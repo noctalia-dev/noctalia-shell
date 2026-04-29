@@ -47,7 +47,7 @@ namespace settings {
   std::unique_ptr<Flex> buildSettingsSidebar(SettingsSidebarContext ctx) {
     const Config cfg = ctx.config;
     const auto sectionLabel = [](std::string_view section) {
-      return i18n::tr("settings.section." + std::string(section));
+      return i18n::tr("settings.navigation.sections." + std::string(section));
     };
 
     auto* scroll = &ctx.contentScrollState;
@@ -105,7 +105,7 @@ namespace settings {
       auto navItem = std::make_unique<Button>();
       navItem->setGlyph("menu");
       navItem->setGlyphSize(Style::fontSizeBody * scale);
-      navItem->setText(i18n::tr("settings.bar-label", "name", barName));
+      navItem->setText(i18n::tr("settings.entities.bar.label", "name", barName));
       if (navItem->label() != nullptr) {
         navItem->label()->setBold(true);
       }
@@ -140,7 +140,7 @@ namespace settings {
         auto ovrItem = std::make_unique<Button>();
         ovrItem->setGlyph("device-desktop");
         ovrItem->setGlyphSize(Style::fontSizeCaption * scale);
-        ovrItem->setText(i18n::tr("settings.monitor-override-label", "name", ovr.match));
+        ovrItem->setText(i18n::tr("settings.entities.monitor-override.label", "name", ovr.match));
         ovrItem->setVariant(ovrSelected ? ButtonVariant::TabActive : ButtonVariant::Tab);
         ovrItem->setContentAlign(ButtonContentAlign::Start);
         ovrItem->setFontSize(Style::fontSizeCaption * scale);
@@ -168,7 +168,7 @@ namespace settings {
       }
 
       auto newMonitorBtn = std::make_unique<Button>();
-      newMonitorBtn->setText(i18n::tr("settings.new-monitor-override"));
+      newMonitorBtn->setText(i18n::tr("settings.entities.monitor-override.new"));
       newMonitorBtn->setGlyph("add");
       newMonitorBtn->setVariant(ButtonVariant::Ghost);
       newMonitorBtn->setContentAlign(ButtonContentAlign::Start);
@@ -199,7 +199,7 @@ namespace settings {
 
       auto input = std::make_unique<Input>();
       input->setValue(*creatingMonitorOverrideMatch);
-      input->setPlaceholder(i18n::tr("settings.monitor-match-placeholder"));
+      input->setPlaceholder(i18n::tr("settings.entities.monitor-override.match-placeholder"));
       input->setFontSize(Style::fontSizeCaption * scale);
       input->setControlHeight(Style::controlHeightSm * scale);
       input->setHorizontalPadding(Style::spaceXs * scale);
@@ -236,7 +236,7 @@ namespace settings {
       actions->setGap(Style::spaceXs * scale);
 
       auto saveBtn = std::make_unique<Button>();
-      saveBtn->setText(i18n::tr("settings.create-monitor-override"));
+      saveBtn->setText(i18n::tr("settings.entities.monitor-override.create"));
       saveBtn->setVariant(ButtonVariant::Default);
       saveBtn->setFontSize(Style::fontSizeCaption * scale);
       saveBtn->setMinHeight(Style::controlHeightSm * scale);
@@ -266,7 +266,7 @@ namespace settings {
     }
 
     auto newBarBtn = std::make_unique<Button>();
-    newBarBtn->setText(i18n::tr("settings.new-bar"));
+    newBarBtn->setText(i18n::tr("settings.entities.bar.new"));
     newBarBtn->setGlyph("add");
     newBarBtn->setVariant(ButtonVariant::Ghost);
     newBarBtn->setContentAlign(ButtonContentAlign::Start);
@@ -292,7 +292,7 @@ namespace settings {
 
       auto input = std::make_unique<Input>();
       input->setValue(*creatingBarName);
-      input->setPlaceholder(i18n::tr("settings.bar-id-placeholder"));
+      input->setPlaceholder(i18n::tr("settings.entities.bar.id-placeholder"));
       input->setFontSize(Style::fontSizeCaption * scale);
       input->setControlHeight(Style::controlHeightSm * scale);
       input->setHorizontalPadding(Style::spaceXs * scale);
@@ -321,7 +321,7 @@ namespace settings {
       actions->setGap(Style::spaceXs * scale);
 
       auto saveBtn = std::make_unique<Button>();
-      saveBtn->setText(i18n::tr("settings.create-bar"));
+      saveBtn->setText(i18n::tr("settings.entities.bar.create"));
       saveBtn->setVariant(ButtonVariant::Default);
       saveBtn->setFontSize(Style::fontSizeCaption * scale);
       saveBtn->setMinHeight(Style::controlHeightSm * scale);

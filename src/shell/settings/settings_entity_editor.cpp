@@ -69,7 +69,7 @@ namespace settings {
             ctx.pendingDeleteMonitorOverrideBarName == barName && ctx.pendingDeleteMonitorOverrideMatch == match;
         const bool renaming =
             ctx.renamingMonitorOverrideBarName == barName && ctx.renamingMonitorOverrideMatch == match;
-        auto* management = makeSection(content, i18n::tr("settings.monitor-override-management"), ctx.scale);
+        auto* management = makeSection(content, i18n::tr("settings.entities.monitor-override.management"), ctx.scale);
 
         if (renaming) {
           auto renameRow = std::make_unique<Flex>();
@@ -79,7 +79,7 @@ namespace settings {
 
           auto input = std::make_unique<Input>();
           input->setValue(match);
-          input->setPlaceholder(i18n::tr("settings.monitor-match-placeholder"));
+          input->setPlaceholder(i18n::tr("settings.entities.monitor-override.match-placeholder"));
           input->setFontSize(Style::fontSizeBody * ctx.scale);
           input->setControlHeight(Style::controlHeight * ctx.scale);
           input->setHorizontalPadding(Style::spaceSm * ctx.scale);
@@ -121,7 +121,7 @@ namespace settings {
           input->setOnSubmit([doRename](const std::string& text) mutable { doRename(text); });
 
           auto saveBtn = std::make_unique<Button>();
-          saveBtn->setText(i18n::tr("settings.rename-monitor-override-save"));
+          saveBtn->setText(i18n::tr("settings.entities.monitor-override.rename-save"));
           saveBtn->setVariant(ButtonVariant::Default);
           saveBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           saveBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
@@ -130,7 +130,7 @@ namespace settings {
           saveBtn->setOnClick([doRename, inputPtr]() mutable { doRename(inputPtr->value()); });
 
           auto cancelBtn = std::make_unique<Button>();
-          cancelBtn->setText(i18n::tr("common.cancel"));
+          cancelBtn->setText(i18n::tr("common.actions.cancel"));
           cancelBtn->setVariant(ButtonVariant::Ghost);
           cancelBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           cancelBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
@@ -158,9 +158,10 @@ namespace settings {
           confirmPanel->setFill(roleColor(ColorRole::Error, 0.10f));
           confirmPanel->setBorder(roleColor(ColorRole::Error, 0.35f), Style::borderWidth);
 
-          confirmPanel->addChild(makeLabel(i18n::tr("settings.delete-monitor-override-confirm-title", "name", match),
-                                           Style::fontSizeBody * ctx.scale, roleColor(ColorRole::Error), true));
-          confirmPanel->addChild(makeLabel(i18n::tr("settings.delete-monitor-override-confirm-desc"),
+          confirmPanel->addChild(
+              makeLabel(i18n::tr("settings.entities.monitor-override.delete-confirm-title", "name", match),
+                        Style::fontSizeBody * ctx.scale, roleColor(ColorRole::Error), true));
+          confirmPanel->addChild(makeLabel(i18n::tr("settings.entities.monitor-override.delete-confirm-desc"),
                                            Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant),
                                            false));
 
@@ -174,7 +175,7 @@ namespace settings {
           confirmRow->addChild(std::move(confirmSpacer));
 
           auto cancelBtn = std::make_unique<Button>();
-          cancelBtn->setText(i18n::tr("common.cancel"));
+          cancelBtn->setText(i18n::tr("common.actions.cancel"));
           cancelBtn->setVariant(ButtonVariant::Ghost);
           cancelBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           cancelBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
@@ -191,7 +192,7 @@ namespace settings {
 
           auto confirmBtn = std::make_unique<Button>();
           confirmBtn->setGlyph("trash");
-          confirmBtn->setText(i18n::tr("settings.delete-monitor-override"));
+          confirmBtn->setText(i18n::tr("settings.entities.monitor-override.delete"));
           confirmBtn->setVariant(ButtonVariant::Destructive);
           confirmBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           confirmBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
@@ -216,7 +217,7 @@ namespace settings {
           actionRow->addChild(std::move(spacer));
 
           auto renameBtn = std::make_unique<Button>();
-          renameBtn->setText(i18n::tr("settings.rename-monitor-override"));
+          renameBtn->setText(i18n::tr("settings.entities.monitor-override.rename"));
           renameBtn->setVariant(ButtonVariant::Ghost);
           renameBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           renameBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
@@ -237,7 +238,7 @@ namespace settings {
 
           auto deleteBtn = std::make_unique<Button>();
           deleteBtn->setGlyph("trash");
-          deleteBtn->setText(i18n::tr("settings.delete-monitor-override"));
+          deleteBtn->setText(i18n::tr("settings.entities.monitor-override.delete"));
           deleteBtn->setVariant(ButtonVariant::Ghost);
           deleteBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           deleteBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
@@ -275,7 +276,7 @@ namespace settings {
 
         const bool pendingDelete = overrideOnly && ctx.pendingDeleteBarName == barName;
         const bool renaming = overrideOnly && ctx.renamingBarName == barName;
-        auto* management = makeSection(content, i18n::tr("settings.bar-management"), ctx.scale);
+        auto* management = makeSection(content, i18n::tr("settings.entities.bar.management"), ctx.scale);
 
         if (renaming) {
           auto renameRow = std::make_unique<Flex>();
@@ -285,7 +286,7 @@ namespace settings {
 
           auto input = std::make_unique<Input>();
           input->setValue(barName);
-          input->setPlaceholder(i18n::tr("settings.bar-id-placeholder"));
+          input->setPlaceholder(i18n::tr("settings.entities.bar.id-placeholder"));
           input->setFontSize(Style::fontSizeBody * ctx.scale);
           input->setControlHeight(Style::controlHeight * ctx.scale);
           input->setHorizontalPadding(Style::spaceSm * ctx.scale);
@@ -315,7 +316,7 @@ namespace settings {
           input->setOnSubmit([doRename](const std::string& text) mutable { doRename(text); });
 
           auto saveBtn = std::make_unique<Button>();
-          saveBtn->setText(i18n::tr("settings.rename-bar-save"));
+          saveBtn->setText(i18n::tr("settings.entities.bar.rename-save"));
           saveBtn->setVariant(ButtonVariant::Default);
           saveBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           saveBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
@@ -324,7 +325,7 @@ namespace settings {
           saveBtn->setOnClick([doRename, inputPtr]() mutable { doRename(inputPtr->value()); });
 
           auto cancelBtn = std::make_unique<Button>();
-          cancelBtn->setText(i18n::tr("common.cancel"));
+          cancelBtn->setText(i18n::tr("common.actions.cancel"));
           cancelBtn->setVariant(ButtonVariant::Ghost);
           cancelBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           cancelBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
@@ -349,9 +350,9 @@ namespace settings {
           confirmPanel->setFill(roleColor(ColorRole::Error, 0.10f));
           confirmPanel->setBorder(roleColor(ColorRole::Error, 0.35f), Style::borderWidth);
 
-          confirmPanel->addChild(makeLabel(i18n::tr("settings.delete-bar-confirm-title", "name", barName),
+          confirmPanel->addChild(makeLabel(i18n::tr("settings.entities.bar.delete-confirm-title", "name", barName),
                                            Style::fontSizeBody * ctx.scale, roleColor(ColorRole::Error), true));
-          confirmPanel->addChild(makeLabel(i18n::tr("settings.delete-bar-confirm-desc"),
+          confirmPanel->addChild(makeLabel(i18n::tr("settings.entities.bar.delete-confirm-desc"),
                                            Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant),
                                            false));
 
@@ -365,7 +366,7 @@ namespace settings {
           confirmRow->addChild(std::move(confirmSpacer));
 
           auto cancelBtn = std::make_unique<Button>();
-          cancelBtn->setText(i18n::tr("common.cancel"));
+          cancelBtn->setText(i18n::tr("common.actions.cancel"));
           cancelBtn->setVariant(ButtonVariant::Ghost);
           cancelBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           cancelBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
@@ -380,7 +381,7 @@ namespace settings {
 
           auto confirmBtn = std::make_unique<Button>();
           confirmBtn->setGlyph("trash");
-          confirmBtn->setText(i18n::tr("settings.delete-bar"));
+          confirmBtn->setText(i18n::tr("settings.entities.bar.delete"));
           confirmBtn->setVariant(ButtonVariant::Destructive);
           confirmBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           confirmBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
@@ -405,7 +406,7 @@ namespace settings {
           if (canMoveUp || canMoveDown) {
             auto moveUpBtn = std::make_unique<Button>();
             moveUpBtn->setGlyph("chevron-up");
-            moveUpBtn->setText(i18n::tr("settings.move-bar-up"));
+            moveUpBtn->setText(i18n::tr("settings.entities.bar.move-up"));
             moveUpBtn->setVariant(ButtonVariant::Ghost);
             moveUpBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
             moveUpBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
@@ -418,7 +419,7 @@ namespace settings {
 
             auto moveDownBtn = std::make_unique<Button>();
             moveDownBtn->setGlyph("chevron-down");
-            moveDownBtn->setText(i18n::tr("settings.move-bar-down"));
+            moveDownBtn->setText(i18n::tr("settings.entities.bar.move-down"));
             moveDownBtn->setVariant(ButtonVariant::Ghost);
             moveDownBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
             moveDownBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
@@ -432,7 +433,7 @@ namespace settings {
 
           if (overrideOnly) {
             auto renameBtn = std::make_unique<Button>();
-            renameBtn->setText(i18n::tr("settings.rename-bar"));
+            renameBtn->setText(i18n::tr("settings.entities.bar.rename"));
             renameBtn->setVariant(ButtonVariant::Ghost);
             renameBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
             renameBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
@@ -451,7 +452,7 @@ namespace settings {
           if (ctx.configService->canDeleteBarOverride(barName)) {
             auto deleteBtn = std::make_unique<Button>();
             deleteBtn->setGlyph("trash");
-            deleteBtn->setText(i18n::tr("settings.delete-bar"));
+            deleteBtn->setText(i18n::tr("settings.entities.bar.delete"));
             deleteBtn->setVariant(ButtonVariant::Ghost);
             deleteBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
             deleteBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);

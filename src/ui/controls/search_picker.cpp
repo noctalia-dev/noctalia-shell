@@ -1,6 +1,7 @@
 #include "ui/controls/search_picker.h"
 
 #include "cursor-shape-v1-client-protocol.h"
+#include "i18n/i18n.h"
 #include "render/scene/input_area.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
@@ -50,7 +51,7 @@ SearchPicker::SearchPicker() {
   setSize(kDefaultWidth, kDefaultHeight);
 
   auto input = std::make_unique<Input>();
-  input->setPlaceholder("Search...");
+  input->setPlaceholder(i18n::tr("ui.controls.search-picker.placeholder"));
   input->setControlHeight(Style::controlHeight);
   input->setOnChange([this](const std::string& value) {
     m_filter = value;

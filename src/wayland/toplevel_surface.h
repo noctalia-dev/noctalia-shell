@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <string>
 
 struct wl_array;
 struct wl_output;
@@ -15,7 +16,7 @@ struct ToplevelSurfaceConfig {
   std::uint32_t height = 480;
   std::uint32_t minWidth = 0;
   std::uint32_t minHeight = 0;
-  const char* title = "Noctalia";
+  std::string title = "Noctalia";
   const char* appId = "dev.noctalia.Noctalia";
 };
 

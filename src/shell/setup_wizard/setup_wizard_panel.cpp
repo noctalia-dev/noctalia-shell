@@ -41,8 +41,8 @@ namespace {
   };
 
   constexpr SelectOption kSetupThemeSources[] = {
-      {"settings.opt.builtin", "builtin"},
-      {"settings.opt.wallpaper", "wallpaper"},
+      {"settings.options.theme.source.built-in", "builtin"},
+      {"settings.options.theme.source.wallpaper", "wallpaper"},
   };
 
   constexpr SelectOption kWallpaperSchemes[] = {
@@ -205,10 +205,10 @@ void SetupWizardPanel::create() {
     auto row = makeRow(scale);
     {
       auto col = makeTextColumn();
-      col->addChild(makeLabel(i18n::tr("settings.telemetry"), Style::fontSizeBody * scale,
+      col->addChild(makeLabel(i18n::tr("settings.schema.shell.telemetry.label"), Style::fontSizeBody * scale,
                               roleColor(ColorRole::OnSurface), true));
-      auto description = makeLabel(i18n::tr("settings.telemetry-desc"), Style::fontSizeCaption * scale,
-                                   roleColor(ColorRole::OnSurfaceVariant));
+      auto description = makeLabel(i18n::tr("settings.schema.shell.telemetry.description"),
+                                   Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant));
       description->setMaxWidth(360.0f * scale);
       col->addChild(std::move(description));
       row->addChild(std::move(col));
@@ -301,7 +301,8 @@ void SetupWizardPanel::create() {
       row->addChild(std::move(label));
 
       auto select = std::make_unique<Select>();
-      select->setOptions({i18n::tr("settings.opt.dark"), i18n::tr("settings.opt.light"), i18n::tr("common.auto")});
+      select->setOptions({i18n::tr("settings.options.theme.mode.dark"), i18n::tr("settings.options.theme.mode.light"),
+                          i18n::tr("common.states.auto")});
       std::size_t modeIdx = 0;
       if (cfg.theme.mode == ThemeMode::Light) {
         modeIdx = 1;
@@ -327,8 +328,8 @@ void SetupWizardPanel::create() {
     // Theme source row
     {
       auto row = makeRow(scale);
-      auto label =
-          makeLabel(i18n::tr("settings.theme-source"), Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface));
+      auto label = makeLabel(i18n::tr("settings.schema.appearance.theme-source.label"), Style::fontSizeBody * scale,
+                             roleColor(ColorRole::OnSurface));
       label->setFlexGrow(1.0f);
       row->addChild(std::move(label));
 

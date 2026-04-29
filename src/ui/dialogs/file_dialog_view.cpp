@@ -2,6 +2,7 @@
 
 #include "core/deferred_call.h"
 #include "core/ui_phase.h"
+#include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/core/thumbnail_service.h"
 #include "render/scene/input_area.h"
@@ -131,7 +132,7 @@ void FileDialogView::create() {
   m_backButton = static_cast<Button*>(toolbar->addChild(std::move(backButton)));
 
   auto searchInput = std::make_unique<Input>();
-  searchInput->setPlaceholder("Filter...");
+  searchInput->setPlaceholder(i18n::tr("ui.dialogs.file.filter-placeholder"));
   searchInput->setFontSize(Style::fontSizeBody * scale);
   searchInput->setControlHeight(Style::controlHeight * scale);
   searchInput->setHorizontalPadding(Style::spaceMd * scale);
@@ -192,7 +193,7 @@ void FileDialogView::create() {
   };
 
   auto nameSort = std::make_unique<Button>();
-  nameSort->setText("Name");
+  nameSort->setText(i18n::tr("ui.dialogs.file.sort.name"));
   configureHeaderButton(nameSort.get());
   nameSort->setContentAlign(ButtonContentAlign::Start);
   nameSort->setFlexGrow(1.0f);
@@ -200,7 +201,7 @@ void FileDialogView::create() {
   m_nameSortButton = static_cast<Button*>(listHeader->addChild(std::move(nameSort)));
 
   auto sizeSort = std::make_unique<Button>();
-  sizeSort->setText("Size");
+  sizeSort->setText(i18n::tr("ui.dialogs.file.sort.size"));
   configureHeaderButton(sizeSort.get());
   sizeSort->setMinWidth(96.0f * scale);
   sizeSort->setContentAlign(ButtonContentAlign::End);
@@ -208,7 +209,7 @@ void FileDialogView::create() {
   m_sizeSortButton = static_cast<Button*>(listHeader->addChild(std::move(sizeSort)));
 
   auto dateSort = std::make_unique<Button>();
-  dateSort->setText("Date");
+  dateSort->setText(i18n::tr("ui.dialogs.file.sort.date"));
   configureHeaderButton(dateSort.get());
   dateSort->setMinWidth(152.0f * scale);
   dateSort->setContentAlign(ButtonContentAlign::End);
@@ -285,7 +286,7 @@ void FileDialogView::create() {
   footer->setGap(Style::spaceSm * scale);
 
   auto filenameInput = std::make_unique<Input>();
-  filenameInput->setPlaceholder("Filename");
+  filenameInput->setPlaceholder(i18n::tr("ui.dialogs.file.filename-placeholder"));
   filenameInput->setFontSize(Style::fontSizeBody * scale);
   filenameInput->setControlHeight(Style::controlHeight * scale);
   filenameInput->setHorizontalPadding(Style::spaceMd * scale);
@@ -297,7 +298,7 @@ void FileDialogView::create() {
   footer->addChild(std::make_unique<Spacer>());
 
   auto cancelButton = std::make_unique<Button>();
-  cancelButton->setText("Cancel");
+  cancelButton->setText(i18n::tr("common.actions.cancel"));
   cancelButton->setVariant(ButtonVariant::Secondary);
   configureDialogActionButton(*cancelButton, scale);
   cancelButton->setOnClick([this]() { DeferredCall::callLater([this]() { cancelDialog(); }); });
@@ -650,7 +651,7 @@ void FileDialogView::rebuildList(Renderer& renderer, float width) {
 
   if (m_visibleEntries.empty()) {
     m_listEmptyLabel->setVisible(true);
-    m_listEmptyLabel->setText("No files match the current filter");
+    m_listEmptyLabel->setText(i18n::tr("ui.dialogs.file.empty-filtered"));
     m_listEmptyLabel->measure(renderer);
     m_listEmptyLabel->setPosition(0.0f, 0.0f);
     m_listRoot->setSize(width, m_listEmptyLabel->height());
@@ -701,7 +702,7 @@ void FileDialogView::rebuildGrid(Renderer& renderer, float width) {
 
   if (m_visibleEntries.empty()) {
     m_gridEmptyLabel->setVisible(true);
-    m_gridEmptyLabel->setText("No files match the current filter");
+    m_gridEmptyLabel->setText(i18n::tr("ui.dialogs.file.empty-filtered"));
     m_gridEmptyLabel->measure(renderer);
     m_gridEmptyLabel->setPosition(0.0f, 0.0f);
     m_gridRoot->setSize(width, m_gridEmptyLabel->height());

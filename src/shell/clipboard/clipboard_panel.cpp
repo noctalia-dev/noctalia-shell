@@ -84,16 +84,16 @@ namespace {
       return entry.textPreview;
     }
     if (entry.isImage()) {
-      return i18n::tr("clipboard.entry-image");
+      return i18n::tr("clipboard.entry.image");
     }
-    return entry.dataMimeType.empty() ? i18n::tr("clipboard.entry-title") : entry.dataMimeType;
+    return entry.dataMimeType.empty() ? i18n::tr("clipboard.entry.title") : entry.dataMimeType;
   }
 
   std::string previewTitle(const ClipboardEntry& entry) {
     if (entry.isImage()) {
-      return i18n::tr("clipboard.preview-image-title");
+      return i18n::tr("clipboard.preview.image-title");
     }
-    return i18n::tr("clipboard.preview-text-title");
+    return i18n::tr("clipboard.preview.text-title");
   }
 
 } // namespace
@@ -205,7 +205,7 @@ void ClipboardPanel::create() {
   m_previewHeaderRow = previewHeader.get();
 
   auto previewTitleLabel = std::make_unique<Label>();
-  previewTitleLabel->setText(i18n::tr("clipboard.entry-title"));
+  previewTitleLabel->setText(i18n::tr("clipboard.entry.title"));
   previewTitleLabel->setFontSize(Style::fontSizeTitle * scale);
   previewTitleLabel->setBold(true);
   previewTitleLabel->setColor(roleColor(ColorRole::Primary));
@@ -428,9 +428,9 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
 
   if (history.empty() || m_filteredIndices.empty()) {
     auto empty = std::make_unique<Label>();
-    empty->setText(history.empty()         ? i18n::tr("clipboard.history-empty")
-                   : m_filterQuery.empty() ? i18n::tr("clipboard.history-empty")
-                                           : i18n::tr("clipboard.no-matching-entries"));
+    empty->setText(history.empty()         ? i18n::tr("clipboard.empty.history-title")
+                   : m_filterQuery.empty() ? i18n::tr("clipboard.empty.history-title")
+                                           : i18n::tr("clipboard.empty.no-matches-title"));
     empty->setCaptionStyle();
     empty->setColor(roleColor(ColorRole::OnSurfaceVariant));
     empty->setMaxWidth(width);
@@ -550,13 +550,13 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
   const auto& history = m_clipboard != nullptr ? m_clipboard->history() : std::deque<ClipboardEntry>{};
   const std::size_t historyIndex = selectedHistoryIndex();
   if (history.empty() || historyIndex == static_cast<std::size_t>(-1)) {
-    m_previewTitle->setText(i18n::tr("clipboard.entry-title"));
-    m_previewMeta->setText(history.empty() ? i18n::tr("clipboard.history-empty-sentence")
-                                           : i18n::tr("clipboard.no-matching-entries"));
+    m_previewTitle->setText(i18n::tr("clipboard.entry.title"));
+    m_previewMeta->setText(history.empty() ? i18n::tr("clipboard.empty.history-message")
+                                           : i18n::tr("clipboard.empty.no-matches-title"));
 
     auto empty = std::make_unique<Label>();
-    empty->setText(history.empty() ? i18n::tr("clipboard.history-empty-sentence")
-                                   : i18n::tr("clipboard.no-matching-entries-sentence"));
+    empty->setText(history.empty() ? i18n::tr("clipboard.empty.history-message")
+                                   : i18n::tr("clipboard.empty.no-matches-message"));
     empty->setColor(roleColor(ColorRole::OnSurfaceVariant));
     empty->setMaxWidth(width);
     m_previewContent->addChild(std::move(empty));
@@ -573,7 +573,7 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
 
   if (m_previewPayloadIndex != historyIndex) {
     auto pending = std::make_unique<Label>();
-    pending->setText(i18n::tr("clipboard.loading-preview"));
+    pending->setText(i18n::tr("clipboard.preview.loading"));
     pending->setColor(roleColor(ColorRole::OnSurfaceVariant));
     pending->setMaxWidth(width);
     m_previewContent->addChild(std::move(pending));
@@ -620,7 +620,7 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
 
     if (expanded.empty()) {
       auto empty = std::make_unique<Label>();
-      empty->setText(i18n::tr("clipboard.empty-text-payload"));
+      empty->setText(i18n::tr("clipboard.preview.empty-text-payload"));
       empty->setColor(roleColor(ColorRole::OnSurfaceVariant));
       m_previewContent->addChild(std::move(empty));
     } else {
@@ -633,7 +633,7 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
       m_previewContent->addChild(std::move(label));
       if (truncated) {
         auto hint = std::make_unique<Label>();
-        hint->setText(i18n::tr("clipboard.truncated"));
+        hint->setText(i18n::tr("clipboard.preview.truncated"));
         hint->setCaptionStyle();
         hint->setColor(roleColor(ColorRole::OnSurfaceVariant));
         m_previewContent->addChild(std::move(hint));

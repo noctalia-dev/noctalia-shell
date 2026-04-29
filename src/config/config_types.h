@@ -277,11 +277,11 @@ enum class ClipboardAutoPasteMode : std::uint8_t {
 };
 
 constexpr EnumOption<ClipboardAutoPasteMode> kClipboardAutoPasteModes[] = {
-    {ClipboardAutoPasteMode::Off, "off", "common.off"},
-    {ClipboardAutoPasteMode::Auto, "auto", "common.auto"},
-    {ClipboardAutoPasteMode::CtrlV, "ctrl_v", "settings.opt.ctrl-v"},
-    {ClipboardAutoPasteMode::CtrlShiftV, "ctrl_shift_v", "settings.opt.ctrl-shift-v"},
-    {ClipboardAutoPasteMode::ShiftInsert, "shift_insert", "settings.opt.shift-insert"},
+    {ClipboardAutoPasteMode::Off, "off", "common.states.off"},
+    {ClipboardAutoPasteMode::Auto, "auto", "common.states.auto"},
+    {ClipboardAutoPasteMode::CtrlV, "ctrl_v", "settings.options.clipboard.auto-paste.ctrl-v"},
+    {ClipboardAutoPasteMode::CtrlShiftV, "ctrl_shift_v", "settings.options.clipboard.auto-paste.ctrl-shift-v"},
+    {ClipboardAutoPasteMode::ShiftInsert, "shift_insert", "settings.options.clipboard.auto-paste.shift-insert"},
 };
 
 enum class PasswordMaskStyle : std::uint8_t {
@@ -290,30 +290,30 @@ enum class PasswordMaskStyle : std::uint8_t {
 };
 
 constexpr EnumOption<PasswordMaskStyle> kPasswordMaskStyles[] = {
-    {PasswordMaskStyle::CircleFilled, "default", "settings.opt.filled-circles"},
-    {PasswordMaskStyle::RandomIcons, "random", "settings.opt.random-icons"},
+    {PasswordMaskStyle::CircleFilled, "default", "settings.options.shell.password-style.filled-circles"},
+    {PasswordMaskStyle::RandomIcons, "random", "settings.options.shell.password-style.random-icons"},
 };
 
 constexpr EnumOption<WallpaperFillMode> kWallpaperFillModes[] = {
-    {WallpaperFillMode::Center, "center", "settings.opt.wallpaper-center"},
-    {WallpaperFillMode::Crop, "crop", "settings.opt.wallpaper-crop"},
-    {WallpaperFillMode::Fit, "fit", "settings.opt.wallpaper-fit"},
-    {WallpaperFillMode::Stretch, "stretch", "settings.opt.wallpaper-stretch"},
-    {WallpaperFillMode::Repeat, "repeat", "settings.opt.wallpaper-repeat"},
+    {WallpaperFillMode::Center, "center", "settings.options.wallpaper.fill.center"},
+    {WallpaperFillMode::Crop, "crop", "settings.options.wallpaper.fill.crop"},
+    {WallpaperFillMode::Fit, "fit", "settings.options.wallpaper.fill.fit"},
+    {WallpaperFillMode::Stretch, "stretch", "settings.options.wallpaper.fill.stretch"},
+    {WallpaperFillMode::Repeat, "repeat", "settings.options.wallpaper.fill.repeat"},
 };
 
 constexpr EnumOption<WallpaperAutomationConfig::Order> kWallpaperAutomationOrders[] = {
-    {WallpaperAutomationConfig::Order::Random, "random", "settings.opt.random"},
-    {WallpaperAutomationConfig::Order::Alphabetical, "alphabetical", "settings.opt.alphabetical"},
+    {WallpaperAutomationConfig::Order::Random, "random", "settings.options.wallpaper.order.random"},
+    {WallpaperAutomationConfig::Order::Alphabetical, "alphabetical", "settings.options.wallpaper.order.alphabetical"},
 };
 
 constexpr EnumOption<WallpaperTransition> kWallpaperTransitions[] = {
-    {WallpaperTransition::Disc, "disc", "settings.opt.transition-disc"},
-    {WallpaperTransition::Fade, "fade", "settings.opt.transition-fade"},
-    {WallpaperTransition::Honeycomb, "honeycomb", "settings.opt.transition-honeycomb"},
-    {WallpaperTransition::Stripes, "stripes", "settings.opt.transition-stripes"},
-    {WallpaperTransition::Wipe, "wipe", "settings.opt.transition-wipe"},
-    {WallpaperTransition::Zoom, "zoom", "settings.opt.transition-zoom"},
+    {WallpaperTransition::Disc, "disc", "settings.options.wallpaper.transition.disc"},
+    {WallpaperTransition::Fade, "fade", "settings.options.wallpaper.transition.fade"},
+    {WallpaperTransition::Honeycomb, "honeycomb", "settings.options.wallpaper.transition.honeycomb"},
+    {WallpaperTransition::Stripes, "stripes", "settings.options.wallpaper.transition.stripes"},
+    {WallpaperTransition::Wipe, "wipe", "settings.options.wallpaper.transition.wipe"},
+    {WallpaperTransition::Zoom, "zoom", "settings.options.wallpaper.transition.zoom"},
 };
 
 struct ShellConfig {
@@ -518,9 +518,9 @@ enum class ThemeSource : std::uint8_t {
 };
 
 constexpr EnumOption<ThemeSource> kThemeSources[] = {
-    {ThemeSource::Builtin, "builtin", "settings.opt.builtin"},
-    {ThemeSource::Wallpaper, "wallpaper", "settings.opt.wallpaper"},
-    {ThemeSource::Community, "community", "settings.opt.community"},
+    {ThemeSource::Builtin, "builtin", "settings.options.theme.source.built-in"},
+    {ThemeSource::Wallpaper, "wallpaper", "settings.options.theme.source.wallpaper"},
+    {ThemeSource::Community, "community", "settings.options.theme.source.community"},
 };
 
 enum class ThemeMode : std::uint8_t {
@@ -530,9 +530,9 @@ enum class ThemeMode : std::uint8_t {
 };
 
 constexpr EnumOption<ThemeMode> kThemeModes[] = {
-    {ThemeMode::Dark, "dark", "settings.opt.dark"},
-    {ThemeMode::Light, "light", "settings.opt.light"},
-    {ThemeMode::Auto, "auto", "common.auto"},
+    {ThemeMode::Dark, "dark", "settings.options.theme.mode.dark"},
+    {ThemeMode::Light, "light", "settings.options.theme.mode.light"},
+    {ThemeMode::Auto, "auto", "common.states.auto"},
 };
 
 struct ThemeConfig {

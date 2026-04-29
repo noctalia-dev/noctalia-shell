@@ -17,139 +17,139 @@ namespace settings {
     const std::vector<WidgetTypeSpec> kWidgetTypeSpecs = {
         {
             .type = "active_window",
-            .labelKey = "settings.widget.active-window",
-            .categoryKey = "settings.widget-category.window",
+            .labelKey = "settings.widgets.types.active-window",
+            .categoryKey = "settings.widgets.categories.window",
         },
         {
             .type = "audio_visualizer",
-            .labelKey = "settings.widget.audio-visualizer",
-            .categoryKey = "settings.widget-category.media",
+            .labelKey = "settings.widgets.types.audio-visualizer",
+            .categoryKey = "settings.widgets.categories.media",
         },
         {
             .type = "battery",
-            .labelKey = "settings.widget.battery",
-            .categoryKey = "settings.widget-category.system",
+            .labelKey = "settings.widgets.types.battery",
+            .categoryKey = "settings.widgets.categories.system",
         },
         {
             .type = "bluetooth",
-            .labelKey = "settings.widget.bluetooth",
-            .categoryKey = "settings.widget-category.system",
+            .labelKey = "settings.widgets.types.bluetooth",
+            .categoryKey = "settings.widgets.categories.system",
         },
         {
             .type = "brightness",
-            .labelKey = "settings.widget.brightness",
-            .categoryKey = "settings.widget-category.system",
+            .labelKey = "settings.widgets.types.brightness",
+            .categoryKey = "settings.widgets.categories.system",
         },
         {
             .type = "clock",
-            .labelKey = "settings.widget.clock",
-            .categoryKey = "settings.widget-category.time",
+            .labelKey = "settings.widgets.types.clock",
+            .categoryKey = "settings.widgets.categories.time",
         },
         {
             .type = "idle_inhibitor",
-            .labelKey = "settings.widget.idle-inhibitor",
-            .categoryKey = "settings.widget-category.system",
+            .labelKey = "settings.widgets.types.idle-inhibitor",
+            .categoryKey = "settings.widgets.categories.system",
         },
         {
             .type = "keyboard_layout",
-            .labelKey = "settings.widget.keyboard-layout",
-            .categoryKey = "settings.widget-category.input",
+            .labelKey = "settings.widgets.types.keyboard-layout",
+            .categoryKey = "settings.widgets.categories.input",
         },
         {
             .type = "launcher",
-            .labelKey = "settings.widget.launcher",
-            .categoryKey = "settings.widget-category.shell",
+            .labelKey = "settings.widgets.types.launcher",
+            .categoryKey = "settings.widgets.categories.shell",
         },
         {
             .type = "lock_keys",
-            .labelKey = "settings.widget.lock-keys",
-            .categoryKey = "settings.widget-category.input",
+            .labelKey = "settings.widgets.types.lock-keys",
+            .categoryKey = "settings.widgets.categories.input",
         },
         {
             .type = "media",
-            .labelKey = "settings.widget.media",
-            .categoryKey = "settings.widget-category.media",
+            .labelKey = "settings.widgets.types.media",
+            .categoryKey = "settings.widgets.categories.media",
         },
         {
             .type = "network",
-            .labelKey = "settings.widget.network",
-            .categoryKey = "settings.widget-category.system",
+            .labelKey = "settings.widgets.types.network",
+            .categoryKey = "settings.widgets.categories.system",
         },
         {
             .type = "nightlight",
-            .labelKey = "settings.widget.nightlight",
-            .categoryKey = "settings.widget-category.system",
+            .labelKey = "settings.widgets.types.nightlight",
+            .categoryKey = "settings.widgets.categories.system",
         },
         {
             .type = "notifications",
-            .labelKey = "settings.widget.notifications",
-            .categoryKey = "settings.widget-category.shell",
+            .labelKey = "settings.widgets.types.notifications",
+            .categoryKey = "settings.widgets.categories.shell",
         },
         {
             .type = "power_profiles",
-            .labelKey = "settings.widget.power-profiles",
-            .categoryKey = "settings.widget-category.system",
+            .labelKey = "settings.widgets.types.power-profiles",
+            .categoryKey = "settings.widgets.categories.system",
         },
         {
             .type = "scripted",
-            .labelKey = "settings.widget.scripted",
-            .categoryKey = "settings.widget-category.custom",
+            .labelKey = "settings.widgets.types.scripted",
+            .categoryKey = "settings.widgets.categories.custom",
         },
         {
             .type = "session",
-            .labelKey = "settings.widget.session",
-            .categoryKey = "settings.widget-category.shell",
+            .labelKey = "settings.widgets.types.session",
+            .categoryKey = "settings.widgets.categories.shell",
         },
         {
             .type = "settings",
-            .labelKey = "settings.widget.settings",
-            .categoryKey = "settings.widget-category.shell",
+            .labelKey = "settings.widgets.types.settings",
+            .categoryKey = "settings.widgets.categories.shell",
         },
         {
             .type = "spacer",
-            .labelKey = "settings.widget.spacer",
-            .categoryKey = "settings.widget-category.layout",
+            .labelKey = "settings.widgets.types.spacer",
+            .categoryKey = "settings.widgets.categories.layout",
         },
         {
             .type = "sysmon",
-            .labelKey = "settings.widget.sysmon",
-            .categoryKey = "settings.widget-category.system",
+            .labelKey = "settings.widgets.types.sysmon",
+            .categoryKey = "settings.widgets.categories.system",
         },
         {
             .type = "test",
-            .labelKey = "settings.widget.test",
-            .categoryKey = "settings.widget-category.custom",
+            .labelKey = "settings.widgets.types.test",
+            .categoryKey = "settings.widgets.categories.custom",
             .visibleInPicker = false,
         },
         {
             .type = "theme_mode",
-            .labelKey = "settings.widget.theme-mode",
-            .categoryKey = "settings.widget-category.shell",
+            .labelKey = "settings.widgets.types.theme-mode",
+            .categoryKey = "settings.widgets.categories.shell",
         },
         {
             .type = "tray",
-            .labelKey = "settings.widget.tray",
-            .categoryKey = "settings.widget-category.shell",
+            .labelKey = "settings.widgets.types.tray",
+            .categoryKey = "settings.widgets.categories.shell",
         },
         {
             .type = "volume",
-            .labelKey = "settings.widget.volume",
-            .categoryKey = "settings.widget-category.media",
+            .labelKey = "settings.widgets.types.volume",
+            .categoryKey = "settings.widgets.categories.media",
         },
         {
             .type = "wallpaper",
-            .labelKey = "settings.widget.wallpaper",
-            .categoryKey = "settings.widget-category.shell",
+            .labelKey = "settings.widgets.types.wallpaper",
+            .categoryKey = "settings.widgets.categories.shell",
         },
         {
             .type = "weather",
-            .labelKey = "settings.widget.weather",
-            .categoryKey = "settings.widget-category.info",
+            .labelKey = "settings.widgets.types.weather",
+            .categoryKey = "settings.widgets.categories.info",
         },
         {
             .type = "workspaces",
-            .labelKey = "settings.widget.workspaces",
-            .categoryKey = "settings.widget-category.window",
+            .labelKey = "settings.widgets.types.workspaces",
+            .categoryKey = "settings.widgets.categories.window",
         },
     };
 
@@ -166,8 +166,8 @@ namespace settings {
                                bool advanced) {
       WidgetSettingSpec spec;
       spec.key = std::string(key);
-      spec.labelKey = std::string("settings.widget-setting.") + std::string(key);
-      spec.descriptionKey = std::string("settings.widget-setting-desc.") + std::string(key);
+      spec.labelKey = std::string("settings.widgets.settings.") + std::string(key) + ".label";
+      spec.descriptionKey = std::string("settings.widgets.settings.") + std::string(key) + ".description";
       spec.valueType = type;
       spec.defaultValue = std::move(defaultValue);
       spec.advanced = advanced;
@@ -231,7 +231,7 @@ namespace settings {
         if (isBuiltInWidgetType(name) || cfg.widgets.contains(name)) {
           continue;
         }
-        addPickerEntry(entries, seen, name, name, name, tr("settings.widget-kind-unknown"),
+        addPickerEntry(entries, seen, name, name, name, tr("settings.entities.widget.kinds.unknown"),
                        WidgetReferenceKind::Unknown);
       }
     }
@@ -276,15 +276,15 @@ namespace settings {
           it != cfg.widgets.end() && !it->second.type.empty() && it->second.type != name) {
         return WidgetReferenceInfo{
             .title = std::string(name),
-            .detail = "type: " + it->second.type,
-            .badge = tr("settings.widget-kind-named"),
+            .detail = tr("settings.entities.widget.detail.type", "type", it->second.type),
+            .badge = tr("settings.entities.widget.kinds.named"),
             .kind = WidgetReferenceKind::Named,
         };
       }
       return WidgetReferenceInfo{
           .title = tr(spec->labelKey),
           .detail = std::string(name),
-          .badge = tr("settings.widget-kind-builtin"),
+          .badge = tr("settings.entities.widget.kinds.built-in"),
           .kind = WidgetReferenceKind::BuiltIn,
       };
     }
@@ -292,8 +292,9 @@ namespace settings {
     if (const auto it = cfg.widgets.find(std::string(name)); it != cfg.widgets.end()) {
       return WidgetReferenceInfo{
           .title = std::string(name),
-          .detail = it->second.type.empty() ? std::string("custom widget") : ("type: " + it->second.type),
-          .badge = tr("settings.widget-kind-named"),
+          .detail = it->second.type.empty() ? tr("settings.entities.widget.detail.custom")
+                                            : tr("settings.entities.widget.detail.type", "type", it->second.type),
+          .badge = tr("settings.entities.widget.kinds.named"),
           .kind = WidgetReferenceKind::Named,
       };
     }
@@ -301,7 +302,7 @@ namespace settings {
     return WidgetReferenceInfo{
         .title = std::string(name),
         .detail = std::string(name),
-        .badge = tr("settings.widget-kind-unknown"),
+        .badge = tr("settings.entities.widget.kinds.unknown"),
         .kind = WidgetReferenceKind::Unknown,
     };
   }
@@ -323,8 +324,9 @@ namespace settings {
         continue;
       }
       addPickerEntry(entries, seen, name, name,
-                     widget.type.empty() ? std::string("custom widget") : ("type: " + widget.type),
-                     tr("settings.widget-kind-named"), WidgetReferenceKind::Named);
+                     widget.type.empty() ? tr("settings.entities.widget.detail.custom")
+                                         : tr("settings.entities.widget.detail.type", "type", widget.type),
+                     tr("settings.entities.widget.kinds.named"), WidgetReferenceKind::Named);
     }
 
     for (const auto& bar : cfg.bars) {
@@ -371,23 +373,23 @@ namespace settings {
 
     auto add = [&](WidgetSettingSpec spec) { specs.push_back(std::move(spec)); };
     const std::vector<WidgetSettingSelectOption> shortFull = {
-        {"short", "settings.widget-option.short"},
-        {"full", "settings.widget-option.full"},
+        {"short", "settings.widgets.options.short"},
+        {"full", "settings.widgets.options.full"},
     };
     const std::vector<WidgetSettingSelectOption> sysmonStats = {
-        {"cpu_usage", "settings.widget-option.cpu-usage"},   {"cpu_temp", "settings.widget-option.cpu-temp"},
-        {"ram_used", "settings.widget-option.ram-used"},     {"ram_pct", "settings.widget-option.ram-percent"},
-        {"swap_pct", "settings.widget-option.swap-percent"}, {"disk_pct", "settings.widget-option.disk-percent"},
+        {"cpu_usage", "settings.widgets.options.cpu-usage"},   {"cpu_temp", "settings.widgets.options.cpu-temp"},
+        {"ram_used", "settings.widgets.options.ram-used"},     {"ram_pct", "settings.widgets.options.ram-percent"},
+        {"swap_pct", "settings.widgets.options.swap-percent"}, {"disk_pct", "settings.widgets.options.disk-percent"},
     };
     const std::vector<WidgetSettingSelectOption> sysmonDisplay = {
-        {"gauge", "settings.widget-option.gauge"},
-        {"graph", "settings.widget-option.graph"},
-        {"text", "settings.widget-option.text"},
+        {"gauge", "settings.widgets.options.gauge"},
+        {"graph", "settings.widgets.options.graph"},
+        {"text", "settings.widgets.options.text"},
     };
     const std::vector<WidgetSettingSelectOption> workspaceDisplay = {
-        {"id", "settings.widget-option.id"},
-        {"name", "settings.widget-option.name"},
-        {"none", "settings.widget-option.none"},
+        {"id", "settings.widgets.options.id"},
+        {"name", "settings.widgets.options.name"},
+        {"none", "settings.widgets.options.none"},
     };
 
     if (type == "active_window") {

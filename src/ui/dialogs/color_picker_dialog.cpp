@@ -1,5 +1,7 @@
 #include "ui/dialogs/color_picker_dialog.h"
 
+#include "i18n/i18n.h"
+
 #include <utility>
 
 namespace {
@@ -22,7 +24,7 @@ bool ColorPickerDialog::open(ColorPickerDialogOptions options, CompletionCallbac
   }
 
   if (options.title.empty()) {
-    options.title = "Color";
+    options.title = i18n::tr("ui.dialogs.color-picker.title");
   }
 
   s_options = std::move(options);

@@ -98,13 +98,13 @@ namespace settings {
 
     std::string laneLabel(std::string_view lane) {
       if (lane == "start") {
-        return i18n::tr("settings.widget-lane-start");
+        return i18n::tr("settings.entities.widget.lanes.start");
       }
       if (lane == "center") {
-        return i18n::tr("settings.widget-lane-center");
+        return i18n::tr("settings.entities.widget.lanes.center");
       }
       if (lane == "end") {
-        return i18n::tr("settings.widget-lane-end");
+        return i18n::tr("settings.entities.widget.lanes.end");
       }
       return std::string(lane);
     }
@@ -228,9 +228,9 @@ namespace settings {
         }
         options.push_back(SearchPickerOption{
             .value = std::string(kCreateInstancePrefix) + entry.value,
-            .label = i18n::tr("settings.widget-picker-create-label", "label", entry.label),
-            .description = i18n::tr("settings.widget-picker-create-desc", "type", entry.value),
-            .category = i18n::tr("settings.widget-kind-new-instance"),
+            .label = i18n::tr("settings.entities.widget.picker.create-label", "label", entry.label),
+            .description = i18n::tr("settings.entities.widget.picker.create-description", "type", entry.value),
+            .category = i18n::tr("settings.entities.widget.kinds.new-instance"),
             .enabled = true,
         });
       }
@@ -630,10 +630,10 @@ namespace settings {
       header->setAlign(FlexAlign::Stretch);
       header->setGap(1.0f * ctx.scale);
       header->setPadding(Style::spaceXs * ctx.scale, 0.0f);
-      header->addChild(makeLabel(i18n::tr("settings.widget-raw-settings"), Style::fontSizeCaption * ctx.scale,
+      header->addChild(makeLabel(i18n::tr("settings.entities.widget.raw.title"), Style::fontSizeCaption * ctx.scale,
                                  roleColor(ColorRole::OnSurface), true));
-      header->addChild(makeLabel(i18n::tr("settings.widget-raw-settings-desc"), Style::fontSizeCaption * ctx.scale,
-                                 roleColor(ColorRole::OnSurfaceVariant), false));
+      header->addChild(makeLabel(i18n::tr("settings.entities.widget.raw.description"),
+                                 Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant), false));
       panel.addChild(std::move(header));
 
       for (const auto& key : rawKeys) {
@@ -667,7 +667,7 @@ namespace settings {
           deleteBtn->setGlyph("trash");
           deleteBtn->setVariant(pendingDelete ? ButtonVariant::Default : ButtonVariant::Ghost);
           if (pendingDelete) {
-            deleteBtn->setText(i18n::tr("settings.delete-widget-raw-setting"));
+            deleteBtn->setText(i18n::tr("settings.entities.widget.raw.delete"));
             deleteBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           }
           deleteBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
@@ -719,10 +719,10 @@ namespace settings {
       copy->setAlign(FlexAlign::Start);
       copy->setGap(Style::spaceXs * ctx.scale);
       copy->setFlexGrow(1.0f);
-      copy->addChild(makeLabel(i18n::tr("settings.widget-setting.type"), Style::fontSizeBody * ctx.scale,
+      copy->addChild(makeLabel(i18n::tr("settings.widgets.settings.type.label"), Style::fontSizeBody * ctx.scale,
                                roleColor(ColorRole::OnSurface), false));
-      auto detail = makeLabel(i18n::tr("settings.widget-setting-desc.type"), Style::fontSizeCaption * ctx.scale,
-                              roleColor(ColorRole::OnSurfaceVariant), false);
+      auto detail = makeLabel(i18n::tr("settings.widgets.settings.type.description"),
+                              Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant), false);
       detail->setMaxWidth(360.0f * ctx.scale);
       copy->addChild(std::move(detail));
       row->addChild(std::move(copy));
@@ -756,8 +756,8 @@ namespace settings {
       panelHeader->setDirection(FlexDirection::Horizontal);
       panelHeader->setAlign(FlexAlign::Center);
       panelHeader->setGap(Style::spaceXs * ctx.scale);
-      panelHeader->addChild(makeLabel(i18n::tr("settings.widget-settings"), Style::fontSizeCaption * ctx.scale,
-                                      roleColor(ColorRole::OnSurface), true));
+      panelHeader->addChild(makeLabel(i18n::tr("settings.entities.widget.settings.title"),
+                                      Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurface), true));
       panelHeader->addChild(
           makeLabel(widgetType, Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant), false));
       panel->addChild(std::move(panelHeader));
@@ -829,8 +829,8 @@ namespace settings {
       addRawWidgetSettings(*panel, widgetName, specs, visibleSpecs, ctx);
 
       if (visibleSpecs == 0) {
-        panel->addChild(makeLabel(i18n::tr("settings.widget-settings-empty"), Style::fontSizeCaption * ctx.scale,
-                                  roleColor(ColorRole::OnSurfaceVariant), false));
+        panel->addChild(makeLabel(i18n::tr("settings.entities.widget.settings.empty"),
+                                  Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant), false));
       }
 
       item.addChild(std::move(panel));
@@ -876,8 +876,9 @@ namespace settings {
         headerRow->setDirection(FlexDirection::Horizontal);
         headerRow->setAlign(FlexAlign::Center);
         headerRow->setGap(Style::spaceSm * ctx.scale);
-        headerRow->addChild(makeLabel(i18n::tr("settings.inspector-edit-title"), Style::fontSizeCaption * ctx.scale,
-                                      roleColor(ColorRole::OnSurfaceVariant), true));
+        headerRow->addChild(makeLabel(i18n::tr("settings.entities.widget.inspector.edit-title"),
+                                      Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant),
+                                      true));
         headerRow->addChild(
             makeLabel(info.title, Style::fontSizeBody * ctx.scale, roleColor(ColorRole::OnSurface), true));
 
@@ -927,7 +928,7 @@ namespace settings {
 
           auto input = std::make_unique<Input>();
           input->setValue(widgetName);
-          input->setPlaceholder(i18n::tr("settings.rename-widget-placeholder"));
+          input->setPlaceholder(i18n::tr("settings.entities.widget.instance.id-placeholder"));
           input->setFontSize(Style::fontSizeCaption * ctx.scale);
           input->setControlHeight(Style::controlHeightSm * ctx.scale);
           input->setHorizontalPadding(Style::spaceXs * ctx.scale);
@@ -955,7 +956,7 @@ namespace settings {
           input->setOnSubmit([doRename](const std::string& text) mutable { doRename(text); });
 
           auto saveBtn = std::make_unique<Button>();
-          saveBtn->setText(i18n::tr("settings.rename-widget-save"));
+          saveBtn->setText(i18n::tr("settings.entities.widget.instance.rename-save"));
           saveBtn->setVariant(ButtonVariant::Default);
           saveBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           saveBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
@@ -964,7 +965,7 @@ namespace settings {
           saveBtn->setOnClick([doRename, inputPtr]() mutable { doRename(inputPtr->value()); });
 
           auto cancelBtn = std::make_unique<Button>();
-          cancelBtn->setText(i18n::tr("common.cancel"));
+          cancelBtn->setText(i18n::tr("common.actions.cancel"));
           cancelBtn->setVariant(ButtonVariant::Ghost);
           cancelBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           cancelBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
@@ -991,9 +992,10 @@ namespace settings {
           confirmPanel->setFill(roleColor(ColorRole::Error, 0.10f));
           confirmPanel->setBorder(roleColor(ColorRole::Error, 0.35f), Style::borderWidth);
 
-          confirmPanel->addChild(makeLabel(i18n::tr("settings.delete-widget-confirm-title", "name", widgetName),
-                                           Style::fontSizeBody * ctx.scale, roleColor(ColorRole::Error), true));
-          confirmPanel->addChild(makeLabel(i18n::tr("settings.delete-widget-confirm-desc"),
+          confirmPanel->addChild(
+              makeLabel(i18n::tr("settings.entities.widget.instance.delete-confirm-title", "name", widgetName),
+                        Style::fontSizeBody * ctx.scale, roleColor(ColorRole::Error), true));
+          confirmPanel->addChild(makeLabel(i18n::tr("settings.entities.widget.instance.delete-confirm-desc"),
                                            Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant),
                                            false));
 
@@ -1007,7 +1009,7 @@ namespace settings {
           confirmRow->addChild(std::move(confirmSpacer));
 
           auto cancelBtn = std::make_unique<Button>();
-          cancelBtn->setText(i18n::tr("common.cancel"));
+          cancelBtn->setText(i18n::tr("common.actions.cancel"));
           cancelBtn->setVariant(ButtonVariant::Ghost);
           cancelBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           cancelBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
@@ -1021,7 +1023,7 @@ namespace settings {
           confirmRow->addChild(std::move(cancelBtn));
 
           auto confirmBtn = std::make_unique<Button>();
-          confirmBtn->setText(i18n::tr("settings.delete-widget-instance"));
+          confirmBtn->setText(i18n::tr("settings.entities.widget.instance.delete"));
           confirmBtn->setGlyph("trash");
           confirmBtn->setVariant(ButtonVariant::Destructive);
           confirmBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
@@ -1057,7 +1059,8 @@ namespace settings {
               continue;
             }
             auto moveBtn = std::make_unique<Button>();
-            moveBtn->setText(i18n::tr("settings.move-to-lane", "lane", laneLabel(targetLane)));
+            moveBtn->setText(
+                i18n::tr("settings.entities.widget.inspector.move-to-lane", "lane", laneLabel(targetLane)));
             moveBtn->setVariant(ButtonVariant::Ghost);
             moveBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
             moveBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
@@ -1086,7 +1089,7 @@ namespace settings {
 
           if (guiManaged && !renaming) {
             auto renameBtn = std::make_unique<Button>();
-            renameBtn->setText(i18n::tr("settings.rename-widget-instance"));
+            renameBtn->setText(i18n::tr("settings.entities.widget.instance.rename"));
             renameBtn->setVariant(ButtonVariant::Ghost);
             renameBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
             renameBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
@@ -1103,7 +1106,7 @@ namespace settings {
           if (guiManaged) {
             auto deleteBtn = std::make_unique<Button>();
             deleteBtn->setGlyph("trash");
-            deleteBtn->setText(i18n::tr("settings.delete-widget-instance"));
+            deleteBtn->setText(i18n::tr("settings.entities.widget.instance.delete"));
             deleteBtn->setVariant(ButtonVariant::Ghost);
             deleteBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
             deleteBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
@@ -1147,8 +1150,9 @@ namespace settings {
         headerRow->setDirection(FlexDirection::Horizontal);
         headerRow->setAlign(FlexAlign::Center);
         headerRow->setGap(Style::spaceSm * ctx.scale);
-        headerRow->addChild(makeLabel(i18n::tr("settings.inspector-add-title", "lane", laneLabel(targetLaneKey)),
-                                      Style::fontSizeBody * ctx.scale, roleColor(ColorRole::OnSurface), true));
+        headerRow->addChild(
+            makeLabel(i18n::tr("settings.entities.widget.inspector.add-title", "lane", laneLabel(targetLaneKey)),
+                      Style::fontSizeBody * ctx.scale, roleColor(ColorRole::OnSurface), true));
 
         auto headerSpacer = std::make_unique<Flex>();
         headerSpacer->setFlexGrow(1.0f);
@@ -1176,7 +1180,7 @@ namespace settings {
 
         if (!ctx.creatingWidgetType.empty()) {
           const std::string widgetType = ctx.creatingWidgetType;
-          inspector->addChild(makeLabel(i18n::tr("settings.create-widget-instance-title", "type", widgetType),
+          inspector->addChild(makeLabel(i18n::tr("settings.entities.widget.instance.create-title", "type", widgetType),
                                         Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant),
                                         false));
 
@@ -1187,7 +1191,7 @@ namespace settings {
 
           auto input = std::make_unique<Input>();
           input->setValue(nextWidgetInstanceId(ctx.config, widgetType));
-          input->setPlaceholder(i18n::tr("settings.rename-widget-placeholder"));
+          input->setPlaceholder(i18n::tr("settings.entities.widget.instance.id-placeholder"));
           input->setFontSize(Style::fontSizeCaption * ctx.scale);
           input->setControlHeight(Style::controlHeightSm * ctx.scale);
           input->setHorizontalPadding(Style::spaceXs * ctx.scale);
@@ -1219,7 +1223,7 @@ namespace settings {
           input->setOnSubmit([doCreate](const std::string& text) mutable { doCreate(text); });
 
           auto createBtn = std::make_unique<Button>();
-          createBtn->setText(i18n::tr("settings.create-widget-instance-save"));
+          createBtn->setText(i18n::tr("settings.entities.widget.instance.create-save"));
           createBtn->setVariant(ButtonVariant::Default);
           createBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           createBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
@@ -1228,7 +1232,7 @@ namespace settings {
           createBtn->setOnClick([doCreate, inputPtr]() mutable { doCreate(inputPtr->value()); });
 
           auto cancelBtn = std::make_unique<Button>();
-          cancelBtn->setText(i18n::tr("common.cancel"));
+          cancelBtn->setText(i18n::tr("common.actions.cancel"));
           cancelBtn->setVariant(ButtonVariant::Ghost);
           cancelBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           cancelBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
@@ -1245,8 +1249,8 @@ namespace settings {
           inspector->addChild(std::move(createRow));
         } else {
           auto picker = std::make_unique<SearchPicker>();
-          picker->setPlaceholder(i18n::tr("settings.widget-picker-placeholder"));
-          picker->setEmptyText(i18n::tr("settings.widget-picker-empty"));
+          picker->setPlaceholder(i18n::tr("settings.entities.widget.picker.placeholder"));
+          picker->setEmptyText(i18n::tr("settings.entities.widget.picker.empty"));
           picker->setOptions(widgetPickerOptions(ctx.config));
           picker->setSize(420.0f * ctx.scale, 280.0f * ctx.scale);
           auto items = targetLaneItems;
@@ -1317,12 +1321,12 @@ namespace settings {
     titleRow->setDirection(FlexDirection::Horizontal);
     titleRow->setAlign(FlexAlign::Center);
     titleRow->setGap(Style::spaceSm * ctx.scale);
-    titleRow->addChild(makeLabel(i18n::tr("settings.bar-widget-editor"), Style::fontSizeBody * ctx.scale,
+    titleRow->addChild(makeLabel(i18n::tr("settings.entities.widget.editor.title"), Style::fontSizeBody * ctx.scale,
                                  roleColor(ColorRole::OnSurface), false));
     block->addChild(std::move(titleRow));
 
-    block->addChild(makeLabel(i18n::tr("settings.bar-widget-editor-desc"), Style::fontSizeCaption * ctx.scale,
-                              roleColor(ColorRole::OnSurfaceVariant), false));
+    block->addChild(makeLabel(i18n::tr("settings.entities.widget.editor.description"),
+                              Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant), false));
 
     const bool inspectorActive = !ctx.editingWidgetName.empty() || !ctx.openWidgetPickerPath.empty();
     if (inspectorActive) {
@@ -1390,7 +1394,7 @@ namespace settings {
         badge->setPadding(1.0f * ctx.scale, Style::spaceXs * ctx.scale);
         badge->setRadius(Style::radiusSm * ctx.scale);
         badge->setFill(roleColor(ColorRole::Primary, 0.15f));
-        badge->addChild(makeLabel(i18n::tr("settings.badge-override"), Style::fontSizeCaption * ctx.scale,
+        badge->addChild(makeLabel(i18n::tr("settings.badges.override"), Style::fontSizeCaption * ctx.scale,
                                   roleColor(ColorRole::Primary), true));
         laneHeader->addChild(std::move(badge));
       }
@@ -1400,7 +1404,7 @@ namespace settings {
         badge->setPadding(1.0f * ctx.scale, Style::spaceXs * ctx.scale);
         badge->setRadius(Style::radiusSm * ctx.scale);
         badge->setFill(roleColor(ColorRole::OnSurfaceVariant, 0.14f));
-        badge->addChild(makeLabel(i18n::tr("settings.badge-inherited"), Style::fontSizeCaption * ctx.scale,
+        badge->addChild(makeLabel(i18n::tr("settings.badges.inherited"), Style::fontSizeCaption * ctx.scale,
                                   roleColor(ColorRole::OnSurfaceVariant), true));
         laneHeader->addChild(std::move(badge));
       }
@@ -1409,7 +1413,7 @@ namespace settings {
       laneHeader->addChild(std::move(laneSpacer));
       if (inherited) {
         auto customizeBtn = std::make_unique<Button>();
-        customizeBtn->setText(i18n::tr("settings.customize-lane"));
+        customizeBtn->setText(i18n::tr("settings.entities.widget.lanes.customize"));
         customizeBtn->setVariant(ButtonVariant::Ghost);
         customizeBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
         customizeBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
@@ -1646,10 +1650,12 @@ namespace settings {
         emptyState->setRadius(Style::radiusSm * ctx.scale);
         emptyState->setFill(roleColor(ColorRole::SurfaceVariant, 0.25f));
         emptyState->setBorder(roleColor(ColorRole::Outline, 0.18f), Style::borderWidth);
-        emptyState->addChild(makeLabel(i18n::tr("settings.lane-empty"), Style::fontSizeCaption * ctx.scale,
-                                       roleColor(ColorRole::OnSurfaceVariant), true));
-        emptyState->addChild(makeLabel(i18n::tr("settings.lane-empty-hint"), Style::fontSizeCaption * ctx.scale,
-                                       roleColor(ColorRole::OnSurfaceVariant), false));
+        emptyState->addChild(makeLabel(i18n::tr("settings.entities.widget.lanes.empty"),
+                                       Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant),
+                                       true));
+        emptyState->addChild(makeLabel(i18n::tr("settings.entities.widget.lanes.empty-hint"),
+                                       Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant),
+                                       false));
         lane->addChild(std::move(emptyState));
       }
 
@@ -1657,7 +1663,7 @@ namespace settings {
       if (!inherited) {
         const bool pickerOpenForLane = ctx.openWidgetPickerPath == pickerKey;
         auto addBtn = std::make_unique<Button>();
-        addBtn->setText(i18n::tr("settings.add-widget"));
+        addBtn->setText(i18n::tr("settings.entities.widget.add"));
         addBtn->setGlyph("add");
         addBtn->setVariant(pickerOpenForLane ? ButtonVariant::Default : ButtonVariant::Ghost);
         addBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);

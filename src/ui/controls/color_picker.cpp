@@ -1,6 +1,7 @@
 #include "ui/controls/color_picker.h"
 
 #include "cursor-shape-v1-client-protocol.h"
+#include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/core/texture_manager.h"
 #include "render/scene/input_area.h"
@@ -429,7 +430,7 @@ ColorPickerSheet::ColorPickerSheet(float chromeScale) : m_chromeScale(std::max(0
   header->setGap(Style::spaceSm * m_chromeScale);
 
   auto title = std::make_unique<Label>();
-  title->setText("Color");
+  title->setText(i18n::tr("ui.dialogs.color-picker.title"));
   title->setBold(true);
   title->setFontSize(Style::fontSizeTitle * m_chromeScale);
   title->setColor(roleColor(ColorRole::Primary));
@@ -460,7 +461,7 @@ ColorPickerSheet::ColorPickerSheet(float chromeScale) : m_chromeScale(std::max(0
   actions->setGap(Style::spaceSm * m_chromeScale);
 
   auto cancel = std::make_unique<Button>();
-  cancel->setText("Cancel");
+  cancel->setText(i18n::tr("common.actions.cancel"));
   cancel->setVariant(ButtonVariant::Secondary);
   configureDialogActionButton(*cancel, m_chromeScale);
   cancel->setOnClick([this]() {
@@ -471,7 +472,7 @@ ColorPickerSheet::ColorPickerSheet(float chromeScale) : m_chromeScale(std::max(0
   actions->addChild(std::move(cancel));
 
   auto apply = std::make_unique<Button>();
-  apply->setText("Apply");
+  apply->setText(i18n::tr("common.actions.apply"));
   apply->setVariant(ButtonVariant::Accent);
   configureDialogActionButton(*apply, m_chromeScale);
   apply->setOnClick([this]() {

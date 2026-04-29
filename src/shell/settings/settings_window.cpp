@@ -153,7 +153,7 @@ void SettingsWindow::open() {
       .height = std::max<std::uint32_t>(1, h),
       .minWidth = minW,
       .minHeight = minH,
-      .title = "Noctalia Settings",
+      .title = i18n::tr("settings.window.native-title"),
       .appId = "dev.noctalia.Noctalia.Settings",
   };
 
@@ -342,7 +342,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   header->setGap(Style::spaceSm * scale);
 
   auto headerTitle = std::make_unique<Label>();
-  headerTitle->setText(i18n::tr("settings.title"));
+  headerTitle->setText(i18n::tr("settings.window.title"));
   headerTitle->setBold(true);
   headerTitle->setFontSize(Style::fontSizeTitle * scale);
   headerTitle->setColor(roleColor(ColorRole::OnSurface));
@@ -389,7 +389,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         requestRebuild();
         return;
       }
-      m_statusMessage = i18n::tr("settings.write-error");
+      m_statusMessage = i18n::tr("settings.errors.write");
       m_statusIsError = true;
       requestRebuild();
     });
@@ -411,7 +411,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
             }
           }
           if (failed) {
-            m_statusMessage = i18n::tr("settings.batch-write-error");
+            m_statusMessage = i18n::tr("settings.errors.batch-write");
             m_statusIsError = true;
             requestRebuild();
             return;
@@ -438,7 +438,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         requestRebuild();
         return;
       }
-      m_statusMessage = i18n::tr("settings.clear-error");
+      m_statusMessage = i18n::tr("settings.errors.clear");
       m_statusIsError = true;
       requestRebuild();
     });
@@ -462,7 +462,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
 
       m_pendingResetPageScope.clear();
       if (failed) {
-        m_statusMessage = i18n::tr("settings.reset-page-error");
+        m_statusMessage = i18n::tr("settings.errors.reset-page");
         m_statusIsError = true;
         requestRebuild();
         return;
@@ -487,7 +487,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
 
           bool changed = m_config->renameOverrideTable({"widget", oldName}, {"widget", newName});
           if (!changed) {
-            m_statusMessage = i18n::tr("settings.rename-widget-error");
+            m_statusMessage = i18n::tr("settings.errors.widget.rename");
             m_statusIsError = true;
             requestRebuild();
             return;
@@ -501,7 +501,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
             }
           }
           if (failed) {
-            m_statusMessage = i18n::tr("settings.batch-write-error");
+            m_statusMessage = i18n::tr("settings.errors.batch-write");
             m_statusIsError = true;
             requestRebuild();
             return;
@@ -540,7 +540,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         requestRebuild();
         return;
       }
-      m_statusMessage = i18n::tr("settings.create-bar-error");
+      m_statusMessage = i18n::tr("settings.errors.bar.create");
       m_statusIsError = true;
       requestRebuild();
     });
@@ -571,7 +571,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         requestRebuild();
         return;
       }
-      m_statusMessage = i18n::tr("settings.rename-bar-error");
+      m_statusMessage = i18n::tr("settings.errors.bar.rename");
       m_statusIsError = true;
       requestRebuild();
     });
@@ -602,7 +602,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         requestRebuild();
         return;
       }
-      m_statusMessage = i18n::tr("settings.delete-bar-error");
+      m_statusMessage = i18n::tr("settings.errors.bar.delete");
       m_statusIsError = true;
       requestRebuild();
     });
@@ -620,7 +620,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         requestRebuild();
         return;
       }
-      m_statusMessage = i18n::tr("settings.move-bar-error");
+      m_statusMessage = i18n::tr("settings.errors.bar.move");
       m_statusIsError = true;
       requestRebuild();
     });
@@ -648,7 +648,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         requestRebuild();
         return;
       }
-      m_statusMessage = i18n::tr("settings.create-monitor-override-error");
+      m_statusMessage = i18n::tr("settings.errors.monitor-override.create");
       m_statusIsError = true;
       requestRebuild();
     });
@@ -676,7 +676,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         requestRebuild();
         return;
       }
-      m_statusMessage = i18n::tr("settings.rename-monitor-override-error");
+      m_statusMessage = i18n::tr("settings.errors.monitor-override.rename");
       m_statusIsError = true;
       requestRebuild();
     });
@@ -702,7 +702,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         requestRebuild();
         return;
       }
-      m_statusMessage = i18n::tr("settings.delete-monitor-override-error");
+      m_statusMessage = i18n::tr("settings.errors.monitor-override.delete");
       m_statusIsError = true;
       requestRebuild();
     });
@@ -715,7 +715,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   filters->setGap(Style::spaceMd * scale);
 
   auto searchInput = std::make_unique<Input>();
-  searchInput->setPlaceholder(i18n::tr("settings.search-placeholder"));
+  searchInput->setPlaceholder(i18n::tr("settings.window.search-placeholder"));
   searchInput->setValue(m_searchQuery);
   searchInput->setFontSize(Style::fontSizeBody * scale);
   searchInput->setControlHeight(Style::controlHeight * scale);
@@ -731,7 +731,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   });
   filters->addChild(std::move(searchInput));
 
-  auto advancedLabel = makeLabel(i18n::tr("settings.badge-advanced"), Style::fontSizeBody * scale,
+  auto advancedLabel = makeLabel(i18n::tr("settings.badges.advanced"), Style::fontSizeBody * scale,
                                  roleColor(ColorRole::OnSurfaceVariant), false);
   filters->addChild(std::move(advancedLabel));
 
@@ -740,7 +740,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   advancedToggle->setChecked(m_showAdvanced);
   advancedToggle->setOnChange([this, requestRebuild](bool value) {
     if (m_config != nullptr && !m_config->setOverride({"shell", "settings_show_advanced"}, value)) {
-      m_statusMessage = i18n::tr("settings.write-error");
+      m_statusMessage = i18n::tr("settings.errors.write");
       m_statusIsError = true;
       requestRebuild();
       return;
@@ -751,7 +751,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   });
   filters->addChild(std::move(advancedToggle));
 
-  auto overriddenLabel = makeLabel(i18n::tr("settings.filter-modified"), Style::fontSizeBody * scale,
+  auto overriddenLabel = makeLabel(i18n::tr("settings.window.filter-modified"), Style::fontSizeBody * scale,
                                    roleColor(ColorRole::OnSurfaceVariant), false);
   filters->addChild(std::move(overriddenLabel));
 
@@ -768,7 +768,8 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   if (!resetPagePaths.empty()) {
     const bool pendingReset = m_pendingResetPageScope == resetPageScope;
     auto resetPageBtn = std::make_unique<Button>();
-    resetPageBtn->setText(pendingReset ? i18n::tr("settings.reset-page-confirm") : i18n::tr("settings.reset-page"));
+    resetPageBtn->setText(pendingReset ? i18n::tr("settings.window.reset-page-confirm")
+                                       : i18n::tr("settings.window.reset-page"));
     resetPageBtn->setVariant(pendingReset ? ButtonVariant::Default : ButtonVariant::Ghost);
     resetPageBtn->setFontSize(Style::fontSizeCaption * scale);
     resetPageBtn->setMinHeight(Style::controlHeightSm * scale);

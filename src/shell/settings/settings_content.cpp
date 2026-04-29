@@ -213,10 +213,12 @@ namespace settings {
     const float scale = ctx.scale;
 
     const auto sectionLabel = [](std::string_view section) {
-      return i18n::tr("settings.section." + std::string(section));
+      return i18n::tr("settings.navigation.sections." + std::string(section));
     };
 
-    const auto groupLabel = [](std::string_view group) { return i18n::tr("settings.group." + std::string(group)); };
+    const auto groupLabel = [](std::string_view group) {
+      return i18n::tr("settings.navigation.groups." + std::string(group));
+    };
 
     const auto makeSection = [&](std::string_view title, std::string_view sectionKey) -> Flex* {
       auto section = std::make_unique<Flex>();
@@ -266,7 +268,7 @@ namespace settings {
 
     const auto makeResetButton = [&](const std::vector<std::string>& path) {
       auto reset = std::make_unique<Button>();
-      reset->setText(i18n::tr("settings.reset"));
+      reset->setText(i18n::tr("settings.actions.reset"));
       reset->setVariant(ButtonVariant::Ghost);
       reset->setFontSize(Style::fontSizeCaption * scale);
       reset->setMinHeight(Style::controlHeightSm * scale);
@@ -313,19 +315,20 @@ namespace settings {
       };
 
       if (monitorExplicit) {
-        titleRow->addChild(makeBadge(i18n::tr("settings.badge-monitor"), roleColor(ColorRole::Secondary, 0.15f),
+        titleRow->addChild(makeBadge(i18n::tr("settings.badges.monitor"), roleColor(ColorRole::Secondary, 0.15f),
                                      roleColor(ColorRole::Secondary)));
       } else if (monitorInherited) {
-        titleRow->addChild(makeBadge(i18n::tr("settings.badge-inherited"),
+        titleRow->addChild(makeBadge(i18n::tr("settings.badges.inherited"),
                                      roleColor(ColorRole::OnSurfaceVariant, 0.12f),
                                      roleColor(ColorRole::OnSurfaceVariant)));
       }
       if (overridden) {
-        titleRow->addChild(makeBadge(i18n::tr("settings.badge-override"), roleColor(ColorRole::Primary, 0.15f),
+        titleRow->addChild(makeBadge(i18n::tr("settings.badges.override"), roleColor(ColorRole::Primary, 0.15f),
                                      roleColor(ColorRole::Primary)));
       }
       if (entry.advanced) {
-        titleRow->addChild(makeBadge(i18n::tr("settings.badge-advanced"), roleColor(ColorRole::OnSurfaceVariant, 0.12f),
+        titleRow->addChild(makeBadge(i18n::tr("settings.badges.advanced"),
+                                     roleColor(ColorRole::OnSurfaceVariant, 0.12f),
                                      roleColor(ColorRole::OnSurfaceVariant)));
       }
       copy->addChild(std::move(titleRow));
@@ -367,7 +370,7 @@ namespace settings {
         select->setSelectedIndex(*index);
       } else if (!setting.selectedValue.empty()) {
         select->clearSelection();
-        select->setPlaceholder(i18n::tr("settings.unknown-select-value", "value", setting.selectedValue));
+        select->setPlaceholder(i18n::tr("settings.controls.select.unknown-value", "value", setting.selectedValue));
       }
       select->setFontSize(Style::fontSizeBody * scale);
       select->setControlHeight(Style::controlHeight * scale);
@@ -520,13 +523,13 @@ namespace settings {
 
       auto button = std::make_unique<Button>();
       button->setVariant(ButtonVariant::Outline);
-      button->setText(setting.unset ? i18n::tr("settings.color-default") : setting.hex);
+      button->setText(setting.unset ? i18n::tr("settings.options.theme-role.default") : setting.hex);
       button->setFontSize(Style::fontSizeBody * scale);
       button->setMinHeight(Style::controlHeight * scale);
       button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
       button->setRadius(Style::radiusMd * scale);
       const std::optional<Color> initialOpt = hasColor ? std::optional<Color>{initialColor} : std::nullopt;
-      const std::string title = i18n::tr("settings.color-picker-title");
+      const std::string title = i18n::tr("settings.dialogs.color-picker.title");
       button->setOnClick([setOverride = ctx.setOverride, path, initialOpt, title]() {
         ColorPickerDialogOptions options;
         options.title = title;
@@ -570,7 +573,7 @@ namespace settings {
         badge->setPadding(1.0f * scale, Style::spaceXs * scale);
         badge->setRadius(Style::radiusSm * scale);
         badge->setFill(roleColor(ColorRole::Primary, 0.15f));
-        badge->addChild(makeLabel(i18n::tr("settings.badge-override"), Style::fontSizeCaption * scale,
+        badge->addChild(makeLabel(i18n::tr("settings.badges.override"), Style::fontSizeCaption * scale,
                                   roleColor(ColorRole::Primary), true));
         titleRow->addChild(std::move(badge));
         titleRow->addChild(makeResetButton(entry.path));
@@ -660,7 +663,7 @@ namespace settings {
         badge->setPadding(1.0f * scale, Style::spaceXs * scale);
         badge->setRadius(Style::radiusSm * scale);
         badge->setFill(roleColor(ColorRole::Primary, 0.15f));
-        badge->addChild(makeLabel(i18n::tr("settings.badge-override"), Style::fontSizeCaption * scale,
+        badge->addChild(makeLabel(i18n::tr("settings.badges.override"), Style::fontSizeCaption * scale,
                                   roleColor(ColorRole::Primary), true));
         titleRow->addChild(std::move(badge));
       }
@@ -786,7 +789,7 @@ namespace settings {
 
         auto select = std::make_unique<Select>();
         select->setOptions(remainingLabels);
-        select->setPlaceholder(i18n::tr("settings.add-list-item-placeholder"));
+        select->setPlaceholder(i18n::tr("settings.controls.list.add-placeholder"));
         select->setFontSize(Style::fontSizeCaption * scale);
         select->setControlHeight(Style::controlHeightSm * scale);
         select->setGlyphSize(Style::fontSizeCaption * scale);
@@ -944,7 +947,7 @@ namespace settings {
         activeGroupKey.clear();
         std::string displayTitle;
         if (entry.section == "bar" && ctx.selectedBar != nullptr) {
-          displayTitle = i18n::tr("settings.bar-label", "name", ctx.selectedBar->name);
+          displayTitle = i18n::tr("settings.entities.bar.label", "name", ctx.selectedBar->name);
           if (ctx.selectedMonitorOverride != nullptr) {
             displayTitle += " / " + ctx.selectedMonitorOverride->match;
           }
@@ -984,9 +987,9 @@ namespace settings {
       emptyState->setFill(roleColor(ColorRole::SurfaceVariant, 0.24f));
       emptyState->setBorder(roleColor(ColorRole::Outline, 0.28f), Style::borderWidth);
       emptyState->setRadius(Style::radiusMd * scale);
-      emptyState->addChild(makeLabel(i18n::tr("settings.no-results"), Style::fontSizeBody * scale,
+      emptyState->addChild(makeLabel(i18n::tr("settings.window.no-results"), Style::fontSizeBody * scale,
                                      roleColor(ColorRole::OnSurface), true));
-      emptyState->addChild(makeLabel(i18n::tr("settings.no-results-hint"), Style::fontSizeCaption * scale,
+      emptyState->addChild(makeLabel(i18n::tr("settings.window.no-results-hint"), Style::fontSizeCaption * scale,
                                      roleColor(ColorRole::OnSurfaceVariant), false));
 
       auto emptyRow = std::make_unique<Flex>();

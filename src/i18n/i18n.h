@@ -14,8 +14,7 @@
 // Free-function translation API. Call sites look like:
 //
 //   i18n::tr("clipboard.title")
-//   i18n::tr("clipboard.row-meta", "time", "5s", "size", "1 KB")
-//   i18n::trp("clipboard.result-count", matchCount)
+//   i18n::tr("settings.entities.bar.label", "name", "top")
 //
 // Trailing arguments are alternating name/value pairs. Values may be any type
 // formattable by std::format; names must be convertible to string_view.

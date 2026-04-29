@@ -67,7 +67,7 @@ namespace settings {
     SelectSetting languageSelect(std::string_view selected) {
       std::vector<SelectOption> opts;
       opts.reserve(i18n::kSupportedLanguages.size() + 1);
-      opts.push_back(SelectOption{"", i18n::tr("common.auto")});
+      opts.push_back(SelectOption{"", i18n::tr("common.states.auto")});
       for (const auto& language : i18n::kSupportedLanguages) {
         opts.push_back(SelectOption{std::string(language.code), std::string(language.displayName)});
       }
@@ -104,7 +104,7 @@ namespace settings {
     SelectSetting optionalColorRoleSelect(const std::optional<ThemeColor>& selected) {
       std::vector<SelectOption> opts;
       opts.reserve(kColorRoleTokens.size() + 1);
-      opts.push_back(SelectOption{"", i18n::tr("settings.color-default")});
+      opts.push_back(SelectOption{"", i18n::tr("settings.options.theme-role.default")});
       appendColorRoleOptions(opts);
       return SelectSetting{std::move(opts), optionalColorRoleValue(selected), true};
     }
@@ -112,7 +112,7 @@ namespace settings {
     SelectSetting capsuleBorderRoleSelect(const std::optional<ThemeColor>& selected) {
       std::vector<SelectOption> opts;
       opts.reserve(kColorRoleTokens.size() + 1);
-      opts.push_back(SelectOption{"", i18n::tr("settings.no-border")});
+      opts.push_back(SelectOption{"", i18n::tr("settings.options.border.none")});
       appendColorRoleOptions(opts);
       return SelectSetting{std::move(opts), optionalColorRoleValue(selected)};
     }
@@ -220,66 +220,77 @@ namespace settings {
                                                   const RegistryEnvironment& env) {
     using i18n::tr;
     const auto positionSelect = [](std::string_view selected) {
-      return plainSelect(
-          {{"top", "common.top"}, {"bottom", "common.bottom"}, {"left", "common.left"}, {"right", "common.right"}},
-          selected);
+      return plainSelect({{"top", "settings.options.edge.top"},
+                          {"bottom", "settings.options.edge.bottom"},
+                          {"left", "settings.options.edge.left"},
+                          {"right", "settings.options.edge.right"}},
+                         selected);
     };
     std::vector<SettingEntry> entries;
 
     // Appearance
-    entries.push_back(makeEntry("appearance", "theme", tr("settings.theme-mode"), tr("settings.theme-mode-desc"),
-                                {"theme", "mode"}, enumSelect(kThemeModes, cfg.theme.mode), "dark light auto colors"));
-    entries.push_back(makeEntry("appearance", "theme", tr("settings.theme-source"), tr("settings.theme-source-desc"),
-                                {"theme", "source"}, enumSelect(kThemeSources, cfg.theme.source), "palette colors"));
+    entries.push_back(makeEntry("appearance", "theme", tr("settings.schema.appearance.theme-mode.label"),
+                                tr("settings.schema.appearance.theme-mode.description"), {"theme", "mode"},
+                                enumSelect(kThemeModes, cfg.theme.mode), "dark light auto colors"));
+    entries.push_back(makeEntry("appearance", "theme", tr("settings.schema.appearance.theme-source.label"),
+                                tr("settings.schema.appearance.theme-source.description"), {"theme", "source"},
+                                enumSelect(kThemeSources, cfg.theme.source), "palette colors"));
     if (cfg.theme.source == ThemeSource::Builtin) {
-      entries.push_back(makeEntry("appearance", "theme", tr("settings.theme-palette"),
-                                  tr("settings.theme-palette-desc"), {"theme", "builtin"},
+      entries.push_back(makeEntry("appearance", "theme", tr("settings.schema.appearance.theme-palette.label"),
+                                  tr("settings.schema.appearance.theme-palette.description"), {"theme", "builtin"},
                                   builtinPaletteSelect(cfg.theme.builtinPalette), "builtin palette colors"));
     } else if (cfg.theme.source == ThemeSource::Wallpaper) {
-      entries.push_back(makeEntry("appearance", "theme", tr("settings.wallpaper-generation-scheme"),
-                                  tr("settings.wallpaper-generation-scheme-desc"), {"theme", "wallpaper_scheme"},
-                                  wallpaperSchemeSelect(cfg.theme.wallpaperScheme),
+      entries.push_back(makeEntry("appearance", "theme",
+                                  tr("settings.schema.appearance.wallpaper-generation-scheme.label"),
+                                  tr("settings.schema.appearance.wallpaper-generation-scheme.description"),
+                                  {"theme", "wallpaper_scheme"}, wallpaperSchemeSelect(cfg.theme.wallpaperScheme),
                                   "wallpaper palette generator scheme material you m3 colors"));
     } else if (cfg.theme.source == ThemeSource::Community) {
-      entries.push_back(makeEntry("appearance", "theme", tr("settings.community-palette"),
-                                  tr("settings.community-palette-desc"), {"theme", "community_palette"},
-                                  TextSetting{cfg.theme.communityPalette, "Noctalia"}, "community palette colors"));
+      entries.push_back(makeEntry("appearance", "theme", tr("settings.schema.appearance.community-palette.label"),
+                                  tr("settings.schema.appearance.community-palette.description"),
+                                  {"theme", "community_palette"}, TextSetting{cfg.theme.communityPalette, "Noctalia"},
+                                  "community palette colors"));
     }
-    entries.push_back(makeEntry("appearance", "interface", tr("settings.ui-scale"), tr("settings.ui-scale-desc"),
-                                {"shell", "ui_scale"}, SliderSetting{cfg.shell.uiScale, 0.5f, 2.5f, 0.05f, false},
-                                "size"));
-    entries.push_back(makeEntry("appearance", "interface", tr("settings.font-family"), tr("settings.font-family-desc"),
-                                {"shell", "font_family"}, TextSetting{cfg.shell.fontFamily, "sans-serif"}, "typeface"));
-    entries.push_back(makeEntry("appearance", "interface", tr("settings.language"), tr("settings.language-desc"),
-                                {"shell", "lang"}, languageSelect(cfg.shell.lang), "locale translation", true));
-    entries.push_back(makeEntry("appearance", "motion", tr("settings.animations"), tr("settings.animations-desc"),
+    entries.push_back(makeEntry("appearance", "interface", tr("settings.schema.appearance.ui-scale.label"),
+                                tr("settings.schema.appearance.ui-scale.description"), {"shell", "ui_scale"},
+                                SliderSetting{cfg.shell.uiScale, 0.5f, 2.5f, 0.05f, false}, "size"));
+    entries.push_back(makeEntry("appearance", "interface", tr("settings.schema.appearance.font-family.label"),
+                                tr("settings.schema.appearance.font-family.description"), {"shell", "font_family"},
+                                TextSetting{cfg.shell.fontFamily, "sans-serif"}, "typeface"));
+    entries.push_back(makeEntry("appearance", "interface", tr("settings.schema.appearance.language.label"),
+                                tr("settings.schema.appearance.language.description"), {"shell", "lang"},
+                                languageSelect(cfg.shell.lang), "locale translation", true));
+    entries.push_back(makeEntry("appearance", "motion", tr("settings.schema.appearance.animations.label"),
+                                tr("settings.schema.appearance.animations.description"),
                                 {"shell", "animation", "enabled"}, ToggleSetting{cfg.shell.animation.enabled},
                                 "motion"));
-    entries.push_back(makeEntry("appearance", "motion", tr("settings.animation-speed"),
-                                tr("settings.animation-speed-desc"), {"shell", "animation", "speed"},
+    entries.push_back(makeEntry("appearance", "motion", tr("settings.schema.appearance.animation-speed.label"),
+                                tr("settings.schema.appearance.animation-speed.description"),
+                                {"shell", "animation", "speed"},
                                 SliderSetting{cfg.shell.animation.speed, 0.1f, 4.0f, 0.05f, false}, "motion"));
-    entries.push_back(makeEntry("appearance", "effects", tr("common.shadow-blur"),
-                                tr("settings.global-shadow-blur-desc"), {"shell", "shadow", "blur"},
-                                SliderSetting{static_cast<float>(cfg.shell.shadow.blur), 0.0f, 100.0f, 1.0f, true},
-                                "shadow depth"));
-    entries.push_back(makeEntry("appearance", "effects", tr("common.shadow-x"), tr("settings.global-shadow-x-desc"),
-                                {"shell", "shadow", "offset_x"},
-                                SliderSetting{static_cast<float>(cfg.shell.shadow.offsetX), -40.0f, 40.0f, 1.0f, true},
-                                "shadow offset", true));
-    entries.push_back(makeEntry("appearance", "effects", tr("common.shadow-y"), tr("settings.global-shadow-y-desc"),
-                                {"shell", "shadow", "offset_y"},
-                                SliderSetting{static_cast<float>(cfg.shell.shadow.offsetY), -40.0f, 40.0f, 1.0f, true},
-                                "shadow offset", true));
-    entries.push_back(makeEntry("appearance", "effects", tr("common.shadow-alpha"),
-                                tr("settings.global-shadow-alpha-desc"), {"shell", "shadow", "alpha"},
-                                SliderSetting{cfg.shell.shadow.alpha, 0.0f, 1.0f, 0.01f, false}, "shadow opacity",
-                                true));
+    entries.push_back(
+        makeEntry("appearance", "effects", tr("settings.schema.shared.shadow-blur.label"),
+                  tr("settings.schema.appearance.global-shadow-blur.description"), {"shell", "shadow", "blur"},
+                  SliderSetting{static_cast<float>(cfg.shell.shadow.blur), 0.0f, 100.0f, 1.0f, true}, "shadow depth"));
+    entries.push_back(makeEntry(
+        "appearance", "effects", tr("settings.schema.shared.shadow-x.label"),
+        tr("settings.schema.appearance.global-shadow-x.description"), {"shell", "shadow", "offset_x"},
+        SliderSetting{static_cast<float>(cfg.shell.shadow.offsetX), -40.0f, 40.0f, 1.0f, true}, "shadow offset", true));
+    entries.push_back(makeEntry(
+        "appearance", "effects", tr("settings.schema.shared.shadow-y.label"),
+        tr("settings.schema.appearance.global-shadow-y.description"), {"shell", "shadow", "offset_y"},
+        SliderSetting{static_cast<float>(cfg.shell.shadow.offsetY), -40.0f, 40.0f, 1.0f, true}, "shadow offset", true));
+    entries.push_back(
+        makeEntry("appearance", "effects", tr("settings.schema.shared.shadow-alpha.label"),
+                  tr("settings.schema.appearance.global-shadow-alpha.description"), {"shell", "shadow", "alpha"},
+                  SliderSetting{cfg.shell.shadow.alpha, 0.0f, 1.0f, 0.01f, false}, "shadow opacity", true));
 
     // Wallpaper
-    entries.push_back(makeEntry("wallpaper", "general", tr("common.enabled"), tr("settings.wallpaper-enabled-desc"),
-                                {"wallpaper", "enabled"}, ToggleSetting{cfg.wallpaper.enabled}, "background image"));
-    entries.push_back(makeEntry("wallpaper", "general", tr("settings.wallpaper-fill-mode"),
-                                tr("settings.wallpaper-fill-mode-desc"), {"wallpaper", "fill_mode"},
+    entries.push_back(makeEntry("wallpaper", "general", tr("settings.schema.shared.enabled.label"),
+                                tr("settings.schema.wallpaper.enabled.description"), {"wallpaper", "enabled"},
+                                ToggleSetting{cfg.wallpaper.enabled}, "background image"));
+    entries.push_back(makeEntry("wallpaper", "general", tr("settings.schema.wallpaper.fill-mode.label"),
+                                tr("settings.schema.wallpaper.fill-mode.description"), {"wallpaper", "fill_mode"},
                                 enumSelect(kWallpaperFillModes, cfg.wallpaper.fillMode), "scale aspect"));
     {
       ColorSetting fillColor;
@@ -287,19 +298,21 @@ namespace settings {
       if (!fillColor.unset) {
         fillColor.hex = formatRgbHex(resolveThemeColor(*cfg.wallpaper.fillColor));
       }
-      entries.push_back(makeEntry("wallpaper", "general", tr("settings.wallpaper-fill-color"),
-                                  tr("settings.wallpaper-fill-color-desc"), {"wallpaper", "fill_color"},
+      entries.push_back(makeEntry("wallpaper", "general", tr("settings.schema.wallpaper.fill-color.label"),
+                                  tr("settings.schema.wallpaper.fill-color.description"), {"wallpaper", "fill_color"},
                                   std::move(fillColor), "background solid color"));
     }
-    entries.push_back(makeEntry("wallpaper", "directories", tr("settings.wallpaper-directory"),
-                                tr("settings.wallpaper-directory-desc"), {"wallpaper", "directory"},
+    entries.push_back(makeEntry("wallpaper", "directories", tr("settings.schema.wallpaper.directory.label"),
+                                tr("settings.schema.wallpaper.directory.description"), {"wallpaper", "directory"},
                                 TextSetting{cfg.wallpaper.directory, "~/Pictures/Wallpapers"}, "folder path"));
-    entries.push_back(makeEntry("wallpaper", "directories", tr("settings.wallpaper-directory-light"),
-                                tr("settings.wallpaper-directory-light-desc"), {"wallpaper", "directory_light"},
-                                TextSetting{cfg.wallpaper.directoryLight, ""}, "folder path light theme", true));
-    entries.push_back(makeEntry("wallpaper", "directories", tr("settings.wallpaper-directory-dark"),
-                                tr("settings.wallpaper-directory-dark-desc"), {"wallpaper", "directory_dark"},
-                                TextSetting{cfg.wallpaper.directoryDark, ""}, "folder path dark theme", true));
+    entries.push_back(makeEntry("wallpaper", "directories", tr("settings.schema.wallpaper.directory-light.label"),
+                                tr("settings.schema.wallpaper.directory-light.description"),
+                                {"wallpaper", "directory_light"}, TextSetting{cfg.wallpaper.directoryLight, ""},
+                                "folder path light theme", true));
+    entries.push_back(makeEntry("wallpaper", "directories", tr("settings.schema.wallpaper.directory-dark.label"),
+                                tr("settings.schema.wallpaper.directory-dark.description"),
+                                {"wallpaper", "directory_dark"}, TextSetting{cfg.wallpaper.directoryDark, ""},
+                                "folder path dark theme", true));
     {
       MultiSelectSetting transitions;
       transitions.options.reserve(std::size(kWallpaperTransitions));
@@ -311,53 +324,59 @@ namespace settings {
         transitions.selectedValues.emplace_back(enumToKey(kWallpaperTransitions, t));
       }
       transitions.requireAtLeastOne = true;
-      entries.push_back(makeEntry("wallpaper", "transition", tr("settings.wallpaper-transitions"),
-                                  tr("settings.wallpaper-transitions-desc"), {"wallpaper", "transition"},
+      entries.push_back(makeEntry("wallpaper", "transition", tr("settings.schema.wallpaper.transitions.label"),
+                                  tr("settings.schema.wallpaper.transitions.description"), {"wallpaper", "transition"},
                                   std::move(transitions), "effects animation pool"));
     }
-    entries.push_back(makeEntry("wallpaper", "transition", tr("settings.wallpaper-transition-duration"),
-                                tr("settings.wallpaper-transition-duration-desc"), {"wallpaper", "transition_duration"},
-                                SliderSetting{cfg.wallpaper.transitionDurationMs, 100.0f, 30000.0f, 100.0f, true},
-                                "fade animation"));
-    entries.push_back(makeEntry("wallpaper", "transition", tr("settings.wallpaper-edge-smoothness"),
-                                tr("settings.wallpaper-edge-smoothness-desc"), {"wallpaper", "edge_smoothness"},
-                                SliderSetting{cfg.wallpaper.edgeSmoothness, 0.0f, 1.0f, 0.01f, false},
-                                "transition feathering", true));
-    entries.push_back(makeEntry("wallpaper", "automation", tr("settings.wallpaper-automation"),
-                                tr("settings.wallpaper-automation-desc"), {"wallpaper", "automation", "enabled"},
-                                ToggleSetting{cfg.wallpaper.automation.enabled}, "rotate slideshow"));
+    entries.push_back(
+        makeEntry("wallpaper", "transition", tr("settings.schema.wallpaper.transition-duration.label"),
+                  tr("settings.schema.wallpaper.transition-duration.description"), {"wallpaper", "transition_duration"},
+                  SliderSetting{cfg.wallpaper.transitionDurationMs, 100.0f, 30000.0f, 100.0f, true}, "fade animation"));
     entries.push_back(makeEntry(
-        "wallpaper", "automation", tr("settings.wallpaper-automation-interval"),
-        tr("settings.wallpaper-automation-interval-desc"), {"wallpaper", "automation", "interval_minutes"},
+        "wallpaper", "transition", tr("settings.schema.wallpaper.edge-smoothness.label"),
+        tr("settings.schema.wallpaper.edge-smoothness.description"), {"wallpaper", "edge_smoothness"},
+        SliderSetting{cfg.wallpaper.edgeSmoothness, 0.0f, 1.0f, 0.01f, false}, "transition feathering", true));
+    entries.push_back(makeEntry("wallpaper", "automation", tr("settings.schema.wallpaper.automation.label"),
+                                tr("settings.schema.wallpaper.automation.description"),
+                                {"wallpaper", "automation", "enabled"}, ToggleSetting{cfg.wallpaper.automation.enabled},
+                                "rotate slideshow"));
+    entries.push_back(makeEntry(
+        "wallpaper", "automation", tr("settings.schema.wallpaper.automation-interval.label"),
+        tr("settings.schema.wallpaper.automation-interval.description"),
+        {"wallpaper", "automation", "interval_minutes"},
         SliderSetting{static_cast<float>(cfg.wallpaper.automation.intervalMinutes), 0.0f, 1440.0f, 1.0f, true},
         "rotate slideshow"));
-    entries.push_back(makeEntry("wallpaper", "automation", tr("settings.wallpaper-automation-order"),
-                                tr("settings.wallpaper-automation-order-desc"), {"wallpaper", "automation", "order"},
-                                enumSelect(kWallpaperAutomationOrders, cfg.wallpaper.automation.order),
-                                "rotate slideshow"));
-    entries.push_back(makeEntry("wallpaper", "automation", tr("settings.wallpaper-automation-recursive"),
-                                tr("settings.wallpaper-automation-recursive-desc"),
+    entries.push_back(
+        makeEntry("wallpaper", "automation", tr("settings.schema.wallpaper.automation-order.label"),
+                  tr("settings.schema.wallpaper.automation-order.description"), {"wallpaper", "automation", "order"},
+                  enumSelect(kWallpaperAutomationOrders, cfg.wallpaper.automation.order), "rotate slideshow"));
+    entries.push_back(makeEntry("wallpaper", "automation", tr("settings.schema.wallpaper.automation-recursive.label"),
+                                tr("settings.schema.wallpaper.automation-recursive.description"),
                                 {"wallpaper", "automation", "recursive"},
                                 ToggleSetting{cfg.wallpaper.automation.recursive}, "subdirectories", true));
 
     // Overview (niri-only: surface only renders when niri's overview IPC is available)
     if (env.niriOverviewSupported) {
-      entries.push_back(makeEntry("overview", "general", tr("common.enabled"), tr("settings.overview-enabled-desc"),
-                                  {"overview", "enabled"}, ToggleSetting{cfg.overview.enabled}, "wallpaper backdrop"));
-      entries.push_back(makeEntry("overview", "general", tr("settings.unload-when-hidden"),
-                                  tr("settings.unload-when-hidden-desc"), {"overview", "unload_when_not_in_use"},
+      entries.push_back(makeEntry("overview", "general", tr("settings.schema.shared.enabled.label"),
+                                  tr("settings.schema.overview.enabled.description"), {"overview", "enabled"},
+                                  ToggleSetting{cfg.overview.enabled}, "wallpaper backdrop"));
+      entries.push_back(makeEntry("overview", "general", tr("settings.schema.overview.unload-when-hidden.label"),
+                                  tr("settings.schema.overview.unload-when-hidden.description"),
+                                  {"overview", "unload_when_not_in_use"},
                                   ToggleSetting{cfg.overview.unloadWhenNotInUse}, "memory"));
-      entries.push_back(makeEntry("overview", "backdrop", tr("settings.blur-intensity"),
-                                  tr("settings.overview-blur-desc"), {"overview", "blur_intensity"},
+      entries.push_back(makeEntry("overview", "backdrop", tr("settings.schema.overview.blur-intensity.label"),
+                                  tr("settings.schema.overview.blur-intensity.description"),
+                                  {"overview", "blur_intensity"},
                                   SliderSetting{cfg.overview.blurIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
-      entries.push_back(makeEntry("overview", "backdrop", tr("settings.tint-intensity"),
-                                  tr("settings.overview-tint-desc"), {"overview", "tint_intensity"},
+      entries.push_back(makeEntry("overview", "backdrop", tr("settings.schema.overview.tint-intensity.label"),
+                                  tr("settings.schema.overview.tint-intensity.description"),
+                                  {"overview", "tint_intensity"},
                                   SliderSetting{cfg.overview.tintIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
     }
 
     // Templates
-    entries.push_back(makeEntry("templates", "built-in", tr("settings.templates-enable-builtins"),
-                                tr("settings.templates-enable-builtins-desc"),
+    entries.push_back(makeEntry("templates", "built-in", tr("settings.schema.templates.enable-builtins.label"),
+                                tr("settings.schema.templates.enable-builtins.description"),
                                 {"theme", "templates", "enable_builtins"},
                                 ToggleSetting{cfg.theme.templates.enableBuiltins}, "theme templates"));
     {
@@ -368,206 +387,240 @@ namespace settings {
         templateOptions.push_back(SelectOption{t.id, t.displayName});
       }
       entries.push_back(makeEntry(
-          "templates", "built-in", tr("settings.templates-builtin-ids"), tr("settings.templates-builtin-ids-desc"),
-          {"theme", "templates", "builtin_ids"},
+          "templates", "built-in", tr("settings.schema.templates.builtin-ids.label"),
+          tr("settings.schema.templates.builtin-ids.description"), {"theme", "templates", "builtin_ids"},
           ListSetting{.items = cfg.theme.templates.builtinIds, .suggestedOptions = std::move(templateOptions)},
           "theme templates apps foot walker gtk"));
     }
-    entries.push_back(makeEntry("templates", "user", tr("settings.templates-enable-user-templates"),
-                                tr("settings.templates-enable-user-templates-desc"),
+    entries.push_back(makeEntry("templates", "user", tr("settings.schema.templates.enable-user-templates.label"),
+                                tr("settings.schema.templates.enable-user-templates.description"),
                                 {"theme", "templates", "enable_user_templates"},
                                 ToggleSetting{cfg.theme.templates.enableUserTemplates}, "theme templates user custom"));
-    entries.push_back(makeEntry("templates", "user", tr("settings.templates-user-config"),
-                                tr("settings.templates-user-config-desc"), {"theme", "templates", "user_config"},
+    entries.push_back(makeEntry("templates", "user", tr("settings.schema.templates.user-config.label"),
+                                tr("settings.schema.templates.user-config.description"),
+                                {"theme", "templates", "user_config"},
                                 TextSetting{cfg.theme.templates.userConfig, "~/.config/noctalia/user-templates.toml"},
                                 "theme templates path file", true));
 
     // Dock
-    entries.push_back(makeEntry("dock", "general", tr("common.enabled"), tr("settings.dock-enabled-desc"),
-                                {"dock", "enabled"}, ToggleSetting{cfg.dock.enabled}, "launcher apps"));
-    entries.push_back(makeEntry("dock", "general", tr("settings.active-monitor-only"),
-                                tr("settings.active-monitor-only-desc"), {"dock", "active_monitor_only"},
-                                ToggleSetting{cfg.dock.activeMonitorOnly}, "monitor"));
-    entries.push_back(makeEntry("dock", "layout", tr("common.position"), tr("settings.dock-position-desc"),
-                                {"dock", "position"}, positionSelect(cfg.dock.position), "edge"));
-    entries.push_back(
-        makeEntry("dock", "layout", tr("settings.icon-size"), tr("settings.icon-size-desc"), {"dock", "icon_size"},
-                  SliderSetting{static_cast<float>(cfg.dock.iconSize), 16.0f, 128.0f, 1.0f, true}, "apps"));
-    entries.push_back(
-        makeEntry("dock", "layout", tr("common.padding"), tr("settings.dock-padding-desc"), {"dock", "padding"},
-                  SliderSetting{static_cast<float>(cfg.dock.padding), 0.0f, 100.0f, 1.0f, true}, "inset"));
+    entries.push_back(makeEntry("dock", "general", tr("settings.schema.shared.enabled.label"),
+                                tr("settings.schema.dock.enabled.description"), {"dock", "enabled"},
+                                ToggleSetting{cfg.dock.enabled}, "launcher apps"));
+    entries.push_back(makeEntry("dock", "general", tr("settings.schema.dock.active-monitor-only.label"),
+                                tr("settings.schema.dock.active-monitor-only.description"),
+                                {"dock", "active_monitor_only"}, ToggleSetting{cfg.dock.activeMonitorOnly}, "monitor"));
+    entries.push_back(makeEntry("dock", "layout", tr("settings.schema.shared.position.label"),
+                                tr("settings.schema.dock.position.description"), {"dock", "position"},
+                                positionSelect(cfg.dock.position), "edge"));
+    entries.push_back(makeEntry("dock", "layout", tr("settings.schema.dock.icon-size.label"),
+                                tr("settings.schema.dock.icon-size.description"), {"dock", "icon_size"},
+                                SliderSetting{static_cast<float>(cfg.dock.iconSize), 16.0f, 128.0f, 1.0f, true},
+                                "apps"));
     entries.push_back(makeEntry(
-        "dock", "layout", tr("settings.item-spacing"), tr("settings.item-spacing-desc"), {"dock", "item_spacing"},
-        SliderSetting{static_cast<float>(cfg.dock.itemSpacing), 0.0f, 100.0f, 1.0f, true}, "gap"));
-    entries.push_back(makeEntry(
-        "dock", "layout", tr("common.horizontal-margin"), tr("settings.dock-margin-h-desc"), {"dock", "margin_h"},
-        SliderSetting{static_cast<float>(cfg.dock.marginH), 0.0f, 500.0f, 1.0f, true}, "gap inset"));
-    entries.push_back(makeEntry(
-        "dock", "layout", tr("common.vertical-margin"), tr("settings.dock-margin-v-desc"), {"dock", "margin_v"},
-        SliderSetting{static_cast<float>(cfg.dock.marginV), 0.0f, 100.0f, 1.0f, true}, "gap inset"));
-    entries.push_back(
-        makeEntry("dock", "shape", tr("common.corner-radius"), tr("settings.dock-radius-desc"), {"dock", "radius"},
-                  SliderSetting{static_cast<float>(cfg.dock.radius), 0.0f, 80.0f, 1.0f, true}, "rounded"));
-    entries.push_back(makeEntry("dock", "shape", tr("common.background-opacity"), tr("settings.dock-bg-opacity-desc"),
+        "dock", "layout", tr("settings.schema.shared.padding.label"), tr("settings.schema.dock.padding.description"),
+        {"dock", "padding"}, SliderSetting{static_cast<float>(cfg.dock.padding), 0.0f, 100.0f, 1.0f, true}, "inset"));
+    entries.push_back(makeEntry("dock", "layout", tr("settings.schema.dock.item-spacing.label"),
+                                tr("settings.schema.dock.item-spacing.description"), {"dock", "item_spacing"},
+                                SliderSetting{static_cast<float>(cfg.dock.itemSpacing), 0.0f, 100.0f, 1.0f, true},
+                                "gap"));
+    entries.push_back(makeEntry("dock", "layout", tr("settings.schema.shared.horizontal-margin.label"),
+                                tr("settings.schema.dock.horizontal-margin.description"), {"dock", "margin_h"},
+                                SliderSetting{static_cast<float>(cfg.dock.marginH), 0.0f, 500.0f, 1.0f, true},
+                                "gap inset"));
+    entries.push_back(makeEntry("dock", "layout", tr("settings.schema.shared.vertical-margin.label"),
+                                tr("settings.schema.dock.vertical-margin.description"), {"dock", "margin_v"},
+                                SliderSetting{static_cast<float>(cfg.dock.marginV), 0.0f, 100.0f, 1.0f, true},
+                                "gap inset"));
+    entries.push_back(makeEntry("dock", "shape", tr("settings.schema.shared.corner-radius.label"),
+                                tr("settings.schema.dock.corner-radius.description"), {"dock", "radius"},
+                                SliderSetting{static_cast<float>(cfg.dock.radius), 0.0f, 80.0f, 1.0f, true},
+                                "rounded"));
+    entries.push_back(makeEntry("dock", "shape", tr("settings.schema.shared.background-opacity.label"),
+                                tr("settings.schema.dock.background-opacity.description"),
                                 {"dock", "background_opacity"},
                                 SliderSetting{cfg.dock.backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "alpha"));
-    entries.push_back(makeEntry("dock", "effects", tr("common.background-blur"), tr("settings.dock-bg-blur-desc"),
-                                {"dock", "background_blur"}, ToggleSetting{cfg.dock.backgroundBlur}, "blur"));
-    entries.push_back(makeEntry("dock", "effects", tr("common.shadow"), tr("settings.dock-shadow-desc"),
-                                {"dock", "shadow"}, ToggleSetting{cfg.dock.shadow}, "shadow"));
-    entries.push_back(makeEntry("dock", "behavior", tr("common.auto-hide"), tr("settings.dock-auto-hide-desc"),
-                                {"dock", "auto_hide"}, ToggleSetting{cfg.dock.autoHide}, "autohide"));
-    entries.push_back(makeEntry("dock", "behavior", tr("common.reserve-space"), tr("settings.dock-reserve-space-desc"),
-                                {"dock", "reserve_space"}, ToggleSetting{cfg.dock.reserveSpace}, "exclusive zone"));
-    entries.push_back(makeEntry("dock", "behavior", tr("settings.show-running"), tr("settings.show-running-desc"),
-                                {"dock", "show_running"}, ToggleSetting{cfg.dock.showRunning}, "windows"));
-    entries.push_back(makeEntry("dock", "behavior", tr("settings.show-instance-count"),
-                                tr("settings.show-instance-count-desc"), {"dock", "show_instance_count"},
-                                ToggleSetting{cfg.dock.showInstanceCount}, "badge windows"));
-    entries.push_back(makeEntry("dock", "focus-styling", tr("settings.active-icon-scale"),
-                                tr("settings.active-icon-scale-desc"), {"dock", "active_scale"},
+    entries.push_back(makeEntry("dock", "effects", tr("settings.schema.shared.background-blur.label"),
+                                tr("settings.schema.dock.background-blur.description"), {"dock", "background_blur"},
+                                ToggleSetting{cfg.dock.backgroundBlur}, "blur"));
+    entries.push_back(makeEntry("dock", "effects", tr("settings.schema.shared.shadow.label"),
+                                tr("settings.schema.dock.shadow.description"), {"dock", "shadow"},
+                                ToggleSetting{cfg.dock.shadow}, "shadow"));
+    entries.push_back(makeEntry("dock", "behavior", tr("settings.schema.shared.auto-hide.label"),
+                                tr("settings.schema.dock.auto-hide.description"), {"dock", "auto_hide"},
+                                ToggleSetting{cfg.dock.autoHide}, "autohide"));
+    entries.push_back(makeEntry("dock", "behavior", tr("settings.schema.shared.reserve-space.label"),
+                                tr("settings.schema.dock.reserve-space.description"), {"dock", "reserve_space"},
+                                ToggleSetting{cfg.dock.reserveSpace}, "exclusive zone"));
+    entries.push_back(makeEntry("dock", "behavior", tr("settings.schema.dock.show-running.label"),
+                                tr("settings.schema.dock.show-running.description"), {"dock", "show_running"},
+                                ToggleSetting{cfg.dock.showRunning}, "windows"));
+    entries.push_back(makeEntry("dock", "behavior", tr("settings.schema.dock.show-instance-count.label"),
+                                tr("settings.schema.dock.show-instance-count.description"),
+                                {"dock", "show_instance_count"}, ToggleSetting{cfg.dock.showInstanceCount},
+                                "badge windows"));
+    entries.push_back(makeEntry("dock", "focus-styling", tr("settings.schema.dock.active-icon-scale.label"),
+                                tr("settings.schema.dock.active-icon-scale.description"), {"dock", "active_scale"},
                                 SliderSetting{cfg.dock.activeScale, 0.1f, 1.75f, 0.05f, false}, "focused", true));
-    entries.push_back(makeEntry("dock", "focus-styling", tr("settings.inactive-icon-scale"),
-                                tr("settings.inactive-icon-scale-desc"), {"dock", "inactive_scale"},
+    entries.push_back(makeEntry("dock", "focus-styling", tr("settings.schema.dock.inactive-icon-scale.label"),
+                                tr("settings.schema.dock.inactive-icon-scale.description"), {"dock", "inactive_scale"},
                                 SliderSetting{cfg.dock.inactiveScale, 0.1f, 1.0f, 0.05f, false}, "unfocused", true));
-    entries.push_back(makeEntry("dock", "focus-styling", tr("settings.active-icon-opacity"),
-                                tr("settings.active-icon-opacity-desc"), {"dock", "active_opacity"},
+    entries.push_back(makeEntry("dock", "focus-styling", tr("settings.schema.dock.active-icon-opacity.label"),
+                                tr("settings.schema.dock.active-icon-opacity.description"), {"dock", "active_opacity"},
                                 SliderSetting{cfg.dock.activeOpacity, 0.0f, 1.0f, 0.01f, false}, "focused alpha",
                                 true));
-    entries.push_back(makeEntry("dock", "focus-styling", tr("settings.inactive-icon-opacity"),
-                                tr("settings.inactive-icon-opacity-desc"), {"dock", "inactive_opacity"},
-                                SliderSetting{cfg.dock.inactiveOpacity, 0.0f, 1.0f, 0.01f, false}, "unfocused alpha",
-                                true));
-    entries.push_back(makeEntry("dock", "pinned-apps", tr("settings.pinned-apps"), tr("settings.pinned-apps-desc"),
-                                {"dock", "pinned"}, ListSetting{.items = cfg.dock.pinned}, "favorites"));
+    entries.push_back(
+        makeEntry("dock", "focus-styling", tr("settings.schema.dock.inactive-icon-opacity.label"),
+                  tr("settings.schema.dock.inactive-icon-opacity.description"), {"dock", "inactive_opacity"},
+                  SliderSetting{cfg.dock.inactiveOpacity, 0.0f, 1.0f, 0.01f, false}, "unfocused alpha", true));
+    entries.push_back(makeEntry("dock", "pinned-apps", tr("settings.schema.dock.pinned-apps.label"),
+                                tr("settings.schema.dock.pinned-apps.description"), {"dock", "pinned"},
+                                ListSetting{.items = cfg.dock.pinned}, "favorites"));
 
     // Desktop
-    entries.push_back(makeEntry("desktop", "widgets", tr("settings.desktop-widgets"),
-                                tr("settings.desktop-widgets-desc"), {"desktop_widgets", "enabled"},
+    entries.push_back(makeEntry("desktop", "widgets", tr("settings.schema.desktop.widgets.label"),
+                                tr("settings.schema.desktop.widgets.description"), {"desktop_widgets", "enabled"},
                                 ToggleSetting{cfg.desktopWidgets.enabled}, "desktop"));
 
     // Shell
-    entries.push_back(makeEntry("shell", "profile", tr("settings.avatar-path"), tr("settings.avatar-path-desc"),
-                                {"shell", "avatar_path"}, TextSetting{cfg.shell.avatarPath, ""}, "image picture"));
-    entries.push_back(makeEntry("shell", "network", tr("settings.offline-mode"), tr("settings.offline-mode-desc"),
-                                {"shell", "offline_mode"}, ToggleSetting{cfg.shell.offlineMode},
-                                "network http fetch download"));
-    entries.push_back(makeEntry("shell", "network", tr("settings.telemetry"), tr("settings.telemetry-desc"),
-                                {"shell", "telemetry_enabled"}, ToggleSetting{cfg.shell.telemetryEnabled},
-                                "analytics ping privacy"));
-    entries.push_back(makeEntry("shell", "security", tr("settings.polkit-agent"), tr("settings.polkit-agent-desc"),
-                                {"shell", "polkit_agent"}, ToggleSetting{cfg.shell.polkitAgent}, "auth password"));
-    entries.push_back(makeEntry("shell", "security", tr("settings.password-style"), tr("settings.password-style-desc"),
-                                {"shell", "password_style"},
+    entries.push_back(makeEntry("shell", "profile", tr("settings.schema.shell.avatar-path.label"),
+                                tr("settings.schema.shell.avatar-path.description"), {"shell", "avatar_path"},
+                                TextSetting{cfg.shell.avatarPath, ""}, "image picture"));
+    entries.push_back(makeEntry("shell", "network", tr("settings.schema.shell.offline-mode.label"),
+                                tr("settings.schema.shell.offline-mode.description"), {"shell", "offline_mode"},
+                                ToggleSetting{cfg.shell.offlineMode}, "network http fetch download"));
+    entries.push_back(makeEntry("shell", "network", tr("settings.schema.shell.telemetry.label"),
+                                tr("settings.schema.shell.telemetry.description"), {"shell", "telemetry_enabled"},
+                                ToggleSetting{cfg.shell.telemetryEnabled}, "analytics ping privacy"));
+    entries.push_back(makeEntry("shell", "security", tr("settings.schema.shell.polkit-agent.label"),
+                                tr("settings.schema.shell.polkit-agent.description"), {"shell", "polkit_agent"},
+                                ToggleSetting{cfg.shell.polkitAgent}, "auth password"));
+    entries.push_back(makeEntry("shell", "security", tr("settings.schema.shell.password-style.label"),
+                                tr("settings.schema.shell.password-style.description"), {"shell", "password_style"},
                                 enumSelect(kPasswordMaskStyles, cfg.shell.passwordMaskStyle), "polkit lock mask"));
-    entries.push_back(makeEntry("shell", "location", tr("settings.show-location"), tr("settings.show-location-desc"),
-                                {"shell", "show_location"}, ToggleSetting{cfg.shell.showLocation}, "weather"));
-    entries.push_back(makeEntry("shell", "clipboard", tr("settings.clipboard-auto-paste"),
-                                tr("settings.clipboard-auto-paste-desc"), {"shell", "clipboard_auto_paste"},
+    entries.push_back(makeEntry("shell", "location", tr("settings.schema.shell.show-location.label"),
+                                tr("settings.schema.shell.show-location.description"), {"shell", "show_location"},
+                                ToggleSetting{cfg.shell.showLocation}, "weather"));
+    entries.push_back(makeEntry("shell", "clipboard", tr("settings.schema.shell.clipboard-auto-paste.label"),
+                                tr("settings.schema.shell.clipboard-auto-paste.description"),
+                                {"shell", "clipboard_auto_paste"},
                                 enumSelect(kClipboardAutoPasteModes, cfg.shell.clipboardAutoPaste), "clipboard paste"));
-    entries.push_back(makeEntry("shell", "osd", tr("settings.osd-position"), tr("settings.osd-position-desc"),
-                                {"osd", "position"},
-                                plainSelect({{"top_right", "settings.opt.top-right"},
-                                             {"top_left", "settings.opt.top-left"},
-                                             {"top_center", "settings.opt.top-center"},
-                                             {"bottom_right", "settings.opt.bottom-right"},
-                                             {"bottom_left", "settings.opt.bottom-left"},
-                                             {"bottom_center", "settings.opt.bottom-center"}},
+    entries.push_back(makeEntry("shell", "osd", tr("settings.schema.shell.osd-position.label"),
+                                tr("settings.schema.shell.osd-position.description"), {"osd", "position"},
+                                plainSelect({{"top_right", "settings.options.screen-position.top-right"},
+                                             {"top_left", "settings.options.screen-position.top-left"},
+                                             {"top_center", "settings.options.screen-position.top-center"},
+                                             {"bottom_right", "settings.options.screen-position.bottom-right"},
+                                             {"bottom_left", "settings.options.screen-position.bottom-left"},
+                                             {"bottom_center", "settings.options.screen-position.bottom-center"}},
                                             cfg.osd.position),
                                 "hud overlay volume brightness"));
 
     // Services
-    entries.push_back(makeEntry("services", "system", tr("settings.system-monitor"), tr("settings.system-monitor-desc"),
+    entries.push_back(makeEntry("services", "system", tr("settings.schema.services.system-monitor.label"),
+                                tr("settings.schema.services.system-monitor.description"),
                                 {"system", "monitor", "enabled"}, ToggleSetting{cfg.system.monitor.enabled},
                                 "system monitor cpu ram memory"));
-    entries.push_back(makeEntry("services", "weather", tr("settings.weather"), tr("settings.weather-desc"),
-                                {"weather", "enabled"}, ToggleSetting{cfg.weather.enabled}, "forecast"));
-    entries.push_back(makeEntry("services", "weather", tr("settings.weather-location"),
-                                tr("settings.weather-location-desc"), {"weather", "auto_locate"},
+    entries.push_back(makeEntry("services", "weather", tr("settings.schema.services.weather.label"),
+                                tr("settings.schema.services.weather.description"), {"weather", "enabled"},
+                                ToggleSetting{cfg.weather.enabled}, "forecast"));
+    entries.push_back(makeEntry("services", "weather", tr("settings.schema.services.weather-location.label"),
+                                tr("settings.schema.services.weather-location.description"), {"weather", "auto_locate"},
                                 ToggleSetting{cfg.weather.autoLocate}, "forecast gps"));
-    entries.push_back(makeEntry(
-        "services", "weather", tr("settings.weather-unit"), tr("settings.weather-unit-desc"), {"weather", "unit"},
-        plainSelect({{"celsius", "settings.opt.celsius"}, {"fahrenheit", "settings.opt.fahrenheit"}}, cfg.weather.unit),
-        "temperature"));
-    entries.push_back(makeEntry("services", "weather", tr("settings.weather-address"),
-                                tr("settings.weather-address-desc"), {"weather", "address"},
+    entries.push_back(makeEntry("services", "weather", tr("settings.schema.services.weather-unit.label"),
+                                tr("settings.schema.services.weather-unit.description"), {"weather", "unit"},
+                                plainSelect({{"celsius", "settings.options.weather.unit.celsius"},
+                                             {"fahrenheit", "settings.options.weather.unit.fahrenheit"}},
+                                            cfg.weather.unit),
+                                "temperature"));
+    entries.push_back(makeEntry("services", "weather", tr("settings.schema.services.weather-address.label"),
+                                tr("settings.schema.services.weather-address.description"), {"weather", "address"},
                                 TextSetting{cfg.weather.address, "City, Country"}, "location"));
-    entries.push_back(makeEntry("services", "weather", tr("settings.weather-effects"),
-                                tr("settings.weather-effects-desc"), {"weather", "effects"},
+    entries.push_back(makeEntry("services", "weather", tr("settings.schema.services.weather-effects.label"),
+                                tr("settings.schema.services.weather-effects.description"), {"weather", "effects"},
                                 ToggleSetting{cfg.weather.effects}, "forecast visuals"));
-    entries.push_back(makeEntry("services", "weather", tr("settings.refresh-interval"),
-                                tr("settings.refresh-interval-desc"), {"weather", "refresh_minutes"},
-                                SliderSetting{static_cast<float>(cfg.weather.refreshMinutes), 5.0f, 240.0f, 5.0f, true},
-                                "forecast"));
-    entries.push_back(makeEntry("services", "audio", tr("settings.audio-overdrive"),
-                                tr("settings.audio-overdrive-desc"), {"audio", "enable_overdrive"},
-                                ToggleSetting{cfg.audio.enableOverdrive}, "volume"));
-    entries.push_back(makeEntry("services", "audio", tr("settings.shell-sounds"), tr("settings.shell-sounds-desc"),
-                                {"audio", "enable_sounds"}, ToggleSetting{cfg.audio.enableSounds}, "sound"));
-    entries.push_back(makeEntry("services", "audio", tr("settings.sound-volume"), tr("settings.sound-volume-desc"),
-                                {"audio", "sound_volume"},
+    entries.push_back(
+        makeEntry("services", "weather", tr("settings.schema.services.weather-refresh-interval.label"),
+                  tr("settings.schema.services.weather-refresh-interval.description"), {"weather", "refresh_minutes"},
+                  SliderSetting{static_cast<float>(cfg.weather.refreshMinutes), 5.0f, 240.0f, 5.0f, true}, "forecast"));
+    entries.push_back(makeEntry("services", "audio", tr("settings.schema.services.audio-overdrive.label"),
+                                tr("settings.schema.services.audio-overdrive.description"),
+                                {"audio", "enable_overdrive"}, ToggleSetting{cfg.audio.enableOverdrive}, "volume"));
+    entries.push_back(makeEntry("services", "audio", tr("settings.schema.services.shell-sounds.label"),
+                                tr("settings.schema.services.shell-sounds.description"), {"audio", "enable_sounds"},
+                                ToggleSetting{cfg.audio.enableSounds}, "sound"));
+    entries.push_back(makeEntry("services", "audio", tr("settings.schema.services.sound-volume.label"),
+                                tr("settings.schema.services.sound-volume.description"), {"audio", "sound_volume"},
                                 SliderSetting{cfg.audio.soundVolume, 0.0f, 1.0f, 0.01f, false}, "sound"));
-    entries.push_back(makeEntry("services", "audio", tr("settings.volume-change-sound"),
-                                tr("settings.volume-change-sound-desc"), {"audio", "volume_change_sound"},
-                                TextSetting{cfg.audio.volumeChangeSound, ""}, "sound path file", true));
-    entries.push_back(makeEntry("services", "audio", tr("settings.notification-sound"),
-                                tr("settings.notification-sound-desc"), {"audio", "notification_sound"},
-                                TextSetting{cfg.audio.notificationSound, ""}, "sound path file", true));
-    entries.push_back(makeEntry("services", "brightness", tr("settings.ddcutil"), tr("settings.ddcutil-desc"),
-                                {"brightness", "enable_ddcutil"}, ToggleSetting{cfg.brightness.enableDdcutil},
-                                "monitor ddcutil"));
-    entries.push_back(makeEntry("services", "night-light", tr("settings.night-light"), tr("settings.night-light-desc"),
-                                {"nightlight", "enabled"}, ToggleSetting{cfg.nightlight.enabled}, "wlsunset"));
-    entries.push_back(makeEntry("services", "night-light", tr("settings.force-night-light"),
-                                tr("settings.force-night-light-desc"), {"nightlight", "force"},
+    entries.push_back(makeEntry("services", "audio", tr("settings.schema.services.volume-change-sound.label"),
+                                tr("settings.schema.services.volume-change-sound.description"),
+                                {"audio", "volume_change_sound"}, TextSetting{cfg.audio.volumeChangeSound, ""},
+                                "sound path file", true));
+    entries.push_back(makeEntry("services", "audio", tr("settings.schema.services.notification-sound.label"),
+                                tr("settings.schema.services.notification-sound.description"),
+                                {"audio", "notification_sound"}, TextSetting{cfg.audio.notificationSound, ""},
+                                "sound path file", true));
+    entries.push_back(makeEntry("services", "brightness", tr("settings.schema.services.ddcutil.label"),
+                                tr("settings.schema.services.ddcutil.description"), {"brightness", "enable_ddcutil"},
+                                ToggleSetting{cfg.brightness.enableDdcutil}, "monitor ddcutil"));
+    entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.night-light.label"),
+                                tr("settings.schema.services.night-light.description"), {"nightlight", "enabled"},
+                                ToggleSetting{cfg.nightlight.enabled}, "wlsunset"));
+    entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.force-night-light.label"),
+                                tr("settings.schema.services.force-night-light.description"), {"nightlight", "force"},
                                 ToggleSetting{cfg.nightlight.force}, "wlsunset"));
-    entries.push_back(makeEntry("services", "night-light", tr("settings.use-weather-location"),
-                                tr("settings.use-weather-location-desc"), {"nightlight", "use_weather_location"},
+    entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.use-weather-location.label"),
+                                tr("settings.schema.services.use-weather-location.description"),
+                                {"nightlight", "use_weather_location"},
                                 ToggleSetting{cfg.nightlight.useWeatherLocation}, "location"));
-    entries.push_back(makeEntry("services", "night-light", tr("settings.night-light-start-time"),
-                                tr("settings.night-light-start-time-desc"), {"nightlight", "start_time"},
-                                TextSetting{cfg.nightlight.startTime, "20:30"}, "time schedule sunset"));
-    entries.push_back(makeEntry("services", "night-light", tr("settings.night-light-stop-time"),
-                                tr("settings.night-light-stop-time-desc"), {"nightlight", "stop_time"},
-                                TextSetting{cfg.nightlight.stopTime, "07:30"}, "time schedule sunrise"));
-    entries.push_back(makeEntry("services", "night-light", tr("settings.latitude"), tr("settings.latitude-desc"),
-                                {"nightlight", "latitude"},
+    entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.night-light-start-time.label"),
+                                tr("settings.schema.services.night-light-start-time.description"),
+                                {"nightlight", "start_time"}, TextSetting{cfg.nightlight.startTime, "20:30"},
+                                "time schedule sunset"));
+    entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.night-light-stop-time.label"),
+                                tr("settings.schema.services.night-light-stop-time.description"),
+                                {"nightlight", "stop_time"}, TextSetting{cfg.nightlight.stopTime, "07:30"},
+                                "time schedule sunrise"));
+    entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.latitude.label"),
+                                tr("settings.schema.services.latitude.description"), {"nightlight", "latitude"},
                                 OptionalNumberSetting{cfg.nightlight.latitude, -90.0, 90.0, "52.5200"},
                                 "coordinate location sunrise sunset", true));
-    entries.push_back(makeEntry("services", "night-light", tr("settings.longitude"), tr("settings.longitude-desc"),
-                                {"nightlight", "longitude"},
+    entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.longitude.label"),
+                                tr("settings.schema.services.longitude.description"), {"nightlight", "longitude"},
                                 OptionalNumberSetting{cfg.nightlight.longitude, -180.0, 180.0, "13.4050"},
                                 "coordinate location sunrise sunset", true));
     entries.push_back(
-        makeEntry("services", "night-light", tr("settings.day-temperature"), tr("settings.day-temperature-desc"),
-                  {"nightlight", "temperature_day"},
+        makeEntry("services", "night-light", tr("settings.schema.services.day-temperature.label"),
+                  tr("settings.schema.services.day-temperature.description"), {"nightlight", "temperature_day"},
                   SliderSetting{static_cast<float>(cfg.nightlight.dayTemperature), 1000.0f, 10000.0f, 100.0f, true},
                   "wlsunset kelvin"));
     entries.push_back(
-        makeEntry("services", "night-light", tr("settings.night-temperature"), tr("settings.night-temperature-desc"),
-                  {"nightlight", "temperature_night"},
+        makeEntry("services", "night-light", tr("settings.schema.services.night-temperature.label"),
+                  tr("settings.schema.services.night-temperature.description"), {"nightlight", "temperature_night"},
                   SliderSetting{static_cast<float>(cfg.nightlight.nightTemperature), 1000.0f, 10000.0f, 100.0f, true},
                   "wlsunset kelvin"));
 
     // Notifications
-    entries.push_back(makeEntry("notifications", "general", tr("settings.notification-daemon"),
-                                tr("settings.notification-daemon-desc"), {"notification", "enable_daemon"},
-                                ToggleSetting{cfg.notification.enableDaemon}, "dbus"));
-    entries.push_back(makeEntry("notifications", "toasts", tr("settings.toast-blur"), tr("settings.toast-blur-desc"),
+    entries.push_back(makeEntry("notifications", "general", tr("settings.schema.notifications.daemon.label"),
+                                tr("settings.schema.notifications.daemon.description"),
+                                {"notification", "enable_daemon"}, ToggleSetting{cfg.notification.enableDaemon},
+                                "dbus"));
+    entries.push_back(makeEntry("notifications", "toasts", tr("settings.schema.notifications.toast-blur.label"),
+                                tr("settings.schema.notifications.toast-blur.description"),
                                 {"notification", "background_blur"}, ToggleSetting{cfg.notification.backgroundBlur},
                                 "popup"));
-    entries.push_back(makeEntry("notifications", "toasts", tr("settings.notification-position"),
-                                tr("settings.notification-position-desc"), {"notification", "position"},
-                                plainSelect({{"top_right", "settings.opt.top-right"},
-                                             {"top_left", "settings.opt.top-left"},
-                                             {"top_center", "settings.opt.top-center"},
-                                             {"bottom_right", "settings.opt.bottom-right"},
-                                             {"bottom_left", "settings.opt.bottom-left"},
-                                             {"bottom_center", "settings.opt.bottom-center"}},
+    entries.push_back(makeEntry("notifications", "toasts", tr("settings.schema.notifications.position.label"),
+                                tr("settings.schema.notifications.position.description"), {"notification", "position"},
+                                plainSelect({{"top_right", "settings.options.screen-position.top-right"},
+                                             {"top_left", "settings.options.screen-position.top-left"},
+                                             {"top_center", "settings.options.screen-position.top-center"},
+                                             {"bottom_right", "settings.options.screen-position.bottom-right"},
+                                             {"bottom_left", "settings.options.screen-position.bottom-left"},
+                                             {"bottom_center", "settings.options.screen-position.bottom-center"}},
                                             cfg.notification.position),
                                 "toast popup placement anchor"));
-    entries.push_back(makeEntry("notifications", "toasts", tr("settings.toast-opacity"),
-                                tr("settings.toast-opacity-desc"), {"notification", "background_opacity"},
+    entries.push_back(makeEntry("notifications", "toasts", tr("settings.schema.notifications.toast-opacity.label"),
+                                tr("settings.schema.notifications.toast-opacity.description"),
+                                {"notification", "background_opacity"},
                                 SliderSetting{cfg.notification.backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "popup"));
 
     // Bar
@@ -579,94 +632,108 @@ namespace settings {
         p.push_back(std::move(key));
         return p;
       };
-      entries.push_back(makeEntry(section, "general", tr("common.enabled"), tr("settings.bar-enabled-desc"),
-                                  path("enabled"), ToggleSetting{selectedBar->enabled}, "visible"));
-      entries.push_back(makeEntry(section, "general", tr("common.position"), tr("settings.bar-position-desc"),
-                                  path("position"), positionSelect(selectedBar->position), "edge"));
-      entries.push_back(makeEntry(section, "general", tr("common.auto-hide"), tr("settings.bar-auto-hide-desc"),
-                                  path("auto_hide"), ToggleSetting{selectedBar->autoHide}, "autohide"));
-      entries.push_back(makeEntry(section, "general", tr("common.reserve-space"), tr("settings.bar-reserve-space-desc"),
-                                  path("reserve_space"), ToggleSetting{selectedBar->reserveSpace}, "exclusive zone"));
-      entries.push_back(makeEntry(
-          section, "layout", tr("settings.thickness"), tr("settings.thickness-desc"), path("thickness"),
-          SliderSetting{static_cast<float>(selectedBar->thickness), 10.0f, 120.0f, 1.0f, true}, "height width"));
-      entries.push_back(makeEntry(section, "layout", tr("settings.content-scale"), tr("settings.content-scale-desc"),
-                                  path("scale"), SliderSetting{selectedBar->scale, 0.5f, 4.0f, 0.05f, false},
-                                  "zoom size"));
-      entries.push_back(makeEntry(
-          section, "layout", tr("common.horizontal-margin"), tr("settings.bar-margin-h-desc"), path("margin_h"),
-          SliderSetting{static_cast<float>(selectedBar->marginH), 0.0f, 500.0f, 1.0f, true}, "gap inset"));
+      entries.push_back(makeEntry(section, "general", tr("settings.schema.shared.enabled.label"),
+                                  tr("settings.schema.bar.enabled.description"), path("enabled"),
+                                  ToggleSetting{selectedBar->enabled}, "visible"));
+      entries.push_back(makeEntry(section, "general", tr("settings.schema.shared.position.label"),
+                                  tr("settings.schema.bar.position.description"), path("position"),
+                                  positionSelect(selectedBar->position), "edge"));
+      entries.push_back(makeEntry(section, "general", tr("settings.schema.shared.auto-hide.label"),
+                                  tr("settings.schema.bar.auto-hide.description"), path("auto_hide"),
+                                  ToggleSetting{selectedBar->autoHide}, "autohide"));
+      entries.push_back(makeEntry(section, "general", tr("settings.schema.shared.reserve-space.label"),
+                                  tr("settings.schema.bar.reserve-space.description"), path("reserve_space"),
+                                  ToggleSetting{selectedBar->reserveSpace}, "exclusive zone"));
+      entries.push_back(makeEntry(section, "layout", tr("settings.schema.bar.thickness.label"),
+                                  tr("settings.schema.bar.thickness.description"), path("thickness"),
+                                  SliderSetting{static_cast<float>(selectedBar->thickness), 10.0f, 120.0f, 1.0f, true},
+                                  "height width"));
+      entries.push_back(makeEntry(section, "layout", tr("settings.schema.bar.content-scale.label"),
+                                  tr("settings.schema.bar.content-scale.description"), path("scale"),
+                                  SliderSetting{selectedBar->scale, 0.5f, 4.0f, 0.05f, false}, "zoom size"));
+      entries.push_back(makeEntry(section, "layout", tr("settings.schema.shared.horizontal-margin.label"),
+                                  tr("settings.schema.bar.horizontal-margin.description"), path("margin_h"),
+                                  SliderSetting{static_cast<float>(selectedBar->marginH), 0.0f, 500.0f, 1.0f, true},
+                                  "gap inset"));
+      entries.push_back(makeEntry(section, "layout", tr("settings.schema.shared.vertical-margin.label"),
+                                  tr("settings.schema.bar.vertical-margin.description"), path("margin_v"),
+                                  SliderSetting{static_cast<float>(selectedBar->marginV), 0.0f, 100.0f, 1.0f, true},
+                                  "gap inset"));
+      entries.push_back(makeEntry(section, "layout", tr("settings.schema.bar.content-padding.label"),
+                                  tr("settings.schema.bar.content-padding.description"), path("padding"),
+                                  SliderSetting{static_cast<float>(selectedBar->padding), 0.0f, 80.0f, 1.0f, true},
+                                  "inset"));
+      entries.push_back(makeEntry(section, "shape", tr("settings.schema.shared.corner-radius.label"),
+                                  tr("settings.schema.bar.corner-radius.description"), path("radius"),
+                                  SliderSetting{static_cast<float>(selectedBar->radius), 0.0f, 80.0f, 1.0f, true},
+                                  "rounded"));
       entries.push_back(
-          makeEntry(section, "layout", tr("common.vertical-margin"), tr("settings.bar-margin-v-desc"), path("margin_v"),
-                    SliderSetting{static_cast<float>(selectedBar->marginV), 0.0f, 100.0f, 1.0f, true}, "gap inset"));
-      entries.push_back(makeEntry(
-          section, "layout", tr("settings.content-padding"), tr("settings.content-padding-desc"), path("padding"),
-          SliderSetting{static_cast<float>(selectedBar->padding), 0.0f, 80.0f, 1.0f, true}, "inset"));
-      entries.push_back(
-          makeEntry(section, "shape", tr("common.corner-radius"), tr("settings.bar-radius-desc"), path("radius"),
-                    SliderSetting{static_cast<float>(selectedBar->radius), 0.0f, 80.0f, 1.0f, true}, "rounded"));
-      entries.push_back(
-          makeEntry(section, "shape", tr("settings.corner-top-left"), tr("settings.corner-top-left-desc"),
-                    path("radius_top_left"),
+          makeEntry(section, "shape", tr("settings.schema.bar.corner-top-left.label"),
+                    tr("settings.schema.bar.corner-top-left.description"), path("radius_top_left"),
                     SliderSetting{static_cast<float>(selectedBar->radiusTopLeft), 0.0f, 80.0f, 1.0f, true},
                     "rounded corner", true));
       entries.push_back(
-          makeEntry(section, "shape", tr("settings.corner-top-right"), tr("settings.corner-top-right-desc"),
-                    path("radius_top_right"),
+          makeEntry(section, "shape", tr("settings.schema.bar.corner-top-right.label"),
+                    tr("settings.schema.bar.corner-top-right.description"), path("radius_top_right"),
                     SliderSetting{static_cast<float>(selectedBar->radiusTopRight), 0.0f, 80.0f, 1.0f, true},
                     "rounded corner", true));
       entries.push_back(
-          makeEntry(section, "shape", tr("settings.corner-bottom-left"), tr("settings.corner-bottom-left-desc"),
-                    path("radius_bottom_left"),
+          makeEntry(section, "shape", tr("settings.schema.bar.corner-bottom-left.label"),
+                    tr("settings.schema.bar.corner-bottom-left.description"), path("radius_bottom_left"),
                     SliderSetting{static_cast<float>(selectedBar->radiusBottomLeft), 0.0f, 80.0f, 1.0f, true},
                     "rounded corner", true));
       entries.push_back(
-          makeEntry(section, "shape", tr("settings.corner-bottom-right"), tr("settings.corner-bottom-right-desc"),
-                    path("radius_bottom_right"),
+          makeEntry(section, "shape", tr("settings.schema.bar.corner-bottom-right.label"),
+                    tr("settings.schema.bar.corner-bottom-right.description"), path("radius_bottom_right"),
                     SliderSetting{static_cast<float>(selectedBar->radiusBottomRight), 0.0f, 80.0f, 1.0f, true},
                     "rounded corner", true));
-      entries.push_back(makeEntry(section, "shape", tr("common.background-opacity"), tr("settings.bar-bg-opacity-desc"),
-                                  path("background_opacity"),
+      entries.push_back(makeEntry(section, "shape", tr("settings.schema.shared.background-opacity.label"),
+                                  tr("settings.schema.bar.background-opacity.description"), path("background_opacity"),
                                   SliderSetting{selectedBar->backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "alpha"));
-      entries.push_back(makeEntry(section, "effects", tr("common.background-blur"), tr("settings.bar-bg-blur-desc"),
-                                  path("background_blur"), ToggleSetting{selectedBar->backgroundBlur}, "blur"));
-      entries.push_back(makeEntry(section, "effects", tr("common.shadow"), tr("settings.bar-shadow-desc"),
-                                  path("shadow"), ToggleSetting{selectedBar->shadow}, "shadow"));
-      entries.push_back(makeEntry(section, "widgets", tr("settings.widget-capsules"),
-                                  tr("settings.widget-capsules-desc"), path("capsule"),
+      entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.background-blur.label"),
+                                  tr("settings.schema.bar.background-blur.description"), path("background_blur"),
+                                  ToggleSetting{selectedBar->backgroundBlur}, "blur"));
+      entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.shadow.label"),
+                                  tr("settings.schema.bar.shadow.description"), path("shadow"),
+                                  ToggleSetting{selectedBar->shadow}, "shadow"));
+      entries.push_back(makeEntry(section, "widgets", tr("settings.schema.bar.widget-capsules.label"),
+                                  tr("settings.schema.bar.widget-capsules.description"), path("capsule"),
                                   ToggleSetting{selectedBar->widgetCapsuleDefault}, "pill"));
-      entries.push_back(makeEntry(section, "widgets", tr("settings.widget-color"), tr("settings.widget-color-desc"),
-                                  path("color"), optionalColorRoleSelect(selectedBar->widgetColor),
-                                  "theme role foreground", true));
-      entries.push_back(makeEntry(section, "widgets", tr("settings.capsule-fill"), tr("settings.capsule-fill-desc"),
-                                  path("capsule_fill"), colorRoleSelect(selectedBar->widgetCapsuleFill),
-                                  "theme role pill", true));
-      entries.push_back(makeEntry(section, "widgets", tr("settings.capsule-foreground"),
-                                  tr("settings.capsule-foreground-desc"), path("capsule_foreground"),
+      entries.push_back(makeEntry(section, "widgets", tr("settings.schema.bar.widget-color.label"),
+                                  tr("settings.schema.bar.widget-color.description"), path("color"),
+                                  optionalColorRoleSelect(selectedBar->widgetColor), "theme role foreground", true));
+      entries.push_back(makeEntry(section, "widgets", tr("settings.schema.bar.capsule-fill.label"),
+                                  tr("settings.schema.bar.capsule-fill.description"), path("capsule_fill"),
+                                  colorRoleSelect(selectedBar->widgetCapsuleFill), "theme role pill", true));
+      entries.push_back(makeEntry(section, "widgets", tr("settings.schema.bar.capsule-foreground.label"),
+                                  tr("settings.schema.bar.capsule-foreground.description"), path("capsule_foreground"),
                                   optionalColorRoleSelect(selectedBar->widgetCapsuleForeground),
                                   "theme role foreground pill", true));
-      entries.push_back(makeEntry(section, "widgets", tr("settings.capsule-border"), tr("settings.capsule-border-desc"),
-                                  path("capsule_border"), capsuleBorderRoleSelect(selectedBar->widgetCapsuleBorder),
-                                  "theme role pill outline", true));
-      entries.push_back(makeEntry(
-          section, "widgets", tr("settings.widget-spacing"), tr("settings.widget-spacing-desc"), path("widget_spacing"),
-          SliderSetting{static_cast<float>(selectedBar->widgetSpacing), 0.0f, 32.0f, 1.0f, true}, "gap"));
-      entries.push_back(makeEntry(section, "widgets", tr("settings.capsule-padding"),
-                                  tr("settings.capsule-padding-desc"), path("capsule_padding"),
+      entries.push_back(makeEntry(section, "widgets", tr("settings.schema.bar.capsule-border.label"),
+                                  tr("settings.schema.bar.capsule-border.description"), path("capsule_border"),
+                                  capsuleBorderRoleSelect(selectedBar->widgetCapsuleBorder), "theme role pill outline",
+                                  true));
+      entries.push_back(
+          makeEntry(section, "widgets", tr("settings.schema.bar.widget-spacing.label"),
+                    tr("settings.schema.bar.widget-spacing.description"), path("widget_spacing"),
+                    SliderSetting{static_cast<float>(selectedBar->widgetSpacing), 0.0f, 32.0f, 1.0f, true}, "gap"));
+      entries.push_back(makeEntry(section, "widgets", tr("settings.schema.bar.capsule-padding.label"),
+                                  tr("settings.schema.bar.capsule-padding.description"), path("capsule_padding"),
                                   SliderSetting{selectedBar->widgetCapsulePadding, 0.0f, 48.0f, 1.0f, false},
                                   "pill inset", true));
-      entries.push_back(makeEntry(section, "widgets", tr("settings.capsule-opacity"),
-                                  tr("settings.capsule-opacity-desc"), path("capsule_opacity"),
+      entries.push_back(makeEntry(section, "widgets", tr("settings.schema.bar.capsule-opacity.label"),
+                                  tr("settings.schema.bar.capsule-opacity.description"), path("capsule_opacity"),
                                   SliderSetting{selectedBar->widgetCapsuleOpacity, 0.0f, 1.0f, 0.01f, false},
                                   "pill alpha", true));
-      entries.push_back(makeEntry(section, "widget-list", tr("settings.start-widgets"),
-                                  tr("settings.start-widgets-desc"), path("start"),
+      entries.push_back(makeEntry(section, "widget-list", tr("settings.schema.bar.start-widgets.label"),
+                                  tr("settings.schema.bar.start-widgets.description"), path("start"),
                                   ListSetting{.items = selectedBar->startWidgets}, "left"));
-      entries.push_back(makeEntry(section, "widget-list", tr("settings.center-widgets"),
-                                  tr("settings.center-widgets-desc"), path("center"),
+      entries.push_back(makeEntry(section, "widget-list", tr("settings.schema.bar.center-widgets.label"),
+                                  tr("settings.schema.bar.center-widgets.description"), path("center"),
                                   ListSetting{.items = selectedBar->centerWidgets}, "middle"));
-      entries.push_back(makeEntry(section, "widget-list", tr("settings.end-widgets"), tr("settings.end-widgets-desc"),
-                                  path("end"), ListSetting{.items = selectedBar->endWidgets}, "right"));
+      entries.push_back(makeEntry(section, "widget-list", tr("settings.schema.bar.end-widgets.label"),
+                                  tr("settings.schema.bar.end-widgets.description"), path("end"),
+                                  ListSetting{.items = selectedBar->endWidgets}, "right"));
     }
 
     // Bar monitor override
@@ -681,109 +748,119 @@ namespace settings {
         return p;
       };
 
-      entries.push_back(makeEntry(section, "general", tr("common.enabled"), tr("settings.bar-enabled-desc"),
-                                  mpath("enabled"), ToggleSetting{ovr.enabled.value_or(bar.enabled)}, "visible"));
-      entries.push_back(makeEntry(section, "general", tr("common.auto-hide"), tr("settings.bar-auto-hide-desc"),
-                                  mpath("auto_hide"), ToggleSetting{ovr.autoHide.value_or(bar.autoHide)}, "autohide"));
-      entries.push_back(makeEntry(section, "general", tr("common.reserve-space"), tr("settings.bar-reserve-space-desc"),
-                                  mpath("reserve_space"), ToggleSetting{ovr.reserveSpace.value_or(bar.reserveSpace)},
-                                  "exclusive zone"));
+      entries.push_back(makeEntry(section, "general", tr("settings.schema.shared.enabled.label"),
+                                  tr("settings.schema.bar.enabled.description"), mpath("enabled"),
+                                  ToggleSetting{ovr.enabled.value_or(bar.enabled)}, "visible"));
+      entries.push_back(makeEntry(section, "general", tr("settings.schema.shared.auto-hide.label"),
+                                  tr("settings.schema.bar.auto-hide.description"), mpath("auto_hide"),
+                                  ToggleSetting{ovr.autoHide.value_or(bar.autoHide)}, "autohide"));
+      entries.push_back(makeEntry(section, "general", tr("settings.schema.shared.reserve-space.label"),
+                                  tr("settings.schema.bar.reserve-space.description"), mpath("reserve_space"),
+                                  ToggleSetting{ovr.reserveSpace.value_or(bar.reserveSpace)}, "exclusive zone"));
       entries.push_back(
-          makeEntry(section, "layout", tr("settings.thickness"), tr("settings.thickness-desc"), mpath("thickness"),
+          makeEntry(section, "layout", tr("settings.schema.bar.thickness.label"),
+                    tr("settings.schema.bar.thickness.description"), mpath("thickness"),
                     SliderSetting{static_cast<float>(ovr.thickness.value_or(bar.thickness)), 10.0f, 120.0f, 1.0f, true},
                     "height width"));
-      entries.push_back(makeEntry(section, "layout", tr("settings.content-scale"), tr("settings.content-scale-desc"),
-                                  mpath("scale"),
+      entries.push_back(makeEntry(section, "layout", tr("settings.schema.bar.content-scale.label"),
+                                  tr("settings.schema.bar.content-scale.description"), mpath("scale"),
                                   SliderSetting{ovr.scale.value_or(bar.scale), 0.5f, 4.0f, 0.05f, false}, "zoom size"));
       entries.push_back(makeEntry(
-          section, "layout", tr("common.horizontal-margin"), tr("settings.bar-margin-h-desc"), mpath("margin_h"),
+          section, "layout", tr("settings.schema.shared.horizontal-margin.label"),
+          tr("settings.schema.bar.horizontal-margin.description"), mpath("margin_h"),
           SliderSetting{static_cast<float>(ovr.marginH.value_or(bar.marginH)), 0.0f, 500.0f, 1.0f, true}, "gap inset"));
       entries.push_back(makeEntry(
-          section, "layout", tr("common.vertical-margin"), tr("settings.bar-margin-v-desc"), mpath("margin_v"),
+          section, "layout", tr("settings.schema.shared.vertical-margin.label"),
+          tr("settings.schema.bar.vertical-margin.description"), mpath("margin_v"),
           SliderSetting{static_cast<float>(ovr.marginV.value_or(bar.marginV)), 0.0f, 100.0f, 1.0f, true}, "gap inset"));
       entries.push_back(makeEntry(
-          section, "layout", tr("settings.content-padding"), tr("settings.content-padding-desc"), mpath("padding"),
+          section, "layout", tr("settings.schema.bar.content-padding.label"),
+          tr("settings.schema.bar.content-padding.description"), mpath("padding"),
           SliderSetting{static_cast<float>(ovr.padding.value_or(bar.padding)), 0.0f, 80.0f, 1.0f, true}, "inset"));
       entries.push_back(makeEntry(
-          section, "shape", tr("common.corner-radius"), tr("settings.bar-radius-desc"), mpath("radius"),
+          section, "shape", tr("settings.schema.shared.corner-radius.label"),
+          tr("settings.schema.bar.corner-radius.description"), mpath("radius"),
           SliderSetting{static_cast<float>(ovr.radius.value_or(bar.radius)), 0.0f, 80.0f, 1.0f, true}, "rounded"));
       entries.push_back(makeEntry(
-          section, "shape", tr("settings.corner-top-left"), tr("settings.corner-top-left-desc"),
-          mpath("radius_top_left"),
+          section, "shape", tr("settings.schema.bar.corner-top-left.label"),
+          tr("settings.schema.bar.corner-top-left.description"), mpath("radius_top_left"),
           SliderSetting{static_cast<float>(ovr.radiusTopLeft.value_or(bar.radiusTopLeft)), 0.0f, 80.0f, 1.0f, true},
           "rounded corner", true));
       entries.push_back(makeEntry(
-          section, "shape", tr("settings.corner-top-right"), tr("settings.corner-top-right-desc"),
-          mpath("radius_top_right"),
+          section, "shape", tr("settings.schema.bar.corner-top-right.label"),
+          tr("settings.schema.bar.corner-top-right.description"), mpath("radius_top_right"),
           SliderSetting{static_cast<float>(ovr.radiusTopRight.value_or(bar.radiusTopRight)), 0.0f, 80.0f, 1.0f, true},
           "rounded corner", true));
-      entries.push_back(makeEntry(section, "shape", tr("settings.corner-bottom-left"),
-                                  tr("settings.corner-bottom-left-desc"), mpath("radius_bottom_left"),
+      entries.push_back(makeEntry(section, "shape", tr("settings.schema.bar.corner-bottom-left.label"),
+                                  tr("settings.schema.bar.corner-bottom-left.description"), mpath("radius_bottom_left"),
                                   SliderSetting{static_cast<float>(ovr.radiusBottomLeft.value_or(bar.radiusBottomLeft)),
                                                 0.0f, 80.0f, 1.0f, true},
                                   "rounded corner", true));
       entries.push_back(
-          makeEntry(section, "shape", tr("settings.corner-bottom-right"), tr("settings.corner-bottom-right-desc"),
-                    mpath("radius_bottom_right"),
+          makeEntry(section, "shape", tr("settings.schema.bar.corner-bottom-right.label"),
+                    tr("settings.schema.bar.corner-bottom-right.description"), mpath("radius_bottom_right"),
                     SliderSetting{static_cast<float>(ovr.radiusBottomRight.value_or(bar.radiusBottomRight)), 0.0f,
                                   80.0f, 1.0f, true},
                     "rounded corner", true));
       entries.push_back(makeEntry(
-          section, "shape", tr("common.background-opacity"), tr("settings.bar-bg-opacity-desc"),
-          mpath("background_opacity"),
+          section, "shape", tr("settings.schema.shared.background-opacity.label"),
+          tr("settings.schema.bar.background-opacity.description"), mpath("background_opacity"),
           SliderSetting{ovr.backgroundOpacity.value_or(bar.backgroundOpacity), 0.0f, 1.0f, 0.01f, false}, "alpha"));
-      entries.push_back(makeEntry(section, "effects", tr("common.background-blur"), tr("settings.bar-bg-blur-desc"),
-                                  mpath("background_blur"),
+      entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.background-blur.label"),
+                                  tr("settings.schema.bar.background-blur.description"), mpath("background_blur"),
                                   ToggleSetting{ovr.backgroundBlur.value_or(bar.backgroundBlur)}, "blur"));
-      entries.push_back(makeEntry(section, "effects", tr("common.shadow"), tr("settings.bar-shadow-desc"),
-                                  mpath("shadow"), ToggleSetting{ovr.shadow.value_or(bar.shadow)}, "shadow"));
+      entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.shadow.label"),
+                                  tr("settings.schema.bar.shadow.description"), mpath("shadow"),
+                                  ToggleSetting{ovr.shadow.value_or(bar.shadow)}, "shadow"));
       entries.push_back(makeEntry(
-          section, "widgets", tr("settings.widget-spacing"), tr("settings.widget-spacing-desc"),
-          mpath("widget_spacing"),
+          section, "widgets", tr("settings.schema.bar.widget-spacing.label"),
+          tr("settings.schema.bar.widget-spacing.description"), mpath("widget_spacing"),
           SliderSetting{static_cast<float>(ovr.widgetSpacing.value_or(bar.widgetSpacing)), 0.0f, 32.0f, 1.0f, true},
           "gap"));
-      entries.push_back(makeEntry(section, "widgets", tr("settings.widget-capsules"),
-                                  tr("settings.widget-capsules-desc"), mpath("capsule"),
+      entries.push_back(makeEntry(section, "widgets", tr("settings.schema.bar.widget-capsules.label"),
+                                  tr("settings.schema.bar.widget-capsules.description"), mpath("capsule"),
                                   ToggleSetting{ovr.widgetCapsuleDefault.value_or(bar.widgetCapsuleDefault)}, "pill"));
       entries.push_back(
-          makeEntry(section, "widgets", tr("settings.widget-color"), tr("settings.widget-color-desc"), mpath("color"),
+          makeEntry(section, "widgets", tr("settings.schema.bar.widget-color.label"),
+                    tr("settings.schema.bar.widget-color.description"), mpath("color"),
                     optionalColorRoleSelect(ovr.widgetColor.has_value() ? ovr.widgetColor : bar.widgetColor),
                     "theme role foreground", true));
-      entries.push_back(makeEntry(
-          section, "widgets", tr("settings.capsule-fill"), tr("settings.capsule-fill-desc"), mpath("capsule_fill"),
-          colorRoleSelect(ovr.widgetCapsuleFill.value_or(bar.widgetCapsuleFill)), "theme role pill", true));
+      entries.push_back(makeEntry(section, "widgets", tr("settings.schema.bar.capsule-fill.label"),
+                                  tr("settings.schema.bar.capsule-fill.description"), mpath("capsule_fill"),
+                                  colorRoleSelect(ovr.widgetCapsuleFill.value_or(bar.widgetCapsuleFill)),
+                                  "theme role pill", true));
       entries.push_back(
-          makeEntry(section, "widgets", tr("settings.capsule-foreground"), tr("settings.capsule-foreground-desc"),
-                    mpath("capsule_foreground"),
+          makeEntry(section, "widgets", tr("settings.schema.bar.capsule-foreground.label"),
+                    tr("settings.schema.bar.capsule-foreground.description"), mpath("capsule_foreground"),
                     optionalColorRoleSelect(ovr.widgetCapsuleForeground.has_value() ? ovr.widgetCapsuleForeground
                                                                                     : bar.widgetCapsuleForeground),
                     "theme role foreground pill", true));
       entries.push_back(makeEntry(
-          section, "widgets", tr("settings.capsule-border"), tr("settings.capsule-border-desc"),
-          mpath("capsule_border"),
+          section, "widgets", tr("settings.schema.bar.capsule-border.label"),
+          tr("settings.schema.bar.capsule-border.description"), mpath("capsule_border"),
           capsuleBorderRoleSelect(ovr.widgetCapsuleBorderSpecified ? ovr.widgetCapsuleBorder : bar.widgetCapsuleBorder),
           "theme role pill outline", true));
       entries.push_back(
-          makeEntry(section, "widgets", tr("settings.capsule-padding"), tr("settings.capsule-padding-desc"),
-                    mpath("capsule_padding"),
+          makeEntry(section, "widgets", tr("settings.schema.bar.capsule-padding.label"),
+                    tr("settings.schema.bar.capsule-padding.description"), mpath("capsule_padding"),
                     SliderSetting{static_cast<float>(ovr.widgetCapsulePadding.value_or(bar.widgetCapsulePadding)), 0.0f,
                                   48.0f, 1.0f, false},
                     "pill inset", true));
       entries.push_back(
-          makeEntry(section, "widgets", tr("settings.capsule-opacity"), tr("settings.capsule-opacity-desc"),
-                    mpath("capsule_opacity"),
+          makeEntry(section, "widgets", tr("settings.schema.bar.capsule-opacity.label"),
+                    tr("settings.schema.bar.capsule-opacity.description"), mpath("capsule_opacity"),
                     SliderSetting{static_cast<float>(ovr.widgetCapsuleOpacity.value_or(bar.widgetCapsuleOpacity)), 0.0f,
                                   1.0f, 0.01f, false},
                     "pill alpha", true));
-      entries.push_back(makeEntry(section, "widget-list", tr("settings.start-widgets"),
-                                  tr("settings.start-widgets-desc"), mpath("start"),
+      entries.push_back(makeEntry(section, "widget-list", tr("settings.schema.bar.start-widgets.label"),
+                                  tr("settings.schema.bar.start-widgets.description"), mpath("start"),
                                   ListSetting{.items = ovr.startWidgets.value_or(bar.startWidgets)}, "left"));
-      entries.push_back(makeEntry(section, "widget-list", tr("settings.center-widgets"),
-                                  tr("settings.center-widgets-desc"), mpath("center"),
+      entries.push_back(makeEntry(section, "widget-list", tr("settings.schema.bar.center-widgets.label"),
+                                  tr("settings.schema.bar.center-widgets.description"), mpath("center"),
                                   ListSetting{.items = ovr.centerWidgets.value_or(bar.centerWidgets)}, "middle"));
-      entries.push_back(makeEntry(section, "widget-list", tr("settings.end-widgets"), tr("settings.end-widgets-desc"),
-                                  mpath("end"), ListSetting{.items = ovr.endWidgets.value_or(bar.endWidgets)},
-                                  "right"));
+      entries.push_back(makeEntry(section, "widget-list", tr("settings.schema.bar.end-widgets.label"),
+                                  tr("settings.schema.bar.end-widgets.description"), mpath("end"),
+                                  ListSetting{.items = ovr.endWidgets.value_or(bar.endWidgets)}, "right"));
     }
 
     return entries;
