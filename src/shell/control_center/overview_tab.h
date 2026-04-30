@@ -72,7 +72,6 @@ private:
   Image* m_wallpaperBg = nullptr;
   RectNode* m_wallpaperGradient = nullptr;
 
-  Label* m_mediaKicker = nullptr;
   Label* m_mediaTrack = nullptr;
   Label* m_mediaArtist = nullptr;
   Label* m_mediaStatus = nullptr;

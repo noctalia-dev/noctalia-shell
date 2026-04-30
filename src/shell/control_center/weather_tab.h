@@ -28,6 +28,7 @@ private:
   void sync(Renderer& renderer);
   void setForecastVisibleDayCount(std::size_t count);
   void hideEffect();
+  [[nodiscard]] static std::string todayIso(std::int32_t utcOffsetSeconds);
   [[nodiscard]] static std::string weekdayLabel(const std::string& isoDate);
   [[nodiscard]] static EffectType effectForWeatherCode(std::int32_t code, bool isDay);
 

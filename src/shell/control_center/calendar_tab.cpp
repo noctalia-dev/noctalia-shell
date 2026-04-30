@@ -27,10 +27,11 @@ namespace {
 
   constexpr float kCalendarGridGap = Style::spaceSm;
   constexpr float kCalendarNavButtonSize = Style::controlHeight;
-  constexpr float kCalendarWeekdayRowHeight = Style::controlHeight;
+  constexpr float kCalendarWeekdayRowHeight = Style::controlHeightSm;
   constexpr float kCalendarHeaderHeight = Style::controlHeightLg;
   constexpr float kCalendarCellSizeMin = Style::controlHeightSm + Style::spaceXs;
-  constexpr float kCalendarCellSizeMax = Style::controlHeightLg + Style::spaceLg;
+  constexpr float kCalendarCellSizeMax = Style::controlHeightLg + Style::spaceXs;
+  constexpr float kCalendarDayButtonSizeMax = Style::controlHeightLg;
   constexpr float kCalendarLayoutEpsilon = 0.5f;
 
   std::string monthName(int month) {
@@ -298,6 +299,8 @@ void CalendarTab::rebuild() {
   const float weekdayHeight = kCalendarWeekdayRowHeight * scale;
   const float dayCellHeight = std::clamp((gridHeightAvailable - weekdayHeight - kCalendarGridGap * scale * 6.0f) / 6.0f,
                                          kCalendarCellSizeMin * scale, kCalendarCellSizeMax * scale);
+  const float dayColumnWidth = std::max(0.0f, (innerWidth - kCalendarGridGap * scale * 6.0f) / 7.0f);
+  const float dayButtonSize = std::round(std::min({dayCellHeight, dayColumnWidth, kCalendarDayButtonSizeMax * scale}));
 
   if (m_header != nullptr) {
     m_header->setSize(innerWidth, kCalendarHeaderHeight * scale);
@@ -375,34 +378,42 @@ void CalendarTab::rebuild() {
   int day = 1;
   int trailingDay = 1;
   for (int index = 0; index < 42; ++index) {
-    auto cell = std::make_unique<Button>();
-    cell->setVariant(ButtonVariant::Ghost);
-    cell->setContentAlign(ButtonContentAlign::Center);
-    cell->setMinHeight(dayCellHeight);
-    cell->setRadius(Style::radiusLg * scale);
-    cell->setFontSize(dayCellHeight > (Style::controlHeightLg + Style::spaceXs) * scale ? Style::fontSizeTitle * scale
-                                                                                        : Style::fontSizeBody * scale);
-    cell->setText("");
+    auto dayTile = std::make_unique<GridTile>();
+    dayTile->setDirection(FlexDirection::Vertical);
+    dayTile->setAlign(FlexAlign::Center);
+    dayTile->setJustify(FlexJustify::Center);
+
+    auto dayButton = std::make_unique<Button>();
+    dayButton->setVariant(ButtonVariant::Ghost);
+    dayButton->setContentAlign(ButtonContentAlign::Center);
+    dayButton->setPadding(0.0f);
+    dayButton->setMinWidth(dayButtonSize);
+    dayButton->setMinHeight(dayButtonSize);
+    dayButton->setSize(dayButtonSize, dayButtonSize);
+    dayButton->setRadius(Style::radiusMd * scale);
+    dayButton->setFontSize(Style::fontSizeBody * scale);
+    dayButton->setText("");
 
     if (index < firstWeekdayMonBased) {
       const int leadingDay = previousMonthDays - firstWeekdayMonBased + index + 1;
-      cell->setText(std::to_string(leadingDay));
-      cell->label()->setColor(roleColor(ColorRole::OnSurfaceVariant, 0.75f));
+      dayButton->setText(std::to_string(leadingDay));
+      dayButton->label()->setColor(roleColor(ColorRole::OnSurfaceVariant, 0.75f));
     } else if (day > monthDays) {
-      cell->setText(std::to_string(trailingDay));
-      cell->label()->setColor(roleColor(ColorRole::OnSurfaceVariant, 0.75f));
+      dayButton->setText(std::to_string(trailingDay));
+      dayButton->label()->setColor(roleColor(ColorRole::OnSurfaceVariant, 0.75f));
       ++trailingDay;
     } else {
-      cell->setText(std::to_string(day));
+      dayButton->setText(std::to_string(day));
       if (state.isCurrentMonth && day == state.today) {
-        cell->setVariant(ButtonVariant::Accent);
+        dayButton->setVariant(ButtonVariant::Accent);
       } else {
-        cell->label()->setColor(roleColor(ColorRole::OnSurface));
+        dayButton->label()->setColor(roleColor(ColorRole::OnSurface));
       }
       ++day;
     }
 
-    dayGrid->addChild(std::move(cell));
+    dayTile->addChild(std::move(dayButton));
+    dayGrid->addChild(std::move(dayTile));
   }
 
   m_grid->addChild(std::move(dayGrid));

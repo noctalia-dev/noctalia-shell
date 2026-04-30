@@ -149,6 +149,12 @@ namespace {
       applyState();
     }
 
+    LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints) override {
+      return measureByLayout(renderer, constraints);
+    }
+
+    void doArrange(Renderer& renderer, const LayoutRect& rect) override { arrangeByLayout(renderer, rect); }
+
     static const char* NetworkTab_rowGlyph(const AccessPointInfo& ap) {
       if (ap.strength >= 67) {
         return "wifi-2";

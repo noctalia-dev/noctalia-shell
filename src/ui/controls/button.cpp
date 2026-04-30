@@ -457,8 +457,9 @@ void Button::applyVisualState() {
 }
 
 void Button::doLayout(Renderer& renderer) {
-  const float assignedWidth = width();
-  const float assignedHeight = height();
+  const bool useCurrentSize = arrangingByLayout() || !sizeAssignedByLayout();
+  const float assignedWidth = useCurrentSize ? width() : 0.0f;
+  const float assignedHeight = useCurrentSize ? height() : 0.0f;
   const bool hasVisibleLabel = m_label != nullptr && m_label->visible();
   const bool glyphOnly = m_glyph != nullptr && !hasVisibleLabel;
 
@@ -550,3 +551,9 @@ void Button::doLayout(Renderer& renderer) {
     applyVisualState();
   }
 }
+
+LayoutSize Button::doMeasure(Renderer& renderer, const LayoutConstraints& constraints) {
+  return measureByLayout(renderer, constraints);
+}
+
+void Button::doArrange(Renderer& renderer, const LayoutRect& rect) { arrangeByLayout(renderer, rect); }

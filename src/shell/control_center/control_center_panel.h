@@ -68,8 +68,8 @@ public:
   [[nodiscard]] bool deferExternalRefresh() const override;
   [[nodiscard]] bool deferPointerRelayout() const override;
 
-  [[nodiscard]] float preferredWidth() const override { return scaled(kPreferredPanelWidth); }
-  [[nodiscard]] float preferredHeight() const override { return scaled(kPreferredPanelHeight); }
+  [[nodiscard]] float preferredWidth() const override { return scaled(780.0f); }
+  [[nodiscard]] float preferredHeight() const override { return scaled(520.0f); }
   [[nodiscard]] bool centeredHorizontally() const override { return true; }
   [[nodiscard]] bool centeredVertically() const override { return true; }
   [[nodiscard]] bool prefersAttachedToBar() const noexcept override { return true; }
@@ -77,10 +77,6 @@ public:
 private:
   void doLayout(Renderer& renderer, float width, float height) override;
   void doUpdate(Renderer& renderer) override;
-  static constexpr float kPreferredPanelWidth = 932.0f;
-  // Inner content area, sized for the tallest tab. Outer chrome adds panelPadding on each side.
-  static constexpr float kPreferredPanelContentHeight = 540.0f;
-  static constexpr float kPreferredPanelHeight = kPreferredPanelContentHeight + 2.0f * Style::panelPadding;
 
   enum class TabId : std::uint8_t {
     Overview,

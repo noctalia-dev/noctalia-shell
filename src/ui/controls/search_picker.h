@@ -44,6 +44,8 @@ private:
   };
 
   void doLayout(Renderer& renderer) override;
+  LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints) override;
+  void doArrange(Renderer& renderer, const LayoutRect& rect) override;
   void applyFilter();
   void rebuildRows();
   void setHighlightedVisibleIndex(std::size_t index);

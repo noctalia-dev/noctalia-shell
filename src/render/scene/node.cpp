@@ -38,6 +38,66 @@ namespace {
 
 } // namespace
 
+LayoutConstraints LayoutConstraints::unconstrained() noexcept { return {}; }
+
+LayoutConstraints LayoutConstraints::available(float width, float height) noexcept {
+  LayoutConstraints constraints;
+  constraints.setMaxWidth(width);
+  constraints.setMaxHeight(height);
+  return constraints;
+}
+
+LayoutConstraints LayoutConstraints::exact(float width, float height) noexcept {
+  LayoutConstraints constraints;
+  constraints.setExactWidth(width);
+  constraints.setExactHeight(height);
+  return constraints;
+}
+
+void LayoutConstraints::setMaxWidth(float width) noexcept {
+  maxWidth = std::max(0.0f, width);
+  hasMaxWidth = true;
+}
+
+void LayoutConstraints::setMaxHeight(float height) noexcept {
+  maxHeight = std::max(0.0f, height);
+  hasMaxHeight = true;
+}
+
+void LayoutConstraints::setExactWidth(float width) noexcept {
+  minWidth = std::max(0.0f, width);
+  setMaxWidth(minWidth);
+}
+
+void LayoutConstraints::setExactHeight(float height) noexcept {
+  minHeight = std::max(0.0f, height);
+  setMaxHeight(minHeight);
+}
+
+bool LayoutConstraints::hasExactWidth() const noexcept { return hasMaxWidth && minWidth == maxWidth; }
+
+bool LayoutConstraints::hasExactHeight() const noexcept { return hasMaxHeight && minHeight == maxHeight; }
+
+float LayoutConstraints::constrainWidth(float width) const noexcept {
+  float constrained = std::max(width, minWidth);
+  if (hasMaxWidth) {
+    constrained = std::min(constrained, maxWidth);
+  }
+  return constrained;
+}
+
+float LayoutConstraints::constrainHeight(float height) const noexcept {
+  float constrained = std::max(height, minHeight);
+  if (hasMaxHeight) {
+    constrained = std::min(constrained, maxHeight);
+  }
+  return constrained;
+}
+
+LayoutSize LayoutConstraints::constrain(LayoutSize size) const noexcept {
+  return LayoutSize{.width = constrainWidth(size.width), .height = constrainHeight(size.height)};
+}
+
 Node::Node(NodeType type) : m_type(type) {}
 
 Node::~Node() {
@@ -53,12 +113,37 @@ void Node::layout(Renderer& renderer) {
   doLayout(renderer);
 }
 
+LayoutSize Node::measure(Renderer& renderer, const LayoutConstraints& constraints) {
+  uiAssertNotRendering("Node::measure");
+  return doMeasure(renderer, constraints);
+}
+
+void Node::arrange(Renderer& renderer, const LayoutRect& rect) {
+  uiAssertNotRendering("Node::arrange");
+  m_arranging = true;
+  m_sizeAssignedByLayout = true;
+  doArrange(renderer, rect);
+  m_arranging = false;
+  m_sizeAssignedByLayout = true;
+}
+
 void Node::doLayout(Renderer& renderer) {
   for (auto& child : m_children) {
     if (child->visible()) {
       child->layout(renderer);
     }
   }
+}
+
+LayoutSize Node::doMeasure(Renderer& renderer, const LayoutConstraints& constraints) {
+  doLayout(renderer);
+  return constraints.constrain(LayoutSize{.width = width(), .height = height()});
+}
+
+void Node::doArrange(Renderer& renderer, const LayoutRect& rect) {
+  setPosition(rect.x, rect.y);
+  setSize(rect.width, rect.height);
+  doLayout(renderer);
 }
 
 void Node::setPosition(float x, float y) {
@@ -71,6 +156,9 @@ void Node::setPosition(float x, float y) {
 }
 
 void Node::setSize(float width, float height) {
+  if (!m_arranging) {
+    m_sizeAssignedByLayout = false;
+  }
   if (m_width == width && m_height == height) {
     return;
   }
@@ -80,6 +168,9 @@ void Node::setSize(float width, float height) {
 }
 
 void Node::setFrameSize(float width, float height) {
+  if (!m_arranging) {
+    m_sizeAssignedByLayout = false;
+  }
   if (m_width == width && m_height == height) {
     return;
   }

@@ -32,6 +32,10 @@ using namespace control_center;
 
 namespace {
 
+  constexpr float kOverviewAvatarScale = 2.6f;
+
+  float overviewAvatarSize(float scale) { return Style::controlHeightLg * kOverviewAvatarScale * scale; }
+
   void applyOverviewCardStyle(Flex& card, float scale) {
     applySectionCardStyle(card, scale);
     card.setGap(Style::spaceSm * scale);
@@ -64,7 +68,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   auto userCard = std::make_unique<Flex>();
   applyOverviewCardStyle(*userCard, scale);
   userCard->setFlexGrow(1.0f);
-  userCard->setFillParentMainAxis(true);
+  userCard->setFillHeight(true);
   userCard->setJustify(FlexJustify::Center);
   m_userCard = userCard.get();
 
@@ -89,7 +93,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   userRow->setAlign(FlexAlign::Center);
   userRow->setGap(Style::spaceMd * scale);
 
-  const float avatarSize = Style::controlHeightLg * 2.6f * scale;
+  const float avatarSize = overviewAvatarSize(scale);
   auto avatar = std::make_unique<Image>();
   avatar->setRadius(avatarSize * 0.5f);
   avatar->setBorder(roleColor(ColorRole::Primary), Style::borderWidth * 3.0f);
@@ -127,18 +131,18 @@ std::unique_ptr<Flex> OverviewTab::create() {
   userCard->addChild(std::move(userRow));
   tab->addChild(std::move(userCard));
 
-  auto overviewRow = std::make_unique<Flex>();
-  overviewRow->setDirection(FlexDirection::Horizontal);
-  overviewRow->setAlign(FlexAlign::Stretch);
-  overviewRow->setGap(Style::spaceMd * scale);
-  overviewRow->setFillParentMainAxis(true);
+  auto middleRow = std::make_unique<Flex>();
+  middleRow->setDirection(FlexDirection::Horizontal);
+  middleRow->setAlign(FlexAlign::Stretch);
+  middleRow->setGap(Style::spaceMd * scale);
+  middleRow->setFillWidth(true);
 
   // --- Date/Time + Weather ---
   auto dateTimeCard = std::make_unique<Flex>();
   applyOverviewCardStyle(*dateTimeCard, scale);
   dateTimeCard->setDirection(FlexDirection::Horizontal);
   dateTimeCard->setJustify(FlexJustify::Center);
-  dateTimeCard->setFillParentMainAxis(true);
+  dateTimeCard->setFillWidth(true);
   dateTimeCard->setFlexGrow(2.0f);
   m_dateTimeCard = dateTimeCard.get();
 
@@ -151,7 +155,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   auto timeLabel = std::make_unique<Label>();
   timeLabel->setText(formatLocalTime("{:%H:%M}"));
   timeLabel->setBold(true);
-  timeLabel->setFontSize(Style::fontSizeTitle * 2.2f * scale);
+  timeLabel->setFontSize(Style::fontSizeTitle * 1.8f * scale);
   timeLabel->setColor(roleColor(ColorRole::Primary));
   m_timeLabel = timeLabel.get();
   dateTimeContent->addChild(std::move(timeLabel));
@@ -191,9 +195,6 @@ std::unique_ptr<Flex> OverviewTab::create() {
   mediaCard->setFlexGrow(3.0f);
   mediaCard->setGap(Style::spaceXs * scale);
   m_mediaCard = mediaCard.get();
-
-  m_mediaKicker = addTitle(*mediaCard, i18n::tr("control-center.overview.sections.now-playing"), scale);
-  m_mediaKicker->setFontSize(Style::fontSizeBody * scale);
 
   auto mediaContent = std::make_unique<Flex>();
   mediaContent->setDirection(FlexDirection::Horizontal);
@@ -246,10 +247,10 @@ std::unique_ptr<Flex> OverviewTab::create() {
   mediaText->addChild(std::move(mediaProgress));
   mediaContent->addChild(std::move(mediaText));
   mediaCard->addChild(std::move(mediaContent));
-  overviewRow->addChild(std::move(mediaCard));
-  overviewRow->addChild(std::move(dateTimeCard));
+  middleRow->addChild(std::move(mediaCard));
+  middleRow->addChild(std::move(dateTimeCard));
 
-  tab->addChild(std::move(overviewRow));
+  tab->addChild(std::move(middleRow));
 
   // --- Shortcuts ---
   const auto& shortcuts =
@@ -262,7 +263,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   grid->setRowGap(Style::spaceSm * scale);
   grid->setUniformCellSize(true);
   grid->setStretchItems(true);
-  grid->setMinCellHeight(Style::controlHeightLg * 2.0f * scale);
+  grid->setMinCellHeight(Style::controlHeightLg * 1.5f * scale);
   grid->setFlexGrow(0.0f);
   m_shortcutsGrid = grid.get();
   m_shortcutPads.clear();
@@ -374,10 +375,6 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
       label->setMaxLines(1);
     }
   }
-  if (m_mediaKicker != nullptr) {
-    m_mediaKicker->setMaxWidth(mediaWrap);
-    m_mediaKicker->setMaxLines(1);
-  }
   if (m_mediaCard != nullptr && m_mediaArt != nullptr && m_mediaText != nullptr) {
     const float textWidth = std::max(1.0f, mediaWrap - m_mediaArt->width() - (Style::spaceSm * contentScale()));
     for (Label* label : {m_mediaTrack, m_mediaArtist, m_mediaStatus, m_mediaProgress}) {
@@ -423,11 +420,11 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
 
   if (m_userAvatar != nullptr && m_userMain != nullptr) {
     const float scale = contentScale();
-    const float minAvatar = Style::controlHeightLg * 2.6f * scale;
+    const float minAvatar = overviewAvatarSize(scale);
     const float desiredAvatar = std::max(minAvatar, m_userMain->height());
     if (std::abs(m_userAvatar->width() - desiredAvatar) > 0.5f) {
       m_userAvatar->setSize(desiredAvatar, desiredAvatar);
-      m_userAvatar->setRadius(Style::radiusLg * scale);
+      m_userAvatar->setRadius(desiredAvatar * 0.5f);
       m_userAvatar->setPadding(1.0f * scale);
     }
     m_userMain->setMinHeight(desiredAvatar);
@@ -466,7 +463,6 @@ void OverviewTab::onClose() {
   m_loadedAvatarPath.clear();
   m_wallpaperBg = nullptr;
   m_wallpaperGradient = nullptr;
-  m_mediaKicker = nullptr;
   m_mediaTrack = nullptr;
   m_mediaArtist = nullptr;
   m_mediaStatus = nullptr;

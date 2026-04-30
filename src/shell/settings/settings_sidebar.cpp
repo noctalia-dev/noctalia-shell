@@ -87,7 +87,7 @@ namespace settings {
       navItem->setMinHeight(Style::controlHeightLg * scale);
       navItem->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
       navItem->setGap(Style::spaceMd * scale);
-      navItem->setRadius(Style::radiusMd * scale);
+      navItem->setRadius(Style::radiusLg * scale);
       navItem->setOnClick([selectedSection, scroll, section, clearTransientState, requestRebuild]() {
         if (*selectedSection != section) {
           scroll->offset = 0.0f;

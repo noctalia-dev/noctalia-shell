@@ -48,7 +48,10 @@ public:
 
 private:
   void doLayout(Renderer& renderer) override;
+  LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints) override;
+  void doArrange(Renderer& renderer, const LayoutRect& rect) override;
   void applyPalette();
+  LayoutSize measureWithConstraints(Renderer& renderer, const LayoutConstraints& constraints);
 
   TextNode* m_textNode = nullptr;
   float m_minWidth = 0.0f;
@@ -62,12 +65,13 @@ private:
   float m_cachedFontSize = 0.0f;
   float m_cachedMaxWidth = 0.0f;
   float m_cachedMinWidth = 0.0f;
-  float m_cachedAssignedWidth = -1.0f;
-  float m_cachedFlexGrow = 0.0f;
+  float m_cachedConstraintMinWidth = 0.0f;
+  float m_cachedConstraintMaxWidth = 0.0f;
   int m_cachedMaxLines = 0;
   TextAlign m_cachedTextAlign = TextAlign::Start;
   bool m_cachedBold = false;
   bool m_cachedStableBaseline = false;
+  bool m_cachedHasConstraintMaxWidth = false;
   bool m_measureCached = false;
   bool m_stableBaseline = false;
 };

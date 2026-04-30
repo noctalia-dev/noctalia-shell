@@ -109,29 +109,52 @@ void Label::clearShadow() { m_textNode->clearShadow(); }
 
 void Label::doLayout(Renderer& renderer) { measure(renderer); }
 
+LayoutSize Label::doMeasure(Renderer& renderer, const LayoutConstraints& constraints) {
+  return measureWithConstraints(renderer, constraints);
+}
+
+void Label::doArrange(Renderer& renderer, const LayoutRect& rect) {
+  setPosition(rect.x, rect.y);
+  LayoutConstraints constraints;
+  constraints.setExactWidth(rect.width);
+  const LayoutSize measured = measureWithConstraints(renderer, constraints);
+  setSize(rect.width, rect.height > 0.0f ? rect.height : measured.height);
+}
+
 void Label::setCaptionStyle() {
   setFontSize(Style::fontSizeCaption);
   setColor(roleColor(ColorRole::OnSurface));
 }
 
 void Label::measure(Renderer& renderer) {
-  const float maxWidth = m_textNode->maxWidth();
+  LayoutConstraints constraints;
+  measureWithConstraints(renderer, constraints);
+}
+
+LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstraints& constraints) {
+  const float configuredMaxWidth = m_textNode->maxWidth();
+  float measureMaxWidth = configuredMaxWidth;
+  if (constraints.hasMaxWidth) {
+    measureMaxWidth =
+        configuredMaxWidth > 0.0f ? std::min(configuredMaxWidth, constraints.maxWidth) : constraints.maxWidth;
+  }
   const int maxLines = m_textNode->maxLines();
-  const bool singleLine =
-      (maxLines == 1) || (maxLines == 0 && maxWidth <= 0.0f && m_textNode->text().find('\n') == std::string::npos);
-  const float assignedWidth = width();
-  const float curFlexGrow = flexGrow();
+  const bool singleLine = (maxLines == 1) || (maxLines == 0 && configuredMaxWidth <= 0.0f &&
+                                              m_textNode->text().find('\n') == std::string::npos);
   const TextAlign align = m_textNode->textAlign();
   if (m_measureCached && m_cachedText == m_textNode->text() && m_cachedFontSize == m_textNode->fontSize() &&
-      m_cachedBold == m_textNode->bold() && m_cachedMaxWidth == maxWidth && m_cachedMaxLines == maxLines &&
-      m_cachedMinWidth == m_minWidth && m_cachedAssignedWidth == assignedWidth && m_cachedFlexGrow == curFlexGrow &&
+      m_cachedBold == m_textNode->bold() && m_cachedMaxWidth == configuredMaxWidth && m_cachedMaxLines == maxLines &&
+      m_cachedMinWidth == m_minWidth && m_cachedConstraintMinWidth == constraints.minWidth &&
+      m_cachedConstraintMaxWidth == constraints.maxWidth && m_cachedHasConstraintMaxWidth == constraints.hasMaxWidth &&
       m_cachedTextAlign == align && m_cachedStableBaseline == m_stableBaseline) {
-    return;
+    return LayoutSize{.width = width(), .height = height()};
   }
-  auto metrics =
-      renderer.measureText(m_textNode->text(), m_textNode->fontSize(), m_textNode->bold(), maxWidth, maxLines, align);
+  auto metrics = renderer.measureText(m_textNode->text(), m_textNode->fontSize(), m_textNode->bold(), measureMaxWidth,
+                                      maxLines, align);
   auto refMetrics = renderer.measureText("A", m_textNode->fontSize(), m_textNode->bold());
-  const float measuredWidth = maxWidth > 0.0f ? std::min(metrics.width, maxWidth) : metrics.width;
+  const float measuredWidth = measureMaxWidth > 0.0f ? std::min(metrics.width, measureMaxWidth) : metrics.width;
+  const bool hasAssignedWidth = constraints.hasExactWidth();
+  const float assignedWidth = constraints.maxWidth;
 
   const float refHeight = refMetrics.bottom - refMetrics.top;
   const float actualHeight = metrics.bottom - metrics.top;
@@ -160,20 +183,18 @@ void Label::measure(Renderer& renderer) {
     // a parent see the ink offset by up to 0.5px.
     const float height = std::round(std::max(refHeight, inkHeight));
     m_baselineOffset = -inkTopForCentering + (height - inkHeightForCentering) * 0.5f;
-    setSize(std::round(std::max(measuredWidth, m_minWidth)), height);
+    const float finalWidth =
+        hasAssignedWidth ? std::max(assignedWidth, m_minWidth) : std::max(measuredWidth, m_minWidth);
+    setSize(std::round(finalWidth), height);
   } else {
     m_baselineOffset = -std::min(refMetrics.top, metrics.top);
     const float inkBottom = m_baselineOffset + metrics.bottom;
     const float height = std::max({refHeight, actualHeight, inkBottom});
-    const bool preserveAssignedWidth = flexGrow() > 0.0f && assignedWidth > 0.0f;
     const float finalWidth =
-        preserveAssignedWidth ? std::max(assignedWidth, m_minWidth) : std::max(measuredWidth, m_minWidth);
+        hasAssignedWidth ? std::max(assignedWidth, m_minWidth) : std::max(measuredWidth, m_minWidth);
     setSize(std::round(finalWidth), std::round(height));
   }
-  const bool preserveAssignedWidth = flexGrow() > 0.0f && assignedWidth > 0.0f;
-  if (preserveAssignedWidth) {
-    setSize(std::round(std::max(assignedWidth, m_minWidth)), height());
-  } else if (width() < m_minWidth) {
+  if (width() < m_minWidth) {
     setSize(std::round(m_minWidth), height());
   }
   float textX = 0.0f;
@@ -190,12 +211,14 @@ void Label::measure(Renderer& renderer) {
   m_cachedText = m_textNode->text();
   m_cachedFontSize = m_textNode->fontSize();
   m_cachedBold = m_textNode->bold();
-  m_cachedMaxWidth = maxWidth;
+  m_cachedMaxWidth = configuredMaxWidth;
   m_cachedMaxLines = maxLines;
   m_cachedMinWidth = m_minWidth;
-  m_cachedAssignedWidth = assignedWidth;
-  m_cachedFlexGrow = curFlexGrow;
+  m_cachedConstraintMinWidth = constraints.minWidth;
+  m_cachedConstraintMaxWidth = constraints.maxWidth;
+  m_cachedHasConstraintMaxWidth = constraints.hasMaxWidth;
   m_cachedTextAlign = align;
   m_cachedStableBaseline = m_stableBaseline;
   m_measureCached = true;
+  return LayoutSize{.width = width(), .height = height()};
 }

@@ -20,14 +20,8 @@ namespace Style {
   inline constexpr float spaceMd = 12.0f;
   inline constexpr float spaceLg = 16.0f;
 
-  // Card surface padding — split from spaceMd so cards can breathe
-  // without affecting the much wider population of spaceMd consumers.
   inline constexpr float cardPadding = 14.0f;
-
-  // Panel chrome padding — gap between the rounded panel border and its content.
-  // Roomier than cardPadding because the panel sits outside any inner cards and its
-  // larger radiusXl corner needs more clearance to avoid clipping content.
-  inline constexpr float panelPadding = 20.0f;
+  inline constexpr float panelPadding = 14.0f;
 
   // Default inner inset for bar widget capsules (logical px, before bar content scale).
   inline constexpr float barCapsulePadding = 6.0f;

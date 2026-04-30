@@ -534,6 +534,12 @@ namespace {
       applyState();
     }
 
+    LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints) override {
+      return measureByLayout(renderer, constraints);
+    }
+
+    void doArrange(Renderer& renderer, const LayoutRect& rect) override { arrangeByLayout(renderer, rect); }
+
   private:
     void applyState() {
       if (pressed()) {
@@ -732,6 +738,12 @@ namespace {
 
       Flex::doLayout(renderer);
     }
+
+    LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints) override {
+      return measureByLayout(renderer, constraints);
+    }
+
+    void doArrange(Renderer& renderer, const LayoutRect& rect) override { arrangeByLayout(renderer, rect); }
 
     void syncFromNode(const AudioNode& node, const MprisPlayerInfo* player, bool isDefault, float sliderMax,
                       bool nodeEnabled) {

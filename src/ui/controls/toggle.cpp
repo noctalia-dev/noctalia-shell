@@ -106,6 +106,12 @@ void Toggle::doLayout(Renderer& renderer) {
   }
 }
 
+LayoutSize Toggle::doMeasure(Renderer& renderer, const LayoutConstraints& constraints) {
+  return measureByLayout(renderer, constraints);
+}
+
+void Toggle::doArrange(Renderer& renderer, const LayoutRect& rect) { arrangeByLayout(renderer, rect); }
+
 void Toggle::applySize() {
   switch (m_size) {
   case ToggleSize::Small:

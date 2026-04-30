@@ -212,7 +212,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   controlsRow->setDirection(FlexDirection::Horizontal);
   controlsRow->setAlign(FlexAlign::Center);
   controlsRow->setJustify(FlexJustify::Center);
-  controlsRow->setFillParentMainAxis(true);
+  controlsRow->setFillWidth(true);
   controlsRow->setGap(0.0f);
 
   auto controls = std::make_unique<Flex>();
@@ -330,7 +330,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   visualizerBody->setDirection(FlexDirection::Horizontal);
   visualizerBody->setAlign(FlexAlign::Stretch);
   visualizerBody->setJustify(FlexJustify::Start);
-  visualizerBody->setFillParentMainAxis(true);
+  visualizerBody->setFillWidth(true);
   visualizerBody->setFlexGrow(1.0f);
   m_visualizerBody = visualizerBody.get();
 

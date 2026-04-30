@@ -76,7 +76,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   currentCard->setAlign(FlexAlign::Center);
   currentCard->setJustify(FlexJustify::Center);
   currentCard->setGap((Style::spaceMd + Style::spaceXs) * scale);
-  currentCard->setFlexGrow(0.9f);
+  currentCard->setFlexGrow(1.0f);
   currentCard->setClipChildren(true);
 
   auto effectNode = std::make_unique<EffectNode>();
@@ -158,10 +158,10 @@ std::unique_ptr<Flex> WeatherTab::create() {
   auto detailsCard = std::make_unique<Flex>();
   applySectionCardStyle(*detailsCard, scale);
   m_detailsCard = detailsCard.get();
-  detailsCard->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+  detailsCard->setPadding(Style::spaceMd * scale, Style::spaceMd * scale, Style::spaceLg * scale,
+                          Style::spaceMd * scale);
   detailsCard->setAlign(FlexAlign::Stretch);
   detailsCard->setGap(Style::spaceSm * scale);
-  detailsCard->setFlexGrow(1.1f);
   const float detailKeyWidth = Style::controlHeightLg * 2.0f * scale;
 
   std::size_t detailRowIndex = 0;
@@ -171,6 +171,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
     row->setAlign(FlexAlign::Center);
     row->setMinHeight(Style::controlHeightSm * scale);
     row->setGap((Style::spaceSm + Style::spaceXs) * scale);
+    row->setFlexGrow(0.0f);
     if (detailRowIndex < kDetailRowCount) {
       m_detailRows[detailRowIndex] = row.get();
     }
@@ -218,7 +219,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   forecastColumn->setGap(0.0f);
   forecastColumn->setPadding(0.0f, Style::spaceMd * scale);
   forecastColumn->setFlexGrow(2.0f);
-  forecastColumn->setFillParentMainAxis(true);
+  forecastColumn->setFillHeight(true);
   m_forecastColumn = forecastColumn.get();
 
   for (std::size_t i = 0; i < kDayCount; ++i) {
@@ -226,7 +227,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
     row->setDirection(FlexDirection::Horizontal);
     row->setAlign(FlexAlign::Center);
     row->setGap(Style::spaceSm * scale);
-    row->setPadding(Style::spaceSm * scale, 0.0f);
+    row->setPadding(Style::spaceXs * scale, 0.0f);
     row->setFlexGrow(1.0f);
     m_dayRows[i] = row.get();
 
@@ -238,7 +239,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
 
     auto glyph = std::make_unique<Glyph>();
     glyph->setGlyph("weather-cloud");
-    glyph->setGlyphSize(Style::fontSizeTitle * 1.7f * scale);
+    glyph->setGlyphSize(Style::fontSizeTitle * 1.6f * scale);
     glyph->setColor(roleColor(ColorRole::OnSurface));
     m_dayGlyphs[i] = glyph.get();
     iconSlot->addChild(std::move(glyph));
@@ -344,19 +345,12 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
 
   const float scale = contentScale();
 
-  float detailsTargetHeight = 0.0f;
-  if (m_leftColumn != nullptr && m_currentCard != nullptr && m_detailsCard != nullptr) {
-    const float leftInnerHeight =
-        std::max(0.0f, m_leftColumn->height() - (m_leftColumn->paddingTop() + m_leftColumn->paddingBottom()));
-    const float leftGap = m_leftColumn->gap();
-    const float available = std::max(0.0f, leftInnerHeight - leftGap);
-    const float currentShare = 0.43f;
-    const float currentMin = Style::controlHeightLg * 3.1f * scale;
-    const float detailsMin = Style::controlHeightSm * 6.0f * scale;
-    const float currentH = std::max(currentMin, available * currentShare);
-    detailsTargetHeight = std::max(detailsMin, available - currentH);
-    m_currentCard->setMinHeight(currentH);
-    m_detailsCard->setMinHeight(detailsTargetHeight);
+  if (m_currentCard != nullptr) {
+    m_currentCard->setMinHeight(Style::controlHeightLg * 3.1f * scale);
+  }
+  if (m_detailsCard != nullptr) {
+    m_detailsCard->setMinHeight(0.0f);
+    m_detailsCard->setFlexGrow(0.0f);
   }
 
   if (m_currentGlyph != nullptr && m_currentText != nullptr && m_currentCard != nullptr) {
@@ -367,23 +361,12 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
     m_currentGlyph->setGlyphSize(desiredGlyph);
   }
 
-  if (m_detailsCard != nullptr && detailsTargetHeight > 0.0f) {
-    std::size_t visibleRows = 0;
+  if (m_detailsCard != nullptr) {
+    const float rowMinHeight = Style::controlHeightSm * scale;
     for (auto* row : m_detailRows) {
-      if (row != nullptr && row->visible()) {
-        ++visibleRows;
-      }
-    }
-    if (visibleRows > 0) {
-      const float detailsInnerHeight =
-          std::max(0.0f, detailsTargetHeight - (m_detailsCard->paddingTop() + m_detailsCard->paddingBottom()));
-      const float gapsTotal = m_detailsCard->gap() * static_cast<float>(visibleRows - 1);
-      const float rowHeight =
-          std::max(Style::controlHeightSm * scale, (detailsInnerHeight - gapsTotal) / static_cast<float>(visibleRows));
-      for (auto* row : m_detailRows) {
-        if (row != nullptr) {
-          row->setMinHeight(row->visible() ? rowHeight : 0.0f);
-        }
+      if (row != nullptr) {
+        row->setMinHeight(row->visible() ? rowMinHeight : 0.0f);
+        row->setFlexGrow(0.0f);
       }
     }
   }
@@ -674,14 +657,21 @@ void WeatherTab::sync(Renderer& renderer) {
                                   : std::format("{} ({})", snapshot.timezoneAbbreviation, snapshot.timezone));
   }
 
-  setForecastVisibleDayCount(snapshot.forecastDays.size());
+  const bool firstForecastIsToday =
+      !snapshot.forecastDays.empty() && snapshot.forecastDays.front().dateIso == todayIso(snapshot.utcOffsetSeconds);
+  const std::size_t forecastStart = firstForecastIsToday ? 1 : 0;
+  const std::size_t visibleForecastCount = forecastStart < snapshot.forecastDays.size()
+                                               ? std::min(kDayCount, snapshot.forecastDays.size() - forecastStart)
+                                               : 0;
+
+  setForecastVisibleDayCount(visibleForecastCount);
   for (std::size_t i = 0; i < kDayCount; ++i) {
-    const bool visible = i < snapshot.forecastDays.size();
+    const bool visible = i < visibleForecastCount;
     if (!visible) {
       continue;
     }
 
-    const auto& day = snapshot.forecastDays[i];
+    const auto& day = snapshot.forecastDays[i + forecastStart];
     if (m_dayGlyphs[i] != nullptr) {
       m_dayGlyphs[i]->setGlyph(WeatherService::glyphForCode(day.weatherCode, true));
       m_dayGlyphs[i]->setColor(roleColor(ColorRole::OnSurface));
@@ -719,6 +709,19 @@ void WeatherTab::sync(Renderer& renderer) {
     m_effectNode->setRadius(Style::radiusXl * contentScale());
     m_effectNode->setVisible(m_activeEffect != EffectType::None);
   }
+}
+
+std::string WeatherTab::todayIso(std::int32_t utcOffsetSeconds) {
+  const auto now = std::chrono::system_clock::now() + std::chrono::seconds{utcOffsetSeconds};
+  const std::time_t time = std::chrono::system_clock::to_time_t(now);
+  std::tm tm{};
+  gmtime_r(&time, &tm);
+
+  char buf[11]{};
+  if (std::strftime(buf, sizeof(buf), "%Y-%m-%d", &tm) == 0) {
+    return {};
+  }
+  return buf;
 }
 
 std::string WeatherTab::weekdayLabel(const std::string& isoDate) {

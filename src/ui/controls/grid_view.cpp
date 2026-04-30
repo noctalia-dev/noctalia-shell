@@ -77,10 +77,8 @@ void GridView::setMinCellHeight(float height) {
 
 void GridView::doLayout(Renderer& renderer) {
   auto layoutWithAssignedSize = [&renderer](Node* child, float assignedWidth, float assignedHeight) {
-    child->setSize(assignedWidth, assignedHeight);
-    child->layout(renderer);
-    // Clamp so controls that resize during layout still match the grid cell.
-    child->setSize(assignedWidth, assignedHeight);
+    child->arrange(renderer,
+                   LayoutRect{.x = child->x(), .y = child->y(), .width = assignedWidth, .height = assignedHeight});
   };
 
   std::vector<Node*> visibleChildren;

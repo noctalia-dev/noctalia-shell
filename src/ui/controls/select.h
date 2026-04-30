@@ -54,6 +54,8 @@ private:
   static constexpr std::size_t npos = static_cast<std::size_t>(-1);
 
   void doLayout(Renderer& renderer) override;
+  LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints) override;
+  void doArrange(Renderer& renderer, const LayoutRect& rect) override;
   void clearOptionViews();
   void rebuildOptionViews();
   void syncTriggerText();

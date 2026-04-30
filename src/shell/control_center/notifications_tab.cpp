@@ -329,7 +329,7 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
     auto summary = std::make_unique<Label>();
     summary->setText(summaryText);
     summary->setBold(true);
-    summary->setFontSize(Style::fontSizeTitle * scale);
+    summary->setFontSize(Style::fontSizeBody * scale);
     summary->setMaxWidth(cardTextWidth);
     summary->setMaxLines(expanded ? kExpandedMaxLines : kSummaryMaxLines);
     summary->measure(renderer);

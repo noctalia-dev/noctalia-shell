@@ -10,12 +10,73 @@
 
 #include <algorithm>
 #include <memory>
+#include <vector>
+
+namespace {
+
+  float mainSize(LayoutSize size, bool horizontal) { return horizontal ? size.width : size.height; }
+
+  float crossSize(LayoutSize size, bool horizontal) { return horizontal ? size.height : size.width; }
+
+  float mainPaddingStart(const Flex& flex, bool horizontal) {
+    return horizontal ? flex.paddingLeft() : flex.paddingTop();
+  }
+
+  float mainPaddingEnd(const Flex& flex, bool horizontal) {
+    return horizontal ? flex.paddingRight() : flex.paddingBottom();
+  }
+
+  float crossPaddingStart(const Flex& flex, bool horizontal) {
+    return horizontal ? flex.paddingTop() : flex.paddingLeft();
+  }
+
+  float crossPaddingEnd(const Flex& flex, bool horizontal) {
+    return horizontal ? flex.paddingBottom() : flex.paddingRight();
+  }
+
+  void setMainConstraint(LayoutConstraints& constraints, bool horizontal, float value) {
+    if (horizontal) {
+      constraints.setExactWidth(value);
+    } else {
+      constraints.setExactHeight(value);
+    }
+  }
+
+  void setCrossConstraint(LayoutConstraints& constraints, bool horizontal, float value) {
+    if (horizontal) {
+      constraints.setExactHeight(value);
+    } else {
+      constraints.setExactWidth(value);
+    }
+  }
+
+  LayoutSize sizeFromAxes(bool horizontal, float main, float cross) {
+    return horizontal ? LayoutSize{.width = main, .height = cross} : LayoutSize{.width = cross, .height = main};
+  }
+
+  LayoutRect rectFromAxes(bool horizontal, float mainPos, float crossPos, float main, float cross) {
+    return horizontal ? LayoutRect{.x = mainPos, .y = crossPos, .width = main, .height = cross}
+                      : LayoutRect{.x = crossPos, .y = mainPos, .width = cross, .height = main};
+  }
+
+} // namespace
+
+struct Flex::ChildLayout {
+  Node* node = nullptr;
+  LayoutSize measured{};
+  float main = 0.0f;
+  float cross = 0.0f;
+};
 
 Flex::Flex() {
   m_paletteConn = paletteChanged().connect([this] { applyPalette(); });
 }
 
 void Flex::setSize(float width, float height) {
+  if (!m_sizingFromLayout && !arrangingByLayout()) {
+    m_explicitWidth = width > 0.0f;
+    m_explicitHeight = height > 0.0f;
+  }
   Node::setSize(width, height);
   if (m_background != nullptr) {
     m_background->setPosition(0.0f, 0.0f);
@@ -24,6 +85,10 @@ void Flex::setSize(float width, float height) {
 }
 
 void Flex::setFrameSize(float width, float height) {
+  if (!m_sizingFromLayout && !arrangingByLayout()) {
+    m_explicitWidth = width > 0.0f;
+    m_explicitHeight = height > 0.0f;
+  }
   Node::setFrameSize(width, height);
   if (m_background != nullptr) {
     m_background->setPosition(0.0f, 0.0f);
@@ -182,13 +247,25 @@ void Flex::setMaxHeight(float maxHeight) {
   markLayoutDirty();
 }
 
-void Flex::setFillParentMainAxis(bool fill) {
-  if (m_fillParentMainAxis == fill) {
+void Flex::setWidthPolicy(FlexSizePolicy policy) {
+  if (m_widthPolicy == policy) {
     return;
   }
-  m_fillParentMainAxis = fill;
+  m_widthPolicy = policy;
   markLayoutDirty();
 }
+
+void Flex::setHeightPolicy(FlexSizePolicy policy) {
+  if (m_heightPolicy == policy) {
+    return;
+  }
+  m_heightPolicy = policy;
+  markLayoutDirty();
+}
+
+void Flex::setFillWidth(bool fill) { setWidthPolicy(fill ? FlexSizePolicy::Fill : FlexSizePolicy::Content); }
+
+void Flex::setFillHeight(bool fill) { setHeightPolicy(fill ? FlexSizePolicy::Fill : FlexSizePolicy::Content); }
 
 void Flex::setRowLayout() {
   setDirection(FlexDirection::Horizontal);
@@ -216,191 +293,234 @@ void Flex::ensureBackground() {
   applyPalette();
 }
 
-void Flex::doLayout(Renderer& renderer) {
-  // Clamp own size from above before measuring children so the rest of the
-  // layout uses the capped width/height. minWidth/minHeight are still applied
-  // at the end via std::max in the final setSize.
-  if (m_maxWidth > 0.0f && width() > m_maxWidth) {
-    setSize(m_maxWidth, height());
-  }
-  if (m_maxHeight > 0.0f && height() > m_maxHeight) {
-    setSize(width(), m_maxHeight);
-  }
+void Flex::setSizeFromLayout(float width, float height) {
+  m_sizingFromLayout = true;
+  setSize(width, height);
+  m_sizingFromLayout = false;
+}
 
-  auto& kids = children();
+LayoutSize Flex::runLayout(Renderer& renderer, const LayoutConstraints& constraints, bool arrangeChildren) {
   const bool horizontal = m_direction == FlexDirection::Horizontal;
-  const float containerMain = horizontal ? width() : height();
-  const float containerCross = horizontal ? height() : width();
+  const bool explicitWidth = width() > 0.0f && (arrangingByLayout() || m_explicitWidth);
+  const bool explicitHeight = height() > 0.0f && (arrangingByLayout() || m_explicitHeight);
 
-  // Pass 0: Stretch — pre-set cross-axis size on children before measurement.
-  if (m_align == FlexAlign::Stretch && containerCross > 0.0f) {
-    const float availCross = horizontal ? (containerCross - m_paddingTop - m_paddingBottom)
-                                        : (containerCross - m_paddingLeft - m_paddingRight);
-    for (auto& child : kids) {
-      if (!child->visible() || !child->participatesInLayout() || child.get() == m_background) {
-        continue;
-      }
-      if (horizontal) {
-        child->setSize(child->width(), availCross);
-      } else {
-        child->setSize(availCross, child->height());
-      }
-    }
+  bool widthKnown = constraints.hasExactWidth();
+  bool heightKnown = constraints.hasExactHeight();
+  float targetWidth = widthKnown ? constraints.maxWidth : 0.0f;
+  float targetHeight = heightKnown ? constraints.maxHeight : 0.0f;
+
+  if (!widthKnown && m_widthPolicy == FlexSizePolicy::Fill && constraints.hasMaxWidth) {
+    widthKnown = true;
+    targetWidth = constraints.maxWidth;
+  }
+  if (!heightKnown && m_heightPolicy == FlexSizePolicy::Fill && constraints.hasMaxHeight) {
+    heightKnown = true;
+    targetHeight = constraints.maxHeight;
+  }
+  if (!widthKnown && explicitWidth) {
+    widthKnown = true;
+    targetWidth = width();
+  }
+  if (!heightKnown && explicitHeight) {
+    heightKnown = true;
+    targetHeight = height();
   }
 
-  // Pass 1: Measure non-grow children (skip grow children — they need sizing first).
+  if (widthKnown) {
+    targetWidth = std::max(targetWidth, m_minWidth);
+    if (m_maxWidth > 0.0f) {
+      targetWidth = std::min(targetWidth, m_maxWidth);
+    }
+    targetWidth = constraints.constrainWidth(targetWidth);
+  }
+  if (heightKnown) {
+    targetHeight = std::max(targetHeight, m_minHeight);
+    if (m_maxHeight > 0.0f) {
+      targetHeight = std::min(targetHeight, m_maxHeight);
+    }
+    targetHeight = constraints.constrainHeight(targetHeight);
+  }
+
+  const bool mainKnown = horizontal ? widthKnown : heightKnown;
+  const bool crossKnown = horizontal ? heightKnown : widthKnown;
+  const float containerMain = horizontal ? targetWidth : targetHeight;
+  const float containerCross = horizontal ? targetHeight : targetWidth;
+  const float innerCross =
+      crossKnown
+          ? std::max(0.0f, containerCross - crossPaddingStart(*this, horizontal) - crossPaddingEnd(*this, horizontal))
+          : 0.0f;
+
+  std::vector<ChildLayout> items;
+  items.reserve(children().size());
   float totalGrow = 0.0f;
-  for (auto& child : kids) {
+  for (auto& child : children()) {
     if (!child->visible() || !child->participatesInLayout() || child.get() == m_background) {
       continue;
     }
+    auto& item = items.emplace_back();
+    item.node = child.get();
     if (child->flexGrow() > 0.0f) {
       totalGrow += child->flexGrow();
+    }
+  }
+
+  auto measureItem = [&](ChildLayout& item, bool exactMain, float assignedMain) {
+    LayoutConstraints childConstraints;
+    if (exactMain) {
+      setMainConstraint(childConstraints, horizontal, assignedMain);
+    }
+    if (m_align == FlexAlign::Stretch && crossKnown) {
+      setCrossConstraint(childConstraints, horizontal, innerCross);
+    }
+    item.measured = item.node->measure(renderer, childConstraints);
+    item.main = exactMain ? assignedMain : mainSize(item.measured, horizontal);
+    item.cross = (m_align == FlexAlign::Stretch && crossKnown) ? innerCross : crossSize(item.measured, horizontal);
+  };
+
+  for (auto& item : items) {
+    if (mainKnown && totalGrow > 0.0f && item.node->flexGrow() > 0.0f) {
       continue;
     }
-    child->layout(renderer);
+    measureItem(item, false, 0.0f);
   }
 
-  // Pass 2: Distribute remaining main-axis space to grow children.
-  if (totalGrow > 0.0f && containerMain > 0.0f) {
-    float fixedTotal = horizontal ? (m_paddingLeft + m_paddingRight) : (m_paddingTop + m_paddingBottom);
-    int visibleCount = 0;
-    for (auto& child : kids) {
-      if (!child->visible() || !child->participatesInLayout() || child.get() == m_background) {
+  const float totalGap = items.size() > 1 ? m_gap * static_cast<float>(items.size() - 1) : 0.0f;
+
+  if (mainKnown && totalGrow > 0.0f) {
+    float fixedMain = mainPaddingStart(*this, horizontal) + mainPaddingEnd(*this, horizontal) + totalGap;
+    for (const auto& item : items) {
+      if (item.node->flexGrow() <= 0.0f) {
+        fixedMain += item.main;
+      }
+    }
+    const float remaining = std::max(0.0f, containerMain - fixedMain);
+    for (auto& item : items) {
+      if (item.node->flexGrow() <= 0.0f) {
         continue;
       }
-      ++visibleCount;
-      if (child->flexGrow() > 0.0f) {
-        continue;
-      }
-      fixedTotal += horizontal ? child->width() : child->height();
-    }
-    if (visibleCount > 1) {
-      fixedTotal += m_gap * static_cast<float>(visibleCount - 1);
-    }
-
-    const float remaining = std::max(0.0f, containerMain - fixedTotal);
-    for (auto& child : kids) {
-      if (!child->visible() || !child->participatesInLayout() || child.get() == m_background ||
-          child->flexGrow() <= 0.0f) {
-        continue;
-      }
-      const float share = remaining * (child->flexGrow() / totalGrow);
-      if (horizontal) {
-        child->setSize(share, child->height());
-      } else {
-        child->setSize(child->width(), share);
-      }
-      child->layout(renderer);
+      const float share = remaining * (item.node->flexGrow() / totalGrow);
+      measureItem(item, true, share);
     }
   }
 
-  // Pass 3: Position children along main axis.
-  const float innerMain = horizontal ? std::max(0.0f, width() - m_paddingLeft - m_paddingRight)
-                                     : std::max(0.0f, height() - m_paddingTop - m_paddingBottom);
-  float contentMain = 0.0f;
-  int visibleCount = 0;
-  for (auto& child : kids) {
-    if (!child->visible() || !child->participatesInLayout() || child.get() == m_background) {
-      continue;
-    }
-    ++visibleCount;
-    contentMain += horizontal ? child->width() : child->height();
-  }
-
-  float effectiveGap = m_gap;
-  if (m_justify == FlexJustify::SpaceBetween && visibleCount > 1) {
-    const float totalChildMain = contentMain;
-    effectiveGap = std::max(m_gap, (innerMain - totalChildMain) / static_cast<float>(visibleCount - 1));
-  }
-  if (visibleCount > 1) {
-    contentMain += effectiveGap * static_cast<float>(visibleCount - 1);
-  }
-
-  float cursor = horizontal ? m_paddingLeft : m_paddingTop;
-  if (m_justify == FlexJustify::Center) {
-    cursor += std::max(0.0f, (innerMain - contentMain) * 0.5f);
-  } else if (m_justify == FlexJustify::End) {
-    cursor += std::max(0.0f, innerMain - contentMain);
-  }
   float crossMax = 0.0f;
-  bool first = true;
-
-  for (auto& child : kids) {
-    if (!child->visible() || !child->participatesInLayout() || child.get() == m_background) {
-      continue;
-    }
-
-    if (!first) {
-      cursor += effectiveGap;
-    }
-    first = false;
-
-    if (horizontal) {
-      child->setPosition(cursor, child->y());
-      cursor += child->width();
-      crossMax = std::max(crossMax, child->height());
-    } else {
-      child->setPosition(child->x(), cursor);
-      cursor += child->height();
-      crossMax = std::max(crossMax, child->width());
-    }
+  float childrenMain = 0.0f;
+  for (const auto& item : items) {
+    childrenMain += item.main;
+    crossMax = std::max(crossMax, item.cross);
   }
+  const float contentMain =
+      mainPaddingStart(*this, horizontal) + childrenMain + totalGap + mainPaddingEnd(*this, horizontal);
+  const float contentCross = crossPaddingStart(*this, horizontal) + crossMax + crossPaddingEnd(*this, horizontal);
 
-  // Compute own size. Preserve pre-set size when grow/stretch constrain it.
-  const bool preserveMain = (totalGrow > 0.0f || m_fillParentMainAxis) && containerMain > 0.0f;
-  const bool preserveCross = m_align == FlexAlign::Stretch && containerCross > 0.0f;
-  if (horizontal) {
-    const float w = preserveMain ? std::max(containerMain, m_minWidth) : std::max(cursor + m_paddingRight, m_minWidth);
-    const float h = preserveCross ? std::max(containerCross, m_minHeight)
-                                  : std::max(crossMax + m_paddingTop + m_paddingBottom, m_minHeight);
-    setSize(w, h);
-  } else {
-    const float w = preserveCross ? std::max(containerCross, m_minWidth)
-                                  : std::max(crossMax + m_paddingLeft + m_paddingRight, m_minWidth);
-    const float h =
-        preserveMain ? std::max(containerMain, m_minHeight) : std::max(cursor + m_paddingBottom, m_minHeight);
-    setSize(w, h);
+  LayoutSize desired = sizeFromAxes(horizontal, contentMain, contentCross);
+  if (widthKnown) {
+    desired.width = targetWidth;
   }
+  if (heightKnown) {
+    desired.height = targetHeight;
+  }
+  desired.width = std::max(desired.width, m_minWidth);
+  desired.height = std::max(desired.height, m_minHeight);
+  if (m_maxWidth > 0.0f) {
+    desired.width = std::min(desired.width, m_maxWidth);
+  }
+  if (m_maxHeight > 0.0f) {
+    desired.height = std::min(desired.height, m_maxHeight);
+  }
+  desired = constraints.constrain(desired);
+  setSizeFromLayout(desired.width, desired.height);
 
-  // Pass 4: Cross-axis alignment.
-  for (auto& child : kids) {
-    if (!child->visible() || !child->participatesInLayout() || child.get() == m_background) {
-      continue;
+  if (arrangeChildren) {
+    const float finalMain = horizontal ? width() : height();
+    const float finalCross = horizontal ? height() : width();
+    const float innerMain =
+        std::max(0.0f, finalMain - mainPaddingStart(*this, horizontal) - mainPaddingEnd(*this, horizontal));
+    const float finalInnerCross =
+        std::max(0.0f, finalCross - crossPaddingStart(*this, horizontal) - crossPaddingEnd(*this, horizontal));
+    float arrangedChildrenMain = 0.0f;
+    for (const auto& item : items) {
+      arrangedChildrenMain += item.main;
     }
 
-    if (horizontal) {
-      if (m_align == FlexAlign::Stretch) {
-        child->setPosition(child->x(), m_paddingTop);
-      } else {
-        float space = height() - m_paddingTop - m_paddingBottom - child->height();
-        float offset = m_paddingTop;
-        if (m_align == FlexAlign::Center) {
-          offset += space * 0.5f;
-        } else if (m_align == FlexAlign::End) {
-          offset += space;
-        }
-        child->setPosition(child->x(), offset);
+    float effectiveGap = m_gap;
+    if (m_justify == FlexJustify::SpaceBetween && items.size() > 1) {
+      effectiveGap = std::max(m_gap, (innerMain - arrangedChildrenMain) / static_cast<float>(items.size() - 1));
+    }
+    const float arrangedContentMain =
+        arrangedChildrenMain + (items.size() > 1 ? effectiveGap * static_cast<float>(items.size() - 1) : 0.0f);
+
+    float cursor = mainPaddingStart(*this, horizontal);
+    if (m_justify == FlexJustify::Center) {
+      cursor += std::max(0.0f, (innerMain - arrangedContentMain) * 0.5f);
+    } else if (m_justify == FlexJustify::End) {
+      cursor += std::max(0.0f, innerMain - arrangedContentMain);
+    }
+
+    bool first = true;
+    for (auto& item : items) {
+      if (!first) {
+        cursor += effectiveGap;
       }
-    } else {
+      first = false;
+
+      float childCross = item.cross;
+      float crossPos = crossPaddingStart(*this, horizontal);
       if (m_align == FlexAlign::Stretch) {
-        child->setPosition(m_paddingLeft, child->y());
+        childCross = finalInnerCross;
       } else {
-        float space = width() - m_paddingLeft - m_paddingRight - child->width();
-        float offset = m_paddingLeft;
+        const float extraCross = finalInnerCross - childCross;
         if (m_align == FlexAlign::Center) {
-          offset += space * 0.5f;
+          crossPos += extraCross * 0.5f;
         } else if (m_align == FlexAlign::End) {
-          offset += space;
+          crossPos += extraCross;
         }
-        child->setPosition(offset, child->y());
       }
+
+      item.node->arrange(renderer, rectFromAxes(horizontal, cursor, crossPos, item.main, childCross));
+      cursor += item.main;
     }
   }
 
-  // Size background to match flex container.
   if (m_background != nullptr) {
     m_background->setPosition(0.0f, 0.0f);
     m_background->setSize(width(), height());
   }
+
+  return LayoutSize{.width = width(), .height = height()};
+}
+
+void Flex::doLayout(Renderer& renderer) {
+  LayoutConstraints constraints;
+  if ((arrangingByLayout() || m_explicitWidth) && width() > 0.0f) {
+    constraints.setExactWidth(width());
+  }
+  if ((arrangingByLayout() || m_explicitHeight) && height() > 0.0f) {
+    constraints.setExactHeight(height());
+  }
+  runLayout(renderer, constraints, true);
+}
+
+LayoutSize Flex::doMeasure(Renderer& renderer, const LayoutConstraints& constraints) {
+  return runLayout(renderer, constraints, false);
+}
+
+void Flex::doArrange(Renderer& renderer, const LayoutRect& rect) {
+  setPosition(rect.x, rect.y);
+  runLayout(renderer, LayoutConstraints::exact(rect.width, rect.height), true);
+}
+
+LayoutSize Flex::measureByLayout(Renderer& renderer, const LayoutConstraints& constraints) {
+  const float measureWidth = constraints.hasExactWidth() ? constraints.maxWidth : (m_explicitWidth ? width() : 0.0f);
+  const float measureHeight =
+      constraints.hasExactHeight() ? constraints.maxHeight : (m_explicitHeight ? height() : 0.0f);
+  setSizeFromLayout(measureWidth, measureHeight);
+  doLayout(renderer);
+  return constraints.constrain(LayoutSize{.width = width(), .height = height()});
+}
+
+void Flex::arrangeByLayout(Renderer& renderer, const LayoutRect& rect) {
+  setPosition(rect.x, rect.y);
+  setSizeFromLayout(rect.width, rect.height);
+  doLayout(renderer);
 }

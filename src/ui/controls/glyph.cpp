@@ -61,23 +61,45 @@ void Glyph::applyPalette() { m_glyphNode->setColor(resolveThemeColor(m_color)); 
 
 void Glyph::doLayout(Renderer& renderer) { measure(renderer); }
 
+LayoutSize Glyph::doMeasure(Renderer& renderer, const LayoutConstraints& constraints) {
+  return measureWithConstraints(renderer, constraints);
+}
+
+void Glyph::doArrange(Renderer& renderer, const LayoutRect& rect) {
+  setPosition(rect.x, rect.y);
+  LayoutConstraints constraints;
+  constraints.setExactWidth(rect.width);
+  if (rect.height > 0.0f) {
+    constraints.setExactHeight(rect.height);
+  }
+  measureWithConstraints(renderer, constraints);
+}
+
 void Glyph::measure(Renderer& renderer) {
-  const float assignedWidth = width();
-  const float curFlexGrow = flexGrow();
+  LayoutConstraints constraints;
+  if (width() > 0.0f && !sizeAssignedByLayout()) {
+    constraints.setExactWidth(width());
+  }
+  measureWithConstraints(renderer, constraints);
+}
+
+LayoutSize Glyph::measureWithConstraints(Renderer& renderer, const LayoutConstraints& constraints) {
   if (m_measureCached && m_cachedCodepoint == m_glyphNode->codepoint() && m_cachedFontSize == m_glyphNode->fontSize() &&
-      m_cachedLogicalFontSize == m_logicalFontSize && m_cachedAssignedWidth == assignedWidth &&
-      m_cachedFlexGrow == curFlexGrow) {
-    return;
+      m_cachedLogicalFontSize == m_logicalFontSize && m_cachedConstraintMaxWidth == constraints.maxWidth &&
+      m_cachedConstraintMaxHeight == constraints.maxHeight &&
+      m_cachedHasConstraintMaxWidth == constraints.hasMaxWidth &&
+      m_cachedHasConstraintMaxHeight == constraints.hasMaxHeight) {
+    return LayoutSize{.width = width(), .height = height()};
   }
   auto metrics = renderer.measureGlyph(m_glyphNode->codepoint(), m_glyphNode->fontSize());
 
   // Tabler icons are designed on a square viewport. Keep layout stable by
   // exposing that square instead of each icon's ink box; only the internal
   // glyph origin uses measured ink extents for centering.
-  const bool preserveAssignedWidth = flexGrow() > 0.0f && assignedWidth > 0.0f;
   const float boxSize = std::round(m_logicalFontSize);
-  const float finalWidth = preserveAssignedWidth ? assignedWidth : boxSize;
-  Node::setSize(std::round(finalWidth), boxSize);
+  const float finalWidth = constraints.hasExactWidth() ? constraints.maxWidth : boxSize;
+  const float finalHeight = constraints.hasExactHeight() ? constraints.maxHeight : boxSize;
+  Node::setSize(std::round(finalWidth), std::round(finalHeight));
 
   const float glyphCenterX = (metrics.left + metrics.right) * 0.5f;
   const float glyphInkCenter = (metrics.top + metrics.bottom) * 0.5f; // relative to baseline
@@ -87,7 +109,10 @@ void Glyph::measure(Renderer& renderer) {
   m_cachedCodepoint = m_glyphNode->codepoint();
   m_cachedFontSize = m_glyphNode->fontSize();
   m_cachedLogicalFontSize = m_logicalFontSize;
-  m_cachedAssignedWidth = assignedWidth;
-  m_cachedFlexGrow = curFlexGrow;
+  m_cachedConstraintMaxWidth = constraints.maxWidth;
+  m_cachedConstraintMaxHeight = constraints.maxHeight;
+  m_cachedHasConstraintMaxWidth = constraints.hasMaxWidth;
+  m_cachedHasConstraintMaxHeight = constraints.hasMaxHeight;
   m_measureCached = true;
+  return LayoutSize{.width = width(), .height = height()};
 }

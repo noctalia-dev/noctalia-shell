@@ -28,6 +28,11 @@ enum class FlexJustify : std::uint8_t {
   SpaceBetween,
 };
 
+enum class FlexSizePolicy : std::uint8_t {
+  Content,
+  Fill,
+};
+
 class Flex : public Node {
 public:
   Flex();
@@ -59,7 +64,10 @@ public:
   void setMinHeight(float minHeight);
   void setMaxWidth(float maxWidth);
   void setMaxHeight(float maxHeight);
-  void setFillParentMainAxis(bool fill);
+  void setWidthPolicy(FlexSizePolicy policy);
+  void setHeightPolicy(FlexSizePolicy policy);
+  void setFillWidth(bool fill);
+  void setFillHeight(bool fill);
 
   void setRowLayout();
 
@@ -67,6 +75,8 @@ public:
   [[nodiscard]] float gap() const noexcept { return m_gap; }
   [[nodiscard]] FlexAlign align() const noexcept { return m_align; }
   [[nodiscard]] FlexJustify justify() const noexcept { return m_justify; }
+  [[nodiscard]] FlexSizePolicy widthPolicy() const noexcept { return m_widthPolicy; }
+  [[nodiscard]] FlexSizePolicy heightPolicy() const noexcept { return m_heightPolicy; }
   [[nodiscard]] float paddingTop() const noexcept { return m_paddingTop; }
   [[nodiscard]] float paddingRight() const noexcept { return m_paddingRight; }
   [[nodiscard]] float paddingBottom() const noexcept { return m_paddingBottom; }
@@ -77,10 +87,18 @@ public:
 
 protected:
   void doLayout(Renderer& renderer) override;
+  LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints) override;
+  void doArrange(Renderer& renderer, const LayoutRect& rect) override;
+  LayoutSize measureByLayout(Renderer& renderer, const LayoutConstraints& constraints);
+  void arrangeByLayout(Renderer& renderer, const LayoutRect& rect);
 
 private:
+  struct ChildLayout;
+
   void ensureBackground();
   void applyPalette();
+  LayoutSize runLayout(Renderer& renderer, const LayoutConstraints& constraints, bool arrangeChildren);
+  void setSizeFromLayout(float width, float height);
 
   RectNode* m_background = nullptr;
   ThemeColor m_fill = clearThemeColor();
@@ -89,6 +107,8 @@ private:
   FlexDirection m_direction = FlexDirection::Horizontal;
   FlexAlign m_align = FlexAlign::Center;
   FlexJustify m_justify = FlexJustify::Start;
+  FlexSizePolicy m_widthPolicy = FlexSizePolicy::Content;
+  FlexSizePolicy m_heightPolicy = FlexSizePolicy::Content;
   float m_gap = 0.0f;
   float m_paddingTop = 0.0f;
   float m_paddingRight = 0.0f;
@@ -98,5 +118,7 @@ private:
   float m_minHeight = 0.0f;
   float m_maxWidth = 0.0f;
   float m_maxHeight = 0.0f;
-  bool m_fillParentMainAxis = false;
+  bool m_sizingFromLayout = false;
+  bool m_explicitWidth = false;
+  bool m_explicitHeight = false;
 };

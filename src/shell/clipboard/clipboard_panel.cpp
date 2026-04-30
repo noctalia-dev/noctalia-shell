@@ -450,7 +450,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     row->setGap(Style::spaceMd);
     row->setPadding(Style::spaceXs, Style::spaceSm, Style::spaceXs, Style::spaceSm);
     row->setSize(width, 0.0f);
-    row->setFillParentMainAxis(true);
+    row->setFillWidth(true);
     row->setMinHeight(kRowHeight);
     row->setRadius(Style::radiusMd);
     if (i == m_selectedIndex) {

@@ -1335,7 +1335,7 @@ namespace settings {
     lanes->setDirection(FlexDirection::Horizontal);
     lanes->setAlign(FlexAlign::Stretch);
     lanes->setGap(Style::spaceSm * ctx.scale);
-    lanes->setFillParentMainAxis(true);
+    lanes->setFillWidth(true);
 
     static constexpr std::string_view kLaneKeys[] = {"start", "center", "end"};
     static constexpr std::size_t kLaneCount = sizeof(kLaneKeys) / sizeof(kLaneKeys[0]);

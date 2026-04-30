@@ -84,6 +84,8 @@ private:
   void applyVisualState();
   void resolveVisualStateColors(Color& bg, Color& border, Color& label) const;
   void doLayout(Renderer& renderer) override;
+  LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints) override;
+  void doArrange(Renderer& renderer, const LayoutRect& rect) override;
 
   void applyColors(const Color& bg, const Color& border, const Color& label);
 

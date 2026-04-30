@@ -1043,7 +1043,7 @@ namespace settings {
       emptyRow->setDirection(FlexDirection::Horizontal);
       emptyRow->setAlign(FlexAlign::Center);
       emptyRow->setJustify(FlexJustify::Center);
-      emptyRow->setFillParentMainAxis(true);
+      emptyRow->setFillWidth(true);
       emptyRow->addChild(std::move(emptyState));
       content.addChild(std::move(emptyRow));
     }

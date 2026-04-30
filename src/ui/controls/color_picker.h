@@ -32,6 +32,8 @@ public:
 
 private:
   void doLayout(Renderer& renderer) override;
+  LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints) override;
+  void doArrange(Renderer& renderer, const LayoutRect& rect) override;
 
   [[nodiscard]] static Color colorAtSv(float h, float s, float v);
   void rebuildSvTexture(Renderer& renderer);

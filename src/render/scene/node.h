@@ -21,6 +21,42 @@ enum class NodeType : std::uint8_t {
   Wallpaper,
 };
 
+struct LayoutSize {
+  float width = 0.0f;
+  float height = 0.0f;
+};
+
+struct LayoutRect {
+  float x = 0.0f;
+  float y = 0.0f;
+  float width = 0.0f;
+  float height = 0.0f;
+};
+
+struct LayoutConstraints {
+  float minWidth = 0.0f;
+  float minHeight = 0.0f;
+  float maxWidth = 0.0f;
+  float maxHeight = 0.0f;
+  bool hasMaxWidth = false;
+  bool hasMaxHeight = false;
+
+  static LayoutConstraints unconstrained() noexcept;
+  static LayoutConstraints available(float width, float height) noexcept;
+  static LayoutConstraints exact(float width, float height) noexcept;
+
+  void setMaxWidth(float width) noexcept;
+  void setMaxHeight(float height) noexcept;
+  void setExactWidth(float width) noexcept;
+  void setExactHeight(float height) noexcept;
+
+  [[nodiscard]] bool hasExactWidth() const noexcept;
+  [[nodiscard]] bool hasExactHeight() const noexcept;
+  [[nodiscard]] float constrainWidth(float width) const noexcept;
+  [[nodiscard]] float constrainHeight(float height) const noexcept;
+  [[nodiscard]] LayoutSize constrain(LayoutSize size) const noexcept;
+};
+
 class Node {
 public:
   explicit Node(NodeType type = NodeType::Base);
@@ -45,6 +81,8 @@ public:
   [[nodiscard]] bool layoutDirty() const noexcept { return m_layoutDirty; }
   [[nodiscard]] bool clipChildren() const noexcept { return m_clipChildren; }
   [[nodiscard]] bool hitTestVisible() const noexcept { return m_hitTestVisible; }
+  [[nodiscard]] bool sizeAssignedByLayout() const noexcept { return m_sizeAssignedByLayout; }
+  [[nodiscard]] bool arrangingByLayout() const noexcept { return m_arranging; }
   [[nodiscard]] std::int32_t zIndex() const noexcept { return m_zIndex; }
   [[nodiscard]] Node* parent() const noexcept { return m_parent; }
   [[nodiscard]] const std::vector<std::unique_ptr<Node>>& children() const noexcept { return m_children; }
@@ -70,6 +108,8 @@ public:
   void setAnimationManager(AnimationManager* mgr);
   [[nodiscard]] AnimationManager* animationManager() const noexcept { return m_animationManager; }
   void layout(Renderer& renderer);
+  [[nodiscard]] LayoutSize measure(Renderer& renderer, const LayoutConstraints& constraints);
+  void arrange(Renderer& renderer, const LayoutRect& rect);
 
   void setUserData(void* data) noexcept { m_userData = data; }
   [[nodiscard]] void* userData() const noexcept { return m_userData; }
@@ -87,6 +127,8 @@ public:
 
 protected:
   virtual void doLayout(Renderer& renderer);
+  virtual LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints);
+  virtual void doArrange(Renderer& renderer, const LayoutRect& rect);
 
 private:
   static Node* hitTestImpl(Node* node, float px, float py);
@@ -105,6 +147,8 @@ private:
   bool m_layoutDirty = true;
   bool m_clipChildren = false;
   bool m_hitTestVisible = true;
+  bool m_sizeAssignedByLayout = false;
+  bool m_arranging = false;
   std::int32_t m_zIndex = 0;
   void* m_userData = nullptr;
   AnimationManager* m_animationManager = nullptr;

@@ -265,15 +265,19 @@ void ScrollView::doLayout(Renderer& renderer) {
   m_viewportArea->setFrameSize(viewportW, viewportH);
 
   m_content->setPosition(0.0f, 0.0f);
-  m_content->setFrameSize(viewportW, m_content->height());
-  m_content->layout(renderer);
+  LayoutConstraints contentConstraints;
+  contentConstraints.setExactWidth(viewportW);
+  LayoutSize contentSize = m_content->measure(renderer, contentConstraints);
+  m_content->arrange(renderer, LayoutRect{.x = 0.0f, .y = 0.0f, .width = viewportW, .height = contentSize.height});
 
   m_scrollbarShown = m_showScrollbar && m_content->height() > viewportH + 0.5f;
   const float gutter = m_scrollbarShown ? (kScrollbarWidth + kScrollbarGap) : 0.0f;
   const float contentWidth = std::max(0.0f, viewportW - gutter);
   if (std::abs(m_content->width() - contentWidth) >= 0.5f) {
-    m_content->setFrameSize(contentWidth, m_content->height());
-    m_content->layout(renderer);
+    contentConstraints = {};
+    contentConstraints.setExactWidth(contentWidth);
+    contentSize = m_content->measure(renderer, contentConstraints);
+    m_content->arrange(renderer, LayoutRect{.x = 0.0f, .y = 0.0f, .width = contentWidth, .height = contentSize.height});
   }
 
   const float contentHeight = m_content->height();
@@ -288,6 +292,12 @@ void ScrollView::doLayout(Renderer& renderer) {
   updateScrollbarGeometry(viewportH, contentHeight);
   applyScrollOffset();
 }
+
+LayoutSize ScrollView::doMeasure(Renderer& renderer, const LayoutConstraints& constraints) {
+  return measureByLayout(renderer, constraints);
+}
+
+void ScrollView::doArrange(Renderer& renderer, const LayoutRect& rect) { arrangeByLayout(renderer, rect); }
 
 void ScrollView::applyScrollOffset() {
   if (m_content != nullptr) {

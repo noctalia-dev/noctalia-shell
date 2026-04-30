@@ -344,13 +344,8 @@ void WorkspacesWidget::applyItemLayout(std::size_t i) {
   if (it.text != nullptr) {
     const float itemW = m_isVertical ? m_indicatorHeight : it.currentWidth;
     const float itemH = m_isVertical ? it.currentWidth : m_indicatorHeight;
-    // Use floor for the vertical centering: when (itemH - textH) is odd,
-    // rounding half-up biases the label downward by 0.5px — and digits'
-    // optical center already sits slightly above their ink center, so the
-    // combined effect reads as visibly low. Floor puts the 0.5px of residual
-    // slack below the text, which matches the optical center better.
     it.text->setPosition(std::max(0.0f, std::round((itemW - it.text->width()) * 0.5f)),
-                         std::floor((itemH - it.text->height()) * 0.5f));
+                         std::round((itemH - it.text->height()) * 0.5f));
   }
   if (it.indicator != nullptr) {
     const float itemW = m_isVertical ? m_indicatorHeight : it.currentWidth;

@@ -166,6 +166,12 @@ void Slider::doLayout(Renderer& /*renderer*/) {
   applyVisualState();
 }
 
+LayoutSize Slider::doMeasure(Renderer& renderer, const LayoutConstraints& constraints) {
+  return measureByLayout(renderer, constraints);
+}
+
+void Slider::doArrange(Renderer& renderer, const LayoutRect& rect) { arrangeByLayout(renderer, rect); }
+
 void Slider::updateGeometry() {
   const float widthPx = width() > 0.0f ? width() : Style::sliderDefaultWidth;
   const float heightPx = std::max({m_thumbSizePx, m_trackHeight, m_controlHeightPx});

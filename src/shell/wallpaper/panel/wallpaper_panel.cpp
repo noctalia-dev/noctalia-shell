@@ -74,7 +74,7 @@ void WallpaperPanel::create() {
   header->setDirection(FlexDirection::Horizontal);
   header->setAlign(FlexAlign::Center);
   header->setGap(Style::spaceSm * scale);
-  header->setFillParentMainAxis(true);
+  header->setFillWidth(true);
   m_header = header.get();
 
   auto headerLeft = std::make_unique<Flex>();
@@ -82,7 +82,7 @@ void WallpaperPanel::create() {
   headerLeft->setAlign(FlexAlign::Center);
   headerLeft->setJustify(FlexJustify::Start);
   headerLeft->setFlexGrow(1.0f);
-  headerLeft->setFillParentMainAxis(true);
+  headerLeft->setFillWidth(true);
 
   auto title = std::make_unique<Label>();
   title->setText(i18n::tr("wallpaper.panel.title"));
@@ -105,7 +105,7 @@ void WallpaperPanel::create() {
   headerRight->setAlign(FlexAlign::Center);
   headerRight->setJustify(FlexJustify::End);
   headerRight->setFlexGrow(1.0f);
-  headerRight->setFillParentMainAxis(true);
+  headerRight->setFillWidth(true);
 
   auto closeButton = std::make_unique<Button>();
   closeButton->setGlyph("close");
@@ -123,7 +123,7 @@ void WallpaperPanel::create() {
   toolbar->setDirection(FlexDirection::Horizontal);
   toolbar->setAlign(FlexAlign::Center);
   toolbar->setGap(Style::spaceSm * scale);
-  toolbar->setFillParentMainAxis(true);
+  toolbar->setFillWidth(true);
   m_toolbar = toolbar.get();
 
   auto filter = std::make_unique<Input>();
@@ -308,7 +308,7 @@ void WallpaperPanel::create() {
   pagination->setDirection(FlexDirection::Horizontal);
   pagination->setAlign(FlexAlign::Center);
   pagination->setJustify(FlexJustify::Center);
-  pagination->setFillParentMainAxis(true);
+  pagination->setFillWidth(true);
   pagination->setGap(Style::spaceMd * scale);
   m_pagination = pagination.get();
 

@@ -418,6 +418,12 @@ void ColorPicker::doLayout(Renderer& renderer) {
   positionOverlays();
 }
 
+LayoutSize ColorPicker::doMeasure(Renderer& renderer, const LayoutConstraints& constraints) {
+  return measureByLayout(renderer, constraints);
+}
+
+void ColorPicker::doArrange(Renderer& renderer, const LayoutRect& rect) { arrangeByLayout(renderer, rect); }
+
 ColorPickerSheet::ColorPickerSheet(float chromeScale) : m_chromeScale(std::max(0.1f, chromeScale)) {
   setDirection(FlexDirection::Vertical);
   setAlign(FlexAlign::Stretch);

@@ -29,7 +29,10 @@ public:
 
 private:
   void doLayout(Renderer& renderer) override;
+  LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints) override;
+  void doArrange(Renderer& renderer, const LayoutRect& rect) override;
   void applyPalette();
+  LayoutSize measureWithConstraints(Renderer& renderer, const LayoutConstraints& constraints);
 
   GlyphNode* m_glyphNode = nullptr;
   float m_baselineOffset = 0.0f;
@@ -42,7 +45,9 @@ private:
   char32_t m_cachedCodepoint = 0;
   float m_cachedFontSize = 0.0f;
   float m_cachedLogicalFontSize = 0.0f;
-  float m_cachedAssignedWidth = -1.0f;
-  float m_cachedFlexGrow = 0.0f;
+  float m_cachedConstraintMaxWidth = 0.0f;
+  float m_cachedConstraintMaxHeight = 0.0f;
+  bool m_cachedHasConstraintMaxWidth = false;
+  bool m_cachedHasConstraintMaxHeight = false;
   bool m_measureCached = false;
 };

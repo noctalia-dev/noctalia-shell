@@ -20,3 +20,9 @@ void GridTile::doLayout(Renderer& renderer) {
     Flex::setSize(std::max(width(), aw), std::max(height(), ah));
   }
 }
+
+LayoutSize GridTile::doMeasure(Renderer& renderer, const LayoutConstraints& constraints) {
+  return measureByLayout(renderer, constraints);
+}
+
+void GridTile::doArrange(Renderer& renderer, const LayoutRect& rect) { arrangeByLayout(renderer, rect); }

@@ -116,7 +116,7 @@ void FileDialogView::create() {
   breadcrumb->setAlign(FlexAlign::Center);
   breadcrumb->setGap(Style::spaceXs * scale);
   breadcrumb->setClipChildren(true);
-  breadcrumb->setFillParentMainAxis(true);
+  breadcrumb->setFillWidth(true);
   m_breadcrumbRow = breadcrumb.get();
   root->addChild(std::move(breadcrumb));
 

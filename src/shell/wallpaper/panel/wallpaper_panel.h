@@ -32,8 +32,8 @@ public:
   void onClose() override;
   [[nodiscard]] bool handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers, bool pressed, bool preedit) override;
 
-  [[nodiscard]] float preferredWidth() const override { return scaled(1100.0f); }
-  [[nodiscard]] float preferredHeight() const override { return scaled(720.0f); }
+  [[nodiscard]] float preferredWidth() const override { return scaled(980.0f); }
+  [[nodiscard]] float preferredHeight() const override { return scaled(700.0f); }
   [[nodiscard]] bool centeredHorizontally() const override { return true; }
   [[nodiscard]] bool centeredVertically() const override { return true; }
   [[nodiscard]] bool prefersAttachedToBar() const noexcept override { return true; }

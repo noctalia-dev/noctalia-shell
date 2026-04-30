@@ -242,9 +242,7 @@ void Select::doLayout(Renderer& renderer) {
     m_needsOptionRebuild = false;
   }
 
-  if (width() > 0.0f) {
-    m_fixedWidth = width();
-  }
+  m_fixedWidth = width() > 0.0f ? width() : 0.0f;
 
   syncTriggerText();
   m_triggerLabel->measure(renderer);
@@ -339,6 +337,12 @@ void Select::doLayout(Renderer& renderer) {
 
   applyVisualState();
 }
+
+LayoutSize Select::doMeasure(Renderer& renderer, const LayoutConstraints& constraints) {
+  return measureByLayout(renderer, constraints);
+}
+
+void Select::doArrange(Renderer& renderer, const LayoutRect& rect) { arrangeByLayout(renderer, rect); }
 
 void Select::clearOptionViews() {
   for (auto& option : m_optionViews) {

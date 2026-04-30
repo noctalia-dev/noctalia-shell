@@ -127,6 +127,12 @@ void SearchPicker::doLayout(Renderer& renderer) {
   }
 }
 
+LayoutSize SearchPicker::doMeasure(Renderer& renderer, const LayoutConstraints& constraints) {
+  return measureByLayout(renderer, constraints);
+}
+
+void SearchPicker::doArrange(Renderer& renderer, const LayoutRect& rect) { arrangeByLayout(renderer, rect); }
+
 void SearchPicker::applyFilter() {
   m_visible.clear();
   for (std::size_t i = 0; i < m_options.size(); ++i) {
@@ -174,7 +180,7 @@ void SearchPicker::rebuildRows() {
     row->setPadding(Style::spaceXs, Style::spaceSm);
     row->setRadius(Style::radiusSm);
     row->setMinHeight(Style::controlHeightLg);
-    row->setFillParentMainAxis(true);
+    row->setFillWidth(true);
 
     auto title = std::make_unique<Label>();
     title->setText(option.label);

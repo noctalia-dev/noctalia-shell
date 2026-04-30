@@ -62,8 +62,8 @@ void ControlCenterPanel::create() {
   sidebar->setDirection(FlexDirection::Vertical);
   sidebar->setAlign(FlexAlign::Stretch);
   sidebar->setGap(Style::spaceXs * scale);
-  sidebar->setPadding(Style::spaceMd * scale);
-  sidebar->setFillParentMainAxis(true);
+  sidebar->setPadding(Style::spaceSm * scale);
+  sidebar->setFillHeight(true);
   sidebar->setFill(roleColor(ColorRole::Surface));
   sidebar->setRadius(Style::radiusXl * scale);
   m_sidebar = sidebar.get();
@@ -78,7 +78,7 @@ void ControlCenterPanel::create() {
     button->label()->setFontSize(Style::fontSizeBody * scale);
     button->setVariant(ButtonVariant::Tab);
     button->setContentAlign(ButtonContentAlign::Start);
-    button->setMinHeight(Style::controlHeightLg * scale);
+    button->setMinHeight(Style::controlHeight * scale);
     button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
     button->setRadius(Style::radiusLg * scale);
     button->setOnClick([this, id = tab.id]() {
