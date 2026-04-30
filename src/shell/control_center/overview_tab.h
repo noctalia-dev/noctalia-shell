@@ -4,6 +4,7 @@
 #include "shell/control_center/tab.h"
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -21,6 +22,7 @@ struct ShortcutPad {
   Glyph* glyph = nullptr;
   Label* label = nullptr;
   Label* description = nullptr;
+  std::optional<std::string> labelOverride;
 };
 
 class OverviewTab : public Tab {
@@ -42,11 +44,16 @@ private:
   void sync(Renderer& renderer);
   void syncShortcuts();
 
+  MprisService* m_mpris = nullptr;
+  WeatherService* m_weather = nullptr;
   ConfigService* m_config = nullptr;
   ShortcutServices m_services;
   bool m_active = false;
 
   Flex* m_rootLayout = nullptr;
+  Flex* m_dateTimeCard = nullptr;
+  Flex* m_mediaCard = nullptr;
+  Flex* m_mediaText = nullptr;
   Flex* m_userCard = nullptr;
   Flex* m_userMain = nullptr;
   Image* m_userAvatar = nullptr;
@@ -58,6 +65,14 @@ private:
   Label* m_userFacts = nullptr;
   Button* m_settingsButton = nullptr;
   std::string m_loadedAvatarPath;
+
+  Label* m_mediaKicker = nullptr;
+  Label* m_mediaTrack = nullptr;
+  Label* m_mediaArtist = nullptr;
+  Label* m_mediaStatus = nullptr;
+  Label* m_mediaProgress = nullptr;
+  Image* m_mediaArt = nullptr;
+  std::string m_loadedMediaArtUrl;
 
   GridView* m_shortcutsGrid = nullptr;
   std::vector<ShortcutPad> m_shortcutPads;

@@ -2,6 +2,8 @@
 
 #include "config/config_service.h"
 #include "core/build_info.h"
+#include "dbus/mpris/mpris_art.h"
+#include "dbus/mpris/mpris_service.h"
 #include "i18n/i18n.h"
 #include "shell/control_center/shortcut_registry.h"
 #include "shell/panel/panel_manager.h"
@@ -15,10 +17,14 @@
 #include "ui/controls/image.h"
 #include "ui/controls/label.h"
 
+#include <algorithm>
 #include <cmath>
+#include <cstdint>
+#include <filesystem>
 #include <format>
 #include <memory>
 #include <string>
+#include <system_error>
 
 using namespace control_center;
 
@@ -36,8 +42,9 @@ OverviewTab::OverviewTab(MprisService* mpris, WeatherService* weather, PipeWireS
                          BluetoothService* bluetooth, NightLightManager* nightLight,
                          noctalia::theme::ThemeService* theme, NotificationManager* notifications,
                          IdleInhibitor* idleInhibitor)
-    : m_config(config), m_services{network,       bluetooth, nightLight,    theme, notifications,
-                                   idleInhibitor, audio,     powerProfiles, mpris, weather} {}
+    : m_mpris(mpris), m_weather(weather), m_config(config),
+      m_services{network,       bluetooth, nightLight,    theme, notifications,
+                 idleInhibitor, audio,     powerProfiles, mpris, weather} {}
 
 OverviewTab::~OverviewTab() = default;
 
@@ -97,12 +104,20 @@ std::unique_ptr<Flex> OverviewTab::create() {
   userCard->addChild(std::move(userRow));
   tab->addChild(std::move(userCard));
 
+  auto overviewRow = std::make_unique<Flex>();
+  overviewRow->setDirection(FlexDirection::Horizontal);
+  overviewRow->setAlign(FlexAlign::Stretch);
+  overviewRow->setGap(Style::spaceMd * scale);
+  overviewRow->setFillParentMainAxis(true);
+
   // --- Date/Time + Weather ---
   auto dateTimeCard = std::make_unique<Flex>();
   applyOverviewCardStyle(*dateTimeCard, scale);
   dateTimeCard->setDirection(FlexDirection::Horizontal);
   dateTimeCard->setJustify(FlexJustify::Center);
   dateTimeCard->setFillParentMainAxis(true);
+  dateTimeCard->setFlexGrow(1.0f);
+  m_dateTimeCard = dateTimeCard.get();
 
   auto dateTimeContent = std::make_unique<Flex>();
   dateTimeContent->setDirection(FlexDirection::Vertical);
@@ -146,7 +161,72 @@ std::unique_ptr<Flex> OverviewTab::create() {
   weatherRow->addChild(std::move(wLine));
   dateTimeContent->addChild(std::move(weatherRow));
   dateTimeCard->addChild(std::move(dateTimeContent));
-  tab->addChild(std::move(dateTimeCard));
+  overviewRow->addChild(std::move(dateTimeCard));
+
+  // --- Media ---
+  auto mediaCard = std::make_unique<Flex>();
+  applyOverviewCardStyle(*mediaCard, scale);
+  mediaCard->setFlexGrow(1.0f);
+  mediaCard->setGap(Style::spaceXs * scale);
+  m_mediaCard = mediaCard.get();
+
+  m_mediaKicker = addTitle(*mediaCard, i18n::tr("control-center.overview.sections.now-playing"), scale);
+  m_mediaKicker->setFontSize(Style::fontSizeBody * scale);
+
+  auto mediaContent = std::make_unique<Flex>();
+  mediaContent->setDirection(FlexDirection::Horizontal);
+  mediaContent->setAlign(FlexAlign::Center);
+  mediaContent->setGap(Style::spaceSm * scale);
+
+  const float artSize = Style::controlHeightLg * 1.55f * scale;
+  auto mediaArt = std::make_unique<Image>();
+  mediaArt->setSize(artSize, artSize);
+  mediaArt->setRadius(Style::radiusLg * scale);
+  mediaArt->setFit(ImageFit::Cover);
+  m_mediaArt = mediaArt.get();
+  mediaContent->addChild(std::move(mediaArt));
+
+  auto mediaText = std::make_unique<Flex>();
+  mediaText->setDirection(FlexDirection::Vertical);
+  mediaText->setAlign(FlexAlign::Stretch);
+  mediaText->setGap(Style::spaceXs * 0.5f * scale);
+  mediaText->setFlexGrow(1.0f);
+  m_mediaText = mediaText.get();
+
+  auto mediaTrack = std::make_unique<Label>();
+  mediaTrack->setText("...");
+  mediaTrack->setFontSize(Style::fontSizeBody * scale);
+  mediaTrack->setColor(roleColor(ColorRole::OnSurface));
+  m_mediaTrack = mediaTrack.get();
+
+  auto mediaArtist = std::make_unique<Label>();
+  mediaArtist->setText(i18n::tr("control-center.overview.media.no-active-player"));
+  mediaArtist->setFontSize(Style::fontSizeCaption * scale);
+  mediaArtist->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  m_mediaArtist = mediaArtist.get();
+
+  auto mediaStatus = std::make_unique<Label>();
+  mediaStatus->setText(i18n::tr("control-center.overview.media.idle"));
+  mediaStatus->setFontSize(Style::fontSizeCaption * scale);
+  mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  m_mediaStatus = mediaStatus.get();
+
+  auto mediaProgress = std::make_unique<Label>();
+  mediaProgress->setText(" ");
+  mediaProgress->setFontSize(Style::fontSizeCaption * scale);
+  mediaProgress->setColor(roleColor(ColorRole::Secondary));
+  mediaProgress->setVisible(false);
+  m_mediaProgress = mediaProgress.get();
+
+  mediaText->addChild(std::move(mediaTrack));
+  mediaText->addChild(std::move(mediaArtist));
+  mediaText->addChild(std::move(mediaStatus));
+  mediaText->addChild(std::move(mediaProgress));
+  mediaContent->addChild(std::move(mediaText));
+  mediaCard->addChild(std::move(mediaContent));
+  overviewRow->addChild(std::move(mediaCard));
+
+  tab->addChild(std::move(overviewRow));
 
   // --- Shortcuts ---
   const auto& shortcuts =
@@ -171,7 +251,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
       continue;
     }
 
-    const std::string label = sc.label.value_or(std::string(shortcut->defaultLabel()));
+    const std::string label = sc.label.has_value() ? *sc.label : shortcut->displayLabel();
     const bool isActive = shortcut->isToggle() && shortcut->active();
 
     auto btn = std::make_unique<Button>();
@@ -215,6 +295,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
     pad.glyph = btnPtr->glyph();
     pad.label = btnPtr->label();
     pad.description = descPtr;
+    pad.labelOverride = sc.label;
     m_shortcutPads.push_back(std::move(pad));
     grid->addChild(std::move(btn));
   }
@@ -251,14 +332,54 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
   if (m_rootLayout == nullptr) {
     return;
   }
+  if (m_dateTimeCard != nullptr) {
+    m_dateTimeCard->setMinHeight(0.0f);
+  }
+  if (m_mediaCard != nullptr) {
+    m_mediaCard->setMinHeight(0.0f);
+  }
   m_rootLayout->setSize(contentWidth, bodyHeight);
   m_rootLayout->layout(renderer);
 
+  const auto innerWidth = [](Flex* card) {
+    if (card == nullptr) {
+      return 1.0f;
+    }
+    return std::max(1.0f, card->width() - (card->paddingLeft() + card->paddingRight()));
+  };
+  const float dateTimeWrap = innerWidth(m_dateTimeCard);
+  const float mediaWrap = innerWidth(m_mediaCard);
+
+  for (Label* label : {m_timeLabel, m_dateLabel, m_weatherLine}) {
+    if (label != nullptr) {
+      label->setMaxWidth(dateTimeWrap);
+      label->setMaxLines(1);
+    }
+  }
+  if (m_mediaKicker != nullptr) {
+    m_mediaKicker->setMaxWidth(mediaWrap);
+    m_mediaKicker->setMaxLines(1);
+  }
+  if (m_mediaCard != nullptr && m_mediaArt != nullptr && m_mediaText != nullptr) {
+    const float textWidth = std::max(1.0f, mediaWrap - m_mediaArt->width() - (Style::spaceSm * contentScale()));
+    for (Label* label : {m_mediaTrack, m_mediaArtist, m_mediaStatus, m_mediaProgress}) {
+      if (label != nullptr) {
+        label->setMaxWidth(textWidth);
+        label->setMaxLines(1);
+      }
+    }
+  }
+
   if (m_userCard != nullptr && m_userFacts != nullptr) {
-    const float userWrap =
-        std::max(1.0f, m_userCard->width() - (m_userCard->paddingLeft() + m_userCard->paddingRight()));
+    const float userWrap = innerWidth(m_userCard);
     m_userFacts->setMaxWidth(userWrap);
     m_userFacts->setMaxLines(1);
+  }
+
+  if (m_dateTimeCard != nullptr && m_mediaCard != nullptr) {
+    const float unifiedCardHeight = std::max(m_dateTimeCard->height(), m_mediaCard->height());
+    m_dateTimeCard->setMinHeight(unifiedCardHeight);
+    m_mediaCard->setMinHeight(unifiedCardHeight);
   }
 
   if (m_userAvatar != nullptr && m_userMain != nullptr) {
@@ -290,6 +411,9 @@ void OverviewTab::setActive(bool active) { m_active = active; }
 
 void OverviewTab::onClose() {
   m_rootLayout = nullptr;
+  m_dateTimeCard = nullptr;
+  m_mediaCard = nullptr;
+  m_mediaText = nullptr;
   m_userCard = nullptr;
   m_userMain = nullptr;
   m_userAvatar = nullptr;
@@ -300,6 +424,13 @@ void OverviewTab::onClose() {
   m_userFacts = nullptr;
   m_settingsButton = nullptr;
   m_loadedAvatarPath.clear();
+  m_mediaKicker = nullptr;
+  m_mediaTrack = nullptr;
+  m_mediaArtist = nullptr;
+  m_mediaStatus = nullptr;
+  m_mediaProgress = nullptr;
+  m_mediaArt = nullptr;
+  m_loadedMediaArtUrl.clear();
   m_shortcutsGrid = nullptr;
   m_shortcutPads.clear();
 }
@@ -335,29 +466,102 @@ void OverviewTab::sync(Renderer& renderer) {
   }
 
   if (m_weatherGlyph != nullptr && m_weatherLine != nullptr) {
-    if (m_services.weather == nullptr || !m_services.weather->enabled()) {
+    if (m_weather == nullptr || !m_weather->enabled()) {
       m_weatherGlyph->setGlyph("weather-cloud-off");
       m_weatherGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
       m_weatherLine->setText(i18n::tr("control-center.overview.weather.disabled"));
-    } else if (!m_services.weather->locationConfigured()) {
+    } else if (!m_weather->locationConfigured()) {
       m_weatherGlyph->setGlyph("weather-cloud");
       m_weatherGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
       m_weatherLine->setText(i18n::tr("control-center.overview.weather.configure-location"));
     } else {
-      const auto& snapshot = m_services.weather->snapshot();
+      const auto& snapshot = m_weather->snapshot();
       if (!snapshot.valid) {
         m_weatherGlyph->setGlyph("weather-cloud");
         m_weatherGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
-        m_weatherLine->setText(m_services.weather->loading()
-                                   ? i18n::tr("control-center.overview.weather.fetching")
-                                   : i18n::tr("control-center.overview.weather.data-unavailable"));
+        m_weatherLine->setText(m_weather->loading() ? i18n::tr("control-center.overview.weather.fetching")
+                                                    : i18n::tr("control-center.overview.weather.data-unavailable"));
       } else {
         m_weatherGlyph->setGlyph(WeatherService::glyphForCode(snapshot.current.weatherCode, snapshot.current.isDay));
         m_weatherGlyph->setColor(roleColor(ColorRole::Primary));
-        const int t =
-            static_cast<int>(std::lround(m_services.weather->displayTemperature(snapshot.current.temperatureC)));
-        m_weatherLine->setText(std::format("{}{} · {}", t, m_services.weather->displayTemperatureUnit(),
+        const int t = static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.current.temperatureC)));
+        m_weatherLine->setText(std::format("{}{} · {}", t, m_weather->displayTemperatureUnit(),
                                            WeatherService::descriptionForCode(snapshot.current.weatherCode)));
+      }
+    }
+  }
+
+  if (m_mediaTrack != nullptr && m_mediaArtist != nullptr && m_mediaStatus != nullptr && m_mediaProgress != nullptr) {
+    if (m_mpris == nullptr) {
+      m_mediaTrack->setText(i18n::tr("control-center.overview.media.playback-unavailable"));
+      m_mediaArtist->setText(i18n::tr("control-center.overview.media.service-unavailable"));
+      m_mediaStatus->setText(i18n::tr("control-center.overview.media.unavailable"));
+      m_mediaProgress->setText(" ");
+      m_mediaProgress->setVisible(false);
+      m_mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
+      if (m_mediaArt != nullptr) {
+        m_mediaArt->clear(renderer);
+      }
+      m_loadedMediaArtUrl.clear();
+    } else {
+      const auto active = m_mpris->activePlayer();
+      if (!active.has_value()) {
+        m_mediaTrack->setText(i18n::tr("control-center.overview.media.nothing-playing"));
+        m_mediaArtist->setText(i18n::tr("control-center.overview.media.play-media-hint"));
+        m_mediaStatus->setText(i18n::tr("control-center.overview.media.idle"));
+        m_mediaProgress->setText(" ");
+        m_mediaProgress->setVisible(false);
+        m_mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
+        if (m_mediaArt != nullptr) {
+          m_mediaArt->clear(renderer);
+        }
+        m_loadedMediaArtUrl.clear();
+      } else {
+        m_mediaTrack->setText(active->title.empty() ? i18n::tr("control-center.overview.media.unknown-track")
+                                                    : active->title);
+        const std::string artists = mpris::joinArtists(active->artists);
+        m_mediaArtist->setText(artists.empty() ? i18n::tr("control-center.overview.media.unknown-artist") : artists);
+        if (active->lengthUs > 0) {
+          const std::int64_t positionSec = std::max<std::int64_t>(0, active->positionUs / 1000000);
+          const std::int64_t lengthSec = std::max<std::int64_t>(1, active->lengthUs / 1000000);
+          m_mediaProgress->setText(std::format("{} / {}", formatClockTime(positionSec), formatClockTime(lengthSec)));
+          m_mediaProgress->setVisible(true);
+        } else {
+          m_mediaProgress->setText(" ");
+          m_mediaProgress->setVisible(false);
+        }
+        if (m_mediaArt != nullptr) {
+          const std::string artUrl = mpris::effectiveArtUrl(*active);
+          if (artUrl != m_loadedMediaArtUrl) {
+            std::string artPath = mpris::normalizeArtPath(artUrl);
+            if (artPath.empty() && mpris::isRemoteArtUrl(artUrl)) {
+              const auto cached = mpris::artCachePath(artUrl);
+              std::error_code ec;
+              if (std::filesystem::exists(cached, ec) && std::filesystem::file_size(cached, ec) > 0) {
+                artPath = cached.string();
+              }
+            }
+            if (!artPath.empty()) {
+              if (!m_mediaArt->setSourceFile(renderer, artPath, static_cast<int>(std::round(m_mediaArt->width())),
+                                             true)) {
+                m_mediaArt->clear(renderer);
+              }
+            } else {
+              m_mediaArt->clear(renderer);
+            }
+            m_loadedMediaArtUrl = artUrl;
+          }
+        }
+        if (active->playbackStatus == "Playing") {
+          m_mediaStatus->setText(i18n::tr("control-center.overview.media.playing"));
+          m_mediaStatus->setColor(roleColor(ColorRole::Primary));
+        } else if (active->playbackStatus == "Paused") {
+          m_mediaStatus->setText(i18n::tr("control-center.overview.media.paused"));
+          m_mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
+        } else {
+          m_mediaStatus->setText(active->playbackStatus);
+          m_mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
+        }
       }
     }
   }
@@ -373,6 +577,12 @@ void OverviewTab::syncShortcuts() {
     }
     if (pad.glyph != nullptr) {
       pad.glyph->setGlyph(std::string(sc.currentIcon()));
+    }
+    if (pad.button != nullptr && pad.label != nullptr) {
+      const std::string label = pad.labelOverride.has_value() ? *pad.labelOverride : sc.displayLabel();
+      if (pad.label->text() != label) {
+        pad.button->setText(label);
+      }
     }
     if (pad.description != nullptr && sc.hasDescription()) {
       pad.description->setText(sc.description());
