@@ -31,6 +31,8 @@ struct DesktopEntry {
   std::string keywordsLower;
   std::string categoriesLower;
   std::string startupWmClassLower;
+  std::string idLower;
+  std::string execLower;
 
   // Desktop file actions (e.g. "New Window", "New Private Window")
   std::vector<DesktopAction> actions;

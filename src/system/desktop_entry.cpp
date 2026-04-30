@@ -25,6 +25,11 @@ namespace {
     return result;
   }
 
+  bool parseDesktopBool(std::string_view value) {
+    const std::string lower = toLower(value);
+    return lower == "true" || lower == "1" || lower == "yes";
+  }
+
   struct LocaleInfo {
     std::string lang;
     std::string country;
@@ -218,11 +223,11 @@ namespace {
       } else if (key == "StartupWMClass") {
         entry.startupWmClass = std::string(value);
       } else if (key == "NoDisplay") {
-        entry.noDisplay = (value == "true");
+        entry.noDisplay = parseDesktopBool(value);
       } else if (key == "Hidden") {
-        entry.hidden = (value == "true");
+        entry.hidden = parseDesktopBool(value);
       } else if (key == "Terminal") {
-        entry.terminal = (value == "true");
+        entry.terminal = parseDesktopBool(value);
       } else if (key == "Actions") {
         // Semicolon-separated list of action IDs, e.g. "NewWindow;NewPrivateWindow;"
         std::size_t start = 0;
@@ -263,6 +268,8 @@ namespace {
     entry.keywordsLower = toLower(entry.keywords);
     entry.categoriesLower = toLower(entry.categories);
     entry.startupWmClassLower = toLower(entry.startupWmClass);
+    entry.idLower = toLower(entry.id);
+    entry.execLower = toLower(entry.exec);
 
     // Build actions in the declared order.
     for (const auto& id : actionOrder) {
@@ -281,14 +288,24 @@ namespace {
 
   std::vector<std::string> xdgDataDirs() {
     std::vector<std::string> dirs;
+    std::unordered_set<std::string> seen;
+
+    auto appendDir = [&](std::string dir) {
+      if (dir.empty()) {
+        return;
+      }
+      if (seen.insert(dir).second) {
+        dirs.push_back(std::move(dir));
+      }
+    };
 
     const char* home = std::getenv("XDG_DATA_HOME");
     if (home != nullptr && home[0] != '\0') {
-      dirs.emplace_back(home);
+      appendDir(home);
     } else {
       const char* userHome = std::getenv("HOME");
       if (userHome != nullptr) {
-        dirs.push_back(std::string(userHome) + "/.local/share");
+        appendDir(std::string(userHome) + "/.local/share");
       }
     }
 
@@ -299,16 +316,17 @@ namespace {
       while (start < sv.size()) {
         auto colon = sv.find(':', start);
         if (colon == std::string_view::npos) {
-          dirs.emplace_back(sv.substr(start));
+          appendDir(std::string(sv.substr(start)));
           break;
         }
-        dirs.emplace_back(sv.substr(start, colon - start));
+        appendDir(std::string(sv.substr(start, colon - start)));
         start = colon + 1;
       }
-    } else {
-      dirs.emplace_back("/usr/local/share");
-      dirs.emplace_back("/usr/share");
     }
+
+    // Keep canonical system directories as a safety net for partial env setups.
+    appendDir("/usr/local/share");
+    appendDir("/usr/share");
 
     return dirs;
   }
