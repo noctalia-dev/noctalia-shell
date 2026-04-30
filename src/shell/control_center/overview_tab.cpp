@@ -235,16 +235,6 @@ std::unique_ptr<Flex> OverviewTab::create() {
   m_wallpaperButton = wallpaperBtn.get();
   actions->addChild(std::move(wallpaperBtn));
 
-  auto settingsBtn = std::make_unique<Button>();
-  settingsBtn->setGlyph("settings");
-  settingsBtn->setVariant(ButtonVariant::Default);
-  settingsBtn->setMinHeight(Style::controlHeight * scale);
-  settingsBtn->setMinWidth(Style::controlHeight * scale);
-  settingsBtn->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
-  settingsBtn->setOnClick([]() { PanelManager::instance().openSettingsWindow(); });
-  m_settingsButton = settingsBtn.get();
-  actions->addChild(std::move(settingsBtn));
-
   auto sessionBtn = std::make_unique<Button>();
   sessionBtn->setGlyph("shutdown");
   sessionBtn->setVariant(ButtonVariant::Default);
@@ -320,6 +310,28 @@ std::unique_ptr<Flex> OverviewTab::create() {
   tab->addChild(std::move(bottomRow));
 
   return tab;
+}
+
+std::unique_ptr<Flex> OverviewTab::createHeaderActions() {
+  const float scale = contentScale();
+  auto actions = std::make_unique<Flex>();
+  actions->setDirection(FlexDirection::Horizontal);
+  actions->setAlign(FlexAlign::Center);
+  actions->setGap(Style::spaceSm * scale);
+
+  auto settingsBtn = std::make_unique<Button>();
+  settingsBtn->setGlyph("settings");
+  settingsBtn->setVariant(ButtonVariant::Default);
+  settingsBtn->setGlyphSize(Style::fontSizeBody * scale);
+  settingsBtn->setMinWidth(Style::controlHeightSm * scale);
+  settingsBtn->setMinHeight(Style::controlHeightSm * scale);
+  settingsBtn->setPadding(Style::spaceXs * scale);
+  settingsBtn->setRadius(Style::radiusMd * scale);
+  settingsBtn->setOnClick([]() { PanelManager::instance().openSettingsWindow(); });
+  m_settingsButton = settingsBtn.get();
+  actions->addChild(std::move(settingsBtn));
+
+  return actions;
 }
 
 void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {

@@ -21,6 +21,7 @@ public:
               PowerProfilesService* powerProfiles, ConfigService* config);
 
   std::unique_ptr<Flex> create() override;
+  std::unique_ptr<Flex> createHeaderActions() override;
   void setActive(bool active) override;
   void onClose() override;
 
