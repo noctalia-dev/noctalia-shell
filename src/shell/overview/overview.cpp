@@ -29,6 +29,14 @@ bool Overview::shouldBeActiveForCurrentCompositorState() const {
   return m_wayland->hasNiriOverviewState() && m_wayland->isNiriOverviewOpen();
 }
 
+bool Overview::shouldKeepLoadedWhileInactive() const {
+  return m_config != nullptr && m_config->config().overview.enabled && !m_config->config().overview.unloadWhenNotInUse;
+}
+
+bool Overview::shouldRenderSurfaces() const { return m_active || shouldKeepLoadedWhileInactive(); }
+
+bool Overview::shouldHaveInstances() const { return shouldRenderSurfaces(); }
+
 void Overview::destroyInstances() {
   for (auto& inst : m_instances) {
     releaseInstanceTexture(*inst);
@@ -42,9 +50,8 @@ bool Overview::initialize(WaylandConnection& wayland, ConfigService* config, Sha
   m_config = config;
   m_textureCache = textureCache;
   m_sharedGl = sharedGl;
-  // Use the compositor's current overview state instead of preloading hidden
-  // surfaces. Otherwise hidden-unload can briefly make overview the only owner
-  // of the selected wallpaper texture during startup.
+  // Use the compositor's current overview state on startup. Hidden preloading
+  // is only allowed when the user explicitly disables hidden unload.
   m_active = active && m_config->config().overview.enabled;
 
   // Register reload callback unconditionally so toggling enabled in config works.
@@ -55,7 +62,7 @@ bool Overview::initialize(WaylandConnection& wayland, ConfigService* config, Sha
     return true;
   }
 
-  if (m_active) {
+  if (shouldHaveInstances()) {
     syncInstances();
   }
   return true;
@@ -77,13 +84,13 @@ void Overview::reload() {
     return;
   }
 
-  if (m_active) {
+  if (shouldHaveInstances()) {
     syncInstances();
   }
 }
 
 void Overview::onOutputChange() {
-  if (m_config == nullptr || !m_config->config().overview.enabled || !m_active) {
+  if (m_config == nullptr || !m_config->config().overview.enabled || !shouldHaveInstances()) {
     return;
   }
   syncInstances();
@@ -99,7 +106,7 @@ void Overview::onStateChange() {
     }
 
     kLog.info("updating {} → {}", inst->connectorName, newPath);
-    if (!m_active) {
+    if (!m_active && !shouldKeepLoadedWhileInactive()) {
       releaseInstanceTexture(*inst, false);
       inst->currentPath = newPath;
       continue;
@@ -110,7 +117,7 @@ void Overview::onStateChange() {
 }
 
 void Overview::onThemeChanged() {
-  if (!m_active) {
+  if (!shouldRenderSurfaces()) {
     return;
   }
   for (auto& inst : m_instances) {
@@ -143,15 +150,33 @@ void Overview::setActive(bool active) {
   }
 
   if (m_active == active) {
+    if (shouldHaveInstances() && m_instances.empty()) {
+      syncInstances();
+    }
+    for (auto& inst : m_instances) {
+      if (inst->surface != nullptr) {
+        inst->surface->setActive(shouldRenderSurfaces());
+      }
+      if (shouldRenderSurfaces()) {
+        ensureInstanceWallpaperLoaded(*inst);
+      }
+    }
     return;
   }
   m_active = active;
   const bool unloadWhenNotInUse = (m_config != nullptr) ? m_config->config().overview.unloadWhenNotInUse : true;
+  const bool renderSurfaces = shouldRenderSurfaces();
 
   if (!m_active) {
+    if (m_instances.empty() && shouldHaveInstances()) {
+      syncInstances();
+    }
     for (auto& inst : m_instances) {
       if (inst->surface != nullptr) {
-        inst->surface->setActive(false);
+        inst->surface->setActive(renderSurfaces);
+      }
+      if (renderSurfaces) {
+        ensureInstanceWallpaperLoaded(*inst);
       }
     }
     if (unloadWhenNotInUse) {
@@ -175,18 +200,7 @@ void Overview::setActive(bool active) {
       continue;
     }
     inst->surface->setActive(true);
-
-    if (inst->currentTexture.id == 0) {
-      std::string path = inst->currentPath;
-      if (path.empty() && m_config != nullptr) {
-        path = m_config->getWallpaperPath(inst->connectorName);
-      }
-      if (!path.empty()) {
-        loadWallpaper(*inst, path);
-      }
-    } else {
-      inst->surface->requestRedraw();
-    }
+    ensureInstanceWallpaperLoaded(*inst);
   }
 }
 
@@ -244,7 +258,7 @@ void Overview::createInstance(const WaylandOutput& output) {
 
   auto* instPtr = inst.get();
   inst->surface->setConfigureCallback([this, instPtr](std::uint32_t /*width*/, std::uint32_t /*height*/) {
-    if (instPtr->currentTexture.id != 0 || !m_active || m_config == nullptr) {
+    if (instPtr->currentTexture.id != 0 || !shouldRenderSurfaces() || m_config == nullptr) {
       return;
     }
     std::string path = instPtr->currentPath;
@@ -261,9 +275,30 @@ void Overview::createInstance(const WaylandOutput& output) {
     return;
   }
 
-  inst->surface->setActive(m_active);
+  inst->surface->setActive(shouldRenderSurfaces());
+
+  if (shouldRenderSurfaces() && !wallpaperPath.empty()) {
+    loadWallpaper(*inst, wallpaperPath);
+  }
 
   m_instances.push_back(std::move(inst));
+}
+
+void Overview::ensureInstanceWallpaperLoaded(OverviewInstance& inst) {
+  if (inst.currentTexture.id == 0) {
+    std::string path = inst.currentPath;
+    if (path.empty() && m_config != nullptr) {
+      path = m_config->getWallpaperPath(inst.connectorName);
+    }
+    if (!path.empty()) {
+      loadWallpaper(inst, path);
+    }
+    return;
+  }
+
+  if (inst.surface != nullptr) {
+    inst.surface->requestRedraw();
+  }
 }
 
 void Overview::loadWallpaper(OverviewInstance& inst, const std::string& path) {
@@ -276,7 +311,7 @@ void Overview::loadWallpaper(OverviewInstance& inst, const std::string& path) {
   inst.currentTexture = tex;
   inst.currentPath = path;
   updateRendererState(inst);
-  if (m_active && inst.surface != nullptr) {
+  if (shouldRenderSurfaces() && inst.surface != nullptr) {
     inst.surface->requestRedraw();
   }
 }

@@ -29,10 +29,14 @@ public:
 
 private:
   [[nodiscard]] bool shouldBeActiveForCurrentCompositorState() const;
+  [[nodiscard]] bool shouldKeepLoadedWhileInactive() const;
+  [[nodiscard]] bool shouldRenderSurfaces() const;
+  [[nodiscard]] bool shouldHaveInstances() const;
   void reload();
   void destroyInstances();
   void syncInstances();
   void createInstance(const WaylandOutput& output);
+  void ensureInstanceWallpaperLoaded(OverviewInstance& inst);
   void loadWallpaper(OverviewInstance& inst, const std::string& path);
   void updateRendererState(OverviewInstance& inst);
   void releaseInstanceTexture(OverviewInstance& inst, bool clearPath = true);
