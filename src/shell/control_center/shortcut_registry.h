@@ -9,8 +9,8 @@ public:
   virtual ~Shortcut() = default;
 
   [[nodiscard]] virtual std::string_view id() const = 0;
-  [[nodiscard]] virtual std::string_view defaultLabel() const = 0;
-  [[nodiscard]] virtual std::string displayLabel() const { return std::string(defaultLabel()); }
+  [[nodiscard]] virtual std::string defaultLabel() const = 0;
+  [[nodiscard]] virtual std::string displayLabel() const { return defaultLabel(); }
   [[nodiscard]] virtual std::string displayIcon() const { return std::string(currentIcon()); }
   [[nodiscard]] virtual std::string_view iconOn() const = 0;
   [[nodiscard]] virtual std::string_view iconOff() const = 0;

@@ -197,6 +197,28 @@
         "muted-volume": "Muted - {volume}%"
       }
     },
+    "shortcuts": {
+      "wifi": "Wi-Fi",
+      "bluetooth": "Bluetooth",
+      "nightlight": "Night Light",
+      "notification": "DND",
+      "dark-mode": {
+        "dark": "Dark Mode",
+        "light": "Light Mode",
+        "auto": "Auto Mode"
+      },
+      "idle-inhibitor": "Idle Inhibitor",
+      "audio": "Audio",
+      "mic-mute": "Microphone",
+      "power-profile": "Power",
+      "weather": "Weather",
+      "keyboard-layout": "Layout",
+      "media": "Media",
+      "sysmon": "System",
+      "wallpaper": "Wallpaper",
+      "session": "Session",
+      "clipboard": "Clipboard"
+    },
     "network": {
       "current-connection": "Current connection",
       "available-networks": "Available networks",

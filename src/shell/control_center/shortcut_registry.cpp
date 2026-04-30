@@ -6,6 +6,7 @@
 #include "dbus/mpris/mpris_service.h"
 #include "dbus/network/network_service.h"
 #include "dbus/power/power_profiles_service.h"
+#include "i18n/i18n.h"
 #include "idle/idle_inhibitor.h"
 #include "notification/notification_manager.h"
 #include "pipewire/pipewire_service.h"
@@ -34,7 +35,7 @@ namespace {
   public:
     explicit WifiShortcut(NetworkService* svc) : m_svc(svc) {}
     std::string_view id() const override { return "wifi"; }
-    std::string_view defaultLabel() const override { return "Wi-Fi"; }
+    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.wifi"); }
     std::string displayLabel() const override {
       if (m_svc != nullptr) {
         const NetworkState& state = m_svc->state();
@@ -42,7 +43,7 @@ namespace {
           return state.ssid;
         }
       }
-      return std::string(defaultLabel());
+      return defaultLabel();
     }
     std::string_view iconOn() const override { return "wifi"; }
     std::string_view iconOff() const override { return "wifi-off"; }
@@ -63,7 +64,7 @@ namespace {
   public:
     explicit BluetoothShortcut(BluetoothService* svc) : m_svc(svc) {}
     std::string_view id() const override { return "bluetooth"; }
-    std::string_view defaultLabel() const override { return "Bluetooth"; }
+    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.bluetooth"); }
     std::string_view iconOn() const override { return "bluetooth"; }
     std::string_view iconOff() const override { return "bluetooth-off"; }
     bool isToggle() const override { return true; }
@@ -83,7 +84,7 @@ namespace {
   public:
     explicit NightlightShortcut(NightLightManager* svc) : m_svc(svc) {}
     std::string_view id() const override { return "nightlight"; }
-    std::string_view defaultLabel() const override { return "Night Light"; }
+    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.nightlight"); }
     std::string_view iconOn() const override {
       return m_svc != nullptr && m_svc->forceEnabled() ? "nightlight-forced" : "nightlight-on";
     }
@@ -109,7 +110,7 @@ namespace {
   public:
     explicit NotificationShortcut(NotificationManager* svc) : m_svc(svc) {}
     std::string_view id() const override { return "notification"; }
-    std::string_view defaultLabel() const override { return "DND"; }
+    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.notification"); }
     std::string_view iconOn() const override { return "bell-off"; }
     std::string_view iconOff() const override { return "bell"; }
     bool isToggle() const override { return true; }
@@ -129,20 +130,20 @@ namespace {
   public:
     explicit DarkModeShortcut(noctalia::theme::ThemeService* svc) : m_svc(svc) {}
     std::string_view id() const override { return "dark_mode"; }
-    std::string_view defaultLabel() const override { return "Dark Mode"; }
+    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.dark-mode.dark"); }
     std::string displayLabel() const override {
       if (m_svc == nullptr) {
-        return std::string(defaultLabel());
+        return defaultLabel();
       }
       switch (m_svc->configuredMode()) {
       case ThemeMode::Dark:
-        return "Dark Mode";
+        return i18n::tr("control-center.shortcuts.dark-mode.dark");
       case ThemeMode::Light:
-        return "Light Mode";
+        return i18n::tr("control-center.shortcuts.dark-mode.light");
       case ThemeMode::Auto:
-        return "Auto Mode";
+        return i18n::tr("control-center.shortcuts.dark-mode.auto");
       }
-      return std::string(defaultLabel());
+      return defaultLabel();
     }
     std::string_view iconOn() const override {
       return m_svc != nullptr && m_svc->configuredMode() == ThemeMode::Auto ? "theme-mode" : "weather-moon-stars";
@@ -164,7 +165,7 @@ namespace {
   public:
     explicit IdleInhibitorShortcut(IdleInhibitor* svc) : m_svc(svc) {}
     std::string_view id() const override { return "idle_inhibitor"; }
-    std::string_view defaultLabel() const override { return "Idle Inhibitor"; }
+    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.idle-inhibitor"); }
     std::string_view iconOn() const override { return "idle-inhibitor-on"; }
     std::string_view iconOff() const override { return "idle-inhibitor-off"; }
     bool isToggle() const override { return true; }
@@ -183,7 +184,7 @@ namespace {
   public:
     explicit AudioShortcut(PipeWireService* svc) : m_svc(svc) {}
     std::string_view id() const override { return "audio"; }
-    std::string_view defaultLabel() const override { return "Audio"; }
+    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.audio"); }
     std::string_view iconOn() const override { return "volume-x"; }
     std::string_view iconOff() const override { return "volume-high"; }
     bool isToggle() const override { return true; }
@@ -211,7 +212,7 @@ namespace {
   public:
     explicit MicMuteShortcut(PipeWireService* svc) : m_svc(svc) {}
     std::string_view id() const override { return "mic_mute"; }
-    std::string_view defaultLabel() const override { return "Microphone"; }
+    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.mic-mute"); }
     std::string_view iconOn() const override { return "microphone-mute"; }
     std::string_view iconOff() const override { return "microphone"; }
     bool isToggle() const override { return true; }
@@ -291,12 +292,12 @@ namespace {
   public:
     explicit PowerProfileShortcut(PowerProfilesService* svc) : m_svc(svc) {}
     std::string_view id() const override { return "power_profile"; }
-    std::string_view defaultLabel() const override { return "Power"; }
+    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.power-profile"); }
     std::string displayLabel() const override {
       if (m_svc != nullptr && !m_svc->activeProfile().empty()) {
         return profileLabel(m_svc->activeProfile());
       }
-      return std::string(defaultLabel());
+      return defaultLabel();
     }
     std::string_view iconOn() const override {
       return powerProfileIcon(m_svc != nullptr ? m_svc->activeProfile() : "");
@@ -332,14 +333,14 @@ namespace {
   public:
     explicit WeatherShortcut(WeatherService* svc) : m_svc(svc) {}
     std::string_view id() const override { return "weather"; }
-    std::string_view defaultLabel() const override { return "Weather"; }
+    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.weather"); }
     std::string displayLabel() const override {
       if (m_svc != nullptr && m_svc->enabled() && m_svc->hasData()) {
         const auto& snapshot = m_svc->snapshot();
         const int temp = static_cast<int>(std::lround(m_svc->displayTemperature(snapshot.current.temperatureC)));
         return std::format("{}{}", temp, m_svc->displayTemperatureUnit());
       }
-      return std::string(defaultLabel());
+      return defaultLabel();
     }
     std::string displayIcon() const override {
       if (m_svc == nullptr || !m_svc->enabled()) {
@@ -364,7 +365,7 @@ namespace {
   public:
     KeyboardLayoutShortcut(WaylandConnection* wayland, ConfigService* config) : m_wayland(wayland), m_config(config) {}
     std::string_view id() const override { return "keyboard_layout"; }
-    std::string_view defaultLabel() const override { return "Layout"; }
+    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.keyboard-layout"); }
     std::string displayLabel() const override {
       return KeyboardLayoutWidget::formatLayoutLabel(resolvedLayoutName(), keyboardLayoutDisplayMode(m_config));
     }
@@ -401,7 +402,7 @@ namespace {
   public:
     explicit MediaShortcut(MprisService* svc) : m_svc(svc) {}
     std::string_view id() const override { return "media"; }
-    std::string_view defaultLabel() const override { return "Media"; }
+    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.media"); }
     std::string_view iconOn() const override { return "media-pause"; }
     std::string_view iconOff() const override { return "media-play"; }
     bool isToggle() const override { return true; }
@@ -426,7 +427,7 @@ namespace {
   class SysmonShortcut final : public Shortcut {
   public:
     std::string_view id() const override { return "sysmon"; }
-    std::string_view defaultLabel() const override { return "System"; }
+    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.sysmon"); }
     std::string_view iconOn() const override { return "activity"; }
     std::string_view iconOff() const override { return "activity"; }
     void onClick() override { openTab("system"); }
@@ -436,7 +437,7 @@ namespace {
   class WallpaperShortcut final : public Shortcut {
   public:
     std::string_view id() const override { return "wallpaper"; }
-    std::string_view defaultLabel() const override { return "Wallpaper"; }
+    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.wallpaper"); }
     std::string_view iconOn() const override { return "wallpaper-selector"; }
     std::string_view iconOff() const override { return "wallpaper-selector"; }
     void onClick() override { PanelManager::instance().togglePanel("wallpaper"); }
@@ -445,7 +446,7 @@ namespace {
   class SessionShortcut final : public Shortcut {
   public:
     std::string_view id() const override { return "session"; }
-    std::string_view defaultLabel() const override { return "Session"; }
+    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.session"); }
     std::string_view iconOn() const override { return "shutdown"; }
     std::string_view iconOff() const override { return "shutdown"; }
     void onClick() override { PanelManager::instance().togglePanel("session"); }
@@ -454,7 +455,7 @@ namespace {
   class ClipboardShortcut final : public Shortcut {
   public:
     std::string_view id() const override { return "clipboard"; }
-    std::string_view defaultLabel() const override { return "Clipboard"; }
+    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.clipboard"); }
     std::string_view iconOn() const override { return "clipboard"; }
     std::string_view iconOff() const override { return "clipboard"; }
     void onClick() override { PanelManager::instance().togglePanel("clipboard"); }

@@ -163,7 +163,6 @@ std::unique_ptr<Flex> OverviewTab::create() {
   weatherRow->addChild(std::move(wLine));
   dateTimeContent->addChild(std::move(weatherRow));
   dateTimeCard->addChild(std::move(dateTimeContent));
-  overviewRow->addChild(std::move(dateTimeCard));
 
   // --- Media ---
   auto mediaCard = std::make_unique<Flex>();
@@ -227,6 +226,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   mediaContent->addChild(std::move(mediaText));
   mediaCard->addChild(std::move(mediaContent));
   overviewRow->addChild(std::move(mediaCard));
+  overviewRow->addChild(std::move(dateTimeCard));
 
   tab->addChild(std::move(overviewRow));
 
