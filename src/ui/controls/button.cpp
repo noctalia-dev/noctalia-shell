@@ -146,8 +146,13 @@ Button::Button() {
       m_onPointerMotion(data.localX, data.localY);
     }
   });
-  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    if (m_enabled && m_onClick) {
+  area->setOnClick([this](const InputArea::PointerData& data) {
+    if (!m_enabled) {
+      return;
+    }
+    if (data.button == BTN_RIGHT && m_onRightClick) {
+      m_onRightClick();
+    } else if (m_onClick) {
       m_onClick();
     }
   });
@@ -202,6 +207,14 @@ void Button::setGlyphSize(float size) {
 
 void Button::setOnClick(std::function<void()> callback) {
   m_onClick = std::move(callback);
+  refreshInputAreaEnabled();
+}
+
+void Button::setOnRightClick(std::function<void()> callback) {
+  m_onRightClick = std::move(callback);
+  if (m_inputArea != nullptr) {
+    m_inputArea->setAcceptedButtons(BTN_LEFT | BTN_RIGHT);
+  }
   refreshInputAreaEnabled();
 }
 
