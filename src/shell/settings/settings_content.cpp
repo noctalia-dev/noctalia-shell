@@ -499,8 +499,9 @@ namespace settings {
         }
       });
 
-      wrap->addChild(std::move(valueInput));
+      // Slider first, numeric value field on the right (reset from makeRow stays left of this cluster).
       wrap->addChild(std::move(slider));
+      wrap->addChild(std::move(valueInput));
       return wrap;
     };
 

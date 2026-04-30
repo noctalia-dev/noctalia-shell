@@ -42,6 +42,7 @@ private:
   struct Instance {
     wl_output* output = nullptr;
     std::int32_t scale = 1;
+    float uiLayoutScale = 1.0f;
     std::unique_ptr<LayerSurface> surface;
     // sceneRoot must be destroyed before `animations` — ~Node() calls cancelForOwner().
     AnimationManager animations;
@@ -72,5 +73,6 @@ private:
   RenderContext* m_renderContext = nullptr;
   OsdContent m_content;
   std::string m_lastPosition;
+  float m_lastLayoutScale = 1.0f;
   std::vector<std::unique_ptr<Instance>> m_instances;
 };
