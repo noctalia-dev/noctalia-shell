@@ -30,6 +30,11 @@ namespace {
     return ids;
   }
 
+  std::unordered_set<TimerManager::TimerId>& inFlightTimerIds() {
+    static std::unordered_set<TimerManager::TimerId> ids;
+    return ids;
+  }
+
 } // namespace
 
 TimerManager& TimerManager::instance() {
@@ -62,8 +67,24 @@ bool TimerManager::cancel(TimerId id) {
   if (id == 0) {
     return false;
   }
-  canceledTimerIds().insert(id);
-  return timerEntries().erase(id) > 0;
+
+  if (timerEntries().erase(id) > 0) {
+    return true;
+  }
+
+  if (inFlightTimerIds().contains(id)) {
+    canceledTimerIds().insert(id);
+    return true;
+  }
+
+  return false;
+}
+
+bool TimerManager::active(TimerId id) const noexcept {
+  if (id == 0 || canceledTimerIds().contains(id)) {
+    return false;
+  }
+  return timerEntries().contains(id) || inFlightTimerIds().contains(id);
 }
 
 int TimerManager::pollTimeoutMs() const {
@@ -100,12 +121,18 @@ void TimerManager::tick() {
       continue;
     }
 
+    inFlightTimerIds().insert(it->second.id);
     dueEntries.push_back(std::move(it->second));
     it = timerEntries().erase(it);
   }
 
   for (auto& entry : dueEntries) {
-    canceledTimerIds().erase(entry.id);
+    if (canceledTimerIds().contains(entry.id)) {
+      canceledTimerIds().erase(entry.id);
+      inFlightTimerIds().erase(entry.id);
+      continue;
+    }
+
     if (entry.callback) {
       entry.callback();
     }
@@ -117,6 +144,7 @@ void TimerManager::tick() {
     }
 
     canceledTimerIds().erase(entry.id);
+    inFlightTimerIds().erase(entry.id);
   }
 }
 
