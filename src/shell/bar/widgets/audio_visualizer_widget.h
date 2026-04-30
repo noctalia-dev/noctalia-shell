@@ -23,6 +23,8 @@ private:
   void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
   void doUpdate(Renderer& renderer) override;
   void syncSpectrum();
+  [[nodiscard]] bool shouldBeVisible() const;
+  bool applyVisibility();
 
   PipeWireSpectrum* m_spectrum = nullptr;
   float m_width = 56.0f;
@@ -36,4 +38,5 @@ private:
   AudioSpectrum* m_visualizer = nullptr;
   bool m_pendingSpectrumUpdate = false;
   bool m_isVertical = false;
+  bool m_visible = true;
 };
