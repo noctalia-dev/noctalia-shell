@@ -460,8 +460,10 @@ namespace {
 std::vector<DesktopEntry> scanDesktopEntries() {
   std::vector<DesktopEntry> entries;
 
-  // Track seen IDs to deduplicate (first occurrence wins per XDG spec)
-  std::unordered_map<std::string, bool> seenIds;
+  // Track seen IDs to deduplicate (first occurrence wins per XDG spec).
+  // Hidden/NoDisplay files still claim their ID so user-local overrides can
+  // suppress lower-priority system entries.
+  std::unordered_set<std::string> seenIds;
 
   for (const auto& dataDir : xdgDataDirs()) {
     fs::path appDir = fs::path(dataDir) / "applications";
@@ -479,15 +481,11 @@ std::vector<DesktopEntry> scanDesktopEntries() {
       }
 
       std::string id = dirEntry.path().stem().string();
-      if (seenIds.count(id) > 0) {
+      if (!seenIds.insert(id).second) {
         continue;
       }
 
-      std::size_t prevSize = entries.size();
       parseDesktopFile(dirEntry.path(), entries);
-      if (entries.size() > prevSize) {
-        seenIds[id] = true;
-      }
     }
   }
 
