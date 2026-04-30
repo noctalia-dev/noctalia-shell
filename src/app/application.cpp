@@ -788,7 +788,7 @@ void Application::initUi() {
                                            m_upowerService.get(), m_powerProfilesService.get(), m_networkService.get(),
                                            m_networkSecretAgent.get(), m_bluetoothService.get(), m_bluetoothAgent.get(),
                                            m_brightnessService.get(), m_systemMonitor.get(), &m_nightLightManager,
-                                           &m_themeService, &m_idleInhibitor, &m_wayland));
+                                           &m_themeService, &m_idleInhibitor, &m_wayland, &m_wallpaper));
   {
     auto launcherPanel = std::make_unique<LauncherPanel>(&m_configService, &m_asyncTextureCache);
     launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));

@@ -200,6 +200,15 @@ Wallpaper::~Wallpaper() {
   }
 }
 
+TextureHandle Wallpaper::currentTexture() const {
+  for (const auto& inst : m_instances) {
+    if (inst->currentTexture.id != 0) {
+      return inst->currentTexture;
+    }
+  }
+  return {};
+}
+
 bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext,
                            SharedTextureCache* textureCache) {
   m_wayland = &wayland;

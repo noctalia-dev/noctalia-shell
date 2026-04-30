@@ -38,6 +38,7 @@ class PipeWireSpectrum;
 class PowerProfilesService;
 class SystemMonitorService;
 class UPowerService;
+class Wallpaper;
 class WeatherService;
 class WaylandConnection;
 
@@ -55,7 +56,8 @@ public:
                      BluetoothService* bluetooth = nullptr, BluetoothAgent* bluetoothAgent = nullptr,
                      BrightnessService* brightness = nullptr, SystemMonitorService* sysmon = nullptr,
                      NightLightManager* nightLight = nullptr, noctalia::theme::ThemeService* theme = nullptr,
-                     IdleInhibitor* idleInhibitor = nullptr, WaylandConnection* wayland = nullptr);
+                     IdleInhibitor* idleInhibitor = nullptr, WaylandConnection* wayland = nullptr,
+                     Wallpaper* wallpaper = nullptr);
 
   void create() override;
   void onFrameTick(float deltaMs) override;

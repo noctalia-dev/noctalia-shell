@@ -14,7 +14,9 @@ class Glyph;
 class GridView;
 class Image;
 class Label;
+class RectNode;
 class Shortcut;
+class Wallpaper;
 class WaylandConnection;
 
 struct ShortcutPad {
@@ -30,7 +32,7 @@ public:
   OverviewTab(MprisService* mpris, WeatherService* weather, PipeWireService* audio, PowerProfilesService* powerProfiles,
               ConfigService* config, NetworkService* network, BluetoothService* bluetooth,
               NightLightManager* nightLight, noctalia::theme::ThemeService* theme, NotificationManager* notifications,
-              IdleInhibitor* idleInhibitor, WaylandConnection* wayland);
+              IdleInhibitor* idleInhibitor, WaylandConnection* wayland, Wallpaper* wallpaper = nullptr);
   ~OverviewTab() override;
 
   std::unique_ptr<Flex> create() override;
@@ -47,6 +49,7 @@ private:
   MprisService* m_mpris = nullptr;
   WeatherService* m_weather = nullptr;
   ConfigService* m_config = nullptr;
+  Wallpaper* m_wallpaper = nullptr;
   ShortcutServices m_services;
   bool m_active = false;
 
@@ -65,6 +68,9 @@ private:
   Label* m_userFacts = nullptr;
   Button* m_settingsButton = nullptr;
   std::string m_loadedAvatarPath;
+
+  Image* m_wallpaperBg = nullptr;
+  RectNode* m_wallpaperGradient = nullptr;
 
   Label* m_mediaKicker = nullptr;
   Label* m_mediaTrack = nullptr;

@@ -27,6 +27,8 @@ public:
   void onSecondTick();
   void registerIpc(IpcService& ipc);
 
+  [[nodiscard]] TextureHandle currentTexture() const;
+
 private:
   void reload();
   void syncInstances();

@@ -5,8 +5,10 @@
 #include "dbus/mpris/mpris_art.h"
 #include "dbus/mpris/mpris_service.h"
 #include "i18n/i18n.h"
+#include "render/scene/rect_node.h"
 #include "shell/control_center/shortcut_registry.h"
 #include "shell/panel/panel_manager.h"
+#include "shell/wallpaper/wallpaper.h"
 #include "system/distro_info.h"
 #include "system/weather_service.h"
 #include "time/time_format.h"
@@ -41,8 +43,8 @@ OverviewTab::OverviewTab(MprisService* mpris, WeatherService* weather, PipeWireS
                          PowerProfilesService* powerProfiles, ConfigService* config, NetworkService* network,
                          BluetoothService* bluetooth, NightLightManager* nightLight,
                          noctalia::theme::ThemeService* theme, NotificationManager* notifications,
-                         IdleInhibitor* idleInhibitor, WaylandConnection* wayland)
-    : m_mpris(mpris), m_weather(weather), m_config(config),
+                         IdleInhibitor* idleInhibitor, WaylandConnection* wayland, Wallpaper* wallpaper)
+    : m_mpris(mpris), m_weather(weather), m_config(config), m_wallpaper(wallpaper),
       m_services{network, bluetooth,     nightLight, theme,   notifications, idleInhibitor,
                  audio,   powerProfiles, mpris,      weather, config,        wayland} {}
 
@@ -61,14 +63,33 @@ std::unique_ptr<Flex> OverviewTab::create() {
   // --- User card ---
   auto userCard = std::make_unique<Flex>();
   applyOverviewCardStyle(*userCard, scale);
+  userCard->setFlexGrow(1.0f);
+  userCard->setFillParentMainAxis(true);
+  userCard->setJustify(FlexJustify::Center);
   m_userCard = userCard.get();
+
+  {
+    auto wpBg = std::make_unique<Image>();
+    wpBg->setFit(ImageFit::Cover);
+    wpBg->setRadius(Style::radiusXl * scale);
+    wpBg->setParticipatesInLayout(false);
+    wpBg->setZIndex(-1);
+    m_wallpaperBg = wpBg.get();
+    userCard->addChild(std::move(wpBg));
+
+    auto gradient = std::make_unique<RectNode>();
+    gradient->setParticipatesInLayout(false);
+    gradient->setZIndex(-1);
+    m_wallpaperGradient = gradient.get();
+    userCard->addChild(std::move(gradient));
+  }
 
   auto userRow = std::make_unique<Flex>();
   userRow->setDirection(FlexDirection::Horizontal);
   userRow->setAlign(FlexAlign::Center);
   userRow->setGap(Style::spaceMd * scale);
 
-  const float avatarSize = Style::controlHeightLg * 3.2f * scale;
+  const float avatarSize = Style::controlHeightLg * 2.6f * scale;
   auto avatar = std::make_unique<Image>();
   avatar->setRadius(avatarSize * 0.5f);
   avatar->setBorder(roleColor(ColorRole::Primary), Style::borderWidth * 3.0f);
@@ -242,7 +263,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   grid->setUniformCellSize(true);
   grid->setStretchItems(true);
   grid->setMinCellHeight(Style::controlHeightLg * 2.0f * scale);
-  grid->setFlexGrow(1.0f);
+  grid->setFlexGrow(0.0f);
   m_shortcutsGrid = grid.get();
   m_shortcutPads.clear();
 
@@ -373,6 +394,26 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
     m_userFacts->setMaxLines(1);
   }
 
+  if (m_userCard != nullptr && m_wallpaperBg != nullptr) {
+    const float cw = m_userCard->width();
+    const float ch = m_userCard->height();
+    m_wallpaperBg->setPosition(0.0f, 0.0f);
+    m_wallpaperBg->setSize(cw, ch);
+    if (m_wallpaperGradient != nullptr) {
+      const float radius = Style::radiusXl * contentScale();
+      m_wallpaperGradient->setPosition(0.0f, 0.0f);
+      m_wallpaperGradient->setFrameSize(cw, ch);
+      const Color surface = resolveThemeColor(roleColor(ColorRole::Surface));
+      m_wallpaperGradient->setStyle(RoundedRectStyle{
+          .fill = surface,
+          .fillEnd = rgba(surface.r, surface.g, surface.b, 0.0f),
+          .fillMode = FillMode::LinearGradient,
+          .gradientDirection = GradientDirection::Horizontal,
+          .radius = radius,
+      });
+    }
+  }
+
   if (m_dateTimeCard != nullptr && m_mediaCard != nullptr) {
     const float unifiedCardHeight = std::max(m_dateTimeCard->height(), m_mediaCard->height());
     m_dateTimeCard->setMinHeight(unifiedCardHeight);
@@ -381,7 +422,7 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
 
   if (m_userAvatar != nullptr && m_userMain != nullptr) {
     const float scale = contentScale();
-    const float minAvatar = Style::controlHeightLg * 3.2f * scale;
+    const float minAvatar = Style::controlHeightLg * 2.6f * scale;
     const float desiredAvatar = std::max(minAvatar, m_userMain->height());
     if (std::abs(m_userAvatar->width() - desiredAvatar) > 0.5f) {
       m_userAvatar->setSize(desiredAvatar, desiredAvatar);
@@ -422,6 +463,8 @@ void OverviewTab::onClose() {
   m_userFacts = nullptr;
   m_settingsButton = nullptr;
   m_loadedAvatarPath.clear();
+  m_wallpaperBg = nullptr;
+  m_wallpaperGradient = nullptr;
   m_mediaKicker = nullptr;
   m_mediaTrack = nullptr;
   m_mediaArtist = nullptr;
@@ -441,6 +484,16 @@ void OverviewTab::sync(Renderer& renderer) {
   }
   if (m_dateLabel != nullptr) {
     m_dateLabel->setText(formatCurrentDate());
+  }
+
+  if (m_wallpaperBg != nullptr && m_wallpaper != nullptr) {
+    const auto tex = m_wallpaper->currentTexture();
+    if (tex.id != 0) {
+      m_wallpaperBg->setExternalTexture(renderer, tex);
+      m_wallpaperBg->setVisible(true);
+    } else {
+      m_wallpaperBg->setVisible(false);
+    }
   }
 
   if (m_userAvatar != nullptr && m_config != nullptr) {
