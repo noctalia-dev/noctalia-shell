@@ -1,6 +1,6 @@
 # Theme
 
-Controls the colors used across the shell — bars, panels, widgets, OSD, overview, and notifications.
+Controls the colors used across the shell — bars, panels, widgets, OSD, backdrop, and notifications.
 
 ```toml
 [theme]

@@ -67,9 +67,9 @@ builtin_ids           = []          # opt-in; list ids with: noctalia theme --li
 enable_user_templates = false
 user_config           = "~/.config/noctalia/user-templates.toml"
 
-# ── Overview ──────────────────────────────────────────────────────────────────
+# ── Backdrop ──────────────────────────────────────────────────────────────────
 
-[overview]
+[backdrop]
 enabled                = false
 unload_when_not_in_use = true
 blur_intensity         = 0.5        # 0.0 = no blur, 1.0 = maximum

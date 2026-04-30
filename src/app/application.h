@@ -41,6 +41,7 @@
 #include "render/core/thumbnail_service.h"
 #include "render/gl_shared_context.h"
 #include "render/render_context.h"
+#include "shell/backdrop/backdrop.h"
 #include "shell/bar/bar.h"
 #include "shell/desktop/desktop_widgets_controller.h"
 #include "shell/desktop/desktop_widgets_poll_source.h"
@@ -50,7 +51,6 @@
 #include "shell/osd/audio_osd.h"
 #include "shell/osd/brightness_osd.h"
 #include "shell/osd/osd_overlay.h"
-#include "shell/overview/overview.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/polkit/polkit_panel.h"
 #include "shell/session/session_panel.h"
@@ -101,7 +101,7 @@ private:
   void startTrayService();
   void syncNotificationDaemon();
   void syncPolkitAgent();
-  [[nodiscard]] bool overviewShouldBeActive() const;
+  [[nodiscard]] bool backdropShouldBeActive() const;
   bool runUserCommand(const std::string& command);
   bool runIdleCommand(const std::string& command);
   void onIconThemeChanged();
@@ -164,7 +164,7 @@ private:
   OsdOverlay m_osdOverlay;
   TrayMenu m_trayMenu;
   Wallpaper m_wallpaper;
-  Overview m_overview;
+  Backdrop m_backdrop;
   SettingsWindow m_settingsWindow;
   LayerPopupHostRegistry m_layerPopupHosts;
   ColorPickerDialogPopup m_colorPickerDialogPopup;

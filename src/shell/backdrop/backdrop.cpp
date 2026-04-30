@@ -1,9 +1,9 @@
-#include "shell/overview/overview.h"
+#include "shell/backdrop/backdrop.h"
 
 #include "config/config_service.h"
 #include "core/log.h"
 #include "render/core/shared_texture_cache.h"
-#include "shell/overview/overview_surface.h"
+#include "shell/backdrop/backdrop_surface.h"
 #include "ui/palette.h"
 #include "wayland/wayland_connection.h"
 
@@ -11,16 +11,16 @@
 
 namespace {
 
-  constexpr Logger kLog("overview");
+  constexpr Logger kLog("backdrop");
   constexpr auto kDestroyDelay = std::chrono::milliseconds(2000);
 
 } // namespace
 
-Overview::Overview() = default;
-Overview::~Overview() = default;
+Backdrop::Backdrop() = default;
+Backdrop::~Backdrop() = default;
 
-bool Overview::shouldBeActiveForCurrentCompositorState() const {
-  if (m_config == nullptr || !m_config->config().overview.enabled) {
+bool Backdrop::shouldBeActiveForCurrentCompositorState() const {
+  if (m_config == nullptr || !m_config->config().backdrop.enabled) {
     return false;
   }
   if (m_wayland == nullptr || !m_wayland->tracksNiriOverviewState()) {
@@ -29,22 +29,22 @@ bool Overview::shouldBeActiveForCurrentCompositorState() const {
   return m_wayland->hasNiriOverviewState() && m_wayland->isNiriOverviewOpen();
 }
 
-bool Overview::shouldKeepLoadedWhileInactive() const {
-  return m_config != nullptr && m_config->config().overview.enabled && !m_config->config().overview.unloadWhenNotInUse;
+bool Backdrop::shouldKeepLoadedWhileInactive() const {
+  return m_config != nullptr && m_config->config().backdrop.enabled && !m_config->config().backdrop.unloadWhenNotInUse;
 }
 
-bool Overview::shouldRenderSurfaces() const { return m_active || shouldKeepLoadedWhileInactive(); }
+bool Backdrop::shouldRenderSurfaces() const { return m_active || shouldKeepLoadedWhileInactive(); }
 
-bool Overview::shouldHaveInstances() const { return shouldRenderSurfaces(); }
+bool Backdrop::shouldHaveInstances() const { return shouldRenderSurfaces(); }
 
-void Overview::destroyInstances() {
+void Backdrop::destroyInstances() {
   for (auto& inst : m_instances) {
     releaseInstanceTexture(*inst);
   }
   m_instances.clear();
 }
 
-bool Overview::initialize(WaylandConnection& wayland, ConfigService* config, SharedTextureCache* textureCache,
+bool Backdrop::initialize(WaylandConnection& wayland, ConfigService* config, SharedTextureCache* textureCache,
                           GlSharedContext* sharedGl, bool active) {
   m_wayland = &wayland;
   m_config = config;
@@ -52,12 +52,12 @@ bool Overview::initialize(WaylandConnection& wayland, ConfigService* config, Sha
   m_sharedGl = sharedGl;
   // Use the compositor's current overview state on startup. Hidden preloading
   // is only allowed when the user explicitly disables hidden unload.
-  m_active = active && m_config->config().overview.enabled;
+  m_active = active && m_config->config().backdrop.enabled;
 
   // Register reload callback unconditionally so toggling enabled in config works.
   m_config->addReloadCallback([this]() { reload(); });
 
-  if (!m_config->config().overview.enabled) {
+  if (!m_config->config().backdrop.enabled) {
     kLog.info("disabled in config");
     return true;
   }
@@ -68,19 +68,19 @@ bool Overview::initialize(WaylandConnection& wayland, ConfigService* config, Sha
   return true;
 }
 
-void Overview::reload() {
+void Backdrop::reload() {
   kLog.info("reloading config");
   m_destroyDelayTimer.stop();
   m_active = shouldBeActiveForCurrentCompositorState();
 
   // Always tear down existing instances. This is necessary because a
   // wallpaper enable/disable cycle resets the wallpaper share context, and any
-  // overview instances created against the old context cannot access the new
-  // textures. Full teardown + recreate is safe since overview surfaces are
+  // backdrop instances created against the old context cannot access the new
+  // textures. Full teardown + recreate is safe since backdrop surfaces are
   // hidden by the compositor outside of overview mode (no visible flash).
   destroyInstances();
 
-  if (!m_config->config().overview.enabled) {
+  if (!m_config->config().backdrop.enabled) {
     return;
   }
 
@@ -89,14 +89,14 @@ void Overview::reload() {
   }
 }
 
-void Overview::onOutputChange() {
-  if (m_config == nullptr || !m_config->config().overview.enabled || !shouldHaveInstances()) {
+void Backdrop::onOutputChange() {
+  if (m_config == nullptr || !m_config->config().backdrop.enabled || !shouldHaveInstances()) {
     return;
   }
   syncInstances();
 }
 
-void Overview::onStateChange() {
+void Backdrop::onStateChange() {
   kLog.info("state changed, checking wallpaper updates");
 
   for (auto& inst : m_instances) {
@@ -116,7 +116,7 @@ void Overview::onStateChange() {
   }
 }
 
-void Overview::onThemeChanged() {
+void Backdrop::onThemeChanged() {
   if (!shouldRenderSurfaces()) {
     return;
   }
@@ -128,9 +128,9 @@ void Overview::onThemeChanged() {
   }
 }
 
-void Overview::onFontChanged() { requestLayout(); }
+void Backdrop::onFontChanged() { requestLayout(); }
 
-void Overview::requestLayout() {
+void Backdrop::requestLayout() {
   for (auto& inst : m_instances) {
     if (inst->surface != nullptr) {
       inst->surface->requestLayout();
@@ -138,9 +138,9 @@ void Overview::requestLayout() {
   }
 }
 
-void Overview::setActive(bool active) {
-  const bool overviewEnabled = (m_config != nullptr) ? m_config->config().overview.enabled : false;
-  if (!overviewEnabled) {
+void Backdrop::setActive(bool active) {
+  const bool backdropEnabled = (m_config != nullptr) ? m_config->config().backdrop.enabled : false;
+  if (!backdropEnabled) {
     m_destroyDelayTimer.stop();
     if (!m_instances.empty()) {
       destroyInstances();
@@ -164,7 +164,7 @@ void Overview::setActive(bool active) {
     return;
   }
   m_active = active;
-  const bool unloadWhenNotInUse = (m_config != nullptr) ? m_config->config().overview.unloadWhenNotInUse : true;
+  const bool unloadWhenNotInUse = (m_config != nullptr) ? m_config->config().backdrop.unloadWhenNotInUse : true;
   const bool renderSurfaces = shouldRenderSurfaces();
 
   if (!m_active) {
@@ -204,7 +204,7 @@ void Overview::setActive(bool active) {
   }
 }
 
-void Overview::syncInstances() {
+void Backdrop::syncInstances() {
   const auto& outputs = m_wayland->outputs();
 
   // Remove instances for outputs that no longer exist
@@ -232,18 +232,18 @@ void Overview::syncInstances() {
   }
 }
 
-void Overview::createInstance(const WaylandOutput& output) {
+void Backdrop::createInstance(const WaylandOutput& output) {
   auto wallpaperPath = m_config->getWallpaperPath(output.connectorName);
   kLog.info("creating on {} ({}), path={}", output.connectorName, output.description, wallpaperPath);
 
-  auto inst = std::make_unique<OverviewInstance>();
+  auto inst = std::make_unique<BackdropInstance>();
   inst->outputName = output.name;
   inst->output = output.output;
   inst->scale = output.scale;
   inst->connectorName = output.connectorName;
 
   auto surfaceConfig = LayerSurfaceConfig{
-      .nameSpace = "noctalia-overview",
+      .nameSpace = "noctalia-backdrop",
       .layer = LayerShellLayer::Background,
       .anchor = LayerShellAnchor::Top | LayerShellAnchor::Bottom | LayerShellAnchor::Left | LayerShellAnchor::Right,
       .width = 0,
@@ -251,7 +251,7 @@ void Overview::createInstance(const WaylandOutput& output) {
       .exclusiveZone = -1,
   };
 
-  inst->surface = std::make_unique<OverviewSurface>(*m_wayland, std::move(surfaceConfig));
+  inst->surface = std::make_unique<BackdropSurface>(*m_wayland, std::move(surfaceConfig));
   inst->surface->setSharedGl(m_sharedGl);
 
   updateRendererState(*inst);
@@ -271,7 +271,7 @@ void Overview::createInstance(const WaylandOutput& output) {
   });
 
   if (!inst->surface->initialize(output.output)) {
-    kLog.warn("failed to initialize overview surface for output {}", output.name);
+    kLog.warn("failed to initialize backdrop surface for output {}", output.name);
     return;
   }
 
@@ -284,7 +284,7 @@ void Overview::createInstance(const WaylandOutput& output) {
   m_instances.push_back(std::move(inst));
 }
 
-void Overview::ensureInstanceWallpaperLoaded(OverviewInstance& inst) {
+void Backdrop::ensureInstanceWallpaperLoaded(BackdropInstance& inst) {
   if (inst.currentTexture.id == 0) {
     std::string path = inst.currentPath;
     if (path.empty() && m_config != nullptr) {
@@ -301,7 +301,7 @@ void Overview::ensureInstanceWallpaperLoaded(OverviewInstance& inst) {
   }
 }
 
-void Overview::loadWallpaper(OverviewInstance& inst, const std::string& path) {
+void Backdrop::loadWallpaper(BackdropInstance& inst, const std::string& path) {
   auto tex = m_textureCache->acquire(path);
   if (tex.id == 0) {
     kLog.warn("failed to load {}", path);
@@ -316,12 +316,12 @@ void Overview::loadWallpaper(OverviewInstance& inst, const std::string& path) {
   }
 }
 
-void Overview::updateRendererState(OverviewInstance& inst) {
+void Backdrop::updateRendererState(BackdropInstance& inst) {
   if (inst.surface == nullptr) {
     return;
   }
 
-  const auto& ov = m_config->config().overview;
+  const auto& ov = m_config->config().backdrop;
   inst.surface->setUnloadWhenInactive(ov.unloadWhenNotInUse);
   inst.surface->setBlurIntensity(ov.blurIntensity);
   inst.surface->setTintIntensity(ov.tintIntensity);
@@ -339,7 +339,7 @@ void Overview::updateRendererState(OverviewInstance& inst) {
   }
 }
 
-void Overview::releaseInstanceTexture(OverviewInstance& inst, bool clearPath) {
+void Backdrop::releaseInstanceTexture(BackdropInstance& inst, bool clearPath) {
   if (inst.currentTexture.id != 0) {
     m_textureCache->release(inst.currentTexture, inst.currentPath);
     inst.currentTexture = {};

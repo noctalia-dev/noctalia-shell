@@ -44,23 +44,23 @@ When automation is enabled, Noctalia picks one image from `directory` on the con
 
 ---
 
-# Overview
+# Backdrop
 
-Renders a blurred and tinted copy of the current wallpaper as a layer-shell backdrop for compositor overview modes (e.g. niri's overview). Disabled by default.
+Renders a blurred and tinted copy of the current wallpaper as a layer-shell backdrop for compositor overview/backdrop modes (e.g. niri's overview). Disabled by default.
 
 To make the surface visible during niri overview, add a layer-rule to your niri config:
 
 ```kdl
 layer-rule {
-    match namespace="^noctalia-overview"
+    match namespace="^noctalia-backdrop"
     place-within-backdrop true
 }
 ```
 
 ```toml
-[overview]
+[backdrop]
 enabled                = false
-unload_when_not_in_use = true   # release resources while closed; false keeps them warm in VRAM
+unload_when_not_in_use = true   # release resources while closed; false keeps the backdrop rendered
 blur_intensity         = 0.5    # 0.0 = no blur, 1.0 = maximum blur
 tint_intensity         = 0.3    # 0.0 = no tint, 1.0 = fully opaque tint
 ```

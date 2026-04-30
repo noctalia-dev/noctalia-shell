@@ -205,7 +205,7 @@ namespace settings {
       return "app-window";
     if (section == "dock")
       return "apps";
-    if (section == "overview")
+    if (section == "backdrop")
       return "layout-grid";
     if (section == "wallpaper")
       return "wallpaper-selector";
@@ -360,23 +360,23 @@ namespace settings {
                                 {"wallpaper", "automation", "recursive"},
                                 ToggleSetting{cfg.wallpaper.automation.recursive}, "subdirectories", true));
 
-    // Overview (niri-only: surface only renders when niri's overview IPC is available)
-    if (env.niriOverviewSupported) {
-      entries.push_back(makeEntry("overview", "general", tr("settings.schema.shared.enabled.label"),
-                                  tr("settings.schema.overview.enabled.description"), {"overview", "enabled"},
-                                  ToggleSetting{cfg.overview.enabled}, "wallpaper backdrop"));
-      entries.push_back(makeEntry("overview", "general", tr("settings.schema.overview.unload-when-hidden.label"),
-                                  tr("settings.schema.overview.unload-when-hidden.description"),
-                                  {"overview", "unload_when_not_in_use"},
-                                  ToggleSetting{cfg.overview.unloadWhenNotInUse}, "memory"));
-      entries.push_back(makeEntry("overview", "backdrop", tr("settings.schema.overview.blur-intensity.label"),
-                                  tr("settings.schema.overview.blur-intensity.description"),
-                                  {"overview", "blur_intensity"},
-                                  SliderSetting{cfg.overview.blurIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
-      entries.push_back(makeEntry("overview", "backdrop", tr("settings.schema.overview.tint-intensity.label"),
-                                  tr("settings.schema.overview.tint-intensity.description"),
-                                  {"overview", "tint_intensity"},
-                                  SliderSetting{cfg.overview.tintIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
+    // Backdrop (niri-only: surface tracks niri overview state)
+    if (env.niriBackdropSupported) {
+      entries.push_back(makeEntry("backdrop", "general", tr("settings.schema.shared.enabled.label"),
+                                  tr("settings.schema.backdrop.enabled.description"), {"backdrop", "enabled"},
+                                  ToggleSetting{cfg.backdrop.enabled}, "wallpaper backdrop"));
+      entries.push_back(makeEntry("backdrop", "general", tr("settings.schema.backdrop.unload-when-hidden.label"),
+                                  tr("settings.schema.backdrop.unload-when-hidden.description"),
+                                  {"backdrop", "unload_when_not_in_use"},
+                                  ToggleSetting{cfg.backdrop.unloadWhenNotInUse}, "memory"));
+      entries.push_back(makeEntry("backdrop", "backdrop", tr("settings.schema.backdrop.blur-intensity.label"),
+                                  tr("settings.schema.backdrop.blur-intensity.description"),
+                                  {"backdrop", "blur_intensity"},
+                                  SliderSetting{cfg.backdrop.blurIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
+      entries.push_back(makeEntry("backdrop", "backdrop", tr("settings.schema.backdrop.tint-intensity.label"),
+                                  tr("settings.schema.backdrop.tint-intensity.description"),
+                                  {"backdrop", "tint_intensity"},
+                                  SliderSetting{cfg.backdrop.tintIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
     }
 
     // Templates

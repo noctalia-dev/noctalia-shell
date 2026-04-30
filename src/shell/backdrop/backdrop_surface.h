@@ -10,10 +10,10 @@
 
 class GlSharedContext;
 
-class OverviewSurface : public LayerSurface {
+class BackdropSurface : public LayerSurface {
 public:
   using LayerSurface::LayerSurface;
-  ~OverviewSurface() override;
+  ~BackdropSurface() override;
 
   void setSharedGl(GlSharedContext* shared) noexcept { m_shared = shared; }
   void setBlurIntensity(float v) noexcept { m_blurIntensity = v; }

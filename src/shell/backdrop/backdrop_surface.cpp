@@ -1,4 +1,4 @@
-#include "shell/overview/overview_surface.h"
+#include "shell/backdrop/backdrop_surface.h"
 
 #include "render/gl_shared_context.h"
 #include "wayland/wayland_connection.h"
@@ -46,7 +46,7 @@ void main() {
 
 } // namespace
 
-OverviewSurface::~OverviewSurface() {
+BackdropSurface::~BackdropSurface() {
   m_wallpaperRenderer.makeCurrent();
   destroyFbos();
   m_blurProgram.destroy();
@@ -54,7 +54,7 @@ OverviewSurface::~OverviewSurface() {
   m_tintProgram.destroy();
 }
 
-bool OverviewSurface::createWlSurface() {
+bool BackdropSurface::createWlSurface() {
   m_surface = wl_compositor_create_surface(m_connection.compositor());
   if (m_surface == nullptr) {
     return false;
@@ -63,13 +63,13 @@ bool OverviewSurface::createWlSurface() {
   initializeSurfaceScaleProtocol();
 
   if (m_shared == nullptr) {
-    throw std::runtime_error("OverviewSurface requires a GlSharedContext");
+    throw std::runtime_error("BackdropSurface requires a GlSharedContext");
   }
   m_wallpaperRenderer.bind(*m_shared, m_surface);
   return true;
 }
 
-void OverviewSurface::onConfigure(std::uint32_t width, std::uint32_t height) {
+void BackdropSurface::onConfigure(std::uint32_t width, std::uint32_t height) {
   const auto bw = bufferWidthFor(width);
   const auto bh = bufferHeightFor(height);
 
@@ -88,14 +88,14 @@ void OverviewSurface::onConfigure(std::uint32_t width, std::uint32_t height) {
   Surface::onConfigure(width, height);
 }
 
-void OverviewSurface::onScaleChanged() {
+void BackdropSurface::onScaleChanged() {
   if (width() == 0 || height() == 0) {
     return;
   }
   onConfigure(width(), height());
 }
 
-void OverviewSurface::render() {
+void BackdropSurface::render() {
   if (m_surface == nullptr) {
     return;
   }
@@ -203,24 +203,24 @@ void OverviewSurface::render() {
   m_wallpaperRenderer.swapBuffers();
 }
 
-void OverviewSurface::setActive(bool active) {
+void BackdropSurface::setActive(bool active) {
   if (m_active == active) {
     return;
   }
   m_active = active;
   if (!m_active && m_unloadWhenInactive) {
-    // Free blur render targets while overview is inactive to drop VRAM usage.
+    // Free blur render targets while backdrop is inactive to drop VRAM usage.
     m_wallpaperRenderer.makeCurrent();
     destroyFbos();
   }
 }
 
-void OverviewSurface::setWallpaperState(GLuint tex, float imgW, float imgH, WallpaperFillMode fillMode) {
+void BackdropSurface::setWallpaperState(GLuint tex, float imgW, float imgH, WallpaperFillMode fillMode) {
   m_wallpaperRenderer.setTransitionState(tex, 0, imgW, imgH, 0.0f, 0.0f, 0.0f, WallpaperTransition::Fade, fillMode,
                                          TransitionParams{});
 }
 
-void OverviewSurface::ensurePrograms() {
+void BackdropSurface::ensurePrograms() {
   if (!m_blitProgram.isValid()) {
     m_blitProgram.create(kVertexShader, kBlitFragment);
   }
@@ -230,7 +230,7 @@ void OverviewSurface::ensurePrograms() {
   m_blurProgram.ensureInitialized();
 }
 
-void OverviewSurface::ensureFbos() {
+void BackdropSurface::ensureFbos() {
   if (m_fbo1 != 0 || m_bufW == 0 || m_bufH == 0) {
     return;
   }
@@ -256,7 +256,7 @@ void OverviewSurface::ensureFbos() {
   createFbo(m_fbo2, m_fboTex2, m_bufW, m_bufH);
 }
 
-void OverviewSurface::destroyFbos() {
+void BackdropSurface::destroyFbos() {
   if (m_fbo1 != 0) {
     glDeleteFramebuffers(1, &m_fbo1);
     glDeleteTextures(1, &m_fboTex1);

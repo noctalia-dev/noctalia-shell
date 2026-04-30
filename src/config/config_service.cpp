@@ -1124,9 +1124,9 @@ void ConfigService::parseTable(const toml::table& tbl) {
     }
   }
 
-  // Parse [overview]
-  if (auto* ovTbl = tbl["overview"].as_table()) {
-    auto& ov = m_config.overview;
+  // Parse [backdrop]
+  if (auto* ovTbl = tbl["backdrop"].as_table()) {
+    auto& ov = m_config.backdrop;
     if (auto v = (*ovTbl)["enabled"].value<bool>())
       ov.enabled = *v;
     if (auto v = (*ovTbl)["unload_when_not_in_use"].value<bool>())

@@ -190,7 +190,7 @@ struct WallpaperConfig {
   std::vector<WallpaperMonitorOverride> monitorOverrides;
 };
 
-struct OverviewConfig {
+struct BackdropConfig {
   bool enabled = false;
   bool unloadWhenNotInUse = true;
   float blurIntensity = 0.5f;
@@ -553,7 +553,7 @@ struct Config {
   std::vector<BarConfig> bars;
   std::unordered_map<std::string, WidgetConfig> widgets;
   WallpaperConfig wallpaper;
-  OverviewConfig overview;
+  BackdropConfig backdrop;
   DockConfig dock;
   DesktopWidgetsConfig desktopWidgets;
   ShellConfig shell;

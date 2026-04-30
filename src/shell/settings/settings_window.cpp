@@ -273,7 +273,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     }
   }
   settings::RegistryEnvironment env;
-  env.niriOverviewSupported = (m_wayland != nullptr && m_wayland->hasNiriOverviewState());
+  env.niriBackdropSupported = (m_wayland != nullptr && m_wayland->tracksNiriOverviewState());
   if (m_wayland != nullptr) {
     for (const auto& output : m_wayland->outputs()) {
       if (output.output == nullptr || output.connectorName.empty()) {

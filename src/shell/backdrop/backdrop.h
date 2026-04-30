@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/timer_manager.h"
-#include "shell/overview/overview_instance.h"
+#include "shell/backdrop/backdrop_instance.h"
 
 #include <memory>
 #include <vector>
@@ -12,10 +12,10 @@ class SharedTextureCache;
 class WaylandConnection;
 struct WaylandOutput;
 
-class Overview {
+class Backdrop {
 public:
-  Overview();
-  ~Overview();
+  Backdrop();
+  ~Backdrop();
 
   bool initialize(WaylandConnection& wayland, ConfigService* config, SharedTextureCache* textureCache,
                   GlSharedContext* sharedGl, bool active);
@@ -36,16 +36,16 @@ private:
   void destroyInstances();
   void syncInstances();
   void createInstance(const WaylandOutput& output);
-  void ensureInstanceWallpaperLoaded(OverviewInstance& inst);
-  void loadWallpaper(OverviewInstance& inst, const std::string& path);
-  void updateRendererState(OverviewInstance& inst);
-  void releaseInstanceTexture(OverviewInstance& inst, bool clearPath = true);
+  void ensureInstanceWallpaperLoaded(BackdropInstance& inst);
+  void loadWallpaper(BackdropInstance& inst, const std::string& path);
+  void updateRendererState(BackdropInstance& inst);
+  void releaseInstanceTexture(BackdropInstance& inst, bool clearPath = true);
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
   SharedTextureCache* m_textureCache = nullptr;
   GlSharedContext* m_sharedGl = nullptr;
-  std::vector<std::unique_ptr<OverviewInstance>> m_instances;
+  std::vector<std::unique_ptr<BackdropInstance>> m_instances;
   bool m_active = false;
   Timer m_destroyDelayTimer;
 };
