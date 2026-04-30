@@ -272,6 +272,24 @@ namespace noctalia::theme {
     m_config.setThemeMode(next);
   }
 
+  void ThemeService::cycleMode() {
+    ThemeMode next = ThemeMode::Dark;
+    switch (configuredMode()) {
+    case ThemeMode::Dark:
+      next = ThemeMode::Light;
+      break;
+    case ThemeMode::Light:
+      next = ThemeMode::Auto;
+      break;
+    case ThemeMode::Auto:
+      next = ThemeMode::Dark;
+      break;
+    }
+    m_config.setThemeMode(next);
+  }
+
+  ThemeMode ThemeService::configuredMode() const noexcept { return m_config.config().theme.mode; }
+
   bool ThemeService::isLightMode() const noexcept { return m_isLightMode; }
 
   void ThemeService::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config/config_types.h"
 #include "core/timer_manager.h"
 #include "render/animation/animation_manager.h"
 #include "theme/palette.h"
@@ -29,6 +30,8 @@ namespace noctalia::theme {
     void onConfigReload();
     void onWallpaperChange();
     void toggleLightDark();
+    void cycleMode();
+    [[nodiscard]] ThemeMode configuredMode() const noexcept;
     [[nodiscard]] bool isLightMode() const noexcept;
 
     void setChangeCallback(ChangeCallback callback);

@@ -29,6 +29,15 @@ namespace {
     explicit WifiShortcut(NetworkService* svc) : m_svc(svc) {}
     std::string_view id() const override { return "wifi"; }
     std::string_view defaultLabel() const override { return "Wi-Fi"; }
+    std::string displayLabel() const override {
+      if (m_svc != nullptr) {
+        const NetworkState& state = m_svc->state();
+        if (state.kind == NetworkConnectivity::Wireless && state.connected && !state.ssid.empty()) {
+          return state.ssid;
+        }
+      }
+      return std::string(defaultLabel());
+    }
     std::string_view iconOn() const override { return "wifi"; }
     std::string_view iconOff() const override { return "wifi-off"; }
     bool isToggle() const override { return true; }
@@ -69,13 +78,20 @@ namespace {
     explicit NightlightShortcut(NightLightManager* svc) : m_svc(svc) {}
     std::string_view id() const override { return "nightlight"; }
     std::string_view defaultLabel() const override { return "Night Light"; }
-    std::string_view iconOn() const override { return "nightlight-on"; }
+    std::string_view iconOn() const override {
+      return m_svc != nullptr && m_svc->forceEnabled() ? "nightlight-forced" : "nightlight-on";
+    }
     std::string_view iconOff() const override { return "nightlight-off"; }
     bool isToggle() const override { return true; }
-    bool active() const override { return m_svc != nullptr && m_svc->enabled(); }
+    bool active() const override { return m_svc != nullptr && (m_svc->forceEnabled() || m_svc->active()); }
     void onClick() override {
       if (m_svc != nullptr) {
-        m_svc->toggleEnabled();
+        if (m_svc->forceEnabled()) {
+          m_svc->setEnabled(false);
+          m_svc->setForceEnabled(false);
+        } else {
+          m_svc->toggleEnabled();
+        }
       }
     }
 
@@ -88,10 +104,10 @@ namespace {
     explicit NotificationShortcut(NotificationManager* svc) : m_svc(svc) {}
     std::string_view id() const override { return "notification"; }
     std::string_view defaultLabel() const override { return "Notifications"; }
-    std::string_view iconOn() const override { return "bell-off"; }
-    std::string_view iconOff() const override { return "bell"; }
+    std::string_view iconOn() const override { return "bell"; }
+    std::string_view iconOff() const override { return "bell-off"; }
     bool isToggle() const override { return true; }
-    bool active() const override { return m_svc != nullptr && m_svc->doNotDisturb(); }
+    bool active() const override { return m_svc != nullptr && !m_svc->doNotDisturb(); }
     void onClick() override {
       if (m_svc != nullptr) {
         (void)m_svc->toggleDoNotDisturb();
@@ -108,13 +124,30 @@ namespace {
     explicit DarkModeShortcut(noctalia::theme::ThemeService* svc) : m_svc(svc) {}
     std::string_view id() const override { return "dark_mode"; }
     std::string_view defaultLabel() const override { return "Dark Mode"; }
-    std::string_view iconOn() const override { return "moon-stars"; }
-    std::string_view iconOff() const override { return "sun"; }
+    std::string_view iconOn() const override {
+      return m_svc != nullptr && m_svc->configuredMode() == ThemeMode::Auto ? "theme-mode" : "weather-moon-stars";
+    }
+    std::string_view iconOff() const override { return "weather-sun"; }
     bool isToggle() const override { return true; }
-    bool active() const override { return m_svc != nullptr && !m_svc->isLightMode(); }
+    bool hasDescription() const override { return true; }
+    bool active() const override { return m_svc != nullptr && m_svc->configuredMode() != ThemeMode::Light; }
+    std::string description() const override {
+      if (m_svc == nullptr) {
+        return {};
+      }
+      switch (m_svc->configuredMode()) {
+      case ThemeMode::Dark:
+        return "Dark";
+      case ThemeMode::Light:
+        return "Light";
+      case ThemeMode::Auto:
+        return "Auto";
+      }
+      return {};
+    }
     void onClick() override {
       if (m_svc != nullptr) {
-        m_svc->toggleLightDark();
+        m_svc->cycleMode();
       }
     }
 

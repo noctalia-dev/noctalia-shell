@@ -349,7 +349,12 @@ void Application::initServices() {
   m_hookManager.reload(m_configService.config().hooks);
   m_configService.addReloadCallback([this]() { m_hookManager.reload(m_configService.config().hooks); });
   m_nightLightManager.reload(m_configService.config().nightlight);
-  m_nightLightManager.setChangeCallback([this]() { m_bar.refresh(); });
+  m_nightLightManager.setChangeCallback([this, shouldRefreshControlCenter]() {
+    m_bar.refresh();
+    if (shouldRefreshControlCenter()) {
+      m_panelManager.refresh();
+    }
+  });
   m_configService.addReloadCallback([this]() { m_nightLightManager.reload(m_configService.config().nightlight); });
 
   // Register all wallpaper consumers in the single-callback slot.

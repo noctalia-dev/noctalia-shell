@@ -84,6 +84,8 @@ std::unique_ptr<Flex> OverviewTab::create() {
   userMain->setJustify(FlexJustify::Center);
   userMain->setGap(Style::spaceXs * 0.5f * scale);
   userMain->setFlexGrow(1.0f);
+  userMain->setMinHeight(avatarSize);
+  userMain->setSize(0.0f, avatarSize);
   m_userMain = userMain.get();
 
   auto userTitle = std::make_unique<Label>();
@@ -338,6 +340,11 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
   if (m_mediaCard != nullptr) {
     m_mediaCard->setMinHeight(0.0f);
   }
+  if (m_userAvatar != nullptr && m_userMain != nullptr) {
+    const float userMainHeight = std::max(1.0f, m_userAvatar->height());
+    m_userMain->setMinHeight(userMainHeight);
+    m_userMain->setSize(m_userMain->width(), userMainHeight);
+  }
   m_rootLayout->setSize(contentWidth, bodyHeight);
   m_rootLayout->layout(renderer);
 
@@ -392,6 +399,7 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
       m_userAvatar->setPadding(1.0f * scale);
     }
     m_userMain->setMinHeight(desiredAvatar);
+    m_userMain->setSize(m_userMain->width(), desiredAvatar);
   }
 
   m_rootLayout->layout(renderer);
