@@ -1,5 +1,6 @@
 #include "shell/session/session_panel.h"
 
+#include "compositors/compositor_detect.h"
 #include "config/config_service.h"
 #include "core/log.h"
 #include "core/process.h"
@@ -38,15 +39,50 @@ namespace {
       {SessionPanel::ActionId::Shutdown, "session.actions.shutdown", "shutdown", ButtonVariant::Destructive},
   }};
 
-  bool doLogout() {
-    if (process::runAsync({"systemctl", "--user", "stop", "graphical-session.target"})) {
-      return true;
+  bool runSyncIfAvailable(std::initializer_list<const char*> args) {
+    if (args.size() == 0) {
+      return false;
     }
+    const char* executable = *args.begin();
+    if (executable == nullptr || executable[0] == '\0' || !process::commandExists(executable)) {
+      return false;
+    }
+    return process::runSync(std::vector<std::string>(args.begin(), args.end())).exitCode == 0;
+  }
+
+  bool doLogout() {
+    // Prefer compositor-native exits where available.
+    switch (compositors::detect()) {
+    case compositors::CompositorKind::Hyprland:
+      if (runSyncIfAvailable({"hyprctl", "dispatch", "exit"})) {
+        return true;
+      }
+      break;
+    case compositors::CompositorKind::Sway:
+      if (runSyncIfAvailable({"scrollmsg", "exit"}) || runSyncIfAvailable({"swaymsg", "exit"}) ||
+          runSyncIfAvailable({"i3-msg", "exit"})) {
+        return true;
+      }
+      break;
+    case compositors::CompositorKind::Niri:
+    case compositors::CompositorKind::Mango:
+    case compositors::CompositorKind::Unknown:
+      break;
+    }
+
+    // Fallback to logind-managed session termination.
     if (const char* sessionId = std::getenv("XDG_SESSION_ID"); sessionId != nullptr && sessionId[0] != '\0') {
-      return process::runAsync({"loginctl", "terminate-session", sessionId});
+      if (process::runSync({"loginctl", "terminate-session", sessionId}).exitCode == 0) {
+        return true;
+      }
     }
     if (const char* user = std::getenv("USER"); user != nullptr && user[0] != '\0') {
-      return process::runAsync({"loginctl", "terminate-user", user});
+      if (process::runSync({"loginctl", "terminate-user", user}).exitCode == 0) {
+        return true;
+      }
+    }
+    if (process::runSync({"systemctl", "--user", "stop", "graphical-session.target"}).exitCode == 0) {
+      return true;
     }
     return false;
   }
