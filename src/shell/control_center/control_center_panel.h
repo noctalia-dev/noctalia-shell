@@ -39,6 +39,7 @@ class PowerProfilesService;
 class SystemMonitorService;
 class UPowerService;
 class WeatherService;
+class WaylandConnection;
 
 namespace noctalia::theme {
   class ThemeService;
@@ -54,7 +55,7 @@ public:
                      BluetoothService* bluetooth = nullptr, BluetoothAgent* bluetoothAgent = nullptr,
                      BrightnessService* brightness = nullptr, SystemMonitorService* sysmon = nullptr,
                      NightLightManager* nightLight = nullptr, noctalia::theme::ThemeService* theme = nullptr,
-                     IdleInhibitor* idleInhibitor = nullptr);
+                     IdleInhibitor* idleInhibitor = nullptr, WaylandConnection* wayland = nullptr);
 
   void create() override;
   void onFrameTick(float deltaMs) override;

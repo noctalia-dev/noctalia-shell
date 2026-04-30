@@ -1,6 +1,7 @@
 #include "shell/control_center/shortcut_registry.h"
 
 #include "compositors/keyboard_backend.h"
+#include "config/config_service.h"
 #include "dbus/bluetooth/bluetooth_service.h"
 #include "dbus/mpris/mpris_service.h"
 #include "dbus/network/network_service.h"
@@ -8,13 +9,18 @@
 #include "idle/idle_inhibitor.h"
 #include "notification/notification_manager.h"
 #include "pipewire/pipewire_service.h"
+#include "shell/bar/widgets/keyboard_layout_widget.h"
 #include "shell/control_center/shortcut_services.h"
 #include "shell/panel/panel_manager.h"
 #include "system/night_light_manager.h"
 #include "system/weather_service.h"
 #include "theme/theme_service.h"
+#include "wayland/wayland_connection.h"
 
 #include <algorithm>
+#include <cmath>
+#include <format>
+#include <vector>
 
 namespace {
 
@@ -103,11 +109,11 @@ namespace {
   public:
     explicit NotificationShortcut(NotificationManager* svc) : m_svc(svc) {}
     std::string_view id() const override { return "notification"; }
-    std::string_view defaultLabel() const override { return "Notifications"; }
-    std::string_view iconOn() const override { return "bell"; }
-    std::string_view iconOff() const override { return "bell-off"; }
+    std::string_view defaultLabel() const override { return "DND"; }
+    std::string_view iconOn() const override { return "bell-off"; }
+    std::string_view iconOff() const override { return "bell"; }
     bool isToggle() const override { return true; }
-    bool active() const override { return m_svc != nullptr && !m_svc->doNotDisturb(); }
+    bool active() const override { return m_svc != nullptr && m_svc->doNotDisturb(); }
     void onClick() override {
       if (m_svc != nullptr) {
         (void)m_svc->toggleDoNotDisturb();
@@ -124,27 +130,26 @@ namespace {
     explicit DarkModeShortcut(noctalia::theme::ThemeService* svc) : m_svc(svc) {}
     std::string_view id() const override { return "dark_mode"; }
     std::string_view defaultLabel() const override { return "Dark Mode"; }
+    std::string displayLabel() const override {
+      if (m_svc == nullptr) {
+        return std::string(defaultLabel());
+      }
+      switch (m_svc->configuredMode()) {
+      case ThemeMode::Dark:
+        return "Dark Mode";
+      case ThemeMode::Light:
+        return "Light Mode";
+      case ThemeMode::Auto:
+        return "Auto Mode";
+      }
+      return std::string(defaultLabel());
+    }
     std::string_view iconOn() const override {
       return m_svc != nullptr && m_svc->configuredMode() == ThemeMode::Auto ? "theme-mode" : "weather-moon-stars";
     }
     std::string_view iconOff() const override { return "weather-sun"; }
     bool isToggle() const override { return true; }
-    bool hasDescription() const override { return true; }
     bool active() const override { return m_svc != nullptr && m_svc->configuredMode() != ThemeMode::Light; }
-    std::string description() const override {
-      if (m_svc == nullptr) {
-        return {};
-      }
-      switch (m_svc->configuredMode()) {
-      case ThemeMode::Dark:
-        return "Dark";
-      case ThemeMode::Light:
-        return "Light";
-      case ThemeMode::Auto:
-        return "Auto";
-      }
-      return {};
-    }
     void onClick() override {
       if (m_svc != nullptr) {
         m_svc->cycleMode();
@@ -159,7 +164,7 @@ namespace {
   public:
     explicit IdleInhibitorShortcut(IdleInhibitor* svc) : m_svc(svc) {}
     std::string_view id() const override { return "idle_inhibitor"; }
-    std::string_view defaultLabel() const override { return "Keep Awake"; }
+    std::string_view defaultLabel() const override { return "Idle Inhibitor"; }
     std::string_view iconOn() const override { return "idle-inhibitor-on"; }
     std::string_view iconOff() const override { return "idle-inhibitor-off"; }
     bool isToggle() const override { return true; }
@@ -179,8 +184,8 @@ namespace {
     explicit AudioShortcut(PipeWireService* svc) : m_svc(svc) {}
     std::string_view id() const override { return "audio"; }
     std::string_view defaultLabel() const override { return "Audio"; }
-    std::string_view iconOn() const override { return "volume-high"; }
-    std::string_view iconOff() const override { return "volume-x"; }
+    std::string_view iconOn() const override { return "volume-x"; }
+    std::string_view iconOff() const override { return "volume-high"; }
     bool isToggle() const override { return true; }
     bool active() const override {
       if (m_svc == nullptr) {
@@ -207,7 +212,7 @@ namespace {
     explicit MicMuteShortcut(PipeWireService* svc) : m_svc(svc) {}
     std::string_view id() const override { return "mic_mute"; }
     std::string_view defaultLabel() const override { return "Microphone"; }
-    std::string_view iconOn() const override { return "microphone-off"; }
+    std::string_view iconOn() const override { return "microphone-mute"; }
     std::string_view iconOff() const override { return "microphone"; }
     bool isToggle() const override { return true; }
     bool active() const override {
@@ -230,21 +235,76 @@ namespace {
     PipeWireService* m_svc;
   };
 
-  // ── Description shortcuts ──────────────��────────────────────────────────────
+  const char* powerProfileIcon(std::string_view profile) {
+    if (profile == "performance") {
+      return "performance";
+    }
+    if (profile == "power-saver") {
+      return "powersaver";
+    }
+    return "balanced";
+  }
+
+  const WidgetConfig* findKeyboardLayoutWidgetConfig(const Config& config) {
+    auto resolve = [&config](const std::string& name) -> const WidgetConfig* {
+      const auto it = config.widgets.find(name);
+      if (it == config.widgets.end() || it->second.type != "keyboard_layout") {
+        return nullptr;
+      }
+      return &it->second;
+    };
+
+    auto search = [&resolve](const std::vector<std::string>& widgets) -> const WidgetConfig* {
+      for (const std::string& name : widgets) {
+        if (const WidgetConfig* wc = resolve(name); wc != nullptr) {
+          return wc;
+        }
+      }
+      return nullptr;
+    };
+
+    for (const BarConfig& bar : config.bars) {
+      if (const WidgetConfig* wc = search(bar.startWidgets); wc != nullptr) {
+        return wc;
+      }
+      if (const WidgetConfig* wc = search(bar.centerWidgets); wc != nullptr) {
+        return wc;
+      }
+      if (const WidgetConfig* wc = search(bar.endWidgets); wc != nullptr) {
+        return wc;
+      }
+    }
+
+    return resolve("keyboard_layout");
+  }
+
+  KeyboardLayoutWidget::DisplayMode keyboardLayoutDisplayMode(const ConfigService* config) {
+    if (config == nullptr) {
+      return KeyboardLayoutWidget::DisplayMode::Short;
+    }
+    const WidgetConfig* wc = findKeyboardLayoutWidgetConfig(config->config());
+    const std::string display = wc != nullptr ? wc->getString("display", "short") : std::string("short");
+    return KeyboardLayoutWidget::parseDisplayMode(display);
+  }
 
   class PowerProfileShortcut final : public Shortcut {
   public:
     explicit PowerProfileShortcut(PowerProfilesService* svc) : m_svc(svc) {}
     std::string_view id() const override { return "power_profile"; }
     std::string_view defaultLabel() const override { return "Power"; }
-    std::string_view iconOn() const override { return "balanced"; }
-    std::string_view iconOff() const override { return "balanced"; }
-    bool hasDescription() const override { return true; }
-    std::string description() const override {
+    std::string displayLabel() const override {
       if (m_svc != nullptr && !m_svc->activeProfile().empty()) {
         return profileLabel(m_svc->activeProfile());
       }
-      return {};
+      return std::string(defaultLabel());
+    }
+    std::string_view iconOn() const override {
+      return powerProfileIcon(m_svc != nullptr ? m_svc->activeProfile() : "");
+    }
+    std::string_view iconOff() const override { return "balanced"; }
+    bool isToggle() const override { return true; }
+    bool active() const override {
+      return m_svc != nullptr && !m_svc->activeProfile().empty() && m_svc->activeProfile() != "balanced";
     }
     void onClick() override {
       if (m_svc == nullptr) {
@@ -273,18 +333,26 @@ namespace {
     explicit WeatherShortcut(WeatherService* svc) : m_svc(svc) {}
     std::string_view id() const override { return "weather"; }
     std::string_view defaultLabel() const override { return "Weather"; }
-    std::string_view iconOn() const override { return "cloud-sun"; }
-    std::string_view iconOff() const override { return "cloud-sun"; }
-    bool hasDescription() const override { return true; }
-    std::string description() const override {
-      if (m_svc != nullptr && m_svc->enabled()) {
+    std::string displayLabel() const override {
+      if (m_svc != nullptr && m_svc->enabled() && m_svc->hasData()) {
         const auto& snapshot = m_svc->snapshot();
-        if (snapshot.valid) {
-          return WeatherService::shortDescriptionForCode(snapshot.current.weatherCode);
-        }
+        const int temp = static_cast<int>(std::lround(m_svc->displayTemperature(snapshot.current.temperatureC)));
+        return std::format("{}{}", temp, m_svc->displayTemperatureUnit());
       }
-      return {};
+      return std::string(defaultLabel());
     }
+    std::string displayIcon() const override {
+      if (m_svc == nullptr || !m_svc->enabled()) {
+        return "weather-cloud-off";
+      }
+      if (m_svc->hasData()) {
+        const auto& snapshot = m_svc->snapshot();
+        return WeatherService::glyphForCode(snapshot.current.weatherCode, snapshot.current.isDay);
+      }
+      return "weather-cloud";
+    }
+    std::string_view iconOn() const override { return "weather-cloud-sun"; }
+    std::string_view iconOff() const override { return "weather-cloud-sun"; }
     void onClick() override { openTab("weather"); }
     void onRightClick() override { openTab("weather"); }
 
@@ -294,17 +362,37 @@ namespace {
 
   class KeyboardLayoutShortcut final : public Shortcut {
   public:
-    KeyboardLayoutShortcut() = default;
+    KeyboardLayoutShortcut(WaylandConnection* wayland, ConfigService* config) : m_wayland(wayland), m_config(config) {}
     std::string_view id() const override { return "keyboard_layout"; }
     std::string_view defaultLabel() const override { return "Layout"; }
+    std::string displayLabel() const override {
+      return KeyboardLayoutWidget::formatLayoutLabel(resolvedLayoutName(), keyboardLayoutDisplayMode(m_config));
+    }
     std::string_view iconOn() const override { return "keyboard"; }
     std::string_view iconOff() const override { return "keyboard"; }
-    bool hasDescription() const override { return true; }
-    std::string description() const override { return m_backend.currentLayoutName().value_or(""); }
-    void onClick() override { (void)m_backend.cycleLayout(); }
+    void onClick() override {
+      (void)m_backend.cycleLayout();
+      PanelManager::instance().refresh();
+    }
 
   private:
+    [[nodiscard]] std::string resolvedLayoutName() const {
+      const auto state = m_backend.layoutState();
+      if (state.has_value() && state->currentIndex >= 0 &&
+          state->currentIndex < static_cast<int>(state->names.size())) {
+        return state->names[static_cast<std::size_t>(state->currentIndex)];
+      }
+
+      if (auto backendName = m_backend.currentLayoutName(); backendName.has_value() && !backendName->empty()) {
+        return *backendName;
+      }
+
+      return m_wayland != nullptr ? m_wayland->currentKeyboardLayoutName() : std::string{};
+    }
+
     KeyboardBackend m_backend;
+    WaylandConnection* m_wayland = nullptr;
+    ConfigService* m_config = nullptr;
   };
 
   // ── Action-only shortcuts ────��──────────────────────────────────────────────
@@ -314,8 +402,16 @@ namespace {
     explicit MediaShortcut(MprisService* svc) : m_svc(svc) {}
     std::string_view id() const override { return "media"; }
     std::string_view defaultLabel() const override { return "Media"; }
-    std::string_view iconOn() const override { return "player-play"; }
-    std::string_view iconOff() const override { return "player-pause"; }
+    std::string_view iconOn() const override { return "media-pause"; }
+    std::string_view iconOff() const override { return "media-play"; }
+    bool isToggle() const override { return true; }
+    bool active() const override {
+      if (m_svc == nullptr) {
+        return false;
+      }
+      const auto active = m_svc->activePlayer();
+      return active.has_value() && active->playbackStatus == "Playing";
+    }
     void onClick() override {
       if (m_svc != nullptr) {
         (void)m_svc->playPauseActive();
@@ -331,8 +427,8 @@ namespace {
   public:
     std::string_view id() const override { return "sysmon"; }
     std::string_view defaultLabel() const override { return "System"; }
-    std::string_view iconOn() const override { return "cpu"; }
-    std::string_view iconOff() const override { return "cpu"; }
+    std::string_view iconOn() const override { return "activity"; }
+    std::string_view iconOff() const override { return "activity"; }
     void onClick() override { openTab("system"); }
     void onRightClick() override { openTab("system"); }
   };
@@ -392,7 +488,7 @@ std::unique_ptr<Shortcut> ShortcutRegistry::create(std::string_view type, const 
   if (type == "sysmon")
     return std::make_unique<SysmonShortcut>();
   if (type == "keyboard_layout")
-    return std::make_unique<KeyboardLayoutShortcut>();
+    return std::make_unique<KeyboardLayoutShortcut>(s.wayland, s.config);
   if (type == "wallpaper")
     return std::make_unique<WallpaperShortcut>();
   if (type == "session")

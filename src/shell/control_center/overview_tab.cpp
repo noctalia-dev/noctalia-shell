@@ -41,10 +41,10 @@ OverviewTab::OverviewTab(MprisService* mpris, WeatherService* weather, PipeWireS
                          PowerProfilesService* powerProfiles, ConfigService* config, NetworkService* network,
                          BluetoothService* bluetooth, NightLightManager* nightLight,
                          noctalia::theme::ThemeService* theme, NotificationManager* notifications,
-                         IdleInhibitor* idleInhibitor)
+                         IdleInhibitor* idleInhibitor, WaylandConnection* wayland)
     : m_mpris(mpris), m_weather(weather), m_config(config),
-      m_services{network,       bluetooth, nightLight,    theme, notifications,
-                 idleInhibitor, audio,     powerProfiles, mpris, weather} {}
+      m_services{network, bluetooth,     nightLight, theme,   notifications, idleInhibitor,
+                 audio,   powerProfiles, mpris,      weather, config,        wayland} {}
 
 OverviewTab::~OverviewTab() = default;
 
@@ -118,7 +118,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   dateTimeCard->setDirection(FlexDirection::Horizontal);
   dateTimeCard->setJustify(FlexJustify::Center);
   dateTimeCard->setFillParentMainAxis(true);
-  dateTimeCard->setFlexGrow(1.0f);
+  dateTimeCard->setFlexGrow(2.0f);
   m_dateTimeCard = dateTimeCard.get();
 
   auto dateTimeContent = std::make_unique<Flex>();
@@ -168,7 +168,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   // --- Media ---
   auto mediaCard = std::make_unique<Flex>();
   applyOverviewCardStyle(*mediaCard, scale);
-  mediaCard->setFlexGrow(1.0f);
+  mediaCard->setFlexGrow(3.0f);
   mediaCard->setGap(Style::spaceXs * scale);
   m_mediaCard = mediaCard.get();
 
@@ -257,7 +257,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
     const bool isActive = shortcut->isToggle() && shortcut->active();
 
     auto btn = std::make_unique<Button>();
-    btn->setGlyph(std::string(shortcut->currentIcon()));
+    btn->setGlyph(shortcut->displayIcon());
     btn->setGlyphSize(Style::fontSizeTitle * 1.5f * scale);
     btn->setText(label);
     btn->label()->setFontSize(Style::fontSizeCaption * scale);
@@ -268,15 +268,6 @@ std::unique_ptr<Flex> OverviewTab::create() {
     btn->setPadding(Style::spaceMd * scale);
     btn->setRadius(Style::radiusLg * scale);
     btn->setVariant(isActive ? ButtonVariant::Accent : ButtonVariant::Outline);
-
-    Label* descPtr = nullptr;
-    if (shortcut->hasDescription()) {
-      auto desc = std::make_unique<Label>();
-      desc->setText("");
-      desc->setFontSize(Style::fontSizeCaption * 0.8f * scale);
-      desc->setMaxLines(1);
-      descPtr = static_cast<Label*>(btn->addChild(std::move(desc)));
-    }
 
     const std::size_t padIdx = m_shortcutPads.size();
     btn->setOnClick([this, padIdx]() {
@@ -296,7 +287,6 @@ std::unique_ptr<Flex> OverviewTab::create() {
     pad.button = btnPtr;
     pad.glyph = btnPtr->glyph();
     pad.label = btnPtr->label();
-    pad.description = descPtr;
     pad.labelOverride = sc.label;
     m_shortcutPads.push_back(std::move(pad));
     grid->addChild(std::move(btn));
@@ -584,16 +574,13 @@ void OverviewTab::syncShortcuts() {
       pad.button->setVariant(on ? ButtonVariant::Accent : ButtonVariant::Outline);
     }
     if (pad.glyph != nullptr) {
-      pad.glyph->setGlyph(std::string(sc.currentIcon()));
+      pad.glyph->setGlyph(sc.displayIcon());
     }
     if (pad.button != nullptr && pad.label != nullptr) {
       const std::string label = pad.labelOverride.has_value() ? *pad.labelOverride : sc.displayLabel();
       if (pad.label->text() != label) {
         pad.button->setText(label);
       }
-    }
-    if (pad.description != nullptr && sc.hasDescription()) {
-      pad.description->setText(sc.description());
     }
   }
 }

@@ -15,13 +15,13 @@ class GridView;
 class Image;
 class Label;
 class Shortcut;
+class WaylandConnection;
 
 struct ShortcutPad {
   std::unique_ptr<Shortcut> shortcut;
   Button* button = nullptr;
   Glyph* glyph = nullptr;
   Label* label = nullptr;
-  Label* description = nullptr;
   std::optional<std::string> labelOverride;
 };
 
@@ -30,7 +30,7 @@ public:
   OverviewTab(MprisService* mpris, WeatherService* weather, PipeWireService* audio, PowerProfilesService* powerProfiles,
               ConfigService* config, NetworkService* network, BluetoothService* bluetooth,
               NightLightManager* nightLight, noctalia::theme::ThemeService* theme, NotificationManager* notifications,
-              IdleInhibitor* idleInhibitor);
+              IdleInhibitor* idleInhibitor, WaylandConnection* wayland);
   ~OverviewTab() override;
 
   std::unique_ptr<Flex> create() override;

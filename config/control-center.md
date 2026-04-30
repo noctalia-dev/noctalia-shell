@@ -39,20 +39,20 @@ type = "session"
 | `wifi` | Wi-Fi | Toggle wireless on/off | Open network tab |
 | `bluetooth` | Bluetooth | Toggle adapter on/off | Open bluetooth tab |
 | `nightlight` | Night Light | Toggle blue-light filter | -- |
-| `notification` | Notifications | Toggle Do Not Disturb | Open notifications tab |
+| `notification` | DND | Toggle Do Not Disturb | Open notifications tab |
 | `dark_mode` | Dark Mode | Toggle light/dark theme | -- |
-| `idle_inhibitor` | Keep Awake | Toggle idle/sleep prevention | -- |
+| `idle_inhibitor` | Idle Inhibitor | Toggle idle/sleep prevention | -- |
 | `audio` | Audio | Toggle output mute | Open audio tab |
 | `mic_mute` | Microphone | Toggle mic mute | Open audio tab |
-| `power_profile` | Power | Cycle power profile | Open system tab |
+| `power_profile` | Current profile | Cycle power profile | Open system tab |
 | `media` | Media | Play/Pause active player | Open media tab |
-| `weather` | Weather | Open weather tab | Open weather tab |
+| `weather` | Temperature | Open weather tab | Open weather tab |
 | `sysmon` | System | Open system tab | Open system tab |
-| `keyboard_layout` | Layout | Cycle keyboard layout | -- |
+| `keyboard_layout` | Current layout | Cycle keyboard layout | -- |
 | `wallpaper` | Wallpaper | Open wallpaper panel | -- |
 | `session` | Session | Open session panel | -- |
 | `clipboard` | Clipboard | Open clipboard panel | -- |
 
-Toggle shortcuts show an active/inactive visual state. `power_profile`, `weather`, and `keyboard_layout` display a dynamic description (current profile, condition, or layout name).
+Toggle shortcuts show an active/inactive visual state. `power_profile`, `weather`, and `keyboard_layout` display dynamic labels (current profile, temperature, or layout name).
 
 When no `[[control_center.shortcuts]]` entries are defined, the default set is: `wifi`, `bluetooth`, `nightlight`, `notification`, `wallpaper`, `session`.

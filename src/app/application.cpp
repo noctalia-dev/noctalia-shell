@@ -339,7 +339,12 @@ void Application::initServices() {
   });
 
   m_idleInhibitor.initialize(m_wayland, &m_renderContext);
-  m_idleInhibitor.setChangeCallback([this]() { m_bar.refresh(); });
+  m_idleInhibitor.setChangeCallback([this, shouldRefreshControlCenter]() {
+    m_bar.refresh();
+    if (shouldRefreshControlCenter()) {
+      m_panelManager.refresh();
+    }
+  });
   m_idleManager.initialize(m_wayland);
   m_idleManager.setCommandRunner([this](const std::string& command) { return runUserCommand(command); });
   m_idleManager.reload(m_configService.config().idle);
@@ -438,7 +443,13 @@ void Application::initServices() {
   if (m_systemBus != nullptr) {
     try {
       m_powerProfilesService = std::make_unique<PowerProfilesService>(*m_systemBus);
-      m_powerProfilesService->setChangeCallback([this](const PowerProfilesState& /*state*/) { m_bar.refresh(); });
+      m_powerProfilesService->setChangeCallback(
+          [this, shouldRefreshControlCenter](const PowerProfilesState& /*state*/) {
+            m_bar.refresh();
+            if (shouldRefreshControlCenter()) {
+              m_panelManager.refresh();
+            }
+          });
       if (!m_powerProfilesService->activeProfile().empty()) {
         kLog.info("power profiles active profile: {}", m_powerProfilesService->activeProfile());
       } else {
@@ -772,11 +783,12 @@ void Application::initUi() {
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
   m_panelManager.registerPanel(
       "control-center",
-      std::make_unique<ControlCenterPanel>(
-          &m_notificationManager, m_pipewireService.get(), m_mprisService.get(), &m_configService, &m_httpClient,
-          &m_weatherService, m_pipewireSpectrum.get(), m_upowerService.get(), m_powerProfilesService.get(),
-          m_networkService.get(), m_networkSecretAgent.get(), m_bluetoothService.get(), m_bluetoothAgent.get(),
-          m_brightnessService.get(), m_systemMonitor.get(), &m_nightLightManager, &m_themeService, &m_idleInhibitor));
+      std::make_unique<ControlCenterPanel>(&m_notificationManager, m_pipewireService.get(), m_mprisService.get(),
+                                           &m_configService, &m_httpClient, &m_weatherService, m_pipewireSpectrum.get(),
+                                           m_upowerService.get(), m_powerProfilesService.get(), m_networkService.get(),
+                                           m_networkSecretAgent.get(), m_bluetoothService.get(), m_bluetoothAgent.get(),
+                                           m_brightnessService.get(), m_systemMonitor.get(), &m_nightLightManager,
+                                           &m_themeService, &m_idleInhibitor, &m_wayland));
   {
     auto launcherPanel = std::make_unique<LauncherPanel>(&m_configService, &m_asyncTextureCache);
     launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));

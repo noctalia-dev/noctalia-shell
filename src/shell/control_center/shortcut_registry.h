@@ -11,13 +11,12 @@ public:
   [[nodiscard]] virtual std::string_view id() const = 0;
   [[nodiscard]] virtual std::string_view defaultLabel() const = 0;
   [[nodiscard]] virtual std::string displayLabel() const { return std::string(defaultLabel()); }
+  [[nodiscard]] virtual std::string displayIcon() const { return std::string(currentIcon()); }
   [[nodiscard]] virtual std::string_view iconOn() const = 0;
   [[nodiscard]] virtual std::string_view iconOff() const = 0;
   [[nodiscard]] virtual bool isToggle() const { return false; }
-  [[nodiscard]] virtual bool hasDescription() const { return false; }
 
   [[nodiscard]] virtual bool active() const { return false; }
-  [[nodiscard]] virtual std::string description() const { return {}; }
 
   virtual void onClick() {}
   virtual void onRightClick() {}

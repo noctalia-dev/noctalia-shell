@@ -17,6 +17,7 @@ public:
 
   KeyboardLayoutWidget(WaylandConnection& wayland, std::string cycleCommand, DisplayMode displayMode);
   static DisplayMode parseDisplayMode(const std::string& value);
+  static std::string formatLayoutLabel(const std::string& layoutName, DisplayMode displayMode);
 
   void create() override;
 
@@ -28,7 +29,6 @@ private:
   void armRefreshTick();
   void scheduleRefreshBurst();
   void cycleLayout();
-  static std::string formatLayoutLabel(const std::string& layoutName, DisplayMode displayMode);
 
   WaylandConnection& m_wayland;
   KeyboardBackend m_keyboardBackend;
