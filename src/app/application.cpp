@@ -767,11 +767,11 @@ void Application::initUi() {
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
   m_panelManager.registerPanel(
       "control-center",
-      std::make_unique<ControlCenterPanel>(&m_notificationManager, m_pipewireService.get(), m_mprisService.get(),
-                                           &m_configService, &m_httpClient, &m_weatherService, m_pipewireSpectrum.get(),
-                                           m_upowerService.get(), m_powerProfilesService.get(), m_networkService.get(),
-                                           m_networkSecretAgent.get(), m_bluetoothService.get(), m_bluetoothAgent.get(),
-                                           m_brightnessService.get(), m_systemMonitor.get()));
+      std::make_unique<ControlCenterPanel>(
+          &m_notificationManager, m_pipewireService.get(), m_mprisService.get(), &m_configService, &m_httpClient,
+          &m_weatherService, m_pipewireSpectrum.get(), m_upowerService.get(), m_powerProfilesService.get(),
+          m_networkService.get(), m_networkSecretAgent.get(), m_bluetoothService.get(), m_bluetoothAgent.get(),
+          m_brightnessService.get(), m_systemMonitor.get(), &m_nightLightManager, &m_themeService, &m_idleInhibitor));
   {
     auto launcherPanel = std::make_unique<LauncherPanel>(&m_configService, &m_asyncTextureCache);
     launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));

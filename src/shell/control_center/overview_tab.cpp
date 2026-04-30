@@ -2,12 +2,8 @@
 
 #include "config/config_service.h"
 #include "core/build_info.h"
-#include "dbus/mpris/mpris_art.h"
-#include "dbus/mpris/mpris_service.h"
-#include "dbus/power/power_profiles_service.h"
-#include "dbus/upower/upower_service.h"
 #include "i18n/i18n.h"
-#include "pipewire/pipewire_service.h"
+#include "shell/control_center/shortcut_registry.h"
 #include "shell/panel/panel_manager.h"
 #include "system/distro_info.h"
 #include "system/weather_service.h"
@@ -15,11 +11,11 @@
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
+#include "ui/controls/grid_view.h"
 #include "ui/controls/image.h"
 #include "ui/controls/label.h"
 
 #include <cmath>
-#include <filesystem>
 #include <format>
 #include <memory>
 #include <string>
@@ -35,10 +31,15 @@ namespace {
 
 } // namespace
 
-OverviewTab::OverviewTab(MprisService* mpris, WeatherService* weather, PipeWireService* audio, UPowerService* upower,
-                         PowerProfilesService* powerProfiles, ConfigService* config)
-    : m_mpris(mpris), m_weather(weather), m_audio(audio), m_upower(upower), m_powerProfiles(powerProfiles),
-      m_config(config) {}
+OverviewTab::OverviewTab(MprisService* mpris, WeatherService* weather, PipeWireService* audio,
+                         PowerProfilesService* powerProfiles, ConfigService* config, NetworkService* network,
+                         BluetoothService* bluetooth, NightLightManager* nightLight,
+                         noctalia::theme::ThemeService* theme, NotificationManager* notifications,
+                         IdleInhibitor* idleInhibitor)
+    : m_config(config), m_services{network,       bluetooth, nightLight,    theme, notifications,
+                                   idleInhibitor, audio,     powerProfiles, mpris, weather} {}
+
+OverviewTab::~OverviewTab() = default;
 
 std::unique_ptr<Flex> OverviewTab::create() {
   const float scale = contentScale();
@@ -50,140 +51,11 @@ std::unique_ptr<Flex> OverviewTab::create() {
   tab->setGap(Style::spaceMd * scale);
   m_rootLayout = tab.get();
 
-  auto topRow = std::make_unique<Flex>();
-  topRow->setDirection(FlexDirection::Horizontal);
-  topRow->setAlign(FlexAlign::Stretch);
-  topRow->setGap(Style::spaceMd * scale);
-
-  // --- Weather ---
-  auto weatherCard = std::make_unique<Flex>();
-  applyOverviewCardStyle(*weatherCard, scale);
-  m_weatherCard = weatherCard.get();
-  weatherCard->setFlexGrow(1.0f);
-  weatherCard->setGap(Style::spaceXs * scale);
-
-  auto weatherHeader = std::make_unique<Flex>();
-  weatherHeader->setDirection(FlexDirection::Horizontal);
-  weatherHeader->setAlign(FlexAlign::Center);
-  weatherHeader->setJustify(FlexJustify::SpaceBetween);
-  weatherHeader->setGap(Style::spaceSm * scale);
-
-  Label* weatherTitle = addTitle(*weatherHeader, i18n::tr("control-center.overview.sections.today"), scale);
-  weatherTitle->setFlexGrow(1.0f);
-
-  auto weatherDate = std::make_unique<Label>();
-  weatherDate->setText(formatCurrentDate());
-  weatherDate->setFontSize(Style::fontSizeCaption * scale);
-  weatherDate->setColor(roleColor(ColorRole::OnSurfaceVariant));
-  m_weatherDate = weatherDate.get();
-  weatherHeader->addChild(std::move(weatherDate));
-  weatherCard->addChild(std::move(weatherHeader));
-
-  auto weatherRow = std::make_unique<Flex>();
-  weatherRow->setDirection(FlexDirection::Horizontal);
-  weatherRow->setAlign(FlexAlign::Center);
-  weatherRow->setGap(Style::spaceSm * scale);
-
-  auto weatherGlyph = std::make_unique<Glyph>();
-  weatherGlyph->setGlyph("weather-cloud-sun");
-  weatherGlyph->setGlyphSize(Style::controlHeightLg * 1.25f * scale);
-  weatherGlyph->setColor(roleColor(ColorRole::Primary));
-  m_weatherGlyph = weatherGlyph.get();
-
-  auto weatherText = std::make_unique<Flex>();
-  weatherText->setDirection(FlexDirection::Vertical);
-  weatherText->setAlign(FlexAlign::Stretch);
-  weatherText->setGap(Style::spaceXs * scale);
-  weatherText->setFlexGrow(1.0f);
-
-  auto weatherTemp = std::make_unique<Label>();
-  weatherTemp->setText("—");
-  weatherTemp->setBold(true);
-  weatherTemp->setFontSize(Style::fontSizeBody * 1.15f * scale);
-  weatherTemp->setColor(roleColor(ColorRole::OnSurface));
-  m_weatherTemp = weatherTemp.get();
-
-  auto weatherSub = std::make_unique<Label>();
-  weatherSub->setText(i18n::tr("control-center.overview.weather.unavailable"));
-  weatherSub->setFontSize(Style::fontSizeCaption * scale);
-  weatherSub->setColor(roleColor(ColorRole::OnSurfaceVariant));
-  m_weatherSub = weatherSub.get();
-
-  weatherText->addChild(std::move(weatherTemp));
-  weatherText->addChild(std::move(weatherSub));
-  weatherRow->addChild(std::move(weatherGlyph));
-  weatherRow->addChild(std::move(weatherText));
-  weatherCard->addChild(std::move(weatherRow));
-  topRow->addChild(std::move(weatherCard));
-
-  // --- Media ---
-  auto mediaCard = std::make_unique<Flex>();
-  applyOverviewCardStyle(*mediaCard, scale);
-  m_mediaCard = mediaCard.get();
-  mediaCard->setFlexGrow(1.0f);
-  mediaCard->setGap(Style::spaceXs * scale);
-
-  m_mediaKicker = addTitle(*mediaCard, i18n::tr("control-center.overview.sections.now-playing"), scale);
-  m_mediaKicker->setFontSize(Style::fontSizeBody * scale);
-
-  auto mediaContent = std::make_unique<Flex>();
-  mediaContent->setDirection(FlexDirection::Horizontal);
-  mediaContent->setAlign(FlexAlign::Center);
-  mediaContent->setGap(Style::spaceSm * scale);
-
-  const float artSize = Style::controlHeightLg * 1.55f * scale;
-  auto mediaArt = std::make_unique<Image>();
-  mediaArt->setSize(artSize, artSize);
-  mediaArt->setRadius(Style::radiusLg * scale);
-  mediaArt->setFit(ImageFit::Cover);
-  m_mediaArt = mediaArt.get();
-  mediaContent->addChild(std::move(mediaArt));
-
-  auto mediaText = std::make_unique<Flex>();
-  mediaText->setDirection(FlexDirection::Vertical);
-  mediaText->setAlign(FlexAlign::Stretch);
-  mediaText->setGap(Style::spaceXs * 0.5f * scale);
-  mediaText->setFlexGrow(1.0f);
-  m_mediaText = mediaText.get();
-
-  auto mediaTrack = std::make_unique<Label>();
-  mediaTrack->setText("…");
-  mediaTrack->setBold(false);
-  mediaTrack->setFontSize(Style::fontSizeBody * scale);
-  mediaTrack->setColor(roleColor(ColorRole::OnSurface));
-  m_mediaTrack = mediaTrack.get();
-
-  auto mediaArtist = std::make_unique<Label>();
-  mediaArtist->setText(i18n::tr("control-center.overview.media.no-active-player"));
-  mediaArtist->setFontSize(Style::fontSizeCaption * scale);
-  mediaArtist->setColor(roleColor(ColorRole::OnSurfaceVariant));
-  m_mediaArtist = mediaArtist.get();
-
-  auto mediaStatus = std::make_unique<Label>();
-  mediaStatus->setText(i18n::tr("control-center.overview.media.idle"));
-  mediaStatus->setFontSize(Style::fontSizeCaption * scale);
-  mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
-  m_mediaStatus = mediaStatus.get();
-
-  auto mediaProgress = std::make_unique<Label>();
-  mediaProgress->setText(" ");
-  mediaProgress->setFontSize(Style::fontSizeCaption * scale);
-  mediaProgress->setColor(roleColor(ColorRole::Secondary));
-  mediaProgress->setVisible(false);
-  m_mediaProgress = mediaProgress.get();
-
-  mediaText->addChild(std::move(mediaTrack));
-  mediaText->addChild(std::move(mediaArtist));
-  mediaText->addChild(std::move(mediaStatus));
-  mediaText->addChild(std::move(mediaProgress));
-  mediaContent->addChild(std::move(mediaText));
-  mediaCard->addChild(std::move(mediaContent));
-  topRow->addChild(std::move(mediaCard));
-
-  // --- Session (display name + uptime) ---
+  // --- User card ---
   auto userCard = std::make_unique<Flex>();
   applyOverviewCardStyle(*userCard, scale);
   m_userCard = userCard.get();
+
   auto userRow = std::make_unique<Flex>();
   userRow->setDirection(FlexDirection::Horizontal);
   userRow->setAlign(FlexAlign::Center);
@@ -207,46 +79,12 @@ std::unique_ptr<Flex> OverviewTab::create() {
   userMain->setFlexGrow(1.0f);
   m_userMain = userMain.get();
 
-  auto userHeader = std::make_unique<Flex>();
-  userHeader->setDirection(FlexDirection::Horizontal);
-  userHeader->setAlign(FlexAlign::Center);
-  userHeader->setJustify(FlexJustify::SpaceBetween);
-  userHeader->setGap(Style::spaceSm * scale);
-
   auto userTitle = std::make_unique<Label>();
   userTitle->setText(displayName);
   userTitle->setBold(true);
   userTitle->setFontSize(Style::fontSizeTitle * 1.12f * scale);
   userTitle->setColor(roleColor(ColorRole::OnSurface));
-  userHeader->addChild(std::move(userTitle));
-
-  auto actions = std::make_unique<Flex>();
-  actions->setDirection(FlexDirection::Horizontal);
-  actions->setAlign(FlexAlign::Center);
-  actions->setGap(Style::spaceSm * scale);
-
-  auto wallpaperBtn = std::make_unique<Button>();
-  wallpaperBtn->setGlyph("wallpaper-selector");
-  wallpaperBtn->setVariant(ButtonVariant::Default);
-  wallpaperBtn->setMinHeight(Style::controlHeight * scale);
-  wallpaperBtn->setMinWidth(Style::controlHeight * scale);
-  wallpaperBtn->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
-  wallpaperBtn->setOnClick([]() { PanelManager::instance().togglePanel("wallpaper"); });
-  m_wallpaperButton = wallpaperBtn.get();
-  actions->addChild(std::move(wallpaperBtn));
-
-  auto sessionBtn = std::make_unique<Button>();
-  sessionBtn->setGlyph("shutdown");
-  sessionBtn->setVariant(ButtonVariant::Default);
-  sessionBtn->setMinHeight(Style::controlHeight * scale);
-  sessionBtn->setMinWidth(Style::controlHeight * scale);
-  sessionBtn->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
-  sessionBtn->setOnClick([]() { PanelManager::instance().togglePanel("session"); });
-  m_sessionMenuButton = sessionBtn.get();
-  actions->addChild(std::move(sessionBtn));
-
-  userHeader->addChild(std::move(actions));
-  userMain->addChild(std::move(userHeader));
+  userMain->addChild(std::move(userTitle));
 
   auto userFacts = std::make_unique<Label>();
   userFacts->setText("…");
@@ -254,60 +92,134 @@ std::unique_ptr<Flex> OverviewTab::create() {
   userFacts->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_userFacts = userFacts.get();
   userMain->addChild(std::move(userFacts));
+
   userRow->addChild(std::move(userMain));
   userCard->addChild(std::move(userRow));
-
   tab->addChild(std::move(userCard));
-  tab->addChild(std::move(topRow));
 
-  auto bottomRow = std::make_unique<Flex>();
-  bottomRow->setDirection(FlexDirection::Horizontal);
-  bottomRow->setAlign(FlexAlign::Stretch);
-  bottomRow->setGap(Style::spaceMd * scale);
+  // --- Date/Time + Weather ---
+  auto dateTimeCard = std::make_unique<Flex>();
+  applyOverviewCardStyle(*dateTimeCard, scale);
+  dateTimeCard->setDirection(FlexDirection::Horizontal);
+  dateTimeCard->setJustify(FlexJustify::Center);
+  dateTimeCard->setFillParentMainAxis(true);
 
-  auto powerCard = std::make_unique<Flex>();
-  applyOverviewCardStyle(*powerCard, scale);
-  m_powerCard = powerCard.get();
-  powerCard->setFlexGrow(1.0f);
-  addTitle(*powerCard, i18n::tr("control-center.overview.sections.power"), scale);
+  auto dateTimeContent = std::make_unique<Flex>();
+  dateTimeContent->setDirection(FlexDirection::Vertical);
+  dateTimeContent->setAlign(FlexAlign::Center);
+  dateTimeContent->setJustify(FlexJustify::Center);
+  dateTimeContent->setGap(Style::spaceXs * scale);
 
-  auto powerLine = std::make_unique<Label>();
-  powerLine->setText("…");
-  powerLine->setFontSize(Style::fontSizeBody * scale);
-  powerLine->setColor(roleColor(ColorRole::OnSurface));
-  m_powerLine = powerLine.get();
-  powerCard->addChild(std::move(powerLine));
+  auto timeLabel = std::make_unique<Label>();
+  timeLabel->setText(formatLocalTime("{:%H:%M}"));
+  timeLabel->setBold(true);
+  timeLabel->setFontSize(Style::fontSizeTitle * 2.2f * scale);
+  timeLabel->setColor(roleColor(ColorRole::Primary));
+  m_timeLabel = timeLabel.get();
+  dateTimeContent->addChild(std::move(timeLabel));
 
-  auto powerSub = std::make_unique<Label>();
-  powerSub->setText(" ");
-  powerSub->setFontSize(Style::fontSizeCaption * scale);
-  powerSub->setColor(roleColor(ColorRole::OnSurfaceVariant));
-  m_powerSub = powerSub.get();
-  powerCard->addChild(std::move(powerSub));
-  bottomRow->addChild(std::move(powerCard));
+  auto dateLabel = std::make_unique<Label>();
+  dateLabel->setText(formatCurrentDate());
+  dateLabel->setFontSize(Style::fontSizeBody * scale);
+  dateLabel->setColor(roleColor(ColorRole::OnSurface));
+  m_dateLabel = dateLabel.get();
+  dateTimeContent->addChild(std::move(dateLabel));
 
-  auto audioCard = std::make_unique<Flex>();
-  applyOverviewCardStyle(*audioCard, scale);
-  m_audioCard = audioCard.get();
-  audioCard->setFlexGrow(1.0f);
-  addTitle(*audioCard, i18n::tr("control-center.overview.sections.audio"), scale);
+  auto weatherRow = std::make_unique<Flex>();
+  weatherRow->setDirection(FlexDirection::Horizontal);
+  weatherRow->setAlign(FlexAlign::Center);
+  weatherRow->setGap(Style::spaceXs * scale);
 
-  auto audioLine = std::make_unique<Label>();
-  audioLine->setText("…");
-  audioLine->setFontSize(Style::fontSizeBody * scale);
-  audioLine->setColor(roleColor(ColorRole::OnSurface));
-  m_audioLine = audioLine.get();
-  audioCard->addChild(std::move(audioLine));
+  auto wGlyph = std::make_unique<Glyph>();
+  wGlyph->setGlyph("weather-cloud-sun");
+  wGlyph->setGlyphSize(Style::fontSizeBody * scale);
+  wGlyph->setColor(roleColor(ColorRole::Primary));
+  m_weatherGlyph = wGlyph.get();
 
-  auto audioSub = std::make_unique<Label>();
-  audioSub->setText(" ");
-  audioSub->setFontSize(Style::fontSizeCaption * scale);
-  audioSub->setColor(roleColor(ColorRole::OnSurfaceVariant));
-  m_audioSub = audioSub.get();
-  audioCard->addChild(std::move(audioSub));
-  bottomRow->addChild(std::move(audioCard));
+  auto wLine = std::make_unique<Label>();
+  wLine->setText("—");
+  wLine->setFontSize(Style::fontSizeCaption * scale);
+  wLine->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  m_weatherLine = wLine.get();
 
-  tab->addChild(std::move(bottomRow));
+  weatherRow->addChild(std::move(wGlyph));
+  weatherRow->addChild(std::move(wLine));
+  dateTimeContent->addChild(std::move(weatherRow));
+  dateTimeCard->addChild(std::move(dateTimeContent));
+  tab->addChild(std::move(dateTimeCard));
+
+  // --- Shortcuts ---
+  const auto& shortcuts =
+      m_config != nullptr ? m_config->config().controlCenter.shortcuts : std::vector<ShortcutConfig>{};
+  const std::size_t count = std::min(shortcuts.size(), std::size_t{8});
+
+  auto grid = std::make_unique<GridView>();
+  grid->setColumns(4);
+  grid->setColumnGap(Style::spaceSm * scale);
+  grid->setRowGap(Style::spaceSm * scale);
+  grid->setUniformCellSize(true);
+  grid->setStretchItems(true);
+  grid->setMinCellHeight(Style::controlHeightLg * 2.0f * scale);
+  grid->setFlexGrow(1.0f);
+  m_shortcutsGrid = grid.get();
+  m_shortcutPads.clear();
+
+  for (std::size_t i = 0; i < count; ++i) {
+    const auto& sc = shortcuts[i];
+    auto shortcut = ShortcutRegistry::create(sc.type, m_services);
+    if (shortcut == nullptr) {
+      continue;
+    }
+
+    const std::string label = sc.label.value_or(std::string(shortcut->defaultLabel()));
+    const bool isActive = shortcut->isToggle() && shortcut->active();
+
+    auto btn = std::make_unique<Button>();
+    btn->setGlyph(std::string(shortcut->currentIcon()));
+    btn->setGlyphSize(Style::fontSizeTitle * 1.5f * scale);
+    btn->setText(label);
+    btn->label()->setFontSize(Style::fontSizeCaption * scale);
+    btn->label()->setMaxLines(1);
+    btn->setDirection(FlexDirection::Vertical);
+    btn->setGap(Style::spaceXs * scale);
+    btn->setMinHeight(0.0f);
+    btn->setPadding(Style::spaceMd * scale);
+    btn->setRadius(Style::radiusLg * scale);
+    btn->setVariant(isActive ? ButtonVariant::Accent : ButtonVariant::Outline);
+
+    Label* descPtr = nullptr;
+    if (shortcut->hasDescription()) {
+      auto desc = std::make_unique<Label>();
+      desc->setText("");
+      desc->setFontSize(Style::fontSizeCaption * 0.8f * scale);
+      desc->setMaxLines(1);
+      descPtr = static_cast<Label*>(btn->addChild(std::move(desc)));
+    }
+
+    const std::size_t padIdx = m_shortcutPads.size();
+    btn->setOnClick([this, padIdx]() {
+      if (padIdx < m_shortcutPads.size()) {
+        m_shortcutPads[padIdx].shortcut->onClick();
+      }
+    });
+    btn->setOnRightClick([this, padIdx]() {
+      if (padIdx < m_shortcutPads.size()) {
+        m_shortcutPads[padIdx].shortcut->onRightClick();
+      }
+    });
+
+    Button* btnPtr = btn.get();
+    ShortcutPad pad;
+    pad.shortcut = std::move(shortcut);
+    pad.button = btnPtr;
+    pad.glyph = btnPtr->glyph();
+    pad.label = btnPtr->label();
+    pad.description = descPtr;
+    m_shortcutPads.push_back(std::move(pad));
+    grid->addChild(std::move(btn));
+  }
+
+  tab->addChild(std::move(grid));
 
   return tab;
 }
@@ -342,85 +254,11 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
   m_rootLayout->setSize(contentWidth, bodyHeight);
   m_rootLayout->layout(renderer);
 
-  const auto innerWidth = [](Flex* card) {
-    if (card == nullptr) {
-      return 1.0f;
-    }
-    return std::max(1.0f, card->width() - (card->paddingLeft() + card->paddingRight()));
-  };
-  const float weatherWrap = innerWidth(m_weatherCard);
-  const float mediaWrap = innerWidth(m_mediaCard);
-  const float userWrap = innerWidth(m_userCard);
-  const float powerWrap = innerWidth(m_powerCard);
-  const float audioWrap = innerWidth(m_audioCard);
-
-  for (Label* label : {m_weatherDate, m_weatherTemp, m_weatherSub}) {
-    if (label != nullptr) {
-      label->setMaxWidth(weatherWrap);
-    }
-  }
-  for (Label* label : {m_mediaKicker, m_mediaTrack, m_mediaArtist, m_mediaStatus, m_mediaProgress}) {
-    if (label != nullptr) {
-      label->setMaxWidth(mediaWrap);
-    }
-  }
-  if (m_mediaCard != nullptr && m_mediaArt != nullptr && m_mediaText != nullptr) {
-    const float mediaInner =
-        std::max(1.0f, m_mediaCard->width() - (m_mediaCard->paddingLeft() + m_mediaCard->paddingRight()));
-    const float textWidth = std::max(1.0f, mediaInner - m_mediaArt->width() - (Style::spaceSm * contentScale()));
-    for (Label* label : {m_mediaTrack, m_mediaArtist, m_mediaStatus, m_mediaProgress}) {
-      if (label != nullptr) {
-        label->setMaxWidth(textWidth);
-      }
-    }
-  }
-  if (m_mediaKicker != nullptr) {
-    m_mediaKicker->setMaxLines(1);
-  }
-  if (m_weatherTemp != nullptr) {
-    m_weatherTemp->setMaxLines(1);
-  }
-  if (m_weatherSub != nullptr) {
-    m_weatherSub->setMaxLines(2);
-  }
-  if (m_weatherDate != nullptr) {
-    m_weatherDate->setMaxLines(1);
-  }
-  if (m_mediaTrack != nullptr) {
-    m_mediaTrack->setMaxLines(1);
-  }
-  if (m_mediaArtist != nullptr) {
-    m_mediaArtist->setMaxLines(1);
-  }
-  if (m_mediaStatus != nullptr) {
-    m_mediaStatus->setMaxLines(1);
-  }
-  if (m_mediaProgress != nullptr) {
-    m_mediaProgress->setMaxLines(1);
-  }
-  if (m_audioLine != nullptr) {
-    m_audioLine->setMaxLines(1);
-  }
-  for (Label* label : {m_userFacts}) {
-    if (label != nullptr) {
-      label->setMaxWidth(userWrap);
-    }
-  }
-  for (Label* label : {m_powerLine, m_powerSub}) {
-    if (label != nullptr) {
-      label->setMaxWidth(powerWrap);
-    }
-  }
-  for (Label* label : {m_audioLine, m_audioSub}) {
-    if (label != nullptr) {
-      label->setMaxWidth(audioWrap);
-    }
-  }
-
-  if (m_weatherCard != nullptr && m_mediaCard != nullptr) {
-    const float unifiedTopCardHeight = std::max(m_weatherCard->height(), m_mediaCard->height());
-    m_weatherCard->setMinHeight(unifiedTopCardHeight);
-    m_mediaCard->setMinHeight(unifiedTopCardHeight);
+  if (m_userCard != nullptr && m_userFacts != nullptr) {
+    const float userWrap =
+        std::max(1.0f, m_userCard->width() - (m_userCard->paddingLeft() + m_userCard->paddingRight()));
+    m_userFacts->setMaxWidth(userWrap);
+    m_userFacts->setMaxLines(1);
   }
 
   if (m_userAvatar != nullptr && m_userMain != nullptr) {
@@ -452,40 +290,28 @@ void OverviewTab::setActive(bool active) { m_active = active; }
 
 void OverviewTab::onClose() {
   m_rootLayout = nullptr;
-  m_weatherCard = nullptr;
-  m_mediaCard = nullptr;
   m_userCard = nullptr;
   m_userMain = nullptr;
-  m_powerCard = nullptr;
-  m_audioCard = nullptr;
-  m_weatherGlyph = nullptr;
-  m_weatherDate = nullptr;
-  m_weatherTemp = nullptr;
-  m_weatherSub = nullptr;
   m_userAvatar = nullptr;
+  m_timeLabel = nullptr;
+  m_dateLabel = nullptr;
+  m_weatherGlyph = nullptr;
+  m_weatherLine = nullptr;
   m_userFacts = nullptr;
-  m_sessionMenuButton = nullptr;
   m_settingsButton = nullptr;
-  m_wallpaperButton = nullptr;
   m_loadedAvatarPath.clear();
-  m_mediaKicker = nullptr;
-  m_mediaTrack = nullptr;
-  m_mediaArtist = nullptr;
-  m_mediaStatus = nullptr;
-  m_mediaProgress = nullptr;
-  m_mediaText = nullptr;
-  m_mediaArt = nullptr;
-  m_loadedMediaArtUrl.clear();
-  m_powerLine = nullptr;
-  m_powerSub = nullptr;
-  m_audioLine = nullptr;
-  m_audioSub = nullptr;
+  m_shortcutsGrid = nullptr;
+  m_shortcutPads.clear();
 }
 
 void OverviewTab::sync(Renderer& renderer) {
-  if (m_wallpaperButton != nullptr) {
-    const bool wallpaperManagementEnabled = (m_config == nullptr) || m_config->config().wallpaper.enabled;
-    m_wallpaperButton->setVisible(wallpaperManagementEnabled);
+  syncShortcuts();
+
+  if (m_timeLabel != nullptr) {
+    m_timeLabel->setText(formatLocalTime("{:%H:%M}"));
+  }
+  if (m_dateLabel != nullptr) {
+    m_dateLabel->setText(formatCurrentDate());
   }
 
   if (m_userAvatar != nullptr && m_config != nullptr) {
@@ -507,181 +333,49 @@ void OverviewTab::sync(Renderer& renderer) {
     m_userFacts->setText(i18n::tr("control-center.overview.user-facts", "user", sessionDisplayName(), "host",
                                   hostName(), "uptime", uptimeText, "version", noctalia::build_info::displayVersion()));
   }
-  if (m_weatherDate != nullptr) {
-    m_weatherDate->setText(formatCurrentDate());
-  }
 
-  if (m_weatherGlyph != nullptr && m_weatherTemp != nullptr && m_weatherSub != nullptr) {
-    if (m_weather == nullptr || !m_weather->enabled()) {
+  if (m_weatherGlyph != nullptr && m_weatherLine != nullptr) {
+    if (m_services.weather == nullptr || !m_services.weather->enabled()) {
       m_weatherGlyph->setGlyph("weather-cloud-off");
       m_weatherGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
-      m_weatherTemp->setText("—");
-      m_weatherSub->setText(i18n::tr("control-center.overview.weather.disabled"));
-    } else if (!m_weather->locationConfigured()) {
+      m_weatherLine->setText(i18n::tr("control-center.overview.weather.disabled"));
+    } else if (!m_services.weather->locationConfigured()) {
       m_weatherGlyph->setGlyph("weather-cloud");
       m_weatherGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
-      m_weatherTemp->setText("—");
-      m_weatherSub->setText(i18n::tr("control-center.overview.weather.configure-location"));
+      m_weatherLine->setText(i18n::tr("control-center.overview.weather.configure-location"));
     } else {
-      const auto& snapshot = m_weather->snapshot();
+      const auto& snapshot = m_services.weather->snapshot();
       if (!snapshot.valid) {
         m_weatherGlyph->setGlyph("weather-cloud");
         m_weatherGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
-        m_weatherTemp->setText("—");
-        m_weatherSub->setText(m_weather->loading() ? i18n::tr("control-center.overview.weather.fetching")
-                                                   : i18n::tr("control-center.overview.weather.data-unavailable"));
+        m_weatherLine->setText(m_services.weather->loading()
+                                   ? i18n::tr("control-center.overview.weather.fetching")
+                                   : i18n::tr("control-center.overview.weather.data-unavailable"));
       } else {
         m_weatherGlyph->setGlyph(WeatherService::glyphForCode(snapshot.current.weatherCode, snapshot.current.isDay));
         m_weatherGlyph->setColor(roleColor(ColorRole::Primary));
-        const int t = static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.current.temperatureC)));
-        m_weatherTemp->setText(std::format("{}{}", t, m_weather->displayTemperatureUnit()));
-        std::string hiLoText;
-        if (!snapshot.forecastDays.empty()) {
-          const int hi = static_cast<int>(
-              std::lround(m_weather->displayTemperature(snapshot.forecastDays.front().temperatureMaxC)));
-          const int lo = static_cast<int>(
-              std::lround(m_weather->displayTemperature(snapshot.forecastDays.front().temperatureMinC)));
-          hiLoText = std::format(" · {} / {}{}", hi, lo, m_weather->displayTemperatureUnit());
-        }
-        const bool showLocation = m_config == nullptr || m_config->config().shell.showLocation;
-        if (showLocation) {
-          const std::string place =
-              snapshot.locationName.empty() ? i18n::tr("weather.locations.current") : snapshot.locationName;
-          m_weatherSub->setText(std::format(
-              "{}{} · {}", WeatherService::descriptionForCode(snapshot.current.weatherCode), hiLoText, place));
-        } else {
-          m_weatherSub->setText(
-              std::format("{}{}", WeatherService::descriptionForCode(snapshot.current.weatherCode), hiLoText));
-        }
+        const int t =
+            static_cast<int>(std::lround(m_services.weather->displayTemperature(snapshot.current.temperatureC)));
+        m_weatherLine->setText(std::format("{}{} · {}", t, m_services.weather->displayTemperatureUnit(),
+                                           WeatherService::descriptionForCode(snapshot.current.weatherCode)));
       }
     }
   }
+}
 
-  if (m_mediaTrack != nullptr && m_mediaArtist != nullptr && m_mediaStatus != nullptr && m_mediaProgress != nullptr) {
-    if (m_mpris == nullptr) {
-      m_mediaTrack->setText(i18n::tr("control-center.overview.media.playback-unavailable"));
-      m_mediaArtist->setText(i18n::tr("control-center.overview.media.service-unavailable"));
-      m_mediaStatus->setText(i18n::tr("control-center.overview.media.unavailable"));
-      m_mediaProgress->setText(" ");
-      m_mediaProgress->setVisible(false);
-      m_mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
-      if (m_mediaArt != nullptr) {
-        m_mediaArt->clear(renderer);
-      }
-      m_loadedMediaArtUrl.clear();
-    } else {
-      const auto active = m_mpris->activePlayer();
-      if (!active.has_value()) {
-        m_mediaTrack->setText(i18n::tr("control-center.overview.media.nothing-playing"));
-        m_mediaArtist->setText(i18n::tr("control-center.overview.media.play-media-hint"));
-        m_mediaStatus->setText(i18n::tr("control-center.overview.media.idle"));
-        m_mediaProgress->setText(" ");
-        m_mediaProgress->setVisible(false);
-        m_mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
-        if (m_mediaArt != nullptr) {
-          m_mediaArt->clear(renderer);
-        }
-        m_loadedMediaArtUrl.clear();
-      } else {
-        m_mediaTrack->setText(active->title.empty() ? i18n::tr("control-center.overview.media.unknown-track")
-                                                    : active->title);
-        const std::string artists = joinedArtists(active->artists);
-        m_mediaArtist->setText(artists.empty() ? i18n::tr("control-center.overview.media.unknown-artist") : artists);
-        if (active->lengthUs > 0) {
-          const std::int64_t positionSec = std::max<std::int64_t>(0, active->positionUs / 1000000);
-          const std::int64_t lengthSec = std::max<std::int64_t>(1, active->lengthUs / 1000000);
-          m_mediaProgress->setText(std::format("{} / {}", formatClockTime(positionSec), formatClockTime(lengthSec)));
-          m_mediaProgress->setVisible(true);
-        } else {
-          m_mediaProgress->setText(" ");
-          m_mediaProgress->setVisible(false);
-        }
-        if (m_mediaArt != nullptr) {
-          const std::string artUrl = mpris::effectiveArtUrl(*active);
-          if (artUrl != m_loadedMediaArtUrl) {
-            std::string artPath = mpris::normalizeArtPath(artUrl);
-            if (artPath.empty() && mpris::isRemoteArtUrl(artUrl)) {
-              const auto cached = mpris::artCachePath(artUrl);
-              std::error_code ec;
-              if (std::filesystem::exists(cached, ec) && std::filesystem::file_size(cached, ec) > 0) {
-                artPath = cached.string();
-              }
-            }
-            if (!artPath.empty()) {
-              if (!m_mediaArt->setSourceFile(renderer, artPath, static_cast<int>(std::round(m_mediaArt->width())),
-                                             true)) {
-                m_mediaArt->clear(renderer);
-              }
-            } else {
-              m_mediaArt->clear(renderer);
-            }
-            m_loadedMediaArtUrl = artUrl;
-          }
-        }
-        if (active->playbackStatus == "Playing") {
-          m_mediaStatus->setText(i18n::tr("control-center.overview.media.playing"));
-          m_mediaStatus->setColor(roleColor(ColorRole::Primary));
-        } else if (active->playbackStatus == "Paused") {
-          m_mediaStatus->setText(i18n::tr("control-center.overview.media.paused"));
-          m_mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
-        } else {
-          m_mediaStatus->setText(active->playbackStatus);
-          m_mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
-        }
-      }
+void OverviewTab::syncShortcuts() {
+  for (auto& pad : m_shortcutPads) {
+    auto& sc = *pad.shortcut;
+    const bool on = sc.isToggle() && sc.active();
+
+    if (pad.button != nullptr) {
+      pad.button->setVariant(on ? ButtonVariant::Accent : ButtonVariant::Outline);
     }
-  }
-
-  if (m_powerLine != nullptr && m_powerSub != nullptr) {
-    if (m_upower == nullptr) {
-      m_powerLine->setText(i18n::tr("control-center.overview.power.unavailable"));
-      m_powerSub->setText(" ");
-    } else {
-      const auto& st = m_upower->state();
-      if (!st.isPresent) {
-        m_powerLine->setText(st.onBattery ? i18n::tr("control-center.overview.power.on-battery")
-                                          : i18n::tr("control-center.overview.power.ac-connected"));
-      } else {
-        m_powerLine->setText(std::format("{} · {:.0f}%", batteryStateLabel(st.state), st.percentage));
-      }
-      if (m_powerProfiles != nullptr && !m_powerProfiles->activeProfile().empty()) {
-        std::string etaSuffix;
-        if (st.isPresent && st.state == BatteryState::Discharging && st.timeToEmpty > 0) {
-          etaSuffix = i18n::tr("control-center.overview.power.eta-left", "duration",
-                               formatDuration(std::chrono::seconds{st.timeToEmpty}));
-        } else if (st.isPresent && st.state == BatteryState::Charging && st.timeToFull > 0) {
-          etaSuffix = i18n::tr("control-center.overview.power.eta-to-full", "duration",
-                               formatDuration(std::chrono::seconds{st.timeToFull}));
-        }
-        m_powerSub->setText(i18n::tr("control-center.overview.power.mode", "profile",
-                                     profileLabel(m_powerProfiles->activeProfile()), "eta", etaSuffix));
-      } else {
-        std::string etaSuffix;
-        if (st.isPresent && st.state == BatteryState::Discharging && st.timeToEmpty > 0) {
-          etaSuffix = i18n::tr("control-center.overview.power.eta-left", "duration",
-                               formatDuration(std::chrono::seconds{st.timeToEmpty}));
-        } else if (st.isPresent && st.state == BatteryState::Charging && st.timeToFull > 0) {
-          etaSuffix = i18n::tr("control-center.overview.power.eta-to-full", "duration",
-                               formatDuration(std::chrono::seconds{st.timeToFull}));
-        }
-        m_powerSub->setText(st.onBattery ? i18n::tr("control-center.overview.power.battery-power", "eta", etaSuffix)
-                                         : i18n::tr("control-center.overview.power.plugged-in", "eta", etaSuffix));
-      }
+    if (pad.glyph != nullptr) {
+      pad.glyph->setGlyph(std::string(sc.currentIcon()));
     }
-  }
-
-  if (m_audioLine != nullptr && m_audioSub != nullptr) {
-    if (m_audio == nullptr) {
-      m_audioLine->setText(i18n::tr("control-center.overview.audio.unavailable"));
-      m_audioSub->setText(" ");
-    } else if (const AudioNode* sink = m_audio->defaultSink(); sink != nullptr) {
-      const int volumePct = static_cast<int>(std::lround(std::clamp(sink->volume, 0.0f, 1.5f) * 100.0f));
-      m_audioLine->setText(sink->description.empty() ? sink->name : sink->description);
-      m_audioSub->setText(sink->muted ? i18n::tr("control-center.overview.audio.muted-volume", "volume", volumePct)
-                                      : i18n::tr("control-center.overview.audio.volume", "volume", volumePct));
-    } else {
-      m_audioLine->setText(i18n::tr("control-center.overview.audio.no-output-device"));
-      m_audioSub->setText(" ");
+    if (pad.description != nullptr && sc.hasDescription()) {
+      pad.description->setText(sc.description());
     }
   }
 }

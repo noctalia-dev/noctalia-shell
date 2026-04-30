@@ -1400,6 +1400,38 @@ void ConfigService::parseTable(const toml::table& tbl) {
     }
   }
 
+  // Parse [[control_center.shortcuts]]
+  if (auto* ccTbl = tbl["control_center"].as_table()) {
+    if (auto* shortcutsArr = (*ccTbl)["shortcuts"].as_array()) {
+      m_config.controlCenter.shortcuts.clear();
+      for (const auto& entry : *shortcutsArr) {
+        auto* entryTbl = entry.as_table();
+        if (entryTbl == nullptr) {
+          continue;
+        }
+        ShortcutConfig sc;
+        if (auto v = (*entryTbl)["type"].value<std::string>()) {
+          sc.type = *v;
+        }
+        if (auto v = (*entryTbl)["label"].value<std::string>()) {
+          sc.label = *v;
+        }
+        if (auto v = (*entryTbl)["icon"].value<std::string>()) {
+          sc.icon = *v;
+        }
+        if (!sc.type.empty()) {
+          m_config.controlCenter.shortcuts.push_back(std::move(sc));
+        }
+      }
+    }
+  }
+  if (m_config.controlCenter.shortcuts.empty()) {
+    m_config.controlCenter.shortcuts = {
+        {"wifi", {}, {}},       {"bluetooth", {}, {}},    {"wallpaper", {}, {}},     {"idle_inhibitor", {}, {}},
+        {"nightlight", {}, {}}, {"notification", {}, {}}, {"power_profile", {}, {}}, {"session", {}, {}},
+    };
+  }
+
   // Parse [idle.behavior.*]
   if (auto* idleTbl = tbl["idle"].as_table()) {
     if (auto* behaviorTbl = (*idleTbl)["behavior"].as_table()) {

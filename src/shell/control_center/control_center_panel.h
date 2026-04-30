@@ -25,11 +25,13 @@ class Button;
 class ConfigService;
 class Flex;
 class HttpClient;
+class IdleInhibitor;
 class InputArea;
 class Label;
 class MprisService;
 class NetworkSecretAgent;
 class NetworkService;
+class NightLightManager;
 class NotificationManager;
 class PipeWireService;
 class PipeWireSpectrum;
@@ -37,6 +39,10 @@ class PowerProfilesService;
 class SystemMonitorService;
 class UPowerService;
 class WeatherService;
+
+namespace noctalia::theme {
+  class ThemeService;
+}
 
 class ControlCenterPanel : public Panel {
 public:
@@ -46,7 +52,9 @@ public:
                      UPowerService* upower = nullptr, PowerProfilesService* powerProfiles = nullptr,
                      NetworkService* network = nullptr, NetworkSecretAgent* networkSecrets = nullptr,
                      BluetoothService* bluetooth = nullptr, BluetoothAgent* bluetoothAgent = nullptr,
-                     BrightnessService* brightness = nullptr, SystemMonitorService* sysmon = nullptr);
+                     BrightnessService* brightness = nullptr, SystemMonitorService* sysmon = nullptr,
+                     NightLightManager* nightLight = nullptr, noctalia::theme::ThemeService* theme = nullptr,
+                     IdleInhibitor* idleInhibitor = nullptr);
 
   void create() override;
   void onFrameTick(float deltaMs) override;

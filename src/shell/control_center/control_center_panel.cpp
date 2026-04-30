@@ -18,9 +18,12 @@ ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeW
                                        PowerProfilesService* powerProfiles, NetworkService* network,
                                        NetworkSecretAgent* networkSecrets, BluetoothService* bluetooth,
                                        BluetoothAgent* bluetoothAgent, BrightnessService* brightness,
-                                       SystemMonitorService* sysmon) {
+                                       SystemMonitorService* sysmon, NightLightManager* nightLight,
+                                       noctalia::theme::ThemeService* theme, IdleInhibitor* idleInhibitor) {
+  (void)upower;
   m_tabs[tabIndex(TabId::Overview)] =
-      std::make_unique<OverviewTab>(mpris, weather, audio, upower, powerProfiles, config);
+      std::make_unique<OverviewTab>(mpris, weather, audio, powerProfiles, config, network, bluetooth, nightLight, theme,
+                                    notifications, idleInhibitor);
   m_tabs[tabIndex(TabId::Media)] = std::make_unique<MediaTab>(mpris, httpClient, spectrum);
   m_tabs[tabIndex(TabId::Audio)] = std::make_unique<AudioTab>(audio, mpris, config);
   m_tabs[tabIndex(TabId::Weather)] = std::make_unique<WeatherTab>(weather, config);

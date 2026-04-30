@@ -69,8 +69,9 @@ struct BarConfig {
   float scale = 1.0f;             // content scale multiplier for glyphs and text
   std::vector<std::string> startWidgets = {"launcher", "wallpaper", "workspaces"};
   std::vector<std::string> centerWidgets = {"clock"};
-  std::vector<std::string> endWidgets = {"media",  "tray",       "notifications", "network",        "bluetooth",
-                                         "volume", "brightness", "battery",       "control-center", "session"};
+  std::vector<std::string> endWidgets = {"media",   "tray",           "notifications", "clipboard",
+                                         "network", "bluetooth",      "volume",        "brightness",
+                                         "battery", "control-center", "session"};
   // When true, widgets on this bar use a capsule unless `[widget.*] capsule = false`.
   bool widgetCapsuleDefault = false;
   ThemeColor widgetCapsuleFill = roleColor(ColorRole::SurfaceVariant);
@@ -549,6 +550,18 @@ struct ThemeConfig {
   TemplatesConfig templates;
 };
 
+struct ShortcutConfig {
+  std::string type;
+  std::optional<std::string> label;
+  std::optional<std::string> icon;
+  bool operator==(const ShortcutConfig&) const = default;
+};
+
+struct ControlCenterConfig {
+  std::vector<ShortcutConfig> shortcuts;
+  bool operator==(const ControlCenterConfig&) const = default;
+};
+
 struct Config {
   std::vector<BarConfig> bars;
   std::unordered_map<std::string, WidgetConfig> widgets;
@@ -568,4 +581,5 @@ struct Config {
   IdleConfig idle;
   HooksConfig hooks;
   ThemeConfig theme;
+  ControlCenterConfig controlCenter;
 };

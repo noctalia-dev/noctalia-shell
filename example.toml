@@ -216,6 +216,22 @@ pinned              = []            # e.g. ["firefox", "code", "kitty"]
 [desktop_widgets]
 enabled = false
 
+# ── Control Center ────────────────────────────────────────────────────────────
+
+# Shortcut buttons shown at the bottom of the overview tab (up to 6).
+# [[control_center.shortcuts]]
+# type = "wifi"
+# [[control_center.shortcuts]]
+# type = "bluetooth"
+# [[control_center.shortcuts]]
+# type = "nightlight"
+# [[control_center.shortcuts]]
+# type = "notification"
+# [[control_center.shortcuts]]
+# type = "wallpaper"
+# [[control_center.shortcuts]]
+# type = "session"
+
 # ── Hooks ─────────────────────────────────────────────────────────────────────
 
 [hooks]
