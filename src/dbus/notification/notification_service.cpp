@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "dbus/session_bus.h"
 #include "i18n/i18n.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
 #include <cctype>
@@ -221,7 +222,8 @@ uint32_t NotificationService::onNotify(const std::string& app_name, uint32_t rep
 
   std::optional<NotificationImageData> imageData = decode_image_hint(hints);
 
-  return m_manager.addOrReplace(replaces_id, clamp_str(app_name), clamp_str(summary), clamp_str(body), urgency, timeout,
+  return m_manager.addOrReplace(replaces_id, clamp_str(app_name), StringUtils::sanitizeMarkup(clamp_str(summary)),
+                                StringUtils::sanitizeMarkup(clamp_str(body)), urgency, timeout,
                                 NotificationOrigin::External, sanitizedActions, icon, imageData, category,
                                 desktop_entry);
 }
