@@ -34,7 +34,7 @@ capsule_opacity    = 1.0
 
 start  = ["launcher", "wallpaper", "workspaces"]
 center = ["clock"]
-end    = ["media", "tray", "notifications", "network", "bluetooth", "volume", "brightness", "battery", "session"]
+end    = ["media", "tray", "notifications", "clipboard", "network", "bluetooth", "volume", "brightness", "battery", "control-center", "session"]
 ```
 
 Radius precedence: `radius` is the global fallback; per-corner values override it when provided.

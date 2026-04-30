@@ -15,28 +15,28 @@ namespace {
 const std::unordered_map<std::string, char32_t> kIcons = {
     // General
     {"close", 0xEB55},             // x
-    {"check", 0xEA5E},             // check
-    {"settings", 0xEB20},          // settings
+    {"check", 0xEA5E},
+    {"settings", 0xEB20},
     {"refresh", 0xEB13},           // refresh
     {"add", 0xEB0B},               // plus
-    {"trash", 0xEB41},             // trash
+    {"trash", 0xEB41},
     {"menu", 0xEC42},              // menu-2
     {"person", 0xEB4D},            // user
-    {"folder-open", 0xFAF7},       // folder-open
-    {"download", 0xEA96},          // download
-    {"search", 0xEB1C},            // search
-    {"apps", 0xEBB6},              // apps
-    {"app-window", 0xEFE6},        // app-window
-    {"question-mark", 0xEC9D},     // question-mark
+    {"folder-open", 0xFAF7},
+    {"download", 0xEA96},
+    {"search", 0xEB1C},
+    {"apps", 0xEBB6},
+    {"app-window", 0xEFE6},
+    {"question-mark", 0xEC9D},
     {"info", 0xF028},              // file-description
-    {"eye", 0xEA9A},               // eye
-    {"pin", 0xEC9C},               // pin
+    {"eye", 0xEA9A},
+    {"pin", 0xEC9C},
     {"unpin", 0xED5F},             // pinned-off
     {"image", 0xEB0A},             // photo
-    {"keyboard", 0xEBD6},          // keyboard
-    {"lock", 0xEAE2},              // lock
-    {"star", 0xEB2E},              // star
-    {"star-off", 0xED62},          // star-off
+    {"keyboard", 0xEBD6},
+    {"lock", 0xEAE2},
+    {"star", 0xEB2E},
+    {"star-off", 0xED62},
     {"plugin", 0xF00A},            // plug-connected
     {"official-plugin", 0xF69F},   // shield-filled
     {"circle-filled", 0xF671},
@@ -46,13 +46,14 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"guitar-pick-filled", 0xF67B},
     {"blob-filled", 0xFEB1},
     {"triangle-filled", 0xF6AD},
-    {"calendar", 0xEA53},          // calendar
-    {"calculator", 0xEB80},        // calculator
-    {"copy", 0xEA7A},              // copy
-    {"photo", 0xEB0A},             // photo
-    {"file-text", 0xEAA2},         // file-text
-    {"home", 0xEAC1},              // home
+    {"calendar", 0xEA53},
+    {"calculator", 0xEB80},
+    {"copy", 0xEA7A},
+    {"photo", 0xEB0A},
+    {"file-text", 0xEAA2},
+    {"home", 0xEAC1},
     {"hourglass", 0XF146},         // hourglass-empty
+    {"clipboard", 0XEA6f},
 
     // Toast / warnings
     {"toast-notice", 0xEA67},      // circle-check
@@ -66,17 +67,17 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"media-prev", 0xF693},        // player-skip-back-filled
     {"media-next", 0xF694},        // player-skip-forward-filled
     {"shuffle", 0xF000},           // arrows-shuffle
-    {"repeat", 0xEB72},            // repeat
-    {"repeat-once", 0xEB71},       // repeat-once
+    {"repeat", 0xEB72},
+    {"repeat-once", 0xEB71},
     {"stop", 0xF695},              // player-stop-filled
     {"disc", 0x1003E},             // disc-filled
-    {"headphones", 0xEABD},        // headphones
-    {"microphone", 0xEAF0},        // microphone
+    {"headphones", 0xEABD},
+    {"microphone", 0xEAF0},
     {"microphone-mute", 0xED16},   // microphone-off
-    {"music-off", 0xF166},         // music-off
-    {"video", 0xED22},             // video
-    {"video-off", 0xED20},         // video-off
-    {"device-speaker", 0xEA8B},    // device-speaker
+    {"music-off", 0xF166},
+    {"video", 0xED22},
+    {"video-off", 0xED20},
+    {"device-speaker", 0xEA8B},
 
     // Volume
     {"volume-high", 0xEB51},       // volume
@@ -90,7 +91,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"upload-speed", 0xEB47},      // upload
 
     // System monitor
-    {"activity", 0xED23},          // activity
+    {"activity", 0xED23},
     {"cpu-intensive", 0xECC6},     // alert-octagon
     {"cpu-usage", 0xFA77},         // brand-speedtest
     {"cpu-temperature", 0xEC2C},   // flame
@@ -103,9 +104,9 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"balanced", 0xEBC2},          // scale
     {"powersaver", 0xED4F},        // leaf
     {"shutdown", 0xEB0D},          // power
-    {"lock", 0xEAE2},              // lock
-    {"lock-pause", 0xF92E},        // lock-pause
-    {"logout", 0xEBA8},            // logout
+    {"lock", 0xEAE2},
+    {"lock-pause", 0xF92E},
+    {"logout", 0xEBA8},
     {"reboot", 0xEB13},            // refresh
     {"suspend", 0xED45},           // player-pause
     {"hibernate", 0xF228},         // zzz
@@ -117,24 +118,24 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"theme-mode", 0xFE56},        // contrast-filled
 
     // Notifications
-    {"bell", 0xEA35},              // bell
-    {"bell-off", 0xECE9},          // bell-off
+    {"bell", 0xEA35},
+    {"bell-off", 0xECE9},
 
     // Idle inhibitor
-    {"keep-awake-on", 0xEAFB},     // mug
-    {"keep-awake-off", 0xF165},    // mug-off
+    {"idle-inhibitor-on", 0xEAFB},     // mug
+    {"Idle-inhibitor-off", 0xF165},    // mug-off
 
     // Brightness / Display
-    {"device-desktop", 0xEA89},    // device-desktop
-    {"device-laptop", 0xEB64},     // device-laptops
+    {"device-desktop", 0xEA89},
+    {"device-laptop", 0xEB64},
     {"brightness-low", 0xFB23},    // brightness-down-filled
     {"brightness-high", 0xFB24},   // brightness-up-filled
 
     // Chevrons / carets / arrows
-    {"chevron-left", 0xEA60},      // chevron-left
-    {"chevron-right", 0xEA61},     // chevron-right
-    {"chevron-up", 0xEA62},        // chevron-up
-    {"chevron-down", 0xEA5F},      // chevron-down
+    {"chevron-left", 0xEA60},
+    {"chevron-right", 0xEA61},
+    {"chevron-up", 0xEA62},
+    {"chevron-down", 0xEA5F},
     {"caret-up", 0xFB2D},          // caret-up-filled
     {"caret-down", 0xFB2A},        // caret-down-filled
     {"caret-left", 0xFB2B},        // caret-left-filled
@@ -148,26 +149,26 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"sort-descending", 0xEB27},   // sort-descending
 
     // Wallpaper / color
-    {"wallpaper-selector", 0xFD4A}, // library-photo
+    {"wallpaper-selector", 0xFD4A},
     {"color-picker", 0xEBE6},       // color-picker
 
     // Battery
     {"battery-0", 0xEA34},         // battery
-    {"battery-1", 0xEA2F},         // battery-1
-    {"battery-2", 0xEA30},         // battery-2
-    {"battery-3", 0xEA31},         // battery-3
-    {"battery-4", 0xEA32},         // battery-4
-    {"battery-charging", 0xEA33},  // battery-charging
+    {"battery-1", 0xEA2F},
+    {"battery-2", 0xEA30},
+    {"battery-3", 0xEA31},
+    {"battery-4", 0xEA32},
+    {"battery-charging", 0xEA33},
     {"battery-plugged", 0xEF3B},    // battery-charging-2
-    {"battery-exclamation", 0xFF1D}, // battery-exclamation
-    {"battery-off", 0xED1C},       // battery-off
+    {"battery-exclamation", 0xFF1D},
+    {"battery-off", 0xED1C},
 
     // WiFi & Network
-    {"wifi", 0xEB52},              // wifi
-    {"wifi-0", 0xEBA3},            // wifi-0
-    {"wifi-1", 0xEBA4},            // wifi-1
-    {"wifi-2", 0xEBA5},            // wifi-2
-    {"wifi-off", 0xECFA},          // wifi-off
+    {"wifi", 0xEB52},
+    {"wifi-0", 0xEBA3},
+    {"wifi-1", 0xEBA4},
+    {"wifi-2", 0xEBA5},
+    {"wifi-off", 0xECFA},
     {"ethernet", 0xECCC},
     {"ethernet-off", 0xECCD},
     {"ethernet-exclamation", 0xECCE},
@@ -191,12 +192,12 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"bluetooth-device-tv", 0xEA8D},      // device-tv
 
     // Antenna
-    {"antenna-bars-1", 0xECC7},    // antenna-bars-1
-    {"antenna-bars-2", 0xECC8},    // antenna-bars-2
-    {"antenna-bars-3", 0xECC9},    // antenna-bars-3
-    {"antenna-bars-4", 0xECCA},    // antenna-bars-4
-    {"antenna-bars-5", 0xECCB},    // antenna-bars-5
-    {"antenna-bars-off", 0xF0AA},  // antenna-bars-off
+    {"antenna-bars-1", 0xECC7},
+    {"antenna-bars-2", 0xECC8},
+    {"antenna-bars-3", 0xECC9},
+    {"antenna-bars-4", 0xECCA},
+    {"antenna-bars-5", 0xECCB},
+    {"antenna-bars-off", 0xF0AA},
 
     // Weather
     {"weather-sun", 0xEB30},       // sun
@@ -211,28 +212,28 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"weather-cloud-sun", 0xEC6D}, // cloud-sun
     {"weather-sunrise", 0xEF1C},   // sunrise
     {"weather-sunset", 0xEC31},    // sunset
-    {"wind", 0xEC34},              // wind
-    {"compass", 0xEA79},           // compass
-    {"clock", 0xEA70},             // clock
-    {"world", 0xEB54},             // world
-    {"world-pin", 0xF9E4},         // world-pin
-    {"map-pin", 0xEAE8},           // map-pin
-    {"mountain", 0xEF97},          // mountain
+    {"wind", 0xEC34},
+    {"compass", 0xEA79},
+    {"clock", 0xEA70},
+    {"world", 0xEB54},
+    {"world-pin", 0xF9E4},
+    {"map-pin", 0xEAE8},
+    {"mountain", 0xEF97},
 
     // Files & Folders
-    {"folder", 0xEAAD},            // folder
-    {"file", 0xEAA4},              // file
+    {"folder", 0xEAAD},
+    {"file", 0xEAA4},
 
 
     // Branding
-    {"noctalia", 0xEC33},          // noctalia
-    {"hyprland", 0xEC6A},          // hyprland
+    {"noctalia", 0xEC33},
+    {"hyprland", 0xEC6A},
 
     // Experimental
-    {"flask", 0xEBD2},                  // flask
-    {"color-swatch", 0xEB61},           // color-swatch
-    {"adjustments-horizontal", 0xEC38},  // adjustments-horizontal
-    {"stack-2", 0xEEF7},                // stack-2
+    {"flask", 0xEBD2},
+    {"color-swatch", 0xEB61},
+    {"adjustments-horizontal", 0xEC38},
+    {"stack-2", 0xEEF7},
 
 };
   // clang-format on

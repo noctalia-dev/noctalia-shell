@@ -14,6 +14,7 @@
 #include "shell/bar/widgets/battery_widget.h"
 #include "shell/bar/widgets/bluetooth_widget.h"
 #include "shell/bar/widgets/brightness_widget.h"
+#include "shell/bar/widgets/clipboard_widget.h"
 #include "shell/bar/widgets/clock_widget.h"
 #include "shell/bar/widgets/control_center_widget.h"
 #include "shell/bar/widgets/idle_inhibitor_widget.h"
@@ -122,6 +123,16 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     std::string format = wc != nullptr ? wc->getString("format", "{:%H:%M}") : std::string("{:%H:%M}");
     std::string verticalFormat = wc != nullptr ? wc->getString("vertical_format", "") : std::string{};
     auto widget = std::make_unique<ClockWidget>(output, std::move(format), std::move(verticalFormat));
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "clipboard") {
+    auto barGlyph = wc != nullptr ? wc->getString("glyph", "clipboard") : std::string{"clipboard"};
+    if (barGlyph.empty()) {
+      barGlyph = "clipboard";
+    }
+    auto widget = std::make_unique<ClipboardWidget>(output, std::move(barGlyph));
     widget->setContentScale(contentScale);
     return widget;
   }

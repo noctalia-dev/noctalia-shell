@@ -773,6 +773,7 @@
         "bluetooth": "Bluetooth",
         "brightness": "Brightness",
         "clock": "Clock",
+        "clipboard": "Clipboard",
         "idle-inhibitor": "Idle Inhibitor",
         "keyboard-layout": "Keyboard Layout",
         "launcher": "Launcher",

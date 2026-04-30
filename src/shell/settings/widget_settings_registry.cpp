@@ -46,6 +46,11 @@ namespace settings {
             .categoryKey = "settings.widgets.categories.time",
         },
         {
+            .type = "clipboard",
+            .labelKey = "settings.widgets.types.clipboard",
+            .categoryKey = "settings.widgets.categories.shell",
+        },
+        {
             .type = "idle_inhibitor",
             .labelKey = "settings.widgets.types.idle-inhibitor",
             .categoryKey = "settings.widgets.categories.system",
@@ -416,6 +421,8 @@ namespace settings {
     } else if (type == "clock") {
       add(stringSpec("format", "{:%H:%M}"));
       add(stringSpec("vertical_format"));
+    } else if (type == "clipboard") {
+      add(stringSpec("glyph", "clipboard"));
     } else if (type == "keyboard_layout") {
       add(stringSpec("cycle_command"));
       add(segmentedSpec("display", "short", shortFull));

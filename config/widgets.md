@@ -320,6 +320,21 @@ glyph = "menu"
 
 ---
 
+## `clipboard`
+
+Shows a clipboard glyph and opens or closes the clipboard panel on click.
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `glyph` | string | `"clipboard"` | Bar glyph id (Tabler-backed aliases) |
+
+```toml
+[widget.clipboard]
+glyph = "clipboard-list"
+```
+
+---
+
 ## `weather`
 
 Shows the current weather in the bar and opens the Weather control-center tab on click. Requires `[weather]` to be configured.
@@ -381,7 +396,7 @@ No configurable settings.
 
 ## `idle_inhibitor`
 
-Shows a keep-awake glyph and toggles the compositor idle inhibitor on click. Uses the standard Wayland `zwp_idle_inhibit_manager_v1` protocol.
+Shows a coffee glyph and toggles the compositor idle inhibitor on click. Uses the standard Wayland `zwp_idle_inhibit_manager_v1` protocol.
 
 No configurable settings.
 
