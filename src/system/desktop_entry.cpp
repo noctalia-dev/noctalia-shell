@@ -83,23 +83,7 @@ namespace {
     return {};
   }
 
-  bool parseBool(std::string_view value) {
-    return value == "true" || value == "True" || value == "TRUE" || value == "1";
-  }
-
-  std::string desktopFileId(const fs::path& appDir, const fs::path& desktopPath) {
-    std::error_code ec;
-    fs::path rel = fs::relative(desktopPath, appDir, ec);
-    if (ec || rel.empty()) {
-      rel = desktopPath.filename();
-    }
-
-    std::string id = rel.generic_string();
-    std::replace(id.begin(), id.end(), '/', '-');
-    return id;
-  }
-
-  void parseDesktopFile(const fs::path& filepath, const std::string& desktopId, std::vector<DesktopEntry>& entries) {
+  void parseDesktopFile(const fs::path& filepath, std::vector<DesktopEntry>& entries) {
     std::ifstream file(filepath);
     if (!file.is_open()) {
       return;
@@ -109,7 +93,7 @@ namespace {
 
     DesktopEntry entry;
     entry.path = filepath.string();
-    entry.id = desktopId;
+    entry.id = filepath.stem().string();
 
     bool inDesktopEntry = false;
     bool inAction = false;
@@ -234,11 +218,11 @@ namespace {
       } else if (key == "StartupWMClass") {
         entry.startupWmClass = std::string(value);
       } else if (key == "NoDisplay") {
-        entry.noDisplay = parseBool(value);
+        entry.noDisplay = (value == "true");
       } else if (key == "Hidden") {
-        entry.hidden = parseBool(value);
+        entry.hidden = (value == "true");
       } else if (key == "Terminal") {
-        entry.terminal = parseBool(value);
+        entry.terminal = (value == "true");
       } else if (key == "Actions") {
         // Semicolon-separated list of action IDs, e.g. "NewWindow;NewPrivateWindow;"
         std::size_t start = 0;
@@ -496,12 +480,12 @@ std::vector<DesktopEntry> scanDesktopEntries() {
         continue;
       }
 
-      std::string id = desktopFileId(appDir, dirEntry.path());
+      std::string id = dirEntry.path().stem().string();
       if (!seenIds.insert(id).second) {
         continue;
       }
 
-      parseDesktopFile(dirEntry.path(), id, entries);
+      parseDesktopFile(dirEntry.path(), entries);
     }
   }
 
