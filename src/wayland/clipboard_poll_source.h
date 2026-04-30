@@ -8,18 +8,13 @@ public:
   explicit ClipboardPollSource(ClipboardService& clipboard) : m_clipboard(clipboard) {}
 
   void dispatch(const std::vector<pollfd>& fds, std::size_t startIdx) override {
-    if (startIdx < fds.size() && fds[startIdx].fd == m_clipboard.activeReadFd()) {
-      m_clipboard.dispatchReadEvents(fds[startIdx].revents);
-    }
+    m_clipboard.dispatchPollEvents(fds, startIdx, m_pollFdCount);
   }
 
 protected:
-  void doAddPollFds(std::vector<pollfd>& fds) override {
-    if (m_clipboard.activeReadFd() >= 0) {
-      fds.push_back({.fd = m_clipboard.activeReadFd(), .events = POLLIN | POLLHUP | POLLERR, .revents = 0});
-    }
-  }
+  void doAddPollFds(std::vector<pollfd>& fds) override { m_pollFdCount = m_clipboard.addPollFds(fds); }
 
 private:
   ClipboardService& m_clipboard;
+  std::size_t m_pollFdCount = 0;
 };
