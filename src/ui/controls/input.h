@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/timer_manager.h"
 #include "render/scene/node.h"
 #include "ui/signal.h"
 #include "ui/style.h"
@@ -54,6 +55,10 @@ private:
   void applyVisualState();
   void updateDisplayText();
   void updateInteractiveGeometry();
+  void updateCursorVisibility();
+  void revealCursor();
+  void startCursorBlink();
+  void stopCursorBlink();
   void ensureCursorVisible();
   void clampScrollOffset();
   void selectWordAtByteOffset(std::size_t offset);
@@ -92,6 +97,8 @@ private:
   std::vector<std::size_t> m_stopByte;
   std::vector<GlyphNode*> m_passwordGlyphs;
   float m_scrollOffset = 0.0f;
+  bool m_cursorBlinkVisible = true;
+  Timer m_cursorBlinkTimer;
 
   std::function<void(const std::string&)> m_onChange;
   std::function<void(const std::string&)> m_onSubmit;
