@@ -39,33 +39,30 @@ namespace {
       {SessionPanel::ActionId::Shutdown, "session.actions.shutdown", "shutdown", ButtonVariant::Destructive},
   }};
 
-  bool runSyncIfAvailable(std::initializer_list<const char*> args) {
-    if (args.size() == 0) {
-      return false;
-    }
-    const char* executable = *args.begin();
-    if (executable == nullptr || executable[0] == '\0' || !process::commandExists(executable)) {
-      return false;
-    }
-    return process::runSync(std::vector<std::string>(args.begin(), args.end())).exitCode == 0;
-  }
-
   bool doLogout() {
     // Prefer compositor-native exits where available.
     switch (compositors::detect()) {
     case compositors::CompositorKind::Hyprland:
-      if (runSyncIfAvailable({"hyprctl", "dispatch", "exit"})) {
+      if (process::runSync({"hyprctl", "dispatch", "exit"})) {
         return true;
       }
       break;
     case compositors::CompositorKind::Sway:
-      if (runSyncIfAvailable({"scrollmsg", "exit"}) || runSyncIfAvailable({"swaymsg", "exit"}) ||
-          runSyncIfAvailable({"i3-msg", "exit"})) {
+      if (process::runSync({"scrollmsg", "exit"}) || process::runSync({"swaymsg", "exit"}) ||
+          process::runSync({"i3-msg", "exit"})) {
         return true;
       }
       break;
     case compositors::CompositorKind::Niri:
+      if (process::runSync({"niri", "msg", "action", "quit", "-s"})) {
+        return true;
+      }
+      break;
     case compositors::CompositorKind::Mango:
+      if (process::runSync({"mmsg", "-q"})) {
+        return true;
+      }
+      break;
     case compositors::CompositorKind::Unknown:
       break;
     }
