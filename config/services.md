@@ -143,7 +143,7 @@ Idle behaviors are named entries under `[idle.behavior.*]`. When no `config.toml
 ```toml
 [idle.behavior.lock]
 timeout = 660
-command = "noctalia:lock"
+command = "noctalia:screen-lock"
 enabled = false             # explicitly disabled in the default config
 
 [idle.behavior.screen-off]
@@ -166,7 +166,7 @@ command = "notify-send 'Idle' 'Going idle'"
 The `noctalia:` prefix runs the rest of the string through the IPC command registry — the same as `noctalia msg <subcommand>`. Examples:
 
 ```
-noctalia:lock
+noctalia:screen-lock
 noctalia:dpms-off
 noctalia:dpms-on
 noctalia:enable-idle-inhibitor

@@ -106,8 +106,8 @@ private:
   bool runIdleCommand(const std::string& command);
   void onIconThemeChanged();
   void onUpowerStateChangedForHooks();
-  void onNetworkStateChangedForHooks(const NetworkState& state);
-  void onBluetoothStateChangedForHooks(const BluetoothState& state);
+  void onNetworkStateChangedForEvents(const NetworkState& state);
+  void onBluetoothStateChangedForEvents(const BluetoothState& state);
   [[nodiscard]] std::vector<PollSource*> currentPollSources();
   [[nodiscard]] std::vector<PollSource*> buildPollSources();
 
@@ -137,8 +137,8 @@ private:
   std::unique_ptr<PolkitAgent> m_polkitAgent;
   std::unique_ptr<UPowerService> m_upowerService;
   std::optional<UPowerState> m_prevUpowerForHooks;
-  std::optional<bool> m_prevWirelessEnabledForHooks;
-  std::optional<bool> m_prevBluetoothPoweredForHooks;
+  std::optional<bool> m_prevWirelessEnabledForEvents;
+  std::optional<bool> m_prevBluetoothPoweredForEvents;
   SessionActionHooks m_sessionActionHooks;
   std::unique_ptr<BrightnessService> m_brightnessService;
   std::unique_ptr<TrayService> m_trayService;

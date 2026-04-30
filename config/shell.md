@@ -99,7 +99,13 @@ Each action accepts a single string chord or an array of chords.
 
 ## Hooks
 
-Optional shell hooks run commands when specific events happen. Define them under `[hooks]` in `config.toml`. Each event is a string (one command) or an array of strings (run in order). The same `noctalia:` prefix rules apply as in [idle behaviors](services.md#idle).
+Optional shell hooks run extra commands when specific events happen. Define them under `[hooks]` in `config.toml`.
+Each event is a string (one command) or an array of strings (run in order). The same `noctalia:` prefix rules apply as
+in [idle behaviors](services.md#idle).
+
+Hooks do not replace Noctalia's built-in behavior. For example, Wi-Fi and Bluetooth power changes still create internal
+Noctalia notifications even when `wifi_*` / `bluetooth_*` hooks are not configured. `notify-send` can be useful while
+testing that a hook fires, but it is not required for Noctalia's own notifications.
 
 | Key | When it fires |
 |-----|---------------|
@@ -122,24 +128,42 @@ Optional shell hooks run commands when specific events happen. Define them under
 
 ```toml
 [hooks]
-started           = "notify-send 'Noctalia' 'Shell started'"
-wallpaper_changed = ["touch /tmp/noctalia-wallpaper"]
-colors_changed    = "notify-send 'Theme' 'Palette updated'"
+# Start a user unit after Noctalia IPC is ready.
+started = "systemctl --user start noctalia-ready.target"
 
-session_locked   = "notify-send 'Session' 'Locked'"
-session_unlocked = "notify-send 'Session' 'Unlocked'"
+# Reload tools that consume generated wallpaper/theme files.
+wallpaper_changed = "systemctl --user restart wallpaper-sync.service"
+colors_changed = [
+  "systemctl --user reload foot-server.service",
+  "logger -t noctalia-hooks 'theme colors changed'",
+]
 
-logging_out   = "echo logging out >> /tmp/noctalia-hooks.log"
-rebooting     = "notify-send 'System' 'Rebooting'"
-shutting_down = "notify-send 'System' 'Shutting down'"
+# Combine normal shell commands with Noctalia IPC commands.
+session_locked = [
+  "playerctl pause",
+  "noctalia:bar-hide",
+]
+session_unlocked = [
+  "noctalia:bar-show",
+  "noctalia:dpms-on",
+]
 
-wifi_enabled  = "notify-send 'Network' 'Wi-Fi on'"
-wifi_disabled = "notify-send 'Network' 'Wi-Fi off'"
+logging_out   = "logger -t noctalia-hooks 'logout requested'"
+rebooting     = "systemctl --user stop backup-sync.service"
+shutting_down = "systemctl --user stop backup-sync.service"
 
-bluetooth_enabled  = "notify-send 'BT' 'Bluetooth on'"
-bluetooth_disabled = "notify-send 'BT' 'Bluetooth off'"
+# Wi-Fi/Bluetooth internal notifications are emitted without these hooks;
+# use hooks only for extra side effects.
+wifi_enabled  = "logger -t noctalia-hooks 'Wi-Fi radio enabled'"
+wifi_disabled = "logger -t noctalia-hooks 'Wi-Fi radio disabled'"
+
+bluetooth_enabled  = "logger -t noctalia-hooks 'Bluetooth powered on'"
+bluetooth_disabled = "logger -t noctalia-hooks 'Bluetooth powered off'"
 
 battery_low_percent_threshold = 15
-battery_state_changed   = "notify-send 'Power' \"Battery: $NOCTALIA_BATTERY_STATE\""
-battery_under_threshold = "notify-send 'Power' \"Battery at ${NOCTALIA_BATTERY_PERCENT}%\""
+battery_state_changed   = "logger -t noctalia-hooks \"Battery: $NOCTALIA_BATTERY_STATE\""
+battery_under_threshold = "systemctl --user start battery-low.target"
+
+# Quick test while developing a hook; not needed for Noctalia's own notifications.
+# started = "notify-send 'Noctalia hook' 'started fired'"
 ```

@@ -487,6 +487,12 @@
     },
     "internal": {
       "dbus-disabled": "DBus notifications disabled",
+      "network": "Network",
+      "wifi-enabled": "Wi-Fi is on",
+      "wifi-disabled": "Wi-Fi is off",
+      "bluetooth": "Bluetooth",
+      "bluetooth-enabled": "Bluetooth is on",
+      "bluetooth-disabled": "Bluetooth is off",
       "session-bus-unavailable": "Session bus unavailable",
       "mpris-disabled": "MPRIS disabled"
     }

@@ -642,7 +642,7 @@ void ConfigService::loadAll() {
         .name = "lock",
         .enabled = false,
         .timeoutSeconds = 660,
-        .command = "noctalia:lock",
+        .command = "noctalia:screen-lock",
     });
     m_config.bars.push_back(BarConfig{});
     return;
