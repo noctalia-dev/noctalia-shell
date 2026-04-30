@@ -48,6 +48,7 @@ private:
   void scheduleManualTimer();
   void apply();
   void startProcess(const std::vector<std::string>& args);
+  void stopAllWlsunsetInstances();
   void stopProcess();
 
   ChangeCallback m_changeCallback;

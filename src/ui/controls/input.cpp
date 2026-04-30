@@ -53,9 +53,13 @@ namespace {
   constexpr std::uint32_t kModCtrl = 1u << 1;
 
   constexpr float kDefaultWidth = 200.0f;
-  constexpr float kCursorWidth = 1.5f;
-  constexpr float kCursorPadV = 3.0f;
+  constexpr float kCursorWidth = 1.25f;
+  constexpr float kCursorPadV = 4.0f;
+  constexpr float kCursorMinHeight = 14.0f;
+  constexpr float kCursorHeightRatio = 0.50f;
   constexpr float kCursorRevealPadding = 2.0f;
+  constexpr auto kCursorBlinkInterval = std::chrono::milliseconds(530);
+  constexpr auto kCursorBlinkResumeDelay = std::chrono::milliseconds(650);
   constexpr float kTextInnerInset = 3.0f;
   constexpr float kPasswordGlyphScale = 0.82f;
   constexpr auto kDoubleClickThreshold = std::chrono::milliseconds(400);
@@ -139,11 +143,13 @@ Input::Input() {
   area->setOnEnter([this](const InputArea::PointerData& /*data*/) { applyVisualState(); });
   area->setOnLeave([this]() { applyVisualState(); });
   area->setOnFocusGain([this]() {
-    m_cursor->setVisible(true);
+    revealCursor();
+    startCursorBlink();
     applyVisualState();
   });
   area->setOnFocusLoss([this]() {
-    m_cursor->setVisible(false);
+    stopCursorBlink();
+    updateCursorVisibility();
     applyVisualState();
   });
   area->setOnPress([this](const InputArea::PointerData& data) {
@@ -172,6 +178,7 @@ Input::Input() {
         m_selectionAnchor = offset;
       }
       updateInteractiveGeometry();
+      revealCursor();
       markLayoutDirty();
       markPaintDirty();
     }
@@ -197,6 +204,7 @@ Input::Input() {
         m_cursorPos = xToByteOffset(data.localX - textStartX + m_scrollOffset);
       }
       updateInteractiveGeometry();
+      revealCursor();
       markLayoutDirty();
       markPaintDirty();
     }
@@ -219,6 +227,7 @@ Input::Input() {
     }
     m_selectionAnchor = m_cursorPos;
     updateInteractiveGeometry();
+    revealCursor();
     markLayoutDirty();
     markPaintDirty();
   });
@@ -395,6 +404,7 @@ void Input::doLayout(Renderer& renderer) {
   m_inputArea->setFrameSize(w, h);
 
   applyVisualState();
+  updateCursorVisibility();
 }
 
 void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool preedit) {
@@ -522,6 +532,7 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
 
   updateDisplayText();
   markLayoutDirty();
+  revealCursor();
 
   if (changed && !preedit && m_onChange) {
     m_onChange(m_value);
@@ -600,15 +611,17 @@ void Input::updateInteractiveGeometry() {
   }
 
   const float controlHeight = height() > 0.0f ? height() : m_controlHeight;
-  const float cursorHeight = std::max(0.0f, controlHeight - kCursorPadV * 2.0f);
+  const float maxCursorHeight = std::max(0.0f, controlHeight - kCursorPadV * 2.0f);
+  const float cursorHeight = std::clamp(controlHeight * kCursorHeightRatio, kCursorMinHeight, maxCursorHeight);
+  const float cursorY = std::round((controlHeight - cursorHeight) * 0.5f);
   const float cursorX = stopXForByte(m_cursorPos) - m_scrollOffset;
-  m_cursor->setPosition(cursorX, kCursorPadV);
+  m_cursor->setPosition(cursorX, cursorY);
   m_cursor->setFrameSize(kCursorWidth, cursorHeight);
 
   if (hasSelection()) {
     const float selX0 = stopXForByte(selectionStart()) - m_scrollOffset;
     const float selX1 = stopXForByte(selectionEnd()) - m_scrollOffset;
-    m_selectionRect->setPosition(selX0, kCursorPadV);
+    m_selectionRect->setPosition(selX0, cursorY);
     m_selectionRect->setFrameSize(std::max(0.0f, selX1 - selX0), cursorHeight);
     m_selectionRect->setVisible(true);
   } else {
@@ -647,8 +660,41 @@ void Input::clampScrollOffset() {
     m_scrollOffset = 0.0f;
     return;
   }
-  const float maxOffset = std::max(0.0f, m_stopX.back() - textViewportWidth());
+  const float maxOffset = std::max(0.0f, m_stopX.back() - textViewportWidth() + kCursorWidth + kCursorRevealPadding);
   m_scrollOffset = std::clamp(m_scrollOffset, 0.0f, maxOffset);
+}
+
+void Input::updateCursorVisibility() {
+  const bool focused = m_inputArea != nullptr && m_inputArea->focused();
+  m_cursor->setVisible(focused && m_cursorBlinkVisible);
+}
+
+void Input::revealCursor() {
+  m_cursorBlinkVisible = true;
+  updateCursorVisibility();
+  markPaintDirty();
+  if (m_inputArea != nullptr && m_inputArea->focused()) {
+    m_cursorBlinkTimer.start(kCursorBlinkResumeDelay, [this]() { startCursorBlink(); });
+  } else {
+    m_cursorBlinkTimer.stop();
+  }
+}
+
+void Input::startCursorBlink() {
+  m_cursorBlinkTimer.startRepeating(kCursorBlinkInterval, [this]() {
+    if (m_inputArea == nullptr || !m_inputArea->focused()) {
+      stopCursorBlink();
+      return;
+    }
+    m_cursorBlinkVisible = !m_cursorBlinkVisible;
+    updateCursorVisibility();
+    markPaintDirty();
+  });
+}
+
+void Input::stopCursorBlink() {
+  m_cursorBlinkTimer.stop();
+  m_cursorBlinkVisible = false;
 }
 
 void Input::selectWordAtByteOffset(std::size_t offset) {

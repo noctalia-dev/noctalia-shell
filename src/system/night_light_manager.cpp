@@ -325,13 +325,30 @@ void NightLightManager::startProcess(const std::vector<std::string>& args) {
   kLog.info("nightlight started pid={} force={} day={}K night={}K", m_pid, effectiveForce(), dayTemp, nightTemp);
 }
 
-void NightLightManager::stopProcess() {
-  if (!hasRunningProcess()) {
+void NightLightManager::stopAllWlsunsetInstances() {
+  if (!process::commandExists("pkill")) {
     return;
   }
 
-  process::terminateTracked(static_cast<int>(m_pid));
-  m_pid = -1;
+  const auto result = process::runSync({"pkill", "-x", "wlsunset"});
+  if (result.exitCode == 0) {
+    kLog.info("nightlight stopped existing wlsunset instances");
+    return;
+  }
+
+  // pkill returns 1 when no process matched.
+  if (result.exitCode != 1) {
+    kLog.warn("nightlight failed to kill all wlsunset instances (exit={})", result.exitCode);
+  }
+}
+
+void NightLightManager::stopProcess() {
+  if (hasRunningProcess()) {
+    process::terminateTracked(static_cast<int>(m_pid));
+    m_pid = -1;
+  }
+
+  stopAllWlsunsetInstances();
 }
 
 void NightLightManager::registerIpc(IpcService& ipc) {

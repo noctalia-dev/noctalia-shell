@@ -140,7 +140,10 @@ void WaylandToplevels::onHandleClosed(zwlr_foreign_toplevel_handle_v1* handle) {
     selectFallbackCurrent();
   }
 
-  notifyIfChanged(before);
+  const bool activeChanged = notifyIfChanged(before);
+  if (!activeChanged && m_changeCallback) {
+    m_changeCallback();
+  }
 }
 
 void WaylandToplevels::onHandleDone(zwlr_foreign_toplevel_handle_v1* handle) {
@@ -150,6 +153,7 @@ void WaylandToplevels::onHandleDone(zwlr_foreign_toplevel_handle_v1* handle) {
   }
 
   const auto before = current();
+  const bool hadModelChanges = it->second.dirty;
   if (it->second.activated) {
     m_currentHandle = handle;
   } else if (m_currentHandle == nullptr || it->second.dirty) {
@@ -157,7 +161,10 @@ void WaylandToplevels::onHandleDone(zwlr_foreign_toplevel_handle_v1* handle) {
   }
   it->second.dirty = false;
 
-  notifyIfChanged(before);
+  const bool activeChanged = notifyIfChanged(before);
+  if (hadModelChanges && !activeChanged && m_changeCallback) {
+    m_changeCallback();
+  }
 }
 
 void WaylandToplevels::onHandleTitle(zwlr_foreign_toplevel_handle_v1* handle, const char* title) {
@@ -270,7 +277,11 @@ void WaylandToplevels::closeHandle(zwlr_foreign_toplevel_handle_v1* handle) {
 void WaylandToplevels::onHandleOutputEnter(zwlr_foreign_toplevel_handle_v1* handle, wl_output* output) {
   auto it = m_handles.find(handle);
   if (it != m_handles.end()) {
-    it->second.output = output;
+    if (it->second.output != output) {
+      it->second.output = output;
+      it->second.dirty = true;
+      it->second.generation = ++m_generation;
+    }
   }
 }
 
@@ -278,25 +289,29 @@ void WaylandToplevels::onHandleOutputLeave(zwlr_foreign_toplevel_handle_v1* hand
   auto it = m_handles.find(handle);
   if (it != m_handles.end() && it->second.output == output) {
     it->second.output = nullptr;
+    it->second.dirty = true;
+    it->second.generation = ++m_generation;
   }
 }
 
-void WaylandToplevels::notifyIfChanged(const std::optional<ActiveToplevel>& before) {
+bool WaylandToplevels::notifyIfChanged(const std::optional<ActiveToplevel>& before) {
   const auto now = current();
   if (before.has_value() != now.has_value()) {
     if (m_changeCallback) {
       m_changeCallback();
     }
-    return;
+    return true;
   }
   if (!before.has_value() || !now.has_value()) {
-    return;
+    return false;
   }
   if (before->title != now->title || before->appId != now->appId || before->identifier != now->identifier) {
     if (m_changeCallback) {
       m_changeCallback();
     }
+    return true;
   }
+  return false;
 }
 
 void WaylandToplevels::selectFallbackCurrent() {
