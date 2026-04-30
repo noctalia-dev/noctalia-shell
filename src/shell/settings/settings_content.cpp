@@ -21,9 +21,12 @@
 #include "util/string_utils.h"
 
 #include <algorithm>
+#include <charconv>
 #include <cmath>
 #include <cstdint>
 #include <format>
+#include <limits>
+#include <locale>
 #include <memory>
 #include <optional>
 #include <string>
@@ -66,41 +69,65 @@ namespace settings {
 
     bool isBlankInput(std::string_view text) { return StringUtils::trim(text).empty(); }
 
+    std::string localeDecimalSeparator() {
+      try {
+        const std::locale userLocale("");
+        const char decimalPoint = std::use_facet<std::numpunct<char>>(userLocale).decimal_point();
+        return std::string(1, decimalPoint);
+      } catch (...) {
+        return ".";
+      }
+    }
+
+    std::string formatSliderValue(float value, bool integerValue, char decimalSeparator = '\0') {
+      if (integerValue) {
+        return std::format("{}", static_cast<int>(std::lround(value)));
+      }
+      std::string formatted = std::format("{:.2f}", value);
+      const std::string decimalSep =
+          decimalSeparator == '\0' ? localeDecimalSeparator() : std::string(1, decimalSeparator);
+      if (decimalSep != ".") {
+        std::size_t dotPos = formatted.find('.');
+        if (dotPos != std::string::npos) {
+          formatted.replace(dotPos, 1, decimalSep);
+        }
+      }
+      return formatted;
+    }
+
+    template <typename T> std::optional<T> parseDecimalInput(std::string_view text) {
+      const std::string trimmed = StringUtils::trim(text);
+      if (trimmed.empty()) {
+        return std::nullopt;
+      }
+
+      std::string normalized = trimmed;
+      std::replace(normalized.begin(), normalized.end(), ',', '.');
+
+      T value{};
+      const char* begin = normalized.data();
+      const char* end = begin + normalized.size();
+      const auto [ptr, ec] = std::from_chars(begin, end, value, std::chars_format::general);
+      if (ec != std::errc{} || ptr != end || !std::isfinite(value)) {
+        return std::nullopt;
+      }
+      if constexpr (std::is_same_v<T, float>) {
+        if (value > std::numeric_limits<float>::max() || value < -std::numeric_limits<float>::max()) {
+          return std::nullopt;
+        }
+      }
+      return value;
+    }
+
     std::optional<float> parseFloatInput(std::string_view text) {
-      const std::string trimmed = StringUtils::trim(text);
-      if (trimmed.empty()) {
+      const auto parsed = parseDecimalInput<double>(text);
+      if (!parsed.has_value()) {
         return std::nullopt;
       }
-
-      try {
-        std::size_t parsed = 0;
-        const float value = std::stof(trimmed, &parsed);
-        if (parsed != trimmed.size() || !std::isfinite(value)) {
-          return std::nullopt;
-        }
-        return value;
-      } catch (...) {
-        return std::nullopt;
-      }
+      return static_cast<float>(*parsed);
     }
 
-    std::optional<double> parseDoubleInput(std::string_view text) {
-      const std::string trimmed = StringUtils::trim(text);
-      if (trimmed.empty()) {
-        return std::nullopt;
-      }
-
-      try {
-        std::size_t parsed = 0;
-        const double value = std::stod(trimmed, &parsed);
-        if (parsed != trimmed.size() || !std::isfinite(value)) {
-          return std::nullopt;
-        }
-        return value;
-      } catch (...) {
-        return std::nullopt;
-      }
-    }
+    std::optional<double> parseDoubleInput(std::string_view text) { return parseDecimalInput<double>(text); }
 
     bool isMonitorOverrideSettingPath(const std::vector<std::string>& path) {
       return path.size() >= 5 && path[0] == "bar" && path[2] == "monitor";
@@ -421,8 +448,7 @@ namespace settings {
       wrap->setGap(Style::spaceSm * scale);
 
       auto valueInput = std::make_unique<Input>();
-      valueInput->setValue(integerValue ? std::format("{}", static_cast<int>(std::lround(value)))
-                                        : std::format("{:.2f}", value));
+      valueInput->setValue(formatSliderValue(value, integerValue));
       valueInput->setFontSize(Style::fontSizeCaption * scale);
       valueInput->setControlHeight(Style::controlHeightSm * scale);
       valueInput->setHorizontalPadding(Style::spaceXs * scale);
@@ -440,8 +466,7 @@ namespace settings {
       auto* sliderPtr = slider.get();
       slider->setOnValueChanged([valueInputPtr, integerValue](float next) {
         valueInputPtr->setInvalid(false);
-        valueInputPtr->setValue(integerValue ? std::format("{}", static_cast<int>(std::lround(next)))
-                                             : std::format("{:.2f}", next));
+        valueInputPtr->setValue(formatSliderValue(next, integerValue));
       });
       slider->setOnDragEnd([setOverride = ctx.setOverride, path, sliderPtr, integerValue]() {
         if (integerValue) {
@@ -462,6 +487,11 @@ namespace settings {
         const float v = *parsed;
         valueInputPtr->setInvalid(false);
         sliderPtr->setValue(v);
+        if (!integerValue) {
+          const std::string trimmed = StringUtils::trim(text);
+          const char preferredSeparator = trimmed.find(',') != std::string::npos ? ',' : '.';
+          valueInputPtr->setValue(formatSliderValue(sliderPtr->value(), false, preferredSeparator));
+        }
         if (integerValue) {
           setOverride(path, static_cast<std::int64_t>(std::lround(v)));
         } else {
