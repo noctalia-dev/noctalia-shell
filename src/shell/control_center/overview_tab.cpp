@@ -71,7 +71,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   {
     auto wpBg = std::make_unique<Image>();
     wpBg->setFit(ImageFit::Cover);
-    wpBg->setRadius(Style::radiusXl * scale);
+    wpBg->setRadius(std::max(0.0f, Style::radiusXl * scale - Style::borderWidth));
     wpBg->setParticipatesInLayout(false);
     wpBg->setZIndex(-1);
     m_wallpaperBg = wpBg.get();
@@ -395,13 +395,14 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
   }
 
   if (m_userCard != nullptr && m_wallpaperBg != nullptr) {
-    const float cw = m_userCard->width();
-    const float ch = m_userCard->height();
-    m_wallpaperBg->setPosition(0.0f, 0.0f);
+    const float bw = Style::borderWidth;
+    const float cw = m_userCard->width() - bw * 2.0f;
+    const float ch = m_userCard->height() - bw * 2.0f;
+    m_wallpaperBg->setPosition(bw, bw);
     m_wallpaperBg->setSize(cw, ch);
     if (m_wallpaperGradient != nullptr) {
-      const float radius = Style::radiusXl * contentScale();
-      m_wallpaperGradient->setPosition(0.0f, 0.0f);
+      const float radius = std::max(0.0f, Style::radiusXl * contentScale() - bw);
+      m_wallpaperGradient->setPosition(bw, bw);
       m_wallpaperGradient->setFrameSize(cw, ch);
       const Color surface = resolveThemeColor(roleColor(ColorRole::Surface));
       m_wallpaperGradient->setStyle(RoundedRectStyle{
