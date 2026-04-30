@@ -742,6 +742,10 @@
         "left": "Left",
         "right": "Right"
       },
+      "layer": {
+        "top": "Top",
+        "overlay": "Overlay"
+      },
       "weather": {
         "unit": {
           "celsius": "Celsius",
@@ -1375,6 +1379,10 @@
         "position": {
           "label": "Toast Position",
           "description": "Screen position for notification toasts"
+        },
+        "layer": {
+          "label": "Wayland Layer",
+          "description": "Choose whether toasts use the top or overlay layer"
         },
         "toast-opacity": {
           "label": "Toast Opacity",

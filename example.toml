@@ -79,6 +79,7 @@ tint_intensity         = 0.3        # 0.0 = no tint, 1.0 = opaque
 
 [notification]
 enable_daemon      = true
+layer              = "top"          # top | overlay
 background_opacity = 0.97
 # IPC examples:
 # noctalia msg notification-clear-active

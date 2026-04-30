@@ -618,6 +618,12 @@ namespace settings {
                                              {"bottom_center", "settings.options.screen-position.bottom-center"}},
                                             cfg.notification.position),
                                 "toast popup placement anchor"));
+    entries.push_back(makeEntry(
+        "notifications", "toasts", tr("settings.schema.notifications.layer.label"),
+        tr("settings.schema.notifications.layer.description"), {"notification", "layer"},
+        asSegmented(plainSelect({{"top", "settings.options.layer.top"}, {"overlay", "settings.options.layer.overlay"}},
+                                cfg.notification.layer)),
+        "toast layer shell z-order"));
     entries.push_back(makeEntry("notifications", "toasts", tr("settings.schema.notifications.toast-opacity.label"),
                                 tr("settings.schema.notifications.toast-opacity.description"),
                                 {"notification", "background_opacity"},

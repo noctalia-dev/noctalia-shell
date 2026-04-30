@@ -236,6 +236,7 @@ struct OsdConfig {
 struct NotificationConfig {
   bool enableDaemon = true;
   std::string position = "top_right";
+  std::string layer = "top";       // top | overlay
   float backgroundOpacity = 0.97f; // toast card background alpha (0.0–1.0)
   std::vector<std::string> monitors;
 };

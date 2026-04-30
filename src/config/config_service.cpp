@@ -1150,6 +1150,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
       notif.enableDaemon = *v;
     if (auto v = notifTable["position"].value<std::string>())
       notif.position = *v;
+    if (auto v = notifTable["layer"].value<std::string>())
+      notif.layer = *v;
     if (auto v = notifTable["background_opacity"].value<double>())
       notif.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
     if (const auto* v = notifTable.get("monitors")) {
