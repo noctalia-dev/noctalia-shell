@@ -65,7 +65,7 @@ PanelWindow {
     if (edge === "top" || edge === "bottom") {
       return thickness + (2 * barMarginV) - bleedInset;
     }
-    return 10; // Auto-height when top/bottom anchors are true
+    return 0; // Auto-height when top/bottom anchors are true
   }
 
   Component.onCompleted: {
