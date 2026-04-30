@@ -176,6 +176,7 @@ Horizontal audio spectrum using the current PipeWire monitor stream.
 | `height` | number | `16` | Widget height in screen pixels |
 | `bands` | number | `16` | Number of spectrum bands |
 | `mirrored` | bool | `false` | Mirror the spectrum around the center line |
+| `show_when_idle` | bool | `false` | Keep the widget visible even when no media is playing |
 | `low_color` | string | `"primary"` | Theme role for the first bars |
 | `high_color` | string | `"primary"` | Theme role for the last bars |
 
@@ -186,6 +187,7 @@ width      = 64
 height     = 16
 bands      = 20
 mirrored   = true
+show_when_idle = true
 low_color  = "primary"
 high_color = "secondary"
 ```

@@ -951,6 +951,10 @@
           "label": "Show Condition",
           "description": "Show weather condition text"
         },
+        "show_when_idle": {
+          "label": "Show When Idle",
+          "description": "Keep the visualizer visible even when no media is playing"
+        },
         "show_label": {
           "label": "Show Label",
           "description": "Show text next to the icon"

@@ -412,6 +412,7 @@ namespace settings {
       add(doubleSpec("height", 16.0, 4.0, 120.0, 1.0));
       add(intSpec("bands", 16, 2.0, 128.0, 1.0));
       add(boolSpec("mirrored", false));
+      add(boolSpec("show_when_idle", false));
       add(stringSpec("low_color", "primary"));
       add(stringSpec("high_color", "primary"));
     } else if (type == "bluetooth") {

@@ -10,9 +10,10 @@
 #include <memory>
 
 AudioVisualizerWidget::AudioVisualizerWidget(PipeWireSpectrum* spectrum, float width, float height, int bands,
-                                             bool mirrored, ThemeColor lowColor, ThemeColor highColor)
+                                             bool mirrored, ThemeColor lowColor, ThemeColor highColor,
+                                             bool showWhenIdle)
     : m_spectrum(spectrum), m_width(width), m_height(height), m_bands(std::max(1, bands)), m_mirrored(mirrored),
-      m_lowColor(lowColor), m_highColor(highColor) {}
+      m_showWhenIdle(showWhenIdle), m_lowColor(lowColor), m_highColor(highColor) {}
 
 AudioVisualizerWidget::~AudioVisualizerWidget() {
   if (m_spectrum != nullptr && m_listenerId != 0) {
@@ -111,7 +112,9 @@ void AudioVisualizerWidget::syncSpectrum() {
   }
 }
 
-bool AudioVisualizerWidget::shouldBeVisible() const { return m_spectrum != nullptr && !m_spectrum->idle(); }
+bool AudioVisualizerWidget::shouldBeVisible() const {
+  return m_spectrum != nullptr && (m_showWhenIdle || !m_spectrum->idle());
+}
 
 bool AudioVisualizerWidget::applyVisibility() {
   if (root() == nullptr || m_visualizer == nullptr) {
