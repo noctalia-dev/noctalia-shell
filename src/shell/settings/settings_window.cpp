@@ -1,5 +1,6 @@
 #include "shell/settings/settings_window.h"
 
+#include "compositors/compositor_detect.h"
 #include "config/config_service.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
@@ -273,7 +274,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     }
   }
   settings::RegistryEnvironment env;
-  env.niriBackdropSupported = (m_wayland != nullptr && m_wayland->tracksNiriOverviewState());
+  env.niriBackdropSupported = (m_wayland != nullptr && compositors::isNiri());
   if (m_wayland != nullptr) {
     for (const auto& output : m_wayland->outputs()) {
       if (output.output == nullptr || output.connectorName.empty()) {
