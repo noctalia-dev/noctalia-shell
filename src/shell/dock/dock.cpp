@@ -359,37 +359,26 @@ void Dock::requestLayout() {
 // ── Input ─────────────────────────────────────────────────────────────────────
 
 bool Dock::onPointerEvent(const PointerEvent& event) {
-  auto isOnPopup = [&](DockPopup* popup) {
-    return popup != nullptr && event.surface != nullptr && event.surface == popup->wlSurface;
-  };
-
-  auto isWithinPopupBounds = [&](DockPopup* popup) {
-    if (!isOnPopup(popup) || popup == nullptr || popup->surface == nullptr) {
-      return false;
-    }
-    const float w = static_cast<float>(popup->surface->width());
-    const float h = static_cast<float>(popup->surface->height());
-    return event.sx >= 0.0 && event.sy >= 0.0 && event.sx < w && event.sy < h;
-  };
-
   // Route to any open popup first (item menu takes priority over window picker).
-  // If the click is outside the popup surface, close the popup and let the
-  // same event continue to dock item hit-testing.
+  // If a pointer press is not consumed by the popup, close it and let the same
+  // event continue to dock item hit-testing.
   if (m_itemMenu != nullptr) {
-    const bool outsidePress =
-        (event.type == PointerEvent::Type::Button && event.state == 1 && !isWithinPopupBounds(m_itemMenu.get()));
-    if (!outsidePress) {
-      return routePopupEvent(m_itemMenu.get(), event);
+    const bool consumed = routePopupEvent(m_itemMenu.get(), event);
+    if (consumed) {
+      return true;
     }
-    closeItemMenu();
+    if (event.type == PointerEvent::Type::Button && event.state == 1) {
+      closeItemMenu();
+    }
   }
   if (m_windowMenu != nullptr) {
-    const bool outsidePress =
-        (event.type == PointerEvent::Type::Button && event.state == 1 && !isWithinPopupBounds(m_windowMenu.get()));
-    if (!outsidePress) {
-      return routePopupEvent(m_windowMenu.get(), event);
+    const bool consumed = routePopupEvent(m_windowMenu.get(), event);
+    if (consumed) {
+      return true;
     }
-    closeWindowPicker();
+    if (event.type == PointerEvent::Type::Button && event.state == 1) {
+      closeWindowPicker();
+    }
   }
 
   switch (event.type) {
@@ -446,10 +435,6 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
         }
       }
 
-      // Auto-hide: start fade-out when pointer leaves, unless a popup is
-      // being opened (m_popupOwnerInstance is set before the roundtrip inside
-      // PopupSurface::initialize, which is where compositors like Hyprland
-      // deliver the Leave event synchronously).
       if (m_config->config().dock.autoHide && m_popupOwnerInstance == nullptr) {
         startHideFadeOut(*m_hoveredInstance);
       }
@@ -734,10 +719,6 @@ void Dock::syncDockSlideLayerTransform(DockInstance& instance) {
 void Dock::applyDockCompositorBlur(DockInstance& instance) {
   const auto& cfg = m_config->config().dock;
   if (instance.surface == nullptr) {
-    return;
-  }
-  if (!cfg.backgroundBlur) {
-    instance.surface->clearBlurRegion();
     return;
   }
   // Compositor blur is independent of scene opacity — clear it while auto-hide
@@ -1526,14 +1507,7 @@ void Dock::closeWindowPicker() {
 
 bool Dock::routePopupEvent(DockPopup* popup, const PointerEvent& event) {
   const bool onPopup = (event.surface != nullptr && event.surface == popup->wlSurface);
-  const bool inBounds = [&]() {
-    if (!onPopup || popup->surface == nullptr) {
-      return false;
-    }
-    const float w = static_cast<float>(popup->surface->width());
-    const float h = static_cast<float>(popup->surface->height());
-    return event.sx >= 0.0 && event.sy >= 0.0 && event.sx < w && event.sy < h;
-  }();
+  bool consumed = false;
 
   switch (event.type) {
   case PointerEvent::Type::Enter:
@@ -1549,15 +1523,26 @@ bool Dock::routePopupEvent(DockPopup* popup, const PointerEvent& event) {
     }
     break;
   case PointerEvent::Type::Motion:
-    if (onPopup && inBounds) {
+    if (onPopup || popup->pointerInside) {
+      if (onPopup) {
+        popup->pointerInside = true;
+      }
       popup->inputDispatcher.pointerMotion(static_cast<float>(event.sx), static_cast<float>(event.sy), 0);
+      consumed = true;
     }
     break;
   case PointerEvent::Type::Button:
-    if (onPopup && inBounds) {
+    if (onPopup || popup->pointerInside) {
+      if (onPopup) {
+        popup->pointerInside = true;
+      }
+      // Keep hover state synced before click dispatch so stationary pointers can
+      // still activate rows even if Enter/Motion ordering is flaky.
+      popup->inputDispatcher.pointerMotion(static_cast<float>(event.sx), static_cast<float>(event.sy), event.serial);
       const bool pressed = (event.state == 1);
       popup->inputDispatcher.pointerButton(static_cast<float>(event.sx), static_cast<float>(event.sy), event.button,
                                            pressed);
+      consumed = true;
     }
     break;
   case PointerEvent::Type::Axis:
@@ -1573,8 +1558,7 @@ bool Dock::routePopupEvent(DockPopup* popup, const PointerEvent& event) {
     }
   }
 
-  // Always consume: popup holds the grab.
-  return true;
+  return consumed;
 }
 
 // ── Private: item context menu (right-click) ──────────────────────────────────

@@ -273,7 +273,19 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     }
   }
   settings::RegistryEnvironment env;
-  env.niriOverviewSupported = (m_wayland != nullptr && m_wayland->hasNiriOverviewState());
+  env.niriBackdropSupported = (m_wayland != nullptr && m_wayland->tracksNiriOverviewState());
+  if (m_wayland != nullptr) {
+    for (const auto& output : m_wayland->outputs()) {
+      if (output.output == nullptr || output.connectorName.empty()) {
+        continue;
+      }
+      std::string label = output.connectorName;
+      if (!output.description.empty()) {
+        label += " (" + output.description + ")";
+      }
+      env.availableOutputs.push_back(settings::SelectOption{output.connectorName, std::move(label)});
+    }
+  }
   const auto registry = settings::buildSettingsRegistry(cfg, selectedBar, selectedMonitorOverride, env);
   const auto sections = sectionKeys(registry);
   if (m_selectedSection == "bar" && selectedBar == nullptr) {

@@ -21,6 +21,7 @@ namespace {
   }
 
   Button::ButtonPalette paletteForVariant(ButtonVariant variant) {
+    constexpr float kDisabledAlpha = 0.55f;
     switch (variant) {
     case ButtonVariant::Default:
       return Button::ButtonPalette{
@@ -30,6 +31,9 @@ namespace {
           .hover = makeState(roleColor(ColorRole::Hover), clearThemeColor(), roleColor(ColorRole::OnHover)),
           .pressed =
               makeState(roleColor(ColorRole::Primary), roleColor(ColorRole::Primary), roleColor(ColorRole::OnPrimary)),
+          .disabled =
+              makeState(roleColor(ColorRole::SurfaceVariant, kDisabledAlpha),
+                        roleColor(ColorRole::Outline, kDisabledAlpha), roleColor(ColorRole::OnSurface, kDisabledAlpha)),
       };
     case ButtonVariant::Secondary:
       return Button::ButtonPalette{
@@ -39,6 +43,9 @@ namespace {
           .hover = makeState(roleColor(ColorRole::Hover), clearThemeColor(), roleColor(ColorRole::OnHover)),
           .pressed =
               makeState(roleColor(ColorRole::Primary), roleColor(ColorRole::Primary), roleColor(ColorRole::OnPrimary)),
+
+          .disabled = makeState(roleColor(ColorRole::Secondary, kDisabledAlpha),
+                                roleColor(ColorRole::Outline, kDisabledAlpha), roleColor(ColorRole::OnSecondary)),
       };
     case ButtonVariant::Destructive:
       return Button::ButtonPalette{
@@ -47,6 +54,8 @@ namespace {
               makeState(roleColor(ColorRole::Error), roleColor(ColorRole::Outline), roleColor(ColorRole::OnError)),
           .hover = makeState(roleColor(ColorRole::Hover), clearThemeColor(), roleColor(ColorRole::OnHover)),
           .pressed = makeState(roleColor(ColorRole::Error), roleColor(ColorRole::Error), roleColor(ColorRole::OnError)),
+          .disabled = makeState(roleColor(ColorRole::Error, kDisabledAlpha),
+                                roleColor(ColorRole::Outline, kDisabledAlpha), roleColor(ColorRole::OnError)),
       };
     case ButtonVariant::Outline:
       return Button::ButtonPalette{
@@ -57,6 +66,9 @@ namespace {
 
           .pressed =
               makeState(roleColor(ColorRole::Primary), roleColor(ColorRole::Primary), roleColor(ColorRole::OnPrimary)),
+          .disabled =
+              makeState(roleColor(ColorRole::Surface, kDisabledAlpha), roleColor(ColorRole::Outline, kDisabledAlpha),
+                        roleColor(ColorRole::OnSurface, kDisabledAlpha)),
       };
     case ButtonVariant::Ghost:
       return Button::ButtonPalette{
@@ -65,6 +77,7 @@ namespace {
           .hover = makeState(roleColor(ColorRole::Hover), clearThemeColor(), roleColor(ColorRole::OnHover)),
           .pressed =
               makeState(roleColor(ColorRole::SurfaceVariant), clearThemeColor(), roleColor(ColorRole::OnSurface)),
+          .disabled = makeState(clearThemeColor(), clearThemeColor(), roleColor(ColorRole::OnSurface, kDisabledAlpha)),
       };
     case ButtonVariant::Accent:
       return Button::ButtonPalette{
@@ -72,6 +85,8 @@ namespace {
           .normal = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
           .hover = makeState(roleColor(ColorRole::Hover), clearThemeColor(), roleColor(ColorRole::OnHover)),
           .pressed = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
+          .disabled = makeState(roleColor(ColorRole::Primary, kDisabledAlpha), clearThemeColor(),
+                                roleColor(ColorRole::OnPrimary)),
       };
     case ButtonVariant::Tab:
       return Button::ButtonPalette{
@@ -80,6 +95,7 @@ namespace {
           .hover = makeState(roleColor(ColorRole::Hover), clearThemeColor(), roleColor(ColorRole::OnHover)),
           .pressed =
               makeState(roleColor(ColorRole::SurfaceVariant), clearThemeColor(), roleColor(ColorRole::OnSurface)),
+          .disabled = makeState(clearThemeColor(), clearThemeColor(), roleColor(ColorRole::OnSurface)),
       };
     case ButtonVariant::TabActive:
       return Button::ButtonPalette{
@@ -87,6 +103,8 @@ namespace {
           .normal = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
           .hover = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
           .pressed = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
+          .disabled = makeState(roleColor(ColorRole::Primary, kDisabledAlpha), clearThemeColor(),
+                                roleColor(ColorRole::OnPrimary)),
       };
     }
 
@@ -128,8 +146,13 @@ Button::Button() {
       m_onPointerMotion(data.localX, data.localY);
     }
   });
-  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    if (m_enabled && m_onClick) {
+  area->setOnClick([this](const InputArea::PointerData& data) {
+    if (!m_enabled) {
+      return;
+    }
+    if (data.button == BTN_RIGHT && m_onRightClick) {
+      m_onRightClick();
+    } else if (m_onClick) {
       m_onClick();
     }
   });
@@ -184,6 +207,14 @@ void Button::setGlyphSize(float size) {
 
 void Button::setOnClick(std::function<void()> callback) {
   m_onClick = std::move(callback);
+  refreshInputAreaEnabled();
+}
+
+void Button::setOnRightClick(std::function<void()> callback) {
+  m_onRightClick = std::move(callback);
+  if (m_inputArea != nullptr) {
+    m_inputArea->setAcceptedButtons(BTN_LEFT | BTN_RIGHT);
+  }
   refreshInputAreaEnabled();
 }
 
@@ -341,6 +372,16 @@ void Button::applyColors(const Color& bg, const Color& border, const Color& labe
   if (m_glyph != nullptr) {
     m_glyph->setColor(label);
   }
+  for (auto& child : children()) {
+    if (child.get() == m_label || child.get() == m_glyph) {
+      continue;
+    }
+    if (auto* lbl = dynamic_cast<Label*>(child.get())) {
+      lbl->setColor(label);
+    } else if (auto* gl = dynamic_cast<Glyph*>(child.get())) {
+      gl->setColor(label);
+    }
+  }
   m_visualStateInitialized = true;
 }
 
@@ -349,10 +390,9 @@ void Button::resolveVisualStateColors(Color& targetBg, Color& targetBorder, Colo
   bool isPressed = m_enabled && pressed();
 
   if (!m_enabled) {
-    constexpr float kDisabledAlpha = 0.5f;
-    targetBg = withAlpha(resolveThemeColor(m_palette.normal.bg), kDisabledAlpha);
-    targetBorder = withAlpha(resolveThemeColor(m_palette.normal.border), kDisabledAlpha);
-    targetLabel = withAlpha(resolveThemeColor(m_palette.normal.label), kDisabledAlpha);
+    targetBg = resolveThemeColor(m_palette.disabled.bg);
+    targetBorder = resolveThemeColor(m_palette.disabled.border);
+    targetLabel = resolveThemeColor(m_palette.disabled.label);
   } else if (isPressed) {
     targetBg = resolveThemeColor(m_palette.pressed.bg);
     targetBorder = resolveThemeColor(m_palette.pressed.border);
@@ -445,28 +485,21 @@ void Button::doLayout(Renderer& renderer) {
   // After Flex layout the content row is left-anchored inside the padding.
   // Shift the whole group to honour m_contentAlign (Start leaves it as-is).
   if (m_contentAlign != ButtonContentAlign::Start) {
-    auto includeContent = [this](Node* node) {
-      return node != nullptr && node->visible() && (node == m_label || node == m_glyph);
-    };
-
     float contentLeft = 0.0f;
     float contentRight = 0.0f;
     float contentTop = 0.0f;
     float contentBottom = 0.0f;
     bool haveContent = false;
 
-    if (includeContent(m_label)) {
-      contentLeft = m_label->x();
-      contentRight = m_label->x() + m_label->width();
-      contentTop = m_label->y();
-      contentBottom = m_label->y() + m_label->height();
-      haveContent = true;
-    }
-    if (includeContent(m_glyph)) {
-      const float left = m_glyph->x();
-      const float right = m_glyph->x() + m_glyph->width();
-      const float top = m_glyph->y();
-      const float bottom = m_glyph->y() + m_glyph->height();
+    for (auto& child : children()) {
+      Node* node = child.get();
+      if (node == nullptr || !node->visible() || !node->participatesInLayout() || node->zIndex() < 0) {
+        continue;
+      }
+      const float left = node->x();
+      const float right = node->x() + node->width();
+      const float top = node->y();
+      const float bottom = node->y() + node->height();
       if (!haveContent) {
         contentLeft = left;
         contentRight = right;
@@ -494,11 +527,12 @@ void Button::doLayout(Renderer& renderer) {
       const float targetTop = std::round((height() - contentHeight) * 0.5f);
       const float shiftY = targetTop - contentTop;
       if (std::abs(shiftX) > 0.01f || std::abs(shiftY) > 0.01f) {
-        if (includeContent(m_label)) {
-          m_label->setPosition(m_label->x() + shiftX, m_label->y() + shiftY);
-        }
-        if (includeContent(m_glyph)) {
-          m_glyph->setPosition(m_glyph->x() + shiftX, m_glyph->y() + shiftY);
+        for (auto& child : children()) {
+          Node* node = child.get();
+          if (node == nullptr || !node->visible() || !node->participatesInLayout() || node->zIndex() < 0) {
+            continue;
+          }
+          node->setPosition(node->x() + shiftX, node->y() + shiftY);
         }
       }
     }

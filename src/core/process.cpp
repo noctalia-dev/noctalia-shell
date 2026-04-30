@@ -207,6 +207,18 @@ namespace process {
     return {exitCode, std::move(out), std::move(err)};
   }
 
+  RunResult runSync(std::initializer_list<const char*> args) {
+    std::vector<std::string> command;
+    command.reserve(args.size());
+    for (const char* arg : args) {
+      if (arg == nullptr) {
+        return {-1, {}, {}};
+      }
+      command.emplace_back(arg);
+    }
+    return runSync(command);
+  }
+
   RunResult runSync(const std::string& command) {
     if (command.empty())
       return {-1, {}, {}};

@@ -41,4 +41,53 @@ namespace StringUtils {
     return lhs.find(rhs) != std::string::npos;
   }
 
+  // Strip HTML/Pango tags and unescape XML entities.
+  [[nodiscard]] inline std::string sanitizeMarkup(std::string_view s) {
+    std::string out;
+    out.reserve(s.size());
+
+    size_t i = 0;
+    while (i < s.size()) {
+      if (s[i] == '<') {
+        size_t close = s.find('>', i + 1);
+        if (close != std::string_view::npos) {
+          auto tag = toLower(s.substr(i + 1, close - i - 1));
+          if (tag == "br" || tag == "br/" || tag == "br /") {
+            out += '\n';
+          }
+          i = close + 1;
+          continue;
+        }
+      }
+
+      if (s[i] == '&') {
+        std::string_view rest = s.substr(i);
+        if (rest.substr(0, 4) == "&lt;") {
+          out += '<';
+          i += 4;
+        } else if (rest.substr(0, 4) == "&gt;") {
+          out += '>';
+          i += 4;
+        } else if (rest.substr(0, 5) == "&amp;") {
+          out += '&';
+          i += 5;
+        } else if (rest.substr(0, 6) == "&quot;") {
+          out += '"';
+          i += 6;
+        } else if (rest.substr(0, 6) == "&apos;") {
+          out += '\'';
+          i += 6;
+        } else {
+          out += s[i];
+          ++i;
+        }
+      } else {
+        out += s[i];
+        ++i;
+      }
+    }
+
+    return out;
+  }
+
 } // namespace StringUtils

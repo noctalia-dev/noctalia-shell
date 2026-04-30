@@ -46,6 +46,11 @@ namespace settings {
             .categoryKey = "settings.widgets.categories.time",
         },
         {
+            .type = "clipboard",
+            .labelKey = "settings.widgets.types.clipboard",
+            .categoryKey = "settings.widgets.categories.shell",
+        },
+        {
             .type = "idle_inhibitor",
             .labelKey = "settings.widgets.types.idle-inhibitor",
             .categoryKey = "settings.widgets.categories.system",
@@ -407,13 +412,18 @@ namespace settings {
       add(doubleSpec("height", 16.0, 4.0, 120.0, 1.0));
       add(intSpec("bands", 16, 2.0, 128.0, 1.0));
       add(boolSpec("mirrored", false));
+      add(boolSpec("show_when_idle", false));
       add(stringSpec("low_color", "primary"));
       add(stringSpec("high_color", "primary"));
     } else if (type == "bluetooth") {
       add(boolSpec("show_label", false));
+    } else if (type == "brightness") {
+      add(boolSpec("show_label", true));
     } else if (type == "clock") {
       add(stringSpec("format", "{:%H:%M}"));
       add(stringSpec("vertical_format"));
+    } else if (type == "clipboard") {
+      add(stringSpec("glyph", "clipboard"));
     } else if (type == "keyboard_layout") {
       add(stringSpec("cycle_command"));
       add(segmentedSpec("display", "short", shortFull));
@@ -446,6 +456,8 @@ namespace settings {
       add(boolSpec("show_label", true));
     } else if (type == "tray") {
       add(stringListSpec("hidden"));
+    } else if (type == "volume") {
+      add(boolSpec("show_label", true));
     } else if (type == "wallpaper") {
       add(stringSpec("glyph", "wallpaper-selector"));
     } else if (type == "weather") {

@@ -22,6 +22,7 @@ class InputArea;
 class RenderContext;
 class WaylandConnection;
 struct PointerEvent;
+struct WaylandOutput;
 
 class NotificationToast {
 public:
@@ -129,6 +130,9 @@ private:
   [[nodiscard]] bool fitsOnSurface(const PopupEntry& entry, float surfaceHeight) const;
   [[nodiscard]] float entryHeight(const PopupEntry& entry) const;
   [[nodiscard]] std::string notificationPosition() const;
+  [[nodiscard]] std::string notificationLayer() const;
+  [[nodiscard]] std::vector<std::string> notificationMonitors() const;
+  [[nodiscard]] bool shouldRenderOnOutput(const WaylandOutput& output) const;
   [[nodiscard]] bool isBottomStacking() const;
   [[nodiscard]] bool revealFromLeftEdge() const;
   void refreshEntryGeometry(PopupEntry& entry) const;
@@ -153,4 +157,6 @@ private:
   std::unordered_set<std::string> m_pendingRemoteIconDownloads;
   std::unordered_set<std::string> m_failedRemoteIconDownloads;
   std::string m_lastPosition;
+  std::string m_lastLayer;
+  std::vector<std::string> m_lastMonitorSelectors;
 };

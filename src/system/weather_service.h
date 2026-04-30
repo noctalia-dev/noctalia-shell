@@ -114,6 +114,8 @@ private:
   void scheduleRetryAfterFailure();
   void loadCache();
   void saveCache() const;
+  [[nodiscard]] bool hasResolvedLocation() const noexcept;
+  [[nodiscard]] bool canFetchWeatherAfterLocationFailure(bool autoLocated) const noexcept;
 
   [[nodiscard]] static std::filesystem::path transportCacheDir();
   [[nodiscard]] static std::filesystem::path stateCacheFilePath();

@@ -10,9 +10,10 @@
 #include <memory>
 
 AudioVisualizerWidget::AudioVisualizerWidget(PipeWireSpectrum* spectrum, float width, float height, int bands,
-                                             bool mirrored, ThemeColor lowColor, ThemeColor highColor)
+                                             bool mirrored, ThemeColor lowColor, ThemeColor highColor,
+                                             bool showWhenIdle)
     : m_spectrum(spectrum), m_width(width), m_height(height), m_bands(std::max(1, bands)), m_mirrored(mirrored),
-      m_lowColor(lowColor), m_highColor(highColor) {}
+      m_showWhenIdle(showWhenIdle), m_lowColor(lowColor), m_highColor(highColor) {}
 
 AudioVisualizerWidget::~AudioVisualizerWidget() {
   if (m_spectrum != nullptr && m_listenerId != 0) {
@@ -49,6 +50,11 @@ void AudioVisualizerWidget::doLayout(Renderer& renderer, float containerWidth, f
   if (root() == nullptr || m_visualizer == nullptr) {
     return;
   }
+  applyVisibility();
+  if (!m_visible) {
+    root()->setSize(0.0f, 0.0f);
+    return;
+  }
 
   m_isVertical = containerHeight > containerWidth;
   m_visualizer->setOrientation(m_isVertical ? AudioSpectrumOrientation::Vertical
@@ -63,11 +69,23 @@ void AudioVisualizerWidget::doLayout(Renderer& renderer, float containerWidth, f
 
 void AudioVisualizerWidget::doUpdate(Renderer& renderer) {
   m_renderer = &renderer;
+  if (applyVisibility()) {
+    if (root() != nullptr) {
+      root()->markLayoutDirty();
+    }
+    requestUpdate();
+  }
   syncSpectrum();
 }
 
 void AudioVisualizerWidget::onFrameTick(float deltaMs) {
   if (m_visualizer == nullptr) {
+    return;
+  }
+  if (applyVisibility()) {
+    requestUpdate();
+  }
+  if (!m_visible) {
     return;
   }
   syncSpectrum();
@@ -78,7 +96,8 @@ void AudioVisualizerWidget::onFrameTick(float deltaMs) {
 }
 
 bool AudioVisualizerWidget::needsFrameTick() const {
-  return m_visualizer != nullptr && (m_pendingSpectrumUpdate || !m_visualizer->converged());
+  return m_visualizer != nullptr &&
+         (m_pendingSpectrumUpdate || !m_visualizer->converged() || shouldBeVisible() != m_visible);
 }
 
 void AudioVisualizerWidget::syncSpectrum() {
@@ -91,4 +110,25 @@ void AudioVisualizerWidget::syncSpectrum() {
   if (m_renderer != nullptr) {
     m_visualizer->layout(*m_renderer);
   }
+}
+
+bool AudioVisualizerWidget::shouldBeVisible() const {
+  return m_spectrum != nullptr && (m_showWhenIdle || !m_spectrum->idle());
+}
+
+bool AudioVisualizerWidget::applyVisibility() {
+  if (root() == nullptr || m_visualizer == nullptr) {
+    return false;
+  }
+  const bool nextVisible = shouldBeVisible();
+  if (nextVisible == m_visible) {
+    return false;
+  }
+  m_visible = nextVisible;
+  root()->setVisible(m_visible);
+  m_visualizer->setVisible(m_visible);
+  if (!m_visible) {
+    root()->setSize(0.0f, 0.0f);
+  }
+  return true;
 }

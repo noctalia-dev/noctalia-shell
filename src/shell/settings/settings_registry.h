@@ -81,7 +81,8 @@ namespace settings {
 
   // Runtime conditions that gate optional sections (e.g. compositor-specific features).
   struct RegistryEnvironment {
-    bool niriOverviewSupported = false; // hide the [overview] section when false
+    bool niriBackdropSupported = false;         // hide the [backdrop] section when false
+    std::vector<SelectOption> availableOutputs; // monitor selectors available on this machine
   };
 
   [[nodiscard]] const BarConfig* findBar(const Config& cfg, std::string_view name);

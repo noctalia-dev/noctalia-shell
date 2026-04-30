@@ -197,6 +197,28 @@
         "muted-volume": "Muted - {volume}%"
       }
     },
+    "shortcuts": {
+      "wifi": "Wi-Fi",
+      "bluetooth": "Bluetooth",
+      "nightlight": "Night Light",
+      "notification": "DND",
+      "dark-mode": {
+        "dark": "Dark Mode",
+        "light": "Light Mode",
+        "auto": "Auto Mode"
+      },
+      "idle-inhibitor": "Idle Inhibitor",
+      "audio": "Audio",
+      "mic-mute": "Microphone",
+      "power-profile": "Power",
+      "weather": "Weather",
+      "keyboard-layout": "Layout",
+      "media": "Media",
+      "sysmon": "System",
+      "wallpaper": "Wallpaper",
+      "session": "Session",
+      "clipboard": "Clipboard"
+    },
     "network": {
       "current-connection": "Current connection",
       "available-networks": "Available networks",
@@ -642,7 +664,7 @@
         "desktop": "Desktop",
         "dock": "Dock",
         "notifications": "Notifications",
-        "overview": "Overview",
+        "backdrop": "Backdrop",
         "services": "Services",
         "shell": "Shell",
         "templates": "Templates",
@@ -720,6 +742,10 @@
         "left": "Left",
         "right": "Right"
       },
+      "layer": {
+        "top": "Top",
+        "overlay": "Overlay"
+      },
       "weather": {
         "unit": {
           "celsius": "Celsius",
@@ -773,6 +799,7 @@
         "bluetooth": "Bluetooth",
         "brightness": "Brightness",
         "clock": "Clock",
+        "clipboard": "Clipboard",
         "idle-inhibitor": "Idle Inhibitor",
         "keyboard-layout": "Keyboard Layout",
         "launcher": "Launcher",
@@ -924,6 +951,10 @@
           "label": "Show Condition",
           "description": "Show weather condition text"
         },
+        "show_when_idle": {
+          "label": "Show When Idle",
+          "description": "Keep the visualizer visible even when no media is playing"
+        },
         "show_label": {
           "label": "Show Label",
           "description": "Show text next to the icon"
@@ -976,9 +1007,6 @@
         },
         "background-opacity": {
           "label": "Background Opacity"
-        },
-        "background-blur": {
-          "label": "Background Blur"
         },
         "shadow": {
           "label": "Shadow"
@@ -1170,9 +1198,6 @@
         "background-opacity": {
           "description": "Background opacity of the dock"
         },
-        "background-blur": {
-          "description": "Blur the background behind the dock"
-        },
         "shadow": {
           "description": "Cast the global surface shadow from the dock"
         },
@@ -1183,21 +1208,21 @@
           "description": "Reserve screen space for the dock"
         }
       },
-      "overview": {
+      "backdrop": {
         "unload-when-hidden": {
           "label": "Unload When Hidden",
-          "description": "Free memory when overview is not visible"
+          "description": "Free memory when backdrop is not visible"
         },
         "blur-intensity": {
           "label": "Blur Intensity",
-          "description": "Blur intensity of the overview backdrop"
+          "description": "Blur intensity of the backdrop"
         },
         "tint-intensity": {
           "label": "Tint Intensity",
-          "description": "Tint intensity of the overview backdrop"
+          "description": "Tint intensity of the backdrop"
         },
         "enabled": {
-          "description": "Enable the overview workspace backdrop"
+          "description": "Enable the backdrop"
         }
       },
       "desktop": {
@@ -1355,17 +1380,21 @@
           "label": "Notification Daemon",
           "description": "Enable the built-in notification daemon"
         },
-        "toast-blur": {
-          "label": "Toast Blur",
-          "description": "Blur background behind notification toasts"
-        },
         "position": {
           "label": "Toast Position",
           "description": "Screen position for notification toasts"
         },
+        "layer": {
+          "label": "Wayland Layer",
+          "description": "Choose whether toasts use the top or overlay layer"
+        },
         "toast-opacity": {
           "label": "Toast Opacity",
           "description": "Background opacity of notification toasts"
+        },
+        "monitors": {
+          "label": "Displays",
+          "description": "Choose which displays show notification toasts; leave empty to show on all displays"
         }
       },
       "bar": {
@@ -1464,9 +1493,6 @@
         },
         "background-opacity": {
           "description": "Background opacity of the bar"
-        },
-        "background-blur": {
-          "description": "Blur the background behind the bar"
         },
         "shadow": {
           "description": "Cast the global surface shadow from the bar"

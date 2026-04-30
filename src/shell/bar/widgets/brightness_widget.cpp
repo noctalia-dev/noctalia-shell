@@ -27,8 +27,8 @@ namespace {
 
 } // namespace
 
-BrightnessWidget::BrightnessWidget(BrightnessService* brightness, wl_output* output)
-    : m_brightness(brightness), m_output(output) {}
+BrightnessWidget::BrightnessWidget(BrightnessService* brightness, wl_output* output, bool showLabel)
+    : m_brightness(brightness), m_output(output), m_showLabel(showLabel) {}
 
 void BrightnessWidget::create() {
   auto area = std::make_unique<InputArea>();
@@ -58,6 +58,7 @@ void BrightnessWidget::create() {
   auto label = std::make_unique<Label>();
   label->setBold(true);
   label->setFontSize(Style::fontSizeBody * m_contentScale);
+  label->setVisible(m_showLabel);
   m_label = label.get();
   area->addChild(std::move(label));
 
@@ -77,18 +78,25 @@ void BrightnessWidget::doLayout(Renderer& renderer, float containerWidth, float 
   }
 
   m_glyph->measure(renderer);
-  m_label->measure(renderer);
+  if (m_label->visible()) {
+    m_label->measure(renderer);
+  }
 
-  if (m_isVertical) {
+  const bool labelVisible = m_label->visible();
+  if (m_isVertical && labelVisible) {
     const float w = std::max(m_glyph->width(), m_label->width());
     m_glyph->setPosition(std::round((w - m_glyph->width()) * 0.5f), 0.0f);
     m_label->setPosition(std::round((w - m_label->width()) * 0.5f), m_glyph->height());
     rootNode->setSize(w, m_glyph->height() + m_label->height());
   } else {
-    const float h = std::max(m_glyph->height(), m_label->height());
+    const float h = labelVisible ? std::max(m_glyph->height(), m_label->height()) : m_glyph->height();
     m_glyph->setPosition(0.0f, std::round((h - m_glyph->height()) * 0.5f));
-    m_label->setPosition(m_glyph->width() + Style::spaceXs, std::round((h - m_label->height()) * 0.5f));
-    rootNode->setSize(m_label->x() + m_label->width(), h);
+    float totalWidth = m_glyph->width();
+    if (labelVisible) {
+      m_label->setPosition(m_glyph->width() + Style::spaceXs, std::round((h - m_label->height()) * 0.5f));
+      totalWidth = m_label->x() + m_label->width();
+    }
+    rootNode->setSize(totalWidth, h);
   }
 }
 
@@ -130,11 +138,14 @@ void BrightnessWidget::syncState(Renderer& renderer) {
   m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
 
-  int pct = static_cast<int>(std::round(brightness * 100.0f));
-  m_label->setFontSize((m_isVertical ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
-  m_label->setText(m_isVertical ? std::to_string(pct) : std::to_string(pct) + "%");
-  m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
-  m_label->measure(renderer);
+  m_label->setVisible(m_showLabel);
+  if (m_showLabel) {
+    int pct = static_cast<int>(std::round(brightness * 100.0f));
+    m_label->setFontSize((m_isVertical ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
+    m_label->setText(m_isVertical ? std::to_string(pct) : std::to_string(pct) + "%");
+    m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+    m_label->measure(renderer);
+  }
 
   requestRedraw();
 }

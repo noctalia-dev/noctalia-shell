@@ -15,9 +15,9 @@ sudo dnf install meson gcc-c++ just \
   libEGL-devel mesa-libGLES-devel \
   freetype-devel fontconfig-devel \
   cairo-devel pango-devel \
-  libxkbcommon-devel \
+  libxkbcommon-devel glib2-devel \
   sdbus-cpp-devel pipewire-devel \
-  pam-devel libcurl-devel libwebp-devel
+  pam-devel polkit-devel libcurl-devel libwebp-devel
 ```
 
 ### Arch
@@ -27,8 +27,8 @@ sudo pacman -S meson gcc just \
   wayland wayland-protocols \
   libglvnd freetype2 fontconfig \
   cairo pango \
-  libxkbcommon \
-  sdbus-cpp libpipewire \
+  libxkbcommon glib2 \
+  sdbus-cpp libpipewire polkit \
   pam curl libwebp
 ```
 
@@ -40,16 +40,21 @@ sudo apt install meson g++ just \
   libegl-dev libgles-dev \
   libfreetype-dev libfontconfig-dev \
   libcairo2-dev libpango1.0-dev \
-  libxkbcommon-dev \
+  libxkbcommon-dev libglib2.0-dev \
   libsdbus-c++-dev libpipewire-0.3-dev \
-  libpam0g-dev libcurl4-openssl-dev libwebp-dev
+  libpam0g-dev libpolkit-agent-1-dev libpolkit-gobject-1-dev \
+  libcurl4-openssl-dev libwebp-dev
 ```
 
 Vendored dependencies, with no system package needed: `Wuffs`, `nanosvg`, `tomlplusplus`, `tinyexpr`,
-`nlohmann/json`, `Luau`, `dr_wav`, `stb_image_resize2`, and Material Color Utilities.
+`nlohmann/json`, `Luau`, `dr_wav`, `fzy`, `stb_image_resize2`, and Material Color Utilities.
 
 System packages required beyond the Wayland/GL stack: `libwebp` handles WebP decoding and thumbnail encoding. Wuffs
 handles the other supported raster image formats.
+
+Polkit agent support requires development files that provide the `polkit-agent-1` and `polkit-gobject-1` pkg-config
+modules. Some distros ship these in the runtime `polkit` package, while split-package distros use names such as
+`polkit-devel`, `polkit-dev`, or `libpolkit-agent-1-dev` / `libpolkit-gobject-1-dev`.
 
 Sanitizer runtime packages are only needed for ASan/UBSan builds configured with `just configure asan`.
 

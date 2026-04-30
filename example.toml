@@ -67,9 +67,9 @@ builtin_ids           = []          # opt-in; list ids with: noctalia theme --li
 enable_user_templates = false
 user_config           = "~/.config/noctalia/user-templates.toml"
 
-# ── Overview ──────────────────────────────────────────────────────────────────
+# ── Backdrop ──────────────────────────────────────────────────────────────────
 
-[overview]
+[backdrop]
 enabled                = false
 unload_when_not_in_use = true
 blur_intensity         = 0.5        # 0.0 = no blur, 1.0 = maximum
@@ -79,8 +79,8 @@ tint_intensity         = 0.3        # 0.0 = no tint, 1.0 = opaque
 
 [notification]
 enable_daemon      = true
+layer              = "top"          # top | overlay
 background_opacity = 0.97
-background_blur    = true
 # IPC examples:
 # noctalia msg notification-clear-active
 # noctalia msg notification-clear-history
@@ -165,7 +165,6 @@ down     = ["down"]
 position           = "top"          # top | bottom | left | right
 thickness          = 34
 background_opacity = 1.0
-background_blur    = true           # ext-background-effect-v1 (niri); inert on other compositors
 radius             = 12
 margin_h           = 180
 margin_v           = 10
@@ -182,7 +181,7 @@ capsule            = false
 
 start  = ["launcher", "wallpaper", "workspaces"]
 center = ["clock"]
-end    = ["media", "tray", "notifications", "network", "bluetooth", "volume", "brightness", "battery", "control-center", "session"]
+end    = ["media", "tray", "notifications", "clipboard", "network", "bluetooth", "volume", "brightness", "battery", "control-center", "session"]
 
 # Per-monitor override example — only the fields you list are overridden:
 # [bar.main.monitor.dp1]
@@ -198,7 +197,6 @@ icon_size           = 48
 padding             = 8
 item_spacing        = 6
 background_opacity  = 0.88
-background_blur     = true
 radius              = 16
 margin_h            = 0
 margin_v            = 8
@@ -218,6 +216,22 @@ pinned              = []            # e.g. ["firefox", "code", "kitty"]
 
 [desktop_widgets]
 enabled = false
+
+# ── Control Center ────────────────────────────────────────────────────────────
+
+# Shortcut buttons shown at the bottom of the overview tab (up to 6).
+# [[control_center.shortcuts]]
+# type = "wifi"
+# [[control_center.shortcuts]]
+# type = "bluetooth"
+# [[control_center.shortcuts]]
+# type = "nightlight"
+# [[control_center.shortcuts]]
+# type = "notification"
+# [[control_center.shortcuts]]
+# type = "wallpaper"
+# [[control_center.shortcuts]]
+# type = "session"
 
 # ── Hooks ─────────────────────────────────────────────────────────────────────
 

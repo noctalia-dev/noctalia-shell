@@ -14,6 +14,7 @@
 #include <fstream>
 #include <iomanip>
 #include <json.hpp>
+#include <memory>
 #include <poll.h>
 #include <ranges>
 #include <sstream>
@@ -355,6 +356,7 @@ bool ClipboardService::bind(void* manager, const DataControlOps* ops, wl_seat* s
 
 void ClipboardService::cleanup() {
   cancelActiveRead();
+  cancelActiveWrites();
   clearOffers();
 
   if (m_ops != nullptr) {
@@ -379,11 +381,22 @@ void ClipboardService::cleanup() {
 
 bool ClipboardService::isAvailable() const noexcept { return m_device != nullptr; }
 
-int ClipboardService::activeReadFd() const noexcept { return m_activeRead.fd; }
-
 const std::deque<ClipboardEntry>& ClipboardService::history() const noexcept { return m_history; }
 
 std::uint64_t ClipboardService::changeSerial() const noexcept { return m_changeSerial; }
+
+std::size_t ClipboardService::addPollFds(std::vector<pollfd>& fds) const {
+  const std::size_t start = fds.size();
+  if (m_activeRead.fd >= 0) {
+    fds.push_back({.fd = m_activeRead.fd, .events = POLLIN | POLLHUP | POLLERR, .revents = 0});
+  }
+  for (const auto& write : m_activeWrites) {
+    if (write.fd >= 0) {
+      fds.push_back({.fd = write.fd, .events = POLLOUT | POLLHUP | POLLERR, .revents = 0});
+    }
+  }
+  return fds.size() - start;
+}
 
 bool ClipboardService::ensureEntryLoaded(std::size_t index) {
   if (index >= m_history.size()) {
@@ -466,10 +479,11 @@ bool ClipboardService::copyData(std::vector<std::string> mimeTypes, std::vector<
   for (const auto& mimeType : mimeTypes) {
     m_ops->sourceOffer(source, mimeType.c_str());
   }
+  auto payload = std::make_shared<std::vector<std::uint8_t>>(std::move(data));
   m_outgoingSources.push_back(OutgoingSource{
       .source = source,
       .mimeTypes = std::move(mimeTypes),
-      .data = std::move(data),
+      .data = std::move(payload),
   });
   m_ops->deviceSetSelection(m_device, source);
   return true;
@@ -522,6 +536,25 @@ void ClipboardService::dispatchReadEvents(short revents) {
   }
 }
 
+void ClipboardService::dispatchPollEvents(const std::vector<pollfd>& fds, std::size_t startIdx, std::size_t count) {
+  const std::size_t end = std::min(fds.size(), startIdx + count);
+  for (std::size_t i = startIdx; i < end; ++i) {
+    if (fds[i].revents == 0) {
+      continue;
+    }
+    if (fds[i].fd == m_activeRead.fd) {
+      dispatchReadEvents(fds[i].revents);
+    }
+  }
+
+  for (std::size_t i = startIdx; i < end; ++i) {
+    if (fds[i].revents == 0) {
+      continue;
+    }
+    dispatchWriteEvents(fds[i].fd, fds[i].revents);
+  }
+}
+
 void ClipboardService::handleDataOffer(void* offer) {
   if (offer == nullptr || m_ops == nullptr) {
     return;
@@ -567,22 +600,14 @@ void ClipboardService::handleSourceSend(void* source, const char* mimeType, int 
   if (it != m_outgoingSources.end() && mimeType != nullptr) {
     const auto mimeIt = std::ranges::find(it->mimeTypes, std::string_view(mimeType));
     if (mimeIt != it->mimeTypes.end()) {
-      const auto* bytes = reinterpret_cast<const char*>(it->data.data());
-      std::size_t remaining = it->data.size();
-      while (remaining > 0) {
-        const ssize_t written = write(fd, bytes, remaining);
-        if (written < 0) {
-          if (errno == EINTR) {
-            continue;
-          }
-          break;
-        }
-        bytes += written;
-        remaining -= static_cast<std::size_t>(written);
+      if (queueOutgoingWrite(source, fd, it->data)) {
+        return;
       }
     }
   }
-  close(fd);
+  if (fd >= 0) {
+    close(fd);
+  }
 }
 
 void ClipboardService::handleSourceCancelled(void* source) {
@@ -593,6 +618,11 @@ void ClipboardService::handleSourceCancelled(void* source) {
 
   if (m_ops != nullptr && it->source != nullptr) {
     m_ops->destroySource(it->source);
+  }
+  for (auto& write : m_activeWrites) {
+    if (write.source == source) {
+      write.source = nullptr;
+    }
   }
   m_outgoingSources.erase(it);
 }
@@ -638,6 +668,13 @@ void ClipboardService::cancelActiveRead() {
   m_activeRead.mimeType.clear();
   m_activeRead.offeredMimeTypes.clear();
   m_activeRead.offer = nullptr;
+}
+
+void ClipboardService::cancelActiveWrites() {
+  for (auto& write : m_activeWrites) {
+    closeFd(write.fd);
+  }
+  m_activeWrites.clear();
 }
 
 bool ClipboardService::startReceive(void* offer) {
@@ -974,6 +1011,93 @@ bool ClipboardService::isEmptyTextPayload(const std::vector<std::uint8_t>& data)
     break;
   }
   return !sawContent;
+}
+
+bool ClipboardService::queueOutgoingWrite(void* source, int fd, std::shared_ptr<const std::vector<std::uint8_t>> data) {
+  if (fd < 0 || data == nullptr || data->empty()) {
+    return false;
+  }
+
+  const int flags = fcntl(fd, F_GETFL, 0);
+  if (flags < 0 || fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) {
+    kLog.warn("failed to make clipboard send fd nonblocking");
+    return false;
+  }
+
+  m_activeWrites.push_back(ActiveWrite{
+      .fd = fd,
+      .source = source,
+      .data = std::move(data),
+      .offset = 0,
+  });
+  drainOutgoingWrite(m_activeWrites.size() - 1);
+  return true;
+}
+
+void ClipboardService::dispatchWriteEvents(int fd, short revents) {
+  if (fd < 0 || revents == 0) {
+    return;
+  }
+
+  const auto findWrite = [this, fd]() { return std::ranges::find(m_activeWrites, fd, &ActiveWrite::fd); };
+
+  auto it = findWrite();
+  if (it == m_activeWrites.end()) {
+    return;
+  }
+
+  if ((revents & POLLOUT) != 0) {
+    drainOutgoingWrite(static_cast<std::size_t>(it - m_activeWrites.begin()));
+    it = findWrite();
+  }
+
+  if (it != m_activeWrites.end() && (revents & (POLLERR | POLLHUP | POLLNVAL)) != 0) {
+    closeActiveWrite(static_cast<std::size_t>(it - m_activeWrites.begin()));
+  }
+}
+
+void ClipboardService::drainOutgoingWrite(std::size_t index) {
+  if (index >= m_activeWrites.size()) {
+    return;
+  }
+
+  auto& writeState = m_activeWrites[index];
+  if (writeState.fd < 0 || writeState.data == nullptr) {
+    closeActiveWrite(index);
+    return;
+  }
+
+  const auto& data = *writeState.data;
+  while (writeState.offset < data.size()) {
+    const auto* bytes = reinterpret_cast<const char*>(data.data() + writeState.offset);
+    const std::size_t remaining = data.size() - writeState.offset;
+    const ssize_t written = write(writeState.fd, bytes, remaining);
+    if (written > 0) {
+      writeState.offset += static_cast<std::size_t>(written);
+      continue;
+    }
+    if (written < 0 && errno == EINTR) {
+      continue;
+    }
+    if (written < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+      return;
+    }
+    closeActiveWrite(index);
+    return;
+  }
+
+  closeActiveWrite(index);
+}
+
+void ClipboardService::closeActiveWrite(std::size_t index) {
+  if (index >= m_activeWrites.size()) {
+    return;
+  }
+  closeFd(m_activeWrites[index].fd);
+  if (index + 1 < m_activeWrites.size()) {
+    m_activeWrites[index] = std::move(m_activeWrites.back());
+  }
+  m_activeWrites.pop_back();
 }
 
 std::string ClipboardService::buildTextPreview(const std::vector<std::uint8_t>& data) {

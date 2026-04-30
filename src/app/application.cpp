@@ -125,46 +125,6 @@ Application::Application() : m_weatherService(m_configService, m_httpClient) {
 Application::~Application() {
   m_wayland.setClipboardService(nullptr);
   m_wayland.setVirtualKeyboardService(nullptr);
-
-  if (m_systemBus != nullptr) {
-    m_systemBus->processPendingEvents();
-    m_brightnessPollSource.reset();
-    m_brightnessService.reset();
-    m_upowerService.reset();
-    m_polkitPollSource.reset();
-    m_polkitAgent.reset();
-    m_networkSecretAgent.reset();
-    m_networkService.reset();
-    m_bluetoothAgent.reset();
-    m_bluetoothService.reset();
-    m_powerProfilesService.reset();
-    m_systemBus->processPendingEvents();
-  }
-
-  // Explicitly clean up D-Bus services before the bus connection is destroyed
-  // This ensures clean disconnection and prevents blocking on shutdown
-  if (m_bus != nullptr) {
-    // Process any pending D-Bus events to ensure clean state
-    m_bus->processPendingEvents();
-
-    // Destroy services in reverse order they were created
-    m_trayService.reset();
-    m_notificationDbus.reset();
-    m_mprisService.reset();
-    m_debugService.reset();
-
-    // Process any final cleanup events
-    m_bus->processPendingEvents();
-  }
-
-  // PipeWire cleanup
-  m_pipewireSpectrumPollSource.reset();
-  m_pipewireSpectrum.reset();
-  m_pipewirePollSource.reset();
-  m_soundPlayer.reset();
-  m_pipewireService.reset();
-
-  // MainLoop will be destroyed next, then SessionBus
   LockScreen::setInstance(nullptr);
   notify::setInstance(nullptr);
 }
@@ -258,6 +218,18 @@ void Application::syncPolkitAgent() {
   }
 }
 
+bool Application::backdropShouldBeActive() const {
+  if (!m_configService.config().backdrop.enabled) {
+    return false;
+  }
+
+  if (!m_wayland.tracksNiriOverviewState()) {
+    return true;
+  }
+
+  return m_wayland.hasNiriOverviewState() && m_wayland.isNiriOverviewOpen();
+}
+
 void Application::run() {
   initLogFile();
   kLog.info("noctalia {}", noctalia::build_info::displayVersion());
@@ -335,7 +307,7 @@ void Application::initServices() {
     m_lockScreen.requestLayout();
     m_osdOverlay.requestLayout();
     m_trayMenu.requestLayout();
-    m_overview.requestLayout();
+    m_backdrop.requestLayout();
   });
   m_wayland.setClipboardService(&m_clipboardService);
   m_wayland.setVirtualKeyboardService(&m_virtualKeyboardService);
@@ -346,7 +318,7 @@ void Application::initServices() {
       m_brightnessService->onOutputsChanged();
     }
     m_wallpaper.onOutputChange();
-    m_overview.onOutputChange();
+    m_backdrop.onOutputChange();
     m_bar.onOutputChange();
     m_dock.onOutputChange();
     m_desktopWidgetsController.onOutputChange();
@@ -359,7 +331,7 @@ void Application::initServices() {
   });
   m_wayland.setWorkspaceChangeCallback([this]() {
     m_bar.refresh();
-    m_overview.setActive(m_wayland.isNiriOverviewOpen());
+    m_backdrop.setActive(backdropShouldBeActive());
   });
   m_wayland.setToplevelChangeCallback([this]() {
     m_bar.refresh();
@@ -367,7 +339,12 @@ void Application::initServices() {
   });
 
   m_idleInhibitor.initialize(m_wayland, &m_renderContext);
-  m_idleInhibitor.setChangeCallback([this]() { m_bar.refresh(); });
+  m_idleInhibitor.setChangeCallback([this, shouldRefreshControlCenter]() {
+    m_bar.refresh();
+    if (shouldRefreshControlCenter()) {
+      m_panelManager.refresh();
+    }
+  });
   m_idleManager.initialize(m_wayland);
   m_idleManager.setCommandRunner([this](const std::string& command) { return runUserCommand(command); });
   m_idleManager.reload(m_configService.config().idle);
@@ -377,16 +354,18 @@ void Application::initServices() {
   m_hookManager.reload(m_configService.config().hooks);
   m_configService.addReloadCallback([this]() { m_hookManager.reload(m_configService.config().hooks); });
   m_nightLightManager.reload(m_configService.config().nightlight);
-  m_nightLightManager.setChangeCallback([this]() { m_bar.refresh(); });
+  m_nightLightManager.setChangeCallback([this, shouldRefreshControlCenter]() {
+    m_bar.refresh();
+    if (shouldRefreshControlCenter()) {
+      m_panelManager.refresh();
+    }
+  });
   m_configService.addReloadCallback([this]() { m_nightLightManager.reload(m_configService.config().nightlight); });
-
-  m_overview.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
-  m_overview.setActive(m_wayland.isNiriOverviewOpen());
 
   // Register all wallpaper consumers in the single-callback slot.
   m_configService.setWallpaperChangeCallback([this]() {
     m_wallpaper.onStateChange();
-    m_overview.onStateChange();
+    m_backdrop.onStateChange();
     m_lockScreen.onWallpaperChanged();
     m_themeService.onWallpaperChange();
     m_hookManager.fire(HookKind::WallpaperChanged);
@@ -401,7 +380,7 @@ void Application::initServices() {
     m_lockScreen.onThemeChanged();
     m_osdOverlay.requestRedraw();
     m_trayMenu.onThemeChanged();
-    m_overview.onThemeChanged();
+    m_backdrop.onThemeChanged();
     m_settingsWindow.onThemeChanged();
     m_colorPickerDialogPopup.requestThemeRedraw();
     m_fileDialogPopup.requestThemeRedraw();
@@ -464,7 +443,13 @@ void Application::initServices() {
   if (m_systemBus != nullptr) {
     try {
       m_powerProfilesService = std::make_unique<PowerProfilesService>(*m_systemBus);
-      m_powerProfilesService->setChangeCallback([this](const PowerProfilesState& /*state*/) { m_bar.refresh(); });
+      m_powerProfilesService->setChangeCallback(
+          [this, shouldRefreshControlCenter](const PowerProfilesState& /*state*/) {
+            m_bar.refresh();
+            if (shouldRefreshControlCenter()) {
+              m_panelManager.refresh();
+            }
+          });
       if (!m_powerProfilesService->activeProfile().empty()) {
         kLog.info("power profiles active profile: {}", m_powerProfilesService->activeProfile());
       } else {
@@ -708,6 +693,7 @@ void Application::initUi() {
   m_renderContext.initialize(m_glShared);
   m_renderContext.setTextFontFamily(m_configService.config().shell.fontFamily);
   m_wallpaper.initialize(m_wayland, &m_configService, &m_renderContext, &m_sharedTextureCache);
+  m_backdrop.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared, backdropShouldBeActive());
   m_settingsWindow.initialize(m_wayland, &m_configService, &m_renderContext);
   m_lockScreen.initialize(m_wayland, &m_renderContext, &m_configService, &m_sharedTextureCache);
   m_lockScreen.setSessionHooks([this]() { m_hookManager.fire(HookKind::SessionLocked); },
@@ -801,7 +787,8 @@ void Application::initUi() {
                                            &m_configService, &m_httpClient, &m_weatherService, m_pipewireSpectrum.get(),
                                            m_upowerService.get(), m_powerProfilesService.get(), m_networkService.get(),
                                            m_networkSecretAgent.get(), m_bluetoothService.get(), m_bluetoothAgent.get(),
-                                           m_brightnessService.get(), m_systemMonitor.get()));
+                                           m_brightnessService.get(), m_systemMonitor.get(), &m_nightLightManager,
+                                           &m_themeService, &m_idleInhibitor, &m_wayland, &m_wallpaper));
   {
     auto launcherPanel = std::make_unique<LauncherPanel>(&m_configService, &m_asyncTextureCache);
     launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));
@@ -894,7 +881,7 @@ void Application::initUi() {
     m_lockScreen.onFontChanged();
     m_osdOverlay.requestLayout();
     m_trayMenu.onFontChanged();
-    m_overview.onFontChanged();
+    m_backdrop.onFontChanged();
     m_settingsWindow.onFontChanged();
     m_colorPickerDialogPopup.requestFontLayout();
     m_fileDialogPopup.requestFontLayout();

@@ -11,7 +11,7 @@
 
 namespace {
 
-  const char* glyphForState(bool enabled) { return enabled ? "keep-awake-on" : "keep-awake-off"; }
+  const char* glyphForState(bool enabled) { return enabled ? "idle-inhibitor-on" : "idle-inhibitor-off"; }
 
 } // namespace
 

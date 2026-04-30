@@ -31,7 +31,7 @@ void main() {
     float total = 0.0;
     float sigma = max(u_radius / 2.0, 0.0001);
     for (int i = -40; i <= 40; i++) {
-        if (float(abs(i)) > u_radius) continue;
+        if (abs(float(i)) > u_radius) continue;
         float fi = float(i);
         float w = exp(-fi * fi / (2.0 * sigma * sigma));
         vec2 offset = u_direction * u_texelSize * fi;

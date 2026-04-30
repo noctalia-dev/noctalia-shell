@@ -135,7 +135,7 @@ shadow = true
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `format` | string | `"{:%H:%M}"` | `std::chrono` format string |
+| `format` | string | `"{:%H:%M}"` | `std::chrono` format string. Bare chrono specs such as `%H:%M` are also accepted. Numeric specifiers support the strftime-style no-pad modifier, e.g. `{:%-I:%M %p}`. |
 
 ---
 

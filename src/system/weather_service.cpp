@@ -463,9 +463,15 @@ void WeatherService::handleLocationResponse(const std::filesystem::path& path, b
   }
   m_requestKind = RequestKind::None;
   if (!success) {
-    m_loading = false;
     m_error = autoLocated ? i18n::tr("weather.errors.ip-geolocation-failed")
                           : i18n::tr("weather.errors.address-lookup-failed");
+    if (canFetchWeatherAfterLocationFailure(autoLocated)) {
+      kLog.warn("{}; fetching weather using last resolved location {} ({}, {})", m_error, m_resolvedLocationName,
+                m_resolvedLatitude, m_resolvedLongitude);
+      startWeatherFetch();
+      return;
+    }
+    m_loading = false;
     scheduleRetryAfterFailure();
     dropPastForecastDays(m_snapshot);
     notifyChanged();
@@ -494,6 +500,12 @@ void WeatherService::handleLocationResponse(const std::filesystem::path& path, b
   } catch (const std::exception& e) {
     m_loading = false;
     m_error = autoLocated ? i18n::tr("weather.errors.parse-ip-geolocation") : i18n::tr("weather.errors.parse-geocode");
+    if (canFetchWeatherAfterLocationFailure(autoLocated)) {
+      kLog.warn("{}: {}; fetching weather using last resolved location {} ({}, {})", m_error, e.what(),
+                m_resolvedLocationName, m_resolvedLatitude, m_resolvedLongitude);
+      startWeatherFetch();
+      return;
+    }
     scheduleRetryAfterFailure();
     kLog.warn("{}: {}", m_error, e.what());
     notifyChanged();
@@ -597,6 +609,22 @@ void WeatherService::handleWeatherResponse(const std::filesystem::path& path, bo
 void WeatherService::scheduleRetryAfterFailure() {
   m_refreshQueued = false;
   m_nextRefreshAt = Clock::now() + std::chrono::minutes(std::max(5, m_activeConfig.refreshMinutes));
+}
+
+bool WeatherService::hasResolvedLocation() const noexcept {
+  return m_locationResolved && std::isfinite(m_resolvedLatitude) && std::isfinite(m_resolvedLongitude) &&
+         m_resolvedLatitude >= -90.0 && m_resolvedLatitude <= 90.0 && m_resolvedLongitude >= -180.0 &&
+         m_resolvedLongitude <= 180.0;
+}
+
+bool WeatherService::canFetchWeatherAfterLocationFailure(bool autoLocated) const noexcept {
+  if (!hasResolvedLocation()) {
+    return false;
+  }
+  if (autoLocated) {
+    return true;
+  }
+  return m_resolvedAddress == m_activeConfig.address;
 }
 
 std::filesystem::path WeatherService::transportCacheDir() { return std::filesystem::path("/tmp") / "noctalia-weather"; }

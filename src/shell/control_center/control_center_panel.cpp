@@ -2,6 +2,7 @@
 
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
+#include "render/scene/input_area.h"
 #include "shell/panel/panel_manager.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
@@ -17,9 +18,13 @@ ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeW
                                        PowerProfilesService* powerProfiles, NetworkService* network,
                                        NetworkSecretAgent* networkSecrets, BluetoothService* bluetooth,
                                        BluetoothAgent* bluetoothAgent, BrightnessService* brightness,
-                                       SystemMonitorService* sysmon) {
+                                       SystemMonitorService* sysmon, NightLightManager* nightLight,
+                                       noctalia::theme::ThemeService* theme, IdleInhibitor* idleInhibitor,
+                                       WaylandConnection* wayland, Wallpaper* wallpaper) {
+  (void)upower;
   m_tabs[tabIndex(TabId::Overview)] =
-      std::make_unique<OverviewTab>(mpris, weather, audio, upower, powerProfiles, config);
+      std::make_unique<OverviewTab>(mpris, weather, audio, powerProfiles, config, network, bluetooth, nightLight, theme,
+                                    notifications, idleInhibitor, wayland, wallpaper);
   m_tabs[tabIndex(TabId::Media)] = std::make_unique<MediaTab>(mpris, httpClient, spectrum);
   m_tabs[tabIndex(TabId::Audio)] = std::make_unique<AudioTab>(audio, mpris, config);
   m_tabs[tabIndex(TabId::Weather)] = std::make_unique<WeatherTab>(weather, config);
@@ -34,6 +39,11 @@ ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeW
   m_tabHeaderActions.fill(nullptr);
 }
 
+bool ControlCenterPanel::dismissTransientUi() {
+  const std::size_t activeIdx = tabIndex(m_activeTab);
+  return m_tabs[activeIdx] != nullptr && m_tabs[activeIdx]->dismissTransientUi();
+}
+
 void ControlCenterPanel::create() {
   const float scale = contentScale();
 
@@ -44,7 +54,7 @@ void ControlCenterPanel::create() {
   auto rootLayout = std::make_unique<Flex>();
   rootLayout->setDirection(FlexDirection::Horizontal);
   rootLayout->setAlign(FlexAlign::Stretch);
-  rootLayout->setGap(Style::spaceMd * scale);
+  rootLayout->setGap(Style::panelPadding * scale);
   rootLayout->setPadding(0.0f);
   m_rootLayout = rootLayout.get();
 
@@ -81,15 +91,23 @@ void ControlCenterPanel::create() {
   rootLayout->addChild(std::move(sidebar));
 
   auto content = std::make_unique<Flex>();
-  content->setCardStyle(scale);
   content->setDirection(FlexDirection::Vertical);
   content->setAlign(FlexAlign::Stretch);
   content->setGap(Style::spaceMd * scale);
-  content->setPadding(Style::spaceLg * scale);
-  content->setRadius(Style::radiusXl * scale);
   content->setFlexGrow(4.0f);
   content->setClipChildren(true);
   m_content = content.get();
+
+  auto dismissArea = std::make_unique<InputArea>();
+  dismissArea->setParticipatesInLayout(false);
+  dismissArea->setZIndex(-1);
+  dismissArea->setOnPress([this](const InputArea::PointerData&) {
+    const std::size_t activeIdx = tabIndex(m_activeTab);
+    if (m_tabs[activeIdx] != nullptr && m_tabs[activeIdx]->dismissTransientUi()) {
+      PanelManager::instance().refresh();
+    }
+  });
+  m_contentDismissArea = static_cast<InputArea*>(content->addChild(std::move(dismissArea)));
 
   auto header = std::make_unique<Flex>();
   header->setDirection(FlexDirection::Horizontal);
@@ -175,6 +193,11 @@ void ControlCenterPanel::doLayout(Renderer& renderer, float width, float height)
   const float bodyWidth = m_tabBodies->width();
   const float bodyHeight = m_tabBodies->height();
 
+  if (m_contentDismissArea != nullptr) {
+    m_contentDismissArea->setPosition(0.0f, 0.0f);
+    m_contentDismissArea->setFrameSize(m_content->width(), m_content->height());
+  }
+
   if (m_contentHeader != nullptr) {
     m_contentHeader->setSize(contentInnerWidth, 0.0f);
   }
@@ -226,6 +249,7 @@ void ControlCenterPanel::onClose() {
   m_rootLayout = nullptr;
   m_sidebar = nullptr;
   m_content = nullptr;
+  m_contentDismissArea = nullptr;
   m_contentHeader = nullptr;
   m_contentHeaderActions = nullptr;
   m_contentTitle = nullptr;

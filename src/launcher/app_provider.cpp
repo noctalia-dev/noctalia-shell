@@ -4,6 +4,7 @@
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
+#include <array>
 #include <csignal>
 #include <cstdlib>
 #include <cstring>
@@ -16,16 +17,23 @@ namespace {
   constexpr std::size_t kMaxSearchResults = 50;
   constexpr std::string_view kDefaultAppIcon = "application-x-executable";
 
-  int scoreEntry(std::string_view pattern, const DesktopEntry& entry) {
+  std::string toLower(std::string_view s) {
+    std::string result(s);
+    std::transform(result.begin(), result.end(), result.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return result;
+  }
+
+  double scoreEntry(std::string_view pattern, const DesktopEntry& entry) {
     if (pattern.empty()) {
-      return 1;
+      return 0.0;
     }
 
-    int nameScore = FuzzyMatch::score(pattern, entry.nameLower) * 3;
-    int genericScore = FuzzyMatch::score(pattern, entry.genericNameLower) * 2;
+    const double nameScore = FuzzyMatch::score(pattern, entry.nameLower) * 3.0;
+    const double genericScore = FuzzyMatch::score(pattern, entry.genericNameLower) * 2.0;
 
     auto scoreList = [&](std::string_view list) {
-      int best = 0;
+      double best = FuzzyMatch::noMatchScore;
       std::size_t start = 0;
       while (start < list.size()) {
         auto semi = list.find(';', start);
@@ -40,10 +48,12 @@ namespace {
       return best;
     };
 
-    int keywordScore = scoreList(entry.keywordsLower);
-    int catScore = scoreList(entry.categoriesLower);
+    const double keywordScore = scoreList(entry.keywordsLower);
+    const double catScore = scoreList(entry.categoriesLower);
+    const double idScore = FuzzyMatch::score(pattern, entry.idLower) * 1.5;
+    const double execScore = FuzzyMatch::score(pattern, entry.execLower);
 
-    return std::max({nameScore, genericScore, keywordScore, catScore});
+    return std::max({nameScore, genericScore, keywordScore, catScore, idScore, execScore});
   }
 
   std::string stripFieldCodes(const std::string& exec) {
@@ -109,16 +119,83 @@ namespace {
     return args;
   }
 
+  bool isExecutableOnPath(std::string_view binary) {
+    if (binary.empty()) {
+      return false;
+    }
+    if (binary.find('/') != std::string_view::npos) {
+      return access(std::string(binary).c_str(), X_OK) == 0;
+    }
+
+    const char* pathEnv = std::getenv("PATH");
+    if (pathEnv == nullptr || pathEnv[0] == '\0') {
+      return false;
+    }
+
+    std::string_view path(pathEnv);
+    std::size_t start = 0;
+    while (start <= path.size()) {
+      const auto sep = path.find(':', start);
+      const auto segment = sep == std::string_view::npos ? path.substr(start) : path.substr(start, sep - start);
+      if (!segment.empty()) {
+        std::string candidate(segment);
+        candidate.push_back('/');
+        candidate.append(binary);
+        if (access(candidate.c_str(), X_OK) == 0) {
+          return true;
+        }
+      }
+      if (sep == std::string_view::npos) {
+        break;
+      }
+      start = sep + 1;
+    }
+    return false;
+  }
+
+  std::vector<std::string> terminalLaunchArgs(const std::string& command) {
+    std::vector<std::string> terminal;
+    if (const char* envTerminal = std::getenv("TERMINAL"); envTerminal != nullptr && envTerminal[0] != '\0') {
+      terminal = tokenize(envTerminal);
+      if (!terminal.empty() && !isExecutableOnPath(terminal.front())) {
+        terminal.clear();
+      }
+    }
+
+    if (terminal.empty()) {
+      static constexpr std::array<std::string_view, 9> kTerminalCandidates = {
+          "x-terminal-emulator", "ghostty", "kitty", "alacritty", "wezterm", "foot", "konsole",
+          "gnome-terminal",      "xterm"};
+      for (const auto candidate : kTerminalCandidates) {
+        if (isExecutableOnPath(candidate)) {
+          terminal.emplace_back(candidate);
+          break;
+        }
+      }
+    }
+
+    if (terminal.empty()) {
+      return {};
+    }
+
+    const std::string& termBin = terminal.front();
+    if (termBin == "gnome-terminal" || termBin == "kgx" || termBin == "ptyxis") {
+      terminal.emplace_back("--");
+      terminal.emplace_back("sh");
+      terminal.emplace_back("-lc");
+      terminal.emplace_back(command);
+    } else {
+      terminal.emplace_back("-e");
+      terminal.emplace_back("sh");
+      terminal.emplace_back("-lc");
+      terminal.emplace_back(command);
+    }
+    return terminal;
+  }
+
   void launchCommand(const std::string& exec, bool terminal, const std::string& activationToken) {
     std::string cleanExec = stripFieldCodes(exec);
-
-    if (terminal) {
-      const char* term = std::getenv("TERMINAL");
-      if (term == nullptr) {
-        term = "xterm";
-      }
-      cleanExec = std::string(term) + " -e " + cleanExec;
-    }
+    std::vector<std::string> args = terminal ? terminalLaunchArgs(cleanExec) : tokenize(cleanExec);
 
     pid_t pid = fork();
     if (pid < 0) {
@@ -146,7 +223,6 @@ namespace {
         }
       }
 
-      auto args = tokenize(cleanExec);
       if (args.empty()) {
         _exit(1);
       }
@@ -184,8 +260,10 @@ void AppProvider::refreshEntriesIfNeeded() const {
 
 std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
   refreshEntriesIfNeeded();
+  const std::string normalizedText = toLower(text);
+  const std::string_view pattern = normalizedText;
 
-  auto buildResult = [&](const DesktopEntry& entry, int s) {
+  auto buildResult = [&](const DesktopEntry& entry, double s) {
     LauncherResult result;
     result.id = entry.path;
     result.title = entry.name;
@@ -197,7 +275,7 @@ std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
   };
 
   // Empty query: return all entries in alphabetical order (as stored)
-  if (text.empty()) {
+  if (pattern.empty()) {
     std::vector<LauncherResult> results;
     results.reserve(m_entries.size());
     for (const auto& entry : m_entries) {
@@ -206,10 +284,10 @@ std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
     return results;
   }
 
-  std::vector<std::pair<int, const DesktopEntry*>> scored;
+  std::vector<std::pair<double, const DesktopEntry*>> scored;
   for (const auto& entry : m_entries) {
-    int s = scoreEntry(text, entry);
-    if (s > 0) {
+    const double s = scoreEntry(pattern, entry);
+    if (FuzzyMatch::isMatch(s)) {
       scored.emplace_back(s, &entry);
     }
   }

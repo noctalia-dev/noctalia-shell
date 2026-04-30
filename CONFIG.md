@@ -32,8 +32,9 @@ A ready-to-use starting config with all defaults is at [example.toml](example.to
 | [Scripted Widgets](config/scripted-widgets.md) | Custom Luau-driven bar widgets |
 | [Dock](config/dock.md) | Application dock, pinned apps, auto-hide, IPC |
 | [Desktop Widgets](config/desktop-widgets.md) | Desktop overlay widgets, edit mode, state file format |
-| [Wallpaper](config/wallpaper.md) | Wallpaper picker, overview backdrop, automation |
+| [Wallpaper](config/wallpaper.md) | Wallpaper picker, backdrop, automation |
 | [Theme](config/theme.md) | Color schemes, modes, wallpaper-derived palettes |
 | [Theming Templates](config/theming-templates.md) | App theme template generation and export paths |
+| [Control Center](config/control-center.md) | Shortcut buttons on the overview tab |
 | [Services](config/services.md) | Audio, sound cues, brightness, system monitor, night light, weather, idle, notifications |
 | [Shell](config/shell.md) | Global UI settings, OSD, keybinds, hooks |

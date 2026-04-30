@@ -29,13 +29,17 @@ Displays the current time.
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `format` | string | `{:%H:%M}` | `std::format`-style chrono format string (horizontal bars and vertical fallback) |
-| `vertical_format` | string | `""` | Format used when the bar is vertical. When empty, falls back to `format` with `:` replaced by line breaks. |
+| `format` | string | `{:%H:%M}` | `std::format`-style chrono format string (horizontal bars and vertical fallback). Bare chrono specs such as `%H:%M` are also accepted. Numeric specifiers support the strftime-style no-pad modifier, e.g. `{:%-I:%M %p}`. |
+| `vertical_format` | string | `""` | Format used when the bar is vertical. When empty, falls back to `format` with `:` replaced by line breaks. Supports the same chrono syntax as `format`. |
 
 ```toml
 [widget.clock]
 format = "{:%H:%M}"
 vertical_format = "{:%H\n%M}"
+
+[widget.clock-12h]
+type   = "clock"
+format = "{:%-I:%M %p}"
 
 [widget.clock-seconds]
 type   = "clock"
@@ -127,7 +131,16 @@ path = "/"
 
 ## `volume`
 
-Shows the default audio sink volume and mute state via PipeWire. No configurable settings.
+Shows the default audio sink volume and mute state via PipeWire.
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `show_label` | bool | `true` | Show the volume percentage next to the glyph (horizontal and vertical bars) |
+
+```toml
+[widget.volume]
+show_label = false
+```
 
 ### IPC
 
@@ -163,6 +176,7 @@ Horizontal audio spectrum using the current PipeWire monitor stream.
 | `height` | number | `16` | Widget height in screen pixels |
 | `bands` | number | `16` | Number of spectrum bands |
 | `mirrored` | bool | `false` | Mirror the spectrum around the center line |
+| `show_when_idle` | bool | `false` | Keep the widget visible even when no media is playing |
 | `low_color` | string | `"primary"` | Theme role for the first bars |
 | `high_color` | string | `"primary"` | Theme role for the last bars |
 
@@ -173,6 +187,7 @@ width      = 64
 height     = 16
 bands      = 20
 mirrored   = true
+show_when_idle = true
 low_color  = "primary"
 high_color = "secondary"
 ```
@@ -208,7 +223,16 @@ No configurable settings.
 
 Shows the current display brightness level and adjusts it via scroll wheel (±5% per step). Hides itself when no controllable display is found. Click opens the display tab in the control center.
 
-No configurable settings. See [`[brightness]`](services.md#brightness) for backend configuration.
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `show_label` | bool | `true` | Show the brightness percentage next to the glyph (horizontal and vertical bars) |
+
+```toml
+[widget.brightness]
+show_label = false
+```
+
+See [`[brightness]`](services.md#brightness) for backend configuration.
 
 ---
 
@@ -298,6 +322,21 @@ glyph = "menu"
 
 ---
 
+## `clipboard`
+
+Shows a clipboard glyph and opens or closes the clipboard panel on click.
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `glyph` | string | `"clipboard"` | Bar glyph id (Tabler-backed aliases) |
+
+```toml
+[widget.clipboard]
+glyph = "clipboard-list"
+```
+
+---
+
 ## `weather`
 
 Shows the current weather in the bar and opens the Weather control-center tab on click. Requires `[weather]` to be configured.
@@ -359,7 +398,7 @@ No configurable settings.
 
 ## `idle_inhibitor`
 
-Shows a keep-awake glyph and toggles the compositor idle inhibitor on click. Uses the standard Wayland `zwp_idle_inhibit_manager_v1` protocol.
+Shows a coffee glyph and toggles the compositor idle inhibitor on click. Uses the standard Wayland `zwp_idle_inhibit_manager_v1` protocol.
 
 No configurable settings.
 

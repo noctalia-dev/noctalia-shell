@@ -14,6 +14,7 @@
 #include "shell/bar/widgets/battery_widget.h"
 #include "shell/bar/widgets/bluetooth_widget.h"
 #include "shell/bar/widgets/brightness_widget.h"
+#include "shell/bar/widgets/clipboard_widget.h"
 #include "shell/bar/widgets/clock_widget.h"
 #include "shell/bar/widgets/control_center_widget.h"
 #include "shell/bar/widgets/idle_inhibitor_widget.h"
@@ -88,12 +89,13 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     const float height = static_cast<float>(wc != nullptr ? wc->getDouble("height", 16.0) : 16.0);
     const int bands = static_cast<int>(wc != nullptr ? wc->getInt("bands", 16) : 16);
     const bool mirrored = wc != nullptr ? wc->getBool("mirrored", false) : false;
+    const bool showWhenIdle = wc != nullptr ? wc->getBool("show_when_idle", false) : false;
     const ThemeColor lowColor =
         themeColorFromConfigString(wc != nullptr ? wc->getString("low_color", "primary") : std::string("primary"));
     const ThemeColor highColor =
         themeColorFromConfigString(wc != nullptr ? wc->getString("high_color", "primary") : std::string("primary"));
-    auto widget =
-        std::make_unique<AudioVisualizerWidget>(m_audioSpectrum, width, height, bands, mirrored, lowColor, highColor);
+    auto widget = std::make_unique<AudioVisualizerWidget>(m_audioSpectrum, width, height, bands, mirrored, lowColor,
+                                                          highColor, showWhenIdle);
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -112,7 +114,8 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "brightness") {
-    auto widget = std::make_unique<BrightnessWidget>(m_brightness, output);
+    const bool showLabel = wc != nullptr ? wc->getBool("show_label", true) : true;
+    auto widget = std::make_unique<BrightnessWidget>(m_brightness, output, showLabel);
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -121,6 +124,16 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     std::string format = wc != nullptr ? wc->getString("format", "{:%H:%M}") : std::string("{:%H:%M}");
     std::string verticalFormat = wc != nullptr ? wc->getString("vertical_format", "") : std::string{};
     auto widget = std::make_unique<ClockWidget>(output, std::move(format), std::move(verticalFormat));
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "clipboard") {
+    auto barGlyph = wc != nullptr ? wc->getString("glyph", "clipboard") : std::string{"clipboard"};
+    if (barGlyph.empty()) {
+      barGlyph = "clipboard";
+    }
+    auto widget = std::make_unique<ClipboardWidget>(output, std::move(barGlyph));
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -287,7 +300,8 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "volume") {
-    auto widget = std::make_unique<VolumeWidget>(m_audio, output);
+    const bool showLabel = wc != nullptr ? wc->getBool("show_label", true) : true;
+    auto widget = std::make_unique<VolumeWidget>(m_audio, output, showLabel);
     widget->setContentScale(contentScale);
     return widget;
   }

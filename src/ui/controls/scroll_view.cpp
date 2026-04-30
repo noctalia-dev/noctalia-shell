@@ -4,7 +4,6 @@
 #include "render/programs/rect_program.h"
 #include "render/scene/input_area.h"
 #include "render/scene/rect_node.h"
-#include "ui/card_style.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -192,7 +191,13 @@ void ScrollView::setSoftness(float softness) {
   applyPalette();
 }
 
-void ScrollView::setCardStyle(float scale) { ui::applyCardStyle(*this, scale); }
+void ScrollView::setCardStyle(float scale) {
+  setFill(roleColor(ColorRole::Surface));
+  setBorder(roleColor(ColorRole::Outline, 0.5f), Style::borderWidth);
+  setRadius(Style::radiusXl * scale);
+  setViewportPaddingH(Style::cardPadding * scale);
+  setViewportPaddingV(Style::cardPadding * scale);
+}
 
 void ScrollView::bindState(ScrollViewState* state) {
   m_boundState = state;

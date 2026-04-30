@@ -32,7 +32,6 @@ struct BarMonitorOverride {
   std::optional<std::int32_t> padding;       // main-axis padding from bar edges to start/end sections
   std::optional<std::int32_t> widgetSpacing; // gap between widgets within a section
   std::optional<bool> shadow;                // use the global shell shadow on this bar
-  std::optional<bool> backgroundBlur;        // request compositor blur via ext-background-effect-v1
   std::optional<float> scale;
   std::optional<std::vector<std::string>> startWidgets;
   std::optional<std::vector<std::string>> centerWidgets;
@@ -67,13 +66,12 @@ struct BarConfig {
   std::int32_t padding = 14;      // main-axis padding from bar edges to start/end sections
   std::int32_t widgetSpacing = 6; // gap between widgets within a section
   bool shadow = true;             // use the global shell shadow
-  bool backgroundBlur =
-      true;           // request compositor blur behind the bar via ext-background-effect-v1 (inert where unsupported)
-  float scale = 1.0f; // content scale multiplier for glyphs and text
+  float scale = 1.0f;             // content scale multiplier for glyphs and text
   std::vector<std::string> startWidgets = {"launcher", "wallpaper", "workspaces"};
   std::vector<std::string> centerWidgets = {"clock"};
-  std::vector<std::string> endWidgets = {"media",  "tray",       "notifications", "network",        "bluetooth",
-                                         "volume", "brightness", "battery",       "control-center", "session"};
+  std::vector<std::string> endWidgets = {"media",   "tray",           "notifications", "clipboard",
+                                         "network", "bluetooth",      "volume",        "brightness",
+                                         "battery", "control-center", "session"};
   // When true, widgets on this bar use a capsule unless `[widget.*] capsule = false`.
   bool widgetCapsuleDefault = false;
   ThemeColor widgetCapsuleFill = roleColor(ColorRole::SurfaceVariant);
@@ -193,7 +191,7 @@ struct WallpaperConfig {
   std::vector<WallpaperMonitorOverride> monitorOverrides;
 };
 
-struct OverviewConfig {
+struct BackdropConfig {
   bool enabled = false;
   bool unloadWhenNotInUse = true;
   float blurIntensity = 0.5f;
@@ -208,11 +206,10 @@ struct DockConfig {
   std::int32_t padding = 8;        // inner padding around the icon row
   std::int32_t itemSpacing = 6;    // gap between items
   float backgroundOpacity = 0.88f;
-  std::int32_t radius = 16; // dock background corner radius
-  std::int32_t marginH = 0; // horizontal compositor margin from screen edges
-  std::int32_t marginV = 8; // vertical gap between dock and screen edge
-  bool shadow = true;       // use the global shell shadow
-  bool backgroundBlur = true;
+  std::int32_t radius = 16;        // dock background corner radius
+  std::int32_t marginH = 0;        // horizontal compositor margin from screen edges
+  std::int32_t marginV = 8;        // vertical gap between dock and screen edge
+  bool shadow = true;              // use the global shell shadow
   bool showRunning = true;         // also show running apps not in pinned list
   bool autoHide = false;           // fade out when not hovered (overlay mode)
   bool reserveSpace = false;       // keep compositor exclusive zone even while auto-hidden
@@ -239,8 +236,9 @@ struct OsdConfig {
 struct NotificationConfig {
   bool enableDaemon = true;
   std::string position = "top_right";
+  std::string layer = "top";       // top | overlay
   float backgroundOpacity = 0.97f; // toast card background alpha (0.0–1.0)
-  bool backgroundBlur = true;
+  std::vector<std::string> monitors;
 };
 
 template <typename T> struct EnumOption {
@@ -553,11 +551,23 @@ struct ThemeConfig {
   TemplatesConfig templates;
 };
 
+struct ShortcutConfig {
+  std::string type;
+  std::optional<std::string> label;
+  std::optional<std::string> icon;
+  bool operator==(const ShortcutConfig&) const = default;
+};
+
+struct ControlCenterConfig {
+  std::vector<ShortcutConfig> shortcuts;
+  bool operator==(const ControlCenterConfig&) const = default;
+};
+
 struct Config {
   std::vector<BarConfig> bars;
   std::unordered_map<std::string, WidgetConfig> widgets;
   WallpaperConfig wallpaper;
-  OverviewConfig overview;
+  BackdropConfig backdrop;
   DockConfig dock;
   DesktopWidgetsConfig desktopWidgets;
   ShellConfig shell;
@@ -572,4 +582,5 @@ struct Config {
   IdleConfig idle;
   HooksConfig hooks;
   ThemeConfig theme;
+  ControlCenterConfig controlCenter;
 };

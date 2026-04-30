@@ -66,6 +66,129 @@ namespace {
     return false;
   }
 
+  bool looksLikeRuntimeLauncher(std::string_view value) {
+    std::string normalized(value);
+    std::ranges::transform(normalized, normalized.begin(),
+                           [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+    if (normalized.empty()) {
+      return false;
+    }
+    static constexpr std::string_view kRuntimeTokens[] = {
+        "wine", "wine64", "wine64-preloader", "wineserver", "proton", "steam-runtime", "pressure-vessel",
+    };
+    for (const auto token : kRuntimeTokens) {
+      if (normalized == token || normalized.find(token) != std::string::npos) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool isLikelyFallbackStreamLabel(std::string_view value) {
+    std::string normalized(value);
+    std::ranges::transform(normalized, normalized.begin(),
+                           [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+    for (char& ch : normalized) {
+      if (std::isspace(static_cast<unsigned char>(ch)) != 0 || ch == '_') {
+        ch = '-';
+      }
+    }
+    while (normalized.find("--") != std::string::npos) {
+      normalized.erase(normalized.find("--"), 1);
+    }
+    return normalized.starts_with("audio-stream-") || normalized.starts_with("stream-") ||
+           normalized.find("audio-stream-#") != std::string::npos;
+  }
+
+  bool isLowConfidenceProgramAppName(const AudioNode& node) {
+    auto normalizeId = [](std::string value) {
+      if (value.ends_with(".desktop")) {
+        value.erase(value.size() - std::string_view(".desktop").size());
+      }
+      const auto lastSlash = value.find_last_of('/');
+      if (lastSlash != std::string::npos) {
+        value = value.substr(lastSlash + 1);
+      }
+      std::ranges::transform(value, value.begin(),
+                             [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+      return value;
+    };
+
+    if (node.applicationName.empty()) {
+      return true;
+    }
+    if (isGenericAudioLabel(node.applicationName)) {
+      return true;
+    }
+
+    const std::string appName = normalizeId(node.applicationName);
+    const std::string appId = normalizeId(node.applicationId);
+    const std::string appBinary = normalizeId(node.applicationBinary);
+    const std::string nodeName = normalizeId(node.name);
+    const std::string nodeDescription = normalizeId(node.description);
+    if (appName.empty()) {
+      return true;
+    }
+    if (!appId.empty() && appName == appId) {
+      return false;
+    }
+    if (!appBinary.empty() && appName == appBinary) {
+      return false;
+    }
+    if (!looksLikeRuntimeLauncher(appName) && (appName == nodeName || appName == nodeDescription)) {
+      return false;
+    }
+    if (looksLikeRuntimeLauncher(appName)) {
+      return true;
+    }
+
+    auto canonical = [](std::string value) {
+      for (char& ch : value) {
+        if (ch == '-' || ch == '_' || ch == '.' || std::isspace(static_cast<unsigned char>(ch)) != 0) {
+          ch = ' ';
+        }
+      }
+      // collapse spaces
+      std::string out;
+      out.reserve(value.size());
+      bool prevSpace = true;
+      for (const char ch : value) {
+        const bool isSpace = std::isspace(static_cast<unsigned char>(ch)) != 0;
+        if (isSpace) {
+          if (!prevSpace) {
+            out.push_back(' ');
+          }
+        } else {
+          out.push_back(ch);
+        }
+        prevSpace = isSpace;
+      }
+      if (!out.empty() && out.back() == ' ') {
+        out.pop_back();
+      }
+      return out;
+    };
+
+    const std::string canonicalName = canonical(appName);
+    const std::string canonicalBinary = canonical(appBinary);
+    const bool binaryMatchesName =
+        !canonicalBinary.empty() &&
+        (canonicalName == canonicalBinary || canonicalName.find(canonicalBinary) != std::string::npos ||
+         canonicalBinary.find(canonicalName) != std::string::npos);
+    // If we have no application.id and the binary disagrees with appName, appName is usually a runtime wrapper label.
+    if (appId.empty() && !appBinary.empty() && !binaryMatchesName) {
+      return true;
+    }
+
+    // Some stream clients expose a runtime/container name in application.name.
+    // If application.id is more specific and does not match, prefer the id label.
+    const bool idLooksSpecific = appId.find('.') != std::string::npos || appId.find('-') != std::string::npos ||
+                                 appId.find('_') != std::string::npos;
+    const bool nameLooksSimple = appName.find('.') == std::string::npos && appName.find('-') == std::string::npos &&
+                                 appName.find('_') == std::string::npos && appName.find(' ') == std::string::npos;
+    return !appId.empty() && appName != appId && idLooksSpecific && nameLooksSimple;
+  }
+
   std::string prettifyIdentifier(std::string value) {
     if (value.empty()) {
       return value;
@@ -99,32 +222,6 @@ namespace {
     }
     std::ranges::transform(value, value.begin(), [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
     return value;
-  }
-
-  std::string execBinaryName(std::string_view exec) {
-    while (!exec.empty() && std::isspace(static_cast<unsigned char>(exec.front())) != 0) {
-      exec.remove_prefix(1);
-    }
-    if (exec.empty()) {
-      return {};
-    }
-
-    std::string token;
-    if (exec.front() == '"' || exec.front() == '\'') {
-      const char quote = exec.front();
-      exec.remove_prefix(1);
-      const auto end = exec.find(quote);
-      token = std::string(exec.substr(0, end));
-    } else {
-      const auto end = exec.find_first_of(" \t\r\n");
-      token = std::string(exec.substr(0, end));
-    }
-
-    const auto lastSlash = token.find_last_of('/');
-    if (lastSlash != std::string::npos) {
-      token = token.substr(lastSlash + 1);
-    }
-    return lowerIdentifier(std::move(token));
   }
 
   void pushUnique(std::vector<std::string>& values, std::string value) {
@@ -177,6 +274,115 @@ namespace {
     appendMatchToken(tokens, player.identity);
     appendMatchToken(tokens, player.busName);
     return tokens;
+  }
+
+  bool isValidDesktopMatch(std::string_view searchTerm, const DesktopEntry& entry) {
+    if (searchTerm.empty()) {
+      return false;
+    }
+    const std::string search = lowerIdentifier(std::string(searchTerm));
+    const std::string id = lowerIdentifier(entry.id);
+    const std::string name = lowerIdentifier(entry.name);
+    const std::string icon = lowerIdentifier(entry.icon);
+    return (!id.empty() && (id.find(search) != std::string::npos || search.find(id) != std::string::npos)) ||
+           (!name.empty() && (name.find(search) != std::string::npos || search.find(name) != std::string::npos)) ||
+           (!icon.empty() && (icon.find(search) != std::string::npos || search.find(icon) != std::string::npos));
+  }
+
+  const DesktopEntry* findDesktopEntryByTerm(std::string_view term) {
+    if (term.empty()) {
+      return nullptr;
+    }
+    const std::string key = lowerIdentifier(std::string(term));
+    for (const auto& entry : desktopEntries()) {
+      if (isValidDesktopMatch(key, entry)) {
+        return &entry;
+      }
+    }
+    return nullptr;
+  }
+
+  const DesktopEntry* findDesktopEntryForNode(const AudioNode& node, std::string_view resolvedAppName) {
+    const std::string binary = lowerIdentifier(node.applicationBinary);
+    if (!binary.empty()) {
+      if (const DesktopEntry* entry = findDesktopEntryByTerm(binary)) {
+        return entry;
+      }
+    }
+    const std::string appId = lowerIdentifier(node.applicationId);
+    if (!appId.empty()) {
+      if (const DesktopEntry* entry = findDesktopEntryByTerm(appId)) {
+        return entry;
+      }
+    }
+    const std::string appName = lowerIdentifier(node.applicationName);
+    if (!appName.empty() && !isGenericAudioLabel(appName) && !looksLikeRuntimeLauncher(appName)) {
+      if (const DesktopEntry* entry = findDesktopEntryByTerm(appName)) {
+        return entry;
+      }
+    }
+    const std::string resolved = lowerIdentifier(std::string(resolvedAppName));
+    if (!resolved.empty() && !isGenericAudioLabel(resolved) && !looksLikeRuntimeLauncher(resolved)) {
+      if (const DesktopEntry* entry = findDesktopEntryByTerm(resolved)) {
+        return entry;
+      }
+    }
+    const std::string nodeName = lowerIdentifier(node.name);
+    if (!nodeName.empty()) {
+      if (const DesktopEntry* entry = findDesktopEntryByTerm(nodeName)) {
+        return entry;
+      }
+    }
+    return nullptr;
+  }
+
+  std::string resolveProgramAppName(const AudioNode& node, const MprisPlayerInfo* player) {
+    std::string resolved = node.applicationName;
+    const bool appNameIsGeneric = isLowConfidenceProgramAppName(node);
+
+    if (appNameIsGeneric) {
+      // Force fallback chain when app name is considered low-confidence.
+      resolved.clear();
+    }
+    if (resolved.empty()) {
+      if (!node.applicationId.empty() && !isGenericAudioLabel(node.applicationId)) {
+        resolved = prettifyIdentifier(node.applicationId);
+      }
+    }
+    if (resolved.empty() || isGenericAudioLabel(resolved)) {
+      if (!node.applicationBinary.empty() && !isGenericAudioLabel(node.applicationBinary)) {
+        resolved = prettifyIdentifier(node.applicationBinary);
+      }
+    }
+    if ((resolved.empty() || isGenericAudioLabel(resolved) || looksLikeRuntimeLauncher(resolved)) &&
+        !node.streamTitle.empty() && !isGenericAudioLabel(node.streamTitle) &&
+        !looksLikeRuntimeLauncher(node.streamTitle) && !isLikelyFallbackStreamLabel(node.streamTitle)) {
+      resolved = node.streamTitle;
+    }
+    if ((resolved.empty() || isGenericAudioLabel(resolved) || looksLikeRuntimeLauncher(resolved) ||
+         (lowerIdentifier(resolved) == lowerIdentifier(node.name) &&
+          lowerIdentifier(resolved) == lowerIdentifier(node.description) && node.applicationId.empty() &&
+          node.applicationBinary.empty())) &&
+        player != nullptr && !player->identity.empty() && !isGenericAudioLabel(player->identity)) {
+      resolved = player->identity;
+    }
+    if (const DesktopEntry* entry = findDesktopEntryForNode(node, resolved);
+        entry != nullptr && !entry->name.empty() && !isGenericAudioLabel(entry->name)) {
+      resolved = entry->name;
+    }
+    if (resolved.empty() || isGenericAudioLabel(resolved)) {
+      resolved = !node.name.empty() ? node.name : node.description;
+    }
+    if (isGenericAudioLabel(resolved) && !node.iconName.empty()) {
+      resolved = prettifyIdentifier(node.iconName);
+    }
+    if ((resolved.empty() || isGenericAudioLabel(resolved)) && player != nullptr && !player->identity.empty()) {
+      resolved = player->identity;
+    }
+    if (resolved.empty()) {
+      resolved = "Application";
+    }
+    return resolved;
   }
 
   bool tokenListsMatch(const std::vector<std::string>& left, const std::vector<std::string>& right) {
@@ -237,35 +443,20 @@ namespace {
 
   void appendDesktopIconCandidates(std::vector<std::string>& candidates, const AudioNode& node,
                                    std::string_view resolvedAppName) {
-    std::vector<std::string> keys;
-    pushUnique(keys, lowerIdentifier(node.applicationId));
-    pushUnique(keys, lowerIdentifier(node.applicationBinary));
-    pushUnique(keys, lowerIdentifier(node.applicationName));
-    pushUnique(keys, lowerIdentifier(std::string(resolvedAppName)));
-    pushUnique(keys, lowerIdentifier(node.iconName));
+    if (const DesktopEntry* entry = findDesktopEntryForNode(node, resolvedAppName);
+        entry != nullptr && !entry->icon.empty()) {
+      pushUnique(candidates, entry->icon);
+      pushUnique(candidates, entry->id);
+    }
+  }
 
-    for (const auto& entry : desktopEntries()) {
-      const std::string entryId = lowerIdentifier(entry.id);
-      const std::string entryName = lowerIdentifier(entry.name);
-      const std::string entryStartupWmClass = lowerIdentifier(entry.startupWmClass);
-      const std::string entryExec = execBinaryName(entry.exec);
-
-      bool matches = false;
-      for (const auto& key : keys) {
-        if (key.empty() || isGenericAudioLabel(key)) {
-          continue;
-        }
-        if (key == entryId || key == entryName || key == entryStartupWmClass || key == entryExec) {
-          matches = true;
-          break;
-        }
+  void appendFallbackIconCandidates(std::vector<std::string>& candidates, const AudioNode& node) {
+    if (looksLikeRuntimeLauncher(node.applicationName) || looksLikeRuntimeLauncher(node.applicationBinary) ||
+        looksLikeRuntimeLauncher(node.applicationId) || isLikelyFallbackStreamLabel(node.streamTitle)) {
+      for (const std::string icon :
+           {"wine", "steam", "applications-games", "application-x-executable", "application-default-icon"}) {
+        pushUnique(candidates, icon);
       }
-      if (!matches || entry.icon.empty()) {
-        continue;
-      }
-      pushUnique(candidates, entry.icon);
-      pushUnique(candidates, entry.id);
-      break;
     }
   }
 
@@ -544,36 +735,13 @@ namespace {
 
     void syncFromNode(const AudioNode& node, const MprisPlayerInfo* player, bool isDefault, float sliderMax,
                       bool nodeEnabled) {
-      std::string resolvedAppName = !node.applicationName.empty() ? node.applicationName : std::string{};
-      if (resolvedAppName.empty() || isGenericAudioLabel(resolvedAppName)) {
-        if (!node.applicationId.empty()) {
-          resolvedAppName = prettifyIdentifier(node.applicationId);
-        }
-      }
-      if (resolvedAppName.empty() || isGenericAudioLabel(resolvedAppName)) {
-        if (!node.applicationBinary.empty()) {
-          resolvedAppName = prettifyIdentifier(node.applicationBinary);
-        }
-      }
-      if (resolvedAppName.empty() || isGenericAudioLabel(resolvedAppName)) {
-        resolvedAppName = !node.description.empty() ? node.description : node.name;
-      }
-      if (isGenericAudioLabel(resolvedAppName) && !node.iconName.empty()) {
-        resolvedAppName = prettifyIdentifier(node.iconName);
-      }
-      if ((resolvedAppName.empty() || isGenericAudioLabel(resolvedAppName)) && player != nullptr &&
-          !player->identity.empty()) {
-        resolvedAppName = player->identity;
-      }
-      if (resolvedAppName.empty()) {
-        resolvedAppName = "Application";
-      }
+      std::string resolvedAppName = resolveProgramAppName(node, player);
 
       std::string title = node.streamTitle;
       if (title.empty() && !node.name.empty() && node.name != resolvedAppName) {
         title = node.name;
       }
-      if (title == resolvedAppName || isGenericAudioLabel(title)) {
+      if (title == resolvedAppName || isGenericAudioLabel(title) || isLikelyFallbackStreamLabel(title)) {
         title.clear();
       }
       if (title.empty()) {
@@ -650,14 +818,6 @@ namespace {
       const std::string candidateApp = sanitize(resolvedAppName);
       const std::string candidateFallback =
           sanitize(node.applicationBinary.empty() ? node.name : node.applicationBinary);
-      if (!candidateIcon.empty()) {
-        pushUnique(m_iconCandidates, candidateIcon);
-        pushUnique(m_iconCandidates, candidateIcon + ".desktop");
-      }
-      if (!candidateId.empty() && candidateId != candidateIcon) {
-        pushUnique(m_iconCandidates, candidateId);
-        pushUnique(m_iconCandidates, candidateId + ".desktop");
-      }
       if (!candidateApp.empty()) {
         pushUnique(m_iconCandidates, candidateApp);
         pushUnique(m_iconCandidates, candidateApp + ".desktop");
@@ -666,7 +826,17 @@ namespace {
         pushUnique(m_iconCandidates, candidateFallback);
         pushUnique(m_iconCandidates, candidateFallback + ".desktop");
       }
+      if (!candidateId.empty() && candidateId != candidateApp && candidateId != candidateFallback) {
+        pushUnique(m_iconCandidates, candidateId);
+        pushUnique(m_iconCandidates, candidateId + ".desktop");
+      }
       appendDesktopIconCandidates(m_iconCandidates, node, resolvedAppName);
+      appendFallbackIconCandidates(m_iconCandidates, node);
+      // Keep raw node icon as final fallback (Electron streams often report Chromium icon names).
+      if (!candidateIcon.empty()) {
+        pushUnique(m_iconCandidates, candidateIcon);
+        pushUnique(m_iconCandidates, candidateIcon + ".desktop");
+      }
       for (const auto& candidate : m_iconCandidates) {
         m_iconKey += candidate;
         m_iconKey.push_back('|');
@@ -784,6 +954,14 @@ bool AudioTab::dragging() const noexcept {
     }
   }
   return false;
+}
+
+bool AudioTab::dismissTransientUi() {
+  if (!m_deviceMenuOpen) {
+    return false;
+  }
+  m_deviceMenuOpen = false;
+  return true;
 }
 
 std::unique_ptr<Flex> AudioTab::create() {
@@ -1324,14 +1502,12 @@ void AudioTab::rebuildProgramVolumes(Renderer& renderer) {
     std::string key;
     const auto sorted = sortedDevices(devices);
     for (const auto& node : sorted) {
-      std::string resolvedAppName = !node.applicationName.empty() ? node.applicationName : node.applicationBinary;
-      if (resolvedAppName.empty()) {
-        resolvedAppName = !node.description.empty() ? node.description : node.name;
-      }
+      const MprisPlayerInfo* player = findMatchingPlayer(players, node, node.applicationName);
+      std::string resolvedAppName = resolveProgramAppName(node, player);
       key += std::to_string(node.id);
       key.push_back(':');
       key += !node.description.empty() ? node.description : node.name;
-      if (const MprisPlayerInfo* player = findMatchingPlayer(players, node, resolvedAppName); player != nullptr) {
+      if (player != nullptr) {
         key.push_back(':');
         key += player->busName;
         key.push_back(':');
@@ -1371,11 +1547,11 @@ void AudioTab::rebuildProgramVolumes(Renderer& renderer) {
                   i18n::tr("control-center.audio.no-application-audio-body"), scale);
   } else {
     for (const auto& sink : sortedDevices(state.programOutputs)) {
+      const MprisPlayerInfo* player = findMatchingPlayer(players, sink, sink.applicationName);
       auto row = std::make_unique<ProgramVolumeRow>(
           m_audio, sink.id, sliderMax, scale,
           [this, sinkId = sink.id](float value) { queueProgramSinkVolume(sinkId, value); },
           [this]() { flushPendingProgramVolumes(true); });
-      const MprisPlayerInfo* player = findMatchingPlayer(players, sink, sink.applicationName);
       row->syncFromNode(sink, player, false, sliderMax, true);
       m_programRows.push_back(row.get());
       m_programList->addChild(std::move(row));

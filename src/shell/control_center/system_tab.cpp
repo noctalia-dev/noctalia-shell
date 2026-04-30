@@ -210,7 +210,7 @@ std::unique_ptr<Flex> SystemTab::create() {
     addTitle(*card, i18n::tr("control-center.system.titles.system-info"), sc);
 
     auto infoLabel = std::make_unique<Label>();
-    infoLabel->setFontSize(Style::fontSizeBody * sc);
+    infoLabel->setFontSize(Style::fontSizeCaption * sc);
     infoLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
 
     infoLabel->setText(

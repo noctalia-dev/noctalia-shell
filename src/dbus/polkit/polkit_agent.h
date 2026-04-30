@@ -9,7 +9,7 @@
 
 class SystemBus;
 
-struct PolkitIdentity {
+struct PolkitRequestIdentity {
   std::string kind;
   std::uint32_t uid = 0;
   std::string userName;
@@ -20,7 +20,7 @@ struct PolkitRequest {
   std::string message;
   std::string iconName;
   std::string cookie;
-  std::vector<PolkitIdentity> identities;
+  std::vector<PolkitRequestIdentity> identities;
 };
 
 class PolkitAgent {
@@ -38,6 +38,7 @@ public:
   void cancelRequest();
 
   void addPollFds(std::vector<pollfd>& fds) const;
+  [[nodiscard]] int pollTimeoutMs() const;
   void dispatch(const std::vector<pollfd>& fds, std::size_t startIdx);
 
   [[nodiscard]] bool hasPendingRequest() const noexcept;

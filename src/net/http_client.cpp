@@ -1,6 +1,7 @@
 #include "net/http_client.h"
 
 #include "core/deferred_call.h"
+#include "core/log.h"
 
 #include <cstdio>
 #include <filesystem>
@@ -8,11 +9,26 @@
 #include <string>
 
 namespace {
+  constexpr Logger kLog("http");
+
   void deferFailure(HttpClient::CompletionCallback cb) {
     if (!cb) {
       return;
     }
     DeferredCall::callLater([cb = std::move(cb)]() { cb(false); });
+  }
+
+  void deferFailures(std::vector<HttpClient::CompletionCallback> callbacks) {
+    if (callbacks.empty()) {
+      return;
+    }
+    DeferredCall::callLater([callbacks = std::move(callbacks)]() mutable {
+      for (auto& callback : callbacks) {
+        if (callback) {
+          callback(false);
+        }
+      }
+    });
   }
 } // namespace
 
@@ -45,6 +61,7 @@ bool HttpClient::hasActiveTransfers() const { return !m_transfers.empty() || !m_
 
 void HttpClient::download(std::string_view url, const std::filesystem::path& destPath, CompletionCallback cb) {
   if (m_offlineMode) {
+    kLog.warn("download skipped in offline mode url={}", url);
     deferFailure(std::move(cb));
     return;
   }
@@ -62,6 +79,7 @@ void HttpClient::download(std::string_view url, const std::filesystem::path& des
 
   FILE* f = std::fopen(tempPath.c_str(), "wb");
   if (f == nullptr) {
+    kLog.warn("download failed to open temp file {} for url={}", tempPath.string(), url);
     deferFailure(std::move(cb));
     return;
   }
@@ -69,6 +87,8 @@ void HttpClient::download(std::string_view url, const std::filesystem::path& des
   CURL* easy = curl_easy_init();
   if (easy == nullptr) {
     std::fclose(f);
+    std::filesystem::remove(tempPath);
+    kLog.warn("download failed to create curl handle url={}", url);
     deferFailure(std::move(cb));
     return;
   }
@@ -87,20 +107,36 @@ void HttpClient::download(std::string_view url, const std::filesystem::path& des
   transfer.file = f;
   transfer.callbacks.push_back(std::move(cb));
   transfer.destKey = destKey;
+  transfer.url = urlStr;
   m_transfers[easy] = std::move(transfer);
+  curl_easy_setopt(easy, CURLOPT_ERRORBUFFER, m_transfers[easy].errorBuffer.data());
+  const CURLMcode addResult = curl_multi_add_handle(m_multi, easy);
+  if (addResult != CURLM_OK) {
+    Transfer failedTransfer = std::move(m_transfers[easy]);
+    m_transfers.erase(easy);
+    curl_easy_cleanup(easy);
+    if (failedTransfer.file != nullptr) {
+      std::fclose(failedTransfer.file);
+    }
+    std::filesystem::remove(failedTransfer.tempPath);
+    kLog.warn("download failed to add curl handle url={} error={}", urlStr, curl_multi_strerror(addResult));
+    deferFailures(std::move(failedTransfer.callbacks));
+    return;
+  }
   m_activeByDest[destKey] = easy;
-  curl_multi_add_handle(m_multi, easy);
   curl_multi_perform(m_multi, &m_running);
 }
 
 void HttpClient::post(std::string_view url, std::string body, std::string_view contentType, CompletionCallback cb) {
   if (m_offlineMode) {
+    kLog.warn("post skipped in offline mode url={}", url);
     deferFailure(std::move(cb));
     return;
   }
 
   CURL* easy = curl_easy_init();
   if (easy == nullptr) {
+    kLog.warn("post failed to create curl handle url={}", url);
     deferFailure(std::move(cb));
     return;
   }
@@ -113,6 +149,7 @@ void HttpClient::post(std::string_view url, std::string body, std::string_view c
   post.headers = curl_slist_append(nullptr, header.c_str());
 
   const std::string urlStr(url);
+  post.url = urlStr;
   curl_easy_setopt(easy, CURLOPT_URL, urlStr.c_str());
   curl_easy_setopt(easy, CURLOPT_POST, 1L);
   curl_easy_setopt(easy, CURLOPT_POSTFIELDSIZE, static_cast<long>(post.body.size()));
@@ -123,7 +160,19 @@ void HttpClient::post(std::string_view url, std::string body, std::string_view c
   curl_easy_setopt(easy, CURLOPT_FAILONERROR, 1L);
 
   m_postTransfers[easy] = std::move(post);
-  curl_multi_add_handle(m_multi, easy);
+  curl_easy_setopt(easy, CURLOPT_ERRORBUFFER, m_postTransfers[easy].errorBuffer.data());
+  const CURLMcode addResult = curl_multi_add_handle(m_multi, easy);
+  if (addResult != CURLM_OK) {
+    PostTransfer failedPost = std::move(m_postTransfers[easy]);
+    m_postTransfers.erase(easy);
+    curl_easy_cleanup(easy);
+    if (failedPost.headers != nullptr) {
+      curl_slist_free_all(failedPost.headers);
+    }
+    kLog.warn("post failed to add curl handle url={} error={}", urlStr, curl_multi_strerror(addResult));
+    deferFailure(std::move(failedPost.callback));
+    return;
+  }
   curl_multi_perform(m_multi, &m_running);
 }
 
@@ -177,17 +226,16 @@ void HttpClient::dispatch(const std::vector<pollfd>& /*fds*/, std::size_t /*star
   while ((msg = curl_multi_info_read(m_multi, &msgsLeft)) != nullptr) {
     if (msg->msg == CURLMSG_DONE) {
       CURL* easy = msg->easy_handle;
-      const bool success = (msg->data.result == CURLE_OK);
       if (m_postTransfers.contains(easy)) {
-        finishPostTransfer(easy, success);
+        finishPostTransfer(easy, msg->data.result);
       } else {
-        finishTransfer(easy, success);
+        finishTransfer(easy, msg->data.result);
       }
     }
   }
 }
 
-void HttpClient::finishTransfer(CURL* easy, bool success) {
+void HttpClient::finishTransfer(CURL* easy, CURLcode result) {
   auto it = m_transfers.find(easy);
   if (it == m_transfers.end()) {
     curl_multi_remove_handle(m_multi, easy);
@@ -199,6 +247,9 @@ void HttpClient::finishTransfer(CURL* easy, bool success) {
   m_transfers.erase(it);
   m_activeByDest.erase(transfer.destKey);
 
+  long responseCode = 0;
+  curl_easy_getinfo(easy, CURLINFO_RESPONSE_CODE, &responseCode);
+
   curl_multi_remove_handle(m_multi, easy);
   curl_easy_cleanup(easy);
 
@@ -207,6 +258,7 @@ void HttpClient::finishTransfer(CURL* easy, bool success) {
     transfer.file = nullptr;
   }
 
+  bool success = result == CURLE_OK;
   if (success) {
     std::error_code ec;
     std::filesystem::rename(transfer.tempPath, transfer.destPath, ec);
@@ -215,8 +267,15 @@ void HttpClient::finishTransfer(CURL* easy, bool success) {
                                  std::filesystem::copy_options::overwrite_existing, ec);
       std::filesystem::remove(transfer.tempPath);
       success = !ec;
+      if (!success) {
+        kLog.warn("download failed to move {} to {}: {}", transfer.tempPath.string(), transfer.destPath.string(),
+                  ec.message());
+      }
     }
   } else {
+    const char* detail = transfer.errorBuffer[0] != '\0' ? transfer.errorBuffer.data() : curl_easy_strerror(result);
+    kLog.warn("download failed url={} curl={} http={} error={}", transfer.url, static_cast<int>(result), responseCode,
+              detail);
     std::filesystem::remove(transfer.tempPath);
   }
 
@@ -225,7 +284,7 @@ void HttpClient::finishTransfer(CURL* easy, bool success) {
   }
 }
 
-void HttpClient::finishPostTransfer(CURL* easy, bool success) {
+void HttpClient::finishPostTransfer(CURL* easy, CURLcode result) {
   auto it = m_postTransfers.find(easy);
   if (it == m_postTransfers.end()) {
     curl_multi_remove_handle(m_multi, easy);
@@ -236,11 +295,20 @@ void HttpClient::finishPostTransfer(CURL* easy, bool success) {
   PostTransfer post = std::move(it->second);
   m_postTransfers.erase(it);
 
+  long responseCode = 0;
+  curl_easy_getinfo(easy, CURLINFO_RESPONSE_CODE, &responseCode);
+
   curl_multi_remove_handle(m_multi, easy);
   curl_easy_cleanup(easy);
 
   if (post.headers != nullptr) {
     curl_slist_free_all(post.headers);
+  }
+
+  const bool success = result == CURLE_OK;
+  if (!success) {
+    const char* detail = post.errorBuffer[0] != '\0' ? post.errorBuffer.data() : curl_easy_strerror(result);
+    kLog.warn("post failed url={} curl={} http={} error={}", post.url, static_cast<int>(result), responseCode, detail);
   }
 
   if (post.callback) {

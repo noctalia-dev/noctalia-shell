@@ -17,6 +17,7 @@
 #include "ui/controls/scroll_view.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "util/fuzzy_match.h"
 #include "wayland/clipboard_service.h"
 
 #include <algorithm>
@@ -32,6 +33,26 @@ namespace {
   constexpr std::size_t kRowOverscan = 3;
   constexpr float kIconSize = 32.0f;
   constexpr float kScrollViewPaddingV = Style::spaceSm;
+  constexpr double kUsageScorePerCount = 0.1;
+  constexpr double kTypedUsageScoreCap = 0.5;
+
+  double usageBoostForScore(double score, int usageCount, bool typedQuery) {
+    if (usageCount <= 0) {
+      return 0.0;
+    }
+
+    const double rawBoost = static_cast<double>(usageCount) * kUsageScorePerCount;
+    if (!typedQuery) {
+      return rawBoost;
+    }
+    if (!FuzzyMatch::isMatch(score)) {
+      return 0.0;
+    }
+
+    // For typed searches, usage should nudge close matches without letting a
+    // weak fuzzy hit outrank a much stronger lexical match.
+    return std::min(rawBoost, kTypedUsageScoreCap);
+  }
 
   float launcherRowHeight(float scale) {
     const float paddingY = Style::spaceXs * scale;
@@ -466,14 +487,15 @@ void LauncherPanel::onInputChanged(const std::string& text) {
     }
   }
 
-  constexpr int kUsageScorePerCount = 20;
+  const bool typedQuery = !queryText.empty();
 
   auto applyUsageBoost = [&](std::vector<LauncherResult>& results, const LauncherProvider& provider) {
     if (!provider.trackUsage()) {
       return;
     }
     for (auto& result : results) {
-      result.score += m_usageTracker.getCount(provider.name(), result.id) * kUsageScorePerCount;
+      const int usageCount = m_usageTracker.getCount(provider.name(), result.id);
+      result.score += usageBoostForScore(result.score, usageCount, typedQuery);
     }
   };
 
@@ -646,15 +668,22 @@ void LauncherPanel::activateSelected() {
 
   const auto& result = m_results[m_selectedIndex];
 
-  // Find the provider that owns this result
+  // Dispatch only to the provider that produced this result. Providers can use
+  // overlapping id shapes, so probing every provider risks side effects.
   for (auto& provider : m_providers) {
-    if (provider->activate(result)) {
-      if (provider->trackUsage()) {
-        m_usageTracker.record(provider->name(), result.id);
-      }
-      PanelManager::instance().closePanel();
+    if (provider->name() != std::string_view(result.providerName)) {
+      continue;
+    }
+
+    if (!provider->activate(result)) {
       return;
     }
+
+    if (provider->trackUsage()) {
+      m_usageTracker.record(provider->name(), result.id);
+    }
+    PanelManager::instance().closePanel();
+    return;
   }
 }
 

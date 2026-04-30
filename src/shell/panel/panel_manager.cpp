@@ -8,6 +8,7 @@
 #include "render/core/renderer.h"
 #include "render/render_context.h"
 #include "render/scene/rect_node.h"
+#include "shell/control_center/control_center_panel.h"
 #include "shell/surface_shadow.h"
 #include "ui/controls/box.h"
 #include "ui/controls/select.h"
@@ -691,6 +692,14 @@ bool PanelManager::onPointerEvent(const PointerEvent& event) {
     }
 
     if (m_pointerInside) {
+      if (pressed && event.surface == m_wlSurface && m_activePanelId == "control-center" &&
+          m_inputDispatcher.hoveredArea() == nullptr) {
+        if (auto* controlCenter = dynamic_cast<ControlCenterPanel*>(m_activePanel);
+            controlCenter != nullptr && controlCenter->dismissTransientUi()) {
+          refresh();
+          return true;
+        }
+      }
       if (pressed) {
         Select::handleGlobalPointerPress(m_inputDispatcher.hoveredArea());
       }

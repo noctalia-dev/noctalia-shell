@@ -333,6 +333,10 @@ bool WaylandConnection::hasNiriOverviewState() const noexcept {
   return m_niriWorkspaceMonitor != nullptr && m_niriWorkspaceMonitor->hasOverviewState();
 }
 
+bool WaylandConnection::tracksNiriOverviewState() const noexcept {
+  return m_niriWorkspaceMonitor != nullptr && m_niriWorkspaceMonitor->canTrackOverviewState();
+}
+
 bool WaylandConnection::isNiriOverviewOpen() const noexcept {
   if (m_niriWorkspaceMonitor == nullptr || !m_niriWorkspaceMonitor->hasOverviewState()) {
     return true;

@@ -1001,17 +1001,14 @@ void MprisService::discoverPlayers() {
     return;
   }
 
-  std::size_t matched = 0;
-
   for (const auto& name : names) {
     if (is_mpris_bus_name(name)) {
-      ++matched;
       // kLog.debug("discover found mpris bus={}", name);
       addOrRefreshPlayer(name);
     }
   }
 
-  // kLog.debug("discover players listed={} matched_mpris={} cached_after={}", names.size(), matched, m_players.size());
+  // kLog.debug("discover players listed={} cached_after={}", names.size(), m_players.size());
 }
 
 void MprisService::scheduleStartupRediscovery() {

@@ -25,6 +25,7 @@ namespace process {
   [[nodiscard]] bool runAsync(const std::vector<std::string>& args);
   [[nodiscard]] bool runAsync(std::initializer_list<const char*> args);
   [[nodiscard]] RunResult runSync(const std::vector<std::string>& args);
+  [[nodiscard]] RunResult runSync(std::initializer_list<const char*> args);
 
   [[nodiscard]] std::optional<int> launchDetachedTracked(const std::vector<std::string>& args);
   [[nodiscard]] std::optional<int> launchDetachedTracked(std::initializer_list<const char*> args);

@@ -1,5 +1,6 @@
 #include "shell/session/session_panel.h"
 
+#include "compositors/compositor_detect.h"
 #include "config/config_service.h"
 #include "core/log.h"
 #include "core/process.h"
@@ -39,14 +40,46 @@ namespace {
   }};
 
   bool doLogout() {
-    if (process::runAsync({"systemctl", "--user", "stop", "graphical-session.target"})) {
-      return true;
+    // Prefer compositor-native exits where available.
+    switch (compositors::detect()) {
+    case compositors::CompositorKind::Hyprland:
+      if (process::runSync({"hyprctl", "dispatch", "exit"})) {
+        return true;
+      }
+      break;
+    case compositors::CompositorKind::Sway:
+      if (process::runSync({"scrollmsg", "exit"}) || process::runSync({"swaymsg", "exit"}) ||
+          process::runSync({"i3-msg", "exit"})) {
+        return true;
+      }
+      break;
+    case compositors::CompositorKind::Niri:
+      if (process::runSync({"niri", "msg", "action", "quit", "-s"})) {
+        return true;
+      }
+      break;
+    case compositors::CompositorKind::Mango:
+      if (process::runSync({"mmsg", "-q"})) {
+        return true;
+      }
+      break;
+    case compositors::CompositorKind::Unknown:
+      break;
     }
+
+    // Fallback to logind-managed session termination.
     if (const char* sessionId = std::getenv("XDG_SESSION_ID"); sessionId != nullptr && sessionId[0] != '\0') {
-      return process::runAsync({"loginctl", "terminate-session", sessionId});
+      if (process::runSync({"loginctl", "terminate-session", sessionId}).exitCode == 0) {
+        return true;
+      }
     }
     if (const char* user = std::getenv("USER"); user != nullptr && user[0] != '\0') {
-      return process::runAsync({"loginctl", "terminate-user", user});
+      if (process::runSync({"loginctl", "terminate-user", user}).exitCode == 0) {
+        return true;
+      }
+    }
+    if (process::runSync({"systemctl", "--user", "stop", "graphical-session.target"}).exitCode == 0) {
+      return true;
     }
     return false;
   }

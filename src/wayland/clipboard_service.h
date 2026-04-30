@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <memory>
+#include <poll.h>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -66,9 +68,9 @@ public:
   void cleanup();
 
   [[nodiscard]] bool isAvailable() const noexcept;
-  [[nodiscard]] int activeReadFd() const noexcept;
   [[nodiscard]] const std::deque<ClipboardEntry>& history() const noexcept;
   [[nodiscard]] std::uint64_t changeSerial() const noexcept;
+  [[nodiscard]] std::size_t addPollFds(std::vector<pollfd>& fds) const;
 
   bool ensureEntryLoaded(std::size_t index);
   bool copyText(std::string text);
@@ -77,6 +79,7 @@ public:
   void clearHistory();
   void setChangeCallback(ChangeCallback callback);
   void dispatchReadEvents(short revents);
+  void dispatchPollEvents(const std::vector<pollfd>& fds, std::size_t startIdx, std::size_t count);
 
   // Protocol callback entrypoints used by the generated listeners.
   void handleDataOffer(void* offer);
@@ -104,7 +107,14 @@ private:
   struct OutgoingSource {
     void* source = nullptr;
     std::vector<std::string> mimeTypes;
-    std::vector<std::uint8_t> data;
+    std::shared_ptr<const std::vector<std::uint8_t>> data;
+  };
+
+  struct ActiveWrite {
+    int fd = -1;
+    void* source = nullptr;
+    std::shared_ptr<const std::vector<std::uint8_t>> data;
+    std::size_t offset = 0;
   };
 
   [[nodiscard]] const OfferState* findOffer(void* offer) const;
@@ -112,6 +122,7 @@ private:
   void destroyOffer(void* offer);
   void clearOffers();
   void cancelActiveRead();
+  void cancelActiveWrites();
   bool startReceive(void* offer);
   void finishRead(bool discard);
   void addToHistory(ClipboardEntry entry);
@@ -129,6 +140,10 @@ private:
   [[nodiscard]] static bool isEmptyTextPayload(const std::vector<std::uint8_t>& data);
   [[nodiscard]] static std::string buildTextPreview(const std::vector<std::uint8_t>& data);
   bool copyData(std::vector<std::string> mimeTypes, std::vector<std::uint8_t> data);
+  bool queueOutgoingWrite(void* source, int fd, std::shared_ptr<const std::vector<std::uint8_t>> data);
+  void dispatchWriteEvents(int fd, short revents);
+  void drainOutgoingWrite(std::size_t index);
+  void closeActiveWrite(std::size_t index);
   void notifyChanged() const;
 
   void* m_manager = nullptr;
@@ -140,6 +155,7 @@ private:
   void* m_selectionOffer = nullptr;
   ActiveRead m_activeRead;
   std::vector<OutgoingSource> m_outgoingSources;
+  std::vector<ActiveWrite> m_activeWrites;
 
   std::deque<ClipboardEntry> m_history;
   std::size_t m_historyBytes = 0;

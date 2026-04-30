@@ -42,6 +42,10 @@ cairo_ft_dep        = dependency('cairo-ft')
 pango_dep           = dependency('pango')
 pangocairo_dep      = dependency('pangocairo')
 xkbcommon_dep       = dependency('xkbcommon')
+glib_dep            = dependency('glib-2.0')
+gobject_dep         = dependency('gobject-2.0')
+polkit_agent_dep    = dependency('polkit-agent-1')
+polkit_gobject_dep  = dependency('polkit-gobject-1')
 # PipeWire/SPA headers use GCC extensions that trigger -Wpedantic/-Wconversion;
 # mark as system so the compiler suppresses those warnings.
 pipewire_dep        = dependency('libpipewire-0.3', include_type: 'system')
@@ -83,6 +87,17 @@ _drwav_lib = static_library('dr_wav',
 drwav_dep = declare_dependency(
   link_with: _drwav_lib,
   include_directories: include_directories('third_party/dr_wav', is_system: true),
+)
+
+# ── Vendored: fzy matcher (C fuzzy scoring) ──────────────────────────────────
+_fzy_lib = static_library('fzy',
+  'third_party/fzy/src/match.c',
+  c_args: ['-Wno-pedantic', '-Wno-conversion'],
+  override_options: ['warning_level=0'],
+)
+fzy_dep = declare_dependency(
+  link_with: _fzy_lib,
+  include_directories: include_directories('third_party/fzy/src', is_system: true),
 )
 
 # ── Vendored: Material Color Utilities (Google) ───────────────────────────────
@@ -411,6 +426,7 @@ _noctalia_sources = files(
   'src/shell/control_center/network_tab.cpp',
   'src/shell/control_center/notifications_tab.cpp',
   'src/shell/control_center/overview_tab.cpp',
+  'src/shell/control_center/shortcut_registry.cpp',
   'src/shell/control_center/system_tab.cpp',
   'src/shell/control_center/tab.cpp',
   'src/shell/control_center/weather_tab.cpp',
@@ -447,8 +463,8 @@ _noctalia_sources = files(
   'src/shell/settings/settings_window.cpp',
   'src/shell/test/test_panel.cpp',
   'src/shell/tray/tray_menu.cpp',
-  'src/shell/overview/overview.cpp',
-  'src/shell/overview/overview_surface.cpp',
+  'src/shell/backdrop/backdrop.cpp',
+  'src/shell/backdrop/backdrop_surface.cpp',
   'src/shell/wallpaper/wallpaper.cpp',
   'src/shell/wallpaper/panel/wallpaper_page_grid.cpp',
   'src/shell/wallpaper/panel/wallpaper_panel.cpp',
@@ -461,6 +477,7 @@ _noctalia_sources = files(
   'src/shell/bar/widgets/battery_widget.cpp',
   'src/shell/bar/widgets/bluetooth_widget.cpp',
   'src/shell/bar/widgets/control_center_widget.cpp',
+  'src/shell/bar/widgets/clipboard_widget.cpp',
   'src/shell/bar/widgets/clock_widget.cpp',
   'src/shell/bar/widgets/idle_inhibitor_widget.cpp',
   'src/shell/bar/widgets/keyboard_layout_widget.cpp',
@@ -495,7 +512,6 @@ _noctalia_sources = files(
   'src/system/weather_service.cpp',
   'src/time/time_format.cpp',
   'src/time/time_service.cpp',
-  'src/ui/card_style.cpp',
   'src/ui/controls/audio_spectrum.cpp',
   'src/ui/controls/box.cpp',
   'src/ui/controls/button.cpp',
@@ -621,11 +637,16 @@ executable('noctalia',
     pango_dep,
     pangocairo_dep,
     xkbcommon_dep,
+    glib_dep,
+    gobject_dep,
+    polkit_agent_dep,
+    polkit_gobject_dep,
     pipewire_dep,
     curl_dep,
     pam_dep,
     tinyexpr_dep,
     drwav_dep,
+    fzy_dep,
     mcu_dep,
     stb_dep,
     libwebp_dep,

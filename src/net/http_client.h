@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <curl/curl.h>
 #include <filesystem>
 #include <functional>
@@ -43,16 +44,20 @@ private:
     FILE* file = nullptr;
     std::vector<CompletionCallback> callbacks;
     std::string destKey;
+    std::string url;
+    std::array<char, CURL_ERROR_SIZE> errorBuffer{};
   };
 
   struct PostTransfer {
     std::string body;
     curl_slist* headers = nullptr;
     CompletionCallback callback;
+    std::string url;
+    std::array<char, CURL_ERROR_SIZE> errorBuffer{};
   };
 
-  void finishTransfer(CURL* easy, bool success);
-  void finishPostTransfer(CURL* easy, bool success);
+  void finishTransfer(CURL* easy, CURLcode result);
+  void finishPostTransfer(CURL* easy, CURLcode result);
   [[nodiscard]] bool hasActiveTransfers() const;
 
   CURLM* m_multi = nullptr;

@@ -10,6 +10,7 @@
 struct pw_context;
 struct pw_core;
 struct pw_client;
+struct pw_device;
 struct pw_loop;
 struct pw_registry;
 struct spa_hook;
@@ -110,6 +111,11 @@ public:
     float volume = 1.0f;
     bool muted = false;
     std::uint32_t channelCount = 0;
+    std::uint32_t deviceId = 0;
+    bool hasRoute = false;
+    std::int32_t routeIndex = -1;
+    std::int32_t routeDevice = -1;
+    std::uint32_t routeDirection = 0;
     struct pw_node* proxy = nullptr;
     spa_hook* listener = nullptr;
   };
@@ -123,9 +129,25 @@ public:
     struct pw_client* proxy = nullptr;
     spa_hook* listener = nullptr;
   };
+  struct DeviceRouteData {
+    std::int32_t index = -1;
+    std::int32_t device = -1;
+    std::uint32_t direction = 0;
+    bool muted = false;
+  };
+  struct DeviceData {
+    PipeWireService* service = nullptr;
+    std::uint32_t id = 0;
+    struct pw_device* proxy = nullptr;
+    spa_hook* listener = nullptr;
+    std::vector<DeviceRouteData> routes;
+  };
   void onRegistryGlobal(std::uint32_t id, const char* type, std::uint32_t version, const struct spa_dict* props);
   void onRegistryGlobalRemove(std::uint32_t id);
   void onClientInfo(std::uint32_t id, const struct pw_client_info* info);
+  void onDeviceInfo(std::uint32_t id, const struct pw_device_info* info);
+  void onDeviceParam(std::uint32_t id, std::uint32_t paramId, std::uint32_t index, std::uint32_t next,
+                     const struct spa_pod* param);
   void onNodeInfo(std::uint32_t id, const struct pw_node_info* info);
   void onNodeParam(std::uint32_t id, std::uint32_t paramId, std::uint32_t index, std::uint32_t next,
                    const struct spa_pod* param);
@@ -150,6 +172,7 @@ private:
 
   std::unordered_map<std::uint32_t, std::unique_ptr<NodeData>> m_nodes;
   std::unordered_map<std::uint32_t, ClientData> m_clients;
+  std::unordered_map<std::uint32_t, DeviceData> m_devices;
   std::vector<std::function<void()>> m_metadataCleanups;
   std::string m_defaultSinkName;
   std::string m_defaultSourceName;

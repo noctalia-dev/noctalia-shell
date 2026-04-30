@@ -816,7 +816,7 @@ void Bar::createInstance(const WaylandOutput& output, std::size_t barIndex, cons
             barConfig.reserveSpace, exclusiveZone);
 
   auto surfaceConfig = LayerSurfaceConfig{
-      .nameSpace = "noctalia-" + barConfig.name,
+      .nameSpace = "noctalia-bar-" + barConfig.name,
       .layer = LayerShellLayer::Top,
       .anchor = anchor,
       .width = surfW,
@@ -1031,11 +1031,6 @@ void Bar::applyBarCompositorBlur(BarInstance& instance) const {
   if (instance.surface == nullptr) {
     return;
   }
-  if (!instance.barConfig.backgroundBlur) {
-    instance.surface->clearBlurRegion();
-    return;
-  }
-
   constexpr float kBlurVisibleOpacity = 0.02f;
   if (instance.barConfig.autoHide && instance.hideOpacity < kBlurVisibleOpacity) {
     instance.surface->clearBlurRegion();

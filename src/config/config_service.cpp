@@ -380,8 +380,6 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.widgetSpacing = *ovr.widgetSpacing;
     if (ovr.shadow)
       resolved.shadow = *ovr.shadow;
-    if (ovr.backgroundBlur)
-      resolved.backgroundBlur = *ovr.backgroundBlur;
     if (ovr.startWidgets)
       resolved.startWidgets = *ovr.startWidgets;
     if (ovr.centerWidgets)
@@ -729,8 +727,6 @@ void ConfigService::parseTable(const toml::table& tbl) {
         bar.widgetSpacing = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["shadow"].value<bool>())
         bar.shadow = *v;
-      if (auto v = (*barTbl)["background_blur"].value<bool>())
-        bar.backgroundBlur = *v;
       if (auto v = (*barTbl)["scale"].value<double>())
         bar.scale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
       if (auto* n = (*barTbl)["start"].as_array())
@@ -814,8 +810,6 @@ void ConfigService::parseTable(const toml::table& tbl) {
             ovr.scale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
           if (auto v = (*monTbl)["shadow"].value<bool>())
             ovr.shadow = *v;
-          if (auto v = (*monTbl)["background_blur"].value<bool>())
-            ovr.backgroundBlur = *v;
           if (auto* n = (*monTbl)["start"].as_array())
             ovr.startWidgets = readStringArray(*n);
           if (auto* n = (*monTbl)["center"].as_array())
@@ -1130,9 +1124,9 @@ void ConfigService::parseTable(const toml::table& tbl) {
     }
   }
 
-  // Parse [overview]
-  if (auto* ovTbl = tbl["overview"].as_table()) {
-    auto& ov = m_config.overview;
+  // Parse [backdrop]
+  if (auto* ovTbl = tbl["backdrop"].as_table()) {
+    auto& ov = m_config.backdrop;
     if (auto v = (*ovTbl)["enabled"].value<bool>())
       ov.enabled = *v;
     if (auto v = (*ovTbl)["unload_when_not_in_use"].value<bool>())
@@ -1156,10 +1150,13 @@ void ConfigService::parseTable(const toml::table& tbl) {
       notif.enableDaemon = *v;
     if (auto v = notifTable["position"].value<std::string>())
       notif.position = *v;
+    if (auto v = notifTable["layer"].value<std::string>())
+      notif.layer = *v;
     if (auto v = notifTable["background_opacity"].value<double>())
       notif.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
-    if (auto v = notifTable["background_blur"].value<bool>())
-      notif.backgroundBlur = *v;
+    if (const auto* v = notifTable.get("monitors")) {
+      notif.monitors = readStringArray(*v);
+    }
   };
 
   if (auto* notifTbl = tbl["notification"].as_table()) {
@@ -1195,8 +1192,6 @@ void ConfigService::parseTable(const toml::table& tbl) {
       dock.marginV = std::clamp(static_cast<std::int32_t>(*v), 0, 100);
     if (auto v = (*dockTbl)["shadow"].value<bool>())
       dock.shadow = *v;
-    if (auto v = (*dockTbl)["background_blur"].value<bool>())
-      dock.backgroundBlur = *v;
     if (auto v = (*dockTbl)["show_running"].value<bool>())
       dock.showRunning = *v;
     if (auto v = (*dockTbl)["auto_hide"].value<bool>())
@@ -1405,6 +1400,38 @@ void ConfigService::parseTable(const toml::table& tbl) {
         setHookCommandsFromNode(node, hooks.commands[static_cast<std::size_t>(*kind)]);
       }
     }
+  }
+
+  // Parse [[control_center.shortcuts]]
+  if (auto* ccTbl = tbl["control_center"].as_table()) {
+    if (auto* shortcutsArr = (*ccTbl)["shortcuts"].as_array()) {
+      m_config.controlCenter.shortcuts.clear();
+      for (const auto& entry : *shortcutsArr) {
+        auto* entryTbl = entry.as_table();
+        if (entryTbl == nullptr) {
+          continue;
+        }
+        ShortcutConfig sc;
+        if (auto v = (*entryTbl)["type"].value<std::string>()) {
+          sc.type = *v;
+        }
+        if (auto v = (*entryTbl)["label"].value<std::string>()) {
+          sc.label = *v;
+        }
+        if (auto v = (*entryTbl)["icon"].value<std::string>()) {
+          sc.icon = *v;
+        }
+        if (!sc.type.empty()) {
+          m_config.controlCenter.shortcuts.push_back(std::move(sc));
+        }
+      }
+    }
+  }
+  if (m_config.controlCenter.shortcuts.empty()) {
+    m_config.controlCenter.shortcuts = {
+        {"wifi", {}, {}},       {"bluetooth", {}, {}},    {"wallpaper", {}, {}},     {"idle_inhibitor", {}, {}},
+        {"nightlight", {}, {}}, {"notification", {}, {}}, {"power_profile", {}, {}}, {"session", {}, {}},
+    };
   }
 
   // Parse [idle.behavior.*]

@@ -25,6 +25,7 @@ public:
 
   void setChangeCallback(ChangeCallback callback);
   [[nodiscard]] bool isEnabled() const noexcept { return m_enabled; }
+  [[nodiscard]] bool canTrackOverviewState() const noexcept { return m_enabled && m_socketPath.has_value(); }
   [[nodiscard]] bool hasOverviewState() const noexcept { return m_overviewKnown; }
   [[nodiscard]] bool isOverviewOpen() const noexcept { return m_overviewOpen; }
   [[nodiscard]] int pollFd() const noexcept { return m_socketFd; }

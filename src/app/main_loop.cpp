@@ -11,18 +11,29 @@
 #include <algorithm>
 #include <cerrno>
 #include <chrono>
+#include <format>
 #include <optional>
 #include <poll.h>
 #include <stdexcept>
 #include <typeinfo>
+#include <utility>
 #include <wayland-client-core.h>
 
 namespace {
   constexpr Logger kLog("main");
-  constexpr float kSlowMainLoopOperationWarnMs = 50.0f;
+  constexpr float kSlowMainLoopOperationDebugMs = 50.0f;
+  constexpr float kSlowMainLoopOperationWarnMs = 1000.0f;
 
   float elapsedSince(std::chrono::steady_clock::time_point start) {
     return std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - start).count();
+  }
+
+  template <typename... Args> void logSlowMainLoopOperation(float ms, std::format_string<Args...> fmt, Args&&... args) {
+    if (ms >= kSlowMainLoopOperationWarnMs) {
+      kLog.warn(fmt, std::forward<Args>(args)...);
+    } else if (ms >= kSlowMainLoopOperationDebugMs) {
+      kLog.debug(fmt, std::forward<Args>(args)...);
+    }
   }
 } // namespace
 
@@ -30,7 +41,7 @@ MainLoop::MainLoop(WaylandConnection& wayland, Bar& bar, PollSourcesProvider sou
     : m_wayland(wayland), m_bar(bar), m_sourcesProvider(std::move(sourcesProvider)) {}
 
 void MainLoop::run() {
-  while (m_bar.isRunning() && !Application::s_shutdownRequested) {
+  while (!Application::s_shutdownRequested) {
     // Process deferred callbacks from the previous iteration
     auto& deferred = DeferredCall::queue();
     if (!deferred.empty()) {
@@ -42,12 +53,15 @@ void MainLoop::run() {
     }
 
     auto opStart = std::chrono::steady_clock::now();
-    if (wl_display_dispatch_pending(m_wayland.display()) < 0) {
-      throw std::runtime_error("failed to dispatch pending Wayland events");
+    while (wl_display_prepare_read(m_wayland.display()) != 0) {
+      opStart = std::chrono::steady_clock::now();
+      if (wl_display_dispatch_pending(m_wayland.display()) < 0) {
+        throw std::runtime_error("failed to dispatch pending Wayland events");
+      }
+      const float ms = elapsedSince(opStart);
+      logSlowMainLoopOperation(ms, "wl_display_dispatch_pending took {:.1f}ms before poll", ms);
     }
-    if (const float ms = elapsedSince(opStart); ms >= kSlowMainLoopOperationWarnMs) {
-      kLog.warn("wl_display_dispatch_pending blocked for {:.1f}ms before poll", ms);
-    }
+    bool waylandReadPrepared = true;
 
     // Try to flush queued requests. If the kernel send buffer is full we get
     // EAGAIN; that is the standard Wayland backpressure signal, not a fatal
@@ -59,12 +73,13 @@ void MainLoop::run() {
     do {
       flushRet = wl_display_flush(m_wayland.display());
     } while (flushRet < 0 && errno == EINTR);
-    if (const float ms = elapsedSince(opStart); ms >= kSlowMainLoopOperationWarnMs) {
-      kLog.warn("wl_display_flush blocked for {:.1f}ms before poll", ms);
-    }
+    float ms = elapsedSince(opStart);
+    logSlowMainLoopOperation(ms, "wl_display_flush took {:.1f}ms before poll", ms);
     const bool flushBlocked = flushRet < 0;
     if (flushBlocked) {
       if (errno != EAGAIN) {
+        wl_display_cancel_read(m_wayland.display());
+        waylandReadPrepared = false;
         throw std::runtime_error("failed to flush Wayland display");
       }
       waylandPollEvents |= POLLOUT;
@@ -89,7 +104,7 @@ void MainLoop::run() {
         pollTimeout = t;
       }
     }
-    if (Surface::hasPendingRenders()) {
+    if (Surface::hasPendingFrameWork() || Surface::hasPendingRenders()) {
       pollTimeout = 0;
     }
 
@@ -129,6 +144,10 @@ void MainLoop::run() {
 
     const int pollResult = ::poll(pollFds.data(), pollFds.size(), pollTimeout);
     if (pollResult < 0) {
+      if (waylandReadPrepared) {
+        wl_display_cancel_read(m_wayland.display());
+        waylandReadPrepared = false;
+      }
       if (errno == EINTR) {
         continue;
       }
@@ -142,31 +161,43 @@ void MainLoop::run() {
       do {
         flushRet = wl_display_flush(m_wayland.display());
       } while (flushRet < 0 && errno == EINTR);
-      if (const float ms = elapsedSince(opStart); ms >= kSlowMainLoopOperationWarnMs) {
-        kLog.warn("wl_display_flush blocked for {:.1f}ms after POLLOUT", ms);
-      }
+      ms = elapsedSince(opStart);
+      logSlowMainLoopOperation(ms, "wl_display_flush took {:.1f}ms after POLLOUT", ms);
       if (flushRet < 0 && errno != EAGAIN) {
+        if (waylandReadPrepared) {
+          wl_display_cancel_read(m_wayland.display());
+          waylandReadPrepared = false;
+        }
         throw std::runtime_error("failed to flush Wayland display");
       }
     }
 
-    // Dispatch Wayland events
-    if ((pollFds[0].revents & POLLIN) != 0) {
+    // Read and dispatch Wayland events. Keep socket reads separate from
+    // callback dispatch so stalls identify which half is actually slow.
+    const bool waylandReadable = (pollFds[0].revents & (POLLIN | POLLERR | POLLHUP)) != 0;
+    if (waylandReadable) {
       opStart = std::chrono::steady_clock::now();
-      if (wl_display_dispatch(m_wayland.display()) < 0) {
-        throw std::runtime_error("failed to dispatch Wayland events");
+      if (wl_display_read_events(m_wayland.display()) < 0) {
+        waylandReadPrepared = false;
+        throw std::runtime_error("failed to read Wayland events");
       }
-      if (const float ms = elapsedSince(opStart); ms >= kSlowMainLoopOperationWarnMs) {
-        kLog.warn("wl_display_dispatch blocked for {:.1f}ms", ms);
-      }
+      ms = elapsedSince(opStart);
+      logSlowMainLoopOperation(ms, "wl_display_read_events took {:.1f}ms", ms);
+      waylandReadPrepared = false;
     } else {
-      opStart = std::chrono::steady_clock::now();
-      if (wl_display_dispatch_pending(m_wayland.display()) < 0) {
-        throw std::runtime_error("failed to dispatch pending Wayland events");
-      }
-      if (const float ms = elapsedSince(opStart); ms >= kSlowMainLoopOperationWarnMs) {
-        kLog.warn("wl_display_dispatch_pending blocked for {:.1f}ms after poll", ms);
-      }
+      wl_display_cancel_read(m_wayland.display());
+      waylandReadPrepared = false;
+    }
+
+    opStart = std::chrono::steady_clock::now();
+    if (wl_display_dispatch_pending(m_wayland.display()) < 0) {
+      throw std::runtime_error("failed to dispatch pending Wayland events");
+    }
+    ms = elapsedSince(opStart);
+    if (waylandReadable) {
+      logSlowMainLoopOperation(ms, "wl_display_dispatch_pending took {:.1f}ms after read", ms);
+    } else {
+      logSlowMainLoopOperation(ms, "wl_display_dispatch_pending took {:.1f}ms after poll", ms);
     }
 
     // Dispatch all sources. A source callback (notably config reload) can
@@ -183,16 +214,19 @@ void MainLoop::run() {
       }
       opStart = std::chrono::steady_clock::now();
       source->dispatch(pollFds, sourceStartIndices[i]);
-      if (const float ms = elapsedSince(opStart); ms >= kSlowMainLoopOperationWarnMs) {
-        kLog.warn("poll source {} dispatch blocked for {:.1f}ms", typeid(*source).name(), ms);
-      }
+      ms = elapsedSince(opStart);
+      logSlowMainLoopOperation(ms, "poll source {} dispatch took {:.1f}ms", typeid(*source).name(), ms);
     }
 
     opStart = std::chrono::steady_clock::now();
+    Surface::drainPendingFrameWork();
+    ms = elapsedSince(opStart);
+    logSlowMainLoopOperation(ms, "queued surface frame work took {:.1f}ms", ms);
+
+    opStart = std::chrono::steady_clock::now();
     Surface::drainPendingRenders();
-    if (const float ms = elapsedSince(opStart); ms >= kSlowMainLoopOperationWarnMs) {
-      kLog.warn("queued surface rendering blocked main loop for {:.1f}ms", ms);
-    }
+    ms = elapsedSince(opStart);
+    logSlowMainLoopOperation(ms, "queued surface rendering took {:.1f}ms", ms);
   }
 
   // Close all UI surfaces immediately and flush Wayland to make them disappear

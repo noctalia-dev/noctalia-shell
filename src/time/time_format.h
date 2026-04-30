@@ -17,6 +17,8 @@ std::string formatTimeAgo(std::chrono::system_clock::time_point tp);
 [[nodiscard]] std::string formatCurrentDate();
 
 // Formats current local time with a C++20 chrono format string (e.g. "{:%H:%M}").
+// Bare chrono specs such as "%H:%M" are accepted, as are strftime-style no-pad
+// numeric specifiers such as "%-I".
 [[nodiscard]] std::string formatLocalTime(const char* fmt);
 
 // Formats a filesystem modification time as "YYYY-MM-DD HH:MM".

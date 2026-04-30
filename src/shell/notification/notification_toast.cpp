@@ -1,6 +1,7 @@
 #include "shell/notification/notification_toast.h"
 
 #include "config/config_service.h"
+#include "config/config_types.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
@@ -1082,6 +1083,33 @@ std::string NotificationToast::notificationPosition() const {
   return m_config->config().notification.position;
 }
 
+std::string NotificationToast::notificationLayer() const {
+  if (m_config == nullptr) {
+    return "top";
+  }
+  const std::string& configured = m_config->config().notification.layer;
+  if (configured == "overlay") {
+    return "overlay";
+  }
+  return "top";
+}
+
+std::vector<std::string> NotificationToast::notificationMonitors() const {
+  if (m_config == nullptr) {
+    return {};
+  }
+  return m_config->config().notification.monitors;
+}
+
+bool NotificationToast::shouldRenderOnOutput(const WaylandOutput& output) const {
+  const auto selectedMonitors = notificationMonitors();
+  if (selectedMonitors.empty()) {
+    return true;
+  }
+  return std::any_of(selectedMonitors.begin(), selectedMonitors.end(),
+                     [&output](const std::string& match) { return outputMatchesSelector(match, output); });
+}
+
 bool NotificationToast::isBottomStacking() const { return isBottomPosition(notificationPosition()); }
 
 bool NotificationToast::revealFromLeftEdge() const { return isLeftPosition(notificationPosition()); }
@@ -1204,7 +1232,10 @@ void NotificationToast::ensureSurfaces() {
 
   const auto surfaceWidth = static_cast<uint32_t>(kSurfaceWidth);
   const std::string position = notificationPosition();
-  if (!m_instances.empty() && position != m_lastPosition) {
+  const std::string layer = notificationLayer();
+  const auto selectedMonitors = notificationMonitors();
+  if (!m_instances.empty() &&
+      (position != m_lastPosition || layer != m_lastLayer || selectedMonitors != m_lastMonitorSelectors)) {
     for (auto& inst : m_instances) {
       inst->animations.cancelAll();
       inst->inputDispatcher.setSceneRoot(nullptr);
@@ -1212,9 +1243,14 @@ void NotificationToast::ensureSurfaces() {
     m_instances.clear();
   }
   m_lastPosition = position;
+  m_lastLayer = layer;
+  m_lastMonitorSelectors = selectedMonitors;
 
   for (const auto& output : m_wayland->outputs()) {
     if (output.output == nullptr) {
+      continue;
+    }
+    if (!shouldRenderOnOutput(output)) {
       continue;
     }
     const auto surfaceHeight = surfaceHeightForOutput(output.output);
@@ -1258,8 +1294,8 @@ void NotificationToast::ensureSurfaces() {
     }
 
     auto surfaceConfig = LayerSurfaceConfig{
-        .nameSpace = "noctalia-notifications",
-        .layer = LayerShellLayer::Top,
+        .nameSpace = "noctalia-notification",
+        .layer = layer == "overlay" ? LayerShellLayer::Overlay : LayerShellLayer::Top,
         .anchor = anchor,
         .width = surfaceWidth,
         .height = surfaceHeight,
@@ -1394,9 +1430,7 @@ void NotificationToast::updateInputRegion(Instance& inst) const {
   }
 
   inst.surface->setInputRegion(rects);
-
-  const bool blur = m_config != nullptr ? m_config->config().notification.backgroundBlur : true;
-  inst.surface->setBlurRegion(blur ? blurRects : std::vector<InputRect>{});
+  inst.surface->setBlurRegion(blurRects);
 }
 
 float NotificationToast::cardReveal(const Instance::CardState& cs) const { return cardRevealFromNode(cs.cardNode); }

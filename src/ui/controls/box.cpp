@@ -2,7 +2,6 @@
 
 #include "render/programs/rect_program.h"
 #include "render/scene/rect_node.h"
-#include "ui/card_style.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -116,4 +115,8 @@ void Box::setPanelStyle() {
   m_rect->setStyle(style);
 }
 
-void Box::setCardStyle(float scale) { ui::applyCardStyle(*this, scale); }
+void Box::setCardStyle(float scale) {
+  setFill(roleColor(ColorRole::Surface));
+  setBorder(roleColor(ColorRole::Outline, 0.5f), Style::borderWidth);
+  setRadius(Style::radiusXl * scale);
+}

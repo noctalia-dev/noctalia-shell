@@ -205,7 +205,7 @@ namespace settings {
       return "app-window";
     if (section == "dock")
       return "apps";
-    if (section == "overview")
+    if (section == "backdrop")
       return "layout-grid";
     if (section == "wallpaper")
       return "wallpaper-selector";
@@ -360,23 +360,23 @@ namespace settings {
                                 {"wallpaper", "automation", "recursive"},
                                 ToggleSetting{cfg.wallpaper.automation.recursive}, "subdirectories", true));
 
-    // Overview (niri-only: surface only renders when niri's overview IPC is available)
-    if (env.niriOverviewSupported) {
-      entries.push_back(makeEntry("overview", "general", tr("settings.schema.shared.enabled.label"),
-                                  tr("settings.schema.overview.enabled.description"), {"overview", "enabled"},
-                                  ToggleSetting{cfg.overview.enabled}, "wallpaper backdrop"));
-      entries.push_back(makeEntry("overview", "general", tr("settings.schema.overview.unload-when-hidden.label"),
-                                  tr("settings.schema.overview.unload-when-hidden.description"),
-                                  {"overview", "unload_when_not_in_use"},
-                                  ToggleSetting{cfg.overview.unloadWhenNotInUse}, "memory"));
-      entries.push_back(makeEntry("overview", "backdrop", tr("settings.schema.overview.blur-intensity.label"),
-                                  tr("settings.schema.overview.blur-intensity.description"),
-                                  {"overview", "blur_intensity"},
-                                  SliderSetting{cfg.overview.blurIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
-      entries.push_back(makeEntry("overview", "backdrop", tr("settings.schema.overview.tint-intensity.label"),
-                                  tr("settings.schema.overview.tint-intensity.description"),
-                                  {"overview", "tint_intensity"},
-                                  SliderSetting{cfg.overview.tintIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
+    // Backdrop (niri-only: surface tracks niri overview state)
+    if (env.niriBackdropSupported) {
+      entries.push_back(makeEntry("backdrop", "general", tr("settings.schema.shared.enabled.label"),
+                                  tr("settings.schema.backdrop.enabled.description"), {"backdrop", "enabled"},
+                                  ToggleSetting{cfg.backdrop.enabled}, "wallpaper backdrop"));
+      entries.push_back(makeEntry("backdrop", "general", tr("settings.schema.backdrop.unload-when-hidden.label"),
+                                  tr("settings.schema.backdrop.unload-when-hidden.description"),
+                                  {"backdrop", "unload_when_not_in_use"},
+                                  ToggleSetting{cfg.backdrop.unloadWhenNotInUse}, "memory"));
+      entries.push_back(makeEntry("backdrop", "backdrop", tr("settings.schema.backdrop.blur-intensity.label"),
+                                  tr("settings.schema.backdrop.blur-intensity.description"),
+                                  {"backdrop", "blur_intensity"},
+                                  SliderSetting{cfg.backdrop.blurIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
+      entries.push_back(makeEntry("backdrop", "backdrop", tr("settings.schema.backdrop.tint-intensity.label"),
+                                  tr("settings.schema.backdrop.tint-intensity.description"),
+                                  {"backdrop", "tint_intensity"},
+                                  SliderSetting{cfg.backdrop.tintIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
     }
 
     // Templates
@@ -444,9 +444,6 @@ namespace settings {
                                 tr("settings.schema.dock.background-opacity.description"),
                                 {"dock", "background_opacity"},
                                 SliderSetting{cfg.dock.backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "alpha"));
-    entries.push_back(makeEntry("dock", "effects", tr("settings.schema.shared.background-blur.label"),
-                                tr("settings.schema.dock.background-blur.description"), {"dock", "background_blur"},
-                                ToggleSetting{cfg.dock.backgroundBlur}, "blur"));
     entries.push_back(makeEntry("dock", "effects", tr("settings.schema.shared.shadow.label"),
                                 tr("settings.schema.dock.shadow.description"), {"dock", "shadow"},
                                 ToggleSetting{cfg.dock.shadow}, "shadow"));
@@ -611,10 +608,6 @@ namespace settings {
                                 tr("settings.schema.notifications.daemon.description"),
                                 {"notification", "enable_daemon"}, ToggleSetting{cfg.notification.enableDaemon},
                                 "dbus"));
-    entries.push_back(makeEntry("notifications", "toasts", tr("settings.schema.notifications.toast-blur.label"),
-                                tr("settings.schema.notifications.toast-blur.description"),
-                                {"notification", "background_blur"}, ToggleSetting{cfg.notification.backgroundBlur},
-                                "popup"));
     entries.push_back(makeEntry("notifications", "toasts", tr("settings.schema.notifications.position.label"),
                                 tr("settings.schema.notifications.position.description"), {"notification", "position"},
                                 plainSelect({{"top_right", "settings.options.screen-position.top-right"},
@@ -625,10 +618,21 @@ namespace settings {
                                              {"bottom_center", "settings.options.screen-position.bottom-center"}},
                                             cfg.notification.position),
                                 "toast popup placement anchor"));
+    entries.push_back(makeEntry(
+        "notifications", "toasts", tr("settings.schema.notifications.layer.label"),
+        tr("settings.schema.notifications.layer.description"), {"notification", "layer"},
+        asSegmented(plainSelect({{"top", "settings.options.layer.top"}, {"overlay", "settings.options.layer.overlay"}},
+                                cfg.notification.layer)),
+        "toast layer shell z-order"));
     entries.push_back(makeEntry("notifications", "toasts", tr("settings.schema.notifications.toast-opacity.label"),
                                 tr("settings.schema.notifications.toast-opacity.description"),
                                 {"notification", "background_opacity"},
                                 SliderSetting{cfg.notification.backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "popup"));
+    entries.push_back(
+        makeEntry("notifications", "toasts", tr("settings.schema.notifications.monitors.label"),
+                  tr("settings.schema.notifications.monitors.description"), {"notification", "monitors"},
+                  ListSetting{.items = cfg.notification.monitors, .suggestedOptions = env.availableOutputs},
+                  "monitor output display screen"));
 
     // Bar
     if (selectedBar != nullptr && selectedMonitorOverride == nullptr) {
@@ -697,9 +701,6 @@ namespace settings {
       entries.push_back(makeEntry(section, "shape", tr("settings.schema.shared.background-opacity.label"),
                                   tr("settings.schema.bar.background-opacity.description"), path("background_opacity"),
                                   SliderSetting{selectedBar->backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "alpha"));
-      entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.background-blur.label"),
-                                  tr("settings.schema.bar.background-blur.description"), path("background_blur"),
-                                  ToggleSetting{selectedBar->backgroundBlur}, "blur"));
       entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.shadow.label"),
                                   tr("settings.schema.bar.shadow.description"), path("shadow"),
                                   ToggleSetting{selectedBar->shadow}, "shadow"));
@@ -813,9 +814,6 @@ namespace settings {
           section, "shape", tr("settings.schema.shared.background-opacity.label"),
           tr("settings.schema.bar.background-opacity.description"), mpath("background_opacity"),
           SliderSetting{ovr.backgroundOpacity.value_or(bar.backgroundOpacity), 0.0f, 1.0f, 0.01f, false}, "alpha"));
-      entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.background-blur.label"),
-                                  tr("settings.schema.bar.background-blur.description"), mpath("background_blur"),
-                                  ToggleSetting{ovr.backgroundBlur.value_or(bar.backgroundBlur)}, "blur"));
       entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.shadow.label"),
                                   tr("settings.schema.bar.shadow.description"), mpath("shadow"),
                                   ToggleSetting{ovr.shadow.value_or(bar.shadow)}, "shadow"));
