@@ -1056,8 +1056,7 @@ void PanelManager::applyPanelCompositorBlur() {
   const CornerShapes corners = m_attachedToBar ? attached_panel::cornerShapes(m_attachedBarPosition) : CornerShapes{};
   const RectInsets logicalInset =
       m_attachedToBar ? attached_panel::logicalInset(m_attachedBarPosition, radius) : RectInsets{};
-  const Radii radii = m_attachedToBar ? attached_panel::cornerRadii(m_attachedBarPosition, radius)
-                                      : Radii{radius, radius, radius, radius};
+  const Radii radii = Radii{radius, radius, radius, radius};
   auto strips = Surface::tessellateShape(bx, by, bw, bh, corners, logicalInset, radii);
   if (strips.empty()) {
     m_surface->clearBlurRegion();
