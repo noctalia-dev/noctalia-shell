@@ -96,7 +96,7 @@ bool Image::setSourceFile(Renderer& renderer, const std::string& path, int targe
   if (m_texture.id == 0) {
     m_sourcePath.clear();
     if (m_image != nullptr) {
-      m_image->setTextureId(0);
+      m_image->setTextureId({});
     }
     return false;
   }
@@ -146,7 +146,7 @@ bool Image::setSourceFileAsync(Renderer& renderer, AsyncTextureCache& cache, con
   if (m_texture.id == 0) {
     m_sourcePath = path;
     if (m_image != nullptr) {
-      m_image->setTextureId(0);
+      m_image->setTextureId({});
       m_image->setFrameSize(0.0f, 0.0f);
     }
     return false;
@@ -173,7 +173,7 @@ bool Image::setSourceBytes(Renderer& renderer, const std::uint8_t* data, std::si
   if (m_texture.id == 0) {
     m_sourcePath.clear();
     if (m_image != nullptr) {
-      m_image->setTextureId(0);
+      m_image->setTextureId({});
     }
     return false;
   }
@@ -200,7 +200,7 @@ bool Image::setSourceRaw(Renderer& renderer, const std::uint8_t* data, std::size
   if (m_texture.id == 0) {
     m_sourcePath.clear();
     if (m_image != nullptr) {
-      m_image->setTextureId(0);
+      m_image->setTextureId({});
     }
     return false;
   }
@@ -251,7 +251,7 @@ void Image::clear(Renderer& renderer) {
   m_sourceTargetSize = 0;
   m_sourceMipmap = false;
   if (m_image != nullptr) {
-    m_image->setTextureId(0);
+    m_image->setTextureId({});
     m_image->setFrameSize(0.0f, 0.0f);
   }
 }
@@ -304,7 +304,7 @@ void Image::doLayout(Renderer& renderer) {
       m_ownsTexture = false;
       m_asyncTargetSize = textureTargetSize;
       if (m_image != nullptr) {
-        m_image->setTextureId(0);
+        m_image->setTextureId({});
         m_image->setFrameSize(0.0f, 0.0f);
       }
       m_texture = m_asyncTextureCache->acquire(m_asyncSourcePath, m_asyncTargetSize, m_asyncMipmap);

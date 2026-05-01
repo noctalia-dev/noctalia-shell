@@ -121,7 +121,7 @@ void WallpaperRenderer::render() {
   auto sh = static_cast<float>(m_logicalHeight);
 
   // If no second texture, just draw the first using fade at progress 0
-  GLuint tex2 = (m_tex2 != 0) ? m_tex2 : m_tex1;
+  TextureId tex2 = (m_tex2 != 0) ? m_tex2 : m_tex1;
   float progress = (m_tex2 != 0) ? m_progress : 0.0f;
 
   m_program.draw(m_transition, WallpaperSourceKind::Image, m_tex1, rgba(0.0f, 0.0f, 0.0f, 1.0f),
@@ -160,7 +160,7 @@ void WallpaperRenderer::renderToFbo(GLuint targetFbo) {
   auto sw = static_cast<float>(m_logicalWidth);
   auto sh = static_cast<float>(m_logicalHeight);
 
-  GLuint tex2 = (m_tex2 != 0) ? m_tex2 : m_tex1;
+  TextureId tex2 = (m_tex2 != 0) ? m_tex2 : m_tex1;
   float progress = (m_tex2 != 0) ? m_progress : 0.0f;
 
   m_program.draw(m_transition, WallpaperSourceKind::Image, m_tex1, rgba(0.0f, 0.0f, 0.0f, 1.0f),
@@ -182,9 +182,9 @@ void WallpaperRenderer::swapBuffers() {
                                   m_logicalHeight, m_bufferWidth, m_bufferHeight);
 }
 
-void WallpaperRenderer::setTransitionState(GLuint tex1, GLuint tex2, float imgW1, float imgH1, float imgW2, float imgH2,
-                                           float progress, WallpaperTransition transition, WallpaperFillMode fillMode,
-                                           const TransitionParams& params) {
+void WallpaperRenderer::setTransitionState(TextureId tex1, TextureId tex2, float imgW1, float imgH1, float imgW2,
+                                           float imgH2, float progress, WallpaperTransition transition,
+                                           WallpaperFillMode fillMode, const TransitionParams& params) {
   m_tex1 = tex1;
   m_tex2 = tex2;
   m_imgW1 = imgW1;

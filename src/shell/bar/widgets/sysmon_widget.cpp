@@ -285,7 +285,7 @@ void SysmonWidget::doUpdate(Renderer& renderer) {
 
   if (m_displayMode == SysmonDisplayMode::Graph) {
     if (m_monitor != nullptr && m_monitor->isRunning()) {
-      updateGraph();
+      updateGraph(renderer);
       scheduleNextUpdate(m_monitor->latest().sampledAt);
     } else {
       clearGraph();
@@ -334,7 +334,7 @@ void SysmonWidget::clearGraph() {
   requestRedraw();
 }
 
-void SysmonWidget::updateGraph() {
+void SysmonWidget::updateGraph(Renderer& renderer) {
   if (m_graphNode == nullptr || m_monitor == nullptr || !m_monitor->isRunning()) {
     return;
   }
@@ -371,7 +371,7 @@ void SysmonWidget::updateGraph() {
                                 (data[static_cast<std::size_t>(n - 1)] - data[static_cast<std::size_t>(n - 2)]) * 0.5f,
                             0.0f, 1.0f));
 
-  m_graphNode->setData(data.data(), texSize, nullptr, 0);
+  m_graphNode->setData(renderer.textureManager(), data.data(), texSize, nullptr, 0);
   m_graphNode->setCount1(static_cast<float>(n));
   m_graphInitialized = true;
   m_lastSampleAt = latestSampleAt;

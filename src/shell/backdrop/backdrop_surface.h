@@ -1,6 +1,8 @@
 #pragma once
 
 #include "render/core/shader_program.h"
+#include "render/core/texture_handle.h"
+#include "render/core/texture_manager.h"
 #include "render/programs/blur_program.h"
 #include "render/wallpaper_renderer.h"
 #include "wayland/layer_surface.h"
@@ -25,7 +27,7 @@ public:
   }
   void setUnloadWhenInactive(bool v) noexcept { m_unloadWhenInactive = v; }
   void setActive(bool active);
-  void setWallpaperState(GLuint tex, float imgW, float imgH, WallpaperFillMode fillMode);
+  void setWallpaperState(TextureId tex, float imgW, float imgH, WallpaperFillMode fillMode);
 
   [[nodiscard]] WallpaperRenderer* wallpaperRenderer() noexcept { return &m_wallpaperRenderer; }
 
@@ -41,14 +43,15 @@ private:
   void destroyFbos();
 
   WallpaperRenderer m_wallpaperRenderer;
+  TextureManager m_textureManager;
   BlurProgram m_blurProgram;
   ShaderProgram m_blitProgram;
   ShaderProgram m_tintProgram;
 
   GLuint m_fbo1 = 0;
-  GLuint m_fboTex1 = 0;
   GLuint m_fbo2 = 0;
-  GLuint m_fboTex2 = 0;
+  TextureHandle m_fboTex1;
+  TextureHandle m_fboTex2;
 
   std::uint32_t m_bufW = 0;
   std::uint32_t m_bufH = 0;

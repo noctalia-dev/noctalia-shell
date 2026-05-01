@@ -1,6 +1,7 @@
 #pragma once
 
 #include "render/core/shader_program.h"
+#include "render/core/texture_handle.h"
 
 #include <GLES2/gl2.h>
 #include <cstdint>
@@ -13,7 +14,7 @@ public:
   // Draw srcTex to the currently-bound framebuffer using a separable Gaussian blur.
   // dirX/dirY: blur direction (1,0 = horizontal, 0,1 = vertical).
   // radius: kernel half-width in texels (0 = no blur, 20 = maximum).
-  void draw(GLuint srcTex, std::uint32_t width, std::uint32_t height, float dirX, float dirY, float radius) const;
+  void draw(TextureId srcTex, std::uint32_t width, std::uint32_t height, float dirX, float dirY, float radius) const;
 
 private:
   ShaderProgram m_program;

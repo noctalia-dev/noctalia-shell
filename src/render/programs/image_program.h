@@ -3,6 +3,7 @@
 #include "render/core/color.h"
 #include "render/core/mat3.h"
 #include "render/core/shader_program.h"
+#include "render/core/texture_handle.h"
 
 #include <GLES2/gl2.h>
 
@@ -17,7 +18,7 @@ public:
   void ensureInitialized();
   void destroy();
 
-  void draw(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height, const Color& tint,
+  void draw(TextureId texture, float surfaceWidth, float surfaceHeight, float width, float height, const Color& tint,
             float opacity, float radius = 0.0f, const Color& borderColor = {0.0f, 0.0f, 0.0f, 0.0f},
             float borderWidth = 0.0f, int fitMode = 0, float textureWidth = 0.0f, float textureHeight = 0.0f,
             const Mat3& transform = Mat3::identity()) const;

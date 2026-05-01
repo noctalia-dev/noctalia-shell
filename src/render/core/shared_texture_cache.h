@@ -10,7 +10,7 @@ class GlSharedContext;
 // Path-keyed, refcounted texture cache backed by a TextureManager living in
 // the shared EGL context. Any subsystem in the shared context's share group
 // (shell, lockscreen, backdrop, wallpaper) can acquire a texture by path and
-// get back the same GLuint — textures are decoded and uploaded once.
+// get back the same TextureId — textures are decoded and uploaded once.
 class SharedTextureCache {
 public:
   SharedTextureCache() = default;

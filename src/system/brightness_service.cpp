@@ -224,13 +224,21 @@ namespace {
 
   std::string resolveBacklightConnector(const std::string& sysfsPath, const WaylandConnection& wayland) {
     std::error_code ec;
+    const auto deviceLink = fs::read_symlink(sysfsPath + "/device", ec);
+    if (ec) {
+      for (const auto& output : wayland.outputs()) {
+        if (output.connectorName.starts_with("eDP")) {
+          return output.connectorName;
+        }
+      }
+      return {};
+    }
 
     const auto devicePath = fs::canonical(sysfsPath + "/device", ec);
     if (ec) {
       return {};
     }
 
-    const std::string devicePathStr = devicePath.string();
     const std::string drmClassPath = "/sys/class/drm";
     DIR* dir = ::opendir(drmClassPath.c_str());
     if (dir == nullptr) {
@@ -244,28 +252,35 @@ namespace {
         continue;
       }
 
+      const auto drmDevicePath = fs::canonical(drmClassPath + "/" + name + "/device", ec);
+      if (ec) {
+        continue;
+      }
+
+      if (drmDevicePath != devicePath) {
+        continue;
+      }
+
       const auto dashPos = name.find('-');
       if (dashPos == std::string::npos) {
         continue;
       }
 
       const std::string connector = name.substr(dashPos + 1);
-      if (findOutputByConnector(wayland, connector) == nullptr) {
-        continue;
-      }
-
-      const auto drmConnectorPath = fs::canonical(drmClassPath + "/" + name, ec);
-      if (ec) {
-        continue;
-      }
-
-      const std::string drmConnectorStr = drmConnectorPath.string();
-      if (devicePathStr == drmConnectorStr || devicePathStr.starts_with(drmConnectorStr + "/")) {
+      if (findOutputByConnector(wayland, connector) != nullptr) {
         match = connector;
         break;
       }
     }
     ::closedir(dir);
+
+    if (match.empty()) {
+      for (const auto& output : wayland.outputs()) {
+        if (output.connectorName.starts_with("eDP")) {
+          return output.connectorName;
+        }
+      }
+    }
 
     return match;
   }
@@ -756,12 +771,6 @@ struct BrightnessService::Impl {
 
       const std::string connectorName = resolveBacklightConnector(path, wayland);
       const WaylandOutput* output = findOutputByConnector(wayland, connectorName);
-
-      if (connectorName.empty() || output == nullptr) {
-        kLog.debug("skipping backlight '{}' because it could not be matched to an active output", name);
-        continue;
-      }
-
       const BrightnessBackendPreference preference = backendPreferenceForOutput(activeConfig, output);
       if (preference == BrightnessBackendPreference::None || preference == BrightnessBackendPreference::Ddcutil) {
         continue;

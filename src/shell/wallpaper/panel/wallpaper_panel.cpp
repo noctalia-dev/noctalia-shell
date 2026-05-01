@@ -386,7 +386,7 @@ void WallpaperPanel::doLayout(Renderer& renderer, float width, float height) {
   m_lastHeight = height;
 
   if (m_thumbnails != nullptr) {
-    m_thumbnails->uploadPending();
+    m_thumbnails->uploadPending(renderer.textureManager());
     m_thumbnailRefreshPending = false;
   }
 
@@ -406,7 +406,7 @@ void WallpaperPanel::doUpdate(Renderer& renderer) {
   }
 
   if (m_thumbnailRefreshPending && m_thumbnails != nullptr) {
-    m_thumbnails->uploadPending();
+    m_thumbnails->uploadPending(renderer.textureManager());
     m_thumbnailRefreshPending = false;
     if (m_grid != nullptr) {
       m_grid->setRenderer(&renderer);

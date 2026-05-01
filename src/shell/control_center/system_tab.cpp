@@ -261,9 +261,7 @@ void SystemTab::onFrameTick(float deltaMs) {
 
   const auto latestSampleAt = m_monitor->latest().sampledAt;
   if (latestSampleAt != std::chrono::steady_clock::time_point{} && latestSampleAt != m_lastSampleAt) {
-    updateGraphs();
-    syncLabels();
-    PanelManager::instance().requestLayout();
+    PanelManager::instance().requestUpdateOnly();
   }
 
   m_scrollProgress = scrollProgressForSample(m_lastSampleAt);
@@ -350,7 +348,7 @@ void SystemTab::doUpdate(Renderer& renderer) {
   }
 
   if (monitorRunning) {
-    updateGraphs();
+    updateGraphs(renderer);
   } else {
     if (m_cpuGraph != nullptr) {
       m_cpuGraph->setCount1(0.0f);
@@ -370,7 +368,7 @@ void SystemTab::doUpdate(Renderer& renderer) {
   syncLabels();
 }
 
-void SystemTab::updateGraphs() {
+void SystemTab::updateGraphs(Renderer& renderer) {
   if (m_monitor == nullptr || !m_monitor->isRunning()) {
     return;
   }
@@ -411,7 +409,7 @@ void SystemTab::updateGraphs() {
     }
     usage[n] = std::clamp(usage[n - 1] + (usage[n - 1] - usage[n - 2]) * 0.5f, 0.0f, 1.0f);
     temp[n] = std::clamp(temp[n - 1] + (temp[n - 1] - temp[n - 2]) * 0.5f, 0.0f, 1.0f);
-    m_cpuGraph->setData(usage.data(), texSize, temp.data(), texSize);
+    m_cpuGraph->setData(renderer.textureManager(), usage.data(), texSize, temp.data(), texSize);
     m_cpuGraph->setCount1(static_cast<float>(n));
     m_cpuGraph->setCount2(static_cast<float>(n));
   }
@@ -424,7 +422,7 @@ void SystemTab::updateGraphs() {
           static_cast<float>(std::clamp(hist[static_cast<std::size_t>(i)].ramUsagePercent / 100.0, 0.0, 1.0));
     }
     ram[n] = std::clamp(ram[n - 1] + (ram[n - 1] - ram[n - 2]) * 0.5f, 0.0f, 1.0f);
-    m_ramGraph->setData(ram.data(), texSize, nullptr, 0);
+    m_ramGraph->setData(renderer.textureManager(), ram.data(), texSize, nullptr, 0);
     m_ramGraph->setCount1(static_cast<float>(n));
   }
 
@@ -446,7 +444,7 @@ void SystemTab::updateGraphs() {
     }
     rx[n] = std::clamp(rx[n - 1] + (rx[n - 1] - rx[n - 2]) * 0.5f, 0.0f, 1.0f);
     tx[n] = std::clamp(tx[n - 1] + (tx[n - 1] - tx[n - 2]) * 0.5f, 0.0f, 1.0f);
-    m_netGraph->setData(rx.data(), texSize, tx.data(), texSize);
+    m_netGraph->setData(renderer.textureManager(), rx.data(), texSize, tx.data(), texSize);
     m_netGraph->setCount1(static_cast<float>(n));
     m_netGraph->setCount2(static_cast<float>(n));
   }
@@ -467,6 +465,7 @@ void SystemTab::updateGraphs() {
     m_netGraph->setScroll2(m_scrollProgress);
   }
 
+  PanelManager::instance().requestLayout();
   if (m_scrollProgress < 1.0f) {
     PanelManager::instance().requestRedraw();
   }

@@ -1,9 +1,10 @@
 #pragma once
 
+#include "render/core/texture_handle.h"
 #include "render/programs/graph_program.h"
 #include "render/scene/node.h"
 
-#include <GLES2/gl2.h>
+class TextureManager;
 
 class GraphNode : public Node {
 public:
@@ -14,7 +15,7 @@ public:
   GraphNode& operator=(const GraphNode&) = delete;
 
   [[nodiscard]] const GraphStyle& style() const noexcept { return m_style; }
-  [[nodiscard]] GLuint textureId() const noexcept { return m_texture; }
+  [[nodiscard]] TextureId textureId() const noexcept { return m_texture.id; }
   [[nodiscard]] int textureWidth() const noexcept { return m_texWidth; }
 
   void setLineColor1(const Color& color) {
@@ -76,14 +77,16 @@ public:
     markPaintDirty();
   }
 
-  // Upload data to the GL texture. Must be called while a GL context is current.
+  // Upload data to the backend texture. Must be called while a render context is current.
   // primary/secondary arrays contain normalized [0..1] values.
   // Pass nullptr and 0 for unused channels.
-  void setData(const float* primary, int primaryCount, const float* secondary, int secondaryCount);
+  void setData(TextureManager& textures, const float* primary, int primaryCount, const float* secondary,
+               int secondaryCount);
 
 private:
   GraphStyle m_style;
-  GLuint m_texture = 0;
+  TextureManager* m_textureManager = nullptr;
+  TextureHandle m_texture;
   int m_texWidth = 0;
   int m_texCapacity = 0;
 };

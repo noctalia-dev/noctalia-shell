@@ -4,6 +4,7 @@
 #include "render/core/color.h"
 #include "render/core/mat3.h"
 #include "render/core/shader_program.h"
+#include "render/core/texture_handle.h"
 
 #include <GLES2/gl2.h>
 #include <array>
@@ -37,8 +38,8 @@ public:
   void ensureInitialized();
   void destroy();
 
-  void draw(WallpaperTransition type, WallpaperSourceKind sourceKind1, GLuint texture1, const Color& sourceColor1,
-            WallpaperSourceKind sourceKind2, GLuint texture2, const Color& sourceColor2, float surfaceWidth,
+  void draw(WallpaperTransition type, WallpaperSourceKind sourceKind1, TextureId texture1, const Color& sourceColor1,
+            WallpaperSourceKind sourceKind2, TextureId texture2, const Color& sourceColor2, float surfaceWidth,
             float surfaceHeight, float quadWidth, float quadHeight, float imageWidth1, float imageHeight1,
             float imageWidth2, float imageHeight2, float progress, float fillMode, const TransitionParams& params,
             const Color& fillColor = rgba(0.0f, 0.0f, 0.0f, 1.0f), const Mat3& transform = Mat3::identity()) const;

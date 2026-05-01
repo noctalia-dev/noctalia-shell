@@ -243,6 +243,8 @@ const std::unordered_map<std::string, char32_t> kIcons = {
 
 } // namespace
 
+bool GlyphRegistry::contains(std::string_view name) { return kIcons.contains(std::string(name)); }
+
 char32_t GlyphRegistry::lookup(std::string_view name) {
   auto it = kIcons.find(std::string(name));
   if (it != kIcons.end()) {

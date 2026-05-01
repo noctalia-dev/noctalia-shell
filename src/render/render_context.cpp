@@ -4,6 +4,7 @@
 #include "core/resource_paths.h"
 #include "core/ui_phase.h"
 #include "render/backend/gles_render_backend.h"
+#include "render/core/texture_handle.h"
 #include "render/gl_shared_context.h"
 #include "render/render_target.h"
 #include "render/scene/effect_node.h"
@@ -81,8 +82,9 @@ void RenderContext::initialize(GlSharedContext& shared) {
   // Pango handles font fallback via Fontconfig automatically — no explicit chain.
   ensureGlPrograms();
   m_backend->textureManager().probeExtensions();
-  m_textRenderer.initialize(&m_glyphProgram);
-  m_glyphRenderer.initialize(paths::assetPath("fonts/tabler.ttf").string(), &m_glyphProgram);
+  m_textRenderer.initialize(&m_glyphProgram, &m_backend->textureManager());
+  m_glyphRenderer.initialize(paths::assetPath("fonts/tabler.ttf").string(), &m_glyphProgram,
+                             &m_backend->textureManager());
 }
 
 void RenderContext::ensureGlPrograms() {
@@ -295,7 +297,7 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
     if (hasSource1) {
       const bool hasSource2 = wallpaper->sourceKind2() == WallpaperSourceKind::Color || wallpaper->texture2() != 0;
       const WallpaperSourceKind sourceKind2 = hasSource2 ? wallpaper->sourceKind2() : wallpaper->sourceKind1();
-      const std::uint32_t texture2 = hasSource2 ? wallpaper->texture2() : wallpaper->texture1();
+      const TextureId texture2 = hasSource2 ? wallpaper->texture2() : wallpaper->texture1();
       const Color& sourceColor2 = hasSource2 ? wallpaper->sourceColor2() : wallpaper->sourceColor1();
       const float imageWidth2 = hasSource2 ? wallpaper->imageWidth2() : wallpaper->imageWidth1();
       const float imageHeight2 = hasSource2 ? wallpaper->imageHeight2() : wallpaper->imageHeight1();

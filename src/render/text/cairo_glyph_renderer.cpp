@@ -1,6 +1,7 @@
 #include "render/text/cairo_glyph_renderer.h"
 
 #include "core/log.h"
+#include "render/core/texture_manager.h"
 #include "render/programs/glyph_program.h"
 
 #include <cairo-ft.h>
@@ -81,8 +82,9 @@ std::size_t CairoGlyphRenderer::CacheKeyHash::operator()(const CacheKey& k) cons
 CairoGlyphRenderer::CairoGlyphRenderer() = default;
 CairoGlyphRenderer::~CairoGlyphRenderer() { cleanup(); }
 
-void CairoGlyphRenderer::initialize(const std::string& fontPath, GlyphProgram* program) {
+void CairoGlyphRenderer::initialize(const std::string& fontPath, GlyphProgram* program, TextureManager* textures) {
   m_program = program;
+  m_textureManager = textures;
 
   if (FT_Init_FreeType(&m_ftLibrary) != 0) {
     throw std::runtime_error("CairoGlyphRenderer: FT_Init_FreeType failed");
@@ -104,8 +106,8 @@ void CairoGlyphRenderer::initialize(const std::string& fontPath, GlyphProgram* p
 
 void CairoGlyphRenderer::cleanup() {
   for (auto& [key, entry] : m_cache) {
-    if (entry.texture != 0) {
-      glDeleteTextures(1, &entry.texture);
+    if (m_textureManager != nullptr) {
+      m_textureManager->unload(entry.texture);
     }
   }
   m_cache.clear();
@@ -125,6 +127,7 @@ void CairoGlyphRenderer::cleanup() {
     m_ftLibrary = nullptr;
   }
   m_program = nullptr;
+  m_textureManager = nullptr;
 }
 
 void CairoGlyphRenderer::setContentScale(float scale) {
@@ -136,8 +139,8 @@ void CairoGlyphRenderer::setContentScale(float scale) {
 void CairoGlyphRenderer::touch(CacheMap::iterator it) { m_lru.splice(m_lru.begin(), m_lru, it->second.lruIt); }
 
 void CairoGlyphRenderer::evict(CacheMap::iterator it) {
-  if (it->second.texture != 0) {
-    glDeleteTextures(1, &it->second.texture);
+  if (m_textureManager != nullptr) {
+    m_textureManager->unload(it->second.texture);
   }
   m_cacheBytes -= it->second.bytes;
   m_lru.erase(it->second.lruIt);
@@ -271,17 +274,15 @@ CairoGlyphRenderer::CacheEntry* CairoGlyphRenderer::lookupOrRasterize(char32_t c
   cairo_surface_destroy(surface);
   cairo_scaled_font_destroy(scaledFont);
 
-  GLuint tex = 0;
-  glGenTextures(1, &tex);
-  glBindTexture(GL_TEXTURE_2D, tex);
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, pxWidth, pxHeight, 0, GL_ALPHA, GL_UNSIGNED_BYTE, tight.data());
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  if (m_textureManager == nullptr) {
+    return nullptr;
+  }
 
-  entry.texture = tex;
+  entry.texture = m_textureManager->loadFromPixels(tight.data(), pxWidth, pxHeight, TextureDataFormat::Alpha,
+                                                   TextureFilter::Linear);
+  if (entry.texture.id == 0) {
+    return nullptr;
+  }
   entry.bytes = static_cast<std::size_t>(pxWidth) * static_cast<std::size_t>(pxHeight);
 
   const float invScale = 1.0f / m_contentScale;
@@ -303,7 +304,7 @@ void CairoGlyphRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, floa
   }
 
   CacheEntry* entry = lookupOrRasterize(codepoint, fontSize);
-  if (entry == nullptr || entry->texture == 0) {
+  if (entry == nullptr || entry->texture.id == 0) {
     return;
   }
 
@@ -327,6 +328,6 @@ void CairoGlyphRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, floa
     world.m[7] = std::round((world.m[7] + inkOffsetY) * m_contentScale) / m_contentScale - inkOffsetY;
   }
 
-  m_program->drawTinted(entry->texture, surfaceWidth, surfaceHeight, quadW, quadH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, color,
-                        world);
+  m_program->drawTinted(entry->texture.id, surfaceWidth, surfaceHeight, quadW, quadH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+                        color, world);
 }

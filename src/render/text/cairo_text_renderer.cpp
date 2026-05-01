@@ -1,6 +1,7 @@
 #include "render/text/cairo_text_renderer.h"
 
 #include "core/log.h"
+#include "render/core/texture_manager.h"
 #include "render/programs/glyph_program.h"
 
 #include <algorithm>
@@ -142,8 +143,9 @@ CairoTextRenderer::CairoTextRenderer() = default;
 
 CairoTextRenderer::~CairoTextRenderer() { cleanup(); }
 
-void CairoTextRenderer::initialize(GlyphProgram* program) {
+void CairoTextRenderer::initialize(GlyphProgram* program, TextureManager* textures) {
   m_program = program;
+  m_textureManager = textures;
 
   if (FcInit()) {
     m_fontConfigInitialized = true;
@@ -197,13 +199,14 @@ void CairoTextRenderer::cleanup() {
     m_fontConfigInitialized = false;
   }
   m_program = nullptr;
+  m_textureManager = nullptr;
 }
 
 void CairoTextRenderer::clearCaches() {
   for (auto& [key, entry] : m_cache) {
     for (auto& tile : entry.tiles) {
-      if (tile.texture != 0) {
-        glDeleteTextures(1, &tile.texture);
+      if (m_textureManager != nullptr) {
+        m_textureManager->unload(tile.texture);
       }
     }
   }
@@ -470,7 +473,7 @@ void CairoTextRenderer::rasterizeLayout(PangoLayout* layout, const Color& color,
   }
 
   // Rasterize each planned tile.
-  // Tinted path: CAIRO_FORMAT_A8 coverage mask, 1 byte/pixel, GL_ALPHA upload,
+  // Tinted path: CAIRO_FORMAT_A8 coverage mask, 1 byte/pixel alpha upload,
   // color applied in shader (u_tint). Color-independent → one cache entry per
   // string serves every color animation state.
   // Untinted path: CAIRO_FORMAT_ARGB32 with `color` baked in, BGRA->RGBA
@@ -522,19 +525,28 @@ void CairoTextRenderer::rasterizeLayout(PangoLayout* layout, const Color& color,
     }
     cairo_surface_destroy(surface);
 
-    GLuint tex = 0;
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    const GLenum glFmt = tinted ? GL_ALPHA : GL_RGBA;
-    glTexImage2D(GL_TEXTURE_2D, 0, static_cast<GLint>(glFmt), pxWidth, tileH, 0, glFmt, GL_UNSIGNED_BYTE, tight.data());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    if (m_textureManager == nullptr) {
+      entry.tiles.clear();
+      entry.bytes = 0;
+      entry.metrics = metricsFromLayout(layout);
+      return;
+    }
+
+    TextureHandle texture = m_textureManager->loadFromPixels(
+        tight.data(), pxWidth, tileH, tinted ? TextureDataFormat::Alpha : TextureDataFormat::Rgba,
+        TextureFilter::Linear);
+    if (texture.id == 0) {
+      for (auto& tile : entry.tiles) {
+        m_textureManager->unload(tile.texture);
+      }
+      entry.tiles.clear();
+      entry.bytes = 0;
+      entry.metrics = metricsFromLayout(layout);
+      return;
+    }
 
     Tile tile;
-    tile.texture = tex;
+    tile.texture = texture;
     tile.pixelHeight = tileH;
     tile.pixelYOffset = tilePlan.yTopPx;
     entry.tiles.push_back(tile);
@@ -553,8 +565,8 @@ void CairoTextRenderer::touch(CacheMap::iterator it) {
 
 void CairoTextRenderer::evict(CacheMap::iterator it) {
   for (auto& tile : it->second.tiles) {
-    if (tile.texture != 0) {
-      glDeleteTextures(1, &tile.texture);
+    if (m_textureManager != nullptr) {
+      m_textureManager->unload(tile.texture);
     }
   }
   m_cacheBytes -= it->second.bytes;
@@ -687,12 +699,12 @@ void CairoTextRenderer::draw(float surfaceWidth, float surfaceHeight, float x, f
     const float tileH = static_cast<float>(tile.pixelHeight) * invScale;
     const Mat3 tileWorld = baseWorld * Mat3::translation(0.0f, tileYLocal);
     if (entry->tinted) {
-      m_program->drawTinted(tile.texture, surfaceWidth, surfaceHeight, quadW, tileH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+      m_program->drawTinted(tile.texture.id, surfaceWidth, surfaceHeight, quadW, tileH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
                             color, tileWorld);
     } else {
       // RGBA entries are rasterized at alpha=1.0 and color-keyed by rgb, so
       // the caller's alpha is applied here as opacity.
-      m_program->draw(tile.texture, surfaceWidth, surfaceHeight, quadW, tileH, 0.0f, 0.0f, 1.0f, 1.0f, color.a,
+      m_program->draw(tile.texture.id, surfaceWidth, surfaceHeight, quadW, tileH, 0.0f, 0.0f, 1.0f, 1.0f, color.a,
                       tileWorld);
     }
   }

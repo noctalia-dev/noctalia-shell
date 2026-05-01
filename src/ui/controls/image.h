@@ -43,8 +43,8 @@ public:
   void clear(Renderer& renderer);
 
   [[nodiscard]] const std::string& sourcePath() const noexcept { return m_sourcePath; }
-  [[nodiscard]] bool hasImage() const noexcept { return m_texture.id != 0; }
-  [[nodiscard]] std::uint32_t textureId() const noexcept { return m_texture.id; }
+  [[nodiscard]] bool hasImage() const noexcept { return m_texture.valid(); }
+  [[nodiscard]] TextureId textureId() const noexcept { return m_texture.id; }
   [[nodiscard]] int sourceWidth() const noexcept { return m_texture.width; }
   [[nodiscard]] int sourceHeight() const noexcept { return m_texture.height; }
   [[nodiscard]] float aspectRatio() const noexcept {

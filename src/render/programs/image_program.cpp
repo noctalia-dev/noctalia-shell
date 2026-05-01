@@ -161,7 +161,7 @@ void ImageProgram::destroy() {
   m_transformLocation = -1;
 }
 
-void ImageProgram::draw(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height,
+void ImageProgram::draw(TextureId texture, float surfaceWidth, float surfaceHeight, float width, float height,
                         const Color& tint, float opacity, float radius, const Color& borderColor, float borderWidth,
                         int fitMode, float textureWidth, float textureHeight, const Mat3& transform) const {
   if (!m_program.isValid() || texture == 0 || width <= 0.0f || height <= 0.0f) {
@@ -188,7 +188,7 @@ void ImageProgram::draw(GLuint texture, float surfaceWidth, float surfaceHeight,
   glUniform1i(m_fitModeLocation, fitMode);
   glUniformMatrix3fv(m_transformLocation, 1, GL_FALSE, transform.m.data());
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, texture);
+  glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(texture.value()));
   glUniform1i(m_samplerLocation, 0);
   const auto posAttr = static_cast<GLuint>(m_positionLocation);
   const auto texAttr = static_cast<GLuint>(m_texCoordLocation);

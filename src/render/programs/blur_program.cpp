@@ -65,9 +65,9 @@ void BlurProgram::ensureInitialized() {
 
 void BlurProgram::destroy() { m_program.destroy(); }
 
-void BlurProgram::draw(GLuint srcTex, std::uint32_t width, std::uint32_t height, float dirX, float dirY,
+void BlurProgram::draw(TextureId srcTex, std::uint32_t width, std::uint32_t height, float dirX, float dirY,
                        float radius) const {
-  if (!m_program.isValid()) {
+  if (!m_program.isValid() || srcTex == 0) {
     return;
   }
 
@@ -78,7 +78,7 @@ void BlurProgram::draw(GLuint srcTex, std::uint32_t width, std::uint32_t height,
   glUseProgram(m_program.id());
 
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, srcTex);
+  glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(srcTex.value()));
   glUniform1i(m_texLoc, 0);
 
   glUniform2f(m_texelSzLoc, 1.0f / static_cast<float>(width), 1.0f / static_cast<float>(height));

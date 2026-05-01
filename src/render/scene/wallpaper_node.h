@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config/config_service.h"
+#include "render/core/texture_handle.h"
 #include "render/programs/wallpaper_program.h"
 #include "render/scene/node.h"
 
@@ -10,8 +11,8 @@ class WallpaperNode : public Node {
 public:
   WallpaperNode() : Node(NodeType::Wallpaper) {}
 
-  [[nodiscard]] std::uint32_t texture1() const noexcept { return m_texture1; }
-  [[nodiscard]] std::uint32_t texture2() const noexcept { return m_texture2; }
+  [[nodiscard]] TextureId texture1() const noexcept { return m_texture1; }
+  [[nodiscard]] TextureId texture2() const noexcept { return m_texture2; }
   [[nodiscard]] WallpaperSourceKind sourceKind1() const noexcept { return m_sourceKind1; }
   [[nodiscard]] WallpaperSourceKind sourceKind2() const noexcept { return m_sourceKind2; }
   [[nodiscard]] const Color& sourceColor1() const noexcept { return m_sourceColor1; }
@@ -26,14 +27,14 @@ public:
   [[nodiscard]] const Color& fillColor() const noexcept { return m_fillColor; }
   [[nodiscard]] const TransitionParams& transitionParams() const noexcept { return m_params; }
 
-  void setTextures(std::uint32_t texture1, std::uint32_t texture2, float imageWidth1, float imageHeight1,
-                   float imageWidth2, float imageHeight2) {
+  void setTextures(TextureId texture1, TextureId texture2, float imageWidth1, float imageHeight1, float imageWidth2,
+                   float imageHeight2) {
     setSources(WallpaperSourceKind::Image, texture1, rgba(0.0f, 0.0f, 0.0f, 1.0f), WallpaperSourceKind::Image, texture2,
                rgba(0.0f, 0.0f, 0.0f, 1.0f), imageWidth1, imageHeight1, imageWidth2, imageHeight2);
   }
 
-  void setSources(WallpaperSourceKind sourceKind1, std::uint32_t texture1, const Color& sourceColor1,
-                  WallpaperSourceKind sourceKind2, std::uint32_t texture2, const Color& sourceColor2, float imageWidth1,
+  void setSources(WallpaperSourceKind sourceKind1, TextureId texture1, const Color& sourceColor1,
+                  WallpaperSourceKind sourceKind2, TextureId texture2, const Color& sourceColor2, float imageWidth1,
                   float imageHeight1, float imageWidth2, float imageHeight2) {
     if (m_texture1 == texture1 && m_texture2 == texture2 && m_imageWidth1 == imageWidth1 &&
         m_imageHeight1 == imageHeight1 && m_imageWidth2 == imageWidth2 && m_imageHeight2 == imageHeight2 &&
@@ -87,8 +88,8 @@ public:
 private:
   WallpaperSourceKind m_sourceKind1 = WallpaperSourceKind::Image;
   WallpaperSourceKind m_sourceKind2 = WallpaperSourceKind::Image;
-  std::uint32_t m_texture1 = 0;
-  std::uint32_t m_texture2 = 0;
+  TextureId m_texture1;
+  TextureId m_texture2;
   Color m_sourceColor1 = rgba(0.0f, 0.0f, 0.0f, 1.0f);
   Color m_sourceColor2 = rgba(0.0f, 0.0f, 0.0f, 1.0f);
   float m_imageWidth1 = 0.0f;
