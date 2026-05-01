@@ -3,11 +3,14 @@
 #include "render/animation/animation_manager.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
+#include "shell/settings/settings_registry.h"
 #include "ui/controls/scroll_view.h"
 #include "wayland/toplevel_surface.h"
 
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 class Box;
 class ConfigService;
@@ -39,6 +42,24 @@ private:
   void destroyWindow();
   void prepareFrame(bool needsUpdate, bool needsLayout);
   void buildScene(std::uint32_t width, std::uint32_t height);
+  void rebuildSettingsContent();
+  void requestSceneRebuild();
+  void requestContentRebuild();
+  void clearStatusMessage();
+  void clearTransientSettingsState();
+  void setSettingOverride(std::vector<std::string> path, ConfigOverrideValue value);
+  void setSettingOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides);
+  void clearSettingOverride(std::vector<std::string> path);
+  void clearSettingOverrides(std::vector<std::vector<std::string>> paths);
+  void renameWidgetInstance(std::string oldName, std::string newName,
+                            std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> referenceOverrides);
+  void createBar(std::string name);
+  void renameBar(std::string oldName, std::string newName);
+  void deleteBar(std::string name);
+  void moveBar(std::string name, int direction);
+  void createMonitorOverride(std::string barName, std::string match);
+  void renameMonitorOverride(std::string barName, std::string oldMatch, std::string newMatch);
+  void deleteMonitorOverride(std::string barName, std::string match);
   [[nodiscard]] float uiScale() const;
 
   WaylandConnection* m_wayland = nullptr;
@@ -49,6 +70,7 @@ private:
   std::unique_ptr<Node> m_sceneRoot;
   Flex* m_mainContainer = nullptr;  // Outer Flex inside m_sceneRoot, sized to the window
   Box* m_panelBackground = nullptr; // Window-sized background panel inside m_sceneRoot
+  Flex* m_contentContainer = nullptr;
   InputDispatcher m_inputDispatcher;
   AnimationManager m_animations;
   bool m_pointerInside = false;
@@ -56,7 +78,9 @@ private:
   std::uint32_t m_lastSceneWidth = 0;
   std::uint32_t m_lastSceneHeight = 0;
   ScrollViewState m_contentScrollState;
+  std::vector<settings::SettingEntry> m_settingsRegistry;
   bool m_rebuildRequested = false;
+  bool m_contentRebuildRequested = false;
   bool m_focusSearchOnRebuild = false;
   std::string m_searchQuery;
   std::string m_openWidgetPickerPath;

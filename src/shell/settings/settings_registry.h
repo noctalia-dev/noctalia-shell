@@ -92,6 +92,8 @@ namespace settings {
   buildSettingsRegistry(const Config& cfg, const BarConfig* selectedBar,
                         const BarMonitorOverride* selectedMonitorOverride = nullptr,
                         const RegistryEnvironment& env = {});
+  [[nodiscard]] std::string normalizedSettingQuery(std::string_view query);
+  [[nodiscard]] bool matchesNormalizedSettingQuery(const SettingEntry& entry, std::string_view normalizedQuery);
   [[nodiscard]] bool matchesSettingQuery(const SettingEntry& entry, std::string_view query);
   [[nodiscard]] std::string_view sectionGlyph(std::string_view section);
 

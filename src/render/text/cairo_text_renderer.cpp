@@ -10,6 +10,7 @@
 #include <cstring>
 #include <fontconfig/fontconfig.h>
 #include <functional>
+#include <limits>
 #include <pango/pango-attributes.h>
 #include <pango/pango.h>
 #include <pango/pangocairo.h>
@@ -356,6 +357,36 @@ CairoTextRenderer::TextMetrics CairoTextRenderer::measure(std::string_view text,
   }
   m_metricsCache.emplace(std::move(key), metrics);
   return metrics;
+}
+
+void CairoTextRenderer::measureCursorStops(std::string_view text, float fontSize,
+                                           const std::vector<std::size_t>& byteOffsets, std::vector<float>& outStops,
+                                           bool bold) {
+  outStops.clear();
+  outStops.reserve(byteOffsets.size());
+
+  if (byteOffsets.empty()) {
+    return;
+  }
+  if (m_pangoContext == nullptr || text.empty()) {
+    outStops.resize(byteOffsets.size(), 0.0f);
+    return;
+  }
+
+  PangoLayout* layout = buildLayout(text, fontSize, bold, 0.0f, 0, TextAlign::Start);
+  const float invScale = 1.0f / m_contentScale;
+  const float pscale = 1.0f / static_cast<float>(PANGO_SCALE);
+  for (const std::size_t offset : byteOffsets) {
+    const std::size_t clampedOffset = std::min(offset, text.size());
+    const int index = clampedOffset > static_cast<std::size_t>(std::numeric_limits<int>::max())
+                          ? std::numeric_limits<int>::max()
+                          : static_cast<int>(clampedOffset);
+    PangoRectangle strong{};
+    PangoRectangle weak{};
+    pango_layout_get_cursor_pos(layout, index, &strong, &weak);
+    outStops.push_back(static_cast<float>(strong.x) * pscale * invScale);
+  }
+  g_object_unref(layout);
 }
 
 // ── Rasterization ───────────────────────────────────────────────────────────

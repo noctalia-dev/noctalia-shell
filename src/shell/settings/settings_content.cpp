@@ -69,14 +69,17 @@ namespace settings {
 
     bool isBlankInput(std::string_view text) { return StringUtils::trim(text).empty(); }
 
-    std::string localeDecimalSeparator() {
-      try {
-        const std::locale userLocale("");
-        const char decimalPoint = std::use_facet<std::numpunct<char>>(userLocale).decimal_point();
-        return std::string(1, decimalPoint);
-      } catch (...) {
-        return ".";
-      }
+    const std::string& localeDecimalSeparator() {
+      static const std::string separator = [] {
+        try {
+          const std::locale userLocale("");
+          const char decimalPoint = std::use_facet<std::numpunct<char>>(userLocale).decimal_point();
+          return std::string(1, decimalPoint);
+        } catch (...) {
+          return std::string(".");
+        }
+      }();
+      return separator;
     }
 
     std::string formatSliderValue(float value, bool integerValue, char decimalSeparator = '\0') {
@@ -939,6 +942,7 @@ namespace settings {
     std::string activeGroupKey;
     Flex* activeSection = nullptr;
     std::size_t visibleEntries = 0;
+    const std::string normalizedSearchQuery = normalizedSettingQuery(ctx.searchQuery);
 
     BarWidgetEditorContext barWidgetEditorCtx{
         .config = cfg,
@@ -986,7 +990,7 @@ namespace settings {
       if (ctx.showOverriddenOnly && ctx.configService != nullptr && !ctx.configService->hasOverride(entry.path)) {
         continue;
       }
-      if (!matchesSettingQuery(entry, ctx.searchQuery)) {
+      if (!matchesNormalizedSettingQuery(entry, normalizedSearchQuery)) {
         continue;
       }
 

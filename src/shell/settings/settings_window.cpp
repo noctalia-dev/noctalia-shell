@@ -182,12 +182,15 @@ void SettingsWindow::destroyWindow() {
     m_surface->setSceneRoot(nullptr);
   }
   m_mainContainer = nullptr;
+  m_contentContainer = nullptr;
   m_sceneRoot.reset();
   m_surface.reset();
   m_pointerInside = false;
   m_lastSceneWidth = 0;
   m_lastSceneHeight = 0;
+  m_settingsRegistry.clear();
   m_rebuildRequested = false;
+  m_contentRebuildRequested = false;
   m_focusSearchOnRebuild = false;
   m_statusMessage.clear();
   m_statusIsError = false;
@@ -233,7 +236,8 @@ void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
     m_lastSceneWidth = width;
     m_lastSceneHeight = height;
     m_rebuildRequested = false;
-  } else if ((sizeChanged || needsLayout) && m_sceneRoot != nullptr) {
+    m_contentRebuildRequested = false;
+  } else if ((m_contentRebuildRequested || sizeChanged || needsLayout) && m_sceneRoot != nullptr) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
     const float w = static_cast<float>(width);
     const float h = static_cast<float>(height);
@@ -244,10 +248,487 @@ void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
     if (m_mainContainer != nullptr) {
       m_mainContainer->setSize(w, h);
     }
+    if (m_contentRebuildRequested) {
+      rebuildSettingsContent();
+      m_contentRebuildRequested = false;
+    }
     m_sceneRoot->layout(*m_renderContext);
     m_lastSceneWidth = width;
     m_lastSceneHeight = height;
   }
+}
+
+void SettingsWindow::requestSceneRebuild() {
+  DeferredCall::callLater([this]() {
+    if (m_surface == nullptr) {
+      return;
+    }
+    m_rebuildRequested = true;
+    m_contentRebuildRequested = false;
+    m_surface->requestLayout();
+  });
+}
+
+void SettingsWindow::requestContentRebuild() {
+  DeferredCall::callLater([this]() {
+    if (m_surface == nullptr) {
+      return;
+    }
+    if (m_sceneRoot == nullptr || m_contentContainer == nullptr) {
+      m_rebuildRequested = true;
+    } else if (!m_rebuildRequested) {
+      m_contentRebuildRequested = true;
+    }
+    m_surface->requestLayout();
+  });
+}
+
+void SettingsWindow::clearStatusMessage() {
+  m_statusMessage.clear();
+  m_statusIsError = false;
+}
+
+void SettingsWindow::clearTransientSettingsState() {
+  m_openWidgetPickerPath.clear();
+  m_editingWidgetName.clear();
+  m_renamingWidgetName.clear();
+  m_pendingDeleteWidgetName.clear();
+  m_pendingDeleteWidgetSettingPath.clear();
+  m_creatingWidgetType.clear();
+  m_creatingBarName.clear();
+  m_renamingBarName.clear();
+  m_pendingDeleteBarName.clear();
+  m_creatingMonitorOverrideBarName.clear();
+  m_creatingMonitorOverrideMatch.clear();
+  m_renamingMonitorOverrideBarName.clear();
+  m_renamingMonitorOverrideMatch.clear();
+  m_pendingDeleteMonitorOverrideBarName.clear();
+  m_pendingDeleteMonitorOverrideMatch.clear();
+  m_pendingResetPageScope.clear();
+}
+
+void SettingsWindow::setSettingOverride(std::vector<std::string> path, ConfigOverrideValue value) {
+  DeferredCall::callLater([this, path = std::move(path), value = std::move(value)]() mutable {
+    if (m_config == nullptr) {
+      return;
+    }
+    if (m_config->setOverride(path, std::move(value))) {
+      m_statusMessage.clear();
+      m_statusIsError = false;
+      m_pendingResetPageScope.clear();
+      requestSceneRebuild();
+      return;
+    }
+    m_statusMessage = i18n::tr("settings.errors.write");
+    m_statusIsError = true;
+    requestSceneRebuild();
+  });
+}
+
+void SettingsWindow::setSettingOverrides(
+    std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides) {
+  DeferredCall::callLater([this, overrides = std::move(overrides)]() mutable {
+    if (m_config == nullptr) {
+      return;
+    }
+    bool changed = false;
+    bool failed = false;
+    for (auto& [path, value] : overrides) {
+      if (m_config->setOverride(path, std::move(value))) {
+        changed = true;
+      } else {
+        failed = true;
+      }
+    }
+    if (failed) {
+      m_statusMessage = i18n::tr("settings.errors.batch-write");
+      m_statusIsError = true;
+      requestSceneRebuild();
+      return;
+    }
+    const bool hadStatus = !m_statusMessage.empty();
+    m_statusMessage.clear();
+    m_statusIsError = false;
+    m_pendingResetPageScope.clear();
+    if (changed || hadStatus) {
+      requestSceneRebuild();
+    }
+  });
+}
+
+void SettingsWindow::clearSettingOverride(std::vector<std::string> path) {
+  DeferredCall::callLater([this, path = std::move(path)]() mutable {
+    if (m_config == nullptr) {
+      return;
+    }
+    if (m_config->clearOverride(path)) {
+      m_statusMessage.clear();
+      m_statusIsError = false;
+      m_pendingResetPageScope.clear();
+      requestSceneRebuild();
+      return;
+    }
+    m_statusMessage = i18n::tr("settings.errors.clear");
+    m_statusIsError = true;
+    requestSceneRebuild();
+  });
+}
+
+void SettingsWindow::clearSettingOverrides(std::vector<std::vector<std::string>> paths) {
+  DeferredCall::callLater([this, paths = std::move(paths)]() mutable {
+    if (m_config == nullptr || paths.empty()) {
+      return;
+    }
+
+    bool changed = false;
+    bool failed = false;
+    for (const auto& path : paths) {
+      if (m_config->clearOverride(path)) {
+        changed = true;
+      } else {
+        failed = true;
+      }
+    }
+
+    m_pendingResetPageScope.clear();
+    if (failed) {
+      m_statusMessage = i18n::tr("settings.errors.reset-page");
+      m_statusIsError = true;
+      requestSceneRebuild();
+      return;
+    }
+
+    m_statusMessage.clear();
+    m_statusIsError = false;
+    if (changed) {
+      requestSceneRebuild();
+    }
+  });
+}
+
+void SettingsWindow::renameWidgetInstance(
+    std::string oldName, std::string newName,
+    std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> referenceOverrides) {
+  DeferredCall::callLater([this, oldName = std::move(oldName), newName = std::move(newName),
+                           referenceOverrides = std::move(referenceOverrides)]() mutable {
+    if (m_config == nullptr) {
+      return;
+    }
+
+    bool changed = m_config->renameOverrideTable({"widget", oldName}, {"widget", newName});
+    if (!changed) {
+      m_statusMessage = i18n::tr("settings.errors.widget.rename");
+      m_statusIsError = true;
+      requestSceneRebuild();
+      return;
+    }
+    bool failed = false;
+    for (auto& [path, value] : referenceOverrides) {
+      if (m_config->setOverride(path, std::move(value))) {
+        changed = true;
+      } else {
+        failed = true;
+      }
+    }
+    if (failed) {
+      m_statusMessage = i18n::tr("settings.errors.batch-write");
+      m_statusIsError = true;
+      requestSceneRebuild();
+      return;
+    }
+    m_statusMessage.clear();
+    m_statusIsError = false;
+    m_pendingResetPageScope.clear();
+    if (changed) {
+      requestSceneRebuild();
+    }
+  });
+}
+
+void SettingsWindow::createBar(std::string name) {
+  DeferredCall::callLater([this, name = std::move(name)]() {
+    if (m_config == nullptr) {
+      return;
+    }
+    if (m_config->createBarOverride(name)) {
+      m_selectedSection = "bar";
+      m_selectedBarName = name;
+      m_selectedMonitorOverride.clear();
+      m_creatingBarName.clear();
+      m_renamingBarName.clear();
+      m_pendingDeleteBarName.clear();
+      m_creatingMonitorOverrideBarName.clear();
+      m_creatingMonitorOverrideMatch.clear();
+      m_renamingMonitorOverrideBarName.clear();
+      m_renamingMonitorOverrideMatch.clear();
+      m_pendingDeleteMonitorOverrideBarName.clear();
+      m_pendingDeleteMonitorOverrideMatch.clear();
+      m_contentScrollState.offset = 0.0f;
+      m_statusMessage.clear();
+      m_statusIsError = false;
+      m_pendingResetPageScope.clear();
+      requestSceneRebuild();
+      return;
+    }
+    m_statusMessage = i18n::tr("settings.errors.bar.create");
+    m_statusIsError = true;
+    requestSceneRebuild();
+  });
+}
+
+void SettingsWindow::renameBar(std::string oldName, std::string newName) {
+  DeferredCall::callLater([this, oldName = std::move(oldName), newName = std::move(newName)]() {
+    if (m_config == nullptr) {
+      return;
+    }
+    if (m_config->renameBarOverride(oldName, newName)) {
+      if (m_selectedBarName == oldName) {
+        m_selectedBarName = newName;
+      }
+      m_selectedMonitorOverride.clear();
+      m_renamingBarName.clear();
+      m_pendingDeleteBarName.clear();
+      m_creatingMonitorOverrideBarName.clear();
+      m_creatingMonitorOverrideMatch.clear();
+      m_renamingMonitorOverrideBarName.clear();
+      m_renamingMonitorOverrideMatch.clear();
+      m_pendingDeleteMonitorOverrideBarName.clear();
+      m_pendingDeleteMonitorOverrideMatch.clear();
+      m_contentScrollState.offset = 0.0f;
+      m_statusMessage.clear();
+      m_statusIsError = false;
+      m_pendingResetPageScope.clear();
+      requestSceneRebuild();
+      return;
+    }
+    m_statusMessage = i18n::tr("settings.errors.bar.rename");
+    m_statusIsError = true;
+    requestSceneRebuild();
+  });
+}
+
+void SettingsWindow::deleteBar(std::string name) {
+  DeferredCall::callLater([this, name = std::move(name)]() {
+    if (m_config == nullptr) {
+      return;
+    }
+    if (m_config->deleteBarOverride(name)) {
+      if (m_selectedBarName == name) {
+        m_selectedBarName.clear();
+        m_selectedMonitorOverride.clear();
+        m_contentScrollState.offset = 0.0f;
+      }
+      m_renamingBarName.clear();
+      m_pendingDeleteBarName.clear();
+      m_creatingMonitorOverrideBarName.clear();
+      m_creatingMonitorOverrideMatch.clear();
+      m_renamingMonitorOverrideBarName.clear();
+      m_renamingMonitorOverrideMatch.clear();
+      m_pendingDeleteMonitorOverrideBarName.clear();
+      m_pendingDeleteMonitorOverrideMatch.clear();
+      m_statusMessage.clear();
+      m_statusIsError = false;
+      m_pendingResetPageScope.clear();
+      requestSceneRebuild();
+      return;
+    }
+    m_statusMessage = i18n::tr("settings.errors.bar.delete");
+    m_statusIsError = true;
+    requestSceneRebuild();
+  });
+}
+
+void SettingsWindow::moveBar(std::string name, int direction) {
+  DeferredCall::callLater([this, name = std::move(name), direction]() {
+    if (m_config == nullptr) {
+      return;
+    }
+    if (m_config->moveBarOverride(name, direction)) {
+      m_statusMessage.clear();
+      m_statusIsError = false;
+      m_pendingResetPageScope.clear();
+      requestSceneRebuild();
+      return;
+    }
+    m_statusMessage = i18n::tr("settings.errors.bar.move");
+    m_statusIsError = true;
+    requestSceneRebuild();
+  });
+}
+
+void SettingsWindow::createMonitorOverride(std::string barName, std::string match) {
+  DeferredCall::callLater([this, barName = std::move(barName), match = std::move(match)]() {
+    if (m_config == nullptr) {
+      return;
+    }
+    if (m_config->createMonitorOverride(barName, match)) {
+      m_selectedSection = "bar";
+      m_selectedBarName = barName;
+      m_selectedMonitorOverride = match;
+      m_creatingMonitorOverrideBarName.clear();
+      m_creatingMonitorOverrideMatch.clear();
+      m_renamingMonitorOverrideBarName.clear();
+      m_renamingMonitorOverrideMatch.clear();
+      m_pendingDeleteMonitorOverrideBarName.clear();
+      m_pendingDeleteMonitorOverrideMatch.clear();
+      m_contentScrollState.offset = 0.0f;
+      m_statusMessage.clear();
+      m_statusIsError = false;
+      m_pendingResetPageScope.clear();
+      requestSceneRebuild();
+      return;
+    }
+    m_statusMessage = i18n::tr("settings.errors.monitor-override.create");
+    m_statusIsError = true;
+    requestSceneRebuild();
+  });
+}
+
+void SettingsWindow::renameMonitorOverride(std::string barName, std::string oldMatch, std::string newMatch) {
+  DeferredCall::callLater(
+      [this, barName = std::move(barName), oldMatch = std::move(oldMatch), newMatch = std::move(newMatch)]() {
+        if (m_config == nullptr) {
+          return;
+        }
+        if (m_config->renameMonitorOverride(barName, oldMatch, newMatch)) {
+          if (m_selectedBarName == barName && m_selectedMonitorOverride == oldMatch) {
+            m_selectedMonitorOverride = newMatch;
+          }
+          m_renamingMonitorOverrideBarName.clear();
+          m_renamingMonitorOverrideMatch.clear();
+          m_pendingDeleteMonitorOverrideBarName.clear();
+          m_pendingDeleteMonitorOverrideMatch.clear();
+          m_contentScrollState.offset = 0.0f;
+          m_statusMessage.clear();
+          m_statusIsError = false;
+          m_pendingResetPageScope.clear();
+          requestSceneRebuild();
+          return;
+        }
+        m_statusMessage = i18n::tr("settings.errors.monitor-override.rename");
+        m_statusIsError = true;
+        requestSceneRebuild();
+      });
+}
+
+void SettingsWindow::deleteMonitorOverride(std::string barName, std::string match) {
+  DeferredCall::callLater([this, barName = std::move(barName), match = std::move(match)]() {
+    if (m_config == nullptr) {
+      return;
+    }
+    if (m_config->deleteMonitorOverride(barName, match)) {
+      if (m_selectedBarName == barName && m_selectedMonitorOverride == match) {
+        m_selectedMonitorOverride.clear();
+        m_contentScrollState.offset = 0.0f;
+      }
+      m_renamingMonitorOverrideBarName.clear();
+      m_renamingMonitorOverrideMatch.clear();
+      m_pendingDeleteMonitorOverrideBarName.clear();
+      m_pendingDeleteMonitorOverrideMatch.clear();
+      m_statusMessage.clear();
+      m_statusIsError = false;
+      m_pendingResetPageScope.clear();
+      requestSceneRebuild();
+      return;
+    }
+    m_statusMessage = i18n::tr("settings.errors.monitor-override.delete");
+    m_statusIsError = true;
+    requestSceneRebuild();
+  });
+}
+
+void SettingsWindow::rebuildSettingsContent() {
+  uiAssertNotRendering("SettingsWindow::rebuildSettingsContent");
+  if (m_contentContainer == nullptr) {
+    return;
+  }
+
+  while (!m_contentContainer->children().empty()) {
+    m_contentContainer->removeChild(m_contentContainer->children().back().get());
+  }
+
+  const float scale = uiScale();
+  const Config fallbackCfg{};
+  const Config& cfg = m_config != nullptr ? m_config->config() : fallbackCfg;
+  const BarConfig* selectedBar = settings::findBar(cfg, m_selectedBarName);
+  const BarMonitorOverride* selectedMonitorOverride = nullptr;
+  if (selectedBar != nullptr && !m_selectedMonitorOverride.empty()) {
+    selectedMonitorOverride = settings::findMonitorOverride(*selectedBar, m_selectedMonitorOverride);
+  }
+
+  const auto requestRebuild = [this]() { requestSceneRebuild(); };
+  const auto setOverride = [this](std::vector<std::string> path, ConfigOverrideValue value) {
+    setSettingOverride(std::move(path), std::move(value));
+  };
+  const auto setOverrides = [this](std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides) {
+    setSettingOverrides(std::move(overrides));
+  };
+  const auto clearOverride = [this](std::vector<std::string> path) { clearSettingOverride(std::move(path)); };
+  const auto renameWidget =
+      [this](std::string oldName, std::string newName,
+             std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> referenceOverrides) {
+        renameWidgetInstance(std::move(oldName), std::move(newName), std::move(referenceOverrides));
+      };
+
+  m_contentContainer->setDirection(FlexDirection::Vertical);
+  m_contentContainer->setAlign(FlexAlign::Stretch);
+  m_contentContainer->setGap(Style::spaceMd * scale);
+
+  settings::addSettingsEntityManagement(
+      *m_contentContainer,
+      settings::SettingsEntityEditorContext{
+          .config = cfg,
+          .configService = m_config,
+          .scale = scale,
+          .searchQuery = m_searchQuery,
+          .selectedSection = m_selectedSection,
+          .selectedBar = selectedBar,
+          .selectedMonitorOverride = selectedMonitorOverride,
+          .renamingBarName = m_renamingBarName,
+          .pendingDeleteBarName = m_pendingDeleteBarName,
+          .renamingMonitorOverrideBarName = m_renamingMonitorOverrideBarName,
+          .renamingMonitorOverrideMatch = m_renamingMonitorOverrideMatch,
+          .pendingDeleteMonitorOverrideBarName = m_pendingDeleteMonitorOverrideBarName,
+          .pendingDeleteMonitorOverrideMatch = m_pendingDeleteMonitorOverrideMatch,
+          .requestRebuild = requestRebuild,
+          .renameBar = [this](std::string oldName,
+                              std::string newName) { renameBar(std::move(oldName), std::move(newName)); },
+          .deleteBar = [this](std::string name) { deleteBar(std::move(name)); },
+          .moveBar = [this](std::string name, int direction) { moveBar(std::move(name), direction); },
+          .renameMonitorOverride =
+              [this](std::string barName, std::string oldMatch, std::string newMatch) {
+                renameMonitorOverride(std::move(barName), std::move(oldMatch), std::move(newMatch));
+              },
+          .deleteMonitorOverride =
+              [this](std::string barName, std::string match) {
+                deleteMonitorOverride(std::move(barName), std::move(match));
+              },
+      });
+
+  settings::addSettingsContentSections(*m_contentContainer, m_settingsRegistry,
+                                       settings::SettingsContentContext{
+                                           .config = cfg,
+                                           .configService = m_config,
+                                           .scale = scale,
+                                           .searchQuery = m_searchQuery,
+                                           .selectedSection = m_selectedSection,
+                                           .selectedBar = selectedBar,
+                                           .selectedMonitorOverride = selectedMonitorOverride,
+                                           .showAdvanced = m_showAdvanced,
+                                           .showOverriddenOnly = m_showOverriddenOnly,
+                                           .openWidgetPickerPath = m_openWidgetPickerPath,
+                                           .editingWidgetName = m_editingWidgetName,
+                                           .pendingDeleteWidgetName = m_pendingDeleteWidgetName,
+                                           .pendingDeleteWidgetSettingPath = m_pendingDeleteWidgetSettingPath,
+                                           .renamingWidgetName = m_renamingWidgetName,
+                                           .creatingWidgetType = m_creatingWidgetType,
+                                           .requestRebuild = requestRebuild,
+                                           .resetContentScroll = [this]() { m_contentScrollState.offset = 0.0f; },
+                                           .setOverride = setOverride,
+                                           .setOverrides = setOverrides,
+                                           .clearOverride = clearOverride,
+                                           .renameWidgetInstance = renameWidget,
+                                       });
 }
 
 void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
@@ -259,7 +740,8 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   const float w = static_cast<float>(width);
   const float h = static_cast<float>(height);
   const float scale = uiScale();
-  const Config cfg = m_config != nullptr ? m_config->config() : Config{};
+  const Config fallbackCfg{};
+  const Config& cfg = m_config != nullptr ? m_config->config() : fallbackCfg;
   const auto availableBars = settings::barNames(cfg);
   if (availableBars.empty()) {
     m_selectedBarName.clear();
@@ -288,8 +770,8 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       env.availableOutputs.push_back(settings::SelectOption{output.connectorName, std::move(label)});
     }
   }
-  const auto registry = settings::buildSettingsRegistry(cfg, selectedBar, selectedMonitorOverride, env);
-  const auto sections = sectionKeys(registry);
+  m_settingsRegistry = settings::buildSettingsRegistry(cfg, selectedBar, selectedMonitorOverride, env);
+  const auto sections = sectionKeys(m_settingsRegistry);
   if (m_selectedSection == "bar" && selectedBar == nullptr) {
     m_selectedSection.clear();
   } else if (m_selectedSection != "bar" && !m_selectedSection.empty() &&
@@ -304,7 +786,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   const std::string resetPageScope = pageScopeKey(m_selectedSection, m_selectedBarName, m_selectedMonitorOverride);
   std::vector<std::vector<std::string>> resetPagePaths;
   if (m_config != nullptr) {
-    for (const auto& entry : registry) {
+    for (const auto& entry : m_settingsRegistry) {
       if (settingEntryBelongsToPage(entry, m_selectedSection, m_selectedBarName, m_selectedMonitorOverride) &&
           m_config->hasOverride(entry.path) && !containsPath(resetPagePaths, entry.path)) {
         resetPagePaths.push_back(entry.path);
@@ -318,6 +800,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   m_inputDispatcher.setSceneRoot(nullptr);
   m_mainContainer = nullptr;
   m_panelBackground = nullptr;
+  m_contentContainer = nullptr;
   m_sceneRoot = std::make_unique<Node>();
   m_sceneRoot->setSize(w, h);
   m_sceneRoot->setAnimationManager(&m_animations);
@@ -377,350 +860,14 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
 
   main->addChild(centeredRow(std::move(header)));
 
-  const auto requestRebuild = [this]() {
-    DeferredCall::callLater([this]() {
-      if (m_surface == nullptr) {
-        return;
-      }
-      m_rebuildRequested = true;
-      m_surface->requestLayout();
-    });
+  const auto requestRebuild = [this]() { requestSceneRebuild(); };
+  const auto clearStatus = [this]() { clearStatusMessage(); };
+  const auto clearOverrides = [this](std::vector<std::vector<std::string>> paths) {
+    clearSettingOverrides(std::move(paths));
   };
-
-  const auto clearStatus = [this]() {
-    m_statusMessage.clear();
-    m_statusIsError = false;
-  };
-
-  const auto setOverride = [this, requestRebuild](std::vector<std::string> path, ConfigOverrideValue value) {
-    DeferredCall::callLater([this, path = std::move(path), value = std::move(value), requestRebuild]() mutable {
-      if (m_config == nullptr) {
-        return;
-      }
-      if (m_config->setOverride(path, std::move(value))) {
-        m_statusMessage.clear();
-        m_statusIsError = false;
-        m_pendingResetPageScope.clear();
-        requestRebuild();
-        return;
-      }
-      m_statusMessage = i18n::tr("settings.errors.write");
-      m_statusIsError = true;
-      requestRebuild();
-    });
-  };
-
-  const auto setOverrides =
-      [this, requestRebuild](std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides) {
-        DeferredCall::callLater([this, overrides = std::move(overrides), requestRebuild]() mutable {
-          if (m_config == nullptr) {
-            return;
-          }
-          bool changed = false;
-          bool failed = false;
-          for (auto& [path, value] : overrides) {
-            if (m_config->setOverride(path, std::move(value))) {
-              changed = true;
-            } else {
-              failed = true;
-            }
-          }
-          if (failed) {
-            m_statusMessage = i18n::tr("settings.errors.batch-write");
-            m_statusIsError = true;
-            requestRebuild();
-            return;
-          }
-          const bool hadStatus = !m_statusMessage.empty();
-          m_statusMessage.clear();
-          m_statusIsError = false;
-          m_pendingResetPageScope.clear();
-          if (changed || hadStatus) {
-            requestRebuild();
-          }
-        });
-      };
-
-  const auto clearOverride = [this, requestRebuild](std::vector<std::string> path) {
-    DeferredCall::callLater([this, path = std::move(path), requestRebuild]() mutable {
-      if (m_config == nullptr) {
-        return;
-      }
-      if (m_config->clearOverride(path)) {
-        m_statusMessage.clear();
-        m_statusIsError = false;
-        m_pendingResetPageScope.clear();
-        requestRebuild();
-        return;
-      }
-      m_statusMessage = i18n::tr("settings.errors.clear");
-      m_statusIsError = true;
-      requestRebuild();
-    });
-  };
-
-  const auto clearOverrides = [this, requestRebuild](std::vector<std::vector<std::string>> paths) {
-    DeferredCall::callLater([this, paths = std::move(paths), requestRebuild]() mutable {
-      if (m_config == nullptr || paths.empty()) {
-        return;
-      }
-
-      bool changed = false;
-      bool failed = false;
-      for (const auto& path : paths) {
-        if (m_config->clearOverride(path)) {
-          changed = true;
-        } else {
-          failed = true;
-        }
-      }
-
-      m_pendingResetPageScope.clear();
-      if (failed) {
-        m_statusMessage = i18n::tr("settings.errors.reset-page");
-        m_statusIsError = true;
-        requestRebuild();
-        return;
-      }
-
-      m_statusMessage.clear();
-      m_statusIsError = false;
-      if (changed) {
-        requestRebuild();
-      }
-    });
-  };
-
-  const auto renameWidgetInstance =
-      [this, requestRebuild](std::string oldName, std::string newName,
-                             std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> referenceOverrides) {
-        DeferredCall::callLater([this, oldName = std::move(oldName), newName = std::move(newName),
-                                 referenceOverrides = std::move(referenceOverrides), requestRebuild]() mutable {
-          if (m_config == nullptr) {
-            return;
-          }
-
-          bool changed = m_config->renameOverrideTable({"widget", oldName}, {"widget", newName});
-          if (!changed) {
-            m_statusMessage = i18n::tr("settings.errors.widget.rename");
-            m_statusIsError = true;
-            requestRebuild();
-            return;
-          }
-          bool failed = false;
-          for (auto& [path, value] : referenceOverrides) {
-            if (m_config->setOverride(path, std::move(value))) {
-              changed = true;
-            } else {
-              failed = true;
-            }
-          }
-          if (failed) {
-            m_statusMessage = i18n::tr("settings.errors.batch-write");
-            m_statusIsError = true;
-            requestRebuild();
-            return;
-          }
-          m_statusMessage.clear();
-          m_statusIsError = false;
-          m_pendingResetPageScope.clear();
-          if (changed) {
-            requestRebuild();
-          }
-        });
-      };
-
-  const auto createBar = [this, requestRebuild](std::string name) {
-    DeferredCall::callLater([this, name = std::move(name), requestRebuild]() {
-      if (m_config == nullptr) {
-        return;
-      }
-      if (m_config->createBarOverride(name)) {
-        m_selectedSection = "bar";
-        m_selectedBarName = name;
-        m_selectedMonitorOverride.clear();
-        m_creatingBarName.clear();
-        m_renamingBarName.clear();
-        m_pendingDeleteBarName.clear();
-        m_creatingMonitorOverrideBarName.clear();
-        m_creatingMonitorOverrideMatch.clear();
-        m_renamingMonitorOverrideBarName.clear();
-        m_renamingMonitorOverrideMatch.clear();
-        m_pendingDeleteMonitorOverrideBarName.clear();
-        m_pendingDeleteMonitorOverrideMatch.clear();
-        m_contentScrollState.offset = 0.0f;
-        m_statusMessage.clear();
-        m_statusIsError = false;
-        m_pendingResetPageScope.clear();
-        requestRebuild();
-        return;
-      }
-      m_statusMessage = i18n::tr("settings.errors.bar.create");
-      m_statusIsError = true;
-      requestRebuild();
-    });
-  };
-
-  const auto renameBar = [this, requestRebuild](std::string oldName, std::string newName) {
-    DeferredCall::callLater([this, oldName = std::move(oldName), newName = std::move(newName), requestRebuild]() {
-      if (m_config == nullptr) {
-        return;
-      }
-      if (m_config->renameBarOverride(oldName, newName)) {
-        if (m_selectedBarName == oldName) {
-          m_selectedBarName = newName;
-        }
-        m_selectedMonitorOverride.clear();
-        m_renamingBarName.clear();
-        m_pendingDeleteBarName.clear();
-        m_creatingMonitorOverrideBarName.clear();
-        m_creatingMonitorOverrideMatch.clear();
-        m_renamingMonitorOverrideBarName.clear();
-        m_renamingMonitorOverrideMatch.clear();
-        m_pendingDeleteMonitorOverrideBarName.clear();
-        m_pendingDeleteMonitorOverrideMatch.clear();
-        m_contentScrollState.offset = 0.0f;
-        m_statusMessage.clear();
-        m_statusIsError = false;
-        m_pendingResetPageScope.clear();
-        requestRebuild();
-        return;
-      }
-      m_statusMessage = i18n::tr("settings.errors.bar.rename");
-      m_statusIsError = true;
-      requestRebuild();
-    });
-  };
-
-  const auto deleteBar = [this, requestRebuild](std::string name) {
-    DeferredCall::callLater([this, name = std::move(name), requestRebuild]() {
-      if (m_config == nullptr) {
-        return;
-      }
-      if (m_config->deleteBarOverride(name)) {
-        if (m_selectedBarName == name) {
-          m_selectedBarName.clear();
-          m_selectedMonitorOverride.clear();
-          m_contentScrollState.offset = 0.0f;
-        }
-        m_renamingBarName.clear();
-        m_pendingDeleteBarName.clear();
-        m_creatingMonitorOverrideBarName.clear();
-        m_creatingMonitorOverrideMatch.clear();
-        m_renamingMonitorOverrideBarName.clear();
-        m_renamingMonitorOverrideMatch.clear();
-        m_pendingDeleteMonitorOverrideBarName.clear();
-        m_pendingDeleteMonitorOverrideMatch.clear();
-        m_statusMessage.clear();
-        m_statusIsError = false;
-        m_pendingResetPageScope.clear();
-        requestRebuild();
-        return;
-      }
-      m_statusMessage = i18n::tr("settings.errors.bar.delete");
-      m_statusIsError = true;
-      requestRebuild();
-    });
-  };
-
-  const auto moveBar = [this, requestRebuild](std::string name, int direction) {
-    DeferredCall::callLater([this, name = std::move(name), direction, requestRebuild]() {
-      if (m_config == nullptr) {
-        return;
-      }
-      if (m_config->moveBarOverride(name, direction)) {
-        m_statusMessage.clear();
-        m_statusIsError = false;
-        m_pendingResetPageScope.clear();
-        requestRebuild();
-        return;
-      }
-      m_statusMessage = i18n::tr("settings.errors.bar.move");
-      m_statusIsError = true;
-      requestRebuild();
-    });
-  };
-
-  const auto createMonitorOverride = [this, requestRebuild](std::string barName, std::string match) {
-    DeferredCall::callLater([this, barName = std::move(barName), match = std::move(match), requestRebuild]() {
-      if (m_config == nullptr) {
-        return;
-      }
-      if (m_config->createMonitorOverride(barName, match)) {
-        m_selectedSection = "bar";
-        m_selectedBarName = barName;
-        m_selectedMonitorOverride = match;
-        m_creatingMonitorOverrideBarName.clear();
-        m_creatingMonitorOverrideMatch.clear();
-        m_renamingMonitorOverrideBarName.clear();
-        m_renamingMonitorOverrideMatch.clear();
-        m_pendingDeleteMonitorOverrideBarName.clear();
-        m_pendingDeleteMonitorOverrideMatch.clear();
-        m_contentScrollState.offset = 0.0f;
-        m_statusMessage.clear();
-        m_statusIsError = false;
-        m_pendingResetPageScope.clear();
-        requestRebuild();
-        return;
-      }
-      m_statusMessage = i18n::tr("settings.errors.monitor-override.create");
-      m_statusIsError = true;
-      requestRebuild();
-    });
-  };
-
-  const auto renameMonitorOverride = [this, requestRebuild](std::string barName, std::string oldMatch,
-                                                            std::string newMatch) {
-    DeferredCall::callLater([this, barName = std::move(barName), oldMatch = std::move(oldMatch),
-                             newMatch = std::move(newMatch), requestRebuild]() {
-      if (m_config == nullptr) {
-        return;
-      }
-      if (m_config->renameMonitorOverride(barName, oldMatch, newMatch)) {
-        if (m_selectedBarName == barName && m_selectedMonitorOverride == oldMatch) {
-          m_selectedMonitorOverride = newMatch;
-        }
-        m_renamingMonitorOverrideBarName.clear();
-        m_renamingMonitorOverrideMatch.clear();
-        m_pendingDeleteMonitorOverrideBarName.clear();
-        m_pendingDeleteMonitorOverrideMatch.clear();
-        m_contentScrollState.offset = 0.0f;
-        m_statusMessage.clear();
-        m_statusIsError = false;
-        m_pendingResetPageScope.clear();
-        requestRebuild();
-        return;
-      }
-      m_statusMessage = i18n::tr("settings.errors.monitor-override.rename");
-      m_statusIsError = true;
-      requestRebuild();
-    });
-  };
-
-  const auto deleteMonitorOverride = [this, requestRebuild](std::string barName, std::string match) {
-    DeferredCall::callLater([this, barName = std::move(barName), match = std::move(match), requestRebuild]() {
-      if (m_config == nullptr) {
-        return;
-      }
-      if (m_config->deleteMonitorOverride(barName, match)) {
-        if (m_selectedBarName == barName && m_selectedMonitorOverride == match) {
-          m_selectedMonitorOverride.clear();
-          m_contentScrollState.offset = 0.0f;
-        }
-        m_renamingMonitorOverrideBarName.clear();
-        m_renamingMonitorOverrideMatch.clear();
-        m_pendingDeleteMonitorOverrideBarName.clear();
-        m_pendingDeleteMonitorOverrideMatch.clear();
-        m_statusMessage.clear();
-        m_statusIsError = false;
-        m_pendingResetPageScope.clear();
-        requestRebuild();
-        return;
-      }
-      m_statusMessage = i18n::tr("settings.errors.monitor-override.delete");
-      m_statusIsError = true;
-      requestRebuild();
-    });
+  const auto createBar = [this](std::string name) { this->createBar(std::move(name)); };
+  const auto createMonitorOverride = [this](std::string barName, std::string match) {
+    this->createMonitorOverride(std::move(barName), std::move(match));
   };
 
   auto filters = std::make_unique<Flex>();
@@ -738,11 +885,16 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   searchInput->setClearButtonEnabled(true);
   searchInput->setSize(320.0f * scale, Style::controlHeight * scale);
   Input* searchInputPtr = searchInput.get();
-  searchInput->setOnChange([this, requestRebuild](const std::string& value) {
+  searchInput->setOnChange([this](const std::string& value) {
     m_searchQuery = value;
-    m_focusSearchOnRebuild = true;
+    const bool hadPendingReset = !m_pendingResetPageScope.empty();
     m_pendingResetPageScope.clear();
-    requestRebuild();
+    if (hadPendingReset) {
+      m_focusSearchOnRebuild = true;
+      requestSceneRebuild();
+    } else {
+      requestContentRebuild();
+    }
   });
   filters->addChild(std::move(searchInput));
   filters->addChild(std::make_unique<Spacer>());
@@ -762,8 +914,13 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       return;
     }
     m_showAdvanced = value;
+    const bool hadPendingReset = !m_pendingResetPageScope.empty();
     m_pendingResetPageScope.clear();
-    requestRebuild();
+    if (hadPendingReset) {
+      requestRebuild();
+    } else {
+      requestContentRebuild();
+    }
   });
   filters->addChild(std::move(advancedToggle));
 
@@ -776,8 +933,13 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   overriddenToggle->setChecked(m_showOverriddenOnly);
   overriddenToggle->setOnChange([this, requestRebuild](bool value) {
     m_showOverriddenOnly = value;
+    const bool hadPendingReset = !m_pendingResetPageScope.empty();
     m_pendingResetPageScope.clear();
-    requestRebuild();
+    if (hadPendingReset) {
+      requestRebuild();
+    } else {
+      requestContentRebuild();
+    }
   });
   filters->addChild(std::move(overriddenToggle));
 
@@ -837,24 +999,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     main->addChild(centeredRow(std::move(status)));
   }
 
-  const auto clearTransientSettingsState = [this]() {
-    m_openWidgetPickerPath.clear();
-    m_editingWidgetName.clear();
-    m_renamingWidgetName.clear();
-    m_pendingDeleteWidgetName.clear();
-    m_pendingDeleteWidgetSettingPath.clear();
-    m_creatingWidgetType.clear();
-    m_creatingBarName.clear();
-    m_renamingBarName.clear();
-    m_pendingDeleteBarName.clear();
-    m_creatingMonitorOverrideBarName.clear();
-    m_creatingMonitorOverrideMatch.clear();
-    m_renamingMonitorOverrideBarName.clear();
-    m_renamingMonitorOverrideMatch.clear();
-    m_pendingDeleteMonitorOverrideBarName.clear();
-    m_pendingDeleteMonitorOverrideMatch.clear();
-    m_pendingResetPageScope.clear();
-  };
+  const auto clearTransientSettingsState = [this]() { this->clearTransientSettingsState(); };
 
   auto body = std::make_unique<Flex>();
   body->setDirection(FlexDirection::Horizontal);
@@ -890,57 +1035,11 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   scroll->clearFill();
   scroll->clearBorder();
   auto* content = scroll->content();
+  m_contentContainer = content;
   content->setDirection(FlexDirection::Vertical);
   content->setAlign(FlexAlign::Stretch);
   content->setGap(Style::spaceMd * scale);
-
-  settings::addSettingsEntityManagement(
-      *content, settings::SettingsEntityEditorContext{
-                    .config = cfg,
-                    .configService = m_config,
-                    .scale = scale,
-                    .searchQuery = m_searchQuery,
-                    .selectedSection = m_selectedSection,
-                    .selectedBar = selectedBar,
-                    .selectedMonitorOverride = selectedMonitorOverride,
-                    .renamingBarName = m_renamingBarName,
-                    .pendingDeleteBarName = m_pendingDeleteBarName,
-                    .renamingMonitorOverrideBarName = m_renamingMonitorOverrideBarName,
-                    .renamingMonitorOverrideMatch = m_renamingMonitorOverrideMatch,
-                    .pendingDeleteMonitorOverrideBarName = m_pendingDeleteMonitorOverrideBarName,
-                    .pendingDeleteMonitorOverrideMatch = m_pendingDeleteMonitorOverrideMatch,
-                    .requestRebuild = requestRebuild,
-                    .renameBar = renameBar,
-                    .deleteBar = deleteBar,
-                    .moveBar = moveBar,
-                    .renameMonitorOverride = renameMonitorOverride,
-                    .deleteMonitorOverride = deleteMonitorOverride,
-                });
-
-  settings::addSettingsContentSections(*content, registry,
-                                       settings::SettingsContentContext{
-                                           .config = cfg,
-                                           .configService = m_config,
-                                           .scale = scale,
-                                           .searchQuery = m_searchQuery,
-                                           .selectedSection = m_selectedSection,
-                                           .selectedBar = selectedBar,
-                                           .selectedMonitorOverride = selectedMonitorOverride,
-                                           .showAdvanced = m_showAdvanced,
-                                           .showOverriddenOnly = m_showOverriddenOnly,
-                                           .openWidgetPickerPath = m_openWidgetPickerPath,
-                                           .editingWidgetName = m_editingWidgetName,
-                                           .pendingDeleteWidgetName = m_pendingDeleteWidgetName,
-                                           .pendingDeleteWidgetSettingPath = m_pendingDeleteWidgetSettingPath,
-                                           .renamingWidgetName = m_renamingWidgetName,
-                                           .creatingWidgetType = m_creatingWidgetType,
-                                           .requestRebuild = requestRebuild,
-                                           .resetContentScroll = [this]() { m_contentScrollState.offset = 0.0f; },
-                                           .setOverride = setOverride,
-                                           .setOverrides = setOverrides,
-                                           .clearOverride = clearOverride,
-                                           .renameWidgetInstance = renameWidgetInstance,
-                                       });
+  rebuildSettingsContent();
 
   body->addChild(std::move(scroll));
   auto bodyRow = centeredRow(std::move(body));

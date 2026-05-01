@@ -414,8 +414,12 @@ void Input::doLayout(Renderer& renderer) {
         const auto metrics = renderer.measureGlyph(passwordMaskCodepointForIndex(charCount - 1), passwordGlyphSize);
         maskX += metrics.width;
         m_stopX.push_back(maskX);
-      } else {
-        m_stopX.push_back(renderer.measureText(m_value.substr(0, pos), m_fontSize).width);
+      }
+    }
+    if (!showPasswordGlyphs) {
+      renderer.measureTextCursorStops(m_value, m_fontSize, m_stopByte, m_stopX);
+      if (m_stopX.size() != m_stopByte.size()) {
+        m_stopX.assign(m_stopByte.size(), 0.0f);
       }
     }
   }
@@ -865,13 +869,6 @@ void Input::syncPasswordGlyphNodes(std::size_t count) {
     auto* glyphPtr = static_cast<GlyphNode*>(m_textViewport->insertChildAt(2, std::move(glyph)));
     m_passwordGlyphs.push_back(glyphPtr);
   }
-}
-
-float Input::measureCursorX(Renderer& renderer) const {
-  if (m_cursorPos == 0 || m_value.empty()) {
-    return 0.0f;
-  }
-  return renderer.measureText(m_value.substr(0, m_cursorPos), m_fontSize).width;
 }
 
 float Input::textViewportWidth() const noexcept {

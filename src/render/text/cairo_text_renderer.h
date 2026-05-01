@@ -5,6 +5,7 @@
 #include "render/core/renderer.h"
 #include "render/core/texture_handle.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <list>
 #include <string>
@@ -57,6 +58,8 @@ public:
 
   [[nodiscard]] TextMetrics measure(std::string_view text, float fontSize, bool bold = false, float maxWidth = 0.0f,
                                     int maxLines = 0, TextAlign align = TextAlign::Start);
+  void measureCursorStops(std::string_view text, float fontSize, const std::vector<std::size_t>& byteOffsets,
+                          std::vector<float>& outStops, bool bold = false);
 
   void draw(float surfaceWidth, float surfaceHeight, float x, float baselineY, std::string_view text, float fontSize,
             const Color& color, const Mat3& transform, bool bold = false, float maxWidth = 0.0f, int maxLines = 0,

@@ -188,12 +188,17 @@ namespace settings {
     return names;
   }
 
-  bool matchesSettingQuery(const SettingEntry& entry, std::string_view query) {
-    const std::string q = lower(query);
-    if (q.empty()) {
+  std::string normalizedSettingQuery(std::string_view query) { return lower(query); }
+
+  bool matchesNormalizedSettingQuery(const SettingEntry& entry, std::string_view normalizedQuery) {
+    if (normalizedQuery.empty()) {
       return true;
     }
-    return entry.searchText.find(q) != std::string::npos;
+    return entry.searchText.find(normalizedQuery) != std::string::npos;
+  }
+
+  bool matchesSettingQuery(const SettingEntry& entry, std::string_view query) {
+    return matchesNormalizedSettingQuery(entry, normalizedSettingQuery(query));
   }
 
   std::string_view sectionGlyph(std::string_view section) {

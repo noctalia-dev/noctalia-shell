@@ -171,6 +171,12 @@ TextMetrics RenderContext::measureText(std::string_view text, float fontSize, bo
                      .inkRight = m.inkRight};
 }
 
+void RenderContext::measureTextCursorStops(std::string_view text, float fontSize,
+                                           const std::vector<std::size_t>& byteOffsets, std::vector<float>& outStops,
+                                           bool bold) {
+  m_textRenderer.measureCursorStops(text, fontSize, byteOffsets, outStops, bold);
+}
+
 TextMetrics RenderContext::measureGlyph(char32_t codepoint, float fontSize) {
   auto m = m_glyphRenderer.measureGlyph(codepoint, fontSize);
   return TextMetrics{.width = m.width,

@@ -14,6 +14,7 @@
 #include <format>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace settings {
   namespace {
@@ -29,14 +30,15 @@ namespace settings {
                          [](unsigned char c) { return std::isalnum(c) != 0 || c == '_' || c == '-'; });
     }
 
-    bool barNameExists(const Config& cfg, std::string_view name) {
-      return std::any_of(cfg.bars.begin(), cfg.bars.end(), [name](const BarConfig& bar) { return bar.name == name; });
+    bool barNameExists(const std::vector<std::string>& barNames, std::string_view name) {
+      return std::any_of(barNames.begin(), barNames.end(),
+                         [name](const std::string& barName) { return barName == name; });
     }
 
-    std::string nextAvailableBarName(const Config& cfg) {
+    std::string nextAvailableBarName(const std::vector<std::string>& barNames) {
       for (std::size_t i = 1;; ++i) {
         const std::string candidate = i == 1 ? "bar" : std::format("bar_{}", i);
-        if (!barNameExists(cfg, candidate)) {
+        if (!barNameExists(barNames, candidate)) {
           return candidate;
         }
       }
@@ -45,7 +47,9 @@ namespace settings {
   } // namespace
 
   std::unique_ptr<Flex> buildSettingsSidebar(SettingsSidebarContext ctx) {
-    const Config cfg = ctx.config;
+    const Config& cfg = ctx.config;
+    std::vector<std::string> existingBarNames = ctx.availableBars;
+    const std::string nextBarName = nextAvailableBarName(existingBarNames);
     const auto sectionLabel = [](std::string_view section) {
       return i18n::tr("settings.navigation.sections." + std::string(section));
     };
@@ -276,9 +280,9 @@ namespace settings {
     newBarBtn->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
     newBarBtn->setGap(Style::spaceMd * scale);
     newBarBtn->setRadius(Style::radiusMd * scale);
-    newBarBtn->setOnClick([creatingBarName, cfg, clearTransientState, requestRebuild]() {
+    newBarBtn->setOnClick([creatingBarName, nextBarName, clearTransientState, requestRebuild]() {
       clearTransientState();
-      *creatingBarName = nextAvailableBarName(cfg);
+      *creatingBarName = nextBarName;
       requestRebuild();
     });
     sidebar->addChild(std::move(newBarBtn));
@@ -299,9 +303,9 @@ namespace settings {
       input->setSize(120.0f * scale, Style::controlHeightSm * scale);
       auto* inputPtr = input.get();
 
-      auto doCreate = [cfg, createBar, inputPtr](std::string rawName) {
+      auto doCreate = [existingBarNames, createBar, inputPtr](std::string rawName) {
         const std::string name = normalizedConfigId(rawName);
-        if (!isValidConfigId(name) || barNameExists(cfg, name)) {
+        if (!isValidConfigId(name) || barNameExists(existingBarNames, name)) {
           inputPtr->setInvalid(true);
           return;
         }
