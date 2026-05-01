@@ -39,6 +39,8 @@ public:
   void setOnSubmit(std::function<void(const std::string&)> callback);
   void setOnKeyEvent(std::function<bool(std::uint32_t sym, std::uint32_t modifiers)> callback);
   void selectAll();
+  void moveCaretLeft(bool shift = false);
+  void moveCaretRight(bool shift = false);
 
   // Set once at application startup; all Input instances use this for Ctrl+C/X/V.
   static void setClipboardService(ClipboardService* clipboard) noexcept;

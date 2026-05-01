@@ -801,7 +801,8 @@ void Application::initUi() {
   }
   m_panelManager.registerPanel("wallpaper",
                                std::make_unique<WallpaperPanel>(&m_wayland, &m_configService, &m_thumbnailService));
-  m_panelManager.registerPanel("polkit", std::make_unique<PolkitPanel>([this]() { return m_polkitAgent.get(); }));
+  m_panelManager.registerPanel(
+      "polkit", std::make_unique<PolkitPanel>(&m_configService, [this]() { return m_polkitAgent.get(); }));
   m_panelManager.registerPanel("setup-wizard", std::make_unique<SetupWizardPanel>(&m_configService, &m_wayland));
 
   if (SetupWizardPanel::isFirstRun()) {

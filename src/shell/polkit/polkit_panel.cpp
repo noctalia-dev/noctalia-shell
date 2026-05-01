@@ -1,5 +1,7 @@
 #include "shell/polkit/polkit_panel.h"
 
+#include "config/config_service.h"
+#include "config/config_types.h"
 #include "dbus/polkit/polkit_agent.h"
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
@@ -11,9 +13,11 @@
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "wayland/wayland_seat.h"
 
 #include <cctype>
 #include <memory>
+#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -39,7 +43,8 @@ namespace {
 
 } // namespace
 
-PolkitPanel::PolkitPanel(std::function<PolkitAgent*()> agentProvider) : m_agentProvider(std::move(agentProvider)) {}
+PolkitPanel::PolkitPanel(ConfigService* config, std::function<PolkitAgent*()> agentProvider)
+    : m_config(config), m_agentProvider(std::move(agentProvider)) {}
 
 void PolkitPanel::create() {
   const float scale = contentScale();
@@ -92,6 +97,8 @@ void PolkitPanel::create() {
   input->setPlaceholder(i18n::tr("auth.polkit.password-placeholder"));
   input->setPasswordMode(true);
   input->setOnSubmit([this](const std::string&) { submit(); });
+  input->setOnKeyEvent(
+      [this](std::uint32_t sym, std::uint32_t modifiers) { return handleInputKeyEvent(sym, modifiers); });
   m_input = input.get();
   bottomContent->addChild(std::move(input));
 
@@ -196,4 +203,31 @@ void PolkitPanel::submit() {
   }
   agent->submitResponse(m_input->value());
   m_input->setValue("");
+}
+
+bool PolkitPanel::handleInputKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
+  if (m_config == nullptr) {
+    return false;
+  }
+  if (m_config->matchesKeybind(KeybindAction::Validate, sym, modifiers)) {
+    submit();
+    return true;
+  }
+  if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter) {
+    return true;
+  }
+  const bool shift = (modifiers & KeyMod::Shift) != 0;
+  if (m_config->matchesKeybind(KeybindAction::Left, sym, modifiers)) {
+    if (m_input != nullptr) {
+      m_input->moveCaretLeft(shift);
+    }
+    return true;
+  }
+  if (m_config->matchesKeybind(KeybindAction::Right, sym, modifiers)) {
+    if (m_input != nullptr) {
+      m_input->moveCaretRight(shift);
+    }
+    return true;
+  }
+  return false;
 }
