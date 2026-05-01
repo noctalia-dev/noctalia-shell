@@ -1,5 +1,6 @@
 #include "launcher/app_provider.h"
 
+#include "util/file_utils.h"
 #include "util/fuzzy_match.h"
 #include "wayland/wayland_connection.h"
 
@@ -119,12 +120,20 @@ namespace {
     return args;
   }
 
+  std::string expandExecutablePath(std::string_view binary) {
+    if (binary.empty() || binary[0] != '~') {
+      return std::string(binary);
+    }
+    return FileUtils::expandUserPath(std::string(binary)).string();
+  }
+
   bool isExecutableOnPath(std::string_view binary) {
     if (binary.empty()) {
       return false;
     }
     if (binary.find('/') != std::string_view::npos) {
-      return access(std::string(binary).c_str(), X_OK) == 0;
+      const std::string expanded = expandExecutablePath(binary);
+      return access(expanded.c_str(), X_OK) == 0;
     }
 
     const char* pathEnv = std::getenv("PATH");
@@ -196,6 +205,10 @@ namespace {
   void launchCommand(const std::string& exec, bool terminal, const std::string& activationToken) {
     std::string cleanExec = stripFieldCodes(exec);
     std::vector<std::string> args = terminal ? terminalLaunchArgs(cleanExec) : tokenize(cleanExec);
+
+    if (!args.empty() && args.front().find('/') != std::string::npos) {
+      args.front() = expandExecutablePath(args.front());
+    }
 
     pid_t pid = fork();
     if (pid < 0) {
