@@ -12,10 +12,10 @@
 namespace {
 
   const char* batteryGlyphName(double percentage, BatteryState state) {
-    if (state == BatteryState::Charging || state == BatteryState::PendingCharge) {
+    if (state == BatteryState::Charging) {
       return "battery-charging";
     }
-    if (state == BatteryState::FullyCharged) {
+    if (state == BatteryState::FullyCharged || state == BatteryState::PendingCharge) {
       return "battery-plugged";
     }
     if (state == BatteryState::Unknown) {
