@@ -312,6 +312,7 @@ void LauncherPanel::create() {
   input->setFontSize(Style::fontSizeBody * scale);
   input->setControlHeight(Style::controlHeight * scale);
   input->setHorizontalPadding(Style::spaceMd * scale);
+  input->setClearButtonEnabled(true);
   input->setOnChange([this](const std::string& text) { onInputChanged(text); });
   input->setOnSubmit([this](const std::string& /*text*/) { activateSelected(); });
   input->setOnKeyEvent([this](std::uint32_t sym, std::uint32_t modifiers) { return handleKeyEvent(sym, modifiers); });

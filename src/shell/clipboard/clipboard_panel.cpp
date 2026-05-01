@@ -167,6 +167,7 @@ void ClipboardPanel::create() {
   filterInput->setFontSize(Style::fontSizeBody * scale);
   filterInput->setControlHeight(Style::controlHeight * scale);
   filterInput->setHorizontalPadding(Style::spaceMd * scale);
+  filterInput->setClearButtonEnabled(true);
   filterInput->setOnChange([this](const std::string& text) { onFilterChanged(text); });
   filterInput->setOnSubmit([this](const std::string& /*text*/) { activateSelected(); });
   filterInput->setOnKeyEvent(
