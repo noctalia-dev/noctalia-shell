@@ -2,7 +2,6 @@
 
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
-#include "shell/panel/panel_manager.h"
 #include "ui/controls/glyph.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -13,9 +12,7 @@ TestWidget::TestWidget(wl_output* output) : m_output(output) {}
 
 void TestWidget::create() {
   auto area = std::make_unique<InputArea>();
-  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    PanelManager::instance().togglePanel("test", m_output, 0.0f, 0.0f);
-  });
+  area->setOnClick([this](const InputArea::PointerData& /*data*/) { requestPanelToggle("test"); });
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("flask");

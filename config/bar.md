@@ -15,6 +15,7 @@ reserve_space      = true        # reserve compositor exclusive zone / push wind
 thickness          = 34          # bar cross-axis size in pixels (height for horizontal, width for vertical)
 background_opacity = 1.0         # 0.0 (transparent) to 1.0 (opaque)
 shadow             = true        # cast the global [shell.shadow]
+attach_panels      = true        # allow panels to attach to this bar (false = always float)
 radius             = 12          # global corner radius fallback
 radius_top_left    = 12
 radius_top_right   = 12
@@ -75,7 +76,7 @@ end                = ["volume", "clock"]
 
 `match` defaults to the subtable key name when omitted, so `[bar.main.monitor."DP-1"]` without a `match` field works too.
 
-Only the fields you specify are overridden; everything else falls through to the `[bar.*]` defaults. Supported override fields: all bar fields, plus `auto_hide`, `reserve_space`, `scale`, `background_opacity`, `color`, and all `capsule_*` keys.
+Only the fields you specify are overridden; everything else falls through to the `[bar.*]` defaults. Supported override fields: all bar fields, plus `auto_hide`, `reserve_space`, `attach_panels`, `scale`, `background_opacity`, `color`, and all `capsule_*` keys.
 
 Shadow blur, offset, and alpha are global under `[shell.shadow]`. Bars only expose `shadow = true|false`.
 

@@ -5,7 +5,6 @@
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "render/scene/rect_node.h"
-#include "shell/panel/panel_manager.h"
 #include "system/system_monitor_service.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
@@ -64,9 +63,8 @@ SysmonWidget::~SysmonWidget() {
 
 void SysmonWidget::create() {
   auto container = std::make_unique<InputArea>();
-  container->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    PanelManager::instance().togglePanel("control-center", m_output, 0.0f, 0.0f, "system");
-  });
+  container->setOnClick(
+      [this](const InputArea::PointerData& /*data*/) { requestPanelToggle("control-center", "system"); });
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph(glyphName(m_stat));

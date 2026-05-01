@@ -4,7 +4,6 @@
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
-#include "shell/panel/panel_manager.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
@@ -31,9 +30,7 @@ NetworkWidget::NetworkWidget(NetworkService* network, wl_output* output, bool sh
 
 void NetworkWidget::create() {
   auto area = std::make_unique<InputArea>();
-  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    PanelManager::instance().togglePanel("control-center", m_output, 0.0f, 0.0f, "network");
-  });
+  area->setOnClick([this](const InputArea::PointerData& /*data*/) { requestPanelToggle("control-center", "network"); });
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("wifi-off");

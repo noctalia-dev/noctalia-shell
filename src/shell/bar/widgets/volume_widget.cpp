@@ -4,7 +4,6 @@
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
-#include "shell/panel/panel_manager.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
@@ -35,9 +34,7 @@ VolumeWidget::VolumeWidget(PipeWireService* audio, wl_output* output, bool showL
 
 void VolumeWidget::create() {
   auto area = std::make_unique<InputArea>();
-  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    PanelManager::instance().togglePanel("control-center", m_output, 0.0f, 0.0f, "audio");
-  });
+  area->setOnClick([this](const InputArea::PointerData& /*data*/) { requestPanelToggle("control-center", "audio"); });
   area->setOnAxis([this](const InputArea::PointerData& data) {
     if (m_audio == nullptr) {
       return;

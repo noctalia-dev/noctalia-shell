@@ -61,6 +61,8 @@ void Widget::setUpdateCallback(UpdateCallback callback) { m_updateCallback = std
 
 void Widget::setRedrawCallback(RedrawCallback callback) { m_redrawCallback = std::move(callback); }
 
+void Widget::setPanelToggleCallback(PanelToggleCallback callback) { m_panelToggleCallback = std::move(callback); }
+
 void Widget::requestUpdate() {
   if (m_updateCallback) {
     m_updateCallback();
@@ -70,5 +72,11 @@ void Widget::requestUpdate() {
 void Widget::requestRedraw() {
   if (m_redrawCallback) {
     m_redrawCallback();
+  }
+}
+
+void Widget::requestPanelToggle(std::string_view panelId, std::string_view context) {
+  if (m_panelToggleCallback) {
+    m_panelToggleCallback(panelId, context);
   }
 }

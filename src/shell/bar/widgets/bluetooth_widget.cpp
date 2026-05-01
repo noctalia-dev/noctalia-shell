@@ -3,7 +3,6 @@
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
-#include "shell/panel/panel_manager.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
@@ -51,9 +50,8 @@ BluetoothWidget::BluetoothWidget(BluetoothService* bluetooth, wl_output* output,
 
 void BluetoothWidget::create() {
   auto area = std::make_unique<InputArea>();
-  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    PanelManager::instance().togglePanel("control-center", m_output, 0.0f, 0.0f, "bluetooth");
-  });
+  area->setOnClick(
+      [this](const InputArea::PointerData& /*data*/) { requestPanelToggle("control-center", "bluetooth"); });
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("bluetooth");

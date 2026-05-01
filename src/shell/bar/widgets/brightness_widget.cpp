@@ -3,7 +3,6 @@
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
-#include "shell/panel/panel_manager.h"
 #include "system/brightness_service.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
@@ -32,9 +31,7 @@ BrightnessWidget::BrightnessWidget(BrightnessService* brightness, wl_output* out
 
 void BrightnessWidget::create() {
   auto area = std::make_unique<InputArea>();
-  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    PanelManager::instance().togglePanel("control-center", m_output, 0.0f, 0.0f, "display");
-  });
+  area->setOnClick([this](const InputArea::PointerData& /*data*/) { requestPanelToggle("control-center", "display"); });
   area->setOnAxis([this](const InputArea::PointerData& data) {
     if (m_brightness == nullptr) {
       return;

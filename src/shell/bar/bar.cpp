@@ -903,6 +903,11 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
           surface->requestRedraw();
         }
       });
+      widget->setPanelToggleCallback([inst = &instance](std::string_view panelId, std::string_view context) {
+        PanelManager::instance().togglePanel(
+            std::string(panelId),
+            PanelOpenRequest{.output = inst->output, .context = context, .sourceBarName = inst->barConfig.name});
+      });
       widget->create();
       if (widget->root() == nullptr) {
         continue;
@@ -1462,7 +1467,9 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
         if (panelManager.isOpen() && panelManager.activePanelId() == "control-center") {
           panelManager.closePanel();
         } else {
-          panelManager.openPanel("control-center", targetInstance->output, 0.0f, 0.0f, "overview");
+          panelManager.openPanel("control-center", PanelOpenRequest{.output = targetInstance->output,
+                                                                    .context = "overview",
+                                                                    .sourceBarName = targetInstance->barConfig.name});
         }
         return true;
       }
@@ -1534,7 +1541,10 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
         if (panelManager.isOpen() && panelManager.activePanelId() == "control-center") {
           panelManager.closePanel();
         } else {
-          panelManager.openPanel("control-center", m_hoveredInstance->output, 0.0f, 0.0f, "overview");
+          panelManager.openPanel("control-center",
+                                 PanelOpenRequest{.output = m_hoveredInstance->output,
+                                                  .context = "overview",
+                                                  .sourceBarName = m_hoveredInstance->barConfig.name});
         }
         consumed = true;
       }

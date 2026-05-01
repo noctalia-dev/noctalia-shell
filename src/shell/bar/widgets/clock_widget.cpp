@@ -3,7 +3,6 @@
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
-#include "shell/panel/panel_manager.h"
 #include "time/time_format.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
@@ -49,9 +48,8 @@ std::string ClockWidget::formatTimeText() const {
 
 void ClockWidget::create() {
   auto area = std::make_unique<InputArea>();
-  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    PanelManager::instance().togglePanel("control-center", m_output, 0.0f, 0.0f, "calendar");
-  });
+  area->setOnClick(
+      [this](const InputArea::PointerData& /*data*/) { requestPanelToggle("control-center", "calendar"); });
 
   auto label = std::make_unique<Label>();
   label->setBold(true);

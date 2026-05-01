@@ -2,7 +2,6 @@
 
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
-#include "shell/panel/panel_manager.h"
 #include "ui/controls/glyph.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -14,9 +13,8 @@ ControlCenterWidget::ControlCenterWidget(wl_output* output, std::string barGlyph
 
 void ControlCenterWidget::create() {
   auto area = std::make_unique<InputArea>();
-  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    PanelManager::instance().togglePanel("control-center", m_output, 0.0f, 0.0f, "overview");
-  });
+  area->setOnClick(
+      [this](const InputArea::PointerData& /*data*/) { requestPanelToggle("control-center", "overview"); });
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph(m_barGlyphId.empty() ? "search" : m_barGlyphId);

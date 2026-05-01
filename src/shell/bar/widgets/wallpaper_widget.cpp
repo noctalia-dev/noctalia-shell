@@ -2,7 +2,6 @@
 
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
-#include "shell/panel/panel_manager.h"
 #include "ui/controls/glyph.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -14,9 +13,7 @@ WallpaperWidget::WallpaperWidget(wl_output* output, std::string barGlyphId)
 
 void WallpaperWidget::create() {
   auto area = std::make_unique<InputArea>();
-  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    PanelManager::instance().togglePanel("wallpaper", m_output, 0.0f, 0.0f);
-  });
+  area->setOnClick([this](const InputArea::PointerData& /*data*/) { requestPanelToggle("wallpaper"); });
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph(m_barGlyphId.empty() ? "wallpaper-selector" : m_barGlyphId);

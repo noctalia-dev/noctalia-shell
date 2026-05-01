@@ -3,7 +3,6 @@
 #include "notification/notification_manager.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
-#include "shell/panel/panel_manager.h"
 #include "ui/controls/box.h"
 #include "ui/controls/glyph.h"
 #include "ui/palette.h"
@@ -33,7 +32,7 @@ void NotificationWidget::create() {
     if (data.button != BTN_LEFT) {
       return;
     }
-    PanelManager::instance().togglePanel("control-center", m_output, 0.0f, 0.0f, "notifications");
+    requestPanelToggle("control-center", "notifications");
   });
 
   auto glyph = std::make_unique<Glyph>();

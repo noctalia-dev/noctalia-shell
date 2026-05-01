@@ -31,6 +31,14 @@ struct PointerEvent;
 struct wl_output;
 struct wl_surface;
 
+struct PanelOpenRequest {
+  wl_output* output = nullptr;
+  float anchorX = 0.0f;
+  float anchorY = 0.0f;
+  std::string_view context = {};
+  std::string_view sourceBarName = {};
+};
+
 class PanelManager {
 public:
   PanelManager();
@@ -57,11 +65,9 @@ public:
 
   void registerPanel(const std::string& id, std::unique_ptr<Panel> content);
 
-  void openPanel(const std::string& panelId, wl_output* output, float anchorX, float anchorY,
-                 std::string_view context = {});
+  void openPanel(const std::string& panelId, PanelOpenRequest request = {});
   void closePanel();
-  void togglePanel(const std::string& panelId, wl_output* output, float anchorX, float anchorY,
-                   std::string_view context = {});
+  void togglePanel(const std::string& panelId, PanelOpenRequest request);
   // IPC-friendly overload: asks WaylandConnection for preferred interactive output.
   void togglePanel(const std::string& panelId);
 
@@ -165,6 +171,7 @@ private:
   float m_detachedRevealProgress = 1.0f;
   AttachedRevealDirection m_attachedRevealDirection = AttachedRevealDirection::Down;
   std::string m_attachedBarPosition; // "top" / "bottom" / "left" / "right" while attached, empty otherwise
+  std::string m_sourceBarName;       // name of the bar that opened the current panel
   std::optional<AttachedPanelGeometry> m_attachedPanelGeometry;
   bool m_pointerInside = false;
   bool m_inTransition = false;

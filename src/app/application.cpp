@@ -202,7 +202,7 @@ void Application::syncPolkitAgent() {
       if (needsInput) {
         if (!(m_panelManager.isOpen() && m_panelManager.activePanelId() == "polkit")) {
           wl_output* output = m_wayland.preferredPanelOutput(std::chrono::milliseconds(1200));
-          m_panelManager.openPanel("polkit", output, 0.0f, 0.0f);
+          m_panelManager.openPanel("polkit", PanelOpenRequest{.output = output});
         } else {
           m_panelManager.refresh();
         }

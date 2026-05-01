@@ -2,7 +2,6 @@
 
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
-#include "shell/panel/panel_manager.h"
 #include "ui/controls/glyph.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -14,9 +13,7 @@ ClipboardWidget::ClipboardWidget(wl_output* output, std::string barGlyphId)
 
 void ClipboardWidget::create() {
   auto area = std::make_unique<InputArea>();
-  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    PanelManager::instance().togglePanel("clipboard", m_output, 0.0f, 0.0f);
-  });
+  area->setOnClick([this](const InputArea::PointerData& /*data*/) { requestPanelToggle("clipboard"); });
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph(m_barGlyphId.empty() ? "clipboard" : m_barGlyphId);

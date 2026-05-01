@@ -26,7 +26,7 @@
 namespace {
 
   void openTab(std::string_view tab) {
-    PanelManager::instance().togglePanel("control-center", nullptr, 0.0f, 0.0f, tab);
+    PanelManager::instance().togglePanel("control-center", PanelOpenRequest{.context = tab});
   }
 
   // ── Toggle shortcuts ────────────────────────────────────────────────────────

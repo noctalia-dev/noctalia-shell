@@ -3,7 +3,6 @@
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
-#include "shell/panel/panel_manager.h"
 #include "system/weather_service.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
@@ -20,9 +19,7 @@ WeatherWidget::WeatherWidget(WeatherService* weather, wl_output* output, float m
 
 void WeatherWidget::create() {
   auto area = std::make_unique<InputArea>();
-  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    PanelManager::instance().togglePanel("control-center", m_output, 0.0f, 0.0f, "weather");
-  });
+  area->setOnClick([this](const InputArea::PointerData& /*data*/) { requestPanelToggle("control-center", "weather"); });
   m_area = area.get();
 
   auto glyph = std::make_unique<Glyph>();

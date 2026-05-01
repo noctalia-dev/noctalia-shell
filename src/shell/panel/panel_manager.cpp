@@ -29,13 +29,28 @@ namespace {
   constexpr Logger kLog("panel");
   constexpr std::int32_t kAttachedPanelBarOverlap = 1;
 
-  BarConfig resolvePanelBarConfig(ConfigService* configService, WaylandConnection* wayland, wl_output* output) {
+  BarConfig resolvePanelBarConfig(ConfigService* configService, WaylandConnection* wayland, wl_output* output,
+                                  std::string_view barName = {}) {
     BarConfig barConfig;
     if (configService == nullptr || configService->config().bars.empty()) {
       return barConfig;
     }
 
-    barConfig = configService->config().bars.front();
+    const auto& bars = configService->config().bars;
+    bool found = false;
+    if (!barName.empty()) {
+      for (const auto& bar : bars) {
+        if (bar.name == barName) {
+          barConfig = bar;
+          found = true;
+          break;
+        }
+      }
+    }
+    if (!found) {
+      barConfig = bars.front();
+    }
+
     if (wayland == nullptr || output == nullptr) {
       return barConfig;
     }
@@ -109,8 +124,7 @@ void PanelManager::registerPanel(const std::string& id, std::unique_ptr<Panel> c
   m_panels[id] = std::move(content);
 }
 
-void PanelManager::openPanel(const std::string& panelId, wl_output* output, float anchorX, float anchorY,
-                             std::string_view context) {
+void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest request) {
   if (m_inTransition) {
     return;
   }
@@ -131,8 +145,9 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
 
   m_activePanel = it->second.get();
   m_activePanelId = panelId;
+  m_sourceBarName = std::string(request.sourceBarName);
   m_activePanel->setContentScale(resolvePanelContentScale(m_config));
-  m_pendingOpenContext = std::string(context);
+  m_pendingOpenContext = std::string(request.context);
 
   // Map shields BEFORE the panel surface is created/committed. Within a
   // single layer, wlroots stacks surfaces by mapping order — the shields
@@ -141,7 +156,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
 
   const auto panelWidth = static_cast<std::uint32_t>(m_activePanel->preferredWidth());
   const auto panelHeight = static_cast<std::uint32_t>(m_activePanel->preferredHeight());
-  const auto barConfig = resolvePanelBarConfig(m_config, m_wayland, output);
+  const auto barConfig = resolvePanelBarConfig(m_config, m_wayland, request.output, request.sourceBarName);
   const bool isBottom = barConfig.position == "bottom";
   const bool isLeft = barConfig.position == "left";
   const bool isRight = barConfig.position == "right";
@@ -152,7 +167,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
   std::int32_t outputWidth = static_cast<std::int32_t>(panelWidth);
   std::int32_t outputHeight = static_cast<std::int32_t>(panelHeight);
   if (m_wayland != nullptr) {
-    const auto* wlOutput = m_wayland->findOutputByWl(output);
+    const auto* wlOutput = m_wayland->findOutputByWl(request.output);
     if (wlOutput != nullptr && wlOutput->width > 0) {
       outputWidth =
           wlOutput->logicalWidth > 0 ? wlOutput->logicalWidth : wlOutput->width / std::max(1, wlOutput->scale);
@@ -180,9 +195,9 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
       barConfig.thickness + (isVertical ? std::max(0, barConfig.marginH) : std::max(0, barConfig.marginV)) + panelGap;
 
   const auto marginLeft = centeredH ? 0
-                                    : clampMargin(anchorX - static_cast<float>(panelWidth) * 0.5f,
+                                    : clampMargin(request.anchorX - static_cast<float>(panelWidth) * 0.5f,
                                                   static_cast<std::int32_t>(panelWidth), outputWidth, screenPadding);
-  const auto marginTop = clampMargin(anchorY - static_cast<float>(panelHeight) * 0.5f,
+  const auto marginTop = clampMargin(request.anchorY - static_cast<float>(panelHeight) * 0.5f,
                                      static_cast<std::int32_t>(panelHeight), outputHeight, screenPadding);
 
   auto surfaceConfig = LayerSurfaceConfig{
@@ -238,11 +253,13 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
     m_attachedRevealProgress = 1.0f;
     m_attachedRevealDirection = AttachedRevealDirection::Down;
     m_attachedBarPosition.clear();
+    m_sourceBarName.clear();
     m_attachedPanelGeometry.reset();
     m_attachedToBar = false;
   };
 
-  if (m_activePanel->prefersAttachedToBar() && barConfig.thickness > 0 && outputWidth > 0 && outputHeight > 0) {
+  if (m_activePanel->prefersAttachedToBar() && barConfig.attachPanels && barConfig.thickness > 0 && outputWidth > 0 &&
+      outputHeight > 0) {
     const std::string_view barPosition = barConfig.position;
     const bool barIsBottom = barPosition == "bottom";
     const bool barIsLeft = barPosition == "left";
@@ -393,11 +410,11 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
     configureSurfaceCallbacks(*m_surface);
 
     m_inTransition = true;
-    const bool ok = m_layerSurface->initialize(output);
+    const bool ok = m_layerSurface->initialize(request.output);
     m_inTransition = false;
 
     if (ok) {
-      m_output = output;
+      m_output = request.output;
       m_wlSurface = m_surface->wlSurface();
       m_surface->setInputRegion(
           {InputRect{m_panelInsetX, m_panelInsetY, static_cast<int>(panelWidth), static_cast<int>(panelHeight)}});
@@ -418,7 +435,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
     }
 
     if (m_attachedPanelGeometryCallback) {
-      m_attachedPanelGeometryCallback(output, std::nullopt);
+      m_attachedPanelGeometryCallback(request.output, std::nullopt);
     }
     m_surface.reset();
     m_layerSurface = nullptr;
@@ -452,7 +469,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
   // Guard against re-entrancy: initialize can process queued Wayland events,
   // re-entering our event handler before the panel is fully open.
   m_inTransition = true;
-  bool ok = m_layerSurface->initialize(output);
+  bool ok = m_layerSurface->initialize(request.output);
   m_inTransition = false;
 
   if (!ok) {
@@ -461,7 +478,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
     return;
   }
 
-  m_output = output;
+  m_output = request.output;
   m_wlSurface = m_surface->wlSurface();
   applyPanelCompositorBlur();
   // Defer the focus grab to the next tick — see attached-path comment above.
@@ -605,6 +622,7 @@ void PanelManager::destroyPanel() {
   m_attachedRevealProgress = 1.0f;
   m_attachedRevealDirection = AttachedRevealDirection::Down;
   m_attachedBarPosition.clear();
+  m_sourceBarName.clear();
   m_attachedPanelGeometry.reset();
   m_attachedToBar = false;
   if (m_wayland != nullptr) {
@@ -612,22 +630,21 @@ void PanelManager::destroyPanel() {
   }
 }
 
-void PanelManager::togglePanel(const std::string& panelId, wl_output* output, float anchorX, float anchorY,
-                               std::string_view context) {
+void PanelManager::togglePanel(const std::string& panelId, PanelOpenRequest request) {
   // Treat a closing panel as closed: re-clicking while it animates out reopens it immediately.
   if (isOpen() && !m_closing && m_activePanelId == panelId) {
-    if (!context.empty() && m_activePanel != nullptr) {
-      if (m_activePanel->isContextActive(context)) {
+    if (!request.context.empty() && m_activePanel != nullptr) {
+      if (m_activePanel->isContextActive(request.context)) {
         closePanel();
         return;
       }
-      m_activePanel->onOpen(context);
+      m_activePanel->onOpen(request.context);
       refresh();
       return;
     }
     closePanel();
   } else {
-    openPanel(panelId, output, anchorX, anchorY, context);
+    openPanel(panelId, request);
   }
 }
 
@@ -637,7 +654,7 @@ void PanelManager::togglePanel(const std::string& panelId) {
     return;
   }
   wl_output* output = m_wayland != nullptr ? m_wayland->preferredPanelOutput(std::chrono::milliseconds(1200)) : nullptr;
-  openPanel(panelId, output, 0.0f, 0.0f);
+  openPanel(panelId, PanelOpenRequest{.output = output});
 }
 
 bool PanelManager::onPointerEvent(const PointerEvent& event) {
@@ -1106,7 +1123,7 @@ void PanelManager::onConfigReloaded() {
   if (!m_activePanel->inheritsBarBackgroundOpacity()) {
     return;
   }
-  const float newOpacity = resolvePanelBarConfig(m_config, m_wayland, m_output).backgroundOpacity;
+  const float newOpacity = resolvePanelBarConfig(m_config, m_wayland, m_output, m_sourceBarName).backgroundOpacity;
   if (std::abs(newOpacity - m_attachedBackgroundOpacity) < 0.001f) {
     return;
   }
@@ -1307,7 +1324,7 @@ void PanelManager::registerIpc(IpcService& ipc) {
           const std::string_view context = std::string_view(args).substr(sep + 1);
           wl_output* output =
               m_wayland != nullptr ? m_wayland->preferredPanelOutput(std::chrono::milliseconds(1200)) : nullptr;
-          togglePanel(panelId, output, 0.0f, 0.0f, context);
+          togglePanel(panelId, PanelOpenRequest{.output = output, .context = context});
         }
         return "ok\n";
       },

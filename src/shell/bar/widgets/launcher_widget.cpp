@@ -2,7 +2,6 @@
 
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
-#include "shell/panel/panel_manager.h"
 #include "ui/controls/glyph.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -14,9 +13,7 @@ LauncherWidget::LauncherWidget(wl_output* output, std::string barGlyphId)
 
 void LauncherWidget::create() {
   auto area = std::make_unique<InputArea>();
-  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    PanelManager::instance().togglePanel("launcher", m_output, 0.0f, 0.0f);
-  });
+  area->setOnClick([this](const InputArea::PointerData& /*data*/) { requestPanelToggle("launcher"); });
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph(m_barGlyphId.empty() ? "video" : m_barGlyphId);

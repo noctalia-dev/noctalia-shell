@@ -1488,6 +1488,10 @@
         "reserve-space": {
           "description": "Reserve screen space for the bar"
         },
+        "attach-panels": {
+          "label": "Attach Panels",
+          "description": "Attach panels opened from this bar to the bar edge"
+        },
         "horizontal-margin": {
           "description": "Horizontal margin from screen edge"
         },

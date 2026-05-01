@@ -380,6 +380,8 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.widgetSpacing = *ovr.widgetSpacing;
     if (ovr.shadow)
       resolved.shadow = *ovr.shadow;
+    if (ovr.attachPanels)
+      resolved.attachPanels = *ovr.attachPanels;
     if (ovr.startWidgets)
       resolved.startWidgets = *ovr.startWidgets;
     if (ovr.centerWidgets)
@@ -697,6 +699,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
         bar.autoHide = *v;
       if (auto v = (*barTbl)["reserve_space"].value<bool>())
         bar.reserveSpace = *v;
+      if (auto v = (*barTbl)["attach_panels"].value<bool>())
+        bar.attachPanels = *v;
       if (auto v = (*barTbl)["thickness"].value<int64_t>())
         bar.thickness = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
       if (auto v = (*barTbl)["background_opacity"].value<double>())
@@ -784,6 +788,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
             ovr.autoHide = *v;
           if (auto v = (*monTbl)["reserve_space"].value<bool>())
             ovr.reserveSpace = *v;
+          if (auto v = (*monTbl)["attach_panels"].value<bool>())
+            ovr.attachPanels = *v;
           if (auto v = (*monTbl)["thickness"].value<int64_t>())
             ovr.thickness = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
           if (auto v = (*monTbl)["background_opacity"].value<double>())

@@ -655,6 +655,9 @@ namespace settings {
       entries.push_back(makeEntry(section, "general", tr("settings.schema.shared.reserve-space.label"),
                                   tr("settings.schema.bar.reserve-space.description"), path("reserve_space"),
                                   ToggleSetting{selectedBar->reserveSpace}, "exclusive zone"));
+      entries.push_back(makeEntry(section, "general", tr("settings.schema.bar.attach-panels.label"),
+                                  tr("settings.schema.bar.attach-panels.description"), path("attach_panels"),
+                                  ToggleSetting{selectedBar->attachPanels}, "panel popup attach float"));
       entries.push_back(makeEntry(section, "layout", tr("settings.schema.bar.thickness.label"),
                                   tr("settings.schema.bar.thickness.description"), path("thickness"),
                                   SliderSetting{static_cast<float>(selectedBar->thickness), 10.0f, 120.0f, 1.0f, true},
@@ -765,6 +768,10 @@ namespace settings {
       entries.push_back(makeEntry(section, "general", tr("settings.schema.shared.reserve-space.label"),
                                   tr("settings.schema.bar.reserve-space.description"), mpath("reserve_space"),
                                   ToggleSetting{ovr.reserveSpace.value_or(bar.reserveSpace)}, "exclusive zone"));
+      entries.push_back(makeEntry(section, "general", tr("settings.schema.bar.attach-panels.label"),
+                                  tr("settings.schema.bar.attach-panels.description"), mpath("attach_panels"),
+                                  ToggleSetting{ovr.attachPanels.value_or(bar.attachPanels)},
+                                  "panel popup attach float"));
       entries.push_back(
           makeEntry(section, "layout", tr("settings.schema.bar.thickness.label"),
                     tr("settings.schema.bar.thickness.description"), mpath("thickness"),

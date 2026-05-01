@@ -7,6 +7,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <string_view>
 
 class AnimationManager;
 class Box;
@@ -16,6 +17,7 @@ class Widget {
 public:
   using UpdateCallback = std::function<void()>;
   using RedrawCallback = std::function<void()>;
+  using PanelToggleCallback = std::function<void(std::string_view panelId, std::string_view context)>;
 
   virtual ~Widget() = default;
 
@@ -40,6 +42,7 @@ public:
   void setAnimationManager(AnimationManager* mgr) noexcept;
   void setUpdateCallback(UpdateCallback callback);
   void setRedrawCallback(RedrawCallback callback);
+  void setPanelToggleCallback(PanelToggleCallback callback);
   void setContentScale(float scale) noexcept { m_contentScale = scale; }
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
   void setAnchor(bool anchor) noexcept { m_anchor = anchor; }
@@ -64,6 +67,7 @@ public:
 protected:
   void requestUpdate();
   void requestRedraw();
+  void requestPanelToggle(std::string_view panelId, std::string_view context = {});
   void setRoot(std::unique_ptr<Node> root) { m_root = std::move(root); }
   void clearReleasedRoot() noexcept { m_rootPtr = nullptr; }
   virtual void doLayout(Renderer& renderer, float containerWidth, float containerHeight) = 0;
@@ -74,6 +78,7 @@ protected:
   AnimationManager* m_animations = nullptr;
   UpdateCallback m_updateCallback;
   RedrawCallback m_redrawCallback;
+  PanelToggleCallback m_panelToggleCallback;
   WidgetBarCapsuleSpec m_barCapsuleSpec{};
   std::optional<ThemeColor> m_widgetForeground;
   Node* m_capsuleShell = nullptr;

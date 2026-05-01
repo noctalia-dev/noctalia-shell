@@ -7,7 +7,6 @@
 #include "net/http_client.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
-#include "shell/panel/panel_manager.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/image.h"
 #include "ui/controls/label.h"
@@ -35,7 +34,7 @@ void MediaWidget::create() {
   area->setAcceptedButtons(BTN_LEFT | BTN_RIGHT);
   area->setOnClick([this](const InputArea::PointerData& data) {
     if (data.button == BTN_LEFT) {
-      PanelManager::instance().togglePanel("control-center", m_output, 0.0f, 0.0f, "media");
+      requestPanelToggle("control-center", "media");
       return;
     }
     if (data.button == BTN_RIGHT && m_mpris != nullptr) {
