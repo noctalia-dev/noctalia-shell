@@ -2,14 +2,19 @@
 
 #include "render/render_context.h"
 
+#include <stdexcept>
 #include <wayland-egl.h>
 
 RenderTarget::~RenderTarget() { destroy(); }
 
 void RenderTarget::create(wl_surface* surface, RenderContext& context) {
   m_wlSurface = surface;
-  m_eglDisplay = context.eglDisplay();
-  m_eglConfig = context.eglConfig();
+  const auto* native = context.backend().glesNative();
+  if (native == nullptr) {
+    throw std::runtime_error("RenderTarget requires a GLES-native backend");
+  }
+  m_eglDisplay = native->display;
+  m_eglConfig = native->config;
 }
 
 void RenderTarget::resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight) {
