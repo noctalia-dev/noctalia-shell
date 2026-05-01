@@ -950,7 +950,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     auto resetPageBtn = std::make_unique<Button>();
     resetPageBtn->setText(pendingReset ? i18n::tr("settings.window.reset-page-confirm")
                                        : i18n::tr("settings.window.reset-page"));
-    resetPageBtn->setVariant(pendingReset ? ButtonVariant::Default : ButtonVariant::Ghost);
+    resetPageBtn->setVariant(pendingReset ? ButtonVariant::Destructive : ButtonVariant::Ghost);
     resetPageBtn->setFontSize(Style::fontSizeCaption * scale);
     resetPageBtn->setMinHeight(Style::controlHeightSm * scale);
     resetPageBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
