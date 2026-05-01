@@ -224,32 +224,13 @@ std::unique_ptr<Flex> WeatherTab::create() {
 
   for (std::size_t i = 0; i < kDayCount; ++i) {
     auto row = std::make_unique<Flex>();
-    row->setDirection(FlexDirection::Horizontal);
-    row->setAlign(FlexAlign::Center);
-    row->setGap(Style::spaceSm * scale);
+    row->setDirection(FlexDirection::Vertical);
+    row->setAlign(FlexAlign::Stretch);
+    row->setJustify(FlexJustify::Center);
+    row->setGap(Style::spaceXs * 0.5f * scale);
     row->setPadding(Style::spaceXs * scale, 0.0f);
     row->setFlexGrow(1.0f);
     m_dayRows[i] = row.get();
-
-    auto iconSlot = std::make_unique<Flex>();
-    iconSlot->setDirection(FlexDirection::Horizontal);
-    iconSlot->setAlign(FlexAlign::Center);
-    iconSlot->setJustify(FlexJustify::Center);
-    m_dayIconSlots[i] = iconSlot.get();
-
-    auto glyph = std::make_unique<Glyph>();
-    glyph->setGlyph("weather-cloud");
-    glyph->setGlyphSize(Style::fontSizeTitle * 1.6f * scale);
-    glyph->setColor(roleColor(ColorRole::OnSurface));
-    m_dayGlyphs[i] = glyph.get();
-    iconSlot->addChild(std::move(glyph));
-    row->addChild(std::move(iconSlot));
-
-    auto infoStack = std::make_unique<Flex>();
-    infoStack->setDirection(FlexDirection::Vertical);
-    infoStack->setAlign(FlexAlign::Stretch);
-    infoStack->setGap(Style::spaceXs * 0.5f * scale);
-    infoStack->setFlexGrow(1.0f);
 
     auto topRow = std::make_unique<Flex>();
     topRow->setDirection(FlexDirection::Horizontal);
@@ -257,14 +238,28 @@ std::unique_ptr<Flex> WeatherTab::create() {
     topRow->setJustify(FlexJustify::SpaceBetween);
     topRow->setGap(Style::spaceSm * scale);
 
+    auto daySlot = std::make_unique<Flex>();
+    daySlot->setDirection(FlexDirection::Horizontal);
+    daySlot->setAlign(FlexAlign::Center);
+    daySlot->setGap(Style::spaceXs * scale);
+    daySlot->setFlexGrow(1.0f);
+    m_dayIconSlots[i] = daySlot.get();
+
+    auto glyph = std::make_unique<Glyph>();
+    glyph->setGlyph("weather-cloud");
+    glyph->setGlyphSize(Style::fontSizeBody * 1.2f * scale);
+    glyph->setColor(roleColor(ColorRole::OnSurface));
+    m_dayGlyphs[i] = glyph.get();
+    daySlot->addChild(std::move(glyph));
+
     auto meta = std::make_unique<Label>();
     meta->setText(i18n::tr("control-center.weather.forecast-placeholder.day"));
     meta->setBold(true);
     meta->setFontSize(Style::fontSizeBody * scale);
     meta->setColor(roleColor(ColorRole::OnSurface));
-    meta->setFlexGrow(1.0f);
     m_dayMetas[i] = meta.get();
-    topRow->addChild(std::move(meta));
+    daySlot->addChild(std::move(meta));
+    topRow->addChild(std::move(daySlot));
 
     auto temps = std::make_unique<Label>();
     temps->setText(i18n::tr("control-center.weather.forecast-placeholder.temperature"));
@@ -280,9 +275,8 @@ std::unique_ptr<Flex> WeatherTab::create() {
     desc->setColor(roleColor(ColorRole::OnSurfaceVariant));
     m_dayDescs[i] = desc.get();
 
-    infoStack->addChild(std::move(topRow));
-    infoStack->addChild(std::move(desc));
-    row->addChild(std::move(infoStack));
+    row->addChild(std::move(topRow));
+    row->addChild(std::move(desc));
     forecastColumn->addChild(std::move(row));
 
     if (i + 1 < kDayCount) {
@@ -371,7 +365,6 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
     }
   }
 
-  const float iconSlotWidth = Style::fontSizeTitle * 2.6f * scale;
   std::size_t visibleForecastDays = 0;
   for (std::size_t i = 0; i < kDayCount; ++i) {
     if (m_dayRows[i] != nullptr && m_dayRows[i]->visible()) {
@@ -408,17 +401,8 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
     if (m_dayRows[i] == nullptr) {
       continue;
     }
-    if (m_dayIconSlots[i] != nullptr) {
-      m_dayIconSlots[i]->setMinWidth(iconSlotWidth);
-    }
-    if (m_dayMetas[i] != nullptr) {
-      m_dayMetas[i]->setMaxWidth(std::max(1.0f, m_dayMetas[i]->width()));
-    }
     if (m_dayTemps[i] != nullptr) {
       m_dayTemps[i]->setMaxWidth(std::max(1.0f, m_dayTemps[i]->width()));
-    }
-    if (m_dayDescs[i] != nullptr) {
-      m_dayDescs[i]->setMaxWidth(std::max(1.0f, m_dayDescs[i]->width()));
     }
   }
 
