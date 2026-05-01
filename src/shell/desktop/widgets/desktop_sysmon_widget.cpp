@@ -72,13 +72,12 @@ void DesktopSysmonWidget::create() {
 }
 
 void DesktopSysmonWidget::onFrameTick(float deltaMs, Renderer& renderer) {
-  (void)renderer;
   (void)deltaMs;
   if (m_monitor != nullptr) {
     if (m_monitor->isRunning()) {
       const auto latestSampleAt = m_monitor->latest().sampledAt;
       if (latestSampleAt != std::chrono::steady_clock::time_point{} && latestSampleAt != m_lastSampleAt) {
-        updateGraph();
+        updateGraph(renderer);
         syncLabel();
       }
     } else {
@@ -153,7 +152,7 @@ void DesktopSysmonWidget::doUpdate(Renderer& renderer) {
   }
 
   if (m_monitor->isRunning()) {
-    updateGraph();
+    updateGraph(renderer);
   } else {
     clearGraph();
   }
@@ -253,7 +252,7 @@ void DesktopSysmonWidget::clearGraph() {
   requestRedraw();
 }
 
-void DesktopSysmonWidget::updateGraph() {
+void DesktopSysmonWidget::updateGraph(Renderer& renderer) {
   if (m_graphNode == nullptr || m_monitor == nullptr || !m_monitor->isRunning()) {
     return;
   }
@@ -291,10 +290,10 @@ void DesktopSysmonWidget::updateGraph() {
     const float prev2 = data2[n - 2];
     data2[n] = std::clamp(last2 + (last2 - prev2) * 0.5f, 0.0f, 1.0f);
 
-    m_graphNode->setData(data1.data(), texSize, data2.data(), texSize);
+    m_graphNode->setData(renderer.textureManager(), data1.data(), texSize, data2.data(), texSize);
     m_graphNode->setCount2(static_cast<float>(n));
   } else {
-    m_graphNode->setData(data1.data(), texSize, nullptr, 0);
+    m_graphNode->setData(renderer.textureManager(), data1.data(), texSize, nullptr, 0);
   }
 
   m_graphNode->setCount1(static_cast<float>(n));

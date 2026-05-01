@@ -93,7 +93,7 @@ void GlyphProgram::destroy() {
   m_tintModeLocation = -1;
 }
 
-void GlyphProgram::bindCommon(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height,
+void GlyphProgram::bindCommon(TextureId texture, float surfaceWidth, float surfaceHeight, float width, float height,
                               float u0, float v0, float u1, float v1, float opacity, const Mat3& transform) const {
   const std::array<GLfloat, 12> positions = {
       0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
@@ -108,7 +108,7 @@ void GlyphProgram::bindCommon(GLuint texture, float surfaceWidth, float surfaceH
   glUniform1f(m_opacityLocation, opacity);
   glUniformMatrix3fv(m_transformLocation, 1, GL_FALSE, transform.m.data());
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, texture);
+  glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(texture.value()));
   glUniform1i(m_samplerLocation, 0);
   const auto posAttr = static_cast<GLuint>(m_positionLocation);
   const auto texAttr = static_cast<GLuint>(m_texCoordLocation);
@@ -121,7 +121,7 @@ void GlyphProgram::bindCommon(GLuint texture, float surfaceWidth, float surfaceH
   glDisableVertexAttribArray(texAttr);
 }
 
-void GlyphProgram::draw(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height, float u0,
+void GlyphProgram::draw(TextureId texture, float surfaceWidth, float surfaceHeight, float width, float height, float u0,
                         float v0, float u1, float v1, float opacity, const Mat3& transform) const {
   if (!m_program.isValid() || texture == 0 || width <= 0.0f || height <= 0.0f) {
     return;
@@ -132,7 +132,7 @@ void GlyphProgram::draw(GLuint texture, float surfaceWidth, float surfaceHeight,
   bindCommon(texture, surfaceWidth, surfaceHeight, width, height, u0, v0, u1, v1, opacity, transform);
 }
 
-void GlyphProgram::drawTinted(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height,
+void GlyphProgram::drawTinted(TextureId texture, float surfaceWidth, float surfaceHeight, float width, float height,
                               float u0, float v0, float u1, float v1, float opacity, const Color& tint,
                               const Mat3& transform) const {
   if (!m_program.isValid() || texture == 0 || width <= 0.0f || height <= 0.0f) {

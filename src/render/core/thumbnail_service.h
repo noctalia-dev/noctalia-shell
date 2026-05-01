@@ -17,9 +17,9 @@
 
 // Shared async thumbnail loader for image-backed UI. Worker threads decode and
 // downsample images off the main thread; the main loop uploads finished
-// pixmaps to GL textures via uploadPending(). The service keeps only explicit
-// in-memory request/release ownership while persisting resized WebP files in
-// the on-disk thumbnail cache.
+// pixmaps through TextureManager via uploadPending(). The service keeps only
+// explicit in-memory request/release ownership while persisting resized WebP
+// files in the on-disk thumbnail cache.
 class ThumbnailService : public PollSource {
 public:
   using ReadyCallback = std::function<void()>;
@@ -44,9 +44,9 @@ public:
   // Release every currently owned texture and cancel every pending decode.
   void releaseAll();
 
-  // Uploads decoded pixmaps to GL textures. Must run on the main thread with
-  // a GL context current.
-  void uploadPending();
+  // Uploads decoded pixmaps to textures. Must run on the main thread with the
+  // owning render context current.
+  void uploadPending(TextureManager& textures);
 
   [[nodiscard]] int pollTimeoutMs() const override { return -1; }
   void dispatch(const std::vector<pollfd>& fds, std::size_t startIdx) override;
@@ -82,6 +82,7 @@ private:
   std::deque<DecodedJob> m_results;
 
   // Main thread only state.
+  TextureManager* m_textureManager = nullptr;
   std::unordered_map<std::string, TextureHandle> m_textures;
   std::unordered_set<std::string> m_failedPaths;
   ReadyCallback m_readyCallback;

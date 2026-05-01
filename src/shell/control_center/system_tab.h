@@ -24,7 +24,7 @@ private:
   void doLayout(Renderer& renderer, float contentWidth, float bodyHeight) override;
   void doUpdate(Renderer& renderer) override;
 
-  void updateGraphs();
+  void updateGraphs(Renderer& renderer);
   void syncLabels();
   [[nodiscard]] static float scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt);
   [[nodiscard]] static std::string formatBytesPerSec(double bytesPerSec);

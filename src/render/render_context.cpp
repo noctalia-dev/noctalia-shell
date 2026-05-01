@@ -82,8 +82,9 @@ void RenderContext::initialize(GlSharedContext& shared) {
   // Pango handles font fallback via Fontconfig automatically — no explicit chain.
   ensureGlPrograms();
   m_backend->textureManager().probeExtensions();
-  m_textRenderer.initialize(&m_glyphProgram);
-  m_glyphRenderer.initialize(paths::assetPath("fonts/tabler.ttf").string(), &m_glyphProgram);
+  m_textRenderer.initialize(&m_glyphProgram, &m_backend->textureManager());
+  m_glyphRenderer.initialize(paths::assetPath("fonts/tabler.ttf").string(), &m_glyphProgram,
+                             &m_backend->textureManager());
 }
 
 void RenderContext::ensureGlPrograms() {

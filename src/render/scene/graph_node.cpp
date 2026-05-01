@@ -1,18 +1,25 @@
 #include "render/scene/graph_node.h"
 
-#include <GLES2/gl2.h>
+#include "render/core/texture_manager.h"
+
 #include <algorithm>
 #include <cstdint>
 #include <vector>
 
 GraphNode::~GraphNode() {
-  if (m_texture != 0) {
-    GLuint texture = static_cast<GLuint>(m_texture.value());
-    glDeleteTextures(1, &texture);
+  if (m_textureManager != nullptr) {
+    m_textureManager->unload(m_texture);
   }
 }
 
-void GraphNode::setData(const float* primary, int primaryCount, const float* secondary, int secondaryCount) {
+void GraphNode::setData(TextureManager& textures, const float* primary, int primaryCount, const float* secondary,
+                        int secondaryCount) {
+  if (m_textureManager != nullptr && m_textureManager != &textures) {
+    m_textureManager->unload(m_texture);
+    m_texCapacity = 0;
+  }
+  m_textureManager = &textures;
+
   const int newWidth = std::max({primaryCount + 1, secondaryCount + 1, 4});
 
   std::vector<std::uint8_t> pixels(static_cast<std::size_t>(newWidth) * 2, 0);
@@ -23,24 +30,14 @@ void GraphNode::setData(const float* primary, int primaryCount, const float* sec
     pixels[static_cast<std::size_t>(i) * 2 + 1] = static_cast<std::uint8_t>(std::clamp(alp, 0.0f, 1.0f) * 255.0f);
   }
 
-  if (m_texture == 0) {
-    GLuint texture = 0;
-    glGenTextures(1, &texture);
-    m_texture = TextureId{texture};
-  }
-
-  glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(m_texture.value()));
-
-  if (newWidth > m_texCapacity) {
+  if (m_texture.id == 0 || newWidth > m_texCapacity) {
+    if (!textures.replace(m_texture, pixels.data(), newWidth, 1, TextureDataFormat::LuminanceAlpha,
+                          TextureFilter::Nearest)) {
+      return;
+    }
     m_texCapacity = newWidth;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, newWidth, 1, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE,
-                 pixels.data());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  } else {
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, newWidth, 1, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, pixels.data());
+  } else if (!textures.updateSubImage(m_texture, pixels.data(), 0, 0, newWidth, 1, TextureDataFormat::LuminanceAlpha)) {
+    return;
   }
 
   m_texWidth = newWidth;

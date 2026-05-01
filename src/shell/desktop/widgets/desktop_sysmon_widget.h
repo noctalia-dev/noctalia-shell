@@ -34,7 +34,7 @@ private:
   [[nodiscard]] std::string formatValueFor(DesktopSysmonStat stat) const;
   void syncLabel();
   void clearGraph();
-  void updateGraph();
+  void updateGraph(Renderer& renderer);
   [[nodiscard]] static float scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt);
   [[nodiscard]] static double normalizedFromStats(DesktopSysmonStat stat, const SystemStats& stats, double& tempMin,
                                                   double& tempMax);

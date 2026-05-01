@@ -2,8 +2,8 @@
 
 #include "render/core/color.h"
 #include "render/core/mat3.h"
+#include "render/core/texture_handle.h"
 
-#include <GLES2/gl2.h>
 #include <cstdint>
 #include <list>
 #include <string>
@@ -17,6 +17,7 @@ typedef struct FT_FaceRec_* FT_Face;
 typedef struct _cairo_font_face cairo_font_face_t;
 
 class GlyphProgram;
+class TextureManager;
 
 // Direct FreeType + Cairo renderer for single codepoints in a dedicated font
 // (tabler.ttf icon font). No Pango, no shaping, no fallback — the icon font
@@ -37,7 +38,7 @@ public:
   CairoGlyphRenderer(const CairoGlyphRenderer&) = delete;
   CairoGlyphRenderer& operator=(const CairoGlyphRenderer&) = delete;
 
-  void initialize(const std::string& fontPath, GlyphProgram* program);
+  void initialize(const std::string& fontPath, GlyphProgram* program, TextureManager* textures);
   void cleanup();
 
   void setContentScale(float scale);
@@ -62,7 +63,7 @@ private:
   using LruList = std::list<CacheKey>;
 
   struct CacheEntry {
-    GLuint texture = 0;
+    TextureHandle texture;
     int pixelWidth = 0;
     int pixelHeight = 0;
     float baselineXPx = 0.0f; // baseline from left of surface, raster pixels
@@ -87,6 +88,7 @@ private:
   FT_Face m_face = nullptr;
   cairo_font_face_t* m_cairoFace = nullptr;
   GlyphProgram* m_program = nullptr;
+  TextureManager* m_textureManager = nullptr;
 
   CacheMap m_cache;
   LruList m_lru;

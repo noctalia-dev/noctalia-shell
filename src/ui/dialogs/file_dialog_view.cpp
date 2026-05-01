@@ -446,7 +446,7 @@ void FileDialogView::doUpdate(Renderer& renderer) {
     return;
   }
 
-  m_thumbnails->uploadPending();
+  m_thumbnails->uploadPending(renderer.textureManager());
   m_thumbnailRefreshPending = false;
   refreshVisibleTileThumbnails(renderer);
 }

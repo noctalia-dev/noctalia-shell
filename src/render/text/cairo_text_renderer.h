@@ -3,8 +3,8 @@
 #include "render/core/color.h"
 #include "render/core/mat3.h"
 #include "render/core/renderer.h"
+#include "render/core/texture_handle.h"
 
-#include <GLES2/gl2.h>
 #include <cstdint>
 #include <list>
 #include <string>
@@ -18,6 +18,7 @@ typedef struct _PangoFontMap PangoFontMap;
 typedef struct _PangoLayout PangoLayout;
 
 class GlyphProgram;
+class TextureManager;
 
 // Pango/Cairo-backed text renderer.
 //
@@ -47,7 +48,7 @@ public:
   CairoTextRenderer(const CairoTextRenderer&) = delete;
   CairoTextRenderer& operator=(const CairoTextRenderer&) = delete;
 
-  void initialize(GlyphProgram* program);
+  void initialize(GlyphProgram* program, TextureManager* textures);
   void cleanup();
 
   // HiDPI: raster at `scale × fontSize` pixels and shrink the quad by 1/scale.
@@ -107,7 +108,7 @@ private:
   // own GL texture sized ≤ GL_MAX_TEXTURE_SIZE. draw() emits one quad per tile;
   // tiles abut on exact buffer-pixel boundaries so there is no visible seam.
   struct Tile {
-    GLuint texture = 0;
+    TextureHandle texture;
     int pixelHeight = 0;  // raster pixels
     int pixelYOffset = 0; // from top of full layout, in raster pixels
   };
@@ -130,9 +131,10 @@ private:
   PangoLayout* buildLayout(std::string_view text, float fontSize, bool bold, float maxWidthPxScaled, int maxLines,
                            TextAlign align) const;
   // Render a layout into a new GL texture; fills out fields of `entry`.
-  // When `tinted` is true, rasterizes as CAIRO_FORMAT_A8 / GL_ALPHA and the
-  // color is applied via u_tint at draw time. When false, rasterizes as
-  // CAIRO_FORMAT_ARGB32 with `color` baked in (for COLR emoji content).
+  // When `tinted` is true, rasterizes as CAIRO_FORMAT_A8 and uploads alpha
+  // coverage so the color is applied via u_tint at draw time. When false,
+  // rasterizes as CAIRO_FORMAT_ARGB32 with `color` baked in (for COLR emoji
+  // content).
   void rasterizeLayout(PangoLayout* layout, const Color& color, bool tinted, CacheEntry& entry);
   // Extract logical metrics from a laid-out PangoLayout, dividing by PANGO_SCALE and by scale.
   TextMetrics metricsFromLayout(PangoLayout* layout) const;
@@ -151,6 +153,7 @@ private:
   PangoFontMap* m_fontMap = nullptr;      // owned
   PangoContext* m_pangoContext = nullptr; // owned
   GlyphProgram* m_program = nullptr;
+  TextureManager* m_textureManager = nullptr;
 
   CacheMap m_cache;
   LruList m_lru;

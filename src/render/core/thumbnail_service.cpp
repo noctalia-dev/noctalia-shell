@@ -4,7 +4,6 @@
 #include "render/core/image_decoder.h"
 #include "util/file_utils.h"
 
-#include <GLES2/gl2.h>
 #include <webp/encode.h>
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
@@ -205,9 +204,8 @@ TextureHandle ThumbnailService::request(const std::string& path) {
 void ThumbnailService::release(const std::string& path) {
   auto it = m_textures.find(path);
   if (it != m_textures.end()) {
-    if (it->second.id != 0) {
-      GLuint texture = static_cast<GLuint>(it->second.id.value());
-      glDeleteTextures(1, &texture);
+    if (m_textureManager != nullptr) {
+      m_textureManager->unload(it->second);
     }
     m_textures.erase(it);
   }
@@ -230,7 +228,9 @@ void ThumbnailService::releaseAll() {
   }
 }
 
-void ThumbnailService::uploadPending() {
+void ThumbnailService::uploadPending(TextureManager& textures) {
+  m_textureManager = &textures;
+
   std::deque<DecodedJob> jobs;
   {
     std::lock_guard<std::mutex> lock(m_resultMutex);
@@ -259,21 +259,14 @@ void ThumbnailService::uploadPending() {
       continue;
     }
 
-    GLuint tex = 0;
-    glGenTextures(1, &tex);
-    if (tex == 0) {
-      kLog.warn("glGenTextures failed for {}", job.path);
+    TextureHandle handle = textures.loadFromRgba(job.rgba.data(), job.width, job.height);
+    if (handle.id == 0) {
+      kLog.warn("failed to upload thumbnail texture for {}", job.path);
       m_failedPaths.insert(job.path);
       continue;
     }
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, job.width, job.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, job.rgba.data());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    m_textures[job.path] = TextureHandle{.id = TextureId{tex}, .width = job.width, .height = job.height};
+    m_textures[job.path] = handle;
   }
 }
 
@@ -321,10 +314,9 @@ void ThumbnailService::pushResult(DecodedJob job) {
 }
 
 void ThumbnailService::deleteAllTextures() {
-  for (auto& [path, handle] : m_textures) {
-    if (handle.id != 0) {
-      GLuint texture = static_cast<GLuint>(handle.id.value());
-      glDeleteTextures(1, &texture);
+  for (auto& entry : m_textures) {
+    if (m_textureManager != nullptr) {
+      m_textureManager->unload(entry.second);
     }
   }
   m_textures.clear();
