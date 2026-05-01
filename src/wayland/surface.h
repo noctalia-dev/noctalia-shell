@@ -1,5 +1,6 @@
 #pragma once
 
+#include "render/programs/rect_program.h"
 #include "render/render_target.h"
 
 #include <chrono>
@@ -60,6 +61,13 @@ public:
   static std::vector<InputRect> tessellateRoundedRect(int x, int y, int w, int h, float radius, int stripPx = 1) {
     return tessellateRoundedRect(x, y, w, h, radius, radius, radius, radius, stripPx);
   }
+  // Tessellates the same shape the rect shader rasterizes: per-corner Concave/Convex
+  // curves around a logical body. (x, y, w, h) describes the BODY rect; the visual
+  // rect is the body expanded outward by logicalInset (so callers don't need to
+  // pre-compute the bounding box that hosts concave-corner bulges). Concave corners
+  // extend outward into the inset margin; convex corners contract the body inward.
+  static std::vector<InputRect> tessellateShape(int x, int y, int w, int h, const CornerShapes& corners,
+                                                const RectInsets& logicalInset, const Radii& radii, int stripPx = 1);
   void requestUpdate();
   void requestUpdateOnly();
   void requestLayout();

@@ -365,6 +365,118 @@ std::vector<InputRect> Surface::tessellateRoundedRect(int x, int y, int w, int h
   return out;
 }
 
+std::vector<InputRect> Surface::tessellateShape(int x, int y, int w, int h, const CornerShapes& corners,
+                                                const RectInsets& logicalInset, const Radii& radii, int stripPx) {
+  std::vector<InputRect> out;
+  if (w <= 0 || h <= 0) {
+    return out;
+  }
+  if (stripPx < 1) {
+    stripPx = 1;
+  }
+
+  // (x, y, w, h) is the body rect. Expand outward by logicalInset to obtain the
+  // visual rect that hosts concave-corner bulges; the body sits inside it offset
+  // by logicalInset.left / .top.
+  const float insetL = std::max(0.0f, logicalInset.left);
+  const float insetT = std::max(0.0f, logicalInset.top);
+  const float insetR = std::max(0.0f, logicalInset.right);
+  const float insetB = std::max(0.0f, logicalInset.bottom);
+  const int visualX = x - static_cast<int>(std::lround(insetL));
+  const int visualY = y - static_cast<int>(std::lround(insetT));
+  const int visualW = w + static_cast<int>(std::lround(insetL)) + static_cast<int>(std::lround(insetR));
+  const int visualH = h + static_cast<int>(std::lround(insetT)) + static_cast<int>(std::lround(insetB));
+
+  const float W = static_cast<float>(visualW);
+  const float H = static_cast<float>(visualH);
+  const float bodyMinX = std::clamp(insetL, 0.0f, W);
+  const float bodyMaxX = std::clamp(W - insetR, bodyMinX, W);
+  const float bodyMinY = std::clamp(insetT, 0.0f, H);
+  const float bodyMaxY = std::clamp(H - insetB, bodyMinY, H);
+  const float bodyW = bodyMaxX - bodyMinX;
+  const float bodyH = bodyMaxY - bodyMinY;
+  const float maxR = std::max(0.0f, std::min(bodyW, bodyH) * 0.5f);
+  const auto clampR = [maxR](float r) { return std::clamp(r, 0.0f, maxR); };
+  const float rTl = clampR(radii.tl);
+  const float rTr = clampR(radii.tr);
+  const float rBr = clampR(radii.br);
+  const float rBl = clampR(radii.bl);
+
+  const auto extent = [](float r, float dy) -> float {
+    if (r <= 0.0f) {
+      return 0.0f;
+    }
+    const float d2 = r * r - dy * dy;
+    return d2 > 0.0f ? std::sqrt(d2) : 0.0f;
+  };
+
+  // Per-row [left, right] of the shape, mirroring the rect shader's evaluation
+  // and clipped to the visual rect.
+  const auto rowBounds = [&](float yf) -> std::pair<float, float> {
+    float left = bodyMinX;
+    float right = bodyMaxX;
+    if (rTl > 0.0f && yf < bodyMinY + rTl) {
+      const float sy = std::clamp(yf, bodyMinY, bodyMinY + rTl);
+      const float e = extent(rTl, sy - (bodyMinY + rTl));
+      if (corners.tl == CornerShape::Concave) {
+        left = std::min(left, bodyMinX - rTl + e);
+      } else {
+        left = std::max(left, bodyMinX + rTl - e);
+      }
+    }
+    if (rBl > 0.0f && yf > bodyMaxY - rBl) {
+      const float sy = std::clamp(yf, bodyMaxY - rBl, bodyMaxY);
+      const float e = extent(rBl, sy - (bodyMaxY - rBl));
+      if (corners.bl == CornerShape::Concave) {
+        left = std::min(left, bodyMinX - rBl + e);
+      } else {
+        left = std::max(left, bodyMinX + rBl - e);
+      }
+    }
+    if (rTr > 0.0f && yf < bodyMinY + rTr) {
+      const float sy = std::clamp(yf, bodyMinY, bodyMinY + rTr);
+      const float e = extent(rTr, sy - (bodyMinY + rTr));
+      if (corners.tr == CornerShape::Concave) {
+        right = std::max(right, bodyMaxX + rTr - e);
+      } else {
+        right = std::min(right, bodyMaxX - rTr + e);
+      }
+    }
+    if (rBr > 0.0f && yf > bodyMaxY - rBr) {
+      const float sy = std::clamp(yf, bodyMaxY - rBr, bodyMaxY);
+      const float e = extent(rBr, sy - (bodyMaxY - rBr));
+      if (corners.br == CornerShape::Concave) {
+        right = std::max(right, bodyMaxX + rBr - e);
+      } else {
+        right = std::min(right, bodyMaxX - rBr + e);
+      }
+    }
+    left = std::clamp(left, 0.0f, W);
+    right = std::clamp(right, left, W);
+    return {left, right};
+  };
+
+  out.reserve(static_cast<std::size_t>(visualH / stripPx + 2));
+
+  for (int row = 0; row < visualH; row += stripPx) {
+    const int rowH = std::min(stripPx, visualH - row);
+    // Take the intersection of the bounds at the strip's top and bottom edges
+    // so the polygon stays inside the actual shape regardless of corner kind.
+    const auto [leftTop, rightTop] = rowBounds(static_cast<float>(row));
+    const auto [leftBot, rightBot] = rowBounds(static_cast<float>(row + rowH));
+    const float left = std::max(leftTop, leftBot);
+    const float right = std::min(rightTop, rightBot);
+    const int rx = visualX + static_cast<int>(std::ceil(left));
+    const int rRight = visualX + static_cast<int>(std::floor(right));
+    const int rw = rRight - rx;
+    if (rw > 0) {
+      out.push_back({rx, visualY + row, rw, rowH});
+    }
+  }
+
+  return out;
+}
+
 void Surface::clearBlurRegion() {
   if (m_backgroundEffect == nullptr) {
     return;
