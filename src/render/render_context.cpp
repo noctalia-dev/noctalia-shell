@@ -19,10 +19,10 @@
 #include "render/scene/wallpaper_node.h"
 #include "ui/style.h"
 
-#include <GLES2/gl2.h>
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <format>
 #include <optional>
 #include <stdexcept>
@@ -51,15 +51,17 @@ namespace {
     }
   }
 
-  void applyScissor(float sw, float sh, float bw, float bh, float left, float top, float right, float bottom) {
+  RenderScissor scissorForClip(float sw, float sh, float bw, float bh, float left, float top, float right,
+                               float bottom) {
     const float scaleX = sw > 0.0f ? bw / sw : 1.0f;
     const float scaleY = sh > 0.0f ? bh / sh : 1.0f;
 
-    const GLint scissorX = static_cast<GLint>(std::floor(left * scaleX));
-    const GLint scissorY = static_cast<GLint>(std::floor((sh - bottom) * scaleY));
-    const GLsizei scissorW = static_cast<GLsizei>(std::ceil(std::max(0.0f, right - left) * scaleX));
-    const GLsizei scissorH = static_cast<GLsizei>(std::ceil(std::max(0.0f, bottom - top) * scaleY));
-    glScissor(scissorX, scissorY, scissorW, scissorH);
+    return RenderScissor{
+        .x = static_cast<std::int32_t>(std::floor(left * scaleX)),
+        .y = static_cast<std::int32_t>(std::floor((sh - bottom) * scaleY)),
+        .width = static_cast<std::int32_t>(std::ceil(std::max(0.0f, right - left) * scaleX)),
+        .height = static_cast<std::int32_t>(std::ceil(std::max(0.0f, bottom - top) * scaleY)),
+    };
   }
 
   Mat3 nodeLocalTransform(const Node* node) {
@@ -81,26 +83,10 @@ void RenderContext::initialize(GlSharedContext& shared) {
   m_backend->initialize(shared);
 
   // Pango handles font fallback via Fontconfig automatically — no explicit chain.
-  ensureGlPrograms();
   m_backend->textureManager().probeExtensions();
-  m_textRenderer.initialize(&m_glyphProgram, &m_backend->textureManager());
-  m_glyphRenderer.initialize(paths::assetPath("fonts/tabler.ttf").string(), &m_glyphProgram,
+  m_textRenderer.initialize(m_backend.get(), &m_backend->textureManager());
+  m_glyphRenderer.initialize(paths::assetPath("fonts/tabler.ttf").string(), m_backend.get(),
                              &m_backend->textureManager());
-}
-
-void RenderContext::ensureGlPrograms() {
-  if (m_glReady) {
-    return;
-  }
-  m_effectProgram.ensureInitialized();
-  m_graphProgram.ensureInitialized();
-  m_imageProgram.ensureInitialized();
-  m_linearGradientProgram.ensureInitialized();
-  m_rectProgram.ensureInitialized();
-  m_spinnerProgram.ensureInitialized();
-  m_wallpaperProgram.ensureInitialized();
-  m_glyphProgram.ensureInitialized();
-  m_glReady = true;
 }
 
 void RenderContext::makeCurrentNoSurface() {
@@ -137,7 +123,6 @@ void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
   }
   const auto totalStart = std::chrono::steady_clock::now();
   m_backend->beginFrame(target);
-  ensureGlPrograms();
   syncContentScale(target);
 
   const auto drawStart = std::chrono::steady_clock::now();
@@ -211,10 +196,9 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
   Node::transformedBounds(node, worldTransform, boundsLeft, boundsTop, boundsRight, boundsBottom);
 
   if (hasClip) {
-    glEnable(GL_SCISSOR_TEST);
-    applyScissor(sw, sh, bw, bh, clipLeft, clipTop, clipRight, clipBottom);
+    m_backend->setScissor(scissorForClip(sw, sh, bw, bh, clipLeft, clipTop, clipRight, clipBottom));
   } else {
-    glDisable(GL_SCISSOR_TEST);
+    m_backend->disableScissor();
   }
 
   switch (node->type()) {
@@ -224,7 +208,7 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
     style.fill.a *= effectiveOpacity;
     style.fillEnd.a *= effectiveOpacity;
     style.border.a *= effectiveOpacity;
-    m_rectProgram.draw(sw, sh, node->width(), node->height(), style, worldTransform);
+    m_backend->drawRect(sw, sh, node->width(), node->height(), style, worldTransform);
     break;
   }
   case NodeType::Text: {
@@ -249,10 +233,22 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
     if (img->textureId() != 0) {
       auto tint = img->tint();
       tint.a *= effectiveOpacity;
-      m_imageProgram.draw(img->textureId(), sw, sh, node->width(), node->height(), tint, effectiveOpacity,
-                          img->radius(), img->borderColor(), img->borderWidth(), static_cast<int>(img->fitMode()),
-                          static_cast<float>(img->textureWidth()), static_cast<float>(img->textureHeight()),
-                          worldTransform);
+      m_backend->drawImage(RenderImageDraw{
+          .texture = img->textureId(),
+          .surfaceWidth = sw,
+          .surfaceHeight = sh,
+          .width = node->width(),
+          .height = node->height(),
+          .tint = tint,
+          .opacity = effectiveOpacity,
+          .radius = img->radius(),
+          .borderColor = img->borderColor(),
+          .borderWidth = img->borderWidth(),
+          .fitMode = static_cast<RenderImageFitMode>(img->fitMode()),
+          .textureWidth = static_cast<float>(img->textureWidth()),
+          .textureHeight = static_cast<float>(img->textureHeight()),
+          .transform = worldTransform,
+      });
     }
     break;
   }
@@ -276,14 +272,14 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
     const auto* spinner = static_cast<const SpinnerNode*>(node);
     auto style = spinner->style();
     style.color.a *= effectiveOpacity;
-    m_spinnerProgram.draw(sw, sh, node->width(), node->height(), style, worldTransform);
+    m_backend->drawSpinner(sw, sh, node->width(), node->height(), style, worldTransform);
     break;
   }
   case NodeType::Effect: {
     const auto* effect = static_cast<const EffectNode*>(node);
     auto style = effect->style();
     style.bgColor.a *= effectiveOpacity;
-    m_effectProgram.draw(sw, sh, node->width(), node->height(), style, worldTransform);
+    m_backend->drawEffect(sw, sh, node->width(), node->height(), style, worldTransform);
     break;
   }
   case NodeType::Graph: {
@@ -293,8 +289,8 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
       style.lineColor1.a *= effectiveOpacity;
       style.lineColor2.a *= effectiveOpacity;
       style.graphFillOpacity *= effectiveOpacity;
-      m_graphProgram.draw(graph->textureId(), graph->textureWidth(), sw, sh, node->width(), node->height(), style,
-                          worldTransform);
+      m_backend->drawGraph(graph->textureId(), graph->textureWidth(), sw, sh, node->width(), node->height(), style,
+                           worldTransform);
     }
     break;
   }
@@ -309,11 +305,11 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
       const float imageWidth2 = hasSource2 ? wallpaper->imageWidth2() : wallpaper->imageWidth1();
       const float imageHeight2 = hasSource2 ? wallpaper->imageHeight2() : wallpaper->imageHeight1();
       const float progress = hasSource2 ? wallpaper->progress() : 0.0f;
-      m_wallpaperProgram.draw(wallpaper->transition(), wallpaper->sourceKind1(), wallpaper->texture1(),
-                              wallpaper->sourceColor1(), sourceKind2, texture2, sourceColor2, sw, sh, node->width(),
-                              node->height(), wallpaper->imageWidth1(), wallpaper->imageHeight1(), imageWidth2,
-                              imageHeight2, progress, static_cast<float>(wallpaper->fillMode()),
-                              wallpaper->transitionParams(), wallpaper->fillColor(), worldTransform);
+      m_backend->drawWallpaper(wallpaper->transition(), wallpaper->sourceKind1(), wallpaper->texture1(),
+                               wallpaper->sourceColor1(), sourceKind2, texture2, sourceColor2, sw, sh, node->width(),
+                               node->height(), wallpaper->imageWidth1(), wallpaper->imageHeight1(), imageWidth2,
+                               imageHeight2, progress, static_cast<float>(wallpaper->fillMode()),
+                               wallpaper->transitionParams(), wallpaper->fillColor(), worldTransform);
     }
     break;
   }
@@ -385,36 +381,9 @@ void RenderContext::cleanup() {
   // Text renderers first — they destroy GL textures and need a current context.
   m_textRenderer.cleanup();
   m_glyphRenderer.cleanup();
-  if (m_backend != nullptr) {
-    m_backend->textureManager().cleanup();
-  }
-  m_effectProgram.destroy();
-  m_graphProgram.destroy();
-  m_imageProgram.destroy();
-  m_linearGradientProgram.destroy();
-  m_rectProgram.destroy();
-  m_spinnerProgram.destroy();
-  m_wallpaperProgram.destroy();
-  m_glyphProgram.destroy();
-  m_glReady = false;
 
   if (m_backend != nullptr) {
     m_backend->cleanup();
     m_backend.reset();
   }
-}
-
-EGLDisplay RenderContext::eglDisplay() const noexcept {
-  const auto* native = m_backend != nullptr ? m_backend->glesNative() : nullptr;
-  return native != nullptr ? native->display : EGL_NO_DISPLAY;
-}
-
-EGLConfig RenderContext::eglConfig() const noexcept {
-  const auto* native = m_backend != nullptr ? m_backend->glesNative() : nullptr;
-  return native != nullptr ? native->config : nullptr;
-}
-
-EGLContext RenderContext::eglContext() const noexcept {
-  const auto* native = m_backend != nullptr ? m_backend->glesNative() : nullptr;
-  return native != nullptr ? native->context : EGL_NO_CONTEXT;
 }

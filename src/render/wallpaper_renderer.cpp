@@ -5,7 +5,6 @@
 #include "render/gl_shared_context.h"
 #include "render/render_target.h"
 
-#include <GLES2/gl2.h>
 #include <chrono>
 #include <format>
 #include <stdexcept>
@@ -17,41 +16,6 @@ namespace {
   constexpr float kSlowWallpaperRenderOperationDebugMs = 50.0f;
   constexpr float kSlowWallpaperRenderOperationWarnMs = 1000.0f;
   constexpr float kMinimumPostProcessAlpha = 0.001f;
-
-  constexpr char kPostProcessVertexShader[] = R"(
-precision highp float;
-attribute vec2 a_position;
-varying vec2 v_texcoord;
-
-void main() {
-    v_texcoord = a_position;
-    vec2 ndc = a_position * 2.0 - 1.0;
-    gl_Position = vec4(ndc.x, -ndc.y, 0.0, 1.0);
-}
-)";
-
-  constexpr char kBlitFragmentShader[] = R"(
-precision highp float;
-uniform sampler2D u_texture;
-varying vec2 v_texcoord;
-
-void main() {
-    // Offscreen framebuffers use GL convention (Y=0 at bottom), EGL window surfaces have Y=0 at top.
-    // Flip V to compensate.
-    vec4 c = texture2D(u_texture, vec2(v_texcoord.x, 1.0 - v_texcoord.y));
-    gl_FragColor = c;
-}
-)";
-
-  constexpr char kTintFragmentShader[] = R"(
-precision mediump float;
-uniform vec4 u_color;
-varying vec2 v_texcoord;
-
-void main() {
-    gl_FragColor = u_color;
-}
-)";
 
   float elapsedSince(std::chrono::steady_clock::time_point start) {
     return std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - start).count();
@@ -116,8 +80,6 @@ void WallpaperRenderer::resize(std::uint32_t bufferWidth, std::uint32_t bufferHe
   m_logicalHeight = logicalHeight;
 
   m_backend->setViewport(bufferWidth, bufferHeight);
-
-  m_program.ensureInitialized();
 }
 
 void WallpaperRenderer::render() {
@@ -139,9 +101,10 @@ void WallpaperRenderer::render() {
   TextureId tex2 = (m_tex2 != 0) ? m_tex2 : m_tex1;
   float progress = (m_tex2 != 0) ? m_progress : 0.0f;
 
-  m_program.draw(m_transition, WallpaperSourceKind::Image, m_tex1, rgba(0.0f, 0.0f, 0.0f, 1.0f),
-                 WallpaperSourceKind::Image, tex2, rgba(0.0f, 0.0f, 0.0f, 1.0f), sw, sh, sw, sh, m_imgW1, m_imgH1,
-                 m_imgW2, m_imgH2, progress, static_cast<float>(m_fillMode), m_params, m_fillColor);
+  m_backend->drawWallpaper(m_transition, WallpaperSourceKind::Image, m_tex1, rgba(0.0f, 0.0f, 0.0f, 1.0f),
+                           WallpaperSourceKind::Image, tex2, rgba(0.0f, 0.0f, 0.0f, 1.0f), sw, sh, sw, sh, m_imgW1,
+                           m_imgH1, m_imgW2, m_imgH2, progress, static_cast<float>(m_fillMode), m_params, m_fillColor,
+                           Mat3::identity());
 
   float ms = elapsedSince(drawStart);
   logSlowWallpaperRenderOperation(ms, "wallpaper draw took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, m_logicalWidth,
@@ -177,9 +140,10 @@ void WallpaperRenderer::renderToFramebuffer(const RenderFramebuffer& target) {
   TextureId tex2 = (m_tex2 != 0) ? m_tex2 : m_tex1;
   float progress = (m_tex2 != 0) ? m_progress : 0.0f;
 
-  m_program.draw(m_transition, WallpaperSourceKind::Image, m_tex1, rgba(0.0f, 0.0f, 0.0f, 1.0f),
-                 WallpaperSourceKind::Image, tex2, rgba(0.0f, 0.0f, 0.0f, 1.0f), sw, sh, sw, sh, m_imgW1, m_imgH1,
-                 m_imgW2, m_imgH2, progress, static_cast<float>(m_fillMode), m_params, m_fillColor);
+  m_backend->drawWallpaper(m_transition, WallpaperSourceKind::Image, m_tex1, rgba(0.0f, 0.0f, 0.0f, 1.0f),
+                           WallpaperSourceKind::Image, tex2, rgba(0.0f, 0.0f, 0.0f, 1.0f), sw, sh, sw, sh, m_imgW1,
+                           m_imgH1, m_imgW2, m_imgH2, progress, static_cast<float>(m_fillMode), m_params, m_fillColor,
+                           Mat3::identity());
   float ms = elapsedSince(drawStart);
   logSlowWallpaperRenderOperation(ms, "wallpaper framebuffer draw took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms,
                                   m_logicalWidth, m_logicalHeight, m_bufferWidth, m_bufferHeight);
@@ -217,16 +181,15 @@ void WallpaperRenderer::blur(RenderFramebuffer& target, RenderFramebuffer& scrat
   }
 
   makeCurrent();
-  m_blurProgram.ensureInitialized();
   m_backend->setViewport(target.width(), target.height());
   m_backend->setBlendMode(RenderBlendMode::Disabled);
 
   for (int round = 0; round < rounds; ++round) {
     m_backend->bindFramebuffer(scratch);
-    m_blurProgram.draw(target.colorTexture(), target.width(), target.height(), 1.0f, 0.0f, radius);
+    m_backend->drawFullscreenBlur(target.colorTexture(), target.width(), target.height(), 1.0f, 0.0f, radius);
 
     m_backend->bindFramebuffer(target);
-    m_blurProgram.draw(scratch.colorTexture(), scratch.width(), scratch.height(), 0.0f, 1.0f, radius);
+    m_backend->drawFullscreenBlur(scratch.colorTexture(), scratch.width(), scratch.height(), 0.0f, 1.0f, radius);
   }
 }
 
@@ -236,15 +199,10 @@ void WallpaperRenderer::tint(RenderFramebuffer& target, Color color, float inten
   }
 
   makeCurrent();
-  ensurePostProcessPrograms();
   m_backend->bindFramebuffer(target);
   m_backend->setViewport(target.width(), target.height());
   m_backend->setBlendMode(RenderBlendMode::StraightAlpha);
-
-  glUseProgram(m_tintProgram.id());
-  const GLint colorLoc = glGetUniformLocation(m_tintProgram.id(), "u_color");
-  glUniform4f(colorLoc, color.r, color.g, color.b, intensity);
-  m_backend->drawFullscreenQuad(m_tintProgram);
+  m_backend->drawFullscreenTint(rgba(color.r, color.g, color.b, intensity));
 }
 
 void WallpaperRenderer::blitToSurface(TextureId texture) {
@@ -253,18 +211,13 @@ void WallpaperRenderer::blitToSurface(TextureId texture) {
   }
 
   makeCurrent();
-  ensurePostProcessPrograms();
   m_backend->bindDefaultFramebuffer();
   m_backend->setViewport(m_bufferWidth, m_bufferHeight);
   m_backend->setBlendMode(RenderBlendMode::Disabled);
   m_backend->clear(rgba(0.0f, 0.0f, 0.0f, 0.0f));
-
-  glUseProgram(m_blitProgram.id());
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(texture.value()));
-  const GLint texLoc = glGetUniformLocation(m_blitProgram.id(), "u_texture");
-  glUniform1i(texLoc, 0);
-  m_backend->drawFullscreenQuad(m_blitProgram);
+  // Offscreen framebuffers use GL convention (Y=0 at bottom), while the
+  // window surface uses top-left logical coordinates.
+  m_backend->drawFullscreenTexture(texture, true);
 }
 
 void WallpaperRenderer::swapBuffers() {
@@ -287,15 +240,6 @@ std::unique_ptr<RenderFramebuffer> WallpaperRenderer::createFramebuffer(std::uin
   return m_backend->createFramebuffer(width, height);
 }
 
-void WallpaperRenderer::ensurePostProcessPrograms() {
-  if (!m_blitProgram.isValid()) {
-    m_blitProgram.create(kPostProcessVertexShader, kBlitFragmentShader);
-  }
-  if (!m_tintProgram.isValid()) {
-    m_tintProgram.create(kPostProcessVertexShader, kTintFragmentShader);
-  }
-}
-
 void WallpaperRenderer::setTransitionState(TextureId tex1, TextureId tex2, float imgW1, float imgH1, float imgW2,
                                            float imgH2, float progress, WallpaperTransition transition,
                                            WallpaperFillMode fillMode, const TransitionParams& params) {
@@ -315,11 +259,6 @@ void WallpaperRenderer::cleanup() {
   if (m_backend != nullptr) {
     m_backend->makeCurrentNoSurface();
   }
-
-  m_program.destroy();
-  m_blurProgram.destroy();
-  m_blitProgram.destroy();
-  m_tintProgram.destroy();
 
   if (m_target != nullptr) {
     m_target->destroy();

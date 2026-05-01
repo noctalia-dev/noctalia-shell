@@ -1,7 +1,7 @@
 #pragma once
 
 #include "config/config_service.h"
-#include "render/programs/rect_program.h"
+#include "render/core/render_styles.h"
 
 #include <cstdint>
 

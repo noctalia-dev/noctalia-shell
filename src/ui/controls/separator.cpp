@@ -1,6 +1,6 @@
 #include "ui/controls/separator.h"
 
-#include "render/programs/rect_program.h"
+#include "render/core/render_styles.h"
 #include "render/scene/rect_node.h"
 #include "ui/controls/flex.h"
 

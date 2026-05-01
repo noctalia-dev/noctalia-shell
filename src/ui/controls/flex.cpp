@@ -1,7 +1,7 @@
 #include "ui/controls/flex.h"
 
+#include "render/core/render_styles.h"
 #include "render/core/renderer.h"
-#include "render/programs/rect_program.h"
 #include "render/scene/rect_node.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"

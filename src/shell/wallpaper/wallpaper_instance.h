@@ -1,8 +1,10 @@
 #pragma once
 
+#include "config/config_types.h"
 #include "render/animation/animation_manager.h"
+#include "render/core/color.h"
 #include "render/core/texture_manager.h"
-#include "render/programs/wallpaper_program.h"
+#include "render/core/wallpaper_types.h"
 #include "render/scene/node.h"
 #include "render/scene/wallpaper_node.h"
 #include "wayland/layer_surface.h"

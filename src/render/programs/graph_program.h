@@ -1,25 +1,11 @@
 #pragma once
 
-#include "render/core/color.h"
 #include "render/core/mat3.h"
+#include "render/core/render_styles.h"
 #include "render/core/shader_program.h"
 #include "render/core/texture_handle.h"
 
 #include <GLES2/gl2.h>
-
-struct GraphStyle {
-  Color lineColor1{};
-  float count1 = 0.0f;
-  float scroll1 = 1.0f;
-
-  Color lineColor2{};
-  float count2 = 0.0f;
-  float scroll2 = 1.0f;
-
-  float lineWidth = 1.5f;
-  float graphFillOpacity = 0.15f;
-  float aaSize = 0.5f;
-};
 
 class GraphProgram {
 public:

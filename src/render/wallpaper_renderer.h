@@ -1,11 +1,9 @@
 #pragma once
 
-#include "config/config_service.h"
+#include "config/config_types.h"
 #include "render/core/color.h"
-#include "render/core/shader_program.h"
 #include "render/core/texture_handle.h"
-#include "render/programs/blur_program.h"
-#include "render/programs/wallpaper_program.h"
+#include "render/core/wallpaper_types.h"
 
 #include <cstdint>
 #include <memory>
@@ -47,7 +45,6 @@ public:
 
 private:
   void cleanup();
-  void ensurePostProcessPrograms();
   void renderToFramebuffer(const RenderFramebuffer& target);
   void blur(RenderFramebuffer& target, RenderFramebuffer& scratch, float radius, int rounds);
   void tint(RenderFramebuffer& target, Color color, float intensity);
@@ -57,11 +54,6 @@ private:
   wl_surface* m_surface = nullptr;
   std::unique_ptr<RenderBackend> m_backend;
   std::unique_ptr<RenderTarget> m_target;
-
-  WallpaperProgram m_program;
-  BlurProgram m_blurProgram;
-  ShaderProgram m_blitProgram;
-  ShaderProgram m_tintProgram;
 
   std::uint32_t m_bufferWidth = 0;
   std::uint32_t m_bufferHeight = 0;

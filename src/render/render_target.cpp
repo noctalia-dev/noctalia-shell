@@ -4,20 +4,17 @@
 #include "render/render_context.h"
 
 #include <stdexcept>
-#include <wayland-egl.h>
 
 RenderTarget::~RenderTarget() { destroy(); }
 
 void RenderTarget::create(wl_surface* surface, RenderContext& context) { create(surface, context.backend()); }
 
 void RenderTarget::create(wl_surface* surface, RenderBackend& backend) {
-  m_wlSurface = surface;
-  const auto* native = backend.glesNative();
-  if (native == nullptr) {
-    throw std::runtime_error("RenderTarget requires a GLES-native backend");
+  destroy();
+  m_surfaceTarget = backend.createSurfaceTarget(surface);
+  if (m_surfaceTarget == nullptr) {
+    throw std::runtime_error("render backend failed to create a surface target");
   }
-  m_eglDisplay = native->display;
-  m_eglConfig = native->config;
 }
 
 void RenderTarget::resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight) {
@@ -28,31 +25,18 @@ void RenderTarget::resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight)
   m_bufferWidth = bufferWidth;
   m_bufferHeight = bufferHeight;
 
-  if (m_window == nullptr) {
-    m_window = wl_egl_window_create(m_wlSurface, static_cast<int>(bufferWidth), static_cast<int>(bufferHeight));
-    if (m_window == nullptr) {
-      return;
-    }
-
-    m_eglSurface =
-        eglCreateWindowSurface(m_eglDisplay, m_eglConfig, reinterpret_cast<EGLNativeWindowType>(m_window), nullptr);
-  } else {
-    wl_egl_window_resize(m_window, static_cast<int>(bufferWidth), static_cast<int>(bufferHeight), 0, 0);
+  if (m_surfaceTarget != nullptr) {
+    m_surfaceTarget->resize(bufferWidth, bufferHeight);
   }
 }
 
+bool RenderTarget::isReady() const noexcept { return m_surfaceTarget != nullptr && m_surfaceTarget->isReady(); }
+
 void RenderTarget::destroy() {
-  if (m_eglSurface != EGL_NO_SURFACE) {
-    eglDestroySurface(m_eglDisplay, m_eglSurface);
-    m_eglSurface = EGL_NO_SURFACE;
+  if (m_surfaceTarget != nullptr) {
+    m_surfaceTarget->destroy();
+    m_surfaceTarget.reset();
   }
-
-  if (m_window != nullptr) {
-    wl_egl_window_destroy(m_window);
-    m_window = nullptr;
-  }
-
-  m_wlSurface = nullptr;
   m_bufferWidth = 0;
   m_bufferHeight = 0;
   m_logicalWidth = 0;

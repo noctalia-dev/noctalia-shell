@@ -1,6 +1,6 @@
 #pragma once
 
-#include "render/programs/rect_program.h"
+#include "render/core/render_styles.h"
 
 #include <cstdint>
 #include <string_view>

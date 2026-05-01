@@ -16,7 +16,7 @@ typedef struct FT_FaceRec_* FT_Face;
 // Cairo forwards
 typedef struct _cairo_font_face cairo_font_face_t;
 
-class GlyphProgram;
+class RenderBackend;
 class TextureManager;
 
 // Direct FreeType + Cairo renderer for single codepoints in a dedicated font
@@ -38,7 +38,7 @@ public:
   CairoGlyphRenderer(const CairoGlyphRenderer&) = delete;
   CairoGlyphRenderer& operator=(const CairoGlyphRenderer&) = delete;
 
-  void initialize(const std::string& fontPath, GlyphProgram* program, TextureManager* textures);
+  void initialize(const std::string& fontPath, RenderBackend* backend, TextureManager* textures);
   void cleanup();
 
   void setContentScale(float scale);
@@ -87,7 +87,7 @@ private:
   FT_Library m_ftLibrary = nullptr;
   FT_Face m_face = nullptr;
   cairo_font_face_t* m_cairoFace = nullptr;
-  GlyphProgram* m_program = nullptr;
+  RenderBackend* m_backend = nullptr;
   TextureManager* m_textureManager = nullptr;
 
   CacheMap m_cache;

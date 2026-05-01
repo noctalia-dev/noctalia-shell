@@ -1,6 +1,6 @@
 #pragma once
 
-#include "render/programs/effect_program.h"
+#include "render/core/render_styles.h"
 #include "shell/control_center/tab.h"
 
 #include <array>

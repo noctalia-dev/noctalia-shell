@@ -1,8 +1,8 @@
 #include "render/text/cairo_glyph_renderer.h"
 
 #include "core/log.h"
+#include "render/backend/render_backend.h"
 #include "render/core/texture_manager.h"
-#include "render/programs/glyph_program.h"
 
 #include <cairo-ft.h>
 #include <cairo.h>
@@ -82,8 +82,8 @@ std::size_t CairoGlyphRenderer::CacheKeyHash::operator()(const CacheKey& k) cons
 CairoGlyphRenderer::CairoGlyphRenderer() = default;
 CairoGlyphRenderer::~CairoGlyphRenderer() { cleanup(); }
 
-void CairoGlyphRenderer::initialize(const std::string& fontPath, GlyphProgram* program, TextureManager* textures) {
-  m_program = program;
+void CairoGlyphRenderer::initialize(const std::string& fontPath, RenderBackend* backend, TextureManager* textures) {
+  m_backend = backend;
   m_textureManager = textures;
 
   if (FT_Init_FreeType(&m_ftLibrary) != 0) {
@@ -126,7 +126,7 @@ void CairoGlyphRenderer::cleanup() {
     FT_Done_FreeType(m_ftLibrary);
     m_ftLibrary = nullptr;
   }
-  m_program = nullptr;
+  m_backend = nullptr;
   m_textureManager = nullptr;
 }
 
@@ -299,7 +299,7 @@ CairoGlyphRenderer::CacheEntry* CairoGlyphRenderer::lookupOrRasterize(char32_t c
 
 void CairoGlyphRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, float x, float baselineY,
                                    char32_t codepoint, float fontSize, const Color& color, const Mat3& transform) {
-  if (m_face == nullptr || m_program == nullptr || codepoint == 0) {
+  if (m_face == nullptr || m_backend == nullptr || codepoint == 0) {
     return;
   }
 
@@ -317,8 +317,8 @@ void CairoGlyphRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, floa
   const Mat3 localTranslation = Mat3::translation(x - baselineXLocal, baselineY - baselineLocal);
   Mat3 world = transform * localTranslation;
 
-  // Snap the visible ink origin to the nearest buffer pixel so GL_LINEAR samples
-  // land on texel centers without the 1px texture pad biasing icon alignment.
+  // Snap the visible ink origin to the nearest buffer pixel so linear filtering
+  // samples land on texel centers without the 1px texture pad biasing icon alignment.
   // Skip when the transform has rotation/skew — snapping then introduces
   // whole-pixel jumps per frame and makes animations look jittery on 1x.
   if (isAxisAligned(world)) {
@@ -328,6 +328,15 @@ void CairoGlyphRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, floa
     world.m[7] = std::round((world.m[7] + inkOffsetY) * m_contentScale) / m_contentScale - inkOffsetY;
   }
 
-  m_program->drawTinted(entry->texture.id, surfaceWidth, surfaceHeight, quadW, quadH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
-                        color, world);
+  m_backend->drawGlyph(RenderGlyphDraw{
+      .texture = entry->texture.id,
+      .surfaceWidth = surfaceWidth,
+      .surfaceHeight = surfaceHeight,
+      .width = quadW,
+      .height = quadH,
+      .opacity = 1.0f,
+      .tint = color,
+      .tinted = true,
+      .transform = world,
+  });
 }

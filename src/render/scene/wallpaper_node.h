@@ -1,8 +1,9 @@
 #pragma once
 
-#include "config/config_service.h"
+#include "config/config_types.h"
+#include "render/core/color.h"
 #include "render/core/texture_handle.h"
-#include "render/programs/wallpaper_program.h"
+#include "render/core/wallpaper_types.h"
 #include "render/scene/node.h"
 
 #include <cstdint>

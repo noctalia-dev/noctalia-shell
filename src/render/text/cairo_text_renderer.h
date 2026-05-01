@@ -18,17 +18,17 @@ typedef struct _PangoContext PangoContext;
 typedef struct _PangoFontMap PangoFontMap;
 typedef struct _PangoLayout PangoLayout;
 
-class GlyphProgram;
+class RenderBackend;
 class TextureManager;
 
 // Pango/Cairo-backed text renderer.
 //
 // Rasterizes a shaped PangoLayout into an ARGB32 Cairo surface, uploads it as
-// a premultiplied RGBA texture, and draws it through GlyphProgram.
+// a premultiplied RGBA texture, and submits glyph quads to RenderBackend.
 // Handles Latin, CJK, Arabic, BiDi, and COLR v1 emoji via fontconfig fallback.
 //
-// measure() and truncate() do not require a current EGL context.
-// draw() needs EGL current (creates/binds GL textures).
+// measure() and truncate() do not require a current render context.
+// draw() needs the render backend context current (creates/binds textures).
 class CairoTextRenderer {
 public:
   struct TextMetrics {
@@ -49,7 +49,7 @@ public:
   CairoTextRenderer(const CairoTextRenderer&) = delete;
   CairoTextRenderer& operator=(const CairoTextRenderer&) = delete;
 
-  void initialize(GlyphProgram* program, TextureManager* textures);
+  void initialize(RenderBackend* backend, TextureManager* textures);
   void cleanup();
 
   // HiDPI: raster at `scale × fontSize` pixels and shrink the quad by 1/scale.
@@ -106,9 +106,9 @@ private:
   // (we also reserve bucket capacity upfront to avoid rehashing).
   using LruList = std::list<const CacheKey*>;
 
-  // A very tall text block can exceed GL_MAX_TEXTURE_SIZE (typically 4096 or
-  // 8192). We slice the Pango layout into N vertically-stacked tiles, each its
-  // own GL texture sized ≤ GL_MAX_TEXTURE_SIZE. draw() emits one quad per tile;
+  // A very tall text block can exceed the backend texture limit (typically
+  // 4096 or 8192). We slice the Pango layout into N vertically-stacked tiles,
+  // each its own texture sized within that limit. draw() emits one quad per tile;
   // tiles abut on exact buffer-pixel boundaries so there is no visible seam.
   struct Tile {
     TextureHandle texture;
@@ -123,7 +123,7 @@ private:
     float baselinePx = 0; // baseline from top of full layout, in raster pixels
     TextMetrics metrics;  // logical metrics in logical (unscaled) pixels
     std::size_t bytes = 0;
-    bool tinted = false; // true: GL_ALPHA coverage, tint in shader; false: premul RGBA
+    bool tinted = false; // true: alpha coverage, tint in shader; false: premul RGBA
     LruList::iterator lruIt;
   };
 
@@ -155,7 +155,7 @@ private:
 
   PangoFontMap* m_fontMap = nullptr;      // owned
   PangoContext* m_pangoContext = nullptr; // owned
-  GlyphProgram* m_program = nullptr;
+  RenderBackend* m_backend = nullptr;
   TextureManager* m_textureManager = nullptr;
 
   CacheMap m_cache;

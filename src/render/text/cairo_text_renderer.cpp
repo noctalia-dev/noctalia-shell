@@ -1,8 +1,8 @@
 #include "render/text/cairo_text_renderer.h"
 
 #include "core/log.h"
+#include "render/backend/render_backend.h"
 #include "render/core/texture_manager.h"
-#include "render/programs/glyph_program.h"
 
 #include <algorithm>
 #include <cairo.h>
@@ -144,8 +144,8 @@ CairoTextRenderer::CairoTextRenderer() = default;
 
 CairoTextRenderer::~CairoTextRenderer() { cleanup(); }
 
-void CairoTextRenderer::initialize(GlyphProgram* program, TextureManager* textures) {
-  m_program = program;
+void CairoTextRenderer::initialize(RenderBackend* backend, TextureManager* textures) {
+  m_backend = backend;
   m_textureManager = textures;
 
   if (FcInit()) {
@@ -199,7 +199,7 @@ void CairoTextRenderer::cleanup() {
     FcFini();
     m_fontConfigInitialized = false;
   }
-  m_program = nullptr;
+  m_backend = nullptr;
   m_textureManager = nullptr;
 }
 
@@ -414,19 +414,19 @@ void CairoTextRenderer::rasterizeLayout(PangoLayout* layout, const Color& color,
   const int baselinePango = pango_layout_get_baseline(layout);
   entry.baselinePx = static_cast<float>(baselinePango) / static_cast<float>(PANGO_SCALE);
 
+  if (m_glMaxTextureSize <= 0 && m_backend != nullptr) {
+    m_glMaxTextureSize = m_backend->maxTextureSize();
+  }
   if (m_glMaxTextureSize <= 0) {
-    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &m_glMaxTextureSize);
-    if (m_glMaxTextureSize <= 0) {
-      m_glMaxTextureSize = 2048; // conservative fallback
-    }
+    m_glMaxTextureSize = 2048; // conservative fallback
   }
   const int maxTex = m_glMaxTextureSize;
 
-  // Width > GL_MAX_TEXTURE_SIZE is rare (would need a single line wider than
-  // the max). We clip rather than horizontally tile; horizontal tiling would
-  // mean splitting glyphs across textures.
+  // Width > the backend texture limit is rare (would need a single line wider
+  // than the max). We clip rather than horizontally tile; horizontal tiling
+  // would mean splitting glyphs across textures.
   if (pxWidth > maxTex) {
-    kLog.warn("text width {}px exceeds GL_MAX_TEXTURE_SIZE {} — clipping", pxWidth, maxTex);
+    kLog.warn("text width {}px exceeds backend texture limit {} — clipping", pxWidth, maxTex);
     pxWidth = maxTex;
   }
 
@@ -508,7 +508,7 @@ void CairoTextRenderer::rasterizeLayout(PangoLayout* layout, const Color& color,
   // color applied in shader (u_tint). Color-independent → one cache entry per
   // string serves every color animation state.
   // Untinted path: CAIRO_FORMAT_ARGB32 with `color` baked in, BGRA->RGBA
-  // swizzle, GL_RGBA upload. Used for COLR color emoji.
+  // swizzle, RGBA upload. Used for COLR color emoji.
   const int bytesPerPixel = tinted ? 1 : 4;
   const int tightRowBytes = pxWidth * bytesPerPixel;
   std::vector<unsigned char> tight;
@@ -549,7 +549,7 @@ void CairoTextRenderer::rasterizeLayout(PangoLayout* layout, const Color& color,
       swizzleBgraToRgba(data, pxWidth, tileH, stride);
     }
 
-    // Repack tightly (GL_UNPACK_ROW_LENGTH is GLES3-only).
+    // Repack tightly because the backend upload path expects contiguous rows.
     tight.resize(static_cast<std::size_t>(tightRowBytes) * static_cast<std::size_t>(tileH));
     for (int y = 0; y < tileH; ++y) {
       std::memcpy(tight.data() + y * tightRowBytes, data + y * stride, static_cast<std::size_t>(tightRowBytes));
@@ -685,7 +685,7 @@ CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(std::string_
 void CairoTextRenderer::draw(float surfaceWidth, float surfaceHeight, float x, float baselineY, std::string_view text,
                              float fontSize, const Color& color, const Mat3& transform, bool bold, float maxWidth,
                              int maxLines, TextAlign align) {
-  if (m_pangoContext == nullptr || m_program == nullptr || text.empty()) {
+  if (m_pangoContext == nullptr || m_backend == nullptr || text.empty()) {
     return;
   }
 
@@ -710,7 +710,7 @@ void CairoTextRenderer::draw(float surfaceWidth, float surfaceHeight, float x, f
 
   // Snap the glyph quad's origin to the nearest buffer pixel. Without this,
   // fractional layout positions place the quad at sub-pixel offsets and
-  // GL_LINEAR samples across texel boundaries → noticeable blur even at 1x.
+  // linear filtering samples across texel boundaries -> noticeable blur even at 1x.
   // Snap in buffer-pixel space so HiDPI outputs still benefit.
   //
   // Only snap when the transform is axis-aligned (no rotation/skew). During
@@ -730,13 +730,29 @@ void CairoTextRenderer::draw(float surfaceWidth, float surfaceHeight, float x, f
     const float tileH = static_cast<float>(tile.pixelHeight) * invScale;
     const Mat3 tileWorld = baseWorld * Mat3::translation(0.0f, tileYLocal);
     if (entry->tinted) {
-      m_program->drawTinted(tile.texture.id, surfaceWidth, surfaceHeight, quadW, tileH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
-                            color, tileWorld);
+      m_backend->drawGlyph(RenderGlyphDraw{
+          .texture = tile.texture.id,
+          .surfaceWidth = surfaceWidth,
+          .surfaceHeight = surfaceHeight,
+          .width = quadW,
+          .height = tileH,
+          .opacity = 1.0f,
+          .tint = color,
+          .tinted = true,
+          .transform = tileWorld,
+      });
     } else {
       // RGBA entries are rasterized at alpha=1.0 and color-keyed by rgb, so
       // the caller's alpha is applied here as opacity.
-      m_program->draw(tile.texture.id, surfaceWidth, surfaceHeight, quadW, tileH, 0.0f, 0.0f, 1.0f, 1.0f, color.a,
-                      tileWorld);
+      m_backend->drawGlyph(RenderGlyphDraw{
+          .texture = tile.texture.id,
+          .surfaceWidth = surfaceWidth,
+          .surfaceHeight = surfaceHeight,
+          .width = quadW,
+          .height = tileH,
+          .opacity = color.a,
+          .transform = tileWorld,
+      });
     }
   }
 }

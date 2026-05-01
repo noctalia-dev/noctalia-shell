@@ -1,15 +1,10 @@
 #pragma once
 
-#include "render/core/color.h"
 #include "render/core/mat3.h"
+#include "render/core/render_styles.h"
 #include "render/core/shader_program.h"
 
 #include <GLES2/gl2.h>
-
-struct SpinnerStyle {
-  Color color{};
-  float thickness = 2.0f;
-};
 
 class SpinnerProgram {
 public:

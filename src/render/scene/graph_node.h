@@ -1,7 +1,7 @@
 #pragma once
 
+#include "render/core/render_styles.h"
 #include "render/core/texture_handle.h"
-#include "render/programs/graph_program.h"
 #include "render/scene/node.h"
 
 class TextureManager;

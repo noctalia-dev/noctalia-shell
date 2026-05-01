@@ -2,7 +2,7 @@
 
 #include "render/animation/animation_manager.h"
 #include "render/core/color.h"
-#include "render/programs/rect_program.h"
+#include "render/core/render_styles.h"
 #include "render/scene/input_area.h"
 #include "render/scene/rect_node.h"
 #include "ui/palette.h"

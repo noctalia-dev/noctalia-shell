@@ -1,6 +1,6 @@
 #include "ui/controls/segmented.h"
 
-#include "render/programs/rect_program.h"
+#include "render/core/render_styles.h"
 #include "ui/controls/button.h"
 #include "ui/palette.h"
 #include "ui/style.h"

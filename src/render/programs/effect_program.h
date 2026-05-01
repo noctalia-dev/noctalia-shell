@@ -1,21 +1,12 @@
 #pragma once
 
-#include "render/core/color.h"
 #include "render/core/mat3.h"
+#include "render/core/render_styles.h"
 #include "render/core/shader_program.h"
 
 #include <GLES2/gl2.h>
 #include <array>
 #include <cstdint>
-
-enum class EffectType : std::uint8_t { None, Sun, Snow, Rain, Cloud, Fog, Stars };
-
-struct EffectStyle {
-  EffectType type = EffectType::None;
-  float time = 0.0f;
-  float radius = 0.0f;
-  Color bgColor{};
-};
 
 class EffectProgram {
 public:

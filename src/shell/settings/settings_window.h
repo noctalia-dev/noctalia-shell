@@ -21,7 +21,7 @@ struct KeyboardEvent;
 struct PointerEvent;
 struct wl_surface;
 
-// Standalone xdg-toplevel settings UI (same binary as the shell; shares RenderContext / GLES).
+// Standalone xdg-toplevel settings UI (same binary as the shell; shares RenderContext).
 class SettingsWindow {
 public:
   void initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext);

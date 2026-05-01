@@ -3,18 +3,9 @@
 #include "render/backend/render_backend.h"
 #include "render/core/mat3.h"
 #include "render/core/renderer.h"
-#include "render/programs/effect_program.h"
-#include "render/programs/glyph_program.h"
-#include "render/programs/graph_program.h"
-#include "render/programs/image_program.h"
-#include "render/programs/linear_gradient_program.h"
-#include "render/programs/rect_program.h"
-#include "render/programs/spinner_program.h"
-#include "render/programs/wallpaper_program.h"
 #include "render/text/cairo_glyph_renderer.h"
 #include "render/text/cairo_text_renderer.h"
 
-#include <EGL/egl.h>
 #include <memory>
 #include <string>
 
@@ -43,9 +34,6 @@ public:
   void syncContentScale(RenderTarget& target);
   void setTextFontFamily(std::string family);
 
-  [[nodiscard]] EGLDisplay eglDisplay() const noexcept;
-  [[nodiscard]] EGLConfig eglConfig() const noexcept;
-  [[nodiscard]] EGLContext eglContext() const noexcept;
   [[nodiscard]] RenderBackend& backend() noexcept { return *m_backend; }
   [[nodiscard]] const RenderBackend& backend() const noexcept { return *m_backend; }
 
@@ -59,22 +47,11 @@ public:
   [[nodiscard]] float renderScale() const noexcept override { return m_renderScale; }
 
 private:
-  void ensureGlPrograms();
   void makeCurrentNoSurface();
   void renderNode(const Node* node, const Mat3& parentTransform, float parentOpacity, float sw, float sh, float bw,
                   float bh, float clipLeft, float clipTop, float clipRight, float clipBottom, bool hasClip);
 
   std::unique_ptr<RenderBackend> m_backend;
-  bool m_glReady = false;
-
-  EffectProgram m_effectProgram;
-  GraphProgram m_graphProgram;
-  ImageProgram m_imageProgram;
-  LinearGradientProgram m_linearGradientProgram;
-  RectProgram m_rectProgram;
-  SpinnerProgram m_spinnerProgram;
-  WallpaperProgram m_wallpaperProgram;
-  GlyphProgram m_glyphProgram;
   CairoTextRenderer m_textRenderer;
   CairoGlyphRenderer m_glyphRenderer;
   float m_renderScale = 1.0f;

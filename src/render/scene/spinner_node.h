@@ -1,7 +1,7 @@
 #pragma once
 
 #include "render/core/color.h"
-#include "render/programs/spinner_program.h"
+#include "render/core/render_styles.h"
 #include "render/scene/node.h"
 
 class SpinnerNode : public Node {

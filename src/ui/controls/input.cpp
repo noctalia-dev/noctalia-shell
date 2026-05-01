@@ -2,8 +2,8 @@
 
 #include "cursor-shape-v1-client-protocol.h"
 #include "render/core/color.h"
+#include "render/core/render_styles.h"
 #include "render/core/renderer.h"
-#include "render/programs/rect_program.h"
 #include "render/scene/glyph_node.h"
 #include "render/scene/input_area.h"
 #include "render/scene/rect_node.h"
