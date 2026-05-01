@@ -1,6 +1,7 @@
 #include "application.h"
 
 #include "app/poll_source.h"
+#include "compositors/compositor_detect.h"
 #include "compositors/output_backend.h"
 #include "core/build_info.h"
 #include "core/deferred_call.h"
@@ -224,7 +225,7 @@ bool Application::backdropShouldBeActive() const {
   }
 
   if (!m_wayland.tracksNiriOverviewState()) {
-    return true;
+    return compositors::isNiri();
   }
 
   return m_wayland.hasNiriOverviewState() && m_wayland.isNiriOverviewOpen();

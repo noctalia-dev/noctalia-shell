@@ -28,6 +28,7 @@ public:
   [[nodiscard]] bool isActive() const noexcept { return m_active; }
 
 private:
+  [[nodiscard]] bool isSupportedForCurrentCompositor() const;
   [[nodiscard]] bool shouldBeActiveForCurrentCompositorState() const;
   [[nodiscard]] bool shouldKeepLoadedWhileInactive() const;
   [[nodiscard]] bool shouldRenderSurfaces() const;

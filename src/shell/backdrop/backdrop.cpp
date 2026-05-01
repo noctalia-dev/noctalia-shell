@@ -1,5 +1,6 @@
 #include "shell/backdrop/backdrop.h"
 
+#include "compositors/compositor_detect.h"
 #include "config/config_service.h"
 #include "core/log.h"
 #include "render/core/shared_texture_cache.h"
@@ -19,18 +20,24 @@ namespace {
 Backdrop::Backdrop() = default;
 Backdrop::~Backdrop() = default;
 
+bool Backdrop::isSupportedForCurrentCompositor() const { return m_wayland != nullptr && compositors::isNiri(); }
+
 bool Backdrop::shouldBeActiveForCurrentCompositorState() const {
   if (m_config == nullptr || !m_config->config().backdrop.enabled) {
     return false;
   }
-  if (m_wayland == nullptr || !m_wayland->tracksNiriOverviewState()) {
+  if (!isSupportedForCurrentCompositor()) {
+    return false;
+  }
+  if (!m_wayland->tracksNiriOverviewState()) {
     return true;
   }
   return m_wayland->hasNiriOverviewState() && m_wayland->isNiriOverviewOpen();
 }
 
 bool Backdrop::shouldKeepLoadedWhileInactive() const {
-  return m_config != nullptr && m_config->config().backdrop.enabled && !m_config->config().backdrop.unloadWhenNotInUse;
+  return m_config != nullptr && isSupportedForCurrentCompositor() && m_config->config().backdrop.enabled &&
+         !m_config->config().backdrop.unloadWhenNotInUse;
 }
 
 bool Backdrop::shouldRenderSurfaces() const { return m_active || shouldKeepLoadedWhileInactive(); }
