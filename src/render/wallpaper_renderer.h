@@ -4,13 +4,17 @@
 #include "render/core/color.h"
 #include "render/core/texture_handle.h"
 #include "render/programs/wallpaper_program.h"
+#include "render/render_target.h"
 
 #include <EGL/egl.h>
+#include <cstdint>
+#include <memory>
 
 struct wl_surface;
-struct wl_egl_window;
 
 class GlSharedContext;
+class RenderBackend;
+class RenderFramebuffer;
 
 class WallpaperRenderer {
 public:
@@ -22,12 +26,14 @@ public:
 
   void bind(GlSharedContext& shared, wl_surface* surface);
   void makeCurrent();
-  [[nodiscard]] EGLContext eglContext() const noexcept { return m_eglContext; }
+  [[nodiscard]] EGLContext eglContext() const noexcept;
   void resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight, std::uint32_t logicalWidth,
               std::uint32_t logicalHeight);
   void render();
-  void renderToFbo(GLuint targetFbo);
+  void renderToFbo(const RenderFramebuffer& target);
   void swapBuffers();
+  [[nodiscard]] std::unique_ptr<RenderFramebuffer> createFramebuffer(std::uint32_t width, std::uint32_t height);
+  void bindDefaultFramebuffer();
 
   void setTransitionState(TextureId tex1, TextureId tex2, float imgW1, float imgH1, float imgW2, float imgH2,
                           float progress, WallpaperTransition transition, WallpaperFillMode fillMode,
@@ -37,11 +43,8 @@ private:
   void cleanup();
 
   wl_surface* m_surface = nullptr;
-  wl_egl_window* m_window = nullptr;
-  EGLDisplay m_eglDisplay = EGL_NO_DISPLAY;
-  EGLConfig m_eglConfig = nullptr;
-  EGLContext m_eglContext = EGL_NO_CONTEXT;
-  EGLSurface m_eglSurface = EGL_NO_SURFACE;
+  std::unique_ptr<RenderBackend> m_backend;
+  RenderTarget m_target;
 
   WallpaperProgram m_program;
 

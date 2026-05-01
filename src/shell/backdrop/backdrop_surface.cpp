@@ -1,10 +1,12 @@
 #include "shell/backdrop/backdrop_surface.h"
 
+#include "render/backend/render_backend.h"
 #include "render/gl_shared_context.h"
 #include "wayland/wayland_connection.h"
 
 #include <GLES2/gl2.h>
 #include <stdexcept>
+#include <utility>
 #include <wayland-client.h>
 
 namespace {
@@ -79,7 +81,7 @@ void BackdropSurface::onConfigure(std::uint32_t width, std::uint32_t height) {
   m_wallpaperRenderer.resize(bw, bh, width, height);
 
   // Recreate FBOs when buffer size changes (if blur is active)
-  if (m_fbo1 != 0) {
+  if (m_fbo1 != nullptr && m_fbo1->valid()) {
     m_wallpaperRenderer.makeCurrent();
     destroyFbos();
     ensureFbos();
@@ -109,7 +111,7 @@ void BackdropSurface::render() {
   static constexpr int kBlurRounds = 3;
   const float blurRadius = m_blurIntensity * 40.0f;
   const auto blitToScreen = [this](TextureId texture) {
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    m_wallpaperRenderer.bindDefaultFramebuffer();
     glViewport(0, 0, static_cast<GLsizei>(m_bufW), static_cast<GLsizei>(m_bufH));
     glDisable(GL_BLEND);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -134,13 +136,13 @@ void BackdropSurface::render() {
     // No blur — render wallpaper to FBO1, tint there, then blit to screen.
     ensurePrograms();
     ensureFbos();
-    if (m_fbo1 == 0) {
+    if (m_fbo1 == nullptr || !m_fbo1->valid()) {
       return;
     }
-    m_wallpaperRenderer.renderToFbo(m_fbo1);
+    m_wallpaperRenderer.renderToFbo(*m_fbo1);
 
     if (m_tintIntensity > 0.001f) {
-      glBindFramebuffer(GL_FRAMEBUFFER, m_fbo1);
+      m_fbo1->bind();
       glViewport(0, 0, static_cast<GLsizei>(m_bufW), static_cast<GLsizei>(m_bufH));
       glEnable(GL_BLEND);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -157,7 +159,7 @@ void BackdropSurface::render() {
       glDisableVertexAttribArray(static_cast<GLuint>(posAttr));
     }
 
-    blitToScreen(m_fboTex1.id);
+    blitToScreen(m_fbo1->colorTexture());
 
     m_wallpaperRenderer.swapBuffers();
     return;
@@ -166,28 +168,28 @@ void BackdropSurface::render() {
   // Blur path — render wallpaper to FBO1, then kBlurRounds × (H blur FBO1→FBO2, V blur FBO2→FBO1)
   ensurePrograms();
   ensureFbos();
-  if (m_fbo1 == 0 || m_fbo2 == 0) {
+  if (m_fbo1 == nullptr || m_fbo2 == nullptr || !m_fbo1->valid() || !m_fbo2->valid()) {
     return;
   }
 
   // Pass 1: wallpaper → FBO1
-  m_wallpaperRenderer.renderToFbo(m_fbo1);
+  m_wallpaperRenderer.renderToFbo(*m_fbo1);
 
   glViewport(0, 0, static_cast<GLsizei>(m_bufW), static_cast<GLsizei>(m_bufH));
   glDisable(GL_BLEND);
 
   for (int round = 0; round < kBlurRounds; ++round) {
     // Horizontal blur FBO1.tex → FBO2
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo2);
-    m_blurProgram.draw(m_fboTex1.id, m_bufW, m_bufH, 1.0f, 0.0f, blurRadius);
+    m_fbo2->bind();
+    m_blurProgram.draw(m_fbo1->colorTexture(), m_bufW, m_bufH, 1.0f, 0.0f, blurRadius);
 
     // Vertical blur FBO2.tex → FBO1
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo1);
-    m_blurProgram.draw(m_fboTex2.id, m_bufW, m_bufH, 0.0f, 1.0f, blurRadius);
+    m_fbo1->bind();
+    m_blurProgram.draw(m_fbo2->colorTexture(), m_bufW, m_bufH, 0.0f, 1.0f, blurRadius);
   }
 
   if (m_tintIntensity > 0.001f) {
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo1);
+    m_fbo1->bind();
     glViewport(0, 0, static_cast<GLsizei>(m_bufW), static_cast<GLsizei>(m_bufH));
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -204,7 +206,7 @@ void BackdropSurface::render() {
     glDisableVertexAttribArray(static_cast<GLuint>(posAttr));
   }
 
-  blitToScreen(m_fboTex1.id);
+  blitToScreen(m_fbo1->colorTexture());
 
   m_wallpaperRenderer.swapBuffers();
 }
@@ -237,48 +239,25 @@ void BackdropSurface::ensurePrograms() {
 }
 
 void BackdropSurface::ensureFbos() {
-  if (m_fbo1 != 0 || m_bufW == 0 || m_bufH == 0) {
+  if ((m_fbo1 != nullptr && m_fbo1->valid()) || m_bufW == 0 || m_bufH == 0) {
     return;
   }
 
-  auto createFbo = [this](GLuint& fbo, TextureHandle& texture, std::uint32_t w, std::uint32_t h) {
-    texture = m_textureManager.createEmpty(static_cast<int>(w), static_cast<int>(h), TextureDataFormat::Rgba,
-                                           TextureFilter::Linear);
-    if (texture.id == 0) {
-      return;
-    }
+  auto fbo1 = m_wallpaperRenderer.createFramebuffer(m_bufW, m_bufH);
+  if (fbo1 == nullptr || !fbo1->valid()) {
+    return;
+  }
 
-    glGenFramebuffers(1, &fbo);
-    if (fbo == 0) {
-      m_textureManager.unload(texture);
-      return;
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, static_cast<GLuint>(texture.id.value()),
-                           0);
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-      glBindFramebuffer(GL_FRAMEBUFFER, 0);
-      glDeleteFramebuffers(1, &fbo);
-      fbo = 0;
-      m_textureManager.unload(texture);
-      return;
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  };
+  auto fbo2 = m_wallpaperRenderer.createFramebuffer(m_bufW, m_bufH);
+  if (fbo2 == nullptr || !fbo2->valid()) {
+    return;
+  }
 
-  createFbo(m_fbo1, m_fboTex1, m_bufW, m_bufH);
-  createFbo(m_fbo2, m_fboTex2, m_bufW, m_bufH);
+  m_fbo1 = std::move(fbo1);
+  m_fbo2 = std::move(fbo2);
 }
 
 void BackdropSurface::destroyFbos() {
-  if (m_fbo1 != 0) {
-    glDeleteFramebuffers(1, &m_fbo1);
-    m_fbo1 = 0;
-  }
-  m_textureManager.unload(m_fboTex1);
-  if (m_fbo2 != 0) {
-    glDeleteFramebuffers(1, &m_fbo2);
-    m_fbo2 = 0;
-  }
-  m_textureManager.unload(m_fboTex2);
+  m_fbo1.reset();
+  m_fbo2.reset();
 }
