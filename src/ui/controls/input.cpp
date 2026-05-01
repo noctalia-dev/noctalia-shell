@@ -58,6 +58,7 @@ namespace {
   constexpr float kCursorMinHeight = 14.0f;
   constexpr float kCursorHeightRatio = 0.50f;
   constexpr float kCursorRevealPadding = 2.0f;
+  constexpr float kClearGlyphScale = 0.85f;
   constexpr auto kCursorBlinkInterval = std::chrono::milliseconds(530);
   constexpr auto kCursorBlinkResumeDelay = std::chrono::milliseconds(650);
   constexpr float kTextInnerInset = 3.0f;
@@ -136,7 +137,7 @@ Input::Input() {
   cursor->setVisible(false);
   m_cursor = static_cast<RectNode*>(m_textViewport->addChild(std::move(cursor)));
 
-  // 2: input area
+  // Full-field input area.
   auto area = std::make_unique<InputArea>();
   area->setFocusable(true);
   area->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_TEXT);
@@ -234,6 +235,23 @@ Input::Input() {
   area->setOnKeyDown([this](const InputArea::KeyData& k) { handleKey(k.sym, k.utf32, k.modifiers, k.preedit); });
   m_inputArea = static_cast<InputArea*>(addChild(std::move(area)));
 
+  // Optional clear button, kept above the full-field input area for hit-testing.
+  auto clearButtonArea = std::make_unique<InputArea>();
+  clearButtonArea->setOnEnter([this](const InputArea::PointerData& /*data*/) { applyVisualState(); });
+  clearButtonArea->setOnLeave([this]() { applyVisualState(); });
+  clearButtonArea->setOnClick([this](const InputArea::PointerData& data) {
+    if (data.button == BTN_LEFT) {
+      clearFromButton();
+    }
+  });
+  clearButtonArea->setVisible(false);
+  m_clearButtonArea = static_cast<InputArea*>(addChild(std::move(clearButtonArea)));
+
+  auto clearGlyph = std::make_unique<GlyphNode>();
+  clearGlyph->setCodepoint(GlyphRegistry::lookup("close"));
+  clearGlyph->setHitTestVisible(false);
+  m_clearButtonGlyph = static_cast<GlyphNode*>(m_clearButtonArea->addChild(std::move(clearGlyph)));
+
   applyVisualState();
   m_paletteConn = paletteChanged().connect([this] {
     updateDisplayText();
@@ -272,6 +290,14 @@ void Input::setControlHeight(float height) {
 
 void Input::setHorizontalPadding(float padding) {
   m_horizontalPadding = std::max(0.0f, padding);
+  markLayoutDirty();
+}
+
+void Input::setClearButtonEnabled(bool enabled) {
+  if (m_clearButtonEnabled == enabled) {
+    return;
+  }
+  m_clearButtonEnabled = enabled;
   markLayoutDirty();
 }
 
@@ -355,6 +381,7 @@ void Input::doLayout(Renderer& renderer) {
   const float w = width() > 0.0f ? width() : kDefaultWidth;
   const float h = m_controlHeight;
   setSize(w, h);
+  const bool showClearButton = clearButtonVisible();
 
   const bool showPasswordGlyphs = m_passwordMode && !m_value.empty();
   m_label->setVisible(!showPasswordGlyphs);
@@ -368,10 +395,10 @@ void Input::doLayout(Renderer& renderer) {
   m_stopX.push_back(0.0f);
   std::size_t charCount = 0;
   float maskGlyphY = 0.0f;
-  float glyphSize = 0.0f;
+  float passwordGlyphSize = 0.0f;
   if (showPasswordGlyphs) {
-    glyphSize = m_fontSize * kPasswordGlyphScale;
-    const auto metrics = renderer.measureGlyph(passwordMaskCodepointForIndex(0), glyphSize);
+    passwordGlyphSize = m_fontSize * kPasswordGlyphScale;
+    const auto metrics = renderer.measureGlyph(passwordMaskCodepointForIndex(0), passwordGlyphSize);
     const float glyphInkCenter = (metrics.top + metrics.bottom) * 0.5f;
     maskGlyphY = std::round(h * 0.5f - glyphInkCenter);
   }
@@ -383,7 +410,7 @@ void Input::doLayout(Renderer& renderer) {
       ++charCount;
       m_stopByte.push_back(pos);
       if (showPasswordGlyphs) {
-        const auto metrics = renderer.measureGlyph(passwordMaskCodepointForIndex(charCount - 1), glyphSize);
+        const auto metrics = renderer.measureGlyph(passwordMaskCodepointForIndex(charCount - 1), passwordGlyphSize);
         maskX += metrics.width;
         m_stopX.push_back(maskX);
       } else {
@@ -406,9 +433,9 @@ void Input::doLayout(Renderer& renderer) {
     for (std::size_t i = 0; i < m_passwordGlyphs.size(); ++i) {
       auto* glyph = m_passwordGlyphs[i];
       const char32_t codepoint = passwordMaskCodepointForIndex(i);
-      const auto metrics = renderer.measureGlyph(codepoint, glyphSize);
+      const auto metrics = renderer.measureGlyph(codepoint, passwordGlyphSize);
       glyph->setCodepoint(codepoint);
-      glyph->setFontSize(glyphSize);
+      glyph->setFontSize(passwordGlyphSize);
       glyph->setColor(resolveThemeColor(roleColor(ColorRole::OnSurface)));
       glyph->setPosition(maskX - m_scrollOffset, maskGlyphY);
       glyph->setVisible(true);
@@ -425,13 +452,28 @@ void Input::doLayout(Renderer& renderer) {
 
   if (m_textViewport != nullptr) {
     const float textInset = m_horizontalPadding + kTextInnerInset;
-    const float viewportW = std::max(0.0f, w - textInset * 2.0f);
+    const float rightInset = showClearButton ? clearButtonTextReserveWidth() : textInset;
+    const float viewportW = std::max(0.0f, w - textInset - rightInset);
     m_textViewport->setPosition(textInset, 0.0f);
     m_textViewport->setSize(viewportW, h);
   }
 
   m_inputArea->setPosition(0.0f, 0.0f);
   m_inputArea->setFrameSize(w, h);
+
+  if (m_clearButtonArea != nullptr && m_clearButtonGlyph != nullptr) {
+    const float buttonSize = clearButtonHitWidth();
+    m_clearButtonArea->setVisible(showClearButton);
+    m_clearButtonArea->setPosition(std::max(0.0f, w - buttonSize), 0.0f);
+    m_clearButtonArea->setFrameSize(buttonSize, h);
+
+    const float clearGlyphSize = std::round(m_fontSize * kClearGlyphScale);
+    const auto metrics = renderer.measureGlyph(m_clearButtonGlyph->codepoint(), clearGlyphSize);
+    const float glyphCenterX = (metrics.left + metrics.right) * 0.5f;
+    const float glyphInkCenter = (metrics.top + metrics.bottom) * 0.5f;
+    m_clearButtonGlyph->setFontSize(clearGlyphSize);
+    m_clearButtonGlyph->setPosition(buttonSize * 0.5f - glyphCenterX, h * 0.5f - glyphInkCenter);
+  }
 
   applyVisualState();
   updateCursorVisibility();
@@ -571,13 +613,15 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
 
 void Input::applyVisualState() {
   const bool focused = m_inputArea != nullptr && m_inputArea->focused();
-  const bool hovered = m_inputArea != nullptr && m_inputArea->hovered();
+  const bool clearButtonHovered = m_clearButtonArea != nullptr && m_clearButtonArea->hovered();
+  const bool inputHovered = (m_inputArea != nullptr && m_inputArea->hovered()) || clearButtonHovered;
   const bool readOnly = isReadOnlyVisual();
 
   const Color fill = focused ? resolved(ColorRole::Surface) : resolved(ColorRole::SurfaceVariant);
-  const Color border = m_invalid ? resolved(ColorRole::Error)
-                                 : (focused ? resolved(ColorRole::Primary)
-                                            : (hovered ? resolved(ColorRole::Hover) : resolved(ColorRole::Outline)));
+  const Color border = m_invalid
+                           ? resolved(ColorRole::Error)
+                           : (focused ? resolved(ColorRole::Primary)
+                                      : (inputHovered ? resolved(ColorRole::Hover) : resolved(ColorRole::Outline)));
 
   m_background->setStyle(RoundedRectStyle{
       .fill = fill,
@@ -609,6 +653,9 @@ void Input::applyVisualState() {
   for (auto* glyph : m_passwordGlyphs) {
     glyph->setColor(passwordGlyphColor);
   }
+  if (m_clearButtonGlyph != nullptr) {
+    m_clearButtonGlyph->setColor(resolved(clearButtonHovered ? ColorRole::OnSurface : ColorRole::OnSurfaceVariant));
+  }
 }
 
 void Input::updateDisplayText() {
@@ -621,6 +668,30 @@ void Input::updateDisplayText() {
 
 bool Input::isReadOnlyVisual() const noexcept {
   return m_inputArea != nullptr && (!m_inputArea->focusable() || !m_inputArea->enabled());
+}
+
+void Input::clearFromButton() {
+  if (m_value.empty()) {
+    return;
+  }
+  m_value.clear();
+  m_cursorPos = 0;
+  m_selectionAnchor = 0;
+  m_preeditStart = 0;
+  m_preeditLen = 0;
+  m_scrollOffset = 0.0f;
+  updateDisplayText();
+  if (m_clearButtonArea != nullptr) {
+    m_clearButtonArea->setVisible(false);
+  }
+  updateInteractiveGeometry();
+  revealCursor();
+  applyVisualState();
+  markLayoutDirty();
+  markPaintDirty();
+  if (m_onChange) {
+    m_onChange(m_value);
+  }
 }
 
 void Input::updateInteractiveGeometry() {
@@ -804,7 +875,27 @@ float Input::measureCursorX(Renderer& renderer) const {
 
 float Input::textViewportWidth() const noexcept {
   const float w = width() > 0.0f ? width() : kDefaultWidth;
-  return std::max(0.0f, w - (m_horizontalPadding + kTextInnerInset) * 2.0f);
+  const float textInset = m_horizontalPadding + kTextInnerInset;
+  const float rightInset = clearButtonVisible() ? clearButtonTextReserveWidth() : textInset;
+  return std::max(0.0f, w - textInset - rightInset);
+}
+
+bool Input::clearButtonVisible() const noexcept { return m_clearButtonEnabled && !m_value.empty(); }
+
+float Input::clearButtonHitWidth() const noexcept {
+  if (!clearButtonVisible()) {
+    return 0.0f;
+  }
+  const float h = height() > 0.0f ? height() : m_controlHeight;
+  return std::max(0.0f, h);
+}
+
+float Input::clearButtonTextReserveWidth() const noexcept {
+  if (!clearButtonVisible()) {
+    return 0.0f;
+  }
+  const float clearGlyphSize = std::round(m_fontSize * kClearGlyphScale);
+  return clearButtonHitWidth() * 0.5f + clearGlyphSize * 0.5f + kTextInnerInset;
 }
 
 bool Input::hasSelection() const noexcept { return m_selectionAnchor != m_cursorPos; }

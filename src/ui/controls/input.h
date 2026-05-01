@@ -33,6 +33,7 @@ public:
   void setFontSize(float size);
   void setControlHeight(float height);
   void setHorizontalPadding(float padding);
+  void setClearButtonEnabled(bool enabled);
   void setPasswordMode(bool enabled);
   void setInvalid(bool invalid);
   void setOnChange(std::function<void(const std::string&)> callback);
@@ -57,6 +58,7 @@ private:
   void applyVisualState();
   void updateDisplayText();
   void updateInteractiveGeometry();
+  void clearFromButton();
   void updateCursorVisibility();
   void revealCursor();
   void startCursorBlink();
@@ -68,6 +70,9 @@ private:
   [[nodiscard]] std::size_t wordEndForByteOffset(std::size_t offset) const;
   [[nodiscard]] float measureCursorX(Renderer& renderer) const;
   [[nodiscard]] float textViewportWidth() const noexcept;
+  [[nodiscard]] bool clearButtonVisible() const noexcept;
+  [[nodiscard]] float clearButtonHitWidth() const noexcept;
+  [[nodiscard]] float clearButtonTextReserveWidth() const noexcept;
   [[nodiscard]] bool hasSelection() const noexcept;
   [[nodiscard]] std::size_t selectionStart() const noexcept;
   [[nodiscard]] std::size_t selectionEnd() const noexcept;
@@ -87,6 +92,8 @@ private:
   Label* m_label = nullptr;
   RectNode* m_cursor = nullptr;
   InputArea* m_inputArea = nullptr;
+  InputArea* m_clearButtonArea = nullptr;
+  GlyphNode* m_clearButtonGlyph = nullptr;
 
   std::string m_value;
   std::string m_placeholder;
@@ -108,6 +115,7 @@ private:
   float m_fontSize = Style::fontSizeBody;
   float m_controlHeight = Style::controlHeight;
   float m_horizontalPadding = Style::spaceMd;
+  bool m_clearButtonEnabled = false;
   bool m_passwordMode = false;
   bool m_invalid = false;
   std::chrono::steady_clock::time_point m_lastPrimaryPressTime{};

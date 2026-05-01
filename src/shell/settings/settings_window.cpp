@@ -18,6 +18,7 @@
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/select.h"
+#include "ui/controls/spacer.h"
 #include "ui/controls/toggle.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -725,7 +726,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   auto filters = std::make_unique<Flex>();
   filters->setDirection(FlexDirection::Horizontal);
   filters->setAlign(FlexAlign::Center);
-  filters->setJustify(FlexJustify::SpaceBetween);
+  filters->setJustify(FlexJustify::Start);
   filters->setGap(Style::spaceMd * scale);
 
   auto searchInput = std::make_unique<Input>();
@@ -734,8 +735,8 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   searchInput->setFontSize(Style::fontSizeBody * scale);
   searchInput->setControlHeight(Style::controlHeight * scale);
   searchInput->setHorizontalPadding(Style::spaceSm * scale);
+  searchInput->setClearButtonEnabled(true);
   searchInput->setSize(320.0f * scale, Style::controlHeight * scale);
-  searchInput->setFlexGrow(1.0f);
   Input* searchInputPtr = searchInput.get();
   searchInput->setOnChange([this, requestRebuild](const std::string& value) {
     m_searchQuery = value;
@@ -744,6 +745,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     requestRebuild();
   });
   filters->addChild(std::move(searchInput));
+  filters->addChild(std::make_unique<Spacer>());
 
   auto advancedLabel = makeLabel(i18n::tr("settings.badges.advanced"), Style::fontSizeBody * scale,
                                  roleColor(ColorRole::OnSurfaceVariant), false);
