@@ -4,6 +4,7 @@
 #include "render/core/image_decoder.h"
 #include "render/core/image_file_loader.h"
 
+#include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #include <cstring>
 #include <vector>
@@ -15,6 +16,8 @@ namespace {
 #ifndef GL_BGRA_EXT
   constexpr GLenum GL_BGRA_EXT = 0x80E1;
 #endif
+
+  [[nodiscard]] GLuint toGlesTexture(TextureId id) noexcept { return static_cast<GLuint>(id.value()); }
 
 } // namespace
 
@@ -158,7 +161,8 @@ TextureHandle TextureManager::loadFromRaw(const std::uint8_t* data, std::size_t 
 
 void TextureManager::unload(TextureHandle& handle) {
   if (handle.id != 0) {
-    glDeleteTextures(1, &handle.id);
+    GLuint texture = toGlesTexture(handle.id);
+    glDeleteTextures(1, &texture);
     std::erase(m_textures, handle.id);
     handle = {};
   }
@@ -166,7 +170,12 @@ void TextureManager::unload(TextureHandle& handle) {
 
 void TextureManager::cleanup() {
   if (!m_textures.empty()) {
-    glDeleteTextures(static_cast<GLsizei>(m_textures.size()), m_textures.data());
+    std::vector<GLuint> textures;
+    textures.reserve(m_textures.size());
+    for (TextureId texture : m_textures) {
+      textures.push_back(toGlesTexture(texture));
+    }
+    glDeleteTextures(static_cast<GLsizei>(textures.size()), textures.data());
     m_textures.clear();
   }
 }
@@ -193,8 +202,8 @@ TextureHandle TextureManager::uploadBgra(const std::uint8_t* data, int width, in
   }
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  m_textures.push_back(tex);
-  return TextureHandle{.id = tex, .width = width, .height = height};
+  m_textures.push_back(TextureId{tex});
+  return TextureHandle{.id = TextureId{tex}, .width = width, .height = height};
 }
 
 TextureHandle TextureManager::uploadRgba(const std::uint8_t* data, int width, int height, bool mipmap) {
@@ -212,6 +221,6 @@ TextureHandle TextureManager::uploadRgba(const std::uint8_t* data, int width, in
   }
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  m_textures.push_back(tex);
-  return TextureHandle{.id = tex, .width = width, .height = height};
+  m_textures.push_back(TextureId{tex});
+  return TextureHandle{.id = TextureId{tex}, .width = width, .height = height};
 }

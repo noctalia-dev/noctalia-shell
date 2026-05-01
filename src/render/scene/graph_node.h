@@ -1,9 +1,8 @@
 #pragma once
 
+#include "render/core/texture_handle.h"
 #include "render/programs/graph_program.h"
 #include "render/scene/node.h"
-
-#include <GLES2/gl2.h>
 
 class GraphNode : public Node {
 public:
@@ -14,7 +13,7 @@ public:
   GraphNode& operator=(const GraphNode&) = delete;
 
   [[nodiscard]] const GraphStyle& style() const noexcept { return m_style; }
-  [[nodiscard]] GLuint textureId() const noexcept { return m_texture; }
+  [[nodiscard]] TextureId textureId() const noexcept { return m_texture; }
   [[nodiscard]] int textureWidth() const noexcept { return m_texWidth; }
 
   void setLineColor1(const Color& color) {
@@ -83,7 +82,7 @@ public:
 
 private:
   GraphStyle m_style;
-  GLuint m_texture = 0;
+  TextureId m_texture;
   int m_texWidth = 0;
   int m_texCapacity = 0;
 };

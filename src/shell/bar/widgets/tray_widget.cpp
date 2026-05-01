@@ -351,7 +351,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
   for (auto* image : m_loadedImages) {
     if (image != nullptr) {
       kLog.debug("tray widget image clear ptr={} path={} tex={}", static_cast<const void*>(image), image->sourcePath(),
-                 image->textureId());
+                 image->textureId().value());
       image->clear(renderer);
     }
   }
@@ -385,7 +385,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
         iconW = iconSize;
         iconH = iconSize;
         kLog.debug("tray widget image load ok id={} path={} size={}x{} tex={} ptr={}", item.id, iconPath,
-                   image->sourceWidth(), image->sourceHeight(), image->textureId(),
+                   image->sourceWidth(), image->sourceHeight(), image->textureId().value(),
                    static_cast<const void*>(image.get()));
         kLog.debug("tray widget icon id={} source=file path={} size={}x{}", item.id, iconPath, image->sourceWidth(),
                    image->sourceHeight());
@@ -695,7 +695,7 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
 std::string TrayWidget::iconForItem(const TrayItemInfo& item) const {
   const std::string preferred =
       item.needsAttention && !item.attentionIconName.empty() ? item.attentionIconName : item.iconName;
-  if (!preferred.empty() && GlyphRegistry::lookup(preferred) != 0) {
+  if (!preferred.empty() && GlyphRegistry::contains(preferred)) {
     return preferred;
   }
   if (item.needsAttention) {

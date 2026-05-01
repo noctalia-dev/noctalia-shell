@@ -235,7 +235,7 @@ void GraphProgram::destroy() {
   m_dataSourceLoc = -1;
 }
 
-void GraphProgram::draw(GLuint dataTexture, int texWidth, float surfaceWidth, float surfaceHeight, float width,
+void GraphProgram::draw(TextureId dataTexture, int texWidth, float surfaceWidth, float surfaceHeight, float width,
                         float height, const GraphStyle& style, const Mat3& transform) const {
   if (!m_program.isValid() || width <= 0.0f || height <= 0.0f || dataTexture == 0) {
     return;
@@ -264,7 +264,7 @@ void GraphProgram::draw(GLuint dataTexture, int texWidth, float surfaceWidth, fl
   glUniform1f(m_aaSizeLoc, style.aaSize);
 
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, dataTexture);
+  glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(dataTexture.value()));
   glUniform1i(m_dataSourceLoc, 0);
 
   const auto posAttr = static_cast<GLuint>(m_positionLoc);

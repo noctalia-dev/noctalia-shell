@@ -385,21 +385,21 @@ void LockSurface::applyWallpaperTexture() {
   Color color = rgba(0.0f, 0.0f, 0.0f, 1.0f);
   if (parseColorWallpaperPath(m_wallpaperPath, color)) {
     m_wallpaperTexture = {};
-    m_wallpaper->setSources(WallpaperSourceKind::Color, 0, color, WallpaperSourceKind::Image, 0,
+    m_wallpaper->setSources(WallpaperSourceKind::Color, {}, color, WallpaperSourceKind::Image, {},
                             rgba(0.0f, 0.0f, 0.0f, 1.0f), 0.0f, 0.0f, 0.0f, 0.0f);
     m_wallpaper->setTransition(WallpaperTransition::Fade, 0.0f, TransitionParams{});
     m_wallpaper->setFillMode(m_wallpaperFillMode);
     m_wallpaper->setFillColor(m_wallpaperFillColor);
   } else if (m_textureCache != nullptr && !m_wallpaperPath.empty()) {
     m_wallpaperTexture = m_textureCache->acquire(m_wallpaperPath);
-    m_wallpaper->setTextures(m_wallpaperTexture.id, 0, static_cast<float>(m_wallpaperTexture.width),
+    m_wallpaper->setTextures(m_wallpaperTexture.id, {}, static_cast<float>(m_wallpaperTexture.width),
                              static_cast<float>(m_wallpaperTexture.height), 0.0f, 0.0f);
     m_wallpaper->setTransition(WallpaperTransition::Fade, 0.0f, TransitionParams{});
     m_wallpaper->setFillMode(m_wallpaperFillMode);
     m_wallpaper->setFillColor(m_wallpaperFillColor);
   } else {
     m_wallpaperTexture = {};
-    m_wallpaper->setTextures(0, 0, 0.0f, 0.0f, 0.0f, 0.0f);
+    m_wallpaper->setTextures({}, {}, 0.0f, 0.0f, 0.0f, 0.0f);
   }
 
   m_wallpaperDirty = false;

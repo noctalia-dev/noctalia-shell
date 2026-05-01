@@ -215,8 +215,8 @@ void BackdropSurface::setActive(bool active) {
   }
 }
 
-void BackdropSurface::setWallpaperState(GLuint tex, float imgW, float imgH, WallpaperFillMode fillMode) {
-  m_wallpaperRenderer.setTransitionState(tex, 0, imgW, imgH, 0.0f, 0.0f, 0.0f, WallpaperTransition::Fade, fillMode,
+void BackdropSurface::setWallpaperState(TextureId tex, float imgW, float imgH, WallpaperFillMode fillMode) {
+  m_wallpaperRenderer.setTransitionState(tex, {}, imgW, imgH, 0.0f, 0.0f, 0.0f, WallpaperTransition::Fade, fillMode,
                                          TransitionParams{});
 }
 

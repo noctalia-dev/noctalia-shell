@@ -1,15 +1,10 @@
 #pragma once
 
-#include <GLES2/gl2.h>
+#include "render/core/texture_handle.h"
+
 #include <cstdint>
 #include <string>
 #include <vector>
-
-struct TextureHandle {
-  GLuint id = 0;
-  int width = 0;
-  int height = 0;
-};
 
 enum class PixmapFormat {
   RGBA, // Red, Green, Blue, Alpha
@@ -42,6 +37,6 @@ private:
                                     bool mipmap = false);
   TextureHandle uploadRgba(const std::uint8_t* data, int width, int height, bool mipmap = false);
   TextureHandle uploadBgra(const std::uint8_t* data, int width, int height, bool mipmap = false);
-  std::vector<GLuint> m_textures;
+  std::vector<TextureId> m_textures;
   bool m_hasBgraExt = false;
 };

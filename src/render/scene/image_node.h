@@ -1,6 +1,7 @@
 #pragma once
 
 #include "render/core/color.h"
+#include "render/core/texture_handle.h"
 #include "render/scene/node.h"
 
 #include <cstdint>
@@ -15,7 +16,7 @@ class ImageNode : public Node {
 public:
   ImageNode() : Node(NodeType::Image) {}
 
-  [[nodiscard]] std::uint32_t textureId() const noexcept { return m_textureId; }
+  [[nodiscard]] TextureId textureId() const noexcept { return m_textureId; }
   [[nodiscard]] const Color& tint() const noexcept { return m_tint; }
   [[nodiscard]] float radius() const noexcept { return m_radius; }
   [[nodiscard]] const Color& borderColor() const noexcept { return m_borderColor; }
@@ -24,7 +25,7 @@ public:
   [[nodiscard]] int textureWidth() const noexcept { return m_textureWidth; }
   [[nodiscard]] int textureHeight() const noexcept { return m_textureHeight; }
 
-  void setTextureId(std::uint32_t id) {
+  void setTextureId(TextureId id) {
     if (m_textureId == id) {
       return;
     }
@@ -75,7 +76,7 @@ public:
   }
 
 private:
-  std::uint32_t m_textureId = 0;
+  TextureId m_textureId;
   Color m_tint = {1.0f, 1.0f, 1.0f, 1.0f};
   float m_radius = 0.0f;
   Color m_borderColor = {0.0f, 0.0f, 0.0f, 0.0f};

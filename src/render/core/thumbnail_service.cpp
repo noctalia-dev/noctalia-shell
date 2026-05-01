@@ -206,7 +206,8 @@ void ThumbnailService::release(const std::string& path) {
   auto it = m_textures.find(path);
   if (it != m_textures.end()) {
     if (it->second.id != 0) {
-      glDeleteTextures(1, &it->second.id);
+      GLuint texture = static_cast<GLuint>(it->second.id.value());
+      glDeleteTextures(1, &texture);
     }
     m_textures.erase(it);
   }
@@ -272,7 +273,7 @@ void ThumbnailService::uploadPending() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    m_textures[job.path] = TextureHandle{.id = tex, .width = job.width, .height = job.height};
+    m_textures[job.path] = TextureHandle{.id = TextureId{tex}, .width = job.width, .height = job.height};
   }
 }
 
@@ -322,7 +323,8 @@ void ThumbnailService::pushResult(DecodedJob job) {
 void ThumbnailService::deleteAllTextures() {
   for (auto& [path, handle] : m_textures) {
     if (handle.id != 0) {
-      glDeleteTextures(1, &handle.id);
+      GLuint texture = static_cast<GLuint>(handle.id.value());
+      glDeleteTextures(1, &texture);
     }
   }
   m_textures.clear();

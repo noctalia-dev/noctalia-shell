@@ -387,8 +387,8 @@ void WallpaperProgram::initProgram(std::size_t index, const char* fragSource) {
   }
 }
 
-void WallpaperProgram::draw(WallpaperTransition type, WallpaperSourceKind sourceKind1, GLuint texture1,
-                            const Color& sourceColor1, WallpaperSourceKind sourceKind2, GLuint texture2,
+void WallpaperProgram::draw(WallpaperTransition type, WallpaperSourceKind sourceKind1, TextureId texture1,
+                            const Color& sourceColor1, WallpaperSourceKind sourceKind2, TextureId texture2,
                             const Color& sourceColor2, float surfaceWidth, float surfaceHeight, float quadWidth,
                             float quadHeight, float imageWidth1, float imageHeight1, float imageWidth2,
                             float imageHeight2, float progress, float fillMode, const TransitionParams& params,
@@ -414,11 +414,11 @@ void WallpaperProgram::draw(WallpaperTransition type, WallpaperSourceKind source
 
   // Textures
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, texture1);
+  glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(texture1.value()));
   glUniform1i(pd.source1Loc, 0);
 
   glActiveTexture(GL_TEXTURE1);
-  glBindTexture(GL_TEXTURE_2D, texture2);
+  glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(texture2.value()));
   if (pd.source2Loc >= 0) {
     glUniform1i(pd.source2Loc, 1);
   }

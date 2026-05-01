@@ -1,12 +1,14 @@
 #include "render/scene/graph_node.h"
 
+#include <GLES2/gl2.h>
 #include <algorithm>
 #include <cstdint>
 #include <vector>
 
 GraphNode::~GraphNode() {
   if (m_texture != 0) {
-    glDeleteTextures(1, &m_texture);
+    GLuint texture = static_cast<GLuint>(m_texture.value());
+    glDeleteTextures(1, &texture);
   }
 }
 
@@ -22,10 +24,12 @@ void GraphNode::setData(const float* primary, int primaryCount, const float* sec
   }
 
   if (m_texture == 0) {
-    glGenTextures(1, &m_texture);
+    GLuint texture = 0;
+    glGenTextures(1, &texture);
+    m_texture = TextureId{texture};
   }
 
-  glBindTexture(GL_TEXTURE_2D, m_texture);
+  glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(m_texture.value()));
 
   if (newWidth > m_texCapacity) {
     m_texCapacity = newWidth;

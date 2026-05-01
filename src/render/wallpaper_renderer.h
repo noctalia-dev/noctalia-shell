@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "render/core/color.h"
+#include "render/core/texture_handle.h"
 #include "render/programs/wallpaper_program.h"
 
 #include <EGL/egl.h>
@@ -28,8 +29,9 @@ public:
   void renderToFbo(GLuint targetFbo);
   void swapBuffers();
 
-  void setTransitionState(GLuint tex1, GLuint tex2, float imgW1, float imgH1, float imgW2, float imgH2, float progress,
-                          WallpaperTransition transition, WallpaperFillMode fillMode, const TransitionParams& params);
+  void setTransitionState(TextureId tex1, TextureId tex2, float imgW1, float imgH1, float imgW2, float imgH2,
+                          float progress, WallpaperTransition transition, WallpaperFillMode fillMode,
+                          const TransitionParams& params);
 
 private:
   void cleanup();
@@ -48,8 +50,8 @@ private:
   std::uint32_t m_logicalWidth = 0;
   std::uint32_t m_logicalHeight = 0;
 
-  GLuint m_tex1 = 0;
-  GLuint m_tex2 = 0;
+  TextureId m_tex1;
+  TextureId m_tex2;
   float m_imgW1 = 0.0f;
   float m_imgH1 = 0.0f;
   float m_imgW2 = 0.0f;

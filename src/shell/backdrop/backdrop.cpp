@@ -342,7 +342,7 @@ void Backdrop::updateRendererState(BackdropInstance& inst) {
                                     static_cast<float>(inst.currentTexture.height),
                                     m_config->config().wallpaper.fillMode);
   } else {
-    inst.surface->setWallpaperState(0, 0.0f, 0.0f, m_config->config().wallpaper.fillMode);
+    inst.surface->setWallpaperState({}, 0.0f, 0.0f, m_config->config().wallpaper.fillMode);
   }
 }
 

@@ -3,6 +3,7 @@
 #include "render/core/color.h"
 #include "render/core/mat3.h"
 #include "render/core/shader_program.h"
+#include "render/core/texture_handle.h"
 
 #include <GLES2/gl2.h>
 
@@ -31,7 +32,7 @@ public:
   void ensureInitialized();
   void destroy();
 
-  void draw(GLuint dataTexture, int texWidth, float surfaceWidth, float surfaceHeight, float width, float height,
+  void draw(TextureId dataTexture, int texWidth, float surfaceWidth, float surfaceHeight, float width, float height,
             const GraphStyle& style, const Mat3& transform = Mat3::identity()) const;
 
 private:
