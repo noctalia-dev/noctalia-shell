@@ -18,13 +18,11 @@
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "util/fuzzy_match.h"
-#include "wayland/clipboard_service.h"
 
 #include <algorithm>
 #include <cmath>
 #include <functional>
 #include <memory>
-#include <optional>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {

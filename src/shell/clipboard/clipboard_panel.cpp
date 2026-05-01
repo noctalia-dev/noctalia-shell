@@ -21,7 +21,6 @@
 
 #include <algorithm>
 #include <chrono>
-#include <cmath>
 #include <ctime>
 #include <memory>
 #include <string>
