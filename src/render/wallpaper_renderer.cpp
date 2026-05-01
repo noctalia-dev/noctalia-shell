@@ -130,25 +130,22 @@ void WallpaperRenderer::resize(std::uint32_t bufferWidth, std::uint32_t bufferHe
   m_logicalWidth = logicalWidth;
   m_logicalHeight = logicalHeight;
 
-  glViewport(0, 0, static_cast<GLsizei>(bufferWidth), static_cast<GLsizei>(bufferHeight));
+  m_backend->setViewport(bufferWidth, bufferHeight);
 
   m_program.ensureInitialized();
 }
 
 void WallpaperRenderer::render() {
-  if (m_target == nullptr || !m_target->isReady() || m_tex1 == 0) {
+  if (m_backend == nullptr || m_target == nullptr || !m_target->isReady() || m_tex1 == 0) {
     return;
   }
 
   const auto totalStart = std::chrono::steady_clock::now();
   makeCurrent();
   const auto drawStart = std::chrono::steady_clock::now();
-  glViewport(0, 0, static_cast<GLsizei>(m_bufferWidth), static_cast<GLsizei>(m_bufferHeight));
-  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
-
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  m_backend->setViewport(m_bufferWidth, m_bufferHeight);
+  m_backend->clear(rgba(0.0f, 0.0f, 0.0f, 1.0f));
+  m_backend->setBlendMode(RenderBlendMode::StraightAlpha);
 
   auto sw = static_cast<float>(m_logicalWidth);
   auto sh = static_cast<float>(m_logicalHeight);
@@ -177,20 +174,17 @@ void WallpaperRenderer::render() {
 }
 
 void WallpaperRenderer::renderToFramebuffer(const RenderFramebuffer& target) {
-  if (m_target == nullptr || !m_target->isReady() || m_tex1 == 0 || !target.valid()) {
+  if (m_backend == nullptr || m_target == nullptr || !m_target->isReady() || m_tex1 == 0 || !target.valid()) {
     return;
   }
 
   const auto totalStart = std::chrono::steady_clock::now();
   makeCurrent();
   const auto drawStart = std::chrono::steady_clock::now();
-  target.bind();
-  glViewport(0, 0, static_cast<GLsizei>(m_bufferWidth), static_cast<GLsizei>(m_bufferHeight));
-  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
-
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  m_backend->bindFramebuffer(target);
+  m_backend->setViewport(m_bufferWidth, m_bufferHeight);
+  m_backend->clear(rgba(0.0f, 0.0f, 0.0f, 1.0f));
+  m_backend->setBlendMode(RenderBlendMode::StraightAlpha);
 
   auto sw = static_cast<float>(m_logicalWidth);
   auto sh = static_cast<float>(m_logicalHeight);
@@ -210,35 +204,34 @@ void WallpaperRenderer::renderToFramebuffer(const RenderFramebuffer& target) {
 }
 
 void WallpaperRenderer::blur(RenderFramebuffer& target, RenderFramebuffer& scratch, float radius, int rounds) {
-  if (!target.valid() || !scratch.valid() || radius < 0.5f || rounds <= 0) {
+  if (m_backend == nullptr || !target.valid() || !scratch.valid() || radius < 0.5f || rounds <= 0) {
     return;
   }
 
   makeCurrent();
   m_blurProgram.ensureInitialized();
-  glViewport(0, 0, static_cast<GLsizei>(target.width()), static_cast<GLsizei>(target.height()));
-  glDisable(GL_BLEND);
+  m_backend->setViewport(target.width(), target.height());
+  m_backend->setBlendMode(RenderBlendMode::Disabled);
 
   for (int round = 0; round < rounds; ++round) {
-    scratch.bind();
+    m_backend->bindFramebuffer(scratch);
     m_blurProgram.draw(target.colorTexture(), target.width(), target.height(), 1.0f, 0.0f, radius);
 
-    target.bind();
+    m_backend->bindFramebuffer(target);
     m_blurProgram.draw(scratch.colorTexture(), scratch.width(), scratch.height(), 0.0f, 1.0f, radius);
   }
 }
 
 void WallpaperRenderer::tint(RenderFramebuffer& target, float r, float g, float b, float intensity) {
-  if (!target.valid() || intensity <= kMinimumPostProcessAlpha) {
+  if (m_backend == nullptr || !target.valid() || intensity <= kMinimumPostProcessAlpha) {
     return;
   }
 
   makeCurrent();
   ensurePostProcessPrograms();
-  target.bind();
-  glViewport(0, 0, static_cast<GLsizei>(target.width()), static_cast<GLsizei>(target.height()));
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  m_backend->bindFramebuffer(target);
+  m_backend->setViewport(target.width(), target.height());
+  m_backend->setBlendMode(RenderBlendMode::StraightAlpha);
 
   glUseProgram(m_tintProgram.id());
   const GLint colorLoc = glGetUniformLocation(m_tintProgram.id(), "u_color");
@@ -247,20 +240,16 @@ void WallpaperRenderer::tint(RenderFramebuffer& target, float r, float g, float 
 }
 
 void WallpaperRenderer::blitToSurface(TextureId texture) {
-  if (m_target == nullptr || !m_target->isReady() || texture == 0) {
+  if (m_backend == nullptr || m_target == nullptr || !m_target->isReady() || texture == 0) {
     return;
   }
 
   makeCurrent();
   ensurePostProcessPrograms();
-  if (m_backend != nullptr) {
-    m_backend->bindDefaultFramebuffer();
-  }
-
-  glViewport(0, 0, static_cast<GLsizei>(m_bufferWidth), static_cast<GLsizei>(m_bufferHeight));
-  glDisable(GL_BLEND);
-  glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
+  m_backend->bindDefaultFramebuffer();
+  m_backend->setViewport(m_bufferWidth, m_bufferHeight);
+  m_backend->setBlendMode(RenderBlendMode::Disabled);
+  m_backend->clear(rgba(0.0f, 0.0f, 0.0f, 0.0f));
 
   glUseProgram(m_blitProgram.id());
   glActiveTexture(GL_TEXTURE0);

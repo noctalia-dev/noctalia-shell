@@ -96,13 +96,10 @@ void GlesRenderBackend::makeCurrent(RenderTarget& target) {
 void GlesRenderBackend::beginFrame(RenderTarget& target) {
   makeCurrent(target);
 
-  glViewport(0, 0, static_cast<GLint>(target.bufferWidth()), static_cast<GLint>(target.bufferHeight()));
-  glEnable(GL_BLEND);
-  glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
+  setViewport(target.bufferWidth(), target.bufferHeight());
+  setBlendMode(RenderBlendMode::PremultipliedAlpha);
   glDisable(GL_SCISSOR_TEST);
-  glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
+  clear(rgba(0.0f, 0.0f, 0.0f, 0.0f));
 }
 
 void GlesRenderBackend::endFrame(RenderTarget& target) {
@@ -123,7 +120,40 @@ std::unique_ptr<RenderFramebuffer> GlesRenderBackend::createFramebuffer(std::uin
   return framebuffer;
 }
 
+void GlesRenderBackend::bindFramebuffer(const RenderFramebuffer& framebuffer) {
+  const auto* glesFramebuffer = dynamic_cast<const GlesFramebuffer*>(&framebuffer);
+  if (glesFramebuffer == nullptr || !glesFramebuffer->valid()) {
+    throw std::runtime_error("GLES backend received an incompatible framebuffer");
+  }
+  glesFramebuffer->bind();
+}
+
 void GlesRenderBackend::bindDefaultFramebuffer() { GlesFramebuffer::bindDefault(); }
+
+void GlesRenderBackend::setViewport(std::uint32_t width, std::uint32_t height) {
+  glViewport(0, 0, static_cast<GLint>(width), static_cast<GLint>(height));
+}
+
+void GlesRenderBackend::clear(Color color) {
+  glClearColor(color.r, color.g, color.b, color.a);
+  glClear(GL_COLOR_BUFFER_BIT);
+}
+
+void GlesRenderBackend::setBlendMode(RenderBlendMode mode) {
+  switch (mode) {
+  case RenderBlendMode::Disabled:
+    glDisable(GL_BLEND);
+    break;
+  case RenderBlendMode::StraightAlpha:
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    break;
+  case RenderBlendMode::PremultipliedAlpha:
+    glEnable(GL_BLEND);
+    glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    break;
+  }
+}
 
 void GlesRenderBackend::cleanup() {
   if (m_native.display != EGL_NO_DISPLAY && m_native.context != EGL_NO_CONTEXT) {

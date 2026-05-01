@@ -21,7 +21,7 @@ public:
   [[nodiscard]] bool create(TextureManager& textures, std::uint32_t width, std::uint32_t height);
   void destroy();
 
-  void bind() const override;
+  void bind() const;
   static void bindDefault();
 
   [[nodiscard]] bool valid() const noexcept override { return m_id != 0 && m_color.id != 0; }
