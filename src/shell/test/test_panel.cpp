@@ -32,7 +32,7 @@ void TestPanel::create() {
   auto rootLayout = std::make_unique<Flex>();
   rootLayout->setDirection(FlexDirection::Vertical);
   rootLayout->setGap(Style::spaceMd * scale);
-  rootLayout->setAlign(FlexAlign::Start);
+  rootLayout->setAlign(FlexAlign::Stretch);
 
   auto header = std::make_unique<Label>();
   header->setText("Test Controls");
@@ -43,23 +43,27 @@ void TestPanel::create() {
 
   auto content = std::make_unique<Flex>();
   content->setDirection(FlexDirection::Horizontal);
-  content->setGap(Style::spaceLg * 2 * scale);
+  content->setGap(Style::spaceLg * scale);
   content->setAlign(FlexAlign::Start);
+  content->setFillWidth(true);
 
-  auto container = std::make_unique<Flex>();
-  container->setDirection(FlexDirection::Vertical);
-  container->setGap(Style::spaceMd * scale);
-  container->setAlign(FlexAlign::Start);
+  auto colA = std::make_unique<Flex>();
+  colA->setDirection(FlexDirection::Vertical);
+  colA->setGap(Style::spaceMd * scale);
+  colA->setAlign(FlexAlign::Start);
+  colA->setFlexGrow(1.0f);
 
-  const float kRowLabelWidth = 150.0f * scale;
+  auto colB = std::make_unique<Flex>();
+  colB->setDirection(FlexDirection::Vertical);
+  colB->setGap(Style::spaceMd * scale);
+  colB->setAlign(FlexAlign::Start);
+  colB->setFlexGrow(1.0f);
 
-  auto makeCol = [scale]() {
-    auto row = std::make_unique<Flex>();
-    row->setDirection(FlexDirection::Vertical);
-    row->setGap(Style::spaceMd * scale);
-    row->setAlign(FlexAlign::Center);
-    return row;
-  };
+  auto colC = std::make_unique<Flex>();
+  colC->setDirection(FlexDirection::Vertical);
+  colC->setGap(Style::spaceMd * scale);
+  colC->setAlign(FlexAlign::Start);
+  colC->setFlexGrow(1.0f);
 
   auto makeRow = [scale]() {
     auto row = std::make_unique<Flex>();
@@ -69,15 +73,31 @@ void TestPanel::create() {
     return row;
   };
 
-  auto makeRowLabel = [scale](const char* text, float minWidth) {
-    auto label = std::make_unique<Label>();
-    label->setText(text);
-    label->setFontSize(Style::fontSizeBody * scale);
-    label->setMinWidth(minWidth);
-    return label;
+  auto makeCol = [scale]() {
+    auto col = std::make_unique<Flex>();
+    col->setDirection(FlexDirection::Vertical);
+    col->setGap(Style::spaceXs * scale);
+    col->setAlign(FlexAlign::Start);
+    return col;
   };
 
-  // Button variants
+  // Each control sits in a small section: a caption-style title on top, then
+  // the control underneath. This is more compact than the prior row-label
+  // pattern and avoids the 150px gutter of empty space on the left.
+  auto makeSection = [scale](const char* title) {
+    auto section = std::make_unique<Flex>();
+    section->setDirection(FlexDirection::Vertical);
+    section->setGap(Style::spaceXs * scale);
+    section->setAlign(FlexAlign::Start);
+    auto label = std::make_unique<Label>();
+    label->setText(title);
+    label->setFontSize(Style::fontSizeCaption * scale);
+    label->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    section->addChild(std::move(label));
+    return section;
+  };
+
+  // ── Column A: Buttons + Icon buttons ────────────────────────────────────
   {
     struct VariantSpec {
       const char* label;
@@ -102,29 +122,23 @@ void TestPanel::create() {
       return btn;
     };
 
-    auto enabledRow = makeRow();
-    for (const auto& v : variants) {
-      enabledRow->addChild(makeVariantButton(v));
+    auto buttonsSection = makeSection("Buttons");
+    auto buttonsCol = makeCol();
+    buttonsCol->setGap(Style::spaceXs * scale);
+    constexpr std::size_t kPerRow = 3;
+    for (bool enabled : {true, false}) {
+      for (std::size_t base = 0; base < variants.size(); base += kPerRow) {
+        auto row = makeRow();
+        for (std::size_t i = base; i < base + kPerRow && i < variants.size(); ++i) {
+          row->addChild(makeVariantButton(variants[i], enabled));
+        }
+        buttonsCol->addChild(std::move(row));
+      }
     }
-
-    auto disabledRow = makeRow();
-    for (const auto& v : variants) {
-      disabledRow->addChild(makeVariantButton(v, false));
-    }
-
-    auto col = makeCol();
-    col->setGap(Style::spaceSm * scale);
-    col->setAlign(FlexAlign::Start);
-    col->addChild(std::move(enabledRow));
-    col->addChild(std::move(disabledRow));
-
-    auto row = makeRow();
-    row->addChild(makeRowLabel("Buttons", kRowLabelWidth));
-    row->addChild(std::move(col));
-    container->addChild(std::move(row));
+    buttonsSection->addChild(std::move(buttonsCol));
+    colA->addChild(std::move(buttonsSection));
   }
 
-  // Button w/ glyph + icon-only
   {
     auto glyphTextButton = std::make_unique<Button>();
     glyphTextButton->setText("Settings");
@@ -149,223 +163,30 @@ void TestPanel::create() {
     glyphButton->setOnClick([]() {});
     m_glyphButton = glyphButton.get();
 
+    auto section = makeSection("Icon buttons");
     auto row = makeRow();
-    row->addChild(makeRowLabel("Icon buttons", kRowLabelWidth));
     row->addChild(std::move(glyphTextButton));
     row->addChild(std::move(glyphButton));
-    container->addChild(std::move(row));
+    section->addChild(std::move(row));
+    colA->addChild(std::move(section));
   }
 
   // Select
-  auto select = std::make_unique<Select>();
-  select->setSize(220.0f * scale, 0.0f);
-  select->setFontSize(Style::fontSizeBody * scale);
-  select->setControlHeight(Style::controlHeight * scale);
-  select->setHorizontalPadding(Style::spaceMd * scale);
-  select->setGlyphSize(14.0f * scale);
-  select->setOptions({"Something", "Yop", "Anything"});
-  select->setSelectedIndex(0);
-  m_select = select.get();
   {
-    auto row = makeRow();
-    row->setZIndex(10);
-    row->addChild(makeRowLabel("Select", kRowLabelWidth));
-    row->addChild(std::move(select));
+    auto select = std::make_unique<Select>();
+    select->setSize(220.0f * scale, 0.0f);
+    select->setFontSize(Style::fontSizeBody * scale);
+    select->setControlHeight(Style::controlHeight * scale);
+    select->setHorizontalPadding(Style::spaceMd * scale);
+    select->setGlyphSize(14.0f * scale);
+    select->setOptions({"Something", "Yop", "Anything"});
+    select->setSelectedIndex(0);
+    m_select = select.get();
 
-    container->addChild(std::move(row));
-  }
-
-  // Slider
-  auto slider = std::make_unique<Slider>();
-  slider->setRange(0.0f, 100.0f);
-  slider->setStep(1.0f);
-  slider->setValue(50.0f);
-  slider->setSize(Style::sliderDefaultWidth * scale, 0.0f);
-  slider->setControlHeight(Style::controlHeight * scale);
-  slider->setTrackHeight(Style::sliderTrackHeight * scale);
-  slider->setThumbSize(Style::sliderThumbSize * scale);
-  slider->setOnValueChanged([this](float value) {
-    if (m_sliderValueLabel != nullptr) {
-      const int percent = static_cast<int>(std::round(value));
-      m_sliderValueLabel->setText(std::to_string(percent) + "%");
-    }
-  });
-  m_slider = slider.get();
-  {
-    auto row = makeRow();
-    row->addChild(makeRowLabel("Slider", kRowLabelWidth));
-    row->addChild(std::move(slider));
-
-    auto valueLabel = std::make_unique<Label>();
-    valueLabel->setText("50%");
-    valueLabel->setCaptionStyle();
-    valueLabel->setFontSize(Style::fontSizeCaption * scale);
-    m_sliderValueLabel = valueLabel.get();
-    row->addChild(std::move(valueLabel));
-
-    container->addChild(std::move(row));
-  }
-
-  // Toggle
-  auto toggle = std::make_unique<Toggle>();
-  toggle->setToggleSize(ToggleSize::Medium);
-  toggle->setScale(scale);
-  toggle->setChecked(false);
-  toggle->setOnChange([this](bool checked) {
-    if (m_toggleValueLabel != nullptr) {
-      m_toggleValueLabel->setText(checked ? "true" : "false");
-    }
-  });
-  m_toggle = toggle.get();
-
-  auto toggleValueLabel = std::make_unique<Label>();
-  toggleValueLabel->setText("false");
-  toggleValueLabel->setCaptionStyle();
-  toggleValueLabel->setFontSize(Style::fontSizeCaption * scale);
-  m_toggleValueLabel = toggleValueLabel.get();
-
-  m_container = container.get();
-  {
-    auto row = makeRow();
-    row->addChild(makeRowLabel("Toggle", kRowLabelWidth));
-    row->addChild(std::move(toggle));
-    row->addChild(std::move(toggleValueLabel));
-    container->addChild(std::move(row));
-  }
-
-  // Segmented
-  {
-    auto segmented = std::make_unique<Segmented>();
-    segmented->setScale(scale);
-    segmented->addOption("Light");
-    segmented->addOption("Dark");
-    segmented->addOption("System");
-    segmented->setSelectedIndex(2);
-
-    auto segmentedValueLabel = std::make_unique<Label>();
-    segmentedValueLabel->setText("System");
-    segmentedValueLabel->setCaptionStyle();
-    segmentedValueLabel->setFontSize(Style::fontSizeCaption * scale);
-    m_segmentedValueLabel = segmentedValueLabel.get();
-
-    static const char* const kLabels[] = {"Light", "Dark", "System"};
-    segmented->setOnChange([this](std::size_t index) {
-      if (m_segmentedValueLabel != nullptr && index < std::size(kLabels)) {
-        m_segmentedValueLabel->setText(kLabels[index]);
-      }
-    });
-    m_segmented = segmented.get();
-
-    auto row = makeRow();
-    row->addChild(makeRowLabel("Segmented", kRowLabelWidth));
-    row->addChild(std::move(segmented));
-    row->addChild(std::move(segmentedValueLabel));
-    container->addChild(std::move(row));
-  }
-
-  // Checkbox
-  auto checkbox = std::make_unique<Checkbox>();
-  checkbox->setScale(scale);
-  checkbox->setChecked(true);
-  checkbox->setOnChange([this](bool checked) {
-    if (m_checkboxValueLabel != nullptr) {
-      m_checkboxValueLabel->setText(checked ? "true" : "false");
-    }
-  });
-  m_checkbox = checkbox.get();
-
-  auto checkboxValueLabel = std::make_unique<Label>();
-  checkboxValueLabel->setText("true");
-  checkboxValueLabel->setCaptionStyle();
-  checkboxValueLabel->setFontSize(Style::fontSizeCaption * scale);
-  m_checkboxValueLabel = checkboxValueLabel.get();
-
-  {
-    auto row = makeRow();
-    row->addChild(makeRowLabel("Checkbox", kRowLabelWidth));
-    row->addChild(std::move(checkbox));
-    row->addChild(std::move(checkboxValueLabel));
-    container->addChild(std::move(row));
-  }
-
-  // Radio
-  {
-    auto options = std::make_unique<Flex>();
-    options->setDirection(FlexDirection::Horizontal);
-    options->setAlign(FlexAlign::Center);
-    options->setGap(Style::spaceMd * scale);
-
-    auto optionA = std::make_unique<Flex>();
-    optionA->setDirection(FlexDirection::Horizontal);
-    optionA->setAlign(FlexAlign::Center);
-    optionA->setGap(Style::spaceXs * scale);
-
-    auto radioA = std::make_unique<RadioButton>();
-    radioA->setScale(scale);
-    radioA->setChecked(true);
-    m_radioA = radioA.get();
-
-    auto labelA = std::make_unique<Label>();
-    labelA->setText("Option A");
-    labelA->setFontSize(Style::fontSizeBody * scale);
-
-    optionA->addChild(std::move(radioA));
-    optionA->addChild(std::move(labelA));
-
-    auto optionB = std::make_unique<Flex>();
-    optionB->setDirection(FlexDirection::Horizontal);
-    optionB->setAlign(FlexAlign::Center);
-    optionB->setGap(Style::spaceXs * scale);
-
-    auto radioB = std::make_unique<RadioButton>();
-    radioB->setScale(scale);
-    m_radioB = radioB.get();
-
-    auto labelB = std::make_unique<Label>();
-    labelB->setText("Option B");
-    labelB->setFontSize(Style::fontSizeBody * scale);
-
-    optionB->addChild(std::move(radioB));
-    optionB->addChild(std::move(labelB));
-
-    if (m_radioA != nullptr) {
-      m_radioA->setOnChange([this](bool checked) {
-        if (!checked || m_radioB == nullptr) {
-          return;
-        }
-        m_radioA->setChecked(true);
-        m_radioB->setChecked(false);
-      });
-    }
-    if (m_radioB != nullptr) {
-      m_radioB->setOnChange([this](bool checked) {
-        if (!checked || m_radioA == nullptr) {
-          return;
-        }
-        m_radioA->setChecked(false);
-        m_radioB->setChecked(true);
-      });
-    }
-
-    options->addChild(std::move(optionA));
-    options->addChild(std::move(optionB));
-
-    auto row = makeRow();
-    row->addChild(makeRowLabel("Radio", kRowLabelWidth));
-    row->addChild(std::move(options));
-    container->addChild(std::move(row));
-  }
-
-  // Spinner
-  {
-    auto spinner = std::make_unique<Spinner>();
-    spinner->setSpinnerSize(20.0f * scale);
-    spinner->setThickness(2.0f * scale);
-    m_spinner = spinner.get();
-    auto row = makeRow();
-    row->addChild(makeRowLabel("Spinner", kRowLabelWidth));
-    row->addChild(std::move(spinner));
-    container->addChild(std::move(row));
+    auto section = makeSection("Select");
+    section->setZIndex(10);
+    section->addChild(std::move(select));
+    colA->addChild(std::move(section));
   }
 
   // Input
@@ -389,25 +210,201 @@ void TestPanel::create() {
       }
     });
 
-    auto col = makeCol();
-    col->addChild(std::move(input));
-    col->addChild(std::move(valueLabel));
-
+    auto section = makeSection("Input");
     auto row = makeRow();
-    row->addChild(makeRowLabel("Input", kRowLabelWidth));
-    row->addChild(std::move(col));
-
-    container->addChild(std::move(row));
+    row->addChild(std::move(input));
+    row->addChild(std::move(valueLabel));
+    section->addChild(std::move(row));
+    colA->addChild(std::move(section));
   }
 
-  // File dialog (popup)
+  // Slider
+  {
+    auto slider = std::make_unique<Slider>();
+    slider->setRange(0.0f, 100.0f);
+    slider->setStep(1.0f);
+    slider->setValue(50.0f);
+    slider->setSize(Style::sliderDefaultWidth * scale, 0.0f);
+    slider->setControlHeight(Style::controlHeight * scale);
+    slider->setTrackHeight(Style::sliderTrackHeight * scale);
+    slider->setThumbSize(Style::sliderThumbSize * scale);
+    slider->setOnValueChanged([this](float value) {
+      if (m_sliderValueLabel != nullptr) {
+        const int percent = static_cast<int>(std::round(value));
+        m_sliderValueLabel->setText(std::to_string(percent) + "%");
+      }
+    });
+    m_slider = slider.get();
+
+    auto valueLabel = std::make_unique<Label>();
+    valueLabel->setText("50%");
+    valueLabel->setCaptionStyle();
+    valueLabel->setFontSize(Style::fontSizeCaption * scale);
+    m_sliderValueLabel = valueLabel.get();
+
+    auto section = makeSection("Slider");
+    auto row = makeRow();
+    row->addChild(std::move(slider));
+    row->addChild(std::move(valueLabel));
+    section->addChild(std::move(row));
+    colA->addChild(std::move(section));
+  }
+
+  // ── Column B: Toggles, Segmented, Checkbox, Radio, Spinner ──────────────
+  {
+    auto toggle = std::make_unique<Toggle>();
+    toggle->setToggleSize(ToggleSize::Medium);
+    toggle->setScale(scale);
+    toggle->setChecked(false);
+    toggle->setOnChange([this](bool checked) {
+      if (m_toggleValueLabel != nullptr) {
+        m_toggleValueLabel->setText(checked ? "true" : "false");
+      }
+    });
+    m_toggle = toggle.get();
+
+    auto valueLabel = std::make_unique<Label>();
+    valueLabel->setText("false");
+    valueLabel->setCaptionStyle();
+    valueLabel->setFontSize(Style::fontSizeCaption * scale);
+    m_toggleValueLabel = valueLabel.get();
+
+    auto section = makeSection("Toggle");
+    auto row = makeRow();
+    row->addChild(std::move(toggle));
+    row->addChild(std::move(valueLabel));
+    section->addChild(std::move(row));
+    colB->addChild(std::move(section));
+  }
+
+  {
+    auto segmented = std::make_unique<Segmented>();
+    segmented->setScale(scale);
+    segmented->addOption("Light");
+    segmented->addOption("Dark");
+    segmented->addOption("System");
+    segmented->setSelectedIndex(2);
+
+    auto valueLabel = std::make_unique<Label>();
+    valueLabel->setText("System");
+    valueLabel->setCaptionStyle();
+    valueLabel->setFontSize(Style::fontSizeCaption * scale);
+    m_segmentedValueLabel = valueLabel.get();
+
+    static const char* const kLabels[] = {"Light", "Dark", "System"};
+    segmented->setOnChange([this](std::size_t index) {
+      if (m_segmentedValueLabel != nullptr && index < std::size(kLabels)) {
+        m_segmentedValueLabel->setText(kLabels[index]);
+      }
+    });
+    m_segmented = segmented.get();
+
+    auto section = makeSection("Segmented");
+    auto row = makeRow();
+    row->addChild(std::move(segmented));
+    row->addChild(std::move(valueLabel));
+    section->addChild(std::move(row));
+    colB->addChild(std::move(section));
+  }
+
+  {
+    auto checkbox = std::make_unique<Checkbox>();
+    checkbox->setScale(scale);
+    checkbox->setChecked(true);
+    checkbox->setOnChange([this](bool checked) {
+      if (m_checkboxValueLabel != nullptr) {
+        m_checkboxValueLabel->setText(checked ? "true" : "false");
+      }
+    });
+    m_checkbox = checkbox.get();
+
+    auto valueLabel = std::make_unique<Label>();
+    valueLabel->setText("true");
+    valueLabel->setCaptionStyle();
+    valueLabel->setFontSize(Style::fontSizeCaption * scale);
+    m_checkboxValueLabel = valueLabel.get();
+
+    auto section = makeSection("Checkbox");
+    auto row = makeRow();
+    row->addChild(std::move(checkbox));
+    row->addChild(std::move(valueLabel));
+    section->addChild(std::move(row));
+    colB->addChild(std::move(section));
+  }
+
+  {
+    auto makeRadioOption = [scale](const char* text, std::unique_ptr<RadioButton> radio) {
+      auto opt = std::make_unique<Flex>();
+      opt->setDirection(FlexDirection::Horizontal);
+      opt->setAlign(FlexAlign::Center);
+      opt->setGap(Style::spaceXs * scale);
+      opt->addChild(std::move(radio));
+      auto label = std::make_unique<Label>();
+      label->setText(text);
+      label->setFontSize(Style::fontSizeBody * scale);
+      opt->addChild(std::move(label));
+      return opt;
+    };
+
+    auto radioA = std::make_unique<RadioButton>();
+    radioA->setScale(scale);
+    radioA->setChecked(true);
+    m_radioA = radioA.get();
+
+    auto radioB = std::make_unique<RadioButton>();
+    radioB->setScale(scale);
+    m_radioB = radioB.get();
+
+    if (m_radioA != nullptr) {
+      m_radioA->setOnChange([this](bool checked) {
+        if (!checked || m_radioB == nullptr) {
+          return;
+        }
+        m_radioA->setChecked(true);
+        m_radioB->setChecked(false);
+      });
+    }
+    if (m_radioB != nullptr) {
+      m_radioB->setOnChange([this](bool checked) {
+        if (!checked || m_radioA == nullptr) {
+          return;
+        }
+        m_radioA->setChecked(false);
+        m_radioB->setChecked(true);
+      });
+    }
+
+    auto options = std::make_unique<Flex>();
+    options->setDirection(FlexDirection::Horizontal);
+    options->setAlign(FlexAlign::Center);
+    options->setGap(Style::spaceMd * scale);
+    options->addChild(makeRadioOption("Option A", std::move(radioA)));
+    options->addChild(makeRadioOption("Option B", std::move(radioB)));
+
+    auto section = makeSection("Radio");
+    section->addChild(std::move(options));
+    colB->addChild(std::move(section));
+  }
+
+  {
+    auto spinner = std::make_unique<Spinner>();
+    spinner->setSpinnerSize(20.0f * scale);
+    spinner->setThickness(2.0f * scale);
+    m_spinner = spinner.get();
+
+    auto section = makeSection("Spinner");
+    section->addChild(std::move(spinner));
+    colB->addChild(std::move(section));
+  }
+
+  // ── Column C: File dialog, Color picker, Grid view, Transforms ──────────
   {
     auto resultLabel = std::make_unique<Label>();
     resultLabel->setText("No image selected");
     resultLabel->setCaptionStyle();
     resultLabel->setFontSize(Style::fontSizeCaption * scale);
     resultLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
-    resultLabel->setMaxWidth(320.0f * scale);
+    resultLabel->setMaxWidth(280.0f * scale);
     m_fileDialogResultLabel = resultLabel.get();
 
     auto openFileDialog = std::make_unique<Button>();
@@ -439,19 +436,14 @@ void TestPanel::create() {
     });
     m_openFileDialogButton = openFileDialog.get();
 
-    auto col = makeCol();
-    col->setAlign(FlexAlign::Start);
-    col->addChild(std::move(openFileDialog));
-    col->addChild(std::move(resultLabel));
-
+    auto section = makeSection("File dialog");
     auto row = makeRow();
-    row->setAlign(FlexAlign::Start);
-    row->addChild(makeRowLabel("File dialog", kRowLabelWidth));
-    row->addChild(std::move(col));
-    container->addChild(std::move(row));
+    row->addChild(std::move(openFileDialog));
+    row->addChild(std::move(resultLabel));
+    section->addChild(std::move(row));
+    colC->addChild(std::move(section));
   }
 
-  // Color picker dialog
   {
     auto resultSwatch = std::make_unique<Box>();
     resultSwatch->setSize(28.0f * scale, 28.0f * scale);
@@ -485,24 +477,23 @@ void TestPanel::create() {
     });
     m_openColorPickerButton = openPicker.get();
 
+    auto section = makeSection("Color picker");
     auto row = makeRow();
-    row->setAlign(FlexAlign::Start);
-    row->addChild(makeRowLabel("Color picker", kRowLabelWidth));
     row->addChild(std::move(openPicker));
     row->addChild(std::move(resultSwatch));
-    container->addChild(std::move(row));
+    section->addChild(std::move(row));
+    colC->addChild(std::move(section));
   }
 
-  // Grid view
   {
     auto grid = std::make_unique<GridView>();
-    grid->setColumns(4);
+    grid->setColumns(3);
     grid->setColumnGap(Style::spaceSm * scale);
     grid->setRowGap(Style::spaceSm * scale);
     grid->setPadding(Style::spaceXs * scale);
-    grid->setSize(360.0f * scale, 0.0f);
+    grid->setSize(300.0f * scale, 0.0f);
     grid->setUniformCellSize(true);
-    grid->setMinCellHeight(76.0f * scale);
+    grid->setMinCellHeight(64.0f * scale);
 
     struct TileSpec {
       const char* glyph;
@@ -510,14 +501,8 @@ void TestPanel::create() {
       bool accent;
     };
     const std::vector<TileSpec> tiles = {
-        {"home", "Home", false},
-        {"media-play", "Music", true},
-        {"copy", "Gallery", false},
-        {"settings", "Settings", false},
-        {"weather-cloud", "Weather", false},
-        {"check", "Calendar", false},
-        {"cpu-temperature", "Terminal", true},
-        {"shutdown", "Power", false},
+        {"home", "Home", false},         {"media-play", "Music", true},       {"copy", "Gallery", false},
+        {"settings", "Settings", false}, {"weather-cloud", "Weather", false}, {"check", "Calendar", false},
     };
 
     for (const auto& tileData : tiles) {
@@ -552,95 +537,86 @@ void TestPanel::create() {
       grid->addChild(std::move(tile));
     }
 
-    auto row = makeRow();
-    row->addChild(makeRowLabel("Grid view", kRowLabelWidth));
-    row->addChild(std::move(grid));
-    container->addChild(std::move(row));
+    auto section = makeSection("Grid view");
+    section->addChild(std::move(grid));
+    colC->addChild(std::move(section));
   }
 
-  auto transformColumn = std::make_unique<Flex>();
-  transformColumn->setDirection(FlexDirection::Vertical);
-  transformColumn->setGap(Style::spaceMd * scale);
-  transformColumn->setAlign(FlexAlign::Start);
+  // Transforms
+  {
+    auto transformStage = std::make_unique<Box>();
+    transformStage->setSize(280.0f * scale, 220.0f * scale);
+    transformStage->setFill(roleColor(ColorRole::Surface));
+    transformStage->setBorder(roleColor(ColorRole::Outline), Style::borderWidth * scale);
+    transformStage->setRadius(Style::radiusLg * scale);
+    m_transformStage = transformStage.get();
 
-  auto transformHeader = std::make_unique<Label>();
-  transformHeader->setText("Transforms");
-  transformHeader->setFontSize(Style::fontSizeBody * scale);
-  transformHeader->setColor(roleColor(ColorRole::Primary));
-  transformColumn->addChild(std::move(transformHeader));
+    auto demoBox = std::make_unique<Box>();
+    demoBox->setSize(180.0f * scale, 100.0f * scale);
+    demoBox->setFill(roleColor(ColorRole::SurfaceVariant));
+    demoBox->setBorder(roleColor(ColorRole::Primary), Style::borderWidth * scale);
+    demoBox->setRadius(Style::radiusLg * scale);
+    demoBox->setRotation(0.0f);
+    m_transformDemoBox = demoBox.get();
 
-  auto transformHelp = std::make_unique<Label>();
-  transformHelp->setText("Rotated node with children.");
-  transformHelp->setFontSize(Style::fontSizeCaption * scale);
-  transformHelp->setColor(roleColor(ColorRole::OnSurfaceVariant));
-  m_transformHelp = transformHelp.get();
-  transformColumn->addChild(std::move(transformHelp));
+    auto demoButton = std::make_unique<Button>();
+    demoButton->setText("Click me...");
+    demoButton->setGlyph("cpu-temperature");
+    demoButton->setFontSize(Style::fontSizeBody * scale);
+    demoButton->setGlyphSize(Style::fontSizeBody * scale);
+    demoButton->setVariant(ButtonVariant::Accent);
+    demoButton->setPadding(Style::spaceSm * scale, Style::spaceLg * scale);
+    demoButton->setRadius(Style::radiusMd * scale);
+    demoButton->setOnClick([this]() {
+      if (m_transformHelp != nullptr) {
+        m_transformHelp->setText("Transform button clicked!");
+        m_transformHelp->setColor(roleColor(ColorRole::Secondary));
+      }
+    });
+    m_transformDemoButton = demoButton.get();
+    m_transformDemoBox->addChild(std::move(demoButton));
 
-  auto transformStage = std::make_unique<Box>();
-  transformStage->setSize(360.0f * scale, 360.0f * scale);
-  transformStage->setFill(roleColor(ColorRole::Surface));
-  transformStage->setBorder(roleColor(ColorRole::Outline), Style::borderWidth * scale);
-  transformStage->setRadius(Style::radiusLg * scale);
-  m_transformStage = transformStage.get();
+    auto demoGlyph = std::make_unique<Glyph>();
+    demoGlyph->setGlyph("noctalia");
+    demoGlyph->setPosition(150.0f * scale, 60.0f * scale);
+    demoGlyph->setGlyphSize(24.0f * scale);
+    demoGlyph->setColor(roleColor(ColorRole::Primary));
+    demoGlyph->setRotation(static_cast<float>(M_PI) * 0.5f);
+    m_transformDemoGlyph = demoGlyph.get();
+    m_transformDemoBox->addChild(std::move(demoGlyph));
 
-  auto demoBox = std::make_unique<Box>();
-  demoBox->setPosition(60.f, 80.f);
-  demoBox->setSize(240.0f * scale, 130.0f * scale);
-  demoBox->setFill(roleColor(ColorRole::SurfaceVariant));
-  demoBox->setBorder(roleColor(ColorRole::Primary), Style::borderWidth * scale);
-  demoBox->setRadius(Style::radiusLg * scale);
-  demoBox->setRotation(0.0f);
-  m_transformDemoBox = demoBox.get();
+    auto badgeBox = std::make_unique<Box>();
+    badgeBox->setSize(28.0f * scale, 28.0f * scale);
+    badgeBox->setFill(roleColor(ColorRole::Primary));
+    badgeBox->setBorder(roleColor(ColorRole::Outline), Style::borderWidth * scale);
+    badgeBox->setRadius(14.0f * scale);
+    m_transformBadgeBox = badgeBox.get();
 
-  auto demoButton = std::make_unique<Button>();
-  demoButton->setText("Click me...");
-  demoButton->setGlyph("cpu-temperature");
-  demoButton->setFontSize(Style::fontSizeBody * scale);
-  demoButton->setGlyphSize(Style::fontSizeBody * scale);
-  demoButton->setVariant(ButtonVariant::Accent);
-  demoButton->setPosition(20.0f, 20.f);
-  demoButton->setPadding(Style::spaceSm * scale, Style::spaceLg * scale);
-  demoButton->setRadius(Style::radiusMd * scale);
-  demoButton->setOnClick([this]() {
-    if (m_transformHelp != nullptr) {
-      m_transformHelp->setText("Transform button clicked!!!");
-      m_transformHelp->setColor(roleColor(ColorRole::Secondary));
-    }
-  });
-  m_transformDemoButton = demoButton.get();
-  m_transformDemoBox->addChild(std::move(demoButton));
+    auto badgeLabel = std::make_unique<Label>();
+    badgeLabel->setText("3");
+    badgeLabel->setFontSize(Style::fontSizeCaption * scale);
+    badgeLabel->setColor(roleColor(ColorRole::OnPrimary));
+    m_transformBadgeLabel = badgeLabel.get();
+    m_transformBadgeBox->addChild(std::move(badgeLabel));
+    m_transformDemoBox->addChild(std::move(badgeBox));
+    m_transformStage->addChild(std::move(demoBox));
 
-  auto demoGlyph = std::make_unique<Glyph>();
-  demoGlyph->setGlyph("noctalia");
-  demoGlyph->setPosition(200.0f, 80.0f);
-  demoGlyph->setGlyphSize(28.0f * scale);
-  demoGlyph->setColor(roleColor(ColorRole::Primary));
-  demoGlyph->setRotation(static_cast<float>(M_PI) * 0.5f);
-  m_transformDemoGlyph = demoGlyph.get();
-  m_transformDemoBox->addChild(std::move(demoGlyph));
+    auto helpLabel = std::make_unique<Label>();
+    helpLabel->setText("Rotated node with children.");
+    helpLabel->setFontSize(Style::fontSizeCaption * scale);
+    helpLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    m_transformHelp = helpLabel.get();
 
-  auto badgeBox = std::make_unique<Box>();
-  badgeBox->setPosition(80.0f, 80.0f);
-  badgeBox->setSize(30.0f * scale, 30.0f * scale);
-  badgeBox->setFill(roleColor(ColorRole::Primary));
-  badgeBox->setBorder(roleColor(ColorRole::Outline), Style::borderWidth * scale);
-  badgeBox->setRadius(15.0f * scale);
-  m_transformBadgeBox = badgeBox.get();
+    auto section = makeSection("Transforms");
+    section->addChild(std::move(helpLabel));
+    section->addChild(std::move(transformStage));
+    colC->addChild(std::move(section));
+  }
 
-  auto badgeLabel = std::make_unique<Label>();
-  badgeLabel->setText("3");
-  badgeLabel->setPosition(10.0f, 10.0f);
-  badgeLabel->setFontSize(Style::fontSizeCaption * scale);
-  badgeLabel->setColor(roleColor(ColorRole::OnPrimary));
-  m_transformBadgeLabel = badgeLabel.get();
-  m_transformBadgeBox->addChild(std::move(badgeLabel));
-  m_transformDemoBox->addChild(std::move(badgeBox));
-  m_transformStage->addChild(std::move(demoBox));
-  transformColumn->addChild(std::move(transformStage));
-
-  m_container = container.get();
-  content->addChild(std::move(container));
-  content->addChild(std::move(transformColumn));
+  m_container = colA.get();
+  content->addChild(std::move(colA));
+  content->addChild(std::move(colB));
+  content->addChild(std::move(colC));
   rootLayout->addChild(std::move(content));
 
   setRoot(std::move(rootLayout));
@@ -699,10 +675,11 @@ void TestPanel::onClose() {
   m_segmentedValueLabel = nullptr;
 }
 
-void TestPanel::doLayout(Renderer& renderer, float /*width*/, float /*height*/) {
+void TestPanel::doLayout(Renderer& renderer, float width, float height) {
   if (root() == nullptr) {
     return;
   }
+  root()->setSize(width, height);
   root()->layout(renderer);
 
   if (m_glyph != nullptr && m_glyphBox != nullptr) {
