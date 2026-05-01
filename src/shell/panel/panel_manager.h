@@ -145,7 +145,6 @@ private:
   Node* m_attachedRevealClipNode = nullptr;
   Node* m_attachedRevealContentNode = nullptr;
   RectNode* m_panelShadowNode = nullptr;
-  RectNode* m_panelContactShadowNode = nullptr;
   InputDispatcher m_inputDispatcher;
 
   std::unordered_map<std::string, std::unique_ptr<Panel>> m_panels;

@@ -96,11 +96,11 @@ vec2 shape_distance_with_corner(vec2 point, vec2 size, vec4 radii, vec4 corner_s
         return rounded_rect_distance_with_corner(point - body_min, body_size, r);
     }
 
-    float is_corner = 0.0;
-    if (r.x > 0.0 && point.x < body_min.x + r.x && point.y < body_min.y + r.x) is_corner = 1.0;
-    if (r.y > 0.0 && point.x > body_max.x - r.y && point.y < body_min.y + r.y) is_corner = 1.0;
-    if (r.z > 0.0 && point.x > body_max.x - r.z && point.y > body_max.y - r.z) is_corner = 1.0;
-    if (r.w > 0.0 && point.x < body_min.x + r.w && point.y > body_max.y - r.w) is_corner = 1.0;
+    bool in_corner_box = false;
+    if (r.x > 0.0 && point.x < body_min.x + r.x && point.y < body_min.y + r.x) in_corner_box = true;
+    if (r.y > 0.0 && point.x > body_max.x - r.y && point.y < body_min.y + r.y) in_corner_box = true;
+    if (r.z > 0.0 && point.x > body_max.x - r.z && point.y > body_max.y - r.z) in_corner_box = true;
+    if (r.w > 0.0 && point.x < body_min.x + r.w && point.y > body_max.y - r.w) in_corner_box = true;
 
     float x = point.x;
     float y = point.y;
@@ -199,6 +199,10 @@ vec2 shape_distance_with_corner(vec2 point, vec2 size, vec4 radii, vec4 corner_s
 
     float boundary_distance = max(max(left - x, x - right), max(top - y, y - bottom));
     float visual_clip = max(max(-point.x, point.x - size.x), max(-point.y, point.y - size.y));
+    // Curve AA only when the curved boundary actually dominates. Where visual_clip wins
+    // (e.g. concave wing along the visual-rect top edge) the boundary is axis-aligned —
+    // snap with the straight-edge window instead.
+    float is_corner = (in_corner_box && boundary_distance > visual_clip) ? 1.0 : 0.0;
     return vec2(max(boundary_distance, visual_clip), is_corner);
 }
 
