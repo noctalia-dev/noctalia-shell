@@ -296,8 +296,6 @@ void Button::setVariant(ButtonVariant variant) {
 }
 
 void Button::applyVariant() {
-  setRadius(Style::radiusMd);
-
   m_palette = paletteForVariant(m_variant);
   setBorder(m_palette.normal.border, m_palette.borderWidth);
 
