@@ -888,11 +888,16 @@ void ConfigService::parseTable(const toml::table& tbl) {
         continue;
       }
 
+      std::string widgetName(name.str());
       WidgetConfig wc;
+      if (auto it = m_config.widgets.find(widgetName); it != m_config.widgets.end()) {
+        wc = it->second;
+      }
+
       if (auto v = (*entryTbl)["type"].value<std::string>()) {
         wc.type = *v;
-      } else {
-        wc.type = std::string(name.str());
+      } else if (wc.type.empty()) {
+        wc.type = widgetName;
       }
 
       for (const auto& [key, val] : *entryTbl) {
@@ -919,7 +924,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
         }
       }
 
-      m_config.widgets[std::string(name.str())] = std::move(wc);
+      m_config.widgets[widgetName] = std::move(wc);
     }
   }
 
