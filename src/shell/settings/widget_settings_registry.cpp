@@ -121,6 +121,11 @@ namespace settings {
             .categoryKey = "settings.widgets.categories.system",
         },
         {
+            .type = "taskbar",
+            .labelKey = "settings.widgets.types.taskbar",
+            .categoryKey = "settings.widgets.categories.window",
+        },
+        {
             .type = "test",
             .labelKey = "settings.widgets.types.test",
             .categoryKey = "settings.widgets.categories.custom",

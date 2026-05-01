@@ -80,6 +80,20 @@ display = "id"   # none | id | name
 
 ---
 
+## `taskbar`
+
+Icon-only running application list for the current output.
+
+Left-click an icon to focus that window. The active window gets a small indicator dot.
+
+No configurable settings.
+
+```toml
+[widget.taskbar]
+```
+
+---
+
 ## `sysmon`
 
 System resource monitor. Shows an icon and value for one configurable stat. Multiple instances with different stats can coexist on the same bar.
