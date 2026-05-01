@@ -27,7 +27,7 @@ TextureHandle SharedTextureCache::acquire(const std::string& path) {
   }
 
   makeCurrent();
-  auto handle = m_textureManager.loadFromFile(path);
+  auto handle = m_textureManager.loadFromFile(path, 0, true);
   if (handle.id == 0) {
     return handle;
   }
