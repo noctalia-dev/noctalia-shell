@@ -2,7 +2,9 @@
 
 #include "config/config_service.h"
 #include "render/core/color.h"
+#include "render/core/shader_program.h"
 #include "render/core/texture_handle.h"
+#include "render/programs/blur_program.h"
 #include "render/programs/wallpaper_program.h"
 #include "render/render_target.h"
 
@@ -31,9 +33,11 @@ public:
               std::uint32_t logicalHeight);
   void render();
   void renderToFbo(const RenderFramebuffer& target);
+  void blur(RenderFramebuffer& target, RenderFramebuffer& scratch, float radius, int rounds);
+  void tint(RenderFramebuffer& target, float r, float g, float b, float intensity);
+  void blitToSurface(TextureId texture);
   void swapBuffers();
   [[nodiscard]] std::unique_ptr<RenderFramebuffer> createFramebuffer(std::uint32_t width, std::uint32_t height);
-  void bindDefaultFramebuffer();
 
   void setTransitionState(TextureId tex1, TextureId tex2, float imgW1, float imgH1, float imgW2, float imgH2,
                           float progress, WallpaperTransition transition, WallpaperFillMode fillMode,
@@ -41,12 +45,16 @@ public:
 
 private:
   void cleanup();
+  void ensurePostProcessPrograms();
 
   wl_surface* m_surface = nullptr;
   std::unique_ptr<RenderBackend> m_backend;
   RenderTarget m_target;
 
   WallpaperProgram m_program;
+  BlurProgram m_blurProgram;
+  ShaderProgram m_blitProgram;
+  ShaderProgram m_tintProgram;
 
   std::uint32_t m_bufferWidth = 0;
   std::uint32_t m_bufferHeight = 0;
