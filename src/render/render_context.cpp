@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "core/resource_paths.h"
 #include "core/ui_phase.h"
+#include "render/backend/gles_render_backend.h"
 #include "render/gl_shared_context.h"
 #include "render/render_target.h"
 #include "render/scene/effect_node.h"
@@ -32,17 +33,9 @@ namespace {
   constexpr float kSlowRenderOperationDebugMs = 50.0f;
   constexpr float kSlowRenderOperationWarnMs = 1000.0f;
 
-  constexpr EGLint kContextAttributes[] = {
-      EGL_CONTEXT_CLIENT_VERSION,
-      2,
-      EGL_NONE,
-  };
-
 } // namespace
 
 namespace {
-
-  const char* safeCString(const char* value) { return value != nullptr ? value : "unknown"; }
 
   float elapsedSince(std::chrono::steady_clock::time_point start) {
     return std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - start).count();
@@ -81,31 +74,15 @@ RenderContext::RenderContext() = default;
 RenderContext::~RenderContext() { cleanup(); }
 
 void RenderContext::initialize(GlSharedContext& shared) {
-  m_eglDisplay = shared.display();
-  m_eglConfig = shared.config();
-
-  m_eglContext = eglCreateContext(m_eglDisplay, m_eglConfig, shared.rootContext(), kContextAttributes);
-  if (m_eglContext == EGL_NO_CONTEXT) {
-    throw std::runtime_error("eglCreateContext failed");
-  }
-
-  // Make context current (surfaceless) so we can create GL resources eagerly.
-  // This allows measureText/measureGlyph to work before any surface exists.
-  eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, m_eglContext);
+  cleanup();
+  m_backend = std::make_unique<GlesRenderBackend>();
+  m_backend->initialize(shared);
 
   // Pango handles font fallback via Fontconfig automatically — no explicit chain.
   ensureGlPrograms();
-  m_textureManager.probeExtensions();
+  m_backend->textureManager().probeExtensions();
   m_textRenderer.initialize(&m_glyphProgram);
   m_glyphRenderer.initialize(paths::assetPath("fonts/tabler.ttf").string(), &m_glyphProgram);
-
-  kLog.info("EGL vendor=\"{}\" version=\"{}\" APIs=\"{}\"", safeCString(eglQueryString(m_eglDisplay, EGL_VENDOR)),
-            safeCString(eglQueryString(m_eglDisplay, EGL_VERSION)),
-            safeCString(eglQueryString(m_eglDisplay, EGL_CLIENT_APIS)));
-  kLog.info("OpenGL ES vendor=\"{}\" renderer=\"{}\" version=\"{}\"",
-            safeCString(reinterpret_cast<const char*>(glGetString(GL_VENDOR))),
-            safeCString(reinterpret_cast<const char*>(glGetString(GL_RENDERER))),
-            safeCString(reinterpret_cast<const char*>(glGetString(GL_VERSION))));
 }
 
 void RenderContext::ensureGlPrograms() {
@@ -124,30 +101,17 @@ void RenderContext::ensureGlPrograms() {
 }
 
 void RenderContext::makeCurrentNoSurface() {
-  if (m_eglDisplay == EGL_NO_DISPLAY || m_eglContext == EGL_NO_CONTEXT) {
+  if (m_backend == nullptr) {
     return;
   }
-
-  if (eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, m_eglContext) != EGL_TRUE) {
-    throw std::runtime_error("eglMakeCurrent(EGL_NO_SURFACE) failed");
-  }
+  m_backend->makeCurrentNoSurface();
 }
 
 void RenderContext::makeCurrent(RenderTarget& target) {
-  const auto start = std::chrono::steady_clock::now();
-  if (eglMakeCurrent(m_eglDisplay, target.eglSurface(), target.eglSurface(), m_eglContext) != EGL_TRUE) {
-    throw std::runtime_error("eglMakeCurrent failed");
+  if (m_backend == nullptr) {
+    throw std::runtime_error("RenderContext has no initialized backend");
   }
-  float ms = elapsedSince(start);
-  logSlowRenderOperation(ms, "eglMakeCurrent took {:.1f}ms", ms);
-  // Non-blocking swap: pacing is driven by wl_surface.frame callbacks, not by
-  // eglSwapBuffers. Default interval=1 blocks indefinitely in Mesa when the
-  // compositor holds our buffer (e.g. niri direct-scanout of a fullscreen
-  // client occludes our overlay layer), which would freeze the whole main loop.
-  const auto intervalStart = std::chrono::steady_clock::now();
-  eglSwapInterval(m_eglDisplay, 0);
-  ms = elapsedSince(intervalStart);
-  logSlowRenderOperation(ms, "eglSwapInterval(0) took {:.1f}ms", ms);
+  m_backend->makeCurrent(target);
 }
 
 void RenderContext::syncContentScale(RenderTarget& target) {
@@ -165,20 +129,15 @@ void RenderContext::setTextFontFamily(std::string family) {
 
 void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
   UiPhaseScope renderPhase(UiPhase::Render);
+  if (m_backend == nullptr) {
+    return;
+  }
   const auto totalStart = std::chrono::steady_clock::now();
-  makeCurrent(target);
+  m_backend->beginFrame(target);
   ensureGlPrograms();
   syncContentScale(target);
 
   const auto drawStart = std::chrono::steady_clock::now();
-  glViewport(0, 0, static_cast<GLint>(target.bufferWidth()), static_cast<GLint>(target.bufferHeight()));
-  glEnable(GL_BLEND);
-  glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
-  glDisable(GL_SCISSOR_TEST);
-  glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
-
   if (sceneRoot != nullptr) {
     const auto sw = static_cast<float>(target.logicalWidth());
     const auto sh = static_cast<float>(target.logicalHeight());
@@ -190,13 +149,7 @@ void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
   logSlowRenderOperation(ms, "scene draw took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, target.logicalWidth(),
                          target.logicalHeight(), target.bufferWidth(), target.bufferHeight());
 
-  const auto swapStart = std::chrono::steady_clock::now();
-  if (eglSwapBuffers(m_eglDisplay, target.eglSurface()) != EGL_TRUE) {
-    throw std::runtime_error("eglSwapBuffers failed");
-  }
-  ms = elapsedSince(swapStart);
-  logSlowRenderOperation(ms, "eglSwapBuffers took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, target.logicalWidth(),
-                         target.logicalHeight(), target.bufferWidth(), target.bufferHeight());
+  m_backend->endFrame(target);
   ms = elapsedSince(totalStart);
   logSlowRenderOperation(ms, "renderScene took {:.1f}ms total", ms);
 }
@@ -230,7 +183,7 @@ TextMetrics RenderContext::measureGlyph(char32_t codepoint, float fontSize) {
 
 TextureManager& RenderContext::textureManager() {
   makeCurrentNoSurface();
-  return m_textureManager;
+  return m_backend->textureManager();
 }
 
 void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, float parentOpacity, float sw, float sh,
@@ -415,16 +368,17 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
 }
 
 void RenderContext::cleanup() {
-  if (m_eglDisplay != EGL_NO_DISPLAY && m_eglContext != EGL_NO_CONTEXT) {
+  if (m_backend != nullptr) {
     // Need a current context to destroy GL resources, but we may not have a surface.
-    // Use EGL_NO_SURFACE — this is valid for destroying resources when no surface exists.
-    eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, m_eglContext);
+    m_backend->makeCurrentNoSurface();
   }
 
   // Text renderers first — they destroy GL textures and need a current context.
   m_textRenderer.cleanup();
   m_glyphRenderer.cleanup();
-  m_textureManager.cleanup();
+  if (m_backend != nullptr) {
+    m_backend->textureManager().cleanup();
+  }
   m_effectProgram.destroy();
   m_graphProgram.destroy();
   m_imageProgram.destroy();
@@ -435,17 +389,23 @@ void RenderContext::cleanup() {
   m_glyphProgram.destroy();
   m_glReady = false;
 
-  if (m_eglDisplay != EGL_NO_DISPLAY) {
-    eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+  if (m_backend != nullptr) {
+    m_backend->cleanup();
+    m_backend.reset();
   }
+}
 
-  if (m_eglContext != EGL_NO_CONTEXT && m_eglDisplay != EGL_NO_DISPLAY) {
-    eglDestroyContext(m_eglDisplay, m_eglContext);
-  }
-  m_eglContext = EGL_NO_CONTEXT;
+EGLDisplay RenderContext::eglDisplay() const noexcept {
+  const auto* native = m_backend != nullptr ? m_backend->glesNative() : nullptr;
+  return native != nullptr ? native->display : EGL_NO_DISPLAY;
+}
 
-  // The EGLDisplay and EGLConfig belong to GlSharedContext — do not terminate
-  // or forget them. Just clear our references.
-  m_eglDisplay = EGL_NO_DISPLAY;
-  m_eglConfig = nullptr;
+EGLConfig RenderContext::eglConfig() const noexcept {
+  const auto* native = m_backend != nullptr ? m_backend->glesNative() : nullptr;
+  return native != nullptr ? native->config : nullptr;
+}
+
+EGLContext RenderContext::eglContext() const noexcept {
+  const auto* native = m_backend != nullptr ? m_backend->glesNative() : nullptr;
+  return native != nullptr ? native->context : EGL_NO_CONTEXT;
 }

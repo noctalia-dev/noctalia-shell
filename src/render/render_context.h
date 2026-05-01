@@ -1,8 +1,8 @@
 #pragma once
 
+#include "render/backend/render_backend.h"
 #include "render/core/mat3.h"
 #include "render/core/renderer.h"
-#include "render/core/texture_manager.h"
 #include "render/programs/effect_program.h"
 #include "render/programs/glyph_program.h"
 #include "render/programs/graph_program.h"
@@ -15,6 +15,7 @@
 #include "render/text/cairo_text_renderer.h"
 
 #include <EGL/egl.h>
+#include <memory>
 #include <string>
 
 class GlSharedContext;
@@ -42,9 +43,11 @@ public:
   void syncContentScale(RenderTarget& target);
   void setTextFontFamily(std::string family);
 
-  [[nodiscard]] EGLDisplay eglDisplay() const noexcept { return m_eglDisplay; }
-  [[nodiscard]] EGLConfig eglConfig() const noexcept { return m_eglConfig; }
-  [[nodiscard]] EGLContext eglContext() const noexcept { return m_eglContext; }
+  [[nodiscard]] EGLDisplay eglDisplay() const noexcept;
+  [[nodiscard]] EGLConfig eglConfig() const noexcept;
+  [[nodiscard]] EGLContext eglContext() const noexcept;
+  [[nodiscard]] RenderBackend& backend() noexcept { return *m_backend; }
+  [[nodiscard]] const RenderBackend& backend() const noexcept { return *m_backend; }
 
   // Renderer interface — used by widgets for measurement and textures
   [[nodiscard]] TextMetrics measureText(std::string_view text, float fontSize, bool bold = false, float maxWidth = 0.0f,
@@ -59,9 +62,7 @@ private:
   void renderNode(const Node* node, const Mat3& parentTransform, float parentOpacity, float sw, float sh, float bw,
                   float bh, float clipLeft, float clipTop, float clipRight, float clipBottom, bool hasClip);
 
-  EGLDisplay m_eglDisplay = EGL_NO_DISPLAY;
-  EGLConfig m_eglConfig = nullptr;
-  EGLContext m_eglContext = EGL_NO_CONTEXT;
+  std::unique_ptr<RenderBackend> m_backend;
   bool m_glReady = false;
 
   EffectProgram m_effectProgram;
@@ -74,6 +75,5 @@ private:
   GlyphProgram m_glyphProgram;
   CairoTextRenderer m_textRenderer;
   CairoGlyphRenderer m_glyphRenderer;
-  TextureManager m_textureManager;
   float m_renderScale = 1.0f;
 };
