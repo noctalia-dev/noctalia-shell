@@ -65,6 +65,7 @@ private:
   };
 
   [[nodiscard]] bool notifyIfChanged(const std::optional<ActiveToplevel>& before);
+  [[nodiscard]] zwlr_foreign_toplevel_handle_v1* latestActivatedHandle() const;
   void selectFallbackCurrent();
 
   zwlr_foreign_toplevel_manager_v1* m_manager = nullptr;

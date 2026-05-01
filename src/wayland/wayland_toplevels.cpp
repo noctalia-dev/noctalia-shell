@@ -161,8 +161,8 @@ void WaylandToplevels::onHandleDone(zwlr_foreign_toplevel_handle_v1* handle) {
   const bool hadModelChanges = it->second.dirty;
   if (it->second.activated) {
     m_currentHandle = handle;
-  } else if (m_currentHandle == nullptr || it->second.dirty) {
-    m_currentHandle = handle;
+  } else if (m_currentHandle == handle) {
+    m_currentHandle = latestActivatedHandle();
   }
   it->second.dirty = false;
 
@@ -209,6 +209,17 @@ void WaylandToplevels::onHandleState(zwlr_foreign_toplevel_handle_v1* handle, wl
       }
     }
   }
+  if (activated) {
+    for (auto& [otherHandle, otherState] : m_handles) {
+      if (otherHandle == handle || !otherState.activated) {
+        continue;
+      }
+      otherState.activated = false;
+      otherState.dirty = true;
+      otherState.generation = ++m_generation;
+    }
+  }
+
   it->second.activated = activated;
   it->second.dirty = true;
   it->second.generation = ++m_generation;
@@ -344,6 +355,23 @@ bool WaylandToplevels::notifyIfChanged(const std::optional<ActiveToplevel>& befo
     return true;
   }
   return false;
+}
+
+zwlr_foreign_toplevel_handle_v1* WaylandToplevels::latestActivatedHandle() const {
+  zwlr_foreign_toplevel_handle_v1* bestHandle = nullptr;
+  std::uint64_t bestGeneration = 0;
+
+  for (const auto& [handle, state] : m_handles) {
+    if (!state.activated) {
+      continue;
+    }
+    if (bestHandle == nullptr || state.generation > bestGeneration) {
+      bestHandle = handle;
+      bestGeneration = state.generation;
+    }
+  }
+
+  return bestHandle;
 }
 
 void WaylandToplevels::selectFallbackCurrent() {
