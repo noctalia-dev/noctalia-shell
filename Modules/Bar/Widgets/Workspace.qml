@@ -44,7 +44,7 @@ Item {
 
   readonly property string labelMode: (widgetSettings.labelMode !== undefined) ? widgetSettings.labelMode : widgetMetadata.labelMode
   readonly property bool hasLabel: (labelMode !== "none")
-  readonly property string fontWeight: {
+  readonly property int fontWeight: {
     var fontWeightSetting = (widgetSettings.fontWeight !== undefined) ? widgetSettings.fontWeight : widgetMetadata.fontWeight;
 
     if (fontWeightSetting === "regular")
@@ -933,7 +933,7 @@ Item {
                 return groupedContainer.workspaceModel.name.substring(0, root.characterCount);
               }
               if (root.labelMode === "index+name") {
-                return (groupedContainer.workspaceModel.idx.toString() + groupedContainer.workspaceModel.name.substring(0, 1));
+                return (groupedContainer.workspaceModel.idx.toString() + " " + groupedContainer.workspaceModel.name.substring(0, root.characterCount));
               }
             }
             return groupedContainer.workspaceModel.idx.toString();
