@@ -40,6 +40,8 @@ public:
                                           PixmapFormat format, bool mipmap = false);
   [[nodiscard]] TextureHandle loadFromPixels(const std::uint8_t* data, int width, int height, TextureDataFormat format,
                                              TextureFilter filter = TextureFilter::Linear, bool mipmap = false);
+  [[nodiscard]] TextureHandle createEmpty(int width, int height, TextureDataFormat format,
+                                          TextureFilter filter = TextureFilter::Linear);
   bool replace(TextureHandle& handle, const std::uint8_t* data, int width, int height, TextureDataFormat format,
                TextureFilter filter = TextureFilter::Linear, bool mipmap = false);
   bool updateSubImage(TextureHandle& handle, const std::uint8_t* data, int x, int y, int width, int height,

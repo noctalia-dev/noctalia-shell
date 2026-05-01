@@ -94,6 +94,13 @@ TextureHandle TextureManager::loadFromPixels(const std::uint8_t* data, int width
   return uploadPixels(data, width, height, format, filter, mipmap);
 }
 
+TextureHandle TextureManager::createEmpty(int width, int height, TextureDataFormat format, TextureFilter filter) {
+  if (width <= 0 || height <= 0) {
+    return {};
+  }
+  return uploadPixels(nullptr, width, height, format, filter, false);
+}
+
 TextureHandle TextureManager::loadFromRaw(const std::uint8_t* data, std::size_t size, int width, int height, int stride,
                                           PixmapFormat format, bool mipmap) {
   if (data == nullptr || size == 0 || width <= 0 || height <= 0) {
