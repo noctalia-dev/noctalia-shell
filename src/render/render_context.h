@@ -51,6 +51,7 @@ public:
                                         int maxLines = 0, TextAlign align = TextAlign::Start) override;
   [[nodiscard]] TextMetrics measureGlyph(char32_t codepoint, float fontSize) override;
   [[nodiscard]] TextureManager& textureManager() override;
+  [[nodiscard]] float renderScale() const noexcept override { return m_renderScale; }
 
 private:
   void ensureGlPrograms();
@@ -74,4 +75,5 @@ private:
   CairoTextRenderer m_textRenderer;
   CairoGlyphRenderer m_glyphRenderer;
   TextureManager m_textureManager;
+  float m_renderScale = 1.0f;
 };

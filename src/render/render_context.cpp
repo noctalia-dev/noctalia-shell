@@ -153,9 +153,9 @@ void RenderContext::makeCurrent(RenderTarget& target) {
 void RenderContext::syncContentScale(RenderTarget& target) {
   const auto sw = static_cast<float>(target.logicalWidth());
   const auto bw = static_cast<float>(target.bufferWidth());
-  const float contentScale = sw > 0.0f ? bw / sw : 1.0f;
-  m_textRenderer.setContentScale(contentScale);
-  m_glyphRenderer.setContentScale(contentScale);
+  m_renderScale = sw > 0.0f ? std::max(1.0f, bw / sw) : 1.0f;
+  m_textRenderer.setContentScale(m_renderScale);
+  m_glyphRenderer.setContentScale(m_renderScale);
 }
 
 void RenderContext::setTextFontFamily(std::string family) {

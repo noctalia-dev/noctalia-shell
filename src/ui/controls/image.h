@@ -66,6 +66,9 @@ private:
   TextureHandle m_texture{};
   bool m_ownsTexture = false;
   std::string m_sourcePath;
+  int m_sourceRequestedTargetSize = 0;
+  int m_sourceTargetSize = 0;
+  bool m_sourceMipmap = false;
   float m_radius = 0.0f;
   float m_padding = 0.0f;
   ImageFit m_fit = ImageFit::Contain;
@@ -74,6 +77,7 @@ private:
   Renderer* m_renderer = nullptr;
   AsyncTextureCache* m_asyncTextureCache = nullptr;
   std::string m_asyncSourcePath;
+  int m_asyncRequestedTargetSize = 0;
   int m_asyncTargetSize = 0;
   bool m_asyncMipmap = false;
   Signal<>::ScopedConnection m_paletteConn;

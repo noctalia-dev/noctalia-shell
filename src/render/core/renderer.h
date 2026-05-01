@@ -26,4 +26,5 @@ public:
                                                 TextAlign align = TextAlign::Start) = 0;
   [[nodiscard]] virtual TextMetrics measureGlyph(char32_t codepoint, float fontSize) = 0;
   [[nodiscard]] virtual TextureManager& textureManager() = 0;
+  [[nodiscard]] virtual float renderScale() const noexcept = 0;
 };

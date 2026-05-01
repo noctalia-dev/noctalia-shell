@@ -5,7 +5,21 @@
 #include "render/scene/image_node.h"
 
 #include <algorithm>
+#include <cmath>
 #include <memory>
+
+namespace {
+
+  int renderTargetSize(const Renderer& renderer, int targetSize) {
+    if (targetSize <= 0) {
+      return 0;
+    }
+
+    const float scale = std::max(1.0f, renderer.renderScale());
+    return std::max(1, static_cast<int>(std::round(static_cast<float>(targetSize) * scale)));
+  }
+
+} // namespace
 
 Image::Image() {
   setClipChildren(true);
@@ -64,7 +78,10 @@ void Image::setPadding(float padding) {
 }
 
 bool Image::setSourceFile(Renderer& renderer, const std::string& path, int targetSize, bool mipmap) {
-  if (m_ownsTexture && path == m_sourcePath && m_texture.id != 0) {
+  const int requestedTargetSize = std::max(0, targetSize);
+  const int textureTargetSize = renderTargetSize(renderer, requestedTargetSize);
+  if (m_ownsTexture && path == m_sourcePath && m_sourceRequestedTargetSize == requestedTargetSize &&
+      m_sourceTargetSize == textureTargetSize && m_sourceMipmap == mipmap && m_texture.id != 0) {
     return true;
   }
 
@@ -75,7 +92,7 @@ bool Image::setSourceFile(Renderer& renderer, const std::string& path, int targe
     return false;
   }
 
-  m_texture = renderer.textureManager().loadFromFile(path, targetSize, mipmap);
+  m_texture = renderer.textureManager().loadFromFile(path, textureTargetSize, mipmap);
   if (m_texture.id == 0) {
     m_sourcePath.clear();
     if (m_image != nullptr) {
@@ -86,6 +103,9 @@ bool Image::setSourceFile(Renderer& renderer, const std::string& path, int targe
 
   m_ownsTexture = true;
   m_sourcePath = path;
+  m_sourceRequestedTargetSize = requestedTargetSize;
+  m_sourceTargetSize = textureTargetSize;
+  m_sourceMipmap = mipmap;
   if (m_image != nullptr) {
     m_image->setTextureId(m_texture.id);
   }
@@ -97,13 +117,15 @@ bool Image::setSourceFileAsync(Renderer& renderer, AsyncTextureCache& cache, con
                                bool mipmap) {
   m_renderer = &renderer;
 
-  const int normalizedTargetSize = std::max(0, targetSize);
+  const int requestedTargetSize = std::max(0, targetSize);
+  const int normalizedTargetSize = renderTargetSize(renderer, requestedTargetSize);
   if (path.empty()) {
     clear(renderer);
     return false;
   }
 
   const bool sameRequest = m_asyncTextureCache == &cache && m_asyncSourcePath == path &&
+                           m_asyncRequestedTargetSize == requestedTargetSize &&
                            m_asyncTargetSize == normalizedTargetSize && m_asyncMipmap == mipmap;
   if (sameRequest && m_texture.id != 0) {
     return true;
@@ -113,6 +135,7 @@ bool Image::setSourceFileAsync(Renderer& renderer, AsyncTextureCache& cache, con
     clear(renderer);
     m_asyncTextureCache = &cache;
     m_asyncSourcePath = path;
+    m_asyncRequestedTargetSize = requestedTargetSize;
     m_asyncTargetSize = normalizedTargetSize;
     m_asyncMipmap = mipmap;
     m_texture = cache.acquire(path, normalizedTargetSize, mipmap);
@@ -206,6 +229,9 @@ void Image::setExternalTexture(Renderer& renderer, TextureHandle handle) {
   m_texture = handle;
   m_ownsTexture = false;
   m_sourcePath.clear();
+  m_sourceRequestedTargetSize = 0;
+  m_sourceTargetSize = 0;
+  m_sourceMipmap = false;
   if (m_image != nullptr) {
     m_image->setTextureId(m_texture.id);
   }
@@ -221,6 +247,9 @@ void Image::clear(Renderer& renderer) {
   m_texture = {};
   m_ownsTexture = false;
   m_sourcePath.clear();
+  m_sourceRequestedTargetSize = 0;
+  m_sourceTargetSize = 0;
+  m_sourceMipmap = false;
   if (m_image != nullptr) {
     m_image->setTextureId(0);
     m_image->setFrameSize(0.0f, 0.0f);
@@ -233,6 +262,7 @@ void Image::clearAsyncSource() {
   }
   m_asyncTextureCache = nullptr;
   m_asyncSourcePath.clear();
+  m_asyncRequestedTargetSize = 0;
   m_asyncTargetSize = 0;
   m_asyncMipmap = false;
 }
@@ -247,7 +277,47 @@ void Image::setFrameSize(float width, float height) {
   updateLayout();
 }
 
-void Image::doLayout(Renderer& /*renderer*/) {
+void Image::doLayout(Renderer& renderer) {
+  if (m_ownsTexture && !m_sourcePath.empty() && m_sourceRequestedTargetSize > 0) {
+    const int textureTargetSize = renderTargetSize(renderer, m_sourceRequestedTargetSize);
+    if (textureTargetSize != m_sourceTargetSize) {
+      auto texture = renderer.textureManager().loadFromFile(m_sourcePath, textureTargetSize, m_sourceMipmap);
+      if (texture.id != 0) {
+        if (m_texture.id != 0) {
+          renderer.textureManager().unload(m_texture);
+        }
+        m_texture = texture;
+        m_sourceTargetSize = textureTargetSize;
+        if (m_image != nullptr) {
+          m_image->setTextureId(m_texture.id);
+        }
+        updateLayout();
+      }
+    }
+  }
+
+  if (m_asyncTextureCache != nullptr && !m_asyncSourcePath.empty()) {
+    const int textureTargetSize = renderTargetSize(renderer, m_asyncRequestedTargetSize);
+    if (textureTargetSize != m_asyncTargetSize) {
+      m_asyncTextureCache->release(m_asyncSourcePath, m_asyncTargetSize, m_asyncMipmap);
+      m_texture = {};
+      m_ownsTexture = false;
+      m_asyncTargetSize = textureTargetSize;
+      if (m_image != nullptr) {
+        m_image->setTextureId(0);
+        m_image->setFrameSize(0.0f, 0.0f);
+      }
+      m_texture = m_asyncTextureCache->acquire(m_asyncSourcePath, m_asyncTargetSize, m_asyncMipmap);
+      if (m_texture.id != 0) {
+        m_sourcePath = m_asyncSourcePath;
+        if (m_image != nullptr) {
+          m_image->setTextureId(m_texture.id);
+        }
+        updateLayout();
+      }
+    }
+  }
+
   if (m_texture.id == 0 && m_asyncTextureCache != nullptr && !m_asyncSourcePath.empty()) {
     const auto handle = m_asyncTextureCache->peek(m_asyncSourcePath, m_asyncTargetSize, m_asyncMipmap);
     if (handle.id != 0) {
