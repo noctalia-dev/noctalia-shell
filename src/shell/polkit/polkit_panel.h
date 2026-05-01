@@ -11,10 +11,11 @@ class InputArea;
 class Label;
 class Renderer;
 class PolkitAgent;
+class ConfigService;
 
 class PolkitPanel : public Panel {
 public:
-  explicit PolkitPanel(std::function<PolkitAgent*()> agentProvider);
+  PolkitPanel(ConfigService* config, std::function<PolkitAgent*()> agentProvider);
 
   void create() override;
   void onOpen(std::string_view context) override;
@@ -32,7 +33,9 @@ private:
   void doLayout(Renderer& renderer, float width, float height) override;
   void doUpdate(Renderer& renderer) override;
   void submit();
+  bool handleInputKeyEvent(std::uint32_t sym, std::uint32_t modifiers);
 
+  ConfigService* m_config = nullptr;
   std::function<PolkitAgent*()> m_agentProvider;
   Flex* m_rootLayout = nullptr;
   InputArea* m_focusArea = nullptr;

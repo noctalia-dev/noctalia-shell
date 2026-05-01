@@ -315,6 +315,36 @@ void Input::selectAll() {
   markPaintDirty();
 }
 
+void Input::moveCaretLeft(bool shift) {
+  if (!shift && hasSelection()) {
+    m_cursorPos = selectionStart();
+    m_selectionAnchor = m_cursorPos;
+  } else {
+    m_cursorPos = prevCharPos(m_value, m_cursorPos);
+    if (!shift) {
+      m_selectionAnchor = m_cursorPos;
+    }
+  }
+  updateDisplayText();
+  markLayoutDirty();
+  revealCursor();
+}
+
+void Input::moveCaretRight(bool shift) {
+  if (!shift && hasSelection()) {
+    m_cursorPos = selectionEnd();
+    m_selectionAnchor = m_cursorPos;
+  } else {
+    m_cursorPos = nextCharPos(m_value, m_cursorPos);
+    if (!shift) {
+      m_selectionAnchor = m_cursorPos;
+    }
+  }
+  updateDisplayText();
+  markLayoutDirty();
+  revealCursor();
+}
+
 void Input::clearSelection() {
   m_selectionAnchor = m_cursorPos;
   updateInteractiveGeometry();
