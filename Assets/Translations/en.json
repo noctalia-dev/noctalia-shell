@@ -435,6 +435,7 @@
     "disconnected": "Disconnected",
     "disconnecting": "Disconnecting...",
     "display-mode": "Display mode",
+    "reconnect": "Reconnect",
     "documentation": "Documentation",
     "download": "Download",
     "duration": "Duration",
@@ -1913,6 +1914,10 @@
     "upload-speed": "Upload speed"
   },
   "toast": {
+    "wifi": {
+      "connected": "Connected to '{ssid}'",
+      "disconnected": "Disconnected from '{ssid}'"
+    },
     "airplane-mode": {
       "description": "Disable all wireless communications.",
       "title": "Airplane Mode"
