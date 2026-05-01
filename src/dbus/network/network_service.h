@@ -59,6 +59,9 @@ public:
 
   [[nodiscard]] const NetworkState& state() const noexcept { return m_state; }
   [[nodiscard]] const std::vector<AccessPointInfo>& accessPoints() const noexcept { return m_accessPoints; }
+  [[nodiscard]] static const char* glyphForState(const NetworkState& state) noexcept;
+  [[nodiscard]] static const char* wifiGlyphForState(const NetworkState& state) noexcept;
+  [[nodiscard]] static const char* wifiGlyphForSignal(std::uint8_t signal) noexcept;
 
   // Trigger a Wi-Fi scan on every wifi device. Results arrive via PropertiesChanged.
   void requestScan();

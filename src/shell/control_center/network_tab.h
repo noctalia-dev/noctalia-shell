@@ -34,7 +34,6 @@ private:
   void showPasswordPrompt(const NetworkSecretAgent::SecretRequest& request);
   void clearPasswordPrompt();
   [[nodiscard]] std::string apListKey(const std::vector<AccessPointInfo>& aps) const;
-  static const char* strengthGlyph(const AccessPointInfo& ap);
 
   NetworkService* m_network = nullptr;
   NetworkSecretAgent* m_secrets = nullptr;

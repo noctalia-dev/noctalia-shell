@@ -75,7 +75,7 @@ namespace {
       clearBorder();
 
       auto signalGlyph = std::make_unique<Glyph>();
-      signalGlyph->setGlyph(NetworkTab_rowGlyph(m_ap));
+      signalGlyph->setGlyph(NetworkService::wifiGlyphForSignal(m_ap.strength));
       signalGlyph->setGlyphSize(Style::fontSizeBody);
       signalGlyph->setColor(roleColor(ColorRole::OnSurface));
       addChild(std::move(signalGlyph));
@@ -154,16 +154,6 @@ namespace {
     }
 
     void doArrange(Renderer& renderer, const LayoutRect& rect) override { arrangeByLayout(renderer, rect); }
-
-    static const char* NetworkTab_rowGlyph(const AccessPointInfo& ap) {
-      if (ap.strength >= 67) {
-        return "wifi-2";
-      }
-      if (ap.strength >= 34) {
-        return "wifi-1";
-      }
-      return "wifi-0";
-    }
 
   private:
     void applyState() {
@@ -559,5 +549,3 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
   }
   m_list->layout(renderer);
 }
-
-const char* NetworkTab::strengthGlyph(const AccessPointInfo& ap) { return AccessPointRow::NetworkTab_rowGlyph(ap); }

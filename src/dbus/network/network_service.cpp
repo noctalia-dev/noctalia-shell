@@ -97,6 +97,42 @@ namespace {
 
 } // namespace
 
+const char* NetworkService::glyphForState(const NetworkState& state) noexcept {
+  if (state.kind == NetworkConnectivity::Wired) {
+    return state.connected ? "ethernet" : "ethernet-off";
+  }
+  return wifiGlyphForState(state);
+}
+
+const char* NetworkService::wifiGlyphForState(const NetworkState& state) noexcept {
+  if (!state.wirelessEnabled) {
+    return "wifi-off";
+  }
+  if (state.kind == NetworkConnectivity::Unknown) {
+    return "wifi-question";
+  }
+  if (state.kind == NetworkConnectivity::Wireless && state.connected) {
+    return wifiGlyphForSignal(state.signalStrength);
+  }
+  return "wifi-exclamation";
+}
+
+const char* NetworkService::wifiGlyphForSignal(std::uint8_t signal) noexcept {
+  if (signal >= 80) {
+    return "wifi";
+  }
+  if (signal >= 60) {
+    return "wifi-3";
+  }
+  if (signal >= 35) {
+    return "wifi-2";
+  }
+  if (signal >= 15) {
+    return "wifi-1";
+  }
+  return "wifi-0";
+}
+
 NetworkService::NetworkService(SystemBus& bus) : m_bus(bus) {
   m_nm = sdbus::createProxy(m_bus.connection(), k_nmBusName, k_nmObjectPath);
 

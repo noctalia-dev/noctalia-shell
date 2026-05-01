@@ -14,22 +14,6 @@
 
 namespace {
 
-  const char* glyphForState(const NetworkState& s) {
-    if (s.kind == NetworkConnectivity::Wired) {
-      return s.connected ? "ethernet" : "ethernet-off";
-    }
-    if (s.kind != NetworkConnectivity::Wireless || !s.connected) {
-      return "wifi-off";
-    }
-    if (s.signalStrength >= 67) {
-      return "wifi-2";
-    }
-    if (s.signalStrength >= 34) {
-      return "wifi-1";
-    }
-    return "wifi-0";
-  }
-
   std::string labelForState(const NetworkState& s) {
     if (s.kind == NetworkConnectivity::Wireless && s.connected && !s.ssid.empty()) {
       return s.ssid;
@@ -117,7 +101,7 @@ void NetworkWidget::syncState(Renderer& renderer) {
   m_haveLastState = true;
   m_lastVertical = m_isVertical;
 
-  m_glyph->setGlyph(glyphForState(s));
+  m_glyph->setGlyph(NetworkService::glyphForState(s));
   m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   m_glyph->setColor(s.connected ? widgetForegroundOr(roleColor(ColorRole::OnSurface))
                                 : roleColor(ColorRole::OnSurfaceVariant));

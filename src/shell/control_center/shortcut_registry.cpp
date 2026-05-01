@@ -47,6 +47,12 @@ namespace {
     }
     std::string_view iconOn() const override { return "wifi"; }
     std::string_view iconOff() const override { return "wifi-off"; }
+    std::string displayIcon() const override {
+      if (m_svc == nullptr) {
+        return "wifi-question";
+      }
+      return NetworkService::wifiGlyphForState(m_svc->state());
+    }
     bool isToggle() const override { return true; }
     bool active() const override { return m_svc != nullptr && m_svc->state().wirelessEnabled; }
     void onClick() override {
