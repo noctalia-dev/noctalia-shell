@@ -71,11 +71,10 @@ Singleton {
     }
   }
 
-  // Handle system wakeup to force-poll and ensure state is up-to-date
+  // Handle potential case where Quickshell doesnt't properly update adapter after system wakeup
   Connections {
     target: Time
     function onResumed() {
-      Logger.i("Bluetooth", "System resumed - forcing state poll");
       ctlPollTimer.restart();
     }
   }
@@ -90,7 +89,7 @@ Singleton {
       checkAirplaneMode();
     }
     function onEnabledChanged() {
-      if (adapter && adapter.enabled && Settings.data.network.bluetoothAutoConnect) {
+      if (adapter?.enabled && Settings.data.network.bluetoothAutoConnect) {
         autoConnectTimer.restart();
       }
     }
@@ -99,7 +98,7 @@ Singleton {
   Connections {
     target: Settings.data.network
     function onBluetoothAutoConnectChanged() {
-      if (Settings.data.network.bluetoothAutoConnect && adapter && adapter.enabled) {
+      if (Settings.data.network.bluetoothAutoConnect && adapter?.enabled) {
         autoConnectTimer.restart();
       } else {
         autoConnectTimer.stop();
@@ -137,7 +136,7 @@ Singleton {
 
   Timer {
     id: ctlPollTimer
-    interval: 250
+    interval: 2000
     running: false
     onTriggered: {
       if (!adapter || !ProgramCheckerService.bluetoothctlAvailable) {

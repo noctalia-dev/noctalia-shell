@@ -116,7 +116,7 @@ Singleton {
 
   Component.onCompleted: {
     Logger.i("Network", "Service started");
-    wifiInitTimer.running = true;
+    wifiInitTimer.restart();
 
     // Ensure initial detection if nmcli is already available at startup
     if (ProgramCheckerService.nmcliAvailable) {
@@ -155,23 +155,6 @@ Singleton {
         } else {
           root.networks = ({});
         }
-        return;
-      }
-      var isAirplaneModeActive = !root.wifiEnabled && BluetoothService.blocked;
-      // Extra check for Airplane Mode if Bluetooth has been blocked before Wi-Fi
-      if (isAirplaneModeActive && !root.airplaneModeEnabled) {
-        root.airplaneModeEnabled = true;
-        ToastService.showNotice(I18n.tr("toast.airplane-mode.title"), I18n.tr("common.enabled"), "plane");
-        Logger.i("AirplaneMode", "Enabled");
-        root.networks = ({});
-        return;
-      }
-      // Extra check for Airplane Mode if Wi-Fi has been unblocked before Bluetooth
-      if (!isAirplaneModeActive && root.airplaneModeEnabled) {
-        root.airplaneModeEnabled = false;
-        ToastService.showNotice(I18n.tr("toast.airplane-mode.title"), I18n.tr("common.disabled"), "plane-off");
-        Logger.i("AirplaneMode", "Disabled");
-        scan();
         return;
       }
       if (root.wifiEnabled) {
