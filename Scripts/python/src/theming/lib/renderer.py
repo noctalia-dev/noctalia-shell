@@ -1128,6 +1128,17 @@ class TemplateRenderer:
         """Substitute {{closest_color}} in text."""
         return re.sub(r"\{\{\s*closest_color\s*\}\}", self.closest_color, text)
 
+    def _kitty_needs_current_theme_link(self, noctalia_theme_path: Path) -> bool:
+        """True if generated kitty theme exists but ~/.config/kitty/current-theme.conf is absent.
+
+        Many kitty.conf snippets use `include ./current-theme.conf`; template-apply.sh maintains
+        that link. When noctalia.conf is skipped as identical, hooks must still run once to create it.
+        """
+        if not noctalia_theme_path.is_file():
+            return False
+        current = Path.home() / ".config" / "kitty" / "current-theme.conf"
+        return not current.is_file()
+
     def process_config_file(self, config_path: Path):
         """Process Matugen TOML configuration file."""
         if not tomllib:
@@ -1167,21 +1178,29 @@ class TemplateRenderer:
                 if not ok:
                     continue
 
-                # Hooks reload external apps (e.g. Discord); skip when output unchanged
-                if not wrote:
+                out_path = Path(output_path).expanduser()
+                # Hooks are skipped when the rendered file is unchanged (avoids mtime noise).
+                # Kitty setups often use `include ./current-theme.conf` pointing at the live
+                # theme; that file is created in the post_hook. If noctalia.conf is unchanged
+                # (e.g. wallpaper palette tweak that doesn't affect terminal colors), the hook
+                # never ran and current-theme.conf never appears — while predefined schemes
+                # usually change bytes so hooks always run. Force hooks when that include is missing.
+                force_hooks = name == "kitty" and self._kitty_needs_current_theme_link(out_path)
+                if not wrote and not force_hooks:
                     continue
 
-                # Execute pre_hook if specified
-                pre_hook = template.get("pre_hook")
-                if pre_hook:
-                    import subprocess
-                    if self.closest_color:
-                        pre_hook = self._substitute_closest_color(pre_hook)
-                    pre_hook = self.render(pre_hook)
-                    try:
-                        subprocess.run(pre_hook, shell=True, check=False)
-                    except Exception as e:
-                        print(f"Error running pre_hook for {name}: {e}", file=sys.stderr)
+                # Execute pre_hook only when the template output was regenerated
+                if wrote:
+                    pre_hook = template.get("pre_hook")
+                    if pre_hook:
+                        import subprocess
+                        if self.closest_color:
+                            pre_hook = self._substitute_closest_color(pre_hook)
+                        pre_hook = self.render(pre_hook)
+                        try:
+                            subprocess.run(pre_hook, shell=True, check=False)
+                        except Exception as e:
+                            print(f"Error running pre_hook for {name}: {e}", file=sys.stderr)
 
                 # Execute post_hook if specified
                 post_hook = template.get("post_hook")

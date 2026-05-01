@@ -14,6 +14,15 @@ MODE="${2:-}" # Optional second argument for dark/light mode
 # --- Apply theme based on the application name ---
 case "$APP_NAME" in
 kitty)
+    # Many configs use: include ./current-theme.conf
+    # Point it at the generated theme whenever the hook runs (including when noctalia.conf
+    # was unchanged on disk and the hook was forced from the template processor).
+    NOCTALIA_THEME="$HOME/.config/kitty/themes/noctalia.conf"
+    CURRENT_THEME="$HOME/.config/kitty/current-theme.conf"
+    if [ -f "$NOCTALIA_THEME" ]; then
+        mkdir -p "$HOME/.config/kitty"
+        ln -sf "themes/noctalia.conf" "$CURRENT_THEME"
+    fi
     KITTY_CONF="$HOME/.config/kitty/kitty.conf"
     if [ -w "$KITTY_CONF" ]; then
         kitty +kitten themes --reload-in=all noctalia
@@ -535,57 +544,73 @@ zathura)
     ;;
 
 starship)
-    # Check if the nested starship config exists first
-    if [ -f "$HOME/.config/starship/starship.toml" ]; then
-        CONFIG_FILE="$HOME/.config/starship/starship.toml"
-    else
-    # Fallback to the default path
-        CONFIG_FILE="$HOME/.config/starship.toml"
-    fi
+            PALETTE_FILE="$HOME/.cache/noctalia/starship-palette.toml"
 
-    # Check if the generated palette file exists
-    if [ ! -f "$PALETTE_FILE" ]; then
-        echo "Error: Starship palette file not found at $PALETTE_FILE" >&2
-        exit 1
-    fi
+            # Respect STARSHIP_CONFIG env var, then fall back to standard lookup order
+            if [ -n "$STARSHIP_CONFIG" ]; then
+                CONFIG_FILE="$STARSHIP_CONFIG"
+            elif [ -f "$HOME/.config/starship.toml" ]; then
+                CONFIG_FILE="$HOME/.config/starship.toml"
+            elif [ -f "$HOME/.config/starship/starship.toml" ]; then
+                CONFIG_FILE="$HOME/.config/starship/starship.toml"
+            else
+                CONFIG_FILE="$HOME/.config/starship.toml"
+            fi
 
-    MARKER_BEGIN="# >>> NOCTALIA STARSHIP PALETTE >>>"
-    MARKER_END="# <<< NOCTALIA STARSHIP PALETTE <<<"
+            if [ ! -f "$PALETTE_FILE" ]; then
+                echo "Error: Starship palette file not found at $PALETTE_FILE" >&2
+                return 1
+            fi
 
-    # Create config file if it doesn't exist
-    if [ ! -f "$CONFIG_FILE" ]; then
-        mkdir -p "$(dirname "$CONFIG_FILE")"
-        echo 'palette = "noctalia"' > "$CONFIG_FILE"
-        echo "" >> "$CONFIG_FILE"
-        echo "$MARKER_BEGIN" >> "$CONFIG_FILE"
-        cat "$PALETTE_FILE" >> "$CONFIG_FILE"
-        echo "$MARKER_END" >> "$CONFIG_FILE"
-        exit 0
-    fi
+            MARKER_BEGIN='# >>> NOCTALIA STARSHIP PALETTE >>>'
+            MARKER_END='# <<< NOCTALIA STARSHIP PALETTE <<<'
 
-    # 1. Set palette = "noctalia" at top level
-    if grep -qE '^palette\s*=' "$CONFIG_FILE"; then
-        sed -i -E 's/^palette\s*=.*/palette = "noctalia"/' "$CONFIG_FILE"
-    else
-        # Insert after schema line if present, otherwise at line 1
-        if grep -qE '^\"\$schema\"' "$CONFIG_FILE"; then
-            sed -i '/^\"\$schema\"/a palette = "noctalia"' "$CONFIG_FILE"
-        else
-            sed -i '1i palette = "noctalia"' "$CONFIG_FILE"
-        fi
-    fi
+            # Create config file from scratch if it doesn't exist yet
+            if [ ! -f "$CONFIG_FILE" ]; then
+                mkdir -p "$(dirname "$CONFIG_FILE")"
+                {
+                    printf 'palette = "noctalia"\n\n'
+                    printf '%s\n' "$MARKER_BEGIN"
+                    cat "$PALETTE_FILE"
+                    printf '%s\n' "$MARKER_END"
+                } > "$CONFIG_FILE"
+                return 0
+            fi
 
-    # 2. Remove existing noctalia palette block (between markers)
-    if grep -qF "$MARKER_BEGIN" "$CONFIG_FILE"; then
-        sed -i "/$(echo "$MARKER_BEGIN" | sed 's/[[\.*^$()+?{|]/\\&/g')/,/$(echo "$MARKER_END" | sed 's/[[\.*^$()+?{|]/\\&/g')/d" "$CONFIG_FILE"
-    fi
+            # Follow symlinks so we edit the real file (safe for stow / dotfile managers)
+            if [ -L "$CONFIG_FILE" ]; then
+                CONFIG_FILE="$(readlink -f "$CONFIG_FILE")"
+            fi
 
-    # 3. Append the new palette block
-    echo "" >> "$CONFIG_FILE"
-    echo "$MARKER_BEGIN" >> "$CONFIG_FILE"
-    cat "$PALETTE_FILE" >> "$CONFIG_FILE"
-    echo "$MARKER_END" >> "$CONFIG_FILE"
-    ;;
+            # Set or insert top-level  palette = "noctalia"
+            if grep -qE '^[[:space:]]*palette[[:space:]]*=' "$CONFIG_FILE"; then
+                sed -i -E 's/^([[:space:]]*)palette([[:space:]]*)=.*/\1palette\2= "noctalia"/' "$CONFIG_FILE"
+            elif grep -qE '^[[:space:]]*"\$schema"' "$CONFIG_FILE"; then
+                sed -i '/^[[:space:]]*"\$schema"/a palette = "noctalia"' "$CONFIG_FILE"
+            else
+                sed -i '1i palette = "noctalia"' "$CONFIG_FILE"
+            fi
+
+            # Remove existing palette block using awk for literal string matching
+            # (avoids sed misinterpreting >, #, or other chars in the markers as regex)
+            if grep -qF "$MARKER_BEGIN" "$CONFIG_FILE"; then
+                awk -v begin="$MARKER_BEGIN" -v end="$MARKER_END" '
+                    $0 == begin { skip = 1; next }
+                    $0 == end   { skip = 0; next }
+                    !skip
+                ' "$CONFIG_FILE" > "${CONFIG_FILE}.noctalia.tmp" \
+                    && mv "${CONFIG_FILE}.noctalia.tmp" "$CONFIG_FILE"
+            fi
+
+            # Append fresh palette block, ensuring a clean newline boundary
+            {
+                printf '\n%s\n' "$MARKER_BEGIN"
+                cat "$PALETTE_FILE"
+                # Guard: ensure palette file ends with newline before closing marker
+                tail -c1 "$PALETTE_FILE" | grep -q $'\n' || printf '\n'
+                printf '%s\n' "$MARKER_END"
+            } >> "$CONFIG_FILE"
+            ;;
 
 *)
     # Handle unknown application names.

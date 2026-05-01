@@ -161,7 +161,7 @@ Item {
             label: I18n.tr("common.bluetooth")
             icon: BluetoothService.enabled ? "bluetooth" : "bluetooth-off"
             checked: BluetoothService.enabled
-            enabled: !NetworkService.airplaneModeEnabled && BluetoothService.bluetoothAvailable
+            enabled: !NetworkService.airplaneModeEnabled && BluetoothService.bluetoothAvailable && !BluetoothService.blocked
             onToggled: checked => BluetoothService.setBluetoothEnabled(checked)
             Layout.alignment: Qt.AlignVCenter
           }
