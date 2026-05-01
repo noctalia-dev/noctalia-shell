@@ -17,7 +17,6 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
-#include <limits>
 #include <linux/input-event-codes.h>
 #include <memory>
 #include <optional>
@@ -244,6 +243,7 @@ void TaskbarWidget::updateModels() {
     for (const auto& window : windows) {
       TaskModel task{};
       task.handleKey = reinterpret_cast<std::uintptr_t>(window.handle);
+      task.order = window.order;
       task.appId = !window.appId.empty() ? window.appId : appId;
       task.idLower = idLower;
       task.startupWmClassLower = startupLower;
@@ -353,19 +353,9 @@ void TaskbarWidget::updateModels() {
     }
   }
 
-  // Keep task positions stable by first-seen toplevel handle order.
-  for (const auto& task : nextTasks) {
-    if (!m_taskOrder.contains(task.handleKey)) {
-      m_taskOrder[task.handleKey] = m_nextTaskOrder++;
-    }
-  }
-  std::stable_sort(nextTasks.begin(), nextTasks.end(), [this](const TaskModel& a, const TaskModel& b) {
-    const auto aIt = m_taskOrder.find(a.handleKey);
-    const auto bIt = m_taskOrder.find(b.handleKey);
-    const std::size_t aOrder = aIt != m_taskOrder.end() ? aIt->second : std::numeric_limits<std::size_t>::max();
-    const std::size_t bOrder = bIt != m_taskOrder.end() ? bIt->second : std::numeric_limits<std::size_t>::max();
-    if (aOrder != bOrder) {
-      return aOrder < bOrder;
+  std::stable_sort(nextTasks.begin(), nextTasks.end(), [](const TaskModel& a, const TaskModel& b) {
+    if (a.order != b.order) {
+      return a.order < b.order;
     }
     return a.handleKey < b.handleKey;
   });
@@ -420,7 +410,8 @@ bool TaskbarWidget::modelsEqual(const std::vector<TaskModel>& tasks,
   for (std::size_t i = 0; i < tasks.size(); ++i) {
     if (tasks[i].appId != m_tasks[i].appId || tasks[i].iconPath != m_tasks[i].iconPath ||
         tasks[i].active != m_tasks[i].active || tasks[i].firstHandle != m_tasks[i].firstHandle ||
-        tasks[i].workspaceKey != m_tasks[i].workspaceKey || tasks[i].title != m_tasks[i].title) {
+        tasks[i].workspaceKey != m_tasks[i].workspaceKey || tasks[i].title != m_tasks[i].title ||
+        tasks[i].order != m_tasks[i].order) {
       return false;
     }
   }

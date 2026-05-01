@@ -22,6 +22,7 @@ struct ActiveToplevel {
 struct ToplevelInfo {
   std::string title;
   std::string appId;
+  std::uint64_t order = 0;
   zwlr_foreign_toplevel_handle_v1* handle = nullptr;
 };
 
@@ -60,6 +61,7 @@ private:
     bool activated = false;
     bool dirty = false;
     std::uint64_t generation = 0;
+    std::uint64_t order = 0;
   };
 
   [[nodiscard]] bool notifyIfChanged(const std::optional<ActiveToplevel>& before);
@@ -69,5 +71,6 @@ private:
   std::unordered_map<zwlr_foreign_toplevel_handle_v1*, ToplevelState> m_handles;
   zwlr_foreign_toplevel_handle_v1* m_currentHandle = nullptr;
   std::uint64_t m_generation = 0;
+  std::uint64_t m_nextOrder = 0;
   ChangeCallback m_changeCallback;
 };

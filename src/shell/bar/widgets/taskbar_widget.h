@@ -22,6 +22,7 @@ public:
 private:
   struct TaskModel {
     std::uintptr_t handleKey = 0;
+    std::uint64_t order = 0;
     std::string appId;
     std::string idLower;
     std::string startupWmClassLower;
@@ -65,8 +66,6 @@ private:
 
   std::vector<TaskModel> m_tasks;
   std::vector<WorkspaceModel> m_workspaces;
-  std::unordered_map<std::uintptr_t, std::size_t> m_taskOrder;
-  std::size_t m_nextTaskOrder = 0;
   std::unordered_map<std::string, std::string> m_appIconsByLower;
   std::uint64_t m_desktopEntriesVersion = 0;
   IconResolver m_iconResolver;
