@@ -1244,7 +1244,7 @@
         },
         "fill-color": {
           "label": "Fill Color",
-          "description": "Solid color shown behind images, in uncovered areas, and as the wallpaper when no image is selected"
+          "description": "Solid color shown behind image in uncovered areas"
         },
         "directory": {
           "label": "Wallpaper Directory",
