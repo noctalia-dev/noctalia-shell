@@ -118,12 +118,14 @@ std::unique_ptr<Flex> OverviewTab::create() {
   userTitle->setBold(true);
   userTitle->setFontSize(Style::fontSizeTitle * 1.12f * scale);
   userTitle->setColor(roleColor(ColorRole::OnSurface));
+  userTitle->setShadow(Color{0.0f, 0.0f, 0.0f, 0.42f}, 0.0f, 1.0f * scale);
   userMain->addChild(std::move(userTitle));
 
   auto userFacts = std::make_unique<Label>();
   userFacts->setText("…");
   userFacts->setFontSize(Style::fontSizeCaption * scale);
   userFacts->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  userFacts->setShadow(Color{0.0f, 0.0f, 0.0f, 0.36f}, 0.0f, 1.0f * scale);
   m_userFacts = userFacts.get();
   userMain->addChild(std::move(userFacts));
 
@@ -499,7 +501,7 @@ void OverviewTab::sync(Renderer& renderer) {
       if (avatarPath.empty()) {
         m_userAvatar->clear(renderer);
       } else {
-        m_userAvatar->setSourceFile(renderer, avatarPath, static_cast<int>(std::round(m_userAvatar->width())));
+        m_userAvatar->setSourceFile(renderer, avatarPath, static_cast<int>(std::round(m_userAvatar->width())), true);
       }
       m_loadedAvatarPath = avatarPath;
     }
