@@ -112,6 +112,7 @@ private:
   void activateFocusGrab();
   void deactivateOutsideClickHandlers();
   void applyAttachedReveal(float progress);
+  void applyDetachedReveal(float progress);
   void publishAttachedPanelGeometry(float revealProgress);
   // Restyle the attached-panel decoration nodes (bg fill, drop shadow, contact shadow)
   // using m_attachedBackgroundOpacity / m_attachedBarPosition. Geometry/positions are not
@@ -162,6 +163,7 @@ private:
   std::uint32_t m_panelVisualHeight = 0;
   float m_attachedBackgroundOpacity = 1.0f;
   float m_attachedRevealProgress = 1.0f;
+  float m_detachedRevealProgress = 1.0f;
   AttachedRevealDirection m_attachedRevealDirection = AttachedRevealDirection::Down;
   std::string m_attachedBarPosition; // "top" / "bottom" / "left" / "right" while attached, empty otherwise
   std::optional<AttachedPanelGeometry> m_attachedPanelGeometry;

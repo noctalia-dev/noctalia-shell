@@ -551,13 +551,9 @@ void PanelManager::closePanel() {
           m_attachedRevealClipNode);
     } else {
       m_animations.cancelForOwner(m_sceneRoot.get());
-      const float startY = m_sceneRoot->y();
       m_animations.animate(
-          1.0f, 0.0f, Style::animFast, Easing::EaseInOutQuad,
-          [this, startY](float v) {
-            m_sceneRoot->setOpacity(v);
-            m_sceneRoot->setPosition(m_sceneRoot->x(), startY + (1.0f - v) * 4.0f);
-          },
+          m_detachedRevealProgress, 0.0f, Style::animFast, Easing::EaseInOutQuad,
+          [this](float v) { applyDetachedReveal(v); },
           [this, gen]() {
             DeferredCall::callLater([this, gen]() {
               if (m_destroyGeneration == gen) {
@@ -936,6 +932,26 @@ void PanelManager::applyAttachedReveal(float progress) {
   applyPanelCompositorBlur();
 }
 
+void PanelManager::applyDetachedReveal(float progress) {
+  m_detachedRevealProgress = std::clamp(progress, 0.0f, 1.0f);
+  if (m_attachedToBar || m_sceneRoot == nullptr) {
+    return;
+  }
+  // Scale the entire scene (background, content, shadow) from 0.95 -> 1.0
+  // around the surface center. Opacity is intentionally not animated because
+  // the compositor blur region (ext-background-effect-v1) is not opacity-aware
+  // and would mismatch a fading content layer.
+  const float s = 1.0f - 0.05f * (1.0f - m_detachedRevealProgress);
+  m_sceneRoot->setScale(s);
+  // Fade only the content layer; the background must stay fully opaque so the
+  // compositor blur region is always covered by an opaque rect (otherwise the
+  // blur would leak through during the animation).
+  if (m_contentNode != nullptr) {
+    m_contentNode->setOpacity(m_detachedRevealProgress);
+  }
+  applyPanelCompositorBlur();
+}
+
 void PanelManager::publishAttachedPanelGeometry(float revealProgress) {
   if (!m_attachedToBar || !m_attachedPanelGeometryCallback || m_output == nullptr || !m_attachedPanelGeometry) {
     return;
@@ -994,6 +1010,16 @@ void PanelManager::applyPanelCompositorBlur() {
     return;
   }
 
+  if (!m_attachedToBar) {
+    const float progress = std::clamp(m_detachedRevealProgress, 0.0f, 1.0f);
+    const float s = 1.0f - 0.05f * (1.0f - progress);
+    const int scaledW = static_cast<int>(std::lround(static_cast<float>(bw) * s));
+    const int scaledH = static_cast<int>(std::lround(static_cast<float>(bh) * s));
+    bx += (bw - scaledW) / 2;
+    by += (bh - scaledH) / 2;
+    bw = scaledW;
+    bh = scaledH;
+  }
   if (m_attachedToBar) {
     const float progress = std::clamp(m_attachedRevealProgress, 0.0f, 1.0f);
     if (progress < 0.001f) {
@@ -1189,31 +1215,10 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
           0.0f, 1.0f, Style::animNormal, Easing::EaseOutCubic, [this](float v) { applyAttachedReveal(v); }, {},
           m_attachedRevealClipNode);
     } else {
-      // Open animation: fast fade-in with the background growing from center.
-      m_sceneRoot->setOpacity(0.0f);
-
+      applyDetachedReveal(0.0f);
       m_animations.animate(
-          0.0f, 1.0f, Style::animNormal, Easing::EaseOutCubic,
-          [this, w, h](float v) {
-            m_sceneRoot->setOpacity(v);
-
-            if (m_bgNode != nullptr) {
-              const float attachedRadius = (m_attachedToBar && m_activePanel != nullptr)
-                                               ? Style::radiusXl * m_activePanel->contentScale()
-                                               : 0.0f;
-              const float bodyW = m_panelVisualWidth > 0 ? static_cast<float>(m_panelVisualWidth) : w;
-              const float visualW = bodyW + attachedRadius * 2.0f;
-              const float visualH = m_panelVisualHeight > 0 ? static_cast<float>(m_panelVisualHeight) : h;
-              const float visualX = static_cast<float>(m_panelInsetX) - attachedRadius;
-              const float s = 1.0f - 0.05f * (1.0f - v);
-              const float bw = visualW * s;
-              const float bh = visualH * s;
-              m_bgNode->setSize(bw, bh);
-              m_bgNode->setPosition(visualX + (visualW - bw) * 0.5f,
-                                    static_cast<float>(m_panelInsetY) + (visualH - bh) * 0.5f);
-            }
-          },
-          {}, m_sceneRoot.get());
+          0.0f, 1.0f, Style::animNormal, Easing::EaseOutCubic, [this](float v) { applyDetachedReveal(v); }, {},
+          m_sceneRoot.get());
     }
 
     m_surface->setSceneRoot(m_sceneRoot.get());
