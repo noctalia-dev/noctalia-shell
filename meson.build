@@ -559,7 +559,7 @@ _noctalia_sources = files(
   'src/compositors/mango/mango_workspace_backend.cpp',
   'src/compositors/niri/niri_output_backend.cpp',
   'src/compositors/niri/niri_keyboard_backend.cpp',
-  'src/compositors/niri/niri_workspace_monitor.cpp',
+  'src/compositors/niri/niri_workspace_backend.cpp',
   'src/compositors/sway/sway_keyboard_backend.cpp',
   'src/compositors/sway/sway_output_backend.cpp',
   'src/compositors/sway/sway_workspace_backend.cpp',

@@ -178,6 +178,16 @@ const char* WaylandWorkspaces::backendName() const noexcept {
   return m_activeBackend != nullptr ? m_activeBackend->backendName() : "none";
 }
 
+std::unordered_map<std::string, std::vector<std::string>>
+WaylandWorkspaces::appIdsByWorkspace(wl_output* output) const {
+  return m_activeBackend != nullptr ? m_activeBackend->appIdsByWorkspace(output)
+                                    : std::unordered_map<std::string, std::vector<std::string>>{};
+}
+
+std::vector<WorkspaceWindow> WaylandWorkspaces::workspaceWindows(wl_output* output) const {
+  return m_activeBackend != nullptr ? m_activeBackend->workspaceWindows(output) : std::vector<WorkspaceWindow>{};
+}
+
 std::vector<Workspace> WaylandWorkspaces::all() const {
   return m_activeBackend != nullptr ? m_activeBackend->all() : std::vector<Workspace>{};
 }

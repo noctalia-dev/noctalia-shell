@@ -1,4 +1,4 @@
-#include "compositors/niri/niri_workspace_monitor.h"
+#include "compositors/niri/niri_workspace_backend.h"
 
 #include "core/log.h"
 #include "util/string_utils.h"
@@ -14,6 +14,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <unordered_set>
 
 namespace {
 
@@ -99,7 +100,7 @@ namespace {
 
 } // namespace
 
-NiriWorkspaceMonitor::NiriWorkspaceMonitor(std::string_view compositorHint) {
+NiriWorkspaceBackend::NiriWorkspaceBackend(std::string_view compositorHint) {
   const char* socketPath = std::getenv("NIRI_SOCKET");
   if (socketPath != nullptr && socketPath[0] != '\0') {
     m_socketPath = std::string(socketPath);
@@ -111,11 +112,11 @@ NiriWorkspaceMonitor::NiriWorkspaceMonitor(std::string_view compositorHint) {
   }
 }
 
-NiriWorkspaceMonitor::~NiriWorkspaceMonitor() { cleanup(); }
+NiriWorkspaceBackend::~NiriWorkspaceBackend() { cleanup(); }
 
-void NiriWorkspaceMonitor::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
+void NiriWorkspaceBackend::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
 
-int NiriWorkspaceMonitor::pollTimeoutMs() const noexcept {
+int NiriWorkspaceBackend::pollTimeoutMs() const noexcept {
   if (!m_enabled || m_socketFd >= 0 || !m_socketPath.has_value()) {
     return -1;
   }
@@ -130,7 +131,7 @@ int NiriWorkspaceMonitor::pollTimeoutMs() const noexcept {
   return static_cast<int>(std::max<std::int64_t>(0, remaining));
 }
 
-void NiriWorkspaceMonitor::dispatchPoll(short revents) {
+void NiriWorkspaceBackend::dispatchPoll(short revents) {
   if (!m_enabled) {
     return;
   }
@@ -150,7 +151,7 @@ void NiriWorkspaceMonitor::dispatchPoll(short revents) {
   }
 }
 
-void NiriWorkspaceMonitor::apply(std::vector<Workspace>& workspaces, const std::string& outputName) const {
+void NiriWorkspaceBackend::apply(std::vector<Workspace>& workspaces, const std::string& outputName) const {
   if (!m_enabled || workspaces.empty() || m_workspaces.empty()) {
     return;
   }
@@ -234,7 +235,93 @@ void NiriWorkspaceMonitor::apply(std::vector<Workspace>& workspaces, const std::
   }
 }
 
-void NiriWorkspaceMonitor::cleanup() {
+std::vector<std::string> NiriWorkspaceBackend::workspaceKeys(const std::string& outputName) const {
+  std::vector<const WorkspaceState*> candidates;
+  candidates.reserve(m_workspaces.size());
+  for (const auto& [workspaceId, workspace] : m_workspaces) {
+    (void)workspaceId;
+    if (!outputName.empty() && workspace.output != outputName) {
+      continue;
+    }
+    candidates.push_back(&workspace);
+  }
+
+  std::sort(candidates.begin(), candidates.end(), [](const WorkspaceState* lhs, const WorkspaceState* rhs) {
+    if (lhs->idx != rhs->idx) {
+      return lhs->idx < rhs->idx;
+    }
+    return lhs->id < rhs->id;
+  });
+
+  std::vector<std::string> result;
+  result.reserve(candidates.size());
+  for (const auto* workspace : candidates) {
+    result.push_back(workspaceKey(*workspace));
+  }
+  return result;
+}
+
+std::unordered_map<std::string, std::vector<std::string>>
+NiriWorkspaceBackend::appIdsByWorkspace(const std::string& outputName) const {
+  std::unordered_map<std::uint64_t, const WorkspaceState*> workspacesById;
+  for (const auto& [id, workspace] : m_workspaces) {
+    if (!outputName.empty() && workspace.output != outputName) {
+      continue;
+    }
+    workspacesById.emplace(id, &workspace);
+  }
+
+  std::unordered_map<std::string, std::vector<std::string>> result;
+  std::unordered_map<std::string, std::unordered_set<std::string>> seen;
+  for (const auto& [windowId, window] : m_windows) {
+    (void)windowId;
+    if (!window.workspaceId.has_value() || window.appId.empty()) {
+      continue;
+    }
+    const auto workspaceIt = workspacesById.find(*window.workspaceId);
+    if (workspaceIt == workspacesById.end()) {
+      continue;
+    }
+
+    const auto key = workspaceKey(*workspaceIt->second);
+    auto& workspaceSeen = seen[key];
+    if (workspaceSeen.insert(window.appId).second) {
+      result[key].push_back(window.appId);
+    }
+  }
+  return result;
+}
+
+std::vector<WorkspaceWindow> NiriWorkspaceBackend::workspaceWindows(const std::string& outputName) const {
+  std::unordered_map<std::uint64_t, const WorkspaceState*> workspacesById;
+  for (const auto& [id, workspace] : m_workspaces) {
+    if (!outputName.empty() && workspace.output != outputName) {
+      continue;
+    }
+    workspacesById.emplace(id, &workspace);
+  }
+
+  std::vector<WorkspaceWindow> result;
+  result.reserve(m_windows.size());
+  for (const auto& [windowId, window] : m_windows) {
+    (void)windowId;
+    if (!window.workspaceId.has_value() || window.appId.empty()) {
+      continue;
+    }
+    const auto workspaceIt = workspacesById.find(*window.workspaceId);
+    if (workspaceIt == workspacesById.end()) {
+      continue;
+    }
+    result.push_back(WorkspaceWindow{
+        .workspaceKey = workspaceKey(*workspaceIt->second),
+        .appId = window.appId,
+        .title = window.title,
+    });
+  }
+  return result;
+}
+
+void NiriWorkspaceBackend::cleanup() {
   closeSocket(false);
   m_windows.clear();
   m_workspaces.clear();
@@ -243,7 +330,7 @@ void NiriWorkspaceMonitor::cleanup() {
   m_readBuffer.clear();
 }
 
-void NiriWorkspaceMonitor::connectIfNeeded() {
+void NiriWorkspaceBackend::connectIfNeeded() {
   if (!m_enabled || m_socketFd >= 0 || !m_socketPath.has_value()) {
     return;
   }
@@ -293,7 +380,7 @@ void NiriWorkspaceMonitor::connectIfNeeded() {
   kLog.debug("connected to niri event stream");
 }
 
-void NiriWorkspaceMonitor::closeSocket(bool scheduleReconnectFlag) {
+void NiriWorkspaceBackend::closeSocket(bool scheduleReconnectFlag) {
   if (m_socketFd >= 0) {
     ::close(m_socketFd);
     m_socketFd = -1;
@@ -306,11 +393,11 @@ void NiriWorkspaceMonitor::closeSocket(bool scheduleReconnectFlag) {
   }
 }
 
-void NiriWorkspaceMonitor::scheduleReconnect() {
+void NiriWorkspaceBackend::scheduleReconnect() {
   m_nextReconnectAt = std::chrono::steady_clock::now() + kReconnectDelay;
 }
 
-void NiriWorkspaceMonitor::readSocket() {
+void NiriWorkspaceBackend::readSocket() {
   std::array<char, 4096> buffer{};
   while (true) {
     const ssize_t readBytes = ::read(m_socketFd, buffer.data(), buffer.size());
@@ -335,7 +422,7 @@ void NiriWorkspaceMonitor::readSocket() {
   parseMessages();
 }
 
-void NiriWorkspaceMonitor::parseMessages() {
+void NiriWorkspaceBackend::parseMessages() {
   auto lineStart = m_readBuffer.begin();
   for (auto it = m_readBuffer.begin(); it != m_readBuffer.end(); ++it) {
     if (*it != '\n') {
@@ -360,7 +447,7 @@ void NiriWorkspaceMonitor::parseMessages() {
   }
 }
 
-bool NiriWorkspaceMonitor::handleMessage(std::string_view line) {
+bool NiriWorkspaceBackend::handleMessage(std::string_view line) {
   nlohmann::json json;
   try {
     json = nlohmann::json::parse(line);
@@ -409,7 +496,7 @@ bool NiriWorkspaceMonitor::handleMessage(std::string_view line) {
   return true;
 }
 
-bool NiriWorkspaceMonitor::handleWorkspacesChanged(const nlohmann::json& payload) {
+bool NiriWorkspaceBackend::handleWorkspacesChanged(const nlohmann::json& payload) {
   const auto* workspaces = arrayPayload(payload, "workspaces");
   if (workspaces == nullptr) {
     return false;
@@ -430,7 +517,7 @@ bool NiriWorkspaceMonitor::handleWorkspacesChanged(const nlohmann::json& payload
   return true;
 }
 
-bool NiriWorkspaceMonitor::handleWindowsChanged(const nlohmann::json& payload) {
+bool NiriWorkspaceBackend::handleWindowsChanged(const nlohmann::json& payload) {
   const auto* windows = arrayPayload(payload, "windows");
   if (windows == nullptr) {
     return false;
@@ -452,7 +539,7 @@ bool NiriWorkspaceMonitor::handleWindowsChanged(const nlohmann::json& payload) {
   return true;
 }
 
-bool NiriWorkspaceMonitor::handleOverviewChanged(const nlohmann::json& payload) {
+bool NiriWorkspaceBackend::handleOverviewChanged(const nlohmann::json& payload) {
   std::optional<bool> open;
   if (payload.is_boolean()) {
     open = payload.get<bool>();
@@ -483,7 +570,7 @@ bool NiriWorkspaceMonitor::handleOverviewChanged(const nlohmann::json& payload) 
   return changed;
 }
 
-bool NiriWorkspaceMonitor::handleWindowOpenedOrChanged(const nlohmann::json& payload) {
+bool NiriWorkspaceBackend::handleWindowOpenedOrChanged(const nlohmann::json& payload) {
   const auto* window = objectPayload(payload, "window");
   if (window == nullptr) {
     return false;
@@ -505,7 +592,7 @@ bool NiriWorkspaceMonitor::handleWindowOpenedOrChanged(const nlohmann::json& pay
   return true;
 }
 
-bool NiriWorkspaceMonitor::handleWindowClosed(const nlohmann::json& payload) {
+bool NiriWorkspaceBackend::handleWindowClosed(const nlohmann::json& payload) {
   std::optional<std::uint64_t> windowId = jsonUnsigned(payload);
   if (!windowId.has_value() && payload.is_object()) {
     windowId = jsonOptionalUnsigned(payload, "id");
@@ -524,7 +611,7 @@ bool NiriWorkspaceMonitor::handleWindowClosed(const nlohmann::json& payload) {
   return true;
 }
 
-std::optional<NiriWorkspaceMonitor::WorkspaceState> NiriWorkspaceMonitor::parseWorkspace(const nlohmann::json& json) {
+std::optional<NiriWorkspaceBackend::WorkspaceState> NiriWorkspaceBackend::parseWorkspace(const nlohmann::json& json) {
   if (!json.is_object()) {
     return std::nullopt;
   }
@@ -543,8 +630,8 @@ std::optional<NiriWorkspaceMonitor::WorkspaceState> NiriWorkspaceMonitor::parseW
   };
 }
 
-std::optional<std::pair<std::uint64_t, NiriWorkspaceMonitor::WindowState>>
-NiriWorkspaceMonitor::parseWindow(const nlohmann::json& json) {
+std::optional<std::pair<std::uint64_t, NiriWorkspaceBackend::WindowState>>
+NiriWorkspaceBackend::parseWindow(const nlohmann::json& json) {
   if (!json.is_object()) {
     return std::nullopt;
   }
@@ -556,11 +643,22 @@ NiriWorkspaceMonitor::parseWindow(const nlohmann::json& json) {
 
   return std::pair<std::uint64_t, WindowState>{
       *id,
-      WindowState{.workspaceId = jsonOptionalUnsigned(json, "workspace_id")},
+      WindowState{
+          .workspaceId = jsonOptionalUnsigned(json, "workspace_id"),
+          .appId =
+              [&json]() {
+                auto appId = jsonOptionalString(json, "app_id");
+                if (appId.empty()) {
+                  appId = jsonOptionalString(json, "class");
+                }
+                return appId;
+              }(),
+          .title = jsonOptionalString(json, "title"),
+      },
   };
 }
 
-std::optional<std::uint64_t> NiriWorkspaceMonitor::parseUnsigned(const std::string& value) {
+std::optional<std::uint64_t> NiriWorkspaceBackend::parseUnsigned(const std::string& value) {
   if (value.empty()) {
     return std::nullopt;
   }
@@ -573,7 +671,7 @@ std::optional<std::uint64_t> NiriWorkspaceMonitor::parseUnsigned(const std::stri
   return parsed;
 }
 
-std::optional<std::size_t> NiriWorkspaceMonitor::parseLeadingNumber(const std::string& value) {
+std::optional<std::size_t> NiriWorkspaceBackend::parseLeadingNumber(const std::string& value) {
   if (value.empty() || !std::isdigit(static_cast<unsigned char>(value.front()))) {
     return std::nullopt;
   }
@@ -587,7 +685,17 @@ std::optional<std::size_t> NiriWorkspaceMonitor::parseLeadingNumber(const std::s
   return parsed > 0 ? std::optional<std::size_t>(parsed) : std::nullopt;
 }
 
-void NiriWorkspaceMonitor::recomputeOccupancy() {
+std::string NiriWorkspaceBackend::workspaceKey(const WorkspaceState& workspace) {
+  if (workspace.idx > 0) {
+    return std::to_string(workspace.idx);
+  }
+  if (workspace.id > 0) {
+    return std::to_string(workspace.id);
+  }
+  return {};
+}
+
+void NiriWorkspaceBackend::recomputeOccupancy() {
   m_occupancy.clear();
   for (const auto& [windowId, window] : m_windows) {
     (void)windowId;
@@ -597,7 +705,7 @@ void NiriWorkspaceMonitor::recomputeOccupancy() {
   }
 }
 
-void NiriWorkspaceMonitor::notifyChanged() const {
+void NiriWorkspaceBackend::notifyChanged() const {
   if (m_changeCallback) {
     m_changeCallback();
   }

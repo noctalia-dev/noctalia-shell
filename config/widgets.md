@@ -86,10 +86,13 @@ Icon-only running application list for the current output.
 
 Left-click an icon to focus that window. The active window gets a small indicator dot.
 
-No configurable settings.
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `group_by_workspace` | bool | `false` | Group icons into workspace capsules when backend workspace-app mapping is available. |
 
 ```toml
 [widget.taskbar]
+group_by_workspace = true
 ```
 
 ---

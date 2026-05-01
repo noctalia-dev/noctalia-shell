@@ -24,6 +24,9 @@ public:
   void activateForOutput(wl_output* output, const Workspace& workspace) override;
   [[nodiscard]] std::vector<Workspace> all() const override;
   [[nodiscard]] std::vector<Workspace> forOutput(wl_output* output) const override;
+  [[nodiscard]] std::unordered_map<std::string, std::vector<std::string>>
+  appIdsByWorkspace(wl_output* output) const override;
+  [[nodiscard]] std::vector<WorkspaceWindow> workspaceWindows(wl_output* output) const override;
   void cleanup() override;
 
   [[nodiscard]] int pollFd() const noexcept override { return m_socketFd; }
@@ -47,6 +50,7 @@ private:
   void handleMessage(std::uint32_t type, const std::string& payload);
   void parseWorkspaceList(const std::string& payload);
   void parseTree(const std::string& payload);
+  void requestTree();
   void refreshFromWorkspaceEvent();
   [[nodiscard]] static Workspace toWorkspace(const SwayWorkspace& workspace);
   [[nodiscard]] static std::string quoteCommandArg(const std::string& value);
@@ -56,5 +60,7 @@ private:
   std::vector<char> m_readBuffer;
   std::vector<SwayWorkspace> m_workspaces;
   std::unordered_map<std::string, std::size_t> m_workspaceOccupancy;
+  std::unordered_map<std::string, std::vector<std::string>> m_workspaceApps;
+  std::vector<WorkspaceWindow> m_workspaceWindows;
   ChangeCallback m_changeCallback;
 };

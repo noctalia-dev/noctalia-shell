@@ -2,7 +2,7 @@
 
 #include "compositors/compositor_detect.h"
 #include "compositors/niri/niri_output_backend.h"
-#include "compositors/niri/niri_workspace_monitor.h"
+#include "compositors/niri/niri_workspace_backend.h"
 #include "core/log.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "dwl-ipc-unstable-v2-client-protocol.h"
@@ -199,7 +199,7 @@ bool WaylandConnection::connect() {
   const std::string compositorHint(compositors::envHint());
   m_workspacesHandler.initialize(compositorHint);
   m_niriOutputBackend = std::make_unique<NiriOutputBackend>(compositorHint);
-  m_niriWorkspaceMonitor = std::make_unique<NiriWorkspaceMonitor>(compositorHint);
+  m_niriWorkspaceBackend = std::make_unique<NiriWorkspaceBackend>(compositorHint);
   logStartupSummary();
   return true;
 }
@@ -224,8 +224,8 @@ void WaylandConnection::setWorkspaceChangeCallback(ChangeCallback callback) {
     return found != nullptr ? found->connectorName : std::string{};
   });
   m_workspacesHandler.setChangeCallback(wrapper);
-  if (m_niriWorkspaceMonitor != nullptr) {
-    m_niriWorkspaceMonitor->setChangeCallback(wrapper);
+  if (m_niriWorkspaceBackend != nullptr) {
+    m_niriWorkspaceBackend->setChangeCallback(wrapper);
   }
 }
 
@@ -330,18 +330,18 @@ wl_output* WaylandConnection::preferredPanelOutput(std::chrono::milliseconds poi
 }
 
 bool WaylandConnection::hasNiriOverviewState() const noexcept {
-  return m_niriWorkspaceMonitor != nullptr && m_niriWorkspaceMonitor->hasOverviewState();
+  return m_niriWorkspaceBackend != nullptr && m_niriWorkspaceBackend->hasOverviewState();
 }
 
 bool WaylandConnection::tracksNiriOverviewState() const noexcept {
-  return m_niriWorkspaceMonitor != nullptr && m_niriWorkspaceMonitor->canTrackOverviewState();
+  return m_niriWorkspaceBackend != nullptr && m_niriWorkspaceBackend->canTrackOverviewState();
 }
 
 bool WaylandConnection::isNiriOverviewOpen() const noexcept {
-  if (m_niriWorkspaceMonitor == nullptr || !m_niriWorkspaceMonitor->hasOverviewState()) {
+  if (m_niriWorkspaceBackend == nullptr || !m_niriWorkspaceBackend->hasOverviewState()) {
     return true;
   }
-  return m_niriWorkspaceMonitor->isOverviewOpen();
+  return m_niriWorkspaceBackend->isOverviewOpen();
 }
 
 void WaylandConnection::setKeyboardEventCallback(WaylandSeat::KeyboardEventCallback callback) {
@@ -383,17 +383,17 @@ std::size_t WaylandConnection::addWorkspacePollFds(std::vector<pollfd>& fds) con
   if (m_workspacesHandler.pollFd() >= 0) {
     fds.push_back({.fd = m_workspacesHandler.pollFd(), .events = m_workspacesHandler.pollEvents(), .revents = 0});
   }
-  if (m_niriWorkspaceMonitor != nullptr && m_niriWorkspaceMonitor->pollFd() >= 0) {
+  if (m_niriWorkspaceBackend != nullptr && m_niriWorkspaceBackend->pollFd() >= 0) {
     fds.push_back(
-        {.fd = m_niriWorkspaceMonitor->pollFd(), .events = m_niriWorkspaceMonitor->pollEvents(), .revents = 0});
+        {.fd = m_niriWorkspaceBackend->pollFd(), .events = m_niriWorkspaceBackend->pollEvents(), .revents = 0});
   }
   return start;
 }
 
 int WaylandConnection::workspacePollTimeoutMs() const noexcept {
   int timeout = m_workspacesHandler.pollTimeoutMs();
-  if (m_niriWorkspaceMonitor != nullptr) {
-    const int trackerTimeout = m_niriWorkspaceMonitor->pollTimeoutMs();
+  if (m_niriWorkspaceBackend != nullptr) {
+    const int trackerTimeout = m_niriWorkspaceBackend->pollTimeoutMs();
     if (trackerTimeout >= 0 && (timeout < 0 || trackerTimeout < timeout)) {
       timeout = trackerTimeout;
     }
@@ -408,29 +408,29 @@ void WaylandConnection::dispatchWorkspacePoll(const std::vector<pollfd>& fds, st
     ++index;
   }
 
-  if (m_niriWorkspaceMonitor != nullptr) {
+  if (m_niriWorkspaceBackend != nullptr) {
     short revents = 0;
-    if (m_niriWorkspaceMonitor->pollFd() >= 0 && index < fds.size() &&
-        fds[index].fd == m_niriWorkspaceMonitor->pollFd()) {
+    if (m_niriWorkspaceBackend->pollFd() >= 0 && index < fds.size() &&
+        fds[index].fd == m_niriWorkspaceBackend->pollFd()) {
       revents = fds[index].revents;
     }
-    m_niriWorkspaceMonitor->dispatchPoll(revents);
+    m_niriWorkspaceBackend->dispatchPoll(revents);
   }
 }
 
 std::vector<Workspace> WaylandConnection::workspaces() const {
   auto current = m_workspacesHandler.all();
-  if (m_niriWorkspaceMonitor != nullptr) {
-    m_niriWorkspaceMonitor->apply(current);
+  if (m_niriWorkspaceBackend != nullptr) {
+    m_niriWorkspaceBackend->apply(current);
   }
   return current;
 }
 
 std::vector<Workspace> WaylandConnection::workspaces(wl_output* output) const {
   auto current = m_workspacesHandler.forOutput(output);
-  if (m_niriWorkspaceMonitor != nullptr) {
+  if (m_niriWorkspaceBackend != nullptr) {
     const auto* found = const_cast<WaylandConnection*>(this)->findOutputByWl(output);
-    m_niriWorkspaceMonitor->apply(current, found != nullptr ? found->connectorName : std::string{});
+    m_niriWorkspaceBackend->apply(current, found != nullptr ? found->connectorName : std::string{});
   }
   return current;
 }
@@ -439,6 +439,53 @@ std::optional<ActiveToplevel> WaylandConnection::activeToplevel() const { return
 wl_output* WaylandConnection::activeToplevelOutput() const { return m_toplevelsHandler.currentOutput(); }
 std::vector<std::string> WaylandConnection::runningAppIds(wl_output* outputFilter) const {
   return m_toplevelsHandler.allAppIds(outputFilter);
+}
+
+std::unordered_map<std::string, std::vector<std::string>>
+WaylandConnection::appIdsByWorkspace(wl_output* outputFilter) const {
+  if (m_niriWorkspaceBackend != nullptr) {
+    const auto* output =
+        outputFilter != nullptr ? const_cast<WaylandConnection*>(this)->findOutputByWl(outputFilter) : nullptr;
+    const auto fromNiri =
+        m_niriWorkspaceBackend->appIdsByWorkspace(output != nullptr ? output->connectorName : std::string{});
+    if (!fromNiri.empty()) {
+      return fromNiri;
+    }
+  }
+  return m_workspacesHandler.appIdsByWorkspace(outputFilter);
+}
+
+std::vector<std::string> WaylandConnection::workspaceDisplayKeys(wl_output* outputFilter) const {
+  if (m_niriWorkspaceBackend == nullptr) {
+    return {};
+  }
+
+  const auto* output =
+      outputFilter != nullptr ? const_cast<WaylandConnection*>(this)->findOutputByWl(outputFilter) : nullptr;
+  return m_niriWorkspaceBackend->workspaceKeys(output != nullptr ? output->connectorName : std::string{});
+}
+
+std::vector<WorkspaceWindowAssignment> WaylandConnection::workspaceWindowAssignments(wl_output* outputFilter) const {
+  std::vector<WorkspaceWindow> windows;
+  if (m_niriWorkspaceBackend != nullptr) {
+    const auto* output =
+        outputFilter != nullptr ? const_cast<WaylandConnection*>(this)->findOutputByWl(outputFilter) : nullptr;
+    windows = m_niriWorkspaceBackend->workspaceWindows(output != nullptr ? output->connectorName : std::string{});
+  }
+  if (windows.empty()) {
+    windows = m_workspacesHandler.workspaceWindows(outputFilter);
+  }
+
+  std::vector<WorkspaceWindowAssignment> result;
+  result.reserve(windows.size());
+  for (const auto& window : windows) {
+    result.push_back(WorkspaceWindowAssignment{
+        .workspaceKey = window.workspaceKey,
+        .appId = window.appId,
+        .title = window.title,
+    });
+  }
+  return result;
 }
 
 std::vector<ToplevelInfo> WaylandConnection::windowsForApp(const std::string& idLower, const std::string& wmClassLower,
@@ -822,8 +869,8 @@ void WaylandConnection::cleanup() {
   }
   m_toplevelsHandler.cleanup();
   m_workspacesHandler.cleanup();
-  if (m_niriWorkspaceMonitor != nullptr) {
-    m_niriWorkspaceMonitor->cleanup();
+  if (m_niriWorkspaceBackend != nullptr) {
+    m_niriWorkspaceBackend->cleanup();
   }
 
   for (auto& out : m_outputs) {

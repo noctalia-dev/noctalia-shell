@@ -14,6 +14,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <unordered_set>
 
 namespace {
 
@@ -24,6 +25,7 @@ namespace {
   constexpr std::uint32_t kIpcSubscribe = 2;
   constexpr std::uint32_t kIpcGetTree = 4;
   constexpr std::uint32_t kIpcWorkspaceEvent = 0x80000000u;
+  constexpr std::uint32_t kIpcWindowEvent = 0x80000003u;
 
   void tallyWorkspaceWindows(const nlohmann::json& node, const std::string& currentWorkspace,
                              std::unordered_map<std::string, std::size_t>& counts) {
@@ -66,6 +68,115 @@ namespace {
     if (hasFloating) {
       for (const auto& child : *floatingIt) {
         tallyWorkspaceWindows(child, workspaceName, counts);
+      }
+    }
+  }
+
+  void collectWorkspaceApps(const nlohmann::json& node, const std::string& currentWorkspace,
+                            std::unordered_map<std::string, std::vector<std::string>>& appIdsByWorkspace,
+                            std::unordered_map<std::string, std::unordered_set<std::string>>& seenPerWorkspace) {
+    if (!node.is_object()) {
+      return;
+    }
+
+    std::string workspaceName = currentWorkspace;
+    if (const auto typeIt = node.find("type"); typeIt != node.end() && typeIt->is_string()) {
+      if (typeIt->get<std::string>() == "workspace") {
+        if (const auto nameIt = node.find("name"); nameIt != node.end() && nameIt->is_string()) {
+          workspaceName = nameIt->get<std::string>();
+        }
+      }
+    }
+
+    std::string appId;
+    if (const auto appIdIt = node.find("app_id"); appIdIt != node.end() && appIdIt->is_string()) {
+      appId = appIdIt->get<std::string>();
+    }
+    if (appId.empty()) {
+      if (const auto propsIt = node.find("window_properties"); propsIt != node.end() && propsIt->is_object()) {
+        const auto classIt = propsIt->find("class");
+        if (classIt != propsIt->end() && classIt->is_string()) {
+          appId = classIt->get<std::string>();
+        }
+      }
+    }
+    if (!workspaceName.empty() && !appId.empty()) {
+      auto& seen = seenPerWorkspace[workspaceName];
+      if (seen.insert(appId).second) {
+        appIdsByWorkspace[workspaceName].push_back(appId);
+      }
+    }
+
+    const auto nodesIt = node.find("nodes");
+    if (nodesIt != node.end() && nodesIt->is_array()) {
+      for (const auto& child : *nodesIt) {
+        collectWorkspaceApps(child, workspaceName, appIdsByWorkspace, seenPerWorkspace);
+      }
+    }
+    const auto floatingIt = node.find("floating_nodes");
+    if (floatingIt != node.end() && floatingIt->is_array()) {
+      for (const auto& child : *floatingIt) {
+        collectWorkspaceApps(child, workspaceName, appIdsByWorkspace, seenPerWorkspace);
+      }
+    }
+  }
+
+  void collectWorkspaceWindows(const nlohmann::json& node, const std::string& currentWorkspace,
+                               const std::string& currentWorkspaceKey, std::vector<WorkspaceWindow>& windows) {
+    if (!node.is_object()) {
+      return;
+    }
+
+    std::string workspaceName = currentWorkspace;
+    std::string workspaceKey = currentWorkspaceKey;
+    if (const auto typeIt = node.find("type"); typeIt != node.end() && typeIt->is_string()) {
+      if (typeIt->get<std::string>() == "workspace") {
+        if (const auto nameIt = node.find("name"); nameIt != node.end() && nameIt->is_string()) {
+          workspaceName = nameIt->get<std::string>();
+        }
+        if (const auto numIt = node.find("num"); numIt != node.end() && numIt->is_number_integer()) {
+          const int num = numIt->get<int>();
+          workspaceKey = num > 0 ? std::to_string(num) : workspaceName;
+        } else {
+          workspaceKey = workspaceName;
+        }
+      }
+    }
+
+    std::string appId;
+    if (const auto appIdIt = node.find("app_id"); appIdIt != node.end() && appIdIt->is_string()) {
+      appId = appIdIt->get<std::string>();
+    }
+    if (appId.empty()) {
+      if (const auto propsIt = node.find("window_properties"); propsIt != node.end() && propsIt->is_object()) {
+        const auto classIt = propsIt->find("class");
+        if (classIt != propsIt->end() && classIt->is_string()) {
+          appId = classIt->get<std::string>();
+        }
+      }
+    }
+
+    const auto nodesIt = node.find("nodes");
+    const auto floatingIt = node.find("floating_nodes");
+    const bool hasNodes = nodesIt != node.end() && nodesIt->is_array();
+    const bool hasFloating = floatingIt != node.end() && floatingIt->is_array();
+    const bool isLeaf = (!hasNodes || nodesIt->empty()) && (!hasFloating || floatingIt->empty());
+    if (isLeaf && !workspaceName.empty() && !workspaceKey.empty() && !appId.empty()) {
+      windows.push_back(WorkspaceWindow{
+          .workspaceKey = workspaceKey,
+          .appId = appId,
+          .title = node.value("name", ""),
+      });
+    }
+
+    if (hasNodes) {
+      for (const auto& child : *nodesIt) {
+        collectWorkspaceWindows(child, workspaceName, workspaceKey, windows);
+      }
+    }
+    if (hasFloating) {
+      for (const auto& child : *floatingIt) {
+        collectWorkspaceWindows(child, workspaceName, workspaceKey, windows);
       }
     }
   }
@@ -118,7 +229,7 @@ bool SwayWorkspaceBackend::connectSocket() {
     return false;
   }
 
-  sendMessage(kIpcSubscribe, R"(["workspace"])");
+  sendMessage(kIpcSubscribe, R"(["workspace","window"])");
   requestSnapshot();
   kLog.info("connected to sway IPC at {}", path);
   return true;
@@ -164,6 +275,62 @@ std::vector<Workspace> SwayWorkspaceBackend::forOutput(wl_output* output) const 
   return result;
 }
 
+std::unordered_map<std::string, std::vector<std::string>>
+SwayWorkspaceBackend::appIdsByWorkspace(wl_output* output) const {
+  const std::string outputName = m_outputNameResolver != nullptr ? m_outputNameResolver(output) : std::string{};
+  if (output != nullptr && outputName.empty()) {
+    return {};
+  }
+  if (outputName.empty()) {
+    return m_workspaceApps;
+  }
+
+  std::unordered_set<std::string> workspaceNames;
+  for (const auto& workspace : m_workspaces) {
+    if (workspace.output == outputName) {
+      workspaceNames.insert(workspace.name);
+    }
+  }
+
+  std::unordered_map<std::string, std::vector<std::string>> filtered;
+  for (const auto& [workspace, apps] : m_workspaceApps) {
+    if (workspaceNames.contains(workspace)) {
+      filtered.emplace(workspace, apps);
+    }
+  }
+  return filtered;
+}
+
+std::vector<WorkspaceWindow> SwayWorkspaceBackend::workspaceWindows(wl_output* output) const {
+  const std::string outputName = m_outputNameResolver != nullptr ? m_outputNameResolver(output) : std::string{};
+  if (output != nullptr && outputName.empty()) {
+    return {};
+  }
+  if (outputName.empty()) {
+    return m_workspaceWindows;
+  }
+
+  std::unordered_set<std::string> workspaceKeys;
+  for (const auto& workspace : m_workspaces) {
+    if (workspace.output != outputName) {
+      continue;
+    }
+    if (workspace.num > 0) {
+      workspaceKeys.insert(std::to_string(workspace.num));
+    } else if (!workspace.name.empty()) {
+      workspaceKeys.insert(workspace.name);
+    }
+  }
+
+  std::vector<WorkspaceWindow> filtered;
+  for (const auto& window : m_workspaceWindows) {
+    if (workspaceKeys.contains(window.workspaceKey)) {
+      filtered.push_back(window);
+    }
+  }
+  return filtered;
+}
+
 void SwayWorkspaceBackend::cleanup() {
   if (m_socketFd >= 0) {
     ::close(m_socketFd);
@@ -171,6 +338,8 @@ void SwayWorkspaceBackend::cleanup() {
   }
   m_readBuffer.clear();
   m_workspaces.clear();
+  m_workspaceApps.clear();
+  m_workspaceWindows.clear();
 }
 
 void SwayWorkspaceBackend::dispatchPoll(short revents) {
@@ -194,6 +363,8 @@ void SwayWorkspaceBackend::requestSnapshot() {
   sendMessage(kIpcGetWorkspaces, "");
   sendMessage(kIpcGetTree, "");
 }
+
+void SwayWorkspaceBackend::requestTree() { sendMessage(kIpcGetTree, ""); }
 
 void SwayWorkspaceBackend::sendMessage(std::uint32_t type, const std::string& payload) {
   if (m_socketFd < 0) {
@@ -297,6 +468,10 @@ void SwayWorkspaceBackend::handleMessage(std::uint32_t type, const std::string& 
   }
   if (type == kIpcWorkspaceEvent) {
     refreshFromWorkspaceEvent();
+    return;
+  }
+  if (type == kIpcWindowEvent) {
+    requestTree();
   }
 }
 
@@ -357,6 +532,13 @@ void SwayWorkspaceBackend::parseTree(const std::string& payload) {
     std::unordered_map<std::string, std::size_t> occupancy;
     tallyWorkspaceWindows(json, std::string{}, occupancy);
     m_workspaceOccupancy = std::move(occupancy);
+    std::unordered_map<std::string, std::vector<std::string>> appIdsByWorkspace;
+    std::unordered_map<std::string, std::unordered_set<std::string>> seenPerWorkspace;
+    collectWorkspaceApps(json, std::string{}, appIdsByWorkspace, seenPerWorkspace);
+    m_workspaceApps = std::move(appIdsByWorkspace);
+    std::vector<WorkspaceWindow> workspaceWindows;
+    collectWorkspaceWindows(json, std::string{}, std::string{}, workspaceWindows);
+    m_workspaceWindows = std::move(workspaceWindows);
 
     if (!m_workspaces.empty()) {
       for (auto& workspace : m_workspaces) {

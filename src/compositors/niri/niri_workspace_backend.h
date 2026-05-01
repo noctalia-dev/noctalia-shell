@@ -13,15 +13,15 @@
 #include <unordered_map>
 #include <vector>
 
-class NiriWorkspaceMonitor {
+class NiriWorkspaceBackend {
 public:
   using ChangeCallback = std::function<void()>;
 
-  explicit NiriWorkspaceMonitor(std::string_view compositorHint);
-  ~NiriWorkspaceMonitor();
+  explicit NiriWorkspaceBackend(std::string_view compositorHint);
+  ~NiriWorkspaceBackend();
 
-  NiriWorkspaceMonitor(const NiriWorkspaceMonitor&) = delete;
-  NiriWorkspaceMonitor& operator=(const NiriWorkspaceMonitor&) = delete;
+  NiriWorkspaceBackend(const NiriWorkspaceBackend&) = delete;
+  NiriWorkspaceBackend& operator=(const NiriWorkspaceBackend&) = delete;
 
   void setChangeCallback(ChangeCallback callback);
   [[nodiscard]] bool isEnabled() const noexcept { return m_enabled; }
@@ -33,11 +33,17 @@ public:
   [[nodiscard]] int pollTimeoutMs() const noexcept;
   void dispatchPoll(short revents);
   void apply(std::vector<Workspace>& workspaces, const std::string& outputName = {}) const;
+  [[nodiscard]] std::vector<std::string> workspaceKeys(const std::string& outputName = {}) const;
+  [[nodiscard]] std::unordered_map<std::string, std::vector<std::string>>
+  appIdsByWorkspace(const std::string& outputName = {}) const;
+  [[nodiscard]] std::vector<WorkspaceWindow> workspaceWindows(const std::string& outputName = {}) const;
   void cleanup();
 
 private:
   struct WindowState {
     std::optional<std::uint64_t> workspaceId;
+    std::string appId;
+    std::string title;
 
     bool operator==(const WindowState&) const = default;
   };
@@ -66,6 +72,7 @@ private:
   [[nodiscard]] static std::optional<std::pair<std::uint64_t, WindowState>> parseWindow(const nlohmann::json& json);
   [[nodiscard]] static std::optional<std::uint64_t> parseUnsigned(const std::string& value);
   [[nodiscard]] static std::optional<std::size_t> parseLeadingNumber(const std::string& value);
+  [[nodiscard]] static std::string workspaceKey(const WorkspaceState& workspace);
   void recomputeOccupancy();
   void notifyChanged() const;
 
