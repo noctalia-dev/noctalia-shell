@@ -306,6 +306,8 @@ CairoTextRenderer::TextMetrics CairoTextRenderer::metricsFromLayout(PangoLayout*
   const float descent = static_cast<float>(logical.height - (baselinePango - logical.y)) * pscale * invScale;
   const float inkTop = static_cast<float>(ink.y - baselinePango) * pscale * invScale;
   const float inkBottom = static_cast<float>(ink.y + ink.height - baselinePango) * pscale * invScale;
+  const float inkLeft = static_cast<float>(ink.x) * pscale * invScale;
+  const float inkRight = static_cast<float>(ink.x + ink.width) * pscale * invScale;
 
   TextMetrics m;
   m.width = width;
@@ -315,6 +317,8 @@ CairoTextRenderer::TextMetrics CairoTextRenderer::metricsFromLayout(PangoLayout*
   m.bottom = descent; // below baseline → positive
   m.inkTop = inkTop;
   m.inkBottom = inkBottom;
+  m.inkLeft = inkLeft;
+  m.inkRight = inkRight;
   return m;
 }
 

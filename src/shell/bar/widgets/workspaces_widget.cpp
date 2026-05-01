@@ -134,6 +134,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
 
   // Compute each slot's intrinsic label-padded width (if labelled).
   std::vector<float> labelPadded(workspaces.size(), 0.0f);
+  std::vector<float> labelInkCenterX(workspaces.size(), 0.0f);
   bool anyMultiChar = false;
   bool anyLabel = false;
   for (std::size_t i = 0; i < workspaces.size(); ++i) {
@@ -150,6 +151,11 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     const float inkHeight = std::max(0.0f, tm.inkBottom - tm.inkTop);
     indicatorHeight = std::max(indicatorHeight, std::round(std::max(labelRefHeight, inkHeight)));
     labelPadded[i] = std::max(pillMin, inkWidth + (kWorkspaceLabelPadH * m_contentScale * 2.0f));
+    // Visible-ink horizontal center within the label box. Used to center digits
+    // by their visible glyph rather than by their advance width — for fonts where
+    // the ink is asymmetric within the advance (e.g. "4"), centering by advance
+    // looks visibly off.
+    labelInkCenterX[i] = (tm.inkLeft + tm.inkRight) * 0.5f;
   }
   const float dotWidth = std::round(indicatorHeight * kWorkspaceDotRatio);
 
@@ -196,6 +202,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     item.showLabel = showLabel;
     item.inactiveWidth = inactiveWidth;
     item.activeWidth = activeWidth;
+    item.textInkCenterX = labelInkCenterX[i];
 
     auto indicator = std::make_unique<Box>();
     indicator->clearBorder();
@@ -344,8 +351,10 @@ void WorkspacesWidget::applyItemLayout(std::size_t i) {
   if (it.text != nullptr) {
     const float itemW = m_isVertical ? m_indicatorHeight : it.currentWidth;
     const float itemH = m_isVertical ? it.currentWidth : m_indicatorHeight;
-    it.text->setPosition(std::max(0.0f, std::round((itemW - it.text->width()) * 0.5f)),
-                         std::round((itemH - it.text->height()) * 0.5f));
+    // Center on the visible ink center, not the advance box center, so digits
+    // with asymmetric ink (e.g. "4") sit optically centered in the slot.
+    const float textX = std::round(itemW * 0.5f - it.textInkCenterX);
+    it.text->setPosition(std::max(0.0f, textX), std::round((itemH - it.text->height()) * 0.5f));
   }
   if (it.indicator != nullptr) {
     const float itemW = m_isVertical ? m_indicatorHeight : it.currentWidth;

@@ -210,7 +210,9 @@ TextMetrics RenderContext::measureText(std::string_view text, float fontSize, bo
                      .top = m.top,
                      .bottom = m.bottom,
                      .inkTop = m.inkTop,
-                     .inkBottom = m.inkBottom};
+                     .inkBottom = m.inkBottom,
+                     .inkLeft = m.inkLeft,
+                     .inkRight = m.inkRight};
 }
 
 TextMetrics RenderContext::measureGlyph(char32_t codepoint, float fontSize) {
@@ -221,7 +223,9 @@ TextMetrics RenderContext::measureGlyph(char32_t codepoint, float fontSize) {
                      .top = m.top,
                      .bottom = m.bottom,
                      .inkTop = m.top,
-                     .inkBottom = m.bottom};
+                     .inkBottom = m.bottom,
+                     .inkLeft = m.left,
+                     .inkRight = m.right};
 }
 
 TextureManager& RenderContext::textureManager() {

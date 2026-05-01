@@ -15,6 +15,8 @@ struct TextMetrics {
   float bottom = 0.0f;
   float inkTop = 0.0f;
   float inkBottom = 0.0f;
+  float inkLeft = 0.0f;
+  float inkRight = 0.0f;
 };
 
 class Renderer {
