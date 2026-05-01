@@ -304,6 +304,32 @@ LayoutSize Flex::runLayout(Renderer& renderer, const LayoutConstraints& constrai
   const bool explicitWidth = width() > 0.0f && (arrangingByLayout() || m_explicitWidth);
   const bool explicitHeight = height() > 0.0f && (arrangingByLayout() || m_explicitHeight);
 
+  const auto constrainFlexWidth = [&](float value) {
+    float constrained = value;
+    if (constraints.hasMaxWidth) {
+      constrained = std::min(constrained, constraints.maxWidth);
+    }
+    constrained = std::max(constrained, constraints.minWidth);
+    constrained = std::max(constrained, m_minWidth);
+    if (m_maxWidth > 0.0f) {
+      constrained = std::min(constrained, m_maxWidth);
+    }
+    return constrained;
+  };
+
+  const auto constrainFlexHeight = [&](float value) {
+    float constrained = value;
+    if (constraints.hasMaxHeight) {
+      constrained = std::min(constrained, constraints.maxHeight);
+    }
+    constrained = std::max(constrained, constraints.minHeight);
+    constrained = std::max(constrained, m_minHeight);
+    if (m_maxHeight > 0.0f) {
+      constrained = std::min(constrained, m_maxHeight);
+    }
+    return constrained;
+  };
+
   bool widthKnown = constraints.hasExactWidth();
   bool heightKnown = constraints.hasExactHeight();
   float targetWidth = widthKnown ? constraints.maxWidth : 0.0f;
@@ -327,18 +353,10 @@ LayoutSize Flex::runLayout(Renderer& renderer, const LayoutConstraints& constrai
   }
 
   if (widthKnown) {
-    targetWidth = std::max(targetWidth, m_minWidth);
-    if (m_maxWidth > 0.0f) {
-      targetWidth = std::min(targetWidth, m_maxWidth);
-    }
-    targetWidth = constraints.constrainWidth(targetWidth);
+    targetWidth = constrainFlexWidth(targetWidth);
   }
   if (heightKnown) {
-    targetHeight = std::max(targetHeight, m_minHeight);
-    if (m_maxHeight > 0.0f) {
-      targetHeight = std::min(targetHeight, m_maxHeight);
-    }
-    targetHeight = constraints.constrainHeight(targetHeight);
+    targetHeight = constrainFlexHeight(targetHeight);
   }
 
   const bool mainKnown = horizontal ? widthKnown : heightKnown;
@@ -373,7 +391,7 @@ LayoutSize Flex::runLayout(Renderer& renderer, const LayoutConstraints& constrai
       setCrossConstraint(childConstraints, horizontal, innerCross);
     }
     item.measured = item.node->measure(renderer, childConstraints);
-    item.main = exactMain ? assignedMain : mainSize(item.measured, horizontal);
+    item.main = mainSize(item.measured, horizontal);
     item.cross = (m_align == FlexAlign::Stretch && crossKnown) ? innerCross : crossSize(item.measured, horizontal);
   };
 
@@ -420,15 +438,8 @@ LayoutSize Flex::runLayout(Renderer& renderer, const LayoutConstraints& constrai
   if (heightKnown) {
     desired.height = targetHeight;
   }
-  desired.width = std::max(desired.width, m_minWidth);
-  desired.height = std::max(desired.height, m_minHeight);
-  if (m_maxWidth > 0.0f) {
-    desired.width = std::min(desired.width, m_maxWidth);
-  }
-  if (m_maxHeight > 0.0f) {
-    desired.height = std::min(desired.height, m_maxHeight);
-  }
-  desired = constraints.constrain(desired);
+  desired.width = constrainFlexWidth(desired.width);
+  desired.height = constrainFlexHeight(desired.height);
   setSizeFromLayout(desired.width, desired.height);
 
   if (arrangeChildren) {
