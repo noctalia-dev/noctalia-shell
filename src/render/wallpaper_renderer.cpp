@@ -15,6 +15,57 @@ namespace {
   constexpr Logger kLog("wallpaper-render");
   constexpr float kSlowWallpaperRenderOperationDebugMs = 50.0f;
   constexpr float kSlowWallpaperRenderOperationWarnMs = 1000.0f;
+  constexpr float kMinimumPostProcessAlpha = 0.001f;
+
+  constexpr char kPostProcessVertexShader[] = R"(
+precision highp float;
+attribute vec2 a_position;
+varying vec2 v_texcoord;
+
+void main() {
+    v_texcoord = a_position;
+    vec2 ndc = a_position * 2.0 - 1.0;
+    gl_Position = vec4(ndc.x, -ndc.y, 0.0, 1.0);
+}
+)";
+
+  constexpr char kBlitFragmentShader[] = R"(
+precision highp float;
+uniform sampler2D u_texture;
+varying vec2 v_texcoord;
+
+void main() {
+    // FBOs use GL convention (Y=0 at bottom), EGL window surfaces have Y=0 at top.
+    // Flip V to compensate.
+    vec4 c = texture2D(u_texture, vec2(v_texcoord.x, 1.0 - v_texcoord.y));
+    gl_FragColor = c;
+}
+)";
+
+  constexpr char kTintFragmentShader[] = R"(
+precision mediump float;
+uniform vec4 u_color;
+varying vec2 v_texcoord;
+
+void main() {
+    gl_FragColor = u_color;
+}
+)";
+
+  void drawFullscreenQuad(const ShaderProgram& program) {
+    const GLint posAttr = glGetAttribLocation(program.id(), "a_position");
+    if (posAttr < 0) {
+      return;
+    }
+
+    static constexpr float kQuad[] = {
+        0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+    };
+    glVertexAttribPointer(static_cast<GLuint>(posAttr), 2, GL_FLOAT, GL_FALSE, 0, kQuad);
+    glEnableVertexAttribArray(static_cast<GLuint>(posAttr));
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDisableVertexAttribArray(static_cast<GLuint>(posAttr));
+  }
 
   float elapsedSince(std::chrono::steady_clock::time_point start) {
     return std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - start).count();
@@ -161,6 +212,67 @@ void WallpaperRenderer::renderToFbo(const RenderFramebuffer& target) {
   // No eglSwapBuffers — caller is responsible for presentation
 }
 
+void WallpaperRenderer::blur(RenderFramebuffer& target, RenderFramebuffer& scratch, float radius, int rounds) {
+  if (!target.valid() || !scratch.valid() || radius < 0.5f || rounds <= 0) {
+    return;
+  }
+
+  makeCurrent();
+  m_blurProgram.ensureInitialized();
+  glViewport(0, 0, static_cast<GLsizei>(target.width()), static_cast<GLsizei>(target.height()));
+  glDisable(GL_BLEND);
+
+  for (int round = 0; round < rounds; ++round) {
+    scratch.bind();
+    m_blurProgram.draw(target.colorTexture(), target.width(), target.height(), 1.0f, 0.0f, radius);
+
+    target.bind();
+    m_blurProgram.draw(scratch.colorTexture(), scratch.width(), scratch.height(), 0.0f, 1.0f, radius);
+  }
+}
+
+void WallpaperRenderer::tint(RenderFramebuffer& target, float r, float g, float b, float intensity) {
+  if (!target.valid() || intensity <= kMinimumPostProcessAlpha) {
+    return;
+  }
+
+  makeCurrent();
+  ensurePostProcessPrograms();
+  target.bind();
+  glViewport(0, 0, static_cast<GLsizei>(target.width()), static_cast<GLsizei>(target.height()));
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  glUseProgram(m_tintProgram.id());
+  const GLint colorLoc = glGetUniformLocation(m_tintProgram.id(), "u_color");
+  glUniform4f(colorLoc, r, g, b, intensity);
+  drawFullscreenQuad(m_tintProgram);
+}
+
+void WallpaperRenderer::blitToSurface(TextureId texture) {
+  if (!m_target.isReady() || texture == 0) {
+    return;
+  }
+
+  makeCurrent();
+  ensurePostProcessPrograms();
+  if (m_backend != nullptr) {
+    m_backend->bindDefaultFramebuffer();
+  }
+
+  glViewport(0, 0, static_cast<GLsizei>(m_bufferWidth), static_cast<GLsizei>(m_bufferHeight));
+  glDisable(GL_BLEND);
+  glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+  glClear(GL_COLOR_BUFFER_BIT);
+
+  glUseProgram(m_blitProgram.id());
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(texture.value()));
+  const GLint texLoc = glGetUniformLocation(m_blitProgram.id(), "u_texture");
+  glUniform1i(texLoc, 0);
+  drawFullscreenQuad(m_blitProgram);
+}
+
 void WallpaperRenderer::swapBuffers() {
   if (m_backend == nullptr || !m_target.isReady()) {
     return;
@@ -181,9 +293,12 @@ std::unique_ptr<RenderFramebuffer> WallpaperRenderer::createFramebuffer(std::uin
   return m_backend->createFramebuffer(width, height);
 }
 
-void WallpaperRenderer::bindDefaultFramebuffer() {
-  if (m_backend != nullptr) {
-    m_backend->bindDefaultFramebuffer();
+void WallpaperRenderer::ensurePostProcessPrograms() {
+  if (!m_blitProgram.isValid()) {
+    m_blitProgram.create(kPostProcessVertexShader, kBlitFragmentShader);
+  }
+  if (!m_tintProgram.isValid()) {
+    m_tintProgram.create(kPostProcessVertexShader, kTintFragmentShader);
   }
 }
 
@@ -208,6 +323,9 @@ void WallpaperRenderer::cleanup() {
   }
 
   m_program.destroy();
+  m_blurProgram.destroy();
+  m_blitProgram.destroy();
+  m_tintProgram.destroy();
 
   m_target.destroy();
 

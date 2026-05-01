@@ -4,56 +4,13 @@
 #include "render/gl_shared_context.h"
 #include "wayland/wayland_connection.h"
 
-#include <GLES2/gl2.h>
 #include <stdexcept>
 #include <utility>
 #include <wayland-client.h>
 
-namespace {
-
-  constexpr char kVertexShader[] = R"(
-precision highp float;
-attribute vec2 a_position;
-varying vec2 v_texcoord;
-
-void main() {
-    v_texcoord = a_position;
-    vec2 ndc = a_position * 2.0 - 1.0;
-    gl_Position = vec4(ndc.x, -ndc.y, 0.0, 1.0);
-}
-)";
-
-  constexpr char kBlitFragment[] = R"(
-precision highp float;
-uniform sampler2D u_texture;
-varying vec2 v_texcoord;
-
-void main() {
-    // FBOs use GL convention (Y=0 at bottom), EGL window surfaces have Y=0 at top.
-    // Flip V to compensate.
-    vec4 c = texture2D(u_texture, vec2(v_texcoord.x, 1.0 - v_texcoord.y));
-    gl_FragColor = c;
-}
-)";
-
-  constexpr char kTintFragment[] = R"(
-precision mediump float;
-uniform vec4 u_color;
-varying vec2 v_texcoord;
-
-void main() {
-    gl_FragColor = u_color;
-}
-)";
-
-} // namespace
-
 BackdropSurface::~BackdropSurface() {
   m_wallpaperRenderer.makeCurrent();
   destroyFbos();
-  m_blurProgram.destroy();
-  m_blitProgram.destroy();
-  m_tintProgram.destroy();
 }
 
 bool BackdropSurface::createWlSurface() {
@@ -110,104 +67,26 @@ void BackdropSurface::render() {
   // 3 rounds of H+V blur gives effective sigma ≈ radius * sqrt(3), much stronger result.
   static constexpr int kBlurRounds = 3;
   const float blurRadius = m_blurIntensity * 40.0f;
-  const auto blitToScreen = [this](TextureId texture) {
-    m_wallpaperRenderer.bindDefaultFramebuffer();
-    glViewport(0, 0, static_cast<GLsizei>(m_bufW), static_cast<GLsizei>(m_bufH));
-    glDisable(GL_BLEND);
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
 
-    glUseProgram(m_blitProgram.id());
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(texture.value()));
-    const GLint texLoc = glGetUniformLocation(m_blitProgram.id(), "u_texture");
-    glUniform1i(texLoc, 0);
-    const GLint posAttr = glGetAttribLocation(m_blitProgram.id(), "a_position");
-    static constexpr float kQuad[] = {
-        0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-    };
-    glVertexAttribPointer(static_cast<GLuint>(posAttr), 2, GL_FLOAT, GL_FALSE, 0, kQuad);
-    glEnableVertexAttribArray(static_cast<GLuint>(posAttr));
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glDisableVertexAttribArray(static_cast<GLuint>(posAttr));
-  };
-
-  if (blurRadius < 0.5f) {
-    // No blur — render wallpaper to FBO1, tint there, then blit to screen.
-    ensurePrograms();
-    ensureFbos();
-    if (m_fbo1 == nullptr || !m_fbo1->valid()) {
-      return;
-    }
-    m_wallpaperRenderer.renderToFbo(*m_fbo1);
-
-    if (m_tintIntensity > 0.001f) {
-      m_fbo1->bind();
-      glViewport(0, 0, static_cast<GLsizei>(m_bufW), static_cast<GLsizei>(m_bufH));
-      glEnable(GL_BLEND);
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-      glUseProgram(m_tintProgram.id());
-      GLint colorLoc = glGetUniformLocation(m_tintProgram.id(), "u_color");
-      glUniform4f(colorLoc, m_tintR, m_tintG, m_tintB, m_tintIntensity);
-      GLint posAttr = glGetAttribLocation(m_tintProgram.id(), "a_position");
-      static constexpr float kQuad[] = {
-          0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-      };
-      glVertexAttribPointer(static_cast<GLuint>(posAttr), 2, GL_FLOAT, GL_FALSE, 0, kQuad);
-      glEnableVertexAttribArray(static_cast<GLuint>(posAttr));
-      glDrawArrays(GL_TRIANGLES, 0, 6);
-      glDisableVertexAttribArray(static_cast<GLuint>(posAttr));
-    }
-
-    blitToScreen(m_fbo1->colorTexture());
-
-    m_wallpaperRenderer.swapBuffers();
-    return;
-  }
-
-  // Blur path — render wallpaper to FBO1, then kBlurRounds × (H blur FBO1→FBO2, V blur FBO2→FBO1)
-  ensurePrograms();
   ensureFbos();
-  if (m_fbo1 == nullptr || m_fbo2 == nullptr || !m_fbo1->valid() || !m_fbo2->valid()) {
+  if (m_fbo1 == nullptr || !m_fbo1->valid()) {
     return;
   }
 
-  // Pass 1: wallpaper → FBO1
   m_wallpaperRenderer.renderToFbo(*m_fbo1);
 
-  glViewport(0, 0, static_cast<GLsizei>(m_bufW), static_cast<GLsizei>(m_bufH));
-  glDisable(GL_BLEND);
-
-  for (int round = 0; round < kBlurRounds; ++round) {
-    // Horizontal blur FBO1.tex → FBO2
-    m_fbo2->bind();
-    m_blurProgram.draw(m_fbo1->colorTexture(), m_bufW, m_bufH, 1.0f, 0.0f, blurRadius);
-
-    // Vertical blur FBO2.tex → FBO1
-    m_fbo1->bind();
-    m_blurProgram.draw(m_fbo2->colorTexture(), m_bufW, m_bufH, 0.0f, 1.0f, blurRadius);
+  if (blurRadius >= 0.5f) {
+    if (m_fbo2 == nullptr || !m_fbo2->valid()) {
+      return;
+    }
+    m_wallpaperRenderer.blur(*m_fbo1, *m_fbo2, blurRadius, kBlurRounds);
   }
 
   if (m_tintIntensity > 0.001f) {
-    m_fbo1->bind();
-    glViewport(0, 0, static_cast<GLsizei>(m_bufW), static_cast<GLsizei>(m_bufH));
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glUseProgram(m_tintProgram.id());
-    GLint colorLoc = glGetUniformLocation(m_tintProgram.id(), "u_color");
-    glUniform4f(colorLoc, m_tintR, m_tintG, m_tintB, m_tintIntensity);
-    GLint posAttr = glGetAttribLocation(m_tintProgram.id(), "a_position");
-    static constexpr float kQuad[] = {
-        0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-    };
-    glVertexAttribPointer(static_cast<GLuint>(posAttr), 2, GL_FLOAT, GL_FALSE, 0, kQuad);
-    glEnableVertexAttribArray(static_cast<GLuint>(posAttr));
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glDisableVertexAttribArray(static_cast<GLuint>(posAttr));
+    m_wallpaperRenderer.tint(*m_fbo1, m_tintR, m_tintG, m_tintB, m_tintIntensity);
   }
 
-  blitToScreen(m_fbo1->colorTexture());
-
+  m_wallpaperRenderer.blitToSurface(m_fbo1->colorTexture());
   m_wallpaperRenderer.swapBuffers();
 }
 
@@ -226,16 +105,6 @@ void BackdropSurface::setActive(bool active) {
 void BackdropSurface::setWallpaperState(TextureId tex, float imgW, float imgH, WallpaperFillMode fillMode) {
   m_wallpaperRenderer.setTransitionState(tex, {}, imgW, imgH, 0.0f, 0.0f, 0.0f, WallpaperTransition::Fade, fillMode,
                                          TransitionParams{});
-}
-
-void BackdropSurface::ensurePrograms() {
-  if (!m_blitProgram.isValid()) {
-    m_blitProgram.create(kVertexShader, kBlitFragment);
-  }
-  if (!m_tintProgram.isValid()) {
-    m_tintProgram.create(kVertexShader, kTintFragment);
-  }
-  m_blurProgram.ensureInitialized();
 }
 
 void BackdropSurface::ensureFbos() {
