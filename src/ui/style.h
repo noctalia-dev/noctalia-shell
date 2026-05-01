@@ -27,7 +27,7 @@ namespace Style {
   inline constexpr float barCapsulePadding = 6.0f;
   inline constexpr float barGlyphSize = 16.0f;
 
-  inline constexpr float fontSizeCaption = 12.0f;
+  inline constexpr float fontSizeCaption = 13.0f;
   inline constexpr float fontSizeBody = 14.0f;
   inline constexpr float fontSizeTitle = 16.0f;
   inline constexpr float fontSizeHeader = 20.0f;
