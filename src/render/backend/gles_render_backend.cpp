@@ -1,6 +1,7 @@
 #include "render/backend/gles_render_backend.h"
 
 #include "core/log.h"
+#include "render/backend/gles_framebuffer.h"
 #include "render/gl_shared_context.h"
 #include "render/render_target.h"
 
@@ -15,6 +16,7 @@ namespace {
   constexpr Logger kLog("render");
   constexpr float kSlowRenderOperationDebugMs = 50.0f;
   constexpr float kSlowRenderOperationWarnMs = 1000.0f;
+  bool g_backendInfoLogged = false;
 
   constexpr EGLint kContextAttributes[] = {
       EGL_CONTEXT_CLIENT_VERSION,
@@ -52,13 +54,16 @@ void GlesRenderBackend::initialize(GlSharedContext& shared) {
   // Make context current (surfaceless) so GL resources can be created eagerly.
   makeCurrentNoSurface();
 
-  kLog.info("EGL vendor=\"{}\" version=\"{}\" APIs=\"{}\"", safeCString(eglQueryString(m_native.display, EGL_VENDOR)),
-            safeCString(eglQueryString(m_native.display, EGL_VERSION)),
-            safeCString(eglQueryString(m_native.display, EGL_CLIENT_APIS)));
-  kLog.info("OpenGL ES vendor=\"{}\" renderer=\"{}\" version=\"{}\"",
-            safeCString(reinterpret_cast<const char*>(glGetString(GL_VENDOR))),
-            safeCString(reinterpret_cast<const char*>(glGetString(GL_RENDERER))),
-            safeCString(reinterpret_cast<const char*>(glGetString(GL_VERSION))));
+  if (!g_backendInfoLogged) {
+    kLog.info("EGL vendor=\"{}\" version=\"{}\" APIs=\"{}\"", safeCString(eglQueryString(m_native.display, EGL_VENDOR)),
+              safeCString(eglQueryString(m_native.display, EGL_VERSION)),
+              safeCString(eglQueryString(m_native.display, EGL_CLIENT_APIS)));
+    kLog.info("OpenGL ES vendor=\"{}\" renderer=\"{}\" version=\"{}\"",
+              safeCString(reinterpret_cast<const char*>(glGetString(GL_VENDOR))),
+              safeCString(reinterpret_cast<const char*>(glGetString(GL_RENDERER))),
+              safeCString(reinterpret_cast<const char*>(glGetString(GL_VERSION))));
+    g_backendInfoLogged = true;
+  }
 }
 
 void GlesRenderBackend::makeCurrentNoSurface() {
@@ -109,6 +114,16 @@ void GlesRenderBackend::endFrame(RenderTarget& target) {
   logSlowRenderOperation(ms, "eglSwapBuffers took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, target.logicalWidth(),
                          target.logicalHeight(), target.bufferWidth(), target.bufferHeight());
 }
+
+std::unique_ptr<RenderFramebuffer> GlesRenderBackend::createFramebuffer(std::uint32_t width, std::uint32_t height) {
+  auto framebuffer = std::make_unique<GlesFramebuffer>();
+  if (!framebuffer->create(m_textureManager, width, height)) {
+    return nullptr;
+  }
+  return framebuffer;
+}
+
+void GlesRenderBackend::bindDefaultFramebuffer() { GlesFramebuffer::bindDefault(); }
 
 void GlesRenderBackend::cleanup() {
   if (m_native.display != EGL_NO_DISPLAY && m_native.context != EGL_NO_CONTEXT) {

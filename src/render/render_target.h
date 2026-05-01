@@ -6,6 +6,7 @@
 struct wl_egl_window;
 struct wl_surface;
 
+class RenderBackend;
 class RenderContext;
 
 class RenderTarget {
@@ -17,6 +18,7 @@ public:
   RenderTarget& operator=(const RenderTarget&) = delete;
 
   void create(wl_surface* surface, RenderContext& context);
+  void create(wl_surface* surface, RenderBackend& backend);
   void resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight);
   void destroy();
 

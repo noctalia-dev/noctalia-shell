@@ -19,6 +19,10 @@ public:
   void beginFrame(RenderTarget& target) override;
   void endFrame(RenderTarget& target) override;
 
+  [[nodiscard]] std::unique_ptr<RenderFramebuffer> createFramebuffer(std::uint32_t width,
+                                                                     std::uint32_t height) override;
+  void bindDefaultFramebuffer() override;
+
   [[nodiscard]] TextureManager& textureManager() override { return m_textureManager; }
   [[nodiscard]] const GlesNativeHandles* glesNative() const noexcept override { return &m_native; }
 

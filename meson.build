@@ -372,6 +372,7 @@ _noctalia_sources = files(
   'src/render/animation/animation.cpp',
   'src/render/animation/animation_manager.cpp',
   'src/render/animation/motion_service.cpp',
+  'src/render/backend/gles_framebuffer.cpp',
   'src/render/backend/gles_render_backend.cpp',
   'src/render/core/async_texture_cache.cpp',
   'src/render/core/color.cpp',

@@ -1,5 +1,6 @@
 #include "render/render_target.h"
 
+#include "render/backend/render_backend.h"
 #include "render/render_context.h"
 
 #include <stdexcept>
@@ -7,9 +8,11 @@
 
 RenderTarget::~RenderTarget() { destroy(); }
 
-void RenderTarget::create(wl_surface* surface, RenderContext& context) {
+void RenderTarget::create(wl_surface* surface, RenderContext& context) { create(surface, context.backend()); }
+
+void RenderTarget::create(wl_surface* surface, RenderBackend& backend) {
   m_wlSurface = surface;
-  const auto* native = context.backend().glesNative();
+  const auto* native = backend.glesNative();
   if (native == nullptr) {
     throw std::runtime_error("RenderTarget requires a GLES-native backend");
   }

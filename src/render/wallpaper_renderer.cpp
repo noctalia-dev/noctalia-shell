@@ -1,6 +1,7 @@
 #include "render/wallpaper_renderer.h"
 
 #include "core/log.h"
+#include "render/backend/gles_render_backend.h"
 #include "render/gl_shared_context.h"
 
 #include <GLES2/gl2.h>
@@ -8,19 +9,12 @@
 #include <format>
 #include <stdexcept>
 #include <utility>
-#include <wayland-egl.h>
 
 namespace {
 
   constexpr Logger kLog("wallpaper-render");
   constexpr float kSlowWallpaperRenderOperationDebugMs = 50.0f;
   constexpr float kSlowWallpaperRenderOperationWarnMs = 1000.0f;
-
-  constexpr EGLint kContextAttributes[] = {
-      EGL_CONTEXT_CLIENT_VERSION,
-      2,
-      EGL_NONE,
-  };
 
   float elapsedSince(std::chrono::steady_clock::time_point start) {
     return std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - start).count();
@@ -42,27 +36,27 @@ WallpaperRenderer::WallpaperRenderer() = default;
 WallpaperRenderer::~WallpaperRenderer() { cleanup(); }
 
 void WallpaperRenderer::bind(GlSharedContext& shared, wl_surface* surface) {
+  cleanup();
+
   if (surface == nullptr) {
     throw std::runtime_error("wallpaper renderer requires a valid Wayland surface");
   }
 
   m_surface = surface;
-  m_eglDisplay = shared.display();
-  m_eglConfig = shared.config();
-
-  m_eglContext = eglCreateContext(m_eglDisplay, m_eglConfig, shared.rootContext(), kContextAttributes);
-  if (m_eglContext == EGL_NO_CONTEXT) {
-    throw std::runtime_error("eglCreateContext failed");
-  }
+  m_backend = std::make_unique<GlesRenderBackend>();
+  m_backend->initialize(shared);
+  m_target.create(surface, *m_backend);
 }
 
 void WallpaperRenderer::makeCurrent() {
-  if (m_eglDisplay != EGL_NO_DISPLAY && m_eglSurface != EGL_NO_SURFACE && m_eglContext != EGL_NO_CONTEXT) {
-    const auto start = std::chrono::steady_clock::now();
-    eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext);
-    const float ms = elapsedSince(start);
-    logSlowWallpaperRenderOperation(ms, "eglMakeCurrent took {:.1f}ms", ms);
+  if (m_backend != nullptr && m_target.isReady()) {
+    m_backend->makeCurrent(m_target);
   }
+}
+
+EGLContext WallpaperRenderer::eglContext() const noexcept {
+  const auto* native = m_backend != nullptr ? m_backend->glesNative() : nullptr;
+  return native != nullptr ? native->context : EGL_NO_CONTEXT;
 }
 
 void WallpaperRenderer::resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight, std::uint32_t logicalWidth,
@@ -71,23 +65,14 @@ void WallpaperRenderer::resize(std::uint32_t bufferWidth, std::uint32_t bufferHe
     return;
   }
 
-  if (m_surface == nullptr || m_eglDisplay == EGL_NO_DISPLAY || m_eglContext == EGL_NO_CONTEXT) {
+  if (m_surface == nullptr || m_backend == nullptr) {
     throw std::runtime_error("wallpaper renderer is not bound");
   }
 
-  if (m_window == nullptr) {
-    m_window = wl_egl_window_create(m_surface, static_cast<int>(bufferWidth), static_cast<int>(bufferHeight));
-    if (m_window == nullptr) {
-      throw std::runtime_error("wl_egl_window_create failed");
-    }
-
-    m_eglSurface =
-        eglCreateWindowSurface(m_eglDisplay, m_eglConfig, reinterpret_cast<EGLNativeWindowType>(m_window), nullptr);
-    if (m_eglSurface == EGL_NO_SURFACE) {
-      throw std::runtime_error("eglCreateWindowSurface failed");
-    }
-  } else {
-    wl_egl_window_resize(m_window, static_cast<int>(bufferWidth), static_cast<int>(bufferHeight), 0, 0);
+  m_target.setLogicalSize(logicalWidth, logicalHeight);
+  m_target.resize(bufferWidth, bufferHeight);
+  if (!m_target.isReady()) {
+    throw std::runtime_error("wallpaper renderer failed to create render target");
   }
 
   makeCurrent();
@@ -103,7 +88,7 @@ void WallpaperRenderer::resize(std::uint32_t bufferWidth, std::uint32_t bufferHe
 }
 
 void WallpaperRenderer::render() {
-  if (m_eglSurface == EGL_NO_SURFACE || m_tex1 == 0) {
+  if (!m_target.isReady() || m_tex1 == 0) {
     return;
   }
 
@@ -132,24 +117,26 @@ void WallpaperRenderer::render() {
   logSlowWallpaperRenderOperation(ms, "wallpaper draw took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, m_logicalWidth,
                                   m_logicalHeight, m_bufferWidth, m_bufferHeight);
 
-  const auto swapStart = std::chrono::steady_clock::now();
-  eglSwapBuffers(m_eglDisplay, m_eglSurface);
-  ms = elapsedSince(swapStart);
-  logSlowWallpaperRenderOperation(ms, "eglSwapBuffers took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, m_logicalWidth,
-                                  m_logicalHeight, m_bufferWidth, m_bufferHeight);
+  if (m_backend != nullptr) {
+    const auto swapStart = std::chrono::steady_clock::now();
+    m_backend->endFrame(m_target);
+    ms = elapsedSince(swapStart);
+    logSlowWallpaperRenderOperation(ms, "wallpaper swap took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms,
+                                    m_logicalWidth, m_logicalHeight, m_bufferWidth, m_bufferHeight);
+  }
   ms = elapsedSince(totalStart);
   logSlowWallpaperRenderOperation(ms, "wallpaper render took {:.1f}ms total", ms);
 }
 
-void WallpaperRenderer::renderToFbo(GLuint targetFbo) {
-  if (m_eglSurface == EGL_NO_SURFACE || m_tex1 == 0) {
+void WallpaperRenderer::renderToFbo(const RenderFramebuffer& target) {
+  if (!m_target.isReady() || m_tex1 == 0 || !target.valid()) {
     return;
   }
 
   const auto totalStart = std::chrono::steady_clock::now();
   makeCurrent();
   const auto drawStart = std::chrono::steady_clock::now();
-  glBindFramebuffer(GL_FRAMEBUFFER, targetFbo);
+  target.bind();
   glViewport(0, 0, static_cast<GLsizei>(m_bufferWidth), static_cast<GLsizei>(m_bufferHeight));
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
@@ -175,11 +162,29 @@ void WallpaperRenderer::renderToFbo(GLuint targetFbo) {
 }
 
 void WallpaperRenderer::swapBuffers() {
+  if (m_backend == nullptr || !m_target.isReady()) {
+    return;
+  }
+
   const auto start = std::chrono::steady_clock::now();
-  eglSwapBuffers(m_eglDisplay, m_eglSurface);
+  m_backend->endFrame(m_target);
   const float ms = elapsedSince(start);
-  logSlowWallpaperRenderOperation(ms, "eglSwapBuffers took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, m_logicalWidth,
+  logSlowWallpaperRenderOperation(ms, "wallpaper swap took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, m_logicalWidth,
                                   m_logicalHeight, m_bufferWidth, m_bufferHeight);
+}
+
+std::unique_ptr<RenderFramebuffer> WallpaperRenderer::createFramebuffer(std::uint32_t width, std::uint32_t height) {
+  if (m_backend == nullptr || width == 0 || height == 0) {
+    return nullptr;
+  }
+  makeCurrent();
+  return m_backend->createFramebuffer(width, height);
+}
+
+void WallpaperRenderer::bindDefaultFramebuffer() {
+  if (m_backend != nullptr) {
+    m_backend->bindDefaultFramebuffer();
+  }
 }
 
 void WallpaperRenderer::setTransitionState(TextureId tex1, TextureId tex2, float imgW1, float imgH1, float imgW2,
@@ -198,19 +203,22 @@ void WallpaperRenderer::setTransitionState(TextureId tex1, TextureId tex2, float
 }
 
 void WallpaperRenderer::cleanup() {
+  if (m_backend != nullptr) {
+    m_backend->makeCurrentNoSurface();
+  }
+
   m_program.destroy();
 
-  if (m_eglDisplay != EGL_NO_DISPLAY) {
-    eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-    if (m_eglSurface != EGL_NO_SURFACE) {
-      eglDestroySurface(m_eglDisplay, m_eglSurface);
-    }
-    if (m_eglContext != EGL_NO_CONTEXT) {
-      eglDestroyContext(m_eglDisplay, m_eglContext);
-    }
+  m_target.destroy();
+
+  if (m_backend != nullptr) {
+    m_backend->cleanup();
+    m_backend.reset();
   }
 
-  if (m_window != nullptr) {
-    wl_egl_window_destroy(m_window);
-  }
+  m_surface = nullptr;
+  m_bufferWidth = 0;
+  m_bufferHeight = 0;
+  m_logicalWidth = 0;
+  m_logicalHeight = 0;
 }
