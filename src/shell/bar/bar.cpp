@@ -1043,10 +1043,10 @@ void Bar::applyBarCompositorBlur(BarInstance& instance) const {
   float absX = 0.0f;
   float absY = 0.0f;
   Node::absolutePosition(instance.bg, absX, absY);
-  const int px = static_cast<int>(std::lround(absX + 1.0f));
-  const int py = static_cast<int>(std::lround(absY + 1.0f));
-  const int pw = static_cast<int>(std::lround(std::max(0.0f, instance.bg->width() - 2.0f)));
-  const int ph = static_cast<int>(std::lround(std::max(0.0f, instance.bg->height() - 2.0f)));
+  const int px = static_cast<int>(std::lround(absX));
+  const int py = static_cast<int>(std::lround(absY));
+  const int pw = static_cast<int>(std::lround(std::max(0.0f, instance.bg->width())));
+  const int ph = static_cast<int>(std::lround(std::max(0.0f, instance.bg->height())));
   auto blurStrips = Surface::tessellateRoundedRect(px, py, pw, ph, static_cast<float>(instance.barConfig.radiusTopLeft),
                                                    static_cast<float>(instance.barConfig.radiusTopRight),
                                                    static_cast<float>(instance.barConfig.radiusBottomRight),
