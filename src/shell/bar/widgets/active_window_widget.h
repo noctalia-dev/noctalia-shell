@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 class Image;
+class Glyph;
 class Label;
 class Renderer;
 class WaylandConnection;
@@ -29,6 +30,7 @@ private:
   float m_maxTitleWidth = 240.0f;
   float m_iconSize = 16.0f;
   Image* m_icon = nullptr;
+  Glyph* m_emptyGlyph = nullptr;
   Label* m_title = nullptr;
 
   IconResolver m_iconResolver;
@@ -39,4 +41,5 @@ private:
   std::string m_lastTitle;
   std::string m_lastAppId;
   std::string m_lastIconPath;
+  bool m_lastEmptyState = false;
 };

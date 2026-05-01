@@ -5,6 +5,7 @@
 #include "render/scene/node.h"
 #include "system/desktop_entry.h"
 #include "system/internal_app_metadata.h"
+#include "ui/controls/glyph.h"
 #include "ui/controls/image.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
@@ -41,6 +42,13 @@ void ActiveWindowWidget::create() {
   icon->setSize(m_iconSize * m_contentScale, m_iconSize * m_contentScale);
   m_icon = static_cast<Image*>(rootNode->addChild(std::move(icon)));
 
+  auto emptyGlyph = std::make_unique<Glyph>();
+  emptyGlyph->setGlyph("app-window");
+  emptyGlyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
+  emptyGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  emptyGlyph->setVisible(false);
+  m_emptyGlyph = static_cast<Glyph*>(rootNode->addChild(std::move(emptyGlyph)));
+
   auto title = std::make_unique<Label>();
   title->setBold(true);
   title->setFontSize(Style::fontSizeBody * m_contentScale);
@@ -55,7 +63,7 @@ void ActiveWindowWidget::create() {
 
 void ActiveWindowWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
   auto* rootNode = root();
-  if (rootNode == nullptr || m_icon == nullptr || m_title == nullptr) {
+  if (rootNode == nullptr || m_icon == nullptr || m_emptyGlyph == nullptr || m_title == nullptr) {
     return;
   }
   syncState(renderer);
@@ -63,23 +71,30 @@ void ActiveWindowWidget::doLayout(Renderer& renderer, float containerWidth, floa
   const bool isVertical = containerHeight > containerWidth;
   const float iconSize = m_iconSize * m_contentScale;
   m_icon->setSize(iconSize, iconSize);
+  m_emptyGlyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
+  m_emptyGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  m_emptyGlyph->measure(renderer);
   m_title->setMaxWidth(m_maxTitleWidth * m_contentScale);
-  m_title->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  m_title->setColor(m_lastEmptyState ? roleColor(ColorRole::OnSurfaceVariant)
+                                     : widgetForegroundOr(roleColor(ColorRole::OnSurface)));
 
+  Node* iconNode = m_lastEmptyState ? static_cast<Node*>(m_emptyGlyph) : static_cast<Node*>(m_icon);
+  m_icon->setVisible(!m_lastEmptyState);
+  m_emptyGlyph->setVisible(m_lastEmptyState);
   if (isVertical) {
     m_title->setVisible(false);
-    m_icon->setPosition(0.0f, 0.0f);
-    rootNode->setSize(iconSize, iconSize);
+    iconNode->setPosition(0.0f, 0.0f);
+    rootNode->setSize(iconNode->width(), iconNode->height());
   } else {
     m_title->setVisible(true);
     m_title->measure(renderer);
 
-    const float contentHeight = std::max(iconSize, m_title->height());
-    const float iconY = std::round((contentHeight - iconSize) * 0.5f);
+    const float contentHeight = std::max(iconNode->height(), m_title->height());
+    const float iconY = std::round((contentHeight - iconNode->height()) * 0.5f);
     const float labelY = std::round((contentHeight - m_title->height()) * 0.5f);
 
-    m_icon->setPosition(0.0f, iconY);
-    m_title->setPosition(iconSize + Style::spaceXs, labelY);
+    iconNode->setPosition(0.0f, iconY);
+    m_title->setPosition(iconNode->width() + Style::spaceXs, labelY);
 
     rootNode->setSize(m_title->x() + m_title->width(), contentHeight);
   }
@@ -88,7 +103,7 @@ void ActiveWindowWidget::doLayout(Renderer& renderer, float containerWidth, floa
 void ActiveWindowWidget::doUpdate(Renderer& renderer) { syncState(renderer); }
 
 void ActiveWindowWidget::syncState(Renderer& renderer) {
-  if (m_icon == nullptr || m_title == nullptr) {
+  if (m_icon == nullptr || m_emptyGlyph == nullptr || m_title == nullptr) {
     return;
   }
 
@@ -103,33 +118,39 @@ void ActiveWindowWidget::syncState(Renderer& renderer) {
   std::string identifier;
   std::string title;
   std::string appId;
+  bool emptyState = false;
 
-  if (current.has_value()) {
+  if (!current.has_value()) {
+    identifier = {};
+    title = i18n::tr("bar.widgets.active-window.no-active");
+    appId = {};
+    emptyState = true;
+  } else {
     identifier = current->identifier;
     title = current->title;
     appId = current->appId;
+    if (title.empty()) {
+      title = appId;
+    }
   }
 
-  if (title.empty()) {
-    title = !appId.empty() ? appId : i18n::tr("bar.widgets.active-window.desktop");
-  }
-
-  if (!desktopEntriesChanged && identifier == m_lastIdentifier && title == m_lastTitle && appId == m_lastAppId) {
+  if (!desktopEntriesChanged && identifier == m_lastIdentifier && title == m_lastTitle && appId == m_lastAppId &&
+      emptyState == m_lastEmptyState) {
     return;
   }
 
   m_lastIdentifier = std::move(identifier);
   m_lastTitle = title;
   m_lastAppId = appId;
+  m_lastEmptyState = emptyState;
 
-  std::string iconPath = resolveIconPath(appId);
-  if (iconPath.empty()) {
-    iconPath = m_iconResolver.resolve("application-x-executable");
-  }
+  std::string iconPath = emptyState ? std::string{} : resolveIconPath(appId);
 
   m_title->setMaxWidth(m_maxTitleWidth * m_contentScale);
   m_title->setText(m_lastTitle);
-  m_title->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  m_title->setColor(m_lastEmptyState ? roleColor(ColorRole::OnSurfaceVariant)
+                                     : widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  m_title->setVisible(true);
   m_title->measure(renderer);
 
   if (iconPath != m_lastIconPath) {
@@ -140,6 +161,8 @@ void ActiveWindowWidget::syncState(Renderer& renderer) {
       m_icon->clear(renderer);
     }
   }
+  m_icon->setVisible(!m_lastEmptyState);
+  m_emptyGlyph->setVisible(m_lastEmptyState);
 
   requestUpdate();
 }

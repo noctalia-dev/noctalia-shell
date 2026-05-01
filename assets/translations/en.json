@@ -454,7 +454,8 @@
         "wired": "Wired"
       },
       "active-window": {
-        "desktop": "Desktop"
+        "desktop": "Desktop",
+        "no-active": "No active window"
       },
       "lock-keys": {
         "caps": "Caps",

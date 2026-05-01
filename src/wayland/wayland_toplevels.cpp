@@ -142,7 +142,7 @@ void WaylandToplevels::onHandleClosed(zwlr_foreign_toplevel_handle_v1* handle) {
   }
   if (m_currentHandle == handle) {
     m_currentHandle = nullptr;
-    selectFallbackCurrent();
+    m_currentHandle = latestActivatedHandle();
   }
 
   const bool activeChanged = notifyIfChanged(before);
@@ -372,16 +372,4 @@ zwlr_foreign_toplevel_handle_v1* WaylandToplevels::latestActivatedHandle() const
   }
 
   return bestHandle;
-}
-
-void WaylandToplevels::selectFallbackCurrent() {
-  if (m_handles.empty()) {
-    return;
-  }
-
-  auto best = std::max_element(m_handles.begin(), m_handles.end(),
-                               [](const auto& a, const auto& b) { return a.second.generation < b.second.generation; });
-  if (best != m_handles.end()) {
-    m_currentHandle = best->first;
-  }
 }
