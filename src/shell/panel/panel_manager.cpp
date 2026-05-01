@@ -589,7 +589,6 @@ void PanelManager::destroyPanel() {
   m_attachedRevealClipNode = nullptr;
   m_attachedRevealContentNode = nullptr;
   m_panelShadowNode = nullptr;
-  m_panelContactShadowNode = nullptr;
   m_sceneRoot.reset();
   m_surface.reset();
   m_layerSurface = nullptr;
@@ -1088,29 +1087,6 @@ void PanelManager::applyAttachedDecorationStyle() {
                                      });
     m_panelShadowNode->setStyle(shadowStyle);
   }
-
-  if (m_panelContactShadowNode != nullptr) {
-    const float contactAlpha = 0.16f * std::clamp(m_attachedBackgroundOpacity, 0.0f, 1.0f);
-    const bool barIsBottom = m_attachedBarPosition == "bottom";
-    const bool barIsRight = m_attachedBarPosition == "right";
-    const bool barIsVertical = m_attachedBarPosition == "left" || m_attachedBarPosition == "right";
-    // Gradient runs perpendicular to the bar edge, dark next to the bar, transparent toward
-    // the panel interior. For top/left: dark at start. For bottom/right: dark at end.
-    const bool darkAtStart = !(barIsBottom || barIsRight);
-    const RoundedRectStyle contactStyle{
-        .fill = darkAtStart ? rgba(0.0f, 0.0f, 0.0f, contactAlpha) : rgba(0.0f, 0.0f, 0.0f, 0.0f),
-        .fillEnd = darkAtStart ? rgba(0.0f, 0.0f, 0.0f, 0.0f) : rgba(0.0f, 0.0f, 0.0f, contactAlpha),
-        .border = clearColor(),
-        .fillMode = FillMode::LinearGradient,
-        .gradientDirection = barIsVertical ? GradientDirection::Horizontal : GradientDirection::Vertical,
-        .corners = attached_panel::cornerShapes(m_attachedBarPosition),
-        .logicalInset = attached_panel::logicalInset(m_attachedBarPosition, radius),
-        .radius = attached_panel::cornerRadii(m_attachedBarPosition, radius),
-        .softness = 1.0f,
-        .borderWidth = 0.0f,
-    };
-    m_panelContactShadowNode->setStyle(contactStyle);
-  }
 }
 
 void PanelManager::onConfigReloaded() {
@@ -1189,11 +1165,6 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
       m_bgNode = sceneParent->addChild(std::move(bg));
     }
 
-    if (hasDecoration && m_attachedToBar) {
-      auto contactShadow = std::make_unique<RectNode>();
-      m_panelContactShadowNode = static_cast<RectNode*>(sceneParent->addChild(std::move(contactShadow)));
-    }
-
     // Create panel content inside a wrapper node for staggered fade-in
     auto contentWrapper = std::make_unique<Node>();
     m_contentNode = contentWrapper.get();
@@ -1262,32 +1233,6 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
   if (m_bgNode != nullptr) {
     m_bgNode->setPosition(bgX, bgY);
     m_bgNode->setSize(bgW, bgH);
-  }
-
-  if (m_panelContactShadowNode != nullptr) {
-    constexpr float kContactShadowBaseThickness = 16.0f;
-    const float scale = m_activePanel->contentScale();
-    const float contactThickness =
-        std::min(std::max(kContactShadowBaseThickness * scale, attachedRadius * 2.0f), barIsVertical ? panelW : panelH);
-    const bool barIsBottom = m_attachedBarPosition == "bottom";
-    const bool barIsRight = m_attachedBarPosition == "right";
-    float contactX = bgX;
-    float contactY = bgY;
-    float contactW = bgW;
-    float contactH = bgH;
-    if (barIsVertical) {
-      contactW = contactThickness;
-      if (barIsRight) {
-        contactX = bgX + bgW - contactThickness;
-      }
-    } else {
-      contactH = contactThickness;
-      if (barIsBottom) {
-        contactY = bgY + bgH - contactThickness;
-      }
-    }
-    m_panelContactShadowNode->setPosition(contactX, contactY);
-    m_panelContactShadowNode->setSize(contactW, contactH);
   }
 
   // Re-apply opacity-dependent styling for bg/shadow/contact-shadow. Cheap and ensures
