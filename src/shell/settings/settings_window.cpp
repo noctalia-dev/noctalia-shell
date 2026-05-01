@@ -947,18 +947,18 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   bodyRow->setFlexGrow(1.0f);
   main->addChild(std::move(bodyRow));
 
+  if (m_focusSearchOnRebuild && searchInputPtr != nullptr && searchInputPtr->inputArea() != nullptr) {
+    m_inputDispatcher.setFocus(searchInputPtr->inputArea());
+    m_focusSearchOnRebuild = false;
+  }
+
   main->setSize(w, h);
   main->layout(*m_renderContext);
-
   m_mainContainer = static_cast<Flex*>(m_sceneRoot->addChild(std::move(main)));
 
   m_inputDispatcher.setSceneRoot(m_sceneRoot.get());
   m_inputDispatcher.setCursorShapeCallback(
       [this](std::uint32_t serial, std::uint32_t shape) { m_wayland->setCursorShape(serial, shape); });
-  if (m_focusSearchOnRebuild && searchInputPtr != nullptr && searchInputPtr->inputArea() != nullptr) {
-    m_inputDispatcher.setFocus(searchInputPtr->inputArea());
-    m_focusSearchOnRebuild = false;
-  }
   m_surface->setSceneRoot(m_sceneRoot.get());
 }
 

@@ -144,6 +144,7 @@ Input::Input() {
   area->setOnEnter([this](const InputArea::PointerData& /*data*/) { applyVisualState(); });
   area->setOnLeave([this]() { applyVisualState(); });
   area->setOnFocusGain([this]() {
+    updateInteractiveGeometry();
     revealCursor();
     startCursorBlink();
     applyVisualState();
