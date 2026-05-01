@@ -53,22 +53,32 @@ uniform vec4 u_shadow_exclusion_logical_inset;
 uniform vec4 u_shadow_exclusion_radii;
 varying vec2 v_pixel;
 
-float rounded_rect_distance(vec2 point, vec2 size, vec4 radii) {
+// Returns (signed distance, is_corner). is_corner = 1.0 when the fragment lies in
+// the curved-corner quadrant of the active radius (both q components positive).
+vec2 rounded_rect_distance_with_corner(vec2 point, vec2 size, vec4 radii) {
     vec2 half_size = size * 0.5;
     vec2 centered = point - half_size;
-    // Select per-corner radius based on quadrant
     float r = centered.x < 0.0
         ? (centered.y < 0.0 ? radii.x : radii.w)
         : (centered.y < 0.0 ? radii.y : radii.z);
     vec2 q = abs(centered) - (half_size - vec2(r));
-    return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+    float distance = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+    float is_corner = (r > 0.0 && q.x > 0.0 && q.y > 0.0) ? 1.0 : 0.0;
+    return vec2(distance, is_corner);
+}
+
+float rounded_rect_distance(vec2 point, vec2 size, vec4 radii) {
+    return rounded_rect_distance_with_corner(point, size, radii).x;
 }
 
 float circle_extent(float radius, float delta) {
     return sqrt(max(0.0, radius * radius - delta * delta));
 }
 
-float shape_distance(vec2 point, vec2 size, vec4 radii, vec4 corner_shapes, vec4 logical_inset) {
+// Returns (signed distance, is_corner). is_corner = 1.0 when the fragment is
+// inside any active corner's r×r axis-aligned band (curved region — concave or
+// convex). Fragments in straight-edge bands return 0.0.
+vec2 shape_distance_with_corner(vec2 point, vec2 size, vec4 radii, vec4 corner_shapes, vec4 logical_inset) {
     vec4 safe_inset = max(logical_inset, vec4(0.0));
     vec2 body_min = min(safe_inset.xy, size);
     vec2 body_max = max(body_min, size - safe_inset.zw);
@@ -83,8 +93,14 @@ float shape_distance(vec2 point, vec2 size, vec4 radii, vec4 corner_shapes, vec4
     bool any_concave = tl_concave || tr_concave || br_concave || bl_concave;
 
     if (!any_concave) {
-        return rounded_rect_distance(point - body_min, body_size, r);
+        return rounded_rect_distance_with_corner(point - body_min, body_size, r);
     }
+
+    float is_corner = 0.0;
+    if (r.x > 0.0 && point.x < body_min.x + r.x && point.y < body_min.y + r.x) is_corner = 1.0;
+    if (r.y > 0.0 && point.x > body_max.x - r.y && point.y < body_min.y + r.y) is_corner = 1.0;
+    if (r.z > 0.0 && point.x > body_max.x - r.z && point.y > body_max.y - r.z) is_corner = 1.0;
+    if (r.w > 0.0 && point.x < body_min.x + r.w && point.y > body_max.y - r.w) is_corner = 1.0;
 
     float x = point.x;
     float y = point.y;
@@ -183,7 +199,11 @@ float shape_distance(vec2 point, vec2 size, vec4 radii, vec4 corner_shapes, vec4
 
     float boundary_distance = max(max(left - x, x - right), max(top - y, y - bottom));
     float visual_clip = max(max(-point.x, point.x - size.x), max(-point.y, point.y - size.y));
-    return max(boundary_distance, visual_clip);
+    return vec2(max(boundary_distance, visual_clip), is_corner);
+}
+
+float shape_distance(vec2 point, vec2 size, vec4 radii, vec4 corner_shapes, vec4 logical_inset) {
+    return shape_distance_with_corner(point, size, radii, corner_shapes, logical_inset).x;
 }
 
 float shadow_shape_distance(vec2 point, vec2 size, vec4 radii, vec4 corner_shapes, vec4 logical_inset) {
@@ -240,13 +260,23 @@ float shadow_shape_distance(vec2 point, vec2 size, vec4 radii, vec4 corner_shape
     return max(distance, visual_clip);
 }
 
+// Pixel-grid-snap window for axis-aligned edges: half-coverage falls exactly on
+// the boundary so an integer-aligned edge produces 100% on the inside pixel and
+// 0% on the outside pixel, with no semi-transparent leakage.
+float coverage_for(vec2 distance_with_corner, float aa_curve) {
+    float lo = mix(-0.5, -aa_curve, distance_with_corner.y);
+    float hi = mix( 0.5,  aa_curve, distance_with_corner.y);
+    return 1.0 - smoothstep(lo, hi, distance_with_corner.x);
+}
+
 void main() {
     float aa = max(u_softness, 0.85);
     vec2 local_point = v_pixel;
     vec2 uv = clamp(local_point / u_rect_size, vec2(0.0), vec2(1.0));
 
-    float outer_distance = shape_distance(local_point, u_rect_size, u_radii, u_corner_shapes, u_logical_inset);
-    float outer_coverage = 1.0 - smoothstep(-aa, aa, outer_distance);
+    vec2 outer = shape_distance_with_corner(local_point, u_rect_size, u_radii, u_corner_shapes, u_logical_inset);
+    float outer_distance = outer.x;
+    float outer_coverage = coverage_for(outer, aa);
 
     if (u_outer_shadow == 1) {
         float cutout_aa = 0.85;
@@ -291,8 +321,8 @@ void main() {
     vec2 inner_size = max(u_rect_size - vec2(u_border_width * 2.0), vec2(0.0));
     vec2 inner_point = local_point - vec2(u_border_width);
     vec4 inner_inset = max(u_logical_inset - vec4(u_border_width), vec4(0.0));
-    float inner_distance = shape_distance(inner_point, inner_size, inner_radii, u_corner_shapes, inner_inset);
-    float inner_coverage = 1.0 - smoothstep(-aa, aa, inner_distance);
+    vec2 inner = shape_distance_with_corner(inner_point, inner_size, inner_radii, u_corner_shapes, inner_inset);
+    float inner_coverage = coverage_for(inner, aa);
 
     if (fill_base.a <= 0.0) {
         float ring_coverage = outer_coverage * (1.0 - inner_coverage);
