@@ -3,8 +3,9 @@
 #include "core/log.h"
 #include "core/resource_paths.h"
 #include "core/ui_phase.h"
-#include "render/backend/gles_render_backend.h"
+#include "render/backend/render_backend.h"
 #include "render/core/texture_handle.h"
+#include "render/core/texture_manager.h"
 #include "render/gl_shared_context.h"
 #include "render/render_target.h"
 #include "render/scene/effect_node.h"
@@ -76,7 +77,7 @@ RenderContext::~RenderContext() { cleanup(); }
 
 void RenderContext::initialize(GlSharedContext& shared) {
   cleanup();
-  m_backend = std::make_unique<GlesRenderBackend>();
+  m_backend = createDefaultRenderBackend();
   m_backend->initialize(shared);
 
   // Pango handles font fallback via Fontconfig automatically — no explicit chain.

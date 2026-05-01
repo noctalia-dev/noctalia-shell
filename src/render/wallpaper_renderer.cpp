@@ -1,8 +1,9 @@
 #include "render/wallpaper_renderer.h"
 
 #include "core/log.h"
-#include "render/backend/gles_render_backend.h"
+#include "render/backend/render_backend.h"
 #include "render/gl_shared_context.h"
+#include "render/render_target.h"
 
 #include <GLES2/gl2.h>
 #include <chrono>
@@ -35,7 +36,7 @@ uniform sampler2D u_texture;
 varying vec2 v_texcoord;
 
 void main() {
-    // FBOs use GL convention (Y=0 at bottom), EGL window surfaces have Y=0 at top.
+    // Offscreen framebuffers use GL convention (Y=0 at bottom), EGL window surfaces have Y=0 at top.
     // Flip V to compensate.
     vec4 c = texture2D(u_texture, vec2(v_texcoord.x, 1.0 - v_texcoord.y));
     gl_FragColor = c;
@@ -94,20 +95,16 @@ void WallpaperRenderer::bind(GlSharedContext& shared, wl_surface* surface) {
   }
 
   m_surface = surface;
-  m_backend = std::make_unique<GlesRenderBackend>();
+  m_backend = createDefaultRenderBackend();
   m_backend->initialize(shared);
-  m_target.create(surface, *m_backend);
+  m_target = std::make_unique<RenderTarget>();
+  m_target->create(surface, *m_backend);
 }
 
 void WallpaperRenderer::makeCurrent() {
-  if (m_backend != nullptr && m_target.isReady()) {
-    m_backend->makeCurrent(m_target);
+  if (m_backend != nullptr && m_target != nullptr && m_target->isReady()) {
+    m_backend->makeCurrent(*m_target);
   }
-}
-
-EGLContext WallpaperRenderer::eglContext() const noexcept {
-  const auto* native = m_backend != nullptr ? m_backend->glesNative() : nullptr;
-  return native != nullptr ? native->context : EGL_NO_CONTEXT;
 }
 
 void WallpaperRenderer::resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight, std::uint32_t logicalWidth,
@@ -116,13 +113,13 @@ void WallpaperRenderer::resize(std::uint32_t bufferWidth, std::uint32_t bufferHe
     return;
   }
 
-  if (m_surface == nullptr || m_backend == nullptr) {
+  if (m_surface == nullptr || m_backend == nullptr || m_target == nullptr) {
     throw std::runtime_error("wallpaper renderer is not bound");
   }
 
-  m_target.setLogicalSize(logicalWidth, logicalHeight);
-  m_target.resize(bufferWidth, bufferHeight);
-  if (!m_target.isReady()) {
+  m_target->setLogicalSize(logicalWidth, logicalHeight);
+  m_target->resize(bufferWidth, bufferHeight);
+  if (!m_target->isReady()) {
     throw std::runtime_error("wallpaper renderer failed to create render target");
   }
 
@@ -139,7 +136,7 @@ void WallpaperRenderer::resize(std::uint32_t bufferWidth, std::uint32_t bufferHe
 }
 
 void WallpaperRenderer::render() {
-  if (!m_target.isReady() || m_tex1 == 0) {
+  if (m_target == nullptr || !m_target->isReady() || m_tex1 == 0) {
     return;
   }
 
@@ -170,7 +167,7 @@ void WallpaperRenderer::render() {
 
   if (m_backend != nullptr) {
     const auto swapStart = std::chrono::steady_clock::now();
-    m_backend->endFrame(m_target);
+    m_backend->endFrame(*m_target);
     ms = elapsedSince(swapStart);
     logSlowWallpaperRenderOperation(ms, "wallpaper swap took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms,
                                     m_logicalWidth, m_logicalHeight, m_bufferWidth, m_bufferHeight);
@@ -179,8 +176,8 @@ void WallpaperRenderer::render() {
   logSlowWallpaperRenderOperation(ms, "wallpaper render took {:.1f}ms total", ms);
 }
 
-void WallpaperRenderer::renderToFbo(const RenderFramebuffer& target) {
-  if (!m_target.isReady() || m_tex1 == 0 || !target.valid()) {
+void WallpaperRenderer::renderToFramebuffer(const RenderFramebuffer& target) {
+  if (m_target == nullptr || !m_target->isReady() || m_tex1 == 0 || !target.valid()) {
     return;
   }
 
@@ -205,10 +202,10 @@ void WallpaperRenderer::renderToFbo(const RenderFramebuffer& target) {
                  WallpaperSourceKind::Image, tex2, rgba(0.0f, 0.0f, 0.0f, 1.0f), sw, sh, sw, sh, m_imgW1, m_imgH1,
                  m_imgW2, m_imgH2, progress, static_cast<float>(m_fillMode), m_params, m_fillColor);
   float ms = elapsedSince(drawStart);
-  logSlowWallpaperRenderOperation(ms, "wallpaper FBO draw took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms,
+  logSlowWallpaperRenderOperation(ms, "wallpaper framebuffer draw took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms,
                                   m_logicalWidth, m_logicalHeight, m_bufferWidth, m_bufferHeight);
   ms = elapsedSince(totalStart);
-  logSlowWallpaperRenderOperation(ms, "wallpaper FBO render took {:.1f}ms total", ms);
+  logSlowWallpaperRenderOperation(ms, "wallpaper framebuffer render took {:.1f}ms total", ms);
   // No eglSwapBuffers — caller is responsible for presentation
 }
 
@@ -250,7 +247,7 @@ void WallpaperRenderer::tint(RenderFramebuffer& target, float r, float g, float 
 }
 
 void WallpaperRenderer::blitToSurface(TextureId texture) {
-  if (!m_target.isReady() || texture == 0) {
+  if (m_target == nullptr || !m_target->isReady() || texture == 0) {
     return;
   }
 
@@ -274,12 +271,12 @@ void WallpaperRenderer::blitToSurface(TextureId texture) {
 }
 
 void WallpaperRenderer::swapBuffers() {
-  if (m_backend == nullptr || !m_target.isReady()) {
+  if (m_backend == nullptr || m_target == nullptr || !m_target->isReady()) {
     return;
   }
 
   const auto start = std::chrono::steady_clock::now();
-  m_backend->endFrame(m_target);
+  m_backend->endFrame(*m_target);
   const float ms = elapsedSince(start);
   logSlowWallpaperRenderOperation(ms, "wallpaper swap took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, m_logicalWidth,
                                   m_logicalHeight, m_bufferWidth, m_bufferHeight);
@@ -327,7 +324,10 @@ void WallpaperRenderer::cleanup() {
   m_blitProgram.destroy();
   m_tintProgram.destroy();
 
-  m_target.destroy();
+  if (m_target != nullptr) {
+    m_target->destroy();
+    m_target.reset();
+  }
 
   if (m_backend != nullptr) {
     m_backend->cleanup();

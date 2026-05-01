@@ -10,7 +10,7 @@
 
 BackdropSurface::~BackdropSurface() {
   m_wallpaperRenderer.makeCurrent();
-  destroyFbos();
+  destroyFramebuffers();
 }
 
 bool BackdropSurface::createWlSurface() {
@@ -37,11 +37,11 @@ void BackdropSurface::onConfigure(std::uint32_t width, std::uint32_t height) {
 
   m_wallpaperRenderer.resize(bw, bh, width, height);
 
-  // Recreate FBOs when buffer size changes (if blur is active)
-  if (m_fbo1 != nullptr && m_fbo1->valid()) {
+  // Recreate offscreen framebuffers when buffer size changes.
+  if (m_primaryFramebuffer != nullptr && m_primaryFramebuffer->valid()) {
     m_wallpaperRenderer.makeCurrent();
-    destroyFbos();
-    ensureFbos();
+    destroyFramebuffers();
+    ensureFramebuffers();
   }
 
   Surface::onConfigure(width, height);
@@ -68,25 +68,25 @@ void BackdropSurface::render() {
   static constexpr int kBlurRounds = 3;
   const float blurRadius = m_blurIntensity * 40.0f;
 
-  ensureFbos();
-  if (m_fbo1 == nullptr || !m_fbo1->valid()) {
+  ensureFramebuffers();
+  if (m_primaryFramebuffer == nullptr || !m_primaryFramebuffer->valid()) {
     return;
   }
 
-  m_wallpaperRenderer.renderToFbo(*m_fbo1);
+  m_wallpaperRenderer.renderToFramebuffer(*m_primaryFramebuffer);
 
   if (blurRadius >= 0.5f) {
-    if (m_fbo2 == nullptr || !m_fbo2->valid()) {
+    if (m_scratchFramebuffer == nullptr || !m_scratchFramebuffer->valid()) {
       return;
     }
-    m_wallpaperRenderer.blur(*m_fbo1, *m_fbo2, blurRadius, kBlurRounds);
+    m_wallpaperRenderer.blur(*m_primaryFramebuffer, *m_scratchFramebuffer, blurRadius, kBlurRounds);
   }
 
   if (m_tintIntensity > 0.001f) {
-    m_wallpaperRenderer.tint(*m_fbo1, m_tintR, m_tintG, m_tintB, m_tintIntensity);
+    m_wallpaperRenderer.tint(*m_primaryFramebuffer, m_tintR, m_tintG, m_tintB, m_tintIntensity);
   }
 
-  m_wallpaperRenderer.blitToSurface(m_fbo1->colorTexture());
+  m_wallpaperRenderer.blitToSurface(m_primaryFramebuffer->colorTexture());
   m_wallpaperRenderer.swapBuffers();
 }
 
@@ -98,7 +98,7 @@ void BackdropSurface::setActive(bool active) {
   if (!m_active && m_unloadWhenInactive) {
     // Free blur render targets while backdrop is inactive to drop VRAM usage.
     m_wallpaperRenderer.makeCurrent();
-    destroyFbos();
+    destroyFramebuffers();
   }
 }
 
@@ -107,26 +107,26 @@ void BackdropSurface::setWallpaperState(TextureId tex, float imgW, float imgH, W
                                          TransitionParams{});
 }
 
-void BackdropSurface::ensureFbos() {
-  if ((m_fbo1 != nullptr && m_fbo1->valid()) || m_bufW == 0 || m_bufH == 0) {
+void BackdropSurface::ensureFramebuffers() {
+  if ((m_primaryFramebuffer != nullptr && m_primaryFramebuffer->valid()) || m_bufW == 0 || m_bufH == 0) {
     return;
   }
 
-  auto fbo1 = m_wallpaperRenderer.createFramebuffer(m_bufW, m_bufH);
-  if (fbo1 == nullptr || !fbo1->valid()) {
+  auto primary = m_wallpaperRenderer.createFramebuffer(m_bufW, m_bufH);
+  if (primary == nullptr || !primary->valid()) {
     return;
   }
 
-  auto fbo2 = m_wallpaperRenderer.createFramebuffer(m_bufW, m_bufH);
-  if (fbo2 == nullptr || !fbo2->valid()) {
+  auto scratch = m_wallpaperRenderer.createFramebuffer(m_bufW, m_bufH);
+  if (scratch == nullptr || !scratch->valid()) {
     return;
   }
 
-  m_fbo1 = std::move(fbo1);
-  m_fbo2 = std::move(fbo2);
+  m_primaryFramebuffer = std::move(primary);
+  m_scratchFramebuffer = std::move(scratch);
 }
 
-void BackdropSurface::destroyFbos() {
-  m_fbo1.reset();
-  m_fbo2.reset();
+void BackdropSurface::destroyFramebuffers() {
+  m_primaryFramebuffer.reset();
+  m_scratchFramebuffer.reset();
 }

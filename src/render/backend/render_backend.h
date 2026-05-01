@@ -50,3 +50,5 @@ public:
   [[nodiscard]] virtual TextureManager& textureManager() = 0;
   [[nodiscard]] virtual const GlesNativeHandles* glesNative() const noexcept { return nullptr; }
 };
+
+[[nodiscard]] std::unique_ptr<RenderBackend> createDefaultRenderBackend();

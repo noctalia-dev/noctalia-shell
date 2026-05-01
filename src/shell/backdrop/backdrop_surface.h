@@ -36,13 +36,13 @@ protected:
   void onScaleChanged() override;
 
 private:
-  void ensureFbos();
-  void destroyFbos();
+  void ensureFramebuffers();
+  void destroyFramebuffers();
 
   WallpaperRenderer m_wallpaperRenderer;
 
-  std::unique_ptr<RenderFramebuffer> m_fbo1;
-  std::unique_ptr<RenderFramebuffer> m_fbo2;
+  std::unique_ptr<RenderFramebuffer> m_primaryFramebuffer;
+  std::unique_ptr<RenderFramebuffer> m_scratchFramebuffer;
 
   std::uint32_t m_bufW = 0;
   std::uint32_t m_bufH = 0;

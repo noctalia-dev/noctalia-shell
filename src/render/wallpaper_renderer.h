@@ -6,9 +6,7 @@
 #include "render/core/texture_handle.h"
 #include "render/programs/blur_program.h"
 #include "render/programs/wallpaper_program.h"
-#include "render/render_target.h"
 
-#include <EGL/egl.h>
 #include <cstdint>
 #include <memory>
 
@@ -17,6 +15,7 @@ struct wl_surface;
 class GlSharedContext;
 class RenderBackend;
 class RenderFramebuffer;
+class RenderTarget;
 
 class WallpaperRenderer {
 public:
@@ -28,11 +27,10 @@ public:
 
   void bind(GlSharedContext& shared, wl_surface* surface);
   void makeCurrent();
-  [[nodiscard]] EGLContext eglContext() const noexcept;
   void resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight, std::uint32_t logicalWidth,
               std::uint32_t logicalHeight);
   void render();
-  void renderToFbo(const RenderFramebuffer& target);
+  void renderToFramebuffer(const RenderFramebuffer& target);
   void blur(RenderFramebuffer& target, RenderFramebuffer& scratch, float radius, int rounds);
   void tint(RenderFramebuffer& target, float r, float g, float b, float intensity);
   void blitToSurface(TextureId texture);
@@ -49,7 +47,7 @@ private:
 
   wl_surface* m_surface = nullptr;
   std::unique_ptr<RenderBackend> m_backend;
-  RenderTarget m_target;
+  std::unique_ptr<RenderTarget> m_target;
 
   WallpaperProgram m_program;
   BlurProgram m_blurProgram;
