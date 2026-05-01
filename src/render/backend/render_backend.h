@@ -9,6 +9,7 @@
 
 class GlSharedContext;
 class RenderTarget;
+class ShaderProgram;
 class TextureManager;
 
 class RenderFramebuffer {
@@ -55,9 +56,11 @@ public:
   virtual void setViewport(std::uint32_t width, std::uint32_t height) = 0;
   virtual void clear(Color color) = 0;
   virtual void setBlendMode(RenderBlendMode mode) = 0;
+  virtual void drawFullscreenQuad(const ShaderProgram& program) = 0;
 
   [[nodiscard]] virtual TextureManager& textureManager() = 0;
   [[nodiscard]] virtual const GlesNativeHandles* glesNative() const noexcept { return nullptr; }
 };
 
 [[nodiscard]] std::unique_ptr<RenderBackend> createDefaultRenderBackend();
+[[nodiscard]] std::unique_ptr<TextureManager> createDefaultTextureManager();

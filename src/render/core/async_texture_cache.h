@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -81,7 +82,7 @@ private:
   [[nodiscard]] static RequestKey makeKey(const std::string& path, int targetSize, bool mipmap);
 
   GlSharedContext* m_sharedGl = nullptr;
-  TextureManager m_textureManager;
+  std::unique_ptr<TextureManager> m_textureManager;
   int m_eventFd = -1;
   std::vector<std::thread> m_workers;
   std::atomic<bool> m_shutdown{false};

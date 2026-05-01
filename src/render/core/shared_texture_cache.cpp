@@ -1,6 +1,7 @@
 #include "render/core/shared_texture_cache.h"
 
 #include "core/log.h"
+#include "render/backend/render_backend.h"
 #include "render/gl_shared_context.h"
 
 namespace {
@@ -9,10 +10,15 @@ namespace {
 
 SharedTextureCache::~SharedTextureCache() {
   makeCurrent();
-  m_textureManager.cleanup();
+  if (m_textureManager != nullptr) {
+    m_textureManager->cleanup();
+  }
 }
 
-void SharedTextureCache::initialize(GlSharedContext* sharedGl) { m_sharedGl = sharedGl; }
+void SharedTextureCache::initialize(GlSharedContext* sharedGl) {
+  m_sharedGl = sharedGl;
+  m_textureManager = createDefaultTextureManager();
+}
 
 TextureHandle SharedTextureCache::acquire(const std::string& path) {
   if (path.empty()) {
@@ -27,7 +33,7 @@ TextureHandle SharedTextureCache::acquire(const std::string& path) {
   }
 
   makeCurrent();
-  auto handle = m_textureManager.loadFromFile(path, 0, true);
+  auto handle = m_textureManager->loadFromFile(path, 0, true);
   if (handle.id == 0) {
     return handle;
   }
@@ -52,7 +58,7 @@ void SharedTextureCache::release(TextureHandle& handle, const std::string& path)
   --it->second.refCount;
   if (it->second.refCount <= 0) {
     makeCurrent();
-    m_textureManager.unload(it->second.handle);
+    m_textureManager->unload(it->second.handle);
     m_entries.erase(it);
     kLog.info("evicted {}", path);
   }

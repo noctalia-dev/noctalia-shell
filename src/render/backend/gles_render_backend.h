@@ -1,7 +1,7 @@
 #pragma once
 
+#include "render/backend/gles_texture_manager.h"
 #include "render/backend/render_backend.h"
-#include "render/core/texture_manager.h"
 
 class GlesRenderBackend final : public RenderBackend {
 public:
@@ -26,11 +26,12 @@ public:
   void setViewport(std::uint32_t width, std::uint32_t height) override;
   void clear(Color color) override;
   void setBlendMode(RenderBlendMode mode) override;
+  void drawFullscreenQuad(const ShaderProgram& program) override;
 
   [[nodiscard]] TextureManager& textureManager() override { return m_textureManager; }
   [[nodiscard]] const GlesNativeHandles* glesNative() const noexcept override { return &m_native; }
 
 private:
   GlesNativeHandles m_native;
-  TextureManager m_textureManager;
+  GlesTextureManager m_textureManager;
 };

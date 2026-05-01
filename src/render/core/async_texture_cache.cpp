@@ -1,6 +1,7 @@
 #include "render/core/async_texture_cache.h"
 
 #include "core/log.h"
+#include "render/backend/render_backend.h"
 #include "render/core/image_file_loader.h"
 #include "render/gl_shared_context.h"
 
@@ -21,6 +22,8 @@ namespace {
 } // namespace
 
 AsyncTextureCache::AsyncTextureCache() {
+  m_textureManager = createDefaultTextureManager();
+
   m_eventFd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
   if (m_eventFd < 0) {
     kLog.warn("failed to create eventfd; async texture cache notifications will be disabled");
@@ -52,12 +55,12 @@ AsyncTextureCache::~AsyncTextureCache() {
     for (auto& [key, entry] : m_entries) {
       (void)key;
       if (entry.handle.id != 0) {
-        m_textureManager.unload(entry.handle);
+        m_textureManager->unload(entry.handle);
       }
     }
     m_entries.clear();
   }
-  m_textureManager.cleanup();
+  m_textureManager->cleanup();
 
   if (m_eventFd >= 0) {
     ::close(m_eventFd);
@@ -209,7 +212,7 @@ void AsyncTextureCache::dispatch(const std::vector<pollfd>& fds, std::size_t sta
       madeCurrent = true;
     }
 
-    entryIt->second.handle = m_textureManager.loadFromRgba(job.rgba.data(), job.width, job.height, job.key.mipmap);
+    entryIt->second.handle = m_textureManager->loadFromRgba(job.rgba.data(), job.width, job.height, job.key.mipmap);
     if (entryIt->second.handle.id == 0) {
       entryIt->second.failed = true;
       continue;
@@ -316,7 +319,7 @@ void AsyncTextureCache::pruneUnusedEntries(std::size_t maxUnusedEntries) {
         makeCurrent();
         madeCurrent = true;
       }
-      m_textureManager.unload(unused[i]->second.handle);
+      m_textureManager->unload(unused[i]->second.handle);
     }
     m_entries.erase(unused[i]);
   }

@@ -2,6 +2,7 @@
 
 #include "render/core/texture_manager.h"
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 
@@ -33,6 +34,6 @@ private:
   };
 
   GlSharedContext* m_sharedGl = nullptr;
-  TextureManager m_textureManager;
+  std::unique_ptr<TextureManager> m_textureManager;
   std::unordered_map<std::string, Entry> m_entries;
 };

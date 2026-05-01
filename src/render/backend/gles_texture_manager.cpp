@@ -1,4 +1,4 @@
-#include "render/core/texture_manager.h"
+#include "render/backend/gles_texture_manager.h"
 
 #include "core/log.h"
 #include "render/core/image_decoder.h"
@@ -41,8 +41,8 @@ namespace {
 
 } // namespace
 
-TextureHandle TextureManager::decodeEncodedRaster(const std::uint8_t* data, std::size_t size,
-                                                  const std::string* debugPath, bool mipmap) {
+TextureHandle GlesTextureManager::decodeEncodedRaster(const std::uint8_t* data, std::size_t size,
+                                                      const std::string* debugPath, bool mipmap) {
   if (data == nullptr || size == 0) {
     return {};
   }
@@ -58,9 +58,9 @@ TextureHandle TextureManager::decodeEncodedRaster(const std::uint8_t* data, std:
   return {};
 }
 
-TextureManager::~TextureManager() { cleanup(); }
+GlesTextureManager::~GlesTextureManager() { cleanup(); }
 
-TextureHandle TextureManager::loadFromFile(const std::string& path, int targetSize, bool mipmap) {
+TextureHandle GlesTextureManager::loadFromFile(const std::string& path, int targetSize, bool mipmap) {
   std::string errorMessage;
   auto loaded = loadImageFile(path, targetSize, &errorMessage);
   if (!loaded.has_value()) {
@@ -75,34 +75,34 @@ TextureHandle TextureManager::loadFromFile(const std::string& path, int targetSi
   return loadFromRgba(loaded->rgba.data(), loaded->width, loaded->height, mipmap);
 }
 
-TextureHandle TextureManager::loadFromEncodedBytes(const std::uint8_t* data, std::size_t size, bool mipmap) {
+TextureHandle GlesTextureManager::loadFromEncodedBytes(const std::uint8_t* data, std::size_t size, bool mipmap) {
   return decodeEncodedRaster(data, size, nullptr, mipmap);
 }
 
-TextureHandle TextureManager::loadFromRgba(const std::uint8_t* data, int width, int height, bool mipmap) {
+TextureHandle GlesTextureManager::loadFromRgba(const std::uint8_t* data, int width, int height, bool mipmap) {
   if (data == nullptr || width <= 0 || height <= 0) {
     return {};
   }
   return uploadRgba(data, width, height, mipmap);
 }
 
-TextureHandle TextureManager::loadFromPixels(const std::uint8_t* data, int width, int height, TextureDataFormat format,
-                                             TextureFilter filter, bool mipmap) {
+TextureHandle GlesTextureManager::loadFromPixels(const std::uint8_t* data, int width, int height,
+                                                 TextureDataFormat format, TextureFilter filter, bool mipmap) {
   if (data == nullptr || width <= 0 || height <= 0) {
     return {};
   }
   return uploadPixels(data, width, height, format, filter, mipmap);
 }
 
-TextureHandle TextureManager::createEmpty(int width, int height, TextureDataFormat format, TextureFilter filter) {
+TextureHandle GlesTextureManager::createEmpty(int width, int height, TextureDataFormat format, TextureFilter filter) {
   if (width <= 0 || height <= 0) {
     return {};
   }
   return uploadPixels(nullptr, width, height, format, filter, false);
 }
 
-TextureHandle TextureManager::loadFromRaw(const std::uint8_t* data, std::size_t size, int width, int height, int stride,
-                                          PixmapFormat format, bool mipmap) {
+TextureHandle GlesTextureManager::loadFromRaw(const std::uint8_t* data, std::size_t size, int width, int height,
+                                              int stride, PixmapFormat format, bool mipmap) {
   if (data == nullptr || size == 0 || width <= 0 || height <= 0) {
     return {};
   }
@@ -194,7 +194,7 @@ TextureHandle TextureManager::loadFromRaw(const std::uint8_t* data, std::size_t 
   return uploadRgba(rgba.data(), width, height, mipmap);
 }
 
-void TextureManager::unload(TextureHandle& handle) {
+void GlesTextureManager::unload(TextureHandle& handle) {
   if (handle.id != 0) {
     GLuint texture = toGlesTexture(handle.id);
     glDeleteTextures(1, &texture);
@@ -203,8 +203,8 @@ void TextureManager::unload(TextureHandle& handle) {
   }
 }
 
-bool TextureManager::replace(TextureHandle& handle, const std::uint8_t* data, int width, int height,
-                             TextureDataFormat format, TextureFilter filter, bool mipmap) {
+bool GlesTextureManager::replace(TextureHandle& handle, const std::uint8_t* data, int width, int height,
+                                 TextureDataFormat format, TextureFilter filter, bool mipmap) {
   TextureHandle next = loadFromPixels(data, width, height, format, filter, mipmap);
   if (next.id == 0) {
     return false;
@@ -214,8 +214,8 @@ bool TextureManager::replace(TextureHandle& handle, const std::uint8_t* data, in
   return true;
 }
 
-bool TextureManager::updateSubImage(TextureHandle& handle, const std::uint8_t* data, int x, int y, int width,
-                                    int height, TextureDataFormat format) {
+bool GlesTextureManager::updateSubImage(TextureHandle& handle, const std::uint8_t* data, int x, int y, int width,
+                                        int height, TextureDataFormat format) {
   if (handle.id == 0 || data == nullptr || x < 0 || y < 0 || width <= 0 || height <= 0 || x + width > handle.width ||
       y + height > handle.height) {
     return false;
@@ -228,7 +228,7 @@ bool TextureManager::updateSubImage(TextureHandle& handle, const std::uint8_t* d
   return true;
 }
 
-void TextureManager::cleanup() {
+void GlesTextureManager::cleanup() {
   if (!m_textures.empty()) {
     std::vector<GLuint> textures;
     textures.reserve(m_textures.size());
@@ -240,14 +240,14 @@ void TextureManager::cleanup() {
   }
 }
 
-void TextureManager::probeExtensions() {
+void GlesTextureManager::probeExtensions() {
   const char* ext = reinterpret_cast<const char*>(glGetString(GL_EXTENSIONS));
   if (ext != nullptr && std::strstr(ext, "GL_EXT_texture_format_BGRA8888") != nullptr) {
     m_hasBgraExt = true;
   }
 }
 
-TextureHandle TextureManager::uploadBgra(const std::uint8_t* data, int width, int height, bool mipmap) {
+TextureHandle GlesTextureManager::uploadBgra(const std::uint8_t* data, int width, int height, bool mipmap) {
   GLuint tex = 0;
   glGenTextures(1, &tex);
   if (tex == 0) {
@@ -271,12 +271,12 @@ TextureHandle TextureManager::uploadBgra(const std::uint8_t* data, int width, in
   return TextureHandle{.id = TextureId{tex}, .width = width, .height = height};
 }
 
-TextureHandle TextureManager::uploadRgba(const std::uint8_t* data, int width, int height, bool mipmap) {
+TextureHandle GlesTextureManager::uploadRgba(const std::uint8_t* data, int width, int height, bool mipmap) {
   return uploadPixels(data, width, height, TextureDataFormat::Rgba, TextureFilter::Linear, mipmap);
 }
 
-TextureHandle TextureManager::uploadPixels(const std::uint8_t* data, int width, int height, TextureDataFormat format,
-                                           TextureFilter filter, bool mipmap) {
+TextureHandle GlesTextureManager::uploadPixels(const std::uint8_t* data, int width, int height,
+                                               TextureDataFormat format, TextureFilter filter, bool mipmap) {
   GLuint tex = 0;
   glGenTextures(1, &tex);
   if (tex == 0) {

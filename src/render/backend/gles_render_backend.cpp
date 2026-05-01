@@ -2,6 +2,7 @@
 
 #include "core/log.h"
 #include "render/backend/gles_framebuffer.h"
+#include "render/core/shader_program.h"
 #include "render/gl_shared_context.h"
 #include "render/render_target.h"
 
@@ -153,6 +154,21 @@ void GlesRenderBackend::setBlendMode(RenderBlendMode mode) {
     glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     break;
   }
+}
+
+void GlesRenderBackend::drawFullscreenQuad(const ShaderProgram& program) {
+  const GLint posAttr = glGetAttribLocation(program.id(), "a_position");
+  if (posAttr < 0) {
+    return;
+  }
+
+  static constexpr float kQuad[] = {
+      0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+  };
+  glVertexAttribPointer(static_cast<GLuint>(posAttr), 2, GL_FLOAT, GL_FALSE, 0, kQuad);
+  glEnableVertexAttribArray(static_cast<GLuint>(posAttr));
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+  glDisableVertexAttribArray(static_cast<GLuint>(posAttr));
 }
 
 void GlesRenderBackend::cleanup() {

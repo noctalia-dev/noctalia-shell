@@ -17,6 +17,13 @@ class RenderBackend;
 class RenderFramebuffer;
 class RenderTarget;
 
+struct BackdropPostProcessOptions {
+  float blurRadius = 0.0f;
+  int blurRounds = 0;
+  Color tintColor = rgba(0.0f, 0.0f, 0.0f, 1.0f);
+  float tintIntensity = 0.0f;
+};
+
 class WallpaperRenderer {
 public:
   WallpaperRenderer();
@@ -30,11 +37,8 @@ public:
   void resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight, std::uint32_t logicalWidth,
               std::uint32_t logicalHeight);
   void render();
-  void renderToFramebuffer(const RenderFramebuffer& target);
-  void blur(RenderFramebuffer& target, RenderFramebuffer& scratch, float radius, int rounds);
-  void tint(RenderFramebuffer& target, float r, float g, float b, float intensity);
-  void blitToSurface(TextureId texture);
-  void swapBuffers();
+  void renderBackdropFrame(RenderFramebuffer& target, RenderFramebuffer& scratch,
+                           const BackdropPostProcessOptions& options);
   [[nodiscard]] std::unique_ptr<RenderFramebuffer> createFramebuffer(std::uint32_t width, std::uint32_t height);
 
   void setTransitionState(TextureId tex1, TextureId tex2, float imgW1, float imgH1, float imgW2, float imgH2,
@@ -44,6 +48,11 @@ public:
 private:
   void cleanup();
   void ensurePostProcessPrograms();
+  void renderToFramebuffer(const RenderFramebuffer& target);
+  void blur(RenderFramebuffer& target, RenderFramebuffer& scratch, float radius, int rounds);
+  void tint(RenderFramebuffer& target, Color color, float intensity);
+  void blitToSurface(TextureId texture);
+  void swapBuffers();
 
   wl_surface* m_surface = nullptr;
   std::unique_ptr<RenderBackend> m_backend;

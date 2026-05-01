@@ -66,28 +66,20 @@ void BackdropSurface::render() {
 
   // 3 rounds of H+V blur gives effective sigma ≈ radius * sqrt(3), much stronger result.
   static constexpr int kBlurRounds = 3;
-  const float blurRadius = m_blurIntensity * 40.0f;
+  const auto options = BackdropPostProcessOptions{
+      .blurRadius = m_blurIntensity * 40.0f,
+      .blurRounds = kBlurRounds,
+      .tintColor = rgba(m_tintR, m_tintG, m_tintB, 1.0f),
+      .tintIntensity = m_tintIntensity,
+  };
 
   ensureFramebuffers();
-  if (m_primaryFramebuffer == nullptr || !m_primaryFramebuffer->valid()) {
+  if (m_primaryFramebuffer == nullptr || m_scratchFramebuffer == nullptr || !m_primaryFramebuffer->valid() ||
+      !m_scratchFramebuffer->valid()) {
     return;
   }
 
-  m_wallpaperRenderer.renderToFramebuffer(*m_primaryFramebuffer);
-
-  if (blurRadius >= 0.5f) {
-    if (m_scratchFramebuffer == nullptr || !m_scratchFramebuffer->valid()) {
-      return;
-    }
-    m_wallpaperRenderer.blur(*m_primaryFramebuffer, *m_scratchFramebuffer, blurRadius, kBlurRounds);
-  }
-
-  if (m_tintIntensity > 0.001f) {
-    m_wallpaperRenderer.tint(*m_primaryFramebuffer, m_tintR, m_tintG, m_tintB, m_tintIntensity);
-  }
-
-  m_wallpaperRenderer.blitToSurface(m_primaryFramebuffer->colorTexture());
-  m_wallpaperRenderer.swapBuffers();
+  m_wallpaperRenderer.renderBackdropFrame(*m_primaryFramebuffer, *m_scratchFramebuffer, options);
 }
 
 void BackdropSurface::setActive(bool active) {

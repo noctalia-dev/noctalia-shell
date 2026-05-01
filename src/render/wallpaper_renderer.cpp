@@ -53,21 +53,6 @@ void main() {
 }
 )";
 
-  void drawFullscreenQuad(const ShaderProgram& program) {
-    const GLint posAttr = glGetAttribLocation(program.id(), "a_position");
-    if (posAttr < 0) {
-      return;
-    }
-
-    static constexpr float kQuad[] = {
-        0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-    };
-    glVertexAttribPointer(static_cast<GLuint>(posAttr), 2, GL_FLOAT, GL_FALSE, 0, kQuad);
-    glEnableVertexAttribArray(static_cast<GLuint>(posAttr));
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glDisableVertexAttribArray(static_cast<GLuint>(posAttr));
-  }
-
   float elapsedSince(std::chrono::steady_clock::time_point start) {
     return std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - start).count();
   }
@@ -203,6 +188,29 @@ void WallpaperRenderer::renderToFramebuffer(const RenderFramebuffer& target) {
   // No eglSwapBuffers — caller is responsible for presentation
 }
 
+void WallpaperRenderer::renderBackdropFrame(RenderFramebuffer& target, RenderFramebuffer& scratch,
+                                            const BackdropPostProcessOptions& options) {
+  if (m_backend == nullptr || !target.valid()) {
+    return;
+  }
+
+  renderToFramebuffer(target);
+
+  if (options.blurRadius >= 0.5f && options.blurRounds > 0) {
+    if (!scratch.valid()) {
+      return;
+    }
+    blur(target, scratch, options.blurRadius, options.blurRounds);
+  }
+
+  if (options.tintIntensity > kMinimumPostProcessAlpha) {
+    tint(target, options.tintColor, options.tintIntensity);
+  }
+
+  blitToSurface(target.colorTexture());
+  swapBuffers();
+}
+
 void WallpaperRenderer::blur(RenderFramebuffer& target, RenderFramebuffer& scratch, float radius, int rounds) {
   if (m_backend == nullptr || !target.valid() || !scratch.valid() || radius < 0.5f || rounds <= 0) {
     return;
@@ -222,7 +230,7 @@ void WallpaperRenderer::blur(RenderFramebuffer& target, RenderFramebuffer& scrat
   }
 }
 
-void WallpaperRenderer::tint(RenderFramebuffer& target, float r, float g, float b, float intensity) {
+void WallpaperRenderer::tint(RenderFramebuffer& target, Color color, float intensity) {
   if (m_backend == nullptr || !target.valid() || intensity <= kMinimumPostProcessAlpha) {
     return;
   }
@@ -235,8 +243,8 @@ void WallpaperRenderer::tint(RenderFramebuffer& target, float r, float g, float 
 
   glUseProgram(m_tintProgram.id());
   const GLint colorLoc = glGetUniformLocation(m_tintProgram.id(), "u_color");
-  glUniform4f(colorLoc, r, g, b, intensity);
-  drawFullscreenQuad(m_tintProgram);
+  glUniform4f(colorLoc, color.r, color.g, color.b, intensity);
+  m_backend->drawFullscreenQuad(m_tintProgram);
 }
 
 void WallpaperRenderer::blitToSurface(TextureId texture) {
@@ -256,7 +264,7 @@ void WallpaperRenderer::blitToSurface(TextureId texture) {
   glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(texture.value()));
   const GLint texLoc = glGetUniformLocation(m_blitProgram.id(), "u_texture");
   glUniform1i(texLoc, 0);
-  drawFullscreenQuad(m_blitProgram);
+  m_backend->drawFullscreenQuad(m_blitProgram);
 }
 
 void WallpaperRenderer::swapBuffers() {
