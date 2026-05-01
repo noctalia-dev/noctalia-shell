@@ -31,6 +31,7 @@
 #include "shell/bar/widgets/settings_widget.h"
 #include "shell/bar/widgets/spacer_widget.h"
 #include "shell/bar/widgets/sysmon_widget.h"
+#include "shell/bar/widgets/taskbar_widget.h"
 #include "shell/bar/widgets/test_widget.h"
 #include "shell/bar/widgets/theme_mode_widget.h"
 #include "shell/bar/widgets/tray_widget.h"
@@ -282,6 +283,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "test") {
     auto widget = std::make_unique<TestWidget>(output);
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "taskbar") {
+    auto widget = std::make_unique<TaskbarWidget>(m_wayland, output);
     widget->setContentScale(contentScale);
     return widget;
   }

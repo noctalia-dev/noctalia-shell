@@ -12,8 +12,8 @@
 #include "render/scene/node.h"
 #include "render/scene/rect_node.h"
 #include "shell/surface_shadow.h"
+#include "system/app_identity.h"
 #include "system/desktop_entry.h"
-#include "system/internal_app_metadata.h"
 #include "ui/controls/box.h"
 #include "ui/controls/context_menu.h"
 #include "ui/controls/flex.h"
@@ -73,20 +73,6 @@ namespace {
       return StringUtils::toLower(active->appId);
     }
     return {};
-  }
-
-  DesktopEntry makeSyntheticRunningEntry(const std::string& runningAppId, const std::string& runningAppIdLower) {
-    DesktopEntry fallback;
-    fallback.id = runningAppId;
-    fallback.name = runningAppId;
-    fallback.nameLower = runningAppIdLower;
-    if (const auto internal = internal_apps::metadataForAppId(runningAppId); internal.has_value()) {
-      fallback.name = internal->displayName;
-      fallback.nameLower = StringUtils::toLower(fallback.name);
-      fallback.icon = internal->iconPath;
-    }
-
-    return fallback;
   }
 
   wl_output* currentDockFilterOutput(const DockConfig& cfg, wl_output* instanceOutput) {
@@ -260,10 +246,12 @@ void Dock::refresh() {
     inst->activeAppIdLower = activeIdLower;
 
     const auto runningIds = cfg.showRunning ? m_wayland->runningAppIds(filterOutput) : std::vector<std::string>{};
+    const auto& allEntries = desktopEntries();
+    const auto resolvedRunning = app_identity::resolveRunningApps(runningIds, allEntries);
     std::vector<std::string> runningLower;
-    runningLower.reserve(runningIds.size());
-    for (const auto& id : runningIds) {
-      runningLower.push_back(StringUtils::toLower(id));
+    runningLower.reserve(resolvedRunning.size());
+    for (const auto& run : resolvedRunning) {
+      runningLower.push_back(run.runningLower);
     }
 
     // Rebuild if model changed or this instance's filter output changed.
@@ -273,32 +261,16 @@ void Dock::refresh() {
       // Count running-only items expected vs current.
       const std::size_t expectedTotal = [&] {
         std::vector<DesktopEntry> entries = m_pinnedEntries;
-        const auto& allEntries = desktopEntries();
-        for (const auto& runId : runningIds) {
-          const auto runLower = StringUtils::toLower(runId);
+        for (const auto& run : resolvedRunning) {
           bool present = false;
           for (const auto& e : entries) {
-            if (StringUtils::toLower(e.id) == runLower || StringUtils::toLower(e.startupWmClass) == runLower ||
-                e.nameLower == runLower) {
+            if (app_identity::desktopEntryMatchesLower(e, run.runningLower)) {
               present = true;
               break;
             }
           }
           if (!present) {
-            bool added = false;
-            for (const auto& de : allEntries) {
-              if (de.hidden || de.noDisplay)
-                continue;
-              if (StringUtils::toLower(de.startupWmClass) == runLower || de.nameLower == runLower ||
-                  StringUtils::toLower(de.id) == runLower) {
-                entries.push_back(de);
-                added = true;
-                break;
-              }
-            }
-            if (!added) {
-              entries.push_back(makeSyntheticRunningEntry(runId, runLower));
-            }
+            entries.push_back(run.entry);
           }
         }
         return entries.size();
@@ -977,15 +949,13 @@ void Dock::rebuildItems(DockInstance& instance) {
   if (cfg.showRunning) {
     const auto runningIds = m_wayland->runningAppIds(filterOutput);
     const auto& allEntries = desktopEntries();
+    const auto resolvedRunning = app_identity::resolveRunningApps(runningIds, allEntries);
 
-    for (const auto& runId : runningIds) {
-      const auto runLower = StringUtils::toLower(runId);
-
+    for (const auto& run : resolvedRunning) {
       // Skip if already in itemEntries (covers pinned entries).
       bool alreadyPresent = false;
       for (const auto& itm : itemEntries) {
-        if (StringUtils::toLower(itm.id) == runLower || StringUtils::toLower(itm.startupWmClass) == runLower ||
-            itm.nameLower == runLower) {
+        if (app_identity::desktopEntryMatchesLower(itm, run.runningLower)) {
           alreadyPresent = true;
           break;
         }
@@ -993,29 +963,18 @@ void Dock::rebuildItems(DockInstance& instance) {
       if (alreadyPresent)
         continue;
 
-      // Find desktop entry.
-      bool foundDesktopEntry = false;
-      for (const auto& de : allEntries) {
-        if (de.hidden || de.noDisplay)
-          continue;
-        if (StringUtils::toLower(de.startupWmClass) == runLower || de.nameLower == runLower ||
-            StringUtils::toLower(de.id) == runLower) {
-          itemEntries.push_back(de);
-          foundDesktopEntry = true;
-          break;
-        }
-      }
-      if (!foundDesktopEntry) {
-        itemEntries.push_back(makeSyntheticRunningEntry(runId, runLower));
-      }
+      itemEntries.push_back(run.entry);
     }
   }
 
   const auto activeIdLower = instance.activeAppIdLower;
   const auto runningIds = m_wayland->runningAppIds(filterOutput);
+  const auto resolvedRunning = app_identity::resolveRunningApps(runningIds, desktopEntries());
   std::vector<std::string> runningLower;
-  for (const auto& id : runningIds)
-    runningLower.push_back(StringUtils::toLower(id));
+  runningLower.reserve(resolvedRunning.size());
+  for (const auto& run : resolvedRunning) {
+    runningLower.push_back(run.runningLower);
+  }
 
   // Reserve up-front so emplace_back never reallocates while lambdas hold raw pointers.
   instance.items.reserve(itemEntries.size());
@@ -1236,15 +1195,12 @@ void Dock::updateVisuals(DockInstance& instance) {
 // ── Private: helpers ──────────────────────────────────────────────────────────
 
 bool Dock::matchesActiveApp(const DockItemView& item, std::string_view activeIdLower) const {
-  if (activeIdLower.empty())
-    return false;
-  return item.idLower == activeIdLower || item.startupWmClassLower == activeIdLower ||
-         item.entry.nameLower == activeIdLower;
+  return app_identity::matchesLower(activeIdLower, item.idLower, item.startupWmClassLower, item.entry.nameLower);
 }
 
 bool Dock::matchesRunningApp(const DockItemView& item, const std::vector<std::string>& runningLower) const {
   for (const auto& rid : runningLower) {
-    if (item.idLower == rid || item.startupWmClassLower == rid || item.entry.nameLower == rid) {
+    if (app_identity::matchesLower(rid, item.idLower, item.startupWmClassLower, item.entry.nameLower)) {
       return true;
     }
   }
