@@ -53,6 +53,7 @@ Select::Select() {
   m_triggerBackground = static_cast<RectNode*>(addChild(std::move(triggerBackground)));
 
   auto triggerLabel = std::make_unique<Label>();
+  triggerLabel->setStableBaseline(true);
   m_triggerLabel = static_cast<Label*>(addChild(std::move(triggerLabel)));
 
   auto triggerGlyph = std::make_unique<Glyph>();
@@ -372,6 +373,7 @@ void Select::rebuildOptionViews() {
     auto label = std::make_unique<Label>();
     label->setText(m_options[i]);
     label->setFontSize(m_fontSize);
+    label->setStableBaseline(true);
     auto* labelPtr = static_cast<Label*>(m_menuViewport->addChild(std::move(label)));
 
     auto checkGlyph = std::make_unique<Glyph>();

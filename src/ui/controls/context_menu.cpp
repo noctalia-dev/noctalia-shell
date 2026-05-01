@@ -154,6 +154,7 @@ void ContextMenuControl::rebuildRows(Renderer& renderer) {
       label->setFontSize(Style::fontSizeBody);
       label->setColor(entry.enabled ? enabledItemColor() : disabledItemColor());
       label->setMaxWidth(entry.hasSubmenu ? (rowWidth - 30.0f) : (rowWidth - 16.0f));
+      label->setStableBaseline(true);
       label->measure(renderer);
       label->setPosition(8.0f, (rowHeight - label->height()) * 0.5f);
       labelPtr = static_cast<Label*>(row->addChild(std::move(label)));
@@ -178,6 +179,7 @@ void ContextMenuControl::rebuildRows(Renderer& renderer) {
       label->setText("");
       label->setFontSize(Style::fontSizeBody);
       label->setColor(roleColor(ColorRole::OnSurfaceVariant));
+      label->setStableBaseline(true);
       labelPtr = static_cast<Label*>(row->addChild(std::move(label)));
 
       auto separatorLine = std::make_unique<Box>();
