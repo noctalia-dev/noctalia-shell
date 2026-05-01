@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <utility>
 #include <wayland-client.h>
 
 namespace {
@@ -118,7 +119,10 @@ void WaylandToplevels::onToplevelCreated(zwlr_foreign_toplevel_handle_v1* handle
   if (handle == nullptr) {
     return;
   }
-  m_handles.try_emplace(handle, ToplevelState{});
+  auto [it, inserted] = m_handles.try_emplace(handle, ToplevelState{});
+  if (inserted) {
+    it->second.order = m_nextOrder++;
+  }
   zwlr_foreign_toplevel_handle_v1_add_listener(handle, &kHandleListener, this);
 }
 
@@ -138,7 +142,7 @@ void WaylandToplevels::onHandleClosed(zwlr_foreign_toplevel_handle_v1* handle) {
   }
   if (m_currentHandle == handle) {
     m_currentHandle = nullptr;
-    selectFallbackCurrent();
+    m_currentHandle = latestActivatedHandle();
   }
 
   const bool activeChanged = notifyIfChanged(before);
@@ -157,8 +161,8 @@ void WaylandToplevels::onHandleDone(zwlr_foreign_toplevel_handle_v1* handle) {
   const bool hadModelChanges = it->second.dirty;
   if (it->second.activated) {
     m_currentHandle = handle;
-  } else if (m_currentHandle == nullptr || it->second.dirty) {
-    m_currentHandle = handle;
+  } else if (m_currentHandle == handle) {
+    m_currentHandle = latestActivatedHandle();
   }
   it->second.dirty = false;
 
@@ -205,6 +209,17 @@ void WaylandToplevels::onHandleState(zwlr_foreign_toplevel_handle_v1* handle, wl
       }
     }
   }
+  if (activated) {
+    for (auto& [otherHandle, otherState] : m_handles) {
+      if (otherHandle == handle || !otherState.activated) {
+        continue;
+      }
+      otherState.activated = false;
+      otherState.dirty = true;
+      otherState.generation = ++m_generation;
+    }
+  }
+
   it->second.activated = activated;
   it->second.dirty = true;
   it->second.generation = ++m_generation;
@@ -222,13 +237,22 @@ wl_output* WaylandToplevels::currentOutput() const {
 }
 
 std::vector<std::string> WaylandToplevels::allAppIds(wl_output* outputFilter) const {
-  std::vector<std::string> ids;
-  ids.reserve(m_handles.size());
+  std::vector<const ToplevelState*> ordered;
+  ordered.reserve(m_handles.size());
   for (const auto& [handle, state] : m_handles) {
+    (void)handle;
     if (outputFilter != nullptr && state.output != outputFilter) {
       continue;
     }
-    const auto appId = effectiveAppId(state.appId, state.title);
+    ordered.push_back(&state);
+  }
+  std::sort(ordered.begin(), ordered.end(),
+            [](const ToplevelState* lhs, const ToplevelState* rhs) { return lhs->order < rhs->order; });
+
+  std::vector<std::string> ids;
+  ids.reserve(ordered.size());
+  for (const auto* state : ordered) {
+    const auto appId = effectiveAppId(state->appId, state->title);
     if (!appId.empty()) {
       ids.push_back(appId);
     }
@@ -238,6 +262,12 @@ std::vector<std::string> WaylandToplevels::allAppIds(wl_output* outputFilter) co
 
 std::vector<ToplevelInfo> WaylandToplevels::windowsForApp(const std::string& idLower, const std::string& wmClassLower,
                                                           wl_output* outputFilter) const {
+  struct MatchedWindow {
+    std::uint64_t order = 0;
+    ToplevelInfo info;
+  };
+
+  std::vector<MatchedWindow> matched;
   std::vector<ToplevelInfo> out;
   for (const auto& [handle, state] : m_handles) {
     if (outputFilter != nullptr && state.output != outputFilter) {
@@ -253,12 +283,23 @@ std::vector<ToplevelInfo> WaylandToplevels::windowsForApp(const std::string& idL
       return s;
     }();
     if (appLower == idLower || (!wmClassLower.empty() && appLower == wmClassLower)) {
-      out.push_back(ToplevelInfo{
-          .title = state.title,
-          .appId = appId,
-          .handle = handle,
+      matched.push_back(MatchedWindow{
+          .order = state.order,
+          .info =
+              ToplevelInfo{
+                  .title = state.title,
+                  .appId = appId,
+                  .order = state.order,
+                  .handle = handle,
+              },
       });
     }
+  }
+  std::sort(matched.begin(), matched.end(),
+            [](const MatchedWindow& lhs, const MatchedWindow& rhs) { return lhs.order < rhs.order; });
+  out.reserve(matched.size());
+  for (auto& window : matched) {
+    out.push_back(std::move(window.info));
   }
   return out;
 }
@@ -316,14 +357,19 @@ bool WaylandToplevels::notifyIfChanged(const std::optional<ActiveToplevel>& befo
   return false;
 }
 
-void WaylandToplevels::selectFallbackCurrent() {
-  if (m_handles.empty()) {
-    return;
+zwlr_foreign_toplevel_handle_v1* WaylandToplevels::latestActivatedHandle() const {
+  zwlr_foreign_toplevel_handle_v1* bestHandle = nullptr;
+  std::uint64_t bestGeneration = 0;
+
+  for (const auto& [handle, state] : m_handles) {
+    if (!state.activated) {
+      continue;
+    }
+    if (bestHandle == nullptr || state.generation > bestGeneration) {
+      bestHandle = handle;
+      bestGeneration = state.generation;
+    }
   }
 
-  auto best = std::max_element(m_handles.begin(), m_handles.end(),
-                               [](const auto& a, const auto& b) { return a.second.generation < b.second.generation; });
-  if (best != m_handles.end()) {
-    m_currentHandle = best->first;
-  }
+  return bestHandle;
 }

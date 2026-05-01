@@ -41,7 +41,7 @@ struct wp_fractional_scale_manager_v1;
 struct wp_viewporter;
 class ClipboardService;
 class NiriOutputBackend;
-class NiriWorkspaceMonitor;
+class NiriWorkspaceBackend;
 struct DataControlOps;
 class VirtualKeyboardService;
 
@@ -59,6 +59,12 @@ struct WaylandOutput {
   std::int32_t logicalHeight = 0;
   zxdg_output_v1* xdgOutput = nullptr;
   bool done = false;
+};
+
+struct WorkspaceWindowAssignment {
+  std::string workspaceKey;
+  std::string appId;
+  std::string title;
 };
 
 class WaylandConnection {
@@ -135,6 +141,11 @@ public:
   [[nodiscard]] std::optional<ActiveToplevel> activeToplevel() const;
   [[nodiscard]] wl_output* activeToplevelOutput() const;
   [[nodiscard]] std::vector<std::string> runningAppIds(wl_output* outputFilter = nullptr) const;
+  [[nodiscard]] std::unordered_map<std::string, std::vector<std::string>>
+  appIdsByWorkspace(wl_output* outputFilter = nullptr) const;
+  [[nodiscard]] std::vector<std::string> workspaceDisplayKeys(wl_output* outputFilter = nullptr) const;
+  [[nodiscard]] std::vector<WorkspaceWindowAssignment>
+  workspaceWindowAssignments(wl_output* outputFilter = nullptr) const;
   [[nodiscard]] std::vector<ToplevelInfo> windowsForApp(const std::string& idLower, const std::string& wmClassLower,
                                                         wl_output* outputFilter = nullptr) const;
   void activateToplevel(zwlr_foreign_toplevel_handle_v1* handle);
@@ -213,7 +224,7 @@ private:
   wl_output* m_lastPointerOutput = nullptr;
   std::chrono::steady_clock::time_point m_lastPointerOutputAt{};
   std::unique_ptr<NiriOutputBackend> m_niriOutputBackend;
-  std::unique_ptr<NiriWorkspaceMonitor> m_niriWorkspaceMonitor;
+  std::unique_ptr<NiriWorkspaceBackend> m_niriWorkspaceBackend;
   WaylandSeat::PointerEventCallback m_pointerEventCallback;
 
   WaylandSeat m_seatHandler;

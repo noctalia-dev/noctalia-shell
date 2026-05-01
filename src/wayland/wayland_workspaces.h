@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <string_view>
+#include <unordered_map>
 
 struct wl_output;
 struct ext_workspace_manager_v1;
@@ -33,6 +34,8 @@ public:
   [[nodiscard]] int pollTimeoutMs() const noexcept;
   void dispatchPoll(short revents);
   [[nodiscard]] const char* backendName() const noexcept;
+  [[nodiscard]] std::unordered_map<std::string, std::vector<std::string>> appIdsByWorkspace(wl_output* output) const;
+  [[nodiscard]] std::vector<WorkspaceWindow> workspaceWindows(wl_output* output) const;
 
   [[nodiscard]] std::vector<Workspace> all() const;
   [[nodiscard]] std::vector<Workspace> forOutput(wl_output* output) const;

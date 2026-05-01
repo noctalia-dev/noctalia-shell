@@ -68,9 +68,9 @@ namespace {
     return {-(contentRight + k), 0.0f};
   }
 
-  std::string currentActiveAppIdLower(const WaylandConnection& wayland) {
+  std::string currentActiveEntryIdLower(const WaylandConnection& wayland) {
     if (const auto active = wayland.activeToplevel(); active.has_value()) {
-      return StringUtils::toLower(active->appId);
+      return StringUtils::toLower(app_identity::resolveRunningDesktopEntry(active->appId, desktopEntries()).id);
     }
     return {};
   }
@@ -227,7 +227,7 @@ void Dock::refresh() {
   refreshPinnedAppsIfNeeded();
 
   const auto& cfg = m_config->config().dock;
-  const std::string globalActiveIdLower = currentActiveAppIdLower(*m_wayland);
+  const std::string globalActiveIdLower = currentActiveEntryIdLower(*m_wayland);
   wl_output* const activeOutput = m_wayland->activeToplevelOutput();
 
   for (auto& inst : m_instances) {
@@ -251,7 +251,7 @@ void Dock::refresh() {
     std::vector<std::string> runningLower;
     runningLower.reserve(resolvedRunning.size());
     for (const auto& run : resolvedRunning) {
-      runningLower.push_back(run.runningLower);
+      runningLower.push_back(StringUtils::toLower(run.entry.id));
     }
 
     // Rebuild if model changed or this instance's filter output changed.
@@ -568,7 +568,7 @@ void Dock::createInstance(const WaylandOutput& output) {
   instance->outputName = output.name;
   instance->output = output.output;
   instance->scale = output.scale;
-  instance->activeAppIdLower = currentActiveAppIdLower(*m_wayland);
+  instance->activeAppIdLower = currentActiveEntryIdLower(*m_wayland);
 
   const bool vert = isVertical();
   const auto& shadowConfig = m_config->config().shell.shadow;
@@ -720,7 +720,7 @@ void Dock::buildScene(DockInstance& instance) {
     return;
   }
 
-  instance.activeAppIdLower = currentActiveAppIdLower(*m_wayland);
+  instance.activeAppIdLower = currentActiveEntryIdLower(*m_wayland);
 
   const auto& cfg = m_config->config().dock;
   const bool vert = isVertical();
@@ -973,7 +973,7 @@ void Dock::rebuildItems(DockInstance& instance) {
   std::vector<std::string> runningLower;
   runningLower.reserve(resolvedRunning.size());
   for (const auto& run : resolvedRunning) {
-    runningLower.push_back(run.runningLower);
+    runningLower.push_back(StringUtils::toLower(run.entry.id));
   }
 
   // Reserve up-front so emplace_back never reallocates while lambdas hold raw pointers.
@@ -1195,12 +1195,12 @@ void Dock::updateVisuals(DockInstance& instance) {
 // ── Private: helpers ──────────────────────────────────────────────────────────
 
 bool Dock::matchesActiveApp(const DockItemView& item, std::string_view activeIdLower) const {
-  return app_identity::matchesLower(activeIdLower, item.idLower, item.startupWmClassLower, item.entry.nameLower);
+  return !activeIdLower.empty() && activeIdLower == item.idLower;
 }
 
 bool Dock::matchesRunningApp(const DockItemView& item, const std::vector<std::string>& runningLower) const {
   for (const auto& rid : runningLower) {
-    if (app_identity::matchesLower(rid, item.idLower, item.startupWmClassLower, item.entry.nameLower)) {
+    if (!rid.empty() && rid == item.idLower) {
       return true;
     }
   }

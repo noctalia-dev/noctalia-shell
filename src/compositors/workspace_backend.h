@@ -4,6 +4,7 @@
 #include <functional>
 #include <poll.h>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 struct wl_output;
@@ -15,6 +16,12 @@ struct Workspace {
   bool active = false;
   bool urgent = false;
   bool occupied = false;
+};
+
+struct WorkspaceWindow {
+  std::string workspaceKey;
+  std::string appId;
+  std::string title;
 };
 
 class WorkspaceBackend {
@@ -31,6 +38,11 @@ public:
   virtual void activateForOutput(wl_output* output, const Workspace& workspace) = 0;
   [[nodiscard]] virtual std::vector<Workspace> all() const = 0;
   [[nodiscard]] virtual std::vector<Workspace> forOutput(wl_output* output) const = 0;
+  [[nodiscard]] virtual std::unordered_map<std::string, std::vector<std::string>>
+  appIdsByWorkspace(wl_output* /*output*/) const {
+    return {};
+  }
+  [[nodiscard]] virtual std::vector<WorkspaceWindow> workspaceWindows(wl_output* /*output*/) const { return {}; }
   virtual void cleanup() = 0;
 
   [[nodiscard]] virtual int pollFd() const noexcept { return -1; }

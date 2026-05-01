@@ -459,6 +459,8 @@ namespace settings {
       add(stringSpec("path", "/"));
       add(segmentedSpec("display", "gauge", sysmonDisplay));
       add(boolSpec("show_label", true));
+    } else if (type == "taskbar") {
+      add(boolSpec("group_by_workspace", false));
     } else if (type == "tray") {
       add(stringListSpec("hidden"));
     } else if (type == "volume") {

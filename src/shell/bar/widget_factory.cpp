@@ -288,7 +288,8 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "taskbar") {
-    auto widget = std::make_unique<TaskbarWidget>(m_wayland, output);
+    const bool groupByWorkspace = wc != nullptr ? wc->getBool("group_by_workspace", false) : false;
+    auto widget = std::make_unique<TaskbarWidget>(m_wayland, output, groupByWorkspace);
     widget->setContentScale(contentScale);
     return widget;
   }

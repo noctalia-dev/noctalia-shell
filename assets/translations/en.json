@@ -454,7 +454,8 @@
         "wired": "Wired"
       },
       "active-window": {
-        "desktop": "Desktop"
+        "desktop": "Desktop",
+        "no-active": "No active window"
       },
       "lock-keys": {
         "caps": "Caps",
@@ -901,6 +902,10 @@
         "glyph": {
           "label": "Glyph",
           "description": "Icon glyph name"
+        },
+        "group_by_workspace": {
+          "label": "Group by Workspace",
+          "description": "Group taskbar icons into workspace capsules when compositor data is available"
         },
         "height": {
           "label": "Height",

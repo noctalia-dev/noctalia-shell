@@ -14,6 +14,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <unordered_set>
 
 namespace {
 
@@ -196,6 +197,79 @@ std::vector<Workspace> HyprlandWorkspaceBackend::forOutput(wl_output* output) co
   result.reserve(ordered.size());
   for (const auto* workspace : ordered) {
     result.push_back(toWorkspace(*workspace));
+  }
+  return result;
+}
+
+std::unordered_map<std::string, std::vector<std::string>>
+HyprlandWorkspaceBackend::appIdsByWorkspace(wl_output* output) const {
+  const std::string outputName = m_outputNameResolver != nullptr ? m_outputNameResolver(output) : std::string{};
+  if (output != nullptr && outputName.empty()) {
+    return {};
+  }
+
+  std::unordered_map<std::string, std::vector<std::string>> byWorkspace;
+  std::unordered_map<std::string, std::unordered_set<std::string>> seenPerWorkspace;
+  for (const auto& [_, toplevel] : m_toplevels) {
+    if (toplevel.workspace.empty() || toplevel.appId.empty()) {
+      continue;
+    }
+    if (!outputName.empty()) {
+      bool workspaceOnOutput = false;
+      for (const auto& workspace : m_workspaces) {
+        if (workspace.name == toplevel.workspace && workspace.monitor == outputName) {
+          workspaceOnOutput = true;
+          break;
+        }
+      }
+      if (!workspaceOnOutput) {
+        continue;
+      }
+    }
+    auto& seen = seenPerWorkspace[toplevel.workspace];
+    if (!seen.insert(toplevel.appId).second) {
+      continue;
+    }
+    byWorkspace[toplevel.workspace].push_back(toplevel.appId);
+  }
+  return byWorkspace;
+}
+
+std::vector<WorkspaceWindow> HyprlandWorkspaceBackend::workspaceWindows(wl_output* output) const {
+  const std::string outputName = m_outputNameResolver != nullptr ? m_outputNameResolver(output) : std::string{};
+  if (output != nullptr && outputName.empty()) {
+    return {};
+  }
+
+  std::unordered_map<std::string, std::string> keysByWorkspace;
+  for (const auto& workspace : m_workspaces) {
+    if (!outputName.empty() && workspace.monitor != outputName) {
+      continue;
+    }
+    if (workspace.id > 0) {
+      keysByWorkspace[workspace.name] = std::to_string(workspace.id);
+    } else if (const auto parsed = parseLeadingNumber(workspace.name); parsed.has_value()) {
+      keysByWorkspace[workspace.name] = std::to_string(*parsed);
+    } else {
+      keysByWorkspace[workspace.name] = workspace.name;
+    }
+  }
+
+  std::vector<WorkspaceWindow> result;
+  result.reserve(m_toplevels.size());
+  for (const auto& [_, toplevel] : m_toplevels) {
+    if (toplevel.workspace.empty() || toplevel.appId.empty()) {
+      continue;
+    }
+    const auto keyIt = keysByWorkspace.find(toplevel.workspace);
+    if (keyIt == keysByWorkspace.end()) {
+      continue;
+    }
+    result.push_back(WorkspaceWindow{
+        .workspaceKey = keyIt->second,
+        .appId = toplevel.appId,
+        .title = toplevel.title,
+    });
   }
   return result;
 }
@@ -431,6 +505,11 @@ void HyprlandWorkspaceBackend::refreshClients() {
     } else {
       state.workspace = item.value("workspace", "");
     }
+    state.appId = item.value("class", "");
+    if (state.appId.empty()) {
+      state.appId = item.value("initialClass", "");
+    }
+    state.title = item.value("title", "");
 
     bool urgent = false;
     bool urgentSet = false;
@@ -667,6 +746,10 @@ void HyprlandWorkspaceBackend::handleEvent(std::string_view line) {
       return;
     }
     moveToplevel(*address, args[1]);
+    if (auto it = m_toplevels.find(*address); it != m_toplevels.end()) {
+      it->second.appId = std::string(args[2]);
+      it->second.title = std::string(args[3]);
+    }
     recomputeWorkspaceFlags();
     notifyChanged();
     return;
@@ -704,7 +787,7 @@ void HyprlandWorkspaceBackend::handleEvent(std::string_view line) {
     }
     auto it = m_toplevels.find(*address);
     if (it == m_toplevels.end()) {
-      m_toplevels.emplace(*address, ToplevelState{.workspace = {}, .urgent = true});
+      m_toplevels.emplace(*address, ToplevelState{.workspace = {}, .appId = {}, .title = {}, .urgent = true});
       refreshClients();
     } else {
       it->second.urgent = true;

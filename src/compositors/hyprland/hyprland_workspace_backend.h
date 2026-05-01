@@ -27,6 +27,9 @@ public:
   void activateForOutput(wl_output* output, const Workspace& workspace) override;
   [[nodiscard]] std::vector<Workspace> all() const override;
   [[nodiscard]] std::vector<Workspace> forOutput(wl_output* output) const override;
+  [[nodiscard]] std::unordered_map<std::string, std::vector<std::string>>
+  appIdsByWorkspace(wl_output* output) const override;
+  [[nodiscard]] std::vector<WorkspaceWindow> workspaceWindows(wl_output* output) const override;
   void cleanup() override;
 
   [[nodiscard]] int pollFd() const noexcept override { return m_eventSocketFd; }
@@ -45,6 +48,8 @@ private:
 
   struct ToplevelState {
     std::string workspace;
+    std::string appId;
+    std::string title;
     bool urgent = false;
   };
 
