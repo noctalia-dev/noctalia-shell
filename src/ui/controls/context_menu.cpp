@@ -96,8 +96,8 @@ void ContextMenuControl::rebuild(Renderer& renderer) {
   auto bg = std::make_unique<Box>();
   bg->setCardStyle();
   bg->setRadius(Style::radiusLg);
-  bg->setFill(fixedColor(brighten(resolveColorRole(ColorRole::Surface), 1.03f)));
-  bg->setBorder(roleColor(ColorRole::Outline, 0.9f), Style::borderWidth);
+  bg->setFill(roleColor(ColorRole::SurfaceVariant));
+  bg->setBorder(roleColor(ColorRole::Outline), Style::borderWidth);
   bg->setFrameSize(width(), height());
   addChild(std::move(bg));
 

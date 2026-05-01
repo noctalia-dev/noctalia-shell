@@ -11,6 +11,7 @@
 #include "shell/control_center/control_center_panel.h"
 #include "shell/surface_shadow.h"
 #include "ui/controls/box.h"
+#include "ui/controls/context_menu_popup.h"
 #include "ui/controls/select.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -649,6 +650,16 @@ bool PanelManager::onPointerEvent(const PointerEvent& event) {
     return false;
   }
 
+  if (m_activePopup != nullptr) {
+    if (m_activePopup->onPointerEvent(event)) {
+      return true;
+    }
+    if (event.type == PointerEvent::Type::Button && event.state == 1) {
+      m_activePopup->close();
+      return true;
+    }
+  }
+
   if (m_attachedPopupCount > 0) {
     if (event.surface == m_wlSurface) {
       if (event.type == PointerEvent::Type::Enter) {
@@ -780,6 +791,10 @@ void PanelManager::requestRedraw() {
 }
 
 void PanelManager::close() { closePanel(); }
+
+void PanelManager::setActivePopup(ContextMenuPopup* popup) { m_activePopup = popup; }
+
+void PanelManager::clearActivePopup() { m_activePopup = nullptr; }
 
 void PanelManager::beginAttachedPopup(wl_surface* surface) {
   if (surface == nullptr || surface != m_wlSurface) {

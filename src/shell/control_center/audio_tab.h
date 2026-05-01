@@ -5,24 +5,28 @@
 
 #include <chrono>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
 class ConfigService;
 class Button;
-class ContextMenuControl;
+class ContextMenuPopup;
 class Flex;
 class Label;
-class InputArea;
 class MprisService;
 class PipeWireService;
+class RenderContext;
 class Renderer;
 class ScrollView;
 class Slider;
+class WaylandConnection;
 
 class AudioTab : public Tab {
 public:
-  AudioTab(PipeWireService* audio, MprisService* mpris, ConfigService* config);
+  AudioTab(PipeWireService* audio, MprisService* mpris, ConfigService* config, WaylandConnection* wayland,
+           RenderContext* renderContext);
+  ~AudioTab() override;
 
   std::unique_ptr<Flex> create() override;
   void onClose() override;
@@ -43,9 +47,13 @@ private:
   void queueSourceVolume(float value);
   void flushPendingVolumes(bool force = false);
 
+  void openDeviceMenu(bool isOutput);
+
   PipeWireService* m_audio = nullptr;
   MprisService* m_mpris = nullptr;
   ConfigService* m_config = nullptr;
+  WaylandConnection* m_wayland = nullptr;
+  RenderContext* m_renderContext = nullptr;
 
   Flex* m_rootLayout = nullptr;
   Flex* m_deviceColumn = nullptr;
@@ -70,9 +78,7 @@ private:
   Flex* m_inputDeviceMenuAnchor = nullptr;
   Button* m_outputDeviceMenuButton = nullptr;
   Button* m_inputDeviceMenuButton = nullptr;
-  ContextMenuControl* m_deviceMenu = nullptr;
-  InputArea* m_deviceMenuDismissCatcher = nullptr;
-  bool m_deviceMenuOpen = false;
+  std::unique_ptr<ContextMenuPopup> m_deviceMenuPopup;
   bool m_deviceMenuIsOutput = true;
   Slider* m_outputSlider = nullptr;
   Label* m_outputValue = nullptr;

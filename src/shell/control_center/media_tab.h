@@ -5,25 +5,29 @@
 
 #include <chrono>
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <string>
 #include <unordered_set>
 #include <vector>
 
 class Button;
+class ContextMenuPopup;
 class HttpClient;
 class Image;
-class InputArea;
 class Label;
 class MprisService;
 class PipeWireSpectrum;
+class RenderContext;
 class Slider;
 class AudioSpectrum;
-class ContextMenuControl;
+class WaylandConnection;
 
 class MediaTab : public Tab {
 public:
-  MediaTab(MprisService* mpris, HttpClient* httpClient, PipeWireSpectrum* spectrum);
+  MediaTab(MprisService* mpris, HttpClient* httpClient, PipeWireSpectrum* spectrum, WaylandConnection* wayland,
+           RenderContext* renderContext);
+  ~MediaTab() override;
 
   std::unique_ptr<Flex> create() override;
   void onFrameTick(float deltaMs) override;
@@ -36,9 +40,13 @@ private:
   void refresh(Renderer& renderer);
   void clearArt(Renderer& renderer);
 
+  void openPlayerMenu();
+
   MprisService* m_mpris = nullptr;
   HttpClient* m_httpClient = nullptr;
   PipeWireSpectrum* m_spectrum = nullptr;
+  WaylandConnection* m_wayland = nullptr;
+  RenderContext* m_renderContext = nullptr;
   std::uint64_t m_spectrumListenerId = 0;
   bool m_active = false;
 
@@ -52,8 +60,7 @@ private:
   Flex* m_nowCard = nullptr;
   Flex* m_mediaStack = nullptr;
   Button* m_playerMenuButton = nullptr;
-  ContextMenuControl* m_playerMenu = nullptr;
-  InputArea* m_playerMenuDismissCatcher = nullptr;
+  std::unique_ptr<ContextMenuPopup> m_playerMenuPopup;
   Label* m_trackTitle = nullptr;
   Label* m_trackArtist = nullptr;
   Label* m_trackAlbum = nullptr;

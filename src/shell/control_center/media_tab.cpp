@@ -7,12 +7,13 @@
 #include "net/http_client.h"
 #include "pipewire/pipewire_spectrum.h"
 #include "render/core/renderer.h"
-#include "render/scene/input_area.h"
+#include "render/scene/node.h"
 #include "shell/control_center/tab.h"
 #include "shell/panel/panel_manager.h"
 #include "ui/controls/audio_spectrum.h"
 #include "ui/controls/button.h"
 #include "ui/controls/context_menu.h"
+#include "ui/controls/context_menu_popup.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/image.h"
 #include "ui/controls/label.h"
@@ -59,8 +60,74 @@ namespace {
 
 } // namespace
 
-MediaTab::MediaTab(MprisService* mpris, HttpClient* httpClient, PipeWireSpectrum* spectrum)
-    : m_mpris(mpris), m_httpClient(httpClient), m_spectrum(spectrum) {}
+MediaTab::MediaTab(MprisService* mpris, HttpClient* httpClient, PipeWireSpectrum* spectrum, WaylandConnection* wayland,
+                   RenderContext* renderContext)
+    : m_mpris(mpris), m_httpClient(httpClient), m_spectrum(spectrum), m_wayland(wayland),
+      m_renderContext(renderContext) {}
+
+MediaTab::~MediaTab() = default;
+
+void MediaTab::openPlayerMenu() {
+  if (m_playerMenuPopup == nullptr || m_mpris == nullptr || m_playerMenuButton == nullptr) {
+    return;
+  }
+
+  const auto pinnedBusName = m_mpris->pinnedPlayerPreference();
+  std::vector<ContextMenuControlEntry> entries;
+  entries.reserve(m_playerBusNames.size() + 1);
+  entries.push_back({.id = 0,
+                     .label = i18n::tr("control-center.media.active-player"),
+                     .enabled = true,
+                     .separator = false,
+                     .hasSubmenu = false});
+  for (std::size_t i = 0; i < m_playerBusNames.size(); ++i) {
+    const auto& busName = m_playerBusNames[i];
+    const bool selected = pinnedBusName.has_value() && busName == *pinnedBusName;
+    std::string identity;
+    if (auto it = m_mpris->players().find(busName); it != m_mpris->players().end()) {
+      identity = it->second.identity;
+    }
+    const std::string label = (selected ? "• " : "") + (identity.empty() ? busName : identity);
+    entries.push_back({.id = static_cast<std::int32_t>(i + 1),
+                       .label = label,
+                       .enabled = true,
+                       .separator = false,
+                       .hasSubmenu = false});
+  }
+
+  Flex* anchor = m_playerMenuButton->parent() != nullptr ? static_cast<Flex*>(m_playerMenuButton->parent())
+                                                         : static_cast<Flex*>(m_nowCard);
+  if (anchor == nullptr) {
+    return;
+  }
+
+  const auto parentCtx = PanelManager::instance().fallbackPopupParentContext();
+  if (!parentCtx.has_value()) {
+    return;
+  }
+
+  float anchorAbsX = 0.0f;
+  float anchorAbsY = 0.0f;
+  Node::absolutePosition(anchor, anchorAbsX, anchorAbsY);
+
+  const float scale = contentScale();
+  const float menuWidth = std::clamp(kMediaUnit * 6.0f * scale, kMediaUnit * 4.2f * scale,
+                                     m_nowCard != nullptr ? std::max(1.0f, m_nowCard->width()) : 240.0f * scale);
+
+  PanelManager::instance().beginAttachedPopup(parentCtx->surface);
+  PanelManager::instance().setActivePopup(m_playerMenuPopup.get());
+
+  m_playerMenuPopup->setOnDismissed([parentSurface = parentCtx->surface]() {
+    PanelManager::instance().clearActivePopup();
+    PanelManager::instance().endAttachedPopup(parentSurface);
+  });
+
+  m_playerMenuPopup->open(std::move(entries), menuWidth, 10, static_cast<std::int32_t>(anchorAbsX),
+                          static_cast<std::int32_t>(anchorAbsY), static_cast<std::int32_t>(anchor->width()),
+                          static_cast<std::int32_t>(anchor->height()), parentCtx->layerSurface, parentCtx->output);
+
+  m_playerMenuOpen = true;
+}
 
 std::unique_ptr<Flex> MediaTab::create() {
   const float scale = contentScale();
@@ -112,8 +179,12 @@ std::unique_ptr<Flex> MediaTab::create() {
     if (m_playerBusNames.empty()) {
       return;
     }
-    m_playerMenuOpen = !m_playerMenuOpen;
-    PanelManager::instance().refresh();
+    if (m_playerMenuPopup != nullptr && m_playerMenuPopup->isOpen()) {
+      m_playerMenuPopup->close();
+      PanelManager::instance().clearActivePopup();
+    } else {
+      openPlayerMenu();
+    }
   });
   m_playerMenuButton = playerMenuButton.get();
   nowHeader->addChild(std::move(playerMenuButton));
@@ -347,42 +418,22 @@ std::unique_ptr<Flex> MediaTab::create() {
   tab->addChild(std::move(mediaColumn));
   tab->addChild(std::move(visualizerColumn));
 
-  auto dismissCatcher = std::make_unique<InputArea>();
-  dismissCatcher->setParticipatesInLayout(false);
-  dismissCatcher->setVisible(false);
-  dismissCatcher->setZIndex(19);
-  dismissCatcher->setOnPress([this](const InputArea::PointerData& /*data*/) {
-    if (!m_playerMenuOpen) {
-      return;
-    }
-    m_playerMenuOpen = false;
-    PanelManager::instance().refresh();
-  });
-  m_playerMenuDismissCatcher = static_cast<InputArea*>(tab->addChild(std::move(dismissCatcher)));
-
-  auto playerMenu = std::make_unique<ContextMenuControl>();
-  playerMenu->setParticipatesInLayout(false);
-  playerMenu->setVisible(false);
-  playerMenu->setMaxVisible(10);
-  playerMenu->setMenuWidth(kMediaUnit * 6.0f * scale);
-  playerMenu->setOnActivate([this](const ContextMenuControlEntry& entry) {
-    if (m_mpris == nullptr) {
-      return;
-    }
-    if (entry.id == 0) {
-      m_mpris->clearPinnedPlayerPreference();
-    } else {
-      const std::size_t idx = static_cast<std::size_t>(entry.id - 1);
-      if (idx < m_playerBusNames.size()) {
-        m_mpris->setPinnedPlayerPreference(m_playerBusNames[idx]);
+  if (m_wayland != nullptr && m_renderContext != nullptr) {
+    m_playerMenuPopup = std::make_unique<ContextMenuPopup>(*m_wayland, *m_renderContext);
+    m_playerMenuPopup->setOnActivate([this](const ContextMenuControlEntry& entry) {
+      if (m_mpris == nullptr) {
+        return;
       }
-    }
-    m_playerMenuOpen = false;
-    PanelManager::instance().refresh();
-  });
-  playerMenu->setRedrawCallback([]() { PanelManager::instance().requestRedraw(); });
-  playerMenu->setZIndex(20);
-  m_playerMenu = static_cast<ContextMenuControl*>(tab->addChild(std::move(playerMenu)));
+      if (entry.id == 0) {
+        m_mpris->clearPinnedPlayerPreference();
+      } else {
+        const std::size_t idx = static_cast<std::size_t>(entry.id - 1);
+        if (idx < m_playerBusNames.size()) {
+          m_mpris->setPinnedPlayerPreference(m_playerBusNames[idx]);
+        }
+      }
+    });
+  }
 
   return tab;
 }
@@ -469,38 +520,6 @@ void MediaTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight
     m_mediaStack->layout(renderer);
   }
 
-  if (m_playerMenuDismissCatcher != nullptr) {
-    m_playerMenuDismissCatcher->setVisible(m_playerMenuOpen);
-    if (m_playerMenuOpen) {
-      m_playerMenuDismissCatcher->setPosition(0.0f, 0.0f);
-      m_playerMenuDismissCatcher->setFrameSize(m_rootLayout->width(), m_rootLayout->height());
-    }
-  }
-
-  if (m_playerMenu != nullptr && m_nowCard != nullptr) {
-    const float menuWidth =
-        std::clamp(kMediaUnit * 6.0f * scale, kMediaUnit * 4.2f * scale,
-                   std::max(1.0f, m_nowCard->width() - (m_nowCard->paddingLeft() + m_nowCard->paddingRight())));
-    m_playerMenu->setMenuWidth(menuWidth);
-    m_playerMenu->setVisible(m_playerMenuOpen);
-    if (m_playerMenuOpen) {
-      m_playerMenu->setSize(menuWidth, m_playerMenu->preferredHeight());
-      float nowAbsX = 0.0f;
-      float nowAbsY = 0.0f;
-      float rootAbsX = 0.0f;
-      float rootAbsY = 0.0f;
-      Node::absolutePosition(m_nowCard, nowAbsX, nowAbsY);
-      Node::absolutePosition(m_rootLayout, rootAbsX, rootAbsY);
-      const float localNowX = nowAbsX - rootAbsX;
-      const float localNowY = nowAbsY - rootAbsY;
-      const float x =
-          localNowX + std::max(m_nowCard->paddingLeft(), m_nowCard->width() - m_nowCard->paddingRight() - menuWidth);
-      const float y = localNowY + m_nowCard->paddingTop() + Style::controlHeightSm * scale + Style::spaceXs * scale;
-      m_playerMenu->setPosition(x, y);
-      m_playerMenu->layout(renderer);
-    }
-  }
-
   if (m_visualizerBody != nullptr && m_visualizerSpectrum != nullptr) {
     const float bodyWidth = std::max(0.0f, m_visualizerBody->width() -
                                                (m_visualizerBody->paddingLeft() + m_visualizerBody->paddingRight()));
@@ -584,8 +603,10 @@ void MediaTab::onClose() {
   m_nowCard = nullptr;
   m_mediaStack = nullptr;
   m_playerMenuButton = nullptr;
-  m_playerMenu = nullptr;
-  m_playerMenuDismissCatcher = nullptr;
+  if (m_playerMenuPopup != nullptr) {
+    PanelManager::instance().clearActivePopup();
+    m_playerMenuPopup->close();
+  }
   m_playerMenuOpen = false;
   m_trackTitle = nullptr;
   m_trackArtist = nullptr;
@@ -668,11 +689,9 @@ void MediaTab::refresh(Renderer& renderer) {
     m_playerBusNames = std::move(playerBusNames);
     m_playerMenuButton->setEnabled(!m_playerBusNames.empty());
     m_playerMenuButton->setVariant(!m_playerBusNames.empty() ? ButtonVariant::Ghost : ButtonVariant::Default);
-    if (m_playerMenu != nullptr) {
-      m_playerMenu->setEntries(std::move(entries));
-    }
-    if (m_playerBusNames.empty()) {
-      m_playerMenuOpen = false;
+    if (m_playerBusNames.empty() && m_playerMenuPopup != nullptr && m_playerMenuPopup->isOpen()) {
+      m_playerMenuPopup->close();
+      PanelManager::instance().clearActivePopup();
     }
   }
 

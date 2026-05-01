@@ -21,6 +21,7 @@
 #include <unordered_map>
 
 class ConfigService;
+class ContextMenuPopup;
 class IpcService;
 class Renderer;
 class RenderContext;
@@ -72,6 +73,12 @@ public:
   [[nodiscard]] const std::string& activePanelId() const noexcept;
   [[nodiscard]] std::optional<LayerPopupParentContext> popupParentContextForSurface(wl_surface* surface) const noexcept;
   [[nodiscard]] std::optional<LayerPopupParentContext> fallbackPopupParentContext() const noexcept;
+
+  [[nodiscard]] RenderContext* renderContext() const noexcept { return m_renderContext; }
+  [[nodiscard]] WaylandConnection* wayland() const noexcept { return m_wayland; }
+
+  void setActivePopup(ContextMenuPopup* popup);
+  void clearActivePopup();
 
   void refresh();
   // Reacts to a ConfigService reload while a panel is open: re-pulls the host bar's
@@ -163,5 +170,6 @@ private:
   bool m_closing = false;
   bool m_attachedToBar = false;
   std::size_t m_attachedPopupCount = 0;
+  ContextMenuPopup* m_activePopup = nullptr;
   std::uint64_t m_destroyGeneration = 0; // invalidates stale deferred destroyPanel calls
 };

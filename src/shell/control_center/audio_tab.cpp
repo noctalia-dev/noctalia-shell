@@ -7,12 +7,14 @@
 #include "pipewire/pipewire_service.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
+#include "render/scene/node.h"
 #include "shell/control_center/tab.h"
 #include "shell/panel/panel_manager.h"
 #include "system/desktop_entry.h"
 #include "system/icon_resolver.h"
 #include "ui/controls/button.h"
 #include "ui/controls/context_menu.h"
+#include "ui/controls/context_menu_popup.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/image.h"
 #include "ui/controls/label.h"
@@ -951,8 +953,63 @@ namespace {
 
 } // namespace
 
-AudioTab::AudioTab(PipeWireService* audio, MprisService* mpris, ConfigService* config)
-    : m_audio(audio), m_mpris(mpris), m_config(config) {}
+AudioTab::AudioTab(PipeWireService* audio, MprisService* mpris, ConfigService* config, WaylandConnection* wayland,
+                   RenderContext* renderContext)
+    : m_audio(audio), m_mpris(mpris), m_config(config), m_wayland(wayland), m_renderContext(renderContext) {}
+
+AudioTab::~AudioTab() = default;
+
+void AudioTab::openDeviceMenu(bool isOutput) {
+  if (m_deviceMenuPopup == nullptr || m_audio == nullptr) {
+    return;
+  }
+
+  m_deviceMenuIsOutput = isOutput;
+  const AudioState& state = m_audio->state();
+  const std::vector<AudioNode>& devices = isOutput ? state.sinks : state.sources;
+
+  std::vector<ContextMenuControlEntry> entries;
+  entries.reserve(devices.size());
+  for (const auto& node : devices) {
+    const std::uint32_t defaultId = isOutput ? state.defaultSinkId : state.defaultSourceId;
+    const bool selected = node.id == defaultId;
+    const std::string label = (selected ? "• " : "") + (!node.description.empty() ? node.description : node.name);
+    entries.push_back(ContextMenuControlEntry{.id = static_cast<std::int32_t>(node.id),
+                                              .label = label,
+                                              .enabled = true,
+                                              .separator = false,
+                                              .hasSubmenu = false});
+  }
+
+  Flex* anchor = isOutput ? m_outputDeviceMenuAnchor : m_inputDeviceMenuAnchor;
+  if (anchor == nullptr) {
+    return;
+  }
+
+  const auto parentCtx = PanelManager::instance().fallbackPopupParentContext();
+  if (!parentCtx.has_value()) {
+    return;
+  }
+
+  float anchorAbsX = 0.0f;
+  float anchorAbsY = 0.0f;
+  Node::absolutePosition(anchor, anchorAbsX, anchorAbsY);
+
+  const float scale = contentScale();
+  const float menuWidth = std::min(280.0f * scale, anchor->width());
+
+  PanelManager::instance().beginAttachedPopup(parentCtx->surface);
+  PanelManager::instance().setActivePopup(m_deviceMenuPopup.get());
+
+  m_deviceMenuPopup->setOnDismissed([parentSurface = parentCtx->surface]() {
+    PanelManager::instance().clearActivePopup();
+    PanelManager::instance().endAttachedPopup(parentSurface);
+  });
+
+  m_deviceMenuPopup->open(std::move(entries), menuWidth, 10, static_cast<std::int32_t>(anchorAbsX),
+                          static_cast<std::int32_t>(anchorAbsY), static_cast<std::int32_t>(anchor->width()),
+                          static_cast<std::int32_t>(anchor->height()), parentCtx->layerSurface, parentCtx->output);
+}
 
 bool AudioTab::dragging() const noexcept {
   if ((m_outputSlider != nullptr && m_outputSlider->dragging()) ||
@@ -969,10 +1026,11 @@ bool AudioTab::dragging() const noexcept {
 }
 
 bool AudioTab::dismissTransientUi() {
-  if (!m_deviceMenuOpen) {
+  if (m_deviceMenuPopup == nullptr || !m_deviceMenuPopup->isOpen()) {
     return false;
   }
-  m_deviceMenuOpen = false;
+  m_deviceMenuPopup->close();
+  PanelManager::instance().clearActivePopup();
   return true;
 }
 
@@ -1021,10 +1079,15 @@ std::unique_ptr<Flex> AudioTab::create() {
   outputMenuButton->setRadius(Style::radiusMd * scale);
   outputMenuButton->setEnabled(false);
   outputMenuButton->setOnClick([this]() {
-    const bool wasOpenForOutput = m_deviceMenuOpen && m_deviceMenuIsOutput;
-    m_deviceMenuIsOutput = true;
-    m_deviceMenuOpen = !wasOpenForOutput;
-    PanelManager::instance().refresh();
+    const bool wasOpen = m_deviceMenuPopup != nullptr && m_deviceMenuPopup->isOpen();
+    const bool wasOpenForOutput = wasOpen && m_deviceMenuIsOutput;
+    if (wasOpen) {
+      m_deviceMenuPopup->close();
+      PanelManager::instance().clearActivePopup();
+    }
+    if (!wasOpenForOutput) {
+      openDeviceMenu(true);
+    }
   });
   m_outputDeviceMenuButton = outputMenuButton.get();
   outputHeader->addChild(std::move(outputMenuButton));
@@ -1120,10 +1183,15 @@ std::unique_ptr<Flex> AudioTab::create() {
   inputMenuButton->setRadius(Style::radiusMd * scale);
   inputMenuButton->setEnabled(false);
   inputMenuButton->setOnClick([this]() {
-    const bool wasOpenForInput = m_deviceMenuOpen && !m_deviceMenuIsOutput;
-    m_deviceMenuIsOutput = false;
-    m_deviceMenuOpen = !wasOpenForInput;
-    PanelManager::instance().refresh();
+    const bool wasOpen = m_deviceMenuPopup != nullptr && m_deviceMenuPopup->isOpen();
+    const bool wasOpenForInput = wasOpen && !m_deviceMenuIsOutput;
+    if (wasOpen) {
+      m_deviceMenuPopup->close();
+      PanelManager::instance().clearActivePopup();
+    }
+    if (!wasOpenForInput) {
+      openDeviceMenu(false);
+    }
   });
   m_inputDeviceMenuButton = inputMenuButton.get();
   inputHeader->addChild(std::move(inputMenuButton));
@@ -1218,40 +1286,20 @@ std::unique_ptr<Flex> AudioTab::create() {
   programCard->addChild(std::move(programScroll));
   tab->addChild(std::move(programCard));
 
-  auto dismissCatcher = std::make_unique<InputArea>();
-  dismissCatcher->setParticipatesInLayout(false);
-  dismissCatcher->setVisible(false);
-  dismissCatcher->setZIndex(19);
-  dismissCatcher->setOnPress([this](const InputArea::PointerData&) {
-    if (!m_deviceMenuOpen) {
-      return;
-    }
-    m_deviceMenuOpen = false;
-    PanelManager::instance().refresh();
-  });
-  m_deviceMenuDismissCatcher = static_cast<InputArea*>(tab->addChild(std::move(dismissCatcher)));
-
-  auto deviceMenu = std::make_unique<ContextMenuControl>();
-  deviceMenu->setParticipatesInLayout(false);
-  deviceMenu->setVisible(false);
-  deviceMenu->setMaxVisible(10);
-  deviceMenu->setMenuWidth(280.0f * scale);
-  deviceMenu->setOnActivate([this](const ContextMenuControlEntry& entry) {
-    if (m_audio == nullptr) {
-      return;
-    }
-    const auto id = static_cast<std::uint32_t>(std::max<std::int32_t>(0, entry.id));
-    if (m_deviceMenuIsOutput) {
-      m_audio->setDefaultSink(id);
-    } else {
-      m_audio->setDefaultSource(id);
-    }
-    m_deviceMenuOpen = false;
-    PanelManager::instance().refresh();
-  });
-  deviceMenu->setRedrawCallback([]() { PanelManager::instance().requestRedraw(); });
-  deviceMenu->setZIndex(20);
-  m_deviceMenu = static_cast<ContextMenuControl*>(tab->addChild(std::move(deviceMenu)));
+  if (m_wayland != nullptr && m_renderContext != nullptr) {
+    m_deviceMenuPopup = std::make_unique<ContextMenuPopup>(*m_wayland, *m_renderContext);
+    m_deviceMenuPopup->setOnActivate([this](const ContextMenuControlEntry& entry) {
+      if (m_audio == nullptr) {
+        return;
+      }
+      const auto id = static_cast<std::uint32_t>(std::max<std::int32_t>(0, entry.id));
+      if (m_deviceMenuIsOutput) {
+        m_audio->setDefaultSink(id);
+      } else {
+        m_audio->setDefaultSource(id);
+      }
+    });
+  }
 
   return tab;
 }
@@ -1276,79 +1324,14 @@ void AudioTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight
   m_rootLayout->layout(renderer);
 
   rebuildProgramVolumes(renderer);
-
-  if (m_deviceMenuDismissCatcher != nullptr) {
-    m_deviceMenuDismissCatcher->setVisible(m_deviceMenuOpen);
-    if (m_deviceMenuOpen && m_rootLayout != nullptr) {
-      m_deviceMenuDismissCatcher->setPosition(0.0f, 0.0f);
-      m_deviceMenuDismissCatcher->setFrameSize(m_rootLayout->width(), m_rootLayout->height());
-    }
-  }
-
-  if (m_deviceMenu != nullptr && m_rootLayout != nullptr) {
-    if (m_deviceMenuOpen) {
-      const float scale = contentScale();
-      Flex* anchor = m_deviceMenuIsOutput ? m_outputDeviceMenuAnchor : m_inputDeviceMenuAnchor;
-      if (anchor != nullptr) {
-        const float menuWidth = std::min(280.0f * scale, m_rootLayout->width());
-        m_deviceMenu->setMenuWidth(menuWidth);
-        m_deviceMenu->setVisible(true);
-        m_deviceMenu->setSize(menuWidth, m_deviceMenu->preferredHeight());
-
-        float anchorAbsX = 0.0f;
-        float anchorAbsY = 0.0f;
-        float rootAbsX = 0.0f;
-        float rootAbsY = 0.0f;
-        Node::absolutePosition(anchor, anchorAbsX, anchorAbsY);
-        Node::absolutePosition(m_rootLayout, rootAbsX, rootAbsY);
-        const float localAnchorX = anchorAbsX - rootAbsX;
-        const float localAnchorY = anchorAbsY - rootAbsY;
-        const float x = localAnchorX + std::max(0.0f, anchor->width() - menuWidth);
-        const float y = localAnchorY + anchor->height() + Style::spaceXs * scale;
-        m_deviceMenu->setPosition(x, y);
-        m_deviceMenu->layout(renderer);
-      }
-    } else {
-      m_deviceMenu->setVisible(false);
-    }
-  }
 }
 
 void AudioTab::doUpdate(Renderer& renderer) {
   rebuildProgramVolumes(renderer);
   syncValueLabelWidths(renderer);
 
-  if (m_deviceMenu != nullptr && m_audio != nullptr) {
+  if (m_audio != nullptr) {
     const AudioState& state = m_audio->state();
-    const auto buildEntries = [&](bool isOutput) {
-      std::vector<ContextMenuControlEntry> entries;
-      const std::vector<AudioNode>& devices = isOutput ? state.sinks : state.sources;
-      entries.reserve(devices.size());
-      if (isOutput) {
-        for (const auto& node : devices) {
-          const bool selected = node.id == state.defaultSinkId;
-          const std::string label = (selected ? "• " : "") + (!node.description.empty() ? node.description : node.name);
-          entries.push_back(ContextMenuControlEntry{.id = static_cast<std::int32_t>(node.id),
-                                                    .label = label,
-                                                    .enabled = true,
-                                                    .separator = false,
-                                                    .hasSubmenu = false});
-        }
-      } else {
-        for (const auto& node : devices) {
-          const bool selected = node.id == state.defaultSourceId;
-          const std::string label = (selected ? "• " : "") + (!node.description.empty() ? node.description : node.name);
-          entries.push_back(ContextMenuControlEntry{.id = static_cast<std::int32_t>(node.id),
-                                                    .label = label,
-                                                    .enabled = true,
-                                                    .separator = false,
-                                                    .hasSubmenu = false});
-        }
-      }
-      return entries;
-    };
-
-    m_deviceMenu->setEntries(buildEntries(m_deviceMenuIsOutput));
 
     if (m_outputDeviceMenuButton != nullptr) {
       const bool hasOutputs = !state.sinks.empty();
@@ -1480,9 +1463,10 @@ void AudioTab::onClose() {
   m_inputDeviceMenuAnchor = nullptr;
   m_outputDeviceMenuButton = nullptr;
   m_inputDeviceMenuButton = nullptr;
-  m_deviceMenu = nullptr;
-  m_deviceMenuDismissCatcher = nullptr;
-  m_deviceMenuOpen = false;
+  if (m_deviceMenuPopup != nullptr) {
+    PanelManager::instance().clearActivePopup();
+    m_deviceMenuPopup->close();
+  }
   m_pendingSinkId = 0;
   m_pendingSourceId = 0;
   m_lastSinkVolume = -1.0f;
