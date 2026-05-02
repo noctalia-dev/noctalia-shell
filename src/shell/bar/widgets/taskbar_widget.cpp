@@ -249,6 +249,42 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       group->setRadius(capsuleRadius);
       auto* groupPtr = static_cast<Box*>(m_taskStrip->addChild(std::move(group)));
 
+      if (tasks.empty()) {
+        auto switcher = std::make_unique<InputArea>();
+        switcher->setFrameSize(groupWidth, groupHeight);
+        switcher->setPosition(0.0f, 0.0f);
+        switcher->setAcceptedButtons(BTN_LEFT);
+        switcher->setOnAxisHandler([this](const InputArea::PointerData& data) {
+          if (!m_groupByWorkspace) {
+            return false;
+          }
+          if (data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL && data.axis != WL_POINTER_AXIS_HORIZONTAL_SCROLL) {
+            return false;
+          }
+
+          float delta = data.scrollDelta(1.0f);
+          if (delta == 0.0f && data.axisValue120 != 0) {
+            delta = static_cast<float>(data.axisValue120) / 120.0f;
+          }
+          if (delta == 0.0f && data.axisDiscrete != 0) {
+            delta = static_cast<float>(data.axisDiscrete);
+          }
+          if (delta == 0.0f) {
+            return false;
+          }
+
+          activateAdjacentWorkspace(delta > 0.0f ? 1 : -1);
+          return true;
+        });
+        auto wsCopy = ws.workspace;
+        switcher->setOnClick([this, wsCopy](const InputArea::PointerData& data) {
+          if (data.button == BTN_LEFT) {
+            m_connection.activateWorkspace(m_output, wsCopy);
+          }
+        });
+        groupPtr->addChild(std::move(switcher));
+      }
+
       for (std::size_t i = 0; i < tasks.size(); ++i) {
         const float tileOffset = (tileSize + groupGap) * static_cast<float>(i);
         auto tile = createTaskTile(*tasks[i]);
@@ -277,6 +313,9 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       badgeText->setPosition(std::round((badgeWidth - badgeText->width()) * 0.5f),
                              std::round((badgeBase - badgeText->height()) * 0.5f));
       badgePtr->addChild(std::move(badgeText));
+      if (tasks.empty()) {
+        badgePtr->setHitTestVisible(false);
+      }
     }
     return;
   }
