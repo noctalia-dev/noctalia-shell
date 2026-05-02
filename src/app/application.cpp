@@ -34,9 +34,7 @@
 #include "util/file_utils.h"
 
 #include <chrono>
-#include <cmath>
 #include <csignal>
-#include <cstdlib>
 #include <filesystem>
 #include <malloc.h>
 #include <optional>
@@ -966,7 +964,7 @@ void Application::initIpc() {
 
   m_ipcService.registerHandler(
       "notification-dnd-set",
-      [this, applyNotificationDnd](const std::string& args) -> std::string {
+      [applyNotificationDnd](const std::string& args) -> std::string {
         const auto parts = noctalia::ipc::splitWords(args);
         if (parts.size() != 1) {
           return "error: notification-dnd-set requires <on|off|true|false|1|0>\n";

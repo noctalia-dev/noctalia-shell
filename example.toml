@@ -146,8 +146,9 @@ command = "noctalia:screen-lock"
 enabled = false
 
 # [idle.behavior.screen-off]
-# timeout = 32
+# timeout = 600
 # command = "noctalia:dpms-off"
+# resume_command = "noctalia:dpms-on"
 
 # ── Keybinds ──────────────────────────────────────────────────────────────────
 

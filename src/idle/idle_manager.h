@@ -38,6 +38,7 @@ private:
   void clearBehaviors();
   void createBehavior(const IdleBehaviorConfig& config);
   void runBehavior(BehaviorState& behavior);
+  void runResumeBehavior(BehaviorState& behavior);
   bool runCommand(const std::string& command) const;
 
   WaylandConnection* m_wayland = nullptr;

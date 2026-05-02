@@ -64,6 +64,10 @@ void IdleManager::createBehavior(const IdleBehaviorConfig& config) {
     kLog.warn("idle behavior '{}' ignored: timeout must be >= 0 seconds", config.name);
     return;
   }
+  if (config.timeoutSeconds == 0) {
+    kLog.debug("idle behavior '{}' disabled by zero timeout", config.name);
+    return;
+  }
   if (config.command.empty()) {
     kLog.warn("idle behavior '{}' ignored: needs a command", config.name);
     return;
@@ -91,6 +95,23 @@ void IdleManager::runBehavior(BehaviorState& behavior) {
   }
 }
 
+void IdleManager::runResumeBehavior(BehaviorState& behavior) {
+  const auto& config = behavior.config;
+  std::string command = config.resumeCommand;
+
+  // Keep existing screen-off configs safe even before users add resume_command.
+  if (command.empty() && config.command == "noctalia:dpms-off") {
+    command = "noctalia:dpms-on";
+  }
+
+  if (command.empty()) {
+    return;
+  }
+  if (!runCommand(command)) {
+    kLog.warn("idle behavior '{}' resume command failed", config.name);
+  }
+}
+
 bool IdleManager::runCommand(const std::string& command) const {
   if (command.empty()) {
     return true;
@@ -114,10 +135,11 @@ void IdleManager::handleIdled(void* data, ext_idle_notification_v1* /*notificati
 
 void IdleManager::handleResumed(void* data, ext_idle_notification_v1* /*notification*/) {
   auto* behavior = static_cast<BehaviorState*>(data);
-  if (behavior == nullptr || !behavior->idled) {
+  if (behavior == nullptr || behavior->owner == nullptr || !behavior->idled) {
     return;
   }
 
   behavior->idled = false;
   kLog.info("idle behavior '{}' resumed", behavior->config.name);
+  behavior->owner->runResumeBehavior(*behavior);
 }

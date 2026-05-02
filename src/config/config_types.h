@@ -464,6 +464,7 @@ struct IdleBehaviorConfig {
   bool enabled = true;
   std::int32_t timeoutSeconds = 0;
   std::string command;
+  std::string resumeCommand;
 };
 
 struct IdleConfig {

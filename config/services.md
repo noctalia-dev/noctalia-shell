@@ -147,19 +147,24 @@ command = "noctalia:screen-lock"
 enabled = false             # explicitly disabled in the default config
 
 [idle.behavior.screen-off]
-timeout = 32
+timeout = 600
 command = "noctalia:dpms-off"
+resume_command = "noctalia:dpms-on"
 
 [idle.behavior.custom]
 timeout = 48
 command = "notify-send 'Idle' 'Going idle'"
+resume_command = "notify-send 'Idle' 'Back from idle'"
 ```
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `enabled` | bool | `true` | Enable or disable this behavior |
-| `timeout` | int | `0` | Seconds before the behavior triggers |
+| `timeout` | int | `0` | Seconds before the behavior triggers; `0` disables this behavior |
 | `command` | string | `""` | Shell command or `noctalia:` IPC subcommand |
+| `resume_command` | string | `""` | Shell command or `noctalia:` IPC subcommand to run when activity resumes after this behavior triggered |
+
+For screen-off behaviors, pair `command = "noctalia:dpms-off"` with `resume_command = "noctalia:dpms-on"`. Noctalia also applies this `dpms-on` resume action automatically for older configs that use exactly `noctalia:dpms-off` without an explicit `resume_command`, so user input does not leave monitors powered off.
 
 ### `noctalia:` commands in idle
 
@@ -169,9 +174,9 @@ The `noctalia:` prefix runs the rest of the string through the IPC command regis
 noctalia:screen-lock
 noctalia:dpms-off
 noctalia:dpms-on
-noctalia:enable-idle-inhibitor
-noctalia:disable-idle-inhibitor
-noctalia:toggle-idle-inhibitor
+noctalia:idle-inhibitor-enable
+noctalia:idle-inhibitor-disable
+noctalia:idle-inhibitor-toggle
 noctalia:panel-toggle launcher
 noctalia:panel-toggle session
 noctalia:panel-toggle clipboard

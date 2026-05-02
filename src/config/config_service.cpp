@@ -816,6 +816,7 @@ void ConfigService::loadAll() {
         .enabled = false,
         .timeoutSeconds = 660,
         .command = "noctalia:screen-lock",
+        .resumeCommand = "",
     });
     m_config.bars.push_back(BarConfig{});
     return;
@@ -1646,6 +1647,9 @@ void ConfigService::parseTable(const toml::table& tbl) {
         }
         if (auto v = (*entryTbl)["command"].value<std::string>()) {
           behavior.command = *v;
+        }
+        if (auto v = (*entryTbl)["resume_command"].value<std::string>()) {
+          behavior.resumeCommand = *v;
         }
 
         m_config.idle.behaviors.push_back(std::move(behavior));

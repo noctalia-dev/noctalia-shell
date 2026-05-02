@@ -439,9 +439,9 @@ No configurable settings.
 ### IPC
 
 ```sh
-noctalia msg enable-idle-inhibitor
-noctalia msg disable-idle-inhibitor
-noctalia msg toggle-idle-inhibitor
+noctalia msg idle-inhibitor-enable
+noctalia msg idle-inhibitor-disable
+noctalia msg idle-inhibitor-toggle
 ```
 
 ---
