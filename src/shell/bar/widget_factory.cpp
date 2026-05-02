@@ -64,7 +64,8 @@ WidgetFactory::WidgetFactory(WaylandConnection& wayland, const Config& config, N
       m_weather(weather), m_nightLight(nightLight), m_themeService(themeService), m_bluetooth(bluetooth),
       m_brightness(brightness), m_fileWatcher(fileWatcher) {}
 
-std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output, float contentScale) const {
+std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output, float contentScale,
+                                              const std::string& barPosition) const {
   // Resolve: if name matches a [widget.<name>] entry, use its type + settings.
   // Otherwise treat the name itself as the widget type with default settings.
   const WidgetConfig* wc = nullptr;
@@ -289,7 +290,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "taskbar") {
     const bool groupByWorkspace = wc != nullptr ? wc->getBool("group_by_workspace", false) : false;
-    auto widget = std::make_unique<TaskbarWidget>(m_wayland, output, groupByWorkspace);
+    auto widget = std::make_unique<TaskbarWidget>(m_wayland, output, groupByWorkspace, barPosition);
     widget->setContentScale(contentScale);
     return widget;
   }

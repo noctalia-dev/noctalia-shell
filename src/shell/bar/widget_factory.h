@@ -37,8 +37,8 @@ public:
                 NightLightManager* nightLight, noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
                 BrightnessService* brightness, FileWatcher* fileWatcher = nullptr);
 
-  [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output,
-                                               float contentScale = 1.0f) const;
+  [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output, float contentScale = 1.0f,
+                                               const std::string& barPosition = "top") const;
 
 private:
   WaylandConnection& m_wayland;

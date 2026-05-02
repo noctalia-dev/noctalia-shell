@@ -863,7 +863,8 @@ void Bar::populateWidgets(BarInstance& instance) {
   const auto& widgetConfigs = m_config->config().widgets;
   auto createWidgets = [&](const std::vector<std::string>& names, std::vector<std::unique_ptr<Widget>>& dest) {
     for (const auto& name : names) {
-      auto widget = m_widgetFactory->create(name, instance.output, instance.barConfig.scale);
+      auto widget =
+          m_widgetFactory->create(name, instance.output, instance.barConfig.scale, instance.barConfig.position);
       if (widget != nullptr) {
         const WidgetConfig* wcPtr = nullptr;
         if (auto it = widgetConfigs.find(name); it != widgetConfigs.end()) {
@@ -1445,6 +1446,29 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
     targetInstance = instanceForSurface(event.surface);
   } else {
     targetInstance = m_hoveredInstance;
+  }
+
+  auto routeWidgetPopups = [&](BarInstance& instance) {
+    auto routeGroup = [&](std::vector<std::unique_ptr<Widget>>& widgets) {
+      for (auto& widget : widgets) {
+        if (widget != nullptr && widget->onPointerEvent(event)) {
+          return true;
+        }
+      }
+      return false;
+    };
+    return routeGroup(instance.startWidgets) || routeGroup(instance.centerWidgets) || routeGroup(instance.endWidgets);
+  };
+  if (targetInstance != nullptr) {
+    if (routeWidgetPopups(*targetInstance)) {
+      return true;
+    }
+  } else {
+    for (const auto& instance : m_instances) {
+      if (instance != nullptr && routeWidgetPopups(*instance)) {
+        return true;
+      }
+    }
   }
 
   if (targetInstance != nullptr && targetInstance->attachedPopupCount > 0) {

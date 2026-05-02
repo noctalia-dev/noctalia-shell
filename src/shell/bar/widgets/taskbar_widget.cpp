@@ -1,17 +1,24 @@
 #include "shell/bar/widgets/taskbar_widget.h"
 
+#include "core/deferred_call.h"
+#include "core/process.h"
+#include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
+#include "shell/panel/panel_manager.h"
 #include "system/app_identity.h"
 #include "system/desktop_entry.h"
 #include "system/internal_app_metadata.h"
 #include "ui/controls/box.h"
+#include "ui/controls/context_menu.h"
+#include "ui/controls/context_menu_popup.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/image.h"
 #include "ui/controls/label.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
+#include "wayland/wayland_seat.h"
 #include "wayland/wayland_toplevels.h"
 
 #include <algorithm>
@@ -24,10 +31,14 @@
 #include <unordered_set>
 #include <wayland-client-protocol.h>
 
-TaskbarWidget::TaskbarWidget(WaylandConnection& connection, wl_output* output, bool groupByWorkspace)
-    : m_connection(connection), m_output(output), m_groupByWorkspace(groupByWorkspace) {
+TaskbarWidget::TaskbarWidget(WaylandConnection& connection, wl_output* output, bool groupByWorkspace,
+                             std::string barPosition)
+    : m_connection(connection), m_output(output), m_groupByWorkspace(groupByWorkspace),
+      m_barPosition(std::move(barPosition)) {
   buildDesktopIconIndex();
 }
+
+TaskbarWidget::~TaskbarWidget() = default;
 
 void TaskbarWidget::create() {
   auto container = std::make_unique<InputArea>();
@@ -129,6 +140,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
   auto createTaskTile = [&](const TaskModel& task) {
     auto area = std::make_unique<InputArea>();
     area->setFrameSize(tileSize, tileSize);
+    area->setAcceptedButtons(BTN_LEFT | BTN_RIGHT);
     area->setOnAxisHandler([this](const InputArea::PointerData& data) {
       if (!m_groupByWorkspace) {
         return false;
@@ -153,9 +165,14 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
     });
 
     if (task.firstHandle != nullptr) {
-      area->setOnClick([this, handle = task.firstHandle](const InputArea::PointerData& data) {
+      auto* areaPtr = area.get();
+      area->setOnClick([this, task, areaPtr, handle = task.firstHandle](const InputArea::PointerData& data) {
         if (data.button == BTN_LEFT) {
           m_connection.activateToplevel(handle);
+          return;
+        }
+        if (data.button == BTN_RIGHT && areaPtr != nullptr) {
+          openTaskContextMenu(task, *areaPtr);
         }
       });
     } else {
@@ -559,6 +576,166 @@ void TaskbarWidget::updateModels() {
   if (root() != nullptr) {
     root()->markLayoutDirty();
   }
+}
+
+bool TaskbarWidget::onPointerEvent(const PointerEvent& event) {
+  if (m_contextMenuPopup == nullptr || !m_contextMenuPopup->isOpen()) {
+    return false;
+  }
+  const bool consumed = m_contextMenuPopup->onPointerEvent(event);
+  if (!consumed && event.type == PointerEvent::Type::Button && event.state == 1) {
+    m_contextMenuPopup->close();
+    return true;
+  }
+  return consumed;
+}
+
+void TaskbarWidget::openTaskContextMenu(const TaskModel& task, InputArea& area) {
+  auto* renderContext = PanelManager::instance().renderContext();
+  if (renderContext == nullptr) {
+    return;
+  }
+
+  wl_surface* pointerSurface = m_connection.lastPointerSurface();
+  auto* layerSurface = m_connection.layerSurfaceFor(pointerSurface);
+  if (layerSurface == nullptr) {
+    return;
+  }
+
+  const auto windows = m_connection.windowsForApp(task.idLower, task.startupWmClassLower, m_output);
+  m_contextMenuHandles.clear();
+  m_contextMenuHandles.reserve(windows.size());
+  for (const auto& window : windows) {
+    if (window.handle != nullptr) {
+      m_contextMenuHandles.push_back(window.handle);
+    }
+  }
+  m_contextMenuPrimaryHandle = task.firstHandle;
+
+  std::vector<DesktopAction> entryActions;
+  const auto& entriesIndex = desktopEntries();
+  for (const auto& entry : entriesIndex) {
+    if (entry.idLower == task.idLower || entry.idLower == task.appIdLower ||
+        entry.startupWmClassLower == task.idLower || entry.startupWmClassLower == task.startupWmClassLower ||
+        entry.nameLower == task.nameLower) {
+      entryActions = entry.actions;
+      break;
+    }
+  }
+
+  // IDs 0..N-1 => desktop actions, -1 => close single, -2 => close all.
+  std::vector<ContextMenuControlEntry> entries;
+  entries.reserve(entryActions.size() + 3);
+  for (std::int32_t i = 0; i < static_cast<std::int32_t>(entryActions.size()); ++i) {
+    entries.push_back(ContextMenuControlEntry{
+        .id = i,
+        .label = entryActions[static_cast<std::size_t>(i)].name,
+        .enabled = true,
+        .separator = false,
+        .hasSubmenu = false,
+    });
+  }
+  if (!m_contextMenuHandles.empty()) {
+    if (!entries.empty()) {
+      entries.push_back(
+          ContextMenuControlEntry{.id = -3, .label = {}, .enabled = false, .separator = true, .hasSubmenu = false});
+    }
+    entries.push_back(ContextMenuControlEntry{
+        .id = -1,
+        .label = i18n::tr("dock.actions.close"),
+        .enabled = m_contextMenuPrimaryHandle != nullptr,
+        .separator = false,
+        .hasSubmenu = false,
+    });
+    if (m_contextMenuHandles.size() > 1) {
+      entries.push_back(ContextMenuControlEntry{
+          .id = -2,
+          .label = i18n::tr("dock.actions.close-all"),
+          .enabled = true,
+          .separator = false,
+          .hasSubmenu = false,
+      });
+    }
+  }
+
+  if (entries.empty()) {
+    return;
+  }
+
+  if (m_contextMenuPopup == nullptr) {
+    m_contextMenuPopup = std::make_unique<ContextMenuPopup>(m_connection, *renderContext);
+  }
+  m_contextMenuPopup->setOnActivate([this, entryActions](const ContextMenuControlEntry& entry) {
+    if (entry.id >= 0) {
+      const auto idx = static_cast<std::size_t>(entry.id);
+      if (idx < entryActions.size()) {
+        const auto& action = entryActions[idx];
+        std::string cmd;
+        cmd.reserve(action.exec.size());
+        for (std::size_t i = 0; i < action.exec.size(); ++i) {
+          if (action.exec[i] == '%' && i + 1 < action.exec.size()) {
+            ++i;
+            continue;
+          }
+          cmd += action.exec[i];
+        }
+        while (!cmd.empty() && std::isspace(static_cast<unsigned char>(cmd.back()))) {
+          cmd.pop_back();
+        }
+        if (!cmd.empty()) {
+          DeferredCall::callLater([cmd]() { (void)process::runAsync(cmd); });
+        }
+      }
+      return;
+    }
+    if (entry.id == -1) {
+      if (m_contextMenuPrimaryHandle != nullptr) {
+        m_connection.closeToplevel(m_contextMenuPrimaryHandle);
+      }
+      return;
+    }
+    if (entry.id == -2) {
+      for (auto* handle : m_contextMenuHandles) {
+        if (handle != nullptr) {
+          m_connection.closeToplevel(handle);
+        }
+      }
+    }
+  });
+
+  float absX = 0.0f;
+  float absY = 0.0f;
+  Node::absolutePosition(&area, absX, absY);
+  const float anchorInset = std::round(std::max(6.0f, Style::spaceSm * m_contentScale));
+  float anchorX = absX + anchorInset;
+  float anchorY = absY + anchorInset;
+  float anchorW = std::max(1.0f, area.width() - (anchorInset * 2.0f));
+  float anchorH = std::max(1.0f, area.height() - (anchorInset * 2.0f));
+
+  constexpr float kTaskMenuWidth = 240.0f;
+  const float menuWidth = kTaskMenuWidth * m_contentScale;
+  const float gap = std::round(std::max(2.0f, Style::spaceMd * m_contentScale));
+
+  // Match tray-style placement intent (open away from bar side) while using the
+  // shared ContextMenuPopup default positioner behavior.
+  if (m_barPosition == "top") {
+    anchorY = absY + area.height() + gap;
+    anchorH = 1.0f;
+  } else if (m_barPosition == "bottom") {
+    anchorY = absY - gap;
+    anchorH = 1.0f;
+  } else if (m_barPosition == "left") {
+    anchorX = absX + area.width() + (menuWidth * 0.5f) + gap;
+    anchorW = 1.0f;
+  } else if (m_barPosition == "right") {
+    anchorX = absX - (menuWidth * 0.5f) - gap;
+    anchorW = 1.0f;
+  }
+
+  m_contextMenuPopup->open(std::move(entries), menuWidth, 12, static_cast<std::int32_t>(std::round(anchorX)),
+                           static_cast<std::int32_t>(std::round(anchorY)),
+                           static_cast<std::int32_t>(std::round(anchorW)),
+                           static_cast<std::int32_t>(std::round(anchorH)), layerSurface, m_output);
 }
 
 std::string TaskbarWidget::toLower(std::string value) { return StringUtils::toLower(std::move(value)); }

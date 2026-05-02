@@ -12,6 +12,7 @@
 class AnimationManager;
 class Box;
 class Renderer;
+struct PointerEvent;
 
 class Widget {
 public:
@@ -32,6 +33,10 @@ public:
   }
   virtual void onFrameTick(float deltaMs) { (void)deltaMs; }
   [[nodiscard]] virtual bool needsFrameTick() const { return false; }
+  [[nodiscard]] virtual bool onPointerEvent(const PointerEvent& event) {
+    (void)event;
+    return false;
+  }
 
   [[nodiscard]] Node* root() const noexcept { return m_root ? m_root.get() : m_rootPtr; }
   [[nodiscard]] float width() const noexcept;

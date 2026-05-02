@@ -5,19 +5,25 @@
 #include "wayland/wayland_connection.h"
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
+class ContextMenuPopup;
 class Flex;
+class InputArea;
 struct wl_output;
 struct zwlr_foreign_toplevel_handle_v1;
+struct PointerEvent;
 
 class TaskbarWidget : public Widget {
 public:
-  TaskbarWidget(WaylandConnection& connection, wl_output* output, bool groupByWorkspace);
+  TaskbarWidget(WaylandConnection& connection, wl_output* output, bool groupByWorkspace, std::string barPosition);
+  ~TaskbarWidget() override;
 
   void create() override;
+  [[nodiscard]] bool onPointerEvent(const PointerEvent& event) override;
 
 private:
   struct TaskModel {
@@ -59,12 +65,14 @@ private:
                                  const std::vector<WorkspaceModel>& workspaces) const;
   void buildDesktopIconIndex();
   [[nodiscard]] std::string resolveIconPath(const std::string& appId, const std::string& iconNameOrPath);
+  void openTaskContextMenu(const TaskModel& task, InputArea& area);
   void activateAdjacentWorkspace(int direction);
   [[nodiscard]] bool activeWorkspaceIndex(std::size_t& index) const;
 
   WaylandConnection& m_connection;
   wl_output* m_output = nullptr;
   bool m_groupByWorkspace = false;
+  std::string m_barPosition;
   bool m_rebuildPending = true;
   bool m_vertical = false;
 
@@ -75,6 +83,9 @@ private:
   std::vector<WorkspaceModel> m_workspaces;
   std::unordered_map<std::uintptr_t, PendingWorkspaceTransition> m_pendingWorkspaceTransitions;
   std::unordered_map<std::string, std::string> m_appIconsByLower;
+  std::unique_ptr<ContextMenuPopup> m_contextMenuPopup;
+  std::vector<zwlr_foreign_toplevel_handle_v1*> m_contextMenuHandles;
+  zwlr_foreign_toplevel_handle_v1* m_contextMenuPrimaryHandle = nullptr;
   std::uint64_t m_desktopEntriesVersion = 0;
   IconResolver m_iconResolver;
 };
