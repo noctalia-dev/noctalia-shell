@@ -289,8 +289,6 @@ namespace {
     return end == haystack.size() || isDesktopTokenDelimiter(static_cast<unsigned char>(haystack[end]));
   }
 
-  // True when remainder is only a sequel marker: digits, roman numerals, or a single English number word.
-  // Requires one token so subtitles ("foo definitive edition") are not treated as sequels.
   bool looksLikeSequelOnlySuffix(std::string_view s) {
     while (!s.empty() && isDesktopTokenDelimiter(static_cast<unsigned char>(s.front()))) {
       s.remove_prefix(1);
@@ -587,10 +585,10 @@ namespace {
       return;
     }
     lastKey = nextKey;
-    kLogProgramUi.info("program stream desktop entry: pw.nodeId={} matched_via={} normalized_term='{}' entry.id='{}' "
-                       "entry.name='{}' entry.path='{}'",
-                       nodeId, desk.matchedVia, desk.normalizedTerm, desk.entry->id, desk.entry->name,
-                       desk.entry->path);
+    kLogProgramUi.debug("program stream desktop entry: pw.nodeId={} matched_via={} normalized_term='{}' entry.id='{}' "
+                        "entry.name='{}' entry.path='{}'",
+                        nodeId, desk.matchedVia, desk.normalizedTerm, desk.entry->id, desk.entry->name,
+                        desk.entry->path);
   }
 
   bool tokenListsMatch(const std::vector<std::string>& left, const std::vector<std::string>& right) {
