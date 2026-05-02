@@ -411,6 +411,20 @@ namespace settings {
     entries.push_back(makeEntry("dock", "general", tr("settings.schema.dock.active-monitor-only.label"),
                                 tr("settings.schema.dock.active-monitor-only.description"),
                                 {"dock", "active_monitor_only"}, ToggleSetting{cfg.dock.activeMonitorOnly}, "monitor"));
+    entries.push_back(makeEntry("dock", "behavior", tr("settings.schema.shared.auto-hide.label"),
+                                tr("settings.schema.dock.auto-hide.description"), {"dock", "auto_hide"},
+                                ToggleSetting{cfg.dock.autoHide}, "autohide"));
+    if (cfg.dock.autoHide)
+      entries.push_back(makeEntry("dock", "behavior", tr("settings.schema.shared.reserve-space.label"),
+                                  tr("settings.schema.dock.reserve-space.description"), {"dock", "reserve_space"},
+                                  ToggleSetting{cfg.dock.reserveSpace}, "exclusive zone"));
+    entries.push_back(makeEntry("dock", "behavior", tr("settings.schema.dock.show-running.label"),
+                                tr("settings.schema.dock.show-running.description"), {"dock", "show_running"},
+                                ToggleSetting{cfg.dock.showRunning}, "windows"));
+    entries.push_back(makeEntry("dock", "behavior", tr("settings.schema.dock.show-instance-count.label"),
+                                tr("settings.schema.dock.show-instance-count.description"),
+                                {"dock", "show_instance_count"}, ToggleSetting{cfg.dock.showInstanceCount},
+                                "badge windows"));
     entries.push_back(makeEntry("dock", "layout", tr("settings.schema.shared.position.label"),
                                 tr("settings.schema.dock.position.description"), {"dock", "position"},
                                 positionSelect(cfg.dock.position), "edge"));
@@ -444,19 +458,6 @@ namespace settings {
     entries.push_back(makeEntry("dock", "effects", tr("settings.schema.shared.shadow.label"),
                                 tr("settings.schema.dock.shadow.description"), {"dock", "shadow"},
                                 ToggleSetting{cfg.dock.shadow}, "shadow"));
-    entries.push_back(makeEntry("dock", "behavior", tr("settings.schema.shared.auto-hide.label"),
-                                tr("settings.schema.dock.auto-hide.description"), {"dock", "auto_hide"},
-                                ToggleSetting{cfg.dock.autoHide}, "autohide"));
-    entries.push_back(makeEntry("dock", "behavior", tr("settings.schema.shared.reserve-space.label"),
-                                tr("settings.schema.dock.reserve-space.description"), {"dock", "reserve_space"},
-                                ToggleSetting{cfg.dock.reserveSpace}, "exclusive zone"));
-    entries.push_back(makeEntry("dock", "behavior", tr("settings.schema.dock.show-running.label"),
-                                tr("settings.schema.dock.show-running.description"), {"dock", "show_running"},
-                                ToggleSetting{cfg.dock.showRunning}, "windows"));
-    entries.push_back(makeEntry("dock", "behavior", tr("settings.schema.dock.show-instance-count.label"),
-                                tr("settings.schema.dock.show-instance-count.description"),
-                                {"dock", "show_instance_count"}, ToggleSetting{cfg.dock.showInstanceCount},
-                                "badge windows"));
     entries.push_back(makeEntry("dock", "focus-styling", tr("settings.schema.dock.active-icon-scale.label"),
                                 tr("settings.schema.dock.active-icon-scale.description"), {"dock", "active_scale"},
                                 SliderSetting{cfg.dock.activeScale, 0.1f, 1.75f, 0.05f, false}, "focused", true));
