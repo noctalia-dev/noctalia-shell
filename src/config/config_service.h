@@ -44,6 +44,7 @@ public:
   [[nodiscard]] bool matchesKeybind(KeybindAction action, std::uint32_t sym, std::uint32_t modifiers) const;
   [[nodiscard]] int watchFd() const noexcept { return m_inotifyFd; }
   [[nodiscard]] std::string buildSupportReport() const;
+  [[nodiscard]] std::string buildFlattenedConfig() const;
   [[nodiscard]] bool shouldRunSetupWizard() const;
 
   void addReloadCallback(ReloadCallback callback);

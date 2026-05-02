@@ -54,6 +54,7 @@ private:
   void clearTransientSettingsState();
   void openActionsMenu();
   void saveSupportReport();
+  void saveFlattenedConfig();
   void setSettingOverride(std::vector<std::string> path, ConfigOverrideValue value);
   void setSettingOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides);
   void clearSettingOverride(std::vector<std::string> path);

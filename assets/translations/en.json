@@ -538,6 +538,9 @@
       "support-report": "Support Report",
       "support-report-title": "Save Support Report",
       "support-report-saved": "Support report saved.",
+      "flattened-config": "Flattened Config",
+      "flattened-config-title": "Export Flattened Config",
+      "flattened-config-saved": "Flattened config saved.",
       "no-results": "No settings found",
       "no-results-hint": "Try a different setting name or config key.",
       "native-title": "Noctalia Settings"
@@ -570,6 +573,7 @@
       "clear": "Failed to reset setting.",
       "reset-page": "Failed to reset some settings.",
       "support-report": "Failed to save support report.",
+      "flattened-config": "Failed to save flattened config.",
       "widget": {
         "rename": "Could not rename widget instance."
       },

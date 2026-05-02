@@ -44,6 +44,7 @@ namespace {
 
   constexpr Logger kLog("settings");
   constexpr std::int32_t kActionSupportReport = 1;
+  constexpr std::int32_t kActionFlattenedConfig = 2;
 
   std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ThemeColor& color, bool bold = false) {
     auto label = std::make_unique<Label>();
@@ -341,6 +342,12 @@ void SettingsWindow::openActionsMenu() {
         }
         DeferredCall::callLater([this]() { saveSupportReport(); });
         break;
+      case kActionFlattenedConfig:
+        if (m_actionsMenuPopup != nullptr) {
+          m_actionsMenuPopup->close();
+        }
+        DeferredCall::callLater([this]() { saveFlattenedConfig(); });
+        break;
       default:
         break;
       }
@@ -353,6 +360,11 @@ void SettingsWindow::openActionsMenu() {
   std::vector<ContextMenuControlEntry> entries;
   entries.push_back({.id = kActionSupportReport,
                      .label = i18n::tr("settings.window.support-report"),
+                     .enabled = true,
+                     .separator = false,
+                     .hasSubmenu = false});
+  entries.push_back({.id = kActionFlattenedConfig,
+                     .label = i18n::tr("settings.window.flattened-config"),
                      .enabled = true,
                      .separator = false,
                      .hasSubmenu = false});
@@ -417,6 +429,55 @@ void SettingsWindow::saveSupportReport() {
 
   if (!opened) {
     m_statusMessage = i18n::tr("settings.errors.support-report");
+    m_statusIsError = true;
+    requestSceneRebuild();
+  }
+}
+
+void SettingsWindow::saveFlattenedConfig() {
+  if (m_config == nullptr) {
+    return;
+  }
+
+  FileDialogOptions options;
+  options.mode = FileDialogMode::Save;
+  options.defaultFilename = "noctalia-flattened-config.toml";
+  options.title = i18n::tr("settings.window.flattened-config-title");
+  options.extensions = {".toml"};
+
+  const bool opened = FileDialog::open(std::move(options), [this](std::optional<std::filesystem::path> result) {
+    if (!result.has_value() || m_config == nullptr) {
+      return;
+    }
+
+    auto path = *result;
+    if (path.extension().empty()) {
+      path += ".toml";
+    }
+
+    std::ofstream out(path, std::ios::trunc);
+    if (!out.is_open()) {
+      m_statusMessage = i18n::tr("settings.errors.flattened-config");
+      m_statusIsError = true;
+      requestSceneRebuild();
+      return;
+    }
+
+    out << m_config->buildFlattenedConfig();
+    if (!out.good()) {
+      m_statusMessage = i18n::tr("settings.errors.flattened-config");
+      m_statusIsError = true;
+      requestSceneRebuild();
+      return;
+    }
+
+    m_statusMessage = i18n::tr("settings.window.flattened-config-saved");
+    m_statusIsError = false;
+    requestSceneRebuild();
+  });
+
+  if (!opened) {
+    m_statusMessage = i18n::tr("settings.errors.flattened-config");
     m_statusIsError = true;
     requestSceneRebuild();
   }

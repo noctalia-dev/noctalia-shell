@@ -426,6 +426,31 @@ std::string ConfigService::buildSupportReport() const {
   return formatToml(root) + "\n";
 }
 
+std::string ConfigService::buildFlattenedConfig() const {
+  toml::table merged;
+
+  for (const auto& path : sortedConfigTomlFiles(m_configDir)) {
+    try {
+      auto table = toml::parse_file(path.string());
+      deepMerge(merged, table);
+    } catch (const toml::parse_error& e) {
+      kLog.warn("skipping parse error in flattened config export {}: {}", path.filename().string(), e.description());
+    }
+  }
+
+  if (!m_overridesPath.empty() && std::filesystem::exists(m_overridesPath)) {
+    try {
+      auto table = toml::parse_file(m_overridesPath);
+      stripInternalState(table);
+      deepMerge(merged, table);
+    } catch (const toml::parse_error& e) {
+      kLog.warn("skipping parse error in flattened config export {}: {}", m_overridesPath, e.description());
+    }
+  }
+
+  return formatToml(merged) + "\n";
+}
+
 void ConfigService::checkReload() {
   if (m_inotifyFd < 0) {
     return;
