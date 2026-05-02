@@ -257,6 +257,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
     meta->setBold(true);
     meta->setFontSize(Style::fontSizeBody * scale);
     meta->setColor(roleColor(ColorRole::OnSurface));
+    meta->setStableBaseline(true);
     m_dayMetas[i] = meta.get();
     daySlot->addChild(std::move(meta));
     topRow->addChild(std::move(daySlot));
@@ -266,6 +267,8 @@ std::unique_ptr<Flex> WeatherTab::create() {
     temps->setBold(true);
     temps->setFontSize(Style::fontSizeBody * scale);
     temps->setColor(roleColor(ColorRole::OnSurface));
+    temps->setTextAlign(TextAlign::End);
+    temps->setStableBaseline(true);
     m_dayTemps[i] = temps.get();
     topRow->addChild(std::move(temps));
 
@@ -294,6 +297,13 @@ std::unique_ptr<Flex> WeatherTab::create() {
 void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
   if (m_rootLayout == nullptr || m_currentText == nullptr || m_forecastColumn == nullptr) {
     return;
+  }
+
+  for (auto* label : m_dayTemps) {
+    if (label != nullptr) {
+      label->setMaxWidth(0.0f);
+      label->setMinWidth(0.0f);
+    }
   }
 
   m_rootLayout->setSize(contentWidth, bodyHeight);
@@ -397,12 +407,31 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
     }
   }
 
+  float forecastTempColumnWidth = 0.0f;
   for (std::size_t i = 0; i < kDayCount; ++i) {
-    if (m_dayRows[i] == nullptr) {
+    if (m_dayRows[i] != nullptr && m_dayRows[i]->visible() && m_dayTemps[i] != nullptr) {
+      m_dayTemps[i]->measure(renderer);
+      forecastTempColumnWidth = std::max(forecastTempColumnWidth, m_dayTemps[i]->width());
+    }
+  }
+
+  const float forecastInnerWidth = m_forecastColumn != nullptr
+                                       ? std::max(0.0f, m_forecastColumn->width() - m_forecastColumn->paddingLeft() -
+                                                            m_forecastColumn->paddingRight())
+                                       : 0.0f;
+  for (std::size_t i = 0; i < kDayCount; ++i) {
+    if (m_dayRows[i] == nullptr || !m_dayRows[i]->visible()) {
       continue;
     }
     if (m_dayTemps[i] != nullptr) {
-      m_dayTemps[i]->setMaxWidth(std::max(1.0f, m_dayTemps[i]->width()));
+      m_dayTemps[i]->setMinWidth(forecastTempColumnWidth);
+    }
+    if (m_dayMetas[i] != nullptr) {
+      const float glyphWidth = m_dayGlyphs[i] != nullptr ? m_dayGlyphs[i]->width() : 0.0f;
+      const float daySlotGap = m_dayIconSlots[i] != nullptr ? m_dayIconSlots[i]->gap() : 0.0f;
+      const float topRowGap = Style::spaceSm * scale;
+      const float metaMaxWidth = forecastInnerWidth - forecastTempColumnWidth - topRowGap - glyphWidth - daySlotGap;
+      m_dayMetas[i]->setMaxWidth(std::max(1.0f, metaMaxWidth));
     }
   }
 
