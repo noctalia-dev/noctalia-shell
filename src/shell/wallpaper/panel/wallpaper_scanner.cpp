@@ -28,6 +28,13 @@ namespace {
         break;
       }
       const auto& entry = *it;
+      if (entry.path().filename().string().starts_with('.')) {
+        if (entry.is_directory()) {
+          it.disable_recursion_pending();
+        }
+        continue;
+      }
+
       std::error_code typeEc;
       if (!entry.is_regular_file(typeEc) || typeEc) {
         continue;
@@ -50,6 +57,10 @@ namespace {
       if (ec) {
         break;
       }
+      if (entry.path().filename().string().starts_with('.')) {
+        continue;
+      }
+
       std::error_code typeEc;
       if (entry.is_directory(typeEc) && !typeEc) {
         WallpaperEntry e;
