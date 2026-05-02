@@ -190,8 +190,8 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
   if (m_groupByWorkspace && !m_workspaces.empty()) {
     const float capsuleRadius = Style::radiusLg * m_contentScale;
     const float groupGap = Style::spaceXs * m_contentScale;
-    const float groupPadY = Style::spaceXs * 0.35f * m_contentScale;
-    const float groupPadRight = Style::spaceXs * 0.55f * m_contentScale;
+    const float groupPadCross = Style::spaceXs * 0.35f * m_contentScale;
+    const float groupPadEnd = Style::spaceXs * 0.55f * m_contentScale;
     const float badgeBase = std::round(std::max(11.0f, Style::barGlyphSize * 0.72f) * m_contentScale);
     const float badgeFontSize = std::round(Style::fontSizeCaption * 0.72f * m_contentScale);
     for (const auto& ws : m_workspaces) {
@@ -209,10 +209,13 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       const auto badgeMetrics = renderer.measureText(ws.label, badgeFontSize, true);
       const float badgeTextWidth = std::max(0.0f, badgeMetrics.right - badgeMetrics.left);
       const float badgeWidth = std::round(std::max(badgeBase, badgeTextWidth + (Style::spaceXs * m_contentScale)));
-      const float groupPadLeft = std::round(std::max(groupPadRight, badgeWidth * 0.68f));
-      const float groupWidth = std::round(groupPadLeft + groupPadRight + (tileSize * static_cast<float>(tasks.size())) +
-                                          (groupGap * static_cast<float>(tasks.size() - 1)));
-      const float groupHeight = std::round(tileSize + (groupPadY * 2.0f));
+      const float groupPadStart = std::round(std::max(groupPadEnd, badgeWidth * 0.68f));
+      const float runLength =
+          (tileSize * static_cast<float>(tasks.size())) + (groupGap * static_cast<float>(tasks.size() - 1));
+      const float groupWidth = m_vertical ? std::round(tileSize + (groupPadCross * 2.0f))
+                                          : std::round(groupPadStart + groupPadEnd + runLength);
+      const float groupHeight = m_vertical ? std::round(groupPadStart + groupPadEnd + runLength)
+                                           : std::round(tileSize + (groupPadCross * 2.0f));
 
       auto group = std::make_unique<Box>();
       group->setFrameSize(groupWidth, groupHeight);
@@ -222,9 +225,13 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       auto* groupPtr = static_cast<Box*>(m_taskStrip->addChild(std::move(group)));
 
       for (std::size_t i = 0; i < tasks.size(); ++i) {
+        const float tileOffset = (tileSize + groupGap) * static_cast<float>(i);
         auto tile = createTaskTile(*tasks[i]);
-        tile->setPosition(std::round(groupPadLeft + (tileSize + groupGap) * static_cast<float>(i)),
-                          std::round(groupPadY));
+        if (m_vertical) {
+          tile->setPosition(std::round(groupPadCross), std::round(groupPadStart + tileOffset));
+        } else {
+          tile->setPosition(std::round(groupPadStart + tileOffset), std::round(groupPadCross));
+        }
         groupPtr->addChild(std::move(tile));
       }
 
