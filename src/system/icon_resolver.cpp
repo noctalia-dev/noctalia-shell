@@ -112,6 +112,7 @@ namespace {
     std::vector<std::string> roots;
     for (const auto& dataDir : dataDirs) {
       pushUnique(roots, dataDir + "/pixmaps");
+      pushUnique(roots, dataDir + "/pixmaps/distribution-logos");
     }
     return roots;
   }
