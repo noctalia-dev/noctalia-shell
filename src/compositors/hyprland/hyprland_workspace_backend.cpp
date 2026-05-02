@@ -266,10 +266,12 @@ std::vector<WorkspaceWindow> HyprlandWorkspaceBackend::workspaceWindows(wl_outpu
       continue;
     }
     result.push_back(WorkspaceWindow{
-        .windowId = std::to_string(address),
+        .windowId = std::format("{:x}", address),
         .workspaceKey = keyIt->second,
         .appId = toplevel.appId,
         .title = toplevel.title,
+        .x = toplevel.x,
+        .y = toplevel.y,
     });
   }
   return result;
@@ -511,6 +513,10 @@ void HyprlandWorkspaceBackend::refreshClients() {
       state.appId = item.value("initialClass", "");
     }
     state.title = item.value("title", "");
+    if (const auto atIt = item.find("at"); atIt != item.end() && atIt->is_array() && atIt->size() >= 2) {
+      state.x = (*atIt)[0].get<std::int32_t>();
+      state.y = (*atIt)[1].get<std::int32_t>();
+    }
 
     bool urgent = false;
     bool urgentSet = false;
@@ -751,6 +757,7 @@ void HyprlandWorkspaceBackend::handleEvent(std::string_view line) {
       it->second.appId = std::string(args[2]);
       it->second.title = std::string(args[3]);
     }
+    refreshClients();
     recomputeWorkspaceFlags();
     notifyChanged();
     return;
@@ -775,6 +782,7 @@ void HyprlandWorkspaceBackend::handleEvent(std::string_view line) {
       return;
     }
     moveToplevel(*address, args[2]);
+    refreshClients();
     recomputeWorkspaceFlags();
     notifyChanged();
     return;

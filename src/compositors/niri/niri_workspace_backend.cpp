@@ -316,6 +316,8 @@ std::vector<WorkspaceWindow> NiriWorkspaceBackend::workspaceWindows(const std::s
         .workspaceKey = workspaceKey(*workspaceIt->second),
         .appId = window.appId,
         .title = window.title,
+        .x = window.x,
+        .y = window.y,
     });
   }
   return result;
@@ -486,6 +488,8 @@ bool NiriWorkspaceBackend::handleMessage(std::string_view line) {
     changed = handleOverviewChanged(nlohmann::json{{"is_open", false}});
   } else if (it.key() == "WindowOpenedOrChanged") {
     changed = handleWindowOpenedOrChanged(it.value());
+  } else if (it.key() == "WindowLayoutsChanged") {
+    changed = handleWindowLayoutsChanged(it.value());
   } else if (it.key() == "WindowClosed") {
     changed = handleWindowClosed(it.value());
   }
@@ -592,6 +596,43 @@ bool NiriWorkspaceBackend::handleWindowOpenedOrChanged(const nlohmann::json& pay
   return true;
 }
 
+bool NiriWorkspaceBackend::handleWindowLayoutsChanged(const nlohmann::json& payload) {
+  const auto* changes = arrayPayload(payload, "changes");
+  if (changes == nullptr) {
+    return false;
+  }
+
+  bool changed = false;
+  for (const auto& item : *changes) {
+    if (!item.is_array() || item.size() < 2) {
+      continue;
+    }
+
+    const auto id = item[0].get<std::uint64_t>();
+    const auto& layout = item[1];
+
+    auto it = m_windows.find(id);
+    if (it == m_windows.end()) {
+      continue;
+    }
+
+    if (layout.contains("pos_in_scrolling_layout")) {
+      const auto& pos = layout["pos_in_scrolling_layout"];
+      if (pos.is_array() && pos.size() >= 2) {
+        std::int32_t x = pos[0].get<std::int32_t>();
+        std::int32_t y = pos[1].get<std::int32_t>();
+        if (it->second.x != x || it->second.y != y) {
+          it->second.x = x;
+          it->second.y = y;
+          changed = true;
+        }
+      }
+    }
+  }
+
+  return changed;
+}
+
 bool NiriWorkspaceBackend::handleWindowClosed(const nlohmann::json& payload) {
   std::optional<std::uint64_t> windowId = jsonUnsigned(payload);
   if (!windowId.has_value() && payload.is_object()) {
@@ -641,6 +682,19 @@ NiriWorkspaceBackend::parseWindow(const nlohmann::json& json) {
     return std::nullopt;
   }
 
+  std::int32_t x = 0;
+  std::int32_t y = 0;
+  if (json.contains("layout")) {
+    const auto& layout = json["layout"];
+    if (layout.contains("pos_in_scrolling_layout")) {
+      const auto& pos = layout["pos_in_scrolling_layout"];
+      if (pos.is_array() && pos.size() >= 2) {
+        x = pos[0].get<std::int32_t>();
+        y = pos[1].get<std::int32_t>();
+      }
+    }
+  }
+
   return std::pair<std::uint64_t, WindowState>{
       *id,
       WindowState{
@@ -654,6 +708,8 @@ NiriWorkspaceBackend::parseWindow(const nlohmann::json& json) {
                 return appId;
               }(),
           .title = jsonOptionalString(json, "title"),
+          .x = x,
+          .y = y,
       },
   };
 }

@@ -23,6 +23,8 @@ struct WorkspaceWindow {
   std::string workspaceKey;
   std::string appId;
   std::string title;
+  std::int32_t x = 0;
+  std::int32_t y = 0;
 };
 
 class WorkspaceBackend {

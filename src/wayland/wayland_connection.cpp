@@ -484,6 +484,8 @@ std::vector<WorkspaceWindowAssignment> WaylandConnection::workspaceWindowAssignm
         .workspaceKey = window.workspaceKey,
         .appId = window.appId,
         .title = window.title,
+        .x = window.x,
+        .y = window.y,
     });
   }
   return result;

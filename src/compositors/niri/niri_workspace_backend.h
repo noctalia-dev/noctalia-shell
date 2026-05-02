@@ -44,6 +44,8 @@ private:
     std::optional<std::uint64_t> workspaceId;
     std::string appId;
     std::string title;
+    std::int32_t x = 0;
+    std::int32_t y = 0;
 
     bool operator==(const WindowState&) const = default;
   };
@@ -67,6 +69,7 @@ private:
   [[nodiscard]] bool handleWindowsChanged(const nlohmann::json& payload);
   [[nodiscard]] bool handleOverviewChanged(const nlohmann::json& payload);
   [[nodiscard]] bool handleWindowOpenedOrChanged(const nlohmann::json& payload);
+  [[nodiscard]] bool handleWindowLayoutsChanged(const nlohmann::json& payload);
   [[nodiscard]] bool handleWindowClosed(const nlohmann::json& payload);
   [[nodiscard]] static std::optional<WorkspaceState> parseWorkspace(const nlohmann::json& json);
   [[nodiscard]] static std::optional<std::pair<std::uint64_t, WindowState>> parseWindow(const nlohmann::json& json);

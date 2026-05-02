@@ -165,12 +165,21 @@ namespace {
     if (const auto idIt = node.find("id"); idIt != node.end() && idIt->is_number_integer()) {
       windowId = std::to_string(idIt->get<std::int64_t>());
     }
+    std::int32_t x = 0;
+    std::int32_t y = 0;
+    if (const auto rectIt = node.find("rect"); rectIt != node.end() && rectIt->is_object()) {
+      x = rectIt->value("x", 0);
+      y = rectIt->value("y", 0);
+    }
+
     if (isLeaf && !workspaceName.empty() && !workspaceKey.empty() && !appId.empty()) {
       windows.push_back(WorkspaceWindow{
           .windowId = windowId,
           .workspaceKey = workspaceKey,
           .appId = appId,
           .title = node.value("name", ""),
+          .x = x,
+          .y = y,
       });
     }
 
