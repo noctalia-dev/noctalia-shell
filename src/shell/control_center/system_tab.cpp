@@ -54,7 +54,7 @@ namespace {
     return ptr;
   }
 
-  Flex* makeIconLabel(Flex& parent, const char* glyphName, float scale) {
+  Flex* makeIconLabel(Flex& parent, const char* glyphName, float scale, Glyph** outIcon = nullptr) {
     auto group = std::make_unique<Flex>();
     group->setDirection(FlexDirection::Horizontal);
     group->setAlign(FlexAlign::Center);
@@ -64,6 +64,9 @@ namespace {
     icon->setGlyph(glyphName);
     icon->setGlyphSize(Style::fontSizeBody * scale);
     icon->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    if (outIcon != nullptr) {
+      *outIcon = icon.get();
+    }
     group->addChild(std::move(icon));
 
     auto* ptr = group.get();
@@ -138,8 +141,10 @@ std::unique_ptr<Flex> SystemTab::create() {
     m_cpuCard = card.get();
 
     auto* header = makeHeaderRow(*card, i18n::tr("control-center.system.titles.cpu"), sc);
-    m_cpuPctLabel = makeValueLabel(*header, sc);
-    m_cpuTempLabel = makeValueLabel(*header, sc);
+    auto* cpuPctGroup = makeIconLabel(*header, "cpu-usage", sc, &m_cpuPctIcon);
+    m_cpuPctLabel = makeValueLabel(*cpuPctGroup, sc);
+    auto* cpuTempGroup = makeIconLabel(*header, "cpu-temperature", sc, &m_cpuTempIcon);
+    m_cpuTempLabel = makeValueLabel(*cpuTempGroup, sc);
     m_cpuGraph = addGraph(*card, sc);
 
     leftCol->addChild(std::move(card));
@@ -153,7 +158,8 @@ std::unique_ptr<Flex> SystemTab::create() {
     m_ramCard = card.get();
 
     auto* header = makeHeaderRow(*card, i18n::tr("control-center.system.titles.memory"), sc);
-    m_ramLabel = makeValueLabel(*header, sc);
+    auto* ramGroup = makeIconLabel(*header, "memory", sc, &m_ramIcon);
+    m_ramLabel = makeValueLabel(*ramGroup, sc);
     m_ramGraph = addGraph(*card, sc);
 
     leftCol->addChild(std::move(card));
@@ -167,9 +173,9 @@ std::unique_ptr<Flex> SystemTab::create() {
     m_netCard = card.get();
 
     auto* header = makeHeaderRow(*card, i18n::tr("control-center.system.titles.network"), sc);
-    auto* rxGroup = makeIconLabel(*header, "download-speed", sc);
+    auto* rxGroup = makeIconLabel(*header, "download-speed", sc, &m_rxIcon);
     m_rxLabel = makeValueLabel(*rxGroup, sc);
-    auto* txGroup = makeIconLabel(*header, "upload-speed", sc);
+    auto* txGroup = makeIconLabel(*header, "upload-speed", sc, &m_txIcon);
     m_txLabel = makeValueLabel(*txGroup, sc);
     m_netGraph = addGraph(*card, sc);
 
@@ -237,10 +243,15 @@ void SystemTab::onClose() {
   m_netCard = nullptr;
   m_loadCard = nullptr;
   m_infoCard = nullptr;
+  m_cpuPctIcon = nullptr;
   m_cpuPctLabel = nullptr;
+  m_cpuTempIcon = nullptr;
   m_cpuTempLabel = nullptr;
+  m_ramIcon = nullptr;
   m_ramLabel = nullptr;
+  m_rxIcon = nullptr;
   m_rxLabel = nullptr;
+  m_txIcon = nullptr;
   m_txLabel = nullptr;
   m_loadLabel = nullptr;
   m_infoLabel = nullptr;
@@ -332,12 +343,44 @@ void SystemTab::doUpdate(Renderer& renderer) {
     m_cpuGraph->setLineColor1(resolveThemeColor(roleColor(ColorRole::Primary)));
     m_cpuGraph->setLineColor2(resolveThemeColor(roleColor(ColorRole::Error)));
   }
+  if (m_cpuPctIcon != nullptr) {
+    m_cpuPctIcon->setColor(roleColor(ColorRole::Primary));
+  }
+  if (m_cpuPctLabel != nullptr) {
+    m_cpuPctLabel->setColor(roleColor(ColorRole::Primary));
+  }
+  if (m_cpuTempIcon != nullptr) {
+    m_cpuTempIcon->setColor(roleColor(ColorRole::Error));
+  }
+  if (m_cpuTempLabel != nullptr) {
+    m_cpuTempLabel->setColor(roleColor(ColorRole::Error));
+  }
+
   if (m_ramGraph != nullptr) {
     m_ramGraph->setLineColor1(resolveThemeColor(roleColor(ColorRole::Secondary)));
   }
+  if (m_ramIcon != nullptr) {
+    m_ramIcon->setColor(roleColor(ColorRole::Secondary));
+  }
+  if (m_ramLabel != nullptr) {
+    m_ramLabel->setColor(roleColor(ColorRole::Secondary));
+  }
+
   if (m_netGraph != nullptr) {
     m_netGraph->setLineColor1(resolveThemeColor(roleColor(ColorRole::Tertiary)));
     m_netGraph->setLineColor2(resolveThemeColor(roleColor(ColorRole::Secondary)));
+  }
+  if (m_rxIcon != nullptr) {
+    m_rxIcon->setColor(roleColor(ColorRole::Tertiary));
+  }
+  if (m_rxLabel != nullptr) {
+    m_rxLabel->setColor(roleColor(ColorRole::Tertiary));
+  }
+  if (m_txIcon != nullptr) {
+    m_txIcon->setColor(roleColor(ColorRole::Secondary));
+  }
+  if (m_txLabel != nullptr) {
+    m_txLabel->setColor(roleColor(ColorRole::Secondary));
   }
 
   const bool monitorRunning = m_monitor->isRunning();
@@ -508,8 +551,7 @@ void SystemTab::syncLabels() {
   }
   if (m_ramLabel != nullptr) {
     const double usedGb = static_cast<double>(stats.ramUsedMb) / 1024.0;
-    const double totalGb = static_cast<double>(stats.ramTotalMb) / 1024.0;
-    m_ramLabel->setText(std::format("{:.1f} / {:.1f} GB · {:.0f}%", usedGb, totalGb, stats.ramUsagePercent));
+    m_ramLabel->setText(std::format("{:.1f} GB · {:.0f}%", usedGb, stats.ramUsagePercent));
   }
   if (m_rxLabel != nullptr) {
     m_rxLabel->setText(formatBytesPerSec(stats.netRxBytesPerSec));

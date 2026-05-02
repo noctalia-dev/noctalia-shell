@@ -6,6 +6,7 @@
 #include <string>
 
 class Flex;
+class Glyph;
 class GraphNode;
 class Label;
 class SystemMonitorService;
@@ -51,10 +52,15 @@ private:
   Flex* m_loadCard = nullptr;
   Flex* m_infoCard = nullptr;
 
+  Glyph* m_cpuPctIcon = nullptr;
   Label* m_cpuPctLabel = nullptr;
+  Glyph* m_cpuTempIcon = nullptr;
   Label* m_cpuTempLabel = nullptr;
+  Glyph* m_ramIcon = nullptr;
   Label* m_ramLabel = nullptr;
+  Glyph* m_rxIcon = nullptr;
   Label* m_rxLabel = nullptr;
+  Glyph* m_txIcon = nullptr;
   Label* m_txLabel = nullptr;
   Label* m_loadLabel = nullptr;
   Label* m_infoLabel = nullptr;
