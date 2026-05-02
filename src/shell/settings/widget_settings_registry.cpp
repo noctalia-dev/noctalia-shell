@@ -210,6 +210,10 @@ namespace settings {
       return baseSpec(key, WidgetSettingValueType::String, std::move(defaultValue), advanced);
     }
 
+    WidgetSettingSpec colorRoleSpec(std::string_view key, std::string defaultValue = {}, bool advanced = false) {
+      return baseSpec(key, WidgetSettingValueType::ColorRole, std::move(defaultValue), advanced);
+    }
+
     WidgetSettingSpec stringListSpec(std::string_view key, std::vector<std::string> defaultValue = {},
                                      bool advanced = false) {
       return baseSpec(key, WidgetSettingValueType::StringList, std::move(defaultValue), advanced);
@@ -375,11 +379,11 @@ namespace settings {
   std::vector<WidgetSettingSpec> commonWidgetSettingSpecs() {
     return {
         boolSpec("anchor", false, true),
-        stringSpec("color", {}, true),
+        colorRoleSpec("color", {}, true),
         boolSpec("capsule", false),
-        stringSpec("capsule_fill", "surface_variant"),
-        stringSpec("capsule_border", {}, true),
-        stringSpec("capsule_foreground", {}, true),
+        colorRoleSpec("capsule_fill", "surface_variant"),
+        colorRoleSpec("capsule_border", {}, true),
+        colorRoleSpec("capsule_foreground", {}, true),
         doubleSpec("capsule_padding", static_cast<double>(Style::barCapsulePadding), 0.0, 48.0, 1.0),
         doubleSpec("capsule_opacity", 1.0, 0.0, 1.0, 0.01),
     };
@@ -418,8 +422,8 @@ namespace settings {
       add(intSpec("bands", 16, 2.0, 128.0, 1.0));
       add(boolSpec("mirrored", false));
       add(boolSpec("show_when_idle", false));
-      add(stringSpec("low_color", "primary"));
-      add(stringSpec("high_color", "primary"));
+      add(colorRoleSpec("low_color", "primary"));
+      add(colorRoleSpec("high_color", "primary"));
     } else if (type == "bluetooth") {
       add(boolSpec("show_label", false));
     } else if (type == "brightness") {

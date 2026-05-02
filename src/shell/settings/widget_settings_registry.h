@@ -46,6 +46,7 @@ namespace settings {
     String,
     StringList,
     Select,
+    ColorRole,
   };
 
   struct WidgetSettingSelectOption {

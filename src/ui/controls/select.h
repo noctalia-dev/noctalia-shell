@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui/controls/flex.h"
+#include "ui/palette.h"
 #include "ui/signal.h"
 #include "ui/style.h"
 
@@ -13,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+class Box;
 class InputArea;
 class Glyph;
 class Label;
@@ -34,6 +36,7 @@ public:
   void setControlHeight(float height);
   void setHorizontalPadding(float padding);
   void setGlyphSize(float size);
+  void setOptionIndicators(std::vector<ThemeColor> colors);
   void setOnSelectionChanged(std::function<void(std::size_t, std::string_view)> callback);
   static void handleGlobalPointerPress(InputArea* target);
   static bool closeAnyOpen();
@@ -46,6 +49,7 @@ public:
 private:
   struct OptionView {
     RectNode* background = nullptr;
+    Box* indicator = nullptr;
     Label* label = nullptr;
     Glyph* checkGlyph = nullptr;
     InputArea* area = nullptr;
@@ -79,6 +83,7 @@ private:
   static Select* s_openSelect;
 
   RectNode* m_triggerBackground = nullptr;
+  Box* m_triggerIndicator = nullptr;
   Label* m_triggerLabel = nullptr;
   Glyph* m_triggerGlyph = nullptr;
   InputArea* m_triggerArea = nullptr;
@@ -104,6 +109,7 @@ private:
   float m_controlHeight = Style::controlHeight;
   float m_horizontalPadding = Style::spaceMd;
   float m_glyphSize = 14.0f;
+  std::vector<ThemeColor> m_indicatorColors;
   Signal<>::ScopedConnection m_paletteConn;
 
   std::function<void(std::size_t, std::string_view)> m_onSelectionChanged;

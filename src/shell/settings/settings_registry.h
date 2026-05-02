@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config/config_service.h"
+#include "ui/palette.h"
 
 #include <functional>
 #include <optional>
@@ -71,8 +72,15 @@ namespace settings {
     std::function<void()> action;
   };
 
-  using SettingControl = std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting, OptionalNumberSetting,
-                                      ListSetting, ColorSetting, MultiSelectSetting, ButtonSetting>;
+  struct ColorRolePickerSetting {
+    std::vector<ColorRole> roles;
+    std::string selectedValue;
+    bool allowNone = false;
+  };
+
+  using SettingControl =
+      std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting, OptionalNumberSetting, ListSetting,
+                   ColorSetting, MultiSelectSetting, ButtonSetting, ColorRolePickerSetting>;
 
   struct SettingEntry {
     std::string section;

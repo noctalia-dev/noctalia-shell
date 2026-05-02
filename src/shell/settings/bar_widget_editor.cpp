@@ -821,6 +821,16 @@ namespace settings {
           ctx.makeRow(*panel, entry, ctx.makeSelect(std::move(selectSetting), path));
           break;
         }
+        case WidgetSettingValueType::ColorRole: {
+          ColorRolePickerSetting pickerSetting;
+          pickerSetting.selectedValue = settingValueAsString(value);
+          pickerSetting.allowNone = spec.advanced;
+          for (const auto& token : kColorRoleTokens) {
+            pickerSetting.roles.push_back(token.role);
+          }
+          ctx.makeRow(*panel, entry, ctx.makeColorRolePicker(std::move(pickerSetting), path));
+          break;
+        }
         }
         ++visibleSpecs;
       }

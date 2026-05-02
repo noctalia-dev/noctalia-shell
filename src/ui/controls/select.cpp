@@ -6,6 +6,7 @@
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "render/scene/rect_node.h"
+#include "ui/controls/box.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
@@ -51,6 +52,10 @@ Select::Select() {
 
   auto triggerBackground = std::make_unique<RectNode>();
   m_triggerBackground = static_cast<RectNode*>(addChild(std::move(triggerBackground)));
+
+  auto triggerIndicator = std::make_unique<Box>();
+  triggerIndicator->setVisible(false);
+  m_triggerIndicator = static_cast<Box*>(addChild(std::move(triggerIndicator)));
 
   auto triggerLabel = std::make_unique<Label>();
   triggerLabel->setStableBaseline(true);
@@ -221,6 +226,12 @@ void Select::setGlyphSize(float size) {
   markLayoutDirty();
 }
 
+void Select::setOptionIndicators(std::vector<ThemeColor> colors) {
+  m_indicatorColors = std::move(colors);
+  m_needsOptionRebuild = true;
+  markLayoutDirty();
+}
+
 void Select::setOnSelectionChanged(std::function<void(std::size_t, std::string_view)> callback) {
   m_onSelectionChanged = std::move(callback);
 }
@@ -255,7 +266,12 @@ void Select::doLayout(Renderer& renderer) {
     widestLabel = std::max(widestLabel, option.label->width());
   }
 
-  float contentWidth = widestLabel + m_horizontalPadding * 2.0f + m_glyphSize + Style::spaceXs;
+  const bool hasIndicators = !m_indicatorColors.empty();
+  const float indicatorSize = hasIndicators ? std::round(m_fontSize) : 0.0f;
+  const float indicatorBorder = hasIndicators ? 1.5f : 0.0f;
+  const float indicatorInset = hasIndicators ? (indicatorSize + Style::spaceSm) : 0.0f;
+
+  float contentWidth = widestLabel + m_horizontalPadding * 2.0f + m_glyphSize + Style::spaceXs + indicatorInset;
   float dropdownWidth = m_fixedWidth > 0.0f ? m_fixedWidth : std::max({kDefaultWidth, kMinWidth, contentWidth});
 
   const float viewportHeight = menuViewportHeight();
@@ -264,13 +280,26 @@ void Select::doLayout(Renderer& renderer) {
   m_triggerBackground->setPosition(0.0f, 0.0f);
   m_triggerBackground->setFrameSize(dropdownWidth, m_controlHeight);
 
+  if (m_triggerIndicator != nullptr) {
+    const bool showTriggerIndicator = hasIndicators && m_selectedIndex < m_indicatorColors.size();
+    m_triggerIndicator->setVisible(showTriggerIndicator);
+    if (showTriggerIndicator) {
+      m_triggerIndicator->setFill(m_indicatorColors[m_selectedIndex]);
+      m_triggerIndicator->setBorder(roleColor(ColorRole::Outline), indicatorBorder);
+      m_triggerIndicator->setFrameSize(indicatorSize, indicatorSize);
+      m_triggerIndicator->setRadius(indicatorSize * 0.5f);
+      m_triggerIndicator->setPosition(m_horizontalPadding, std::round((m_controlHeight - indicatorSize) * 0.5f));
+    }
+  }
+
+  const float triggerLabelLeft = m_horizontalPadding + indicatorInset;
   const float triggerLabelMax =
-      std::max(0.0f, dropdownWidth - (m_horizontalPadding * 2.0f + m_glyphSize + Style::spaceXs));
+      std::max(0.0f, dropdownWidth - (triggerLabelLeft + m_horizontalPadding + m_glyphSize + Style::spaceXs));
   m_triggerLabel->setMaxWidth(triggerLabelMax);
   m_triggerLabel->measure(renderer);
   float triggerLabelY = std::round((m_controlHeight - m_triggerLabel->height()) * 0.5f);
   float triggerGlyphY = std::round((m_controlHeight - m_triggerGlyph->height()) * 0.5f);
-  m_triggerLabel->setPosition(m_horizontalPadding, triggerLabelY);
+  m_triggerLabel->setPosition(triggerLabelLeft, triggerLabelY);
   m_triggerGlyph->setPosition(dropdownWidth - m_horizontalPadding - m_triggerGlyph->width(), triggerGlyphY);
   m_triggerArea->setPosition(0.0f, 0.0f);
   m_triggerArea->setFrameSize(dropdownWidth, m_controlHeight);
@@ -319,11 +348,24 @@ void Select::doLayout(Renderer& renderer) {
     option.background->setFrameSize(dropdownWidth, m_controlHeight);
     option.background->setZIndex(3);
 
+    if (option.indicator != nullptr) {
+      option.indicator->setVisible(showMenu);
+      option.indicator->setFrameSize(indicatorSize, indicatorSize);
+      option.indicator->setRadius(indicatorSize * 0.5f);
+      option.indicator->setBorder(roleColor(ColorRole::Outline), indicatorBorder);
+      option.indicator->setPosition(m_horizontalPadding, rowY + std::round((m_controlHeight - indicatorSize) * 0.5f));
+      option.indicator->setZIndex(4);
+      if (i < m_indicatorColors.size()) {
+        option.indicator->setFill(m_indicatorColors[i]);
+      }
+    }
+
+    const float optLabelLeft = m_horizontalPadding + indicatorInset;
     option.label->setMaxWidth(
-        std::max(0.0f, dropdownWidth - m_horizontalPadding * 2.0f - m_glyphSize - Style::spaceXs));
+        std::max(0.0f, dropdownWidth - optLabelLeft - m_horizontalPadding - m_glyphSize - Style::spaceXs));
     option.label->measure(renderer);
     float optLabelY = std::round((m_controlHeight - option.label->height()) * 0.5f);
-    option.label->setPosition(m_horizontalPadding, rowY + optLabelY);
+    option.label->setPosition(optLabelLeft, rowY + optLabelY);
     option.label->setZIndex(4);
 
     option.checkGlyph->measure(renderer);
@@ -356,6 +398,9 @@ void Select::clearOptionViews() {
     if (option.label != nullptr) {
       (void)m_menuViewport->removeChild(option.label);
     }
+    if (option.indicator != nullptr) {
+      (void)m_menuViewport->removeChild(option.indicator);
+    }
     if (option.background != nullptr) {
       (void)m_menuViewport->removeChild(option.background);
     }
@@ -366,9 +411,17 @@ void Select::clearOptionViews() {
 void Select::rebuildOptionViews() {
   clearOptionViews();
 
+  const bool hasIndicators = !m_indicatorColors.empty();
+
   for (std::size_t i = 0; i < m_options.size(); ++i) {
     auto background = std::make_unique<RectNode>();
     auto* bgPtr = static_cast<RectNode*>(m_menuViewport->addChild(std::move(background)));
+
+    Box* indicatorPtr = nullptr;
+    if (hasIndicators && i < m_indicatorColors.size()) {
+      auto indicator = std::make_unique<Box>();
+      indicatorPtr = static_cast<Box*>(m_menuViewport->addChild(std::move(indicator)));
+    }
 
     auto label = std::make_unique<Label>();
     label->setText(m_options[i]);
@@ -415,6 +468,7 @@ void Select::rebuildOptionViews() {
 
     m_optionViews.push_back(OptionView{
         .background = bgPtr,
+        .indicator = indicatorPtr,
         .label = labelPtr,
         .checkGlyph = checkIconPtr,
         .area = areaPtr,

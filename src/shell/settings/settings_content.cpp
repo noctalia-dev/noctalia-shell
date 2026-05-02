@@ -605,6 +605,32 @@ namespace settings {
       return wrap;
     };
 
+    const auto makeColorRolePicker = [&](const ColorRolePickerSetting& setting,
+                                         std::vector<std::string> path) -> std::unique_ptr<Node> {
+      std::vector<SelectOption> opts;
+      opts.reserve(setting.roles.size() + (setting.allowNone ? 1 : 0));
+      std::vector<ThemeColor> indicators;
+      indicators.reserve(setting.roles.size() + (setting.allowNone ? 1 : 0));
+
+      if (setting.allowNone) {
+        opts.push_back(SelectOption{"", i18n::tr("settings.options.theme-role.default")});
+        indicators.push_back(clearThemeColor());
+      }
+      for (const auto role : setting.roles) {
+        opts.push_back(SelectOption{std::string(colorRoleToken(role)), std::string(colorRoleToken(role))});
+        indicators.push_back(roleColor(role));
+      }
+
+      SelectSetting selectSetting{std::move(opts), setting.selectedValue, setting.allowNone};
+      auto select = makeSelect(selectSetting, std::move(path));
+
+      if (auto* sel = dynamic_cast<Select*>(select.get())) {
+        sel->setOptionIndicators(std::move(indicators));
+      }
+
+      return select;
+    };
+
     const auto makeMultiSelectBlock = [&](Flex& section, const SettingEntry& entry, const MultiSelectSetting& setting) {
       const bool overridden = (ctx.configService != nullptr && ctx.configService->hasOverride(entry.path));
 
@@ -944,6 +970,8 @@ namespace settings {
               button->setRadius(Style::radiusMd * scale);
               button->setOnClick(control.action);
               return button;
+            } else if constexpr (std::is_same_v<T, ColorRolePickerSetting>) {
+              return makeColorRolePicker(control, entry.path);
             }
           },
           entry.control);
@@ -987,6 +1015,8 @@ namespace settings {
         },
         .makeText = [&](const std::string& value, const std::string& placeholder, std::vector<std::string> path)
             -> std::unique_ptr<Node> { return makeText(value, placeholder, std::move(path)); },
+        .makeColorRolePicker = [&](const ColorRolePickerSetting& setting, std::vector<std::string> path)
+            -> std::unique_ptr<Node> { return makeColorRolePicker(setting, std::move(path)); },
         .makeListBlock = [&](Flex& section, const SettingEntry& entry,
                              const ListSetting& list) { makeListBlock(section, entry, list); },
     };

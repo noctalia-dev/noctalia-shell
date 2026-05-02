@@ -93,33 +93,25 @@ namespace settings {
       return {};
     }
 
-    void appendColorRoleOptions(std::vector<SelectOption>& opts) {
-      for (const auto& option : kColorRoleTokens) {
-        opts.push_back(SelectOption{std::string(option.token), std::string(option.token)});
+    std::vector<ColorRole> allColorRoles() {
+      std::vector<ColorRole> roles;
+      roles.reserve(kColorRoleTokens.size());
+      for (const auto& token : kColorRoleTokens) {
+        roles.push_back(token.role);
       }
+      return roles;
     }
 
-    SelectSetting colorRoleSelect(const ThemeColor& selected) {
-      std::vector<SelectOption> opts;
-      opts.reserve(kColorRoleTokens.size());
-      appendColorRoleOptions(opts);
-      return SelectSetting{std::move(opts), colorRoleValue(selected)};
+    ColorRolePickerSetting colorRolePicker(const ThemeColor& selected) {
+      return ColorRolePickerSetting{allColorRoles(), colorRoleValue(selected)};
     }
 
-    SelectSetting optionalColorRoleSelect(const std::optional<ThemeColor>& selected) {
-      std::vector<SelectOption> opts;
-      opts.reserve(kColorRoleTokens.size() + 1);
-      opts.push_back(SelectOption{"", i18n::tr("settings.options.theme-role.default")});
-      appendColorRoleOptions(opts);
-      return SelectSetting{std::move(opts), optionalColorRoleValue(selected), true};
+    ColorRolePickerSetting optionalColorRolePicker(const std::optional<ThemeColor>& selected) {
+      return ColorRolePickerSetting{allColorRoles(), optionalColorRoleValue(selected), true};
     }
 
-    SelectSetting capsuleBorderRoleSelect(const std::optional<ThemeColor>& selected) {
-      std::vector<SelectOption> opts;
-      opts.reserve(kColorRoleTokens.size() + 1);
-      opts.push_back(SelectOption{"", i18n::tr("settings.options.border.none")});
-      appendColorRoleOptions(opts);
-      return SelectSetting{std::move(opts), optionalColorRoleValue(selected)};
+    ColorRolePickerSetting capsuleBorderRolePicker(const std::optional<ThemeColor>& selected) {
+      return ColorRolePickerSetting{allColorRoles(), optionalColorRoleValue(selected), true};
     }
 
     std::string pathText(const std::vector<std::string>& path) {
@@ -726,17 +718,17 @@ namespace settings {
                                   ToggleSetting{selectedBar->widgetCapsuleDefault}, "pill"));
       entries.push_back(makeEntry(section, "widgets", tr("settings.schema.bar.widget-color.label"),
                                   tr("settings.schema.bar.widget-color.description"), path("color"),
-                                  optionalColorRoleSelect(selectedBar->widgetColor), "theme role foreground", true));
+                                  optionalColorRolePicker(selectedBar->widgetColor), "theme role foreground", true));
       entries.push_back(makeEntry(section, "widgets", tr("settings.schema.bar.capsule-fill.label"),
                                   tr("settings.schema.bar.capsule-fill.description"), path("capsule_fill"),
-                                  colorRoleSelect(selectedBar->widgetCapsuleFill), "theme role pill", true));
+                                  colorRolePicker(selectedBar->widgetCapsuleFill), "theme role pill", true));
       entries.push_back(makeEntry(section, "widgets", tr("settings.schema.bar.capsule-foreground.label"),
                                   tr("settings.schema.bar.capsule-foreground.description"), path("capsule_foreground"),
-                                  optionalColorRoleSelect(selectedBar->widgetCapsuleForeground),
+                                  optionalColorRolePicker(selectedBar->widgetCapsuleForeground),
                                   "theme role foreground pill", true));
       entries.push_back(makeEntry(section, "widgets", tr("settings.schema.bar.capsule-border.label"),
                                   tr("settings.schema.bar.capsule-border.description"), path("capsule_border"),
-                                  capsuleBorderRoleSelect(selectedBar->widgetCapsuleBorder), "theme role pill outline",
+                                  capsuleBorderRolePicker(selectedBar->widgetCapsuleBorder), "theme role pill outline",
                                   true));
       entries.push_back(
           makeEntry(section, "widgets", tr("settings.schema.bar.widget-spacing.label"),
@@ -849,22 +841,22 @@ namespace settings {
       entries.push_back(
           makeEntry(section, "widgets", tr("settings.schema.bar.widget-color.label"),
                     tr("settings.schema.bar.widget-color.description"), mpath("color"),
-                    optionalColorRoleSelect(ovr.widgetColor.has_value() ? ovr.widgetColor : bar.widgetColor),
+                    optionalColorRolePicker(ovr.widgetColor.has_value() ? ovr.widgetColor : bar.widgetColor),
                     "theme role foreground", true));
       entries.push_back(makeEntry(section, "widgets", tr("settings.schema.bar.capsule-fill.label"),
                                   tr("settings.schema.bar.capsule-fill.description"), mpath("capsule_fill"),
-                                  colorRoleSelect(ovr.widgetCapsuleFill.value_or(bar.widgetCapsuleFill)),
+                                  colorRolePicker(ovr.widgetCapsuleFill.value_or(bar.widgetCapsuleFill)),
                                   "theme role pill", true));
       entries.push_back(
           makeEntry(section, "widgets", tr("settings.schema.bar.capsule-foreground.label"),
                     tr("settings.schema.bar.capsule-foreground.description"), mpath("capsule_foreground"),
-                    optionalColorRoleSelect(ovr.widgetCapsuleForeground.has_value() ? ovr.widgetCapsuleForeground
+                    optionalColorRolePicker(ovr.widgetCapsuleForeground.has_value() ? ovr.widgetCapsuleForeground
                                                                                     : bar.widgetCapsuleForeground),
                     "theme role foreground pill", true));
       entries.push_back(makeEntry(
           section, "widgets", tr("settings.schema.bar.capsule-border.label"),
           tr("settings.schema.bar.capsule-border.description"), mpath("capsule_border"),
-          capsuleBorderRoleSelect(ovr.widgetCapsuleBorderSpecified ? ovr.widgetCapsuleBorder : bar.widgetCapsuleBorder),
+          capsuleBorderRolePicker(ovr.widgetCapsuleBorderSpecified ? ovr.widgetCapsuleBorder : bar.widgetCapsuleBorder),
           "theme role pill outline", true));
       entries.push_back(
           makeEntry(section, "widgets", tr("settings.schema.bar.capsule-padding.label"),
