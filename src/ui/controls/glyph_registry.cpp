@@ -232,13 +232,17 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     // Branding
     {"noctalia", 0xEC33},
     {"hyprland", 0xEC6A},
+    {"niri", 0xEC32},
 
-    // Experimental
+    // Misc
     {"flask", 0xEBD2},
     {"color-swatch", 0xEB61},
     {"adjustments-horizontal", 0xEC38},
     {"stack-2", 0xEEF7},
-
+    {"layout-bottombar", 0xEAD3},
+    {"paint", 0xEB00},
+    {"bar", 0xFD51},
+    {"layout-board", 0xEF95} // crop-16-9
 };
   // clang-format on
 

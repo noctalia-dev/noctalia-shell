@@ -201,21 +201,45 @@ namespace settings {
     if (section == "shell")
       return "app-window";
     if (section == "dock")
-      return "apps";
+      return "layout-bottombar";
     if (section == "backdrop")
-      return "layout-grid";
+      return "niri";
     if (section == "wallpaper")
-      return "wallpaper-selector";
+      return "paint";
     if (section == "desktop")
-      return "device-desktop";
+      return "layout-board";
     if (section == "services")
       return "stack-2";
     if (section == "notifications")
       return "bell";
     if (section == "bar")
-      return "menu";
+      return "bar";
     return "settings";
   }
+
+  // V4 REF.
+  // "settings-general": "adjustments-horizontal",
+  // "settings-bar": "crop-16-9",
+  // "settings-user-interface": "layout-board",
+  // "settings-control-center": "adjustments-horizontal",
+  // "settings-dock": "layout-bottombar",
+  // "settings-launcher": "rocket",
+  // "settings-audio": "device-speaker",
+  // "settings-display": "device-desktop",
+  // "settings-network": "circles-relation",
+  // "settings-brightness": "brightness-up",
+  // "settings-location": "world-pin",
+  // "settings-color-scheme": "palette",
+  // "settings-wallpaper": "paint",
+  // "settings-wallpaper-selector": "library-photo",
+  // "settings-hooks": "link",
+  // "settings-notifications": "bell",
+  // "settings-osd": "picture-in-picture",
+  // "settings-about": "info-square-rounded",
+  // "settings-idle": "moon",
+  // "settings-lock-screen": "lock",
+  // "settings-session-menu": "power",
+  // "settings-system-monitor": "activity",
 
   std::vector<SettingEntry> buildSettingsRegistry(const Config& cfg, const BarConfig* selectedBar,
                                                   const BarMonitorOverride* selectedMonitorOverride,
