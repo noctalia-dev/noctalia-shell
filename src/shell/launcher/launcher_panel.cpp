@@ -210,9 +210,9 @@ namespace {
 
       bool ready = false;
       if (m_asyncTextures != nullptr) {
-        ready = m_image->setSourceFileAsync(renderer, *m_asyncTextures, m_iconPath, m_iconTargetSize);
+        ready = m_image->setSourceFileAsync(renderer, *m_asyncTextures, m_iconPath, m_iconTargetSize, true);
       } else {
-        ready = m_image->setSourceFile(renderer, m_iconPath, m_iconTargetSize);
+        ready = m_image->setSourceFile(renderer, m_iconPath, m_iconTargetSize, true);
       }
 
       m_image->setSize(kIconSize * m_scale, kIconSize * m_scale);
