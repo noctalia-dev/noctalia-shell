@@ -92,11 +92,13 @@ namespace settings {
     auto* creatingMonitorOverrideMatch = &ctx.creatingMonitorOverrideMatch;
 
     const auto clearTransientState = std::move(ctx.clearTransientState);
+    const auto clearSearchQuery = std::move(ctx.clearSearchQuery);
     const auto requestRebuild = std::move(ctx.requestRebuild);
     const auto createBar = std::move(ctx.createBar);
     const auto createMonitorOverride = std::move(ctx.createMonitorOverride);
     const float scale = ctx.scale;
-    const bool showActiveTab = !ctx.globalSearchActive;
+    const bool searchActive = ctx.globalSearchActive;
+    const bool showActiveTab = !searchActive;
 
     auto sidebarScroll = std::make_unique<ScrollView>();
     sidebarScroll->bindState(&ctx.sidebarScrollState);
@@ -122,14 +124,16 @@ namespace settings {
       navItem->setGlyph(sectionGlyph(section));
       navItem->setText(sectionLabel(section));
       applyPrimaryNavStyle(*navItem, scale, selected);
-      navItem->setOnClick([selectedSection, scroll, section, clearTransientState, requestRebuild]() {
-        if (*selectedSection != section) {
-          scroll->offset = 0.0f;
-        }
-        *selectedSection = section;
-        clearTransientState();
-        requestRebuild();
-      });
+      navItem->setOnClick(
+          [selectedSection, scroll, section, searchActive, clearTransientState, clearSearchQuery, requestRebuild]() {
+            if (searchActive || *selectedSection != section) {
+              scroll->offset = 0.0f;
+            }
+            *selectedSection = section;
+            clearSearchQuery();
+            clearTransientState();
+            requestRebuild();
+          });
       sidebar->addChild(std::move(navItem));
     }
 
@@ -140,14 +144,16 @@ namespace settings {
       navItem->setGlyph("bar");
       navItem->setText(i18n::tr("settings.entities.bar.label", "name", barName));
       applyPrimaryNavStyle(*navItem, scale, barSelected);
-      navItem->setOnClick([selectedSection, selectedBarName, selectedMonitorOverride, scroll, barName,
-                           clearTransientState, requestRebuild]() {
-        if (*selectedSection != "bar" || *selectedBarName != barName || !selectedMonitorOverride->empty()) {
+      navItem->setOnClick([selectedSection, selectedBarName, selectedMonitorOverride, scroll, barName, searchActive,
+                           clearTransientState, clearSearchQuery, requestRebuild]() {
+        if (searchActive || *selectedSection != "bar" || *selectedBarName != barName ||
+            !selectedMonitorOverride->empty()) {
           scroll->offset = 0.0f;
         }
         *selectedSection = "bar";
         *selectedBarName = barName;
         selectedMonitorOverride->clear();
+        clearSearchQuery();
         clearTransientState();
         requestRebuild();
       });
@@ -167,13 +173,15 @@ namespace settings {
         applySecondaryNavStyle(*ovrItem, scale, ovrSelected);
         auto match = ovr.match;
         ovrItem->setOnClick([selectedSection, selectedBarName, selectedMonitorOverride, scroll, barName, match,
-                             clearTransientState, requestRebuild]() {
-          if (*selectedSection != "bar" || *selectedBarName != barName || *selectedMonitorOverride != match) {
+                             searchActive, clearTransientState, clearSearchQuery, requestRebuild]() {
+          if (searchActive || *selectedSection != "bar" || *selectedBarName != barName ||
+              *selectedMonitorOverride != match) {
             scroll->offset = 0.0f;
           }
           *selectedSection = "bar";
           *selectedBarName = barName;
           *selectedMonitorOverride = match;
+          clearSearchQuery();
           clearTransientState();
           requestRebuild();
         });

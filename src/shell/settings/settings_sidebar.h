@@ -29,6 +29,7 @@ namespace settings {
     std::string& creatingMonitorOverrideMatch;
 
     std::function<void()> clearTransientState;
+    std::function<void()> clearSearchQuery;
     std::function<void()> requestRebuild;
     std::function<void(std::string)> createBar;
     std::function<void(std::string, std::string)> createMonitorOverride;

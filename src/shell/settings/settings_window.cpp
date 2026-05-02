@@ -1214,6 +1214,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   }
 
   const auto clearTransientSettingsState = [this]() { this->clearTransientSettingsState(); };
+  const auto clearSearchQuery = [this]() { m_searchQuery.clear(); };
 
   auto body = std::make_unique<Flex>();
   body->setDirection(FlexDirection::Horizontal);
@@ -1235,6 +1236,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       .creatingMonitorOverrideBarName = m_creatingMonitorOverrideBarName,
       .creatingMonitorOverrideMatch = m_creatingMonitorOverrideMatch,
       .clearTransientState = clearTransientSettingsState,
+      .clearSearchQuery = clearSearchQuery,
       .requestRebuild = requestRebuild,
       .createBar = createBar,
       .createMonitorOverride = createMonitorOverride,
