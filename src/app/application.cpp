@@ -699,6 +699,7 @@ void Application::initUi() {
   m_wallpaper.initialize(m_wayland, &m_configService, &m_renderContext, &m_sharedTextureCache);
   m_backdrop.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared, backdropShouldBeActive());
   m_settingsWindow.initialize(m_wayland, &m_configService, &m_renderContext);
+  m_settingsWindow.setOpenDesktopWidgetEditor([this]() { m_desktopWidgetsController.toggleEdit(); });
   m_lockScreen.initialize(m_wayland, &m_renderContext, &m_configService, &m_sharedTextureCache);
   m_lockScreen.setSessionHooks([this]() { m_hookManager.fire(HookKind::SessionLocked); },
                                [this]() { m_hookManager.fire(HookKind::SessionUnlocked); });

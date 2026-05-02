@@ -934,6 +934,16 @@ namespace settings {
               return nullptr;
             } else if constexpr (std::is_same_v<T, ListSetting>) {
               return nullptr;
+            } else if constexpr (std::is_same_v<T, ButtonSetting>) {
+              auto button = std::make_unique<Button>();
+              button->setVariant(ButtonVariant::Outline);
+              button->setText(control.label);
+              button->setFontSize(Style::fontSizeBody * scale);
+              button->setMinHeight(Style::controlHeight * scale);
+              button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+              button->setRadius(Style::radiusMd * scale);
+              button->setOnClick(control.action);
+              return button;
             }
           },
           entry.control);

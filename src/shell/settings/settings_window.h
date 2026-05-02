@@ -8,6 +8,7 @@
 #include "ui/controls/scroll_view.h"
 #include "wayland/toplevel_surface.h"
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
@@ -42,6 +43,7 @@ public:
   void onKeyboardEvent(const KeyboardEvent& event);
   void onThemeChanged();
   void onFontChanged();
+  void setOpenDesktopWidgetEditor(std::function<void()> callback) { m_openDesktopWidgetEditor = std::move(callback); }
 
 private:
   void destroyWindow();
@@ -118,4 +120,5 @@ private:
   bool m_showAdvanced = false;
   bool m_showOverriddenOnly = false;
   bool m_statusIsError = false;
+  std::function<void()> m_openDesktopWidgetEditor;
 };

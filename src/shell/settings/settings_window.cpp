@@ -948,6 +948,27 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     }
   }
   m_settingsRegistry = settings::buildSettingsRegistry(cfg, selectedBar, selectedMonitorOverride, env);
+
+  if (m_openDesktopWidgetEditor) {
+    auto it = std::find_if(m_settingsRegistry.begin(), m_settingsRegistry.end(), [](const settings::SettingEntry& e) {
+      return e.section == "desktop" && e.group == "widgets";
+    });
+    if (it != m_settingsRegistry.end()) {
+      ++it;
+    }
+    settings::SettingEntry btn{
+        .section = "desktop",
+        .group = "widgets",
+        .title = i18n::tr("settings.schema.desktop.widgets-editor.label"),
+        .subtitle = i18n::tr("settings.schema.desktop.widgets-editor.description"),
+        .path = {},
+        .control = settings::ButtonSetting{i18n::tr("settings.schema.desktop.widgets-editor.button"),
+                                           m_openDesktopWidgetEditor},
+        .searchText = "desktop widgets editor edit",
+    };
+    m_settingsRegistry.insert(it, std::move(btn));
+  }
+
   const auto sections = sectionKeys(m_settingsRegistry);
   if (m_selectedSection == "bar" && selectedBar == nullptr) {
     m_selectedSection.clear();

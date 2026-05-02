@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 
+#include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -65,8 +66,13 @@ namespace settings {
     bool requireAtLeastOne = false; // disable removing the last selected entry
   };
 
+  struct ButtonSetting {
+    std::string label;
+    std::function<void()> action;
+  };
+
   using SettingControl = std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting, OptionalNumberSetting,
-                                      ListSetting, ColorSetting, MultiSelectSetting>;
+                                      ListSetting, ColorSetting, MultiSelectSetting, ButtonSetting>;
 
   struct SettingEntry {
     std::string section;
