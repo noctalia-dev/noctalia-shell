@@ -230,6 +230,85 @@ namespace {
     return value;
   }
 
+  std::string trimAsciiWhitespaceCopy(std::string_view s) {
+    std::size_t i = 0;
+    std::size_t j = s.size();
+    while (i < j && std::isspace(static_cast<unsigned char>(s[i])) != 0) {
+      ++i;
+    }
+    while (j > i && std::isspace(static_cast<unsigned char>(s[j - 1])) != 0) {
+      --j;
+    }
+    return std::string(s.substr(i, j - i));
+  }
+
+  [[nodiscard]] bool isBlankSearchKey(std::string_view s) {
+    if (s.empty()) {
+      return true;
+    }
+    for (unsigned char c : s) {
+      if (std::isspace(c) == 0) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool isDesktopTokenDelimiter(unsigned char c) { return c == '-' || c == '_' || c == '.' || std::isspace(c) != 0; }
+
+  // Substring match only when `needle` aligns with token boundaries in `haystack` (hyphen/dot/space/etc.).
+  // Prevents "dark hours" matching KDE Ark via "ark" inside "d**ark**", and rejects accidental infixes.
+  bool desktopSubstringMatchesWholeTokens(std::string_view haystack, std::string_view needle) {
+    if (needle.empty() || haystack.empty() || needle.size() > haystack.size()) {
+      return false;
+    }
+    for (std::size_t pos = 0; pos + needle.size() <= haystack.size();) {
+      pos = haystack.find(needle, pos);
+      if (pos == std::string_view::npos) {
+        return false;
+      }
+      const bool leftOk = pos == 0 || isDesktopTokenDelimiter(static_cast<unsigned char>(haystack[pos - 1]));
+      const std::size_t end = pos + needle.size();
+      const bool rightOk = end == haystack.size() || isDesktopTokenDelimiter(static_cast<unsigned char>(haystack[end]));
+      if (leftOk && rightOk) {
+        return true;
+      }
+      pos += 1;
+    }
+    return false;
+  }
+
+  bool crossMatchDesktopSearch(std::string_view search, std::string_view field) {
+    if (search.empty() || field.empty()) {
+      return false;
+    }
+    if (search == field) {
+      return true;
+    }
+    const std::string_view shorter = search.size() <= field.size() ? search : field;
+    const std::string_view longer = search.size() <= field.size() ? field : search;
+    if (shorter.size() < 2) {
+      return false;
+    }
+    return desktopSubstringMatchesWholeTokens(longer, shorter);
+  }
+
+  bool isValidDesktopMatch(std::string_view searchTerm, const DesktopEntry& entry) {
+    if (searchTerm.empty()) {
+      return false;
+    }
+    const std::string search = lowerIdentifier(std::string(searchTerm));
+    if (isBlankSearchKey(search)) {
+      return false;
+    }
+    const std::string id = lowerIdentifier(entry.id);
+    const std::string name = lowerIdentifier(entry.name);
+    const std::string icon = lowerIdentifier(entry.icon);
+    return (!id.empty() && crossMatchDesktopSearch(search, id)) ||
+           (!name.empty() && crossMatchDesktopSearch(search, name)) ||
+           (!icon.empty() && crossMatchDesktopSearch(search, icon));
+  }
+
   void pushUnique(std::vector<std::string>& values, std::string value) {
     if (value.empty()) {
       return;
@@ -282,24 +361,15 @@ namespace {
     return tokens;
   }
 
-  bool isValidDesktopMatch(std::string_view searchTerm, const DesktopEntry& entry) {
-    if (searchTerm.empty()) {
-      return false;
-    }
-    const std::string search = lowerIdentifier(std::string(searchTerm));
-    const std::string id = lowerIdentifier(entry.id);
-    const std::string name = lowerIdentifier(entry.name);
-    const std::string icon = lowerIdentifier(entry.icon);
-    return (!id.empty() && (id.find(search) != std::string::npos || search.find(id) != std::string::npos)) ||
-           (!name.empty() && (name.find(search) != std::string::npos || search.find(name) != std::string::npos)) ||
-           (!icon.empty() && (icon.find(search) != std::string::npos || search.find(icon) != std::string::npos));
-  }
-
   const DesktopEntry* findDesktopEntryByTerm(std::string_view term) {
-    if (term.empty()) {
+    const std::string trimmed = trimAsciiWhitespaceCopy(term);
+    if (trimmed.empty()) {
       return nullptr;
     }
-    const std::string key = lowerIdentifier(std::string(term));
+    const std::string key = lowerIdentifier(trimmed);
+    if (isBlankSearchKey(key)) {
+      return nullptr;
+    }
     for (const auto& entry : desktopEntries()) {
       if (isValidDesktopMatch(key, entry)) {
         return &entry;
@@ -316,7 +386,7 @@ namespace {
 
   DesktopEntryMatch lookupDesktopEntryForProgramStream(const AudioNode& node, std::string_view resolvedBeforeDesktop) {
     DesktopEntryMatch out;
-    const std::string binary = lowerIdentifier(node.applicationBinary);
+    const std::string binary = lowerIdentifier(trimAsciiWhitespaceCopy(node.applicationBinary));
     // Wine/Proton streams report wine64-preloader etc.; matching desktop entries by that binary (or
     // the shared Icon=wine) incorrectly picks unrelated apps (e.g. Protontricks) before app/node name.
     if (!binary.empty() && !looksLikeRuntimeLauncher(node.applicationBinary)) {
@@ -327,7 +397,7 @@ namespace {
         return out;
       }
     }
-    const std::string appId = lowerIdentifier(node.applicationId);
+    const std::string appId = lowerIdentifier(trimAsciiWhitespaceCopy(node.applicationId));
     if (!appId.empty()) {
       if (const DesktopEntry* entry = findDesktopEntryByTerm(appId)) {
         out.entry = entry;
@@ -336,7 +406,7 @@ namespace {
         return out;
       }
     }
-    const std::string appName = lowerIdentifier(node.applicationName);
+    const std::string appName = lowerIdentifier(trimAsciiWhitespaceCopy(node.applicationName));
     if (!appName.empty() && !isGenericAudioLabel(appName) && !looksLikeRuntimeLauncher(appName)) {
       if (const DesktopEntry* entry = findDesktopEntryByTerm(appName)) {
         out.entry = entry;
@@ -345,7 +415,7 @@ namespace {
         return out;
       }
     }
-    const std::string resolved = lowerIdentifier(std::string(resolvedBeforeDesktop));
+    const std::string resolved = lowerIdentifier(trimAsciiWhitespaceCopy(resolvedBeforeDesktop));
     if (!resolved.empty() && !isGenericAudioLabel(resolved) && !looksLikeRuntimeLauncher(resolved)) {
       if (const DesktopEntry* entry = findDesktopEntryByTerm(resolved)) {
         out.entry = entry;
@@ -354,7 +424,7 @@ namespace {
         return out;
       }
     }
-    const std::string nodeName = lowerIdentifier(node.name);
+    const std::string nodeName = lowerIdentifier(trimAsciiWhitespaceCopy(node.name));
     if (!nodeName.empty()) {
       if (const DesktopEntry* entry = findDesktopEntryByTerm(nodeName)) {
         out.entry = entry;
