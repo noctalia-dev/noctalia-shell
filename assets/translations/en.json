@@ -814,6 +814,7 @@
         "bluetooth": "Bluetooth",
         "brightness": "Brightness",
         "clock": "Clock",
+        "control-center": "Control Center",
         "clipboard": "Clipboard",
         "idle-inhibitor": "Idle Inhibitor",
         "keyboard-layout": "Keyboard Layout",
@@ -994,6 +995,10 @@
         "type": {
           "label": "Type",
           "description": "Built-in widget type for this named instance"
+        },
+        "use_distro_logo": {
+          "label": "Use distribution logo",
+          "description": "Use the system distribution logo instead of a generic icon."
         },
         "vertical_format": {
           "label": "Vertical Format",

@@ -9,6 +9,7 @@ struct DistroInfo {
   std::string name;
   std::string version;
   std::string prettyName;
+  std::string logo;
 };
 
 class DistroDetector {

@@ -109,6 +109,9 @@ std::optional<DistroInfo> DistroDetector::detect() {
     if (const auto it = parsed->find("PRETTY_NAME"); it != parsed->end()) {
       info.prettyName = it->second;
     }
+    if (const auto it = parsed->find("LOGO"); it != parsed->end()) {
+      info.logo = it->second;
+    }
 
     if (!info.prettyName.empty() || !info.name.empty() || !info.id.empty()) {
       return info;

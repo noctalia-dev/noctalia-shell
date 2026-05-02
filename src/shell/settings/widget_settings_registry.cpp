@@ -46,6 +46,11 @@ namespace settings {
             .categoryKey = "settings.widgets.categories.time",
         },
         {
+            .type = "control-center",
+            .labelKey = "settings.widgets.types.control-center",
+            .categoryKey = "settings.widgets.categories.shell",
+        },
+        {
             .type = "clipboard",
             .labelKey = "settings.widgets.types.clipboard",
             .categoryKey = "settings.widgets.categories.shell",
@@ -438,6 +443,10 @@ namespace settings {
       add(segmentedSpec("display", "short", shortFull));
     } else if (type == "launcher") {
       add(stringSpec("glyph", "search"));
+      add(boolSpec("use_distro_logo", false));
+    } else if (type == "control-center") {
+      add(stringSpec("glyph", "noctalia"));
+      add(boolSpec("use_distro_logo", false));
     } else if (type == "lock_keys") {
       add(boolSpec("show_caps_lock", true));
       add(boolSpec("show_num_lock", true));

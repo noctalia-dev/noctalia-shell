@@ -97,6 +97,22 @@ group_by_workspace = true
 
 ---
 
+## `control-center`
+
+Opens the control center panel on click.
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `glyph` | string | `"noctalia"` | Bar glyph id (Tabler-backed aliases) |
+| `use_distro_logo` | bool | `false` | Use the distribution's logo image instead of the font glyph |
+
+```toml
+[widget.control-center]
+use_distro_logo = true
+```
+
+---
+
 ## `sysmon`
 
 System resource monitor. Shows an icon and value for one configurable stat. Multiple instances with different stats can coexist on the same bar.
@@ -331,6 +347,7 @@ Opens the launcher panel on click.
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `glyph` | string | `"search"` | Bar glyph id (Tabler-backed aliases) |
+| `use_distro_logo` | bool | `false` | Use the distribution's logo image instead of the font glyph |
 
 ```toml
 [widget.launcher]

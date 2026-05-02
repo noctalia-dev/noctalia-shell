@@ -13,6 +13,8 @@
 #include "render/core/image_decoder.h"
 #include "util/file_utils.h"
 
+#include <algorithm>
+#include <cmath>
 #include <fstream>
 
 namespace {} // namespace
@@ -44,8 +46,15 @@ std::optional<LoadedImageFile> loadImageFile(const std::string& path, int target
       return std::nullopt;
     }
 
-    const int width = targetSize > 0 ? targetSize : static_cast<int>(image->width);
-    const int height = targetSize > 0 ? targetSize : static_cast<int>(image->height);
+    int width = static_cast<int>(image->width);
+    int height = static_cast<int>(image->height);
+    if (targetSize > 0 && image->width > 0.0f && image->height > 0.0f) {
+      // Preserve source aspect ratio and constrain the longer side to targetSize.
+      const float maxSide = std::max(image->width, image->height);
+      const float scale = static_cast<float>(targetSize) / maxSide;
+      width = std::max(1, static_cast<int>(std::round(image->width * scale)));
+      height = std::max(1, static_cast<int>(std::round(image->height * scale)));
+    }
     if (width <= 0 || height <= 0) {
       if (errorMessage != nullptr) {
         *errorMessage = "invalid SVG dimensions";

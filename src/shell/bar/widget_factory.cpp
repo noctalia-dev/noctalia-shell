@@ -39,6 +39,8 @@
 #include "shell/bar/widgets/wallpaper_widget.h"
 #include "shell/bar/widgets/weather_widget.h"
 #include "shell/bar/widgets/workspaces_widget.h"
+#include "system/distro_info.h"
+#include "system/icon_resolver.h"
 #include "system/system_monitor_service.h"
 #include "system/weather_service.h"
 #include "theme/theme_service.h"
@@ -63,6 +65,8 @@ WidgetFactory::WidgetFactory(WaylandConnection& wayland, const Config& config, N
       m_idleInhibitor(idleInhibitor), m_mpris(mpris), m_audioSpectrum(audioSpectrum), m_httpClient(httpClient),
       m_weather(weather), m_nightLight(nightLight), m_themeService(themeService), m_bluetooth(bluetooth),
       m_brightness(brightness), m_fileWatcher(fileWatcher) {}
+
+WidgetFactory::~WidgetFactory() = default;
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output, float contentScale,
                                               const std::string& barPosition) const {
@@ -145,7 +149,18 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     if (barGlyph.empty()) {
       barGlyph = "search";
     }
-    auto widget = std::make_unique<ControlCenterWidget>(output, std::move(barGlyph));
+
+    std::string logoPath;
+    if (wc != nullptr && wc->getBool("use_distro_logo", false)) {
+      if (!m_iconResolver) {
+        m_iconResolver = std::make_unique<IconResolver>();
+      }
+      if (const auto info = DistroDetector::detect(); info.has_value() && !info->logo.empty()) {
+        logoPath = m_iconResolver->resolve(info->logo);
+      }
+    }
+
+    auto widget = std::make_unique<ControlCenterWidget>(output, std::move(barGlyph), std::move(logoPath));
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -170,7 +185,18 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     if (barGlyph.empty()) {
       barGlyph = "search";
     }
-    auto widget = std::make_unique<LauncherWidget>(output, std::move(barGlyph));
+
+    std::string logoPath;
+    if (wc != nullptr && wc->getBool("use_distro_logo", false)) {
+      if (!m_iconResolver) {
+        m_iconResolver = std::make_unique<IconResolver>();
+      }
+      if (const auto info = DistroDetector::detect(); info.has_value() && !info->logo.empty()) {
+        logoPath = m_iconResolver->resolve(info->logo);
+      }
+    }
+
+    auto widget = std::make_unique<LauncherWidget>(output, std::move(barGlyph), std::move(logoPath));
     widget->setContentScale(contentScale);
     return widget;
   }

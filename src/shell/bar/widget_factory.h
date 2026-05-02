@@ -24,6 +24,7 @@ class WeatherService;
 struct wl_output;
 class NightLightManager;
 class WaylandConnection;
+class IconResolver;
 namespace noctalia::theme {
   class ThemeService;
 }
@@ -36,6 +37,7 @@ public:
                 MprisService* mpris, PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weather,
                 NightLightManager* nightLight, noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
                 BrightnessService* brightness, FileWatcher* fileWatcher = nullptr);
+  ~WidgetFactory();
 
   [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output, float contentScale = 1.0f,
                                                const std::string& barPosition = "top") const;
@@ -60,4 +62,5 @@ private:
   BluetoothService* m_bluetooth;
   BrightnessService* m_brightness;
   FileWatcher* m_fileWatcher;
+  mutable std::unique_ptr<IconResolver> m_iconResolver;
 };
