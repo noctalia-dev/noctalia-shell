@@ -161,7 +161,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   detailsCard->setPadding(Style::spaceMd * scale, Style::spaceMd * scale, Style::spaceLg * scale,
                           Style::spaceMd * scale);
   detailsCard->setAlign(FlexAlign::Stretch);
-  detailsCard->setGap(Style::spaceSm * scale);
+  detailsCard->setGap(0);
   const float detailKeyWidth = Style::controlHeightLg * 2.0f * scale;
 
   std::size_t detailRowIndex = 0;
@@ -203,12 +203,13 @@ std::unique_ptr<Flex> WeatherTab::create() {
     detailsCard->addChild(std::move(row));
   };
 
+  addDetailRow("temperature-sun", i18n::tr("control-center.weather.details.tempMax"), m_tempMaxLabel);
+  addDetailRow("temperature", i18n::tr("control-center.weather.details.tempMin"), m_tempMinLabel);
   addDetailRow("wind", i18n::tr("control-center.weather.details.wind"), m_windLabel);
   addDetailRow("weather-sunrise", i18n::tr("control-center.weather.details.sunrise"), m_sunriseLabel);
   addDetailRow("weather-sunset", i18n::tr("control-center.weather.details.sunset"), m_sunsetLabel);
-  addDetailRow("world-pin", i18n::tr("control-center.weather.details.latitude"), m_timezoneLabel);
-  addDetailRow("map-pin", i18n::tr("control-center.weather.details.longitude"), m_longitudeLabel);
-  addDetailRow("clock", i18n::tr("control-center.weather.details.timezone"), m_elevationLabel);
+  addDetailRow("mountain", i18n::tr("control-center.weather.details.elevation"), m_elevationLabel);
+  addDetailRow("clock", i18n::tr("control-center.weather.details.timezone"), m_timeZoneLabel);
 
   leftColumn->addChild(std::move(detailsCard));
 
@@ -264,7 +265,6 @@ std::unique_ptr<Flex> WeatherTab::create() {
 
     auto temps = std::make_unique<Label>();
     temps->setText(i18n::tr("control-center.weather.forecast-placeholder.temperature"));
-    temps->setBold(true);
     temps->setFontSize(Style::fontSizeBody * scale);
     temps->setColor(colorSpecFromRole(ColorRole::OnSurface));
     temps->setTextAlign(TextAlign::End);
@@ -340,8 +340,8 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
   if (m_statusLabel != nullptr) {
     m_statusLabel->setMaxWidth(leftColumnWidth);
   }
-  for (auto* label :
-       {m_windLabel, m_sunriseLabel, m_sunsetLabel, m_timezoneLabel, m_longitudeLabel, m_elevationLabel}) {
+  for (auto* label : {m_windLabel, m_sunriseLabel, m_sunsetLabel, m_tempMaxLabel, m_tempMinLabel, m_elevationLabel,
+                      m_timeZoneLabel}) {
     if (label != nullptr) {
       label->setMaxWidth(leftColumnWidth);
     }
@@ -480,9 +480,10 @@ void WeatherTab::onClose() {
   m_windLabel = nullptr;
   m_sunriseLabel = nullptr;
   m_sunsetLabel = nullptr;
-  m_timezoneLabel = nullptr;
-  m_longitudeLabel = nullptr;
+  m_tempMaxLabel = nullptr;
+  m_tempMinLabel = nullptr;
   m_elevationLabel = nullptr;
+  m_timeZoneLabel = nullptr;
   m_detailRows.fill(nullptr);
   m_dayRows.fill(nullptr);
   m_daySeparators.fill(nullptr);
@@ -535,14 +536,17 @@ void WeatherTab::sync(Renderer& renderer) {
     if (m_sunsetLabel != nullptr) {
       m_sunsetLabel->setText("--");
     }
-    if (m_timezoneLabel != nullptr) {
-      m_timezoneLabel->setText("--");
+    if (m_tempMaxLabel != nullptr) {
+      m_tempMaxLabel->setText("--");
+    }
+    if (m_tempMinLabel != nullptr) {
+      m_tempMinLabel->setText("--");
     }
     if (m_elevationLabel != nullptr) {
       m_elevationLabel->setText("--");
     }
-    if (m_longitudeLabel != nullptr) {
-      m_longitudeLabel->setText("--");
+    if (m_timeZoneLabel != nullptr) {
+      m_timeZoneLabel->setText("--");
     }
     setForecastVisibleDayCount(0);
     hideEffect();
@@ -569,14 +573,17 @@ void WeatherTab::sync(Renderer& renderer) {
     if (m_sunsetLabel != nullptr) {
       m_sunsetLabel->setText("--");
     }
-    if (m_timezoneLabel != nullptr) {
-      m_timezoneLabel->setText("--");
+    if (m_tempMaxLabel != nullptr) {
+      m_tempMaxLabel->setText("--");
+    }
+    if (m_tempMinLabel != nullptr) {
+      m_tempMinLabel->setText("--");
     }
     if (m_elevationLabel != nullptr) {
       m_elevationLabel->setText("--");
     }
-    if (m_longitudeLabel != nullptr) {
-      m_longitudeLabel->setText("--");
+    if (m_timeZoneLabel != nullptr) {
+      m_timeZoneLabel->setText("--");
     }
     setForecastVisibleDayCount(0);
     hideEffect();
@@ -606,14 +613,17 @@ void WeatherTab::sync(Renderer& renderer) {
     if (m_sunsetLabel != nullptr) {
       m_sunsetLabel->setText("--");
     }
-    if (m_timezoneLabel != nullptr) {
-      m_timezoneLabel->setText("--");
+    if (m_tempMaxLabel != nullptr) {
+      m_tempMaxLabel->setText("--");
+    }
+    if (m_tempMinLabel != nullptr) {
+      m_tempMinLabel->setText("--");
     }
     if (m_elevationLabel != nullptr) {
       m_elevationLabel->setText("--");
     }
-    if (m_longitudeLabel != nullptr) {
-      m_longitudeLabel->setText("--");
+    if (m_timeZoneLabel != nullptr) {
+      m_timeZoneLabel->setText("--");
     }
     setForecastVisibleDayCount(0);
     hideEffect();
@@ -659,16 +669,24 @@ void WeatherTab::sync(Renderer& renderer) {
     m_sunsetLabel->setText(!snapshot.forecastDays.empty() ? formatIsoClock(snapshot.forecastDays.front().sunsetIso)
                                                           : std::string("--"));
   }
-  if (m_timezoneLabel != nullptr) {
-    m_timezoneLabel->setText(std::format("{:.4f}", snapshot.latitude));
+  auto unit = m_weather->displayTemperatureUnit();
+  if (m_tempMaxLabel != nullptr) {
+    auto temp =
+        static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.forecastDays.front().temperatureMaxC)));
+    m_tempMaxLabel->setText(!snapshot.forecastDays.empty() ? std::format("{}{}", temp, unit) : std::string("--"));
   }
-  if (m_longitudeLabel != nullptr) {
-    m_longitudeLabel->setText(std::format("{:.4f}", snapshot.longitude));
+  if (m_tempMinLabel != nullptr) {
+    auto temp =
+        static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.forecastDays.front().temperatureMinC)));
+    m_tempMinLabel->setText(!snapshot.forecastDays.empty() ? std::format("{}{}", temp, unit) : std::string("--"));
   }
   if (m_elevationLabel != nullptr) {
-    m_elevationLabel->setText(snapshot.timezoneAbbreviation.empty()
-                                  ? (snapshot.timezone.empty() ? std::string("--") : snapshot.timezone)
-                                  : std::format("{} ({})", snapshot.timezoneAbbreviation, snapshot.timezone));
+    m_elevationLabel->setText(std::format("{}m", static_cast<int>(snapshot.elevationM)));
+  }
+  if (m_timeZoneLabel != nullptr) {
+    m_timeZoneLabel->setText(snapshot.timezoneAbbreviation.empty()
+                                 ? (snapshot.timezone.empty() ? std::string("--") : snapshot.timezone)
+                                 : std::format("{} ({})", snapshot.timezoneAbbreviation, snapshot.timezone));
   }
 
   const bool firstForecastIsToday =

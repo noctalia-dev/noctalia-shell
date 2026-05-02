@@ -52,9 +52,10 @@ private:
   Label* m_windLabel = nullptr;
   Label* m_sunriseLabel = nullptr;
   Label* m_sunsetLabel = nullptr;
-  Label* m_timezoneLabel = nullptr;
-  Label* m_longitudeLabel = nullptr;
+  Label* m_tempMaxLabel = nullptr;
+  Label* m_tempMinLabel = nullptr;
   Label* m_elevationLabel = nullptr;
+  Label* m_timeZoneLabel = nullptr;
   std::array<Flex*, kDetailRowCount> m_detailRows{};
   std::array<Flex*, kDayCount> m_dayRows{};
   std::array<Separator*, kDayCount - 1> m_daySeparators{};
