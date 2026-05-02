@@ -284,7 +284,10 @@
         "sunset": "Sunset",
         "latitude": "Latitude",
         "longitude": "Longitude",
-        "timezone": "Timezone"
+        "timezone": "Timezone",
+        "elevation": "Elevation",
+        "tempMax": "Temperature Max",
+        "tempMin": "Temperature Min"
       },
       "forecast-placeholder": {
         "day": "Sunday",

@@ -223,6 +223,8 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"world-pin", 0xF9E4},
     {"map-pin", 0xEAE8},
     {"mountain", 0xEF97},
+    {"temperature", 0xeb38},
+    {"temperature-sun", 0xfda4},
 
     // Files & Folders
     {"folder", 0xEAAD},
