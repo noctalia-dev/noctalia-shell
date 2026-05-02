@@ -19,3 +19,10 @@ noctalia
 # OS
 .DS_Store
 Thumbs.db
+
+# Nix
+.envrc
+.direnv/
+result/
+result
+result-*
