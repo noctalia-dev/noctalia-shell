@@ -98,7 +98,7 @@ bool InputDispatcher::pointerButton(float x, float y, std::uint32_t button, bool
 bool InputDispatcher::pointerAxis(float x, float y, std::uint32_t axis, std::uint32_t axisSource, double value,
                                   std::int32_t discrete, std::int32_t value120, float lines) {
   pruneDetachedAreas();
-  InputArea* target = m_capturedArea != nullptr ? m_capturedArea : m_hoveredArea;
+  InputArea* target = m_capturedArea != nullptr ? m_capturedArea : findInputAreaAt(x, y);
   if (target == nullptr) {
     return false;
   }
