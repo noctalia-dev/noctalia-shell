@@ -274,7 +274,6 @@ NiriWorkspaceBackend::appIdsByWorkspace(const std::string& outputName) const {
   std::unordered_map<std::string, std::vector<std::string>> result;
   std::unordered_map<std::string, std::unordered_set<std::string>> seen;
   for (const auto& [windowId, window] : m_windows) {
-    (void)windowId;
     if (!window.workspaceId.has_value() || window.appId.empty()) {
       continue;
     }
@@ -313,6 +312,7 @@ std::vector<WorkspaceWindow> NiriWorkspaceBackend::workspaceWindows(const std::s
       continue;
     }
     result.push_back(WorkspaceWindow{
+        .windowId = std::to_string(windowId),
         .workspaceKey = workspaceKey(*workspaceIt->second),
         .appId = window.appId,
         .title = window.title,

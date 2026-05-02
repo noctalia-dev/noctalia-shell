@@ -41,6 +41,11 @@ private:
     std::string label;
   };
 
+  struct PendingWorkspaceTransition {
+    std::string targetWorkspaceKey;
+    std::uint8_t votes = 0;
+  };
+
   void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
   void doUpdate(Renderer& renderer) override;
 
@@ -68,6 +73,7 @@ private:
 
   std::vector<TaskModel> m_tasks;
   std::vector<WorkspaceModel> m_workspaces;
+  std::unordered_map<std::uintptr_t, PendingWorkspaceTransition> m_pendingWorkspaceTransitions;
   std::unordered_map<std::string, std::string> m_appIconsByLower;
   std::uint64_t m_desktopEntriesVersion = 0;
   IconResolver m_iconResolver;

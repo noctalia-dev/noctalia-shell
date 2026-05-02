@@ -161,8 +161,13 @@ namespace {
     const bool hasNodes = nodesIt != node.end() && nodesIt->is_array();
     const bool hasFloating = floatingIt != node.end() && floatingIt->is_array();
     const bool isLeaf = (!hasNodes || nodesIt->empty()) && (!hasFloating || floatingIt->empty());
+    std::string windowId;
+    if (const auto idIt = node.find("id"); idIt != node.end() && idIt->is_number_integer()) {
+      windowId = std::to_string(idIt->get<std::int64_t>());
+    }
     if (isLeaf && !workspaceName.empty() && !workspaceKey.empty() && !appId.empty()) {
       windows.push_back(WorkspaceWindow{
+          .windowId = windowId,
           .workspaceKey = workspaceKey,
           .appId = appId,
           .title = node.value("name", ""),

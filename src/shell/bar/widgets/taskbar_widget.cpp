@@ -21,6 +21,7 @@
 #include <memory>
 #include <optional>
 #include <unordered_map>
+#include <unordered_set>
 #include <wayland-client-protocol.h>
 
 TaskbarWidget::TaskbarWidget(WaylandConnection& connection, wl_output* output, bool groupByWorkspace)
@@ -202,16 +203,14 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
           tasks.push_back(&task);
         }
       }
-      if (tasks.empty()) {
-        continue;
-      }
 
       const auto badgeMetrics = renderer.measureText(ws.label, badgeFontSize, true);
       const float badgeTextWidth = std::max(0.0f, badgeMetrics.right - badgeMetrics.left);
       const float badgeWidth = std::round(std::max(badgeBase, badgeTextWidth + (Style::spaceXs * m_contentScale)));
       const float groupPadStart = std::round(std::max(groupPadEnd, badgeWidth * 0.68f));
-      const float runLength =
-          (tileSize * static_cast<float>(tasks.size())) + (groupGap * static_cast<float>(tasks.size() - 1));
+      const float taskCount = std::max(1.0f, static_cast<float>(tasks.size()));
+      const float gapCount = tasks.empty() ? 0.0f : (taskCount - 1.0f);
+      const float runLength = (tileSize * taskCount) + (groupGap * gapCount);
       const float groupWidth = m_vertical ? std::round(tileSize + (groupPadCross * 2.0f))
                                           : std::round(groupPadStart + groupPadEnd + runLength);
       const float groupHeight = m_vertical ? std::round(groupPadStart + groupPadEnd + runLength)
@@ -317,23 +316,70 @@ void TaskbarWidget::updateModels() {
     }
   }
 
+  std::stable_sort(nextTasks.begin(), nextTasks.end(), [](const TaskModel& a, const TaskModel& b) {
+    if (a.order != b.order) {
+      return a.order < b.order;
+    }
+    return a.handleKey < b.handleKey;
+  });
+
   if (m_groupByWorkspace && !workspaceAssignments.empty()) {
+    std::unordered_map<std::uintptr_t, std::string> previousWorkspaceByHandle;
+    previousWorkspaceByHandle.reserve(m_tasks.size());
+    for (const auto& task : m_tasks) {
+      if (!task.workspaceKey.empty()) {
+        previousWorkspaceByHandle[task.handleKey] = task.workspaceKey;
+      }
+    }
+    std::unordered_map<std::string, const WorkspaceModel*> workspaceByAnyKey;
+    workspaceByAnyKey.reserve(m_workspaces.size() * 3);
+    for (const auto& ws : nextWorkspaces) {
+      workspaceByAnyKey.emplace(ws.key, &ws);
+      if (!ws.workspace.id.empty()) {
+        workspaceByAnyKey.emplace(ws.workspace.id, &ws);
+      }
+      if (!ws.workspace.name.empty()) {
+        workspaceByAnyKey.emplace(ws.workspace.name, &ws);
+      }
+    }
+    auto isTransientWorkspace = [&](const std::string& workspaceKey) {
+      const auto it = workspaceByAnyKey.find(workspaceKey);
+      if (it == workspaceByAnyKey.end() || it->second == nullptr) {
+        return false;
+      }
+      const auto& workspace = it->second->workspace;
+      return !workspace.active && !workspace.occupied;
+    };
+
     std::vector<bool> used(workspaceAssignments.size(), false);
-    auto assignByTitle = [&](TaskModel& task, bool requireTitle) -> bool {
+    auto matchesApp = [&](const TaskModel& task, const WorkspaceWindowAssignment& assignment) {
+      const std::string assignmentAppLower = toLower(assignment.appId);
+      return assignmentAppLower == task.appIdLower || assignmentAppLower == task.idLower ||
+             assignmentAppLower == task.startupWmClassLower || assignmentAppLower == task.nameLower;
+    };
+
+    auto assignMatch = [&](TaskModel& task, bool requireTitle,
+                           const std::function<bool(const WorkspaceWindowAssignment&)>& extraPredicate) -> bool {
       for (std::size_t i = 0; i < workspaceAssignments.size(); ++i) {
         if (used[i]) {
           continue;
         }
         const auto& assignment = workspaceAssignments[i];
-        const std::string assignmentAppLower = toLower(assignment.appId);
-        if (assignmentAppLower != task.appIdLower && assignmentAppLower != task.idLower &&
-            assignmentAppLower != task.startupWmClassLower && assignmentAppLower != task.nameLower) {
+        if (!matchesApp(task, assignment)) {
           continue;
         }
         if (requireTitle && assignment.title.empty()) {
           continue;
         }
         if (requireTitle && assignment.title != task.title) {
+          continue;
+        }
+        const auto previous = previousWorkspaceByHandle.find(task.handleKey);
+        if (previous != previousWorkspaceByHandle.end() && assignment.workspaceKey != previous->second &&
+            isTransientWorkspace(assignment.workspaceKey)) {
+          continue;
+        }
+        if (!extraPredicate(assignment)) {
           continue;
         }
         task.workspaceKey = assignment.workspaceKey;
@@ -344,8 +390,35 @@ void TaskbarWidget::updateModels() {
     };
 
     for (auto& task : nextTasks) {
-      (void)assignByTitle(task, true);
+      const auto previous = previousWorkspaceByHandle.find(task.handleKey);
+      if (previous == previousWorkspaceByHandle.end()) {
+        continue;
+      }
+      (void)assignMatch(task, true, [&](const WorkspaceWindowAssignment& assignment) {
+        return assignment.workspaceKey == previous->second;
+      });
     }
+
+    for (auto& task : nextTasks) {
+      if (!task.workspaceKey.empty()) {
+        continue;
+      }
+      const auto previous = previousWorkspaceByHandle.find(task.handleKey);
+      if (previous == previousWorkspaceByHandle.end()) {
+        continue;
+      }
+      (void)assignMatch(task, false, [&](const WorkspaceWindowAssignment& assignment) {
+        return assignment.workspaceKey == previous->second;
+      });
+    }
+
+    for (auto& task : nextTasks) {
+      if (!task.workspaceKey.empty()) {
+        continue;
+      }
+      (void)assignMatch(task, true, [](const WorkspaceWindowAssignment&) { return true; });
+    }
+
     for (auto& task : nextTasks) {
       if (!task.workspaceKey.empty()) {
         continue;
@@ -357,9 +430,12 @@ void TaskbarWidget::updateModels() {
           continue;
         }
         const auto& assignment = workspaceAssignments[i];
-        const std::string assignmentAppLower = toLower(assignment.appId);
-        if (assignmentAppLower != task.appIdLower && assignmentAppLower != task.idLower &&
-            assignmentAppLower != task.startupWmClassLower && assignmentAppLower != task.nameLower) {
+        if (!matchesApp(task, assignment)) {
+          continue;
+        }
+        const auto previous = previousWorkspaceByHandle.find(task.handleKey);
+        if (previous != previousWorkspaceByHandle.end() && assignment.workspaceKey != previous->second &&
+            isTransientWorkspace(assignment.workspaceKey)) {
           continue;
         }
         if (matchIndex.has_value()) {
@@ -412,12 +488,67 @@ void TaskbarWidget::updateModels() {
     }
   }
 
-  std::stable_sort(nextTasks.begin(), nextTasks.end(), [](const TaskModel& a, const TaskModel& b) {
-    if (a.order != b.order) {
-      return a.order < b.order;
+  if (m_groupByWorkspace && !nextWorkspaces.empty()) {
+    std::string activeWorkspaceKey;
+    for (const auto& workspace : nextWorkspaces) {
+      if (workspace.workspace.active) {
+        activeWorkspaceKey = workspace.key;
+        break;
+      }
     }
-    return a.handleKey < b.handleKey;
-  });
+    if (!activeWorkspaceKey.empty()) {
+      for (auto& task : nextTasks) {
+        if (task.active) {
+          task.workspaceKey = activeWorkspaceKey;
+          break;
+        }
+      }
+    }
+  }
+
+  std::unordered_map<std::uintptr_t, std::string> previousWorkspaceByHandle;
+  previousWorkspaceByHandle.reserve(m_tasks.size());
+  for (const auto& task : m_tasks) {
+    if (!task.workspaceKey.empty()) {
+      previousWorkspaceByHandle[task.handleKey] = task.workspaceKey;
+    }
+  }
+  std::unordered_set<std::uintptr_t> seenHandles;
+  seenHandles.reserve(nextTasks.size());
+  for (auto& task : nextTasks) {
+    seenHandles.insert(task.handleKey);
+    const auto previous = previousWorkspaceByHandle.find(task.handleKey);
+    if (previous == previousWorkspaceByHandle.end() || previous->second.empty() || task.workspaceKey.empty()) {
+      m_pendingWorkspaceTransitions.erase(task.handleKey);
+      continue;
+    }
+    if (task.workspaceKey == previous->second) {
+      m_pendingWorkspaceTransitions.erase(task.handleKey);
+      continue;
+    }
+
+    auto& pending = m_pendingWorkspaceTransitions[task.handleKey];
+    if (pending.targetWorkspaceKey != task.workspaceKey) {
+      pending.targetWorkspaceKey = task.workspaceKey;
+      pending.votes = 1;
+    } else if (pending.votes < 255) {
+      ++pending.votes;
+    }
+
+    if (pending.votes < 2) {
+      task.workspaceKey = previous->second;
+    } else {
+      m_pendingWorkspaceTransitions.erase(task.handleKey);
+    }
+  }
+
+  for (auto it = m_pendingWorkspaceTransitions.begin(); it != m_pendingWorkspaceTransitions.end();) {
+    if (!seenHandles.contains(it->first)) {
+      it = m_pendingWorkspaceTransitions.erase(it);
+    } else {
+      ++it;
+    }
+  }
 
   if (modelsEqual(nextTasks, nextWorkspaces)) {
     return;

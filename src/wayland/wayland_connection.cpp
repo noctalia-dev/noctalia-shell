@@ -480,6 +480,7 @@ std::vector<WorkspaceWindowAssignment> WaylandConnection::workspaceWindowAssignm
   result.reserve(windows.size());
   for (const auto& window : windows) {
     result.push_back(WorkspaceWindowAssignment{
+        .windowId = window.windowId,
         .workspaceKey = window.workspaceKey,
         .appId = window.appId,
         .title = window.title,

@@ -210,7 +210,7 @@ HyprlandWorkspaceBackend::appIdsByWorkspace(wl_output* output) const {
 
   std::unordered_map<std::string, std::vector<std::string>> byWorkspace;
   std::unordered_map<std::string, std::unordered_set<std::string>> seenPerWorkspace;
-  for (const auto& [_, toplevel] : m_toplevels) {
+  for (const auto& [address, toplevel] : m_toplevels) {
     if (toplevel.workspace.empty() || toplevel.appId.empty()) {
       continue;
     }
@@ -257,7 +257,7 @@ std::vector<WorkspaceWindow> HyprlandWorkspaceBackend::workspaceWindows(wl_outpu
 
   std::vector<WorkspaceWindow> result;
   result.reserve(m_toplevels.size());
-  for (const auto& [_, toplevel] : m_toplevels) {
+  for (const auto& [address, toplevel] : m_toplevels) {
     if (toplevel.workspace.empty() || toplevel.appId.empty()) {
       continue;
     }
@@ -266,6 +266,7 @@ std::vector<WorkspaceWindow> HyprlandWorkspaceBackend::workspaceWindows(wl_outpu
       continue;
     }
     result.push_back(WorkspaceWindow{
+        .windowId = std::to_string(address),
         .workspaceKey = keyIt->second,
         .appId = toplevel.appId,
         .title = toplevel.title,

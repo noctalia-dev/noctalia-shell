@@ -62,6 +62,7 @@ struct WaylandOutput {
 };
 
 struct WorkspaceWindowAssignment {
+  std::string windowId;
   std::string workspaceKey;
   std::string appId;
   std::string title;
