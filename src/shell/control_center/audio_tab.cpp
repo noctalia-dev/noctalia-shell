@@ -278,19 +278,95 @@ namespace {
     return false;
   }
 
-  bool crossMatchDesktopSearch(std::string_view search, std::string_view field) {
-    if (search.empty() || field.empty()) {
+  bool wholeTokenMatchAtStart(std::string_view haystack, std::string_view needle) {
+    if (needle.empty() || haystack.size() < needle.size()) {
       return false;
     }
-    if (search == field) {
+    if (haystack.substr(0, needle.size()) != needle) {
+      return false;
+    }
+    const std::size_t end = needle.size();
+    return end == haystack.size() || isDesktopTokenDelimiter(static_cast<unsigned char>(haystack[end]));
+  }
+
+  // True when remainder is only a sequel marker: digits, roman numerals, or a single English number word.
+  // Requires one token so subtitles ("foo definitive edition") are not treated as sequels.
+  bool looksLikeSequelOnlySuffix(std::string_view s) {
+    while (!s.empty() && isDesktopTokenDelimiter(static_cast<unsigned char>(s.front()))) {
+      s.remove_prefix(1);
+    }
+    while (!s.empty() && isDesktopTokenDelimiter(static_cast<unsigned char>(s.back()))) {
+      s.remove_suffix(1);
+    }
+    if (s.empty()) {
+      return false;
+    }
+    for (std::size_t i = 0; i < s.size(); ++i) {
+      if (isDesktopTokenDelimiter(static_cast<unsigned char>(s[i]))) {
+        return false;
+      }
+    }
+
+    std::string tok(s);
+    std::ranges::transform(tok, tok.begin(), [](unsigned char ch) {
+      return static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+    });
+
+    bool allDigit = true;
+    for (unsigned char c : tok) {
+      if (std::isdigit(c) == 0) {
+        allDigit = false;
+        break;
+      }
+    }
+    if (allDigit) {
       return true;
     }
-    const std::string_view shorter = search.size() <= field.size() ? search : field;
-    const std::string_view longer = search.size() <= field.size() ? field : search;
+
+    static constexpr std::string_view kRoman[] = {"ii", "iii", "iv", "vi", "vii", "viii", "ix", "x", "xi", "xii"};
+    for (const auto r : kRoman) {
+      if (tok == r) {
+        return true;
+      }
+    }
+
+    // Spelled-out sequel ordinals (generic English product naming, not title-specific).
+    static constexpr std::string_view kEnglishNumberWords[] = {"two",   "three", "four", "five",   "six",   "seven",
+                                                               "eight", "nine",  "ten",  "eleven", "twelve"};
+    for (const auto w : kEnglishNumberWords) {
+      if (tok == w) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool crossMatchDesktopSearch(std::string_view lookupKey, std::string_view desktopField) {
+    if (lookupKey.empty() || desktopField.empty()) {
+      return false;
+    }
+    if (lookupKey == desktopField) {
+      return true;
+    }
+    const std::string_view shorter = lookupKey.size() <= desktopField.size() ? lookupKey : desktopField;
+    const std::string_view longer = lookupKey.size() <= desktopField.size() ? desktopField : lookupKey;
     if (shorter.size() < 2) {
       return false;
     }
-    return desktopSubstringMatchesWholeTokens(longer, shorter);
+    if (!desktopSubstringMatchesWholeTokens(longer, shorter)) {
+      return false;
+    }
+    // Sequel/stream title is longer than base game's .desktop name ("… 2" vs "…"); do not pick the base entry.
+    if (lookupKey.size() > desktopField.size() && wholeTokenMatchAtStart(lookupKey, desktopField)) {
+      std::string_view remainder = lookupKey.substr(desktopField.size());
+      while (!remainder.empty() && isDesktopTokenDelimiter(static_cast<unsigned char>(remainder.front()))) {
+        remainder.remove_prefix(1);
+      }
+      if (looksLikeSequelOnlySuffix(remainder)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   bool isValidDesktopMatch(std::string_view searchTerm, const DesktopEntry& entry) {
