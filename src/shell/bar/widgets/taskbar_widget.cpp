@@ -21,6 +21,7 @@
 #include <memory>
 #include <optional>
 #include <unordered_map>
+#include <wayland-client-protocol.h>
 
 TaskbarWidget::TaskbarWidget(WaylandConnection& connection, wl_output* output, bool groupByWorkspace)
     : m_connection(connection), m_output(output), m_groupByWorkspace(groupByWorkspace) {
@@ -28,6 +29,30 @@ TaskbarWidget::TaskbarWidget(WaylandConnection& connection, wl_output* output, b
 }
 
 void TaskbarWidget::create() {
+  auto container = std::make_unique<InputArea>();
+  container->setOnAxisHandler([this](const InputArea::PointerData& data) {
+    if (!m_groupByWorkspace) {
+      return false;
+    }
+
+    if (data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL && data.axis != WL_POINTER_AXIS_HORIZONTAL_SCROLL) {
+      return false;
+    }
+
+    float delta = data.scrollDelta(1.0f);
+    if (delta == 0.0f && data.axisValue120 != 0) {
+      delta = static_cast<float>(data.axisValue120) / 120.0f;
+    }
+    if (delta == 0.0f && data.axisDiscrete != 0) {
+      delta = static_cast<float>(data.axisDiscrete);
+    }
+    if (delta == 0.0f) {
+      return false;
+    }
+    activateAdjacentWorkspace(delta > 0.0f ? 1 : -1);
+    return true;
+  });
+
   auto root = std::make_unique<Flex>();
   root->setDirection(FlexDirection::Horizontal);
   root->setAlign(FlexAlign::Center);
@@ -40,7 +65,8 @@ void TaskbarWidget::create() {
   m_taskStrip = static_cast<Flex*>(root->addChild(std::move(taskStrip)));
 
   m_root = root.get();
-  setRoot(std::move(root));
+  container->addChild(std::move(root));
+  setRoot(std::move(container));
 }
 
 void TaskbarWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
@@ -67,6 +93,9 @@ void TaskbarWidget::doLayout(Renderer& renderer, float containerWidth, float con
   }
 
   m_root->layout(renderer);
+  if (Node* container = root(); container != nullptr && container != m_root) {
+    container->setFrameSize(m_root->width(), m_root->height());
+  }
 }
 
 void TaskbarWidget::doUpdate(Renderer& renderer) {
@@ -99,6 +128,29 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
   auto createTaskTile = [&](const TaskModel& task) {
     auto area = std::make_unique<InputArea>();
     area->setFrameSize(tileSize, tileSize);
+    area->setOnAxisHandler([this](const InputArea::PointerData& data) {
+      if (!m_groupByWorkspace) {
+        return false;
+      }
+      if (data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL && data.axis != WL_POINTER_AXIS_HORIZONTAL_SCROLL) {
+        return false;
+      }
+
+      float delta = data.scrollDelta(1.0f);
+      if (delta == 0.0f && data.axisValue120 != 0) {
+        delta = static_cast<float>(data.axisValue120) / 120.0f;
+      }
+      if (delta == 0.0f && data.axisDiscrete != 0) {
+        delta = static_cast<float>(data.axisDiscrete);
+      }
+      if (delta == 0.0f) {
+        return false;
+      }
+
+      activateAdjacentWorkspace(delta > 0.0f ? 1 : -1);
+      return true;
+    });
+
     if (task.firstHandle != nullptr) {
       area->setOnClick([this, handle = task.firstHandle](const InputArea::PointerData& data) {
         if (data.button == BTN_LEFT) {
@@ -465,4 +517,38 @@ std::string TaskbarWidget::resolveIconPath(const std::string& appId, const std::
     return m_iconResolver.resolve(it->second);
   }
   return m_iconResolver.resolve(appId);
+}
+
+bool TaskbarWidget::activeWorkspaceIndex(std::size_t& index) const {
+  for (std::size_t i = 0; i < m_workspaces.size(); ++i) {
+    if (m_workspaces[i].workspace.active) {
+      index = i;
+      return true;
+    }
+  }
+  return false;
+}
+
+void TaskbarWidget::activateAdjacentWorkspace(int direction) {
+  if (!m_groupByWorkspace || m_workspaces.empty() || direction == 0) {
+    return;
+  }
+
+  std::size_t targetIndex = 0;
+  std::size_t current = 0;
+  if (!activeWorkspaceIndex(current)) {
+    targetIndex = direction > 0 ? 0 : (m_workspaces.size() - 1);
+  } else if (direction > 0) {
+    if (current + 1 >= m_workspaces.size()) {
+      return;
+    }
+    targetIndex = current + 1;
+  } else {
+    if (current == 0) {
+      return;
+    }
+    targetIndex = current - 1;
+  }
+
+  m_connection.activateWorkspace(m_output, m_workspaces[targetIndex].workspace);
 }

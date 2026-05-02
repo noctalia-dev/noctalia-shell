@@ -54,6 +54,8 @@ private:
                                  const std::vector<WorkspaceModel>& workspaces) const;
   void buildDesktopIconIndex();
   [[nodiscard]] std::string resolveIconPath(const std::string& appId, const std::string& iconNameOrPath);
+  void activateAdjacentWorkspace(int direction);
+  [[nodiscard]] bool activeWorkspaceIndex(std::size_t& index) const;
 
   WaylandConnection& m_connection;
   wl_output* m_output = nullptr;
