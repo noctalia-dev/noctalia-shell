@@ -85,6 +85,8 @@ Surface::Surface(WaylandConnection& connection) : m_connection(connection) {}
 Surface::~Surface() {
   cancelQueuedFrameWork();
   cancelQueuedRender();
+  m_invalidationToken.reset();
+  setSceneRoot(nullptr);
   destroySurface();
 }
 
@@ -170,6 +172,33 @@ void Surface::setPrepareFrameCallback(PrepareFrameCallback callback) { m_prepare
 void Surface::setUpdateCallback(UpdateCallback callback) { m_updateCallback = std::move(callback); }
 
 void Surface::setFrameTickCallback(FrameTickCallback callback) { m_frameTickCallback = std::move(callback); }
+
+void Surface::setSceneRoot(Node* root) {
+  if (m_sceneRoot == root) {
+    return;
+  }
+  m_sceneRoot = root;
+  if (m_sceneRoot == nullptr) {
+    return;
+  }
+
+  const std::weak_ptr<InvalidationToken> token = m_invalidationToken;
+  m_sceneRoot->setInvalidationCallback([this, token](NodeInvalidation invalidation) {
+    if (token.expired()) {
+      return;
+    }
+    const UiPhase phase = currentUiPhase();
+    if (m_inPrepareFrame || phase != UiPhase::Idle) {
+      return;
+    }
+
+    if (invalidation == NodeInvalidation::Layout) {
+      requestLayout();
+    } else {
+      requestRedraw();
+    }
+  });
+}
 
 void Surface::setRenderContext(RenderContext* ctx) {
   if (m_renderContext == ctx && (ctx == nullptr || m_surface == nullptr || m_renderTarget.surfaceTarget() != nullptr)) {

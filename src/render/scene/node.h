@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -19,6 +20,11 @@ enum class NodeType : std::uint8_t {
   Effect,
   Graph,
   Wallpaper,
+};
+
+enum class NodeInvalidation : std::uint8_t {
+  Paint,
+  Layout,
 };
 
 struct LayoutSize {
@@ -107,6 +113,7 @@ public:
 
   void setAnimationManager(AnimationManager* mgr);
   [[nodiscard]] AnimationManager* animationManager() const noexcept { return m_animationManager; }
+  void setInvalidationCallback(std::function<void(NodeInvalidation)> callback);
   void layout(Renderer& renderer);
   [[nodiscard]] LayoutSize measure(Renderer& renderer, const LayoutConstraints& constraints);
   void arrange(Renderer& renderer, const LayoutRect& rect);
@@ -152,9 +159,11 @@ private:
   std::int32_t m_zIndex = 0;
   void* m_userData = nullptr;
   AnimationManager* m_animationManager = nullptr;
+  std::function<void(NodeInvalidation)> m_invalidationCallback;
   Node* m_parent = nullptr;
   std::vector<std::unique_ptr<Node>> m_children;
 
   void propagatePaintDirty();
   void propagateLayoutDirty();
+  void notifyInvalidated(NodeInvalidation invalidation);
 };

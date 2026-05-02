@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -74,7 +75,7 @@ public:
   void requestRedraw();
   void renderNow();
   void setAnimationManager(AnimationManager* manager) noexcept { m_animationManager = manager; }
-  void setSceneRoot(Node* root) noexcept { m_sceneRoot = root; }
+  void setSceneRoot(Node* root);
   void setRenderContext(RenderContext* ctx);
   [[nodiscard]] RenderContext* renderContext() const noexcept { return m_renderContext; }
   [[nodiscard]] RenderTarget& renderTarget() noexcept { return m_renderTarget; }
@@ -110,6 +111,8 @@ protected:
   wl_surface* m_surface = nullptr;
 
 private:
+  struct InvalidationToken {};
+
   void preparePendingFrame();
   void kickFrameLoop();
   void queueFrameWork(bool runFrameTick = false, float deltaMs = 0.0f);
@@ -126,6 +129,7 @@ private:
   RenderTarget m_renderTarget;
   AnimationManager* m_animationManager = nullptr;
   Node* m_sceneRoot = nullptr;
+  std::shared_ptr<InvalidationToken> m_invalidationToken = std::make_shared<InvalidationToken>();
   ConfigureCallback m_configureCallback;
   PrepareFrameCallback m_prepareFrameCallback;
   UpdateCallback m_updateCallback;

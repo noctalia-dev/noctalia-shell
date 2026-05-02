@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <utility>
 
 namespace {
 
@@ -253,6 +254,10 @@ void Node::setAnimationManager(AnimationManager* mgr) {
   }
 }
 
+void Node::setInvalidationCallback(std::function<void(NodeInvalidation)> callback) {
+  m_invalidationCallback = std::move(callback);
+}
+
 Node* Node::addChild(std::unique_ptr<Node> child) {
   uiAssertSceneMutationAllowed("Node::addChild");
   child->m_parent = this;
@@ -310,6 +315,8 @@ void Node::propagatePaintDirty() {
   m_paintDirty = true;
   if (m_parent != nullptr) {
     m_parent->propagatePaintDirty();
+  } else {
+    notifyInvalidated(NodeInvalidation::Paint);
   }
 }
 
@@ -320,6 +327,14 @@ void Node::propagateLayoutDirty() {
   m_layoutDirty = true;
   if (m_parent != nullptr) {
     m_parent->propagateLayoutDirty();
+  } else {
+    notifyInvalidated(NodeInvalidation::Layout);
+  }
+}
+
+void Node::notifyInvalidated(NodeInvalidation invalidation) {
+  if (m_invalidationCallback) {
+    m_invalidationCallback(invalidation);
   }
 }
 
