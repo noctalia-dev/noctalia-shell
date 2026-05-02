@@ -1,6 +1,7 @@
 #include "shell/control_center/audio_tab.h"
 
 #include "config/config_service.h"
+#include "core/log.h"
 #include "core/ui_phase.h"
 #include "dbus/mpris/mpris_service.h"
 #include "i18n/i18n.h"
@@ -26,6 +27,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -38,6 +40,7 @@ namespace {
 
   constexpr float kDevicesColumnGrow = 3.0f;
   constexpr float kValueLabelWidth = Style::controlHeightLg + Style::spaceLg;
+  constexpr Logger kLogProgramUi{"audio_tab"};
   constexpr float kVolumeSyncEpsilon = 0.005f; // 0.5%
   constexpr auto kVolumeCommitInterval = std::chrono::milliseconds(16);
   constexpr auto kVolumeStateHoldoff = std::chrono::milliseconds(180);
@@ -76,7 +79,8 @@ namespace {
       return false;
     }
     static constexpr std::string_view kRuntimeTokens[] = {
-        "wine", "wine64", "wine64-preloader", "wineserver", "proton", "steam-runtime", "pressure-vessel",
+        "wine",   "wine64",       "wine64-preloader", "wineserver",
+        "proton", "protontricks", "steam-runtime",    "pressure-vessel",
     };
     for (const auto token : kRuntimeTokens) {
       if (normalized == token || normalized.find(token) != std::string::npos) {
@@ -306,7 +310,9 @@ namespace {
 
   const DesktopEntry* findDesktopEntryForNode(const AudioNode& node, std::string_view resolvedAppName) {
     const std::string binary = lowerIdentifier(node.applicationBinary);
-    if (!binary.empty()) {
+    // Wine/Proton streams report wine64-preloader etc.; matching desktop entries by that binary (or
+    // the shared Icon=wine) incorrectly picks unrelated apps (e.g. Protontricks) before app/node name.
+    if (!binary.empty() && !looksLikeRuntimeLauncher(node.applicationBinary)) {
       if (const DesktopEntry* entry = findDesktopEntryByTerm(binary)) {
         return entry;
       }
@@ -372,7 +378,7 @@ namespace {
         entry != nullptr && !entry->name.empty() && !isGenericAudioLabel(entry->name)) {
       resolved = entry->name;
     }
-    if (resolved.empty() || isGenericAudioLabel(resolved)) {
+    if (resolved.empty() || isGenericAudioLabel(resolved) || looksLikeRuntimeLauncher(resolved)) {
       resolved = !node.name.empty() ? node.name : node.description;
     }
     if (isGenericAudioLabel(resolved) && !node.iconName.empty()) {
@@ -410,6 +416,76 @@ namespace {
     }
     const std::string artists = joinedArtists(player->artists);
     return artists.empty() ? player->title : artists + " - " + player->title;
+  }
+
+  std::string programResolutionIdentityKey(const AudioNode& node, const MprisPlayerInfo* player,
+                                           std::string_view resolvedAppName) {
+    std::string key;
+    key.reserve(512);
+    key = std::to_string(node.id);
+    auto appendField = [&key](std::string_view field) {
+      key.push_back('|');
+      key.append(field);
+    };
+    appendField(node.applicationName);
+    appendField(node.applicationId);
+    appendField(node.applicationBinary);
+    appendField(node.iconName);
+    appendField(node.name);
+    appendField(node.description);
+    if (player != nullptr) {
+      appendField(player->identity);
+      appendField(player->busName);
+      appendField(player->desktopEntry);
+    }
+    appendField(resolvedAppName);
+    return key;
+  }
+
+  std::string formatTokenPreview(const std::vector<std::string>& tokens, std::size_t maxTokens) {
+    std::string out;
+    std::size_t shown = 0;
+    for (const auto& t : tokens) {
+      if (t.empty() || isGenericAudioLabel(t)) {
+        continue;
+      }
+      if (shown >= maxTokens) {
+        out += ", ...";
+        break;
+      }
+      if (!out.empty()) {
+        out += ", ";
+      }
+      out += t;
+      ++shown;
+    }
+    return out;
+  }
+
+  void logProgramVolumeResolutionIfChanged(std::string& lastKey, const AudioNode& node, const MprisPlayerInfo* player,
+                                           std::string_view resolvedAppName, std::size_t mprisPlayerCount) {
+    const std::string nextKey = programResolutionIdentityKey(node, player, resolvedAppName);
+    if (nextKey == lastKey) {
+      return;
+    }
+    lastKey = nextKey;
+    const std::vector<std::string> streamTokens = streamMatchTokens(node, node.applicationName);
+    const std::string tokenPreview = formatTokenPreview(streamTokens, 12);
+    if (player != nullptr) {
+      kLogProgramUi.debug(
+          "application volume: id={} pw[app.name='{}' app.id='{}' binary='{}' icon='{}' node.name='{}' desc='{}'] "
+          "mpris[match identity='{}' bus='{}' desktop='{}' status='{}'] resolved='{}' streamTokens=[{}] "
+          "mprisPlayerCount={}",
+          node.id, node.applicationName, node.applicationId, node.applicationBinary, node.iconName, node.name,
+          node.description, player->identity, player->busName, player->desktopEntry, player->playbackStatus,
+          resolvedAppName, tokenPreview, mprisPlayerCount);
+    } else {
+      kLogProgramUi.debug(
+          "application volume: id={} pw[app.name='{}' app.id='{}' binary='{}' icon='{}' node.name='{}' desc='{}'] "
+          "mpris[no match] resolved='{}' streamTokens=[{}] mprisPlayerCount={}",
+          node.id, node.applicationName, node.applicationId, node.applicationBinary, node.iconName, node.name,
+          node.description, resolvedAppName, tokenPreview, mprisPlayerCount);
+    }
   }
 
   const MprisPlayerInfo* findMatchingPlayer(const std::vector<MprisPlayerInfo>& players, const AudioNode& node,
@@ -748,8 +824,9 @@ namespace {
     void doArrange(Renderer& renderer, const LayoutRect& rect) override { arrangeByLayout(renderer, rect); }
 
     void syncFromNode(const AudioNode& node, const MprisPlayerInfo* player, bool isDefault, float sliderMax,
-                      bool nodeEnabled) {
+                      bool nodeEnabled, std::size_t mprisPlayerCount) {
       std::string resolvedAppName = resolveProgramAppName(node, player);
+      logProgramVolumeResolutionIfChanged(m_programResolutionLogKey, node, player, resolvedAppName, mprisPlayerCount);
 
       std::string title = node.streamTitle;
       if (title.empty() && !node.name.empty() && node.name != resolvedAppName) {
@@ -877,6 +954,7 @@ namespace {
     std::string m_lastIconKey;
     std::string m_lastIconPath;
     std::vector<std::string> m_iconCandidates;
+    std::string m_programResolutionLogKey;
 
     Slider* m_slider = nullptr;
     Label* m_valueLabel = nullptr;
@@ -1548,7 +1626,7 @@ void AudioTab::rebuildProgramVolumes(Renderer& renderer) {
           m_audio, sink.id, sliderMax, scale,
           [this, sinkId = sink.id](float value) { queueProgramSinkVolume(sinkId, value); },
           [this]() { flushPendingProgramVolumes(true); });
-      row->syncFromNode(sink, player, false, sliderMax, true);
+      row->syncFromNode(sink, player, false, sliderMax, true, players.size());
       m_programRows.push_back(row.get());
       m_programList->addChild(std::move(row));
     }
@@ -1584,7 +1662,7 @@ void AudioTab::syncProgramVolumeRows() {
       continue;
     }
     const MprisPlayerInfo* player = findMatchingPlayer(players, *it->second, it->second->applicationName);
-    row->syncFromNode(*it->second, player, false, sliderMax, true);
+    row->syncFromNode(*it->second, player, false, sliderMax, true, players.size());
   }
 }
 
