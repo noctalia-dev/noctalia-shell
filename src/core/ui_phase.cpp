@@ -1,13 +1,17 @@
 #include "core/ui_phase.h"
 
+#ifndef NDEBUG
 #include "core/log.h"
 
 #include <cstdlib>
+#endif
 
 namespace {
 
   thread_local UiPhase g_currentUiPhase = UiPhase::Idle;
+#ifndef NDEBUG
   constexpr Logger kLog{"ui_phase"};
+#endif
 
 } // namespace
 

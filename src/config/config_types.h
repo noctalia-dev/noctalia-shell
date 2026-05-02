@@ -57,11 +57,11 @@ struct BarConfig {
   bool reserveSpace = true; // reserve compositor exclusive zone for this bar
   std::int32_t thickness = Style::barThicknessDefault;
   float backgroundOpacity = 1.0f;
-  std::int32_t radius = Style::radiusXl;
-  std::int32_t radiusTopLeft = Style::radiusXl;
-  std::int32_t radiusTopRight = Style::radiusXl;
-  std::int32_t radiusBottomLeft = Style::radiusXl;
-  std::int32_t radiusBottomRight = Style::radiusXl;
+  std::int32_t radius = static_cast<std::int32_t>(Style::radiusXl);
+  std::int32_t radiusTopLeft = static_cast<std::int32_t>(Style::radiusXl);
+  std::int32_t radiusTopRight = static_cast<std::int32_t>(Style::radiusXl);
+  std::int32_t radiusBottomLeft = static_cast<std::int32_t>(Style::radiusXl);
+  std::int32_t radiusBottomRight = static_cast<std::int32_t>(Style::radiusXl);
   std::int32_t marginH = 180;     // horizontal compositor margin (left = right = marginH)
   std::int32_t marginV = 10;      // vertical compositor margin (gap between bar and screen edge)
   std::int32_t padding = 14;      // main-axis padding from bar edges to start/end sections
