@@ -96,6 +96,7 @@ namespace settings {
     const auto createBar = std::move(ctx.createBar);
     const auto createMonitorOverride = std::move(ctx.createMonitorOverride);
     const float scale = ctx.scale;
+    const bool showActiveTab = !ctx.globalSearchActive;
 
     auto sidebarScroll = std::make_unique<ScrollView>();
     sidebarScroll->bindState(&ctx.sidebarScrollState);
@@ -116,7 +117,7 @@ namespace settings {
     sidebar->setPadding(Style::spaceSm * scale);
 
     for (const auto& section : ctx.sections) {
-      const bool selected = section == *selectedSection;
+      const bool selected = showActiveTab && section == *selectedSection;
       auto navItem = std::make_unique<Button>();
       navItem->setGlyph(sectionGlyph(section));
       navItem->setText(sectionLabel(section));
@@ -134,7 +135,7 @@ namespace settings {
 
     for (const auto& barName : ctx.availableBars) {
       const bool barSelected =
-          *selectedSection == "bar" && *selectedBarName == barName && selectedMonitorOverride->empty();
+          showActiveTab && *selectedSection == "bar" && *selectedBarName == barName && selectedMonitorOverride->empty();
       auto navItem = std::make_unique<Button>();
       navItem->setGlyph("bar");
       navItem->setText(i18n::tr("settings.entities.bar.label", "name", barName));
@@ -158,8 +159,8 @@ namespace settings {
       }
 
       for (const auto& ovr : bar->monitorOverrides) {
-        const bool ovrSelected =
-            *selectedSection == "bar" && *selectedBarName == barName && *selectedMonitorOverride == ovr.match;
+        const bool ovrSelected = showActiveTab && *selectedSection == "bar" && *selectedBarName == barName &&
+                                 *selectedMonitorOverride == ovr.match;
         auto ovrItem = std::make_unique<Button>();
         ovrItem->setGlyph("device-desktop");
         ovrItem->setText(i18n::tr("settings.entities.monitor-override.label", "name", ovr.match));
