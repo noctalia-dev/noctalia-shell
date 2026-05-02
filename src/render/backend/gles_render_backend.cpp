@@ -390,8 +390,8 @@ void GlesRenderBackend::drawFullscreenTint(Color color) {
   drawFullscreenQuad(m_fullscreenTintProgram);
 }
 
-void GlesRenderBackend::drawFullscreenBlur(TextureId sourceTexture, std::uint32_t width, std::uint32_t height,
-                                           float directionX, float directionY, float radius) {
+void GlesRenderBackend::drawFramebufferBlur(TextureId sourceTexture, std::uint32_t width, std::uint32_t height,
+                                            float directionX, float directionY, float radius) {
   if (sourceTexture == 0) {
     return;
   }

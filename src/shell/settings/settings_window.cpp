@@ -1097,10 +1097,12 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   searchInput->setSize(320.0f * scale, Style::controlHeight * scale);
   Input* searchInputPtr = searchInput.get();
   searchInput->setOnChange([this](const std::string& value) {
+    const bool wasSearchActive = !m_searchQuery.empty();
     m_searchQuery = value;
+    const bool searchActiveChanged = wasSearchActive != !m_searchQuery.empty();
     const bool hadPendingReset = !m_pendingResetPageScope.empty();
     m_pendingResetPageScope.clear();
-    if (hadPendingReset) {
+    if (hadPendingReset || searchActiveChanged) {
       m_focusSearchOnRebuild = true;
       requestSceneRebuild();
     } else {
@@ -1223,6 +1225,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       .sections = sections,
       .availableBars = availableBars,
       .scale = scale,
+      .globalSearchActive = !m_searchQuery.empty(),
       .sidebarScrollState = m_sidebarScrollState,
       .contentScrollState = m_contentScrollState,
       .selectedSection = m_selectedSection,

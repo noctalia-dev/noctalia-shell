@@ -17,6 +17,7 @@ namespace settings {
     const std::vector<std::string>& sections;
     const std::vector<std::string>& availableBars;
     float scale = 1.0f;
+    bool globalSearchActive = false;
 
     ScrollViewState& sidebarScrollState;
     ScrollViewState& contentScrollState;

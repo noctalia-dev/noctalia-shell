@@ -1139,6 +1139,11 @@ namespace noctalia::theme {
   } // namespace
 
   bool TemplateEngine::processConfigFile(const std::filesystem::path& configPath) {
+    auto cancelRequested = [this]() { return m_options.cancelRequested && m_options.cancelRequested(); };
+    if (cancelRequested()) {
+      return true;
+    }
+
     toml::table root;
     try {
       root = toml::parse_file(configPath.string());
@@ -1223,6 +1228,10 @@ namespace noctalia::theme {
 
     bool ok = true;
     for (const ParsedTemplateEntry& entry : entries) {
+      if (cancelRequested()) {
+        return ok;
+      }
+
       std::string closestColor;
       if (!entry.compareTo.empty() && !entry.colorsToCompare.empty()) {
         Options compareOptions = m_options;
@@ -1240,7 +1249,7 @@ namespace noctalia::theme {
       renderOptions.configFile = configPath.string();
 
       auto runHook = [&](const std::string& hook) {
-        if (!hook.empty()) {
+        if (!hook.empty() && !cancelRequested()) {
           const auto hookRendered = EngineImpl(m_themeData, renderOptions).render(hook);
           if (hookRendered.errorCount == 0 && !hookRendered.text.empty()) [[maybe_unused]]
             const bool hookOk = process::runSync(hookRendered.text);
@@ -1253,6 +1262,10 @@ namespace noctalia::theme {
 
       bool wroteAny = false;
       for (const std::string& outputPath : entry.outputPaths) {
+        if (cancelRequested()) {
+          return ok;
+        }
+
         const auto fileResult =
             EngineImpl(m_themeData, renderOptions).renderFile(entry.inputPath, std::filesystem::path(outputPath));
         if (!fileResult.success) {
@@ -1260,6 +1273,10 @@ namespace noctalia::theme {
           continue;
         }
         wroteAny = wroteAny || fileResult.wrote;
+      }
+
+      if (cancelRequested()) {
+        return ok;
       }
 
       if ((hasOutputs && wroteAny) || (!hasOutputs && !entry.postHook.empty()))
