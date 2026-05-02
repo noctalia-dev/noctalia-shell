@@ -66,6 +66,10 @@ void BackdropSurface::render() {
       .tintIntensity = m_tintIntensity,
   };
 
+  if (!m_layer.dirty()) {
+    return;
+  }
+
   m_layer.ensure([&](RenderFramebuffer& target) {
     auto* scratch = m_layer.scratch();
     if (scratch == nullptr) {
