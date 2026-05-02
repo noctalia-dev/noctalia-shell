@@ -312,6 +312,7 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   value->setFontSize(valueFontSize(s));
   value->setColor(colorSpecFromRole(ColorRole::OnSurface));
   value->setTextAlign(TextAlign::End);
+  value->setStableBaseline(true);
   // Reserve enough width for "100%" so the progress bar doesn't shrink at max values.
   value->setText("100%");
   value->measure(*m_renderContext);
