@@ -308,43 +308,75 @@ namespace {
     return nullptr;
   }
 
-  const DesktopEntry* findDesktopEntryForNode(const AudioNode& node, std::string_view resolvedAppName) {
+  struct DesktopEntryMatch {
+    const DesktopEntry* entry = nullptr;
+    const char* matchedVia = nullptr;
+    std::string normalizedTerm;
+  };
+
+  DesktopEntryMatch lookupDesktopEntryForProgramStream(const AudioNode& node, std::string_view resolvedBeforeDesktop) {
+    DesktopEntryMatch out;
     const std::string binary = lowerIdentifier(node.applicationBinary);
     // Wine/Proton streams report wine64-preloader etc.; matching desktop entries by that binary (or
     // the shared Icon=wine) incorrectly picks unrelated apps (e.g. Protontricks) before app/node name.
     if (!binary.empty() && !looksLikeRuntimeLauncher(node.applicationBinary)) {
       if (const DesktopEntry* entry = findDesktopEntryByTerm(binary)) {
-        return entry;
+        out.entry = entry;
+        out.matchedVia = "binary";
+        out.normalizedTerm = binary;
+        return out;
       }
     }
     const std::string appId = lowerIdentifier(node.applicationId);
     if (!appId.empty()) {
       if (const DesktopEntry* entry = findDesktopEntryByTerm(appId)) {
-        return entry;
+        out.entry = entry;
+        out.matchedVia = "application_id";
+        out.normalizedTerm = appId;
+        return out;
       }
     }
     const std::string appName = lowerIdentifier(node.applicationName);
     if (!appName.empty() && !isGenericAudioLabel(appName) && !looksLikeRuntimeLauncher(appName)) {
       if (const DesktopEntry* entry = findDesktopEntryByTerm(appName)) {
-        return entry;
+        out.entry = entry;
+        out.matchedVia = "application_name";
+        out.normalizedTerm = appName;
+        return out;
       }
     }
-    const std::string resolved = lowerIdentifier(std::string(resolvedAppName));
+    const std::string resolved = lowerIdentifier(std::string(resolvedBeforeDesktop));
     if (!resolved.empty() && !isGenericAudioLabel(resolved) && !looksLikeRuntimeLauncher(resolved)) {
       if (const DesktopEntry* entry = findDesktopEntryByTerm(resolved)) {
-        return entry;
+        out.entry = entry;
+        out.matchedVia = "resolved_intermediate";
+        out.normalizedTerm = resolved;
+        return out;
       }
     }
     const std::string nodeName = lowerIdentifier(node.name);
     if (!nodeName.empty()) {
       if (const DesktopEntry* entry = findDesktopEntryByTerm(nodeName)) {
-        return entry;
+        out.entry = entry;
+        out.matchedVia = "node_name";
+        out.normalizedTerm = nodeName;
+        return out;
       }
     }
-    return nullptr;
+    return out;
   }
 
-  std::string resolveProgramAppName(const AudioNode& node, const MprisPlayerInfo* player) {
+  const DesktopEntry* findDesktopEntryForNode(const AudioNode& node, std::string_view resolvedAppName) {
+    return lookupDesktopEntryForProgramStream(node, resolvedAppName).entry;
+  }
+
+  struct ResolveProgramNameResult {
+    std::string displayName;
+    DesktopEntryMatch desktop;
+  };
+
+  ResolveProgramNameResult resolveProgramDisplayName(const AudioNode& node, const MprisPlayerInfo* player) {
+    ResolveProgramNameResult result;
     std::string resolved = node.applicationName;
     const bool appNameIsGeneric = isLowConfidenceProgramAppName(node);
 
@@ -374,9 +406,10 @@ namespace {
         player != nullptr && !player->identity.empty() && !isGenericAudioLabel(player->identity)) {
       resolved = player->identity;
     }
-    if (const DesktopEntry* entry = findDesktopEntryForNode(node, resolved);
-        entry != nullptr && !entry->name.empty() && !isGenericAudioLabel(entry->name)) {
-      resolved = entry->name;
+    result.desktop = lookupDesktopEntryForProgramStream(node, resolved);
+    if (result.desktop.entry != nullptr && !result.desktop.entry->name.empty() &&
+        !isGenericAudioLabel(result.desktop.entry->name)) {
+      resolved = result.desktop.entry->name;
     }
     if (resolved.empty() || isGenericAudioLabel(resolved) || looksLikeRuntimeLauncher(resolved)) {
       resolved = !node.name.empty() ? node.name : node.description;
@@ -390,7 +423,28 @@ namespace {
     if (resolved.empty()) {
       resolved = "Application";
     }
-    return resolved;
+    result.displayName = std::move(resolved);
+    return result;
+  }
+
+  std::string resolveProgramAppName(const AudioNode& node, const MprisPlayerInfo* player) {
+    return resolveProgramDisplayName(node, player).displayName;
+  }
+
+  void logDesktopEntryMatchIfChanged(std::string& lastKey, std::uint32_t nodeId, const DesktopEntryMatch& desk) {
+    if (desk.entry == nullptr || desk.matchedVia == nullptr) {
+      return;
+    }
+    const std::string nextKey =
+        std::to_string(nodeId) + "|" + desk.matchedVia + "|" + desk.normalizedTerm + "|" + desk.entry->id;
+    if (nextKey == lastKey) {
+      return;
+    }
+    lastKey = nextKey;
+    kLogProgramUi.info("program stream desktop entry: pw.nodeId={} matched_via={} normalized_term='{}' entry.id='{}' "
+                       "entry.name='{}' entry.path='{}'",
+                       nodeId, desk.matchedVia, desk.normalizedTerm, desk.entry->id, desk.entry->name,
+                       desk.entry->path);
   }
 
   bool tokenListsMatch(const std::vector<std::string>& left, const std::vector<std::string>& right) {
@@ -825,7 +879,9 @@ namespace {
 
     void syncFromNode(const AudioNode& node, const MprisPlayerInfo* player, bool isDefault, float sliderMax,
                       bool nodeEnabled, std::size_t mprisPlayerCount) {
-      std::string resolvedAppName = resolveProgramAppName(node, player);
+      const ResolveProgramNameResult resolved = resolveProgramDisplayName(node, player);
+      const std::string& resolvedAppName = resolved.displayName;
+      logDesktopEntryMatchIfChanged(m_desktopMatchLogKey, node.id, resolved.desktop);
       logProgramVolumeResolutionIfChanged(m_programResolutionLogKey, node, player, resolvedAppName, mprisPlayerCount);
 
       std::string title = node.streamTitle;
@@ -955,6 +1011,7 @@ namespace {
     std::string m_lastIconPath;
     std::vector<std::string> m_iconCandidates;
     std::string m_programResolutionLogKey;
+    std::string m_desktopMatchLogKey;
 
     Slider* m_slider = nullptr;
     Label* m_valueLabel = nullptr;
