@@ -393,6 +393,7 @@ _noctalia_sources = files(
   'src/render/programs/graph_program.cpp',
   'src/render/programs/blur_program.cpp',
   'src/render/programs/wallpaper_program.cpp',
+  'src/render/core/cached_layer.cpp',
   'src/render/core/shared_texture_cache.cpp',
   'src/render/gl_shared_context.cpp',
   'src/render/render_context.cpp',

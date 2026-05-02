@@ -1,12 +1,11 @@
 #pragma once
 
-#include "render/backend/render_backend.h"
+#include "render/core/cached_layer.h"
 #include "render/core/texture_handle.h"
 #include "render/wallpaper_renderer.h"
 #include "wayland/layer_surface.h"
 
 #include <cstdint>
-#include <memory>
 
 class GlSharedContext;
 
@@ -16,13 +15,9 @@ public:
   ~BackdropSurface() override;
 
   void setSharedGl(GlSharedContext* shared) noexcept { m_shared = shared; }
-  void setBlurIntensity(float v) noexcept { m_blurIntensity = v; }
-  void setTintIntensity(float v) noexcept { m_tintIntensity = v; }
-  void setTintColor(float r, float g, float b) noexcept {
-    m_tintR = r;
-    m_tintG = g;
-    m_tintB = b;
-  }
+  void setBlurIntensity(float v) noexcept;
+  void setTintIntensity(float v) noexcept;
+  void setTintColor(float r, float g, float b) noexcept;
   void setUnloadWhenInactive(bool v) noexcept { m_unloadWhenInactive = v; }
   void setActive(bool active);
   void setWallpaperState(TextureId tex, float imgW, float imgH, WallpaperFillMode fillMode);
@@ -36,13 +31,8 @@ protected:
   void onScaleChanged() override;
 
 private:
-  void ensureFramebuffers();
-  void destroyFramebuffers();
-
   WallpaperRenderer m_wallpaperRenderer;
-
-  std::unique_ptr<RenderFramebuffer> m_primaryFramebuffer;
-  std::unique_ptr<RenderFramebuffer> m_scratchFramebuffer;
+  CachedLayer m_layer;
 
   std::uint32_t m_bufW = 0;
   std::uint32_t m_bufH = 0;
