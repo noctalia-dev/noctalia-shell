@@ -27,7 +27,7 @@ For dependencies and normal build commands, start with [README.md](README.md).
 | Idle | `ext-idle-notify-v1`, `idle-inhibit-unstable-v1` |
 | Cursor | `wp-cursor-shape-v1` |
 | Keyboard | `xkbcommon` |
-| Rendering | `EGL`, `OpenGL ES 3`, `wayland-egl` |
+| Rendering | `EGL`, `OpenGL ES 2.0+`, `wayland-egl` |
 | Text | `cairo`, `pango`, `pangocairo`, `freetype`, `fontconfig` |
 | Images | `Wuffs` (vendored), `nanosvg` (vendored), `stb_image_resize2` (vendored), `libwebp` |
 | IPC | `sdbus-c++` |
