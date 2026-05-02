@@ -15,7 +15,7 @@ class MprisService;
 
 class DesktopMediaPlayerWidget : public DesktopWidget {
 public:
-  DesktopMediaPlayerWidget(MprisService* mpris, HttpClient* httpClient, bool vertical, ThemeColor color, bool shadow);
+  DesktopMediaPlayerWidget(MprisService* mpris, HttpClient* httpClient, bool vertical, ColorSpec color, bool shadow);
 
   void create() override;
   [[nodiscard]] bool wantsSecondTicks() const override { return true; }
@@ -33,7 +33,7 @@ private:
   MprisService* m_mpris;
   HttpClient* m_httpClient;
   bool m_vertical;
-  ThemeColor m_color;
+  ColorSpec m_color;
   bool m_shadow;
 
   Image* m_artwork = nullptr;

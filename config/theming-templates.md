@@ -74,7 +74,7 @@ If a block tag appears alone on a line, with only whitespace around it, that who
 
 ## Data Model
 
-### Theme Colors
+### Palette Colors
 
 Colors are accessed with:
 

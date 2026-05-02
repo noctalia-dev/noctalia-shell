@@ -85,20 +85,20 @@ namespace {
       setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
       setMinHeight(kRowMinHeight * scale);
       setRadius(Style::radiusMd * scale);
-      setFill(roleColor(ColorRole::Surface));
+      setFill(colorSpecFromRole(ColorRole::Surface));
       clearBorder();
 
       auto icon = std::make_unique<Glyph>();
       icon->setGlyph(glyphFor(m_device.kind));
       icon->setGlyphSize(Style::fontSizeBody * scale);
-      icon->setColor(roleColor(ColorRole::OnSurface));
+      icon->setColor(colorSpecFromRole(ColorRole::OnSurface));
       addChild(std::move(icon));
 
       auto alias = std::make_unique<Label>();
       alias->setText(m_device.alias);
       alias->setBold(m_device.connected);
       alias->setFontSize(Style::fontSizeBody * scale);
-      alias->setColor(roleColor(ColorRole::OnSurface));
+      alias->setColor(colorSpecFromRole(ColorRole::OnSurface));
       alias->setFlexGrow(1.0f);
       m_title = alias.get();
       addChild(std::move(alias));
@@ -108,14 +108,14 @@ namespace {
         battery->setText(std::to_string(static_cast<int>(m_device.batteryPercent)) + "%");
         battery->setCaptionStyle();
         battery->setFontSize(Style::fontSizeCaption * scale);
-        battery->setColor(roleColor(ColorRole::OnSurfaceVariant));
+        battery->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
         addChild(std::move(battery));
       } else if (m_device.hasRssi && bucketFor(m_device) == DeviceBucket::Available) {
         auto rssi = std::make_unique<Label>();
         rssi->setText(std::to_string(static_cast<int>(m_device.rssi)) + " dBm");
         rssi->setCaptionStyle();
         rssi->setFontSize(Style::fontSizeCaption * scale);
-        rssi->setColor(roleColor(ColorRole::OnSurfaceVariant));
+        rssi->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
         addChild(std::move(rssi));
       }
 
@@ -212,21 +212,21 @@ std::unique_ptr<Flex> BluetoothTab::create() {
   auto pairingTitle = std::make_unique<Label>();
   pairingTitle->setBold(true);
   pairingTitle->setFontSize(Style::fontSizeBody * scale);
-  pairingTitle->setColor(roleColor(ColorRole::OnSurface));
+  pairingTitle->setColor(colorSpecFromRole(ColorRole::OnSurface));
   m_pairingTitle = pairingTitle.get();
   pairingCard->addChild(std::move(pairingTitle));
 
   auto pairingDetail = std::make_unique<Label>();
   pairingDetail->setCaptionStyle();
   pairingDetail->setFontSize(Style::fontSizeCaption * scale);
-  pairingDetail->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  pairingDetail->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   m_pairingDetail = pairingDetail.get();
   pairingCard->addChild(std::move(pairingDetail));
 
   auto pairingCode = std::make_unique<Label>();
   pairingCode->setBold(true);
   pairingCode->setFontSize(Style::fontSizeTitle * scale);
-  pairingCode->setColor(roleColor(ColorRole::Primary));
+  pairingCode->setColor(colorSpecFromRole(ColorRole::Primary));
   m_pairingCode = pairingCode.get();
   pairingCard->addChild(std::move(pairingCode));
 
@@ -354,7 +354,7 @@ std::unique_ptr<Flex> BluetoothTab::createHeaderActions() {
   auto powerLabel = std::make_unique<Label>();
   powerLabel->setText(i18n::tr("control-center.bluetooth.bluetooth"));
   powerLabel->setFontSize(Style::fontSizeCaption * scale);
-  powerLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  powerLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   row->addChild(std::move(powerLabel));
 
   auto powerToggle = std::make_unique<Toggle>();
@@ -371,7 +371,7 @@ std::unique_ptr<Flex> BluetoothTab::createHeaderActions() {
   auto discoverLabel = std::make_unique<Label>();
   discoverLabel->setText(i18n::tr("control-center.bluetooth.visible"));
   discoverLabel->setFontSize(Style::fontSizeCaption * scale);
-  discoverLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  discoverLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   row->addChild(std::move(discoverLabel));
 
   auto discoverToggle = std::make_unique<Toggle>();
@@ -387,7 +387,7 @@ std::unique_ptr<Flex> BluetoothTab::createHeaderActions() {
 
   auto spinner = std::make_unique<Spinner>();
   spinner->setSpinnerSize(Style::fontSizeBody * scale);
-  spinner->setColor(roleColor(ColorRole::Primary));
+  spinner->setColor(colorSpecFromRole(ColorRole::Primary));
   m_scanSpinner = spinner.get();
   row->addChild(std::move(spinner));
 
@@ -611,7 +611,7 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
     empty->setText(i18n::tr("control-center.bluetooth.unavailable"));
     empty->setCaptionStyle();
     empty->setFontSize(Style::fontSizeCaption);
-    empty->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    empty->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     m_list->addChild(std::move(empty));
     m_list->layout(renderer);
     return;
@@ -640,7 +640,7 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
                                               : i18n::tr("control-center.bluetooth.off"));
     empty->setCaptionStyle();
     empty->setFontSize(Style::fontSizeCaption);
-    empty->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    empty->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     m_list->addChild(std::move(empty));
     m_list->layout(renderer);
     return;
@@ -668,7 +668,7 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
       header->setCaptionStyle();
       header->setBold(true);
       header->setFontSize(Style::fontSizeCaption);
-      header->setColor(roleColor(ColorRole::OnSurfaceVariant));
+      header->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
       m_list->addChild(std::move(header));
       currentBucket = bucket;
       first = false;

@@ -17,10 +17,10 @@ class Box : public Node {
 public:
   Box();
 
-  void setFill(const ThemeColor& color);
+  void setFill(const ColorSpec& color);
   // Explicit fixed color.
   void setFill(const Color& color);
-  void setBorder(const ThemeColor& color, float width);
+  void setBorder(const ColorSpec& color, float width);
   void setBorder(const Color& color, float width);
   void clearBorder();
   void setRadius(float radius);
@@ -41,8 +41,8 @@ private:
   void applyPalette();
 
   RectNode* m_rect = nullptr;
-  ThemeColor m_fill = clearThemeColor();
-  ThemeColor m_border = clearThemeColor();
+  ColorSpec m_fill = clearColorSpec();
+  ColorSpec m_border = clearColorSpec();
   float m_borderWidth = 0.0f;
   Signal<>::ScopedConnection m_paletteConn;
 };

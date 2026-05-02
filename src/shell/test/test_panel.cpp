@@ -37,7 +37,7 @@ void TestPanel::create() {
   auto header = std::make_unique<Label>();
   header->setText("Test Controls");
   header->setFontSize(Style::fontSizeTitle * scale);
-  header->setColor(roleColor(ColorRole::Primary));
+  header->setColor(colorSpecFromRole(ColorRole::Primary));
   m_headerLabel = header.get();
   rootLayout->addChild(std::move(header));
 
@@ -92,7 +92,7 @@ void TestPanel::create() {
     auto label = std::make_unique<Label>();
     label->setText(title);
     label->setFontSize(Style::fontSizeCaption * scale);
-    label->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    label->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     section->addChild(std::move(label));
     return section;
   };
@@ -403,7 +403,7 @@ void TestPanel::create() {
     resultLabel->setText("No image selected");
     resultLabel->setCaptionStyle();
     resultLabel->setFontSize(Style::fontSizeCaption * scale);
-    resultLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    resultLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     resultLabel->setMaxWidth(280.0f * scale);
     m_fileDialogResultLabel = resultLabel.get();
 
@@ -427,10 +427,10 @@ void TestPanel::create() {
         }
         if (result.has_value()) {
           m_fileDialogResultLabel->setText(result->string());
-          m_fileDialogResultLabel->setColor(roleColor(ColorRole::Primary));
+          m_fileDialogResultLabel->setColor(colorSpecFromRole(ColorRole::Primary));
         } else {
           m_fileDialogResultLabel->setText("Cancelled");
-          m_fileDialogResultLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+          m_fileDialogResultLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
         }
       });
     });
@@ -448,11 +448,11 @@ void TestPanel::create() {
     auto resultSwatch = std::make_unique<Box>();
     resultSwatch->setSize(28.0f * scale, 28.0f * scale);
     resultSwatch->setRadius(Style::radiusMd * scale);
-    resultSwatch->setBorder(roleColor(ColorRole::Outline), Style::borderWidth * scale);
+    resultSwatch->setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth * scale);
     if (const auto last = ColorPickerDialog::lastResult()) {
       resultSwatch->setFill(*last);
     } else {
-      resultSwatch->setFill(resolveThemeColor(roleColor(ColorRole::Primary)));
+      resultSwatch->setFill(colorForRole(ColorRole::Primary));
     }
     m_colorPickerResultSwatch = resultSwatch.get();
 
@@ -514,8 +514,8 @@ void TestPanel::create() {
       tile->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
       if (tileData.accent) {
         tile->setRadius(Style::radiusMd * scale);
-        tile->setFill(roleColor(ColorRole::Primary));
-        tile->setBorder(roleColor(ColorRole::Primary), Style::borderWidth);
+        tile->setFill(colorSpecFromRole(ColorRole::Primary));
+        tile->setBorder(colorSpecFromRole(ColorRole::Primary), Style::borderWidth);
       } else {
         tile->setCardStyle(scale);
         tile->setRadius(Style::radiusMd * scale);
@@ -524,14 +524,14 @@ void TestPanel::create() {
       auto icon = std::make_unique<Glyph>();
       icon->setGlyph(tileData.glyph);
       icon->setGlyphSize(16.0f * scale);
-      icon->setColor(roleColor(tileData.accent ? ColorRole::OnPrimary : ColorRole::OnSurface));
+      icon->setColor(colorSpecFromRole(tileData.accent ? ColorRole::OnPrimary : ColorRole::OnSurface));
       tile->addChild(std::move(icon));
 
       auto label = std::make_unique<Label>();
       label->setText(tileData.label);
       label->setCaptionStyle();
       label->setFontSize(Style::fontSizeCaption * scale);
-      label->setColor(roleColor(tileData.accent ? ColorRole::OnPrimary : ColorRole::OnSurfaceVariant));
+      label->setColor(colorSpecFromRole(tileData.accent ? ColorRole::OnPrimary : ColorRole::OnSurfaceVariant));
       tile->addChild(std::move(label));
 
       grid->addChild(std::move(tile));
@@ -546,15 +546,15 @@ void TestPanel::create() {
   {
     auto transformStage = std::make_unique<Box>();
     transformStage->setSize(280.0f * scale, 220.0f * scale);
-    transformStage->setFill(roleColor(ColorRole::Surface));
-    transformStage->setBorder(roleColor(ColorRole::Outline), Style::borderWidth * scale);
+    transformStage->setFill(colorSpecFromRole(ColorRole::Surface));
+    transformStage->setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth * scale);
     transformStage->setRadius(Style::radiusLg * scale);
     m_transformStage = transformStage.get();
 
     auto demoBox = std::make_unique<Box>();
     demoBox->setSize(180.0f * scale, 100.0f * scale);
-    demoBox->setFill(roleColor(ColorRole::SurfaceVariant));
-    demoBox->setBorder(roleColor(ColorRole::Primary), Style::borderWidth * scale);
+    demoBox->setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
+    demoBox->setBorder(colorSpecFromRole(ColorRole::Primary), Style::borderWidth * scale);
     demoBox->setRadius(Style::radiusLg * scale);
     demoBox->setRotation(0.0f);
     m_transformDemoBox = demoBox.get();
@@ -570,7 +570,7 @@ void TestPanel::create() {
     demoButton->setOnClick([this]() {
       if (m_transformHelp != nullptr) {
         m_transformHelp->setText("Transform button clicked!");
-        m_transformHelp->setColor(roleColor(ColorRole::Secondary));
+        m_transformHelp->setColor(colorSpecFromRole(ColorRole::Secondary));
       }
     });
     m_transformDemoButton = demoButton.get();
@@ -580,22 +580,22 @@ void TestPanel::create() {
     demoGlyph->setGlyph("noctalia");
     demoGlyph->setPosition(150.0f * scale, 60.0f * scale);
     demoGlyph->setGlyphSize(24.0f * scale);
-    demoGlyph->setColor(roleColor(ColorRole::Primary));
+    demoGlyph->setColor(colorSpecFromRole(ColorRole::Primary));
     demoGlyph->setRotation(static_cast<float>(M_PI) * 0.5f);
     m_transformDemoGlyph = demoGlyph.get();
     m_transformDemoBox->addChild(std::move(demoGlyph));
 
     auto badgeBox = std::make_unique<Box>();
     badgeBox->setSize(28.0f * scale, 28.0f * scale);
-    badgeBox->setFill(roleColor(ColorRole::Primary));
-    badgeBox->setBorder(roleColor(ColorRole::Outline), Style::borderWidth * scale);
+    badgeBox->setFill(colorSpecFromRole(ColorRole::Primary));
+    badgeBox->setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth * scale);
     badgeBox->setRadius(14.0f * scale);
     m_transformBadgeBox = badgeBox.get();
 
     auto badgeLabel = std::make_unique<Label>();
     badgeLabel->setText("3");
     badgeLabel->setFontSize(Style::fontSizeCaption * scale);
-    badgeLabel->setColor(roleColor(ColorRole::OnPrimary));
+    badgeLabel->setColor(colorSpecFromRole(ColorRole::OnPrimary));
     m_transformBadgeLabel = badgeLabel.get();
     m_transformBadgeBox->addChild(std::move(badgeLabel));
     m_transformDemoBox->addChild(std::move(badgeBox));
@@ -604,7 +604,7 @@ void TestPanel::create() {
     auto helpLabel = std::make_unique<Label>();
     helpLabel->setText("Rotated node with children.");
     helpLabel->setFontSize(Style::fontSizeCaption * scale);
-    helpLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    helpLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     m_transformHelp = helpLabel.get();
 
     auto section = makeSection("Transforms");

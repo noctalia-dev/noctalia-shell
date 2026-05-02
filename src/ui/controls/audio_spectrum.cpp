@@ -59,14 +59,14 @@ void AudioSpectrum::tick(float deltaMs) {
   }
 }
 
-void AudioSpectrum::setGradient(const ThemeColor& lowColor, const ThemeColor& highColor) {
+void AudioSpectrum::setGradient(const ColorSpec& lowColor, const ColorSpec& highColor) {
   m_lowColor = lowColor;
   m_highColor = highColor;
   recolorBars();
 }
 
 void AudioSpectrum::setGradient(const Color& lowColor, const Color& highColor) {
-  setGradient(fixedColor(lowColor), fixedColor(highColor));
+  setGradient(fixedColorSpec(lowColor), fixedColorSpec(highColor));
 }
 
 void AudioSpectrum::setSpacingRatio(float ratio) {
@@ -211,8 +211,8 @@ void AudioSpectrum::ensureBarCount(std::size_t count) {
 }
 
 void AudioSpectrum::recolorBars() {
-  const Color lowColor = resolveThemeColor(m_lowColor);
-  const Color highColor = resolveThemeColor(m_highColor);
+  const Color lowColor = resolveColorSpec(m_lowColor);
+  const Color highColor = resolveColorSpec(m_highColor);
   const std::size_t lastIndex = m_bars.empty() ? 0 : m_bars.size() - 1;
   for (std::size_t i = 0; i < m_bars.size(); ++i) {
     const float t = lastIndex == 0 ? 0.0f : static_cast<float>(i) / static_cast<float>(lastIndex);

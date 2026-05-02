@@ -33,9 +33,9 @@ enum class ButtonVariant : std::uint8_t {
 class Button : public Flex {
 public:
   struct ButtonStateColors {
-    ThemeColor bg;
-    ThemeColor border;
-    ThemeColor label;
+    ColorSpec bg;
+    ColorSpec border;
+    ColorSpec label;
   };
 
   struct ButtonPalette {

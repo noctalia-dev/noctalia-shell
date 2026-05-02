@@ -24,7 +24,7 @@ namespace {
     if (!config.fillColor) {
       return rgba(0.0f, 0.0f, 0.0f, 0.0f);
     }
-    return resolveThemeColor(*config.fillColor);
+    return resolveColorSpec(*config.fillColor);
   }
 
   const ext_session_lock_v1_listener kSessionLockListener = {

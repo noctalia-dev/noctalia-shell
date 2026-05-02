@@ -45,13 +45,13 @@ public:
   void setPadding(float all);
   void setPadding(float vertical, float horizontal);
 
-  void setFill(const ThemeColor& color);
+  void setFill(const ColorSpec& color);
   // Explicit fixed color.
   void setFill(const Color& color);
   void clearFill();
   void setRadius(float radius);
   void setRadii(const Radii& radii);
-  void setBorder(const ThemeColor& color, float width);
+  void setBorder(const ColorSpec& color, float width);
   // Explicit fixed color.
   void setBorder(const Color& color, float width);
   void clearBorder();
@@ -101,8 +101,8 @@ private:
   void setSizeFromLayout(float width, float height);
 
   RectNode* m_background = nullptr;
-  ThemeColor m_fill = clearThemeColor();
-  ThemeColor m_border = clearThemeColor();
+  ColorSpec m_fill = clearColorSpec();
+  ColorSpec m_border = clearColorSpec();
   Signal<>::ScopedConnection m_paletteConn;
   FlexDirection m_direction = FlexDirection::Horizontal;
   FlexAlign m_align = FlexAlign::Center;

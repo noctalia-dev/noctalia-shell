@@ -143,7 +143,8 @@ void ScriptedWidget::doLayout(Renderer& renderer, float containerWidth, float co
   if (!m_flex)
     return;
 
-  auto textColor = m_textColorRole ? roleColor(*m_textColorRole) : widgetForegroundOr(roleColor(ColorRole::OnSurface));
+  auto textColor = m_textColorRole ? colorSpecFromRole(*m_textColorRole)
+                                   : widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface));
   m_label->setColor(textColor);
   m_label->setVisible(!m_label->text().empty());
   if (m_label->visible()) {
@@ -151,8 +152,8 @@ void ScriptedWidget::doLayout(Renderer& renderer, float containerWidth, float co
   }
 
   if (m_glyphVisible) {
-    auto glyphColor =
-        m_glyphColorRole ? roleColor(*m_glyphColorRole) : widgetForegroundOr(roleColor(ColorRole::OnSurface));
+    auto glyphColor = m_glyphColorRole ? colorSpecFromRole(*m_glyphColorRole)
+                                       : widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface));
     m_glyph->setColor(glyphColor);
     m_glyph->measure(renderer);
   }

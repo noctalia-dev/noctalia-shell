@@ -715,10 +715,10 @@ void NotificationToast::addCardToInstance(Instance& inst, std::size_t entryIndex
   // Hover wiring: pause countdown while the card is hovered, and brighten the (X).
   // On leave, resume the countdown from the remaining progress.
   const bool isCritical = (entry.urgency == Urgency::Critical);
-  const Color closeColorNormal =
-      resolveThemeColor(isCritical ? roleColor(ColorRole::Error, 0.75f) : roleColor(ColorRole::OnSurfaceVariant, 0.6f));
+  const Color closeColorNormal = resolveColorSpec(isCritical ? colorSpecFromRole(ColorRole::Error, 0.75f)
+                                                             : colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.6f));
   const Color closeColorHover =
-      resolveThemeColor(isCritical ? roleColor(ColorRole::Error) : roleColor(ColorRole::OnSurface));
+      resolveColorSpec(isCritical ? colorSpecFromRole(ColorRole::Error) : colorSpecFromRole(ColorRole::OnSurface));
   const int totalDuration = entry.displayDurationMs;
   const uint32_t notificationId = entry.notificationId;
   Glyph* closeGlyphPtr = cs.closeGlyph;
@@ -1477,11 +1477,11 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
   bg->setRadius(Style::radiusXl);
   if (isCritical) {
     // Keep critical toasts readable: surface background + urgent border.
-    bg->setFill(roleColor(ColorRole::Surface, bgAlpha));
-    bg->setBorder(roleColor(ColorRole::Error, 0.95f), Style::borderWidth * 1.4f);
+    bg->setFill(colorSpecFromRole(ColorRole::Surface, bgAlpha));
+    bg->setBorder(colorSpecFromRole(ColorRole::Error, 0.95f), Style::borderWidth * 1.4f);
   } else {
-    bg->setFill(roleColor(ColorRole::Surface, bgAlpha));
-    bg->setBorder(roleColor(ColorRole::Outline, 0.8f), Style::borderWidth);
+    bg->setFill(colorSpecFromRole(ColorRole::Surface, bgAlpha));
+    bg->setBorder(colorSpecFromRole(ColorRole::Outline, 0.8f), Style::borderWidth);
   }
   bg->setSize(kCardWidth, cardHeight);
   *outBg = cardRoot->addChild(std::move(bg));
@@ -1549,7 +1549,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
     auto fallback = std::make_unique<Glyph>();
     fallback->setGlyph("bell");
     fallback->setGlyphSize(kNotificationIconGlyphSize);
-    fallback->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    fallback->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     fallback->measure(*m_renderContext);
     fallback->setPosition(std::round((kNotificationIconSize - fallback->width()) * 0.5f),
                           std::round((kNotificationIconSize - fallback->height()) * 0.5f));
@@ -1561,7 +1561,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
   auto appName = std::make_unique<Label>();
   appName->setText(entry.appName);
   appName->setFontSize(kMetaFontSize);
-  appName->setColor(roleColor(isCritical ? ColorRole::Error : ColorRole::OnSurfaceVariant));
+  appName->setColor(colorSpecFromRole(isCritical ? ColorRole::Error : ColorRole::OnSurfaceVariant));
   appName->setMaxWidth(innerWidth - kCloseButtonSize - Style::spaceXs);
   appName->measure(*m_renderContext);
   *outAppName = appName.get();
@@ -1572,8 +1572,8 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
   auto closeGlyph = std::make_unique<Glyph>();
   closeGlyph->setGlyph("close");
   closeGlyph->setGlyphSize(kCloseGlyphSize);
-  closeGlyph->setColor(resolveThemeColor(isCritical ? roleColor(ColorRole::Error, 0.75f)
-                                                    : roleColor(ColorRole::OnSurfaceVariant, 0.6f)));
+  closeGlyph->setColor(resolveColorSpec(isCritical ? colorSpecFromRole(ColorRole::Error, 0.75f)
+                                                   : colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.6f)));
   *outCloseGlyph = static_cast<Glyph*>(headerRow->addChild(std::move(closeGlyph)));
   headerRow->layout(*m_renderContext);
 
@@ -1583,7 +1583,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
   auto summary = std::make_unique<Label>();
   summary->setText(entry.summary);
   summary->setFontSize(kSummaryFontSize);
-  summary->setColor(roleColor(ColorRole::OnSurface));
+  summary->setColor(colorSpecFromRole(ColorRole::OnSurface));
   summary->setBold(true);
   summary->setMaxWidth(textMaxWidth);
   std::unique_ptr<Flex> actionsRow;
@@ -1670,7 +1670,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
   auto body = std::make_unique<Label>();
   body->setText(entry.body);
   body->setFontSize(kBodyFontSize);
-  body->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  body->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   body->setMaxWidth(textMaxWidth);
   const float bodyHeight = availableBodyHeight(summaryMeasuredH, actionsReservedHeight, cardHeight);
   const int bodyLines = entry.toastBodyLines;
@@ -1691,8 +1691,8 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
 
   // Progress bar (countdown)
   auto progressBar = std::make_unique<ProgressBar>();
-  progressBar->setTrackColor(roleColor(ColorRole::OnSurfaceVariant, 0.35f));
-  progressBar->setFillColor(roleColor(isCritical ? ColorRole::Error : ColorRole::Primary));
+  progressBar->setTrackColor(colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.35f));
+  progressBar->setFillColor(colorSpecFromRole(isCritical ? ColorRole::Error : ColorRole::Primary));
   progressBar->setSize(innerWidth, kProgressHeight);
   progressBar->setPosition(kCardInnerPad, progressY);
   *outProgress = static_cast<ProgressBar*>(foreground->addChild(std::move(progressBar)));

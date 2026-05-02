@@ -56,7 +56,7 @@ void BluetoothWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("bluetooth");
   glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
-  glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 
@@ -131,14 +131,14 @@ void BluetoothWidget::syncState(Renderer& renderer) {
 
   m_glyph->setGlyph(glyphForState(s, numConnected));
   m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
-  m_glyph->setColor(s.powered ? widgetForegroundOr(roleColor(ColorRole::OnSurface))
-                              : roleColor(ColorRole::OnSurfaceVariant));
+  m_glyph->setColor(s.powered ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
+                              : colorSpecFromRole(ColorRole::OnSurfaceVariant));
   m_glyph->measure(renderer);
 
   if (m_label != nullptr) {
     m_label->setText(alias);
-    m_label->setColor(s.powered ? widgetForegroundOr(roleColor(ColorRole::OnSurface))
-                                : roleColor(ColorRole::OnSurfaceVariant));
+    m_label->setColor(s.powered ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
+                                : colorSpecFromRole(ColorRole::OnSurfaceVariant));
     m_label->measure(renderer);
   }
 

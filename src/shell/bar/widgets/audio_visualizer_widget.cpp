@@ -10,8 +10,7 @@
 #include <memory>
 
 AudioVisualizerWidget::AudioVisualizerWidget(PipeWireSpectrum* spectrum, float width, float height, int bands,
-                                             bool mirrored, ThemeColor lowColor, ThemeColor highColor,
-                                             bool showWhenIdle)
+                                             bool mirrored, ColorSpec lowColor, ColorSpec highColor, bool showWhenIdle)
     : m_spectrum(spectrum), m_width(width), m_height(height), m_bands(std::max(1, bands)), m_mirrored(mirrored),
       m_showWhenIdle(showWhenIdle), m_lowColor(lowColor), m_highColor(highColor) {}
 

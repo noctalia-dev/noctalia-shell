@@ -46,7 +46,7 @@ namespace {
   constexpr std::int32_t kActionSupportReport = 1;
   constexpr std::int32_t kActionFlattenedConfig = 2;
 
-  std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ThemeColor& color, bool bold = false) {
+  std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ColorSpec& color, bool bold = false) {
     auto label = std::make_unique<Label>();
     label->setText(text);
     label->setFontSize(fontSize);
@@ -1041,7 +1041,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   headerTitle->setText(i18n::tr("settings.window.title"));
   headerTitle->setBold(true);
   headerTitle->setFontSize(Style::fontSizeTitle * scale);
-  headerTitle->setColor(roleColor(ColorRole::OnSurface));
+  headerTitle->setColor(colorSpecFromRole(ColorRole::OnSurface));
   headerTitle->setFlexGrow(1.0f);
   headerTitle->setStableBaseline(true);
   header->addChild(std::move(headerTitle));
@@ -1111,7 +1111,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   filters->addChild(std::make_unique<Spacer>());
 
   auto advancedLabel = makeLabel(i18n::tr("settings.badges.advanced"), Style::fontSizeBody * scale,
-                                 roleColor(ColorRole::OnSurfaceVariant), false);
+                                 colorSpecFromRole(ColorRole::OnSurfaceVariant), false);
   filters->addChild(std::move(advancedLabel));
 
   auto advancedToggle = std::make_unique<Toggle>();
@@ -1136,7 +1136,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   filters->addChild(std::move(advancedToggle));
 
   auto overriddenLabel = makeLabel(i18n::tr("settings.window.filter-modified"), Style::fontSizeBody * scale,
-                                   roleColor(ColorRole::OnSurfaceVariant), false);
+                                   colorSpecFromRole(ColorRole::OnSurfaceVariant), false);
   filters->addChild(std::move(overriddenLabel));
 
   auto overriddenToggle = std::make_unique<Toggle>();
@@ -1185,11 +1185,12 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     status->setGap(Style::spaceSm * scale);
     status->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
     status->setRadius(Style::radiusMd * scale);
-    status->setFill(roleColor(m_statusIsError ? ColorRole::Error : ColorRole::Secondary, 0.14f));
-    status->setBorder(roleColor(m_statusIsError ? ColorRole::Error : ColorRole::Secondary, 0.45f), Style::borderWidth);
+    status->setFill(colorSpecFromRole(m_statusIsError ? ColorRole::Error : ColorRole::Secondary, 0.14f));
+    status->setBorder(colorSpecFromRole(m_statusIsError ? ColorRole::Error : ColorRole::Secondary, 0.45f),
+                      Style::borderWidth);
 
     auto message = makeLabel(m_statusMessage, Style::fontSizeCaption * scale,
-                             roleColor(m_statusIsError ? ColorRole::Error : ColorRole::Secondary), true);
+                             colorSpecFromRole(m_statusIsError ? ColorRole::Error : ColorRole::Secondary), true);
     message->setFlexGrow(1.0f);
     status->addChild(std::move(message));
 

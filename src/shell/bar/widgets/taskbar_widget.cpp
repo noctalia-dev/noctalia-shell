@@ -126,7 +126,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
 
     if (task.active) {
       auto indicator = std::make_unique<Box>();
-      indicator->setFill(roleColor(ColorRole::Primary));
+      indicator->setFill(colorSpecFromRole(ColorRole::Primary));
       indicator->setRadius(indicatorSize * 0.5f);
       indicator->setFrameSize(indicatorSize, indicatorSize);
       indicator->setPosition(std::round((tileSize - indicatorSize) * 0.5f), std::round(tileSize - indicatorSize));
@@ -164,8 +164,8 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
 
       auto group = std::make_unique<Box>();
       group->setFrameSize(groupWidth, groupHeight);
-      group->setFill(roleColor(ColorRole::SurfaceVariant, ws.workspace.active ? 0.52f : 0.18f));
-      group->setBorder(roleColor(ColorRole::Primary, ws.workspace.active ? 0.65f : 0.16f), Style::borderWidth);
+      group->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, ws.workspace.active ? 0.52f : 0.18f));
+      group->setBorder(colorSpecFromRole(ColorRole::Primary, ws.workspace.active ? 0.65f : 0.16f), Style::borderWidth);
       group->setRadius(capsuleRadius);
       auto* groupPtr = static_cast<Box*>(m_taskStrip->addChild(std::move(group)));
 
@@ -179,8 +179,8 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       auto badge = std::make_unique<Box>();
       badge->setFrameSize(badgeWidth, badgeBase);
       badge->setRadius(badgeBase * 0.5f);
-      badge->setFill(roleColor(ws.workspace.active ? ColorRole::Primary : ColorRole::Surface));
-      badge->setBorder(roleColor(ColorRole::Outline, 0.45f), Style::borderWidth);
+      badge->setFill(colorSpecFromRole(ws.workspace.active ? ColorRole::Primary : ColorRole::Surface));
+      badge->setBorder(colorSpecFromRole(ColorRole::Outline, 0.45f), Style::borderWidth);
       badge->setPosition(std::round(badgeWidth * -0.32f), std::round(badgeBase * -0.22f));
       auto* badgePtr = static_cast<Box*>(groupPtr->addChild(std::move(badge)));
 
@@ -188,7 +188,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       badgeText->setText(ws.label);
       badgeText->setBold(true);
       badgeText->setFontSize(badgeFontSize);
-      badgeText->setColor(roleColor(ws.workspace.active ? ColorRole::OnPrimary : ColorRole::OnSurface));
+      badgeText->setColor(colorSpecFromRole(ws.workspace.active ? ColorRole::OnPrimary : ColorRole::OnSurface));
       badgeText->measure(renderer);
       badgeText->setPosition(std::round((badgeWidth - badgeText->width()) * 0.5f),
                              std::round((badgeBase - badgeText->height()) * 0.5f));

@@ -873,15 +873,15 @@
         },
         "capsule_border": {
           "label": "Capsule Border",
-          "description": "Theme role for the capsule outline"
+          "description": "Color role for the capsule outline"
         },
         "capsule_fill": {
           "label": "Capsule Fill",
-          "description": "Theme role for the capsule background"
+          "description": "Color role for the capsule background"
         },
         "capsule_foreground": {
           "label": "Capsule Foreground",
-          "description": "Theme role for content inside the capsule"
+          "description": "Color role for content inside the capsule"
         },
         "capsule_opacity": {
           "label": "Capsule Opacity",
@@ -893,7 +893,7 @@
         },
         "color": {
           "label": "Color",
-          "description": "Theme role for widget foreground"
+          "description": "Color role for widget foreground"
         },
         "cycle_command": {
           "label": "Cycle Command",
@@ -1465,19 +1465,19 @@
         },
         "widget-color": {
           "label": "Widget Color",
-          "description": "Default icon and label theme role for widgets on this bar"
+          "description": "Default icon and label color role for widgets on this bar"
         },
         "capsule-fill": {
           "label": "Capsule Fill",
-          "description": "Default capsule background theme role"
+          "description": "Default capsule background color role"
         },
         "capsule-border": {
           "label": "Capsule Border",
-          "description": "Default capsule outline theme role"
+          "description": "Default capsule outline color role"
         },
         "capsule-foreground": {
           "label": "Capsule Foreground",
-          "description": "Default icon and label theme role inside capsules"
+          "description": "Default icon and label color role inside capsules"
         },
         "widget-spacing": {
           "label": "Widget Spacing",

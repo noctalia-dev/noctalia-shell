@@ -53,7 +53,7 @@ void MediaWidget::create() {
   auto label = std::make_unique<Label>();
   label->setBold(true);
   label->setFontSize(Style::fontSizeBody * m_contentScale);
-  label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  label->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   label->setMaxWidth(m_maxWidth * m_contentScale);
   label->setMaxLines(1);
   label->setStableBaseline(true);
@@ -63,7 +63,7 @@ void MediaWidget::create() {
   auto emptyGlyph = std::make_unique<Glyph>();
   emptyGlyph->setGlyph("music-off");
   emptyGlyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
-  emptyGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  emptyGlyph->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   emptyGlyph->setVisible(false);
   m_emptyGlyph = emptyGlyph.get();
   area->addChild(std::move(emptyGlyph));
@@ -81,11 +81,11 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
   const bool isVertical = containerHeight > containerWidth;
 
   m_label->setMaxWidth(m_maxWidth * m_contentScale);
-  m_label->setColor(m_lastPlaybackStatus == "Playing" ? widgetForegroundOr(roleColor(ColorRole::OnSurface))
-                                                      : roleColor(ColorRole::OnSurfaceVariant));
+  m_label->setColor(m_lastPlaybackStatus == "Playing" ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
+                                                      : colorSpecFromRole(ColorRole::OnSurfaceVariant));
   m_label->measure(renderer);
   m_emptyGlyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
-  m_emptyGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  m_emptyGlyph->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   m_emptyGlyph->measure(renderer);
 
   const bool showArtSlot = m_art->hasImage();
@@ -175,8 +175,8 @@ void MediaWidget::syncState(Renderer& renderer) {
 
   m_label->setMaxWidth(m_maxWidth * m_contentScale);
   m_label->setText(m_lastText);
-  m_label->setColor(m_lastPlaybackStatus == "Playing" ? widgetForegroundOr(roleColor(ColorRole::OnSurface))
-                                                      : roleColor(ColorRole::OnSurfaceVariant));
+  m_label->setColor(m_lastPlaybackStatus == "Playing" ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
+                                                      : colorSpecFromRole(ColorRole::OnSurfaceVariant));
   m_label->measure(renderer);
 
   if (artChanged) {

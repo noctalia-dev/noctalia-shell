@@ -182,11 +182,10 @@ void FileEntryTile::doLayout(Renderer& renderer) {
 }
 
 void FileEntryTile::applyVisualState() {
-  const Color bg = m_selected  ? resolveThemeColor(roleColor(ColorRole::Primary))
-                   : m_hovered ? resolveThemeColor(roleColor(ColorRole::SurfaceVariant, 0.65f))
+  const Color bg = m_selected  ? colorForRole(ColorRole::Primary)
+                   : m_hovered ? colorForRole(ColorRole::SurfaceVariant, 0.65f)
                                : clearColor();
-  const Color fg = m_selected ? resolveThemeColor(roleColor(ColorRole::OnPrimary))
-                              : resolveThemeColor(roleColor(ColorRole::OnSurface));
+  const Color fg = m_selected ? colorForRole(ColorRole::OnPrimary) : colorForRole(ColorRole::OnSurface);
   const float alpha = m_disabled ? 0.55f : 1.0f;
 
   m_background->setFill(bg);

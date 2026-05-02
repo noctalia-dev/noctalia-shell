@@ -91,7 +91,7 @@ namespace {
     return randomCodepoints[index % randomCodepoints.size()];
   }
 
-  Color resolved(ColorRole role, float alpha = 1.0f) { return resolveThemeColor(roleColor(role, alpha)); }
+  Color resolved(ColorRole role, float alpha = 1.0f) { return colorForRole(role, alpha); }
 
 } // namespace
 
@@ -124,7 +124,7 @@ Input::Input() {
   auto label = std::make_unique<Label>();
   label->setFontSize(m_fontSize);
   label->setMaxLines(1);
-  label->setColor(roleColor(ColorRole::OnSurface));
+  label->setColor(colorSpecFromRole(ColorRole::OnSurface));
   label->setStableBaseline(true);
   m_label = static_cast<Label*>(m_textViewport->addChild(std::move(label)));
 
@@ -442,7 +442,7 @@ void Input::doLayout(Renderer& renderer) {
       const auto metrics = renderer.measureGlyph(codepoint, passwordGlyphSize);
       glyph->setCodepoint(codepoint);
       glyph->setFontSize(passwordGlyphSize);
-      glyph->setColor(resolveThemeColor(roleColor(ColorRole::OnSurface)));
+      glyph->setColor(colorForRole(ColorRole::OnSurface));
       glyph->setPosition(maskX - m_scrollOffset, maskGlyphY);
       glyph->setVisible(true);
       maskX += metrics.width;
@@ -654,8 +654,8 @@ void Input::applyVisualState() {
       m_invalid ? ColorRole::Error
                 : (((m_value.empty() && !m_placeholder.empty()) || readOnly) ? ColorRole::OnSurfaceVariant
                                                                              : ColorRole::OnSurface);
-  m_label->setColor(roleColor(textRole));
-  const Color passwordGlyphColor = resolveThemeColor(roleColor(textRole));
+  m_label->setColor(colorSpecFromRole(textRole));
+  const Color passwordGlyphColor = colorForRole(textRole);
   for (auto* glyph : m_passwordGlyphs) {
     glyph->setColor(passwordGlyphColor);
   }

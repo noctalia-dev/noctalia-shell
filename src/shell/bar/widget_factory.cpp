@@ -91,10 +91,10 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     const int bands = static_cast<int>(wc != nullptr ? wc->getInt("bands", 16) : 16);
     const bool mirrored = wc != nullptr ? wc->getBool("mirrored", false) : false;
     const bool showWhenIdle = wc != nullptr ? wc->getBool("show_when_idle", false) : false;
-    const ThemeColor lowColor =
-        themeColorFromConfigString(wc != nullptr ? wc->getString("low_color", "primary") : std::string("primary"));
-    const ThemeColor highColor =
-        themeColorFromConfigString(wc != nullptr ? wc->getString("high_color", "primary") : std::string("primary"));
+    const ColorSpec lowColor =
+        colorSpecFromConfigString(wc != nullptr ? wc->getString("low_color", "primary") : std::string("primary"));
+    const ColorSpec highColor =
+        colorSpecFromConfigString(wc != nullptr ? wc->getString("high_color", "primary") : std::string("primary"));
     auto widget = std::make_unique<AudioVisualizerWidget>(m_audioSpectrum, width, height, bands, mirrored, lowColor,
                                                           highColor, showWhenIdle);
     widget->setContentScale(contentScale);

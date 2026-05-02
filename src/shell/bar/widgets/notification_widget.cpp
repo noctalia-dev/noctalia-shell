@@ -38,12 +38,12 @@ void NotificationWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("bell");
   glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
-  glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 
   auto dot = std::make_unique<Box>();
-  dot->setFill(roleColor(ColorRole::Primary));
+  dot->setFill(colorSpecFromRole(ColorRole::Primary));
   const float dotSize = kDotBaseSize * m_contentScale;
   dot->setRadius(dotSize * 0.5f);
   dot->setSize(dotSize, dotSize);
@@ -64,7 +64,7 @@ void NotificationWidget::doLayout(Renderer& renderer, float /*containerWidth*/, 
 
   m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   m_glyph->setGlyph(m_dndEnabled ? "bell-off" : "bell");
-  m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
   m_glyph->setPosition(0.0f, 0.0f);
   rootNode->setSize(m_glyph->width(), m_glyph->height());
@@ -87,7 +87,7 @@ void NotificationWidget::refreshIndicatorState() {
   m_dndEnabled = dndEnabled;
   if (m_glyph != nullptr) {
     m_glyph->setGlyph(m_dndEnabled ? "bell-off" : "bell");
-    m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+    m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   }
   if (m_dot != nullptr) {
     m_dot->setVisible(m_hasNotifications && !m_dndEnabled);

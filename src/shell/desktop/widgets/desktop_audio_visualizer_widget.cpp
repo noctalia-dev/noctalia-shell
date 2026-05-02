@@ -27,7 +27,7 @@ namespace {
 } // namespace
 
 DesktopAudioVisualizerWidget::DesktopAudioVisualizerWidget(PipeWireSpectrum* spectrum, float aspectRatio, int bands,
-                                                           bool mirrored, ThemeColor lowColor, ThemeColor highColor,
+                                                           bool mirrored, ColorSpec lowColor, ColorSpec highColor,
                                                            float minValue)
     : m_spectrum(spectrum), m_aspectRatio(clampAspectRatio(aspectRatio)), m_bands(std::max(1, bands)),
       m_mirrored(mirrored), m_lowColor(lowColor), m_highColor(highColor), m_minValue(std::clamp(minValue, 0.0f, 1.0f)) {

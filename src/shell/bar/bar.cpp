@@ -64,8 +64,8 @@ namespace {
 
   constexpr Logger kLog("bar");
 
-  ThemeColor withOpacity(const ThemeColor& color, float opacity) {
-    ThemeColor out = color;
+  ColorSpec withOpacity(const ColorSpec& color, float opacity) {
+    ColorSpec out = color;
     out.alpha = std::clamp(out.alpha * std::clamp(opacity, 0.0f, 1.0f), 0.0f, 1.0f);
     return out;
   }
@@ -872,7 +872,7 @@ void Bar::populateWidgets(BarInstance& instance) {
         }
         widget->setBarCapsuleSpec(resolveWidgetBarCapsuleSpec(instance.barConfig, wcPtr));
         if (wcPtr != nullptr && wcPtr->hasSetting("color")) {
-          widget->setWidgetForeground(themeColorFromConfigString(wcPtr->getString("color", "")));
+          widget->setWidgetForeground(colorSpecFromConfigString(wcPtr->getString("color", "")));
         } else if (instance.barConfig.widgetColor.has_value()) {
           widget->setWidgetForeground(*instance.barConfig.widgetColor);
         }
@@ -1015,8 +1015,8 @@ void Bar::applyBackgroundPalette(BarInstance& instance) {
     return;
   }
   auto style = instance.bg->style();
-  style.fill = resolveThemeColor(roleColor(ColorRole::Surface, instance.barConfig.backgroundOpacity));
-  style.border = resolveThemeColor(roleColor(ColorRole::Outline));
+  style.fill = colorForRole(ColorRole::Surface, instance.barConfig.backgroundOpacity);
+  style.border = colorForRole(ColorRole::Outline);
   instance.bg->setStyle(style);
 }
 
@@ -1216,9 +1216,9 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   // draws only outside the rect, so any size mismatch is visible at corners.
   if (instance.bg != nullptr) {
     const RoundedRectStyle bgStyle{
-        .fill = resolveThemeColor(roleColor(ColorRole::Surface, instance.barConfig.backgroundOpacity)),
+        .fill = colorForRole(ColorRole::Surface, instance.barConfig.backgroundOpacity),
         .fillEnd = {},
-        .border = resolveThemeColor(roleColor(ColorRole::Outline)),
+        .border = colorForRole(ColorRole::Outline),
         .fillMode = FillMode::Solid,
         .radius = barRadii,
         .softness = 0.0f,

@@ -11,7 +11,7 @@ class WeatherService;
 
 class DesktopWeatherWidget : public DesktopWidget {
 public:
-  DesktopWeatherWidget(const WeatherService* weather, ThemeColor color, bool shadow);
+  DesktopWeatherWidget(const WeatherService* weather, ColorSpec color, bool shadow);
 
   void create() override;
 
@@ -22,7 +22,7 @@ private:
   void applyShadow();
 
   const WeatherService* m_weather = nullptr;
-  ThemeColor m_color;
+  ColorSpec m_color;
   bool m_shadow;
 
   Glyph* m_glyph = nullptr;

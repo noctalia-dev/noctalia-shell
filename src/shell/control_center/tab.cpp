@@ -20,7 +20,7 @@ namespace control_center {
     label->setText(text);
     label->setBold(true);
     label->setFontSize(Style::fontSizeTitle * scale);
-    label->setColor(roleColor(ColorRole::OnSurface));
+    label->setColor(colorSpecFromRole(ColorRole::OnSurface));
     auto* ptr = label.get();
     parent.addChild(std::move(label));
     return ptr;
@@ -30,7 +30,7 @@ namespace control_center {
     auto label = std::make_unique<Label>();
     label->setText(text);
     label->setFontSize(Style::fontSizeBody * scale);
-    label->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    label->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     parent.addChild(std::move(label));
   }
 

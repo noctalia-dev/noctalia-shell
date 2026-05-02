@@ -471,7 +471,7 @@ namespace {
       setPadding(Style::spaceSm, Style::spaceMd);
       setMinHeight(Style::controlHeightLg);
       setRadius(Style::radiusMd);
-      setFill(roleColor(ColorRole::Surface));
+      setFill(colorSpecFromRole(ColorRole::Surface));
       clearBorder();
 
       auto radio = std::make_unique<RadioButton>();
@@ -485,7 +485,7 @@ namespace {
       auto title = std::make_unique<Label>();
       title->setBold(true);
       title->setFontSize(Style::fontSizeBody);
-      title->setColor(roleColor(ColorRole::OnSurface));
+      title->setColor(colorSpecFromRole(ColorRole::OnSurface));
       title->setFlexGrow(1.0f);
       m_title = title.get();
       addChild(std::move(title));
@@ -545,22 +545,22 @@ namespace {
   private:
     void applyState() {
       if (pressed()) {
-        setFill(roleColor(ColorRole::Primary));
-        setBorder(roleColor(ColorRole::Primary), Style::borderWidth);
+        setFill(colorSpecFromRole(ColorRole::Primary));
+        setBorder(colorSpecFromRole(ColorRole::Primary), Style::borderWidth);
         if (m_title != nullptr) {
-          m_title->setColor(roleColor(ColorRole::OnPrimary));
+          m_title->setColor(colorSpecFromRole(ColorRole::OnPrimary));
         }
         return;
       }
 
-      setFill(roleColor(ColorRole::Surface));
+      setFill(colorSpecFromRole(ColorRole::Surface));
       if (hovered()) {
-        setBorder(roleColor(ColorRole::Primary), Style::borderWidth);
+        setBorder(colorSpecFromRole(ColorRole::Primary), Style::borderWidth);
       } else {
         clearBorder();
       }
       if (m_title != nullptr) {
-        m_title->setColor(roleColor(ColorRole::OnSurface));
+        m_title->setColor(colorSpecFromRole(ColorRole::OnSurface));
       }
     }
 
@@ -587,7 +587,7 @@ namespace {
       setPadding(Style::spaceXs * scale, Style::spaceMd * scale);
       setMinHeight((Style::controlHeightLg + Style::spaceXs) * scale);
       setRadius(Style::radiusMd * scale);
-      setFill(roleColor(ColorRole::Surface));
+      setFill(colorSpecFromRole(ColorRole::Surface));
       clearBorder();
 
       constexpr float kIconSizeSm = 28.0f;
@@ -618,14 +618,14 @@ namespace {
       auto appName = std::make_unique<Label>();
       appName->setBold(true);
       appName->setFontSize(Style::fontSizeBody * scale);
-      appName->setColor(roleColor(ColorRole::OnSurface));
+      appName->setColor(colorSpecFromRole(ColorRole::OnSurface));
       m_appNameLabel = appName.get();
       textCol->addChild(std::move(appName));
 
       auto subtitle = std::make_unique<Label>();
       subtitle->setCaptionStyle();
       subtitle->setFontSize(Style::fontSizeCaption * scale);
-      subtitle->setColor(roleColor(ColorRole::OnSurfaceVariant));
+      subtitle->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
       subtitle->setVisible(false);
       m_subtitleLabel = subtitle.get();
       textCol->addChild(std::move(subtitle));
@@ -910,21 +910,21 @@ namespace {
     card->setGap(Style::spaceXs * scale);
     card->setPadding(Style::spaceMd * scale);
     card->setRadius(Style::radiusMd * scale);
-    card->setFill(roleColor(ColorRole::Surface));
+    card->setFill(colorSpecFromRole(ColorRole::Surface));
     card->clearBorder();
 
     auto titleLabel = std::make_unique<Label>();
     titleLabel->setText(title);
     titleLabel->setBold(true);
     titleLabel->setFontSize(Style::fontSizeBody * scale);
-    titleLabel->setColor(roleColor(ColorRole::OnSurface));
+    titleLabel->setColor(colorSpecFromRole(ColorRole::OnSurface));
     card->addChild(std::move(titleLabel));
 
     auto bodyLabel = std::make_unique<Label>();
     bodyLabel->setText(body);
     bodyLabel->setCaptionStyle();
     bodyLabel->setFontSize(Style::fontSizeCaption * scale);
-    bodyLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    bodyLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     card->addChild(std::move(bodyLabel));
 
     parent.addChild(std::move(card));
@@ -1068,7 +1068,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   outputDeviceLabel->setText(i18n::tr("control-center.audio.no-output-selected"));
   outputDeviceLabel->setCaptionStyle();
   outputDeviceLabel->setFontSize(Style::fontSizeCaption * scale);
-  outputDeviceLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  outputDeviceLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   m_outputDeviceLabel = outputDeviceLabel.get();
 
   auto outputMenuButton = std::make_unique<Button>();
@@ -1172,7 +1172,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   inputDeviceLabel->setText(i18n::tr("control-center.audio.no-input-selected"));
   inputDeviceLabel->setCaptionStyle();
   inputDeviceLabel->setFontSize(Style::fontSizeCaption * scale);
-  inputDeviceLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  inputDeviceLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   m_inputDeviceLabel = inputDeviceLabel.get();
 
   auto inputMenuButton = std::make_unique<Button>();

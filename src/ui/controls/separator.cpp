@@ -13,7 +13,7 @@ Separator::Separator() {
   applyPalette();
 }
 
-void Separator::setColor(const ThemeColor& color) {
+void Separator::setColor(const ColorSpec& color) {
   m_color = color;
   applyPalette();
 }
@@ -56,7 +56,7 @@ void Separator::applyPalette() {
     horizontal = flex->direction() == FlexDirection::Vertical;
   }
 
-  const Color opaque = resolveThemeColor(m_color);
+  const Color opaque = resolveColorSpec(m_color);
   Color transparent = opaque;
   transparent.a = 0.0f;
   const GradientDirection dir = horizontal ? GradientDirection::Horizontal : GradientDirection::Vertical;

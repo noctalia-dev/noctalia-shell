@@ -51,7 +51,7 @@ void VolumeWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("volume-high");
   glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
-  glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 
@@ -117,8 +117,8 @@ void VolumeWidget::syncState(Renderer& renderer) {
 
   m_glyph->setGlyph(volumeGlyphName(volume, muted));
   m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
-  m_glyph->setColor(muted ? roleColor(ColorRole::OnSurfaceVariant)
-                          : widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  m_glyph->setColor(muted ? colorSpecFromRole(ColorRole::OnSurfaceVariant)
+                          : widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
 
   m_label->setVisible(m_showLabel);
@@ -126,8 +126,8 @@ void VolumeWidget::syncState(Renderer& renderer) {
     int pct = static_cast<int>(std::round(volume * 100.0f));
     m_label->setFontSize((m_isVertical ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
     m_label->setText(m_isVertical ? std::to_string(pct) : std::to_string(pct) + "%");
-    m_label->setColor(muted ? roleColor(ColorRole::OnSurfaceVariant)
-                            : widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+    m_label->setColor(muted ? colorSpecFromRole(ColorRole::OnSurfaceVariant)
+                            : widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
     m_label->measure(renderer);
   }
 

@@ -89,7 +89,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   auto currentGlyph = std::make_unique<Glyph>();
   currentGlyph->setGlyph("weather-cloud");
   currentGlyph->setGlyphSize(kCurrentGlyphSize * scale);
-  currentGlyph->setColor(roleColor(ColorRole::Primary));
+  currentGlyph->setColor(colorSpecFromRole(ColorRole::Primary));
   m_currentGlyph = currentGlyph.get();
   currentCard->addChild(std::move(currentGlyph));
 
@@ -109,14 +109,14 @@ std::unique_ptr<Flex> WeatherTab::create() {
   temp->setText("--°C");
   temp->setBold(true);
   temp->setFontSize(Style::fontSizeTitle * 2.35f * scale);
-  temp->setColor(roleColor(ColorRole::OnSurface));
+  temp->setColor(colorSpecFromRole(ColorRole::OnSurface));
   m_currentTempLabel = temp.get();
   currentTop->addChild(std::move(temp));
 
   auto hilo = std::make_unique<Label>();
   hilo->setText("--↑ --↓");
   hilo->setFontSize(Style::fontSizeBody * scale);
-  hilo->setColor(roleColor(ColorRole::Primary));
+  hilo->setColor(colorSpecFromRole(ColorRole::Primary));
   m_currentHiLoLabel = hilo.get();
   currentTop->addChild(std::move(hilo));
 
@@ -128,7 +128,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   auto currentDesc = std::make_unique<Label>();
   currentDesc->setText(i18n::tr("control-center.weather.waiting"));
   currentDesc->setFontSize(Style::fontSizeBody * scale);
-  currentDesc->setColor(roleColor(ColorRole::OnSurface));
+  currentDesc->setColor(colorSpecFromRole(ColorRole::OnSurface));
   m_currentDescLabel = currentDesc.get();
   currentBottom->addChild(std::move(currentDesc));
 
@@ -136,7 +136,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   updated->setText(" ");
   updated->setCaptionStyle();
   updated->setFontSize(Style::fontSizeCaption * scale);
-  updated->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  updated->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   m_updatedLabel = updated.get();
   currentBottom->addChild(std::move(updated));
 
@@ -144,7 +144,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   status->setText(" ");
   status->setCaptionStyle();
   status->setFontSize(Style::fontSizeCaption * scale);
-  status->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  status->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   status->setVisible(false);
   m_statusLabel = status.get();
   currentBottom->addChild(std::move(status));
@@ -180,12 +180,12 @@ std::unique_ptr<Flex> WeatherTab::create() {
     auto icon = std::make_unique<Glyph>();
     icon->setGlyph(iconName);
     icon->setGlyphSize((Style::fontSizeBody + Style::spaceXs) * scale);
-    icon->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    icon->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     row->addChild(std::move(icon));
 
     auto keyLabel = std::make_unique<Label>();
     keyLabel->setText(key);
-    keyLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    keyLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     keyLabel->setFontSize(Style::fontSizeBody * scale);
     keyLabel->setMinWidth(detailKeyWidth - (Style::fontSizeBody + Style::spaceXs) * scale - Style::spaceSm * scale);
     row->addChild(std::move(keyLabel));
@@ -194,7 +194,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
     value->setText("--");
     value->setBold(true);
     value->setFontSize(Style::fontSizeBody * scale);
-    value->setColor(roleColor(ColorRole::OnSurface));
+    value->setColor(colorSpecFromRole(ColorRole::OnSurface));
     value->setTextAlign(TextAlign::End);
     value->setFlexGrow(1.0f);
     valueOut = value.get();
@@ -248,7 +248,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
     auto glyph = std::make_unique<Glyph>();
     glyph->setGlyph("weather-cloud");
     glyph->setGlyphSize(Style::fontSizeBody * 1.2f * scale);
-    glyph->setColor(roleColor(ColorRole::OnSurface));
+    glyph->setColor(colorSpecFromRole(ColorRole::OnSurface));
     m_dayGlyphs[i] = glyph.get();
     daySlot->addChild(std::move(glyph));
 
@@ -256,7 +256,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
     meta->setText(i18n::tr("control-center.weather.forecast-placeholder.day"));
     meta->setBold(true);
     meta->setFontSize(Style::fontSizeBody * scale);
-    meta->setColor(roleColor(ColorRole::OnSurface));
+    meta->setColor(colorSpecFromRole(ColorRole::OnSurface));
     meta->setStableBaseline(true);
     m_dayMetas[i] = meta.get();
     daySlot->addChild(std::move(meta));
@@ -266,7 +266,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
     temps->setText(i18n::tr("control-center.weather.forecast-placeholder.temperature"));
     temps->setBold(true);
     temps->setFontSize(Style::fontSizeBody * scale);
-    temps->setColor(roleColor(ColorRole::OnSurface));
+    temps->setColor(colorSpecFromRole(ColorRole::OnSurface));
     temps->setTextAlign(TextAlign::End);
     temps->setStableBaseline(true);
     m_dayTemps[i] = temps.get();
@@ -275,7 +275,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
     auto desc = std::make_unique<Label>();
     desc->setText(i18n::tr("control-center.weather.forecast-placeholder.description"));
     desc->setFontSize(Style::fontSizeCaption * scale);
-    desc->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    desc->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     m_dayDescs[i] = desc.get();
 
     row->addChild(std::move(topRow));
@@ -516,7 +516,7 @@ void WeatherTab::sync(Renderer& renderer) {
   }
 
   if (m_weather == nullptr || !m_weather->enabled()) {
-    m_currentGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    m_currentGlyph->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     m_currentTempLabel->setText("--°C");
     if (m_currentHiLoLabel != nullptr) {
       m_currentHiLoLabel->setText("-- / --");
@@ -550,7 +550,7 @@ void WeatherTab::sync(Renderer& renderer) {
   }
 
   if (!m_weather->locationConfigured()) {
-    m_currentGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    m_currentGlyph->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     m_currentTempLabel->setText(std::format("--{}", m_weather->displayTemperatureUnit()));
     if (m_currentHiLoLabel != nullptr) {
       m_currentHiLoLabel->setText("-- / --");
@@ -585,7 +585,7 @@ void WeatherTab::sync(Renderer& renderer) {
 
   const auto& snapshot = m_weather->snapshot();
   if (!snapshot.valid) {
-    m_currentGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    m_currentGlyph->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     m_currentTempLabel->setText(std::format("--{}", m_weather->displayTemperatureUnit()));
     if (m_currentHiLoLabel != nullptr) {
       m_currentHiLoLabel->setText("-- / --");
@@ -621,7 +621,7 @@ void WeatherTab::sync(Renderer& renderer) {
   }
 
   m_currentGlyph->setGlyph(WeatherService::glyphForCode(snapshot.current.weatherCode, snapshot.current.isDay));
-  m_currentGlyph->setColor(roleColor(snapshot.current.isDay ? ColorRole::Primary : ColorRole::Secondary));
+  m_currentGlyph->setColor(colorSpecFromRole(snapshot.current.isDay ? ColorRole::Primary : ColorRole::Secondary));
   m_currentTempLabel->setText(
       std::format("{}{}", static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.current.temperatureC))),
                   m_weather->displayTemperatureUnit()));
@@ -643,7 +643,8 @@ void WeatherTab::sync(Renderer& renderer) {
   const std::string status = m_weather->loading() ? i18n::tr("control-center.weather.refreshing")
                                                   : (snapshot.valid ? std::string{} : m_weather->error());
   m_statusLabel->setText(status);
-  m_statusLabel->setColor(roleColor(m_weather->error().empty() ? ColorRole::OnSurfaceVariant : ColorRole::Error));
+  m_statusLabel->setColor(
+      colorSpecFromRole(m_weather->error().empty() ? ColorRole::OnSurfaceVariant : ColorRole::Error));
   m_statusLabel->setVisible(!status.empty());
   if (m_windLabel != nullptr) {
     m_windLabel->setText(std::format("{} {} {}", static_cast<int>(std::lround(snapshot.current.windSpeedKmh)),
@@ -687,7 +688,7 @@ void WeatherTab::sync(Renderer& renderer) {
     const auto& day = snapshot.forecastDays[i + forecastStart];
     if (m_dayGlyphs[i] != nullptr) {
       m_dayGlyphs[i]->setGlyph(WeatherService::glyphForCode(day.weatherCode, true));
-      m_dayGlyphs[i]->setColor(roleColor(ColorRole::OnSurface));
+      m_dayGlyphs[i]->setColor(colorSpecFromRole(ColorRole::OnSurface));
       m_dayGlyphs[i]->measure(renderer);
     }
     if (m_dayMetas[i] != nullptr) {
@@ -718,7 +719,7 @@ void WeatherTab::sync(Renderer& renderer) {
       m_shaderTime = 0.0f;
     }
     m_effectNode->setEffectType(m_activeEffect);
-    m_effectNode->setBgColor(resolveColorRole(ColorRole::Surface));
+    m_effectNode->setBgColor(colorForRole(ColorRole::Surface));
     m_effectNode->setRadius(Style::radiusXl * contentScale());
     m_effectNode->setVisible(m_activeEffect != EffectType::None);
   }

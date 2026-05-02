@@ -71,20 +71,20 @@ namespace {
       setPadding(Style::spaceSm, Style::spaceMd);
       setMinHeight(kRowMinHeight);
       setRadius(Style::radiusMd);
-      setFill(roleColor(ColorRole::Surface));
+      setFill(colorSpecFromRole(ColorRole::Surface));
       clearBorder();
 
       auto signalGlyph = std::make_unique<Glyph>();
       signalGlyph->setGlyph(NetworkService::wifiGlyphForSignal(m_ap.strength));
       signalGlyph->setGlyphSize(Style::fontSizeBody);
-      signalGlyph->setColor(roleColor(ColorRole::OnSurface));
+      signalGlyph->setColor(colorSpecFromRole(ColorRole::OnSurface));
       addChild(std::move(signalGlyph));
 
       auto ssid = std::make_unique<Label>();
       ssid->setText(m_ap.ssid);
       ssid->setBold(m_ap.active);
       ssid->setFontSize(Style::fontSizeBody);
-      ssid->setColor(roleColor(ColorRole::OnSurface));
+      ssid->setColor(colorSpecFromRole(ColorRole::OnSurface));
       ssid->setFlexGrow(1.0f);
       m_title = ssid.get();
       addChild(std::move(ssid));
@@ -93,7 +93,7 @@ namespace {
         auto lock = std::make_unique<Glyph>();
         lock->setGlyph("lock");
         lock->setGlyphSize(Style::fontSizeCaption);
-        lock->setColor(roleColor(ColorRole::OnSurfaceVariant));
+        lock->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
         addChild(std::move(lock));
       }
 
@@ -101,7 +101,7 @@ namespace {
       strength->setText(std::to_string(static_cast<int>(m_ap.strength)) + "%");
       strength->setCaptionStyle();
       strength->setFontSize(Style::fontSizeCaption);
-      strength->setColor(roleColor(ColorRole::OnSurfaceVariant));
+      strength->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
       addChild(std::move(strength));
 
       if (saved) {
@@ -160,21 +160,21 @@ namespace {
       const bool hov = m_inputArea != nullptr && m_inputArea->hovered();
       const bool pressed = m_inputArea != nullptr && m_inputArea->pressed();
       if (pressed) {
-        setFill(roleColor(ColorRole::Primary));
-        setBorder(roleColor(ColorRole::Primary), Style::borderWidth);
+        setFill(colorSpecFromRole(ColorRole::Primary));
+        setBorder(colorSpecFromRole(ColorRole::Primary), Style::borderWidth);
         if (m_title != nullptr) {
-          m_title->setColor(roleColor(ColorRole::OnPrimary));
+          m_title->setColor(colorSpecFromRole(ColorRole::OnPrimary));
         }
         return;
       }
-      setFill(roleColor(m_ap.active ? ColorRole::SurfaceVariant : ColorRole::Surface));
+      setFill(colorSpecFromRole(m_ap.active ? ColorRole::SurfaceVariant : ColorRole::Surface));
       if (hov) {
-        setBorder(roleColor(ColorRole::Primary), Style::borderWidth);
+        setBorder(colorSpecFromRole(ColorRole::Primary), Style::borderWidth);
       } else {
         clearBorder();
       }
       if (m_title != nullptr) {
-        m_title->setColor(roleColor(ColorRole::OnSurface));
+        m_title->setColor(colorSpecFromRole(ColorRole::OnSurface));
       }
     }
 
@@ -222,14 +222,14 @@ std::unique_ptr<Flex> NetworkTab::create() {
   auto title = std::make_unique<Label>();
   title->setBold(true);
   title->setFontSize(Style::fontSizeTitle * scale);
-  title->setColor(roleColor(ColorRole::OnSurface));
+  title->setColor(colorSpecFromRole(ColorRole::OnSurface));
   m_currentTitle = title.get();
   currentCard->addChild(std::move(title));
 
   auto detail = std::make_unique<Label>();
   detail->setCaptionStyle();
   detail->setFontSize(Style::fontSizeCaption * scale);
-  detail->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  detail->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   m_currentDetail = detail.get();
   currentCard->addChild(std::move(detail));
 
@@ -262,7 +262,7 @@ std::unique_ptr<Flex> NetworkTab::create() {
   auto passwordTitle = std::make_unique<Label>();
   passwordTitle->setBold(true);
   passwordTitle->setFontSize(Style::fontSizeBody * scale);
-  passwordTitle->setColor(roleColor(ColorRole::OnSurface));
+  passwordTitle->setColor(colorSpecFromRole(ColorRole::OnSurface));
   m_passwordTitle = passwordTitle.get();
   passwordCard->addChild(std::move(passwordTitle));
 
@@ -346,7 +346,7 @@ std::unique_ptr<Flex> NetworkTab::createHeaderActions() {
   auto wifiLabel = std::make_unique<Label>();
   wifiLabel->setText(i18n::tr("control-center.network.wifi"));
   wifiLabel->setFontSize(Style::fontSizeCaption * scale);
-  wifiLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  wifiLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   row->addChild(std::move(wifiLabel));
 
   auto wifiToggle = std::make_unique<Toggle>();
@@ -362,7 +362,7 @@ std::unique_ptr<Flex> NetworkTab::createHeaderActions() {
 
   auto spinner = std::make_unique<Spinner>();
   spinner->setSpinnerSize(Style::fontSizeBody * scale);
-  spinner->setColor(roleColor(ColorRole::Primary));
+  spinner->setColor(colorSpecFromRole(ColorRole::Primary));
   m_scanSpinner = spinner.get();
   row->addChild(std::move(spinner));
 
@@ -526,7 +526,7 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
                                         : i18n::tr("control-center.network.unavailable-title"));
     empty->setCaptionStyle();
     empty->setFontSize(Style::fontSizeCaption);
-    empty->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    empty->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     m_list->addChild(std::move(empty));
   } else {
     for (const auto& ap : aps) {

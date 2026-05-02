@@ -163,7 +163,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   nowLabel->setText(i18n::tr("control-center.media.now-playing"));
   nowLabel->setBold(true);
   nowLabel->setFontSize(Style::fontSizeTitle * scale);
-  nowLabel->setColor(roleColor(ColorRole::OnSurface));
+  nowLabel->setColor(colorSpecFromRole(ColorRole::OnSurface));
   nowLabel->setFlexGrow(1.0f);
   nowHeader->addChild(std::move(nowLabel));
 
@@ -222,14 +222,14 @@ std::unique_ptr<Flex> MediaTab::create() {
   title->setText(i18n::tr("control-center.media.nothing-playing"));
   title->setBold(true);
   title->setFontSize((Style::fontSizeTitle + Style::spaceXs) * scale);
-  title->setColor(roleColor(ColorRole::OnSurface));
+  title->setColor(colorSpecFromRole(ColorRole::OnSurface));
   m_trackTitle = title.get();
   metadataStack->addChild(std::move(title));
 
   auto artist = std::make_unique<Label>();
   artist->setText(i18n::tr("control-center.media.start-playback"));
   artist->setFontSize(Style::fontSizeBody * scale);
-  artist->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  artist->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   m_trackArtist = artist.get();
   metadataStack->addChild(std::move(artist));
 
@@ -237,7 +237,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   album->setText("");
   album->setCaptionStyle();
   album->setFontSize(Style::fontSizeCaption * scale);
-  album->setColor(roleColor(ColorRole::Secondary));
+  album->setColor(colorSpecFromRole(ColorRole::Secondary));
   album->setVisible(false);
   m_trackAlbum = album.get();
   metadataStack->addChild(std::move(album));
@@ -394,7 +394,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   visualizerLabel->setText(i18n::tr("control-center.media.spectrum"));
   visualizerLabel->setBold(true);
   visualizerLabel->setFontSize(Style::fontSizeTitle * scale);
-  visualizerLabel->setColor(roleColor(ColorRole::OnSurface));
+  visualizerLabel->setColor(colorSpecFromRole(ColorRole::OnSurface));
   visualizerColumn->addChild(std::move(visualizerLabel));
 
   auto visualizerBody = std::make_unique<Flex>();
@@ -406,7 +406,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   m_visualizerBody = visualizerBody.get();
 
   auto visualizerSpectrum = std::make_unique<AudioSpectrum>();
-  visualizerSpectrum->setGradient(resolveColorRole(ColorRole::Secondary), resolveColorRole(ColorRole::Tertiary));
+  visualizerSpectrum->setGradient(colorForRole(ColorRole::Secondary), colorForRole(ColorRole::Tertiary));
   visualizerSpectrum->setSpacingRatio(0.5f);
   visualizerSpectrum->setOrientation(AudioSpectrumOrientation::Vertical);
   visualizerSpectrum->setMirrored(true);

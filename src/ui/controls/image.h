@@ -23,7 +23,7 @@ public:
   ~Image() override;
 
   void setRadius(float radius);
-  void setBorder(const ThemeColor& color, float width);
+  void setBorder(const ColorSpec& color, float width);
   void setBorder(const Color& color, float width);
   void setTint(const Color& tint);
   void setFit(ImageFit fit);
@@ -72,7 +72,7 @@ private:
   float m_radius = 0.0f;
   float m_padding = 0.0f;
   ImageFit m_fit = ImageFit::Contain;
-  ThemeColor m_border = clearThemeColor();
+  ColorSpec m_border = clearColorSpec();
   float m_borderWidth = 0.0f;
   Renderer* m_renderer = nullptr;
   AsyncTextureCache* m_asyncTextureCache = nullptr;

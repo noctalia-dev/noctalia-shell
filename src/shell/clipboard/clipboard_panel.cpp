@@ -140,7 +140,7 @@ void ClipboardPanel::create() {
   title->setText(i18n::tr("clipboard.title"));
   title->setFontSize(Style::fontSizeTitle * scale);
   title->setBold(true);
-  title->setColor(roleColor(ColorRole::Primary));
+  title->setColor(colorSpecFromRole(ColorRole::Primary));
   m_sidebarTitle = title.get();
   sidebarHeader->addChild(std::move(title));
 
@@ -208,7 +208,7 @@ void ClipboardPanel::create() {
   previewTitleLabel->setText(i18n::tr("clipboard.entry.title"));
   previewTitleLabel->setFontSize(Style::fontSizeTitle * scale);
   previewTitleLabel->setBold(true);
-  previewTitleLabel->setColor(roleColor(ColorRole::Primary));
+  previewTitleLabel->setColor(colorSpecFromRole(ColorRole::Primary));
   m_previewTitle = previewTitleLabel.get();
   previewTitleLabel->setFlexGrow(1.0f);
   previewHeader->addChild(std::move(previewTitleLabel));
@@ -229,7 +229,7 @@ void ClipboardPanel::create() {
   auto previewMetaLabel = std::make_unique<Label>();
   previewMetaLabel->setCaptionStyle();
   previewMetaLabel->setFontSize(Style::fontSizeCaption * scale);
-  previewMetaLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  previewMetaLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   m_previewMeta = previewMetaLabel.get();
   preview->addChild(std::move(previewMetaLabel));
 
@@ -432,7 +432,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
                    : m_filterQuery.empty() ? i18n::tr("clipboard.empty.history-title")
                                            : i18n::tr("clipboard.empty.no-matches-title"));
     empty->setCaptionStyle();
-    empty->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    empty->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     empty->setMaxWidth(width);
     m_list->addChild(std::move(empty));
     m_lastChangeSerial = m_clipboard != nullptr ? m_clipboard->changeSerial() : 0;
@@ -454,7 +454,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     row->setMinHeight(kRowHeight);
     row->setRadius(Style::radiusMd);
     if (i == m_selectedIndex) {
-      row->setFill(roleColor(ColorRole::SurfaceVariant));
+      row->setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
     }
 
     auto* rowPtr = row.get();
@@ -472,7 +472,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
         m_mouseActive = true;
         if (idx != m_selectedIndex && m_hoverIndex != idx) {
           m_hoverIndex = idx;
-          rowPtr->setFill(roleColor(ColorRole::SurfaceVariant, 0.45f));
+          rowPtr->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, 0.45f));
           PanelManager::instance().refresh();
         }
       }
@@ -482,7 +482,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
         return;
       }
       m_hoverIndex = idx;
-      rowPtr->setFill(roleColor(ColorRole::SurfaceVariant, 0.45f));
+      rowPtr->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, 0.45f));
       PanelManager::instance().refresh();
     });
     area->setOnLeave([this, idx = i, rowPtr]() {
@@ -497,7 +497,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     auto glyph = std::make_unique<Glyph>();
     glyph->setGlyph(entry.isImage() ? "photo" : "file-text");
     glyph->setGlyphSize(kListGlyphSize);
-    glyph->setColor(roleColor(entry.isImage() ? ColorRole::Secondary : ColorRole::Primary));
+    glyph->setColor(colorSpecFromRole(entry.isImage() ? ColorRole::Secondary : ColorRole::Primary));
     row->addChild(std::move(glyph));
 
     auto textColumn = std::make_unique<Flex>();
@@ -511,7 +511,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     title->setText(cleanTitle);
     title->setFontSize(Style::fontSizeBody);
     title->setBold(true);
-    title->setColor(roleColor(ColorRole::OnSurface));
+    title->setColor(colorSpecFromRole(ColorRole::OnSurface));
     title->setMaxWidth(textWidth);
     title->setMaxLines(1);
     textColumn->addChild(std::move(title));
@@ -519,7 +519,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     auto timeLabel = std::make_unique<Label>();
     timeLabel->setText(formatTimeAgo(entry.capturedAt) + "  •  " + formatBytes(entry.byteSize));
     timeLabel->setCaptionStyle();
-    timeLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    timeLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     timeLabel->setMaxWidth(textWidth);
     textColumn->addChild(std::move(timeLabel));
 
@@ -557,7 +557,7 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
     auto empty = std::make_unique<Label>();
     empty->setText(history.empty() ? i18n::tr("clipboard.empty.history-message")
                                    : i18n::tr("clipboard.empty.no-matches-message"));
-    empty->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    empty->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     empty->setMaxWidth(width);
     m_previewContent->addChild(std::move(empty));
     m_lastPreviewWidth = width;
@@ -574,7 +574,7 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
   if (m_previewPayloadIndex != historyIndex) {
     auto pending = std::make_unique<Label>();
     pending->setText(i18n::tr("clipboard.preview.loading"));
-    pending->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    pending->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     pending->setMaxWidth(width);
     m_previewContent->addChild(std::move(pending));
     m_lastPreviewWidth = width;
@@ -621,13 +621,13 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
     if (expanded.empty()) {
       auto empty = std::make_unique<Label>();
       empty->setText(i18n::tr("clipboard.preview.empty-text-payload"));
-      empty->setColor(roleColor(ColorRole::OnSurfaceVariant));
+      empty->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
       m_previewContent->addChild(std::move(empty));
     } else {
       auto label = std::make_unique<Label>();
       label->setText(expanded);
       label->setFontSize(Style::fontSizeBody);
-      label->setColor(roleColor(ColorRole::OnSurface));
+      label->setColor(colorSpecFromRole(ColorRole::OnSurface));
       label->setMaxWidth(width);
       label->setMaxLines(kMaxPreviewLines);
       m_previewContent->addChild(std::move(label));
@@ -635,7 +635,7 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
         auto hint = std::make_unique<Label>();
         hint->setText(i18n::tr("clipboard.preview.truncated"));
         hint->setCaptionStyle();
-        hint->setColor(roleColor(ColorRole::OnSurfaceVariant));
+        hint->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
         m_previewContent->addChild(std::move(hint));
       }
     }
@@ -711,13 +711,13 @@ void ClipboardPanel::updateRowSelection(std::size_t previousIndex) {
   if (previousIndex < m_rowFlexes.size() && m_rowFlexes[previousIndex] != nullptr) {
     Flex* prev = m_rowFlexes[previousIndex];
     if (m_hoverIndex == previousIndex) {
-      prev->setFill(roleColor(ColorRole::SurfaceVariant, 0.45f));
+      prev->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, 0.45f));
     } else {
       prev->setFill(rgba(0, 0, 0, 0));
     }
   }
   if (m_selectedIndex < m_rowFlexes.size() && m_rowFlexes[m_selectedIndex] != nullptr) {
-    m_rowFlexes[m_selectedIndex]->setFill(roleColor(ColorRole::SurfaceVariant));
+    m_rowFlexes[m_selectedIndex]->setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
   }
 }
 

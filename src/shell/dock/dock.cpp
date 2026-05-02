@@ -399,7 +399,7 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
         if (item.hovered) {
           item.hovered = false;
           if (item.background != nullptr) {
-            item.background->setFill(clearThemeColor());
+            item.background->setFill(clearColorSpec());
           }
           if (m_hoveredInstance->sceneRoot) {
             m_hoveredInstance->sceneRoot->markPaintDirty();
@@ -898,8 +898,8 @@ void Dock::applyPanelPalette(DockInstance& instance) {
   if (instance.panel == nullptr)
     return;
   const float opacity = m_config->config().dock.backgroundOpacity;
-  instance.panel->setFill(roleColor(ColorRole::Surface, opacity));
-  instance.panel->setBorder(roleColor(ColorRole::Outline), 0.0f);
+  instance.panel->setFill(colorSpecFromRole(ColorRole::Surface, opacity));
+  instance.panel->setBorder(colorSpecFromRole(ColorRole::Outline), 0.0f);
 }
 
 // ── Private: item population ──────────────────────────────────────────────────
@@ -1003,7 +1003,7 @@ void Dock::rebuildItems(DockInstance& instance) {
     bg->setSize(cellMain, cellMain); // square — excludes indicator strip
     bg->setPosition(0.0f, 0.0f);
     bg->setRadius(static_cast<float>(cfg.radius));
-    bg->setFill(clearThemeColor());
+    bg->setFill(clearColorSpec());
     item.background = static_cast<Box*>(areaNode->addChild(std::move(bg)));
 
     // Icon centred inside the padded cell.
@@ -1022,7 +1022,7 @@ void Dock::rebuildItems(DockInstance& instance) {
       auto glyph = std::make_unique<Glyph>();
       glyph->setGlyph("apps");
       glyph->setGlyphSize(iSize * 0.8f);
-      glyph->setColor(roleColor(ColorRole::OnSurface));
+      glyph->setColor(colorSpecFromRole(ColorRole::OnSurface));
       glyph->setSize(iSize, iSize);
       glyph->setPosition(kCellPad, kCellPad);
       item.iconGlyph = static_cast<Glyph*>(areaNode->addChild(std::move(glyph)));
@@ -1057,7 +1057,7 @@ void Dock::rebuildItems(DockInstance& instance) {
       if (!itemPtr->hovered) {
         itemPtr->hovered = true;
         if (itemPtr->background) {
-          itemPtr->background->setFill(roleColor(ColorRole::Hover, 0.8f));
+          itemPtr->background->setFill(colorSpecFromRole(ColorRole::Hover, 0.8f));
         }
         if (instPtr->sceneRoot)
           instPtr->sceneRoot->markPaintDirty();
@@ -1067,7 +1067,7 @@ void Dock::rebuildItems(DockInstance& instance) {
       if (itemPtr->hovered) {
         itemPtr->hovered = false;
         if (itemPtr->background) {
-          itemPtr->background->setFill(clearThemeColor());
+          itemPtr->background->setFill(clearColorSpec());
         }
         if (instPtr->sceneRoot)
           instPtr->sceneRoot->markPaintDirty();
@@ -1178,8 +1178,8 @@ void Dock::updateVisuals(DockInstance& instance) {
         if (show) {
           const std::string label = (count > 9) ? "9+" : std::to_string(count);
           item.badgeLabel->setText(label);
-          item.badgeLabel->setColor(roleColor(ColorRole::OnPrimary));
-          item.badge->setFill(roleColor(ColorRole::Primary));
+          item.badgeLabel->setColor(colorSpecFromRole(ColorRole::OnPrimary));
+          item.badge->setFill(colorSpecFromRole(ColorRole::Primary));
           if (m_renderContext != nullptr) {
             const float bd = std::max(kBadgeMinSize, static_cast<float>(cfg.iconSize) * kBadgeSizeRatio);
             item.badgeLabel->measure(*m_renderContext);

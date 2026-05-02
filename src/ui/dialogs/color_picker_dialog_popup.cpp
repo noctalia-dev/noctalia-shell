@@ -278,7 +278,7 @@ void ColorPickerDialogPopup::buildScene(std::uint32_t width, std::uint32_t heigh
   if (const auto& initialColor = ColorPickerDialog::currentOptions().initialColor; initialColor.has_value()) {
     sheet->colorPicker()->setColor(*initialColor);
   } else {
-    sheet->colorPicker()->setColor(resolveThemeColor(roleColor(ColorRole::Primary)));
+    sheet->colorPicker()->setColor(colorForRole(ColorRole::Primary));
   }
   sheet->setOnCancel([this]() { DeferredCall::callLater([this]() { cancel(); }); });
   sheet->setOnApply([this](const Color& color) { DeferredCall::callLater([this, color]() { accept(color); }); });

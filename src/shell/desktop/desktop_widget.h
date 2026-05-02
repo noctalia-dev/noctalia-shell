@@ -47,7 +47,7 @@ public:
   void setRedrawCallback(RedrawCallback callback) { m_redrawCallback = std::move(callback); }
   void setContentScale(float scale) noexcept { m_contentScale = scale; }
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
-  void setBackgroundStyle(const ThemeColor& color, float radius, float padding);
+  void setBackgroundStyle(const ColorSpec& color, float radius, float padding);
 
 protected:
   void setRoot(std::unique_ptr<Node> root);
@@ -89,7 +89,7 @@ private:
   RedrawCallback m_redrawCallback;
 
   bool m_bgEnabled = false;
-  ThemeColor m_bgColor;
+  ColorSpec m_bgColor;
   float m_bgRadius = 0.0f;
   float m_bgPadding = 0.0f;
 };

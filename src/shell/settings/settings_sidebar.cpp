@@ -102,7 +102,7 @@ namespace settings {
     sidebarScroll->setScrollbarVisible(true);
     sidebarScroll->setViewportPaddingH(0.0f);
     sidebarScroll->setViewportPaddingV(0.0f);
-    sidebarScroll->setFill(roleColor(ColorRole::Surface));
+    sidebarScroll->setFill(colorSpecFromRole(ColorRole::Surface));
     sidebarScroll->setRadius(Style::radiusXl * scale);
     sidebarScroll->clearBorder();
     sidebarScroll->setFillHeight(true);

@@ -106,7 +106,7 @@ void Segmented::refreshVariants() {
 
 void Segmented::applyOuterStyle() {
   setPadding(0.0f);
-  setFill(roleColor(ColorRole::SurfaceVariant));
+  setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
   clearBorder();
   setRadius(Style::radiusMd * m_scale);
 }

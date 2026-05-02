@@ -17,7 +17,7 @@ void TestWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("flask");
   glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
-  glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 
@@ -29,7 +29,7 @@ void TestWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*
     return;
   }
   m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
-  m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
   auto* node = root();
   if (node != nullptr) {

@@ -249,24 +249,11 @@ namespace {
 
   void stripInternalState(toml::table& table) { table.erase(kInternalStateTable); }
 
-  ThemeColor themeColorFromRoleString(const std::string& raw) {
-    const std::string trimmed = StringUtils::trim(raw);
-    Color fixed;
-    if (tryParseHexColor(trimmed, fixed)) {
-      return fixedColor(fixed);
-    }
-    if (auto role = colorRoleFromToken(trimmed)) {
-      return roleColor(*role);
-    }
-    kLog.warn("unknown theme color role \"{}\", using surface_variant", raw);
-    return roleColor(ColorRole::SurfaceVariant);
-  }
-
-  std::optional<ThemeColor> optionalCapsuleBorder(const std::string& raw) {
+  std::optional<ColorSpec> optionalCapsuleBorder(const std::string& raw) {
     if (StringUtils::trim(raw).empty()) {
       return std::nullopt;
     }
-    return themeColorFromRoleString(raw);
+    return colorSpecFromConfigString(raw);
   }
 
 } // namespace
@@ -928,10 +915,10 @@ void ConfigService::parseTable(const toml::table& tbl) {
         bar.widgetCapsuleDefault = *v;
       }
       if (auto fillStr = (*barTbl)["capsule_fill"].value<std::string>()) {
-        bar.widgetCapsuleFill = themeColorFromRoleString(*fillStr);
+        bar.widgetCapsuleFill = colorSpecFromConfigString(*fillStr);
       }
       if (auto fgStr = (*barTbl)["capsule_foreground"].value<std::string>()) {
-        bar.widgetCapsuleForeground = themeColorFromRoleString(*fgStr);
+        bar.widgetCapsuleForeground = colorSpecFromConfigString(*fgStr);
       }
       if (auto v = (*barTbl)["capsule_padding"].value<double>()) {
         bar.widgetCapsulePadding = std::clamp(static_cast<float>(*v), 0.0f, 48.0f);
@@ -948,7 +935,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
         bar.widgetCapsuleBorder = optionalCapsuleBorder(borderStr);
       }
       if (auto widgetColorStr = (*barTbl)["color"].value<std::string>()) {
-        bar.widgetColor = themeColorFromRoleString(*widgetColorStr);
+        bar.widgetColor = colorSpecFromConfigString(*widgetColorStr);
       }
 
       // Parse [bar.<name>.monitor.*] overrides — insertion order preserved by toml++
@@ -1011,10 +998,10 @@ void ConfigService::parseTable(const toml::table& tbl) {
             ovr.widgetCapsuleDefault = *v;
           }
           if (auto fillStr = (*monTbl)["capsule_fill"].value<std::string>()) {
-            ovr.widgetCapsuleFill = themeColorFromRoleString(*fillStr);
+            ovr.widgetCapsuleFill = colorSpecFromConfigString(*fillStr);
           }
           if (auto fgStr = (*monTbl)["capsule_foreground"].value<std::string>()) {
-            ovr.widgetCapsuleForeground = themeColorFromRoleString(*fgStr);
+            ovr.widgetCapsuleForeground = colorSpecFromConfigString(*fgStr);
           }
           if (auto v = (*monTbl)["capsule_padding"].value<double>()) {
             ovr.widgetCapsulePadding = *v;
@@ -1031,7 +1018,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
             ovr.widgetCapsuleBorder = optionalCapsuleBorder(borderStr);
           }
           if (auto cStr = (*monTbl)["color"].value<std::string>()) {
-            ovr.widgetColor = themeColorFromRoleString(*cStr);
+            ovr.widgetColor = colorSpecFromConfigString(*cStr);
           }
 
           bar.monitorOverrides.push_back(std::move(ovr));
@@ -1253,7 +1240,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
       if (StringUtils::trim(*v).empty()) {
         wp.fillColor = std::nullopt;
       } else {
-        wp.fillColor = themeColorFromConfigString(*v);
+        wp.fillColor = colorSpecFromConfigString(*v);
       }
     }
     if (auto* arr = (*wpTbl)["transition"].as_array()) {
@@ -1315,7 +1302,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
           if (StringUtils::trim(*v).empty()) {
             ovr.fillColor = std::nullopt;
           } else {
-            ovr.fillColor = themeColorFromConfigString(*v);
+            ovr.fillColor = colorSpecFromConfigString(*v);
           }
         }
         if (auto v = (*monTbl)["directory"].value<std::string>())

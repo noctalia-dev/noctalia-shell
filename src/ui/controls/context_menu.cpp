@@ -19,9 +19,9 @@ namespace {
   constexpr float kSeparatorHeight = 10.0f;
   constexpr float kItemGap = 0.0f;
 
-  ThemeColor enabledItemColor() { return roleColor(ColorRole::OnSurface); }
+  ColorSpec enabledItemColor() { return colorSpecFromRole(ColorRole::OnSurface); }
 
-  ThemeColor disabledItemColor() { return roleColor(ColorRole::OnSurface, 0.55f); }
+  ColorSpec disabledItemColor() { return colorSpecFromRole(ColorRole::OnSurface, 0.55f); }
 
 } // namespace
 
@@ -96,8 +96,8 @@ void ContextMenuControl::rebuild(Renderer& renderer) {
   auto bg = std::make_unique<Box>();
   bg->setCardStyle();
   bg->setRadius(Style::radiusLg);
-  bg->setFill(roleColor(ColorRole::SurfaceVariant));
-  bg->setBorder(roleColor(ColorRole::Outline), Style::borderWidth);
+  bg->setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
+  bg->setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth);
   bg->setFrameSize(width(), height());
   addChild(std::move(bg));
 
@@ -143,7 +143,7 @@ void ContextMenuControl::rebuildRows(Renderer& renderer) {
 
     if (!entry.separator) {
       auto rowBg = std::make_unique<Box>();
-      rowBg->setFill(clearThemeColor());
+      rowBg->setFill(clearColorSpec());
       rowBg->setRadius(Style::radiusSm);
       rowBg->setFrameSize(rowWidth, rowHeight);
       rowBgPtr = static_cast<Box*>(row->addChild(std::move(rowBg)));
@@ -170,7 +170,7 @@ void ContextMenuControl::rebuildRows(Renderer& renderer) {
       }
     } else {
       auto rowBg = std::make_unique<Box>();
-      rowBg->setFill(clearThemeColor());
+      rowBg->setFill(clearColorSpec());
       rowBg->setRadius(Style::radiusSm);
       rowBg->setFrameSize(rowWidth, rowHeight);
       rowBgPtr = static_cast<Box*>(row->addChild(std::move(rowBg)));
@@ -178,12 +178,12 @@ void ContextMenuControl::rebuildRows(Renderer& renderer) {
       auto label = std::make_unique<Label>();
       label->setText("");
       label->setFontSize(Style::fontSizeBody);
-      label->setColor(roleColor(ColorRole::OnSurfaceVariant));
+      label->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
       label->setStableBaseline(true);
       labelPtr = static_cast<Label*>(row->addChild(std::move(label)));
 
       auto separatorLine = std::make_unique<Box>();
-      separatorLine->setFill(roleColor(ColorRole::Outline, 0.85f));
+      separatorLine->setFill(colorSpecFromRole(ColorRole::Outline, 0.85f));
       separatorLine->setFrameSize(rowWidth - 20.0f, 1.0f);
       separatorLine->setPosition(10.0f, (rowHeight - 1.0f) * 0.5f);
       row->addChild(std::move(separatorLine));
@@ -191,15 +191,15 @@ void ContextMenuControl::rebuildRows(Renderer& renderer) {
 
     if (rowBgPtr != nullptr && labelPtr != nullptr) {
       const auto applyRowState = [rowBgPtr, labelPtr, chevronPtr, interactive, separator](bool highlighted) {
-        rowBgPtr->setFill(highlighted ? roleColor(ColorRole::Hover) : clearThemeColor());
+        rowBgPtr->setFill(highlighted ? colorSpecFromRole(ColorRole::Hover) : clearColorSpec());
         if (separator) {
-          labelPtr->setColor(roleColor(ColorRole::OnSurfaceVariant));
+          labelPtr->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
         } else {
-          labelPtr->setColor(highlighted ? roleColor(ColorRole::OnHover)
+          labelPtr->setColor(highlighted ? colorSpecFromRole(ColorRole::OnHover)
                                          : (interactive ? enabledItemColor() : disabledItemColor()));
         }
         if (chevronPtr != nullptr) {
-          chevronPtr->setColor(highlighted ? roleColor(ColorRole::OnHover)
+          chevronPtr->setColor(highlighted ? colorSpecFromRole(ColorRole::OnHover)
                                            : (interactive ? enabledItemColor() : disabledItemColor()));
         }
       };

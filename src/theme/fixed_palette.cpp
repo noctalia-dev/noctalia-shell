@@ -18,7 +18,7 @@ namespace noctalia::theme {
       return rgbHex(it->second & 0x00FFFFFFU);
     }
 
-    Color toThemeColor(const ::Color& color) {
+    Color toUiColor(const ::Color& color) {
       auto toByte = [](float value) { return static_cast<int>(std::clamp(value, 0.0f, 1.0f) * 255.0f + 0.5f); };
       return Color(toByte(color.r), toByte(color.g), toByte(color.b));
     }
@@ -33,20 +33,20 @@ namespace noctalia::theme {
   } // namespace
 
   TokenMap expandFixedPaletteMode(const ::Palette& palette, bool isDark) {
-    const Color primary = toThemeColor(palette.primary);
-    const Color onPrimary = toThemeColor(palette.onPrimary);
-    const Color secondary = toThemeColor(palette.secondary);
-    const Color onSecondary = toThemeColor(palette.onSecondary);
-    const Color tertiary = toThemeColor(palette.tertiary);
-    const Color onTertiary = toThemeColor(palette.onTertiary);
-    const Color error = toThemeColor(palette.error);
-    const Color onError = toThemeColor(palette.onError);
-    const Color surface = toThemeColor(palette.surface);
-    const Color onSurface = toThemeColor(palette.onSurface);
-    const Color surfaceVariant = toThemeColor(palette.surfaceVariant);
-    const Color onSurfaceVariant = toThemeColor(palette.onSurfaceVariant);
-    const Color outlineRaw = toThemeColor(palette.outline);
-    const Color shadow = toThemeColor(palette.shadow);
+    const Color primary = toUiColor(palette.primary);
+    const Color onPrimary = toUiColor(palette.onPrimary);
+    const Color secondary = toUiColor(palette.secondary);
+    const Color onSecondary = toUiColor(palette.onSecondary);
+    const Color tertiary = toUiColor(palette.tertiary);
+    const Color onTertiary = toUiColor(palette.onTertiary);
+    const Color error = toUiColor(palette.error);
+    const Color onError = toUiColor(palette.onError);
+    const Color surface = toUiColor(palette.surface);
+    const Color onSurface = toUiColor(palette.onSurface);
+    const Color surfaceVariant = toUiColor(palette.surfaceVariant);
+    const Color onSurfaceVariant = toUiColor(palette.onSurfaceVariant);
+    const Color outlineRaw = toUiColor(palette.outline);
+    const Color shadow = toUiColor(palette.shadow);
 
     auto makeContainerDark = [](const Color& base) {
       auto [h, s, l] = base.toHsl();

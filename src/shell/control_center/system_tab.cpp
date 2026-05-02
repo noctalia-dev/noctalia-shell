@@ -36,7 +36,7 @@ namespace {
     label->setText(title);
     label->setBold(true);
     label->setFontSize(Style::fontSizeTitle * scale);
-    label->setColor(roleColor(ColorRole::OnSurface));
+    label->setColor(colorSpecFromRole(ColorRole::OnSurface));
     label->setFlexGrow(1.0f);
     row->addChild(std::move(label));
 
@@ -48,7 +48,7 @@ namespace {
   Label* makeValueLabel(Flex& parent, float scale) {
     auto label = std::make_unique<Label>();
     label->setFontSize(Style::fontSizeBody * scale);
-    label->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    label->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     auto* ptr = label.get();
     parent.addChild(std::move(label));
     return ptr;
@@ -63,7 +63,7 @@ namespace {
     auto icon = std::make_unique<Glyph>();
     icon->setGlyph(glyphName);
     icon->setGlyphSize(Style::fontSizeBody * scale);
-    icon->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    icon->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     if (outIcon != nullptr) {
       *outIcon = icon.get();
     }
@@ -217,7 +217,7 @@ std::unique_ptr<Flex> SystemTab::create() {
 
     auto infoLabel = std::make_unique<Label>();
     infoLabel->setFontSize(Style::fontSizeCaption * sc);
-    infoLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    infoLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
 
     infoLabel->setText(
         buildSystemInfoText(m_monitor != nullptr && m_monitor->isRunning() ? m_monitor->latest() : SystemStats{}));
@@ -340,47 +340,47 @@ void SystemTab::doUpdate(Renderer& renderer) {
   }
 
   if (m_cpuGraph != nullptr) {
-    m_cpuGraph->setLineColor1(resolveThemeColor(roleColor(ColorRole::Primary)));
-    m_cpuGraph->setLineColor2(resolveThemeColor(roleColor(ColorRole::Error)));
+    m_cpuGraph->setLineColor1(colorForRole(ColorRole::Primary));
+    m_cpuGraph->setLineColor2(colorForRole(ColorRole::Error));
   }
   if (m_cpuPctIcon != nullptr) {
-    m_cpuPctIcon->setColor(roleColor(ColorRole::Primary));
+    m_cpuPctIcon->setColor(colorSpecFromRole(ColorRole::Primary));
   }
   if (m_cpuPctLabel != nullptr) {
-    m_cpuPctLabel->setColor(roleColor(ColorRole::Primary));
+    m_cpuPctLabel->setColor(colorSpecFromRole(ColorRole::Primary));
   }
   if (m_cpuTempIcon != nullptr) {
-    m_cpuTempIcon->setColor(roleColor(ColorRole::Error));
+    m_cpuTempIcon->setColor(colorSpecFromRole(ColorRole::Error));
   }
   if (m_cpuTempLabel != nullptr) {
-    m_cpuTempLabel->setColor(roleColor(ColorRole::Error));
+    m_cpuTempLabel->setColor(colorSpecFromRole(ColorRole::Error));
   }
 
   if (m_ramGraph != nullptr) {
-    m_ramGraph->setLineColor1(resolveThemeColor(roleColor(ColorRole::Secondary)));
+    m_ramGraph->setLineColor1(colorForRole(ColorRole::Secondary));
   }
   if (m_ramIcon != nullptr) {
-    m_ramIcon->setColor(roleColor(ColorRole::Secondary));
+    m_ramIcon->setColor(colorSpecFromRole(ColorRole::Secondary));
   }
   if (m_ramLabel != nullptr) {
-    m_ramLabel->setColor(roleColor(ColorRole::Secondary));
+    m_ramLabel->setColor(colorSpecFromRole(ColorRole::Secondary));
   }
 
   if (m_netGraph != nullptr) {
-    m_netGraph->setLineColor1(resolveThemeColor(roleColor(ColorRole::Tertiary)));
-    m_netGraph->setLineColor2(resolveThemeColor(roleColor(ColorRole::Secondary)));
+    m_netGraph->setLineColor1(colorForRole(ColorRole::Tertiary));
+    m_netGraph->setLineColor2(colorForRole(ColorRole::Secondary));
   }
   if (m_rxIcon != nullptr) {
-    m_rxIcon->setColor(roleColor(ColorRole::Tertiary));
+    m_rxIcon->setColor(colorSpecFromRole(ColorRole::Tertiary));
   }
   if (m_rxLabel != nullptr) {
-    m_rxLabel->setColor(roleColor(ColorRole::Tertiary));
+    m_rxLabel->setColor(colorSpecFromRole(ColorRole::Tertiary));
   }
   if (m_txIcon != nullptr) {
-    m_txIcon->setColor(roleColor(ColorRole::Secondary));
+    m_txIcon->setColor(colorSpecFromRole(ColorRole::Secondary));
   }
   if (m_txLabel != nullptr) {
-    m_txLabel->setColor(roleColor(ColorRole::Secondary));
+    m_txLabel->setColor(colorSpecFromRole(ColorRole::Secondary));
   }
 
   const bool monitorRunning = m_monitor->isRunning();

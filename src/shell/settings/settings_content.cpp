@@ -39,8 +39,7 @@
 namespace settings {
   namespace {
 
-    std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ThemeColor& color,
-                                     bool bold = false) {
+    std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ColorSpec& color, bool bold = false) {
       auto label = std::make_unique<Label>();
       label->setText(text);
       label->setFontSize(fontSize);
@@ -256,7 +255,7 @@ namespace settings {
       section->setGap(Style::spaceSm * scale);
       section->setPadding(Style::spaceLg * scale);
       section->setCardStyle(scale);
-      section->setFill(roleColor(ColorRole::Surface));
+      section->setFill(colorSpecFromRole(ColorRole::Surface));
 
       auto titleRow = std::make_unique<Flex>();
       titleRow->setDirection(FlexDirection::Horizontal);
@@ -266,10 +265,10 @@ namespace settings {
       auto titleGlyph = std::make_unique<Glyph>();
       titleGlyph->setGlyph(sectionGlyph(sectionKey));
       titleGlyph->setGlyphSize(Style::fontSizeHeader * scale);
-      titleGlyph->setColor(roleColor(ColorRole::Primary));
+      titleGlyph->setColor(colorSpecFromRole(ColorRole::Primary));
       titleRow->addChild(std::move(titleGlyph));
 
-      titleRow->addChild(makeLabel(title, Style::fontSizeHeader * scale, roleColor(ColorRole::Primary), true));
+      titleRow->addChild(makeLabel(title, Style::fontSizeHeader * scale, colorSpecFromRole(ColorRole::Primary), true));
 
       section->addChild(std::move(titleRow));
       auto* raw = section.get();
@@ -289,10 +288,11 @@ namespace settings {
         groupHeader->setPadding(Style::spaceSm * scale, 0.0f, 0.0f, 0.0f);
         groupHeader->addChild(std::make_unique<Separator>());
         groupHeader->addChild(
-            makeLabel(title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurfaceVariant), true));
+            makeLabel(title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurfaceVariant), true));
         section.addChild(std::move(groupHeader));
       } else {
-        section.addChild(makeLabel(title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurfaceVariant), true));
+        section.addChild(
+            makeLabel(title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurfaceVariant), true));
       }
     };
 
@@ -332,9 +332,10 @@ namespace settings {
       titleRow->setDirection(FlexDirection::Horizontal);
       titleRow->setAlign(FlexAlign::Center);
       titleRow->setGap(Style::spaceSm * scale);
-      titleRow->addChild(makeLabel(entry.title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), true));
+      titleRow->addChild(
+          makeLabel(entry.title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), true));
 
-      const auto makeBadge = [&](std::string_view label, const ThemeColor& fill, const ThemeColor& color) {
+      const auto makeBadge = [&](std::string_view label, const ColorSpec& fill, const ColorSpec& color) {
         auto badge = std::make_unique<Flex>();
         badge->setAlign(FlexAlign::Center);
         badge->setPadding(1.0f * scale, Style::spaceXs * scale);
@@ -345,27 +346,28 @@ namespace settings {
       };
 
       if (monitorExplicit) {
-        titleRow->addChild(makeBadge(i18n::tr("settings.badges.monitor"), roleColor(ColorRole::Secondary, 0.15f),
-                                     roleColor(ColorRole::Secondary)));
+        titleRow->addChild(makeBadge(i18n::tr("settings.badges.monitor"),
+                                     colorSpecFromRole(ColorRole::Secondary, 0.15f),
+                                     colorSpecFromRole(ColorRole::Secondary)));
       } else if (monitorInherited) {
         titleRow->addChild(makeBadge(i18n::tr("settings.badges.inherited"),
-                                     roleColor(ColorRole::OnSurfaceVariant, 0.12f),
-                                     roleColor(ColorRole::OnSurfaceVariant)));
+                                     colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.12f),
+                                     colorSpecFromRole(ColorRole::OnSurfaceVariant)));
       }
       if (overridden) {
-        titleRow->addChild(makeBadge(i18n::tr("settings.badges.override"), roleColor(ColorRole::Primary, 0.15f),
-                                     roleColor(ColorRole::Primary)));
+        titleRow->addChild(makeBadge(i18n::tr("settings.badges.override"), colorSpecFromRole(ColorRole::Primary, 0.15f),
+                                     colorSpecFromRole(ColorRole::Primary)));
       }
       if (entry.advanced) {
         titleRow->addChild(makeBadge(i18n::tr("settings.badges.advanced"),
-                                     roleColor(ColorRole::OnSurfaceVariant, 0.12f),
-                                     roleColor(ColorRole::OnSurfaceVariant)));
+                                     colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.12f),
+                                     colorSpecFromRole(ColorRole::OnSurfaceVariant)));
       }
       copy->addChild(std::move(titleRow));
 
       if (!entry.subtitle.empty()) {
-        auto detail =
-            makeLabel(entry.subtitle, Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), false);
+        auto detail = makeLabel(entry.subtitle, Style::fontSizeCaption * scale,
+                                colorSpecFromRole(ColorRole::OnSurfaceVariant), false);
         detail->setMaxWidth(360.0f * scale);
         copy->addChild(std::move(detail));
       }
@@ -564,13 +566,13 @@ namespace settings {
       auto swatch = std::make_unique<Box>();
       swatch->setSize(swatchSize, swatchSize);
       swatch->setRadius(Style::radiusSm * scale);
-      swatch->setBorder(roleColor(ColorRole::Outline), 1.0f);
+      swatch->setBorder(colorSpecFromRole(ColorRole::Outline), 1.0f);
       Color initialColor;
       const bool hasColor = !setting.unset && tryParseHexColor(setting.hex, initialColor);
       if (hasColor) {
         swatch->setFill(initialColor);
       } else {
-        swatch->setFill(roleColor(ColorRole::SurfaceVariant));
+        swatch->setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
       }
 
       auto button = std::make_unique<Button>();
@@ -609,16 +611,16 @@ namespace settings {
                                          std::vector<std::string> path) -> std::unique_ptr<Node> {
       std::vector<SelectOption> opts;
       opts.reserve(setting.roles.size() + (setting.allowNone ? 1 : 0));
-      std::vector<ThemeColor> indicators;
+      std::vector<ColorSpec> indicators;
       indicators.reserve(setting.roles.size() + (setting.allowNone ? 1 : 0));
 
       if (setting.allowNone) {
         opts.push_back(SelectOption{"", i18n::tr("settings.options.theme-role.default")});
-        indicators.push_back(clearThemeColor());
+        indicators.push_back(clearColorSpec());
       }
       for (const auto role : setting.roles) {
         opts.push_back(SelectOption{std::string(colorRoleToken(role)), std::string(colorRoleToken(role))});
-        indicators.push_back(roleColor(role));
+        indicators.push_back(colorSpecFromRole(role));
       }
 
       SelectSetting selectSetting{std::move(opts), setting.selectedValue, setting.allowNone};
@@ -644,23 +646,24 @@ namespace settings {
       titleRow->setDirection(FlexDirection::Horizontal);
       titleRow->setAlign(FlexAlign::Center);
       titleRow->setGap(Style::spaceSm * scale);
-      titleRow->addChild(makeLabel(entry.title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), true));
+      titleRow->addChild(
+          makeLabel(entry.title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), true));
       if (overridden) {
         auto badge = std::make_unique<Flex>();
         badge->setAlign(FlexAlign::Center);
         badge->setPadding(1.0f * scale, Style::spaceXs * scale);
         badge->setRadius(Style::radiusSm * scale);
-        badge->setFill(roleColor(ColorRole::Primary, 0.15f));
+        badge->setFill(colorSpecFromRole(ColorRole::Primary, 0.15f));
         badge->addChild(makeLabel(i18n::tr("settings.badges.override"), Style::fontSizeCaption * scale,
-                                  roleColor(ColorRole::Primary), true));
+                                  colorSpecFromRole(ColorRole::Primary), true));
         titleRow->addChild(std::move(badge));
         titleRow->addChild(makeResetButton(entry.path));
       }
       block->addChild(std::move(titleRow));
 
       if (!entry.subtitle.empty()) {
-        block->addChild(
-            makeLabel(entry.subtitle, Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), false));
+        block->addChild(makeLabel(entry.subtitle, Style::fontSizeCaption * scale,
+                                  colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
       }
 
       auto checkRow = std::make_unique<Flex>();
@@ -712,7 +715,8 @@ namespace settings {
           setOverride(path, ordered);
         });
         item->addChild(std::move(checkbox));
-        item->addChild(makeLabel(option.label, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), false));
+        item->addChild(
+            makeLabel(option.label, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), false));
 
         checkRow->addChild(std::move(item));
       }
@@ -734,15 +738,16 @@ namespace settings {
       titleRow->setDirection(FlexDirection::Horizontal);
       titleRow->setAlign(FlexAlign::Center);
       titleRow->setGap(Style::spaceSm * scale);
-      titleRow->addChild(makeLabel(entry.title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), true));
+      titleRow->addChild(
+          makeLabel(entry.title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), true));
       if (overridden) {
         auto badge = std::make_unique<Flex>();
         badge->setAlign(FlexAlign::Center);
         badge->setPadding(1.0f * scale, Style::spaceXs * scale);
         badge->setRadius(Style::radiusSm * scale);
-        badge->setFill(roleColor(ColorRole::Primary, 0.15f));
+        badge->setFill(colorSpecFromRole(ColorRole::Primary, 0.15f));
         badge->addChild(makeLabel(i18n::tr("settings.badges.override"), Style::fontSizeCaption * scale,
-                                  roleColor(ColorRole::Primary), true));
+                                  colorSpecFromRole(ColorRole::Primary), true));
         titleRow->addChild(std::move(badge));
       }
       if (overridden) {
@@ -751,8 +756,8 @@ namespace settings {
       block->addChild(std::move(titleRow));
 
       if (!entry.subtitle.empty()) {
-        block->addChild(
-            makeLabel(entry.subtitle, Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), false));
+        block->addChild(makeLabel(entry.subtitle, Style::fontSizeCaption * scale,
+                                  colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
       }
 
       const auto resolveItemLabel = [&list](const std::string& value) -> std::string {
@@ -777,7 +782,7 @@ namespace settings {
         labelCell->setAlign(FlexAlign::Center);
         labelCell->setMinWidth(labelCellWidth);
         labelCell->addChild(makeLabel(resolveItemLabel(list.items[i]), Style::fontSizeCaption * scale,
-                                      roleColor(ColorRole::OnSurface), false));
+                                      colorSpecFromRole(ColorRole::OnSurface), false));
         itemRow->addChild(std::move(labelCell));
 
         auto removeBtn = std::make_unique<Button>();
@@ -1077,13 +1082,13 @@ namespace settings {
       emptyState->setJustify(FlexJustify::Center);
       emptyState->setGap(Style::spaceXs * scale);
       emptyState->setPadding((Style::spaceLg + Style::spaceMd) * scale);
-      emptyState->setFill(roleColor(ColorRole::SurfaceVariant, 0.24f));
-      emptyState->setBorder(roleColor(ColorRole::Outline, 0.28f), Style::borderWidth);
+      emptyState->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, 0.24f));
+      emptyState->setBorder(colorSpecFromRole(ColorRole::Outline, 0.28f), Style::borderWidth);
       emptyState->setRadius(Style::radiusMd * scale);
       emptyState->addChild(makeLabel(i18n::tr("settings.window.no-results"), Style::fontSizeBody * scale,
-                                     roleColor(ColorRole::OnSurface), true));
+                                     colorSpecFromRole(ColorRole::OnSurface), true));
       emptyState->addChild(makeLabel(i18n::tr("settings.window.no-results-hint"), Style::fontSizeCaption * scale,
-                                     roleColor(ColorRole::OnSurfaceVariant), false));
+                                     colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
 
       auto emptyRow = std::make_unique<Flex>();
       emptyRow->setDirection(FlexDirection::Horizontal);

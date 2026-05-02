@@ -139,7 +139,7 @@ started = "systemctl --user start noctalia-ready.target"
 wallpaper_changed = "systemctl --user restart wallpaper-sync.service"
 colors_changed = [
   "systemctl --user reload foot-server.service",
-  "logger -t noctalia-hooks 'theme colors changed'",
+  "logger -t noctalia-hooks 'palette colors changed'",
 ]
 
 # Combine normal shell commands with Noctalia IPC commands.

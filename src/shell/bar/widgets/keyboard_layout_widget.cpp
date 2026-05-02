@@ -314,7 +314,7 @@ void KeyboardLayoutWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("keyboard");
   glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
-  glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 
@@ -348,7 +348,7 @@ void KeyboardLayoutWidget::doLayout(Renderer& renderer, float containerWidth, fl
 
   if (m_glyph != nullptr) {
     m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
-    m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+    m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
     m_glyph->measure(renderer);
     if (m_glyph->width() <= 0.0f) {
       // Some icon fonts may miss the keyboard glyph; use a guaranteed fallback.
@@ -357,7 +357,7 @@ void KeyboardLayoutWidget::doLayout(Renderer& renderer, float containerWidth, fl
     }
   }
 
-  m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  m_label->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_label->setTextAlign(m_isVertical ? TextAlign::Center : TextAlign::Start);
   const float stableLabelWidth =
       std::round(renderer.measureText(kVerticalStableLabel, m_label->fontSize(), true).width);
@@ -434,7 +434,7 @@ void KeyboardLayoutWidget::sync(Renderer& renderer) {
 
   m_label->setFontSize((m_isVertical ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
   m_label->setText(layoutLabel);
-  m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  m_label->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_label->measure(renderer);
 
   if (auto* node = root(); node != nullptr) {

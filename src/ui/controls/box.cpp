@@ -13,23 +13,23 @@ Box::Box() {
   m_paletteConn = paletteChanged().connect([this] { applyPalette(); });
 }
 
-void Box::setFill(const ThemeColor& color) {
+void Box::setFill(const ColorSpec& color) {
   m_fill = color;
   applyPalette();
 }
 
-void Box::setFill(const Color& color) { setFill(fixedColor(color)); }
+void Box::setFill(const Color& color) { setFill(fixedColorSpec(color)); }
 
-void Box::setBorder(const ThemeColor& color, float width) {
+void Box::setBorder(const ColorSpec& color, float width) {
   m_border = color;
   m_borderWidth = width;
   applyPalette();
 }
 
-void Box::setBorder(const Color& color, float width) { setBorder(fixedColor(color), width); }
+void Box::setBorder(const Color& color, float width) { setBorder(fixedColorSpec(color), width); }
 
 void Box::clearBorder() {
-  m_border = clearThemeColor();
+  m_border = clearColorSpec();
   m_borderWidth = 0.0f;
   applyPalette();
 }
@@ -76,20 +76,20 @@ void Box::setFrameSize(float w, float h) {
 
 void Box::applyPalette() {
   auto style = m_rect->style();
-  style.fill = resolveThemeColor(m_fill);
-  style.border = resolveThemeColor(m_border);
+  style.fill = resolveColorSpec(m_fill);
+  style.border = resolveColorSpec(m_border);
   style.borderWidth = m_borderWidth;
   style.fillMode = FillMode::Solid;
   m_rect->setStyle(style);
 }
 
 void Box::setFlatStyle() {
-  m_fill = roleColor(ColorRole::Surface);
-  m_border = roleColor(ColorRole::Outline);
+  m_fill = colorSpecFromRole(ColorRole::Surface);
+  m_border = colorSpecFromRole(ColorRole::Outline);
   m_borderWidth = 0.0f;
   auto style = m_rect->style();
-  style.fill = resolveThemeColor(m_fill);
-  style.border = resolveThemeColor(m_border);
+  style.fill = resolveColorSpec(m_fill);
+  style.border = resolveColorSpec(m_border);
   style.borderWidth = m_borderWidth;
   style.fillMode = FillMode::Solid;
   style.corners = {};
@@ -100,12 +100,12 @@ void Box::setFlatStyle() {
 }
 
 void Box::setPanelStyle() {
-  m_fill = roleColor(ColorRole::Surface);
-  m_border = roleColor(ColorRole::Outline);
+  m_fill = colorSpecFromRole(ColorRole::Surface);
+  m_border = colorSpecFromRole(ColorRole::Outline);
   m_borderWidth = Style::borderWidth;
   auto style = m_rect->style();
-  style.fill = resolveThemeColor(m_fill);
-  style.border = resolveThemeColor(m_border);
+  style.fill = resolveColorSpec(m_fill);
+  style.border = resolveColorSpec(m_border);
   style.borderWidth = m_borderWidth;
   style.fillMode = FillMode::Solid;
   style.corners = {};
@@ -116,7 +116,7 @@ void Box::setPanelStyle() {
 }
 
 void Box::setCardStyle(float scale) {
-  setFill(roleColor(ColorRole::Surface));
-  setBorder(roleColor(ColorRole::Outline, 0.5f), Style::borderWidth);
+  setFill(colorSpecFromRole(ColorRole::Surface));
+  setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), Style::borderWidth);
   setRadius(Style::radiusXl * scale);
 }

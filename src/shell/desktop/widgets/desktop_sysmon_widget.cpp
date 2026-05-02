@@ -24,8 +24,8 @@ namespace {
 } // namespace
 
 DesktopSysmonWidget::DesktopSysmonWidget(SystemMonitorService* monitor, DesktopSysmonStat stat,
-                                         std::optional<DesktopSysmonStat> stat2, ThemeColor lineColor,
-                                         ThemeColor lineColor2, bool showLabel, bool shadow)
+                                         std::optional<DesktopSysmonStat> stat2, ColorSpec lineColor,
+                                         ColorSpec lineColor2, bool showLabel, bool shadow)
     : m_monitor(monitor), m_stat(stat), m_stat2(stat2), m_lineColor(lineColor), m_lineColor2(lineColor2),
       m_showLabel(showLabel), m_shadow(shadow) {
   if (m_monitor != nullptr) {
@@ -105,14 +105,14 @@ void DesktopSysmonWidget::doLayout(Renderer& renderer) {
   const float fontSize = Style::fontSizeBody * scale;
   const float gap = Style::spaceSm * scale;
 
-  m_graphNode->setLineColor1(resolveThemeColor(m_lineColor));
+  m_graphNode->setLineColor1(resolveColorSpec(m_lineColor));
   if (m_stat2.has_value()) {
-    m_graphNode->setLineColor2(resolveThemeColor(m_lineColor2));
+    m_graphNode->setLineColor2(resolveColorSpec(m_lineColor2));
   }
   m_graphNode->setLineWidth(kGraphLineWidth * scale);
 
   m_glyph->setGlyphSize(fontSize);
-  m_glyph->setColor(resolveThemeColor(roleColor(ColorRole::OnSurface)));
+  m_glyph->setColor(colorForRole(ColorRole::OnSurface));
   if (m_shadow) {
     m_glyph->setShadow(Color{0.0f, 0.0f, 0.0f, 0.5f}, 0.0f, 1.0f);
   }
@@ -126,7 +126,7 @@ void DesktopSysmonWidget::doLayout(Renderer& renderer) {
 
   if (m_label != nullptr) {
     m_label->setFontSize(fontSize);
-    m_label->setColor(resolveThemeColor(roleColor(ColorRole::OnSurface)));
+    m_label->setColor(colorForRole(ColorRole::OnSurface));
     m_label->measure(renderer);
     headerW += gap + m_label->width();
   }

@@ -14,13 +14,13 @@ class ProgressBar : public Node {
 public:
   ProgressBar();
 
-  void setFill(const ThemeColor& color);
+  void setFill(const ColorSpec& color);
   void setFill(const Color& color);
-  void setTrack(const ThemeColor& color);
+  void setTrack(const ColorSpec& color);
   void setTrack(const Color& color);
-  void setFillColor(const ThemeColor& color);
+  void setFillColor(const ColorSpec& color);
   void setFillColor(const Color& color);
-  void setTrackColor(const ThemeColor& color);
+  void setTrackColor(const ColorSpec& color);
   void setTrackColor(const Color& color);
   void setRadius(float radius);
   void setSoftness(float softness);
@@ -37,8 +37,8 @@ private:
 
   RectNode* m_track = nullptr;
   RectNode* m_fill = nullptr;
-  ThemeColor m_trackColor = roleColor(ColorRole::SurfaceVariant);
-  ThemeColor m_fillColor = roleColor(ColorRole::Primary);
+  ColorSpec m_trackColor = colorSpecFromRole(ColorRole::SurfaceVariant);
+  ColorSpec m_fillColor = colorSpecFromRole(ColorRole::Primary);
   float m_progress = 1.0f;
   ProgressBarOrientation m_orientation = ProgressBarOrientation::Horizontal;
   Signal<>::ScopedConnection m_paletteConn;

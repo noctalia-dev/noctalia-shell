@@ -33,7 +33,7 @@ namespace {
   constexpr std::size_t kMaxVisibleOptions = 6;
   constexpr auto kTypeaheadTimeout = std::chrono::milliseconds(800);
 
-  Color resolved(ColorRole role, float alpha = 1.0f) { return resolveThemeColor(roleColor(role, alpha)); }
+  Color resolved(ColorRole role, float alpha = 1.0f) { return colorForRole(role, alpha); }
 
   char asciiLower(char c) { return static_cast<char>(std::tolower(static_cast<unsigned char>(c))); }
 
@@ -226,7 +226,7 @@ void Select::setGlyphSize(float size) {
   markLayoutDirty();
 }
 
-void Select::setOptionIndicators(std::vector<ThemeColor> colors) {
+void Select::setOptionIndicators(std::vector<ColorSpec> colors) {
   m_indicatorColors = std::move(colors);
   m_needsOptionRebuild = true;
   markLayoutDirty();
@@ -285,7 +285,7 @@ void Select::doLayout(Renderer& renderer) {
     m_triggerIndicator->setVisible(showTriggerIndicator);
     if (showTriggerIndicator) {
       m_triggerIndicator->setFill(m_indicatorColors[m_selectedIndex]);
-      m_triggerIndicator->setBorder(roleColor(ColorRole::Outline), indicatorBorder);
+      m_triggerIndicator->setBorder(colorSpecFromRole(ColorRole::Outline), indicatorBorder);
       m_triggerIndicator->setFrameSize(indicatorSize, indicatorSize);
       m_triggerIndicator->setRadius(indicatorSize * 0.5f);
       m_triggerIndicator->setPosition(m_horizontalPadding, std::round((m_controlHeight - indicatorSize) * 0.5f));
@@ -352,7 +352,7 @@ void Select::doLayout(Renderer& renderer) {
       option.indicator->setVisible(showMenu);
       option.indicator->setFrameSize(indicatorSize, indicatorSize);
       option.indicator->setRadius(indicatorSize * 0.5f);
-      option.indicator->setBorder(roleColor(ColorRole::Outline), indicatorBorder);
+      option.indicator->setBorder(colorSpecFromRole(ColorRole::Outline), indicatorBorder);
       option.indicator->setPosition(m_horizontalPadding, rowY + std::round((m_controlHeight - indicatorSize) * 0.5f));
       option.indicator->setZIndex(4);
       if (i < m_indicatorColors.size()) {
@@ -621,13 +621,13 @@ void Select::applyVisualState() {
 
   Color triggerBg = resolved(ColorRole::SurfaceVariant);
   Color triggerBorder = resolved(ColorRole::Outline);
-  ThemeColor triggerText =
-      selectedText().empty() ? roleColor(ColorRole::OnSurfaceVariant) : roleColor(ColorRole::OnSurface);
+  ColorSpec triggerText =
+      selectedText().empty() ? colorSpecFromRole(ColorRole::OnSurfaceVariant) : colorSpecFromRole(ColorRole::OnSurface);
 
   if (!m_enabled) {
     triggerBg = resolved(ColorRole::SurfaceVariant, 0.75f);
     triggerBorder = resolved(ColorRole::Outline, 0.6f);
-    triggerText = roleColor(ColorRole::OnSurface, 0.55f);
+    triggerText = colorSpecFromRole(ColorRole::OnSurface, 0.55f);
   } else if (triggerHovered || triggerPressed) {
     triggerBg = resolved(ColorRole::SurfaceVariant);
     triggerBorder = resolved(ColorRole::Hover);
@@ -667,13 +667,13 @@ void Select::applyVisualState() {
     option.area->setVisible(showMenu);
 
     Color bg = clearColor();
-    ThemeColor fg = roleColor(ColorRole::OnSurface);
+    ColorSpec fg = colorSpecFromRole(ColorRole::OnSurface);
 
     if (!m_enabled) {
-      fg = roleColor(ColorRole::OnSurface, 0.55f);
+      fg = colorSpecFromRole(ColorRole::OnSurface, 0.55f);
     } else if (i == m_hoveredOptionIndex) {
       bg = resolved(ColorRole::Primary);
-      fg = roleColor(ColorRole::OnPrimary);
+      fg = colorSpecFromRole(ColorRole::OnPrimary);
     }
 
     option.label->setColor(fg);

@@ -13,7 +13,7 @@ class Spinner : public Node {
 public:
   Spinner();
 
-  void setColor(const ThemeColor& color);
+  void setColor(const ColorSpec& color);
   void setColor(const Color& color);
   void setSpinnerSize(float size);
   void setThickness(float thickness);
@@ -29,7 +29,7 @@ private:
   void updateGeometry();
 
   SpinnerNode* m_spinnerNode = nullptr;
-  ThemeColor m_color = roleColor(ColorRole::Primary);
+  ColorSpec m_color = colorSpecFromRole(ColorRole::Primary);
   Signal<>::ScopedConnection m_paletteConn;
   std::uint32_t m_animId = 0;
   bool m_spinning = false;

@@ -69,13 +69,13 @@ void PolkitPanel::create() {
   title->setText(i18n::tr("auth.polkit.title"));
   title->setBold(true);
   title->setFontSize(Style::fontSizeTitle * scale);
-  title->setColor(roleColor(ColorRole::Primary));
+  title->setColor(colorSpecFromRole(ColorRole::Primary));
   m_titleLabel = title.get();
   topContent->addChild(std::move(title));
 
   auto message = std::make_unique<Label>();
   message->setFontSize(Style::fontSizeBody * scale);
-  message->setColor(roleColor(ColorRole::OnSurface));
+  message->setColor(colorSpecFromRole(ColorRole::OnSurface));
   message->setMaxLines(6);
   m_messageLabel = message.get();
   topContent->addChild(std::move(message));
@@ -88,7 +88,7 @@ void PolkitPanel::create() {
 
   auto prompt = std::make_unique<Label>();
   prompt->setFontSize(Style::fontSizeBody * scale);
-  prompt->setColor(roleColor(ColorRole::OnSurface));
+  prompt->setColor(colorSpecFromRole(ColorRole::OnSurface));
   prompt->setMaxLines(3);
   m_promptLabel = prompt.get();
   bottomContent->addChild(std::move(prompt));
@@ -104,7 +104,7 @@ void PolkitPanel::create() {
 
   auto supplementary = std::make_unique<Label>();
   supplementary->setFontSize(Style::fontSizeCaption * scale);
-  supplementary->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  supplementary->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   supplementary->setMaxLines(4);
   m_supplementaryLabel = supplementary.get();
   bottomContent->addChild(std::move(supplementary));
@@ -188,11 +188,12 @@ void PolkitPanel::doUpdate(Renderer& /*renderer*/) {
   }
   m_messageLabel->setText(wrapLongRuns(request.message.empty() ? request.actionId : request.message));
   m_promptLabel->setText(promptText);
-  m_promptLabel->setColor(isInvalidPassword ? roleColor(ColorRole::Error) : roleColor(ColorRole::OnSurface));
+  m_promptLabel->setColor(isInvalidPassword ? colorSpecFromRole(ColorRole::Error)
+                                            : colorSpecFromRole(ColorRole::OnSurface));
   m_promptLabel->setVisible(!promptText.empty());
   m_supplementaryLabel->setText(supplementaryText);
   m_supplementaryLabel->setVisible(!supplementaryText.empty());
-  m_supplementaryLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  m_supplementaryLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   m_submitButton->setEnabled(agent->isResponseRequired());
 }
 

@@ -208,7 +208,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     indicator->clearBorder();
     indicator->setRadius(indicatorHeight * 0.5f);
     indicator->setFrameSize(w, indicatorHeight);
-    indicator->setFill(roleColor(workspaceFillRole(ws)));
+    indicator->setFill(colorSpecFromRole(workspaceFillRole(ws)));
     item.indicator = static_cast<Box*>(area->addChild(std::move(indicator)));
 
     if (showLabel) {
@@ -216,7 +216,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
       text->setText(labels[i]);
       text->setFontSize(labelFontSize);
       text->setBold(true);
-      text->setColor(roleColor(workspaceTextRole(ws)));
+      text->setColor(colorSpecFromRole(workspaceTextRole(ws)));
       text->measure(renderer);
       item.label = labels[i];
       item.text = static_cast<Label*>(area->addChild(std::move(text)));
@@ -282,10 +282,10 @@ void WorkspacesWidget::retarget(Renderer& renderer) {
   for (std::size_t i = 0; i < m_items.size(); ++i) {
     auto& it = m_items[i];
     if (it.indicator != nullptr) {
-      it.indicator->setFill(roleColor(workspaceFillRole(m_cachedState[i])));
+      it.indicator->setFill(colorSpecFromRole(workspaceFillRole(m_cachedState[i])));
     }
     if (it.text != nullptr) {
-      it.text->setColor(roleColor(workspaceTextRole(m_cachedState[i])));
+      it.text->setColor(colorSpecFromRole(workspaceTextRole(m_cachedState[i])));
     }
   }
 

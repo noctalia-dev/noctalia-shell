@@ -35,7 +35,7 @@ namespace {
 } // namespace
 
 DesktopMediaPlayerWidget::DesktopMediaPlayerWidget(MprisService* mpris, HttpClient* httpClient, bool vertical,
-                                                   ThemeColor color, bool shadow)
+                                                   ColorSpec color, bool shadow)
     : m_mpris(mpris), m_httpClient(httpClient), m_vertical(vertical), m_color(std::move(color)), m_shadow(shadow) {}
 
 void DesktopMediaPlayerWidget::create() {

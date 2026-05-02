@@ -52,8 +52,7 @@ namespace settings {
       std::shared_ptr<std::vector<Flex*>> itemNodes;
     };
 
-    std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ThemeColor& color,
-                                     bool bold = false) {
+    std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ColorSpec& color, bool bold = false) {
       auto label = std::make_unique<Label>();
       label->setText(text);
       label->setFontSize(fontSize);
@@ -176,16 +175,16 @@ namespace settings {
       return true;
     }
 
-    ThemeColor widgetBadgeColor(WidgetReferenceKind kind) {
+    ColorSpec widgetBadgeColor(WidgetReferenceKind kind) {
       switch (kind) {
       case WidgetReferenceKind::BuiltIn:
-        return roleColor(ColorRole::Primary, 0.16f);
+        return colorSpecFromRole(ColorRole::Primary, 0.16f);
       case WidgetReferenceKind::Named:
-        return roleColor(ColorRole::Secondary, 0.18f);
+        return colorSpecFromRole(ColorRole::Secondary, 0.18f);
       case WidgetReferenceKind::Unknown:
-        return roleColor(ColorRole::Error, 0.16f);
+        return colorSpecFromRole(ColorRole::Error, 0.16f);
       }
-      return roleColor(ColorRole::OnSurfaceVariant, 0.12f);
+      return colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.12f);
     }
 
     const WidgetTypeSpec* widgetTypeSpecForType(std::string_view type) {
@@ -629,9 +628,10 @@ namespace settings {
       header->setGap(1.0f * ctx.scale);
       header->setPadding(Style::spaceXs * ctx.scale, 0.0f);
       header->addChild(makeLabel(i18n::tr("settings.entities.widget.raw.title"), Style::fontSizeCaption * ctx.scale,
-                                 roleColor(ColorRole::OnSurface), true));
+                                 colorSpecFromRole(ColorRole::OnSurface), true));
       header->addChild(makeLabel(i18n::tr("settings.entities.widget.raw.description"),
-                                 Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant), false));
+                                 Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurfaceVariant),
+                                 false));
       panel.addChild(std::move(header));
 
       for (const auto& key : rawKeys) {
@@ -651,14 +651,15 @@ namespace settings {
         row->setPadding(Style::spaceXs * ctx.scale, 0.0f);
         row->setMinHeight(Style::controlHeightSm * ctx.scale);
 
-        row->addChild(makeLabel(key, Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurface), true));
+        row->addChild(
+            makeLabel(key, Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurface), true));
 
         auto spacer = std::make_unique<Flex>();
         spacer->setFlexGrow(1.0f);
         row->addChild(std::move(spacer));
 
         row->addChild(makeLabel(settingValueAsDisplayString(valueIt->second), Style::fontSizeCaption * ctx.scale,
-                                roleColor(ColorRole::OnSurfaceVariant), false));
+                                colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
 
         if (overridden) {
           auto deleteBtn = std::make_unique<Button>();
@@ -718,9 +719,10 @@ namespace settings {
       copy->setGap(Style::spaceXs * ctx.scale);
       copy->setFlexGrow(1.0f);
       copy->addChild(makeLabel(i18n::tr("settings.widgets.settings.type.label"), Style::fontSizeBody * ctx.scale,
-                               roleColor(ColorRole::OnSurface), false));
-      auto detail = makeLabel(i18n::tr("settings.widgets.settings.type.description"),
-                              Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant), false);
+                               colorSpecFromRole(ColorRole::OnSurface), false));
+      auto detail =
+          makeLabel(i18n::tr("settings.widgets.settings.type.description"), Style::fontSizeCaption * ctx.scale,
+                    colorSpecFromRole(ColorRole::OnSurfaceVariant), false);
       detail->setMaxWidth(360.0f * ctx.scale);
       copy->addChild(std::move(detail));
       row->addChild(std::move(copy));
@@ -747,17 +749,18 @@ namespace settings {
       panel->setGap(Style::spaceXs * ctx.scale);
       panel->setPadding(Style::spaceSm * ctx.scale);
       panel->setRadius(Style::radiusSm * ctx.scale);
-      panel->setFill(roleColor(ColorRole::SurfaceVariant, 0.55f));
-      panel->setBorder(roleColor(ColorRole::Outline, 0.22f), Style::borderWidth);
+      panel->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, 0.55f));
+      panel->setBorder(colorSpecFromRole(ColorRole::Outline, 0.22f), Style::borderWidth);
 
       auto panelHeader = std::make_unique<Flex>();
       panelHeader->setDirection(FlexDirection::Horizontal);
       panelHeader->setAlign(FlexAlign::Center);
       panelHeader->setGap(Style::spaceXs * ctx.scale);
       panelHeader->addChild(makeLabel(i18n::tr("settings.entities.widget.settings.title"),
-                                      Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurface), true));
-      panelHeader->addChild(
-          makeLabel(widgetType, Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant), false));
+                                      Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurface),
+                                      true));
+      panelHeader->addChild(makeLabel(widgetType, Style::fontSizeCaption * ctx.scale,
+                                      colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
       panel->addChild(std::move(panelHeader));
 
       std::size_t visibleSpecs = 0;
@@ -839,7 +842,8 @@ namespace settings {
 
       if (visibleSpecs == 0) {
         panel->addChild(makeLabel(i18n::tr("settings.entities.widget.settings.empty"),
-                                  Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant), false));
+                                  Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurfaceVariant),
+                                  false));
       }
 
       item.addChild(std::move(panel));
@@ -856,8 +860,8 @@ namespace settings {
       inspector->setGap(Style::spaceSm * ctx.scale);
       inspector->setPadding(Style::spaceMd * ctx.scale);
       inspector->setRadius(Style::radiusMd * ctx.scale);
-      inspector->setFill(roleColor(ColorRole::Surface, 0.85f));
-      inspector->setBorder(roleColor(ColorRole::Outline, 0.35f), Style::borderWidth);
+      inspector->setFill(colorSpecFromRole(ColorRole::Surface, 0.85f));
+      inspector->setBorder(colorSpecFromRole(ColorRole::Outline, 0.35f), Style::borderWidth);
 
       if (hasEdit) {
         const std::string widgetName = ctx.editingWidgetName;
@@ -886,10 +890,10 @@ namespace settings {
         headerRow->setAlign(FlexAlign::Center);
         headerRow->setGap(Style::spaceSm * ctx.scale);
         headerRow->addChild(makeLabel(i18n::tr("settings.entities.widget.inspector.edit-title"),
-                                      Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant),
-                                      true));
+                                      Style::fontSizeCaption * ctx.scale,
+                                      colorSpecFromRole(ColorRole::OnSurfaceVariant), true));
         headerRow->addChild(
-            makeLabel(info.title, Style::fontSizeBody * ctx.scale, roleColor(ColorRole::OnSurface), true));
+            makeLabel(info.title, Style::fontSizeBody * ctx.scale, colorSpecFromRole(ColorRole::OnSurface), true));
 
         auto kindBadge = std::make_unique<Flex>();
         kindBadge->setAlign(FlexAlign::Center);
@@ -897,7 +901,7 @@ namespace settings {
         kindBadge->setRadius(Style::radiusSm * ctx.scale);
         kindBadge->setFill(widgetBadgeColor(info.kind));
         kindBadge->addChild(
-            makeLabel(info.badge, Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurface), true));
+            makeLabel(info.badge, Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurface), true));
         headerRow->addChild(std::move(kindBadge));
 
         auto headerSpacer = std::make_unique<Flex>();
@@ -997,15 +1001,15 @@ namespace settings {
           confirmPanel->setGap(Style::spaceXs * ctx.scale);
           confirmPanel->setPadding(Style::spaceSm * ctx.scale);
           confirmPanel->setRadius(Style::radiusSm * ctx.scale);
-          confirmPanel->setFill(roleColor(ColorRole::Error, 0.10f));
-          confirmPanel->setBorder(roleColor(ColorRole::Error, 0.35f), Style::borderWidth);
+          confirmPanel->setFill(colorSpecFromRole(ColorRole::Error, 0.10f));
+          confirmPanel->setBorder(colorSpecFromRole(ColorRole::Error, 0.35f), Style::borderWidth);
 
           confirmPanel->addChild(
               makeLabel(i18n::tr("settings.entities.widget.instance.delete-confirm-title", "name", widgetName),
-                        Style::fontSizeBody * ctx.scale, roleColor(ColorRole::Error), true));
+                        Style::fontSizeBody * ctx.scale, colorSpecFromRole(ColorRole::Error), true));
           confirmPanel->addChild(makeLabel(i18n::tr("settings.entities.widget.instance.delete-confirm-desc"),
-                                           Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant),
-                                           false));
+                                           Style::fontSizeCaption * ctx.scale,
+                                           colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
 
           auto confirmRow = std::make_unique<Flex>();
           confirmRow->setDirection(FlexDirection::Horizontal);
@@ -1160,7 +1164,7 @@ namespace settings {
         headerRow->setGap(Style::spaceSm * ctx.scale);
         headerRow->addChild(
             makeLabel(i18n::tr("settings.entities.widget.inspector.add-title", "lane", laneLabel(targetLaneKey)),
-                      Style::fontSizeBody * ctx.scale, roleColor(ColorRole::OnSurface), true));
+                      Style::fontSizeBody * ctx.scale, colorSpecFromRole(ColorRole::OnSurface), true));
 
         auto headerSpacer = std::make_unique<Flex>();
         headerSpacer->setFlexGrow(1.0f);
@@ -1188,8 +1192,8 @@ namespace settings {
         if (!ctx.creatingWidgetType.empty()) {
           const std::string widgetType = ctx.creatingWidgetType;
           inspector->addChild(makeLabel(i18n::tr("settings.entities.widget.instance.create-title", "type", widgetType),
-                                        Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant),
-                                        false));
+                                        Style::fontSizeCaption * ctx.scale,
+                                        colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
 
           auto createRow = std::make_unique<Flex>();
           createRow->setDirection(FlexDirection::Horizontal);
@@ -1329,11 +1333,12 @@ namespace settings {
     titleRow->setAlign(FlexAlign::Center);
     titleRow->setGap(Style::spaceSm * ctx.scale);
     titleRow->addChild(makeLabel(i18n::tr("settings.entities.widget.editor.title"), Style::fontSizeBody * ctx.scale,
-                                 roleColor(ColorRole::OnSurface), false));
+                                 colorSpecFromRole(ColorRole::OnSurface), false));
     block->addChild(std::move(titleRow));
 
     block->addChild(makeLabel(i18n::tr("settings.entities.widget.editor.description"),
-                              Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant), false));
+                              Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurfaceVariant),
+                              false));
 
     const bool inspectorActive = !ctx.editingWidgetName.empty() || !ctx.openWidgetPickerPath.empty();
     if (inspectorActive) {
@@ -1365,14 +1370,14 @@ namespace settings {
       lane->setGap(Style::spaceXs * ctx.scale);
       lane->setPadding(Style::spaceSm * ctx.scale);
       lane->setRadius(Style::radiusMd * ctx.scale);
-      lane->setFill(roleColor(ColorRole::SurfaceVariant, 0.45f));
-      lane->setBorder(roleColor(ColorRole::Outline, 0.35f), Style::borderWidth);
+      lane->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, 0.45f));
+      lane->setBorder(colorSpecFromRole(ColorRole::Outline, 0.35f), Style::borderWidth);
       lane->setFlexGrow(1.0f);
       lane->setMinWidth(160.0f * ctx.scale);
       auto* lanePtr = lane.get();
 
       auto dropIndicator = std::make_unique<Box>();
-      dropIndicator->setFill(roleColor(ColorRole::Primary));
+      dropIndicator->setFill(colorSpecFromRole(ColorRole::Primary));
       dropIndicator->setRadius(std::max(1.0f, 1.5f * ctx.scale));
       dropIndicator->setVisible(false);
       dropIndicator->setParticipatesInLayout(false);
@@ -1393,16 +1398,16 @@ namespace settings {
       laneHeader->setDirection(FlexDirection::Horizontal);
       laneHeader->setAlign(FlexAlign::Center);
       laneHeader->setGap(Style::spaceXs * ctx.scale);
-      laneHeader->addChild(
-          makeLabel(laneLabel(laneKey), Style::fontSizeBody * ctx.scale, roleColor(ColorRole::OnSurface), true));
+      laneHeader->addChild(makeLabel(laneLabel(laneKey), Style::fontSizeBody * ctx.scale,
+                                     colorSpecFromRole(ColorRole::OnSurface), true));
       if (overridden) {
         auto badge = std::make_unique<Flex>();
         badge->setAlign(FlexAlign::Center);
         badge->setPadding(1.0f * ctx.scale, Style::spaceXs * ctx.scale);
         badge->setRadius(Style::radiusSm * ctx.scale);
-        badge->setFill(roleColor(ColorRole::Primary, 0.15f));
+        badge->setFill(colorSpecFromRole(ColorRole::Primary, 0.15f));
         badge->addChild(makeLabel(i18n::tr("settings.badges.override"), Style::fontSizeCaption * ctx.scale,
-                                  roleColor(ColorRole::Primary), true));
+                                  colorSpecFromRole(ColorRole::Primary), true));
         laneHeader->addChild(std::move(badge));
       }
       if (inherited) {
@@ -1410,9 +1415,9 @@ namespace settings {
         badge->setAlign(FlexAlign::Center);
         badge->setPadding(1.0f * ctx.scale, Style::spaceXs * ctx.scale);
         badge->setRadius(Style::radiusSm * ctx.scale);
-        badge->setFill(roleColor(ColorRole::OnSurfaceVariant, 0.14f));
+        badge->setFill(colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.14f));
         badge->addChild(makeLabel(i18n::tr("settings.badges.inherited"), Style::fontSizeCaption * ctx.scale,
-                                  roleColor(ColorRole::OnSurfaceVariant), true));
+                                  colorSpecFromRole(ColorRole::OnSurfaceVariant), true));
         laneHeader->addChild(std::move(badge));
       }
       auto laneSpacer = std::make_unique<Flex>();
@@ -1444,8 +1449,8 @@ namespace settings {
         item->setGap(Style::spaceXs * ctx.scale);
         item->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
         item->setRadius(Style::radiusSm * ctx.scale);
-        item->setFill(roleColor(ColorRole::Surface, 0.72f));
-        item->setBorder(roleColor(ColorRole::Outline, 0.22f), Style::borderWidth);
+        item->setFill(colorSpecFromRole(ColorRole::Surface, 0.72f));
+        item->setBorder(colorSpecFromRole(ColorRole::Outline, 0.22f), Style::borderWidth);
         auto* itemPtr = item.get();
         itemNodes->push_back(itemPtr);
 
@@ -1454,7 +1459,7 @@ namespace settings {
         itemTop->setAlign(FlexAlign::Center);
         itemTop->setGap(Style::spaceXs * ctx.scale);
         itemTop->addChild(
-            makeLabel(info.title, Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurface), true));
+            makeLabel(info.title, Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurface), true));
         auto itemSpacer = std::make_unique<Flex>();
         itemSpacer->setFlexGrow(1.0f);
         itemTop->addChild(std::move(itemSpacer));
@@ -1464,12 +1469,12 @@ namespace settings {
         kindBadge->setRadius(Style::radiusSm * ctx.scale);
         kindBadge->setFill(widgetBadgeColor(info.kind));
         kindBadge->addChild(
-            makeLabel(info.badge, Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurface), true));
+            makeLabel(info.badge, Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurface), true));
         itemTop->addChild(std::move(kindBadge));
         item->addChild(std::move(itemTop));
 
-        item->addChild(
-            makeLabel(info.detail, Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant), false));
+        item->addChild(makeLabel(info.detail, Style::fontSizeCaption * ctx.scale,
+                                 colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
 
         auto actions = std::make_unique<Flex>();
         actions->setDirection(FlexDirection::Horizontal);
@@ -1655,14 +1660,14 @@ namespace settings {
         emptyState->setGap(2.0f * ctx.scale);
         emptyState->setPadding(Style::spaceMd * ctx.scale, Style::spaceSm * ctx.scale);
         emptyState->setRadius(Style::radiusSm * ctx.scale);
-        emptyState->setFill(roleColor(ColorRole::SurfaceVariant, 0.25f));
-        emptyState->setBorder(roleColor(ColorRole::Outline, 0.18f), Style::borderWidth);
+        emptyState->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, 0.25f));
+        emptyState->setBorder(colorSpecFromRole(ColorRole::Outline, 0.18f), Style::borderWidth);
         emptyState->addChild(makeLabel(i18n::tr("settings.entities.widget.lanes.empty"),
-                                       Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant),
-                                       true));
+                                       Style::fontSizeCaption * ctx.scale,
+                                       colorSpecFromRole(ColorRole::OnSurfaceVariant), true));
         emptyState->addChild(makeLabel(i18n::tr("settings.entities.widget.lanes.empty-hint"),
-                                       Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant),
-                                       false));
+                                       Style::fontSizeCaption * ctx.scale,
+                                       colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
         lane->addChild(std::move(emptyState));
       }
 

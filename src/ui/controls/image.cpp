@@ -47,13 +47,13 @@ void Image::setRadius(float radius) {
   markPaintDirty();
 }
 
-void Image::setBorder(const ThemeColor& color, float width) {
+void Image::setBorder(const ColorSpec& color, float width) {
   m_border = color;
   m_borderWidth = width;
   applyPalette();
 }
 
-void Image::setBorder(const Color& color, float width) { setBorder(fixedColor(color), width); }
+void Image::setBorder(const Color& color, float width) { setBorder(fixedColorSpec(color), width); }
 
 void Image::setTint(const Color& tint) {
   if (m_image != nullptr) {
@@ -333,7 +333,7 @@ void Image::doLayout(Renderer& renderer) {
 }
 
 void Image::applyPalette() {
-  const Color border = resolveThemeColor(m_border);
+  const Color border = resolveColorSpec(m_border);
   if (m_image != nullptr) {
     m_image->setBorder(border, m_borderWidth);
   }

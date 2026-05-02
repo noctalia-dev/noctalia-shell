@@ -156,13 +156,11 @@ void FileEntryRow::setVisualState(bool selected, bool hovered, bool disabled) {
 }
 
 void FileEntryRow::applyVisualState() {
-  const Color bg = m_selected  ? resolveThemeColor(roleColor(ColorRole::Primary))
-                   : m_hovered ? resolveThemeColor(roleColor(ColorRole::SurfaceVariant, 0.7f))
+  const Color bg = m_selected  ? colorForRole(ColorRole::Primary)
+                   : m_hovered ? colorForRole(ColorRole::SurfaceVariant, 0.7f)
                                : clearColor();
-  const Color fg = m_selected ? resolveThemeColor(roleColor(ColorRole::OnPrimary))
-                              : resolveThemeColor(roleColor(ColorRole::OnSurface));
-  const Color sub = m_selected ? resolveThemeColor(roleColor(ColorRole::OnPrimary, 0.82f))
-                               : resolveThemeColor(roleColor(ColorRole::OnSurfaceVariant));
+  const Color fg = m_selected ? colorForRole(ColorRole::OnPrimary) : colorForRole(ColorRole::OnSurface);
+  const Color sub = m_selected ? colorForRole(ColorRole::OnPrimary, 0.82f) : colorForRole(ColorRole::OnSurfaceVariant);
   const float alpha = m_disabled ? 0.55f : 1.0f;
 
   m_background->setFill(bg);

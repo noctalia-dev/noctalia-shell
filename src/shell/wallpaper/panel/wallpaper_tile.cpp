@@ -69,27 +69,27 @@ WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentSca
   auto image = std::make_unique<Image>();
   image->setFit(ImageFit::Cover);
   image->setRadius(frameRadius);
-  image->setBorder(roleColor(ColorRole::Outline), outlineWidth);
+  image->setBorder(colorSpecFromRole(ColorRole::Outline), outlineWidth);
   image->setFrameSize(frameWidth, frameHeight);
   m_thumb = static_cast<Image*>(m_thumbBox->addChild(std::move(image)));
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("folder");
   glyph->setGlyphSize(std::min(frameWidth, frameHeight) * 0.45f);
-  glyph->setColor(roleColor(ColorRole::Primary));
+  glyph->setColor(colorSpecFromRole(ColorRole::Primary));
   glyph->setVisible(false);
   m_folderGlyph = static_cast<Glyph*>(m_thumbBox->addChild(std::move(glyph)));
 
   auto loadingGlyph = std::make_unique<Glyph>();
   loadingGlyph->setGlyph("hourglass");
   loadingGlyph->setGlyphSize(std::min(frameWidth, frameHeight) * 0.32f);
-  loadingGlyph->setColor(roleColor(ColorRole::OnSurface, 0.5f));
+  loadingGlyph->setColor(colorSpecFromRole(ColorRole::OnSurface, 0.5f));
   loadingGlyph->setVisible(false);
   m_loadingGlyph = static_cast<Glyph*>(m_thumbBox->addChild(std::move(loadingGlyph)));
 
   auto label = std::make_unique<Label>();
   label->setFontSize(Style::fontSizeCaption * m_contentScale);
-  label->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  label->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   label->setMaxWidth(frameWidth);
   label->setMaxLines(1);
   m_label = static_cast<Label*>(m_layout->addChild(std::move(label)));
@@ -233,14 +233,14 @@ void WallpaperTile::applyVisualState() {
   m_thumb->setTint(active ? rgba(1.0f, 1.0f, 1.0f, 1.0f) : rgba(0.5f, 0.5f, 0.5f, 1.0f));
 
   const float outlineWidth = Style::borderWidth * 3.0f;
-  ThemeColor borderColor = active ? roleColor(ColorRole::Hover) : roleColor(ColorRole::Outline);
-  ThemeColor frameBg = roleColor(ColorRole::SurfaceVariant);
+  ColorSpec borderColor = active ? colorSpecFromRole(ColorRole::Hover) : colorSpecFromRole(ColorRole::Outline);
+  ColorSpec frameBg = colorSpecFromRole(ColorRole::SurfaceVariant);
 
   m_thumbBox->setFill(frameBg);
   if (m_entry.isDir) {
     // Folder tiles hide the image node, so draw the state outline on the frame.
     m_thumbBox->setBorder(borderColor, outlineWidth);
-    m_thumb->setBorder(roleColor(ColorRole::Outline), outlineWidth);
+    m_thumb->setBorder(colorSpecFromRole(ColorRole::Outline), outlineWidth);
   } else {
     m_thumbBox->clearBorder();
     m_thumb->setBorder(borderColor, outlineWidth);

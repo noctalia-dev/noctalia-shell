@@ -25,7 +25,7 @@ public:
   AudioSpectrum();
 
   void setValues(const std::vector<float>& values);
-  void setGradient(const ThemeColor& lowColor, const ThemeColor& highColor);
+  void setGradient(const ColorSpec& lowColor, const ColorSpec& highColor);
   void setGradient(const Color& lowColor, const Color& highColor);
   void setSpacingRatio(float ratio);
   void setOrientation(AudioSpectrumOrientation orientation);
@@ -50,8 +50,8 @@ private:
   std::vector<Box*> m_bars;
   float m_smoothingTauMs = 60.0f;
   bool m_converged = true;
-  ThemeColor m_lowColor = roleColor(ColorRole::Primary);
-  ThemeColor m_highColor = roleColor(ColorRole::Primary);
+  ColorSpec m_lowColor = colorSpecFromRole(ColorRole::Primary);
+  ColorSpec m_highColor = colorSpecFromRole(ColorRole::Primary);
   float m_spacingRatio = 0.5f;
   AudioSpectrumOrientation m_orientation = AudioSpectrumOrientation::Horizontal;
   AudioSpectrumLayoutMode m_layoutMode = AudioSpectrumLayoutMode::QuantizedCentered;

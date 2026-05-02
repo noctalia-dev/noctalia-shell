@@ -17,7 +17,7 @@ namespace {
 
 } // namespace
 
-const Color& resolveColorRole(ColorRole role) noexcept {
+const Color& colorForRole(ColorRole role) noexcept {
   switch (role) {
   case ColorRole::Primary:
     return palette.primary;
@@ -56,6 +56,12 @@ const Color& resolveColorRole(ColorRole role) noexcept {
   return palette.onSurface;
 }
 
+Color colorForRole(ColorRole role, float alpha) noexcept {
+  Color color = colorForRole(role);
+  color.a *= alpha;
+  return color;
+}
+
 std::optional<ColorRole> colorRoleFromToken(std::string_view token) {
   const std::string normalized = normalizedRoleToken(token);
   for (const auto& option : kColorRoleTokens) {
@@ -75,16 +81,16 @@ std::string_view colorRoleToken(ColorRole role) noexcept {
   return "on_surface";
 }
 
-ThemeColor roleColor(ColorRole role, float alpha) noexcept {
-  return ThemeColor{.role = role, .fixed = clearColor(), .alpha = alpha};
+ColorSpec colorSpecFromRole(ColorRole role, float alpha) noexcept {
+  return ColorSpec{.role = role, .fixed = clearColor(), .alpha = alpha};
 }
 
-ThemeColor fixedColor(const Color& color) noexcept {
-  return ThemeColor{.role = std::nullopt, .fixed = color, .alpha = 1.0f};
+ColorSpec fixedColorSpec(const Color& color) noexcept {
+  return ColorSpec{.role = std::nullopt, .fixed = color, .alpha = 1.0f};
 }
 
-Color resolveThemeColor(const ThemeColor& color) noexcept {
-  Color resolved = color.role.has_value() ? resolveColorRole(*color.role) : color.fixed;
+Color resolveColorSpec(const ColorSpec& color) noexcept {
+  Color resolved = color.role.has_value() ? colorForRole(*color.role) : color.fixed;
   resolved.a *= color.alpha;
   return resolved;
 }

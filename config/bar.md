@@ -105,12 +105,12 @@ Set under `[bar.<name>]` or `[bar.<name>.monitor.*]`:
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `capsule` | bool | `false` | `true` gives every widget a capsule unless `[widget.*]` sets `capsule = false`. |
-| `color` | string | *(unset)* | Default icon + label color for every widget on this bar. |
-| `capsule_fill` | string | `surface_variant` | Default capsule background theme role. |
-| `capsule_foreground` | string | *(unset)* | Default icon + label color for capped widgets. |
+| `color` | string | *(unset)* | Default icon + label color role or hex color for every widget on this bar. |
+| `capsule_fill` | string | `surface_variant` | Default capsule background color role or hex color. |
+| `capsule_foreground` | string | *(unset)* | Default icon + label color role or hex color for capped widgets. |
 | `capsule_padding` | number | `6` | Inner padding in logical pixels before `scale` is applied (clamped 0–48). |
 | `capsule_opacity` | number | `1.0` | Capsule background opacity (0.0–1.0). |
-| `capsule_border` | string | *(omitted)* | If omitted, no border by default. If present (even `""`), per-widget border rules apply. |
+| `capsule_border` | string | *(omitted)* | Color role or hex color for the capsule border. If omitted, no border by default. If present as `""`, no border. |
 
 ### Per-widget overrides
 
@@ -119,14 +119,14 @@ Set under `[widget.<name>]`:
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `capsule` | bool | *(from bar)* | Omit to inherit bar flag; `false` disables; `true` forces on. |
-| `capsule_fill` | string | *(from bar)* | Capsule background color. |
-| `capsule_foreground` | string | *(from bar)* | Icon + label color when capsule is visible. `color` takes priority over this. |
+| `capsule_fill` | string | *(from bar)* | Capsule background color role or hex color. |
+| `capsule_foreground` | string | *(from bar)* | Icon + label color role or hex color when capsule is visible. `color` takes priority over this. |
 | `capsule_padding` | number | *(from bar)* | Per-widget inner padding (0–48). |
 | `capsule_opacity` | number | *(from bar)* | Per-widget capsule background opacity. |
-| `capsule_border` | string | *(from bar)* | Omit to inherit bar policy. Present but empty/whitespace-only = no border. |
-| `color` | string | *(unset)* | Icon + label color with or without capsule. Resolution order: `color` → `capsule_foreground` → built-in defaults. |
+| `capsule_border` | string | *(from bar)* | Color role or hex color for the capsule border. Omit to inherit bar policy. Present but empty/whitespace-only = no border. |
+| `color` | string | *(unset)* | Icon + label color role or hex color with or without capsule. Resolution order: `color` → `capsule_foreground` → built-in defaults. |
 
-Theme role names use **snake_case** (e.g. `on_surface`, `surface_variant`, `secondary`). Arbitrary hex colors are not accepted here; these settings use the shell's classic 16 theme roles.
+Color role names use **snake_case** (e.g. `on_surface`, `surface_variant`, `secondary`). Hex colors may use `#RGB`, `#RGBA`, `#RRGGBB`, or `#RRGGBBAA`.
 
 The capsule is hidden automatically when a widget reports no visible ink (empty tray, absent battery, invisible root). Subclasses may override `Widget::shouldShowBarCapsule()`.
 

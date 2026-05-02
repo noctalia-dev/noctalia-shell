@@ -20,8 +20,7 @@
 namespace settings {
   namespace {
 
-    std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ThemeColor& color,
-                                     bool bold = false) {
+    std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ColorSpec& color, bool bold = false) {
       auto label = std::make_unique<Label>();
       label->setText(text);
       label->setFontSize(fontSize);
@@ -53,8 +52,8 @@ namespace settings {
       section->setGap(Style::spaceSm * scale);
       section->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
       section->setCardStyle(scale);
-      section->setFill(roleColor(ColorRole::Surface));
-      section->addChild(makeLabel(title, Style::fontSizeTitle * scale, roleColor(ColorRole::OnSurface), true));
+      section->setFill(colorSpecFromRole(ColorRole::Surface));
+      section->addChild(makeLabel(title, Style::fontSizeTitle * scale, colorSpecFromRole(ColorRole::OnSurface), true));
 
       auto* raw = section.get();
       content.addChild(std::move(section));
@@ -157,15 +156,15 @@ namespace settings {
           confirmPanel->setGap(Style::spaceXs * ctx.scale);
           confirmPanel->setPadding(Style::spaceSm * ctx.scale);
           confirmPanel->setRadius(Style::radiusSm * ctx.scale);
-          confirmPanel->setFill(roleColor(ColorRole::Error, 0.10f));
-          confirmPanel->setBorder(roleColor(ColorRole::Error, 0.35f), Style::borderWidth);
+          confirmPanel->setFill(colorSpecFromRole(ColorRole::Error, 0.10f));
+          confirmPanel->setBorder(colorSpecFromRole(ColorRole::Error, 0.35f), Style::borderWidth);
 
           confirmPanel->addChild(
               makeLabel(i18n::tr("settings.entities.monitor-override.delete-confirm-title", "name", match),
-                        Style::fontSizeBody * ctx.scale, roleColor(ColorRole::Error), true));
+                        Style::fontSizeBody * ctx.scale, colorSpecFromRole(ColorRole::Error), true));
           confirmPanel->addChild(makeLabel(i18n::tr("settings.entities.monitor-override.delete-confirm-desc"),
-                                           Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant),
-                                           false));
+                                           Style::fontSizeCaption * ctx.scale,
+                                           colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
 
           auto confirmRow = std::make_unique<Flex>();
           confirmRow->setDirection(FlexDirection::Horizontal);
@@ -349,14 +348,14 @@ namespace settings {
           confirmPanel->setGap(Style::spaceXs * ctx.scale);
           confirmPanel->setPadding(Style::spaceSm * ctx.scale);
           confirmPanel->setRadius(Style::radiusSm * ctx.scale);
-          confirmPanel->setFill(roleColor(ColorRole::Error, 0.10f));
-          confirmPanel->setBorder(roleColor(ColorRole::Error, 0.35f), Style::borderWidth);
+          confirmPanel->setFill(colorSpecFromRole(ColorRole::Error, 0.10f));
+          confirmPanel->setBorder(colorSpecFromRole(ColorRole::Error, 0.35f), Style::borderWidth);
 
           confirmPanel->addChild(makeLabel(i18n::tr("settings.entities.bar.delete-confirm-title", "name", barName),
-                                           Style::fontSizeBody * ctx.scale, roleColor(ColorRole::Error), true));
+                                           Style::fontSizeBody * ctx.scale, colorSpecFromRole(ColorRole::Error), true));
           confirmPanel->addChild(makeLabel(i18n::tr("settings.entities.bar.delete-confirm-desc"),
-                                           Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurfaceVariant),
-                                           false));
+                                           Style::fontSizeCaption * ctx.scale,
+                                           colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
 
           auto confirmRow = std::make_unique<Flex>();
           confirmRow->setDirection(FlexDirection::Horizontal);

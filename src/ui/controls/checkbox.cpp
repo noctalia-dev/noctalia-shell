@@ -101,19 +101,19 @@ void Checkbox::applyState() {
     return;
   }
 
-  ThemeColor fill = roleColor(ColorRole::Surface);
-  ThemeColor border = roleColor(ColorRole::Outline);
+  ColorSpec fill = colorSpecFromRole(ColorRole::Surface);
+  ColorSpec border = colorSpecFromRole(ColorRole::Outline);
   if (m_checked) {
-    fill = roleColor(ColorRole::Primary);
-    border = roleColor(ColorRole::Primary);
+    fill = colorSpecFromRole(ColorRole::Primary);
+    border = colorSpecFromRole(ColorRole::Primary);
   } else if (hovered()) {
-    border = roleColor(ColorRole::Hover);
+    border = colorSpecFromRole(ColorRole::Hover);
   }
 
   m_box->setFill(fill);
   m_box->setBorder(border, Style::borderWidth * m_scale);
 
-  m_checkGlyph->setColor(roleColor(ColorRole::OnPrimary));
+  m_checkGlyph->setColor(colorSpecFromRole(ColorRole::OnPrimary));
   m_checkGlyph->setVisible(m_checked);
 
   setOpacity(m_enabled ? 1.0f : 0.55f);

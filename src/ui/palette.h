@@ -53,18 +53,18 @@ inline constexpr std::array<ColorRoleToken, 16> kColorRoleTokens = {{
 
 [[nodiscard]] constexpr Color clearColor() noexcept { return rgba(0.0f, 0.0f, 0.0f, 0.0f); }
 
-struct ThemeColor {
+struct ColorSpec {
   std::optional<ColorRole> role;
   Color fixed = clearColor();
   float alpha = 1.0f;
 };
 
-constexpr bool operator==(const ThemeColor& a, const ThemeColor& b) noexcept {
+constexpr bool operator==(const ColorSpec& a, const ColorSpec& b) noexcept {
   return a.role == b.role && a.fixed == b.fixed && a.alpha == b.alpha;
 }
 
-[[nodiscard]] constexpr ThemeColor clearThemeColor() noexcept {
-  return ThemeColor{.role = std::nullopt, .fixed = clearColor(), .alpha = 1.0f};
+[[nodiscard]] constexpr ColorSpec clearColorSpec() noexcept {
+  return ColorSpec{.role = std::nullopt, .fixed = clearColor(), .alpha = 1.0f};
 }
 
 struct Palette {
@@ -97,12 +97,13 @@ constexpr bool operator==(const Palette& lhs, const Palette& rhs) noexcept {
 
 extern Palette palette;
 
-[[nodiscard]] const Color& resolveColorRole(ColorRole role) noexcept;
+[[nodiscard]] const Color& colorForRole(ColorRole role) noexcept;
+[[nodiscard]] Color colorForRole(ColorRole role, float alpha) noexcept;
 [[nodiscard]] std::optional<ColorRole> colorRoleFromToken(std::string_view token);
 [[nodiscard]] std::string_view colorRoleToken(ColorRole role) noexcept;
-[[nodiscard]] ThemeColor roleColor(ColorRole role, float alpha = 1.0f) noexcept;
-[[nodiscard]] ThemeColor fixedColor(const Color& color) noexcept;
-[[nodiscard]] Color resolveThemeColor(const ThemeColor& color) noexcept;
+[[nodiscard]] ColorSpec colorSpecFromRole(ColorRole role, float alpha = 1.0f) noexcept;
+[[nodiscard]] ColorSpec fixedColorSpec(const Color& color) noexcept;
+[[nodiscard]] Color resolveColorSpec(const ColorSpec& color) noexcept;
 
 void setPalette(const Palette& p);
 

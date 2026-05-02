@@ -44,7 +44,7 @@ void ActiveWindowWidget::create() {
   auto title = std::make_unique<Label>();
   title->setBold(true);
   title->setFontSize(Style::fontSizeBody * m_contentScale);
-  title->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  title->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   title->setMaxWidth(m_maxTitleWidth * m_contentScale);
   title->setMaxLines(1);
   title->setStableBaseline(true);
@@ -72,7 +72,7 @@ void ActiveWindowWidget::doLayout(Renderer& renderer, float containerWidth, floa
   m_icon->setVisible(true);
 
   m_title->setMaxWidth(m_maxTitleWidth * m_contentScale);
-  m_title->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  m_title->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
 
   if (isVertical) {
     m_title->setVisible(false);
@@ -141,7 +141,7 @@ void ActiveWindowWidget::syncState(Renderer& renderer) {
 
   m_title->setMaxWidth(m_maxTitleWidth * m_contentScale);
   m_title->setText(m_lastTitle);
-  m_title->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  m_title->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_title->setVisible(true);
   m_title->measure(renderer);
 

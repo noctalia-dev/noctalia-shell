@@ -1090,7 +1090,7 @@ void PanelManager::applyAttachedDecorationStyle() {
 
   if (m_bgNode != nullptr) {
     auto* bg = static_cast<Box*>(m_bgNode);
-    bg->setFill(roleColor(ColorRole::Surface, m_attachedBackgroundOpacity));
+    bg->setFill(colorSpecFromRole(ColorRole::Surface, m_attachedBackgroundOpacity));
   }
 
   if (m_panelShadowNode != nullptr && m_config != nullptr) {

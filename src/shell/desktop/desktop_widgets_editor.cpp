@@ -378,7 +378,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   root->setFrameSize(static_cast<float>(surface.surface->width()), static_cast<float>(surface.surface->height()));
 
   auto dim = std::make_unique<Box>();
-  dim->setFill(roleColor(ColorRole::SurfaceVariant, 0.14f));
+  dim->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, 0.14f));
   dim->setPosition(0.0f, 0.0f);
   dim->setFrameSize(root->width(), root->height());
   dim->setZIndex(0);
@@ -408,7 +408,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
     for (float x = 0.0f; x <= width; x += cell) {
       auto line = std::make_unique<Box>();
       const bool major = (static_cast<int>(std::lround(x / cell)) % majorInterval) == 0;
-      line->setFill(roleColor(major ? ColorRole::Primary : ColorRole::Outline, major ? 0.18f : 0.08f));
+      line->setFill(colorSpecFromRole(major ? ColorRole::Primary : ColorRole::Outline, major ? 0.18f : 0.08f));
       line->setPosition(x, 0.0f);
       line->setFrameSize(1.0f, height);
       line->setZIndex(2);
@@ -418,7 +418,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
     for (float y = 0.0f; y <= height; y += cell) {
       auto line = std::make_unique<Box>();
       const bool major = (static_cast<int>(std::lround(y / cell)) % majorInterval) == 0;
-      line->setFill(roleColor(major ? ColorRole::Primary : ColorRole::Outline, major ? 0.18f : 0.08f));
+      line->setFill(colorSpecFromRole(major ? ColorRole::Primary : ColorRole::Outline, major ? 0.18f : 0.08f));
       line->setPosition(0.0f, y);
       line->setFrameSize(width, 1.0f);
       line->setZIndex(2);
@@ -507,14 +507,14 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
 
     auto ringShadow = std::make_unique<Box>();
     ringShadow->setBorder(kShadowColor, 1.0f + kShadowExpand * 2.0f);
-    ringShadow->setFill(clearThemeColor());
+    ringShadow->setFill(clearColorSpec());
     ringShadow->setRadius(Style::radiusMd + kRotatePadding + kShadowExpand);
     surface.rotationRingShadow = ringShadow.get();
     surface.selectionFrameTransform->addChild(std::move(ringShadow));
 
     auto ring = std::make_unique<Box>();
-    ring->setBorder(roleColor(ColorRole::Primary), 1.0f);
-    ring->setFill(clearThemeColor());
+    ring->setBorder(colorSpecFromRole(ColorRole::Primary), 1.0f);
+    ring->setFill(clearColorSpec());
     ring->setRadius(Style::radiusMd + kRotatePadding);
     ring->setZIndex(1);
     surface.rotationRing = ring.get();
@@ -549,14 +549,14 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
 
     auto selectionBorderShadow = std::make_unique<Box>();
     selectionBorderShadow->setBorder(kShadowColor, kSelectionStroke + kShadowExpand * 2.0f);
-    selectionBorderShadow->setFill(clearThemeColor());
+    selectionBorderShadow->setFill(clearColorSpec());
     selectionBorderShadow->setRadius(Style::radiusMd + kShadowExpand);
     surface.selectionBorderShadow = selectionBorderShadow.get();
     selectionBorderTransform->addChild(std::move(selectionBorderShadow));
 
     auto selectionBorder = std::make_unique<Box>();
-    selectionBorder->setBorder(roleColor(ColorRole::Primary), kSelectionStroke);
-    selectionBorder->setFill(clearThemeColor());
+    selectionBorder->setBorder(colorSpecFromRole(ColorRole::Primary), kSelectionStroke);
+    selectionBorder->setFill(clearColorSpec());
     selectionBorder->setRadius(Style::radiusMd);
     selectionBorder->setZIndex(1);
     surface.selectionBorder = selectionBorder.get();
@@ -568,14 +568,14 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
 
       auto scaleHandleShadow = std::make_unique<Box>();
       scaleHandleShadow->setBorder(kShadowColor, kShadowExpand);
-      scaleHandleShadow->setFill(clearThemeColor());
+      scaleHandleShadow->setFill(clearColorSpec());
       scaleHandleShadow->setRadius(Style::radiusSm + kShadowExpand);
       scaleHandleShadow->setZIndex(103);
       surface.scaleHandleShadows[i] = scaleHandleShadow.get();
       root->addChild(std::move(scaleHandleShadow));
 
       auto scaleHandle = std::make_unique<Box>();
-      scaleHandle->setFill(roleColor(ColorRole::Primary));
+      scaleHandle->setFill(colorSpecFromRole(ColorRole::Primary));
       scaleHandle->setRadius(Style::radiusSm);
       scaleHandle->setZIndex(104);
       surface.scaleHandles[i] = scaleHandle.get();
@@ -610,8 +610,8 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   toolbar->setAlign(FlexAlign::Center);
   toolbar->setGap(Style::spaceSm);
   toolbar->setPadding(Style::spaceSm, Style::spaceMd);
-  toolbar->setFill(roleColor(ColorRole::Surface, 0.94f));
-  toolbar->setBorder(roleColor(ColorRole::Outline), Style::borderWidth);
+  toolbar->setFill(colorSpecFromRole(ColorRole::Surface, 0.94f));
+  toolbar->setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth);
   toolbar->setRadius(Style::radiusXl);
   toolbar->setZIndex(200);
 
@@ -620,7 +620,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   toolbarHandle->setAlign(FlexAlign::Center);
   toolbarHandle->setGap(Style::spaceXs);
   toolbarHandle->setPadding(Style::spaceXs, Style::spaceSm);
-  toolbarHandle->setFill(roleColor(ColorRole::SurfaceVariant, 0.85f));
+  toolbarHandle->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, 0.85f));
   toolbarHandle->setRadius(Style::radiusLg);
   toolbarHandle->setMinHeight(Style::controlHeightSm);
 

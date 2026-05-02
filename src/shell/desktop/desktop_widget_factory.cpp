@@ -70,14 +70,14 @@ namespace {
     return fallback;
   }
 
-  ThemeColor getThemeColorSetting(const std::unordered_map<std::string, WidgetSettingValue>& settings,
-                                  const std::string& key, const ThemeColor& fallback) {
+  ColorSpec getColorSpecSetting(const std::unordered_map<std::string, WidgetSettingValue>& settings,
+                                const std::string& key, const ColorSpec& fallback) {
     const auto it = settings.find(key);
     if (it == settings.end()) {
       return fallback;
     }
     if (const auto* value = std::get_if<std::string>(&it->second)) {
-      return themeColorFromConfigString(*value);
+      return colorSpecFromConfigString(*value);
     }
     return fallback;
   }
@@ -87,8 +87,8 @@ namespace {
 
   void applyCommonSettings(DesktopWidget& widget, const std::unordered_map<std::string, WidgetSettingValue>& settings) {
     if (getBoolSetting(settings, "background", false)) {
-      const ThemeColor bgColor =
-          getThemeColorSetting(settings, "background_color", roleColor(ColorRole::Surface, 0.8f));
+      const ColorSpec bgColor =
+          getColorSpecSetting(settings, "background_color", colorSpecFromRole(ColorRole::Surface, 0.8f));
       const float radius = getFloatSetting(settings, "background_radius", kDefaultBgRadius);
       const float padding = getFloatSetting(settings, "background_padding", kDefaultBgPadding);
       widget.setBackgroundStyle(bgColor, radius, padding);
@@ -107,10 +107,10 @@ DesktopWidgetFactory::create(const std::string& type,
                              const std::unordered_map<std::string, WidgetSettingValue>& settings,
                              float contentScale) const {
   if (type == "clock") {
-    auto widget =
-        std::make_unique<DesktopClockWidget>(getStringSetting(settings, "format", "{:%H:%M}"),
-                                             getThemeColorSetting(settings, "color", roleColor(ColorRole::OnSurface)),
-                                             getBoolSetting(settings, "shadow", true));
+    auto widget = std::make_unique<DesktopClockWidget>(
+        getStringSetting(settings, "format", "{:%H:%M}"),
+        getColorSpecSetting(settings, "color", colorSpecFromRole(ColorRole::OnSurface)),
+        getBoolSetting(settings, "shadow", true));
     applyCommonSettings(*widget, settings);
     widget->setContentScale(contentScale);
     return widget;
@@ -124,8 +124,8 @@ DesktopWidgetFactory::create(const std::string& type,
     auto widget = std::make_unique<DesktopAudioVisualizerWidget>(
         m_pipewireSpectrum, getFloatSetting(settings, "aspect_ratio", kDefaultDesktopAudioVisualizerAspectRatio),
         getIntSetting(settings, "bands", 32), getBoolSetting(settings, "mirrored", true),
-        getThemeColorSetting(settings, "low_color", roleColor(ColorRole::Primary)),
-        getThemeColorSetting(settings, "high_color", roleColor(ColorRole::Primary)),
+        getColorSpecSetting(settings, "low_color", colorSpecFromRole(ColorRole::Primary)),
+        getColorSpecSetting(settings, "high_color", colorSpecFromRole(ColorRole::Primary)),
         std::clamp(getFloatSetting(settings, "min_value", 0.0f), 0.0f, 1.0f));
     applyCommonSettings(*widget, settings);
     widget->setContentScale(contentScale);
@@ -146,7 +146,7 @@ DesktopWidgetFactory::create(const std::string& type,
       return nullptr;
     }
     auto widget = std::make_unique<DesktopWeatherWidget>(
-        m_weather, getThemeColorSetting(settings, "color", roleColor(ColorRole::OnSurface)),
+        m_weather, getColorSpecSetting(settings, "color", colorSpecFromRole(ColorRole::OnSurface)),
         getBoolSetting(settings, "shadow", true));
     applyCommonSettings(*widget, settings);
     widget->setContentScale(contentScale);
@@ -160,7 +160,8 @@ DesktopWidgetFactory::create(const std::string& type,
     }
     const bool vertical = getStringSetting(settings, "layout", "horizontal") == "vertical";
     auto widget = std::make_unique<DesktopMediaPlayerWidget>(
-        m_mpris, m_httpClient, vertical, getThemeColorSetting(settings, "color", roleColor(ColorRole::OnSurface)),
+        m_mpris, m_httpClient, vertical,
+        getColorSpecSetting(settings, "color", colorSpecFromRole(ColorRole::OnSurface)),
         getBoolSetting(settings, "shadow", true));
     applyCommonSettings(*widget, settings);
     widget->setContentScale(contentScale);
@@ -188,8 +189,8 @@ DesktopWidgetFactory::create(const std::string& type,
       stat2 = parseStat(stat2Str);
     }
     auto widget = std::make_unique<DesktopSysmonWidget>(
-        m_sysmon, stat, stat2, getThemeColorSetting(settings, "color", roleColor(ColorRole::Primary)),
-        getThemeColorSetting(settings, "color2", roleColor(ColorRole::Secondary)),
+        m_sysmon, stat, stat2, getColorSpecSetting(settings, "color", colorSpecFromRole(ColorRole::Primary)),
+        getColorSpecSetting(settings, "color2", colorSpecFromRole(ColorRole::Secondary)),
         getBoolSetting(settings, "show_label", true), getBoolSetting(settings, "shadow", true));
     applyCommonSettings(*widget, settings);
     widget->setContentScale(contentScale);

@@ -66,7 +66,7 @@ void WallpaperPanel::create() {
   root->setAlign(FlexAlign::Stretch);
   root->setGap(Style::spaceSm * scale);
   root->setPadding(Style::spaceMd * scale);
-  root->setFill(roleColor(ColorRole::Surface));
+  root->setFill(colorSpecFromRole(ColorRole::Surface));
   root->setRadius(Style::radiusXl * scale);
   m_rootLayout = root.get();
 
@@ -88,14 +88,14 @@ void WallpaperPanel::create() {
   title->setText(i18n::tr("wallpaper.panel.title"));
   title->setFontSize(Style::fontSizeTitle * scale);
   title->setBold(true);
-  title->setColor(roleColor(ColorRole::Primary));
+  title->setColor(colorSpecFromRole(ColorRole::Primary));
   m_title = title.get();
   headerLeft->addChild(std::move(title));
   header->addChild(std::move(headerLeft));
 
   auto breadcrumb = std::make_unique<Label>();
   breadcrumb->setFontSize(Style::fontSizeBody * scale);
-  breadcrumb->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  breadcrumb->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   breadcrumb->setMaxLines(1);
   m_breadcrumb = breadcrumb.get();
   header->addChild(std::move(breadcrumb));
@@ -166,7 +166,7 @@ void WallpaperPanel::create() {
   auto flattenLabel = std::make_unique<Label>();
   flattenLabel->setText(i18n::tr("wallpaper.panel.flatten"));
   flattenLabel->setFontSize(Style::fontSizeBody * scale);
-  flattenLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  flattenLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   m_flattenLabel = static_cast<Label*>(toolbar->addChild(std::move(flattenLabel)));
 
   auto flatten = std::make_unique<Toggle>();
@@ -335,7 +335,7 @@ void WallpaperPanel::create() {
 
   auto pageLabel = std::make_unique<Label>();
   pageLabel->setFontSize(Style::fontSizeBody * scale);
-  pageLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  pageLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   m_pageLabel = static_cast<Label*>(pagination->addChild(std::move(pageLabel)));
 
   auto next = std::make_unique<Button>();
@@ -553,13 +553,13 @@ std::optional<Color> WallpaperPanel::selectedFillColor() const {
   if (!choice.connector.empty()) {
     for (const auto& ovr : wp.monitorOverrides) {
       if (ovr.match == choice.connector && ovr.fillColor.has_value()) {
-        return resolveThemeColor(*ovr.fillColor);
+        return resolveColorSpec(*ovr.fillColor);
       }
     }
   }
 
   if (wp.fillColor.has_value()) {
-    return resolveThemeColor(*wp.fillColor);
+    return resolveColorSpec(*wp.fillColor);
   }
   return std::nullopt;
 }

@@ -9,7 +9,7 @@ class Label;
 
 class DesktopClockWidget : public DesktopWidget {
 public:
-  DesktopClockWidget(std::string format, ThemeColor color, bool shadow);
+  DesktopClockWidget(std::string format, ColorSpec color, bool shadow);
 
   void create() override;
   [[nodiscard]] bool wantsSecondTicks() const override;
@@ -21,7 +21,7 @@ private:
   void applyShadow();
 
   std::string m_format;
-  ThemeColor m_color;
+  ColorSpec m_color;
   bool m_shadow;
   bool m_showsSeconds = false;
   Label* m_label = nullptr;

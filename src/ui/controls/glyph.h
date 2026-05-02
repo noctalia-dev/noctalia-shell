@@ -17,7 +17,7 @@ public:
   bool setGlyph(std::string_view name);
   bool setCodepoint(char32_t codepoint);
   void setGlyphSize(float size);
-  void setColor(const ThemeColor& color);
+  void setColor(const ColorSpec& color);
   // Explicit fixed color.
   void setColor(const Color& color);
   void setShadow(const Color& color, float offsetX, float offsetY);
@@ -37,7 +37,7 @@ private:
   GlyphNode* m_glyphNode = nullptr;
   float m_baselineOffset = 0.0f;
   float m_logicalFontSize = 0.0f;
-  ThemeColor m_color = roleColor(ColorRole::OnSurface);
+  ColorSpec m_color = colorSpecFromRole(ColorRole::OnSurface);
   Signal<>::ScopedConnection m_paletteConn;
 
   // Memoized measure() inputs — lets repeated layout passes with identical

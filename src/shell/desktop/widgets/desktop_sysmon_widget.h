@@ -20,7 +20,7 @@ enum class DesktopSysmonStat : std::uint8_t { CpuUsage, CpuTemp, RamPct, SwapPct
 class DesktopSysmonWidget : public DesktopWidget {
 public:
   DesktopSysmonWidget(SystemMonitorService* monitor, DesktopSysmonStat stat, std::optional<DesktopSysmonStat> stat2,
-                      ThemeColor lineColor, ThemeColor lineColor2, bool showLabel, bool shadow);
+                      ColorSpec lineColor, ColorSpec lineColor2, bool showLabel, bool shadow);
   ~DesktopSysmonWidget() override;
 
   void create() override;
@@ -43,8 +43,8 @@ private:
   SystemMonitorService* m_monitor;
   DesktopSysmonStat m_stat;
   std::optional<DesktopSysmonStat> m_stat2;
-  ThemeColor m_lineColor;
-  ThemeColor m_lineColor2;
+  ColorSpec m_lineColor;
+  ColorSpec m_lineColor2;
   bool m_showLabel;
   bool m_shadow;
 

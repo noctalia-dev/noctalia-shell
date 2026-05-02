@@ -276,8 +276,8 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
 
   auto background = std::make_unique<Box>();
   background->setCardStyle();
-  background->setFill(roleColor(ColorRole::Surface));
-  background->setBorder(roleColor(ColorRole::Outline), border);
+  background->setFill(colorSpecFromRole(ColorRole::Surface));
+  background->setBorder(colorSpecFromRole(ColorRole::Outline), border);
   background->setRadius(ch * 0.5f);
   background->setSize(cw, ch);
   background->setPosition(cardX, cardY);
@@ -302,7 +302,7 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyphSize(glyphSize(s));
-  glyph->setColor(roleColor(ColorRole::Primary));
+  glyph->setColor(colorSpecFromRole(ColorRole::Primary));
   inst.glyph = glyph.get();
   inst.glyph->setZIndex(1);
   inst.row->addChild(std::move(glyph));
@@ -310,7 +310,7 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   auto value = std::make_unique<Label>();
   value->setBold(true);
   value->setFontSize(valueFontSize(s));
-  value->setColor(roleColor(ColorRole::OnSurface));
+  value->setColor(colorSpecFromRole(ColorRole::OnSurface));
   value->setTextAlign(TextAlign::End);
   // Reserve enough width for "100%" so the progress bar doesn't shrink at max values.
   value->setText("100%");
@@ -321,8 +321,8 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
 
   const float ph = progressHeight(s);
   auto progress = std::make_unique<ProgressBar>();
-  progress->setTrack(roleColor(ColorRole::SurfaceVariant));
-  progress->setFill(roleColor(ColorRole::Primary));
+  progress->setTrack(colorSpecFromRole(ColorRole::SurfaceVariant));
+  progress->setFill(colorSpecFromRole(ColorRole::Primary));
   progress->setFlexGrow(1.0f);
   progress->setSize(0.0f, ph);
   progress->setRadius(ph * 0.5f);

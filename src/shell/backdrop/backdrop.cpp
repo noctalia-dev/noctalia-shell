@@ -334,7 +334,7 @@ void Backdrop::updateRendererState(BackdropInstance& inst) {
   inst.surface->setTintIntensity(ov.tintIntensity);
 
   // Tint color from the current surface role.
-  const Color surface = resolveThemeColor(roleColor(ColorRole::Surface));
+  const Color surface = colorForRole(ColorRole::Surface);
   inst.surface->setTintColor(surface.r, surface.g, surface.b);
 
   if (inst.currentTexture.id != 0) {

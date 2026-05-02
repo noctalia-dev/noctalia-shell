@@ -169,7 +169,7 @@ namespace {
   constexpr Logger kLog("wallpaper");
 
   Color resolveWallpaperFillColor(const WallpaperConfig& config, const WaylandOutput& output) {
-    const ThemeColor* fillColor = nullptr;
+    const ColorSpec* fillColor = nullptr;
     if (const auto* ovr = findWallpaperMonitorOverride(config, output); ovr != nullptr && ovr->fillColor) {
       fillColor = &*ovr->fillColor;
     } else if (config.fillColor) {
@@ -179,7 +179,7 @@ namespace {
     if (fillColor == nullptr) {
       return rgba(0.0f, 0.0f, 0.0f, 0.0f);
     }
-    return resolveThemeColor(*fillColor);
+    return resolveColorSpec(*fillColor);
   }
 
   bool parseColorWallpaperPath(std::string_view path, Color& out) {

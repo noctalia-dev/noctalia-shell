@@ -140,16 +140,16 @@ void Flex::setPadding(float all) { setPadding(all, all, all, all); }
 
 void Flex::setPadding(float vertical, float horizontal) { setPadding(vertical, horizontal, vertical, horizontal); }
 
-void Flex::setFill(const ThemeColor& color) {
+void Flex::setFill(const ColorSpec& color) {
   m_fill = color;
   ensureBackground();
   applyPalette();
 }
 
-void Flex::setFill(const Color& color) { setFill(fixedColor(color)); }
+void Flex::setFill(const Color& color) { setFill(fixedColorSpec(color)); }
 
 void Flex::clearFill() {
-  m_fill = clearThemeColor();
+  m_fill = clearColorSpec();
   if (m_background != nullptr) {
     applyPalette();
   }
@@ -169,7 +169,7 @@ void Flex::setRadii(const Radii& radii) {
   m_background->setStyle(style);
 }
 
-void Flex::setBorder(const ThemeColor& color, float width) {
+void Flex::setBorder(const ColorSpec& color, float width) {
   m_border = color;
   ensureBackground();
   auto style = m_background->style();
@@ -178,10 +178,10 @@ void Flex::setBorder(const ThemeColor& color, float width) {
   applyPalette();
 }
 
-void Flex::setBorder(const Color& color, float width) { setBorder(fixedColor(color), width); }
+void Flex::setBorder(const Color& color, float width) { setBorder(fixedColorSpec(color), width); }
 
 void Flex::clearBorder() {
-  m_border = clearThemeColor();
+  m_border = clearColorSpec();
   if (m_background != nullptr) {
     auto style = m_background->style();
     style.borderWidth = 0.0f;
@@ -195,8 +195,8 @@ void Flex::applyPalette() {
     return;
   }
   auto style = m_background->style();
-  style.fill = resolveThemeColor(m_fill);
-  style.border = resolveThemeColor(m_border);
+  style.fill = resolveColorSpec(m_fill);
+  style.border = resolveColorSpec(m_border);
   style.fillMode = FillMode::Solid;
   m_background->setStyle(style);
 }
@@ -209,8 +209,8 @@ void Flex::setSoftness(float softness) {
 }
 
 void Flex::setCardStyle(float scale) {
-  setFill(roleColor(ColorRole::Surface));
-  setBorder(roleColor(ColorRole::Outline, 0.5f), Style::borderWidth);
+  setFill(colorSpecFromRole(ColorRole::Surface));
+  setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), Style::borderWidth);
   setRadius(Style::radiusXl * scale);
   setPadding(Style::cardPadding * scale);
 }

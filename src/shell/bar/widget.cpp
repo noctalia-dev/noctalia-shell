@@ -10,7 +10,7 @@ namespace {
 
 } // namespace
 
-ThemeColor Widget::widgetForegroundOr(const ThemeColor& fallback) const noexcept {
+ColorSpec Widget::widgetForegroundOr(const ColorSpec& fallback) const noexcept {
   // Per-widget `color` must win over bar/widget `capsule_foreground`, otherwise a bar-level
   // capsule_foreground (e.g. on_primary) overrides explicit `color = primary` after layout.
   if (m_widgetForeground.has_value()) {

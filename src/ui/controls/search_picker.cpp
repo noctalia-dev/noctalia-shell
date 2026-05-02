@@ -47,8 +47,8 @@ SearchPicker::SearchPicker() {
   setAlign(FlexAlign::Stretch);
   setGap(Style::spaceSm);
   setPadding(Style::spaceSm);
-  setFill(roleColor(ColorRole::Surface));
-  setBorder(roleColor(ColorRole::Outline), Style::borderWidth);
+  setFill(colorSpecFromRole(ColorRole::Surface));
+  setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth);
   setRadius(Style::radiusMd);
   setSize(kDefaultWidth, kDefaultHeight);
 
@@ -163,7 +163,7 @@ void SearchPicker::rebuildRows() {
     auto empty = std::make_unique<Label>();
     empty->setText(m_emptyText);
     empty->setFontSize(Style::fontSizeBody);
-    empty->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    empty->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     empty->setStableBaseline(true);
     content->addChild(std::move(empty));
     markLayoutDirty();
@@ -259,13 +259,13 @@ void SearchPicker::applyRowStates() {
     const bool selected = option.value == m_selectedValue;
     const bool enabled = option.enabled;
 
-    row.row->setFill(highlighted ? roleColor(ColorRole::Primary)
-                                 : (selected ? roleColor(ColorRole::Primary, 0.16f) : clearThemeColor()));
-    row.title->setColor(highlighted
-                            ? roleColor(ColorRole::OnPrimary)
-                            : (enabled ? roleColor(ColorRole::OnSurface) : roleColor(ColorRole::OnSurface, 0.55f)));
-    row.detail->setColor(highlighted ? roleColor(ColorRole::OnPrimary, 0.78f)
-                                     : roleColor(ColorRole::OnSurfaceVariant, enabled ? 1.0f : 0.55f));
+    row.row->setFill(highlighted ? colorSpecFromRole(ColorRole::Primary)
+                                 : (selected ? colorSpecFromRole(ColorRole::Primary, 0.16f) : clearColorSpec()));
+    row.title->setColor(highlighted ? colorSpecFromRole(ColorRole::OnPrimary)
+                                    : (enabled ? colorSpecFromRole(ColorRole::OnSurface)
+                                               : colorSpecFromRole(ColorRole::OnSurface, 0.55f)));
+    row.detail->setColor(highlighted ? colorSpecFromRole(ColorRole::OnPrimary, 0.78f)
+                                     : colorSpecFromRole(ColorRole::OnSurfaceVariant, enabled ? 1.0f : 0.55f));
     if (row.area != nullptr) {
       row.area->setEnabled(enabled);
     }

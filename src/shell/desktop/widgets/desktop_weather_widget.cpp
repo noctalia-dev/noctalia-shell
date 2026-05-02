@@ -31,7 +31,7 @@ namespace {
 
 } // namespace
 
-DesktopWeatherWidget::DesktopWeatherWidget(const WeatherService* weather, ThemeColor color, bool shadow)
+DesktopWeatherWidget::DesktopWeatherWidget(const WeatherService* weather, ColorSpec color, bool shadow)
     : m_weather(weather), m_color(std::move(color)), m_shadow(shadow) {}
 
 void DesktopWeatherWidget::create() {

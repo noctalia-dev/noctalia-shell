@@ -52,7 +52,7 @@ LockSurface::LockSurface(WaylandConnection& connection) : Surface(connection) {
   m_clockShadow = static_cast<Label*>(m_root.addChild(std::move(clockShadow)));
 
   auto clock = std::make_unique<Label>();
-  clock->setColor(roleColor(ColorRole::Primary));
+  clock->setColor(colorSpecFromRole(ColorRole::Primary));
   m_clock = static_cast<Label*>(m_root.addChild(std::move(clock)));
 
   auto loginPanel = std::make_unique<RectNode>();
@@ -338,7 +338,7 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
   m_clockShadow->setVisible(m_clockShadowEnabled);
   m_clockShadow->setFontSize(kClockFontSize);
   m_clockShadow->setBold(true);
-  m_clockShadow->setColor(roleColor(ColorRole::Shadow, 0.55f));
+  m_clockShadow->setColor(colorSpecFromRole(ColorRole::Shadow, 0.55f));
   m_clockShadow->setText(m_clock->text());
   m_clockShadow->measure(*renderer);
   m_clockShadow->setPosition(clockX + 3.0f, clockY + 4.0f);
@@ -347,8 +347,8 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
   m_loginPanel->setPosition(panelX, panelY);
   m_loginPanel->setSize(panelWidth, panelHeight);
   m_loginPanel->setStyle(RoundedRectStyle{
-      .fill = resolveThemeColor(roleColor(ColorRole::SurfaceVariant, 0.88f)),
-      .border = resolveThemeColor(roleColor(ColorRole::Outline, 0.95f)),
+      .fill = colorForRole(ColorRole::SurfaceVariant, 0.88f),
+      .border = colorForRole(ColorRole::Outline, 0.95f),
       .fillMode = FillMode::Solid,
       .radius = Style::radiusXl,
       .softness = 1.0f,

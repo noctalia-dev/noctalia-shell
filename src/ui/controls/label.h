@@ -17,7 +17,7 @@ public:
 
   bool setText(std::string_view text);
   void setFontSize(float size);
-  void setColor(const ThemeColor& color);
+  void setColor(const ColorSpec& color);
   // Explicit fixed color.
   void setColor(const Color& color);
   void setMinWidth(float minWidth);
@@ -56,7 +56,7 @@ private:
   TextNode* m_textNode = nullptr;
   float m_minWidth = 0.0f;
   float m_baselineOffset = 0.0f;
-  ThemeColor m_color = roleColor(ColorRole::OnSurface);
+  ColorSpec m_color = colorSpecFromRole(ColorRole::OnSurface);
   Signal<>::ScopedConnection m_paletteConn;
 
   // Memoized measure() inputs — lets repeated layout passes with identical

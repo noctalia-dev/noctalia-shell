@@ -105,7 +105,7 @@ namespace {
 
       auto actionLabel = std::make_unique<Label>();
       actionLabel->setFontSize(kIconSize * scale);
-      actionLabel->setColor(roleColor(ColorRole::OnSurface));
+      actionLabel->setColor(colorSpecFromRole(ColorRole::OnSurface));
       actionLabel->setVisible(false);
       m_actionLabel = static_cast<Label*>(m_row->addChild(std::move(actionLabel)));
 
@@ -116,7 +116,7 @@ namespace {
 
       auto glyph = std::make_unique<Glyph>();
       glyph->setGlyphSize(kIconSize * scale);
-      glyph->setColor(roleColor(ColorRole::OnSurface));
+      glyph->setColor(colorSpecFromRole(ColorRole::OnSurface));
       glyph->setVisible(false);
       m_glyph = static_cast<Glyph*>(m_row->addChild(std::move(glyph)));
 
@@ -130,13 +130,13 @@ namespace {
       auto title = std::make_unique<Label>();
       title->setFontSize(Style::fontSizeBody * scale);
       title->setBold(true);
-      title->setColor(roleColor(ColorRole::OnSurface));
+      title->setColor(colorSpecFromRole(ColorRole::OnSurface));
       m_title = static_cast<Label*>(m_textCol->addChild(std::move(title)));
 
       auto subtitle = std::make_unique<Label>();
       subtitle->setCaptionStyle();
       subtitle->setFontSize(Style::fontSizeCaption * scale);
-      subtitle->setColor(roleColor(ColorRole::OnSurfaceVariant));
+      subtitle->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
       m_subtitle = static_cast<Label*>(m_textCol->addChild(std::move(subtitle)));
 
       setVisible(false);
@@ -257,9 +257,9 @@ namespace {
   private:
     void applyVisualState() {
       if (m_selected) {
-        m_row->setFill(roleColor(ColorRole::SurfaceVariant));
+        m_row->setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
       } else if (m_hovered) {
-        m_row->setFill(roleColor(ColorRole::SurfaceVariant, 0.45f));
+        m_row->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, 0.45f));
       } else {
         m_row->setFill(rgba(0, 0, 0, 0));
       }
@@ -340,7 +340,7 @@ void LauncherPanel::create() {
   m_resultsRoot = static_cast<Node*>(m_list->addChild(std::move(resultsRoot)));
   auto emptyLabel = std::make_unique<Label>();
   emptyLabel->setCaptionStyle();
-  emptyLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  emptyLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   emptyLabel->setVisible(false);
   m_emptyLabel = static_cast<Label*>(m_resultsRoot->addChild(std::move(emptyLabel)));
   container->addChild(std::move(scrollView));

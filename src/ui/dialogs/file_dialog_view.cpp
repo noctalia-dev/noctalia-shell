@@ -99,7 +99,7 @@ void FileDialogView::create() {
   auto title = std::make_unique<Label>();
   title->setFontSize(Style::fontSizeTitle * scale);
   title->setBold(true);
-  title->setColor(roleColor(ColorRole::Primary));
+  title->setColor(colorSpecFromRole(ColorRole::Primary));
   m_titleLabel = static_cast<Label*>(header->addChild(std::move(title)));
 
   header->addChild(std::make_unique<Spacer>());

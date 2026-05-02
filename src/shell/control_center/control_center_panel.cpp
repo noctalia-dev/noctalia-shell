@@ -66,7 +66,7 @@ void ControlCenterPanel::create() {
   sidebar->setGap(Style::spaceXs * scale);
   sidebar->setPadding(Style::spaceSm * scale);
   sidebar->setFillHeight(true);
-  sidebar->setFill(roleColor(ColorRole::Surface));
+  sidebar->setFill(colorSpecFromRole(ColorRole::Surface));
   sidebar->setRadius(Style::radiusXl * scale);
   m_sidebar = sidebar.get();
 
@@ -122,7 +122,7 @@ void ControlCenterPanel::create() {
   title->setText(i18n::tr("control-center.tabs.overview"));
   title->setBold(true);
   title->setFontSize(Style::fontSizeTitle * scale);
-  title->setColor(roleColor(ColorRole::Primary));
+  title->setColor(colorSpecFromRole(ColorRole::Primary));
   title->setFlexGrow(1.0f);
   m_contentTitle = title.get();
   header->addChild(std::move(title));

@@ -36,7 +36,7 @@ public:
   void setControlHeight(float height);
   void setHorizontalPadding(float padding);
   void setGlyphSize(float size);
-  void setOptionIndicators(std::vector<ThemeColor> colors);
+  void setOptionIndicators(std::vector<ColorSpec> colors);
   void setOnSelectionChanged(std::function<void(std::size_t, std::string_view)> callback);
   static void handleGlobalPointerPress(InputArea* target);
   static bool closeAnyOpen();
@@ -109,7 +109,7 @@ private:
   float m_controlHeight = Style::controlHeight;
   float m_horizontalPadding = Style::spaceMd;
   float m_glyphSize = 14.0f;
-  std::vector<ThemeColor> m_indicatorColors;
+  std::vector<ColorSpec> m_indicatorColors;
   Signal<>::ScopedConnection m_paletteConn;
 
   std::function<void(std::size_t, std::string_view)> m_onSelectionChanged;

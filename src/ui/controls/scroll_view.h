@@ -28,10 +28,10 @@ public:
   void setScrollbarVisible(bool visible);
   void setViewportPaddingH(float padding);
   void setViewportPaddingV(float padding);
-  void setFill(const ThemeColor& fill);
+  void setFill(const ColorSpec& fill);
   void setFill(const Color& fill);
   void clearFill();
-  void setBorder(const ThemeColor& border, float width);
+  void setBorder(const ColorSpec& border, float width);
   void setBorder(const Color& border, float width);
   void clearBorder();
   void setRadius(float radius);
@@ -64,10 +64,10 @@ private:
 
   ScrollViewState* m_boundState = nullptr;
   std::function<void(float)> m_onScrollChanged;
-  ThemeColor m_backgroundFill = clearThemeColor();
-  ThemeColor m_backgroundBorder = clearThemeColor();
-  ThemeColor m_scrollbarTrackColor = roleColor(ColorRole::Outline, 0.45f);
-  ThemeColor m_scrollbarThumbColor = roleColor(ColorRole::Primary);
+  ColorSpec m_backgroundFill = clearColorSpec();
+  ColorSpec m_backgroundBorder = clearColorSpec();
+  ColorSpec m_scrollbarTrackColor = colorSpecFromRole(ColorRole::Outline, 0.45f);
+  ColorSpec m_scrollbarThumbColor = colorSpecFromRole(ColorRole::Primary);
   Signal<>::ScopedConnection m_paletteConn;
 
   float m_viewportPaddingH = Style::spaceXs;

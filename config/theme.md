@@ -67,11 +67,12 @@ Picks the generator when `source = "wallpaper"`:
 
 ## Shell Color Roles
 
-User-facing shell color settings use these 16 theme roles:
+User-facing shell color settings can reference these 16 color roles:
 
 `primary`, `on_primary`, `secondary`, `on_secondary`, `tertiary`, `on_tertiary`, `error`, `on_error`, `surface`, `on_surface`, `surface_variant`, `on_surface_variant`, `outline`, `shadow`, `hover`, `on_hover`
 
-Role names are lowercase `snake_case`. Arbitrary hex colors are intentionally not accepted in shell/widget config.
+Role names are lowercase `snake_case`. Config fields parsed as palette colors may also accept hex colors where a fixed
+color is needed; Settings role pickers expose the 16 roles.
 
 ### IPC
 

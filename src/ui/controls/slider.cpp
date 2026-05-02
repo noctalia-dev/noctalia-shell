@@ -25,7 +25,7 @@ namespace {
     };
   }
 
-  Color resolved(ColorRole role, float alpha = 1.0f) { return resolveThemeColor(roleColor(role, alpha)); }
+  Color resolved(ColorRole role, float alpha = 1.0f) { return colorForRole(role, alpha); }
 
 } // namespace
 

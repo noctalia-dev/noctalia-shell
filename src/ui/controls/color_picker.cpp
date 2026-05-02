@@ -72,7 +72,7 @@ ColorPicker::ColorPicker() {
 
   auto svImage = std::make_unique<Image>();
   svImage->setFit(ImageFit::Stretch);
-  svImage->setBorder(roleColor(ColorRole::Outline), Style::borderWidth);
+  svImage->setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth);
   m_svImage = static_cast<Image*>(addChild(std::move(svImage)));
 
   constexpr int kHueSegments = 36;
@@ -107,7 +107,7 @@ ColorPicker::ColorPicker() {
     auto lab = std::make_unique<Label>();
     lab->setText(title);
     lab->setFontSize(Style::fontSizeCaption);
-    lab->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    lab->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     lab->setStableBaseline(true);
     col->addChild(std::move(lab));
     auto in = std::make_unique<Input>();
@@ -222,7 +222,7 @@ void ColorPicker::setScale(float scale) {
     m_hueThumb->setRadius(t * 0.5f);
   }
   if (m_svImage != nullptr) {
-    m_svImage->setBorder(roleColor(ColorRole::Outline), Style::borderWidth * m_scale);
+    m_svImage->setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth * m_scale);
   }
   markLayoutDirty();
 }
@@ -440,7 +440,7 @@ ColorPickerSheet::ColorPickerSheet(float chromeScale) : m_chromeScale(std::max(0
   title->setText(i18n::tr("ui.dialogs.color-picker.title"));
   title->setBold(true);
   title->setFontSize(Style::fontSizeTitle * m_chromeScale);
-  title->setColor(roleColor(ColorRole::Primary));
+  title->setColor(colorSpecFromRole(ColorRole::Primary));
   title->setStableBaseline(true);
   m_title = static_cast<Label*>(header->addChild(std::move(title)));
 

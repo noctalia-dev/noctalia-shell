@@ -38,11 +38,11 @@ struct BarMonitorOverride {
   std::optional<std::vector<std::string>> centerWidgets;
   std::optional<std::vector<std::string>> endWidgets;
   std::optional<bool> widgetCapsuleDefault;
-  std::optional<ThemeColor> widgetCapsuleFill;
+  std::optional<ColorSpec> widgetCapsuleFill;
   bool widgetCapsuleBorderSpecified = false;
-  std::optional<ThemeColor> widgetCapsuleBorder;
-  std::optional<ThemeColor> widgetCapsuleForeground;
-  std::optional<ThemeColor> widgetColor;
+  std::optional<ColorSpec> widgetCapsuleBorder;
+  std::optional<ColorSpec> widgetCapsuleForeground;
+  std::optional<ColorSpec> widgetColor;
   std::optional<double> widgetCapsulePadding;
   std::optional<double> widgetCapsuleOpacity;
 
@@ -76,19 +76,19 @@ struct BarConfig {
                                          "battery", "control-center", "session"};
   // When true, widgets on this bar use a capsule unless `[widget.*] capsule = false`.
   bool widgetCapsuleDefault = false;
-  ThemeColor widgetCapsuleFill = roleColor(ColorRole::SurfaceVariant);
+  ColorSpec widgetCapsuleFill = colorSpecFromRole(ColorRole::SurfaceVariant);
   // When set, bar widgets with capsules use this for icon + primary label color unless overridden per widget.
-  std::optional<ThemeColor> widgetCapsuleForeground;
+  std::optional<ColorSpec> widgetCapsuleForeground;
   // Default icon + primary label color for all widgets on this bar (same as per-widget `color`); per-widget `color`
   // overrides.
-  std::optional<ThemeColor> widgetColor;
+  std::optional<ColorSpec> widgetColor;
   // Inner padding between capsule edge and widget content (logical px), multiplied by widget content scale on the bar.
   float widgetCapsulePadding = Style::barCapsulePadding;
   // Capsule background opacity multiplier (0.0–1.0).
   float widgetCapsuleOpacity = 1.0f;
   // True when `capsule_border` appears under `[bar.*]` (empty value = no outline for widgets that inherit border).
   bool widgetCapsuleBorderSpecified = false;
-  std::optional<ThemeColor> widgetCapsuleBorder;
+  std::optional<ColorSpec> widgetCapsuleBorder;
   std::vector<BarMonitorOverride> monitorOverrides;
 
   bool operator==(const BarConfig&) const = default;
@@ -101,11 +101,11 @@ using ConfigOverrideValue = std::variant<bool, std::int64_t, double, std::string
 // Corner shape (pill), border width, and edge softness are fixed in the shell code; padding is configurable.
 struct WidgetBarCapsuleSpec {
   bool enabled = false;
-  ThemeColor fill = roleColor(ColorRole::SurfaceVariant);
+  ColorSpec fill = colorSpecFromRole(ColorRole::SurfaceVariant);
   // Set only when `capsule_border` is present and non-empty in config; otherwise no outline.
-  std::optional<ThemeColor> border;
+  std::optional<ColorSpec> border;
   // Icon + primary label color when the capsule is visible; unset = widget defaults.
-  std::optional<ThemeColor> foreground;
+  std::optional<ColorSpec> foreground;
   // Inner padding in logical pixels before content-scale (see `capsule_padding` / bar default).
   float padding = Style::barCapsulePadding;
   // Capsule background opacity multiplier (0.0–1.0).
@@ -132,8 +132,8 @@ struct WidgetConfig {
 // Merges `[bar.*]` capsule defaults with `[widget.*]` overrides (see CONFIG.md).
 [[nodiscard]] WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const WidgetConfig* widget);
 
-// Theme role for `[widget.*] color` and other user color strings (same rules as `capsule_fill`).
-[[nodiscard]] ThemeColor themeColorFromConfigString(const std::string& raw);
+// Color spec for `[widget.*] color` and other user color strings (same rules as `capsule_fill`).
+[[nodiscard]] ColorSpec colorSpecFromConfigString(const std::string& raw);
 
 // Shared output selector matching used by monitor-scoped config and IPC selectors.
 // Matches connector name exactly, or a word-boundary token within output description.
@@ -159,7 +159,7 @@ enum class WallpaperTransition : std::uint8_t {
 struct WallpaperMonitorOverride {
   std::string match;
   std::optional<bool> enabled;
-  std::optional<ThemeColor> fillColor;
+  std::optional<ColorSpec> fillColor;
   std::optional<std::string> directory;
   std::optional<std::string> directoryLight;
   std::optional<std::string> directoryDark;
@@ -180,7 +180,7 @@ struct WallpaperAutomationConfig {
 struct WallpaperConfig {
   bool enabled = true;
   WallpaperFillMode fillMode = WallpaperFillMode::Crop;
-  std::optional<ThemeColor> fillColor;
+  std::optional<ColorSpec> fillColor;
   std::vector<WallpaperTransition> transitions = {WallpaperTransition::Fade, WallpaperTransition::Wipe,
                                                   WallpaperTransition::Disc, WallpaperTransition::Stripes,
                                                   WallpaperTransition::Zoom, WallpaperTransition::Honeycomb};

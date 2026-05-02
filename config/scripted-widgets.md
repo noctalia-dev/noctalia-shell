@@ -40,14 +40,14 @@ my_setting = "value"
 | `barWidget.setText(text)` | — | Set the label text |
 | `barWidget.setGlyph(name)` | — | Set the icon by Tabler icon name |
 | `barWidget.setGlyphCodepoint(cp)` | — | Set the icon by Unicode codepoint |
-| `barWidget.setColor(role)` | — | Set the label color by theme role |
-| `barWidget.setGlyphColor(role)` | — | Set the glyph color by theme role |
+| `barWidget.setColor(role)` | — | Set the label color by color role |
+| `barWidget.setGlyphColor(role)` | — | Set the glyph color by color role |
 | `barWidget.setVisible(visible)` | — | Show or hide the entire widget |
 | `barWidget.setUpdateInterval(ms)` | — | Set the `update()` tick interval in milliseconds (default 250, minimum 16) |
 | `barWidget.isVertical()` | `boolean` | Whether the bar is in vertical orientation |
 | `barWidget.getConfig(key, default?)` | `any` | Read a TOML config setting. Returns the typed value or default/nil. |
 
-**Theme color roles:** `primary`, `on_primary`, `secondary`, `on_secondary`, `tertiary`, `on_tertiary`, `error`, `on_error`, `surface`, `on_surface`, `surface_variant`, `on_surface_variant`, `outline`, `shadow`, `hover`, `on_hover`.
+**Color roles:** `primary`, `on_primary`, `secondary`, `on_secondary`, `tertiary`, `on_tertiary`, `error`, `on_error`, `surface`, `on_surface`, `surface_variant`, `on_surface_variant`, `outline`, `shadow`, `hover`, `on_hover`.
 
 ### Lua callbacks
 

@@ -11,7 +11,7 @@ class Separator : public Node {
 public:
   Separator();
 
-  void setColor(const ThemeColor& color);
+  void setColor(const ColorSpec& color);
   void setThickness(float thickness);
 
 protected:
@@ -22,7 +22,7 @@ private:
 
   RectNode* m_rectStart = nullptr;
   RectNode* m_rectEnd = nullptr;
-  ThemeColor m_color = roleColor(ColorRole::Outline);
+  ColorSpec m_color = colorSpecFromRole(ColorRole::Outline);
   float m_thickness = 1.0f;
   Signal<>::ScopedConnection m_paletteConn;
 };

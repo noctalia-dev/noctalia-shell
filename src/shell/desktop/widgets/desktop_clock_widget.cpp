@@ -27,7 +27,7 @@ namespace {
 
 } // namespace
 
-DesktopClockWidget::DesktopClockWidget(std::string format, ThemeColor color, bool shadow)
+DesktopClockWidget::DesktopClockWidget(std::string format, ColorSpec color, bool shadow)
     : m_format(std::move(format)), m_color(std::move(color)), m_shadow(shadow),
       m_showsSeconds(formatShowsSeconds(m_format)) {}
 

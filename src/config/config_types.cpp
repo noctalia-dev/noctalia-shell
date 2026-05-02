@@ -10,24 +10,24 @@
 namespace {
   constexpr Logger kLog("config");
 
-  ThemeColor themeColorFromRoleString(const std::string& raw) {
+  ColorSpec parseColorSpecString(const std::string& raw) {
     const std::string trimmed = StringUtils::trim(raw);
     Color fixed;
     if (tryParseHexColor(trimmed, fixed)) {
-      return fixedColor(fixed);
+      return fixedColorSpec(fixed);
     }
     if (auto role = colorRoleFromToken(trimmed)) {
-      return roleColor(*role);
+      return colorSpecFromRole(*role);
     }
-    kLog.warn("unknown theme color role \"{}\", using surface_variant", raw);
-    return roleColor(ColorRole::SurfaceVariant);
+    kLog.warn("unknown color role \"{}\", using surface_variant", raw);
+    return colorSpecFromRole(ColorRole::SurfaceVariant);
   }
 
-  std::optional<ThemeColor> optionalCapsuleBorder(const std::string& raw) {
+  std::optional<ColorSpec> optionalCapsuleBorder(const std::string& raw) {
     if (StringUtils::trim(raw).empty()) {
       return std::nullopt;
     }
-    return themeColorFromRoleString(raw);
+    return parseColorSpecString(raw);
   }
 
 } // namespace
@@ -113,7 +113,7 @@ WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const Wid
   }
 
   if (widgetHasFillKey) {
-    spec.fill = themeColorFromRoleString(widget->getString("capsule_fill", ""));
+    spec.fill = parseColorSpecString(widget->getString("capsule_fill", ""));
   } else {
     spec.fill = bar.widgetCapsuleFill;
   }
@@ -138,7 +138,7 @@ WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const Wid
   }
 
   if (widget != nullptr && widget->hasSetting("capsule_foreground")) {
-    spec.foreground = themeColorFromRoleString(widget->getString("capsule_foreground", ""));
+    spec.foreground = parseColorSpecString(widget->getString("capsule_foreground", ""));
   } else if (bar.widgetCapsuleForeground.has_value()) {
     spec.foreground = bar.widgetCapsuleForeground;
   } else {
@@ -147,7 +147,7 @@ WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const Wid
   return spec;
 }
 
-ThemeColor themeColorFromConfigString(const std::string& raw) { return themeColorFromRoleString(raw); }
+ColorSpec colorSpecFromConfigString(const std::string& raw) { return parseColorSpecString(raw); }
 
 std::optional<HookKind> hookKindFromKey(std::string_view key) { return enumFromKey(kHookKinds, key); }
 

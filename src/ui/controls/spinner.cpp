@@ -27,12 +27,12 @@ Spinner::Spinner() {
   updateGeometry();
 }
 
-void Spinner::setColor(const ThemeColor& color) {
+void Spinner::setColor(const ColorSpec& color) {
   m_color = color;
   applyPalette();
 }
 
-void Spinner::setColor(const Color& color) { setColor(fixedColor(color)); }
+void Spinner::setColor(const Color& color) { setColor(fixedColorSpec(color)); }
 
 void Spinner::setSpinnerSize(float size) {
   m_spinnerSize = size;
@@ -59,7 +59,7 @@ void Spinner::stop() {
 
 void Spinner::applyPalette() {
   if (m_spinnerNode != nullptr) {
-    m_spinnerNode->setColor(resolveThemeColor(m_color));
+    m_spinnerNode->setColor(resolveColorSpec(m_color));
   }
 }
 

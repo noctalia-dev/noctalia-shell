@@ -90,7 +90,7 @@ All desktop widget types support an optional rounded background rectangle:
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `background` | bool | `false` | Show a filled rounded rectangle behind the widget |
-| `background_color` | string | `"surface"` (80% opacity) | Background fill theme role |
+| `background_color` | string | `"surface"` (80% opacity) | Background fill color role or hex color |
 | `background_radius` | float | `12.0` | Corner radius in logical pixels |
 | `background_padding` | float | `10.0` | Padding between content and background edge |
 
@@ -104,7 +104,7 @@ The `clock`, `weather`, `media_player`, and `sysmon` widget types additionally s
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `color` | string | `"on_surface"` | Text/glyph theme role (e.g. `"primary"`, `"tertiary"`) |
+| `color` | string | `"on_surface"` | Text/glyph color role or hex color (e.g. `"primary"`, `"tertiary"`) |
 | `shadow` | bool | `true` | Draw a drop shadow behind text and glyphs for readability on wallpapers |
 
 ```toml
@@ -168,8 +168,8 @@ high_color   = "secondary"
 | `aspect_ratio` | float | `2.5` | Width-to-height ratio |
 | `min_value` | float | `0.02` | Minimum displayed band height for widgets created in edit mode; omit or set `0.0` for no floor |
 | `mirrored` | bool | `true` | Mirror the spectrum horizontally |
-| `low_color` | string | `"primary"` | Gradient low-end theme role |
-| `high_color` | string | `"primary"` | Gradient high-end theme role |
+| `low_color` | string | `"primary"` | Gradient low-end color role or hex color |
+| `high_color` | string | `"primary"` | Gradient high-end color role or hex color |
 
 ---
 
@@ -274,6 +274,6 @@ background = true
 |---------|------|---------|-------------|
 | `stat` | string | `"cpu_usage"` | Primary stat: `"cpu_usage"`, `"cpu_temp"`, `"ram_pct"`, `"swap_pct"` |
 | `stat2` | string | — | Optional secondary stat (same values as `stat`). Omit for single curve. |
-| `color` | string | `"primary"` | Primary line theme role |
-| `color2` | string | `"secondary"` | Secondary line color (used when `stat2` is set) |
+| `color` | string | `"primary"` | Primary line color role or hex color |
+| `color2` | string | `"secondary"` | Secondary line color role or hex color (used when `stat2` is set) |
 | `show_label` | bool | `true` | Show the current value as text next to the icon |

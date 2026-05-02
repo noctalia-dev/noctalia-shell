@@ -19,7 +19,7 @@ void SettingsWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph(m_barGlyphId.empty() ? "settings" : m_barGlyphId);
   glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
-  glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 
@@ -31,7 +31,7 @@ void SettingsWidget::doLayout(Renderer& renderer, float /*containerWidth*/, floa
     return;
   }
   m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
-  m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
   auto* node = root();
   if (node != nullptr) {

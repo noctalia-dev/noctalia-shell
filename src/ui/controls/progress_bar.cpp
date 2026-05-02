@@ -15,33 +15,33 @@ ProgressBar::ProgressBar() {
   auto fill = std::make_unique<RectNode>();
   m_fill = static_cast<RectNode*>(addChild(std::move(fill)));
 
-  setTrack(roleColor(ColorRole::SurfaceVariant));
-  setFill(roleColor(ColorRole::Primary));
+  setTrack(colorSpecFromRole(ColorRole::SurfaceVariant));
+  setFill(colorSpecFromRole(ColorRole::Primary));
   setRadius(Style::radiusSm);
   m_paletteConn = paletteChanged().connect([this] { applyPalette(); });
 }
 
-void ProgressBar::setFill(const ThemeColor& color) { setFillColor(color); }
+void ProgressBar::setFill(const ColorSpec& color) { setFillColor(color); }
 
-void ProgressBar::setFillColor(const ThemeColor& color) {
+void ProgressBar::setFillColor(const ColorSpec& color) {
   m_fillColor = color;
   applyPalette();
 }
 
 void ProgressBar::setFill(const Color& color) { setFillColor(color); }
 
-void ProgressBar::setFillColor(const Color& color) { setFillColor(fixedColor(color)); }
+void ProgressBar::setFillColor(const Color& color) { setFillColor(fixedColorSpec(color)); }
 
-void ProgressBar::setTrack(const ThemeColor& color) { setTrackColor(color); }
+void ProgressBar::setTrack(const ColorSpec& color) { setTrackColor(color); }
 
-void ProgressBar::setTrackColor(const ThemeColor& color) {
+void ProgressBar::setTrackColor(const ColorSpec& color) {
   m_trackColor = color;
   applyPalette();
 }
 
 void ProgressBar::setTrack(const Color& color) { setTrackColor(color); }
 
-void ProgressBar::setTrackColor(const Color& color) { setTrackColor(fixedColor(color)); }
+void ProgressBar::setTrackColor(const Color& color) { setTrackColor(fixedColorSpec(color)); }
 
 void ProgressBar::setRadius(float radius) {
   auto style = m_track->style();
@@ -78,12 +78,12 @@ void ProgressBar::setOrientation(ProgressBarOrientation orientation) {
 
 void ProgressBar::applyPalette() {
   auto trackStyle = m_track->style();
-  trackStyle.fill = resolveThemeColor(m_trackColor);
+  trackStyle.fill = resolveColorSpec(m_trackColor);
   trackStyle.fillMode = FillMode::Solid;
   m_track->setStyle(trackStyle);
 
   auto fillStyle = m_fill->style();
-  fillStyle.fill = resolveThemeColor(m_fillColor);
+  fillStyle.fill = resolveColorSpec(m_fillColor);
   fillStyle.fillMode = FillMode::Solid;
   m_fill->setStyle(fillStyle);
 }

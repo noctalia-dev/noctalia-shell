@@ -34,7 +34,7 @@ directory_dark  = "/home/user/Wallpapers/Vertical/Dark"
 
 The wallpaper picker panel lists images in `directory` as a grid of thumbnails. Selecting a monitor in the panel toolbar switches to that monitor's override directory (falling back to the base `directory`). Clicking a tile writes the path to `state.toml` and applies it immediately. Picking a wallpaper while **ALL** is selected applies it to every connected output. Picking a solid color stores it as a wallpaper source path such as `color:#FF00FF`, so it uses the same transition shader pipeline as image wallpapers.
 
-`fill_color` accepts hex colors (`#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA`) or theme role names such as `surface` and `primary`. It is used behind image wallpapers and in uncovered areas for `center`/`fit`.
+`fill_color` accepts hex colors (`#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA`) or color role names such as `surface` and `primary`. It is used behind image wallpapers and in uncovered areas for `center`/`fit`.
 
 Monitor overrides may also set `fill_color`.
 

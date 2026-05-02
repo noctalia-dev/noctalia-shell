@@ -64,7 +64,7 @@ void DesktopWidget::setRoot(std::unique_ptr<Node> root) {
   }
 }
 
-void DesktopWidget::setBackgroundStyle(const ThemeColor& color, float radius, float padding) {
+void DesktopWidget::setBackgroundStyle(const ColorSpec& color, float radius, float padding) {
   m_bgEnabled = true;
   m_bgColor = color;
   m_bgRadius = radius;

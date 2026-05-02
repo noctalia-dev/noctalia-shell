@@ -241,14 +241,14 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
     title->setText(i18n::tr("control-center.notifications.empty-title"));
     title->setBold(true);
     title->setFontSize(Style::fontSizeBody * scale);
-    title->setColor(roleColor(ColorRole::OnSurface));
+    title->setColor(colorSpecFromRole(ColorRole::OnSurface));
     empty->addChild(std::move(title));
 
     auto body = std::make_unique<Label>();
     body->setText(i18n::tr("control-center.notifications.empty-body"));
     body->setCaptionStyle();
     body->setFontSize(Style::fontSizeCaption * scale);
-    body->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    body->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     empty->addChild(std::move(body));
 
     m_list->addChild(std::move(empty));
@@ -288,7 +288,7 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
     meta->setText(it->notification.appName + " • " + statusText(*it));
     meta->setCaptionStyle();
     meta->setFontSize(Style::fontSizeCaption * scale);
-    meta->setColor(roleColor(statusColorRole(*it)));
+    meta->setColor(colorSpecFromRole(statusColorRole(*it)));
     meta->setMaxWidth(metaTextWidth);
     meta->setFlexGrow(1.0f);
     meta->measure(renderer);
@@ -339,7 +339,7 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
       auto body = std::make_unique<Label>();
       body->setText(bodyText);
       body->setFontSize(Style::fontSizeCaption * scale);
-      body->setColor(roleColor(ColorRole::OnSurfaceVariant));
+      body->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
       body->setMaxWidth(cardTextWidth);
       body->setMaxLines(expanded ? kExpandedMaxLines : kBodyMaxLines);
       body->measure(renderer);

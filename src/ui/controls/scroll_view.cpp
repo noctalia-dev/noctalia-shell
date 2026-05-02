@@ -155,28 +155,28 @@ void ScrollView::setScrollbarVisible(bool visible) {
   markLayoutDirty();
 }
 
-void ScrollView::setFill(const ThemeColor& fill) {
+void ScrollView::setFill(const ColorSpec& fill) {
   m_backgroundFill = fill;
   applyPalette();
 }
 
-void ScrollView::setFill(const Color& fill) { setFill(fixedColor(fill)); }
+void ScrollView::setFill(const Color& fill) { setFill(fixedColorSpec(fill)); }
 
 void ScrollView::clearFill() {
-  m_backgroundFill = clearThemeColor();
+  m_backgroundFill = clearColorSpec();
   applyPalette();
 }
 
-void ScrollView::setBorder(const ThemeColor& border, float width) {
+void ScrollView::setBorder(const ColorSpec& border, float width) {
   m_backgroundBorder = border;
   m_backgroundBorderWidth = width;
   applyPalette();
 }
 
-void ScrollView::setBorder(const Color& border, float width) { setBorder(fixedColor(border), width); }
+void ScrollView::setBorder(const Color& border, float width) { setBorder(fixedColorSpec(border), width); }
 
 void ScrollView::clearBorder() {
-  m_backgroundBorder = clearThemeColor();
+  m_backgroundBorder = clearColorSpec();
   m_backgroundBorderWidth = 0.0f;
   applyPalette();
 }
@@ -192,8 +192,8 @@ void ScrollView::setSoftness(float softness) {
 }
 
 void ScrollView::setCardStyle(float scale) {
-  setFill(roleColor(ColorRole::Surface));
-  setBorder(roleColor(ColorRole::Outline, 0.5f), Style::borderWidth);
+  setFill(colorSpecFromRole(ColorRole::Surface));
+  setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), Style::borderWidth);
   setRadius(Style::radiusXl * scale);
   setViewportPaddingH(Style::cardPadding * scale);
   setViewportPaddingV(Style::cardPadding * scale);
@@ -226,15 +226,15 @@ float ScrollView::contentViewportWidth() const noexcept {
 
 void ScrollView::applyPalette() {
   if (m_scrollbarTrack != nullptr) {
-    m_scrollbarTrack->setStyle(makeSolid(resolveThemeColor(m_scrollbarTrackColor), kScrollbarWidth * 0.5f));
+    m_scrollbarTrack->setStyle(makeSolid(resolveColorSpec(m_scrollbarTrackColor), kScrollbarWidth * 0.5f));
   }
   if (m_scrollbarThumb != nullptr) {
-    m_scrollbarThumb->setStyle(makeSolid(resolveThemeColor(m_scrollbarThumbColor), kScrollbarWidth * 0.5f));
+    m_scrollbarThumb->setStyle(makeSolid(resolveColorSpec(m_scrollbarThumbColor), kScrollbarWidth * 0.5f));
   }
   if (m_background != nullptr) {
     m_background->setStyle(RoundedRectStyle{
-        .fill = resolveThemeColor(m_backgroundFill),
-        .border = resolveThemeColor(m_backgroundBorder),
+        .fill = resolveColorSpec(m_backgroundFill),
+        .border = resolveColorSpec(m_backgroundBorder),
         .fillMode = FillMode::Solid,
         .radius = m_backgroundRadius,
         .softness = m_backgroundSoftness,

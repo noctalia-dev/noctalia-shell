@@ -32,14 +32,14 @@ void Label::setFontSize(float size) {
   m_measureCached = false;
 }
 
-void Label::setColor(const ThemeColor& color) {
+void Label::setColor(const ColorSpec& color) {
   m_color = color;
   applyPalette();
 }
 
-void Label::setColor(const Color& color) { setColor(fixedColor(color)); }
+void Label::setColor(const Color& color) { setColor(fixedColorSpec(color)); }
 
-void Label::applyPalette() { m_textNode->setColor(resolveThemeColor(m_color)); }
+void Label::applyPalette() { m_textNode->setColor(resolveColorSpec(m_color)); }
 
 void Label::setMinWidth(float minWidth) {
   if (m_minWidth == minWidth) {
@@ -123,7 +123,7 @@ void Label::doArrange(Renderer& renderer, const LayoutRect& rect) {
 
 void Label::setCaptionStyle() {
   setFontSize(Style::fontSizeCaption);
-  setColor(roleColor(ColorRole::OnSurface));
+  setColor(colorSpecFromRole(ColorRole::OnSurface));
 }
 
 void Label::measure(Renderer& renderer) {

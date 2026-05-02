@@ -69,21 +69,21 @@ void SysmonWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph(glyphName(m_stat));
   glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
-  glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   container->addChild(std::move(glyph));
 
   if (m_displayMode == SysmonDisplayMode::Graph) {
     auto chartBg = std::make_unique<RectNode>();
     RoundedRectStyle bgStyle;
-    bgStyle.fill = resolveColorRole(ColorRole::SurfaceVariant);
+    bgStyle.fill = colorForRole(ColorRole::SurfaceVariant);
     bgStyle.radius = Style::radiusSm;
     bgStyle.softness = 0.5f;
     chartBg->setStyle(bgStyle);
     m_chartBg = static_cast<RectNode*>(container->addChild(std::move(chartBg)));
 
     auto graph = std::make_unique<GraphNode>();
-    graph->setLineColor1(resolveColorRole(ColorRole::Primary));
+    graph->setLineColor1(colorForRole(ColorRole::Primary));
     graph->setLineWidth(kGraphLineWidth * m_contentScale);
     graph->setGraphFillOpacity(0.15f);
     m_graphNode = static_cast<GraphNode*>(m_chartBg->addChild(std::move(graph)));
@@ -91,8 +91,8 @@ void SysmonWidget::create() {
 
   if (m_displayMode == SysmonDisplayMode::Gauge) {
     auto gauge = std::make_unique<ProgressBar>();
-    gauge->setFill(roleColor(ColorRole::Primary));
-    gauge->setTrackColor(roleColor(ColorRole::OnSurface, 0.25f));
+    gauge->setFill(colorSpecFromRole(ColorRole::Primary));
+    gauge->setTrackColor(colorSpecFromRole(ColorRole::OnSurface, 0.25f));
     gauge->setProgress(0.0f);
     m_gauge = static_cast<ProgressBar*>(container->addChild(std::move(gauge)));
   }
@@ -144,7 +144,7 @@ void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float cont
   const bool orientationChanged = m_isVerticalBar != isVerticalBar;
   m_isVerticalBar = isVerticalBar;
 
-  m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
   const float glyphH = m_glyph->height();
   const float gap = Style::spaceXs * m_contentScale;
@@ -155,7 +155,7 @@ void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float cont
       syncLabelText(m_lastRawValue.empty() ? formatValue() : m_lastRawValue);
     }
     m_label->setFontSize((verticalBar ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
-    m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+    m_label->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
     m_label->measure(renderer);
   }
   const float labelW = m_label != nullptr ? m_label->width() : 0.0f;

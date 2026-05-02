@@ -154,7 +154,7 @@ std::unique_ptr<Flex> CalendarTab::create() {
   month->setBold(true);
   month->setFontSize((Style::fontSizeTitle + Style::spaceXs) * scale);
   month->setMaxLines(1);
-  month->setColor(roleColor(ColorRole::OnSurface));
+  month->setColor(colorSpecFromRole(ColorRole::OnSurface));
   m_monthLabel = month.get();
   monthWrap->addChild(std::move(month));
 
@@ -162,7 +162,7 @@ std::unique_ptr<Flex> CalendarTab::create() {
   monthSub->setText(i18n::tr("control-center.calendar.today"));
   monthSub->setCaptionStyle();
   monthSub->setFontSize(Style::fontSizeCaption * scale);
-  monthSub->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  monthSub->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   monthSub->setMaxLines(1);
   m_monthSubLabel = monthSub.get();
   monthWrap->addChild(std::move(monthSub));
@@ -207,13 +207,13 @@ std::unique_ptr<Flex> CalendarTab::create() {
   tasksTitle->setText(i18n::tr("control-center.calendar.tasks"));
   tasksTitle->setBold(true);
   tasksTitle->setFontSize(Style::fontSizeTitle * scale);
-  tasksTitle->setColor(roleColor(ColorRole::OnSurface));
+  tasksTitle->setColor(colorSpecFromRole(ColorRole::OnSurface));
   tasksCard->addChild(std::move(tasksTitle));
 
   auto tasksBody = std::make_unique<Label>();
   tasksBody->setText(i18n::tr("control-center.calendar.no-tasks"));
   tasksBody->setFontSize(Style::fontSizeBody * scale);
-  tasksBody->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  tasksBody->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   tasksBody->setMaxLines(3);
   tasksCard->addChild(std::move(tasksBody));
 
@@ -357,7 +357,7 @@ void CalendarTab::rebuild() {
     dayLabel->setFontSize((Style::fontSizeCaption + 1.0f) * scale);
     dayLabel->setBold(true);
     dayLabel->setStableBaseline(true);
-    dayLabel->setColor(roleColor(i >= 5 ? ColorRole::Secondary : ColorRole::OnSurfaceVariant));
+    dayLabel->setColor(colorSpecFromRole(i >= 5 ? ColorRole::Secondary : ColorRole::OnSurfaceVariant));
     dayCell->addChild(std::move(dayLabel));
 
     weekdayRow->addChild(std::move(dayCell));
@@ -398,17 +398,17 @@ void CalendarTab::rebuild() {
     if (index < firstWeekdayMonBased) {
       const int leadingDay = previousMonthDays - firstWeekdayMonBased + index + 1;
       dayButton->setText(std::to_string(leadingDay));
-      dayButton->label()->setColor(roleColor(ColorRole::OnSurfaceVariant, 0.75f));
+      dayButton->label()->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.75f));
     } else if (day > monthDays) {
       dayButton->setText(std::to_string(trailingDay));
-      dayButton->label()->setColor(roleColor(ColorRole::OnSurfaceVariant, 0.75f));
+      dayButton->label()->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.75f));
       ++trailingDay;
     } else {
       dayButton->setText(std::to_string(day));
       if (state.isCurrentMonth && day == state.today) {
         dayButton->setVariant(ButtonVariant::Accent);
       } else {
-        dayButton->label()->setColor(roleColor(ColorRole::OnSurface));
+        dayButton->label()->setColor(colorSpecFromRole(ColorRole::OnSurface));
       }
       ++day;
     }

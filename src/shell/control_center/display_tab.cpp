@@ -84,7 +84,7 @@ std::unique_ptr<Flex> DisplayTab::create() {
   auto emptyLabel = std::make_unique<Label>();
   emptyLabel->setText(i18n::tr("control-center.display.no-displays"));
   emptyLabel->setFontSize(Style::fontSizeBody * scale);
-  emptyLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  emptyLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   emptyState->addChild(std::move(emptyLabel));
   m_emptyState = emptyState.get();
   tab->addChild(std::move(emptyState));
@@ -245,7 +245,7 @@ void DisplayTab::rebuildCards(Renderer& /*renderer*/) {
     auto icon = std::make_unique<Glyph>();
     icon->setGlyph("device-desktop");
     icon->setGlyphSize(Style::fontSizeTitle * scale);
-    icon->setColor(roleColor(ColorRole::OnSurface));
+    icon->setColor(colorSpecFromRole(ColorRole::OnSurface));
     auto* iconPtr = icon.get();
     headerRow->addChild(std::move(icon));
 
@@ -253,7 +253,7 @@ void DisplayTab::rebuildCards(Renderer& /*renderer*/) {
     nameLabel->setText(display.label);
     nameLabel->setBold(true);
     nameLabel->setFontSize(Style::fontSizeBody * scale);
-    nameLabel->setColor(roleColor(ColorRole::OnSurface));
+    nameLabel->setColor(colorSpecFromRole(ColorRole::OnSurface));
     nameLabel->setFlexGrow(1.0f);
     auto* nameLabelPtr = nameLabel.get();
     headerRow->addChild(std::move(nameLabel));
@@ -264,7 +264,7 @@ void DisplayTab::rebuildCards(Renderer& /*renderer*/) {
     const std::string infoText = formatDisplayInfo(display);
     detailsLabel->setText(infoText);
     detailsLabel->setFontSize(Style::fontSizeCaption * scale);
-    detailsLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    detailsLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     auto* detailsLabelPtr = detailsLabel.get();
     card->addChild(std::move(detailsLabel));
 
@@ -277,7 +277,7 @@ void DisplayTab::rebuildCards(Renderer& /*renderer*/) {
     auto sunIcon = std::make_unique<Glyph>();
     sunIcon->setGlyph("brightness-low");
     sunIcon->setGlyphSize(Style::fontSizeTitle * scale);
-    sunIcon->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    sunIcon->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     sliderRow->addChild(std::move(sunIcon));
 
     auto slider = std::make_unique<Slider>();
@@ -317,13 +317,13 @@ void DisplayTab::rebuildCards(Renderer& /*renderer*/) {
     auto sunHighIcon = std::make_unique<Glyph>();
     sunHighIcon->setGlyph("brightness-high");
     sunHighIcon->setGlyphSize(Style::fontSizeTitle * scale);
-    sunHighIcon->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    sunHighIcon->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     sliderRow->addChild(std::move(sunHighIcon));
 
     auto valueLabel = std::make_unique<Label>();
     valueLabel->setText(formatBrightnessValue(display, display.brightness));
     valueLabel->setFontSize(Style::fontSizeBody * scale);
-    valueLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    valueLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     valueLabel->setMinWidth(Style::controlHeightLg * scale);
     auto* valueLabelPtr = valueLabel.get();
     sliderRow->addChild(std::move(valueLabel));
