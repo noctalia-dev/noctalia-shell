@@ -36,6 +36,7 @@ private:
   GLint m_logicalInsetLocation = -1;
   GLint m_radiiLocation = -1;
   GLint m_softnessLocation = -1;
+  GLint m_invertFillLocation = -1;
   GLint m_borderWidthLocation = -1;
   GLint m_outerShadowLocation = -1;
   GLint m_shadowCutoutOffsetLocation = -1;

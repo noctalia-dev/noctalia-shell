@@ -323,6 +323,7 @@ void Application::initServices() {
     m_bar.onOutputChange();
     m_dock.onOutputChange();
     m_desktopWidgetsController.onOutputChange();
+    m_screenCorners.onOutputChange();
     m_lockScreen.onOutputChange();
   });
   m_clipboardService.setChangeCallback([this]() {
@@ -825,6 +826,9 @@ void Application::initUi() {
     m_brightnessOsd.primeFromService(*m_brightnessService);
   }
 
+  m_screenCorners.initialize(m_wayland, &m_configService, &m_renderContext);
+  m_screenCorners.onConfigReload();
+
   m_trayMenu.initialize(m_wayland, &m_configService, m_trayService.get(), &m_renderContext);
 
   m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get(),
@@ -843,6 +847,7 @@ void Application::initUi() {
   // When config reloads, refresh any open panel: bar-driven attached decoration restyle and
   // shell-driven compositor blur.
   m_configService.addReloadCallback([this]() { m_panelManager.onConfigReloaded(); });
+  m_configService.addReloadCallback([this]() { m_screenCorners.onConfigReload(); });
 
   m_layerPopupHosts.registerHost(
       [this](wl_surface* surface) { return m_panelManager.popupParentContextForSurface(surface); },

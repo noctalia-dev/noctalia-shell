@@ -487,6 +487,15 @@ namespace settings {
     entries.push_back(makeEntry("desktop", "widgets", tr("settings.schema.desktop.widgets.label"),
                                 tr("settings.schema.desktop.widgets.description"), {"desktop_widgets", "enabled"},
                                 ToggleSetting{cfg.desktopWidgets.enabled}, "desktop"));
+    entries.push_back(makeEntry("desktop", "screen-corners", tr("settings.schema.desktop.screen-corners-enabled.label"),
+                                tr("settings.schema.desktop.screen-corners-enabled.description"),
+                                {"shell", "screen_corners", "enabled"}, ToggleSetting{cfg.shell.screenCorners.enabled},
+                                "screen corners rounded"));
+    entries.push_back(
+        makeEntry("desktop", "screen-corners", tr("settings.schema.desktop.screen-corners-size.label"),
+                  tr("settings.schema.desktop.screen-corners-size.description"), {"shell", "screen_corners", "size"},
+                  SliderSetting{static_cast<float>(cfg.shell.screenCorners.size), 1.0f, 100.0f, 1.0f, true},
+                  "screen corners radius"));
 
     // Shell
     entries.push_back(makeEntry("shell", "profile", tr("settings.schema.shell.avatar-path.label"),

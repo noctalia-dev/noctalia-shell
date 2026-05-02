@@ -42,6 +42,7 @@ uniform vec4 u_corner_shapes; // tl, tr, br, bl: 0 = convex, 1 = concave
 uniform vec4 u_logical_inset; // left, top, right, bottom
 uniform vec4 u_radii;  // tl, tr, br, bl
 uniform float u_softness;
+uniform int u_invert_fill;
 uniform float u_border_width;
 uniform int u_outer_shadow;
 uniform vec2 u_shadow_cutout_offset;
@@ -281,6 +282,7 @@ void main() {
     vec2 outer = shape_distance_with_corner(local_point, u_rect_size, u_radii, u_corner_shapes, u_logical_inset);
     float outer_distance = outer.x;
     float outer_coverage = coverage_for(outer, aa);
+    if (u_invert_fill == 1) outer_coverage = 1.0 - outer_coverage;
 
     if (u_outer_shadow == 1) {
         float cutout_aa = 0.85;
@@ -381,6 +383,7 @@ void RectProgram::ensureInitialized() {
   m_logicalInsetLocation = glGetUniformLocation(m_program.id(), "u_logical_inset");
   m_radiiLocation = glGetUniformLocation(m_program.id(), "u_radii");
   m_softnessLocation = glGetUniformLocation(m_program.id(), "u_softness");
+  m_invertFillLocation = glGetUniformLocation(m_program.id(), "u_invert_fill");
   m_borderWidthLocation = glGetUniformLocation(m_program.id(), "u_border_width");
   m_outerShadowLocation = glGetUniformLocation(m_program.id(), "u_outer_shadow");
   m_shadowCutoutOffsetLocation = glGetUniformLocation(m_program.id(), "u_shadow_cutout_offset");
@@ -395,9 +398,9 @@ void RectProgram::ensureInitialized() {
   if (m_positionLocation < 0 || m_surfaceSizeLocation < 0 || m_quadSizeLocation < 0 || m_rectOriginLocation < 0 ||
       m_rectSizeLocation < 0 || m_colorLocation < 0 || m_fillEndColorLocation < 0 || m_borderColorLocation < 0 ||
       m_fillModeLocation < 0 || m_gradientDirectionLocation < 0 || m_radiiLocation < 0 || m_softnessLocation < 0 ||
-      m_cornerShapesLocation < 0 || m_logicalInsetLocation < 0 || m_borderWidthLocation < 0 ||
-      m_outerShadowLocation < 0 || m_shadowCutoutOffsetLocation < 0 || m_shadowExclusionLocation < 0 ||
-      m_shadowExclusionOffsetLocation < 0 || m_shadowExclusionSizeLocation < 0 ||
+      m_invertFillLocation < 0 || m_cornerShapesLocation < 0 || m_logicalInsetLocation < 0 ||
+      m_borderWidthLocation < 0 || m_outerShadowLocation < 0 || m_shadowCutoutOffsetLocation < 0 ||
+      m_shadowExclusionLocation < 0 || m_shadowExclusionOffsetLocation < 0 || m_shadowExclusionSizeLocation < 0 ||
       m_shadowExclusionCornerShapesLocation < 0 || m_shadowExclusionLogicalInsetLocation < 0 ||
       m_shadowExclusionRadiiLocation < 0 || m_transformLocation < 0) {
     throw std::runtime_error("failed to query rounded-rect shader locations");
@@ -420,6 +423,7 @@ void RectProgram::destroy() {
   m_logicalInsetLocation = -1;
   m_radiiLocation = -1;
   m_softnessLocation = -1;
+  m_invertFillLocation = -1;
   m_borderWidthLocation = -1;
   m_outerShadowLocation = -1;
   m_shadowCutoutOffsetLocation = -1;
@@ -472,6 +476,7 @@ void RectProgram::draw(float surfaceWidth, float surfaceHeight, float width, flo
               style.logicalInset.bottom);
   glUniform4f(m_radiiLocation, style.radius.tl, style.radius.tr, style.radius.br, style.radius.bl);
   glUniform1f(m_softnessLocation, style.softness);
+  glUniform1i(m_invertFillLocation, style.invertFill ? 1 : 0);
   glUniform1f(m_borderWidthLocation, style.borderWidth);
   glUniform1i(m_outerShadowLocation, style.outerShadow ? 1 : 0);
   glUniform2f(m_shadowCutoutOffsetLocation, style.shadowCutoutOffsetX, style.shadowCutoutOffsetY);

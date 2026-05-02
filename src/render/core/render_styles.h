@@ -70,6 +70,7 @@ struct RoundedRectStyle {
   RectInsets logicalInset{};
   Radii radius{};
   float softness = 1.0f;
+  bool invertFill = false;
   float borderWidth = 0.0f;
   bool outerShadow = false;
   float shadowCutoutOffsetX = 0.0f;
@@ -88,7 +89,7 @@ constexpr bool operator==(const RoundedRectStyle& lhs, const RoundedRectStyle& r
   return lhs.fill == rhs.fill && lhs.fillEnd == rhs.fillEnd && lhs.border == rhs.border &&
          lhs.fillMode == rhs.fillMode && lhs.gradientDirection == rhs.gradientDirection && lhs.corners == rhs.corners &&
          lhs.logicalInset == rhs.logicalInset && lhs.radius == rhs.radius && lhs.softness == rhs.softness &&
-         lhs.borderWidth == rhs.borderWidth && lhs.outerShadow == rhs.outerShadow &&
+         lhs.invertFill == rhs.invertFill && lhs.borderWidth == rhs.borderWidth && lhs.outerShadow == rhs.outerShadow &&
          lhs.shadowCutoutOffsetX == rhs.shadowCutoutOffsetX && lhs.shadowCutoutOffsetY == rhs.shadowCutoutOffsetY &&
          lhs.shadowExclusion == rhs.shadowExclusion && lhs.shadowExclusionOffsetX == rhs.shadowExclusionOffsetX &&
          lhs.shadowExclusionOffsetY == rhs.shadowExclusionOffsetY &&

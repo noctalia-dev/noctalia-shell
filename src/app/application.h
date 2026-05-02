@@ -53,6 +53,7 @@
 #include "shell/osd/osd_overlay.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/polkit/polkit_panel.h"
+#include "shell/screen_corners/screen_corners.h"
 #include "shell/session/session_panel.h"
 #include "shell/settings/settings_window.h"
 #include "shell/tray/tray_menu.h"
@@ -162,6 +163,7 @@ private:
   AudioOsd m_audioOsd;
   BrightnessOsd m_brightnessOsd;
   OsdOverlay m_osdOverlay;
+  ScreenCorners m_screenCorners;
   TrayMenu m_trayMenu;
   Wallpaper m_wallpaper;
   Backdrop m_backdrop;

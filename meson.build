@@ -450,6 +450,7 @@ _noctalia_sources = files(
   'src/shell/osd/audio_osd.cpp',
   'src/shell/osd/brightness_osd.cpp',
   'src/shell/osd/osd_overlay.cpp',
+  'src/shell/screen_corners/screen_corners.cpp',
   'src/shell/panel/panel_click_shield.cpp',
   'src/shell/panel/panel_focus_grab.cpp',
   'src/shell/panel/panel_manager.cpp',

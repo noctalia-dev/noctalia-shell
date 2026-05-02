@@ -705,6 +705,7 @@
         "osd": "OSD",
         "pinned-apps": "Pinned Apps",
         "profile": "Profile",
+        "screen-corners": "Screen Corners",
         "security": "Security",
         "shape": "Shape",
         "system": "System",
@@ -1248,6 +1249,14 @@
         "widgets": {
           "label": "Desktop Widgets",
           "description": "Show widgets on the desktop"
+        },
+        "screen-corners-enabled": {
+          "label": "Screen Corners",
+          "description": "Round the screen corners with a black overlay"
+        },
+        "screen-corners-size": {
+          "label": "Corner Size",
+          "description": "Radius of the rounded screen corners in pixels"
         }
       },
       "wallpaper": {

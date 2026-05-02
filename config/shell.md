@@ -38,6 +38,10 @@ alpha    = 0.55  # multiplied by each component's background opacity
 [shell.panel]
 background_blur = true   # request compositor blur behind panels via ext-background-effect-v1
 
+[shell.screen_corners]
+enabled = false    # overlay black rounded corners on each screen
+size    = 32       # corner radius in logical pixels (1–100)
+
 [shell.mpris]
 blacklist = []           # optional list of players to hide from media widgets/control-center
 ```

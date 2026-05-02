@@ -337,6 +337,13 @@ struct ShellConfig {
     bool operator==(const PanelConfig&) const = default;
   };
 
+  struct ScreenCornersConfig {
+    bool enabled = false;
+    std::int32_t size = 32;
+
+    bool operator==(const ScreenCornersConfig&) const = default;
+  };
+
   struct MprisConfig {
     std::vector<std::string> blacklist;
 
@@ -357,6 +364,7 @@ struct ShellConfig {
   ClipboardAutoPasteMode clipboardAutoPaste = ClipboardAutoPasteMode::Auto;
   ShadowConfig shadow;
   PanelConfig panel;
+  ScreenCornersConfig screenCorners;
   MprisConfig mpris;
 };
 

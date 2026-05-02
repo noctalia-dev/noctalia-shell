@@ -1170,6 +1170,14 @@ void ConfigService::parseTable(const toml::table& tbl) {
         shell.panel.backgroundBlur = *v;
       }
     }
+    if (const auto* screenCornersTbl = (*shellTbl)["screen_corners"].as_table()) {
+      if (auto v = (*screenCornersTbl)["enabled"].value<bool>()) {
+        shell.screenCorners.enabled = *v;
+      }
+      if (auto v = (*screenCornersTbl)["size"].value<std::int64_t>()) {
+        shell.screenCorners.size = std::clamp(static_cast<std::int32_t>(*v), 1, 100);
+      }
+    }
     if (const auto* mprisTbl = (*shellTbl)["mpris"].as_table()) {
       if (const auto* blacklistNode = mprisTbl->get("blacklist")) {
         shell.mpris.blacklist = readStringArray(*blacklistNode);
