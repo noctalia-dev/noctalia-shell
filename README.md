@@ -136,8 +136,8 @@ changes when the config directory is read-only, such as on NixOS.
 Both layers are watched for changes and hot-reloaded. If neither declarative config nor state overrides exist,
 Noctalia falls back to built-in defaults in code.
 
-A ready-to-use starting config with all defaults is at [example.toml](example.toml). See [CONFIG.md](CONFIG.md) for the
-full configuration reference.
+A ready-to-use starting config with all defaults is at [example.toml](example.toml). The full configuration reference
+lives in the [documentation site](https://docs.noctalia.dev/v5/).
 
 ## Contributing
 
