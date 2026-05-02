@@ -356,6 +356,7 @@ void CalendarTab::rebuild() {
     dayLabel->setText(weekdays[i]);
     dayLabel->setFontSize((Style::fontSizeCaption + 1.0f) * scale);
     dayLabel->setBold(true);
+    dayLabel->setStableBaseline(true);
     dayLabel->setColor(roleColor(i >= 5 ? ColorRole::Secondary : ColorRole::OnSurfaceVariant));
     dayCell->addChild(std::move(dayLabel));
 
