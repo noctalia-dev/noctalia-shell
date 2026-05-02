@@ -13,6 +13,8 @@
 #include "shell/settings/settings_sidebar.h"
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"
+#include "ui/controls/context_menu.h"
+#include "ui/controls/context_menu_popup.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
@@ -20,14 +22,19 @@
 #include "ui/controls/select.h"
 #include "ui/controls/spacer.h"
 #include "ui/controls/toggle.h"
+#include "ui/dialogs/file_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "wayland/toplevel_surface.h"
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -36,6 +43,7 @@
 namespace {
 
   constexpr Logger kLog("settings");
+  constexpr std::int32_t kActionSupportReport = 1;
 
   std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ThemeColor& color, bool bold = false) {
     auto label = std::make_unique<Label>();
@@ -95,6 +103,8 @@ namespace {
 
 } // namespace
 
+SettingsWindow::~SettingsWindow() = default;
+
 void SettingsWindow::initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext) {
   m_wayland = &wayland;
   m_config = config;
@@ -127,6 +137,7 @@ void SettingsWindow::open() {
       output = outs.front().output;
     }
   }
+  m_output = output;
 
   m_surface = std::make_unique<ToplevelSurface>(*m_wayland);
   m_surface->setRenderContext(m_renderContext);
@@ -184,9 +195,15 @@ void SettingsWindow::destroyWindow() {
   }
   m_mainContainer = nullptr;
   m_contentContainer = nullptr;
+  m_actionsMenuButton = nullptr;
+  if (m_actionsMenuPopup != nullptr) {
+    m_actionsMenuPopup->close();
+    m_actionsMenuPopup.reset();
+  }
   m_sceneRoot.reset();
   m_surface.reset();
   m_pointerInside = false;
+  m_output = nullptr;
   m_lastSceneWidth = 0;
   m_lastSceneHeight = 0;
   m_settingsRegistry.clear();
@@ -306,6 +323,103 @@ void SettingsWindow::clearTransientSettingsState() {
   m_pendingDeleteMonitorOverrideBarName.clear();
   m_pendingDeleteMonitorOverrideMatch.clear();
   m_pendingResetPageScope.clear();
+}
+
+void SettingsWindow::openActionsMenu() {
+  if (m_wayland == nullptr || m_renderContext == nullptr || m_surface == nullptr || m_actionsMenuButton == nullptr ||
+      m_surface->xdgSurface() == nullptr) {
+    return;
+  }
+
+  if (m_actionsMenuPopup == nullptr) {
+    m_actionsMenuPopup = std::make_unique<ContextMenuPopup>(*m_wayland, *m_renderContext);
+    m_actionsMenuPopup->setOnActivate([this](const ContextMenuControlEntry& entry) {
+      switch (entry.id) {
+      case kActionSupportReport:
+        if (m_actionsMenuPopup != nullptr) {
+          m_actionsMenuPopup->close();
+        }
+        DeferredCall::callLater([this]() { saveSupportReport(); });
+        break;
+      default:
+        break;
+      }
+    });
+  } else if (m_actionsMenuPopup->isOpen()) {
+    m_actionsMenuPopup->close();
+    return;
+  }
+
+  std::vector<ContextMenuControlEntry> entries;
+  entries.push_back({.id = kActionSupportReport,
+                     .label = i18n::tr("settings.window.support-report"),
+                     .enabled = true,
+                     .separator = false,
+                     .hasSubmenu = false});
+
+  float anchorAbsX = 0.0f;
+  float anchorAbsY = 0.0f;
+  Node::absolutePosition(m_actionsMenuButton, anchorAbsX, anchorAbsY);
+
+  const float scale = uiScale();
+  wl_output* output = m_wayland->lastPointerOutput();
+  if (output == nullptr) {
+    output = m_output;
+  }
+
+  m_actionsMenuPopup->openAsChild(
+      std::move(entries), 220.0f * scale, 8, static_cast<std::int32_t>(anchorAbsX),
+      static_cast<std::int32_t>(anchorAbsY), static_cast<std::int32_t>(m_actionsMenuButton->width()),
+      static_cast<std::int32_t>(m_actionsMenuButton->height()), m_surface->xdgSurface(), output);
+}
+
+void SettingsWindow::saveSupportReport() {
+  if (m_config == nullptr) {
+    return;
+  }
+
+  FileDialogOptions options;
+  options.mode = FileDialogMode::Save;
+  options.defaultFilename = "noctalia-support-report.toml";
+  options.title = i18n::tr("settings.window.support-report-title");
+  options.extensions = {".toml"};
+
+  const bool opened = FileDialog::open(std::move(options), [this](std::optional<std::filesystem::path> result) {
+    if (!result.has_value() || m_config == nullptr) {
+      return;
+    }
+
+    auto path = *result;
+    if (path.extension().empty()) {
+      path += ".toml";
+    }
+
+    std::ofstream out(path, std::ios::trunc);
+    if (!out.is_open()) {
+      m_statusMessage = i18n::tr("settings.errors.support-report");
+      m_statusIsError = true;
+      requestSceneRebuild();
+      return;
+    }
+
+    out << m_config->buildSupportReport();
+    if (!out.good()) {
+      m_statusMessage = i18n::tr("settings.errors.support-report");
+      m_statusIsError = true;
+      requestSceneRebuild();
+      return;
+    }
+
+    m_statusMessage = i18n::tr("settings.window.support-report-saved");
+    m_statusIsError = false;
+    requestSceneRebuild();
+  });
+
+  if (!opened) {
+    m_statusMessage = i18n::tr("settings.errors.support-report");
+    m_statusIsError = true;
+    requestSceneRebuild();
+  }
 }
 
 void SettingsWindow::setSettingOverride(std::vector<std::string> path, ConfigOverrideValue value) {
@@ -741,6 +855,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   const float w = static_cast<float>(width);
   const float h = static_cast<float>(height);
   const float scale = uiScale();
+  m_actionsMenuButton = nullptr;
   const Config fallbackCfg{};
   const Config& cfg = m_config != nullptr ? m_config->config() : fallbackCfg;
   const auto availableBars = settings::barNames(cfg);
@@ -848,6 +963,18 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   headerTitle->setFlexGrow(1.0f);
   headerTitle->setStableBaseline(true);
   header->addChild(std::move(headerTitle));
+
+  auto actionsMenuBtn = std::make_unique<Button>();
+  actionsMenuBtn->setGlyph("more-vertical");
+  actionsMenuBtn->setVariant(ButtonVariant::Ghost);
+  actionsMenuBtn->setGlyphSize(Style::fontSizeBody * scale);
+  actionsMenuBtn->setMinWidth(Style::controlHeightSm * scale);
+  actionsMenuBtn->setMinHeight(Style::controlHeightSm * scale);
+  actionsMenuBtn->setPadding(Style::spaceXs * scale);
+  actionsMenuBtn->setRadius(Style::radiusMd * scale);
+  actionsMenuBtn->setOnClick([this]() { openActionsMenu(); });
+  m_actionsMenuButton = actionsMenuBtn.get();
+  header->addChild(std::move(actionsMenuBtn));
 
   auto closeBtn = std::make_unique<Button>();
   closeBtn->setGlyph("close");
@@ -1013,6 +1140,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       .sections = sections,
       .availableBars = availableBars,
       .scale = scale,
+      .sidebarScrollState = m_sidebarScrollState,
       .contentScrollState = m_contentScrollState,
       .selectedSection = m_selectedSection,
       .selectedBarName = m_selectedBarName,
@@ -1066,6 +1194,15 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
 bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
   if (!isOpen() || m_surface == nullptr) {
     return false;
+  }
+
+  if (m_actionsMenuPopup != nullptr && m_actionsMenuPopup->onPointerEvent(event)) {
+    return true;
+  }
+  if (m_actionsMenuPopup != nullptr && m_actionsMenuPopup->isOpen() && event.type == PointerEvent::Type::Button &&
+      event.state == 1) {
+    m_actionsMenuPopup->close();
+    return true;
   }
 
   wl_surface* const ws = m_surface->wlSurface();
@@ -1141,6 +1278,10 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
     }
   };
   if (event.pressed && m_config->matchesKeybind(KeybindAction::Cancel, event.sym, event.modifiers)) {
+    if (m_actionsMenuPopup != nullptr && m_actionsMenuPopup->isOpen()) {
+      m_actionsMenuPopup->close();
+      return;
+    }
     if (!m_openWidgetPickerPath.empty() || !m_editingWidgetName.empty() || !m_creatingWidgetType.empty() ||
         !m_renamingWidgetName.empty() || !m_pendingDeleteWidgetName.empty() ||
         !m_pendingDeleteWidgetSettingPath.empty() || !m_creatingBarName.empty() || !m_renamingBarName.empty() ||

@@ -806,7 +806,7 @@ void Application::initUi() {
       "polkit", std::make_unique<PolkitPanel>(&m_configService, [this]() { return m_polkitAgent.get(); }));
   m_panelManager.registerPanel("setup-wizard", std::make_unique<SetupWizardPanel>(&m_configService, &m_wayland));
 
-  if (SetupWizardPanel::isFirstRun()) {
+  if (SetupWizardPanel::isFirstRun(m_configService)) {
     DeferredCall::callLater([]() { PanelManager::instance().togglePanel("setup-wizard"); });
   }
 

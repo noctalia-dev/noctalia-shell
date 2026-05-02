@@ -4,6 +4,7 @@
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
 #include "shell/settings/settings_registry.h"
+#include "ui/controls/context_menu_popup.h"
 #include "ui/controls/scroll_view.h"
 #include "wayland/toplevel_surface.h"
 
@@ -13,17 +14,21 @@
 #include <vector>
 
 class Box;
+class Button;
 class ConfigService;
 class Flex;
 class RenderContext;
 class WaylandConnection;
 struct KeyboardEvent;
 struct PointerEvent;
+struct wl_output;
 struct wl_surface;
 
 // Standalone xdg-toplevel settings UI (same binary as the shell; shares RenderContext).
 class SettingsWindow {
 public:
+  ~SettingsWindow();
+
   void initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext);
 
   void open();
@@ -47,6 +52,8 @@ private:
   void requestContentRebuild();
   void clearStatusMessage();
   void clearTransientSettingsState();
+  void openActionsMenu();
+  void saveSupportReport();
   void setSettingOverride(std::vector<std::string> path, ConfigOverrideValue value);
   void setSettingOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides);
   void clearSettingOverride(std::vector<std::string> path);
@@ -70,13 +77,17 @@ private:
   std::unique_ptr<Node> m_sceneRoot;
   Flex* m_mainContainer = nullptr;  // Outer Flex inside m_sceneRoot, sized to the window
   Box* m_panelBackground = nullptr; // Window-sized background panel inside m_sceneRoot
+  Button* m_actionsMenuButton = nullptr;
   Flex* m_contentContainer = nullptr;
+  std::unique_ptr<ContextMenuPopup> m_actionsMenuPopup;
   InputDispatcher m_inputDispatcher;
   AnimationManager m_animations;
   bool m_pointerInside = false;
+  wl_output* m_output = nullptr;
 
   std::uint32_t m_lastSceneWidth = 0;
   std::uint32_t m_lastSceneHeight = 0;
+  ScrollViewState m_sidebarScrollState;
   ScrollViewState m_contentScrollState;
   std::vector<settings::SettingEntry> m_settingsRegistry;
   bool m_rebuildRequested = false;

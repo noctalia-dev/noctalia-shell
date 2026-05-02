@@ -1,5 +1,6 @@
 #include "config/config_service.h"
 
+#include "core/build_info.h"
 #include "core/log.h"
 #include "ipc/ipc_service.h"
 #include "notification/notification_manager.h"
@@ -8,10 +9,15 @@
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <filesystem>
+#include <fstream>
+#include <iomanip>
 #include <optional>
+#include <sstream>
 #include <stdexcept>
 #include <string_view>
 #include <sys/inotify.h>
@@ -162,6 +168,86 @@ namespace {
   }
 
   constexpr Logger kLog("config");
+  constexpr const char* kInternalStateTable = "noctalia_state";
+  constexpr const char* kSetupWizardCompletedKey = "setup_wizard_completed";
+
+  std::vector<std::filesystem::path> sortedConfigTomlFiles(std::string_view configDir) {
+    std::vector<std::filesystem::path> files;
+    if (configDir.empty()) {
+      return files;
+    }
+
+    std::error_code ec;
+    if (!std::filesystem::is_directory(configDir, ec) || ec) {
+      return files;
+    }
+    for (const auto& entry : std::filesystem::directory_iterator(configDir, ec)) {
+      if (entry.is_regular_file() && entry.path().extension() == ".toml") {
+        files.push_back(entry.path());
+      }
+    }
+    std::sort(files.begin(), files.end());
+    return files;
+  }
+
+  std::string readTextFile(const std::filesystem::path& path, std::string* error = nullptr) {
+    std::ifstream in(path, std::ios::binary);
+    if (!in.is_open()) {
+      if (error != nullptr) {
+        *error = "open failed";
+      }
+      return {};
+    }
+
+    std::ostringstream out;
+    out << in.rdbuf();
+    if (!in.good() && !in.eof()) {
+      if (error != nullptr) {
+        *error = "read failed";
+      }
+      return {};
+    }
+    if (error != nullptr) {
+      error->clear();
+    }
+    return out.str();
+  }
+
+  std::string formatToml(const toml::table& table) {
+    std::ostringstream out;
+    out << toml::toml_formatter{table,
+                                toml::toml_formatter::default_flags & ~toml::format_flags::allow_literal_strings};
+    return out.str();
+  }
+
+  std::string utcTimestamp() {
+    const auto now = std::chrono::system_clock::now();
+    const std::time_t tt = std::chrono::system_clock::to_time_t(now);
+    std::tm tm{};
+    gmtime_r(&tt, &tm);
+
+    std::ostringstream out;
+    out << std::put_time(&tm, "%Y-%m-%dT%H:%M:%SZ");
+    return out.str();
+  }
+
+  std::string relativeTo(const std::filesystem::path& path, const std::filesystem::path& base) {
+    const auto relative = path.lexically_relative(base);
+    if (!relative.empty()) {
+      return relative.string();
+    }
+    return path.filename().string();
+  }
+
+  bool setupWizardCompletedFrom(const toml::table& table) {
+    const auto* state = table[kInternalStateTable].as_table();
+    if (state == nullptr) {
+      return false;
+    }
+    return (*state)[kSetupWizardCompletedKey].value<bool>().value_or(false);
+  }
+
+  void stripInternalState(toml::table& table) { table.erase(kInternalStateTable); }
 
   ThemeColor themeColorFromRoleString(const std::string& raw) {
     const std::string trimmed = StringUtils::trim(raw);
@@ -256,6 +342,88 @@ void ConfigService::fireReloadCallbacks() {
   for (const auto& cb : m_reloadCallbacks) {
     cb();
   }
+}
+
+bool ConfigService::shouldRunSetupWizard() const {
+  return !m_setupWizardCompleted && sortedConfigTomlFiles(m_configDir).empty() && m_overridesTable.empty();
+}
+
+std::string ConfigService::buildSupportReport() const {
+  toml::table root;
+
+  toml::table report;
+  report.insert_or_assign("format_version", std::int64_t{1});
+  report.insert_or_assign("generated_by", "noctalia");
+  report.insert_or_assign("generated_at_utc", utcTimestamp());
+  report.insert_or_assign("noctalia_version", std::string(noctalia::build_info::version()));
+  report.insert_or_assign("git_revision", std::string(noctalia::build_info::revision()));
+  root.insert_or_assign("report", std::move(report));
+
+  toml::table paths;
+  paths.insert_or_assign("config_dir", m_configDir);
+  paths.insert_or_assign("settings_path", m_overridesPath);
+  root.insert_or_assign("paths", std::move(paths));
+
+  toml::table merged;
+  toml::array sources;
+  const auto configFiles = sortedConfigTomlFiles(m_configDir);
+  for (std::size_t i = 0; i < configFiles.size(); ++i) {
+    const auto& path = configFiles[i];
+
+    toml::table source;
+    source.insert_or_assign("kind", "declarative");
+    source.insert_or_assign("load_order", static_cast<std::int64_t>(i));
+    source.insert_or_assign("relative_path", relativeTo(path, m_configDir));
+    source.insert_or_assign("path", path.string());
+
+    std::string readError;
+    source.insert_or_assign("content", readTextFile(path, &readError));
+    if (!readError.empty()) {
+      source.insert_or_assign("read_error", readError);
+    } else {
+      try {
+        auto table = toml::parse_file(path.string());
+        deepMerge(merged, table);
+      } catch (const toml::parse_error& e) {
+        source.insert_or_assign("parse_error", e.what());
+      }
+    }
+
+    sources.push_back(std::move(source));
+  }
+  root.insert_or_assign("config_sources", std::move(sources));
+
+  toml::table state;
+  state.insert_or_assign("kind", "state");
+  state.insert_or_assign("relative_path", "settings.toml");
+  state.insert_or_assign("path", m_overridesPath);
+
+  const bool settingsExists = !m_overridesPath.empty() && std::filesystem::exists(m_overridesPath);
+  state.insert_or_assign("exists", settingsExists);
+  if (settingsExists) {
+    std::string readError;
+    state.insert_or_assign("content", readTextFile(m_overridesPath, &readError));
+    if (!readError.empty()) {
+      state.insert_or_assign("read_error", readError);
+    } else {
+      try {
+        auto table = toml::parse_file(m_overridesPath);
+        stripInternalState(table);
+        deepMerge(merged, table);
+      } catch (const toml::parse_error& e) {
+        state.insert_or_assign("parse_error", e.what());
+      }
+    }
+  } else {
+    state.insert_or_assign("content", "");
+  }
+  root.insert_or_assign("state_settings", std::move(state));
+
+  toml::table mergedConfig;
+  mergedConfig.insert_or_assign("content", formatToml(merged));
+  root.insert_or_assign("merged_config", std::move(mergedConfig));
+
+  return formatToml(root) + "\n";
 }
 
 void ConfigService::checkReload() {
@@ -491,6 +659,7 @@ void ConfigService::loadOverridesFromFile() {
   m_overridesTable = toml::table{};
   m_defaultWallpaperPath.clear();
   m_monitorWallpaperPaths.clear();
+  m_setupWizardCompleted = false;
 
   if (m_overridesPath.empty() || !std::filesystem::exists(m_overridesPath)) {
     return;
@@ -504,6 +673,8 @@ void ConfigService::loadOverridesFromFile() {
     m_overridesTable = toml::table{};
     return;
   }
+  m_setupWizardCompleted = setupWizardCompletedFrom(m_overridesTable);
+  stripInternalState(m_overridesTable);
   extractWallpaperFromOverrides();
 }
 
@@ -575,19 +746,7 @@ void ConfigService::loadAll() {
   m_config = Config{};
   seedBuiltinWidgets(m_config);
 
-  // Collect all *.toml files in the config dir, sorted alphabetically.
-  std::vector<std::filesystem::path> files;
-  if (!m_configDir.empty()) {
-    std::error_code ec;
-    if (std::filesystem::is_directory(m_configDir, ec)) {
-      for (const auto& entry : std::filesystem::directory_iterator(m_configDir, ec)) {
-        if (entry.is_regular_file() && entry.path().extension() == ".toml") {
-          files.push_back(entry.path());
-        }
-      }
-    }
-  }
-  std::sort(files.begin(), files.end());
+  const auto files = sortedConfigTomlFiles(m_configDir);
 
   toml::table merged;
   std::string firstError;

@@ -43,6 +43,8 @@ public:
   [[nodiscard]] const Config& config() const noexcept { return m_config; }
   [[nodiscard]] bool matchesKeybind(KeybindAction action, std::uint32_t sym, std::uint32_t modifiers) const;
   [[nodiscard]] int watchFd() const noexcept { return m_inotifyFd; }
+  [[nodiscard]] std::string buildSupportReport() const;
+  [[nodiscard]] bool shouldRunSetupWizard() const;
 
   void addReloadCallback(ReloadCallback callback);
   void setNotificationManager(NotificationManager* manager);
@@ -61,6 +63,7 @@ public:
   void setThemeMode(ThemeMode mode);
   // Persist dock enabled override to settings.toml and trigger the reload pipeline.
   void setDockEnabled(bool enabled);
+  bool markSetupWizardCompleted();
   [[nodiscard]] bool hasOverride(const std::vector<std::string>& path) const;
   [[nodiscard]] bool isOverrideOnlyBar(std::string_view name) const;
   [[nodiscard]] bool canMoveBarOverride(std::string_view name, int direction) const;
@@ -103,6 +106,7 @@ private:
   std::unordered_map<std::string, std::unordered_set<std::string>> m_configFileMonitorOverrideNames;
   std::string m_defaultWallpaperPath;
   std::unordered_map<std::string, std::string> m_monitorWallpaperPaths;
+  bool m_setupWizardCompleted = false;
 
   std::string m_pendingError; // parse error from initial load, sent as notification once manager is wired up
   uint32_t m_configErrorNotificationId = 0; // ID of the active config-error notification, 0 if none

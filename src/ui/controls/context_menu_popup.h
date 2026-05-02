@@ -15,6 +15,7 @@ class WaylandConnection;
 struct PointerEvent;
 struct wl_output;
 struct wl_surface;
+struct xdg_surface;
 struct zwlr_layer_surface_v1;
 
 class ContextMenuPopup {
@@ -25,6 +26,9 @@ public:
   void open(std::vector<ContextMenuControlEntry> entries, float menuWidth, std::size_t maxVisible, std::int32_t anchorX,
             std::int32_t anchorY, std::int32_t anchorW, std::int32_t anchorH, zwlr_layer_surface_v1* parentLayerSurface,
             wl_output* output);
+  void openAsChild(std::vector<ContextMenuControlEntry> entries, float menuWidth, std::size_t maxVisible,
+                   std::int32_t anchorX, std::int32_t anchorY, std::int32_t anchorW, std::int32_t anchorH,
+                   xdg_surface* parentXdgSurface, wl_output* output);
   void close();
   [[nodiscard]] bool isOpen() const noexcept;
 
@@ -35,6 +39,10 @@ public:
   [[nodiscard]] wl_surface* wlSurface() const noexcept;
 
 private:
+  void openCommon(std::vector<ContextMenuControlEntry> entries, float menuWidth, std::size_t maxVisible,
+                  std::int32_t anchorX, std::int32_t anchorY, std::int32_t anchorW, std::int32_t anchorH,
+                  zwlr_layer_surface_v1* parentLayerSurface, xdg_surface* parentXdgSurface, wl_output* output);
+
   WaylandConnection& m_wayland;
   RenderContext& m_renderContext;
   std::unique_ptr<PopupSurface> m_surface;

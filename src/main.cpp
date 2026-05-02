@@ -1,4 +1,5 @@
 #include "app/application.h"
+#include "config/cli.h"
 #include "core/build_info.h"
 #include "core/log.h"
 #include "ipc/cli.h"
@@ -31,6 +32,8 @@ namespace {
                 "                   Run 'noctalia msg --help' for available commands\n"
                 "  theme <image>    Generate a color palette from an image\n"
                 "                   Run 'noctalia theme --help' for options\n"
+                "  config <command> Config support and replay helpers\n"
+                "                   Run 'noctalia config --help' for options\n"
                 "\n"
                 "For more information and documentation, visit:\n"
                 "  https://noctalia.dev");
@@ -63,6 +66,8 @@ int main(int argc, char* argv[]) {
       return noctalia::theme::runCli(argc, argv);
     if (std::strcmp(argv[1], "msg") == 0)
       return noctalia::ipc::runCli(argc, argv);
+    if (std::strcmp(argv[1], "config") == 0)
+      return noctalia::config::runCli(argc, argv);
   }
 
   for (int i = 1; i < argc; ++i) {

@@ -18,12 +18,10 @@
 #include "ui/dialogs/file_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
-#include "util/file_utils.h"
 #include "wayland/wayland_connection.h"
 
 #include <cstdlib>
 #include <filesystem>
-#include <fstream>
 #include <iterator>
 #include <memory>
 #include <span>
@@ -59,25 +57,6 @@ namespace {
 
   constexpr std::string_view kDefaultThemeSource = "builtin";
   constexpr std::string_view kDefaultBuiltinPalette = "Noctalia";
-
-  std::string markerPath() {
-    const std::string dir = FileUtils::stateDir();
-    if (dir.empty()) {
-      return {};
-    }
-    return dir + "/setup_done";
-  }
-
-  void writeMarker() {
-    const std::string path = markerPath();
-    if (path.empty()) {
-      return;
-    }
-    std::error_code ec;
-    std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
-    std::ofstream out(path);
-    out << "1";
-  }
 
   std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ThemeColor& color, bool bold = false) {
     auto label = std::make_unique<Label>();
@@ -156,13 +135,7 @@ namespace {
 
 } // namespace
 
-bool SetupWizardPanel::isFirstRun() {
-  const std::string path = markerPath();
-  if (path.empty()) {
-    return false;
-  }
-  return !std::filesystem::exists(path);
-}
+bool SetupWizardPanel::isFirstRun(const ConfigService& config) { return config.shouldRunSetupWizard(); }
 
 void SetupWizardPanel::create() {
   const float scale = contentScale();
@@ -471,9 +444,15 @@ void SetupWizardPanel::commit() {
     m_config->setOverride({"theme", "builtin"},
                           m_builtinPalette.empty() ? std::string(kDefaultBuiltinPalette) : m_builtinPalette);
   }
-  writeMarker();
+  if (m_config != nullptr) {
+    (void)m_config->markSetupWizardCompleted();
+  }
   kLog.info("setup complete");
   PanelManager::instance().close();
 }
 
-void SetupWizardPanel::onClose() { writeMarker(); }
+void SetupWizardPanel::onClose() {
+  if (m_config != nullptr) {
+    (void)m_config->markSetupWizardCompleted();
+  }
+}

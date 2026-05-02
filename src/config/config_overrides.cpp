@@ -11,6 +11,8 @@
 
 namespace {
   constexpr Logger kLog("config");
+  constexpr const char* kInternalStateTable = "noctalia_state";
+  constexpr const char* kSetupWizardCompletedKey = "setup_wizard_completed";
 
   toml::table* ensureTable(toml::table& parent, std::string_view key) {
     if (auto* existing = parent.get_as<toml::table>(key)) {
@@ -141,6 +143,22 @@ void ConfigService::setDockEnabled(bool enabled) {
 
   loadAll();
   fireReloadCallbacks();
+}
+
+bool ConfigService::markSetupWizardCompleted() {
+  if (m_setupWizardCompleted) {
+    return true;
+  }
+
+  m_setupWizardCompleted = true;
+  if (!writeOverridesToFile()) {
+    m_setupWizardCompleted = false;
+    kLog.warn("failed to write {}", m_overridesPath);
+    return false;
+  }
+
+  m_ownOverridesWritePending = true;
+  return true;
 }
 
 bool ConfigService::hasOverride(const std::vector<std::string>& path) const {
@@ -598,13 +616,19 @@ bool ConfigService::writeOverridesToFile() {
   if (m_overridesPath.empty()) {
     return false;
   }
+  toml::table output = m_overridesTable;
+  if (m_setupWizardCompleted) {
+    auto* state = ensureTable(output, kInternalStateTable);
+    state->insert_or_assign(kSetupWizardCompletedKey, true);
+  }
+
   const std::string tmpPath = m_overridesPath + ".tmp";
   {
     std::ofstream out(tmpPath, std::ios::trunc);
     if (!out.is_open()) {
       return false;
     }
-    out << toml::toml_formatter{m_overridesTable,
+    out << toml::toml_formatter{output,
                                 toml::toml_formatter::default_flags & ~toml::format_flags::allow_literal_strings};
     if (!out.good()) {
       return false;

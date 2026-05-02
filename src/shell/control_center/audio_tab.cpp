@@ -1072,7 +1072,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   m_outputDeviceLabel = outputDeviceLabel.get();
 
   auto outputMenuButton = std::make_unique<Button>();
-  outputMenuButton->setGlyph("menu");
+  outputMenuButton->setGlyph("more-vertical");
   outputMenuButton->setVariant(ButtonVariant::Ghost);
   outputMenuButton->setGlyphSize(Style::fontSizeCaption * scale);
   outputMenuButton->setPadding(Style::spaceXs * scale);
@@ -1176,7 +1176,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   m_inputDeviceLabel = inputDeviceLabel.get();
 
   auto inputMenuButton = std::make_unique<Button>();
-  inputMenuButton->setGlyph("menu");
+  inputMenuButton->setGlyph("more-vertical");
   inputMenuButton->setVariant(ButtonVariant::Ghost);
   inputMenuButton->setGlyphSize(Style::fontSizeCaption * scale);
   inputMenuButton->setPadding(Style::spaceXs * scale);

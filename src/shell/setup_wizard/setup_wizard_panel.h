@@ -31,7 +31,7 @@ public:
   [[nodiscard]] LayerShellLayer layer() const override { return LayerShellLayer::Overlay; }
   [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::OnDemand; }
 
-  static bool isFirstRun();
+  static bool isFirstRun(const ConfigService& config);
 
 private:
   void doLayout(Renderer& renderer, float width, float height) override;

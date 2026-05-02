@@ -6,6 +6,8 @@
 #include "ui/controls/flex.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
+#include "ui/controls/scroll_view.h"
+#include "ui/palette.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
 
@@ -18,6 +20,8 @@
 
 namespace settings {
   namespace {
+
+    constexpr float kSidebarWidth = 180.0f;
 
     std::string normalizedConfigId(std::string_view text) { return StringUtils::trim(text); }
 
@@ -44,6 +48,31 @@ namespace settings {
       }
     }
 
+    void applyPrimaryNavStyle(Button& button, float scale, bool selected) {
+      button.setVariant(selected ? ButtonVariant::TabActive : ButtonVariant::Tab);
+      button.setContentAlign(ButtonContentAlign::Start);
+      button.setFontSize(Style::fontSizeBody * scale);
+      button.setGlyphSize(21.0f * scale);
+      button.setMinHeight(Style::controlHeight * scale);
+      button.setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+      button.setGap(Style::spaceSm * scale);
+      button.setRadius(Style::radiusLg * scale);
+      if (button.label() != nullptr) {
+        button.label()->setBold(true);
+      }
+    }
+
+    void applySecondaryNavStyle(Button& button, float scale, bool selected) {
+      button.setVariant(selected ? ButtonVariant::TabActive : ButtonVariant::Tab);
+      button.setContentAlign(ButtonContentAlign::Start);
+      button.setFontSize(Style::fontSizeCaption * scale);
+      button.setGlyphSize(Style::fontSizeCaption * scale);
+      button.setMinHeight(Style::controlHeightSm * scale);
+      button.setPadding(Style::spaceXs * scale, Style::spaceMd * scale, Style::spaceXs * scale, Style::spaceLg * scale);
+      button.setGap(Style::spaceXs * scale);
+      button.setRadius(Style::radiusMd * scale);
+    }
+
   } // namespace
 
   std::unique_ptr<Flex> buildSettingsSidebar(SettingsSidebarContext ctx) {
@@ -68,30 +97,30 @@ namespace settings {
     const auto createMonitorOverride = std::move(ctx.createMonitorOverride);
     const float scale = ctx.scale;
 
-    auto sidebar = std::make_unique<Flex>();
+    auto sidebarScroll = std::make_unique<ScrollView>();
+    sidebarScroll->bindState(&ctx.sidebarScrollState);
+    sidebarScroll->setScrollbarVisible(true);
+    sidebarScroll->setViewportPaddingH(0.0f);
+    sidebarScroll->setViewportPaddingV(0.0f);
+    sidebarScroll->setFill(roleColor(ColorRole::Surface));
+    sidebarScroll->setRadius(Style::radiusXl * scale);
+    sidebarScroll->clearBorder();
+    sidebarScroll->setFillHeight(true);
+    sidebarScroll->setSize(kSidebarWidth * scale, 0.0f);
+    sidebarScroll->setMinWidth(kSidebarWidth * scale);
+
+    auto* sidebar = sidebarScroll->content();
     sidebar->setDirection(FlexDirection::Vertical);
     sidebar->setAlign(FlexAlign::Stretch);
     sidebar->setGap(Style::spaceXs * scale);
-    sidebar->setSize(168.0f * scale, 0.0f);
-    sidebar->setMinWidth(168.0f * scale);
-    sidebar->setPadding(Style::spaceXs * scale, 0.0f);
+    sidebar->setPadding(Style::spaceSm * scale);
 
     for (const auto& section : ctx.sections) {
       const bool selected = section == *selectedSection;
       auto navItem = std::make_unique<Button>();
       navItem->setGlyph(sectionGlyph(section));
-      navItem->setGlyphSize(Style::fontSizeBody * scale);
       navItem->setText(sectionLabel(section));
-      if (navItem->label() != nullptr) {
-        navItem->label()->setBold(true);
-      }
-      navItem->setVariant(selected ? ButtonVariant::TabActive : ButtonVariant::Tab);
-      navItem->setContentAlign(ButtonContentAlign::Start);
-      navItem->setFontSize(Style::fontSizeBody * scale);
-      navItem->setMinHeight(Style::controlHeightLg * scale);
-      navItem->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-      navItem->setGap(Style::spaceMd * scale);
-      navItem->setRadius(Style::radiusLg * scale);
+      applyPrimaryNavStyle(*navItem, scale, selected);
       navItem->setOnClick([selectedSection, scroll, section, clearTransientState, requestRebuild]() {
         if (*selectedSection != section) {
           scroll->offset = 0.0f;
@@ -108,18 +137,8 @@ namespace settings {
           *selectedSection == "bar" && *selectedBarName == barName && selectedMonitorOverride->empty();
       auto navItem = std::make_unique<Button>();
       navItem->setGlyph("menu");
-      navItem->setGlyphSize(Style::fontSizeBody * scale);
       navItem->setText(i18n::tr("settings.entities.bar.label", "name", barName));
-      if (navItem->label() != nullptr) {
-        navItem->label()->setBold(true);
-      }
-      navItem->setVariant(barSelected ? ButtonVariant::TabActive : ButtonVariant::Tab);
-      navItem->setContentAlign(ButtonContentAlign::Start);
-      navItem->setFontSize(Style::fontSizeBody * scale);
-      navItem->setMinHeight(Style::controlHeightLg * scale);
-      navItem->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-      navItem->setGap(Style::spaceMd * scale);
-      navItem->setRadius(Style::radiusMd * scale);
+      applyPrimaryNavStyle(*navItem, scale, barSelected);
       navItem->setOnClick([selectedSection, selectedBarName, selectedMonitorOverride, scroll, barName,
                            clearTransientState, requestRebuild]() {
         if (*selectedSection != "bar" || *selectedBarName != barName || !selectedMonitorOverride->empty()) {
@@ -143,15 +162,8 @@ namespace settings {
             *selectedSection == "bar" && *selectedBarName == barName && *selectedMonitorOverride == ovr.match;
         auto ovrItem = std::make_unique<Button>();
         ovrItem->setGlyph("device-desktop");
-        ovrItem->setGlyphSize(Style::fontSizeCaption * scale);
         ovrItem->setText(i18n::tr("settings.entities.monitor-override.label", "name", ovr.match));
-        ovrItem->setVariant(ovrSelected ? ButtonVariant::TabActive : ButtonVariant::Tab);
-        ovrItem->setContentAlign(ButtonContentAlign::Start);
-        ovrItem->setFontSize(Style::fontSizeCaption * scale);
-        ovrItem->setMinHeight(Style::controlHeightSm * scale);
-        ovrItem->setPadding(Style::spaceXs * scale, Style::spaceMd * scale, Style::spaceXs * scale,
-                            Style::spaceMd * 2 * scale);
-        ovrItem->setRadius(Style::radiusMd * scale);
+        applySecondaryNavStyle(*ovrItem, scale, ovrSelected);
         auto match = ovr.match;
         ovrItem->setOnClick([selectedSection, selectedBarName, selectedMonitorOverride, scroll, barName, match,
                              clearTransientState, requestRebuild]() {
@@ -181,6 +193,7 @@ namespace settings {
       newMonitorBtn->setMinHeight(Style::controlHeightSm * scale);
       newMonitorBtn->setPadding(Style::spaceXs * scale, Style::spaceMd * scale, Style::spaceXs * scale,
                                 Style::spaceLg * scale);
+      newMonitorBtn->setGap(Style::spaceXs * scale);
       newMonitorBtn->setRadius(Style::radiusMd * scale);
       newMonitorBtn->setOnClick([creatingMonitorOverrideBarName, creatingMonitorOverrideMatch, barName,
                                  clearTransientState, requestRebuild]() {
@@ -274,12 +287,15 @@ namespace settings {
     newBarBtn->setGlyph("add");
     newBarBtn->setVariant(ButtonVariant::Ghost);
     newBarBtn->setContentAlign(ButtonContentAlign::Start);
-    newBarBtn->setFontSize(Style::fontSizeTitle * scale);
-    newBarBtn->setGlyphSize(Style::fontSizeTitle * scale);
-    newBarBtn->setMinHeight(Style::controlHeightLg * scale);
+    newBarBtn->setFontSize(Style::fontSizeBody * scale);
+    newBarBtn->setGlyphSize(21.0f * scale);
+    newBarBtn->setMinHeight(Style::controlHeight * scale);
     newBarBtn->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-    newBarBtn->setGap(Style::spaceMd * scale);
-    newBarBtn->setRadius(Style::radiusMd * scale);
+    newBarBtn->setGap(Style::spaceSm * scale);
+    newBarBtn->setRadius(Style::radiusLg * scale);
+    if (newBarBtn->label() != nullptr) {
+      newBarBtn->label()->setBold(true);
+    }
     newBarBtn->setOnClick([creatingBarName, nextBarName, clearTransientState, requestRebuild]() {
       clearTransientState();
       *creatingBarName = nextBarName;
@@ -353,7 +369,7 @@ namespace settings {
       sidebar->addChild(std::move(createPanel));
     }
 
-    return sidebar;
+    return sidebarScroll;
   }
 
 } // namespace settings

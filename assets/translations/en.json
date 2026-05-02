@@ -535,6 +535,9 @@
       "filter-modified": "Modified",
       "reset-page": "Reset Page",
       "reset-page-confirm": "Confirm Reset",
+      "support-report": "Support Report",
+      "support-report-title": "Save Support Report",
+      "support-report-saved": "Support report saved.",
       "no-results": "No settings found",
       "no-results-hint": "Try a different setting name or config key.",
       "native-title": "Noctalia Settings"
@@ -566,6 +569,7 @@
       "batch-write": "Some settings could not be saved.",
       "clear": "Failed to reset setting.",
       "reset-page": "Failed to reset some settings.",
+      "support-report": "Failed to save support report.",
       "widget": {
         "rename": "Could not rename widget instance."
       },

@@ -18,6 +18,7 @@ namespace settings {
     const std::vector<std::string>& availableBars;
     float scale = 1.0f;
 
+    ScrollViewState& sidebarScrollState;
     ScrollViewState& contentScrollState;
     std::string& selectedSection;
     std::string& selectedBarName;

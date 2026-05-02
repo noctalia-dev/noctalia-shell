@@ -29,6 +29,22 @@ ContextMenuPopup::~ContextMenuPopup() { close(); }
 void ContextMenuPopup::open(std::vector<ContextMenuControlEntry> entries, float menuWidth, std::size_t maxVisible,
                             std::int32_t anchorX, std::int32_t anchorY, std::int32_t anchorW, std::int32_t anchorH,
                             zwlr_layer_surface_v1* parentLayerSurface, wl_output* output) {
+  openCommon(std::move(entries), menuWidth, maxVisible, anchorX, anchorY, anchorW, anchorH, parentLayerSurface, nullptr,
+             output);
+}
+
+void ContextMenuPopup::openAsChild(std::vector<ContextMenuControlEntry> entries, float menuWidth,
+                                   std::size_t maxVisible, std::int32_t anchorX, std::int32_t anchorY,
+                                   std::int32_t anchorW, std::int32_t anchorH, xdg_surface* parentXdgSurface,
+                                   wl_output* output) {
+  openCommon(std::move(entries), menuWidth, maxVisible, anchorX, anchorY, anchorW, anchorH, nullptr, parentXdgSurface,
+             output);
+}
+
+void ContextMenuPopup::openCommon(std::vector<ContextMenuControlEntry> entries, float menuWidth, std::size_t maxVisible,
+                                  std::int32_t anchorX, std::int32_t anchorY, std::int32_t anchorW,
+                                  std::int32_t anchorH, zwlr_layer_surface_v1* parentLayerSurface,
+                                  xdg_surface* parentXdgSurface, wl_output* output) {
   close();
 
   const float menuHeight = ContextMenuControl::preferredHeight(entries, maxVisible);
@@ -118,7 +134,10 @@ void ContextMenuPopup::open(std::vector<ContextMenuControlEntry> entries, float 
 
   m_surface->setDismissedCallback([self]() { DeferredCall::callLater([self]() { self->close(); }); });
 
-  if (!m_surface->initialize(parentLayerSurface, output, popupCfg)) {
+  const bool initialized = parentXdgSurface != nullptr
+                               ? m_surface->initializeAsChild(parentXdgSurface, output, popupCfg)
+                               : m_surface->initialize(parentLayerSurface, output, popupCfg);
+  if (!initialized) {
     kLog.warn("failed to create context menu popup");
     m_surface.reset();
     return;
