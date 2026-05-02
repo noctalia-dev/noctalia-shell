@@ -75,7 +75,7 @@ public:
   void renderNow();
   void setAnimationManager(AnimationManager* manager) noexcept { m_animationManager = manager; }
   void setSceneRoot(Node* root) noexcept { m_sceneRoot = root; }
-  void setRenderContext(RenderContext* ctx) noexcept { m_renderContext = ctx; }
+  void setRenderContext(RenderContext* ctx);
   [[nodiscard]] RenderContext* renderContext() const noexcept { return m_renderContext; }
   [[nodiscard]] RenderTarget& renderTarget() noexcept { return m_renderTarget; }
   [[nodiscard]] wl_surface* wlSurface() const noexcept { return m_surface; }
@@ -119,6 +119,7 @@ private:
   void queueRender();
   void cancelQueuedRender();
   void renderQueuedFrame();
+  bool ensureRenderTargetReady();
   void resizeRenderTarget();
 
   RenderContext* m_renderContext = nullptr;

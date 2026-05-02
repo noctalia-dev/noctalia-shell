@@ -85,13 +85,22 @@ void main() {
         if (m_window == nullptr) {
           return;
         }
-
-        m_surface =
-            eglCreateWindowSurface(m_display, m_config, reinterpret_cast<EGLNativeWindowType>(m_window), nullptr);
-        return;
+      } else {
+        wl_egl_window_resize(m_window, static_cast<int>(bufferWidth), static_cast<int>(bufferHeight), 0, 0);
       }
 
-      wl_egl_window_resize(m_window, static_cast<int>(bufferWidth), static_cast<int>(bufferHeight), 0, 0);
+      if (m_surface == EGL_NO_SURFACE) {
+        m_surface =
+            eglCreateWindowSurface(m_display, m_config, reinterpret_cast<EGLNativeWindowType>(m_window), nullptr);
+        if (m_surface == EGL_NO_SURFACE && !m_createFailureLogged) {
+          const EGLint error = eglGetError();
+          kLog.warn("eglCreateWindowSurface failed (EGL error 0x{:04x}); will retry before rendering",
+                    static_cast<unsigned>(error));
+          m_createFailureLogged = true;
+        } else if (m_surface != EGL_NO_SURFACE) {
+          m_createFailureLogged = false;
+        }
+      }
     }
 
     void destroy() override {
@@ -117,6 +126,7 @@ void main() {
     wl_surface* m_wlSurface = nullptr;
     wl_egl_window* m_window = nullptr;
     EGLSurface m_surface = EGL_NO_SURFACE;
+    bool m_createFailureLogged = false;
   };
 
   GlesSurfaceTarget& glesSurfaceTarget(RenderTarget& target) {

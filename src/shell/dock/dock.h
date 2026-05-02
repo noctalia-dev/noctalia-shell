@@ -105,6 +105,7 @@ private:
   void createInstance(const WaylandOutput& output);
   void destroyInstance(std::uint32_t outputName);
   void prepareFrame(DockInstance& instance, bool needsUpdate, bool needsLayout);
+  bool syncInstanceModel(DockInstance& instance);
   void applyDockCompositorBlur(DockInstance& instance);
   void syncDockSlideLayerTransform(DockInstance& instance);
   void buildScene(DockInstance& instance);

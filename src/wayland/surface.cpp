@@ -171,6 +171,20 @@ void Surface::setUpdateCallback(UpdateCallback callback) { m_updateCallback = st
 
 void Surface::setFrameTickCallback(FrameTickCallback callback) { m_frameTickCallback = std::move(callback); }
 
+void Surface::setRenderContext(RenderContext* ctx) {
+  if (m_renderContext == ctx && (ctx == nullptr || m_surface == nullptr || m_renderTarget.surfaceTarget() != nullptr)) {
+    return;
+  }
+
+  m_renderContext = ctx;
+  m_renderTarget.destroy();
+
+  if (m_surface != nullptr && m_renderContext != nullptr) {
+    m_renderTarget.create(m_surface, *m_renderContext);
+    resizeRenderTarget();
+  }
+}
+
 void Surface::initializeSurfaceScaleProtocol() {
   if (m_surface == nullptr || !m_connection.hasFractionalScale()) {
     return;
@@ -214,8 +228,19 @@ void Surface::resizeRenderTarget() {
     return;
   }
 
+  if (m_surface != nullptr && m_renderTarget.surfaceTarget() == nullptr) {
+    m_renderTarget.create(m_surface, *m_renderContext);
+  }
+
+  const auto bufferWidth = bufferWidthFor(m_width);
+  const auto bufferHeight = bufferHeightFor(m_height);
+
   m_renderTarget.setLogicalSize(m_width, m_height);
-  m_renderTarget.resize(bufferWidthFor(m_width), bufferHeightFor(m_height));
+  if (m_renderTarget.bufferWidth() == bufferWidth && m_renderTarget.bufferHeight() == bufferHeight &&
+      m_renderTarget.isReady()) {
+    return;
+  }
+  m_renderTarget.resize(bufferWidth, bufferHeight);
 }
 
 void Surface::onPreferredFractionalScale(std::uint32_t numerator) {
@@ -581,6 +606,9 @@ void Surface::preparePendingFrame() {
   if (m_prepareFrameCallback == nullptr || (!m_updateRequested && !m_layoutRequested)) {
     return;
   }
+  if (!ensureRenderTargetReady()) {
+    return;
+  }
 
   UiPhaseScope preparePhase(UiPhase::PrepareFrame);
   const bool needsUpdate = m_updateRequested;
@@ -712,9 +740,20 @@ void Surface::renderQueuedFrame() {
   const bool invalidated = m_sceneRoot != nullptr && (m_sceneRoot->paintDirty() || m_sceneRoot->layoutDirty());
   const bool animating = m_animationManager != nullptr && m_animationManager->hasActive();
   if (m_redrawRequested || invalidated || animating) {
-    m_redrawRequested = false;
     render();
   }
+}
+
+bool Surface::ensureRenderTargetReady() {
+  if (m_renderContext == nullptr) {
+    return true;
+  }
+  if (m_surface == nullptr || m_width == 0 || m_height == 0) {
+    return false;
+  }
+
+  resizeRenderTarget();
+  return m_renderTarget.isReady();
 }
 
 bool Surface::hasPendingRenders() { return !pendingRenderQueue().empty(); }

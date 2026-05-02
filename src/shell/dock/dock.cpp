@@ -226,81 +226,11 @@ void Dock::refresh() {
 
   refreshPinnedAppsIfNeeded();
 
-  const auto& cfg = m_config->config().dock;
-  const std::string globalActiveIdLower = currentActiveEntryIdLower(*m_wayland);
-  wl_output* const activeOutput = m_wayland->activeToplevelOutput();
-
   for (auto& inst : m_instances) {
-    if (inst->surface == nullptr || m_renderContext == nullptr) {
+    if (inst->surface == nullptr) {
       continue;
     }
-
-    wl_output* filterOutput = currentDockFilterOutput(cfg, inst->output);
-    const bool filterOutputChanged = (filterOutput != inst->lastFilterOutput);
-    inst->lastFilterOutput = filterOutput;
-
-    // When filtering by active monitor, inactive monitors' docks should not
-    // highlight the globally-active app — it isn't on them.
-    const std::string activeIdLower =
-        (cfg.activeMonitorOnly && activeOutput != inst->output) ? std::string{} : globalActiveIdLower;
-    inst->activeAppIdLower = activeIdLower;
-
-    const auto runningIds = cfg.showRunning ? m_wayland->runningAppIds(filterOutput) : std::vector<std::string>{};
-    const auto& allEntries = desktopEntries();
-    const auto resolvedRunning = app_identity::resolveRunningApps(runningIds, allEntries);
-    std::vector<std::string> runningLower;
-    runningLower.reserve(resolvedRunning.size());
-    for (const auto& run : resolvedRunning) {
-      runningLower.push_back(StringUtils::toLower(run.entry.id));
-    }
-
-    // Rebuild if model changed or this instance's filter output changed.
-    bool needRebuild = (inst->modelSerial != m_modelSerial) || filterOutputChanged;
-
-    if (!needRebuild && cfg.showRunning) {
-      // Count running-only items expected vs current.
-      const std::size_t expectedTotal = [&] {
-        std::vector<DesktopEntry> entries = m_pinnedEntries;
-        for (const auto& run : resolvedRunning) {
-          bool present = false;
-          for (const auto& e : entries) {
-            if (app_identity::desktopEntryMatchesLower(e, run.runningLower)) {
-              present = true;
-              break;
-            }
-          }
-          if (!present) {
-            entries.push_back(run.entry);
-          }
-        }
-        return entries.size();
-      }();
-      if (expectedTotal != inst->items.size()) {
-        needRebuild = true;
-      }
-    }
-
-    // Sync running/active flags even without a rebuild (icon emphasis updates).
-    for (auto& item : inst->items) {
-      item.running = matchesRunningApp(item, runningLower);
-      item.active = matchesActiveApp(item, activeIdLower);
-    }
-
-    if (needRebuild) {
-      rebuildItems(*inst);
-    }
-
-    m_renderContext->makeCurrent(inst->surface->renderTarget());
-    m_renderContext->syncContentScale(inst->surface->renderTarget());
-    updateVisuals(*inst);
-    if (inst->sceneRoot != nullptr &&
-        ((inst->sceneRoot->paintDirty() || inst->sceneRoot->layoutDirty()) || inst->animations.hasActive())) {
-      if (inst->sceneRoot->layoutDirty()) {
-        inst->surface->requestLayout();
-      } else {
-        inst->surface->requestRedraw();
-      }
-    }
+    inst->surface->requestUpdateOnly();
   }
 }
 
@@ -653,7 +583,7 @@ void Dock::createInstance(const WaylandOutput& output) {
 
 // ── Private: scene building ───────────────────────────────────────────────────
 
-void Dock::prepareFrame(DockInstance& instance, bool /*needsUpdate*/, bool needsLayout) {
+void Dock::prepareFrame(DockInstance& instance, bool needsUpdate, bool needsLayout) {
   if (m_renderContext == nullptr || instance.surface == nullptr) {
     return;
   }
@@ -665,14 +595,84 @@ void Dock::prepareFrame(DockInstance& instance, bool /*needsUpdate*/, bool needs
   }
 
   m_renderContext->makeCurrent(instance.surface->renderTarget());
+  m_renderContext->syncContentScale(instance.surface->renderTarget());
+
+  bool needsModelRebuild = false;
+  if (needsUpdate || instance.sceneRoot == nullptr) {
+    UiPhaseScope updatePhase(UiPhase::Update);
+    needsModelRebuild = syncInstanceModel(instance);
+  }
 
   const bool needsSceneBuild = instance.sceneRoot == nullptr ||
                                static_cast<std::uint32_t>(std::round(instance.sceneRoot->width())) != width ||
                                static_cast<std::uint32_t>(std::round(instance.sceneRoot->height())) != height;
-  if (needsSceneBuild || needsLayout) {
+  if (needsSceneBuild || needsLayout || needsModelRebuild) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
+    if (needsModelRebuild && instance.sceneRoot != nullptr) {
+      rebuildItems(instance);
+    }
     buildScene(instance);
+  } else if (needsUpdate) {
+    updateVisuals(instance);
   }
+}
+
+bool Dock::syncInstanceModel(DockInstance& instance) {
+  if (m_wayland == nullptr || m_config == nullptr) {
+    return false;
+  }
+
+  const auto& cfg = m_config->config().dock;
+  const std::string globalActiveIdLower = currentActiveEntryIdLower(*m_wayland);
+  wl_output* const activeOutput = m_wayland->activeToplevelOutput();
+  wl_output* filterOutput = currentDockFilterOutput(cfg, instance.output);
+  const bool filterOutputChanged = (filterOutput != instance.lastFilterOutput);
+  instance.lastFilterOutput = filterOutput;
+
+  // When filtering by active monitor, inactive monitors' docks should not
+  // highlight the globally-active app — it isn't on them.
+  const std::string activeIdLower =
+      (cfg.activeMonitorOnly && activeOutput != instance.output) ? std::string{} : globalActiveIdLower;
+  instance.activeAppIdLower = activeIdLower;
+
+  const auto runningIds = cfg.showRunning ? m_wayland->runningAppIds(filterOutput) : std::vector<std::string>{};
+  const auto& allEntries = desktopEntries();
+  const auto resolvedRunning = app_identity::resolveRunningApps(runningIds, allEntries);
+  std::vector<std::string> runningLower;
+  runningLower.reserve(resolvedRunning.size());
+  for (const auto& run : resolvedRunning) {
+    runningLower.push_back(StringUtils::toLower(run.entry.id));
+  }
+
+  bool needRebuild = (instance.modelSerial != m_modelSerial) || filterOutputChanged;
+  if (!needRebuild && cfg.showRunning) {
+    const std::size_t expectedTotal = [&] {
+      std::vector<DesktopEntry> entries = m_pinnedEntries;
+      for (const auto& run : resolvedRunning) {
+        bool present = false;
+        for (const auto& entry : entries) {
+          if (app_identity::desktopEntryMatchesLower(entry, run.runningLower)) {
+            present = true;
+            break;
+          }
+        }
+        if (!present) {
+          entries.push_back(run.entry);
+        }
+      }
+      return entries.size();
+    }();
+    if (expectedTotal != instance.items.size()) {
+      needRebuild = true;
+    }
+  }
+
+  for (auto& item : instance.items) {
+    item.running = matchesRunningApp(item, runningLower);
+    item.active = matchesActiveApp(item, activeIdLower);
+  }
+
+  return needRebuild;
 }
 
 void Dock::syncDockSlideLayerTransform(DockInstance& instance) {
@@ -719,8 +719,6 @@ void Dock::buildScene(DockInstance& instance) {
   if (m_renderContext == nullptr || instance.surface == nullptr) {
     return;
   }
-
-  instance.activeAppIdLower = currentActiveEntryIdLower(*m_wayland);
 
   const auto& cfg = m_config->config().dock;
   const bool vert = isVertical();
