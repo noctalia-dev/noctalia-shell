@@ -3,6 +3,7 @@
 #include <chrono>
 #include <optional>
 #include <string>
+#include <vector>
 
 struct DistroInfo {
   std::string id;
@@ -19,6 +20,9 @@ public:
 
 // Best-effort pretty label for the running distribution.
 [[nodiscard]] std::string distroLabel();
+
+// Best-effort icon names for the running distribution, in priority order.
+[[nodiscard]] std::vector<std::string> distroLogoIconNames(const DistroInfo& info);
 
 // Kernel release string (uname -r), or "unknown" on failure.
 [[nodiscard]] std::string kernelRelease();

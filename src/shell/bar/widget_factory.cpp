@@ -51,6 +51,19 @@
 
 namespace {
   constexpr Logger kLog("shell");
+
+  std::string resolveDistroLogo(IconResolver& iconResolver) {
+    if (const auto info = DistroDetector::detect(); info.has_value()) {
+      for (const auto& name : distroLogoIconNames(*info)) {
+        const auto& resolved = iconResolver.resolve(name);
+        if (!resolved.empty()) {
+          return resolved;
+        }
+      }
+    }
+
+    return {};
+  }
 } // namespace
 
 WidgetFactory::WidgetFactory(WaylandConnection& wayland, const Config& config, NotificationManager* notifications,
@@ -155,9 +168,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
       if (!m_iconResolver) {
         m_iconResolver = std::make_unique<IconResolver>();
       }
-      if (const auto info = DistroDetector::detect(); info.has_value() && !info->logo.empty()) {
-        logoPath = m_iconResolver->resolve(info->logo);
-      }
+      logoPath = resolveDistroLogo(*m_iconResolver);
     }
 
     auto widget = std::make_unique<ControlCenterWidget>(output, std::move(barGlyph), std::move(logoPath));
@@ -191,9 +202,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
       if (!m_iconResolver) {
         m_iconResolver = std::make_unique<IconResolver>();
       }
-      if (const auto info = DistroDetector::detect(); info.has_value() && !info->logo.empty()) {
-        logoPath = m_iconResolver->resolve(info->logo);
-      }
+      logoPath = resolveDistroLogo(*m_iconResolver);
     }
 
     auto widget = std::make_unique<LauncherWidget>(output, std::move(barGlyph), std::move(logoPath));
