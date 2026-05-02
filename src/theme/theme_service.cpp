@@ -1,6 +1,7 @@
 #include "theme/theme_service.h"
 
 #include "config/config_service.h"
+#include "core/deferred_call.h"
 #include "core/log.h"
 #include "ipc/ipc_service.h"
 #include "net/http_client.h"
@@ -296,6 +297,38 @@ namespace noctalia::theme {
 
   void ThemeService::setResolvedCallback(ResolvedCallback callback) { m_resolvedCallback = std::move(callback); }
 
+  void ThemeService::queueResolvedCallback(const GeneratedPalette& generated, std::string_view mode) {
+    if (!m_resolvedCallback) {
+      return;
+    }
+    m_pendingResolvedPalette = generated;
+    m_pendingResolvedMode = std::string(mode);
+    ++m_resolvedCallbackGeneration;
+  }
+
+  void ThemeService::flushResolvedCallback(bool defer) {
+    if (!m_resolvedCallback || !m_pendingResolvedPalette.has_value()) {
+      return;
+    }
+
+    GeneratedPalette generated = std::move(*m_pendingResolvedPalette);
+    std::string mode = std::move(m_pendingResolvedMode);
+    const std::uint64_t generation = m_resolvedCallbackGeneration;
+    m_pendingResolvedPalette.reset();
+    m_pendingResolvedMode.clear();
+
+    if (defer) {
+      DeferredCall::callLater([this, generation, generated = std::move(generated), mode = std::move(mode)]() mutable {
+        if (generation == m_resolvedCallbackGeneration && m_resolvedCallback) {
+          m_resolvedCallback(generated, mode);
+        }
+      });
+      return;
+    }
+
+    m_resolvedCallback(generated, mode);
+  }
+
   void ThemeService::startCommunityDownload(const std::string& name) {
     if (m_inflightCommunityName == name) {
       return;
@@ -349,16 +382,14 @@ namespace noctalia::theme {
       resolved = resolveBuiltin(cfg);
     }
 
-    if (m_resolvedCallback) {
-      m_resolvedCallback(resolved->generated, resolved->mode);
-    }
-
+    queueResolvedCallback(resolved->generated, resolved->mode);
     m_isLightMode = resolved->mode == "light";
 
     if (animate) {
       startTransition(resolved->palette);
     } else {
       if (m_transitionAnimId == 0 && palette == resolved->palette) {
+        flushResolvedCallback(/*defer=*/false);
         return;
       }
       if (m_transitionAnimId != 0) {
@@ -370,14 +401,17 @@ namespace noctalia::theme {
       if (m_changeCallback) {
         m_changeCallback();
       }
+      flushResolvedCallback(/*defer=*/false);
     }
   }
 
   void ThemeService::startTransition(const Palette& target) {
     if (m_transitionAnimId == 0 && palette == target) {
+      flushResolvedCallback(/*defer=*/false);
       return;
     }
     if (m_transitionAnimId != 0 && m_targetPalette == target) {
+      flushResolvedCallback(/*defer=*/true);
       return;
     }
     // Capture the currently-displayed palette (possibly mid-fade) so a new
@@ -388,6 +422,7 @@ namespace noctalia::theme {
     }
     m_fromPalette = palette;
     m_targetPalette = target;
+    m_transitionResolvedCallbackFlushed = false;
     m_transitionAnimId = m_animations.animate(
         0.0f, 1.0f, kTransitionDurationMs, Easing::EaseOutCubic,
         [this](float t) {
@@ -395,20 +430,27 @@ namespace noctalia::theme {
           if (m_changeCallback) {
             m_changeCallback();
           }
-        },
-        [this]() {
-          m_transitionAnimId = 0;
-          m_transitionTimer.stop();
-          setPalette(m_targetPalette);
-          if (m_changeCallback) {
-            m_changeCallback();
+          if (!m_transitionResolvedCallbackFlushed) {
+            m_transitionResolvedCallbackFlushed = true;
+            flushResolvedCallback(/*defer=*/true);
           }
-        });
+        },
+        [this]() { finishTransition(/*deferResolvedCallback=*/false); });
     if (m_transitionAnimId == 0) {
       m_transitionTimer.stop();
       return;
     }
     m_transitionTimer.startRepeating(kTransitionTick, [this] { tickTransition(); });
+  }
+
+  void ThemeService::finishTransition(bool deferResolvedCallback) {
+    m_transitionAnimId = 0;
+    m_transitionTimer.stop();
+    setPalette(m_targetPalette);
+    if (m_changeCallback) {
+      m_changeCallback();
+    }
+    flushResolvedCallback(deferResolvedCallback);
   }
 
   void ThemeService::tickTransition() {

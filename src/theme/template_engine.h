@@ -3,6 +3,7 @@
 #include "theme/palette.h"
 
 #include <filesystem>
+#include <functional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -32,6 +33,7 @@ namespace noctalia::theme {
       std::string configDir;
       std::string configFile;
       std::unordered_set<std::string> enabledTemplates;
+      std::function<bool()> cancelRequested;
       std::string schemeType = "content";
       bool verbose = true;
     };
