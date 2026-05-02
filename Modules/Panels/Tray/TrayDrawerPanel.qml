@@ -7,6 +7,7 @@ import qs.Commons
 import qs.Modules.MainScreen
 import qs.Services.UI
 import qs.Widgets
+import "../../../Helpers/TrayIconResolver.js" as TrayIconResolver
 
 // A compact grid panel listing all tray items, opened from the Tray widget
 SmartPanel {
@@ -189,18 +190,22 @@ SmartPanel {
             anchors.fill: parent
             asynchronous: true
             backer.fillMode: Image.PreserveAspectFit
-            source: {
-              let icon = modelData?.icon || "";
-              if (!icon)
-                return "";
-              if (icon.includes("?path=")) {
-                const chunks = icon.split("?path=");
-                const name = chunks[0];
-                const path = chunks[1];
-                const fileName = name.substring(name.lastIndexOf("/") + 1);
-                return `file://${path}/${fileName}`;
+
+            property string rawIcon: modelData?.icon || ""
+            property var _candidates: []
+            property int _tryIndex: 0
+
+            onRawIconChanged: {
+              _candidates = TrayIconResolver.resolveCandidates(rawIcon);
+              _tryIndex = 0;
+              source = _candidates.length > 0 ? _candidates[0] : "";
+            }
+
+            onStatusChanged: {
+              if (status === Image.Error && _tryIndex < _candidates.length - 1) {
+                _tryIndex++;
+                source = _candidates[_tryIndex];
               }
-              return icon;
             }
 
             layer.enabled: panelContent.widgetSettings.colorizeIcons !== false
