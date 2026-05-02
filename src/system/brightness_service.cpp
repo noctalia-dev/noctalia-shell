@@ -267,6 +267,14 @@ namespace {
     }
     ::closedir(dir);
 
+    if (match.empty()) {
+      for (const auto& output : wayland.outputs()) {
+        if (output.connectorName.starts_with("eDP")) {
+          return output.connectorName;
+        }
+      }
+    }
+
     return match;
   }
 
