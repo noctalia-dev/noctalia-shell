@@ -749,7 +749,7 @@ namespace settings {
       panel->setGap(Style::spaceXs * ctx.scale);
       panel->setPadding(Style::spaceSm * ctx.scale);
       panel->setRadius(Style::radiusSm * ctx.scale);
-      panel->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, 0.55f));
+      panel->setFill(colorSpecFromRole(ColorRole::Surface));
       panel->setBorder(colorSpecFromRole(ColorRole::Outline, 0.22f), Style::borderWidth);
 
       auto panelHeader = std::make_unique<Flex>();
@@ -860,7 +860,7 @@ namespace settings {
       inspector->setGap(Style::spaceSm * ctx.scale);
       inspector->setPadding(Style::spaceMd * ctx.scale);
       inspector->setRadius(Style::radiusMd * ctx.scale);
-      inspector->setFill(colorSpecFromRole(ColorRole::Surface, 0.85f));
+      inspector->setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
       inspector->setBorder(colorSpecFromRole(ColorRole::Outline, 0.35f), Style::borderWidth);
 
       if (hasEdit) {
@@ -926,6 +926,48 @@ namespace settings {
         });
         headerRow->addChild(std::move(closeBtn));
         inspector->addChild(std::move(headerRow));
+
+        if (!currentLaneInherited && !currentLaneKey.empty()) {
+          auto moveRow = std::make_unique<Flex>();
+          moveRow->setDirection(FlexDirection::Horizontal);
+          moveRow->setAlign(FlexAlign::Center);
+          moveRow->setGap(Style::spaceXs * ctx.scale);
+
+          auto moveSpacer = std::make_unique<Flex>();
+          moveSpacer->setFlexGrow(1.0f);
+          moveRow->addChild(std::move(moveSpacer));
+
+          for (const auto targetLane : kLaneKeys) {
+            if (targetLane == currentLaneKey) {
+              continue;
+            }
+            auto moveBtn = std::make_unique<Button>();
+            moveBtn->setText(
+                i18n::tr("settings.entities.widget.inspector.move-to-lane", "lane", laneLabel(targetLane)));
+            moveBtn->setVariant(ButtonVariant::Ghost);
+            moveBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
+            moveBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
+            moveBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
+            moveBtn->setRadius(Style::radiusSm * ctx.scale);
+            auto sourceItems = currentLaneItems;
+            auto sourcePath = currentLanePath;
+            auto targetPath = pathWithLastSegment(entry.path, std::string(targetLane));
+            auto targetItems = barWidgetItemsForPath(ctx.config, targetPath);
+            moveBtn->setOnClick([setOverrides = ctx.setOverrides, sourceItems, sourcePath, targetItems, targetPath,
+                                 widgetName]() mutable {
+              auto it = std::find(sourceItems.begin(), sourceItems.end(), widgetName);
+              if (it == sourceItems.end()) {
+                return;
+              }
+              sourceItems.erase(it);
+              targetItems.push_back(widgetName);
+              setOverrides({{sourcePath, sourceItems}, {targetPath, targetItems}});
+            });
+            moveRow->addChild(std::move(moveBtn));
+          }
+
+          inspector->addChild(std::move(moveRow));
+        }
 
         addWidgetSettingsPanel(*inspector, widgetName, ctx);
 
@@ -1060,40 +1102,11 @@ namespace settings {
 
           confirmPanel->addChild(std::move(confirmRow));
           inspector->addChild(std::move(confirmPanel));
-        } else if (!currentLaneInherited && !currentLaneKey.empty()) {
+        } else if (guiManaged && !currentLaneInherited && !currentLaneKey.empty()) {
           auto actionRow = std::make_unique<Flex>();
           actionRow->setDirection(FlexDirection::Horizontal);
           actionRow->setAlign(FlexAlign::Center);
           actionRow->setGap(Style::spaceXs * ctx.scale);
-
-          for (const auto targetLane : kLaneKeys) {
-            if (targetLane == currentLaneKey) {
-              continue;
-            }
-            auto moveBtn = std::make_unique<Button>();
-            moveBtn->setText(
-                i18n::tr("settings.entities.widget.inspector.move-to-lane", "lane", laneLabel(targetLane)));
-            moveBtn->setVariant(ButtonVariant::Ghost);
-            moveBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
-            moveBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
-            moveBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-            moveBtn->setRadius(Style::radiusSm * ctx.scale);
-            auto sourceItems = currentLaneItems;
-            auto sourcePath = currentLanePath;
-            auto targetPath = pathWithLastSegment(entry.path, std::string(targetLane));
-            auto targetItems = barWidgetItemsForPath(ctx.config, targetPath);
-            moveBtn->setOnClick([setOverrides = ctx.setOverrides, sourceItems, sourcePath, targetItems, targetPath,
-                                 widgetName]() mutable {
-              auto it = std::find(sourceItems.begin(), sourceItems.end(), widgetName);
-              if (it == sourceItems.end()) {
-                return;
-              }
-              sourceItems.erase(it);
-              targetItems.push_back(widgetName);
-              setOverrides({{sourcePath, sourceItems}, {targetPath, targetItems}});
-            });
-            actionRow->addChild(std::move(moveBtn));
-          }
 
           auto actionSpacer = std::make_unique<Flex>();
           actionSpacer->setFlexGrow(1.0f);
