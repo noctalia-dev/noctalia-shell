@@ -37,11 +37,16 @@ public:
   void render();
   void renderBackdropFrame(RenderFramebuffer& target, RenderFramebuffer& scratch,
                            const BackdropPostProcessOptions& options);
+  void renderBackdropContent(RenderFramebuffer& target, RenderFramebuffer& scratch,
+                             const BackdropPostProcessOptions& options);
+  void presentTexture(TextureId texture);
   [[nodiscard]] std::unique_ptr<RenderFramebuffer> createFramebuffer(std::uint32_t width, std::uint32_t height);
 
   void setTransitionState(TextureId tex1, TextureId tex2, float imgW1, float imgH1, float imgW2, float imgH2,
                           float progress, WallpaperTransition transition, WallpaperFillMode fillMode,
                           const TransitionParams& params);
+
+  [[nodiscard]] RenderBackend* backend() const noexcept { return m_backend.get(); }
 
 private:
   void cleanup();

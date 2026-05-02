@@ -158,6 +158,16 @@ void WallpaperRenderer::renderBackdropFrame(RenderFramebuffer& target, RenderFra
     return;
   }
 
+  renderBackdropContent(target, scratch, options);
+  presentTexture(target.colorTexture());
+}
+
+void WallpaperRenderer::renderBackdropContent(RenderFramebuffer& target, RenderFramebuffer& scratch,
+                                              const BackdropPostProcessOptions& options) {
+  if (m_backend == nullptr || !target.valid()) {
+    return;
+  }
+
   renderToFramebuffer(target);
 
   if (options.blurRadius >= 0.5f && options.blurRounds > 0) {
@@ -170,8 +180,14 @@ void WallpaperRenderer::renderBackdropFrame(RenderFramebuffer& target, RenderFra
   if (options.tintIntensity > kMinimumPostProcessAlpha) {
     tint(target, options.tintColor, options.tintIntensity);
   }
+}
 
-  blitToSurface(target.colorTexture());
+void WallpaperRenderer::presentTexture(TextureId texture) {
+  if (m_backend == nullptr || m_target == nullptr || !m_target->isReady() || texture == TextureId{}) {
+    return;
+  }
+
+  blitToSurface(texture);
   swapBuffers();
 }
 
