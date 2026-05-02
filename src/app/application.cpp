@@ -368,6 +368,9 @@ void Application::initServices() {
     m_backdrop.onStateChange();
     m_lockScreen.onWallpaperChanged();
     m_themeService.onWallpaperChange();
+    if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center") {
+      m_panelManager.refresh();
+    }
     m_hookManager.fire(HookKind::WallpaperChanged);
   });
 

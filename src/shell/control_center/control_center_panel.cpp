@@ -22,9 +22,9 @@ ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeW
                                        noctalia::theme::ThemeService* theme, IdleInhibitor* idleInhibitor,
                                        WaylandConnection* wayland, Wallpaper* wallpaper) {
   (void)upower;
-  m_tabs[tabIndex(TabId::Overview)] =
-      std::make_unique<OverviewTab>(mpris, weather, audio, powerProfiles, config, network, bluetooth, nightLight, theme,
-                                    notifications, idleInhibitor, wayland, wallpaper);
+  m_tabs[tabIndex(TabId::Overview)] = std::make_unique<OverviewTab>(
+      mpris, weather, audio, powerProfiles, config, network, bluetooth, nightLight, theme, notifications, idleInhibitor,
+      wayland, wallpaper, PanelManager::instance().renderContext());
   m_tabs[tabIndex(TabId::Media)] =
       std::make_unique<MediaTab>(mpris, httpClient, spectrum, wayland, PanelManager::instance().renderContext());
   m_tabs[tabIndex(TabId::Audio)] =
