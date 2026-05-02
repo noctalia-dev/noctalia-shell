@@ -132,8 +132,8 @@ public:
                              const Mat3& transform) = 0;
   virtual void drawFullscreenTexture(TextureId texture, bool flipY) = 0;
   virtual void drawFullscreenTint(Color color) = 0;
-  virtual void drawFullscreenBlur(TextureId sourceTexture, std::uint32_t width, std::uint32_t height, float directionX,
-                                  float directionY, float radius) = 0;
+  virtual void drawFramebufferBlur(TextureId sourceTexture, std::uint32_t width, std::uint32_t height, float directionX,
+                                   float directionY, float radius) = 0;
 
   [[nodiscard]] virtual TextureManager& textureManager() = 0;
 };

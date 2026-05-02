@@ -202,10 +202,10 @@ void WallpaperRenderer::blur(RenderFramebuffer& target, RenderFramebuffer& scrat
 
   for (int round = 0; round < rounds; ++round) {
     m_backend->bindFramebuffer(scratch);
-    m_backend->drawFullscreenBlur(target.colorTexture(), target.width(), target.height(), 1.0f, 0.0f, radius);
+    m_backend->drawFramebufferBlur(target.colorTexture(), target.width(), target.height(), 1.0f, 0.0f, radius);
 
     m_backend->bindFramebuffer(target);
-    m_backend->drawFullscreenBlur(scratch.colorTexture(), scratch.width(), scratch.height(), 0.0f, 1.0f, radius);
+    m_backend->drawFramebufferBlur(scratch.colorTexture(), scratch.width(), scratch.height(), 0.0f, 1.0f, radius);
   }
 }
 

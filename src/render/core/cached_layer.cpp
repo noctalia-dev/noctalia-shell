@@ -55,6 +55,7 @@ RenderFramebuffer* CachedLayer::scratch() {
 void CachedLayer::destroy() {
   m_framebuffer.reset();
   m_scratch.reset();
+  m_backend = nullptr;
   m_width = 0;
   m_height = 0;
   m_dirty = true;

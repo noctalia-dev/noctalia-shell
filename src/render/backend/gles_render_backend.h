@@ -59,8 +59,8 @@ public:
                      const Mat3& transform) override;
   void drawFullscreenTexture(TextureId texture, bool flipY) override;
   void drawFullscreenTint(Color color) override;
-  void drawFullscreenBlur(TextureId sourceTexture, std::uint32_t width, std::uint32_t height, float directionX,
-                          float directionY, float radius) override;
+  void drawFramebufferBlur(TextureId sourceTexture, std::uint32_t width, std::uint32_t height, float directionX,
+                           float directionY, float radius) override;
 
   [[nodiscard]] TextureManager& textureManager() override { return m_textureManager; }
 
