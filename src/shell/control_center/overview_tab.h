@@ -80,6 +80,8 @@ private:
   Label* m_mediaArtist = nullptr;
   Label* m_mediaStatus = nullptr;
   Label* m_mediaProgress = nullptr;
+  Flex* m_mediaArtSlot = nullptr;
+  Glyph* m_mediaArtFallback = nullptr;
   Image* m_mediaArt = nullptr;
   std::string m_loadedMediaArtUrl;
 

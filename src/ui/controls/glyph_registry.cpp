@@ -232,7 +232,6 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"folder", 0xEAAD},
     {"file", 0xEAA4},
 
-
     // Branding
     {"noctalia", 0xEC33},
     {"hyprland", 0xEC6A},
@@ -246,7 +245,8 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"layout-bottombar", 0xEAD3},
     {"paint", 0xEB00},
     {"bar", 0xFD51},
-    {"layout-board", 0xEF95} // crop-16-9
+    {"layout-board", 0xEF95}, // crop-16-9
+    {"disc", 0xEA90}
 };
   // clang-format on
 

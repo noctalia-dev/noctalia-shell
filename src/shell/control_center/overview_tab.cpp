@@ -154,6 +154,9 @@ std::unique_ptr<Flex> OverviewTab::create() {
   auto mediaCard = std::make_unique<Flex>();
   applyOverviewCardStyle(*mediaCard, scale);
   mediaCard->setFillWidth(true);
+  mediaCard->setFillHeight(true);
+  mediaCard->setFlexGrow(1.4f);
+  mediaCard->setJustify(FlexJustify::Center);
   mediaCard->setGap(Style::spaceXs * scale);
   m_mediaCard = mediaCard.get();
 
@@ -163,12 +166,30 @@ std::unique_ptr<Flex> OverviewTab::create() {
   mediaContent->setGap(Style::spaceSm * scale);
 
   const float artSize = Style::controlHeightLg * 1.22f * scale;
+  auto artSlot = std::make_unique<Flex>();
+  artSlot->setDirection(FlexDirection::Vertical);
+  artSlot->setAlign(FlexAlign::Center);
+  artSlot->setJustify(FlexJustify::Center);
+  artSlot->setSize(artSize, artSize);
+  m_mediaArtSlot = artSlot.get();
+
+  auto artFallback = std::make_unique<Glyph>();
+  artFallback->setGlyph("disc");
+  artFallback->setGlyphSize(artSize * 0.55f);
+  artFallback->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+  m_mediaArtFallback = artFallback.get();
+  artSlot->addChild(std::move(artFallback));
+
   auto mediaArt = std::make_unique<Image>();
   mediaArt->setSize(artSize, artSize);
   mediaArt->setRadius(Style::radiusLg * scale);
   mediaArt->setFit(ImageFit::Cover);
+  mediaArt->setParticipatesInLayout(false);
+  mediaArt->setZIndex(1);
   m_mediaArt = mediaArt.get();
-  mediaContent->addChild(std::move(mediaArt));
+  artSlot->addChild(std::move(mediaArt));
+
+  mediaContent->addChild(std::move(artSlot));
 
   auto mediaText = std::make_unique<Flex>();
   mediaText->setDirection(FlexDirection::Vertical);
@@ -426,13 +447,37 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
       label->setMaxLines(1);
     }
   }
-  if (m_mediaCard != nullptr && m_mediaArt != nullptr && m_mediaText != nullptr) {
-    const float textWidth = std::max(1.0f, mediaWrap - m_mediaArt->width() - (Style::spaceSm * contentScale()));
-    for (Label* label : {m_mediaTrack, m_mediaArtist, m_mediaStatus, m_mediaProgress}) {
+  // Grow the album art square to fill the media card height so the row feels balanced
+  // when the card flex-grows. Done before label maxWidth so the text wrap width matches
+  // the final art size on the very first frame.
+  if (m_mediaCard != nullptr && m_mediaArt != nullptr && m_mediaArtSlot != nullptr) {
+    const float scale = contentScale();
+    const float minArt = Style::controlHeightLg * 1.22f * scale;
+    const float maxArt = Style::controlHeightLg * 2.6f * scale;
+    const float available =
+        std::max(0.0f, m_mediaCard->height() - m_mediaCard->paddingTop() - m_mediaCard->paddingBottom());
+    const float desired = std::clamp(available, minArt, maxArt);
+    if (std::abs(m_mediaArtSlot->width() - desired) > 0.5f) {
+      m_mediaArtSlot->setSize(desired, desired);
+      m_mediaArt->setSize(desired, desired);
+      m_mediaArt->setRadius(Style::radiusLg * scale);
+      if (m_mediaArtFallback != nullptr) {
+        m_mediaArtFallback->setGlyphSize(desired * 0.55f);
+      }
+    }
+  }
+
+  if (m_mediaCard != nullptr && m_mediaArtSlot != nullptr && m_mediaText != nullptr) {
+    const float textWidth = std::max(1.0f, mediaWrap - m_mediaArtSlot->width() - (Style::spaceSm * contentScale()));
+    for (Label* label : {m_mediaArtist, m_mediaStatus, m_mediaProgress}) {
       if (label != nullptr) {
         label->setMaxWidth(textWidth);
         label->setMaxLines(1);
       }
+    }
+    if (m_mediaTrack != nullptr) {
+      m_mediaTrack->setMaxWidth(textWidth);
+      m_mediaTrack->setMaxLines(2);
     }
   }
 
@@ -566,6 +611,8 @@ void OverviewTab::onClose() {
   m_mediaStatus = nullptr;
   m_mediaProgress = nullptr;
   m_mediaArt = nullptr;
+  m_mediaArtSlot = nullptr;
+  m_mediaArtFallback = nullptr;
   m_loadedMediaArtUrl.clear();
   m_shortcutsGrid = nullptr;
   m_shortcutPads.clear();
@@ -672,26 +719,30 @@ void OverviewTab::sync(Renderer& renderer) {
   if (m_mediaTrack != nullptr && m_mediaArtist != nullptr && m_mediaStatus != nullptr && m_mediaProgress != nullptr) {
     if (m_mpris == nullptr) {
       m_mediaTrack->setText(i18n::tr("control-center.overview.media.playback-unavailable"));
-      m_mediaArtist->setText(i18n::tr("control-center.overview.media.service-unavailable"));
+      m_mediaArtist->setText("");
+      m_mediaArtist->setVisible(false);
       m_mediaStatus->setText(i18n::tr("control-center.overview.media.unavailable"));
       m_mediaProgress->setText(" ");
       m_mediaProgress->setVisible(false);
       m_mediaStatus->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
       if (m_mediaArt != nullptr) {
         m_mediaArt->clear(renderer);
+        m_mediaArt->setVisible(false);
       }
       m_loadedMediaArtUrl.clear();
     } else {
       const auto active = m_mpris->activePlayer();
       if (!active.has_value()) {
         m_mediaTrack->setText(i18n::tr("control-center.overview.media.nothing-playing"));
-        m_mediaArtist->setText(i18n::tr("control-center.overview.media.play-media-hint"));
+        m_mediaArtist->setText("");
+        m_mediaArtist->setVisible(false);
         m_mediaStatus->setText(i18n::tr("control-center.overview.media.idle"));
         m_mediaProgress->setText(" ");
         m_mediaProgress->setVisible(false);
         m_mediaStatus->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
         if (m_mediaArt != nullptr) {
           m_mediaArt->clear(renderer);
+          m_mediaArt->setVisible(false);
         }
         m_loadedMediaArtUrl.clear();
       } else {
@@ -699,15 +750,15 @@ void OverviewTab::sync(Renderer& renderer) {
                                                     : active->title);
         const std::string artists = mpris::joinArtists(active->artists);
         m_mediaArtist->setText(artists.empty() ? i18n::tr("control-center.overview.media.unknown-artist") : artists);
+        m_mediaArtist->setVisible(true);
+        std::string progressText;
         if (active->lengthUs > 0) {
           const std::int64_t positionSec = std::max<std::int64_t>(0, active->positionUs / 1000000);
           const std::int64_t lengthSec = std::max<std::int64_t>(1, active->lengthUs / 1000000);
-          m_mediaProgress->setText(std::format("{} / {}", formatClockTime(positionSec), formatClockTime(lengthSec)));
-          m_mediaProgress->setVisible(true);
-        } else {
-          m_mediaProgress->setText(" ");
-          m_mediaProgress->setVisible(false);
+          progressText = std::format("{} / {}", formatClockTime(positionSec), formatClockTime(lengthSec));
         }
+        m_mediaProgress->setText(" ");
+        m_mediaProgress->setVisible(false);
         if (m_mediaArt != nullptr) {
           const std::string artUrl = mpris::effectiveArtUrl(*active);
           if (artUrl != m_loadedMediaArtUrl) {
@@ -719,27 +770,35 @@ void OverviewTab::sync(Renderer& renderer) {
                 artPath = cached.string();
               }
             }
+            bool loaded = false;
             if (!artPath.empty()) {
-              if (!m_mediaArt->setSourceFile(renderer, artPath, static_cast<int>(std::round(m_mediaArt->width())),
-                                             true)) {
+              loaded =
+                  m_mediaArt->setSourceFile(renderer, artPath, static_cast<int>(std::round(m_mediaArt->width())), true);
+              if (!loaded) {
                 m_mediaArt->clear(renderer);
               }
             } else {
               m_mediaArt->clear(renderer);
             }
+            m_mediaArt->setVisible(loaded);
             m_loadedMediaArtUrl = artUrl;
           }
         }
+        std::string statusText;
         if (active->playbackStatus == "Playing") {
-          m_mediaStatus->setText(i18n::tr("control-center.overview.media.playing"));
+          statusText = i18n::tr("control-center.overview.media.playing");
           m_mediaStatus->setColor(colorSpecFromRole(ColorRole::Primary));
         } else if (active->playbackStatus == "Paused") {
-          m_mediaStatus->setText(i18n::tr("control-center.overview.media.paused"));
+          statusText = i18n::tr("control-center.overview.media.paused");
           m_mediaStatus->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
         } else {
-          m_mediaStatus->setText(active->playbackStatus);
+          statusText = active->playbackStatus;
           m_mediaStatus->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
         }
+        if (!progressText.empty()) {
+          statusText = std::format("{} · {}", statusText, progressText);
+        }
+        m_mediaStatus->setText(statusText);
       }
     }
   }
