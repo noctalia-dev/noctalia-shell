@@ -310,6 +310,8 @@
       "follow-focused-screen-label": "Follow focused screen",
       "show-all-workspaces-description": "Show all workspaces, regardless of the screen they are bound to.",
       "show-all-workspaces-label": "Show all workspaces",
+      "focus-workspace-on-current-monitor-description": "When switching workspaces, move the workspace to the current monitor instead of switching the monitor's focus.",
+      "focus-workspace-on-current-monitor-label": "Focus workspace on current monitor",
       "font-weight-description": "Set the visual weight for text within workspace.",
       "font-weight-label": "Font weight",
       "grouped-border-opacity-description": "Set the opacity level for workspace container borders.",

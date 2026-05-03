@@ -525,13 +525,16 @@ Item {
   }
 
   // Public functions
-  function switchToWorkspace(workspace) {
+  function switchToWorkspace(workspace, options = {}) {
     try {
+      const focusOnCurrent = options.focusWorkspaceOnCurrentMonitor || false;
+      const dispatcher = focusOnCurrent ? "focusworkspaceoncurrentmonitor" : "workspace";
+
       if (workspace.name) {
-        Hyprland.dispatch(`workspace ${workspace.name}`);
+        Hyprland.dispatch(`${dispatcher} ${workspace.name}`);
         return;
       }
-      Hyprland.dispatch(`workspace ${workspace.idx}`);
+      Hyprland.dispatch(`${dispatcher} ${workspace.idx}`);
     } catch (e) {
       Logger.e("HyprlandService", "Failed to switch workspace:", e);
     }

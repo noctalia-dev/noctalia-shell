@@ -310,6 +310,8 @@
       "follow-focused-screen-label": "Fokussiertem Bildschirm folgen",
       "show-all-workspaces-description": "Alle Arbeitsflächen anzeigen, unabhängig davon, welchem Bildschirm sie zugeordnet sind.",
       "show-all-workspaces-label": "Alle Arbeitsflächen anzeigen",
+      "focus-workspace-on-current-monitor-description": "Beim Wechseln zwischen Arbeitsflächen soll der Arbeitsflächen auf den aktuellen Monitor verschoben werden, anstatt den Fokus des Monitors zu wechseln.",
+      "focus-workspace-on-current-monitor-label": "Arbeitsflächen auf den aktuellen Monitor verschieben",
       "font-weight-description": "Visuelles Gewicht für Text im Arbeitsbereich festlegen.",
       "font-weight-label": "Schriftstärke",
       "grouped-border-opacity-description": "Legen Sie die Deckkraft für Arbeitsflächen-Container-Rahmen fest.",

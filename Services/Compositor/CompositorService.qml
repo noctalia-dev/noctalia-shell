@@ -389,9 +389,9 @@ Singleton {
   }
 
   // Generic workspace switching
-  function switchToWorkspace(workspace) {
+  function switchToWorkspace(workspace, options = {}) {
     if (backend && backend.switchToWorkspace) {
-      backend.switchToWorkspace(workspace);
+      backend.switchToWorkspace(workspace, options);
     } else {
       Logger.w("Compositor", "No backend available for workspace switching");
     }
