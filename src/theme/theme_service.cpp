@@ -6,6 +6,7 @@
 #include "ipc/ipc_service.h"
 #include "net/http_client.h"
 #include "theme/builtin_palettes.h"
+#include "theme/community_palettes.h"
 #include "theme/fixed_palette.h"
 #include "theme/image_loader.h"
 #include "theme/palette_generator.h"
@@ -13,10 +14,8 @@
 
 #include <cctype>
 #include <chrono>
-#include <cstdlib>
 #include <exception>
 #include <filesystem>
-#include <format>
 #include <fstream>
 #include <json.hpp>
 #include <sstream>
@@ -85,37 +84,6 @@ namespace noctalia::theme {
       };
     }
 
-    std::string urlEncode(std::string_view text) {
-      std::string encoded;
-      encoded.reserve(text.size() * 3);
-      auto isUnreserved = [](unsigned char ch) {
-        return std::isalnum(ch) != 0 || ch == '-' || ch == '_' || ch == '.' || ch == '~';
-      };
-      for (char rawCh : text) {
-        const auto ch = static_cast<unsigned char>(rawCh);
-        if (isUnreserved(ch)) {
-          encoded.push_back(static_cast<char>(ch));
-        } else {
-          encoded += std::format("%{:02X}", static_cast<unsigned int>(ch));
-        }
-      }
-      return encoded;
-    }
-
-    std::filesystem::path communityPaletteCacheDir() {
-      if (const char* xdg = std::getenv("XDG_CACHE_HOME"); xdg != nullptr && xdg[0] != '\0') {
-        return std::filesystem::path(xdg) / "noctalia" / "community-palettes";
-      }
-      if (const char* home = std::getenv("HOME"); home != nullptr && home[0] != '\0') {
-        return std::filesystem::path(home) / ".cache" / "noctalia" / "community-palettes";
-      }
-      return std::filesystem::path("/tmp") / "noctalia" / "community-palettes";
-    }
-
-    std::filesystem::path communityPaletteCachePath(std::string_view encodedName) {
-      return communityPaletteCacheDir() / (std::string(encodedName) + ".json");
-    }
-
     // Reads a color key from a JSON object, looking first for the `m`-prefixed form
     // (e.g. `mPrimary`) and falling back to the unprefixed name. Returns fallback
     // (transparent black) if the key is missing or the value is not a hex string.
@@ -164,39 +132,44 @@ namespace noctalia::theme {
 
     TerminalAnsiColors readAnsiJson(const nlohmann::json& obj) {
       return TerminalAnsiColors{
-          .black = readColorField(obj, "black"),
-          .red = readColorField(obj, "red"),
-          .green = readColorField(obj, "green"),
-          .yellow = readColorField(obj, "yellow"),
-          .blue = readColorField(obj, "blue"),
-          .magenta = readColorField(obj, "magenta"),
-          .cyan = readColorField(obj, "cyan"),
-          .white = readColorField(obj, "white"),
+          .black = readColorField(obj, kTerminalBlackJsonKey),
+          .red = readColorField(obj, kTerminalRedJsonKey),
+          .green = readColorField(obj, kTerminalGreenJsonKey),
+          .yellow = readColorField(obj, kTerminalYellowJsonKey),
+          .blue = readColorField(obj, kTerminalBlueJsonKey),
+          .magenta = readColorField(obj, kTerminalMagentaJsonKey),
+          .cyan = readColorField(obj, kTerminalCyanJsonKey),
+          .white = readColorField(obj, kTerminalWhiteJsonKey),
       };
     }
 
     TerminalPalette readTerminalJson(const nlohmann::json& obj) {
       TerminalPalette tp{};
-      if (auto it = obj.find("normal"); it != obj.end() && it->is_object()) {
+      if (auto it = obj.find(kTerminalNormalJsonKey); it != obj.end() && it->is_object()) {
         tp.normal = readAnsiJson(*it);
       }
-      if (auto it = obj.find("bright"); it != obj.end() && it->is_object()) {
+      if (auto it = obj.find(kTerminalBrightJsonKey); it != obj.end() && it->is_object()) {
         tp.bright = readAnsiJson(*it);
       }
-      tp.foreground = readColorField(obj, "foreground");
-      tp.background = readColorField(obj, "background");
-      tp.selectionFg = readColorField(obj, "selectionFg");
-      tp.selectionBg = readColorField(obj, "selectionBg");
-      tp.cursorText = readColorField(obj, "cursorText");
-      tp.cursor = readColorField(obj, "cursor");
+      tp.foreground = readColorField(obj, kTerminalForegroundJsonKey);
+      tp.background = readColorField(obj, kTerminalBackgroundJsonKey);
+      tp.selectionFg = readColorField(obj, kTerminalSelectionFgJsonKey);
+      tp.selectionBg = readColorField(obj, kTerminalSelectionBgJsonKey);
+      tp.cursorText = readColorField(obj, kTerminalCursorTextJsonKey);
+      tp.cursor = readColorField(obj, kTerminalCursorJsonKey);
       return tp;
     }
 
+    std::optional<TerminalPalette> readModeTerminalJson(const nlohmann::json& obj) {
+      auto it = obj.find(kTerminalJsonKey);
+      if (it == obj.end() || !it->is_object())
+        return std::nullopt;
+      return readTerminalJson(*it);
+    }
+
     struct ParsedCommunityPalette {
-      Palette dark;
-      Palette light;
-      TerminalPalette darkTerminal;
-      TerminalPalette lightTerminal;
+      FixedPaletteMode dark;
+      FixedPaletteMode light;
     };
 
     std::optional<ParsedCommunityPalette> parseCommunityPaletteJson(const std::filesystem::path& path) {
@@ -211,20 +184,24 @@ namespace noctalia::theme {
           return std::nullopt;
         ParsedCommunityPalette out{};
         if (auto it = root.find("dark"); it != root.end() && it->is_object()) {
-          out.dark = readPaletteJson(*it);
+          out.dark.palette = readPaletteJson(*it);
+          if (auto terminal = readModeTerminalJson(*it)) {
+            out.dark.terminal = *terminal;
+          } else {
+            return std::nullopt;
+          }
         } else {
           return std::nullopt;
         }
         if (auto it = root.find("light"); it != root.end() && it->is_object()) {
-          out.light = readPaletteJson(*it);
+          out.light.palette = readPaletteJson(*it);
+          if (auto terminal = readModeTerminalJson(*it)) {
+            out.light.terminal = *terminal;
+          } else {
+            return std::nullopt;
+          }
         } else {
           out.light = out.dark;
-        }
-        if (auto it = root.find("darkTerminal"); it != root.end() && it->is_object()) {
-          out.darkTerminal = readTerminalJson(*it);
-        }
-        if (auto it = root.find("lightTerminal"); it != root.end() && it->is_object()) {
-          out.lightTerminal = readTerminalJson(*it);
         }
         return out;
       } catch (const std::exception& e) {
@@ -238,8 +215,6 @@ namespace noctalia::theme {
           .name = "community",
           .dark = parsed.dark,
           .light = parsed.light,
-          .darkTerminal = parsed.darkTerminal,
-          .lightTerminal = parsed.lightTerminal,
       };
       const std::string mode = resolvedModeName(cfg);
       const GeneratedPalette generated = expandBuiltinPalette(bp);
@@ -334,11 +309,10 @@ namespace noctalia::theme {
       return;
     }
     m_inflightCommunityName = name;
-    const std::string encoded = urlEncode(name);
-    const auto cachePath = communityPaletteCachePath(encoded);
+    const auto cachePath = communityPaletteCachePath(name);
     std::error_code ec;
     std::filesystem::create_directories(cachePath.parent_path(), ec);
-    const std::string url = "https://api.noctalia.dev/palette/" + encoded;
+    const std::string url = communityPaletteDownloadUrl(name);
     kLog.info("fetching community palette '{}' from {}", name, url);
     m_httpClient.download(url, cachePath, [this, name, cachePath](bool success) {
       if (m_inflightCommunityName == name) {
@@ -365,7 +339,7 @@ namespace noctalia::theme {
     if (cfg.source == ThemeSource::Wallpaper) {
       resolved = resolveWallpaper(cfg, m_config.getDefaultWallpaperPath());
     } else if (cfg.source == ThemeSource::Community && !cfg.communityPalette.empty()) {
-      const auto cachePath = communityPaletteCachePath(urlEncode(cfg.communityPalette));
+      const auto cachePath = communityPaletteCachePath(cfg.communityPalette);
       if (std::filesystem::exists(cachePath)) {
         if (auto parsed = parseCommunityPaletteJson(cachePath)) {
           resolved = makeResolvedFromParsed(*parsed, cfg);

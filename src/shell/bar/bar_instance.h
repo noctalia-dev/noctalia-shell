@@ -14,9 +14,9 @@
 #include <optional>
 #include <vector>
 
+class Box;
 class Flex;
 class Node;
-class RectNode;
 
 struct BarInstance {
   std::uint32_t outputName = 0;
@@ -37,12 +37,12 @@ struct BarInstance {
   std::size_t attachedPopupCount = 0;
 
   // Bar background, shadow, and layout sections (start/center/end along main axis)
-  RectNode* bg = nullptr;
-  RectNode* shadow = nullptr;
+  Box* bg = nullptr;
+  Box* shadow = nullptr;
   Node* shadowLeftClip = nullptr;
   Node* shadowRightClip = nullptr;
-  RectNode* shadowLeft = nullptr;
-  RectNode* shadowRight = nullptr;
+  Box* shadowLeft = nullptr;
+  Box* shadowRight = nullptr;
   Node* contentClip = nullptr;
   Node* startSlot = nullptr;
   Node* centerSlot = nullptr;

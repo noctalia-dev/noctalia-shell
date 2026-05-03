@@ -116,28 +116,21 @@ namespace noctalia::theme {
     }
 
     void injectTerminalColors(TokenMap& dst, const nlohmann::json& modeJson) {
-      if (!modeJson.contains("terminal") || !modeJson["terminal"].is_object())
+      if (!modeJson.contains(kTerminalJsonKey) || !modeJson[kTerminalJsonKey].is_object())
         return;
-      const auto& terminal = modeJson["terminal"];
-      static constexpr std::pair<const char*, const char*> directKeys[] = {
-          {"foreground", "terminal_foreground"},
-          {"background", "terminal_background"},
-          {"cursor", "terminal_cursor"},
-          {"cursorText", "terminal_cursor_text"},
-          {"selectionFg", "terminal_selection_fg"},
-          {"selectionBg", "terminal_selection_bg"},
-      };
-      for (const auto& [jsonKey, flatKey] : directKeys) {
+      const auto& terminal = modeJson[kTerminalJsonKey];
+      for (const auto& [jsonKey, flatKey] : kTerminalDirectColorTokenKeys) {
         if (terminal.contains(jsonKey) && terminal[jsonKey].is_string())
           setToken(dst, flatKey, terminal[jsonKey].get<std::string>());
       }
-      for (const char* group : {"normal", "bright"}) {
-        if (!terminal.contains(group) || !terminal[group].is_object())
+      for (const auto& group : kTerminalAnsiGroupTokenKeys) {
+        if (!terminal.contains(group.jsonKey) || !terminal[group.jsonKey].is_object())
           continue;
-        for (auto it = terminal[group].begin(); it != terminal[group].end(); ++it) {
-          if (!it.value().is_string())
+        for (const auto key : kTerminalAnsiColorJsonKeys) {
+          const auto& groupJson = terminal[group.jsonKey];
+          if (!groupJson.contains(key) || !groupJson[key].is_string())
             continue;
-          setToken(dst, std::string("terminal_") + group + "_" + it.key(), it.value().get<std::string>());
+          setToken(dst, std::string(group.tokenPrefix) + "_" + std::string(key), groupJson[key].get<std::string>());
         }
       }
     }

@@ -10,7 +10,6 @@
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
-#include "render/scene/rect_node.h"
 #include "shell/surface_shadow.h"
 #include "system/app_identity.h"
 #include "system/desktop_entry.h"
@@ -766,8 +765,8 @@ void Dock::buildScene(DockInstance& instance) {
 
     // Shadow
     if (shell::surface_shadow::enabled(cfg.shadow, shadowConfig)) {
-      auto shadow = std::make_unique<RectNode>();
-      instance.shadow = static_cast<RectNode*>(instance.slideRoot->addChild(std::move(shadow)));
+      auto shadow = std::make_unique<Box>();
+      instance.shadow = static_cast<Box*>(instance.slideRoot->addChild(std::move(shadow)));
     }
 
     // Panel background

@@ -272,9 +272,13 @@ namespace settings {
                                   {"theme", "wallpaper_scheme"}, wallpaperSchemeSelect(cfg.theme.wallpaperScheme),
                                   "wallpaper palette generator scheme material you m3 colors"));
     } else if (cfg.theme.source == ThemeSource::Community) {
+      SettingControl communityPaletteControl = TextSetting{cfg.theme.communityPalette, "Oxocarbon"};
+      if (!env.communityPalettes.empty()) {
+        communityPaletteControl = SelectSetting{env.communityPalettes, cfg.theme.communityPalette};
+      }
       entries.push_back(makeEntry("appearance", "theme", tr("settings.schema.appearance.community-palette.label"),
                                   tr("settings.schema.appearance.community-palette.description"),
-                                  {"theme", "community_palette"}, TextSetting{cfg.theme.communityPalette, "Noctalia"},
+                                  {"theme", "community_palette"}, std::move(communityPaletteControl),
                                   "community palette colors"));
     }
     entries.push_back(makeEntry("appearance", "interface", tr("settings.schema.appearance.ui-scale.label"),

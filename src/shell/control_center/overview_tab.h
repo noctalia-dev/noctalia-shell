@@ -9,12 +9,12 @@
 #include <vector>
 
 class Button;
+class Box;
 class ConfigService;
 class Glyph;
 class GridView;
 class Image;
 class Label;
-class RectNode;
 class Shortcut;
 class Wallpaper;
 class WaylandConnection;
@@ -72,7 +72,7 @@ private:
   std::string m_loadedAvatarPath;
 
   Image* m_wallpaperBg = nullptr;
-  RectNode* m_wallpaperGradient = nullptr;
+  Box* m_wallpaperGradient = nullptr;
 
   Label* m_mediaTrack = nullptr;
   Label* m_mediaArtist = nullptr;

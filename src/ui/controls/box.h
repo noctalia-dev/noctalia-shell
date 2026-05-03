@@ -1,21 +1,22 @@
 #pragma once
 
+#include "render/core/render_styles.h"
 #include "render/scene/node.h"
 #include "ui/palette.h"
 
 #include <optional>
 
 class RectNode;
-struct CornerShapes;
-struct Radii;
-struct RectInsets;
 
 // A styled rectangle that keeps its internal RectNode sized to match itself.
-// Use this anywhere you need a background, separator, or decorative shape in
-// shell/widget code — not RectNode directly.
+// Use this anywhere you need a background or decorative shape in shell/widget
+// code — not RectNode directly.
 class Box : public Node {
 public:
   Box();
+
+  [[nodiscard]] const RoundedRectStyle& style() const noexcept;
+  void setStyle(const RoundedRectStyle& style);
 
   void setFill(const ColorSpec& color);
   // Explicit fixed color.
@@ -39,10 +40,14 @@ public:
 
 private:
   void applyPalette();
+  void syncStyle();
 
   RectNode* m_rect = nullptr;
+  RoundedRectStyle m_style;
   ColorSpec m_fill = clearColorSpec();
   ColorSpec m_border = clearColorSpec();
   float m_borderWidth = 0.0f;
+  bool m_resolveFill = true;
+  bool m_resolveBorder = true;
   Signal<>::ScopedConnection m_paletteConn;
 };

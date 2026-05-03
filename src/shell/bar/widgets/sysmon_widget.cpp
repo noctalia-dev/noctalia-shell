@@ -4,8 +4,8 @@
 #include "render/scene/graph_node.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
-#include "render/scene/rect_node.h"
 #include "system/system_monitor_service.h"
+#include "ui/controls/box.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/controls/progress_bar.h"
@@ -74,13 +74,13 @@ void SysmonWidget::create() {
   container->addChild(std::move(glyph));
 
   if (m_displayMode == SysmonDisplayMode::Graph) {
-    auto chartBg = std::make_unique<RectNode>();
+    auto chartBg = std::make_unique<Box>();
     RoundedRectStyle bgStyle;
     bgStyle.fill = colorForRole(ColorRole::SurfaceVariant);
     bgStyle.radius = Style::radiusSm;
     bgStyle.softness = 0.5f;
     chartBg->setStyle(bgStyle);
-    m_chartBg = static_cast<RectNode*>(container->addChild(std::move(chartBg)));
+    m_chartBg = static_cast<Box*>(container->addChild(std::move(chartBg)));
 
     auto graph = std::make_unique<GraphNode>();
     graph->setLineColor1(colorForRole(ColorRole::Primary));

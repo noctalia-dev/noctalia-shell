@@ -5,7 +5,7 @@
 
 #include <string>
 
-Palette palette = noctalia::theme::findBuiltinPalette("Noctalia")->dark;
+Palette palette = noctalia::theme::findBuiltinPalette("Noctalia")->dark.palette;
 
 namespace {
 

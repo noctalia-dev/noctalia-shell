@@ -6,9 +6,9 @@
 #include "render/core/render_styles.h"
 #include "render/core/shared_texture_cache.h"
 #include "render/render_context.h"
-#include "render/scene/rect_node.h"
 #include "render/scene/wallpaper_node.h"
 #include "time/time_format.h"
+#include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
@@ -44,8 +44,8 @@ LockSurface::LockSurface(WaylandConnection& connection) : Surface(connection) {
   m_wallpaper = static_cast<WallpaperNode*>(m_root.addChild(std::move(wallpaper)));
   m_wallpaper->setZIndex(0);
 
-  auto backdrop = std::make_unique<RectNode>();
-  m_backdrop = static_cast<RectNode*>(m_root.addChild(std::move(backdrop)));
+  auto backdrop = std::make_unique<Box>();
+  m_backdrop = static_cast<Box*>(m_root.addChild(std::move(backdrop)));
   m_backdrop->setZIndex(-1);
 
   auto clockShadow = std::make_unique<Label>();
@@ -55,8 +55,8 @@ LockSurface::LockSurface(WaylandConnection& connection) : Surface(connection) {
   clock->setColor(colorSpecFromRole(ColorRole::Primary));
   m_clock = static_cast<Label*>(m_root.addChild(std::move(clock)));
 
-  auto loginPanel = std::make_unique<RectNode>();
-  m_loginPanel = static_cast<RectNode*>(m_root.addChild(std::move(loginPanel)));
+  auto loginPanel = std::make_unique<Box>();
+  m_loginPanel = static_cast<Box*>(m_root.addChild(std::move(loginPanel)));
 
   auto passwordField = std::make_unique<Input>();
   passwordField->setPlaceholder(i18n::tr("lockscreen.password-placeholder"));

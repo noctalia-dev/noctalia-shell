@@ -1091,7 +1091,7 @@
         },
         "community-palette": {
           "label": "Community Palette",
-          "description": "Palette name to fetch from the community catalog"
+          "description": "Choose a palette from the community catalog"
         },
         "ui-scale": {
           "label": "UI Scale",
