@@ -19,6 +19,14 @@ ColumnLayout {
   }
 
   NToggle {
+    label: I18n.tr("panels.notifications.settings-mark-seen-on-open-label")
+    description: I18n.tr("panels.notifications.settings-mark-seen-on-open-description")
+    checked: Settings.data.notifications.markSeenOnOpen
+    onToggled: checked => Settings.data.notifications.markSeenOnOpen = checked
+    defaultValue: Settings.getDefaultValue("notifications.markSeenOnOpen")
+  }
+
+  NToggle {
     label: I18n.tr("panels.notifications.settings-markdown-label")
     description: I18n.tr("panels.notifications.settings-markdown-description")
     checked: Settings.data.notifications.enableMarkdown

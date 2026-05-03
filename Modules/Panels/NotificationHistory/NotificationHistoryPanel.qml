@@ -19,7 +19,9 @@ SmartPanel {
   preferredHeight: Math.round((Settings.data.notifications.enableMarkdown ? 640 : 540) * Style.uiScaleRatio)
 
   onOpened: {
-    NotificationService.updateLastSeenTs();
+      if (Settings.data.notifications.markSeenOnOpen === true) {
+          NotificationService.updateLastSeenTs();
+      }
   }
 
   panelContent: Rectangle {

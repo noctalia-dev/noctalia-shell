@@ -1507,6 +1507,8 @@
       "settings-enabled-description": "Enable or disable the notification daemon, requires a restart of Noctalia shell.",
       "settings-enabled-label": "Enable notifications",
       "settings-location-description": "Where notifications appear on screen.",
+      "settings-mark-seen-on-open-label": "Mark notifications seen when opening history",
+      "settings-mark-seen-on-open-description": "Marks all notifications as seen when opening the history so they won't show up as new.",
       "settings-markdown-description": "Render notification content using Markdown formatting.",
       "settings-markdown-label": "Enable Markdown",
       "sounds-desc": "Configure notification sound effects and volume.",

@@ -441,6 +441,7 @@
   "notifications": {
     "enabled": true,
     "enableMarkdown": false,
+    "markSeenOnOpen": true,
     "density": "default",
     "monitors": [],
     "location": "top_right",
