@@ -7,7 +7,6 @@
 #include "ipc/ipc_service.h"
 #include "render/core/renderer.h"
 #include "render/render_context.h"
-#include "render/scene/rect_node.h"
 #include "shell/control_center/control_center_panel.h"
 #include "shell/surface_shadow.h"
 #include "ui/controls/box.h"
@@ -1242,8 +1241,8 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
 
     if (hasDecoration && m_attachedToBar && m_config != nullptr &&
         shell::surface_shadow::enabled(true, m_config->config().shell.shadow)) {
-      auto shadow = std::make_unique<RectNode>();
-      m_panelShadowNode = static_cast<RectNode*>(sceneParent->addChild(std::move(shadow)));
+      auto shadow = std::make_unique<Box>();
+      m_panelShadowNode = static_cast<Box*>(sceneParent->addChild(std::move(shadow)));
       m_panelShadowNode->setZIndex(-1);
     }
 

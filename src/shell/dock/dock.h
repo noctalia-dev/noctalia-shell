@@ -23,7 +23,6 @@ class Glyph;
 class Image;
 class InputArea;
 class Label;
-class RectNode;
 class RenderContext;
 class WaylandConnection;
 class LayerSurface;
@@ -84,7 +83,7 @@ private:
     Node* slideRoot = nullptr;
     float slideHiddenDx = 0.0f;
     float slideHiddenDy = 0.0f;
-    RectNode* shadow = nullptr;
+    Box* shadow = nullptr;
     Box* panel = nullptr;
     Flex* row = nullptr;
     InputDispatcher inputDispatcher;

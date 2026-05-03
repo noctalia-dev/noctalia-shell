@@ -10,11 +10,23 @@
 Box::Box() {
   auto rect = std::make_unique<RectNode>();
   m_rect = static_cast<RectNode*>(addChild(std::move(rect)));
+  m_style = m_rect->style();
   m_paletteConn = paletteChanged().connect([this] { applyPalette(); });
+}
+
+const RoundedRectStyle& Box::style() const noexcept { return m_style; }
+
+void Box::setStyle(const RoundedRectStyle& style) {
+  m_style = style;
+  m_resolveFill = false;
+  m_resolveBorder = false;
+  m_borderWidth = style.borderWidth;
+  syncStyle();
 }
 
 void Box::setFill(const ColorSpec& color) {
   m_fill = color;
+  m_resolveFill = true;
   applyPalette();
 }
 
@@ -23,6 +35,7 @@ void Box::setFill(const Color& color) { setFill(fixedColorSpec(color)); }
 void Box::setBorder(const ColorSpec& color, float width) {
   m_border = color;
   m_borderWidth = width;
+  m_resolveBorder = true;
   applyPalette();
 }
 
@@ -31,37 +44,33 @@ void Box::setBorder(const Color& color, float width) { setBorder(fixedColorSpec(
 void Box::clearBorder() {
   m_border = clearColorSpec();
   m_borderWidth = 0.0f;
+  m_resolveBorder = true;
   applyPalette();
 }
 
 void Box::setRadius(float radius) {
-  auto style = m_rect->style();
-  style.radius = radius;
-  m_rect->setStyle(style);
+  m_style.radius = radius;
+  syncStyle();
 }
 
 void Box::setRadii(const Radii& radii) {
-  auto style = m_rect->style();
-  style.radius = radii;
-  m_rect->setStyle(style);
+  m_style.radius = radii;
+  syncStyle();
 }
 
 void Box::setCornerShapes(const CornerShapes& corners) {
-  auto style = m_rect->style();
-  style.corners = corners;
-  m_rect->setStyle(style);
+  m_style.corners = corners;
+  syncStyle();
 }
 
 void Box::setLogicalInset(const RectInsets& inset) {
-  auto style = m_rect->style();
-  style.logicalInset = inset;
-  m_rect->setStyle(style);
+  m_style.logicalInset = inset;
+  syncStyle();
 }
 
 void Box::setSoftness(float softness) {
-  auto style = m_rect->style();
-  style.softness = softness;
-  m_rect->setStyle(style);
+  m_style.softness = softness;
+  syncStyle();
 }
 
 void Box::setSize(float w, float h) {
@@ -75,44 +84,49 @@ void Box::setFrameSize(float w, float h) {
 }
 
 void Box::applyPalette() {
-  auto style = m_rect->style();
-  style.fill = resolveColorSpec(m_fill);
-  style.border = resolveColorSpec(m_border);
-  style.borderWidth = m_borderWidth;
-  style.fillMode = FillMode::Solid;
-  m_rect->setStyle(style);
+  if (m_resolveFill) {
+    m_style.fill = resolveColorSpec(m_fill);
+    m_style.fillMode = FillMode::Solid;
+  }
+  if (m_resolveBorder) {
+    m_style.border = resolveColorSpec(m_border);
+    m_style.borderWidth = m_borderWidth;
+  }
+  syncStyle();
 }
 
 void Box::setFlatStyle() {
   m_fill = colorSpecFromRole(ColorRole::Surface);
   m_border = colorSpecFromRole(ColorRole::Outline);
   m_borderWidth = 0.0f;
-  auto style = m_rect->style();
-  style.fill = resolveColorSpec(m_fill);
-  style.border = resolveColorSpec(m_border);
-  style.borderWidth = m_borderWidth;
-  style.fillMode = FillMode::Solid;
-  style.corners = {};
-  style.logicalInset = {};
-  style.radius = 0;
-  style.softness = 0;
-  m_rect->setStyle(style);
+  m_resolveFill = true;
+  m_resolveBorder = true;
+  m_style.fill = resolveColorSpec(m_fill);
+  m_style.border = resolveColorSpec(m_border);
+  m_style.borderWidth = m_borderWidth;
+  m_style.fillMode = FillMode::Solid;
+  m_style.corners = {};
+  m_style.logicalInset = {};
+  m_style.radius = 0;
+  m_style.softness = 0;
+  syncStyle();
 }
 
 void Box::setPanelStyle() {
   m_fill = colorSpecFromRole(ColorRole::Surface);
   m_border = colorSpecFromRole(ColorRole::Outline);
   m_borderWidth = Style::borderWidth;
-  auto style = m_rect->style();
-  style.fill = resolveColorSpec(m_fill);
-  style.border = resolveColorSpec(m_border);
-  style.borderWidth = m_borderWidth;
-  style.fillMode = FillMode::Solid;
-  style.corners = {};
-  style.logicalInset = {};
-  style.radius = Style::radiusXl;
-  style.softness = 1.0f;
-  m_rect->setStyle(style);
+  m_resolveFill = true;
+  m_resolveBorder = true;
+  m_style.fill = resolveColorSpec(m_fill);
+  m_style.border = resolveColorSpec(m_border);
+  m_style.borderWidth = m_borderWidth;
+  m_style.fillMode = FillMode::Solid;
+  m_style.corners = {};
+  m_style.logicalInset = {};
+  m_style.radius = Style::radiusXl;
+  m_style.softness = 1.0f;
+  syncStyle();
 }
 
 void Box::setCardStyle(float scale) {
@@ -120,3 +134,5 @@ void Box::setCardStyle(float scale) {
   setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), Style::borderWidth);
   setRadius(Style::radiusXl * scale);
 }
+
+void Box::syncStyle() { m_rect->setStyle(m_style); }

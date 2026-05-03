@@ -8,7 +8,6 @@
 #include "dbus/upower/upower_service.h"
 #include "ipc/ipc_service.h"
 #include "render/render_context.h"
-#include "render/scene/rect_node.h"
 #include "shell/bar/widget.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/surface_shadow.h"
@@ -1135,27 +1134,27 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     instance.slideRoot = instance.sceneRoot->addChild(std::move(slide));
 
     // Bar background
-    auto bg = std::make_unique<RectNode>();
-    instance.bg = static_cast<RectNode*>(instance.slideRoot->addChild(std::move(bg)));
+    auto bg = std::make_unique<Box>();
+    instance.bg = static_cast<Box*>(instance.slideRoot->addChild(std::move(bg)));
 
     // Shadow — bar shape copy rendered with large SDF softness to simulate a blurred drop shadow.
     if (shadowSize > 0.0f) {
-      auto shadow = std::make_unique<RectNode>();
-      instance.shadow = static_cast<RectNode*>(instance.slideRoot->addChild(std::move(shadow)));
+      auto shadow = std::make_unique<Box>();
+      instance.shadow = static_cast<Box*>(instance.slideRoot->addChild(std::move(shadow)));
 
       auto leftClip = std::make_unique<Node>();
       leftClip->setClipChildren(true);
       leftClip->setZIndex(-1);
       instance.shadowLeftClip = instance.slideRoot->addChild(std::move(leftClip));
-      auto leftShadow = std::make_unique<RectNode>();
-      instance.shadowLeft = static_cast<RectNode*>(instance.shadowLeftClip->addChild(std::move(leftShadow)));
+      auto leftShadow = std::make_unique<Box>();
+      instance.shadowLeft = static_cast<Box*>(instance.shadowLeftClip->addChild(std::move(leftShadow)));
 
       auto rightClip = std::make_unique<Node>();
       rightClip->setClipChildren(true);
       rightClip->setZIndex(-1);
       instance.shadowRightClip = instance.slideRoot->addChild(std::move(rightClip));
-      auto rightShadow = std::make_unique<RectNode>();
-      instance.shadowRight = static_cast<RectNode*>(instance.shadowRightClip->addChild(std::move(rightShadow)));
+      auto rightShadow = std::make_unique<Box>();
+      instance.shadowRight = static_cast<Box*>(instance.shadowRightClip->addChild(std::move(rightShadow)));
     }
     // Note: shadow is inserted before bar sections so it renders below them (z=-1 is set below).
 
@@ -1272,7 +1271,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
           Radii{pickRadius(corners.tl), pickRadius(corners.tr), pickRadius(corners.br), pickRadius(corners.bl)};
     }
 
-    auto configureShadow = [&](RectNode* node, float x, float y) {
+    auto configureShadow = [&](Box* node, float x, float y) {
       if (node == nullptr) {
         return;
       }

@@ -3,7 +3,7 @@
 #include "config/config_service.h"
 #include "core/ui_phase.h"
 #include "render/render_context.h"
-#include "render/scene/rect_node.h"
+#include "ui/controls/box.h"
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
@@ -133,7 +133,7 @@ void ScreenCorners::ensureSurfaces() {
 void ScreenCorners::destroySurfaces() { m_instances.clear(); }
 
 void ScreenCorners::buildCornerScene(Corner& corner, float size, int cornerIndex) {
-  auto root = std::make_unique<RectNode>();
+  auto root = std::make_unique<Box>();
   root->setSize(size, size);
   root->setStyle(RoundedRectStyle{
       .fill = Color{0.0f, 0.0f, 0.0f, 1.0f},

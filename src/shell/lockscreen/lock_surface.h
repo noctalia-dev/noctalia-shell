@@ -17,9 +17,9 @@ struct ext_session_lock_v1;
 struct wl_output;
 
 class Button;
+class Box;
 class Input;
 class Label;
-class RectNode;
 class SharedTextureCache;
 class WallpaperNode;
 struct KeyboardEvent;
@@ -63,10 +63,10 @@ private:
   wl_output* m_output = nullptr;
   Node m_root;
   WallpaperNode* m_wallpaper = nullptr;
-  RectNode* m_backdrop = nullptr;
+  Box* m_backdrop = nullptr;
   Label* m_clockShadow = nullptr;
   Label* m_clock = nullptr;
-  RectNode* m_loginPanel = nullptr;
+  Box* m_loginPanel = nullptr;
   Input* m_passwordField = nullptr;
   Button* m_loginButton = nullptr;
   SharedTextureCache* m_textureCache = nullptr;

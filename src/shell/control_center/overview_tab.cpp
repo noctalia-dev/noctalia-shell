@@ -5,13 +5,13 @@
 #include "dbus/mpris/mpris_art.h"
 #include "dbus/mpris/mpris_service.h"
 #include "i18n/i18n.h"
-#include "render/scene/rect_node.h"
 #include "shell/control_center/shortcut_registry.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/wallpaper/wallpaper.h"
 #include "system/distro_info.h"
 #include "system/weather_service.h"
 #include "time/time_format.h"
+#include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
@@ -80,7 +80,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
     m_wallpaperBg = wpBg.get();
     userCard->addChild(std::move(wpBg));
 
-    auto gradient = std::make_unique<RectNode>();
+    auto gradient = std::make_unique<Box>();
     gradient->setParticipatesInLayout(false);
     gradient->setZIndex(-1);
     m_wallpaperGradient = gradient.get();

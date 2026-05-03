@@ -22,10 +22,10 @@
 
 class ConfigService;
 class ContextMenuPopup;
+class Box;
 class IpcService;
 class Renderer;
 class RenderContext;
-class RectNode;
 class WaylandConnection;
 struct PointerEvent;
 struct wl_output;
@@ -152,7 +152,7 @@ private:
   Node* m_contentNode = nullptr;
   Node* m_attachedRevealClipNode = nullptr;
   Node* m_attachedRevealContentNode = nullptr;
-  RectNode* m_panelShadowNode = nullptr;
+  Box* m_panelShadowNode = nullptr;
   InputDispatcher m_inputDispatcher;
 
   std::unordered_map<std::string, std::unique_ptr<Panel>> m_panels;

@@ -6,11 +6,11 @@
 #include <chrono>
 #include <string>
 
+class Box;
 class Glyph;
 class GraphNode;
 class Label;
 class ProgressBar;
-class RectNode;
 class SystemMonitorService;
 struct SystemStats;
 struct wl_output;
@@ -61,7 +61,7 @@ private:
   std::chrono::steady_clock::time_point m_lastSampleAt{};
   double m_tempMin = 30.0;
   double m_tempMax = 80.0;
-  RectNode* m_chartBg = nullptr;
+  Box* m_chartBg = nullptr;
   GraphNode* m_graphNode = nullptr;
   float m_scrollProgress = 1.0f;
   Timer m_updateTimer;

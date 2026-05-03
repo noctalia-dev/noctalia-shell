@@ -7,7 +7,7 @@
 #include "render/core/render_styles.h"
 #include "render/core/shared_texture_cache.h"
 #include "render/render_context.h"
-#include "render/scene/rect_node.h"
+#include "ui/controls/box.h"
 #include "ui/palette.h"
 #include "wayland/wayland_connection.h"
 
@@ -505,8 +505,8 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
 
   instance->sceneRoot = std::make_unique<Node>();
   instance->sceneRoot->setAnimationManager(&instance->animations);
-  auto fillNode = std::make_unique<RectNode>();
-  instance->fillNode = static_cast<RectNode*>(instance->sceneRoot->addChild(std::move(fillNode)));
+  auto fillNode = std::make_unique<Box>();
+  instance->fillNode = static_cast<Box*>(instance->sceneRoot->addChild(std::move(fillNode)));
   auto wallpaperNode = std::make_unique<WallpaperNode>();
   instance->wallpaperNode = static_cast<WallpaperNode*>(instance->sceneRoot->addChild(std::move(wallpaperNode)));
   instance->surface->setSceneRoot(instance->sceneRoot.get());
