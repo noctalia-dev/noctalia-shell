@@ -789,6 +789,7 @@ Singleton {
       property int screenOffTimeout: 600    // seconds, 0 = disabled
       property int lockTimeout: 660         // seconds, 0 = disabled
       property int suspendTimeout: 1800     // seconds, 0 = disabled
+      property int lockScreenOffTimeout: 0  // seconds, 0 = disabled — turn off monitors while lock screen is active
       property int fadeDuration: 5       // seconds of fade-to-black before action fires
       property string screenOffCommand: ""
       property string lockCommand: ""

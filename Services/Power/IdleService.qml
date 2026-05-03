@@ -43,6 +43,7 @@ Singleton {
   property var _customMonitors: ({})
   property var _queuedStages: []
   property bool _screenOffActive: false
+  property var _lockScreenOffMonitor: null
 
   // Signals for external listeners (plugins, modules)
   signal screenOffRequested
@@ -199,6 +200,7 @@ Singleton {
       if (PanelService.lockScreen && !PanelService.lockScreen.active) {
         PanelService.lockScreen.active = true;
       }
+      _applyLockScreenOffMonitor();
       root.lockRequested();
     } else if (stage === "suspend") {
       if (Settings.data.idle.suspendCommand)
@@ -239,6 +241,61 @@ Singleton {
     }
     function onCustomCommandsChanged() {
       root._applyCustomMonitors();
+    }
+    function onLockScreenOffTimeoutChanged() {
+      if (PanelService.lockScreen && PanelService.lockScreen.active)
+        root._applyLockScreenOffMonitor();
+      else
+        root._destroyLockScreenOffMonitor();
+    }
+  }
+
+  // -------------------------------------------------------
+  // React to lock screen active state changes
+  Connections {
+    target: PanelService.lockScreen
+    function onActiveChanged() {
+      if (PanelService.lockScreen.active)
+        root._applyLockScreenOffMonitor();
+      else
+        root._destroyLockScreenOffMonitor();
+    }
+  }
+
+  function _applyLockScreenOffMonitor() {
+    _destroyLockScreenOffMonitor();
+    const t = Settings.data.idle.lockScreenOffTimeout;
+    if (!Settings.data.idle.enabled || t <= 0)
+      return;
+    try {
+      const qml = `
+        import Quickshell.Wayland
+        IdleMonitor { timeout: ${t} }
+      `;
+
+      const monitor = Qt.createQmlObject(qml, root, "IdleMonitor_lockScreenOff");
+      monitor.isIdleChanged.connect(function () {
+        if (monitor.isIdle) {
+          Logger.i("IdleService", "Lock-screen idle: turning off monitors");
+          CompositorService.turnOffMonitors();
+          root._screenOffActive = true;
+        } else {
+          root._restoreMonitors();
+        }
+      });
+      root._lockScreenOffMonitor = monitor;
+      root._monitorsCreated = true;
+      Logger.i("IdleService", "Lock-screen-off monitor created, timeout", t, "s");
+    } catch (e) {
+      Logger.w("IdleService", "Failed to create lock-screen-off monitor:", e);
+    }
+  }
+
+  function _destroyLockScreenOffMonitor() {
+    if (_lockScreenOffMonitor) {
+      _lockScreenOffMonitor.destroy();
+      root._lockScreenOffMonitor = null;
+      Logger.d("IdleService", "Lock-screen-off monitor destroyed");
     }
   }
 
