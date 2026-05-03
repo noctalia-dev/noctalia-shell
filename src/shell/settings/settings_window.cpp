@@ -1404,7 +1404,6 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
       m_renamingMonitorOverrideMatch.clear();
       m_pendingDeleteMonitorOverrideBarName.clear();
       m_pendingDeleteMonitorOverrideMatch.clear();
-      m_contentScrollState.offset = 0.0f;
       requestRebuild();
       return;
     }
