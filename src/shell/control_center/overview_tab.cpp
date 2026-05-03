@@ -212,30 +212,34 @@ std::unique_ptr<Flex> OverviewTab::create() {
   auto dateTimeCard = std::make_unique<Flex>();
   applyOverviewCardStyle(*dateTimeCard, scale);
   dateTimeCard->setDirection(FlexDirection::Horizontal);
+  dateTimeCard->setAlign(FlexAlign::Center);
   dateTimeCard->setJustify(FlexJustify::Center);
+  dateTimeCard->setGap(Style::spaceLg * scale);
   dateTimeCard->setFillWidth(true);
+  dateTimeCard->setFillHeight(true);
+  dateTimeCard->setFlexGrow(1.0f);
   m_dateTimeCard = dateTimeCard.get();
-
-  auto dateTimeContent = std::make_unique<Flex>();
-  dateTimeContent->setDirection(FlexDirection::Vertical);
-  dateTimeContent->setAlign(FlexAlign::Center);
-  dateTimeContent->setJustify(FlexJustify::Center);
-  dateTimeContent->setGap(Style::spaceXs * 0.85f * scale);
 
   auto timeLabel = std::make_unique<Label>();
   timeLabel->setText(formatLocalTime("{:%H:%M}"));
   timeLabel->setBold(true);
-  timeLabel->setFontSize(Style::fontSizeTitle * 1.42f * scale);
+  timeLabel->setFontSize(Style::fontSizeTitle * 1.7f * scale);
   timeLabel->setColor(colorSpecFromRole(ColorRole::Primary));
   m_timeLabel = timeLabel.get();
-  dateTimeContent->addChild(std::move(timeLabel));
+  dateTimeCard->addChild(std::move(timeLabel));
+
+  auto dateTimeRight = std::make_unique<Flex>();
+  dateTimeRight->setDirection(FlexDirection::Vertical);
+  dateTimeRight->setAlign(FlexAlign::Start);
+  dateTimeRight->setJustify(FlexJustify::Center);
+  dateTimeRight->setGap(Style::spaceXs * 0.5f * scale);
 
   auto dateLabel = std::make_unique<Label>();
   dateLabel->setText(formatCurrentDate());
   dateLabel->setFontSize(Style::fontSizeBody * 0.9f * scale);
   dateLabel->setColor(colorSpecFromRole(ColorRole::OnSurface));
   m_dateLabel = dateLabel.get();
-  dateTimeContent->addChild(std::move(dateLabel));
+  dateTimeRight->addChild(std::move(dateLabel));
 
   auto weatherRow = std::make_unique<Flex>();
   weatherRow->setDirection(FlexDirection::Horizontal);
@@ -256,8 +260,8 @@ std::unique_ptr<Flex> OverviewTab::create() {
 
   weatherRow->addChild(std::move(wGlyph));
   weatherRow->addChild(std::move(wLine));
-  dateTimeContent->addChild(std::move(weatherRow));
-  dateTimeCard->addChild(std::move(dateTimeContent));
+  dateTimeRight->addChild(std::move(weatherRow));
+  dateTimeCard->addChild(std::move(dateTimeRight));
 
   leftColumn->addChild(std::move(mediaCard));
   leftColumn->addChild(std::move(dateTimeCard));
@@ -548,7 +552,7 @@ void OverviewTab::onClose() {
 void OverviewTab::syncScaledFonts() {
   const float s = contentScale();
   if (m_timeLabel != nullptr) {
-    m_timeLabel->setFontSize(Style::fontSizeTitle * 1.42f * s);
+    m_timeLabel->setFontSize(Style::fontSizeTitle * 1.7f * s);
   }
   if (m_dateLabel != nullptr) {
     m_dateLabel->setFontSize(Style::fontSizeBody * 0.9f * s);
