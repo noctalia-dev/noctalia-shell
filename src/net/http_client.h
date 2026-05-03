@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <chrono>
 #include <curl/curl.h>
 #include <filesystem>
 #include <functional>
@@ -58,10 +59,12 @@ private:
 
   void finishTransfer(CURL* easy, CURLcode result);
   void finishPostTransfer(CURL* easy, CURLcode result);
+  void performMulti(const char* reason);
   [[nodiscard]] bool hasActiveTransfers() const;
 
   CURLM* m_multi = nullptr;
   int m_running = 0;
+  std::chrono::steady_clock::time_point m_lastServiceAt{};
   bool m_offlineMode = false;
   std::unordered_map<CURL*, Transfer> m_transfers;
   std::unordered_map<CURL*, PostTransfer> m_postTransfers;

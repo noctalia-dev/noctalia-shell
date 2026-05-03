@@ -43,16 +43,20 @@ MainLoop::MainLoop(WaylandConnection& wayland, Bar& bar, PollSourcesProvider sou
 void MainLoop::run() {
   while (!Application::s_shutdownRequested) {
     // Process deferred callbacks from the previous iteration
+    auto opStart = std::chrono::steady_clock::now();
     auto& deferred = DeferredCall::queue();
     if (!deferred.empty()) {
       auto pending = std::move(deferred);
+      const std::size_t count = pending.size();
       deferred.clear();
       for (auto& fn : pending) {
         fn();
       }
+      const float ms = elapsedSince(opStart);
+      logSlowMainLoopOperation(ms, "deferred callbacks took {:.1f}ms (count={})", ms, count);
     }
 
-    auto opStart = std::chrono::steady_clock::now();
+    opStart = std::chrono::steady_clock::now();
     while (wl_display_prepare_read(m_wayland.display()) != 0) {
       opStart = std::chrono::steady_clock::now();
       if (wl_display_dispatch_pending(m_wayland.display()) < 0) {
@@ -88,6 +92,7 @@ void MainLoop::run() {
     // Collect poll fds and compute timeout from all sources. The source list is
     // fetched fresh each iteration so config reloads can add/remove poll sources
     // (e.g. polkit/brightness) without leaving stale pointers in the loop.
+    opStart = std::chrono::steady_clock::now();
     const std::vector<PollSource*> sources = m_sourcesProvider ? m_sourcesProvider() : std::vector<PollSource*>{};
     std::vector<pollfd> pollFds;
     pollFds.push_back({.fd = wl_display_get_fd(m_wayland.display()), .events = waylandPollEvents, .revents = 0});
@@ -114,6 +119,10 @@ void MainLoop::run() {
     if (flushBlocked && pollTimeout >= 0 && pollTimeout < 16) {
       pollTimeout = 16;
     }
+
+    ms = elapsedSince(opStart);
+    logSlowMainLoopOperation(ms, "poll source preparation took {:.1f}ms (sources={} fds={} timeout={}ms)", ms,
+                             sources.size(), pollFds.size(), pollTimeout);
 
 #ifndef NDEBUG
     // Spin canary: if a source votes pollTimeoutMs()==0 for >100ms continuously,

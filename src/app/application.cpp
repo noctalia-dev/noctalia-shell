@@ -79,6 +79,30 @@ namespace {
     throw std::runtime_error(std::string(label) + " init failed");
   }
 
+  float elapsedSince(std::chrono::steady_clock::time_point start) {
+    return std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - start).count();
+  }
+
+  template <typename Fn> void runStartupPhase(std::string_view label, Fn&& fn) {
+    constexpr float kSlowStartupPhaseDebugMs = 50.0f;
+    constexpr float kSlowStartupPhaseWarnMs = 1000.0f;
+
+    const auto start = std::chrono::steady_clock::now();
+    try {
+      fn();
+    } catch (...) {
+      kLog.warn("startup phase {} failed after {:.1f}ms", label, elapsedSince(start));
+      throw;
+    }
+
+    const float ms = elapsedSince(start);
+    if (ms >= kSlowStartupPhaseWarnMs) {
+      kLog.warn("startup phase {} took {:.1f}ms", label, ms);
+    } else if (ms >= kSlowStartupPhaseDebugMs) {
+      kLog.debug("startup phase {} took {:.1f}ms", label, ms);
+    }
+  }
+
   void signal_handler(int signum) {
     if (signum == SIGTERM || signum == SIGINT) {
       Application::s_shutdownRequested = true;
@@ -232,16 +256,19 @@ bool Application::backdropShouldBeActive() const {
 void Application::run() {
   initLogFile();
   kLog.info("noctalia {}", noctalia::build_info::displayVersion());
-  initServices();
-  initUi();
-  initIpc();
-  (void)buildPollSources();
+  runStartupPhase("initServices", [this]() { initServices(); });
+  runStartupPhase("initUi", [this]() { initUi(); });
+  runStartupPhase("initIpc", [this]() { initIpc(); });
+  runStartupPhase("buildPollSources", [this]() { (void)buildPollSources(); });
 
-  m_hookManager.reload(m_configService.config().hooks);
-  m_hookManager.fire(HookKind::Started);
-  m_telemetryService.maybeSend(m_configService, m_httpClient, m_wayland);
+  runStartupPhase("startup hooks", [this]() {
+    m_hookManager.reload(m_configService.config().hooks);
+    m_hookManager.fire(HookKind::Started);
+  });
+  runStartupPhase("telemetry enqueue",
+                  [this]() { m_telemetryService.maybeSend(m_configService, m_httpClient, m_wayland); });
 
-  malloc_trim(0);
+  runStartupPhase("malloc_trim", []() { malloc_trim(0); });
 
   m_trayInitTimer.start(std::chrono::milliseconds(500), [this]() { startTrayService(); });
 

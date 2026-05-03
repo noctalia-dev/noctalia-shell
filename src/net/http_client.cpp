@@ -3,6 +3,7 @@
 #include "core/deferred_call.h"
 #include "core/log.h"
 
+#include <chrono>
 #include <cstdio>
 #include <filesystem>
 #include <limits>
@@ -10,6 +11,13 @@
 
 namespace {
   constexpr Logger kLog("http");
+  constexpr float kSlowCurlOperationDebugMs = 50.0f;
+  constexpr float kSlowCurlOperationWarnMs = 1000.0f;
+  constexpr float kCurlServiceGapWarnMs = 5000.0f;
+
+  float elapsedSince(std::chrono::steady_clock::time_point start) {
+    return std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - start).count();
+  }
 
   void deferFailure(HttpClient::CompletionCallback cb) {
     if (!cb) {
@@ -124,7 +132,7 @@ void HttpClient::download(std::string_view url, const std::filesystem::path& des
     return;
   }
   m_activeByDest[destKey] = easy;
-  curl_multi_perform(m_multi, &m_running);
+  performMulti("download start");
 }
 
 void HttpClient::post(std::string_view url, std::string body, std::string_view contentType, CompletionCallback cb) {
@@ -173,7 +181,7 @@ void HttpClient::post(std::string_view url, std::string body, std::string_view c
     deferFailure(std::move(failedPost.callback));
     return;
   }
-  curl_multi_perform(m_multi, &m_running);
+  performMulti("post start");
 }
 
 void HttpClient::addPollFds(std::vector<pollfd>& fds) {
@@ -219,7 +227,7 @@ void HttpClient::dispatch(const std::vector<pollfd>& /*fds*/, std::size_t /*star
     return;
   }
 
-  curl_multi_perform(m_multi, &m_running);
+  performMulti("poll dispatch");
 
   CURLMsg* msg = nullptr;
   int msgsLeft = 0;
@@ -233,6 +241,31 @@ void HttpClient::dispatch(const std::vector<pollfd>& /*fds*/, std::size_t /*star
       }
     }
   }
+
+  if (!hasActiveTransfers()) {
+    m_lastServiceAt = {};
+  }
+}
+
+void HttpClient::performMulti(const char* reason) {
+  const auto now = std::chrono::steady_clock::now();
+  if (m_lastServiceAt != std::chrono::steady_clock::time_point{}) {
+    const float serviceGapMs = std::chrono::duration<float, std::milli>(now - m_lastServiceAt).count();
+    if (serviceGapMs >= kCurlServiceGapWarnMs) {
+      kLog.warn("http client was not serviced for {:.1f}ms before {} (downloads={} posts={} running={})", serviceGapMs,
+                reason, m_transfers.size(), m_postTransfers.size(), m_running);
+    }
+  }
+
+  const auto opStart = std::chrono::steady_clock::now();
+  curl_multi_perform(m_multi, &m_running);
+  const float ms = elapsedSince(opStart);
+  if (ms >= kSlowCurlOperationWarnMs) {
+    kLog.warn("curl_multi_perform took {:.1f}ms during {}", ms, reason);
+  } else if (ms >= kSlowCurlOperationDebugMs) {
+    kLog.debug("curl_multi_perform took {:.1f}ms during {}", ms, reason);
+  }
+  m_lastServiceAt = std::chrono::steady_clock::now();
 }
 
 void HttpClient::finishTransfer(CURL* easy, CURLcode result) {
