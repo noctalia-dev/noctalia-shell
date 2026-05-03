@@ -308,6 +308,8 @@
       "focused-color-label": "Farbe der fokussierten Arbeitsfläche",
       "follow-focused-screen-description": "Zeige Arbeitsflächen vom aktuell fokussierten Bildschirm an, statt vom Bildschirm, auf dem sich die Leiste befindet.",
       "follow-focused-screen-label": "Fokussiertem Bildschirm folgen",
+      "show-all-workspaces-description": "Alle Arbeitsflächen anzeigen, unabhängig davon, welchem Bildschirm sie zugeordnet sind.",
+      "show-all-workspaces-label": "Alle Arbeitsflächen anzeigen",
       "font-weight-description": "Visuelles Gewicht für Text im Arbeitsbereich festlegen.",
       "font-weight-label": "Schriftstärke",
       "grouped-border-opacity-description": "Legen Sie die Deckkraft für Arbeitsflächen-Container-Rahmen fest.",
