@@ -123,7 +123,7 @@ namespace {
       auto textCol = std::make_unique<Flex>();
       textCol->setDirection(FlexDirection::Vertical);
       textCol->setAlign(FlexAlign::Start);
-      textCol->setGap(Style::spaceXs * scale);
+      textCol->setGap(Style::spaceXs * 0.5f * scale);
       textCol->setFlexGrow(1.0f);
       m_textCol = static_cast<Flex*>(m_row->addChild(std::move(textCol)));
 
@@ -131,12 +131,16 @@ namespace {
       title->setFontSize(Style::fontSizeBody * scale);
       title->setBold(true);
       title->setColor(colorSpecFromRole(ColorRole::OnSurface));
+      title->setMaxLines(1);
+      title->setStableBaseline(true);
       m_title = static_cast<Label*>(m_textCol->addChild(std::move(title)));
 
       auto subtitle = std::make_unique<Label>();
       subtitle->setCaptionStyle();
       subtitle->setFontSize(Style::fontSizeCaption * scale);
       subtitle->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+      subtitle->setMaxLines(1);
+      subtitle->setStableBaseline(true);
       m_subtitle = static_cast<Label*>(m_textCol->addChild(std::move(subtitle)));
 
       setVisible(false);
