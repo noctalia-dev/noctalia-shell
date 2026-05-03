@@ -38,10 +38,27 @@
         "type": "github"
       }
     },
+    "presets-cream-of-the-crop": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1759980756,
+        "narHash": "sha256-4ZyrXmiLR8hyzad9qPjOiDaVEEpPDR+nBr2uTrbRxLw=",
+        "owner": "projectM-visualizer",
+        "repo": "presets-cream-of-the-crop",
+        "rev": "0180df21f5e0bd39b9060cc5de420ed2f1f9e509",
+        "type": "github"
+      },
+      "original": {
+        "owner": "projectM-visualizer",
+        "repo": "presets-cream-of-the-crop",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "nixpkgs": "nixpkgs",
-        "noctalia-qs": "noctalia-qs"
+        "noctalia-qs": "noctalia-qs",
+        "presets-cream-of-the-crop": "presets-cream-of-the-crop"
       }
     },
     "systems": {

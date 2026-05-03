@@ -446,6 +446,8 @@ Singleton {
       property list<var> favorites: []
       // Format: [{ "path": "...", "appearance": "light"|"dark", "colorScheme": "...", "darkMode": bool, "useWallpaperColors": bool, "generationMethod": "...", "paletteColors": [...] }]
       // Legacy entries omit "appearance" and use darkMode to infer light vs dark slot.
+
+      property bool livePaperEnabled: false
     }
 
     // applauncher
