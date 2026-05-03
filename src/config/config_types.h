@@ -556,7 +556,7 @@ struct ThemeConfig {
 
   ThemeSource source = ThemeSource::Builtin;
   std::string builtinPalette = "Noctalia";
-  std::string communityPalette = "Noctalia";
+  std::string communityPalette = "Oxocarbon";
   std::string wallpaperScheme = "m3-content";
   ThemeMode mode = ThemeMode::Dark;
   TemplatesConfig templates;
