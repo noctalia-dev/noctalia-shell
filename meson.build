@@ -44,6 +44,7 @@ pangocairo_dep      = dependency('pangocairo')
 xkbcommon_dep       = dependency('xkbcommon')
 glib_dep            = dependency('glib-2.0')
 gobject_dep         = dependency('gobject-2.0')
+gio_dep             = dependency('gio-2.0')
 polkit_agent_dep    = dependency('polkit-agent-1')
 polkit_gobject_dep  = dependency('polkit-gobject-1')
 # PipeWire/SPA headers use GCC extensions that trigger -Wpedantic/-Wconversion;
@@ -650,6 +651,7 @@ executable('noctalia',
     xkbcommon_dep,
     glib_dep,
     gobject_dep,
+    gio_dep,
     polkit_agent_dep,
     polkit_gobject_dep,
     pipewire_dep,

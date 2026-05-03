@@ -1,10 +1,12 @@
 #include "system/icon_resolver.h"
 
 #include <algorithm>
-#include <cstdio>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <gio/gio.h>
+#include <memory>
+#include <optional>
 #include <set>
 #include <string_view>
 #include <utility>
@@ -138,6 +140,56 @@ namespace {
     return signature;
   }
 
+  struct GSettingsDeleter {
+    void operator()(GSettings* settings) const {
+      if (settings != nullptr) {
+        g_object_unref(settings);
+      }
+    }
+  };
+
+  GSettings* iconSettings() {
+    static std::unique_ptr<GSettings, GSettingsDeleter> settings = []() {
+      GSettingsSchemaSource* source = g_settings_schema_source_get_default();
+      if (source == nullptr) {
+        return std::unique_ptr<GSettings, GSettingsDeleter>{nullptr};
+      }
+
+      GSettingsSchema* schema = g_settings_schema_source_lookup(source, "org.gnome.desktop.interface", TRUE);
+      if (schema == nullptr) {
+        return std::unique_ptr<GSettings, GSettingsDeleter>{nullptr};
+      }
+
+      const bool hasIconThemeKey = g_settings_schema_has_key(schema, "icon-theme") != FALSE;
+      g_settings_schema_unref(schema);
+      if (!hasIconThemeKey) {
+        return std::unique_ptr<GSettings, GSettingsDeleter>{nullptr};
+      }
+
+      return std::unique_ptr<GSettings, GSettingsDeleter>{g_settings_new("org.gnome.desktop.interface")};
+    }();
+    return settings.get();
+  }
+
+  std::optional<std::string> readGSettingsIconTheme() {
+    GSettings* settings = iconSettings();
+    if (settings == nullptr) {
+      return std::nullopt;
+    }
+
+    gchar* raw = g_settings_get_string(settings, "icon-theme");
+    if (raw == nullptr) {
+      return std::nullopt;
+    }
+
+    std::string value = trim(raw);
+    g_free(raw);
+    if (value.empty()) {
+      return std::nullopt;
+    }
+    return value;
+  }
+
   // Returns theme name candidates in priority order:
   //   1. GSettings (the canonical source used by compositors and other launchers)
   //   2. GTK3 ini file (reliable fallback)
@@ -145,16 +197,8 @@ namespace {
   std::vector<std::string> readGtkThemeCandidates() {
     std::vector<std::string> candidates;
 
-    // 1. GSettings via CLI — most reliable, matches what fuzzel and other tools use
-    if (FILE* pipe = popen("gsettings get org.gnome.desktop.interface icon-theme 2>/dev/null", "r")) {
-      char buf[256] = {};
-      if (fgets(buf, sizeof(buf), pipe) != nullptr) {
-        std::string value = trim(buf);
-        if (!value.empty()) {
-          candidates.emplace_back(std::move(value));
-        }
-      }
-      pclose(pipe);
+    if (auto value = readGSettingsIconTheme(); value.has_value()) {
+      candidates.emplace_back(std::move(*value));
     }
 
     // 2. GTK ini files
