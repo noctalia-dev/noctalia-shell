@@ -20,8 +20,7 @@ struct PointerEvent;
 
 class TaskbarWidget : public Widget {
 public:
-  TaskbarWidget(WaylandConnection& connection, wl_output* output, bool groupByWorkspace, std::string barPosition,
-                float activeIndicatorWidth);
+  TaskbarWidget(WaylandConnection& connection, wl_output* output, bool groupByWorkspace, std::string barPosition);
   ~TaskbarWidget() override;
 
   void create() override;
@@ -75,7 +74,6 @@ private:
   WaylandConnection& m_connection;
   wl_output* m_output = nullptr;
   bool m_groupByWorkspace = false;
-  float m_activeIndicatorWidth = 0.0f;
   std::string m_barPosition;
   bool m_rebuildPending = true;
   bool m_vertical = false;

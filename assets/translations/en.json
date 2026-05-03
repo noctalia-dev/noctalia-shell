@@ -867,10 +867,6 @@
         "text": "Text"
       },
       "settings": {
-        "active_indicator_width": {
-          "label": "Active Indicator Width",
-          "description": "Width of the active-task underline in pixels; set to 0 to hide"
-        },
         "anchor": {
           "label": "Anchor",
           "description": "Pin this widget as the center alignment anchor"
