@@ -34,10 +34,14 @@ precision highp float;
 
 uniform vec2 u_rect_size;
 uniform vec4 u_color;
-uniform vec4 u_fill_end_color;
 uniform vec4 u_border_color;
 uniform int u_fill_mode;
 uniform vec2 u_gradient_direction;
+uniform vec4 u_gradient_stops;
+uniform vec4 u_gradient_color0;
+uniform vec4 u_gradient_color1;
+uniform vec4 u_gradient_color2;
+uniform vec4 u_gradient_color3;
 uniform vec4 u_corner_shapes; // tl, tr, br, bl: 0 = convex, 1 = concave
 uniform vec4 u_logical_inset; // left, top, right, bottom
 uniform vec4 u_radii;  // tl, tr, br, bl
@@ -274,6 +278,30 @@ float coverage_for(vec2 distance_with_corner, float aa_curve) {
     return 1.0 - smoothstep(lo, hi, distance_with_corner.x);
 }
 
+float gradient_segment_t(float position, float start, float end) {
+    return clamp((position - start) / max(end - start, 0.0001), 0.0, 1.0);
+}
+
+vec4 gradient_fill(float position) {
+    vec4 stops = clamp(u_gradient_stops, vec4(0.0), vec4(1.0));
+    stops.y = max(stops.y, stops.x);
+    stops.z = max(stops.z, stops.y);
+    stops.w = max(stops.w, stops.z);
+
+    vec4 c0 = u_gradient_color0;
+    vec4 c1 = u_gradient_color1;
+    vec4 c2 = u_gradient_color2;
+    vec4 c3 = u_gradient_color3;
+
+    if (position <= stops.y) {
+        return mix(c0, c1, gradient_segment_t(position, stops.x, stops.y));
+    }
+    if (position <= stops.z) {
+        return mix(c1, c2, gradient_segment_t(position, stops.y, stops.z));
+    }
+    return mix(c2, c3, gradient_segment_t(position, stops.z, stops.w));
+}
+
 void main() {
     float aa = max(u_softness, 0.85);
     vec2 local_point = v_pixel;
@@ -304,14 +332,14 @@ void main() {
         return;
     }
 
-    float gradient_t = clamp(dot(uv, u_gradient_direction), 0.0, 1.0);
+    float gradient_pos = clamp(dot(uv, u_gradient_direction), 0.0, 1.0);
     vec4 fill_base;
     if (u_fill_mode == 0) {
         fill_base = vec4(0.0);
     } else if (u_fill_mode == 1) {
         fill_base = u_color;
     } else {
-        fill_base = mix(u_color, u_fill_end_color, gradient_t);
+        fill_base = gradient_fill(gradient_pos);
     }
 
     if (u_border_width <= 0.0 || u_border_color.a <= 0.0) {
@@ -375,10 +403,14 @@ void RectProgram::ensureInitialized() {
   m_rectOriginLocation = glGetUniformLocation(m_program.id(), "u_rect_origin");
   m_rectSizeLocation = glGetUniformLocation(m_program.id(), "u_rect_size");
   m_colorLocation = glGetUniformLocation(m_program.id(), "u_color");
-  m_fillEndColorLocation = glGetUniformLocation(m_program.id(), "u_fill_end_color");
   m_borderColorLocation = glGetUniformLocation(m_program.id(), "u_border_color");
   m_fillModeLocation = glGetUniformLocation(m_program.id(), "u_fill_mode");
   m_gradientDirectionLocation = glGetUniformLocation(m_program.id(), "u_gradient_direction");
+  m_gradientStopsLocation = glGetUniformLocation(m_program.id(), "u_gradient_stops");
+  m_gradientColor0Location = glGetUniformLocation(m_program.id(), "u_gradient_color0");
+  m_gradientColor1Location = glGetUniformLocation(m_program.id(), "u_gradient_color1");
+  m_gradientColor2Location = glGetUniformLocation(m_program.id(), "u_gradient_color2");
+  m_gradientColor3Location = glGetUniformLocation(m_program.id(), "u_gradient_color3");
   m_cornerShapesLocation = glGetUniformLocation(m_program.id(), "u_corner_shapes");
   m_logicalInsetLocation = glGetUniformLocation(m_program.id(), "u_logical_inset");
   m_radiiLocation = glGetUniformLocation(m_program.id(), "u_radii");
@@ -396,13 +428,14 @@ void RectProgram::ensureInitialized() {
   m_transformLocation = glGetUniformLocation(m_program.id(), "u_transform");
 
   if (m_positionLocation < 0 || m_surfaceSizeLocation < 0 || m_quadSizeLocation < 0 || m_rectOriginLocation < 0 ||
-      m_rectSizeLocation < 0 || m_colorLocation < 0 || m_fillEndColorLocation < 0 || m_borderColorLocation < 0 ||
-      m_fillModeLocation < 0 || m_gradientDirectionLocation < 0 || m_radiiLocation < 0 || m_softnessLocation < 0 ||
-      m_invertFillLocation < 0 || m_cornerShapesLocation < 0 || m_logicalInsetLocation < 0 ||
-      m_borderWidthLocation < 0 || m_outerShadowLocation < 0 || m_shadowCutoutOffsetLocation < 0 ||
-      m_shadowExclusionLocation < 0 || m_shadowExclusionOffsetLocation < 0 || m_shadowExclusionSizeLocation < 0 ||
-      m_shadowExclusionCornerShapesLocation < 0 || m_shadowExclusionLogicalInsetLocation < 0 ||
-      m_shadowExclusionRadiiLocation < 0 || m_transformLocation < 0) {
+      m_rectSizeLocation < 0 || m_colorLocation < 0 || m_borderColorLocation < 0 || m_fillModeLocation < 0 ||
+      m_gradientDirectionLocation < 0 || m_radiiLocation < 0 || m_softnessLocation < 0 || m_gradientStopsLocation < 0 ||
+      m_gradientColor0Location < 0 || m_gradientColor1Location < 0 || m_gradientColor2Location < 0 ||
+      m_gradientColor3Location < 0 || m_invertFillLocation < 0 || m_cornerShapesLocation < 0 ||
+      m_logicalInsetLocation < 0 || m_borderWidthLocation < 0 || m_outerShadowLocation < 0 ||
+      m_shadowCutoutOffsetLocation < 0 || m_shadowExclusionLocation < 0 || m_shadowExclusionOffsetLocation < 0 ||
+      m_shadowExclusionSizeLocation < 0 || m_shadowExclusionCornerShapesLocation < 0 ||
+      m_shadowExclusionLogicalInsetLocation < 0 || m_shadowExclusionRadiiLocation < 0 || m_transformLocation < 0) {
     throw std::runtime_error("failed to query rounded-rect shader locations");
   }
 }
@@ -415,10 +448,14 @@ void RectProgram::destroy() {
   m_rectOriginLocation = -1;
   m_rectSizeLocation = -1;
   m_colorLocation = -1;
-  m_fillEndColorLocation = -1;
   m_borderColorLocation = -1;
   m_fillModeLocation = -1;
   m_gradientDirectionLocation = -1;
+  m_gradientStopsLocation = -1;
+  m_gradientColor0Location = -1;
+  m_gradientColor1Location = -1;
+  m_gradientColor2Location = -1;
+  m_gradientColor3Location = -1;
   m_cornerShapesLocation = -1;
   m_logicalInsetLocation = -1;
   m_radiiLocation = -1;
@@ -458,7 +495,6 @@ void RectProgram::draw(float surfaceWidth, float surfaceHeight, float width, flo
   glUniform2f(m_rectOriginLocation, rectOrigin, rectOrigin);
   glUniform2f(m_rectSizeLocation, width, height);
   glUniform4f(m_colorLocation, style.fill.r, style.fill.g, style.fill.b, style.fill.a);
-  glUniform4f(m_fillEndColorLocation, style.fillEnd.r, style.fillEnd.g, style.fillEnd.b, style.fillEnd.a);
   glUniform4f(m_borderColorLocation, style.border.r, style.border.g, style.border.b, style.border.a);
   int fillMode = 0;
   if (style.fillMode == FillMode::Solid) {
@@ -469,6 +505,15 @@ void RectProgram::draw(float surfaceWidth, float surfaceHeight, float width, flo
   glUniform1i(m_fillModeLocation, fillMode);
   glUniform2f(m_gradientDirectionLocation, style.gradientDirection == GradientDirection::Horizontal ? 1.0f : 0.0f,
               style.gradientDirection == GradientDirection::Vertical ? 1.0f : 0.0f);
+  const auto& stop0 = style.gradientStops[0];
+  const auto& stop1 = style.gradientStops[1];
+  const auto& stop2 = style.gradientStops[2];
+  const auto& stop3 = style.gradientStops[3];
+  glUniform4f(m_gradientStopsLocation, stop0.position, stop1.position, stop2.position, stop3.position);
+  glUniform4f(m_gradientColor0Location, stop0.color.r, stop0.color.g, stop0.color.b, stop0.color.a);
+  glUniform4f(m_gradientColor1Location, stop1.color.r, stop1.color.g, stop1.color.b, stop1.color.a);
+  glUniform4f(m_gradientColor2Location, stop2.color.r, stop2.color.g, stop2.color.b, stop2.color.a);
+  glUniform4f(m_gradientColor3Location, stop3.color.r, stop3.color.g, stop3.color.b, stop3.color.a);
   const auto cornerShapeValue = [](CornerShape shape) { return shape == CornerShape::Concave ? 1.0f : 0.0f; };
   glUniform4f(m_cornerShapesLocation, cornerShapeValue(style.corners.tl), cornerShapeValue(style.corners.tr),
               cornerShapeValue(style.corners.br), cornerShapeValue(style.corners.bl));

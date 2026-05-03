@@ -1218,7 +1218,6 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   if (instance.bg != nullptr) {
     const RoundedRectStyle bgStyle{
         .fill = colorForRole(ColorRole::Surface, instance.barConfig.backgroundOpacity),
-        .fillEnd = {},
         .border = colorForRole(ColorRole::Outline),
         .fillMode = FillMode::Solid,
         .radius = barRadii,

@@ -63,10 +63,11 @@ void Separator::applyPalette() {
 
   m_rectStart->setStyle(RoundedRectStyle{
       .fill = transparent,
-      .fillEnd = opaque,
       .border = clearColor(),
       .fillMode = FillMode::LinearGradient,
       .gradientDirection = dir,
+      .gradientStops = {GradientStop{0.0f, transparent}, GradientStop{0.0f, transparent}, GradientStop{1.0f, opaque},
+                        GradientStop{1.0f, opaque}},
       .radius = 0.0f,
       .softness = 0.0f,
       .borderWidth = 0.0f,
@@ -74,10 +75,11 @@ void Separator::applyPalette() {
 
   m_rectEnd->setStyle(RoundedRectStyle{
       .fill = opaque,
-      .fillEnd = transparent,
       .border = clearColor(),
       .fillMode = FillMode::LinearGradient,
       .gradientDirection = dir,
+      .gradientStops = {GradientStop{0.0f, opaque}, GradientStop{0.0f, opaque}, GradientStop{1.0f, transparent},
+                        GradientStop{1.0f, transparent}},
       .radius = 0.0f,
       .softness = 0.0f,
       .borderWidth = 0.0f,

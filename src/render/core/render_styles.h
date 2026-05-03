@@ -2,6 +2,7 @@
 
 #include "render/core/color.h"
 
+#include <array>
 #include <cstdint>
 
 enum class FillMode {
@@ -60,12 +61,21 @@ constexpr bool operator==(const Radii& lhs, const Radii& rhs) noexcept {
   return lhs.tl == rhs.tl && lhs.tr == rhs.tr && lhs.br == rhs.br && lhs.bl == rhs.bl;
 }
 
+struct GradientStop {
+  float position = 0.0f;
+  Color color{};
+};
+
+constexpr bool operator==(const GradientStop& lhs, const GradientStop& rhs) noexcept {
+  return lhs.position == rhs.position && lhs.color == rhs.color;
+}
+
 struct RoundedRectStyle {
   Color fill{};
-  Color fillEnd{};
   Color border{};
   FillMode fillMode = FillMode::Solid;
   GradientDirection gradientDirection = GradientDirection::Horizontal;
+  std::array<GradientStop, 4> gradientStops{};
   CornerShapes corners{};
   RectInsets logicalInset{};
   Radii radius{};
@@ -86,12 +96,13 @@ struct RoundedRectStyle {
 };
 
 constexpr bool operator==(const RoundedRectStyle& lhs, const RoundedRectStyle& rhs) noexcept {
-  return lhs.fill == rhs.fill && lhs.fillEnd == rhs.fillEnd && lhs.border == rhs.border &&
-         lhs.fillMode == rhs.fillMode && lhs.gradientDirection == rhs.gradientDirection && lhs.corners == rhs.corners &&
-         lhs.logicalInset == rhs.logicalInset && lhs.radius == rhs.radius && lhs.softness == rhs.softness &&
-         lhs.invertFill == rhs.invertFill && lhs.borderWidth == rhs.borderWidth && lhs.outerShadow == rhs.outerShadow &&
-         lhs.shadowCutoutOffsetX == rhs.shadowCutoutOffsetX && lhs.shadowCutoutOffsetY == rhs.shadowCutoutOffsetY &&
-         lhs.shadowExclusion == rhs.shadowExclusion && lhs.shadowExclusionOffsetX == rhs.shadowExclusionOffsetX &&
+  return lhs.fill == rhs.fill && lhs.border == rhs.border && lhs.fillMode == rhs.fillMode &&
+         lhs.gradientDirection == rhs.gradientDirection && lhs.corners == rhs.corners &&
+         lhs.gradientStops == rhs.gradientStops && lhs.logicalInset == rhs.logicalInset && lhs.radius == rhs.radius &&
+         lhs.softness == rhs.softness && lhs.invertFill == rhs.invertFill && lhs.borderWidth == rhs.borderWidth &&
+         lhs.outerShadow == rhs.outerShadow && lhs.shadowCutoutOffsetX == rhs.shadowCutoutOffsetX &&
+         lhs.shadowCutoutOffsetY == rhs.shadowCutoutOffsetY && lhs.shadowExclusion == rhs.shadowExclusion &&
+         lhs.shadowExclusionOffsetX == rhs.shadowExclusionOffsetX &&
          lhs.shadowExclusionOffsetY == rhs.shadowExclusionOffsetY &&
          lhs.shadowExclusionWidth == rhs.shadowExclusionWidth &&
          lhs.shadowExclusionHeight == rhs.shadowExclusionHeight &&

@@ -5,7 +5,6 @@
 #include "dbus/mpris/mpris_art.h"
 #include "dbus/mpris/mpris_service.h"
 #include "i18n/i18n.h"
-#include "render/render_context.h"
 #include "render/scene/rect_node.h"
 #include "shell/control_center/shortcut_registry.h"
 #include "shell/panel/panel_manager.h"
@@ -22,7 +21,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstdint>
 #include <filesystem>
 #include <format>
 #include <memory>
@@ -34,18 +32,8 @@ using namespace control_center;
 namespace {
 
   constexpr float kOverviewAvatarScale = 2.6f;
-  constexpr float kOverviewWallpaperBlurRadius = 5.0f;
-  constexpr int kOverviewWallpaperBlurRounds = 3;
 
   float overviewAvatarSize(float scale) { return Style::controlHeightLg * kOverviewAvatarScale * scale; }
-
-  std::uint32_t bufferExtent(float logicalExtent, float renderScale) {
-    if (logicalExtent <= 0.0f) {
-      return 0;
-    }
-    return std::max<std::uint32_t>(
-        1, static_cast<std::uint32_t>(std::lround(logicalExtent * std::max(1.0f, renderScale))));
-  }
 
   void applyOverviewCardStyle(Flex& card, float scale) {
     applySectionCardStyle(card, scale);
@@ -58,9 +46,8 @@ OverviewTab::OverviewTab(MprisService* mpris, WeatherService* weather, PipeWireS
                          PowerProfilesService* powerProfiles, ConfigService* config, NetworkService* network,
                          BluetoothService* bluetooth, NightLightManager* nightLight,
                          noctalia::theme::ThemeService* theme, NotificationManager* notifications,
-                         IdleInhibitor* idleInhibitor, WaylandConnection* wayland, Wallpaper* wallpaper,
-                         RenderContext* renderContext)
-    : m_mpris(mpris), m_weather(weather), m_config(config), m_wallpaper(wallpaper), m_renderContext(renderContext),
+                         IdleInhibitor* idleInhibitor, WaylandConnection* wayland, Wallpaper* wallpaper)
+    : m_mpris(mpris), m_weather(weather), m_config(config), m_wallpaper(wallpaper),
       m_services{network, bluetooth,     nightLight, theme,   notifications, idleInhibitor,
                  audio,   powerProfiles, mpris,      weather, config,        wayland} {}
 
@@ -461,11 +448,14 @@ void OverviewTab::layoutWallpaperBackground(Renderer& renderer) {
     m_wallpaperGradient->setPosition(bw, bw);
     m_wallpaperGradient->setFrameSize(cw, ch);
     const Color surface = colorForRole(ColorRole::Surface);
+    const Color translucentSurface = rgba(surface.r, surface.g, surface.b, surface.a * 0.85f);
+    const Color transparentSurface = rgba(surface.r, surface.g, surface.b, 0.0f);
     m_wallpaperGradient->setStyle(RoundedRectStyle{
         .fill = surface,
-        .fillEnd = rgba(surface.r, surface.g, surface.b, 0.0f),
         .fillMode = FillMode::LinearGradient,
         .gradientDirection = GradientDirection::Horizontal,
+        .gradientStops = {GradientStop{0.0f, translucentSurface}, GradientStop{0.25f, translucentSurface},
+                          GradientStop{0.9f, transparentSurface}, GradientStop{1.0f, transparentSurface}},
         .radius = radius,
     });
   }
@@ -482,56 +472,16 @@ void OverviewTab::syncWallpaperBackground(Renderer& renderer) {
   if (!source.valid()) {
     m_wallpaperBg->clear(renderer);
     m_wallpaperBg->setVisible(false);
-    m_wallpaperBlur.destroy();
-    m_wallpaperBlurSource = {};
-    m_wallpaperBlurTexture = {};
-    m_wallpaperBlurBufferWidth = 0;
-    m_wallpaperBlurBufferHeight = 0;
     return;
   }
 
-  const std::uint32_t bufW = bufferExtent(m_wallpaperBg->width(), renderer.renderScale());
-  const std::uint32_t bufH = bufferExtent(m_wallpaperBg->height(), renderer.renderScale());
-  if (bufW == 0 || bufH == 0) {
+  if (m_wallpaperBg->width() <= 0.0f || m_wallpaperBg->height() <= 0.0f) {
     m_wallpaperBg->setVisible(false);
-    return;
-  }
-
-  if (m_renderContext == nullptr) {
-    m_wallpaperBg->setExternalTexture(renderer, source);
-    m_wallpaperBg->setVisible(true);
-    m_wallpaperBlur.destroy();
-    m_wallpaperBlurSource = source.id;
-    m_wallpaperBlurTexture = source.id;
-    m_wallpaperBlurBufferWidth = bufW;
-    m_wallpaperBlurBufferHeight = bufH;
-    return;
-  }
-
-  if (m_wallpaperBlurSource == source.id && m_wallpaperBlurBufferWidth == bufW && m_wallpaperBlurBufferHeight == bufH &&
-      m_wallpaperBg->textureId() == m_wallpaperBlurTexture && m_wallpaperBlurTexture.valid()) {
-    m_wallpaperBg->setVisible(true);
-    return;
-  }
-
-  const TextureHandle blurred = m_wallpaperBlur.get(m_renderContext->backend(), source, bufW, bufH,
-                                                    kOverviewWallpaperBlurRadius, kOverviewWallpaperBlurRounds);
-  if (blurred.valid()) {
-    m_wallpaperBg->setExternalTexture(renderer, blurred);
-    m_wallpaperBg->setVisible(true);
-    m_wallpaperBlurSource = source.id;
-    m_wallpaperBlurTexture = blurred.id;
-    m_wallpaperBlurBufferWidth = bufW;
-    m_wallpaperBlurBufferHeight = bufH;
     return;
   }
 
   m_wallpaperBg->setExternalTexture(renderer, source);
   m_wallpaperBg->setVisible(true);
-  m_wallpaperBlurSource = {};
-  m_wallpaperBlurTexture = source.id;
-  m_wallpaperBlurBufferWidth = bufW;
-  m_wallpaperBlurBufferHeight = bufH;
 }
 
 void OverviewTab::doUpdate(Renderer& renderer) {
@@ -560,11 +510,6 @@ void OverviewTab::onClose() {
   m_loadedAvatarPath.clear();
   m_wallpaperBg = nullptr;
   m_wallpaperGradient = nullptr;
-  m_wallpaperBlur.destroy();
-  m_wallpaperBlurSource = {};
-  m_wallpaperBlurTexture = {};
-  m_wallpaperBlurBufferWidth = 0;
-  m_wallpaperBlurBufferHeight = 0;
   m_mediaTrack = nullptr;
   m_mediaArtist = nullptr;
   m_mediaStatus = nullptr;

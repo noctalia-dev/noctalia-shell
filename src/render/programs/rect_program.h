@@ -28,10 +28,14 @@ private:
   GLint m_rectOriginLocation = -1;
   GLint m_rectSizeLocation = -1;
   GLint m_colorLocation = -1;
-  GLint m_fillEndColorLocation = -1;
   GLint m_borderColorLocation = -1;
   GLint m_fillModeLocation = -1;
   GLint m_gradientDirectionLocation = -1;
+  GLint m_gradientStopsLocation = -1;
+  GLint m_gradientColor0Location = -1;
+  GLint m_gradientColor1Location = -1;
+  GLint m_gradientColor2Location = -1;
+  GLint m_gradientColor3Location = -1;
   GLint m_cornerShapesLocation = -1;
   GLint m_logicalInsetLocation = -1;
   GLint m_radiiLocation = -1;

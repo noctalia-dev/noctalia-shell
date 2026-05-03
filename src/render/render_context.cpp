@@ -206,8 +206,10 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
     const auto* rect = static_cast<const RectNode*>(node);
     auto style = rect->style();
     style.fill.a *= effectiveOpacity;
-    style.fillEnd.a *= effectiveOpacity;
     style.border.a *= effectiveOpacity;
+    for (auto& stop : style.gradientStops) {
+      stop.color.a *= effectiveOpacity;
+    }
     m_backend->drawRect(sw, sh, node->width(), node->height(), style, worldTransform);
     break;
   }

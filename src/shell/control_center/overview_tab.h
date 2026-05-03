@@ -1,10 +1,8 @@
 #pragma once
 
-#include "render/core/blur_cache.h"
 #include "shell/control_center/shortcut_services.h"
 #include "shell/control_center/tab.h"
 
-#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -17,7 +15,6 @@ class GridView;
 class Image;
 class Label;
 class RectNode;
-class RenderContext;
 class Shortcut;
 class Wallpaper;
 class WaylandConnection;
@@ -35,8 +32,7 @@ public:
   OverviewTab(MprisService* mpris, WeatherService* weather, PipeWireService* audio, PowerProfilesService* powerProfiles,
               ConfigService* config, NetworkService* network, BluetoothService* bluetooth,
               NightLightManager* nightLight, noctalia::theme::ThemeService* theme, NotificationManager* notifications,
-              IdleInhibitor* idleInhibitor, WaylandConnection* wayland, Wallpaper* wallpaper = nullptr,
-              RenderContext* renderContext = nullptr);
+              IdleInhibitor* idleInhibitor, WaylandConnection* wayland, Wallpaper* wallpaper = nullptr);
   ~OverviewTab() override;
 
   std::unique_ptr<Flex> create() override;
@@ -56,7 +52,6 @@ private:
   WeatherService* m_weather = nullptr;
   ConfigService* m_config = nullptr;
   Wallpaper* m_wallpaper = nullptr;
-  RenderContext* m_renderContext = nullptr;
   ShortcutServices m_services;
   bool m_active = false;
 
@@ -78,11 +73,6 @@ private:
 
   Image* m_wallpaperBg = nullptr;
   RectNode* m_wallpaperGradient = nullptr;
-  BlurCache m_wallpaperBlur;
-  TextureId m_wallpaperBlurSource;
-  TextureId m_wallpaperBlurTexture;
-  std::uint32_t m_wallpaperBlurBufferWidth = 0;
-  std::uint32_t m_wallpaperBlurBufferHeight = 0;
 
   Label* m_mediaTrack = nullptr;
   Label* m_mediaArtist = nullptr;
