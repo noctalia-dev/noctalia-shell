@@ -54,15 +54,49 @@ namespace noctalia::theme {
       }
     }
 
+    const ::Color& ansiColorForKey(const TerminalAnsiColors& colors, std::string_view key) {
+      if (key == kTerminalBlackJsonKey)
+        return colors.black;
+      if (key == kTerminalRedJsonKey)
+        return colors.red;
+      if (key == kTerminalGreenJsonKey)
+        return colors.green;
+      if (key == kTerminalYellowJsonKey)
+        return colors.yellow;
+      if (key == kTerminalBlueJsonKey)
+        return colors.blue;
+      if (key == kTerminalMagentaJsonKey)
+        return colors.magenta;
+      if (key == kTerminalCyanJsonKey)
+        return colors.cyan;
+      return colors.white;
+    }
+
+    const ::Color& directColorForKey(const TerminalPalette& terminal, std::string_view key) {
+      if (key == kTerminalForegroundJsonKey)
+        return terminal.foreground;
+      if (key == kTerminalBackgroundJsonKey)
+        return terminal.background;
+      if (key == kTerminalCursorJsonKey)
+        return terminal.cursor;
+      if (key == kTerminalCursorTextJsonKey)
+        return terminal.cursorText;
+      if (key == kTerminalSelectionFgJsonKey)
+        return terminal.selectionFg;
+      return terminal.selectionBg;
+    }
+
+    const TerminalAnsiColors& ansiGroupForKey(const TerminalPalette& terminal, std::string_view key) {
+      return key == kTerminalBrightJsonKey ? terminal.bright : terminal.normal;
+    }
+
     void applyAnsiColors(TokenMap& tokens, std::string_view prefix, const TerminalAnsiColors& colors) {
-      setToken(tokens, std::string(prefix) + "_black", colors.black);
-      setToken(tokens, std::string(prefix) + "_red", colors.red);
-      setToken(tokens, std::string(prefix) + "_green", colors.green);
-      setToken(tokens, std::string(prefix) + "_yellow", colors.yellow);
-      setToken(tokens, std::string(prefix) + "_blue", colors.blue);
-      setToken(tokens, std::string(prefix) + "_magenta", colors.magenta);
-      setToken(tokens, std::string(prefix) + "_cyan", colors.cyan);
-      setToken(tokens, std::string(prefix) + "_white", colors.white);
+      for (const auto key : kTerminalAnsiColorJsonKeys) {
+        std::string tokenKey(prefix);
+        tokenKey += "_";
+        tokenKey += key;
+        setToken(tokens, tokenKey, ansiColorForKey(colors, key));
+      }
     }
 
     Color interpolateColor(const Color& a, const Color& b, double t) {
@@ -73,14 +107,12 @@ namespace noctalia::theme {
   } // namespace
 
   void applyTerminalPalette(TokenMap& tokens, const TerminalPalette& terminal) {
-    applyAnsiColors(tokens, "terminal_normal", terminal.normal);
-    applyAnsiColors(tokens, "terminal_bright", terminal.bright);
-    setToken(tokens, "terminal_foreground", terminal.foreground);
-    setToken(tokens, "terminal_background", terminal.background);
-    setToken(tokens, "terminal_selection_fg", terminal.selectionFg);
-    setToken(tokens, "terminal_selection_bg", terminal.selectionBg);
-    setToken(tokens, "terminal_cursor_text", terminal.cursorText);
-    setToken(tokens, "terminal_cursor", terminal.cursor);
+    for (const auto& group : kTerminalAnsiGroupTokenKeys) {
+      applyAnsiColors(tokens, group.tokenPrefix, ansiGroupForKey(terminal, group.jsonKey));
+    }
+    for (const auto& key : kTerminalDirectColorTokenKeys) {
+      setToken(tokens, key.tokenKey, directColorForKey(terminal, key.jsonKey));
+    }
   }
 
   void synthesizeTerminalPaletteTokens(TokenMap& tokens) {

@@ -7,12 +7,15 @@
 
 namespace noctalia::theme {
 
+  struct FixedPaletteMode {
+    Palette palette;
+    TerminalPalette terminal;
+  };
+
   struct BuiltinPalette {
     std::string_view name;
-    Palette dark;
-    Palette light;
-    TerminalPalette darkTerminal;
-    TerminalPalette lightTerminal;
+    FixedPaletteMode dark;
+    FixedPaletteMode light;
   };
 
   std::span<const BuiltinPalette> builtinPalettes();
