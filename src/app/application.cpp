@@ -112,6 +112,7 @@ namespace {
 } // namespace
 
 Application::Application() : m_weatherService(m_configService, m_httpClient) {
+  m_notificationManager.loadPersistedHistory();
   notify::setInstance(&m_notificationManager);
   LockScreen::setInstance(&m_lockScreen);
 
@@ -150,6 +151,7 @@ Application::Application() : m_weatherService(m_configService, m_httpClient) {
 }
 
 Application::~Application() {
+  m_notificationManager.flushPersistedHistory();
   m_wayland.setClipboardService(nullptr);
   m_wayland.setVirtualKeyboardService(nullptr);
   LockScreen::setInstance(nullptr);

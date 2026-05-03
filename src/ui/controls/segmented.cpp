@@ -78,8 +78,23 @@ Button* Segmented::makeSegmentButton(std::string_view label, std::string_view gl
   btn->setPadding(Style::spaceXs * m_scale, Style::spaceMd * m_scale);
   btn->setOnClick([this, index]() { setSelectedIndex(index); });
   Button* raw = btn.get();
+  raw->setFlexGrow(m_equalSegmentWidths ? 1.0f : 0.0f);
+  raw->setContentAlign(ButtonContentAlign::Center);
   addChild(std::move(btn));
   return raw;
+}
+
+void Segmented::setEqualSegmentWidths(bool equalWidths) {
+  if (m_equalSegmentWidths == equalWidths) {
+    return;
+  }
+  m_equalSegmentWidths = equalWidths;
+  for (Button* b : m_buttons) {
+    if (b != nullptr) {
+      b->setFlexGrow(m_equalSegmentWidths ? 1.0f : 0.0f);
+    }
+  }
+  markLayoutDirty();
 }
 
 void Segmented::refreshVariants() {

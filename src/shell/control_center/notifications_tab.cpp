@@ -2,26 +2,78 @@
 
 #include "core/ui_phase.h"
 #include "i18n/i18n.h"
+#include "net/uri.h"
+#include "notification/notification.h"
 #include "notification/notification_manager.h"
 #include "render/core/renderer.h"
+#include "render/core/texture_manager.h"
+#include "render/scene/node.h"
 #include "shell/panel/panel_manager.h"
 #include "time/time_format.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
+#include "ui/controls/glyph.h"
+#include "ui/controls/image.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
+#include "ui/controls/segmented.h"
 #include "ui/palette.h"
 
 #include <chrono>
 #include <cmath>
+#include <ctime>
+#include <filesystem>
+#include <functional>
 #include <memory>
+#include <string_view>
+#include <unistd.h>
 #include <vector>
 
 using namespace control_center;
 
 namespace {
 
+  constexpr float kHistoryIconSize = 36.0f;
+  constexpr float kHistoryIconRadius = 8.0f;
+  constexpr float kHistoryIconGlyphSize = 22.0f;
+
   constexpr float kNotificationActionButtonSize = Style::controlHeightSm;
+
+  std::filesystem::path remoteNotificationIconCachePath(std::string_view url) {
+    return std::filesystem::path("/tmp") / "noctalia-notification-icons" /
+           (std::to_string(std::hash<std::string_view>{}(url)) + ".img");
+  }
+
+  std::string normalizeLocalIconPath(std::string_view iconValue) { return uri::normalizeFileUrl(iconValue); }
+
+  std::string resolveHistoryIconPath(const Notification& n, IconResolver& resolver) {
+    if (!n.icon.has_value() || n.icon->empty()) {
+      return {};
+    }
+    const std::string& iconValue = *n.icon;
+    if (uri::isRemoteUrl(iconValue)) {
+      const auto cached = remoteNotificationIconCachePath(iconValue);
+      std::error_code ec;
+      if (std::filesystem::exists(cached, ec) && std::filesystem::file_size(cached, ec) > 0) {
+        return cached.string();
+      }
+      return {};
+    }
+
+    const std::string localPath = normalizeLocalIconPath(iconValue);
+    if (!localPath.empty() && localPath.front() == '/') {
+      if (access(localPath.c_str(), R_OK) == 0) {
+        return localPath;
+      }
+      return {};
+    }
+    if (localPath.empty()) {
+      return {};
+    }
+
+    const std::string& resolved = resolver.resolve(localPath);
+    return resolved.empty() ? std::string() : resolved;
+  }
   constexpr int kSummaryMaxLines = 2;
   constexpr int kBodyMaxLines = 3;
   constexpr int kExpandedMaxLines = 500;
@@ -56,6 +108,45 @@ namespace {
 
   void applyNotificationCardStyle(Flex& card, float scale) { applySectionCardStyle(card, scale); }
 
+  std::string relativeMetaLine(const Notification& n) {
+    if (n.receivedWallClock.has_value()) {
+      return formatTimeAgo(*n.receivedWallClock);
+    }
+    return formatElapsedSince(n.receivedTime);
+  }
+
+  bool matchesHistoryFilter(const NotificationHistoryEntry& e, std::size_t filterIndex) {
+    if (filterIndex == 0) {
+      return true;
+    }
+    if (!e.notification.receivedWallClock.has_value()) {
+      return false;
+    }
+    const std::time_t entryT = WallClock::to_time_t(*e.notification.receivedWallClock);
+    const std::time_t nowT = WallClock::to_time_t(WallClock::now());
+    std::tm entryL{};
+    std::tm nowL{};
+    localtime_r(&entryT, &entryL);
+    localtime_r(&nowT, &nowL);
+    const bool isToday = entryL.tm_year == nowL.tm_year && entryL.tm_yday == nowL.tm_yday;
+    std::tm yRef = nowL;
+    yRef.tm_hour = 12;
+    yRef.tm_min = 0;
+    yRef.tm_sec = 0;
+    yRef.tm_mday -= 1;
+    mktime(&yRef);
+    const bool isYesterday = entryL.tm_year == yRef.tm_year && entryL.tm_yday == yRef.tm_yday;
+
+    if (filterIndex == 1) {
+      return isToday;
+    }
+    if (filterIndex == 2) {
+      return isYesterday;
+    }
+    // Older
+    return !isToday && !isYesterday;
+  }
+
   bool canExpandText(Renderer& renderer, std::string_view text, float fontSize, bool bold, float maxWidth,
                      int collapsedMaxLines) {
     if (text.empty()) {
@@ -80,6 +171,23 @@ std::unique_ptr<Flex> NotificationsTab::create() {
   tab->setAlign(FlexAlign::Stretch);
   tab->setGap(Style::spaceSm * scale);
   m_root = tab.get();
+
+  auto filter = std::make_unique<Segmented>();
+  filter->setScale(scale);
+  filter->setFontSize(Style::fontSizeCaption * scale);
+  filter->addOption(i18n::tr("control-center.notifications.filter.all"));
+  filter->addOption(i18n::tr("control-center.notifications.filter.today"));
+  filter->addOption(i18n::tr("control-center.notifications.filter.yesterday"));
+  filter->addOption(i18n::tr("control-center.notifications.filter.older"));
+  filter->setEqualSegmentWidths(true);
+  filter->setSelectedIndex(m_filterIndex);
+  filter->setOnChange([this](std::size_t idx) {
+    m_filterIndex = idx;
+    m_lastSerial = 0;
+    PanelManager::instance().refresh();
+  });
+  m_filter = filter.get();
+  tab->addChild(std::move(filter));
 
   auto scroll = std::make_unique<ScrollView>();
   scroll->setScrollbarVisible(true);
@@ -120,7 +228,7 @@ std::unique_ptr<Flex> NotificationsTab::createHeaderActions() {
 }
 
 void NotificationsTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
-  if (m_root == nullptr || m_scroll == nullptr) {
+  if (m_root == nullptr || m_scroll == nullptr || m_filter == nullptr) {
     return;
   }
 
@@ -157,6 +265,7 @@ void NotificationsTab::onClose() {
   m_root = nullptr;
   m_scroll = nullptr;
   m_list = nullptr;
+  m_filter = nullptr;
   m_clearAllButton = nullptr;
   m_expandedIds.clear();
   m_lastSerial = 0;
@@ -220,7 +329,8 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
   const std::int64_t relativeSlot =
       std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count() /
       15;
-  if (serial == m_lastSerial && std::abs(width - m_lastWidth) < 0.5f && relativeSlot == m_lastRelativeTimeSlot) {
+  if (serial == m_lastSerial && std::abs(width - m_lastWidth) < 0.5f && relativeSlot == m_lastRelativeTimeSlot &&
+      m_filterIndex == m_lastRebuildFilterIndex) {
     return;
   }
 
@@ -261,25 +371,68 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
     m_lastSerial = serial;
     m_lastWidth = width;
     m_lastRelativeTimeSlot = relativeSlot;
+    m_lastRebuildFilterIndex = m_filterIndex;
     return;
   }
 
+  std::vector<const NotificationHistoryEntry*> filtered;
+  filtered.reserve(m_notifications->history().size());
   for (auto it = m_notifications->history().rbegin(); it != m_notifications->history().rend(); ++it) {
-    const std::string summaryText =
-        it->notification.summary.empty() ? i18n::tr("control-center.notifications.untitled") : it->notification.summary;
-    const std::string& bodyText = it->notification.body;
+    if (matchesHistoryFilter(*it, m_filterIndex)) {
+      filtered.push_back(&*it);
+    }
+  }
+
+  if (filtered.empty()) {
+    auto empty = std::make_unique<Flex>();
+    applyNotificationCardStyle(*empty, scale);
+    empty->setAlign(FlexAlign::Center);
+    empty->setGap(Style::spaceSm * scale);
+    empty->setPadding(Style::spaceLg * scale, Style::spaceMd * scale);
+    empty->setMinWidth(cardWidth);
+
+    auto title = std::make_unique<Label>();
+    title->setText(i18n::tr("control-center.notifications.filter-empty-title"));
+    title->setBold(true);
+    title->setFontSize(Style::fontSizeBody * scale);
+    title->setColor(colorSpecFromRole(ColorRole::OnSurface));
+    empty->addChild(std::move(title));
+
+    auto body = std::make_unique<Label>();
+    body->setText(i18n::tr("control-center.notifications.filter-empty-body"));
+    body->setCaptionStyle();
+    body->setFontSize(Style::fontSizeCaption * scale);
+    body->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+    empty->addChild(std::move(body));
+
+    m_list->addChild(std::move(empty));
+    m_lastSerial = serial;
+    m_lastWidth = width;
+    m_lastRelativeTimeSlot = relativeSlot;
+    m_lastRebuildFilterIndex = m_filterIndex;
+    return;
+  }
+
+  for (const NotificationHistoryEntry* entry : filtered) {
+    const std::string summaryText = entry->notification.summary.empty()
+                                        ? i18n::tr("control-center.notifications.untitled")
+                                        : entry->notification.summary;
+    const std::string& bodyText = entry->notification.body;
     const bool summaryExpandable =
         canExpandText(renderer, summaryText, Style::fontSizeBody * scale, true, cardTextWidth, kSummaryMaxLines);
     const bool bodyExpandable =
         canExpandText(renderer, bodyText, Style::fontSizeBody * scale, false, cardTextWidth, kBodyMaxLines);
     const bool canExpand = summaryExpandable || bodyExpandable;
-    const bool expanded = canExpand && m_expandedIds.contains(it->notification.id);
+    const bool expanded = canExpand && m_expandedIds.contains(entry->notification.id);
     if (!canExpand) {
-      m_expandedIds.erase(it->notification.id);
+      m_expandedIds.erase(entry->notification.id);
     }
 
+    const float iconPx = kHistoryIconSize * scale;
+    const float iconColumn = iconPx + Style::spaceSm * scale;
     const float headerActionsWidth = actionButtonSize + (canExpand ? (actionButtonsGap + actionButtonSize) : 0.0f);
-    const float metaTextWidth = std::max(0.0f, cardTextWidth - headerActionsWidth - Style::spaceSm * scale);
+    const float leftClusterWidth = cardTextWidth - headerActionsWidth;
+    const float metaTextWidth = std::max(0.0f, leftClusterWidth - iconColumn);
 
     auto card = std::make_unique<Flex>();
     applyNotificationCardStyle(*card, scale);
@@ -291,20 +444,71 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
     header->setJustify(FlexJustify::SpaceBetween);
     header->setGap(Style::spaceSm * scale);
 
+    auto leftCluster = std::make_unique<Flex>();
+    leftCluster->setDirection(FlexDirection::Horizontal);
+    leftCluster->setAlign(FlexAlign::Center);
+    leftCluster->setGap(Style::spaceSm * scale);
+    leftCluster->setFlexGrow(1.0f);
+
+    auto iconSlot = std::make_unique<Node>();
+    iconSlot->setSize(iconPx, iconPx);
+    bool iconAssigned = false;
+    const std::string iconPath = resolveHistoryIconPath(entry->notification, m_iconResolver);
+    if (!iconPath.empty()) {
+      auto appIcon = std::make_unique<Image>();
+      appIcon->setSize(iconPx, iconPx);
+      appIcon->setPosition(0.0f, 0.0f);
+      appIcon->setRadius(kHistoryIconRadius * scale);
+      appIcon->setFit(ImageFit::Cover);
+      if (appIcon->setSourceFile(renderer, iconPath, static_cast<int>(std::round(iconPx)))) {
+        iconSlot->addChild(std::move(appIcon));
+        iconAssigned = true;
+      }
+    } else if (entry->notification.imageData.has_value()) {
+      const auto& image = *entry->notification.imageData;
+      if (image.width > 0 && image.height > 0 && !image.data.empty()) {
+        auto appIcon = std::make_unique<Image>();
+        appIcon->setSize(iconPx, iconPx);
+        appIcon->setPosition(0.0f, 0.0f);
+        appIcon->setRadius(kHistoryIconRadius * scale);
+        appIcon->setFit(ImageFit::Cover);
+        const bool validImageMetadata = image.bitsPerSample == 8 && ((image.channels == 4 && image.hasAlpha) ||
+                                                                     (image.channels == 3 && !image.hasAlpha));
+        const PixmapFormat format = image.channels == 3 ? PixmapFormat::RGB : PixmapFormat::RGBA;
+        if (validImageMetadata && appIcon->setSourceRaw(renderer, image.data.data(), image.data.size(), image.width,
+                                                        image.height, image.rowStride, format, true)) {
+          iconSlot->addChild(std::move(appIcon));
+          iconAssigned = true;
+        }
+      }
+    }
+    if (!iconAssigned) {
+      auto fallback = std::make_unique<Glyph>();
+      fallback->setGlyph("bell");
+      fallback->setGlyphSize(kHistoryIconGlyphSize * scale);
+      fallback->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+      fallback->measure(renderer);
+      fallback->setPosition(std::round((iconPx - fallback->width()) * 0.5f),
+                            std::round((iconPx - fallback->height()) * 0.5f));
+      iconSlot->addChild(std::move(fallback));
+    }
+    leftCluster->addChild(std::move(iconSlot));
+
     auto meta = std::make_unique<Label>();
-    std::string metaLine = it->notification.appName + " • " + formatElapsedSince(it->notification.receivedTime);
-    if (!it->active) {
+    std::string metaLine = entry->notification.appName + " • " + relativeMetaLine(entry->notification);
+    if (!entry->active) {
       metaLine += " • ";
-      metaLine += statusText(*it);
+      metaLine += statusText(*entry);
     }
     meta->setText(std::move(metaLine));
     meta->setCaptionStyle();
     meta->setFontSize(Style::fontSizeCaption * scale);
-    meta->setColor(colorSpecFromRole(statusColorRole(*it)));
+    meta->setColor(colorSpecFromRole(statusColorRole(*entry)));
     meta->setMaxWidth(metaTextWidth);
     meta->setFlexGrow(1.0f);
     meta->measure(renderer);
-    header->addChild(std::move(meta));
+    leftCluster->addChild(std::move(meta));
+    header->addChild(std::move(leftCluster));
 
     auto headerActions = std::make_unique<Flex>();
     headerActions->setDirection(FlexDirection::Horizontal);
@@ -320,7 +524,7 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
       expand->setMinHeight(actionButtonSize);
       expand->setPadding(Style::spaceXs * scale);
       expand->setRadius(Style::radiusMd * scale);
-      expand->setOnClick([this, id = it->notification.id]() { toggleNotificationExpanded(id); });
+      expand->setOnClick([this, id = entry->notification.id]() { toggleNotificationExpanded(id); });
       headerActions->addChild(std::move(expand));
     }
 
@@ -333,7 +537,7 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
     dismiss->setPadding(Style::spaceXs * scale);
     dismiss->setRadius(Style::radiusMd * scale);
     dismiss->setOnClick(
-        [this, id = it->notification.id, active = it->active]() { removeNotificationEntry(id, active); });
+        [this, id = entry->notification.id, active = entry->active]() { removeNotificationEntry(id, active); });
     headerActions->addChild(std::move(dismiss));
     header->addChild(std::move(headerActions));
     card->addChild(std::move(header));
@@ -364,4 +568,5 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
   m_lastSerial = serial;
   m_lastWidth = width;
   m_lastRelativeTimeSlot = relativeSlot;
+  m_lastRebuildFilterIndex = m_filterIndex;
 }

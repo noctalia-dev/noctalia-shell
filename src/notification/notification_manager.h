@@ -91,9 +91,18 @@ public:
   [[nodiscard]] bool hasUnreadNotificationHistory() const noexcept;
   void markNotificationHistorySeen();
 
+  /// Loads persisted history from disk (call once at startup before emitting events).
+  void loadPersistedHistory();
+  /// Writes pending history to disk immediately (e.g. shutdown).
+  void flushPersistedHistory();
+
 private:
   void upsertHistory(const Notification& notification, bool active, std::optional<CloseReason> closeReason);
   void rebuildHistoryIndex();
+  void schedulePersistHistory();
+  void persistHistoryToDisk();
+
+  bool m_persistScheduled = false;
 
   std::deque<Notification> m_notifications;
   std::unordered_map<uint32_t, size_t> m_idToIndex;

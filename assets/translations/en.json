@@ -329,6 +329,14 @@
     "notifications": {
       "empty-title": "No notifications",
       "empty-body": "Recent notifications will show here.",
+      "filter-empty-title": "Nothing here",
+      "filter-empty-body": "No notifications match this filter.",
+      "filter": {
+        "all": "All",
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "older": "Older"
+      },
       "untitled": "Untitled notification",
       "status": {
         "active": "Active",
