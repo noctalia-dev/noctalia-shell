@@ -11,6 +11,7 @@
 #include "shell/settings/settings_entity_editor.h"
 #include "shell/settings/settings_registry.h"
 #include "shell/settings/settings_sidebar.h"
+#include "theme/community_templates.h"
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/context_menu.h"
@@ -935,6 +936,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   }
   settings::RegistryEnvironment env;
   env.niriBackdropSupported = (m_wayland != nullptr && compositors::isNiri());
+  for (const auto& t : noctalia::theme::CommunityTemplateService::availableTemplates()) {
+    env.communityTemplates.push_back(settings::SelectOption{t.id, t.displayName});
+  }
   if (m_wayland != nullptr) {
     for (const auto& output : m_wayland->outputs()) {
       if (output.output == nullptr || output.connectorName.empty()) {
@@ -1422,3 +1426,5 @@ void SettingsWindow::onFontChanged() {
     m_surface->requestLayout();
   }
 }
+
+void SettingsWindow::onExternalOptionsChanged() { requestSceneRebuild(); }

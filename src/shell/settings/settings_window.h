@@ -43,6 +43,7 @@ public:
   void onKeyboardEvent(const KeyboardEvent& event);
   void onThemeChanged();
   void onFontChanged();
+  void onExternalOptionsChanged();
   void setOpenDesktopWidgetEditor(std::function<void()> callback) { m_openDesktopWidgetEditor = std::move(callback); }
 
 private:

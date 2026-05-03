@@ -67,6 +67,7 @@
 #include "system/telemetry_service.h"
 #include "system/weather_poll_source.h"
 #include "system/weather_service.h"
+#include "theme/community_templates.h"
 #include "theme/template_apply_service.h"
 #include "theme/theme_service.h"
 #include "time/time_poll_source.h"
@@ -117,6 +118,7 @@ private:
   VirtualKeyboardService m_virtualKeyboardService;
   ConfigService m_configService;
   HttpClient m_httpClient;
+  noctalia::theme::CommunityTemplateService m_communityTemplateService{m_httpClient};
   noctalia::theme::ThemeService m_themeService{m_configService, m_httpClient};
   noctalia::theme::TemplateApplyService m_templateApplyService{m_configService};
   TimeService m_timeService;

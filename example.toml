@@ -62,10 +62,12 @@ builtin = "Noctalia"                # Ayu | Catppuccin | Dracula | Eldritch | Gr
                                     # dysfunctional | muted
 
 [theme.templates]
-enable_builtins       = true
-builtin_ids           = []          # opt-in; list ids with: noctalia theme --list-builtins
-enable_user_templates = false
-user_config           = "~/.config/noctalia/user-templates.toml"
+enable_builtin_templates            = true
+builtin_ids                = []     # opt-in; list ids with: noctalia theme --list-builtins
+enable_community_templates = true
+community_ids              = []     # fetched from api.noctalia.dev/templates, cached locally
+enable_user_templates      = false
+user_config                = "~/.config/noctalia/user-templates.toml"
 
 # ── Backdrop ──────────────────────────────────────────────────────────────────
 

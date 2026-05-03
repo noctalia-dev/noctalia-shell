@@ -695,6 +695,7 @@
         "brightness": "Brightness",
         "built-in": "Built-in",
         "clipboard": "Clipboard",
+        "community": "Community",
         "directories": "Directories",
         "effects": "Effects",
         "focus-styling": "Focus Styling",
@@ -1120,6 +1121,14 @@
         "builtin-ids": {
           "label": "Active Built-in Templates",
           "description": "Template IDs to render on each theme change."
+        },
+        "enable-community-templates": {
+          "label": "Enable Community Templates",
+          "description": "Download and apply templates from the community catalog"
+        },
+        "community-ids": {
+          "label": "Active Community Templates",
+          "description": "Community template IDs to render on each theme change."
         },
         "enable-user-templates": {
           "label": "Enable User Templates",

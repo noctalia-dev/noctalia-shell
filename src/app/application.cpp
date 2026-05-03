@@ -276,6 +276,15 @@ void Application::initServices() {
   m_configService.addReloadCallback(applyPasswordMaskStyle);
   m_configService.addReloadCallback(
       [this]() { m_httpClient.setOfflineMode(m_configService.config().shell.offlineMode); });
+  m_communityTemplateService.setReadyCallback([this]() {
+    if (m_configService.config().theme.templates.enableCommunityTemplates) {
+      m_themeService.onConfigReload();
+      m_settingsWindow.onExternalOptionsChanged();
+    }
+  });
+  m_communityTemplateService.sync(m_configService.config().theme.templates);
+  m_configService.addReloadCallback(
+      [this]() { m_communityTemplateService.sync(m_configService.config().theme.templates); });
 
   // i18n has no dependencies on other services and must be ready before any
   // UI construction reads a translated string.

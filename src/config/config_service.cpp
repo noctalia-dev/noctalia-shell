@@ -1210,8 +1210,10 @@ void ConfigService::parseTable(const toml::table& tbl) {
     }
     if (const auto* templatesTbl = (*themeTbl)["templates"].as_table()) {
       auto& templates = theme.templates;
-      if (auto v = (*templatesTbl)["enable_builtins"].value<bool>())
-        templates.enableBuiltins = *v;
+      if (auto v = (*templatesTbl)["enable_builtin_templates"].value<bool>())
+        templates.enableBuiltinTemplates = *v;
+      if (auto v = (*templatesTbl)["enable_community_templates"].value<bool>())
+        templates.enableCommunityTemplates = *v;
       if (auto v = (*templatesTbl)["enable_user_templates"].value<bool>())
         templates.enableUserTemplates = *v;
       if (auto v = (*templatesTbl)["user_config"].value<std::string>())
@@ -1222,6 +1224,14 @@ void ConfigService::parseTable(const toml::table& tbl) {
         for (const auto& item : *builtinIds) {
           if (const auto* id = item.as_string())
             templates.builtinIds.push_back(id->get());
+        }
+      }
+      if (const auto* communityIds = (*templatesTbl)["community_ids"].as_array()) {
+        templates.communityIds.clear();
+        templates.communityIds.reserve(communityIds->size());
+        for (const auto& item : *communityIds) {
+          if (const auto* id = item.as_string())
+            templates.communityIds.push_back(id->get());
         }
       }
     }

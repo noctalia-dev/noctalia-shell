@@ -403,8 +403,8 @@ namespace settings {
     // Templates
     entries.push_back(makeEntry("templates", "built-in", tr("settings.schema.templates.enable-builtins.label"),
                                 tr("settings.schema.templates.enable-builtins.description"),
-                                {"theme", "templates", "enable_builtins"},
-                                ToggleSetting{cfg.theme.templates.enableBuiltins}, "theme templates"));
+                                {"theme", "templates", "enable_builtin_templates"},
+                                ToggleSetting{cfg.theme.templates.enableBuiltinTemplates}, "theme templates"));
     {
       const auto availableTemplates = noctalia::theme::availableTemplates();
       std::vector<SelectOption> templateOptions;
@@ -418,6 +418,16 @@ namespace settings {
           ListSetting{.items = cfg.theme.templates.builtinIds, .suggestedOptions = std::move(templateOptions)},
           "theme templates apps foot walker gtk"));
     }
+    entries.push_back(
+        makeEntry("templates", "community", tr("settings.schema.templates.enable-community-templates.label"),
+                  tr("settings.schema.templates.enable-community-templates.description"),
+                  {"theme", "templates", "enable_community_templates"},
+                  ToggleSetting{cfg.theme.templates.enableCommunityTemplates}, "theme templates community"));
+    entries.push_back(
+        makeEntry("templates", "community", tr("settings.schema.templates.community-ids.label"),
+                  tr("settings.schema.templates.community-ids.description"), {"theme", "templates", "community_ids"},
+                  ListSetting{.items = cfg.theme.templates.communityIds, .suggestedOptions = env.communityTemplates},
+                  "theme templates community apps discord fuzzel vscode walker"));
     entries.push_back(makeEntry("templates", "user", tr("settings.schema.templates.enable-user-templates.label"),
                                 tr("settings.schema.templates.enable-user-templates.description"),
                                 {"theme", "templates", "enable_user_templates"},

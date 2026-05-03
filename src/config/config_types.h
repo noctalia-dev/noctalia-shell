@@ -546,8 +546,10 @@ constexpr EnumOption<ThemeMode> kThemeModes[] = {
 
 struct ThemeConfig {
   struct TemplatesConfig {
-    bool enableBuiltins = true;
+    bool enableBuiltinTemplates = true;
     std::vector<std::string> builtinIds;
+    bool enableCommunityTemplates = true;
+    std::vector<std::string> communityIds;
     bool enableUserTemplates = false;
     std::string userConfig = "~/.config/noctalia/user-templates.toml";
 
