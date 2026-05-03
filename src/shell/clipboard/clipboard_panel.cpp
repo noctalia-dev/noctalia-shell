@@ -33,6 +33,7 @@ namespace {
   constexpr float kRowHeight = 46.0f;
   constexpr float kPreviewImageHeight = 280.0f;
   constexpr float kListGlyphSize = 24.0f;
+  constexpr float kListThumbSize = 40.0f;
   constexpr auto kPreviewPayloadDebounceInterval = std::chrono::milliseconds(75);
   constexpr auto kFilterDebounceInterval = std::chrono::milliseconds(120);
 
@@ -440,18 +441,25 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     return;
   }
 
-  const float textWidth = std::max(0.0f, width - kListGlyphSize - Style::spaceMd - Style::spaceSm * 2.0f);
+  const float scale = contentScale();
+  const float thumbPx = kListThumbSize * scale;
+  const float leadW = thumbPx;
+  const float textWidth = std::max(0.0f, width - leadW - Style::spaceMd * scale - Style::spaceSm * scale * 2.0f);
   for (std::size_t i = 0; i < m_filteredIndices.size(); ++i) {
     const std::size_t historyIdx = m_filteredIndices[i];
-    const auto& entry = history[historyIdx];
+    ClipboardEntry rowEntry = history[historyIdx];
+    if (rowEntry.isImage() && m_clipboard != nullptr) {
+      (void)m_clipboard->ensureEntryLoaded(historyIdx);
+      rowEntry = history[historyIdx];
+    }
     auto row = std::make_unique<Flex>();
     row->setDirection(FlexDirection::Horizontal);
     row->setAlign(FlexAlign::Center);
     row->setGap(Style::spaceMd);
-    row->setPadding(Style::spaceXs, Style::spaceSm, Style::spaceXs, Style::spaceSm);
+    row->setPadding(Style::spaceXs * scale, Style::spaceSm * scale, Style::spaceXs * scale, Style::spaceSm * scale);
     row->setSize(width, 0.0f);
     row->setFillWidth(true);
-    row->setMinHeight(kRowHeight);
+    row->setMinHeight(std::max(kRowHeight * scale, thumbPx));
     row->setRadius(Style::radiusMd);
     if (i == m_selectedIndex) {
       row->setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
@@ -494,19 +502,42 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
       PanelManager::instance().refresh();
     });
 
-    auto glyph = std::make_unique<Glyph>();
-    glyph->setGlyph(entry.isImage() ? "photo" : "file-text");
-    glyph->setGlyphSize(kListGlyphSize);
-    glyph->setColor(colorSpecFromRole(entry.isImage() ? ColorRole::Secondary : ColorRole::Primary));
-    row->addChild(std::move(glyph));
+    auto lead = std::make_unique<Flex>();
+    lead->setDirection(FlexDirection::Horizontal);
+    lead->setAlign(FlexAlign::Center);
+    lead->setJustify(FlexJustify::Center);
+    lead->setSize(leadW, 0.0f);
+
+    if (rowEntry.isImage() && !rowEntry.data.empty()) {
+      auto thumb = std::make_unique<Image>();
+      thumb->setSize(thumbPx, thumbPx);
+      thumb->setFit(ImageFit::Cover);
+      thumb->setRadius(Style::radiusMd * scale);
+      if (thumb->setSourceBytes(renderer, rowEntry.data.data(), rowEntry.data.size())) {
+        lead->addChild(std::move(thumb));
+      } else {
+        auto fallback = std::make_unique<Glyph>();
+        fallback->setGlyph("photo");
+        fallback->setGlyphSize(kListGlyphSize * scale);
+        fallback->setColor(colorSpecFromRole(ColorRole::Secondary));
+        lead->addChild(std::move(fallback));
+      }
+    } else {
+      auto glyph = std::make_unique<Glyph>();
+      glyph->setGlyph(rowEntry.isImage() ? "photo" : "file-text");
+      glyph->setGlyphSize(kListGlyphSize * scale);
+      glyph->setColor(colorSpecFromRole(rowEntry.isImage() ? ColorRole::Secondary : ColorRole::Primary));
+      lead->addChild(std::move(glyph));
+    }
+    row->addChild(std::move(lead));
 
     auto textColumn = std::make_unique<Flex>();
     textColumn->setDirection(FlexDirection::Vertical);
     textColumn->setAlign(FlexAlign::Start);
-    textColumn->setGap(Style::spaceXs);
+    textColumn->setGap(Style::spaceXs * scale);
 
-    const std::string rawTitle = entryTitle(entry);
-    const std::string cleanTitle = entry.isImage() ? rawTitle : collapseWhitespace(rawTitle);
+    const std::string rawTitle = entryTitle(rowEntry);
+    const std::string cleanTitle = rowEntry.isImage() ? rawTitle : collapseWhitespace(rawTitle);
     auto title = std::make_unique<Label>();
     title->setText(cleanTitle);
     title->setFontSize(Style::fontSizeBody);
@@ -517,7 +548,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     textColumn->addChild(std::move(title));
 
     auto timeLabel = std::make_unique<Label>();
-    timeLabel->setText(formatTimeAgo(entry.capturedAt) + "  •  " + formatBytes(entry.byteSize));
+    timeLabel->setText(formatTimeAgo(rowEntry.capturedAt) + "  •  " + formatBytes(rowEntry.byteSize));
     timeLabel->setCaptionStyle();
     timeLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     timeLabel->setMaxWidth(textWidth);
