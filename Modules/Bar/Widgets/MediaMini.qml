@@ -236,7 +236,7 @@ Item {
     y: Style.pixelAlignCenter(parent.height, height)
     width: Style.toOdd(isVertical ? (isHidden ? 0 : verticalSize) : (isHidden ? 0 : contentWidth))
     height: Style.toOdd(isVertical ? (isHidden ? 0 : verticalSize) : capsuleHeight)
-    radius: Style.radiusM
+    radius: Style.barRadiusM
     color: Style.capsuleColor
     border.color: Style.capsuleBorderColor
     border.width: Style.capsuleBorderWidth
@@ -335,7 +335,7 @@ Item {
           maxWidth: root.maxWidth - root.mainContentWidth
           forcedHover: mainMouseArea.containsMouse
           fadeExtent: 0.1
-          fadeCornerRadius: Style.radiusM
+          fadeCornerRadius: Style.barRadiusM
 
           NText {
             color: hasPlayer ? root.textColor : Color.mOnSurfaceVariant

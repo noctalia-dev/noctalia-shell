@@ -99,7 +99,7 @@ Item {
     id: pillBackground
     width: buttonSize
     height: root.contentHeight
-    radius: Style.radiusM
+    radius: Style.barRadiusM
     color: root.bgColor
     border.color: Style.capsuleBorderColor
     border.width: Style.capsuleBorderWidth
@@ -134,10 +134,10 @@ Item {
     color: "transparent" // Make pill background transparent to avoid double opacity
 
     // Radius logic for vertical expansion - rounded on the side that connects to icon
-    topLeftRadius: openUpward ? Style.radiusM : 0
-    bottomLeftRadius: openDownward ? Style.radiusM : 0
-    topRightRadius: openUpward ? Style.radiusM : 0
-    bottomRightRadius: openDownward ? Style.radiusM : 0
+    topLeftRadius: openUpward ? Style.barRadiusM : 0
+    bottomLeftRadius: openDownward ? Style.barRadiusM : 0
+    topRightRadius: openUpward ? Style.barRadiusM : 0
+    bottomRightRadius: openDownward ? Style.barRadiusM : 0
 
     anchors.horizontalCenter: parent.horizontalCenter
 
@@ -188,7 +188,7 @@ Item {
     id: iconCircle
     width: buttonSize
     height: buttonSize
-    radius: Math.min(Style.radiusL, width / 2)
+    radius: Math.min(Style.barRadiusL, width / 2)
     color: "transparent" // Make icon background transparent to avoid double opacity
 
     // Icon positioning based on direction

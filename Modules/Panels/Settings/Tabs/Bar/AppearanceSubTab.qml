@@ -155,6 +155,29 @@ ColumnLayout {
 
   NValueSlider {
     Layout.fillWidth: true
+    label: I18n.tr("panels.bar.appearance-widget-radius-label")
+    description: I18n.tr("panels.bar.appearance-widget-radius-description")
+    from: 0
+    to: 2
+    stepSize: 0.01
+    showReset: true
+    value: Settings.data.bar.widgetRadiusRatio
+    defaultValue: Settings.getDefaultValue("bar.widgetRadiusRatio")
+    onMoved: value => Settings.data.bar.widgetRadiusRatio = value
+    text: Math.floor(Settings.data.bar.widgetRadiusRatio * 100) + "%"
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.bar.appearance-override-plugin-widget-radius-label")
+    description: I18n.tr("panels.bar.appearance-override-plugin-widget-radius-description")
+    checked: Settings.data.bar.overridePluginWidgetRadius
+    defaultValue: Settings.getDefaultValue("bar.overridePluginWidgetRadius")
+    onToggled: checked => Settings.data.bar.overridePluginWidgetRadius = checked
+  }
+
+  NValueSlider {
+    Layout.fillWidth: true
     label: I18n.tr("panels.bar.appearance-widget-spacing-label")
     description: I18n.tr("panels.bar.appearance-widget-spacing-description")
     from: 0
