@@ -360,6 +360,20 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
   if (m_rootLayout == nullptr) {
     return;
   }
+
+  // Cap shortcut labels to the cell text area so long labels elide rather than
+  // stretching the button and breaking the uniform grid.
+  if (!m_shortcutPads.empty()) {
+    const float scale = contentScale();
+    const float cellWidth = (contentWidth - 3.0f * Style::spaceSm * scale) / 4.0f;
+    const float labelMaxWidth = std::max(1.0f, cellWidth - 2.0f * Style::spaceMd * scale);
+    for (auto& pad : m_shortcutPads) {
+      if (pad.label != nullptr) {
+        pad.label->setMaxWidth(labelMaxWidth);
+      }
+    }
+  }
+
   if (m_dateTimeCard != nullptr) {
     m_dateTimeCard->setMinHeight(0.0f);
   }
