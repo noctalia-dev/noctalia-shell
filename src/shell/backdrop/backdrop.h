@@ -1,6 +1,5 @@
 #pragma once
 
-#include "core/timer_manager.h"
 #include "shell/backdrop/backdrop_instance.h"
 
 #include <memory>
@@ -30,7 +29,6 @@ public:
 private:
   [[nodiscard]] bool isSupportedForCurrentCompositor() const;
   [[nodiscard]] bool shouldBeActiveForCurrentCompositorState() const;
-  [[nodiscard]] bool shouldKeepLoadedWhileInactive() const;
   [[nodiscard]] bool shouldRenderSurfaces() const;
   [[nodiscard]] bool shouldHaveInstances() const;
   void reload();
@@ -48,5 +46,4 @@ private:
   GlSharedContext* m_sharedGl = nullptr;
   std::vector<std::unique_ptr<BackdropInstance>> m_instances;
   bool m_active = false;
-  Timer m_destroyDelayTimer;
 };

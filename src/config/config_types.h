@@ -195,7 +195,6 @@ struct WallpaperConfig {
 
 struct BackdropConfig {
   bool enabled = false;
-  bool unloadWhenNotInUse = true;
   float blurIntensity = 0.5f;
   float tintIntensity = 0.3f;
 };

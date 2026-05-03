@@ -392,10 +392,6 @@ namespace settings {
       entries.push_back(makeEntry("backdrop", "general", tr("settings.schema.shared.enabled.label"),
                                   tr("settings.schema.backdrop.enabled.description"), {"backdrop", "enabled"},
                                   ToggleSetting{cfg.backdrop.enabled}, "wallpaper backdrop"));
-      entries.push_back(makeEntry("backdrop", "general", tr("settings.schema.backdrop.unload-when-hidden.label"),
-                                  tr("settings.schema.backdrop.unload-when-hidden.description"),
-                                  {"backdrop", "unload_when_not_in_use"},
-                                  ToggleSetting{cfg.backdrop.unloadWhenNotInUse}, "memory"));
       entries.push_back(makeEntry("backdrop", "backdrop", tr("settings.schema.backdrop.blur-intensity.label"),
                                   tr("settings.schema.backdrop.blur-intensity.description"),
                                   {"backdrop", "blur_intensity"},

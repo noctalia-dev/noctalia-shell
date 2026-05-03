@@ -1260,10 +1260,6 @@
         }
       },
       "backdrop": {
-        "unload-when-hidden": {
-          "label": "Unload When Hidden",
-          "description": "Free memory when backdrop is not visible"
-        },
         "blur-intensity": {
           "label": "Blur Intensity",
           "description": "Blur intensity of the backdrop"

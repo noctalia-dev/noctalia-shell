@@ -13,7 +13,6 @@
 namespace {
 
   constexpr Logger kLog("backdrop");
-  constexpr auto kDestroyDelay = std::chrono::milliseconds(2000);
 
 } // namespace
 
@@ -35,14 +34,14 @@ bool Backdrop::shouldBeActiveForCurrentCompositorState() const {
   return m_wayland->hasNiriOverviewState() && m_wayland->isNiriOverviewOpen();
 }
 
-bool Backdrop::shouldKeepLoadedWhileInactive() const {
-  return m_config != nullptr && isSupportedForCurrentCompositor() && m_config->config().backdrop.enabled &&
-         !m_config->config().backdrop.unloadWhenNotInUse;
+bool Backdrop::shouldRenderSurfaces() const { return m_active; }
+
+bool Backdrop::shouldHaveInstances() const {
+  if (m_config == nullptr || !m_config->config().backdrop.enabled) {
+    return false;
+  }
+  return isSupportedForCurrentCompositor();
 }
-
-bool Backdrop::shouldRenderSurfaces() const { return m_active || shouldKeepLoadedWhileInactive(); }
-
-bool Backdrop::shouldHaveInstances() const { return shouldRenderSurfaces(); }
 
 void Backdrop::destroyInstances() {
   for (auto& inst : m_instances) {
@@ -57,8 +56,6 @@ bool Backdrop::initialize(WaylandConnection& wayland, ConfigService* config, Sha
   m_config = config;
   m_textureCache = textureCache;
   m_sharedGl = sharedGl;
-  // Use the compositor's current overview state on startup. Hidden preloading
-  // is only allowed when the user explicitly disables hidden unload.
   m_active = active && m_config->config().backdrop.enabled;
 
   // Register reload callback unconditionally so toggling enabled in config works.
@@ -77,7 +74,6 @@ bool Backdrop::initialize(WaylandConnection& wayland, ConfigService* config, Sha
 
 void Backdrop::reload() {
   kLog.info("reloading config");
-  m_destroyDelayTimer.stop();
   m_active = shouldBeActiveForCurrentCompositorState();
 
   // Always tear down existing instances. This is necessary because a
@@ -113,18 +109,13 @@ void Backdrop::onStateChange() {
     }
 
     kLog.info("updating {} → {}", inst->connectorName, newPath);
-    if (!m_active && !shouldKeepLoadedWhileInactive()) {
-      releaseInstanceTexture(*inst, false);
-      inst->currentPath = newPath;
-      continue;
-    }
     releaseInstanceTexture(*inst);
     loadWallpaper(*inst, newPath);
   }
 }
 
 void Backdrop::onThemeChanged() {
-  if (!shouldRenderSurfaces()) {
+  if (!shouldHaveInstances()) {
     return;
   }
   for (auto& inst : m_instances) {
@@ -148,7 +139,6 @@ void Backdrop::requestLayout() {
 void Backdrop::setActive(bool active) {
   const bool backdropEnabled = (m_config != nullptr) ? m_config->config().backdrop.enabled : false;
   if (!backdropEnabled) {
-    m_destroyDelayTimer.stop();
     if (!m_instances.empty()) {
       destroyInstances();
     }
@@ -171,7 +161,6 @@ void Backdrop::setActive(bool active) {
     return;
   }
   m_active = active;
-  const bool unloadWhenNotInUse = (m_config != nullptr) ? m_config->config().backdrop.unloadWhenNotInUse : true;
   const bool renderSurfaces = shouldRenderSurfaces();
 
   if (!m_active) {
@@ -186,19 +175,9 @@ void Backdrop::setActive(bool active) {
         ensureInstanceWallpaperLoaded(*inst);
       }
     }
-    if (unloadWhenNotInUse) {
-      m_destroyDelayTimer.start(kDestroyDelay, [this]() {
-        if (!m_active) {
-          destroyInstances();
-        }
-      });
-    } else {
-      m_destroyDelayTimer.stop();
-    }
     return;
   }
 
-  m_destroyDelayTimer.stop();
   if (m_instances.empty()) {
     syncInstances();
   }
@@ -265,7 +244,7 @@ void Backdrop::createInstance(const WaylandOutput& output) {
 
   auto* instPtr = inst.get();
   inst->surface->setConfigureCallback([this, instPtr](std::uint32_t /*width*/, std::uint32_t /*height*/) {
-    if (instPtr->currentTexture.id != 0 || !shouldRenderSurfaces() || m_config == nullptr) {
+    if (instPtr->currentTexture.id != 0 || !shouldHaveInstances() || m_config == nullptr) {
       return;
     }
     std::string path = instPtr->currentPath;
@@ -284,7 +263,7 @@ void Backdrop::createInstance(const WaylandOutput& output) {
 
   inst->surface->setActive(shouldRenderSurfaces());
 
-  if (shouldRenderSurfaces() && !wallpaperPath.empty()) {
+  if (shouldHaveInstances() && !wallpaperPath.empty()) {
     loadWallpaper(*inst, wallpaperPath);
   }
 
@@ -329,7 +308,6 @@ void Backdrop::updateRendererState(BackdropInstance& inst) {
   }
 
   const auto& ov = m_config->config().backdrop;
-  inst.surface->setUnloadWhenInactive(ov.unloadWhenNotInUse);
   inst.surface->setBlurIntensity(ov.blurIntensity);
   inst.surface->setTintIntensity(ov.tintIntensity);
 

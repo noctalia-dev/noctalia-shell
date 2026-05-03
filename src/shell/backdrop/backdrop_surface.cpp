@@ -87,10 +87,6 @@ void BackdropSurface::setActive(bool active) {
     return;
   }
   m_active = active;
-  if (!m_active && m_unloadWhenInactive) {
-    m_wallpaperRenderer.makeCurrent();
-    m_layer.destroy();
-  }
 }
 
 void BackdropSurface::setBlurIntensity(float v) noexcept {
