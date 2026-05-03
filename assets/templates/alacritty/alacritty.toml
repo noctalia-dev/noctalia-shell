@@ -1,10 +1,10 @@
 [colors.primary]
-background = '{{colors.background.default.hex}}'
-foreground = '{{colors.on_surface.default.hex}}'
+background = '{{colors.terminal_background.default.hex}}'
+foreground = '{{colors.terminal_foreground.default.hex}}'
 
 [colors.cursor]
-text = '{{colors.on_surface.default.hex}}'
-cursor = '{{colors.on_surface_variant.default.hex}}'
+text = '{{colors.terminal_cursor_text.default.hex}}'
+cursor = '{{colors.terminal_cursor.default.hex}}'
 
 [colors.vi_mode_cursor]
 text = '{{colors.background.default.hex}}'
@@ -31,38 +31,38 @@ foreground = '{{colors.surface_variant.default.hex}}'
 background = '{{colors.secondary.default.hex}}'
 
 [colors.selection]
-text = '{{colors.background.default.hex}}'
-background = '{{colors.primary.default.hex}}'
+text = '{{colors.terminal_selection_fg.default.hex}}'
+background = '{{colors.terminal_selection_bg.default.hex}}'
 
 
 [colors.normal]
-black   = '{{colors.surface.default.hex}}'
-red     = '{{colors.error.default.hex}}'
-green   = '{{colors.primary.default.hex}}'
-yellow  = '{{colors.secondary.default.hex}}'
-blue    = '{{colors.tertiary.default.hex}}'
-magenta = '{{colors.primary_fixed_dim.default.hex}}'
-cyan    = '{{colors.secondary_fixed_dim.default.hex}}'
-white   = '{{colors.on_surface.default.hex}}'
+black   = '{{colors.terminal_normal_black.default.hex}}'
+red     = '{{colors.terminal_normal_red.default.hex}}'
+green   = '{{colors.terminal_normal_green.default.hex}}'
+yellow  = '{{colors.terminal_normal_yellow.default.hex}}'
+blue    = '{{colors.terminal_normal_blue.default.hex}}'
+magenta = '{{colors.terminal_normal_magenta.default.hex}}'
+cyan    = '{{colors.terminal_normal_cyan.default.hex}}'
+white   = '{{colors.terminal_normal_white.default.hex}}'
 
 
 [colors.bright]
-black   = '{{colors.outline.default.hex}}'
-red     = '{{colors.error.default.hex}}'
-green   = '{{colors.primary.default.hex}}'
-yellow  = '{{colors.secondary.default.hex}}'
-blue    = '{{colors.tertiary.default.hex}}'
-magenta = '{{colors.primary_fixed_dim.default.hex}}'
-cyan    = '{{colors.secondary_fixed_dim.default.hex}}'
-white   = '{{colors.on_surface.default.hex}}'
+black   = '{{colors.terminal_bright_black.default.hex}}'
+red     = '{{colors.terminal_bright_red.default.hex}}'
+green   = '{{colors.terminal_bright_green.default.hex}}'
+yellow  = '{{colors.terminal_bright_yellow.default.hex}}'
+blue    = '{{colors.terminal_bright_blue.default.hex}}'
+magenta = '{{colors.terminal_bright_magenta.default.hex}}'
+cyan    = '{{colors.terminal_bright_cyan.default.hex}}'
+white   = '{{colors.terminal_bright_white.default.hex}}'
 
 
 [colors.dim]
-black   = '{{colors.outline.default.hex}}'
-red     = '{{colors.error.default.hex}}'
-green   = '{{colors.primary.default.hex}}'
-yellow  = '{{colors.secondary.default.hex}}'
-blue    = '{{colors.tertiary.default.hex}}'
-magenta = '{{colors.primary_fixed_dim.default.hex}}'
-cyan    = '{{colors.secondary_fixed_dim.default.hex}}'
-white   = '{{colors.on_surface.default.hex}}'
+black   = '{{colors.terminal_normal_black.default.hex}}'
+red     = '{{colors.terminal_normal_red.default.hex}}'
+green   = '{{colors.terminal_normal_green.default.hex}}'
+yellow  = '{{colors.terminal_normal_yellow.default.hex}}'
+blue    = '{{colors.terminal_normal_blue.default.hex}}'
+magenta = '{{colors.terminal_normal_magenta.default.hex}}'
+cyan    = '{{colors.terminal_normal_cyan.default.hex}}'
+white   = '{{colors.terminal_normal_white.default.hex}}'

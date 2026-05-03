@@ -10,6 +10,7 @@
 #include "cpp/scheme/scheme_rainbow.h"
 #include "cpp/scheme/scheme_tonal_spot.h"
 #include "cpp/utils/utils.h"
+#include "theme/fixed_palette.h"
 #include "theme/palette.h"
 #include "theme/palette_generator.h"
 #include "theme/scheme.h"
@@ -444,6 +445,7 @@ namespace noctalia::theme {
     out.light = buildTokenMap(*lightScheme);
     out.dark["source_color"] = seed;
     out.light["source_color"] = seed;
+    synthesizeTerminalPaletteTokens(out);
     return out;
   }
 

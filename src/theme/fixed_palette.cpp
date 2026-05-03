@@ -11,6 +11,9 @@ namespace noctalia::theme {
 
   namespace {
 
+    constexpr std::uint32_t kOpaqueBlack = 0xff000000U;
+    constexpr std::uint32_t kOpaqueWhite = 0xffffffffU;
+
     ::Color tokenToColor(const TokenMap& tokens, std::string_view key) {
       auto it = tokens.find(std::string(key));
       if (it == tokens.end())
@@ -25,12 +28,109 @@ namespace noctalia::theme {
 
     void setToken(TokenMap& dst, std::string_view key, const Color& color) { dst[std::string(key)] = color.toArgb(); }
 
+    std::uint32_t colorToArgb(const ::Color& color) {
+      auto toByte = [](float value) {
+        return static_cast<std::uint32_t>(value <= 0.0f ? 0.0f : (value >= 1.0f ? 255.0f : value * 255.0f + 0.5f));
+      };
+      return kOpaqueBlack | (toByte(color.r) << 16U) | (toByte(color.g) << 8U) | toByte(color.b);
+    }
+
+    void setToken(TokenMap& dst, std::string_view key, const ::Color& color) {
+      dst[std::string(key)] = colorToArgb(color);
+    }
+
+    bool hasToken(const TokenMap& tokens, std::string_view key) {
+      return tokens.find(std::string(key)) != tokens.end();
+    }
+
+    std::uint32_t tokenOr(const TokenMap& tokens, std::string_view key, std::uint32_t fallback) {
+      auto it = tokens.find(std::string(key));
+      return it == tokens.end() ? fallback : it->second;
+    }
+
+    void setMissingToken(TokenMap& tokens, std::string_view key, std::uint32_t value) {
+      if (!hasToken(tokens, key)) {
+        tokens[std::string(key)] = value;
+      }
+    }
+
+    void applyAnsiColors(TokenMap& tokens, std::string_view prefix, const TerminalAnsiColors& colors) {
+      setToken(tokens, std::string(prefix) + "_black", colors.black);
+      setToken(tokens, std::string(prefix) + "_red", colors.red);
+      setToken(tokens, std::string(prefix) + "_green", colors.green);
+      setToken(tokens, std::string(prefix) + "_yellow", colors.yellow);
+      setToken(tokens, std::string(prefix) + "_blue", colors.blue);
+      setToken(tokens, std::string(prefix) + "_magenta", colors.magenta);
+      setToken(tokens, std::string(prefix) + "_cyan", colors.cyan);
+      setToken(tokens, std::string(prefix) + "_white", colors.white);
+    }
+
     Color interpolateColor(const Color& a, const Color& b, double t) {
       auto mix = [t](int lhs, int rhs) { return static_cast<int>(lhs + (rhs - lhs) * t); };
       return Color(mix(a.r, b.r), mix(a.g, b.g), mix(a.b, b.b));
     }
 
   } // namespace
+
+  void applyTerminalPalette(TokenMap& tokens, const TerminalPalette& terminal) {
+    applyAnsiColors(tokens, "terminal_normal", terminal.normal);
+    applyAnsiColors(tokens, "terminal_bright", terminal.bright);
+    setToken(tokens, "terminal_foreground", terminal.foreground);
+    setToken(tokens, "terminal_background", terminal.background);
+    setToken(tokens, "terminal_selection_fg", terminal.selectionFg);
+    setToken(tokens, "terminal_selection_bg", terminal.selectionBg);
+    setToken(tokens, "terminal_cursor_text", terminal.cursorText);
+    setToken(tokens, "terminal_cursor", terminal.cursor);
+  }
+
+  void synthesizeTerminalPaletteTokens(TokenMap& tokens) {
+    const std::uint32_t background = tokenOr(tokens, "background", tokenOr(tokens, "surface", kOpaqueBlack));
+    const std::uint32_t foreground = tokenOr(tokens, "on_surface", kOpaqueWhite);
+    const std::uint32_t surface = tokenOr(tokens, "surface", background);
+    const std::uint32_t surfaceVariant = tokenOr(tokens, "surface_variant", surface);
+    const std::uint32_t onSurfaceVariant = tokenOr(tokens, "on_surface_variant", foreground);
+    const std::uint32_t outline = tokenOr(tokens, "outline", onSurfaceVariant);
+    const std::uint32_t error = tokenOr(tokens, "error", foreground);
+    const std::uint32_t primary = tokenOr(tokens, "primary", foreground);
+    const std::uint32_t secondary = tokenOr(tokens, "secondary", primary);
+    const std::uint32_t tertiary = tokenOr(tokens, "tertiary", secondary);
+    const std::uint32_t primaryFixedDim = tokenOr(tokens, "primary_fixed_dim", primary);
+    const std::uint32_t secondaryFixedDim = tokenOr(tokens, "secondary_fixed_dim", secondary);
+
+    setMissingToken(tokens, "terminal_foreground", foreground);
+    setMissingToken(tokens, "terminal_background", background);
+    setMissingToken(tokens, "terminal_cursor", foreground);
+    setMissingToken(tokens, "terminal_cursor_text", background);
+    setMissingToken(tokens, "terminal_selection_fg", onSurfaceVariant);
+    setMissingToken(tokens, "terminal_selection_bg", surfaceVariant);
+
+    setMissingToken(tokens, "terminal_normal_black", surfaceVariant);
+    setMissingToken(tokens, "terminal_normal_red", error);
+    setMissingToken(tokens, "terminal_normal_green", primary);
+    setMissingToken(tokens, "terminal_normal_yellow", secondary);
+    setMissingToken(tokens, "terminal_normal_blue", tertiary);
+    setMissingToken(tokens, "terminal_normal_magenta", primaryFixedDim);
+    setMissingToken(tokens, "terminal_normal_cyan", secondaryFixedDim);
+    setMissingToken(tokens, "terminal_normal_white", foreground);
+
+    setMissingToken(tokens, "terminal_bright_black", outline);
+    setMissingToken(tokens, "terminal_bright_red", error);
+    setMissingToken(tokens, "terminal_bright_green", primary);
+    setMissingToken(tokens, "terminal_bright_yellow", secondary);
+    setMissingToken(tokens, "terminal_bright_blue", tertiary);
+    setMissingToken(tokens, "terminal_bright_magenta", primaryFixedDim);
+    setMissingToken(tokens, "terminal_bright_cyan", secondaryFixedDim);
+    setMissingToken(tokens, "terminal_bright_white", foreground);
+  }
+
+  void synthesizeTerminalPaletteTokens(GeneratedPalette& palette) {
+    if (!palette.dark.empty()) {
+      synthesizeTerminalPaletteTokens(palette.dark);
+    }
+    if (!palette.light.empty()) {
+      synthesizeTerminalPaletteTokens(palette.light);
+    }
+  }
 
   TokenMap expandFixedPaletteMode(const ::Palette& palette, bool isDark) {
     const Color primary = toUiColor(palette.primary);

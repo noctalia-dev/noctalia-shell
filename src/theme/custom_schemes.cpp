@@ -9,6 +9,7 @@
 #include "cpp/cam/hct.h"
 #include "theme/color.h"
 #include "theme/contrast.h"
+#include "theme/fixed_palette.h"
 #include "theme/palette.h"
 #include "theme/palette_generator.h"
 #include "theme/scheme.h"
@@ -1239,6 +1240,7 @@ namespace noctalia::theme {
       out.dark["source_color"] = palette[0].toArgb();
       out.light["source_color"] = palette[0].toArgb();
     }
+    synthesizeTerminalPaletteTokens(out);
     return out;
   }
 

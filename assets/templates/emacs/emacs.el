@@ -73,23 +73,23 @@
       (inverse-on-surface "{{colors.on_surface.default.hex}}")
       (inverse-primary "{{colors.primary.default.hex}}")
       (inverse-surface "{{colors.surface.default.hex}}")
-      ;; Map terminal colors (term0-term15) to available colors
-      (term0 "{{colors.surface.default.hex}}")
-      (term1 "{{colors.error.default.hex}}")
-      (term2 "{{colors.tertiary.default.hex}}")
-      (term3 "{{colors.secondary.default.hex}}")
-      (term4 "{{colors.primary.default.hex}}")
-      (term5 "{{colors.tertiary_container.default.hex}}")
-      (term6 "{{colors.secondary_container.default.hex}}")
-      (term7 "{{colors.on_surface.default.hex}}")
-      (term8 "{{colors.outline.default.hex}}")
-      (term9 "{{colors.error.default.hex}}")
-      (term10 "{{colors.tertiary.default.hex}}")
-      (term11 "{{colors.secondary.default.hex}}")
-      (term12 "{{colors.primary.default.hex}}")
-      (term13 "{{colors.tertiary_container.default.hex}}")
-      (term14 "{{colors.secondary_container.default.hex}}")
-      (term15 "{{colors.on_surface.default.hex}}"))
+      ;; ANSI terminal colors
+      (term0 "{{colors.terminal_normal_black.default.hex}}")
+      (term1 "{{colors.terminal_normal_red.default.hex}}")
+      (term2 "{{colors.terminal_normal_green.default.hex}}")
+      (term3 "{{colors.terminal_normal_yellow.default.hex}}")
+      (term4 "{{colors.terminal_normal_blue.default.hex}}")
+      (term5 "{{colors.terminal_normal_magenta.default.hex}}")
+      (term6 "{{colors.terminal_normal_cyan.default.hex}}")
+      (term7 "{{colors.terminal_normal_white.default.hex}}")
+      (term8 "{{colors.terminal_bright_black.default.hex}}")
+      (term9 "{{colors.terminal_bright_red.default.hex}}")
+      (term10 "{{colors.terminal_bright_green.default.hex}}")
+      (term11 "{{colors.terminal_bright_yellow.default.hex}}")
+      (term12 "{{colors.terminal_bright_blue.default.hex}}")
+      (term13 "{{colors.terminal_bright_magenta.default.hex}}")
+      (term14 "{{colors.terminal_bright_cyan.default.hex}}")
+      (term15 "{{colors.terminal_bright_white.default.hex}}"))
 
   (custom-theme-set-faces
    'noctalia
@@ -358,4 +358,3 @@
 
 (provide-theme 'noctalia)
 ;;; noctalia-theme.el ends here
-

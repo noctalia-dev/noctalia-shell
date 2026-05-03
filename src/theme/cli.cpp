@@ -209,6 +209,7 @@ namespace noctalia::theme {
         err = "theme json contained no token maps";
         return false;
       }
+      synthesizeTerminalPaletteTokens(palette);
       return true;
     }
 
