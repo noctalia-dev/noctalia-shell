@@ -120,7 +120,7 @@ namespace {
     const float contentSlide = contentOffsetForReveal(clampedReveal);
     if (revealFromLeft) {
       cardNode->setPosition(kPaddingX, y);
-      cardNode->setSize(visibleWidth, cardNode->height());
+      cardNode->setFrameSize(visibleWidth, cardNode->height());
       cardContent->setPosition(0.0f, 0.0f);
       cardForeground->setOpacity(contentOpacityForReveal(clampedReveal));
       cardForeground->setPosition(-contentSlide, 0.0f);
@@ -128,7 +128,7 @@ namespace {
     }
 
     cardNode->setPosition(kPaddingX + hiddenWidth, y);
-    cardNode->setSize(visibleWidth, cardNode->height());
+    cardNode->setFrameSize(visibleWidth, cardNode->height());
     cardContent->setPosition(-hiddenWidth, 0.0f);
     cardForeground->setOpacity(contentOpacityForReveal(clampedReveal));
     cardForeground->setPosition(contentSlide, 0.0f);
@@ -357,6 +357,7 @@ void NotificationToast::initialize(WaylandConnection& wayland, ConfigService* co
 void NotificationToast::requestLayout() {
   for (auto& inst : m_instances) {
     if (inst->surface != nullptr) {
+      inst->rebuildRequested = true;
       inst->surface->requestLayout();
     }
   }
@@ -1363,9 +1364,18 @@ void NotificationToast::prepareFrame(Instance& inst, bool /*needsUpdate*/, bool 
   const bool needsSceneBuild = inst.sceneRoot == nullptr ||
                                static_cast<uint32_t>(std::round(inst.sceneRoot->width())) != width ||
                                static_cast<uint32_t>(std::round(inst.sceneRoot->height())) != height;
-  if (needsSceneBuild || needsLayout) {
+  const bool needsRebuild = needsSceneBuild || inst.rebuildRequested;
+  inst.rebuildRequested = false;
+
+  // Generic scene graph layout dirt can come from paint-only toast interactions,
+  // such as reveal clipping or hover state. Rebuilding here would restart active
+  // entry/exit/countdown animations; only explicit toast rebuild requests should
+  // tear down the card scene.
+  if (needsRebuild) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
     buildScene(inst, width, height);
+  } else if (needsLayout && inst.surface != nullptr) {
+    inst.surface->requestRedraw();
   }
 }
 
@@ -1806,11 +1816,7 @@ std::string NotificationToast::resolveNotificationIconPath(const PopupEntry& ent
 
         m_failedRemoteIconDownloads.erase(url);
         m_remoteIconCache[url] = path;
-        for (auto& inst : m_instances) {
-          if (inst->surface != nullptr) {
-            inst->surface->requestLayout();
-          }
-        }
+        requestLayout();
       });
     } else if (m_httpClient == nullptr) {
       kLog.warn("notification toast: cannot download remote icon url='{}' because HttpClient is null", iconValue);

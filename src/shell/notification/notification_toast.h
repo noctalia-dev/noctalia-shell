@@ -74,6 +74,7 @@ private:
     std::unique_ptr<Node> sceneRoot;
     InputDispatcher inputDispatcher;
     bool pointerInside = false;
+    bool rebuildRequested = false;
 
     // Per-entry visual nodes for this instance
     struct CardState {
