@@ -3,6 +3,7 @@
 #include "app/poll_source.h"
 #include "compositors/compositor_detect.h"
 #include "compositors/output_backend.h"
+#include "config/config_types.h"
 #include "core/build_info.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
@@ -353,6 +354,9 @@ void Application::initServices() {
   m_wayland.setClipboardService(&m_clipboardService);
   m_wayland.setVirtualKeyboardService(&m_virtualKeyboardService);
   Input::setClipboardService(&m_clipboardService);
+  Input::setValidateKeyMatcher([this](std::uint32_t sym, std::uint32_t modifiers) {
+    return m_configService.matchesKeybind(KeybindAction::Validate, sym, modifiers);
+  });
 
   m_wayland.setOutputChangeCallback([this]() {
     if (m_brightnessService != nullptr) {

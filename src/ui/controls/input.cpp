@@ -17,6 +17,7 @@
 #include <array>
 #include <cctype>
 #include <cmath>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -26,6 +27,7 @@ namespace {
 
   ClipboardService* g_clipboard = nullptr;
   Input::PasswordMaskStyle g_passwordMaskStyle = Input::PasswordMaskStyle::CircleFilled;
+  std::function<bool(std::uint32_t, std::uint32_t)> g_validateKeyMatcher;
 
   std::optional<std::string> readClipboardText() {
     if (g_clipboard == nullptr) {
@@ -332,6 +334,10 @@ void Input::setOnKeyEvent(std::function<bool(std::uint32_t, std::uint32_t)> call
 
 void Input::setClipboardService(ClipboardService* clipboard) noexcept { g_clipboard = clipboard; }
 
+void Input::setValidateKeyMatcher(std::function<bool(std::uint32_t, std::uint32_t)> matcher) noexcept {
+  g_validateKeyMatcher = std::move(matcher);
+}
+
 void Input::setPasswordMaskStyle(PasswordMaskStyle style) noexcept { g_passwordMaskStyle = style; }
 
 void Input::selectAll() {
@@ -488,10 +494,15 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
     return;
   }
 
+  const bool validateMatch = g_validateKeyMatcher && g_validateKeyMatcher(sym, modifiers);
+
   // Ignore keys that produce no text and aren't action keys we handle below
-  if (utf32 == 0 && !preedit && sym != XKB_KEY_BackSpace && sym != XKB_KEY_Delete && sym != XKB_KEY_Left &&
-      sym != XKB_KEY_Right && sym != XKB_KEY_Home && sym != XKB_KEY_End && sym != XKB_KEY_Return) {
-    return;
+  if (utf32 == 0 && !preedit) {
+    const bool navigationOrEdit = sym == XKB_KEY_BackSpace || sym == XKB_KEY_Delete || sym == XKB_KEY_Left ||
+                                  sym == XKB_KEY_Right || sym == XKB_KEY_Home || sym == XKB_KEY_End;
+    if (!navigationOrEdit && !validateMatch) {
+      return;
+    }
   }
 
   bool changed = false;
@@ -585,7 +596,7 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
     if (!shift) {
       m_selectionAnchor = m_cursorPos;
     }
-  } else if (sym == XKB_KEY_Return) {
+  } else if (validateMatch) {
     if (m_onSubmit) {
       m_onSubmit(m_value);
     }
