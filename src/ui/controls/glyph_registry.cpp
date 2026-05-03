@@ -19,6 +19,8 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"settings", 0xEB20},
     {"refresh", 0xEB13},           // refresh
     {"add", 0xEB0B},               // plus
+    {"plus", 0xEB0B},
+    {"minus", 0xEAF2},
     {"trash", 0xEB41},
     {"menu", 0xEC42},              // menu-2
     {"more-vertical", 0xEA94},     // dots-vertical

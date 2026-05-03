@@ -16,6 +16,7 @@
 #include "ui/controls/select.h"
 #include "ui/controls/slider.h"
 #include "ui/controls/spinner.h"
+#include "ui/controls/stepper.h"
 #include "ui/controls/toggle.h"
 #include "ui/dialogs/color_picker_dialog.h"
 #include "ui/dialogs/file_dialog.h"
@@ -420,6 +421,31 @@ void TestPanel::create() {
     colB->addChild(std::move(section));
   }
 
+  {
+    auto stepper = std::make_unique<Stepper>();
+    stepper->setScale(scale);
+    stepper->setRange(0, 99);
+    stepper->setStep(1);
+    stepper->setValue(42);
+    stepper->setOnValueChanged([this](int v) {
+      if (m_stepperValueLabel != nullptr) {
+        m_stepperValueLabel->setText("onChange: " + std::to_string(v));
+      }
+    });
+    m_stepper = stepper.get();
+
+    auto valueLabel = std::make_unique<Label>();
+    valueLabel->setText("onChange: 42");
+    valueLabel->setCaptionStyle();
+    valueLabel->setFontSize(Style::fontSizeCaption * scale);
+    m_stepperValueLabel = valueLabel.get();
+
+    auto section = makeSection("Stepper");
+    section->addChild(std::move(stepper));
+    section->addChild(std::move(valueLabel));
+    colB->addChild(std::move(section));
+  }
+
   // ── Column C: File dialog, Color picker, Grid view, Transforms ──────────
   {
     auto resultLabel = std::make_unique<Label>();
@@ -687,6 +713,8 @@ void TestPanel::onClose() {
   m_radioA = nullptr;
   m_radioB = nullptr;
   m_spinner = nullptr;
+  m_stepper = nullptr;
+  m_stepperValueLabel = nullptr;
   m_input = nullptr;
   m_inputValueLabel = nullptr;
   m_openFileDialogButton = nullptr;

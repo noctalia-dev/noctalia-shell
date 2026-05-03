@@ -154,11 +154,14 @@ Input::Input() {
     stopCursorBlink();
     updateCursorVisibility();
     applyVisualState();
+    if (m_onFocusLoss) {
+      m_onFocusLoss();
+    }
   });
   area->setOnPress([this](const InputArea::PointerData& data) {
     if (data.pressed) {
       const float textStartX = m_horizontalPadding + kTextInnerInset;
-      const std::size_t offset = xToByteOffset(data.localX - textStartX + m_scrollOffset);
+      const std::size_t offset = xToByteOffset(data.localX - textStartX + m_scrollOffset - m_contentLeadSlack);
       const auto now = std::chrono::steady_clock::now();
       const bool isDoubleClick = data.button == BTN_LEFT && m_hasLastPrimaryPress &&
                                  now - m_lastPrimaryPressTime <= kDoubleClickThreshold &&
@@ -204,7 +207,7 @@ Input::Input() {
       clampScrollOffset();
       if (!handledByEdgeScroll) {
         const float textStartX = m_horizontalPadding + kTextInnerInset;
-        m_cursorPos = xToByteOffset(data.localX - textStartX + m_scrollOffset);
+        m_cursorPos = xToByteOffset(data.localX - textStartX + m_scrollOffset - m_contentLeadSlack);
       }
       updateInteractiveGeometry();
       revealCursor();
@@ -324,6 +327,39 @@ void Input::setInvalid(bool invalid) {
   markPaintDirty();
 }
 
+void Input::setFrameVisible(bool visible) {
+  if (m_frameVisible == visible) {
+    return;
+  }
+  m_frameVisible = visible;
+  applyVisualState();
+  markPaintDirty();
+}
+
+void Input::setBold(bool bold) {
+  if (m_label != nullptr) {
+    m_label->setBold(bold);
+  }
+  markLayoutDirty();
+}
+
+void Input::setMinLayoutWidth(float width) {
+  const float next = std::max(0.0f, width);
+  if (m_minLayoutWidth == next) {
+    return;
+  }
+  m_minLayoutWidth = next;
+  markLayoutDirty();
+}
+
+void Input::setTextAlign(TextAlign align) {
+  if (m_textAlign == align) {
+    return;
+  }
+  m_textAlign = align;
+  markLayoutDirty();
+}
+
 void Input::setOnChange(std::function<void(const std::string&)> callback) { m_onChange = std::move(callback); }
 
 void Input::setOnSubmit(std::function<void(const std::string&)> callback) { m_onSubmit = std::move(callback); }
@@ -331,6 +367,8 @@ void Input::setOnSubmit(std::function<void(const std::string&)> callback) { m_on
 void Input::setOnKeyEvent(std::function<bool(std::uint32_t, std::uint32_t)> callback) {
   m_onKeyEvent = std::move(callback);
 }
+
+void Input::setOnFocusLoss(std::function<void()> callback) { m_onFocusLoss = std::move(callback); }
 
 void Input::setClipboardService(ClipboardService* clipboard) noexcept { g_clipboard = clipboard; }
 
@@ -384,7 +422,9 @@ void Input::clearSelection() {
 }
 
 void Input::doLayout(Renderer& renderer) {
-  const float w = width() > 0.0f ? width() : kDefaultWidth;
+  const float minFromHint = m_minLayoutWidth > 0.0f ? m_minLayoutWidth : 0.0f;
+  const float wBase = width() > 0.0f ? width() : (minFromHint > 0.0f ? minFromHint : kDefaultWidth);
+  const float w = std::max(wBase, minFromHint);
   const float h = m_controlHeight;
   setSize(w, h);
   const bool showClearButton = clearButtonVisible();
@@ -429,17 +469,32 @@ void Input::doLayout(Renderer& renderer) {
     }
   }
 
+  m_contentLeadSlack = 0.0f;
+  if (!showPasswordGlyphs && m_textAlign == TextAlign::Center) {
+    const float textInset = m_horizontalPadding + kTextInnerInset;
+    const float rightInset = showClearButton ? clearButtonTextReserveWidth() : textInset;
+    const float vw = std::max(0.0f, w - textInset - rightInset);
+    float textExtent = 0.0f;
+    if (!m_value.empty() && m_stopX.size() > 1U) {
+      textExtent = m_stopX.back();
+    } else if (m_value.empty() && !m_placeholder.empty()) {
+      textExtent = renderer.measureText(m_placeholder, m_fontSize, m_label->bold()).width;
+    }
+    if (vw > 0.0f && textExtent > 0.0f && textExtent + 0.5f < vw) {
+      m_contentLeadSlack = std::round((vw - textExtent) * 0.5f);
+    }
+  }
+
   if (m_inputArea != nullptr && m_inputArea->focused()) {
     ensureCursorVisible();
   } else {
     // Keep unfocused inputs anchored to the beginning of the text.
     m_scrollOffset = 0.0f;
   }
-  updateInteractiveGeometry();
 
   if (showPasswordGlyphs) {
     syncPasswordGlyphNodes(charCount);
-    float maskX = 0.0f;
+    float gx = m_contentLeadSlack - m_scrollOffset;
     for (std::size_t i = 0; i < m_passwordGlyphs.size(); ++i) {
       auto* glyph = m_passwordGlyphs[i];
       const char32_t codepoint = passwordMaskCodepointForIndex(i);
@@ -447,14 +502,14 @@ void Input::doLayout(Renderer& renderer) {
       glyph->setCodepoint(codepoint);
       glyph->setFontSize(passwordGlyphSize);
       glyph->setColor(colorForRole(ColorRole::OnSurface));
-      glyph->setPosition(maskX - m_scrollOffset, maskGlyphY);
+      glyph->setPosition(gx, maskGlyphY);
       glyph->setVisible(true);
-      maskX += metrics.width;
+      gx += metrics.width;
     }
   } else {
     syncPasswordGlyphNodes(0);
     const float labelY = std::round((h - m_label->height()) * 0.5f);
-    m_label->setPosition(-m_scrollOffset, labelY);
+    m_label->setPosition(-m_scrollOffset + m_contentLeadSlack, labelY);
   }
 
   m_background->setPosition(0.0f, 0.0f);
@@ -485,6 +540,7 @@ void Input::doLayout(Renderer& renderer) {
     m_clearButtonGlyph->setPosition(buttonSize * 0.5f - glyphCenterX, h * 0.5f - glyphInkCenter);
   }
 
+  updateInteractiveGeometry();
   applyVisualState();
   updateCursorVisibility();
 }
@@ -632,20 +688,25 @@ void Input::applyVisualState() {
   const bool inputHovered = (m_inputArea != nullptr && m_inputArea->hovered()) || clearButtonHovered;
   const bool readOnly = isReadOnlyVisual();
 
-  const Color fill = focused ? resolved(ColorRole::Surface) : resolved(ColorRole::SurfaceVariant);
-  const Color border = m_invalid
-                           ? resolved(ColorRole::Error)
-                           : (focused ? resolved(ColorRole::Primary)
-                                      : (inputHovered ? resolved(ColorRole::Hover) : resolved(ColorRole::Outline)));
+  if (m_frameVisible) {
+    m_background->setVisible(true);
+    const Color fill = focused ? resolved(ColorRole::Surface) : resolved(ColorRole::SurfaceVariant);
+    const Color border = m_invalid
+                             ? resolved(ColorRole::Error)
+                             : (focused ? resolved(ColorRole::Primary)
+                                        : (inputHovered ? resolved(ColorRole::Hover) : resolved(ColorRole::Outline)));
 
-  m_background->setStyle(RoundedRectStyle{
-      .fill = fill,
-      .border = border,
-      .fillMode = FillMode::Solid,
-      .radius = Style::radiusMd,
-      .softness = 1.0f,
-      .borderWidth = Style::borderWidth,
-  });
+    m_background->setStyle(RoundedRectStyle{
+        .fill = fill,
+        .border = border,
+        .fillMode = FillMode::Solid,
+        .radius = Style::radiusMd,
+        .softness = 1.0f,
+        .borderWidth = Style::borderWidth,
+    });
+  } else if (m_background != nullptr) {
+    m_background->setVisible(false);
+  }
 
   auto selectionStyle = m_selectionRect->style();
   selectionStyle.fill = resolved(ColorRole::Primary);
@@ -730,13 +791,13 @@ void Input::updateInteractiveGeometry() {
   const float maxCursorHeight = std::max(0.0f, controlHeight - kCursorPadV * 2.0f);
   const float cursorHeight = std::clamp(controlHeight * kCursorHeightRatio, kCursorMinHeight, maxCursorHeight);
   const float cursorY = std::round((controlHeight - cursorHeight) * 0.5f);
-  const float cursorX = stopXForByte(m_cursorPos) - m_scrollOffset;
+  const float cursorX = stopXForByte(m_cursorPos) - m_scrollOffset + m_contentLeadSlack;
   m_cursor->setPosition(cursorX, cursorY);
   m_cursor->setFrameSize(kCursorWidth, cursorHeight);
 
   if (hasSelection()) {
-    const float selX0 = stopXForByte(selectionStart()) - m_scrollOffset;
-    const float selX1 = stopXForByte(selectionEnd()) - m_scrollOffset;
+    const float selX0 = stopXForByte(selectionStart()) - m_scrollOffset + m_contentLeadSlack;
+    const float selX1 = stopXForByte(selectionEnd()) - m_scrollOffset + m_contentLeadSlack;
     m_selectionRect->setPosition(selX0, cursorY);
     m_selectionRect->setFrameSize(std::max(0.0f, selX1 - selX0), cursorHeight);
     m_selectionRect->setVisible(true);
@@ -759,13 +820,15 @@ void Input::ensureCursorVisible() {
 
   const float cursorContentX = stopXForByte(m_cursorPos);
   const float revealPad = std::max(kCursorRevealPadding, kTextInnerInset);
-  const float leftEdge = m_scrollOffset + revealPad;
-  const float rightEdge = m_scrollOffset + viewportWidth - revealPad - kCursorWidth;
+  const float slack = m_contentLeadSlack;
+  const float cursorVx = cursorContentX - m_scrollOffset + slack;
+  const float leftEdge = revealPad;
+  const float rightEdge = viewportWidth - revealPad - kCursorWidth;
 
-  if (cursorContentX < leftEdge) {
-    m_scrollOffset = cursorContentX - revealPad;
-  } else if (cursorContentX > rightEdge) {
-    m_scrollOffset = cursorContentX - viewportWidth + revealPad + kCursorWidth;
+  if (cursorVx < leftEdge) {
+    m_scrollOffset = cursorContentX + slack - leftEdge;
+  } else if (cursorVx > rightEdge) {
+    m_scrollOffset = cursorContentX + slack - rightEdge;
   }
 
   clampScrollOffset();
@@ -778,6 +841,17 @@ void Input::clampScrollOffset() {
   }
   const float maxOffset = std::max(0.0f, m_stopX.back() - textViewportWidth() + kCursorWidth + kCursorRevealPadding);
   m_scrollOffset = std::clamp(m_scrollOffset, 0.0f, maxOffset);
+}
+
+LayoutSize Input::doMeasure(Renderer& renderer, const LayoutConstraints& constraints) {
+  const float minFromHint = m_minLayoutWidth > 0.0f ? m_minLayoutWidth : 0.0f;
+  if (constraints.hasExactWidth()) {
+    const float assignW = std::max(constraints.maxWidth, minFromHint);
+    setSize(assignW, m_controlHeight);
+  }
+  doLayout(renderer);
+  const float w = std::max(width(), minFromHint);
+  return constraints.constrain(LayoutSize{.width = w, .height = height()});
 }
 
 void Input::updateCursorVisibility() {

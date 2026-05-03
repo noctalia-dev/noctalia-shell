@@ -14,6 +14,7 @@ class Select;
 class Label;
 class Slider;
 class Spinner;
+class Stepper;
 class Toggle;
 
 class TestPanel : public Panel {
@@ -51,6 +52,8 @@ private:
   RadioButton* m_radioA = nullptr;
   RadioButton* m_radioB = nullptr;
   Spinner* m_spinner = nullptr;
+  Stepper* m_stepper = nullptr;
+  Label* m_stepperValueLabel = nullptr;
   Input* m_input = nullptr;
   Label* m_inputValueLabel = nullptr;
   Button* m_openFileDialogButton = nullptr;

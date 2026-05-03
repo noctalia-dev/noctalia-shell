@@ -1,0 +1,276 @@
+#include "ui/controls/stepper.h"
+
+#include "render/core/renderer.h"
+#include "render/scene/input_area.h"
+#include "ui/controls/button.h"
+#include "ui/controls/input.h"
+#include "ui/palette.h"
+#include "ui/style.h"
+
+#include <algorithm>
+#include <cctype>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <xkbcommon/xkbcommon-keysyms.h>
+
+namespace {
+
+  constexpr float kDefaultMinWidth = 140.0f;
+  constexpr float kValueFieldHPadding = 2.0f;
+
+  std::string trimAscii(std::string_view s) {
+    std::size_t a = 0;
+    std::size_t b = s.size();
+    while (a < b && std::isspace(static_cast<unsigned char>(s[a])) != 0) {
+      ++a;
+    }
+    while (b > a && std::isspace(static_cast<unsigned char>(s[b - 1])) != 0) {
+      --b;
+    }
+    return std::string(s.substr(a, b - a));
+  }
+
+} // namespace
+
+Stepper::Stepper() {
+  setDirection(FlexDirection::Horizontal);
+  setAlign(FlexAlign::Center);
+  setJustify(FlexJustify::SpaceBetween);
+  setGap(0.0f);
+  setPadding(Style::spaceXs, Style::spaceXs);
+  setMinWidth(kDefaultMinWidth);
+  setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
+  setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth);
+  setRadius(Style::radiusMd);
+
+  auto makeStepButton = [this](bool increment) -> std::unique_ptr<Button> {
+    auto btn = std::make_unique<Button>();
+    btn->setVariant(ButtonVariant::Ghost);
+    btn->setGlyph(increment ? "plus" : "minus");
+    btn->setGlyphSize(Style::fontSizeBody);
+    btn->setMinWidth(Style::controlHeightSm);
+    btn->setMinHeight(Style::controlHeightSm);
+    btn->setPadding(0.0f);
+    btn->setContentAlign(ButtonContentAlign::Center);
+    btn->setOnClick([this, increment]() { stepBy(increment ? 1 : -1); });
+    return btn;
+  };
+
+  {
+    auto dec = makeStepButton(false);
+    m_decrement = dec.get();
+    addChild(std::move(dec));
+  }
+
+  {
+    auto field = std::make_unique<Input>();
+    field->setFrameVisible(false);
+    field->setBold(true);
+    field->setTextAlign(TextAlign::Center);
+    field->setFontSize(Style::fontSizeBody);
+    field->setControlHeight(Style::controlHeightSm);
+    field->setHorizontalPadding(kValueFieldHPadding);
+    field->setFlexGrow(1.0f);
+    field->setOnSubmit([this](const std::string& /*text*/) { commitValueField(); });
+    field->setOnFocusLoss([this]() { commitValueField(); });
+    field->setOnKeyEvent([this](std::uint32_t sym, std::uint32_t mod) { return swallowNonNumericKey(sym, mod); });
+    m_valueInput = field.get();
+    addChild(std::move(field));
+  }
+
+  {
+    auto inc = makeStepButton(true);
+    m_increment = inc.get();
+    addChild(std::move(inc));
+  }
+
+  syncValueField();
+  refreshButtons();
+}
+
+void Stepper::setRange(int minValue, int maxValue) {
+  if (maxValue < minValue) {
+    std::swap(minValue, maxValue);
+  }
+  if (m_min == minValue && m_max == maxValue) {
+    return;
+  }
+  m_min = minValue;
+  m_max = maxValue;
+  setValue(m_value);
+}
+
+void Stepper::setStep(int step) {
+  const int next = std::max(1, step);
+  if (m_step == next) {
+    return;
+  }
+  m_step = next;
+  setValue(m_value);
+}
+
+void Stepper::setValue(int value) {
+  const int next = std::clamp(value, m_min, m_max);
+  if (next == m_value) {
+    syncValueField();
+    refreshButtons();
+    return;
+  }
+  m_value = next;
+  syncValueField();
+  refreshButtons();
+  if (m_onValueChanged) {
+    m_onValueChanged(m_value);
+  }
+  markLayoutDirty();
+}
+
+void Stepper::setEnabled(bool enabled) {
+  if (m_enabled == enabled) {
+    return;
+  }
+  m_enabled = enabled;
+  refreshButtons();
+  if (m_valueInput != nullptr) {
+    m_valueInput->inputArea()->setEnabled(enabled);
+    m_valueInput->inputArea()->setFocusable(enabled);
+  }
+  markPaintDirty();
+}
+
+void Stepper::setOnValueChanged(std::function<void(int)> callback) { m_onValueChanged = std::move(callback); }
+
+void Stepper::setScale(float scale) {
+  m_scale = std::max(0.1f, scale);
+  setGap(0.0f);
+  setPadding(Style::spaceXs * m_scale, Style::spaceXs * m_scale);
+  setMinWidth(kDefaultMinWidth * m_scale);
+  setRadius(Style::radiusMd * m_scale);
+  setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth * m_scale);
+  if (m_valueInput != nullptr) {
+    m_valueInput->setFontSize(Style::fontSizeBody * m_scale);
+    m_valueInput->setControlHeight(Style::controlHeightSm * m_scale);
+    m_valueInput->setHorizontalPadding(kValueFieldHPadding * m_scale);
+  }
+  if (m_decrement != nullptr) {
+    m_decrement->setGlyphSize(Style::fontSizeBody * m_scale);
+    m_decrement->setMinWidth(Style::controlHeightSm * m_scale);
+    m_decrement->setMinHeight(Style::controlHeightSm * m_scale);
+    m_decrement->setPadding(0.0f);
+    m_decrement->setRadius(Style::radiusMd * m_scale);
+  }
+  if (m_increment != nullptr) {
+    m_increment->setGlyphSize(Style::fontSizeBody * m_scale);
+    m_increment->setMinWidth(Style::controlHeightSm * m_scale);
+    m_increment->setMinHeight(Style::controlHeightSm * m_scale);
+    m_increment->setPadding(0.0f);
+    m_increment->setRadius(Style::radiusMd * m_scale);
+  }
+  markLayoutDirty();
+}
+
+void Stepper::syncValueFieldMinWidth(Renderer& renderer) {
+  if (m_valueInput == nullptr) {
+    return;
+  }
+  const float fs = Style::fontSizeBody * m_scale;
+  const float wMin = renderer.measureText(std::to_string(m_min), fs, true).width;
+  const float wMax = renderer.measureText(std::to_string(m_max), fs, true).width;
+  const float digitFloor = fs * 2.5f;
+  m_valueInput->setMinLayoutWidth(std::max({wMin, wMax, digitFloor}));
+}
+
+LayoutSize Stepper::doMeasure(Renderer& renderer, const LayoutConstraints& constraints) {
+  syncValueFieldMinWidth(renderer);
+  return Flex::doMeasure(renderer, constraints);
+}
+
+void Stepper::doLayout(Renderer& renderer) {
+  syncValueFieldMinWidth(renderer);
+  Flex::doLayout(renderer);
+  if (m_decrement != nullptr) {
+    m_decrement->updateInputArea();
+  }
+  if (m_increment != nullptr) {
+    m_increment->updateInputArea();
+  }
+}
+
+void Stepper::stepBy(int directionSign) {
+  if (!m_enabled || directionSign == 0) {
+    return;
+  }
+  const long delta = static_cast<long>(m_step) * static_cast<long>(directionSign);
+  const long nextLong = static_cast<long>(m_value) + delta;
+  const int next = static_cast<int>(std::clamp(nextLong, static_cast<long>(m_min), static_cast<long>(m_max)));
+  setValue(next);
+}
+
+void Stepper::syncValueField() {
+  if (m_valueInput != nullptr) {
+    m_valueInput->setValue(std::to_string(m_value));
+  }
+}
+
+void Stepper::commitValueField() {
+  if (m_valueInput == nullptr || !m_enabled) {
+    return;
+  }
+  const std::string t = trimAscii(m_valueInput->value());
+  if (t.empty()) {
+    syncValueField();
+    return;
+  }
+  try {
+    std::size_t idx = 0;
+    const long v = std::stol(t, &idx, 10);
+    if (idx != t.size()) {
+      syncValueField();
+      return;
+    }
+    setValue(static_cast<int>(v));
+  } catch (const std::logic_error&) {
+    syncValueField();
+  }
+}
+
+bool Stepper::swallowNonNumericKey(std::uint32_t sym, std::uint32_t modifiers) {
+  (void)modifiers;
+  if (sym >= XKB_KEY_0 && sym <= XKB_KEY_9) {
+    return false;
+  }
+  if (sym >= XKB_KEY_KP_0 && sym <= XKB_KEY_KP_9) {
+    return false;
+  }
+  if (m_min < 0) {
+    if (sym == XKB_KEY_minus || sym == XKB_KEY_KP_Subtract) {
+      return false;
+    }
+  }
+  if (sym == XKB_KEY_plus || sym == XKB_KEY_KP_Add) {
+    return true;
+  }
+  if ((sym >= XKB_KEY_a && sym <= XKB_KEY_z) || (sym >= XKB_KEY_A && sym <= XKB_KEY_Z)) {
+    return true;
+  }
+  if (sym == XKB_KEY_space) {
+    return true;
+  }
+  if (sym == XKB_KEY_period || sym == XKB_KEY_comma) {
+    return true;
+  }
+  if (sym == XKB_KEY_KP_Decimal || sym == XKB_KEY_KP_Separator) {
+    return true;
+  }
+  return false;
+}
+
+void Stepper::refreshButtons() {
+  if (m_decrement != nullptr) {
+    m_decrement->setEnabled(m_enabled && m_value > m_min);
+  }
+  if (m_increment != nullptr) {
+    m_increment->setEnabled(m_enabled && m_value < m_max);
+  }
+}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/timer_manager.h"
+#include "render/core/renderer.h"
 #include "render/scene/node.h"
 #include "ui/signal.h"
 #include "ui/style.h"
@@ -37,9 +38,14 @@ public:
   void setClearButtonEnabled(bool enabled);
   void setPasswordMode(bool enabled);
   void setInvalid(bool invalid);
+  void setFrameVisible(bool visible);
+  void setBold(bool bold);
+  void setMinLayoutWidth(float width);
+  void setTextAlign(TextAlign align);
   void setOnChange(std::function<void(const std::string&)> callback);
   void setOnSubmit(std::function<void(const std::string&)> callback);
   void setOnKeyEvent(std::function<bool(std::uint32_t sym, std::uint32_t modifiers)> callback);
+  void setOnFocusLoss(std::function<void()> callback);
   void selectAll();
   void moveCaretLeft(bool shift = false);
   void moveCaretRight(bool shift = false);
@@ -57,6 +63,7 @@ public:
 
 private:
   void doLayout(Renderer& renderer) override;
+  LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints) override;
   void handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool preedit = false);
   void applyVisualState();
   void updateDisplayText();
@@ -114,12 +121,17 @@ private:
   std::function<void(const std::string&)> m_onChange;
   std::function<void(const std::string&)> m_onSubmit;
   std::function<bool(std::uint32_t, std::uint32_t)> m_onKeyEvent;
+  std::function<void()> m_onFocusLoss;
   float m_fontSize = Style::fontSizeBody;
   float m_controlHeight = Style::controlHeight;
   float m_horizontalPadding = Style::spaceMd;
   bool m_clearButtonEnabled = false;
   bool m_passwordMode = false;
   bool m_invalid = false;
+  bool m_frameVisible = true;
+  float m_minLayoutWidth = 0.0f;
+  float m_contentLeadSlack = 0.0f;
+  TextAlign m_textAlign = TextAlign::Start;
   std::chrono::steady_clock::time_point m_lastPrimaryPressTime{};
   float m_lastPrimaryPressX = 0.0f;
   float m_lastPrimaryPressY = 0.0f;
