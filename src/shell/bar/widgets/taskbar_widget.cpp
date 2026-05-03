@@ -32,9 +32,9 @@
 #include <wayland-client-protocol.h>
 
 TaskbarWidget::TaskbarWidget(WaylandConnection& connection, wl_output* output, bool groupByWorkspace,
-                             std::string barPosition, float activeIndicatorWidth)
+                             std::string barPosition)
     : m_connection(connection), m_output(output), m_groupByWorkspace(groupByWorkspace),
-      m_activeIndicatorWidth(activeIndicatorWidth), m_barPosition(std::move(barPosition)) {
+      m_barPosition(std::move(barPosition)) {
   buildDesktopIconIndex();
 }
 
@@ -194,14 +194,14 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       area->addChild(std::move(glyph));
     }
 
-    const float lineWidth = m_activeIndicatorWidth * m_contentScale;
-    if (task.active && lineWidth > 0.0f) {
-      const float lineThickness = std::max(1.0f, Style::spaceXs * 0.25f * m_contentScale);
+    if (task.active) {
+      const float d = std::max(4.0f, std::round(Style::barGlyphSize * 0.32f * m_contentScale));
+      const float bottomInset = 0.25f * m_contentScale;
       auto indicator = std::make_unique<Box>();
       indicator->setFill(colorSpecFromRole(ColorRole::Primary));
-      indicator->setRadius(lineThickness * 0.5f);
-      indicator->setFrameSize(lineWidth, lineThickness);
-      indicator->setPosition(std::round((tileSize - lineWidth) * 0.5f), std::round(tileSize - lineThickness));
+      indicator->setRadius(d * 0.5f);
+      indicator->setFrameSize(d, d);
+      indicator->setPosition(std::round((tileSize - d) * 0.5f), std::round(tileSize - d - bottomInset));
       area->addChild(std::move(indicator));
     }
     return area;
