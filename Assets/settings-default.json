@@ -107,6 +107,8 @@
     "allowPanelsOnScreenWithoutBar": true,
     "showChangelogOnStartup": true,
     "telemetryEnabled": false,
+    "hotCornerOverrides": [],
+    "showScreenCornersFeedback": false,
     "enableLockScreenCountdown": true,
     "lockScreenCountdownDuration": 10000,
     "autoStartAuth": false,

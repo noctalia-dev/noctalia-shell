@@ -129,7 +129,48 @@ PanelWindow {
 
     // Only include regions that are actually needed
     // panelRegions is handled by PanelService, bar is local to this screen
-    regions: [barMaskRegion, backgroundMaskRegion]
+    regions: [barMaskRegion, backgroundMaskRegion, hotCornerTopRightMaskRegion, hotCornerTopLeftMaskRegion, hotCornerBottomLeftMaskRegion, hotCornerBottomRightMaskRegion]
+
+    // Hot corner regions
+    Region {
+      id: hotCornerTopLeftMaskRegion
+      readonly property bool cornerEnabled: Settings.getHotCornerEnabledForScreen(root.screen?.name, "TopLeft")
+      x: 0
+      y: 0
+      width: cornerEnabled ? 3 : 0
+      height: cornerEnabled ? 3 : 0
+      intersection: Intersection.Subtract
+    }
+
+    Region {
+      id: hotCornerTopRightMaskRegion
+      readonly property bool cornerEnabled: Settings.getHotCornerEnabledForScreen(root.screen?.name, "TopRight")
+      x: root.width - 3
+      y: 0
+      width: cornerEnabled ? 3 : 0
+      height: cornerEnabled ? 3 : 0
+      intersection: Intersection.Subtract
+    }
+
+    Region {
+      id: hotCornerBottomLeftMaskRegion
+      readonly property bool cornerEnabled: Settings.getHotCornerEnabledForScreen(root.screen?.name, "BottomLeft")
+      x: 0
+      y: root.height - 3
+      width: cornerEnabled ? 3 : 0
+      height: cornerEnabled ? 3 : 0
+      intersection: Intersection.Subtract
+    }
+
+    Region {
+      id: hotCornerBottomRightMaskRegion
+      readonly property bool cornerEnabled: Settings.getHotCornerEnabledForScreen(root.screen?.name, "BottomRight")
+      x: root.width - 3
+      y: root.height - 3
+      width: cornerEnabled ? 3 : 0
+      height: cornerEnabled ? 3 : 0
+      intersection: Intersection.Subtract
+    }
 
     // Bar region - subtract bar area from mask (only if bar should be shown on this screen)
     Region {
@@ -545,7 +586,9 @@ PanelWindow {
     }
 
     // Screen Corners
-    ScreenCorners {}
+    ScreenCorners {
+      screenName: root.screen?.name || ""
+    }
 
     // Blur behind the bar and open panels
     // Helper object holding computed properties for blur regions

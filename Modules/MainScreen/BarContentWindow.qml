@@ -36,6 +36,59 @@ PanelWindow {
   WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.exclusionMode: ExclusionMode.Ignore // Don't reserve space - BarExclusionZone in MainScreen handles that
 
+  // Hot Corner "Tunnel": Make the top-right 3x3px corner click-through
+  // mouse events can reach the hot corner catcher in MainScreen below.
+  mask: Region {
+    // Add the entire window to the clickable mask
+    Region {
+      x: 0
+      y: 0
+      width: barWindow.width
+      height: barWindow.height
+    }
+
+    // Subtract only the 3x3 hot corner areas from the clickable mask
+    Region {
+      readonly property bool cornerEnabled: Settings.getHotCornerEnabledForScreen(barWindow.screen?.name, "TopLeft")
+      readonly property bool barInCorner: barPosition === "top" || barPosition === "left"
+      intersection: Intersection.Subtract
+      x: 0
+      y: 0
+      width: (cornerEnabled && barInCorner) ? 3 : 0
+      height: (cornerEnabled && barInCorner) ? 3 : 0
+    }
+
+    Region {
+      readonly property bool cornerEnabled: Settings.getHotCornerEnabledForScreen(barWindow.screen?.name, "TopRight")
+      readonly property bool barInCorner: barPosition === "top" || barPosition === "right"
+      intersection: Intersection.Subtract
+      x: barWindow.width - 3
+      y: 0
+      width: (cornerEnabled && barInCorner) ? 3 : 0
+      height: (cornerEnabled && barInCorner) ? 3 : 0
+    }
+
+    Region {
+      readonly property bool cornerEnabled: Settings.getHotCornerEnabledForScreen(barWindow.screen?.name, "BottomLeft")
+      readonly property bool barInCorner: barPosition === "bottom" || barPosition === "left"
+      intersection: Intersection.Subtract
+      x: 0
+      y: barWindow.height - 3
+      width: (cornerEnabled && barInCorner) ? 3 : 0
+      height: (cornerEnabled && barInCorner) ? 3 : 0
+    }
+
+    Region {
+      readonly property bool cornerEnabled: Settings.getHotCornerEnabledForScreen(barWindow.screen?.name, "BottomRight")
+      readonly property bool barInCorner: barPosition === "bottom" || barPosition === "right"
+      intersection: Intersection.Subtract
+      x: barWindow.width - 3
+      y: barWindow.height - 3
+      width: (cornerEnabled && barInCorner) ? 3 : 0
+      height: (cornerEnabled && barInCorner) ? 3 : 0
+    }
+  }
+
   // Position and size to match bar location (per-screen)
   readonly property string barPosition: Settings.getBarPositionForScreen(barWindow.screen?.name)
   readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
