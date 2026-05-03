@@ -77,6 +77,8 @@ public:
   [[nodiscard]] bool isOpen() const noexcept;
   [[nodiscard]] bool isAttachedOpen() const noexcept;
   [[nodiscard]] const std::string& activePanelId() const noexcept;
+  // True when a panel is open and it reports the given context as active (e.g. control-center tab).
+  [[nodiscard]] bool isActivePanelContext(std::string_view context) const noexcept;
   [[nodiscard]] std::optional<LayerPopupParentContext> popupParentContextForSurface(wl_surface* surface) const noexcept;
   [[nodiscard]] std::optional<LayerPopupParentContext> fallbackPopupParentContext() const noexcept;
 

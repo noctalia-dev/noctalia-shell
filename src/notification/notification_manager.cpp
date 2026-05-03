@@ -164,6 +164,7 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
   const auto& n = m_notifications.back();
   log_notification(n, "added");
   upsertHistory(n, true, std::nullopt);
+  m_unreadSinceHistoryVisit = true;
 
   for (auto& [token, cb] : m_eventCallbacks) {
     cb(n, NotificationEvent::Added);
@@ -270,6 +271,7 @@ void NotificationManager::clearHistory() {
   m_history.clear();
   m_historyIndex.clear();
   ++m_changeSerial;
+  markNotificationHistorySeen();
 }
 
 std::vector<uint32_t> NotificationManager::expiredIds() const {
@@ -344,3 +346,15 @@ bool NotificationManager::toggleDoNotDisturb() {
 void NotificationManager::setStateCallback(StateCallback callback) { m_stateCallback = std::move(callback); }
 
 void NotificationManager::setSoundPlayer(SoundPlayer* soundPlayer) { m_soundPlayer = soundPlayer; }
+
+bool NotificationManager::hasUnreadNotificationHistory() const noexcept { return m_unreadSinceHistoryVisit; }
+
+void NotificationManager::markNotificationHistorySeen() {
+  if (!m_unreadSinceHistoryVisit) {
+    return;
+  }
+  m_unreadSinceHistoryVisit = false;
+  if (m_stateCallback) {
+    m_stateCallback();
+  }
+}

@@ -130,6 +130,10 @@ Application::Application() : m_weatherService(m_configService, m_httpClient) {
         const char* origin = (n.origin == NotificationOrigin::Internal) ? "internal" : "external";
         kLog.debug("notification {} id={} origin={}", kind, n.id, origin);
 
+        if (event == NotificationEvent::Added && m_panelManager.isActivePanelContext("notifications")) {
+          m_notificationManager.markNotificationHistorySeen();
+        }
+
         // Keep bar widgets in sync with notification state changes.
         m_bar.refresh();
         if (shouldRefreshControlCenter()) {
