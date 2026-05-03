@@ -9,39 +9,6 @@ namespace noctalia::theme {
 
   namespace {
 
-    constexpr std::uint32_t colorToArgb(const Color& color) {
-      auto toByte = [](float value) constexpr {
-        return static_cast<std::uint32_t>(value <= 0.0f ? 0.0f : (value >= 1.0f ? 255.0f : value * 255.0f + 0.5f));
-      };
-      return 0xff000000U | (toByte(color.r) << 16U) | (toByte(color.g) << 8U) | toByte(color.b);
-    }
-
-    void setToken(TokenMap& tokens, std::string_view key, const Color& color) {
-      tokens[std::string(key)] = colorToArgb(color);
-    }
-
-    void applyAnsiColors(TokenMap& tokens, std::string_view prefix, const TerminalAnsiColors& colors) {
-      setToken(tokens, std::string(prefix) + "_black", colors.black);
-      setToken(tokens, std::string(prefix) + "_red", colors.red);
-      setToken(tokens, std::string(prefix) + "_green", colors.green);
-      setToken(tokens, std::string(prefix) + "_yellow", colors.yellow);
-      setToken(tokens, std::string(prefix) + "_blue", colors.blue);
-      setToken(tokens, std::string(prefix) + "_magenta", colors.magenta);
-      setToken(tokens, std::string(prefix) + "_cyan", colors.cyan);
-      setToken(tokens, std::string(prefix) + "_white", colors.white);
-    }
-
-    void applyTerminalColors(TokenMap& tokens, const TerminalPalette& terminal) {
-      applyAnsiColors(tokens, "terminal_normal", terminal.normal);
-      applyAnsiColors(tokens, "terminal_bright", terminal.bright);
-      setToken(tokens, "terminal_foreground", terminal.foreground);
-      setToken(tokens, "terminal_background", terminal.background);
-      setToken(tokens, "terminal_selection_fg", terminal.selectionFg);
-      setToken(tokens, "terminal_selection_bg", terminal.selectionBg);
-      setToken(tokens, "terminal_cursor_text", terminal.cursorText);
-      setToken(tokens, "terminal_cursor", terminal.cursor);
-    }
-
     constexpr std::array<BuiltinPalette, 10> kPalettes = {
         {
             {
@@ -1051,8 +1018,8 @@ namespace noctalia::theme {
 
   GeneratedPalette expandBuiltinPalette(const BuiltinPalette& palette) {
     auto generated = expandFixedPalettes(palette.dark, palette.light);
-    applyTerminalColors(generated.dark, palette.darkTerminal);
-    applyTerminalColors(generated.light, palette.lightTerminal);
+    applyTerminalPalette(generated.dark, palette.darkTerminal);
+    applyTerminalPalette(generated.light, palette.lightTerminal);
     return generated;
   }
 

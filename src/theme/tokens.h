@@ -10,7 +10,7 @@ namespace noctalia::theme {
   // and the custom schemes populate the same key set so consumers can treat
   // them interchangeably. `source_color` is the seed color used to generate
   // the scheme and is exposed for template compatibility.
-  inline constexpr std::array<std::string_view, 50> kTokens = {
+  inline constexpr auto kTokens = std::to_array<std::string_view>({
       "source_color",
       "primary",
       "on_primary",
@@ -61,7 +61,29 @@ namespace noctalia::theme {
       "inverse_primary",
       "background",
       "on_background",
-  };
+      "terminal_foreground",
+      "terminal_background",
+      "terminal_cursor",
+      "terminal_cursor_text",
+      "terminal_selection_fg",
+      "terminal_selection_bg",
+      "terminal_normal_black",
+      "terminal_normal_red",
+      "terminal_normal_green",
+      "terminal_normal_yellow",
+      "terminal_normal_blue",
+      "terminal_normal_magenta",
+      "terminal_normal_cyan",
+      "terminal_normal_white",
+      "terminal_bright_black",
+      "terminal_bright_red",
+      "terminal_bright_green",
+      "terminal_bright_yellow",
+      "terminal_bright_blue",
+      "terminal_bright_magenta",
+      "terminal_bright_cyan",
+      "terminal_bright_white",
+  });
 
   inline constexpr size_t kTokenCount = kTokens.size();
 
