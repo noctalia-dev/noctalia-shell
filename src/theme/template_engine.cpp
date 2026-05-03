@@ -146,6 +146,8 @@ namespace noctalia::theme {
       std::string name;
       std::string inputPath;
       std::vector<std::string> outputPaths;
+      // Rendered like hooks, then run via sh -lc; non-comment stdout lines become extra output paths.
+      std::string outputPathDynamic;
       std::string compareTo;
       std::vector<CompareColorEntry> colorsToCompare;
       std::string preHook;
@@ -1104,6 +1106,21 @@ namespace noctalia::theme {
       return base / expanded;
     }
 
+    void appendPathsFromDynamicStdout(const std::filesystem::path& configPath, std::vector<std::string>& outputs,
+                                      const std::string& stdoutText) {
+      std::string_view remaining(stdoutText);
+      while (!remaining.empty()) {
+        const std::size_t nl = remaining.find('\n');
+        const std::string_view line = nl == std::string_view::npos ? remaining : remaining.substr(0, nl);
+        remaining = nl == std::string_view::npos ? std::string_view{} : remaining.substr(nl + 1);
+        std::string trimmed = StringUtils::trim(line);
+        if (trimmed.empty() || trimmed.front() == '#') {
+          continue;
+        }
+        outputs.push_back(resolveConfigPath(configPath, trimmed).string());
+      }
+    }
+
     std::optional<ParsedTemplateEntry> parseTemplateEntry(const std::filesystem::path& configPath,
                                                           std::string_view name, const toml::table& tpl,
                                                           std::string_view defaultMode) {
@@ -1131,6 +1148,8 @@ namespace noctalia::theme {
         entry.preHook = preHook->get();
       if (const auto postHook = tpl.get_as<std::string>("post_hook"))
         entry.postHook = postHook->get();
+      if (const auto opd = tpl.get_as<std::string>("output_path_dynamic"))
+        entry.outputPathDynamic = opd->get();
       if (const auto index = tpl.get_as<int64_t>("index"))
         entry.index = static_cast<int>(index->get());
       return entry;
@@ -1248,6 +1267,17 @@ namespace noctalia::theme {
       renderOptions.configDir = configPath.has_parent_path() ? configPath.parent_path().string() : "";
       renderOptions.configFile = configPath.string();
 
+      std::vector<std::string> effectiveOutputs = entry.outputPaths;
+      if (!entry.outputPathDynamic.empty()) {
+        const auto cmdRendered = EngineImpl(m_themeData, renderOptions).render(entry.outputPathDynamic);
+        if (cmdRendered.errorCount == 0 && !cmdRendered.text.empty()) {
+          const auto dynResult = process::runSync(cmdRendered.text);
+          if (dynResult.exitCode == 0) {
+            appendPathsFromDynamicStdout(configPath, effectiveOutputs, dynResult.out);
+          }
+        }
+      }
+
       auto runHook = [&](const std::string& hook) {
         if (!hook.empty() && !cancelRequested()) {
           const auto hookRendered = EngineImpl(m_themeData, renderOptions).render(hook);
@@ -1256,12 +1286,12 @@ namespace noctalia::theme {
         }
       };
 
-      const bool hasOutputs = !entry.outputPaths.empty();
+      const bool hasOutputs = !effectiveOutputs.empty();
       if (hasOutputs)
         runHook(entry.preHook);
 
       bool wroteAny = false;
-      for (const std::string& outputPath : entry.outputPaths) {
+      for (const std::string& outputPath : effectiveOutputs) {
         if (cancelRequested()) {
           return ok;
         }

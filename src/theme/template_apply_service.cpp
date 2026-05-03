@@ -160,6 +160,7 @@ namespace noctalia::theme {
     out << "# [templates.my_app]\n";
     out << "# input_path = \"~/.config/noctalia/templates/my-app.css\"\n";
     out << "# output_path = \"~/.config/my-app/theme.css\"\n";
+    out << "# output_path_dynamic = \"bash '~/.config/noctalia/templates/resolve-paths.sh'\"\n";
     out << "# post_hook = \"my-app --reload-theme\"\n";
   }
 
