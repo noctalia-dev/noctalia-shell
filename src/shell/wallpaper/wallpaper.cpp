@@ -611,7 +611,7 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
   instance.transitionProgress = 0.0f;
 
   auto* inst = &instance;
-  instance.transitionAnimId = instance.animations.animate(
+  instance.transitionAnimId = instance.animations.animateUnscaled(
       0.0f, 1.0f, wpConfig.transitionDurationMs, Easing::EaseInOutCubic,
       [inst](float v) { inst->transitionProgress = v; },
       [this, inst]() {
