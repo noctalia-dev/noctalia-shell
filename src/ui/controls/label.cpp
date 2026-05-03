@@ -1,5 +1,7 @@
 #include "ui/controls/label.h"
 
+#include "render/animation/animation.h"
+#include "render/animation/animation_manager.h"
 #include "render/core/renderer.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -8,7 +10,13 @@
 #include <cmath>
 #include <memory>
 
-Label::Label() {
+namespace {
+
+  constexpr const char* kMarqueeGap = " ";
+
+} // namespace
+
+Label::Label() : InputArea() {
   auto textNode = std::make_unique<TextNode>();
   m_textNode = static_cast<TextNode*>(addChild(std::move(textNode)));
   m_textNode->setFontSize(Style::fontSizeBody);
@@ -17,9 +25,11 @@ Label::Label() {
 }
 
 bool Label::setText(std::string_view text) {
-  if (m_textNode->text() == text)
+  if (m_plainText == text) {
     return false;
-  m_textNode->setText(std::string(text));
+  }
+  m_plainText = std::string(text);
+  m_textNode->setText(m_plainText);
   m_measureCached = false;
   return true;
 }
@@ -50,18 +60,24 @@ void Label::setMinWidth(float minWidth) {
 }
 
 void Label::setMaxWidth(float maxWidth) {
-  if (m_textNode->maxWidth() == maxWidth) {
+  if (m_userMaxWidth == maxWidth) {
     return;
   }
-  m_textNode->setMaxWidth(maxWidth);
+  m_userMaxWidth = maxWidth;
+  if (!m_autoScroll) {
+    m_textNode->setMaxWidth(maxWidth);
+  }
   m_measureCached = false;
 }
 
 void Label::setMaxLines(int maxLines) {
-  if (m_textNode->maxLines() == maxLines) {
+  if (m_userMaxLines == maxLines) {
     return;
   }
-  m_textNode->setMaxLines(maxLines);
+  m_userMaxLines = maxLines;
+  if (!m_autoScroll) {
+    m_textNode->setMaxLines(maxLines);
+  }
   m_measureCached = false;
 }
 
@@ -73,13 +89,13 @@ void Label::setBold(bool bold) {
   m_measureCached = false;
 }
 
-const std::string& Label::text() const noexcept { return m_textNode->text(); }
+const std::string& Label::text() const noexcept { return m_plainText; }
 
 float Label::fontSize() const noexcept { return m_textNode->fontSize(); }
 
 const Color& Label::color() const noexcept { return m_textNode->color(); }
 
-float Label::maxWidth() const noexcept { return m_textNode->maxWidth(); }
+float Label::maxWidth() const noexcept { return m_userMaxWidth; }
 
 bool Label::bold() const noexcept { return m_textNode->bold(); }
 
@@ -107,6 +123,195 @@ void Label::setShadow(const Color& color, float offsetX, float offsetY) {
 
 void Label::clearShadow() { m_textNode->clearShadow(); }
 
+void Label::setAutoScroll(bool enabled) {
+  if (m_autoScroll == enabled) {
+    return;
+  }
+  m_autoScroll = enabled;
+  stopScrollAnimations();
+  m_scrollOffset = 0.0f;
+  syncTextNodeConstraints();
+  m_measureCached = false;
+  syncHoverInteraction();
+}
+
+void Label::setAutoScrollOnlyWhenHovered(bool enabled) {
+  if (m_autoScrollHoverOnly == enabled) {
+    return;
+  }
+  m_autoScrollHoverOnly = enabled;
+  syncHoverInteraction();
+  restartScrollIfNeeded();
+}
+
+void Label::syncHoverInteraction() {
+  if (!m_autoScroll || !m_autoScrollHoverOnly) {
+    setOnEnter(nullptr);
+    setOnLeave(nullptr);
+    return;
+  }
+  setOnEnter([this](const PointerData&) { restartScrollIfNeeded(); });
+  setOnLeave([this]() { restartScrollIfNeeded(); });
+}
+
+void Label::setAutoScrollSpeed(float pixelsPerSecond) {
+  const float next = std::max(pixelsPerSecond, 1.0f);
+  if (m_scrollSpeedPxPerSec == next) {
+    return;
+  }
+  m_scrollSpeedPxPerSec = next;
+  if (!m_autoScroll) {
+    return;
+  }
+  stopScrollAnimations();
+  m_scrollOffset = 0.0f;
+  applyScrollPosition();
+  markPaintDirty();
+  startMarqueeLoop();
+}
+
+void Label::syncTextNodeConstraints() {
+  if (m_autoScroll) {
+    m_textNode->setMaxWidth(0.0f);
+    m_textNode->setMaxLines(1);
+  } else {
+    m_textNode->setMaxWidth(m_userMaxWidth);
+    m_textNode->setMaxLines(m_userMaxLines);
+  }
+}
+
+void Label::applyScrollPosition() { m_textNode->setPosition(m_textBaseX - m_scrollOffset, m_baselineOffset); }
+
+void Label::stopMarqueeAnimation() {
+  if (animationManager() != nullptr && m_marqueeAnimId != 0) {
+    animationManager()->cancel(m_marqueeAnimId);
+  }
+  m_marqueeAnimId = 0;
+}
+
+void Label::stopSnapAnimation() {
+  if (animationManager() != nullptr && m_snapAnimId != 0) {
+    animationManager()->cancel(m_snapAnimId);
+  }
+  m_snapAnimId = 0;
+}
+
+void Label::stopScrollAnimations() {
+  stopMarqueeAnimation();
+  stopSnapAnimation();
+}
+
+void Label::startSnapToZero() {
+  stopMarqueeAnimation();
+  if (m_scrollOffset <= 0.5f) {
+    m_scrollOffset = 0.0f;
+    applyScrollPosition();
+    markPaintDirty();
+    return;
+  }
+  if (animationManager() == nullptr) {
+    m_scrollOffset = 0.0f;
+    applyScrollPosition();
+    markPaintDirty();
+    return;
+  }
+  if (m_snapAnimId != 0) {
+    return;
+  }
+  const float from = m_scrollOffset;
+  const float rewindSpeed = m_scrollSpeedPxPerSec * 8.0f;
+  float durationMs = std::max(36.0f, (from / rewindSpeed) * 1000.0f);
+  durationMs = std::min(durationMs, 180.0f);
+  m_snapAnimId = animationManager()->animate(
+      from, 0.0f, durationMs, Easing::EaseOutCubic,
+      [this](float v) {
+        m_scrollOffset = v;
+        applyScrollPosition();
+        markPaintDirty();
+      },
+      [this]() {
+        m_snapAnimId = 0;
+        m_scrollOffset = 0.0f;
+        applyScrollPosition();
+        markPaintDirty();
+      },
+      this);
+}
+
+void Label::startMarqueeLoop() {
+  if (!m_autoScroll || animationManager() == nullptr) {
+    return;
+  }
+  if (m_autoScrollHoverOnly && !hovered()) {
+    return;
+  }
+  const float viewportW = width();
+  if (viewportW <= 0.0f || m_fullTextWidth <= viewportW + 0.5f) {
+    return;
+  }
+  if (m_marqueeLoopPeriod <= 0.0f) {
+    return;
+  }
+  if (m_marqueeAnimId != 0) {
+    return;
+  }
+  stopSnapAnimation();
+
+  const float period = m_marqueeLoopPeriod;
+  const float durationMs = (period / m_scrollSpeedPxPerSec) * 1000.0f;
+  m_marqueeAnimId = animationManager()->animate(
+      0.0f, period, durationMs, Easing::Linear,
+      [this](float v) {
+        m_scrollOffset = v;
+        applyScrollPosition();
+        markPaintDirty();
+      },
+      [this]() {
+        m_marqueeAnimId = 0;
+        m_scrollOffset = 0.0f;
+        applyScrollPosition();
+        markPaintDirty();
+        startMarqueeLoop();
+      },
+      this);
+}
+
+void Label::restartScrollIfNeeded() {
+  stopMarqueeAnimation();
+
+  const bool overflow = m_autoScroll && width() > 0.0f && m_fullTextWidth > width() + 0.5f;
+  if (!overflow) {
+    stopSnapAnimation();
+    m_scrollOffset = 0.0f;
+    setClipChildren(false);
+    m_textNode->setText(m_plainText);
+    applyScrollPosition();
+    markPaintDirty();
+    return;
+  }
+
+  setClipChildren(true);
+
+  const bool runMarquee = !m_autoScrollHoverOnly || hovered();
+
+  if (!runMarquee) {
+    if (m_scrollOffset > 0.5f) {
+      startSnapToZero();
+    } else {
+      m_scrollOffset = 0.0f;
+      applyScrollPosition();
+      markPaintDirty();
+    }
+    return;
+  }
+
+  stopSnapAnimation();
+  m_scrollOffset = 0.0f;
+  applyScrollPosition();
+  markPaintDirty();
+  startMarqueeLoop();
+}
+
 void Label::doLayout(Renderer& renderer) { measure(renderer); }
 
 LayoutSize Label::doMeasure(Renderer& renderer, const LayoutConstraints& constraints) {
@@ -132,42 +337,42 @@ void Label::measure(Renderer& renderer) {
 }
 
 LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstraints& constraints) {
-  const float configuredMaxWidth = m_textNode->maxWidth();
+  const float configuredMaxWidth = m_userMaxWidth;
   float measureMaxWidth = configuredMaxWidth;
   if (constraints.hasMaxWidth) {
     measureMaxWidth =
         configuredMaxWidth > 0.0f ? std::min(configuredMaxWidth, constraints.maxWidth) : constraints.maxWidth;
   }
-  const int maxLines = m_textNode->maxLines();
-  const bool singleLine = (maxLines == 1) || (maxLines == 0 && configuredMaxWidth <= 0.0f &&
-                                              m_textNode->text().find('\n') == std::string::npos);
+  if (m_autoScroll) {
+    measureMaxWidth = 0.0f;
+  }
+  const int effectiveMaxLines = m_autoScroll ? 1 : m_userMaxLines;
+  const bool singleLine =
+      m_autoScroll || (effectiveMaxLines == 1) ||
+      (effectiveMaxLines == 0 && configuredMaxWidth <= 0.0f && m_plainText.find('\n') == std::string::npos);
   const TextAlign align = m_textNode->textAlign();
-  if (m_measureCached && m_cachedText == m_textNode->text() && m_cachedFontSize == m_textNode->fontSize() &&
-      m_cachedBold == m_textNode->bold() && m_cachedMaxWidth == configuredMaxWidth && m_cachedMaxLines == maxLines &&
+  if (m_measureCached && m_cachedText == m_plainText && m_cachedFontSize == m_textNode->fontSize() &&
+      m_cachedBold == m_textNode->bold() && m_cachedMaxWidth == m_userMaxWidth && m_cachedMaxLines == m_userMaxLines &&
       m_cachedMinWidth == m_minWidth && m_cachedConstraintMinWidth == constraints.minWidth &&
       m_cachedConstraintMaxWidth == constraints.maxWidth && m_cachedHasConstraintMaxWidth == constraints.hasMaxWidth &&
-      m_cachedTextAlign == align && m_cachedStableBaseline == m_stableBaseline) {
+      m_cachedTextAlign == align && m_cachedStableBaseline == m_stableBaseline && m_cachedAutoScroll == m_autoScroll) {
     return LayoutSize{.width = width(), .height = height()};
   }
-  auto metrics = renderer.measureText(m_textNode->text(), m_textNode->fontSize(), m_textNode->bold(), measureMaxWidth,
-                                      maxLines, align);
+
+  syncTextNodeConstraints();
+
+  auto metrics = renderer.measureText(m_plainText, m_textNode->fontSize(), m_textNode->bold(), measureMaxWidth,
+                                      effectiveMaxLines, align);
   auto refMetrics = renderer.measureText("A", m_textNode->fontSize(), m_textNode->bold());
   const float measuredWidth = measureMaxWidth > 0.0f ? std::min(metrics.width, measureMaxWidth) : metrics.width;
+  m_fullTextWidth = m_autoScroll ? measuredWidth : 0.0f;
   const bool hasAssignedWidth = constraints.hasExactWidth();
   const float assignedWidth = constraints.maxWidth;
 
   const float refHeight = refMetrics.bottom - refMetrics.top;
   const float actualHeight = metrics.bottom - metrics.top;
   const float inkHeight = std::max(0.0f, metrics.inkBottom - metrics.inkTop);
-  // Keep single-line labels on the same reference height as glyphs, but center
-  // the visible text ink within that height so digits and symbols do not read
-  // optically low beside icons.
   if (singleLine && inkHeight > 0.0f) {
-    // Stable-baseline labels center on the caps reference ("A") instead of the
-    // current text's ink. That keeps caps at a fixed y across text changes
-    // (e.g. a clock cycling "Mar" → "Apr") AND matches the y-position used by
-    // sibling dynamic-mode labels whose text happens to be caps-only (e.g. a
-    // weather capsule reading "15°C"), so they align horizontally.
     float inkTopForCentering = metrics.inkTop;
     float inkHeightForCentering = inkHeight;
     if (m_stableBaseline) {
@@ -177,48 +382,93 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
         inkHeightForCentering = capInkHeight;
       }
     }
-    // Round height BEFORE computing the ink-centering offset so the ink center
-    // lands at the geometric center of the rounded (visible) box, not the
-    // unrounded refHeight — otherwise callers that center the label box inside
-    // a parent see the ink offset by up to 0.5px.
     const float height = std::round(std::max(refHeight, inkHeight));
     m_baselineOffset = -inkTopForCentering + (height - inkHeightForCentering) * 0.5f;
-    const float finalWidth =
-        hasAssignedWidth ? std::max(assignedWidth, m_minWidth) : std::max(measuredWidth, m_minWidth);
+    float finalWidth = 0.0f;
+    if (m_autoScroll) {
+      float boxW = m_fullTextWidth;
+      if (hasAssignedWidth) {
+        boxW = assignedWidth;
+      } else {
+        if (constraints.hasMaxWidth) {
+          boxW = std::min(boxW, constraints.maxWidth);
+        }
+        if (m_userMaxWidth > 0.0f) {
+          boxW = std::min(boxW, m_userMaxWidth);
+        }
+      }
+      finalWidth = std::max(boxW, m_minWidth);
+    } else {
+      finalWidth = hasAssignedWidth ? std::max(assignedWidth, m_minWidth) : std::max(measuredWidth, m_minWidth);
+    }
     setSize(std::round(finalWidth), height);
   } else {
     m_baselineOffset = -std::min(refMetrics.top, metrics.top);
     const float inkBottom = m_baselineOffset + metrics.bottom;
     const float height = std::max({refHeight, actualHeight, inkBottom});
-    const float finalWidth =
-        hasAssignedWidth ? std::max(assignedWidth, m_minWidth) : std::max(measuredWidth, m_minWidth);
+    float finalWidth = 0.0f;
+    if (m_autoScroll) {
+      float boxW = m_fullTextWidth;
+      if (hasAssignedWidth) {
+        boxW = assignedWidth;
+      } else {
+        if (constraints.hasMaxWidth) {
+          boxW = std::min(boxW, constraints.maxWidth);
+        }
+        if (m_userMaxWidth > 0.0f) {
+          boxW = std::min(boxW, m_userMaxWidth);
+        }
+      }
+      finalWidth = std::max(boxW, m_minWidth);
+    } else {
+      finalWidth = hasAssignedWidth ? std::max(assignedWidth, m_minWidth) : std::max(measuredWidth, m_minWidth);
+    }
     setSize(std::round(finalWidth), std::round(height));
   }
   if (width() < m_minWidth) {
     setSize(std::round(m_minWidth), height());
   }
+  const float layoutWidth = width();
+  const bool overflow = m_autoScroll && m_fullTextWidth > layoutWidth + 0.5f;
+  const float alignWidth = m_autoScroll ? m_fullTextWidth : measuredWidth;
   float textX = 0.0f;
-  const float finalWidth = width();
-  if (align == TextAlign::Center) {
-    textX = (finalWidth - measuredWidth) * 0.5f;
-  } else if (align == TextAlign::End) {
-    textX = finalWidth - measuredWidth;
+  if (!overflow) {
+    if (align == TextAlign::Center) {
+      textX = (layoutWidth - alignWidth) * 0.5f;
+    } else if (align == TextAlign::End) {
+      textX = layoutWidth - alignWidth;
+    }
   }
-  // Keep subpixel baseline/text offsets here; cairo text rendering performs
-  // a single final snap in device-pixel space after full world transform.
-  m_textNode->setPosition(textX, m_baselineOffset);
+  m_textBaseX = overflow ? 0.0f : textX;
+  if (!overflow) {
+    m_scrollOffset = 0.0f;
+  }
 
-  m_cachedText = m_textNode->text();
+  if (overflow && m_autoScroll) {
+    auto gapMetrics = renderer.measureText(kMarqueeGap, m_textNode->fontSize(), m_textNode->bold(), 0.0f, 1, align);
+    m_marqueeLoopPeriod = m_fullTextWidth + gapMetrics.width;
+    m_textNode->setText(m_plainText + kMarqueeGap + m_plainText);
+  } else {
+    m_marqueeLoopPeriod = 0.0f;
+    m_textNode->setText(m_plainText);
+  }
+
+  applyScrollPosition();
+
+  m_cachedText = m_plainText;
   m_cachedFontSize = m_textNode->fontSize();
   m_cachedBold = m_textNode->bold();
-  m_cachedMaxWidth = configuredMaxWidth;
-  m_cachedMaxLines = maxLines;
+  m_cachedMaxWidth = m_userMaxWidth;
+  m_cachedMaxLines = m_userMaxLines;
   m_cachedMinWidth = m_minWidth;
   m_cachedConstraintMinWidth = constraints.minWidth;
   m_cachedConstraintMaxWidth = constraints.maxWidth;
   m_cachedHasConstraintMaxWidth = constraints.hasMaxWidth;
   m_cachedTextAlign = align;
   m_cachedStableBaseline = m_stableBaseline;
+  m_cachedAutoScroll = m_autoScroll;
   m_measureCached = true;
+
+  restartScrollIfNeeded();
   return LayoutSize{.width = width(), .height = height()};
 }
