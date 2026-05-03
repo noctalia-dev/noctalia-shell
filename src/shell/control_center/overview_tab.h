@@ -46,6 +46,7 @@ private:
   void layoutWallpaperBackground(Renderer& renderer);
   void syncWallpaperBackground(Renderer& renderer);
   void sync(Renderer& renderer);
+  void syncScaledFonts();
   void syncShortcuts();
 
   MprisService* m_mpris = nullptr;

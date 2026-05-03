@@ -610,7 +610,7 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
     auto empty = std::make_unique<Label>();
     empty->setText(i18n::tr("control-center.bluetooth.unavailable"));
     empty->setCaptionStyle();
-    empty->setFontSize(Style::fontSizeCaption);
+    empty->setFontSize(Style::fontSizeCaption * contentScale());
     empty->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     m_list->addChild(std::move(empty));
     m_list->layout(renderer);
@@ -639,7 +639,7 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
     empty->setText(m_service->state().powered ? i18n::tr("control-center.bluetooth.no-devices")
                                               : i18n::tr("control-center.bluetooth.off"));
     empty->setCaptionStyle();
-    empty->setFontSize(Style::fontSizeCaption);
+    empty->setFontSize(Style::fontSizeCaption * contentScale());
     empty->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     m_list->addChild(std::move(empty));
     m_list->layout(renderer);
@@ -667,7 +667,7 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
       header->setText(sectionText);
       header->setCaptionStyle();
       header->setBold(true);
-      header->setFontSize(Style::fontSizeCaption);
+      header->setFontSize(Style::fontSizeCaption * contentScale());
       header->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
       m_list->addChild(std::move(header));
       currentBucket = bucket;

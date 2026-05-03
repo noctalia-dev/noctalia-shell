@@ -32,6 +32,9 @@ using namespace control_center;
 namespace {
 
   constexpr float kOverviewAvatarScale = 2.6f;
+  // Bottom row: 1 : 1 — equal split so media/clock and shortcuts feel balanced (tweak either value slightly if needed).
+  constexpr float kOverviewMainColumnFlexGrow = 1.0f;
+  constexpr float kOverviewShortcutsFlexGrow = 1.0f;
 
   float overviewAvatarSize(float scale) { return Style::controlHeightLg * kOverviewAvatarScale * scale; }
 
@@ -132,68 +135,24 @@ std::unique_ptr<Flex> OverviewTab::create() {
   userCard->addChild(std::move(userRow));
   tab->addChild(std::move(userCard));
 
-  auto middleRow = std::make_unique<Flex>();
-  middleRow->setDirection(FlexDirection::Horizontal);
-  middleRow->setAlign(FlexAlign::Stretch);
-  middleRow->setGap(Style::spaceMd * scale);
-  middleRow->setFillWidth(true);
+  auto bottomRow = std::make_unique<Flex>();
+  bottomRow->setDirection(FlexDirection::Horizontal);
+  bottomRow->setAlign(FlexAlign::Stretch);
+  bottomRow->setGap(Style::spaceMd * scale);
+  bottomRow->setFillWidth(true);
 
-  // --- Date/Time + Weather ---
-  auto dateTimeCard = std::make_unique<Flex>();
-  applyOverviewCardStyle(*dateTimeCard, scale);
-  dateTimeCard->setDirection(FlexDirection::Horizontal);
-  dateTimeCard->setJustify(FlexJustify::Center);
-  dateTimeCard->setFillWidth(true);
-  dateTimeCard->setFlexGrow(2.0f);
-  m_dateTimeCard = dateTimeCard.get();
+  auto leftColumn = std::make_unique<Flex>();
+  leftColumn->setDirection(FlexDirection::Vertical);
+  leftColumn->setAlign(FlexAlign::Stretch);
+  leftColumn->setJustify(FlexJustify::Start);
+  leftColumn->setGap(Style::spaceSm * scale);
+  leftColumn->setFlexGrow(kOverviewMainColumnFlexGrow);
+  leftColumn->setFillWidth(true);
 
-  auto dateTimeContent = std::make_unique<Flex>();
-  dateTimeContent->setDirection(FlexDirection::Vertical);
-  dateTimeContent->setAlign(FlexAlign::Center);
-  dateTimeContent->setJustify(FlexJustify::Center);
-  dateTimeContent->setGap(Style::spaceXs * scale);
-
-  auto timeLabel = std::make_unique<Label>();
-  timeLabel->setText(formatLocalTime("{:%H:%M}"));
-  timeLabel->setBold(true);
-  timeLabel->setFontSize(Style::fontSizeTitle * 1.8f * scale);
-  timeLabel->setColor(colorSpecFromRole(ColorRole::Primary));
-  m_timeLabel = timeLabel.get();
-  dateTimeContent->addChild(std::move(timeLabel));
-
-  auto dateLabel = std::make_unique<Label>();
-  dateLabel->setText(formatCurrentDate());
-  dateLabel->setFontSize(Style::fontSizeBody * scale);
-  dateLabel->setColor(colorSpecFromRole(ColorRole::OnSurface));
-  m_dateLabel = dateLabel.get();
-  dateTimeContent->addChild(std::move(dateLabel));
-
-  auto weatherRow = std::make_unique<Flex>();
-  weatherRow->setDirection(FlexDirection::Horizontal);
-  weatherRow->setAlign(FlexAlign::Center);
-  weatherRow->setGap(Style::spaceXs * scale);
-
-  auto wGlyph = std::make_unique<Glyph>();
-  wGlyph->setGlyph("weather-cloud-sun");
-  wGlyph->setGlyphSize(Style::fontSizeBody * scale);
-  wGlyph->setColor(colorSpecFromRole(ColorRole::Primary));
-  m_weatherGlyph = wGlyph.get();
-
-  auto wLine = std::make_unique<Label>();
-  wLine->setText("—");
-  wLine->setFontSize(Style::fontSizeCaption * scale);
-  wLine->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
-  m_weatherLine = wLine.get();
-
-  weatherRow->addChild(std::move(wGlyph));
-  weatherRow->addChild(std::move(wLine));
-  dateTimeContent->addChild(std::move(weatherRow));
-  dateTimeCard->addChild(std::move(dateTimeContent));
-
-  // --- Media ---
+  // --- Media (top of left column) ---
   auto mediaCard = std::make_unique<Flex>();
   applyOverviewCardStyle(*mediaCard, scale);
-  mediaCard->setFlexGrow(3.0f);
+  mediaCard->setFillWidth(true);
   mediaCard->setGap(Style::spaceXs * scale);
   m_mediaCard = mediaCard.get();
 
@@ -202,7 +161,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   mediaContent->setAlign(FlexAlign::Center);
   mediaContent->setGap(Style::spaceSm * scale);
 
-  const float artSize = Style::controlHeightLg * 1.55f * scale;
+  const float artSize = Style::controlHeightLg * 1.22f * scale;
   auto mediaArt = std::make_unique<Image>();
   mediaArt->setSize(artSize, artSize);
   mediaArt->setRadius(Style::radiusLg * scale);
@@ -219,7 +178,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
 
   auto mediaTrack = std::make_unique<Label>();
   mediaTrack->setText("...");
-  mediaTrack->setFontSize(Style::fontSizeBody * scale);
+  mediaTrack->setFontSize(Style::fontSizeBody * 0.95f * scale);
   mediaTrack->setColor(colorSpecFromRole(ColorRole::OnSurface));
   m_mediaTrack = mediaTrack.get();
 
@@ -248,24 +207,77 @@ std::unique_ptr<Flex> OverviewTab::create() {
   mediaText->addChild(std::move(mediaProgress));
   mediaContent->addChild(std::move(mediaText));
   mediaCard->addChild(std::move(mediaContent));
-  middleRow->addChild(std::move(mediaCard));
-  middleRow->addChild(std::move(dateTimeCard));
 
-  tab->addChild(std::move(middleRow));
+  // --- Date/Time + Weather (below media) ---
+  auto dateTimeCard = std::make_unique<Flex>();
+  applyOverviewCardStyle(*dateTimeCard, scale);
+  dateTimeCard->setDirection(FlexDirection::Horizontal);
+  dateTimeCard->setJustify(FlexJustify::Center);
+  dateTimeCard->setFillWidth(true);
+  m_dateTimeCard = dateTimeCard.get();
 
-  // --- Shortcuts ---
+  auto dateTimeContent = std::make_unique<Flex>();
+  dateTimeContent->setDirection(FlexDirection::Vertical);
+  dateTimeContent->setAlign(FlexAlign::Center);
+  dateTimeContent->setJustify(FlexJustify::Center);
+  dateTimeContent->setGap(Style::spaceXs * 0.85f * scale);
+
+  auto timeLabel = std::make_unique<Label>();
+  timeLabel->setText(formatLocalTime("{:%H:%M}"));
+  timeLabel->setBold(true);
+  timeLabel->setFontSize(Style::fontSizeTitle * 1.42f * scale);
+  timeLabel->setColor(colorSpecFromRole(ColorRole::Primary));
+  m_timeLabel = timeLabel.get();
+  dateTimeContent->addChild(std::move(timeLabel));
+
+  auto dateLabel = std::make_unique<Label>();
+  dateLabel->setText(formatCurrentDate());
+  dateLabel->setFontSize(Style::fontSizeBody * 0.9f * scale);
+  dateLabel->setColor(colorSpecFromRole(ColorRole::OnSurface));
+  m_dateLabel = dateLabel.get();
+  dateTimeContent->addChild(std::move(dateLabel));
+
+  auto weatherRow = std::make_unique<Flex>();
+  weatherRow->setDirection(FlexDirection::Horizontal);
+  weatherRow->setAlign(FlexAlign::Center);
+  weatherRow->setGap(Style::spaceXs * scale);
+
+  auto wGlyph = std::make_unique<Glyph>();
+  wGlyph->setGlyph("weather-cloud-sun");
+  wGlyph->setGlyphSize(Style::fontSizeCaption * 1.12f * scale);
+  wGlyph->setColor(colorSpecFromRole(ColorRole::Primary));
+  m_weatherGlyph = wGlyph.get();
+
+  auto wLine = std::make_unique<Label>();
+  wLine->setText("—");
+  wLine->setFontSize(Style::fontSizeCaption * scale);
+  wLine->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+  m_weatherLine = wLine.get();
+
+  weatherRow->addChild(std::move(wGlyph));
+  weatherRow->addChild(std::move(wLine));
+  dateTimeContent->addChild(std::move(weatherRow));
+  dateTimeCard->addChild(std::move(dateTimeContent));
+
+  leftColumn->addChild(std::move(mediaCard));
+  leftColumn->addChild(std::move(dateTimeCard));
+  bottomRow->addChild(std::move(leftColumn));
+
+  // --- Shortcuts (right of media + clock) ---
   const auto& shortcuts =
       m_config != nullptr ? m_config->config().controlCenter.shortcuts : std::vector<ShortcutConfig>{};
   const std::size_t count = std::min(shortcuts.size(), std::size_t{8});
 
   auto grid = std::make_unique<GridView>();
-  grid->setColumns(4);
+  grid->setColumns(3);
   grid->setColumnGap(Style::spaceSm * scale);
   grid->setRowGap(Style::spaceSm * scale);
+  grid->setPadding(0.0f);
   grid->setUniformCellSize(true);
   grid->setStretchItems(true);
-  grid->setMinCellHeight(Style::controlHeightLg * 1.5f * scale);
-  grid->setFlexGrow(0.0f);
+  grid->setSquareCells(false);
+  grid->setMinCellHeight(0.0f);
+  grid->setFlexGrow(kOverviewShortcutsFlexGrow);
   m_shortcutsGrid = grid.get();
   m_shortcutPads.clear();
 
@@ -281,14 +293,22 @@ std::unique_ptr<Flex> OverviewTab::create() {
 
     auto btn = std::make_unique<Button>();
     btn->setGlyph(shortcut->displayIcon());
-    btn->setGlyphSize(Style::fontSizeTitle * 1.5f * scale);
+    btn->setGlyphSize(Style::fontSizeTitle * 1.35f * scale);
     btn->setText(label);
-    btn->label()->setFontSize(Style::fontSizeCaption * scale);
+    // Match media card column: Stretch so label width follows the cell; Center uses intrinsic text width and fights
+    // setMaxWidth.
+    btn->setAlign(FlexAlign::Stretch);
+    // Label font only — Button::setFontSize also resizes the glyph. Mini + uiScale keeps tiles closer to other CC rows
+    // that use raw fontSizeCaption (no * contentScale), while still scaling with shell.uiScale for consistency inside
+    // Overview.
+    btn->label()->setFontSize(Style::fontSizeMini * scale);
+    btn->label()->setStableBaseline(false);
     btn->label()->setMaxLines(1);
+    btn->label()->setTextAlign(TextAlign::Center);
     btn->setDirection(FlexDirection::Vertical);
     btn->setGap(Style::spaceXs * scale);
     btn->setMinHeight(0.0f);
-    btn->setPadding(Style::spaceMd * scale);
+    btn->setPadding(Style::spaceSm * scale);
     btn->setRadius(Style::radiusLg * scale);
     btn->setVariant(isActive ? ButtonVariant::Accent : ButtonVariant::Outline);
 
@@ -315,7 +335,8 @@ std::unique_ptr<Flex> OverviewTab::create() {
     grid->addChild(std::move(btn));
   }
 
-  tab->addChild(std::move(grid));
+  bottomRow->addChild(std::move(grid));
+  tab->addChild(std::move(bottomRow));
 
   return tab;
 }
@@ -348,19 +369,6 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
     return;
   }
 
-  // Cap shortcut labels to the cell text area so long labels elide rather than
-  // stretching the button and breaking the uniform grid.
-  if (!m_shortcutPads.empty()) {
-    const float scale = contentScale();
-    const float cellWidth = (contentWidth - 3.0f * Style::spaceSm * scale) / 4.0f;
-    const float labelMaxWidth = std::max(1.0f, cellWidth - 2.0f * Style::spaceMd * scale);
-    for (auto& pad : m_shortcutPads) {
-      if (pad.label != nullptr) {
-        pad.label->setMaxWidth(labelMaxWidth);
-      }
-    }
-  }
-
   if (m_dateTimeCard != nullptr) {
     m_dateTimeCard->setMinHeight(0.0f);
   }
@@ -374,6 +382,29 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
   }
   m_rootLayout->setSize(contentWidth, bodyHeight);
   m_rootLayout->layout(renderer);
+
+  // Cap shortcut labels to the button's content width after cells are sized (avoids elide from grid math mismatch).
+  if (!m_shortcutPads.empty() && m_shortcutsGrid != nullptr) {
+    const float scale = contentScale();
+    for (auto& pad : m_shortcutPads) {
+      if (pad.label == nullptr) {
+        continue;
+      }
+      float inner = 1.0f;
+      if (pad.button != nullptr && pad.button->width() > 1.0f) {
+        inner = std::max(1.0f, pad.button->width() - pad.button->paddingLeft() - pad.button->paddingRight());
+      } else {
+        const float gridW = m_shortcutsGrid->width();
+        const float innerGrid =
+            std::max(1.0f, gridW - m_shortcutsGrid->paddingLeft() - m_shortcutsGrid->paddingRight());
+        const std::size_t cols = std::max<std::size_t>(1, std::min(m_shortcutsGrid->columns(), m_shortcutPads.size()));
+        const float cellWidth =
+            (innerGrid - static_cast<float>(cols - 1) * m_shortcutsGrid->columnGap()) / static_cast<float>(cols);
+        inner = std::max(1.0f, cellWidth - 2.0f * Style::spaceSm * scale);
+      }
+      pad.label->setMaxWidth(inner);
+    }
+  }
 
   const auto innerWidth = [](Flex* card) {
     if (card == nullptr) {
@@ -404,12 +435,6 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
     const float userWrap = innerWidth(m_userCard);
     m_userFacts->setMaxWidth(userWrap);
     m_userFacts->setMaxLines(1);
-  }
-
-  if (m_dateTimeCard != nullptr && m_mediaCard != nullptr) {
-    const float unifiedCardHeight = std::max(m_dateTimeCard->height(), m_mediaCard->height());
-    m_dateTimeCard->setMinHeight(unifiedCardHeight);
-    m_mediaCard->setMinHeight(unifiedCardHeight);
   }
 
   if (m_userAvatar != nullptr && m_userMain != nullptr) {
@@ -520,7 +545,47 @@ void OverviewTab::onClose() {
   m_shortcutPads.clear();
 }
 
+void OverviewTab::syncScaledFonts() {
+  const float s = contentScale();
+  if (m_timeLabel != nullptr) {
+    m_timeLabel->setFontSize(Style::fontSizeTitle * 1.42f * s);
+  }
+  if (m_dateLabel != nullptr) {
+    m_dateLabel->setFontSize(Style::fontSizeBody * 0.9f * s);
+  }
+  if (m_weatherGlyph != nullptr) {
+    m_weatherGlyph->setGlyphSize(Style::fontSizeCaption * 1.12f * s);
+  }
+  if (m_weatherLine != nullptr) {
+    m_weatherLine->setFontSize(Style::fontSizeCaption * s);
+  }
+  if (m_userFacts != nullptr) {
+    m_userFacts->setFontSize(Style::fontSizeCaption * s);
+  }
+  if (m_mediaTrack != nullptr) {
+    m_mediaTrack->setFontSize(Style::fontSizeBody * 0.95f * s);
+  }
+  if (m_mediaArtist != nullptr) {
+    m_mediaArtist->setFontSize(Style::fontSizeCaption * s);
+  }
+  if (m_mediaStatus != nullptr) {
+    m_mediaStatus->setFontSize(Style::fontSizeCaption * s);
+  }
+  if (m_mediaProgress != nullptr) {
+    m_mediaProgress->setFontSize(Style::fontSizeCaption * s);
+  }
+  for (auto& pad : m_shortcutPads) {
+    if (pad.label != nullptr) {
+      pad.label->setFontSize(Style::fontSizeMini * s);
+    }
+    if (pad.glyph != nullptr) {
+      pad.glyph->setGlyphSize(Style::fontSizeTitle * 1.35f * s);
+    }
+  }
+}
+
 void OverviewTab::sync(Renderer& renderer) {
+  syncScaledFonts();
   syncShortcuts();
 
   if (m_timeLabel != nullptr) {
@@ -670,6 +735,8 @@ void OverviewTab::syncShortcuts() {
       if (pad.label->text() != label) {
         pad.button->setText(label);
       }
+      // setText() enables stable baseline for clocks; shortcut captions are not caps-stable single-line widgets.
+      pad.label->setStableBaseline(false);
     }
   }
 }

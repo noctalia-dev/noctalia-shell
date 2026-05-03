@@ -62,28 +62,28 @@ namespace {
 
   class AccessPointRow : public Flex {
   public:
-    AccessPointRow(AccessPointInfo ap, bool saved, std::function<void(const AccessPointInfo&)> onActivate,
+    AccessPointRow(float scale, AccessPointInfo ap, bool saved, std::function<void(const AccessPointInfo&)> onActivate,
                    std::function<void(const AccessPointInfo&)> onForget)
         : m_ap(std::move(ap)), m_onActivate(std::move(onActivate)), m_onForget(std::move(onForget)) {
       setDirection(FlexDirection::Horizontal);
       setAlign(FlexAlign::Center);
-      setGap(Style::spaceSm);
-      setPadding(Style::spaceSm, Style::spaceMd);
-      setMinHeight(kRowMinHeight);
-      setRadius(Style::radiusMd);
+      setGap(Style::spaceSm * scale);
+      setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+      setMinHeight(kRowMinHeight * scale);
+      setRadius(Style::radiusMd * scale);
       setFill(colorSpecFromRole(ColorRole::Surface));
       clearBorder();
 
       auto signalGlyph = std::make_unique<Glyph>();
       signalGlyph->setGlyph(NetworkService::wifiGlyphForSignal(m_ap.strength));
-      signalGlyph->setGlyphSize(Style::fontSizeBody);
+      signalGlyph->setGlyphSize(Style::fontSizeBody * scale);
       signalGlyph->setColor(colorSpecFromRole(ColorRole::OnSurface));
       addChild(std::move(signalGlyph));
 
       auto ssid = std::make_unique<Label>();
       ssid->setText(m_ap.ssid);
       ssid->setBold(m_ap.active);
-      ssid->setFontSize(Style::fontSizeBody);
+      ssid->setFontSize(Style::fontSizeBody * scale);
       ssid->setColor(colorSpecFromRole(ColorRole::OnSurface));
       ssid->setFlexGrow(1.0f);
       m_title = ssid.get();
@@ -92,7 +92,7 @@ namespace {
       if (m_ap.secured) {
         auto lock = std::make_unique<Glyph>();
         lock->setGlyph("lock");
-        lock->setGlyphSize(Style::fontSizeCaption);
+        lock->setGlyphSize(Style::fontSizeCaption * scale);
         lock->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
         addChild(std::move(lock));
       }
@@ -100,7 +100,7 @@ namespace {
       auto strength = std::make_unique<Label>();
       strength->setText(std::to_string(static_cast<int>(m_ap.strength)) + "%");
       strength->setCaptionStyle();
-      strength->setFontSize(Style::fontSizeCaption);
+      strength->setFontSize(Style::fontSizeCaption * scale);
       strength->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
       addChild(std::move(strength));
 
@@ -525,14 +525,14 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
     empty->setText(m_network != nullptr ? i18n::tr("control-center.network.no-networks")
                                         : i18n::tr("control-center.network.unavailable-title"));
     empty->setCaptionStyle();
-    empty->setFontSize(Style::fontSizeCaption);
+    empty->setFontSize(Style::fontSizeCaption * contentScale());
     empty->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     m_list->addChild(std::move(empty));
   } else {
     for (const auto& ap : aps) {
       const bool saved = m_network != nullptr && m_network->hasSavedConnection(ap.ssid);
       auto row = std::make_unique<AccessPointRow>(
-          ap, saved,
+          contentScale(), ap, saved,
           [this](const AccessPointInfo& clicked) {
             if (m_network != nullptr) {
               m_network->activateAccessPoint(clicked);

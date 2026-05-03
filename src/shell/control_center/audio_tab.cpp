@@ -738,13 +738,13 @@ namespace {
 
   class AudioDeviceRow : public Flex {
   public:
-    explicit AudioDeviceRow(std::function<void()> onSelect) : m_onSelect(std::move(onSelect)) {
+    explicit AudioDeviceRow(float scale, std::function<void()> onSelect) : m_onSelect(std::move(onSelect)) {
       setDirection(FlexDirection::Horizontal);
       setAlign(FlexAlign::Center);
-      setGap(Style::spaceSm);
-      setPadding(Style::spaceSm, Style::spaceMd);
-      setMinHeight(Style::controlHeightLg);
-      setRadius(Style::radiusMd);
+      setGap(Style::spaceSm * scale);
+      setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+      setMinHeight(Style::controlHeightLg * scale);
+      setRadius(Style::radiusMd * scale);
       setFill(colorSpecFromRole(ColorRole::Surface));
       clearBorder();
 
@@ -758,7 +758,7 @@ namespace {
 
       auto title = std::make_unique<Label>();
       title->setBold(true);
-      title->setFontSize(Style::fontSizeBody);
+      title->setFontSize(Style::fontSizeBody * scale);
       title->setColor(colorSpecFromRole(ColorRole::OnSurface));
       title->setFlexGrow(1.0f);
       m_title = title.get();
@@ -1957,7 +1957,7 @@ void AudioTab::rebuildLists(Renderer& renderer) {
                   i18n::tr("control-center.audio.no-output-devices-body"), scale);
   } else {
     for (const auto& sink : sortedDevices(state.sinks)) {
-      auto row = std::make_unique<AudioDeviceRow>([this, id = sink.id]() {
+      auto row = std::make_unique<AudioDeviceRow>(scale, [this, id = sink.id]() {
         if (m_audio != nullptr) {
           m_audio->setDefaultSink(id);
         }
@@ -1973,7 +1973,7 @@ void AudioTab::rebuildLists(Renderer& renderer) {
                   i18n::tr("control-center.audio.no-input-devices-body"), scale);
   } else {
     for (const auto& source : sortedDevices(state.sources)) {
-      auto row = std::make_unique<AudioDeviceRow>([this, id = source.id]() {
+      auto row = std::make_unique<AudioDeviceRow>(scale, [this, id = source.id]() {
         if (m_audio != nullptr) {
           m_audio->setDefaultSource(id);
         }
