@@ -12,10 +12,6 @@ category = "misc"
 name = "Foot"
 category = "terminal"
 
-[catalog.fuzzel]
-name = "Fuzzel"
-category = "launcher"
-
 [catalog.ghostty]
 name = "Ghostty"
 category = "terminal"
@@ -72,14 +68,6 @@ category = "compositor"
 name = "Starship"
 category = "terminal"
 
-[catalog.vicinae]
-name = "Vicinae"
-category = "launcher"
-
-[catalog.walker]
-name = "Walker"
-category = "launcher"
-
 [catalog.wezterm]
 name = "Wezterm"
 category = "terminal"
@@ -87,14 +75,6 @@ category = "terminal"
 [catalog.yazi]
 name = "Yazi"
 category = "misc"
-
-[catalog.zathura]
-name = "Zathura"
-category = "misc"
-
-[catalog.zed]
-name = "Zed"
-category = "editor"
 
 [templates.alacritty]
 input_path = "./alacritty/alacritty.toml"
@@ -110,11 +90,6 @@ post_hook = "bash '{{ config_dir }}/btop/apply.sh'"
 input_path = "./foot/foot"
 output_path = "~/.config/foot/themes/noctalia"
 post_hook = "bash '{{ config_dir }}/foot/apply.sh'"
-
-[templates.fuzzel]
-input_path = "./fuzzel/fuzzel.conf"
-output_path = "~/.config/fuzzel/themes/noctalia"
-post_hook = "bash '{{ config_dir }}/fuzzel/apply.sh'"
 
 [templates.ghostty]
 input_path = "./ghostty/ghostty"
@@ -184,16 +159,6 @@ input_path = "./starship/starship.toml"
 output_path = "~/.cache/noctalia/starship-palette.toml"
 post_hook = "bash '{{ config_dir }}/starship/apply.sh'"
 
-[templates.vicinae]
-input_path = "./vicinae/vicinae.toml"
-output_path = "~/.local/share/vicinae/themes/noctalia.toml"
-post_hook = "bash '{{ config_dir }}/vicinae/apply.sh' '{{ config_dir }}/../noctalia.svg'"
-
-[templates.walker]
-input_path = "./walker/walker.css"
-output_path = "~/.config/walker/themes/noctalia/style.css"
-post_hook = "bash '{{ config_dir }}/walker/apply.sh'"
-
 [templates.wezterm]
 input_path = "./wezterm/wezterm.toml"
 output_path = "~/.config/wezterm/colors/Noctalia.toml"
@@ -203,12 +168,3 @@ post_hook = "bash '{{ config_dir }}/wezterm/apply.sh'"
 input_path = "./yazi/yazi.toml"
 output_path = "~/.config/yazi/flavors/noctalia.yazi/flavor.toml"
 post_hook = "bash '{{ config_dir }}/yazi/apply.sh'"
-
-[templates.zathura]
-input_path = "./zathura/zathurarc"
-output_path = "~/.config/zathura/noctaliarc"
-post_hook = "bash '{{ config_dir }}/zathura/apply.sh'"
-
-[templates.zed]
-input_path = "./zed/zed.json"
-output_path = "~/.config/zed/themes/noctalia.json"
