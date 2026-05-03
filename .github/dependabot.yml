@@ -1,0 +1,29 @@
+version: 2
+
+updates:
+  # default branch
+  - package-ecosystem: "nix"
+    directory: "/"
+    schedule:
+      interval: "daily"
+
+    open-pull-requests-limit: 5
+
+    groups:
+      nix-deps:
+        patterns:
+          - "*"
+
+  # v5 branch
+  - package-ecosystem: "nix"
+    directory: "/"
+    target-branch: "v5"
+    schedule:
+      interval: "daily"
+
+    open-pull-requests-limit: 5
+
+    groups:
+      nix-deps:
+        patterns:
+          - "*"
