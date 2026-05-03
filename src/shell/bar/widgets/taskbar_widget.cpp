@@ -32,9 +32,9 @@
 #include <wayland-client-protocol.h>
 
 TaskbarWidget::TaskbarWidget(WaylandConnection& connection, wl_output* output, bool groupByWorkspace,
-                             std::string barPosition)
+                             std::string barPosition, float activeIndicatorWidth)
     : m_connection(connection), m_output(output), m_groupByWorkspace(groupByWorkspace),
-      m_barPosition(std::move(barPosition)) {
+      m_activeIndicatorWidth(activeIndicatorWidth), m_barPosition(std::move(barPosition)) {
   buildDesktopIconIndex();
 }
 
@@ -136,33 +136,33 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
   const float iconSize = Style::barGlyphSize * m_contentScale;
   const float tilePadding = Style::spaceXs * 0.35f * m_contentScale;
   const float tileSize = iconSize + tilePadding * 2.0f;
-  const float indicatorSize = std::max(2.0f, Style::spaceXs * 0.4f * m_contentScale);
+  const auto workspaceAxisHandler = [this](const InputArea::PointerData& data) -> bool {
+    if (!m_groupByWorkspace) {
+      return false;
+    }
+    if (data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL && data.axis != WL_POINTER_AXIS_HORIZONTAL_SCROLL) {
+      return false;
+    }
+
+    float delta = data.scrollDelta(1.0f);
+    if (delta == 0.0f && data.axisValue120 != 0) {
+      delta = static_cast<float>(data.axisValue120) / 120.0f;
+    }
+    if (delta == 0.0f && data.axisDiscrete != 0) {
+      delta = static_cast<float>(data.axisDiscrete);
+    }
+    if (delta == 0.0f) {
+      return false;
+    }
+
+    activateAdjacentWorkspace(delta > 0.0f ? 1 : -1);
+    return true;
+  };
   auto createTaskTile = [&](const TaskModel& task) {
     auto area = std::make_unique<InputArea>();
     area->setFrameSize(tileSize, tileSize);
     area->setAcceptedButtons(BTN_LEFT | BTN_RIGHT);
-    area->setOnAxisHandler([this](const InputArea::PointerData& data) {
-      if (!m_groupByWorkspace) {
-        return false;
-      }
-      if (data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL && data.axis != WL_POINTER_AXIS_HORIZONTAL_SCROLL) {
-        return false;
-      }
-
-      float delta = data.scrollDelta(1.0f);
-      if (delta == 0.0f && data.axisValue120 != 0) {
-        delta = static_cast<float>(data.axisValue120) / 120.0f;
-      }
-      if (delta == 0.0f && data.axisDiscrete != 0) {
-        delta = static_cast<float>(data.axisDiscrete);
-      }
-      if (delta == 0.0f) {
-        return false;
-      }
-
-      activateAdjacentWorkspace(delta > 0.0f ? 1 : -1);
-      return true;
-    });
+    area->setOnAxisHandler(workspaceAxisHandler);
 
     if (task.firstHandle != nullptr) {
       auto* areaPtr = area.get();
@@ -194,12 +194,14 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       area->addChild(std::move(glyph));
     }
 
-    if (task.active) {
+    const float lineWidth = m_activeIndicatorWidth * m_contentScale;
+    if (task.active && lineWidth > 0.0f) {
+      const float lineThickness = std::max(1.0f, Style::spaceXs * 0.25f * m_contentScale);
       auto indicator = std::make_unique<Box>();
       indicator->setFill(colorSpecFromRole(ColorRole::Primary));
-      indicator->setRadius(indicatorSize * 0.5f);
-      indicator->setFrameSize(indicatorSize, indicatorSize);
-      indicator->setPosition(std::round((tileSize - indicatorSize) * 0.5f), std::round(tileSize - indicatorSize));
+      indicator->setRadius(lineThickness * 0.5f);
+      indicator->setFrameSize(lineWidth, lineThickness);
+      indicator->setPosition(std::round((tileSize - lineWidth) * 0.5f), std::round(tileSize - lineThickness));
       area->addChild(std::move(indicator));
     }
     return area;
@@ -254,28 +256,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
         switcher->setFrameSize(groupWidth, groupHeight);
         switcher->setPosition(0.0f, 0.0f);
         switcher->setAcceptedButtons(BTN_LEFT);
-        switcher->setOnAxisHandler([this](const InputArea::PointerData& data) {
-          if (!m_groupByWorkspace) {
-            return false;
-          }
-          if (data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL && data.axis != WL_POINTER_AXIS_HORIZONTAL_SCROLL) {
-            return false;
-          }
-
-          float delta = data.scrollDelta(1.0f);
-          if (delta == 0.0f && data.axisValue120 != 0) {
-            delta = static_cast<float>(data.axisValue120) / 120.0f;
-          }
-          if (delta == 0.0f && data.axisDiscrete != 0) {
-            delta = static_cast<float>(data.axisDiscrete);
-          }
-          if (delta == 0.0f) {
-            return false;
-          }
-
-          activateAdjacentWorkspace(delta > 0.0f ? 1 : -1);
-          return true;
-        });
+        switcher->setOnAxisHandler(workspaceAxisHandler);
         auto wsCopy = ws.workspace;
         switcher->setOnClick([this, wsCopy](const InputArea::PointerData& data) {
           if (data.button == BTN_LEFT) {
@@ -296,15 +277,30 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
         groupPtr->addChild(std::move(tile));
       }
 
+      const float badgeLeft = std::round(badgeWidth * -0.32f);
+      const float badgeTop = std::round(badgeBase * -0.22f);
+      auto badgeHit = std::make_unique<InputArea>();
+      badgeHit->setFrameSize(badgeWidth, badgeBase);
+      badgeHit->setPosition(badgeLeft, badgeTop);
+      badgeHit->setAcceptedButtons(BTN_LEFT);
+      badgeHit->setOnAxisHandler(workspaceAxisHandler);
+      auto wsForBadge = ws.workspace;
+      badgeHit->setOnClick([this, wsForBadge](const InputArea::PointerData& data) {
+        if (data.button == BTN_LEFT) {
+          m_connection.activateWorkspace(m_output, wsForBadge);
+        }
+      });
+
       auto badge = std::make_unique<Box>();
       badge->setFrameSize(badgeWidth, badgeBase);
       badge->setRadius(badgeBase * 0.5f);
       badge->setFill(colorSpecFromRole(ws.workspace.active ? ColorRole::Primary : ColorRole::Surface));
       badge->setBorder(colorSpecFromRole(ColorRole::Outline, 0.45f), Style::borderWidth);
-      badge->setPosition(std::round(badgeWidth * -0.32f), std::round(badgeBase * -0.22f));
-      auto* badgePtr = static_cast<Box*>(groupPtr->addChild(std::move(badge)));
+      badge->setPosition(0.0f, 0.0f);
+      auto* badgePtr = static_cast<Box*>(badgeHit->addChild(std::move(badge)));
 
       auto badgeText = std::make_unique<Label>();
+      badgeText->setHitTestVisible(false);
       badgeText->setText(ws.label);
       badgeText->setBold(true);
       badgeText->setFontSize(badgeFontSize);
@@ -314,8 +310,9 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
                              std::round((badgeBase - badgeText->height()) * 0.5f));
       badgePtr->addChild(std::move(badgeText));
       if (tasks.empty()) {
-        badgePtr->setHitTestVisible(false);
+        badgeHit->setHitTestVisible(false);
       }
+      groupPtr->addChild(std::move(badgeHit));
     }
     return;
   }

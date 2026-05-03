@@ -473,6 +473,7 @@ namespace settings {
       add(segmentedSpec("display", "gauge", sysmonDisplay));
       add(boolSpec("show_label", true));
     } else if (type == "taskbar") {
+      add(doubleSpec("active_indicator_width", 14.0, 0.0, 15.0, 1.0));
       add(boolSpec("group_by_workspace", false));
     } else if (type == "tray") {
       add(stringListSpec("hidden"));

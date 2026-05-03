@@ -47,10 +47,12 @@
 #include "ui/style.h"
 #include "wayland/wayland_connection.h"
 
+#include <algorithm>
 #include <string>
 
 namespace {
   constexpr Logger kLog("shell");
+  constexpr double kTaskbarActiveIndicatorWidthMax = 15.0;
 
   std::string resolveDistroLogo(IconResolver& iconResolver) {
     if (const auto info = DistroDetector::detect(); info.has_value()) {
@@ -325,7 +327,10 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "taskbar") {
     const bool groupByWorkspace = wc != nullptr ? wc->getBool("group_by_workspace", false) : false;
-    auto widget = std::make_unique<TaskbarWidget>(m_wayland, output, groupByWorkspace, barPosition);
+    const double rawWidth = wc != nullptr ? wc->getDouble("active_indicator_width", 14.0) : 14.0;
+    const float activeIndicatorWidth = static_cast<float>(std::clamp(rawWidth, 0.0, kTaskbarActiveIndicatorWidthMax));
+    auto widget =
+        std::make_unique<TaskbarWidget>(m_wayland, output, groupByWorkspace, barPosition, activeIndicatorWidth);
     widget->setContentScale(contentScale);
     return widget;
   }
