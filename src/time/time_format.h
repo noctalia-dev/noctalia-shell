@@ -7,6 +7,9 @@
 
 std::string formatTimeAgo(std::chrono::system_clock::time_point tp);
 
+// Same wording as formatTimeAgo, but duration is computed from steady_clock (e.g. Notification::receivedTime).
+[[nodiscard]] std::string formatElapsedSince(std::chrono::steady_clock::time_point since);
+
 // Formats a duration as "{d}d {h}h {m}m" / "{h}h {m}m" / "{m}m" / "<1m".
 [[nodiscard]] std::string formatDuration(std::chrono::seconds duration);
 

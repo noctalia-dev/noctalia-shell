@@ -5,12 +5,14 @@
 #include "notification/notification_manager.h"
 #include "render/core/renderer.h"
 #include "shell/panel/panel_manager.h"
+#include "time/time_format.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/palette.h"
 
+#include <chrono>
 #include <cmath>
 #include <memory>
 #include <vector>
@@ -159,6 +161,7 @@ void NotificationsTab::onClose() {
   m_expandedIds.clear();
   m_lastSerial = 0;
   m_lastWidth = -1.0f;
+  m_lastRelativeTimeSlot = -1;
 }
 
 void NotificationsTab::clearAllNotifications() {
@@ -214,7 +217,10 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
   }
 
   const std::uint64_t serial = m_notifications != nullptr ? m_notifications->changeSerial() : 0;
-  if (serial == m_lastSerial && std::abs(width - m_lastWidth) < 0.5f) {
+  const std::int64_t relativeSlot =
+      std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count() /
+      15;
+  if (serial == m_lastSerial && std::abs(width - m_lastWidth) < 0.5f && relativeSlot == m_lastRelativeTimeSlot) {
     return;
   }
 
@@ -254,6 +260,7 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
     m_list->addChild(std::move(empty));
     m_lastSerial = serial;
     m_lastWidth = width;
+    m_lastRelativeTimeSlot = relativeSlot;
     return;
   }
 
@@ -285,7 +292,12 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
     header->setGap(Style::spaceSm * scale);
 
     auto meta = std::make_unique<Label>();
-    meta->setText(it->notification.appName + " • " + statusText(*it));
+    std::string metaLine = it->notification.appName + " • " + formatElapsedSince(it->notification.receivedTime);
+    if (!it->active) {
+      metaLine += " • ";
+      metaLine += statusText(*it);
+    }
+    meta->setText(std::move(metaLine));
     meta->setCaptionStyle();
     meta->setFontSize(Style::fontSizeCaption * scale);
     meta->setColor(colorSpecFromRole(statusColorRole(*it)));
@@ -351,4 +363,5 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
 
   m_lastSerial = serial;
   m_lastWidth = width;
+  m_lastRelativeTimeSlot = relativeSlot;
 }
