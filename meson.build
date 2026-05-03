@@ -41,6 +41,7 @@ cairo_dep           = dependency('cairo')
 cairo_ft_dep        = dependency('cairo-ft')
 pango_dep           = dependency('pango')
 pangocairo_dep      = dependency('pangocairo')
+librsvg_dep         = dependency('librsvg-2.0')
 xkbcommon_dep       = dependency('xkbcommon')
 glib_dep            = dependency('glib-2.0')
 gobject_dep         = dependency('gobject-2.0')
@@ -385,7 +386,6 @@ _noctalia_sources = files(
   'src/render/core/shader_program.cpp',
   'src/render/core/thumbnail_service.cpp',
   'src/render/core/image_decoder.cpp',
-  'src/render/image_loaders.cpp',
   'src/render/programs/glyph_program.cpp',
   'src/render/programs/image_program.cpp',
   'src/render/programs/linear_gradient_program.cpp',
@@ -626,7 +626,6 @@ endif
 # ── Include directories ────────────────────────────────────────────────────────
 _noctalia_inc = [
   include_directories('src'),
-  include_directories('third_party/nanosvg'),
   include_directories('third_party/tomlplusplus'),
   include_directories('third_party/wuffs', is_system: true),
   # nlohmann is header-only and uses GCC extensions in some paths; treat as system.
@@ -651,6 +650,7 @@ executable('noctalia',
     cairo_ft_dep,
     pango_dep,
     pangocairo_dep,
+    librsvg_dep,
     xkbcommon_dep,
     glib_dep,
     gobject_dep,
