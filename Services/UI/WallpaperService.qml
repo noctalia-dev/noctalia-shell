@@ -808,7 +808,7 @@ Singleton {
     } else {
       // Pick a random wallpaper common to all screens
       // We can use any screenName here, so we just pick the primary one.
-      var wallpaperList = getWallpapersList(Screen.name);
+      var wallpaperList = getWallpapersList(Quickshell.screens[0].name);
       if (wallpaperList.length > 0) {
         var randomPath = _pickUnusedRandom("all", wallpaperList);
         changeWallpaper(randomPath, screen);
@@ -892,13 +892,13 @@ Singleton {
       }
     } else {
       // Pick next alphabetical wallpaper common to all screens
-      var wallpaperList = getWallpapersList(Screen.name);
+      var wallpaperList = getWallpapersList(Quickshell.screens[0].name);
       if (wallpaperList.length > 0) {
         // Use primary screen name as key for single directory mode
         var key = "all";
         if (alphabeticalIndices[key] === undefined) {
           // Find current wallpaper in list to set initial index
-          var currentWallpaper = getWallpaper(Screen.name) || "";
+          var currentWallpaper = getWallpaper(Quickshell.screens[0].name) || "";
           var foundIndex = wallpaperList.indexOf(currentWallpaper);
           alphabeticalIndices[key] = (foundIndex >= 0) ? foundIndex : 0;
         }
