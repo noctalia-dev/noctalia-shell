@@ -12,6 +12,10 @@ category = "misc"
 name = "Cava"
 category = "audio"
 
+[catalog.emacs]
+name = "Emacs"
+category = "editor"
+
 [catalog.foot]
 name = "Foot"
 category = "terminal"
@@ -94,6 +98,11 @@ post_hook = "bash '{{ config_dir }}/btop/apply.sh'"
 input_path = "./cava/cava.ini"
 output_path = "~/.config/cava/themes/noctalia"
 post_hook = "bash '{{ config_dir }}/cava/apply.sh'"
+
+[templates.emacs]
+input_path = "./emacs/emacs.el"
+# no output_path
+post_hook = "bash '{{ config_dir }}/emacs/apply.sh'"
 
 [templates.foot]
 input_path = "./foot/foot"
