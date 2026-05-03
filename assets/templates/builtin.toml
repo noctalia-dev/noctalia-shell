@@ -52,7 +52,7 @@ category = "compositor"
 name = "Mango"
 category = "compositor"
 
-[catalog.qtct]
+[catalog.qt]
 name = "Qt"
 category = "system"
 
@@ -140,7 +140,7 @@ input_path = "./mango/mango.conf"
 output_path = "~/.config/mango/noctalia.conf"
 post_hook = "bash '{{ config_dir }}/mango/apply.sh'"
 
-[templates.qtct]
+[templates.qt]
 input_path = "./qt/qtct.conf"
 output_path = ["~/.config/qt5ct/colors/noctalia.conf", "~/.config/qt6ct/colors/noctalia.conf"]
 
