@@ -54,6 +54,7 @@ private:
     curl_slist* headers = nullptr;
     CompletionCallback callback;
     std::string url;
+    std::string response;
     std::array<char, CURL_ERROR_SIZE> errorBuffer{};
   };
 

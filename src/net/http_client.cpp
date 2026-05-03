@@ -38,6 +38,17 @@ namespace {
       }
     });
   }
+
+  std::size_t captureResponse(char* ptr, std::size_t size, std::size_t nmemb, void* userdata) {
+    const std::size_t bytes = size * nmemb;
+    if (userdata == nullptr || ptr == nullptr || bytes == 0) {
+      return bytes;
+    }
+
+    auto* response = static_cast<std::string*>(userdata);
+    response->append(ptr, bytes);
+    return bytes;
+  }
 } // namespace
 
 HttpClient::HttpClient() {
@@ -169,6 +180,8 @@ void HttpClient::post(std::string_view url, std::string body, std::string_view c
 
   m_postTransfers[easy] = std::move(post);
   curl_easy_setopt(easy, CURLOPT_ERRORBUFFER, m_postTransfers[easy].errorBuffer.data());
+  curl_easy_setopt(easy, CURLOPT_WRITEFUNCTION, captureResponse);
+  curl_easy_setopt(easy, CURLOPT_WRITEDATA, &m_postTransfers[easy].response);
   const CURLMcode addResult = curl_multi_add_handle(m_multi, easy);
   if (addResult != CURLM_OK) {
     PostTransfer failedPost = std::move(m_postTransfers[easy]);
