@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <charconv>
+#include <chrono>
 #include <cmath>
 #include <cstring>
 #include <memory>
@@ -28,6 +29,7 @@
 namespace {
 
   constexpr float kDefaultVolumeStep = 0.05f;
+  constexpr auto kVolumeApplyMinInterval = std::chrono::milliseconds(25);
 
   // Registry events.
   void onRegistryGlobal(void* data, std::uint32_t id, std::uint32_t, const char* type, std::uint32_t version,
@@ -335,6 +337,9 @@ PipeWireService::PipeWireService() {
 }
 
 PipeWireService::~PipeWireService() {
+  m_volumeThrottleTimer.stop();
+  m_pendingNodeVolumes.clear();
+
   // Destroy node proxies and their listeners
   for (auto& [id, nd] : m_nodes) {
     if (nd->listener != nullptr) {
@@ -995,15 +1000,53 @@ void PipeWireService::rebuildState() {
   emitChanged();
 }
 
-void PipeWireService::setNodeVolume(std::uint32_t id, float volume) {
+void PipeWireService::scheduleVolumeFlush() {
+  const auto now = std::chrono::steady_clock::now();
+  const auto earliest = m_lastVolumeFlushValid ? (m_lastVolumeFlushAt + kVolumeApplyMinInterval)
+                                               : std::chrono::steady_clock::time_point{};
+
+  if (!m_lastVolumeFlushValid || now >= earliest) {
+    m_volumeThrottleTimer.stop();
+    flushPendingNodeVolumes();
+    m_lastVolumeFlushAt = std::chrono::steady_clock::now();
+    m_lastVolumeFlushValid = true;
+    return;
+  }
+
+  const auto delay = std::chrono::duration_cast<std::chrono::milliseconds>(earliest - now);
+  const auto wait = std::max(delay, std::chrono::milliseconds{1});
+  m_volumeThrottleTimer.start(wait, [this]() {
+    flushPendingNodeVolumes();
+    m_lastVolumeFlushAt = std::chrono::steady_clock::now();
+  });
+}
+
+void PipeWireService::flushPendingNodeVolumes() {
+  if (m_pendingNodeVolumes.empty()) {
+    return;
+  }
+
+  bool dirty = false;
+  auto pending = std::move(m_pendingNodeVolumes);
+
+  for (const auto& [id, volume] : pending) {
+    dirty |= applyNodeVolumeImmediate(id, volume);
+  }
+
+  if (dirty) {
+    rebuildState();
+  }
+}
+
+bool PipeWireService::applyNodeVolumeImmediate(std::uint32_t id, float volume) {
   auto it = m_nodes.find(id);
   if (it == m_nodes.end()) {
-    return;
+    return false;
   }
 
   auto& nd = *it->second;
   if (nd.proxy == nullptr) {
-    return;
+    return false;
   }
 
   volume = std::clamp(volume, 0.0f, 1.5f);
@@ -1016,9 +1059,9 @@ void PipeWireService::setNodeVolume(std::uint32_t id, float volume) {
     if (updatedViaWpctl) {
       if (std::abs(nd.volume - volume) >= 0.0001f) {
         nd.volume = volume;
-        rebuildState();
+        return true;
       }
-      return;
+      return false;
     }
   }
 
@@ -1043,8 +1086,23 @@ void PipeWireService::setNodeVolume(std::uint32_t id, float volume) {
   // Apply optimistic local state while PipeWire publishes props.
   if (std::abs(nd.volume - volume) >= 0.0001f) {
     nd.volume = volume;
-    rebuildState();
+    return true;
   }
+  return false;
+}
+
+void PipeWireService::setNodeVolume(std::uint32_t id, float volume) {
+  auto it = m_nodes.find(id);
+  if (it == m_nodes.end()) {
+    return;
+  }
+
+  if (it->second->proxy == nullptr) {
+    return;
+  }
+
+  m_pendingNodeVolumes[id] = std::clamp(volume, 0.0f, 1.5f);
+  scheduleVolumeFlush();
 }
 
 void PipeWireService::setNodeMuted(std::uint32_t id, bool muted) {

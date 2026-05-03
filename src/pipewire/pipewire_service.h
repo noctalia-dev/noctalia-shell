@@ -1,5 +1,8 @@
 #pragma once
 
+#include "core/timer_manager.h"
+
+#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -159,6 +162,15 @@ private:
   void setNodeVolume(std::uint32_t id, float volume);
   void setNodeMuted(std::uint32_t id, bool muted);
   void setDefaultNode(std::uint32_t id, const char* key);
+
+  void scheduleVolumeFlush();
+  void flushPendingNodeVolumes();
+  [[nodiscard]] bool applyNodeVolumeImmediate(std::uint32_t id, float volume);
+
+  Timer m_volumeThrottleTimer;
+  std::unordered_map<std::uint32_t, float> m_pendingNodeVolumes;
+  std::chrono::steady_clock::time_point m_lastVolumeFlushAt{};
+  bool m_lastVolumeFlushValid = false;
 
   pw_loop* m_loop = nullptr;
   pw_context* m_context = nullptr;
