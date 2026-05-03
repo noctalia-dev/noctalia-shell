@@ -101,7 +101,7 @@ post_hook = "bash '{{ config_dir }}/cava/apply.sh'"
 
 [templates.emacs]
 input_path = "./emacs/emacs.el"
-# no output_path
+output_path_dynamic = "bash '{{ config_dir }}/emacs/output-path.sh'"
 post_hook = "bash '{{ config_dir }}/emacs/apply.sh'"
 
 [templates.foot]
