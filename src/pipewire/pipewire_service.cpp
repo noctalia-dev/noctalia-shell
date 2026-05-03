@@ -1098,20 +1098,7 @@ bool PipeWireService::applyNodeVolumeImmediate(std::uint32_t id, float volume) {
 
   volume = std::clamp(volume, 0.0f, 1.5f);
 
-  // Use wpctl only for real device nodes.
-  const bool isDeviceNode = nd.mediaClass == "Audio/Sink" || nd.mediaClass == "Audio/Source";
-  if (isDeviceNode) {
-    const bool updatedViaWpctl =
-        process::runSync({"wpctl", "set-volume", std::to_string(id), std::format("{:.4f}", volume)});
-    if (updatedViaWpctl) {
-      if (std::abs(nd.volume - volume) >= 0.0001f) {
-        nd.volume = volume;
-        return true;
-      }
-      return false;
-    }
-  }
-
+  // Apply via PipeWire only — synchronous wpctl here blocked the poll loop and froze the shell under rapid changes.
   // Convert linear volume to cubic (PipeWire native)
   float cubic = volume * volume * volume;
 
@@ -1163,23 +1150,9 @@ void PipeWireService::setNodeMuted(std::uint32_t id, bool muted) {
     return;
   }
 
-  // Match WirePlumber session policy (same as set-volume) so mute state stays consistent
-  // with wpctl and survives odd daemon/node prop ordering after resume/reboot.
-  const bool isDeviceNode = nd.mediaClass == "Audio/Sink" || nd.mediaClass == "Audio/Source";
-  if (isDeviceNode) {
-    const bool updatedViaWpctl = process::runSync({"wpctl", "set-mute", std::to_string(id), muted ? "1" : "0"});
-    if (updatedViaWpctl) {
-      const bool before = nd.muted;
-      nd.swMute = muted;
-      recomputeEffectiveMute(nd);
-      if (before != nd.muted) {
-        rebuildState();
-      }
-      return;
-    }
-  }
+  // Native set_param only (same rationale as set-volume — avoid blocking runSync(wpctl) on the main thread).
 
-  // Program streams, or device fallback when wpctl is unavailable.
+  // Program streams, or device nodes with route params.
   if (nd.hasRoute && nd.routeIndex >= 0) {
     std::uint8_t routeBuffer[512];
     spa_pod_builder routeBuilder;
