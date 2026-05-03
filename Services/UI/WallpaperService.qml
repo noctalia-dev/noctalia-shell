@@ -1619,6 +1619,27 @@ Singleton {
   }
 
   // -------------------------------------------------------------------
+  // Directory watcher - auto-detects new wallpapers added to local collection
+  // -------------------------------------------------------------------
+  Timer {
+    id: directoryWatchDebounce
+    interval: 1000
+    repeat: false
+    onTriggered: {
+      Logger.d("Wallpaper", "Wallpaper directory changed on disk, refreshing list")
+      root.refreshWallpapersList()
+    }
+  }
+
+  FileView {
+    id: wallpaperDirectoryWatcher
+    path: root.defaultDirectory !== "" ? root.defaultDirectory : undefined
+    printErrors: false
+    watchChanges: true
+    onFileChanged: directoryWatchDebounce.restart()
+  }
+
+  // -------------------------------------------------------------------
   // Cache file persistence
   // -------------------------------------------------------------------
   FileView {
