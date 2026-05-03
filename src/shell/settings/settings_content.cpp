@@ -10,6 +10,7 @@
 #include "ui/controls/glyph.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
+#include "ui/controls/search_picker.h"
 #include "ui/controls/segmented.h"
 #include "ui/controls/select.h"
 #include "ui/controls/separator.h"
@@ -58,6 +59,26 @@ namespace settings {
       return std::nullopt;
     }
 
+    std::string pathKey(const std::vector<std::string>& path) {
+      std::string out;
+      for (const auto& part : path) {
+        if (!out.empty()) {
+          out.push_back('.');
+        }
+        out += part;
+      }
+      return out;
+    }
+
+    std::string optionLabel(const std::vector<SelectOption>& options, std::string_view value) {
+      for (const auto& opt : options) {
+        if (opt.value == value) {
+          return opt.label;
+        }
+      }
+      return std::string(value);
+    }
+
     std::vector<std::string> optionLabels(const std::vector<SelectOption>& options) {
       std::vector<std::string> labels;
       labels.reserve(options.size());
@@ -65,6 +86,19 @@ namespace settings {
         labels.push_back(opt.label);
       }
       return labels;
+    }
+
+    std::vector<SearchPickerOption> searchPickerOptions(const std::vector<SelectOption>& options) {
+      std::vector<SearchPickerOption> out;
+      out.reserve(options.size());
+      for (const auto& opt : options) {
+        out.push_back(SearchPickerOption{.value = opt.value,
+                                         .label = opt.label,
+                                         .description = opt.description,
+                                         .category = opt.category,
+                                         .enabled = true});
+      }
+      return out;
     }
 
     bool isBlankInput(std::string_view text) { return StringUtils::trim(text).empty(); }
@@ -634,6 +668,149 @@ namespace settings {
       return select;
     };
 
+    const auto makeSearchPickerButton = [&](const SettingEntry& entry,
+                                            const SearchPickerSetting& setting) -> std::unique_ptr<Node> {
+      auto button = std::make_unique<Button>();
+      button->setVariant(ButtonVariant::Outline);
+      button->setGlyph("search");
+      button->setText(optionLabel(setting.options, setting.selectedValue));
+      button->setContentAlign(ButtonContentAlign::Start);
+      button->setFontSize(Style::fontSizeBody * scale);
+      button->setGlyphSize(Style::fontSizeBody * scale);
+      button->setMinWidth(190.0f * scale);
+      button->setMinHeight(Style::controlHeight * scale);
+      button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+      button->setRadius(Style::radiusMd * scale);
+      button->setOnClick([&openPath = ctx.openSearchPickerPath, requestContentRebuild = ctx.requestContentRebuild,
+                          path = entry.path]() {
+        openPath = pathKey(path);
+        requestContentRebuild();
+      });
+      return button;
+    };
+
+    const auto makeSearchPickerBlock = [&](Flex& section, const SettingEntry& entry,
+                                           const SearchPickerSetting& setting) {
+      const bool overridden = (ctx.configService != nullptr && ctx.configService->hasOverride(entry.path));
+      const std::string pickerPath = pathKey(entry.path);
+
+      auto block = std::make_unique<Flex>();
+      block->setDirection(FlexDirection::Vertical);
+      block->setAlign(FlexAlign::Stretch);
+      block->setGap(Style::spaceXs * scale);
+
+      const auto makeBadge = [&](std::string_view label, const ColorSpec& fill, const ColorSpec& color) {
+        auto badge = std::make_unique<Flex>();
+        badge->setAlign(FlexAlign::Center);
+        badge->setPadding(1.0f * scale, Style::spaceXs * scale);
+        badge->setRadius(Style::radiusSm * scale);
+        badge->setFill(fill);
+        badge->addChild(makeLabel(label, Style::fontSizeCaption * scale, color, true));
+        return badge;
+      };
+
+      auto headerRow = std::make_unique<Flex>();
+      headerRow->setDirection(FlexDirection::Horizontal);
+      headerRow->setAlign(FlexAlign::Center);
+      headerRow->setJustify(FlexJustify::SpaceBetween);
+      headerRow->setGap(Style::spaceXs * scale);
+      headerRow->setPadding(2.0f * scale, 0.0f);
+      headerRow->setMinHeight(Style::controlHeight * scale);
+
+      auto copy = std::make_unique<Flex>();
+      copy->setDirection(FlexDirection::Vertical);
+      copy->setAlign(FlexAlign::Start);
+      copy->setGap(Style::spaceXs * scale);
+      copy->setFlexGrow(1.0f);
+
+      auto titleRow = std::make_unique<Flex>();
+      titleRow->setDirection(FlexDirection::Horizontal);
+      titleRow->setAlign(FlexAlign::Center);
+      titleRow->setGap(Style::spaceSm * scale);
+      titleRow->addChild(
+          makeLabel(entry.title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), true));
+
+      if (overridden) {
+        titleRow->addChild(makeBadge(i18n::tr("settings.badges.override"), colorSpecFromRole(ColorRole::Primary, 0.15f),
+                                     colorSpecFromRole(ColorRole::Primary)));
+      }
+      if (entry.advanced) {
+        titleRow->addChild(makeBadge(i18n::tr("settings.badges.advanced"),
+                                     colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.12f),
+                                     colorSpecFromRole(ColorRole::OnSurfaceVariant)));
+      }
+      copy->addChild(std::move(titleRow));
+
+      if (!entry.subtitle.empty()) {
+        auto detail = makeLabel(entry.subtitle, Style::fontSizeCaption * scale,
+                                colorSpecFromRole(ColorRole::OnSurfaceVariant), false);
+        detail->setMaxWidth(360.0f * scale);
+        copy->addChild(std::move(detail));
+      }
+
+      headerRow->addChild(std::move(copy));
+
+      auto actions = std::make_unique<Flex>();
+      actions->setDirection(FlexDirection::Horizontal);
+      actions->setAlign(FlexAlign::Center);
+      actions->setGap(Style::spaceSm * scale);
+      if (overridden) {
+        actions->addChild(makeResetButton(entry.path));
+      }
+
+      auto closeBtn = std::make_unique<Button>();
+      closeBtn->setVariant(ButtonVariant::Ghost);
+      closeBtn->setGlyph("close");
+      closeBtn->setGlyphSize(Style::fontSizeCaption * scale);
+      closeBtn->setMinWidth(Style::controlHeightSm * scale);
+      closeBtn->setMinHeight(Style::controlHeightSm * scale);
+      closeBtn->setPadding(Style::spaceXs * scale);
+      closeBtn->setRadius(Style::radiusSm * scale);
+      closeBtn->setOnClick([&openPath = ctx.openSearchPickerPath, requestContentRebuild = ctx.requestContentRebuild]() {
+        openPath.clear();
+        requestContentRebuild();
+      });
+      actions->addChild(std::move(closeBtn));
+      headerRow->addChild(std::move(actions));
+      block->addChild(std::move(headerRow));
+
+      auto picker = std::make_unique<SearchPicker>();
+      if (!setting.placeholder.empty()) {
+        picker->setPlaceholder(setting.placeholder);
+      }
+      if (!setting.emptyText.empty()) {
+        picker->setEmptyText(setting.emptyText);
+      }
+      picker->setOptions(searchPickerOptions(setting.options));
+      picker->setSelectedValue(setting.selectedValue);
+      picker->setSize(0.0f, setting.preferredHeight * scale);
+      picker->setFillWidth(true);
+      auto* pickerPtr = picker.get();
+      picker->setOnActivated([&openPath = ctx.openSearchPickerPath, requestContentRebuild = ctx.requestContentRebuild,
+                              setOverride = ctx.setOverride, path = entry.path,
+                              selectedValue = setting.selectedValue](const SearchPickerOption& option) {
+        if (option.value.empty()) {
+          return;
+        }
+        openPath.clear();
+        if (option.value == selectedValue) {
+          requestContentRebuild();
+          return;
+        }
+        setOverride(path, option.value);
+      });
+      picker->setOnCancel([&openPath = ctx.openSearchPickerPath, requestContentRebuild = ctx.requestContentRebuild]() {
+        openPath.clear();
+        requestContentRebuild();
+      });
+      block->addChild(std::move(picker));
+
+      section.addChild(std::move(block));
+      if (ctx.openSearchPickerPath == pickerPath && ctx.focusArea) {
+        ctx.focusArea(pickerPtr->filterInputArea());
+      }
+    };
+
     const auto makeMultiSelectBlock = [&](Flex& section, const SettingEntry& entry, const MultiSelectSetting& setting) {
       const bool overridden = (ctx.configService != nullptr && ctx.configService->hasOverride(entry.path));
 
@@ -962,6 +1139,8 @@ namespace settings {
               return makeOptionalNumber(control, entry.path);
             } else if constexpr (std::is_same_v<T, ColorSetting>) {
               return makeColor(control, entry.path);
+            } else if constexpr (std::is_same_v<T, SearchPickerSetting>) {
+              return nullptr;
             } else if constexpr (std::is_same_v<T, MultiSelectSetting>) {
               return nullptr;
             } else if constexpr (std::is_same_v<T, ListSetting>) {
@@ -1003,6 +1182,7 @@ namespace settings {
         .creatingWidgetType = ctx.creatingWidgetType,
         .requestRebuild = ctx.requestRebuild,
         .resetContentScroll = ctx.resetContentScroll,
+        .focusArea = ctx.focusArea,
         .setOverride = ctx.setOverride,
         .setOverrides = ctx.setOverrides,
         .clearOverride = ctx.clearOverride,
@@ -1066,6 +1246,12 @@ namespace settings {
             addBarWidgetLaneEditor(*activeSection, entry, barWidgetEditorCtx);
           } else if (!isBarWidgetListPath(entry.path)) {
             makeListBlock(*activeSection, entry, *list);
+          }
+        } else if (const auto* picker = std::get_if<SearchPickerSetting>(&entry.control)) {
+          if (ctx.openSearchPickerPath == pathKey(entry.path)) {
+            makeSearchPickerBlock(*activeSection, entry, *picker);
+          } else {
+            makeRow(*activeSection, entry, makeSearchPickerButton(entry, *picker));
           }
         } else if (const auto* multi = std::get_if<MultiSelectSetting>(&entry.control)) {
           makeMultiSelectBlock(*activeSection, entry, *multi);

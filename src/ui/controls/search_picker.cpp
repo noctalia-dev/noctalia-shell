@@ -8,9 +8,10 @@
 #include "ui/controls/scroll_view.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "util/fuzzy_match.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
-#include <cctype>
 #include <linux/input-event-codes.h>
 #include <memory>
 #include <string>
@@ -20,13 +21,6 @@ namespace {
 
   constexpr float kDefaultWidth = 320.0f;
   constexpr float kDefaultHeight = 360.0f;
-
-  std::string lower(std::string_view value) {
-    std::string out(value);
-    std::transform(out.begin(), out.end(), out.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    return out;
-  }
 
   std::string detailText(const SearchPickerOption& option) {
     if (!option.description.empty() && !option.category.empty()) {
@@ -116,6 +110,10 @@ void SearchPicker::setOnActivated(std::function<void(const SearchPickerOption&)>
 
 void SearchPicker::setOnCancel(std::function<void()> callback) { m_onCancel = std::move(callback); }
 
+InputArea* SearchPicker::filterInputArea() const noexcept {
+  return m_input != nullptr ? m_input->inputArea() : nullptr;
+}
+
 void SearchPicker::doLayout(Renderer& renderer) {
   Flex::doLayout(renderer);
   for (const auto& row : m_rows) {
@@ -134,13 +132,40 @@ LayoutSize SearchPicker::doMeasure(Renderer& renderer, const LayoutConstraints& 
 void SearchPicker::doArrange(Renderer& renderer, const LayoutRect& rect) { arrangeByLayout(renderer, rect); }
 
 void SearchPicker::applyFilter() {
+  struct ScoredOption {
+    std::size_t index = 0;
+    double score = 0.0;
+  };
+
   m_visible.clear();
+  std::vector<ScoredOption> scored;
+  const std::string query = StringUtils::trim(m_filter);
+
   for (std::size_t i = 0; i < m_options.size(); ++i) {
-    if (matchesFilter(m_options[i])) {
+    if (query.empty()) {
       m_visible.push_back(i);
+      continue;
+    }
+
+    const double score = matchScore(m_options[i], query);
+    if (FuzzyMatch::isMatch(score)) {
+      scored.push_back(ScoredOption{.index = i, .score = score});
     }
   }
+
+  if (!query.empty()) {
+    std::stable_sort(scored.begin(), scored.end(),
+                     [](const ScoredOption& lhs, const ScoredOption& rhs) { return lhs.score > rhs.score; });
+    m_visible.reserve(scored.size());
+    for (const auto& item : scored) {
+      m_visible.push_back(item.index);
+    }
+  }
+
   m_highlightedVisibleIndex = 0;
+  if (m_scroll != nullptr) {
+    m_scroll->setScrollOffset(0.0f);
+  }
   rebuildRows();
 }
 
@@ -177,10 +202,11 @@ void SearchPicker::rebuildRows() {
     auto row = std::make_unique<Flex>();
     row->setDirection(FlexDirection::Vertical);
     row->setAlign(FlexAlign::Stretch);
-    row->setGap(1.0f);
+    const std::string detail = detailText(option);
+    row->setGap(detail.empty() ? 0.0f : 1.0f);
     row->setPadding(Style::spaceXs, Style::spaceSm);
     row->setRadius(Style::radiusSm);
-    row->setMinHeight(Style::controlHeightLg);
+    row->setMinHeight(detail.empty() ? Style::controlHeight : Style::controlHeightLg);
     row->setFillWidth(true);
 
     auto title = std::make_unique<Label>();
@@ -189,11 +215,14 @@ void SearchPicker::rebuildRows() {
     title->setStableBaseline(true);
     auto* titlePtr = static_cast<Label*>(row->addChild(std::move(title)));
 
-    auto detail = std::make_unique<Label>();
-    detail->setText(detailText(option));
-    detail->setFontSize(Style::fontSizeCaption);
-    detail->setStableBaseline(true);
-    auto* detailPtr = static_cast<Label*>(row->addChild(std::move(detail)));
+    Label* detailPtr = nullptr;
+    if (!detail.empty()) {
+      auto detailLabel = std::make_unique<Label>();
+      detailLabel->setText(detail);
+      detailLabel->setFontSize(Style::fontSizeCaption);
+      detailLabel->setStableBaseline(true);
+      detailPtr = static_cast<Label*>(row->addChild(std::move(detailLabel)));
+    }
 
     auto area = std::make_unique<InputArea>();
     area->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
@@ -226,6 +255,7 @@ void SearchPicker::setHighlightedVisibleIndex(std::size_t index) {
   }
   m_highlightedVisibleIndex = index;
   applyRowStates();
+  ensureHighlightedVisible();
 }
 
 void SearchPicker::moveHighlight(int delta) {
@@ -247,10 +277,31 @@ void SearchPicker::activateHighlighted() {
   }
 }
 
+void SearchPicker::ensureHighlightedVisible() {
+  if (m_scroll == nullptr || m_highlightedVisibleIndex >= m_rows.size()) {
+    return;
+  }
+
+  const auto& row = m_rows[m_highlightedVisibleIndex];
+  if (row.row == nullptr || row.row->height() <= 0.0f || m_scroll->height() <= 0.0f) {
+    return;
+  }
+
+  const float top = row.row->y();
+  const float bottom = top + row.row->height();
+  const float offset = m_scroll->scrollOffset();
+  const float viewportHeight = m_scroll->height();
+  if (top < offset) {
+    m_scroll->setScrollOffset(top);
+  } else if (bottom > offset + viewportHeight) {
+    m_scroll->setScrollOffset(bottom - viewportHeight);
+  }
+}
+
 void SearchPicker::applyRowStates() {
   for (std::size_t i = 0; i < m_rows.size(); ++i) {
     auto& row = m_rows[i];
-    if (row.row == nullptr || row.title == nullptr || row.detail == nullptr || i >= m_visible.size()) {
+    if (row.row == nullptr || row.title == nullptr || i >= m_visible.size()) {
       continue;
     }
 
@@ -264,8 +315,10 @@ void SearchPicker::applyRowStates() {
     row.title->setColor(highlighted ? colorSpecFromRole(ColorRole::OnPrimary)
                                     : (enabled ? colorSpecFromRole(ColorRole::OnSurface)
                                                : colorSpecFromRole(ColorRole::OnSurface, 0.55f)));
-    row.detail->setColor(highlighted ? colorSpecFromRole(ColorRole::OnPrimary, 0.78f)
-                                     : colorSpecFromRole(ColorRole::OnSurfaceVariant, enabled ? 1.0f : 0.55f));
+    if (row.detail != nullptr) {
+      row.detail->setColor(highlighted ? colorSpecFromRole(ColorRole::OnPrimary, 0.78f)
+                                       : colorSpecFromRole(ColorRole::OnSurfaceVariant, enabled ? 1.0f : 0.55f));
+    }
     if (row.area != nullptr) {
       row.area->setEnabled(enabled);
     }
@@ -273,13 +326,7 @@ void SearchPicker::applyRowStates() {
   markPaintDirty();
 }
 
-bool SearchPicker::matchesFilter(const SearchPickerOption& option) const {
-  const std::string query = lower(m_filter);
-  if (query.empty()) {
-    return true;
-  }
-
-  const std::string haystack =
-      lower(option.label + " " + option.value + " " + option.description + " " + option.category);
-  return haystack.find(query) != std::string::npos;
+double SearchPicker::matchScore(const SearchPickerOption& option, std::string_view query) const {
+  const std::string haystack = option.label + " " + option.value + " " + option.description + " " + option.category;
+  return FuzzyMatch::score(query, haystack);
 }

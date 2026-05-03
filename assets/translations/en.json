@@ -1091,7 +1091,8 @@
         },
         "community-palette": {
           "label": "Community Palette",
-          "description": "Choose a palette from the community catalog"
+          "description": "Choose a palette from the community catalog",
+          "search-placeholder": "Search palettes..."
         },
         "ui-scale": {
           "label": "UI Scale",

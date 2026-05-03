@@ -99,6 +99,7 @@ private:
   bool m_focusSearchOnRebuild = false;
   std::string m_searchQuery;
   std::string m_openWidgetPickerPath;
+  std::string m_openSearchPickerPath;
   std::string m_editingWidgetName;
   std::string m_pendingDeleteWidgetName;
   std::string m_pendingDeleteWidgetSettingPath;
