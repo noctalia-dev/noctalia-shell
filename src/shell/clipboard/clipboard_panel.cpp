@@ -214,6 +214,11 @@ void ClipboardPanel::create() {
   previewTitleLabel->setFlexGrow(1.0f);
   previewHeader->addChild(std::move(previewTitleLabel));
 
+  auto previewActions = std::make_unique<Flex>();
+  previewActions->setDirection(FlexDirection::Horizontal);
+  previewActions->setAlign(FlexAlign::Center);
+  previewActions->setGap(Style::spaceXs * scale);
+
   auto copyButton = std::make_unique<Button>();
   copyButton->setGlyph("copy");
   copyButton->setVariant(ButtonVariant::Secondary);
@@ -224,7 +229,21 @@ void ClipboardPanel::create() {
   copyButton->setRadius(Style::radiusMd * scale);
   copyButton->setOnClick([this]() { activateSelected(); });
   m_copyButton = copyButton.get();
-  previewHeader->addChild(std::move(copyButton));
+  previewActions->addChild(std::move(copyButton));
+
+  auto deleteEntryButton = std::make_unique<Button>();
+  deleteEntryButton->setGlyph("trash");
+  deleteEntryButton->setVariant(ButtonVariant::Destructive);
+  deleteEntryButton->setGlyphSize(Style::fontSizeBody * scale);
+  deleteEntryButton->setMinWidth(Style::controlHeightSm * scale);
+  deleteEntryButton->setMinHeight(Style::controlHeightSm * scale);
+  deleteEntryButton->setPadding(Style::spaceXs * scale);
+  deleteEntryButton->setRadius(Style::radiusMd * scale);
+  deleteEntryButton->setOnClick([this]() { deleteSelectedEntry(); });
+  m_deleteEntryButton = deleteEntryButton.get();
+  previewActions->addChild(std::move(deleteEntryButton));
+
+  previewHeader->addChild(std::move(previewActions));
   preview->addChild(std::move(previewHeader));
 
   auto previewMetaLabel = std::make_unique<Label>();
@@ -363,6 +382,7 @@ void ClipboardPanel::onClose() {
   m_previewTitle = nullptr;
   m_previewMeta = nullptr;
   m_copyButton = nullptr;
+  m_deleteEntryButton = nullptr;
   m_previewScrollView = nullptr;
   m_previewContent = nullptr;
   m_previewImage = nullptr;
@@ -545,6 +565,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     title->setColor(colorSpecFromRole(ColorRole::OnSurface));
     title->setMaxWidth(textWidth);
     title->setMaxLines(1);
+    title->setHitTestVisible(false);
     textColumn->addChild(std::move(title));
 
     auto timeLabel = std::make_unique<Label>();
@@ -552,6 +573,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     timeLabel->setCaptionStyle();
     timeLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     timeLabel->setMaxWidth(textWidth);
+    timeLabel->setHitTestVisible(false);
     textColumn->addChild(std::move(timeLabel));
 
     row->addChild(std::move(textColumn));
@@ -763,6 +785,32 @@ void ClipboardPanel::selectIndex(std::size_t index) {
   m_selectedIndex = index;
   updateRowSelection(previous);
   schedulePreviewPayloadRefresh(true);
+  m_pendingScrollToSelected = true;
+  PanelManager::instance().refresh();
+}
+
+void ClipboardPanel::deleteSelectedEntry() {
+  if (m_clipboard == nullptr) {
+    return;
+  }
+  const std::size_t historyIndex = selectedHistoryIndex();
+  if (historyIndex == static_cast<std::size_t>(-1)) {
+    return;
+  }
+  const std::size_t filterPos = m_selectedIndex;
+  if (!m_clipboard->removeHistoryEntry(historyIndex)) {
+    return;
+  }
+  applyFilter();
+  if (m_filteredIndices.empty()) {
+    m_selectedIndex = 0;
+    m_hoverIndex = static_cast<std::size_t>(-1);
+    m_mouseActive = false;
+  } else {
+    m_selectedIndex = std::min(filterPos, m_filteredIndices.size() - 1);
+  }
+  schedulePreviewPayloadRefresh(false);
+  m_lastListWidth = -1.0f;
   m_pendingScrollToSelected = true;
   PanelManager::instance().refresh();
 }

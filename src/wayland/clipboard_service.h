@@ -76,6 +76,7 @@ public:
   bool copyText(std::string text);
   bool copyEntry(const ClipboardEntry& entry);
   bool promoteEntry(std::size_t index);
+  bool removeHistoryEntry(std::size_t index);
   void clearHistory();
   void setChangeCallback(ChangeCallback callback);
   void dispatchReadEvents(short revents);

@@ -447,6 +447,23 @@ bool ClipboardService::promoteEntry(std::size_t index) {
   return true;
 }
 
+bool ClipboardService::removeHistoryEntry(std::size_t index) {
+  if (index >= m_history.size()) {
+    return false;
+  }
+  const std::size_t removedBytes = m_history[index].byteSize;
+  m_history.erase(m_history.begin() + static_cast<std::ptrdiff_t>(index));
+  if (m_historyBytes >= removedBytes) {
+    m_historyBytes -= removedBytes;
+  } else {
+    m_historyBytes = 0;
+  }
+  ++m_changeSerial;
+  persistHistory();
+  notifyChanged();
+  return true;
+}
+
 void ClipboardService::clearHistory() {
   if (m_history.empty()) {
     return;
