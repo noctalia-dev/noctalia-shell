@@ -247,17 +247,19 @@ Item {
   // ==================== SHARED ====================
 
   function getBatteryPanel() {
-    var panel = PanelService.getPanel("batteryPanel", screen);
-    if (panel) {
-      panel.panelID = {
-        showPowerProfiles: widgetSettings.showPowerProfiles !== undefined ? widgetSettings.showPowerProfiles : widgetMetadata.showPowerProfiles,
-        showNoctaliaPerformance: widgetSettings.showNoctaliaPerformance !== undefined ? widgetSettings.showNoctaliaPerformance : widgetMetadata.showNoctaliaPerformance
-      };
-    }
-    return panel;
+    return PanelService.getPanel("batteryPanel", screen);
   }
 
   function toggleBatteryPanel() {
-    getBatteryPanel()?.toggle(root);
+    var panel = getBatteryPanel();
+    if (panel) {
+      if (!panel.isPanelOpen) {
+        panel.panelID = {
+          showPowerProfiles: widgetSettings.showPowerProfiles !== undefined ? widgetSettings.showPowerProfiles : widgetMetadata.showPowerProfiles,
+          showNoctaliaPerformance: widgetSettings.showNoctaliaPerformance !== undefined ? widgetSettings.showNoctaliaPerformance : widgetMetadata.showNoctaliaPerformance
+        };
+      }
+      panel.toggle(root);
+    }
   }
 }
