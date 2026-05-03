@@ -4,10 +4,12 @@
 
 #include <cstddef>
 #include <functional>
+#include <memory>
 #include <string_view>
 #include <vector>
 
 class Button;
+class Separator;
 
 class Segmented : public Flex {
 public:
@@ -28,11 +30,14 @@ public:
   void setEqualSegmentWidths(bool equalWidths);
 
 private:
-  Button* makeSegmentButton(std::string_view label, std::string_view glyph, std::size_t index);
+  [[nodiscard]] std::unique_ptr<Separator> makeSegmentSeparator();
+  [[nodiscard]] std::unique_ptr<Button> makeSegmentButton(std::string_view label, std::string_view glyph,
+                                                          std::size_t index);
   void refreshVariants();
   void applyOuterStyle();
   [[nodiscard]] float effectiveFontSize() const noexcept;
 
+  std::vector<Separator*> m_separators;
   std::vector<Button*> m_buttons;
   std::size_t m_selected = 0;
   std::function<void(std::size_t)> m_onChange;

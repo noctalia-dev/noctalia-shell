@@ -7,9 +7,10 @@
 
 class Button;
 class Input;
+class Separator;
 class Renderer;
 
-// Horizontal numeric stepper: [ − ] editable value [ + ]
+// Horizontal numeric stepper styled like Segmented (shared SurfaceVariant track, Tab-style ends + center).
 class Stepper : public Flex {
 public:
   Stepper();
@@ -40,8 +41,12 @@ private:
   void commitValueField();
   bool swallowNonNumericKey(std::uint32_t sym, std::uint32_t modifiers);
   void refreshButtons();
+  void refreshSegmentStyle();
 
   Button* m_decrement = nullptr;
+  Separator* m_separatorBeforeValue = nullptr;
+  Flex* m_valueTrack = nullptr;
+  Separator* m_separatorAfterValue = nullptr;
   Button* m_increment = nullptr;
   Input* m_valueInput = nullptr;
 

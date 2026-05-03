@@ -2,6 +2,8 @@
 
 #include "render/core/render_styles.h"
 #include "ui/controls/button.h"
+#include "ui/controls/flex.h"
+#include "ui/controls/separator.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -20,8 +22,15 @@ std::size_t Segmented::addOption(std::string_view label) { return addOption(labe
 
 std::size_t Segmented::addOption(std::string_view label, std::string_view glyph) {
   const std::size_t index = m_buttons.size();
-  Button* btn = makeSegmentButton(label, glyph, index);
-  m_buttons.push_back(btn);
+  if (index > 0) {
+    auto sep = makeSegmentSeparator();
+    m_separators.push_back(sep.get());
+    addChild(std::move(sep));
+  }
+  auto btn = makeSegmentButton(label, glyph, index);
+  Button* raw = btn.get();
+  m_buttons.push_back(raw);
+  addChild(std::move(btn));
   refreshVariants();
   return index;
 }
@@ -60,13 +69,29 @@ void Segmented::setScale(float scale) {
       btn->setGlyphSize(fs);
     }
   }
+  const float ruleW = std::max(1.0f, Style::borderWidth * m_scale);
+  for (Separator* sep : m_separators) {
+    if (sep != nullptr) {
+      sep->setThickness(ruleW);
+    }
+  }
   refreshVariants();
   markLayoutDirty();
 }
 
 void Segmented::setOnChange(std::function<void(std::size_t)> callback) { m_onChange = std::move(callback); }
 
-Button* Segmented::makeSegmentButton(std::string_view label, std::string_view glyph, std::size_t index) {
+std::unique_ptr<Separator> Segmented::makeSegmentSeparator() {
+  auto sep = std::make_unique<Separator>();
+  sep->setOrientation(SeparatorOrientation::VerticalRule);
+  sep->setThickness(std::max(1.0f, Style::borderWidth * m_scale));
+  sep->setColor(colorSpecFromRole(ColorRole::Outline, 0.5f));
+  sep->setFlexGrow(0.0f);
+  return sep;
+}
+
+std::unique_ptr<Button> Segmented::makeSegmentButton(std::string_view label, std::string_view glyph,
+                                                     std::size_t index) {
   auto btn = std::make_unique<Button>();
   if (!glyph.empty()) {
     btn->setGlyph(glyph);
@@ -77,11 +102,9 @@ Button* Segmented::makeSegmentButton(std::string_view label, std::string_view gl
   btn->setMinHeight(Style::controlHeight * m_scale);
   btn->setPadding(Style::spaceXs * m_scale, Style::spaceMd * m_scale);
   btn->setOnClick([this, index]() { setSelectedIndex(index); });
-  Button* raw = btn.get();
-  raw->setFlexGrow(m_equalSegmentWidths ? 1.0f : 0.0f);
-  raw->setContentAlign(ButtonContentAlign::Center);
-  addChild(std::move(btn));
-  return raw;
+  btn->setFlexGrow(m_equalSegmentWidths ? 1.0f : 0.0f);
+  btn->setContentAlign(ButtonContentAlign::Center);
+  return btn;
 }
 
 void Segmented::setEqualSegmentWidths(bool equalWidths) {

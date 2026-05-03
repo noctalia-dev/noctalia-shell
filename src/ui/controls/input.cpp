@@ -336,6 +336,15 @@ void Input::setFrameVisible(bool visible) {
   markPaintDirty();
 }
 
+void Input::setEmbeddedOnSolidPrimary(bool embedded) {
+  if (m_embeddedOnSolidPrimary == embedded) {
+    return;
+  }
+  m_embeddedOnSolidPrimary = embedded;
+  applyVisualState();
+  markPaintDirty();
+}
+
 void Input::setBold(bool bold) {
   if (m_label != nullptr) {
     m_label->setBold(bold);
@@ -706,6 +715,39 @@ void Input::applyVisualState() {
     });
   } else if (m_background != nullptr) {
     m_background->setVisible(false);
+  }
+
+  if (m_embeddedOnSolidPrimary && !m_frameVisible) {
+    auto selectionStyleEmb = m_selectionRect->style();
+    selectionStyleEmb.fill = resolved(ColorRole::Surface, 0.4f);
+    selectionStyleEmb.fillMode = FillMode::Solid;
+    selectionStyleEmb.radius = 2.0f;
+    m_selectionRect->setStyle(selectionStyleEmb);
+
+    auto cursorStyleEmb = m_cursor->style();
+    cursorStyleEmb.fill = resolved(ColorRole::Surface);
+    cursorStyleEmb.fillMode = FillMode::Solid;
+    cursorStyleEmb.radius = 1.0f;
+    m_cursor->setStyle(cursorStyleEmb);
+
+    if (m_invalid) {
+      m_label->setColor(colorSpecFromRole(ColorRole::Error));
+    } else if ((m_value.empty() && !m_placeholder.empty()) || readOnly) {
+      m_label->setColor(colorSpecFromRole(ColorRole::OnPrimary, 0.65f));
+    } else {
+      m_label->setColor(colorSpecFromRole(ColorRole::OnPrimary));
+    }
+    const Color passwordGlyphEmb =
+        m_invalid ? resolved(ColorRole::Error)
+                  : (((m_value.empty() && !m_placeholder.empty()) || readOnly) ? resolved(ColorRole::OnPrimary, 0.65f)
+                                                                               : resolved(ColorRole::OnPrimary));
+    for (auto* glyph : m_passwordGlyphs) {
+      glyph->setColor(passwordGlyphEmb);
+    }
+    if (m_clearButtonGlyph != nullptr) {
+      m_clearButtonGlyph->setColor(resolved(ColorRole::OnPrimary, clearButtonHovered ? 1.0f : 0.72f));
+    }
+    return;
   }
 
   auto selectionStyle = m_selectionRect->style();

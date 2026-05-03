@@ -39,6 +39,8 @@ public:
   void setPasswordMode(bool enabled);
   void setInvalid(bool invalid);
   void setFrameVisible(bool visible);
+  /// When the frame is hidden, treat the field as sitting on a solid Primary fill (e.g. segmented control center).
+  void setEmbeddedOnSolidPrimary(bool embedded);
   void setBold(bool bold);
   void setMinLayoutWidth(float width);
   void setTextAlign(TextAlign align);
@@ -129,6 +131,7 @@ private:
   bool m_passwordMode = false;
   bool m_invalid = false;
   bool m_frameVisible = true;
+  bool m_embeddedOnSolidPrimary = false;
   float m_minLayoutWidth = 0.0f;
   float m_contentLeadSlack = 0.0f;
   TextAlign m_textAlign = TextAlign::Start;
