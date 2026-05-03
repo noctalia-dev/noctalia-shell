@@ -140,6 +140,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   bottomRow->setAlign(FlexAlign::Stretch);
   bottomRow->setGap(Style::spaceMd * scale);
   bottomRow->setFillWidth(true);
+  m_bottomRow = bottomRow.get();
 
   auto leftColumn = std::make_unique<Flex>();
   leftColumn->setDirection(FlexDirection::Vertical);
@@ -454,6 +455,26 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
     m_userMain->setSize(m_userMain->width(), desiredAvatar);
   }
 
+  // Lock the shortcuts grid height to its square-cell natural size so it does not vary
+  // when the media or clock cards change. The leftColumn stretches to match this height.
+  if (m_shortcutsGrid != nullptr && !m_shortcutPads.empty()) {
+    const float gridW = m_shortcutsGrid->width();
+    const float innerGridW = std::max(1.0f, gridW - m_shortcutsGrid->paddingLeft() - m_shortcutsGrid->paddingRight());
+    const std::size_t cols = std::max<std::size_t>(1, std::min(m_shortcutsGrid->columns(), m_shortcutPads.size()));
+    const std::size_t rows = (m_shortcutPads.size() + cols - 1) / cols;
+    const float cellWidth = std::max(1.0f, (innerGridW - static_cast<float>(cols - 1) * m_shortcutsGrid->columnGap()) /
+                                               static_cast<float>(cols));
+    // Cells aim for square but trimmed slightly so the grid stays compact and the bottom row
+    // doesn't tower over the user card area.
+    const float cellSide = cellWidth * 0.82f;
+    const float gridH = static_cast<float>(rows) * cellSide +
+                        static_cast<float>(rows > 0 ? rows - 1 : 0) * m_shortcutsGrid->rowGap() +
+                        m_shortcutsGrid->paddingTop() + m_shortcutsGrid->paddingBottom();
+    if (m_bottomRow != nullptr) {
+      m_bottomRow->setMinHeight(gridH);
+    }
+  }
+
   m_rootLayout->layout(renderer);
   layoutWallpaperBackground(renderer);
   if (m_weatherGlyph != nullptr) {
@@ -524,6 +545,7 @@ void OverviewTab::setActive(bool active) { m_active = active; }
 
 void OverviewTab::onClose() {
   m_rootLayout = nullptr;
+  m_bottomRow = nullptr;
   m_dateTimeCard = nullptr;
   m_mediaCard = nullptr;
   m_mediaText = nullptr;

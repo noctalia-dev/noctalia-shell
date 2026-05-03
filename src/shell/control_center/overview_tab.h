@@ -57,6 +57,7 @@ private:
   bool m_active = false;
 
   Flex* m_rootLayout = nullptr;
+  Flex* m_bottomRow = nullptr;
   Flex* m_dateTimeCard = nullptr;
   Flex* m_mediaCard = nullptr;
   Flex* m_mediaText = nullptr;
