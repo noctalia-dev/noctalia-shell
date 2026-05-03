@@ -218,6 +218,29 @@ void TestPanel::create() {
     colA->addChild(std::move(section));
   }
 
+  // Label (auto-scroll)
+  {
+    auto marquee = std::make_unique<Label>();
+    marquee->setText("This label scrolls automatically when the line is longer than its layout width :p");
+    marquee->setFontSize(Style::fontSizeBody * scale);
+    marquee->setMaxWidth(240.0f * scale);
+    marquee->setAutoScroll(true);
+    marquee->setAutoScrollSpeed(42.0f * scale);
+
+    auto marqueeHover = std::make_unique<Label>();
+    marqueeHover->setText("Hover this row to scroll - the marquee pauses when the pointer leaves the label.");
+    marqueeHover->setFontSize(Style::fontSizeBody * scale);
+    marqueeHover->setMaxWidth(240.0f * scale);
+    marqueeHover->setAutoScroll(true);
+    marqueeHover->setAutoScrollSpeed(42.0f * scale);
+    marqueeHover->setAutoScrollOnlyWhenHovered(true);
+
+    auto section = makeSection("Label (auto-scroll)");
+    section->addChild(std::move(marquee));
+    section->addChild(std::move(marqueeHover));
+    colA->addChild(std::move(section));
+  }
+
   // Slider
   {
     auto slider = std::make_unique<Slider>();

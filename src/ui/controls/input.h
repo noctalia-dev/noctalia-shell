@@ -7,6 +7,7 @@
 
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <string>
 #include <string_view>
@@ -45,6 +46,8 @@ public:
 
   // Set once at application startup; all Input instances use this for Ctrl+C/X/V.
   static void setClipboardService(ClipboardService* clipboard) noexcept;
+  /// Submit invokes onSubmit only when this matcher returns true (Application wires ConfigService validate keybinds).
+  static void setValidateKeyMatcher(std::function<bool(std::uint32_t sym, std::uint32_t modifiers)> matcher) noexcept;
   static void setPasswordMaskStyle(PasswordMaskStyle style) noexcept;
   void clearSelection();
 

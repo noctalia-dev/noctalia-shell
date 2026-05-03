@@ -42,12 +42,6 @@ public:
   void cancel() override;
 
 private:
-  enum class CaptureCoordinateSpace : std::uint8_t {
-    None,
-    PopupLocal,
-    ParentMapped,
-  };
-
   [[nodiscard]] wl_surface* resolveEventSurface(const PointerEvent& event) const noexcept;
   [[nodiscard]] std::optional<LayerPopupParentContext> resolveParentContext() const;
   void prepareFrame(bool needsUpdate, bool needsLayout);
@@ -74,6 +68,5 @@ private:
   std::unique_ptr<FileDialogView> m_dialog;
   bool m_attachedToHost = false;
   wl_surface* m_parentSurface = nullptr;
-  CaptureCoordinateSpace m_captureCoordinateSpace = CaptureCoordinateSpace::None;
   bool m_pointerInside = false;
 };

@@ -33,12 +33,6 @@ public:
   [[nodiscard]] wl_surface* wlSurface() const noexcept;
 
 private:
-  enum class CaptureCoordinateSpace : std::uint8_t {
-    None,
-    PopupLocal,
-    ParentMapped,
-  };
-
   void accept(const Color& result);
   void cancel();
   void prepareFrame(bool needsUpdate, bool needsLayout);
@@ -66,6 +60,5 @@ private:
   InputDispatcher m_inputDispatcher;
   bool m_attachedToHost = false;
   wl_surface* m_parentSurface = nullptr;
-  CaptureCoordinateSpace m_captureCoordinateSpace = CaptureCoordinateSpace::None;
   bool m_pointerInside = false;
 };

@@ -14,6 +14,43 @@
 
 namespace {
 
+  std::string formatAgeSeconds(std::int64_t secs,
+                               std::optional<std::chrono::system_clock::time_point> calendarAfterSixDays) {
+    using namespace std::chrono;
+    if (secs < 0) {
+      secs = 0;
+    }
+    if (secs < 60) {
+      return i18n::tr("time.relative.just-now");
+    }
+    if (secs < 3600) {
+      const long mins = secs / 60;
+      return i18n::trp("time.relative.minutes-ago", mins);
+    }
+    if (secs < 86400) {
+      const long hrs = secs / 3600;
+      return i18n::trp("time.relative.hours-ago", hrs);
+    }
+    if (secs < 7 * 86400) {
+      const long days = secs / 86400;
+      return i18n::trp("time.relative.days-ago", days);
+    }
+    if (calendarAfterSixDays.has_value()) {
+      const std::time_t rawTime = std::chrono::system_clock::to_time_t(*calendarAfterSixDays);
+      std::tm localTime{};
+      localtime_r(&rawTime, &localTime);
+      char buffer[32];
+      std::strftime(buffer, sizeof(buffer), "%b %e", &localTime);
+      return buffer;
+    }
+    const long days = static_cast<long>(secs / 86400);
+    return i18n::trp("time.relative.days-ago", days);
+  }
+
+} // namespace
+
+namespace {
+
   bool shouldUseStrftimeCompat(std::string_view fmt) {
     return fmt.find("%-") != std::string_view::npos ||
            (fmt.find('{') == std::string_view::npos && fmt.find('%') != std::string_view::npos);
@@ -156,28 +193,13 @@ std::string formatFileTime(const std::filesystem::file_time_type& time) {
 std::string formatTimeAgo(std::chrono::system_clock::time_point tp) {
   using namespace std::chrono;
   const auto secs = duration_cast<seconds>(system_clock::now() - tp).count();
+  return formatAgeSeconds(secs, tp);
+}
 
-  if (secs < 60) {
-    return i18n::tr("time.relative.just-now");
-  }
-  if (secs < 3600) {
-    const long mins = secs / 60;
-    return i18n::trp("time.relative.minutes-ago", mins);
-  }
-  if (secs < 86400) {
-    const long hrs = secs / 3600;
-    return i18n::trp("time.relative.hours-ago", hrs);
-  }
-  if (secs < 7 * 86400) {
-    const long days = secs / 86400;
-    return i18n::trp("time.relative.days-ago", days);
-  }
-  const std::time_t rawTime = system_clock::to_time_t(tp);
-  std::tm localTime{};
-  localtime_r(&rawTime, &localTime);
-  char buffer[32];
-  std::strftime(buffer, sizeof(buffer), "%b %e", &localTime);
-  return buffer;
+std::string formatElapsedSince(std::chrono::steady_clock::time_point since) {
+  using namespace std::chrono;
+  const auto secs = duration_cast<seconds>(steady_clock::now() - since).count();
+  return formatAgeSeconds(secs, std::nullopt);
 }
 
 std::string formatDuration(std::chrono::seconds duration) {

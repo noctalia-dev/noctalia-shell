@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <charconv>
+#include <chrono>
 #include <cmath>
 #include <cstring>
 #include <memory>
@@ -21,6 +22,7 @@
 #include <spa/pod/builder.h>
 #include <spa/pod/iter.h>
 #include <spa/pod/parser.h>
+#include <spa/utils/defs.h>
 #include <spa/utils/result.h>
 #include <string>
 #include <string_view>
@@ -28,6 +30,7 @@
 namespace {
 
   constexpr float kDefaultVolumeStep = 0.05f;
+  constexpr auto kVolumeApplyMinInterval = std::chrono::milliseconds(25);
 
   // Registry events.
   void onRegistryGlobal(void* data, std::uint32_t id, std::uint32_t, const char* type, std::uint32_t version,
@@ -191,26 +194,6 @@ namespace {
     return std::nullopt;
   }
 
-  void applyVolumePropsFromDict(PipeWireService::NodeData& nd, const spa_dict* props) {
-    if (props == nullptr) {
-      return;
-    }
-
-    if (const auto maybeChannelmixVolume = parseFloat(dictGet(props, "channelmix.volume"));
-        maybeChannelmixVolume.has_value()) {
-      nd.volume = std::clamp(*maybeChannelmixVolume, 0.0f, 1.5f);
-    } else if (const auto maybeVolume = parseFloat(dictGet(props, "volume")); maybeVolume.has_value()) {
-      nd.volume = std::clamp(*maybeVolume, 0.0f, 1.5f);
-    }
-
-    if (const auto maybeChannelmixMuted = parseBool(dictGet(props, "channelmix.mute"));
-        maybeChannelmixMuted.has_value()) {
-      nd.muted = *maybeChannelmixMuted;
-    } else if (const auto maybeMuted = parseBool(dictGet(props, "mute")); maybeMuted.has_value()) {
-      nd.muted = *maybeMuted;
-    }
-  }
-
   bool applyClientPropsFromDict(PipeWireService::ClientData& client, const spa_dict* props) {
     if (props == nullptr) {
       return false;
@@ -335,6 +318,9 @@ PipeWireService::PipeWireService() {
 }
 
 PipeWireService::~PipeWireService() {
+  m_volumeThrottleTimer.stop();
+  m_pendingNodeVolumes.clear();
+
   // Destroy node proxies and their listeners
   for (auto& [id, nd] : m_nodes) {
     if (nd->listener != nullptr) {
@@ -618,6 +604,12 @@ void PipeWireService::onRegistryGlobalRemove(std::uint32_t id) {
       pw_proxy_destroy(reinterpret_cast<pw_proxy*>(it->second.proxy));
     }
     m_devices.erase(it);
+    for (auto& [nid, node] : m_nodes) {
+      if (node != nullptr && node->deviceId == id) {
+        recomputeEffectiveMute(*node);
+      }
+    }
+    rebuildState();
     return;
   }
 
@@ -750,13 +742,14 @@ void PipeWireService::onNodeParam(std::uint32_t id, std::uint32_t paramId, std::
         auto* propsObj = reinterpret_cast<spa_pod_object*>(const_cast<spa_pod*>(routeProps));
         SPA_POD_OBJECT_FOREACH(propsObj, prop) {
           if (prop->key == SPA_PROP_mute) {
-            bool muted = false;
-            if (spa_pod_get_bool(&prop->value, &muted) == 0) {
-              nd.muted = muted;
+            bool routeMuted = false;
+            if (spa_pod_get_bool(&prop->value, &routeMuted) == 0) {
+              nd.nodeRouteMute = routeMuted;
             }
           }
         }
       }
+      recomputeEffectiveMute(nd);
       rebuildState();
     }
     return;
@@ -789,9 +782,9 @@ void PipeWireService::onNodeParam(std::uint32_t id, std::uint32_t paramId, std::
       parseVolumeArrayProp(prop, parsedSoftVolumes);
       hasSoftVolumes = true;
     } else if (prop->key == SPA_PROP_mute) {
-      bool muted = false;
-      if (spa_pod_get_bool(&prop->value, &muted) == 0) {
-        nd.muted = muted;
+      bool swMuted = false;
+      if (spa_pod_get_bool(&prop->value, &swMuted) == 0) {
+        nd.swMute = swMuted;
       }
     }
   }
@@ -804,6 +797,8 @@ void PipeWireService::onNodeParam(std::uint32_t id, std::uint32_t paramId, std::
   } else if (hasSoftVolumes) {
     nd.volume = parsedSoftVolumes;
   }
+
+  recomputeEffectiveMute(nd);
 
   if (isProgramStreamClass(nd.mediaClass)) {
     kLog.debug("[program-stream] node-param id={} class='{}' volume={:.3f} muted={} channels={}", id, nd.mediaClass,
@@ -903,6 +898,13 @@ void PipeWireService::onDeviceParam(std::uint32_t id, std::uint32_t paramId, std
     existing->direction = routeDirection;
     existing->muted = muted;
   }
+
+  for (auto& [nid, node] : m_nodes) {
+    if (node != nullptr && node->deviceId == id) {
+      recomputeEffectiveMute(*node);
+    }
+  }
+  rebuildState();
 }
 
 void PipeWireService::parseDefaultNodes(const spa_dict* props) {
@@ -995,15 +997,103 @@ void PipeWireService::rebuildState() {
   emitChanged();
 }
 
-void PipeWireService::setNodeVolume(std::uint32_t id, float volume) {
+bool PipeWireService::deviceRouteIndicatesMuted(const NodeData& nd) const {
+  if (nd.deviceId == 0) {
+    return false;
+  }
+  const auto it = m_devices.find(nd.deviceId);
+  if (it == m_devices.end()) {
+    return false;
+  }
+  std::uint32_t wantDir = 0;
+  if (nd.mediaClass == "Audio/Source") {
+    wantDir = SPA_DIRECTION_INPUT;
+  } else if (nd.mediaClass == "Audio/Sink") {
+    wantDir = SPA_DIRECTION_OUTPUT;
+  } else {
+    return false;
+  }
+  for (const auto& r : it->second.routes) {
+    if (r.direction == wantDir && r.index >= 0 && r.muted) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void PipeWireService::recomputeEffectiveMute(NodeData& nd) {
+  nd.muted = nd.swMute || nd.nodeRouteMute || deviceRouteIndicatesMuted(nd);
+}
+
+void PipeWireService::applyVolumePropsFromDict(NodeData& nd, const spa_dict* props) {
+  if (props == nullptr) {
+    return;
+  }
+
+  if (const auto maybeChannelmixVolume = parseFloat(dictGet(props, "channelmix.volume"));
+      maybeChannelmixVolume.has_value()) {
+    nd.volume = std::clamp(*maybeChannelmixVolume, 0.0f, 1.5f);
+  } else if (const auto maybeVolume = parseFloat(dictGet(props, "volume")); maybeVolume.has_value()) {
+    nd.volume = std::clamp(*maybeVolume, 0.0f, 1.5f);
+  }
+
+  if (const auto maybeChannelmixMuted = parseBool(dictGet(props, "channelmix.mute"));
+      maybeChannelmixMuted.has_value()) {
+    nd.swMute = *maybeChannelmixMuted;
+  } else if (const auto maybeMuted = parseBool(dictGet(props, "mute")); maybeMuted.has_value()) {
+    nd.swMute = *maybeMuted;
+  }
+
+  recomputeEffectiveMute(nd);
+}
+
+void PipeWireService::scheduleVolumeFlush() {
+  const auto now = std::chrono::steady_clock::now();
+  const auto earliest = m_lastVolumeFlushValid ? (m_lastVolumeFlushAt + kVolumeApplyMinInterval)
+                                               : std::chrono::steady_clock::time_point{};
+
+  if (!m_lastVolumeFlushValid || now >= earliest) {
+    m_volumeThrottleTimer.stop();
+    flushPendingNodeVolumes();
+    m_lastVolumeFlushAt = std::chrono::steady_clock::now();
+    m_lastVolumeFlushValid = true;
+    return;
+  }
+
+  const auto delay = std::chrono::duration_cast<std::chrono::milliseconds>(earliest - now);
+  const auto wait = std::max(delay, std::chrono::milliseconds{1});
+  m_volumeThrottleTimer.start(wait, [this]() {
+    flushPendingNodeVolumes();
+    m_lastVolumeFlushAt = std::chrono::steady_clock::now();
+  });
+}
+
+void PipeWireService::flushPendingNodeVolumes() {
+  if (m_pendingNodeVolumes.empty()) {
+    return;
+  }
+
+  bool dirty = false;
+  auto pending = std::move(m_pendingNodeVolumes);
+
+  for (const auto& [id, volume] : pending) {
+    dirty |= applyNodeVolumeImmediate(id, volume);
+  }
+
+  if (dirty) {
+    rebuildState();
+  }
+}
+
+bool PipeWireService::applyNodeVolumeImmediate(std::uint32_t id, float volume) {
   auto it = m_nodes.find(id);
   if (it == m_nodes.end()) {
-    return;
+    return false;
   }
 
   auto& nd = *it->second;
   if (nd.proxy == nullptr) {
-    return;
+    return false;
   }
 
   volume = std::clamp(volume, 0.0f, 1.5f);
@@ -1016,9 +1106,9 @@ void PipeWireService::setNodeVolume(std::uint32_t id, float volume) {
     if (updatedViaWpctl) {
       if (std::abs(nd.volume - volume) >= 0.0001f) {
         nd.volume = volume;
-        rebuildState();
+        return true;
       }
-      return;
+      return false;
     }
   }
 
@@ -1043,8 +1133,23 @@ void PipeWireService::setNodeVolume(std::uint32_t id, float volume) {
   // Apply optimistic local state while PipeWire publishes props.
   if (std::abs(nd.volume - volume) >= 0.0001f) {
     nd.volume = volume;
-    rebuildState();
+    return true;
   }
+  return false;
+}
+
+void PipeWireService::setNodeVolume(std::uint32_t id, float volume) {
+  auto it = m_nodes.find(id);
+  if (it == m_nodes.end()) {
+    return;
+  }
+
+  if (it->second->proxy == nullptr) {
+    return;
+  }
+
+  m_pendingNodeVolumes[id] = std::clamp(volume, 0.0f, 1.5f);
+  scheduleVolumeFlush();
 }
 
 void PipeWireService::setNodeMuted(std::uint32_t id, bool muted) {
@@ -1058,53 +1163,23 @@ void PipeWireService::setNodeMuted(std::uint32_t id, bool muted) {
     return;
   }
 
+  // Match WirePlumber session policy (same as set-volume) so mute state stays consistent
+  // with wpctl and survives odd daemon/node prop ordering after resume/reboot.
   const bool isDeviceNode = nd.mediaClass == "Audio/Sink" || nd.mediaClass == "Audio/Source";
-  if (isDeviceNode && nd.deviceId != 0) {
-    auto devIt = m_devices.find(nd.deviceId);
-    if (devIt != m_devices.end() && devIt->second.proxy != nullptr) {
-      const std::uint32_t targetDirection =
-          (nd.mediaClass == "Audio/Source") ? SPA_DIRECTION_INPUT : SPA_DIRECTION_OUTPUT;
-      bool wroteDeviceRoute = false;
-      for (const auto& route : devIt->second.routes) {
-        if (route.index < 0 || route.direction != targetDirection) {
-          continue;
-        }
-
-        std::uint8_t routeBuffer[512];
-        spa_pod_builder routeBuilder;
-        spa_pod_builder_init(&routeBuilder, routeBuffer, sizeof(routeBuffer));
-
-        spa_pod_frame routeFrame;
-        spa_pod_builder_push_object(&routeBuilder, &routeFrame, SPA_TYPE_OBJECT_ParamRoute, SPA_PARAM_Route);
-        spa_pod_builder_prop(&routeBuilder, SPA_PARAM_ROUTE_index, 0);
-        spa_pod_builder_int(&routeBuilder, route.index);
-        spa_pod_builder_prop(&routeBuilder, SPA_PARAM_ROUTE_direction, 0);
-        spa_pod_builder_id(&routeBuilder, route.direction);
-        spa_pod_builder_prop(&routeBuilder, SPA_PARAM_ROUTE_device, 0);
-        spa_pod_builder_int(&routeBuilder, route.device);
-        spa_pod_builder_prop(&routeBuilder, SPA_PARAM_ROUTE_props, 0);
-        spa_pod_frame routePropsFrame;
-        spa_pod_builder_push_object(&routeBuilder, &routePropsFrame, SPA_TYPE_OBJECT_Props, SPA_PARAM_Props);
-        spa_pod_builder_prop(&routeBuilder, SPA_PROP_mute, 0);
-        spa_pod_builder_bool(&routeBuilder, muted);
-        spa_pod_builder_pop(&routeBuilder, &routePropsFrame);
-        spa_pod_builder_prop(&routeBuilder, SPA_PARAM_ROUTE_save, 0);
-        spa_pod_builder_bool(&routeBuilder, true);
-        auto* routePod = static_cast<spa_pod*>(spa_pod_builder_pop(&routeBuilder, &routeFrame));
-        pw_device_set_param(devIt->second.proxy, SPA_PARAM_Route, 0, routePod);
-        wroteDeviceRoute = true;
+  if (isDeviceNode) {
+    const bool updatedViaWpctl = process::runSync({"wpctl", "set-mute", std::to_string(id), muted ? "1" : "0"});
+    if (updatedViaWpctl) {
+      const bool before = nd.muted;
+      nd.swMute = muted;
+      recomputeEffectiveMute(nd);
+      if (before != nd.muted) {
+        rebuildState();
       }
-
-      if (wroteDeviceRoute) {
-        if (nd.muted != muted) {
-          nd.muted = muted;
-          rebuildState();
-        }
-        return;
-      }
+      return;
     }
   }
 
+  // Program streams, or device fallback when wpctl is unavailable.
   if (nd.hasRoute && nd.routeIndex >= 0) {
     std::uint8_t routeBuffer[512];
     spa_pod_builder routeBuilder;
@@ -1142,9 +1217,13 @@ void PipeWireService::setNodeMuted(std::uint32_t id, bool muted) {
 
   pw_node_set_param(nd.proxy, SPA_PARAM_Props, 0, pod);
 
-  // Apply optimistic local state while PipeWire publishes props.
-  if (nd.muted != muted) {
-    nd.muted = muted;
+  const bool before = nd.muted;
+  nd.swMute = muted;
+  if (nd.hasRoute && nd.routeIndex >= 0) {
+    nd.nodeRouteMute = muted;
+  }
+  recomputeEffectiveMute(nd);
+  if (before != nd.muted) {
     rebuildState();
   }
 }

@@ -1,5 +1,8 @@
 #pragma once
 
+#include "core/timer_manager.h"
+
+#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -14,6 +17,7 @@ struct pw_device;
 struct pw_loop;
 struct pw_registry;
 struct spa_hook;
+struct spa_dict;
 
 class ConfigService;
 class IpcService;
@@ -109,6 +113,10 @@ public:
     std::string iconName;
     std::string mediaClass;
     float volume = 1.0f;
+    // Software / node-route mute from PipeWire props (SPA_PARAM_Props, node routes).
+    bool swMute = false;
+    bool nodeRouteMute = false;
+    // Effective mute for UI (includes device-route mute, e.g. USB mic hardware switch).
     bool muted = false;
     std::uint32_t channelCount = 0;
     std::uint32_t deviceId = 0;
@@ -156,9 +164,21 @@ public:
 private:
   void rebuildState();
   void refreshNodeIdentity(NodeData& nd);
+  void applyVolumePropsFromDict(NodeData& nd, const spa_dict* props);
+  void recomputeEffectiveMute(NodeData& nd);
+  [[nodiscard]] bool deviceRouteIndicatesMuted(const NodeData& nd) const;
   void setNodeVolume(std::uint32_t id, float volume);
   void setNodeMuted(std::uint32_t id, bool muted);
   void setDefaultNode(std::uint32_t id, const char* key);
+
+  void scheduleVolumeFlush();
+  void flushPendingNodeVolumes();
+  [[nodiscard]] bool applyNodeVolumeImmediate(std::uint32_t id, float volume);
+
+  Timer m_volumeThrottleTimer;
+  std::unordered_map<std::uint32_t, float> m_pendingNodeVolumes;
+  std::chrono::steady_clock::time_point m_lastVolumeFlushAt{};
+  bool m_lastVolumeFlushValid = false;
 
   pw_loop* m_loop = nullptr;
   pw_context* m_context = nullptr;

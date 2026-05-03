@@ -78,7 +78,7 @@ void NotificationWidget::doLayout(Renderer& renderer, float /*containerWidth*/, 
 void NotificationWidget::doUpdate(Renderer& /*renderer*/) { refreshIndicatorState(); }
 
 void NotificationWidget::refreshIndicatorState() {
-  const bool hasNotifications = (m_manager != nullptr) && !m_manager->all().empty();
+  const bool hasNotifications = (m_manager != nullptr) && m_manager->hasUnreadNotificationHistory();
   const bool dndEnabled = (m_manager != nullptr) && m_manager->doNotDisturb();
   if (hasNotifications == m_hasNotifications && dndEnabled == m_dndEnabled) {
     return;

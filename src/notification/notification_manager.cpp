@@ -1,8 +1,12 @@
 #include "notification_manager.h"
 
+#include "core/deferred_call.h"
 #include "core/log.h"
+#include "notification/notification_history_store.h"
 #include "pipewire/sound_player.h"
+#include "util/file_utils.h"
 
+#include <filesystem>
 #include <string_view>
 
 namespace {
@@ -39,6 +43,13 @@ namespace {
     return std::nullopt; // 0 = persistent, -1 = server default (treat as persistent for now)
   }
 
+  std::optional<WallTimePoint> schedule_expiry_wall(WallTimePoint wallNow, int32_t timeout_ms) noexcept {
+    if (timeout_ms > 0) {
+      return wallNow + std::chrono::milliseconds(timeout_ms);
+    }
+    return std::nullopt;
+  }
+
   bool has_same_content(const Notification& notification, const std::string& appName, const std::string& summary,
                         const std::string& body) {
     return notification.appName == appName && notification.summary == summary && notification.body == body;
@@ -72,6 +83,7 @@ void NotificationManager::upsertHistory(const Notification& notification, bool a
   }
 
   rebuildHistoryIndex();
+  schedulePersistHistory();
 }
 
 int NotificationManager::addEventCallback(EventCallback callback) {
@@ -92,6 +104,7 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
                                            std::optional<std::string> category,
                                            std::optional<std::string> desktop_entry) {
   const auto now = Clock::now();
+  const auto wallNow = WallClock::now();
   auto log_notification = [](const Notification& n, std::string_view action) {
     kLog.debug("notification {} #{} origin={} from=\"{}\" urgency={} summary=\"{}\" body=\"{}\" timeout={}ms", action,
                n.id, origin_str(n.origin), n.appName, urgency_str(n.urgency), n.summary, n.body, n.timeout);
@@ -119,6 +132,8 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
       n.desktopEntry = std::move(desktop_entry);
       n.receivedTime = now;
       n.expiryTime = schedule_expiry(now, timeout);
+      n.receivedWallClock = wallNow;
+      n.expiryWallClock = schedule_expiry_wall(wallNow, timeout);
 
       log_notification(n, "updated");
       upsertHistory(n, true, std::nullopt);
@@ -158,12 +173,15 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
       .desktopEntry = std::move(desktop_entry),
       .receivedTime = now,
       .expiryTime = schedule_expiry(now, timeout),
+      .receivedWallClock = wallNow,
+      .expiryWallClock = schedule_expiry_wall(wallNow, timeout),
   });
   m_idToIndex.emplace(id, m_notifications.size() - 1);
 
   const auto& n = m_notifications.back();
   log_notification(n, "added");
   upsertHistory(n, true, std::nullopt);
+  m_unreadSinceHistoryVisit = true;
 
   for (auto& [token, cb] : m_eventCallbacks) {
     cb(n, NotificationEvent::Added);
@@ -260,6 +278,7 @@ void NotificationManager::removeHistoryEntry(uint32_t id) {
   m_history.erase(m_history.begin() + static_cast<std::ptrdiff_t>(it->second));
   ++m_changeSerial;
   rebuildHistoryIndex();
+  schedulePersistHistory();
 }
 
 void NotificationManager::clearHistory() {
@@ -270,6 +289,8 @@ void NotificationManager::clearHistory() {
   m_history.clear();
   m_historyIndex.clear();
   ++m_changeSerial;
+  markNotificationHistorySeen();
+  schedulePersistHistory();
 }
 
 std::vector<uint32_t> NotificationManager::expiredIds() const {
@@ -310,6 +331,7 @@ void NotificationManager::pauseExpiry(uint32_t id) {
     return;
   }
   m_notifications[it->second].expiryTime.reset();
+  m_notifications[it->second].expiryWallClock.reset();
 }
 
 void NotificationManager::resumeExpiry(uint32_t id, int32_t remainingMs) {
@@ -319,9 +341,13 @@ void NotificationManager::resumeExpiry(uint32_t id, int32_t remainingMs) {
   }
   if (remainingMs <= 0) {
     m_notifications[it->second].expiryTime = Clock::now();
+    m_notifications[it->second].expiryWallClock = WallClock::now();
     return;
   }
-  m_notifications[it->second].expiryTime = Clock::now() + std::chrono::milliseconds(remainingMs);
+  const auto steadyResume = Clock::now();
+  const auto wallResume = WallClock::now();
+  m_notifications[it->second].expiryTime = steadyResume + std::chrono::milliseconds(remainingMs);
+  m_notifications[it->second].expiryWallClock = wallResume + std::chrono::milliseconds(remainingMs);
 }
 
 void NotificationManager::setDoNotDisturb(bool enabled) {
@@ -344,3 +370,59 @@ bool NotificationManager::toggleDoNotDisturb() {
 void NotificationManager::setStateCallback(StateCallback callback) { m_stateCallback = std::move(callback); }
 
 void NotificationManager::setSoundPlayer(SoundPlayer* soundPlayer) { m_soundPlayer = soundPlayer; }
+
+bool NotificationManager::hasUnreadNotificationHistory() const noexcept { return m_unreadSinceHistoryVisit; }
+
+void NotificationManager::markNotificationHistorySeen() {
+  if (!m_unreadSinceHistoryVisit) {
+    return;
+  }
+  m_unreadSinceHistoryVisit = false;
+  if (m_stateCallback) {
+    m_stateCallback();
+  }
+}
+
+void NotificationManager::schedulePersistHistory() {
+  if (m_persistScheduled) {
+    return;
+  }
+  m_persistScheduled = true;
+  DeferredCall::callLater([this]() {
+    m_persistScheduled = false;
+    persistHistoryToDisk();
+  });
+}
+
+void NotificationManager::persistHistoryToDisk() {
+  const std::string dir = FileUtils::stateDir();
+  if (dir.empty()) {
+    return;
+  }
+  std::filesystem::path path(dir);
+  std::error_code ec;
+  std::filesystem::create_directories(path, ec);
+  path /= "notification_history.json";
+  (void)saveNotificationHistoryToFile(path, m_history, m_nextId, m_changeSerial);
+}
+
+void NotificationManager::loadPersistedHistory() {
+  const std::string dir = FileUtils::stateDir();
+  if (dir.empty()) {
+    return;
+  }
+  std::filesystem::path path(dir);
+  path /= "notification_history.json";
+  std::uint32_t nextId = m_nextId;
+  std::uint64_t serial = m_changeSerial;
+  std::deque<NotificationHistoryEntry> loaded;
+  if (!loadNotificationHistoryFromFile(path, loaded, nextId, serial)) {
+    return;
+  }
+  m_history = std::move(loaded);
+  m_nextId = nextId;
+  m_changeSerial = serial;
+  rebuildHistoryIndex();
+}
+
+void NotificationManager::flushPersistedHistory() { persistHistoryToDisk(); }

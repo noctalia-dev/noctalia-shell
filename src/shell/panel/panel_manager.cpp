@@ -762,6 +762,13 @@ bool PanelManager::isAttachedOpen() const noexcept { return isOpen() && m_attach
 
 const std::string& PanelManager::activePanelId() const noexcept { return m_activePanelId; }
 
+bool PanelManager::isActivePanelContext(std::string_view context) const noexcept {
+  if (!isOpen() || m_activePanel == nullptr) {
+    return false;
+  }
+  return m_activePanel->isContextActive(context);
+}
+
 void PanelManager::refresh() {
   if (!isOpen() || m_renderContext == nullptr || m_activePanel == nullptr || m_surface == nullptr) {
     return;

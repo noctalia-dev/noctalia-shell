@@ -49,6 +49,7 @@ private:
   void activateSelected();
   bool handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers);
   void scrollToSelected();
+  void deleteSelectedEntry();
   void applyFilter();
   void onFilterChanged(const std::string& text);
   [[nodiscard]] std::size_t selectedHistoryIndex() const;
@@ -75,6 +76,7 @@ private:
   Label* m_previewTitle = nullptr;
   Label* m_previewMeta = nullptr;
   Button* m_copyButton = nullptr;
+  Button* m_deleteEntryButton = nullptr;
   ScrollView* m_previewScrollView = nullptr;
   Flex* m_previewContent = nullptr;
   Image* m_previewImage = nullptr;

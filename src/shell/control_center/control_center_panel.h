@@ -134,4 +134,5 @@ private:
   std::array<Flex*, kTabCount> m_tabContainers{};
   std::array<Flex*, kTabCount> m_tabHeaderActions{};
   TabId m_activeTab = TabId::Overview;
+  NotificationManager* m_notificationManager = nullptr;
 };

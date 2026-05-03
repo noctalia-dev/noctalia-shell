@@ -514,7 +514,8 @@ namespace settings {
     const auto makeText = [&](const std::string& value, const std::string& placeholder, std::vector<std::string> path) {
       auto input = std::make_unique<Input>();
       input->setValue(value);
-      input->setPlaceholder(placeholder);
+      input->setPlaceholder(placeholder.empty() ? i18n::tr("settings.controls.list.add-entry-placeholder")
+                                                : placeholder);
       input->setFontSize(Style::fontSizeBody * scale);
       input->setControlHeight(Style::controlHeight * scale);
       input->setHorizontalPadding(Style::spaceSm * scale);
@@ -844,7 +845,7 @@ namespace settings {
       auto addRow = std::make_unique<Flex>();
       addRow->setDirection(FlexDirection::Horizontal);
       addRow->setAlign(FlexAlign::Center);
-      addRow->setGap(Style::spaceXs * scale);
+      addRow->setGap(Style::spaceSm * scale);
 
       const bool useSelectAdder = !list.suggestedOptions.empty();
       std::vector<SelectOption> remaining;
@@ -872,7 +873,7 @@ namespace settings {
 
         auto select = std::make_unique<Select>();
         select->setOptions(remainingLabels);
-        select->setPlaceholder(i18n::tr("settings.controls.list.add-placeholder"));
+        select->setPlaceholder(i18n::tr("settings.controls.list.add-entry-placeholder"));
         select->setFontSize(Style::fontSizeCaption * scale);
         select->setControlHeight(Style::controlHeightSm * scale);
         select->setGlyphSize(Style::fontSizeCaption * scale);
@@ -903,21 +904,21 @@ namespace settings {
         addRow->addChild(std::move(addBtn));
       } else {
         auto addInput = std::make_unique<Input>();
-        addInput->setFontSize(Style::fontSizeCaption * scale);
-        addInput->setControlHeight(Style::controlHeightSm * scale);
-        addInput->setHorizontalPadding(Style::spaceXs * scale);
-        addInput->setSize(140.0f * scale, Style::controlHeightSm * scale);
-        addInput->setFlexGrow(1.0f);
+        addInput->setPlaceholder(i18n::tr("settings.controls.list.add-entry-placeholder"));
+        addInput->setFontSize(Style::fontSizeBody * scale);
+        addInput->setControlHeight(Style::controlHeight * scale);
+        addInput->setHorizontalPadding(Style::spaceSm * scale);
+        addInput->setSize(190.0f * scale, Style::controlHeight * scale);
         auto* addInputPtr = addInput.get();
 
         auto addBtn = std::make_unique<Button>();
         addBtn->setGlyph("add");
         addBtn->setVariant(ButtonVariant::Ghost);
-        addBtn->setGlyphSize(Style::fontSizeCaption * scale);
-        addBtn->setMinWidth(Style::controlHeightSm * scale);
-        addBtn->setMinHeight(Style::controlHeightSm * scale);
-        addBtn->setPadding(Style::spaceXs * scale);
-        addBtn->setRadius(Style::radiusSm * scale);
+        addBtn->setGlyphSize(Style::fontSizeBody * scale);
+        addBtn->setMinWidth(Style::controlHeight * scale);
+        addBtn->setMinHeight(Style::controlHeight * scale);
+        addBtn->setPadding(Style::spaceSm * scale);
+        addBtn->setRadius(Style::radiusMd * scale);
         auto items = list.items;
         auto path = entry.path;
         addBtn->setOnClick([setOverride = ctx.setOverride, addInputPtr, items, path]() mutable {

@@ -26,6 +26,8 @@ enum class NotificationOrigin : uint8_t {
 
 using Clock = std::chrono::steady_clock;
 using TimePoint = Clock::time_point;
+using WallClock = std::chrono::system_clock;
+using WallTimePoint = WallClock::time_point;
 
 struct NotificationImageData {
   std::int32_t width = 0;
@@ -54,4 +56,8 @@ struct Notification {
   std::optional<std::string> desktopEntry;
   TimePoint receivedTime;              // add/replace time used for duplicate burst suppression
   std::optional<TimePoint> expiryTime; // absent = never expires
+  /// Wall-clock receive time (history UI, persistence). Optional for pre-migration / corrupt rows.
+  std::optional<WallTimePoint> receivedWallClock;
+  /// Wall-clock expiry when timeout-based; mirrors expiryTime where applicable.
+  std::optional<WallTimePoint> expiryWallClock;
 };

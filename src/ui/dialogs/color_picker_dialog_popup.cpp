@@ -98,7 +98,6 @@ bool ColorPickerDialogPopup::onPointerEvent(const PointerEvent& event) {
   }
 
   const bool captured = m_inputDispatcher.pointerCaptured();
-  wl_surface* const eventSurface = resolveEventSurface(event);
   float localX = 0.0f;
   float localY = 0.0f;
   const bool mapped = mapPointerEvent(event, localX, localY);
@@ -151,14 +150,6 @@ bool ColorPickerDialogPopup::onPointerEvent(const PointerEvent& event) {
       m_inputDispatcher.pointerMotion(localX, localY, event.serial);
     }
     m_inputDispatcher.pointerButton(localX, localY, event.button, event.state == 1);
-    if (event.state == 1 && !captured) {
-      if (m_inputDispatcher.pointerCaptured()) {
-        m_captureCoordinateSpace =
-            ownsSurface(eventSurface) ? CaptureCoordinateSpace::PopupLocal : CaptureCoordinateSpace::ParentMapped;
-      }
-    } else if (event.state != 1 && !m_inputDispatcher.pointerCaptured()) {
-      m_captureCoordinateSpace = CaptureCoordinateSpace::None;
-    }
     break;
   case PointerEvent::Type::Axis:
     if (captured) {
@@ -334,7 +325,6 @@ void ColorPickerDialogPopup::destroyPopup() {
   }
   m_pointerInside = false;
   m_parentSurface = nullptr;
-  m_captureCoordinateSpace = CaptureCoordinateSpace::None;
   m_inputDispatcher.setSceneRoot(nullptr);
   m_sheet = nullptr;
   m_bgNode = nullptr;
@@ -353,18 +343,18 @@ bool ColorPickerDialogPopup::mapPointerEvent(const PointerEvent& event, float& l
     return false;
   }
 
+  // During implicit grab, motion may be delivered with the parent surface as the event
+  // target while coordinates are still relative to that surface — not popup-local.
   if (m_inputDispatcher.pointerCaptured() && event.type != PointerEvent::Type::Leave) {
-    switch (m_captureCoordinateSpace) {
-    case CaptureCoordinateSpace::PopupLocal:
+    if (ownsSurface(eventSurface)) {
       localX = static_cast<float>(event.sx);
       localY = static_cast<float>(event.sy);
       return true;
-    case CaptureCoordinateSpace::ParentMapped:
+    }
+    if (eventSurface == m_parentSurface) {
       localX = static_cast<float>(event.sx) - static_cast<float>(m_surface->configuredX());
       localY = static_cast<float>(event.sy) - static_cast<float>(m_surface->configuredY());
       return true;
-    case CaptureCoordinateSpace::None:
-      break;
     }
   }
 

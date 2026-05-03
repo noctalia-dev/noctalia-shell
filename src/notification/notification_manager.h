@@ -86,9 +86,23 @@ public:
   void setStateCallback(StateCallback callback);
   void setSoundPlayer(class SoundPlayer* soundPlayer);
 
+  // Bar indicator: true when at least one notification was added since the user last
+  // viewed the notification history (control center notifications tab).
+  [[nodiscard]] bool hasUnreadNotificationHistory() const noexcept;
+  void markNotificationHistorySeen();
+
+  /// Loads persisted history from disk (call once at startup before emitting events).
+  void loadPersistedHistory();
+  /// Writes pending history to disk immediately (e.g. shutdown).
+  void flushPersistedHistory();
+
 private:
   void upsertHistory(const Notification& notification, bool active, std::optional<CloseReason> closeReason);
   void rebuildHistoryIndex();
+  void schedulePersistHistory();
+  void persistHistoryToDisk();
+
+  bool m_persistScheduled = false;
 
   std::deque<Notification> m_notifications;
   std::unordered_map<uint32_t, size_t> m_idToIndex;
@@ -101,5 +115,6 @@ private:
   uint32_t m_nextId{1};
   std::uint64_t m_changeSerial{0};
   bool m_doNotDisturb = false;
+  bool m_unreadSinceHistoryVisit = false;
   class SoundPlayer* m_soundPlayer = nullptr;
 };

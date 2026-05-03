@@ -1,6 +1,7 @@
 #include "shell/control_center/control_center_panel.h"
 
 #include "i18n/i18n.h"
+#include "notification/notification_manager.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "shell/panel/panel_manager.h"
@@ -22,6 +23,7 @@ ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeW
                                        noctalia::theme::ThemeService* theme, IdleInhibitor* idleInhibitor,
                                        WaylandConnection* wayland, Wallpaper* wallpaper) {
   (void)upower;
+  m_notificationManager = notifications;
   m_tabs[tabIndex(TabId::Overview)] =
       std::make_unique<OverviewTab>(mpris, weather, audio, powerProfiles, config, network, bluetooth, nightLight, theme,
                                     notifications, idleInhibitor, wayland, wallpaper);
@@ -275,6 +277,9 @@ bool ControlCenterPanel::deferPointerRelayout() const { return deferExternalRefr
 
 void ControlCenterPanel::selectTab(TabId tab) {
   m_activeTab = tab;
+  if (tab == TabId::Notifications && m_notificationManager != nullptr) {
+    m_notificationManager->markNotificationHistorySeen();
+  }
   for (const auto& meta : kTabs) {
     const std::size_t idx = tabIndex(meta.id);
     if (m_tabContainers[idx] != nullptr) {

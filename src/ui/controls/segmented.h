@@ -24,6 +24,9 @@ public:
 
   void setOnChange(std::function<void(std::size_t)> callback);
 
+  // When true, each segment gets flexGrow 1 so the group fills the available width (e.g. full bar).
+  void setEqualSegmentWidths(bool equalWidths);
+
 private:
   Button* makeSegmentButton(std::string_view label, std::string_view glyph, std::size_t index);
   void refreshVariants();
@@ -35,4 +38,5 @@ private:
   std::function<void(std::size_t)> m_onChange;
   float m_fontSize = 0.0f;
   float m_scale = 1.0f;
+  bool m_equalSegmentWidths = false;
 };
