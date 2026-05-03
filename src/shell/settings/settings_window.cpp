@@ -11,6 +11,7 @@
 #include "shell/settings/settings_entity_editor.h"
 #include "shell/settings/settings_registry.h"
 #include "shell/settings/settings_sidebar.h"
+#include "theme/community_palettes.h"
 #include "theme/community_templates.h"
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"
@@ -936,6 +937,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   }
   settings::RegistryEnvironment env;
   env.niriBackdropSupported = (m_wayland != nullptr && compositors::isNiri());
+  for (const auto& paletteInfo : noctalia::theme::availableCommunityPalettes()) {
+    env.communityPalettes.push_back(settings::SelectOption{paletteInfo.name, paletteInfo.name});
+  }
   for (const auto& t : noctalia::theme::CommunityTemplateService::availableTemplates()) {
     env.communityTemplates.push_back(settings::SelectOption{t.id, t.displayName});
   }

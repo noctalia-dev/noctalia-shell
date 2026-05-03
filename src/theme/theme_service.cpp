@@ -6,6 +6,7 @@
 #include "ipc/ipc_service.h"
 #include "net/http_client.h"
 #include "theme/builtin_palettes.h"
+#include "theme/community_palettes.h"
 #include "theme/fixed_palette.h"
 #include "theme/image_loader.h"
 #include "theme/palette_generator.h"
@@ -13,10 +14,8 @@
 
 #include <cctype>
 #include <chrono>
-#include <cstdlib>
 #include <exception>
 #include <filesystem>
-#include <format>
 #include <fstream>
 #include <json.hpp>
 #include <sstream>
@@ -83,37 +82,6 @@ namespace noctalia::theme {
           .palette = mapGeneratedPaletteMode(mode == "light" ? generated.light : generated.dark),
           .mode = mode,
       };
-    }
-
-    std::string urlEncode(std::string_view text) {
-      std::string encoded;
-      encoded.reserve(text.size() * 3);
-      auto isUnreserved = [](unsigned char ch) {
-        return std::isalnum(ch) != 0 || ch == '-' || ch == '_' || ch == '.' || ch == '~';
-      };
-      for (char rawCh : text) {
-        const auto ch = static_cast<unsigned char>(rawCh);
-        if (isUnreserved(ch)) {
-          encoded.push_back(static_cast<char>(ch));
-        } else {
-          encoded += std::format("%{:02X}", static_cast<unsigned int>(ch));
-        }
-      }
-      return encoded;
-    }
-
-    std::filesystem::path communityPaletteCacheDir() {
-      if (const char* xdg = std::getenv("XDG_CACHE_HOME"); xdg != nullptr && xdg[0] != '\0') {
-        return std::filesystem::path(xdg) / "noctalia" / "community-palettes";
-      }
-      if (const char* home = std::getenv("HOME"); home != nullptr && home[0] != '\0') {
-        return std::filesystem::path(home) / ".cache" / "noctalia" / "community-palettes";
-      }
-      return std::filesystem::path("/tmp") / "noctalia" / "community-palettes";
-    }
-
-    std::filesystem::path communityPaletteCachePath(std::string_view encodedName) {
-      return communityPaletteCacheDir() / (std::string(encodedName) + ".json");
     }
 
     // Reads a color key from a JSON object, looking first for the `m`-prefixed form
@@ -334,11 +302,10 @@ namespace noctalia::theme {
       return;
     }
     m_inflightCommunityName = name;
-    const std::string encoded = urlEncode(name);
-    const auto cachePath = communityPaletteCachePath(encoded);
+    const auto cachePath = communityPaletteCachePath(name);
     std::error_code ec;
     std::filesystem::create_directories(cachePath.parent_path(), ec);
-    const std::string url = "https://api.noctalia.dev/palette/" + encoded;
+    const std::string url = communityPaletteDownloadUrl(name);
     kLog.info("fetching community palette '{}' from {}", name, url);
     m_httpClient.download(url, cachePath, [this, name, cachePath](bool success) {
       if (m_inflightCommunityName == name) {
@@ -365,7 +332,7 @@ namespace noctalia::theme {
     if (cfg.source == ThemeSource::Wallpaper) {
       resolved = resolveWallpaper(cfg, m_config.getDefaultWallpaperPath());
     } else if (cfg.source == ThemeSource::Community && !cfg.communityPalette.empty()) {
-      const auto cachePath = communityPaletteCachePath(urlEncode(cfg.communityPalette));
+      const auto cachePath = communityPaletteCachePath(cfg.communityPalette);
       if (std::filesystem::exists(cachePath)) {
         if (auto parsed = parseCommunityPaletteJson(cachePath)) {
           resolved = makeResolvedFromParsed(*parsed, cfg);

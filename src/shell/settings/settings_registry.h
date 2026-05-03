@@ -97,6 +97,7 @@ namespace settings {
   struct RegistryEnvironment {
     bool niriBackdropSupported = false;         // hide the [backdrop] section when false
     std::vector<SelectOption> availableOutputs; // monitor selectors available on this machine
+    std::vector<SelectOption> communityPalettes;
     std::vector<SelectOption> communityTemplates;
   };
 

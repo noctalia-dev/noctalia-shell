@@ -310,6 +310,9 @@ void Application::initServices() {
   m_configService.addReloadCallback(applyPasswordMaskStyle);
   m_configService.addReloadCallback(
       [this]() { m_httpClient.setOfflineMode(m_configService.config().shell.offlineMode); });
+  m_communityPaletteService.setReadyCallback([this]() { m_settingsWindow.onExternalOptionsChanged(); });
+  m_communityPaletteService.sync();
+  m_configService.addReloadCallback([this]() { m_communityPaletteService.sync(); });
   m_communityTemplateService.setReadyCallback([this]() {
     if (m_configService.config().theme.templates.enableCommunityTemplates) {
       m_themeService.onConfigReload();
