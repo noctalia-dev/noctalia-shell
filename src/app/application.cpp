@@ -161,8 +161,8 @@ Application::~Application() {
 
 void Application::syncNotificationDaemon() {
   if (m_bus == nullptr) {
-    m_notificationDbus.reset();
     m_notificationPollSource.setDbusService(nullptr);
+    m_notificationDbus.reset();
     return;
   }
 
@@ -170,8 +170,8 @@ void Application::syncNotificationDaemon() {
     if (m_notificationDbus != nullptr) {
       kLog.info("notification daemon disabled by config");
     }
-    m_notificationDbus.reset();
     m_notificationPollSource.setDbusService(nullptr);
+    m_notificationDbus.reset();
     return;
   }
 

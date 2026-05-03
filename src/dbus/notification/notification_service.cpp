@@ -17,51 +17,102 @@ namespace {
 static const sdbus::ServiceName k_bus_name{"org.freedesktop.Notifications"};
 static const sdbus::ObjectPath k_object_path{"/org/freedesktop/Notifications"};
 static constexpr auto k_interface = "org.freedesktop.Notifications";
+static constexpr auto k_already_owner_error = "System.Error.EALREADY";
 
-NotificationService::NotificationService(SessionBus& bus, NotificationManager& manager) : m_manager(manager) {
-  m_manager.setActionInvokeCallback(
-      [this](uint32_t id, const std::string& actionKey) { emitActionInvoked(id, actionKey); });
+namespace {
+  void requestNotificationBusName(sdbus::IConnection& connection) {
+    try {
+      connection.requestName(k_bus_name);
+    } catch (const sdbus::Error& e) {
+      if (e.getName() == k_already_owner_error) {
+        kLog.debug("notification daemon bus name already owned by this connection; reusing");
+        return;
+      }
+      throw;
+    }
+  }
+} // namespace
 
-  bus.connection().requestName(k_bus_name);
-  m_object = sdbus::createObject(bus.connection(), k_object_path);
+NotificationService::NotificationService(SessionBus& bus, NotificationManager& manager)
+    : m_bus(bus), m_manager(manager) {
+  try {
+    m_object = sdbus::createObject(m_bus.connection(), k_object_path);
 
-  m_object
-      ->addVTable(
-          sdbus::registerMethod("Notify")
-              .withInputParamNames("app_name", "replaces_id", "app_icon", "summary", "body", "actions", "hints",
-                                   "expire_timeout")
-              .withOutputParamNames("id")
-              .implementedAs([this](const std::string& app_name, uint32_t replaces_id, const std::string& app_icon,
-                                    const std::string& summary, const std::string& body,
-                                    const std::vector<std::string>& actions,
-                                    const std::map<std::string, sdbus::Variant>& hints, int32_t expire_timeout) {
-                return onNotify(app_name, replaces_id, app_icon, summary, body, actions, hints, expire_timeout);
-              }),
+    m_object
+        ->addVTable(
+            sdbus::registerMethod("Notify")
+                .withInputParamNames("app_name", "replaces_id", "app_icon", "summary", "body", "actions", "hints",
+                                     "expire_timeout")
+                .withOutputParamNames("id")
+                .implementedAs([this](const std::string& app_name, uint32_t replaces_id, const std::string& app_icon,
+                                      const std::string& summary, const std::string& body,
+                                      const std::vector<std::string>& actions,
+                                      const std::map<std::string, sdbus::Variant>& hints, int32_t expire_timeout) {
+                  return onNotify(app_name, replaces_id, app_icon, summary, body, actions, hints, expire_timeout);
+                }),
 
-          sdbus::registerMethod("GetCapabilities").withOutputParamNames("capabilities").implementedAs([this]() {
-            return onGetCapabilities();
-          }),
+            sdbus::registerMethod("GetCapabilities").withOutputParamNames("capabilities").implementedAs([this]() {
+              return onGetCapabilities();
+            }),
 
-          sdbus::registerMethod("GetNotifications").withOutputParamNames("notifications").implementedAs([this]() {
-            return onGetNotifications();
-          }),
+            sdbus::registerMethod("GetNotifications").withOutputParamNames("notifications").implementedAs([this]() {
+              return onGetNotifications();
+            }),
 
-          sdbus::registerMethod("GetServerInformation")
-              .withOutputParamNames("name", "vendor", "version", "spec_version")
-              .implementedAs([this]() { return onGetServerInformation(); }),
+            sdbus::registerMethod("GetServerInformation")
+                .withOutputParamNames("name", "vendor", "version", "spec_version")
+                .implementedAs([this]() { return onGetServerInformation(); }),
 
-          sdbus::registerMethod("CloseNotification").withInputParamNames("id").implementedAs([this](uint32_t id) {
-            onCloseNotification(id);
-          }),
+            sdbus::registerMethod("CloseNotification").withInputParamNames("id").implementedAs([this](uint32_t id) {
+              onCloseNotification(id);
+            }),
 
-          sdbus::registerMethod("InvokeAction")
-              .withInputParamNames("id", "action_key")
-              .implementedAs([this](uint32_t id, const std::string& actionKey) { onInvokeAction(id, actionKey); }),
+            sdbus::registerMethod("InvokeAction")
+                .withInputParamNames("id", "action_key")
+                .implementedAs([this](uint32_t id, const std::string& actionKey) { onInvokeAction(id, actionKey); }),
 
-          sdbus::registerSignal("NotificationClosed").withParameters<uint32_t, uint32_t>("id", "reason"),
+            sdbus::registerSignal("NotificationClosed").withParameters<uint32_t, uint32_t>("id", "reason"),
 
-          sdbus::registerSignal("ActionInvoked").withParameters<uint32_t, std::string>("id", "action_key"))
-      .forInterface(k_interface);
+            sdbus::registerSignal("ActionInvoked").withParameters<uint32_t, std::string>("id", "action_key"))
+        .forInterface(k_interface);
+
+    requestNotificationBusName(m_bus.connection());
+    m_nameAcquired = true;
+    m_manager.setActionInvokeCallback(
+        [this](uint32_t id, const std::string& actionKey) { emitActionInvoked(id, actionKey); });
+  } catch (...) {
+    m_manager.setActionInvokeCallback(nullptr);
+    if (m_nameAcquired) {
+      try {
+        m_bus.connection().releaseName(k_bus_name);
+      } catch (const sdbus::Error& e) {
+        kLog.debug("notification daemon release after init failure failed: {}", e.what());
+      }
+      m_nameAcquired = false;
+    }
+    throw;
+  }
+}
+
+NotificationService::~NotificationService() {
+  m_manager.setActionInvokeCallback(nullptr);
+
+  if (m_nameAcquired) {
+    try {
+      m_bus.connection().releaseName(k_bus_name);
+    } catch (const sdbus::Error& e) {
+      kLog.debug("notification daemon bus name release failed: {}", e.what());
+    }
+    m_nameAcquired = false;
+  }
+
+  if (m_object != nullptr) {
+    try {
+      m_object->unregister();
+    } catch (const sdbus::Error& e) {
+      kLog.debug("notification daemon object unregister failed: {}", e.what());
+    }
+  }
 }
 
 void NotificationService::processExpired() {

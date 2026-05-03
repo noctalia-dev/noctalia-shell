@@ -14,13 +14,16 @@ class SessionBus;
 class NotificationService {
 public:
   NotificationService(SessionBus& bus, NotificationManager& manager);
+  ~NotificationService();
 
   // Close expired notifications and emit D-Bus signals for them.
   void processExpired();
 
 private:
+  SessionBus& m_bus;
   NotificationManager& m_manager;
   std::unique_ptr<sdbus::IObject> m_object;
+  bool m_nameAcquired = false;
 
   // D-Bus method handlers
   uint32_t onNotify(const std::string& app_name, uint32_t replaces_id, const std::string& app_icon,
