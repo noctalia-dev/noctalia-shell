@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cmath>
 #include <format>
+#include <limits>
 #include <utility>
 #include <wayland-client.h>
 
@@ -467,6 +468,55 @@ std::vector<InputRect> Surface::tessellateShape(int x, int y, int w, int h, cons
   // Per-row [left, right] of the shape, mirroring the rect shader's evaluation
   // and clipped to the visual rect.
   const auto rowBounds = [&](float yf) -> std::pair<float, float> {
+    // Rows in the top/bottom inset strips (yf outside the body's vertical span)
+    // are only inside the shape where a concave corner bulge crosses the row.
+    // The straight body edges don't reach into these strips, and the shader's
+    // per-fragment top/bottom checks (corner block 2) clip them away. Mirror
+    // that clipping here so the blur region matches the visible shape — without
+    // this, vertical bars (insetT/insetB > 0) leak blur above and below the body.
+    if (yf < bodyMinY) {
+      const float dy = bodyMinY - yf;
+      float bulgeLeft = std::numeric_limits<float>::infinity();
+      float bulgeRight = -std::numeric_limits<float>::infinity();
+      if (corners.tl == CornerShape::Concave && rTl > 0.0f && dy <= rTl) {
+        const float chord = std::sqrt(std::max(0.0f, dy * (2.0f * rTl - dy)));
+        bulgeLeft = std::min(bulgeLeft, bodyMinX);
+        bulgeRight = std::max(bulgeRight, bodyMinX + rTl - chord);
+      }
+      if (corners.tr == CornerShape::Concave && rTr > 0.0f && dy <= rTr) {
+        const float chord = std::sqrt(std::max(0.0f, dy * (2.0f * rTr - dy)));
+        bulgeLeft = std::min(bulgeLeft, bodyMaxX - rTr + chord);
+        bulgeRight = std::max(bulgeRight, bodyMaxX);
+      }
+      if (bulgeLeft > bulgeRight) {
+        return {0.0f, 0.0f};
+      }
+      const float left = std::clamp(bulgeLeft, 0.0f, W);
+      const float right = std::clamp(bulgeRight, left, W);
+      return {left, right};
+    }
+    if (yf > bodyMaxY) {
+      const float dy = yf - bodyMaxY;
+      float bulgeLeft = std::numeric_limits<float>::infinity();
+      float bulgeRight = -std::numeric_limits<float>::infinity();
+      if (corners.bl == CornerShape::Concave && rBl > 0.0f && dy <= rBl) {
+        const float chord = std::sqrt(std::max(0.0f, dy * (2.0f * rBl - dy)));
+        bulgeLeft = std::min(bulgeLeft, bodyMinX);
+        bulgeRight = std::max(bulgeRight, bodyMinX + rBl - chord);
+      }
+      if (corners.br == CornerShape::Concave && rBr > 0.0f && dy <= rBr) {
+        const float chord = std::sqrt(std::max(0.0f, dy * (2.0f * rBr - dy)));
+        bulgeLeft = std::min(bulgeLeft, bodyMaxX - rBr + chord);
+        bulgeRight = std::max(bulgeRight, bodyMaxX);
+      }
+      if (bulgeLeft > bulgeRight) {
+        return {0.0f, 0.0f};
+      }
+      const float left = std::clamp(bulgeLeft, 0.0f, W);
+      const float right = std::clamp(bulgeRight, left, W);
+      return {left, right};
+    }
+
     float left = bodyMinX;
     float right = bodyMaxX;
     if (rTl > 0.0f && yf < bodyMinY + rTl) {
