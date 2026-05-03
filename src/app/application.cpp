@@ -527,13 +527,14 @@ void Application::initServices() {
     try {
       m_networkService = std::make_unique<NetworkService>(*m_systemBus);
       m_prevWirelessEnabledForEvents = m_networkService->state().wirelessEnabled;
-      m_networkService->setChangeCallback([this, shouldRefreshControlCenter](const NetworkState& state) {
-        onNetworkStateChangedForEvents(state);
-        m_bar.refresh();
-        if (shouldRefreshControlCenter()) {
-          m_panelManager.refresh();
-        }
-      });
+      m_networkService->setChangeCallback(
+          [this, shouldRefreshControlCenter](const NetworkState& state, NetworkChangeOrigin origin) {
+            onNetworkStateChangedForEvents(state, origin);
+            m_bar.refresh();
+            if (shouldRefreshControlCenter()) {
+              m_panelManager.refresh();
+            }
+          });
       kLog.info("network service active");
     } catch (const std::exception& e) {
       kLog.warn("network service disabled: {}", e.what());
@@ -558,10 +559,11 @@ void Application::initServices() {
           m_panelManager.refresh();
         }
       };
-      m_bluetoothService->setStateCallback([this, refreshBluetoothUi](const BluetoothState& state) {
-        onBluetoothStateChangedForEvents(state);
-        refreshBluetoothUi();
-      });
+      m_bluetoothService->setStateCallback(
+          [this, refreshBluetoothUi](const BluetoothState& state, BluetoothStateChangeOrigin origin) {
+            onBluetoothStateChangedForEvents(state, origin);
+            refreshBluetoothUi();
+          });
       m_bluetoothService->setDevicesCallback(
           [refreshBluetoothUi](const std::vector<BluetoothDeviceInfo>& /*devices*/) { refreshBluetoothUi(); });
       kLog.info("bluetooth service active");
@@ -1172,40 +1174,50 @@ void Application::onUpowerStateChangedForHooks() {
   m_prevUpowerForHooks = next;
 }
 
-void Application::onNetworkStateChangedForEvents(const NetworkState& state) {
+void Application::onNetworkStateChangedForEvents(const NetworkState& state, NetworkChangeOrigin origin) {
   if (!m_prevWirelessEnabledForEvents.has_value()) {
     m_prevWirelessEnabledForEvents = state.wirelessEnabled;
     return;
   }
   const bool prev = *m_prevWirelessEnabledForEvents;
   if (prev != state.wirelessEnabled) {
+    if (origin != NetworkChangeOrigin::Noctalia) {
+      if (state.wirelessEnabled) {
+        m_notificationManager.addInternal(i18n::tr("notifications.internal.network"),
+                                          i18n::tr("notifications.internal.wifi-enabled"), "");
+      } else {
+        m_notificationManager.addInternal(i18n::tr("notifications.internal.network"),
+                                          i18n::tr("notifications.internal.wifi-disabled"), "");
+      }
+    }
     if (state.wirelessEnabled) {
-      m_notificationManager.addInternal(i18n::tr("notifications.internal.network"),
-                                        i18n::tr("notifications.internal.wifi-enabled"), "");
       m_hookManager.fire(HookKind::WifiEnabled);
     } else {
-      m_notificationManager.addInternal(i18n::tr("notifications.internal.network"),
-                                        i18n::tr("notifications.internal.wifi-disabled"), "");
       m_hookManager.fire(HookKind::WifiDisabled);
     }
   }
   m_prevWirelessEnabledForEvents = state.wirelessEnabled;
 }
 
-void Application::onBluetoothStateChangedForEvents(const BluetoothState& state) {
+void Application::onBluetoothStateChangedForEvents(const BluetoothState& state, BluetoothStateChangeOrigin origin) {
   if (!m_prevBluetoothPoweredForEvents.has_value()) {
     m_prevBluetoothPoweredForEvents = state.powered;
     return;
   }
   const bool prev = *m_prevBluetoothPoweredForEvents;
   if (prev != state.powered) {
+    if (origin != BluetoothStateChangeOrigin::Noctalia) {
+      if (state.powered) {
+        m_notificationManager.addInternal(i18n::tr("notifications.internal.bluetooth"),
+                                          i18n::tr("notifications.internal.bluetooth-enabled"), "");
+      } else {
+        m_notificationManager.addInternal(i18n::tr("notifications.internal.bluetooth"),
+                                          i18n::tr("notifications.internal.bluetooth-disabled"), "");
+      }
+    }
     if (state.powered) {
-      m_notificationManager.addInternal(i18n::tr("notifications.internal.bluetooth"),
-                                        i18n::tr("notifications.internal.bluetooth-enabled"), "");
       m_hookManager.fire(HookKind::BluetoothEnabled);
     } else {
-      m_notificationManager.addInternal(i18n::tr("notifications.internal.bluetooth"),
-                                        i18n::tr("notifications.internal.bluetooth-disabled"), "");
       m_hookManager.fire(HookKind::BluetoothDisabled);
     }
   }

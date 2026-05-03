@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -44,9 +45,14 @@ struct NetworkState {
   bool operator==(const NetworkState&) const = default;
 };
 
+enum class NetworkChangeOrigin : std::uint8_t {
+  External,
+  Noctalia,
+};
+
 class NetworkService {
 public:
-  using ChangeCallback = std::function<void(const NetworkState&)>;
+  using ChangeCallback = std::function<void(const NetworkState&, NetworkChangeOrigin)>;
 
   explicit NetworkService(SystemBus& bus);
   ~NetworkService();
@@ -93,6 +99,7 @@ private:
   void rebindActiveAccessPoint(const std::string& apPath);
   void ensureWifiDeviceSubscribed(const std::string& devicePath);
   [[nodiscard]] NetworkState readState();
+  [[nodiscard]] NetworkChangeOrigin consumeWirelessEnabledChangeOrigin(bool enabled);
   void emitChangedIfNeeded(NetworkState next);
 
   SystemBus& m_bus;
@@ -109,5 +116,6 @@ private:
   std::vector<std::string> m_savedSsids;
   bool m_scanning = false;
   std::int64_t m_scanBaselineLastScan = 0;
+  std::optional<bool> m_pendingLocalWirelessEnabled;
   ChangeCallback m_changeCallback;
 };

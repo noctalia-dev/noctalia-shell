@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -57,9 +58,14 @@ struct BluetoothState {
   bool operator==(const BluetoothState&) const = default;
 };
 
+enum class BluetoothStateChangeOrigin : std::uint8_t {
+  External,
+  Noctalia,
+};
+
 class BluetoothService {
 public:
-  using StateCallback = std::function<void(const BluetoothState&)>;
+  using StateCallback = std::function<void(const BluetoothState&, BluetoothStateChangeOrigin)>;
   using DevicesCallback = std::function<void(const std::vector<BluetoothDeviceInfo>&)>;
 
   explicit BluetoothService(SystemBus& bus);
@@ -93,13 +99,15 @@ private:
   friend struct Impl;
 
   BluetoothDeviceInfo* findDevice(const std::string& path);
-  void emitState();
+  [[nodiscard]] BluetoothStateChangeOrigin consumePoweredChangeOrigin(bool powered);
+  void emitState(BluetoothStateChangeOrigin origin = BluetoothStateChangeOrigin::External);
   void emitDevices();
 
   std::unique_ptr<Impl> m_impl;
 
   BluetoothState m_state;
   std::vector<BluetoothDeviceInfo> m_devices;
+  std::optional<bool> m_pendingLocalPowered;
   StateCallback m_stateCallback;
   DevicesCallback m_devicesCallback;
 };

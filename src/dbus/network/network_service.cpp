@@ -204,9 +204,12 @@ void NetworkService::refresh() {
   const bool apsChanged = previousAps != m_accessPoints;
   const bool savedChanged = previousSaved != m_savedSsids;
   const bool stateChanged = next != m_state;
+  const bool wirelessEnabledChanged = next.wirelessEnabled != m_state.wirelessEnabled;
+  const NetworkChangeOrigin origin =
+      wirelessEnabledChanged ? consumeWirelessEnabledChangeOrigin(next.wirelessEnabled) : NetworkChangeOrigin::External;
   m_state = std::move(next);
   if ((stateChanged || apsChanged || savedChanged) && m_changeCallback) {
-    m_changeCallback(m_state);
+    m_changeCallback(m_state, origin);
   }
 }
 
@@ -299,9 +302,15 @@ bool NetworkService::activateAccessPoint(const AccessPointInfo& ap) {
 }
 
 void NetworkService::setWirelessEnabled(bool enabled) {
+  if (enabled != m_state.wirelessEnabled) {
+    m_pendingLocalWirelessEnabled = enabled;
+  }
   try {
     m_nm->setProperty("WirelessEnabled").onInterface(k_nmInterface).toValue(enabled);
   } catch (const sdbus::Error& e) {
+    if (m_pendingLocalWirelessEnabled == enabled) {
+      m_pendingLocalWirelessEnabled.reset();
+    }
     kLog.warn("WirelessEnabled write failed: {}", e.what());
   }
 }
@@ -727,12 +736,24 @@ NetworkState NetworkService::readState() {
   return next;
 }
 
+NetworkChangeOrigin NetworkService::consumeWirelessEnabledChangeOrigin(bool enabled) {
+  if (!m_pendingLocalWirelessEnabled.has_value()) {
+    return NetworkChangeOrigin::External;
+  }
+  const bool matchesLocalRequest = *m_pendingLocalWirelessEnabled == enabled;
+  m_pendingLocalWirelessEnabled.reset();
+  return matchesLocalRequest ? NetworkChangeOrigin::Noctalia : NetworkChangeOrigin::External;
+}
+
 void NetworkService::emitChangedIfNeeded(NetworkState next) {
   if (next == m_state) {
     return;
   }
+  const bool wirelessEnabledChanged = next.wirelessEnabled != m_state.wirelessEnabled;
+  const NetworkChangeOrigin origin =
+      wirelessEnabledChanged ? consumeWirelessEnabledChangeOrigin(next.wirelessEnabled) : NetworkChangeOrigin::External;
   m_state = std::move(next);
   if (m_changeCallback) {
-    m_changeCallback(m_state);
+    m_changeCallback(m_state, origin);
   }
 }

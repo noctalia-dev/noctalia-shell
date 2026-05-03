@@ -109,8 +109,8 @@ private:
   bool runIdleCommand(const std::string& command);
   void onIconThemeChanged();
   void onUpowerStateChangedForHooks();
-  void onNetworkStateChangedForEvents(const NetworkState& state);
-  void onBluetoothStateChangedForEvents(const BluetoothState& state);
+  void onNetworkStateChangedForEvents(const NetworkState& state, NetworkChangeOrigin origin);
+  void onBluetoothStateChangedForEvents(const BluetoothState& state, BluetoothStateChangeOrigin origin);
   [[nodiscard]] std::vector<PollSource*> currentPollSources();
   [[nodiscard]] std::vector<PollSource*> buildPollSources();
 

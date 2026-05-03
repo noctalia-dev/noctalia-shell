@@ -326,12 +326,15 @@ struct BluetoothService::Impl {
       BluetoothState next = self.m_state;
       readAdapterProps(changed, next);
       next.adapterPresent = true;
-      if (next.powered != self.m_state.powered) {
+      const bool poweredChanged = next.powered != self.m_state.powered;
+      BluetoothStateChangeOrigin origin = BluetoothStateChangeOrigin::External;
+      if (poweredChanged) {
         kLog.debug("adapter Powered -> {}", next.powered);
+        origin = self.consumePoweredChangeOrigin(next.powered);
       }
       if (next != self.m_state) {
         self.m_state = std::move(next);
-        self.emitState();
+        self.emitState(origin);
       }
       return;
     }
@@ -442,12 +445,16 @@ void BluetoothService::refresh() {
   try {
     ManagedObjects objects;
     m_impl->root->callMethod("GetManagedObjects").onInterface(k_objectManagerInterface).storeResultsTo(objects);
+    const BluetoothState previous = m_state;
     m_devices.clear();
     m_state = BluetoothState{};
     m_impl->adapterPath.clear();
     m_impl->adapter.reset();
     m_impl->seedFromManagedObjects(objects);
-    emitState();
+    const BluetoothStateChangeOrigin origin = previous.powered != m_state.powered
+                                                  ? consumePoweredChangeOrigin(m_state.powered)
+                                                  : BluetoothStateChangeOrigin::External;
+    emitState(origin);
     emitDevices();
   } catch (const sdbus::Error& e) {
     kLog.debug("GetManagedObjects failed: {}", e.what());
@@ -458,6 +465,9 @@ void BluetoothService::setPowered(bool enabled) {
   if (m_impl->adapter == nullptr) {
     return;
   }
+  if (enabled != m_state.powered) {
+    m_pendingLocalPowered = enabled;
+  }
   try {
     if (!enabled && m_state.discovering) {
       try {
@@ -467,6 +477,9 @@ void BluetoothService::setPowered(bool enabled) {
     }
     m_impl->adapter->setProperty("Powered").onInterface(k_adapterInterface).toValue(enabled);
   } catch (const sdbus::Error& e) {
+    if (m_pendingLocalPowered == enabled) {
+      m_pendingLocalPowered.reset();
+    }
     kLog.warn("setPowered failed: {}", e.what());
   }
 }
@@ -618,9 +631,18 @@ BluetoothDeviceInfo* BluetoothService::findDevice(const std::string& path) {
   return it == m_devices.end() ? nullptr : &*it;
 }
 
-void BluetoothService::emitState() {
+BluetoothStateChangeOrigin BluetoothService::consumePoweredChangeOrigin(bool powered) {
+  if (!m_pendingLocalPowered.has_value()) {
+    return BluetoothStateChangeOrigin::External;
+  }
+  const bool matchesLocalRequest = *m_pendingLocalPowered == powered;
+  m_pendingLocalPowered.reset();
+  return matchesLocalRequest ? BluetoothStateChangeOrigin::Noctalia : BluetoothStateChangeOrigin::External;
+}
+
+void BluetoothService::emitState(BluetoothStateChangeOrigin origin) {
   if (m_stateCallback) {
-    m_stateCallback(m_state);
+    m_stateCallback(m_state, origin);
   }
 }
 
