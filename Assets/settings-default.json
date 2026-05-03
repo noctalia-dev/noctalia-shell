@@ -17,6 +17,7 @@
     "useSeparateOpacity": false,
     "marginVertical": 4,
     "marginHorizontal": 4,
+    "floatingOuterEdgeRounding": false,
     "frameThickness": 8,
     "frameRadius": 12,
     "outerCorners": true,

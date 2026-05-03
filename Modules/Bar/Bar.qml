@@ -68,6 +68,11 @@ Item {
   readonly property string barPosition: Settings.getBarPositionForScreen(screen?.name)
   readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
   readonly property bool barFloating: Settings.data.bar.barType === "floating"
+  readonly property bool floatingOuterEdgeRounding: barFloating && (Settings.data.bar.floatingOuterEdgeRounding ?? false)
+  readonly property real barFloatMarginH: barFloating ? (Settings.data.bar.marginHorizontal ?? 0) : 0
+  readonly property real barFloatMarginV: barFloating ? (Settings.data.bar.marginVertical ?? 0) : 0
+  readonly property real floatingOuterRoundingThreshold: Style.radiusL + Style.screenRadius
+  readonly property bool floatingOuterRoundingAllowed: barIsVertical ? (barFloatMarginV >= floatingOuterRoundingThreshold) : (barFloatMarginH >= floatingOuterRoundingThreshold)
 
   // Bar density (per-screen)
   readonly property string barDensity: Settings.getBarDensityForScreen(screen?.name)
@@ -224,9 +229,14 @@ Item {
         // State 1: Horizontal inversion (outer curve on X-axis)
         // State 2: Vertical inversion (outer curve on Y-axis)
         readonly property int topLeftCornerState: {
-          // Floating bar: always simple rounded corners
-          if (barFloating)
+          // Floating bar: flatten corners only on side touching screen edge
+          if (barFloating) {
+            if (barPosition === "top" && root.barFloatMarginV <= 0)
+              return (root.floatingOuterEdgeRounding && root.floatingOuterRoundingAllowed) ? 1 : -1;
+            if (barPosition === "left" && root.barFloatMarginH <= 0)
+              return (root.floatingOuterEdgeRounding && root.floatingOuterRoundingAllowed) ? 2 : -1;
             return 0;
+          }
           // Top bar: top corners against screen edge = no radius
           if (barPosition === "top")
             return -1;
@@ -242,9 +252,14 @@ Item {
         }
 
         readonly property int topRightCornerState: {
-          // Floating bar: always simple rounded corners
-          if (barFloating)
+          // Floating bar: flatten corners only on side touching screen edge
+          if (barFloating) {
+            if (barPosition === "top" && root.barFloatMarginV <= 0)
+              return (root.floatingOuterEdgeRounding && root.floatingOuterRoundingAllowed) ? 1 : -1;
+            if (barPosition === "right" && root.barFloatMarginH <= 0)
+              return (root.floatingOuterEdgeRounding && root.floatingOuterRoundingAllowed) ? 2 : -1;
             return 0;
+          }
           // Top bar: top corners against screen edge = no radius
           if (barPosition === "top")
             return -1;
@@ -260,9 +275,14 @@ Item {
         }
 
         readonly property int bottomLeftCornerState: {
-          // Floating bar: always simple rounded corners
-          if (barFloating)
+          // Floating bar: flatten corners only on side touching screen edge
+          if (barFloating) {
+            if (barPosition === "bottom" && root.barFloatMarginV <= 0)
+              return (root.floatingOuterEdgeRounding && root.floatingOuterRoundingAllowed) ? 1 : -1;
+            if (barPosition === "left" && root.barFloatMarginH <= 0)
+              return (root.floatingOuterEdgeRounding && root.floatingOuterRoundingAllowed) ? 2 : -1;
             return 0;
+          }
           // Bottom bar: bottom corners against screen edge = no radius
           if (barPosition === "bottom")
             return -1;
@@ -278,9 +298,14 @@ Item {
         }
 
         readonly property int bottomRightCornerState: {
-          // Floating bar: always simple rounded corners
-          if (barFloating)
+          // Floating bar: flatten corners only on side touching screen edge
+          if (barFloating) {
+            if (barPosition === "bottom" && root.barFloatMarginV <= 0)
+              return (root.floatingOuterEdgeRounding && root.floatingOuterRoundingAllowed) ? 1 : -1;
+            if (barPosition === "right" && root.barFloatMarginH <= 0)
+              return (root.floatingOuterEdgeRounding && root.floatingOuterRoundingAllowed) ? 2 : -1;
             return 0;
+          }
           // Bottom bar: bottom corners against screen edge = no radius
           if (barPosition === "bottom")
             return -1;

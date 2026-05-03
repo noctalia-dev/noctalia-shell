@@ -222,6 +222,7 @@ Singleton {
       // Floating bar settings
       property int marginVertical: 4
       property int marginHorizontal: 4
+      property bool floatingOuterEdgeRounding: false
 
       // Framed bar settings
       property int frameThickness: 8

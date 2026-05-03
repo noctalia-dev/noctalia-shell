@@ -440,8 +440,13 @@ PanelWindow {
       readonly property bool isFramed: Settings.data.bar.barType === "framed"
       readonly property real frameThickness: Settings.data.bar.frameThickness ?? 12
       readonly property bool barFloating: Settings.data.bar.barType === "floating"
+      readonly property bool floatingOuterEdgeRounding: barFloating && (Settings.data.bar.floatingOuterEdgeRounding ?? false)
       readonly property real barMarginH: barFloating ? Math.floor(Settings.data.bar.marginHorizontal) : 0
       readonly property real barMarginV: barFloating ? Math.floor(Settings.data.bar.marginVertical) : 0
+      readonly property real barFloatMarginH: barFloating ? (Settings.data.bar.marginHorizontal ?? 0) : 0
+      readonly property real barFloatMarginV: barFloating ? (Settings.data.bar.marginVertical ?? 0) : 0
+      readonly property real floatingOuterRoundingThreshold: Style.radiusL + Style.screenRadius
+      readonly property bool floatingOuterRoundingAllowed: barIsVertical ? (barFloatMarginV >= floatingOuterRoundingThreshold) : (barFloatMarginH >= floatingOuterRoundingThreshold)
       readonly property real barHeight: Style.getBarHeightForScreen(screen?.name)
 
       // Auto-hide properties (read by AllBackgrounds for background fade)
@@ -492,8 +497,13 @@ PanelWindow {
 
       // Corner states (same as Bar.qml)
       readonly property int topLeftCornerState: {
-        if (barFloating)
+        if (barFloating) {
+          if (barPosition === "top" && barFloatMarginV <= 0)
+            return (floatingOuterEdgeRounding && floatingOuterRoundingAllowed) ? 1 : -1;
+          if (barPosition === "left" && barFloatMarginH <= 0)
+            return (floatingOuterEdgeRounding && floatingOuterRoundingAllowed) ? 2 : -1;
           return 0;
+        }
         if (barPosition === "top")
           return -1;
         if (barPosition === "left")
@@ -505,8 +515,13 @@ PanelWindow {
       }
 
       readonly property int topRightCornerState: {
-        if (barFloating)
+        if (barFloating) {
+          if (barPosition === "top" && barFloatMarginV <= 0)
+            return (floatingOuterEdgeRounding && floatingOuterRoundingAllowed) ? 1 : -1;
+          if (barPosition === "right" && barFloatMarginH <= 0)
+            return (floatingOuterEdgeRounding && floatingOuterRoundingAllowed) ? 2 : -1;
           return 0;
+        }
         if (barPosition === "top")
           return -1;
         if (barPosition === "right")
@@ -518,8 +533,13 @@ PanelWindow {
       }
 
       readonly property int bottomLeftCornerState: {
-        if (barFloating)
+        if (barFloating) {
+          if (barPosition === "bottom" && barFloatMarginV <= 0)
+            return (floatingOuterEdgeRounding && floatingOuterRoundingAllowed) ? 1 : -1;
+          if (barPosition === "left" && barFloatMarginH <= 0)
+            return (floatingOuterEdgeRounding && floatingOuterRoundingAllowed) ? 2 : -1;
           return 0;
+        }
         if (barPosition === "bottom")
           return -1;
         if (barPosition === "left")
@@ -531,8 +551,13 @@ PanelWindow {
       }
 
       readonly property int bottomRightCornerState: {
-        if (barFloating)
+        if (barFloating) {
+          if (barPosition === "bottom" && barFloatMarginV <= 0)
+            return (floatingOuterEdgeRounding && floatingOuterRoundingAllowed) ? 1 : -1;
+          if (barPosition === "right" && barFloatMarginH <= 0)
+            return (floatingOuterEdgeRounding && floatingOuterRoundingAllowed) ? 2 : -1;
           return 0;
+        }
         if (barPosition === "bottom")
           return -1;
         if (barPosition === "right")
