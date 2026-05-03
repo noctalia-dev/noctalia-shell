@@ -1,5 +1,6 @@
 {
   quickshell,
+  callPackage,
   nixfmt,
   statix,
   deadnix,
@@ -10,6 +11,9 @@
   kdePackages,
   mkShellNoCC,
 }:
+let
+  runtimeDeps = callPackage ./runtime-deps.nix { };
+in
 mkShellNoCC {
   #it's faster than mkDerivation / mkShell
   packages = [
@@ -30,5 +34,5 @@ mkShellNoCC {
     # CoC
     lefthook # githooks
     kdePackages.qtdeclarative # qmlfmt, qmllint, qmlls and etc; Qt6
-  ];
+  ] ++ runtimeDeps;
 }
