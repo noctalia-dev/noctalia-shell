@@ -561,7 +561,7 @@
         "unknown-value": "Unknown: {value}"
       },
       "list": {
-        "add-placeholder": "Pick…"
+        "add-entry-placeholder": "Add entry…"
       }
     },
     "dialogs": {
@@ -711,6 +711,7 @@
         "interface": "Interface",
         "layout": "Layout",
         "location": "Location",
+        "media": "Media",
         "motion": "Motion",
         "network": "Network",
         "night-light": "Night Light",
@@ -1150,7 +1151,8 @@
       "shell": {
         "avatar-path": {
           "label": "Avatar Path",
-          "description": "Path to a custom avatar image"
+          "description": "Path to a custom avatar image",
+          "placeholder": "/path/to/avatar.png"
         },
         "offline-mode": {
           "label": "Offline Mode",
@@ -1304,11 +1306,13 @@
         },
         "directory-light": {
           "label": "Light Mode Directory",
-          "description": "Wallpaper folder used in Light theme mode"
+          "description": "Wallpaper folder used in Light theme mode",
+          "placeholder": "~/Pictures/Wallpapers"
         },
         "directory-dark": {
           "label": "Dark Mode Directory",
-          "description": "Wallpaper folder used in Dark theme mode"
+          "description": "Wallpaper folder used in Dark theme mode",
+          "placeholder": "~/Pictures/Wallpapers"
         },
         "transitions": {
           "label": "Transition Effects",
@@ -1386,11 +1390,17 @@
         },
         "volume-change-sound": {
           "label": "Volume Change Sound",
-          "description": "Sound file used for volume feedback"
+          "description": "Sound file used for volume feedback",
+          "placeholder": "/path/to/sound.ogg"
         },
         "notification-sound": {
           "label": "Notification Sound",
-          "description": "Sound file used for notification feedback"
+          "description": "Sound file used for notification feedback",
+          "placeholder": "/path/to/sound.ogg"
+        },
+        "mpris-blacklist": {
+          "label": "MPRIS player blacklist",
+          "description": "Players to ignore for media controls and Now Playing."
         },
         "ddcutil": {
           "label": "DDC/CI (ddcutil)",

@@ -331,14 +331,16 @@ namespace settings {
     entries.push_back(makeEntry("wallpaper", "directories", tr("settings.schema.wallpaper.directory.label"),
                                 tr("settings.schema.wallpaper.directory.description"), {"wallpaper", "directory"},
                                 TextSetting{cfg.wallpaper.directory, "~/Pictures/Wallpapers"}, "folder path"));
-    entries.push_back(makeEntry("wallpaper", "directories", tr("settings.schema.wallpaper.directory-light.label"),
-                                tr("settings.schema.wallpaper.directory-light.description"),
-                                {"wallpaper", "directory_light"}, TextSetting{cfg.wallpaper.directoryLight, ""},
-                                "folder path light theme", true));
-    entries.push_back(makeEntry("wallpaper", "directories", tr("settings.schema.wallpaper.directory-dark.label"),
-                                tr("settings.schema.wallpaper.directory-dark.description"),
-                                {"wallpaper", "directory_dark"}, TextSetting{cfg.wallpaper.directoryDark, ""},
-                                "folder path dark theme", true));
+    entries.push_back(makeEntry(
+        "wallpaper", "directories", tr("settings.schema.wallpaper.directory-light.label"),
+        tr("settings.schema.wallpaper.directory-light.description"), {"wallpaper", "directory_light"},
+        TextSetting{cfg.wallpaper.directoryLight, tr("settings.schema.wallpaper.directory-light.placeholder")},
+        "folder path light theme", true));
+    entries.push_back(
+        makeEntry("wallpaper", "directories", tr("settings.schema.wallpaper.directory-dark.label"),
+                  tr("settings.schema.wallpaper.directory-dark.description"), {"wallpaper", "directory_dark"},
+                  TextSetting{cfg.wallpaper.directoryDark, tr("settings.schema.wallpaper.directory-dark.placeholder")},
+                  "folder path dark theme", true));
     {
       MultiSelectSetting transitions;
       transitions.options.reserve(std::size(kWallpaperTransitions));
@@ -527,7 +529,8 @@ namespace settings {
     // Shell
     entries.push_back(makeEntry("shell", "profile", tr("settings.schema.shell.avatar-path.label"),
                                 tr("settings.schema.shell.avatar-path.description"), {"shell", "avatar_path"},
-                                TextSetting{cfg.shell.avatarPath, ""}, "image picture"));
+                                TextSetting{cfg.shell.avatarPath, tr("settings.schema.shell.avatar-path.placeholder")},
+                                "image picture"));
     entries.push_back(makeEntry("shell", "network", tr("settings.schema.shell.offline-mode.label"),
                                 tr("settings.schema.shell.offline-mode.description"), {"shell", "offline_mode"},
                                 ToggleSetting{cfg.shell.offlineMode}, "network http fetch download"));
@@ -596,14 +599,20 @@ namespace settings {
     entries.push_back(makeEntry("services", "audio", tr("settings.schema.services.sound-volume.label"),
                                 tr("settings.schema.services.sound-volume.description"), {"audio", "sound_volume"},
                                 SliderSetting{cfg.audio.soundVolume, 0.0f, 1.0f, 0.01f, false}, "sound"));
-    entries.push_back(makeEntry("services", "audio", tr("settings.schema.services.volume-change-sound.label"),
-                                tr("settings.schema.services.volume-change-sound.description"),
-                                {"audio", "volume_change_sound"}, TextSetting{cfg.audio.volumeChangeSound, ""},
-                                "sound path file", true));
-    entries.push_back(makeEntry("services", "audio", tr("settings.schema.services.notification-sound.label"),
-                                tr("settings.schema.services.notification-sound.description"),
-                                {"audio", "notification_sound"}, TextSetting{cfg.audio.notificationSound, ""},
-                                "sound path file", true));
+    entries.push_back(makeEntry(
+        "services", "audio", tr("settings.schema.services.volume-change-sound.label"),
+        tr("settings.schema.services.volume-change-sound.description"), {"audio", "volume_change_sound"},
+        TextSetting{cfg.audio.volumeChangeSound, tr("settings.schema.services.volume-change-sound.placeholder")},
+        "sound path file", true));
+    entries.push_back(makeEntry(
+        "services", "audio", tr("settings.schema.services.notification-sound.label"),
+        tr("settings.schema.services.notification-sound.description"), {"audio", "notification_sound"},
+        TextSetting{cfg.audio.notificationSound, tr("settings.schema.services.notification-sound.placeholder")},
+        "sound path file", true));
+    entries.push_back(makeEntry("services", "media", tr("settings.schema.services.mpris-blacklist.label"),
+                                tr("settings.schema.services.mpris-blacklist.description"),
+                                {"shell", "mpris", "blacklist"}, ListSetting{.items = cfg.shell.mpris.blacklist},
+                                "mpris media player dbus session blacklist"));
     entries.push_back(makeEntry("services", "brightness", tr("settings.schema.services.ddcutil.label"),
                                 tr("settings.schema.services.ddcutil.description"), {"brightness", "enable_ddcutil"},
                                 ToggleSetting{cfg.brightness.enableDdcutil}, "monitor ddcutil"));
