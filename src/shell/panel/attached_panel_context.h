@@ -17,7 +17,13 @@ struct AttachedPanelGeometry {
   float y = 0.0f;
   float width = 0.0f;
   float height = 0.0f;
+  // Full panel corner radius; used for the away-side convex corners, which are visible
+  // throughout the open/close animation and should always render rounded.
   float cornerRadius = 0.0f;
+  // Bar-side concave-corner radius. Animated with the reveal progress: zero while the
+  // bg's bar-side edge is still hidden behind the bar, ramps to cornerRadius as the
+  // bulges slide into view near the end of the open animation.
+  float bulgeRadius = 0.0f;
 };
 
 namespace attached_panel {

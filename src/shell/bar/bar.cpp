@@ -1255,16 +1255,22 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
                                       instance.attachedPanelGeometry->height > 0.0f;
     if (panelShadowExclusion) {
       const auto& attached = *instance.attachedPanelGeometry;
-      const float radius = std::max(0.0f, attached.cornerRadius);
+      const float convexRadius = std::max(0.0f, attached.cornerRadius);
+      const float bulgeRadius = std::max(0.0f, attached.bulgeRadius);
       const std::string_view barPosition = instance.barConfig.position;
+      const auto corners = attached_panel::cornerShapes(barPosition);
+      const auto pickRadius = [&](CornerShape shape) {
+        return shape == CornerShape::Concave ? bulgeRadius : convexRadius;
+      };
       shadowStyle.shadowExclusion = true;
       shadowStyle.shadowExclusionOffsetX = shadowX - attached.x;
       shadowStyle.shadowExclusionOffsetY = shadowY - attached.y;
       shadowStyle.shadowExclusionWidth = attached.width;
       shadowStyle.shadowExclusionHeight = attached.height;
-      shadowStyle.shadowExclusionCorners = attached_panel::cornerShapes(barPosition);
-      shadowStyle.shadowExclusionLogicalInset = attached_panel::logicalInset(barPosition, radius);
-      shadowStyle.shadowExclusionRadius = Radii{radius, radius, radius, radius};
+      shadowStyle.shadowExclusionCorners = corners;
+      shadowStyle.shadowExclusionLogicalInset = attached_panel::logicalInset(barPosition, bulgeRadius);
+      shadowStyle.shadowExclusionRadius =
+          Radii{pickRadius(corners.tl), pickRadius(corners.tr), pickRadius(corners.br), pickRadius(corners.bl)};
     }
 
     auto configureShadow = [&](RectNode* node, float x, float y) {

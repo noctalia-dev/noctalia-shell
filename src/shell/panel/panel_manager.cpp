@@ -365,6 +365,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     // rect extends past the body by `cornerRadius` on the cross axis to cover concave-corner notches.
     AttachedPanelGeometry attachedGeometry;
     attachedGeometry.cornerRadius = cornerRadius;
+    attachedGeometry.bulgeRadius = cornerRadius;
     if (barIsVertical) {
       attachedGeometry.x = static_cast<float>(barSurfaceLocalVisualX);
       attachedGeometry.y = static_cast<float>(barSurfaceLocalVisualY) - cornerRadius;
@@ -980,23 +981,73 @@ void PanelManager::publishAttachedPanelGeometry(float revealProgress) {
   }
 
   auto geometry = *m_attachedPanelGeometry;
+
+  // The bar-side concave bulges live at the bg's bar-side edge and only enter the
+  // visible clip during the last `radius / panelMainDim` portion of the animation
+  // (before that, the bg's bar-side edge is still behind the bar). Until they're
+  // visible, the visible panel silhouette is a sharp-edged rectangle on the bar
+  // side, so the cutout's bulge radius and per-side cross-axis extension scale up
+  // linearly only as the bulges slide into view. The away-side convex corners are
+  // visible throughout the animation (they're at the leading edge of the slide),
+  // so cornerRadius is left at its full value — the bar uses cornerRadius for the
+  // away-side corners and bulgeRadius for the bar-side corners.
+  const float originalRadius = geometry.cornerRadius;
+  const bool vertical = (m_attachedRevealDirection == AttachedRevealDirection::Right ||
+                         m_attachedRevealDirection == AttachedRevealDirection::Left);
+  const float panelMainDim = vertical ? geometry.width : geometry.height;
+  const float bulgeRevealAmount = std::clamp(originalRadius - panelMainDim * (1.0f - progress), 0.0f, originalRadius);
+  const float crossDelta = originalRadius - bulgeRevealAmount;
+  geometry.bulgeRadius = bulgeRevealAmount;
+
+  // The away-side convex corners are visible at full radius throughout the animation
+  // (they're at the leading edge of the slide). The rect shader clamps each corner's
+  // radius to min(body_w, body_h)/2 — so when the visible body is shorter than
+  // 2*cornerRadius along the main axis, the convex corners would shrink and shift
+  // inward, no longer matching the visible bg's curve. Extend the body main-axis
+  // dimension toward the bar so it's at least 2*cornerRadius. The extension goes
+  // BAR-WARD into the bar's body area, where the bar covers the cutout's effect on
+  // the shadow underneath (and the cutout's straight bar-side edge stays hidden).
+  const float minMainDim = 2.0f * originalRadius;
+
   switch (m_attachedRevealDirection) {
-  case AttachedRevealDirection::Down:
-    geometry.height *= progress;
-    break;
-  case AttachedRevealDirection::Up: {
-    const float visible = geometry.height * progress;
-    geometry.y += geometry.height - visible;
-    geometry.height = visible;
+  case AttachedRevealDirection::Down: {
+    const float visibleHeight = geometry.height * progress;
+    const float effectiveHeight = std::max(visibleHeight, minMainDim);
+    const float extension = effectiveHeight - visibleHeight;
+    geometry.y -= extension;
+    geometry.height = effectiveHeight;
+    geometry.x += crossDelta;
+    geometry.width -= 2.0f * crossDelta;
     break;
   }
-  case AttachedRevealDirection::Right:
-    geometry.width *= progress;
+  case AttachedRevealDirection::Up: {
+    const float originalHeight = geometry.height;
+    const float visibleHeight = originalHeight * progress;
+    const float effectiveHeight = std::max(visibleHeight, minMainDim);
+    geometry.y += originalHeight - visibleHeight;
+    geometry.height = effectiveHeight;
+    geometry.x += crossDelta;
+    geometry.width -= 2.0f * crossDelta;
     break;
+  }
+  case AttachedRevealDirection::Right: {
+    const float visibleWidth = geometry.width * progress;
+    const float effectiveWidth = std::max(visibleWidth, minMainDim);
+    const float extension = effectiveWidth - visibleWidth;
+    geometry.x -= extension;
+    geometry.width = effectiveWidth;
+    geometry.y += crossDelta;
+    geometry.height -= 2.0f * crossDelta;
+    break;
+  }
   case AttachedRevealDirection::Left: {
-    const float visible = geometry.width * progress;
-    geometry.x += geometry.width - visible;
-    geometry.width = visible;
+    const float originalWidth = geometry.width;
+    const float visibleWidth = originalWidth * progress;
+    const float effectiveWidth = std::max(visibleWidth, minMainDim);
+    geometry.x += originalWidth - visibleWidth;
+    geometry.width = effectiveWidth;
+    geometry.y += crossDelta;
+    geometry.height -= 2.0f * crossDelta;
     break;
   }
   }
@@ -1035,36 +1086,34 @@ void PanelManager::applyPanelCompositorBlur() {
     by += (bh - scaledH) / 2;
     bw = scaledW;
     bh = scaledH;
-  }
-  if (m_attachedToBar) {
+  } else {
+    // Mirror the slide that the visible content node performs in applyAttachedReveal:
+    // the full bg shape (body + concave bar-side bulges + convex away-side corners) is
+    // tessellated at the bg's animated position, then strips are clipped to the surface
+    // bounds below — the same clipping the m_attachedRevealClipNode applies to the
+    // visible content. This keeps the blur region in lockstep with what's actually on
+    // screen, so the bar-side concave bulges only contribute blur once the panel's
+    // bar-side edge has slid into view (i.e. near the end of the open animation).
     const float progress = std::clamp(m_attachedRevealProgress, 0.0f, 1.0f);
     if (progress < 0.001f) {
       m_surface->clearBlurRegion();
       return;
     }
+    const float panelW = static_cast<float>(m_panelVisualWidth);
+    const float panelH = static_cast<float>(m_panelVisualHeight);
     switch (m_attachedRevealDirection) {
     case AttachedRevealDirection::Down:
-      bh = static_cast<int>(std::lround(static_cast<float>(bh) * progress));
+      by -= static_cast<int>(std::lround(panelH * (1.0f - progress)));
       break;
-    case AttachedRevealDirection::Up: {
-      const int visible = static_cast<int>(std::lround(static_cast<float>(bh) * progress));
-      by += bh - visible;
-      bh = visible;
+    case AttachedRevealDirection::Up:
+      by += static_cast<int>(std::lround(panelH * (1.0f - progress)));
       break;
-    }
     case AttachedRevealDirection::Right:
-      bw = static_cast<int>(std::lround(static_cast<float>(bw) * progress));
+      bx -= static_cast<int>(std::lround(panelW * (1.0f - progress)));
       break;
-    case AttachedRevealDirection::Left: {
-      const int visible = static_cast<int>(std::lround(static_cast<float>(bw) * progress));
-      bx += bw - visible;
-      bw = visible;
+    case AttachedRevealDirection::Left:
+      bx += static_cast<int>(std::lround(panelW * (1.0f - progress)));
       break;
-    }
-    }
-    if (bw <= 0 || bh <= 0) {
-      m_surface->clearBlurRegion();
-      return;
     }
   }
 
@@ -1078,6 +1127,29 @@ void PanelManager::applyPanelCompositorBlur() {
     m_surface->clearBlurRegion();
     return;
   }
+
+  if (m_attachedToBar && m_sceneRoot != nullptr) {
+    const int clipMaxX = static_cast<int>(std::lround(m_sceneRoot->width()));
+    const int clipMaxY = static_cast<int>(std::lround(m_sceneRoot->height()));
+    std::vector<InputRect> clipped;
+    clipped.reserve(strips.size());
+    for (const auto& s : strips) {
+      const int sxLeft = std::max(s.x, 0);
+      const int sxRight = std::min(s.x + s.width, clipMaxX);
+      const int syTop = std::max(s.y, 0);
+      const int syBot = std::min(s.y + s.height, clipMaxY);
+      if (sxRight > sxLeft && syBot > syTop) {
+        clipped.push_back({sxLeft, syTop, sxRight - sxLeft, syBot - syTop});
+      }
+    }
+    if (clipped.empty()) {
+      m_surface->clearBlurRegion();
+      return;
+    }
+    m_surface->setBlurRegion(clipped);
+    return;
+  }
+
   m_surface->setBlurRegion(strips);
 }
 
