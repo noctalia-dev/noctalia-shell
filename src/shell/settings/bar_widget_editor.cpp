@@ -1502,7 +1502,7 @@ namespace settings {
         const bool editableWidget = !widgetTypeForReference(ctx.config, widgetName).empty();
         if (!inherited) {
           auto dragBtn = std::make_unique<Button>();
-          dragBtn->setGlyph("menu");
+          dragBtn->setGlyph("menu-2");
           dragBtn->setVariant(ButtonVariant::Ghost);
           dragBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
           dragBtn->setMinWidth(Style::controlHeightSm * ctx.scale);

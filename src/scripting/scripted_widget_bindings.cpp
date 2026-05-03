@@ -31,13 +31,6 @@ namespace {
     return 0;
   }
 
-  int luau_setGlyphCodepoint(lua_State* L) {
-    auto cp = static_cast<char32_t>(luaL_checknumber(L, 1));
-    if (auto* w = getWidget(L))
-      w->luaSetGlyphCodepoint(cp);
-    return 0;
-  }
-
   int luau_setColor(lua_State* L) {
     const char* role = luaL_checkstring(L, 1);
     if (auto* w = getWidget(L))
@@ -116,7 +109,6 @@ namespace {
   const luaL_Reg kWidgetLib[] = {
       {"setText", luau_setText},
       {"setGlyph", luau_setGlyph},
-      {"setGlyphCodepoint", luau_setGlyphCodepoint},
       {"setColor", luau_setColor},
       {"setGlyphColor", luau_setGlyphColor},
       {"isVertical", luau_isVertical},

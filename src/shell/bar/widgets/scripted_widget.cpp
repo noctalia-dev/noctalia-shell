@@ -190,18 +190,6 @@ void ScriptedWidget::luaSetGlyph(std::string_view name) {
   m_dirty |= changed;
 }
 
-void ScriptedWidget::luaSetGlyphCodepoint(char32_t codepoint) {
-  if (!m_glyph)
-    return;
-  bool changed = m_glyph->setCodepoint(codepoint);
-  if (!m_glyphVisible) {
-    m_glyph->setVisible(true);
-    m_glyphVisible = true;
-    changed = true;
-  }
-  m_dirty |= changed;
-}
-
 void ScriptedWidget::luaSetColor(std::string_view role) {
   auto parsed = colorRoleFromToken(role);
   if (parsed != m_textColorRole) {

@@ -701,5 +701,5 @@ std::string TrayWidget::iconForItem(const TrayItemInfo& item) const {
   if (item.needsAttention) {
     return "warning";
   }
-  return "menu";
+  return "menu-2";
 }

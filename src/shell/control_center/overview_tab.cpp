@@ -174,7 +174,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   m_mediaArtSlot = artSlot.get();
 
   auto artFallback = std::make_unique<Glyph>();
-  artFallback->setGlyph("disc");
+  artFallback->setGlyph("disc-filled");
   artFallback->setGlyphSize(artSize * 0.55f);
   artFallback->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   m_mediaArtFallback = artFallback.get();

@@ -1,16 +1,25 @@
 #include "ui/controls/glyph_registry.h"
 
 #include "core/log.h"
+#include "core/resource_paths.h"
 
+#include <charconv>
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <json.hpp>
+#include <optional>
 #include <string>
+#include <system_error>
 #include <unordered_map>
 
 namespace {
 
   constexpr Logger kLog("glyph");
+  constexpr char32_t kMissingGlyph = 0xF292; // skull
 
   // Hand-curated alias → codepoint map.
-  // To add a new icon, find its codepoint in assets/fonts/tabler-icons.json.
+  // Use these for semantic shell states and stable Noctalia-facing names.
   // clang-format off
 const std::unordered_map<std::string, char32_t> kIcons = {
     // General
@@ -22,7 +31,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"plus", 0xEB0B},
     {"minus", 0xEAF2},
     {"trash", 0xEB41},
-    {"menu", 0xEC42},              // menu-2
+    {"menu-2", 0xEC42},
     {"more-vertical", 0xEA94},     // dots-vertical
     {"person", 0xEB4D},            // user
     {"folder-open", 0xFAF7},
@@ -55,7 +64,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"photo", 0xEB0A},
     {"file-text", 0xEAA2},
     {"home", 0xEAC1},
-    {"hourglass", 0XF146},         // hourglass-empty
+    {"hourglass-empty", 0XF146},
     {"clipboard", 0XEA6f},
 
     // Toast / warnings
@@ -73,7 +82,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"repeat", 0xEB72},
     {"repeat-once", 0xEB71},
     {"stop", 0xF695},              // player-stop-filled
-    {"disc", 0x1003E},             // disc-filled
+    {"disc-filled", 0x1003E},
     {"headphones", 0xEABD},
     {"microphone", 0xEAF0},
     {"microphone-mute", 0xED16},   // microphone-off
@@ -139,10 +148,10 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"chevron-right", 0xEA61},
     {"chevron-up", 0xEA62},
     {"chevron-down", 0xEA5F},
-    {"caret-up", 0xFB2D},          // caret-up-filled
-    {"caret-down", 0xFB2A},        // caret-down-filled
-    {"caret-left", 0xFB2B},        // caret-left-filled
-    {"caret-right", 0xFB2C},       // caret-right-filled
+    {"caret-up-filled", 0xFB2D},
+    {"caret-down-filled", 0xFB2A},
+    {"caret-left-filled", 0xFB2B},
+    {"caret-right-filled", 0xFB2C},
     {"square-filled", 0xFC40},     // square-filled
     {"arrow-left", 0xEA19},        // arrow-left
     {"arrow-back", 0xEA0c},        // arrow-back
@@ -245,23 +254,103 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"layout-bottombar", 0xEAD3},
     {"paint", 0xEB00},
     {"bar", 0xFD51},
-    {"layout-board", 0xEF95}, // crop-16-9
-    {"disc", 0xEA90}
+    {"layout-board", 0xEF95} // crop-16-9
 };
   // clang-format on
 
+  [[nodiscard]] std::optional<char32_t> parseCodepointLiteral(std::string_view value) {
+    if (value.size() < 3) {
+      return std::nullopt;
+    }
+
+    std::string_view hex;
+    if ((value[0] == 'U' || value[0] == 'u') && value[1] == '+') {
+      hex = value.substr(2);
+    } else if (value.size() > 2 && value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) {
+      hex = value.substr(2);
+    } else {
+      return std::nullopt;
+    }
+
+    if (hex.empty()) {
+      return std::nullopt;
+    }
+
+    std::uint32_t codepoint = 0;
+    const auto* begin = hex.data();
+    const auto* end = begin + hex.size();
+    const auto result = std::from_chars(begin, end, codepoint, 16);
+    if (result.ec != std::errc{} || result.ptr != end || codepoint == 0 || codepoint > 0x10FFFF) {
+      return std::nullopt;
+    }
+    return static_cast<char32_t>(codepoint);
+  }
+
+  [[nodiscard]] std::unordered_map<std::string, char32_t> loadTablerIcons() {
+    std::unordered_map<std::string, char32_t> icons;
+    const std::filesystem::path path = paths::assetPath("fonts/tabler.json");
+    std::ifstream file(path);
+    if (!file.is_open()) {
+      kLog.warn("failed to open Tabler glyph metadata: {}", path.string());
+      return icons;
+    }
+
+    try {
+      const auto root = nlohmann::json::parse(file);
+      if (!root.is_object()) {
+        kLog.warn("Tabler glyph metadata is not an object: {}", path.string());
+        return icons;
+      }
+
+      icons.reserve(root.size());
+      for (const auto& [name, value] : root.items()) {
+        if (!value.is_string()) {
+          continue;
+        }
+        const std::string codepoint = value.get<std::string>();
+        if (auto parsed = parseCodepointLiteral(codepoint)) {
+          icons.emplace(name, *parsed);
+        }
+      }
+      kLog.debug("loaded {} Tabler glyph names from {}", icons.size(), path.string());
+    } catch (const nlohmann::json::exception& e) {
+      kLog.warn("failed to parse Tabler glyph metadata '{}': {}", path.string(), e.what());
+    }
+    return icons;
+  }
+
+  [[nodiscard]] const std::unordered_map<std::string, char32_t>& tablerIcons() {
+    static const std::unordered_map<std::string, char32_t> icons = loadTablerIcons();
+    return icons;
+  }
+
 } // namespace
 
-bool GlyphRegistry::contains(std::string_view name) { return kIcons.contains(std::string(name)); }
+bool GlyphRegistry::contains(std::string_view name) {
+  const std::string key{name};
+  if (kIcons.contains(key) || parseCodepointLiteral(name).has_value()) {
+    return true;
+  }
+  return tablerIcons().contains(key);
+}
 
 char32_t GlyphRegistry::lookup(std::string_view name) {
-  auto it = kIcons.find(std::string(name));
+  const std::string key{name};
+  auto it = kIcons.find(key);
   if (it != kIcons.end()) {
     return it->second;
   }
 
-  kLog.warn("missing glyph: {}", name);
+  if (auto codepoint = parseCodepointLiteral(name)) {
+    return *codepoint;
+  }
 
-  // Fallback to skull
-  return 0xF292;
+  const auto& tabler = tablerIcons();
+  it = tabler.find(key);
+  if (it != tabler.end()) {
+    return it->second;
+  }
+
+  kLog.warn("missing glyph: {}", name);
+  return kMissingGlyph;
 }

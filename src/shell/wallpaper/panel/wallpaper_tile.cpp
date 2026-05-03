@@ -81,7 +81,7 @@ WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentSca
   m_folderGlyph = static_cast<Glyph*>(m_thumbBox->addChild(std::move(glyph)));
 
   auto loadingGlyph = std::make_unique<Glyph>();
-  loadingGlyph->setGlyph("hourglass");
+  loadingGlyph->setGlyph("hourglass-empty");
   loadingGlyph->setGlyphSize(std::min(frameWidth, frameHeight) * 0.32f);
   loadingGlyph->setColor(colorSpecFromRole(ColorRole::OnSurface, 0.5f));
   loadingGlyph->setVisible(false);

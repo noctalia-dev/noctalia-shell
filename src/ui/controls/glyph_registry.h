@@ -2,9 +2,10 @@
 
 #include <string_view>
 
-// Hand-curated alias → codepoint map.
-// To add a new icon, find its codepoint in assets/fonts/tabler-icons.json
-// and add an entry here.
+// Glyph names resolve in this order:
+// 1. Hand-curated Noctalia aliases from glyph_registry.cpp.
+// 2. Explicit codepoint literals such as U+F123 or 0xF123.
+// 3. Native Tabler icon names from assets/fonts/tabler.json.
 namespace GlyphRegistry {
 
   [[nodiscard]] bool contains(std::string_view name);

@@ -29,7 +29,6 @@ public:
 
   void luaSetText(std::string_view text);
   void luaSetGlyph(std::string_view name);
-  void luaSetGlyphCodepoint(char32_t codepoint);
   void luaSetColor(std::string_view role);
   void luaSetGlyphColor(std::string_view role);
   void luaSetVisible(bool visible);

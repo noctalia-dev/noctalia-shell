@@ -625,7 +625,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   toolbarHandle->setMinHeight(Style::controlHeightSm);
 
   auto handleGlyph = std::make_unique<Glyph>();
-  handleGlyph->setGlyph("menu");
+  handleGlyph->setGlyph("menu-2");
   handleGlyph->setGlyphSize(14.0f);
   toolbarHandle->addChild(std::move(handleGlyph));
 
