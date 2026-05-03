@@ -448,7 +448,7 @@ void OverviewTab::layoutWallpaperBackground(Renderer& renderer) {
     m_wallpaperGradient->setPosition(bw, bw);
     m_wallpaperGradient->setFrameSize(cw, ch);
     const Color surface = colorForRole(ColorRole::Surface);
-    const Color translucentSurface = rgba(surface.r, surface.g, surface.b, surface.a * 0.85f);
+    const Color translucentSurface = rgba(surface.r, surface.g, surface.b, surface.a * 0.9f);
     const Color transparentSurface = rgba(surface.r, surface.g, surface.b, 0.0f);
     m_wallpaperGradient->setStyle(RoundedRectStyle{
         .fill = surface,

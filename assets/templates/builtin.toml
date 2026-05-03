@@ -8,6 +8,10 @@ category = "terminal"
 name = "Btop"
 category = "misc"
 
+[catalog.cava]
+name = "Cava"
+category = "audio"
+
 [catalog.foot]
 name = "Foot"
 category = "terminal"
@@ -85,6 +89,11 @@ post_hook = "bash '{{ config_dir }}/alacritty/apply.sh'"
 input_path = "./btop/btop.theme"
 output_path = "~/.config/btop/themes/noctalia.theme"
 post_hook = "bash '{{ config_dir }}/btop/apply.sh'"
+
+[templates.cava]
+input_path = "./cava/cava.ini"
+output_path = "~/.config/cava/themes/noctalia"
+post_hook = "bash '{{ config_dir }}/cava/apply.sh'"
 
 [templates.foot]
 input_path = "./foot/foot"
