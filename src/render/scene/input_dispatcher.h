@@ -19,6 +19,7 @@ public:
   void pointerEnter(float x, float y, std::uint32_t serial);
   void pointerLeave();
   void pointerMotion(float x, float y, std::uint32_t serial);
+  void syncPointerHover();
   // Returns true if the event was consumed by a scene widget
   bool pointerButton(float x, float y, std::uint32_t button, bool pressed);
   bool pointerAxis(float x, float y, std::uint32_t axis, std::uint32_t axisSource, double value, std::int32_t discrete,

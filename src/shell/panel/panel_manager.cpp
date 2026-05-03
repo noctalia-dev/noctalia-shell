@@ -1352,6 +1352,9 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     m_contentNode->setPosition(panelX + kPadding, panelY + kPadding);
     m_contentNode->setSize(panelW - kPadding * 2.0f, panelH - kPadding * 2.0f);
   }
+  if (m_pointerInside) {
+    m_inputDispatcher.syncPointerHover();
+  }
 }
 
 void PanelManager::prepareFrame(bool needsUpdate, bool needsLayout) {
@@ -1383,6 +1386,9 @@ void PanelManager::prepareFrame(bool needsUpdate, bool needsLayout) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
     if (m_activePanel != nullptr) {
       m_activePanel->layout(*m_renderContext, m_contentWidth, m_contentHeight);
+    }
+    if (m_pointerInside) {
+      m_inputDispatcher.syncPointerHover();
     }
   }
 }

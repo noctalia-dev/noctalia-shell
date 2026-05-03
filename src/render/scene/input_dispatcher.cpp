@@ -71,8 +71,20 @@ void InputDispatcher::pointerMotion(float x, float y, std::uint32_t serial) {
 }
 
 bool InputDispatcher::pointerButton(float x, float y, std::uint32_t button, bool pressed) {
+  m_lastPointerX = x;
+  m_lastPointerY = y;
+  m_hasPointerPosition = true;
+
   pruneDetachedAreas();
+
   InputArea* target = m_capturedArea != nullptr ? m_capturedArea : m_hoveredArea;
+
+  // Press with no hover target: subtree may have been rebuilt (same global coords, new InputArea*).
+  if (target == nullptr && m_capturedArea == nullptr && pressed && m_hasPointerPosition) {
+    updateHover(x, y, m_lastSerial);
+    target = m_hoveredArea;
+  }
+
   if (target != nullptr) {
     float localX = 0.0f;
     float localY = 0.0f;
@@ -89,10 +101,23 @@ bool InputDispatcher::pointerButton(float x, float y, std::uint32_t button, bool
     }
     return true;
   }
+
+  // Release lost its capture (e.g. onClick rebuilt the scene); restore hover without mis-delivering the release.
+  if (!pressed && m_capturedArea == nullptr && m_hasPointerPosition) {
+    updateHover(x, y, m_lastSerial);
+  }
+
   if (pressed) {
     setFocus(nullptr);
   }
   return false;
+}
+
+void InputDispatcher::syncPointerHover() {
+  if (!m_hasPointerPosition || m_capturedArea != nullptr) {
+    return;
+  }
+  updateHover(m_lastPointerX, m_lastPointerY, m_lastSerial);
 }
 
 bool InputDispatcher::pointerAxis(float x, float y, std::uint32_t axis, std::uint32_t axisSource, double value,
