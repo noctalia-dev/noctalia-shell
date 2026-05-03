@@ -34,6 +34,7 @@ public:
   void setOnCancel(std::function<void()> callback);
 
   [[nodiscard]] const std::string& filter() const noexcept { return m_filter; }
+  [[nodiscard]] InputArea* filterInputArea() const noexcept;
 
 private:
   struct RowView {
@@ -51,8 +52,9 @@ private:
   void setHighlightedVisibleIndex(std::size_t index);
   void moveHighlight(int delta);
   void activateHighlighted();
+  void ensureHighlightedVisible();
   void applyRowStates();
-  [[nodiscard]] bool matchesFilter(const SearchPickerOption& option) const;
+  [[nodiscard]] double matchScore(const SearchPickerOption& option, std::string_view query) const;
 
   Input* m_input = nullptr;
   ScrollView* m_scroll = nullptr;

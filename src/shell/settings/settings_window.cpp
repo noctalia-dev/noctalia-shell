@@ -311,6 +311,7 @@ void SettingsWindow::clearStatusMessage() {
 
 void SettingsWindow::clearTransientSettingsState() {
   m_openWidgetPickerPath.clear();
+  m_openSearchPickerPath.clear();
   m_editingWidgetName.clear();
   m_renamingWidgetName.clear();
   m_pendingDeleteWidgetName.clear();
@@ -835,6 +836,7 @@ void SettingsWindow::rebuildSettingsContent() {
   }
 
   const auto requestRebuild = [this]() { requestSceneRebuild(); };
+  const auto requestContent = [this]() { requestContentRebuild(); };
   const auto setOverride = [this](std::vector<std::string> path, ConfigOverrideValue value) {
     setSettingOverride(std::move(path), std::move(value));
   };
@@ -895,13 +897,16 @@ void SettingsWindow::rebuildSettingsContent() {
                                            .showAdvanced = m_showAdvanced,
                                            .showOverriddenOnly = m_showOverriddenOnly,
                                            .openWidgetPickerPath = m_openWidgetPickerPath,
+                                           .openSearchPickerPath = m_openSearchPickerPath,
                                            .editingWidgetName = m_editingWidgetName,
                                            .pendingDeleteWidgetName = m_pendingDeleteWidgetName,
                                            .pendingDeleteWidgetSettingPath = m_pendingDeleteWidgetSettingPath,
                                            .renamingWidgetName = m_renamingWidgetName,
                                            .creatingWidgetType = m_creatingWidgetType,
                                            .requestRebuild = requestRebuild,
+                                           .requestContentRebuild = requestContent,
                                            .resetContentScroll = [this]() { m_contentScrollState.offset = 0.0f; },
+                                           .focusArea = [this](InputArea* area) { m_inputDispatcher.setFocus(area); },
                                            .setOverride = setOverride,
                                            .setOverrides = setOverrides,
                                            .clearOverride = clearOverride,
@@ -1110,6 +1115,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     const bool searchActiveChanged = wasSearchActive != !m_searchQuery.empty();
     const bool hadPendingReset = !m_pendingResetPageScope.empty();
     m_pendingResetPageScope.clear();
+    m_openSearchPickerPath.clear();
     if (hadPendingReset || searchActiveChanged) {
       m_focusSearchOnRebuild = true;
       requestSceneRebuild();

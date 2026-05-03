@@ -11,6 +11,7 @@
 #include <vector>
 
 class Flex;
+class InputArea;
 
 namespace settings {
 
@@ -26,6 +27,7 @@ namespace settings {
     bool showOverriddenOnly = false;
 
     std::string& openWidgetPickerPath;
+    std::string& openSearchPickerPath;
     std::string& editingWidgetName;
     std::string& pendingDeleteWidgetName;
     std::string& pendingDeleteWidgetSettingPath;
@@ -33,7 +35,9 @@ namespace settings {
     std::string& creatingWidgetType;
 
     std::function<void()> requestRebuild;
+    std::function<void()> requestContentRebuild;
     std::function<void()> resetContentScroll;
+    std::function<void(InputArea*)> focusArea;
     std::function<void(std::vector<std::string>, ConfigOverrideValue)> setOverride;
     std::function<void(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>)> setOverrides;
     std::function<void(std::vector<std::string>)> clearOverride;

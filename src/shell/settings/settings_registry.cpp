@@ -274,7 +274,13 @@ namespace settings {
     } else if (cfg.theme.source == ThemeSource::Community) {
       SettingControl communityPaletteControl = TextSetting{cfg.theme.communityPalette, "Oxocarbon"};
       if (!env.communityPalettes.empty()) {
-        communityPaletteControl = SelectSetting{env.communityPalettes, cfg.theme.communityPalette};
+        communityPaletteControl = SearchPickerSetting{
+            .options = env.communityPalettes,
+            .selectedValue = cfg.theme.communityPalette,
+            .placeholder = tr("settings.schema.appearance.community-palette.search-placeholder"),
+            .emptyText = tr("ui.controls.search-picker.empty"),
+            .preferredHeight = 240.0f,
+        };
       }
       entries.push_back(makeEntry("appearance", "theme", tr("settings.schema.appearance.community-palette.label"),
                                   tr("settings.schema.appearance.community-palette.description"),

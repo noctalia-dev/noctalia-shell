@@ -19,6 +19,8 @@ namespace settings {
   struct SelectOption {
     std::string value;
     std::string label;
+    std::string description = {};
+    std::string category = {};
   };
 
   struct SelectSetting {
@@ -26,6 +28,14 @@ namespace settings {
     std::string selectedValue;
     bool clearOnEmpty = false;
     bool segmented = false; // render as Segmented pill group instead of dropdown Select
+  };
+
+  struct SearchPickerSetting {
+    std::vector<SelectOption> options;
+    std::string selectedValue;
+    std::string placeholder;
+    std::string emptyText;
+    float preferredHeight = 240.0f;
   };
 
   struct SliderSetting {
@@ -80,7 +90,7 @@ namespace settings {
 
   using SettingControl =
       std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting, OptionalNumberSetting, ListSetting,
-                   ColorSetting, MultiSelectSetting, ButtonSetting, ColorRolePickerSetting>;
+                   ColorSetting, MultiSelectSetting, ButtonSetting, ColorRolePickerSetting, SearchPickerSetting>;
 
   struct SettingEntry {
     std::string section;

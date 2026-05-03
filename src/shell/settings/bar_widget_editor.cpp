@@ -1309,7 +1309,11 @@ namespace settings {
             pendingDeleteWidgetSettingPath.clear();
             requestRebuild();
           });
+          auto* pickerPtr = picker.get();
           inspector->addChild(std::move(picker));
+          if (ctx.focusArea) {
+            ctx.focusArea(pickerPtr->filterInputArea());
+          }
         }
       }
 
