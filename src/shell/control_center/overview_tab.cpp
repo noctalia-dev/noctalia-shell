@@ -439,7 +439,6 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
     return std::max(1.0f, card->width() - (card->paddingLeft() + card->paddingRight()));
   };
   const float dateTimeWrap = innerWidth(m_dateTimeCard);
-  const float mediaWrap = innerWidth(m_mediaCard);
 
   for (Label* label : {m_timeLabel, m_dateLabel, m_weatherLine}) {
     if (label != nullptr) {
@@ -467,18 +466,14 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
     }
   }
 
-  if (m_mediaCard != nullptr && m_mediaArtSlot != nullptr && m_mediaText != nullptr) {
-    const float textWidth = std::max(1.0f, mediaWrap - m_mediaArtSlot->width() - (Style::spaceSm * contentScale()));
-    for (Label* label : {m_mediaArtist, m_mediaStatus, m_mediaProgress}) {
-      if (label != nullptr) {
-        label->setMaxWidth(textWidth);
-        label->setMaxLines(1);
-      }
+  // Labels auto-wrap to mediaText's assigned width via Flex stretch propagation.
+  for (Label* label : {m_mediaArtist, m_mediaStatus, m_mediaProgress}) {
+    if (label != nullptr) {
+      label->setMaxLines(1);
     }
-    if (m_mediaTrack != nullptr) {
-      m_mediaTrack->setMaxWidth(textWidth);
-      m_mediaTrack->setMaxLines(2);
-    }
+  }
+  if (m_mediaTrack != nullptr) {
+    m_mediaTrack->setMaxLines(2);
   }
 
   if (m_userCard != nullptr && m_userFacts != nullptr) {

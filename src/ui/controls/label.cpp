@@ -328,7 +328,10 @@ void Label::doArrange(Renderer& renderer, const LayoutRect& rect) {
   setPosition(rect.x, rect.y);
   LayoutConstraints constraints;
   constraints.setExactWidth(rect.width);
-  const LayoutSize measured = measureWithConstraints(renderer, constraints);
+  // fromArrange=true: do not overwrite the text node's wrap budget here. Arrange's
+  // exact width is the label's own (rounded) measured width fed back, not a parent
+  // wrap-intent — feeding it to Pango as maxWidth can trigger sub-pixel ellipsis.
+  const LayoutSize measured = measureWithConstraints(renderer, constraints, true);
   setSize(rect.width, rect.height > 0.0f ? rect.height : measured.height);
 }
 
@@ -342,7 +345,7 @@ void Label::measure(Renderer& renderer) {
   measureWithConstraints(renderer, constraints);
 }
 
-LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstraints& constraints) {
+LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstraints& constraints, bool fromArrange) {
   const float configuredMaxWidth = m_userMaxWidth;
   float measureMaxWidth = configuredMaxWidth;
   if (constraints.hasMaxWidth) {
@@ -366,6 +369,16 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
   }
 
   syncTextNodeConstraints();
+  // Override the default with the constraint-aware wrap budget so paint uses the same
+  // wrap width that was used to measure metrics. Without this, a Label inside a Flex
+  // with stretch-derived width would measure correctly but paint unwrapped.
+  // Skipped on the arrange path: arrange's exact width is the label's own already-measured
+  // width fed back to itself, not a parent wrap-intent. Feeding it to Pango as maxWidth
+  // can spuriously ellipsize when the rounded box width sits a fraction below natural.
+  if (!m_autoScroll && !fromArrange) {
+    m_textNode->setMaxWidth(measureMaxWidth);
+    m_textNode->setMaxLines(effectiveMaxLines);
+  }
 
   auto metrics = renderer.measureText(m_plainText, m_textNode->fontSize(), m_textNode->bold(), measureMaxWidth,
                                       effectiveMaxLines, align);

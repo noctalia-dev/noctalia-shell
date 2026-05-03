@@ -50,6 +50,16 @@ namespace {
     }
   }
 
+  // Soft cross-axis upper bound. Lets children (esp. labels) discover a wrap budget
+  // even when align != Stretch, without forcing them to fill the full cross extent.
+  void setCrossMaxConstraint(LayoutConstraints& constraints, bool horizontal, float value) {
+    if (horizontal) {
+      constraints.setMaxHeight(value);
+    } else {
+      constraints.setMaxWidth(value);
+    }
+  }
+
   LayoutSize sizeFromAxes(bool horizontal, float main, float cross) {
     return horizontal ? LayoutSize{.width = main, .height = cross} : LayoutSize{.width = cross, .height = main};
   }
@@ -387,8 +397,14 @@ LayoutSize Flex::runLayout(Renderer& renderer, const LayoutConstraints& constrai
     if (exactMain) {
       setMainConstraint(childConstraints, horizontal, assignedMain);
     }
-    if (m_align == FlexAlign::Stretch && crossKnown) {
-      setCrossConstraint(childConstraints, horizontal, innerCross);
+    if (crossKnown) {
+      if (m_align == FlexAlign::Stretch) {
+        setCrossConstraint(childConstraints, horizontal, innerCross);
+      } else {
+        // Even without stretch, advertise the available cross extent as an upper bound so
+        // children that need it (text wrapping, max-width caps) get a budget for free.
+        setCrossMaxConstraint(childConstraints, horizontal, innerCross);
+      }
     }
     item.measured = item.node->measure(renderer, childConstraints);
     item.main = mainSize(item.measured, horizontal);

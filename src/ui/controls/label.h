@@ -62,7 +62,7 @@ private:
   LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints) override;
   void doArrange(Renderer& renderer, const LayoutRect& rect) override;
   void applyPalette();
-  LayoutSize measureWithConstraints(Renderer& renderer, const LayoutConstraints& constraints);
+  LayoutSize measureWithConstraints(Renderer& renderer, const LayoutConstraints& constraints, bool fromArrange = false);
   void syncTextNodeConstraints();
   void restartScrollIfNeeded();
   void stopMarqueeAnimation();

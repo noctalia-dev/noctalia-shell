@@ -318,16 +318,7 @@ void SystemTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeigh
   sizeGraph(m_ramGraph, m_ramCard);
   sizeGraph(m_netGraph, m_netCard);
 
-  const auto innerWidth = [](Flex* card) {
-    if (card == nullptr) {
-      return 1.0f;
-    }
-    return std::max(1.0f, card->width() - (card->paddingLeft() + card->paddingRight()));
-  };
-
-  if (m_infoLabel != nullptr && m_infoCard != nullptr) {
-    m_infoLabel->setMaxWidth(innerWidth(m_infoCard));
-  }
+  // m_infoLabel auto-wraps via Flex Stretch (m_infoCard uses applySectionCardStyle → align=Stretch).
 
   // Apply width constraints in the same frame they are set so System Info
   // reaches its final card height immediately on open.

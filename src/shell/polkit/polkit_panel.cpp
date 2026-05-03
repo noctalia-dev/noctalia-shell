@@ -156,16 +156,7 @@ void PolkitPanel::doLayout(Renderer& renderer, float width, float height) {
     return;
   }
   m_rootLayout->setSize(width, height);
-  const float contentWidth = std::max(0.0f, width - (Style::spaceLg * contentScale() * 2.0f));
-  if (m_messageLabel != nullptr) {
-    m_messageLabel->setMaxWidth(contentWidth);
-  }
-  if (m_promptLabel != nullptr) {
-    m_promptLabel->setMaxWidth(contentWidth);
-  }
-  if (m_supplementaryLabel != nullptr) {
-    m_supplementaryLabel->setMaxWidth(contentWidth);
-  }
+  // Labels auto-wrap via Flex Stretch propagation (root → topContent/bottomContent → labels).
   m_rootLayout->layout(renderer);
 }
 
