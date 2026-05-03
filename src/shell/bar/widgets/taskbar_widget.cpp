@@ -300,7 +300,6 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       auto* badgePtr = static_cast<Box*>(badgeHit->addChild(std::move(badge)));
 
       auto badgeText = std::make_unique<Label>();
-      badgeText->setHitTestVisible(false);
       badgeText->setText(ws.label);
       badgeText->setBold(true);
       badgeText->setFontSize(badgeFontSize);

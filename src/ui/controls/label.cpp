@@ -22,6 +22,10 @@ Label::Label() : InputArea() {
   m_textNode->setFontSize(Style::fontSizeBody);
   applyPalette();
   m_paletteConn = paletteChanged().connect([this] { applyPalette(); });
+  // Label is an InputArea; pointer hits on glyphs would otherwise stop here and
+  // never reach a parent InputArea (e.g. bar clock/media). Hover-only marquee
+  // opts back in via syncHoverInteraction().
+  setHitTestVisible(false);
 }
 
 bool Label::setText(std::string_view text) {
@@ -148,8 +152,10 @@ void Label::syncHoverInteraction() {
   if (!m_autoScroll || !m_autoScrollHoverOnly) {
     setOnEnter(nullptr);
     setOnLeave(nullptr);
+    setHitTestVisible(false);
     return;
   }
+  setHitTestVisible(true);
   setOnEnter([this](const PointerData&) { restartScrollIfNeeded(); });
   setOnLeave([this]() { restartScrollIfNeeded(); });
 }

@@ -213,9 +213,6 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
 
     if (showLabel) {
       auto text = std::make_unique<Label>();
-      // Label is an InputArea; without this, clicks on glyphs hit the label and
-      // never reach the workspace slot's onClick on the parent InputArea.
-      text->setHitTestVisible(false);
       text->setText(labels[i]);
       text->setFontSize(labelFontSize);
       text->setBold(true);
