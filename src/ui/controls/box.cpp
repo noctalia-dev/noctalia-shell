@@ -73,6 +73,11 @@ void Box::setSoftness(float softness) {
   syncStyle();
 }
 
+void Box::setNoAa(bool noAa) {
+  m_style.noAa = noAa;
+  syncStyle();
+}
+
 void Box::setSize(float w, float h) {
   Node::setSize(w, h);
   m_rect->setFrameSize(w, h);

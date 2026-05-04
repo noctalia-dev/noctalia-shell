@@ -26,10 +26,8 @@ void AudioVisualizerWidget::create() {
 
   auto visualizer = std::make_unique<AudioSpectrum>();
   visualizer->setOrientation(AudioSpectrumOrientation::Horizontal);
-  visualizer->setLayoutMode(AudioSpectrumLayoutMode::Fill);
   visualizer->setCentered(true);
   visualizer->setMirrored(m_mirrored);
-  visualizer->setSpacingRatio(0.4f);
   visualizer->setGradient(m_lowColor, m_highColor);
   m_visualizer = visualizer.get();
   root->addChild(std::move(visualizer));

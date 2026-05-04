@@ -29,6 +29,7 @@ public:
   void setCornerShapes(const CornerShapes& corners);
   void setLogicalInset(const RectInsets& inset);
   void setSoftness(float softness);
+  void setNoAa(bool noAa);
 
   // Presets
   void setFlatStyle();

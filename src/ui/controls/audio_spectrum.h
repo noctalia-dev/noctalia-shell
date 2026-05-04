@@ -15,11 +15,6 @@ enum class AudioSpectrumOrientation : std::uint8_t {
   Vertical,
 };
 
-enum class AudioSpectrumLayoutMode : std::uint8_t {
-  QuantizedCentered,
-  Fill,
-};
-
 class AudioSpectrum : public Node {
 public:
   AudioSpectrum();
@@ -27,9 +22,7 @@ public:
   void setValues(const std::vector<float>& values);
   void setGradient(const ColorSpec& lowColor, const ColorSpec& highColor);
   void setGradient(const Color& lowColor, const Color& highColor);
-  void setSpacingRatio(float ratio);
   void setOrientation(AudioSpectrumOrientation orientation);
-  void setLayoutMode(AudioSpectrumLayoutMode mode);
   void setMirrored(bool mirrored);
   void setCentered(bool centered);
   void setSmoothingTimeMs(float tauMs) noexcept { m_smoothingTauMs = std::max(0.0f, tauMs); }
@@ -53,10 +46,8 @@ private:
   bool m_converged = true;
   ColorSpec m_lowColor = colorSpecFromRole(ColorRole::Primary);
   ColorSpec m_highColor = colorSpecFromRole(ColorRole::Primary);
-  float m_spacingRatio = 0.5f;
   float m_minDisplayValue = 0.0f;
   AudioSpectrumOrientation m_orientation = AudioSpectrumOrientation::Horizontal;
-  AudioSpectrumLayoutMode m_layoutMode = AudioSpectrumLayoutMode::QuantizedCentered;
   bool m_mirrored = false;
   bool m_centered = false;
   Signal<>::ScopedConnection m_paletteConn;

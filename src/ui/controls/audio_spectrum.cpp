@@ -69,30 +69,11 @@ void AudioSpectrum::setGradient(const Color& lowColor, const Color& highColor) {
   setGradient(fixedColorSpec(lowColor), fixedColorSpec(highColor));
 }
 
-void AudioSpectrum::setSpacingRatio(float ratio) {
-  const float clamped = std::max(0.0f, ratio);
-  if (m_spacingRatio == clamped) {
-    return;
-  }
-  m_spacingRatio = clamped;
-  updateBarsGeometry();
-  markLayoutDirty();
-}
-
 void AudioSpectrum::setOrientation(AudioSpectrumOrientation orientation) {
   if (m_orientation == orientation) {
     return;
   }
   m_orientation = orientation;
-  updateBarsGeometry();
-  markLayoutDirty();
-}
-
-void AudioSpectrum::setLayoutMode(AudioSpectrumLayoutMode mode) {
-  if (m_layoutMode == mode) {
-    return;
-  }
-  m_layoutMode = mode;
   updateBarsGeometry();
   markLayoutDirty();
 }
@@ -132,47 +113,17 @@ void AudioSpectrum::updateBarsGeometry() {
     return;
   }
 
-  const float slotUnits = static_cast<float>(barCount) + m_spacingRatio * static_cast<float>(std::max(0, barCount - 1));
-  if (m_orientation == AudioSpectrumOrientation::Horizontal) {
-    const bool fill = m_layoutMode == AudioSpectrumLayoutMode::Fill;
-    const float unit = width() / std::max(1.0f, slotUnits);
-    const float barWidth = fill ? std::max(1.0f, unit) : std::max(1.0f, std::floor(unit));
-    const float gap = fill ? unit * m_spacingRatio : std::floor(barWidth * m_spacingRatio);
-    const float usedWidth =
-        barWidth * static_cast<float>(barCount) + gap * static_cast<float>(std::max(0, barCount - 1));
-    float x =
-        fill ? std::max(0.0f, (width() - usedWidth) * 0.5f) : std::floor(std::max(0.0f, (width() - usedWidth) * 0.5f));
-
-    for (int i = 0; i < barCount; ++i) {
-      const int valueIndex =
-          m_mirrored ? (i < static_cast<int>(m_displayValues.size()) ? static_cast<int>(m_displayValues.size()) - 1 - i
-                                                                     : i - static_cast<int>(m_displayValues.size()))
-                     : i;
-      const float rawValue = valueIndex >= 0 && valueIndex < static_cast<int>(m_displayValues.size())
-                                 ? std::clamp(m_displayValues[static_cast<std::size_t>(valueIndex)], 0.0f, 1.0f)
-                                 : 0.0f;
-      const float value = std::max(rawValue, m_minDisplayValue);
-      const float barHeight = fill ? std::round(value * height()) : std::floor(value * height() + 0.5f);
-      const float y =
-          m_centered ? (fill ? std::round((height() - barHeight) * 0.5f) : std::floor((height() - barHeight) * 0.5f))
-                     : (fill ? std::round(height() - barHeight) : std::floor(height() - barHeight));
-      if (auto* bar = m_bars[static_cast<std::size_t>(i)]; bar != nullptr) {
-        bar->setPosition(fill ? std::round(x) : x, y);
-        bar->setFrameSize(barWidth, barHeight);
-      }
-      x += barWidth + gap;
-    }
-    return;
-  }
-
-  const bool fill = m_layoutMode == AudioSpectrumLayoutMode::Fill;
-  const float unit = height() / std::max(1.0f, slotUnits);
-  const float barHeight = fill ? std::max(1.0f, unit) : std::max(1.0f, std::floor(unit));
-  const float gap = fill ? unit * m_spacingRatio : std::floor(barHeight * m_spacingRatio);
-  const float usedHeight =
-      barHeight * static_cast<float>(barCount) + gap * static_cast<float>(std::max(0, barCount - 1));
-  float y = fill ? std::max(0.0f, (height() - usedHeight) * 0.5f)
-                 : std::floor(std::max(0.0f, (height() - usedHeight) * 0.5f));
+  // Sharp grid: integer-pixel unit shared by bars and gaps. Total slots along the
+  // main axis = barCount bars + (barCount - 1) gaps. Any leftover from the floor
+  // is split evenly at both ends so the strip stays centered.
+  const bool horizontal = m_orientation == AudioSpectrumOrientation::Horizontal;
+  const float mainAxisLen = horizontal ? width() : height();
+  const float crossAxisLen = horizontal ? height() : width();
+  const int slots = std::max(1, 2 * barCount - 1);
+  const float unit = std::max(1.0f, std::floor(mainAxisLen / static_cast<float>(slots)));
+  const float used = unit * static_cast<float>(slots);
+  const float startOffset = std::floor(std::max(0.0f, (mainAxisLen - used) * 0.5f));
+  const float stride = unit * 2.0f; // bar + gap
 
   for (int i = 0; i < barCount; ++i) {
     const int valueIndex =
@@ -183,15 +134,24 @@ void AudioSpectrum::updateBarsGeometry() {
                                ? std::clamp(m_displayValues[static_cast<std::size_t>(valueIndex)], 0.0f, 1.0f)
                                : 0.0f;
     const float value = std::max(rawValue, m_minDisplayValue);
-    const float barWidth = fill ? std::round(value * width()) : std::floor(value * width() + 0.5f);
-    const float x = m_centered
-                        ? (fill ? std::round((width() - barWidth) * 0.5f) : std::floor((width() - barWidth) * 0.5f))
-                        : (fill ? std::round(width() - barWidth) : std::floor(width() - barWidth));
-    if (auto* bar = m_bars[static_cast<std::size_t>(i)]; bar != nullptr) {
-      bar->setPosition(x, fill ? std::round(y) : y);
-      bar->setFrameSize(barWidth, barHeight);
+    float crossSize = std::max(1.0f, std::floor(value * crossAxisLen + 0.5f));
+    // When centered, force an even cross size so the bar lands on integer columns
+    // on both sides — odd sizes would leave a 1-px right-edge wobble between bars.
+    if (m_centered) {
+      crossSize = std::max(2.0f, std::round(crossSize * 0.5f) * 2.0f);
     }
-    y += barHeight + gap;
+    const float mainPos = startOffset + static_cast<float>(i) * stride;
+    const float crossPos =
+        m_centered ? std::floor((crossAxisLen - crossSize) * 0.5f) : std::floor(crossAxisLen - crossSize);
+    if (auto* bar = m_bars[static_cast<std::size_t>(i)]; bar != nullptr) {
+      if (horizontal) {
+        bar->setPosition(mainPos, crossPos);
+        bar->setFrameSize(unit, crossSize);
+      } else {
+        bar->setPosition(crossPos, mainPos);
+        bar->setFrameSize(crossSize, unit);
+      }
+    }
   }
 }
 

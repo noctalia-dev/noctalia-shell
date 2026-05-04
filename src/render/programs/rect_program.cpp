@@ -46,6 +46,7 @@ uniform vec4 u_corner_shapes; // tl, tr, br, bl: 0 = convex, 1 = concave
 uniform vec4 u_logical_inset; // left, top, right, bottom
 uniform vec4 u_radii;  // tl, tr, br, bl
 uniform float u_softness;
+uniform int u_no_aa;
 uniform int u_invert_fill;
 uniform float u_border_width;
 uniform int u_outer_shadow;
@@ -273,6 +274,9 @@ float shadow_shape_distance(vec2 point, vec2 size, vec4 radii, vec4 corner_shape
 // the boundary so an integer-aligned edge produces 100% on the inside pixel and
 // 0% on the outside pixel, with no semi-transparent leakage.
 float coverage_for(vec2 distance_with_corner, float aa_curve) {
+    if (u_no_aa == 1) {
+        return 1.0 - step(0.0, distance_with_corner.x);
+    }
     float lo = mix(-0.5, -aa_curve, distance_with_corner.y);
     float hi = mix( 0.5,  aa_curve, distance_with_corner.y);
     return 1.0 - smoothstep(lo, hi, distance_with_corner.x);
@@ -415,6 +419,7 @@ void RectProgram::ensureInitialized() {
   m_logicalInsetLocation = glGetUniformLocation(m_program.id(), "u_logical_inset");
   m_radiiLocation = glGetUniformLocation(m_program.id(), "u_radii");
   m_softnessLocation = glGetUniformLocation(m_program.id(), "u_softness");
+  m_noAaLocation = glGetUniformLocation(m_program.id(), "u_no_aa");
   m_invertFillLocation = glGetUniformLocation(m_program.id(), "u_invert_fill");
   m_borderWidthLocation = glGetUniformLocation(m_program.id(), "u_border_width");
   m_outerShadowLocation = glGetUniformLocation(m_program.id(), "u_outer_shadow");
@@ -431,7 +436,7 @@ void RectProgram::ensureInitialized() {
       m_rectSizeLocation < 0 || m_colorLocation < 0 || m_borderColorLocation < 0 || m_fillModeLocation < 0 ||
       m_gradientDirectionLocation < 0 || m_radiiLocation < 0 || m_softnessLocation < 0 || m_gradientStopsLocation < 0 ||
       m_gradientColor0Location < 0 || m_gradientColor1Location < 0 || m_gradientColor2Location < 0 ||
-      m_gradientColor3Location < 0 || m_invertFillLocation < 0 || m_cornerShapesLocation < 0 ||
+      m_gradientColor3Location < 0 || m_invertFillLocation < 0 || m_noAaLocation < 0 || m_cornerShapesLocation < 0 ||
       m_logicalInsetLocation < 0 || m_borderWidthLocation < 0 || m_outerShadowLocation < 0 ||
       m_shadowCutoutOffsetLocation < 0 || m_shadowExclusionLocation < 0 || m_shadowExclusionOffsetLocation < 0 ||
       m_shadowExclusionSizeLocation < 0 || m_shadowExclusionCornerShapesLocation < 0 ||
@@ -460,6 +465,7 @@ void RectProgram::destroy() {
   m_logicalInsetLocation = -1;
   m_radiiLocation = -1;
   m_softnessLocation = -1;
+  m_noAaLocation = -1;
   m_invertFillLocation = -1;
   m_borderWidthLocation = -1;
   m_outerShadowLocation = -1;
@@ -521,6 +527,7 @@ void RectProgram::draw(float surfaceWidth, float surfaceHeight, float width, flo
               style.logicalInset.bottom);
   glUniform4f(m_radiiLocation, style.radius.tl, style.radius.tr, style.radius.br, style.radius.bl);
   glUniform1f(m_softnessLocation, style.softness);
+  glUniform1i(m_noAaLocation, style.noAa ? 1 : 0);
   glUniform1i(m_invertFillLocation, style.invertFill ? 1 : 0);
   glUniform1f(m_borderWidthLocation, style.borderWidth);
   glUniform1i(m_outerShadowLocation, style.outerShadow ? 1 : 0);
