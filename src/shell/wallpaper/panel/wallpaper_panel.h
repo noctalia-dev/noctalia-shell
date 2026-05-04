@@ -61,7 +61,7 @@ private:
   void navigateUp();
   void applyWallpaperFromEntry(const WallpaperEntry& entry);
   void applyColorWallpaper();
-  void rebindGrid();
+  void rebindGrid(bool resetScroll = false);
   void resetSelection();
   void selectVisibleIndex(std::size_t index);
   void activateSelectedEntry();

@@ -566,14 +566,16 @@ void WallpaperPanel::applyFilter() {
   }
 }
 
-void WallpaperPanel::rebindGrid() {
+void WallpaperPanel::rebindGrid(bool resetScroll) {
   if (m_grid == nullptr) {
     return;
   }
   m_grid->notifyDataChanged();
+  if (resetScroll || m_visibleEntries.empty()) {
+    m_grid->scrollView().setScrollOffset(0.0f);
+  }
   if (m_visibleEntries.empty()) {
     m_grid->setSelectedIndex(std::nullopt);
-    m_grid->scrollView().setScrollOffset(0.0f);
   } else {
     m_grid->setSelectedIndex(m_selectedVisibleIndex);
   }
@@ -703,7 +705,7 @@ void WallpaperPanel::navigateInto(const std::filesystem::path& dir) {
   refreshScan();
   applyFilter();
   resetSelection();
-  rebindGrid();
+  rebindGrid(true);
   rebuildBreadcrumb();
   m_dirty = true;
   PanelManager::instance().refresh();
@@ -717,7 +719,7 @@ void WallpaperPanel::navigateUp() {
   refreshScan();
   applyFilter();
   resetSelection();
-  rebindGrid();
+  rebindGrid(true);
   rebuildBreadcrumb();
   m_dirty = true;
   PanelManager::instance().refresh();
