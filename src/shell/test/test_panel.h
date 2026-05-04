@@ -2,6 +2,9 @@
 
 #include "shell/panel/panel.h"
 
+#include <memory>
+#include <string>
+
 class Flex;
 class Button;
 class Box;
@@ -31,6 +34,9 @@ public:
 private:
   void doLayout(Renderer& renderer, float width, float height) override;
   void doUpdate(Renderer& renderer) override;
+  std::unique_ptr<Flex> buildTextLabSection(float scale);
+  void applyTestFontFamily(const std::string& family);
+  void selectTab(std::size_t index);
   Flex* m_container = nullptr;
   Label* m_headerLabel = nullptr;
   Label* m_sliderValueLabel = nullptr;
@@ -68,4 +74,11 @@ private:
   Label* m_segmentedValueLabel = nullptr;
   Button* m_closeButton = nullptr;
   ScrollView* m_scrollView = nullptr;
+  Flex* m_controlsTab = nullptr;
+  Flex* m_textTab = nullptr;
+  Segmented* m_tabSwitch = nullptr;
+  Input* m_fontFamilyInput = nullptr;
+  Label* m_fontStatusLabel = nullptr;
+  Label* m_stableBaselineLabel = nullptr;
+  Toggle* m_stableBaselineToggle = nullptr;
 };
