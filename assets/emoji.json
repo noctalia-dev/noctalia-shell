@@ -349,6 +349,12 @@
     "category": "people"
   },
   {
+     "emoji": "🫩",
+     "name": "face with bags under eyes",
+     "keywords": ["tired", "done", "depressed"],
+     "category": "people"
+  },
+  {
     "emoji": "🤒",
     "name": "face with thermometer",
     "keywords": ["sick"],
@@ -2234,7 +2240,7 @@
   },
   {
     "emoji": "🧑‍🎄",
-    "name": "mx claus",
+    "name": "Mx. Claus",
     "keywords": [],
     "category": "people"
   },
@@ -3320,6 +3326,12 @@
     "category": "people"
   },
   {
+    "emoji": "🫆",
+    "name": "fingerprint",
+    "keywords": ["authentication", "biometrics"],
+    "category": "people"
+  },
+  {
     "emoji": "🐵",
     "name": "monkey face",
     "keywords": [],
@@ -3962,6 +3974,30 @@
     "category": "animals"
   },
   {
+    "emoji": "🦀",
+    "name": "crab",
+    "keywords": ["rust", "cargo", "ferris"],
+    "category": "animals"
+  },
+  {
+    "emoji": "🦞",
+    "name": "lobster",
+    "keywords": ["maine", "claw"],
+    "category": "animals"
+  },
+  {
+    "emoji": "🦐",
+    "name": "shrimp",
+    "keywords": [],
+    "category": "animals"
+  },
+  {
+    "emoji": "🦑",
+    "name": "squid",
+    "keywords": ["ika", "splatoon"],
+    "category": "animals"
+  },
+  {
     "emoji": "🐌",
     "name": "snail",
     "keywords": ["slow"],
@@ -4238,6 +4274,12 @@
     "category": "nature"
   },
   {
+    "emoji": "🪾",
+    "name": "leafless tree",
+    "keywords": ["dead", "shrub"],
+    "category": "nature"
+  },
+  {
     "emoji": "🍇",
     "name": "grapes",
     "keywords": [],
@@ -4462,7 +4504,13 @@
   {
     "emoji": "🍄‍🟫",
     "name": "brown mushroom",
-    "keywords": [],
+    "keywords": ["fungus"],
+    "category": "food"
+  },
+  {
+    "emoji": "🫜",
+    "name": "root vegetable",
+    "keywords": ["radish", "beet"],
     "category": "food"
   },
   {
@@ -4768,30 +4816,6 @@
   {
     "emoji": "🥡",
     "name": "takeout box",
-    "keywords": [],
-    "category": "food"
-  },
-  {
-    "emoji": "🦀",
-    "name": "crab",
-    "keywords": [],
-    "category": "food"
-  },
-  {
-    "emoji": "🦞",
-    "name": "lobster",
-    "keywords": [],
-    "category": "food"
-  },
-  {
-    "emoji": "🦐",
-    "name": "shrimp",
-    "keywords": [],
-    "category": "food"
-  },
-  {
-    "emoji": "🦑",
-    "name": "squid",
     "keywords": [],
     "category": "food"
   },
@@ -7322,6 +7346,12 @@
     "category": "objects"
   },
   {
+    "emoji": "🪉",
+    "name": "harp",
+    "keywords": [],
+    "category": "objects"
+  },
+  {
     "emoji": "📱",
     "name": "mobile phone",
     "keywords": ["smartphone", "mobile"],
@@ -8147,6 +8177,12 @@
     "emoji": "🪜",
     "name": "ladder",
     "keywords": [],
+    "category": "objects"
+  },
+  {
+    "emoji": "🪏",
+    "name": "shovel",
+    "keywords": ["dig"],
     "category": "objects"
   },
   {
@@ -9260,6 +9296,12 @@
     "category": "symbols"
   },
   {
+    "emoji": "🫟",
+    "name": "splatter",
+    "keywords": ["paint", "goo"],
+    "category": "symbols"
+  },
+  {
     "emoji": "#️⃣",
     "name": "keycap: #",
     "keywords": ["number"],
@@ -10126,6 +10168,12 @@
   {
     "emoji": "🇨🇵",
     "name": "Clipperton Island",
+    "keywords": [],
+    "category": "flags"
+  },
+  {
+    "emoji": "🇨🇶",
+    "name": "Sark",
     "keywords": [],
     "category": "flags"
   },
