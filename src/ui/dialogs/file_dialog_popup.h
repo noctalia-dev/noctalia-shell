@@ -1,72 +1,49 @@
 #pragma once
 
-#include "render/animation/animation_manager.h"
-#include "render/scene/input_dispatcher.h"
+#include "ui/dialogs/dialog_popup_host.h"
 #include "ui/dialogs/file_dialog.h"
 #include "ui/dialogs/file_dialog_view.h"
-#include "ui/dialogs/layer_popup_host.h"
 
+#include <filesystem>
 #include <memory>
+#include <optional>
 
-class Box;
-class ConfigService;
-class Node;
-class PopupSurface;
-class RenderContext;
 class ThumbnailService;
-class WaylandConnection;
-struct KeyboardEvent;
-struct PointerEvent;
-struct wl_surface;
 
-class FileDialogPopup final : public FileDialogHost, public FileDialogPresenter {
+class FileDialogPopup final : public DialogPopupHost, public FileDialogHost, public FileDialogPresenter {
 public:
+  ~FileDialogPopup() override;
+
   void initialize(WaylandConnection& wayland, ConfigService& config, RenderContext& renderContext,
                   LayerPopupHostRegistry& popupHosts, ThumbnailService& thumbnails);
 
   [[nodiscard]] bool openFileDialog() override;
   void closeFileDialogWithoutResult() override;
-  [[nodiscard]] bool onPointerEvent(const PointerEvent& event);
-  void onKeyboardEvent(const KeyboardEvent& event);
-  void requestFontLayout();
-  void requestThemeRedraw();
-  [[nodiscard]] bool isOpen() const noexcept { return m_surface != nullptr; }
-  [[nodiscard]] wl_surface* wlSurface() const noexcept;
 
-  void requestUpdateOnly() override;
-  void requestLayout() override;
-  void requestRedraw() override;
+  // FileDialogHost overrides. The base provides the actual behavior; these
+  // exist solely to satisfy the FileDialogHost vtable slots, since the base
+  // methods are not part of FileDialogHost's vtable through the multiple
+  // inheritance.
+  void requestUpdateOnly() override { DialogPopupHost::requestUpdateOnly(); }
+  void requestLayout() override { DialogPopupHost::requestLayout(); }
+  void requestRedraw() override { DialogPopupHost::requestRedraw(); }
   void focusArea(InputArea* area) override;
   [[nodiscard]] InputArea* focusedArea() const override;
   void accept(std::optional<std::filesystem::path> result) override;
-  void cancel() override;
+  void cancel() override { DialogPopupHost::cancel(); }
+
+protected:
+  void populateContent(Node* contentParent, std::uint32_t width, std::uint32_t height) override;
+  void layoutSheet(float contentWidth, float contentHeight) override;
+  void cancelToFacade() override;
+  [[nodiscard]] InputArea* initialFocusArea() override;
+
+  [[nodiscard]] float computePadding(float scale) const override;
+  void runUpdatePhase() override;
+  [[nodiscard]] bool preDispatchKeyboard(const KeyboardEvent& event) override;
+  void onSheetClose() override;
 
 private:
-  [[nodiscard]] wl_surface* resolveEventSurface(const PointerEvent& event) const noexcept;
-  [[nodiscard]] std::optional<LayerPopupParentContext> resolveParentContext() const;
-  void prepareFrame(bool needsUpdate, bool needsLayout);
-  void buildScene(std::uint32_t width, std::uint32_t height);
-  void layoutScene(float width, float height);
-  void destroyPopup();
-  [[nodiscard]] bool mapPointerEvent(const PointerEvent& event, float& localX, float& localY) const noexcept;
-  void syncPointerStateFromCurrentPosition();
-  [[nodiscard]] bool ownsSurface(wl_surface* surface) const noexcept;
-  [[nodiscard]] float uiScale() const;
-
-  WaylandConnection* m_wayland = nullptr;
-  ConfigService* m_config = nullptr;
-  RenderContext* m_renderContext = nullptr;
-  LayerPopupHostRegistry* m_popupHosts = nullptr;
   ThumbnailService* m_thumbnails = nullptr;
-
-  std::unique_ptr<PopupSurface> m_surface;
-  AnimationManager m_animations;
-  std::unique_ptr<Node> m_sceneRoot;
-  Box* m_bgNode = nullptr;
-  Node* m_contentNode = nullptr;
-  InputDispatcher m_inputDispatcher;
   std::unique_ptr<FileDialogView> m_dialog;
-  bool m_attachedToHost = false;
-  wl_surface* m_parentSurface = nullptr;
-  bool m_pointerInside = false;
 };

@@ -435,9 +435,9 @@ void Application::initServices() {
     m_trayMenu.onThemeChanged();
     m_backdrop.onThemeChanged();
     m_settingsWindow.onThemeChanged();
-    m_colorPickerDialogPopup.requestThemeRedraw();
-    m_glyphPickerDialogPopup.requestThemeRedraw();
-    m_fileDialogPopup.requestThemeRedraw();
+    m_colorPickerDialogPopup.requestRedraw();
+    m_glyphPickerDialogPopup.requestRedraw();
+    m_fileDialogPopup.requestRedraw();
   });
 
   if (const auto distro = DistroDetector::detect(); distro.has_value()) {
@@ -956,9 +956,9 @@ void Application::initUi() {
     m_trayMenu.onFontChanged();
     m_backdrop.onFontChanged();
     m_settingsWindow.onFontChanged();
-    m_colorPickerDialogPopup.requestFontLayout();
-    m_glyphPickerDialogPopup.requestFontLayout();
-    m_fileDialogPopup.requestFontLayout();
+    m_colorPickerDialogPopup.requestLayout();
+    m_glyphPickerDialogPopup.requestLayout();
+    m_fileDialogPopup.requestLayout();
   });
 
   m_timeService.setTickSecondCallback([this]() {
