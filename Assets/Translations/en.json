@@ -58,6 +58,7 @@
       "display-mode-icon-always": "Icon - Always show %",
       "display-mode-icon-hover": "Icon - Show on hover",
       "display-mode-icon-only": "Icon only",
+      "display-mode-android-16": "Android 16 style",
       "hide-if-idle-description": "Hide the widget when the battery is not charging or discharging.",
       "hide-if-idle-label": "Hide when idle",
       "hide-if-not-detected-description": "Hide the widget when no battery is detected on the system.",
