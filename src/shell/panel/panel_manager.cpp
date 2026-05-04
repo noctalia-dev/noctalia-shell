@@ -337,7 +337,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_attachedBackgroundOpacity = m_activePanel->inheritsBarBackgroundOpacity()
                                       ? barConfig.backgroundOpacity
                                       : m_activePanel->attachedBackgroundOpacityOverride();
-    m_attachedContactShadow = barConfig.contactShadow && barConfig.shadow;
+    m_attachedContactShadow = barConfig.contactShadow;
     m_attachedRevealProgress = 0.0f;
     m_attachedRevealDirection = attached_panel::revealDirection(barPosition);
     m_attachedBarPosition = std::string(barPosition);
