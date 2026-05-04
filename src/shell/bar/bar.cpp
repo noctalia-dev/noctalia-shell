@@ -1390,7 +1390,6 @@ void Bar::prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout
   }
 
   m_renderContext->makeCurrent(instance.surface->renderTarget());
-  m_renderContext->syncContentScale(instance.surface->renderTarget());
 
   if (needsUpdate) {
     UiPhaseScope updatePhase(UiPhase::Update);

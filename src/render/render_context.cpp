@@ -101,6 +101,13 @@ void RenderContext::makeCurrent(RenderTarget& target) {
     throw std::runtime_error("RenderContext has no initialized backend");
   }
   m_backend->makeCurrent(target);
+  // Sync the shared text/glyph renderer to this target's buffer/logical ratio
+  // unconditionally on every makeCurrent. The text and glyph renderers are
+  // process-singletons; if this is left out, layout/measure on one surface can
+  // run at a stale scale set by the last-rendered surface (visible as label
+  // jitter on multi-monitor setups with mixed fractional scales). renderScene
+  // also goes through this path indirectly via beginFrame.
+  syncContentScale(target);
 }
 
 void RenderContext::syncContentScale(RenderTarget& target) {

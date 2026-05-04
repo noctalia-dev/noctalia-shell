@@ -1434,7 +1434,6 @@ void PanelManager::prepareFrame(bool needsUpdate, bool needsLayout) {
   }
 
   m_renderContext->makeCurrent(m_surface->renderTarget());
-  m_renderContext->syncContentScale(m_surface->renderTarget());
 
   const auto width = m_surface->width();
   const auto height = m_surface->height();

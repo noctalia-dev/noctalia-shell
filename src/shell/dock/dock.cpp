@@ -594,7 +594,6 @@ void Dock::prepareFrame(DockInstance& instance, bool needsUpdate, bool needsLayo
   }
 
   m_renderContext->makeCurrent(instance.surface->renderTarget());
-  m_renderContext->syncContentScale(instance.surface->renderTarget());
 
   bool needsModelRebuild = false;
   if (needsUpdate || instance.sceneRoot == nullptr) {

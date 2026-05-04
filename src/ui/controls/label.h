@@ -110,4 +110,18 @@ private:
   float m_textBaseX = 0.0f;
   std::uint32_t m_marqueeAnimId = 0;
   std::uint32_t m_snapAnimId = 0;
+
+  // Last-applied marquee inputs. restartScrollIfNeeded() resets the scroll
+  // offset to 0 and re-arms the animation, so we must avoid calling it on
+  // every measure pass — Flex layout calls Label::measureWithConstraints()
+  // multiple times per layout (measure → arrange → next pass) with slightly
+  // different constraints, each of which is a measure-cache miss.
+  bool m_marqueeStateValid = false;
+  bool m_marqueeStateAutoScroll = false;
+  bool m_marqueeStateHoverOnly = false;
+  bool m_marqueeStateHovered = false;
+  float m_marqueeStateWidth = 0.0f;
+  float m_marqueeStateFullTextWidth = 0.0f;
+  float m_marqueeStateLoopPeriod = 0.0f;
+  float m_marqueeStateSpeed = 0.0f;
 };

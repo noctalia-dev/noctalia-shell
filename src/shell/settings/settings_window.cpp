@@ -239,7 +239,6 @@ void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
   }
 
   m_renderContext->makeCurrent(m_surface->renderTarget());
-  m_renderContext->syncContentScale(m_surface->renderTarget());
 
   // Rebuild the entire scene only on first build or when something explicitly
   // requested it (config change, nav click, etc.). Pure size changes — which
