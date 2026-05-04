@@ -417,7 +417,7 @@ ColumnLayout {
             }
 
             NText {
-              text: I18n.tr("panels.bar.appearance-type-description") ?? "Choose the style of the bar: Simple, Floating or Framed"
+              text: I18n.tr("panels.bar.appearance-type-description") ?? "Choose the style of the bar: Simple, Floating, Framed or Island"
               pointSize: Style.fontSizeS
               color: Color.mOnSurfaceVariant
             }
@@ -441,6 +441,10 @@ ColumnLayout {
               {
                 "key": "framed",
                 "name": I18n.tr("options.bar.type-framed") ?? "Framed"
+              },
+              {
+                "key": "island",
+                "name": I18n.tr("options.bar.type-island") ?? "Island"
               }
             ]
             delegate: Rectangle {
@@ -469,9 +473,7 @@ ColumnLayout {
               MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                  Settings.data.bar.barType = modelData.key;
-                }
+                onClicked: Settings.data.bar.barType = modelData.key
               }
 
               Behavior on color {

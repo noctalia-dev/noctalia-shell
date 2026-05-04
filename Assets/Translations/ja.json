@@ -684,6 +684,7 @@
       "display-mode-always-visible": "常に表示",
       "type-floating": "フローティング",
       "type-framed": "フレーム",
+      "type-island": "Island",
       "type-simple": "シンプル"
     },
     "control-center": {

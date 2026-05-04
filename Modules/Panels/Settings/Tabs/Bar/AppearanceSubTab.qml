@@ -84,13 +84,15 @@ ColumnLayout {
       {
         "key": "framed",
         "name": I18n.tr("options.bar.type-framed")
+      },
+      {
+        "key": "island",
+        "name": I18n.tr("options.bar.type-island") ?? "Island"
       }
     ]
     currentKey: Settings.data.bar.barType
     defaultValue: Settings.getDefaultValue("bar.barType")
-    onSelected: key => {
-                  Settings.data.bar.barType = key;
-                }
+    onSelected: key => Settings.data.bar.barType = key
   }
 
   NComboBox {
@@ -297,7 +299,7 @@ ColumnLayout {
   }
 
   ColumnLayout {
-    visible: Settings.data.bar.barType === "floating"
+    visible: Settings.data.bar.barType === "floating" || Settings.data.bar.barType === "island"
     spacing: Style.marginL
     Layout.fillWidth: true
 
@@ -306,7 +308,8 @@ ColumnLayout {
     }
 
     NSpinBox {
-      label: I18n.tr("panels.bar.appearance-margins-vertical")
+      visible: Settings.data.bar.barType === "floating" || (Settings.data.bar.barType === "island" && (Settings.data.bar.position === "left" || Settings.data.bar.position === "right"))
+      label: Settings.data.bar.barType === "island" ? (I18n.tr("panels.bar.appearance-margins-vertical") ?? "Marge verticale") : I18n.tr("panels.bar.appearance-margins-vertical")
       description: I18n.tr("panels.bar.appearance-margins-description")
       from: 0
       to: 500
@@ -317,7 +320,8 @@ ColumnLayout {
     }
 
     NSpinBox {
-      label: I18n.tr("panels.bar.appearance-margins-horizontal")
+      visible: Settings.data.bar.barType === "floating" || (Settings.data.bar.barType === "island" && (Settings.data.bar.position === "top" || Settings.data.bar.position === "bottom"))
+      label: Settings.data.bar.barType === "island" ? (I18n.tr("panels.bar.appearance-margins-horizontal") ?? "Marge horizontale") : I18n.tr("panels.bar.appearance-margins-horizontal")
       description: I18n.tr("panels.bar.appearance-margins-description")
       from: 0
       to: 500

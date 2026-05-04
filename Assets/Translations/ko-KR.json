@@ -684,6 +684,7 @@
       "display-mode-always-visible": "항상 표시",
       "type-floating": "플로팅",
       "type-framed": "프레임",
+      "type-island": "Island",
       "type-simple": "심플"
     },
     "control-center": {

@@ -202,7 +202,7 @@ Singleton {
 
     // bar
     property JsonObject bar: JsonObject {
-      property string barType: "simple" // "simple", "floating", "framed"
+      property string barType: "simple" // "simple", "floating", "framed", "island"
       property string position: "top" // "top", "bottom", "left", or "right"
       property list<string> monitors: [] // holds bar visibility per monitor
       property string density: "default" // "compact", "default", "comfortable"

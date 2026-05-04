@@ -684,6 +684,7 @@
       "display-mode-always-visible": "Luôn hiển thị",
       "type-floating": "Nổi",
       "type-framed": "Được đóng khung",
+      "type-island": "Island",
       "type-simple": "Đơn giản"
     },
     "control-center": {

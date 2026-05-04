@@ -40,10 +40,11 @@ PanelWindow {
   readonly property string barPosition: Settings.getBarPositionForScreen(barWindow.screen?.name)
   readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
   readonly property bool isFramed: Settings.data.bar.barType === "framed"
+  readonly property bool isIsland: Settings.data.bar.barType === "island"
   readonly property real frameThickness: Settings.data.bar.frameThickness ?? 12
   readonly property bool barFloating: Settings.data.bar.barType === "floating"
-  readonly property real barMarginH: Math.ceil(barFloating ? Settings.data.bar.marginHorizontal : 0)
-  readonly property real barMarginV: Math.ceil(barFloating ? Settings.data.bar.marginVertical : 0)
+  readonly property real barMarginH: Math.ceil((barFloating || (isIsland && !barIsVertical)) ? Settings.data.bar.marginHorizontal : 0)
+  readonly property real barMarginV: Math.ceil((barFloating || (isIsland && barIsVertical)) ? Settings.data.bar.marginVertical : 0)
   readonly property real barHeight: Style.getBarHeightForScreen(barWindow.screen?.name)
 
   // Auto-hide properties
@@ -189,10 +190,10 @@ PanelWindow {
 
   // Handle floating margins and framed mode offsets
   margins {
-    top: (barPosition === "top") ? barMarginV : (isFramed ? frameThickness : barMarginV)
-    bottom: (barPosition === "bottom") ? barMarginV : (isFramed ? frameThickness : barMarginV)
-    left: (barPosition === "left") ? barMarginH : (isFramed ? frameThickness : barMarginH)
-    right: (barPosition === "right") ? barMarginH : (isFramed ? frameThickness : barMarginH)
+    top: (barPosition === "top") ? (isIsland ? 0 : barMarginV) : (isFramed ? frameThickness : barMarginV)
+    bottom: (barPosition === "bottom") ? (isIsland ? 0 : barMarginV) : (isFramed ? frameThickness : barMarginV)
+    left: (barPosition === "left") ? (isIsland ? 0 : barMarginH) : (isFramed ? frameThickness : barMarginH)
+    right: (barPosition === "right") ? (isIsland ? 0 : barMarginH) : (isFramed ? frameThickness : barMarginH)
   }
 
   // Set a tight window size

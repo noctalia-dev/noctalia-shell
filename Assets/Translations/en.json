@@ -684,6 +684,7 @@
       "display-mode-always-visible": "Always Visible",
       "type-floating": "Floating",
       "type-framed": "Framed",
+      "type-island": "Island",
       "type-simple": "Simple"
     },
     "control-center": {
