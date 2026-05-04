@@ -10,6 +10,7 @@
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/search_picker.h"
+#include "ui/dialogs/glyph_picker_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -807,9 +808,48 @@ namespace settings {
                                      static_cast<float>(spec.step), path, false));
           break;
         }
-        case WidgetSettingValueType::String:
-          ctx.makeRow(*panel, entry, ctx.makeText(settingValueAsString(value), {}, path));
+        case WidgetSettingValueType::String: {
+          auto textNode = ctx.makeText(settingValueAsString(value), {}, path);
+          if (spec.key == "glyph") {
+            auto wrap = std::make_unique<Flex>();
+            wrap->setDirection(FlexDirection::Horizontal);
+            wrap->setAlign(FlexAlign::Center);
+            wrap->setGap(Style::spaceSm * ctx.scale);
+            wrap->addChild(std::move(textNode));
+
+            auto pickerButton = std::make_unique<Button>();
+            pickerButton->setVariant(ButtonVariant::Secondary);
+            pickerButton->setGlyph("apps");
+            pickerButton->setGlyphSize(Style::fontSizeBody * ctx.scale);
+            pickerButton->setMinHeight(Style::controlHeight * ctx.scale);
+            pickerButton->setMinWidth(Style::controlHeight * ctx.scale);
+            pickerButton->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
+            pickerButton->setRadius(Style::radiusMd * ctx.scale);
+            pickerButton->setOnClick([setOverride = ctx.setOverride, requestRebuild = ctx.requestRebuild, path,
+                                      currentValue = settingValueAsString(value)]() {
+              GlyphPickerDialogOptions options;
+              if (!currentValue.empty()) {
+                options.initialGlyph = currentValue;
+              }
+              (void)GlyphPickerDialog::open(
+                  std::move(options), [setOverride, requestRebuild, path](std::optional<GlyphPickerResult> result) {
+                    if (!result.has_value()) {
+                      return;
+                    }
+                    setOverride(path, result->name);
+                    if (requestRebuild) {
+                      requestRebuild();
+                    }
+                  });
+            });
+            wrap->addChild(std::move(pickerButton));
+
+            ctx.makeRow(*panel, entry, std::move(wrap));
+          } else {
+            ctx.makeRow(*panel, entry, std::move(textNode));
+          }
           break;
+        }
         case WidgetSettingValueType::StringList:
           ctx.makeListBlock(*panel, entry, ListSetting{.items = settingValueAsStringList(value)});
           break;

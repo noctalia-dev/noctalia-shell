@@ -354,3 +354,7 @@ char32_t GlyphRegistry::lookup(std::string_view name) {
   kLog.warn("missing glyph: {}", name);
   return kMissingGlyph;
 }
+
+const std::unordered_map<std::string, char32_t>& GlyphRegistry::tablerIcons() { return ::tablerIcons(); }
+
+const std::unordered_map<std::string, char32_t>& GlyphRegistry::aliases() { return kIcons; }

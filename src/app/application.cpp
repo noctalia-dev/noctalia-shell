@@ -31,6 +31,7 @@
 #include "ui/controls/input.h"
 #include "ui/dialogs/color_picker_dialog.h"
 #include "ui/dialogs/file_dialog.h"
+#include "ui/dialogs/glyph_picker_dialog.h"
 #include "ui/style.h"
 #include "util/file_utils.h"
 
@@ -435,6 +436,7 @@ void Application::initServices() {
     m_backdrop.onThemeChanged();
     m_settingsWindow.onThemeChanged();
     m_colorPickerDialogPopup.requestThemeRedraw();
+    m_glyphPickerDialogPopup.requestThemeRedraw();
     m_fileDialogPopup.requestThemeRedraw();
   });
 
@@ -774,6 +776,8 @@ void Application::initUi() {
       return;
     if (m_colorPickerDialogPopup.onPointerEvent(event))
       return;
+    if (m_glyphPickerDialogPopup.onPointerEvent(event))
+      return;
     if (m_fileDialogPopup.onPointerEvent(event))
       return;
     if (m_bar.onPointerEvent(event))
@@ -796,6 +800,10 @@ void Application::initUi() {
     }
     if (m_colorPickerDialogPopup.isOpen()) {
       m_colorPickerDialogPopup.onKeyboardEvent(event);
+      return;
+    }
+    if (m_glyphPickerDialogPopup.isOpen()) {
+      m_glyphPickerDialogPopup.onKeyboardEvent(event);
       return;
     }
     if (m_fileDialogPopup.isOpen()) {
@@ -918,6 +926,9 @@ void Application::initUi() {
   m_colorPickerDialogPopup.initialize(m_wayland, m_configService, m_renderContext, m_layerPopupHosts);
   ColorPickerDialog::setPresenter(&m_colorPickerDialogPopup);
 
+  m_glyphPickerDialogPopup.initialize(m_wayland, m_configService, m_renderContext, m_layerPopupHosts);
+  GlyphPickerDialog::setPresenter(&m_glyphPickerDialogPopup);
+
   m_fileDialogPopup.initialize(m_wayland, m_configService, m_renderContext, m_layerPopupHosts, m_thumbnailService);
   FileDialog::setPresenter(&m_fileDialogPopup);
 
@@ -946,6 +957,7 @@ void Application::initUi() {
     m_backdrop.onFontChanged();
     m_settingsWindow.onFontChanged();
     m_colorPickerDialogPopup.requestFontLayout();
+    m_glyphPickerDialogPopup.requestFontLayout();
     m_fileDialogPopup.requestFontLayout();
   });
 

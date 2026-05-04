@@ -1604,6 +1604,10 @@
       },
       "color-picker": {
         "title": "Color"
+      },
+      "glyph-picker": {
+        "title": "Pick an Icon",
+        "search-placeholder": "Search icons…"
       }
     },
     "controls": {
