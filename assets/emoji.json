@@ -511,6 +511,12 @@
     "category": "people"
   },
   {
+    "emoji": "🫪",
+    "name": "distored face",
+    "keywords": ["anxious", "bloated"],
+    "category": "people"
+  },
+  {
     "emoji": "🥺",
     "name": "pleading face",
     "keywords": ["puppy", "eyes"],
@@ -946,6 +952,12 @@
     "emoji": "💢",
     "name": "anger symbol",
     "keywords": ["angry"],
+    "category": "people"
+  },
+  {
+    "emoji": "🫯",
+    "name": "fight cloud",
+    "keywords": [],
     "category": "people"
   },
   {
@@ -2413,6 +2425,12 @@
     "category": "people"
   },
   {
+    "emoji": "🫈",
+    "name": "hairy creature",
+    "keywords": ["bigfoot", "sasquatch"],
+    "category": "people"
+  },
+  {
     "emoji": "💆",
     "name": "person getting massage",
     "keywords": ["spa"],
@@ -2681,6 +2699,12 @@
     "emoji": "🏃‍♀️‍➡️",
     "name": "woman running facing right",
     "keywords": ["exercise", "workout", "marathon"],
+    "category": "people"
+  },
+  {
+    "emoji": "🧑‍🩰",
+    "name": "balet dancer",
+    "keywords": [],
     "category": "people"
   },
   {
@@ -3928,6 +3952,12 @@
   {
     "emoji": "🐬",
     "name": "dolphin",
+    "keywords": [],
+    "category": "animals"
+  },
+  {
+    "emoji": "🫍",
+    "name": "orca",
     "keywords": [],
     "category": "animals"
   },
@@ -7286,6 +7316,18 @@
     "category": "objects"
   },
   {
+    "emoji": "🎺",
+    "name": "trumpet",
+    "keywords": [],
+    "category": "objects"
+  },
+  {
+    "emoji": "🪊",
+    "name": "trombone",
+    "keywords": [],
+    "category": "objects"
+  },
+  {
     "emoji": "🪗",
     "name": "accordion",
     "keywords": [],
@@ -7301,12 +7343,6 @@
     "emoji": "🎹",
     "name": "musical keyboard",
     "keywords": ["piano"],
-    "category": "objects"
-  },
-  {
-    "emoji": "🎺",
-    "name": "trumpet",
-    "keywords": [],
     "category": "objects"
   },
   {
@@ -7678,7 +7714,13 @@
   {
     "emoji": "🪙",
     "name": "coin",
-    "keywords": [],
+    "keywords": ["money"],
+    "category": "objects"
+  },
+  {
+    "emoji": "🪎",
+    "name": "treasure chest",
+    "keywords": ["booty", "loot", "money"],
     "category": "objects"
   },
   {
@@ -9118,13 +9160,13 @@
   {
     "emoji": "‼️",
     "name": "double exclamation mark",
-    "keywords": [],
+    "keywords": ["bangbang"],
     "category": "symbols"
   },
   {
     "emoji": "⁉️",
     "name": "exclamation question mark",
-    "keywords": [],
+    "keywords": ["interrobang"],
     "category": "symbols"
   },
   {
