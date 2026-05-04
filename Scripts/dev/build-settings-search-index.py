@@ -3,7 +3,7 @@
 Build settings search index from QML source files.
 
 Parses settings tab QML files to extract searchable metadata
-(i18n keys, widget types, tab/sub-tab locations).
+(i18n keys, widget types, tab/sub-tab locations, visibility conditions).
 
 Output: Assets/settings-search-index.json
 
@@ -32,6 +32,7 @@ WIDGET_TYPES = (
     "NTextInput",
     "NCheckbox",
     "NLabel",
+    "NColorChoice",
     "HookRow",
 )
 
@@ -41,6 +42,21 @@ RE_WIDGET_OPEN = re.compile(
 )
 RE_LABEL = re.compile(r'label:\s*I18n\.tr\("([^"]+)"')
 RE_DESCRIPTION = re.compile(r'description:\s*I18n\.tr\("([^"]+)"')
+RE_VISIBLE = re.compile(r'^\s*visible:\s*(.+?)(?:\s*;)?\s*$')
+
+# Prefixes that indicate externally-resolvable conditions (singleton services or globals).
+# Conditions referencing local variables (root., parent., model, index, etc.) are skipped.
+RESOLVABLE_PREFIXES = (
+    "CompositorService.",
+    "Settings.data.",
+    "Quickshell.",
+    "IdleService.",
+    "SystemStatService.",
+    "SoundService.",
+    "BluetoothService.",
+    "LocationService.",
+    "false",
+)
 
 
 def parse_component_declarations(content: str) -> dict[str, str]:
@@ -233,9 +249,61 @@ def resolve_tab_info(
         return tab_index, tab_label, None, None
 
 
-def extract_widget_blocks(content: str) -> list[tuple[str, str]]:
+def is_resolvable_condition(cond: str) -> bool:
+    """Check if a visibility condition can be resolved at runtime by the shell."""
+    # Strip negation for prefix checking
+    check = cond.lstrip("!").lstrip(" ").lstrip("(").lstrip(" ")
+    return any(check.startswith(p) for p in RESOLVABLE_PREFIXES)
+
+
+def build_scope_visibility(content: str) -> dict[int, list[str]]:
     """
-    Extract (widget_type, block_text) pairs from QML content.
+    For each line number, compute the list of inherited visibility conditions
+    from all enclosing QML scopes.
+
+    Tracks brace-depth to maintain a scope stack. When a ``visible:`` property
+    is found, it is associated with the innermost scope. The conditions are
+    inherited by all lines within that scope.
+
+    Returns: line_number -> list of condition strings
+    """
+    lines = content.splitlines()
+    # Each entry: visibility condition string or None
+    scope_stack: list[str | None] = []
+    result: dict[int, list[str]] = {}
+
+    for line_num, raw_line in enumerate(lines):
+        stripped = raw_line.strip()
+
+        # Record inherited conditions BEFORE processing this line's braces.
+        # This means a widget opening on this line inherits from parent scopes,
+        # not from its own scope (which hasn't been populated yet).
+        result[line_num] = [c for c in scope_stack if c is not None]
+
+        # Process opening braces — push new scopes
+        n_opens = stripped.count("{")
+        for _ in range(n_opens):
+            scope_stack.append(None)
+
+        # Check for visible: property — assign to the innermost scope
+        vis_match = RE_VISIBLE.match(stripped)
+        if vis_match and scope_stack:
+            cond = vis_match.group(1).strip()
+            if cond != "true":
+                scope_stack[-1] = cond
+
+        # Process closing braces — pop scopes
+        n_closes = stripped.count("}")
+        for _ in range(n_closes):
+            if scope_stack:
+                scope_stack.pop()
+
+    return result
+
+
+def extract_widget_blocks(content: str) -> list[tuple[str, str, int]]:
+    """
+    Extract (widget_type, block_text, start_line) tuples from QML content.
 
     Uses brace-depth tracking to capture the full widget block.
     """
@@ -249,6 +317,7 @@ def extract_widget_blocks(content: str) -> list[tuple[str, str]]:
             widget_type = m.group(1)
             depth = 0
             block_lines = []
+            start_line = i
             j = i
 
             while j < len(lines):
@@ -260,7 +329,7 @@ def extract_widget_blocks(content: str) -> list[tuple[str, str]]:
                 j += 1
 
             block_text = "\n".join(block_lines)
-            results.append((widget_type, block_text))
+            results.append((widget_type, block_text, start_line))
             i = j + 1
         else:
             i += 1
@@ -281,9 +350,10 @@ def extract_entries(
         return []
 
     content = qml_file.read_text()
+    scope_vis = build_scope_visibility(content)
     entries = []
 
-    for widget_type, block in extract_widget_blocks(content):
+    for widget_type, block, start_line in extract_widget_blocks(content):
         label_match = RE_LABEL.search(block)
         if not label_match:
             continue
@@ -291,6 +361,19 @@ def extract_entries(
         label_key = label_match.group(1)
         desc_match = RE_DESCRIPTION.search(block)
         desc_key = desc_match.group(1) if desc_match else None
+
+        # Collect visibility conditions: ancestor scopes + widget's own visible:
+        conditions = list(scope_vis.get(start_line, []))
+        widget_vis = re.search(
+            r'^\s*visible:\s*(.+?)(?:\s*;)?\s*$', block, re.MULTILINE
+        )
+        if widget_vis:
+            cond = widget_vis.group(1).strip()
+            if cond != "true" and cond not in conditions:
+                conditions.append(cond)
+
+        # Keep only externally-resolvable conditions
+        conditions = [c for c in conditions if is_resolvable_condition(c)]
 
         entry = {
             "labelKey": label_key,
@@ -302,6 +385,8 @@ def extract_entries(
         }
         if sub_tab_label is not None:
             entry["subTabLabel"] = sub_tab_label
+        if conditions:
+            entry["visibleWhen"] = conditions
 
         entries.append(entry)
 

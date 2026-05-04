@@ -43,7 +43,6 @@ PanelWindow {
     Logger.d("MainScreen", "Initialized for screen:", screen?.name, "- Dimensions:", screen?.width, "x", screen?.height, "- Position:", screen?.x, ",", screen?.y);
   }
 
-  // Wayland
   WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.namespace: "noctalia-background-" + (screen?.name || "unknown")
   WlrLayershell.exclusionMode: ExclusionMode.Ignore // Don't reserve space - BarExclusionZone handles that
@@ -203,13 +202,15 @@ PanelWindow {
   }
 
   // Blur behind the bar and open panels — attached to PanelWindow (required by BackgroundEffect API)
-  BackgroundEffect.blurRegion: Region {
+  BackgroundEffect.blurRegion: Settings.data.general.enableBlurBehind ? blurRegion : null
+  Region {
+    id: blurRegion
     // ── Non-framed bar (simple/floating): single rectangle with bar corner states ──
     Region {
-      x: (!barPlaceholder.isFramed && root.barShouldShow) ? barPlaceholder.x : 0
-      y: (!barPlaceholder.isFramed && root.barShouldShow) ? barPlaceholder.y : 0
-      width: (!barPlaceholder.isFramed && root.barShouldShow) ? barPlaceholder.width : 0
-      height: (!barPlaceholder.isFramed && root.barShouldShow) ? barPlaceholder.height : 0
+      x: (!barPlaceholder.isFramed && root.barShouldShow && !barPlaceholder.isHidden) ? barPlaceholder.x : 0
+      y: (!barPlaceholder.isFramed && root.barShouldShow && !barPlaceholder.isHidden) ? barPlaceholder.y : 0
+      width: (!barPlaceholder.isFramed && root.barShouldShow && !barPlaceholder.isHidden) ? barPlaceholder.width : 0
+      height: (!barPlaceholder.isFramed && root.barShouldShow && !barPlaceholder.isHidden) ? barPlaceholder.height : 0
       radius: Style.radiusL
       topLeftCorner: barPlaceholder.topLeftCornerState
       topRightCorner: barPlaceholder.topRightCornerState
@@ -221,8 +222,8 @@ PanelWindow {
     Region {
       x: 0
       y: 0
-      width: (barPlaceholder.isFramed && root.barShouldShow) ? root.width : 0
-      height: (barPlaceholder.isFramed && root.barShouldShow) ? root.height : 0
+      width: (barPlaceholder.isFramed && root.barShouldShow && !barPlaceholder.isHidden) ? root.width : 0
+      height: (barPlaceholder.isFramed && root.barShouldShow && !barPlaceholder.isHidden) ? root.height : 0
 
       Region {
         intersection: Intersection.Subtract
@@ -438,7 +439,7 @@ PanelWindow {
       readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
       readonly property bool isFramed: Settings.data.bar.barType === "framed"
       readonly property real frameThickness: Settings.data.bar.frameThickness ?? 12
-      readonly property bool barFloating: Settings.data.bar.floating || false
+      readonly property bool barFloating: Settings.data.bar.barType === "floating"
       readonly property real barMarginH: barFloating ? Math.floor(Settings.data.bar.marginHorizontal) : 0
       readonly property real barMarginV: barFloating ? Math.floor(Settings.data.bar.marginVertical) : 0
       readonly property real barHeight: Style.getBarHeightForScreen(screen?.name)
@@ -460,14 +461,14 @@ PanelWindow {
       // Use screen dimensions directly
       x: {
         if (barPosition === "right")
-          return screen.width - barHeight - barMarginH;
+          return (screen?.width ?? 0) - barHeight - barMarginH;
         if (isFramed && !barIsVertical)
           return frameThickness;
         return barMarginH;
       }
       y: {
         if (barPosition === "bottom")
-          return screen.height - barHeight - barMarginV;
+          return (screen?.height ?? 0) - barHeight - barMarginV;
         if (isFramed && barIsVertical)
           return frameThickness;
         return barMarginV;
@@ -477,16 +478,16 @@ PanelWindow {
           return barHeight;
         }
         if (isFramed)
-          return screen.width - frameThickness * 2;
-        return screen.width - barMarginH * 2;
+          return (screen?.width ?? 0) - frameThickness * 2;
+        return (screen?.width ?? 0) - barMarginH * 2;
       }
       height: {
         if (!barIsVertical) {
           return barHeight;
         }
         if (isFramed)
-          return screen.height - frameThickness * 2;
-        return screen.height - barMarginV * 2;
+          return (screen?.height ?? 0) - frameThickness * 2;
+        return (screen?.height ?? 0) - barMarginV * 2;
       }
 
       // Corner states (same as Bar.qml)

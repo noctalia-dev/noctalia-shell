@@ -57,7 +57,7 @@ NBox {
     running: false
     repeat: false
     onTriggered: {
-      if (brightnessMonitor && Math.abs(localBrightness - brightnessMonitor.brightness) >= 0.01) {
+      if (brightnessMonitor && Math.abs(localBrightness - brightnessMonitor.brightness) > 0.009) {
         brightnessMonitor.setBrightness(localBrightness);
       }
     }

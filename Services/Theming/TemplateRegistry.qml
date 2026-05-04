@@ -8,8 +8,14 @@ import qs.Commons
 Singleton {
   id: root
 
+  Component.onCompleted: {
+    if (Settings.data.templates.enableUserTheming)
+    writeUserTemplatesToml();
+  }
+
   readonly property string templateApplyScript: Quickshell.shellDir + '/Scripts/bash/template-apply.sh'
   readonly property string gtkRefreshScript: Quickshell.shellDir + '/Scripts/python/src/theming/gtk-refresh.py'
+  readonly property string kdeApplyScript: Quickshell.shellDir + '/Scripts/python/src/theming/kde-apply-scheme.py'
   readonly property string vscodeHelperScript: Quickshell.shellDir + '/Scripts/python/src/theming/vscode-helper.py'
 
   // Dynamically resolved VSCode extension theme paths (all matching noctalia extensions)
@@ -23,6 +29,7 @@ Singleton {
       "id": "foot",
       "name": "Foot",
       "templatePath": "terminal/foot",
+      "predefinedTemplatePath": "terminal/foot-predefined",
       "outputPath": "~/.config/foot/themes/noctalia",
       "postHook": `${templateApplyScript} foot`
     },
@@ -30,6 +37,7 @@ Singleton {
       "id": "ghostty",
       "name": "Ghostty",
       "templatePath": "terminal/ghostty",
+      "predefinedTemplatePath": "terminal/ghostty-predefined",
       "outputPath": "~/.config/ghostty/themes/noctalia",
       "postHook": `${templateApplyScript} ghostty`
     },
@@ -37,6 +45,7 @@ Singleton {
       "id": "kitty",
       "name": "Kitty",
       "templatePath": "terminal/kitty.conf",
+      "predefinedTemplatePath": "terminal/kitty-predefined.conf",
       "outputPath": "~/.config/kitty/themes/noctalia.conf",
       "postHook": `${templateApplyScript} kitty`
     },
@@ -44,6 +53,7 @@ Singleton {
       "id": "alacritty",
       "name": "Alacritty",
       "templatePath": "terminal/alacritty.toml",
+      "predefinedTemplatePath": "terminal/alacritty-predefined.toml",
       "outputPath": "~/.config/alacritty/themes/noctalia.toml",
       "postHook": `${templateApplyScript} alacritty`
     },
@@ -51,8 +61,17 @@ Singleton {
       "id": "wezterm",
       "name": "Wezterm",
       "templatePath": "terminal/wezterm.toml",
+      "predefinedTemplatePath": "terminal/wezterm-predefined.toml",
       "outputPath": "~/.config/wezterm/colors/Noctalia.toml",
       "postHook": `${templateApplyScript} wezterm`
+    },
+    {
+      "id": "starship",
+      "name": "Starship",
+      "templatePath": "terminal/starship.toml",
+      "predefinedTemplatePath": "terminal/starship-predefined.toml",
+      "outputPath": "~/.cache/noctalia/starship-palette.toml",
+      "postHook": `${templateApplyScript} starship`
     }
   ]
 
@@ -99,7 +118,7 @@ Singleton {
           "path": "~/.local/share/color-schemes/noctalia.colors"
         }
       ],
-      "postProcess": () => "if command -v plasma-apply-colorscheme >/dev/null 2>&1; then plasma-apply-colorscheme BreezeDark; sleep 0.5; plasma-apply-colorscheme noctalia; fi"
+      "postProcess": () => `${kdeApplyScript} noctalia`
     },
     {
       "id": "fuzzel",
@@ -188,6 +207,10 @@ Singleton {
         {
           "name": "vencord",
           "path": "~/.config/Vencord"
+        },
+        {
+          "name": "vencord-flatpak",
+          "path": "~/.var/app/com.discordapp.Discord/config/Vencord"
         },
         {
           "name": "betterdiscord",
@@ -302,7 +325,8 @@ Singleton {
       "id": "emacs",
       "name": "Emacs",
       "category": "editor",
-      "input": "emacs.el"
+      "input": "emacs.el",
+      "postProcess": () => `emacsclient -e "(load-theme 'noctalia t)"`
     },
     {
       "id": "labwc",
@@ -344,7 +368,7 @@ Singleton {
       "id": "scroll",
       "name": "Scroll",
       "category": "compositor",
-      "input": "sway",
+      "input": "scroll",
       "outputs": [
         {
           "path": "~/.config/scroll/noctalia"
@@ -538,7 +562,7 @@ Singleton {
     var userConfigPath = Settings.configDir + "user-templates.toml";
 
     // Check if file already exists
-    fileCheckProcess.command = ["test", "-f", userConfigPath];
+    fileCheckProcess.command = ["test", "-s", userConfigPath];
     fileCheckProcess.running = true;
   }
 
@@ -546,17 +570,14 @@ Singleton {
     var userConfigPath = Settings.configDir + "user-templates.toml";
     var configContent = buildUserTemplatesToml();
     var userConfigPathEsc = userConfigPath.replace(/'/g, "'\\''");
+    var configDirEsc = Settings.configDir.replace(/'/g, "'\\''");
 
-    // Ensure directory exists (should already exist but just in case)
-    Quickshell.execDetached(["mkdir", "-p", Settings.configDir]);
-
-    // Write the config file using heredoc to avoid escaping issues
-    var script = `cat > '${userConfigPathEsc}' << 'EOF'\n`;
+    // Combine mkdir and write in a single script to avoid race condition
+    var script = `mkdir -p '${configDirEsc}' && cat > '${userConfigPathEsc}' << 'EOF'\n`;
     script += configContent;
     script += "EOF\n";
-    Quickshell.execDetached(["sh", "-c", script]);
-
-    Logger.d("TemplateRegistry", "User templates config written to:", userConfigPath);
+    fileWriteProcess.command = ["sh", "-c", script];
+    fileWriteProcess.running = true;
   }
 
   // Extract Emacs clients for ProgramCheckerService compatibility
@@ -575,18 +596,32 @@ Singleton {
     }
   ]
 
-  // Process for checking if user templates file exists
+  // Process for checking if user templates file exists and is non-empty
   Process {
     id: fileCheckProcess
     running: false
 
     onExited: function (exitCode) {
       if (exitCode === 0) {
-        // File exists, skip creation
+        // File exists and is non-empty, skip creation
         Logger.d("TemplateRegistry", "User templates config already exists, skipping creation");
       } else {
-        // File doesn't exist, create it
+        // File doesn't exist or is empty, create it
         doWriteUserTemplatesToml();
+      }
+    }
+  }
+
+  // Process for writing user templates file with error reporting
+  Process {
+    id: fileWriteProcess
+    running: false
+
+    onExited: function (exitCode) {
+      if (exitCode === 0) {
+        Logger.d("TemplateRegistry", "User templates config written to:", Settings.configDir + "user-templates.toml");
+      } else {
+        Logger.e("TemplateRegistry", "Failed to write user templates config (exit code:", exitCode + ")");
       }
     }
   }

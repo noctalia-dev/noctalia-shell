@@ -42,7 +42,7 @@ Item {
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
 
-  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId] ?? {}
   // Explicit screenName property ensures reactive binding when screen changes
   readonly property string screenName: screen ? screen.name : ""
   property var widgetSettings: {
@@ -349,7 +349,13 @@ Item {
       visible: root.drawerEnabled && dropdownItems.length > 0 && BarService.getPillDirection(root)
       width: isVertical ? barHeight : capsuleHeight
       height: isVertical ? capsuleHeight : barHeight
-      tooltipText: I18n.tr("tooltips.open-tray-dropdown")
+      tooltipText: {
+        if (PanelService.getPanel("trayDrawerPanel", root.screen)?.isPanelOpen) {
+          return "";
+        } else {
+          return I18n.tr("tooltips.open-tray-dropdown");
+        }
+      }
       tooltipDirection: BarService.getTooltipDirection(root.screen?.name)
       baseSize: capsuleHeight
       applyUiScale: false

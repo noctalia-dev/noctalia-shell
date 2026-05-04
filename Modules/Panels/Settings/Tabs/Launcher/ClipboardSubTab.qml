@@ -45,6 +45,24 @@ ColumnLayout {
     enabled: Settings.data.appLauncher.enableClipboardHistory && ProgramCheckerService.wtypeAvailable
   }
 
+  NToggle {
+    label: I18n.tr("panels.launcher.settings-clip-smart-icons-label")
+    description: I18n.tr("panels.launcher.settings-clip-smart-icons-description")
+    checked: Settings.data.appLauncher.enableClipboardSmartIcons
+    onToggled: checked => Settings.data.appLauncher.enableClipboardSmartIcons = checked
+    defaultValue: Settings.getDefaultValue("appLauncher.enableClipboardSmartIcons")
+    enabled: Settings.data.appLauncher.enableClipboardHistory
+  }
+
+  NToggle {
+    label: I18n.tr("panels.launcher.settings-clip-chips-label")
+    description: I18n.tr("panels.launcher.settings-clip-chips-description")
+    checked: Settings.data.appLauncher.enableClipboardChips
+    onToggled: checked => Settings.data.appLauncher.enableClipboardChips = checked
+    defaultValue: Settings.getDefaultValue("appLauncher.enableClipboardChips")
+    enabled: Settings.data.appLauncher.enableClipboardHistory
+  }
+
   NDivider {
     Layout.fillWidth: true
     visible: Settings.data.appLauncher.enableClipboardHistory
@@ -55,7 +73,7 @@ ColumnLayout {
     description: I18n.tr("panels.launcher.settings-clipboard-watch-text-description")
     Layout.fillWidth: true
     text: Settings.data.appLauncher.clipboardWatchTextCommand
-    onEditingFinished: Settings.data.appLauncher.clipboardWatchTextCommand = text
+    onTextChanged: Settings.data.appLauncher.clipboardWatchTextCommand = text
     enabled: Settings.data.appLauncher.enableClipboardHistory
     visible: Settings.data.appLauncher.enableClipboardHistory
   }
@@ -65,7 +83,7 @@ ColumnLayout {
     description: I18n.tr("panels.launcher.settings-clipboard-watch-image-description")
     Layout.fillWidth: true
     text: Settings.data.appLauncher.clipboardWatchImageCommand
-    onEditingFinished: Settings.data.appLauncher.clipboardWatchImageCommand = text
+    onTextChanged: Settings.data.appLauncher.clipboardWatchImageCommand = text
     enabled: Settings.data.appLauncher.enableClipboardHistory
     visible: Settings.data.appLauncher.enableClipboardHistory
   }

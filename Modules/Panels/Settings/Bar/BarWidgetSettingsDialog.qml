@@ -15,6 +15,7 @@ Popup {
   property string widgetId: ""
   property string sectionId: ""
   property var screen: null
+  property bool barIsVertical: false
   property var settingsCache: ({})
 
   readonly property real maxHeight: (screen ? screen.height : (parent ? parent.height : 800)) * 0.8
@@ -25,6 +26,7 @@ Popup {
   height: Math.min(content.implicitHeight + padding * 2, maxHeight)
   padding: Style.marginXL
   modal: true
+  closePolicy: Popup.NoAutoClose
   dim: false
   anchors.centerIn: parent
 

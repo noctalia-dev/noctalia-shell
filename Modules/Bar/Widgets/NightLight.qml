@@ -20,7 +20,7 @@ NIconButton {
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
 
-  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId] ?? {}
   readonly property string screenName: screen ? screen.name : ""
   property var widgetSettings: {
     if (section && sectionWidgetIndex >= 0 && screenName) {
@@ -37,8 +37,8 @@ NIconButton {
   baseSize: Style.getCapsuleHeightForScreen(screen?.name)
   applyUiScale: false
   customRadius: Style.radiusL
-  colorBg: Settings.data.nightLight.forced ? Color.mPrimary : Style.capsuleColor
-  colorFg: Settings.data.nightLight.forced ? Color.mOnPrimary : Color.resolveColorKey(iconColorKey)
+  colorBg: Settings.data.nightLight.enabled ? Color.mPrimary : Style.capsuleColor
+  colorFg: Settings.data.nightLight.enabled ? Color.mOnPrimary : Color.resolveColorKey(iconColorKey)
   border.color: Style.capsuleBorderColor
   border.width: Style.capsuleBorderWidth
 

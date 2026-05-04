@@ -51,12 +51,26 @@ Variants {
 
     // Only create PanelWindow if enabled AND (screen has widgets OR in edit mode)
     // During compositor overview, show widgets only when overviewEnabled is true.
-    active: modelData && Settings.data.desktopWidgets.enabled && (screenWidgets.length > 0 || DesktopWidgetRegistry.editMode) && (!CompositorService.overviewActive || Settings.data.desktopWidgets.overviewEnabled) && !PowerProfileService.noctaliaPerformanceMode && !PanelService.lockScreen?.active
+    active: modelData && Settings.data.desktopWidgets.enabled && (screenWidgets.length > 0 || DesktopWidgetRegistry.editMode) && (!CompositorService.overviewActive || Settings.data.desktopWidgets.overviewEnabled) && (!PowerProfileService.noctaliaPerformanceMode || !Settings.data.noctaliaPerformance.disableDesktopWidgets) && !PanelService.lockScreen?.active
 
     sourceComponent: PanelWindow {
       id: window
       color: "transparent"
       screen: screenLoader.modelData
+      mask: DesktopWidgetRegistry.editMode ? null : widgetsMask
+
+      // Dynamic mask: combine clickable regions for each loaded widget
+      property var _maskRegions: []
+
+      Component {
+        id: maskRegionComponent
+        Region {}
+      }
+
+      Region {
+        id: widgetsMask
+        regions: window._maskRegions
+      }
 
       WlrLayershell.layer: WlrLayer.Bottom
       WlrLayershell.exclusionMode: ExclusionMode.Ignore
@@ -273,29 +287,69 @@ Variants {
 
             required property var modelData
             required property int index
+            property var _maskRegion: null
+            readonly property bool _isPlugin: DesktopWidgetRegistry.isPluginWidget(modelData.id)
 
-            sourceComponent: {
-              // Access registeredWidgets and pluginReloadCounter to create reactive binding
-              var _ = root.pluginReloadCounter;
-              var widgets = root.registeredWidgets;
-              return widgets[modelData.id] || null;
+            // All widgets use setSource() so that screen, widgetData, and
+            // widgetIndex are set as initial properties, available during
+            // Component.onCompleted. This prevents registration-key
+            // mismatches in widgets that build IDs from screen.name.
+            Component.onCompleted: _loadWidget()
+
+            onActiveChanged: {
+              if (active)
+                _loadWidget();
+            }
+
+            function _loadWidget() {
+              var widgetId = modelData.id;
+              var comp = root.registeredWidgets[widgetId];
+              if (!comp)
+                return;
+
+              var props = {
+                "screen": window.screen,
+                "widgetData": modelData,
+                "widgetIndex": index
+              };
+
+              if (_isPlugin) {
+                var pluginId = widgetId.replace("plugin:", "");
+                var api = PluginService.getPluginAPI(pluginId);
+                if (api)
+                  props.pluginApi = api;
+                setSource(comp.url, props);
+              } else {
+                // Core widgets: use explicit URL (inline Component.url
+                // returns the registry file, not the widget file)
+                var url = DesktopWidgetRegistry.widgetUrls[widgetId];
+                if (url)
+                  setSource(url, props);
+              }
             }
 
             onLoaded: {
               if (item) {
-                item.screen = window.screen;
                 item.parent = widgetsContainer;
-                item.widgetData = modelData;
-                item.widgetIndex = index;
 
-                // Inject plugin API for plugin widgets
-                if (DesktopWidgetRegistry.isPluginWidget(modelData.id)) {
-                  var pluginId = modelData.id.replace("plugin:", "");
-                  var api = PluginService.getPluginAPI(pluginId);
-                  if (api && item.hasOwnProperty("pluginApi")) {
-                    item.pluginApi = api;
-                  }
-                }
+                // Create mask region so this widget receives mouse input
+                _maskRegion = maskRegionComponent.createObject(window);
+                _maskRegion.item = item;
+                var newRegions = window._maskRegions.slice();
+                newRegions.push(_maskRegion);
+                window._maskRegions = newRegions;
+              }
+            }
+
+            // Clean up mask region when widget unloads
+            onItemChanged: {
+              if (!item && _maskRegion) {
+                var region = _maskRegion;
+                _maskRegion = null;
+                window._maskRegions = window._maskRegions.filter(function (r) {
+                  return r !== region;
+                });
+                region.destroy();
               }
             }
           }
@@ -307,7 +361,7 @@ Variants {
           visible: DesktopWidgetRegistry.editMode && Settings.data.desktopWidgets.enabled
 
           readonly property string barPos: Settings.getBarPositionForScreen(window.screen?.name)
-          readonly property bool barFloating: Settings.data.bar.floating || false
+          readonly property bool barFloating: Settings.data.bar.barType === "floating"
           readonly property real barHeight: Style.getBarHeightForScreen(window.screen?.name)
 
           readonly property int barOffsetTop: {
@@ -439,6 +493,15 @@ Variants {
                     });
                   }
                 }
+              }
+
+              NIconButton {
+                icon: "grid-3x3"
+                visible: Settings.data.desktopWidgets.gridSnap
+                tooltipText: I18n.tr("panels.desktop-widgets.edit-mode-grid-snap-scale-label")
+                colorBg: Settings.data.desktopWidgets.gridSnapScale ? Color.mPrimary : Color.mSurfaceVariant
+                colorFg: Settings.data.desktopWidgets.gridSnapScale ? Color.mOnPrimary : Color.mPrimary
+                onClicked: Settings.data.desktopWidgets.gridSnapScale = !Settings.data.desktopWidgets.gridSnapScale
               }
 
               NIconButton {

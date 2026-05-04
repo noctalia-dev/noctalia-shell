@@ -17,6 +17,7 @@ Popup {
   property var nameFilters: ["*"]
   property bool showDirs: true
   property bool showHiddenFiles: false
+  property bool allowMultiSelection: false
 
   property var selectedPaths: []
   property string currentPath: initialPath
@@ -166,6 +167,55 @@ Popup {
                         event.accepted = true;
                       }
                     }
+
+    // Function when an item is clicked, either a folder or a file since both have the same functionality, reduces repetitive code
+    function itemClicked(modifiers, path) {
+      var list = currentSelection.slice();
+      const index = list.indexOf(path);
+      if (root.allowMultiSelection && (modifiers & Qt.ShiftModifier) && list.length > 0) {
+        if (index > -1) {
+          list.splice(index, 1);
+          currentSelection = list;
+        } else {
+          var i = 0;
+          var toggle = false;
+          const firstItemPath = list[0];
+          while (i < filteredModel.count) {
+            const itemPath = filteredModel.get(i).filePath;
+
+            // This should be called twice, when we get to the item selected and when we get to the starting item.
+            if (itemPath === firstItemPath || itemPath === path) {
+              toggle = !toggle;
+            }
+
+            // Add all files between the starting item and the item selected.
+            if (toggle) {
+              if (!list.includes(itemPath)) {
+                list.push(itemPath);
+              }
+            }
+
+            i++;
+          }
+
+          // Add the path selected as well since it's skipped in the while loop
+          if (!list.includes(path)) {
+            list.push(path);
+          }
+          currentSelection = list;
+        }
+      } else if (root.allowMultiSelection && (modifiers & Qt.ControlModifier)) {
+        if (index > -1) {
+          list.splice(index, 1);
+          currentSelection = list;
+        } else {
+          list.push(path);
+          currentSelection = list;
+        }
+      } else {
+        currentSelection = [path];
+      }
+    }
 
     ColumnLayout {
       anchors.fill: parent
@@ -578,13 +628,13 @@ Popup {
                              if (model.fileIsDir) {
                                // In folder mode, single click selects the folder
                                if (root.selectionMode === "folders") {
-                                 filePickerPanel.currentSelection = [model.filePath];
+                                 filePickerPanel.itemClicked(mouse.modifiers, model.filePath);
                                }
                                // In file mode, single click on folder does nothing (must double-click to enter)
                              } else {
                                // Single click on file selects it (only in file mode)
                                if (root.selectionMode === "files") {
-                                 filePickerPanel.currentSelection = [model.filePath];
+                                 filePickerPanel.itemClicked(mouse.modifiers, model.filePath);
                                }
                              }
                            }
@@ -677,13 +727,13 @@ Popup {
                              if (model.fileIsDir) {
                                // In folder mode, single click selects the folder
                                if (root.selectionMode === "folders") {
-                                 filePickerPanel.currentSelection = [model.filePath];
+                                 filePickerPanel.itemClicked(mouse.modifiers, model.filePath);
                                }
                                // In file mode, single click on folder does nothing (must double-click to enter)
                              } else {
                                // Single click on file selects it (only in file mode)
                                if (root.selectionMode === "files") {
-                                 filePickerPanel.currentSelection = [model.filePath];
+                                 filePickerPanel.itemClicked(mouse.modifiers, model.filePath);
                                }
                              }
                            }

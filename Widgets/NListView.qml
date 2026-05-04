@@ -26,6 +26,9 @@ Item {
   property int gradientHeight: 16
   property bool reserveScrollbarSpace: true
 
+  // Keep scrollbars visible whenever overflow exists (without forcing visibility when not scrollable)
+  property bool showScrollbarWhenScrollable: Settings.data.ui.scrollbarAlwaysVisible
+
   // Available width for content (excludes scrollbar space when reserveScrollbarSpace is true)
   readonly property real availableWidth: width - (reserveScrollbarSpace ? handleWidth + Style.marginXS : 0)
 
@@ -70,10 +73,68 @@ Item {
 
   // Scroll speed multiplier for mouse wheel (1.0 = default, higher = faster)
   property real wheelScrollMultiplier: 2.0
+  property int smoothWheelAnimationDuration: Style.animationNormal
+  property real _wheelTargetY: 0
+
+  function clampScrollY(value) {
+    return Math.max(0, Math.min(value, listView.contentHeight - listView.height));
+  }
+
+  function applyWheelScroll(delta) {
+    if (!root.contentOverflows)
+      return;
+
+    const step = delta * root.wheelScrollMultiplier;
+
+    if (!Settings.data.general.smoothScrollEnabled || Settings.data.general.animationDisabled) {
+      listView.contentY = root.clampScrollY(listView.contentY - step);
+      root._wheelTargetY = listView.contentY;
+      return;
+    }
+
+    if (!wheelScrollAnimation.running)
+      root._wheelTargetY = listView.contentY;
+
+    root._wheelTargetY = root.clampScrollY(root._wheelTargetY - step);
+    wheelScrollAnimation.to = root._wheelTargetY;
+    wheelScrollAnimation.restart();
+  }
+
+  function animateToContentY(targetY) {
+    const clampedY = root.clampScrollY(targetY);
+
+    if (!Settings.data.general.smoothScrollEnabled || Settings.data.general.animationDisabled || listView.dragging || listView.flicking) {
+      listView.contentY = clampedY;
+      root._wheelTargetY = clampedY;
+      return;
+    }
+
+    root._wheelTargetY = clampedY;
+    wheelScrollAnimation.to = clampedY;
+    wheelScrollAnimation.restart();
+  }
 
   // Forward ListView methods
   function positionViewAtIndex(index, mode) {
+    const shouldAnimate = mode === ListView.Contain;
+    if (!shouldAnimate) {
+      listView.positionViewAtIndex(index, mode);
+      root._wheelTargetY = listView.contentY;
+      return;
+    }
+
+    const previousY = listView.contentY;
     listView.positionViewAtIndex(index, mode);
+    const targetY = root.clampScrollY(listView.contentY);
+
+    if (Math.abs(targetY - previousY) < 0.5) {
+      root._wheelTargetY = targetY;
+      return;
+    }
+
+    listView.contentY = previousY;
+    root._wheelTargetY = previousY;
+    root.animateToContentY(targetY);
   }
 
   function positionViewAtBeginning() {
@@ -121,6 +182,7 @@ Item {
   implicitHeight: 200
 
   Component.onCompleted: {
+    _wheelTargetY = listView.contentY;
     createGradients();
   }
 
@@ -189,6 +251,31 @@ Item {
     clip: true
     boundsBehavior: Flickable.StopAtBounds
 
+    NumberAnimation {
+      id: wheelScrollAnimation
+      target: listView
+      property: "contentY"
+      duration: root.smoothWheelAnimationDuration
+      easing.type: Easing.OutCubic
+    }
+
+    onDraggingChanged: {
+      if (dragging) {
+        wheelScrollAnimation.stop();
+        root._wheelTargetY = contentY;
+      }
+    }
+
+    onFlickingChanged: {
+      if (flicking) {
+        wheelScrollAnimation.stop();
+        root._wheelTargetY = contentY;
+      }
+    }
+
+    onContentHeightChanged: root._wheelTargetY = root.clampScrollY(root._wheelTargetY)
+    onHeightChanged: root._wheelTargetY = root.clampScrollY(root._wheelTargetY)
+
     WheelHandler {
       enabled: !root.contentOverflows
       acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
@@ -202,8 +289,7 @@ Item {
       acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
       onWheel: event => {
                  const delta = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 2;
-                 const newY = listView.contentY - (delta * root.wheelScrollMultiplier);
-                 listView.contentY = Math.max(0, Math.min(newY, listView.contentHeight - listView.height));
+                 root.applyWheelScroll(delta);
                  event.accepted = true;
                }
     }
@@ -221,7 +307,7 @@ Item {
         implicitHeight: 100
         radius: root.handleRadius
         color: parent.pressed ? root.handlePressedColor : parent.hovered ? root.handleHoverColor : root.handleColor
-        opacity: parent.policy === ScrollBar.AlwaysOn ? 1.0 : root.verticalScrollBarActive ? (parent.active ? 1.0 : 0.0) : 0.0
+        opacity: parent.policy === ScrollBar.AlwaysOn ? 1.0 : root.verticalScrollBarActive ? ((root.showScrollbarWhenScrollable || parent.active) ? 1.0 : 0.0) : 0.0
 
         Behavior on opacity {
           NumberAnimation {
@@ -240,7 +326,7 @@ Item {
         implicitWidth: root.handleWidth
         implicitHeight: 100
         color: root.trackColor
-        opacity: parent.policy === ScrollBar.AlwaysOn ? 0.3 : root.verticalScrollBarActive ? (parent.active ? 0.3 : 0.0) : 0.0
+        opacity: parent.policy === ScrollBar.AlwaysOn ? 0.3 : root.verticalScrollBarActive ? ((root.showScrollbarWhenScrollable || parent.active) ? 0.3 : 0.0) : 0.0
         radius: root.handleRadius / 2
 
         Behavior on opacity {

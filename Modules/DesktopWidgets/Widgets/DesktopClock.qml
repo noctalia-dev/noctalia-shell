@@ -14,12 +14,12 @@ DraggableDesktopWidget {
 
   readonly property color clockTextColor: Color.resolveColorKey(clockColor)
   readonly property real fontSize: Math.round(Style.fontSizeXXXL * 2.5 * widgetScale)
-  readonly property real widgetOpacity: (widgetData && widgetData.opacity !== undefined) ? widgetData.opacity : 1.0
-  readonly property string clockStyle: (widgetData && widgetData.clockStyle !== undefined) ? widgetData.clockStyle : (widgetMetadata.clockStyle !== undefined ? widgetMetadata.clockStyle : "digital")
-  readonly property string clockColor: (widgetData && widgetData.clockColor !== undefined) ? widgetData.clockColor : (widgetMetadata.clockColor !== undefined ? widgetMetadata.clockColor : "none")
-  readonly property bool useCustomFont: (widgetData && widgetData.useCustomFont !== undefined) ? widgetData.useCustomFont : (widgetMetadata.useCustomFont !== undefined ? widgetMetadata.useCustomFont : false)
-  readonly property string customFont: (widgetData && widgetData.customFont !== undefined) ? widgetData.customFont : ""
-  readonly property string format: (widgetData && widgetData.format !== undefined) ? widgetData.format : (widgetMetadata.format !== undefined ? widgetMetadata.format : "HH:mm\\nd MMMM yyyy")
+  readonly property real widgetOpacity: widgetData.opacity !== undefined ? widgetData.opacity : 1.0
+  readonly property string clockStyle: widgetData.clockStyle !== undefined ? widgetData.clockStyle : widgetMetadata.clockStyle
+  readonly property string clockColor: widgetData.clockColor !== undefined ? widgetData.clockColor : widgetMetadata.clockColor
+  readonly property bool useCustomFont: widgetData.useCustomFont !== undefined ? widgetData.useCustomFont : widgetMetadata.useCustomFont
+  readonly property string customFont: widgetData.customFont !== undefined ? widgetData.customFont : widgetMetadata.customFont
+  readonly property string format: widgetData.format !== undefined ? widgetData.format : widgetMetadata.format
 
   readonly property real contentPadding: Math.round((clockStyle === "minimal" ? Style.marginL : Style.marginXL) * widgetScale)
   implicitWidth: contentLoader.item ? Math.round((contentLoader.item.implicitWidth || contentLoader.item.width || 0) + contentPadding * 2) : 0

@@ -107,12 +107,11 @@ ShellRoot {
         Qt.callLater(function () {
           LocationService.init();
           NightLightService.apply();
-          HooksService.init();
-          BluetoothService.init();
           IdleInhibitorService.init();
           IdleService.init();
           PowerProfileService.init();
           HostService.init();
+          NotificationRulesService.init();
           GitHubService.init();
           SupporterService.init();
           CustomButtonIPCService.init();
@@ -125,7 +124,7 @@ ShellRoot {
           }
         });
 
-        delayedInitTimer.running = true;
+        delayedInitTimer.restart();
       }
 
       Overview {}
@@ -171,14 +170,13 @@ ShellRoot {
     }
   }
 
-  // ---------------------------------------------
   // Delayed initialization and wizard/changelog
-  // ---------------------------------------------
   Timer {
     id: delayedInitTimer
     running: false
     interval: 1500
     onTriggered: {
+      HooksService.init();
       FontService.init();
       UpdateService.init();
       showWizardOrChangelog();

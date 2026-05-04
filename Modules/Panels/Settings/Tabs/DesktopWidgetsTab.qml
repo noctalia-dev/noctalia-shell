@@ -80,11 +80,14 @@ ColumnLayout {
 
       NSectionEditor {
         required property var modelData
+        readonly property real compositorScale: {
+          const info = CompositorService.displayScales[modelData.name];
+          return (info && info.scale) ? info.scale : 1.0;
+        }
 
         Layout.fillWidth: true
         sectionName: modelData.name
         sectionSubtitle: {
-          var compositorScale = CompositorService.getDisplayScale(modelData.name);
           // Format scale to 2 decimal places to prevent overly long text
           var formattedScale = compositorScale.toFixed(2);
           return "(" + modelData.width + "x" + modelData.height + " @ " + formattedScale + "x)";
@@ -106,7 +109,8 @@ ColumnLayout {
         onRemoveWidget: (section, index) => _removeWidgetFromMonitor(modelData.name, index)
         onMoveWidget: (fromSection, index, toSection) => _moveWidgetToMonitor(fromSection, index, toSection)
         onUpdateWidgetSettings: (section, index, settings) => _updateWidgetSettingsForMonitor(modelData.name, index, settings)
-        onOpenPluginSettingsRequested: manifest => pluginSettingsDialog.openPluginSettings(manifest)
+        pluginSettingsEntryPoints: ["desktopWidgetSettings", "settings"]
+        onOpenPluginSettingsRequested: (manifest, entryPoint) => pluginSettingsDialog.openPluginSettings(manifest, entryPoint)
       }
     }
   }
@@ -266,6 +270,9 @@ ColumnLayout {
     } else if (widgetId === "MediaPlayer") {
       newWidget.x = 100;
       newWidget.y = 200;
+    } else if (widgetId === "AudioVisualizer") {
+      newWidget.x = 120;
+      newWidget.y = 280;
     } else if (widgetId === "Weather") {
       newWidget.x = 100;
       newWidget.y = 300;

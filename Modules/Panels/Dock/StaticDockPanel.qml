@@ -56,9 +56,23 @@ SmartPanel {
     }
   }
 
+  onAnyAppHoveredChanged: {
+    if (anyAppHovered) {
+      hoverCloseTimer.stop();
+    } else if (!panelHovered && !menuHovered && !dockHovered && !isDockHovered) {
+      hoverCloseTimer.restart();
+    }
+  }
+
   onClosed: {
     hoverCloseTimer.stop();
     isDockHovered = false;
+  }
+
+  onOpened: {
+    // Don't auto-start close timer here — the peek zone's onExited in Dock.qml
+    // starts hideTimer which checks panel.isDockHovered, giving the user time
+    // to move into the panel without it closing prematurely.
   }
 
   panelAnchorTop: dockPosition === "top"
@@ -196,7 +210,38 @@ SmartPanel {
     if (!appId || !pinnedApps || pinnedApps.length === 0)
       return false;
     const normalizedId = normalizeAppId(appId);
-    return pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedId);
+    // Direct match
+    if (pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedId))
+      return true;
+    // Resolve via desktop entry lookup (handles StartupWMClass != .desktop filename)
+    const resolved = resolveToDesktopEntryId(appId);
+    if (resolved !== appId) {
+      const normalizedResolved = normalizeAppId(resolved);
+      return pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedResolved);
+    }
+    return false;
+  }
+
+  // Desktop entry ID resolution cache (cleared when DesktopEntries change)
+  property var _desktopEntryIdCache: ({})
+
+  // Resolve a toplevel appId to its canonical .desktop entry ID via heuristic lookup.
+  function resolveToDesktopEntryId(appId) {
+    if (!appId)
+      return appId;
+    if (_desktopEntryIdCache.hasOwnProperty(appId))
+      return _desktopEntryIdCache[appId];
+    try {
+      if (typeof DesktopEntries !== 'undefined' && DesktopEntries.heuristicLookup) {
+        const entry = DesktopEntries.heuristicLookup(appId);
+        if (entry && entry.id) {
+          _desktopEntryIdCache[appId] = entry.id;
+          return entry.id;
+        }
+      }
+    } catch (e) {}
+    _desktopEntryIdCache[appId] = appId;
+    return appId;
   }
 
   // Helper function to get app name from desktop entry
@@ -372,7 +417,17 @@ SmartPanel {
     function pushPinned() {
       pinnedApps.forEach(pinnedAppId => {
                            // Find all running instances of this pinned app using robust matching
-                           const matchingToplevels = runningApps.filter(app => app && normalizeAppId(app.appId) === normalizeAppId(pinnedAppId));
+                           // Also resolve toplevel appId via desktop entry lookup to handle
+                           // StartupWMClass != .desktop filename (e.g. zen -> zen-browser-bin)
+                           const normalizedPinned = normalizeAppId(pinnedAppId);
+                           const matchingToplevels = runningApps.filter(app => {
+                                                                          if (!app)
+                                                                          return false;
+                                                                          if (normalizeAppId(app.appId) === normalizedPinned)
+                                                                          return true;
+                                                                          const resolved = resolveToDesktopEntryId(app.appId);
+                                                                          return resolved !== app.appId && normalizeAppId(resolved) === normalizedPinned;
+                                                                        });
 
                            if (matchingToplevels.length > 0) {
                              // Add all running instances as pinned-running
@@ -473,6 +528,7 @@ SmartPanel {
     target: DesktopEntries.applications
     function onValuesChanged() {
       root.iconRevision++;
+      root._desktopEntryIdCache = {};
     }
   }
 
@@ -492,7 +548,7 @@ SmartPanel {
     id: hoverCloseTimer
     interval: hideDelay
     onTriggered: {
-      if (root.menuHovered || (root.currentContextMenu && root.currentContextMenu.visible)) {
+      if (root.dockHovered || root.isDockHovered || root.anyAppHovered || root.menuHovered || (root.currentContextMenu && root.currentContextMenu.visible)) {
         restart();
         return;
       }
@@ -509,20 +565,27 @@ SmartPanel {
     property real contentPreferredWidth: Math.round(dockContainerWrapper.width) - (isVertical ? frameThickness : 0)
     property real contentPreferredHeight: Math.round(dockContainerWrapper.height) - (!isVertical ? frameThickness : 0)
 
-    // Detect hover over panel content (including DockContent)
-    HoverHandler {
-      id: dockHoverHandler
-      acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-      onHoveredChanged: {
-        root.panelHovered = hovered;
-        if (hovered) {
-          root.isDockHovered = true;
-          hoverCloseTimer.stop();
-        } else {
-          if (root.menuHovered || (root.currentContextMenu && root.currentContextMenu.visible)) {
+    Item {
+      id: hoverArea
+      anchors.fill: dockContainerWrapper
+      anchors.margins: -frameThickness
+
+      // Detect hover over dock area including frame thickness
+      HoverHandler {
+        id: dockHoverArea
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        onHoveredChanged: {
+          root.panelHovered = hovered;
+          if (hovered) {
+            root.isDockHovered = true;
             hoverCloseTimer.stop();
           } else {
-            hoverCloseTimer.restart();
+            root.isDockHovered = false;
+            if (root.menuHovered || (root.currentContextMenu && root.currentContextMenu.visible)) {
+              hoverCloseTimer.stop();
+            } else {
+              hoverCloseTimer.restart();
+            }
           }
         }
       }

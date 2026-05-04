@@ -16,6 +16,7 @@ Singleton {
   property bool isSway: false
   property bool isMango: false
   property bool isLabwc: false
+  property bool isExtWorkspace: false
   property bool isScroll: false
 
   // Generic workspace and window data
@@ -77,6 +78,7 @@ Singleton {
       isSway = false;
       isMango = true;
       isLabwc = false;
+      isExtWorkspace = false;
       backendLoader.sourceComponent = mangoComponent;
     } else if (labwcPid && labwcPid.length > 0) {
       isHyprland = false;
@@ -84,6 +86,7 @@ Singleton {
       isSway = false;
       isMango = false;
       isLabwc = true;
+      isExtWorkspace = false;
       backendLoader.sourceComponent = labwcComponent;
       Logger.i("CompositorService", "Detected LabWC with PID: " + labwcPid);
     } else if (niriSocket && niriSocket.length > 0) {
@@ -92,6 +95,7 @@ Singleton {
       isSway = false;
       isMango = false;
       isLabwc = false;
+      isExtWorkspace = false;
       backendLoader.sourceComponent = niriComponent;
     } else if (hyprlandSignature && hyprlandSignature.length > 0) {
       isHyprland = true;
@@ -99,6 +103,7 @@ Singleton {
       isSway = false;
       isMango = false;
       isLabwc = false;
+      isExtWorkspace = false;
       backendLoader.sourceComponent = hyprlandComponent;
     } else if (swaySock && swaySock.length > 0) {
       isHyprland = false;
@@ -106,16 +111,19 @@ Singleton {
       isSway = true;
       isMango = false;
       isLabwc = false;
+      isExtWorkspace = false;
       isScroll = currentDesktop && currentDesktop.toLowerCase().includes("scroll");
       backendLoader.sourceComponent = swayComponent;
     } else {
-      // Always fallback to Niri
+      // Always fallback to ext-workspace-v1
       isHyprland = false;
-      isNiri = true;
+      isNiri = false;
       isSway = false;
       isMango = false;
       isLabwc = false;
-      backendLoader.sourceComponent = niriComponent;
+      isExtWorkspace = true;
+      backendLoader.sourceComponent = extWorkspaceComponent;
+      Logger.i("CompositorService", "Using generic ext-workspace backend (no recognized compositor env)");
     }
   }
 
@@ -191,6 +199,14 @@ Singleton {
     }
   }
 
+  // Generic ext-workspace (WindowManager) when compositor env is unknown
+  Component {
+    id: extWorkspaceComponent
+    ExtWorkspaceService {
+      id: extWorkspaceBackend
+    }
+  }
+
   function setupBackendConnections() {
     if (!backend)
       return;
@@ -211,10 +227,7 @@ Singleton {
                                         });
 
     backend.windowListChanged.connect(() => {
-                                        // Sync windows when they change
                                         syncWindows();
-                                        // Forward the signal
-                                        windowListChanged();
                                       });
 
     // Property bindings - use automatic property change signal
@@ -360,7 +373,16 @@ Singleton {
     for (var i = 0; i < windows.count; i++) {
       var window = windows.get(i);
       if (window.workspaceId === workspaceId) {
-        windowsInWs.push(window);
+        // Snapshot to plain JS object so callers never hold live ListModel
+        // proxies that become invalid when syncWindows() clears the model.
+        windowsInWs.push({
+                           id: window.id,
+                           title: window.title,
+                           appId: window.appId,
+                           isFocused: window.isFocused,
+                           workspaceId: window.workspaceId,
+                           handle: window.handle
+                         });
       }
     }
     return windowsInWs;
@@ -372,6 +394,13 @@ Singleton {
       backend.switchToWorkspace(workspace);
     } else {
       Logger.w("Compositor", "No backend available for workspace switching");
+    }
+  }
+
+  // Scrollable workspace content (Niri)
+  function scrollWorkspaceContent(direction) {
+    if (backend && backend.scrollWorkspaceContent) {
+      backend.scrollWorkspaceContent(direction);
     }
   }
 
@@ -488,6 +517,16 @@ Singleton {
                                     });
   }
 
+  function userspaceReboot() {
+    Logger.i("Compositor", "Userspace reboot requested");
+    if (executeSessionAction("userspaceReboot"))
+      return;
+
+    HooksService.executeSessionHook("userspaceReboot", () => {
+                                      Quickshell.execDetached(["sh", "-c", "systemctl soft-reboot"]);
+                                    });
+  }
+
   function rebootToUefi() {
     Logger.i("Compositor", "Reboot to UEFI firmware requested requested");
     if (executeSessionAction("rebootToUefi"))
@@ -504,6 +543,15 @@ Singleton {
       backend.turnOffMonitors();
     } else {
       Logger.w("Compositor", "No backend available for turnOffMonitors");
+    }
+  }
+
+  function turnOnMonitors() {
+    Logger.i("Compositor", "Turn on monitors requested");
+    if (backend && backend.turnOnMonitors) {
+      backend.turnOnMonitors();
+    } else {
+      Logger.w("Compositor", "No backend available for turnOnMonitors");
     }
   }
 

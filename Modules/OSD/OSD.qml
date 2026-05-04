@@ -35,6 +35,7 @@ Variants {
     property int currentOSDType: -1 // OSD.Type enum value, -1 means none
     property bool startupComplete: false
     property real currentBrightness: 0
+    property bool suppressInputOSD: false
 
     // Lock Key States
     property string lastLockKeyChanged: ""  // "caps", "num", "scroll", or ""
@@ -185,8 +186,12 @@ Variants {
       var brightnessPanel = PanelService.getPanel("brightnessPanel", root.modelData);
       var controlCenterPanel = PanelService.getPanel("controlCenterPanel", root.modelData);
 
-      if ((brightnessPanel && brightnessPanel.isPanelOpen) || (controlCenterPanel && controlCenterPanel.isPanelOpen)) {
+      if (brightnessPanel && brightnessPanel.isPanelOpen)
         return;
+      if (controlCenterPanel && controlCenterPanel.isPanelOpen) {
+        var cards = Settings.data.controlCenter.cards || [];
+        if (cards.some(c => c.enabled && c.id === "brightness-card"))
+          return;
       }
       showOSD(OSD.Type.Brightness);
     }
@@ -210,12 +215,16 @@ Variants {
       if (!isTypeEnabled(type))
         return;
 
-      // Suppress Audio OSD if Audio Panel or Control Center is open
+      // Suppress Audio OSD if Audio Panel or Control Center (with audio card) is open
       if (type === OSD.Type.Volume || type === OSD.Type.InputVolume) {
         var audioPanel = PanelService.getPanel("audioPanel", root.modelData);
-        var controlCenterPanel = PanelService.getPanel("controlCenterPanel", root.modelData);
-        if ((audioPanel && audioPanel.isPanelOpen) || (controlCenterPanel && controlCenterPanel.isPanelOpen)) {
+        if (audioPanel && audioPanel.isPanelOpen)
           return;
+        var controlCenterPanel = PanelService.getPanel("controlCenterPanel", root.modelData);
+        if (controlCenterPanel && controlCenterPanel.isPanelOpen) {
+          var cards = Settings.data.controlCenter.cards || [];
+          if (cards.some(c => c.enabled && c.id === "audio-card"))
+            return;
         }
       }
 
@@ -251,6 +260,14 @@ Variants {
         showOSD(OSD.Type.Volume);
       }
 
+      function onVolumeAtMaximum() {
+        showOSD(OSD.Type.Volume);
+      }
+
+      function onVolumeAtMinimum() {
+        showOSD(OSD.Type.Volume);
+      }
+
       function onMutedChanged() {
         if (AudioService.consumeOutputOSDSuppression())
           return;
@@ -258,11 +275,15 @@ Variants {
       }
 
       function onInputVolumeChanged() {
+        if (suppressInputOSD)
+          return;
         if (AudioService.hasInput)
           showOSD(OSD.Type.InputVolume);
       }
 
       function onInputMutedChanged() {
+        if (suppressInputOSD)
+          return;
         if (!AudioService.hasInput)
           return;
         if (AudioService.consumeInputOSDSuppression())
@@ -272,6 +293,8 @@ Variants {
 
       // Refresh OSD when device changes to ensure correct volume is displayed
       function onSinkChanged() {
+        suppressInputOSD = true;
+        inputSuppressionTimer.restart();
         // If volume OSD is currently showing, refresh it to show new device's volume
         if (root.currentOSDType === OSD.Type.Volume) {
           Qt.callLater(() => {
@@ -342,6 +365,14 @@ Variants {
         connectBrightnessMonitors();
         root.startupComplete = true;
       }
+    }
+
+    // Timer to reset the input volume OSD suppression
+    Timer {
+      id: inputSuppressionTimer
+      interval: 300
+      repeat: false
+      onTriggered: root.suppressInputOSD = false
     }
 
     Component.onDestruction: {
@@ -473,7 +504,7 @@ Variants {
         let base = Style.marginM;
         if (screenBarPosition === position) {
           const isVertical = position === "top" || position === "bottom";
-          const floatExtra = Math.ceil(Settings.data.bar.floating ? (isVertical ? Settings.data.bar.marginVertical : Settings.data.bar.marginHorizontal) : 0);
+          const floatExtra = Math.ceil(Settings.data.bar.barType === "floating" ? (isVertical ? Settings.data.bar.marginVertical : Settings.data.bar.marginHorizontal) : 0);
           return barHeight + base + floatExtra;
         }
 
@@ -497,6 +528,9 @@ Variants {
       WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
       WlrLayershell.layer: Settings.data.osd?.overlayLayer ? WlrLayer.Overlay : WlrLayer.Top
       WlrLayershell.exclusionMode: ExclusionMode.Ignore
+
+      // Click-through — OSD is display-only, no input needed
+      mask: Region {}
 
       Item {
         id: osdItem
@@ -541,8 +575,8 @@ Variants {
           anchors.fill: parent
           anchors.margins: Style.marginM * 1.5
           radius: Style.radiusL
-          color: Qt.alpha(Color.mSurface, Settings.data.osd.backgroundOpacity || 1.0)
-          border.color: Qt.alpha(Color.mOutline, Settings.data.osd.backgroundOpacity || 1.0)
+          color: Qt.alpha(Color.mSurface, Color.adaptiveOpacity(Settings.data.osd.backgroundOpacity) || 1.0)
+          border.color: Qt.alpha(Color.mOutline, Color.adaptiveOpacity(Settings.data.osd.backgroundOpacity) || 1.0)
           border.width: {
             const bw = Math.max(2, Style.borderM);
             return bw % 2 === 0 ? bw : bw + 1;

@@ -40,6 +40,7 @@ ColumnLayout {
                  valueShowUnreadBadge = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showUnreadBadge
   }
 
   NColorChoice {
@@ -49,6 +50,7 @@ ColumnLayout {
                   valueIconColor = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.iconColor
   }
 
   NColorChoice {
@@ -60,6 +62,7 @@ ColumnLayout {
                   saveSettings();
                 }
     visible: valueShowUnreadBadge
+    defaultValue: widgetMetadata.unreadBadgeColor
   }
 
   NToggle {
@@ -70,7 +73,8 @@ ColumnLayout {
                  valueHideWhenZero = checked;
                  saveSettings();
                }
-    visible: !valueHideWhenZeroUnread
+    enabled: !valueHideWhenZeroUnread
+    defaultValue: widgetMetadata.hideWhenZero
   }
 
   NToggle {
@@ -81,5 +85,6 @@ ColumnLayout {
                  valueHideWhenZeroUnread = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.hideWhenZeroUnread
   }
 }

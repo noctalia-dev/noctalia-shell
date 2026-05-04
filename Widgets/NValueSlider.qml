@@ -30,6 +30,7 @@ RowLayout {
   signal moved(real value)
   signal pressedChanged(bool pressed, real value)
 
+  readonly property bool sliderActive: slider.activeFocus || slider.pressed
   readonly property bool isValueChanged: defaultValue !== undefined && (value !== defaultValue)
   readonly property string indicatorTooltip: {
     if (defaultValue === undefined)

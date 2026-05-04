@@ -7,7 +7,7 @@ QtObject {
   function migrate(adapter, logger, rawJson) {
     logger.i("Migration45", "Migrating bar settings...");
 
-    if (adapter.bar.floating) {
+    if (rawJson?.bar?.floating) {
       adapter.bar.barType = "floating";
     } else {
       adapter.bar.barType = "simple";

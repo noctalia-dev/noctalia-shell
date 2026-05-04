@@ -1,0 +1,84 @@
+[colors]
+ansi = [
+    "{{colors.terminal_normal_black.default.hex}}",
+    "{{colors.terminal_normal_red.default.hex}}",
+    "{{colors.terminal_normal_green.default.hex}}",
+    "{{colors.terminal_normal_yellow.default.hex}}",
+    "{{colors.terminal_normal_blue.default.hex}}",
+    "{{colors.terminal_normal_magenta.default.hex}}",
+    "{{colors.terminal_normal_cyan.default.hex}}",
+    "{{colors.terminal_normal_white.default.hex}}",
+]
+background = "{{colors.terminal_background.default.hex}}"
+brights = [
+    "{{colors.terminal_bright_black.default.hex}}",
+    "{{colors.terminal_bright_red.default.hex}}",
+    "{{colors.terminal_bright_green.default.hex}}",
+    "{{colors.terminal_bright_yellow.default.hex}}",
+    "{{colors.terminal_bright_blue.default.hex}}",
+    "{{colors.terminal_bright_magenta.default.hex}}",
+    "{{colors.terminal_bright_cyan.default.hex}}",
+    "{{colors.terminal_bright_white.default.hex}}",
+]
+compose_cursor = "{{colors.terminal_cursor.default.hex}}"
+cursor_bg = "{{colors.terminal_cursor.default.hex}}"
+cursor_border = "{{colors.terminal_cursor.default.hex}}"
+cursor_fg = "{{colors.terminal_cursor_text.default.hex}}"
+foreground = "{{colors.terminal_foreground.default.hex}}"
+scrollbar_thumb = "{{colors.terminal_selection_bg.default.hex}}"
+selection_bg = "{{colors.terminal_selection_bg.default.hex}}"
+selection_fg = "{{colors.terminal_selection_fg.default.hex}}"
+split = "{{colors.terminal_bright_black.default.hex}}"
+visual_bell = "{{colors.terminal_normal_black.default.hex}}"
+
+[colors.indexed]
+16 = "{{colors.secondary.default.hex}}"
+17 = "{{colors.terminal_cursor.default.hex}}"
+
+[colors.tab_bar]
+background = "{{colors.terminal_background.default.hex | darken 0.1}}"
+inactive_tab_edge = "{{colors.terminal_selection_bg.default.hex}}"
+
+[colors.tab_bar.active_tab]
+bg_color = "{{colors.primary.default.hex}}"
+fg_color = "{{colors.on_primary.default.hex}}"
+intensity = "Normal"
+italic = false
+strikethrough = false
+underline = "None"
+
+[colors.tab_bar.inactive_tab]
+bg_color = "{{colors.terminal_background.default.hex | darken 0.05}}"
+fg_color = "{{colors.terminal_foreground.default.hex}}"
+intensity = "Normal"
+italic = false
+strikethrough = false
+underline = "None"
+
+[colors.tab_bar.inactive_tab_hover]
+bg_color = "{{colors.terminal_background.default.hex}}"
+fg_color = "{{colors.terminal_foreground.default.hex}}"
+intensity = "Normal"
+italic = false
+strikethrough = false
+underline = "None"
+
+[colors.tab_bar.new_tab]
+bg_color = "{{colors.terminal_selection_bg.default.hex}}"
+fg_color = "{{colors.terminal_foreground.default.hex}}"
+intensity = "Normal"
+italic = false
+strikethrough = false
+underline = "None"
+
+[colors.tab_bar.new_tab_hover]
+bg_color = "{{colors.terminal_bright_black.default.hex}}"
+fg_color = "{{colors.terminal_foreground.default.hex}}"
+intensity = "Normal"
+italic = false
+strikethrough = false
+underline = "None"
+
+[metadata]
+author = "Noctalia"
+name = "Noctalia"

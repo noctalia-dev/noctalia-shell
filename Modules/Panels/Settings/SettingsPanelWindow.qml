@@ -38,6 +38,10 @@ FloatingWindow {
         settingsContent._pendingSubTab = subTabId;
       settingsContent.initialize();
       isInitialized = true;
+      // Tab content persists in window mode; if no subtab specified and the
+      // tab content is still loaded (same tab), reset to first subtab
+      if (subTabId < 0 && settingsContent.activeTabContent)
+        settingsContent.setSubTabIndex(0);
     }
   }
 
@@ -83,16 +87,32 @@ FloatingWindow {
     onActivated: settingsContent.selectPreviousTab()
   }
 
-  Shortcut {
-    sequence: "Up"
-    enabled: !PanelService.isKeybindRecording
-    onActivated: settingsContent.scrollUp()
+  Instantiator {
+    model: Settings.data.general.keybinds.keyUp || []
+    Shortcut {
+      sequence: modelData
+      enabled: !PanelService.isKeybindRecording
+      onActivated: {
+        if (settingsContent.searchText.trim() !== "")
+          settingsContent.searchSelectPrevious();
+        else
+          settingsContent.scrollUp();
+      }
+    }
   }
 
-  Shortcut {
-    sequence: "Down"
-    enabled: !PanelService.isKeybindRecording
-    onActivated: settingsContent.scrollDown()
+  Instantiator {
+    model: Settings.data.general.keybinds.keyDown || []
+    Shortcut {
+      sequence: modelData
+      enabled: !PanelService.isKeybindRecording
+      onActivated: {
+        if (settingsContent.searchText.trim() !== "")
+          settingsContent.searchSelectNext();
+        else
+          settingsContent.scrollDown();
+      }
+    }
   }
 
   // Main content

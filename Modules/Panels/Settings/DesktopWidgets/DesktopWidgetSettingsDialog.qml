@@ -26,6 +26,7 @@ Popup {
   height: Math.min(content.implicitHeight + padding * 2, maxHeight)
   padding: Style.marginXL
   modal: true
+  closePolicy: Popup.NoAutoClose
   dim: false
 
   // Center in parent
@@ -63,7 +64,7 @@ Popup {
 
         NText {
           text: I18n.tr("system.widget-settings-title", {
-                          "widget": root.widgetId
+                          "widget": DesktopWidgetRegistry.getWidgetDisplayName(root.widgetId)
                         })
           pointSize: Style.fontSizeL
           font.weight: Style.fontWeightBold
@@ -136,6 +137,40 @@ Popup {
     }
   }
 
+  // Mouse area for a draggable popup
+  MouseArea {
+    x: titleRow.x
+    y: titleRow.y
+    width: titleRow.width
+    height: titleRow.height
+    z: -1
+
+    cursorShape: Qt.OpenHandCursor
+
+    property real pressX: 0
+    property real pressY: 0
+
+    onPressed: mouse => {
+                 pressX = mouse.x;
+                 pressY = mouse.y;
+                 cursorShape = Qt.ClosedHandCursor;
+               }
+
+    onReleased: {
+      cursorShape = Qt.OpenHandCursor;
+    }
+
+    onPositionChanged: mouse => {
+                         if (pressed) {
+                           var deltaX = mouse.x - pressX;
+                           var deltaY = mouse.y - pressY;
+
+                           root.x += deltaX;
+                           root.y += deltaY;
+                         }
+                       }
+  }
+
   Timer {
     id: saveTimer
     running: false
@@ -152,6 +187,12 @@ Popup {
       if (newSettings) {
         root.settingsCache = newSettings;
         saveTimer.start();
+      }
+    }
+
+    function onSettingsSaved(newSettings) {
+      if (newSettings) {
+        root.updateWidgetSettings(root.sectionId, root.widgetIndex, newSettings);
       }
     }
   }
@@ -172,19 +213,42 @@ Popup {
       var pluginId = widgetId.replace("plugin:", "");
       var manifest = PluginRegistry.getPluginManifest(pluginId);
 
-      if (!manifest || !manifest.entryPoints || !manifest.entryPoints.settings) {
-        Logger.w("DesktopWidgetSettingsDialog", "Plugin does not have settings:", pluginId);
-        return;
-      }
-
       var pluginDir = PluginRegistry.getPluginDir(pluginId);
-      var settingsPath = "file://" + pluginDir + "/" + manifest.entryPoints.settings;
       var loadVersion = PluginRegistry.pluginLoadVersions[pluginId] || 0;
       var api = PluginService.getPluginAPI(pluginId);
 
-      settingsLoader.setSource(settingsPath + "?v=" + loadVersion, {
-                                 "pluginApi": api
-                               });
+      var settingsPath;
+      if (manifest && manifest.entryPoints && manifest.entryPoints.desktopWidgetSettings) {
+        settingsPath = "file://" + pluginDir + "/" + manifest.entryPoints.desktopWidgetSettings;
+
+        var widgetSettings = {};
+        widgetSettings.data = widgetData || {};
+        widgetSettings.metadata = DesktopWidgetRegistry.widgetMetadata[widgetId] || {};
+        widgetSettings.save = function () {
+          var newSettings = Object.assign({}, widgetSettings.data);
+          root.settingsCache = newSettings;
+          saveTimer.start();
+        };
+
+        settingsLoader.setSource(settingsPath + "?v=" + loadVersion, {
+                                   "pluginApi": api,
+                                   "widgetSettings": widgetSettings
+                                 });
+      } else {
+        Logger.w("DesktopWidgetSettingsDialog", "Plugin does not have desktop widget settings:", pluginId);
+
+        // Fallback to the plugin settings
+        if (manifest && manifest.entryPoints && manifest.entryPoints.settings) {
+          settingsPath = "file://" + pluginDir + "/" + manifest.entryPoints.settings;
+
+          settingsLoader.setSource(settingsPath + "?v=" + loadVersion, {
+                                     "pluginApi": api
+                                   });
+        } else {
+          Logger.w("DesktopWidgetSettingsDialog", "Plugin does not have settings:", pluginId);
+        }
+      }
+
       return;
     }
 

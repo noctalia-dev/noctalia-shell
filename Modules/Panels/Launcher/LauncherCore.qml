@@ -3,11 +3,11 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Widgets
+import "Helpers/LauncherNavigation.js" as LauncherNav
 
 import "Providers"
 import qs.Commons
 import qs.Services.Keyboard
-import qs.Services.Noctalia
 import qs.Services.UI
 import qs.Widgets
 
@@ -27,7 +27,7 @@ Rectangle {
   }
 
   // Expose for preview panel positioning
-  readonly property var resultsView: resultsViewLoader.item
+  readonly property var resultsView: resultsSwapView.item
 
   // State
   property string searchText: ""
@@ -45,9 +45,11 @@ Rectangle {
   property bool globalMouseInitialized: false
   property bool mouseTrackingReady: false // Delay tracking until panel is settled
 
+  readonly property bool animationsDisabled: Settings.data.general.animationDisabled
+
   Timer {
     id: mouseTrackingDelayTimer
-    interval: Style.animationNormal + 50 // Wait for panel animation to complete + safety margin
+    interval: root.animationsDisabled ? 0 : (Style.animationNormal + 50) // Wait for panel animation to complete + safety margin
     repeat: false
     onTriggered: {
       root.mouseTrackingReady = true;
@@ -63,7 +65,7 @@ Rectangle {
   readonly property int badgeSize: Math.round(effectiveIconSize * Style.uiScaleRatio)
   readonly property int entryHeight: Math.round(badgeSize + (launcherDensity === "compact" ? (Style.marginL + Style.marginXXS) : (Style.marginXL + Style.marginS)))
 
-  readonly property bool providerShowsCategories: currentProvider.showsCategories === true
+  readonly property bool providerShowsCategories: (currentProvider.showsCategories !== undefined ? currentProvider.showsCategories : true) && providerCategories.length > 0
 
   readonly property var providerCategories: {
     if (currentProvider.availableCategories && currentProvider.availableCategories.length > 0) {
@@ -130,10 +132,10 @@ Rectangle {
     return base;
   }
   readonly property int listPanelWidth: Math.round(500 * Style.uiScaleRatio)
-  readonly property int gridContentWidth: listPanelWidth - (2 * Style.marginXS)
+  readonly property int gridContentWidth: listPanelWidth - Style.margin2XS
   readonly property int gridCellSize: Math.floor((gridContentWidth - ((targetGridColumns - 1) * Style.marginS)) / targetGridColumns)
 
-  property int gridColumns: 5
+  readonly property int gridColumns: targetGridColumns
 
   // Check if current provider allows wrap navigation (default true)
   readonly property bool allowWrapNavigation: {
@@ -158,40 +160,77 @@ Rectangle {
     }
   }
 
+  onSearchTextChanged: {
+    if (isOpen) {
+      updateResults();
+    }
+  }
+
   function onOpened() {
-    resultsReady = false;
     ignoreMouseHover = true;
     globalMouseInitialized = false;
     mouseTrackingReady = false;
     mouseTrackingDelayTimer.restart();
-    syncPluginProviders();
+
+    // Show launcher immediately, results will populate asynchronously
+    resultsReady = true;
+    focusSearchInput();
+
     Qt.callLater(() => {
+                   syncPluginProviders();
                    for (let provider of providers) {
                      if (provider.onOpened)
                      provider.onOpened();
                    }
                    updateResults();
-                   resultsReady = true;
-                   focusSearchInput();
                  });
   }
 
   function onClosed() {
     searchText = "";
     ignoreMouseHover = true;
+    if (resultsSwapView)
+      resultsSwapView.resetVisuals();
     for (let provider of providers) {
       if (provider.onClosed)
         provider.onClosed();
     }
   }
 
-  onSearchTextChanged: {
-    if (isOpen)
-      updateResults();
-  }
-
   function close() {
     requestClose();
+  }
+
+  function applyCategorySelection(tabIndex, categories) {
+    const categoryList = categories || providerCategories;
+    if (!categoryList || tabIndex < 0 || tabIndex >= categoryList.length)
+      return false;
+
+    currentProvider.selectCategory(categoryList[tabIndex]);
+    categoryTabs.currentIndex = tabIndex;
+    return true;
+  }
+
+  function selectCategoryWithSlide(tabIndex) {
+    if (!showProviderCategories || !currentProvider || !currentProvider.selectCategory)
+      return;
+
+    const cats = providerCategories;
+    if (!cats || tabIndex < 0 || tabIndex >= cats.length)
+      return;
+
+    const currentIdx = cats.indexOf(currentProvider.selectedCategory);
+    if (tabIndex === currentIdx)
+      return;
+
+    const canAnimate = !animationsDisabled && resultsSwapView.width > 0 && resultsSwapView.height > 0;
+    if (!canAnimate) {
+      applyCategorySelection(tabIndex, cats);
+      return;
+    }
+
+    const direction = tabIndex > currentIdx ? 1 : -1;
+    resultsSwapView.swap(direction, () => applyCategorySelection(tabIndex, providerCategories));
   }
 
   // Public API
@@ -215,6 +254,7 @@ Rectangle {
 
   function syncPluginProviders() {
     var registeredIds = LauncherProviderRegistry.getPluginProviders();
+    var changed = false;
 
     // Remove providers that are no longer registered
     for (var existingId in pluginProviderInstances) {
@@ -222,34 +262,29 @@ Rectangle {
         var idx = providers.indexOf(pluginProviderInstances[existingId]);
         if (idx >= 0)
           providers.splice(idx, 1);
-        pluginProviderInstances[existingId].destroy();
         delete pluginProviderInstances[existingId];
         Logger.d("Launcher", "Removed plugin provider:", existingId);
+        changed = true;
       }
     }
 
-    // Add new providers
+    // Adopt persistent instances from the registry
     for (var i = 0; i < registeredIds.length; i++) {
       var providerId = registeredIds[i];
       if (!pluginProviderInstances[providerId]) {
-        var component = LauncherProviderRegistry.getProviderComponent(providerId);
-        var pluginId = providerId.substring(7); // Remove "plugin:" prefix
-        var pluginApi = PluginService.getPluginAPI(pluginId);
-        if (component && pluginApi) {
-          var instance = component.createObject(root, {
-                                                  pluginApi: pluginApi
-                                                });
-          if (instance) {
-            pluginProviderInstances[providerId] = instance;
-            registerProvider(instance);
-            Logger.d("Launcher", "Registered plugin provider:", providerId);
-          }
+        var instance = LauncherProviderRegistry.getProviderInstance(providerId);
+        if (instance) {
+          pluginProviderInstances[providerId] = instance;
+          providers.push(instance);
+          instance.launcher = root;
+          Logger.d("Launcher", "Adopted plugin provider:", providerId);
+          changed = true;
         }
       }
     }
 
-    // Update results if launcher is open
-    if (root.isOpen) {
+    // Update results only if providers changed
+    if (changed && root.isOpen) {
       updateResults();
     }
   }
@@ -304,9 +339,23 @@ Rectangle {
 
       // Sort by _score (higher = better match), items without _score go first
       if (searchText.trim() !== "") {
+        const boostByUsage = Settings.data.appLauncher.sortByMostUsed;
+
         allResults.sort((a, b) => {
-                          const sa = a._score !== undefined ? a._score : 0;
-                          const sb = b._score !== undefined ? b._score : 0;
+                          let sa = a._score !== undefined ? a._score : 0;
+                          let sb = b._score !== undefined ? b._score : 0;
+
+                          // Boost scores for frequently used items from tracked providers
+                          // _score is normalized 0–1, so boost is scaled to nudge, not overwhelm
+                          if (boostByUsage) {
+                            if (a.provider && a.provider.trackUsage && a.usageKey) {
+                              sa += 0.1 * Math.log2(1 + ShellState.getLauncherUsageCount(a.usageKey));
+                            }
+                            if (b.provider && b.provider.trackUsage && b.usageKey) {
+                              sb += 0.1 * Math.log2(1 + ShellState.getLauncherUsageCount(b.usageKey));
+                            }
+                          }
+
                           return sb - sa;
                         });
       }
@@ -318,155 +367,53 @@ Rectangle {
     selectedIndex = 0;
   }
 
-  // Navigation functions
+  // Navigation functions (delegated to LauncherNavigation.js)
   function selectNext() {
-    if (results.length > 0 && selectedIndex < results.length - 1) {
-      selectedIndex++;
-    }
+    selectedIndex = LauncherNav.selectNext(selectedIndex, results.length);
   }
-
   function selectPrevious() {
-    if (results.length > 0 && selectedIndex > 0) {
-      selectedIndex--;
-    }
+    selectedIndex = LauncherNav.selectPrevious(selectedIndex, results.length);
   }
-
   function selectNextWrapped() {
-    if (results.length > 0) {
-      if (allowWrapNavigation) {
-        selectedIndex = (selectedIndex + 1) % results.length;
-      } else {
-        selectNext();
-      }
-    }
+    selectedIndex = LauncherNav.selectNextWrapped(selectedIndex, results.length, allowWrapNavigation);
   }
-
   function selectPreviousWrapped() {
-    if (results.length > 0) {
-      if (allowWrapNavigation) {
-        selectedIndex = (((selectedIndex - 1) % results.length) + results.length) % results.length;
-      } else {
-        selectPrevious();
-      }
-    }
+    selectedIndex = LauncherNav.selectPreviousWrapped(selectedIndex, results.length, allowWrapNavigation);
   }
-
   function selectFirst() {
-    selectedIndex = 0;
+    selectedIndex = LauncherNav.selectFirst();
   }
-
   function selectLast() {
-    selectedIndex = results.length > 0 ? results.length - 1 : 0;
+    selectedIndex = LauncherNav.selectLast(results.length);
   }
-
   function selectNextPage() {
-    if (results.length > 0) {
-      const page = Math.max(1, Math.floor(600 / entryHeight));
-      selectedIndex = Math.min(selectedIndex + page, results.length - 1);
-    }
+    selectedIndex = LauncherNav.selectNextPage(selectedIndex, results.length, entryHeight);
   }
-
   function selectPreviousPage() {
-    if (results.length > 0) {
-      const page = Math.max(1, Math.floor(600 / entryHeight));
-      selectedIndex = Math.max(selectedIndex - page, 0);
-    }
+    selectedIndex = LauncherNav.selectPreviousPage(selectedIndex, results.length, entryHeight);
   }
-
-  // Grid view navigation functions
   function selectPreviousRow() {
-    if (results.length > 0 && isGridView && gridColumns > 0) {
-      const currentRow = Math.floor(selectedIndex / gridColumns);
-      const currentCol = selectedIndex % gridColumns;
-
-      if (currentRow > 0) {
-        const targetRow = currentRow - 1;
-        const targetIndex = targetRow * gridColumns + currentCol;
-        const itemsInTargetRow = Math.min(gridColumns, results.length - targetRow * gridColumns);
-        if (currentCol < itemsInTargetRow) {
-          selectedIndex = targetIndex;
-        } else {
-          selectedIndex = targetRow * gridColumns + itemsInTargetRow - 1;
-        }
-      } else {
-        // Wrap to last row, same column
-        const totalRows = Math.ceil(results.length / gridColumns);
-        const lastRow = totalRows - 1;
-        const itemsInLastRow = Math.min(gridColumns, results.length - lastRow * gridColumns);
-        if (currentCol < itemsInLastRow) {
-          selectedIndex = lastRow * gridColumns + currentCol;
-        } else {
-          selectedIndex = results.length - 1;
-        }
-      }
-    }
+    selectedIndex = LauncherNav.selectPreviousRow(selectedIndex, results.length, gridColumns);
   }
-
   function selectNextRow() {
-    if (results.length > 0 && isGridView && gridColumns > 0) {
-      const currentRow = Math.floor(selectedIndex / gridColumns);
-      const currentCol = selectedIndex % gridColumns;
-      const totalRows = Math.ceil(results.length / gridColumns);
-
-      if (currentRow < totalRows - 1) {
-        const targetRow = currentRow + 1;
-        const targetIndex = targetRow * gridColumns + currentCol;
-        if (targetIndex < results.length) {
-          selectedIndex = targetIndex;
-        } else {
-          const itemsInTargetRow = results.length - targetRow * gridColumns;
-          if (itemsInTargetRow > 0) {
-            selectedIndex = targetRow * gridColumns + itemsInTargetRow - 1;
-          } else {
-            selectedIndex = Math.min(currentCol, results.length - 1);
-          }
-        }
-      } else {
-        // Wrap to first row, same column
-        selectedIndex = Math.min(currentCol, results.length - 1);
-      }
-    }
+    selectedIndex = LauncherNav.selectNextRow(selectedIndex, results.length, gridColumns);
   }
-
   function selectPreviousColumn() {
-    if (results.length > 0 && isGridView) {
-      const currentRow = Math.floor(selectedIndex / gridColumns);
-      const currentCol = selectedIndex % gridColumns;
-      if (currentCol > 0) {
-        selectedIndex = currentRow * gridColumns + (currentCol - 1);
-      } else if (currentRow > 0) {
-        selectedIndex = (currentRow - 1) * gridColumns + (gridColumns - 1);
-      } else {
-        const totalRows = Math.ceil(results.length / gridColumns);
-        const lastRowIndex = (totalRows - 1) * gridColumns + (gridColumns - 1);
-        selectedIndex = Math.min(lastRowIndex, results.length - 1);
-      }
-    }
+    selectedIndex = LauncherNav.selectPreviousColumn(selectedIndex, results.length, gridColumns);
   }
-
   function selectNextColumn() {
-    if (results.length > 0 && isGridView) {
-      const currentRow = Math.floor(selectedIndex / gridColumns);
-      const currentCol = selectedIndex % gridColumns;
-      const itemsInCurrentRow = Math.min(gridColumns, results.length - currentRow * gridColumns);
-
-      if (currentCol < itemsInCurrentRow - 1) {
-        selectedIndex = currentRow * gridColumns + (currentCol + 1);
-      } else {
-        const totalRows = Math.ceil(results.length / gridColumns);
-        if (currentRow < totalRows - 1) {
-          selectedIndex = (currentRow + 1) * gridColumns;
-        } else {
-          selectedIndex = 0;
-        }
-      }
-    }
+    selectedIndex = LauncherNav.selectNextColumn(selectedIndex, results.length, gridColumns);
   }
 
   function activate() {
     if (results.length > 0 && results[selectedIndex]) {
       const item = results[selectedIndex];
       const provider = item.provider || currentProvider;
+
+      // Track usage for providers that opt in (cross-provider "most used" tracking)
+      if (Settings.data.appLauncher.sortByMostUsed && provider && provider.trackUsage && item.usageKey) {
+        ShellState.recordLauncherUsage(item.usageKey);
+      }
 
       // Check if auto-paste is enabled and provider/item supports it
       if (Settings.data.appLauncher.autoPasteClipboard && provider && provider.supportsAutoPaste && item.autoPasteText) {
@@ -540,7 +487,8 @@ Rectangle {
       if (showProviderCategories) {
         var cats = providerCategories;
         var idx = cats.indexOf(currentProvider.selectedCategory);
-        currentProvider.selectCategory(cats[(idx + 1) % cats.length]);
+        var nextIdx = (idx + 1) % cats.length;
+        selectCategoryWithSlide(nextIdx);
       } else {
         selectNextWrapped();
       }
@@ -550,7 +498,8 @@ Rectangle {
       if (showProviderCategories) {
         var cats2 = providerCategories;
         var idx2 = cats2.indexOf(currentProvider.selectedCategory);
-        currentProvider.selectCategory(cats2[((idx2 - 1) % cats2.length + cats2.length) % cats2.length]);
+        var prevIdx = ((idx2 - 1) % cats2.length + cats2.length) % cats2.length;
+        selectCategoryWithSlide(prevIdx);
       } else {
         selectPreviousWrapped();
       }
@@ -755,18 +704,19 @@ Rectangle {
           tooltipText: root.currentProvider.getCategoryName ? root.currentProvider.getCategoryName(modelData) : modelData
           tabIndex: index
           checked: categoryTabs.currentIndex === index
-          onClicked: root.currentProvider.selectCategory(modelData)
+          onClicked: root.selectCategoryWithSlide(index)
         }
       }
     }
 
     // Results view
-    Loader {
-      id: resultsViewLoader
+    NSlideSwapView {
+      id: resultsSwapView
       Layout.fillWidth: true
       Layout.leftMargin: Style.marginL
       Layout.rightMargin: Style.marginL
       Layout.fillHeight: true
+      animationsEnabled: !root.animationsDisabled
       sourceComponent: root.isSingleView ? singleViewComponent : (root.isGridView ? gridViewComponent : listViewComponent)
     }
 
@@ -780,7 +730,7 @@ Rectangle {
         horizontalPolicy: ScrollBar.AlwaysOff
         verticalPolicy: ScrollBar.AlwaysOff
         reserveScrollbarSpace: false
-        gradientColor: Color.mSurfaceVariant
+        gradientColor: Settings.data.ui.panelBackgroundOpacity < 1 ? "transparent" : Color.mSurface
         wheelScrollMultiplier: 4.0
 
         width: parent.width
@@ -798,274 +748,8 @@ Rectangle {
         }
         onModelChanged: {}
 
-        delegate: NBox {
-          id: entry
-
-          property bool isSelected: (!root.ignoreMouseHover && mouseArea.containsMouse) || (index === root.selectedIndex)
-
-          // Prepare item when it becomes visible (e.g., decode images)
-          Component.onCompleted: {
-            var provider = modelData.provider;
-            if (provider && provider.prepareItem) {
-              provider.prepareItem(modelData);
-            }
-          }
-
-          width: resultsList.availableWidth
-          implicitHeight: root.entryHeight
-          clip: true
-          color: entry.isSelected ? Color.mHover : Color.mSurface
-
-          Behavior on color {
-            ColorAnimation {
-              duration: Style.animationFast
-              easing.type: Easing.OutCirc
-            }
-          }
-
-          ColumnLayout {
-            id: contentLayout
-            anchors.fill: parent
-            anchors.margins: root.isCompactDensity ? Style.marginXS : Style.marginM
-            spacing: root.isCompactDensity ? Style.marginXS : Style.marginM
-
-            // Top row - Main entry content with action buttons
-            RowLayout {
-              Layout.fillWidth: true
-              spacing: root.isCompactDensity ? Style.marginS : Style.marginM
-
-              // Icon badge or Image preview or Emoji
-              Item {
-                visible: !modelData.hideIcon
-                Layout.preferredWidth: modelData.hideIcon ? 0 : root.badgeSize
-                Layout.preferredHeight: modelData.hideIcon ? 0 : root.badgeSize
-
-                // Icon background
-                Rectangle {
-                  anchors.fill: parent
-                  radius: Style.radiusXS
-                  color: Color.mSurfaceVariant
-                  visible: Settings.data.appLauncher.showIconBackground && !modelData.isImage
-                }
-
-                // Image preview - uses provider's getImageUrl if available
-                NImageRounded {
-                  id: imagePreview
-                  anchors.fill: parent
-                  visible: !!modelData.isImage && !modelData.displayString
-                  radius: Style.radiusXS
-                  borderColor: Color.mOnSurface
-                  borderWidth: Style.borderM
-                  imageFillMode: Image.PreserveAspectCrop
-
-                  // Use provider's image revision for reactive updates
-                  readonly property int _rev: modelData.provider && modelData.provider.imageRevision ? modelData.provider.imageRevision : 0
-
-                  // Get image URL from provider
-                  imagePath: {
-                    _rev;
-                    var provider = modelData.provider;
-                    if (provider && provider.getImageUrl) {
-                      return provider.getImageUrl(modelData);
-                    }
-                    return "";
-                  }
-
-                  Rectangle {
-                    anchors.fill: parent
-                    visible: parent.status === Image.Loading
-                    color: Color.mSurfaceVariant
-
-                    BusyIndicator {
-                      anchors.centerIn: parent
-                      running: true
-                      width: Style.baseWidgetSize * 0.5
-                      height: width
-                    }
-                  }
-
-                  onStatusChanged: status => {
-                                     if (status === Image.Error) {
-                                       iconLoader.visible = true;
-                                       imagePreview.visible = false;
-                                     }
-                                   }
-                }
-
-                Loader {
-                  id: iconLoader
-                  anchors.fill: parent
-                  anchors.margins: Style.marginXS
-
-                  visible: (!modelData.isImage && !modelData.displayString) || (!!modelData.isImage && imagePreview.status === Image.Error)
-                  active: visible
-
-                  sourceComponent: Component {
-                    Loader {
-                      anchors.fill: parent
-                      sourceComponent: Settings.data.appLauncher.iconMode === "tabler" && modelData.isTablerIcon ? tablerIconComponent : systemIconComponent
-                    }
-                  }
-
-                  Component {
-                    id: tablerIconComponent
-                    NIcon {
-                      icon: modelData.icon
-                      pointSize: Style.fontSizeXXXL
-                      visible: modelData.icon && !modelData.displayString
-                      color: (entry.isSelected && !Settings.data.appLauncher.showIconBackground) ? Color.mOnHover : Color.mOnSurface
-                    }
-                  }
-
-                  Component {
-                    id: systemIconComponent
-                    IconImage {
-                      anchors.fill: parent
-                      source: modelData.icon ? ThemeIcons.iconFromName(modelData.icon, "application-x-executable") : ""
-                      visible: modelData.icon && source !== "" && !modelData.displayString
-                      asynchronous: true
-                    }
-                  }
-                }
-
-                // String display - takes precedence when displayString is present
-                NText {
-                  id: stringDisplay
-                  anchors.centerIn: parent
-                  visible: !!modelData.displayString || (!imagePreview.visible && !iconLoader.visible)
-                  text: modelData.displayString ? modelData.displayString : (modelData.name ? modelData.name.charAt(0).toUpperCase() : "?")
-                  pointSize: modelData.displayString ? (modelData.displayStringSize || Style.fontSizeXXXL) : Style.fontSizeXXL
-                  font.weight: Style.fontWeightBold
-                  color: modelData.displayString ? Color.mOnSurface : Color.mOnPrimary
-                }
-
-                // Image type indicator overlay
-                Rectangle {
-                  visible: !!modelData.isImage && imagePreview.visible
-                  anchors.bottom: parent.bottom
-                  anchors.right: parent.right
-                  anchors.margins: 2
-                  width: formatLabel.width + Style.marginXS
-                  height: formatLabel.height + Style.marginXXS
-                  color: Color.mSurfaceVariant
-                  radius: Style.radiusXXS
-                  NText {
-                    id: formatLabel
-                    anchors.centerIn: parent
-                    text: {
-                      if (!modelData.isImage)
-                        return "";
-                      const desc = modelData.description || "";
-                      const parts = desc.split(" \u2022 ");
-                      return parts[0] || "IMG";
-                    }
-                    pointSize: Style.fontSizeXXS
-                    color: Color.mOnSurfaceVariant
-                  }
-                }
-
-                // Badge icon overlay (generic indicator for any provider)
-                Rectangle {
-                  visible: !!modelData.badgeIcon
-                  anchors.bottom: parent.bottom
-                  anchors.right: parent.right
-                  anchors.margins: 2
-                  width: height
-                  height: Style.fontSizeM + Style.marginXS
-                  color: Color.mSurfaceVariant
-                  radius: Style.radiusXXS
-                  NIcon {
-                    anchors.centerIn: parent
-                    icon: modelData.badgeIcon || ""
-                    pointSize: Style.fontSizeS
-                    color: Color.mOnSurfaceVariant
-                  }
-                }
-              }
-
-              // Text content
-              ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 0
-
-                NText {
-                  text: modelData.name || "Unknown"
-                  pointSize: Style.fontSizeL
-                  font.weight: Style.fontWeightBold
-                  color: entry.isSelected ? Color.mOnHover : Color.mOnSurface
-                  elide: Text.ElideRight
-                  maximumLineCount: 1
-                  wrapMode: Text.Wrap
-                  clip: true
-                  Layout.fillWidth: true
-                }
-
-                NText {
-                  text: modelData.description || ""
-                  pointSize: Style.fontSizeS
-                  color: entry.isSelected ? Color.mOnHover : Color.mOnSurfaceVariant
-                  elide: Text.ElideRight
-                  maximumLineCount: 1
-                  Layout.fillWidth: true
-                  visible: text !== "" && !root.isCompactDensity
-                }
-              }
-
-              // Action buttons row - dynamically populated from provider
-              RowLayout {
-                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                spacing: Style.marginXS
-                visible: entry.isSelected && itemActions.length > 0
-
-                property var itemActions: {
-                  if (!entry.isSelected)
-                    return [];
-                  var provider = modelData.provider || root.currentProvider;
-                  if (provider && provider.getItemActions) {
-                    return provider.getItemActions(modelData);
-                  }
-                  return [];
-                }
-
-                Repeater {
-                  model: parent.itemActions
-                  NIconButton {
-                    icon: modelData.icon
-                    baseSize: Style.baseWidgetSize * 0.75
-                    tooltipText: modelData.tooltip
-                    z: 1
-                    onClicked: {
-                      if (modelData.action) {
-                        modelData.action();
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-
-          MouseArea {
-            id: mouseArea
-            anchors.fill: parent
-            z: -1
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            enabled: !Settings.data.appLauncher.ignoreMouseInput
-            onEntered: {
-              if (!root.ignoreMouseHover) {
-                root.selectedIndex = index;
-              }
-            }
-            onClicked: mouse => {
-                         if (mouse.button === Qt.LeftButton) {
-                           root.selectedIndex = index;
-                           root.activate();
-                           mouse.accepted = true;
-                         }
-                       }
-            acceptedButtons: Qt.LeftButton
-          }
+        delegate: LauncherListDelegate {
+          launcher: root
         }
       }
     }
@@ -1082,6 +766,7 @@ Rectangle {
         NBox {
           anchors.fill: parent
           color: Color.mSurfaceVariant
+          forceOpaque: true
           Layout.fillWidth: true
           Layout.fillHeight: true
 
@@ -1127,7 +812,7 @@ Rectangle {
       }
     }
 
-    // --------------------------
+    // // --------------------------
     // GRID VIEW
     Component {
       id: gridViewComponent
@@ -1137,7 +822,7 @@ Rectangle {
         horizontalPolicy: ScrollBar.AlwaysOff
         verticalPolicy: ScrollBar.AlwaysOff
         reserveScrollbarSpace: false
-        gradientColor: Color.mSurfaceVariant
+        gradientColor: Settings.data.ui.panelBackgroundOpacity < 1 ? "transparent" : Color.mSurface
         wheelScrollMultiplier: 4.0
         trackedSelectionIndex: root.selectedIndex
 
@@ -1165,10 +850,6 @@ Rectangle {
         // Completely disable GridView key handling
         Keys.enabled: false
 
-        Component.onCompleted: root.gridColumns = root.targetGridColumns
-        onWidthChanged: root.gridColumns = root.targetGridColumns
-        onModelChanged: {}
-
         // Handle scrolling to show selected item when it changes
         Connections {
           target: root
@@ -1187,261 +868,8 @@ Rectangle {
           }
         }
 
-        delegate: Item {
-          id: gridEntryContainer
-          width: resultsGrid.cellWidth
-          height: resultsGrid.cellHeight
-
-          property bool isSelected: (!root.ignoreMouseHover && mouseArea.containsMouse) || (index === root.selectedIndex)
-
-          // Prepare item when it becomes visible (e.g., decode images)
-          Component.onCompleted: {
-            var provider = modelData.provider;
-            if (provider && provider.prepareItem) {
-              provider.prepareItem(modelData);
-            }
-          }
-
-          NBox {
-            id: gridEntry
-            anchors.fill: parent
-            anchors.margins: Style.marginXXS
-            color: gridEntryContainer.isSelected ? Color.mHover : Color.mSurface
-
-            Behavior on color {
-              ColorAnimation {
-                duration: Style.animationFast
-                easing.type: Easing.OutCirc
-              }
-            }
-
-            ColumnLayout {
-              anchors.fill: parent
-              anchors.margins: root.isCompactDensity ? Style.marginXS : Style.marginS
-              anchors.bottomMargin: root.isCompactDensity ? Style.marginXS : Style.marginS
-              spacing: root.isCompactDensity ? 0 : Style.marginXXS
-
-              // Icon badge or Image preview or Emoji
-              Item {
-                // Use consistent 65% sizing for all items
-                Layout.preferredWidth: Math.round(gridEntry.width * 0.65)
-                Layout.preferredHeight: Math.round(gridEntry.width * 0.65)
-                Layout.alignment: Qt.AlignHCenter
-
-                // Icon background
-                Rectangle {
-                  anchors.fill: parent
-                  radius: Style.radiusM
-                  color: Color.mSurfaceVariant
-                  visible: Settings.data.appLauncher.showIconBackground && !modelData.isImage
-                }
-
-                // Image preview - uses provider's getImageUrl if available
-                NImageRounded {
-                  id: gridImagePreview
-                  anchors.fill: parent
-                  visible: !!modelData.isImage && !modelData.displayString
-                  radius: Style.radiusM
-
-                  // Use provider's image revision for reactive updates
-                  readonly property int _rev: modelData.provider && modelData.provider.imageRevision ? modelData.provider.imageRevision : 0
-
-                  // Get image URL from provider
-                  imagePath: {
-                    _rev;
-                    var provider = modelData.provider;
-                    if (provider && provider.getImageUrl) {
-                      return provider.getImageUrl(modelData);
-                    }
-                    return "";
-                  }
-
-                  Rectangle {
-                    anchors.fill: parent
-                    visible: parent.status === Image.Loading
-                    color: Color.mSurfaceVariant
-
-                    BusyIndicator {
-                      anchors.centerIn: parent
-                      running: true
-                      width: Style.baseWidgetSize * 0.5
-                      height: width
-                    }
-                  }
-
-                  onStatusChanged: status => {
-                                     if (status === Image.Error) {
-                                       gridIconLoader.visible = true;
-                                       gridImagePreview.visible = false;
-                                     }
-                                   }
-                }
-
-                Loader {
-                  id: gridIconLoader
-                  anchors.fill: parent
-                  anchors.margins: Style.marginXS
-
-                  visible: (!modelData.isImage && !modelData.displayString) || (!!modelData.isImage && gridImagePreview.status === Image.Error)
-                  active: visible
-
-                  sourceComponent: Settings.data.appLauncher.iconMode === "tabler" && modelData.isTablerIcon ? gridTablerIconComponent : gridSystemIconComponent
-
-                  Component {
-                    id: gridTablerIconComponent
-                    NIcon {
-                      icon: modelData.icon
-                      pointSize: Style.fontSizeXXXL
-                      visible: modelData.icon && !modelData.displayString
-                      color: (gridEntryContainer.isSelected && !Settings.data.appLauncher.showIconBackground) ? Color.mOnHover : Color.mOnSurface
-                    }
-                  }
-
-                  Component {
-                    id: gridSystemIconComponent
-                    IconImage {
-                      anchors.fill: parent
-                      source: modelData.icon ? ThemeIcons.iconFromName(modelData.icon, "application-x-executable") : ""
-                      visible: modelData.icon && source !== "" && !modelData.displayString
-                      asynchronous: true
-                    }
-                  }
-                }
-
-                // String display
-                NText {
-                  id: gridStringDisplay
-                  anchors.centerIn: parent
-                  visible: !!modelData.displayString || (!gridImagePreview.visible && !gridIconLoader.visible)
-                  text: modelData.displayString ? modelData.displayString : (modelData.name ? modelData.name.charAt(0).toUpperCase() : "?")
-                  pointSize: {
-                    if (modelData.displayString) {
-                      // Use custom size if provided, otherwise default scaling
-                      if (modelData.displayStringSize) {
-                        return modelData.displayStringSize * Style.uiScaleRatio;
-                      }
-                      if (root.providerHasDisplayString) {
-                        // Scale with cell width but cap at reasonable maximum
-                        const cellBasedSize = gridEntry.width * 0.4;
-                        const maxSize = Style.fontSizeXXXL * Style.uiScaleRatio;
-                        return Math.min(cellBasedSize, maxSize);
-                      }
-                      return Style.fontSizeXXL * 2 * Style.uiScaleRatio;
-                    }
-                    // Scale font size relative to cell width for low res, but cap at maximum
-                    const cellBasedSize = gridEntry.width * 0.25;
-                    const baseSize = Style.fontSizeXL * Style.uiScaleRatio;
-                    const maxSize = Style.fontSizeXXL * Style.uiScaleRatio;
-                    return Math.min(Math.max(cellBasedSize, baseSize), maxSize);
-                  }
-                  font.weight: Style.fontWeightBold
-                  color: modelData.displayString ? Color.mOnSurface : Color.mOnPrimary
-                }
-
-                // Badge icon overlay (generic indicator for any provider)
-                Rectangle {
-                  visible: !!modelData.badgeIcon
-                  anchors.bottom: parent.bottom
-                  anchors.right: parent.right
-                  anchors.margins: 2
-                  width: height
-                  height: Style.fontSizeM + Style.marginXS
-                  color: Color.mSurfaceVariant
-                  radius: Style.radiusXXS
-                  NIcon {
-                    anchors.centerIn: parent
-                    icon: modelData.badgeIcon || ""
-                    pointSize: Style.fontSizeS
-                    color: Color.mOnSurfaceVariant
-                  }
-                }
-              }
-
-              // Text content (hidden when hideLabel is true)
-              NText {
-                visible: !modelData.hideLabel
-                text: modelData.name || "Unknown"
-                pointSize: {
-                  if (root.providerHasDisplayString && modelData.displayString) {
-                    return Style.fontSizeS * Style.uiScaleRatio;
-                  }
-                  // Scale font size relative to cell width for low res, but cap at maximum
-                  const cellBasedSize = gridEntry.width * 0.12;
-                  const baseSize = Style.fontSizeS * Style.uiScaleRatio;
-                  const maxSize = Style.fontSizeM * Style.uiScaleRatio;
-                  return Math.min(Math.max(cellBasedSize, baseSize), maxSize);
-                }
-                font.weight: Style.fontWeightSemiBold
-                color: gridEntryContainer.isSelected ? Color.mOnHover : Color.mOnSurface
-                elide: Text.ElideRight
-                Layout.fillWidth: true
-                Layout.maximumWidth: gridEntry.width - 8
-                Layout.leftMargin: (root.providerHasDisplayString && modelData.displayString) ? Style.marginS : 0
-                Layout.rightMargin: (root.providerHasDisplayString && modelData.displayString) ? Style.marginS : 0
-                horizontalAlignment: Text.AlignHCenter
-                wrapMode: Text.NoWrap
-                maximumLineCount: 1
-              }
-            }
-
-            // Action buttons (overlay in top-right corner) - dynamically populated from provider
-            Row {
-              visible: gridEntryContainer.isSelected && gridItemActions.length > 0
-              anchors.top: parent.top
-              anchors.right: parent.right
-              anchors.margins: Style.marginXS
-              z: 10
-              spacing: Style.marginXXS
-
-              property var gridItemActions: {
-                if (!gridEntryContainer.isSelected)
-                  return [];
-                var provider = modelData.provider || root.currentProvider;
-                if (provider && provider.getItemActions) {
-                  return provider.getItemActions(modelData);
-                }
-                return [];
-              }
-
-              Repeater {
-                model: parent.gridItemActions
-                NIconButton {
-                  icon: modelData.icon
-                  baseSize: Style.baseWidgetSize * 0.75
-                  tooltipText: modelData.tooltip
-                  z: 11
-                  onClicked: {
-                    if (modelData.action) {
-                      modelData.action();
-                    }
-                  }
-                }
-              }
-            }
-          }
-
-          MouseArea {
-            id: mouseArea
-            anchors.fill: parent
-            z: -1
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            enabled: !Settings.data.appLauncher.ignoreMouseInput
-
-            onEntered: {
-              if (!root.ignoreMouseHover) {
-                root.selectedIndex = index;
-              }
-            }
-            onClicked: mouse => {
-                         if (mouse.button === Qt.LeftButton) {
-                           root.selectedIndex = index;
-                           root.activate();
-                           mouse.accepted = true;
-                         }
-                       }
-            acceptedButtons: Qt.LeftButton
-          }
+        delegate: LauncherGridDelegate {
+          launcher: root
         }
       }
     }

@@ -14,7 +14,8 @@ Popup {
   property var screen: null
   readonly property real maxHeight: (screen ? screen.height : (parent ? parent.height : 800)) * 0.8
 
-  width: Math.max(settingsContent.implicitWidth + padding * 2, 600 * Style.uiScaleRatio)
+  property real _minWidth: 600 * Style.uiScaleRatio
+  width: _minWidth
   height: Math.min(settingsContent.implicitHeight + padding * 2, maxHeight)
   padding: Style.marginXL
 
@@ -120,7 +121,7 @@ Popup {
     currentPluginApi = null;
   }
 
-  function openPluginSettings(pluginManifest) {
+  function openPluginSettings(pluginManifest, settingsEntryPoint) {
     currentPlugin = pluginManifest;
 
     // Use composite key if available (for custom plugins), otherwise use manifest ID (for official plugins)
@@ -137,12 +138,15 @@ Popup {
 
     // Get plugin directory
     var pluginDir = PluginRegistry.getPluginDir(pluginId);
-    var settingsPath = pluginDir + "/" + pluginManifest.entryPoints.settings;
+    var settingsEntry = settingsEntryPoint ? pluginManifest.entryPoints[settingsEntryPoint] : pluginManifest.entryPoints.settings;
+    var settingsPath = pluginDir + "/" + settingsEntry;
 
     settingsLoader.setSource("file://" + settingsPath, {
                                "pluginApi": currentPluginApi
                              });
 
+    var preferred = (settingsLoader.item && settingsLoader.item.preferredWidth !== undefined) ? settingsLoader.item.preferredWidth + padding * 2 : 0;
+    width = Math.max(preferred, _minWidth);
     open();
   }
 }

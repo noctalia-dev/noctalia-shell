@@ -29,10 +29,8 @@ RowLayout {
     description: root.description
     placeholderText: root.placeholderText
     text: root.text
-    onEditingFinished: {
-      root.text = text;
-      root.editingFinished();
-    }
+    onTextChanged: root.text = text
+    onEditingFinished: root.editingFinished()
     Layout.fillWidth: true
   }
 

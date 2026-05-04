@@ -10,9 +10,10 @@ Item {
   required property ShellScreen screen
 
   property string icon: ""
+  property string iconPosition: ""
   property string text: ""
   property string suffix: ""
-  property var tooltipText: ""
+  property var tooltipText
   property bool autoHide: false
   property bool forceOpen: false
   property bool forceClose: false
@@ -55,6 +56,7 @@ Item {
       BarPillVertical {
         screen: root.screen
         icon: root.icon
+        iconPosition: root.iconPosition
         text: root.text
         suffix: root.suffix
         tooltipText: root.tooltipText
@@ -84,6 +86,7 @@ Item {
       BarPillHorizontal {
         screen: root.screen
         icon: root.icon
+        iconPosition: root.iconPosition
         text: root.text
         suffix: root.suffix
         tooltipText: root.tooltipText

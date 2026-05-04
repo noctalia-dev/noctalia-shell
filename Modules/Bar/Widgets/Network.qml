@@ -19,7 +19,7 @@ Item {
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
 
-  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId] ?? {}
   // Explicit screenName property ensures reactive binding when screen changes
   readonly property string screenName: screen ? screen.name : ""
   property var widgetSettings: {
@@ -46,10 +46,10 @@ Item {
 
     model: [
       {
-        "label": Settings.data.network.wifiEnabled ? I18n.tr("actions.disable-wifi") : I18n.tr("actions.enable-wifi"),
+        "label": NetworkService.wifiEnabled ? I18n.tr("actions.disable-wifi") : I18n.tr("actions.enable-wifi"),
         "action": "toggle-wifi",
-        "icon": Settings.data.network.wifiEnabled ? "wifi-off" : "wifi",
-        "enabled": !Settings.data.network.airplaneModeEnabled && NetworkService.wifiAvailable
+        "icon": NetworkService.wifiEnabled ? "wifi-off" : "wifi",
+        "enabled": !NetworkService.airplaneModeEnabled && NetworkService.wifiAvailable
       },
       {
         "label": I18n.tr("common.wifi") + " " + I18n.tr("tooltips.open-settings"),
@@ -68,7 +68,7 @@ Item {
                    PanelService.closeContextMenu(screen);
 
                    if (action === "toggle-wifi") {
-                     NetworkService.setWifiEnabled(!Settings.data.network.wifiEnabled);
+                     NetworkService.setWifiEnabled(!NetworkService.wifiEnabled);
                    } else if (action === "wifi-settings") {
                      SettingsPanelService.openToTab(SettingsPanel.Tab.Connections, 0, screen);
                    } else if (action === "widget-settings") {
@@ -79,47 +79,12 @@ Item {
 
   BarPill {
     id: pill
-
     screen: root.screen
     oppositeDirection: BarService.getPillDirection(root)
     customIconColor: Color.resolveColorKeyOptional(root.iconColorKey)
     customTextColor: Color.resolveColorKeyOptional(root.textColorKey)
-    icon: {
-      try {
-        if (NetworkService.ethernetConnected) {
-          return NetworkService.internetConnectivity ? "ethernet" : "ethernet-off";
-        }
-        let connected = false;
-        let signalStrength = 0;
-        for (const net in NetworkService.networks) {
-          if (NetworkService.networks[net].connected) {
-            connected = true;
-            signalStrength = NetworkService.networks[net].signal;
-            break;
-          }
-        }
-        return connected ? NetworkService.signalIcon(signalStrength, true) : "wifi-off";
-      } catch (error) {
-        Logger.e("Wi-Fi", "Error getting icon:", error);
-        return "wifi-off";
-      }
-    }
-    text: {
-      try {
-        if (NetworkService.ethernetConnected) {
-          return "";
-        }
-        for (const net in NetworkService.networks) {
-          if (NetworkService.networks[net].connected) {
-            return net;
-          }
-        }
-        return "";
-      } catch (error) {
-        Logger.e("Wi-Fi", "Error getting ssid:", error);
-        return "error";
-      }
-    }
+    icon: NetworkService.getIcon()
+    text: NetworkService.getStatusText(false)
     autoHide: false
     forceOpen: !isBarVertical && root.displayMode === "alwaysShow"
     forceClose: isBarVertical || root.displayMode === "alwaysHide" || text === ""
@@ -131,31 +96,10 @@ Item {
       PanelService.showContextMenu(contextMenu, pill, screen);
     }
     tooltipText: {
-      try {
-        if (NetworkService.ethernetConnected) {
-          const d = NetworkService.activeEthernetDetails || ({});
-          let base = "";
-          if (d.ifname && d.ifname.length > 0)
-            base = d.ifname;
-          else if (d.connectionName && d.connectionName.length > 0)
-            base = d.connectionName;
-          else if (NetworkService.activeEthernetIf && NetworkService.activeEthernetIf.length > 0)
-            base = NetworkService.activeEthernetIf;
-          else
-            base = I18n.tr("common.ethernet");
-          const speed = (d.speed && d.speed.length > 0) ? d.speed : "";
-          return speed ? (base + " — " + speed) : base;
-        }
-        // Wi‑Fi tooltip: SSID — link speed (if available)
-        if (pill.text !== "") {
-          const w = NetworkService.activeWifiDetails || ({});
-          const rate = (w.rateShort && w.rateShort.length > 0) ? w.rateShort : (w.rate || "");
-          return rate && rate.length > 0 ? (pill.text + " — " + rate) : pill.text;
-        }
-      } catch (e) {
-        // noop
+      if (PanelService.getPanel("networkPanel", screen)?.isPanelOpen) {
+        return "";
       }
-      return I18n.tr("common.wifi");
+      return NetworkService.getStatusText(true);
     }
   }
 }

@@ -13,11 +13,12 @@ Item {
   property string icon: ""
   property string text: ""
   property string suffix: ""
-  property var tooltipText: ""
+  property var tooltipText
   property bool autoHide: false
   property bool forceOpen: false
   property bool forceClose: false
   property bool oppositeDirection: false
+  property string iconPosition: ""
   property bool hovered: false
   property color customBackgroundColor: "transparent"
   property color customTextIconColor: "transparent"
@@ -111,16 +112,22 @@ Item {
     x: {
       if (!hasIcon)
         return 0;
+      // iconPosition takes precedence, fallback to oppositeDirection
+      if (iconPosition === "right")
+        return (iconCircle.x + iconCircle.width / 2) - width;
+      if (iconPosition === "left")
+        return (iconCircle.x + iconCircle.width / 2);
       return oppositeDirection ? (iconCircle.x + iconCircle.width / 2) : (iconCircle.x + iconCircle.width / 2) - width;
     }
 
     opacity: revealed ? Style.opacityFull : Style.opacityNone
     color: "transparent" // Make pill background transparent to avoid double opacity
 
-    topLeftRadius: oppositeDirection ? 0 : Style.radiusM
-    bottomLeftRadius: oppositeDirection ? 0 : Style.radiusM
-    topRightRadius: oppositeDirection ? Style.radiusM : 0
-    bottomRightRadius: oppositeDirection ? Style.radiusM : 0
+    // iconPosition takes precedence, fallback to oppositeDirection
+    topLeftRadius: iconPosition ? (iconPosition === "right" ? Style.radiusM : 0) : (oppositeDirection ? 0 : Style.radiusM)
+    bottomLeftRadius: iconPosition ? (iconPosition === "right" ? Style.radiusM : 0) : (oppositeDirection ? 0 : Style.radiusM)
+    topRightRadius: iconPosition ? (iconPosition === "right" ? 0 : Style.radiusM) : (oppositeDirection ? Style.radiusM : 0)
+    bottomRightRadius: iconPosition ? (iconPosition === "right" ? 0 : Style.radiusM) : (oppositeDirection ? Style.radiusM : 0)
     anchors.verticalCenter: parent.verticalCenter
 
     NText {
@@ -132,10 +139,17 @@ Item {
 
         // Better text horizontal centering
         var centerX = (parent.width - width) / 2;
-        var offset = oppositeDirection ? Style.marginXS : -Style.marginXS;
+        // iconPosition takes precedence, fallback to oppositeDirection
+        var offset;
+        if (iconPosition === "right")
+          offset = -Style.marginXS;
+        else if (iconPosition === "left")
+          offset = Style.marginXS;
+        else
+          offset = oppositeDirection ? Style.marginXS : -Style.marginXS;
         if (forceOpen) {
           // If its force open, the icon disc background is the same color as the bg pill move text slightly
-          offset += oppositeDirection ? -Style.marginXXS : Style.marginXXS;
+          offset += iconPosition === "right" ? Style.marginXXS : (iconPosition === "left" ? -Style.marginXXS : oppositeDirection ? -Style.marginXXS : Style.marginXXS);
         }
         return centerX + offset;
       }
@@ -171,7 +185,8 @@ Item {
     color: "transparent" // Make icon background transparent to avoid double opacity
     anchors.verticalCenter: parent.verticalCenter
 
-    x: oppositeDirection ? 0 : (parent.width - width)
+    // iconPosition takes precedence, fallback to oppositeDirection
+    x: iconPosition ? (iconPosition === "right" ? (parent.width - width) : 0) : (oppositeDirection ? 0 : (parent.width - width))
 
     NIcon {
       icon: root.icon

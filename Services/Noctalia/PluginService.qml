@@ -441,8 +441,8 @@ Singleton {
     // Use git sparse-checkout to clone only the plugin subfolder
     // GIT_TERMINAL_PROMPT=0 prevents hanging on private repos that need auth
     // Note: We download from the original pluginId folder in the repo, but save to compositeKey folder
-    var downloadCmd = "temp_dir=$(mktemp -d) && GIT_TERMINAL_PROMPT=0 git clone --filter=blob:none --sparse --depth=1 --quiet '" + repoUrl + "' \"$temp_dir\" 2>/dev/null && cd \"$temp_dir\" && git sparse-checkout set '" + pluginId + "' 2>/dev/null && mkdir -p '" + pluginDir + "' && cp -r \"$temp_dir/" + pluginId + "/.\" '" + pluginDir
-        + "/'; exit_code=$?; rm -rf \"$temp_dir\"; exit $exit_code";
+    var downloadCmd = "temp_dir=$(mktemp -d) && GIT_TERMINAL_PROMPT=0 git clone --filter=blob:none --sparse --depth=1 --quiet '" + repoUrl + "' \"$temp_dir\" 2>/dev/null && cd \"$temp_dir\" && git sparse-checkout set '" + pluginId + "' 2>/dev/null && mkdir -p '" + pluginDir + "' && rm -f \"$temp_dir/" + pluginId + "/settings.json\" && cp -r \"$temp_dir/" + pluginId
+        + "/.\" '" + pluginDir + "/'; exit_code=$?; rm -rf \"$temp_dir\"; exit $exit_code";
 
     // Mark as installing
     var newInstalling = Object.assign({}, root.installingPlugins);
@@ -1024,8 +1024,9 @@ Singleton {
     // Set current language (can't use binding in Qt.createQmlObject string)
     api.currentLanguage = I18n.langCode;
 
-    // Set pre-loaded settings and translations (available immediately!)
-    api.pluginSettings = settings || {};
+    // Merge manifest defaults with loaded settings (user settings take priority)
+    var defaults = (manifest.metadata && manifest.metadata.defaultSettings) || {};
+    api.pluginSettings = Object.assign({}, defaults, settings || {});
     api.pluginTranslations = translations || {};
     api.pluginFallbackTranslations = fallbackTranslations || {};
 
@@ -1451,25 +1452,28 @@ Singleton {
 
     if (updateCount > 0) {
       Logger.i("PluginService", updateCount, "plugin update(s) available");
-      ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.trp("panels.plugins.update-available", updateCount) + "\n\n" + updatesDescription, "plugin", 5000, I18n.tr("panels.plugins.open-plugins-tab"), function () {
-        // Open settings panel to Plugins tab on the screen where the cursor is
-        if (root.screenDetector) {
-          root.screenDetector.withCurrentScreen(function (screen) {
-            var panel = PanelService.getPanel("settingsPanel", screen);
+
+      if (Settings.data.plugins.notifyUpdates) {
+        ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.trp("panels.plugins.update-available", updateCount) + "\n\n" + updatesDescription, "plugin", 5000, I18n.tr("panels.plugins.open-plugins-tab"), function () {
+          // Open settings panel to Plugins tab on the screen where the cursor is
+          if (root.screenDetector) {
+            root.screenDetector.withCurrentScreen(function (screen) {
+              var panel = PanelService.getPanel("settingsPanel", screen);
+              if (panel) {
+                panel.requestedTab = SettingsPanel.Tab.Plugins;
+                panel.open();
+              }
+            });
+          } else {
+            // Fallback to primary screen if screen detector is not available
+            var panel = PanelService.getPanel("settingsPanel", Quickshell.screens[0]);
             if (panel) {
               panel.requestedTab = SettingsPanel.Tab.Plugins;
               panel.open();
             }
-          });
-        } else {
-          // Fallback to primary screen if screen detector is not available
-          var panel = PanelService.getPanel("settingsPanel", Quickshell.screens[0]);
-          if (panel) {
-            panel.requestedTab = SettingsPanel.Tab.Plugins;
-            panel.open();
           }
-        }
-      });
+        });
+      }
     } else if (pendingCount > 0) {
       Logger.i("PluginService", pendingCount, "plugin update(s) pending (require newer Noctalia)");
     } else {
@@ -1606,6 +1610,10 @@ Singleton {
         Settings.data.desktopWidgets.monitorWidgets = desktopWidgetsBackup;
         Logger.d("PluginService", "Restored desktop widget settings");
 
+        // Persist restored layout immediately to prevent race with file watcher reload
+        // (the earlier disablePlugin write triggers a reload that can overwrite the restore)
+        Settings.saveImmediate();
+
         // Remove from updates list
         var updates = Object.assign({}, root.pluginUpdates);
         delete updates[pluginId];
@@ -1624,6 +1632,7 @@ Singleton {
 
         // Restore desktop widget settings even on failure
         Settings.data.desktopWidgets.monitorWidgets = desktopWidgetsBackup;
+        Settings.saveImmediate();
 
         if (callback)
           callback(false, error);

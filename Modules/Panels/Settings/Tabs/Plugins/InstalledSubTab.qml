@@ -40,6 +40,14 @@ ColumnLayout {
     onToggled: checked => Settings.data.plugins.autoUpdate = checked
   }
 
+  // Update notification toggle
+  NToggle {
+    label: I18n.tr("panels.plugins.notify-updates")
+    description: I18n.tr("panels.plugins.notify-updates-description")
+    checked: Settings.data.plugins.notifyUpdates
+    onToggled: checked => Settings.data.plugins.notifyUpdates = checked
+  }
+
   // Check for updates button
   NButton {
     property bool isChecking: Object.keys(PluginService.activeFetches).length > 0

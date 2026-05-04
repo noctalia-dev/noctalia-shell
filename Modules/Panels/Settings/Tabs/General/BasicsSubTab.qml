@@ -42,7 +42,7 @@ ColumnLayout {
         placeholderText: '~/.face' // don't translate path
         buttonIcon: "photo"
         buttonTooltip: I18n.tr("panels.general.profile-tooltip")
-        onInputEditingFinished: Settings.data.general.avatarImage = text
+        onInputTextChanged: text => Settings.data.general.avatarImage = text
         onButtonClicked: {
           avatarPicker.openFilePicker();
         }
@@ -148,6 +148,15 @@ ColumnLayout {
     checked: Settings.data.general.reverseScroll
     defaultValue: Settings.getDefaultValue("general.reverseScroll")
     onToggled: checked => Settings.data.general.reverseScroll = checked
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.general.smooth-scrolling-label")
+    description: I18n.tr("panels.general.smooth-scrolling-description")
+    checked: Settings.data.general.smoothScrollEnabled
+    defaultValue: Settings.getDefaultValue("general.smoothScrollEnabled")
+    onToggled: checked => Settings.data.general.smoothScrollEnabled = checked
   }
 
   NDivider {

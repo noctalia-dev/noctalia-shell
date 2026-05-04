@@ -5,6 +5,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Services.Theming
 import qs.Services.UI
 
 Singleton {
@@ -15,6 +16,20 @@ Singleton {
   property string schemesDirectory: Quickshell.shellDir + "/Assets/ColorScheme"
   property string downloadedSchemesDirectory: Settings.configDir + "colorschemes"
   property string colorsJsonFilePath: Settings.configDir + "colors.json"
+  // Last successfully parsed predefined scheme JSON (full object). Used to refresh app templates
+  // on wallpaper changes without re-running applyScheme (avoids rewriting colors.json when unchanged).
+  property var lastPredefinedSchemeData: null
+  readonly property string gtkRefreshScript: Quickshell.shellDir + "/Scripts/python/src/theming/gtk-refresh.py"
+
+  // prefer-light/prefer-dark only; GTK template post_hook still runs full gtk-refresh.
+  function pushSystemColorScheme() {
+    if (!Settings.data.colorSchemes.syncGsettings)
+      return;
+    if (TemplateProcessor.isTemplateEnabled("gtk"))
+      return;
+    const mode = Settings.data.colorSchemes.darkMode ? "dark" : "light";
+    Quickshell.execDetached(["python3", gtkRefreshScript, "--appearance-only", mode]);
+  }
 
   Connections {
     target: Settings.data.colorSchemes
@@ -24,6 +39,7 @@ Singleton {
         // Re-apply current scheme to pick the right variant
         applyScheme(Settings.data.colorSchemes.predefinedScheme);
       }
+      root.pushSystemColorScheme();
       // Toast: dark/light mode switched
       const enabled = !!Settings.data.colorSchemes.darkMode;
       const label = enabled ? I18n.tr("tooltips.switch-to-dark-mode") : I18n.tr("tooltips.switch-to-light-mode");
@@ -190,10 +206,11 @@ Singleton {
           }
         }
         writeColorsToDisk(variant);
+        lastPredefinedSchemeData = data;
         Logger.i("ColorScheme", "Applying color scheme:", getBasename(path));
 
         // Generate templates for predefined color schemes
-        if (hasEnabledTemplates()) {
+        if (hasEnabledTemplates() || Settings.data.templates.enableUserTheming) {
           AppThemeService.generateFromPredefinedScheme(data);
         }
       } catch (e) {

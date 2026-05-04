@@ -32,6 +32,10 @@ Item {
                           "timestamp": Date.now()
                         });
     }
+
+    function onDismiss() {
+      root.dismissToast();
+    }
   }
 
   // Clear queue on component destruction to prevent orphaned toasts
@@ -40,6 +44,13 @@ Item {
     isShowingToast = false;
     hideTimer.stop();
     quickSwitchTimer.stop();
+  }
+
+  function dismissToast() {
+    if (windowLoader.item) {
+      hideTimer.stop();
+      windowLoader.item.hideToast();
+    }
   }
 
   function enqueueToast(toastData) {
@@ -59,10 +70,7 @@ Item {
       messageQueue.push(toastData);
 
       // Hide current toast immediately
-      if (windowLoader.item) {
-        hideTimer.stop();
-        windowLoader.item.hideToast();
-      }
+      root.dismissToast();
 
       // Process new toast after a brief delay
       isShowingToast = false;
@@ -147,7 +155,7 @@ Item {
       readonly property real frameThickness: Settings.data.bar.frameThickness ?? 8
 
       readonly property string barPos: Settings.getBarPositionForScreen(panel.screen?.name)
-      readonly property bool isFloating: Settings.data.bar.floating
+      readonly property bool isFloating: Settings.data.bar.barType === "floating"
       readonly property real barHeight: Style.getBarHeightForScreen(panel.screen?.name)
 
       // Calculate bar and frame offsets for each edge separately

@@ -18,7 +18,7 @@ ColumnLayout {
   signal settingsChanged(var settings)
 
   // Local state
-  property string valueIconColor: widgetData.iconColor !== undefined ? widgetData.iconColor : (widgetData.colorName !== undefined ? widgetData.colorName : widgetMetadata.iconColor)
+  property string valueIconColor: widgetData.iconColor !== undefined ? widgetData.iconColor : widgetMetadata.iconColor
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
@@ -33,5 +33,6 @@ ColumnLayout {
                   root.valueIconColor = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.iconColor
   }
 }

@@ -19,7 +19,8 @@ Item {
 
   signal hidden
 
-  readonly property int notificationWidth: Math.round(440 * Style.uiScaleRatio)
+  readonly property bool isCompact: Settings.data.notifications?.density === "compact"
+  readonly property int notificationWidth: Math.round((isCompact ? 320 : 440) * Style.uiScaleRatio)
   readonly property int shadowPadding: Style.shadowBlurMax + Style.marginL
 
   width: notificationWidth + shadowPadding * 2
@@ -95,7 +96,7 @@ Item {
     anchors.fill: parent
     anchors.margins: shadowPadding
     radius: Style.radiusL
-    color: Qt.alpha(Color.mSurface, Settings.data.notifications.backgroundOpacity || 1.0)
+    color: Qt.alpha(Color.mSurface, Color.adaptiveOpacity(Settings.data.notifications.backgroundOpacity) || 1.0)
 
     // Colored border based on type
     border.width: Style.borderS
@@ -109,7 +110,7 @@ Item {
         baseColor = Color.mOutline;
         break;
       }
-      return Qt.alpha(baseColor, Settings.data.notifications.backgroundOpacity || 1.0);
+      return Qt.alpha(baseColor, Color.adaptiveOpacity(Settings.data.notifications.backgroundOpacity) || 1.0);
     }
 
     // Progress bar
@@ -141,7 +142,7 @@ Item {
             baseColor = Color.mPrimary; // Match standard notification color
             break;
           }
-          return Qt.alpha(baseColor, Settings.data.notifications.backgroundOpacity || 1.0);
+          return Qt.alpha(baseColor, Color.adaptiveOpacity(Settings.data.notifications.backgroundOpacity) || 1.0);
         }
       }
     }
@@ -282,11 +283,11 @@ Item {
   RowLayout {
     id: contentLayout
     anchors.fill: background
-    anchors.topMargin: Style.marginM
-    anchors.bottomMargin: Style.marginM
-    anchors.leftMargin: Style.margin2M
-    anchors.rightMargin: Style.margin2M
-    spacing: Style.marginL
+    anchors.topMargin: isCompact ? Style.marginS : Style.marginM
+    anchors.bottomMargin: isCompact ? Style.marginS : Style.marginM
+    anchors.leftMargin: isCompact ? Style.marginM : Style.margin2M
+    anchors.rightMargin: isCompact ? Style.marginM : Style.margin2M
+    spacing: isCompact ? Style.marginM : Style.marginL
 
     // Icon
     NIcon {
@@ -309,7 +310,7 @@ Item {
           return Color.mOnSurface;
         }
       }
-      pointSize: Style.fontSizeXXL * 1.5
+      pointSize: isCompact ? Style.fontSizeXL : Style.fontSizeXXL * 1.5
       Layout.alignment: Qt.AlignVCenter
     }
 
@@ -323,7 +324,7 @@ Item {
         Layout.fillWidth: true
         text: root.title
         color: Color.mOnSurface
-        pointSize: Style.fontSizeL
+        pointSize: isCompact ? Style.fontSizeM : Style.fontSizeL
         font.weight: Style.fontWeightBold
         wrapMode: Text.WordWrap
         visible: text.length > 0
@@ -333,8 +334,10 @@ Item {
         Layout.fillWidth: true
         text: root.description
         color: Color.mOnSurface
-        pointSize: Style.fontSizeM
+        pointSize: isCompact ? Style.fontSizeS : Style.fontSizeM
         wrapMode: Text.WordWrap
+        maximumLineCount: isCompact ? 2 : 20
+        elide: isCompact ? Text.ElideRight : Text.ElideNone
         visible: text.length > 0
       }
 

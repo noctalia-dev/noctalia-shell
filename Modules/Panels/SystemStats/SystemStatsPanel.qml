@@ -136,6 +136,7 @@ SmartPanel {
             maxValue2: Math.max(SystemStatService.cpuTempHistoryMax + 5, 1)
             color: Color.mPrimary
             color2: Color.mSecondary
+            strokeWidth: Math.max(1, Style.uiScaleRatio)
             fill: true
             fillOpacity: 0.15
             updateInterval: SystemStatService.cpuUsageIntervalMs
@@ -165,7 +166,7 @@ SmartPanel {
             }
 
             NText {
-              text: `${Math.round(SystemStatService.memPercent)}% (${SystemStatService.formatGigabytes(SystemStatService.memGb).replace(/[^0-9.]/g, "")} GB)`
+              text: `${Math.round(SystemStatService.memPercent)}% (${(SystemStatService.memGb).toFixed(1)} GiB)`
               pointSize: Style.fontSizeXS
               color: Color.mPrimary
               font.family: Settings.data.ui.fontFixed
@@ -189,6 +190,7 @@ SmartPanel {
             minValue: 0
             maxValue: 100
             color: Color.mPrimary
+            strokeWidth: Math.max(1, Style.uiScaleRatio)
             fill: true
             fillOpacity: 0.15
             updateInterval: SystemStatService.memIntervalMs
@@ -260,6 +262,7 @@ SmartPanel {
             maxValue2: SystemStatService.txMaxSpeed
             color: Color.mPrimary
             color2: Color.mSecondary
+            strokeWidth: Math.max(1, Style.uiScaleRatio)
             fill: true
             fillOpacity: 0.15
             updateInterval: SystemStatService.networkIntervalMs
@@ -386,7 +389,7 @@ SmartPanel {
             }
 
             NText {
-              text: `${SystemStatService.formatGigabytes(SystemStatService.swapGb).replace(/[^0-9.]/g, "")} / ${SystemStatService.formatGigabytes(SystemStatService.swapTotalGb).replace(/[^0-9.]/g, "")} GB`
+              text: `${(SystemStatService.swapGb).toFixed(1)} / ${(SystemStatService.swapTotalGb).toFixed(1)} GiB`
               pointSize: Style.fontSizeXS
               color: Color.mOnSurface
               Layout.fillWidth: true

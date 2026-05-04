@@ -21,7 +21,7 @@ Item {
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
 
-  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId] ?? {}
   // Explicit screenName property ensures reactive binding when screen changes
   readonly property string screenName: screen ? screen.name : ""
   property var widgetSettings: {
@@ -80,7 +80,7 @@ Item {
       }
 
       let rateText = BatteryService.getRateText(selectedDevice);
-      if (rateText) {
+      if (!isPluggedIn && rateText) {
         const colonIdx = rateText.indexOf(":");
         if (colonIdx >= 0) {
           rows.push([rateText.substring(0, colonIdx).trim(), rateText.substring(colonIdx + 1).trim()]);
@@ -173,7 +173,7 @@ Item {
     id: nBattery
     visible: root.useGraphicMode
     anchors.centerIn: parent
-    baseSize: Style.barFontSize
+    baseSize: (Style.getBarHeightForScreen(root.screenName) / root.capsuleHeight) * Style.fontSizeXXS
     showPercentageText: root.displayMode !== "graphic-clean"
     vertical: root.isBarVertical
     percentage: root.percent
@@ -194,20 +194,21 @@ Item {
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     cursorShape: Qt.PointingHandCursor
     onEntered: {
-      if (root.tooltipContent) {
+      if (!getBatteryPanel()?.isPanelOpen && root.tooltipContent) {
         TooltipService.show(root, root.tooltipContent, BarService.getTooltipDirection(root.screen?.name));
+        tooltipRefreshTimer.start();
       }
-      tooltipRefreshTimer.start();
     }
     onExited: {
       tooltipRefreshTimer.stop();
       TooltipService.hide();
     }
     onClicked: mouse => {
+                 TooltipService.hide();
                  if (mouse.button === Qt.RightButton) {
                    PanelService.showContextMenu(contextMenu, nBattery, screen);
                  } else {
-                   openBatteryPanel();
+                   toggleBatteryPanel();
                  }
                }
   }
@@ -238,22 +239,25 @@ Item {
     forceClose: root.displayMode === "icon-only" || !root.isReady
     customBackgroundColor: root.isCharging ? Color.mPrimary : ((root.isLowBattery || root.isCriticalBattery) ? Color.mError : "transparent")
     customTextIconColor: root.isCharging ? Color.mOnPrimary : ((root.isLowBattery || root.isCriticalBattery) ? Color.mOnError : "transparent")
-    tooltipText: root.tooltipContent
-
-    onClicked: openBatteryPanel()
+    tooltipText: !getBatteryPanel()?.isPanelOpen ? root.tooltipContent : ""
+    onClicked: toggleBatteryPanel()
     onRightClicked: PanelService.showContextMenu(contextMenu, pill, screen)
   }
 
   // ==================== SHARED ====================
 
-  function openBatteryPanel() {
+  function getBatteryPanel() {
     var panel = PanelService.getPanel("batteryPanel", screen);
     if (panel) {
       panel.panelID = {
         showPowerProfiles: widgetSettings.showPowerProfiles !== undefined ? widgetSettings.showPowerProfiles : widgetMetadata.showPowerProfiles,
         showNoctaliaPerformance: widgetSettings.showNoctaliaPerformance !== undefined ? widgetSettings.showNoctaliaPerformance : widgetMetadata.showNoctaliaPerformance
       };
-      panel.toggle(root);
     }
+    return panel;
+  }
+
+  function toggleBatteryPanel() {
+    getBatteryPanel()?.toggle(root);
   }
 }

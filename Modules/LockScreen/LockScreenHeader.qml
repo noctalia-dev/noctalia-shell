@@ -118,23 +118,7 @@ Rectangle {
       // Date below
       NText {
         text: {
-          var lang = I18n.locale.name.split("_")[0];
-          var formats = {
-            "de": "dddd, d. MMMM",
-            "en": "dddd, MMMM d",
-            "es": "dddd, d 'de' MMMM",
-            "fr": "dddd d MMMM",
-            "hu": "dddd, MMMM d.",
-            "ja": "yyyy年M月d日 dddd",
-            "ko": "yyyy년 M월 d일 dddd",
-            "ku": "dddd, dê MMMM",
-            "nl": "dddd d MMMM",
-            "nn": "dddd d. MMMM",
-            "pt": "dddd, d 'de' MMMM",
-            "sv": "dddd d MMMM",
-            "zh": "yyyy年M月d日 dddd"
-          };
-          var dateString = I18n.locale.toString(root.currentDate, formats[lang] || "dddd, d MMMM");
+          var dateString = I18n.locale.toString(root.currentDate, I18n.dateFormat());
           return dateString.charAt(0).toUpperCase() + dateString.slice(1);
         }
         pointSize: Style.fontSizeXL
@@ -188,6 +172,7 @@ Rectangle {
       // Custom Clock (Stacked)
       ColumnLayout {
         anchors.centerIn: parent
+        width: parent.width
         visible: Settings.data.general.clockStyle === "custom"
         spacing: -3
 
@@ -198,8 +183,11 @@ Rectangle {
             pointSize: Style.fontSizeL
             font.weight: Style.fontWeightBold
             color: Color.mOnSurface
+            wrapMode: Text.WordWrap
             horizontalAlignment: Text.AlignHCenter
             Layout.alignment: Qt.AlignHCenter
+            Layout.maximumWidth: parent.width
+            Layout.fillWidth: true
           }
         }
       }

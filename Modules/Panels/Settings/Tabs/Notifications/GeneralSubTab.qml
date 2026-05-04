@@ -9,7 +9,7 @@ import qs.Widgets
 
 ColumnLayout {
   id: root
-
+  spacing: Style.marginL
   Layout.fillWidth: true
 
   property var addMonitor
@@ -122,9 +122,12 @@ ColumnLayout {
       model: Quickshell.screens || []
       delegate: NCheckbox {
         Layout.fillWidth: true
+        readonly property real compositorScale: {
+          const info = CompositorService.displayScales[modelData.name];
+          return (info && info.scale) ? info.scale : 1.0;
+        }
         label: modelData.name || I18n.tr("common.unknown")
         description: {
-          const compositorScale = CompositorService.getDisplayScale(modelData.name);
           I18n.tr("system.monitor-description", {
                     "model": modelData.model,
                     "width": modelData.width * compositorScale,

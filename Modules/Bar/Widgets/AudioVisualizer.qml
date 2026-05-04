@@ -25,7 +25,7 @@ Item {
   readonly property bool isVerticalBar: barPosition === "left" || barPosition === "right"
   readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
 
-  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId] ?? {}
   property var widgetSettings: {
     if (section && sectionWidgetIndex >= 0 && screenName) {
       var widgets = Settings.getBarWidgetsForScreen(screenName)[section];
@@ -45,20 +45,20 @@ Item {
 
   readonly property bool shouldShow: (currentVisualizerType !== "" && currentVisualizerType !== "none") && (!hideWhenIdle || MediaService.isPlaying)
 
-  // Register/unregister with CavaService based on visibility
-  readonly property string cavaComponentId: "bar:audiovisualizer:" + root.screen.name + ":" + root.section + ":" + root.sectionWidgetIndex
+  // Register/unregister with SpectrumService based on visibility (use screenName — screen can be null after DPMS/output changes)
+  readonly property string spectrumComponentId: "bar:audiovisualizer:" + screenName + ":" + root.section + ":" + root.sectionWidgetIndex
 
   onShouldShowChanged: {
     if (root.shouldShow) {
-      CavaService.registerComponent(root.cavaComponentId);
+      SpectrumService.registerComponent(root.spectrumComponentId);
     } else {
-      CavaService.unregisterComponent(root.cavaComponentId);
+      SpectrumService.unregisterComponent(root.spectrumComponentId);
     }
   }
 
   Component.onDestruction: {
     if (root.shouldShow) {
-      CavaService.unregisterComponent(root.cavaComponentId);
+      SpectrumService.unregisterComponent(root.spectrumComponentId);
     }
   }
 
@@ -140,14 +140,16 @@ Item {
 
     onTriggered: action => {
                    contextMenu.close();
-                   PanelService.closeContextMenu(screen);
+                   if (screen) {
+                     PanelService.closeContextMenu(screen);
+                   }
 
                    if (action === "cycle-visualizer") {
                      const types = ["linear", "mirrored", "wave"];
                      const currentIndex = types.indexOf(currentVisualizerType);
                      const nextIndex = (currentIndex + 1) % types.length;
                      Settings.data.audio.visualizerType = types[nextIndex];
-                   } else if (action === "widget-settings") {
+                   } else if (action === "widget-settings" && screen) {
                      BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
                    }
                  }
@@ -163,7 +165,9 @@ Item {
 
     onClicked: mouse => {
                  if (mouse.button === Qt.RightButton) {
-                   PanelService.showContextMenu(contextMenu, root, screen);
+                   if (screen) {
+                     PanelService.showContextMenu(contextMenu, root, screen);
+                   }
                  } else {
                    const types = ["linear", "mirrored", "wave"];
                    const currentIndex = types.indexOf(currentVisualizerType);
@@ -177,11 +181,12 @@ Item {
     id: linearComponent
     NLinearSpectrum {
       anchors.fill: parent
-      values: CavaService.values
+      values: SpectrumService.values
       fillColor: root.fillColor
       showMinimumSignal: true
       vertical: root.isVerticalBar
       barPosition: root.barPosition
+      mirrored: Settings.data.audio.spectrumMirrored
     }
   }
 
@@ -189,10 +194,11 @@ Item {
     id: mirroredComponent
     NMirroredSpectrum {
       anchors.fill: parent
-      values: CavaService.values
+      values: SpectrumService.values
       fillColor: root.fillColor
       showMinimumSignal: true
       vertical: root.isVerticalBar
+      mirrored: Settings.data.audio.spectrumMirrored
     }
   }
 
@@ -200,10 +206,11 @@ Item {
     id: waveComponent
     NWaveSpectrum {
       anchors.fill: parent
-      values: CavaService.values
+      values: SpectrumService.values
       fillColor: root.fillColor
       showMinimumSignal: true
       vertical: root.isVerticalBar
+      mirrored: Settings.data.audio.spectrumMirrored
     }
   }
 }

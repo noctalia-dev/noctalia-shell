@@ -62,15 +62,31 @@ DraggableDesktopWidget {
       Layout.alignment: Qt.AlignVCenter
 
       NIcon {
+        visible: !LocationService.taliaWeatherMascotActive || !weatherReady
         anchors.centerIn: parent
-        icon: weatherReady ? LocationService.weatherSymbolFromCode(currentWeatherCode, LocationService.data.weather.current_weather.is_day) : "weather-cloud-off"
+        icon: weatherReady ? LocationService.weatherSymbolFromCode(currentWeatherCode) : (LocationService.locationConfigured ? "weather-cloud-off" : "map-pin-off")
         pointSize: Math.round(Style.fontSizeXXXL * 2 * widgetScale)
         color: weatherReady ? Color.mPrimary : Color.mOnSurfaceVariant
+      }
+      Loader {
+        active: LocationService.taliaWeatherMascotActive && weatherReady
+        anchors.fill: parent
+        asynchronous: true
+        sourceComponent: Component {
+          Image {
+            anchors.fill: parent
+            fillMode: Image.PreserveAspectFit
+            smooth: true
+            mipmap: true
+            asynchronous: true
+            source: Qt.resolvedUrl(LocationService.taliaWeatherImageFromCode(currentWeatherCode))
+          }
+        }
       }
     }
 
     NText {
-      text: weatherReady ? `${currentTemp}°${tempUnit}` : "---"
+      text: weatherReady ? `${currentTemp}°${tempUnit}` : "--"
       pointSize: Math.round(Style.fontSizeXXXL * widgetScale)
       font.weight: Style.fontWeightBold
       color: Color.mOnSurface
@@ -83,7 +99,7 @@ DraggableDesktopWidget {
 
       NText {
         Layout.fillWidth: true
-        text: locationName || "No location"
+        text: locationName || I18n.tr("common.weather-no-location")
         pointSize: Math.round(Style.fontSizeS * widgetScale)
         font.weight: Style.fontWeightRegular
         color: Color.mOnSurfaceVariant

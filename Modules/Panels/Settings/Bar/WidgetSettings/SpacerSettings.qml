@@ -28,6 +28,7 @@ ColumnLayout {
     description: I18n.tr("bar.spacer.width-description")
     text: widgetData.width || widgetMetadata.width
     placeholderText: I18n.tr("placeholders.enter-width-pixels")
-    onEditingFinished: saveSettings()
+    onTextChanged: saveSettings()
+    defaultValue: String(widgetMetadata.width)
   }
 }

@@ -265,7 +265,7 @@ PopupWindow {
                         } else if (action.execute) {
                           action.execute();
                         }
-                        if (Settings.data.dock.dockType === "static") {
+                        if (Settings.data.dock.dockType === "attached") {
                           const panel = PanelService.getPanel("staticDockPanel", root.screen, false);
                           if (panel)
                             panel.close();
@@ -505,7 +505,7 @@ PopupWindow {
     if (appId) {
       root.toggleAppPin(appId);
     }
-    closeAndReset();
+    Qt.callLater(() => closeAndReset());
   }
 
   function handleClose(targetToplevel) {
@@ -582,6 +582,7 @@ PopupWindow {
 
   Rectangle {
     anchors.fill: parent
+    anchors.margins: border.width
     color: Color.mSurfaceVariant
     radius: Style.radiusS
     border.color: Color.mOutline

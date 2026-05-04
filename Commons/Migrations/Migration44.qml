@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import qs.Commons
 
 QtObject {
   id: root
@@ -7,9 +8,7 @@ QtObject {
   function migrate(adapter, logger, rawJson) {
     logger.i("Migration44", "Updating PAM pam/password.conf");
 
-    // Copying logic from Settings.qml to avoid dependency on it
-    const shellName = "noctalia";
-    const configDir = Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/";
+    const configDir = Settings.configDir;
     const pamConfigDir = configDir + "pam";
     const pamConfigFile = pamConfigDir + "/password.conf";
     const pamConfigDirEsc = pamConfigDir.replace(/'/g, "'\\''");

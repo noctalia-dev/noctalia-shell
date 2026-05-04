@@ -49,6 +49,7 @@ ColumnLayout {
                    valueShowCapsLock = checked;
                    saveSettings();
                  }
+      defaultValue: widgetMetadata.showCapsLock
     }
 
     NIcon {
@@ -86,6 +87,7 @@ ColumnLayout {
                    valueShowNumLock = checked;
                    saveSettings();
                  }
+      defaultValue: widgetMetadata.showNumLock
     }
 
     NIcon {
@@ -123,6 +125,7 @@ ColumnLayout {
                    valueShowScrollLock = checked;
                    saveSettings();
                  }
+      defaultValue: widgetMetadata.showScrollLock
     }
 
     NIcon {
@@ -162,5 +165,6 @@ ColumnLayout {
                  valueHideWhenOff = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.hideWhenOff
   }
 }

@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.Commons
 import qs.Services.Compositor
+import qs.Services.Power
 import qs.Services.UI
 
 Variants {
@@ -13,7 +14,7 @@ Variants {
 
     required property ShellScreen modelData
 
-    active: modelData && Settings.data.wallpaper.enabled
+    active: modelData && Settings.data.wallpaper.enabled && (!PowerProfileService.noctaliaPerformanceMode || !Settings.data.noctaliaPerformance.disableWallpaper)
 
     sourceComponent: PanelWindow {
       id: root
@@ -230,7 +231,7 @@ Variants {
           anchors.fill: parent
 
           property variant source1: currentWallpaper
-          property variant source2: nextWallpaper
+          property variant source2: nextWallpaper.status === Image.Ready ? nextWallpaper : currentWallpaper.status === Image.Ready ? nextWallpaper : currentWallpaper
           property real progress: root.transitionProgress
 
           // Fill mode properties
@@ -260,7 +261,7 @@ Variants {
           anchors.fill: parent
 
           property variant source1: currentWallpaper
-          property variant source2: nextWallpaper
+          property variant source2: nextWallpaper.status === Image.Ready ? nextWallpaper : currentWallpaper
           property real progress: root.transitionProgress
           property real smoothness: root.edgeSmoothness
           property real direction: root.wipeDirection
@@ -292,7 +293,7 @@ Variants {
           anchors.fill: parent
 
           property variant source1: currentWallpaper
-          property variant source2: nextWallpaper
+          property variant source2: nextWallpaper.status === Image.Ready ? nextWallpaper : currentWallpaper
           property real progress: root.transitionProgress
           property real smoothness: root.edgeSmoothness
           property real aspectRatio: root.width / root.height
@@ -326,7 +327,7 @@ Variants {
           anchors.fill: parent
 
           property variant source1: currentWallpaper
-          property variant source2: nextWallpaper
+          property variant source2: nextWallpaper.status === Image.Ready ? nextWallpaper : currentWallpaper
           property real progress: root.transitionProgress
           property real smoothness: root.edgeSmoothness
           property real aspectRatio: root.width / root.height
@@ -360,7 +361,7 @@ Variants {
           anchors.fill: parent
 
           property variant source1: currentWallpaper
-          property variant source2: nextWallpaper
+          property variant source2: nextWallpaper.status === Image.Ready ? nextWallpaper : currentWallpaper
           property real progress: root.transitionProgress
           property real maxBlockSize: root.pixelateMaxBlockSize
 
@@ -391,7 +392,7 @@ Variants {
           anchors.fill: parent
 
           property variant source1: currentWallpaper
-          property variant source2: nextWallpaper
+          property variant source2: nextWallpaper.status === Image.Ready ? nextWallpaper : currentWallpaper
           property real progress: root.transitionProgress
           property real cellSize: root.honeycombCellSize
           property real centerX: root.honeycombCenterX
@@ -428,6 +429,12 @@ Variants {
         duration: Settings.data.wallpaper.transitionDuration
         easing.type: Easing.InOutCubic
         onFinished: {
+          // Mark startup complete now that the animation has finished,
+          // so displayScalesChanged doesn't trigger a duplicate transition.
+          if (isStartupTransition) {
+            isStartupTransition = false;
+          }
+
           // Clear the tracking of what we're transitioning to
           transitioningToOriginalPath = "";
 
@@ -672,12 +679,15 @@ Variants {
       // ------------------------------------------------------
       // Main method that actually trigger the wallpaper change
       function changeWallpaper() {
-        // Get the transitionType from the settings
-        transitionType = Settings.data.wallpaper.transitionType;
-
-        if (transitionType == "random") {
-          var index = Math.floor(Math.random() * allTransitions.length);
-          transitionType = allTransitions[index];
+        // Pick a transition from the user's selected list
+        var selected = Settings.data.wallpaper.transitionType;
+        if (!selected || selected.length === 0) {
+          transitionType = "none";
+        } else if (selected.length === 1) {
+          transitionType = selected[0];
+        } else {
+          var index = Math.floor(Math.random() * selected.length);
+          transitionType = selected[index];
         }
 
         // Ensure the transition type really exists
@@ -731,12 +741,15 @@ Variants {
           return;
         }
 
-        // Get the transitionType from the settings
-        transitionType = Settings.data.wallpaper.transitionType;
-
-        if (transitionType == "random") {
-          var index = Math.floor(Math.random() * allTransitions.length);
-          transitionType = allTransitions[index];
+        // Pick a transition from the user's selected list
+        var selected = Settings.data.wallpaper.transitionType;
+        if (!selected || selected.length === 0) {
+          transitionType = "none";
+        } else if (selected.length === 1) {
+          transitionType = selected[0];
+        } else {
+          var index = Math.floor(Math.random() * selected.length);
+          transitionType = selected[index];
         }
 
         // Ensure the transition type really exists
@@ -776,11 +789,12 @@ Variants {
       function _executeStartupTransition() {
         if (transitionType === "none") {
           setWallpaperImmediate(futureWallpaper);
+          isStartupTransition = false;
         } else {
+          // isStartupTransition stays true until transitionAnimation.onFinished
+          // to prevent displayScalesChanged from triggering a duplicate transition.
           setWallpaperWithTransition(futureWallpaper);
         }
-        // Mark startup transition complete
-        isStartupTransition = false;
       }
     }
   }

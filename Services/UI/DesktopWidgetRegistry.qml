@@ -28,10 +28,19 @@ Singleton {
   property Component systemStatComponent: Component {
     DesktopSystemStat {}
   }
+  property Component audioVisualizerComponent: Component {
+    DesktopAudioVisualizer {}
+  }
 
   // Widget registry object mapping widget names to components
   // Created in Component.onCompleted to ensure Components are ready
   property var widgets: ({})
+
+  // Explicit URLs for core widgets. Inline Component.url returns the parent
+  // file's URL, so we need these for Loader.setSource() with initial properties.
+  // Plugin widgets use their Component.url directly (loaded from actual files).
+  readonly property string _widgetsDir: Quickshell.shellDir + "/Modules/DesktopWidgets/Widgets/"
+  property var widgetUrls: ({})
 
   Component.onCompleted: {
     // Initialize widgets object after Components are ready
@@ -40,7 +49,16 @@ Singleton {
     widgetsObj["MediaPlayer"] = mediaPlayerComponent;
     widgetsObj["Weather"] = weatherComponent;
     widgetsObj["SystemStat"] = systemStatComponent;
+    widgetsObj["AudioVisualizer"] = audioVisualizerComponent;
     widgets = widgetsObj;
+
+    var urlsObj = {};
+    urlsObj["Clock"] = _widgetsDir + "DesktopClock.qml";
+    urlsObj["MediaPlayer"] = _widgetsDir + "DesktopMediaPlayer.qml";
+    urlsObj["Weather"] = _widgetsDir + "DesktopWeather.qml";
+    urlsObj["SystemStat"] = _widgetsDir + "DesktopSystemStat.qml";
+    urlsObj["AudioVisualizer"] = _widgetsDir + "DesktopAudioVisualizer.qml";
+    widgetUrls = urlsObj;
 
     Logger.i("DesktopWidgetRegistry", "Service started");
   }
@@ -49,39 +67,52 @@ Singleton {
                                      "Clock": "WidgetSettings/ClockSettings.qml",
                                      "MediaPlayer": "WidgetSettings/MediaPlayerSettings.qml",
                                      "Weather": "WidgetSettings/WeatherSettings.qml",
-                                     "SystemStat": "WidgetSettings/SystemStatSettings.qml"
+                                     "SystemStat": "WidgetSettings/SystemStatSettings.qml",
+                                     "AudioVisualizer": "WidgetSettings/AudioVisualizerSettings.qml"
                                    })
 
   property var widgetMetadata: ({
                                   "Clock": {
                                     "showBackground": true,
+                                    "roundedCorners": true,
                                     "clockStyle": "digital",
                                     "clockColor": "none",
                                     "useCustomFont": false,
+                                    "customFont": "",
                                     "format": "HH:mm\\nd MMMM yyyy"
                                   },
                                   "MediaPlayer": {
                                     "showBackground": true,
+                                    "roundedCorners": true,
                                     "visualizerType": "linear",
                                     "hideMode": "visible",
                                     "showButtons": true,
                                     "showAlbumArt": true,
-                                    "showVisualizer": true,
-                                    "roundedCorners": true
+                                    "showVisualizer": true
                                   },
                                   "Weather": {
-                                    "showBackground": true
+                                    "showBackground": true,
+                                    "roundedCorners": true
                                   },
                                   "SystemStat": {
                                     "showBackground": true,
+                                    "roundedCorners": true,
                                     "statType": "CPU",
                                     "diskPath": "/",
-                                    "roundedCorners": true,
                                     "layout": "bottom"
+                                  },
+                                  "AudioVisualizer": {
+                                    "showBackground": true,
+                                    "roundedCorners": true,
+                                    "width": 320,
+                                    "height": 72,
+                                    "visualizerType": "linear",
+                                    "hideWhenIdle": false,
+                                    "colorName": "primary"
                                   }
                                 })
 
-  property var cpuIntensiveWidgets: ["SystemStat"]
+  property var cpuIntensiveWidgets: ["SystemStat", "AudioVisualizer"]
 
   // Plugin widget storage (mirroring BarWidgetRegistry pattern)
   property var pluginWidgets: ({})
@@ -245,7 +276,7 @@ Singleton {
     if (root.isPluginWidget(widgetId)) {
       var pluginId = widgetId.replace("plugin:", "");
       var manifest = PluginRegistry.getPluginManifest(pluginId);
-      if (manifest && manifest.entryPoints && manifest.entryPoints.settings) {
+      if (manifest && manifest.entryPoints && (manifest.entryPoints.desktopWidgetSettings || manifest.entryPoints.settings)) {
         hasSettings = true;
       }
     } else {

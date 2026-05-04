@@ -10,6 +10,7 @@ RowLayout {
   property real minimumWidth: 280
   property real popupHeight: 180
 
+  property bool selectOnNavigation: true
   property string label: ""
   property string description: ""
   property ListModel model: {}
@@ -152,7 +153,10 @@ RowLayout {
     }
   }
 
-  onSearchTextChanged: filterModel()
+  onSearchTextChanged: {
+    filterModel();
+    listView.currentIndex = 0;
+  }
 
   NLabel {
     label: root.label
@@ -168,10 +172,13 @@ RowLayout {
   ComboBox {
     id: combo
 
+    opacity: enabled ? 1.0 : 0.6
+    Layout.margins: Style.borderS
     Layout.minimumWidth: Math.round(root.minimumWidth * Style.uiScaleRatio)
     Layout.preferredHeight: Math.round(root.preferredHeight * Style.uiScaleRatio)
     implicitWidth: Layout.minimumWidth
     model: root.activeModel
+    textRole: "name"
     currentIndex: findIndexInActiveModel(currentKey)
     onActivated: {
       if (combo.currentIndex >= 0 && root.activeModel && combo.currentIndex < root.activeModel.count) {
@@ -234,6 +241,48 @@ RowLayout {
           text: root.searchText
           onTextChanged: root.searchText = text
           fontSize: Style.fontSizeS
+
+          Keys.onPressed: event => {
+                            if (Keybinds.checkKey(event, 'enter', Settings)) {
+                              selectHighlighted();
+                              combo.popup.close();
+                              event.accepted = true;
+                              return;
+                            }
+
+                            if (Keybinds.checkKey(event, 'escape', Settings)) {
+                              combo.popup.close();
+                              event.accepted = true;
+                              return;
+                            }
+
+                            if (Keybinds.checkKey(event, 'up', Settings)) {
+                              if (listView.currentIndex > 0) {
+                                listView.currentIndex--;
+                                if (root.selectOnNavigation)
+                                selectHighlighted();
+                              }
+                              event.accepted = true;
+                              return;
+                            }
+
+                            if (Keybinds.checkKey(event, 'down', Settings)) {
+                              if (listView.currentIndex < listView.count - 1) {
+                                listView.currentIndex++;
+                                if (root.selectOnNavigation)
+                                selectHighlighted();
+                              }
+                              event.accepted = true;
+                              return;
+                            }
+                          }
+
+          function selectHighlighted() {
+            if (listView.currentIndex >= 0 && listView.model && listView.currentIndex < listView.model.count) {
+              var selectedKey = listView.model.get(listView.currentIndex).key;
+              root.selected(selectedKey);
+            }
+          }
         }
 
         NListView {
@@ -244,6 +293,11 @@ RowLayout {
           model: combo.popup.visible ? root.activeModel : null
           horizontalPolicy: ScrollBar.AlwaysOff
           verticalPolicy: ScrollBar.AsNeeded
+
+          onCurrentIndexChanged: {
+            if (currentIndex >= 0)
+              positionViewAtIndex(currentIndex, ListView.Contain);
+          }
 
           delegate: root.delegate ? root.delegate : defaultDelegate
 
@@ -282,11 +336,6 @@ RowLayout {
                   verticalAlignment: Text.AlignVCenter
                   elide: Text.ElideRight
                   Layout.fillWidth: true
-                  Behavior on color {
-                    ColorAnimation {
-                      duration: Style.animationFast
-                    }
-                  }
                 }
 
                 RowLayout {
@@ -342,11 +391,6 @@ RowLayout {
                 anchors.fill: parent
                 color: highlighted ? Color.mHover : "transparent"
                 radius: Style.iRadiusS
-                Behavior on color {
-                  ColorAnimation {
-                    duration: Style.animationFast
-                  }
-                }
               }
             }
           }
@@ -376,12 +420,15 @@ RowLayout {
         if (combo.popup.visible) {
           // Ensure the model is filtered when popup opens
           filterModel();
+          listView.currentIndex = Math.max(0, root.findIndexInActiveModel(root.currentKey));
           // Small delay to ensure the popup is fully rendered
           Qt.callLater(() => {
                          if (searchInput && searchInput.inputItem) {
                            searchInput.inputItem.forceActiveFocus();
                          }
                        });
+        } else {
+          root.searchText = "";
         }
       }
     }

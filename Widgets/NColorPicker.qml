@@ -12,6 +12,7 @@ Rectangle {
 
   signal colorSelected(color color)
 
+  Layout.margins: Style.borderS
   implicitWidth: 150
   implicitHeight: Math.round(Style.baseWidgetSize * 1.1)
 

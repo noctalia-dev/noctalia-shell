@@ -19,7 +19,7 @@ Item {
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
 
-  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId] ?? {}
   // Explicit screenName property ensures reactive binding when screen changes
   readonly property string screenName: screen ? screen.name : ""
   property var widgetSettings: {
@@ -46,11 +46,16 @@ Item {
   implicitWidth: pill.width
   implicitHeight: pill.height
 
-  // Track the brightness monitor reactively; explicitly update on screen/monitors changes
-  property var brightnessMonitor: null
-
-  function updateMonitor() {
-    brightnessMonitor = BrightnessService.getMonitorForScreen(screen) || null;
+  // Track the brightness monitor reactively via declarative binding so it
+  // updates atomically when monitors change, avoiding a transient undefined
+  // state that occurs when Monitor QtObjects are destroyed before the
+  // imperative updateMonitor() call would run.
+  property var brightnessMonitor: {
+    var _ = BrightnessService.monitors; // reactive dependency
+    var __ = BrightnessService.ddcMonitors; // reactive dependency
+    if (!screen)
+      return null;
+    return BrightnessService.getMonitorForScreen(screen) ?? null;
   }
 
   function getControllableMonitorCount() {
@@ -61,18 +66,6 @@ Item {
         count++;
     }
     return count;
-  }
-
-  onScreenChanged: updateMonitor()
-
-  Connections {
-    target: BrightnessService
-    function onMonitorsChanged() {
-      root.updateMonitor();
-    }
-    function onDdcMonitorsChanged() {
-      root.updateMonitor();
-    }
   }
 
   visible: brightnessMonitor !== null
@@ -163,7 +156,8 @@ Item {
     forceClose: displayMode === "alwaysHide"
     tooltipText: {
       var monitor = brightnessMonitor;
-      if (!monitor || !monitor.brightnessControlAvailable || isNaN(monitor.brightness))
+      var panel = PanelService.getPanel("brightnessPanel", screen);
+      if (panel?.isPanelOpen || !monitor || !monitor.brightnessControlAvailable || isNaN(monitor.brightness))
         return "";
       return I18n.tr("tooltips.brightness-at", {
                        "brightness": Math.round(monitor.brightness * 100)
@@ -182,29 +176,18 @@ Item {
         return;
 
       var shouldApplyToAll = root.applyToAllMonitors && root.getControllableMonitorCount() > 1;
-      if (shouldApplyToAll) {
-        var direction = angle > 0 ? 1 : -1;
-        var baseValue = !isNaN(monitor.queuedBrightness) ? monitor.queuedBrightness : monitor.brightness;
-        var step = monitor.stepSize;
-        var minValue = monitor.minBrightnessValue;
-
-        if (direction > 0 && Settings.data.brightness.enforceMinimum && baseValue < minValue) {
-          baseValue = Math.max(step, minValue);
+      if (angle > 0) {
+        if (shouldApplyToAll) {
+          BrightnessService.increaseBrightness();
         } else {
-          baseValue = baseValue + direction * step;
+          monitor.increaseBrightness();
         }
-
-        var targetValue = Math.max(minValue, Math.min(1, baseValue));
-
-        BrightnessService.monitors.forEach(function (m) {
-          if (m && m.brightnessControlAvailable) {
-            m.setBrightnessDebounced(targetValue);
-          }
-        });
-      } else if (angle > 0) {
-        monitor.increaseBrightness();
       } else if (angle < 0) {
-        monitor.decreaseBrightness();
+        if (shouldApplyToAll) {
+          BrightnessService.decreaseBrightness();
+        } else {
+          monitor.decreaseBrightness();
+        }
       }
     }
 

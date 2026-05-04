@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Services.Power
 
 /*
 Noctalia is not strictly a Material Design project, it supports both some predefined
@@ -19,6 +20,28 @@ Singleton {
   id: root
 
   property bool reloadColors: false
+
+  // Debounce external reload requests (file watcher + directory watcher)
+  // so atomic replacements only trigger one reload.
+  Timer {
+    id: externalColorReloadTimer
+    running: false
+    interval: 200
+    onTriggered: {
+      if (customColorsFile.path !== undefined) {
+        Logger.d("Color", "Reloading colors from disk");
+        reloadColors = true;
+        customColorsFile.reload();
+      }
+    }
+  }
+
+  function scheduleExternalColorReload() {
+    if (!Settings.directoriesCreated || customColorsFile.path === undefined) {
+      return;
+    }
+    externalColorReloadTimer.restart();
+  }
 
   // Suppress transition animations until the first colors.json load completes
   property bool skipTransition: true
@@ -324,6 +347,27 @@ Singleton {
     }
   }
 
+  // Adaptive opacity calculation: automatically makes light mode more transparent
+  function adaptiveOpacity(baseOpacity) {
+    if (PowerProfileService.noctaliaPerformanceMode)
+      return 1.0;
+    return Settings.data.colorSchemes.darkMode ? baseOpacity : Math.pow(baseOpacity, 1.5);
+  }
+
+  function smartAlpha(baseColor, minAlpha = 0.4) {
+    if (PowerProfileService.noctaliaPerformanceMode)
+      return baseColor;
+
+    if (!Settings.data.ui.translucentWidgets)
+      return baseColor;
+
+    let alpha = Math.max(adaptiveOpacity(Settings.data.ui.panelBackgroundOpacity), minAlpha);
+
+    // Combine with the base color's existing alpha
+    let resultAlpha = Math.max(0, baseColor.a - (1.0 - alpha));
+    return Qt.alpha(baseColor, resultAlpha);
+  }
+
   readonly property var colorKeyModel: [
     {
       "key": "none",
@@ -384,11 +428,7 @@ Singleton {
     path: Settings.directoriesCreated ? (Settings.configDir + "colors.json") : undefined
     printErrors: false
     watchChanges: true
-    onFileChanged: {
-      Logger.d("Color", "Reloading colors from disk");
-      reloadColors = true;
-      reload();
-    }
+    onFileChanged: scheduleExternalColorReload()
     onAdapterUpdated: {
       Logger.d("Color", "Writing colors to disk");
       writeAdapter();
@@ -453,5 +493,15 @@ Singleton {
       property color mHover: defaultColors.mHover
       property color mOnHover: defaultColors.mOnHover
     }
+  }
+
+  // Watch parent config directory as a fallback for declarative setups where
+  // colors.json may be replaced atomically (e.g., symlink/store-path swap).
+  FileView {
+    id: colorsDirWatcher
+    path: Settings.directoriesCreated ? Settings.configDir : undefined
+    printErrors: false
+    watchChanges: true
+    onFileChanged: scheduleExternalColorReload()
   }
 }

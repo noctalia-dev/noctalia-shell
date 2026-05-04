@@ -36,12 +36,17 @@ NBox {
 
     ColumnLayout {
       Layout.fillWidth: true
+      Layout.minimumWidth: 0
       spacing: Style.marginXXS
       NText {
+        Layout.fillWidth: true
+        Layout.minimumWidth: 0
         text: HostService.displayName
         font.weight: Style.fontWeightBold
       }
       NText {
+        Layout.fillWidth: true
+        Layout.minimumWidth: 0
         text: I18n.tr("system.uptime", {
                         "uptime": uptimeText
                       })
@@ -52,6 +57,7 @@ NBox {
 
     RowLayout {
       spacing: Style.marginS
+      Layout.fillWidth: false
       Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
       Item {
         Layout.fillWidth: true

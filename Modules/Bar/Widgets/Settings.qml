@@ -16,7 +16,7 @@ NIconButton {
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
 
-  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId] ?? {}
   // Explicit screenName property ensures reactive binding when screen changes
   readonly property string screenName: screen ? screen.name : ""
   property var widgetSettings: {
@@ -34,7 +34,13 @@ NIconButton {
   readonly property color iconColor: Color.resolveColorKey(valueIconColor)
 
   icon: "settings"
-  tooltipText: !PanelService.getPanel("settingsPanel", screen)?.isPanelOpen ? I18n.tr("tooltips.open-settings") : ""
+  tooltipText: {
+    if (PanelService.getPanel("settingsPanel", screen)?.isPanelOpen) {
+      return "";
+    } else {
+      return I18n.tr("tooltips.open-settings");
+    }
+  }
   tooltipDirection: BarService.getTooltipDirection(screen?.name)
   baseSize: Style.getCapsuleHeightForScreen(screen?.name)
   applyUiScale: false

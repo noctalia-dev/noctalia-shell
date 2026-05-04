@@ -18,7 +18,7 @@ NIconButton {
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
 
-  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId] ?? {}
   readonly property string screenName: screen ? screen.name : ""
   property var widgetSettings: {
     if (section && sectionWidgetIndex >= 0 && screenName) {
@@ -37,7 +37,13 @@ NIconButton {
   applyUiScale: false
   customRadius: Style.radiusL
   icon: "wallpaper-selector"
-  tooltipText: I18n.tr("tooltips.wallpaper-selector")
+  tooltipText: {
+    if (PanelService.getPanel("wallpaperPanel", screen)?.isPanelOpen) {
+      return "";
+    } else {
+      return I18n.tr("tooltips.wallpaper-selector");
+    }
+  }
   tooltipDirection: BarService.getTooltipDirection(screen?.name)
   colorBg: Style.capsuleColor
   colorFg: Color.resolveColorKey(iconColorKey)

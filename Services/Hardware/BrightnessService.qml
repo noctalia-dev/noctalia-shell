@@ -233,7 +233,7 @@ Singleton {
   Process {
     id: ddcProc
     property list<var> ddcMonitors: []
-    command: ["ddcutil", "detect", "--sleep-multiplier=0.5"]
+    command: ["ddcutil", "detect", "--enable-dynamic-sleep", "--sleep-multiplier=0.5"]
     stdout: StdioCollector {
       onStreamFinished: {
         var displays = text.trim().split("\n\n");
@@ -367,7 +367,7 @@ Singleton {
         refreshProc.running = true;
       } else if (monitor.isDdc && monitor.busNum !== "") {
         // For DDC displays, get the current value
-        refreshProc.command = ["ddcutil", "-b", monitor.busNum, "--sleep-multiplier=0.05", "getvcp", "10", "--brief"];
+        refreshProc.command = ["ddcutil", "-b", monitor.busNum, "--enable-dynamic-sleep", "--sleep-multiplier=0.05", "getvcp", "10", "--brief"];
         refreshProc.running = true;
       } else if (monitor.isAppleDisplay) {
         // For Apple displays, get the current value
@@ -450,7 +450,6 @@ Singleton {
     }
 
     readonly property real stepSize: Settings.data.brightness.brightnessStep / 100.0
-    readonly property real minBrightnessValue: (Settings.data.brightness.enforceMinimum ? 0.01 : 0.0)
 
     // Timer for debouncing rapid changes
     readonly property Timer timer: Timer {
@@ -470,13 +469,7 @@ Singleton {
 
     function increaseBrightness(): void {
       const value = !isNaN(monitor.queuedBrightness) ? monitor.queuedBrightness : monitor.brightness;
-      // Enforce minimum brightness if enabled
-      if (Settings.data.brightness.enforceMinimum && value < minBrightnessValue) {
-        setBrightnessDebounced(Math.max(stepSize, minBrightnessValue));
-      } else {
-        // Normal brightness increase
-        setBrightnessDebounced(value + stepSize);
-      }
+      setBrightnessDebounced(value + stepSize);
     }
 
     function decreaseBrightness(): void {
@@ -485,7 +478,8 @@ Singleton {
     }
 
     function setBrightness(value: real): void {
-      value = Math.max(minBrightnessValue, Math.min(1, value));
+      var min = Settings.data.brightness.enforceMinimum && isDdc ? 0.01 : 0;
+      value = Math.max(min, Math.min(1, value));
       var rounded = Math.round(value * 100);
 
       // Always update internal value and trigger UI feedback immediately
@@ -516,17 +510,18 @@ Singleton {
         var ddcValue = Math.round(value * monitor.maxBrightness);
         var ddcBus = busNum;
         Qt.callLater(() => {
-                       setBrightnessProc.command = ["ddcutil", "-b", ddcBus, "--noverify", "--async", "--sleep-multiplier=0.05", "setvcp", "10", ddcValue];
+                       setBrightnessProc.command = ["ddcutil", "-b", ddcBus, "--noverify", "--async", "--enable-dynamic-sleep", "--sleep-multiplier=0.05", "setvcp", "10", ddcValue];
                        setBrightnessProc.running = true;
                      });
       } else if (!isDdc) {
         monitor.commandRunning = true;
         monitor.ignoreNextChange = true;
+        var setMin = Settings.data.brightness.enforceMinimum ? "-n" : "";
         var backlightDeviceName = root.getBacklightDeviceName(monitor.backlightDevice);
         if (backlightDeviceName !== "") {
-          setBrightnessProc.command = ["brightnessctl", "-d", backlightDeviceName, "s", rounded + "%"];
+          setBrightnessProc.command = ["brightnessctl", "-d", backlightDeviceName, "s", rounded + "%", setMin];
         } else {
-          setBrightnessProc.command = ["brightnessctl", "s", rounded + "%"];
+          setBrightnessProc.command = ["brightnessctl", "s", rounded + "%", setMin];
         }
         setBrightnessProc.running = true;
       }
@@ -538,7 +533,7 @@ Singleton {
         initProc.command = ["asdbctl", "get"];
         initProc.running = true;
       } else if (isDdc && busNum !== "") {
-        initProc.command = ["ddcutil", "-b", busNum, "--sleep-multiplier=0.05", "getvcp", "10", "--brief"];
+        initProc.command = ["ddcutil", "-b", busNum, "--enable-dynamic-sleep", "--sleep-multiplier=0.05", "getvcp", "10", "--brief"];
         initProc.running = true;
       } else if (!isDdc) {
         // Internal backlight: first try explicit output mapping, then fall back to first available.

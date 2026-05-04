@@ -11,18 +11,28 @@ import qs.Widgets
 
 // Simple notification popup - displays multiple notifications
 Variants {
-  // If no notification display activated in settings, then show them all
-  model: Quickshell.screens.filter(screen => (Settings.data.notifications.monitors.includes(screen.name) || (Settings.data.notifications.monitors.length === 0)))
+
+  model: {
+    const screens = Quickshell.screens.filter(screen => Settings.data.notifications.monitors.includes(screen.name));
+    // Empty list can mean two things :
+    // - No (visible) notification display activated in settings
+    // - One or more (not visible) displays are activated but unplugged
+    // In both cases we fallback to show notification on all screens
+    return screens.length === 0 ? Quickshell.screens : screens;
+  }
 
   delegate: Loader {
     id: root
 
     required property ShellScreen modelData
 
-    property ListModel notificationModel: NotificationService.activeList
+    property ListModel notificationModel: NotificationService.popupModel
 
-    // Always create window (but with 0x0 dimensions when no notifications)
-    active: notificationModel.count > 0 || delayTimer.running
+    // Deferred activation via Qt.callLater to avoid activating the Loader
+    // synchronously during ListModel.insert() (which would cause nested
+    // incubation with the inner Repeater).
+    property bool shouldBeActive: false
+    active: shouldBeActive || delayTimer.running
 
     // Keep loader active briefly after last notification to allow animations to complete
     Timer {
@@ -31,10 +41,19 @@ Variants {
       repeat: false
     }
 
+    function activate() {
+      shouldBeActive = true;
+    }
+
     Connections {
       target: notificationModel
       function onCountChanged() {
-        if (notificationModel.count === 0 && root.active) {
+        if (notificationModel.count > 0) {
+          if (!root.shouldBeActive) {
+            Qt.callLater(root.activate);
+          }
+        } else if (root.shouldBeActive) {
+          root.shouldBeActive = false;
           delayTimer.restart();
         }
       }
@@ -77,7 +96,7 @@ Variants {
       readonly property bool isCentered: location === "top" || location === "bottom"
 
       readonly property string barPos: Settings.getBarPositionForScreen(notifWindow.screen?.name)
-      readonly property bool isFloating: Settings.data.bar.floating
+      readonly property bool isFloating: Settings.data.bar.barType === "floating"
       readonly property real barHeight: Style.getBarHeightForScreen(notifWindow.screen?.name)
 
       readonly property bool isFramed: Settings.data.bar.barType === "framed"
@@ -152,7 +171,7 @@ Variants {
             }
           } catch (e) {
             // Service fallback if delegate is already invalid
-            NotificationService.dismissActiveNotification(notificationId);
+            NotificationService.dismissPopup(notificationId);
           }
         };
 
@@ -331,12 +350,13 @@ Variants {
 
             function runAction(actionId, isDismissed) {
               if (!isDismissed) {
-                NotificationService.focusSenderWindow(model.appName);
-                NotificationService.invokeActionAndSuppressClose(notificationId, actionId);
-              } else if (Settings.data.notifications.clearDismissed) {
-                NotificationService.removeFromHistory(notificationId);
+                if (NotificationService.invokeActionAndSuppressClose(notificationId, actionId))
+                  card.animateOut();
+              } else {
+                if (Settings.data.notifications.clearDismissed)
+                  NotificationService.removeFromHistory(notificationId);
+                card.animateOut();
               }
-              card.animateOut();
             }
 
             Timer {
@@ -344,7 +364,7 @@ Variants {
               interval: Style.animationSlow
               repeat: false
               onTriggered: {
-                NotificationService.dismissActiveNotification(notificationId);
+                NotificationService.dismissPopup(notificationId);
               }
             }
 
@@ -508,9 +528,11 @@ Variants {
                               var hasDefault = actions.some(function (a) {
                                 return a.identifier === "default";
                               });
-                              if (hasDefault) {
-                                card.runAction("default", false);
+                              if (hasDefault && NotificationService.invokeActionAndSuppressClose(notificationId, "default")) {
+                                card.animateOut();
                               } else {
+                                // Without a default action, or if invoking it fails,
+                                // the best fallback is focusing the sender window by app identity.
                                 NotificationService.focusSenderWindow(model.appName);
                                 card.animateOut();
                               }
@@ -527,9 +549,9 @@ Variants {
                 id: cardBackground
                 anchors.fill: parent
                 radius: Style.radiusL
-                border.color: Qt.alpha(Color.mOutline, Settings.data.notifications.backgroundOpacity || 1.0)
+                border.color: Qt.alpha(Color.mOutline, Color.adaptiveOpacity(Settings.data.notifications.backgroundOpacity) || 1.0)
                 border.width: Style.borderS
-                color: Qt.alpha(Color.mSurface, Settings.data.notifications.backgroundOpacity || 1.0)
+                color: Qt.alpha(Color.mSurface, Color.adaptiveOpacity(Settings.data.notifications.backgroundOpacity) || 1.0)
 
                 // Progress bar
                 Rectangle {
@@ -548,7 +570,7 @@ Variants {
 
                     color: {
                       var baseColor = model.urgency === 2 ? Color.mError : model.urgency === 0 ? Color.mOnSurface : Color.mPrimary;
-                      return Qt.alpha(baseColor, Settings.data.notifications.backgroundOpacity || 1.0);
+                      return Qt.alpha(baseColor, Color.adaptiveOpacity(Settings.data.notifications.backgroundOpacity) || 1.0);
                     }
 
                     antialiasing: true

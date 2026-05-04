@@ -1,6 +1,7 @@
 {
   "bar": {
     "ActiveWindow": {
+      "showText": true,
       "showIcon": true,
       "hideMode": "hidden",
       "scrollingMode": "hover",
@@ -52,6 +53,7 @@
     "CustomButton": {
       "icon": "heart",
       "showIcon": true,
+      "iconPosition": "left",
       "showExecTooltip": true,
       "showTextTooltip": true,
       "generalTooltipText": "",
@@ -78,8 +80,8 @@
         "horizontal": 10,
         "vertical": 10
       },
-      "enableColorization": false,
       "colorizeSystemIcon": "none",
+      "colorizeSystemText": "none",
       "ipcIdentifier": ""
     },
     "DarkMode": {
@@ -125,10 +127,7 @@
       "visualizerType": "linear",
       "textColor": "none",
       "compactMode": false,
-      "panelShowAlbumArt": true,
-      "panelShowVisualizer": true,
-      "compactShowAlbumArt": true,
-      "compactShowVisualizer": false
+      "panelShowAlbumArt": true
     },
     "Microphone": {
       "displayMode": "onhover",
@@ -159,6 +158,7 @@
       "useMonospaceFont": true,
       "usePadding": false,
       "showCpuUsage": true,
+      "showCpuCores": false,
       "showCpuFreq": false,
       "showCpuTemp": true,
       "showGpuTemp": false,
@@ -217,6 +217,7 @@
       "hideUnoccupied": false,
       "characterCount": 2,
       "showApplications": false,
+      "showApplicationsHover": false,
       "showLabelsOnlyWhenOccupied": true,
       "colorizeIcons": false,
       "unfocusedIconsOpacity": 1,
@@ -227,7 +228,8 @@
       "occupiedColor": "secondary",
       "emptyColor": "secondary",
       "showBadge": true,
-      "pillSize": 0.6
+      "pillSize": 0.6,
+      "fontWeight": "bold"
     },
     "Volume": {
       "displayMode": "onhover",
@@ -254,29 +256,41 @@
   "desktop": {
     "Clock": {
       "showBackground": true,
+      "roundedCorners": true,
       "clockStyle": "digital",
       "clockColor": "none",
       "useCustomFont": false,
+      "customFont": "",
       "format": "HH:mm\\nd MMMM yyyy"
     },
     "MediaPlayer": {
       "showBackground": true,
+      "roundedCorners": true,
       "visualizerType": "linear",
       "hideMode": "visible",
       "showButtons": true,
       "showAlbumArt": true,
-      "showVisualizer": true,
-      "roundedCorners": true
+      "showVisualizer": true
     },
     "Weather": {
-      "showBackground": true
+      "showBackground": true,
+      "roundedCorners": true
     },
     "SystemStat": {
       "showBackground": true,
+      "roundedCorners": true,
       "statType": "CPU",
       "diskPath": "/",
-      "roundedCorners": true,
       "layout": "bottom"
+    },
+    "AudioVisualizer": {
+      "showBackground": true,
+      "roundedCorners": true,
+      "width": 320,
+      "height": 72,
+      "visualizerType": "linear",
+      "hideWhenIdle": false,
+      "colorName": "primary"
     }
   }
 }

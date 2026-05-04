@@ -29,7 +29,7 @@ Item {
   readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
   readonly property real barFontSize: Style.getBarFontSizeForScreen(screenName)
 
-  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId] ?? {}
   property var widgetSettings: {
     if (section && sectionWidgetIndex >= 0 && screenName) {
       var widgets = Settings.getBarWidgetsForScreen(screenName)[section];
@@ -54,7 +54,7 @@ Item {
   readonly property real maxTaskbarWidth: {
     if (!screen || isVerticalBar || !smartWidth || maxTaskbarWidthPercent <= 0)
       return 0;
-    var barFloating = Settings.data.bar.floating || false;
+    var barFloating = Settings.data.bar.barType === "floating";
     var barMarginH = barFloating ? Math.ceil(Settings.data.bar.marginHorizontal) : 0;
     var availableWidth = screen.width - (barMarginH * 2);
     return Math.round(availableWidth * (maxTaskbarWidthPercent / 100));
@@ -203,7 +203,38 @@ Item {
     if (!appId || !pinnedApps || pinnedApps.length === 0)
       return false;
     const normalizedId = normalizeAppId(appId);
-    return pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedId);
+    // Direct match
+    if (pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedId))
+      return true;
+    // Resolve via desktop entry lookup (handles StartupWMClass != .desktop filename)
+    const resolved = resolveToDesktopEntryId(appId);
+    if (resolved !== appId) {
+      const normalizedResolved = normalizeAppId(resolved);
+      return pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedResolved);
+    }
+    return false;
+  }
+
+  // Desktop entry ID resolution cache (cleared when DesktopEntries change)
+  property var _desktopEntryIdCache: ({})
+
+  // Resolve a toplevel appId to its canonical .desktop entry ID via heuristic lookup.
+  function resolveToDesktopEntryId(appId) {
+    if (!appId)
+      return appId;
+    if (_desktopEntryIdCache.hasOwnProperty(appId))
+      return _desktopEntryIdCache[appId];
+    try {
+      if (typeof DesktopEntries !== 'undefined' && DesktopEntries.heuristicLookup) {
+        const entry = DesktopEntries.heuristicLookup(appId);
+        if (entry && entry.id) {
+          _desktopEntryIdCache[appId] = entry.id;
+          return entry.id;
+        }
+      }
+    } catch (e) {}
+    _desktopEntryIdCache[appId] = appId;
+    return appId;
   }
 
   // Helper function to get app name from desktop entry
@@ -272,7 +303,14 @@ Item {
       return false;
     const pinnedApps = Settings.data.dock.pinnedApps || [];
     const normalizedId = normalizeAppId(appId);
-    return pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedId);
+    if (pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedId))
+      return true;
+    const resolved = resolveToDesktopEntryId(appId);
+    if (resolved !== appId) {
+      const normalizedResolved = normalizeAppId(resolved);
+      return pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedResolved);
+    }
+    return false;
   }
 
   // Helper function to toggle app pin/unpin
@@ -331,6 +369,10 @@ Item {
                                 "title": w.title || getAppNameFromDesktopEntry(w.appId)
                               });
           processedAppIds.add(normalizeAppId(w.appId));
+          // Also track the resolved desktop entry ID so pinned app matching works
+          const resolvedId = resolveToDesktopEntryId(w.appId);
+          if (resolvedId !== w.appId)
+            processedAppIds.add(normalizeAppId(resolvedId));
         }
       }
     } catch (e)
@@ -371,29 +413,22 @@ Item {
     try {
       const app = DesktopEntries.byId(appId);
 
-      if (Settings.data.appLauncher.customLaunchPrefixEnabled && Settings.data.appLauncher.customLaunchPrefix) {
+      if (Settings.data.appLauncher.customLaunchPrefixEnabled && Settings.data.appLauncher.customLaunchPrefix.trim() !== "") {
         // Use custom launch prefix
-        const prefix = Settings.data.appLauncher.customLaunchPrefix.split(" ");
+        const prefix = Settings.data.appLauncher.customLaunchPrefix.trim().split(" ");
 
-        if (app.runInTerminal) {
-          const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
+        if (app.runInTerminal && Settings.data.appLauncher.terminalCommand.trim() !== "") {
+          const terminal = Settings.data.appLauncher.terminalCommand.trim().split(" ");
           const command = prefix.concat(terminal.concat(app.command));
           Quickshell.execDetached(command);
         } else {
           const command = prefix.concat(app.command);
           Quickshell.execDetached(command);
         }
-      } else if (Settings.data.appLauncher.useApp2Unit && ProgramCheckerService.app2unitAvailable && app.id) {
-        Logger.d("Taskbar", `Using app2unit for: ${app.id}`);
-        if (app.runInTerminal)
-          Quickshell.execDetached(["app2unit", "--", app.id + ".desktop"]);
-        else
-          Quickshell.execDetached(["app2unit", "--"].concat(app.command));
       } else {
-        // Fallback logic when app2unit is not used
-        if (app.runInTerminal) {
+        if (app.runInTerminal && Settings.data.appLauncher.terminalCommand.trim() !== "") {
           Logger.d("Taskbar", "Executing terminal app manually: " + app.name);
-          const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
+          const terminal = Settings.data.appLauncher.terminalCommand.trim().split(" ");
           const command = terminal.concat(app.command);
           CompositorService.spawn(command);
         } else if (app.command && app.command.length > 0) {

@@ -22,7 +22,7 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional, Tuple, Union
 
 try:
     import tomllib
@@ -87,7 +87,7 @@ class VariableScope:
 # --- Known color format types ---
 
 KNOWN_FORMATS = frozenset({
-    "hex", "hex_stripped", "rgb", "rgba", "hsl", "hsla",
+    "hex", "hex_stripped", "rgb", "rgb_csv", "rgba", "hsl", "hsla",
     "red", "green", "blue", "alpha", "hue", "saturation", "lightness",
 })
 
@@ -138,10 +138,10 @@ class TemplateRenderer:
     COLOR_ARG_FILTERS = {"blend", "harmonize"}
 
     # Regex for block delimiters: <* ... *>
-    _BLOCK_RE = re.compile(r'<\*\s*(.*?)\s*\*>', re.DOTALL)
+    _BLOCK_RE = re.compile(r'<\*(.*?)\*>', re.DOTALL)
 
     # Regex for expression tags: {{ ... }}
-    _EXPR_RE = re.compile(r"\{\{\s*([^}\n]+?)\s*\}\}")
+    _EXPR_RE = re.compile(r"\{\{([^}\n]+?)\}\}")
 
     def __init__(self, theme_data: dict[str, dict[str, str]], verbose: bool = True, default_mode: str = "dark", image_path: Optional[str] = None, scheme_type: str = "content"):
         self.theme_data = theme_data
@@ -359,7 +359,7 @@ class TemplateRenderer:
             condition_part = condition_part[4:].strip()
 
         # Extract expression from {{ ... }} if present
-        expr_match = re.match(r'\{\{\s*(.+?)\s*\}\}', condition_part)
+        expr_match = re.match(r'\{\{(.+?)\}\}', condition_part)
         if expr_match:
             condition_expr = expr_match.group(1).strip()
         else:
@@ -509,6 +509,13 @@ class TemplateRenderer:
         base = parts[0].strip()
         filters = [p.strip() for p in parts[1:]]
 
+        # Handle {{mode}} tag - resolves to current theme mode
+        if base == "mode":
+            result_str = self.default_mode
+            for filter_str in filters:
+                result_str = self._apply_string_or_color_filter(result_str, filter_str, expr)
+            return result_str
+
         # Try scope resolution first
         resolved = self._resolve_from_scope(base, scope)
         if resolved is not None:
@@ -654,6 +661,8 @@ class TemplateRenderer:
             return color.to_hex().lstrip('#')
         elif format_type == "rgb":
             return f"rgb({color.r}, {color.g}, {color.b})"
+        elif format_type == "rgb_csv":
+            return f"{color.r},{color.g},{color.b}"
         elif format_type == "rgba":
             alpha = getattr(color, 'alpha', 1.0)
             return f"rgba({color.r}, {color.g}, {color.b}, {alpha})"
@@ -961,13 +970,15 @@ class TemplateRenderer:
 
         return result
 
-    def render_file(self, input_path: Path, output_path: Path) -> bool:
+    def render_file(self, input_path: Path, output_path: Path) -> Tuple[bool, bool]:
         """Render a template file to an output path.
 
-        Returns True if successful, False if skipped due to errors.
+        Returns (success, wrote) where wrote is False if the file was skipped because
+        content was already identical (avoids mtime bumps and app reloads).
         """
         self._current_file = str(input_path)
         success = False
+        wrote = False
         try:
             template_text = input_path.read_text()
             rendered_text = self.render(template_text)
@@ -975,8 +986,18 @@ class TemplateRenderer:
             if self._error_count > 0:
                 print(f"Skipping {output_path}: template has {self._error_count} error(s)", file=sys.stderr)
             else:
-                output_path.parent.mkdir(parents=True, exist_ok=True)
-                output_path.write_text(rendered_text)
+                out = Path(output_path).expanduser()
+                out.parent.mkdir(parents=True, exist_ok=True)
+                skip_write = False
+                if out.is_file():
+                    try:
+                        if out.read_text() == rendered_text:
+                            skip_write = True
+                    except OSError:
+                        pass
+                if not skip_write:
+                    out.write_text(rendered_text)
+                    wrote = True
                 success = True
         except FileNotFoundError:
             self._log_error(f"Template file not found: {input_path}")
@@ -986,7 +1007,7 @@ class TemplateRenderer:
             self._log_error(f"Unexpected error: {e}")
         finally:
             self._current_file = None
-        return success
+        return success, wrote
 
     # --- Custom Colors ---
 
@@ -1107,6 +1128,17 @@ class TemplateRenderer:
         """Substitute {{closest_color}} in text."""
         return re.sub(r"\{\{\s*closest_color\s*\}\}", self.closest_color, text)
 
+    def _kitty_needs_current_theme_link(self, noctalia_theme_path: Path) -> bool:
+        """True if generated kitty theme exists but ~/.config/kitty/current-theme.conf is absent.
+
+        Many kitty.conf snippets use `include ./current-theme.conf`; template-apply.sh maintains
+        that link. When noctalia.conf is skipped as identical, hooks must still run once to create it.
+        """
+        if not noctalia_theme_path.is_file():
+            return False
+        current = Path.home() / ".config" / "kitty" / "current-theme.conf"
+        return not current.is_file()
+
     def process_config_file(self, config_path: Path):
         """Process Matugen TOML configuration file."""
         if not tomllib:
@@ -1142,19 +1174,33 @@ class TemplateRenderer:
                     rendered_compare_to = self.render(compare_to)
                     self.closest_color = find_closest_color(rendered_compare_to, colors_to_compare)
 
-                self.render_file(Path(input_path).expanduser(), Path(output_path).expanduser())
+                ok, wrote = self.render_file(Path(input_path).expanduser(), Path(output_path).expanduser())
+                if not ok:
+                    continue
 
-                # Execute pre_hook if specified
-                pre_hook = template.get("pre_hook")
-                if pre_hook:
-                    import subprocess
-                    if self.closest_color:
-                        pre_hook = self._substitute_closest_color(pre_hook)
-                    pre_hook = self.render(pre_hook)
-                    try:
-                        subprocess.run(pre_hook, shell=True, check=False)
-                    except Exception as e:
-                        print(f"Error running pre_hook for {name}: {e}", file=sys.stderr)
+                out_path = Path(output_path).expanduser()
+                # Hooks are skipped when the rendered file is unchanged (avoids mtime noise).
+                # Kitty setups often use `include ./current-theme.conf` pointing at the live
+                # theme; that file is created in the post_hook. If noctalia.conf is unchanged
+                # (e.g. wallpaper palette tweak that doesn't affect terminal colors), the hook
+                # never ran and current-theme.conf never appears — while predefined schemes
+                # usually change bytes so hooks always run. Force hooks when that include is missing.
+                force_hooks = name == "kitty" and self._kitty_needs_current_theme_link(out_path)
+                if not wrote and not force_hooks:
+                    continue
+
+                # Execute pre_hook only when the template output was regenerated
+                if wrote:
+                    pre_hook = template.get("pre_hook")
+                    if pre_hook:
+                        import subprocess
+                        if self.closest_color:
+                            pre_hook = self._substitute_closest_color(pre_hook)
+                        pre_hook = self.render(pre_hook)
+                        try:
+                            subprocess.run(pre_hook, shell=True, check=False)
+                        except Exception as e:
+                            print(f"Error running pre_hook for {name}: {e}", file=sys.stderr)
 
                 # Execute post_hook if specified
                 post_hook = template.get("post_hook")

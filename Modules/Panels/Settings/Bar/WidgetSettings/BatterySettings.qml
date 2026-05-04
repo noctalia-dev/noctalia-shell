@@ -18,7 +18,7 @@ ColumnLayout {
 
   // Local state
   property string valueDisplayMode: widgetData.displayMode !== undefined ? widgetData.displayMode : widgetMetadata.displayMode
-  property string valueDeviceNativePath: widgetData.deviceNativePath !== undefined ? widgetData.deviceNativePath : "__default__"
+  property string valueDeviceNativePath: widgetData.deviceNativePath !== undefined ? widgetData.deviceNativePath : widgetMetadata.deviceNativePath
   property bool valueShowPowerProfiles: widgetData.showPowerProfiles !== undefined ? widgetData.showPowerProfiles : widgetMetadata.showPowerProfiles
   property bool valueShowNoctaliaPerformance: widgetData.showNoctaliaPerformance !== undefined ? widgetData.showNoctaliaPerformance : widgetMetadata.showNoctaliaPerformance
   property bool valueHideIfNotDetected: widgetData.hideIfNotDetected !== undefined ? widgetData.hideIfNotDetected : widgetMetadata.hideIfNotDetected
@@ -50,6 +50,7 @@ ColumnLayout {
                   root.valueDeviceNativePath = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.deviceNativePath
   }
 
   NComboBox {
@@ -84,6 +85,7 @@ ColumnLayout {
                   root.valueDisplayMode = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.displayMode
   }
 
   NToggle {
@@ -94,6 +96,7 @@ ColumnLayout {
                  valueHideIfNotDetected = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.hideIfNotDetected
   }
 
   NToggle {
@@ -104,6 +107,7 @@ ColumnLayout {
                  valueHideIfIdle = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.hideIfIdle
   }
 
   NDivider {
@@ -118,6 +122,7 @@ ColumnLayout {
                  valueShowPowerProfiles = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showPowerProfiles
   }
 
   NToggle {
@@ -128,5 +133,6 @@ ColumnLayout {
                  valueShowNoctaliaPerformance = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showNoctaliaPerformance
   }
 }

@@ -26,11 +26,35 @@ ColumnLayout {
   }
 
   NToggle {
+    label: I18n.tr("panels.user-interface.scrollbar-always-visible-label")
+    description: I18n.tr("panels.user-interface.scrollbar-always-visible-description")
+    checked: Settings.data.ui.scrollbarAlwaysVisible
+    defaultValue: Settings.getDefaultValue("ui.scrollbarAlwaysVisible")
+    onToggled: checked => Settings.data.ui.scrollbarAlwaysVisible = checked
+  }
+
+  NToggle {
     label: I18n.tr("panels.user-interface.shadows-label")
     description: I18n.tr("panels.user-interface.shadows-description")
     checked: Settings.data.general.enableShadows
     defaultValue: Settings.getDefaultValue("general.enableShadows")
     onToggled: checked => Settings.data.general.enableShadows = checked
+  }
+
+  NToggle {
+    label: I18n.tr("panels.user-interface.blur-behind-label")
+    description: I18n.tr("panels.user-interface.blur-behind-description")
+    checked: Settings.data.general.enableBlurBehind
+    defaultValue: Settings.getDefaultValue("general.enableBlurBehind")
+    onToggled: checked => Settings.data.general.enableBlurBehind = checked
+  }
+
+  NToggle {
+    label: I18n.tr("panels.user-interface.translucent-widgets-label")
+    description: I18n.tr("panels.user-interface.translucent-widgets-description")
+    checked: Settings.data.ui.translucentWidgets
+    defaultValue: Settings.getDefaultValue("ui.translucentWidgets")
+    onToggled: checked => Settings.data.ui.translucentWidgets = checked
   }
 
   NComboBox {
@@ -169,36 +193,18 @@ ColumnLayout {
       Layout.fillWidth: true
       visible: !Settings.data.general.animationDisabled
 
-      RowLayout {
-        spacing: Style.marginL
+      NValueSlider {
         Layout.fillWidth: true
-
-        NValueSlider {
-          Layout.fillWidth: true
-          label: I18n.tr("panels.user-interface.animation-speed-label")
-          description: I18n.tr("panels.user-interface.animation-speed-description")
-          from: 0
-          to: 2.0
-          stepSize: 0.01
-          value: Settings.data.general.animationSpeed
-          defaultValue: Settings.getDefaultValue("general.animationSpeed")
-          onMoved: value => Settings.data.general.animationSpeed = Math.max(value, 0.05)
-          text: Math.round(Settings.data.general.animationSpeed * 100) + "%"
-        }
-
-        Item {
-          Layout.preferredWidth: 30 * Style.uiScaleRatio
-          Layout.preferredHeight: 30 * Style.uiScaleRatio
-
-          NIconButton {
-            icon: "restore"
-            baseSize: Style.baseWidgetSize * 0.8
-            tooltipText: I18n.tr("panels.user-interface.animation-speed-reset")
-            onClicked: Settings.data.general.animationSpeed = Settings.getDefaultValue("general.animationSpeed")
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-          }
-        }
+        label: I18n.tr("panels.user-interface.animation-speed-label")
+        description: I18n.tr("panels.user-interface.animation-speed-description")
+        from: 0
+        to: 2.0
+        stepSize: 0.01
+        showReset: true
+        value: Settings.data.general.animationSpeed
+        defaultValue: Settings.getDefaultValue("general.animationSpeed")
+        onMoved: value => Settings.data.general.animationSpeed = Math.max(value, 0.05)
+        text: Math.round(Settings.data.general.animationSpeed * 100) + "%"
       }
     }
   }

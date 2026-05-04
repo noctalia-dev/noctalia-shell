@@ -7,11 +7,12 @@ import qs.Services.UI
 Slider {
   id: root
 
+  readonly property bool sliderActive: activeFocus || pressed
   property color fillColor: Color.mPrimary
   property var cutoutColor: Color.mSurface
   property bool snapAlways: true
   property real heightRatio: 0.7
-  property string tooltipText
+  property var tooltipText
   property string tooltipDirection: "auto"
   property bool hovering: false
 
@@ -41,7 +42,9 @@ Slider {
     // Background track
     Shape {
       anchors.fill: parent
+      visible: bgContainer.width > 0 && bgContainer.height > 0
       preferredRendererType: Shape.CurveRenderer
+      asynchronous: true
 
       ShapePath {
         id: bgPath
@@ -119,8 +122,9 @@ Slider {
     Shape {
       width: bgContainer.fillWidth
       height: bgContainer.height
-      visible: bgContainer.fillWidth > 0
+      visible: bgContainer.fillWidth > 0 && bgContainer.height > 0
       preferredRendererType: Shape.CurveRenderer
+      asynchronous: true
       clip: true
 
       ShapePath {
@@ -223,14 +227,14 @@ Slider {
 
       onEntered: {
         root.hovering = true;
-        if (root.tooltipText) {
+        if (root.tooltipText && (!Array.isArray(root.tooltipText) || root.tooltipText.length > 0)) {
           TooltipService.show(knob, root.tooltipText, root.tooltipDirection);
         }
       }
 
       onExited: {
         root.hovering = false;
-        if (root.tooltipText) {
+        if (root.tooltipText && (!Array.isArray(root.tooltipText) || root.tooltipText.length > 0)) {
           TooltipService.hide();
         }
       }
@@ -240,7 +244,7 @@ Slider {
     Connections {
       target: root
       function onPressedChanged() {
-        if (root.pressed && root.tooltipText) {
+        if (root.pressed && root.tooltipText && (!Array.isArray(root.tooltipText) || root.tooltipText.length > 0)) {
           TooltipService.hide();
         }
       }

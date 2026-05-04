@@ -18,8 +18,8 @@ ColumnLayout {
   property string valueStatType: widgetData.statType !== undefined ? widgetData.statType : widgetMetadata.statType
   property string valueDiskPath: widgetData.diskPath !== undefined ? widgetData.diskPath : widgetMetadata.diskPath
   property bool valueShowBackground: widgetData.showBackground !== undefined ? widgetData.showBackground : widgetMetadata.showBackground
-  property bool valueRoundedCorners: widgetData.roundedCorners !== undefined ? widgetData.roundedCorners : (widgetMetadata.roundedCorners !== undefined ? widgetMetadata.roundedCorners : true)
-  property string valueLayout: widgetData.layout !== undefined ? widgetData.layout : (widgetMetadata.layout !== undefined ? widgetMetadata.layout : "side")
+  property bool valueRoundedCorners: widgetData.roundedCorners !== undefined ? widgetData.roundedCorners : widgetMetadata.roundedCorners
+  property string valueLayout: widgetData.layout !== undefined ? widgetData.layout : widgetMetadata.layout
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
@@ -67,6 +67,7 @@ ColumnLayout {
                   valueStatType = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.statType
   }
 
   NComboBox {
@@ -86,6 +87,7 @@ ColumnLayout {
                   valueDiskPath = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.diskPath
   }
 
   NDivider {
@@ -101,6 +103,7 @@ ColumnLayout {
                  valueShowBackground = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showBackground
   }
 
   NToggle {
@@ -113,6 +116,7 @@ ColumnLayout {
                  valueRoundedCorners = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.roundedCorners
   }
 
   NDivider {
@@ -139,5 +143,6 @@ ColumnLayout {
                   valueLayout = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.layout
   }
 }

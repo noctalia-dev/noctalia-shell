@@ -10,6 +10,7 @@ import qs.Commons
 import qs.Modules.Panels.Settings
 import qs.Services.Compositor
 import qs.Services.Hardware
+import qs.Services.Location
 import qs.Services.Media
 import qs.Services.Networking
 import qs.Services.Noctalia
@@ -36,11 +37,11 @@ Singleton {
       Logger.w("IPC", "Argument to ipc call '" + funcName + "' must be a number");
       return null;
     }
-    if (idx < 0 || idx >= NotificationService.activeList.count) {
+    if (idx < 0 || idx >= NotificationService.popupModel.count) {
       Logger.w("IPC", "Notification index out of range: " + idx);
       return null;
     }
-    return NotificationService.activeList.get(idx);
+    return NotificationService.popupModel.get(idx);
   }
 
   IpcHandler {
@@ -53,6 +54,9 @@ Singleton {
     }
     function showBar() {
       BarService.show();
+    }
+    function peek() {
+      BarService.peek();
     }
     function setDisplayMode(mode: string, screen: string) {
       if (mode === "always_visible" || mode === "non_exclusive" || mode === "auto_hide") {
@@ -97,9 +101,11 @@ Singleton {
                                             "notifications": SettingsPanel.Tab.Notifications,
                                             "plugins": SettingsPanel.Tab.Plugins,
                                             "sessionmenu": SettingsPanel.Tab.SessionMenu,
-                                            "systemmonitor": SettingsPanel.Tab.SystemMonitor,
+                                            "system": SettingsPanel.Tab.System,
+                                            "systemmonitor": SettingsPanel.Tab.System,
                                             "userinterface": SettingsPanel.Tab.UserInterface,
-                                            "wallpaper": SettingsPanel.Tab.Wallpaper
+                                            "wallpaper": SettingsPanel.Tab.Wallpaper,
+                                            "idle": SettingsPanel.Tab.Idle
                                           })
 
   function _parseSettingsTabArg(tabArg) {
@@ -189,7 +195,7 @@ Singleton {
     }
 
     function dismissOldest() {
-      NotificationService.dismissOldestActive();
+      NotificationService.dismissOldestPopup();
     }
 
     function removeOldestHistory() {
@@ -197,7 +203,7 @@ Singleton {
     }
 
     function dismissAll() {
-      NotificationService.dismissAllActive();
+      NotificationService.dismissAllPopups();
     }
 
     function getHistory(): string {
@@ -228,13 +234,13 @@ Singleton {
 
       var actions = JSON.parse(notif.actionsJson || "[]");
       if (actions.length === 0) {
-        NotificationService.dismissActiveNotification(notif.id);
+        NotificationService.dismissPopup(notif.id);
         return false;
       }
 
       var actionId = actions.find(a => a.identifier === "default")?.identifier ?? actions[0].identifier;
       var result = NotificationService.invokeAction(notif.id, actionId);
-      NotificationService.dismissActiveNotification(notif.id);
+      NotificationService.dismissPopup(notif.id);
       return result;
     }
 
@@ -251,6 +257,38 @@ Singleton {
       if (!notif)
         return "[]";
       return notif.actionsJson || "[]";
+    }
+  }
+
+  IpcHandler {
+    target: "toast"
+
+    function send(json: string) {
+      try {
+        var data = JSON.parse(json);
+        var title = data.title || "";
+        var body = data.body || "";
+        var icon = data.icon || "";
+        var type = data.type || "notice";
+        var duration = data.duration;
+
+        switch (type) {
+        case "warning":
+          ToastService.showWarning(title, body, duration ?? 4000);
+          break;
+        case "error":
+          ToastService.showError(title, body, duration ?? 6000);
+          break;
+        default:
+          ToastService.showNotice(title, body, icon, duration ?? 3000);
+        }
+      } catch (error) {
+        Logger.e("IPC", "Failed to parse toast JSON: " + error);
+      }
+    }
+
+    function dismiss() {
+      ToastService.dismissToast();
     }
   }
 
@@ -404,6 +442,16 @@ Singleton {
   }
 
   IpcHandler {
+    target: "monitors"
+    function on() {
+      CompositorService.turnOnMonitors();
+    }
+    function off() {
+      CompositorService.turnOffMonitors();
+    }
+  }
+
+  IpcHandler {
     target: "darkMode"
     function toggle() {
       Settings.data.colorSchemes.darkMode = !Settings.data.colorSchemes.darkMode;
@@ -482,19 +530,19 @@ Singleton {
     function togglePanel() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var panel = PanelService.getPanel("audioPanel", screen);
-                                              panel?.toggle();
+                                              panel?.toggle(null, "Volume");
                                             });
     }
     function openPanel() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var panel = PanelService.getPanel("audioPanel", screen);
-                                              panel?.open();
+                                              panel?.open(null, "Volume");
                                             });
     }
     function closePanel() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var panel = PanelService.getPanel("audioPanel", screen);
-                                              panel?.close();
+                                              panel?.close(null, "Volume");
                                             });
     }
   }
@@ -504,6 +552,7 @@ Singleton {
     function toggle() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var sessionMenuPanel = PanelService.getPanel("sessionMenuPanel", screen);
+                                              // Session Menu is never open near the bar
                                               sessionMenuPanel?.toggle();
                                             });
     }
@@ -556,9 +605,28 @@ Singleton {
       }
     }
 
-    function random() {
+    function random(screen: string) {
       if (Settings.data.wallpaper.enabled) {
-        WallpaperService.setRandomWallpaper();
+        if (!screen || screen === "all" || screen.trim().length === 0) {
+          screen = undefined;
+        }
+        WallpaperService.setRandomWallpaper(screen);
+      }
+    }
+
+    function get(screen: string): string {
+      if (screen === "all" || screen === "") {
+        if (Quickshell.screens.length > 1) {
+          return JSON.stringify(WallpaperService.getWallpapersEffectiveMap());
+        }
+        return WallpaperService.getWallpaper(Quickshell.screens[0].name) ?? "";
+      } else {
+        var found = Quickshell.screens.find(s => s.name === screen);
+        if (!found) {
+          Logger.w("IPC", "wallpaper get: unknown screen: " + screen);
+          return "";
+        }
+        return WallpaperService.getWallpaper(screen) ?? "";
       }
     }
 
@@ -567,6 +635,10 @@ Singleton {
         screen = undefined;
       }
       WallpaperService.changeWallpaper(path, screen);
+    }
+
+    function refresh() {
+      WallpaperService.refreshWallpapersList();
     }
 
     function toggleAutomation() {
@@ -583,7 +655,7 @@ Singleton {
   IpcHandler {
     target: "wifi"
     function toggle() {
-      NetworkService.setWifiEnabled(!Settings.data.network.wifiEnabled);
+      NetworkService.setWifiEnabled(!NetworkService.wifiEnabled);
     }
     function enable() {
       NetworkService.setWifiEnabled(true);
@@ -598,7 +670,7 @@ Singleton {
     function togglePanel() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var networkPanel = PanelService.getPanel("networkPanel", screen);
-                                              networkPanel?.toggle(null, "WiFi");
+                                              networkPanel?.toggle(null, "Network");
                                             });
     }
   }
@@ -619,6 +691,28 @@ Singleton {
                                               var bluetoothPanel = PanelService.getPanel("bluetoothPanel", screen);
                                               bluetoothPanel?.toggle(null, "Bluetooth");
                                             });
+    }
+    function toggleAutoConnect() {
+      Settings.data.network.bluetoothAutoConnect = !Settings.data.network.bluetoothAutoConnect;
+    }
+    function enableAutoConnect() {
+      Settings.data.network.bluetoothAutoConnect = true;
+    }
+    function disableAutoConnect() {
+      Settings.data.network.bluetoothAutoConnect = false;
+    }
+  }
+
+  IpcHandler {
+    target: "airplaneMode"
+    function toggle() {
+      NetworkService.setAirplaneMode(!NetworkService.airplaneModeEnabled);
+    }
+    function enable() {
+      NetworkService.setAirplaneMode(true);
+    }
+    function disable() {
+      NetworkService.setAirplaneMode(false);
     }
   }
 
@@ -666,34 +760,6 @@ Singleton {
 
     function disableNoctaliaPerformance() {
       PowerProfileService.setNoctaliaPerformance(false);
-    }
-  }
-
-  IpcHandler {
-    target: "toast"
-
-    function send(json: string) {
-      try {
-        var data = JSON.parse(json);
-        var title = data.title || "";
-        var body = data.body || "";
-        var icon = data.icon || "";
-        var type = data.type || "notice";
-        var duration = data.duration;
-
-        switch (type) {
-        case "warning":
-          ToastService.showWarning(title, body, duration ?? 4000);
-          break;
-        case "error":
-          ToastService.showError(title, body, duration ?? 6000);
-          break;
-        default:
-          ToastService.showNotice(title, body, icon, duration ?? 3000);
-        }
-      } catch (error) {
-        Logger.e("IPC", "Failed to parse toast JSON: " + error);
-      }
     }
   }
 
@@ -793,6 +859,7 @@ Singleton {
     }
     function set(name: string) {
       Settings.data.location.name = name;
+      LocationService.update();
     }
   }
 

@@ -118,6 +118,18 @@ ColumnLayout {
                }
   }
 
+  NToggle {
+    label: I18n.tr("panels.color-scheme.sync-gsettings-label")
+    description: I18n.tr("panels.color-scheme.sync-gsettings-description")
+    checked: Settings.data.colorSchemes.syncGsettings
+    defaultValue: Settings.getDefaultValue("colorSchemes.syncGsettings")
+    onToggled: checked => {
+                 Settings.data.colorSchemes.syncGsettings = checked;
+                 if (checked)
+                 ColorSchemeService.pushSystemColorScheme();
+               }
+  }
+
   NComboBox {
     label: I18n.tr("panels.color-scheme.dark-mode-mode-label")
     description: I18n.tr("panels.color-scheme.dark-mode-mode-description")
@@ -138,6 +150,7 @@ ColumnLayout {
     ]
 
     currentKey: Settings.data.colorSchemes.schedulingMode
+    defaultValue: Settings.getDefaultValue("colorSchemes.schedulingMode")
 
     onSelected: key => {
                   Settings.data.colorSchemes.schedulingMode = key;
@@ -200,6 +213,7 @@ ColumnLayout {
     label: I18n.tr("panels.color-scheme.color-source-use-wallpaper-colors-label")
     description: I18n.tr("panels.color-scheme.color-source-use-wallpaper-colors-description")
     checked: Settings.data.colorSchemes.useWallpaperColors
+    defaultValue: Settings.getDefaultValue("colorSchemes.useWallpaperColors")
     onToggled: checked => {
                  Settings.data.colorSchemes.useWallpaperColors = checked;
                  if (checked) {
@@ -238,7 +252,6 @@ ColumnLayout {
                   Settings.data.colorSchemes.monitorForColors = key;
                   AppThemeService.generate();
                 }
-    defaultValue: ""
   }
 
   NComboBox {

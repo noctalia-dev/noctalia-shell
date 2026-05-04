@@ -198,6 +198,7 @@ DraggableDesktopWidget {
       color2: root.color2
       fill: true
       updateInterval: root.graphUpdateInterval
+      strokeWidth: Math.max(1, root.widgetScale)
       animateScale: root.statType === "Network"
     }
   }

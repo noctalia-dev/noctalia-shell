@@ -22,11 +22,35 @@ Item {
     return (item && item.visible) ? item[prop] : 0;
   }
 
+  readonly property bool _isPlugin: ControlCenterWidgetRegistry.isPluginWidget(widgetId)
+
+  function _loadPluginWidget() {
+    var comp = ControlCenterWidgetRegistry.getWidget(widgetId);
+    if (!comp)
+      return;
+    var pluginId = widgetId.substring(7); // Remove "plugin:" prefix
+    var api = PluginService.getPluginAPI(pluginId);
+    loader.setSource(comp.url, api ? {
+                                       "pluginApi": api
+                                     } : {});
+  }
+
   Loader {
     id: loader
     anchors.fill: parent
     asynchronous: false
-    sourceComponent: ControlCenterWidgetRegistry.getWidget(widgetId)
+
+    // Core widgets use sourceComponent; plugin widgets use setSource()
+    // so pluginApi is available from the first binding evaluation.
+    Component.onCompleted: {
+      if (root._isPlugin) {
+        root._loadPluginWidget();
+      } else {
+        sourceComponent = Qt.binding(function () {
+          return ControlCenterWidgetRegistry.getWidget(widgetId);
+        });
+      }
+    }
 
     onLoaded: {
       if (!item)
@@ -42,12 +66,6 @@ Item {
       // Set screen property
       if (item.hasOwnProperty("screen")) {
         item.screen = widgetScreen;
-      }
-
-      // Pass pluginApi for plugin widgets
-      if (ControlCenterWidgetRegistry.isPluginWidget(widgetId) && item.hasOwnProperty("pluginApi")) {
-        var pluginId = widgetId.substring(7); // Remove "plugin:" prefix
-        item.pluginApi = PluginService.getPluginAPI(pluginId);
       }
 
       // Call custom onLoaded if it exists

@@ -340,7 +340,7 @@
         "title_bar.inactive_background": "{{colors.surface_dim.light.hex}}",
         "toolbar.background": "{{colors.surface_container_low.light.hex}}",
         "tab_bar.background": "{{colors.surface_container.light.hex}}",
-        "tab.inactive_backgorround": "{{colors.surface_container_low.light.hex}}",
+        "tab.inactive_background": "{{colors.surface_container_low.light.hex}}",
         "tab.active_background": "{{colors.surface_container_high.light.hex}}",
         "search.match_background": "{{colors.tertiary_container.light.hex}}80",
         "panel.background": "{{colors.surface_container_low.light.hex}}",

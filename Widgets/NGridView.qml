@@ -30,6 +30,9 @@ Item {
   property int gradientHeight: 16
   property bool reserveScrollbarSpace: true
 
+  // Keep scrollbars visible whenever overflow exists (without forcing visibility when not scrollable)
+  property bool showScrollbarWhenScrollable: Settings.data.ui.scrollbarAlwaysVisible
+
   // Available width for content (excludes scrollbar space when reserveScrollbarSpace is true)
   // Note: Always reserves space when enabled to avoid binding loops with cellWidth calculations
   readonly property real availableWidth: width - (reserveScrollbarSpace ? handleWidth + Style.marginXS : 0)
@@ -82,6 +85,46 @@ Item {
 
   // Scroll speed multiplier for mouse wheel (1.0 = default, higher = faster)
   property real wheelScrollMultiplier: 2.0
+  property int smoothWheelAnimationDuration: Style.animationNormal
+  property real _wheelTargetY: 0
+
+  function clampScrollY(value) {
+    return Math.max(0, Math.min(value, gridView.contentHeight - gridView.height));
+  }
+
+  function applyWheelScroll(delta) {
+    if (!root.contentOverflows)
+      return;
+
+    const step = delta * root.wheelScrollMultiplier;
+
+    if (!Settings.data.general.smoothScrollEnabled || Settings.data.general.animationDisabled) {
+      gridView.contentY = root.clampScrollY(gridView.contentY - step);
+      root._wheelTargetY = gridView.contentY;
+      return;
+    }
+
+    if (!wheelScrollAnimation.running)
+      root._wheelTargetY = gridView.contentY;
+
+    root._wheelTargetY = root.clampScrollY(root._wheelTargetY - step);
+    wheelScrollAnimation.to = root._wheelTargetY;
+    wheelScrollAnimation.restart();
+  }
+
+  function animateToContentY(targetY) {
+    const clampedY = root.clampScrollY(targetY);
+
+    if (!Settings.data.general.smoothScrollEnabled || Settings.data.general.animationDisabled || gridView.dragging || gridView.flicking) {
+      gridView.contentY = clampedY;
+      root._wheelTargetY = clampedY;
+      return;
+    }
+
+    root._wheelTargetY = clampedY;
+    wheelScrollAnimation.to = clampedY;
+    wheelScrollAnimation.restart();
+  }
 
   // Track selection index for gradient visibility (set externally)
   property int trackedSelectionIndex: -1
@@ -126,7 +169,25 @@ Item {
 
   // Forward GridView methods
   function positionViewAtIndex(index, mode) {
+    const shouldAnimate = mode === GridView.Contain;
+    if (!shouldAnimate) {
+      gridView.positionViewAtIndex(index, mode);
+      root._wheelTargetY = gridView.contentY;
+      return;
+    }
+
+    const previousY = gridView.contentY;
     gridView.positionViewAtIndex(index, mode);
+    const targetY = root.clampScrollY(gridView.contentY);
+
+    if (Math.abs(targetY - previousY) < 0.5) {
+      root._wheelTargetY = targetY;
+      return;
+    }
+
+    gridView.contentY = previousY;
+    root._wheelTargetY = previousY;
+    root.animateToContentY(targetY);
   }
 
   function positionViewAtBeginning() {
@@ -194,6 +255,7 @@ Item {
   implicitHeight: 200
 
   Component.onCompleted: {
+    _wheelTargetY = gridView.contentY;
     createGradients();
   }
 
@@ -277,6 +339,31 @@ Item {
     // Enable flickable for smooth scrolling
     boundsBehavior: Flickable.StopAtBounds
 
+    NumberAnimation {
+      id: wheelScrollAnimation
+      target: gridView
+      property: "contentY"
+      duration: root.smoothWheelAnimationDuration
+      easing.type: Easing.OutCubic
+    }
+
+    onDraggingChanged: {
+      if (dragging) {
+        wheelScrollAnimation.stop();
+        root._wheelTargetY = contentY;
+      }
+    }
+
+    onFlickingChanged: {
+      if (flicking) {
+        wheelScrollAnimation.stop();
+        root._wheelTargetY = contentY;
+      }
+    }
+
+    onContentHeightChanged: root._wheelTargetY = root.clampScrollY(root._wheelTargetY)
+    onHeightChanged: root._wheelTargetY = root.clampScrollY(root._wheelTargetY)
+
     // Focus handling depends on keyNavigationEnabled
     focus: keyNavigationEnabled
     activeFocusOnTab: keyNavigationEnabled
@@ -293,8 +380,7 @@ Item {
       acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
       onWheel: event => {
                  const delta = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 2;
-                 const newY = gridView.contentY - (delta * root.wheelScrollMultiplier);
-                 gridView.contentY = Math.max(0, Math.min(newY, gridView.contentHeight - gridView.height));
+                 root.applyWheelScroll(delta);
                  event.accepted = true;
                }
     }
@@ -311,7 +397,7 @@ Item {
         implicitHeight: 100
         radius: root.handleRadius
         color: parent.pressed ? root.handlePressedColor : parent.hovered ? root.handleHoverColor : root.handleColor
-        opacity: parent.policy === ScrollBar.AlwaysOn ? 1.0 : root.verticalScrollBarActive ? (parent.active ? 1.0 : 0.0) : 0.0
+        opacity: parent.policy === ScrollBar.AlwaysOn ? 1.0 : root.verticalScrollBarActive ? ((root.showScrollbarWhenScrollable || parent.active) ? 1.0 : 0.0) : 0.0
 
         Behavior on opacity {
           NumberAnimation {
@@ -330,7 +416,7 @@ Item {
         implicitWidth: root.handleWidth
         implicitHeight: 100
         color: root.trackColor
-        opacity: parent.policy === ScrollBar.AlwaysOn ? 0.3 : root.verticalScrollBarActive ? (parent.active ? 0.3 : 0.0) : 0.0
+        opacity: parent.policy === ScrollBar.AlwaysOn ? 0.3 : root.verticalScrollBarActive ? ((root.showScrollbarWhenScrollable || parent.active) ? 0.3 : 0.0) : 0.0
         radius: root.handleRadius / 2
 
         Behavior on opacity {

@@ -54,6 +54,7 @@ ColumnLayout {
                   valueDisplayMode = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.displayMode
   }
 
   NToggle {
@@ -64,6 +65,7 @@ ColumnLayout {
                  valueShowIcon = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showIcon
   }
 
   NColorChoice {
@@ -73,6 +75,7 @@ ColumnLayout {
                   valueIconColor = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.iconColor
   }
 
   NColorChoice {
@@ -81,5 +84,6 @@ ColumnLayout {
                   valueTextColor = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.textColor
   }
 }

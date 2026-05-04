@@ -79,6 +79,7 @@ Singleton {
 
   property var widgetMetadata: ({
                                   "ActiveWindow": {
+                                    "showText": true,
                                     "showIcon": true,
                                     "hideMode": "hidden",
                                     "scrollingMode": "hover",
@@ -125,11 +126,13 @@ Singleton {
                                     "customIconPath": "",
                                     "colorizeDistroLogo": false,
                                     "colorizeSystemIcon": "none",
+                                    "colorizeSystemText": "none",
                                     "enableColorization": false
                                   },
                                   "CustomButton": {
                                     "icon": "heart",
                                     "showIcon": true,
+                                    "iconPosition": "left",
                                     "showExecTooltip": true,
                                     "showTextTooltip": true,
                                     "generalTooltipText": "",
@@ -156,8 +159,8 @@ Singleton {
                                       "horizontal": 10,
                                       "vertical": 10
                                     },
-                                    "enableColorization": false,
                                     "colorizeSystemIcon": "none",
+                                    "colorizeSystemText": "none",
                                     "ipcIdentifier": ""
                                   },
                                   "DarkMode": {
@@ -187,6 +190,7 @@ Singleton {
                                     "icon": "rocket",
                                     "customIconPath": "",
                                     "colorizeSystemIcon": "none",
+                                    "colorizeSystemText": "none",
                                     "enableColorization": false,
                                     "iconColor": "none"
                                   },
@@ -203,10 +207,7 @@ Singleton {
                                     "visualizerType": "linear",
                                     "textColor": "none",
                                     "compactMode": false,
-                                    "panelShowAlbumArt": true,
-                                    "panelShowVisualizer": true,
-                                    "compactShowAlbumArt": true,
-                                    "compactShowVisualizer": false
+                                    "panelShowAlbumArt": true
                                   },
                                   "Microphone": {
                                     "displayMode": "onhover",
@@ -237,6 +238,7 @@ Singleton {
                                     "useMonospaceFont": true,
                                     "usePadding": false,
                                     "showCpuUsage": true,
+                                    "showCpuCores": false,
                                     "showCpuFreq": false,
                                     "showCpuTemp": true,
                                     "showGpuTemp": false,
@@ -295,6 +297,7 @@ Singleton {
                                     "hideUnoccupied": false,
                                     "characterCount": 2,
                                     "showApplications": false,
+                                    "showApplicationsHover": false,
                                     "showLabelsOnlyWhenOccupied": true,
                                     "colorizeIcons": false,
                                     "unfocusedIconsOpacity": 1.0,
@@ -305,7 +308,8 @@ Singleton {
                                     "occupiedColor": "secondary",
                                     "emptyColor": "secondary",
                                     "showBadge": true,
-                                    "pillSize": 0.6
+                                    "pillSize": 0.6,
+                                    "fontWeight": "bold"
                                   },
                                   "Volume": {
                                     "displayMode": "onhover",

@@ -42,6 +42,7 @@ ColumnLayout {
                  valueUseDistroLogo = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.useDistroLogo
   }
 
   NToggle {
@@ -52,6 +53,7 @@ ColumnLayout {
                  valueEnableColorization = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.enableColorization
   }
 
   NColorChoice {
@@ -63,6 +65,7 @@ ColumnLayout {
       valueColorizeSystemIcon = key;
       saveSettings();
     }
+    defaultValue: widgetMetadata.colorizeSystemIcon
   }
 
   RowLayout {

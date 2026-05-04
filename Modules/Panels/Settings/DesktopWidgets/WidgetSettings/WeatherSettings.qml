@@ -14,10 +14,12 @@ ColumnLayout {
   signal settingsChanged(var settings)
 
   property bool valueShowBackground: widgetData.showBackground !== undefined ? widgetData.showBackground : widgetMetadata.showBackground
+  property bool valueRoundedCorners: widgetData.roundedCorners !== undefined ? widgetData.roundedCorners : widgetMetadata.roundedCorners
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.showBackground = valueShowBackground;
+    settings.roundedCorners = valueRoundedCorners;
     settingsChanged(settings);
   }
 
@@ -30,5 +32,19 @@ ColumnLayout {
                  valueShowBackground = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showBackground
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    visible: valueShowBackground
+    label: I18n.tr("panels.desktop-widgets.clock-rounded-corners-label")
+    description: I18n.tr("panels.desktop-widgets.clock-rounded-corners-description")
+    checked: valueRoundedCorners
+    onToggled: checked => {
+                 valueRoundedCorners = checked;
+                 saveSettings();
+               }
+    defaultValue: widgetMetadata.roundedCorners
   }
 }

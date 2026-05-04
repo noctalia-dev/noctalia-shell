@@ -90,6 +90,8 @@ Rectangle {
             text: {
               if (!Settings.data.location.weatherEnabled)
                 return "";
+              if (!LocationService.locationConfigured)
+                return I18n.tr("common.weather-no-location");
               if (!root.weatherReady)
                 return I18n.tr("common.weather-loading");
               if (Settings.data.location.hideWeatherCityName)
@@ -104,7 +106,7 @@ Rectangle {
           }
 
           NText {
-            text: root.weatherReady && !Settings.data.location.hideWeatherTimezone ? ` (${LocationService.data.weather.timezone_abbreviation})` : ""
+            text: root.weatherReady && !Settings.data.location.hideWeatherTimezone ? `${Settings.data.location.hideWeatherCityName ? "" : " "}(${LocationService.data.weather.timezone_abbreviation})` : ""
             pointSize: Style.fontSizeXS
             color: Qt.alpha(Color.mOnPrimary, 0.7)
           }

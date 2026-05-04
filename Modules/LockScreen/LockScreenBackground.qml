@@ -111,7 +111,7 @@ Item {
 
   Image {
     id: lockBgImage
-    visible: source !== "" && Settings.data.wallpaper.enabled && !Settings.data.wallpaper.useSolidColor
+    visible: source !== "" && Settings.data.wallpaper.enabled && !Settings.data.wallpaper.useSolidColor && (!PowerProfileService.noctaliaPerformanceMode || !Settings.data.noctaliaPerformance.disableWallpaper)
     anchors.fill: parent
     fillMode: Image.PreserveAspectCrop
     source: resolvedWallpaperPath
@@ -120,10 +120,10 @@ Item {
     mipmap: false
     antialiasing: true
 
-    layer.enabled: true
+    layer.enabled: Settings.data.general.lockScreenBlur > 0 && !PowerProfileService.noctaliaPerformanceMode
     layer.smooth: false
     layer.effect: MultiEffect {
-      blurEnabled: !PowerProfileService.noctaliaPerformanceMode && (Settings.data.general.lockScreenBlur > 0)
+      blurEnabled: true
       blur: Settings.data.general.lockScreenBlur
       blurMax: 48
     }
@@ -142,19 +142,19 @@ Item {
     gradient: Gradient {
       GradientStop {
         position: 0.0
-        color: Qt.alpha(Color.mShadow, 0.8)
-      }
-      GradientStop {
-        position: 0.3
         color: Qt.alpha(Color.mShadow, 0.4)
       }
       GradientStop {
+        position: 0.3
+        color: Qt.alpha(Color.mShadow, 0.2)
+      }
+      GradientStop {
         position: 0.7
-        color: Qt.alpha(Color.mShadow, 0.5)
+        color: Qt.alpha(Color.mShadow, 0.25)
       }
       GradientStop {
         position: 1.0
-        color: Qt.alpha(Color.mShadow, 0.9)
+        color: Qt.alpha(Color.mShadow, 0.5)
       }
     }
   }

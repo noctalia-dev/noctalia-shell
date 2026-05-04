@@ -18,15 +18,15 @@ Item {
   required property int extraLeft
   required property int extraRight
   property alias dockContainer: dockContainer
-  readonly property bool isStaticMode: Settings.data.dock.dockType === "static"
-  readonly property string tooltipDirection: dockRoot.dockPosition === "top" ? "bottom" : "top"
+  readonly property bool isAttachedMode: Settings.data.dock.dockType === "attached"
+  readonly property string tooltipDirection: dockRoot.dockPosition === "left" ? "right" : (dockRoot.dockPosition === "right" ? "left" : (dockRoot.dockPosition === "top" ? "bottom" : "top"))
 
   Rectangle {
     id: dockContainer
     // For vertical dock, swap width and height logic
     width: dockRoot.isVertical ? Math.round(dockRoot.iconSize * 1.5) : Math.min(dockLayout.implicitWidth + Style.marginXL, dockRoot.maxWidth)
     height: dockRoot.isVertical ? Math.min(dockLayout.implicitHeight + Style.marginXL, dockRoot.maxHeight) : Math.round(dockRoot.iconSize * 1.5)
-    color: Qt.alpha(Color.mSurface, (isStaticMode ? 0 : Settings.data.dock.backgroundOpacity))
+    color: Qt.alpha(Color.mSurface, (isAttachedMode ? 0 : Color.adaptiveOpacity(Settings.data.dock.backgroundOpacity)))
 
     // Anchor based on padding to achieve centering shift
     anchors.horizontalCenter: extraLeft > 0 || extraRight > 0 ? undefined : parent.horizontalCenter
@@ -39,7 +39,7 @@ Item {
 
     radius: Style.radiusL
     border.width: Style.borderS
-    border.color: Qt.alpha(Color.mOutline, (isStaticMode ? 0 : Settings.data.dock.backgroundOpacity))
+    border.color: Qt.alpha(Color.mOutline, (isAttachedMode ? 0 : Color.adaptiveOpacity(Settings.data.dock.backgroundOpacity)))
 
     MouseArea {
       id: dockMouseArea
@@ -145,27 +145,21 @@ Item {
           return;
         }
 
-        if (Settings.data.appLauncher.customLaunchPrefixEnabled && Settings.data.appLauncher.customLaunchPrefix) {
-          const prefix = Settings.data.appLauncher.customLaunchPrefix.split(" ");
+        if (Settings.data.appLauncher.customLaunchPrefixEnabled && Settings.data.appLauncher.customLaunchPrefix.trim() !== "") {
+          const prefix = Settings.data.appLauncher.customLaunchPrefix.trim().split(" ");
 
-          if (app.runInTerminal) {
-            const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
+          if (app.runInTerminal && Settings.data.appLauncher.terminalCommand.trim() !== "") {
+            const terminal = Settings.data.appLauncher.terminalCommand.trim().split(" ");
             const command = prefix.concat(terminal.concat(app.command));
             Quickshell.execDetached(command);
           } else {
             const command = prefix.concat(app.command);
             Quickshell.execDetached(command);
           }
-        } else if (Settings.data.appLauncher.useApp2Unit && ProgramCheckerService.app2unitAvailable && app.id) {
-          Logger.d("Dock", `Using app2unit for: ${app.id}`);
-          if (app.runInTerminal)
-            Quickshell.execDetached(["app2unit", "--", app.id + ".desktop"]);
-          else
-            Quickshell.execDetached(["app2unit", "--"].concat(app.command));
         } else {
-          if (app.runInTerminal) {
+          if (app.runInTerminal && Settings.data.appLauncher.terminalCommand.trim() !== "") {
             Logger.d("Dock", "Executing terminal app manually: " + app.name);
-            const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
+            const terminal = Settings.data.appLauncher.terminalCommand.trim().split(" ");
             const command = terminal.concat(app.command);
             CompositorService.spawn(command);
           } else if (app.command && app.command.length > 0) {
@@ -243,7 +237,13 @@ Item {
               return -1;
             }
             readonly property var launcherMetadata: BarWidgetRegistry.widgetMetadata["Launcher"]
-            readonly property string launcherIcon: launcherWidgetSettings.icon || (launcherMetadata && launcherMetadata.icon ? launcherMetadata.icon : "search")
+            readonly property string launcherIcon: {
+              if (Settings.data.dock.launcherIcon !== undefined && Settings.data.dock.launcherIcon !== "")
+                return Settings.data.dock.launcherIcon;
+              if (launcherWidgetSettings.icon !== undefined && launcherWidgetSettings.icon !== "")
+                return launcherWidgetSettings.icon;
+              return (launcherMetadata && launcherMetadata.icon) ? launcherMetadata.icon : "search";
+            }
             readonly property string launcherIconColorKey: {
               if (Settings.data.dock.launcherIconColor !== undefined)
                 return Settings.data.dock.launcherIconColor;
@@ -252,6 +252,15 @@ Item {
               if (launcherMetadata && launcherMetadata.iconColor !== undefined)
                 return launcherMetadata.iconColor;
               return "none";
+            }
+            readonly property bool launcherUseDistroLogo: {
+              if (Settings.data.dock.launcherUseDistroLogo !== undefined)
+                return Settings.data.dock.launcherUseDistroLogo;
+              if (launcherWidgetSettings.useDistroLogo !== undefined)
+                return launcherWidgetSettings.useDistroLogo;
+              if (launcherMetadata && launcherMetadata.useDistroLogo !== undefined)
+                return launcherMetadata.useDistroLogo;
+              return false;
             }
 
             Item {
@@ -274,6 +283,24 @@ Item {
                 icon: launcherButton.launcherIcon
                 pointSize: dockRoot.iconSize * 0.7
                 color: Color.resolveColorKey(launcherButton.launcherIconColorKey)
+                visible: !launcherButton.launcherUseDistroLogo
+              }
+
+              IconImage {
+                anchors.centerIn: parent
+                width: dockRoot.iconSize * 0.8
+                height: width
+                source: launcherButton.launcherUseDistroLogo ? HostService.osLogo : ""
+                visible: source !== ""
+                smooth: true
+                asynchronous: true
+                layer.enabled: visible
+                layer.effect: ShaderEffect {
+                  property color targetColor: Color.resolveColorKey(launcherButton.launcherIconColorKey)
+                  property real colorizeMode: 2.0
+
+                  fragmentShader: Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/appicon_colorize.frag.qsb")
+                }
               }
             }
 
@@ -557,6 +584,7 @@ Item {
 
                 // Apply dock-specific colorization shader only to non-focused apps
                 layer.enabled: !appButton.isActive && Settings.data.dock.colorizeIcons
+                layer.smooth: true
                 layer.effect: ShaderEffect {
                   property color targetColor: Settings.data.colorSchemes.darkMode ? Color.mOnSurface : Color.mSurfaceVariant
                   property real colorizeMode: 0.0 // Dock mode (grayscale)

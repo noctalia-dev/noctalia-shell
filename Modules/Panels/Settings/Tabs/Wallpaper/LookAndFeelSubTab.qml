@@ -36,13 +36,46 @@ ColumnLayout {
     }
   }
 
-  NComboBox {
-    label: I18n.tr("panels.wallpaper.look-feel-transition-type-label")
-    description: I18n.tr("panels.wallpaper.look-feel-transition-type-description")
-    model: WallpaperService.transitionsModel
-    currentKey: Settings.data.wallpaper.transitionType
-    onSelected: key => Settings.data.wallpaper.transitionType = key
-    defaultValue: Settings.getDefaultValue("wallpaper.transitionType")
+  NDivider {
+    Layout.fillWidth: true
+  }
+
+  ColumnLayout {
+    spacing: Style.marginS
+    Layout.fillWidth: true
+
+    NLabel {
+      label: I18n.tr("panels.wallpaper.look-feel-transition-type-label")
+      description: I18n.tr("panels.wallpaper.look-feel-transition-type-description")
+    }
+
+    Repeater {
+      model: WallpaperService.allTransitions
+
+      NCheckbox {
+        required property string modelData
+        label: {
+          var key = "wallpaper.transitions." + modelData;
+          return I18n.tr(key);
+        }
+        labelSize: Style.fontSizeM
+        checked: Settings.data.wallpaper.transitionType.includes(modelData)
+        onToggled: checked => {
+                     var arr = Array.from(Settings.data.wallpaper.transitionType);
+                     if (checked) {
+                       if (!arr.includes(modelData))
+                       arr.push(modelData);
+                     } else {
+                       arr = arr.filter(k => k !== modelData);
+                     }
+                     Settings.data.wallpaper.transitionType = arr;
+                   }
+      }
+    }
+  }
+
+  NDivider {
+    Layout.fillWidth: true
   }
 
   NToggle {
@@ -59,6 +92,7 @@ ColumnLayout {
     from: 500
     to: 10000
     stepSize: 100
+    showReset: true
     value: Settings.data.wallpaper.transitionDuration
     onMoved: value => Settings.data.wallpaper.transitionDuration = value
     text: (Settings.data.wallpaper.transitionDuration / 1000).toFixed(1) + "s"
@@ -71,6 +105,7 @@ ColumnLayout {
     description: I18n.tr("panels.wallpaper.look-feel-edge-smoothness-description")
     from: 0.0
     to: 1.0
+    showReset: true
     value: Settings.data.wallpaper.transitionEdgeSmoothness
     onMoved: value => Settings.data.wallpaper.transitionEdgeSmoothness = value
     text: Math.round(Settings.data.wallpaper.transitionEdgeSmoothness * 100) + "%"

@@ -41,6 +41,7 @@ Item {
 
   // Widget settings - matching MediaMini pattern
   readonly property bool showIcon: (widgetSettings.showIcon !== undefined) ? widgetSettings.showIcon : (widgetMetadata.showIcon || false)
+  readonly property bool showText: (widgetSettings.showText !== undefined) ? widgetSettings.showText : (widgetMetadata.showText || false)
   readonly property string hideMode: (widgetSettings.hideMode !== undefined) ? widgetSettings.hideMode : (widgetMetadata.hideMode || "hidden")
   readonly property string scrollingMode: (widgetSettings.scrollingMode !== undefined) ? widgetSettings.scrollingMode : (widgetMetadata.scrollingMode || "hover")
 
@@ -102,14 +103,17 @@ Item {
     // Icon width (if visible)
     if (showIcon) {
       contentWidth += iconSize;
-      contentWidth += Style.marginS; // Spacing after icon
+      if (showText) {
+        contentWidth += Style.marginS; // Spacing after icon
+      }
     }
 
     // Text width (use the measured width)
-    contentWidth += titleContainer.measuredWidth;
-
-    // Additional small margin for text
-    contentWidth += Style.margin2XXS;
+    if (showText) {
+      contentWidth += titleContainer.measuredWidth;
+      // Additional small margin for text
+      contentWidth += Style.margin2XXS;
+    }
 
     // Add container margins
     contentWidth += margins;
@@ -224,8 +228,7 @@ Item {
       // Horizontal layout for top/bottom bars
       RowLayout {
         id: rowLayout
-        height: iconSize
-        y: Style.pixelAlignCenter(parent.height, height)
+        anchors.verticalCenter: parent.verticalCenter
         spacing: Style.marginS
         visible: !isVerticalBar
         z: 1
@@ -260,6 +263,10 @@ Item {
           id: titleContainer
           text: windowTitle
           Layout.alignment: Qt.AlignVCenter
+          Layout.preferredHeight: root.capsuleHeight
+          fadeRoundLeftCorners: !showIcon
+          visible: showText
+
           maxWidth: {
             // Calculate available width based on other elements
             var iconWidth = (showIcon && windowIcon.visible ? (iconSize + Style.marginS) : 0);
@@ -275,9 +282,8 @@ Item {
             return NScrollText.ScrollMode.Never;
           }
           forcedHover: mainMouseArea.containsMouse
-          gradientColor: Style.capsuleColor
-          gradientWidth: Math.round(8 * Style.uiScaleRatio)
-          cornerRadius: Style.radiusM
+          fadeExtent: 0.1
+          fadeCornerRadius: Style.radiusM
 
           NText {
             text: windowTitle

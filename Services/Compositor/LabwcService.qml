@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
+import Quickshell.WindowManager
 import qs.Commons
 
 Item {
@@ -10,167 +11,150 @@ Item {
   property ListModel workspaces: ListModel {}
   property var windows: []
   property int focusedWindowIndex: -1
-  property var trackedToplevels: ({})
+  property var trackedToplevels: new Set()
 
   // LabWC typically has global workspaces (shared across all outputs)
   property bool globalWorkspaces: true
 
-  // Internal workspace state from helper
-  property var workspaceData: ({})
-  property int activeWorkspaceOid: -1
+  // Map from native workspace id to the native Workspace object for activation
+  property var nativeWorkspaceMap: ({})
+
+  // Set of workspace objects we've already connected signals to
+  property var connectedWorkspaces: ({})
 
   signal workspaceChanged
   signal activeWindowChanged
   signal windowListChanged
   signal displayScalesChanged
 
-  // Path to the helper script
-  readonly property string helperScript: Qt.resolvedUrl("../../Scripts/python/src/compositor/labwc-workspace-helper.py").toString().replace("file://", "")
-
   function initialize() {
     updateWindows();
-    startWorkspaceHelper();
-    Logger.i("LabwcService", "Service started");
+    connectWorkspaceSignals();
+    syncWorkspaces();
+    Logger.i("LabwcService", "Service started (ext-workspace-v1)");
   }
 
-  // Workspace helper process
-  Process {
-    id: workspaceHelper
-    running: false
-    command: ["python3", root.helperScript]
+  // Watch for windowsets being added/removed
+  Connections {
+    target: WindowManager
 
-    stdout: SplitParser {
-      onRead: function (line) {
-        root.parseHelperOutput(line);
-      }
+    function onWindowsetsChanged() {
+      root.connectWorkspaceSignals();
+      Qt.callLater(root.syncWorkspaces);
     }
 
-    stderr: SplitParser {
-      onRead: function (line) {
-        Logger.w("LabwcService", "Helper stderr: " + line);
-      }
-    }
-
-    onExited: function (exitCode, exitStatus) {
-      if (exitCode !== 0) {
-        Logger.e("LabwcService", "Workspace helper exited with code: " + exitCode);
-      }
-      // Restart helper after a delay if it crashes
-      if (root.visible !== false) {
-        restartTimer.start();
-      }
+    function onWindowsetProjectionsChanged() {
+      Qt.callLater(root.syncWorkspaces);
     }
   }
 
+  // Re-check windowsets after a short delay - the Wayland protocol data
+  // may arrive after init and the changed signal can be missed
   Timer {
-    id: restartTimer
-    interval: 2000
+    interval: 500
+    running: true
     repeat: false
     onTriggered: {
-      if (!workspaceHelper.running) {
-        Logger.i("LabwcService", "Restarting workspace helper...");
-        startWorkspaceHelper();
+      if (WindowManager.windowsets.length > 0) {
+        root.connectWorkspaceSignals();
+        root.syncWorkspaces();
       }
     }
   }
 
-  function startWorkspaceHelper() {
-    if (!workspaceHelper.running) {
-      workspaceHelper.running = true;
-      Logger.d("LabwcService", "Starting workspace helper: " + helperScript);
+  // Connect to property change signals on each native windowset object
+  function connectWorkspaceSignals() {
+    const nativeWs = WindowManager.windowsets;
+    const newConnected = {};
+
+    for (const ws of nativeWs) {
+      const key = ws.id || ws.toString();
+      newConnected[key] = true;
+
+      if (connectedWorkspaces[key])
+        continue;
+
+      ws.activeChanged.connect(() => {
+                                 Qt.callLater(root.syncWorkspaces);
+                               });
+
+      ws.urgentChanged.connect(() => {
+                                 Qt.callLater(root.syncWorkspaces);
+                               });
+
+      ws.shouldDisplayChanged.connect(() => {
+                                        Qt.callLater(root.syncWorkspaces);
+                                      });
+
+      ws.nameChanged.connect(() => {
+                               Qt.callLater(root.syncWorkspaces);
+                             });
     }
+
+    connectedWorkspaces = newConnected;
   }
 
-  function stopWorkspaceHelper() {
-    if (workspaceHelper.running) {
-      workspaceHelper.running = false;
-    }
-  }
+  function syncWorkspaces() {
+    const nativeWs = WindowManager.windowsets;
 
-  function parseHelperOutput(line) {
-    try {
-      const data = JSON.parse(line);
-
-      if (data.type === "state") {
-        processWorkspaceState(data);
-      } else if (data.type === "error") {
-        Logger.e("LabwcService", "Helper error: " + data.message);
-      }
-    } catch (e) {
-      Logger.e("LabwcService", "Failed to parse helper output: " + e + " - " + line);
-    }
-  }
-
-  function processWorkspaceState(data) {
-    const wsList = data.workspaces || [];
-    const groups = data.groups || [];
-    const oldActiveOid = activeWorkspaceOid;
-
-    // Clear and rebuild workspaces
     workspaces.clear();
-    workspaceData = {};
+    nativeWorkspaceMap = {};
 
-    let newActiveOid = -1;
     let idx = 1;
 
-    for (const ws of wsList) {
-      // Skip hidden workspaces
-      if (ws.isHidden) {
+    for (const ws of nativeWs) {
+      // Skip hidden workspaces (shouldDisplay = false means hidden)
+      if (!ws.shouldDisplay) {
         continue;
       }
 
-      // Find which outputs this workspace's group spans
-      let groupOutputs = [];
-      if (ws.groupOid !== undefined && ws.groupOid !== null) {
-        for (const grp of groups) {
-          if (grp.oid === ws.groupOid && grp.outputs && grp.outputs.length > 0) {
-            groupOutputs = grp.outputs;
-            break;
-          }
+      // Find which outputs this windowset's projection spans
+      let outputName = "";
+      if (ws.projection) {
+        const projScreens = ws.projection.screens;
+        if (projScreens && projScreens.length > 0) {
+          outputName = projScreens[0].name || "";
         }
       }
 
       const wsEntry = {
-        "id": ws.oid,
-        "idx": ws.coordinates && ws.coordinates.length > 0 ? ws.coordinates[0] + 1 : idx,
+        "id": ws.id || idx.toString(),
+        "idx": idx,
         "name": ws.name || ("Workspace " + idx),
-        "output": groupOutputs.length > 0 ? groupOutputs[0] : "",
-        "isFocused": ws.isActive,
+        "output": outputName,
+        "isFocused": ws.active,
         "isActive": true,
-        "isUrgent": ws.isUrgent,
+        "isUrgent": ws.urgent,
         "isOccupied": false,
-        "oid": ws.oid
+        "oid": ws.id || idx.toString()
       };
 
       workspaces.append(wsEntry);
-      workspaceData[ws.oid] = wsEntry;
-
-      if (ws.isActive) {
-        newActiveOid = ws.oid;
-      }
+      nativeWorkspaceMap[wsEntry.id] = ws;
 
       idx++;
     }
 
-    activeWorkspaceOid = newActiveOid;
-
     // Update windows with workspace info
     updateWindowWorkspaces();
-
-    // Emit signal if workspace changed
-    if (oldActiveOid !== newActiveOid || workspaces.count > 0) {
-      workspaceChanged();
-    }
+    workspaceChanged();
   }
 
   function updateWindowWorkspaces() {
-    // Update windows with active workspace ID
-    // Note: ext-workspace-v1 doesn't provide window-to-workspace mapping
-    // This requires ext-toplevel-workspace protocol which LabWC may not support yet
-    // For now, assign all windows to the active workspace
+    // ext-workspace-v1 doesn't provide window-to-workspace mapping
+    // Assign all windows to the active workspace
+    let activeId = "";
+    for (let i = 0; i < workspaces.count; i++) {
+      const ws = workspaces.get(i);
+      if (ws.isFocused) {
+        activeId = ws.id;
+        break;
+      }
+    }
+
     for (let i = 0; i < windows.length; i++) {
-      if (activeWorkspaceOid > 0) {
-        windows[i].workspaceId = activeWorkspaceOid;
+      if (activeId) {
+        windows[i].workspaceId = activeId;
       }
     }
     windowListChanged();
@@ -184,7 +168,7 @@ Item {
   }
 
   function connectToToplevel(toplevel) {
-    if (!toplevel || !toplevel.address)
+    if (!toplevel)
       return;
 
     toplevel.activatedChanged.connect(() => {
@@ -204,28 +188,41 @@ Item {
   function updateWindows() {
     const newWindows = [];
     const toplevels = ToplevelManager.toplevels?.values || [];
-    const newTracked = {};
 
     let focusedIdx = -1;
     let idx = 0;
+
+    // Find active workspace id
+    let activeId = "";
+    for (let i = 0; i < workspaces.count; i++) {
+      const ws = workspaces.get(i);
+      if (ws.isFocused) {
+        activeId = ws.id;
+        break;
+      }
+    }
 
     for (const toplevel of toplevels) {
       if (!toplevel)
         continue;
 
-      const addr = toplevel.address || "";
-      if (addr && !trackedToplevels[addr]) {
+      if (!trackedToplevels.has(toplevel)) {
         connectToToplevel(toplevel);
-      }
-      if (addr) {
-        newTracked[addr] = true;
+        trackedToplevels.add(toplevel);
       }
 
+      // Get output name from toplevel's screen list
+      const output = (toplevel.screens && toplevel.screens.length > 0) ? (toplevel.screens[0].name || "") : "";
+
+      // Use appId + title as a stable id since Toplevel has no address property
+      const windowId = (toplevel.appId || "") + ":" + idx;
+
       newWindows.push({
-                        "id": addr,
+                        "id": windowId,
                         "appId": toplevel.appId || "",
                         "title": toplevel.title || "",
-                        "workspaceId": activeWorkspaceOid > 0 ? activeWorkspaceOid : 1,
+                        "output": output,
+                        "workspaceId": activeId || "1",
                         "isFocused": toplevel.activated || false,
                         "toplevel": toplevel
                       });
@@ -235,8 +232,6 @@ Item {
       }
       idx++;
     }
-
-    trackedToplevels = newTracked;
     windows = newWindows;
     focusedWindowIndex = focusedIdx;
 
@@ -256,15 +251,12 @@ Item {
   }
 
   function switchToWorkspace(workspace) {
-    try {
-      // Use the workspace name for activation via ext-workspace protocol
-      // Names are "1", "2", "3", "4" as configured in labwc rc.xml
-      const wsName = workspace.name || workspace.idx?.toString() || "1";
-
-      // Activate via ext-workspace protocol using workspace name
-      Quickshell.execDetached(["python3", helperScript, "--activate", wsName]);
-    } catch (e) {
-      Logger.e("LabwcService", "Failed to switch workspace:", e);
+    // Find the native Workspace object and activate it directly
+    const nativeWs = nativeWorkspaceMap[workspace.id] || nativeWorkspaceMap[workspace.oid];
+    if (nativeWs && nativeWs.canActivate) {
+      nativeWs.activate();
+    } else {
+      Logger.w("LabwcService", "Cannot activate workspace: " + (workspace.name || workspace.id));
     }
   }
 
@@ -276,8 +268,15 @@ Item {
     }
   }
 
+  function turnOnMonitors() {
+    try {
+      Quickshell.execDetached(["wlr-randr", "--on"]);
+    } catch (e) {
+      Logger.e("LabwcService", "Failed to turn on monitors:", e);
+    }
+  }
+
   function logout() {
-    stopWorkspaceHelper();
     try {
       // Exit labwc by sending SIGTERM to $LABWC_PID or using --exit flag
       Quickshell.execDetached(["sh", "-c", "labwc --exit || kill -s SIGTERM $LABWC_PID"]);
@@ -297,9 +296,5 @@ Item {
   function getFocusedScreen() {
     // de-activated until proper testing
     return null;
-  }
-
-  Component.onDestruction: {
-    stopWorkspaceHelper();
   }
 }

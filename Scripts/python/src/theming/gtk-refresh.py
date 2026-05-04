@@ -40,57 +40,79 @@ def theme_exists(theme_name: str) -> bool:
     return False
 
 
+GTK_IMPORT = '@import url("noctalia.css");'
+
+
+def ensure_gtk_css_import(gtk_css: Path, colors_file: Path, label: str) -> bool:
+    """
+    Append the noctalia.css import to gtk.css if not already present.
+    If gtk.css doesn't exist, create it with the import.
+    Does not overwrite user modifications (similar to niri template).
+    """
+    if not colors_file.exists():
+        print(f"Error: {label} noctalia.css not found at {colors_file}", file=sys.stderr)
+        return False
+
+    if gtk_css.exists() or gtk_css.is_symlink():
+        content = gtk_css.read_text()
+        # Already has the import (flexible: allow optional whitespace / different quoting)
+        if "noctalia.css" in content and "@import" in content:
+            return True
+        # Need to modify — handle symlinks carefully
+        target = gtk_css
+        if gtk_css.is_symlink():
+            resolved = gtk_css.resolve()
+            if os.access(resolved, os.W_OK):
+                # Writable symlink (e.g. dotfiles): edit the target directly
+                target = resolved
+            else:
+                # Read-only symlink (e.g. NixOS): convert to local file
+                gtk_css.unlink()
+                gtk_css.write_text(resolved.read_text())
+        # Append import to the end
+        new_content = content.rstrip()
+        if new_content and not new_content.endswith("\n"):
+            new_content += "\n"
+        new_content += "\n" + GTK_IMPORT + "\n"
+        target.write_text(new_content)
+        print(f"Appended {label} noctalia.css import to gtk.css")
+    else:
+        gtk_css.write_text(GTK_IMPORT + "\n")
+        print(f"Created {label} gtk.css with noctalia.css import")
+    return True
+
+
 async def apply_gtk3_colors(config_dir: Path):
     gtk3_dir = config_dir / "gtk-3.0"
     colors_file = gtk3_dir / "noctalia.css"
     gtk_css = gtk3_dir / "gtk.css"
-
-    if not colors_file.exists():
-        print(f"Error: noctalia.css not found at {colors_file}", file=sys.stderr)
-        return False
-
-    if gtk_css.is_symlink():
-        gtk_css.unlink()
-    elif gtk_css.exists():
-        backup_name = f"gtk.css.backup.{int(os.path.getmtime(gtk_css))}"
-        gtk_css.rename(gtk3_dir / backup_name)
-        print(f"Backed up existing gtk.css to {backup_name}")
-
-    gtk_css.symlink_to("noctalia.css")
-    print(f"Created symlink: {gtk_css} -> noctalia.css")
-    return True
+    return ensure_gtk_css_import(gtk_css, colors_file, "GTK3")
 
 
 async def apply_gtk4_colors(config_dir: Path):
     gtk4_dir = config_dir / "gtk-4.0"
     colors_file = gtk4_dir / "noctalia.css"
     gtk_css = gtk4_dir / "gtk.css"
-    gtk4_import = '@import url("noctalia.css");'
-
-    if not colors_file.exists():
-        print(f"Error: GTK4 noctalia.css not found at {colors_file}", file=sys.stderr)
-        return False
-
-    gtk_css.write_text(gtk4_import)
-    print("Updated GTK4 CSS import")
-    return True
+    return ensure_gtk_css_import(gtk_css, colors_file, "GTK4")
 
 
-async def refresh_theme():
+async def sync_system_appearance(mode: str, *, update_gtk_theme: bool = True) -> None:
+    """
+    Push light/dark to org.gnome.desktop.interface (gsettings or dconf fallback).
+    Used by the GTK template post-hook and ColorSchemeService when "Sync system theme"
+    is on (both set color-scheme and gtk-theme when themes exist). --appearance-only
+    skips CSS and only updates color-scheme for narrow tooling use.
+    """
     has_gsettings = shutil.which("gsettings")
     has_dconf = shutil.which("dconf")
 
     if not has_gsettings and not has_dconf:
-        print("No gsettings or dconf found, skip GTK refresh")
+        print("No gsettings or dconf found, skip system appearance sync")
         return
 
-    if mode == "light":
-        target_theme = "adw-gtk3"
-    else:
-        target_theme = "adw-gtk3-dark"
-
-    theme_available = theme_exists(target_theme)
-    if not theme_available:
+    target_theme = "adw-gtk3" if mode == "light" else "adw-gtk3-dark"
+    theme_available = update_gtk_theme and theme_exists(target_theme)
+    if update_gtk_theme and not theme_available:
         print(f"Theme '{target_theme}' not found, skipping GTK theme set")
 
     if has_gsettings:
@@ -108,19 +130,39 @@ async def refresh_theme():
 
 
 async def get_config_dir() -> Path:
-    # 1. project-specific override
-    if value := os.environ.get("NOCTALIA_CONFIG_DIR"):
-        return Path(value).expanduser()
+    # Returns the XDG config home (e.g. ~/.config)
+    # GTK config lives at ~/.config/gtk-3.0/ and ~/.config/gtk-4.0/.
 
-    # 2. XDG standard
+    # 1. XDG standard
     if value := os.environ.get("XDG_CONFIG_HOME"):
         return Path(value).expanduser()
 
-    # 3. fallback
+    # 2. fallback
     return Path.home() / ".config"
 
 
+def parse_args():
+    argv = sys.argv[1:]
+    appearance_only = False
+    if argv and argv[0] == "--appearance-only":
+        appearance_only = True
+        argv = argv[1:]
+    if len(argv) != 1 or argv[0] not in ("dark", "light"):
+        print(
+            "Usage: gtk-refresh.py [--appearance-only] (dark|light)",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    return appearance_only, argv[0]
+
+
 async def main():
+    appearance_only, mode = parse_args()
+
+    if appearance_only:
+        await sync_system_appearance(mode, update_gtk_theme=False)
+        return
+
     config_dir = await get_config_dir()
 
     if not config_dir.is_dir():
@@ -133,13 +175,14 @@ async def main():
     results = await asyncio.gather(apply_gtk3_colors(config_dir), apply_gtk4_colors(config_dir))
 
     if all(results):
-        await refresh_theme()
+        await sync_system_appearance(mode, update_gtk_theme=True)
         print("GTK colors applied successfully")
     else:
+        # Still push light/dark preference so portal/GTK apps follow the shell even when
+        # gtk.css / noctalia.css setup failed.
+        await sync_system_appearance(mode, update_gtk_theme=False)
         sys.exit(1)
 
 
 if __name__ == "__main__":
-    mode = sys.argv[1]  # light or dark
-
     asyncio.run(main())

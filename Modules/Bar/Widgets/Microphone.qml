@@ -21,7 +21,7 @@ Item {
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
 
-  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId] ?? {}
   // Explicit screenName property ensures reactive binding when screen changes
   readonly property string screenName: screen ? screen.name : ""
   property var widgetSettings: {
@@ -143,13 +143,21 @@ Item {
     suffix: "%"
     forceOpen: displayMode === "alwaysShow"
     forceClose: displayMode === "alwaysHide"
-    tooltipText: I18n.tr("tooltips.microphone-volume-at", {
-                           "volume": (() => {
-                                        const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
-                                        const displayVolume = Math.min(maxVolume, AudioService.inputVolume);
-                                        return Math.round(displayVolume * 100);
-                                      })()
-                         })
+    tooltipText: {
+      if (PanelService.getPanel("audioPanel", screen)?.isPanelOpen) {
+        return "";
+      } else {
+        const nick = AudioService.source?.nickname ?? "";
+        const volumeText = I18n.tr("tooltips.microphone-volume-at", {
+                                     "volume": (() => {
+                                                  const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
+                                                  const displayVolume = Math.min(maxVolume, AudioService.inputVolume);
+                                                  return Math.round(displayVolume * 100);
+                                                })()
+                                   });
+        return nick ? volumeText + "\n" + nick : volumeText;
+      }
+    }
 
     onWheel: function (delta) {
       // As soon as we start scrolling to adjust volume, hide the tooltip

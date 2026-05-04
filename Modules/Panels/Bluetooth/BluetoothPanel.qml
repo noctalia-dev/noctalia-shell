@@ -54,9 +54,17 @@ SmartPanel {
           NToggle {
             id: bluetoothSwitch
             checked: BluetoothService.enabled
-            enabled: !Settings.data.network.airplaneModeEnabled && BluetoothService.bluetoothAvailable
+            enabled: !NetworkService.airplaneModeEnabled && BluetoothService.bluetoothAvailable
             onToggled: checked => BluetoothService.setBluetoothEnabled(checked)
             baseSize: Style.baseWidgetSize * 0.65
+          }
+
+          NIconButton {
+            icon: Settings.data.network.bluetoothAutoConnect ? "bluetooth-connected" : "bluetooth"
+            tooltipText: Settings.data.network.bluetoothAutoConnect ? I18n.tr("tooltips.bluetooth-auto-connect-on") : I18n.tr("tooltips.bluetooth-auto-connect-off")
+            colorFg: Settings.data.network.bluetoothAutoConnect ? Color.mPrimary : Color.mOnSurfaceVariant
+            baseSize: Style.baseWidgetSize * 0.8
+            onClicked: Settings.data.network.bluetoothAutoConnect = !Settings.data.network.bluetoothAutoConnect
           }
 
           NIconButton {
