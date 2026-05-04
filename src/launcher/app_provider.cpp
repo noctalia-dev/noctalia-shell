@@ -6,11 +6,13 @@
 
 #include <algorithm>
 #include <array>
+#include <cerrno>
 #include <csignal>
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
 #include <string_view>
+#include <sys/wait.h>
 #include <unistd.h>
 
 namespace {
@@ -216,8 +218,19 @@ namespace {
     }
 
     if (pid == 0) {
-      // Child process
-      setsid();
+      // Intermediate child: create a new session, then fork again so the
+      // grandchild is fully detached and re-parented away from noctalia.
+      if (setsid() < 0) {
+        _exit(1);
+      }
+
+      const pid_t detachedPid = fork();
+      if (detachedPid < 0) {
+        _exit(1);
+      }
+      if (detachedPid > 0) {
+        _exit(0);
+      }
 
       // Set activation token so the compositor can focus the app's window
       if (!activationToken.empty()) {
@@ -251,8 +264,10 @@ namespace {
       _exit(1);
     }
 
-    // Parent: fire and forget. Child is session leader.
-    // We intentionally do not waitpid — the child is its own session.
+    // Reap only the intermediate child to avoid zombies.
+    int status = 0;
+    while (waitpid(pid, &status, 0) < 0 && errno == EINTR) {
+    }
   }
 
 } // namespace
