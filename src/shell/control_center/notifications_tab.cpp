@@ -1,15 +1,14 @@
 #include "shell/control_center/notifications_tab.h"
 
-#include "core/ui_phase.h"
 #include "i18n/i18n.h"
 #include "net/uri.h"
 #include "notification/notification.h"
 #include "notification/notification_manager.h"
 #include "render/core/renderer.h"
 #include "render/core/texture_manager.h"
-#include "render/scene/node.h"
 #include "shell/panel/panel_manager.h"
 #include "time/time_format.h"
+#include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
@@ -17,16 +16,21 @@
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/segmented.h"
+#include "ui/controls/virtual_list_view.h"
 #include "ui/palette.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <ctime>
 #include <filesystem>
 #include <functional>
 #include <memory>
+#include <optional>
+#include <string>
 #include <string_view>
 #include <unistd.h>
+#include <utility>
 #include <vector>
 
 using namespace control_center;
@@ -38,6 +42,9 @@ namespace {
   constexpr float kHistoryIconGlyphSize = 22.0f;
 
   constexpr float kNotificationActionButtonSize = Style::controlHeightSm;
+  constexpr int kSummaryMaxLines = 2;
+  constexpr int kBodyMaxLines = 3;
+  constexpr int kExpandedMaxLines = 500;
 
   std::filesystem::path remoteNotificationIconCachePath(std::string_view url) {
     return std::filesystem::path("/tmp") / "noctalia-notification-icons" /
@@ -74,9 +81,6 @@ namespace {
     const std::string& resolved = resolver.resolve(localPath);
     return resolved.empty() ? std::string() : resolved;
   }
-  constexpr int kSummaryMaxLines = 2;
-  constexpr int kBodyMaxLines = 3;
-  constexpr int kExpandedMaxLines = 500;
 
   std::string statusText(const NotificationHistoryEntry& entry) {
     if (entry.active) {
@@ -115,6 +119,12 @@ namespace {
     return formatElapsedSince(n.receivedTime);
   }
 
+  std::int64_t currentRelativeTimeSlot() {
+    return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch())
+               .count() /
+           15;
+  }
+
   bool matchesHistoryFilter(const NotificationHistoryEntry& e, std::size_t filterIndex) {
     if (filterIndex == 0) {
       return true;
@@ -143,8 +153,16 @@ namespace {
     if (filterIndex == 2) {
       return isYesterday;
     }
-    // Older
     return !isToday && !isYesterday;
+  }
+
+  float measuredTextHeight(Renderer& renderer, std::string_view text, float fontSize, bool bold, float maxWidth,
+                           int maxLines) {
+    if (text.empty()) {
+      return 0.0f;
+    }
+    const auto bounds = renderer.measureText(text, fontSize, bold, maxWidth, maxLines);
+    return std::max(0.0f, bounds.bottom - bounds.top);
   }
 
   bool canExpandText(Renderer& renderer, std::string_view text, float fontSize, bool bold, float maxWidth,
@@ -153,16 +171,348 @@ namespace {
       return false;
     }
 
-    const auto collapsed = renderer.measureText(text, fontSize, bold, maxWidth, collapsedMaxLines);
-    const auto expanded = renderer.measureText(text, fontSize, bold, maxWidth, kExpandedMaxLines);
-    const float collapsedHeight = collapsed.bottom - collapsed.top;
-    const float expandedHeight = expanded.bottom - expanded.top;
+    const float collapsedHeight = measuredTextHeight(renderer, text, fontSize, bold, maxWidth, collapsedMaxLines);
+    const float expandedHeight = measuredTextHeight(renderer, text, fontSize, bold, maxWidth, kExpandedMaxLines);
     return expandedHeight > collapsedHeight + 0.5f;
   }
 
+  struct NotificationCardMetrics {
+    std::string summaryText;
+    std::string metaLine;
+    bool canExpand = false;
+    bool expanded = false;
+    float height = 0.0f;
+    float cardTextWidth = 0.0f;
+    float metaTextWidth = 0.0f;
+  };
+
+  NotificationCardMetrics measureNotificationCard(Renderer& renderer, const NotificationHistoryEntry& entry,
+                                                  float scale, float width, bool expandedRequested) {
+    NotificationCardMetrics metrics;
+    const float cardWidth = std::max(0.0f, width);
+    const float cardHorizontalPadding = Style::spaceMd * scale * 2.0f;
+    metrics.cardTextWidth = std::max(0.0f, cardWidth - cardHorizontalPadding);
+    metrics.summaryText = entry.notification.summary.empty() ? i18n::tr("control-center.notifications.untitled")
+                                                             : entry.notification.summary;
+    const std::string& bodyText = entry.notification.body;
+
+    const bool summaryExpandable = canExpandText(renderer, metrics.summaryText, Style::fontSizeBody * scale, true,
+                                                 metrics.cardTextWidth, kSummaryMaxLines);
+    // Preserve the previous expand affordance calculation, which used body font size here.
+    const bool bodyExpandable =
+        canExpandText(renderer, bodyText, Style::fontSizeBody * scale, false, metrics.cardTextWidth, kBodyMaxLines);
+    metrics.canExpand = summaryExpandable || bodyExpandable;
+    metrics.expanded = metrics.canExpand && expandedRequested;
+
+    const float iconPx = kHistoryIconSize * scale;
+    const float iconColumn = iconPx + Style::spaceSm * scale;
+    const float actionButtonSize = kNotificationActionButtonSize * scale;
+    const float actionButtonsGap = Style::spaceXs * scale;
+    const float headerActionsWidth =
+        actionButtonSize + (metrics.canExpand ? (actionButtonsGap + actionButtonSize) : 0.0f);
+    const float leftClusterWidth = metrics.cardTextWidth - headerActionsWidth;
+    metrics.metaTextWidth = std::max(0.0f, leftClusterWidth - iconColumn);
+
+    metrics.metaLine = entry.notification.appName + " • " + relativeMetaLine(entry.notification);
+    if (!entry.active) {
+      metrics.metaLine += " • ";
+      metrics.metaLine += statusText(entry);
+    }
+
+    const float metaHeight =
+        measuredTextHeight(renderer, metrics.metaLine, Style::fontSizeCaption * scale, false, metrics.metaTextWidth, 0);
+    const float headerHeight = std::max({iconPx, actionButtonSize, metaHeight});
+    const float summaryHeight =
+        measuredTextHeight(renderer, metrics.summaryText, Style::fontSizeBody * scale, true, metrics.cardTextWidth,
+                           metrics.expanded ? kExpandedMaxLines : kSummaryMaxLines);
+    const float bodyHeight =
+        bodyText.empty()
+            ? 0.0f
+            : measuredTextHeight(renderer, bodyText, Style::fontSizeCaption * scale, false, metrics.cardTextWidth,
+                                 metrics.expanded ? kExpandedMaxLines : kBodyMaxLines);
+
+    const float paddingY = (Style::spaceSm + Style::spaceXs) * scale * 2.0f;
+    const int childCount = bodyText.empty() ? 2 : 3;
+    const float gaps = Style::spaceSm * scale * static_cast<float>(childCount - 1);
+    metrics.height = paddingY + headerHeight + summaryHeight + bodyHeight + gaps;
+    return metrics;
+  }
+
+  std::uint64_t rawImageKey(const NotificationHistoryEntry& entry) {
+    return (static_cast<std::uint64_t>(entry.notification.id) << 32U) ^ entry.eventSerial;
+  }
+
+  std::uint64_t revisionForEntry(const NotificationHistoryEntry& entry, bool expanded, std::int64_t relativeSlot) {
+    std::uint64_t revision = entry.eventSerial;
+    revision ^= static_cast<std::uint64_t>(relativeSlot < 0 ? 0 : relativeSlot) * 0x9E3779B185EBCA87ULL;
+    if (expanded) {
+      revision ^= 0xD1B54A32D192ED03ULL;
+    }
+    return revision;
+  }
+
+  class NotificationHistoryRow final : public Flex {
+  public:
+    explicit NotificationHistoryRow(float scale) : m_scale(scale) {
+      applyNotificationCardStyle(*this, scale);
+      setFillWidth(true);
+
+      auto header = std::make_unique<Flex>();
+      header->setDirection(FlexDirection::Horizontal);
+      header->setAlign(FlexAlign::Center);
+      header->setJustify(FlexJustify::SpaceBetween);
+      header->setGap(Style::spaceSm * scale);
+      m_header = static_cast<Flex*>(addChild(std::move(header)));
+
+      auto leftCluster = std::make_unique<Flex>();
+      leftCluster->setDirection(FlexDirection::Horizontal);
+      leftCluster->setAlign(FlexAlign::Center);
+      leftCluster->setGap(Style::spaceSm * scale);
+      leftCluster->setFlexGrow(1.0f);
+      m_leftCluster = static_cast<Flex*>(m_header->addChild(std::move(leftCluster)));
+
+      auto iconSlot = std::make_unique<Box>();
+      iconSlot->setSize(kHistoryIconSize * scale, kHistoryIconSize * scale);
+      m_iconSlot = static_cast<Box*>(m_leftCluster->addChild(std::move(iconSlot)));
+
+      auto image = std::make_unique<Image>();
+      image->setVisible(false);
+      m_image = static_cast<Image*>(m_iconSlot->addChild(std::move(image)));
+
+      auto fallback = std::make_unique<Glyph>();
+      fallback->setGlyph("bell");
+      fallback->setVisible(false);
+      m_fallback = static_cast<Glyph*>(m_iconSlot->addChild(std::move(fallback)));
+
+      auto meta = std::make_unique<Label>();
+      meta->setCaptionStyle();
+      meta->setFontSize(Style::fontSizeCaption * scale);
+      meta->setFlexGrow(1.0f);
+      m_meta = static_cast<Label*>(m_leftCluster->addChild(std::move(meta)));
+
+      auto headerActions = std::make_unique<Flex>();
+      headerActions->setDirection(FlexDirection::Horizontal);
+      headerActions->setAlign(FlexAlign::Center);
+      headerActions->setGap(Style::spaceXs * scale);
+      m_headerActions = static_cast<Flex*>(m_header->addChild(std::move(headerActions)));
+
+      m_expand = static_cast<Button*>(m_headerActions->addChild(makeActionButton("chevron-down", scale)));
+      m_dismiss = static_cast<Button*>(m_headerActions->addChild(makeActionButton("trash", scale)));
+
+      auto summary = std::make_unique<Label>();
+      summary->setBold(true);
+      summary->setFontSize(Style::fontSizeBody * scale);
+      m_summary = static_cast<Label*>(addChild(std::move(summary)));
+
+      auto body = std::make_unique<Label>();
+      body->setFontSize(Style::fontSizeCaption * scale);
+      body->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+      body->setVisible(false);
+      m_body = static_cast<Label*>(addChild(std::move(body)));
+    }
+
+    void bind(Renderer& renderer, const NotificationHistoryEntry& entry, float width, bool expanded,
+              IconResolver& iconResolver, std::function<void(uint32_t)> onToggleExpanded,
+              std::function<void(uint32_t, bool)> onRemove) {
+      const NotificationCardMetrics metrics = measureNotificationCard(renderer, entry, m_scale, width, expanded);
+      setMinWidth(width);
+      setSize(width, metrics.height);
+
+      const float iconPx = kHistoryIconSize * m_scale;
+      m_iconSlot->setSize(iconPx, iconPx);
+
+      bindIcon(renderer, entry, iconResolver);
+
+      m_meta->setText(metrics.metaLine);
+      m_meta->setColor(colorSpecFromRole(statusColorRole(entry)));
+      m_meta->setMaxWidth(metrics.metaTextWidth);
+      m_meta->measure(renderer);
+
+      m_expand->setVisible(metrics.canExpand);
+      m_expand->setEnabled(metrics.canExpand);
+      m_expand->setGlyph(metrics.expanded ? "chevron-up" : "chevron-down");
+      m_expand->setOnClick(
+          [onToggleExpanded = std::move(onToggleExpanded), id = entry.notification.id]() { onToggleExpanded(id); });
+
+      m_dismiss->setOnClick([onRemove = std::move(onRemove), id = entry.notification.id, active = entry.active]() {
+        onRemove(id, active);
+      });
+
+      m_summary->setText(metrics.summaryText);
+      m_summary->setMaxWidth(metrics.cardTextWidth);
+      m_summary->setMaxLines(metrics.expanded ? kExpandedMaxLines : kSummaryMaxLines);
+      m_summary->measure(renderer);
+
+      if (entry.notification.body.empty()) {
+        m_body->setVisible(false);
+        m_body->setText("");
+      } else {
+        m_body->setVisible(true);
+        m_body->setText(entry.notification.body);
+        m_body->setMaxWidth(metrics.cardTextWidth);
+        m_body->setMaxLines(metrics.expanded ? kExpandedMaxLines : kBodyMaxLines);
+        m_body->measure(renderer);
+      }
+    }
+
+  private:
+    enum class ImageKind {
+      None,
+      File,
+      Raw,
+    };
+
+    static std::unique_ptr<Button> makeActionButton(std::string_view glyph, float scale) {
+      auto button = std::make_unique<Button>();
+      button->setGlyph(glyph);
+      button->setVariant(ButtonVariant::Ghost);
+      button->setGlyphSize(Style::fontSizeBody * scale);
+      button->setMinWidth(kNotificationActionButtonSize * scale);
+      button->setMinHeight(kNotificationActionButtonSize * scale);
+      button->setPadding(Style::spaceXs * scale);
+      button->setRadius(Style::radiusMd * scale);
+      return button;
+    }
+
+    void showFallbackIcon(Renderer& renderer) {
+      if (m_imageKind != ImageKind::None) {
+        m_image->clear(renderer);
+      }
+      m_imageKind = ImageKind::None;
+      m_rawImageKey = 0;
+      m_image->setVisible(false);
+
+      const float iconPx = kHistoryIconSize * m_scale;
+      m_fallback->setGlyph("bell");
+      m_fallback->setGlyphSize(kHistoryIconGlyphSize * m_scale);
+      m_fallback->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+      m_fallback->measure(renderer);
+      m_fallback->setPosition(std::round((iconPx - m_fallback->width()) * 0.5f),
+                              std::round((iconPx - m_fallback->height()) * 0.5f));
+      m_fallback->setVisible(true);
+    }
+
+    void bindIcon(Renderer& renderer, const NotificationHistoryEntry& entry, IconResolver& iconResolver) {
+      const float iconPx = kHistoryIconSize * m_scale;
+      m_image->setSize(iconPx, iconPx);
+      m_image->setPosition(0.0f, 0.0f);
+      m_image->setRadius(kHistoryIconRadius * m_scale);
+      m_image->setFit(ImageFit::Cover);
+
+      const std::string iconPath = resolveHistoryIconPath(entry.notification, iconResolver);
+      if (!iconPath.empty()) {
+        const int targetSize = static_cast<int>(std::round(iconPx));
+        const bool ready = m_image->setSourceFile(renderer, iconPath, targetSize);
+        if (ready) {
+          m_imageKind = ImageKind::File;
+          m_rawImageKey = 0;
+          m_image->setVisible(true);
+          m_fallback->setVisible(false);
+          return;
+        }
+      }
+
+      if (entry.notification.imageData.has_value()) {
+        const auto& image = *entry.notification.imageData;
+        if (image.width > 0 && image.height > 0 && !image.data.empty()) {
+          const bool validImageMetadata = image.bitsPerSample == 8 && ((image.channels == 4 && image.hasAlpha) ||
+                                                                       (image.channels == 3 && !image.hasAlpha));
+          const PixmapFormat format = image.channels == 3 ? PixmapFormat::RGB : PixmapFormat::RGBA;
+          const std::uint64_t key = rawImageKey(entry);
+          bool ready = m_imageKind == ImageKind::Raw && m_rawImageKey == key && m_image->hasImage();
+          if (!ready && validImageMetadata) {
+            ready = m_image->setSourceRaw(renderer, image.data.data(), image.data.size(), image.width, image.height,
+                                          image.rowStride, format, true);
+          }
+          if (ready) {
+            m_imageKind = ImageKind::Raw;
+            m_rawImageKey = key;
+            m_image->setVisible(true);
+            m_fallback->setVisible(false);
+            return;
+          }
+        }
+      }
+
+      showFallbackIcon(renderer);
+    }
+
+    float m_scale = 1.0f;
+    Flex* m_header = nullptr;
+    Flex* m_leftCluster = nullptr;
+    Box* m_iconSlot = nullptr;
+    Image* m_image = nullptr;
+    Glyph* m_fallback = nullptr;
+    Label* m_meta = nullptr;
+    Flex* m_headerActions = nullptr;
+    Button* m_expand = nullptr;
+    Button* m_dismiss = nullptr;
+    Label* m_summary = nullptr;
+    Label* m_body = nullptr;
+    ImageKind m_imageKind = ImageKind::None;
+    std::uint64_t m_rawImageKey = 0;
+  };
+
 } // namespace
 
+class NotificationHistoryAdapter final : public VirtualListAdapter {
+public:
+  NotificationHistoryAdapter(NotificationsTab& owner, float scale) : m_owner(owner), m_scale(scale) {}
+
+  [[nodiscard]] std::size_t itemCount() const override { return m_owner.m_filtered.size(); }
+
+  [[nodiscard]] std::uint64_t itemKey(std::size_t index) const override {
+    if (index >= m_owner.m_filtered.size() || m_owner.m_filtered[index] == nullptr) {
+      return static_cast<std::uint64_t>(index);
+    }
+    return m_owner.m_filtered[index]->notification.id;
+  }
+
+  [[nodiscard]] std::uint64_t itemRevision(std::size_t index) const override {
+    if (index >= m_owner.m_filtered.size() || m_owner.m_filtered[index] == nullptr) {
+      return 0;
+    }
+    const auto& entry = *m_owner.m_filtered[index];
+    const bool expanded = m_owner.m_expandedIds.contains(entry.notification.id);
+    return revisionForEntry(entry, expanded, m_owner.m_lastRelativeTimeSlot);
+  }
+
+  [[nodiscard]] float measureItem(Renderer& renderer, std::size_t index, float width) override {
+    if (index >= m_owner.m_filtered.size() || m_owner.m_filtered[index] == nullptr) {
+      return 1.0f;
+    }
+    const auto& entry = *m_owner.m_filtered[index];
+    const bool expanded = m_owner.m_expandedIds.contains(entry.notification.id);
+    return measureNotificationCard(renderer, entry, m_scale, width, expanded).height;
+  }
+
+  [[nodiscard]] std::unique_ptr<Node> createItem() override {
+    return std::make_unique<NotificationHistoryRow>(m_scale);
+  }
+
+  void bindItem(Renderer& renderer, Node& item, std::size_t index, float width, bool /*hovered*/) override {
+    if (index >= m_owner.m_filtered.size() || m_owner.m_filtered[index] == nullptr) {
+      return;
+    }
+    auto* row = dynamic_cast<NotificationHistoryRow*>(&item);
+    if (row == nullptr) {
+      return;
+    }
+    const auto& entry = *m_owner.m_filtered[index];
+    row->bind(
+        renderer, entry, width, m_owner.m_expandedIds.contains(entry.notification.id), m_owner.m_iconResolver,
+        [this](uint32_t id) { m_owner.toggleNotificationExpanded(id); },
+        [this](uint32_t id, bool active) { m_owner.removeNotificationEntry(id, active); });
+  }
+
+private:
+  NotificationsTab& m_owner;
+  float m_scale = 1.0f;
+};
+
 NotificationsTab::NotificationsTab(NotificationManager* notifications) : m_notifications(notifications) {}
+
+NotificationsTab::~NotificationsTab() = default;
 
 std::unique_ptr<Flex> NotificationsTab::create() {
   const float scale = contentScale();
@@ -183,25 +533,47 @@ std::unique_ptr<Flex> NotificationsTab::create() {
   filter->setSelectedIndex(m_filterIndex);
   filter->setOnChange([this](std::size_t idx) {
     m_filterIndex = idx;
-    m_lastSerial = 0;
+    m_lastRebuildFilterIndex = static_cast<std::size_t>(-1);
+    if (m_list != nullptr) {
+      m_list->scrollView().setScrollOffset(0.0f);
+    }
     PanelManager::instance().refresh();
   });
   m_filter = filter.get();
   tab->addChild(std::move(filter));
 
-  auto scroll = std::make_unique<ScrollView>();
-  scroll->setScrollbarVisible(true);
-  scroll->setViewportPaddingH(0.0f);
-  scroll->setViewportPaddingV(0.0f);
-  scroll->clearFill();
-  scroll->clearBorder();
-  scroll->setFlexGrow(1.0f);
-  m_scroll = scroll.get();
-  m_list = scroll->content();
-  m_list->setDirection(FlexDirection::Vertical);
-  m_list->setAlign(FlexAlign::Stretch);
-  m_list->setGap(Style::spaceMd * scale);
-  tab->addChild(std::move(scroll));
+  m_adapter = std::make_unique<NotificationHistoryAdapter>(*this, scale);
+
+  auto list = std::make_unique<VirtualListView>();
+  list->setFlexGrow(1.0f);
+  list->setFillWidth(true);
+  list->setFillHeight(true);
+  list->setItemGap(Style::spaceMd * scale);
+  list->setOverscanItems(3);
+  list->setAdapter(m_adapter.get());
+  m_list = static_cast<VirtualListView*>(tab->addChild(std::move(list)));
+
+  auto empty = std::make_unique<Flex>();
+  applyNotificationCardStyle(*empty, scale);
+  empty->setAlign(FlexAlign::Center);
+  empty->setGap(Style::spaceSm * scale);
+  empty->setPadding(Style::spaceLg * scale, Style::spaceMd * scale);
+  empty->setVisible(false);
+  m_emptyCard = empty.get();
+
+  auto title = std::make_unique<Label>();
+  title->setBold(true);
+  title->setFontSize(Style::fontSizeBody * scale);
+  title->setColor(colorSpecFromRole(ColorRole::OnSurface));
+  m_emptyTitle = static_cast<Label*>(empty->addChild(std::move(title)));
+
+  auto body = std::make_unique<Label>();
+  body->setCaptionStyle();
+  body->setFontSize(Style::fontSizeCaption * scale);
+  body->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+  m_emptyBody = static_cast<Label*>(empty->addChild(std::move(body)));
+
+  tab->addChild(std::move(empty));
 
   return tab;
 }
@@ -228,49 +600,38 @@ std::unique_ptr<Flex> NotificationsTab::createHeaderActions() {
 }
 
 void NotificationsTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
-  if (m_root == nullptr || m_scroll == nullptr || m_filter == nullptr) {
+  if (m_root == nullptr || m_filter == nullptr) {
     return;
   }
 
+  refreshDataSnapshot();
   m_root->setSize(contentWidth, bodyHeight);
   m_root->layout(renderer);
-  const float initialWidth = m_scroll->contentViewportWidth();
-  rebuild(renderer, initialWidth);
-  m_scroll->layout(renderer);
-
-  const float settledWidth = m_scroll->contentViewportWidth();
-  if (std::abs(settledWidth - initialWidth) >= 0.5f) {
-    rebuild(renderer, settledWidth);
-    m_scroll->layout(renderer);
-  }
 }
 
 void NotificationsTab::doUpdate(Renderer& renderer) {
-  if (m_scroll == nullptr) {
-    return;
-  }
-
-  const float initialWidth = m_scroll->contentViewportWidth();
-  rebuild(renderer, initialWidth);
-  m_scroll->layout(renderer);
-
-  const float settledWidth = m_scroll->contentViewportWidth();
-  if (std::abs(settledWidth - initialWidth) >= 0.5f) {
-    rebuild(renderer, settledWidth);
-    m_scroll->layout(renderer);
+  if (refreshDataSnapshot() && m_root != nullptr) {
+    m_root->layout(renderer);
   }
 }
 
 void NotificationsTab::onClose() {
+  if (m_list != nullptr) {
+    m_list->setAdapter(nullptr);
+  }
   m_root = nullptr;
-  m_scroll = nullptr;
   m_list = nullptr;
+  m_emptyCard = nullptr;
+  m_emptyTitle = nullptr;
+  m_emptyBody = nullptr;
   m_filter = nullptr;
   m_clearAllButton = nullptr;
+  m_adapter.reset();
+  m_filtered.clear();
   m_expandedIds.clear();
   m_lastSerial = 0;
-  m_lastWidth = -1.0f;
   m_lastRelativeTimeSlot = -1;
+  m_lastRebuildFilterIndex = static_cast<std::size_t>(-1);
 }
 
 void NotificationsTab::clearAllNotifications() {
@@ -288,6 +649,10 @@ void NotificationsTab::clearAllNotifications() {
   }
   m_notifications->clearHistory();
   m_expandedIds.clear();
+  m_lastSerial = 0;
+  if (m_list != nullptr) {
+    m_list->notifyDataChanged();
+  }
   PanelManager::instance().refresh();
 }
 
@@ -301,6 +666,10 @@ void NotificationsTab::removeNotificationEntry(uint32_t id, bool wasActive) {
   }
   m_notifications->removeHistoryEntry(id);
   m_expandedIds.erase(id);
+  m_lastSerial = 0;
+  if (m_list != nullptr) {
+    m_list->notifyDataChanged();
+  }
   PanelManager::instance().refresh();
 }
 
@@ -310,263 +679,79 @@ void NotificationsTab::toggleNotificationExpanded(uint32_t id) {
   } else {
     m_expandedIds.insert(id);
   }
-  m_lastWidth = -1.0f;
+
+  if (m_list != nullptr) {
+    if (const auto index = filteredIndexForId(id); index.has_value()) {
+      m_list->notifyItemChanged(*index);
+    } else {
+      m_list->notifyDataChanged();
+    }
+  }
   PanelManager::instance().refresh();
 }
 
-void NotificationsTab::rebuild(Renderer& renderer, float width) {
-  uiAssertNotRendering("NotificationsTab::rebuild");
-  if (m_list == nullptr) {
-    return;
-  }
-
+bool NotificationsTab::refreshDataSnapshot() {
   const bool hasHistory = m_notifications != nullptr && !m_notifications->history().empty();
   if (m_clearAllButton != nullptr) {
     m_clearAllButton->setEnabled(hasHistory);
   }
 
   const std::uint64_t serial = m_notifications != nullptr ? m_notifications->changeSerial() : 0;
-  const std::int64_t relativeSlot =
-      std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count() /
-      15;
-  if (serial == m_lastSerial && std::abs(width - m_lastWidth) < 0.5f && relativeSlot == m_lastRelativeTimeSlot &&
-      m_filterIndex == m_lastRebuildFilterIndex) {
-    return;
+  const std::int64_t relativeSlot = currentRelativeTimeSlot();
+  const bool changed =
+      serial != m_lastSerial || relativeSlot != m_lastRelativeTimeSlot || m_filterIndex != m_lastRebuildFilterIndex;
+  if (!changed) {
+    updateEmptyState(hasHistory, !m_filtered.empty());
+    return false;
   }
 
-  while (!m_list->children().empty()) {
-    m_list->removeChild(m_list->children().front().get());
-  }
-
-  const float scale = contentScale();
-  const float cardWidth = std::max(0.0f, width);
-  const float actionButtonSize = kNotificationActionButtonSize * scale;
-  const float actionButtonsGap = Style::spaceXs * scale;
-  const float cardHorizontalPadding = Style::spaceMd * scale * 2.0f;
-  const float cardTextWidth = std::max(0.0f, cardWidth - cardHorizontalPadding);
-
-  if (m_notifications == nullptr || m_notifications->history().empty()) {
-    auto empty = std::make_unique<Flex>();
-    applyNotificationCardStyle(*empty, scale);
-    empty->setAlign(FlexAlign::Center);
-    empty->setGap(Style::spaceSm * scale);
-    empty->setPadding(Style::spaceLg * scale, Style::spaceMd * scale);
-    empty->setMinWidth(cardWidth);
-
-    auto title = std::make_unique<Label>();
-    title->setText(i18n::tr("control-center.notifications.empty-title"));
-    title->setBold(true);
-    title->setFontSize(Style::fontSizeBody * scale);
-    title->setColor(colorSpecFromRole(ColorRole::OnSurface));
-    empty->addChild(std::move(title));
-
-    auto body = std::make_unique<Label>();
-    body->setText(i18n::tr("control-center.notifications.empty-body"));
-    body->setCaptionStyle();
-    body->setFontSize(Style::fontSizeCaption * scale);
-    body->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
-    empty->addChild(std::move(body));
-
-    m_list->addChild(std::move(empty));
-    m_lastSerial = serial;
-    m_lastWidth = width;
-    m_lastRelativeTimeSlot = relativeSlot;
-    m_lastRebuildFilterIndex = m_filterIndex;
-    return;
-  }
-
-  std::vector<const NotificationHistoryEntry*> filtered;
-  filtered.reserve(m_notifications->history().size());
-  for (auto it = m_notifications->history().rbegin(); it != m_notifications->history().rend(); ++it) {
-    if (matchesHistoryFilter(*it, m_filterIndex)) {
-      filtered.push_back(&*it);
-    }
-  }
-
-  if (filtered.empty()) {
-    auto empty = std::make_unique<Flex>();
-    applyNotificationCardStyle(*empty, scale);
-    empty->setAlign(FlexAlign::Center);
-    empty->setGap(Style::spaceSm * scale);
-    empty->setPadding(Style::spaceLg * scale, Style::spaceMd * scale);
-    empty->setMinWidth(cardWidth);
-
-    auto title = std::make_unique<Label>();
-    title->setText(i18n::tr("control-center.notifications.filter-empty-title"));
-    title->setBold(true);
-    title->setFontSize(Style::fontSizeBody * scale);
-    title->setColor(colorSpecFromRole(ColorRole::OnSurface));
-    empty->addChild(std::move(title));
-
-    auto body = std::make_unique<Label>();
-    body->setText(i18n::tr("control-center.notifications.filter-empty-body"));
-    body->setCaptionStyle();
-    body->setFontSize(Style::fontSizeCaption * scale);
-    body->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
-    empty->addChild(std::move(body));
-
-    m_list->addChild(std::move(empty));
-    m_lastSerial = serial;
-    m_lastWidth = width;
-    m_lastRelativeTimeSlot = relativeSlot;
-    m_lastRebuildFilterIndex = m_filterIndex;
-    return;
-  }
-
-  for (const NotificationHistoryEntry* entry : filtered) {
-    const std::string summaryText = entry->notification.summary.empty()
-                                        ? i18n::tr("control-center.notifications.untitled")
-                                        : entry->notification.summary;
-    const std::string& bodyText = entry->notification.body;
-    const bool summaryExpandable =
-        canExpandText(renderer, summaryText, Style::fontSizeBody * scale, true, cardTextWidth, kSummaryMaxLines);
-    const bool bodyExpandable =
-        canExpandText(renderer, bodyText, Style::fontSizeBody * scale, false, cardTextWidth, kBodyMaxLines);
-    const bool canExpand = summaryExpandable || bodyExpandable;
-    const bool expanded = canExpand && m_expandedIds.contains(entry->notification.id);
-    if (!canExpand) {
-      m_expandedIds.erase(entry->notification.id);
-    }
-
-    const float iconPx = kHistoryIconSize * scale;
-    const float iconColumn = iconPx + Style::spaceSm * scale;
-    const float headerActionsWidth = actionButtonSize + (canExpand ? (actionButtonsGap + actionButtonSize) : 0.0f);
-    const float leftClusterWidth = cardTextWidth - headerActionsWidth;
-    const float metaTextWidth = std::max(0.0f, leftClusterWidth - iconColumn);
-
-    auto card = std::make_unique<Flex>();
-    applyNotificationCardStyle(*card, scale);
-    card->setMinWidth(cardWidth);
-
-    auto header = std::make_unique<Flex>();
-    header->setDirection(FlexDirection::Horizontal);
-    header->setAlign(FlexAlign::Center);
-    header->setJustify(FlexJustify::SpaceBetween);
-    header->setGap(Style::spaceSm * scale);
-
-    auto leftCluster = std::make_unique<Flex>();
-    leftCluster->setDirection(FlexDirection::Horizontal);
-    leftCluster->setAlign(FlexAlign::Center);
-    leftCluster->setGap(Style::spaceSm * scale);
-    leftCluster->setFlexGrow(1.0f);
-
-    auto iconSlot = std::make_unique<Node>();
-    iconSlot->setSize(iconPx, iconPx);
-    bool iconAssigned = false;
-    const std::string iconPath = resolveHistoryIconPath(entry->notification, m_iconResolver);
-    if (!iconPath.empty()) {
-      auto appIcon = std::make_unique<Image>();
-      appIcon->setSize(iconPx, iconPx);
-      appIcon->setPosition(0.0f, 0.0f);
-      appIcon->setRadius(kHistoryIconRadius * scale);
-      appIcon->setFit(ImageFit::Cover);
-      if (appIcon->setSourceFile(renderer, iconPath, static_cast<int>(std::round(iconPx)))) {
-        iconSlot->addChild(std::move(appIcon));
-        iconAssigned = true;
-      }
-    } else if (entry->notification.imageData.has_value()) {
-      const auto& image = *entry->notification.imageData;
-      if (image.width > 0 && image.height > 0 && !image.data.empty()) {
-        auto appIcon = std::make_unique<Image>();
-        appIcon->setSize(iconPx, iconPx);
-        appIcon->setPosition(0.0f, 0.0f);
-        appIcon->setRadius(kHistoryIconRadius * scale);
-        appIcon->setFit(ImageFit::Cover);
-        const bool validImageMetadata = image.bitsPerSample == 8 && ((image.channels == 4 && image.hasAlpha) ||
-                                                                     (image.channels == 3 && !image.hasAlpha));
-        const PixmapFormat format = image.channels == 3 ? PixmapFormat::RGB : PixmapFormat::RGBA;
-        if (validImageMetadata && appIcon->setSourceRaw(renderer, image.data.data(), image.data.size(), image.width,
-                                                        image.height, image.rowStride, format, true)) {
-          iconSlot->addChild(std::move(appIcon));
-          iconAssigned = true;
-        }
+  m_filtered.clear();
+  if (m_notifications != nullptr) {
+    m_filtered.reserve(m_notifications->history().size());
+    for (auto it = m_notifications->history().rbegin(); it != m_notifications->history().rend(); ++it) {
+      if (matchesHistoryFilter(*it, m_filterIndex)) {
+        m_filtered.push_back(&*it);
       }
     }
-    if (!iconAssigned) {
-      auto fallback = std::make_unique<Glyph>();
-      fallback->setGlyph("bell");
-      fallback->setGlyphSize(kHistoryIconGlyphSize * scale);
-      fallback->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
-      fallback->measure(renderer);
-      fallback->setPosition(std::round((iconPx - fallback->width()) * 0.5f),
-                            std::round((iconPx - fallback->height()) * 0.5f));
-      iconSlot->addChild(std::move(fallback));
-    }
-    leftCluster->addChild(std::move(iconSlot));
-
-    auto meta = std::make_unique<Label>();
-    std::string metaLine = entry->notification.appName + " • " + relativeMetaLine(entry->notification);
-    if (!entry->active) {
-      metaLine += " • ";
-      metaLine += statusText(*entry);
-    }
-    meta->setText(std::move(metaLine));
-    meta->setCaptionStyle();
-    meta->setFontSize(Style::fontSizeCaption * scale);
-    meta->setColor(colorSpecFromRole(statusColorRole(*entry)));
-    meta->setMaxWidth(metaTextWidth);
-    meta->setFlexGrow(1.0f);
-    meta->measure(renderer);
-    leftCluster->addChild(std::move(meta));
-    header->addChild(std::move(leftCluster));
-
-    auto headerActions = std::make_unique<Flex>();
-    headerActions->setDirection(FlexDirection::Horizontal);
-    headerActions->setAlign(FlexAlign::Center);
-    headerActions->setGap(actionButtonsGap);
-
-    if (canExpand) {
-      auto expand = std::make_unique<Button>();
-      expand->setGlyph(expanded ? "chevron-up" : "chevron-down");
-      expand->setVariant(ButtonVariant::Ghost);
-      expand->setGlyphSize(Style::fontSizeBody * scale);
-      expand->setMinWidth(actionButtonSize);
-      expand->setMinHeight(actionButtonSize);
-      expand->setPadding(Style::spaceXs * scale);
-      expand->setRadius(Style::radiusMd * scale);
-      expand->setOnClick([this, id = entry->notification.id]() { toggleNotificationExpanded(id); });
-      headerActions->addChild(std::move(expand));
-    }
-
-    auto dismiss = std::make_unique<Button>();
-    dismiss->setGlyph("trash");
-    dismiss->setVariant(ButtonVariant::Ghost);
-    dismiss->setGlyphSize(Style::fontSizeBody * scale);
-    dismiss->setMinWidth(actionButtonSize);
-    dismiss->setMinHeight(actionButtonSize);
-    dismiss->setPadding(Style::spaceXs * scale);
-    dismiss->setRadius(Style::radiusMd * scale);
-    dismiss->setOnClick(
-        [this, id = entry->notification.id, active = entry->active]() { removeNotificationEntry(id, active); });
-    headerActions->addChild(std::move(dismiss));
-    header->addChild(std::move(headerActions));
-    card->addChild(std::move(header));
-
-    auto summary = std::make_unique<Label>();
-    summary->setText(summaryText);
-    summary->setBold(true);
-    summary->setFontSize(Style::fontSizeBody * scale);
-    summary->setMaxWidth(cardTextWidth);
-    summary->setMaxLines(expanded ? kExpandedMaxLines : kSummaryMaxLines);
-    summary->measure(renderer);
-    card->addChild(std::move(summary));
-
-    if (!bodyText.empty()) {
-      auto body = std::make_unique<Label>();
-      body->setText(bodyText);
-      body->setFontSize(Style::fontSizeCaption * scale);
-      body->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
-      body->setMaxWidth(cardTextWidth);
-      body->setMaxLines(expanded ? kExpandedMaxLines : kBodyMaxLines);
-      body->measure(renderer);
-      card->addChild(std::move(body));
-    }
-
-    m_list->addChild(std::move(card));
   }
 
   m_lastSerial = serial;
-  m_lastWidth = width;
   m_lastRelativeTimeSlot = relativeSlot;
   m_lastRebuildFilterIndex = m_filterIndex;
+
+  updateEmptyState(hasHistory, !m_filtered.empty());
+  if (m_list != nullptr) {
+    m_list->notifyDataChanged();
+  }
+  return true;
+}
+
+void NotificationsTab::updateEmptyState(bool hasHistory, bool hasFiltered) {
+  if (m_list != nullptr) {
+    m_list->setVisible(hasFiltered);
+  }
+  if (m_emptyCard != nullptr) {
+    m_emptyCard->setVisible(!hasFiltered);
+  }
+
+  if (m_emptyTitle == nullptr || m_emptyBody == nullptr) {
+    return;
+  }
+
+  if (hasHistory) {
+    m_emptyTitle->setText(i18n::tr("control-center.notifications.filter-empty-title"));
+    m_emptyBody->setText(i18n::tr("control-center.notifications.filter-empty-body"));
+  } else {
+    m_emptyTitle->setText(i18n::tr("control-center.notifications.empty-title"));
+    m_emptyBody->setText(i18n::tr("control-center.notifications.empty-body"));
+  }
+}
+
+std::optional<std::size_t> NotificationsTab::filteredIndexForId(uint32_t id) const {
+  for (std::size_t i = 0; i < m_filtered.size(); ++i) {
+    if (m_filtered[i] != nullptr && m_filtered[i]->notification.id == id) {
+      return i;
+    }
+  }
+  return std::nullopt;
 }
