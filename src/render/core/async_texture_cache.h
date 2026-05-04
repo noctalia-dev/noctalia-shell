@@ -20,7 +20,30 @@ class GlSharedContext;
 
 class AsyncTextureCache : public PollSource {
 public:
-  using ReadyCallback = std::function<void()>;
+  using TextureReadyCallback = std::function<void(TextureHandle)>;
+
+  class ReadySubscription {
+  public:
+    ReadySubscription() = default;
+    ~ReadySubscription();
+
+    ReadySubscription(const ReadySubscription&) = delete;
+    ReadySubscription& operator=(const ReadySubscription&) = delete;
+
+    ReadySubscription(ReadySubscription&& other) noexcept;
+    ReadySubscription& operator=(ReadySubscription&& other) noexcept;
+
+    void disconnect();
+
+  private:
+    friend class AsyncTextureCache;
+
+    ReadySubscription(AsyncTextureCache* cache, std::weak_ptr<void> lifetimeToken, std::uint64_t id);
+
+    AsyncTextureCache* m_cache = nullptr;
+    std::weak_ptr<void> m_lifetimeToken;
+    std::uint64_t m_id = 0;
+  };
 
   AsyncTextureCache();
   ~AsyncTextureCache() override;
@@ -29,7 +52,8 @@ public:
   AsyncTextureCache& operator=(const AsyncTextureCache&) = delete;
 
   void initialize(GlSharedContext* sharedGl);
-  void setReadyCallback(ReadyCallback callback);
+  [[nodiscard]] ReadySubscription subscribeReady(const std::string& path, int targetSize, bool mipmap,
+                                                 TextureReadyCallback callback);
 
   [[nodiscard]] TextureHandle acquire(const std::string& path, int targetSize = 0, bool mipmap = false);
   [[nodiscard]] TextureHandle peek(const std::string& path, int targetSize = 0, bool mipmap = false) const;
@@ -72,12 +96,19 @@ private:
     bool failed = false;
   };
 
+  struct ReadyListener {
+    RequestKey key;
+    TextureReadyCallback callback;
+  };
+
   void workerLoop();
   void signalMain();
   void pushResult(DecodedJob job);
   void makeCurrent();
   void touchEntry(Entry& entry);
   void pruneUnusedEntries(std::size_t maxUnusedEntries);
+  void removeReadyListener(std::uint64_t id);
+  void notifyReady(const RequestKey& key, TextureHandle handle);
 
   [[nodiscard]] static RequestKey makeKey(const std::string& path, int targetSize, bool mipmap);
 
@@ -99,5 +130,7 @@ private:
   // Main thread only state.
   std::unordered_map<RequestKey, Entry, RequestKeyHash> m_entries;
   std::uint64_t m_touchSerial = 0;
-  ReadyCallback m_readyCallback;
+  std::unordered_map<std::uint64_t, ReadyListener> m_readyListeners;
+  std::uint64_t m_nextReadyListenerId = 0;
+  std::shared_ptr<int> m_lifetimeToken = std::make_shared<int>(0);
 };

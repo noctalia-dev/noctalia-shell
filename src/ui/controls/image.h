@@ -1,15 +1,16 @@
 #pragma once
 
+#include "render/core/async_texture_cache.h"
 #include "render/core/texture_manager.h"
 #include "render/scene/node.h"
 #include "ui/palette.h"
 #include "ui/signal.h"
 
+#include <functional>
 #include <string>
 
 class ImageNode;
 class Renderer;
-class AsyncTextureCache;
 
 enum class ImageFit : std::uint8_t {
   Contain,
@@ -19,6 +20,8 @@ enum class ImageFit : std::uint8_t {
 
 class Image : public Node {
 public:
+  using AsyncReadyCallback = std::function<void()>;
+
   Image();
   ~Image() override;
 
@@ -28,6 +31,7 @@ public:
   void setTint(const Color& tint);
   void setFit(ImageFit fit);
   void setPadding(float padding);
+  void setAsyncReadyCallback(AsyncReadyCallback callback);
 
   bool setSourceFile(Renderer& renderer, const std::string& path, int targetSize = 0, bool mipmap = false);
   bool setSourceFileAsync(Renderer& renderer, AsyncTextureCache& cache, const std::string& path, int targetSize = 0,
@@ -61,6 +65,8 @@ private:
   void applyPalette();
   void updateLayout();
   void clearAsyncSource();
+  void subscribeAsyncReady();
+  void handleAsyncTextureReady(TextureHandle handle);
 
   ImageNode* m_image = nullptr;
   TextureHandle m_texture{};
@@ -76,9 +82,11 @@ private:
   float m_borderWidth = 0.0f;
   Renderer* m_renderer = nullptr;
   AsyncTextureCache* m_asyncTextureCache = nullptr;
+  AsyncTextureCache::ReadySubscription m_asyncReadySub;
   std::string m_asyncSourcePath;
   int m_asyncRequestedTargetSize = 0;
   int m_asyncTargetSize = 0;
   bool m_asyncMipmap = false;
+  AsyncReadyCallback m_asyncReadyCallback;
   Signal<>::ScopedConnection m_paletteConn;
 };

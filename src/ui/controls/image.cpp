@@ -77,6 +77,8 @@ void Image::setPadding(float padding) {
   updateLayout();
 }
 
+void Image::setAsyncReadyCallback(AsyncReadyCallback callback) { m_asyncReadyCallback = std::move(callback); }
+
 bool Image::setSourceFile(Renderer& renderer, const std::string& path, int targetSize, bool mipmap) {
   const int requestedTargetSize = std::max(0, targetSize);
   const int textureTargetSize = renderTargetSize(renderer, requestedTargetSize);
@@ -139,8 +141,14 @@ bool Image::setSourceFileAsync(Renderer& renderer, AsyncTextureCache& cache, con
     m_asyncTargetSize = normalizedTargetSize;
     m_asyncMipmap = mipmap;
     m_texture = cache.acquire(path, normalizedTargetSize, mipmap);
+    if (m_texture.id == 0) {
+      subscribeAsyncReady();
+    }
   } else if (m_texture.id == 0) {
     m_texture = cache.peek(path, normalizedTargetSize, mipmap);
+    if (m_texture.id != 0) {
+      m_asyncReadySub.disconnect();
+    }
   }
 
   if (m_texture.id == 0) {
@@ -257,6 +265,7 @@ void Image::clear(Renderer& renderer) {
 }
 
 void Image::clearAsyncSource() {
+  m_asyncReadySub.disconnect();
   if (m_asyncTextureCache != nullptr && !m_asyncSourcePath.empty()) {
     m_asyncTextureCache->release(m_asyncSourcePath, m_asyncTargetSize, m_asyncMipmap);
   }
@@ -299,6 +308,7 @@ void Image::doLayout(Renderer& renderer) {
   if (m_asyncTextureCache != nullptr && !m_asyncSourcePath.empty()) {
     const int textureTargetSize = renderTargetSize(renderer, m_asyncRequestedTargetSize);
     if (textureTargetSize != m_asyncTargetSize) {
+      m_asyncReadySub.disconnect();
       m_asyncTextureCache->release(m_asyncSourcePath, m_asyncTargetSize, m_asyncMipmap);
       m_texture = {};
       m_ownsTexture = false;
@@ -314,6 +324,8 @@ void Image::doLayout(Renderer& renderer) {
           m_image->setTextureId(m_texture.id);
         }
         updateLayout();
+      } else {
+        subscribeAsyncReady();
       }
     }
   }
@@ -327,8 +339,43 @@ void Image::doLayout(Renderer& renderer) {
       if (m_image != nullptr) {
         m_image->setTextureId(m_texture.id);
       }
+      m_asyncReadySub.disconnect();
       updateLayout();
+      if (m_asyncReadyCallback) {
+        m_asyncReadyCallback();
+      }
     }
+  }
+}
+
+void Image::subscribeAsyncReady() {
+  m_asyncReadySub.disconnect();
+  if (m_asyncTextureCache == nullptr || m_asyncSourcePath.empty()) {
+    return;
+  }
+
+  m_asyncReadySub =
+      m_asyncTextureCache->subscribeReady(m_asyncSourcePath, m_asyncTargetSize, m_asyncMipmap,
+                                          [this](TextureHandle handle) { handleAsyncTextureReady(handle); });
+}
+
+void Image::handleAsyncTextureReady(TextureHandle handle) {
+  if (handle.id == 0 || m_asyncTextureCache == nullptr || m_asyncSourcePath.empty()) {
+    return;
+  }
+
+  m_texture = handle;
+  m_ownsTexture = false;
+  m_sourcePath = m_asyncSourcePath;
+  if (m_image != nullptr) {
+    m_image->setTextureId(m_texture.id);
+  }
+  m_asyncReadySub.disconnect();
+  updateLayout();
+  markPaintDirty();
+
+  if (m_asyncReadyCallback) {
+    m_asyncReadyCallback();
   }
 }
 

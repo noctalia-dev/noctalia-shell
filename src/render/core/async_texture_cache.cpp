@@ -21,6 +21,43 @@ namespace {
 
 } // namespace
 
+AsyncTextureCache::ReadySubscription::ReadySubscription(AsyncTextureCache* cache, std::weak_ptr<void> lifetimeToken,
+                                                        std::uint64_t id)
+    : m_cache(cache), m_lifetimeToken(std::move(lifetimeToken)), m_id(id) {}
+
+AsyncTextureCache::ReadySubscription::~ReadySubscription() { disconnect(); }
+
+AsyncTextureCache::ReadySubscription::ReadySubscription(ReadySubscription&& other) noexcept
+    : m_cache(other.m_cache), m_lifetimeToken(std::move(other.m_lifetimeToken)), m_id(other.m_id) {
+  other.m_cache = nullptr;
+  other.m_id = 0;
+}
+
+AsyncTextureCache::ReadySubscription&
+AsyncTextureCache::ReadySubscription::operator=(ReadySubscription&& other) noexcept {
+  if (this != &other) {
+    disconnect();
+    m_cache = other.m_cache;
+    m_lifetimeToken = std::move(other.m_lifetimeToken);
+    m_id = other.m_id;
+    other.m_cache = nullptr;
+    other.m_id = 0;
+  }
+  return *this;
+}
+
+void AsyncTextureCache::ReadySubscription::disconnect() {
+  if (m_id == 0) {
+    return;
+  }
+  if (m_cache != nullptr && !m_lifetimeToken.expired()) {
+    m_cache->removeReadyListener(m_id);
+  }
+  m_cache = nullptr;
+  m_lifetimeToken.reset();
+  m_id = 0;
+}
+
 AsyncTextureCache::AsyncTextureCache() {
   m_textureManager = createDefaultTextureManager();
 
@@ -39,6 +76,9 @@ AsyncTextureCache::AsyncTextureCache() {
 }
 
 AsyncTextureCache::~AsyncTextureCache() {
+  m_lifetimeToken.reset();
+  m_readyListeners.clear();
+
   {
     std::lock_guard<std::mutex> lock(m_queueMutex);
     m_shutdown.store(true);
@@ -70,7 +110,22 @@ AsyncTextureCache::~AsyncTextureCache() {
 
 void AsyncTextureCache::initialize(GlSharedContext* sharedGl) { m_sharedGl = sharedGl; }
 
-void AsyncTextureCache::setReadyCallback(ReadyCallback callback) { m_readyCallback = std::move(callback); }
+AsyncTextureCache::ReadySubscription AsyncTextureCache::subscribeReady(const std::string& path, int targetSize,
+                                                                       bool mipmap, TextureReadyCallback callback) {
+  auto key = makeKey(path, targetSize, mipmap);
+  if (key.path.empty() || !callback) {
+    return {};
+  }
+
+  if (const auto handle = peek(key.path, key.targetSize, key.mipmap); handle.id != 0) {
+    callback(handle);
+    return {};
+  }
+
+  const std::uint64_t id = ++m_nextReadyListenerId;
+  m_readyListeners.emplace(id, ReadyListener{.key = std::move(key), .callback = std::move(callback)});
+  return ReadySubscription{this, m_lifetimeToken, id};
+}
 
 TextureHandle AsyncTextureCache::acquire(const std::string& path, int targetSize, bool mipmap) {
   const auto key = makeKey(path, targetSize, mipmap);
@@ -180,7 +235,6 @@ void AsyncTextureCache::dispatch(const std::vector<pollfd>& fds, std::size_t sta
     return;
   }
 
-  bool uploadedAny = false;
   bool madeCurrent = false;
 
   for (auto& job : jobs) {
@@ -218,12 +272,7 @@ void AsyncTextureCache::dispatch(const std::vector<pollfd>& fds, std::size_t sta
       continue;
     }
     touchEntry(entryIt->second);
-
-    uploadedAny = true;
-  }
-
-  if (uploadedAny && m_readyCallback) {
-    m_readyCallback();
+    notifyReady(job.key, entryIt->second.handle);
   }
 }
 
@@ -293,6 +342,24 @@ void AsyncTextureCache::makeCurrent() {
 }
 
 void AsyncTextureCache::touchEntry(Entry& entry) { entry.lastTouch = ++m_touchSerial; }
+
+void AsyncTextureCache::removeReadyListener(std::uint64_t id) { m_readyListeners.erase(id); }
+
+void AsyncTextureCache::notifyReady(const RequestKey& key, TextureHandle handle) {
+  std::vector<std::pair<std::uint64_t, TextureReadyCallback>> callbacks;
+  callbacks.reserve(m_readyListeners.size());
+  for (const auto& [id, listener] : m_readyListeners) {
+    if (listener.key == key && listener.callback) {
+      callbacks.emplace_back(id, listener.callback);
+    }
+  }
+
+  for (auto& [id, callback] : callbacks) {
+    if (m_readyListeners.find(id) != m_readyListeners.end()) {
+      callback(handle);
+    }
+  }
+}
 
 void AsyncTextureCache::pruneUnusedEntries(std::size_t maxUnusedEntries) {
   using It = std::unordered_map<RequestKey, Entry, RequestKeyHash>::iterator;
