@@ -230,6 +230,21 @@ pywalfox)
     pywalfox update
     ;;
 
+ksyntax)
+    # KDE Syntax Highlighting themes
+    KSYNTAX_THEME_SOURCE="$HOME/.cache/noctalia/ksyntax-noctalia.theme"
+    KSYNTAX_THEME_DEST="$HOME/.local/share/org.kde.syntax-highlighting/themes/noctalia.theme"
+
+    if [ -f "$KSYNTAX_THEME_SOURCE" ]; then
+        mkdir -p "$(dirname "$KSYNTAX_THEME_DEST")"
+        cp "$KSYNTAX_THEME_SOURCE" "$KSYNTAX_THEME_DEST"
+        echo "KDE syntax theme updated."
+    else
+        echo "Error: Source theme not found at $KSYNTAX_THEME_SOURCE" >&2
+        exit 1
+    fi
+    ;;
+
 cava)
     CONFIG_FILE="$HOME/.config/cava/config"
     THEME_MODIFIED=false
