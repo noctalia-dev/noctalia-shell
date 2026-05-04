@@ -64,6 +64,9 @@ Item {
   readonly property bool shouldHideEmpty: !hasPlayer && hideMode === "hidden"
   readonly property bool isHidden: shouldHideIdle || shouldHideEmpty
 
+  // Volume scroll
+  property int wheelAccumulator: 0
+
   // Title
   readonly property string title: {
     if (!hasPlayer)
@@ -391,6 +394,27 @@ Item {
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
     acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton | Qt.ForwardButton | Qt.BackButton
+
+    onWheel: function (ev) {
+      // Hide tooltip as soon as the user starts scrolling to adjust volume
+      TooltipService.hide();
+
+      ev.accepted = true;
+
+      var delta = ev.pixelDelta.y;
+
+      if (ev.inverted)
+            delta *= -1;
+
+      wheelAccumulator += delta;
+      if (wheelAccumulator >= 120) {
+        wheelAccumulator = 0;
+        MediaService.increaseVolume();
+      } else if (wheelAccumulator <= -120) {
+        wheelAccumulator = 0;
+        MediaService.decreaseVolume();
+      }
+    }
 
     onClicked: mouse => {
                  TooltipService.hide();

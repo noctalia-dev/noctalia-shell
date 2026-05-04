@@ -1574,6 +1574,8 @@
       "types-lockkey-label": "Lock keys",
       "types-media-description": "Show OSD when media playback state changes (play, pause, skip).",
       "types-media-label": "Media playback",
+      "types-media-volume-description": "Show OSD when media volume changes.",
+      "types-media-volume-label": "Media volume",
       "types-title": "OSD trigger events",
       "types-volume-description": "Show OSD when audio output volume changes.",
       "types-volume-label": "Output volume"

@@ -707,7 +707,7 @@ Singleton {
       property int autoHideMs: 2000
       property bool overlayLayer: true
       property real backgroundOpacity: 1.0
-      property list<var> enabledTypes: [OSD.Type.Volume, OSD.Type.InputVolume, OSD.Type.Brightness]
+      property list<var> enabledTypes: [OSD.Type.Volume, OSD.Type.InputVolume, OSD.Type.Brightness, OSD.Type.MediaVolume]
       property list<string> monitors: [] // holds osd visibility per monitor
     }
 

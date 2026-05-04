@@ -25,6 +25,12 @@ Singleton {
     }
   }
 
+  function formatVolume(volume) {
+    if (isNaN(volume) || volume < 0)
+      volume = 0;
+    return Math.floor(volume * 100) + " %";
+  }
+
   property var currentPlayer: null
   property string playerIdentity: currentPlayer ? (currentPlayer.identity || "") : ""
   property real currentPosition: 0
@@ -41,9 +47,15 @@ Singleton {
   property bool canGoNext: currentPlayer ? currentPlayer.canGoNext : false
   property bool canGoPrevious: currentPlayer ? currentPlayer.canGoPrevious : false
   property bool canSeek: currentPlayer ? currentPlayer.canSeek : false
+  property bool isMuted: currentPlayer ? currentPlayer.volume < root.epsilon : false
+  property real volume: currentPlayer ? currentPlayer.volume : 0.0
+  property bool volumeSupported: currentPlayer ? currentPlayer.volumeSupported : false
+  property string volumeString: formatVolume(volume)
   property string positionString: formatTime(currentPosition)
   property string lengthString: formatTime(trackLength)
   property real infiniteTrackLength: 922337203685
+
+  readonly property real stepVolume: Settings.data.audio.volumeStep / 100.0
 
   Component.onCompleted: {
     updateCurrentPlayer();
@@ -289,6 +301,27 @@ Singleton {
       let seekPosition = ratio * target.length;
       target.position = seekPosition;
       currentPosition = seekPosition;
+    }
+  }
+
+  function setVolume(value) {
+    let target = currentPlayer ? (currentPlayer._controlTarget || currentPlayer) : null;
+    if (target && target.canControl && target.volumeSupported) {
+      target.volume = Math.max(0.0, Math.min(1.0, value));
+    }
+  }
+
+  function increaseVolume() {
+    let target = currentPlayer ? (currentPlayer._controlTarget || currentPlayer) : null;
+    if (target && target.canControl && target.volumeSupported) {
+      target.volume = Math.min(1.0, target.volume + stepVolume);
+    }
+  }
+
+  function decreaseVolume() {
+    let target = currentPlayer ? (currentPlayer._controlTarget || currentPlayer) : null;
+    if (target && target.canControl && target.volumeSupported) {
+      target.volume = Math.max(0.0, target.volume - stepVolume);
     }
   }
 
