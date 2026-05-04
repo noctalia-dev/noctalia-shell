@@ -307,7 +307,6 @@
   },
   {
     "emoji": "🙂‍↕️",
-    "skin_tone_support": false,
     "name": "head shaking vertically",
     "keywords": ["yes", "shake", "shaking", "agree"],
     "category": "people"
@@ -2582,7 +2581,7 @@
   },
   {
     "emoji": "👨‍🦯‍➡️",
-    "skin_tone_support_unicode_version": "15.1",
+    "name": "man with white cane facing right",
     "keywords": [],
     "category": "people"
   },
