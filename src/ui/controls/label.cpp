@@ -283,9 +283,36 @@ void Label::startMarqueeLoop() {
 }
 
 void Label::restartScrollIfNeeded() {
+  const bool overflow = m_autoScroll && width() > 0.0f && m_fullTextWidth > width() + 0.5f;
+  const bool runMarquee = overflow && (!m_autoScrollHoverOnly || hovered());
+
+  // Skip the reset path when none of the marquee-relevant inputs have changed
+  // since the last call. measureWithConstraints() invokes us at the tail of
+  // every cache-missed measure, but cache misses are common (different parent
+  // constraints across measure/arrange phases) and we must not snap the scroll
+  // offset back to 0 unless the geometry or mode actually changed.
+  if (m_marqueeStateValid && m_marqueeStateAutoScroll == m_autoScroll &&
+      m_marqueeStateHoverOnly == m_autoScrollHoverOnly && m_marqueeStateHovered == hovered() &&
+      m_marqueeStateWidth == width() && m_marqueeStateFullTextWidth == m_fullTextWidth &&
+      m_marqueeStateLoopPeriod == m_marqueeLoopPeriod && m_marqueeStateSpeed == m_scrollSpeedPxPerSec) {
+    if (runMarquee && m_marqueeAnimId == 0 && m_snapAnimId == 0) {
+      // Edge case: animation manager wasn't ready when we last tried.
+      startMarqueeLoop();
+    }
+    return;
+  }
+
+  m_marqueeStateValid = true;
+  m_marqueeStateAutoScroll = m_autoScroll;
+  m_marqueeStateHoverOnly = m_autoScrollHoverOnly;
+  m_marqueeStateHovered = hovered();
+  m_marqueeStateWidth = width();
+  m_marqueeStateFullTextWidth = m_fullTextWidth;
+  m_marqueeStateLoopPeriod = m_marqueeLoopPeriod;
+  m_marqueeStateSpeed = m_scrollSpeedPxPerSec;
+
   stopMarqueeAnimation();
 
-  const bool overflow = m_autoScroll && width() > 0.0f && m_fullTextWidth > width() + 0.5f;
   if (!overflow) {
     stopSnapAnimation();
     m_scrollOffset = 0.0f;
@@ -297,8 +324,6 @@ void Label::restartScrollIfNeeded() {
   }
 
   setClipChildren(true);
-
-  const bool runMarquee = !m_autoScrollHoverOnly || hovered();
 
   if (!runMarquee) {
     if (m_scrollOffset > 0.5f) {
