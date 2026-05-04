@@ -240,8 +240,8 @@ ksyntax)
         cp "$KSYNTAX_THEME_SOURCE" "$KSYNTAX_THEME_DEST"
         echo "KDE syntax theme updated."
     else
+        # Log to stderr but do NOT exit
         echo "Error: Source theme not found at $KSYNTAX_THEME_SOURCE" >&2
-        exit 1
     fi
     ;;
 
