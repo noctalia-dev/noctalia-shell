@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -20,12 +21,14 @@ class Label;
 class Select;
 class ThumbnailService;
 class Toggle;
-class WallpaperPageGrid;
+class VirtualGridView;
+class WallpaperGridAdapter;
 class WaylandConnection;
 
 class WallpaperPanel : public Panel {
 public:
   WallpaperPanel(WaylandConnection* wayland, ConfigService* config, ThumbnailService* thumbnails);
+  ~WallpaperPanel() override;
 
   void create() override;
   void onOpen(std::string_view context) override;
@@ -58,15 +61,12 @@ private:
   void navigateUp();
   void applyWallpaperFromEntry(const WallpaperEntry& entry);
   void applyColorWallpaper();
-  void applyPage();
-  void resetPage();
+  void rebindGrid();
   void resetSelection();
-  void syncGridSelection();
   void selectVisibleIndex(std::size_t index);
   void activateSelectedEntry();
   [[nodiscard]] bool lightTheme() const;
   [[nodiscard]] bool handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers);
-  [[nodiscard]] std::size_t pageCount() const noexcept;
   [[nodiscard]] std::filesystem::path activeDirectoryForSelection() const;
   [[nodiscard]] std::filesystem::path rootDirectoryForSelection() const;
   [[nodiscard]] std::optional<Color> selectedFillColor() const;
@@ -91,11 +91,8 @@ private:
   Button* m_refreshButton = nullptr;
   Button* m_colorButton = nullptr;
   Button* m_closeButton = nullptr;
-  WallpaperPageGrid* m_grid = nullptr;
-  Flex* m_pagination = nullptr;
-  Button* m_prevButton = nullptr;
-  Button* m_nextButton = nullptr;
-  Label* m_pageLabel = nullptr;
+  VirtualGridView* m_grid = nullptr;
+  std::unique_ptr<WallpaperGridAdapter> m_adapter;
 
   std::vector<MonitorChoice> m_monitorChoices;
   std::size_t m_selectedMonitorIndex = 0;
@@ -113,10 +110,7 @@ private:
   Timer m_filterDebounceTimer;
 
   bool m_flatten = false;
-  std::size_t m_currentPage = 0;
   std::size_t m_selectedVisibleIndex = 0;
-  std::size_t m_hoverVisibleIndex = static_cast<std::size_t>(-1);
-  bool m_mouseActive = false;
   float m_lastWidth = 0.0f;
   float m_lastHeight = 0.0f;
   bool m_dirty = false;

@@ -92,6 +92,8 @@ private:
   VirtualGridAdapter* m_adapter = nullptr;
   std::vector<Node*> m_pool;
   std::vector<std::optional<std::size_t>> m_slotBoundIndex;
+  std::vector<bool> m_slotBoundSelected;
+  std::vector<bool> m_slotBoundHovered;
 
   std::size_t m_columns = 0;
   float m_minCellWidth = 96.0f;

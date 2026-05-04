@@ -8,20 +8,23 @@
 #include "render/core/thumbnail_service.h"
 #include "render/scene/input_area.h"
 #include "shell/panel/panel_manager.h"
-#include "shell/wallpaper/panel/wallpaper_page_grid.h"
+#include "shell/wallpaper/panel/wallpaper_tile.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
+#include "ui/controls/scroll_view.h"
 #include "ui/controls/select.h"
 #include "ui/controls/spacer.h"
 #include "ui/controls/toggle.h"
+#include "ui/controls/virtual_grid_view.h"
 #include "ui/dialogs/color_picker_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
 #include "wayland/wayland_connection.h"
 
+#include <algorithm>
 #include <chrono>
 #include <memory>
 #include <string_view>
@@ -32,6 +35,8 @@ namespace {
 
   constexpr Logger kLog("wp-panel");
   constexpr auto kFilterDebounceInterval = std::chrono::milliseconds(120);
+  constexpr float kMinTileWidth = 180.0f;
+  constexpr float kTileAspect = 0.78f; // height / width — leaves room for label under widescreen thumb
 
   bool parseColorWallpaperPath(std::string_view path, Color& out) {
     constexpr std::string_view kPrefix = "color:";
@@ -45,8 +50,74 @@ namespace {
 
 } // namespace
 
+class WallpaperGridAdapter : public VirtualGridAdapter {
+public:
+  using ActivateCallback = std::function<void(const WallpaperEntry&)>;
+
+  explicit WallpaperGridAdapter(float scale) : m_scale(scale) {}
+
+  void setEntries(const std::vector<WallpaperEntry>* entries) { m_entries = entries; }
+  void setRenderer(Renderer* renderer) { m_renderer = renderer; }
+  void setThumbnailService(ThumbnailService* service) {
+    m_thumbnails = service;
+    for (WallpaperTile* tile : m_pool) {
+      if (tile != nullptr) {
+        tile->setThumbnailService(service);
+      }
+    }
+  }
+  void setOnActivate(ActivateCallback callback) { m_onActivate = std::move(callback); }
+
+  void refreshVisibleThumbnails(Renderer& renderer) {
+    for (WallpaperTile* tile : m_pool) {
+      if (tile != nullptr && tile->visible()) {
+        tile->refreshThumbnail(renderer);
+      }
+    }
+  }
+
+  [[nodiscard]] std::size_t itemCount() const override { return m_entries == nullptr ? 0u : m_entries->size(); }
+
+  [[nodiscard]] std::unique_ptr<Node> createTile() override {
+    auto tile = std::make_unique<WallpaperTile>(0.0f, 0.0f, m_scale);
+    tile->setThumbnailService(m_thumbnails);
+    m_pool.push_back(tile.get());
+    return tile;
+  }
+
+  void bindTile(Node& tile, std::size_t index, bool selected, bool hovered) override {
+    auto* wt = static_cast<WallpaperTile*>(&tile);
+    wt->setCellSize(wt->width(), wt->height());
+    if (m_renderer != nullptr && m_entries != nullptr && index < m_entries->size()) {
+      wt->setEntry((*m_entries)[index], *m_renderer);
+    }
+    wt->setSelected(selected);
+    wt->setHoveredVisual(hovered && !selected);
+  }
+
+  // VirtualGridView's overlay InputArea catches the click, so per-tile click
+  // callbacks never fire — dispatch from here instead.
+  void onActivate(std::size_t index) override {
+    if (!m_onActivate || m_entries == nullptr || index >= m_entries->size()) {
+      return;
+    }
+    m_onActivate((*m_entries)[index]);
+  }
+
+private:
+  float m_scale;
+  const std::vector<WallpaperEntry>* m_entries = nullptr;
+  Renderer* m_renderer = nullptr;
+  ThumbnailService* m_thumbnails = nullptr;
+
+  std::vector<WallpaperTile*> m_pool;
+  ActivateCallback m_onActivate;
+};
+
 WallpaperPanel::WallpaperPanel(WaylandConnection* wayland, ConfigService* config, ThumbnailService* thumbnails)
     : m_wayland(wayland), m_config(config), m_thumbnails(thumbnails) {}
+
+WallpaperPanel::~WallpaperPanel() = default;
 
 void WallpaperPanel::create() {
   const float scale = contentScale();
@@ -143,9 +214,8 @@ void WallpaperPanel::create() {
       }
       m_filterQuery = m_pendingFilterQuery;
       applyFilter();
-      resetPage();
       resetSelection();
-      applyPage();
+      rebindGrid();
       m_dirty = true;
       PanelManager::instance().refresh();
     });
@@ -154,7 +224,7 @@ void WallpaperPanel::create() {
   m_filterInput = static_cast<Input*>(toolbar->addChild(std::move(filter)));
 
   auto back = std::make_unique<Button>();
-  back->setGlyph("arrow-back");
+  back->setGlyph("arrow-big-up");
   back->setVariant(ButtonVariant::Secondary);
   configureIconButton(back.get());
   back->setOnClick([this]() { navigateUp(); });
@@ -175,9 +245,8 @@ void WallpaperPanel::create() {
     m_flatten = checked;
     refreshScan();
     applyFilter();
-    resetPage();
     resetSelection();
-    applyPage();
+    rebindGrid();
     m_dirty = true;
     PanelManager::instance().refresh();
   });
@@ -191,9 +260,8 @@ void WallpaperPanel::create() {
     m_navStack.clear();
     refreshScan();
     applyFilter();
-    resetPage();
     resetSelection();
-    applyPage();
+    rebindGrid();
     rebuildBreadcrumb();
     m_dirty = true;
     PanelManager::instance().refresh();
@@ -215,9 +283,8 @@ void WallpaperPanel::create() {
     m_scanner.invalidate();
     refreshScan();
     applyFilter();
-    resetPage();
     resetSelection();
-    applyPage();
+    rebindGrid();
     m_dirty = true;
     PanelManager::instance().refresh();
   });
@@ -225,142 +292,33 @@ void WallpaperPanel::create() {
 
   root->addChild(std::move(toolbar));
 
-  // ── Body: paged grid ───────────────────────────────────────────────────
-  auto grid = std::make_unique<WallpaperPageGrid>(scale);
-  grid->setFlexGrow(1.0f);
-  m_grid = grid.get();
-  m_grid->setThumbnailService(m_thumbnails);
-  m_grid->setLightTheme(lightTheme());
-  m_grid->setOnTileClick([this](const WallpaperEntry& entry) {
+  // ── Body: virtualized scrolling grid ──────────────────────────────────
+  m_adapter = std::make_unique<WallpaperGridAdapter>(scale);
+  m_adapter->setThumbnailService(m_thumbnails);
+  m_adapter->setEntries(&m_visibleEntries);
+  m_adapter->setOnActivate([this](const WallpaperEntry& entry) {
     if (entry.isDir) {
       navigateInto(entry.absPath);
     } else {
       applyWallpaperFromEntry(entry);
     }
   });
-  m_grid->setOnTileMotion([this](std::size_t index) {
-    const std::size_t visibleIndex = m_currentPage * WallpaperPageGrid::kPageSize + index;
-    if (visibleIndex >= m_visibleEntries.size()) {
-      return;
-    }
-    if (!m_mouseActive) {
-      m_mouseActive = true;
-    }
-    if (visibleIndex == m_selectedVisibleIndex || visibleIndex == m_hoverVisibleIndex) {
-      return;
-    }
-    m_hoverVisibleIndex = visibleIndex;
-    syncGridSelection();
-    m_dirty = true;
-    PanelManager::instance().refresh();
-  });
-  m_grid->setOnTileEnter([this](std::size_t index) {
-    if (!m_mouseActive) {
-      return;
-    }
-    const std::size_t visibleIndex = m_currentPage * WallpaperPageGrid::kPageSize + index;
-    if (visibleIndex >= m_visibleEntries.size() || visibleIndex == m_selectedVisibleIndex ||
-        visibleIndex == m_hoverVisibleIndex) {
-      return;
-    }
-    m_hoverVisibleIndex = visibleIndex;
-    syncGridSelection();
-    m_dirty = true;
-    PanelManager::instance().refresh();
-  });
-  m_grid->setOnScroll([this](float delta) {
-    if (m_visibleEntries.empty() || delta == 0.0f) {
-      return;
-    }
-    const std::size_t cols = WallpaperPageGrid::kColumns;
-    if (delta > 0.0f) {
-      const std::size_t next = m_selectedVisibleIndex + cols;
-      if (next < m_visibleEntries.size()) {
-        selectVisibleIndex(next);
-      } else {
-        const std::size_t last = m_visibleEntries.size() - 1;
-        if (m_selectedVisibleIndex != last) {
-          selectVisibleIndex(last);
-        }
-      }
-    } else {
-      if (m_selectedVisibleIndex >= cols) {
-        selectVisibleIndex(m_selectedVisibleIndex - cols);
-      } else if (m_selectedVisibleIndex != 0) {
-        selectVisibleIndex(0);
-      }
-    }
-  });
-  m_grid->setOnTileLeave([this](std::size_t index) {
-    const std::size_t visibleIndex = m_currentPage * WallpaperPageGrid::kPageSize + index;
-    if (m_hoverVisibleIndex != visibleIndex) {
-      return;
-    }
-    m_hoverVisibleIndex = static_cast<std::size_t>(-1);
-    syncGridSelection();
-    m_dirty = true;
-    PanelManager::instance().refresh();
-  });
-  root->addChild(std::move(grid));
 
-  // ── Pagination bar ─────────────────────────────────────────────────────
-  auto pagination = std::make_unique<Flex>();
-  pagination->setDirection(FlexDirection::Horizontal);
-  pagination->setAlign(FlexAlign::Center);
-  pagination->setJustify(FlexJustify::Center);
-  pagination->setFillWidth(true);
-  pagination->setGap(Style::spaceMd * scale);
-  m_pagination = pagination.get();
-
-  auto prev = std::make_unique<Button>();
-  prev->setGlyph("chevron-left");
-  prev->setVariant(ButtonVariant::Secondary);
-  configureIconButton(prev.get());
-  prev->setOnClick([this]() {
-    if (m_currentPage == 0) {
-      return;
+  auto grid = std::make_unique<VirtualGridView>();
+  grid->setMinCellWidth(kMinTileWidth * scale);
+  grid->setSquareCells(false);
+  grid->setColumnGap(Style::spaceMd * scale);
+  grid->setRowGap(Style::spaceMd * scale);
+  grid->setOverscanRows(2);
+  grid->setFlexGrow(1.0f);
+  grid->setFillWidth(true);
+  grid->setAdapter(m_adapter.get());
+  grid->setOnSelectionChanged([this](std::optional<std::size_t> idx) {
+    if (idx.has_value() && *idx < m_visibleEntries.size()) {
+      m_selectedVisibleIndex = *idx;
     }
-    m_currentPage--;
-    const std::size_t firstIndex = m_currentPage * WallpaperPageGrid::kPageSize;
-    if (firstIndex < m_visibleEntries.size()) {
-      m_selectedVisibleIndex = firstIndex;
-    }
-    m_hoverVisibleIndex = static_cast<std::size_t>(-1);
-    m_mouseActive = false;
-    applyPage();
-    m_dirty = true;
-    PanelManager::instance().refresh();
   });
-  m_prevButton = static_cast<Button*>(pagination->addChild(std::move(prev)));
-
-  auto pageLabel = std::make_unique<Label>();
-  pageLabel->setFontSize(Style::fontSizeBody * scale);
-  pageLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
-  m_pageLabel = static_cast<Label*>(pagination->addChild(std::move(pageLabel)));
-
-  auto next = std::make_unique<Button>();
-  next->setGlyph("chevron-right");
-  next->setVariant(ButtonVariant::Secondary);
-  configureIconButton(next.get());
-  next->setOnClick([this]() {
-    const std::size_t total = pageCount();
-    if (m_currentPage + 1 >= total) {
-      return;
-    }
-    m_currentPage++;
-    const std::size_t firstIndex = m_currentPage * WallpaperPageGrid::kPageSize;
-    if (firstIndex < m_visibleEntries.size()) {
-      m_selectedVisibleIndex = firstIndex;
-    }
-    m_hoverVisibleIndex = static_cast<std::size_t>(-1);
-    m_mouseActive = false;
-    applyPage();
-    m_dirty = true;
-    PanelManager::instance().refresh();
-  });
-  m_nextButton = static_cast<Button*>(pagination->addChild(std::move(next)));
-
-  root->addChild(std::move(pagination));
+  m_grid = static_cast<VirtualGridView*>(root->addChild(std::move(grid)));
 
   setRoot(std::move(root));
   if (m_animations != nullptr) {
@@ -390,9 +348,14 @@ void WallpaperPanel::doLayout(Renderer& renderer, float width, float height) {
     m_thumbnailRefreshPending = false;
   }
 
+  if (m_adapter != nullptr) {
+    m_adapter->setRenderer(&renderer);
+  }
+
+  // Drive cell height from current tile width via VirtualGridView's resolved
+  // geometry: configure the cell height to follow the chosen tile aspect.
   if (m_grid != nullptr) {
-    m_grid->setRenderer(&renderer);
-    m_grid->setLightTheme(lightTheme());
+    m_grid->setCellHeight(kMinTileWidth * contentScale() * kTileAspect);
   }
 
   m_rootLayout->setSize(width, height);
@@ -408,9 +371,9 @@ void WallpaperPanel::doUpdate(Renderer& renderer) {
   if (m_thumbnailRefreshPending && m_thumbnails != nullptr) {
     m_thumbnails->uploadPending(renderer.textureManager());
     m_thumbnailRefreshPending = false;
-    if (m_grid != nullptr) {
-      m_grid->setRenderer(&renderer);
-      m_grid->refreshVisibleThumbnails(renderer);
+    if (m_adapter != nullptr) {
+      m_adapter->setRenderer(&renderer);
+      m_adapter->refreshVisibleThumbnails(renderer);
     }
   }
 }
@@ -430,9 +393,8 @@ void WallpaperPanel::onOpen(std::string_view /*context*/) {
   populateMonitorChoices();
   refreshScan();
   applyFilter();
-  resetPage();
   resetSelection();
-  applyPage();
+  rebindGrid();
   rebuildBreadcrumb();
   m_dirty = true;
 }
@@ -449,6 +411,13 @@ void WallpaperPanel::onClose() {
 
   m_visibleEntries.clear();
 
+  // Detach adapter from grid before either is destroyed; the pool tiles were
+  // minted by the adapter.
+  if (m_grid != nullptr) {
+    m_grid->setAdapter(nullptr);
+  }
+  m_adapter.reset();
+
   m_rootLayout = nullptr;
   m_header = nullptr;
   m_toolbar = nullptr;
@@ -463,10 +432,6 @@ void WallpaperPanel::onClose() {
   m_colorButton = nullptr;
   m_closeButton = nullptr;
   m_grid = nullptr;
-  m_pagination = nullptr;
-  m_prevButton = nullptr;
-  m_nextButton = nullptr;
-  m_pageLabel = nullptr;
 
   clearReleasedRoot();
   m_lastWidth = 0.0f;
@@ -601,71 +566,20 @@ void WallpaperPanel::applyFilter() {
   }
 }
 
-void WallpaperPanel::resetPage() { m_currentPage = 0; }
-
-std::size_t WallpaperPanel::pageCount() const noexcept {
+void WallpaperPanel::rebindGrid() {
+  if (m_grid == nullptr) {
+    return;
+  }
+  m_grid->notifyDataChanged();
   if (m_visibleEntries.empty()) {
-    return 1;
-  }
-  return (m_visibleEntries.size() + WallpaperPageGrid::kPageSize - 1) / WallpaperPageGrid::kPageSize;
-}
-
-void WallpaperPanel::applyPage() {
-  if (m_grid == nullptr) {
-    return;
-  }
-
-  const std::size_t total = m_visibleEntries.size();
-  const std::size_t pageSize = WallpaperPageGrid::kPageSize;
-  const std::size_t pages = pageCount();
-  if (m_currentPage >= pages) {
-    m_currentPage = pages == 0 ? 0 : pages - 1;
-  }
-  const std::size_t start = m_currentPage * pageSize;
-  const std::size_t count = (start >= total) ? 0 : std::min(pageSize, total - start);
-
-  m_grid->setPage(count == 0 ? nullptr : m_visibleEntries.data() + start, count);
-  syncGridSelection();
-
-  if (m_pageLabel != nullptr) {
-    if (total == 0) {
-      m_pageLabel->setText("0 / 0");
-    } else {
-      m_pageLabel->setText(std::to_string(m_currentPage + 1) + " / " + std::to_string(pages));
-    }
-  }
-  if (m_prevButton != nullptr) {
-    m_prevButton->setEnabled(m_currentPage > 0);
-  }
-  if (m_nextButton != nullptr) {
-    m_nextButton->setEnabled(total > 0 && m_currentPage + 1 < pages);
+    m_grid->setSelectedIndex(std::nullopt);
+    m_grid->scrollView().setScrollOffset(0.0f);
+  } else {
+    m_grid->setSelectedIndex(m_selectedVisibleIndex);
   }
 }
 
-void WallpaperPanel::resetSelection() {
-  m_selectedVisibleIndex = 0;
-  m_hoverVisibleIndex = static_cast<std::size_t>(-1);
-  m_mouseActive = false;
-}
-
-void WallpaperPanel::syncGridSelection() {
-  if (m_grid == nullptr) {
-    return;
-  }
-
-  const std::size_t pageStart = m_currentPage * WallpaperPageGrid::kPageSize;
-  const std::size_t pageEnd = pageStart + WallpaperPageGrid::kPageSize;
-  const std::size_t selectedIndex = (m_selectedVisibleIndex < m_visibleEntries.size() &&
-                                     m_selectedVisibleIndex >= pageStart && m_selectedVisibleIndex < pageEnd)
-                                        ? (m_selectedVisibleIndex - pageStart)
-                                        : WallpaperPageGrid::kPageSize;
-  const std::size_t hoverIndex = (m_hoverVisibleIndex < m_visibleEntries.size() && m_hoverVisibleIndex >= pageStart &&
-                                  m_hoverVisibleIndex < pageEnd)
-                                     ? (m_hoverVisibleIndex - pageStart)
-                                     : WallpaperPageGrid::kPageSize;
-
-  m_grid->setHighlightedIndex(selectedIndex, hoverIndex, m_mouseActive);
-}
+void WallpaperPanel::resetSelection() { m_selectedVisibleIndex = 0; }
 
 bool WallpaperPanel::lightTheme() const {
   return m_config != nullptr && m_config->config().theme.mode == ThemeMode::Light;
@@ -677,15 +591,9 @@ void WallpaperPanel::selectVisibleIndex(std::size_t index) {
   }
 
   m_selectedVisibleIndex = index;
-  m_hoverVisibleIndex = static_cast<std::size_t>(-1);
-  m_mouseActive = false;
-
-  const std::size_t nextPage = index / WallpaperPageGrid::kPageSize;
-  if (nextPage != m_currentPage) {
-    m_currentPage = nextPage;
-    applyPage();
-  } else {
-    syncGridSelection();
+  if (m_grid != nullptr) {
+    m_grid->setSelectedIndex(index);
+    m_grid->scrollToIndex(index);
   }
 
   m_dirty = true;
@@ -710,6 +618,18 @@ bool WallpaperPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) 
     return false;
   }
 
+  // Approximate column count from current grid layout. VirtualGridView does
+  // not expose its column count directly, so we recompute from viewport width.
+  std::size_t columns = 1;
+  if (m_grid != nullptr) {
+    const float viewportW = m_grid->scrollView().contentViewportWidth();
+    const float cellW = kMinTileWidth * contentScale();
+    const float gap = Style::spaceMd * contentScale();
+    if (cellW > 0.0f) {
+      columns = std::max<std::size_t>(1, static_cast<std::size_t>((viewportW + gap) / (cellW + gap)));
+    }
+  }
+
   if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Left, sym, modifiers)) {
     if (m_selectedVisibleIndex > 0) {
       selectVisibleIndex(m_selectedVisibleIndex - 1);
@@ -725,14 +645,14 @@ bool WallpaperPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) 
   }
 
   if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Up, sym, modifiers)) {
-    if (m_selectedVisibleIndex >= WallpaperPageGrid::kColumns) {
-      selectVisibleIndex(m_selectedVisibleIndex - WallpaperPageGrid::kColumns);
+    if (m_selectedVisibleIndex >= columns) {
+      selectVisibleIndex(m_selectedVisibleIndex - columns);
     }
     return true;
   }
 
   if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Down, sym, modifiers)) {
-    const std::size_t nextIndex = m_selectedVisibleIndex + WallpaperPageGrid::kColumns;
+    const std::size_t nextIndex = m_selectedVisibleIndex + columns;
     if (nextIndex < m_visibleEntries.size()) {
       selectVisibleIndex(nextIndex);
     }
@@ -782,9 +702,8 @@ void WallpaperPanel::navigateInto(const std::filesystem::path& dir) {
   m_navStack.push_back(dir);
   refreshScan();
   applyFilter();
-  resetPage();
   resetSelection();
-  applyPage();
+  rebindGrid();
   rebuildBreadcrumb();
   m_dirty = true;
   PanelManager::instance().refresh();
@@ -797,9 +716,8 @@ void WallpaperPanel::navigateUp() {
   m_navStack.pop_back();
   refreshScan();
   applyFilter();
-  resetPage();
   resetSelection();
-  applyPage();
+  rebindGrid();
   rebuildBreadcrumb();
   m_dirty = true;
   PanelManager::instance().refresh();

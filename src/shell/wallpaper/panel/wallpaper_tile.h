@@ -2,7 +2,6 @@
 
 #include "render/scene/input_area.h"
 #include "shell/wallpaper/panel/wallpaper_scanner.h"
-#include "ui/palette.h"
 
 #include <functional>
 #include <string>
@@ -24,6 +23,11 @@ public:
 
   WallpaperTile(float cellWidth, float cellHeight, float contentScale);
 
+  // Update the tile's outer cell size and recompute internal frame sizes so
+  // the thumbnail/glyph/label adapt to viewport-driven cell dimensions
+  // (used by VirtualGridView, which resizes pool tiles on scroll/resize).
+  void setCellSize(float cellWidth, float cellHeight);
+
   // Non-owning pointer to the shared async thumbnail service. If null, tiles
   // will leave their image blank.
   void setThumbnailService(ThumbnailService* service) { m_thumbnails = service; }
@@ -40,7 +44,6 @@ public:
 
   void setSelected(bool selected);
   void setHoveredVisual(bool hovered);
-  void setLightTheme(bool lightTheme);
   void setOnTileClick(ClickCallback callback);
   void setOnTileMotion(HoverCallback callback);
   void setOnTileEnter(HoverCallback callback);

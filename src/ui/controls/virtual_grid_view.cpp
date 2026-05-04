@@ -231,7 +231,15 @@ void VirtualGridView::doLayout(Renderer& renderer) {
   const std::size_t visibleRowCount = (rowCount == 0 || lastRow < firstRow) ? 0 : (lastRow - firstRow + 1);
   const std::size_t desiredPoolSize = visibleRowCount * columns;
 
-  // Step 3: grow the pool if needed (never shrink — avoids realloc thrash on resize).
+  // Step 3: grow the pool if needed. Pool is row-major (poolRows * columns)
+  // so we can address slots by `row % poolRows` and keep tiles bound to the
+  // same logical index while they remain in the visible window — avoids the
+  // "every scroll rebinds every slot" thrash that would otherwise release
+  // expensive per-tile state (e.g. wallpaper thumbnails).
+  if (m_layoutColumns != columns) {
+    // Column count changed (resize): existing slot→logicalIndex mapping is stale.
+    std::fill(m_slotBoundIndex.begin(), m_slotBoundIndex.end(), std::nullopt);
+  }
   while (m_pool.size() < desiredPoolSize) {
     auto tile = m_adapter->createTile();
     if (tile == nullptr) {
@@ -242,38 +250,62 @@ void VirtualGridView::doLayout(Renderer& renderer) {
     Node* raw = m_canvas->addChild(std::move(tile));
     m_pool.push_back(raw);
     m_slotBoundIndex.emplace_back();
+    m_slotBoundSelected.push_back(false);
+    m_slotBoundHovered.push_back(false);
   }
 
-  // Step 4: bind / position pool slots.
+  // Step 4: bind / position pool slots, addressing by `row % poolRows`.
+  const std::size_t poolRows = columns == 0 ? 0 : m_pool.size() / columns;
   m_visibleStartIndex = firstRow * columns;
+  std::vector<bool> slotActive(m_pool.size(), false);
+
+  if (poolRows > 0 && visibleRowCount > 0) {
+    for (std::size_t row = firstRow; row <= lastRow; ++row) {
+      const std::size_t poolRow = row % poolRows;
+      for (std::size_t col = 0; col < columns; ++col) {
+        const std::size_t slot = poolRow * columns + col;
+        if (slot >= m_pool.size()) {
+          continue;
+        }
+        const std::size_t logicalIndex = row * columns + col;
+        if (logicalIndex >= m_itemCount) {
+          continue;
+        }
+        Node* tile = m_pool[slot];
+        if (tile == nullptr) {
+          continue;
+        }
+
+        slotActive[slot] = true;
+
+        const float x = static_cast<float>(col) * (cellW + m_columnGap);
+        const float y = static_cast<float>(row) * (cellH + m_rowGap);
+        tile->setPosition(x, y);
+        tile->setSize(cellW, cellH);
+
+        const bool selected = m_selectedIndex.has_value() && *m_selectedIndex == logicalIndex;
+        const bool hovered = m_hoveredIndex.has_value() && *m_hoveredIndex == logicalIndex;
+        const bool dirty = !m_slotBoundIndex[slot].has_value() || *m_slotBoundIndex[slot] != logicalIndex ||
+                           m_slotBoundSelected[slot] != selected || m_slotBoundHovered[slot] != hovered;
+        if (dirty) {
+          m_adapter->bindTile(*tile, logicalIndex, selected, hovered);
+          m_slotBoundIndex[slot] = logicalIndex;
+          m_slotBoundSelected[slot] = selected;
+          m_slotBoundHovered[slot] = hovered;
+        }
+        tile->setVisible(true);
+        // Canvas's doLayout is a no-op, so we lay out each pool tile explicitly
+        // here — otherwise the inner glyph/label children never get measured.
+        tile->layout(renderer);
+      }
+    }
+  }
+
   for (std::size_t slot = 0; slot < m_pool.size(); ++slot) {
-    Node* tile = m_pool[slot];
-    if (tile == nullptr) {
-      continue;
-    }
-    const std::size_t logicalIndex = m_visibleStartIndex + slot;
-    const bool active = slot < desiredPoolSize && logicalIndex < m_itemCount;
-    if (!active) {
-      tile->setVisible(false);
+    if (!slotActive[slot] && m_pool[slot] != nullptr) {
+      m_pool[slot]->setVisible(false);
       m_slotBoundIndex[slot].reset();
-      continue;
     }
-
-    const bool selected = m_selectedIndex.has_value() && *m_selectedIndex == logicalIndex;
-    const bool hovered = m_hoveredIndex.has_value() && *m_hoveredIndex == logicalIndex;
-    m_adapter->bindTile(*tile, logicalIndex, selected, hovered);
-    m_slotBoundIndex[slot] = logicalIndex;
-
-    const std::size_t row = logicalIndex / columns;
-    const std::size_t col = logicalIndex % columns;
-    const float x = static_cast<float>(col) * (cellW + m_columnGap);
-    const float y = static_cast<float>(row) * (cellH + m_rowGap);
-    tile->setPosition(x, y);
-    tile->setSize(cellW, cellH);
-    tile->setVisible(true);
-    // Canvas's doLayout is a no-op, so we lay out each pool tile explicitly
-    // here — otherwise the inner glyph/label children never get measured.
-    tile->layout(renderer);
   }
 
   // Step 5: position the input overlay across the entire virtual canvas.

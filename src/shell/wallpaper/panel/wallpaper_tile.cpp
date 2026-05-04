@@ -16,7 +16,6 @@
 
 WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentScale)
     : m_cellWidth(cellWidth), m_cellHeight(cellHeight), m_contentScale(contentScale) {
-  setSize(cellWidth, cellHeight);
   setAcceptedButtons(BTN_LEFT);
   setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
   setOnClick([this](const InputArea::PointerData&) {
@@ -40,49 +39,35 @@ WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentSca
     }
   });
 
-  const float padding = Style::spaceXs * m_contentScale;
-  const float innerGap = Style::spaceXs * m_contentScale;
-  const float labelH = Style::fontSizeCaption * m_contentScale * 1.4f;
-  const float frameWidth = std::max(0.0f, cellWidth - padding * 2.0f);
-  const float frameHeight = std::max(0.0f, cellHeight - padding * 2.0f - innerGap - labelH);
-  const float outlineWidth = Style::borderWidth * 2.0f;
   const float frameRadius = Style::radiusLg * m_contentScale;
+  const float outlineWidth = Style::borderWidth * 2.0f;
 
   auto layout = std::make_unique<Flex>();
   layout->setDirection(FlexDirection::Vertical);
   layout->setAlign(FlexAlign::Center);
-  layout->setGap(innerGap);
-  layout->setPadding(padding);
   m_layout = static_cast<Flex*>(addChild(std::move(layout)));
-  m_layout->setFrameSize(cellWidth, cellHeight);
 
   auto thumbBox = std::make_unique<Flex>();
   thumbBox->setDirection(FlexDirection::Vertical);
   thumbBox->setAlign(FlexAlign::Center);
   thumbBox->setJustify(FlexJustify::Center);
   thumbBox->setRadius(frameRadius);
-  thumbBox->setMinWidth(frameWidth);
-  thumbBox->setMinHeight(frameHeight);
-  thumbBox->setFrameSize(frameWidth, frameHeight);
   m_thumbBox = static_cast<Flex*>(m_layout->addChild(std::move(thumbBox)));
 
   auto image = std::make_unique<Image>();
   image->setFit(ImageFit::Cover);
   image->setRadius(frameRadius);
   image->setBorder(colorSpecFromRole(ColorRole::Outline), outlineWidth);
-  image->setFrameSize(frameWidth, frameHeight);
   m_thumb = static_cast<Image*>(m_thumbBox->addChild(std::move(image)));
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("folder");
-  glyph->setGlyphSize(std::min(frameWidth, frameHeight) * 0.45f);
   glyph->setColor(colorSpecFromRole(ColorRole::Primary));
   glyph->setVisible(false);
   m_folderGlyph = static_cast<Glyph*>(m_thumbBox->addChild(std::move(glyph)));
 
   auto loadingGlyph = std::make_unique<Glyph>();
   loadingGlyph->setGlyph("hourglass-empty");
-  loadingGlyph->setGlyphSize(std::min(frameWidth, frameHeight) * 0.32f);
   loadingGlyph->setColor(colorSpecFromRole(ColorRole::OnSurface, 0.5f));
   loadingGlyph->setVisible(false);
   m_loadingGlyph = static_cast<Glyph*>(m_thumbBox->addChild(std::move(loadingGlyph)));
@@ -90,9 +75,45 @@ WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentSca
   auto label = std::make_unique<Label>();
   label->setFontSize(Style::fontSizeCaption * m_contentScale);
   label->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
-  label->setMaxWidth(frameWidth);
   label->setMaxLines(1);
   m_label = static_cast<Label*>(m_layout->addChild(std::move(label)));
+
+  setCellSize(cellWidth, cellHeight);
+}
+
+void WallpaperTile::setCellSize(float cellWidth, float cellHeight) {
+  m_cellWidth = cellWidth;
+  m_cellHeight = cellHeight;
+  setSize(cellWidth, cellHeight);
+
+  const float padding = Style::spaceXs * m_contentScale;
+  const float innerGap = Style::spaceXs * m_contentScale;
+  const float labelH = Style::fontSizeCaption * m_contentScale * 1.4f;
+  const float frameWidth = std::max(0.0f, cellWidth - padding * 2.0f);
+  const float frameHeight = std::max(0.0f, cellHeight - padding * 2.0f - innerGap - labelH);
+
+  if (m_layout != nullptr) {
+    m_layout->setGap(innerGap);
+    m_layout->setPadding(padding);
+    m_layout->setFrameSize(cellWidth, cellHeight);
+  }
+  if (m_thumbBox != nullptr) {
+    m_thumbBox->setMinWidth(frameWidth);
+    m_thumbBox->setMinHeight(frameHeight);
+    m_thumbBox->setFrameSize(frameWidth, frameHeight);
+  }
+  if (m_thumb != nullptr) {
+    m_thumb->setFrameSize(frameWidth, frameHeight);
+  }
+  if (m_folderGlyph != nullptr) {
+    m_folderGlyph->setGlyphSize(std::min(frameWidth, frameHeight) * 0.45f);
+  }
+  if (m_loadingGlyph != nullptr) {
+    m_loadingGlyph->setGlyphSize(std::min(frameWidth, frameHeight) * 0.32f);
+  }
+  if (m_label != nullptr) {
+    m_label->setMaxWidth(frameWidth);
+  }
 }
 
 void WallpaperTile::doLayout(Renderer& renderer) { InputArea::doLayout(renderer); }
