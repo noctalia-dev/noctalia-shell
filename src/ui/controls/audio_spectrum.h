@@ -33,6 +33,7 @@ public:
   void setMirrored(bool mirrored);
   void setCentered(bool centered);
   void setSmoothingTimeMs(float tauMs) noexcept { m_smoothingTauMs = std::max(0.0f, tauMs); }
+  void setMinDisplayValue(float minValue) noexcept { m_minDisplayValue = std::clamp(minValue, 0.0f, 1.0f); }
 
   void tick(float deltaMs);
   [[nodiscard]] bool converged() const noexcept { return m_converged; }
@@ -53,6 +54,7 @@ private:
   ColorSpec m_lowColor = colorSpecFromRole(ColorRole::Primary);
   ColorSpec m_highColor = colorSpecFromRole(ColorRole::Primary);
   float m_spacingRatio = 0.5f;
+  float m_minDisplayValue = 0.0f;
   AudioSpectrumOrientation m_orientation = AudioSpectrumOrientation::Horizontal;
   AudioSpectrumLayoutMode m_layoutMode = AudioSpectrumLayoutMode::QuantizedCentered;
   bool m_mirrored = false;

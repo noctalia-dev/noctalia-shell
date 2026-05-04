@@ -390,13 +390,6 @@ std::unique_ptr<Flex> MediaTab::create() {
   visualizerColumn->setClipChildren(true);
   m_visualizerColumn = visualizerColumn.get();
 
-  auto visualizerLabel = std::make_unique<Label>();
-  visualizerLabel->setText(i18n::tr("control-center.media.spectrum"));
-  visualizerLabel->setBold(true);
-  visualizerLabel->setFontSize(Style::fontSizeTitle * scale);
-  visualizerLabel->setColor(colorSpecFromRole(ColorRole::OnSurface));
-  visualizerColumn->addChild(std::move(visualizerLabel));
-
   auto visualizerBody = std::make_unique<Flex>();
   visualizerBody->setDirection(FlexDirection::Horizontal);
   visualizerBody->setAlign(FlexAlign::Stretch);
@@ -411,6 +404,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   visualizerSpectrum->setOrientation(AudioSpectrumOrientation::Vertical);
   visualizerSpectrum->setMirrored(true);
   visualizerSpectrum->setCentered(true);
+  visualizerSpectrum->setMinDisplayValue(0.01f);
   visualizerSpectrum->setFlexGrow(1.0f);
   m_visualizerSpectrum = visualizerSpectrum.get();
   visualizerBody->addChild(std::move(visualizerSpectrum));

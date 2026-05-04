@@ -49,6 +49,7 @@ void DesktopAudioVisualizerWidget::create() {
   visualizer->setMirrored(m_mirrored);
   visualizer->setSpacingRatio(0.4f);
   visualizer->setGradient(m_lowColor, m_highColor);
+  visualizer->setMinDisplayValue(m_minValue);
   m_visualizer = visualizer.get();
   rootNode->addChild(std::move(visualizer));
 
@@ -96,13 +97,7 @@ void DesktopAudioVisualizerWidget::syncSpectrum(Renderer* renderer) {
     return;
   }
 
-  auto values = m_spectrum->values(m_listenerId);
-  if (m_minValue > 0.0f) {
-    for (float& value : values) {
-      value = std::max(value, m_minValue);
-    }
-  }
-  m_visualizer->setValues(values);
+  m_visualizer->setValues(m_spectrum->values(m_listenerId));
   m_pendingSpectrumUpdate = false;
   if (renderer != nullptr) {
     m_visualizer->layout(*renderer);

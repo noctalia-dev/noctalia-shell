@@ -148,9 +148,10 @@ void AudioSpectrum::updateBarsGeometry() {
           m_mirrored ? (i < static_cast<int>(m_displayValues.size()) ? static_cast<int>(m_displayValues.size()) - 1 - i
                                                                      : i - static_cast<int>(m_displayValues.size()))
                      : i;
-      const float value = valueIndex >= 0 && valueIndex < static_cast<int>(m_displayValues.size())
-                              ? std::clamp(m_displayValues[static_cast<std::size_t>(valueIndex)], 0.0f, 1.0f)
-                              : 0.0f;
+      const float rawValue = valueIndex >= 0 && valueIndex < static_cast<int>(m_displayValues.size())
+                                 ? std::clamp(m_displayValues[static_cast<std::size_t>(valueIndex)], 0.0f, 1.0f)
+                                 : 0.0f;
+      const float value = std::max(rawValue, m_minDisplayValue);
       const float barHeight = fill ? std::round(value * height()) : std::floor(value * height() + 0.5f);
       const float y =
           m_centered ? (fill ? std::round((height() - barHeight) * 0.5f) : std::floor((height() - barHeight) * 0.5f))
@@ -178,9 +179,10 @@ void AudioSpectrum::updateBarsGeometry() {
         m_mirrored ? (i < static_cast<int>(m_displayValues.size()) ? static_cast<int>(m_displayValues.size()) - 1 - i
                                                                    : i - static_cast<int>(m_displayValues.size()))
                    : i;
-    const float value = valueIndex >= 0 && valueIndex < static_cast<int>(m_displayValues.size())
-                            ? std::clamp(m_displayValues[static_cast<std::size_t>(valueIndex)], 0.0f, 1.0f)
-                            : 0.0f;
+    const float rawValue = valueIndex >= 0 && valueIndex < static_cast<int>(m_displayValues.size())
+                               ? std::clamp(m_displayValues[static_cast<std::size_t>(valueIndex)], 0.0f, 1.0f)
+                               : 0.0f;
+    const float value = std::max(rawValue, m_minDisplayValue);
     const float barWidth = fill ? std::round(value * width()) : std::floor(value * width() + 0.5f);
     const float x = m_centered
                         ? (fill ? std::round((width() - barWidth) * 0.5f) : std::floor((width() - barWidth) * 0.5f))
