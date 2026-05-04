@@ -1047,6 +1047,9 @@
         "shadow": {
           "label": "Shadow"
         },
+        "contact-shadow": {
+          "label": "Contact Shadow"
+        },
         "shadow-blur": {
           "label": "Shadow Blur"
         },
@@ -1563,6 +1566,9 @@
         },
         "shadow": {
           "description": "Cast the global surface shadow from the bar"
+        },
+        "contact-shadow": {
+          "description": "Dark gradient between an attached panel and the bar to suggest depth at the seam"
         }
       }
     }

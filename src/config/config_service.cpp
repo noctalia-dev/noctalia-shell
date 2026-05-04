@@ -560,6 +560,8 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.widgetSpacing = *ovr.widgetSpacing;
     if (ovr.shadow)
       resolved.shadow = *ovr.shadow;
+    if (ovr.contactShadow)
+      resolved.contactShadow = *ovr.contactShadow;
     if (ovr.attachPanels)
       resolved.attachPanels = *ovr.attachPanels;
     if (ovr.startWidgets)
@@ -903,6 +905,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
         bar.widgetSpacing = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["shadow"].value<bool>())
         bar.shadow = *v;
+      if (auto v = (*barTbl)["contact_shadow"].value<bool>())
+        bar.contactShadow = *v;
       if (auto v = (*barTbl)["scale"].value<double>())
         bar.scale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
       if (auto* n = (*barTbl)["start"].as_array())
@@ -988,6 +992,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
             ovr.scale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
           if (auto v = (*monTbl)["shadow"].value<bool>())
             ovr.shadow = *v;
+          if (auto v = (*monTbl)["contact_shadow"].value<bool>())
+            ovr.contactShadow = *v;
           if (auto* n = (*monTbl)["start"].as_array())
             ovr.startWidgets = readStringArray(*n);
           if (auto* n = (*monTbl)["center"].as_array())

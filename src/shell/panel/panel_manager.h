@@ -153,6 +153,7 @@ private:
   Node* m_attachedRevealClipNode = nullptr;
   Node* m_attachedRevealContentNode = nullptr;
   Box* m_panelShadowNode = nullptr;
+  Box* m_panelContactShadowNode = nullptr;
   InputDispatcher m_inputDispatcher;
 
   std::unordered_map<std::string, std::unique_ptr<Panel>> m_panels;
@@ -169,6 +170,7 @@ private:
   std::uint32_t m_panelVisualWidth = 0;
   std::uint32_t m_panelVisualHeight = 0;
   float m_attachedBackgroundOpacity = 1.0f;
+  bool m_attachedContactShadow = false;
   float m_attachedRevealProgress = 1.0f;
   float m_detachedRevealProgress = 1.0f;
   AttachedRevealDirection m_attachedRevealDirection = AttachedRevealDirection::Down;

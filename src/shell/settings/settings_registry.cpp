@@ -763,6 +763,9 @@ namespace settings {
       entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.shadow.label"),
                                   tr("settings.schema.bar.shadow.description"), path("shadow"),
                                   ToggleSetting{selectedBar->shadow}, "shadow"));
+      entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.contact-shadow.label"),
+                                  tr("settings.schema.bar.contact-shadow.description"), path("contact_shadow"),
+                                  ToggleSetting{selectedBar->contactShadow}, "shadow contact panel attached"));
       entries.push_back(makeEntry(section, "widgets", tr("settings.schema.bar.widget-capsules.label"),
                                   tr("settings.schema.bar.widget-capsules.description"), path("capsule"),
                                   ToggleSetting{selectedBar->widgetCapsuleDefault}, "pill"));
@@ -880,6 +883,10 @@ namespace settings {
       entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.shadow.label"),
                                   tr("settings.schema.bar.shadow.description"), mpath("shadow"),
                                   ToggleSetting{ovr.shadow.value_or(bar.shadow)}, "shadow"));
+      entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.contact-shadow.label"),
+                                  tr("settings.schema.bar.contact-shadow.description"), mpath("contact_shadow"),
+                                  ToggleSetting{ovr.contactShadow.value_or(bar.contactShadow)},
+                                  "shadow contact panel attached"));
       entries.push_back(makeEntry(
           section, "widgets", tr("settings.schema.bar.widget-spacing.label"),
           tr("settings.schema.bar.widget-spacing.description"), mpath("widget_spacing"),

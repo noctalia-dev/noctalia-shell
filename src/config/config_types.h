@@ -32,6 +32,7 @@ struct BarMonitorOverride {
   std::optional<std::int32_t> padding;       // main-axis padding from bar edges to start/end sections
   std::optional<std::int32_t> widgetSpacing; // gap between widgets within a section
   std::optional<bool> shadow;                // use the global shell shadow on this bar
+  std::optional<bool> contactShadow;         // dark gradient between attached panel and bar
   std::optional<bool> attachPanels;          // allow panels to attach to this bar
   std::optional<float> scale;
   std::optional<std::vector<std::string>> startWidgets;
@@ -67,6 +68,7 @@ struct BarConfig {
   std::int32_t padding = 14;      // main-axis padding from bar edges to start/end sections
   std::int32_t widgetSpacing = 6; // gap between widgets within a section
   bool shadow = true;             // use the global shell shadow
+  bool contactShadow = false;     // dark gradient between attached panel and bar
   bool attachPanels = true;       // allow panels to attach to this bar
   float scale = 1.0f;             // content scale multiplier for glyphs and text
   std::vector<std::string> startWidgets = {"launcher", "wallpaper", "workspaces"};
