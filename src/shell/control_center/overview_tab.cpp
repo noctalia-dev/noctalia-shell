@@ -386,6 +386,18 @@ std::unique_ptr<Flex> OverviewTab::createHeaderActions() {
   m_settingsButton = settingsBtn.get();
   actions->addChild(std::move(settingsBtn));
 
+  auto sessionBtn = std::make_unique<Button>();
+  sessionBtn->setGlyph("shutdown");
+  sessionBtn->setVariant(ButtonVariant::Default);
+  sessionBtn->setGlyphSize(Style::fontSizeBody * scale);
+  sessionBtn->setMinWidth(Style::controlHeightSm * scale);
+  sessionBtn->setMinHeight(Style::controlHeightSm * scale);
+  sessionBtn->setPadding(Style::spaceXs * scale);
+  sessionBtn->setRadius(Style::radiusMd * scale);
+  sessionBtn->setOnClick([]() { PanelManager::instance().togglePanel("session"); });
+  m_sessionButton = sessionBtn.get();
+  actions->addChild(std::move(sessionBtn));
+
   return actions;
 }
 
@@ -598,6 +610,7 @@ void OverviewTab::onClose() {
   m_weatherLine = nullptr;
   m_userFacts = nullptr;
   m_settingsButton = nullptr;
+  m_sessionButton = nullptr;
   m_loadedAvatarPath.clear();
   m_wallpaperBg = nullptr;
   m_wallpaperGradient = nullptr;

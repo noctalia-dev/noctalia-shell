@@ -71,6 +71,7 @@ private:
   Label* m_weatherLine = nullptr;
   Label* m_userFacts = nullptr;
   Button* m_settingsButton = nullptr;
+  Button* m_sessionButton = nullptr;
   std::string m_loadedAvatarPath;
 
   Image* m_wallpaperBg = nullptr;
