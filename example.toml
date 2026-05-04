@@ -260,3 +260,6 @@ battery_low_percent_threshold = 0   # set to e.g. 15 to enable battery_under_thr
 
 # [widget.control-center]
 # use_distro_logo = true
+
+# [widget.notifications]
+# hide_when_no_unread = true

@@ -9,7 +9,7 @@ class NotificationManager;
 
 class NotificationWidget : public Widget {
 public:
-  NotificationWidget(NotificationManager* manager, wl_output* output);
+  NotificationWidget(NotificationManager* manager, wl_output* output, bool hideWhenNoUnread = false);
 
   void create() override;
 
@@ -22,6 +22,7 @@ private:
   wl_output* m_output = nullptr;
   Glyph* m_glyph = nullptr;
   Node* m_dot = nullptr;
+  bool m_hideWhenNoUnread = false;
   bool m_hasNotifications = false;
   bool m_dndEnabled = false;
 };

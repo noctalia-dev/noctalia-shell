@@ -458,6 +458,8 @@ namespace settings {
       add(doubleSpec("art_size", 16.0, 8.0, 96.0, 1.0));
     } else if (type == "network") {
       add(boolSpec("show_label", true));
+    } else if (type == "notifications") {
+      add(boolSpec("hide_when_no_unread", false));
     } else if (type == "scripted") {
       add(stringSpec("script"));
       add(boolSpec("hot_reload", false, true));

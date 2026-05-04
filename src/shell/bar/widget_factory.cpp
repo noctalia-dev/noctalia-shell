@@ -246,7 +246,8 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "notifications") {
-    auto widget = std::make_unique<NotificationWidget>(m_notifications, output);
+    const bool hideWhenNoUnread = wc != nullptr ? wc->getBool("hide_when_no_unread", false) : false;
+    auto widget = std::make_unique<NotificationWidget>(m_notifications, output, hideWhenNoUnread);
     widget->setContentScale(contentScale);
     return widget;
   }

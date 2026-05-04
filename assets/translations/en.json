@@ -939,6 +939,10 @@
           "label": "Hide When Off",
           "description": "Hide the lock key indicator when inactive"
         },
+        "hide_when_no_unread": {
+          "label": "Hide When No New",
+          "description": "Hide the notifications widget when there are no unread notifications"
+        },
         "high_color": {
           "label": "High Color",
           "description": "Color used for high visualizer values"

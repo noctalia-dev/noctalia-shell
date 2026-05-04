@@ -15,8 +15,8 @@ namespace {
   constexpr float kDotBaseSize = 6.0f;
 } // namespace
 
-NotificationWidget::NotificationWidget(NotificationManager* manager, wl_output* output)
-    : m_manager(manager), m_output(output) {}
+NotificationWidget::NotificationWidget(NotificationManager* manager, wl_output* output, bool hideWhenNoUnread)
+    : m_manager(manager), m_output(output), m_hideWhenNoUnread(hideWhenNoUnread) {}
 
 void NotificationWidget::create() {
   auto area = std::make_unique<InputArea>();
@@ -80,6 +80,13 @@ void NotificationWidget::doUpdate(Renderer& /*renderer*/) { refreshIndicatorStat
 void NotificationWidget::refreshIndicatorState() {
   const bool hasNotifications = (m_manager != nullptr) && m_manager->hasUnreadNotificationHistory();
   const bool dndEnabled = (m_manager != nullptr) && m_manager->doNotDisturb();
+
+  if (Node* rootNode = root(); rootNode != nullptr) {
+    const bool showWidget = !m_hideWhenNoUnread || hasNotifications;
+    rootNode->setVisible(showWidget);
+    rootNode->setParticipatesInLayout(showWidget);
+  }
+
   if (hasNotifications == m_hasNotifications && dndEnabled == m_dndEnabled) {
     return;
   }
