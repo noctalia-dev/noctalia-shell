@@ -15,6 +15,7 @@
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
+#include "ui/controls/virtual_grid_view.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "util/fuzzy_match.h"
@@ -30,7 +31,6 @@ namespace {
   constexpr std::size_t kMaxResults = 50;
   constexpr std::size_t kRowOverscan = 3;
   constexpr float kIconSize = 32.0f;
-  constexpr float kScrollViewPaddingV = Style::spaceSm;
   constexpr double kUsageScorePerCount = 0.1;
   constexpr double kTypedUsageScoreCap = 0.5;
 
@@ -61,40 +61,10 @@ namespace {
     return std::ceil(std::max(kIconSize * scale, textHeight) + paddingY * 2.0f);
   }
 
-  std::size_t rowPoolCount(float viewportHeight, float rowHeight) {
-    const float safeHeight = std::max(rowHeight, 1.0f);
-    return std::max<std::size_t>(1,
-                                 static_cast<std::size_t>(std::ceil(viewportHeight / safeHeight)) + kRowOverscan * 2);
-  }
-
-  class LauncherResultRow final : public InputArea {
+  class LauncherResultRow final : public Node {
   public:
-    using IndexCallback = std::function<void(std::size_t)>;
-
     LauncherResultRow(float scale, AsyncTextureCache* asyncTextures)
         : m_scale(scale), m_rowHeight(launcherRowHeight(scale)), m_asyncTextures(asyncTextures) {
-      setPropagateEvents(true);
-      setOnClick([this](const InputArea::PointerData&) {
-        if (m_boundIndex != static_cast<std::size_t>(-1) && m_onClick) {
-          m_onClick(m_boundIndex);
-        }
-      });
-      setOnMotion([this](const InputArea::PointerData&) {
-        if (m_boundIndex != static_cast<std::size_t>(-1) && m_onMotion) {
-          m_onMotion(m_boundIndex);
-        }
-      });
-      setOnEnter([this](const InputArea::PointerData&) {
-        if (m_boundIndex != static_cast<std::size_t>(-1) && m_onEnter) {
-          m_onEnter(m_boundIndex);
-        }
-      });
-      setOnLeave([this]() {
-        if (m_boundIndex != static_cast<std::size_t>(-1) && m_onLeave) {
-          m_onLeave(m_boundIndex);
-        }
-      });
-
       auto row = std::make_unique<Flex>();
       row->setDirection(FlexDirection::Horizontal);
       row->setAlign(FlexAlign::Center);
@@ -142,22 +112,9 @@ namespace {
       subtitle->setMaxLines(1);
       subtitle->setStableBaseline(true);
       m_subtitle = static_cast<Label*>(m_textCol->addChild(std::move(subtitle)));
-
-      setVisible(false);
     }
 
-    [[nodiscard]] std::size_t boundIndex() const noexcept { return m_boundIndex; }
-
-    void setCallbacks(IndexCallback onClick, IndexCallback onMotion, IndexCallback onEnter, IndexCallback onLeave) {
-      m_onClick = std::move(onClick);
-      m_onMotion = std::move(onMotion);
-      m_onEnter = std::move(onEnter);
-      m_onLeave = std::move(onLeave);
-    }
-
-    void bind(Renderer& renderer, const LauncherResult& result, std::size_t index, float width, bool selected,
-              bool hovered) {
-      m_boundIndex = index;
+    void bind(Renderer& renderer, const LauncherResult& result, float width, bool selected, bool hovered) {
       m_selected = selected;
       m_hovered = hovered;
       m_iconPath = result.iconPath;
@@ -165,7 +122,6 @@ namespace {
       m_iconTargetSize = static_cast<int>(std::round(kIconSize * m_scale));
       m_actionTextVisible = !result.actionText.empty();
 
-      setVisible(true);
       setSize(width, m_rowHeight);
       m_row->setFrameSize(width, m_rowHeight);
 
@@ -204,7 +160,6 @@ namespace {
       }
 
       applyVisualState();
-      layout(renderer);
     }
 
     bool refreshAsyncIcon(Renderer& renderer) {
@@ -226,36 +181,12 @@ namespace {
       return ready;
     }
 
-    void clear(Renderer& renderer) {
-      m_boundIndex = static_cast<std::size_t>(-1);
-      m_selected = false;
-      m_hovered = false;
-      m_actionTextVisible = false;
-      m_iconPath.clear();
-      m_fallbackGlyph = "app-window";
-      m_iconTargetSize = 0;
-      m_image->clear(renderer);
-      m_actionLabel->setVisible(false);
-      m_image->setVisible(false);
-      m_glyph->setVisible(false);
-      setVisible(false);
-    }
-
-    void setVisualState(bool selected, bool hovered) {
-      if (m_selected == selected && m_hovered == hovered) {
-        return;
-      }
-      m_selected = selected;
-      m_hovered = hovered;
-      applyVisualState();
-    }
-
   protected:
     void doLayout(Renderer& renderer) override {
       if (!m_actionTextVisible && !m_iconPath.empty()) {
         (void)refreshAsyncIcon(renderer);
       }
-      InputArea::doLayout(renderer);
+      Node::doLayout(renderer);
     }
 
   private:
@@ -271,7 +202,6 @@ namespace {
 
     float m_scale = 1.0f;
     float m_rowHeight = 0.0f;
-    std::size_t m_boundIndex = static_cast<std::size_t>(-1);
     bool m_selected = false;
     bool m_hovered = false;
     Flex* m_row = nullptr;
@@ -286,16 +216,52 @@ namespace {
     std::string m_fallbackGlyph;
     int m_iconTargetSize = 0;
     bool m_actionTextVisible = false;
-    IndexCallback m_onClick;
-    IndexCallback m_onMotion;
-    IndexCallback m_onEnter;
-    IndexCallback m_onLeave;
   };
 
 } // namespace
 
+class LauncherResultAdapter final : public VirtualGridAdapter {
+public:
+  using ActivateCallback = std::function<void(std::size_t)>;
+
+  LauncherResultAdapter(float scale, AsyncTextureCache* cache) : m_scale(scale), m_cache(cache) {}
+
+  void setResults(const std::vector<LauncherResult>* results) { m_results = results; }
+  void setRenderer(Renderer* renderer) { m_renderer = renderer; }
+  void setOnActivate(ActivateCallback callback) { m_onActivate = std::move(callback); }
+
+  [[nodiscard]] std::size_t itemCount() const override { return m_results == nullptr ? 0u : m_results->size(); }
+
+  [[nodiscard]] std::unique_ptr<Node> createTile() override {
+    return std::make_unique<LauncherResultRow>(m_scale, m_cache);
+  }
+
+  void bindTile(Node& tile, std::size_t index, bool selected, bool hovered) override {
+    if (m_renderer == nullptr || m_results == nullptr || index >= m_results->size()) {
+      return;
+    }
+    auto* row = static_cast<LauncherResultRow*>(&tile);
+    row->bind(*m_renderer, (*m_results)[index], tile.width(), selected, hovered);
+  }
+
+  void onActivate(std::size_t index) override {
+    if (m_onActivate) {
+      m_onActivate(index);
+    }
+  }
+
+private:
+  float m_scale;
+  AsyncTextureCache* m_cache = nullptr;
+  Renderer* m_renderer = nullptr;
+  const std::vector<LauncherResult>* m_results = nullptr;
+  ActivateCallback m_onActivate;
+};
+
 LauncherPanel::LauncherPanel(ConfigService* config, AsyncTextureCache* asyncTextures)
     : m_config(config), m_asyncTextures(asyncTextures) {}
+
+LauncherPanel::~LauncherPanel() = default;
 
 void LauncherPanel::addProvider(std::unique_ptr<LauncherProvider> provider) {
   provider->initialize();
@@ -319,35 +285,44 @@ void LauncherPanel::create() {
   input->setOnSubmit([this](const std::string& /*text*/) { activateSelected(); });
   input->setOnKeyEvent([this](std::uint32_t sym, std::uint32_t modifiers) { return handleKeyEvent(sym, modifiers); });
   m_input = input.get();
-
   container->addChild(std::move(input));
 
-  auto scrollView = std::make_unique<ScrollView>();
-  scrollView->setScrollbarVisible(true);
-  scrollView->setFlexGrow(1.0f);
-  scrollView->setOnScrollChanged([this](float offset) {
-    if (m_virtualRowHeight <= 0.0f || m_results.empty()) {
-      return;
-    }
-    const auto topIndex = static_cast<std::size_t>(std::floor(offset / m_virtualRowHeight));
-    const auto startIndex = topIndex > kRowOverscan ? topIndex - kRowOverscan : 0;
-    if (startIndex != m_rowPoolStartIndex) {
-      m_dirty = true;
-      PanelManager::instance().requestLayout();
+  auto body = std::make_unique<Flex>();
+  body->setDirection(FlexDirection::Vertical);
+  body->setAlign(FlexAlign::Stretch);
+  body->setFlexGrow(1.0f);
+  body->setFillWidth(true);
+  m_body = body.get();
+
+  m_adapter = std::make_unique<LauncherResultAdapter>(scale, m_asyncTextures);
+  m_adapter->setResults(&m_results);
+  m_adapter->setOnActivate([this](std::size_t index) { activateAt(index); });
+
+  auto grid = std::make_unique<VirtualGridView>();
+  grid->setColumns(1);
+  grid->setSquareCells(false);
+  grid->setCellHeight(launcherRowHeight(scale));
+  grid->setColumnGap(0.0f);
+  grid->setRowGap(0.0f);
+  grid->setOverscanRows(kRowOverscan);
+  grid->setFlexGrow(1.0f);
+  grid->setFillWidth(true);
+  grid->setAdapter(m_adapter.get());
+  grid->setOnSelectionChanged([this](std::optional<std::size_t> idx) {
+    if (idx.has_value() && *idx < m_results.size()) {
+      m_selectedIndex = *idx;
     }
   });
-  m_scrollView = scrollView.get();
-  m_list = scrollView->content();
-  m_list->setDirection(FlexDirection::Vertical);
-  m_list->setAlign(FlexAlign::Start);
-  auto resultsRoot = std::make_unique<Node>();
-  m_resultsRoot = static_cast<Node*>(m_list->addChild(std::move(resultsRoot)));
+  m_grid = static_cast<VirtualGridView*>(body->addChild(std::move(grid)));
+
   auto emptyLabel = std::make_unique<Label>();
   emptyLabel->setCaptionStyle();
   emptyLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   emptyLabel->setVisible(false);
-  m_emptyLabel = static_cast<Label*>(m_resultsRoot->addChild(std::move(emptyLabel)));
-  container->addChild(std::move(scrollView));
+  emptyLabel->setParticipatesInLayout(false);
+  m_emptyLabel = static_cast<Label*>(body->addChild(std::move(emptyLabel)));
+
+  container->addChild(std::move(body));
 
   m_container = container.get();
   setRoot(std::move(container));
@@ -358,59 +333,33 @@ void LauncherPanel::create() {
 }
 
 void LauncherPanel::doLayout(Renderer& renderer, float width, float height) {
-  if (m_container == nullptr || m_input == nullptr || m_scrollView == nullptr) {
+  if (m_container == nullptr || m_input == nullptr) {
     return;
+  }
+
+  if (m_adapter != nullptr) {
+    m_adapter->setRenderer(&renderer);
   }
 
   m_container->setSize(width, height);
   m_container->layout(renderer);
 
-  bool relayoutNeeded = false;
-  if (m_dirty || m_lastListWidth != m_scrollView->contentViewportWidth()) {
-    rebuildResults(renderer, m_scrollView->contentViewportWidth());
-    m_dirty = false;
-    relayoutNeeded = true;
-  }
-
-  if (relayoutNeeded) {
-    m_container->layout(renderer);
-    // Rebuilding may have shown/hidden the scrollbar, which changes the
-    // viewport width. Re-measure and rebuild once more so every row lands at
-    // the final width — otherwise the first-frame selection background can
-    // overshoot.
-    if (m_lastListWidth != m_scrollView->contentViewportWidth()) {
-      rebuildResults(renderer, m_scrollView->contentViewportWidth());
-      m_container->layout(renderer);
-    }
-  }
-
   if (m_pendingScrollToSelected) {
     scrollToSelected();
     m_pendingScrollToSelected = false;
-  }
-
-  m_lastWidth = width;
-}
-
-void LauncherPanel::doUpdate(Renderer& renderer) {
-  if (m_dirty && m_lastWidth > 0.0f) {
-    const float listWidth = m_scrollView != nullptr ? m_scrollView->contentViewportWidth() : m_lastWidth;
-    rebuildResults(renderer, listWidth);
-    m_dirty = false;
+    // Re-run layout so the rebound rows reflect the new scroll offset.
+    m_container->layout(renderer);
   }
 }
 
 void LauncherPanel::onOpen(std::string_view context) {
-  m_hoverIndex = static_cast<std::size_t>(-1);
-  m_mouseActive = false;
   m_pendingScrollToSelected = false;
-  m_lastListWidth = -1.0f;
   const std::string initialValue(context);
   if (m_input != nullptr) {
     m_input->setValue(initialValue);
   }
-  if (m_scrollView != nullptr) {
-    m_scrollView->setScrollOffset(0.0f);
+  if (m_grid != nullptr) {
+    m_grid->scrollView().setScrollOffset(0.0f);
   }
   onInputChanged(initialValue);
 }
@@ -423,22 +372,19 @@ void LauncherPanel::onClose() {
   m_query.clear();
   m_results.clear();
   m_selectedIndex = 0;
-  m_rowPoolStartIndex = static_cast<std::size_t>(-1);
-  m_lastWidth = 0.0f;
-  m_lastListWidth = -1.0f;
-  m_virtualRowHeight = 0.0f;
-  m_dirty = false;
   m_pendingScrollToSelected = false;
 
-  // The scene tree (and all nodes) is destroyed by PanelManager after onClose(),
-  // so null out all raw pointers to avoid dangling references on re-open.
+  if (m_grid != nullptr) {
+    m_grid->setAdapter(nullptr);
+  }
+  m_adapter.reset();
+
+  // The scene tree (and all nodes) is destroyed by PanelManager after onClose().
   m_container = nullptr;
   m_input = nullptr;
-  m_scrollView = nullptr;
-  m_list = nullptr;
-  m_resultsRoot = nullptr;
+  m_body = nullptr;
+  m_grid = nullptr;
   m_emptyLabel = nullptr;
-  m_rowPool.clear();
   clearReleasedRoot();
 }
 
@@ -460,6 +406,7 @@ void LauncherPanel::onIconThemeChanged() {
       }
     }
   }
+  refreshResults();
   m_pendingScrollToSelected = true;
 }
 
@@ -546,122 +493,47 @@ void LauncherPanel::onInputChanged(const std::string& text) {
   }
 
   m_selectedIndex = 0;
-  m_rowPoolStartIndex = static_cast<std::size_t>(-1);
-  m_dirty = true;
+  refreshResults();
 }
 
-void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
-  uiAssertNotRendering("LauncherPanel::rebuildResults");
-  if (m_list == nullptr || m_resultsRoot == nullptr || m_emptyLabel == nullptr || m_scrollView == nullptr) {
+void LauncherPanel::refreshResults() {
+  uiAssertNotRendering("LauncherPanel::refreshResults");
+  if (m_grid == nullptr || m_emptyLabel == nullptr) {
     return;
   }
 
-  const float viewportHeight = std::max(0.0f, m_scrollView->height() - kScrollViewPaddingV * 2.0f);
-  m_virtualRowHeight = launcherRowHeight(contentScale());
-  ensureRowPool(viewportHeight);
-
+  m_grid->notifyDataChanged();
   if (m_results.empty()) {
-    m_emptyLabel->setVisible(true);
+    m_grid->setSelectedIndex(std::nullopt);
+    m_grid->scrollView().setScrollOffset(0.0f);
+  } else {
+    m_grid->setSelectedIndex(m_selectedIndex);
+  }
+  applyEmptyState();
+  m_pendingScrollToSelected = !m_results.empty();
+}
+
+void LauncherPanel::applyEmptyState() {
+  if (m_grid == nullptr || m_emptyLabel == nullptr) {
+    return;
+  }
+  const bool empty = m_results.empty();
+  m_grid->setVisible(!empty);
+  m_grid->setParticipatesInLayout(!empty);
+  m_emptyLabel->setVisible(empty);
+  m_emptyLabel->setParticipatesInLayout(empty);
+  if (empty) {
     m_emptyLabel->setText(m_query.empty() ? i18n::tr("launcher.empty.type-to-search")
                                           : i18n::tr("launcher.empty.no-results"));
-    m_emptyLabel->setMaxWidth(width);
-    m_emptyLabel->measure(renderer);
-    m_emptyLabel->setPosition(0.0f, 0.0f);
-    m_resultsRoot->setSize(width, m_emptyLabel->height());
-    for (auto* rowArea : m_rowPool) {
-      static_cast<LauncherResultRow*>(rowArea)->clear(renderer);
-    }
-    m_rowPoolStartIndex = static_cast<std::size_t>(-1);
-    m_lastListWidth = width;
-    return;
-  }
-
-  m_emptyLabel->setVisible(false);
-  m_resultsRoot->setSize(width, m_virtualRowHeight * static_cast<float>(m_results.size()));
-
-  const auto topIndex = std::min(
-      static_cast<std::size_t>(std::floor(m_scrollView->scrollOffset() / m_virtualRowHeight)), m_results.size() - 1);
-  const auto startIndex = topIndex > kRowOverscan ? topIndex - kRowOverscan : 0;
-  m_rowPoolStartIndex = startIndex;
-
-  for (std::size_t slot = 0; slot < m_rowPool.size(); ++slot) {
-    auto* row = static_cast<LauncherResultRow*>(m_rowPool[slot]);
-    const std::size_t resultIndex = startIndex + slot;
-    if (resultIndex < m_results.size()) {
-      row->setPosition(0.0f, static_cast<float>(resultIndex) * m_virtualRowHeight);
-      row->bind(renderer, m_results[resultIndex], resultIndex, width, resultIndex == m_selectedIndex,
-                m_mouseActive && resultIndex == m_hoverIndex && resultIndex != m_selectedIndex);
-    } else {
-      row->clear(renderer);
-    }
-  }
-
-  m_lastListWidth = width;
-}
-
-void LauncherPanel::ensureRowPool(float viewportHeight) {
-  if (m_resultsRoot == nullptr) {
-    return;
-  }
-
-  const std::size_t desiredPoolSize = rowPoolCount(viewportHeight, m_virtualRowHeight);
-  if (m_rowPool.size() == desiredPoolSize) {
-    return;
-  }
-
-  for (auto* rowArea : m_rowPool) {
-    m_resultsRoot->removeChild(rowArea);
-  }
-  m_rowPool.clear();
-
-  const float scale = contentScale();
-  for (std::size_t i = 0; i < desiredPoolSize; ++i) {
-    auto row = std::make_unique<LauncherResultRow>(scale, m_asyncTextures);
-    row->setCallbacks(
-        [this](std::size_t index) {
-          m_selectedIndex = index;
-          activateSelected();
-        },
-        [this](std::size_t index) {
-          if (!m_mouseActive) {
-            m_mouseActive = true;
-          }
-          if (index != m_selectedIndex && m_hoverIndex != index) {
-            m_hoverIndex = index;
-            updateVisibleRowStates();
-            PanelManager::instance().requestRedraw();
-          }
-        },
-        [this](std::size_t index) {
-          if (!m_mouseActive || index == m_selectedIndex || m_hoverIndex == index) {
-            return;
-          }
-          m_hoverIndex = index;
-          updateVisibleRowStates();
-          PanelManager::instance().requestRedraw();
-        },
-        [this](std::size_t index) {
-          if (m_hoverIndex != index || index == m_selectedIndex) {
-            return;
-          }
-          m_hoverIndex = static_cast<std::size_t>(-1);
-          updateVisibleRowStates();
-          PanelManager::instance().requestRedraw();
-        });
-    auto* rowPtr = static_cast<LauncherResultRow*>(m_resultsRoot->addChild(std::move(row)));
-    m_rowPool.push_back(rowPtr);
   }
 }
 
-void LauncherPanel::updateVisibleRowStates() {
-  for (auto* rowArea : m_rowPool) {
-    auto* row = static_cast<LauncherResultRow*>(rowArea);
-    const std::size_t index = row->boundIndex();
-    if (index == static_cast<std::size_t>(-1)) {
-      continue;
-    }
-    row->setVisualState(index == m_selectedIndex, m_mouseActive && index == m_hoverIndex && index != m_selectedIndex);
+void LauncherPanel::activateAt(std::size_t index) {
+  if (index >= m_results.size()) {
+    return;
   }
+  m_selectedIndex = index;
+  activateSelected();
 }
 
 void LauncherPanel::activateSelected() {
@@ -694,7 +566,9 @@ bool LauncherPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
   if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Up, sym, modifiers)) {
     if (m_selectedIndex > 0) {
       --m_selectedIndex;
-      m_dirty = true;
+      if (m_grid != nullptr) {
+        m_grid->setSelectedIndex(m_selectedIndex);
+      }
       m_pendingScrollToSelected = true;
       if (root() != nullptr) {
         root()->markLayoutDirty();
@@ -706,7 +580,9 @@ bool LauncherPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
   if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Down, sym, modifiers)) {
     if (!m_results.empty() && m_selectedIndex < m_results.size() - 1) {
       ++m_selectedIndex;
-      m_dirty = true;
+      if (m_grid != nullptr) {
+        m_grid->setSelectedIndex(m_selectedIndex);
+      }
       m_pendingScrollToSelected = true;
       if (root() != nullptr) {
         root()->markLayoutDirty();
@@ -724,18 +600,24 @@ bool LauncherPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
 }
 
 void LauncherPanel::scrollToSelected() {
-  if (m_scrollView == nullptr || m_virtualRowHeight <= 0.0f || m_selectedIndex >= m_results.size()) {
+  if (m_grid == nullptr || m_selectedIndex >= m_results.size()) {
     return;
   }
 
-  const float itemTop = static_cast<float>(m_selectedIndex) * m_virtualRowHeight;
-  const float itemBottom = itemTop + m_virtualRowHeight;
-  const float viewportH = m_scrollView->height() - kScrollViewPaddingV * 2.0f;
-  const float scrollOffset = m_scrollView->scrollOffset();
+  const float rowHeight = launcherRowHeight(contentScale());
+  if (rowHeight <= 0.0f) {
+    return;
+  }
+
+  ScrollView& scroll = m_grid->scrollView();
+  const float itemTop = static_cast<float>(m_selectedIndex) * rowHeight;
+  const float itemBottom = itemTop + rowHeight;
+  const float viewportH = m_grid->height();
+  const float scrollOffset = scroll.scrollOffset();
 
   if (itemTop < scrollOffset) {
-    m_scrollView->setScrollOffset(itemTop);
+    scroll.setScrollOffset(itemTop);
   } else if (itemBottom > scrollOffset + viewportH) {
-    m_scrollView->setScrollOffset(itemBottom - viewportH);
+    scroll.setScrollOffset(itemBottom - viewportH);
   }
 }

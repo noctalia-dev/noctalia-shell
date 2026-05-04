@@ -16,15 +16,17 @@ class Image;
 class Input;
 class InputArea;
 class Label;
+class LauncherResultAdapter;
 class Node;
 class Renderer;
-class ScrollView;
+class VirtualGridView;
 class ConfigService;
 class AsyncTextureCache;
 
 class LauncherPanel : public Panel {
 public:
   LauncherPanel(ConfigService* config, AsyncTextureCache* asyncTextures);
+  ~LauncherPanel() override;
 
   void addProvider(std::unique_ptr<LauncherProvider> provider);
 
@@ -43,14 +45,13 @@ public:
 
 private:
   void doLayout(Renderer& renderer, float width, float height) override;
-  void doUpdate(Renderer& renderer) override;
   void onInputChanged(const std::string& text);
-  void rebuildResults(Renderer& renderer, float width);
-  void ensureRowPool(float viewportHeight);
-  void updateVisibleRowStates();
+  void refreshResults();
+  void activateAt(std::size_t index);
   void activateSelected();
   bool handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers);
   void scrollToSelected();
+  void applyEmptyState();
 
   std::vector<std::unique_ptr<LauncherProvider>> m_providers;
   std::vector<LauncherResult> m_results;
@@ -59,21 +60,13 @@ private:
 
   Flex* m_container = nullptr;
   Input* m_input = nullptr;
-  ScrollView* m_scrollView = nullptr;
-  Flex* m_list = nullptr;
-  Node* m_resultsRoot = nullptr;
+  Flex* m_body = nullptr;
+  VirtualGridView* m_grid = nullptr;
   Label* m_emptyLabel = nullptr;
-  std::vector<InputArea*> m_rowPool;
+  std::unique_ptr<LauncherResultAdapter> m_adapter;
 
   std::string m_query;
   std::size_t m_selectedIndex = 0;
-  std::size_t m_hoverIndex = static_cast<std::size_t>(-1);
-  std::size_t m_rowPoolStartIndex = static_cast<std::size_t>(-1);
-  float m_lastWidth = 0.0f;
-  float m_lastListWidth = -1.0f;
-  float m_virtualRowHeight = 0.0f;
-  bool m_dirty = false;
-  bool m_mouseActive = false;
   bool m_pendingScrollToSelected = false;
   ConfigService* m_config = nullptr;
   AsyncTextureCache* m_asyncTextures = nullptr;
