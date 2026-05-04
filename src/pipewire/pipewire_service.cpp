@@ -1098,12 +1098,13 @@ bool PipeWireService::applyNodeVolumeImmediate(std::uint32_t id, float volume) {
 
   volume = std::clamp(volume, 0.0f, 1.5f);
 
-  // Use wpctl only for real device nodes.
+  // Keep WirePlumber policy in sync without blocking the main loop.
+  // `runAsync` is fire-and-forget, so rapid wheel/slider updates remain responsive.
   const bool isDeviceNode = nd.mediaClass == "Audio/Sink" || nd.mediaClass == "Audio/Source";
   if (isDeviceNode) {
-    const bool updatedViaWpctl =
-        process::runSync({"wpctl", "set-volume", std::to_string(id), std::format("{:.4f}", volume)});
-    if (updatedViaWpctl) {
+    const bool launched = process::runAsync({"wpctl", "set-volume", std::to_string(id), std::format("{:.4f}", volume)});
+    if (launched) {
+      // For devices, keep policy changes in WirePlumber path (pavu/wpctl-visible).
       if (std::abs(nd.volume - volume) >= 0.0001f) {
         nd.volume = volume;
         return true;
@@ -1163,12 +1164,11 @@ void PipeWireService::setNodeMuted(std::uint32_t id, bool muted) {
     return;
   }
 
-  // Match WirePlumber session policy (same as set-volume) so mute state stays consistent
-  // with wpctl and survives odd daemon/node prop ordering after resume/reboot.
+  // Keep WirePlumber policy in sync, but do not block the UI thread.
   const bool isDeviceNode = nd.mediaClass == "Audio/Sink" || nd.mediaClass == "Audio/Source";
   if (isDeviceNode) {
-    const bool updatedViaWpctl = process::runSync({"wpctl", "set-mute", std::to_string(id), muted ? "1" : "0"});
-    if (updatedViaWpctl) {
+    const bool launched = process::runAsync({"wpctl", "set-mute", std::to_string(id), muted ? "1" : "0"});
+    if (launched) {
       const bool before = nd.muted;
       nd.swMute = muted;
       recomputeEffectiveMute(nd);
@@ -1179,7 +1179,7 @@ void PipeWireService::setNodeMuted(std::uint32_t id, bool muted) {
     }
   }
 
-  // Program streams, or device fallback when wpctl is unavailable.
+  // Program streams, and device nodes for immediate local/UI consistency.
   if (nd.hasRoute && nd.routeIndex >= 0) {
     std::uint8_t routeBuffer[512];
     spa_pod_builder routeBuilder;
