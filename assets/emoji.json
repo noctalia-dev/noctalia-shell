@@ -300,6 +300,19 @@
     "category": "people"
   },
   {
+    "emoji": "🙂‍↔️",
+    "name": "head shaking horizontally",
+    "keywords": ["no", "shake", "shaking"],
+    "category": "people"
+  },
+  {
+    "emoji": "🙂‍↕️",
+    "skin_tone_support": false,
+    "name": "head shaking vertically",
+    "keywords": ["yes", "shake", "shaking", "agree"],
+    "category": "people"
+  },
+  {
     "emoji": "😌",
     "name": "relieved face",
     "keywords": ["whew"],
@@ -2448,6 +2461,24 @@
     "category": "people"
   },
   {
+    "emoji": "🚶‍➡️",
+    "name": "person walking facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "🚶‍♀️‍➡️",
+    "name": "woman walking facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "🚶‍♂️‍➡️",
+    "name": "man walking facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
     "emoji": "🧍",
     "name": "person standing",
     "keywords": [],
@@ -2484,6 +2515,24 @@
     "category": "people"
   },
   {
+    "emoji": "🧎‍➡️",
+    "name": "person kneeling facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "🧎‍♀️‍➡️",
+    "name": "woman kneeling facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "🧎‍♂️‍➡️",
+    "name": "man kneeling facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
     "emoji": "🧑‍🦯",
     "name": "person with white cane",
     "keywords": [],
@@ -2498,6 +2547,24 @@
   {
     "emoji": "👩‍🦯",
     "name": "woman with white cane",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "🧑‍🦯‍➡️",
+    "name": "person with white cane facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "👨‍🦯‍➡️",
+    "skin_tone_support_unicode_version": "15.1",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "👩‍🦯‍➡️",
+    "name": "woman with white cane facing right",
     "keywords": [],
     "category": "people"
   },
@@ -2520,6 +2587,24 @@
     "category": "people"
   },
   {
+    "emoji": "🧑‍🦼‍➡️",
+    "name": "person in motorized wheelchair facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "👨‍🦼‍➡️",
+    "name": "man in motorized wheelchair facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "👩‍🦼‍➡️",
+    "name": "woman in motorized wheelchair facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
     "emoji": "🧑‍🦽",
     "name": "person in manual wheelchair",
     "keywords": [],
@@ -2538,6 +2623,25 @@
     "category": "people"
   },
   {
+    "emoji": "🧑‍🦽‍➡️",
+    "name": "person in manual wheelchair facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "👨‍🦽‍➡️",
+    "name": "man in manual wheelchair facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "👩‍🦽‍➡️",
+    "name": "woman in manual wheelchair facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  
+  {
     "emoji": "🏃",
     "name": "person running",
     "keywords": ["exercise", "workout", "marathon"],
@@ -2552,6 +2656,24 @@
   {
     "emoji": "🏃‍♀️",
     "name": "woman running",
+    "keywords": ["exercise", "workout", "marathon"],
+    "category": "people"
+  },
+  {
+    "emoji": "🏃‍➡️",
+    "name": "person running facing right",
+    "keywords": ["exercise", "workout", "marathon"],
+    "category": "people"
+  },
+  {
+    "emoji": "🏃‍♂️‍➡️",
+    "name": "man running facing right",
+    "keywords": ["exercise", "workout", "marathon"],
+    "category": "people"
+  },
+  {
+    "emoji": "🏃‍♀️‍➡️",
+    "name": "woman running facing right",
     "keywords": ["exercise", "workout", "marathon"],
     "category": "people"
   },
@@ -2990,7 +3112,31 @@
   {
     "emoji": "👪",
     "name": "family",
-    "keywords": ["home", "parents", "child"],
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "🧑‍🧑‍🧒",
+    "name": "family adult, adult, child",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "🧑‍🧑‍🧒‍🧒",
+    "name": "family adult, adult, child, child",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "🧑‍🧒",
+    "name": "family adult, child",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "🧑‍🧒‍🧒",
+    "name": "family adult, child, child",
+    "keywords": [],
     "category": "people"
   },
   {
@@ -3696,6 +3842,12 @@
     "category": "animals"
   },
   {
+    "emoji": "🐦‍🔥",
+    "name": "phoenix",
+    "keywords": ["fire", "rising", "ash", "bird"],
+    "category": "animals"
+  },
+  {
     "emoji": "🐸",
     "name": "frog",
     "keywords": [],
@@ -4116,6 +4268,12 @@
     "category": "food"
   },
   {
+    "emoji": "🍋‍🟩",
+    "name": "lime",
+    "keywords": ["margarita"],
+    "category": "food"
+  },
+  {
     "emoji": "🍌",
     "name": "banana",
     "keywords": ["fruit"],
@@ -4298,6 +4456,12 @@
   {
     "emoji": "🫛",
     "name": "pea pod",
+    "keywords": [],
+    "category": "food"
+  },
+  {
+    "emoji": "🍄‍🟫",
+    "name": "brown mushroom",
     "keywords": [],
     "category": "food"
   },
@@ -7946,7 +8110,13 @@
   {
     "emoji": "🔗",
     "name": "link",
-    "keywords": [],
+    "keywords": ["url"],
+    "category": "objects"
+  },
+  {
+    "emoji": "⛓️‍💥",
+    "name": "broken chain",
+    "keywords": ["free", "break"],
     "category": "objects"
   },
   {
@@ -11041,8 +11211,8 @@
   },
   {
     "emoji": "🇹🇷",
-    "name": "Turkey",
-    "keywords": ["turkey"],
+    "name": "Türkiye",
+    "keywords": ["turkey", "turkiye"],
     "category": "flags"
   },
   {
