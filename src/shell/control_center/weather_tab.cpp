@@ -95,9 +95,11 @@ std::unique_ptr<Flex> WeatherTab::create() {
 
   auto currentText = std::make_unique<Flex>();
   currentText->setDirection(FlexDirection::Vertical);
-  currentText->setAlign(FlexAlign::Start);
+  currentText->setAlign(FlexAlign::Stretch);
   currentText->setJustify(FlexJustify::SpaceBetween);
   currentText->setGap(Style::spaceXs * scale);
+  currentText->setFlexGrow(1.0f);
+  currentText->setFillWidth(true);
   m_currentText = currentText.get();
 
   auto currentTop = std::make_unique<Flex>();
@@ -309,11 +311,19 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
   m_rootLayout->setSize(contentWidth, bodyHeight);
   m_rootLayout->layout(renderer);
 
+  const float leftColumnWidth =
+      m_leftColumn != nullptr
+          ? std::max(0.0f, m_leftColumn->width() - (m_leftColumn->paddingLeft() + m_leftColumn->paddingRight()))
+          : contentWidth;
   float currentTextWidth = m_currentText->width();
   if (m_currentCard != nullptr && m_currentGlyph != nullptr) {
+    const float currentCardWidth = leftColumnWidth > 0.0f ? leftColumnWidth : m_currentCard->width();
     const float cardInnerWidth =
-        std::max(0.0f, m_currentCard->width() - (m_currentCard->paddingLeft() + m_currentCard->paddingRight()));
-    currentTextWidth = std::max(1.0f, cardInnerWidth - m_currentGlyph->width() - m_currentCard->gap());
+        std::max(0.0f, currentCardWidth - (m_currentCard->paddingLeft() + m_currentCard->paddingRight()));
+    const float availableTextWidth = std::max(1.0f, cardInnerWidth - m_currentGlyph->width() - m_currentCard->gap());
+    const float balancedTextWidth = std::max(Style::controlHeightLg * 4.4f * contentScale(), cardInnerWidth * 0.58f);
+    currentTextWidth = std::min(availableTextWidth, balancedTextWidth);
+    m_currentText->setMaxWidth(currentTextWidth);
   }
   if (m_currentTempLabel != nullptr) {
     m_currentTempLabel->setMaxWidth(currentTextWidth);
@@ -327,10 +337,6 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
   if (m_updatedLabel != nullptr) {
     m_updatedLabel->setMaxWidth(currentTextWidth);
   }
-  const float leftColumnWidth =
-      m_leftColumn != nullptr
-          ? std::max(0.0f, m_leftColumn->width() - (m_leftColumn->paddingLeft() + m_leftColumn->paddingRight()))
-          : contentWidth;
   if (m_currentCard != nullptr) {
     m_currentCard->setMinWidth(leftColumnWidth);
   }
@@ -506,14 +512,6 @@ void WeatherTab::sync(Renderer& renderer) {
   const bool showLocation = m_config == nullptr || m_config->config().shell.showLocation;
   if (m_updatedLabel != nullptr) {
     m_updatedLabel->setVisible(showLocation);
-  }
-  if (m_detailRows.size() >= 5) {
-    if (m_detailRows[3] != nullptr) {
-      m_detailRows[3]->setVisible(showLocation);
-    }
-    if (m_detailRows[4] != nullptr) {
-      m_detailRows[4]->setVisible(showLocation);
-    }
   }
 
   if (m_weather == nullptr || !m_weather->enabled()) {
