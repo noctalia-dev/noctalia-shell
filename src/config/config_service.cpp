@@ -1636,8 +1636,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
   }
   if (m_config.controlCenter.shortcuts.empty()) {
     m_config.controlCenter.shortcuts = {
-        {"wifi", {}, {}},       {"bluetooth", {}, {}},    {"wallpaper", {}, {}},     {"caffeine", {}, {}},
-        {"nightlight", {}, {}}, {"notification", {}, {}}, {"power_profile", {}, {}}, {"session", {}, {}},
+        {"wifi", {}, {}},         {"bluetooth", {}, {}}, {"nightlight", {}, {}},
+        {"notification", {}, {}}, {"wallpaper", {}, {}}, {"caffeine", {}, {}},
     };
   }
 

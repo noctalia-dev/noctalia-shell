@@ -292,7 +292,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   // --- Shortcuts (right of media + clock) ---
   const auto& shortcuts =
       m_config != nullptr ? m_config->config().controlCenter.shortcuts : std::vector<ShortcutConfig>{};
-  const std::size_t count = std::min(shortcuts.size(), std::size_t{8});
+  const std::size_t count = std::min(shortcuts.size(), std::size_t{6});
 
   auto grid = std::make_unique<GridView>();
   grid->setColumns(2);
