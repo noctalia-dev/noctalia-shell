@@ -122,9 +122,9 @@ ColorPicker::ColorPicker() {
   };
 
   m_hexInput = addField("Hex", 108.0f);
-  m_rInput = addField("R", 44.0f);
-  m_gInput = addField("G", 44.0f);
-  m_bInput = addField("B", 44.0f);
+  m_rInput = addField("R", 56.0f);
+  m_gInput = addField("G", 56.0f);
+  m_bInput = addField("B", 56.0f);
 
   m_hexInput->setOnChange([this](const std::string& v) { onHexInputChange(v); });
   m_rInput->setOnChange([this](const std::string& /*v*/) { onRgbInputChange(); });
