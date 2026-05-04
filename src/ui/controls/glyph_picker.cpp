@@ -2,9 +2,9 @@
 
 #include "i18n/i18n.h"
 #include "render/scene/input_area.h"
+#include "render/text/glyph_registry.h"
 #include "ui/controls/button.h"
 #include "ui/controls/glyph.h"
-#include "ui/controls/glyph_registry.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"

@@ -1,4 +1,4 @@
-#include "ui/controls/glyph_registry.h"
+#include "render/text/glyph_registry.h"
 
 #include "core/log.h"
 #include "core/resource_paths.h"

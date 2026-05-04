@@ -7,7 +7,7 @@
 #include "render/scene/glyph_node.h"
 #include "render/scene/input_area.h"
 #include "render/scene/rect_node.h"
-#include "ui/controls/glyph_registry.h"
+#include "render/text/glyph_registry.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"

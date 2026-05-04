@@ -2,7 +2,7 @@
 
 #include "render/core/renderer.h"
 #include "render/scene/glyph_node.h"
-#include "ui/controls/glyph_registry.h"
+#include "render/text/glyph_registry.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
