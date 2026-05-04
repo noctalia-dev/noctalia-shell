@@ -113,17 +113,18 @@ void AudioSpectrum::updateBarsGeometry() {
     return;
   }
 
-  // Sharp grid: integer-pixel unit shared by bars and gaps. Total slots along the
-  // main axis = barCount bars + (barCount - 1) gaps. Any leftover from the floor
-  // is split evenly at both ends so the strip stays centered.
   const bool horizontal = m_orientation == AudioSpectrumOrientation::Horizontal;
   const float mainAxisLen = horizontal ? width() : height();
   const float crossAxisLen = horizontal ? height() : width();
-  const int slots = std::max(1, 2 * barCount - 1);
-  const float unit = std::max(1.0f, std::floor(mainAxisLen / static_cast<float>(slots)));
-  const float used = unit * static_cast<float>(slots);
+  const int gapCount = std::max(0, barCount - 1);
+  // Treat each gap as half a bar, then solve uniform bar/gap sizes from the full axis.
+  constexpr float kGapToBarRatio = 0.5f;
+  const float weightedSlots = static_cast<float>(barCount) + static_cast<float>(gapCount) * kGapToBarRatio;
+  const float barThickness = mainAxisLen / std::max(1.0f, weightedSlots);
+  const float gapThickness = gapCount > 0 ? barThickness * kGapToBarRatio : 0.0f;
+  const float used = barThickness * static_cast<float>(barCount) + gapThickness * static_cast<float>(gapCount);
   const float startOffset = std::floor(std::max(0.0f, (mainAxisLen - used) * 0.5f));
-  const float stride = unit * 2.0f; // bar + gap
+  const float stride = barThickness + gapThickness;
 
   for (int i = 0; i < barCount; ++i) {
     const int valueIndex =
@@ -146,10 +147,10 @@ void AudioSpectrum::updateBarsGeometry() {
     if (auto* bar = m_bars[static_cast<std::size_t>(i)]; bar != nullptr) {
       if (horizontal) {
         bar->setPosition(mainPos, crossPos);
-        bar->setFrameSize(unit, crossSize);
+        bar->setFrameSize(barThickness, crossSize);
       } else {
         bar->setPosition(crossPos, mainPos);
-        bar->setFrameSize(crossSize, unit);
+        bar->setFrameSize(crossSize, barThickness);
       }
     }
   }
