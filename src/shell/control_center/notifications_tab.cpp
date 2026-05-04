@@ -24,7 +24,6 @@
 #include <ctime>
 #include <filesystem>
 #include <functional>
-#include <limits>
 #include <memory>
 #include <string_view>
 #include <unistd.h>
@@ -161,58 +160,6 @@ namespace {
     return expandedHeight > collapsedHeight + 0.5f;
   }
 
-  std::uint64_t hashNotificationHistoryVisuals(const std::vector<const NotificationHistoryEntry*>& entries,
-                                               IconResolver& resolver) {
-    constexpr std::uint64_t kOffset = 14695981039346656037ULL;
-    constexpr std::uint64_t kPrime = 1099511628211ULL;
-
-    auto mix = [](std::uint64_t& hash, std::uint64_t value) {
-      hash ^= value;
-      hash *= kPrime;
-    };
-
-    auto mixString = [&mix](std::uint64_t& hash, std::string_view value) {
-      for (unsigned char ch : value) {
-        mix(hash, ch);
-      }
-      mix(hash, 0xffULL);
-    };
-
-    std::uint64_t hash = kOffset;
-    mix(hash, IconResolver::themeGeneration());
-    mix(hash, entries.size());
-
-    for (const NotificationHistoryEntry* entry : entries) {
-      if (entry == nullptr) {
-        mix(hash, std::numeric_limits<std::uint64_t>::max());
-        continue;
-      }
-
-      mix(hash, entry->notification.id);
-      if (const std::string iconPath = resolveHistoryIconPath(entry->notification, resolver); !iconPath.empty()) {
-        mixString(hash, iconPath);
-      } else {
-        mix(hash, 0ULL);
-      }
-
-      if (entry->notification.imageData.has_value()) {
-        const auto& image = *entry->notification.imageData;
-        mix(hash, 1ULL);
-        mix(hash, static_cast<std::uint64_t>(std::max(0, image.width)));
-        mix(hash, static_cast<std::uint64_t>(std::max(0, image.height)));
-        mix(hash, static_cast<std::uint64_t>(std::max(0, image.rowStride)));
-        mix(hash, static_cast<std::uint64_t>(image.channels));
-        mix(hash, static_cast<std::uint64_t>(image.bitsPerSample));
-        mix(hash, image.hasAlpha ? 1ULL : 0ULL);
-        mix(hash, image.data.size());
-      } else {
-        mix(hash, 0ULL);
-      }
-    }
-
-    return hash;
-  }
-
 } // namespace
 
 NotificationsTab::NotificationsTab(NotificationManager* notifications) : m_notifications(notifications) {}
@@ -322,7 +269,6 @@ void NotificationsTab::onClose() {
   m_clearAllButton = nullptr;
   m_expandedIds.clear();
   m_lastSerial = 0;
-  m_lastVisualSignature = 0;
   m_lastWidth = -1.0f;
   m_lastRelativeTimeSlot = -1;
 }
@@ -383,19 +329,8 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
   const std::int64_t relativeSlot =
       std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count() /
       15;
-  std::vector<const NotificationHistoryEntry*> filtered;
-  if (m_notifications != nullptr) {
-    filtered.reserve(m_notifications->history().size());
-    for (auto it = m_notifications->history().rbegin(); it != m_notifications->history().rend(); ++it) {
-      if (matchesHistoryFilter(*it, m_filterIndex)) {
-        filtered.push_back(&*it);
-      }
-    }
-  }
-
-  const std::uint64_t visualSignature = hashNotificationHistoryVisuals(filtered, m_iconResolver);
   if (serial == m_lastSerial && std::abs(width - m_lastWidth) < 0.5f && relativeSlot == m_lastRelativeTimeSlot &&
-      m_filterIndex == m_lastRebuildFilterIndex && visualSignature == m_lastVisualSignature) {
+      m_filterIndex == m_lastRebuildFilterIndex) {
     return;
   }
 
@@ -434,11 +369,18 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
 
     m_list->addChild(std::move(empty));
     m_lastSerial = serial;
-    m_lastVisualSignature = visualSignature;
     m_lastWidth = width;
     m_lastRelativeTimeSlot = relativeSlot;
     m_lastRebuildFilterIndex = m_filterIndex;
     return;
+  }
+
+  std::vector<const NotificationHistoryEntry*> filtered;
+  filtered.reserve(m_notifications->history().size());
+  for (auto it = m_notifications->history().rbegin(); it != m_notifications->history().rend(); ++it) {
+    if (matchesHistoryFilter(*it, m_filterIndex)) {
+      filtered.push_back(&*it);
+    }
   }
 
   if (filtered.empty()) {
@@ -465,7 +407,6 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
 
     m_list->addChild(std::move(empty));
     m_lastSerial = serial;
-    m_lastVisualSignature = visualSignature;
     m_lastWidth = width;
     m_lastRelativeTimeSlot = relativeSlot;
     m_lastRebuildFilterIndex = m_filterIndex;
@@ -625,7 +566,6 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
   }
 
   m_lastSerial = serial;
-  m_lastVisualSignature = visualSignature;
   m_lastWidth = width;
   m_lastRelativeTimeSlot = relativeSlot;
   m_lastRebuildFilterIndex = m_filterIndex;
