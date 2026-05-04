@@ -79,19 +79,33 @@ NBox {
     onTriggered: {
       // Only sync if sink hasn't changed
       if (AudioService.sink && AudioService.sink.id === lastSinkId) {
-        if (Math.abs(localOutputVolume - AudioService.volume) >= 0.01) {
+        if (Math.round(Math.abs(localOutputVolume - AudioService.volume) * 100) / 100 >= 0.01) {
           AudioService.setVolume(localOutputVolume);
         }
       }
       // Only sync if source hasn't changed
       if (AudioService.source && AudioService.source.id === lastSourceId) {
-        if (Math.abs(localInputVolume - AudioService.inputVolume) >= 0.01) {
+        if (Math.round(Math.abs(localInputVolume - AudioService.inputVolume) * 100) / 100 >= 0.01) {
           AudioService.setInputVolume(localInputVolume);
         }
       }
     }
   }
 
+  // Timer to reset local*VolumeChanging variables after onWheel events
+  Timer {
+    id: wheelDebounceTimer
+    interval: 100
+    repeat: false
+    onTriggered: {
+      if (panelContent.localOutputVolumeChanging)
+        panelContent.localOutputVolumeChanging = false;
+      if (panelContent.localInputVolumeChanging)
+        panelContent.localInputVolumeChanging = false;
+    }
+  }
+
+  // Connections to update local volumes when AudioService changes
   Connections {
     target: AudioService
     function onVolumeChanged() {
@@ -183,24 +197,17 @@ NBox {
         onPressedChanged: localOutputVolumeChanging = pressed
         tooltipText: `${Math.round((outputVolumeGuard ? localOutputVolume : AudioService.volume) * 100)}%`
         tooltipDirection: "bottom"
-
-        // MouseArea to handle wheel events when hovering over the slider
-        MouseArea {
-          anchors.fill: parent
-          hoverEnabled: true
-          acceptedButtons: Qt.NoButton
-          propagateComposedEvents: true
-
-          onWheel: wheel => {
-                     if (outputVolumeSlider.enabled && AudioService.sink) {
-                       const delta = wheel.angleDelta.y || wheel.angleDelta.x;
-                       const step = Settings.data.audio.volumeStep / 100.0; // Convert percentage to 0-1 range
-                       const increment = delta > 0 ? step : -step;
-                       const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
-                       const newValue = Math.max(0, Math.min(maxVolume, localOutputVolume + increment));
-                       localOutputVolume = newValue;
-                     }
-                   }
+        onWheel: function (wheel) {
+          if (outputVolumeSlider.enabled && AudioService.sink) {
+            localOutputVolumeChanging = true;
+            wheelDebounceTimer.restart();
+            const delta = wheel.angleDelta.y || wheel.angleDelta.x;
+            const step = Settings.data.audio.volumeStep / 100.0; // Convert percentage to 0-1 range
+            const increment = delta > 0 ? step : -step;
+            const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
+            const newValue = Math.max(0, Math.min(maxVolume, localOutputVolume + increment));
+            localOutputVolume = newValue;
+          }
         }
       }
     }
@@ -251,24 +258,17 @@ NBox {
         onPressedChanged: localInputVolumeChanging = pressed
         tooltipText: `${Math.round((inputVolumeGuard ? localInputVolume : AudioService.inputVolume) * 100)}%`
         tooltipDirection: "bottom"
-
-        // MouseArea to handle wheel events when hovering over the slider
-        MouseArea {
-          anchors.fill: parent
-          hoverEnabled: true
-          acceptedButtons: Qt.NoButton
-          propagateComposedEvents: true
-
-          onWheel: wheel => {
-                     if (inputVolumeSlider.enabled && AudioService.source) {
-                       const delta = wheel.angleDelta.y || wheel.angleDelta.x;
-                       const step = Settings.data.audio.volumeStep / 100.0; // Convert percentage to 0-1 range
-                       const increment = delta > 0 ? step : -step;
-                       const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
-                       const newValue = Math.max(0, Math.min(maxVolume, localInputVolume + increment));
-                       localInputVolume = newValue;
-                     }
-                   }
+        onWheel: function (wheel) {
+          if (inputVolumeSlider.enabled && AudioService.source) {
+            localInputVolumeChanging = true;
+            wheelDebounceTimer.restart();
+            const delta = wheel.angleDelta.y || wheel.angleDelta.x;
+            const step = Settings.data.audio.volumeStep / 100.0; // Convert percentage to 0-1 range
+            const increment = delta > 0 ? step : -step;
+            const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
+            const newValue = Math.max(0, Math.min(maxVolume, localInputVolume + increment));
+            localInputVolume = newValue;
+          }
         }
       }
     }

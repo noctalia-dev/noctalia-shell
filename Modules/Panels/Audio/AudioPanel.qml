@@ -133,16 +133,28 @@ SmartPanel {
       onTriggered: {
         // Only sync if sink hasn't changed
         if (AudioService.sink && AudioService.sink.id === panelContent.lastSinkId) {
-          if (Math.abs(panelContent.localOutputVolume - AudioService.volume) >= 0.01) {
+          if (Math.round(Math.abs(panelContent.localOutputVolume - AudioService.volume) * 100) / 100 >= 0.01) {
             AudioService.setVolume(panelContent.localOutputVolume);
           }
         }
         // Only sync if source hasn't changed
         if (AudioService.source && AudioService.source.id === panelContent.lastSourceId) {
-          if (Math.abs(panelContent.localInputVolume - AudioService.inputVolume) >= 0.01) {
+          if (Math.round(Math.abs(panelContent.localInputVolume - AudioService.inputVolume) * 100) / 100 >= 0.01) {
             AudioService.setInputVolume(panelContent.localInputVolume);
           }
         }
+      }
+    }
+
+    Timer {
+      id: wheelDebounceTimer
+      interval: 100
+      repeat: false
+      onTriggered: {
+        if (panelContent.localOutputVolumeChanging)
+          panelContent.localOutputVolumeChanging = false;
+        if (panelContent.localInputVolumeChanging)
+          panelContent.localInputVolumeChanging = false;
       }
     }
 
@@ -288,6 +300,18 @@ SmartPanel {
                     onPressedChanged: function (pressed) {
                       localOutputVolumeChanging = pressed;
                     }
+                    onWheel: function (event) {
+                      if (AudioService.sink) {
+                        localOutputVolumeChanging = true;
+                        wheelDebounceTimer.restart();
+                        const delta = event.angleDelta.y || event.angleDelta.x;
+                        const step = Settings.data.audio.volumeStep / 100.0; // Convert percentage to 0-1 range
+                        const increment = delta > 0 ? step : -step;
+                        const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
+                        const newValue = Math.max(0, Math.min(maxVolume, localOutputVolume + increment));
+                        localOutputVolume = newValue;
+                      }
+                    }
                   }
 
                   NText {
@@ -363,6 +387,18 @@ SmartPanel {
                     }
                     onPressedChanged: function (pressed) {
                       localInputVolumeChanging = pressed;
+                    }
+                    onWheel: function (event) {
+                      if (AudioService.source) {
+                        localInputVolumeChanging = true;
+                        wheelDebounceTimer.restart();
+                        const delta = event.angleDelta.y || event.angleDelta.x;
+                        const step = Settings.data.audio.volumeStep / 100.0; // Convert percentage to 0-1 range
+                        const increment = delta > 0 ? step : -step;
+                        const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
+                        const newValue = Math.max(0, Math.min(maxVolume, localInputVolume + increment));
+                        localInputVolume = newValue;
+                      }
                     }
                   }
 
@@ -685,6 +721,19 @@ SmartPanel {
                           if (appBox.nodeAudio && appBox.modelData && appBox.modelData.ready === true) {
                             appBox.nodeAudio.volume = value;
                             AudioService.setPanelAppStreamVolume(appBox.modelData, value);
+                          }
+                        }
+                        onWheel: function (event) {
+                          if (appBox.nodeAudio && appBox.modelData && appBox.modelData.ready === true) {
+                            const delta = event.angleDelta.y || event.angleDelta.x;
+                            const step = Settings.data.audio.volumeStep / 100.0; // Convert percentage to 0-1 range
+                            const increment = delta > 0 ? step : -step;
+                            const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
+                            const newValue = Math.max(0, Math.min(maxVolume, appBox.nodeAudio.volume + increment));
+                            appBox.nodeAudio.volume = newValue;
+                            var key = AudioService.getAppKey(appBox.modelData);
+                            if (key)
+                              AudioService.setAppStreamVolume(key, newValue);
                           }
                         }
                       }
