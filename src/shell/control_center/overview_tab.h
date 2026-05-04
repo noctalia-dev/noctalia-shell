@@ -1,8 +1,11 @@
 #pragma once
 
+#include "core/timer_manager.h"
 #include "shell/control_center/shortcut_services.h"
 #include "shell/control_center/tab.h"
 
+#include <chrono>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -37,6 +40,7 @@ public:
 
   std::unique_ptr<Flex> create() override;
   std::unique_ptr<Flex> createHeaderActions() override;
+  void onFrameTick(float deltaMs) override;
   void setActive(bool active) override;
   void onClose() override;
 
@@ -85,6 +89,15 @@ private:
   Glyph* m_mediaArtFallback = nullptr;
   Image* m_mediaArt = nullptr;
   std::string m_loadedMediaArtUrl;
+  std::string m_mediaPositionBusName;
+  std::string m_mediaPositionTrackId;
+  std::string m_mediaPositionTrackSignature;
+  std::string m_mediaLastPlaybackStatus;
+  std::int64_t m_mediaPositionUs = 0;
+  std::chrono::steady_clock::time_point m_mediaPositionSampleAt{};
+  std::chrono::steady_clock::time_point m_nextRealtimeUpdateAt{};
+  std::chrono::steady_clock::time_point m_lastRealtimeMprisPollAt{};
+  Timer m_progressTimer;
 
   GridView* m_shortcutsGrid = nullptr;
   std::vector<ShortcutPad> m_shortcutPads;

@@ -35,6 +35,12 @@ namespace {
   // Bottom row: 1 : 1 — equal split so media/clock and shortcuts feel balanced (tweak either value slightly if needed).
   constexpr float kOverviewMainColumnFlexGrow = 1.66f;
   constexpr float kOverviewShortcutsFlexGrow = 1.0f;
+  constexpr auto kOverviewRealtimeUpdateInterval = std::chrono::milliseconds(1000);
+  constexpr auto kOverviewMprisPollInterval = std::chrono::milliseconds(1000);
+  constexpr auto kOverviewTransientPositionRegressionWindow = std::chrono::milliseconds(1500);
+  constexpr std::int64_t kOverviewTransientPositionRegressionFloorUs = 5'000'000;
+  constexpr std::int64_t kOverviewTransientPositionRegressionCeilingUs = 1'500'000;
+  constexpr std::int64_t kOverviewTransientPositionRegressionDeltaUs = 5'000'000;
 
   float overviewAvatarSize(float scale) { return Style::controlHeightLg * kOverviewAvatarScale * scale; }
 
@@ -588,14 +594,47 @@ void OverviewTab::syncWallpaperBackground(Renderer& renderer) {
 
 void OverviewTab::doUpdate(Renderer& renderer) {
   if (!m_active) {
+    m_progressTimer.stop();
     return;
+  }
+
+  const bool playing =
+      m_mpris != nullptr && m_mpris->activePlayer().has_value() && m_mpris->activePlayer()->playbackStatus == "Playing";
+  if (playing) {
+    if (!m_progressTimer.active()) {
+      m_progressTimer.startRepeating(std::chrono::milliseconds(1000), [this]() {
+        if (!m_active) {
+          return;
+        }
+        PanelManager::instance().requestUpdateOnly();
+        PanelManager::instance().requestRedraw();
+      });
+    }
+  } else {
+    m_progressTimer.stop();
   }
   sync(renderer);
 }
 
-void OverviewTab::setActive(bool active) { m_active = active; }
+void OverviewTab::onFrameTick(float /*deltaMs*/) {}
+
+void OverviewTab::setActive(bool active) {
+  m_active = active;
+  if (!active) {
+    m_progressTimer.stop();
+    m_nextRealtimeUpdateAt = {};
+    m_lastRealtimeMprisPollAt = {};
+    m_mediaPositionBusName.clear();
+    m_mediaPositionTrackId.clear();
+    m_mediaPositionTrackSignature.clear();
+    m_mediaLastPlaybackStatus.clear();
+    m_mediaPositionUs = 0;
+    m_mediaPositionSampleAt = {};
+  }
+}
 
 void OverviewTab::onClose() {
+  m_progressTimer.stop();
   m_rootLayout = nullptr;
   m_bottomRow = nullptr;
   m_dateTimeCard = nullptr;
@@ -622,6 +661,14 @@ void OverviewTab::onClose() {
   m_mediaArtSlot = nullptr;
   m_mediaArtFallback = nullptr;
   m_loadedMediaArtUrl.clear();
+  m_mediaPositionBusName.clear();
+  m_mediaPositionTrackId.clear();
+  m_mediaPositionTrackSignature.clear();
+  m_mediaLastPlaybackStatus.clear();
+  m_mediaPositionUs = 0;
+  m_mediaPositionSampleAt = {};
+  m_nextRealtimeUpdateAt = {};
+  m_lastRealtimeMprisPollAt = {};
   m_shortcutsGrid = nullptr;
   m_shortcutPads.clear();
 }
@@ -741,6 +788,12 @@ void OverviewTab::sync(Renderer& renderer) {
     } else {
       const auto active = m_mpris->activePlayer();
       if (!active.has_value()) {
+        m_mediaPositionBusName.clear();
+        m_mediaPositionTrackId.clear();
+        m_mediaPositionTrackSignature.clear();
+        m_mediaLastPlaybackStatus.clear();
+        m_mediaPositionUs = 0;
+        m_mediaPositionSampleAt = {};
         m_mediaTrack->setText(i18n::tr("control-center.overview.media.nothing-playing"));
         m_mediaArtist->setText("");
         m_mediaArtist->setVisible(false);
@@ -759,11 +812,47 @@ void OverviewTab::sync(Renderer& renderer) {
         const std::string artists = mpris::joinArtists(active->artists);
         m_mediaArtist->setText(artists.empty() ? i18n::tr("control-center.overview.media.unknown-artist") : artists);
         m_mediaArtist->setVisible(true);
+        const std::string trackSignature = std::format("{}\n{}\n{}\n{}\n{}", active->trackId, active->title, artists,
+                                                       active->album, active->sourceUrl);
         std::string progressText;
         if (active->lengthUs > 0) {
-          const std::int64_t positionSec = std::max<std::int64_t>(0, active->positionUs / 1000000);
+          const auto now = std::chrono::steady_clock::now();
+          std::int64_t livePositionUs = std::max<std::int64_t>(0, active->positionUs);
+          livePositionUs = std::clamp<std::int64_t>(livePositionUs, 0, active->lengthUs);
+          const bool sameDisplayedTrack =
+              m_mediaPositionBusName == active->busName && m_mediaPositionTrackSignature == trackSignature;
+          const bool withinTransientRegressionWindow =
+              m_mediaPositionSampleAt != std::chrono::steady_clock::time_point{} &&
+              now - m_mediaPositionSampleAt <= kOverviewTransientPositionRegressionWindow;
+          const bool preserveDisplayedPosition =
+              sameDisplayedTrack && m_mediaLastPlaybackStatus == "Playing" && active->playbackStatus == "Playing" &&
+              m_mediaPositionUs >= kOverviewTransientPositionRegressionFloorUs &&
+              livePositionUs <= kOverviewTransientPositionRegressionCeilingUs &&
+              livePositionUs + kOverviewTransientPositionRegressionDeltaUs < m_mediaPositionUs &&
+              withinTransientRegressionWindow;
+          if (preserveDisplayedPosition) {
+            livePositionUs = m_mediaPositionUs;
+          }
+
+          m_mediaPositionBusName = active->busName;
+          m_mediaPositionTrackId = active->trackId;
+          m_mediaPositionTrackSignature = trackSignature;
+          m_mediaLastPlaybackStatus = active->playbackStatus;
+          if (!preserveDisplayedPosition) {
+            m_mediaPositionUs = livePositionUs;
+            m_mediaPositionSampleAt = now;
+          }
+
+          const std::int64_t positionSec = std::max<std::int64_t>(0, livePositionUs / 1000000);
           const std::int64_t lengthSec = std::max<std::int64_t>(1, active->lengthUs / 1000000);
           progressText = std::format("{} / {}", formatClockTime(positionSec), formatClockTime(lengthSec));
+        } else {
+          m_mediaPositionBusName.clear();
+          m_mediaPositionTrackId.clear();
+          m_mediaPositionTrackSignature.clear();
+          m_mediaLastPlaybackStatus.clear();
+          m_mediaPositionUs = 0;
+          m_mediaPositionSampleAt = {};
         }
         m_mediaProgress->setText(" ");
         m_mediaProgress->setVisible(false);

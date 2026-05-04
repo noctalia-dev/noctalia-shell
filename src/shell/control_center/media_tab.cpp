@@ -48,6 +48,12 @@ namespace {
   constexpr float kMediaPlayPauseHeight = kMediaUnit + Style::spaceSm;
   constexpr float kMediaArtworkMinHeight = kMediaUnit * 4;
   constexpr auto kNoActivePlayerGrace = std::chrono::milliseconds(2000);
+  constexpr auto kRealtimeProgressUpdateInterval = std::chrono::milliseconds(1000);
+  constexpr auto kRealtimeMprisPollInterval = std::chrono::milliseconds(1000);
+  constexpr auto kTransientPositionRegressionWindow = std::chrono::milliseconds(1500);
+  constexpr std::int64_t kTransientPositionRegressionFloorUs = 5'000'000;
+  constexpr std::int64_t kTransientPositionRegressionCeilingUs = 1'500'000;
+  constexpr std::int64_t kTransientPositionRegressionDeltaUs = 5'000'000;
 
   std::string playPauseGlyph(const std::string& playbackStatus) {
     return playbackStatus == "Playing" ? "media-pause" : "media-play";
@@ -527,6 +533,7 @@ void MediaTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight
 
 void MediaTab::doUpdate(Renderer& renderer) {
   if (!m_active) {
+    m_progressTimer.stop();
     return;
   }
   if (m_visualizerSpectrum != nullptr && m_spectrum != nullptr && m_spectrumListenerId != 0) {
@@ -534,20 +541,40 @@ void MediaTab::doUpdate(Renderer& renderer) {
       m_visualizerSpectrum->setValues(m_spectrum->values(m_spectrumListenerId));
     }
   }
+
+  const auto active = m_mpris != nullptr ? m_mpris->activePlayer() : std::nullopt;
+  const bool hasPendingSeek = m_pendingSeekUs >= 0 && std::chrono::steady_clock::now() < m_pendingSeekUntil;
+  const bool playing = active.has_value() && active->playbackStatus == "Playing";
+  if (playing || hasPendingSeek) {
+    if (!m_progressTimer.active()) {
+      m_progressTimer.startRepeating(std::chrono::milliseconds(1000), [this]() {
+        if (!m_active) {
+          return;
+        }
+        PanelManager::instance().requestUpdateOnly();
+        PanelManager::instance().requestRedraw();
+      });
+    }
+  } else {
+    m_progressTimer.stop();
+  }
+
   refresh(renderer);
 }
 
 void MediaTab::onFrameTick(float deltaMs) {
-  if (!m_active || m_visualizerSpectrum == nullptr) {
+  if (!m_active) {
     return;
   }
-  if (m_spectrum != nullptr && m_spectrumListenerId != 0) {
-    if (m_spectrum->idle() && m_visualizerSpectrum->converged()) {
-      return;
+
+  if (m_visualizerSpectrum != nullptr) {
+    if (m_spectrum != nullptr && m_spectrumListenerId != 0) {
+      if (!m_spectrum->idle() || !m_visualizerSpectrum->converged()) {
+        m_visualizerSpectrum->setValues(m_spectrum->values(m_spectrumListenerId));
+      }
     }
-    m_visualizerSpectrum->setValues(m_spectrum->values(m_spectrumListenerId));
+    m_visualizerSpectrum->tick(deltaMs);
   }
-  m_visualizerSpectrum->tick(deltaMs);
 }
 
 void MediaTab::setActive(bool active) {
@@ -567,7 +594,11 @@ void MediaTab::setActive(bool active) {
     }
   }
   if (!active) {
+    m_progressTimer.stop();
     m_positionSampleAt = {};
+    m_positionTrackSignature.clear();
+    m_nextRealtimeUpdateAt = {};
+    m_lastRealtimeMprisPollAt = {};
   }
   if (becameActive && m_mpris != nullptr) {
     // Pull a fresh snapshot (including Position) when the tab opens so the
@@ -579,6 +610,7 @@ void MediaTab::setActive(bool active) {
 }
 
 void MediaTab::onClose() {
+  m_progressTimer.stop();
   if (m_spectrum != nullptr) {
     if (m_spectrumListenerId != 0) {
       m_spectrum->removeChangeListener(m_spectrumListenerId);
@@ -618,6 +650,9 @@ void MediaTab::onClose() {
   m_lastActiveSnapshot.reset();
   m_pendingSeekBusName.clear();
   m_pendingSeekUs = -1;
+  m_positionTrackSignature.clear();
+  m_nextRealtimeUpdateAt = {};
+  m_lastRealtimeMprisPollAt = {};
 }
 
 void MediaTab::clearArt(Renderer& renderer) {
@@ -697,40 +732,47 @@ void MediaTab::refresh(Renderer& renderer) {
     const auto& player = *active;
     m_lastActiveSnapshot = player;
     m_lastActiveSeenAt = now;
-    const bool sameBus = m_positionBusName == player.busName && m_positionSampleAt.time_since_epoch().count() != 0;
-    const bool trackComparable =
-        player.trackId.empty() || m_positionTrackId.empty() || m_positionTrackId == player.trackId;
-    const bool canExtrapolate = sameBus && trackComparable && player.playbackStatus == "Playing";
+    const std::string trackSignature = std::format("{}\n{}\n{}\n{}\n{}", player.trackId, player.title,
+                                                   joinArtists(player.artists), player.album, player.sourceUrl);
     std::int64_t livePositionUs = player.positionUs;
-    if (canExtrapolate) {
-      const auto elapsedUs = std::chrono::duration_cast<std::chrono::microseconds>(now - m_positionSampleAt).count();
-      if (elapsedUs > 0 && elapsedUs <= 5'000'000) {
-        const std::int64_t predictedUs = m_positionUs + elapsedUs;
-        // Keep local timeline smooth for players with stale Position values.
-        // Only trust transport when it clearly advances ahead.
-        livePositionUs = (player.positionUs > predictedUs + 2'000'000) ? player.positionUs : predictedUs;
-      }
-    }
     if (player.lengthUs > 0) {
       livePositionUs = std::clamp<std::int64_t>(livePositionUs, 0, player.lengthUs);
     } else {
       livePositionUs = std::max<std::int64_t>(0, livePositionUs);
     }
-    m_positionBusName = player.busName;
-    m_positionTrackId = player.trackId;
-    m_positionUs = livePositionUs;
-    m_positionSampleAt = now;
 
     const bool pendingMatchesPlayer = m_pendingSeekBusName.empty() || m_pendingSeekBusName == player.busName;
     const bool seekPending = pendingMatchesPlayer && now < m_pendingSeekUntil && m_pendingSeekUs >= 0;
+    const bool sameDisplayedTrack = m_positionBusName == player.busName && m_positionTrackSignature == trackSignature;
+    const bool withinTransientRegressionWindow = m_positionSampleAt != std::chrono::steady_clock::time_point{} &&
+                                                 now - m_positionSampleAt <= kTransientPositionRegressionWindow;
+    const bool preserveDisplayedPosition =
+        !seekPending && sameDisplayedTrack && m_lastPlaybackStatus == "Playing" && player.playbackStatus == "Playing" &&
+        m_positionUs >= kTransientPositionRegressionFloorUs &&
+        livePositionUs <= kTransientPositionRegressionCeilingUs &&
+        livePositionUs + kTransientPositionRegressionDeltaUs < m_positionUs && withinTransientRegressionWindow;
+    if (preserveDisplayedPosition) {
+      livePositionUs = m_positionUs;
+    }
+
+    m_positionBusName = player.busName;
+    m_positionTrackId = player.trackId;
+    m_positionTrackSignature = trackSignature;
+    if (!preserveDisplayedPosition) {
+      m_positionUs = livePositionUs;
+      m_positionSampleAt = now;
+    }
+
     const bool seekReached = seekPending && std::llabs(livePositionUs - m_pendingSeekUs) <= 1500000;
     const std::int64_t displayPositionUs = seekPending && !seekReached ? m_pendingSeekUs : livePositionUs;
     if (!seekPending || seekReached) {
       m_pendingSeekBusName.clear();
       m_pendingSeekUs = -1;
     }
-    m_positionUs = displayPositionUs;
-    m_positionSampleAt = now;
+    if (!preserveDisplayedPosition || seekPending) {
+      m_positionUs = displayPositionUs;
+      m_positionSampleAt = now;
+    }
 
     m_trackTitle->setText(player.title.empty() ? player.identity : player.title);
     m_trackArtist->setText(joinArtists(player.artists).empty() ? player.identity : joinArtists(player.artists));
@@ -813,6 +855,7 @@ void MediaTab::refresh(Renderer& renderer) {
   m_lastActiveSnapshot.reset();
   m_positionBusName.clear();
   m_positionTrackId.clear();
+  m_positionTrackSignature.clear();
   m_positionUs = 0;
   m_positionSampleAt = {};
   m_trackTitle->setText(i18n::tr("control-center.media.nothing-playing"));
