@@ -16,6 +16,7 @@ class Slider;
 class Spinner;
 class Stepper;
 class Toggle;
+class ScrollView;
 
 class TestPanel : public Panel {
 public:
@@ -65,4 +66,6 @@ private:
   Label* m_glyphPickerResultLabel = nullptr;
   Segmented* m_segmented = nullptr;
   Label* m_segmentedValueLabel = nullptr;
+  Button* m_closeButton = nullptr;
+  ScrollView* m_scrollView = nullptr;
 };

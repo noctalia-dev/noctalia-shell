@@ -2,6 +2,7 @@
 
 #include "render/animation/animation_manager.h"
 #include "render/core/color.h"
+#include "shell/panel/panel_manager.h"
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/checkbox.h"
@@ -12,6 +13,7 @@
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/radio_button.h"
+#include "ui/controls/scroll_view.h"
 #include "ui/controls/segmented.h"
 #include "ui/controls/select.h"
 #include "ui/controls/slider.h"
@@ -36,12 +38,33 @@ void TestPanel::create() {
   rootLayout->setGap(Style::spaceMd * scale);
   rootLayout->setAlign(FlexAlign::Stretch);
 
+  auto headerRow = std::make_unique<Flex>();
+  headerRow->setDirection(FlexDirection::Horizontal);
+  headerRow->setAlign(FlexAlign::Center);
+  headerRow->setJustify(FlexJustify::SpaceBetween);
+  headerRow->setGap(Style::spaceSm * scale);
+
   auto header = std::make_unique<Label>();
   header->setText("Test Controls");
+  header->setBold(true);
   header->setFontSize(Style::fontSizeTitle * scale);
   header->setColor(colorSpecFromRole(ColorRole::Primary));
+  header->setFlexGrow(1.0f);
   m_headerLabel = header.get();
-  rootLayout->addChild(std::move(header));
+  headerRow->addChild(std::move(header));
+
+  auto closeButton = std::make_unique<Button>();
+  closeButton->setGlyph("close");
+  closeButton->setVariant(ButtonVariant::Default);
+  closeButton->setGlyphSize(Style::fontSizeBody * scale);
+  closeButton->setMinWidth(Style::controlHeightSm * scale);
+  closeButton->setMinHeight(Style::controlHeightSm * scale);
+  closeButton->setPadding(Style::spaceXs * scale);
+  closeButton->setRadius(Style::radiusMd * scale);
+  closeButton->setOnClick([]() { PanelManager::instance().closePanel(); });
+  m_closeButton = closeButton.get();
+  headerRow->addChild(std::move(closeButton));
+  rootLayout->addChild(std::move(headerRow));
 
   auto content = std::make_unique<Flex>();
   content->setDirection(FlexDirection::Horizontal);
@@ -716,7 +739,21 @@ void TestPanel::create() {
   content->addChild(std::move(colA));
   content->addChild(std::move(colB));
   content->addChild(std::move(colC));
-  rootLayout->addChild(std::move(content));
+
+  auto scroll = std::make_unique<ScrollView>();
+  scroll->setScrollbarVisible(true);
+  scroll->setViewportPaddingH(0.0f);
+  scroll->setViewportPaddingV(0.0f);
+  scroll->clearFill();
+  scroll->clearBorder();
+  scroll->setFlexGrow(1.0f);
+  m_scrollView = scroll.get();
+  auto* scrollContent = scroll->content();
+  scrollContent->setDirection(FlexDirection::Vertical);
+  scrollContent->setAlign(FlexAlign::Stretch);
+  scrollContent->setGap(Style::spaceMd * scale);
+  scrollContent->addChild(std::move(content));
+  rootLayout->addChild(std::move(scroll));
 
   setRoot(std::move(rootLayout));
 
@@ -776,6 +813,8 @@ void TestPanel::onClose() {
   m_glyphPickerResultLabel = nullptr;
   m_segmented = nullptr;
   m_segmentedValueLabel = nullptr;
+  m_closeButton = nullptr;
+  m_scrollView = nullptr;
 }
 
 void TestPanel::doLayout(Renderer& renderer, float width, float height) {
