@@ -43,28 +43,6 @@ namespace {
     return value != nullptr && value[0] != '\0' ? value : "<unset>";
   }
 
-  [[nodiscard]] bool isNiriQuitDisconnect(std::string_view stderrText) {
-    return stderrText.find("error communicating with niri") != std::string_view::npos &&
-           stderrText.find("EOF while parsing a value") != std::string_view::npos;
-  }
-
-  [[nodiscard]] bool runLogoutCommand(const char* command, std::initializer_list<const char*> args,
-                                      bool acceptNiriQuitDisconnect = false) {
-    kLog.info("logout: trying {}", command);
-    const process::RunResult result = process::runSync(args);
-    if (result.exitCode == 0) {
-      kLog.info("logout: {} succeeded", command);
-      return true;
-    }
-    if (acceptNiriQuitDisconnect && isNiriQuitDisconnect(result.err)) {
-      kLog.info("logout: {} closed niri IPC before replying; treating as successful logout", command);
-      return true;
-    }
-
-    kLog.warn("logout: {} failed exit={} stderr=\"{}\"", command, result.exitCode, result.err);
-    return false;
-  }
-
   compositors::CompositorKind logActionContext(std::string_view action) {
     const compositors::CompositorKind compositor = compositors::detect();
     kLog.info("{} requested: compositor={} env_hint=\"{}\" xdg_session_id={} user={}", action,
@@ -75,70 +53,33 @@ namespace {
 
   bool doLogout() {
     const compositors::CompositorKind compositor = logActionContext("logout");
-    const char* sessionId = std::getenv("XDG_SESSION_ID");
-    const char* user = std::getenv("USER");
 
-    // Prefer compositor-native exits where available.
     switch (compositor) {
     case compositors::CompositorKind::Hyprland:
-      kLog.info("logout: using compositor-native path for {}", compositors::name(compositor));
-      if (runLogoutCommand("hyprctl dispatch exit", {"hyprctl", "dispatch", "exit"})) {
-        return true;
-      }
-      break;
+      return process::launchFirstAvailable({{"hyprctl", "dispatch", "exit"}});
     case compositors::CompositorKind::Sway:
-      kLog.info("logout: using compositor-native path for {}", compositors::name(compositor));
-      if (runLogoutCommand("scrollmsg exit", {"scrollmsg", "exit"}) ||
-          runLogoutCommand("swaymsg exit", {"swaymsg", "exit"}) ||
-          runLogoutCommand("i3-msg exit", {"i3-msg", "exit"})) {
-        return true;
-      }
-      break;
+      return process::launchFirstAvailable({{"swaymsg", "exit"}, {"i3-msg", "exit"}});
     case compositors::CompositorKind::Niri:
-      kLog.info("logout: using compositor-native path for {}", compositors::name(compositor));
-      if (runLogoutCommand("niri msg action quit --skip-confirmation",
-                           {"niri", "msg", "action", "quit", "--skip-confirmation"}, true)) {
-        return true;
-      }
-      break;
+      return process::launchFirstAvailable({{"niri", "msg", "action", "quit", "--skip-confirmation"}});
     case compositors::CompositorKind::Mango:
-      kLog.info("logout: using compositor-native path for {}", compositors::name(compositor));
-      if (runLogoutCommand("mmsg -q", {"mmsg", "-q"})) {
-        return true;
-      }
-      break;
+      return process::launchFirstAvailable({{"mmsg", "-q"}});
     case compositors::CompositorKind::Unknown:
-      kLog.info("logout: no compositor-native logout command for detected compositor");
       break;
     }
 
-    if (compositor != compositors::CompositorKind::Unknown) {
-      kLog.warn("logout: compositor-native path for {} failed; skipping logind/systemd session fallback",
-                compositors::name(compositor));
-      return false;
-    }
-
-    // Fallback only when no compositor-specific path is available. Prefer the systemd user session target before
-    // terminating the whole logind session/user.
-    if (runLogoutCommand("systemctl --user stop graphical-session.target",
-                         {"systemctl", "--user", "stop", "graphical-session.target"})) {
+    if (process::launchFirstAvailable({{"systemctl", "--user", "stop", "graphical-session.target"}})) {
       return true;
     }
-    if (sessionId != nullptr && sessionId[0] != '\0') {
-      if (runLogoutCommand("loginctl terminate-session", {"loginctl", "terminate-session", sessionId})) {
+    if (const char* sessionId = std::getenv("XDG_SESSION_ID"); sessionId != nullptr && sessionId[0] != '\0') {
+      if (process::launchFirstAvailable({{"loginctl", "terminate-session", sessionId}})) {
         return true;
       }
-    } else {
-      kLog.warn("logout: XDG_SESSION_ID is unset; skipping loginctl terminate-session");
     }
-    if (user != nullptr && user[0] != '\0') {
-      if (runLogoutCommand("loginctl terminate-user", {"loginctl", "terminate-user", user})) {
+    if (const char* user = std::getenv("USER"); user != nullptr && user[0] != '\0') {
+      if (process::launchFirstAvailable({{"loginctl", "terminate-user", user}})) {
         return true;
       }
-    } else {
-      kLog.warn("logout: USER is unset; skipping loginctl terminate-user");
     }
-    kLog.warn("logout: all logout methods failed");
     return false;
   }
 
