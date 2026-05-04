@@ -32,4 +32,12 @@ ColumnLayout {
     checked: Settings.data.notifications.enableBatteryToast
     onToggled: checked => Settings.data.notifications.enableBatteryToast = checked
   }
+
+  NCheckbox {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.notifications.toast-do-not-disturb-label")
+    description: I18n.tr("panels.notifications.toast-do-not-disturb-description")
+    checked: Settings.data.notifications.enableDoNotDisturbToast
+    onToggled: checked => Settings.data.notifications.enableDoNotDisturbToast = checked
+  }
 }
