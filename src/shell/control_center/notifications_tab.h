@@ -37,6 +37,7 @@ private:
   std::size_t m_filterIndex = 0;
   std::unordered_set<uint32_t> m_expandedIds;
   std::uint64_t m_lastSerial = 0;
+  std::uint64_t m_lastVisualSignature = 0;
   float m_lastWidth = -1.0f;
   /// Wall-clock coarse slot so relative times (e.g. "2 min ago") refresh without churning every frame.
   std::int64_t m_lastRelativeTimeSlot = -1;
