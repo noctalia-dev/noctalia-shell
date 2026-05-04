@@ -300,6 +300,19 @@
     "category": "people"
   },
   {
+    "emoji": "🙂‍↔️",
+    "name": "head shaking horizontally",
+    "keywords": ["no", "shake", "shaking"],
+    "category": "people"
+  },
+  {
+    "emoji": "🙂‍↕️",
+    "skin_tone_support": false,
+    "name": "head shaking vertically",
+    "keywords": ["yes", "shake", "shaking", "agree"],
+    "category": "people"
+  },
+  {
     "emoji": "😌",
     "name": "relieved face",
     "keywords": ["whew"],
@@ -334,6 +347,12 @@
     "name": "face with medical mask",
     "keywords": ["sick", "ill"],
     "category": "people"
+  },
+  {
+     "emoji": "🫩",
+     "name": "face with bags under eyes",
+     "keywords": ["tired", "done", "depressed"],
+     "category": "people"
   },
   {
     "emoji": "🤒",
@@ -489,6 +508,12 @@
     "emoji": "😳",
     "name": "flushed face",
     "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "🫪",
+    "name": "distored face",
+    "keywords": ["anxious", "bloated"],
     "category": "people"
   },
   {
@@ -927,6 +952,12 @@
     "emoji": "💢",
     "name": "anger symbol",
     "keywords": ["angry"],
+    "category": "people"
+  },
+  {
+    "emoji": "🫯",
+    "name": "fight cloud",
+    "keywords": [],
     "category": "people"
   },
   {
@@ -2221,7 +2252,7 @@
   },
   {
     "emoji": "🧑‍🎄",
-    "name": "mx claus",
+    "name": "Mx. Claus",
     "keywords": [],
     "category": "people"
   },
@@ -2394,6 +2425,12 @@
     "category": "people"
   },
   {
+    "emoji": "🫈",
+    "name": "hairy creature",
+    "keywords": ["bigfoot", "sasquatch"],
+    "category": "people"
+  },
+  {
     "emoji": "💆",
     "name": "person getting massage",
     "keywords": ["spa"],
@@ -2448,6 +2485,24 @@
     "category": "people"
   },
   {
+    "emoji": "🚶‍➡️",
+    "name": "person walking facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "🚶‍♀️‍➡️",
+    "name": "woman walking facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "🚶‍♂️‍➡️",
+    "name": "man walking facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
     "emoji": "🧍",
     "name": "person standing",
     "keywords": [],
@@ -2484,6 +2539,24 @@
     "category": "people"
   },
   {
+    "emoji": "🧎‍➡️",
+    "name": "person kneeling facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "🧎‍♀️‍➡️",
+    "name": "woman kneeling facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "🧎‍♂️‍➡️",
+    "name": "man kneeling facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
     "emoji": "🧑‍🦯",
     "name": "person with white cane",
     "keywords": [],
@@ -2498,6 +2571,24 @@
   {
     "emoji": "👩‍🦯",
     "name": "woman with white cane",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "🧑‍🦯‍➡️",
+    "name": "person with white cane facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "👨‍🦯‍➡️",
+    "skin_tone_support_unicode_version": "15.1",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "👩‍🦯‍➡️",
+    "name": "woman with white cane facing right",
     "keywords": [],
     "category": "people"
   },
@@ -2520,6 +2611,24 @@
     "category": "people"
   },
   {
+    "emoji": "🧑‍🦼‍➡️",
+    "name": "person in motorized wheelchair facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "👨‍🦼‍➡️",
+    "name": "man in motorized wheelchair facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "👩‍🦼‍➡️",
+    "name": "woman in motorized wheelchair facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
     "emoji": "🧑‍🦽",
     "name": "person in manual wheelchair",
     "keywords": [],
@@ -2538,6 +2647,25 @@
     "category": "people"
   },
   {
+    "emoji": "🧑‍🦽‍➡️",
+    "name": "person in manual wheelchair facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "👨‍🦽‍➡️",
+    "name": "man in manual wheelchair facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "👩‍🦽‍➡️",
+    "name": "woman in manual wheelchair facing right",
+    "keywords": [],
+    "category": "people"
+  },
+  
+  {
     "emoji": "🏃",
     "name": "person running",
     "keywords": ["exercise", "workout", "marathon"],
@@ -2553,6 +2681,30 @@
     "emoji": "🏃‍♀️",
     "name": "woman running",
     "keywords": ["exercise", "workout", "marathon"],
+    "category": "people"
+  },
+  {
+    "emoji": "🏃‍➡️",
+    "name": "person running facing right",
+    "keywords": ["exercise", "workout", "marathon"],
+    "category": "people"
+  },
+  {
+    "emoji": "🏃‍♂️‍➡️",
+    "name": "man running facing right",
+    "keywords": ["exercise", "workout", "marathon"],
+    "category": "people"
+  },
+  {
+    "emoji": "🏃‍♀️‍➡️",
+    "name": "woman running facing right",
+    "keywords": ["exercise", "workout", "marathon"],
+    "category": "people"
+  },
+  {
+    "emoji": "🧑‍🩰",
+    "name": "balet dancer",
+    "keywords": [],
     "category": "people"
   },
   {
@@ -2990,7 +3142,31 @@
   {
     "emoji": "👪",
     "name": "family",
-    "keywords": ["home", "parents", "child"],
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "🧑‍🧑‍🧒",
+    "name": "family adult, adult, child",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "🧑‍🧑‍🧒‍🧒",
+    "name": "family adult, adult, child, child",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "🧑‍🧒",
+    "name": "family adult, child",
+    "keywords": [],
+    "category": "people"
+  },
+  {
+    "emoji": "🧑‍🧒‍🧒",
+    "name": "family adult, child, child",
+    "keywords": [],
     "category": "people"
   },
   {
@@ -3171,6 +3347,12 @@
     "emoji": "👣",
     "name": "footprints",
     "keywords": ["feet", "tracks"],
+    "category": "people"
+  },
+  {
+    "emoji": "🫆",
+    "name": "fingerprint",
+    "keywords": ["authentication", "biometrics"],
     "category": "people"
   },
   {
@@ -3696,6 +3878,12 @@
     "category": "animals"
   },
   {
+    "emoji": "🐦‍🔥",
+    "name": "phoenix",
+    "keywords": ["fire", "rising", "ash", "bird"],
+    "category": "animals"
+  },
+  {
     "emoji": "🐸",
     "name": "frog",
     "keywords": [],
@@ -3768,6 +3956,12 @@
     "category": "animals"
   },
   {
+    "emoji": "🫍",
+    "name": "orca",
+    "keywords": [],
+    "category": "animals"
+  },
+  {
     "emoji": "🦭",
     "name": "seal",
     "keywords": [],
@@ -3807,6 +4001,30 @@
     "emoji": "🪼",
     "name": "jellyfish",
     "keywords": [],
+    "category": "animals"
+  },
+  {
+    "emoji": "🦀",
+    "name": "crab",
+    "keywords": ["rust", "cargo", "ferris"],
+    "category": "animals"
+  },
+  {
+    "emoji": "🦞",
+    "name": "lobster",
+    "keywords": ["maine", "claw"],
+    "category": "animals"
+  },
+  {
+    "emoji": "🦐",
+    "name": "shrimp",
+    "keywords": [],
+    "category": "animals"
+  },
+  {
+    "emoji": "🦑",
+    "name": "squid",
+    "keywords": ["ika", "splatoon"],
     "category": "animals"
   },
   {
@@ -4086,6 +4304,12 @@
     "category": "nature"
   },
   {
+    "emoji": "🪾",
+    "name": "leafless tree",
+    "keywords": ["dead", "shrub"],
+    "category": "nature"
+  },
+  {
     "emoji": "🍇",
     "name": "grapes",
     "keywords": [],
@@ -4113,6 +4337,12 @@
     "emoji": "🍋",
     "name": "lemon",
     "keywords": [],
+    "category": "food"
+  },
+  {
+    "emoji": "🍋‍🟩",
+    "name": "lime",
+    "keywords": ["margarita"],
     "category": "food"
   },
   {
@@ -4299,6 +4529,18 @@
     "emoji": "🫛",
     "name": "pea pod",
     "keywords": [],
+    "category": "food"
+  },
+  {
+    "emoji": "🍄‍🟫",
+    "name": "brown mushroom",
+    "keywords": ["fungus"],
+    "category": "food"
+  },
+  {
+    "emoji": "🫜",
+    "name": "root vegetable",
+    "keywords": ["radish", "beet"],
     "category": "food"
   },
   {
@@ -4604,30 +4846,6 @@
   {
     "emoji": "🥡",
     "name": "takeout box",
-    "keywords": [],
-    "category": "food"
-  },
-  {
-    "emoji": "🦀",
-    "name": "crab",
-    "keywords": [],
-    "category": "food"
-  },
-  {
-    "emoji": "🦞",
-    "name": "lobster",
-    "keywords": [],
-    "category": "food"
-  },
-  {
-    "emoji": "🦐",
-    "name": "shrimp",
-    "keywords": [],
-    "category": "food"
-  },
-  {
-    "emoji": "🦑",
-    "name": "squid",
     "keywords": [],
     "category": "food"
   },
@@ -7098,6 +7316,18 @@
     "category": "objects"
   },
   {
+    "emoji": "🎺",
+    "name": "trumpet",
+    "keywords": [],
+    "category": "objects"
+  },
+  {
+    "emoji": "🪊",
+    "name": "trombone",
+    "keywords": [],
+    "category": "objects"
+  },
+  {
     "emoji": "🪗",
     "name": "accordion",
     "keywords": [],
@@ -7113,12 +7343,6 @@
     "emoji": "🎹",
     "name": "musical keyboard",
     "keywords": ["piano"],
-    "category": "objects"
-  },
-  {
-    "emoji": "🎺",
-    "name": "trumpet",
-    "keywords": [],
     "category": "objects"
   },
   {
@@ -7155,6 +7379,12 @@
     "emoji": "🪈",
     "name": "flute",
     "keywords": ["recorder"],
+    "category": "objects"
+  },
+  {
+    "emoji": "🪉",
+    "name": "harp",
+    "keywords": [],
     "category": "objects"
   },
   {
@@ -7484,7 +7714,13 @@
   {
     "emoji": "🪙",
     "name": "coin",
-    "keywords": [],
+    "keywords": ["money"],
+    "category": "objects"
+  },
+  {
+    "emoji": "🪎",
+    "name": "treasure chest",
+    "keywords": ["booty", "loot", "money"],
     "category": "objects"
   },
   {
@@ -7946,7 +8182,13 @@
   {
     "emoji": "🔗",
     "name": "link",
-    "keywords": [],
+    "keywords": ["url"],
+    "category": "objects"
+  },
+  {
+    "emoji": "⛓️‍💥",
+    "name": "broken chain",
+    "keywords": ["free", "break"],
     "category": "objects"
   },
   {
@@ -7977,6 +8219,12 @@
     "emoji": "🪜",
     "name": "ladder",
     "keywords": [],
+    "category": "objects"
+  },
+  {
+    "emoji": "🪏",
+    "name": "shovel",
+    "keywords": ["dig"],
     "category": "objects"
   },
   {
@@ -8912,13 +9160,13 @@
   {
     "emoji": "‼️",
     "name": "double exclamation mark",
-    "keywords": [],
+    "keywords": ["bangbang"],
     "category": "symbols"
   },
   {
     "emoji": "⁉️",
     "name": "exclamation question mark",
-    "keywords": [],
+    "keywords": ["interrobang"],
     "category": "symbols"
   },
   {
@@ -9087,6 +9335,12 @@
     "emoji": "™️",
     "name": "trade mark",
     "keywords": ["trademark"],
+    "category": "symbols"
+  },
+  {
+    "emoji": "🫟",
+    "name": "splatter",
+    "keywords": ["paint", "goo"],
     "category": "symbols"
   },
   {
@@ -9956,6 +10210,12 @@
   {
     "emoji": "🇨🇵",
     "name": "Clipperton Island",
+    "keywords": [],
+    "category": "flags"
+  },
+  {
+    "emoji": "🇨🇶",
+    "name": "Sark",
     "keywords": [],
     "category": "flags"
   },
@@ -11041,8 +11301,8 @@
   },
   {
     "emoji": "🇹🇷",
-    "name": "Turkey",
-    "keywords": ["turkey"],
+    "name": "Türkiye",
+    "keywords": ["turkey", "turkiye"],
     "category": "flags"
   },
   {
