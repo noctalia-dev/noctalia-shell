@@ -61,6 +61,8 @@ private:
   Label* m_transformHelp = nullptr;
   Box* m_colorPickerResultSwatch = nullptr;
   Button* m_openColorPickerButton = nullptr;
+  Button* m_openGlyphPickerButton = nullptr;
+  Label* m_glyphPickerResultLabel = nullptr;
   Segmented* m_segmented = nullptr;
   Label* m_segmentedValueLabel = nullptr;
 };

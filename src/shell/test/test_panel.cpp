@@ -20,6 +20,7 @@
 #include "ui/controls/toggle.h"
 #include "ui/dialogs/color_picker_dialog.h"
 #include "ui/dialogs/file_dialog.h"
+#include "ui/dialogs/glyph_picker_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -535,6 +536,55 @@ void TestPanel::create() {
   }
 
   {
+    auto resultLabel = std::make_unique<Label>();
+    if (const auto last = GlyphPickerDialog::lastResult()) {
+      resultLabel->setText(last->name);
+      resultLabel->setColor(colorSpecFromRole(ColorRole::Primary));
+    } else {
+      resultLabel->setText("No glyph selected");
+      resultLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+    }
+    resultLabel->setCaptionStyle();
+    resultLabel->setFontSize(Style::fontSizeCaption * scale);
+    resultLabel->setMaxWidth(280.0f * scale);
+    m_glyphPickerResultLabel = resultLabel.get();
+
+    auto openPicker = std::make_unique<Button>();
+    openPicker->setText("Open glyph picker...");
+    openPicker->setFontSize(Style::fontSizeBody * scale);
+    openPicker->setVariant(ButtonVariant::Default);
+    openPicker->setMinHeight(Style::controlHeight * scale);
+    openPicker->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+    openPicker->setRadius(Style::radiusMd * scale);
+    openPicker->setOnClick([this]() {
+      GlyphPickerDialogOptions options;
+      if (const auto last = GlyphPickerDialog::lastResult()) {
+        options.initialGlyph = last->name;
+      }
+      (void)GlyphPickerDialog::open(std::move(options), [this](std::optional<GlyphPickerResult> result) {
+        if (!result.has_value()) {
+          return;
+        }
+        if (m_glyphPickerResultLabel != nullptr) {
+          m_glyphPickerResultLabel->setText(result->name);
+          m_glyphPickerResultLabel->setColor(colorSpecFromRole(ColorRole::Primary));
+        }
+        if (m_glyphButton != nullptr) {
+          m_glyphButton->setGlyph(result->name);
+        }
+      });
+    });
+    m_openGlyphPickerButton = openPicker.get();
+
+    auto section = makeSection("Glyph picker");
+    auto row = makeRow();
+    row->addChild(std::move(openPicker));
+    row->addChild(std::move(resultLabel));
+    section->addChild(std::move(row));
+    colC->addChild(std::move(section));
+  }
+
+  {
     auto grid = std::make_unique<GridView>();
     grid->setColumns(3);
     grid->setColumnGap(Style::spaceSm * scale);
@@ -722,6 +772,8 @@ void TestPanel::onClose() {
   m_transformHelp = nullptr;
   m_colorPickerResultSwatch = nullptr;
   m_openColorPickerButton = nullptr;
+  m_openGlyphPickerButton = nullptr;
+  m_glyphPickerResultLabel = nullptr;
   m_segmented = nullptr;
   m_segmentedValueLabel = nullptr;
 }
