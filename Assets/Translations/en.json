@@ -1446,6 +1446,8 @@
       "lock-screen-blur-strength-label": "Lock screen blur strength",
       "lock-screen-tint-strength-description": "Applies a tint overlay to the lock screen wallpaper.",
       "lock-screen-tint-strength-label": "Lock screen tint strength",
+      "hide-header-label": "Hide top header",
+      "hide-header-description": "Do not display the top header.",
       "monitors-desc": "Show lock screen on specific monitors. Defaults to all if none are chosen.",
       "password-chars-description": "Cute icons used to hide your password.",
       "password-chars-label": "Random password icons",
