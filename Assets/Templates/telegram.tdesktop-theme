@@ -137,3 +137,19 @@ photoCropPointFg: {{colors.primary.default.hex}}; // Photo crop points
 
 chat_inBubbleSelected: #313244; // inbox selected chat background
 chat_outBubbleSelected: #313244; // outbox selected chat background
+
+// --- Folders Sidebar ---
+sideBarBg: {{colors.surface.default.hex}}; // Main background of the sidebar
+sideBarBgActive: {{colors.primary_container.default.hex}}; // Active (selected) folder background
+sideBarBgRipple: {{colors.on_surface.default.hex}}20; // Ripple effect on click (with transparency)
+
+sideBarTextFg: {{colors.on_surface_variant.default.hex}}; // Inactive folders text color
+sideBarTextFgActive: {{colors.on_primary_container.default.hex}}; // Active folder text color
+
+sideBarIconFg: {{colors.on_surface_variant.default.hex}}; // Inactive folders (and burger menu) icon color
+sideBarIconFgActive: {{colors.on_primary_container.default.hex}}; // Active folder icon color
+
+sideBarBadgeBg: {{colors.primary.default.hex}}; // Unread badge background color (unmuted)
+sideBarBadgeBgMuted: {{colors.surface_variant.default.hex}}; // Unread badge background color (muted)
+sideBarBadgeFg: {{colors.on_primary.default.hex}}; // Unread badge text color (unmuted)
+sideBarBadgeFgMuted: {{colors.on_surface_variant.default.hex}}; // Unread badge text color (muted)
