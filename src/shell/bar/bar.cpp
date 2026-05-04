@@ -23,7 +23,6 @@
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <linux/input-event-codes.h>
 #include <wayland-client-core.h>
@@ -31,7 +30,6 @@
 namespace {
 
   constexpr float kCircularCapsuleNarrowWidthEpsilon = 1.0f;
-  constexpr std::int32_t kAutoHideTriggerPx = 2;
   constexpr float kAutoHideSlideExtraPx = 16.0f;
   constexpr std::int32_t kAutoHideTriggerRegionPx = 4;
 
@@ -1068,7 +1066,7 @@ void Bar::startHideFadeOut(BarInstance& instance) {
         syncBarSlideLayerTransform(*inst);
         applyBarCompositorBlur(*inst);
       },
-      [this, inst = &instance]() {
+      [inst = &instance]() {
         if (inst->surface == nullptr) {
           return;
         }
