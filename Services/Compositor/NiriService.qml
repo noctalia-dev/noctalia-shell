@@ -107,6 +107,9 @@ Item {
     const workspacesList = [];
     for (var i = 0; i < niriWorkspaces.length; i++) {
       const ws = niriWorkspaces[i];
+      if (workspaceCache[ws.id]) {
+        continue;
+      }
       const wsData = {
         "id": ws.id,
         "idx": ws.idx,
