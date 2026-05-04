@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
 import qs.Services.Hardware
+import qs.Services.Noctalia
 import qs.Widgets
 
 ColumnLayout {
@@ -23,6 +24,21 @@ ColumnLayout {
   property bool valueShowNoctaliaPerformance: widgetData.showNoctaliaPerformance !== undefined ? widgetData.showNoctaliaPerformance : widgetMetadata.showNoctaliaPerformance
   property bool valueHideIfNotDetected: widgetData.hideIfNotDetected !== undefined ? widgetData.hideIfNotDetected : widgetMetadata.hideIfNotDetected
   property bool valueHideIfIdle: widgetData.hideIfIdle !== undefined ? widgetData.hideIfIdle : widgetMetadata.hideIfIdle
+
+  readonly property var displayModeModel: {
+    var m = [
+      { "key": "graphic", "name": I18n.tr("bar.battery.display-mode-graphic") },
+      { "key": "graphic-clean", "name": I18n.tr("bar.battery.display-mode-graphic-clean") },
+      { "key": "icon-hover", "name": I18n.tr("bar.battery.display-mode-icon-hover") },
+      { "key": "icon-always", "name": I18n.tr("bar.battery.display-mode-icon-always") },
+      { "key": "icon-only", "name": I18n.tr("bar.battery.display-mode-icon-only") }
+    ];
+
+    if (PluginRegistry.isPluginDownloaded("custom-battery")) {
+      m.push({ "key": "android-16", "name": I18n.tr("bar.battery.display-mode-android-16") });
+    }
+    return m;
+  }
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
@@ -58,28 +74,7 @@ ColumnLayout {
     label: I18n.tr("common.display-mode")
     description: I18n.tr("bar.battery.display-mode-description")
     minimumWidth: 240
-    model: [
-      {
-        "key": "graphic",
-        "name": I18n.tr("bar.battery.display-mode-graphic")
-      },
-      {
-        "key": "graphic-clean",
-        "name": I18n.tr("bar.battery.display-mode-graphic-clean")
-      },
-      {
-        "key": "icon-hover",
-        "name": I18n.tr("bar.battery.display-mode-icon-hover")
-      },
-      {
-        "key": "icon-always",
-        "name": I18n.tr("bar.battery.display-mode-icon-always")
-      },
-      {
-        "key": "icon-only",
-        "name": I18n.tr("bar.battery.display-mode-icon-only")
-      }
-    ]
+    model: root.displayModeModel
     currentKey: root.valueDisplayMode
     onSelected: key => {
                   root.valueDisplayMode = key;
