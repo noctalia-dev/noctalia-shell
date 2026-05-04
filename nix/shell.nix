@@ -7,6 +7,7 @@
   shellcheck,
   jsonfmt,
   lefthook,
+  lib,
   kdePackages,
   mkShellNoCC,
 }:
@@ -31,4 +32,6 @@ mkShellNoCC {
     lefthook # githooks
     kdePackages.qtdeclarative # qmlfmt, qmllint, qmlls and etc; Qt6
   ];
+
+  env.QML_IMPORT_PATH = lib.makeSearchPathOutput "lib" kdePackages.qtbase.qtQmlPrefix [quickshell kdePackages.qtdeclarative];
 }
