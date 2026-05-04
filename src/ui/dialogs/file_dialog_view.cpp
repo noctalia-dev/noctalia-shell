@@ -1,7 +1,6 @@
 #include "ui/dialogs/file_dialog_view.h"
 
 #include "core/deferred_call.h"
-#include "core/ui_phase.h"
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/core/thumbnail_service.h"
@@ -13,6 +12,7 @@
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/separator.h"
 #include "ui/controls/spacer.h"
+#include "ui/controls/virtual_grid_view.h"
 #include "ui/dialogs/file_entry_row.h"
 #include "ui/dialogs/file_entry_tile.h"
 #include "ui/style.h"
@@ -21,8 +21,8 @@
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
+#include <functional>
 #include <memory>
-#include <unordered_set>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
@@ -31,6 +31,7 @@ namespace {
   constexpr std::uint32_t kModCtrl = 1u << 1;
   constexpr std::size_t kListRowOverscan = 3;
   constexpr std::size_t kGridRowOverscan = 1;
+  constexpr float kGridMinCellWidth = 140.0f;
 
   std::string lower(std::string_view text) {
     std::string out;
@@ -39,12 +40,6 @@ namespace {
       out.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
     }
     return out;
-  }
-
-  std::size_t rowPoolCount(float viewportHeight, float itemHeight, std::size_t overscanRows) {
-    const float safeHeight = std::max(itemHeight, 1.0f);
-    return std::max<std::size_t>(1,
-                                 static_cast<std::size_t>(std::ceil(viewportHeight / safeHeight)) + overscanRows * 2);
   }
 
   void configureDialogActionButton(Button& button, float scale) {
@@ -56,6 +51,88 @@ namespace {
 
 } // namespace
 
+class FileListAdapter final : public VirtualGridAdapter {
+public:
+  explicit FileListAdapter(float scale) : m_scale(scale) {}
+
+  void setRenderer(Renderer* renderer) { m_renderer = renderer; }
+  void setEntries(const std::vector<FileEntry>* entries) { m_entries = entries; }
+  void setSelectableFn(std::function<bool(std::size_t)> fn) { m_isSelectable = std::move(fn); }
+  void setOnActivate(std::function<void(std::size_t)> fn) { m_onActivate = std::move(fn); }
+
+  [[nodiscard]] std::size_t itemCount() const override { return m_entries == nullptr ? 0 : m_entries->size(); }
+
+  [[nodiscard]] std::unique_ptr<Node> createTile() override { return std::make_unique<FileEntryRow>(m_scale); }
+
+  void bindTile(Node& tile, std::size_t index, bool selected, bool hovered) override {
+    if (m_renderer == nullptr || m_entries == nullptr || index >= m_entries->size()) {
+      return;
+    }
+    auto* row = static_cast<FileEntryRow*>(&tile);
+    const bool disabled = m_isSelectable && !m_isSelectable(index);
+    row->bind(*m_renderer, (*m_entries)[index], index, row->width(), selected, hovered && !selected, disabled);
+  }
+
+  void onActivate(std::size_t index) override {
+    if (m_onActivate) {
+      m_onActivate(index);
+    }
+  }
+
+private:
+  float m_scale = 1.0f;
+  Renderer* m_renderer = nullptr;
+  const std::vector<FileEntry>* m_entries = nullptr;
+  std::function<bool(std::size_t)> m_isSelectable;
+  std::function<void(std::size_t)> m_onActivate;
+};
+
+class FileGridAdapter final : public VirtualGridAdapter {
+public:
+  FileGridAdapter(float scale, ThumbnailService* thumbnails) : m_scale(scale), m_thumbnails(thumbnails) {}
+
+  void setRenderer(Renderer* renderer) { m_renderer = renderer; }
+  void setEntries(const std::vector<FileEntry>* entries) { m_entries = entries; }
+  void setSelectableFn(std::function<bool(std::size_t)> fn) { m_isSelectable = std::move(fn); }
+  void setOnActivate(std::function<void(std::size_t)> fn) { m_onActivate = std::move(fn); }
+
+  [[nodiscard]] std::size_t itemCount() const override { return m_entries == nullptr ? 0 : m_entries->size(); }
+
+  [[nodiscard]] std::unique_ptr<Node> createTile() override {
+    return std::make_unique<FileEntryTile>(m_scale, m_thumbnails);
+  }
+
+  void bindTile(Node& tile, std::size_t index, bool selected, bool hovered) override {
+    if (m_renderer == nullptr || m_entries == nullptr || index >= m_entries->size()) {
+      return;
+    }
+    auto* file = static_cast<FileEntryTile*>(&tile);
+    const bool disabled = m_isSelectable && !m_isSelectable(index);
+    // FileEntryTile::bind detects same-thumbnailPath rebinds and skips release/request,
+    // so per-frame rebinds that VirtualGridView's row-modulo recycling already filters
+    // out remain free of thumbnail churn.
+    std::string releasedPath = file->bind(*m_renderer, (*m_entries)[index], index, file->width(), file->height(),
+                                          selected, hovered && !selected, disabled);
+    if (!releasedPath.empty() && m_thumbnails != nullptr) {
+      m_thumbnails->release(releasedPath);
+    }
+  }
+
+  void onActivate(std::size_t index) override {
+    if (m_onActivate) {
+      m_onActivate(index);
+    }
+  }
+
+private:
+  float m_scale = 1.0f;
+  ThumbnailService* m_thumbnails = nullptr;
+  Renderer* m_renderer = nullptr;
+  const std::vector<FileEntry>* m_entries = nullptr;
+  std::function<bool(std::size_t)> m_isSelectable;
+  std::function<void(std::size_t)> m_onActivate;
+};
+
 FileDialogView::FileDialogView(ThumbnailService* thumbnails) : m_thumbnails(thumbnails) {}
 
 FileDialogView::~FileDialogView() = default;
@@ -63,8 +140,7 @@ FileDialogView::~FileDialogView() = default;
 void FileDialogView::create() {
   const float scale = contentScale();
   m_listRowHeight = std::ceil(32.0f * scale);
-  m_gridCellWidth = 140.0f * scale;
-  m_gridCellHeight = 140.0f * scale;
+  m_gridCellSize = kGridMinCellWidth * scale;
 
   const auto configureIconButton = [scale](Button* button) {
     if (button == nullptr) {
@@ -219,66 +295,68 @@ void FileDialogView::create() {
   listContainer->addChild(std::move(listHeader));
   listContainer->addChild(std::make_unique<Separator>());
 
-  auto listScroll = std::make_unique<ScrollView>();
-  listScroll->setFlexGrow(1.0f);
-  listScroll->setScrollbarVisible(true);
-  listScroll->setCardStyle(scale);
-  listScroll->setOnScrollChanged([this](float offset) {
-    if (m_visibleEntries.empty() || m_listRowHeight <= 0.0f) {
-      return;
-    }
-    const auto topIndex = static_cast<std::size_t>(std::floor(offset / m_listRowHeight));
-    const auto startIndex = topIndex > kListRowOverscan ? topIndex - kListRowOverscan : 0;
-    if (startIndex != m_rowPoolStartIndex) {
-      m_dirty = true;
-      requestLayout();
-    }
-  });
-  m_listScrollView = listScroll.get();
-  auto* listContent = listScroll->content();
-  listContent->setDirection(FlexDirection::Vertical);
-  listContent->setAlign(FlexAlign::Start);
-  auto listRoot = std::make_unique<Node>();
-  m_listRoot = listRoot.get();
-  listContent->addChild(std::move(listRoot));
+  m_listAdapter = std::make_unique<FileListAdapter>(scale);
+  m_listAdapter->setEntries(&m_visibleEntries);
+  m_listAdapter->setSelectableFn([this](std::size_t idx) { return isSelectableIndex(idx); });
+  m_listAdapter->setOnActivate(
+      [this](std::size_t idx) { DeferredCall::callLater([this, idx]() { handleEntryClick(idx); }); });
+
+  auto listGrid = std::make_unique<VirtualGridView>();
+  listGrid->setColumns(1);
+  listGrid->setSquareCells(false);
+  listGrid->setCellHeight(m_listRowHeight);
+  listGrid->setRowGap(0.0f);
+  listGrid->setColumnGap(0.0f);
+  listGrid->setOverscanRows(kListRowOverscan);
+  listGrid->setFlexGrow(1.0f);
+  listGrid->scrollView().setScrollbarVisible(true);
+  listGrid->scrollView().setCardStyle(scale);
+  listGrid->setAdapter(m_listAdapter.get());
+  listGrid->setOnSelectionChanged([this](std::optional<std::size_t>) { syncGridSelection(); });
+  m_listGrid = static_cast<VirtualGridView*>(listContainer->addChild(std::move(listGrid)));
+
   auto listEmpty = std::make_unique<Label>();
   listEmpty->setCaptionStyle();
   listEmpty->setVisible(false);
-  m_listEmptyLabel = static_cast<Label*>(m_listRoot->addChild(std::move(listEmpty)));
-  listContainer->addChild(std::move(listScroll));
+  listEmpty->setParticipatesInLayout(false);
+  m_listEmptyLabel = static_cast<Label*>(listContainer->addChild(std::move(listEmpty)));
+
   root->addChild(std::move(listContainer));
 
-  auto gridScroll = std::make_unique<ScrollView>();
-  gridScroll->setFlexGrow(1.0f);
-  gridScroll->setScrollbarVisible(true);
-  gridScroll->setCardStyle(scale);
-  gridScroll->setViewportPaddingH(0.0f);
-  gridScroll->setVisible(false);
-  gridScroll->setOnScrollChanged([this](float offset) {
-    if (m_visibleEntries.empty()) {
-      return;
-    }
-    const float pitch = m_gridCellHeight + Style::spaceSm * contentScale();
-    const auto topRow = static_cast<std::size_t>(std::floor(offset / std::max(pitch, 1.0f)));
-    const auto startRow = topRow > kGridRowOverscan ? topRow - kGridRowOverscan : 0;
-    const std::size_t startIndex = startRow * std::max<std::size_t>(1, m_gridColumns);
-    if (startIndex != m_tilePoolStartIndex) {
-      m_dirty = true;
-      requestLayout();
-    }
-  });
-  m_gridScrollView = gridScroll.get();
-  auto* gridContent = gridScroll->content();
-  gridContent->setDirection(FlexDirection::Vertical);
-  gridContent->setAlign(FlexAlign::Start);
-  auto gridRoot = std::make_unique<Node>();
-  m_gridRoot = gridRoot.get();
-  gridContent->addChild(std::move(gridRoot));
+  auto gridContainer = std::make_unique<Flex>();
+  gridContainer->setDirection(FlexDirection::Vertical);
+  gridContainer->setAlign(FlexAlign::Stretch);
+  gridContainer->setFlexGrow(1.0f);
+  gridContainer->setVisible(false);
+  m_gridContainer = gridContainer.get();
+
+  m_gridAdapter = std::make_unique<FileGridAdapter>(scale, m_thumbnails);
+  m_gridAdapter->setEntries(&m_visibleEntries);
+  m_gridAdapter->setSelectableFn([this](std::size_t idx) { return isSelectableIndex(idx); });
+  m_gridAdapter->setOnActivate(
+      [this](std::size_t idx) { DeferredCall::callLater([this, idx]() { handleEntryClick(idx); }); });
+
+  auto gridGrid = std::make_unique<VirtualGridView>();
+  gridGrid->setColumns(0);
+  gridGrid->setMinCellWidth(m_gridCellSize);
+  gridGrid->setSquareCells(true);
+  gridGrid->setRowGap(Style::spaceSm * scale);
+  gridGrid->setColumnGap(Style::spaceSm * scale);
+  gridGrid->setOverscanRows(kGridRowOverscan);
+  gridGrid->setFlexGrow(1.0f);
+  gridGrid->scrollView().setScrollbarVisible(true);
+  gridGrid->scrollView().setCardStyle(scale);
+  gridGrid->setAdapter(m_gridAdapter.get());
+  gridGrid->setOnSelectionChanged([this](std::optional<std::size_t>) { syncGridSelection(); });
+  m_gridGrid = static_cast<VirtualGridView*>(gridContainer->addChild(std::move(gridGrid)));
+
   auto gridEmpty = std::make_unique<Label>();
   gridEmpty->setCaptionStyle();
   gridEmpty->setVisible(false);
-  m_gridEmptyLabel = static_cast<Label*>(m_gridRoot->addChild(std::move(gridEmpty)));
-  root->addChild(std::move(gridScroll));
+  gridEmpty->setParticipatesInLayout(false);
+  m_gridEmptyLabel = static_cast<Label*>(gridContainer->addChild(std::move(gridEmpty)));
+
+  root->addChild(std::move(gridContainer));
 
   auto footer = std::make_unique<Flex>();
   footer->setDirection(FlexDirection::Horizontal);
@@ -334,13 +412,6 @@ void FileDialogView::onOpen(std::string_view /*context*/) {
   m_sortOrder = FileDialogSortOrder::Ascending;
   m_showHiddenFiles = m_options.showHiddenFiles;
   m_selectedIndex = static_cast<std::size_t>(-1);
-  m_hoverIndex = static_cast<std::size_t>(-1);
-  m_rowPoolStartIndex = static_cast<std::size_t>(-1);
-  m_tilePoolStartIndex = static_cast<std::size_t>(-1);
-  m_lastListWidth = -1.0f;
-  m_lastGridWidth = -1.0f;
-  m_mouseActive = false;
-  m_dirty = true;
   m_thumbnailRefreshPending = false;
 
   if (m_titleLabel != nullptr) {
@@ -366,16 +437,18 @@ void FileDialogView::onClose() {
     m_thumbnails->releaseAll();
   }
 
+  if (m_listGrid != nullptr) {
+    m_listGrid->setAdapter(nullptr);
+  }
+  if (m_gridGrid != nullptr) {
+    m_gridGrid->setAdapter(nullptr);
+  }
+
   m_entries.clear();
   m_visibleEntries.clear();
-  m_rowPool.clear();
-  m_tilePool.clear();
   m_currentDirectory.clear();
   m_filterQuery.clear();
   m_selectedIndex = static_cast<std::size_t>(-1);
-  m_hoverIndex = static_cast<std::size_t>(-1);
-  m_rowPoolStartIndex = static_cast<std::size_t>(-1);
-  m_tilePoolStartIndex = static_cast<std::size_t>(-1);
   m_rootLayout = nullptr;
   m_titleLabel = nullptr;
   m_breadcrumbRow = nullptr;
@@ -390,16 +463,17 @@ void FileDialogView::onClose() {
   m_nameSortButton = nullptr;
   m_sizeSortButton = nullptr;
   m_dateSortButton = nullptr;
-  m_listScrollView = nullptr;
-  m_listRoot = nullptr;
+  m_listGrid = nullptr;
   m_listEmptyLabel = nullptr;
-  m_gridScrollView = nullptr;
-  m_gridRoot = nullptr;
+  m_gridContainer = nullptr;
+  m_gridGrid = nullptr;
   m_gridEmptyLabel = nullptr;
   m_filenameInput = nullptr;
   m_cancelButton = nullptr;
   m_okButton = nullptr;
   m_listFocusArea = nullptr;
+  m_listAdapter.reset();
+  m_gridAdapter.reset();
   clearReleasedRoot();
 }
 
@@ -415,28 +489,23 @@ void FileDialogView::doLayout(Renderer& renderer, float width, float height) {
     return;
   }
 
-  m_lastWidth = width;
+  if (m_listAdapter != nullptr) {
+    m_listAdapter->setRenderer(&renderer);
+  }
+  if (m_gridAdapter != nullptr) {
+    m_gridAdapter->setRenderer(&renderer);
+  }
+
   m_rootLayout->setSize(width, height);
   m_rootLayout->layout(renderer);
 
-  bool relayoutNeeded = false;
-  if (m_dirty || (m_listScrollView != nullptr && m_lastListWidth != m_listScrollView->contentViewportWidth()) ||
-      (m_gridScrollView != nullptr && m_lastGridWidth != m_gridScrollView->contentViewportWidth())) {
-    rebuildVisibleEntries(renderer);
-    m_dirty = false;
-    relayoutNeeded = true;
-  }
-
-  if (relayoutNeeded) {
-    m_rootLayout->layout(renderer);
-
-    const bool listWidthChanged =
-        m_listScrollView != nullptr && std::abs(m_lastListWidth - m_listScrollView->contentViewportWidth()) >= 0.5f;
-    const bool gridWidthChanged =
-        m_gridScrollView != nullptr && std::abs(m_lastGridWidth - m_gridScrollView->contentViewportWidth()) >= 0.5f;
-    if (listWidthChanged || gridWidthChanged) {
-      rebuildVisibleEntries(renderer);
-      m_rootLayout->layout(renderer);
+  if (m_gridGrid != nullptr) {
+    const float viewportW = m_gridGrid->scrollView().contentViewportWidth();
+    if (viewportW > 0.0f) {
+      const float gap = Style::spaceSm * contentScale();
+      const std::size_t columns =
+          std::max<std::size_t>(1, static_cast<std::size_t>(std::floor((viewportW + gap) / (m_gridCellSize + gap))));
+      m_gridColumns = columns;
     }
   }
 }
@@ -448,7 +517,13 @@ void FileDialogView::doUpdate(Renderer& renderer) {
 
   m_thumbnails->uploadPending(renderer.textureManager());
   m_thumbnailRefreshPending = false;
-  refreshVisibleTileThumbnails(renderer);
+  if (m_viewMode == ViewMode::Grid && m_gridGrid != nullptr) {
+    // Force visible tiles to rebind so FileEntryTile::bind re-queries the thumbnail
+    // service. Same-path rebinds are a no-op for the thumbnail cache.
+    m_gridGrid->notifyDataChanged();
+  }
+  requestLayout();
+  requestRedraw();
 }
 
 bool FileDialogView::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers, bool pressed, bool preedit) {
@@ -573,21 +648,25 @@ void FileDialogView::applyFilter(bool resetScroll) {
     m_selectedIndex = firstSelectableIndex();
   }
 
-  m_hoverIndex = static_cast<std::size_t>(-1);
-  m_mouseActive = false;
-  m_rowPoolStartIndex = static_cast<std::size_t>(-1);
-  m_tilePoolStartIndex = static_cast<std::size_t>(-1);
   if (resetScroll) {
-    if (m_listScrollView != nullptr) {
-      m_listScrollView->setScrollOffset(0.0f);
+    if (m_listGrid != nullptr) {
+      m_listGrid->scrollView().setScrollOffset(0.0f);
     }
-    if (m_gridScrollView != nullptr) {
-      m_gridScrollView->setScrollOffset(0.0f);
+    if (m_gridGrid != nullptr) {
+      m_gridGrid->scrollView().setScrollOffset(0.0f);
     }
   }
+  if (m_listGrid != nullptr) {
+    m_listGrid->notifyDataChanged();
+  }
+  if (m_gridGrid != nullptr) {
+    m_gridGrid->notifyDataChanged();
+  }
+
+  syncGridSelection();
+  applyEmptyStates();
   updateFilenameFieldFromSelection();
   updateControls();
-  m_dirty = true;
   if (root() != nullptr) {
     root()->markLayoutDirty();
   }
@@ -631,278 +710,28 @@ void FileDialogView::rebuildBreadcrumb() {
   }
 }
 
-void FileDialogView::rebuildVisibleEntries(Renderer& renderer) {
-  if (m_listScrollView != nullptr && m_listContainer != nullptr && m_listContainer->visible()) {
-    rebuildList(renderer, m_listScrollView->contentViewportWidth());
-  }
-  if (m_gridScrollView != nullptr && m_gridScrollView->visible()) {
-    rebuildGrid(renderer, m_gridScrollView->contentViewportWidth());
-  }
-  updateVisibleStates();
-}
+void FileDialogView::applyEmptyStates() {
+  const bool empty = m_visibleEntries.empty();
+  const std::string emptyText = empty ? i18n::tr("ui.dialogs.file.empty-filtered") : std::string();
 
-void FileDialogView::rebuildList(Renderer& renderer, float width) {
-  if (m_listRoot == nullptr || m_listEmptyLabel == nullptr || m_listScrollView == nullptr) {
-    return;
+  if (m_listEmptyLabel != nullptr) {
+    m_listEmptyLabel->setText(emptyText);
+    m_listEmptyLabel->setVisible(empty);
+    m_listEmptyLabel->setParticipatesInLayout(empty);
   }
-
-  const float viewportHeight = std::max(0.0f, m_listScrollView->height() - Style::spaceSm * contentScale() * 2.0f);
-  ensureRowPool(viewportHeight);
-
-  if (m_visibleEntries.empty()) {
-    m_listEmptyLabel->setVisible(true);
-    m_listEmptyLabel->setText(i18n::tr("ui.dialogs.file.empty-filtered"));
-    m_listEmptyLabel->measure(renderer);
-    m_listEmptyLabel->setPosition(0.0f, 0.0f);
-    m_listRoot->setSize(width, m_listEmptyLabel->height());
-    for (auto* rowArea : m_rowPool) {
-      static_cast<FileEntryRow*>(rowArea)->clear();
-    }
-    m_lastListWidth = width;
-    return;
+  if (m_listGrid != nullptr) {
+    m_listGrid->setVisible(!empty);
+    m_listGrid->setParticipatesInLayout(!empty);
   }
 
-  m_listEmptyLabel->setVisible(false);
-  m_listRoot->setSize(width, m_listRowHeight * static_cast<float>(m_visibleEntries.size()));
-
-  const auto topIndex =
-      std::min(static_cast<std::size_t>(std::floor(m_listScrollView->scrollOffset() / m_listRowHeight)),
-               m_visibleEntries.size() - 1);
-  const auto startIndex = topIndex > kListRowOverscan ? topIndex - kListRowOverscan : 0;
-  m_rowPoolStartIndex = startIndex;
-
-  for (std::size_t slot = 0; slot < m_rowPool.size(); ++slot) {
-    auto* row = static_cast<FileEntryRow*>(m_rowPool[slot]);
-    const std::size_t visibleIndex = startIndex + slot;
-    if (visibleIndex < m_visibleEntries.size()) {
-      row->setPosition(0.0f, static_cast<float>(visibleIndex) * m_listRowHeight);
-      row->bind(renderer, m_visibleEntries[visibleIndex], visibleIndex, width, visibleIndex == m_selectedIndex,
-                m_mouseActive && visibleIndex == m_hoverIndex && visibleIndex != m_selectedIndex,
-                !isSelectableIndex(visibleIndex));
-    } else {
-      row->clear();
-    }
+  if (m_gridEmptyLabel != nullptr) {
+    m_gridEmptyLabel->setText(emptyText);
+    m_gridEmptyLabel->setVisible(empty);
+    m_gridEmptyLabel->setParticipatesInLayout(empty);
   }
-
-  m_lastListWidth = width;
-}
-
-void FileDialogView::rebuildGrid(Renderer& renderer, float width) {
-  if (m_gridRoot == nullptr || m_gridEmptyLabel == nullptr || m_gridScrollView == nullptr) {
-    return;
-  }
-
-  const float gap = Style::spaceSm * contentScale();
-  const std::size_t columns =
-      std::max<std::size_t>(1, static_cast<std::size_t>(std::floor((width + gap) / (m_gridCellWidth + gap))));
-  m_gridColumns = columns;
-  const float pitch = m_gridCellHeight + gap;
-  const float viewportHeight = std::max(0.0f, m_gridScrollView->height() - Style::spaceSm * contentScale() * 2.0f);
-  ensureTilePool(viewportHeight, columns);
-
-  if (m_visibleEntries.empty()) {
-    m_gridEmptyLabel->setVisible(true);
-    m_gridEmptyLabel->setText(i18n::tr("ui.dialogs.file.empty-filtered"));
-    m_gridEmptyLabel->measure(renderer);
-    m_gridEmptyLabel->setPosition(0.0f, 0.0f);
-    m_gridRoot->setSize(width, m_gridEmptyLabel->height());
-    std::unordered_set<std::string> releasedPaths;
-    for (auto* tileArea : m_tilePool) {
-      if (std::string released = static_cast<FileEntryTile*>(tileArea)->clear(renderer); !released.empty()) {
-        releasedPaths.insert(std::move(released));
-      }
-    }
-    if (m_thumbnails != nullptr) {
-      for (const auto& path : releasedPaths) {
-        m_thumbnails->release(path);
-      }
-    }
-    m_lastGridWidth = width;
-    return;
-  }
-
-  m_gridEmptyLabel->setVisible(false);
-  const std::size_t rows = (m_visibleEntries.size() + columns - 1) / columns;
-  m_gridRoot->setSize(width, rows > 0 ? static_cast<float>(rows) * pitch - gap : 0.0f);
-
-  const auto topRow = static_cast<std::size_t>(std::floor(m_gridScrollView->scrollOffset() / std::max(pitch, 1.0f)));
-  const auto startRow = topRow > kGridRowOverscan ? topRow - kGridRowOverscan : 0;
-  const auto startIndex = startRow * columns;
-  m_tilePoolStartIndex = startIndex;
-
-  std::unordered_set<std::string> releasedPaths;
-  std::unordered_set<std::string> retainedPaths;
-  retainedPaths.reserve(m_tilePool.size());
-
-  for (std::size_t slot = 0; slot < m_tilePool.size(); ++slot) {
-    auto* tile = static_cast<FileEntryTile*>(m_tilePool[slot]);
-    const std::size_t visibleIndex = startIndex + slot;
-    if (visibleIndex < m_visibleEntries.size()) {
-      const std::size_t col = visibleIndex % columns;
-      const std::size_t row = visibleIndex / columns;
-      tile->setPosition(static_cast<float>(col) * (m_gridCellWidth + gap), static_cast<float>(row) * pitch);
-      if (std::string released =
-              tile->bind(renderer, m_visibleEntries[visibleIndex], visibleIndex, m_gridCellWidth, m_gridCellHeight,
-                         visibleIndex == m_selectedIndex,
-                         m_mouseActive && visibleIndex == m_hoverIndex && visibleIndex != m_selectedIndex,
-                         !isSelectableIndex(visibleIndex));
-          !released.empty()) {
-        releasedPaths.insert(std::move(released));
-      }
-      if (!tile->thumbnailPath().empty()) {
-        retainedPaths.insert(tile->thumbnailPath());
-      }
-    } else {
-      if (std::string released = tile->clear(renderer); !released.empty()) {
-        releasedPaths.insert(std::move(released));
-      }
-    }
-  }
-
-  if (m_thumbnails != nullptr) {
-    for (const auto& path : releasedPaths) {
-      if (!retainedPaths.contains(path)) {
-        m_thumbnails->release(path);
-      }
-    }
-  }
-
-  m_lastGridWidth = width;
-}
-
-void FileDialogView::ensureRowPool(float viewportHeight) {
-  if (m_listRoot == nullptr) {
-    return;
-  }
-
-  const std::size_t desired = rowPoolCount(viewportHeight, m_listRowHeight, kListRowOverscan);
-  if (m_rowPool.size() == desired) {
-    return;
-  }
-
-  for (auto* rowArea : m_rowPool) {
-    m_listRoot->removeChild(rowArea);
-  }
-  m_rowPool.clear();
-
-  const float scale = contentScale();
-  for (std::size_t i = 0; i < desired; ++i) {
-    auto row = std::make_unique<FileEntryRow>(scale);
-    row->setCallbacks(
-        [this](std::size_t index) { DeferredCall::callLater([this, index]() { handleEntryClick(index); }); },
-        [this](std::size_t index) {
-          if (!m_mouseActive) {
-            m_mouseActive = true;
-          }
-          if (index != m_selectedIndex && m_hoverIndex != index) {
-            m_hoverIndex = index;
-            updateVisibleStates();
-            requestRedraw();
-          }
-        },
-        [this](std::size_t index) {
-          if (!m_mouseActive || index == m_selectedIndex || m_hoverIndex == index) {
-            return;
-          }
-          m_hoverIndex = index;
-          updateVisibleStates();
-          requestRedraw();
-        },
-        [this](std::size_t index) {
-          if (m_hoverIndex != index || index == m_selectedIndex) {
-            return;
-          }
-          m_hoverIndex = static_cast<std::size_t>(-1);
-          updateVisibleStates();
-          requestRedraw();
-        });
-    m_rowPool.push_back(static_cast<InputArea*>(m_listRoot->addChild(std::move(row))));
-  }
-}
-
-void FileDialogView::ensureTilePool(float viewportHeight, std::size_t columns) {
-  if (m_gridRoot == nullptr) {
-    return;
-  }
-
-  const float pitch = m_gridCellHeight + Style::spaceSm * contentScale();
-  const std::size_t visibleRows = rowPoolCount(viewportHeight, pitch, kGridRowOverscan);
-  const std::size_t desired = std::max<std::size_t>(1, visibleRows * columns);
-  if (m_tilePool.size() == desired) {
-    return;
-  }
-
-  for (auto* tileArea : m_tilePool) {
-    m_gridRoot->removeChild(tileArea);
-  }
-  m_tilePool.clear();
-
-  const float scale = contentScale();
-  for (std::size_t i = 0; i < desired; ++i) {
-    auto tile = std::make_unique<FileEntryTile>(scale, m_thumbnails);
-    tile->setCallbacks(
-        [this](std::size_t index) { DeferredCall::callLater([this, index]() { handleEntryClick(index); }); },
-        [this](std::size_t index) {
-          if (!m_mouseActive) {
-            m_mouseActive = true;
-          }
-          if (index != m_selectedIndex && m_hoverIndex != index) {
-            m_hoverIndex = index;
-            updateVisibleStates();
-            requestRedraw();
-          }
-        },
-        [this](std::size_t index) {
-          if (!m_mouseActive || index == m_selectedIndex || m_hoverIndex == index) {
-            return;
-          }
-          m_hoverIndex = index;
-          updateVisibleStates();
-          requestRedraw();
-        },
-        [this](std::size_t index) {
-          if (m_hoverIndex != index || index == m_selectedIndex) {
-            return;
-          }
-          m_hoverIndex = static_cast<std::size_t>(-1);
-          updateVisibleStates();
-          requestRedraw();
-        });
-    m_tilePool.push_back(static_cast<InputArea*>(m_gridRoot->addChild(std::move(tile))));
-  }
-}
-
-void FileDialogView::refreshVisibleTileThumbnails(Renderer& renderer) {
-  if (m_viewMode != ViewMode::Grid) {
-    return;
-  }
-  for (auto* tileArea : m_tilePool) {
-    auto* tile = static_cast<FileEntryTile*>(tileArea);
-    if (tile->boundIndex() != static_cast<std::size_t>(-1)) {
-      tile->refreshThumbnail(renderer);
-    }
-  }
-  requestRedraw();
-}
-
-void FileDialogView::updateVisibleStates() {
-  for (auto* rowArea : m_rowPool) {
-    auto* row = static_cast<FileEntryRow*>(rowArea);
-    const std::size_t index = row->boundIndex();
-    if (index == static_cast<std::size_t>(-1)) {
-      continue;
-    }
-    row->setVisualState(index == m_selectedIndex, m_mouseActive && index == m_hoverIndex && index != m_selectedIndex,
-                        !isSelectableIndex(index));
-  }
-  for (auto* tileArea : m_tilePool) {
-    auto* tile = static_cast<FileEntryTile*>(tileArea);
-    const std::size_t index = tile->boundIndex();
-    if (index == static_cast<std::size_t>(-1)) {
-      continue;
-    }
-    tile->setVisualState(index == m_selectedIndex, m_mouseActive && index == m_hoverIndex && index != m_selectedIndex,
-                         !isSelectableIndex(index));
+  if (m_gridGrid != nullptr) {
+    m_gridGrid->setVisible(!empty);
+    m_gridGrid->setParticipatesInLayout(!empty);
   }
 }
 
@@ -969,8 +798,8 @@ void FileDialogView::updateControls() {
   if (m_listContainer != nullptr) {
     m_listContainer->setVisible(m_viewMode == ViewMode::List);
   }
-  if (m_gridScrollView != nullptr) {
-    m_gridScrollView->setVisible(m_viewMode == ViewMode::Grid);
+  if (m_gridContainer != nullptr) {
+    m_gridContainer->setVisible(m_viewMode == ViewMode::Grid);
   }
 }
 
@@ -1010,7 +839,6 @@ void FileDialogView::setViewMode(ViewMode mode) {
   m_viewMode = mode;
   updateControls();
   ensureSelectionVisible();
-  m_dirty = true;
   requestLayout();
 }
 
@@ -1052,10 +880,9 @@ void FileDialogView::selectIndex(std::size_t index) {
     return;
   }
   m_selectedIndex = index;
-  m_hoverIndex = static_cast<std::size_t>(-1);
+  syncGridSelection();
   updateFilenameFieldFromSelection();
   updateControls();
-  updateVisibleStates();
   focusList();
   ensureSelectionVisible();
   requestRedraw();
@@ -1063,6 +890,7 @@ void FileDialogView::selectIndex(std::size_t index) {
 
 void FileDialogView::handleEntryClick(std::size_t index) {
   if (index >= m_visibleEntries.size()) {
+    syncGridSelection();
     return;
   }
 
@@ -1081,6 +909,7 @@ void FileDialogView::handleEntryClick(std::size_t index) {
   }
 
   if (!isSelectableIndex(index)) {
+    syncGridSelection();
     return;
   }
 
@@ -1192,36 +1021,51 @@ void FileDialogView::ensureSelectionVisible() {
     return;
   }
 
-  if (m_viewMode == ViewMode::List && m_listScrollView != nullptr && m_listRowHeight > 0.0f) {
+  if (m_viewMode == ViewMode::List && m_listGrid != nullptr && m_listRowHeight > 0.0f) {
+    ScrollView& scroll = m_listGrid->scrollView();
     const float top = static_cast<float>(m_selectedIndex) * m_listRowHeight;
     const float bottom = top + m_listRowHeight;
-    const float viewport = m_listScrollView->height() - Style::spaceSm * contentScale() * 2.0f;
-    const float offset = m_listScrollView->scrollOffset();
+    const float viewport = m_listGrid->height();
+    const float offset = scroll.scrollOffset();
     if (top < offset) {
-      m_listScrollView->setScrollOffset(top);
+      scroll.setScrollOffset(top);
     } else if (bottom > offset + viewport) {
-      m_listScrollView->setScrollOffset(bottom - viewport);
+      scroll.setScrollOffset(bottom - viewport);
     }
-    m_dirty = true;
     requestLayout();
     return;
   }
 
-  if (m_viewMode == ViewMode::Grid && m_gridScrollView != nullptr && m_gridColumns > 0) {
+  if (m_viewMode == ViewMode::Grid && m_gridGrid != nullptr && m_gridColumns > 0) {
+    ScrollView& scroll = m_gridGrid->scrollView();
     const float gap = Style::spaceSm * contentScale();
-    const float pitch = m_gridCellHeight + gap;
+    const float viewportW = m_gridGrid->scrollView().contentViewportWidth();
+    const float columnsF = static_cast<float>(m_gridColumns);
+    const float cellW = std::max(0.0f, (viewportW - (columnsF - 1.0f) * gap) / std::max(columnsF, 1.0f));
+    const float cellH = cellW; // squareCells
+    const float pitch = cellH + gap;
     const std::size_t row = m_selectedIndex / m_gridColumns;
     const float top = static_cast<float>(row) * pitch;
-    const float bottom = top + m_gridCellHeight;
-    const float viewport = m_gridScrollView->height() - Style::spaceSm * contentScale() * 2.0f;
-    const float offset = m_gridScrollView->scrollOffset();
+    const float bottom = top + cellH;
+    const float viewport = m_gridGrid->height();
+    const float offset = scroll.scrollOffset();
     if (top < offset) {
-      m_gridScrollView->setScrollOffset(top);
+      scroll.setScrollOffset(top);
     } else if (bottom > offset + viewport) {
-      m_gridScrollView->setScrollOffset(bottom - viewport);
+      scroll.setScrollOffset(bottom - viewport);
     }
-    m_dirty = true;
     requestLayout();
+  }
+}
+
+void FileDialogView::syncGridSelection() {
+  const std::optional<std::size_t> selection =
+      m_selectedIndex < m_visibleEntries.size() ? std::optional{m_selectedIndex} : std::nullopt;
+  if (m_listGrid != nullptr) {
+    m_listGrid->setSelectedIndex(selection);
+  }
+  if (m_gridGrid != nullptr) {
+    m_gridGrid->setSelectedIndex(selection);
   }
 }
 

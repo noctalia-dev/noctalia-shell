@@ -44,6 +44,8 @@ public:
   [[nodiscard]] float maxScrollOffset() const noexcept { return m_maxScrollOffset; }
   [[nodiscard]] bool scrollable() const noexcept { return m_maxScrollOffset > 0.0f; }
   [[nodiscard]] float contentViewportWidth() const noexcept;
+  [[nodiscard]] float viewportPaddingH() const noexcept { return m_viewportPaddingH; }
+  [[nodiscard]] float viewportPaddingV() const noexcept { return m_viewportPaddingV; }
 
 private:
   void doLayout(Renderer& renderer) override;

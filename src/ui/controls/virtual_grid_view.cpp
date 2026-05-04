@@ -175,14 +175,17 @@ void VirtualGridView::doLayout(Renderer& renderer) {
   }
 
   // Step 1: estimate the canvas's virtual size so ScrollView can measure
-  // content height correctly. Use our own width minus the scrollbar gutter
-  // assuming the bar is shown — for large lists that estimate is exact, and
-  // for small lists the only visible artifact is a few pixels of right pad.
-  constexpr float kScrollbarGutter = 14.0f; // matches ScrollView's internal width + gap
+  // content height correctly. Reserve the scrollbar gutter (assume scrollbar
+  // is shown) and the ScrollView's own viewport padding — for card-styled
+  // scrollers that horizontal padding is non-trivial, and ignoring it makes
+  // tiles overflow the viewport into the scrollbar area.
+  constexpr float kScrollbarGutter = 14.0f; // matches ScrollView's internal kScrollbarWidth + kScrollbarGap
   const float ourW = std::max(0.0f, width());
   const float ourH = std::max(0.0f, height());
-  const float viewportW = std::max(0.0f, ourW - kScrollbarGutter);
-  const float viewportH = ourH;
+  const float padH = m_scroll->viewportPaddingH();
+  const float padV = m_scroll->viewportPaddingV();
+  const float viewportW = std::max(0.0f, ourW - 2.0f * padH - kScrollbarGutter);
+  const float viewportH = std::max(0.0f, ourH - 2.0f * padV);
 
   m_itemCount = m_adapter->itemCount();
   const std::size_t columns =
@@ -317,8 +320,21 @@ void VirtualGridView::doLayout(Renderer& renderer) {
   Flex::doLayout(renderer);
 }
 
-LayoutSize VirtualGridView::doMeasure(Renderer& renderer, const LayoutConstraints& constraints) {
-  return measureByLayout(renderer, constraints);
+LayoutSize VirtualGridView::doMeasure(Renderer& /*renderer*/, const LayoutConstraints& constraints) {
+  // Pure size report: never run doLayout from measure. The parent's measure pass
+  // happens with intermediate constraints (often width=0 for a fillWidth+flexGrow
+  // child); binding tiles at those phantom widths would then mark layout dirty and
+  // schedule another full root re-layout, which manifests as ~6px wobble on
+  // sibling labels (header titles, columns) every time the cursor moves anywhere
+  // in the dialog. Tile binding belongs in the arrange pass where the final rect
+  // is known.
+  const float w = constraints.hasExactWidth() ? constraints.maxWidth
+                  : constraints.hasMaxWidth   ? constraints.maxWidth
+                                              : 0.0f;
+  const float h = constraints.hasExactHeight() ? constraints.maxHeight
+                  : constraints.hasMaxHeight   ? constraints.maxHeight
+                                               : 0.0f;
+  return LayoutSize{.width = w, .height = h};
 }
 
 void VirtualGridView::doArrange(Renderer& renderer, const LayoutRect& rect) { arrangeByLayout(renderer, rect); }

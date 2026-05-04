@@ -10,14 +10,16 @@
 
 class AnimationManager;
 class Button;
+class FileGridAdapter;
+class FileListAdapter;
 class Flex;
 class Input;
 class InputArea;
 class Label;
 class Node;
 class Renderer;
-class ScrollView;
 class ThumbnailService;
+class VirtualGridView;
 
 class FileDialogHost {
 public:
@@ -76,13 +78,7 @@ private:
   void refreshDirectory();
   void applyFilter(bool resetScroll);
   void rebuildBreadcrumb();
-  void rebuildVisibleEntries(Renderer& renderer);
-  void rebuildList(Renderer& renderer, float width);
-  void rebuildGrid(Renderer& renderer, float width);
-  void ensureRowPool(float viewportHeight);
-  void ensureTilePool(float viewportHeight, std::size_t columns);
-  void refreshVisibleTileThumbnails(Renderer& renderer);
-  void updateVisibleStates();
+  void applyEmptyStates();
   void updateControls();
   void updateFilenameFieldFromSelection();
   void setShowHiddenFiles(bool show);
@@ -100,6 +96,7 @@ private:
   void focusFilename();
   void cycleFocus(bool reverse);
   void ensureSelectionVisible();
+  void syncGridSelection();
   [[nodiscard]] std::size_t firstSelectableIndex() const;
   [[nodiscard]] bool isSelectableIndex(std::size_t index) const;
   [[nodiscard]] bool isTextInputFocused() const;
@@ -133,11 +130,10 @@ private:
   Button* m_nameSortButton = nullptr;
   Button* m_sizeSortButton = nullptr;
   Button* m_dateSortButton = nullptr;
-  ScrollView* m_listScrollView = nullptr;
-  Node* m_listRoot = nullptr;
+  VirtualGridView* m_listGrid = nullptr;
   Label* m_listEmptyLabel = nullptr;
-  ScrollView* m_gridScrollView = nullptr;
-  Node* m_gridRoot = nullptr;
+  Flex* m_gridContainer = nullptr;
+  VirtualGridView* m_gridGrid = nullptr;
   Label* m_gridEmptyLabel = nullptr;
   Input* m_filenameInput = nullptr;
   Button* m_cancelButton = nullptr;
@@ -146,8 +142,9 @@ private:
 
   std::vector<FileEntry> m_entries;
   std::vector<FileEntry> m_visibleEntries;
-  std::vector<InputArea*> m_rowPool;
-  std::vector<InputArea*> m_tilePool;
+
+  std::unique_ptr<FileListAdapter> m_listAdapter;
+  std::unique_ptr<FileGridAdapter> m_gridAdapter;
 
   std::filesystem::path m_currentDirectory;
   std::string m_filterQuery;
@@ -155,18 +152,9 @@ private:
   FileDialogSortField m_sortField = FileDialogSortField::Name;
   FileDialogSortOrder m_sortOrder = FileDialogSortOrder::Ascending;
   std::size_t m_selectedIndex = static_cast<std::size_t>(-1);
-  std::size_t m_hoverIndex = static_cast<std::size_t>(-1);
-  std::size_t m_rowPoolStartIndex = static_cast<std::size_t>(-1);
-  std::size_t m_tilePoolStartIndex = static_cast<std::size_t>(-1);
   std::size_t m_gridColumns = 1;
-  float m_lastWidth = 0.0f;
-  float m_lastListWidth = -1.0f;
-  float m_lastGridWidth = -1.0f;
   float m_listRowHeight = 0.0f;
-  float m_gridCellWidth = 0.0f;
-  float m_gridCellHeight = 0.0f;
-  bool m_dirty = false;
-  bool m_mouseActive = false;
+  float m_gridCellSize = 0.0f;
   bool m_thumbnailRefreshPending = false;
   bool m_showHiddenFiles = false;
   float m_contentScale = 1.0f;
