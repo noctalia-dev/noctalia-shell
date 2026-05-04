@@ -185,12 +185,13 @@ void FileEntryTile::applyVisualState() {
   const Color bg = m_selected  ? colorForRole(ColorRole::Primary)
                    : m_hovered ? colorForRole(ColorRole::SurfaceVariant, 0.65f)
                                : clearColor();
-  const Color fg = m_selected ? colorForRole(ColorRole::OnPrimary) : colorForRole(ColorRole::OnSurface);
+  const Color glyphFg = colorForRole(ColorRole::OnSurface); // glyph sits on the preview's Surface bg
+  const Color labelFg = m_selected ? colorForRole(ColorRole::OnPrimary) : colorForRole(ColorRole::OnSurface);
   const float alpha = m_disabled ? 0.55f : 1.0f;
 
   m_background->setFill(bg);
-  m_glyph->setColor(withAlpha(fg, alpha));
-  m_label->setColor(withAlpha(fg, alpha));
+  m_glyph->setColor(withAlpha(glyphFg, alpha));
+  m_label->setColor(withAlpha(labelFg, alpha));
   markLayoutDirty();
 }
 

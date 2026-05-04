@@ -124,8 +124,7 @@ private:
   Input* m_searchInput = nullptr;
   Label* m_sortLabel = nullptr;
   Button* m_hiddenToggle = nullptr;
-  Button* m_listToggle = nullptr;
-  Button* m_gridToggle = nullptr;
+  Button* m_viewToggle = nullptr;
   Flex* m_listContainer = nullptr;
   Button* m_nameSortButton = nullptr;
   Button* m_sizeSortButton = nullptr;

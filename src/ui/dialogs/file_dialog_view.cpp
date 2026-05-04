@@ -193,6 +193,7 @@ void FileDialogView::create() {
   breadcrumb->setGap(Style::spaceXs * scale);
   breadcrumb->setClipChildren(true);
   breadcrumb->setFillWidth(true);
+  breadcrumb->setMinHeight(Style::controlHeightSm * scale);
   m_breadcrumbRow = breadcrumb.get();
   root->addChild(std::move(breadcrumb));
 
@@ -200,12 +201,6 @@ void FileDialogView::create() {
   toolbar->setDirection(FlexDirection::Horizontal);
   toolbar->setAlign(FlexAlign::Center);
   toolbar->setGap(Style::spaceSm * scale);
-
-  auto backButton = std::make_unique<Button>();
-  backButton->setGlyph("arrow-back");
-  configureIconButton(backButton.get());
-  backButton->setOnClick([this]() { DeferredCall::callLater([this]() { navigateUp(); }); });
-  m_backButton = static_cast<Button*>(toolbar->addChild(std::move(backButton)));
 
   auto searchInput = std::make_unique<Input>();
   searchInput->setPlaceholder(i18n::tr("ui.dialogs.file.filter-placeholder"));
@@ -221,6 +216,12 @@ void FileDialogView::create() {
   searchInput->setOnSubmit([this](const std::string&) { activateSelection(); });
   m_searchInput = static_cast<Input*>(toolbar->addChild(std::move(searchInput)));
 
+  auto backButton = std::make_unique<Button>();
+  backButton->setGlyph("arrow-big-up");
+  configureIconButton(backButton.get());
+  backButton->setOnClick([this]() { DeferredCall::callLater([this]() { navigateUp(); }); });
+  m_backButton = static_cast<Button*>(toolbar->addChild(std::move(backButton)));
+
   toolbar->addChild(std::make_unique<Spacer>());
 
   auto sortLabel = std::make_unique<Label>();
@@ -234,19 +235,13 @@ void FileDialogView::create() {
   hiddenToggle->setOnClick([this]() { DeferredCall::callLater([this]() { setShowHiddenFiles(!m_showHiddenFiles); }); });
   m_hiddenToggle = static_cast<Button*>(toolbar->addChild(std::move(hiddenToggle)));
 
-  auto listToggle = std::make_unique<Button>();
-  listToggle->setGlyph("list");
-  listToggle->setVariant(ButtonVariant::Tab);
-  configureIconButton(listToggle.get());
-  listToggle->setOnClick([this]() { DeferredCall::callLater([this]() { setViewMode(ViewMode::List); }); });
-  m_listToggle = static_cast<Button*>(toolbar->addChild(std::move(listToggle)));
-
-  auto gridToggle = std::make_unique<Button>();
-  gridToggle->setGlyph("layout-grid");
-  gridToggle->setVariant(ButtonVariant::Tab);
-  configureIconButton(gridToggle.get());
-  gridToggle->setOnClick([this]() { DeferredCall::callLater([this]() { setViewMode(ViewMode::Grid); }); });
-  m_gridToggle = static_cast<Button*>(toolbar->addChild(std::move(gridToggle)));
+  auto viewToggle = std::make_unique<Button>();
+  viewToggle->setVariant(ButtonVariant::Default);
+  configureIconButton(viewToggle.get());
+  viewToggle->setOnClick([this]() {
+    DeferredCall::callLater([this]() { setViewMode(m_viewMode == ViewMode::List ? ViewMode::Grid : ViewMode::List); });
+  });
+  m_viewToggle = static_cast<Button*>(toolbar->addChild(std::move(viewToggle)));
 
   root->addChild(std::move(toolbar));
 
@@ -457,8 +452,7 @@ void FileDialogView::onClose() {
   m_searchInput = nullptr;
   m_sortLabel = nullptr;
   m_hiddenToggle = nullptr;
-  m_listToggle = nullptr;
-  m_gridToggle = nullptr;
+  m_viewToggle = nullptr;
   m_listContainer = nullptr;
   m_nameSortButton = nullptr;
   m_sizeSortButton = nullptr;
@@ -769,11 +763,8 @@ void FileDialogView::updateControls() {
   if (m_hiddenToggle != nullptr) {
     m_hiddenToggle->setSelected(m_showHiddenFiles);
   }
-  if (m_listToggle != nullptr) {
-    m_listToggle->setSelected(m_viewMode == ViewMode::List);
-  }
-  if (m_gridToggle != nullptr) {
-    m_gridToggle->setSelected(m_viewMode == ViewMode::Grid);
+  if (m_viewToggle != nullptr) {
+    m_viewToggle->setGlyph(m_viewMode == ViewMode::List ? "layout-grid" : "list");
   }
 
   if (m_sortLabel != nullptr) {
