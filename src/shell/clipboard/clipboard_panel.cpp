@@ -467,11 +467,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
   const float textWidth = std::max(0.0f, width - leadW - Style::spaceMd * scale - Style::spaceSm * scale * 2.0f);
   for (std::size_t i = 0; i < m_filteredIndices.size(); ++i) {
     const std::size_t historyIdx = m_filteredIndices[i];
-    ClipboardEntry rowEntry = history[historyIdx];
-    if (rowEntry.isImage() && m_clipboard != nullptr) {
-      (void)m_clipboard->ensureEntryLoaded(historyIdx);
-      rowEntry = history[historyIdx];
-    }
+    const ClipboardEntry& rowEntry = history[historyIdx];
     auto row = std::make_unique<Flex>();
     row->setDirection(FlexDirection::Horizontal);
     row->setAlign(FlexAlign::Center);
@@ -528,27 +524,11 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     lead->setJustify(FlexJustify::Center);
     lead->setSize(leadW, 0.0f);
 
-    if (rowEntry.isImage() && !rowEntry.data.empty()) {
-      auto thumb = std::make_unique<Image>();
-      thumb->setSize(thumbPx, thumbPx);
-      thumb->setFit(ImageFit::Cover);
-      thumb->setRadius(Style::radiusMd * scale);
-      if (thumb->setSourceBytes(renderer, rowEntry.data.data(), rowEntry.data.size())) {
-        lead->addChild(std::move(thumb));
-      } else {
-        auto fallback = std::make_unique<Glyph>();
-        fallback->setGlyph("photo");
-        fallback->setGlyphSize(kListGlyphSize * scale);
-        fallback->setColor(colorSpecFromRole(ColorRole::Secondary));
-        lead->addChild(std::move(fallback));
-      }
-    } else {
-      auto glyph = std::make_unique<Glyph>();
-      glyph->setGlyph(rowEntry.isImage() ? "photo" : "file-text");
-      glyph->setGlyphSize(kListGlyphSize * scale);
-      glyph->setColor(colorSpecFromRole(rowEntry.isImage() ? ColorRole::Secondary : ColorRole::Primary));
-      lead->addChild(std::move(glyph));
-    }
+    auto glyph = std::make_unique<Glyph>();
+    glyph->setGlyph(rowEntry.isImage() ? "photo" : "file-text");
+    glyph->setGlyphSize(kListGlyphSize * scale);
+    glyph->setColor(colorSpecFromRole(rowEntry.isImage() ? ColorRole::Secondary : ColorRole::Primary));
+    lead->addChild(std::move(glyph));
     row->addChild(std::move(lead));
 
     auto textColumn = std::make_unique<Flex>();
