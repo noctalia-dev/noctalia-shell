@@ -33,7 +33,7 @@ namespace {
 
   constexpr float kOverviewAvatarScale = 2.6f;
   // Bottom row: 1 : 1 — equal split so media/clock and shortcuts feel balanced (tweak either value slightly if needed).
-  constexpr float kOverviewMainColumnFlexGrow = 1.0f;
+  constexpr float kOverviewMainColumnFlexGrow = 1.66f;
   constexpr float kOverviewShortcutsFlexGrow = 1.0f;
 
   float overviewAvatarSize(float scale) { return Style::controlHeightLg * kOverviewAvatarScale * scale; }
@@ -295,7 +295,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   const std::size_t count = std::min(shortcuts.size(), std::size_t{8});
 
   auto grid = std::make_unique<GridView>();
-  grid->setColumns(3);
+  grid->setColumns(2);
   grid->setColumnGap(Style::spaceSm * scale);
   grid->setRowGap(Style::spaceSm * scale);
   grid->setPadding(0.0f);
