@@ -124,32 +124,32 @@ void IdleInhibitor::notifyChanged() {
 
 void IdleInhibitor::registerIpc(IpcService& ipc) {
   ipc.registerHandler(
-      "idle-inhibitor-enable",
+      "caffeine-enable",
       [this](const std::string&) -> std::string {
         if (!available())
-          return "error: idle inhibitor protocol unavailable\n";
+          return "error: caffeine protocol unavailable\n";
         setEnabled(true);
         return "ok\n";
       },
-      "idle-inhibitor-enable", "Enable the compositor idle inhibitor");
+      "caffeine-enable", "Enable caffeine (idle inhibitor)");
 
   ipc.registerHandler(
-      "idle-inhibitor-disable",
+      "caffeine-disable",
       [this](const std::string&) -> std::string {
         if (!available())
-          return "error: idle inhibitor protocol unavailable\n";
+          return "error: caffeine protocol unavailable\n";
         setEnabled(false);
         return "ok\n";
       },
-      "idle-inhibitor-disable", "Disable the compositor idle inhibitor");
+      "caffeine-disable", "Disable caffeine (idle inhibitor)");
 
   ipc.registerHandler(
-      "idle-inhibitor-toggle",
+      "caffeine-toggle",
       [this](const std::string&) -> std::string {
         if (!available())
-          return "error: idle inhibitor protocol unavailable\n";
+          return "error: caffeine protocol unavailable\n";
         toggle();
         return "ok\n";
       },
-      "idle-inhibitor-toggle", "Toggle the compositor idle inhibitor");
+      "caffeine-toggle", "Toggle caffeine (idle inhibitor)");
 }

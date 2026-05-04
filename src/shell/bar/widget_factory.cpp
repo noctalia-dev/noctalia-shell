@@ -177,7 +177,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     return widget;
   }
 
-  if (type == "idle_inhibitor") {
+  if (type == "caffeine") {
     auto widget = std::make_unique<IdleInhibitorWidget>(m_idleInhibitor);
     widget->setContentScale(contentScale);
     return widget;

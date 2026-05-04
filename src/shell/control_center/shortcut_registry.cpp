@@ -170,10 +170,10 @@ namespace {
   class IdleInhibitorShortcut final : public Shortcut {
   public:
     explicit IdleInhibitorShortcut(IdleInhibitor* svc) : m_svc(svc) {}
-    std::string_view id() const override { return "idle_inhibitor"; }
-    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.idle-inhibitor"); }
-    std::string_view iconOn() const override { return "idle-inhibitor-on"; }
-    std::string_view iconOff() const override { return "idle-inhibitor-off"; }
+    std::string_view id() const override { return "caffeine"; }
+    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.caffeine"); }
+    std::string_view iconOn() const override { return "caffeine-on"; }
+    std::string_view iconOff() const override { return "caffeine-off"; }
     bool isToggle() const override { return true; }
     bool active() const override { return m_svc != nullptr && m_svc->enabled(); }
     void onClick() override {
@@ -480,7 +480,7 @@ std::unique_ptr<Shortcut> ShortcutRegistry::create(std::string_view type, const 
     return std::make_unique<NotificationShortcut>(s.notifications);
   if (type == "dark_mode")
     return std::make_unique<DarkModeShortcut>(s.theme);
-  if (type == "idle_inhibitor")
+  if (type == "caffeine")
     return std::make_unique<IdleInhibitorShortcut>(s.idleInhibitor);
   if (type == "audio")
     return std::make_unique<AudioShortcut>(s.audio);

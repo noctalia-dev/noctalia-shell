@@ -133,9 +133,9 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"bell", 0xEA35},
     {"bell-off", 0xECE9},
 
-    // Idle inhibitor
-    {"idle-inhibitor-on", 0x10009},     // mug-filled
-    {"idle-inhibitor-off", 0xEAFB},    // mug
+    // Caffeine (idle inhibitor)
+    {"caffeine-on", 0x10009},     // mug-filled
+    {"caffeine-off", 0xEAFB},    // mug
 
     // Brightness / Display
     {"device-desktop", 0xEA89},

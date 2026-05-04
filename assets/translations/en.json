@@ -205,7 +205,7 @@
         "light": "Light Mode",
         "auto": "Auto Mode"
       },
-      "idle-inhibitor": "Idle Inhibitor",
+      "caffeine": "Caffeine",
       "audio": "Audio",
       "mic-mute": "Microphone",
       "power-profile": "Power",
@@ -827,7 +827,7 @@
         "clock": "Clock",
         "control-center": "Control Center",
         "clipboard": "Clipboard",
-        "idle-inhibitor": "Idle Inhibitor",
+        "caffeine": "Caffeine",
         "keyboard-layout": "Keyboard Layout",
         "launcher": "Launcher",
         "lock-keys": "Lock Keys",

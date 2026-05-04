@@ -56,8 +56,8 @@ namespace settings {
             .categoryKey = "settings.widgets.categories.shell",
         },
         {
-            .type = "idle_inhibitor",
-            .labelKey = "settings.widgets.types.idle-inhibitor",
+            .type = "caffeine",
+            .labelKey = "settings.widgets.types.caffeine",
             .categoryKey = "settings.widgets.categories.system",
         },
         {
