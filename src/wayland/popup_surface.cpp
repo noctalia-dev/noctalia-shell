@@ -6,7 +6,6 @@
 #include "xdg-shell-client-protocol.h"
 
 #include <algorithm>
-#include <stdexcept>
 #include <utility>
 #include <wayland-client.h>
 
