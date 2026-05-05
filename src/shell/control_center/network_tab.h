@@ -45,6 +45,8 @@ private:
   Flex* m_passwordCard = nullptr;
   Label* m_passwordTitle = nullptr;
   Input* m_passwordInput = nullptr;
+  Button* m_passwordRevealButton = nullptr;
+  bool m_passwordRevealed = false;
   Flex* m_listCard = nullptr;
   ScrollView* m_listScroll = nullptr;
   Flex* m_list = nullptr;

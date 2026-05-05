@@ -274,6 +274,7 @@ std::unique_ptr<Flex> NetworkTab::create() {
   auto passwordInput = std::make_unique<Input>();
   passwordInput->setPlaceholder(i18n::tr("control-center.network.password"));
   passwordInput->setFlexGrow(1.0f);
+  passwordInput->setPasswordMode(true);
   passwordInput->setOnSubmit([this](const std::string& value) {
     if (m_secrets != nullptr) {
       m_secrets->submitSecret(value);
@@ -283,6 +284,27 @@ std::unique_ptr<Flex> NetworkTab::create() {
   });
   m_passwordInput = passwordInput.get();
   inputRow->addChild(std::move(passwordInput));
+
+  auto revealButton = std::make_unique<Button>();
+  revealButton->setVariant(ButtonVariant::Ghost);
+  revealButton->setGlyph("eye");
+  revealButton->setGlyphSize(Style::fontSizeBody * scale);
+  revealButton->setMinWidth(Style::controlHeightSm * scale);
+  revealButton->setMinHeight(Style::controlHeightSm * scale);
+  revealButton->setPadding(Style::spaceXs * scale);
+  revealButton->setRadius(Style::radiusMd * scale);
+  revealButton->setOnClick([this]() {
+    if (m_passwordInput == nullptr) {
+      return;
+    }
+    m_passwordRevealed = !m_passwordRevealed;
+    m_passwordInput->setPasswordMode(!m_passwordRevealed);
+    if (m_passwordRevealButton != nullptr) {
+      m_passwordRevealButton->setGlyph(m_passwordRevealed ? "eye-off" : "eye");
+    }
+  });
+  m_passwordRevealButton = revealButton.get();
+  inputRow->addChild(std::move(revealButton));
 
   auto connectButton = std::make_unique<Button>();
   connectButton->setVariant(ButtonVariant::Default);
@@ -410,6 +432,8 @@ void NetworkTab::onClose() {
   m_passwordCard = nullptr;
   m_passwordTitle = nullptr;
   m_passwordInput = nullptr;
+  m_passwordRevealButton = nullptr;
+  m_passwordRevealed = false;
   m_listCard = nullptr;
   m_listScroll = nullptr;
   m_list = nullptr;
@@ -437,16 +461,26 @@ void NetworkTab::syncPasswordCard() {
 void NetworkTab::showPasswordPrompt(const NetworkSecretAgent::SecretRequest& request) {
   m_hasPendingSecret = true;
   m_pendingSsid = request.ssid;
+  m_passwordRevealed = false;
   if (m_passwordInput != nullptr) {
     m_passwordInput->setValue("");
+    m_passwordInput->setPasswordMode(true);
+  }
+  if (m_passwordRevealButton != nullptr) {
+    m_passwordRevealButton->setGlyph("eye");
   }
 }
 
 void NetworkTab::clearPasswordPrompt() {
   m_hasPendingSecret = false;
   m_pendingSsid.clear();
+  m_passwordRevealed = false;
   if (m_passwordInput != nullptr) {
     m_passwordInput->setValue("");
+    m_passwordInput->setPasswordMode(true);
+  }
+  if (m_passwordRevealButton != nullptr) {
+    m_passwordRevealButton->setGlyph("eye");
   }
 }
 
