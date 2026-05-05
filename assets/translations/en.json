@@ -199,6 +199,12 @@
       "wifi": "Wi-Fi",
       "bluetooth": "Bluetooth",
       "nightlight": "Night Light",
+      "nightlight-states": {
+        "off": "Night Light",
+        "scheduled-day": "Scheduled — day",
+        "scheduled-night": "Night Light",
+        "forced": "Always on"
+      },
       "notification": "DND",
       "dark-mode": {
         "dark": "Dark Mode",

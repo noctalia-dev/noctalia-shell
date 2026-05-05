@@ -31,9 +31,16 @@ NightLightManager::~NightLightManager() { stopProcess(); }
 void NightLightManager::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
 
 void NightLightManager::reload(const NightLightConfig& config) {
+  // Only drop a user override when the underlying config field actually changed.
+  // Otherwise unrelated edits (saved via inotify hot-reload) would silently undo
+  // the bar/control-center toggles the user just made.
+  if (config.enabled != m_config.enabled) {
+    m_enabledOverride.reset();
+  }
+  if (config.force != m_config.force) {
+    m_forceOverride.reset();
+  }
   m_config = config;
-  m_enabledOverride.reset();
-  m_forceOverride.reset();
   apply();
 }
 

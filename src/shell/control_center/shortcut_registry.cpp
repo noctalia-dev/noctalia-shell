@@ -91,6 +91,24 @@ namespace {
     explicit NightlightShortcut(NightLightManager* svc) : m_svc(svc) {}
     std::string_view id() const override { return "nightlight"; }
     std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.nightlight"); }
+    std::string displayLabel() const override {
+      if (m_svc == nullptr) {
+        return defaultLabel();
+      }
+      if (m_svc->forceEnabled()) {
+        return i18n::tr("control-center.shortcuts.nightlight-states.forced");
+      }
+      if (!m_svc->enabled()) {
+        return i18n::tr("control-center.shortcuts.nightlight-states.off");
+      }
+      // Scheduled and currently warming the screen.
+      if (m_svc->active()) {
+        return i18n::tr("control-center.shortcuts.nightlight-states.scheduled-night");
+      }
+      // Scheduled but in the day phase: surface that the click "took" even
+      // though wlsunset is intentionally not running yet.
+      return i18n::tr("control-center.shortcuts.nightlight-states.scheduled-day");
+    }
     std::string_view iconOn() const override {
       return m_svc != nullptr && m_svc->forceEnabled() ? "nightlight-forced" : "nightlight-on";
     }
@@ -98,13 +116,22 @@ namespace {
     bool isToggle() const override { return true; }
     bool active() const override { return m_svc != nullptr && (m_svc->forceEnabled() || m_svc->active()); }
     void onClick() override {
+      if (m_svc == nullptr) {
+        return;
+      }
+      // Mirror the bar widget: primary toggles on/off; if currently forced,
+      // drop force and land on scheduled-on so force is reversible without
+      // also losing the master enable.
+      if (m_svc->forceEnabled()) {
+        m_svc->clearForceOverride();
+        m_svc->setEnabled(true);
+      } else {
+        m_svc->toggleEnabled();
+      }
+    }
+    void onRightClick() override {
       if (m_svc != nullptr) {
-        if (m_svc->forceEnabled()) {
-          m_svc->setEnabled(false);
-          m_svc->setForceEnabled(false);
-        } else {
-          m_svc->toggleEnabled();
-        }
+        m_svc->toggleForceEnabled();
       }
     }
 
