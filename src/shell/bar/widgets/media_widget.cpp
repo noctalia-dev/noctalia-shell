@@ -123,10 +123,10 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
     if (!showArtSlot) {
       m_art->setPosition(0.0f, 0.0f);
       m_emptyGlyph->setPosition(0.0f, 0.0f);
-      rootNode->setSize(m_emptyGlyph->width(), std::max(minLength, m_emptyGlyph->height()));
+      rootNode->setSize(m_emptyGlyph->width(), m_emptyGlyph->height());
     } else {
       m_art->setPosition(0.0f, 0.0f);
-      rootNode->setSize(artSize, std::max(minLength, artSize));
+      rootNode->setSize(artSize, artSize);
     }
   } else {
     if (showArtSlot) {
