@@ -108,7 +108,6 @@ private:
   void startTrayService();
   void syncNotificationDaemon();
   void syncPolkitAgent();
-  [[nodiscard]] bool backdropShouldBeActive() const;
   bool runUserCommand(const std::string& command);
   bool runIdleCommand(const std::string& command);
   void onIconThemeChanged();

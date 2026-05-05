@@ -250,18 +250,6 @@ void Application::syncPolkitAgent() {
   }
 }
 
-bool Application::backdropShouldBeActive() const {
-  if (!m_configService.config().backdrop.enabled) {
-    return false;
-  }
-
-  if (!m_wayland.tracksNiriOverviewState()) {
-    return compositors::isNiri();
-  }
-
-  return m_wayland.hasNiriOverviewState() && m_wayland.isNiriOverviewOpen();
-}
-
 void Application::run() {
   initLogFile();
   kLog.info("noctalia {}", noctalia::build_info::displayVersion());
@@ -367,10 +355,7 @@ void Application::initServices() {
       m_panelManager.refresh();
     }
   });
-  m_wayland.setWorkspaceChangeCallback([this]() {
-    m_bar.refresh();
-    m_backdrop.setActive(backdropShouldBeActive());
-  });
+  m_wayland.setWorkspaceChangeCallback([this]() { m_bar.refresh(); });
   m_wayland.setToplevelChangeCallback([this]() {
     m_bar.refresh();
     m_dock.refresh();
@@ -743,7 +728,7 @@ void Application::initUi() {
   m_renderContext.initialize(m_glShared);
   m_renderContext.setTextFontFamily(m_configService.config().shell.fontFamily);
   m_wallpaper.initialize(m_wayland, &m_configService, &m_renderContext, &m_sharedTextureCache);
-  m_backdrop.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared, backdropShouldBeActive());
+  m_backdrop.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
   m_settingsWindow.initialize(m_wayland, &m_configService, &m_renderContext);
   m_settingsWindow.setOpenDesktopWidgetEditor([this]() { m_desktopWidgetsController.toggleEdit(); });
   m_lockScreen.initialize(m_wayland, &m_renderContext, &m_configService, &m_sharedTextureCache);

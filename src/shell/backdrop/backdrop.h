@@ -17,25 +17,20 @@ public:
   ~Backdrop();
 
   bool initialize(WaylandConnection& wayland, ConfigService* config, SharedTextureCache* textureCache,
-                  GlSharedContext* sharedGl, bool active);
+                  GlSharedContext* sharedGl);
   void onOutputChange();
   void onFontChanged();
   void onStateChange();
   void onThemeChanged();
   void requestLayout();
-  void setActive(bool active);
-  [[nodiscard]] bool isActive() const noexcept { return m_active; }
 
 private:
   [[nodiscard]] bool isSupportedForCurrentCompositor() const;
-  [[nodiscard]] bool shouldBeActiveForCurrentCompositorState() const;
-  [[nodiscard]] bool shouldRenderSurfaces() const;
   [[nodiscard]] bool shouldHaveInstances() const;
   void reload();
   void destroyInstances();
   void syncInstances();
   void createInstance(const WaylandOutput& output);
-  void ensureInstanceWallpaperLoaded(BackdropInstance& inst);
   void loadWallpaper(BackdropInstance& inst, const std::string& path);
   void updateRendererState(BackdropInstance& inst);
   void releaseInstanceTexture(BackdropInstance& inst, bool clearPath = true);
@@ -45,5 +40,4 @@ private:
   SharedTextureCache* m_textureCache = nullptr;
   GlSharedContext* m_sharedGl = nullptr;
   std::vector<std::unique_ptr<BackdropInstance>> m_instances;
-  bool m_active = false;
 };

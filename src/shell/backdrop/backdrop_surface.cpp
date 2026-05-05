@@ -47,7 +47,7 @@ void BackdropSurface::onScaleChanged() {
 }
 
 void BackdropSurface::render() {
-  if (m_surface == nullptr || !m_active) {
+  if (m_surface == nullptr) {
     return;
   }
 
@@ -80,13 +80,6 @@ void BackdropSurface::render() {
 
   requestFrame();
   m_wallpaperRenderer.presentTexture(m_layer.texture());
-}
-
-void BackdropSurface::setActive(bool active) {
-  if (m_active == active) {
-    return;
-  }
-  m_active = active;
 }
 
 void BackdropSurface::setBlurIntensity(float v) noexcept {

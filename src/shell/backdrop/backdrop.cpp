@@ -21,21 +21,6 @@ Backdrop::~Backdrop() = default;
 
 bool Backdrop::isSupportedForCurrentCompositor() const { return m_wayland != nullptr && compositors::isNiri(); }
 
-bool Backdrop::shouldBeActiveForCurrentCompositorState() const {
-  if (m_config == nullptr || !m_config->config().backdrop.enabled) {
-    return false;
-  }
-  if (!isSupportedForCurrentCompositor()) {
-    return false;
-  }
-  if (!m_wayland->tracksNiriOverviewState()) {
-    return true;
-  }
-  return m_wayland->hasNiriOverviewState() && m_wayland->isNiriOverviewOpen();
-}
-
-bool Backdrop::shouldRenderSurfaces() const { return m_active; }
-
 bool Backdrop::shouldHaveInstances() const {
   if (m_config == nullptr || !m_config->config().backdrop.enabled) {
     return false;
@@ -51,12 +36,11 @@ void Backdrop::destroyInstances() {
 }
 
 bool Backdrop::initialize(WaylandConnection& wayland, ConfigService* config, SharedTextureCache* textureCache,
-                          GlSharedContext* sharedGl, bool active) {
+                          GlSharedContext* sharedGl) {
   m_wayland = &wayland;
   m_config = config;
   m_textureCache = textureCache;
   m_sharedGl = sharedGl;
-  m_active = active && m_config->config().backdrop.enabled;
 
   // Register reload callback unconditionally so toggling enabled in config works.
   m_config->addReloadCallback([this]() { reload(); });
@@ -74,7 +58,6 @@ bool Backdrop::initialize(WaylandConnection& wayland, ConfigService* config, Sha
 
 void Backdrop::reload() {
   kLog.info("reloading config");
-  m_active = shouldBeActiveForCurrentCompositorState();
 
   // Always tear down existing instances. This is necessary because a
   // wallpaper enable/disable cycle resets the wallpaper share context, and any
@@ -133,60 +116,6 @@ void Backdrop::requestLayout() {
     if (inst->surface != nullptr) {
       inst->surface->requestLayout();
     }
-  }
-}
-
-void Backdrop::setActive(bool active) {
-  const bool backdropEnabled = (m_config != nullptr) ? m_config->config().backdrop.enabled : false;
-  if (!backdropEnabled) {
-    if (!m_instances.empty()) {
-      destroyInstances();
-    }
-    m_active = false;
-    return;
-  }
-
-  if (m_active == active) {
-    if (shouldHaveInstances() && m_instances.empty()) {
-      syncInstances();
-    }
-    for (auto& inst : m_instances) {
-      if (inst->surface != nullptr) {
-        inst->surface->setActive(shouldRenderSurfaces());
-      }
-      if (shouldRenderSurfaces()) {
-        ensureInstanceWallpaperLoaded(*inst);
-      }
-    }
-    return;
-  }
-  m_active = active;
-  const bool renderSurfaces = shouldRenderSurfaces();
-
-  if (!m_active) {
-    if (m_instances.empty() && shouldHaveInstances()) {
-      syncInstances();
-    }
-    for (auto& inst : m_instances) {
-      if (inst->surface != nullptr) {
-        inst->surface->setActive(renderSurfaces);
-      }
-      if (renderSurfaces) {
-        ensureInstanceWallpaperLoaded(*inst);
-      }
-    }
-    return;
-  }
-
-  if (m_instances.empty()) {
-    syncInstances();
-  }
-  for (auto& inst : m_instances) {
-    if (inst->surface == nullptr) {
-      continue;
-    }
-    inst->surface->setActive(true);
-    ensureInstanceWallpaperLoaded(*inst);
   }
 }
 
@@ -261,30 +190,11 @@ void Backdrop::createInstance(const WaylandOutput& output) {
     return;
   }
 
-  inst->surface->setActive(shouldRenderSurfaces());
-
   if (shouldHaveInstances() && !wallpaperPath.empty()) {
     loadWallpaper(*inst, wallpaperPath);
   }
 
   m_instances.push_back(std::move(inst));
-}
-
-void Backdrop::ensureInstanceWallpaperLoaded(BackdropInstance& inst) {
-  if (inst.currentTexture.id == 0) {
-    std::string path = inst.currentPath;
-    if (path.empty() && m_config != nullptr) {
-      path = m_config->getWallpaperPath(inst.connectorName);
-    }
-    if (!path.empty()) {
-      loadWallpaper(inst, path);
-    }
-    return;
-  }
-
-  if (inst.surface != nullptr) {
-    inst.surface->requestRedraw();
-  }
 }
 
 void Backdrop::loadWallpaper(BackdropInstance& inst, const std::string& path) {
@@ -297,7 +207,7 @@ void Backdrop::loadWallpaper(BackdropInstance& inst, const std::string& path) {
   inst.currentTexture = tex;
   inst.currentPath = path;
   updateRendererState(inst);
-  if (shouldRenderSurfaces() && inst.surface != nullptr) {
+  if (inst.surface != nullptr) {
     inst.surface->requestRedraw();
   }
 }
