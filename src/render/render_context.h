@@ -40,6 +40,7 @@ public:
   // Renderer interface — used by widgets for measurement and textures
   [[nodiscard]] TextMetrics measureText(std::string_view text, float fontSize, bool bold = false, float maxWidth = 0.0f,
                                         int maxLines = 0, TextAlign align = TextAlign::Start) override;
+  [[nodiscard]] TextMetrics measureFont(float fontSize, bool bold = false) override;
   void measureTextCursorStops(std::string_view text, float fontSize, const std::vector<std::size_t>& byteOffsets,
                               std::vector<float>& outStops, bool bold = false) override;
   [[nodiscard]] TextMetrics measureGlyph(char32_t codepoint, float fontSize) override;

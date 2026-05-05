@@ -121,7 +121,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
   const float labelFontSize = Style::fontSizeCaption * m_contentScale;
   // Workspace pills are decorative indicators, so keep their body closer to
   // caption text than to the full bar capsule height used by regular widgets.
-  const auto labelRefMetrics = renderer.measureText("A", labelFontSize, true);
+  const auto labelRefMetrics = renderer.measureFont(labelFontSize, true);
   const float labelRefHeight = labelRefMetrics.bottom - labelRefMetrics.top;
   float indicatorHeight = std::round(std::max(labelRefHeight, kWorkspacePillMinHeight * m_contentScale));
 

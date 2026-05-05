@@ -163,6 +163,19 @@ TextMetrics RenderContext::measureText(std::string_view text, float fontSize, bo
                      .inkRight = m.inkRight};
 }
 
+TextMetrics RenderContext::measureFont(float fontSize, bool bold) {
+  auto m = m_textRenderer.measureFont(fontSize, bold);
+  return TextMetrics{.width = m.width,
+                     .left = m.left,
+                     .right = m.right,
+                     .top = m.top,
+                     .bottom = m.bottom,
+                     .inkTop = m.inkTop,
+                     .inkBottom = m.inkBottom,
+                     .inkLeft = m.inkLeft,
+                     .inkRight = m.inkRight};
+}
+
 void RenderContext::measureTextCursorStops(std::string_view text, float fontSize,
                                            const std::vector<std::size_t>& byteOffsets, std::vector<float>& outStops,
                                            bool bold) {

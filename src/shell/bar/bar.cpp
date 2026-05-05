@@ -246,7 +246,7 @@ namespace {
           continue;
         }
         if (scale != cachedBodyExtentScale) {
-          const auto refMetrics = renderer.measureText("A", Style::fontSizeBody * scale);
+          const auto refMetrics = renderer.measureFont(Style::fontSizeBody * scale);
           cachedBodyExtent = std::round(refMetrics.bottom - refMetrics.top);
           cachedBodyExtentScale = scale;
         }

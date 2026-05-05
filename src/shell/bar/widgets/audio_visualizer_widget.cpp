@@ -57,7 +57,7 @@ void AudioVisualizerWidget::doLayout(Renderer& renderer, float containerWidth, f
   m_isVertical = containerHeight > containerWidth;
   m_visualizer->setOrientation(m_isVertical ? AudioSpectrumOrientation::Vertical
                                             : AudioSpectrumOrientation::Horizontal);
-  const auto refMetrics = renderer.measureText("A", Style::fontSizeBody * m_contentScale);
+  const auto refMetrics = renderer.measureFont(Style::fontSizeBody * m_contentScale);
   const float bodyExtent = std::round(refMetrics.bottom - refMetrics.top);
   const float width = std::max(1.0f, m_isVertical ? bodyExtent : m_width * m_contentScale);
   const float height = std::max(1.0f, m_isVertical ? m_width * m_contentScale : bodyExtent);

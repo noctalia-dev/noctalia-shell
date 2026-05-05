@@ -32,8 +32,9 @@ public:
   void setBold(bool bold);
   void setTextAlign(TextAlign align);
   // Stable mode is the default for UI labels. It centers single-line text using
-  // a font cap reference instead of the current string's ink, so clocks,
-  // counters, and icon+text rows do not jump when glyphs change.
+  // Pango's logical line metrics instead of the current string's ink, so
+  // clocks, counters, CJK text, and icon+text rows do not jump when glyphs
+  // change.
   void setBaselineMode(LabelBaselineMode mode);
   void setShadow(const Color& color, float offsetX, float offsetY);
   void clearShadow();

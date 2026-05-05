@@ -359,6 +359,35 @@ CairoTextRenderer::TextMetrics CairoTextRenderer::measure(std::string_view text,
   return metrics;
 }
 
+CairoTextRenderer::TextMetrics CairoTextRenderer::measureFont(float fontSize, bool bold) const {
+  if (m_pangoContext == nullptr) {
+    return {};
+  }
+
+  const float rasterSize = std::max(1.0f, fontSize * m_contentScale);
+  PangoFontDescription* desc = pango_font_description_new();
+  pango_font_description_set_family(desc, m_fontFamily.c_str());
+  pango_font_description_set_weight(desc, bold ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL);
+  pango_font_description_set_absolute_size(desc, static_cast<double>(rasterSize) * PANGO_SCALE);
+
+  PangoFontMetrics* metrics = pango_context_get_metrics(m_pangoContext, desc, pango_language_get_default());
+  pango_font_description_free(desc);
+  if (metrics == nullptr) {
+    return {};
+  }
+
+  const float invScale = 1.0f / m_contentScale;
+  const float pscale = 1.0f / static_cast<float>(PANGO_SCALE);
+  const float ascent = static_cast<float>(pango_font_metrics_get_ascent(metrics)) * pscale * invScale;
+  const float descent = static_cast<float>(pango_font_metrics_get_descent(metrics)) * pscale * invScale;
+  pango_font_metrics_unref(metrics);
+
+  TextMetrics out;
+  out.top = -ascent;
+  out.bottom = descent;
+  return out;
+}
+
 void CairoTextRenderer::measureCursorStops(std::string_view text, float fontSize,
                                            const std::vector<std::size_t>& byteOffsets, std::vector<float>& outStops,
                                            bool bold) {

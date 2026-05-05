@@ -412,27 +412,22 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
 
   auto metrics = renderer.measureText(m_plainText, m_textNode->fontSize(), m_textNode->bold(), measureMaxWidth,
                                       effectiveMaxLines, align);
-  auto refMetrics = renderer.measureText("A", m_textNode->fontSize(), m_textNode->bold());
   const float measuredWidth = measureMaxWidth > 0.0f ? std::min(metrics.width, measureMaxWidth) : metrics.width;
   m_fullTextWidth = m_autoScroll ? measuredWidth : 0.0f;
   const bool hasAssignedWidth = constraints.hasExactWidth();
   const float assignedWidth = constraints.maxWidth;
 
-  const float refHeight = refMetrics.bottom - refMetrics.top;
   const float actualHeight = metrics.bottom - metrics.top;
   const float inkHeight = std::max(0.0f, metrics.inkBottom - metrics.inkTop);
   if (singleLine && inkHeight > 0.0f) {
-    float inkTopForCentering = metrics.inkTop;
-    float inkHeightForCentering = inkHeight;
+    float height = 0.0f;
     if (m_baselineMode == LabelBaselineMode::Stable) {
-      const float capInkHeight = std::max(0.0f, refMetrics.inkBottom - refMetrics.inkTop);
-      if (capInkHeight > 0.0f) {
-        inkTopForCentering = refMetrics.inkTop;
-        inkHeightForCentering = capInkHeight;
-      }
+      height = std::round(actualHeight);
+      m_baselineOffset = -metrics.top + (height - actualHeight) * 0.5f;
+    } else {
+      height = std::round(std::max(actualHeight, inkHeight));
+      m_baselineOffset = -metrics.inkTop + (height - inkHeight) * 0.5f;
     }
-    const float height = std::round(std::max(refHeight, inkHeight));
-    m_baselineOffset = -inkTopForCentering + (height - inkHeightForCentering) * 0.5f;
     float finalWidth = 0.0f;
     if (m_autoScroll) {
       float boxW = m_fullTextWidth;
@@ -452,9 +447,8 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
     }
     setSize(std::round(finalWidth), height);
   } else {
-    m_baselineOffset = -std::min(refMetrics.top, metrics.top);
-    const float inkBottom = m_baselineOffset + metrics.bottom;
-    const float height = std::max({refHeight, actualHeight, inkBottom});
+    m_baselineOffset = -metrics.top;
+    const float height = actualHeight;
     float finalWidth = 0.0f;
     if (m_autoScroll) {
       float boxW = m_fullTextWidth;

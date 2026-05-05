@@ -28,6 +28,7 @@ public:
   [[nodiscard]] virtual TextMetrics measureText(std::string_view text, float fontSize, bool bold = false,
                                                 float maxWidth = 0.0f, int maxLines = 0,
                                                 TextAlign align = TextAlign::Start) = 0;
+  [[nodiscard]] virtual TextMetrics measureFont(float fontSize, bool bold = false) = 0;
   virtual void measureTextCursorStops(std::string_view text, float fontSize,
                                       const std::vector<std::size_t>& byteOffsets, std::vector<float>& outStops,
                                       bool bold = false) = 0;
