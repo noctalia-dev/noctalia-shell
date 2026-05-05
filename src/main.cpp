@@ -21,18 +21,18 @@ namespace {
   enum class SpawnResult { Parent, Child, Error };
 
   int runTopLevelFlag(const char* flag) {
-    if (std::strcmp(flag, "--version") == 0) {
+    if (std::strcmp(flag, "--version") == 0 || std::strcmp(flag, "-v") == 0) {
       const std::string version = noctalia::build_info::displayVersion();
       std::printf("noctalia %s\n", version.c_str());
       return 0;
     }
-    if (std::strcmp(flag, "--help") == 0) {
+    if (std::strcmp(flag, "--help") == 0 || std::strcmp(flag, "-h") == 0) {
       std::puts("Usage: noctalia [OPTIONS]\n"
                 "\n"
                 "Options:\n"
-                "  --help       Show this help message\n"
-                "  --version    Show version information\n"
-                "  --daemon     Run in background\n"
+                "  -h, --help       Show this help message\n"
+                "  -v, --version    Show version information\n"
+                "  -d, --daemon     Run in background\n"
                 "\n"
                 "Subcommands:\n"
                 "  msg <command>    Send a command to the running instance\n"
