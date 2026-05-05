@@ -1,6 +1,5 @@
 #pragma once
 
-#include "core/timer_manager.h"
 #include "shell/bar/widget.h"
 
 #include <cstdint>
@@ -8,13 +7,13 @@
 class Glyph;
 class Label;
 class Renderer;
-class WaylandConnection;
+class LockKeysService;
 
 class LockKeysWidget : public Widget {
 public:
   enum class DisplayMode : std::uint8_t { Short = 0, Full = 1 };
 
-  LockKeysWidget(WaylandConnection& wayland, bool showCapsLock, bool showNumLock, bool showScrollLock, bool hideWhenOff,
+  LockKeysWidget(LockKeysService* lockKeys, bool showCapsLock, bool showNumLock, bool showScrollLock, bool hideWhenOff,
                  DisplayMode displayMode);
 
   static DisplayMode parseDisplayMode(const std::string& value);
@@ -26,7 +25,7 @@ private:
   void doUpdate(Renderer& renderer) override;
   void sync(Renderer& renderer);
 
-  WaylandConnection& m_wayland;
+  LockKeysService* m_lockKeys = nullptr;
   bool m_showCapsLock = true;
   bool m_showNumLock = true;
   bool m_showScrollLock = false;
@@ -50,5 +49,4 @@ private:
   CachedState m_cachedState;
   bool m_hasState = false;
   bool m_isVertical = false;
-  Timer m_refreshTimer;
 };

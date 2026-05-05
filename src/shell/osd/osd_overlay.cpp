@@ -53,7 +53,7 @@ namespace {
 
   [[nodiscard]] float progressHeight(float s) { return (Style::spaceXs + Style::borderWidth * 2) * s; }
 
-  [[nodiscard]] float cardPadding(float s) { return Style::spaceSm * s; }
+  [[nodiscard]] float cardPadding(float s) { return Style::spaceMd * s; }
 
   [[nodiscard]] float innerGap(float s) { return (Style::spaceSm + Style::spaceXs * 0.5f) * s; }
 
@@ -316,7 +316,8 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   // Reserve enough width for "100%" so the progress bar doesn't shrink at max values.
   value->setText("100%");
   value->measure(*m_renderContext);
-  value->setMinWidth(value->width());
+  inst.progressValueMinWidth = value->width();
+  value->setMinWidth(inst.progressValueMinWidth);
   value->setZIndex(1);
   inst.value = value.get();
 
@@ -345,6 +346,10 @@ void OsdOverlay::updateInstanceContent(Instance& inst) {
   const float s = inst.uiLayoutScale;
 
   inst.glyph->setGlyph(m_content.icon);
+  inst.progress->setVisible(m_content.showProgress);
+  inst.row->setJustify(m_content.showProgress ? FlexJustify::Start : FlexJustify::Center);
+  inst.value->setTextAlign(m_content.showProgress ? TextAlign::End : TextAlign::Center);
+  inst.value->setMinWidth(m_content.showProgress ? inst.progressValueMinWidth : 0.0f);
   inst.value->setText(m_content.value);
   inst.progress->setRadius(progressHeight(s) * 0.5f);
   inst.progress->setProgress(m_content.progress);

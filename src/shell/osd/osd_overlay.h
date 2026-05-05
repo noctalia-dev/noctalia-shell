@@ -22,6 +22,7 @@ struct OsdContent {
   std::string icon;
   std::string value;
   float progress = 0.0f;
+  bool showProgress = true;
 };
 
 class OsdOverlay {
@@ -55,6 +56,7 @@ private:
     Glyph* glyph = nullptr;
     Label* value = nullptr;
     ProgressBar* progress = nullptr;
+    float progressValueMinWidth = 0.0f;
     AnimationManager::Id showAnimId = 0;
     AnimationManager::Id hideAnimId = 0;
     bool showPending = false;

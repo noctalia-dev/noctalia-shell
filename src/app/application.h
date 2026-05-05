@@ -50,6 +50,7 @@
 #include "shell/notification/notification_toast.h"
 #include "shell/osd/audio_osd.h"
 #include "shell/osd/brightness_osd.h"
+#include "shell/osd/lock_keys_osd.h"
 #include "shell/osd/osd_overlay.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/polkit/polkit_panel.h"
@@ -62,6 +63,8 @@
 #include "system/brightness_service.h"
 #include "system/desktop_entry_poll_source.h"
 #include "system/icon_theme_poll_source.h"
+#include "system/lock_keys_poll_source.h"
+#include "system/lock_keys_service.h"
 #include "system/night_light_manager.h"
 #include "system/system_monitor_service.h"
 #include "system/telemetry_service.h"
@@ -125,6 +128,7 @@ private:
   noctalia::theme::ThemeService m_themeService{m_configService, m_httpClient};
   noctalia::theme::TemplateApplyService m_templateApplyService{m_configService};
   TimeService m_timeService;
+  LockKeysService m_lockKeysService;
   NotificationManager m_notificationManager;
   std::unique_ptr<SessionBus> m_bus;
   std::unique_ptr<SystemBus> m_systemBus;
@@ -168,6 +172,7 @@ private:
   NotificationToast m_notificationToast;
   AudioOsd m_audioOsd;
   BrightnessOsd m_brightnessOsd;
+  LockKeysOsd m_lockKeysOsd;
   OsdOverlay m_osdOverlay;
   ScreenCorners m_screenCorners;
   TrayMenu m_trayMenu;
@@ -193,6 +198,7 @@ private:
   TimerPollSource m_timerPollSource;
   KeyRepeatPollSource m_keyRepeatPollSource{m_wayland};
   WorkspacePollSource m_workspacePollSource{m_wayland};
+  LockKeysPollSource m_lockKeysPollSource{m_lockKeysService};
   std::unique_ptr<BrightnessPollSource> m_brightnessPollSource;
   std::unique_ptr<PipeWirePollSource> m_pipewirePollSource;
   std::unique_ptr<PipeWireSpectrumPollSource> m_pipewireSpectrumPollSource;

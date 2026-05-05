@@ -491,6 +491,16 @@
       "close-all": "Close All"
     }
   },
+  "osd": {
+    "lock-keys": {
+      "caps-on": "Caps Lock On",
+      "caps-off": "Caps Lock Off",
+      "num-on": "Num Lock On",
+      "num-off": "Num Lock Off",
+      "scroll-on": "Scroll Lock On",
+      "scroll-off": "Scroll Lock Off"
+    }
+  },
   "tray": {
     "menu": {
       "empty": "No menu items..."
@@ -780,8 +790,8 @@
       },
       "weather": {
         "unit": {
-          "celsius": "Celsius",
-          "fahrenheit": "Fahrenheit"
+          "metric": "Metric",
+          "imperial": "Imperial"
         }
       },
       "wallpaper": {
@@ -1368,8 +1378,8 @@
           "description": "Automatically detect location for weather"
         },
         "weather-unit": {
-          "label": "Temperature Unit",
-          "description": "Temperature unit for weather display"
+          "label": "Units",
+          "description": "Unit system for weather display"
         },
         "weather-address": {
           "label": "Address",

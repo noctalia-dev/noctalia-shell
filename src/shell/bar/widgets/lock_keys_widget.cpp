@@ -3,84 +3,19 @@
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/node.h"
+#include "system/lock_keys_service.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
-#include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
-#include <filesystem>
-#include <fstream>
 #include <memory>
 #include <string>
 
 namespace {
-
-  constexpr auto kLockKeysProbeInterval = std::chrono::milliseconds(500);
-
-  struct SysfsLockKeysState {
-    bool capsLock = false;
-    bool numLock = false;
-    bool scrollLock = false;
-    bool hasAnyLed = false;
-  };
-
-  SysfsLockKeysState readLockKeysFromSysfs() {
-    namespace fs = std::filesystem;
-
-    SysfsLockKeysState result;
-    std::error_code ec;
-    const fs::path ledsDir{"/sys/class/leds"};
-    if (!fs::is_directory(ledsDir, ec)) {
-      return result;
-    }
-
-    for (const auto& entry : fs::directory_iterator(ledsDir, ec)) {
-      if (ec) {
-        break;
-      }
-      if (!entry.is_directory(ec) || ec) {
-        continue;
-      }
-
-      const std::string name = entry.path().filename().string();
-      const std::size_t sep = name.find("::");
-      if (sep == std::string::npos) {
-        continue;
-      }
-
-      const std::string kind = name.substr(sep + 2);
-      if (kind != "capslock" && kind != "numlock" && kind != "scrolllock") {
-        continue;
-      }
-
-      std::ifstream file(entry.path() / "brightness");
-      if (!file.is_open()) {
-        continue;
-      }
-      int brightness = 0;
-      file >> brightness;
-      if (!file.good() && !file.eof()) {
-        continue;
-      }
-
-      result.hasAnyLed = true;
-      const bool isOn = brightness != 0;
-      if (kind == "capslock") {
-        result.capsLock = result.capsLock || isOn;
-      } else if (kind == "numlock") {
-        result.numLock = result.numLock || isOn;
-      } else {
-        result.scrollLock = result.scrollLock || isOn;
-      }
-    }
-
-    return result;
-  }
 
   void configureLabel(Label* label, const std::string& text, bool visible, float contentScale) {
     if (label == nullptr) {
@@ -95,9 +30,9 @@ namespace {
 
 } // namespace
 
-LockKeysWidget::LockKeysWidget(WaylandConnection& wayland, bool showCapsLock, bool showNumLock, bool showScrollLock,
+LockKeysWidget::LockKeysWidget(LockKeysService* lockKeys, bool showCapsLock, bool showNumLock, bool showScrollLock,
                                bool hideWhenOff, DisplayMode displayMode)
-    : m_wayland(wayland), m_showCapsLock(showCapsLock), m_showNumLock(showNumLock), m_showScrollLock(showScrollLock),
+    : m_lockKeys(lockKeys), m_showCapsLock(showCapsLock), m_showNumLock(showNumLock), m_showScrollLock(showScrollLock),
       m_hideWhenOff(hideWhenOff), m_displayMode(displayMode) {}
 
 LockKeysWidget::DisplayMode LockKeysWidget::parseDisplayMode(const std::string& value) {
@@ -127,14 +62,6 @@ void LockKeysWidget::create() {
   rootNode->addChild(std::move(scroll));
 
   setRoot(std::move(rootNode));
-
-  // Lock LED state updates are not event-driven; probe at a low interval.
-  m_refreshTimer.startRepeating(kLockKeysProbeInterval, [this]() {
-    if (auto* node = root(); node != nullptr) {
-      node->markLayoutDirty();
-    }
-    requestRedraw();
-  });
 }
 
 void LockKeysWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
@@ -237,17 +164,8 @@ void LockKeysWidget::doUpdate(Renderer& renderer) { sync(renderer); }
 void LockKeysWidget::sync(Renderer& renderer) {
   (void)renderer;
 
-  // Prefer sysfs LED state (compositor-agnostic, no group membership required).
-  // Fall back to the XKB state from the Wayland seat when sysfs has no LED entries.
-  WaylandSeat::LockKeysState lockState;
-  const auto sysfs = readLockKeysFromSysfs();
-  if (sysfs.hasAnyLed) {
-    lockState.capsLock = sysfs.capsLock;
-    lockState.numLock = sysfs.numLock;
-    lockState.scrollLock = sysfs.scrollLock;
-  } else {
-    lockState = m_wayland.keyboardLockKeysState();
-  }
+  const WaylandSeat::LockKeysState lockState =
+      m_lockKeys != nullptr ? m_lockKeys->state() : WaylandSeat::LockKeysState{};
 
   const bool capsVisible = m_showCapsLock && (!m_hideWhenOff || lockState.capsLock);
   const bool numVisible = m_showNumLock && (!m_hideWhenOff || lockState.numLock);

@@ -10,6 +10,7 @@ class FileWatcher;
 class NotificationManager;
 class HttpClient;
 class IdleInhibitor;
+class LockKeysService;
 class MprisService;
 class BluetoothService;
 class BrightnessService;
@@ -36,7 +37,7 @@ public:
                 PowerProfilesService* powerProfiles, NetworkService* network, IdleInhibitor* idleInhibitor,
                 MprisService* mpris, PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weather,
                 NightLightManager* nightLight, noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
-                BrightnessService* brightness, FileWatcher* fileWatcher = nullptr);
+                BrightnessService* brightness, LockKeysService* lockKeys, FileWatcher* fileWatcher = nullptr);
   ~WidgetFactory();
 
   [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output, float contentScale = 1.0f,
@@ -61,6 +62,7 @@ private:
   noctalia::theme::ThemeService* m_themeService;
   BluetoothService* m_bluetooth;
   BrightnessService* m_brightness;
+  LockKeysService* m_lockKeys;
   FileWatcher* m_fileWatcher;
   mutable std::unique_ptr<IconResolver> m_iconResolver;
 };

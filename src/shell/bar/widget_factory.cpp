@@ -41,6 +41,7 @@
 #include "shell/bar/widgets/workspaces_widget.h"
 #include "system/distro_info.h"
 #include "system/icon_resolver.h"
+#include "system/lock_keys_service.h"
 #include "system/system_monitor_service.h"
 #include "system/weather_service.h"
 #include "theme/theme_service.h"
@@ -72,12 +73,12 @@ WidgetFactory::WidgetFactory(WaylandConnection& wayland, const Config& config, N
                              IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
                              HttpClient* httpClient, WeatherService* weather, NightLightManager* nightLight,
                              noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
-                             BrightnessService* brightness, FileWatcher* fileWatcher)
+                             BrightnessService* brightness, LockKeysService* lockKeys, FileWatcher* fileWatcher)
     : m_wayland(wayland), m_config(config), m_notifications(notifications), m_tray(tray), m_audio(audio),
       m_upower(upower), m_sysmon(sysmon), m_powerProfiles(powerProfiles), m_network(network),
       m_idleInhibitor(idleInhibitor), m_mpris(mpris), m_audioSpectrum(audioSpectrum), m_httpClient(httpClient),
       m_weather(weather), m_nightLight(nightLight), m_themeService(themeService), m_bluetooth(bluetooth),
-      m_brightness(brightness), m_fileWatcher(fileWatcher) {}
+      m_brightness(brightness), m_lockKeys(lockKeys), m_fileWatcher(fileWatcher) {}
 
 WidgetFactory::~WidgetFactory() = default;
 
@@ -216,7 +217,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     const bool hideWhenOff = wc != nullptr ? wc->getBool("hide_when_off", false) : false;
     const std::string display = wc != nullptr ? wc->getString("display", "short") : std::string("short");
 
-    auto widget = std::make_unique<LockKeysWidget>(m_wayland, showCaps, showNum, showScroll, hideWhenOff,
+    auto widget = std::make_unique<LockKeysWidget>(m_lockKeys, showCaps, showNum, showScroll, hideWhenOff,
                                                    LockKeysWidget::parseDisplayMode(display));
     widget->setContentScale(contentScale);
     return widget;
