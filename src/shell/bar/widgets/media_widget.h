@@ -18,7 +18,8 @@ struct wl_output;
 
 class MediaWidget : public Widget {
 public:
-  MediaWidget(MprisService* mpris, HttpClient* httpClient, wl_output* output, float maxWidth, float artSize);
+  MediaWidget(MprisService* mpris, HttpClient* httpClient, wl_output* output, float maxWidth, float minWidth,
+              float artSize);
 
   void create() override;
 
@@ -33,6 +34,7 @@ private:
   HttpClient* m_httpClient = nullptr;
   wl_output* m_output = nullptr;
   float m_maxWidth = 220.0f;
+  float m_minWidth = 80.0f;
   float m_artSize = 16.0f;
   InputArea* m_area = nullptr;
   Image* m_art = nullptr;

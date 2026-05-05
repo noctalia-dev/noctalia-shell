@@ -26,8 +26,10 @@ namespace {
 
 } // namespace
 
-MediaWidget::MediaWidget(MprisService* mpris, HttpClient* httpClient, wl_output* output, float maxWidth, float artSize)
-    : m_mpris(mpris), m_httpClient(httpClient), m_output(output), m_maxWidth(maxWidth), m_artSize(artSize) {}
+MediaWidget::MediaWidget(MprisService* mpris, HttpClient* httpClient, wl_output* output, float maxWidth, float minWidth,
+                         float artSize)
+    : m_mpris(mpris), m_httpClient(httpClient), m_output(output), m_maxWidth(maxWidth), m_minWidth(minWidth),
+      m_artSize(artSize) {}
 
 void MediaWidget::create() {
   auto area = std::make_unique<InputArea>();
@@ -79,6 +81,7 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
   syncState(renderer);
 
   const bool isVertical = containerHeight > containerWidth;
+  const float minLength = std::max(0.0f, m_minWidth * m_contentScale);
 
   m_label->setMaxWidth(m_maxWidth * m_contentScale);
   m_label->setColor(m_lastPlaybackStatus == "Playing" ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
@@ -120,10 +123,10 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
     if (!showArtSlot) {
       m_art->setPosition(0.0f, 0.0f);
       m_emptyGlyph->setPosition(0.0f, 0.0f);
-      rootNode->setSize(m_emptyGlyph->width(), m_emptyGlyph->height());
+      rootNode->setSize(m_emptyGlyph->width(), std::max(minLength, m_emptyGlyph->height()));
     } else {
       m_art->setPosition(0.0f, 0.0f);
-      rootNode->setSize(artSize, artSize);
+      rootNode->setSize(artSize, std::max(minLength, artSize));
     }
   } else {
     if (showArtSlot) {
@@ -139,7 +142,7 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
     }
     const float contentWidth =
         showLabel ? m_label->x() + m_label->width() : (showArtSlot ? artSize : m_emptyGlyph->width());
-    rootNode->setSize(contentWidth, contentHeight);
+    rootNode->setSize(std::max(minLength, contentWidth), contentHeight);
   }
 }
 

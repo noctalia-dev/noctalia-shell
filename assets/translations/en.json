@@ -983,6 +983,10 @@
           "label": "Max Length",
           "description": "Maximum text width in pixels"
         },
+        "min_length": {
+          "label": "Min Length",
+          "description": "Minimum text width in pixels"
+        },
         "mirrored": {
           "label": "Mirrored",
           "description": "Mirror the visualizer around its center"

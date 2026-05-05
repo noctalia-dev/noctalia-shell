@@ -453,6 +453,7 @@ namespace settings {
       add(boolSpec("hide_when_off", false));
       add(segmentedSpec("display", "short", shortFull));
     } else if (type == "media") {
+      add(doubleSpec("min_length", 80.0, 0.0, 800.0, 1.0));
       add(doubleSpec("max_length", 220.0, 40.0, 800.0, 1.0));
       add(doubleSpec("art_size", 16.0, 8.0, 96.0, 1.0));
     } else if (type == "network") {
