@@ -724,7 +724,6 @@ namespace settings {
       auto detail =
           makeLabel(i18n::tr("settings.widgets.settings.type.description"), Style::fontSizeCaption * ctx.scale,
                     colorSpecFromRole(ColorRole::OnSurfaceVariant), false);
-      detail->setMaxWidth(360.0f * ctx.scale);
       copy->addChild(std::move(detail));
       row->addChild(std::move(copy));
 

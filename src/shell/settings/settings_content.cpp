@@ -402,7 +402,6 @@ namespace settings {
       if (!entry.subtitle.empty()) {
         auto detail = makeLabel(entry.subtitle, Style::fontSizeCaption * scale,
                                 colorSpecFromRole(ColorRole::OnSurfaceVariant), false);
-        detail->setMaxWidth(360.0f * scale);
         copy->addChild(std::move(detail));
       }
 
@@ -744,7 +743,6 @@ namespace settings {
       if (!entry.subtitle.empty()) {
         auto detail = makeLabel(entry.subtitle, Style::fontSizeCaption * scale,
                                 colorSpecFromRole(ColorRole::OnSurfaceVariant), false);
-        detail->setMaxWidth(360.0f * scale);
         copy->addChild(std::move(detail));
       }
 
