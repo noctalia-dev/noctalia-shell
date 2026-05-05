@@ -43,7 +43,8 @@ jobs:
             cairo pango \
             libxkbcommon \
             sdbus-cpp libpipewire \
-            pam curl libwebp
+            pam curl libwebp \
+            librsvg
 
       - uses: actions/checkout@v4
 
