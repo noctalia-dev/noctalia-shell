@@ -13,7 +13,6 @@
 #include <stdexcept>
 #include <string>
 #include <sys/stat.h>
-#include <sys/wait.h>
 #include <unistd.h>
 
 namespace {
@@ -49,7 +48,7 @@ namespace {
     return -1;
   }
 
-  SpawnResult daemonize(pid_t* out_pid) {
+  SpawnResult daemonize(pid_t* outPid) {
     pid_t pid = ::fork();
     if (pid < 0) {
       std::perror("fork (first)");
@@ -57,8 +56,8 @@ namespace {
     }
 
     if (pid > 0) {
-      if (out_pid)
-        *out_pid = pid;
+      if (outPid)
+        *outPid = pid;
       return SpawnResult::Parent;
     }
 
