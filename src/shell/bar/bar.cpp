@@ -700,6 +700,9 @@ void Bar::setAttachedPanelGeometry(wl_output* output, std::optional<AttachedPane
 
   instance->attachedPanelGeometry = geometry;
   if (instance->surface != nullptr && instance->surface->width() > 0 && instance->surface->height() > 0) {
+    if (m_renderContext != nullptr) {
+      m_renderContext->syncContentScale(instance->surface->renderTarget());
+    }
     buildScene(*instance, instance->surface->width(), instance->surface->height());
     instance->surface->requestRedraw();
   }
