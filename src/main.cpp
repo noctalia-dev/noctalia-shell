@@ -139,9 +139,14 @@ int main(int argc, char* argv[]) {
   }
 
   for (int i = 1; i < argc; ++i) {
-    const int rc = runTopLevelFlag(argv[i]);
-    if (rc >= 0)
-      return rc;
+    if (argv[i][0] == '-') {
+      const int rc = runTopLevelFlag(argv[i]);
+      if (rc >= 0)
+        return rc;
+
+      std::fprintf(stderr, "error: unknown option: %s\n", argv[i]);
+      return 1;
+    }
   }
 
   if (IpcClient::isRunning()) {
