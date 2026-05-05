@@ -685,9 +685,15 @@ void WeatherTab::sync(Renderer& renderer) {
     m_elevationLabel->setText(std::format("{}m", static_cast<int>(snapshot.elevationM)));
   }
   if (m_timeZoneLabel != nullptr) {
+    // Use the last component of the IANA path ("America/Toronto" → "Toronto") to keep
+    // the label short enough to remain right-aligned without elision in most cases.
+    std::string tzCity = snapshot.timezone;
+    if (const auto slash = tzCity.rfind('/'); slash != std::string::npos) {
+      tzCity = tzCity.substr(slash + 1);
+    }
     m_timeZoneLabel->setText(snapshot.timezoneAbbreviation.empty()
                                  ? (snapshot.timezone.empty() ? std::string("--") : snapshot.timezone)
-                                 : std::format("{} ({})", snapshot.timezoneAbbreviation, snapshot.timezone));
+                                 : std::format("{} ({})", snapshot.timezoneAbbreviation, tzCity));
   }
 
   const bool firstForecastIsToday =
