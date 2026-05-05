@@ -453,6 +453,7 @@ namespace settings {
       add(boolSpec("hide_when_off", false));
       add(segmentedSpec("display", "short", shortFull));
     } else if (type == "media") {
+      add(doubleSpec("min_length", 80.0, 0.0, 800.0, 1.0));
       add(doubleSpec("max_length", 220.0, 40.0, 800.0, 1.0));
       add(doubleSpec("art_size", 16.0, 8.0, 96.0, 1.0));
     } else if (type == "network") {
@@ -477,6 +478,9 @@ namespace settings {
       add(boolSpec("group_by_workspace", false));
     } else if (type == "tray") {
       add(stringListSpec("hidden"));
+      add(stringListSpec("pinned"));
+      add(boolSpec("drawer", false));
+      add(intSpec("drawer_columns", 3, 1.0, 5.0, 1.0));
     } else if (type == "volume") {
       add(boolSpec("show_label", true));
     } else if (type == "wallpaper") {

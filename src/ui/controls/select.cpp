@@ -18,6 +18,7 @@
 #include <cmath>
 #include <linux/input-event-codes.h>
 #include <memory>
+#include <wayland-client-protocol.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
@@ -109,11 +110,12 @@ Select::Select() {
 
   auto menuArea = std::make_unique<InputArea>();
   menuArea->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
-  menuArea->setOnAxis([this](const InputArea::PointerData& data) {
-    if (!m_open) {
-      return;
+  menuArea->setOnAxisHandler([this](const InputArea::PointerData& data) {
+    if (!m_open || data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL) {
+      return false;
     }
     scrollBy(data.scrollDelta(kOptionHeight));
+    return true;
   });
   m_menuArea = static_cast<InputArea*>(m_menuViewport->addChild(std::move(menuArea)));
 
@@ -458,11 +460,12 @@ void Select::rebuildOptionViews() {
       closeMenu();
       setSelectedIndex(i);
     });
-    area->setOnAxis([this](const InputArea::PointerData& data) {
-      if (!m_open) {
-        return;
+    area->setOnAxisHandler([this](const InputArea::PointerData& data) {
+      if (!m_open || data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL) {
+        return false;
       }
       scrollBy(data.scrollDelta(m_controlHeight));
+      return true;
     });
     auto* areaPtr = static_cast<InputArea*>(m_menuViewport->addChild(std::move(area)));
 

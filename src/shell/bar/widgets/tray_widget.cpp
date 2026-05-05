@@ -7,6 +7,7 @@
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "render/text/glyph_registry.h"
+#include "shell/panel/panel_manager.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/image.h"
@@ -182,18 +183,34 @@ namespace {
 
 } // namespace
 
-TrayWidget::TrayWidget(TrayService* tray, std::vector<std::string> hiddenItems)
-    : m_tray(tray), m_hiddenItems(std::move(hiddenItems)) {
-  std::vector<std::string> normalized;
-  normalized.reserve(m_hiddenItems.size());
-  for (const auto& token : m_hiddenItems) {
-    for (const auto& variant : identifierVariants(token)) {
-      if (std::ranges::find(normalized, variant) == normalized.end()) {
-        normalized.push_back(variant);
+TrayWidget::TrayWidget(TrayService* tray, std::vector<std::string> hiddenItems, std::vector<std::string> pinnedItems,
+                       bool drawerMode, std::function<void()> itemActivated, std::string barPosition,
+                       bool panelGridMode, std::size_t panelGridColumns)
+    : m_tray(tray), m_hiddenItems(std::move(hiddenItems)), m_pinnedItems(std::move(pinnedItems)),
+      m_drawerMode(drawerMode), m_itemActivated(std::move(itemActivated)), m_barPosition(std::move(barPosition)),
+      m_panelGridMode(panelGridMode), m_panelGridColumns(std::clamp<std::size_t>(panelGridColumns, 1U, 5U)) {
+  auto normalizeTokens = [](std::vector<std::string>& tokens) {
+    std::vector<std::string> normalized;
+    normalized.reserve(tokens.size());
+    for (const auto& token : tokens) {
+      const auto lowerToken = toLower(token);
+      if (lowerToken.rfind("item:", 0) == 0 || lowerToken.rfind("icon:", 0) == 0 ||
+          lowerToken.rfind("title:", 0) == 0 || lowerToken.rfind("bus:", 0) == 0) {
+        if (std::ranges::find(normalized, lowerToken) == normalized.end()) {
+          normalized.push_back(lowerToken);
+        }
+        continue;
+      }
+      for (const auto& variant : identifierVariants(token)) {
+        if (std::ranges::find(normalized, variant) == normalized.end()) {
+          normalized.push_back(variant);
+        }
       }
     }
-  }
-  m_hiddenItems = std::move(normalized);
+    tokens = std::move(normalized);
+  };
+  normalizeTokens(m_hiddenItems);
+  normalizeTokens(m_pinnedItems);
   buildDesktopIconIndex();
 }
 
@@ -242,8 +259,13 @@ std::string TrayWidget::resolveFromTrayThemePath(std::string_view themePath, std
 
 void TrayWidget::create() {
   auto container = std::make_unique<Flex>();
-  container->setRowLayout();
-  container->setAlign(FlexAlign::Center);
+  if (m_panelGridMode) {
+    container->setDirection(FlexDirection::Vertical);
+    container->setAlign(FlexAlign::Start);
+  } else {
+    container->setRowLayout();
+    container->setAlign(FlexAlign::Center);
+  }
   container->setGap(Style::spaceXs * m_contentScale);
   m_container = container.get();
 
@@ -252,6 +274,28 @@ void TrayWidget::create() {
 
 void TrayWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
   if (m_container == nullptr) {
+    return;
+  }
+  if (m_drawerMode && m_drawerChevron != nullptr && m_drawerTrigger != nullptr) {
+    const bool panelOpen = PanelManager::instance().isOpenPanel("tray-drawer");
+    const std::string glyphName = drawerChevronGlyph(panelOpen);
+    if (m_drawerChevronGlyph != glyphName) {
+      m_drawerChevronGlyph = glyphName;
+      m_drawerChevron->setGlyph(glyphName);
+      m_drawerChevron->setGlyphSize(m_drawerTrigger->width());
+      m_drawerChevron->measure(renderer);
+      m_drawerChevron->setPosition(std::round((m_drawerTrigger->width() - m_drawerChevron->width()) * 0.5f),
+                                   std::round((m_drawerTrigger->height() - m_drawerChevron->height()) * 0.5f));
+      requestRedraw();
+    }
+  }
+  if (m_panelGridMode) {
+    syncState(renderer);
+    if (m_rebuildPending) {
+      rebuild(renderer);
+      m_rebuildPending = false;
+    }
+    m_container->layout(renderer);
     return;
   }
   const bool vertical = containerHeight > containerWidth;
@@ -361,8 +405,71 @@ void TrayWidget::rebuild(Renderer& renderer) {
     m_container->removeChild(m_container->children().back().get());
   }
 
+  if (m_drawerMode) {
+    m_drawerTrigger = nullptr;
+    m_drawerChevron = nullptr;
+    m_drawerChevronGlyph.clear();
+    bool hasDrawerItems = false;
+    for (const auto& item : m_items) {
+      if (isHiddenItem(item) || isPinnedItem(item)) {
+        continue;
+      }
+      hasDrawerItems = true;
+      break;
+    }
+    if (hasDrawerItems) {
+      const float itemSize = Style::barGlyphSize * m_contentScale;
+      auto triggerArea = std::make_unique<InputArea>();
+      auto* triggerPtr = triggerArea.get();
+      m_drawerTrigger = triggerPtr;
+      triggerArea->setSize(itemSize, itemSize);
+      triggerArea->setOnClick([this, triggerPtr](const InputArea::PointerData& data) {
+        if (data.button == BTN_LEFT) {
+          float ax = 0.0f;
+          float ay = 0.0f;
+          Node::absolutePosition(triggerPtr, ax, ay);
+          // Open below / away from the bar edge relative to the tray button center.
+          const float centerX = ax + triggerPtr->width() * 0.5f;
+          const float centerY = ay + triggerPtr->height() * 0.5f;
+          float anchorX = centerX;
+          float anchorY = centerY;
+          if (m_barPosition == "top") {
+            anchorY += triggerPtr->height() * 0.5f + Style::spaceXs * m_contentScale;
+          } else if (m_barPosition == "bottom") {
+            anchorY -= triggerPtr->height() * 0.5f + Style::spaceXs * m_contentScale;
+          } else if (m_barPosition == "left") {
+            anchorX += triggerPtr->width() * 0.5f + Style::spaceXs * m_contentScale;
+          } else if (m_barPosition == "right") {
+            anchorX -= triggerPtr->width() * 0.5f + Style::spaceXs * m_contentScale;
+          }
+          requestPanelToggle("tray-drawer", {}, anchorX, anchorY);
+        }
+      });
+      auto glyph = std::make_unique<Glyph>();
+      const bool panelOpen = PanelManager::instance().isOpenPanel("tray-drawer");
+      m_drawerChevronGlyph = drawerChevronGlyph(panelOpen);
+      glyph->setGlyph(m_drawerChevronGlyph);
+      glyph->setGlyphSize(itemSize);
+      glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
+      glyph->measure(renderer);
+      glyph->setPosition(std::round((itemSize - glyph->width()) * 0.5f),
+                         std::round((itemSize - glyph->height()) * 0.5f));
+      m_drawerChevron = glyph.get();
+      triggerArea->addChild(std::move(glyph));
+      m_container->addChild(std::move(triggerArea));
+    }
+  }
+
+  Flex* gridRow = nullptr;
+  std::size_t gridCol = 0;
   for (const auto& item : m_items) {
     if (isHiddenItem(item)) {
+      continue;
+    }
+    if (m_drawerMode && !isPinnedItem(item)) {
+      continue;
+    }
+    if (m_panelGridMode && isPinnedItem(item)) {
       continue;
     }
     const std::string iconPath = resolveIconPath(item);
@@ -515,6 +622,9 @@ void TrayWidget::rebuild(Renderer& renderer) {
       }
       if (data.button == BTN_LEFT) {
         (void)m_tray->activateItem(itemId);
+        if (m_itemActivated) {
+          m_itemActivated();
+        }
       } else if (data.button == BTN_RIGHT) {
         m_tray->requestMenuToggle(itemId);
       } else if (data.button == BTN_MIDDLE) {
@@ -522,8 +632,34 @@ void TrayWidget::rebuild(Renderer& renderer) {
       }
     });
     area->addChild(std::move(iconNode));
-    m_container->addChild(std::move(area));
+    if (m_panelGridMode) {
+      if (gridRow == nullptr || gridCol >= m_panelGridColumns) {
+        auto row = std::make_unique<Flex>();
+        row->setDirection(FlexDirection::Horizontal);
+        row->setAlign(FlexAlign::Center);
+        row->setGap(Style::spaceXs * m_contentScale);
+        gridRow = static_cast<Flex*>(m_container->addChild(std::move(row)));
+        gridCol = 0;
+      }
+      gridRow->addChild(std::move(area));
+      ++gridCol;
+    } else {
+      m_container->addChild(std::move(area));
+    }
   }
+}
+
+std::string TrayWidget::drawerChevronGlyph(bool panelOpen) const {
+  if (m_barPosition == "bottom") {
+    return panelOpen ? "chevron-down" : "chevron-up";
+  }
+  if (m_barPosition == "left") {
+    return panelOpen ? "chevron-left" : "chevron-right";
+  }
+  if (m_barPosition == "right") {
+    return panelOpen ? "chevron-right" : "chevron-left";
+  }
+  return panelOpen ? "chevron-up" : "chevron-down";
 }
 
 bool TrayWidget::isHiddenItem(const TrayItemInfo& item) const {
@@ -549,6 +685,73 @@ bool TrayWidget::isHiddenItem(const TrayItemInfo& item) const {
   appendVariants(item.attentionIconName);
 
   for (const auto& needle : m_hiddenItems) {
+    if (std::ranges::find(candidates, needle) != candidates.end()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool TrayWidget::isPinnedItem(const TrayItemInfo& item) const {
+  if (m_pinnedItems.empty()) {
+    return false;
+  }
+
+  auto hasVariant = [](std::string_view token, std::string_view value) {
+    const auto variants = identifierVariants(value);
+    return std::ranges::find(variants, token) != variants.end();
+  };
+
+  for (const auto& needle : m_pinnedItems) {
+    if (needle.rfind("item:", 0) == 0) {
+      const auto value = needle.substr(5);
+      if (hasVariant(value, item.itemName) || hasVariant(value, item.id) || hasVariant(value, item.objectPath)) {
+        return true;
+      }
+      continue;
+    }
+    if (needle.rfind("icon:", 0) == 0) {
+      const auto value = needle.substr(5);
+      if (hasVariant(value, item.iconName) || hasVariant(value, item.overlayIconName) ||
+          hasVariant(value, item.attentionIconName)) {
+        return true;
+      }
+      continue;
+    }
+    if (needle.rfind("title:", 0) == 0) {
+      if (hasVariant(needle.substr(6), item.title)) {
+        return true;
+      }
+      continue;
+    }
+    if (needle.rfind("bus:", 0) == 0) {
+      if (hasVariant(needle.substr(4), item.busName)) {
+        return true;
+      }
+      continue;
+    }
+  }
+
+  std::vector<std::string> candidates;
+  auto appendVariants = [&candidates](std::string_view text) {
+    for (const auto& variant : identifierVariants(text)) {
+      if (std::ranges::find(candidates, variant) == candidates.end()) {
+        candidates.push_back(variant);
+      }
+    }
+  };
+
+  appendVariants(item.id);
+  appendVariants(item.busName);
+  appendVariants(item.itemName);
+  appendVariants(item.title);
+  appendVariants(item.objectPath);
+  appendVariants(item.iconName);
+  appendVariants(item.overlayIconName);
+  appendVariants(item.attentionIconName);
+
+  for (const auto& needle : m_pinnedItems) {
     if (std::ranges::find(candidates, needle) != candidates.end()) {
       return true;
     }

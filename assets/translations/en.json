@@ -503,7 +503,9 @@
   },
   "tray": {
     "menu": {
-      "empty": "No menu items..."
+      "empty": "No menu items...",
+      "pin": "Pin",
+      "unpin": "Unpin"
     }
   },
   "notifications": {
@@ -951,6 +953,18 @@
           "label": "Hidden Items",
           "description": "Tray item ids to hide"
         },
+        "pinned": {
+          "label": "Pinned Items",
+          "description": "Tray item ids that stay visible in the bar when drawer mode is enabled"
+        },
+        "drawer": {
+          "label": "Use Drawer Panel",
+          "description": "Show a tray button in the bar and open items in a panel"
+        },
+        "drawer_columns": {
+          "label": "Drawer Columns",
+          "description": "Number of tray icons per row in the drawer panel"
+        },
         "hide_when_off": {
           "label": "Hide When Off",
           "description": "Hide the lock key indicator when inactive"
@@ -982,6 +996,10 @@
         "max_length": {
           "label": "Max Length",
           "description": "Maximum text width in pixels"
+        },
+        "min_length": {
+          "label": "Min Length",
+          "description": "Minimum text width in pixels"
         },
         "mirrored": {
           "label": "Mirrored",

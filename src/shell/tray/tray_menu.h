@@ -10,6 +10,7 @@
 
 #include <chrono>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -60,6 +61,9 @@ private:
   void closeSubmenu();
   void prepareSubmenuFrame(MenuInstance& inst, bool needsUpdate, bool needsLayout);
   void buildSubmenuScene(MenuInstance& inst, uint32_t width, uint32_t height);
+  [[nodiscard]] std::optional<TrayItemInfo> activeTrayItem() const;
+  [[nodiscard]] bool activeItemPinned() const;
+  bool toggleActiveItemPinned();
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;

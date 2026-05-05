@@ -48,6 +48,9 @@
 #include "ui/style.h"
 #include "wayland/wayland_connection.h"
 
+#include <algorithm>
+#include <cstdint>
+#include <functional>
 #include <string>
 
 namespace {
@@ -225,8 +228,9 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "media") {
     const float maxWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_length", 220.0) : 220.0);
+    const float minWidth = static_cast<float>(wc != nullptr ? wc->getDouble("min_length", 80.0) : 80.0);
     const float artSize = static_cast<float>(wc != nullptr ? wc->getDouble("art_size", 16.0) : 16.0);
-    auto widget = std::make_unique<MediaWidget>(m_mpris, m_httpClient, output, maxWidth, artSize);
+    auto widget = std::make_unique<MediaWidget>(m_mpris, m_httpClient, output, maxWidth, minWidth, artSize);
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -339,7 +343,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "tray") {
     const auto hiddenItems = wc != nullptr ? wc->getStringList("hidden") : std::vector<std::string>{};
-    auto widget = std::make_unique<TrayWidget>(m_tray, hiddenItems);
+    const auto pinnedItems = wc != nullptr ? wc->getStringList("pinned") : std::vector<std::string>{};
+    const bool drawer = wc != nullptr ? wc->getBool("drawer", false) : false;
+    const std::size_t drawerColumns =
+        static_cast<std::size_t>(std::clamp<std::int64_t>(wc != nullptr ? wc->getInt("drawer_columns", 3) : 3, 1, 5));
+    auto widget = std::make_unique<TrayWidget>(m_tray, hiddenItems, pinnedItems, drawer, std::function<void()>{},
+                                               barPosition, false, drawerColumns);
     widget->setContentScale(contentScale);
     return widget;
   }

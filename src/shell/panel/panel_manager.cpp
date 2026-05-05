@@ -188,8 +188,14 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
   const auto marginLeft = centeredH ? 0
                                     : clampMargin(request.anchorX - static_cast<float>(panelWidth) * 0.5f,
                                                   static_cast<std::int32_t>(panelWidth), outputWidth, screenPadding);
-  const auto marginTop = clampMargin(request.anchorY - static_cast<float>(panelHeight) * 0.5f,
-                                     static_cast<std::int32_t>(panelHeight), outputHeight, screenPadding);
+  const auto marginTopFromAnchor = clampMargin(request.anchorY - static_cast<float>(panelHeight) * 0.5f,
+                                               static_cast<std::int32_t>(panelHeight), outputHeight, screenPadding);
+  // Detached panels with explicit widget-provided anchors should follow that
+  // anchor; otherwise they pick up fixed bar offsets intended for centered
+  // panels and can appear too far from the trigger.
+  const bool useExplicitAnchorForDetached = request.hasExplicitAnchor;
+  const auto marginBottomFromAnchor =
+      std::max(0, outputHeight - marginTopFromAnchor - static_cast<std::int32_t>(panelHeight));
 
   auto surfaceConfig = LayerSurfaceConfig{
       .nameSpace = "noctalia-panel",
@@ -200,10 +206,11 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
       .exclusiveZone = 0,
       .marginTop = centeredV   ? static_cast<std::int32_t>((outputHeight - static_cast<std::int32_t>(panelHeight)) / 2)
                    : centeredH ? (isBottom ? 0 : barOffset)
-                   : (isLeft || isRight) ? marginTop
-                                         : (isBottom ? 0 : barOffset),
+                   : (isLeft || isRight)
+                       ? marginTopFromAnchor
+                       : (isBottom ? 0 : (useExplicitAnchorForDetached ? marginTopFromAnchor : barOffset)),
       .marginRight = isRight ? barOffset : 0,
-      .marginBottom = isBottom ? barOffset : 0,
+      .marginBottom = isBottom ? (useExplicitAnchorForDetached ? marginBottomFromAnchor : barOffset) : 0,
       .marginLeft = centeredH ? 0 : (isLeft ? barOffset : marginLeft),
       .keyboard = m_activePanel->keyboardMode(),
       .defaultWidth = panelWidth,
@@ -297,18 +304,26 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     const std::int32_t barBottom =
         barIsVertical ? std::max(barTop, outputHeight - mEnds) : barTop + barConfig.thickness;
 
-    // Panel body rect in screen coords. Centered on the bar's main axis; 1 px bar overlap
-    // so the concave-corner notches read as merged with the bar edge.
+    // Panel body rect in screen coords. For attached panels, place along the bar
+    // main axis using request anchor when provided, else center fallback.
+    // Keep 1 px bar overlap so concave corners read as merged with the bar edge.
     std::int32_t visualX = 0;
     std::int32_t visualY = 0;
+    const bool useAnchorForAttached = request.hasExplicitAnchor;
     if (barIsVertical) {
       const auto centeredY = barTop + (barBottom - barTop - static_cast<std::int32_t>(panelHeight)) / 2;
-      visualY = centeredY;
+      const auto desiredY =
+          static_cast<std::int32_t>(std::lround(request.anchorY - static_cast<float>(panelHeight) * 0.5f));
+      const auto maxY = std::max(barTop, barBottom - static_cast<std::int32_t>(panelHeight));
+      visualY = useAnchorForAttached ? std::clamp(desiredY, barTop, maxY) : centeredY;
       visualX = barIsLeft ? barRight - kAttachedPanelBarOverlap
                           : barLeft - static_cast<std::int32_t>(panelWidth) + kAttachedPanelBarOverlap;
     } else {
       const auto centeredX = barLeft + (barRight - barLeft - static_cast<std::int32_t>(panelWidth)) / 2;
-      visualX = centeredX;
+      const auto desiredX =
+          static_cast<std::int32_t>(std::lround(request.anchorX - static_cast<float>(panelWidth) * 0.5f));
+      const auto maxX = std::max(barLeft, barRight - static_cast<std::int32_t>(panelWidth));
+      visualX = useAnchorForAttached ? std::clamp(desiredX, barLeft, maxX) : centeredX;
       visualY = barIsBottom ? barTop - static_cast<std::int32_t>(panelHeight) + kAttachedPanelBarOverlap
                             : barBottom - kAttachedPanelBarOverlap;
     }
@@ -780,6 +795,10 @@ bool PanelManager::onPointerEvent(const PointerEvent& event) {
 }
 
 bool PanelManager::isOpen() const noexcept { return m_surface != nullptr && m_activePanel != nullptr; }
+
+bool PanelManager::isOpenPanel(std::string_view panelId) const noexcept {
+  return isOpen() && m_activePanelId == panelId;
+}
 
 bool PanelManager::isAttachedOpen() const noexcept { return isOpen() && m_attachedToBar; }
 

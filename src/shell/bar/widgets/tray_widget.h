@@ -6,17 +6,22 @@
 #include "system/icon_resolver.h"
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 class Flex;
 class Image;
+class InputArea;
+class Glyph;
 class TrayService;
 
 class TrayWidget : public Widget {
 public:
-  TrayWidget(TrayService* tray, std::vector<std::string> hiddenItems = {});
+  TrayWidget(TrayService* tray, std::vector<std::string> hiddenItems = {}, std::vector<std::string> pinnedItems = {},
+             bool drawerMode = false, std::function<void()> itemActivated = {}, std::string barPosition = "top",
+             bool panelGridMode = false, std::size_t panelGridColumns = 3);
 
   void create() override;
 
@@ -29,7 +34,9 @@ private:
   void syncState(Renderer& renderer);
   void rebuild(Renderer& renderer);
   [[nodiscard]] std::string iconForItem(const TrayItemInfo& item) const;
+  [[nodiscard]] bool isPinnedItem(const TrayItemInfo& item) const;
   [[nodiscard]] bool isHiddenItem(const TrayItemInfo& item) const;
+  [[nodiscard]] std::string drawerChevronGlyph(bool panelOpen) const;
 
   TrayService* m_tray = nullptr;
   Flex* m_container = nullptr;
@@ -40,8 +47,17 @@ private:
   std::uint64_t m_desktopEntriesVersion = 0;
   std::vector<TrayItemInfo> m_items;
   std::vector<std::string> m_hiddenItems;
+  std::vector<std::string> m_pinnedItems;
   std::vector<Image*> m_loadedImages;
   float m_contentHeight = 0.0f;
   bool m_isVertical = false;
   bool m_rebuildPending = true;
+  bool m_drawerMode = false;
+  std::function<void()> m_itemActivated;
+  std::string m_barPosition;
+  bool m_panelGridMode = false;
+  std::size_t m_panelGridColumns = 3;
+  InputArea* m_drawerTrigger = nullptr;
+  Glyph* m_drawerChevron = nullptr;
+  std::string m_drawerChevronGlyph;
 };

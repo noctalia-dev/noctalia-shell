@@ -25,6 +25,7 @@
 #include "shell/session/session_panel.h"
 #include "shell/setup_wizard/setup_wizard_panel.h"
 #include "shell/test/test_panel.h"
+#include "shell/tray/tray_drawer_panel.h"
 #include "shell/wallpaper/panel/wallpaper_panel.h"
 #include "system/distro_info.h"
 #include "time/time_format.h"
@@ -35,8 +36,10 @@
 #include "ui/style.h"
 #include "util/file_utils.h"
 
+#include <algorithm>
 #include <chrono>
 #include <csignal>
+#include <cstdint>
 #include <filesystem>
 #include <malloc.h>
 #include <optional>
@@ -118,9 +121,7 @@ Application::Application() : m_lockKeysService(m_wayland), m_weatherService(m_co
   notify::setInstance(&m_notificationManager);
   LockScreen::setInstance(&m_lockScreen);
 
-  auto shouldRefreshControlCenter = [this]() {
-    return m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center";
-  };
+  auto shouldRefreshControlCenter = [this]() { return m_panelManager.isOpenPanel("control-center"); };
 
   m_notificationManager.addEventCallback(
       [this, shouldRefreshControlCenter](const Notification& n, NotificationEvent event) {
@@ -224,19 +225,19 @@ void Application::syncPolkitAgent() {
       const bool hasPending = m_polkitAgent->hasPendingRequest();
       const bool needsInput = m_polkitAgent->isResponseRequired();
       if (!hasPending) {
-        if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "polkit") {
+        if (m_panelManager.isOpenPanel("polkit")) {
           m_panelManager.close();
         }
         return;
       }
       if (needsInput) {
-        if (!(m_panelManager.isOpen() && m_panelManager.activePanelId() == "polkit")) {
+        if (!m_panelManager.isOpenPanel("polkit")) {
           wl_output* output = m_wayland.preferredPanelOutput(std::chrono::milliseconds(1200));
           m_panelManager.openPanel("polkit", PanelOpenRequest{.output = output});
         } else {
           m_panelManager.refresh();
         }
-      } else if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "polkit") {
+      } else if (m_panelManager.isOpenPanel("polkit")) {
         m_panelManager.refresh();
       }
     });
@@ -289,9 +290,7 @@ void Application::initServices() {
   std::signal(SIGTERM, signal_handler);
   std::signal(SIGINT, signal_handler);
 
-  auto shouldRefreshControlCenter = [this]() {
-    return m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center";
-  };
+  auto shouldRefreshControlCenter = [this]() { return m_panelManager.isOpenPanel("control-center"); };
 
   auto applyMotionConfig = [this]() {
     auto& motion = MotionService::instance();
@@ -364,7 +363,7 @@ void Application::initServices() {
     m_lockScreen.onOutputChange();
   });
   m_clipboardService.setChangeCallback([this]() {
-    if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "clipboard") {
+    if (m_panelManager.isOpenPanel("clipboard")) {
       m_panelManager.refresh();
     }
   });
@@ -413,7 +412,7 @@ void Application::initServices() {
     m_backdrop.onStateChange();
     m_lockScreen.onWallpaperChanged();
     m_themeService.onWallpaperChange();
-    if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center") {
+    if (m_panelManager.isOpenPanel("control-center")) {
       m_panelManager.refresh();
     }
     m_hookManager.fire(HookKind::WallpaperChanged);
@@ -739,9 +738,7 @@ void Application::startTrayService() {
 }
 
 void Application::initUi() {
-  auto shouldRefreshControlCenter = [this]() {
-    return m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center";
-  };
+  auto shouldRefreshControlCenter = [this]() { return m_panelManager.isOpenPanel("control-center"); };
 
   m_renderContext.initialize(m_glShared);
   m_renderContext.setTextFontFamily(m_configService.config().shell.fontFamily);
@@ -859,6 +856,13 @@ void Application::initUi() {
   }
   m_panelManager.registerPanel("wallpaper",
                                std::make_unique<WallpaperPanel>(&m_wayland, &m_configService, &m_thumbnailService));
+  std::size_t trayDrawerColumns = 3;
+  if (const auto it = m_configService.config().widgets.find("tray"); it != m_configService.config().widgets.end()) {
+    trayDrawerColumns =
+        static_cast<std::size_t>(std::clamp<std::int64_t>(it->second.getInt("drawer_columns", 3), 1, 5));
+  }
+  m_panelManager.registerPanel(
+      "tray-drawer", std::make_unique<TrayDrawerPanel>(m_trayService.get(), &m_configService, trayDrawerColumns));
   m_panelManager.registerPanel(
       "polkit", std::make_unique<PolkitPanel>(&m_configService, [this]() { return m_polkitAgent.get(); }));
   m_panelManager.registerPanel("setup-wizard", std::make_unique<SetupWizardPanel>(&m_configService, &m_wayland));
@@ -1020,7 +1024,7 @@ void Application::initIpc() {
   auto applyNotificationDnd = [this](bool enabled) {
     m_notificationManager.setDoNotDisturb(enabled);
     m_bar.refresh();
-    if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center") {
+    if (m_panelManager.isOpenPanel("control-center")) {
       m_panelManager.refresh();
     }
   };
@@ -1069,7 +1073,7 @@ void Application::initIpc() {
         for (const uint32_t id : activeIds) {
           (void)m_notificationManager.close(id, CloseReason::Dismissed);
         }
-        if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center") {
+        if (m_panelManager.isOpenPanel("control-center")) {
           m_panelManager.refresh();
         }
         return "ok\n";
@@ -1080,7 +1084,7 @@ void Application::initIpc() {
       "notification-clear-history",
       [this](const std::string&) -> std::string {
         m_notificationManager.clearHistory();
-        if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center") {
+        if (m_panelManager.isOpenPanel("control-center")) {
           m_panelManager.refresh();
         }
         return "ok\n";

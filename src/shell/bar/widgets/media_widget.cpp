@@ -26,8 +26,10 @@ namespace {
 
 } // namespace
 
-MediaWidget::MediaWidget(MprisService* mpris, HttpClient* httpClient, wl_output* output, float maxWidth, float artSize)
-    : m_mpris(mpris), m_httpClient(httpClient), m_output(output), m_maxWidth(maxWidth), m_artSize(artSize) {}
+MediaWidget::MediaWidget(MprisService* mpris, HttpClient* httpClient, wl_output* output, float maxWidth, float minWidth,
+                         float artSize)
+    : m_mpris(mpris), m_httpClient(httpClient), m_output(output), m_maxWidth(maxWidth), m_minWidth(minWidth),
+      m_artSize(artSize) {}
 
 void MediaWidget::create() {
   auto area = std::make_unique<InputArea>();
@@ -79,11 +81,13 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
   syncState(renderer);
 
   const bool isVertical = containerHeight > containerWidth;
+  const float minLength = std::max(0.0f, m_minWidth * m_contentScale);
 
   m_label->setMaxWidth(m_maxWidth * m_contentScale);
   m_label->setColor(m_lastPlaybackStatus == "Playing" ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
                                                       : colorSpecFromRole(ColorRole::OnSurfaceVariant));
   m_label->measure(renderer);
+  m_emptyGlyph->setGlyph(m_lastPlaybackStatus.empty() ? "disc-filled" : "music-off");
   m_emptyGlyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   m_emptyGlyph->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   m_emptyGlyph->measure(renderer);
@@ -139,7 +143,7 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
     }
     const float contentWidth =
         showLabel ? m_label->x() + m_label->width() : (showArtSlot ? artSize : m_emptyGlyph->width());
-    rootNode->setSize(contentWidth, contentHeight);
+    rootNode->setSize(std::max(minLength, contentWidth), contentHeight);
   }
 }
 

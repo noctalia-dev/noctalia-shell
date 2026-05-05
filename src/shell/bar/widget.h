@@ -18,7 +18,9 @@ class Widget {
 public:
   using UpdateCallback = std::function<void()>;
   using RedrawCallback = std::function<void()>;
-  using PanelToggleCallback = std::function<void(std::string_view panelId, std::string_view context)>;
+  using PanelToggleCallback =
+      std::function<void(std::string_view panelId, std::string_view context, std::optional<float> anchorSurfaceX,
+                         std::optional<float> anchorSurfaceY)>;
 
   virtual ~Widget() = default;
 
@@ -72,7 +74,9 @@ public:
 protected:
   void requestUpdate();
   void requestRedraw();
-  void requestPanelToggle(std::string_view panelId, std::string_view context = {});
+  void requestPanelToggle(std::string_view panelId, std::string_view context = {},
+                          std::optional<float> anchorSurfaceX = std::nullopt,
+                          std::optional<float> anchorSurfaceY = std::nullopt);
   void setRoot(std::unique_ptr<Node> root) { m_root = std::move(root); }
   void clearReleasedRoot() noexcept { m_rootPtr = nullptr; }
   virtual void doLayout(Renderer& renderer, float containerWidth, float containerHeight) = 0;

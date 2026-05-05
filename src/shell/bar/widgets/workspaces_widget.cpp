@@ -20,7 +20,6 @@
 namespace {
   constexpr Logger kLog("workspace");
   constexpr float kWorkspaceGap = Style::spaceSm;
-  constexpr float kWorkspaceDotRatio = 0.62f;
   constexpr float kWorkspacePillMinWidth = Style::controlHeight + Style::spaceXs;
   constexpr float kWorkspaceLabelPadH = Style::spaceSm;
   constexpr float kWorkspacePillMinHeight = Style::fontSizeCaption;
@@ -157,7 +156,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     // looks visibly off.
     labelInkCenterX[i] = (tm.inkLeft + tm.inkRight) * 0.5f;
   }
-  const float dotWidth = std::round(indicatorHeight * kWorkspaceDotRatio);
+  const float minCircleExtent = std::round(indicatorHeight);
 
   // Pick per-slot active/inactive widths so (active - inactive) is constant across slots,
   // guaranteeing stable total width regardless of which slot is active.
@@ -180,15 +179,15 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     float inactiveWidth = 0.0f;
     float activeWidth = 0.0f;
     if (!anyLabel) {
-      inactiveWidth = dotWidth;
+      inactiveWidth = minCircleExtent;
       activeWidth = uniformActive;
     } else if (anyMultiChar) {
       // Uniform width — inactive must reserve enough room for its own label.
-      inactiveWidth = showLabel ? labelPadded[i] : dotWidth;
+      inactiveWidth = showLabel ? labelPadded[i] : minCircleExtent;
       activeWidth = inactiveWidth;
     } else {
       // All single-char labels: morph from square to uniform pill.
-      inactiveWidth = showLabel ? indicatorHeight : dotWidth;
+      inactiveWidth = showLabel ? indicatorHeight : minCircleExtent;
       activeWidth = uniformActive;
     }
 
@@ -208,7 +207,9 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     indicator->clearBorder();
     indicator->setRadius(indicatorHeight * 0.5f);
     indicator->setFrameSize(w, indicatorHeight);
-    indicator->setFill(colorSpecFromRole(workspaceFillRole(ws)));
+    const bool isEmpty = !ws.active && !ws.urgent && !ws.occupied;
+    indicator->setFill(isEmpty ? colorSpecFromRole(ColorRole::Secondary, 0.35f)
+                               : colorSpecFromRole(workspaceFillRole(ws)));
     item.indicator = static_cast<Box*>(area->addChild(std::move(indicator)));
 
     if (showLabel) {
@@ -282,7 +283,10 @@ void WorkspacesWidget::retarget(Renderer& renderer) {
   for (std::size_t i = 0; i < m_items.size(); ++i) {
     auto& it = m_items[i];
     if (it.indicator != nullptr) {
-      it.indicator->setFill(colorSpecFromRole(workspaceFillRole(m_cachedState[i])));
+      const auto& ws = m_cachedState[i];
+      const bool isEmpty = !ws.active && !ws.urgent && !ws.occupied;
+      it.indicator->setFill(isEmpty ? colorSpecFromRole(ColorRole::Secondary, 0.35f)
+                                    : colorSpecFromRole(workspaceFillRole(ws)));
     }
     if (it.text != nullptr) {
       it.text->setColor(colorSpecFromRole(workspaceTextRole(m_cachedState[i])));
@@ -451,7 +455,9 @@ ColorRole WorkspacesWidget::workspaceFillRole(const Workspace& workspace) {
   if (workspace.occupied) {
     return ColorRole::Secondary;
   }
-  return ColorRole::SurfaceVariant;
+  // Keep empty slots visibly present even when the bar background also uses
+  // a surface-variant tone.
+  return ColorRole::Surface;
 }
 
 ColorRole WorkspacesWidget::workspaceTextRole(const Workspace& workspace) {
