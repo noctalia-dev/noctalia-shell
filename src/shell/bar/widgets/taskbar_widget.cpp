@@ -330,7 +330,7 @@ void TaskbarWidget::updateModels() {
   const auto active = m_connection.activeToplevel();
   const auto* activeHandle = active.has_value() ? active->handle : nullptr;
 
-  const auto running = m_connection.runningAppIds(m_output);
+  const auto running = m_connection.runningAppIds(m_groupByWorkspace ? nullptr : m_output);
   const auto resolvedRunning = app_identity::resolveRunningApps(running, desktopEntries());
   std::vector<WorkspaceModel> nextWorkspaces;
   std::unordered_map<std::string, std::vector<std::string>> runningByWorkspace;
@@ -381,7 +381,7 @@ void TaskbarWidget::updateModels() {
     const std::string nameLower = !run.entry.nameLower.empty() ? run.entry.nameLower : run.runningLower;
     const std::string appId = !run.entry.id.empty() ? run.entry.id : run.runningAppId;
 
-    const auto windows = m_connection.windowsForApp(idLower, startupLower, m_output);
+    const auto windows = m_connection.windowsForApp(idLower, startupLower, m_groupByWorkspace ? nullptr : m_output);
     for (const auto& window : windows) {
       const auto handleKey = reinterpret_cast<std::uintptr_t>(window.handle);
       if (!processedHandles.insert(handleKey).second) {
