@@ -2,6 +2,7 @@
 
 #include "core/timer_manager.h"
 #include "render/core/color.h"
+#include "render/core/thumbnail_service.h"
 #include "shell/panel/panel.h"
 #include "shell/wallpaper/panel/wallpaper_scanner.h"
 
@@ -19,7 +20,6 @@ class Input;
 class InputArea;
 class Label;
 class Select;
-class ThumbnailService;
 class Toggle;
 class VirtualGridView;
 class WallpaperGridAdapter;
@@ -115,4 +115,5 @@ private:
   float m_lastHeight = 0.0f;
   bool m_dirty = false;
   bool m_thumbnailRefreshPending = false;
+  ThumbnailService::Subscription m_thumbnailPendingSub;
 };

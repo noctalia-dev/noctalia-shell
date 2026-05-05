@@ -22,6 +22,7 @@ public:
   using HoverCallback = std::function<void()>;
 
   WallpaperTile(float cellWidth, float cellHeight, float contentScale);
+  ~WallpaperTile() override;
 
   // Update the tile's outer cell size and recompute internal frame sizes so
   // the thumbnail/glyph/label adapt to viewport-driven cell dimensions
@@ -30,7 +31,7 @@ public:
 
   // Non-owning pointer to the shared async thumbnail service. If null, tiles
   // will leave their image blank.
-  void setThumbnailService(ThumbnailService* service) { m_thumbnails = service; }
+  void setThumbnailService(ThumbnailService* service);
 
   // Bind the tile to an entry. For image entries, a thumbnail is requested
   // from the service; if the previous binding was also an image, its
@@ -54,6 +55,7 @@ public:
 private:
   void applyVisualState();
   void doLayout(Renderer& renderer) override;
+  void releaseThumbnail();
 
   float m_cellWidth;
   float m_cellHeight;

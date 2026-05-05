@@ -108,14 +108,11 @@ public:
     }
     auto* file = static_cast<FileEntryTile*>(&tile);
     const bool disabled = m_isSelectable && !m_isSelectable(index);
-    // FileEntryTile::bind detects same-thumbnailPath rebinds and skips release/request,
+    // FileEntryTile::bind detects same-thumbnailPath rebinds and skips acquire/release,
     // so per-frame rebinds that VirtualGridView's row-modulo recycling already filters
     // out remain free of thumbnail churn.
-    std::string releasedPath = file->bind(*m_renderer, (*m_entries)[index], index, file->width(), file->height(),
-                                          selected, hovered && !selected, disabled);
-    if (!releasedPath.empty() && m_thumbnails != nullptr) {
-      m_thumbnails->release(releasedPath);
-    }
+    file->bind(*m_renderer, (*m_entries)[index], index, file->width(), file->height(), selected, hovered && !selected,
+               disabled);
   }
 
   void onActivate(std::size_t index) override {
@@ -391,7 +388,7 @@ void FileDialogView::create() {
   }
 
   if (m_thumbnails != nullptr) {
-    m_thumbnails->setReadyCallback([this]() {
+    m_thumbnailPendingSub = m_thumbnails->subscribePendingUpload([this]() {
       m_thumbnailRefreshPending = true;
       requestUpdateOnly();
     });
@@ -428,10 +425,6 @@ void FileDialogView::onOpen(std::string_view /*context*/) {
 }
 
 void FileDialogView::onClose() {
-  if (m_thumbnails != nullptr) {
-    m_thumbnails->releaseAll();
-  }
-
   if (m_listGrid != nullptr) {
     m_listGrid->setAdapter(nullptr);
   }
@@ -468,6 +461,7 @@ void FileDialogView::onClose() {
   m_listFocusArea = nullptr;
   m_listAdapter.reset();
   m_gridAdapter.reset();
+  m_thumbnailPendingSub.disconnect();
   clearReleasedRoot();
 }
 
@@ -490,6 +484,10 @@ void FileDialogView::doLayout(Renderer& renderer, float width, float height) {
     m_gridAdapter->setRenderer(&renderer);
   }
 
+  if (m_thumbnails != nullptr && m_thumbnails->uploadPending(renderer.textureManager())) {
+    m_thumbnailRefreshPending = false;
+  }
+
   m_rootLayout->setSize(width, height);
   m_rootLayout->layout(renderer);
 
@@ -509,9 +507,9 @@ void FileDialogView::doUpdate(Renderer& renderer) {
     return;
   }
 
-  m_thumbnails->uploadPending(renderer.textureManager());
+  const bool changed = m_thumbnails->uploadPending(renderer.textureManager());
   m_thumbnailRefreshPending = false;
-  if (m_viewMode == ViewMode::Grid && m_gridGrid != nullptr) {
+  if (changed && m_viewMode == ViewMode::Grid && m_gridGrid != nullptr) {
     // Force visible tiles to rebind so FileEntryTile::bind re-queries the thumbnail
     // service. Same-path rebinds are a no-op for the thumbnail cache.
     m_gridGrid->notifyDataChanged();
@@ -609,9 +607,6 @@ bool FileDialogView::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers,
 }
 
 void FileDialogView::refreshDirectory() {
-  if (m_thumbnails != nullptr) {
-    m_thumbnails->releaseAll();
-  }
   m_entries = m_scanner.scan(m_currentDirectory, m_options.extensions, m_showHiddenFiles, m_sortField, m_sortOrder);
   rebuildBreadcrumb();
   applyFilter(true);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/files/directory_scanner.h"
+#include "render/core/thumbnail_service.h"
 #include "ui/dialogs/file_dialog.h"
 
 #include <cstddef>
@@ -18,7 +19,6 @@ class InputArea;
 class Label;
 class Node;
 class Renderer;
-class ThumbnailService;
 class VirtualGridView;
 
 class FileDialogHost {
@@ -155,6 +155,7 @@ private:
   float m_listRowHeight = 0.0f;
   float m_gridCellSize = 0.0f;
   bool m_thumbnailRefreshPending = false;
+  ThumbnailService::Subscription m_thumbnailPendingSub;
   bool m_showHiddenFiles = false;
   float m_contentScale = 1.0f;
   AnimationManager* m_animations = nullptr;

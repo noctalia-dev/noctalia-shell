@@ -81,6 +81,22 @@ WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentSca
   setCellSize(cellWidth, cellHeight);
 }
 
+WallpaperTile::~WallpaperTile() { releaseThumbnail(); }
+
+void WallpaperTile::setThumbnailService(ThumbnailService* service) {
+  if (m_thumbnails == service) {
+    return;
+  }
+  releaseThumbnail();
+  m_thumbnails = service;
+  if (m_hasEntry && !m_entry.isDir && m_thumbnails != nullptr) {
+    m_thumbPath = m_entry.absPath.string();
+    if (!m_thumbPath.empty()) {
+      (void)m_thumbnails->acquire(m_thumbPath);
+    }
+  }
+}
+
 void WallpaperTile::setCellSize(float cellWidth, float cellHeight) {
   m_cellWidth = cellWidth;
   m_cellHeight = cellHeight;
@@ -128,8 +144,8 @@ void WallpaperTile::setEntry(const WallpaperEntry& entry, Renderer& renderer) {
     return;
   }
 
-  if (!m_thumbPath.empty() && m_thumbPath != newPath && m_thumbnails != nullptr) {
-    m_thumbnails->release(m_thumbPath);
+  if (m_thumbPath != newPath) {
+    releaseThumbnail();
   }
 
   m_entry = entry;
@@ -148,7 +164,6 @@ void WallpaperTile::setEntry(const WallpaperEntry& entry, Renderer& renderer) {
     if (m_loadingGlyph != nullptr) {
       m_loadingGlyph->setVisible(false);
     }
-    m_thumbPath.clear();
     applyVisualState();
     return;
   }
@@ -168,6 +183,9 @@ void WallpaperTile::setEntry(const WallpaperEntry& entry, Renderer& renderer) {
     return;
   }
 
+  if (!m_thumbPath.empty()) {
+    (void)m_thumbnails->acquire(m_thumbPath);
+  }
   refreshThumbnail(renderer);
   applyVisualState();
 }
@@ -176,10 +194,7 @@ void WallpaperTile::clearEntry(Renderer& renderer) {
   if (!m_hasEntry && !visible()) {
     return;
   }
-  if (!m_thumbPath.empty() && m_thumbnails != nullptr) {
-    m_thumbnails->release(m_thumbPath);
-  }
-  m_thumbPath.clear();
+  releaseThumbnail();
   if (m_thumb != nullptr) {
     m_thumb->clear(renderer);
   }
@@ -206,7 +221,7 @@ void WallpaperTile::refreshThumbnail(Renderer& renderer) {
     return;
   }
 
-  const TextureHandle handle = m_thumbnails->request(m_thumbPath);
+  const TextureHandle handle = m_thumbnails->peek(m_thumbPath);
   if (handle.id != 0) {
     m_loadingThumbnail = false;
     m_thumb->setExternalTexture(renderer, handle);
@@ -222,6 +237,13 @@ void WallpaperTile::refreshThumbnail(Renderer& renderer) {
       m_loadingGlyph->setVisible(true);
     }
   }
+}
+
+void WallpaperTile::releaseThumbnail() {
+  if (!m_thumbPath.empty() && m_thumbnails != nullptr) {
+    m_thumbnails->release(m_thumbPath);
+  }
+  m_thumbPath.clear();
 }
 
 void WallpaperTile::setSelected(bool selected) {

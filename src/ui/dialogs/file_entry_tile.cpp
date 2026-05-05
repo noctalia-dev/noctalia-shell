@@ -81,8 +81,8 @@ void FileEntryTile::setCallbacks(IndexCallback onClick, IndexCallback onMotion, 
   m_onLeave = std::move(onLeave);
 }
 
-std::string FileEntryTile::bind(Renderer& renderer, const FileEntry& entry, std::size_t index, float width,
-                                float height, bool selected, bool hovered, bool disabled) {
+void FileEntryTile::bind(Renderer& renderer, const FileEntry& entry, std::size_t index, float width, float height,
+                         bool selected, bool hovered, bool disabled) {
   m_boundIndex = index;
   m_selected = selected;
   m_hovered = hovered;
@@ -94,10 +94,12 @@ std::string FileEntryTile::bind(Renderer& renderer, const FileEntry& entry, std:
 
   m_thumbnailEligible = !entry.isDir && DirectoryScanner::isImagePath(entry.absPath);
   const std::string nextThumbnailPath = m_thumbnailEligible ? entry.absPath.string() : std::string();
-  std::string releasedPath;
   if (m_thumbnailPath != nextThumbnailPath) {
-    releasedPath = std::move(m_thumbnailPath);
+    releaseThumbnail();
     m_thumbnailPath = nextThumbnailPath;
+    if (!m_thumbnailPath.empty() && m_thumbnails != nullptr) {
+      (void)m_thumbnails->acquire(m_thumbnailPath);
+    }
   }
 
   m_glyph->setGlyph(entry.isDir ? "folder" : (m_thumbnailEligible ? "image" : "file"));
@@ -107,12 +109,11 @@ std::string FileEntryTile::bind(Renderer& renderer, const FileEntry& entry, std:
   refreshThumbnail(renderer);
   applyVisualState();
   layout(renderer);
-  return releasedPath;
 }
 
 void FileEntryTile::refreshThumbnail(Renderer& renderer) {
   if (m_thumbnailEligible && !m_thumbnailPath.empty() && m_thumbnails != nullptr) {
-    const TextureHandle handle = m_thumbnails->request(m_thumbnailPath);
+    const TextureHandle handle = m_thumbnails->peek(m_thumbnailPath);
     if (handle.id != 0) {
       m_image->setExternalTexture(renderer, handle);
       m_image->setVisible(true);
@@ -126,8 +127,8 @@ void FileEntryTile::refreshThumbnail(Renderer& renderer) {
   m_glyph->setVisible(true);
 }
 
-std::string FileEntryTile::clear(Renderer& renderer) {
-  std::string releasedPath = std::move(m_thumbnailPath);
+void FileEntryTile::clear(Renderer& renderer) {
+  releaseThumbnail();
   m_image->clear(renderer);
   m_image->setVisible(false);
   m_glyph->setVisible(false);
@@ -137,7 +138,6 @@ std::string FileEntryTile::clear(Renderer& renderer) {
   m_disabled = false;
   m_thumbnailEligible = false;
   setVisible(false);
-  return releasedPath;
 }
 
 void FileEntryTile::setVisualState(bool selected, bool hovered, bool disabled) {

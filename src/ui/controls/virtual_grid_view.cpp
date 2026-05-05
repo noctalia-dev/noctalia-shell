@@ -208,14 +208,23 @@ void VirtualGridView::doLayout(Renderer& renderer) {
 
   m_canvas->setVirtualSize(viewportW, virtualHeight);
 
-  // Apply any pending scrollToIndex now that we know cell geometry — this must
-  // happen before ScrollView lays out so its scroll offset is current.
+  // Apply any pending scrollToIndex now that we know cell geometry. Keep the
+  // current viewport stable when the target row is already fully visible; this
+  // makes keyboard navigation scroll only at the viewport edges instead of
+  // pinning each selected row to the top.
   if (m_pendingScrollToIndex) {
     m_pendingScrollToIndex = false;
     if (m_pendingScrollIndex < m_itemCount && columns > 0) {
       const std::size_t row = m_pendingScrollIndex / columns;
-      const float targetTop = static_cast<float>(row) * (cellH + m_rowGap);
-      m_scroll->setScrollOffset(targetTop);
+      const float rowTop = static_cast<float>(row) * (cellH + m_rowGap);
+      const float rowBottom = rowTop + cellH;
+      const float visibleTop = m_scroll->scrollOffset();
+      const float visibleBottom = visibleTop + viewportH;
+      if (rowTop < visibleTop) {
+        m_scroll->setScrollOffset(rowTop);
+      } else if (rowBottom > visibleBottom) {
+        m_scroll->setScrollOffset(rowBottom - viewportH);
+      }
     }
   }
 

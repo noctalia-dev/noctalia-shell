@@ -1,12 +1,14 @@
 #pragma once
 
 #include "core/timer_manager.h"
+#include "render/core/thumbnail_service.h"
 #include "shell/panel/panel.h"
 #include "wayland/clipboard_service.h"
 
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -20,10 +22,13 @@ class Label;
 class Renderer;
 class ScrollView;
 class ConfigService;
+class ClipboardListAdapter;
+class VirtualGridView;
 
 class ClipboardPanel : public Panel {
 public:
-  ClipboardPanel(ClipboardService* clipboard, ConfigService* config);
+  ClipboardPanel(ClipboardService* clipboard, ConfigService* config, ThumbnailService* thumbnails);
+  ~ClipboardPanel() override;
   void setActivateCallback(std::function<void(const ClipboardEntry&)> callback);
 
   void create() override;
@@ -42,9 +47,8 @@ private:
   void doLayout(Renderer& renderer, float width, float height) override;
   void doUpdate(Renderer& renderer) override;
   void schedulePreviewPayloadRefresh(bool debounced);
-  void rebuildList(Renderer& renderer, float width);
+  void updateListState();
   void rebuildPreview(Renderer& renderer, float width, float height);
-  void updateRowSelection(std::size_t previousIndex);
   void selectIndex(std::size_t index);
   void activateSelected();
   bool handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers);
@@ -57,6 +61,7 @@ private:
   ClipboardService* m_clipboard = nullptr;
   std::function<void(const ClipboardEntry&)> m_activateCallback;
   ConfigService* m_config = nullptr;
+  ThumbnailService* m_thumbnails = nullptr;
 
   InputArea* m_focusArea = nullptr;
   Flex* m_rootLayout = nullptr;
@@ -65,9 +70,9 @@ private:
   Label* m_sidebarTitle = nullptr;
   Button* m_clearHistoryButton = nullptr;
   Input* m_filterInput = nullptr;
-  ScrollView* m_listScrollView = nullptr;
-  Flex* m_list = nullptr;
-  std::vector<Flex*> m_rowFlexes;
+  VirtualGridView* m_listGrid = nullptr;
+  Label* m_listEmptyLabel = nullptr;
+  std::unique_ptr<ClipboardListAdapter> m_listAdapter;
   std::vector<std::size_t> m_filteredIndices;
   std::string m_filterQuery;
 
@@ -84,16 +89,15 @@ private:
   std::size_t m_selectedIndex = 0;
   std::size_t m_previewPayloadIndex = static_cast<std::size_t>(-1);
   std::size_t m_pendingPreviewPayloadIndex = static_cast<std::size_t>(-1);
-  std::size_t m_hoverIndex = static_cast<std::size_t>(-1);
   Timer m_previewPayloadDebounceTimer;
   Timer m_filterDebounceTimer;
   std::string m_pendingFilterQuery;
-  bool m_mouseActive = false;
   std::uint64_t m_lastChangeSerial = 0;
   float m_lastWidth = 0.0f;
   float m_lastHeight = 0.0f;
-  float m_lastListWidth = -1.0f;
   float m_lastPreviewWidth = -1.0f;
   float m_lastPreviewHeight = -1.0f;
   bool m_pendingScrollToSelected = false;
+  bool m_thumbnailRefreshPending = false;
+  ThumbnailService::Subscription m_thumbnailPendingSub;
 };

@@ -159,6 +159,7 @@ private:
   GlSharedContext m_glShared;
   SharedTextureCache m_sharedTextureCache;
   RenderContext m_renderContext;
+  ThumbnailService m_thumbnailService;
   Bar m_bar;
   Dock m_dock;
   DesktopWidgetsController m_desktopWidgetsController;
@@ -177,7 +178,6 @@ private:
   ColorPickerDialogPopup m_colorPickerDialogPopup;
   GlyphPickerDialogPopup m_glyphPickerDialogPopup;
   FileDialogPopup m_fileDialogPopup;
-  ThumbnailService m_thumbnailService;
   AsyncTextureCache m_asyncTextureCache;
 
   // Poll sources (must outlive MainLoop)

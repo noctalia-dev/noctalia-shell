@@ -20,6 +20,7 @@
 #include <system_error>
 #include <unistd.h>
 #include <utility>
+#include <vector>
 
 namespace {
 
@@ -141,6 +142,31 @@ namespace {
 
 } // namespace
 
+ThumbnailService::Subscription::Subscription(std::function<void()> disconnect) : m_disconnect(std::move(disconnect)) {}
+
+ThumbnailService::Subscription::~Subscription() { disconnect(); }
+
+ThumbnailService::Subscription::Subscription(Subscription&& other) noexcept
+    : m_disconnect(std::move(other.m_disconnect)) {}
+
+ThumbnailService::Subscription& ThumbnailService::Subscription::operator=(Subscription&& other) noexcept {
+  if (this == &other) {
+    return *this;
+  }
+  disconnect();
+  m_disconnect = std::move(other.m_disconnect);
+  return *this;
+}
+
+void ThumbnailService::Subscription::disconnect() {
+  if (!m_disconnect) {
+    return;
+  }
+  auto disconnect = std::move(m_disconnect);
+  m_disconnect = nullptr;
+  disconnect();
+}
+
 ThumbnailService::ThumbnailService() {
   m_eventFd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
   if (m_eventFd < 0) {
@@ -158,6 +184,12 @@ ThumbnailService::ThumbnailService() {
 }
 
 ThumbnailService::~ThumbnailService() {
+  if (m_lifetimeToken != nullptr) {
+    *m_lifetimeToken = false;
+  }
+  m_pendingListeners.clear();
+  m_readyListeners.clear();
+
   {
     std::lock_guard<std::mutex> lock(m_queueMutex);
     m_shutdown.store(true);
@@ -177,39 +209,98 @@ ThumbnailService::~ThumbnailService() {
   }
 }
 
-void ThumbnailService::setReadyCallback(ReadyCallback callback) { m_readyCallback = std::move(callback); }
-
-TextureHandle ThumbnailService::request(const std::string& path) {
-  auto hit = m_textures.find(path);
-  if (hit != m_textures.end()) {
-    return hit->second;
-  }
-  if (m_failedPaths.contains(path)) {
+ThumbnailService::Subscription ThumbnailService::subscribePendingUpload(PendingUploadCallback callback) {
+  if (!callback) {
     return {};
   }
 
+  const std::uint64_t id = m_nextListenerId++;
+  m_pendingListeners.emplace(id, PendingListener{.callback = std::move(callback)});
+  bool hasPendingResults = false;
   {
-    std::lock_guard<std::mutex> lock(m_queueMutex);
-    m_canceled.erase(path);
-    if (m_inFlight.contains(path)) {
-      return {};
-    }
-    m_inFlight.insert(path);
-    m_jobQueue.push_back(path);
+    std::lock_guard<std::mutex> lock(m_resultMutex);
+    hasPendingResults = !m_results.empty();
   }
-  m_queueCv.notify_one();
+  if (hasPendingResults && m_pendingListeners.contains(id) && m_pendingListeners[id].callback) {
+    m_pendingListeners[id].callback();
+  }
+
+  std::weak_ptr<bool> token = m_lifetimeToken;
+  return Subscription([this, token, id]() {
+    auto alive = token.lock();
+    if (alive == nullptr || !*alive) {
+      return;
+    }
+    m_pendingListeners.erase(id);
+  });
+}
+
+ThumbnailService::Subscription ThumbnailService::subscribeReady(const std::string& path, ReadyCallback callback) {
+  if (path.empty() || !callback) {
+    return {};
+  }
+
+  const TextureHandle current = peek(path);
+  if (current.id != 0) {
+    callback(path, current);
+    return {};
+  }
+
+  const std::uint64_t id = m_nextListenerId++;
+  m_readyListeners.emplace(id, ReadyListener{.path = path, .callback = std::move(callback)});
+
+  std::weak_ptr<bool> token = m_lifetimeToken;
+  return Subscription([this, token, id]() {
+    auto alive = token.lock();
+    if (alive == nullptr || !*alive) {
+      return;
+    }
+    m_readyListeners.erase(id);
+  });
+}
+
+TextureHandle ThumbnailService::acquire(const std::string& path) {
+  if (path.empty()) {
+    return {};
+  }
+
+  CacheEntry& entry = m_entries[path];
+  ++entry.refCount;
+  if (entry.handle.id != 0 || entry.failed) {
+    return entry.handle;
+  }
+
+  enqueueDecodeIfNeeded(path);
   return {};
 }
 
-void ThumbnailService::release(const std::string& path) {
-  auto it = m_textures.find(path);
-  if (it != m_textures.end()) {
-    if (m_textureManager != nullptr) {
-      m_textureManager->unload(it->second);
-    }
-    m_textures.erase(it);
+TextureHandle ThumbnailService::peek(const std::string& path) const {
+  const auto it = m_entries.find(path);
+  if (it == m_entries.end()) {
+    return {};
   }
-  m_failedPaths.erase(path);
+  return it->second.handle;
+}
+
+void ThumbnailService::release(const std::string& path) {
+  const auto it = m_entries.find(path);
+  if (it == m_entries.end()) {
+    return;
+  }
+
+  CacheEntry& entry = it->second;
+  if (entry.refCount > 0) {
+    --entry.refCount;
+  }
+
+  if (entry.refCount > 0) {
+    return;
+  }
+
+  if (entry.handle.id != 0 && m_textureManager != nullptr) {
+    m_textureManager->unload(entry.handle);
+  }
+  m_entries.erase(it);
 
   std::lock_guard<std::mutex> lock(m_queueMutex);
   if (m_inFlight.contains(path)) {
@@ -217,18 +308,18 @@ void ThumbnailService::release(const std::string& path) {
   }
 }
 
-void ThumbnailService::releaseAll() {
-  deleteAllTextures();
-  m_failedPaths.clear();
-
+void ThumbnailService::enqueueDecodeIfNeeded(const std::string& path) {
   std::lock_guard<std::mutex> lock(m_queueMutex);
-  m_jobQueue.clear();
-  for (const auto& p : m_inFlight) {
-    m_canceled.insert(p);
+  m_canceled.erase(path);
+  if (m_inFlight.contains(path)) {
+    return;
   }
+  m_inFlight.insert(path);
+  m_jobQueue.push_back(path);
+  m_queueCv.notify_one();
 }
 
-void ThumbnailService::uploadPending(TextureManager& textures) {
+bool ThumbnailService::uploadPending(TextureManager& textures) {
   m_textureManager = &textures;
 
   std::deque<DecodedJob> jobs;
@@ -238,9 +329,10 @@ void ThumbnailService::uploadPending(TextureManager& textures) {
     m_results.clear();
   }
   if (jobs.empty()) {
-    return;
+    return false;
   }
 
+  bool changed = false;
   for (auto& job : jobs) {
     bool dropped = false;
     {
@@ -254,20 +346,34 @@ void ThumbnailService::uploadPending(TextureManager& textures) {
     if (dropped) {
       continue;
     }
+
+    auto entryIt = m_entries.find(job.path);
+    if (entryIt == m_entries.end() || entryIt->second.refCount == 0) {
+      continue;
+    }
     if (job.failed || job.rgba.empty() || job.width <= 0 || job.height <= 0) {
-      m_failedPaths.insert(job.path);
+      entryIt->second.failed = true;
+      changed = true;
       continue;
     }
 
     TextureHandle handle = textures.loadFromRgba(job.rgba.data(), job.width, job.height);
     if (handle.id == 0) {
       kLog.warn("failed to upload thumbnail texture for {}", job.path);
-      m_failedPaths.insert(job.path);
+      entryIt->second.failed = true;
+      changed = true;
       continue;
     }
 
-    m_textures[job.path] = handle;
+    if (entryIt->second.handle.id != 0 && m_textureManager != nullptr) {
+      m_textureManager->unload(entryIt->second.handle);
+    }
+    entryIt->second.handle = handle;
+    entryIt->second.failed = false;
+    changed = true;
+    notifyReady(job.path, handle);
   }
+  return changed;
 }
 
 void ThumbnailService::doAddPollFds(std::vector<pollfd>& fds) {
@@ -289,9 +395,7 @@ void ThumbnailService::dispatch(const std::vector<pollfd>& fds, std::size_t star
   while (::read(m_eventFd, &ignored, sizeof(ignored)) > 0) {
   }
 
-  if (m_readyCallback) {
-    m_readyCallback();
-  }
+  notifyPendingUpload();
 }
 
 void ThumbnailService::signalMain() {
@@ -314,12 +418,46 @@ void ThumbnailService::pushResult(DecodedJob job) {
 }
 
 void ThumbnailService::deleteAllTextures() {
-  for (auto& entry : m_textures) {
-    if (m_textureManager != nullptr) {
-      m_textureManager->unload(entry.second);
+  for (auto& [path, entry] : m_entries) {
+    (void)path;
+    if (entry.handle.id != 0 && m_textureManager != nullptr) {
+      m_textureManager->unload(entry.handle);
     }
   }
-  m_textures.clear();
+  m_entries.clear();
+}
+
+void ThumbnailService::notifyPendingUpload() {
+  std::vector<PendingUploadCallback> callbacks;
+  callbacks.reserve(m_pendingListeners.size());
+  for (const auto& [id, listener] : m_pendingListeners) {
+    (void)id;
+    if (listener.callback) {
+      callbacks.push_back(listener.callback);
+    }
+  }
+
+  for (auto& callback : callbacks) {
+    callback();
+  }
+}
+
+void ThumbnailService::notifyReady(const std::string& path, TextureHandle handle) {
+  std::vector<std::pair<std::uint64_t, ReadyCallback>> callbacks;
+  for (const auto& [id, listener] : m_readyListeners) {
+    if (listener.path == path && listener.callback) {
+      callbacks.emplace_back(id, listener.callback);
+    }
+  }
+
+  for (const auto& [id, callback] : callbacks) {
+    const auto it = m_readyListeners.find(id);
+    if (it == m_readyListeners.end()) {
+      continue;
+    }
+    m_readyListeners.erase(it);
+    callback(path, handle);
+  }
 }
 
 void ThumbnailService::workerLoop() {
