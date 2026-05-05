@@ -45,6 +45,45 @@ namespace {
     return localX >= 0.0f && localX < node->width() && localY >= 0.0f && localY < node->height();
   }
 
+  std::pair<float, float> surfaceOriginForOutputLocal(const BarInstance& instance, const WaylandOutput& outputInfo) {
+    if (instance.surface == nullptr) {
+      return {0.0f, 0.0f};
+    }
+    const auto* surface = instance.surface.get();
+    const std::uint32_t anchor = surface->anchor();
+    const bool aTop = (anchor & LayerShellAnchor::Top) != 0;
+    const bool aBottom = (anchor & LayerShellAnchor::Bottom) != 0;
+    const bool aLeft = (anchor & LayerShellAnchor::Left) != 0;
+    const bool aRight = (anchor & LayerShellAnchor::Right) != 0;
+    const float mTop = static_cast<float>(surface->marginTop());
+    const float mRight = static_cast<float>(surface->marginRight());
+    const float mBottom = static_cast<float>(surface->marginBottom());
+    const float mLeft = static_cast<float>(surface->marginLeft());
+    const float surfW = static_cast<float>(surface->width());
+    const float surfH = static_cast<float>(surface->height());
+    const float outputW = static_cast<float>(outputInfo.logicalWidth);
+    const float outputH = static_cast<float>(outputInfo.logicalHeight);
+
+    float x = 0.0f;
+    float y = 0.0f;
+    if (aLeft && aRight) {
+      x = mLeft;
+    } else if (aRight) {
+      x = std::max(0.0f, outputW - mRight - surfW);
+    } else {
+      x = mLeft;
+    }
+
+    if (aTop && aBottom) {
+      y = mTop;
+    } else if (aBottom) {
+      y = std::max(0.0f, outputH - mBottom - surfH);
+    } else {
+      y = mTop;
+    }
+    return {x, y};
+  }
+
   std::uint32_t positionToAnchor(const std::string& position) {
     if (position == "bottom") {
       return LayerShellAnchor::Bottom | LayerShellAnchor::Left | LayerShellAnchor::Right;
@@ -906,10 +945,31 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
           surface->requestRedraw();
         }
       });
-      widget->setPanelToggleCallback([inst = &instance](std::string_view panelId, std::string_view context) {
-        PanelManager::instance().togglePanel(
-            std::string(panelId),
-            PanelOpenRequest{.output = inst->output, .context = context, .sourceBarName = inst->barConfig.name});
+      widget->setPanelToggleCallback([this, inst = &instance](std::string_view panelId, std::string_view context,
+                                                              std::optional<float> anchorSurfaceX,
+                                                              std::optional<float> anchorSurfaceY) {
+        float anchorX = inst->lastPointerSx;
+        float anchorY = inst->lastPointerSy;
+        if (anchorSurfaceX.has_value()) {
+          anchorX = *anchorSurfaceX;
+        }
+        if (anchorSurfaceY.has_value()) {
+          anchorY = *anchorSurfaceY;
+        }
+        if (m_wayland != nullptr && inst->output != nullptr) {
+          if (const auto* out = m_wayland->findOutputByWl(inst->output);
+              out != nullptr && out->logicalWidth > 0 && out->logicalHeight > 0) {
+            const auto [surfaceX, surfaceY] = surfaceOriginForOutputLocal(*inst, *out);
+            anchorX += surfaceX;
+            anchorY += surfaceY;
+          }
+        }
+        PanelManager::instance().togglePanel(std::string(panelId),
+                                             PanelOpenRequest{.output = inst->output,
+                                                              .anchorX = anchorX,
+                                                              .anchorY = anchorY,
+                                                              .context = context,
+                                                              .sourceBarName = inst->barConfig.name});
       });
       widget->create();
       if (widget->root() == nullptr) {
@@ -1513,6 +1573,8 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
       break;
     }
     m_hoveredInstance = it->second;
+    m_hoveredInstance->lastPointerSx = static_cast<float>(event.sx);
+    m_hoveredInstance->lastPointerSy = static_cast<float>(event.sy);
     m_hoveredInstance->pointerInside = true;
     m_hoveredInstance->inputDispatcher.pointerEnter(static_cast<float>(event.sx), static_cast<float>(event.sy),
                                                     event.serial);
@@ -1549,12 +1611,16 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
   case PointerEvent::Type::Motion: {
     if (m_hoveredInstance == nullptr)
       break;
+    m_hoveredInstance->lastPointerSx = static_cast<float>(event.sx);
+    m_hoveredInstance->lastPointerSy = static_cast<float>(event.sy);
     m_hoveredInstance->inputDispatcher.pointerMotion(static_cast<float>(event.sx), static_cast<float>(event.sy), 0);
     break;
   }
   case PointerEvent::Type::Button: {
     if (m_hoveredInstance == nullptr)
       break;
+    m_hoveredInstance->lastPointerSx = static_cast<float>(event.sx);
+    m_hoveredInstance->lastPointerSy = static_cast<float>(event.sy);
     bool pressed = (event.state == 1); // WL_POINTER_BUTTON_STATE_PRESSED
     consumed = m_hoveredInstance->inputDispatcher.pointerButton(static_cast<float>(event.sx),
                                                                 static_cast<float>(event.sy), event.button, pressed);
@@ -1582,6 +1648,8 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
   case PointerEvent::Type::Axis: {
     if (m_hoveredInstance == nullptr)
       break;
+    m_hoveredInstance->lastPointerSx = static_cast<float>(event.sx);
+    m_hoveredInstance->lastPointerSy = static_cast<float>(event.sy);
     m_hoveredInstance->inputDispatcher.pointerAxis(static_cast<float>(event.sx), static_cast<float>(event.sy),
                                                    event.axis, event.axisSource, event.axisValue, event.axisDiscrete,
                                                    event.axisValue120, event.axisLines);

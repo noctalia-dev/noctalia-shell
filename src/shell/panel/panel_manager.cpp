@@ -297,18 +297,27 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     const std::int32_t barBottom =
         barIsVertical ? std::max(barTop, outputHeight - mEnds) : barTop + barConfig.thickness;
 
-    // Panel body rect in screen coords. Centered on the bar's main axis; 1 px bar overlap
-    // so the concave-corner notches read as merged with the bar edge.
+    // Panel body rect in screen coords. For attached panels, place along the bar
+    // main axis using request anchor when provided, else center fallback.
+    // Keep 1 px bar overlap so concave corners read as merged with the bar edge.
     std::int32_t visualX = 0;
     std::int32_t visualY = 0;
+    const bool hasAnchor = (request.anchorX != 0.0f || request.anchorY != 0.0f);
+    const bool useAnchorForAttached = hasAnchor && m_activePanelId == "tray-drawer";
     if (barIsVertical) {
       const auto centeredY = barTop + (barBottom - barTop - static_cast<std::int32_t>(panelHeight)) / 2;
-      visualY = centeredY;
+      const auto desiredY =
+          static_cast<std::int32_t>(std::lround(request.anchorY - static_cast<float>(panelHeight) * 0.5f));
+      const auto maxY = std::max(barTop, barBottom - static_cast<std::int32_t>(panelHeight));
+      visualY = useAnchorForAttached ? std::clamp(desiredY, barTop, maxY) : centeredY;
       visualX = barIsLeft ? barRight - kAttachedPanelBarOverlap
                           : barLeft - static_cast<std::int32_t>(panelWidth) + kAttachedPanelBarOverlap;
     } else {
       const auto centeredX = barLeft + (barRight - barLeft - static_cast<std::int32_t>(panelWidth)) / 2;
-      visualX = centeredX;
+      const auto desiredX =
+          static_cast<std::int32_t>(std::lround(request.anchorX - static_cast<float>(panelWidth) * 0.5f));
+      const auto maxX = std::max(barLeft, barRight - static_cast<std::int32_t>(panelWidth));
+      visualX = useAnchorForAttached ? std::clamp(desiredX, barLeft, maxX) : centeredX;
       visualY = barIsBottom ? barTop - static_cast<std::int32_t>(panelHeight) + kAttachedPanelBarOverlap
                             : barBottom - kAttachedPanelBarOverlap;
     }

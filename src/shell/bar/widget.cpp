@@ -75,8 +75,9 @@ void Widget::requestRedraw() {
   }
 }
 
-void Widget::requestPanelToggle(std::string_view panelId, std::string_view context) {
+void Widget::requestPanelToggle(std::string_view panelId, std::string_view context, std::optional<float> anchorSurfaceX,
+                                std::optional<float> anchorSurfaceY) {
   if (m_panelToggleCallback) {
-    m_panelToggleCallback(panelId, context);
+    m_panelToggleCallback(panelId, context, anchorSurfaceX, anchorSurfaceY);
   }
 }

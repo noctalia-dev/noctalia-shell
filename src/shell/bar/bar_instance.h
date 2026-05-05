@@ -34,6 +34,8 @@ struct BarInstance {
   InputDispatcher inputDispatcher;
   float hideOpacity = 1.0f;
   bool pointerInside = false;
+  float lastPointerSx = 0.0f;
+  float lastPointerSy = 0.0f;
   std::size_t attachedPopupCount = 0;
 
   // Bar background, shadow, and layout sections (start/center/end along main axis)

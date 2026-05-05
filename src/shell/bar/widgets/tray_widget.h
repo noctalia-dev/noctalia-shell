@@ -6,6 +6,7 @@
 #include "system/icon_resolver.h"
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -16,7 +17,9 @@ class TrayService;
 
 class TrayWidget : public Widget {
 public:
-  TrayWidget(TrayService* tray, std::vector<std::string> hiddenItems = {});
+  TrayWidget(TrayService* tray, std::vector<std::string> hiddenItems = {}, bool drawerMode = false,
+             std::function<void()> itemActivated = {}, std::string barPosition = "top", bool panelGridMode = false,
+             std::size_t panelGridColumns = 3);
 
   void create() override;
 
@@ -44,4 +47,9 @@ private:
   float m_contentHeight = 0.0f;
   bool m_isVertical = false;
   bool m_rebuildPending = true;
+  bool m_drawerMode = false;
+  std::function<void()> m_itemActivated;
+  std::string m_barPosition;
+  bool m_panelGridMode = false;
+  std::size_t m_panelGridColumns = 3;
 };

@@ -951,6 +951,14 @@
           "label": "Hidden Items",
           "description": "Tray item ids to hide"
         },
+        "drawer": {
+          "label": "Use Drawer Panel",
+          "description": "Show a tray button in the bar and open items in a panel"
+        },
+        "drawer_columns": {
+          "label": "Drawer Columns",
+          "description": "Number of tray icons per row in the drawer panel"
+        },
         "hide_when_off": {
           "label": "Hide When Off",
           "description": "Hide the lock key indicator when inactive"

@@ -25,6 +25,7 @@
 #include "shell/session/session_panel.h"
 #include "shell/setup_wizard/setup_wizard_panel.h"
 #include "shell/test/test_panel.h"
+#include "shell/tray/tray_drawer_panel.h"
 #include "shell/wallpaper/panel/wallpaper_panel.h"
 #include "system/distro_info.h"
 #include "time/time_format.h"
@@ -35,8 +36,10 @@
 #include "ui/style.h"
 #include "util/file_utils.h"
 
+#include <algorithm>
 #include <chrono>
 #include <csignal>
+#include <cstdint>
 #include <filesystem>
 #include <malloc.h>
 #include <optional>
@@ -859,6 +862,15 @@ void Application::initUi() {
   }
   m_panelManager.registerPanel("wallpaper",
                                std::make_unique<WallpaperPanel>(&m_wayland, &m_configService, &m_thumbnailService));
+  std::vector<std::string> trayDrawerHidden;
+  std::size_t trayDrawerColumns = 3;
+  if (const auto it = m_configService.config().widgets.find("tray"); it != m_configService.config().widgets.end()) {
+    trayDrawerHidden = it->second.getStringList("hidden");
+    trayDrawerColumns =
+        static_cast<std::size_t>(std::clamp<std::int64_t>(it->second.getInt("drawer_columns", 3), 1, 5));
+  }
+  m_panelManager.registerPanel(
+      "tray-drawer", std::make_unique<TrayDrawerPanel>(m_trayService.get(), trayDrawerHidden, trayDrawerColumns));
   m_panelManager.registerPanel(
       "polkit", std::make_unique<PolkitPanel>(&m_configService, [this]() { return m_polkitAgent.get(); }));
   m_panelManager.registerPanel("setup-wizard", std::make_unique<SetupWizardPanel>(&m_configService, &m_wayland));

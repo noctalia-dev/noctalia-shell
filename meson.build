@@ -475,6 +475,7 @@ _noctalia_sources = files(
   'src/shell/settings/widget_settings_registry.cpp',
   'src/shell/settings/settings_window.cpp',
   'src/shell/test/test_panel.cpp',
+  'src/shell/tray/tray_drawer_panel.cpp',
   'src/shell/tray/tray_menu.cpp',
   'src/shell/backdrop/backdrop.cpp',
   'src/shell/backdrop/backdrop_surface.cpp',
