@@ -93,6 +93,14 @@ ColumnLayout {
     defaultValue: Settings.getDefaultValue("general.lockScreenAnimations")
   }
 
+  NToggle {
+    label: I18n.tr("panels.lock-screen.lock-screen-copy-bg-label")
+    description: I18n.tr("panels.lock-screen.lock-screen-copy-bg-description")
+    checked: Settings.data.general.lockScreenCopyBg
+    onToggled: checked => Settings.data.general.lockScreenCopyBg = checked
+    defaultValue: Settings.getDefaultValue("general.lockScreenCopyBg")
+  }
+
   NValueSlider {
     Layout.fillWidth: true
     label: I18n.tr("panels.lock-screen.lock-screen-blur-strength-label")

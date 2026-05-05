@@ -1719,6 +1719,15 @@
     "subTabLabel": "common.appearance"
   },
   {
+    "labelKey": "panels.lock-screen.lock-screen-copy-bg-label",
+    "descriptionKey": "panels.lock-screen.lock-screen-copy-bg-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
     "labelKey": "panels.lock-screen.lock-screen-blur-strength-label",
     "descriptionKey": "panels.lock-screen.lock-screen-blur-strength-description",
     "widget": "NValueSlider",

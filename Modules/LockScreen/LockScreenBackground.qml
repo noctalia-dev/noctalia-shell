@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Effects
 import Quickshell
+import Quickshell.Wayland
 import qs.Commons
 import qs.Services.Compositor
 import qs.Services.Power
@@ -10,11 +11,22 @@ Item {
   id: root
   anchors.fill: parent
 
+  // Screen of the lock surface
+  required property ShellScreen screen
+
+  // ItemGrabResult of the screen copy for this surface
+  required property var screenGrab
+
   // Cached wallpaper path - exposed for parent components
   property string resolvedWallpaperPath: ""
-  property color tintColor: Settings.data.colorSchemes.darkMode ? Color.mSurface : Color.mOnSurface
 
-  required property var screen
+  // Enter / exit transtion value
+  property real transitionProgress: 1.0
+
+  readonly property color tintColor: Settings.data.colorSchemes.darkMode ? Color.mSurface : Color.mOnSurface
+  readonly property bool useEffects: !PowerProfileService.noctaliaPerformanceMode || !Settings.data.noctaliaPerformance.disableWallpaper
+  readonly property bool useScreencopy: Settings.data.general.lockScreenCopyBg
+  readonly property bool useWallpaper: Settings.data.wallpaper.enabled && resolvedWallpaperPath !== ""
 
   // Request preprocessed wallpaper when lock screen becomes active or dimensions change
   Component.onCompleted: {
@@ -103,15 +115,29 @@ Item {
     });
   }
 
-  // Background - solid color or black fallback
-  Rectangle {
+  // A copy of the screen to use as background
+  // Also used as fade in / fade out backdrop
+  Image {
+    id: lockBgScreencopy
     anchors.fill: parent
-    color: Settings.data.wallpaper.useSolidColor ? Settings.data.wallpaper.solidColor : "#000000"
+    source: screenGrab ? screenGrab.url : ""
+
+    cache: false
+    fillMode: Image.PreserveAspectCrop
+    visible: screenGrab && lockBgRender.visible && lockBgRender.opacity < 1.0
   }
 
+  // If using a solid color wallpaper
+  Rectangle {
+    anchors.fill: parent
+    opacity: (Settings.data.wallpaper.useSolidColor && useEffects) ? transitionProgress : 0.0
+    color: Settings.data.wallpaper.solidColor
+  }
+
+  // If using an image wallpaper
   Image {
     id: lockBgImage
-    visible: source !== "" && Settings.data.wallpaper.enabled && !Settings.data.wallpaper.useSolidColor && (!PowerProfileService.noctaliaPerformanceMode || !Settings.data.noctaliaPerformance.disableWallpaper)
+    visible: false // rendered with effects below
     anchors.fill: parent
     fillMode: Image.PreserveAspectCrop
     source: resolvedWallpaperPath
@@ -119,19 +145,23 @@ Item {
     smooth: true
     mipmap: false
     antialiasing: true
+  }
 
-    layer.enabled: Settings.data.general.lockScreenBlur > 0 && !PowerProfileService.noctaliaPerformanceMode
-    layer.smooth: false
-    layer.effect: MultiEffect {
-      blurEnabled: true
-      blur: Settings.data.general.lockScreenBlur
-      blurMax: 48
-    }
+  // Applies the image wallpaper or screen copy with effects
+  MultiEffect {
+    id: lockBgRender
+    anchors.fill: parent
+    opacity: transitionProgress
+    visible: useEffects && ((screenGrab && useScreencopy) || useWallpaper)
+    source: useScreencopy ? lockBgScreencopy : lockBgImage
 
-    // Tint overlay
+    blurEnabled: Settings.data.general.lockScreenBlur > 0
+    blur: Settings.data.general.lockScreenBlur * transitionProgress
+    blurMax: 64
+
     Rectangle {
       anchors.fill: parent
-      color: root.tintColor
+      color: tintColor
       opacity: Settings.data.general.lockScreenTint
     }
   }
