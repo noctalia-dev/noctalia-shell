@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <stdexcept>
 #include <string>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -62,6 +63,12 @@ namespace {
 
     if (::setsid() < 0) {
       std::perror("setsid");
+      _exit(1);
+    }
+
+    ::umask(0);
+    if (::chdir("/") != 0) {
+      std::perror("chdir");
       _exit(1);
     }
 
