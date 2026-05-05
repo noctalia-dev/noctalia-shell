@@ -1464,11 +1464,11 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
   auto viewport = std::make_unique<InputArea>();
   viewport->setSize(kCardWidth, cardHeight);
   viewport->setClipChildren(true);
-  // Unified close mechanism: clicking anywhere on the card dismisses it. The (X) glyph
+  // Unified close mechanism: right-clicking anywhere on the card dismisses it. The (X) glyph
   // is purely visual — it brightens while the card is hovered via the card's own
   // onEnter/onLeave handlers installed in addCardToInstance().
   viewport->setOnClick([this, id = entry.notificationId](const InputArea::PointerData& data) {
-    if (data.button == BTN_LEFT) {
+    if (data.button == BTN_RIGHT) {
       removePopup(id);
     }
   });
