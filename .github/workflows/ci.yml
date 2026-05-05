@@ -44,7 +44,7 @@ jobs:
             libxkbcommon \
             sdbus-cpp libpipewire \
             pam curl libwebp \
-            librsvg
+            librsvg polkit
 
       - uses: actions/checkout@v4
 
