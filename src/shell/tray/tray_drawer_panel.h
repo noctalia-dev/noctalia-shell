@@ -7,12 +7,13 @@
 #include <string>
 #include <vector>
 
+class ConfigService;
 class Renderer;
 class TrayWidget;
 
 class TrayDrawerPanel : public Panel {
 public:
-  TrayDrawerPanel(TrayService* tray, std::vector<std::string> hiddenItems = {}, std::size_t drawerColumns = 3);
+  TrayDrawerPanel(TrayService* tray, ConfigService* config, std::size_t drawerColumns = 3);
   ~TrayDrawerPanel() override;
 
   void create() override;
@@ -28,10 +29,12 @@ public:
 private:
   void doLayout(Renderer& renderer, float width, float height) override;
   void doUpdate(Renderer& renderer) override;
+  [[nodiscard]] std::vector<std::string> currentHiddenItems() const;
+  [[nodiscard]] std::vector<std::string> currentPinnedItems() const;
   [[nodiscard]] std::size_t visibleItemCount() const;
 
   TrayService* m_tray = nullptr;
-  std::vector<std::string> m_hiddenItems;
+  ConfigService* m_config = nullptr;
   std::size_t m_drawerColumns = 3;
   std::unique_ptr<TrayWidget> m_drawerWidget;
 };

@@ -343,11 +343,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "tray") {
     const auto hiddenItems = wc != nullptr ? wc->getStringList("hidden") : std::vector<std::string>{};
+    const auto pinnedItems = wc != nullptr ? wc->getStringList("pinned") : std::vector<std::string>{};
     const bool drawer = wc != nullptr ? wc->getBool("drawer", false) : false;
     const std::size_t drawerColumns =
         static_cast<std::size_t>(std::clamp<std::int64_t>(wc != nullptr ? wc->getInt("drawer_columns", 3) : 3, 1, 5));
-    auto widget = std::make_unique<TrayWidget>(m_tray, hiddenItems, drawer, std::function<void()>{}, barPosition, false,
-                                               drawerColumns);
+    auto widget = std::make_unique<TrayWidget>(m_tray, hiddenItems, pinnedItems, drawer, std::function<void()>{},
+                                               barPosition, false, drawerColumns);
     widget->setContentScale(contentScale);
     return widget;
   }

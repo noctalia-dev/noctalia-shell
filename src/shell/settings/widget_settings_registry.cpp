@@ -478,6 +478,7 @@ namespace settings {
       add(boolSpec("group_by_workspace", false));
     } else if (type == "tray") {
       add(stringListSpec("hidden"));
+      add(stringListSpec("pinned"));
       add(boolSpec("drawer", false));
       add(intSpec("drawer_columns", 3, 1.0, 5.0, 1.0));
     } else if (type == "volume") {

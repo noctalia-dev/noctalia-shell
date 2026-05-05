@@ -7,6 +7,7 @@
 #include "dbus/tray/tray_service.h"
 #include "i18n/i18n.h"
 #include "render/render_context.h"
+#include "shell/panel/panel_manager.h"
 #include "ui/controls/context_menu.h"
 #include "ui/style.h"
 #include "wayland/layer_surface.h"
@@ -15,6 +16,7 @@
 #include "xdg-shell-client-protocol.h"
 
 #include <algorithm>
+#include <cctype>
 #include <optional>
 #include <string>
 
@@ -23,6 +25,7 @@ namespace {
   constexpr Logger kLog("tray");
 
   constexpr float kMenuWidth = 246.0f;
+  constexpr std::int32_t kPinToggleEntryId = -2147000000;
 
   constexpr float kSurfaceWidth = kMenuWidth;
 
@@ -34,7 +37,149 @@ namespace {
     return std::find(widgets.begin(), widgets.end(), "tray") != widgets.end();
   }
 
+  void closeTrayDrawerPanelIfOpen() {
+    auto& panelManager = PanelManager::instance();
+    if (panelManager.isOpen() && panelManager.activePanelId() == "tray-drawer") {
+      panelManager.close();
+    }
+  }
+
+  bool trayDrawerEnabled(ConfigService* config) {
+    if (config == nullptr) {
+      return false;
+    }
+    const auto it = config->config().widgets.find("tray");
+    if (it == config->config().widgets.end()) {
+      return false;
+    }
+    return it->second.getBool("drawer", false);
+  }
+
   std::size_t visibleEntryLimit(std::size_t entryCount) { return std::max<std::size_t>(1, entryCount); }
+
+  std::string toLower(std::string_view value) {
+    std::string out(value);
+    std::transform(out.begin(), out.end(), out.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return out;
+  }
+
+  std::vector<std::string> identifierVariants(std::string_view value) {
+    std::vector<std::string> out;
+    if (value.empty()) {
+      return out;
+    }
+    auto pushUnique = [&out](std::string candidate) {
+      if (candidate.empty()) {
+        return;
+      }
+      if (std::ranges::find(out, candidate) == out.end()) {
+        out.push_back(std::move(candidate));
+      }
+    };
+
+    std::string base(value);
+    pushUnique(base);
+    pushUnique(toLower(base));
+
+    if (const auto slash = base.find_last_of('/'); slash != std::string::npos && slash + 1 < base.size()) {
+      base = base.substr(slash + 1);
+      pushUnique(base);
+      pushUnique(toLower(base));
+    }
+
+    std::string dashed = base;
+    std::replace(dashed.begin(), dashed.end(), '_', '-');
+    pushUnique(dashed);
+    pushUnique(toLower(dashed));
+
+    std::string underscored = base;
+    std::replace(underscored.begin(), underscored.end(), '-', '_');
+    pushUnique(underscored);
+    pushUnique(toLower(underscored));
+
+    return out;
+  }
+
+  bool tokenMatchesItem(std::string_view token, const TrayItemInfo& item) {
+    if (token.empty()) {
+      return false;
+    }
+    const auto normalizedToken = toLower(token);
+    auto fieldMatches = [&](std::string_view tokenValue, std::string_view value) {
+      for (const auto& variant : identifierVariants(value)) {
+        if (variant == tokenValue) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    // Typed token matching (preferred for new pins).
+    if (normalizedToken.rfind("item:", 0) == 0) {
+      const auto value = normalizedToken.substr(5);
+      return fieldMatches(value, item.itemName) || fieldMatches(value, item.id) || fieldMatches(value, item.objectPath);
+    }
+    if (normalizedToken.rfind("icon:", 0) == 0) {
+      const auto value = normalizedToken.substr(5);
+      const auto iconVariants = identifierVariants(item.iconName);
+      const auto attentionVariants = identifierVariants(item.attentionIconName);
+      return std::ranges::find(iconVariants, value) != iconVariants.end() ||
+             std::ranges::find(attentionVariants, value) != attentionVariants.end();
+    }
+    if (normalizedToken.rfind("title:", 0) == 0) {
+      const auto value = normalizedToken.substr(6);
+      const auto titleVariants = identifierVariants(item.title);
+      return std::ranges::find(titleVariants, value) != titleVariants.end();
+    }
+    if (normalizedToken.rfind("bus:", 0) == 0) {
+      const auto value = normalizedToken.substr(4);
+      const auto busVariants = identifierVariants(item.busName);
+      return std::ranges::find(busVariants, value) != busVariants.end();
+    }
+
+    // Backward-compatible matching for existing untyped pins.
+    std::vector<std::string> candidates;
+    auto appendVariants = [&candidates](std::string_view text) {
+      for (const auto& variant : identifierVariants(text)) {
+        if (std::ranges::find(candidates, variant) == candidates.end()) {
+          candidates.push_back(variant);
+        }
+      }
+    };
+    appendVariants(item.id);
+    appendVariants(item.busName);
+    appendVariants(item.itemName);
+    appendVariants(item.title);
+    appendVariants(item.objectPath);
+    appendVariants(item.iconName);
+    appendVariants(item.overlayIconName);
+    appendVariants(item.attentionIconName);
+    return std::ranges::find(candidates, normalizedToken) != candidates.end();
+  }
+
+  bool isUniqueBusName(std::string_view value) { return !value.empty() && value.front() == ':'; }
+
+  bool looksGenericStatusItemName(std::string_view value) {
+    if (value.empty()) {
+      return true;
+    }
+    const auto lower = toLower(value);
+    return lower.find("status_icon") != std::string::npos || lower.find("statusnotifieritem") != std::string::npos ||
+           lower.find("statusnotifier") != std::string::npos || lower.find("status-notifier") != std::string::npos ||
+           lower.find("status notifier") != std::string::npos;
+  }
+
+  std::string lastPathSegment(std::string_view value) {
+    if (value.empty()) {
+      return {};
+    }
+    const auto slash = value.find_last_of('/');
+    if (slash == std::string::npos || slash + 1 >= value.size()) {
+      return std::string(value);
+    }
+    return std::string(value.substr(slash + 1));
+  }
 
   std::optional<BarConfig> resolveTrayBarConfig(ConfigService* config, WaylandConnection* wayland, wl_output* output) {
     if (config == nullptr) {
@@ -365,6 +510,17 @@ void TrayMenu::refreshEntries() {
     return;
   }
   m_entries = m_tray->menuEntries(m_activeItemId);
+  if (!m_entries.empty() && trayDrawerEnabled(m_config)) {
+    const bool pinned = activeItemPinned();
+    m_entries.push_back(TrayMenuEntry{
+        .id = kPinToggleEntryId,
+        .label = i18n::tr(pinned ? "tray.menu.unpin" : "tray.menu.pin"),
+        .enabled = true,
+        .visible = true,
+        .separator = false,
+        .hasSubmenu = false,
+    });
+  }
   if (m_entries.empty()) {
     m_entries.push_back(TrayMenuEntry{
         .id = -1,
@@ -627,6 +783,14 @@ void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
     }
   });
   menu->setOnActivate([this](const ContextMenuControlEntry& entry) {
+    if (entry.id == kPinToggleEntryId) {
+      DeferredCall::callLater([this]() {
+        (void)toggleActiveItemPinned();
+        close();
+        closeTrayDrawerPanelIfOpen();
+      });
+      return;
+    }
     if (m_tray == nullptr || m_activeItemId.empty()) {
       return;
     }
@@ -635,6 +799,7 @@ void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
         (void)m_tray->activateMenuEntry(m_activeItemId, entry.id);
       }
       close();
+      closeTrayDrawerPanelIfOpen();
     });
   });
   menu->setOnSubmenuOpen(
@@ -648,6 +813,86 @@ void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
   inst.inputDispatcher.setCursorShapeCallback(
       [this](uint32_t serial, uint32_t shape) { m_wayland->setCursorShape(serial, shape); });
   inst.surface->setSceneRoot(inst.sceneRoot.get());
+}
+
+std::optional<TrayItemInfo> TrayMenu::activeTrayItem() const {
+  if (m_tray == nullptr || m_activeItemId.empty()) {
+    return std::nullopt;
+  }
+  const auto allItems = m_tray->items();
+  const auto it =
+      std::ranges::find_if(allItems, [this](const TrayItemInfo& item) { return item.id == m_activeItemId; });
+  if (it == allItems.end()) {
+    return std::nullopt;
+  }
+  return *it;
+}
+
+bool TrayMenu::activeItemPinned() const {
+  if (m_config == nullptr) {
+    return false;
+  }
+  const auto item = activeTrayItem();
+  if (!item.has_value()) {
+    return false;
+  }
+  const auto cfgIt = m_config->config().widgets.find("tray");
+  const auto pinned =
+      cfgIt != m_config->config().widgets.end() ? cfgIt->second.getStringList("pinned") : std::vector<std::string>{};
+  for (const auto& token : pinned) {
+    if (tokenMatchesItem(token, *item)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool TrayMenu::toggleActiveItemPinned() {
+  if (m_config == nullptr) {
+    return false;
+  }
+  const auto item = activeTrayItem();
+  if (!item.has_value()) {
+    return false;
+  }
+
+  auto cfgIt = m_config->config().widgets.find("tray");
+  std::vector<std::string> pinned =
+      cfgIt != m_config->config().widgets.end() ? cfgIt->second.getStringList("pinned") : std::vector<std::string>{};
+  const bool currentlyPinned =
+      std::ranges::any_of(pinned, [&](const std::string& token) { return tokenMatchesItem(token, *item); });
+
+  if (currentlyPinned) {
+    std::erase_if(pinned, [&](const std::string& token) { return tokenMatchesItem(token, *item); });
+  } else {
+    std::string token;
+    // Persist typed stable tokens; avoid transient :1.xxx ids.
+    if (!looksGenericStatusItemName(item->itemName)) {
+      token = "item:" + item->itemName;
+    } else if (!item->iconName.empty()) {
+      token = "icon:" + item->iconName;
+    } else if (!item->overlayIconName.empty()) {
+      token = "icon:" + item->overlayIconName;
+    } else if (!item->attentionIconName.empty()) {
+      token = "icon:" + item->attentionIconName;
+    } else if (!looksGenericStatusItemName(item->title)) {
+      token = "title:" + item->title;
+    } else if (const auto objectToken = lastPathSegment(item->objectPath);
+               !objectToken.empty() && !looksGenericStatusItemName(objectToken) && !isUniqueBusName(objectToken)) {
+      token = "item:" + objectToken;
+    } else if (const auto idToken = lastPathSegment(item->id);
+               !idToken.empty() && !looksGenericStatusItemName(idToken) && !isUniqueBusName(idToken)) {
+      token = "item:" + idToken;
+    } else if (!isUniqueBusName(item->busName)) {
+      token = "bus:" + item->busName;
+    }
+    if (token.empty()) {
+      token = "item:" + item->id;
+    }
+    pinned.push_back(token);
+  }
+
+  return m_config->setOverride({"widget", "tray", "pinned"}, pinned);
 }
 
 void TrayMenu::closeSubmenu() {
@@ -805,6 +1050,7 @@ void TrayMenu::buildSubmenuScene(MenuInstance& inst, uint32_t width, uint32_t he
         (void)m_tray->activateMenuEntry(m_activeItemId, entry.id);
       }
       close();
+      closeTrayDrawerPanelIfOpen();
     });
   });
   menu->setPosition(0.0f, 0.0f);

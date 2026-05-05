@@ -503,7 +503,9 @@
   },
   "tray": {
     "menu": {
-      "empty": "No menu items..."
+      "empty": "No menu items...",
+      "pin": "Pin",
+      "unpin": "Unpin"
     }
   },
   "notifications": {
@@ -950,6 +952,10 @@
         "hidden": {
           "label": "Hidden Items",
           "description": "Tray item ids to hide"
+        },
+        "pinned": {
+          "label": "Pinned Items",
+          "description": "Tray item ids that stay visible in the bar when drawer mode is enabled"
         },
         "drawer": {
           "label": "Use Drawer Panel",
