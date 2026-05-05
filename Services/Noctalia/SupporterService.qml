@@ -72,6 +72,10 @@ Singleton {
   }
 
   function fetchFromApi() {
+    if (!Settings.data.general.autoNetworkEnabled) {
+      return;
+    }
+
     if (isFetching) {
       Logger.d("Supporter", "Already fetching");
       return;

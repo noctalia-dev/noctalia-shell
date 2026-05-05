@@ -348,6 +348,11 @@ Singleton {
       }
       property bool reverseScroll: false
       property bool smoothScrollEnabled: true
+      // Controls whether automatic (non-user-initiated) network fetches are enabled.
+      // Distro packagers: set default to false to comply with policies requiring
+      // explicit user consent for network access. Users can re-enable in settings.
+      // Build-time: sed -i 's/"autoNetworkEnabled": true/"autoNetworkEnabled": false/' Assets/settings-default.json
+      property bool autoNetworkEnabled: true
     }
 
     // ui

@@ -96,6 +96,10 @@ Singleton {
 
   // --------------------------------
   function fetchFromGitHub() {
+    if (!Settings.data.general.autoNetworkEnabled) {
+      return;
+    }
+
     if (isFetchingData) {
       Logger.d("GitHub", "GitHub data is still fetching");
       return;

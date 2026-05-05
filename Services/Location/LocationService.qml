@@ -194,7 +194,7 @@ Singleton {
     }
   }
 
-  // Query geocoding API to convert location name to coordinates
+  // (runs only when user has explicitly configured a location in Settings)
   function geocodeLocation(locationName, callback, errorCallback) {
     if (locationName === "") {
       isFetchingWeather = false;
@@ -226,7 +226,7 @@ Singleton {
     xhr.send();
   }
 
-  // Fetch weather data from Open-Meteo API
+  // (runs only when user has explicitly enabled weather in Settings)
   function fetchWeatherData(latitude, longitude, errorCallback) {
     Logger.d("Location", "Fetching weather from api.open-meteo.com");
     var url = "https://api.open-meteo.com/v1/forecast?latitude=" + latitude + "&longitude=" + longitude + "&current_weather=true&current=relativehumidity_2m,surface_pressure,is_day&daily=temperature_2m_max,temperature_2m_min,weathercode,sunset,sunrise&timezone=auto";
@@ -263,6 +263,11 @@ Singleton {
 
   // Geolocate via IP address using the Noctalia API
   function geolocate(callback, errorCallback) {
+    if (!Settings.data.general.autoNetworkEnabled) {
+      if (errorCallback) errorCallback("Location", "IP geolocation disabled (autoNetworkEnabled=false)");
+      return;
+    }
+
     Logger.d("Location", "Geolocating via IP");
     var url = "https://api.noctalia.dev/geolocate";
     var xhr = new XMLHttpRequest();

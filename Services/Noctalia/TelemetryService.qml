@@ -19,6 +19,10 @@ Singleton {
   readonly property string telemetryEndpoint: Quickshell.env("NOCTALIA_TELEMETRY_ENDPOINT") || "https://api.noctalia.dev/ping"
 
   function init() {
+    if (!Settings.data.general.autoNetworkEnabled) {
+      return;
+    }
+
     if (initialized)
       return;
 

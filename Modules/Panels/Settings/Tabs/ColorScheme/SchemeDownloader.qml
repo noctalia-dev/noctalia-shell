@@ -173,6 +173,10 @@ Popup {
   }
 
   function fetchAvailableSchemesFromAPI() {
+    if (!Settings.data.general.autoNetworkEnabled) {
+      return;
+    }
+
     if (fetching) {
       return;
     }
