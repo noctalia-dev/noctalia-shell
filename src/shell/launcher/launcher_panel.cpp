@@ -111,7 +111,6 @@ namespace {
       title->setBold(true);
       title->setColor(colorSpecFromRole(ColorRole::OnSurface));
       title->setMaxLines(1);
-      title->setStableBaseline(true);
       m_title = static_cast<Label*>(m_textCol->addChild(std::move(title)));
 
       auto subtitle = std::make_unique<Label>();
@@ -119,7 +118,6 @@ namespace {
       subtitle->setFontSize(Style::fontSizeCaption * scale);
       subtitle->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
       subtitle->setMaxLines(1);
-      subtitle->setStableBaseline(true);
       m_subtitle = static_cast<Label*>(m_textCol->addChild(std::move(subtitle)));
     }
 

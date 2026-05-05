@@ -54,7 +54,6 @@ namespace {
     label->setFontSize(fontSize);
     label->setColor(color);
     label->setBold(bold);
-    label->setStableBaseline(true);
     return label;
   }
 
@@ -1055,7 +1054,6 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   headerTitle->setFontSize(Style::fontSizeTitle * scale);
   headerTitle->setColor(colorSpecFromRole(ColorRole::OnSurface));
   headerTitle->setFlexGrow(1.0f);
-  headerTitle->setStableBaseline(true);
   header->addChild(std::move(headerTitle));
 
   auto actionsMenuBtn = std::make_unique<Button>();

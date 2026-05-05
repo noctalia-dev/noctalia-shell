@@ -260,7 +260,6 @@ std::unique_ptr<Flex> WeatherTab::create() {
     meta->setBold(true);
     meta->setFontSize(Style::fontSizeBody * scale);
     meta->setColor(colorSpecFromRole(ColorRole::OnSurface));
-    meta->setStableBaseline(true);
     m_dayMetas[i] = meta.get();
     daySlot->addChild(std::move(meta));
     topRow->addChild(std::move(daySlot));
@@ -270,7 +269,6 @@ std::unique_ptr<Flex> WeatherTab::create() {
     temps->setFontSize(Style::fontSizeBody * scale);
     temps->setColor(colorSpecFromRole(ColorRole::OnSurface));
     temps->setTextAlign(TextAlign::End);
-    temps->setStableBaseline(true);
     m_dayTemps[i] = temps.get();
     topRow->addChild(std::move(temps));
 

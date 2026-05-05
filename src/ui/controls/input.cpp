@@ -126,7 +126,6 @@ Input::Input() {
   label->setFontSize(m_fontSize);
   label->setMaxLines(1);
   label->setColor(colorSpecFromRole(ColorRole::OnSurface));
-  label->setStableBaseline(true);
   m_label = static_cast<Label*>(m_textViewport->addChild(std::move(label)));
 
   // 2: cursor

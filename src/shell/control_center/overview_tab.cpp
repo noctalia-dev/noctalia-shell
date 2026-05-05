@@ -334,7 +334,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
     // that use raw fontSizeCaption (no * contentScale), while still scaling with shell.uiScale for consistency inside
     // Overview.
     btn->label()->setFontSize(Style::fontSizeMini * scale);
-    btn->label()->setStableBaseline(false);
+    btn->label()->setBaselineMode(LabelBaselineMode::InkCentered);
     btn->label()->setMaxLines(1);
     btn->label()->setTextAlign(TextAlign::Center);
     btn->setDirection(FlexDirection::Vertical);
@@ -917,8 +917,7 @@ void OverviewTab::syncShortcuts() {
       if (pad.label->text() != label) {
         pad.button->setText(label);
       }
-      // setText() enables stable baseline for clocks; shortcut captions are not caps-stable single-line widgets.
-      pad.label->setStableBaseline(false);
+      pad.label->setBaselineMode(LabelBaselineMode::InkCentered);
     }
   }
 }

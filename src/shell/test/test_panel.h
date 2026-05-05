@@ -79,6 +79,6 @@ private:
   Segmented* m_tabSwitch = nullptr;
   Input* m_fontFamilyInput = nullptr;
   Label* m_fontStatusLabel = nullptr;
-  Label* m_stableBaselineLabel = nullptr;
-  Toggle* m_stableBaselineToggle = nullptr;
+  Label* m_baselineModeLabel = nullptr;
+  Toggle* m_baselineModeToggle = nullptr;
 };

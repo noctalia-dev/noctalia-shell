@@ -1022,9 +1022,8 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
     section->addChild(std::move(col));
   }
 
-  // ── Stable baseline test (cap-only ↔ descender swap). Toggling the
-  // ── stableBaseline flag should pin the baseline; without it, "Apr"
-  // ── may shift relative to "MAR".
+  // ── Baseline mode test (cap-only ↔ descender swap). Stable mode should pin
+  // ── the baseline; ink-centered mode may shift "Apr" relative to "MAR".
   {
     auto col = std::make_unique<Flex>();
     col->setDirection(FlexDirection::Vertical);
@@ -1035,7 +1034,7 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
     col->setPadding(Style::spaceMd * scale);
 
     auto title = std::make_unique<Label>();
-    title->setText("Stable baseline (caps-only vs descender)");
+    title->setText("Baseline mode (stable vs ink-centered)");
     title->setBold(true);
     title->setFontSize(Style::fontSizeBody * scale);
     col->addChild(std::move(title));
@@ -1048,24 +1047,24 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
     auto stable = std::make_unique<Label>();
     stable->setText("MAR 2025");
     stable->setFontSize(Style::fontSizeTitle * scale);
-    stable->setStableBaseline(true);
-    m_stableBaselineLabel = stable.get();
+    m_baselineModeLabel = stable.get();
     row->addChild(std::move(stable));
 
     auto descender = std::make_unique<Label>();
     descender->setText("Apgjy");
     descender->setFontSize(Style::fontSizeTitle * scale);
-    descender->setStableBaseline(true);
     row->addChild(std::move(descender));
 
     auto plain = std::make_unique<Label>();
-    plain->setText("MAR 2025 (no stable)");
+    plain->setText("MAR 2025 (ink)");
     plain->setFontSize(Style::fontSizeTitle * scale);
+    plain->setBaselineMode(LabelBaselineMode::InkCentered);
     row->addChild(std::move(plain));
 
     auto plainDesc = std::make_unique<Label>();
-    plainDesc->setText("Apgjy (no stable)");
+    plainDesc->setText("Apgjy (ink)");
     plainDesc->setFontSize(Style::fontSizeTitle * scale);
+    plainDesc->setBaselineMode(LabelBaselineMode::InkCentered);
     row->addChild(std::move(plainDesc));
 
     auto toggleRow = std::make_unique<Flex>();
@@ -1074,7 +1073,7 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
     toggleRow->setGap(Style::spaceSm * scale);
 
     auto toggleLabel = std::make_unique<Label>();
-    toggleLabel->setText("stable-baseline labels:");
+    toggleLabel->setText("first label stable:");
     toggleLabel->setCaptionStyle();
     toggleLabel->setFontSize(Style::fontSizeCaption * scale);
     toggleRow->addChild(std::move(toggleLabel));
@@ -1084,11 +1083,11 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
     toggle->setScale(scale);
     toggle->setChecked(true);
     toggle->setOnChange([this](bool checked) {
-      if (m_stableBaselineLabel != nullptr) {
-        m_stableBaselineLabel->setStableBaseline(checked);
+      if (m_baselineModeLabel != nullptr) {
+        m_baselineModeLabel->setBaselineMode(checked ? LabelBaselineMode::Stable : LabelBaselineMode::InkCentered);
       }
     });
-    m_stableBaselineToggle = toggle.get();
+    m_baselineModeToggle = toggle.get();
     toggleRow->addChild(std::move(toggle));
 
     col->addChild(std::move(row));
@@ -1480,8 +1479,8 @@ void TestPanel::onClose() {
   m_scrollView = nullptr;
   m_fontFamilyInput = nullptr;
   m_fontStatusLabel = nullptr;
-  m_stableBaselineLabel = nullptr;
-  m_stableBaselineToggle = nullptr;
+  m_baselineModeLabel = nullptr;
+  m_baselineModeToggle = nullptr;
   m_controlsTab = nullptr;
   m_textTab = nullptr;
   m_tabSwitch = nullptr;

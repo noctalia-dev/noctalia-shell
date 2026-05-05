@@ -12,6 +12,11 @@
 
 class Renderer;
 
+enum class LabelBaselineMode : std::uint8_t {
+  Stable,
+  InkCentered,
+};
+
 class Label : public InputArea {
 public:
   Label();
@@ -26,12 +31,10 @@ public:
   void setMaxLines(int maxLines);
   void setBold(bool bold);
   void setTextAlign(TextAlign align);
-  // Enable stable-baseline centering for single-line labels whose text changes
-  // frequently (clocks, counters). Caps are centered using the font's caps
-  // reference instead of the current text's ink, so the baseline stays fixed
-  // when descenders appear/disappear (e.g. "Mar" ↔ "Apr"). Also aligns with
-  // dynamic-mode sibling labels that happen to contain caps-only text.
-  void setStableBaseline(bool stable);
+  // Stable mode is the default for UI labels. It centers single-line text using
+  // a font cap reference instead of the current string's ink, so clocks,
+  // counters, and icon+text rows do not jump when glyphs change.
+  void setBaselineMode(LabelBaselineMode mode);
   void setShadow(const Color& color, float offsetX, float offsetY);
   void clearShadow();
   // Single-line horizontal marquee when the line is wider than the laid-out width.
@@ -51,6 +54,7 @@ public:
   [[nodiscard]] float maxWidth() const noexcept;
   [[nodiscard]] bool bold() const noexcept;
   [[nodiscard]] TextAlign textAlign() const noexcept;
+  [[nodiscard]] LabelBaselineMode baselineMode() const noexcept { return m_baselineMode; }
   [[nodiscard]] float baselineOffset() const noexcept { return m_baselineOffset; }
 
   void measure(Renderer& renderer);
@@ -92,12 +96,12 @@ private:
   float m_cachedConstraintMaxWidth = 0.0f;
   int m_cachedMaxLines = 0;
   TextAlign m_cachedTextAlign = TextAlign::Start;
+  LabelBaselineMode m_cachedBaselineMode = LabelBaselineMode::Stable;
   bool m_cachedBold = false;
-  bool m_cachedStableBaseline = false;
   bool m_cachedAutoScroll = false;
   bool m_cachedHasConstraintMaxWidth = false;
   bool m_measureCached = false;
-  bool m_stableBaseline = false;
+  LabelBaselineMode m_baselineMode = LabelBaselineMode::Stable;
 
   float m_userMaxWidth = 0.0f;
   int m_userMaxLines = 0;

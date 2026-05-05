@@ -189,7 +189,6 @@ void SearchPicker::rebuildRows() {
     empty->setText(m_emptyText);
     empty->setFontSize(Style::fontSizeBody);
     empty->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
-    empty->setStableBaseline(true);
     content->addChild(std::move(empty));
     markLayoutDirty();
     return;
@@ -212,7 +211,6 @@ void SearchPicker::rebuildRows() {
     auto title = std::make_unique<Label>();
     title->setText(option.label);
     title->setFontSize(Style::fontSizeBody);
-    title->setStableBaseline(true);
     auto* titlePtr = static_cast<Label*>(row->addChild(std::move(title)));
 
     Label* detailPtr = nullptr;
@@ -220,7 +218,6 @@ void SearchPicker::rebuildRows() {
       auto detailLabel = std::make_unique<Label>();
       detailLabel->setText(detail);
       detailLabel->setFontSize(Style::fontSizeCaption);
-      detailLabel->setStableBaseline(true);
       detailPtr = static_cast<Label*>(row->addChild(std::move(detailLabel)));
     }
 

@@ -178,7 +178,6 @@ GlyphPicker::GlyphPicker(float chromeScale) : m_chromeScale(std::max(0.1f, chrom
   title->setBold(true);
   title->setFontSize(Style::fontSizeTitle * m_chromeScale);
   title->setColor(colorSpecFromRole(ColorRole::Primary));
-  title->setStableBaseline(true);
   m_title = static_cast<Label*>(header->addChild(std::move(title)));
 
   header->addChild(std::make_unique<Spacer>());

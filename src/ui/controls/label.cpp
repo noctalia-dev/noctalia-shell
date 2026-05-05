@@ -113,11 +113,11 @@ void Label::setTextAlign(TextAlign align) {
   m_measureCached = false;
 }
 
-void Label::setStableBaseline(bool stable) {
-  if (m_stableBaseline == stable) {
+void Label::setBaselineMode(LabelBaselineMode mode) {
+  if (m_baselineMode == mode) {
     return;
   }
-  m_stableBaseline = stable;
+  m_baselineMode = mode;
   m_measureCached = false;
 }
 
@@ -389,7 +389,7 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
       m_cachedBold == m_textNode->bold() && m_cachedMaxWidth == m_userMaxWidth && m_cachedMaxLines == m_userMaxLines &&
       m_cachedMinWidth == m_minWidth && m_cachedConstraintMinWidth == constraints.minWidth &&
       m_cachedConstraintMaxWidth == constraints.maxWidth && m_cachedHasConstraintMaxWidth == constraints.hasMaxWidth &&
-      m_cachedTextAlign == align && m_cachedStableBaseline == m_stableBaseline && m_cachedAutoScroll == m_autoScroll) {
+      m_cachedTextAlign == align && m_cachedBaselineMode == m_baselineMode && m_cachedAutoScroll == m_autoScroll) {
     return LayoutSize{.width = width(), .height = height()};
   }
 
@@ -424,7 +424,7 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
   if (singleLine && inkHeight > 0.0f) {
     float inkTopForCentering = metrics.inkTop;
     float inkHeightForCentering = inkHeight;
-    if (m_stableBaseline) {
+    if (m_baselineMode == LabelBaselineMode::Stable) {
       const float capInkHeight = std::max(0.0f, refMetrics.inkBottom - refMetrics.inkTop);
       if (capInkHeight > 0.0f) {
         inkTopForCentering = refMetrics.inkTop;
@@ -514,7 +514,7 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
   m_cachedConstraintMaxWidth = constraints.maxWidth;
   m_cachedHasConstraintMaxWidth = constraints.hasMaxWidth;
   m_cachedTextAlign = align;
-  m_cachedStableBaseline = m_stableBaseline;
+  m_cachedBaselineMode = m_baselineMode;
   m_cachedAutoScroll = m_autoScroll;
   m_measureCached = true;
 

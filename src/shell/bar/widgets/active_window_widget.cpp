@@ -47,7 +47,6 @@ void ActiveWindowWidget::create() {
   title->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   title->setMaxWidth(m_maxTitleWidth * m_contentScale);
   title->setMaxLines(1);
-  title->setStableBaseline(true);
   m_title = static_cast<Label*>(rootNode->addChild(std::move(title)));
 
   setRoot(std::move(rootNode));

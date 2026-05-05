@@ -46,7 +46,6 @@ namespace settings {
       label->setFontSize(fontSize);
       label->setColor(color);
       label->setBold(bold);
-      label->setStableBaseline(true);
       return label;
     }
 

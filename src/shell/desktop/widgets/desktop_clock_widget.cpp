@@ -37,7 +37,6 @@ void DesktopClockWidget::create() {
   auto label = std::make_unique<Label>();
   label->setBold(true);
   label->setTextAlign(TextAlign::Center);
-  label->setStableBaseline(true);
   label->setColor(m_color);
   label->setFontSize(clockFontSize(contentScale()));
   m_label = label.get();

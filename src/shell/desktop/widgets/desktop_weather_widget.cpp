@@ -47,7 +47,6 @@ void DesktopWeatherWidget::create() {
   auto temperature = std::make_unique<Label>();
   temperature->setBold(true);
   temperature->setTextAlign(TextAlign::Start);
-  temperature->setStableBaseline(true);
   temperature->setFontSize(temperatureFontSize(contentScale()));
   temperature->setColor(m_color);
   m_temperature = temperature.get();
@@ -55,7 +54,6 @@ void DesktopWeatherWidget::create() {
 
   auto condition = std::make_unique<Label>();
   condition->setTextAlign(TextAlign::Start);
-  condition->setStableBaseline(true);
   condition->setFontSize(conditionFontSize(contentScale()));
   condition->setColor(m_color);
   m_condition = condition.get();
