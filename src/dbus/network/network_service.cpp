@@ -319,15 +319,67 @@ void NetworkService::disconnect() {
   if (m_activeConnectionPath.empty() || m_activeConnectionPath == "/") {
     return;
   }
+  // Async: DeactivateConnection on a system-owned profile is gated by polkit,
+  // and a sync call would freeze the main loop while the polkit agent prompts
+  // (or while polkit waits for an agent to register). Fire-and-forget here.
+  const std::string activePath = m_activeConnectionPath;
   try {
-    m_nm->callMethod("DeactivateConnection")
+    m_nm->callMethodAsync("DeactivateConnection")
         .onInterface(k_nmInterface)
-        .withArguments(sdbus::ObjectPath{m_activeConnectionPath});
-    kLog.info("deactivated connection path={}", m_activeConnectionPath);
+        .withArguments(sdbus::ObjectPath{activePath})
+        .uponReplyInvoke([activePath](std::optional<sdbus::Error> err) {
+          if (err.has_value()) {
+            kLog.warn("DeactivateConnection failed path={}: {}", activePath, err->what());
+          } else {
+            kLog.info("deactivated connection path={}", activePath);
+          }
+        });
   } catch (const sdbus::Error& e) {
-    kLog.warn("DeactivateConnection failed: {}", e.what());
+    kLog.warn("DeactivateConnection dispatch failed: {}", e.what());
   }
 }
+
+namespace {
+  // State machine for an in-flight forgetSsid operation. Owned by lambdas
+  // captured via shared_ptr; lives until the last D-Bus reply lands.
+  struct ForgetOp {
+    std::string ssid;
+    std::unique_ptr<sdbus::IProxy> settings;
+    std::vector<std::unique_ptr<sdbus::IProxy>> targets;
+    int matched = 0;
+    int removed = 0;
+    int failed = 0;
+    int pendingGetSettings = 0;
+    int pendingDeletes = 0;
+    bool listingDone = false;
+    std::function<void()> onComplete;
+  };
+
+  bool ssidFromSettings(const std::map<std::string, std::map<std::string, sdbus::Variant>>& cfg, std::string& out) {
+    auto wifiIt = cfg.find("802-11-wireless");
+    if (wifiIt == cfg.end())
+      return false;
+    auto ssidIt = wifiIt->second.find("ssid");
+    if (ssidIt == wifiIt->second.end())
+      return false;
+    try {
+      const auto bytes = ssidIt->second.get<std::vector<std::uint8_t>>();
+      out.assign(bytes.begin(), bytes.end());
+      return true;
+    } catch (const sdbus::Error&) {
+      return false;
+    }
+  }
+
+  void maybeFinishForget(const std::shared_ptr<ForgetOp>& op) {
+    if (op->listingDone && op->pendingGetSettings == 0 && op->pendingDeletes == 0) {
+      kLog.info("forgetSsid ssid=\"{}\" matched={} removed={} failed={}", op->ssid, op->matched, op->removed,
+                op->failed);
+      if (op->onComplete)
+        op->onComplete();
+    }
+  }
+} // namespace
 
 void NetworkService::forgetSsid(const std::string& ssid) {
   if (ssid.empty()) {
@@ -335,63 +387,89 @@ void NetworkService::forgetSsid(const std::string& ssid) {
   }
   // Tear down the live connection before deleting the saved profile, so a
   // subsequent reconnect attempt cannot silently reuse the still-active
-  // connection (which would skip the password prompt).
+  // connection (which would skip the password prompt). Async — see disconnect().
   if (m_state.kind == NetworkConnectivity::Wireless && m_state.connected && m_state.ssid == ssid) {
     disconnect();
   }
+
+  auto op = std::make_shared<ForgetOp>();
+  op->ssid = ssid;
+  op->onComplete = [this]() {
+    // Final refresh rebuilds the UI (no Forget button, no active tint) without
+    // waiting for an NM PropertiesChanged signal to land.
+    refresh();
+  };
+
   try {
-    auto settings = sdbus::createProxy(m_bus.connection(), k_nmBusName, k_nmSettingsObjectPath);
-    std::vector<sdbus::ObjectPath> connectionPaths;
-    settings->callMethod("ListConnections").onInterface(k_nmSettingsInterface).storeResultsTo(connectionPaths);
-    int matched = 0;
-    int removed = 0;
-    int failed = 0;
-    for (const auto& connectionPath : connectionPaths) {
-      std::map<std::string, std::map<std::string, sdbus::Variant>> cfg;
-      try {
-        auto connection = sdbus::createProxy(m_bus.connection(), k_nmBusName, connectionPath);
-        connection->callMethod("GetSettings").onInterface(k_nmSettingsConnectionInterface).storeResultsTo(cfg);
-        auto wifiIt = cfg.find("802-11-wireless");
-        if (wifiIt == cfg.end()) {
-          continue;
-        }
-        auto ssidIt = wifiIt->second.find("ssid");
-        if (ssidIt == wifiIt->second.end()) {
-          continue;
-        }
-        std::string foundSsid;
-        try {
-          const auto bytes = ssidIt->second.get<std::vector<std::uint8_t>>();
-          foundSsid.assign(bytes.begin(), bytes.end());
-        } catch (const sdbus::Error&) {
-          continue;
-        }
-        if (foundSsid != ssid) {
-          continue;
-        }
-        ++matched;
-        try {
-          connection->callMethod("Delete").onInterface(k_nmSettingsConnectionInterface);
-          ++removed;
-        } catch (const sdbus::Error& e) {
-          // Common cause: system-owned profile + no polkit agent running, so
-          // the Delete is denied. Surface the real error name so the user can
-          // tell — it's otherwise indistinguishable from "nothing happened".
-          ++failed;
-          kLog.warn("forgetSsid: Delete refused for {} ssid=\"{}\": {}", std::string(connectionPath), ssid, e.what());
-        }
-      } catch (const sdbus::Error& e) {
-        kLog.debug("forgetSsid: failed to inspect {}: {}", std::string(connectionPath), e.what());
-      }
-    }
-    kLog.info("forgetSsid ssid=\"{}\" matched={} removed={} failed={}", ssid, matched, removed, failed);
+    op->settings = sdbus::createProxy(m_bus.connection(), k_nmBusName, k_nmSettingsObjectPath);
   } catch (const sdbus::Error& e) {
-    kLog.warn("forgetSsid failed ssid=\"{}\": {}", ssid, e.what());
+    kLog.warn("forgetSsid: settings proxy failed ssid=\"{}\": {}", ssid, e.what());
+    refresh();
+    return;
   }
-  // Full refresh: pulls saved-connection list, AP list, and live state, and
-  // fires the change callback so the UI rebuilds (no Forget button, no active
-  // tint) without waiting for an NM PropertiesChanged signal to land.
-  refresh();
+
+  auto& bus = m_bus;
+  op->settings->callMethodAsync("ListConnections")
+      .onInterface(k_nmSettingsInterface)
+      .uponReplyInvoke([op, &bus](std::optional<sdbus::Error> err, std::vector<sdbus::ObjectPath> paths) {
+        if (err.has_value()) {
+          kLog.warn("forgetSsid: ListConnections failed ssid=\"{}\": {}", op->ssid, err->what());
+          op->listingDone = true;
+          maybeFinishForget(op);
+          return;
+        }
+        for (const auto& connectionPath : paths) {
+          std::unique_ptr<sdbus::IProxy> conn;
+          try {
+            conn = sdbus::createProxy(bus.connection(), k_nmBusName, connectionPath);
+          } catch (const sdbus::Error& e) {
+            kLog.debug("forgetSsid: proxy failed for {}: {}", std::string(connectionPath), e.what());
+            continue;
+          }
+          auto* connRaw = conn.get();
+          op->targets.push_back(std::move(conn));
+          ++op->pendingGetSettings;
+          const std::string pathStr{connectionPath};
+          connRaw->callMethodAsync("GetSettings")
+              .onInterface(k_nmSettingsConnectionInterface)
+              .uponReplyInvoke(
+                  [op, connRaw, pathStr](std::optional<sdbus::Error> getErr,
+                                         std::map<std::string, std::map<std::string, sdbus::Variant>> cfg) {
+                    --op->pendingGetSettings;
+                    if (getErr.has_value()) {
+                      kLog.debug("forgetSsid: GetSettings failed for {}: {}", pathStr, getErr->what());
+                      maybeFinishForget(op);
+                      return;
+                    }
+                    std::string foundSsid;
+                    if (!ssidFromSettings(cfg, foundSsid) || foundSsid != op->ssid) {
+                      maybeFinishForget(op);
+                      return;
+                    }
+                    ++op->matched;
+                    ++op->pendingDeletes;
+                    connRaw->callMethodAsync("Delete")
+                        .onInterface(k_nmSettingsConnectionInterface)
+                        .uponReplyInvoke([op, pathStr](std::optional<sdbus::Error> delErr) {
+                          --op->pendingDeletes;
+                          if (delErr.has_value()) {
+                            // Common cause: system-owned profile + no polkit agent
+                            // running, so Delete is denied. Surface the real error
+                            // name — otherwise indistinguishable from "nothing happened".
+                            ++op->failed;
+                            kLog.warn("forgetSsid: Delete refused for {} ssid=\"{}\": {}", pathStr, op->ssid,
+                                      delErr->what());
+                          } else {
+                            ++op->removed;
+                          }
+                          maybeFinishForget(op);
+                        });
+                    maybeFinishForget(op);
+                  });
+        }
+        op->listingDone = true;
+        maybeFinishForget(op);
+      });
 }
 
 bool NetworkService::hasSavedConnection(const std::string& ssid) const {
