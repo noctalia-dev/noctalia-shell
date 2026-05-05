@@ -1151,6 +1151,83 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
     section->addChild(std::move(col));
   }
 
+  // ── Text alignment: Start / Center / End with short, medium, and long
+  // ── (eliding) text in same-width framed boxes. Each row is one alignment
+  // ── mode; each column is a different text length. The long column should
+  // ── always show the ellipsis; the short and medium columns show where the
+  // ── text lands relative to the box edges.
+  {
+    auto col = std::make_unique<Flex>();
+    col->setDirection(FlexDirection::Vertical);
+    col->setAlign(FlexAlign::Start);
+    col->setGap(Style::spaceSm * scale);
+    col->setCardStyle(scale);
+    col->setRadius(Style::radiusLg * scale);
+    col->setPadding(Style::spaceMd * scale);
+
+    auto title = std::make_unique<Label>();
+    title->setText("Text alignment (Start / Center / End × short / medium / long)");
+    title->setBold(true);
+    title->setFontSize(Style::fontSizeBody * scale);
+    col->addChild(std::move(title));
+
+    constexpr float kBoxW = 200.0f;
+    const std::string kShort = "Hi";
+    const std::string kMedium = "The quick brown fox";
+    const std::string kLong = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod.";
+
+    struct AlignRow {
+      const char* name;
+      TextAlign align;
+    };
+    const AlignRow rows[] = {
+        {"Start", TextAlign::Start},
+        {"Center", TextAlign::Center},
+        {"End", TextAlign::End},
+    };
+
+    auto makeAlignFrame = [&](const std::string& text, TextAlign align) {
+      auto frame = std::make_unique<Flex>();
+      frame->setDirection(FlexDirection::Horizontal);
+      frame->setAlign(FlexAlign::Center);
+      frame->setSize(kBoxW * scale, 0.0f);
+      frame->setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth);
+      frame->setRadius(Style::radiusSm * scale);
+      frame->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+
+      auto lbl = std::make_unique<Label>();
+      lbl->setText(text);
+      lbl->setFontSize(Style::fontSizeBody * scale);
+      lbl->setMaxLines(1);
+      lbl->setTextAlign(align);
+      lbl->setFlexGrow(1.0f); // fill the frame so alignment has space to act
+      frame->addChild(std::move(lbl));
+      return frame;
+    };
+
+    for (const auto& r : rows) {
+      auto row = std::make_unique<Flex>();
+      row->setDirection(FlexDirection::Horizontal);
+      row->setAlign(FlexAlign::Center);
+      row->setGap(Style::spaceSm * scale);
+
+      auto tag = std::make_unique<Label>();
+      tag->setText(r.name);
+      tag->setFontSize(Style::fontSizeCaption * scale);
+      tag->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+      tag->setMinWidth(48.0f * scale);
+      row->addChild(std::move(tag));
+
+      row->addChild(makeAlignFrame(kShort, r.align));
+      row->addChild(makeAlignFrame(kMedium, r.align));
+      row->addChild(makeAlignFrame(kLong, r.align));
+
+      col->addChild(std::move(row));
+    }
+
+    section->addChild(std::move(col));
+  }
+
   // ── Multi-line wrapping with explicit maxLines.
   {
     auto col = std::make_unique<Flex>();

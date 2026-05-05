@@ -393,16 +393,21 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
     return LayoutSize{.width = width(), .height = height()};
   }
 
-  syncTextNodeConstraints();
-  // Override the default with the constraint-aware wrap budget so paint uses the same
-  // wrap width that was used to measure metrics. Without this, a Label inside a Flex
-  // with stretch-derived width would measure correctly but paint unwrapped.
-  // Skipped on the arrange path: arrange's exact width is the label's own already-measured
-  // width fed back to itself, not a parent wrap-intent. Feeding it to Pango as maxWidth
-  // can spuriously ellipsize when the rounded box width sits a fraction below natural.
-  if (!m_autoScroll && !fromArrange) {
-    m_textNode->setMaxWidth(measureMaxWidth);
-    m_textNode->setMaxLines(effectiveMaxLines);
+  // On the arrange path the text node already holds the constraint-aware wrap budget
+  // from the preceding measure pass. Resetting it here (via syncTextNodeConstraints)
+  // would clobber the correct ellipsis width with m_userMaxWidth, which can be wider
+  // than the flex-assigned cell (e.g. leftColumnWidth vs. the actual value-cell share).
+  // Only update text node constraints on the measure path.
+  if (!fromArrange) {
+    syncTextNodeConstraints();
+    // Override with constraint-aware wrap budget so paint uses the same wrap width
+    // that was used to measure metrics. Without this, a Label inside a Flex with
+    // stretch-derived width would measure correctly but paint unwrapped.
+    // Skipped for auto-scroll: marquee needs the unconstrained text width.
+    if (!m_autoScroll) {
+      m_textNode->setMaxWidth(measureMaxWidth);
+      m_textNode->setMaxLines(effectiveMaxLines);
+    }
   }
 
   auto metrics = renderer.measureText(m_plainText, m_textNode->fontSize(), m_textNode->bold(), measureMaxWidth,
