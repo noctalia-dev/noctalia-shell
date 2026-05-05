@@ -581,8 +581,8 @@ namespace settings {
                                 ToggleSetting{cfg.weather.autoLocate}, "forecast gps"));
     entries.push_back(makeEntry("services", "weather", tr("settings.schema.services.weather-unit.label"),
                                 tr("settings.schema.services.weather-unit.description"), {"weather", "unit"},
-                                asSegmented(plainSelect({{"celsius", "settings.options.weather.unit.celsius"},
-                                                         {"fahrenheit", "settings.options.weather.unit.fahrenheit"}},
+                                asSegmented(plainSelect({{"metric", "settings.options.weather.unit.metric"},
+                                                         {"imperial", "settings.options.weather.unit.imperial"}},
                                                         cfg.weather.unit)),
                                 "temperature"));
     entries.push_back(makeEntry(

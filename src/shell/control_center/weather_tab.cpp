@@ -655,8 +655,11 @@ void WeatherTab::sync(Renderer& renderer) {
       colorSpecFromRole(m_weather->error().empty() ? ColorRole::OnSurfaceVariant : ColorRole::Error));
   m_statusLabel->setVisible(!status.empty());
   if (m_windLabel != nullptr) {
-    m_windLabel->setText(std::format("{} {} {}", static_cast<int>(std::lround(snapshot.current.windSpeedKmh)),
-                                     snapshot.currentUnits.windSpeed.empty() ? "km/h" : snapshot.currentUnits.windSpeed,
+    const bool imperial = m_weather->useImperial();
+    const double windSpeed = imperial ? snapshot.current.windSpeedKmh * 0.621371 : snapshot.current.windSpeedKmh;
+    const char* windUnit =
+        imperial ? "mph" : (snapshot.currentUnits.windSpeed.empty() ? "km/h" : snapshot.currentUnits.windSpeed.c_str());
+    m_windLabel->setText(std::format("{} {} {}", static_cast<int>(std::lround(windSpeed)), windUnit,
                                      windDirectionLabel(snapshot.current.windDirectionDeg)));
   }
   if (m_sunriseLabel != nullptr) {

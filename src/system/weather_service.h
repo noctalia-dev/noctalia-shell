@@ -87,7 +87,7 @@ public:
   [[nodiscard]] bool hasData() const noexcept { return m_snapshot.valid; }
   [[nodiscard]] const std::string& error() const noexcept { return m_error; }
   [[nodiscard]] const WeatherSnapshot& snapshot() const noexcept { return m_snapshot; }
-  [[nodiscard]] bool useFahrenheit() const noexcept;
+  [[nodiscard]] bool useImperial() const noexcept;
   [[nodiscard]] double displayTemperature(double celsius) const noexcept;
   [[nodiscard]] const char* displayTemperatureUnit() const noexcept;
 

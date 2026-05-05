@@ -279,16 +279,16 @@ bool WeatherService::locationConfigured() const noexcept {
   return m_activeConfig.autoLocate || !m_activeConfig.address.empty();
 }
 
-bool WeatherService::useFahrenheit() const noexcept { return m_activeConfig.unit == "fahrenheit"; }
+bool WeatherService::useImperial() const noexcept { return m_activeConfig.unit == "imperial"; }
 
 double WeatherService::displayTemperature(double celsius) const noexcept {
-  if (!useFahrenheit()) {
+  if (!useImperial()) {
     return celsius;
   }
   return 32.0 + (celsius * 1.8);
 }
 
-const char* WeatherService::displayTemperatureUnit() const noexcept { return useFahrenheit() ? "\u00b0F" : "\u00b0C"; }
+const char* WeatherService::displayTemperatureUnit() const noexcept { return useImperial() ? "\u00b0F" : "\u00b0C"; }
 
 std::string WeatherService::glyphForCode(std::int32_t code, bool isDay) {
   if (code == 0) {

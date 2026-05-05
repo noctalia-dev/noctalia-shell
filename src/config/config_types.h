@@ -375,7 +375,7 @@ struct WeatherConfig {
   bool effects = true;
   std::string address;
   std::int32_t refreshMinutes = 30;
-  std::string unit = "celsius";
+  std::string unit = "metric";
 };
 
 struct SystemConfig {
