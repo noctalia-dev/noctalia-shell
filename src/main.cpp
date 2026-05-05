@@ -68,7 +68,7 @@ namespace {
 
     ::umask(0);
     if (::chdir("/") != 0) {
-      std::perror("chdir");
+      std::perror("chdir(\"/\")");
       _exit(1);
     }
 
