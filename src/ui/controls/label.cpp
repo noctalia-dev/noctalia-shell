@@ -385,10 +385,13 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
       m_autoScroll || (effectiveMaxLines == 1) ||
       (effectiveMaxLines == 0 && configuredMaxWidth <= 0.0f && m_plainText.find('\n') == std::string::npos);
   const TextAlign align = m_textNode->textAlign();
+  const float renderScale = renderer.renderScale();
+  const std::uint64_t textMetricsGeneration = renderer.textMetricsGeneration();
   if (m_measureCached && m_cachedText == m_plainText && m_cachedFontSize == m_textNode->fontSize() &&
       m_cachedBold == m_textNode->bold() && m_cachedMaxWidth == m_userMaxWidth && m_cachedMaxLines == m_userMaxLines &&
       m_cachedMinWidth == m_minWidth && m_cachedConstraintMinWidth == constraints.minWidth &&
       m_cachedConstraintMaxWidth == constraints.maxWidth && m_cachedHasConstraintMaxWidth == constraints.hasMaxWidth &&
+      m_cachedRenderScale == renderScale && m_cachedTextMetricsGeneration == textMetricsGeneration &&
       m_cachedTextAlign == align && m_cachedBaselineMode == m_baselineMode && m_cachedAutoScroll == m_autoScroll) {
     return LayoutSize{.width = width(), .height = height()};
   }
@@ -506,6 +509,8 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
   m_cachedMinWidth = m_minWidth;
   m_cachedConstraintMinWidth = constraints.minWidth;
   m_cachedConstraintMaxWidth = constraints.maxWidth;
+  m_cachedRenderScale = renderScale;
+  m_cachedTextMetricsGeneration = textMetricsGeneration;
   m_cachedHasConstraintMaxWidth = constraints.hasMaxWidth;
   m_cachedTextAlign = align;
   m_cachedBaselineMode = m_baselineMode;

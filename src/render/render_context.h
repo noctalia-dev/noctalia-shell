@@ -6,6 +6,7 @@
 #include "render/text/cairo_glyph_renderer.h"
 #include "render/text/cairo_text_renderer.h"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -46,6 +47,7 @@ public:
   [[nodiscard]] TextMetrics measureGlyph(char32_t codepoint, float fontSize) override;
   [[nodiscard]] TextureManager& textureManager() override;
   [[nodiscard]] float renderScale() const noexcept override { return m_renderScale; }
+  [[nodiscard]] std::uint64_t textMetricsGeneration() const noexcept override { return m_textMetricsGeneration; }
 
 private:
   void makeCurrentNoSurface();
@@ -55,5 +57,7 @@ private:
   std::unique_ptr<RenderBackend> m_backend;
   CairoTextRenderer m_textRenderer;
   CairoGlyphRenderer m_glyphRenderer;
+  std::string m_textFontFamily = "sans-serif";
   float m_renderScale = 1.0f;
+  std::uint64_t m_textMetricsGeneration = 1;
 };

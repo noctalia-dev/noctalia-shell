@@ -35,4 +35,5 @@ public:
   [[nodiscard]] virtual TextMetrics measureGlyph(char32_t codepoint, float fontSize) = 0;
   [[nodiscard]] virtual TextureManager& textureManager() = 0;
   [[nodiscard]] virtual float renderScale() const noexcept = 0;
+  [[nodiscard]] virtual std::uint64_t textMetricsGeneration() const noexcept { return 0; }
 };

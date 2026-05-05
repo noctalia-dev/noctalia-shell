@@ -95,6 +95,8 @@ private:
   float m_cachedMinWidth = 0.0f;
   float m_cachedConstraintMinWidth = 0.0f;
   float m_cachedConstraintMaxWidth = 0.0f;
+  float m_cachedRenderScale = 0.0f;
+  std::uint64_t m_cachedTextMetricsGeneration = 0;
   int m_cachedMaxLines = 0;
   TextAlign m_cachedTextAlign = TextAlign::Start;
   LabelBaselineMode m_cachedBaselineMode = LabelBaselineMode::Stable;

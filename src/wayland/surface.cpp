@@ -153,6 +153,9 @@ void Surface::onConfigure(std::uint32_t width, std::uint32_t height) {
   const float resizeMs = elapsedMs([this] {
     applySurfaceScaleState();
     resizeRenderTarget();
+    if (m_renderContext != nullptr) {
+      m_renderContext->syncContentScale(m_renderTarget);
+    }
   });
   logSlowSurfaceOperation(resizeMs, "surface configure resize took {:.1f}ms ({}, {}x{} logical)", resizeMs,
                           static_cast<const void*>(this), m_width, m_height);
@@ -289,6 +292,10 @@ void Surface::onPreferredFractionalScale(std::uint32_t numerator) {
 void Surface::onScaleChanged() {
   applySurfaceScaleState();
   resizeRenderTarget();
+  if (m_renderContext != nullptr) {
+    m_renderContext->syncContentScale(m_renderTarget);
+  }
+  requestLayout();
   requestRedraw();
 }
 
