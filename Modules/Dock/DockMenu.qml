@@ -497,6 +497,12 @@ PopupWindow {
   function handleFocus(targetToplevel) {
     if (targetToplevel?.activate) {
       targetToplevel.activate();
+
+      // hide dock after focusing window (if not the currently focused window)
+      if (dockRoot.autoHide && window !== ToplevelManager?.activeToplevel) {
+        dockRoot.hidden = true;
+        dockRoot.unloadTimer.restart();
+      }
     }
     closeAndReset();
   }
