@@ -933,6 +933,18 @@
           "label": "Display",
           "description": "Display mode for this widget"
         },
+        "focused_color": {
+          "label": "Focused Color",
+          "description": "Color role used for the focused workspace"
+        },
+        "occupied_color": {
+          "label": "Occupied Color",
+          "description": "Color role used for occupied workspaces"
+        },
+        "empty_color": {
+          "label": "Empty Color",
+          "description": "Color role used for empty workspaces"
+        },
         "format": {
           "label": "Format",
           "description": "Time format string"

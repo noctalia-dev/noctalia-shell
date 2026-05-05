@@ -380,6 +380,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "workspaces") {
     const std::string display = wc != nullptr ? wc->getString("display", "id") : std::string("id");
+    const ColorSpec focusedColor =
+        colorSpecFromConfigString(wc != nullptr ? wc->getString("focused_color", "primary") : std::string("primary"));
+    const ColorSpec occupiedColor = colorSpecFromConfigString(
+        wc != nullptr ? wc->getString("occupied_color", "secondary") : std::string("secondary"));
+    const ColorSpec emptyColor =
+        colorSpecFromConfigString(wc != nullptr ? wc->getString("empty_color", "secondary") : std::string("secondary"));
     WorkspacesWidget::DisplayMode displayMode = WorkspacesWidget::DisplayMode::Id;
     if (display == "id") {
       displayMode = WorkspacesWidget::DisplayMode::Id;
@@ -388,7 +394,8 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     } else if (display == "none") {
       displayMode = WorkspacesWidget::DisplayMode::None;
     }
-    auto widget = std::make_unique<WorkspacesWidget>(m_wayland, output, displayMode);
+    auto widget =
+        std::make_unique<WorkspacesWidget>(m_wayland, output, displayMode, focusedColor, occupiedColor, emptyColor);
     widget->setContentScale(contentScale);
     return widget;
   }

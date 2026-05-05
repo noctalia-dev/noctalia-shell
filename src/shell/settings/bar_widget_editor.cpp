@@ -866,8 +866,16 @@ namespace settings {
           ColorRolePickerSetting pickerSetting;
           pickerSetting.selectedValue = settingValueAsString(value);
           pickerSetting.allowNone = spec.advanced;
-          for (const auto& token : kColorRoleTokens) {
-            pickerSetting.roles.push_back(token.role);
+          if (!spec.options.empty()) {
+            for (const auto& option : spec.options) {
+              if (const auto role = colorRoleFromToken(option.value); role.has_value()) {
+                pickerSetting.roles.push_back(*role);
+              }
+            }
+          } else {
+            for (const auto& token : kColorRoleTokens) {
+              pickerSetting.roles.push_back(token.role);
+            }
           }
           ctx.makeRow(*panel, entry, ctx.makeColorRolePicker(std::move(pickerSetting), path));
           break;

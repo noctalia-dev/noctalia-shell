@@ -417,6 +417,9 @@ namespace settings {
         {"name", "settings.widgets.options.name"},
         {"none", "settings.widgets.options.none"},
     };
+    const std::vector<WidgetSettingSelectOption> workspaceColorRoles = {
+        {"on_surface", ""}, {"primary", ""}, {"secondary", ""}, {"tertiary", ""}, {"error", ""},
+    };
 
     if (type == "active_window") {
       add(doubleSpec("max_length", 260.0, 40.0, 800.0, 1.0));
@@ -490,6 +493,21 @@ namespace settings {
       add(boolSpec("show_condition", true));
     } else if (type == "workspaces") {
       add(segmentedSpec("display", "id", workspaceDisplay));
+      {
+        auto focusedColor = colorRoleSpec("focused_color", "primary");
+        focusedColor.options = workspaceColorRoles;
+        add(std::move(focusedColor));
+      }
+      {
+        auto occupiedColor = colorRoleSpec("occupied_color", "secondary");
+        occupiedColor.options = workspaceColorRoles;
+        add(std::move(occupiedColor));
+      }
+      {
+        auto emptyColor = colorRoleSpec("empty_color", "secondary");
+        emptyColor.options = workspaceColorRoles;
+        add(std::move(emptyColor));
+      }
     }
 
     return specs;

@@ -15,6 +15,7 @@
 #include <cctype>
 #include <cmath>
 #include <linux/input-event-codes.h>
+#include <utility>
 #include <wayland-client-protocol.h>
 
 namespace {
@@ -26,8 +27,10 @@ namespace {
   constexpr float kWorkspaceAnimDurationMs = static_cast<float>(Style::animNormal);
 } // namespace
 
-WorkspacesWidget::WorkspacesWidget(WaylandConnection& connection, wl_output* output, DisplayMode displayMode)
-    : m_connection(connection), m_output(output), m_displayMode(displayMode) {}
+WorkspacesWidget::WorkspacesWidget(WaylandConnection& connection, wl_output* output, DisplayMode displayMode,
+                                   ColorSpec focusedColor, ColorSpec occupiedColor, ColorSpec emptyColor)
+    : m_connection(connection), m_output(output), m_displayMode(displayMode), m_focusedColor(std::move(focusedColor)),
+      m_occupiedColor(std::move(occupiedColor)), m_emptyColor(std::move(emptyColor)) {}
 
 void WorkspacesWidget::create() {
   auto container = std::make_unique<InputArea>();
@@ -208,8 +211,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     indicator->setRadius(indicatorHeight * 0.5f);
     indicator->setFrameSize(w, indicatorHeight);
     const bool isEmpty = !ws.active && !ws.urgent && !ws.occupied;
-    indicator->setFill(isEmpty ? colorSpecFromRole(ColorRole::Secondary, 0.55f)
-                               : colorSpecFromRole(workspaceFillRole(ws)));
+    indicator->setFill(colorSpecFromRole(workspaceFillRole(ws), workspaceFillAlpha(ws)));
     indicator->clearBorder();
     item.indicator = static_cast<Box*>(area->addChild(std::move(indicator)));
 
@@ -218,7 +220,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
       text->setText(labels[i]);
       text->setFontSize(labelFontSize);
       text->setBold(true);
-      text->setColor(colorSpecFromRole(isEmpty ? ColorRole::OnSecondary : workspaceTextRole(ws)));
+      text->setColor(colorSpecFromRole(isEmpty ? emptyWorkspaceTextRole() : workspaceTextRole(ws)));
       text->measure(renderer);
       item.label = labels[i];
       item.text = static_cast<Label*>(area->addChild(std::move(text)));
@@ -285,15 +287,13 @@ void WorkspacesWidget::retarget(Renderer& renderer) {
     auto& it = m_items[i];
     if (it.indicator != nullptr) {
       const auto& ws = m_cachedState[i];
-      const bool isEmpty = !ws.active && !ws.urgent && !ws.occupied;
-      it.indicator->setFill(isEmpty ? colorSpecFromRole(ColorRole::Secondary, 0.55f)
-                                    : colorSpecFromRole(workspaceFillRole(ws)));
+      it.indicator->setFill(colorSpecFromRole(workspaceFillRole(ws), workspaceFillAlpha(ws)));
       it.indicator->clearBorder();
     }
     if (it.text != nullptr) {
       const auto& ws = m_cachedState[i];
       const bool isEmpty = !ws.active && !ws.urgent && !ws.occupied;
-      it.text->setColor(colorSpecFromRole(isEmpty ? ColorRole::OnSecondary : workspaceTextRole(ws)));
+      it.text->setColor(colorSpecFromRole(isEmpty ? emptyWorkspaceTextRole() : workspaceTextRole(ws)));
     }
   }
 
@@ -449,30 +449,72 @@ std::optional<std::size_t> WorkspacesWidget::numericWorkspaceId(const Workspace&
   return std::nullopt;
 }
 
-ColorRole WorkspacesWidget::workspaceFillRole(const Workspace& workspace) {
+ColorRole WorkspacesWidget::workspaceFillRole(const Workspace& workspace) const {
   if (workspace.active) {
-    return ColorRole::Primary;
+    return m_focusedColor.role.value_or(ColorRole::Primary);
   }
   if (workspace.urgent) {
     return ColorRole::Error;
   }
   if (workspace.occupied) {
-    return ColorRole::Secondary;
+    return m_occupiedColor.role.value_or(ColorRole::Secondary);
   }
-  // Keep empty slots visibly present even when the bar background also uses
-  // a surface-variant tone.
-  return ColorRole::Surface;
+  return m_emptyColor.role.value_or(ColorRole::Secondary);
 }
 
-ColorRole WorkspacesWidget::workspaceTextRole(const Workspace& workspace) {
+ColorRole WorkspacesWidget::workspaceTextRole(const Workspace& workspace) const {
   if (workspace.active) {
-    return ColorRole::OnPrimary;
+    return onRoleForFill(workspaceFillRole(workspace));
   }
   if (workspace.urgent) {
     return ColorRole::OnError;
   }
   if (workspace.occupied) {
-    return ColorRole::OnSecondary;
+    return onRoleForFill(workspaceFillRole(workspace));
   }
-  return ColorRole::OnSurfaceVariant;
+  return onRoleForFill(workspaceFillRole(workspace));
+}
+
+float WorkspacesWidget::workspaceFillAlpha(const Workspace& workspace) const {
+  if (workspace.active) {
+    return m_focusedColor.alpha;
+  }
+  if (workspace.urgent) {
+    return 1.0f;
+  }
+  if (workspace.occupied) {
+    return m_occupiedColor.alpha;
+  }
+  return m_emptyColor.alpha * 0.55f;
+}
+
+ColorRole WorkspacesWidget::onRoleForFill(ColorRole fill) {
+  switch (fill) {
+  case ColorRole::Primary:
+    return ColorRole::OnPrimary;
+  case ColorRole::Secondary:
+    return ColorRole::OnSecondary;
+  case ColorRole::Tertiary:
+    return ColorRole::OnTertiary;
+  case ColorRole::Error:
+    return ColorRole::OnError;
+  case ColorRole::Surface:
+  case ColorRole::SurfaceVariant:
+  case ColorRole::Outline:
+  case ColorRole::Shadow:
+  case ColorRole::Hover:
+  case ColorRole::OnPrimary:
+  case ColorRole::OnSecondary:
+  case ColorRole::OnTertiary:
+  case ColorRole::OnError:
+  case ColorRole::OnSurface:
+  case ColorRole::OnSurfaceVariant:
+  case ColorRole::OnHover:
+    return ColorRole::OnSurface;
+  }
+  return ColorRole::OnSurface;
+}
+
+ColorRole WorkspacesWidget::emptyWorkspaceTextRole() const {
+  return onRoleForFill(m_emptyColor.role.value_or(ColorRole::Secondary));
 }
