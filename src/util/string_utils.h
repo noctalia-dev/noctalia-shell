@@ -41,6 +41,33 @@ namespace StringUtils {
     return lhs.find(rhs) != std::string::npos;
   }
 
+  [[nodiscard]] inline std::string trimLeadingBlankLines(std::string_view text) {
+    if (text.empty()) {
+      return {};
+    }
+
+    std::size_t start = 0;
+    while (start < text.size()) {
+      std::size_t lineEnd = text.find('\n', start);
+      if (lineEnd == std::string_view::npos) {
+        lineEnd = text.size();
+      }
+      const std::string_view line = text.substr(start, lineEnd - start);
+      const bool blankLine =
+          line.empty() || std::all_of(line.begin(), line.end(), [](unsigned char ch) { return std::isspace(ch) != 0; });
+      if (!blankLine) {
+        break;
+      }
+      if (lineEnd >= text.size()) {
+        start = text.size();
+        break;
+      }
+      start = lineEnd + 1;
+    }
+
+    return std::string(text.substr(start));
+  }
+
   // Strip HTML/Pango tags and unescape XML entities.
   [[nodiscard]] inline std::string sanitizeMarkup(std::string_view s) {
     std::string out;

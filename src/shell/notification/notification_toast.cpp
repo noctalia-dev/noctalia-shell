@@ -20,6 +20,7 @@
 #include "ui/controls/progress_bar.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "util/string_utils.h"
 #include "wayland/surface.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
@@ -167,33 +168,6 @@ namespace {
            std::all_of(text.begin(), text.end(), [](unsigned char ch) { return std::isspace(ch) != 0; });
   }
 
-  std::string trimLeadingBlankLines(std::string_view text) {
-    if (text.empty()) {
-      return {};
-    }
-
-    std::size_t start = 0;
-    while (start < text.size()) {
-      std::size_t lineEnd = text.find('\n', start);
-      if (lineEnd == std::string_view::npos) {
-        lineEnd = text.size();
-      }
-      const std::string_view line = text.substr(start, lineEnd - start);
-      const bool blankLine =
-          line.empty() || std::all_of(line.begin(), line.end(), [](unsigned char ch) { return std::isspace(ch) != 0; });
-      if (!blankLine) {
-        break;
-      }
-      if (lineEnd >= text.size()) {
-        start = text.size();
-        break;
-      }
-      start = lineEnd + 1;
-    }
-
-    return std::string(text.substr(start));
-  }
-
   float measureActionsFromPairs(RenderContext& rc, const std::vector<std::string>& actions) {
     if (actions.empty()) {
       return 0.0f;
@@ -246,8 +220,8 @@ namespace {
 
   ToastGeometry planToastLayout(RenderContext& rc, std::string_view summary, std::string_view body,
                                 const std::vector<std::string>& actions, float floorCardHeight) {
-    const std::string displaySummary = trimLeadingBlankLines(summary);
-    const std::string displayBody = trimLeadingBlankLines(body);
+    const std::string displaySummary = StringUtils::trimLeadingBlankLines(summary);
+    const std::string displayBody = StringUtils::trimLeadingBlankLines(body);
     const float textMaxWidth = notificationTextMaxWidth();
     const float actionsReserved = measureActionsFromPairs(rc, actions);
     const float maxCard = static_cast<float>(kMaxToastCardHeight);
@@ -497,8 +471,8 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
             cs.appNameLabel->setText(n.appName);
             const float actionsReservedHeight = measureActionsFromPairs(*m_renderContext, m_entries[i].actions);
             PopupEntry& e = m_entries[i];
-            const std::string displaySummary = trimLeadingBlankLines(e.summary);
-            const std::string displayBody = trimLeadingBlankLines(e.body);
+            const std::string displaySummary = StringUtils::trimLeadingBlankLines(e.summary);
+            const std::string displayBody = StringUtils::trimLeadingBlankLines(e.body);
             cs.summaryLabel->setText(displaySummary);
             cs.summaryLabel->setMaxLines(std::max(1, e.toastSummaryLines));
             cs.summaryLabel->measure(*m_renderContext);
@@ -1622,8 +1596,8 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
 
   // Summary (bold title) — Pango handles wrap + ellipsize.
   auto summary = std::make_unique<Label>();
-  const std::string displaySummary = trimLeadingBlankLines(entry.summary);
-  const std::string displayBody = trimLeadingBlankLines(entry.body);
+  const std::string displaySummary = StringUtils::trimLeadingBlankLines(entry.summary);
+  const std::string displayBody = StringUtils::trimLeadingBlankLines(entry.body);
   summary->setText(displaySummary);
   summary->setFontSize(kSummaryFontSize);
   summary->setColor(colorSpecFromRole(ColorRole::OnSurface));
