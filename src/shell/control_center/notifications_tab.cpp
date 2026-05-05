@@ -190,31 +190,6 @@ namespace {
 
   NotificationCardMetrics measureNotificationCard(Renderer& renderer, const NotificationHistoryEntry& entry,
                                                   float scale, float width, bool expandedRequested) {
-    const auto truncateByLines = [](std::string_view text, int maxLines, bool* didTruncate) {
-      if (didTruncate != nullptr) {
-        *didTruncate = false;
-      }
-      if (maxLines <= 0 || text.empty()) {
-        return std::string(text);
-      }
-
-      int seenLines = 1;
-      std::size_t index = 0;
-      while (index < text.size()) {
-        if (text[index] == '\n') {
-          ++seenLines;
-          if (seenLines > maxLines) {
-            if (didTruncate != nullptr) {
-              *didTruncate = true;
-            }
-            return std::string(text.substr(0, index));
-          }
-        }
-        ++index;
-      }
-      return std::string(text);
-    };
-
     NotificationCardMetrics metrics;
     const float cardWidth = std::max(0.0f, width);
     const float cardHorizontalPadding = Style::spaceMd * scale * 2.0f;
@@ -228,7 +203,7 @@ namespace {
     const bool summaryExpandable = canExpandText(renderer, summaryText, Style::fontSizeBody * scale, true,
                                                  metrics.cardTextWidth, kSummaryMaxLines);
     bool bodyLineTruncated = false;
-    const std::string collapsedBodyText = truncateByLines(bodyText, kBodyMaxLines, &bodyLineTruncated);
+    const std::string collapsedBodyText = StringUtils::truncateByLines(bodyText, kBodyMaxLines, &bodyLineTruncated);
     const bool bodyExpandable = bodyLineTruncated || canExpandText(renderer, bodyText, Style::fontSizeCaption * scale,
                                                                    false, metrics.cardTextWidth, kBodyMaxLines);
     metrics.canExpand = summaryExpandable || bodyExpandable;

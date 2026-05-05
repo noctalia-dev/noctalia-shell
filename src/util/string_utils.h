@@ -68,6 +68,31 @@ namespace StringUtils {
     return std::string(text.substr(start));
   }
 
+  [[nodiscard]] inline std::string truncateByLines(std::string_view text, int maxLines, bool* didTruncate = nullptr) {
+    if (didTruncate != nullptr) {
+      *didTruncate = false;
+    }
+    if (maxLines <= 0 || text.empty()) {
+      return std::string(text);
+    }
+
+    int seenLines = 1;
+    std::size_t index = 0;
+    while (index < text.size()) {
+      if (text[index] == '\n') {
+        ++seenLines;
+        if (seenLines > maxLines) {
+          if (didTruncate != nullptr) {
+            *didTruncate = true;
+          }
+          return std::string(text.substr(0, index));
+        }
+      }
+      ++index;
+    }
+    return std::string(text);
+  }
+
   // Strip HTML/Pango tags and unescape XML entities.
   [[nodiscard]] inline std::string sanitizeMarkup(std::string_view s) {
     std::string out;
