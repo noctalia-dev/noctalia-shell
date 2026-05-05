@@ -481,13 +481,13 @@ namespace settings {
                                 tr("settings.schema.dock.item-spacing.description"), {"dock", "item_spacing"},
                                 SliderSetting{static_cast<float>(cfg.dock.itemSpacing), 0.0f, 100.0f, 1.0f, true},
                                 "gap"));
-    entries.push_back(makeEntry("dock", "layout", tr("settings.schema.shared.horizontal-margin.label"),
-                                tr("settings.schema.dock.horizontal-margin.description"), {"dock", "margin_h"},
-                                SliderSetting{static_cast<float>(cfg.dock.marginH), 0.0f, 500.0f, 1.0f, true},
+    entries.push_back(makeEntry("dock", "layout", tr("settings.schema.shared.ends-margin.label"),
+                                tr("settings.schema.dock.ends-margin.description"), {"dock", "margin_ends"},
+                                SliderSetting{static_cast<float>(cfg.dock.marginEnds), 0.0f, 500.0f, 1.0f, true},
                                 "gap inset"));
-    entries.push_back(makeEntry("dock", "layout", tr("settings.schema.shared.vertical-margin.label"),
-                                tr("settings.schema.dock.vertical-margin.description"), {"dock", "margin_v"},
-                                SliderSetting{static_cast<float>(cfg.dock.marginV), 0.0f, 100.0f, 1.0f, true},
+    entries.push_back(makeEntry("dock", "layout", tr("settings.schema.shared.edge-margin.label"),
+                                tr("settings.schema.dock.edge-margin.description"), {"dock", "margin_edge"},
+                                SliderSetting{static_cast<float>(cfg.dock.marginEdge), 0.0f, 100.0f, 1.0f, true},
                                 "gap inset"));
     entries.push_back(makeEntry("dock", "shape", tr("settings.schema.shared.corner-radius.label"),
                                 tr("settings.schema.dock.corner-radius.description"), {"dock", "radius"},
@@ -721,13 +721,13 @@ namespace settings {
       entries.push_back(makeEntry(section, "layout", tr("settings.schema.bar.content-scale.label"),
                                   tr("settings.schema.bar.content-scale.description"), path("scale"),
                                   SliderSetting{selectedBar->scale, 0.5f, 4.0f, 0.05f, false}, "zoom size"));
-      entries.push_back(makeEntry(section, "layout", tr("settings.schema.shared.horizontal-margin.label"),
-                                  tr("settings.schema.bar.horizontal-margin.description"), path("margin_h"),
-                                  SliderSetting{static_cast<float>(selectedBar->marginH), 0.0f, 500.0f, 1.0f, true},
+      entries.push_back(makeEntry(section, "layout", tr("settings.schema.shared.ends-margin.label"),
+                                  tr("settings.schema.bar.ends-margin.description"), path("margin_ends"),
+                                  SliderSetting{static_cast<float>(selectedBar->marginEnds), 0.0f, 500.0f, 1.0f, true},
                                   "gap inset"));
-      entries.push_back(makeEntry(section, "layout", tr("settings.schema.shared.vertical-margin.label"),
-                                  tr("settings.schema.bar.vertical-margin.description"), path("margin_v"),
-                                  SliderSetting{static_cast<float>(selectedBar->marginV), 0.0f, 100.0f, 1.0f, true},
+      entries.push_back(makeEntry(section, "layout", tr("settings.schema.shared.edge-margin.label"),
+                                  tr("settings.schema.bar.edge-margin.description"), path("margin_edge"),
+                                  SliderSetting{static_cast<float>(selectedBar->marginEdge), 0.0f, 100.0f, 1.0f, true},
                                   "gap inset"));
       entries.push_back(makeEntry(section, "layout", tr("settings.schema.bar.content-padding.label"),
                                   tr("settings.schema.bar.content-padding.description"), path("padding"),
@@ -840,13 +840,15 @@ namespace settings {
                                   tr("settings.schema.bar.content-scale.description"), mpath("scale"),
                                   SliderSetting{ovr.scale.value_or(bar.scale), 0.5f, 4.0f, 0.05f, false}, "zoom size"));
       entries.push_back(makeEntry(
-          section, "layout", tr("settings.schema.shared.horizontal-margin.label"),
-          tr("settings.schema.bar.horizontal-margin.description"), mpath("margin_h"),
-          SliderSetting{static_cast<float>(ovr.marginH.value_or(bar.marginH)), 0.0f, 500.0f, 1.0f, true}, "gap inset"));
+          section, "layout", tr("settings.schema.shared.ends-margin.label"),
+          tr("settings.schema.bar.ends-margin.description"), mpath("margin_ends"),
+          SliderSetting{static_cast<float>(ovr.marginEnds.value_or(bar.marginEnds)), 0.0f, 500.0f, 1.0f, true},
+          "gap inset"));
       entries.push_back(makeEntry(
-          section, "layout", tr("settings.schema.shared.vertical-margin.label"),
-          tr("settings.schema.bar.vertical-margin.description"), mpath("margin_v"),
-          SliderSetting{static_cast<float>(ovr.marginV.value_or(bar.marginV)), 0.0f, 100.0f, 1.0f, true}, "gap inset"));
+          section, "layout", tr("settings.schema.shared.edge-margin.label"),
+          tr("settings.schema.bar.edge-margin.description"), mpath("margin_edge"),
+          SliderSetting{static_cast<float>(ovr.marginEdge.value_or(bar.marginEdge)), 0.0f, 100.0f, 1.0f, true},
+          "gap inset"));
       entries.push_back(makeEntry(
           section, "layout", tr("settings.schema.bar.content-padding.label"),
           tr("settings.schema.bar.content-padding.description"), mpath("padding"),

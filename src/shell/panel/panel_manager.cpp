@@ -153,7 +153,6 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
   const bool isBottom = barConfig.position == "bottom";
   const bool isLeft = barConfig.position == "left";
   const bool isRight = barConfig.position == "right";
-  const bool isVertical = isLeft || isRight;
   const std::int32_t panelGap = static_cast<std::int32_t>(Style::spaceXs);
   const std::int32_t screenPadding = static_cast<std::int32_t>(Style::spaceSm);
 
@@ -184,8 +183,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
                                : isLeft   ? LayerShellAnchor::Left | LayerShellAnchor::Top
                                : isRight  ? LayerShellAnchor::Right | LayerShellAnchor::Top
                                           : LayerShellAnchor::Top | LayerShellAnchor::Left;
-  const std::int32_t barOffset =
-      barConfig.thickness + (isVertical ? std::max(0, barConfig.marginH) : std::max(0, barConfig.marginV)) + panelGap;
+  const std::int32_t barOffset = barConfig.thickness + std::max(0, barConfig.marginEdge) + panelGap;
 
   const auto marginLeft = centeredH ? 0
                                     : clampMargin(request.anchorX - static_cast<float>(panelWidth) * 0.5f,
@@ -288,14 +286,16 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     const std::uint32_t surfaceHeight = barIsVertical ? (panelHeight + crossPad) : (panelHeight + mainPad);
 
     // Bar visible rect in screen coords, derived from BarConfig + output dimensions.
-    const std::int32_t marginH = std::max(0, barConfig.marginH);
-    const std::int32_t marginV = std::max(0, barConfig.marginV);
-    const std::int32_t barLeft = barIsRight ? std::max(0, outputWidth - marginH - barConfig.thickness) : marginH;
-    const std::int32_t barTop = barIsBottom ? std::max(0, outputHeight - marginV - barConfig.thickness) : marginV;
+    const std::int32_t mEdge = std::max(0, barConfig.marginEdge);
+    const std::int32_t mEnds = std::max(0, barConfig.marginEnds);
+    const std::int32_t barLeft =
+        barIsRight ? std::max(0, outputWidth - mEdge - barConfig.thickness) : (barIsVertical ? mEdge : mEnds);
+    const std::int32_t barTop =
+        barIsBottom ? std::max(0, outputHeight - mEdge - barConfig.thickness) : (barIsVertical ? mEnds : mEdge);
     const std::int32_t barRight =
-        barIsVertical ? barLeft + barConfig.thickness : std::max(barLeft, outputWidth - marginH);
+        barIsVertical ? barLeft + barConfig.thickness : std::max(barLeft, outputWidth - mEnds);
     const std::int32_t barBottom =
-        barIsVertical ? std::max(barTop, outputHeight - marginV) : barTop + barConfig.thickness;
+        barIsVertical ? std::max(barTop, outputHeight - mEnds) : barTop + barConfig.thickness;
 
     // Panel body rect in screen coords. Centered on the bar's main axis; 1 px bar overlap
     // so the concave-corner notches read as merged with the bar edge.
@@ -345,14 +345,14 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     std::int32_t barSurfaceLocalVisualX = visualX;
     std::int32_t barSurfaceLocalVisualY = visualY;
     if (barIsVertical) {
-      barSurfaceLocalVisualY = visualY - (barTop - std::min(marginV, barShadowBleed.up));
+      barSurfaceLocalVisualY = visualY - (barTop - std::min(mEnds, barShadowBleed.up));
       const std::int32_t barSurfaceOriginX =
-          barIsLeft ? std::max(0, marginH - barShadowBleed.left) : barLeft - barShadowBleed.left;
+          barIsLeft ? std::max(0, mEdge - barShadowBleed.left) : barLeft - barShadowBleed.left;
       barSurfaceLocalVisualX = visualX - barSurfaceOriginX;
     } else {
-      barSurfaceLocalVisualX = visualX - (barLeft - std::min(marginH, barShadowBleed.left));
+      barSurfaceLocalVisualX = visualX - (barLeft - std::min(mEnds, barShadowBleed.left));
       const std::int32_t barSurfaceOriginY =
-          barIsBottom ? barTop - barShadowBleed.up : std::max(0, marginV - barShadowBleed.up);
+          barIsBottom ? barTop - barShadowBleed.up : std::max(0, mEdge - barShadowBleed.up);
       barSurfaceLocalVisualY = visualY - barSurfaceOriginY;
     }
 

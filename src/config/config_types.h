@@ -27,8 +27,8 @@ struct BarMonitorOverride {
   std::optional<std::int32_t> radiusTopRight;
   std::optional<std::int32_t> radiusBottomLeft;
   std::optional<std::int32_t> radiusBottomRight;
-  std::optional<std::int32_t> marginH;       // horizontal compositor margin (left = right = marginH)
-  std::optional<std::int32_t> marginV;       // vertical compositor margin (gap between bar and screen edge)
+  std::optional<std::int32_t> marginEnds;    // inset from each end of the bar along its main axis
+  std::optional<std::int32_t> marginEdge;    // distance from the nearest screen edge (floats the bar when > 0)
   std::optional<std::int32_t> padding;       // main-axis padding from bar edges to start/end sections
   std::optional<std::int32_t> widgetSpacing; // gap between widgets within a section
   std::optional<bool> shadow;                // use the global shell shadow on this bar
@@ -63,8 +63,8 @@ struct BarConfig {
   std::int32_t radiusTopRight = static_cast<std::int32_t>(Style::radiusXl);
   std::int32_t radiusBottomLeft = static_cast<std::int32_t>(Style::radiusXl);
   std::int32_t radiusBottomRight = static_cast<std::int32_t>(Style::radiusXl);
-  std::int32_t marginH = 180;     // horizontal compositor margin (left = right = marginH)
-  std::int32_t marginV = 10;      // vertical compositor margin (gap between bar and screen edge)
+  std::int32_t marginEnds = 180;  // inset from each end of the bar along its main axis
+  std::int32_t marginEdge = 10;   // distance from the nearest screen edge (floats the bar when > 0)
   std::int32_t padding = 14;      // main-axis padding from bar edges to start/end sections
   std::int32_t widgetSpacing = 6; // gap between widgets within a section
   bool shadow = true;             // use the global shell shadow
@@ -210,8 +210,8 @@ struct DockConfig {
   std::int32_t itemSpacing = 6;    // gap between items
   float backgroundOpacity = 0.88f;
   std::int32_t radius = 16;        // dock background corner radius
-  std::int32_t marginH = 0;        // horizontal compositor margin from screen edges
-  std::int32_t marginV = 8;        // vertical gap between dock and screen edge
+  std::int32_t marginEnds = 0;     // inset from each end of the dock along its main axis
+  std::int32_t marginEdge = 8;     // distance from the nearest screen edge (floats the dock when > 0)
   bool shadow = true;              // use the global shell shadow
   bool showRunning = true;         // also show running apps not in pinned list
   bool autoHide = false;           // fade out when not hovered (overlay mode)

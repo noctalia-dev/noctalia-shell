@@ -1042,11 +1042,11 @@
         "padding": {
           "label": "Padding"
         },
-        "horizontal-margin": {
-          "label": "Horizontal Margin"
+        "ends-margin": {
+          "label": "Ends Margin"
         },
-        "vertical-margin": {
-          "label": "Vertical Margin"
+        "edge-margin": {
+          "label": "Edge Margin"
         },
         "corner-radius": {
           "label": "Corner Radius"
@@ -1245,11 +1245,11 @@
         "padding": {
           "description": "Inner padding of the dock"
         },
-        "horizontal-margin": {
-          "description": "Horizontal margin from screen edge"
+        "ends-margin": {
+          "description": "Inset from each end of the dock along its main axis"
         },
-        "vertical-margin": {
-          "description": "Vertical margin from screen edge"
+        "edge-margin": {
+          "description": "Distance from the nearest screen edge, positive values float the dock away from it"
         },
         "corner-radius": {
           "description": "Corner radius of the dock"
@@ -1562,11 +1562,11 @@
           "label": "Attach Panels",
           "description": "Attach panels opened from this bar to the bar edge"
         },
-        "horizontal-margin": {
-          "description": "Horizontal margin from screen edge"
+        "ends-margin": {
+          "description": "Inset from each end of the bar along its main axis"
         },
-        "vertical-margin": {
-          "description": "Vertical margin from screen edge"
+        "edge-margin": {
+          "description": "Distance from the nearest screen edge,  positive values float the bar away from it"
         },
         "corner-radius": {
           "description": "Corner radius of the bar"

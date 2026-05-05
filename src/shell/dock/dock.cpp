@@ -93,7 +93,7 @@ namespace {
     for (const auto& bar : config.bars) {
       std::string item =
           std::format("{}\x1f{}\x1f{}\x1f{}\x1f{}\x1f{}\x1f{}\x1f{}\x1f{}", bar.name, bar.position, bar.enabled,
-                      bar.autoHide, bar.reserveSpace, bar.thickness, bar.marginH, bar.marginV, bar.shadow);
+                      bar.autoHide, bar.reserveSpace, bar.thickness, bar.marginEnds, bar.marginEdge, bar.shadow);
 
       item.push_back('\x1e');
       for (const auto& override : bar.monitorOverrides) {
@@ -103,8 +103,8 @@ namespace {
         appendOptionalStackPart(item, override.autoHide);
         appendOptionalStackPart(item, override.reserveSpace);
         appendOptionalStackPart(item, override.thickness);
-        appendOptionalStackPart(item, override.marginH);
-        appendOptionalStackPart(item, override.marginV);
+        appendOptionalStackPart(item, override.marginEnds);
+        appendOptionalStackPart(item, override.marginEdge);
         appendOptionalStackPart(item, override.shadow);
         item.push_back('\x1e');
       }
@@ -515,35 +515,35 @@ void Dock::createInstance(const WaylandOutput& output) {
   std::int32_t exclusiveZone = 0;
 
   if (!vert) {
-    // Horizontal dock (top / bottom): centered, width = panel + shadow bleed sides + mH on each side.
+    // Horizontal dock (top / bottom): ends inset = left/right, edge gap = top/bottom.
     surfW = static_cast<std::uint32_t>(panelW + sb.left + sb.right);
-    surfH = static_cast<std::uint32_t>(sb.up + panelH + std::min(cfg.marginV, sb.down));
+    surfH = static_cast<std::uint32_t>(sb.up + panelH + std::min(cfg.marginEdge, sb.down));
     if (isBottom) {
-      mB = std::max(0, cfg.marginV - sb.down);
-      surfH = static_cast<std::uint32_t>(sb.up + panelH + std::min(cfg.marginV, sb.down));
-      exclusiveZone = hiddenOverlayMode ? 0 : (panelH + std::min(cfg.marginV, sb.down));
+      mB = std::max(0, cfg.marginEdge - sb.down);
+      surfH = static_cast<std::uint32_t>(sb.up + panelH + std::min(cfg.marginEdge, sb.down));
+      exclusiveZone = hiddenOverlayMode ? 0 : (panelH + std::min(cfg.marginEdge, sb.down));
     } else {
-      mT = std::max(0, cfg.marginV - sb.up);
-      surfH = static_cast<std::uint32_t>(std::min(cfg.marginV, sb.up) + panelH + sb.down);
-      exclusiveZone = hiddenOverlayMode ? 0 : (std::min(cfg.marginV, sb.up) + panelH);
+      mT = std::max(0, cfg.marginEdge - sb.up);
+      surfH = static_cast<std::uint32_t>(std::min(cfg.marginEdge, sb.up) + panelH + sb.down);
+      exclusiveZone = hiddenOverlayMode ? 0 : (std::min(cfg.marginEdge, sb.up) + panelH);
     }
-    // marginH is applied symmetrically as compositor side margins.
-    mL = cfg.marginH;
-    mR = cfg.marginH;
+    // marginEnds is applied symmetrically as compositor side margins.
+    mL = cfg.marginEnds;
+    mR = cfg.marginEnds;
   } else {
-    // Vertical dock (left / right): centered vertically, height = panel + shadow bleed + mV.
+    // Vertical dock (left / right): ends inset = top/bottom, edge gap = left/right.
     surfH = static_cast<std::uint32_t>(panelW + sb.up + sb.down);
     if (isRight) {
-      mR = std::max(0, cfg.marginH - sb.right);
-      surfW = static_cast<std::uint32_t>(sb.left + panelH + std::min(cfg.marginH, sb.right));
-      exclusiveZone = hiddenOverlayMode ? 0 : (panelH + std::min(cfg.marginH, sb.right));
+      mR = std::max(0, cfg.marginEdge - sb.right);
+      surfW = static_cast<std::uint32_t>(sb.left + panelH + std::min(cfg.marginEdge, sb.right));
+      exclusiveZone = hiddenOverlayMode ? 0 : (panelH + std::min(cfg.marginEdge, sb.right));
     } else {
-      mL = std::max(0, cfg.marginH - sb.left);
-      surfW = static_cast<std::uint32_t>(std::min(cfg.marginH, sb.left) + panelH + sb.right);
-      exclusiveZone = hiddenOverlayMode ? 0 : (std::min(cfg.marginH, sb.left) + panelH);
+      mL = std::max(0, cfg.marginEdge - sb.left);
+      surfW = static_cast<std::uint32_t>(std::min(cfg.marginEdge, sb.left) + panelH + sb.right);
+      exclusiveZone = hiddenOverlayMode ? 0 : (std::min(cfg.marginEdge, sb.left) + panelH);
     }
-    mT = cfg.marginV;
-    mB = cfg.marginV;
+    mT = cfg.marginEnds;
+    mB = cfg.marginEnds;
   }
 
   LayerSurfaceConfig lsCfg{
@@ -730,8 +730,7 @@ void Dock::buildScene(DockInstance& instance) {
   const float bleedR = static_cast<float>(sb.right);
   const float bleedU = static_cast<float>(sb.up);
   const float bleedD = static_cast<float>(sb.down);
-  const float mV = static_cast<float>(cfg.marginV);
-  const float mH = static_cast<float>(cfg.marginH);
+  const float mEdge = static_cast<float>(cfg.marginEdge);
   const bool isBottom = (cfg.position == "bottom");
   const bool isRight = (cfg.position == "right");
 
@@ -739,11 +738,11 @@ void Dock::buildScene(DockInstance& instance) {
   float panelX, panelY, panelW, panelH;
   if (!vert) {
     panelX = bleedL;
-    panelY = isBottom ? bleedU : std::min(mV, bleedU);
+    panelY = isBottom ? bleedU : std::min(mEdge, bleedU);
     panelW = w - bleedL - bleedR;
     panelH = static_cast<float>(dockThickness());
   } else {
-    panelX = isRight ? bleedL : std::min(mH, bleedL);
+    panelX = isRight ? bleedL : std::min(mEdge, bleedL);
     panelY = bleedU;
     panelW = static_cast<float>(dockThickness());
     panelH = h - bleedU - bleedD;
@@ -1102,12 +1101,12 @@ void Dock::resizeSurface(DockInstance& instance) {
   std::uint32_t surfW, surfH;
   if (!vert) {
     surfW = static_cast<std::uint32_t>(panelW + sb.left + sb.right);
-    surfH = isBottom ? static_cast<std::uint32_t>(sb.up + panelH + std::min(cfg.marginV, sb.down))
-                     : static_cast<std::uint32_t>(std::min(cfg.marginV, sb.up) + panelH + sb.down);
+    surfH = isBottom ? static_cast<std::uint32_t>(sb.up + panelH + std::min(cfg.marginEdge, sb.down))
+                     : static_cast<std::uint32_t>(std::min(cfg.marginEdge, sb.up) + panelH + sb.down);
   } else {
     const bool isRight = (cfg.position == "right");
-    surfW = isRight ? static_cast<std::uint32_t>(sb.left + panelH + std::min(cfg.marginH, sb.right))
-                    : static_cast<std::uint32_t>(std::min(cfg.marginH, sb.left) + panelH + sb.right);
+    surfW = isRight ? static_cast<std::uint32_t>(sb.left + panelH + std::min(cfg.marginEdge, sb.right))
+                    : static_cast<std::uint32_t>(std::min(cfg.marginEdge, sb.left) + panelH + sb.right);
     surfH = static_cast<std::uint32_t>(panelW + sb.up + sb.down);
   }
 
@@ -1330,7 +1329,7 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item, std::vec
     aW = halfCell * 2;
     aH = panelThk;
   } else if (isTop) {
-    const std::int32_t panelFace = std::min(cfg.marginV, sb.up) + panelThk;
+    const std::int32_t panelFace = std::min(cfg.marginEdge, sb.up) + panelThk;
     aX = ptrX - halfCell;
     aY = 0;
     aW = halfCell * 2;
@@ -1341,7 +1340,7 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item, std::vec
     aW = panelThk;
     aH = halfCell * 2;
   } else { // left
-    const std::int32_t panelFace = std::min(cfg.marginH, sb.left) + panelThk;
+    const std::int32_t panelFace = std::min(cfg.marginEdge, sb.left) + panelThk;
     aX = 0;
     aY = ptrY - halfCell;
     aW = panelFace;
@@ -1538,7 +1537,7 @@ void Dock::startHideFadeOut(DockInstance& inst) {
         const auto panelW = dockContentSize(inst.items.size());
         const auto panelH = dockThickness();
         const auto surfW = static_cast<int>(vert ? (sb.left + panelH + sb.right) : (panelW + sb.left + sb.right));
-        const auto surfH = static_cast<int>(vert ? (panelW + sb.up + sb.down) : (sb.up + panelH + cfg.marginV));
+        const auto surfH = static_cast<int>(vert ? (panelW + sb.up + sb.down) : (sb.up + panelH + cfg.marginEdge));
         if (!vert) {
           inst.surface->setInputRegion({InputRect{0, surfH - kAutoHideTriggerPx, surfW, kAutoHideTriggerPx}});
         } else if (cfg.position == "left") {
@@ -1691,7 +1690,7 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
     aW = halfCell * 2;
     aH = panelThk;
   } else if (isTop) {
-    const std::int32_t panelFace = std::min(cfg.marginV, sb.up) + panelThk;
+    const std::int32_t panelFace = std::min(cfg.marginEdge, sb.up) + panelThk;
     aX = ptrX - halfCell;
     aY = 0;
     aW = halfCell * 2;
@@ -1702,7 +1701,7 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
     aW = panelThk;
     aH = halfCell * 2;
   } else { // left
-    const std::int32_t panelFace = std::min(cfg.marginH, sb.left) + panelThk;
+    const std::int32_t panelFace = std::min(cfg.marginEdge, sb.left) + panelThk;
     aX = 0;
     aY = ptrY - halfCell;
     aW = panelFace;

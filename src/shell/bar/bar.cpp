@@ -85,8 +85,8 @@ namespace {
     const bool sameShadowSurface =
         (!a.shadow && !b.shadow) || shell::surface_shadow::sameSurfaceMetrics(previousShadow, nextShadow);
     return a.name == b.name && a.position == b.position && a.enabled == b.enabled && a.autoHide == b.autoHide &&
-           a.reserveSpace == b.reserveSpace && a.thickness == b.thickness && a.marginH == b.marginH &&
-           a.marginV == b.marginV && a.shadow == b.shadow && sameShadowSurface &&
+           a.reserveSpace == b.reserveSpace && a.thickness == b.thickness && a.marginEnds == b.marginEnds &&
+           a.marginEdge == b.marginEdge && a.shadow == b.shadow && sameShadowSurface &&
            a.monitorOverrides == b.monitorOverrides;
   }
 
@@ -115,8 +115,8 @@ namespace {
   BarVisualGeometry computeBarVisualGeometry(const BarConfig& cfg, const ShellConfig::ShadowConfig& shadow,
                                              float surfaceWidth, float surfaceHeight) {
     const float barThickness = static_cast<float>(cfg.thickness);
-    const float marginH = static_cast<float>(cfg.marginH);
-    const float marginV = static_cast<float>(cfg.marginV);
+    const float marginEnds = static_cast<float>(cfg.marginEnds);
+    const float marginEdge = static_cast<float>(cfg.marginEdge);
     const bool isBottom = cfg.position == "bottom";
     const bool isRight = cfg.position == "right";
     const bool isVertical = (cfg.position == "left" || cfg.position == "right");
@@ -127,22 +127,24 @@ namespace {
     const float bleedDown = static_cast<float>(sbi.down);
 
     if (isVertical) {
-      const float x = isRight ? bleedLeft : std::min(marginH, bleedLeft);
-      const float y = std::min(marginV, bleedUp);
+      // Vertical bar: edge gap is left/right, ends inset is top/bottom.
+      const float x = isRight ? bleedLeft : std::min(marginEdge, bleedLeft);
+      const float y = std::min(marginEnds, bleedUp);
       return {
           .x = x,
           .y = y,
           .width = barThickness,
-          .height = surfaceHeight - y - std::min(marginV, bleedDown),
+          .height = surfaceHeight - y - std::min(marginEnds, bleedDown),
       };
     }
 
-    const float x = std::min(marginH, bleedLeft);
-    const float y = isBottom ? bleedUp : std::min(marginV, bleedUp);
+    // Horizontal bar: edge gap is top/bottom, ends inset is left/right.
+    const float x = std::min(marginEnds, bleedLeft);
+    const float y = isBottom ? bleedUp : std::min(marginEdge, bleedUp);
     return {
         .x = x,
         .y = y,
-        .width = surfaceWidth - x - std::min(marginH, bleedRight),
+        .width = surfaceWidth - x - std::min(marginEnds, bleedRight),
         .height = barThickness,
     };
   }
@@ -763,8 +765,8 @@ void Bar::createInstance(const WaylandOutput& output, std::size_t barIndex, cons
   const bool isBottom = barConfig.position == "bottom";
   const bool isRight = barConfig.position == "right";
 
-  const std::int32_t mH = barConfig.marginH;
-  const std::int32_t mV = barConfig.marginV;
+  const std::int32_t mEnds = barConfig.marginEnds;
+  const std::int32_t mEdge = barConfig.marginEdge;
   const auto sb = shell::surface_shadow::bleed(barConfig.shadow, m_config->config().shell.shadow);
   const bool reserveExclusiveZone = barConfig.reserveSpace;
 
@@ -775,35 +777,37 @@ void Bar::createInstance(const WaylandOutput& output, std::size_t barIndex, cons
   std::int32_t exclusiveZone = reserveExclusiveZone ? 0 : -1;
 
   if (!vertical) {
-    mLeft = std::max(0, mH - sb.left);
-    mRight = std::max(0, mH - sb.right);
+    // Horizontal bar: ends inset = left/right, edge gap = top/bottom.
+    mLeft = std::max(0, mEnds - sb.left);
+    mRight = std::max(0, mEnds - sb.right);
     if (isBottom) {
-      mBottom = std::max(0, mV - sb.down);
-      surfH = static_cast<std::uint32_t>(sb.up + barConfig.thickness + std::min(mV, sb.down));
+      mBottom = std::max(0, mEdge - sb.down);
+      surfH = static_cast<std::uint32_t>(sb.up + barConfig.thickness + std::min(mEdge, sb.down));
       if (reserveExclusiveZone) {
-        exclusiveZone = barConfig.thickness + std::min(mV, sb.down);
+        exclusiveZone = barConfig.thickness + std::min(mEdge, sb.down);
       }
     } else {
-      mTop = std::max(0, mV - sb.up);
-      surfH = static_cast<std::uint32_t>(std::min(mV, sb.up) + barConfig.thickness + sb.down);
+      mTop = std::max(0, mEdge - sb.up);
+      surfH = static_cast<std::uint32_t>(std::min(mEdge, sb.up) + barConfig.thickness + sb.down);
       if (reserveExclusiveZone) {
-        exclusiveZone = std::min(mV, sb.up) + barConfig.thickness;
+        exclusiveZone = std::min(mEdge, sb.up) + barConfig.thickness;
       }
     }
   } else {
-    mTop = std::max(0, mV - sb.up);
-    mBottom = std::max(0, mV - sb.down);
+    // Vertical bar: ends inset = top/bottom, edge gap = left/right.
+    mTop = std::max(0, mEnds - sb.up);
+    mBottom = std::max(0, mEnds - sb.down);
     if (isRight) {
-      mRight = std::max(0, mH - sb.right);
-      surfW = static_cast<std::uint32_t>(sb.left + barConfig.thickness + std::min(mH, sb.right));
+      mRight = std::max(0, mEdge - sb.right);
+      surfW = static_cast<std::uint32_t>(sb.left + barConfig.thickness + std::min(mEdge, sb.right));
       if (reserveExclusiveZone) {
-        exclusiveZone = barConfig.thickness + std::min(mH, sb.right);
+        exclusiveZone = barConfig.thickness + std::min(mEdge, sb.right);
       }
     } else {
-      mLeft = std::max(0, mH - sb.left);
-      surfW = static_cast<std::uint32_t>(std::min(mH, sb.left) + barConfig.thickness + sb.right);
+      mLeft = std::max(0, mEdge - sb.left);
+      surfW = static_cast<std::uint32_t>(std::min(mEdge, sb.left) + barConfig.thickness + sb.right);
       if (reserveExclusiveZone) {
-        exclusiveZone = std::min(mH, sb.left) + barConfig.thickness;
+        exclusiveZone = std::min(mEdge, sb.left) + barConfig.thickness;
       }
     }
   }
@@ -1349,8 +1353,7 @@ void Bar::updateWidgets(BarInstance& instance) {
   const auto h = static_cast<float>(instance.surface->height());
   const float padding = static_cast<float>(instance.barConfig.padding);
   const float barThickness = static_cast<float>(instance.barConfig.thickness);
-  const float marginH = static_cast<float>(instance.barConfig.marginH);
-  const float marginV = static_cast<float>(instance.barConfig.marginV);
+  const float marginEnds = static_cast<float>(instance.barConfig.marginEnds);
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
   const auto sbi = shell::surface_shadow::bleed(instance.barConfig.shadow, m_config->config().shell.shadow);
   const float bleedLeft = static_cast<float>(sbi.left);
@@ -1359,12 +1362,12 @@ void Bar::updateWidgets(BarInstance& instance) {
   const float bleedDown = static_cast<float>(sbi.down);
   float barAreaW, barAreaH;
   if (isVertical) {
-    const float barAreaY = std::min(marginV, bleedUp);
+    const float barAreaY = std::min(marginEnds, bleedUp);
     barAreaW = barThickness;
-    barAreaH = h - barAreaY - std::min(marginV, bleedDown);
+    barAreaH = h - barAreaY - std::min(marginEnds, bleedDown);
   } else {
-    const float barAreaX = std::min(marginH, bleedLeft);
-    barAreaW = w - barAreaX - std::min(marginH, bleedRight);
+    const float barAreaX = std::min(marginEnds, bleedLeft);
+    barAreaW = w - barAreaX - std::min(marginEnds, bleedRight);
     barAreaH = barThickness;
   }
 
@@ -1405,8 +1408,7 @@ void Bar::prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout
   const auto h = static_cast<float>(instance.surface->height());
   const float padding = static_cast<float>(instance.barConfig.padding);
   const float barThickness = static_cast<float>(instance.barConfig.thickness);
-  const float marginH = static_cast<float>(instance.barConfig.marginH);
-  const float marginV = static_cast<float>(instance.barConfig.marginV);
+  const float marginEnds = static_cast<float>(instance.barConfig.marginEnds);
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
   const auto sbi = shell::surface_shadow::bleed(instance.barConfig.shadow, m_config->config().shell.shadow);
   const float bleedLeft = static_cast<float>(sbi.left);
@@ -1416,12 +1418,12 @@ void Bar::prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout
   float barAreaW = 0.0f;
   float barAreaH = 0.0f;
   if (isVertical) {
-    const float barAreaY = std::min(marginV, bleedUp);
+    const float barAreaY = std::min(marginEnds, bleedUp);
     barAreaW = barThickness;
-    barAreaH = h - barAreaY - std::min(marginV, bleedDown);
+    barAreaH = h - barAreaY - std::min(marginEnds, bleedDown);
   } else {
-    const float barAreaX = std::min(marginH, bleedLeft);
-    barAreaW = w - barAreaX - std::min(marginH, bleedRight);
+    const float barAreaX = std::min(marginEnds, bleedLeft);
+    barAreaW = w - barAreaX - std::min(marginEnds, bleedRight);
     barAreaH = barThickness;
   }
 

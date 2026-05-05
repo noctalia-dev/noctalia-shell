@@ -201,11 +201,11 @@ namespace settings {
       if (key == "scale") {
         return override->scale.has_value();
       }
-      if (key == "margin_h") {
-        return override->marginH.has_value();
+      if (key == "margin_ends") {
+        return override->marginEnds.has_value();
       }
-      if (key == "margin_v") {
-        return override->marginV.has_value();
+      if (key == "margin_edge") {
+        return override->marginEdge.has_value();
       }
       if (key == "padding") {
         return override->padding.has_value();
