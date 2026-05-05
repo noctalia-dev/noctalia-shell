@@ -6,6 +6,7 @@
 #include "render/text/cairo_glyph_renderer.h"
 #include "render/text/cairo_text_renderer.h"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -40,11 +41,13 @@ public:
   // Renderer interface — used by widgets for measurement and textures
   [[nodiscard]] TextMetrics measureText(std::string_view text, float fontSize, bool bold = false, float maxWidth = 0.0f,
                                         int maxLines = 0, TextAlign align = TextAlign::Start) override;
+  [[nodiscard]] TextMetrics measureFont(float fontSize, bool bold = false) override;
   void measureTextCursorStops(std::string_view text, float fontSize, const std::vector<std::size_t>& byteOffsets,
                               std::vector<float>& outStops, bool bold = false) override;
   [[nodiscard]] TextMetrics measureGlyph(char32_t codepoint, float fontSize) override;
   [[nodiscard]] TextureManager& textureManager() override;
   [[nodiscard]] float renderScale() const noexcept override { return m_renderScale; }
+  [[nodiscard]] std::uint64_t textMetricsGeneration() const noexcept override { return m_textMetricsGeneration; }
 
 private:
   void makeCurrentNoSurface();
@@ -54,5 +57,7 @@ private:
   std::unique_ptr<RenderBackend> m_backend;
   CairoTextRenderer m_textRenderer;
   CairoGlyphRenderer m_glyphRenderer;
+  std::string m_textFontFamily = "sans-serif";
   float m_renderScale = 1.0f;
+  std::uint64_t m_textMetricsGeneration = 1;
 };

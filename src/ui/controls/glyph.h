@@ -47,6 +47,7 @@ private:
   float m_cachedLogicalFontSize = 0.0f;
   float m_cachedConstraintMaxWidth = 0.0f;
   float m_cachedConstraintMaxHeight = 0.0f;
+  float m_cachedRenderScale = 0.0f;
   bool m_cachedHasConstraintMaxWidth = false;
   bool m_cachedHasConstraintMaxHeight = false;
   bool m_measureCached = false;

@@ -58,6 +58,7 @@ public:
 
   [[nodiscard]] TextMetrics measure(std::string_view text, float fontSize, bool bold = false, float maxWidth = 0.0f,
                                     int maxLines = 0, TextAlign align = TextAlign::Start);
+  [[nodiscard]] TextMetrics measureFont(float fontSize, bool bold = false) const;
   void measureCursorStops(std::string_view text, float fontSize, const std::vector<std::size_t>& byteOffsets,
                           std::vector<float>& outStops, bool bold = false);
 

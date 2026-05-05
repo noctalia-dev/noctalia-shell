@@ -87,6 +87,8 @@ void RenderContext::initialize(GlSharedContext& shared) {
   m_textRenderer.initialize(m_backend.get(), &m_backend->textureManager());
   m_glyphRenderer.initialize(paths::assetPath("fonts/tabler.ttf").string(), m_backend.get(),
                              &m_backend->textureManager());
+  m_textFontFamily = "sans-serif";
+  ++m_textMetricsGeneration;
 }
 
 void RenderContext::makeCurrentNoSurface() {
@@ -119,8 +121,16 @@ void RenderContext::syncContentScale(RenderTarget& target) {
 }
 
 void RenderContext::setTextFontFamily(std::string family) {
+  if (family.empty()) {
+    family = "sans-serif";
+  }
+  if (m_textFontFamily == family) {
+    return;
+  }
   makeCurrentNoSurface();
-  m_textRenderer.setFontFamily(std::move(family));
+  m_textFontFamily = std::move(family);
+  m_textRenderer.setFontFamily(m_textFontFamily);
+  ++m_textMetricsGeneration;
 }
 
 void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
@@ -152,6 +162,19 @@ void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
 TextMetrics RenderContext::measureText(std::string_view text, float fontSize, bool bold, float maxWidth, int maxLines,
                                        TextAlign align) {
   auto m = m_textRenderer.measure(text, fontSize, bold, maxWidth, maxLines, align);
+  return TextMetrics{.width = m.width,
+                     .left = m.left,
+                     .right = m.right,
+                     .top = m.top,
+                     .bottom = m.bottom,
+                     .inkTop = m.inkTop,
+                     .inkBottom = m.inkBottom,
+                     .inkLeft = m.inkLeft,
+                     .inkRight = m.inkRight};
+}
+
+TextMetrics RenderContext::measureFont(float fontSize, bool bold) {
+  auto m = m_textRenderer.measureFont(fontSize, bold);
   return TextMetrics{.width = m.width,
                      .left = m.left,
                      .right = m.right,
