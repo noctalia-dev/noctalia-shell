@@ -7,7 +7,7 @@ import Quickshell.Io
 import qs.Commons
 import qs.Widgets
 
-Popup {
+NPopup {
   id: root
 
   // Properties

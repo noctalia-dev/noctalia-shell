@@ -16,6 +16,7 @@ SmartPanel {
   readonly property bool isFramed: Settings.data.bar.barType === "framed" && hasBar
   property bool isDockHovered: false
   property bool panelHovered: false
+  isHovered: true // Turn off SmartPanel auto-hide feature by removing the hovering binding
   readonly property int iconSize: Math.round(12 + 24 * (Settings.data.dock.size ?? 1))
   readonly property int maxWidth: screen ? screen.width * 0.8 : 1000
   readonly property int maxHeight: screen ? screen.height * 0.8 : 1000

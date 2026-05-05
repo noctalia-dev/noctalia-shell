@@ -2499,6 +2499,33 @@
     "subTabLabel": "common.panels"
   },
   {
+    "labelKey": "panels.user-interface.panels-auto-hide-label",
+    "descriptionKey": "panels.user-interface.panels-auto-hide-description",
+    "widget": "NComboBox",
+    "tab": 1,
+    "tabLabel": "panels.user-interface.title",
+    "subTab": 1,
+    "subTabLabel": "common.panels"
+  },
+  {
+    "labelKey": "panels.user-interface.panels-auto-hide-delay-label",
+    "descriptionKey": "panels.user-interface.panels-auto-hide-delay-description",
+    "widget": "NValueSlider",
+    "tab": 1,
+    "tabLabel": "panels.user-interface.title",
+    "subTab": 1,
+    "subTabLabel": "common.panels"
+  },
+  {
+    "labelKey": "panels.user-interface.panels-auto-hide-delay-before-enter-label",
+    "descriptionKey": "panels.user-interface.panels-auto-hide-delay-before-enter-description",
+    "widget": "NValueSlider",
+    "tab": 1,
+    "tabLabel": "panels.user-interface.title",
+    "subTab": 1,
+    "subTabLabel": "common.panels"
+  },
+  {
     "labelKey": "panels.user-interface.settings-panel-mode-label",
     "descriptionKey": "panels.user-interface.settings-panel-mode-description",
     "widget": "NComboBox",

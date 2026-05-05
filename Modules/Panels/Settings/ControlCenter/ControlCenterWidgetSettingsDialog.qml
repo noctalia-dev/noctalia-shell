@@ -6,7 +6,7 @@ import qs.Services.UI
 import qs.Widgets
 
 // Widget Settings Dialog Component
-Popup {
+NPopup {
   id: root
 
   property int widgetIndex: -1

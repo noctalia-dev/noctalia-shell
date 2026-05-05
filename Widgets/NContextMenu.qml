@@ -30,7 +30,7 @@ import qs.Commons
 *     onClicked: contextMenu.openAtItem(parent, mouse.x, mouse.y)
 *   }
 */
-Popup {
+NPopup {
   id: root
 
   property var model: []

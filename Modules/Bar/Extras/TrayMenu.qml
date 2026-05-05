@@ -58,6 +58,8 @@ PopupWindow {
   }
 
   visible: false
+  onVisibleChanged: PanelService.childrenVisible(visible)
+
   color: "transparent"
   anchor.item: anchorItem
   anchor.rect.x: {
