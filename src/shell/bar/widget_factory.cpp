@@ -47,7 +47,6 @@
 #include "ui/style.h"
 #include "wayland/wayland_connection.h"
 
-#include <algorithm>
 #include <string>
 
 namespace {
@@ -106,16 +105,15 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "audio_visualizer") {
     const float width = static_cast<float>(wc != nullptr ? wc->getDouble("width", 56.0) : 56.0);
-    const float height = static_cast<float>(wc != nullptr ? wc->getDouble("height", 16.0) : 16.0);
     const int bands = static_cast<int>(wc != nullptr ? wc->getInt("bands", 16) : 16);
-    const bool mirrored = wc != nullptr ? wc->getBool("mirrored", false) : false;
+    const bool mirrored = wc != nullptr ? wc->getBool("mirrored", true) : true;
     const bool showWhenIdle = wc != nullptr ? wc->getBool("show_when_idle", false) : false;
     const ColorSpec lowColor =
         colorSpecFromConfigString(wc != nullptr ? wc->getString("low_color", "primary") : std::string("primary"));
     const ColorSpec highColor =
         colorSpecFromConfigString(wc != nullptr ? wc->getString("high_color", "primary") : std::string("primary"));
-    auto widget = std::make_unique<AudioVisualizerWidget>(m_audioSpectrum, width, height, bands, mirrored, lowColor,
-                                                          highColor, showWhenIdle);
+    auto widget = std::make_unique<AudioVisualizerWidget>(m_audioSpectrum, width, bands, mirrored, lowColor, highColor,
+                                                          showWhenIdle);
     widget->setContentScale(contentScale);
     return widget;
   }

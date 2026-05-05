@@ -9,9 +9,9 @@
 #include <algorithm>
 #include <memory>
 
-AudioVisualizerWidget::AudioVisualizerWidget(PipeWireSpectrum* spectrum, float width, float height, int bands,
-                                             bool mirrored, ColorSpec lowColor, ColorSpec highColor, bool showWhenIdle)
-    : m_spectrum(spectrum), m_width(width), m_height(height), m_bands(std::max(1, bands)), m_mirrored(mirrored),
+AudioVisualizerWidget::AudioVisualizerWidget(PipeWireSpectrum* spectrum, float width, int bands, bool mirrored,
+                                             ColorSpec lowColor, ColorSpec highColor, bool showWhenIdle)
+    : m_spectrum(spectrum), m_width(width), m_bands(std::max(1, bands)), m_mirrored(mirrored),
       m_showWhenIdle(showWhenIdle), m_lowColor(lowColor), m_highColor(highColor) {}
 
 AudioVisualizerWidget::~AudioVisualizerWidget() {
@@ -56,8 +56,9 @@ void AudioVisualizerWidget::doLayout(Renderer& renderer, float containerWidth, f
   m_isVertical = containerHeight > containerWidth;
   m_visualizer->setOrientation(m_isVertical ? AudioSpectrumOrientation::Vertical
                                             : AudioSpectrumOrientation::Horizontal);
-  const float width = std::max(1.0f, (m_isVertical ? m_height : m_width) * m_contentScale);
-  const float height = std::max(1.0f, (m_isVertical ? m_width : m_height) * m_contentScale);
+  const float crossDim = m_isVertical ? containerWidth : containerHeight;
+  const float width = std::max(1.0f, m_isVertical ? crossDim : m_width * m_contentScale);
+  const float height = std::max(1.0f, m_isVertical ? m_width * m_contentScale : crossDim);
   m_visualizer->setPosition(0.0f, 0.0f);
   m_visualizer->setSize(width, height);
   m_visualizer->layout(renderer);
