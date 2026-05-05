@@ -49,6 +49,7 @@ namespace {
     auto label = std::make_unique<Label>();
     label->setFontSize(Style::fontSizeBody * scale);
     label->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+    label->setStableBaseline(true);
     auto* ptr = label.get();
     parent.addChild(std::move(label));
     return ptr;
