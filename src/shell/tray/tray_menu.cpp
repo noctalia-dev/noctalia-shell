@@ -39,7 +39,7 @@ namespace {
 
   void closeTrayDrawerPanelIfOpen() {
     auto& panelManager = PanelManager::instance();
-    if (panelManager.isOpen() && panelManager.activePanelId() == "tray-drawer") {
+    if (panelManager.isOpenPanel("tray-drawer")) {
       panelManager.close();
     }
   }

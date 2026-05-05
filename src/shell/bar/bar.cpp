@@ -964,12 +964,14 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
             anchorY += surfaceY;
           }
         }
-        PanelManager::instance().togglePanel(std::string(panelId),
-                                             PanelOpenRequest{.output = inst->output,
-                                                              .anchorX = anchorX,
-                                                              .anchorY = anchorY,
-                                                              .context = context,
-                                                              .sourceBarName = inst->barConfig.name});
+        PanelManager::instance().togglePanel(
+            std::string(panelId),
+            PanelOpenRequest{.output = inst->output,
+                             .anchorX = anchorX,
+                             .anchorY = anchorY,
+                             .hasExplicitAnchor = anchorSurfaceX.has_value() || anchorSurfaceY.has_value(),
+                             .context = context,
+                             .sourceBarName = inst->barConfig.name});
       });
       widget->create();
       if (widget->root() == nullptr) {
@@ -1552,7 +1554,7 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
     case PointerEvent::Type::Axis:
       if (event.type == PointerEvent::Type::Button && event.button == BTN_RIGHT && event.state == 1) {
         auto& panelManager = PanelManager::instance();
-        if (panelManager.isOpen() && panelManager.activePanelId() == "control-center") {
+        if (panelManager.isOpenPanel("control-center")) {
           panelManager.closePanel();
         } else {
           panelManager.openPanel("control-center", PanelOpenRequest{.output = targetInstance->output,
@@ -1632,7 +1634,7 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
                                     pointInsideNode(m_hoveredInstance->endSection, sx, sy);
       if (!insideAnySection) {
         auto& panelManager = PanelManager::instance();
-        if (panelManager.isOpen() && panelManager.activePanelId() == "control-center") {
+        if (panelManager.isOpenPanel("control-center")) {
           panelManager.closePanel();
         } else {
           panelManager.openPanel("control-center",

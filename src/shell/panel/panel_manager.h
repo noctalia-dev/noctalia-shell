@@ -36,6 +36,7 @@ struct PanelOpenRequest {
   wl_output* output = nullptr;
   float anchorX = 0.0f;
   float anchorY = 0.0f;
+  bool hasExplicitAnchor = false;
   std::string_view context = {};
   std::string_view sourceBarName = {};
 };
@@ -76,6 +77,7 @@ public:
   void onKeyboardEvent(const KeyboardEvent& event);
 
   [[nodiscard]] bool isOpen() const noexcept;
+  [[nodiscard]] bool isOpenPanel(std::string_view panelId) const noexcept;
   [[nodiscard]] bool isAttachedOpen() const noexcept;
   [[nodiscard]] const std::string& activePanelId() const noexcept;
   // True when a panel is open and it reports the given context as active (e.g. control-center tab).

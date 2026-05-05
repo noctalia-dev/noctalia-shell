@@ -121,9 +121,7 @@ Application::Application() : m_lockKeysService(m_wayland), m_weatherService(m_co
   notify::setInstance(&m_notificationManager);
   LockScreen::setInstance(&m_lockScreen);
 
-  auto shouldRefreshControlCenter = [this]() {
-    return m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center";
-  };
+  auto shouldRefreshControlCenter = [this]() { return m_panelManager.isOpenPanel("control-center"); };
 
   m_notificationManager.addEventCallback(
       [this, shouldRefreshControlCenter](const Notification& n, NotificationEvent event) {
@@ -227,19 +225,19 @@ void Application::syncPolkitAgent() {
       const bool hasPending = m_polkitAgent->hasPendingRequest();
       const bool needsInput = m_polkitAgent->isResponseRequired();
       if (!hasPending) {
-        if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "polkit") {
+        if (m_panelManager.isOpenPanel("polkit")) {
           m_panelManager.close();
         }
         return;
       }
       if (needsInput) {
-        if (!(m_panelManager.isOpen() && m_panelManager.activePanelId() == "polkit")) {
+        if (!m_panelManager.isOpenPanel("polkit")) {
           wl_output* output = m_wayland.preferredPanelOutput(std::chrono::milliseconds(1200));
           m_panelManager.openPanel("polkit", PanelOpenRequest{.output = output});
         } else {
           m_panelManager.refresh();
         }
-      } else if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "polkit") {
+      } else if (m_panelManager.isOpenPanel("polkit")) {
         m_panelManager.refresh();
       }
     });
@@ -292,9 +290,7 @@ void Application::initServices() {
   std::signal(SIGTERM, signal_handler);
   std::signal(SIGINT, signal_handler);
 
-  auto shouldRefreshControlCenter = [this]() {
-    return m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center";
-  };
+  auto shouldRefreshControlCenter = [this]() { return m_panelManager.isOpenPanel("control-center"); };
 
   auto applyMotionConfig = [this]() {
     auto& motion = MotionService::instance();
@@ -367,7 +363,7 @@ void Application::initServices() {
     m_lockScreen.onOutputChange();
   });
   m_clipboardService.setChangeCallback([this]() {
-    if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "clipboard") {
+    if (m_panelManager.isOpenPanel("clipboard")) {
       m_panelManager.refresh();
     }
   });
@@ -416,7 +412,7 @@ void Application::initServices() {
     m_backdrop.onStateChange();
     m_lockScreen.onWallpaperChanged();
     m_themeService.onWallpaperChange();
-    if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center") {
+    if (m_panelManager.isOpenPanel("control-center")) {
       m_panelManager.refresh();
     }
     m_hookManager.fire(HookKind::WallpaperChanged);
@@ -742,9 +738,7 @@ void Application::startTrayService() {
 }
 
 void Application::initUi() {
-  auto shouldRefreshControlCenter = [this]() {
-    return m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center";
-  };
+  auto shouldRefreshControlCenter = [this]() { return m_panelManager.isOpenPanel("control-center"); };
 
   m_renderContext.initialize(m_glShared);
   m_renderContext.setTextFontFamily(m_configService.config().shell.fontFamily);
@@ -1030,7 +1024,7 @@ void Application::initIpc() {
   auto applyNotificationDnd = [this](bool enabled) {
     m_notificationManager.setDoNotDisturb(enabled);
     m_bar.refresh();
-    if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center") {
+    if (m_panelManager.isOpenPanel("control-center")) {
       m_panelManager.refresh();
     }
   };
@@ -1079,7 +1073,7 @@ void Application::initIpc() {
         for (const uint32_t id : activeIds) {
           (void)m_notificationManager.close(id, CloseReason::Dismissed);
         }
-        if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center") {
+        if (m_panelManager.isOpenPanel("control-center")) {
           m_panelManager.refresh();
         }
         return "ok\n";
@@ -1090,7 +1084,7 @@ void Application::initIpc() {
       "notification-clear-history",
       [this](const std::string&) -> std::string {
         m_notificationManager.clearHistory();
-        if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center") {
+        if (m_panelManager.isOpenPanel("control-center")) {
           m_panelManager.refresh();
         }
         return "ok\n";

@@ -277,8 +277,7 @@ void TrayWidget::doLayout(Renderer& renderer, float containerWidth, float contai
     return;
   }
   if (m_drawerMode && m_drawerChevron != nullptr && m_drawerTrigger != nullptr) {
-    const bool panelOpen =
-        PanelManager::instance().isOpen() && PanelManager::instance().activePanelId() == "tray-drawer";
+    const bool panelOpen = PanelManager::instance().isOpenPanel("tray-drawer");
     const std::string glyphName = drawerChevronGlyph(panelOpen);
     if (m_drawerChevronGlyph != glyphName) {
       m_drawerChevronGlyph = glyphName;
@@ -447,8 +446,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
         }
       });
       auto glyph = std::make_unique<Glyph>();
-      const bool panelOpen =
-          PanelManager::instance().isOpen() && PanelManager::instance().activePanelId() == "tray-drawer";
+      const bool panelOpen = PanelManager::instance().isOpenPanel("tray-drawer");
       m_drawerChevronGlyph = drawerChevronGlyph(panelOpen);
       glyph->setGlyph(m_drawerChevronGlyph);
       glyph->setGlyphSize(itemSize);
