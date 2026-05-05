@@ -13,6 +13,8 @@
 
 class Flex;
 class Image;
+class InputArea;
+class Glyph;
 class TrayService;
 
 class TrayWidget : public Widget {
@@ -33,6 +35,7 @@ private:
   void rebuild(Renderer& renderer);
   [[nodiscard]] std::string iconForItem(const TrayItemInfo& item) const;
   [[nodiscard]] bool isHiddenItem(const TrayItemInfo& item) const;
+  [[nodiscard]] std::string drawerChevronGlyph(bool panelOpen) const;
 
   TrayService* m_tray = nullptr;
   Flex* m_container = nullptr;
@@ -52,4 +55,7 @@ private:
   std::string m_barPosition;
   bool m_panelGridMode = false;
   std::size_t m_panelGridColumns = 3;
+  InputArea* m_drawerTrigger = nullptr;
+  Glyph* m_drawerChevron = nullptr;
+  std::string m_drawerChevronGlyph;
 };

@@ -7,6 +7,7 @@
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "render/text/glyph_registry.h"
+#include "shell/panel/panel_manager.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/image.h"
@@ -263,6 +264,20 @@ void TrayWidget::doLayout(Renderer& renderer, float containerWidth, float contai
   if (m_container == nullptr) {
     return;
   }
+  if (m_drawerMode && m_drawerChevron != nullptr && m_drawerTrigger != nullptr) {
+    const bool panelOpen =
+        PanelManager::instance().isOpen() && PanelManager::instance().activePanelId() == "tray-drawer";
+    const std::string glyphName = drawerChevronGlyph(panelOpen);
+    if (m_drawerChevronGlyph != glyphName) {
+      m_drawerChevronGlyph = glyphName;
+      m_drawerChevron->setGlyph(glyphName);
+      m_drawerChevron->setGlyphSize(m_drawerTrigger->width());
+      m_drawerChevron->measure(renderer);
+      m_drawerChevron->setPosition(std::round((m_drawerTrigger->width() - m_drawerChevron->width()) * 0.5f),
+                                   std::round((m_drawerTrigger->height() - m_drawerChevron->height()) * 0.5f));
+      requestRedraw();
+    }
+  }
   if (m_panelGridMode) {
     syncState(renderer);
     if (m_rebuildPending) {
@@ -383,6 +398,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
     const float itemSize = Style::barGlyphSize * m_contentScale;
     auto triggerArea = std::make_unique<InputArea>();
     auto* triggerPtr = triggerArea.get();
+    m_drawerTrigger = triggerPtr;
     triggerArea->setSize(itemSize, itemSize);
     triggerArea->setOnClick([this, triggerPtr](const InputArea::PointerData& data) {
       if (data.button == BTN_LEFT) {
@@ -407,19 +423,15 @@ void TrayWidget::rebuild(Renderer& renderer) {
       }
     });
     auto glyph = std::make_unique<Glyph>();
-    if (m_barPosition == "bottom") {
-      glyph->setGlyph("chevron-up");
-    } else if (m_barPosition == "left") {
-      glyph->setGlyph("chevron-right");
-    } else if (m_barPosition == "right") {
-      glyph->setGlyph("chevron-left");
-    } else {
-      glyph->setGlyph("chevron-down");
-    }
+    const bool panelOpen =
+        PanelManager::instance().isOpen() && PanelManager::instance().activePanelId() == "tray-drawer";
+    m_drawerChevronGlyph = drawerChevronGlyph(panelOpen);
+    glyph->setGlyph(m_drawerChevronGlyph);
     glyph->setGlyphSize(itemSize);
     glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
     glyph->measure(renderer);
     glyph->setPosition(std::round((itemSize - glyph->width()) * 0.5f), std::round((itemSize - glyph->height()) * 0.5f));
+    m_drawerChevron = glyph.get();
     triggerArea->addChild(std::move(glyph));
     m_container->addChild(std::move(triggerArea));
     return;
@@ -606,6 +618,19 @@ void TrayWidget::rebuild(Renderer& renderer) {
       m_container->addChild(std::move(area));
     }
   }
+}
+
+std::string TrayWidget::drawerChevronGlyph(bool panelOpen) const {
+  if (m_barPosition == "bottom") {
+    return panelOpen ? "chevron-down" : "chevron-up";
+  }
+  if (m_barPosition == "left") {
+    return panelOpen ? "chevron-left" : "chevron-right";
+  }
+  if (m_barPosition == "right") {
+    return panelOpen ? "chevron-right" : "chevron-left";
+  }
+  return panelOpen ? "chevron-up" : "chevron-down";
 }
 
 bool TrayWidget::isHiddenItem(const TrayItemInfo& item) const {
