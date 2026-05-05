@@ -6,8 +6,9 @@
 #include "shell/panel/attached_panel_context.h"
 #include "shell/panel/panel.h"
 #include "shell/panel/panel_click_shield.h"
-#include "shell/panel/panel_focus_grab.h"
 #include "ui/dialogs/layer_popup_host.h"
+#include "wayland/hyprland/focus_grab_service.h"
+#include "wayland/hyprland/popup_grab_host.h"
 #include "wayland/layer_surface.h"
 #include "wayland/surface.h"
 #include "wayland/wayland_seat.h"
@@ -39,7 +40,7 @@ struct PanelOpenRequest {
   std::string_view sourceBarName = {};
 };
 
-class PanelManager {
+class PanelManager : public PopupGrabHost {
 public:
   PanelManager();
   ~PanelManager();
@@ -104,6 +105,12 @@ public:
   void beginAttachedPopup(wl_surface* surface);
   void endAttachedPopup(wl_surface* surface);
 
+  // PopupGrabHost. PopupSurface enrolls itself with us while our focus_grab
+  // is active so the compositor doesn't fire `cleared` when the user
+  // interacts with a popup opened from inside the panel.
+  void registerPopupSurface(wl_surface* surface) override;
+  void unregisterPopupSurface(wl_surface* surface) override;
+
   void registerIpc(IpcService& ipc);
 
 private:
@@ -139,7 +146,7 @@ private:
   std::function<std::vector<InputRect>(wl_output*)> m_clickShieldExcludeRectsProvider;
   std::function<std::vector<wl_surface*>()> m_focusGrabBarSurfacesProvider;
   PanelClickShield m_clickShield;
-  PanelFocusGrab m_focusGrab;
+  std::unique_ptr<FocusGrab> m_focusGrab;
 
   std::unique_ptr<Surface> m_surface;
   LayerSurface* m_layerSurface = nullptr;

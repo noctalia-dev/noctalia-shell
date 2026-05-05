@@ -1,6 +1,8 @@
 #include "wayland/popup_surface.h"
 
 #include "core/log.h"
+#include "wayland/hyprland/focus_grab_service.h"
+#include "wayland/hyprland/popup_grab_host.h"
 #include "wayland/wayland_connection.h"
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #include "xdg-shell-client-protocol.h"
@@ -28,8 +30,40 @@ namespace {
 PopupSurface::PopupSurface(WaylandConnection& connection) : Surface(connection) {}
 
 PopupSurface::~PopupSurface() {
+  unenrollFromGrabHost();
   m_connection.unregisterSurface(m_surface);
   destroyRoleObjects();
+}
+
+void PopupSurface::wireGrab() {
+  // When a focus_grab host is active, xdg_popup_grab conflicts with it on
+  // Hyprland (the compositor sends popup_done shortly after the focus_grab
+  // commit, tearing this popup down). Enroll with the host instead so its
+  // whitelist covers this popup, and skip xdg_popup_grab.
+  PopupGrabHost* host = nullptr;
+  if (auto* svc = m_connection.focusGrabService(); svc != nullptr) {
+    host = svc->popupGrabHost();
+  }
+  if (host != nullptr && m_surface != nullptr) {
+    host->registerPopupSurface(m_surface);
+    m_enrolledInGrabHost = true;
+    return;
+  }
+  if (m_config.grab && m_config.serial != 0 && m_connection.seat() != nullptr && m_popup != nullptr) {
+    xdg_popup_grab(m_popup, m_connection.seat(), m_config.serial);
+  }
+}
+
+void PopupSurface::unenrollFromGrabHost() {
+  if (!m_enrolledInGrabHost) {
+    return;
+  }
+  m_enrolledInGrabHost = false;
+  if (auto* svc = m_connection.focusGrabService(); svc != nullptr) {
+    if (auto* host = svc->popupGrabHost(); host != nullptr && m_surface != nullptr) {
+      host->unregisterPopupSurface(m_surface);
+    }
+  }
 }
 
 bool PopupSurface::initialize(zwlr_layer_surface_v1* parentLayerSurface, wl_output* output, PopupSurfaceConfig config) {
@@ -92,9 +126,7 @@ bool PopupSurface::initialize(zwlr_layer_surface_v1* parentLayerSurface, wl_outp
   xdg_popup_add_listener(m_popup, &kPopupListener, this);
   zwlr_layer_surface_v1_get_popup(parentLayerSurface, m_popup);
 
-  if (m_config.grab && m_config.serial != 0 && m_connection.seat() != nullptr) {
-    xdg_popup_grab(m_popup, m_connection.seat(), m_config.serial);
-  }
+  wireGrab();
 
   wl_surface_commit(m_surface);
   // Flush before the roundtrip to ensure any pending destroy messages from a previous
@@ -102,6 +134,7 @@ bool PopupSurface::initialize(zwlr_layer_surface_v1* parentLayerSurface, wl_outp
   wl_display_flush(m_connection.display());
   if (wl_display_roundtrip(m_connection.display()) < 0) {
     kLog.warn("popup: initial roundtrip failed (compositor protocol error)");
+    unenrollFromGrabHost();
     destroyRoleObjects();
     destroySurface();
     return false;
@@ -205,14 +238,13 @@ bool PopupSurface::initializeAsChild(xdg_surface* parentXdgSurface, wl_output* o
 
   xdg_popup_add_listener(m_popup, &kPopupListener, this);
 
-  if (m_config.grab && m_config.serial != 0 && m_connection.seat() != nullptr) {
-    xdg_popup_grab(m_popup, m_connection.seat(), m_config.serial);
-  }
+  wireGrab();
 
   wl_surface_commit(m_surface);
   wl_display_flush(m_connection.display());
   if (wl_display_roundtrip(m_connection.display()) < 0) {
     kLog.warn("submenu popup: initial roundtrip failed (compositor protocol error)");
+    unenrollFromGrabHost();
     destroyRoleObjects();
     destroySurface();
     return false;

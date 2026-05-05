@@ -17,6 +17,7 @@
 #include "viewporter-client-protocol.h"
 #include "virtual-keyboard-unstable-v1-client-protocol.h"
 #include "wayland/clipboard_service.h"
+#include "wayland/hyprland/focus_grab_service.h"
 #include "wayland/virtual_keyboard_service.h"
 #include "wlr-data-control-unstable-v1-client-protocol.h"
 #include "wlr-foreign-toplevel-management-unstable-v1-client-protocol.h"
@@ -195,6 +196,9 @@ bool WaylandConnection::connect() {
     cleanup();
     throw std::runtime_error("failed during Wayland output discovery roundtrip");
   }
+
+  m_focusGrabService = std::make_unique<FocusGrabService>();
+  m_focusGrabService->initialize(m_hyprlandFocusGrabManager);
 
   const std::string compositorHint(compositors::envHint());
   m_workspacesHandler.initialize(compositorHint);
@@ -606,6 +610,7 @@ wp_fractional_scale_manager_v1* WaylandConnection::fractionalScaleManager() cons
 hyprland_focus_grab_manager_v1* WaylandConnection::hyprlandFocusGrabManager() const noexcept {
   return m_hyprlandFocusGrabManager;
 }
+FocusGrabService* WaylandConnection::focusGrabService() const noexcept { return m_focusGrabService.get(); }
 wp_viewporter* WaylandConnection::viewporter() const noexcept { return m_viewporter; }
 
 void WaylandConnection::onBackgroundEffectCapabilities(std::uint32_t capabilities) noexcept {

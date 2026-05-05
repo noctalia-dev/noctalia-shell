@@ -85,12 +85,6 @@ void PanelManager::initialize(WaylandConnection& wayland, ConfigService* config,
   m_config = config;
   m_renderContext = renderContext;
   m_clickShield.initialize(wayland);
-  m_focusGrab.initialize(wayland);
-  m_focusGrab.setOnCleared([this]() {
-    if (isOpen() && !m_closing) {
-      closePanel();
-    }
-  });
 }
 
 void PanelManager::setOpenSettingsWindowCallback(std::function<void()> callback) {
@@ -401,7 +395,10 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
         // surface also grabs the pointer (any click anywhere reports on this surface), which
         // breaks outside-click dismissal. When the focus_grab protocol is available we drop to
         // OnDemand and let the grab grant keyboard focus to the panel per the spec.
-        .keyboard = m_focusGrab.available() ? LayerShellKeyboard::OnDemand : LayerShellKeyboard::Exclusive,
+        .keyboard = (m_wayland != nullptr && m_wayland->focusGrabService() != nullptr &&
+                     m_wayland->focusGrabService()->available())
+                        ? LayerShellKeyboard::OnDemand
+                        : LayerShellKeyboard::Exclusive,
         .defaultWidth = surfaceWidth,
         .defaultHeight = surfaceHeight,
     };
@@ -503,7 +500,8 @@ void PanelManager::activateClickShield() {
   // exclude bar surfaces there (input region exclusion isn't honored when
   // keyboard_interactivity is Exclusive, which is what unlocks pointer
   // delivery). Skip the shield and let activateFocusGrab() handle it later.
-  if (m_focusGrab.available()) {
+  auto* grabService = m_wayland->focusGrabService();
+  if (grabService != nullptr && grabService->available()) {
     return;
   }
   std::vector<wl_output*> outputs;
@@ -517,7 +515,11 @@ void PanelManager::activateClickShield() {
 }
 
 void PanelManager::activateFocusGrab() {
-  if (!m_focusGrab.available() || m_wlSurface == nullptr) {
+  if (m_wayland == nullptr || m_wlSurface == nullptr) {
+    return;
+  }
+  auto* grabService = m_wayland->focusGrabService();
+  if (grabService == nullptr || !grabService->available()) {
     return;
   }
   // Whitelist the panel + every bar surface. Clicks on whitelisted surfaces
@@ -526,18 +528,34 @@ void PanelManager::activateFocusGrab() {
   // event handler. The panel uses OnDemand keyboard mode on Hyprland (the
   // focus_grab grants keyboard focus to the panel on its own) so the panel
   // surface no longer grabs the pointer the way Exclusive does.
-  std::vector<wl_surface*> whitelist;
-  whitelist.push_back(m_wlSurface);
+  m_focusGrab = grabService->createGrab();
+  if (m_focusGrab == nullptr) {
+    return;
+  }
+  m_focusGrab->setOnCleared([this]() {
+    if (isOpen() && !m_closing) {
+      closePanel();
+    }
+  });
+  grabService->setPopupGrabHost(this);
+  m_focusGrab->addSurface(m_wlSurface);
   if (m_focusGrabBarSurfacesProvider) {
     auto bars = m_focusGrabBarSurfacesProvider();
-    whitelist.insert(whitelist.end(), bars.begin(), bars.end());
+    for (auto* surface : bars) {
+      m_focusGrab->addSurface(surface);
+    }
   }
-  m_focusGrab.activate(whitelist);
+  m_focusGrab->commit();
 }
 
 void PanelManager::deactivateOutsideClickHandlers() {
   m_clickShield.deactivate();
-  m_focusGrab.deactivate();
+  if (m_wayland != nullptr) {
+    if (auto* svc = m_wayland->focusGrabService(); svc != nullptr && svc->popupGrabHost() == this) {
+      svc->setPopupGrabHost(nullptr);
+    }
+  }
+  m_focusGrab.reset();
 }
 
 void PanelManager::closePanel() {
@@ -820,6 +838,22 @@ void PanelManager::close() { closePanel(); }
 void PanelManager::setActivePopup(ContextMenuPopup* popup) { m_activePopup = popup; }
 
 void PanelManager::clearActivePopup() { m_activePopup = nullptr; }
+
+void PanelManager::registerPopupSurface(wl_surface* surface) {
+  if (m_focusGrab == nullptr || surface == nullptr) {
+    return;
+  }
+  m_focusGrab->addSurface(surface);
+  m_focusGrab->commit();
+}
+
+void PanelManager::unregisterPopupSurface(wl_surface* surface) {
+  if (m_focusGrab == nullptr || surface == nullptr) {
+    return;
+  }
+  m_focusGrab->removeSurface(surface);
+  m_focusGrab->commit();
+}
 
 void PanelManager::beginAttachedPopup(wl_surface* surface) {
   if (surface == nullptr || surface != m_wlSurface) {

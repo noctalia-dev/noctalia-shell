@@ -459,7 +459,7 @@ _noctalia_sources = files(
   'src/shell/osd/osd_overlay.cpp',
   'src/shell/screen_corners/screen_corners.cpp',
   'src/shell/panel/panel_click_shield.cpp',
-  'src/shell/panel/panel_focus_grab.cpp',
+  'src/wayland/hyprland/focus_grab_service.cpp',
   'src/shell/panel/panel_manager.cpp',
   'src/shell/polkit/polkit_panel.cpp',
   'src/shell/session/session_panel.cpp',

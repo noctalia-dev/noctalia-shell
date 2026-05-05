@@ -5,6 +5,7 @@
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
 #include "ui/controls/context_menu.h"
+#include "wayland/hyprland/focus_grab_service.h"
 #include "wayland/popup_surface.h"
 
 #include <chrono>
@@ -75,6 +76,11 @@ private:
   std::vector<TrayMenuEntry> m_submenuEntries;
   std::int32_t m_submenuParentEntryId = 0;
   std::unique_ptr<MenuInstance> m_submenuInstance;
+
+  // Hyprland-only: keeps the popup surfaces in the focus whitelist so motion
+  // events (hover) reach the popup eagerly instead of waiting for a click to
+  // transfer focus from the bar's OnDemand layer surface.
+  std::unique_ptr<FocusGrab> m_focusGrab;
 
   Timer m_retryTimer;
 };

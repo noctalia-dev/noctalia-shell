@@ -490,6 +490,13 @@ void TrayMenu::ensureSurface() {
     anchorX = placement.anchorX;
     anchorY = placement.anchorY;
   }
+  // On Hyprland, hyprland_focus_grab_v1 conflicts with xdg_popup_grab — the
+  // compositor sends popup_done shortly after we commit our focus grab,
+  // tearing the popup down. Skip xdg_popup_grab when we'll be using
+  // focus_grab; outside-click dismissal is handled by the focus grab's
+  // `cleared` event instead.
+  auto* grabService = m_wayland->focusGrabService();
+  const bool useFocusGrab = grabService != nullptr && grabService->available();
   inst->submenuDirection = placement.submenuDirection;
   auto popupConfig = PopupSurfaceConfig{
       .anchorX = anchorX,
@@ -504,7 +511,7 @@ void TrayMenu::ensureSurface() {
       .offsetX = placement.offsetX,
       .offsetY = placement.offsetY,
       .serial = serial,
-      .grab = true,
+      .grab = !useFocusGrab,
   };
 
   if (!inst->surface->initialize(parentLayerSurface, output, popupConfig)) {
@@ -514,6 +521,36 @@ void TrayMenu::ensureSurface() {
 
   inst->wlSurface = inst->surface->wlSurface();
   m_instance = std::move(inst);
+
+  // Hyprland: without an active focus grab covering the popup, the compositor
+  // only delivers pointer events after a click transfers focus from the bar's
+  // OnDemand layer surface, so hover never reaches the popup. Whitelisting the
+  // popup (and the parent bar so re-clicking other tray icons keeps working)
+  // eagerly routes motion to the popup. Defer to the next tick — Hyprland's
+  // focus_grab needs the whitelisted surfaces to be mapped, which only happens
+  // after the configure round-trip completes; committing the grab synchronously
+  // here makes the compositor fire `cleared` immediately and the menu never
+  // appears.
+  DeferredCall::callLater([this]() {
+    if (!m_visible || m_instance == nullptr || m_wayland == nullptr) {
+      return;
+    }
+    auto* svc = m_wayland->focusGrabService();
+    if (svc == nullptr || !svc->available()) {
+      return;
+    }
+    m_focusGrab = svc->createGrab();
+    if (m_focusGrab == nullptr) {
+      return;
+    }
+    m_focusGrab->setOnCleared([this]() {
+      if (m_visible) {
+        close();
+      }
+    });
+    m_focusGrab->addSurface(m_instance->wlSurface);
+    m_focusGrab->commit();
+  });
 }
 
 void TrayMenu::destroySurface() {
@@ -521,6 +558,7 @@ void TrayMenu::destroySurface() {
     m_instance->inputDispatcher.setSceneRoot(nullptr);
   }
   m_instance.reset();
+  m_focusGrab.reset();
 }
 
 void TrayMenu::rebuildScenes() {
@@ -615,6 +653,10 @@ void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
 void TrayMenu::closeSubmenu() {
   if (m_submenuInstance != nullptr) {
     m_submenuInstance->inputDispatcher.setSceneRoot(nullptr);
+    if (m_focusGrab != nullptr && m_submenuInstance->wlSurface != nullptr) {
+      m_focusGrab->removeSurface(m_submenuInstance->wlSurface);
+      m_focusGrab->commit();
+    }
   }
   // Notify the server before clearing state so the parent id is still valid.
   if (m_tray != nullptr && !m_activeItemId.empty() && m_submenuParentEntryId != 0) {
@@ -682,7 +724,7 @@ void TrayMenu::openSubmenu(std::int32_t parentEntryId, float rowCenterY) {
       .offsetX = offsetX,
       .offsetY = 0,
       .serial = m_wayland->lastInputSerial(),
-      .grab = true,
+      .grab = (m_focusGrab == nullptr),
   };
 
   xdg_surface* parentXdg = m_instance->surface->xdgSurface();
@@ -695,6 +737,11 @@ void TrayMenu::openSubmenu(std::int32_t parentEntryId, float rowCenterY) {
 
   inst->wlSurface = inst->surface->wlSurface();
   m_submenuInstance = std::move(inst);
+
+  if (m_focusGrab != nullptr && m_submenuInstance->wlSurface != nullptr) {
+    m_focusGrab->addSurface(m_submenuInstance->wlSurface);
+    m_focusGrab->commit();
+  }
 }
 
 void TrayMenu::prepareSubmenuFrame(MenuInstance& inst, bool /*needsUpdate*/, bool needsLayout) {

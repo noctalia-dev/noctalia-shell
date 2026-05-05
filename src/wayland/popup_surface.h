@@ -50,6 +50,10 @@ public:
 
 private:
   void destroyRoleObjects();
+  // Decide whether to take xdg_popup_grab vs. enroll in the active focus_grab
+  // host. Sets m_enrolledInGrabHost when we registered with the host.
+  void wireGrab();
+  void unenrollFromGrabHost();
 
   PopupSurfaceConfig m_config;
   xdg_surface* m_xdgSurface = nullptr;
@@ -59,4 +63,5 @@ private:
   std::uint32_t m_pendingHeight = 0;
   std::int32_t m_configuredX = 0;
   std::int32_t m_configuredY = 0;
+  bool m_enrolledInGrabHost = false;
 };

@@ -40,6 +40,7 @@ struct hyprland_focus_grab_manager_v1;
 struct wp_fractional_scale_manager_v1;
 struct wp_viewporter;
 class ClipboardService;
+class FocusGrabService;
 class NiriOutputBackend;
 class NiriWorkspaceBackend;
 struct DataControlOps;
@@ -120,6 +121,7 @@ public:
   [[nodiscard]] ext_background_effect_manager_v1* backgroundEffectManager() const noexcept;
   [[nodiscard]] wp_fractional_scale_manager_v1* fractionalScaleManager() const noexcept;
   [[nodiscard]] hyprland_focus_grab_manager_v1* hyprlandFocusGrabManager() const noexcept;
+  [[nodiscard]] FocusGrabService* focusGrabService() const noexcept;
   [[nodiscard]] wp_viewporter* viewporter() const noexcept;
   [[nodiscard]] wl_display* display() const noexcept;
   [[nodiscard]] wl_compositor* compositor() const noexcept;
@@ -208,6 +210,7 @@ private:
   ext_background_effect_manager_v1* m_backgroundEffectManager = nullptr;
   wp_fractional_scale_manager_v1* m_fractionalScaleManager = nullptr;
   hyprland_focus_grab_manager_v1* m_hyprlandFocusGrabManager = nullptr;
+  std::unique_ptr<FocusGrabService> m_focusGrabService;
   wp_viewporter* m_viewporter = nullptr;
   bool m_backgroundEffectBlurSupported = false;
   void* m_dataControlManager = nullptr;
