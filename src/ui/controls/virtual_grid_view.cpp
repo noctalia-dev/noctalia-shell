@@ -155,9 +155,18 @@ void VirtualGridView::scrollToIndex(std::size_t index) {
 
 void VirtualGridView::setSelectedIndex(std::optional<std::size_t> index) {
   if (m_selectedIndex == index) {
+    if (m_selectedIndex.has_value()) {
+      m_pendingScrollToIndex = true;
+      m_pendingScrollIndex = *m_selectedIndex;
+      markLayoutDirty();
+    }
     return;
   }
   m_selectedIndex = index;
+  if (m_selectedIndex.has_value()) {
+    m_pendingScrollToIndex = true;
+    m_pendingScrollIndex = *m_selectedIndex;
+  }
   markLayoutDirty();
   if (m_onSelectionChanged) {
     m_onSelectionChanged(m_selectedIndex);
