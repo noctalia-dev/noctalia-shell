@@ -18,6 +18,7 @@
 #include "ui/controls/segmented.h"
 #include "ui/controls/virtual_list_view.h"
 #include "ui/palette.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
 #include <chrono>
@@ -178,6 +179,7 @@ namespace {
 
   struct NotificationCardMetrics {
     std::string summaryText;
+    std::string bodyText;
     std::string metaLine;
     bool canExpand = false;
     bool expanded = false;
@@ -188,21 +190,50 @@ namespace {
 
   NotificationCardMetrics measureNotificationCard(Renderer& renderer, const NotificationHistoryEntry& entry,
                                                   float scale, float width, bool expandedRequested) {
+    const auto truncateByLines = [](std::string_view text, int maxLines, bool* didTruncate) {
+      if (didTruncate != nullptr) {
+        *didTruncate = false;
+      }
+      if (maxLines <= 0 || text.empty()) {
+        return std::string(text);
+      }
+
+      int seenLines = 1;
+      std::size_t index = 0;
+      while (index < text.size()) {
+        if (text[index] == '\n') {
+          ++seenLines;
+          if (seenLines > maxLines) {
+            if (didTruncate != nullptr) {
+              *didTruncate = true;
+            }
+            return std::string(text.substr(0, index));
+          }
+        }
+        ++index;
+      }
+      return std::string(text);
+    };
+
     NotificationCardMetrics metrics;
     const float cardWidth = std::max(0.0f, width);
     const float cardHorizontalPadding = Style::spaceMd * scale * 2.0f;
     metrics.cardTextWidth = std::max(0.0f, cardWidth - cardHorizontalPadding);
-    metrics.summaryText = entry.notification.summary.empty() ? i18n::tr("control-center.notifications.untitled")
-                                                             : entry.notification.summary;
-    const std::string& bodyText = entry.notification.body;
+    const std::string summaryText = StringUtils::trimLeadingBlankLines(
+        entry.notification.summary.empty() ? i18n::tr("control-center.notifications.untitled")
+                                           : entry.notification.summary);
+    const std::string bodyText = StringUtils::trimLeadingBlankLines(entry.notification.body);
+    metrics.summaryText = summaryText;
 
-    const bool summaryExpandable = canExpandText(renderer, metrics.summaryText, Style::fontSizeBody * scale, true,
+    const bool summaryExpandable = canExpandText(renderer, summaryText, Style::fontSizeBody * scale, true,
                                                  metrics.cardTextWidth, kSummaryMaxLines);
-    // Preserve the previous expand affordance calculation, which used body font size here.
-    const bool bodyExpandable =
-        canExpandText(renderer, bodyText, Style::fontSizeBody * scale, false, metrics.cardTextWidth, kBodyMaxLines);
+    bool bodyLineTruncated = false;
+    const std::string collapsedBodyText = truncateByLines(bodyText, kBodyMaxLines, &bodyLineTruncated);
+    const bool bodyExpandable = bodyLineTruncated || canExpandText(renderer, bodyText, Style::fontSizeCaption * scale,
+                                                                   false, metrics.cardTextWidth, kBodyMaxLines);
     metrics.canExpand = summaryExpandable || bodyExpandable;
     metrics.expanded = metrics.canExpand && expandedRequested;
+    metrics.bodyText = metrics.expanded ? bodyText : collapsedBodyText;
 
     const float iconPx = kHistoryIconSize * scale;
     const float iconColumn = iconPx + Style::spaceSm * scale;
@@ -226,13 +257,13 @@ namespace {
         measuredTextHeight(renderer, metrics.summaryText, Style::fontSizeBody * scale, true, metrics.cardTextWidth,
                            metrics.expanded ? kExpandedMaxLines : kSummaryMaxLines);
     const float bodyHeight =
-        bodyText.empty()
+        metrics.bodyText.empty()
             ? 0.0f
-            : measuredTextHeight(renderer, bodyText, Style::fontSizeCaption * scale, false, metrics.cardTextWidth,
-                                 metrics.expanded ? kExpandedMaxLines : kBodyMaxLines);
+            : measuredTextHeight(renderer, metrics.bodyText, Style::fontSizeCaption * scale, false,
+                                 metrics.cardTextWidth, metrics.expanded ? kExpandedMaxLines : kBodyMaxLines);
 
     const float paddingY = (Style::spaceSm + Style::spaceXs) * scale * 2.0f;
-    const int childCount = bodyText.empty() ? 2 : 3;
+    const int childCount = metrics.bodyText.empty() ? 2 : 3;
     const float gaps = Style::spaceSm * scale * static_cast<float>(childCount - 1);
     metrics.height = paddingY + headerHeight + summaryHeight + bodyHeight + gaps;
     return metrics;
@@ -343,12 +374,12 @@ namespace {
       m_summary->setMaxLines(metrics.expanded ? kExpandedMaxLines : kSummaryMaxLines);
       m_summary->measure(renderer);
 
-      if (entry.notification.body.empty()) {
+      if (metrics.bodyText.empty()) {
         m_body->setVisible(false);
         m_body->setText("");
       } else {
         m_body->setVisible(true);
-        m_body->setText(entry.notification.body);
+        m_body->setText(metrics.bodyText);
         m_body->setMaxWidth(metrics.cardTextWidth);
         m_body->setMaxLines(metrics.expanded ? kExpandedMaxLines : kBodyMaxLines);
         m_body->measure(renderer);
