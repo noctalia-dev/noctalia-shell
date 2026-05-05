@@ -18,6 +18,8 @@
 
 namespace {
 
+  enum class SpawnResult { Parent, Child, Error };
+
   int runTopLevelFlag(const char* flag) {
     if (std::strcmp(flag, "--version") == 0) {
       const std::string version = noctalia::build_info::displayVersion();
@@ -28,9 +30,9 @@ namespace {
       std::puts("Usage: noctalia [OPTIONS]\n"
                 "\n"
                 "Options:\n"
-                "  --help     Show this help message\n"
-                "  --version  Show version information\n"
-                "  --daemon   Run in background\n"
+                "  --help       Show this help message\n"
+                "  --version    Show version information\n"
+                "  --daemon     Run in background\n"
                 "\n"
                 "Subcommands:\n"
                 "  msg <command>    Send a command to the running instance\n"
@@ -47,18 +49,17 @@ namespace {
     return -1;
   }
 
-  // daemonize
-  bool daemonize(pid_t* out_pid) {
+  SpawnResult daemonize(pid_t* out_pid) {
     pid_t pid = ::fork();
     if (pid < 0) {
-      std::perror("fork");
-      return true;
+      std::perror("fork (first)");
+      return SpawnResult::Error;
     }
 
     if (pid > 0) {
       if (out_pid)
         *out_pid = pid;
-      return true;
+      return SpawnResult::Parent;
     }
 
     if (::setsid() < 0) {
@@ -74,7 +75,7 @@ namespace {
 
     pid = ::fork();
     if (pid < 0) {
-      std::perror("fork");
+      std::perror("fork (second)");
       _exit(1);
     }
 
@@ -91,7 +92,7 @@ namespace {
         ::close(fd);
     }
 
-    return false;
+    return SpawnResult::Child;
   }
 
   int runShell() {
@@ -118,9 +119,7 @@ int main(int argc, char* argv[]) {
 
   for (int i = 1; i < argc; ++i) {
     if (std::strcmp(argv[i], "--daemon") == 0 || std::strcmp(argv[i], "-d") == 0) {
-
       shouldDaemonize = true;
-
       for (int j = i; j < argc - 1; ++j) {
         argv[j] = argv[j + 1];
       }
@@ -155,8 +154,13 @@ int main(int argc, char* argv[]) {
   }
 
   if (shouldDaemonize) {
-    pid_t pid;
-    if (daemonize(&pid)) {
+    pid_t pid = -1;
+    SpawnResult result = daemonize(&pid);
+
+    if (result == SpawnResult::Error) {
+      return 1;
+    }
+    if (result == SpawnResult::Parent) {
       std::printf("noctalia started [pid: %d]\n", pid);
       return 0;
     }
