@@ -208,8 +208,9 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     indicator->setRadius(indicatorHeight * 0.5f);
     indicator->setFrameSize(w, indicatorHeight);
     const bool isEmpty = !ws.active && !ws.urgent && !ws.occupied;
-    indicator->setFill(isEmpty ? colorSpecFromRole(ColorRole::Secondary, 0.35f)
+    indicator->setFill(isEmpty ? colorSpecFromRole(ColorRole::Secondary, 0.55f)
                                : colorSpecFromRole(workspaceFillRole(ws)));
+    indicator->clearBorder();
     item.indicator = static_cast<Box*>(area->addChild(std::move(indicator)));
 
     if (showLabel) {
@@ -217,7 +218,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
       text->setText(labels[i]);
       text->setFontSize(labelFontSize);
       text->setBold(true);
-      text->setColor(colorSpecFromRole(workspaceTextRole(ws)));
+      text->setColor(colorSpecFromRole(isEmpty ? ColorRole::OnSecondary : workspaceTextRole(ws)));
       text->measure(renderer);
       item.label = labels[i];
       item.text = static_cast<Label*>(area->addChild(std::move(text)));
@@ -285,11 +286,14 @@ void WorkspacesWidget::retarget(Renderer& renderer) {
     if (it.indicator != nullptr) {
       const auto& ws = m_cachedState[i];
       const bool isEmpty = !ws.active && !ws.urgent && !ws.occupied;
-      it.indicator->setFill(isEmpty ? colorSpecFromRole(ColorRole::Secondary, 0.35f)
+      it.indicator->setFill(isEmpty ? colorSpecFromRole(ColorRole::Secondary, 0.55f)
                                     : colorSpecFromRole(workspaceFillRole(ws)));
+      it.indicator->clearBorder();
     }
     if (it.text != nullptr) {
-      it.text->setColor(colorSpecFromRole(workspaceTextRole(m_cachedState[i])));
+      const auto& ws = m_cachedState[i];
+      const bool isEmpty = !ws.active && !ws.urgent && !ws.occupied;
+      it.text->setColor(colorSpecFromRole(isEmpty ? ColorRole::OnSecondary : workspaceTextRole(ws)));
     }
   }
 
