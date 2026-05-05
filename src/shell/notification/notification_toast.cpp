@@ -167,6 +167,33 @@ namespace {
            std::all_of(text.begin(), text.end(), [](unsigned char ch) { return std::isspace(ch) != 0; });
   }
 
+  std::string trimLeadingBlankLines(std::string_view text) {
+    if (text.empty()) {
+      return {};
+    }
+
+    std::size_t start = 0;
+    while (start < text.size()) {
+      std::size_t lineEnd = text.find('\n', start);
+      if (lineEnd == std::string_view::npos) {
+        lineEnd = text.size();
+      }
+      const std::string_view line = text.substr(start, lineEnd - start);
+      const bool blankLine =
+          line.empty() || std::all_of(line.begin(), line.end(), [](unsigned char ch) { return std::isspace(ch) != 0; });
+      if (!blankLine) {
+        break;
+      }
+      if (lineEnd >= text.size()) {
+        start = text.size();
+        break;
+      }
+      start = lineEnd + 1;
+    }
+
+    return std::string(text.substr(start));
+  }
+
   float measureActionsFromPairs(RenderContext& rc, const std::vector<std::string>& actions) {
     if (actions.empty()) {
       return 0.0f;
@@ -219,6 +246,8 @@ namespace {
 
   ToastGeometry planToastLayout(RenderContext& rc, std::string_view summary, std::string_view body,
                                 const std::vector<std::string>& actions, float floorCardHeight) {
+    const std::string displaySummary = trimLeadingBlankLines(summary);
+    const std::string displayBody = trimLeadingBlankLines(body);
     const float textMaxWidth = notificationTextMaxWidth();
     const float actionsReserved = measureActionsFromPairs(rc, actions);
     const float maxCard = static_cast<float>(kMaxToastCardHeight);
@@ -226,12 +255,12 @@ namespace {
 
     ToastGeometry out;
 
-    if (isBlankText(body)) {
+    if (isBlankText(displayBody)) {
       Label summaryProbe;
       summaryProbe.setFontSize(kSummaryFontSize);
       summaryProbe.setBold(true);
       summaryProbe.setMaxWidth(textMaxWidth);
-      summaryProbe.setText(summary);
+      summaryProbe.setText(displaySummary);
       summaryProbe.setMaxLines(kMaxSummaryLines);
       summaryProbe.measure(rc);
       const float sumH = summaryProbe.height();
@@ -257,7 +286,7 @@ namespace {
       summaryProbe.setFontSize(kSummaryFontSize);
       summaryProbe.setBold(true);
       summaryProbe.setMaxWidth(textMaxWidth);
-      summaryProbe.setText(summary);
+      summaryProbe.setText(displaySummary);
       summaryProbe.setMaxLines(sl);
       summaryProbe.measure(rc);
       const float sumH = summaryProbe.height();
@@ -265,7 +294,7 @@ namespace {
       Label bodyProbe;
       bodyProbe.setFontSize(kBodyFontSize);
       bodyProbe.setMaxWidth(textMaxWidth);
-      bodyProbe.setText(body);
+      bodyProbe.setText(displayBody);
       bodyProbe.setMaxLines(bl);
       bodyProbe.measure(rc);
       const float bodyH = bodyProbe.height();
@@ -285,14 +314,14 @@ namespace {
     summaryProbe.setFontSize(kSummaryFontSize);
     summaryProbe.setBold(true);
     summaryProbe.setMaxWidth(textMaxWidth);
-    summaryProbe.setText(summary);
+    summaryProbe.setText(displaySummary);
     summaryProbe.setMaxLines(1);
     summaryProbe.measure(rc);
 
     Label bodyProbe;
     bodyProbe.setFontSize(kBodyFontSize);
     bodyProbe.setMaxWidth(textMaxWidth);
-    bodyProbe.setText(body);
+    bodyProbe.setText(displayBody);
     bodyProbe.setMaxLines(1);
     bodyProbe.measure(rc);
 
@@ -468,16 +497,18 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
             cs.appNameLabel->setText(n.appName);
             const float actionsReservedHeight = measureActionsFromPairs(*m_renderContext, m_entries[i].actions);
             PopupEntry& e = m_entries[i];
-            cs.summaryLabel->setText(e.summary);
+            const std::string displaySummary = trimLeadingBlankLines(e.summary);
+            const std::string displayBody = trimLeadingBlankLines(e.body);
+            cs.summaryLabel->setText(displaySummary);
             cs.summaryLabel->setMaxLines(std::max(1, e.toastSummaryLines));
             cs.summaryLabel->measure(*m_renderContext);
             const float summaryH = cs.summaryLabel->height();
             const float bodyHeight = availableBodyHeight(summaryH, actionsReservedHeight, cs.cardNode->height());
             const int bodyLines = e.toastBodyLines;
             cs.bodyLabel->setMaxLines(std::max(1, bodyLines));
-            cs.bodyLabel->setText(bodyLines > 0 ? e.body : "");
+            cs.bodyLabel->setText(bodyLines > 0 ? displayBody : "");
             cs.bodyLabel->measure(*m_renderContext);
-            cs.bodyLabel->setVisible(bodyLines > 0 && !e.body.empty());
+            cs.bodyLabel->setVisible(bodyLines > 0 && !isBlankText(displayBody));
             cs.bodyLabel->setPosition(notificationTextStartX(), bodyTopForSummary(summaryH));
             clampBodyLabelHeight(*cs.bodyLabel, bodyHeight);
           }
@@ -1591,7 +1622,9 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
 
   // Summary (bold title) — Pango handles wrap + ellipsize.
   auto summary = std::make_unique<Label>();
-  summary->setText(entry.summary);
+  const std::string displaySummary = trimLeadingBlankLines(entry.summary);
+  const std::string displayBody = trimLeadingBlankLines(entry.body);
+  summary->setText(displaySummary);
   summary->setFontSize(kSummaryFontSize);
   summary->setColor(colorSpecFromRole(ColorRole::OnSurface));
   summary->setBold(true);
@@ -1678,7 +1711,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
   foreground->addChild(std::move(summary));
 
   auto body = std::make_unique<Label>();
-  body->setText(entry.body);
+  body->setText(displayBody);
   body->setFontSize(kBodyFontSize);
   body->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   body->setMaxWidth(textMaxWidth);
