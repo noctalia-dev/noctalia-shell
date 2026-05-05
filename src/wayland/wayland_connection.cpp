@@ -318,6 +318,17 @@ wl_output* WaylandConnection::preferredPanelOutput(std::chrono::milliseconds poi
     }
   }
 
+  if (wl_output* output = activeToplevelOutput(); output != nullptr) {
+    return output;
+  }
+
+  if (wl_surface* keyboardSurface = lastKeyboardSurface(); keyboardSurface != nullptr) {
+    const auto it = m_surfaceOutputMap.find(keyboardSurface);
+    if (it != m_surfaceOutputMap.end() && it->second != nullptr) {
+      return it->second;
+    }
+  }
+
   if (hasFreshPointerOutput(pointerMaxAge)) {
     return m_lastPointerOutput;
   }
