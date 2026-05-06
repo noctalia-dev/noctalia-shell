@@ -42,6 +42,7 @@ public:
   [[nodiscard]] LayerShellLayer layer() const override { return LayerShellLayer::Overlay; }
   [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::Exclusive; }
   [[nodiscard]] InputArea* initialFocusArea() const override;
+  [[nodiscard]] bool prefersAttachedToBar() const noexcept override;
 
 private:
   void doLayout(Renderer& renderer, float width, float height) override;

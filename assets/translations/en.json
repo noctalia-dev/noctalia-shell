@@ -721,13 +721,14 @@
         "built-in": "Built-in",
         "clipboard": "Clipboard",
         "community": "Community",
-        "control-center": "Control Center",
+        "control-center": "Control Center:",
         "directories": "Directories",
         "effects": "Effects",
         "focus-styling": "Focus Styling",
         "general": "General",
         "grouping": "Grouping",
         "interface": "Interface",
+        "launcher": "Launcher",
         "layout": "Layout",
         "location": "Location",
         "media": "Media",
@@ -747,6 +748,7 @@
         "transition": "Transition",
         "user": "User",
         "weather": "Weather",
+        "wallpaper": "Wallpaper",
         "widget-list": "Widget List",
         "widgets": "Widgets"
       }
@@ -1326,6 +1328,22 @@
         "overview-shortcuts": {
           "label": "Overview Shortcuts",
           "description": "Choose up to six shortcut buttons for the overview tab"
+        },
+        "attach-control-center": {
+          "label": "Attach to Bar",
+          "description": "Attach the Control Center panel to the bar when a suitable bar is available"
+        },
+        "attach-launcher": {
+          "label": "Attach to Bar",
+          "description": "Attach the Launcher panel to the bar when a suitable bar is available"
+        },
+        "attach-clipboard": {
+          "label": "Attach to Bar",
+          "description": "Attach the Clipboard panel to the bar when a suitable bar is available"
+        },
+        "attach-wallpaper": {
+          "label": "Attach to Bar",
+          "description": "Attach the Wallpaper panel to the bar when a suitable bar is available"
         }
       },
       "backdrop": {

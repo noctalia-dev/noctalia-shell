@@ -73,7 +73,7 @@ public:
   [[nodiscard]] float preferredHeight() const override { return scaled(520.0f); }
   [[nodiscard]] bool centeredHorizontally() const override { return true; }
   [[nodiscard]] bool centeredVertically() const override { return true; }
-  [[nodiscard]] bool prefersAttachedToBar() const noexcept override { return true; }
+  [[nodiscard]] bool prefersAttachedToBar() const noexcept override;
 
 private:
   void doLayout(Renderer& renderer, float width, float height) override;

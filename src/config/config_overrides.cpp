@@ -292,7 +292,10 @@ namespace {
            a.showLocation == b.showLocation && a.clipboardAutoPaste == b.clipboardAutoPaste &&
            a.shadow.blur == b.shadow.blur && a.shadow.offsetX == b.shadow.offsetX &&
            a.shadow.offsetY == b.shadow.offsetY && nearlyEqual(a.shadow.alpha, b.shadow.alpha) &&
-           a.panel.backgroundBlur == b.panel.backgroundBlur && a.screenCorners.enabled == b.screenCorners.enabled &&
+           a.panel.backgroundBlur == b.panel.backgroundBlur && a.panel.attachLauncher == b.panel.attachLauncher &&
+           a.panel.attachClipboard == b.panel.attachClipboard &&
+           a.panel.attachControlCenter == b.panel.attachControlCenter &&
+           a.panel.attachWallpaper == b.panel.attachWallpaper && a.screenCorners.enabled == b.screenCorners.enabled &&
            a.screenCorners.size == b.screenCorners.size && a.mpris.blacklist == b.mpris.blacklist;
   }
 

@@ -537,6 +537,22 @@ namespace settings {
         ShortcutListSetting{
             .items = cfg.controlCenter.shortcuts, .suggestedOptions = controlCenterShortcutOptions(), .maxItems = 6},
         "quick settings shortcuts toggles wifi bluetooth caffeine night light dnd power media weather clipboard"));
+    entries.push_back(makeEntry("panels", "control-center", tr("settings.schema.panels.attach-control-center.label"),
+                                tr("settings.schema.panels.attach-control-center.description"),
+                                {"shell", "panel", "attach_control_center"},
+                                ToggleSetting{cfg.shell.panel.attachControlCenter}, "attach bar panel"));
+    entries.push_back(makeEntry("panels", "launcher", tr("settings.schema.panels.attach-launcher.label"),
+                                tr("settings.schema.panels.attach-launcher.description"),
+                                {"shell", "panel", "attach_launcher"}, ToggleSetting{cfg.shell.panel.attachLauncher},
+                                "attach bar panel"));
+    entries.push_back(makeEntry("panels", "clipboard", tr("settings.schema.panels.attach-clipboard.label"),
+                                tr("settings.schema.panels.attach-clipboard.description"),
+                                {"shell", "panel", "attach_clipboard"}, ToggleSetting{cfg.shell.panel.attachClipboard},
+                                "attach bar panel"));
+    entries.push_back(makeEntry("panels", "wallpaper", tr("settings.schema.panels.attach-wallpaper.label"),
+                                tr("settings.schema.panels.attach-wallpaper.description"),
+                                {"shell", "panel", "attach_wallpaper"}, ToggleSetting{cfg.shell.panel.attachWallpaper},
+                                "attach bar panel"));
 
     // Desktop
     entries.push_back(makeEntry("desktop", "widgets", tr("settings.schema.desktop.widgets.label"),

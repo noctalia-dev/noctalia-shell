@@ -346,6 +346,10 @@ struct ShellConfig {
 
   struct PanelConfig {
     bool backgroundBlur = true; // request compositor blur behind panels via ext-background-effect-v1
+    bool attachLauncher = false;
+    bool attachClipboard = false;
+    bool attachControlCenter = true;
+    bool attachWallpaper = true;
 
     bool operator==(const PanelConfig&) const = default;
   };

@@ -1186,6 +1186,18 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
       if (auto v = (*panelTbl)["background_blur"].value<bool>()) {
         shell.panel.backgroundBlur = *v;
       }
+      if (auto v = (*panelTbl)["attach_launcher"].value<bool>()) {
+        shell.panel.attachLauncher = *v;
+      }
+      if (auto v = (*panelTbl)["attach_clipboard"].value<bool>()) {
+        shell.panel.attachClipboard = *v;
+      }
+      if (auto v = (*panelTbl)["attach_control_center"].value<bool>()) {
+        shell.panel.attachControlCenter = *v;
+      }
+      if (auto v = (*panelTbl)["attach_wallpaper"].value<bool>()) {
+        shell.panel.attachWallpaper = *v;
+      }
     }
     if (const auto* screenCornersTbl = (*shellTbl)["screen_corners"].as_table()) {
       if (auto v = (*screenCornersTbl)["enabled"].value<bool>()) {

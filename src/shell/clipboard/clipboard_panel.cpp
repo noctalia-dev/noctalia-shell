@@ -364,6 +364,10 @@ ClipboardPanel::ClipboardPanel(ClipboardService* clipboard, ConfigService* confi
 
 ClipboardPanel::~ClipboardPanel() = default;
 
+bool ClipboardPanel::prefersAttachedToBar() const noexcept {
+  return m_config != nullptr && m_config->config().shell.panel.attachClipboard;
+}
+
 void ClipboardPanel::setActivateCallback(std::function<void(const ClipboardEntry&)> callback) {
   m_activateCallback = std::move(callback);
 }

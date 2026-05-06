@@ -47,6 +47,10 @@ ControlCenterPanel::ControlCenterPanel(
   m_tabHeaderActions.fill(nullptr);
 }
 
+bool ControlCenterPanel::prefersAttachedToBar() const noexcept {
+  return m_config == nullptr || m_config->config().shell.panel.attachControlCenter;
+}
+
 bool ControlCenterPanel::dismissTransientUi() {
   const std::size_t activeIdx = tabIndex(m_activeTab);
   return m_tabs[activeIdx] != nullptr && m_tabs[activeIdx]->dismissTransientUi();

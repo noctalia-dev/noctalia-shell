@@ -119,6 +119,10 @@ WallpaperPanel::WallpaperPanel(WaylandConnection* wayland, ConfigService* config
 
 WallpaperPanel::~WallpaperPanel() = default;
 
+bool WallpaperPanel::prefersAttachedToBar() const noexcept {
+  return m_config == nullptr || m_config->config().shell.panel.attachWallpaper;
+}
+
 void WallpaperPanel::create() {
   const float scale = contentScale();
   const auto configureIconButton = [scale](Button* button) {
