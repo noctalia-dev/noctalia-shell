@@ -7,6 +7,7 @@ import qs.Commons
 import qs.Modules.Bar.Extras
 import qs.Services.Hardware
 import qs.Services.Networking
+import qs.Services.Noctalia
 import qs.Services.UI
 import qs.Widgets
 
@@ -39,7 +40,9 @@ Item {
   readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
 
   readonly property string displayMode: widgetSettings.displayMode !== undefined ? widgetSettings.displayMode : widgetMetadata.displayMode
-  readonly property bool useGraphicMode: displayMode === "graphic" || displayMode === "graphic-clean"
+  readonly property bool useGraphicMode: displayMode === "graphic" || displayMode === "graphic-clean" || (displayMode === "android-16" && !pluginExists)
+  readonly property bool pluginExists: PluginRegistry.isPluginDownloaded("custom-battery")
+  readonly property bool usePluginMode: displayMode === "android-16" && pluginExists
 
   readonly property bool hideIfNotDetected: widgetSettings.hideIfNotDetected !== undefined ? widgetSettings.hideIfNotDetected : widgetMetadata.hideIfNotDetected
   readonly property bool hideIfIdle: widgetSettings.hideIfIdle !== undefined ? widgetSettings.hideIfIdle : widgetMetadata.hideIfIdle
@@ -122,8 +125,8 @@ Item {
   visible: shouldShow
   opacity: shouldShow ? 1.0 : 0.0
 
-  implicitWidth: useGraphicMode ? capsule.width : pill.width
-  implicitHeight: useGraphicMode ? capsule.height : pill.height
+  implicitWidth: usePluginMode ? (pluginLoader.item ? pluginLoader.item.implicitWidth : 0) : (useGraphicMode ? capsule.width : pill.width)
+  implicitHeight: usePluginMode ? (pluginLoader.item ? pluginLoader.item.implicitHeight : 0) : (useGraphicMode ? capsule.height : pill.height)
 
   NPopupContextMenu {
     id: contextMenu
@@ -151,7 +154,7 @@ Item {
   // Capsule background (graphic mode only)
   Rectangle {
     id: capsule
-    visible: root.useGraphicMode
+    visible: root.useGraphicMode && !root.usePluginMode
     anchors.centerIn: nBattery
     width: root.isBarVertical ? root.capsuleHeight : nBattery.width + Style.margin2S
     height: root.isBarVertical ? nBattery.height + Style.margin2S : root.capsuleHeight
@@ -171,7 +174,7 @@ Item {
 
   NBattery {
     id: nBattery
-    visible: root.useGraphicMode
+    visible: root.useGraphicMode && !root.usePluginMode
     anchors.centerIn: parent
     baseSize: (Style.getBarHeightForScreen(root.screenName) / root.capsuleHeight) * Style.fontSizeXXS
     showPercentageText: root.displayMode !== "graphic-clean"
@@ -188,7 +191,7 @@ Item {
 
   MouseArea {
     id: graphicMouseArea
-    visible: root.useGraphicMode
+    visible: root.useGraphicMode && !root.usePluginMode
     anchors.fill: parent
     hoverEnabled: true
     acceptedButtons: Qt.LeftButton | Qt.RightButton
@@ -228,7 +231,7 @@ Item {
 
   BarPill {
     id: pill
-    visible: !root.useGraphicMode
+    visible: !root.useGraphicMode && !root.usePluginMode
     screen: root.screen
     oppositeDirection: BarService.getPillDirection(root)
     icon: BatteryService.getIcon(root.percent, root.isCharging, root.isPluggedIn, root.isReady)
@@ -242,6 +245,38 @@ Item {
     tooltipText: !getBatteryPanel()?.isPanelOpen ? root.tooltipContent : ""
     onClicked: toggleBatteryPanel()
     onRightClicked: PanelService.showContextMenu(contextMenu, pill, screen)
+  }
+
+  // ==================== PLUGIN MODE ====================
+
+  Loader {
+    id: pluginLoader
+    active: root.usePluginMode
+    visible: active
+    source: active ? "file://" + PluginRegistry.getPluginDir("custom-battery") + "/BarWidget.qml" : ""
+
+    onLoaded: {
+      item.screen = root.screen;
+      item.widgetId = root.widgetId;
+      item.section = root.section;
+      item.sectionWidgetIndex = root.sectionWidgetIndex;
+      item.sectionWidgetsCount = root.sectionWidgetsCount;
+      item.pluginApi = PluginService.loadedPlugins["custom-battery"] ? PluginService.loadedPlugins["custom-battery"].api : null;
+    }
+
+    anchors.fill: parent
+  }
+
+  MouseArea {
+    id: pluginMouseArea
+    anchors.fill: parent
+    visible: root.usePluginMode
+    acceptedButtons: Qt.RightButton
+    onClicked: mouse => {
+      if (mouse.button === Qt.RightButton) {
+        PanelService.showContextMenu(contextMenu, pluginLoader.item || this, screen);
+      }
+    }
   }
 
   // ==================== SHARED ====================

@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Widgets
 import qs.Commons
@@ -58,6 +59,9 @@ Item {
   readonly property bool hasFocusedWindow: CompositorService.getFocusedWindow() !== null
   readonly property string windowTitle: CompositorService.getFocusedWindowTitle() || "No active window"
   readonly property string fallbackIcon: "user-desktop"
+
+  // Memory usage tooltip
+  property string memoryUsage: ""
 
   readonly property int iconSize: Style.toOdd(capsuleHeight * 0.75)
   readonly property int verticalSize: Style.toOdd(capsuleHeight * 0.85)
@@ -334,6 +338,41 @@ Item {
     }
   }
 
+  // Process to query active window PID and memory usage
+  Process {
+    id: memoryQueryProcess
+    running: false
+    command: ["sh", "-c", "PID=$(hyprctl activewindow -j 2>/dev/null | grep '\"pid\":' | head -1 | sed 's/[^0-9]//g'); if [ -n \"$PID\" ]; then pstree -p $PID 2>/dev/null | tr '(' '\\n' | grep -oE '^[0-9]+' | xargs ps -o rss= -p 2>/dev/null | awk '{sum+=$1} END {if(sum>0) print int(sum)}'; fi"]
+
+    property string outputLine: ""
+
+    stdout: SplitParser {
+      onRead: function(line) {
+        memoryQueryProcess.outputLine = line.trim();
+      }
+    }
+
+    onExited: function(exitCode) {
+      var kbStr = outputLine;
+      outputLine = "";
+      if (kbStr && !isNaN(kbStr)) {
+        var kb = parseInt(kbStr);
+        if (kb >= 1024) {
+          root.memoryUsage = Math.round(kb / 1024) + " MB";
+        } else {
+          root.memoryUsage = kb + " kB";
+        }
+        // Re-show tooltip with updated content (show() handles same-target update)
+        if (mainMouseArea.containsMouse && root.memoryUsage !== "") {
+          var content = ((windowTitle !== "") && isVerticalBar || (scrollingMode === "never"))
+            ? windowTitle + "\nMemory: " + root.memoryUsage
+            : "Memory: " + root.memoryUsage;
+          TooltipService.show(root, content, BarService.getTooltipDirection(root.screen?.name));
+        }
+      }
+    }
+  }
+
   // Mouse area for hover detection
   MouseArea {
     id: mainMouseArea
@@ -349,11 +388,19 @@ Item {
     cursorShape: Qt.PointingHandCursor
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     onEntered: {
-      if ((windowTitle !== "") && isVerticalBar || (scrollingMode === "never")) {
-        TooltipService.show(root, windowTitle, BarService.getTooltipDirection(root.screen?.name));
+      root.memoryUsage = "";
+      if (hasFocusedWindow) {
+        if ((windowTitle !== "") && isVerticalBar || (scrollingMode === "never")) {
+          TooltipService.show(root, windowTitle + "\nMemory: ...", BarService.getTooltipDirection(root.screen?.name));
+        } else {
+          TooltipService.show(root, "Memory: ...", BarService.getTooltipDirection(root.screen?.name));
+        }
+        // Trigger memory query
+        memoryQueryProcess.running = true;
       }
     }
     onExited: {
+      root.memoryUsage = "";
       TooltipService.hide();
     }
     onClicked: mouse => {
