@@ -698,6 +698,7 @@ Singleton {
       property bool enableMediaToast: false
       property bool enableKeyboardLayoutToast: true
       property bool enableBatteryToast: true
+      property bool enableDoNotDisturbToast: true
     }
 
     // on-screen display

@@ -2058,6 +2058,15 @@
     "subTabLabel": "common.toast"
   },
   {
+    "labelKey": "panels.notifications.toast-do-not-disturb-label",
+    "descriptionKey": "panels.notifications.toast-do-not-disturb-description",
+    "widget": "NCheckbox",
+    "tab": 9,
+    "tabLabel": "common.notifications",
+    "subTab": 4,
+    "subTabLabel": "common.toast"
+  },
+  {
     "labelKey": "panels.osd.enabled-label",
     "descriptionKey": "panels.osd.enabled-description",
     "widget": "NToggle",

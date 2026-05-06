@@ -1541,6 +1541,8 @@
       "toast-battery-description": "Show a warning when the battery level falls below this percentage.",
       "toast-battery-label": "Battery warning",
       "toast-desc": "Configure toast appearance and behavior.",
+      "toast-do-not-disturb-description": "Show a toast when Do Not Disturb is toggled.",
+      "toast-do-not-disturb-label": "Do Not Disturb",
       "toast-keyboard-description": "Show a toast when the keyboard layout changes.",
       "toast-keyboard-label": "Keyboard layout",
       "toast-media-description": "Show a toast when media playback state changes.",

@@ -467,7 +467,8 @@
     },
     "enableMediaToast": false,
     "enableKeyboardLayoutToast": true,
-    "enableBatteryToast": true
+    "enableBatteryToast": true,
+    "enableDoNotDisturbToast": true
   },
   "osd": {
     "enabled": true,
