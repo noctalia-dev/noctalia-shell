@@ -10,6 +10,7 @@
 #include "ui/controls/glyph.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
+#include "ui/controls/list_editor.h"
 #include "ui/controls/search_picker.h"
 #include "ui/controls/segmented.h"
 #include "ui/controls/select.h"
@@ -24,8 +25,10 @@
 #include <algorithm>
 #include <charconv>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <format>
+#include <functional>
 #include <limits>
 #include <locale>
 #include <memory>
@@ -452,7 +455,7 @@ namespace settings {
       const auto makeBadge = [&](std::string_view label, const ColorSpec& fill, const ColorSpec& color) {
         auto badge = std::make_unique<Flex>();
         badge->setAlign(FlexAlign::Center);
-        badge->setPadding(1.0f * scale, Style::spaceXs * scale);
+        badge->setPadding(0, Style::spaceXs * scale);
         badge->setRadius(Style::radiusSm * scale);
         badge->setFill(fill);
         badge->addChild(makeLabel(label, Style::fontSizeCaption * scale, color, true));
@@ -800,7 +803,7 @@ namespace settings {
       const auto makeBadge = [&](std::string_view label, const ColorSpec& fill, const ColorSpec& color) {
         auto badge = std::make_unique<Flex>();
         badge->setAlign(FlexAlign::Center);
-        badge->setPadding(1.0f * scale, Style::spaceXs * scale);
+        badge->setPadding(0, Style::spaceXs * scale);
         badge->setRadius(Style::radiusSm * scale);
         badge->setFill(fill);
         badge->addChild(makeLabel(label, Style::fontSizeCaption * scale, color, true));
@@ -1035,194 +1038,48 @@ namespace settings {
                                   colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
       }
 
-      const auto resolveItemLabel = [&list](const std::string& value) -> std::string {
-        for (const auto& opt : list.suggestedOptions) {
-          if (opt.value == value) {
-            return opt.label;
-          }
-        }
-        return value;
-      };
-
-      const float labelCellWidth = 200.0f * scale;
-      for (std::size_t i = 0; i < list.items.size(); ++i) {
-        auto itemRow = std::make_unique<Flex>();
-        itemRow->setDirection(FlexDirection::Horizontal);
-        itemRow->setAlign(FlexAlign::Center);
-        itemRow->setGap(Style::spaceXs * scale);
-        itemRow->setMinHeight(Style::controlHeightSm * scale);
-
-        auto labelCell = std::make_unique<Flex>();
-        labelCell->setDirection(FlexDirection::Horizontal);
-        labelCell->setAlign(FlexAlign::Center);
-        labelCell->setMinWidth(labelCellWidth);
-        labelCell->addChild(makeLabel(resolveItemLabel(list.items[i]), Style::fontSizeCaption * scale,
-                                      colorSpecFromRole(ColorRole::OnSurface), false));
-        itemRow->addChild(std::move(labelCell));
-
-        auto removeBtn = std::make_unique<Button>();
-        removeBtn->setGlyph("close");
-        removeBtn->setVariant(ButtonVariant::Ghost);
-        removeBtn->setGlyphSize(Style::fontSizeCaption * scale);
-        removeBtn->setMinWidth(Style::controlHeightSm * scale);
-        removeBtn->setMinHeight(Style::controlHeightSm * scale);
-        removeBtn->setPadding(Style::spaceXs * scale);
-        removeBtn->setRadius(Style::radiusSm * scale);
-        {
-          auto items = list.items;
-          auto path = entry.path;
-          const Config& config = cfg;
-          removeBtn->setOnClick(
-              [setOverride = ctx.setOverride, setOverrides = ctx.setOverrides, &config, items, path, i]() mutable {
-                const std::string removedItem = items[i];
-                items.erase(items.begin() + static_cast<std::ptrdiff_t>(i));
-                const auto overrides = capsuleGroupRemovalOverrides(config, path, removedItem, items);
-                if (overrides.size() == 1) {
-                  setOverride(path, items);
-                  return;
-                }
-                setOverrides(overrides);
-              });
-        }
-        itemRow->addChild(std::move(removeBtn));
-
-        if (i > 0) {
-          auto upBtn = std::make_unique<Button>();
-          upBtn->setGlyph("chevron-up");
-          upBtn->setVariant(ButtonVariant::Ghost);
-          upBtn->setGlyphSize(Style::fontSizeCaption * scale);
-          upBtn->setMinWidth(Style::controlHeightSm * scale);
-          upBtn->setMinHeight(Style::controlHeightSm * scale);
-          upBtn->setPadding(Style::spaceXs * scale);
-          upBtn->setRadius(Style::radiusSm * scale);
-          auto items = list.items;
-          auto path = entry.path;
-          upBtn->setOnClick([setOverride = ctx.setOverride, items, path, i]() mutable {
-            std::swap(items[i], items[i - 1]);
+      auto listEditor = std::make_unique<ListEditor>();
+      listEditor->setScale(scale);
+      listEditor->setAddPlaceholder(i18n::tr("settings.controls.list.add-entry-placeholder"));
+      std::vector<ListEditorOption> suggestedOptions;
+      suggestedOptions.reserve(list.suggestedOptions.size());
+      for (const auto& opt : list.suggestedOptions) {
+        suggestedOptions.push_back(ListEditorOption{.value = opt.value, .label = opt.label});
+      }
+      listEditor->setSuggestedOptions(std::move(suggestedOptions));
+      listEditor->setItems(list.items);
+      listEditor->setOnAddRequested(
+          [setOverride = ctx.setOverride, items = list.items, path = entry.path](std::string value) mutable {
+            if (value.empty()) {
+              return;
+            }
+            items.push_back(std::move(value));
             setOverride(path, items);
           });
-          itemRow->addChild(std::move(upBtn));
-        }
-        if (i + 1 < list.items.size()) {
-          auto downBtn = std::make_unique<Button>();
-          downBtn->setGlyph("chevron-down");
-          downBtn->setVariant(ButtonVariant::Ghost);
-          downBtn->setGlyphSize(Style::fontSizeCaption * scale);
-          downBtn->setMinWidth(Style::controlHeightSm * scale);
-          downBtn->setMinHeight(Style::controlHeightSm * scale);
-          downBtn->setPadding(Style::spaceXs * scale);
-          downBtn->setRadius(Style::radiusSm * scale);
-          auto items = list.items;
-          auto path = entry.path;
-          downBtn->setOnClick([setOverride = ctx.setOverride, items, path, i]() mutable {
-            std::swap(items[i], items[i + 1]);
-            setOverride(path, items);
-          });
-          itemRow->addChild(std::move(downBtn));
-        }
-
-        block->addChild(std::move(itemRow));
-      }
-
-      auto addRow = std::make_unique<Flex>();
-      addRow->setDirection(FlexDirection::Horizontal);
-      addRow->setAlign(FlexAlign::Center);
-      addRow->setGap(Style::spaceSm * scale);
-
-      const bool useSelectAdder = !list.suggestedOptions.empty();
-      std::vector<SelectOption> remaining;
-      if (useSelectAdder) {
-        remaining.reserve(list.suggestedOptions.size());
-        for (const auto& opt : list.suggestedOptions) {
-          if (std::find(list.items.begin(), list.items.end(), opt.value) == list.items.end()) {
-            remaining.push_back(opt);
-          }
-        }
-      }
-
-      if (useSelectAdder) {
-        if (remaining.empty()) {
-          // Every suggested value is already in the list — nothing to add.
-          section.addChild(std::move(block));
+      listEditor->setOnRemoveRequested([setOverride = ctx.setOverride, setOverrides = ctx.setOverrides,
+                                        config = std::cref(cfg), items = list.items,
+                                        path = entry.path](std::size_t index) mutable {
+        if (index >= items.size()) {
           return;
         }
-
-        std::vector<std::string> remainingLabels;
-        remainingLabels.reserve(remaining.size());
-        for (const auto& opt : remaining) {
-          remainingLabels.push_back(opt.label);
-        }
-
-        auto select = std::make_unique<Select>();
-        select->setOptions(remainingLabels);
-        select->setPlaceholder(i18n::tr("settings.controls.list.add-entry-placeholder"));
-        select->setFontSize(Style::fontSizeCaption * scale);
-        select->setControlHeight(Style::controlHeightSm * scale);
-        select->setGlyphSize(Style::fontSizeCaption * scale);
-        select->setSize(labelCellWidth, Style::controlHeightSm * scale);
-        auto* selectPtr = select.get();
-
-        auto addBtn = std::make_unique<Button>();
-        addBtn->setGlyph("add");
-        addBtn->setVariant(ButtonVariant::Ghost);
-        addBtn->setGlyphSize(Style::fontSizeCaption * scale);
-        addBtn->setMinWidth(Style::controlHeightSm * scale);
-        addBtn->setMinHeight(Style::controlHeightSm * scale);
-        addBtn->setPadding(Style::spaceXs * scale);
-        addBtn->setRadius(Style::radiusSm * scale);
-
-        auto items = list.items;
-        auto path = entry.path;
-        addBtn->setOnClick([setOverride = ctx.setOverride, selectPtr, remaining, items, path]() mutable {
-          const std::size_t index = selectPtr->selectedIndex();
-          if (index >= remaining.size()) {
-            return;
-          }
-          items.push_back(remaining[index].value);
+        const std::string removedItem = items[index];
+        items.erase(items.begin() + static_cast<std::ptrdiff_t>(index));
+        const auto overrides = capsuleGroupRemovalOverrides(config.get(), path, removedItem, items);
+        if (overrides.size() == 1) {
           setOverride(path, items);
-        });
-
-        addRow->addChild(std::move(select));
-        addRow->addChild(std::move(addBtn));
-      } else {
-        auto addInput = std::make_unique<Input>();
-        addInput->setPlaceholder(i18n::tr("settings.controls.list.add-entry-placeholder"));
-        addInput->setFontSize(Style::fontSizeBody * scale);
-        addInput->setControlHeight(Style::controlHeight * scale);
-        addInput->setHorizontalPadding(Style::spaceSm * scale);
-        addInput->setSize(190.0f * scale, Style::controlHeight * scale);
-        auto* addInputPtr = addInput.get();
-
-        auto addBtn = std::make_unique<Button>();
-        addBtn->setGlyph("add");
-        addBtn->setVariant(ButtonVariant::Ghost);
-        addBtn->setGlyphSize(Style::fontSizeBody * scale);
-        addBtn->setMinWidth(Style::controlHeight * scale);
-        addBtn->setMinHeight(Style::controlHeight * scale);
-        addBtn->setPadding(Style::spaceSm * scale);
-        addBtn->setRadius(Style::radiusMd * scale);
-        auto items = list.items;
-        auto path = entry.path;
-        addBtn->setOnClick([setOverride = ctx.setOverride, addInputPtr, items, path]() mutable {
-          const auto& text = addInputPtr->value();
-          if (!text.empty()) {
-            items.push_back(text);
-            setOverride(path, items);
-          }
-        });
-
-        addInput->setOnSubmit([setOverride = ctx.setOverride, items, path](const std::string& text) mutable {
-          if (!text.empty()) {
-            items.push_back(text);
-            setOverride(path, items);
-          }
-        });
-
-        addRow->addChild(std::move(addInput));
-        addRow->addChild(std::move(addBtn));
-      }
-
-      block->addChild(std::move(addRow));
+          return;
+        }
+        setOverrides(overrides);
+      });
+      listEditor->setOnMoveRequested([setOverride = ctx.setOverride, items = list.items,
+                                      path = entry.path](std::size_t from, std::size_t to) mutable {
+        if (from >= items.size() || to >= items.size() || from == to) {
+          return;
+        }
+        std::swap(items[from], items[to]);
+        setOverride(path, items);
+      });
+      block->addChild(std::move(listEditor));
 
       section.addChild(std::move(block));
     };
