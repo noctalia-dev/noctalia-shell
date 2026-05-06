@@ -56,6 +56,18 @@ Singleton {
   property bool _discoveryWasRunning: false
   property bool _ctlInit: false
   property var _autoConnectQueue: []
+  property var _deviceCodecSelections: ({})
+  property var _deviceCodecOptions: ({})
+  property var _deviceActiveCodecProfile: ({})
+  property var _deviceCodecProfileIndices: ({})
+  property var _deviceCodecBackendMeta: ({})
+  property var _codecSetRequestedKey: ({})
+  property var _codecSetPendingUntil: ({})
+  property var _codecQueryPending: ({})
+  property var _codecQueryQueue: []
+  property string _codecQueryCurrentAddr: ""
+  property string _codecSetCurrentAddr: ""
+  property bool _codecBackendAvailable: true
 
   // Persistent cache for per-device auto-connect toggle
   property string cacheFile: Settings.cacheDir + "bluetooth_devices.json"
@@ -388,6 +400,333 @@ Singleton {
     }
   }
 
+  function codecOptions(device) {
+    if (!device) {
+      return [];
+    }
+    var addr = BluetoothUtils.macFromDevice(device);
+    if (!addr || !_deviceCodecOptions[addr]) {
+      return [];
+    }
+    return _deviceCodecOptions[addr];
+  }
+
+  function _profileLabel(profileKey, description) {
+    var p = String(profileKey || "").toLowerCase();
+    var d = String(description || "").toLowerCase();
+    var dm = d.match(/codec\s+([a-z0-9+\-]+)/i);
+    if (dm && dm[1]) {
+      var codec = dm[1].toLowerCase();
+      if (codec === "ldac")
+        return "LDAC";
+      if (codec === "aac")
+        return "AAC";
+      if (codec === "sbc")
+        return "SBC";
+      if (codec === "aptx-hd" || codec === "aptx_hd")
+        return "aptX HD";
+      if (codec === "aptx")
+        return "aptX";
+      if (codec === "lc3")
+        return "LC3";
+      if (codec === "msbc" || codec === "m_sbc")
+        return "mSBC";
+      if (codec === "cvsd")
+        return "CVSD";
+      return codec.toUpperCase();
+    }
+
+    if (p.indexOf("ldac") !== -1)
+      return "LDAC";
+    if (p.indexOf("aptx_hd") !== -1 || p.indexOf("aptx-hd") !== -1)
+      return "aptX HD";
+    if (p.indexOf("aptx") !== -1)
+      return "aptX";
+    if (p.indexOf("aac") !== -1)
+      return "AAC";
+    if (p.indexOf("sbc") !== -1)
+      return "SBC";
+    if (p.indexOf("lc3") !== -1)
+      return "LC3";
+    if (p.indexOf("msbc") !== -1 || p.indexOf("m_sbc") !== -1)
+      return "mSBC";
+    if (p.indexOf("cvsd") !== -1)
+      return "CVSD";
+    return String(profileKey || "").replace(/[_-]/g, " ");
+  }
+
+  function _parseCodecQueryOutput(text) {
+    var lines = String(text || "").split(/\r?\n/);
+    var active = "";
+    var profiles = [];
+    var seen = ({});
+    var profileIndexMap = ({});
+    var backend = "";
+    var target = "";
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (!line)
+        continue;
+      if (line.indexOf("ACTIVE=") === 0) {
+        active = line.slice(7).trim();
+        continue;
+      }
+      if (line.indexOf("BACKEND=") === 0) {
+        backend = line.slice(8).trim();
+        continue;
+      }
+      if (line.indexOf("TARGET=") === 0) {
+        target = line.slice(7).trim();
+        continue;
+      }
+      if (line.indexOf("PROFILE_IDX=") === 0) {
+        var payload = line.slice(12);
+        var parts = payload.split("|");
+        if (parts.length >= 2) {
+          var idx = Number(parts[0]);
+          var pkey = parts[1];
+          if (!isNaN(idx) && pkey) {
+            profileIndexMap[pkey] = idx;
+          }
+        }
+        continue;
+      }
+      if (line.indexOf("PROFILE=") !== 0)
+        continue;
+      var p = line.slice(8).trim();
+      if (!p || seen[p])
+        continue;
+      seen[p] = true;
+      if (p === "off")
+        continue;
+      var lower = p.toLowerCase();
+      var isBtAudioProfile = lower.indexOf("a2dp") !== -1 || lower.indexOf("headset") !== -1 || lower.indexOf("handsfree") !== -1 || lower.indexOf("hfp") !== -1 || lower.indexOf("hsp") !== -1;
+      if (!isBtAudioProfile)
+        continue;
+      profiles.push({
+                      "key": p,
+                      "name": _profileLabel(p, "")
+                    });
+    }
+
+    // Apply description-derived labels when PROFILE_IDX lines provided richer metadata.
+    for (var k = 0; k < lines.length; k++) {
+      var l = lines[k].trim();
+      if (l.indexOf("PROFILE_IDX=") !== 0)
+        continue;
+      var payload2 = l.slice(12);
+      var parts2 = payload2.split("|");
+      if (parts2.length < 3)
+        continue;
+      var pkey2 = parts2[1];
+      var pdesc2 = parts2.slice(2).join("|");
+      for (var q = 0; q < profiles.length; q++) {
+        if (profiles[q].key === pkey2) {
+          profiles[q].name = _profileLabel(pkey2, pdesc2);
+          break;
+        }
+      }
+    }
+
+    return {
+      "active": active,
+      "options": profiles,
+      "profileIndexMap": profileIndexMap,
+      "backend": backend,
+      "target": target
+    };
+  }
+
+  function _bluezCardToken(address) {
+    return String(address || "").trim().toUpperCase().replace(/[:-]/g, "_");
+  }
+
+  function _runNextCodecQuery() {
+    if (codecQueryProcess.running || _codecQueryQueue.length === 0) {
+      return;
+    }
+
+    var addr = _codecQueryQueue.shift();
+    var pending = Object.assign({}, _codecQueryPending);
+    pending[addr] = true;
+    _codecQueryPending = pending;
+    _codecQueryCurrentAddr = addr;
+
+    var cardToken = _bluezCardToken(addr);
+    var script = "CARD_TOKEN='" + cardToken + "'; "
+           + "ADDR='" + addr + "'; "
+           + "if command -v pactl >/dev/null 2>&1; then "
+           + "  CARD_NAME=$(pactl list cards short 2>/dev/null | awk -v tok=\"$CARD_TOKEN\" '$2 ~ \"bluez_card\\.\" tok {print $2; exit}'); "
+           + "  if [ -n \"$CARD_NAME\" ]; then "
+           + "    echo BACKEND=pactl; "
+           + "    echo TARGET=$CARD_NAME; "
+           + "    pactl list cards 2>/dev/null | awk -v card=\"$CARD_NAME\" '"
+           + "$1==\"Name:\" {in_card=($2==card); in_profiles=0} "
+           + "in_card && $1==\"Active\" && $2==\"Profile:\" {print \"ACTIVE=\" $3} "
+           + "in_card && /^\\s*Profiles:/ {in_profiles=1; next} "
+           + "in_card && in_profiles && /^\\s*Active Profile:/ {in_profiles=0} "
+           + "in_card && in_profiles { if (match($0,/^[[:space:]]*([^:[:space:]]+):/,m)) { print \"PROFILE=\" m[1]; } }'; "
+           + "    exit 0; "
+           + "  fi; "
+           + "fi; "
+           + "command -v wpctl >/dev/null 2>&1 || exit 10; "
+           + "command -v pw-cli >/dev/null 2>&1 || exit 10; "
+               + "DEVICE_ID=$(pw-cli ls Device 2>/dev/null | awk -v tok=\"$CARD_TOKEN\" '/^[[:space:]]*id [0-9]+,/{id=$2; gsub(/,/,\"\",id)} /device.name = \"bluez_card\\./{ if (index($0, tok)>0) { print id; exit } }'); "
+           + "[ -n \"$DEVICE_ID\" ] || exit 11; "
+           + "echo BACKEND=wpctl; "
+           + "echo TARGET=$DEVICE_ID; "
+           + "ACTIVE=$(pw-cli enum-params \"$DEVICE_ID\" Profile 2>/dev/null | sed -n 's/.*String \"\\([^\"\\]*\\)\"/\\1/p' | head -n1); "
+           + "[ -n \"$ACTIVE\" ] && echo ACTIVE=$ACTIVE; "
+           + "pw-cli enum-params \"$DEVICE_ID\" EnumProfile 2>/dev/null | awk '"
+           + "/Profile:index/ {need_idx=1; next} "
+           + "need_idx && /Int / {idx=$2; need_idx=0; next} "
+           + "/Profile:name/ {need_name=1; next} "
+           + "need_name && /String / {name=$2; gsub(/\"/,\"\",name); need_name=0; next} "
+           + "/Profile:description/ {need_desc=1; next} "
+           + "need_desc && /String / {desc=$0; sub(/^.*String \"/,\"\",desc); sub(/\"$/,\"\",desc); need_desc=0; next} "
+           + "/ParamAvailability:yes/ { if (name != \"\" && name != \"off\") { print \"PROFILE=\" name; print \"PROFILE_IDX=\" idx \"|\" name \"|\" desc; } idx=\"\"; name=\"\"; desc=\"\"; }'";
+
+    codecQueryProcess.command = ["sh", "-c", script];
+    codecQueryProcess.running = true;
+  }
+
+  function ensureCodecOptions(device) {
+    if (!device || !device.connected || !isAudioDevice(device)) {
+      return;
+    }
+    var addr = BluetoothUtils.macFromDevice(device);
+    if (!addr) {
+      return;
+    }
+    if (_deviceCodecOptions[addr] && _deviceCodecOptions[addr].length > 0) {
+      return;
+    }
+    if (_codecQueryPending[addr]) {
+      return;
+    }
+    if (_codecQueryQueue.indexOf(addr) === -1) {
+      _codecQueryQueue = _codecQueryQueue.concat([addr]);
+    }
+    _runNextCodecQuery();
+  }
+
+  function isAudioDevice(device) {
+    if (!device) {
+      return false;
+    }
+    var iconName = String(device.icon || "").toLowerCase();
+    var name = String(device.name || device.deviceName || "").toLowerCase();
+    return iconName.indexOf("audio") !== -1 || iconName.indexOf("head") !== -1 || iconName.indexOf("speaker") !== -1 || iconName.indexOf("headset") !== -1 || iconName.indexOf("handsfree") !== -1 || name.indexOf("head") !== -1 || name.indexOf("speaker") !== -1 || name.indexOf("earbud") !== -1;
+  }
+
+  function getSelectedCodecKey(device) {
+    if (!device) {
+      return "";
+    }
+    var addr = BluetoothUtils.macFromDevice(device);
+    if (!addr) {
+      return "";
+    }
+
+    var pendingUntil = _codecSetPendingUntil[addr] || 0;
+    if (pendingUntil > Date.now() && _codecSetRequestedKey[addr]) {
+      return _codecSetRequestedKey[addr];
+    }
+
+    if (_deviceActiveCodecProfile[addr]) {
+      return _deviceActiveCodecProfile[addr];
+    }
+    if (!_deviceCodecSelections[addr]) {
+      return "";
+    }
+    return _deviceCodecSelections[addr];
+  }
+
+  function isCodecSwitchBusy(device) {
+    if (!device) {
+      return false;
+    }
+    var addr = BluetoothUtils.macFromDevice(device);
+    if (!addr) {
+      return false;
+    }
+    if (codecSetProcess.running && _codecSetCurrentAddr === addr) {
+      return true;
+    }
+    var pendingUntil = _codecSetPendingUntil[addr] || 0;
+    return pendingUntil > Date.now();
+  }
+
+  function setCodecForDevice(device, key) {
+    if (!device) {
+      return;
+    }
+
+    var valid = false;
+    var opts = codecOptions(device);
+    for (var i = 0; i < opts.length; i++) {
+      if (opts[i].key === key) {
+        valid = true;
+        break;
+      }
+    }
+    if (!valid) {
+      return;
+    }
+
+    var addr = BluetoothUtils.macFromDevice(device);
+    if (!addr) {
+      return;
+    }
+    if (codecSetProcess.running && _codecSetCurrentAddr === addr) {
+      return;
+    }
+    if (getSelectedCodecKey(device) === key) {
+      return;
+    }
+    if (addr) {
+      var selections = Object.assign({}, _deviceCodecSelections);
+      selections[addr] = key;
+      _deviceCodecSelections = selections;
+
+      // Optimistic update keeps the combo selection stable until backend confirms.
+      var activeMap = Object.assign({}, _deviceActiveCodecProfile);
+      activeMap[addr] = key;
+      _deviceActiveCodecProfile = activeMap;
+
+      var requestedMap = Object.assign({}, _codecSetRequestedKey);
+      requestedMap[addr] = key;
+      _codecSetRequestedKey = requestedMap;
+
+      var pendingMap = Object.assign({}, _codecSetPendingUntil);
+      pendingMap[addr] = Date.now() + 7000;
+      _codecSetPendingUntil = pendingMap;
+    }
+
+    var backendMeta = _deviceCodecBackendMeta[addr] || ({});
+    var backend = backendMeta.backend || "";
+    var target = backendMeta.target || "";
+    var idxMap = _deviceCodecProfileIndices[addr] || ({});
+
+    if (backend === "wpctl") {
+      var profileIndex = idxMap[key];
+      if (profileIndex === undefined || profileIndex === null) {
+        ToastService.showWarning(I18n.tr("common.bluetooth"), I18n.tr("toast.bluetooth.codec-apply-failed"));
+        return;
+      }
+      codecSetProcess.command = ["wpctl", "set-profile", String(target), String(profileIndex)];
+    } else if (backend === "pactl") {
+      codecSetProcess.command = ["pactl", "set-card-profile", String(target), String(key)];
+    } else {
+      ToastService.showWarning(I18n.tr("common.bluetooth"), I18n.tr("toast.bluetooth.codec-selector-unavailable"));
+      return;
+    }
+
+    _codecSetCurrentAddr = addr;
+    codecSetProcess.running = true;
+  }
+
   // Status key for a device (untranslated)
   function getStatusKey(device) {
     if (!device) {
@@ -511,6 +850,103 @@ Singleton {
         }
       }
     }
+  }
+
+  Process {
+    id: codecQueryProcess
+    running: false
+
+    onExited: function (code) {
+      var addr = root._codecQueryCurrentAddr;
+      root._codecQueryCurrentAddr = "";
+
+      var pending = Object.assign({}, root._codecQueryPending);
+      delete pending[addr];
+      root._codecQueryPending = pending;
+
+      if (code === 0 && addr) {
+        var parsed = root._parseCodecQueryOutput(stdout.text);
+
+        var optionsMap = Object.assign({}, root._deviceCodecOptions);
+        optionsMap[addr] = parsed.options;
+        root._deviceCodecOptions = optionsMap;
+
+        var profileIndexMaps = Object.assign({}, root._deviceCodecProfileIndices);
+        profileIndexMaps[addr] = parsed.profileIndexMap;
+        root._deviceCodecProfileIndices = profileIndexMaps;
+
+        var requested = root._codecSetRequestedKey[addr] || "";
+        var pendingUntilNow = root._codecSetPendingUntil[addr] || 0;
+        var stillPending = pendingUntilNow > Date.now();
+        if (!stillPending || !requested || parsed.active === requested) {
+          var activeMap = Object.assign({}, root._deviceActiveCodecProfile);
+          activeMap[addr] = parsed.active;
+          root._deviceActiveCodecProfile = activeMap;
+        }
+
+        if (requested && parsed.active === requested) {
+          var pendingMap2 = Object.assign({}, root._codecSetPendingUntil);
+          delete pendingMap2[addr];
+          root._codecSetPendingUntil = pendingMap2;
+
+          var requestedMap2 = Object.assign({}, root._codecSetRequestedKey);
+          delete requestedMap2[addr];
+          root._codecSetRequestedKey = requestedMap2;
+        }
+
+        var backendMetaMap = Object.assign({}, root._deviceCodecBackendMeta);
+        backendMetaMap[addr] = {
+          "backend": parsed.backend,
+          "target": parsed.target
+        };
+        root._deviceCodecBackendMeta = backendMetaMap;
+
+        root._codecBackendAvailable = true;
+      } else if (code === 10) {
+        root._codecBackendAvailable = false;
+      }
+
+      root._runNextCodecQuery();
+    }
+
+    stdout: StdioCollector {}
+    stderr: StdioCollector {}
+  }
+
+  Process {
+    id: codecSetProcess
+    running: false
+
+    onExited: function (code) {
+      var addr = root._codecSetCurrentAddr;
+      root._codecSetCurrentAddr = "";
+
+      if (code !== 0) {
+        if (addr) {
+          var pendingMap = Object.assign({}, root._codecSetPendingUntil);
+          delete pendingMap[addr];
+          root._codecSetPendingUntil = pendingMap;
+
+          var requestedMap = Object.assign({}, root._codecSetRequestedKey);
+          delete requestedMap[addr];
+          root._codecSetRequestedKey = requestedMap;
+        }
+        if (code === 10) {
+          root._codecBackendAvailable = false;
+        }
+        ToastService.showWarning(I18n.tr("common.bluetooth"), I18n.tr("toast.bluetooth.codec-apply-failed"));
+        return;
+      }
+      root._codecBackendAvailable = true;
+      // Re-query after profile change so active codec and available list remain accurate.
+      if (addr && root._codecQueryQueue.indexOf(addr) === -1) {
+        root._codecQueryQueue = root._codecQueryQueue.concat([addr]);
+      }
+      root._runNextCodecQuery();
+    }
+
+    stdout: StdioCollector {}
+    stderr: StdioCollector {}
   }
 
   // Interactive pairing process
