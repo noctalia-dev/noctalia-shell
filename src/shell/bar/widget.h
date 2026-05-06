@@ -18,6 +18,7 @@ class Widget {
 public:
   using UpdateCallback = std::function<void()>;
   using RedrawCallback = std::function<void()>;
+  using FrameTickRequestCallback = std::function<void()>;
   using PanelToggleCallback =
       std::function<void(std::string_view panelId, std::string_view context, std::optional<float> anchorSurfaceX,
                          std::optional<float> anchorSurfaceY)>;
@@ -49,6 +50,7 @@ public:
   void setAnimationManager(AnimationManager* mgr) noexcept;
   void setUpdateCallback(UpdateCallback callback);
   void setRedrawCallback(RedrawCallback callback);
+  void setFrameTickRequestCallback(FrameTickRequestCallback callback);
   void setPanelToggleCallback(PanelToggleCallback callback);
   void setContentScale(float scale) noexcept { m_contentScale = scale; }
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
@@ -74,6 +76,7 @@ public:
 protected:
   void requestUpdate();
   void requestRedraw();
+  void requestFrameTick();
   void requestPanelToggle(std::string_view panelId, std::string_view context = {},
                           std::optional<float> anchorSurfaceX = std::nullopt,
                           std::optional<float> anchorSurfaceY = std::nullopt);
@@ -87,6 +90,7 @@ protected:
   AnimationManager* m_animations = nullptr;
   UpdateCallback m_updateCallback;
   RedrawCallback m_redrawCallback;
+  FrameTickRequestCallback m_frameTickRequestCallback;
   PanelToggleCallback m_panelToggleCallback;
   WidgetBarCapsuleSpec m_barCapsuleSpec{};
   std::optional<ColorSpec> m_widgetForeground;

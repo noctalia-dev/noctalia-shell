@@ -852,6 +852,13 @@ void PanelManager::requestRedraw() {
   m_surface->requestRedraw();
 }
 
+void PanelManager::requestFrameTick() {
+  if (!isOpen() || m_surface == nullptr) {
+    return;
+  }
+  m_surface->requestFrameTick();
+}
+
 void PanelManager::close() { closePanel(); }
 
 void PanelManager::setActivePopup(ContextMenuPopup* popup) { m_activePopup = popup; }

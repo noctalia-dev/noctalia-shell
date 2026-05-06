@@ -103,6 +103,7 @@ public:
   // Requests a redraw on the active panel surface without re-running panel
   // update/layout. Used for reactive palette restyling.
   void requestRedraw();
+  void requestFrameTick();
   void close();
   void beginAttachedPopup(wl_surface* surface);
   void endAttachedPopup(wl_surface* surface);

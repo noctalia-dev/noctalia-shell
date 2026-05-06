@@ -16,6 +16,7 @@ public:
   using UpdateCallback = std::function<void()>;
   using LayoutCallback = std::function<void()>;
   using RedrawCallback = std::function<void()>;
+  using FrameTickRequestCallback = std::function<void()>;
 
   virtual ~DesktopWidget() = default;
 
@@ -45,6 +46,9 @@ public:
   // host must rerun update+layout on the widget.
   void setLayoutCallback(LayoutCallback callback) { m_layoutCallback = std::move(callback); }
   void setRedrawCallback(RedrawCallback callback) { m_redrawCallback = std::move(callback); }
+  void setFrameTickRequestCallback(FrameTickRequestCallback callback) {
+    m_frameTickRequestCallback = std::move(callback);
+  }
   void setContentScale(float scale) noexcept { m_contentScale = scale; }
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
   void setBackgroundStyle(const ColorSpec& color, float radius, float padding);
@@ -70,6 +74,12 @@ protected:
     }
   }
 
+  void requestFrameTick() {
+    if (m_frameTickRequestCallback) {
+      m_frameTickRequestCallback();
+    }
+  }
+
   virtual void doLayout(Renderer& renderer) = 0;
   virtual void doUpdate(Renderer& renderer) { (void)renderer; }
 
@@ -87,6 +97,7 @@ private:
   UpdateCallback m_updateCallback;
   LayoutCallback m_layoutCallback;
   RedrawCallback m_redrawCallback;
+  FrameTickRequestCallback m_frameTickRequestCallback;
 
   bool m_bgEnabled = false;
   ColorSpec m_bgColor;

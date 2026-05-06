@@ -104,19 +104,7 @@ namespace {
     if (!hasValidAspectRatio) {
       widget.settings.insert_or_assign("aspect_ratio", static_cast<double>(kDefaultDesktopAudioVisualizerAspectRatio));
     }
-
-    const auto minValueIt = widget.settings.find("min_value");
-    if (minValueIt == widget.settings.end()) {
-      return;
-    }
-    if (const auto* doubleValue = std::get_if<double>(&minValueIt->second)) {
-      widget.settings.insert_or_assign("min_value", std::clamp(*doubleValue, 0.0, 1.0));
-      return;
-    }
-    if (const auto* intValue = std::get_if<std::int64_t>(&minValueIt->second)) {
-      const double clamped = std::clamp(static_cast<double>(*intValue), 0.0, 1.0);
-      widget.settings.insert_or_assign("min_value", clamped);
-    }
+    widget.settings.erase("min_value");
   }
 
   bool parseDesktopWidgetCounter(std::string_view id, std::uint64_t& value) {

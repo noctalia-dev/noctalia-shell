@@ -40,7 +40,6 @@ namespace {
   constexpr Logger kLog("desktop");
   constexpr float kToolbarY = 68.0f;
   constexpr float kDefaultDesktopAudioVisualizerAspectRatio = 240.0f / 96.0f;
-  constexpr float kDefaultDesktopAudioVisualizerMinValue = 0.02f;
   constexpr float kSelectionStroke = 2.0f;
   constexpr float kShadowExpand = 1.0f;
   const Color kShadowColor = rgba(0.0f, 0.0f, 0.0f, 0.45f);
@@ -254,7 +253,7 @@ void DesktopWidgetsEditor::createSurface(const WaylandOutput& output) {
     }
     for (auto& [id, view] : rawOverlay->views) {
       (void)id;
-      if (view.widget != nullptr) {
+      if (view.widget != nullptr && view.widget->needsFrameTick()) {
         view.widget->onFrameTick(deltaMs, *m_renderContext);
       }
     }
@@ -452,6 +451,11 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
     widget->setRedrawCallback([surfacePtr]() {
       if (surfacePtr->surface != nullptr) {
         surfacePtr->surface->requestRedraw();
+      }
+    });
+    widget->setFrameTickRequestCallback([surfacePtr]() {
+      if (surfacePtr->surface != nullptr) {
+        surfacePtr->surface->requestFrameTick();
       }
     });
     widget->update(*m_renderContext);
@@ -929,7 +933,6 @@ void DesktopWidgetsEditor::addWidget(const std::string& outputName, const std::s
   if (widget.type == "audio_visualizer") {
     widget.settings.emplace("aspect_ratio", static_cast<double>(kDefaultDesktopAudioVisualizerAspectRatio));
     widget.settings.emplace("bands", static_cast<std::int64_t>(32));
-    widget.settings.emplace("min_value", static_cast<double>(kDefaultDesktopAudioVisualizerMinValue));
   }
 
   if (widget.type == "sticker") {

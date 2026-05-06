@@ -214,6 +214,9 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "lock_keys") {
+    if (m_lockKeys == nullptr) {
+      return nullptr;
+    }
     const bool showCaps = wc != nullptr ? wc->getBool("show_caps_lock", true) : true;
     const bool showNum = wc != nullptr ? wc->getBool("show_num_lock", true) : true;
     const bool showScroll = wc != nullptr ? wc->getBool("show_scroll_lock", false) : false;

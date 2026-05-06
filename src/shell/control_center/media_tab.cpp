@@ -409,7 +409,6 @@ std::unique_ptr<Flex> MediaTab::create() {
   visualizerSpectrum->setOrientation(AudioSpectrumOrientation::Vertical);
   visualizerSpectrum->setMirrored(true);
   visualizerSpectrum->setCentered(true);
-  visualizerSpectrum->setMinDisplayValue(0.005f);
   visualizerSpectrum->setFlexGrow(1.0f);
   m_visualizerSpectrum = visualizerSpectrum.get();
   visualizerBody->addChild(std::move(visualizerSpectrum));
@@ -586,7 +585,7 @@ void MediaTab::setActive(bool active) {
         if (!m_active || m_spectrum->idle()) {
           return;
         }
-        PanelManager::instance().requestRedraw();
+        PanelManager::instance().requestFrameTick();
       });
     } else if (!active && m_spectrumListenerId != 0) {
       m_spectrum->removeChangeListener(m_spectrumListenerId);

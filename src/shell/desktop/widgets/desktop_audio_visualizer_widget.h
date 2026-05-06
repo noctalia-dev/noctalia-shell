@@ -12,7 +12,7 @@ class Renderer;
 class DesktopAudioVisualizerWidget : public DesktopWidget {
 public:
   DesktopAudioVisualizerWidget(PipeWireSpectrum* spectrum, float aspectRatio, int bands, bool mirrored,
-                               ColorSpec lowColor, ColorSpec highColor, float minValue);
+                               ColorSpec lowColor, ColorSpec highColor);
   ~DesktopAudioVisualizerWidget() override;
 
   void create() override;
@@ -30,7 +30,6 @@ private:
   bool m_mirrored = true;
   ColorSpec m_lowColor = colorSpecFromRole(ColorRole::Primary);
   ColorSpec m_highColor = colorSpecFromRole(ColorRole::Primary);
-  float m_minValue = 0.0f;
   std::uint64_t m_listenerId = 0;
   AudioSpectrum* m_visualizer = nullptr;
   bool m_pendingSpectrumUpdate = false;

@@ -948,6 +948,11 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
           surface->requestRedraw();
         }
       });
+      widget->setFrameTickRequestCallback([surface = instance.surface.get()]() {
+        if (surface != nullptr) {
+          surface->requestFrameTick();
+        }
+      });
       widget->setPanelToggleCallback([this, inst = &instance](std::string_view panelId, std::string_view context,
                                                               std::optional<float> anchorSurfaceX,
                                                               std::optional<float> anchorSurfaceY) {

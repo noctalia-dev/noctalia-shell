@@ -229,6 +229,11 @@ void DesktopWidgetsHost::createInstance(const DesktopWidgetState& state, const W
       rawInstance->surface->requestRedraw();
     }
   });
+  instance->widget->setFrameTickRequestCallback([rawInstance]() {
+    if (rawInstance->surface != nullptr) {
+      rawInstance->surface->requestFrameTick();
+    }
+  });
 
   instance->surface->setConfigureCallback(
       [rawInstance](std::uint32_t /*width*/, std::uint32_t /*height*/) { rawInstance->surface->requestLayout(); });
@@ -237,6 +242,9 @@ void DesktopWidgetsHost::createInstance(const DesktopWidgetState& state, const W
   });
   instance->surface->setFrameTickCallback([this, rawInstance](float deltaMs) {
     if (rawInstance->widget == nullptr || m_renderContext == nullptr) {
+      return;
+    }
+    if (!rawInstance->widget->needsFrameTick()) {
       return;
     }
     rawInstance->widget->onFrameTick(deltaMs, *m_renderContext);
