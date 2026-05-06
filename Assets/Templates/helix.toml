@@ -11,15 +11,15 @@
 "constant.character" = "secondaryContainer"
 "constant.character.escape" = "tertiaryContainer"
 
-"string" = { fg = "tertiary", bg = "surfaceContainerHigh" }
-"string.regexp" = { fg = "tertiaryContainer", bg = "surfaceContainerHigh" }
-"string.special" = { fg = "tertiary", bg = "surfaceContainerHigh" }
-"string.special.symbol" = { fg = "tertiary", bg = "surfaceContainerHigh" }
+"string" = { fg = "tertiary" }
+"string.regexp" = { fg = "tertiaryContainer" }
+"string.special" = { fg = "tertiary" }
+"string.special.symbol" = { fg = "tertiary" }
 "string.special.path" = { fg = "secondary", underline = { color = "secondary", style = "line" } }
 
 "path" = { fg = "secondary", underline = { color = "secondary", style = "line" } }
 
-"comment" = { fg = "outline", bg = "surfaceContainerHigh", modifiers = ["italic"] }
+"comment" = { fg = "outline", modifiers = ["italic"] }
 
 "variable" = "onSurface"
 "variable.builtin" = "secondary"
@@ -152,8 +152,8 @@ onSurface = "{{colors.on_surface.default.hex}}"
 surfaceVariant = "{{colors.surface_variant.default.hex}}"
 onSurfaceVariant = "{{colors.on_surface_variant.default.hex}}"
 
-outline = "{{colors.outline.default.hex}}"
-outlineVariant = "{{colors.outline_variant.default.hex}}"
+outline = "{{colors.tertiary.default.hex}}"
+outlineVariant = "{{colors.secondary.default.hex}}"
 
 surfaceContainerLowest = "{{colors.surface_container_lowest.default.hex}}"
 surfaceContainerLow = "{{colors.surface_container_low.default.hex}}"
