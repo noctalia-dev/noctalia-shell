@@ -134,11 +134,15 @@ void AudioSpectrumProgram::draw(float surfaceWidth, float surfaceHeight, float p
   const float crossAxisLen = horizontal ? height : width;
   const int gapCount = std::max(0, barCount - 1);
   const float weightedSlots = static_cast<float>(barCount) + static_cast<float>(gapCount) * kGapToBarRatio;
-  const float barThickness = mainAxisLen / std::max(1.0f, weightedSlots);
-  const float gapThickness = gapCount > 0 ? barThickness * kGapToBarRatio : 0.0f;
-  const float used = barThickness * static_cast<float>(barCount) + gapThickness * static_cast<float>(gapCount);
-  const float startOffset = std::floor(std::max(0.0f, (mainAxisLen - used) * 0.5f));
+  const float devicePixel = 1.0f / mainPixelScale;
+  const float barThickness =
+      std::max(devicePixel, std::floor(mainAxisLen / std::max(1.0f, weightedSlots) * mainPixelScale) / mainPixelScale);
+  const float gapThickness =
+      gapCount > 0 ? std::max(devicePixel, std::floor(barThickness * kGapToBarRatio * mainPixelScale) / mainPixelScale)
+                   : 0.0f;
   const float stride = barThickness + gapThickness;
+  const float used = barThickness * static_cast<float>(barCount) + gapThickness * static_cast<float>(gapCount);
+  const float startOffset = std::floor(std::max(0.0f, (mainAxisLen - used) * 0.5f) * mainPixelScale) / mainPixelScale;
 
   m_vertices.clear();
   m_vertices.reserve(static_cast<std::size_t>(barCount) * 6U * 6U);
@@ -154,10 +158,8 @@ void AudioSpectrumProgram::draw(float surfaceWidth, float surfaceHeight, float p
     }
     const float crossSize = crossPixels / crossPixelScale;
 
-    const float mainPos = startOffset + static_cast<float>(i) * stride;
-    const float mainStart = std::max(0.0f, snapToPixel(mainPos, mainPixelScale));
-    const float mainEnd = std::min(mainAxisLen, std::max(mainStart + (1.0f / mainPixelScale),
-                                                         snapToPixel(mainPos + barThickness, mainPixelScale)));
+    const float mainStart = snapToPixel(startOffset + static_cast<float>(i) * stride, mainPixelScale);
+    const float mainEnd = mainStart + barThickness;
     float crossStart =
         snapToPixel(style.centered ? (crossAxisLen - crossSize) * 0.5f : crossAxisLen - crossSize, crossPixelScale);
     float crossEnd = crossStart + crossSize;
