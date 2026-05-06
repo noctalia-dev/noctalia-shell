@@ -77,6 +77,14 @@ ColumnLayout {
   }
 
   NToggle {
+    label: I18n.tr("panels.lock-screen.hide-header-label")
+    description: I18n.tr("panels.lock-screen.hide-header-description")
+    checked: Settings.data.general.hideLockScreenHeader
+    onToggled: checked => Settings.data.general.hideLockScreenHeader = checked
+    defaultValue: Settings.getDefaultValue("general.hideLockScreenHeader")
+  }
+
+  NToggle {
     label: I18n.tr("panels.lock-screen.enable-lockscreen-media-controls-label")
     description: I18n.tr("panels.lock-screen.enable-lockscreen-media-controls-description")
     checked: Settings.data.general.enableLockScreenMediaControls

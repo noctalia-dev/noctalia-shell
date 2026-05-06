@@ -1698,6 +1698,15 @@
     "subTabLabel": "common.appearance"
   },
   {
+    "labelKey": "panels.lock-screen.hide-header-label",
+    "descriptionKey": "panels.lock-screen.hide-header-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
     "labelKey": "panels.lock-screen.enable-lockscreen-media-controls-label",
     "descriptionKey": "panels.lock-screen.enable-lockscreen-media-controls-description",
     "widget": "NToggle",

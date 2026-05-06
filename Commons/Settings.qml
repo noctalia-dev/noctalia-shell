@@ -313,6 +313,7 @@ Singleton {
       property real animationSpeed: 1.0
       property bool animationDisabled: false
       property bool compactLockScreen: false
+      property bool hideLockScreenHeader: false
       property bool lockScreenAnimations: false
       property bool lockOnSuspend: true
       property bool showSessionButtonsOnLockScreen: true

@@ -145,6 +145,7 @@ Loader {
                 // Header with avatar, welcome, time, date
                 LockScreenHeader {
                   id: headerComponent
+                  visible: !Settings.data.general.hideLockScreenHeader
                 }
 
                 // Info notification
