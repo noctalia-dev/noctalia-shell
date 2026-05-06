@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import qs.Commons
+import qs.Services.Keyboard
 
 Item {
   id: root
@@ -72,6 +73,7 @@ Item {
     updateWindows();
     statePollTimer.start();
     readStateFile();
+    Qt.callLater(queryDisplayScales);
     Logger.i("DriftwmService", "Service started (driftwm infinite canvas)");
   }
 
@@ -79,7 +81,7 @@ Item {
 
   Timer {
     id: statePollTimer
-    interval: 250
+    interval: 500
     running: false
     repeat: true
     onTriggered: root.readStateFile()
@@ -153,6 +155,9 @@ Item {
           break;
         case "layout":
           if (activeLayout !== value) { activeLayout = value; changed = true; }
+          if (typeof KeyboardLayoutService !== 'undefined' && value) {
+            KeyboardLayoutService.setCurrentLayout(value);
+          }
           break;
         case "windows":
           if (value) {
@@ -328,11 +333,57 @@ Item {
   }
 
   function cycleKeyboardLayout() {
-    Logger.w("DriftwmService", "Keyboard layout cycling not supported");
+    Logger.w("DriftwmService", "Keyboard layout cycling not supported on driftwm");
   }
 
   function queryDisplayScales() {
-    Logger.w("DriftwmService", "Display scale queries not supported via ToplevelManager");
+    const processObj = Qt.createQmlObject(
+      'import QtQuick; import Quickshell.Io; Process {\n' +
+      '  command: ["wlr-randr", "--json"]\n' +
+      '  stdout: StdioCollector {}\n' +
+      '}',
+      root,
+      "DriftwmDisplayScales"
+    );
+
+    processObj.exited.connect(function (exitCode) {
+      if (exitCode !== 0 || !processObj.stdout.text) {
+        processObj.destroy();
+        return;
+      }
+
+      try {
+        const outputs = JSON.parse(processObj.stdout.text);
+        const scales = {};
+
+        for (const output of outputs) {
+          if (!output.name) continue;
+
+          const currentMode = output.modes?.find(m => m.current);
+          scales[output.name] = {
+            "name": output.name,
+            "scale": output.scale || 1.0,
+            "width": currentMode?.width || 0,
+            "height": currentMode?.height || 0,
+            "refresh": currentMode?.refresh || 60,
+            "physicalWidth": output.physical_size?.width || 0,
+            "physicalHeight": output.physical_size?.height || 0,
+            "transform": output.transform || "normal"
+          };
+        }
+
+        if (Object.keys(scales).length > 0) {
+          CompositorService.onDisplayScalesUpdated(scales);
+          Logger.d("DriftwmService", "Queried display scales from wlr-randr");
+        }
+      } catch (e) {
+        Logger.w("DriftwmService", "Failed to parse wlr-randr output:", e);
+      }
+
+      processObj.destroy();
+    });
+
+    processObj.running = true;
   }
 
   function getFocusedScreen() {
