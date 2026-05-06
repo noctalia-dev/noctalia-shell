@@ -27,12 +27,14 @@ ColumnLayout {
             {
               "key": "volume",
               "name": I18n.tr("common.volume")
-            },
-            {
-              "key": "workspace",
-              "name": I18n.tr("panels.bar.behavior-workspace-scroll-option-workspace")
             }
           ];
+      if (!CompositorService.isDriftwm) {
+        items.push({
+                     "key": "workspace",
+                     "name": I18n.tr("panels.bar.behavior-workspace-scroll-option-workspace")
+                   });
+      }
       if (CompositorService.isNiri) {
         items.push({
                      "key": "content",

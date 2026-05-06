@@ -28,6 +28,7 @@ import qs.Modules.OSD
 import qs.Modules.Panels.Launcher
 import qs.Modules.Panels.Settings
 import qs.Modules.Toast
+import qs.Services.Compositor
 import qs.Services.Control
 import qs.Services.Hardware
 import qs.Services.Keyboard
@@ -97,7 +98,10 @@ ShellRoot {
         Logger.i("Shell", "---------------------------");
 
         // Critical services needed for initial UI rendering
-        WallpaperService.init();
+        // driftwm handles its own background via shaders — skip wallpaper init
+        if (!CompositorService.isDriftwm) {
+          WallpaperService.init();
+        }
         ImageCacheService.init();
         AppThemeService.init();
         ColorSchemeService.init();

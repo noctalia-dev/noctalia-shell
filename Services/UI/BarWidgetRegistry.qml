@@ -17,6 +17,7 @@ Singleton {
                            "Battery": batteryComponent,
                            "Bluetooth": bluetoothComponent,
                            "Brightness": brightnessComponent,
+                           "CanvasPosition": canvasPositionComponent,
                            "Clock": clockComponent,
                            "ControlCenter": controlCenterComponent,
                            "CustomButton": customButtonComponent,
@@ -337,6 +338,9 @@ Singleton {
   }
   property Component brightnessComponent: Component {
     Brightness {}
+  }
+  property Component canvasPositionComponent: Component {
+    CanvasPosition {}
   }
   property Component clockComponent: Component {
     Clock {}

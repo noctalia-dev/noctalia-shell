@@ -369,6 +369,7 @@ ColumnLayout {
 
     NToggle {
       Layout.fillWidth: true
+      visible: !CompositorService.isDriftwm
       label: I18n.tr("panels.bar.appearance-show-on-workspace-switch-label")
       description: I18n.tr("panels.bar.appearance-show-on-workspace-switch-description")
       checked: Settings.data.bar.showOnWorkspaceSwitch
