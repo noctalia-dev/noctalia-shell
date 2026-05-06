@@ -119,6 +119,15 @@ Loader {
                 property string currentLayout: KeyboardLayoutService.currentLayout
               }
 
+              Connections {
+                target: Time
+                function onResumed() {
+                  if (!passwordInput.activeFocus) {
+                    passwordInput.forceActiveFocus();
+                  }
+                }
+              }
+
               // Background with wallpaper, gradient, and screen corners
               LockScreenBackground {
                 id: backgroundComponent
@@ -339,6 +348,13 @@ Loader {
             Rectangle {
               anchors.fill: parent
               color: "black"
+
+              Connections {
+                target: Time
+                function onResumed() {
+                  blackScreenPasswordInput.forceActiveFocus();
+                }
+              }
 
               TextInput {
                 id: blackScreenPasswordInput
