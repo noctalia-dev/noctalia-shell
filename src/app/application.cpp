@@ -802,13 +802,7 @@ void Application::initUi() {
 
   // Panel manager must be before bar so widgets can access PanelManager::instance()
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
-  m_panelManager.setOpenSettingsWindowCallback([this]() {
-    if (m_settingsWindow.isOpen()) {
-      m_settingsWindow.close();
-    } else {
-      m_settingsWindow.open();
-    }
-  });
+  m_panelManager.setOpenSettingsWindowCallback([this]() { m_settingsWindow.open(); });
   auto clipboardPanel = std::make_unique<ClipboardPanel>(&m_clipboardService, &m_configService, &m_thumbnailService);
   clipboardPanel->setActivateCallback([this](const ClipboardEntry& entry) {
     m_panelManager.close();
