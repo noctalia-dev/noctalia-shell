@@ -145,6 +145,42 @@ ColumnLayout {
       onValueChanged: Settings.data.systemMonitor.gpuCriticalThreshold = value
     }
 
+    // GPU Memory Usage
+    NText {
+      visible: SystemStatService.gpuAvailable
+      text: I18n.tr("bar.system-monitor.gpu-memory-label")
+      pointSize: Style.fontSizeM
+    }
+
+    NSpinBox {
+      visible: SystemStatService.gpuAvailable
+      Layout.alignment: Qt.AlignHCenter
+      from: 0
+      to: 100
+      stepSize: 5
+      value: Settings.data.systemMonitor.gpuMemWarningThreshold
+      defaultValue: Settings.getDefaultValue("systemMonitor.gpuMemWarningThreshold")
+      suffix: "%"
+      onValueChanged: {
+        Settings.data.systemMonitor.gpuMemWarningThreshold = value;
+        if (Settings.data.systemMonitor.gpuMemCriticalThreshold < value) {
+          Settings.data.systemMonitor.gpuMemCriticalThreshold = value;
+        }
+      }
+    }
+
+    NSpinBox {
+      visible: SystemStatService.gpuAvailable
+      Layout.alignment: Qt.AlignHCenter
+      from: Settings.data.systemMonitor.gpuMemWarningThreshold
+      to: 100
+      stepSize: 5
+      value: Settings.data.systemMonitor.gpuMemCriticalThreshold
+      defaultValue: Settings.getDefaultValue("systemMonitor.gpuMemCriticalThreshold")
+      suffix: "%"
+      onValueChanged: Settings.data.systemMonitor.gpuMemCriticalThreshold = value
+    }
+
     // Memory Usage
     NText {
       text: I18n.tr("bar.system-monitor.memory-usage-label")
