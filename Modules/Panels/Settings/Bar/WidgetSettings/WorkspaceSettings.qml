@@ -99,7 +99,7 @@ ColumnLayout {
       valueCharacterCount = value;
       saveSettings();
     }
-    visible: valueLabelMode === "name"
+    visible: valueLabelMode === "name" || valueLabelMode === "index+name"
   }
 
   NValueSlider {
