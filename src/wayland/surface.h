@@ -8,6 +8,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 struct wl_callback;
@@ -26,6 +27,33 @@ struct InputRect {
   int y = 0;
   int width = 0;
   int height = 0;
+};
+
+struct SurfaceIdleProfileEntry {
+  std::string label;
+  std::uint64_t requestUpdate = 0;
+  std::uint64_t requestUpdateOnly = 0;
+  std::uint64_t requestLayout = 0;
+  std::uint64_t requestRedraw = 0;
+  std::uint64_t queuedFrameWork = 0;
+  std::uint64_t processedFrameWork = 0;
+  std::uint64_t queuedRenders = 0;
+  std::uint64_t processedQueuedRenders = 0;
+  std::uint64_t prepareCallbacks = 0;
+  std::uint64_t frameTicks = 0;
+  std::uint64_t animationTicks = 0;
+  std::uint64_t updateCallbacks = 0;
+  std::uint64_t renders = 0;
+  double prepareMs = 0.0;
+  double frameTickMs = 0.0;
+  double animationMs = 0.0;
+  double updateMs = 0.0;
+  double renderMs = 0.0;
+};
+
+struct SurfaceIdleProfileSnapshot {
+  SurfaceIdleProfileEntry total;
+  std::vector<SurfaceIdleProfileEntry> surfaces;
 };
 
 class Surface {
@@ -73,6 +101,7 @@ public:
   void requestUpdateOnly();
   void requestLayout();
   void requestRedraw();
+  void requestFrameTick();
   void renderNow();
   void setAnimationManager(AnimationManager* manager) noexcept { m_animationManager = manager; }
   void setSceneRoot(Node* root);
@@ -92,6 +121,7 @@ public:
   static void drainPendingFrameWork();
   [[nodiscard]] static bool hasPendingRenders();
   static void drainPendingRenders();
+  [[nodiscard]] static SurfaceIdleProfileSnapshot takeIdleProfileSnapshot(bool reset);
   void onPreferredFractionalScale(std::uint32_t numerator);
 
 protected:

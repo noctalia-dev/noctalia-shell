@@ -12,8 +12,12 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <format>
 #include <limits>
+#include <string_view>
+#include <typeinfo>
+#include <unordered_map>
 #include <utility>
 #include <wayland-client.h>
 
@@ -51,6 +55,106 @@ namespace {
   std::vector<Surface*>& pendingFrameWorkQueue() {
     static std::vector<Surface*> queue;
     return queue;
+  }
+
+  bool idleProfileEnabled() {
+    static const bool enabled = [] {
+      const char* value = std::getenv("NOCTALIA_IDLE_PROFILE");
+      return value != nullptr && value[0] != '\0' && std::string_view(value) != "0" &&
+             std::string_view(value) != "false";
+    }();
+    return enabled;
+  }
+
+  struct SurfaceProfileState {
+    SurfaceIdleProfileEntry total;
+    std::unordered_map<const Surface*, SurfaceIdleProfileEntry> surfaces;
+  };
+
+  SurfaceProfileState& surfaceProfileState() {
+    static SurfaceProfileState state;
+    return state;
+  }
+
+  enum class SurfaceProfileEvent : std::uint8_t {
+    RequestUpdate,
+    RequestUpdateOnly,
+    RequestLayout,
+    RequestRedraw,
+    QueueFrameWork,
+    ProcessFrameWork,
+    QueueRender,
+    ProcessQueuedRender,
+    PrepareCallback,
+    FrameTick,
+    AnimationTick,
+    UpdateCallback,
+    Render,
+  };
+
+  void addSurfaceProfileEvent(SurfaceIdleProfileEntry& entry, SurfaceProfileEvent event, double ms) {
+    switch (event) {
+    case SurfaceProfileEvent::RequestUpdate:
+      ++entry.requestUpdate;
+      break;
+    case SurfaceProfileEvent::RequestUpdateOnly:
+      ++entry.requestUpdateOnly;
+      break;
+    case SurfaceProfileEvent::RequestLayout:
+      ++entry.requestLayout;
+      break;
+    case SurfaceProfileEvent::RequestRedraw:
+      ++entry.requestRedraw;
+      break;
+    case SurfaceProfileEvent::QueueFrameWork:
+      ++entry.queuedFrameWork;
+      break;
+    case SurfaceProfileEvent::ProcessFrameWork:
+      ++entry.processedFrameWork;
+      break;
+    case SurfaceProfileEvent::QueueRender:
+      ++entry.queuedRenders;
+      break;
+    case SurfaceProfileEvent::ProcessQueuedRender:
+      ++entry.processedQueuedRenders;
+      break;
+    case SurfaceProfileEvent::PrepareCallback:
+      ++entry.prepareCallbacks;
+      entry.prepareMs += ms;
+      break;
+    case SurfaceProfileEvent::FrameTick:
+      ++entry.frameTicks;
+      entry.frameTickMs += ms;
+      break;
+    case SurfaceProfileEvent::AnimationTick:
+      ++entry.animationTicks;
+      entry.animationMs += ms;
+      break;
+    case SurfaceProfileEvent::UpdateCallback:
+      ++entry.updateCallbacks;
+      entry.updateMs += ms;
+      break;
+    case SurfaceProfileEvent::Render:
+      ++entry.renders;
+      entry.renderMs += ms;
+      break;
+    }
+  }
+
+  void recordSurfaceProfileEvent(const Surface& surface, SurfaceProfileEvent event, double ms = 0.0) {
+    if (!idleProfileEnabled()) {
+      return;
+    }
+
+    auto& state = surfaceProfileState();
+    addSurfaceProfileEvent(state.total, event, ms);
+
+    auto& entry = state.surfaces[&surface];
+    if (entry.label.empty()) {
+      entry.label = std::format("{}@{:x} {}x{}", typeid(surface).name(), reinterpret_cast<std::uintptr_t>(&surface),
+                                surface.width(), surface.height());
+    }
+    addSurfaceProfileEvent(entry, event, ms);
   }
 
   template <typename Fn> float elapsedMs(Fn&& fn) {
@@ -597,24 +701,42 @@ void Surface::clearBlurRegion() {
 }
 
 void Surface::requestUpdate() {
+  recordSurfaceProfileEvent(*this, SurfaceProfileEvent::RequestUpdate);
   m_updateRequested = true;
   m_layoutRequested = true;
   kickFrameLoop();
 }
 
 void Surface::requestUpdateOnly() {
+  recordSurfaceProfileEvent(*this, SurfaceProfileEvent::RequestUpdateOnly);
   m_updateRequested = true;
   kickFrameLoop();
 }
 
 void Surface::requestLayout() {
+  recordSurfaceProfileEvent(*this, SurfaceProfileEvent::RequestLayout);
   m_layoutRequested = true;
   kickFrameLoop();
 }
 
 void Surface::requestRedraw() {
+  recordSurfaceProfileEvent(*this, SurfaceProfileEvent::RequestRedraw);
   m_redrawRequested = true;
   kickFrameLoop();
+}
+
+void Surface::requestFrameTick() {
+  if (!m_running || !m_configured || m_frameCallback != nullptr || m_inFrameHandler || m_inPrepareFrame) {
+    return;
+  }
+
+  float deltaMs = 0.0f;
+  const auto now = std::chrono::steady_clock::now();
+  if (m_lastFrameAt.has_value()) {
+    deltaMs = std::chrono::duration<float, std::milli>(now - *m_lastFrameAt).count();
+  }
+  m_lastFrameAt = now;
+  queueFrameWork(true, deltaMs);
 }
 
 void Surface::renderNow() {
@@ -633,6 +755,7 @@ void Surface::render() {
 
   requestFrame();
   const float renderMs = elapsedMs([this] { m_renderContext->renderScene(m_renderTarget, m_sceneRoot); });
+  recordSurfaceProfileEvent(*this, SurfaceProfileEvent::Render, renderMs);
   logSlowSurfaceOperation(renderMs, "surface render took {:.1f}ms ({}x{} logical, {}x{} buffer)", renderMs, m_width,
                           m_height, m_renderTarget.bufferWidth(), m_renderTarget.bufferHeight());
 
@@ -704,6 +827,7 @@ void Surface::preparePendingFrame() {
   ScopedBoolFlag preparing{m_inPrepareFrame};
   const float callbackMs =
       elapsedMs([this, needsUpdate, needsLayout] { m_prepareFrameCallback(needsUpdate, needsLayout); });
+  recordSurfaceProfileEvent(*this, SurfaceProfileEvent::PrepareCallback, callbackMs);
   logSlowSurfaceOperation(callbackMs, "surface prepareFrame callback took {:.1f}ms ({}, {}x{} logical)", callbackMs,
                           static_cast<const void*>(this), m_width, m_height);
 }
@@ -737,6 +861,7 @@ void Surface::queueFrameWork(bool runFrameTick, float deltaMs) {
     return;
   }
   m_frameWorkQueued = true;
+  recordSurfaceProfileEvent(*this, SurfaceProfileEvent::QueueFrameWork);
   pendingFrameWorkQueue().push_back(this);
 }
 
@@ -753,6 +878,7 @@ void Surface::cancelQueuedFrameWork() {
 
 void Surface::processQueuedFrameWork() {
   m_frameWorkQueued = false;
+  recordSurfaceProfileEvent(*this, SurfaceProfileEvent::ProcessFrameWork);
   if (m_surface == nullptr || !m_configured) {
     m_frameTickPending = false;
     m_pendingFrameDeltaMs = 0.0f;
@@ -769,18 +895,21 @@ void Surface::processQueuedFrameWork() {
 
     if (m_animationManager != nullptr) {
       const float tickMs = elapsedMs([this, deltaMs] { m_animationManager->tick(deltaMs); });
+      recordSurfaceProfileEvent(*this, SurfaceProfileEvent::AnimationTick, tickMs);
       logSlowSurfaceOperation(tickMs, "surface animation tick took {:.1f}ms ({}, {}x{} logical)", tickMs,
                               static_cast<const void*>(this), m_width, m_height);
     }
 
     if (m_frameTickCallback) {
       const float callbackMs = elapsedMs([this, deltaMs] { m_frameTickCallback(deltaMs); });
+      recordSurfaceProfileEvent(*this, SurfaceProfileEvent::FrameTick, callbackMs);
       logSlowSurfaceOperation(callbackMs, "surface frame tick callback took {:.1f}ms ({}, {}x{} logical)", callbackMs,
                               static_cast<const void*>(this), m_width, m_height);
     }
 
     if (m_updateCallback) {
       const float updateMs = elapsedMs([this] { m_updateCallback(); });
+      recordSurfaceProfileEvent(*this, SurfaceProfileEvent::UpdateCallback, updateMs);
       logSlowSurfaceOperation(updateMs, "surface update callback took {:.1f}ms ({}, {}x{} logical)", updateMs,
                               static_cast<const void*>(this), m_width, m_height);
     }
@@ -804,6 +933,7 @@ void Surface::queueRender() {
     return;
   }
   m_renderQueued = true;
+  recordSurfaceProfileEvent(*this, SurfaceProfileEvent::QueueRender);
   pendingRenderQueue().push_back(this);
 }
 
@@ -818,6 +948,7 @@ void Surface::cancelQueuedRender() {
 
 void Surface::renderQueuedFrame() {
   m_renderQueued = false;
+  recordSurfaceProfileEvent(*this, SurfaceProfileEvent::ProcessQueuedRender);
   if (m_surface == nullptr || !m_configured) {
     return;
   }
@@ -845,6 +976,26 @@ bool Surface::ensureRenderTargetReady() {
 bool Surface::hasPendingRenders() { return !pendingRenderQueue().empty(); }
 
 bool Surface::hasPendingFrameWork() { return !pendingFrameWorkQueue().empty(); }
+
+SurfaceIdleProfileSnapshot Surface::takeIdleProfileSnapshot(bool reset) {
+  SurfaceIdleProfileSnapshot snapshot;
+  if (!idleProfileEnabled()) {
+    return snapshot;
+  }
+
+  auto& state = surfaceProfileState();
+  snapshot.total = state.total;
+  snapshot.surfaces.reserve(state.surfaces.size());
+  for (const auto& [surface, entry] : state.surfaces) {
+    (void)surface;
+    snapshot.surfaces.push_back(entry);
+  }
+
+  if (reset) {
+    state = SurfaceProfileState{};
+  }
+  return snapshot;
+}
 
 void Surface::drainPendingFrameWork() {
   auto& queue = pendingFrameWorkQueue();

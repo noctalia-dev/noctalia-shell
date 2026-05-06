@@ -11,11 +11,19 @@
 #include <algorithm>
 #include <cerrno>
 #include <chrono>
+#include <cstdint>
+#include <cstdlib>
+#include <ctime>
+#include <cxxabi.h>
 #include <format>
+#include <memory>
 #include <optional>
 #include <poll.h>
 #include <stdexcept>
+#include <string>
+#include <string_view>
 #include <typeinfo>
+#include <unordered_map>
 #include <utility>
 #include <wayland-client-core.h>
 
@@ -23,9 +31,209 @@ namespace {
   constexpr Logger kLog("main");
   constexpr float kSlowMainLoopOperationDebugMs = 50.0f;
   constexpr float kSlowMainLoopOperationWarnMs = 1000.0f;
+  constexpr auto kIdleProfileReportInterval = std::chrono::seconds(10);
+
+  struct SourceIdleProfile {
+    std::string name;
+    std::uint64_t dispatchCalls = 0;
+    std::uint64_t wakeDispatches = 0;
+    std::uint64_t fdWakeups = 0;
+    std::uint64_t timeoutWakeups = 0;
+    std::uint64_t timeoutVotes = 0;
+    std::uint64_t zeroTimeoutVotes = 0;
+    double dispatchMs = 0.0;
+    double maxDispatchMs = 0.0;
+  };
+
+  struct MainLoopIdleProfile {
+    std::chrono::steady_clock::time_point windowStart = std::chrono::steady_clock::now();
+    std::uint64_t iterations = 0;
+    std::uint64_t pollFdWakeups = 0;
+    std::uint64_t pollTimeoutWakeups = 0;
+    std::uint64_t pollImmediateWakeups = 0;
+    std::uint64_t waylandFdWakeups = 0;
+    std::uint64_t waylandReadableWakeups = 0;
+    std::uint64_t waylandWritableWakeups = 0;
+    std::uint64_t waylandErrorWakeups = 0;
+    std::uint64_t deferredBatches = 0;
+    std::uint64_t deferredCallbacks = 0;
+    std::uint64_t waylandFlushCalls = 0;
+    std::uint64_t waylandFlushBlocked = 0;
+    std::uint64_t waylandReadCalls = 0;
+    std::uint64_t waylandDispatchCalls = 0;
+    std::uint64_t surfaceFrameWorkDrains = 0;
+    std::uint64_t surfaceRenderDrains = 0;
+    double deferredMs = 0.0;
+    double pollPrepMs = 0.0;
+    double pollWaitMs = 0.0;
+    double waylandFlushMs = 0.0;
+    double waylandReadMs = 0.0;
+    double waylandDispatchMs = 0.0;
+    double sourceDispatchMs = 0.0;
+    double surfaceFrameWorkMs = 0.0;
+    double surfaceRenderMs = 0.0;
+    double processCpuStartMs = 0.0;
+    double mainThreadCpuStartMs = 0.0;
+    std::unordered_map<std::string, SourceIdleProfile> sources;
+  };
 
   float elapsedSince(std::chrono::steady_clock::time_point start) {
     return std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - start).count();
+  }
+
+  bool idleProfileEnabled() {
+    static const bool enabled = [] {
+      const char* value = std::getenv("NOCTALIA_IDLE_PROFILE");
+      return value != nullptr && value[0] != '\0' && std::string_view(value) != "0" &&
+             std::string_view(value) != "false";
+    }();
+    return enabled;
+  }
+
+  double cpuClockMs(clockid_t clockId) {
+    timespec ts{};
+    if (::clock_gettime(clockId, &ts) != 0) {
+      return 0.0;
+    }
+    return static_cast<double>(ts.tv_sec) * 1000.0 + static_cast<double>(ts.tv_nsec) / 1000000.0;
+  }
+
+  std::string demangleTypeName(const char* name) {
+    int status = 0;
+    std::unique_ptr<char, decltype(&std::free)> demangled{abi::__cxa_demangle(name, nullptr, nullptr, &status),
+                                                          &std::free};
+    if (status == 0 && demangled != nullptr) {
+      return demangled.get();
+    }
+    return name != nullptr ? std::string(name) : std::string("<unknown>");
+  }
+
+  MainLoopIdleProfile& idleProfile() {
+    static MainLoopIdleProfile profile;
+    return profile;
+  }
+
+  SourceIdleProfile& sourceIdleProfile(MainLoopIdleProfile& profile, const PollSource& source) {
+    const std::string rawName = typeid(source).name();
+    auto& entry = profile.sources[rawName];
+    if (entry.name.empty()) {
+      entry.name = demangleTypeName(rawName.c_str());
+    }
+    return entry;
+  }
+
+  void resetIdleProfile(MainLoopIdleProfile& profile, std::chrono::steady_clock::time_point now) {
+    profile = MainLoopIdleProfile{};
+    profile.windowStart = now;
+    profile.processCpuStartMs = cpuClockMs(CLOCK_PROCESS_CPUTIME_ID);
+    profile.mainThreadCpuStartMs = cpuClockMs(CLOCK_THREAD_CPUTIME_ID);
+  }
+
+  std::uint64_t requestTotal(const SurfaceIdleProfileEntry& entry) {
+    return entry.requestUpdate + entry.requestUpdateOnly + entry.requestLayout + entry.requestRedraw;
+  }
+
+  void maybeReportIdleProfile() {
+    if (!idleProfileEnabled()) {
+      return;
+    }
+
+    auto& profile = idleProfile();
+    const auto now = std::chrono::steady_clock::now();
+    if (now - profile.windowStart < kIdleProfileReportInterval) {
+      return;
+    }
+
+    const double seconds = std::chrono::duration<double>(now - profile.windowStart).count();
+    const double processCpuMs = std::max(0.0, cpuClockMs(CLOCK_PROCESS_CPUTIME_ID) - profile.processCpuStartMs);
+    const double mainThreadCpuMs = std::max(0.0, cpuClockMs(CLOCK_THREAD_CPUTIME_ID) - profile.mainThreadCpuStartMs);
+    const double backgroundCpuMs = std::max(0.0, processCpuMs - mainThreadCpuMs);
+    const double pctDenom = std::max(0.001, seconds * 10.0);
+    const auto surfaceSnapshot = Surface::takeIdleProfileSnapshot(true);
+    kLog.info("idle profile {:.1f}s: loops={} cpu(process/thread/bg)={:.1f}/{:.1f}/{:.1f}ms "
+              "{:.2f}/{:.2f}/{:.2f}% poll(fd/timeout/immediate)={}/{}/{} wlFd(total/in/out/err)={}/{}/{}/{} "
+              "prep={:.2f}ms "
+              "wait={:.1f}ms deferred={} callbacks {:.2f}ms wl(flush/read/dispatch)={}/{}/{} "
+              "{:.2f}/{:.2f}/{:.2f}ms sourceDispatch={:.2f}ms surfaceDrains(frame/render)={}/{} {:.2f}/{:.2f}ms",
+              seconds, profile.iterations, processCpuMs, mainThreadCpuMs, backgroundCpuMs, processCpuMs / pctDenom,
+              mainThreadCpuMs / pctDenom, backgroundCpuMs / pctDenom, profile.pollFdWakeups, profile.pollTimeoutWakeups,
+              profile.pollImmediateWakeups, profile.waylandFdWakeups, profile.waylandReadableWakeups,
+              profile.waylandWritableWakeups, profile.waylandErrorWakeups, profile.pollPrepMs, profile.pollWaitMs,
+              profile.deferredBatches, profile.deferredMs, profile.waylandFlushCalls, profile.waylandReadCalls,
+              profile.waylandDispatchCalls, profile.waylandFlushMs, profile.waylandReadMs, profile.waylandDispatchMs,
+              profile.sourceDispatchMs, profile.surfaceFrameWorkDrains, profile.surfaceRenderDrains,
+              profile.surfaceFrameWorkMs, profile.surfaceRenderMs);
+
+    std::vector<SourceIdleProfile> sources;
+    sources.reserve(profile.sources.size());
+    for (const auto& [name, entry] : profile.sources) {
+      (void)name;
+      sources.push_back(entry);
+    }
+    std::sort(sources.begin(), sources.end(), [](const auto& lhs, const auto& rhs) {
+      if (lhs.wakeDispatches != rhs.wakeDispatches) {
+        return lhs.wakeDispatches > rhs.wakeDispatches;
+      }
+      if (lhs.dispatchMs != rhs.dispatchMs) {
+        return lhs.dispatchMs > rhs.dispatchMs;
+      }
+      return lhs.dispatchCalls > rhs.dispatchCalls;
+    });
+
+    std::size_t printed = 0;
+    for (const auto& source : sources) {
+      if (printed >= 10) {
+        break;
+      }
+      if (source.dispatchCalls == 0 && source.timeoutVotes == 0) {
+        continue;
+      }
+      ++printed;
+      kLog.info("idle profile source {}: wake={} fd={} timeout={} dispatch={} time={:.3f}ms max={:.3f}ms "
+                "timeoutVotes={} zeroVotes={}",
+                source.name, source.wakeDispatches, source.fdWakeups, source.timeoutWakeups, source.dispatchCalls,
+                source.dispatchMs, source.maxDispatchMs, source.timeoutVotes, source.zeroTimeoutVotes);
+    }
+
+    const auto& total = surfaceSnapshot.total;
+    kLog.info("idle profile surfaces: requests(update/updateOnly/layout/redraw)={}/{}/{}/{} queued(frame/render)={}/{} "
+              "processed(frame/render)={}/{} prepare={} {:.3f}ms frameTick={} {:.3f}ms animation={} {:.3f}ms "
+              "updateCb={} {:.3f}ms renders={} {:.3f}ms",
+              total.requestUpdate, total.requestUpdateOnly, total.requestLayout, total.requestRedraw,
+              total.queuedFrameWork, total.queuedRenders, total.processedFrameWork, total.processedQueuedRenders,
+              total.prepareCallbacks, total.prepareMs, total.frameTicks, total.frameTickMs, total.animationTicks,
+              total.animationMs, total.updateCallbacks, total.updateMs, total.renders, total.renderMs);
+
+    auto surfaces = surfaceSnapshot.surfaces;
+    std::sort(surfaces.begin(), surfaces.end(), [](const auto& lhs, const auto& rhs) {
+      if (lhs.renderMs != rhs.renderMs) {
+        return lhs.renderMs > rhs.renderMs;
+      }
+      if (lhs.renders != rhs.renders) {
+        return lhs.renders > rhs.renders;
+      }
+      return requestTotal(lhs) > requestTotal(rhs);
+    });
+
+    printed = 0;
+    for (const auto& surface : surfaces) {
+      if (printed >= 8) {
+        break;
+      }
+      if (surface.renders == 0 && surface.prepareCallbacks == 0 && requestTotal(surface) == 0 &&
+          surface.frameTicks == 0 && surface.updateCallbacks == 0) {
+        continue;
+      }
+      ++printed;
+      kLog.info("idle profile surface {}: requests={}/{}/{}/{} frame/render={}/{} prepare={} {:.3f}ms "
+                "frameTick={} {:.3f}ms updateCb={} {:.3f}ms renders={} {:.3f}ms",
+                surface.label, surface.requestUpdate, surface.requestUpdateOnly, surface.requestLayout,
+                surface.requestRedraw, surface.processedFrameWork, surface.processedQueuedRenders,
+                surface.prepareCallbacks, surface.prepareMs, surface.frameTicks, surface.frameTickMs,
+                surface.updateCallbacks, surface.updateMs, surface.renders, surface.renderMs);
+    }
+
+    resetIdleProfile(profile, now);
   }
 
   template <typename... Args> void logSlowMainLoopOperation(float ms, std::format_string<Args...> fmt, Args&&... args) {
@@ -41,7 +249,17 @@ MainLoop::MainLoop(WaylandConnection& wayland, Bar& bar, PollSourcesProvider sou
     : m_wayland(wayland), m_bar(bar), m_sourcesProvider(std::move(sourcesProvider)) {}
 
 void MainLoop::run() {
+  if (idleProfileEnabled()) {
+    kLog.info("NOCTALIA_IDLE_PROFILE enabled; logging idle wake/render profile every {}s",
+              std::chrono::duration_cast<std::chrono::seconds>(kIdleProfileReportInterval).count());
+    resetIdleProfile(idleProfile(), std::chrono::steady_clock::now());
+  }
+
   while (!Application::s_shutdownRequested) {
+    if (idleProfileEnabled()) {
+      ++idleProfile().iterations;
+    }
+
     // Process deferred callbacks from the previous iteration
     auto opStart = std::chrono::steady_clock::now();
     auto& deferred = DeferredCall::queue();
@@ -53,6 +271,12 @@ void MainLoop::run() {
         fn();
       }
       const float ms = elapsedSince(opStart);
+      if (idleProfileEnabled()) {
+        auto& profile = idleProfile();
+        ++profile.deferredBatches;
+        profile.deferredCallbacks += count;
+        profile.deferredMs += ms;
+      }
       logSlowMainLoopOperation(ms, "deferred callbacks took {:.1f}ms (count={})", ms, count);
     }
 
@@ -78,9 +302,17 @@ void MainLoop::run() {
       flushRet = wl_display_flush(m_wayland.display());
     } while (flushRet < 0 && errno == EINTR);
     float ms = elapsedSince(opStart);
+    if (idleProfileEnabled()) {
+      auto& profile = idleProfile();
+      ++profile.waylandFlushCalls;
+      profile.waylandFlushMs += ms;
+    }
     logSlowMainLoopOperation(ms, "wl_display_flush took {:.1f}ms before poll", ms);
     const bool flushBlocked = flushRet < 0;
     if (flushBlocked) {
+      if (idleProfileEnabled()) {
+        ++idleProfile().waylandFlushBlocked;
+      }
       if (errno != EAGAIN) {
         wl_display_cancel_read(m_wayland.display());
         waylandReadPrepared = false;
@@ -99,12 +331,28 @@ void MainLoop::run() {
 
     int pollTimeout = -1;
     std::vector<std::size_t> sourceStartIndices;
+    std::vector<std::size_t> sourceFdCounts;
+    std::vector<int> sourceTimeouts;
     sourceStartIndices.reserve(sources.size());
+    sourceFdCounts.reserve(sources.size());
+    sourceTimeouts.reserve(sources.size());
 
     for (auto* source : sources) {
-      sourceStartIndices.push_back(source->addPollFds(pollFds));
+      const std::size_t startIdx = source->addPollFds(pollFds);
+      sourceStartIndices.push_back(startIdx);
+      sourceFdCounts.push_back(pollFds.size() - startIdx);
 
       const int t = source->pollTimeoutMs();
+      sourceTimeouts.push_back(t);
+      if (idleProfileEnabled()) {
+        auto& stats = sourceIdleProfile(idleProfile(), *source);
+        if (t >= 0) {
+          ++stats.timeoutVotes;
+        }
+        if (t == 0) {
+          ++stats.zeroTimeoutVotes;
+        }
+      }
       if (t >= 0 && (pollTimeout < 0 || t < pollTimeout)) {
         pollTimeout = t;
       }
@@ -121,6 +369,9 @@ void MainLoop::run() {
     }
 
     ms = elapsedSince(opStart);
+    if (idleProfileEnabled()) {
+      idleProfile().pollPrepMs += ms;
+    }
     logSlowMainLoopOperation(ms, "poll source preparation took {:.1f}ms (sources={} fds={} timeout={}ms)", ms,
                              sources.size(), pollFds.size(), pollTimeout);
 
@@ -151,7 +402,34 @@ void MainLoop::run() {
     }
 #endif
 
+    opStart = std::chrono::steady_clock::now();
     const int pollResult = ::poll(pollFds.data(), pollFds.size(), pollTimeout);
+    ms = elapsedSince(opStart);
+    if (idleProfileEnabled()) {
+      auto& profile = idleProfile();
+      profile.pollWaitMs += ms;
+      if (pollResult == 0) {
+        ++profile.pollTimeoutWakeups;
+        if (pollTimeout == 0) {
+          ++profile.pollImmediateWakeups;
+        }
+      } else if (pollResult > 0) {
+        ++profile.pollFdWakeups;
+        const short waylandRevents = pollFds[0].revents;
+        if (waylandRevents != 0) {
+          ++profile.waylandFdWakeups;
+        }
+        if ((waylandRevents & POLLIN) != 0) {
+          ++profile.waylandReadableWakeups;
+        }
+        if ((waylandRevents & POLLOUT) != 0) {
+          ++profile.waylandWritableWakeups;
+        }
+        if ((waylandRevents & (POLLERR | POLLHUP | POLLNVAL)) != 0) {
+          ++profile.waylandErrorWakeups;
+        }
+      }
+    }
     if (pollResult < 0) {
       if (waylandReadPrepared) {
         wl_display_cancel_read(m_wayland.display());
@@ -171,6 +449,11 @@ void MainLoop::run() {
         flushRet = wl_display_flush(m_wayland.display());
       } while (flushRet < 0 && errno == EINTR);
       ms = elapsedSince(opStart);
+      if (idleProfileEnabled()) {
+        auto& profile = idleProfile();
+        ++profile.waylandFlushCalls;
+        profile.waylandFlushMs += ms;
+      }
       logSlowMainLoopOperation(ms, "wl_display_flush took {:.1f}ms after POLLOUT", ms);
       if (flushRet < 0 && errno != EAGAIN) {
         if (waylandReadPrepared) {
@@ -191,6 +474,11 @@ void MainLoop::run() {
         throw std::runtime_error("failed to read Wayland events");
       }
       ms = elapsedSince(opStart);
+      if (idleProfileEnabled()) {
+        auto& profile = idleProfile();
+        ++profile.waylandReadCalls;
+        profile.waylandReadMs += ms;
+      }
       logSlowMainLoopOperation(ms, "wl_display_read_events took {:.1f}ms", ms);
       waylandReadPrepared = false;
     } else {
@@ -203,6 +491,11 @@ void MainLoop::run() {
       throw std::runtime_error("failed to dispatch pending Wayland events");
     }
     ms = elapsedSince(opStart);
+    if (idleProfileEnabled()) {
+      auto& profile = idleProfile();
+      ++profile.waylandDispatchCalls;
+      profile.waylandDispatchMs += ms;
+    }
     if (waylandReadable) {
       logSlowMainLoopOperation(ms, "wl_display_dispatch_pending took {:.1f}ms after read", ms);
     } else {
@@ -224,18 +517,58 @@ void MainLoop::run() {
       opStart = std::chrono::steady_clock::now();
       source->dispatch(pollFds, sourceStartIndices[i]);
       ms = elapsedSince(opStart);
+      if (idleProfileEnabled()) {
+        bool fdReady = false;
+        const std::size_t startIdx = sourceStartIndices[i];
+        const std::size_t endIdx = std::min(pollFds.size(), startIdx + sourceFdCounts[i]);
+        for (std::size_t fdIdx = startIdx; fdIdx < endIdx; ++fdIdx) {
+          if (pollFds[fdIdx].revents != 0) {
+            fdReady = true;
+            break;
+          }
+        }
+        const bool timeoutWake = pollResult == 0 && sourceTimeouts[i] >= 0 && sourceTimeouts[i] == pollTimeout;
+        auto& stats = sourceIdleProfile(idleProfile(), *source);
+        ++stats.dispatchCalls;
+        stats.dispatchMs += ms;
+        stats.maxDispatchMs = std::max(stats.maxDispatchMs, static_cast<double>(ms));
+        if (fdReady || timeoutWake) {
+          ++stats.wakeDispatches;
+        }
+        if (fdReady) {
+          ++stats.fdWakeups;
+        }
+        if (timeoutWake) {
+          ++stats.timeoutWakeups;
+        }
+        idleProfile().sourceDispatchMs += ms;
+      }
       logSlowMainLoopOperation(ms, "poll source {} dispatch took {:.1f}ms", typeid(*source).name(), ms);
     }
 
+    const bool hadFrameWork = Surface::hasPendingFrameWork();
     opStart = std::chrono::steady_clock::now();
     Surface::drainPendingFrameWork();
     ms = elapsedSince(opStart);
+    if (idleProfileEnabled() && hadFrameWork) {
+      auto& profile = idleProfile();
+      ++profile.surfaceFrameWorkDrains;
+      profile.surfaceFrameWorkMs += ms;
+    }
     logSlowMainLoopOperation(ms, "queued surface frame work took {:.1f}ms", ms);
 
+    const bool hadRenders = Surface::hasPendingRenders();
     opStart = std::chrono::steady_clock::now();
     Surface::drainPendingRenders();
     ms = elapsedSince(opStart);
+    if (idleProfileEnabled() && hadRenders) {
+      auto& profile = idleProfile();
+      ++profile.surfaceRenderDrains;
+      profile.surfaceRenderMs += ms;
+    }
     logSlowMainLoopOperation(ms, "queued surface rendering took {:.1f}ms", ms);
+
+    maybeReportIdleProfile();
   }
 
   // Close all UI surfaces immediately and flush Wayland to make them disappear
