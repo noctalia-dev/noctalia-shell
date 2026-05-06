@@ -12,6 +12,14 @@ Singleton {
   readonly property list<Monitor> monitors: variants.instances
   property bool appleDisplayPresent: false
   property list<var> availableBacklightDevices: []
+  // Outputs using niri SDR brightness (NV_PLANE_DEGAMMA_MULTIPLIER DRM plane property)
+  // Only active when running under niri compositor. Set to output names e.g. ["HDMI-A-2"]
+  property list<var> niriSdrOutputs: []
+  // Default brightness for niri SDR outputs at init (0.0-1.0)
+  property real niriSdrDefaultBrightness: 0.7
+  // Minimum real brightness sent to niri when UI shows 1% (0.0-1.0)
+  // Prevents pitch black: UI 1% → this value, UI 100% → 1.0
+  property real niriSdrMinBrightness: 0.1
 
   function getMonitorForScreen(screen: ShellScreen): var {
     return monitors.find(m => m.modelData === screen);
@@ -266,13 +274,22 @@ Singleton {
     readonly property bool isDdc: Settings.data.brightness.enableDdcSupport && root.ddcMonitors.some(m => m.connector === modelData.name)
     readonly property string busNum: root.ddcMonitors.find(m => m.connector === modelData.name)?.busNum ?? ""
     readonly property bool isAppleDisplay: root.appleDisplayPresent && modelData.model.startsWith("StudioDisplay")
-    readonly property string method: isAppleDisplay ? "apple" : (isDdc ? "ddcutil" : "internal")
+    readonly property bool isNiriSdr: {
+      if (isAppleDisplay || isDdc || brightnessPath !== "")
+      return false;
+      if (typeof CompositorService !== 'undefined' && !CompositorService.isNiri)
+      return false;
+      return root.niriSdrOutputs.indexOf(modelData.name) >= 0;
+    }
+    readonly property string method: isAppleDisplay ? "apple" : (isDdc ? "ddcutil" : (isNiriSdr ? "niri-sdr" : "internal"))
 
     // Check if brightness control is available for this monitor
     readonly property bool brightnessControlAvailable: {
       if (isAppleDisplay)
       return true;
       if (isDdc)
+      return true;
+      if (isNiriSdr)
       return true;
       // For internal displays, check if we have a brightness path
       return brightnessPath !== "";
@@ -361,7 +378,10 @@ Singleton {
 
     // Function to actively refresh the brightness from system
     function refreshBrightnessFromSystem() {
-      if (!monitor.isDdc && !monitor.isAppleDisplay) {
+      if (monitor.isNiriSdr) {
+        // Cannot read current niri SDR brightness from system, skip
+        return;
+      } else if (!monitor.isDdc && !monitor.isAppleDisplay) {
         // For internal displays, query the system directly
         refreshProc.command = ["sh", "-c", "cat " + monitor.brightnessPath + " && " + "cat " + monitor.maxBrightnessPath];
         refreshProc.running = true;
@@ -513,6 +533,15 @@ Singleton {
                        setBrightnessProc.command = ["ddcutil", "-b", ddcBus, "--noverify", "--async", "--enable-dynamic-sleep", "--sleep-multiplier=0.05", "setvcp", "10", ddcValue];
                        setBrightnessProc.running = true;
                      });
+      } else if (isNiriSdr) {
+        monitor.commandRunning = true;
+        monitor.ignoreNextChange = true;
+        var minSdr = root.niriSdrMinBrightness;
+        var sdrValue = (minSdr + Math.max(0.01, value) * (1.0 - minSdr)).toFixed(4);
+        var outputName = monitor.modelData.name;
+        Logger.d("Brightness", "niri SDR brightness:", outputName, sdrValue);
+        setBrightnessProc.command = ["niri", "msg", "output", outputName, "sdr-brightness", sdrValue];
+        setBrightnessProc.running = true;
       } else if (!isDdc) {
         monitor.commandRunning = true;
         monitor.ignoreNextChange = true;
@@ -535,6 +564,12 @@ Singleton {
       } else if (isDdc && busNum !== "") {
         initProc.command = ["ddcutil", "-b", busNum, "--enable-dynamic-sleep", "--sleep-multiplier=0.05", "getvcp", "10", "--brief"];
         initProc.running = true;
+      } else if (isNiriSdr) {
+        monitor.brightness = root.niriSdrDefaultBrightness;
+        monitor.brightnessUpdated(monitor.brightness);
+        root.monitorBrightnessChanged(monitor, monitor.brightness);
+        Logger.d("Brightness", "niri SDR init brightness:", monitor.modelData.name, monitor.brightness);
+        monitor.initInProgress = false;
       } else if (!isDdc) {
         // Internal backlight: first try explicit output mapping, then fall back to first available.
         var preferredDevicePath = root.getMappedBacklightDevice(modelData.name);
