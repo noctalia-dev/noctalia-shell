@@ -43,6 +43,7 @@ class ClipboardService;
 class FocusGrabService;
 class NiriOutputBackend;
 class NiriWorkspaceBackend;
+class SwayOutputBackend;
 struct DataControlOps;
 class VirtualKeyboardService;
 
@@ -244,6 +245,7 @@ private:
   wl_output* m_lastPointerOutput = nullptr;
   std::chrono::steady_clock::time_point m_lastPointerOutputAt{};
   std::unique_ptr<NiriOutputBackend> m_niriOutputBackend;
+  std::unique_ptr<SwayOutputBackend> m_swayOutputBackend;
   std::unique_ptr<NiriWorkspaceBackend> m_niriWorkspaceBackend;
   WaylandSeat::PointerEventCallback m_pointerEventCallback;
 
