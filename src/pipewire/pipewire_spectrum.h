@@ -47,6 +47,8 @@ public:
   void handleAudioStateChanged();
 
 private:
+  static constexpr int kFrameRateHz = 60;
+
   struct ListenerState {
     int bandCount = 32;
     ChangeCallback callback;
@@ -75,6 +77,7 @@ private:
   void configureListenerState(ListenerState& state, bool resetState);
   void resetListenerState(ListenerState& state, bool clearValues);
   bool processListenerView(ListenerState& state, float nrFactor, double gravityMod);
+  [[nodiscard]] std::chrono::nanoseconds frameInterval() const noexcept;
   void computeAnalysisBandBins();
   void feedSamples(const float* monoSamples, int count);
   void processFrame();
@@ -97,9 +100,6 @@ private:
   std::chrono::steady_clock::time_point m_nextFrameAt{};
 
   static constexpr int kFftSize = 4096;
-  static constexpr int kFrameRate = 60;
-  static constexpr int kIdleThreshold = kFrameRate;
-
   std::vector<float> m_ringBuffer;
   int m_ringPos = 0;
   bool m_ringFull = false;

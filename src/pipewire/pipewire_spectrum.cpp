@@ -310,7 +310,19 @@ void PipeWireSpectrum::Stream::handleProcess() {
   }
 
   m_spectrum.feedSamples(mono.data(), frameCount);
-  m_spectrum.m_samplesReceived = true;
+
+  // Skip flagging sample receipt for fully-silent batches so a paused/silent sink
+  // lets processFrame() short-circuit at the m_idle gate instead of running scheduled FFT work.
+  bool anyNonZero = false;
+  for (int i = 0; i < frameCount; ++i) {
+    if (mono[i] != 0.0f) {
+      anyNonZero = true;
+      break;
+    }
+  }
+  if (anyNonZero) {
+    m_spectrum.m_samplesReceived = true;
+  }
 }
 
 PipeWireSpectrum::PipeWireSpectrum(PipeWireService& service) : m_service(service) { initProcessing(); }
@@ -362,22 +374,37 @@ int PipeWireSpectrum::pollTimeoutMs() const {
   if (!hasListeners() || m_stream == nullptr) {
     return -1;
   }
+  if (m_idle && !m_samplesReceived) {
+    return -1;
+  }
   const auto now = std::chrono::steady_clock::now();
   if (m_nextFrameAt <= now) {
     return 0;
   }
-  return static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(m_nextFrameAt - now).count());
+  return static_cast<int>(std::chrono::ceil<std::chrono::milliseconds>(m_nextFrameAt - now).count());
 }
 
 void PipeWireSpectrum::tick() {
   if (!hasListeners() || m_stream == nullptr) {
     return;
   }
+  if (m_idle && !m_samplesReceived) {
+    return;
+  }
 
   const auto now = std::chrono::steady_clock::now();
   if (m_nextFrameAt.time_since_epoch().count() == 0 || now >= m_nextFrameAt) {
+    const bool frameClockUnset = m_nextFrameAt.time_since_epoch().count() == 0;
     processFrame();
-    m_nextFrameAt = now + std::chrono::milliseconds(1000 / kFrameRate);
+
+    const auto interval = frameInterval();
+    if (frameClockUnset || now - m_nextFrameAt >= interval) {
+      m_nextFrameAt = now + interval;
+    } else {
+      do {
+        m_nextFrameAt += interval;
+      } while (m_nextFrameAt <= now);
+    }
   }
 }
 
@@ -643,6 +670,10 @@ bool PipeWireSpectrum::processListenerView(ListenerState& state, float nrFactor,
   return changed;
 }
 
+std::chrono::nanoseconds PipeWireSpectrum::frameInterval() const noexcept {
+  return std::chrono::nanoseconds{std::chrono::seconds{1}} / kFrameRateHz;
+}
+
 void PipeWireSpectrum::feedSamples(const float* monoSamples, int count) {
   const bool wasFull = m_ringFull;
   for (int i = 0; i < count; ++i) {
@@ -659,6 +690,7 @@ void PipeWireSpectrum::feedSamples(const float* monoSamples, int count) {
 
 void PipeWireSpectrum::processFrame() {
   if (!m_ringFull) {
+    m_samplesReceived = false;
     return;
   }
   if (m_idle && !m_samplesReceived) {
@@ -733,7 +765,7 @@ void PipeWireSpectrum::processFrame() {
 
   if (silence) {
     ++m_idleFrames;
-    if (m_idleFrames >= kIdleThreshold) {
+    if (m_idleFrames >= kFrameRateHz) {
       if (!m_idle) {
         m_idle = true;
         clearValues(true);
