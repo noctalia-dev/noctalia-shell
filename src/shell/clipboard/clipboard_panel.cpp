@@ -578,9 +578,6 @@ void ClipboardPanel::doLayout(Renderer& renderer, float width, float height) {
   if (m_listAdapter != nullptr) {
     m_listAdapter->setRenderer(&renderer);
   }
-  if (m_thumbnails != nullptr && m_thumbnails->uploadPending(renderer.textureManager())) {
-    m_thumbnailRefreshPending = false;
-  }
 
   // Flex layout handles all sizing: sidebar title is measured automatically,
   // listGrid fills remaining sidebar height (flexGrow), preview fills
@@ -600,6 +597,17 @@ void ClipboardPanel::doLayout(Renderer& renderer, float width, float height) {
     m_rootLayout->layout(renderer);
   }
 
+  if (m_thumbnails != nullptr) {
+    const bool changed = m_thumbnails->uploadPending(renderer.textureManager());
+    if (changed) {
+      m_thumbnailRefreshPending = false;
+      if (m_listAdapter != nullptr) {
+        m_listAdapter->setRenderer(&renderer);
+        m_listAdapter->refreshVisibleThumbnails(renderer);
+      }
+    }
+  }
+
   if (m_pendingScrollToSelected) {
     scrollToSelected();
     m_pendingScrollToSelected = false;
@@ -607,10 +615,6 @@ void ClipboardPanel::doLayout(Renderer& renderer, float width, float height) {
 }
 
 void ClipboardPanel::doUpdate(Renderer& renderer) {
-  if (m_clipboard == nullptr || m_lastWidth <= 0.0f) {
-    return;
-  }
-
   if (m_thumbnailRefreshPending && m_thumbnails != nullptr) {
     const bool changed = m_thumbnails->uploadPending(renderer.textureManager());
     m_thumbnailRefreshPending = false;
@@ -618,6 +622,10 @@ void ClipboardPanel::doUpdate(Renderer& renderer) {
       m_listAdapter->setRenderer(&renderer);
       m_listAdapter->refreshVisibleThumbnails(renderer);
     }
+  }
+
+  if (m_clipboard == nullptr || m_lastWidth <= 0.0f) {
+    return;
   }
 
   if (m_lastChangeSerial != m_clipboard->changeSerial()) {
@@ -652,7 +660,6 @@ void ClipboardPanel::onOpen(std::string_view /*context*/) {
   m_lastPreviewWidth = -1.0f;
   m_lastPreviewHeight = -1.0f;
   m_pendingScrollToSelected = false;
-  m_thumbnailRefreshPending = false;
   m_filterQuery.clear();
   m_pendingFilterQuery.clear();
   m_filterDebounceTimer.stop();
