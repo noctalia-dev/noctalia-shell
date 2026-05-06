@@ -5,6 +5,7 @@
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
+#include "cursor-shape-v1-client-protocol.h"
 #include "i18n/i18n.h"
 #include "net/http_client.h"
 #include "net/uri.h"
@@ -736,10 +737,14 @@ void NotificationToast::addCardToInstance(Instance& inst, std::size_t entryIndex
   const uint32_t notificationId = entry.notificationId;
   Glyph* closeGlyphPtr = cs.closeGlyph;
   ProgressBar* progressBarPtr = cs.progressBar;
+  InputArea* cardInput = card;
 
-  card->setOnEnter([this, closeGlyphPtr, closeColorNormal, closeColorHover, notificationId,
-                    progressBarPtr](const InputArea::PointerData& data) {
-    closeGlyphPtr->setColor(isCloseButtonHit(data.localX, data.localY) ? closeColorHover : closeColorNormal);
+  card->setOnEnter([this, closeGlyphPtr, closeColorNormal, closeColorHover, notificationId, progressBarPtr,
+                    cardInput](const InputArea::PointerData& data) {
+    const bool closeHovered = isCloseButtonHit(data.localX, data.localY);
+    closeGlyphPtr->setColor(closeHovered ? closeColorHover : closeColorNormal);
+    cardInput->setCursorShape(closeHovered ? WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER
+                                           : WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
     if (auto* popup = findEntry(notificationId); popup != nullptr) {
       popup->hovered = true;
       popup->remainingProgress = std::clamp(progressBarPtr->progress(), 0.0f, 1.0f);
@@ -753,12 +758,16 @@ void NotificationToast::addCardToInstance(Instance& inst, std::size_t entryIndex
     }
   });
 
-  card->setOnMotion([closeGlyphPtr, closeColorNormal, closeColorHover](const InputArea::PointerData& data) {
-    closeGlyphPtr->setColor(isCloseButtonHit(data.localX, data.localY) ? closeColorHover : closeColorNormal);
+  card->setOnMotion([closeGlyphPtr, closeColorNormal, closeColorHover, cardInput](const InputArea::PointerData& data) {
+    const bool closeHovered = isCloseButtonHit(data.localX, data.localY);
+    closeGlyphPtr->setColor(closeHovered ? closeColorHover : closeColorNormal);
+    cardInput->setCursorShape(closeHovered ? WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER
+                                           : WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
   });
 
-  card->setOnLeave([this, notificationId, totalDuration, closeGlyphPtr, closeColorNormal, progressBarPtr]() {
+  card->setOnLeave([this, notificationId, totalDuration, closeGlyphPtr, closeColorNormal, progressBarPtr, cardInput]() {
     closeGlyphPtr->setColor(closeColorNormal);
+    cardInput->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
     if (auto* popup = findEntry(notificationId); popup != nullptr) {
       popup->hovered = false;
       popup->remainingProgress = std::clamp(progressBarPtr->progress(), 0.0f, 1.0f);
@@ -1483,6 +1492,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
       removePopup(id);
     }
   });
+  viewport->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
 
   auto cardRoot = std::make_unique<Node>();
   cardRoot->setSize(kCardWidth, cardHeight);
@@ -1639,6 +1649,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
       actionButton->setVariant(ButtonVariant::Outline);
       actionButton->setFontSize(Style::fontSizeCaption);
       actionButton->setText(actionLabel);
+      actionButton->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
       actionButton->setOnEnter([this, notificationId]() {
         pauseCountdowns(notificationId);
         if (m_notifications != nullptr) {
