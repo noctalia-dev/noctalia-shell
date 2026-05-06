@@ -1590,6 +1590,18 @@ void ConfigService::parseTable(const toml::table& tbl) {
     if (auto v = (*nightlightTbl)["temperature_night"].value<int64_t>()) {
       nightlight.nightTemperature = std::clamp(static_cast<std::int32_t>(*v), 1000, 25000);
     }
+    if (nightlight.dayTemperature - nightlight.nightTemperature < NightLightConfig::kTemperatureGap) {
+      const std::int32_t origDay = nightlight.dayTemperature;
+      const std::int32_t origNight = nightlight.nightTemperature;
+      // Prefer to preserve day and pull night down; if day is too low to leave room for the gap, bump day up.
+      nightlight.nightTemperature = origDay - NightLightConfig::kTemperatureGap;
+      if (nightlight.nightTemperature < NightLightConfig::kTemperatureMin) {
+        nightlight.nightTemperature = NightLightConfig::kTemperatureMin;
+        nightlight.dayTemperature = NightLightConfig::kTemperatureMin + NightLightConfig::kTemperatureGap;
+      }
+      kLog.warn("nightlight temperatures must satisfy day > night (day={}K night={}K); adjusted to day={}K night={}K",
+                origDay, origNight, nightlight.dayTemperature, nightlight.nightTemperature);
+    }
   }
 
   // Parse [hooks]

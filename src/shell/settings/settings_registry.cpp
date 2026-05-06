@@ -656,16 +656,59 @@ namespace settings {
                                   tr("settings.schema.services.longitude.description"), {"nightlight", "longitude"},
                                   OptionalNumberSetting{cfg.nightlight.longitude, -180.0, 180.0, "13.4050"},
                                   "coordinate location sunrise sunset", true));
-      entries.push_back(
-          makeEntry("services", "night-light", tr("settings.schema.services.day-temperature.label"),
-                    tr("settings.schema.services.day-temperature.description"), {"nightlight", "temperature_day"},
-                    SliderSetting{static_cast<float>(cfg.nightlight.dayTemperature), 1000.0f, 10000.0f, 100.0f, true},
-                    "wlsunset kelvin"));
-      entries.push_back(
-          makeEntry("services", "night-light", tr("settings.schema.services.night-temperature.label"),
-                    tr("settings.schema.services.night-temperature.description"), {"nightlight", "temperature_night"},
-                    SliderSetting{static_cast<float>(cfg.nightlight.nightTemperature), 1000.0f, 10000.0f, 100.0f, true},
-                    "wlsunset kelvin"));
+      // Both sliders span the same range; the day > night invariant is enforced at commit time
+      // via SliderSetting::linkedCommit, which pushes the other temperature when needed.
+      const float tempMin = static_cast<float>(NightLightConfig::kTemperatureMin);
+      const float tempMax = static_cast<float>(NightLightConfig::kTemperatureMax);
+      const float tempStep = static_cast<float>(NightLightConfig::kTemperatureGap);
+
+      SliderSetting daySlider{static_cast<float>(cfg.nightlight.dayTemperature), tempMin, tempMax, tempStep, true};
+      daySlider.linkedCommit = [curNight = cfg.nightlight.nightTemperature](double v) {
+        std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides;
+        const auto newDay = std::clamp(static_cast<std::int32_t>(std::lround(v)), NightLightConfig::kTemperatureMin,
+                                       NightLightConfig::kTemperatureMax);
+        if (newDay - NightLightConfig::kTemperatureGap < curNight) {
+          std::int32_t pushedNight =
+              std::max(NightLightConfig::kTemperatureMin, newDay - NightLightConfig::kTemperatureGap);
+          if (pushedNight + NightLightConfig::kTemperatureGap > newDay) {
+            // Day was below kTemperatureMin + kTemperatureGap; bump day up too. The slider value
+            // refresh comes through the rebuilt registry on the next config reload.
+            const std::int32_t bumpedDay =
+                std::min(NightLightConfig::kTemperatureMax, pushedNight + NightLightConfig::kTemperatureGap);
+            overrides.emplace_back(std::vector<std::string>{"nightlight", "temperature_day"},
+                                   static_cast<std::int64_t>(bumpedDay));
+          }
+          overrides.emplace_back(std::vector<std::string>{"nightlight", "temperature_night"},
+                                 static_cast<std::int64_t>(pushedNight));
+        }
+        return overrides;
+      };
+      entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.day-temperature.label"),
+                                  tr("settings.schema.services.day-temperature.description"),
+                                  {"nightlight", "temperature_day"}, std::move(daySlider), "wlsunset kelvin"));
+
+      SliderSetting nightSlider{static_cast<float>(cfg.nightlight.nightTemperature), tempMin, tempMax, tempStep, true};
+      nightSlider.linkedCommit = [curDay = cfg.nightlight.dayTemperature](double v) {
+        std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides;
+        const auto newNight = std::clamp(static_cast<std::int32_t>(std::lround(v)), NightLightConfig::kTemperatureMin,
+                                         NightLightConfig::kTemperatureMax);
+        if (curDay - NightLightConfig::kTemperatureGap < newNight) {
+          std::int32_t pushedDay =
+              std::min(NightLightConfig::kTemperatureMax, newNight + NightLightConfig::kTemperatureGap);
+          if (pushedDay - NightLightConfig::kTemperatureGap < newNight) {
+            const std::int32_t bumpedNight =
+                std::max(NightLightConfig::kTemperatureMin, pushedDay - NightLightConfig::kTemperatureGap);
+            overrides.emplace_back(std::vector<std::string>{"nightlight", "temperature_night"},
+                                   static_cast<std::int64_t>(bumpedNight));
+          }
+          overrides.emplace_back(std::vector<std::string>{"nightlight", "temperature_day"},
+                                 static_cast<std::int64_t>(pushedDay));
+        }
+        return overrides;
+      };
+      entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.night-temperature.label"),
+                                  tr("settings.schema.services.night-temperature.description"),
+                                  {"nightlight", "temperature_night"}, std::move(nightSlider), "wlsunset kelvin"));
     }
 
     // Notifications

@@ -449,6 +449,11 @@ struct KeybindsConfig {
 };
 
 struct NightLightConfig {
+  // wlsunset requires day > night with at least this much headroom, in Kelvin.
+  static constexpr std::int32_t kTemperatureMin = 1000;
+  static constexpr std::int32_t kTemperatureMax = 10000;
+  static constexpr std::int32_t kTemperatureGap = 100;
+
   bool enabled = false;
   bool force = false;
   bool useWeatherLocation = true; // use WeatherService coordinates when start/stop and explicit lat/long are not set

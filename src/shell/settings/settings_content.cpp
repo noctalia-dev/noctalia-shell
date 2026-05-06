@@ -481,70 +481,86 @@ namespace settings {
       return select;
     };
 
-    const auto makeSlider = [&](float value, float minValue, float maxValue, float step, std::vector<std::string> path,
-                                bool integerValue = false) {
-      auto wrap = std::make_unique<Flex>();
-      wrap->setDirection(FlexDirection::Horizontal);
-      wrap->setAlign(FlexAlign::Center);
-      wrap->setGap(Style::spaceSm * scale);
+    const auto makeSlider =
+        [&](float value, float minValue, float maxValue, float step, std::vector<std::string> path,
+            bool integerValue = false,
+            std::function<std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>(double)> linkedCommit =
+                {}) {
+          auto wrap = std::make_unique<Flex>();
+          wrap->setDirection(FlexDirection::Horizontal);
+          wrap->setAlign(FlexAlign::Center);
+          wrap->setGap(Style::spaceSm * scale);
 
-      auto valueInput = std::make_unique<Input>();
-      valueInput->setValue(formatSliderValue(value, integerValue));
-      valueInput->setFontSize(Style::fontSizeCaption * scale);
-      valueInput->setControlHeight(Style::controlHeightSm * scale);
-      valueInput->setHorizontalPadding(Style::spaceXs * scale);
-      valueInput->setSize(50.0f * scale, Style::controlHeightSm * scale);
-      auto* valueInputPtr = valueInput.get();
+          auto valueInput = std::make_unique<Input>();
+          valueInput->setValue(formatSliderValue(value, integerValue));
+          valueInput->setFontSize(Style::fontSizeCaption * scale);
+          valueInput->setControlHeight(Style::controlHeightSm * scale);
+          valueInput->setHorizontalPadding(Style::spaceXs * scale);
+          valueInput->setSize(50.0f * scale, Style::controlHeightSm * scale);
+          auto* valueInputPtr = valueInput.get();
 
-      auto slider = std::make_unique<Slider>();
-      slider->setRange(minValue, maxValue);
-      slider->setStep(step);
-      slider->setSize(Style::sliderDefaultWidth * scale, Style::controlHeight * scale);
-      slider->setControlHeight(Style::controlHeight * scale);
-      slider->setThumbSize(Style::sliderThumbSize * scale);
-      slider->setTrackHeight(Style::sliderTrackHeight * scale);
-      slider->setValue(value);
-      auto* sliderPtr = slider.get();
-      slider->setOnValueChanged([valueInputPtr, integerValue](float next) {
-        valueInputPtr->setInvalid(false);
-        valueInputPtr->setValue(formatSliderValue(next, integerValue));
-      });
-      slider->setOnDragEnd([setOverride = ctx.setOverride, path, sliderPtr, integerValue]() {
-        if (integerValue) {
-          setOverride(path, static_cast<std::int64_t>(std::lround(sliderPtr->value())));
-        } else {
-          setOverride(path, static_cast<double>(sliderPtr->value()));
-        }
-      });
+          auto slider = std::make_unique<Slider>();
+          slider->setRange(minValue, maxValue);
+          slider->setStep(step);
+          slider->setSize(Style::sliderDefaultWidth * scale, Style::controlHeight * scale);
+          slider->setControlHeight(Style::controlHeight * scale);
+          slider->setThumbSize(Style::sliderThumbSize * scale);
+          slider->setTrackHeight(Style::sliderTrackHeight * scale);
+          slider->setValue(value);
+          auto* sliderPtr = slider.get();
+          slider->setOnValueChanged([valueInputPtr, integerValue](float next) {
+            valueInputPtr->setInvalid(false);
+            valueInputPtr->setValue(formatSliderValue(next, integerValue));
+          });
 
-      valueInput->setOnChange([valueInputPtr](const std::string& /*text*/) { valueInputPtr->setInvalid(false); });
-      valueInput->setOnSubmit([setOverride = ctx.setOverride, path, sliderPtr, valueInputPtr, minValue, maxValue,
-                               integerValue](const std::string& text) {
-        const auto parsed = parseFloatInput(text);
-        if (!parsed.has_value() || *parsed < minValue || *parsed > maxValue) {
-          valueInputPtr->setInvalid(true);
-          return;
-        }
-        const float v = *parsed;
-        valueInputPtr->setInvalid(false);
-        sliderPtr->setValue(v);
-        if (!integerValue) {
-          const std::string trimmed = StringUtils::trim(text);
-          const char preferredSeparator = trimmed.find(',') != std::string::npos ? ',' : '.';
-          valueInputPtr->setValue(formatSliderValue(sliderPtr->value(), false, preferredSeparator));
-        }
-        if (integerValue) {
-          setOverride(path, static_cast<std::int64_t>(std::lround(v)));
-        } else {
-          setOverride(path, static_cast<double>(v));
-        }
-      });
+          // Helper: commit either via single setOverride or as an atomic batch when linkedCommit
+          // returns extra overrides (cross-field constraints).
+          const auto commit = [setOverride = ctx.setOverride, setOverrides = ctx.setOverrides, path, integerValue,
+                               linkedCommit](double v) {
+            ConfigOverrideValue primary =
+                integerValue ? ConfigOverrideValue{static_cast<std::int64_t>(std::lround(v))} : ConfigOverrideValue{v};
+            if (linkedCommit) {
+              auto extras = linkedCommit(v);
+              if (!extras.empty()) {
+                std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> all;
+                all.reserve(extras.size() + 1);
+                all.emplace_back(path, std::move(primary));
+                for (auto& e : extras) {
+                  all.push_back(std::move(e));
+                }
+                setOverrides(std::move(all));
+                return;
+              }
+            }
+            setOverride(path, std::move(primary));
+          };
 
-      // Slider first, numeric value field on the right (reset from makeRow stays left of this cluster).
-      wrap->addChild(std::move(slider));
-      wrap->addChild(std::move(valueInput));
-      return wrap;
-    };
+          slider->setOnDragEnd([commit, sliderPtr]() { commit(static_cast<double>(sliderPtr->value())); });
+
+          valueInput->setOnChange([valueInputPtr](const std::string& /*text*/) { valueInputPtr->setInvalid(false); });
+          valueInput->setOnSubmit(
+              [commit, sliderPtr, valueInputPtr, minValue, maxValue, integerValue](const std::string& text) {
+                const auto parsed = parseFloatInput(text);
+                if (!parsed.has_value() || *parsed < minValue || *parsed > maxValue) {
+                  valueInputPtr->setInvalid(true);
+                  return;
+                }
+                const float v = *parsed;
+                valueInputPtr->setInvalid(false);
+                sliderPtr->setValue(v);
+                if (!integerValue) {
+                  const std::string trimmed = StringUtils::trim(text);
+                  const char preferredSeparator = trimmed.find(',') != std::string::npos ? ',' : '.';
+                  valueInputPtr->setValue(formatSliderValue(sliderPtr->value(), false, preferredSeparator));
+                }
+                commit(static_cast<double>(v));
+              });
+
+          // Slider first, numeric value field on the right (reset from makeRow stays left of this cluster).
+          wrap->addChild(std::move(slider));
+          wrap->addChild(std::move(valueInput));
+          return wrap;
+        };
 
     const auto makeText = [&](const std::string& value, const std::string& placeholder, std::vector<std::string> path) {
       auto input = std::make_unique<Input>();
@@ -1132,7 +1148,7 @@ namespace settings {
               return makeSelect(control, entry.path);
             } else if constexpr (std::is_same_v<T, SliderSetting>) {
               return makeSlider(control.value, control.minValue, control.maxValue, control.step, entry.path,
-                                control.integerValue);
+                                control.integerValue, control.linkedCommit);
             } else if constexpr (std::is_same_v<T, TextSetting>) {
               return makeText(control.value, control.placeholder, entry.path);
             } else if constexpr (std::is_same_v<T, OptionalNumberSetting>) {
