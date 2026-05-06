@@ -13,7 +13,9 @@
 
 namespace {
   constexpr float kStackedPrimaryScale = 0.72f;
-  constexpr float kStackedSecondaryScale = 0.58f;
+  constexpr float kStackedSecondaryScale = 0.62f;
+  constexpr float kStackedPrimaryScaleNoCapsule = 0.80f;
+  constexpr float kStackedSecondaryScaleNoCapsule = 0.72f;
 
   std::pair<std::string_view, std::string_view> splitFirstLine(std::string_view text) {
     const std::size_t newline = text.find('\n');
@@ -100,12 +102,17 @@ void ClockWidget::doLayout(Renderer& renderer, float containerWidth, float conta
   m_secondaryLabel->setColor(foreground);
 
   const bool showSecondary = !m_isVertical && !m_lastSecondaryText.empty();
-  float primaryFontSize = Style::fontSizeBody * m_contentScale * (showSecondary ? kStackedPrimaryScale : 1.0f);
-  float secondaryFontSize = Style::fontSizeBody * m_contentScale * kStackedSecondaryScale;
+  const bool noCapsule = !barCapsuleSpec().enabled;
+  const float stackedPrimaryScale = noCapsule ? kStackedPrimaryScaleNoCapsule : kStackedPrimaryScale;
+  const float stackedSecondaryScale = noCapsule ? kStackedSecondaryScaleNoCapsule : kStackedSecondaryScale;
+  float primaryFontSize = Style::fontSizeBody * m_contentScale * (showSecondary ? stackedPrimaryScale : 1.0f);
+  float secondaryFontSize = Style::fontSizeBody * m_contentScale * stackedSecondaryScale;
 
   // Horizontal clocks use single-line metrics unless the configured format
   // explicitly contains line breaks.
   m_label->setFontSize(primaryFontSize);
+  m_label->setBold(true);
+  m_secondaryLabel->setBold(true);
   m_secondaryLabel->setFontSize(secondaryFontSize);
   m_label->setMaxLines(m_isVertical ? 0 : 1);
   m_label->setMinWidth(0.0f);
@@ -134,9 +141,18 @@ void ClockWidget::doLayout(Renderer& renderer, float containerWidth, float conta
     height = m_label->height() + m_secondaryLabel->height();
   }
 
-  m_label->setPosition(showSecondary ? std::round((width - m_label->width()) * 0.5f) : 0.0f, 0.0f);
   if (showSecondary) {
-    m_secondaryLabel->setPosition(std::round((width - m_secondaryLabel->width()) * 0.5f), m_label->height());
+    const auto primaryMetrics =
+        renderer.measureText(m_lastPrimaryText, primaryFontSize, true, 0.0f, 1, TextAlign::Start);
+    const auto secondaryMetrics =
+        renderer.measureText(m_lastSecondaryText, secondaryFontSize, false, 0.0f, 1, TextAlign::Start);
+    const float centerX = width * 0.5f;
+    const float primaryInkCenterX = (primaryMetrics.inkLeft + primaryMetrics.inkRight) * 0.5f;
+    const float secondaryInkCenterX = (secondaryMetrics.inkLeft + secondaryMetrics.inkRight) * 0.5f;
+    m_label->setPosition(std::round(centerX - primaryInkCenterX), 0.0f);
+    m_secondaryLabel->setPosition(std::round(centerX - secondaryInkCenterX), m_label->height());
+  } else {
+    m_label->setPosition(0.0f, 0.0f);
   }
   rootNode->setSize(width, height);
 }
