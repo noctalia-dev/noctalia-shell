@@ -23,12 +23,12 @@ jobs:
 
             const extractValue = (heading) => {
               const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-              const match = body.match(new RegExp(`### ${escapedHeading}\\s*\\n+([^\\n\\r]+)`, "i"));
+              const match = body.match(new RegExp(`^\\s*(?:###\\s*)?${escapedHeading}\\s*\\r?\\n+([^\\n\\r]+)`, "im"));
               return match ? match[1].trim() : null;
             };
 
-            const compositorValue = extractValue("Desktop environment / compositor");
-            const distributionValue = extractValue("Distribution family");
+            const compositorValue = extractValue("Compositor");
+            const distributionValue = extractValue("Distribution");
 
             const compositorLabelMap = {
               "Niri": "compositor:niri",
@@ -36,6 +36,7 @@ jobs:
               "Sway": "compositor:sway",
               "Scroll": "compositor:scroll",
               "Labwc": "compositor:labwc",
+              "Mango": "compositor:mango",
               "MangoWC": "compositor:mango",
               "Other": "compositor:other"
             };
@@ -47,6 +48,7 @@ jobs:
               "NixOS": "distro:nixos",
               "openSUSE-based": "distro:opensuse",
               "Gentoo-based": "distro:gentoo",
+              "Void": "distro:void",
               "Void-based": "distro:void",
               "Other": "distro:other"
             };
