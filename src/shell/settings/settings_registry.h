@@ -40,6 +40,10 @@ namespace settings {
   };
 
   struct SliderSetting {
+    SliderSetting() = default;
+    SliderSetting(float valueIn, float minValueIn, float maxValueIn, float stepIn, bool integerValueIn)
+        : value(valueIn), minValue(minValueIn), maxValue(maxValueIn), step(stepIn), integerValue(integerValueIn) {}
+
     float value = 0.0f;
     float minValue = 0.0f;
     float maxValue = 1.0f;
