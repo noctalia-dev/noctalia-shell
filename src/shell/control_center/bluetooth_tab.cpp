@@ -474,12 +474,16 @@ void BluetoothTab::syncHeader() {
     m_discoverableToggle->setEnabled(s.adapterPresent && s.powered);
   }
   if (m_scanSpinner != nullptr) {
-    m_scanSpinner->setVisible(s.discovering);
-    if (s.discovering && !m_scanSpinner->spinning()) {
+    const bool spinnerVisible = s.discovering && s.powered && s.adapterPresent;
+    m_scanSpinner->setVisible(spinnerVisible);
+    if (spinnerVisible && !m_scanSpinner->spinning()) {
       m_scanSpinner->start();
-    } else if (!s.discovering && m_scanSpinner->spinning()) {
+    } else if (!spinnerVisible && m_scanSpinner->spinning()) {
       m_scanSpinner->stop();
     }
+  }
+  if (m_rescanButton != nullptr) {
+    m_rescanButton->setEnabled(s.adapterPresent && s.powered);
   }
 }
 
@@ -609,6 +613,17 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
   if (m_service == nullptr) {
     auto empty = std::make_unique<Label>();
     empty->setText(i18n::tr("control-center.bluetooth.unavailable"));
+    empty->setCaptionStyle();
+    empty->setFontSize(Style::fontSizeCaption * contentScale());
+    empty->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+    m_list->addChild(std::move(empty));
+    m_list->layout(renderer);
+    return;
+  }
+
+  if (!m_service->state().powered) {
+    auto empty = std::make_unique<Label>();
+    empty->setText(i18n::tr("control-center.bluetooth.off"));
     empty->setCaptionStyle();
     empty->setFontSize(Style::fontSizeCaption * contentScale());
     empty->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
