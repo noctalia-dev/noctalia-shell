@@ -477,6 +477,7 @@ Singleton {
       property string screenshotAnnotationTool: ""
       property bool overviewLayer: false
       property string density: "default" // "compact", "default", "comfortable"
+      property list<var> commandAliases: []
     }
 
     // control center

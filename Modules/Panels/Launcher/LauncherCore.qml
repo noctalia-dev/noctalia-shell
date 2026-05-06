@@ -294,12 +294,26 @@ Rectangle {
     results = [];
     var newActiveProvider = null;
 
+    let search = searchText;
+    const aliases = Settings.data.appLauncher.commandAliases;
+    
+    if (aliases && !search.startsWith(">")) {
+      for (let i = 0; i < aliases.length; i++) {
+        const aliasObj = aliases[i];
+        if (aliasObj && aliasObj.alias && (search === aliasObj.alias || search.startsWith(aliasObj.alias + " "))) {
+          const cmd = aliasObj.command || "";
+          search = (search === aliasObj.alias) ? (cmd + " ") : (cmd + search.substring(aliasObj.alias.length));
+          break;
+        }
+      }
+    }
+
     // Check for command mode
-    if (searchText.startsWith(">")) {
+    if (search.startsWith(">")) {
       for (let provider of providers) {
-        if (provider.handleCommand && provider.handleCommand(searchText)) {
+        if (provider.handleCommand && provider.handleCommand(search)) {
           newActiveProvider = provider;
-          results = provider.getResults(searchText);
+          results = provider.getResults(search);
           break;
         }
       }
@@ -311,10 +325,10 @@ Rectangle {
           if (provider.commands)
             allCommands = allCommands.concat(provider.commands());
         }
-        if (searchText === ">") {
+        if (search === ">") {
           results = allCommands;
-        } else if (searchText.length > 1) {
-          const query = searchText.substring(1);
+        } else if (search.length > 1) {
+          const query = search.substring(1);
           if (typeof FuzzySort !== 'undefined') {
             const fuzzyResults = FuzzySort.go(query, allCommands, {
                                                 "keys": ["name"],
@@ -332,13 +346,13 @@ Rectangle {
       let allResults = [];
       for (let provider of providers) {
         if (provider.handleSearch) {
-          const providerResults = provider.getResults(searchText);
+          const providerResults = provider.getResults(search);
           allResults = allResults.concat(providerResults);
         }
       }
 
       // Sort by _score (higher = better match), items without _score go first
-      if (searchText.trim() !== "") {
+      if (search.trim() !== "") {
         const boostByUsage = Settings.data.appLauncher.sortByMostUsed;
 
         allResults.sort((a, b) => {

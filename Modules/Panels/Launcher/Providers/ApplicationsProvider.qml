@@ -421,6 +421,9 @@ Item {
     if (!entries || entries.length === 0)
       return [];
 
+    if (query && query.startsWith(">"))
+      return [];
+
     // Set category mode based on whether there's a query
     const isSearching = !!(query && query.trim() !== "");
     showsCategories = !isSearching;
