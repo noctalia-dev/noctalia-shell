@@ -27,6 +27,11 @@ SmartPanel {
   property string panelViewMode: "wifi"
   property bool panelViewPersistEnabled: false
 
+  WifiPrefs.NetworkEditPopup {
+    id: networkEditPopup
+    parent: Overlay.overlay
+  }
+
   onPanelViewModeChanged: {
     // Persist last view (only after restored the initial value)
     if (panelViewPersistEnabled) {
@@ -153,7 +158,7 @@ SmartPanel {
               icon: "settings"
               tooltipText: I18n.tr("tooltips.open-settings")
               baseSize: Style.baseWidgetSize * 0.8
-              onClicked: SettingsPanelService.openToTab(SettingsPanel.Tab.Connections, 0, screen)
+              onClicked: SettingsPanelService.openToTab(SettingsPanel.Tab.Connections, panelViewMode === "ethernet" ? 1 : 0, screen)
             }
 
             NIconButton {
@@ -636,6 +641,24 @@ SmartPanel {
                             onClicked: {
                               ethernetDetailsGrid = !ethernetDetailsGrid;
                               Settings.data.network.wifiDetailsViewMode = ethernetDetailsGrid ? "grid" : "list";
+                            }
+                            z: 1
+                          }
+
+                          // Edit connection button
+                          NIconButton {
+                            anchors.top: parent.top
+                            anchors.right: parent.right
+                            anchors.rightMargin: Style.marginS + (Style.baseWidgetSize * 0.65) + Style.marginS
+                            anchors.topMargin: Style.marginS
+                            icon: "settings"
+                            tooltipText: I18n.tr("wifi.edit.title")
+                            baseSize: Style.baseWidgetSize * 0.65
+                            onClicked: {
+                              var connName = NetworkService.activeEthernetDetails.connectionName || "";
+                              if (connName) {
+                                networkEditPopup.openEdit(connName, true, false);
+                              }
                             }
                             z: 1
                           }

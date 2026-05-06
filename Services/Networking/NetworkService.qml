@@ -91,6 +91,13 @@ Singleton {
   property bool airplaneModeEnabled: false
   property bool airplaneModeToggled: false
 
+  // Edit connection state
+  property bool modifyingConnection: false
+  property var pendingConnectionSettings: ({})
+
+  signal connectionSettingsLoaded(var settings)
+  signal connectionModified(bool success, string errorMsg)
+
   Connections {
     target: root
     function onWifiEnabledChanged() {
@@ -291,6 +298,71 @@ Singleton {
       ethernetDetailsLoading = true;
       deviceStatusProcess.running = true;
     }
+  }
+
+  // Fetch saved profile settings for editing
+  function getConnectionSettings(connName, isWifi) {
+    if (!ProgramCheckerService.nmcliAvailable || !connName) {
+      return;
+    }
+    getSettingsProcess.connName = connName;
+    var mtuField = isWifi ? "802-11-wireless.mtu" : "802-3-ethernet.mtu";
+    getSettingsProcess.command = ["nmcli", "-t", "-f", "ipv4.method,ipv4.addresses,ipv4.gateway,ipv4.dns,ipv6.method,ipv6.addresses,ipv6.gateway,ipv6.dns," + mtuField, "connection", "show", connName];
+    getSettingsProcess.running = true;
+  }
+
+  // Modify connection profile and optionally reapply
+  function modifyConnection(connName, settings, isActive, isWifi) {
+    if (!ProgramCheckerService.nmcliAvailable || !connName || modifyingConnection) {
+      return;
+    }
+    modifyingConnection = true;
+    pendingConnectionSettings = { connName: connName, isActive: isActive };
+
+    var args = ["nmcli", "connection", "modify", connName];
+
+    // IPv4
+    if (settings.ipv4Method !== undefined) {
+      args.push("ipv4.method", settings.ipv4Method);
+    }
+    if (settings.ipv4Method === "manual") {
+      args.push("ipv4.addresses", settings.ipv4Address || "");
+      args.push("ipv4.gateway", settings.ipv4Gateway || "");
+    } else if (settings.ipv4Method === "auto" || settings.ipv4Method === "disabled") {
+      args.push("ipv4.addresses", "");
+      args.push("ipv4.gateway", "");
+    }
+    if (settings.ipv4Dns !== undefined) {
+      args.push("ipv4.dns", settings.ipv4Dns || "");
+      var ignoreV4Dns = (settings.ipv4Method === "auto" && settings.ipv4Dns) ? "yes" : "no";
+      args.push("ipv4.ignore-auto-dns", ignoreV4Dns);
+    }
+
+    // IPv6
+    if (settings.ipv6Method !== undefined) {
+      args.push("ipv6.method", settings.ipv6Method);
+    }
+    if (settings.ipv6Method === "manual") {
+      args.push("ipv6.addresses", settings.ipv6Address || "");
+      args.push("ipv6.gateway", settings.ipv6Gateway || "");
+    } else if (settings.ipv6Method === "auto" || settings.ipv6Method === "disabled" || settings.ipv6Method === "link-local") {
+      args.push("ipv6.addresses", "");
+      args.push("ipv6.gateway", "");
+    }
+    if (settings.ipv6Dns !== undefined) {
+      args.push("ipv6.dns", settings.ipv6Dns || "");
+      var ignoreV6Dns = (settings.ipv6Method === "auto" && settings.ipv6Dns) ? "yes" : "no";
+      args.push("ipv6.ignore-auto-dns", ignoreV6Dns);
+    }
+
+    // MTU
+    if (settings.mtu !== undefined) {
+      var mtuKey = isWifi ? "802-11-wireless.mtu" : "802-3-ethernet.mtu";
+      args.push(mtuKey, String(settings.mtu));
+    }
+
+    modifyProcess.command = args;
+    modifyProcess.running = true;
   }
 
   // Helper function to immediately update network status
@@ -1137,6 +1209,141 @@ Singleton {
           Logger.d("Network", "State changed: " + data);
           deviceStatusProcess.running = true;
           connectivityCheckProcess.running = true;
+        }
+      }
+    }
+  }
+
+  // Fetch connection profile settings for editing
+  Process {
+    id: getSettingsProcess
+    property string connName: ""
+    running: false
+    command: ["nmcli", "-t", "-f", "ipv4.method,ipv4.addresses,ipv4.gateway,ipv4.dns,ipv6.method,ipv6.addresses,ipv6.gateway,ipv6.dns,802-3-ethernet.mtu", "connection", "show", connName]
+    environment: ({ "LC_ALL": "C" })
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        var settings = {
+          ipv4Method: "auto",
+          ipv4Address: "",
+          ipv4Gateway: "",
+          ipv4Dns: "",
+          ipv6Method: "auto",
+          ipv6Address: "",
+          ipv6Gateway: "",
+          ipv6Dns: "",
+          mtu: 0
+        };
+
+        var lines = text.split("\n");
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i].trim();
+          if (!line) continue;
+          var idx = line.indexOf(":");
+          if (idx === -1) continue;
+          var key = line.substring(0, idx);
+          var val = line.substring(idx + 1).trim();
+
+          switch (key) {
+            case "ipv4.method": settings.ipv4Method = val; break;
+            case "ipv4.addresses": settings.ipv4Address = val || ""; break;
+            case "ipv4.gateway": settings.ipv4Gateway = val || ""; break;
+            case "ipv4.dns": settings.ipv4Dns = val || ""; break;
+            case "ipv6.method": settings.ipv6Method = val; break;
+            case "ipv6.addresses": settings.ipv6Address = val || ""; break;
+            case "ipv6.gateway": settings.ipv6Gateway = val || ""; break;
+            case "ipv6.dns": settings.ipv6Dns = val || ""; break;
+            case "802-3-ethernet.mtu":
+            case "802-11-wireless.mtu": settings.mtu = parseInt(val) || 0; break;
+          }
+        }
+
+        // Clean up double dashes (nmcli outputs "--" for empty values)
+        for (var k in settings) {
+          if (settings[k] === "--") settings[k] = "";
+        }
+
+        root.connectionSettingsLoaded(settings);
+      }
+    }
+    stderr: StdioCollector {
+      onStreamFinished: {
+        if (text.trim()) {
+          Logger.w("Network", "Get settings error: " + text.trim());
+          root.connectionSettingsLoaded(null);
+        }
+      }
+    }
+  }
+
+  // Modify connection profile
+  Process {
+    id: modifyProcess
+    running: false
+    environment: ({ "LC_ALL": "C" })
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        Logger.i("Network", "Connection modified: " + root.pendingConnectionSettings.connName);
+        if (root.pendingConnectionSettings.isActive) {
+          reapplyProcess.connName = root.pendingConnectionSettings.connName;
+          reapplyProcess.running = true;
+        } else {
+          root.modifyingConnection = false;
+          root.connectionModified(true, "");
+          ToastService.showNotice(I18n.tr("common.network"), I18n.tr("toast.wifi.settings-applied"), "settings");
+        }
+      }
+    }
+    stderr: StdioCollector {
+      onStreamFinished: {
+        if (text.trim()) {
+          Logger.w("Network", "Modify error: " + text.trim());
+          root.modifyingConnection = false;
+          root.connectionModified(false, text.trim());
+          ToastService.showWarning(I18n.tr("common.network"), I18n.tr("toast.wifi.settings-apply-failed"), "settings");
+        }
+      }
+    }
+  }
+
+  Timer {
+    id: postReapplyRefreshTimer
+    interval: 5000
+    onTriggered: {
+      deviceStatusProcess.running = true;
+    }
+  }
+
+  // Reapply connection after modify (bring it up with new settings)
+  Process {
+    id: reapplyProcess
+    property string connName: ""
+    running: false
+    command: ["nmcli", "connection", "up", connName]
+    environment: ({ "LC_ALL": "C" })
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        Logger.i("Network", "Connection reapplied: " + reapplyProcess.connName);
+        root.modifyingConnection = false;
+        root.connectionModified(true, "");
+        ToastService.showNotice(I18n.tr("common.network"), I18n.tr("toast.wifi.settings-applied"), "settings");
+
+        // Invalidate cache and schedule delayed refresh
+        root.activeWifiDetailsTimestamp = 0;
+        root.activeEthernetDetailsTimestamp = 0;
+        postReapplyRefreshTimer.restart();
+      }
+    }
+    stderr: StdioCollector {
+      onStreamFinished: {
+        if (text.trim()) {
+          Logger.w("Network", "Reapply error: " + text.trim());
+          root.modifyingConnection = false;
+          root.connectionModified(false, text.trim());
+          ToastService.showWarning(I18n.tr("common.network"), I18n.tr("toast.wifi.settings-apply-failed"), "settings");
         }
       }
     }

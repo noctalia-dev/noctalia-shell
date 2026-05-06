@@ -1999,7 +1999,9 @@
       "connection-timeout": "Hết thời gian chờ kết nối",
       "disconnected": "Đã ngắt kết nối khỏi '{ssid}'",
       "incorrect-password": "Mật khẩu không đúng",
-      "network-not-found": "Không tìm thấy mạng"
+      "network-not-found": "Không tìm thấy mạng",
+      "settings-applied": "Đã áp dụng cài đặt mạng",
+      "settings-apply-failed": "Không thể áp dụng cài đặt mạng"
     }
   },
   "tooltips": {
@@ -2206,6 +2208,38 @@
     "tooltip-placeholder": "Giữ chỗ"
   },
   "wifi": {
+    "edit": {
+      "address": "Địa chỉ IP",
+      "address-placeholder-v4": "vd. 192.168.1.50/24",
+      "address-placeholder-v6": "vd. fd00::1/64",
+      "apply": "Áp dụng",
+      "applying": "Đang áp dụng...",
+      "cancel": "Hủy",
+      "dns": "Máy chủ DNS",
+      "dns-hint": "Phân cách bằng dấu phẩy",
+      "dns-placeholder-v4": "vd. 8.8.8.8, 8.8.4.4",
+      "dns-placeholder-v6": "vd. 2001:4860:4860::8888",
+      "error-apply-failed": "Không thể áp dụng cài đặt",
+      "error-invalid-dns": "Định dạng DNS không hợp lệ",
+      "error-invalid-gateway": "Định dạng gateway không hợp lệ",
+      "error-invalid-ip": "Định dạng địa chỉ IP không hợp lệ",
+      "error-load-failed": "Không thể tải cài đặt",
+      "error-invalid-mtu": "MTU phải là 0 (tự động) hoặc 68–9216",
+      "gateway": "Gateway",
+      "gateway-placeholder-v4": "vd. 192.168.1.1",
+      "gateway-placeholder-v6": "vd. fd00::1",
+      "general": "Chung",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "method": "Phương thức",
+      "method-auto": "Tự động (DHCP)",
+      "method-disabled": "Tắt",
+      "method-link-local": "Chỉ liên kết cục bộ",
+      "method-manual": "Thủ công",
+      "mtu": "MTU",
+      "mtu-description": "0 = tự động",
+      "title": "Chỉnh sửa kết nối"
+    },
     "enterprise": {
       "anonymous-identity": "Danh tính Ẩn danh",
       "ca-cert": "Chứng chỉ CA",

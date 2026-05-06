@@ -1999,7 +1999,9 @@
       "connection-timeout": "Zeitüberschreitung bei der Verbindung",
       "disconnected": "Getrennt von '{ssid}'",
       "incorrect-password": "Falsches Passwort",
-      "network-not-found": "Netzwerk nicht gefunden"
+      "network-not-found": "Netzwerk nicht gefunden",
+      "settings-applied": "Netzwerkeinstellungen angewendet",
+      "settings-apply-failed": "Netzwerkeinstellungen konnten nicht angewendet werden"
     }
   },
   "tooltips": {
@@ -2206,6 +2208,38 @@
     "tooltip-placeholder": "Platzhalter"
   },
   "wifi": {
+    "edit": {
+      "address": "IP-Adresse",
+      "address-placeholder-v4": "z.B. 192.168.1.50/24",
+      "address-placeholder-v6": "z.B. fd00::1/64",
+      "apply": "Anwenden",
+      "applying": "Wird angewendet...",
+      "cancel": "Abbrechen",
+      "dns": "DNS-Server",
+      "dns-hint": "Kommagetrennt",
+      "dns-placeholder-v4": "z.B. 8.8.8.8, 8.8.4.4",
+      "dns-placeholder-v6": "z.B. 2001:4860:4860::8888",
+      "error-apply-failed": "Einstellungen konnten nicht angewendet werden",
+      "error-invalid-dns": "Ungültiges DNS-Format",
+      "error-invalid-gateway": "Ungültiges Gateway-Format",
+      "error-invalid-ip": "Ungültiges IP-Adressformat",
+      "error-load-failed": "Einstellungen konnten nicht geladen werden",
+      "error-invalid-mtu": "MTU muss 0 (auto) oder 68–9216 sein",
+      "gateway": "Gateway",
+      "gateway-placeholder-v4": "z.B. 192.168.1.1",
+      "gateway-placeholder-v6": "z.B. fd00::1",
+      "general": "Allgemein",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "method": "Methode",
+      "method-auto": "Automatisch (DHCP)",
+      "method-disabled": "Deaktiviert",
+      "method-link-local": "Nur Link-Local",
+      "method-manual": "Manuell",
+      "mtu": "MTU",
+      "mtu-description": "0 = automatisch",
+      "title": "Verbindung bearbeiten"
+    },
     "enterprise": {
       "anonymous-identity": "Anonyme Identität",
       "ca-cert": "CA-Zertifikat",

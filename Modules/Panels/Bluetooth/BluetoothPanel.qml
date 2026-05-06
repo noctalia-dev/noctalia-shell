@@ -71,7 +71,7 @@ SmartPanel {
             icon: "settings"
             tooltipText: I18n.tr("tooltips.open-settings")
             baseSize: Style.baseWidgetSize * 0.8
-            onClicked: SettingsPanelService.openToTab(SettingsPanel.Tab.Connections, 1, screen)
+            onClicked: SettingsPanelService.openToTab(SettingsPanel.Tab.Connections, 2, screen)
           }
 
           NIconButton {
@@ -185,7 +185,7 @@ SmartPanel {
                 text: I18n.tr("common.settings")
                 icon: "settings"
                 Layout.alignment: Qt.AlignHCenter
-                onClicked: SettingsPanelService.openToTab(SettingsPanel.Tab.Connections, 1, screen)
+                onClicked: SettingsPanelService.openToTab(SettingsPanel.Tab.Connections, 2, screen)
               }
 
               Item {

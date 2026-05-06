@@ -1999,7 +1999,9 @@
       "connection-timeout": "Délai de connexion dépassé",
       "disconnected": "Déconnecté de '{ssid}'",
       "incorrect-password": "Mot de passe incorrect",
-      "network-not-found": "Réseau introuvable"
+      "network-not-found": "Réseau introuvable",
+      "settings-applied": "Paramètres réseau appliqués",
+      "settings-apply-failed": "Échec de l'application des paramètres réseau"
     }
   },
   "tooltips": {
@@ -2206,6 +2208,38 @@
     "tooltip-placeholder": "Espace réservé"
   },
   "wifi": {
+    "edit": {
+      "address": "Adresse IP",
+      "address-placeholder-v4": "ex. 192.168.1.50/24",
+      "address-placeholder-v6": "ex. fd00::1/64",
+      "apply": "Appliquer",
+      "applying": "Application...",
+      "cancel": "Annuler",
+      "dns": "Serveurs DNS",
+      "dns-hint": "Séparés par des virgules",
+      "dns-placeholder-v4": "ex. 8.8.8.8, 8.8.4.4",
+      "dns-placeholder-v6": "ex. 2001:4860:4860::8888",
+      "error-apply-failed": "Échec de l'application des paramètres",
+      "error-invalid-dns": "Format DNS invalide",
+      "error-invalid-gateway": "Format de passerelle invalide",
+      "error-invalid-ip": "Format d'adresse IP invalide",
+      "error-load-failed": "Échec du chargement des paramètres",
+      "error-invalid-mtu": "MTU doit être 0 (auto) ou 68–9216",
+      "gateway": "Passerelle",
+      "gateway-placeholder-v4": "ex. 192.168.1.1",
+      "gateway-placeholder-v6": "ex. fd00::1",
+      "general": "Général",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "method": "Méthode",
+      "method-auto": "Automatique (DHCP)",
+      "method-disabled": "Désactivé",
+      "method-link-local": "Lien local uniquement",
+      "method-manual": "Manuel",
+      "mtu": "MTU",
+      "mtu-description": "0 = automatique",
+      "title": "Modifier la connexion"
+    },
     "enterprise": {
       "anonymous-identity": "Identité Anonyme",
       "ca-cert": "Certificat CA",

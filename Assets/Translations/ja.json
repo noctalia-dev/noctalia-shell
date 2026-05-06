@@ -1999,7 +1999,9 @@
       "connection-timeout": "接続タイムアウト",
       "disconnected": "{ssid} から切断しました",
       "incorrect-password": "パスワードが違います",
-      "network-not-found": "ネットワークが見つかりません"
+      "network-not-found": "ネットワークが見つかりません",
+      "settings-applied": "ネットワーク設定が適用されました",
+      "settings-apply-failed": "ネットワーク設定の適用に失敗しました"
     }
   },
   "tooltips": {
@@ -2206,6 +2208,38 @@
     "tooltip-placeholder": "プレースホルダー"
   },
   "wifi": {
+    "edit": {
+      "address": "IPアドレス",
+      "address-placeholder-v4": "例: 192.168.1.50/24",
+      "address-placeholder-v6": "例: fd00::1/64",
+      "apply": "適用",
+      "applying": "適用中...",
+      "cancel": "キャンセル",
+      "dns": "DNSサーバー",
+      "dns-hint": "カンマ区切り",
+      "dns-placeholder-v4": "例: 8.8.8.8, 8.8.4.4",
+      "dns-placeholder-v6": "例: 2001:4860:4860::8888",
+      "error-apply-failed": "設定の適用に失敗しました",
+      "error-invalid-dns": "無効なDNS形式",
+      "error-invalid-gateway": "無効なゲートウェイ形式",
+      "error-invalid-ip": "無効なIPアドレス形式",
+      "error-load-failed": "設定の読み込みに失敗しました",
+      "error-invalid-mtu": "MTU は 0（自動）または 68〜9216 にしてください",
+      "gateway": "ゲートウェイ",
+      "gateway-placeholder-v4": "例: 192.168.1.1",
+      "gateway-placeholder-v6": "例: fd00::1",
+      "general": "一般",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "method": "方式",
+      "method-auto": "自動 (DHCP)",
+      "method-disabled": "無効",
+      "method-link-local": "リンクローカルのみ",
+      "method-manual": "手動",
+      "mtu": "MTU",
+      "mtu-description": "0 = 自動",
+      "title": "接続を編集"
+    },
     "enterprise": {
       "anonymous-identity": "匿名ID",
       "ca-cert": "CA証明書",
