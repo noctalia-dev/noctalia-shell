@@ -1,10 +1,12 @@
 #include "shell/control_center/control_center_panel.h"
 
+#include "config/config_service.h"
 #include "i18n/i18n.h"
 #include "notification/notification_manager.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "shell/panel/panel_manager.h"
+#include "system/brightness_service.h"
 #include "system/dependency_service.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
@@ -22,6 +24,8 @@ ControlCenterPanel::ControlCenterPanel(
     SystemMonitorService* sysmon, NightLightManager* nightLight, noctalia::theme::ThemeService* theme,
     IdleInhibitor* idleInhibitor, DependencyService* dependencies, WaylandConnection* wayland, Wallpaper* wallpaper) {
   (void)upower;
+  m_config = config;
+  m_brightness = brightness;
   m_notificationManager = notifications;
   m_dependencies = dependencies;
   m_tabs[tabIndex(TabId::Overview)] =
@@ -242,6 +246,9 @@ void ControlCenterPanel::onFrameTick(float deltaMs) {
 void ControlCenterPanel::onOpen(std::string_view context) {
   if (m_dependencies != nullptr) {
     m_dependencies->rescan();
+  }
+  if (m_brightness != nullptr && m_config != nullptr) {
+    m_brightness->reload(m_config->config().brightness);
   }
   selectTab(tabFromContext(context));
 }

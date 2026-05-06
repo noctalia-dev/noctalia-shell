@@ -948,6 +948,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   }
   settings::RegistryEnvironment env;
   env.niriBackdropSupported = (m_wayland != nullptr && compositors::isNiri());
+  env.ddcutilAvailable = (m_dependencies != nullptr && m_dependencies->hasDdcutil());
   env.wlsunsetAvailable = (m_dependencies != nullptr && m_dependencies->hasWlsunset());
   for (const auto& paletteInfo : noctalia::theme::availableCommunityPalettes()) {
     env.communityPalettes.push_back(settings::SelectOption{paletteInfo.name, paletteInfo.name});

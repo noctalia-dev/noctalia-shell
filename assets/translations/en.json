@@ -1464,7 +1464,8 @@
         },
         "ddcutil": {
           "label": "DDC/CI (ddcutil)",
-          "description": "Control external monitor brightness via DDC/CI"
+          "description": "Control external monitor brightness via DDC/CI",
+          "requires-ddcutil": "Install ddcutil to enable DDC/CI brightness control"
         },
         "night-light": {
           "label": "Night Light",

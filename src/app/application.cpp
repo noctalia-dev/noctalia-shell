@@ -578,8 +578,8 @@ void Application::initServices() {
   }
 
   try {
-    m_brightnessService =
-        std::make_unique<BrightnessService>(m_systemBus.get(), m_wayland, m_configService.config().brightness);
+    m_brightnessService = std::make_unique<BrightnessService>(
+        m_systemBus.get(), m_wayland, m_configService.config().brightness, &m_dependencyService);
     m_brightnessService->setChangeCallback([this, shouldRefreshControlCenter]() {
       m_brightnessOsd.onBrightnessChanged(*m_brightnessService);
       m_bar.refresh();

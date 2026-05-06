@@ -2,11 +2,11 @@
 
 #include "config/config_service.h"
 #include "core/log.h"
-#include "core/process.h"
 #include "core/timer_manager.h"
 #include "dbus/system_bus.h"
 #include "ipc/ipc_arg_parse.h"
 #include "ipc/ipc_service.h"
+#include "system/dependency_service.h"
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
@@ -586,6 +586,7 @@ namespace {
 struct BrightnessService::Impl {
   SystemBus* bus = nullptr;
   WaylandConnection& wayland;
+  DependencyService* dependencies = nullptr;
   BrightnessConfig activeConfig;
   ChangeCallback changeCallback;
 
@@ -613,8 +614,8 @@ struct BrightnessService::Impl {
   std::unordered_map<std::string, DdcJob> pendingRefreshes;
   std::queue<WorkerCompletion> completions;
 
-  Impl(SystemBus* systemBus, WaylandConnection& wl, const BrightnessConfig& config)
-      : bus(systemBus), wayland(wl), activeConfig(config) {
+  Impl(SystemBus* systemBus, WaylandConnection& wl, const BrightnessConfig& config, DependencyService* deps)
+      : bus(systemBus), wayland(wl), dependencies(deps), activeConfig(config) {
     setupPollFds();
     workerThread = std::thread([this]() { workerLoop(); });
   }
@@ -816,7 +817,7 @@ struct BrightnessService::Impl {
     if (!activeConfig.enableDdcutil) {
       return;
     }
-    if (!process::commandExists("ddcutil")) {
+    if (dependencies != nullptr && !dependencies->hasDdcutil()) {
       if (!warnedMissingDdcutil) {
         kLog.warn("brightness.enable_ddcutil is set but ddcutil is not installed");
         warnedMissingDdcutil = true;
@@ -1307,8 +1308,9 @@ struct BrightnessService::Impl {
   }
 };
 
-BrightnessService::BrightnessService(SystemBus* bus, WaylandConnection& wayland, const BrightnessConfig& config)
-    : m_impl(new Impl(bus, wayland, config)) {
+BrightnessService::BrightnessService(SystemBus* bus, WaylandConnection& wayland, const BrightnessConfig& config,
+                                     DependencyService* dependencies)
+    : m_impl(new Impl(bus, wayland, config, dependencies)) {
   m_impl->rebuildState(false);
 }
 

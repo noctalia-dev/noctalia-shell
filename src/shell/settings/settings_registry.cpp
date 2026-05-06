@@ -620,8 +620,11 @@ namespace settings {
                                 {"shell", "mpris", "blacklist"}, ListSetting{.items = cfg.shell.mpris.blacklist},
                                 "mpris media player dbus session blacklist"));
     entries.push_back(makeEntry("services", "brightness", tr("settings.schema.services.ddcutil.label"),
-                                tr("settings.schema.services.ddcutil.description"), {"brightness", "enable_ddcutil"},
-                                ToggleSetting{cfg.brightness.enableDdcutil}, "monitor ddcutil"));
+                                env.ddcutilAvailable ? tr("settings.schema.services.ddcutil.description")
+                                                     : tr("settings.schema.services.ddcutil.requires-ddcutil"),
+                                {"brightness", "enable_ddcutil"},
+                                ToggleSetting{.checked = cfg.brightness.enableDdcutil, .enabled = env.ddcutilAvailable},
+                                "monitor ddcutil"));
     if (!env.wlsunsetAvailable) {
       // Show only the master toggle in a disabled state so users can discover the feature
       // and learn the dependency requirement. The remaining settings are hidden until wlsunset is installed.

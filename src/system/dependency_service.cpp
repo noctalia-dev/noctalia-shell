@@ -11,7 +11,8 @@ namespace {
   constexpr Logger kLog("dependencies");
 
   // Optional CLI tools the shell knows about. Adding a new tracked tool is one line.
-  constexpr std::array<const char*, 1> kTrackedTools = {
+  constexpr std::array<const char*, 2> kTrackedTools = {
+      "ddcutil",
       "wlsunset",
   };
 

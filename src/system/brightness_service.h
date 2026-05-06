@@ -6,6 +6,7 @@
 #include <vector>
 
 class IpcService;
+class DependencyService;
 class SystemBus;
 class WaylandConnection;
 struct BrightnessConfig;
@@ -29,7 +30,8 @@ class BrightnessService {
 public:
   using ChangeCallback = std::function<void()>;
 
-  BrightnessService(SystemBus* bus, WaylandConnection& wayland, const BrightnessConfig& config);
+  BrightnessService(SystemBus* bus, WaylandConnection& wayland, const BrightnessConfig& config,
+                    DependencyService* dependencies = nullptr);
   ~BrightnessService();
 
   BrightnessService(const BrightnessService&) = delete;
