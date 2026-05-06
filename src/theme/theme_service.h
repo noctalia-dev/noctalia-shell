@@ -31,6 +31,7 @@ namespace noctalia::theme {
     // Resolves the target theme and cross-fades to it.
     void onConfigReload();
     void onWallpaperChange();
+    void onAutoSchemeChanged();
     void toggleLightDark();
     void cycleMode();
     [[nodiscard]] ThemeMode configuredMode() const noexcept;
