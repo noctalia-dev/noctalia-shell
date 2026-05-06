@@ -18,6 +18,7 @@ Singleton {
   property bool isLabwc: false
   property bool isExtWorkspace: false
   property bool isScroll: false
+  property bool isDriftwm: false
 
   // Generic workspace and window data
   property ListModel workspaces: ListModel {}
@@ -34,6 +35,12 @@ Singleton {
   // Global workspaces flag (workspaces shared across all outputs)
   // True for LabWC (stacking compositor), false for tiling WMs with per-output workspaces
   property bool globalWorkspaces: false
+
+  // Canvas state (driftwm infinite canvas)
+  signal canvasStateChanged
+  property real canvasViewportX: 0
+  property real canvasViewportY: 0
+  property real canvasZoom: 1.0
 
   // Generic events
   signal workspaceChanged
@@ -70,9 +77,19 @@ Singleton {
     const currentDesktop = Quickshell.env("XDG_CURRENT_DESKTOP");
     const labwcPid = Quickshell.env("LABWC_PID");
 
-    // Check for MangoWC using XDG_CURRENT_DESKTOP environment variable
-    // MangoWC sets XDG_CURRENT_DESKTOP=mango
-    if (currentDesktop && currentDesktop.toLowerCase().includes("mango")) {
+    // Check for driftwm using XDG_CURRENT_DESKTOP environment variable
+    // driftwm sets XDG_CURRENT_DESKTOP=driftwm
+    if (currentDesktop && currentDesktop.toLowerCase().includes("driftwm")) {
+      isHyprland = false;
+      isNiri = false;
+      isSway = false;
+      isMango = false;
+      isLabwc = false;
+      isExtWorkspace = false;
+      isDriftwm = true;
+      backendLoader.sourceComponent = driftwmComponent;
+      Logger.i("CompositorService", "Detected driftwm (infinite canvas compositor)");
+    } else if (currentDesktop && currentDesktop.toLowerCase().includes("mango")) {
       isHyprland = false;
       isNiri = false;
       isSway = false;
@@ -115,15 +132,40 @@ Singleton {
       isScroll = currentDesktop && currentDesktop.toLowerCase().includes("scroll");
       backendLoader.sourceComponent = swayComponent;
     } else {
-      // Always fallback to ext-workspace-v1
-      isHyprland = false;
-      isNiri = false;
-      isSway = false;
-      isMango = false;
-      isLabwc = false;
-      isExtWorkspace = true;
-      backendLoader.sourceComponent = extWorkspaceComponent;
-      Logger.i("CompositorService", "Using generic ext-workspace backend (no recognized compositor env)");
+      // Check for driftwm state file as fallback when XDG_CURRENT_DESKTOP is not set
+      // (e.g. when running driftwm from TTY instead of a display manager)
+      const runtimeDir = Quickshell.env("XDG_RUNTIME_DIR") || "/run/user/1000";
+      const driftwmStateFile = runtimeDir + "/driftwm/state";
+      const safeFile = driftwmStateFile.replace(/"/g, '\\"');
+
+      const statCheckObj = Qt.createQmlObject(
+        'import QtQuick; import Quickshell.Io; Process {\n' +
+        '  command: ["sh", "-c", "test -f \\"' + safeFile + '\\""]\n' +
+        '}',
+        root,
+        "DriftwmFallbackCheck"
+      );
+
+      statCheckObj.exited.connect(function (exitCode) {
+        if (exitCode === 0) {
+          isDriftwm = true;
+          isHyprland = false;
+          isNiri = false;
+          isSway = false;
+          isMango = false;
+          isLabwc = false;
+          isExtWorkspace = false;
+          backendLoader.sourceComponent = driftwmComponent;
+          Logger.i("CompositorService", "Detected driftwm via state file (no XDG_CURRENT_DESKTOP)");
+        } else {
+          isExtWorkspace = true;
+          backendLoader.sourceComponent = extWorkspaceComponent;
+          Logger.i("CompositorService", "Using generic ext-workspace backend (no recognized compositor env)");
+        }
+        statCheckObj.destroy();
+      });
+
+      statCheckObj.running = true;
     }
   }
 
@@ -207,6 +249,14 @@ Singleton {
     }
   }
 
+  // driftwm backend component
+  Component {
+    id: driftwmComponent
+    DriftwmService {
+      id: driftwmBackend
+    }
+  }
+
   function setupBackendConnections() {
     if (!backend)
       return;
@@ -242,6 +292,16 @@ Singleton {
                                             });
     }
 
+    // Canvas state (driftwm-specific)
+    if (backend.canvasStateChanged) {
+      backend.canvasStateChanged.connect(() => {
+                                          canvasViewportX = backend.viewportX;
+                                          canvasViewportY = backend.viewportY;
+                                          canvasZoom = backend.viewportZoom;
+                                          canvasStateChanged();
+                                        });
+    }
+
     // Initial sync
     syncWorkspaces();
     syncWindows();
@@ -251,6 +311,11 @@ Singleton {
     }
     if (backend.globalWorkspaces !== undefined) {
       globalWorkspaces = backend.globalWorkspaces;
+    }
+    if (backend.viewportX !== undefined) {
+      canvasViewportX = backend.viewportX;
+      canvasViewportY = backend.viewportY;
+      canvasZoom = backend.viewportZoom;
     }
   }
 

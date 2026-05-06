@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
+import qs.Services.Compositor
 import qs.Widgets
 
 ColumnLayout {
@@ -44,6 +45,7 @@ ColumnLayout {
   NToggle {
     label: I18n.tr("panels.user-interface.blur-behind-label")
     description: I18n.tr("panels.user-interface.blur-behind-description")
+    visible: !CompositorService.isDriftwm
     checked: Settings.data.general.enableBlurBehind
     defaultValue: Settings.getDefaultValue("general.enableBlurBehind")
     onToggled: checked => Settings.data.general.enableBlurBehind = checked

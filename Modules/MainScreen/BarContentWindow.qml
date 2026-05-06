@@ -4,6 +4,7 @@ import Quickshell.Wayland
 import qs.Commons
 import qs.Modules.Bar
 import qs.Services.UI
+import qs.Services.Compositor
 
 /**
 * BarContentWindow - Separate transparent PanelWindow for bar content
@@ -33,7 +34,10 @@ PanelWindow {
 
   // Wayland layer configuration
   WlrLayershell.namespace: "noctalia-bar-content-" + (barWindow.screen?.name || "unknown")
-  WlrLayershell.layer: WlrLayer.Top
+  // driftwm: Overlay layer needed so bar sits above MainScreen mask and is clickable.
+  // On other compositors, Top works fine because the mask punches through.
+  WlrLayershell.layer: CompositorService.isDriftwm ? WlrLayer.Overlay : WlrLayer.Top
+  WlrLayershell.keyboardFocus: CompositorService.isDriftwm ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
   WlrLayershell.exclusionMode: ExclusionMode.Ignore // Don't reserve space - BarExclusionZone in MainScreen handles that
 
   // Position and size to match bar location (per-screen)
