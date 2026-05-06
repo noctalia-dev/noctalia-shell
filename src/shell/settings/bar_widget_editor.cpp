@@ -1078,8 +1078,13 @@ namespace settings {
         headerRow->addChild(makeLabel(i18n::tr("settings.entities.widget.inspector.edit-title"),
                                       Style::fontSizeCaption * ctx.scale,
                                       colorSpecFromRole(ColorRole::OnSurfaceVariant), true));
-        headerRow->addChild(
-            makeLabel(info.title, Style::fontSizeBody * ctx.scale, colorSpecFromRole(ColorRole::OnSurface), true));
+        {
+          auto titleLabel =
+              makeLabel(info.title, Style::fontSizeBody * ctx.scale, colorSpecFromRole(ColorRole::OnSurface), true);
+          titleLabel->setMaxLines(1);
+          titleLabel->setFlexGrow(1.0f);
+          headerRow->addChild(std::move(titleLabel));
+        }
 
         auto kindBadge = std::make_unique<Flex>();
         kindBadge->setAlign(FlexAlign::Center);
@@ -1674,11 +1679,13 @@ namespace settings {
         itemTop->setDirection(FlexDirection::Horizontal);
         itemTop->setAlign(FlexAlign::Center);
         itemTop->setGap(Style::spaceXs * ctx.scale);
-        itemTop->addChild(
-            makeLabel(info.title, Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurface), true));
-        auto itemSpacer = std::make_unique<Flex>();
-        itemSpacer->setFlexGrow(1.0f);
-        itemTop->addChild(std::move(itemSpacer));
+        {
+          auto titleLabel =
+              makeLabel(info.title, Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurface), true);
+          titleLabel->setMaxLines(1);
+          titleLabel->setFlexGrow(1.0f);
+          itemTop->addChild(std::move(titleLabel));
+        }
         auto kindBadge = std::make_unique<Flex>();
         kindBadge->setAlign(FlexAlign::Center);
         kindBadge->setPadding(1.0f * ctx.scale, Style::spaceXs * ctx.scale);
