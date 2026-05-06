@@ -48,6 +48,8 @@ public:
   void setOnSubmit(std::function<void(const std::string&)> callback);
   void setOnKeyEvent(std::function<bool(std::uint32_t sym, std::uint32_t modifiers)> callback);
   void setOnFocusLoss(std::function<void()> callback);
+  void setEnabled(bool enabled);
+  [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
   void selectAll();
   void moveCaretLeft(bool shift = false);
   void moveCaretRight(bool shift = false);
@@ -132,6 +134,7 @@ private:
   bool m_invalid = false;
   bool m_frameVisible = true;
   bool m_embeddedOnSolidPrimary = false;
+  bool m_enabled = true;
   float m_minLayoutWidth = 0.0f;
   float m_contentLeadSlack = 0.0f;
   TextAlign m_textAlign = TextAlign::Start;

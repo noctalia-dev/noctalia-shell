@@ -276,6 +276,20 @@ InputArea* GlyphPicker::initialFocusArea() const noexcept {
   return m_searchInput != nullptr ? m_searchInput->inputArea() : nullptr;
 }
 
+void GlyphPicker::setEnabled(bool enabled) {
+  if (m_enabled == enabled) {
+    return;
+  }
+  m_enabled = enabled;
+  if (m_searchInput != nullptr) {
+    m_searchInput->setEnabled(enabled);
+  }
+  if (m_applyButton != nullptr) {
+    m_applyButton->setEnabled(enabled);
+  }
+  setOpacity(enabled ? 1.0f : 0.55f);
+}
+
 std::optional<GlyphPickerResult> GlyphPicker::currentResult() const {
   if (m_grid == nullptr || m_adapter == nullptr) {
     return std::nullopt;

@@ -27,6 +27,9 @@ public:
 
   void setOnColorChanged(std::function<void(const Color&)> callback);
 
+  void setEnabled(bool enabled);
+  [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
+
   [[nodiscard]] static float intrinsicColumnHeight(float pickerWidth, float scale);
   [[nodiscard]] InputArea* primaryInputArea() const noexcept;
 
@@ -72,6 +75,7 @@ private:
   Box* m_hueThumb = nullptr;
 
   std::function<void(const Color&)> m_onColorChanged;
+  bool m_enabled = true;
 };
 
 // Title + ColorPicker + Cancel/Apply row — reusable chrome for dialogs or embedded UIs.

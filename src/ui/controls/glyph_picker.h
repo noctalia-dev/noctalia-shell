@@ -39,6 +39,9 @@ public:
   void setOnCancel(std::function<void()> callback) { m_onCancel = std::move(callback); }
   void setOnApply(std::function<void(const GlyphPickerResult&)> callback) { m_onApply = std::move(callback); }
 
+  void setEnabled(bool enabled);
+  [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
+
   [[nodiscard]] static float preferredDialogWidth(float scale);
   [[nodiscard]] static float preferredDialogHeight(float scale);
 
@@ -63,4 +66,5 @@ private:
 
   std::optional<std::string> m_pendingInitialGlyph;
   bool m_pendingInitialApplied = false;
+  bool m_enabled = true;
 };

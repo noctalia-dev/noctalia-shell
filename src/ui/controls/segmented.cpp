@@ -81,6 +81,19 @@ void Segmented::setScale(float scale) {
 
 void Segmented::setOnChange(std::function<void(std::size_t)> callback) { m_onChange = std::move(callback); }
 
+void Segmented::setEnabled(bool enabled) {
+  if (m_enabled == enabled) {
+    return;
+  }
+  m_enabled = enabled;
+  for (Button* btn : m_buttons) {
+    if (btn != nullptr) {
+      btn->setEnabled(enabled);
+    }
+  }
+  setOpacity(enabled ? 1.0f : 0.55f);
+}
+
 std::unique_ptr<Separator> Segmented::makeSegmentSeparator() {
   auto sep = std::make_unique<Separator>();
   sep->setOrientation(SeparatorOrientation::VerticalRule);
@@ -104,6 +117,7 @@ std::unique_ptr<Button> Segmented::makeSegmentButton(std::string_view label, std
   btn->setOnClick([this, index]() { setSelectedIndex(index); });
   btn->setFlexGrow(m_equalSegmentWidths ? 1.0f : 0.0f);
   btn->setContentAlign(ButtonContentAlign::Center);
+  btn->setEnabled(m_enabled);
   return btn;
 }
 

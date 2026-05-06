@@ -383,6 +383,21 @@ void Input::setOnKeyEvent(std::function<bool(std::uint32_t, std::uint32_t)> call
 
 void Input::setOnFocusLoss(std::function<void()> callback) { m_onFocusLoss = std::move(callback); }
 
+void Input::setEnabled(bool enabled) {
+  if (m_enabled == enabled) {
+    return;
+  }
+  m_enabled = enabled;
+  if (m_inputArea != nullptr) {
+    m_inputArea->setEnabled(enabled);
+  }
+  if (m_clearButtonArea != nullptr) {
+    m_clearButtonArea->setEnabled(enabled);
+  }
+  setOpacity(enabled ? 1.0f : 0.55f);
+  applyVisualState();
+}
+
 void Input::setClipboardService(ClipboardService* clipboard) noexcept { g_clipboard = clipboard; }
 
 void Input::setValidateKeyMatcher(std::function<bool(std::uint32_t, std::uint32_t)> matcher) noexcept {

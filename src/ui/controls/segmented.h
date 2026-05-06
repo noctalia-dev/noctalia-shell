@@ -26,6 +26,9 @@ public:
 
   void setOnChange(std::function<void(std::size_t)> callback);
 
+  void setEnabled(bool enabled);
+  [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
+
   // When true, each segment gets flexGrow 1 so the group fills the available width (e.g. full bar).
   void setEqualSegmentWidths(bool equalWidths);
 
@@ -44,4 +47,5 @@ private:
   float m_fontSize = 0.0f;
   float m_scale = 1.0f;
   bool m_equalSegmentWidths = false;
+  bool m_enabled = true;
 };

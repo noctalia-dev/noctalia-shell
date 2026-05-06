@@ -114,6 +114,22 @@ InputArea* SearchPicker::filterInputArea() const noexcept {
   return m_input != nullptr ? m_input->inputArea() : nullptr;
 }
 
+void SearchPicker::setEnabled(bool enabled) {
+  if (m_enabled == enabled) {
+    return;
+  }
+  m_enabled = enabled;
+  if (m_input != nullptr) {
+    m_input->setEnabled(enabled);
+  }
+  for (auto& row : m_rows) {
+    if (row.area != nullptr) {
+      row.area->setEnabled(enabled);
+    }
+  }
+  setOpacity(enabled ? 1.0f : 0.55f);
+}
+
 void SearchPicker::doLayout(Renderer& renderer) {
   Flex::doLayout(renderer);
   for (const auto& row : m_rows) {
@@ -223,7 +239,7 @@ void SearchPicker::rebuildRows() {
 
     auto area = std::make_unique<InputArea>();
     area->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
-    area->setEnabled(option.enabled);
+    area->setEnabled(m_enabled && option.enabled);
     area->setParticipatesInLayout(false);
     area->setOnEnter(
         [this, visibleIndex](const InputArea::PointerData& /*data*/) { setHighlightedVisibleIndex(visibleIndex); });

@@ -33,6 +33,9 @@ public:
   void setOnActivated(std::function<void(const SearchPickerOption&)> callback);
   void setOnCancel(std::function<void()> callback);
 
+  void setEnabled(bool enabled);
+  [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
+
   [[nodiscard]] const std::string& filter() const noexcept { return m_filter; }
   [[nodiscard]] InputArea* filterInputArea() const noexcept;
 
@@ -67,4 +70,5 @@ private:
   std::size_t m_highlightedVisibleIndex = 0;
   std::function<void(const SearchPickerOption&)> m_onActivated;
   std::function<void()> m_onCancel;
+  bool m_enabled = true;
 };
