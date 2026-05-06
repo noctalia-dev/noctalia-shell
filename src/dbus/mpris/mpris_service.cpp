@@ -410,6 +410,9 @@ void MprisService::refreshPlayerPosition(const std::string& busName, bool notify
 
   try {
     const auto now = std::chrono::steady_clock::now();
+    const auto seekCommandIt = m_lastSeekCommandAt.find(busName);
+    const bool recentLocalSeek =
+        seekCommandIt != m_lastSeekCommandAt.end() && now - seekCommandIt->second <= k_seek_pause_grace_window;
     const auto rawPositionUs =
         proxyIt->second->getProperty("Position").onInterface(k_mpris_player_interface).get<int64_t>();
     auto offsetIt = m_positionOffsetsUs.find(busName);
@@ -492,12 +495,15 @@ void MprisService::refreshPlayerPosition(const std::string& busName, bool notify
           pauseIt != m_recentNoSignalPauseAt.end() && now - pauseIt->second <= k_no_signal_pause_recovery_window;
       const std::int64_t pausedJumpUs = std::llabs(normalizedUs - playerIt->second.positionUs);
       if (recoveringRecentPause) {
-        if (pausedJumpUs < k_pause_recovery_min_jump_us) {
+        if (recentLocalSeek) {
+          // A paused seek can legitimately jump without implying playback resumed.
+        } else if (pausedJumpUs < k_pause_recovery_min_jump_us) {
           return;
+        } else {
+          playerIt->second.playbackStatus = "Playing";
+          m_recentNoSignalPauseAt.erase(pauseIt);
         }
-        playerIt->second.playbackStatus = "Playing";
-        m_recentNoSignalPauseAt.erase(pauseIt);
-      } else if (pausedJumpUs >= k_paused_same_track_position_jump_tolerance_us) {
+      } else if (!recentLocalSeek && pausedJumpUs < k_paused_same_track_position_jump_tolerance_us) {
         return;
       }
     }
@@ -1417,12 +1423,13 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
         const auto pauseIt = m_recentNoSignalPauseAt.find(busName);
         const bool recoveringRecentPause =
             pauseIt != m_recentNoSignalPauseAt.end() && now - pauseIt->second <= k_no_signal_pause_recovery_window;
+        const auto seekCommandIt = m_lastSeekCommandAt.find(busName);
+        const bool recentLocalSeek =
+            seekCommandIt != m_lastSeekCommandAt.end() && now - seekCommandIt->second <= k_seek_pause_grace_window;
         const std::int64_t pausedJumpUs = std::llabs(normalizedUs - previousPosUs);
-        if (pausedJumpUs >= k_pause_recovery_min_jump_us) {
+        if (recoveringRecentPause && !recentLocalSeek && pausedJumpUs >= k_pause_recovery_min_jump_us) {
           playerIt->second.playbackStatus = "Playing";
-          if (recoveringRecentPause) {
-            m_recentNoSignalPauseAt.erase(pauseIt);
-          }
+          m_recentNoSignalPauseAt.erase(pauseIt);
         }
       }
 
@@ -1555,12 +1562,6 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
       if (previousPositionAuthoritative && !logicalTrackChanged && !hadPositionSignal &&
           previous_info.playbackStatus == "Playing" && merged.playbackStatus == "Paused" && previous_info.canSeek) {
         m_recentNoSignalPauseAt[busName] = now;
-        const auto sampleIt = m_lastPositionSampleAt.find(busName);
-        const bool withinSeekPauseGrace =
-            sampleIt != m_lastPositionSampleAt.end() && now - sampleIt->second <= k_seek_pause_grace_window;
-        if (withinSeekPauseGrace && recentLocalSeek) {
-          merged.playbackStatus = previous_info.playbackStatus;
-        }
       } else if (merged.playbackStatus != "Paused") {
         m_recentNoSignalPauseAt.erase(busName);
       }
@@ -1581,7 +1582,7 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
           preservePreviousPosition = rawDeltaUs > maxReasonableDeltaUs;
           if (!preservePreviousPosition && previous_info.playbackStatus == "Paused" &&
               merged.playbackStatus == "Paused") {
-            preservePreviousPosition = rawDeltaUs > k_paused_same_track_position_jump_tolerance_us;
+            preservePreviousPosition = !recentLocalSeek && rawDeltaUs < k_paused_same_track_position_jump_tolerance_us;
           }
         }
 
