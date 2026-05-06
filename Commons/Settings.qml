@@ -405,6 +405,7 @@ Singleton {
     // wallpaper
     property JsonObject wallpaper: JsonObject {
       property bool enabled: true
+      property bool enableLockScreenWallpaper: false
       property bool overviewEnabled: false
       property string directory: ""
       property list<var> monitorDirectories: []
@@ -413,6 +414,8 @@ Singleton {
       property string viewMode: "single" // "single" | "recursive" | "browse"
       property bool setWallpaperOnAllMonitors: true
       property bool linkLightAndDarkWallpapers: true
+      property string lockScreenWallpaperLight: ""
+      property string lockScreenWallpaperDark: ""
       property string fillMode: "crop"
       property color fillColor: "#000000"
       property bool useSolidColor: false

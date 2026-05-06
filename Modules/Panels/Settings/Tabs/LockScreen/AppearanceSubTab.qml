@@ -86,6 +86,15 @@ ColumnLayout {
   }
 
   NToggle {
+    label: I18n.tr("panels.lock-screen.enable-lock-screen-wallpaper-label")
+    description: I18n.tr("panels.lock-screen.enable-lock-screen-wallpaper-description")
+    checked: Settings.data.wallpaper.enableLockScreenWallpaper
+    onToggled: checked => Settings.data.wallpaper.enableLockScreenWallpaper = checked
+    visible: !Settings.data.wallpaper.enabled
+    defaultValue: Settings.getDefaultValue("wallpaper.enableLockScreenWallpaper")
+  }
+
+  NToggle {
     label: I18n.tr("panels.lock-screen.lock-screen-animations-label")
     description: I18n.tr("panels.lock-screen.lock-screen-animations-description")
     checked: Settings.data.general.lockScreenAnimations

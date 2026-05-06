@@ -141,10 +141,10 @@ SmartPanel {
     property var currentScreen: Quickshell.screens[currentScreenIndex]
     property string filterText: ""
     property int appearanceTabIndex: 0
+    property int wallpaperTargetTabIndex: 0 // 0 = desktop, 1 = lock screen
     readonly property bool headerScreensStripAvailable: !Settings.data.wallpaper.setWallpaperOnAllMonitors || Settings.data.wallpaper.enableMultiMonitorDirectories
     readonly property bool headerDevicesButtonVisible: Quickshell.screens.length > 1 || Settings.data.wallpaper.enableMultiMonitorDirectories
     property alias screenRepeater: screenRepeater
-
     Component.onCompleted: {
       root.contentItem = panelContent;
     }
@@ -180,6 +180,13 @@ SmartPanel {
         }
         WallhavenService.search(Settings.data.wallpaper.wallhavenQuery || "", 1);
       }
+    }
+
+    function getSelectedTargetWallpaper(screenName) {
+      if (wallpaperTargetTabIndex === 1) {
+        return WallpaperService.getLockScreenWallpaper(screenName);
+      }
+      return WallpaperService.getWallpaperPathForSlot(screenName, WallpaperService.wallpaperSelectionAppearance);
     }
 
     color: "transparent"
@@ -222,6 +229,7 @@ SmartPanel {
           wallhavenView.gridView.currentIndex = -1;
         }
         panelContent.appearanceTabIndex = Settings.data.colorSchemes.darkMode ? 1 : 0;
+        panelContent.wallpaperTargetTabIndex = (!Settings.data.wallpaper.enabled && Settings.data.wallpaper.enableLockScreenWallpaper) ? 1 : 0;
         WallpaperService.wallpaperSelectionAppearance = panelContent.appearanceTabIndex === 1 ? "dark" : "light";
         // Give initial focus to search input
         Qt.callLater(() => {
@@ -297,7 +305,7 @@ SmartPanel {
             }
 
             NIconButton {
-              visible: Settings.data.wallpaper.enabled
+              visible: Settings.data.wallpaper.enabled || Settings.data.wallpaper.enableLockScreenWallpaper
               icon: "dark-mode"
               tooltipText: Settings.data.wallpaper.linkLightAndDarkWallpapers ? I18n.tr("wallpaper.panel.header-separate-light-dark-tooltip") : I18n.tr("wallpaper.panel.header-link-light-dark-tooltip")
               baseSize: Style.baseWidgetSize * 0.8
@@ -350,7 +358,7 @@ SmartPanel {
 
           NTabBar {
             id: appearanceTabBar
-            visible: Settings.data.wallpaper.enabled && !Settings.data.wallpaper.linkLightAndDarkWallpapers
+            visible: (Settings.data.wallpaper.enabled || Settings.data.wallpaper.enableLockScreenWallpaper) && !Settings.data.wallpaper.linkLightAndDarkWallpapers
             Layout.fillWidth: true
             currentIndex: panelContent.appearanceTabIndex
             spacing: Style.marginM
@@ -374,6 +382,39 @@ SmartPanel {
               text: I18n.tr("wallpaper.panel.appearance-dark-tab")
               tabIndex: 1
               checked: appearanceTabBar.currentIndex === 1
+            }
+          }
+
+          NTabBar {
+            id: wallpaperTargetTabBar
+            visible: Settings.data.wallpaper.enabled || Settings.data.wallpaper.enableLockScreenWallpaper
+            Layout.fillWidth: true
+            currentIndex: panelContent.wallpaperTargetTabIndex
+            spacing: Style.marginM
+            distributeEvenly: true
+
+            onCurrentIndexChanged: {
+              if (currentIndex < 0) {
+                return;
+              }
+              panelContent.wallpaperTargetTabIndex = currentIndex;
+              for (var i = 0; i < screenRepeater.count; i++) {
+                let item = screenRepeater.itemAt(i);
+                if (item && item.refreshWallpaperScreenData) {
+                  item.refreshWallpaperScreenData();
+                }
+              }
+            }
+
+            NTabButton {
+              text: I18n.tr("wallpaper.panel.target-desktop-tab")
+              tabIndex: 0
+              checked: wallpaperTargetTabBar.currentIndex === 0
+            }
+            NTabButton {
+              text: I18n.tr("wallpaper.panel.target-lock-screen-tab")
+              tabIndex: 1
+              checked: wallpaperTargetTabBar.currentIndex === 1
             }
           }
 
@@ -829,12 +870,17 @@ SmartPanel {
       target: WallpaperService
       function onWallpaperChanged(screenName, path) {
         if (targetScreen !== null && screenName === targetScreen.name) {
-          currentWallpaper = WallpaperService.getWallpaperPathForSlot(targetScreen.name, WallpaperService.wallpaperSelectionAppearance);
+          currentWallpaper = panelContent.getSelectedTargetWallpaper(targetScreen.name);
+        }
+      }
+      function onLockScreenWallpaperChanged(path) {
+        if (targetScreen !== null) {
+          currentWallpaper = panelContent.getSelectedTargetWallpaper(targetScreen.name);
         }
       }
       function onWallpaperSelectionAppearanceChanged() {
         if (targetScreen !== null) {
-          currentWallpaper = WallpaperService.getWallpaperPathForSlot(targetScreen.name, WallpaperService.wallpaperSelectionAppearance);
+          currentWallpaper = panelContent.getSelectedTargetWallpaper(targetScreen.name);
           updateFiltered(false);
         }
       }
@@ -869,7 +915,7 @@ SmartPanel {
         return;
       }
 
-      currentWallpaper = WallpaperService.getWallpaperPathForSlot(targetScreen.name, WallpaperService.wallpaperSelectionAppearance);
+      currentWallpaper = panelContent.getSelectedTargetWallpaper(targetScreen.name);
 
       if (isBrowseMode) {
         // In browse mode, scan current directory for both files and directories
@@ -899,12 +945,15 @@ SmartPanel {
       if (isDirectory) {
         WallpaperService.setBrowsePath(targetScreen.name, path);
       } else {
-        var screen = Settings.data.wallpaper.setWallpaperOnAllMonitors ? undefined : targetScreen.name;
-        WallpaperService.changeWallpaper(path, screen, WallpaperService.wallpaperSelectionAppearance);
-        WallpaperService.applyFavoriteTheme(path, screen, WallpaperService.wallpaperSelectionAppearance);
+        if (panelContent.wallpaperTargetTabIndex === 1) {
+          WallpaperService.changeLockScreenWallpaper(path, WallpaperService.wallpaperSelectionAppearance);
+        } else {
+          var screen = Settings.data.wallpaper.setWallpaperOnAllMonitors ? undefined : targetScreen.name;
+          WallpaperService.changeWallpaper(path, screen, WallpaperService.wallpaperSelectionAppearance);
+          WallpaperService.applyFavoriteTheme(path, screen, WallpaperService.wallpaperSelectionAppearance);
+        }
       }
     }
-
     // Helper function to cycle view modes
     function cycleViewMode() {
       var mode = Settings.data.wallpaper.viewMode;
@@ -1922,13 +1971,17 @@ SmartPanel {
       if (typeof WallhavenService !== "undefined") {
         WallhavenService.downloadWallpaper(wallpaper, function (success, localPath) {
           if (success) {
-            var whScreen = Settings.data.wallpaper.setWallpaperOnAllMonitors ? undefined : Quickshell.screens[currentScreenIndex].name;
-            if (!Settings.data.wallpaper.setWallpaperOnAllMonitors && currentScreenIndex < Quickshell.screens.length) {
-              WallpaperService.changeWallpaper(localPath, Quickshell.screens[currentScreenIndex].name, WallpaperService.wallpaperSelectionAppearance);
+            if (panelContent.wallpaperTargetTabIndex === 1) {
+              WallpaperService.changeLockScreenWallpaper(localPath, WallpaperService.wallpaperSelectionAppearance);
             } else {
-              WallpaperService.changeWallpaper(localPath, undefined, WallpaperService.wallpaperSelectionAppearance);
+              var whScreen = Settings.data.wallpaper.setWallpaperOnAllMonitors ? undefined : Quickshell.screens[currentScreenIndex].name;
+              if (!Settings.data.wallpaper.setWallpaperOnAllMonitors && currentScreenIndex < Quickshell.screens.length) {
+                WallpaperService.changeWallpaper(localPath, Quickshell.screens[currentScreenIndex].name, WallpaperService.wallpaperSelectionAppearance);
+              } else {
+                WallpaperService.changeWallpaper(localPath, undefined, WallpaperService.wallpaperSelectionAppearance);
+              }
+              WallpaperService.applyFavoriteTheme(localPath, whScreen, WallpaperService.wallpaperSelectionAppearance);
             }
-            WallpaperService.applyFavoriteTheme(localPath, whScreen, WallpaperService.wallpaperSelectionAppearance);
           }
         });
       }
