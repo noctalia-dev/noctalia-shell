@@ -16,8 +16,10 @@ ColumnLayout {
   signal settingsChanged(var settings)
 
   property string valueLabelMode: widgetData.labelMode !== undefined ? widgetData.labelMode : widgetMetadata.labelMode
+  property bool valueLargeActive: widgetData.largeActive !== undefined ? widgetData.largeActive : widgetMetadata.largeActive
   property bool valueHideUnoccupied: widgetData.hideUnoccupied !== undefined ? widgetData.hideUnoccupied : widgetMetadata.hideUnoccupied
   property bool valueFollowFocusedScreen: widgetData.followFocusedScreen !== undefined ? widgetData.followFocusedScreen : widgetMetadata.followFocusedScreen
+  property bool valueShowAll: widgetData.showAll !== undefined ? widgetData.showAll : widgetMetadata.showAll
   property int valueCharacterCount: widgetData.characterCount !== undefined ? widgetData.characterCount : widgetMetadata.characterCount
 
   // Grouped mode settings
@@ -39,9 +41,11 @@ ColumnLayout {
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.labelMode = valueLabelMode;
+    settings.largeActive = valueLargeActive;
     settings.hideUnoccupied = valueHideUnoccupied;
     settings.characterCount = valueCharacterCount;
     settings.followFocusedScreen = valueFollowFocusedScreen;
+    settings.showAll = valueShowAll;
     settings.showApplications = valueShowApplications;
     settings.showApplicationsHover = valueShowApplicationsHover;
     settings.showLabelsOnlyWhenOccupied = valueShowLabelsOnlyWhenOccupied;
@@ -150,6 +154,16 @@ ColumnLayout {
   }
 
   NToggle {
+    label: I18n.tr("bar.workspace.large-active-label")
+    description: I18n.tr("bar.workspace.large-active-description")
+    checked: valueLargeActive
+    onToggled: checked => {
+                 valueLargeActive = checked;
+                 saveSettings();
+               }
+  }
+
+  NToggle {
     label: I18n.tr("bar.workspace.hide-unoccupied-label")
     description: I18n.tr("bar.workspace.hide-unoccupied-description")
     checked: valueHideUnoccupied
@@ -175,6 +189,16 @@ ColumnLayout {
     checked: valueFollowFocusedScreen
     onToggled: checked => {
                  valueFollowFocusedScreen = checked;
+                 saveSettings();
+               }
+  }
+
+  NToggle {
+    label: I18n.tr("bar.workspace.show-all-label")
+    description: I18n.tr("bar.workspace.show-all-description")
+    checked: valueShowAll
+    onToggled: checked => {
+                 valueShowAll = checked;
                  saveSettings();
                }
   }

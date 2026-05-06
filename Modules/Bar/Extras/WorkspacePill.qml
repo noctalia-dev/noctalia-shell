@@ -17,6 +17,7 @@ Item {
   required property int fontWeight
   required property int characterCount
   required property real textRatio
+  required property bool largeActive
   required property bool showLabelsOnlyWhenOccupied
   required property string focusedColor
   required property string occupiedColor
@@ -40,8 +41,8 @@ Item {
 
   states: [
     State {
-      name: "active"
-      when: workspace.isActive
+      name: "large"
+      when: largeActive ? workspace.isActive : workspace.isFocused
       PropertyChanges {
         target: pillContainer
         width: isVertical ? barHeight : getWorkspaceWidth(workspace, true)
@@ -54,8 +55,8 @@ Item {
 
   transitions: [
     Transition {
-      from: "inactive"
-      to: "active"
+      from: "default"
+      to: "large"
       NumberAnimation {
         properties: isVertical ? "height,pillHeight" : "width,pillWidth"
         duration: Style.animationNormal
@@ -63,8 +64,8 @@ Item {
       }
     },
     Transition {
-      from: "active"
-      to: "inactive"
+      from: "large"
+      to: "default"
       NumberAnimation {
         properties: isVertical ? "height,pillHeight" : "width,pillWidth"
         duration: Style.animationNormal
@@ -83,15 +84,16 @@ Item {
     z: 0
 
     color: {
+      const alpha = (workspace.matchesScreen) ? 1.0 : 0.6;
       if (pillMouseArea.containsMouse)
-        return Color.mHover;
+        return Qt.alpha(Color.mHover, alpha);
       if (workspace.isFocused)
-        return Color.resolveColorKey(focusedColor);
+        return Qt.alpha(Color.resolveColorKey(focusedColor), alpha);
       if (workspace.isUrgent)
-        return Color.mError;
+        return Qt.alpha(Color.mError, alpha);
       if (workspace.isOccupied)
-        return Color.resolveColorKey(occupiedColor);
-      return Qt.alpha(Color.resolveColorKey(emptyColor), 0.3);
+        return Qt.alpha(Color.resolveColorKey(occupiedColor), alpha);
+      return Qt.alpha(Color.resolveColorKey(emptyColor), 0.3 * alpha);
     }
 
     Loader {

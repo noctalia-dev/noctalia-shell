@@ -57,8 +57,10 @@ Item {
       return Style.fontWeightBold;
     return Style.fontWeightBold;
   }
+  readonly property bool largeActive: (widgetSettings.largeActive !== undefined) ? widgetSettings.largeActive : widgetMetadata.largeActive
   readonly property bool hideUnoccupied: (widgetSettings.hideUnoccupied !== undefined) ? widgetSettings.hideUnoccupied : widgetMetadata.hideUnoccupied
   readonly property bool followFocusedScreen: (widgetSettings.followFocusedScreen !== undefined) ? widgetSettings.followFocusedScreen : widgetMetadata.followFocusedScreen
+  readonly property bool showAll: (widgetSettings.showAll !== undefined) ? widgetSettings.showAll : widgetMetadata.showAll
   readonly property int characterCount: {
     const count = (widgetSettings.characterCount !== undefined) ? widgetSettings.characterCount : widgetMetadata.characterCount;
     return isVertical ? Math.min(count, 2) : count;
@@ -120,7 +122,7 @@ Item {
   property int lastFocusedWorkspaceId: -1
   property real masterProgress: 0.0
   property bool effectsActive: false
-  property color effectColor: Color.mPrimary
+  property color effectColor: Color.resolveColorKey(root.focusedColor)
 
   property int horizontalPadding: Style.marginS
   property int spacingBetweenPills: Style.marginXS
@@ -160,10 +162,10 @@ Item {
   implicitWidth: appVisible ? (isVertical ? groupedGrid.implicitWidth : Math.round(groupedGrid.implicitWidth + horizontalPadding * hasLabel)) : (isVertical ? barHeight : computeWidth())
   implicitHeight: appVisible ? (isVertical ? Math.round(groupedGrid.implicitHeight + horizontalPadding * 0.6 * hasLabel) : barHeight) : (isVertical ? computeHeight() : barHeight)
 
-  function getWorkspaceWidth(ws, activeOverride) {
+  function getWorkspaceWidth(ws, largeOverride) {
     const d = Math.round(capsuleHeight * root.baseDimensionRatio);
-    const isActive = activeOverride !== undefined ? activeOverride : ws.isActive;
-    const factor = isActive ? 2.2 : 1;
+    const isLarge = largeOverride !== undefined ? largeOverride : (largeActive ? ws.isActive : ws.isFocused);
+    const factor = isLarge ? 2.2 : 1;
 
     // Don't calculate text width if labels are off
     if (labelMode === "none") {
@@ -185,10 +187,10 @@ Item {
     return Style.toOdd(Math.max(d * factor, textWidth + padding));
   }
 
-  function getWorkspaceHeight(ws, activeOverride) {
+  function getWorkspaceHeight(ws, largeOverride) {
     const d = Math.round(capsuleHeight * root.baseDimensionRatio);
-    const isActive = activeOverride !== undefined ? activeOverride : ws.isActive;
-    const factor = isActive ? 2.2 : 1;
+    const isLarge = largeOverride !== undefined ? largeOverride : (largeActive ? ws.isActive : ws.isFocused);
+    const factor = isLarge ? 2.2 : 1;
     return Style.toOdd(d * factor);
   }
 
@@ -342,7 +344,7 @@ Item {
         // For global workspaces (e.g., LabWC), show all workspaces on all screens
         const matchesScreen = CompositorService.globalWorkspaces || (followFocusedScreen && ws.output.toLowerCase() == focusedOutput) || (!followFocusedScreen && ws.output.toLowerCase() == screenName);
 
-        if (!matchesScreen)
+        if (!matchesScreen && !showAll)
           continue;
         if (hideUnoccupied && !ws.isOccupied && !ws.isFocused)
           continue;
@@ -356,7 +358,8 @@ Item {
           isFocused: ws.isFocused,
           isActive: ws.isActive,
           isUrgent: ws.isUrgent,
-          isOccupied: ws.isOccupied
+          isOccupied: ws.isOccupied,
+          matchesScreen: matchesScreen
         };
 
         if (ws.handle !== null && ws.handle !== undefined) {
@@ -398,8 +401,8 @@ Item {
     updateWorkspaceFocus();
   }
 
-  function triggerUnifiedWave() {
-    effectColor = Color.mPrimary;
+  function triggerUnifiedWave(color) {
+    effectColor = color !== undefined ? color : Color.resolveColorKey(root.focusedColor);
     masterAnimation.restart();
   }
 
@@ -408,7 +411,8 @@ Item {
       const ws = localWorkspaces.get(i);
       if (ws.isFocused === true) {
         if (root.lastFocusedWorkspaceId !== -1 && root.lastFocusedWorkspaceId !== ws.id) {
-          root.triggerUnifiedWave();
+          const waveColor = ws.matchesScreen ? Color.resolveColorKey(root.focusedColor) : Qt.alpha(Color.resolveColorKey(root.focusedColor), 0.6);
+          root.triggerUnifiedWave(waveColor);
         }
         root.lastFocusedWorkspaceId = ws.id;
         root.workspaceChanged(ws.id, Color.mPrimary);
@@ -627,6 +631,7 @@ Item {
         fontWeight: root.fontWeight
         characterCount: root.characterCount
         textRatio: root.textRatio
+        largeActive: root.largeActive
         showLabelsOnlyWhenOccupied: root.showLabelsOnlyWhenOccupied
         focusedColor: root.focusedColor
         occupiedColor: root.occupiedColor
@@ -670,6 +675,7 @@ Item {
         fontWeight: root.fontWeight
         characterCount: root.characterCount
         textRatio: root.textRatio
+        largeActive: root.largeActive
         showLabelsOnlyWhenOccupied: root.showLabelsOnlyWhenOccupied
         focusedColor: root.focusedColor
         occupiedColor: root.occupiedColor
