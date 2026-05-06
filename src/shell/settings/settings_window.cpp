@@ -23,6 +23,7 @@
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/select.h"
+#include "ui/controls/separator.h"
 #include "ui/controls/spacer.h"
 #include "ui/controls/toggle.h"
 #include "ui/dialogs/file_dialog.h"
@@ -48,6 +49,12 @@ namespace {
   constexpr Logger kLog("settings");
   constexpr std::int32_t kActionSupportReport = 1;
   constexpr std::int32_t kActionFlattenedConfig = 2;
+
+  constexpr float kWindowWidth = 1080.0f;
+  constexpr float kWindowHeight = 600.0f;
+  constexpr float kWindowMinWidth = 800.0f;
+  constexpr float kWindowMinHeight = 500.0f;
+  constexpr float kBodyMaxWidth = 1280.0f;
 
   std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ColorSpec& color, bool bold = false) {
     auto label = std::make_unique<Label>();
@@ -167,16 +174,16 @@ void SettingsWindow::open() {
   m_surface->setUpdateCallback([]() {});
 
   const float scale = uiScale();
-  const std::uint32_t w = static_cast<std::uint32_t>(std::round(900.0f * scale));
-  const std::uint32_t h = static_cast<std::uint32_t>(std::round(600.0f * scale));
-  const std::uint32_t minW = static_cast<std::uint32_t>(std::round(800.0f * scale));
-  const std::uint32_t minH = static_cast<std::uint32_t>(std::round(500.0f * scale));
+  const std::uint32_t width = static_cast<std::uint32_t>(std::round(kWindowWidth * scale));
+  const std::uint32_t height = static_cast<std::uint32_t>(std::round(kWindowHeight * scale));
+  const std::uint32_t minWidth = static_cast<std::uint32_t>(std::round(kWindowMinWidth * scale));
+  const std::uint32_t minHeight = static_cast<std::uint32_t>(std::round(kWindowMinHeight * scale));
 
   ToplevelSurfaceConfig cfg{
-      .width = std::max<std::uint32_t>(1, w),
-      .height = std::max<std::uint32_t>(1, h),
-      .minWidth = minW,
-      .minHeight = minH,
+      .width = std::max<std::uint32_t>(1, width),
+      .height = std::max<std::uint32_t>(1, height),
+      .minWidth = minWidth,
+      .minHeight = minHeight,
       .title = i18n::tr("settings.window.native-title"),
       .appId = "dev.noctalia.Noctalia.Settings",
   };
@@ -1040,10 +1047,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   main->setPadding(Style::spaceLg * scale);
   main->setSize(w, h);
 
-  const float bodyMaxWidth = 1024.0f * scale;
   const auto centeredRow = [&](std::unique_ptr<Flex> child) {
     child->setFlexGrow(1.0f);
-    child->setMaxWidth(bodyMaxWidth);
+    child->setMaxWidth(kBodyMaxWidth * scale);
     auto row = std::make_unique<Flex>();
     row->setDirection(FlexDirection::Horizontal);
     row->setAlign(FlexAlign::Stretch);
@@ -1264,6 +1270,10 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   });
 
   body->addChild(std::move(sidebar));
+
+  auto separator = std::make_unique<Separator>();
+  separator->setColor(colorSpecFromRole(ColorRole::Outline, 0.35f));
+  body->addChild(std::move(separator));
 
   auto scroll = std::make_unique<ScrollView>();
   scroll->bindState(&m_contentScrollState);

@@ -369,8 +369,7 @@ namespace settings {
       section->setAlign(FlexAlign::Stretch);
       section->setGap(Style::spaceSm * scale);
       section->setPadding(Style::spaceLg * scale);
-      section->setCardStyle(scale);
-      section->setFill(colorSpecFromRole(ColorRole::Surface));
+      section->setFill(clearColorSpec());
 
       auto titleRow = std::make_unique<Flex>();
       titleRow->setDirection(FlexDirection::Horizontal);
