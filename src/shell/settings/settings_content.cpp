@@ -33,6 +33,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <unordered_set>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -248,6 +249,9 @@ namespace settings {
       if (key == "color") {
         return override->widgetColor.has_value();
       }
+      if (key == "capsule_groups") {
+        return override->widgetCapsuleGroups.has_value();
+      }
       if (key == "capsule_padding") {
         return override->widgetCapsulePadding.has_value();
       }
@@ -264,6 +268,84 @@ namespace settings {
         return override->endWidgets.has_value();
       }
       return false;
+    }
+
+    bool isBarCapsuleGroupsPath(const std::vector<std::string>& path) {
+      return path.size() == 3 && path[0] == "bar" && path[2] == "capsule_groups";
+    }
+
+    bool isMonitorCapsuleGroupsPath(const std::vector<std::string>& path) {
+      return path.size() == 5 && path[0] == "bar" && path[2] == "monitor" && path[4] == "capsule_groups";
+    }
+
+    bool isCapsuleGroupsPath(const std::vector<std::string>& path) {
+      return isBarCapsuleGroupsPath(path) || isMonitorCapsuleGroupsPath(path);
+    }
+
+    void collectWidgetNames(std::unordered_set<std::string>& widgetNames, const std::vector<std::string>& widgets) {
+      for (const auto& widget : widgets) {
+        widgetNames.insert(widget);
+      }
+    }
+
+    std::unordered_set<std::string> scopedBarWidgetNames(const Config& cfg, const std::vector<std::string>& path) {
+      std::unordered_set<std::string> widgetNames;
+
+      const auto* bar = path.size() >= 2 ? findBar(cfg, path[1]) : nullptr;
+      if (bar == nullptr) {
+        return widgetNames;
+      }
+
+      if (isBarCapsuleGroupsPath(path)) {
+        collectWidgetNames(widgetNames, bar->startWidgets);
+        collectWidgetNames(widgetNames, bar->centerWidgets);
+        collectWidgetNames(widgetNames, bar->endWidgets);
+        for (const auto& ovr : bar->monitorOverrides) {
+          collectWidgetNames(widgetNames, ovr.startWidgets.value_or(bar->startWidgets));
+          collectWidgetNames(widgetNames, ovr.centerWidgets.value_or(bar->centerWidgets));
+          collectWidgetNames(widgetNames, ovr.endWidgets.value_or(bar->endWidgets));
+        }
+        return widgetNames;
+      }
+
+      const auto* ovr = path.size() >= 4 ? findMonitorOverride(*bar, path[3]) : nullptr;
+      if (ovr == nullptr) {
+        return widgetNames;
+      }
+
+      collectWidgetNames(widgetNames, ovr->startWidgets.value_or(bar->startWidgets));
+      collectWidgetNames(widgetNames, ovr->centerWidgets.value_or(bar->centerWidgets));
+      collectWidgetNames(widgetNames, ovr->endWidgets.value_or(bar->endWidgets));
+      return widgetNames;
+    }
+
+    std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>
+    capsuleGroupRemovalOverrides(const Config& cfg, const std::vector<std::string>& path, std::string_view removedGroup,
+                                 std::vector<std::string> updatedGroups) {
+      std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides;
+      overrides.push_back({path, std::move(updatedGroups)});
+
+      if (!isCapsuleGroupsPath(path)) {
+        return overrides;
+      }
+
+      const std::string trimmedRemoved = StringUtils::trim(removedGroup);
+      if (trimmedRemoved.empty()) {
+        return overrides;
+      }
+
+      for (const auto& widgetName : scopedBarWidgetNames(cfg, path)) {
+        const auto widgetIt = cfg.widgets.find(widgetName);
+        if (widgetIt == cfg.widgets.end() || !widgetIt->second.hasSetting("capsule_group")) {
+          continue;
+        }
+        if (StringUtils::trim(widgetIt->second.getString("capsule_group", "")) != trimmedRemoved) {
+          continue;
+        }
+        overrides.push_back({{"widget", widgetName, "capsule_group"}, std::string()});
+      }
+
+      return overrides;
     }
 
   } // namespace
@@ -990,10 +1072,18 @@ namespace settings {
         {
           auto items = list.items;
           auto path = entry.path;
-          removeBtn->setOnClick([setOverride = ctx.setOverride, items, path, i]() mutable {
-            items.erase(items.begin() + static_cast<std::ptrdiff_t>(i));
-            setOverride(path, items);
-          });
+          const Config& config = cfg;
+          removeBtn->setOnClick(
+              [setOverride = ctx.setOverride, setOverrides = ctx.setOverrides, &config, items, path, i]() mutable {
+                const std::string removedItem = items[i];
+                items.erase(items.begin() + static_cast<std::ptrdiff_t>(i));
+                const auto overrides = capsuleGroupRemovalOverrides(config, path, removedItem, items);
+                if (overrides.size() == 1) {
+                  setOverride(path, items);
+                  return;
+                }
+                setOverrides(overrides);
+              });
         }
         itemRow->addChild(std::move(removeBtn));
 

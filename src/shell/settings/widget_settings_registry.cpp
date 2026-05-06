@@ -386,6 +386,7 @@ namespace settings {
         boolSpec("anchor", false, true),
         colorRoleSpec("color", {}, true),
         boolSpec("capsule", false),
+        stringSpec("capsule_group"),
         colorRoleSpec("capsule_fill", "surface_variant"),
         colorRoleSpec("capsule_border", {}, true),
         colorRoleSpec("capsule_foreground", {}, true),

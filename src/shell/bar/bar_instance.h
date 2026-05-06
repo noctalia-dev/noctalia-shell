@@ -18,6 +18,17 @@ class Box;
 class Flex;
 class Node;
 
+struct BarCapsuleRun {
+  Node* shell = nullptr;
+  Box* bg = nullptr;
+  Flex* container = nullptr;
+  Node* content = nullptr;
+  WidgetBarCapsuleSpec spec{};
+  float contentScale = 1.0f;
+  bool allowCircularSizing = true;
+  std::vector<Widget*> widgets;
+};
+
 struct BarInstance {
   std::uint32_t outputName = 0;
   wl_output* output = nullptr;
@@ -56,6 +67,9 @@ struct BarInstance {
   std::vector<std::unique_ptr<Widget>> startWidgets;
   std::vector<std::unique_ptr<Widget>> centerWidgets;
   std::vector<std::unique_ptr<Widget>> endWidgets;
+  std::vector<BarCapsuleRun> startCapsuleRuns;
+  std::vector<BarCapsuleRun> centerCapsuleRuns;
+  std::vector<BarCapsuleRun> endCapsuleRuns;
 
   Signal<>::ScopedConnection paletteConn;
   std::optional<AttachedPanelGeometry> attachedPanelGeometry;

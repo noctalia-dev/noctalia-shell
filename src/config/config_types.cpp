@@ -112,6 +112,10 @@ WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const Wid
     return spec;
   }
 
+  if (widget != nullptr && widget->hasSetting("capsule_group")) {
+    spec.group = StringUtils::trim(widget->getString("capsule_group", ""));
+  }
+
   if (widgetHasFillKey) {
     spec.fill = parseColorSpecString(widget->getString("capsule_fill", ""));
   } else {

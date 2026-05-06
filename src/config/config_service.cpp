@@ -586,6 +586,9 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
     if (ovr.widgetColor) {
       resolved.widgetColor = *ovr.widgetColor;
     }
+    if (ovr.widgetCapsuleGroups) {
+      resolved.widgetCapsuleGroups = *ovr.widgetCapsuleGroups;
+    }
     if (ovr.widgetCapsulePadding) {
       resolved.widgetCapsulePadding = std::clamp(static_cast<float>(*ovr.widgetCapsulePadding), 0.0f, 48.0f);
     }
@@ -952,6 +955,9 @@ void ConfigService::parseTable(const toml::table& tbl) {
       if (auto widgetColorStr = (*barTbl)["color"].value<std::string>()) {
         bar.widgetColor = colorSpecFromConfigString(*widgetColorStr);
       }
+      if (auto* n = (*barTbl)["capsule_groups"].as_array()) {
+        bar.widgetCapsuleGroups = readStringArray(*n);
+      }
 
       // Parse [bar.<name>.monitor.*] overrides — insertion order preserved by toml++
       if (auto* monTblMap = (*barTbl)["monitor"].as_table()) {
@@ -1036,6 +1042,9 @@ void ConfigService::parseTable(const toml::table& tbl) {
           }
           if (auto cStr = (*monTbl)["color"].value<std::string>()) {
             ovr.widgetColor = colorSpecFromConfigString(*cStr);
+          }
+          if (auto* n = (*monTbl)["capsule_groups"].as_array()) {
+            ovr.widgetCapsuleGroups = readStringArray(*n);
           }
 
           bar.monitorOverrides.push_back(std::move(ovr));

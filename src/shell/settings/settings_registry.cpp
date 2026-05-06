@@ -824,6 +824,9 @@ namespace settings {
       entries.push_back(makeEntry(section, "widgets", tr("settings.schema.bar.widget-color.label"),
                                   tr("settings.schema.bar.widget-color.description"), path("color"),
                                   optionalColorRolePicker(selectedBar->widgetColor), "color role foreground", true));
+      entries.push_back(makeEntry(section, "grouping", tr("settings.schema.bar.capsule-groups.label"),
+                                  tr("settings.schema.bar.capsule-groups.description"), path("capsule_groups"),
+                                  ListSetting{.items = selectedBar->widgetCapsuleGroups}, "grouped capsules"));
       entries.push_back(makeEntry(section, "widgets", tr("settings.schema.bar.capsule-fill.label"),
                                   tr("settings.schema.bar.capsule-fill.description"), path("capsule_fill"),
                                   colorRolePicker(selectedBar->widgetCapsuleFill), "color role pill", true));
@@ -969,6 +972,10 @@ namespace settings {
           tr("settings.schema.bar.capsule-border.description"), mpath("capsule_border"),
           capsuleBorderRolePicker(ovr.widgetCapsuleBorderSpecified ? ovr.widgetCapsuleBorder : bar.widgetCapsuleBorder),
           "color role pill outline", true));
+      entries.push_back(makeEntry(section, "grouping", tr("settings.schema.bar.capsule-groups.label"),
+                                  tr("settings.schema.bar.capsule-groups.description"), mpath("capsule_groups"),
+                                  ListSetting{.items = ovr.widgetCapsuleGroups.value_or(bar.widgetCapsuleGroups)},
+                                  "grouped capsules"));
       entries.push_back(
           makeEntry(section, "widgets", tr("settings.schema.bar.capsule-padding.label"),
                     tr("settings.schema.bar.capsule-padding.description"), mpath("capsule_padding"),

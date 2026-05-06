@@ -222,24 +222,35 @@ namespace {
     float cachedBodyExtent = -1.0f;
     float cachedBodyExtentScale = -1.0f;
     auto finalizeCapsules = [isVertical, slotCross, &renderer, &cachedBodyExtent,
-                             &cachedBodyExtentScale](std::vector<std::unique_ptr<Widget>>& widgets) {
-      for (auto& w : widgets) {
-        if (w == nullptr || !w->barCapsuleSpec().enabled) {
+                             &cachedBodyExtentScale](std::vector<BarCapsuleRun>& runs) {
+      for (auto& run : runs) {
+        Node* shell = run.shell;
+        Box* bg = run.bg;
+        Node* content = run.content;
+        if (shell == nullptr || bg == nullptr || content == nullptr) {
           continue;
         }
-        Node* shell = w->barCapsuleShell();
-        Box* bg = w->barCapsuleBox();
-        Node* inner = w->root();
-        if (shell == nullptr || bg == nullptr || inner == nullptr) {
-          continue;
+        if (run.container != nullptr) {
+          run.container->layout(renderer);
         }
-        shell->setVisible(inner->visible());
-        const float scale = w->contentScale();
-        const float iw = inner->width();
-        const float ih = inner->height();
-        if (!w->shouldShowBarCapsule()) {
+
+        bool hasVisibleContent = false;
+        bool hasVisibleInk = false;
+        for (Widget* widget : run.widgets) {
+          if (widget == nullptr || widget->root() == nullptr) {
+            continue;
+          }
+          hasVisibleContent = hasVisibleContent || widget->root()->visible();
+          hasVisibleInk = hasVisibleInk || widget->shouldShowBarCapsule();
+        }
+
+        shell->setVisible(hasVisibleContent);
+        const float scale = run.contentScale;
+        const float iw = content->width();
+        const float ih = content->height();
+        if (!hasVisibleInk) {
           shell->setSize(iw, ih);
-          inner->setPosition(0.0f, 0.0f);
+          content->setPosition(0.0f, 0.0f);
           bg->setVisible(false);
           bg->setPosition(0.0f, 0.0f);
           bg->setSize(iw, ih);
@@ -252,7 +263,7 @@ namespace {
         }
         const float bodyExtent = cachedBodyExtent;
         const float iconExtent = std::max(bodyExtent, std::round(Style::barGlyphSize * scale));
-        const float pad = w->barCapsuleSpec().padding * scale;
+        const float pad = run.spec.padding * scale;
         const float padMain = pad;
         const float padCross = std::min(pad, Style::spaceXs * scale);
         float capsuleCross = bodyExtent + 2.0f * padCross;
@@ -263,32 +274,32 @@ namespace {
         float shellCross = capsuleCross;
         float shellW = isVertical ? shellCross : shellMain;
         float shellH = isVertical ? shellMain : shellCross;
-        float innerX = std::round((shellW - iw) * 0.5f);
-        float innerY = std::round((shellH - ih) * 0.5f);
+        float contentX = std::round((shellW - iw) * 0.5f);
+        float contentY = std::round((shellH - ih) * 0.5f);
         // Glyph-only widgets become a fixed circle based on the bar capsule
         // cross-size, not on the measured content width. Multi-line / wide
         // content (e.g. stacked vertical clock) must NOT be squared, or the
         // capsule collapses on the main axis.
         const float iconThreshold = iconExtent + (kCircularCapsuleNarrowWidthEpsilon * scale);
-        const bool iconSized = iw <= iconThreshold && ih <= iconThreshold;
+        const bool iconSized = run.allowCircularSizing && iw <= iconThreshold && ih <= iconThreshold;
         if (iconSized) {
           const float side = capsuleCross;
           shellW = side;
           shellH = side;
-          innerX = std::round((shellW - iw) * 0.5f);
-          innerY = std::round((shellH - ih) * 0.5f);
+          contentX = std::round((shellW - iw) * 0.5f);
+          contentY = std::round((shellH - ih) * 0.5f);
         }
         shell->setSize(shellW, shellH);
         bg->setVisible(true);
         bg->setPosition(0.0f, 0.0f);
         bg->setSize(shellW, shellH);
-        inner->setPosition(innerX, innerY);
+        content->setPosition(contentX, contentY);
         bg->setRadius(std::min(shellW, shellH) * 0.5f);
       }
     };
-    finalizeCapsules(instance.startWidgets);
-    finalizeCapsules(instance.centerWidgets);
-    finalizeCapsules(instance.endWidgets);
+    finalizeCapsules(instance.startCapsuleRuns);
+    finalizeCapsules(instance.centerCapsuleRuns);
+    finalizeCapsules(instance.endCapsuleRuns);
 
     const float contentMainStart = padding;
     const float contentMainEnd = std::max(contentMainStart, (isVertical ? barAreaH : barAreaW) - padding);
@@ -932,10 +943,15 @@ void Bar::populateWidgets(BarInstance& instance) {
 }
 
 void Bar::attachWidgetsToSections(BarInstance& instance) {
-  auto attach = [&](std::vector<std::unique_ptr<Widget>>& widgets, Flex* section) {
+  const bool isVertical = instance.barConfig.position == "left" || instance.barConfig.position == "right";
+  const float widgetSpacing = static_cast<float>(instance.barConfig.widgetSpacing);
+
+  auto attach = [&](std::vector<std::unique_ptr<Widget>>& widgets, std::vector<BarCapsuleRun>& capsuleRuns,
+                    Flex* section) {
     if (section == nullptr) {
       return;
     }
+
     for (auto& widget : widgets) {
       widget->setAnimationManager(&instance.animations);
       widget->setUpdateCallback([surface = instance.surface.get()]() {
@@ -982,37 +998,131 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
                              .sourceBarName = inst->barConfig.name});
       });
       widget->create();
+    }
+
+    capsuleRuns.clear();
+
+    auto addPlainWidget = [&](Widget& widget) {
+      widget.setBarCapsuleScene(nullptr, nullptr);
+      section->addChild(widget.releaseRoot());
+    };
+
+    auto addSingleCapsule = [&](Widget& widget) {
+      const auto& cap = widget.barCapsuleSpec();
+      auto shell = std::make_unique<Node>();
+      Node* shellPtr = shell.get();
+      auto capsuleBg = std::make_unique<Box>();
+      Box* bgPtr = capsuleBg.get();
+      capsuleBg->setFill(withOpacity(cap.fill, cap.opacity));
+      const float scale = widget.contentScale();
+      if (cap.border.has_value()) {
+        capsuleBg->setBorder(*cap.border, Style::borderWidth * scale);
+      } else {
+        capsuleBg->clearBorder();
+      }
+      capsuleBg->setZIndex(-1);
+      shellPtr->addChild(std::move(capsuleBg));
+      shellPtr->addChild(widget.releaseRoot());
+      widget.setBarCapsuleScene(shellPtr, bgPtr);
+      capsuleRuns.push_back(BarCapsuleRun{
+          .shell = shellPtr,
+          .bg = bgPtr,
+          .container = nullptr,
+          .content = widget.root(),
+          .spec = cap,
+          .contentScale = widget.contentScale(),
+          .allowCircularSizing = true,
+          .widgets = {&widget},
+      });
+      section->addChild(std::move(shell));
+    };
+
+    auto canJoinCapsuleGroup = [](const Widget& first, const Widget& next) {
+      const auto& firstSpec = first.barCapsuleSpec();
+      const auto& nextSpec = next.barCapsuleSpec();
+      return firstSpec.enabled && nextSpec.enabled && !first.isAnchor() && !next.isAnchor() &&
+             !firstSpec.group.empty() && firstSpec == nextSpec && first.contentScale() == next.contentScale();
+    };
+
+    std::size_t index = 0;
+    while (index < widgets.size()) {
+      auto& widget = widgets[index];
       if (widget->root() == nullptr) {
+        ++index;
         continue;
       }
-      if (widget->barCapsuleSpec().enabled) {
-        const auto& cap = widget->barCapsuleSpec();
-        auto shell = std::make_unique<Node>();
-        Node* shellPtr = shell.get();
-        auto capsuleBg = std::make_unique<Box>();
-        Box* bgPtr = capsuleBg.get();
-        capsuleBg->setFill(withOpacity(cap.fill, cap.opacity));
-        const float scale = widget->contentScale();
-        if (cap.border.has_value()) {
-          capsuleBg->setBorder(*cap.border, Style::borderWidth * scale);
-        } else {
-          capsuleBg->clearBorder();
-        }
-        capsuleBg->setZIndex(-1);
-        shellPtr->addChild(std::move(capsuleBg));
-        shellPtr->addChild(widget->releaseRoot());
-        widget->setBarCapsuleScene(shellPtr, bgPtr);
-        section->addChild(std::move(shell));
-      } else {
-        widget->setBarCapsuleScene(nullptr, nullptr);
-        section->addChild(widget->releaseRoot());
+
+      const auto& cap = widget->barCapsuleSpec();
+      if (!cap.enabled) {
+        addPlainWidget(*widget);
+        ++index;
+        continue;
       }
+
+      if (widget->isAnchor() || cap.group.empty()) {
+        addSingleCapsule(*widget);
+        ++index;
+        continue;
+      }
+
+      std::size_t runEnd = index + 1;
+      while (runEnd < widgets.size() && widgets[runEnd] != nullptr && widgets[runEnd]->root() != nullptr &&
+             canJoinCapsuleGroup(*widget, *widgets[runEnd])) {
+        ++runEnd;
+      }
+
+      if (runEnd - index < 2) {
+        addSingleCapsule(*widget);
+        ++index;
+        continue;
+      }
+
+      auto shell = std::make_unique<Node>();
+      Node* shellPtr = shell.get();
+      auto capsuleBg = std::make_unique<Box>();
+      Box* bgPtr = capsuleBg.get();
+      capsuleBg->setFill(withOpacity(cap.fill, cap.opacity));
+      const float scale = widget->contentScale();
+      if (cap.border.has_value()) {
+        capsuleBg->setBorder(*cap.border, Style::borderWidth * scale);
+      } else {
+        capsuleBg->clearBorder();
+      }
+      capsuleBg->setZIndex(-1);
+      shellPtr->addChild(std::move(capsuleBg));
+
+      auto inner = std::make_unique<Flex>();
+      Flex* innerPtr = inner.get();
+      innerPtr->setDirection(isVertical ? FlexDirection::Vertical : FlexDirection::Horizontal);
+      innerPtr->setGap(widgetSpacing);
+      innerPtr->setAlign(FlexAlign::Center);
+      shellPtr->addChild(std::move(inner));
+
+      BarCapsuleRun run;
+      run.shell = shellPtr;
+      run.bg = bgPtr;
+      run.container = innerPtr;
+      run.content = innerPtr;
+      run.spec = cap;
+      run.contentScale = widget->contentScale();
+      run.allowCircularSizing = false;
+
+      for (std::size_t memberIndex = index; memberIndex < runEnd; ++memberIndex) {
+        auto& member = widgets[memberIndex];
+        member->setBarCapsuleScene(shellPtr, bgPtr);
+        run.widgets.push_back(member.get());
+        innerPtr->addChild(member->releaseRoot());
+      }
+
+      capsuleRuns.push_back(std::move(run));
+      section->addChild(std::move(shell));
+      index = runEnd;
     }
   };
 
-  attach(instance.startWidgets, instance.startSection);
-  attach(instance.centerWidgets, instance.centerSection);
-  attach(instance.endWidgets, instance.endSection);
+  attach(instance.startWidgets, instance.startCapsuleRuns, instance.startSection);
+  attach(instance.centerWidgets, instance.centerCapsuleRuns, instance.centerSection);
+  attach(instance.endWidgets, instance.endCapsuleRuns, instance.endSection);
 }
 
 void Bar::rebuildInstanceContents(BarInstance& instance, const BarConfig& newConfig) {
@@ -1039,6 +1149,9 @@ void Bar::rebuildInstanceContents(BarInstance& instance, const BarConfig& newCon
   instance.startWidgets.clear();
   instance.centerWidgets.clear();
   instance.endWidgets.clear();
+  instance.startCapsuleRuns.clear();
+  instance.centerCapsuleRuns.clear();
+  instance.endCapsuleRuns.clear();
 
   // Refresh section-level layout knobs that may have changed (gap; direction
   // doesn't change because position is part of the surface-fields gate).

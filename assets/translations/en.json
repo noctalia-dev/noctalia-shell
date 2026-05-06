@@ -724,6 +724,7 @@
         "effects": "Effects",
         "focus-styling": "Focus Styling",
         "general": "General",
+        "grouping": "Grouping",
         "interface": "Interface",
         "layout": "Layout",
         "location": "Location",
@@ -902,6 +903,10 @@
         "capsule": {
           "label": "Capsule",
           "description": "Draw a capsule behind this widget"
+        },
+        "capsule_group": {
+          "label": "Capsule Group",
+          "description": "Join nearby widgets with the same managed group"
         },
         "capsule_border": {
           "label": "Capsule Border",
@@ -1553,6 +1558,10 @@
         "widget-capsules": {
           "label": "Widget Capsules",
           "description": "Wrap widgets in capsule backgrounds"
+        },
+        "capsule-groups": {
+          "label": "Capsule Groups",
+          "description": "Create reusable groups for nearby widgets on this bar"
         },
         "widget-color": {
           "label": "Widget Color",

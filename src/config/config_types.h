@@ -44,6 +44,7 @@ struct BarMonitorOverride {
   std::optional<ColorSpec> widgetCapsuleBorder;
   std::optional<ColorSpec> widgetCapsuleForeground;
   std::optional<ColorSpec> widgetColor;
+  std::optional<std::vector<std::string>> widgetCapsuleGroups;
   std::optional<double> widgetCapsulePadding;
   std::optional<double> widgetCapsuleOpacity;
 
@@ -84,6 +85,7 @@ struct BarConfig {
   // Default icon + primary label color for all widgets on this bar (same as per-widget `color`); per-widget `color`
   // overrides.
   std::optional<ColorSpec> widgetColor;
+  std::vector<std::string> widgetCapsuleGroups;
   // Inner padding between capsule edge and widget content (logical px), multiplied by widget content scale on the bar.
   float widgetCapsulePadding = Style::barCapsulePadding;
   // Capsule background opacity multiplier (0.0–1.0).
@@ -104,6 +106,8 @@ using ConfigOverrideValue = std::variant<bool, std::int64_t, double, std::string
 struct WidgetBarCapsuleSpec {
   bool enabled = false;
   ColorSpec fill = colorSpecFromRole(ColorRole::SurfaceVariant);
+  // Adjacent widgets in the same section with the same non-empty group and identical capsule styling share one shell.
+  std::string group;
   // Set only when `capsule_border` is present and non-empty in config; otherwise no outline.
   std::optional<ColorSpec> border;
   // Icon + primary label color when the capsule is visible; unset = widget defaults.
