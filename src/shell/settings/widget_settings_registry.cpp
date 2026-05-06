@@ -417,6 +417,11 @@ namespace settings {
         {"name", "settings.widgets.options.name"},
         {"none", "settings.widgets.options.none"},
     };
+    const std::vector<WidgetSettingSelectOption> mediaTitleScroll = {
+        {"none", "settings.widgets.options.none"},
+        {"always", "settings.widgets.options.always"},
+        {"on_hover", "settings.widgets.options.on-hover"},
+    };
     const std::vector<WidgetSettingSelectOption> workspaceColorRoles = {
         {"on_surface", ""}, {"primary", ""}, {"secondary", ""}, {"tertiary", ""}, {"error", ""},
     };
@@ -459,6 +464,7 @@ namespace settings {
       add(doubleSpec("min_length", 80.0, 0.0, 800.0, 1.0));
       add(doubleSpec("max_length", 220.0, 40.0, 800.0, 1.0));
       add(doubleSpec("art_size", 16.0, 8.0, 96.0, 1.0));
+      add(selectSpec("title_scroll", "none", mediaTitleScroll));
     } else if (type == "network") {
       add(boolSpec("show_label", true));
     } else if (type == "notifications") {

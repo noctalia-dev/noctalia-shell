@@ -16,16 +16,23 @@ class Renderer;
 struct MprisPlayerInfo;
 struct wl_output;
 
+enum class MediaTitleScrollMode : std::uint8_t {
+  None,
+  Always,
+  OnHover,
+};
+
 class MediaWidget : public Widget {
 public:
   MediaWidget(MprisService* mpris, HttpClient* httpClient, wl_output* output, float maxWidth, float minWidth,
-              float artSize);
+              float artSize, MediaTitleScrollMode titleScrollMode);
 
   void create() override;
 
 private:
   void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
   void doUpdate(Renderer& renderer) override;
+  void applyTitleScrollMode(bool titleVisible);
   void syncState(Renderer& renderer);
   [[nodiscard]] static std::string buildDisplayText(const MprisPlayerInfo& player);
   [[nodiscard]] std::string resolveArtworkPath() const;
@@ -36,6 +43,7 @@ private:
   float m_maxWidth = 220.0f;
   float m_minWidth = 80.0f;
   float m_artSize = 16.0f;
+  MediaTitleScrollMode m_titleScrollMode = MediaTitleScrollMode::None;
   InputArea* m_area = nullptr;
   Image* m_art = nullptr;
   Glyph* m_emptyGlyph = nullptr;

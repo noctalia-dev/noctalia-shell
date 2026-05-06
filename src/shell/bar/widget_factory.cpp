@@ -53,6 +53,16 @@
 
 namespace {
   constexpr Logger kLog("shell");
+
+  MediaTitleScrollMode parseMediaTitleScrollMode(std::string_view value) {
+    if (value == "always") {
+      return MediaTitleScrollMode::Always;
+    }
+    if (value == "on_hover" || value == "hover") {
+      return MediaTitleScrollMode::OnHover;
+    }
+    return MediaTitleScrollMode::None;
+  }
 } // namespace
 
 WidgetFactory::WidgetFactory(WaylandConnection& wayland, const Config& config, NotificationManager* notifications,
@@ -206,7 +216,9 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     const float maxWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_length", 220.0) : 220.0);
     const float minWidth = static_cast<float>(wc != nullptr ? wc->getDouble("min_length", 80.0) : 80.0);
     const float artSize = static_cast<float>(wc != nullptr ? wc->getDouble("art_size", 16.0) : 16.0);
-    auto widget = std::make_unique<MediaWidget>(m_mpris, m_httpClient, output, maxWidth, minWidth, artSize);
+    const std::string titleScroll = wc != nullptr ? wc->getString("title_scroll", "none") : std::string("none");
+    auto widget = std::make_unique<MediaWidget>(m_mpris, m_httpClient, output, maxWidth, minWidth, artSize,
+                                                parseMediaTitleScrollMode(titleScroll));
     widget->setContentScale(contentScale);
     return widget;
   }

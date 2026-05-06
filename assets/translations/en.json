@@ -869,6 +869,7 @@
         "workspaces": "Workspaces"
       },
       "options": {
+        "always": "Always",
         "cpu-temp": "CPU Temperature",
         "cpu-usage": "CPU Usage",
         "disk-percent": "Disk Percent",
@@ -878,6 +879,7 @@
         "id": "ID",
         "name": "Name",
         "none": "None",
+        "on-hover": "On Hover",
         "ram-percent": "RAM Percent",
         "ram-used": "RAM Used",
         "short": "Short",
@@ -1017,6 +1019,10 @@
         "min_length": {
           "label": "Min Length",
           "description": "Minimum widget length in pixels"
+        },
+        "title_scroll": {
+          "label": "Title Scroll",
+          "description": "When the media title should scroll"
         },
         "mirrored": {
           "label": "Mirrored",

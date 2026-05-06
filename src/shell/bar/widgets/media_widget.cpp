@@ -27,13 +27,21 @@ namespace {
 } // namespace
 
 MediaWidget::MediaWidget(MprisService* mpris, HttpClient* httpClient, wl_output* output, float maxWidth, float minWidth,
-                         float artSize)
+                         float artSize, MediaTitleScrollMode titleScrollMode)
     : m_mpris(mpris), m_httpClient(httpClient), m_output(output), m_maxWidth(maxWidth), m_minWidth(minWidth),
-      m_artSize(artSize) {}
+      m_artSize(artSize), m_titleScrollMode(titleScrollMode) {}
 
 void MediaWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setAcceptedButtons(BTN_LEFT | BTN_RIGHT);
+  area->setOnEnter([this](const InputArea::PointerData&) {
+    applyTitleScrollMode(m_label != nullptr && m_label->visible());
+    this->requestUpdate();
+  });
+  area->setOnLeave([this]() {
+    applyTitleScrollMode(m_label != nullptr && m_label->visible());
+    this->requestUpdate();
+  });
   area->setOnClick([this](const InputArea::PointerData& data) {
     if (data.button == BTN_LEFT) {
       requestPanelToggle("control-center", "media");
@@ -58,6 +66,7 @@ void MediaWidget::create() {
   label->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   label->setMaxWidth(m_maxWidth * m_contentScale);
   label->setMaxLines(1);
+  label->setAutoScroll(false);
   m_label = label.get();
   area->addChild(std::move(label));
 
@@ -111,6 +120,7 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
   m_label->setVisible(!isVertical && !m_label->text().empty());
   m_emptyGlyph->setVisible(showEmptyGlyph);
   const bool showLabel = m_label->visible();
+  applyTitleScrollMode(showLabel);
 
   const float leadingWidth = showArtSlot ? artSize : (showEmptyGlyph ? m_emptyGlyph->width() : 0.0f);
   const float spacing = showLabel && leadingWidth > 0.0f ? Style::spaceXs : 0.0f;
@@ -152,6 +162,18 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
 
 void MediaWidget::doUpdate(Renderer& renderer) { syncState(renderer); }
 
+void MediaWidget::applyTitleScrollMode(bool titleVisible) {
+  if (m_label == nullptr) {
+    return;
+  }
+
+  const bool shouldScroll =
+      titleVisible && (m_titleScrollMode == MediaTitleScrollMode::Always ||
+                       (m_titleScrollMode == MediaTitleScrollMode::OnHover && m_area != nullptr && m_area->hovered()));
+  m_label->setAutoScroll(shouldScroll);
+  m_label->setAutoScrollOnlyWhenHovered(false);
+}
+
 void MediaWidget::syncState(Renderer& renderer) {
   if (m_art == nullptr || m_label == nullptr) {
     return;
@@ -184,6 +206,7 @@ void MediaWidget::syncState(Renderer& renderer) {
   m_label->setText(m_lastText);
   m_label->setColor(m_lastPlaybackStatus == "Playing" ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
                                                       : colorSpecFromRole(ColorRole::OnSurfaceVariant));
+  applyTitleScrollMode(m_label->visible());
   m_label->measure(renderer);
 
   if (artChanged) {

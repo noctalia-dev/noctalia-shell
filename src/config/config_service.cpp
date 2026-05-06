@@ -736,6 +736,7 @@ void ConfigService::seedBuiltinWidgets(Config& config) {
   media.settings["max_length"] = 220.0;
   media.settings["min_length"] = 80.0;
   media.settings["art_size"] = 16.0;
+  media.settings["title_scroll"] = std::string("none");
   seed("media", std::move(media));
 
   WidgetConfig keyboardLayout;
