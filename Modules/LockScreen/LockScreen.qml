@@ -136,8 +136,8 @@ Loader {
                   onEntered: {
                     // Avoid repeatedly forcing focus on every mouse move.
                     // This can churn text-input surface state during monitor/suspend transitions.
-                    if (passwordInput && !passwordInput.activeFocus) {
-                      passwordInput.forceActiveFocus();
+                    if (panelComponent.passwordField && !panelComponent.passwordField.passwordFocused) {
+                      panelComponent.passwordField.forceActiveFocus();
                     }
                   }
                 }
@@ -283,50 +283,12 @@ Loader {
                   }
                 }
 
-                // Hidden input that receives actual text
-                TextInput {
-                  id: passwordInput
-                  width: 0
-                  height: 0
-                  visible: false
-                  enabled: !lockContext.unlockInProgress
-                  echoMode: TextInput.Password
-                  passwordMaskDelay: 0
-
-                  // Bidirectional sync — avoids a declarative binding which breaks on input
-                  onTextChanged: {
-                    if (lockContext.currentText !== text)
-                      lockContext.currentText = text;
-                  }
-                  Connections {
-                    target: lockContext
-                    function onCurrentTextChanged() {
-                      if (passwordInput.text !== lockContext.currentText)
-                        passwordInput.text = lockContext.currentText;
-                    }
-                  }
-
-                  Keys.onPressed: function (event) {
-                    if (Keybinds.checkKey(event, 'enter', Settings)) {
-                      lockContext.tryUnlock();
-                      event.accepted = true;
-                    }
-                    if (Keybinds.checkKey(event, 'escape', Settings) && panelComponent.timerActive) {
-                      panelComponent.cancelTimer();
-                      event.accepted = true;
-                    }
-                  }
-
-                  Component.onCompleted: forceActiveFocus()
-                }
-
                 // Main panel with password, weather, media, session controls
                 LockScreenPanel {
                   id: panelComponent
                   lockControl: lockContext
                   batteryIndicator: batteryIndicator
                   keyboardLayout: keyboardLayout
-                  passwordInput: passwordInput
                 }
               }
             }
