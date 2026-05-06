@@ -681,7 +681,9 @@ void WeatherTab::sync(Renderer& renderer) {
     m_tempMinLabel->setText(!snapshot.forecastDays.empty() ? std::format("{}{}", temp, unit) : std::string("--"));
   }
   if (m_elevationLabel != nullptr) {
-    m_elevationLabel->setText(std::format("{}m", static_cast<int>(snapshot.elevationM)));
+    const bool imperial = m_weather->useImperial();
+    const int elevation = static_cast<int>(imperial ? snapshot.elevationM * 3.28084 : snapshot.elevationM);
+    m_elevationLabel->setText(std::format("{}{}", elevation, imperial ? "ft" : "m"));
   }
   if (m_timeZoneLabel != nullptr) {
     // Use the last component of the IANA path ("America/Toronto" → "Toronto") to keep
