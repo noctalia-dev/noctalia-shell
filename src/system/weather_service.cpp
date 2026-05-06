@@ -223,7 +223,7 @@ int WeatherService::pollTimeoutMs() const {
   if (m_nextRefreshAt <= now) {
     return 0;
   }
-  return static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(m_nextRefreshAt - now).count());
+  return static_cast<int>(std::chrono::ceil<std::chrono::milliseconds>(m_nextRefreshAt - now).count());
 }
 
 void WeatherService::tick() {

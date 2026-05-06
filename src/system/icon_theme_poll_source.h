@@ -12,7 +12,7 @@ class IconThemePollSource final : public PollSource {
 private:
   using Clock = std::chrono::steady_clock;
 
-  static constexpr std::chrono::milliseconds kCheckInterval{1000};
+  static constexpr std::chrono::seconds kCheckInterval{60};
 
 public:
   void setChangeCallback(std::function<void()> callback) { m_changeCallback = std::move(callback); }
@@ -22,8 +22,7 @@ public:
     if (now >= m_nextCheck) {
       return 0;
     }
-    const auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(m_nextCheck - now).count();
-    return static_cast<int>(std::max<long long>(1, remaining));
+    return static_cast<int>(std::chrono::ceil<std::chrono::milliseconds>(m_nextCheck - now).count());
   }
 
   void dispatch(const std::vector<pollfd>& /*fds*/, std::size_t /*startIdx*/) override {

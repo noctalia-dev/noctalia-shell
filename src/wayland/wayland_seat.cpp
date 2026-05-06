@@ -464,7 +464,7 @@ int WaylandSeat::repeatPollTimeoutMs() const {
   if (now >= m_repeatNextFire) {
     return 0;
   }
-  const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(m_repeatNextFire - now).count();
+  const auto ms = std::chrono::ceil<std::chrono::milliseconds>(m_repeatNextFire - now).count();
   return static_cast<int>(std::min<long long>(ms, std::numeric_limits<int>::max()));
 }
 

@@ -309,7 +309,7 @@ int NotificationManager::nextExpiryTimeoutMs() const {
   const auto now = Clock::now();
   for (const auto& n : m_notifications) {
     if (n.expiryTime) {
-      const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(*n.expiryTime - now).count();
+      const auto ms = std::chrono::ceil<std::chrono::milliseconds>(*n.expiryTime - now).count();
       const int clamped = static_cast<int>(std::max<long long>(0, ms));
       if (expiryMs < 0 || clamped < expiryMs) {
         expiryMs = clamped;

@@ -51,8 +51,7 @@ int LockKeysService::pollTimeoutMs() const {
     return 0;
   }
 
-  const auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(m_nextRefreshAt - now).count();
-  return static_cast<int>(std::max<std::int64_t>(1, remaining));
+  return static_cast<int>(std::chrono::ceil<std::chrono::milliseconds>(m_nextRefreshAt - now).count());
 }
 
 void LockKeysService::dispatchPoll() {

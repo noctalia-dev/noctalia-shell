@@ -52,6 +52,7 @@ std::atomic<bool> Application::s_shutdownRequested{false};
 namespace {
 
   constexpr Logger kLog("app");
+  constexpr bool kLockKeysEnabled = true;
 
   template <typename Factory>
   auto makeWithStartupBackoff(std::string_view label, Factory&& factory) -> decltype(factory()) {
@@ -360,13 +361,14 @@ void Application::initServices() {
     m_bar.refresh();
     m_dock.refresh();
   });
-  m_lockKeysService.refreshNow();
-  m_lockKeysService.setChangeCallback(
-      [this](const WaylandSeat::LockKeysState& previous, const WaylandSeat::LockKeysState& current) {
-        m_lockKeysOsd.onLockKeysChanged(previous, current);
-        m_bar.refresh();
-      });
-
+  if constexpr (kLockKeysEnabled) {
+    m_lockKeysService.refreshNow();
+    m_lockKeysService.setChangeCallback(
+        [this](const WaylandSeat::LockKeysState& previous, const WaylandSeat::LockKeysState& current) {
+          m_lockKeysOsd.onLockKeysChanged(previous, current);
+          m_bar.refresh();
+        });
+  }
   m_idleInhibitor.initialize(m_wayland, &m_renderContext);
   m_idleInhibitor.setChangeCallback([this, shouldRefreshControlCenter]() {
     m_bar.refresh();
@@ -870,9 +872,10 @@ void Application::initUi() {
   if (m_brightnessService != nullptr) {
     m_brightnessOsd.primeFromService(*m_brightnessService);
   }
-  m_lockKeysOsd.bindOverlay(m_osdOverlay);
-  m_lockKeysOsd.primeFromService(m_lockKeysService);
-
+  if constexpr (kLockKeysEnabled) {
+    m_lockKeysOsd.bindOverlay(m_osdOverlay);
+    m_lockKeysOsd.primeFromService(m_lockKeysService);
+  }
   m_screenCorners.initialize(m_wayland, &m_configService, &m_renderContext);
   m_screenCorners.onConfigReload();
 
@@ -882,7 +885,8 @@ void Application::initUi() {
                    m_pipewireService.get(), m_upowerService.get(), m_systemMonitor.get(), m_powerProfilesService.get(),
                    m_networkService.get(), &m_idleInhibitor, m_mprisService.get(), m_pipewireSpectrum.get(),
                    &m_httpClient, &m_weatherService, &m_renderContext, &m_nightLightManager, &m_themeService,
-                   m_bluetoothService.get(), m_brightnessService.get(), &m_lockKeysService, &m_fileWatcher);
+                   m_bluetoothService.get(), m_brightnessService.get(), kLockKeysEnabled ? &m_lockKeysService : nullptr,
+                   &m_fileWatcher);
   m_panelManager.setAttachedPanelGeometryCallback(
       [this](wl_output* output, std::optional<AttachedPanelGeometry> geometry) {
         m_bar.setAttachedPanelGeometry(output, geometry);
@@ -1240,7 +1244,9 @@ std::vector<PollSource*> Application::currentPollSources() {
   sources.push_back(&m_timerPollSource);
   sources.push_back(&m_keyRepeatPollSource);
   sources.push_back(&m_workspacePollSource);
-  sources.push_back(&m_lockKeysPollSource);
+  if constexpr (kLockKeysEnabled) {
+    sources.push_back(&m_lockKeysPollSource);
+  }
   if (m_pipewirePollSource != nullptr) {
     sources.push_back(m_pipewirePollSource.get());
   }

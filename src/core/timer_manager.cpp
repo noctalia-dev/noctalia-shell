@@ -1,6 +1,8 @@
 #include "core/timer_manager.h"
 
 #include <algorithm>
+#include <cstdint>
+#include <limits>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -103,7 +105,8 @@ int TimerManager::pollTimeoutMs() const {
     return 0;
   }
 
-  return static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(nextDue - now).count());
+  const auto remaining = std::chrono::ceil<std::chrono::milliseconds>(nextDue - now).count();
+  return static_cast<int>(std::min<std::int64_t>(remaining, std::numeric_limits<int>::max()));
 }
 
 void TimerManager::tick() {
