@@ -209,6 +209,7 @@ private:
   FileWatchPollSource m_fileWatchPollSource{m_fileWatcher};
   WeatherPollSource m_weatherPollSource{m_weatherService};
   Timer m_trayInitTimer;
+  Timer m_polkitInitTimer;
   Timer m_clipboardAutoPasteTimer;
 
   std::unique_ptr<MainLoop> m_mainLoop;

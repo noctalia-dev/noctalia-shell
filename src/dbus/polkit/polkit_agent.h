@@ -26,6 +26,7 @@ struct PolkitRequest {
 class PolkitAgent {
 public:
   using StateCallback = std::function<void()>;
+  using ReadyCallback = std::function<void(bool ok, const std::string& error)>;
 
   explicit PolkitAgent(SystemBus& bus);
   ~PolkitAgent();
@@ -33,7 +34,12 @@ public:
   PolkitAgent(const PolkitAgent&) = delete;
   PolkitAgent& operator=(const PolkitAgent&) = delete;
 
+  // Kicks off asynchronous polkit session lookup + agent registration.
+  // The ReadyCallback (if set) fires once registration succeeds or fails.
+  void start();
+
   void setStateCallback(StateCallback callback);
+  void setReadyCallback(ReadyCallback callback);
   void submitResponse(const std::string& response);
   void cancelRequest();
 
