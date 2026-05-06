@@ -473,12 +473,25 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
     return std::max(1.0f, card->width() - (card->paddingLeft() + card->paddingRight()));
   };
   const float dateTimeWrap = innerWidth(m_dateTimeCard);
+  if (m_timeLabel != nullptr) {
+    m_timeLabel->setMaxWidth(dateTimeWrap);
+    m_timeLabel->setMaxLines(1);
+  }
 
-  for (Label* label : {m_timeLabel, m_dateLabel, m_weatherLine}) {
-    if (label != nullptr) {
-      label->setMaxWidth(dateTimeWrap);
-      label->setMaxLines(1);
-    }
+  float dateTimeRightWrap = dateTimeWrap;
+  if (m_timeLabel != nullptr && m_dateTimeCard != nullptr) {
+    dateTimeRightWrap = std::max(1.0f, dateTimeWrap - m_timeLabel->width() - m_dateTimeCard->gap());
+  }
+  if (m_dateLabel != nullptr) {
+    m_dateLabel->setMaxWidth(dateTimeRightWrap);
+    m_dateLabel->setMaxLines(1);
+  }
+  if (m_weatherLine != nullptr) {
+    const float weatherTextWrap =
+        std::max(1.0f, dateTimeRightWrap - (m_weatherGlyph != nullptr ? m_weatherGlyph->width() : 0.0f) -
+                           Style::spaceXs * contentScale());
+    m_weatherLine->setMaxWidth(weatherTextWrap);
+    m_weatherLine->setMaxLines(2);
   }
   // Grow the album art square to fill the media card height so the row feels balanced
   // when the card flex-grows. Done before label maxWidth so the text wrap width matches

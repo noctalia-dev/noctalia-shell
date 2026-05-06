@@ -131,6 +131,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   currentDesc->setText(i18n::tr("control-center.weather.waiting"));
   currentDesc->setFontSize(Style::fontSizeBody * scale);
   currentDesc->setColor(colorSpecFromRole(ColorRole::OnSurface));
+  currentDesc->setMaxLines(3);
   m_currentDescLabel = currentDesc.get();
   currentBottom->addChild(std::move(currentDesc));
 
