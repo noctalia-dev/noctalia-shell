@@ -2,6 +2,7 @@
 
 #include "i18n/i18n.h"
 #include "render/core/color.h"
+#include "shell/control_center/shortcut_registry.h"
 #include "theme/builtin_palettes.h"
 #include "theme/builtin_templates.h"
 
@@ -67,6 +68,15 @@ namespace settings {
                           {"dysfunctional", "theme.scheme.dysfunctional"},
                           {"muted", "theme.scheme.muted"}},
                          selected);
+    }
+
+    std::vector<SelectOption> controlCenterShortcutOptions() {
+      std::vector<SelectOption> opts;
+      opts.reserve(ShortcutRegistry::catalog().size());
+      for (const auto& shortcut : ShortcutRegistry::catalog()) {
+        opts.push_back(SelectOption{std::string(shortcut.type), i18n::tr(shortcut.labelKey)});
+      }
+      return opts;
     }
 
     SelectSetting languageSelect(std::string_view selected) {
@@ -202,6 +212,8 @@ namespace settings {
       return "app-window";
     if (section == "dock")
       return "layout-bottombar";
+    if (section == "panels")
+      return "layout-dashboard";
     if (section == "backdrop")
       return "niri";
     if (section == "wallpaper")
@@ -517,6 +529,14 @@ namespace settings {
     entries.push_back(makeEntry("dock", "pinned-apps", tr("settings.schema.dock.pinned-apps.label"),
                                 tr("settings.schema.dock.pinned-apps.description"), {"dock", "pinned"},
                                 ListSetting{.items = cfg.dock.pinned}, "favorites"));
+
+    // Panels
+    entries.push_back(makeEntry(
+        "panels", "control-center", tr("settings.schema.panels.overview-shortcuts.label"),
+        tr("settings.schema.panels.overview-shortcuts.description"), {"control_center", "shortcuts"},
+        ShortcutListSetting{
+            .items = cfg.controlCenter.shortcuts, .suggestedOptions = controlCenterShortcutOptions(), .maxItems = 6},
+        "quick settings shortcuts toggles wifi bluetooth caffeine night light dnd power media weather clipboard"));
 
     // Desktop
     entries.push_back(makeEntry("desktop", "widgets", tr("settings.schema.desktop.widgets.label"),

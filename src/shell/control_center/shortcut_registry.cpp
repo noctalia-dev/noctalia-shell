@@ -20,11 +20,31 @@
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <format>
 #include <vector>
 
 namespace {
+
+  constexpr std::array<ShortcutRegistry::CatalogEntry, 16> kShortcutCatalog{{
+      {"wifi", "control-center.shortcuts.wifi"},
+      {"bluetooth", "control-center.shortcuts.bluetooth"},
+      {"nightlight", "control-center.shortcuts.nightlight"},
+      {"notification", "control-center.shortcuts.notification"},
+      {"dark_mode", "control-center.shortcuts.dark-mode.dark"},
+      {"caffeine", "control-center.shortcuts.caffeine"},
+      {"audio", "control-center.shortcuts.audio"},
+      {"mic_mute", "control-center.shortcuts.mic-mute"},
+      {"power_profile", "control-center.shortcuts.power-profile"},
+      {"media", "control-center.shortcuts.media"},
+      {"weather", "control-center.shortcuts.weather"},
+      {"sysmon", "control-center.shortcuts.sysmon"},
+      {"keyboard_layout", "control-center.shortcuts.keyboard-layout"},
+      {"wallpaper", "control-center.shortcuts.wallpaper"},
+      {"session", "control-center.shortcuts.session"},
+      {"clipboard", "control-center.shortcuts.clipboard"},
+  }};
 
   void openTab(std::string_view tab) {
     PanelManager::instance().togglePanel("control-center", PanelOpenRequest{.context = tab});
@@ -498,6 +518,8 @@ namespace {
   };
 
 } // namespace
+
+std::span<const ShortcutRegistry::CatalogEntry> ShortcutRegistry::catalog() { return kShortcutCatalog; }
 
 std::unique_ptr<Shortcut> ShortcutRegistry::create(std::string_view type, const ShortcutServices& s) {
   if (type == "wifi")

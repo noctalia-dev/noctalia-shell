@@ -21,6 +21,7 @@ public:
   void setSuggestedOptions(std::vector<ListEditorOption> options);
   void setAddPlaceholder(std::string_view placeholder);
   void setScale(float scale);
+  void setMaxItems(std::size_t maxItems);
   void setOnAddRequested(std::function<void(std::string)> callback);
   void setOnRemoveRequested(std::function<void(std::size_t)> callback);
   void setOnMoveRequested(std::function<void(std::size_t, std::size_t)> callback);
@@ -37,6 +38,7 @@ private:
   std::vector<std::string> m_items;
   std::vector<ListEditorOption> m_suggestedOptions;
   std::string m_addPlaceholder;
+  std::size_t m_maxItems = 0;
   std::function<void(std::string)> m_onAddRequested;
   std::function<void(std::size_t)> m_onRemoveRequested;
   std::function<void(std::size_t, std::size_t)> m_onMoveRequested;

@@ -98,8 +98,16 @@ struct BarConfig {
   bool operator==(const BarConfig&) const = default;
 };
 
+struct ShortcutConfig {
+  std::string type;
+  bool operator==(const ShortcutConfig&) const = default;
+};
+
+[[nodiscard]] std::vector<ShortcutConfig> defaultControlCenterShortcuts();
+
 using WidgetSettingValue = std::variant<bool, std::int64_t, double, std::string, std::vector<std::string>>;
-using ConfigOverrideValue = std::variant<bool, std::int64_t, double, std::string, std::vector<std::string>>;
+using ConfigOverrideValue =
+    std::variant<bool, std::int64_t, double, std::string, std::vector<std::string>, std::vector<ShortcutConfig>>;
 
 // Optional rounded “capsule” behind a bar widget (see `[widget.*] capsule_*` in CONFIG.md).
 // Corner shape (pill), border width, and edge softness are fixed in the shell code; padding is configurable.
@@ -572,13 +580,6 @@ struct ThemeConfig {
   std::string wallpaperScheme = "m3-content";
   ThemeMode mode = ThemeMode::Dark;
   TemplatesConfig templates;
-};
-
-struct ShortcutConfig {
-  std::string type;
-  std::optional<std::string> label;
-  std::optional<std::string> icon;
-  bool operator==(const ShortcutConfig&) const = default;
 };
 
 struct ControlCenterConfig {

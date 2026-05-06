@@ -56,6 +56,11 @@ void ListEditor::setScale(float scale) {
   rebuildRows();
 }
 
+void ListEditor::setMaxItems(std::size_t maxItems) {
+  m_maxItems = maxItems;
+  rebuildRows();
+}
+
 void ListEditor::setOnAddRequested(std::function<void(std::string)> callback) {
   m_onAddRequested = std::move(callback);
 }
@@ -133,6 +138,11 @@ void ListEditor::rebuildRows() {
     }
 
     addChild(std::move(itemRow));
+  }
+
+  if (m_maxItems > 0 && m_items.size() >= m_maxItems) {
+    markLayoutDirty();
+    return;
   }
 
   auto addRow = std::make_unique<Flex>();

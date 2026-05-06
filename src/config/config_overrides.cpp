@@ -369,6 +369,17 @@ namespace {
               array.push_back(item);
             }
             table.insert_or_assign(key, std::move(array));
+          } else if constexpr (std::is_same_v<T, std::vector<ShortcutConfig>>) {
+            toml::array array;
+            for (const auto& item : concrete) {
+              if (item.type.empty()) {
+                continue;
+              }
+              toml::table shortcut;
+              shortcut.insert_or_assign("type", item.type);
+              array.push_back(std::move(shortcut));
+            }
+            table.insert_or_assign(key, std::move(array));
           } else {
             table.insert_or_assign(key, concrete);
           }
@@ -596,6 +607,7 @@ std::optional<Config> ConfigService::configForOverrides(const toml::table& overr
         .resumeCommand = "",
     });
     parsed.bars.push_back(BarConfig{});
+    parsed.controlCenter.shortcuts = defaultControlCenterShortcuts();
     return parsed;
   }
 

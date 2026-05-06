@@ -1086,6 +1086,90 @@ namespace settings {
       section.addChild(std::move(block));
     };
 
+    const auto makeShortcutListBlock = [&](Flex& section, const SettingEntry& entry,
+                                           const ShortcutListSetting& shortcuts) {
+      const bool overridden = (ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(entry.path));
+
+      auto block = std::make_unique<Flex>();
+      block->setDirection(FlexDirection::Vertical);
+      block->setAlign(FlexAlign::Stretch);
+      block->setGap(Style::spaceXs * scale);
+      block->setPadding(2.0f * scale, 0.0f);
+
+      auto titleRow = std::make_unique<Flex>();
+      titleRow->setDirection(FlexDirection::Horizontal);
+      titleRow->setAlign(FlexAlign::Center);
+      titleRow->setGap(Style::spaceSm * scale);
+      titleRow->addChild(
+          makeLabel(entry.title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), true));
+      if (overridden) {
+        auto badge = std::make_unique<Flex>();
+        badge->setAlign(FlexAlign::Center);
+        badge->setPadding(1.0f * scale, Style::spaceXs * scale);
+        badge->setRadius(Style::radiusSm * scale);
+        badge->setFill(colorSpecFromRole(ColorRole::Primary, 0.15f));
+        badge->addChild(makeLabel(i18n::tr("settings.badges.override"), Style::fontSizeCaption * scale,
+                                  colorSpecFromRole(ColorRole::Primary), true));
+        titleRow->addChild(std::move(badge));
+      }
+      if (overridden) {
+        titleRow->addChild(makeResetButton(entry.path));
+      }
+      block->addChild(std::move(titleRow));
+
+      if (!entry.subtitle.empty()) {
+        block->addChild(makeLabel(entry.subtitle, Style::fontSizeCaption * scale,
+                                  colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
+      }
+
+      std::vector<std::string> itemTypes;
+      itemTypes.reserve(shortcuts.items.size());
+      for (const auto& item : shortcuts.items) {
+        itemTypes.push_back(item.type);
+      }
+
+      std::vector<ListEditorOption> suggestedOptions;
+      suggestedOptions.reserve(shortcuts.suggestedOptions.size());
+      for (const auto& opt : shortcuts.suggestedOptions) {
+        suggestedOptions.push_back(ListEditorOption{.value = opt.value, .label = opt.label});
+      }
+
+      auto listEditor = std::make_unique<ListEditor>();
+      listEditor->setScale(scale);
+      listEditor->setMaxItems(shortcuts.maxItems);
+      listEditor->setAddPlaceholder(i18n::tr("settings.controls.list.add-entry-placeholder"));
+      listEditor->setSuggestedOptions(std::move(suggestedOptions));
+      listEditor->setItems(std::move(itemTypes));
+      listEditor->setOnAddRequested(
+          [setOverride = ctx.setOverride, items = shortcuts.items, path = entry.path](std::string value) mutable {
+            if (value.empty() || std::any_of(items.begin(), items.end(),
+                                             [&value](const ShortcutConfig& item) { return item.type == value; })) {
+              return;
+            }
+            items.push_back(ShortcutConfig{std::move(value)});
+            setOverride(path, items);
+          });
+      listEditor->setOnRemoveRequested(
+          [setOverride = ctx.setOverride, items = shortcuts.items, path = entry.path](std::size_t index) mutable {
+            if (index >= items.size()) {
+              return;
+            }
+            items.erase(items.begin() + static_cast<std::ptrdiff_t>(index));
+            setOverride(path, items);
+          });
+      listEditor->setOnMoveRequested([setOverride = ctx.setOverride, items = shortcuts.items,
+                                      path = entry.path](std::size_t from, std::size_t to) mutable {
+        if (from >= items.size() || to >= items.size() || from == to) {
+          return;
+        }
+        std::swap(items[from], items[to]);
+        setOverride(path, items);
+      });
+      block->addChild(std::move(listEditor));
+
+      section.addChild(std::move(block));
+    };
+
     const auto makeControl = [&](const SettingEntry& entry) -> std::unique_ptr<Node> {
       return std::visit(
           [&](const auto& control) -> std::unique_ptr<Node> {
@@ -1108,6 +1192,8 @@ namespace settings {
             } else if constexpr (std::is_same_v<T, MultiSelectSetting>) {
               return nullptr;
             } else if constexpr (std::is_same_v<T, ListSetting>) {
+              return nullptr;
+            } else if constexpr (std::is_same_v<T, ShortcutListSetting>) {
               return nullptr;
             } else if constexpr (std::is_same_v<T, ButtonSetting>) {
               auto button = std::make_unique<Button>();
@@ -1212,6 +1298,8 @@ namespace settings {
           } else if (!isBarWidgetListPath(entry.path)) {
             makeListBlock(*activeSection, entry, *list);
           }
+        } else if (const auto* shortcuts = std::get_if<ShortcutListSetting>(&entry.control)) {
+          makeShortcutListBlock(*activeSection, entry, *shortcuts);
         } else if (const auto* picker = std::get_if<SearchPickerSetting>(&entry.control)) {
           if (ctx.openSearchPickerPath == pathKey(entry.path)) {
             makeSearchPickerBlock(*activeSection, entry, *picker);

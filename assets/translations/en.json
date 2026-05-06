@@ -704,6 +704,7 @@
         "appearance": "Appearance",
         "desktop": "Desktop",
         "dock": "Dock",
+        "panels": "Panels",
         "notifications": "Notifications",
         "backdrop": "Backdrop",
         "services": "Services",
@@ -720,6 +721,7 @@
         "built-in": "Built-in",
         "clipboard": "Clipboard",
         "community": "Community",
+        "control-center": "Control Center",
         "directories": "Directories",
         "effects": "Effects",
         "focus-styling": "Focus Styling",
@@ -733,6 +735,7 @@
         "network": "Network",
         "night-light": "Night Light",
         "osd": "OSD",
+        "overview": "Overview",
         "pinned-apps": "Pinned Apps",
         "profile": "Profile",
         "screen-corners": "Screen Corners",
@@ -1317,6 +1320,12 @@
         },
         "reserve-space": {
           "description": "Reserve screen space for the dock"
+        }
+      },
+      "panels": {
+        "overview-shortcuts": {
+          "label": "Overview Shortcuts",
+          "description": "Choose up to six shortcut buttons for the overview tab"
         }
       },
       "backdrop": {

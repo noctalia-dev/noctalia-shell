@@ -3,6 +3,7 @@
 #include "config/config_service.h"
 #include "ui/palette.h"
 
+#include <cstddef>
 #include <functional>
 #include <optional>
 #include <string>
@@ -75,6 +76,12 @@ namespace settings {
     std::vector<SelectOption> suggestedOptions = {};
   };
 
+  struct ShortcutListSetting {
+    std::vector<ShortcutConfig> items;
+    std::vector<SelectOption> suggestedOptions = {};
+    std::size_t maxItems = 0;
+  };
+
   struct ColorSetting {
     std::string hex; // current resolved value as #RRGGBB; empty when unset
     bool unset = true;
@@ -97,9 +104,9 @@ namespace settings {
     bool allowNone = false;
   };
 
-  using SettingControl =
-      std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting, OptionalNumberSetting, ListSetting,
-                   ColorSetting, MultiSelectSetting, ButtonSetting, ColorRolePickerSetting, SearchPickerSetting>;
+  using SettingControl = std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting, OptionalNumberSetting,
+                                      ListSetting, ShortcutListSetting, ColorSetting, MultiSelectSetting, ButtonSetting,
+                                      ColorRolePickerSetting, SearchPickerSetting>;
 
   struct SettingEntry {
     std::string section;

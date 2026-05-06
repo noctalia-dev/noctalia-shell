@@ -7,7 +7,6 @@
 #include <chrono>
 #include <cstdint>
 #include <memory>
-#include <optional>
 #include <string>
 #include <vector>
 
@@ -28,7 +27,6 @@ struct ShortcutPad {
   Button* button = nullptr;
   Glyph* glyph = nullptr;
   Label* label = nullptr;
-  std::optional<std::string> labelOverride;
 };
 
 class OverviewTab : public Tab {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -29,5 +30,11 @@ struct ShortcutServices;
 
 class ShortcutRegistry {
 public:
+  struct CatalogEntry {
+    std::string_view type;
+    std::string_view labelKey;
+  };
+
+  [[nodiscard]] static std::span<const CatalogEntry> catalog();
   static std::unique_ptr<Shortcut> create(std::string_view type, const ShortcutServices& services);
 };

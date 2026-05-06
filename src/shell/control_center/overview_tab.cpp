@@ -334,7 +334,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
       continue;
     }
 
-    const std::string label = sc.label.has_value() ? *sc.label : shortcut->displayLabel();
+    const std::string label = shortcut->displayLabel();
     const bool enabled = shortcut->enabled();
     const bool isActive = shortcut->isToggle() && shortcut->active();
 
@@ -378,7 +378,6 @@ std::unique_ptr<Flex> OverviewTab::create() {
     pad.button = btnPtr;
     pad.glyph = btnPtr->glyph();
     pad.label = btnPtr->label();
-    pad.labelOverride = sc.label;
     m_shortcutPads.push_back(std::move(pad));
     grid->addChild(std::move(btn));
   }
@@ -944,7 +943,7 @@ void OverviewTab::syncShortcuts() {
       pad.glyph->setGlyph(sc.displayIcon());
     }
     if (pad.button != nullptr && pad.label != nullptr) {
-      const std::string label = pad.labelOverride.has_value() ? *pad.labelOverride : sc.displayLabel();
+      const std::string label = sc.displayLabel();
       if (pad.label->text() != label) {
         pad.button->setText(label);
       }

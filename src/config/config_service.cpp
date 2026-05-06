@@ -835,6 +835,7 @@ void ConfigService::loadAll() {
         .resumeCommand = "",
     });
     m_config.bars.push_back(BarConfig{});
+    m_config.controlCenter.shortcuts = defaultControlCenterShortcuts();
     return;
   }
 
@@ -1644,8 +1645,10 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
   }
 
   // Parse [[control_center.shortcuts]]
+  bool controlCenterShortcutsConfigured = false;
   if (auto* ccTbl = tbl["control_center"].as_table()) {
     if (auto* shortcutsArr = (*ccTbl)["shortcuts"].as_array()) {
+      controlCenterShortcutsConfigured = true;
       config.controlCenter.shortcuts.clear();
       for (const auto& entry : *shortcutsArr) {
         auto* entryTbl = entry.as_table();
@@ -1656,23 +1659,14 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
         if (auto v = (*entryTbl)["type"].value<std::string>()) {
           sc.type = *v;
         }
-        if (auto v = (*entryTbl)["label"].value<std::string>()) {
-          sc.label = *v;
-        }
-        if (auto v = (*entryTbl)["icon"].value<std::string>()) {
-          sc.icon = *v;
-        }
         if (!sc.type.empty()) {
           config.controlCenter.shortcuts.push_back(std::move(sc));
         }
       }
     }
   }
-  if (config.controlCenter.shortcuts.empty()) {
-    config.controlCenter.shortcuts = {
-        {"wifi", {}, {}},       {"bluetooth", {}, {}},    {"caffeine", {}, {}},
-        {"nightlight", {}, {}}, {"notification", {}, {}}, {"power_profile", {}, {}},
-    };
+  if (!controlCenterShortcutsConfigured && config.controlCenter.shortcuts.empty()) {
+    config.controlCenter.shortcuts = defaultControlCenterShortcuts();
   }
 
   // Parse [idle.behavior.*]
