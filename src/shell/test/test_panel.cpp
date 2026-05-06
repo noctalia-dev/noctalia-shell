@@ -441,7 +441,7 @@ void TestPanel::create() {
   {
     auto stepper = std::make_unique<Stepper>();
     stepper->setScale(scale);
-    stepper->setRange(0, 99);
+    stepper->setRange(0, 999);
     stepper->setStep(1);
     stepper->setValue(42);
     stepper->setOnValueChanged([this](int v) {

@@ -19,7 +19,12 @@
 
 namespace {
 
-  constexpr float kDefaultMinWidth = 140.0f;
+  constexpr float kDefaultMinWidth = 100.0f;
+  // Matches Input's internal text viewport inset so the layout minimum reserves
+  // the visible text box, not just ink.
+  constexpr float kInputTextInnerInset = 3.0f;
+
+  float valueInputHorizontalPadding(float scale) { return Style::spaceSm * scale; }
 
   std::unique_ptr<Separator> makeStepperSeparator(float scale) {
     auto sep = std::make_unique<Separator>();
@@ -96,11 +101,10 @@ Stepper::Stepper() {
 
     auto field = std::make_unique<Input>();
     field->setFrameVisible(false);
-    field->setBold(true);
     field->setTextAlign(TextAlign::Center);
     field->setFontSize(Style::fontSizeBody);
     field->setControlHeight(Style::controlHeight);
-    field->setHorizontalPadding(Style::spaceMd);
+    field->setHorizontalPadding(valueInputHorizontalPadding(m_scale));
     field->setFlexGrow(1.0f);
     field->setOnSubmit([this](const std::string& /*text*/) { commitValueField(); });
     field->setOnFocusLoss([this]() { commitValueField(); });
@@ -137,6 +141,7 @@ void Stepper::setRange(int minValue, int maxValue) {
   m_min = minValue;
   m_max = maxValue;
   setValue(m_value);
+  markLayoutDirty();
 }
 
 void Stepper::setStep(int step) {
@@ -191,7 +196,7 @@ void Stepper::setScale(float scale) {
   if (m_valueInput != nullptr) {
     m_valueInput->setFontSize(Style::fontSizeBody * m_scale);
     m_valueInput->setControlHeight(Style::controlHeight * m_scale);
-    m_valueInput->setHorizontalPadding(Style::spaceMd * m_scale);
+    m_valueInput->setHorizontalPadding(valueInputHorizontalPadding(m_scale));
   }
   if (m_decrement != nullptr) {
     m_decrement->setGlyphSize(Style::fontSizeBody * m_scale);
@@ -212,10 +217,10 @@ void Stepper::syncValueFieldMinWidth(Renderer& renderer) {
     return;
   }
   const float fs = Style::fontSizeBody * m_scale;
-  const float wMin = renderer.measureText(std::to_string(m_min), fs, true).width;
-  const float wMax = renderer.measureText(std::to_string(m_max), fs, true).width;
-  const float digitFloor = fs * 2.5f;
-  m_valueInput->setMinLayoutWidth(std::max({wMin, wMax, digitFloor}));
+  const float wMin = renderer.measureText(std::to_string(m_min), fs, false).width;
+  const float wMax = renderer.measureText(std::to_string(m_max), fs, false).width;
+  const float textInset = valueInputHorizontalPadding(m_scale) + kInputTextInnerInset;
+  m_valueInput->setMinLayoutWidth(std::max(wMin, wMax) + textInset * 2.0f);
 }
 
 LayoutSize Stepper::doMeasure(Renderer& renderer, const LayoutConstraints& constraints) {
