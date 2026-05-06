@@ -312,14 +312,16 @@ struct PolkitAgent::Impl {
   void onSessionReady(GObject* /*source*/, GAsyncResult* result) {
     starting = false;
     GError* error = nullptr;
-    PolkitSubject* subject = polkit_unix_session_new_for_process_finish(result, &error);
+    PolkitSubject* subject = nullptr;
+
+    PolkitSubject* pidSubject = polkit_unix_session_new_for_process_finish(result, &error);
 
     // If we were cancelled (destruction), bail out without touching members
     // beyond the cancellable cleanup that the destructor already handled.
     if (error != nullptr && g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
       g_clear_error(&error);
-      if (subject != nullptr) {
-        g_object_unref(subject);
+      if (pidSubject != nullptr) {
+        g_object_unref(pidSubject);
       }
       return;
     }
@@ -327,6 +329,18 @@ struct PolkitAgent::Impl {
     if (registerCancellable != nullptr) {
       g_object_unref(registerCancellable);
       registerCancellable = nullptr;
+    }
+
+    // Polkit's underlying authorization logic is session-based rather than tied to isolated processes
+    const char* sessionId = std::getenv("XDG_SESSION_ID");
+    if (sessionId != nullptr && sessionId[0] != '\0') {
+      subject = polkit_unix_session_new(sessionId);
+      if (pidSubject != nullptr) {
+        g_object_unref(pidSubject);
+      }
+    } else {
+      // Retained for non-systemd environment support
+      subject = pidSubject;
     }
 
     if (subject == nullptr || error != nullptr) {
