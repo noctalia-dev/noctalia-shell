@@ -217,6 +217,7 @@ bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config, Re
   m_textureCache = textureCache;
 
   if (!m_config->config().wallpaper.enabled) {
+    m_wallpaperEnabled = false;
     kLog.info("disabled in config");
     return true;
   }
@@ -232,6 +233,7 @@ bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config, Re
   });
 
   resetAutomationState();
+  m_wallpaperEnabled = true;
   syncInstances();
   return true;
 }
@@ -239,10 +241,12 @@ bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config, Re
 void Wallpaper::reload() {
   kLog.info("reloading config");
 
+  const bool wasEnabled = m_wallpaperEnabled;
   const bool nowEnabled = m_config->config().wallpaper.enabled;
-  resetAutomationState();
 
   if (!nowEnabled) {
+    resetAutomationState();
+    m_wallpaperEnabled = false;
     // Wallpaper disabled — full teardown
     for (auto& inst : m_instances) {
       releaseInstanceTextures(*inst);
@@ -250,6 +254,11 @@ void Wallpaper::reload() {
     m_instances.clear();
     return;
   }
+
+  if (!wasEnabled) {
+    resetAutomationState();
+  }
+  m_wallpaperEnabled = true;
 
   // Wallpaper remains (or becomes) enabled — sync instances without teardown
   // to avoid flickering. syncInstances handles monitor override changes
