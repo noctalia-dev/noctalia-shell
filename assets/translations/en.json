@@ -1012,11 +1012,11 @@
         },
         "max_length": {
           "label": "Max Length",
-          "description": "Maximum text width in pixels"
+          "description": "Maximum widget length in pixels"
         },
         "min_length": {
           "label": "Min Length",
-          "description": "Minimum text width in pixels"
+          "description": "Minimum widget length in pixels"
         },
         "mirrored": {
           "label": "Mirrored",

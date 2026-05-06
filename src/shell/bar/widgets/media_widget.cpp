@@ -80,12 +80,11 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
   syncState(renderer);
 
   const bool isVertical = containerHeight > containerWidth;
-  const float minLength = std::max(0.0f, m_minWidth * m_contentScale);
+  const float maxLength = std::max(0.0f, m_maxWidth * m_contentScale);
+  const float minLength = std::clamp(m_minWidth * m_contentScale, 0.0f, maxLength);
 
-  m_label->setMaxWidth(m_maxWidth * m_contentScale);
   m_label->setColor(m_lastPlaybackStatus == "Playing" ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
                                                       : colorSpecFromRole(ColorRole::OnSurfaceVariant));
-  m_label->measure(renderer);
   m_emptyGlyph->setGlyph(m_lastPlaybackStatus.empty() ? "disc-filled" : "music-off");
   m_emptyGlyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   m_emptyGlyph->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
@@ -112,6 +111,13 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
   m_label->setVisible(!isVertical && !m_label->text().empty());
   m_emptyGlyph->setVisible(showEmptyGlyph);
   const bool showLabel = m_label->visible();
+
+  const float leadingWidth = showArtSlot ? artSize : (showEmptyGlyph ? m_emptyGlyph->width() : 0.0f);
+  const float spacing = showLabel && leadingWidth > 0.0f ? Style::spaceXs : 0.0f;
+  const float labelMaxWidth = showLabel ? std::max(0.0f, maxLength - leadingWidth - spacing) : 0.0f;
+  m_label->setMaxWidth(labelMaxWidth);
+  m_label->measure(renderer);
+
   float contentHeight = showLabel ? m_label->height() : 0.0f;
   if (showArtSlot) {
     contentHeight = std::max(contentHeight, artSize);
@@ -130,19 +136,17 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
     }
   } else {
     if (showArtSlot) {
-      const float spacing = showLabel ? Style::spaceXs : 0.0f;
       m_art->setPosition(0.0f, std::round((contentHeight - artSize) * 0.5f));
       m_emptyGlyph->setPosition(0.0f, 0.0f);
       m_label->setPosition(artSize + spacing, std::round((contentHeight - m_label->height()) * 0.5f));
     } else {
-      const float spacing = showLabel ? Style::spaceXs : 0.0f;
       m_art->setPosition(0.0f, 0.0f);
       m_emptyGlyph->setPosition(0.0f, std::round((contentHeight - m_emptyGlyph->height()) * 0.5f));
       m_label->setPosition(m_emptyGlyph->width() + spacing, std::round((contentHeight - m_label->height()) * 0.5f));
     }
     const float contentWidth =
         showLabel ? m_label->x() + m_label->width() : (showArtSlot ? artSize : m_emptyGlyph->width());
-    rootNode->setSize(std::max(minLength, contentWidth), contentHeight);
+    rootNode->setSize(std::clamp(contentWidth, minLength, maxLength), contentHeight);
   }
 }
 

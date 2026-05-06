@@ -733,7 +733,7 @@ void ConfigService::seedBuiltinWidgets(Config& config) {
 
   WidgetConfig media;
   media.type = "media";
-  media.settings["max_length"] = 200.0;
+  media.settings["max_length"] = 220.0;
   media.settings["min_length"] = 80.0;
   media.settings["art_size"] = 16.0;
   seed("media", std::move(media));
