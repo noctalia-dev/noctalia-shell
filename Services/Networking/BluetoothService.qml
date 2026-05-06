@@ -71,10 +71,16 @@ Singleton {
     }
   }
 
-  // Handle potential case where Quickshell doesnt't properly update adapter after system wakeup
+  // Handle potential case where Quickshell doesnt't properly update adapter after boot or system wakeup
   Connections {
     target: Time
     function onResumed() {
+      ctlPollTimer.restart();
+    }
+  }
+
+  onAdapterChanged: {
+    if (adapter) {
       ctlPollTimer.restart();
     }
   }
