@@ -151,6 +151,10 @@ public:
   [[nodiscard]] std::vector<std::string> workspaceDisplayKeys(wl_output* outputFilter = nullptr) const;
   [[nodiscard]] std::vector<WorkspaceWindowAssignment>
   workspaceWindowAssignments(wl_output* outputFilter = nullptr) const;
+  [[nodiscard]] TaskbarAssignmentMode taskbarAssignmentMode() const noexcept;
+  [[nodiscard]] std::unordered_map<std::uintptr_t, WorkspaceWindow>
+  assignTaskbarWindows(const std::vector<TaskbarWindowCandidate>& windows, wl_output* outputFilter = nullptr) const;
+  [[nodiscard]] const char* workspaceBackendName() const noexcept;
   [[nodiscard]] std::vector<ToplevelInfo> windowsForApp(const std::string& idLower, const std::string& wmClassLower,
                                                         wl_output* outputFilter = nullptr) const;
   void activateToplevel(zwlr_foreign_toplevel_handle_v1* handle);

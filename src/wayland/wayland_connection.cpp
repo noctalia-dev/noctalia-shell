@@ -581,6 +581,18 @@ std::vector<WorkspaceWindowAssignment> WaylandConnection::workspaceWindowAssignm
   return result;
 }
 
+TaskbarAssignmentMode WaylandConnection::taskbarAssignmentMode() const noexcept {
+  return m_workspacesHandler.taskbarAssignmentMode();
+}
+
+std::unordered_map<std::uintptr_t, WorkspaceWindow>
+WaylandConnection::assignTaskbarWindows(const std::vector<TaskbarWindowCandidate>& windows,
+                                        wl_output* outputFilter) const {
+  return m_workspacesHandler.assignTaskbarWindows(windows, outputFilter);
+}
+
+const char* WaylandConnection::workspaceBackendName() const noexcept { return m_workspacesHandler.backendName(); }
+
 std::vector<ToplevelInfo> WaylandConnection::windowsForApp(const std::string& idLower, const std::string& wmClassLower,
                                                            wl_output* outputFilter) const {
   return m_toplevelsHandler.windowsForApp(idLower, wmClassLower, outputFilter);

@@ -27,6 +27,17 @@ struct WorkspaceWindow {
   std::int32_t y = 0;
 };
 
+struct TaskbarWindowCandidate {
+  std::uintptr_t handleKey = 0;
+  std::vector<std::string> appIds;
+  std::string title;
+};
+
+enum class TaskbarAssignmentMode {
+  Generic,
+  WorkspaceOccurrenceTitle,
+};
+
 class WorkspaceBackend {
 public:
   using ChangeCallback = std::function<void()>;
@@ -43,6 +54,13 @@ public:
   [[nodiscard]] virtual std::vector<Workspace> forOutput(wl_output* output) const = 0;
   [[nodiscard]] virtual std::unordered_map<std::string, std::vector<std::string>>
   appIdsByWorkspace(wl_output* /*output*/) const {
+    return {};
+  }
+  [[nodiscard]] virtual TaskbarAssignmentMode taskbarAssignmentMode() const noexcept {
+    return TaskbarAssignmentMode::Generic;
+  }
+  [[nodiscard]] virtual std::unordered_map<std::uintptr_t, WorkspaceWindow>
+  assignTaskbarWindows(const std::vector<TaskbarWindowCandidate>& /*windows*/, wl_output* /*output*/) const {
     return {};
   }
   [[nodiscard]] virtual std::vector<WorkspaceWindow> workspaceWindows(wl_output* /*output*/) const { return {}; }

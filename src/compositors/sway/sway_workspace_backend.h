@@ -26,6 +26,11 @@ public:
   [[nodiscard]] std::vector<Workspace> forOutput(wl_output* output) const override;
   [[nodiscard]] std::unordered_map<std::string, std::vector<std::string>>
   appIdsByWorkspace(wl_output* output) const override;
+  [[nodiscard]] TaskbarAssignmentMode taskbarAssignmentMode() const noexcept override {
+    return TaskbarAssignmentMode::WorkspaceOccurrenceTitle;
+  }
+  [[nodiscard]] std::unordered_map<std::uintptr_t, WorkspaceWindow>
+  assignTaskbarWindows(const std::vector<TaskbarWindowCandidate>& windows, wl_output* output) const override;
   [[nodiscard]] std::vector<WorkspaceWindow> workspaceWindows(wl_output* output) const override;
   void cleanup() override;
 

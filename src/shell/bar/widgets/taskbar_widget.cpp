@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <functional>
 #include <linux/input-event-codes.h>
 #include <memory>
 #include <optional>
@@ -164,17 +165,37 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
     area->setAcceptedButtons(BTN_LEFT | BTN_RIGHT);
     area->setOnAxisHandler(workspaceAxisHandler);
 
-    if (task.firstHandle != nullptr) {
+    const WorkspaceModel* taskWorkspace = nullptr;
+    if (m_groupByWorkspace && !task.workspaceKey.empty()) {
+      for (const auto& workspace : m_workspaces) {
+        if (task.workspaceKey == workspace.key || task.workspaceKey == workspace.workspace.id ||
+            task.workspaceKey == workspace.workspace.name) {
+          taskWorkspace = &workspace;
+          break;
+        }
+      }
+    }
+    const std::optional<Workspace> clickWorkspace =
+        taskWorkspace != nullptr ? std::optional<Workspace>(taskWorkspace->workspace) : std::nullopt;
+
+    if (task.firstHandle != nullptr || clickWorkspace.has_value()) {
       auto* areaPtr = area.get();
-      area->setOnClick([this, task, areaPtr, handle = task.firstHandle](const InputArea::PointerData& data) {
-        if (data.button == BTN_LEFT) {
-          m_connection.activateToplevel(handle);
-          return;
-        }
-        if (data.button == BTN_RIGHT && areaPtr != nullptr) {
-          openTaskContextMenu(task, *areaPtr);
-        }
-      });
+      area->setOnClick(
+          [this, task, areaPtr, handle = task.firstHandle, clickWorkspace](const InputArea::PointerData& data) {
+            if (data.button == BTN_LEFT) {
+              if (handle != nullptr) {
+                m_connection.activateToplevel(handle);
+                return;
+              }
+              if (clickWorkspace.has_value()) {
+                m_connection.activateWorkspace(m_output, *clickWorkspace);
+              }
+              return;
+            }
+            if (data.button == BTN_RIGHT && areaPtr != nullptr && handle != nullptr) {
+              openTaskContextMenu(task, *areaPtr);
+            }
+          });
     } else {
       area->setEnabled(false);
     }
@@ -331,6 +352,7 @@ void TaskbarWidget::updateModels() {
   const auto* activeHandle = active.has_value() ? active->handle : nullptr;
 
   const auto running = m_connection.runningAppIds(m_output);
+  const auto assignmentMode = m_connection.taskbarAssignmentMode();
   const auto resolvedRunning = app_identity::resolveRunningApps(running, desktopEntries());
   std::vector<WorkspaceModel> nextWorkspaces;
   std::unordered_map<std::string, std::vector<std::string>> runningByWorkspace;
@@ -413,264 +435,427 @@ void TaskbarWidget::updateModels() {
   });
 
   if (m_groupByWorkspace && !workspaceAssignments.empty()) {
-    std::unordered_map<std::uintptr_t, std::string> previousWorkspaceByHandle;
-    std::unordered_map<std::uintptr_t, std::string> previousWorkspaceWindowByHandle;
-    previousWorkspaceByHandle.reserve(m_tasks.size());
-    previousWorkspaceWindowByHandle.reserve(m_tasks.size());
-    for (const auto& task : m_tasks) {
-      if (!task.workspaceKey.empty()) {
-        previousWorkspaceByHandle[task.handleKey] = task.workspaceKey;
-      }
-      if (!task.workspaceWindowId.empty()) {
-        previousWorkspaceWindowByHandle[task.handleKey] = task.workspaceWindowId;
-      }
-    }
-    std::unordered_map<std::string, const WorkspaceModel*> workspaceByAnyKey;
-    workspaceByAnyKey.reserve(m_workspaces.size() * 3);
-    for (const auto& ws : nextWorkspaces) {
-      workspaceByAnyKey.emplace(ws.key, &ws);
-      if (!ws.workspace.id.empty()) {
-        workspaceByAnyKey.emplace(ws.workspace.id, &ws);
-      }
-      if (!ws.workspace.name.empty()) {
-        workspaceByAnyKey.emplace(ws.workspace.name, &ws);
-      }
-    }
-    auto isTransientWorkspace = [&](const std::string& workspaceKey) {
-      const auto it = workspaceByAnyKey.find(workspaceKey);
-      if (it == workspaceByAnyKey.end() || it->second == nullptr) {
-        return false;
-      }
-      const auto& workspace = it->second->workspace;
-      return !workspace.active && !workspace.occupied;
-    };
-
-    std::vector<bool> used(workspaceAssignments.size(), false);
-    auto matchesApp = [&](const TaskModel& task, const WorkspaceWindowAssignment& assignment) {
-      const std::string assignmentAppLower = toLower(assignment.appId);
-      return assignmentAppLower == task.appIdLower || assignmentAppLower == task.idLower ||
-             assignmentAppLower == task.startupWmClassLower || assignmentAppLower == task.nameLower;
-    };
-
-    auto assignMatch = [&](TaskModel& task, bool requireTitle,
-                           const std::function<bool(const WorkspaceWindowAssignment&)>& extraPredicate) -> bool {
-      for (std::size_t i = 0; i < workspaceAssignments.size(); ++i) {
-        if (used[i]) {
-          continue;
-        }
-        const auto& assignment = workspaceAssignments[i];
-        if (!matchesApp(task, assignment)) {
-          continue;
-        }
-        if (requireTitle && assignment.title.empty()) {
-          continue;
-        }
-        if (requireTitle && assignment.title != task.title) {
-          continue;
-        }
-        const auto previous = previousWorkspaceByHandle.find(task.handleKey);
-        if (previous != previousWorkspaceByHandle.end() && assignment.workspaceKey != previous->second &&
-            isTransientWorkspace(assignment.workspaceKey)) {
-          continue;
-        }
-        if (!extraPredicate(assignment)) {
-          continue;
-        }
-        task.workspaceKey = assignment.workspaceKey;
-        task.workspaceWindowId = assignment.windowId;
-        task.workspaceOrder = i;
-        used[i] = true;
-        return true;
-      }
-      return false;
-    };
-
-    for (auto& task : nextTasks) {
-      const auto previous = previousWorkspaceWindowByHandle.find(task.handleKey);
-      if (previous == previousWorkspaceWindowByHandle.end()) {
-        continue;
-      }
-      for (std::size_t i = 0; i < workspaceAssignments.size(); ++i) {
-        if (used[i]) {
-          continue;
-        }
-        const auto& assignment = workspaceAssignments[i];
-        if (assignment.windowId != previous->second || !matchesApp(task, assignment)) {
-          continue;
-        }
-        task.workspaceKey = assignment.workspaceKey;
-        task.workspaceWindowId = assignment.windowId;
-        task.workspaceOrder = i;
-        used[i] = true;
-        break;
-      }
-    }
-
-    for (auto& task : nextTasks) {
-      if (!task.workspaceKey.empty()) {
-        continue;
-      }
-      const auto previous = previousWorkspaceByHandle.find(task.handleKey);
-      if (previous == previousWorkspaceByHandle.end()) {
-        continue;
-      }
-      (void)assignMatch(task, true, [&](const WorkspaceWindowAssignment& assignment) {
-        return assignment.workspaceKey == previous->second;
-      });
-    }
-
-    for (auto& task : nextTasks) {
-      if (!task.workspaceKey.empty()) {
-        continue;
-      }
-      const auto previous = previousWorkspaceByHandle.find(task.handleKey);
-      if (previous == previousWorkspaceByHandle.end()) {
-        continue;
-      }
-      (void)assignMatch(task, false, [&](const WorkspaceWindowAssignment& assignment) {
-        return assignment.workspaceKey == previous->second;
-      });
-    }
-
-    for (auto& task : nextTasks) {
-      if (!task.workspaceKey.empty()) {
-        continue;
-      }
-      (void)assignMatch(task, true, [](const WorkspaceWindowAssignment&) { return true; });
-    }
-
-    for (auto& task : nextTasks) {
-      if (!task.workspaceKey.empty()) {
-        continue;
+    if (assignmentMode == TaskbarAssignmentMode::WorkspaceOccurrenceTitle) {
+      std::vector<TaskbarWindowCandidate> candidates;
+      candidates.reserve(nextTasks.size());
+      for (const auto& task : nextTasks) {
+        TaskbarWindowCandidate candidate{};
+        candidate.handleKey = task.handleKey;
+        candidate.title = task.title;
+        auto append = [&](const std::string& value) {
+          if (value.empty()) {
+            return;
+          }
+          if (std::find(candidate.appIds.begin(), candidate.appIds.end(), value) == candidate.appIds.end()) {
+            candidate.appIds.push_back(value);
+          }
+        };
+        append(task.appIdLower);
+        append(task.idLower);
+        append(task.startupWmClassLower);
+        append(task.nameLower);
+        candidates.push_back(std::move(candidate));
       }
 
-      std::optional<std::size_t> matchIndex;
-      for (std::size_t i = 0; i < workspaceAssignments.size(); ++i) {
-        if (used[i]) {
+      const auto assignedByHandle = m_connection.assignTaskbarWindows(candidates, m_output);
+      std::vector<bool> representedAssignments(workspaceAssignments.size(), false);
+
+      for (auto& task : nextTasks) {
+        const auto assignedIt = assignedByHandle.find(task.handleKey);
+        if (assignedIt == assignedByHandle.end()) {
           continue;
         }
-        const auto& assignment = workspaceAssignments[i];
-        if (!matchesApp(task, assignment)) {
-          continue;
-        }
-        const auto previous = previousWorkspaceByHandle.find(task.handleKey);
-        if (previous != previousWorkspaceByHandle.end() && assignment.workspaceKey != previous->second &&
-            isTransientWorkspace(assignment.workspaceKey)) {
-          continue;
-        }
-        if (matchIndex.has_value()) {
-          matchIndex = std::nullopt;
+
+        const auto& assigned = assignedIt->second;
+        task.workspaceKey = assigned.workspaceKey;
+        task.workspaceWindowId = assigned.windowId;
+
+        for (std::size_t assignmentIndex = 0; assignmentIndex < workspaceAssignments.size(); ++assignmentIndex) {
+          if (representedAssignments[assignmentIndex]) {
+            continue;
+          }
+          const auto& assignment = workspaceAssignments[assignmentIndex];
+          if (assignment.workspaceKey != assigned.workspaceKey) {
+            continue;
+          }
+          if (!assigned.windowId.empty() && assignment.windowId != assigned.windowId) {
+            continue;
+          }
+          if (toLower(assignment.appId) != task.appIdLower && toLower(assignment.appId) != task.idLower &&
+              toLower(assignment.appId) != task.startupWmClassLower && toLower(assignment.appId) != task.nameLower) {
+            continue;
+          }
+          if (!assigned.title.empty() && !assignment.title.empty() && assignment.title != assigned.title) {
+            continue;
+          }
+          task.workspaceOrder = assignmentIndex;
+          representedAssignments[assignmentIndex] = true;
           break;
         }
-        matchIndex = i;
       }
 
-      if (matchIndex.has_value()) {
-        task.workspaceKey = workspaceAssignments[*matchIndex].workspaceKey;
-        task.workspaceWindowId = workspaceAssignments[*matchIndex].windowId;
-        task.workspaceOrder = *matchIndex;
-        used[*matchIndex] = true;
-      }
-    }
-
-    for (auto& task : nextTasks) {
-      if (task.workspaceKey.empty() || task.workspaceOrder != std::numeric_limits<std::uint64_t>::max()) {
-        continue;
-      }
+      auto syntheticTaskKey = [](const WorkspaceWindowAssignment& assignment, std::size_t index) {
+        const std::string seed = assignment.windowId.empty()
+                                     ? assignment.workspaceKey + "\n" + assignment.appId + "\n" + assignment.title +
+                                           "\n" + std::to_string(index)
+                                     : assignment.windowId;
+        std::uintptr_t value = static_cast<std::uintptr_t>(std::hash<std::string>{}(seed));
+        if (value == 0) {
+          value = static_cast<std::uintptr_t>(index + 1);
+        }
+        return value;
+      };
 
       for (std::size_t i = 0; i < workspaceAssignments.size(); ++i) {
-        if (used[i]) {
+        if (representedAssignments[i]) {
           continue;
         }
+
         const auto& assignment = workspaceAssignments[i];
-        const std::string assignmentAppLower = toLower(assignment.appId);
-        if (assignmentAppLower != task.appIdLower && assignmentAppLower != task.idLower &&
-            assignmentAppLower != task.startupWmClassLower && assignmentAppLower != task.nameLower) {
-          continue;
-        }
-        if (assignment.workspaceKey != task.workspaceKey) {
+        if (assignment.workspaceKey.empty() || assignment.appId.empty()) {
           continue;
         }
 
-        task.workspaceOrder = i;
-        task.workspaceWindowId = assignment.windowId;
-        used[i] = true;
-        break;
-      }
-    }
-
-    // Rebuild workspaceOrder from assignment stream order every frame so
-    // left/right reorders are reflected even when toplevel `order` is static.
-    for (auto& task : nextTasks) {
-      task.workspaceOrder = std::numeric_limits<std::uint64_t>::max();
-    }
-    std::vector<bool> orderClaimed(nextTasks.size(), false);
-    std::unordered_set<std::string> claimedWindowIds;
-    for (std::size_t taskIndex = 0; taskIndex < nextTasks.size(); ++taskIndex) {
-      auto& task = nextTasks[taskIndex];
-      if (task.workspaceWindowId.empty()) {
-        continue;
-      }
-      for (std::size_t assignmentIndex = 0; assignmentIndex < workspaceAssignments.size(); ++assignmentIndex) {
-        const auto& assignment = workspaceAssignments[assignmentIndex];
-        if (assignment.windowId != task.workspaceWindowId || !matchesApp(task, assignment)) {
-          continue;
-        }
+        TaskModel task{};
+        task.handleKey = syntheticTaskKey(assignment, i);
+        task.order = static_cast<std::uint64_t>(std::numeric_limits<std::int32_t>::max()) + i;
+        task.appId = assignment.appId;
+        task.idLower = toLower(task.appId);
+        task.startupWmClassLower = task.idLower;
+        task.nameLower = task.idLower;
+        task.appIdLower = task.idLower;
+        task.title = assignment.title;
+        task.iconPath = resolveIconPath(task.appId, {});
         task.workspaceKey = assignment.workspaceKey;
-        task.workspaceOrder = assignmentIndex;
-        orderClaimed[taskIndex] = true;
-        claimedWindowIds.insert(assignment.windowId);
-        break;
+        task.workspaceWindowId = assignment.windowId;
+        task.workspaceOrder = i;
+        nextTasks.push_back(std::move(task));
       }
-    }
-    for (std::size_t assignmentIndex = 0; assignmentIndex < workspaceAssignments.size(); ++assignmentIndex) {
-      const auto& assignment = workspaceAssignments[assignmentIndex];
-      if (!assignment.windowId.empty() && claimedWindowIds.contains(assignment.windowId)) {
-        continue;
+    } else {
+      std::unordered_map<std::uintptr_t, std::string> previousWorkspaceByHandle;
+      std::unordered_map<std::uintptr_t, std::string> previousWorkspaceWindowByHandle;
+      previousWorkspaceByHandle.reserve(m_tasks.size());
+      previousWorkspaceWindowByHandle.reserve(m_tasks.size());
+      for (const auto& task : m_tasks) {
+        if (!task.workspaceKey.empty()) {
+          previousWorkspaceByHandle[task.handleKey] = task.workspaceKey;
+        }
+        if (!task.workspaceWindowId.empty()) {
+          previousWorkspaceWindowByHandle[task.handleKey] = task.workspaceWindowId;
+        }
       }
-      const std::string assignmentAppLower = toLower(assignment.appId);
+      std::unordered_map<std::string, const WorkspaceModel*> workspaceByAnyKey;
+      workspaceByAnyKey.reserve(m_workspaces.size() * 3);
+      for (const auto& ws : nextWorkspaces) {
+        workspaceByAnyKey.emplace(ws.key, &ws);
+        if (!ws.workspace.id.empty()) {
+          workspaceByAnyKey.emplace(ws.workspace.id, &ws);
+        }
+        if (!ws.workspace.name.empty()) {
+          workspaceByAnyKey.emplace(ws.workspace.name, &ws);
+        }
+      }
+      auto isTransientWorkspace = [&](const std::string& workspaceKey) {
+        const auto it = workspaceByAnyKey.find(workspaceKey);
+        if (it == workspaceByAnyKey.end() || it->second == nullptr) {
+          return false;
+        }
+        const auto& workspace = it->second->workspace;
+        return !workspace.active && !workspace.occupied;
+      };
 
-      auto appMatches = [&](const TaskModel& task) {
+      std::vector<bool> used(workspaceAssignments.size(), false);
+      auto matchesApp = [&](const TaskModel& task, const WorkspaceWindowAssignment& assignment) {
+        const std::string assignmentAppLower = toLower(assignment.appId);
         return assignmentAppLower == task.appIdLower || assignmentAppLower == task.idLower ||
                assignmentAppLower == task.startupWmClassLower || assignmentAppLower == task.nameLower;
       };
 
-      auto tryClaim = [&](bool requireWorkspace, bool requireTitle) -> bool {
-        for (std::size_t i = 0; i < nextTasks.size(); ++i) {
-          auto& task = nextTasks[i];
-          if (orderClaimed[i] || !appMatches(task)) {
+      auto assignMatch = [&](TaskModel& task, bool requireTitle,
+                             const std::function<bool(const WorkspaceWindowAssignment&)>& extraPredicate) -> bool {
+        for (std::size_t i = 0; i < workspaceAssignments.size(); ++i) {
+          if (used[i]) {
             continue;
           }
-          if (requireWorkspace && task.workspaceKey != assignment.workspaceKey) {
+          const auto& assignment = workspaceAssignments[i];
+          if (!matchesApp(task, assignment)) {
             continue;
           }
-          if (requireTitle && !assignment.title.empty() && assignment.title != task.title) {
+          if (requireTitle && assignment.title.empty()) {
             continue;
           }
-          if (task.workspaceKey.empty()) {
-            task.workspaceKey = assignment.workspaceKey;
+          if (requireTitle && assignment.title != task.title) {
+            continue;
           }
+          const auto previous = previousWorkspaceByHandle.find(task.handleKey);
+          if (previous != previousWorkspaceByHandle.end() && assignment.workspaceKey != previous->second &&
+              isTransientWorkspace(assignment.workspaceKey)) {
+            continue;
+          }
+          if (!extraPredicate(assignment)) {
+            continue;
+          }
+          task.workspaceKey = assignment.workspaceKey;
           task.workspaceWindowId = assignment.windowId;
-          task.workspaceOrder = assignmentIndex;
-          orderClaimed[i] = true;
-          if (!assignment.windowId.empty()) {
-            claimedWindowIds.insert(assignment.windowId);
-          }
+          task.workspaceOrder = i;
+          used[i] = true;
           return true;
         }
         return false;
       };
 
-      if (tryClaim(true, true)) {
-        continue;
+      for (auto& task : nextTasks) {
+        const auto previous = previousWorkspaceWindowByHandle.find(task.handleKey);
+        if (previous == previousWorkspaceWindowByHandle.end()) {
+          continue;
+        }
+        for (std::size_t i = 0; i < workspaceAssignments.size(); ++i) {
+          if (used[i]) {
+            continue;
+          }
+          const auto& assignment = workspaceAssignments[i];
+          if (assignment.windowId != previous->second || !matchesApp(task, assignment)) {
+            continue;
+          }
+          task.workspaceKey = assignment.workspaceKey;
+          task.workspaceWindowId = assignment.windowId;
+          task.workspaceOrder = i;
+          used[i] = true;
+          break;
+        }
       }
-      if (tryClaim(true, false)) {
-        continue;
+
+      for (auto& task : nextTasks) {
+        if (!task.workspaceKey.empty()) {
+          continue;
+        }
+        const auto previous = previousWorkspaceByHandle.find(task.handleKey);
+        if (previous == previousWorkspaceByHandle.end()) {
+          continue;
+        }
+        (void)assignMatch(task, true, [&](const WorkspaceWindowAssignment& assignment) {
+          return assignment.workspaceKey == previous->second;
+        });
       }
-      if (tryClaim(false, true)) {
-        continue;
+
+      for (auto& task : nextTasks) {
+        if (!task.workspaceKey.empty()) {
+          continue;
+        }
+        const auto previous = previousWorkspaceByHandle.find(task.handleKey);
+        if (previous == previousWorkspaceByHandle.end()) {
+          continue;
+        }
+        (void)assignMatch(task, false, [&](const WorkspaceWindowAssignment& assignment) {
+          return assignment.workspaceKey == previous->second;
+        });
       }
-      (void)tryClaim(false, false);
+
+      for (auto& task : nextTasks) {
+        if (!task.workspaceKey.empty()) {
+          continue;
+        }
+        (void)assignMatch(task, true, [](const WorkspaceWindowAssignment&) { return true; });
+      }
+
+      for (auto& task : nextTasks) {
+        if (!task.workspaceKey.empty()) {
+          continue;
+        }
+
+        std::optional<std::size_t> matchIndex;
+        for (std::size_t i = 0; i < workspaceAssignments.size(); ++i) {
+          if (used[i]) {
+            continue;
+          }
+          const auto& assignment = workspaceAssignments[i];
+          if (!matchesApp(task, assignment)) {
+            continue;
+          }
+          const auto previous = previousWorkspaceByHandle.find(task.handleKey);
+          if (previous != previousWorkspaceByHandle.end() && assignment.workspaceKey != previous->second &&
+              isTransientWorkspace(assignment.workspaceKey)) {
+            continue;
+          }
+          if (matchIndex.has_value()) {
+            matchIndex = std::nullopt;
+            break;
+          }
+          matchIndex = i;
+        }
+
+        if (matchIndex.has_value()) {
+          task.workspaceKey = workspaceAssignments[*matchIndex].workspaceKey;
+          task.workspaceWindowId = workspaceAssignments[*matchIndex].windowId;
+          task.workspaceOrder = *matchIndex;
+          used[*matchIndex] = true;
+        }
+      }
+
+      for (auto& task : nextTasks) {
+        if (task.workspaceKey.empty() || task.workspaceOrder != std::numeric_limits<std::uint64_t>::max()) {
+          continue;
+        }
+
+        for (std::size_t i = 0; i < workspaceAssignments.size(); ++i) {
+          if (used[i]) {
+            continue;
+          }
+          const auto& assignment = workspaceAssignments[i];
+          const std::string assignmentAppLower = toLower(assignment.appId);
+          if (assignmentAppLower != task.appIdLower && assignmentAppLower != task.idLower &&
+              assignmentAppLower != task.startupWmClassLower && assignmentAppLower != task.nameLower) {
+            continue;
+          }
+          if (assignment.workspaceKey != task.workspaceKey) {
+            continue;
+          }
+
+          task.workspaceOrder = i;
+          task.workspaceWindowId = assignment.windowId;
+          used[i] = true;
+          break;
+        }
+      }
+
+      // Rebuild workspaceOrder from assignment stream order every frame so
+      // left/right reorders are reflected even when toplevel `order` is static.
+      for (auto& task : nextTasks) {
+        task.workspaceOrder = std::numeric_limits<std::uint64_t>::max();
+      }
+      std::vector<bool> orderClaimed(nextTasks.size(), false);
+      std::unordered_set<std::string> claimedWindowIds;
+      for (std::size_t taskIndex = 0; taskIndex < nextTasks.size(); ++taskIndex) {
+        auto& task = nextTasks[taskIndex];
+        if (task.workspaceWindowId.empty()) {
+          continue;
+        }
+        for (std::size_t assignmentIndex = 0; assignmentIndex < workspaceAssignments.size(); ++assignmentIndex) {
+          const auto& assignment = workspaceAssignments[assignmentIndex];
+          if (assignment.windowId != task.workspaceWindowId || !matchesApp(task, assignment)) {
+            continue;
+          }
+          task.workspaceKey = assignment.workspaceKey;
+          task.workspaceOrder = assignmentIndex;
+          orderClaimed[taskIndex] = true;
+          claimedWindowIds.insert(assignment.windowId);
+          break;
+        }
+      }
+      for (std::size_t assignmentIndex = 0; assignmentIndex < workspaceAssignments.size(); ++assignmentIndex) {
+        const auto& assignment = workspaceAssignments[assignmentIndex];
+        if (!assignment.windowId.empty() && claimedWindowIds.contains(assignment.windowId)) {
+          continue;
+        }
+        const std::string assignmentAppLower = toLower(assignment.appId);
+
+        auto appMatches = [&](const TaskModel& task) {
+          return assignmentAppLower == task.appIdLower || assignmentAppLower == task.idLower ||
+                 assignmentAppLower == task.startupWmClassLower || assignmentAppLower == task.nameLower;
+        };
+
+        auto tryClaim = [&](bool requireWorkspace, bool requireTitle) -> bool {
+          for (std::size_t i = 0; i < nextTasks.size(); ++i) {
+            auto& task = nextTasks[i];
+            if (orderClaimed[i] || !appMatches(task)) {
+              continue;
+            }
+            if (requireWorkspace && task.workspaceKey != assignment.workspaceKey) {
+              continue;
+            }
+            if (requireTitle && !assignment.title.empty() && assignment.title != task.title) {
+              continue;
+            }
+            if (task.workspaceKey.empty()) {
+              task.workspaceKey = assignment.workspaceKey;
+            }
+            task.workspaceWindowId = assignment.windowId;
+            task.workspaceOrder = assignmentIndex;
+            orderClaimed[i] = true;
+            if (!assignment.windowId.empty()) {
+              claimedWindowIds.insert(assignment.windowId);
+            }
+            return true;
+          }
+          return false;
+        };
+
+        if (tryClaim(true, true)) {
+          continue;
+        }
+        if (tryClaim(true, false)) {
+          continue;
+        }
+        if (tryClaim(false, true)) {
+          continue;
+        }
+        (void)tryClaim(false, false);
+      }
+
+      std::vector<bool> representedAssignments(workspaceAssignments.size(), false);
+      for (const auto& task : nextTasks) {
+        if (task.workspaceKey.empty()) {
+          continue;
+        }
+        for (std::size_t i = 0; i < workspaceAssignments.size(); ++i) {
+          if (representedAssignments[i]) {
+            continue;
+          }
+          const auto& assignment = workspaceAssignments[i];
+          const std::string assignmentAppLower = toLower(assignment.appId);
+          const bool appMatches = assignmentAppLower == task.appIdLower || assignmentAppLower == task.idLower ||
+                                  assignmentAppLower == task.startupWmClassLower ||
+                                  assignmentAppLower == task.nameLower;
+          if (!appMatches || assignment.workspaceKey != task.workspaceKey) {
+            continue;
+          }
+          if (!task.workspaceWindowId.empty() && assignment.windowId != task.workspaceWindowId) {
+            continue;
+          }
+          if (!task.title.empty() && !assignment.title.empty() && assignment.title != task.title) {
+            continue;
+          }
+          representedAssignments[i] = true;
+          break;
+        }
+      }
+
+      auto syntheticTaskKey = [](const WorkspaceWindowAssignment& assignment, std::size_t index) {
+        const std::string seed = assignment.windowId.empty()
+                                     ? assignment.workspaceKey + "\n" + assignment.appId + "\n" + assignment.title +
+                                           "\n" + std::to_string(index)
+                                     : assignment.windowId;
+        std::uintptr_t value = static_cast<std::uintptr_t>(std::hash<std::string>{}(seed));
+        if (value == 0) {
+          value = static_cast<std::uintptr_t>(index + 1);
+        }
+        return value;
+      };
+
+      for (std::size_t i = 0; i < workspaceAssignments.size(); ++i) {
+        if (representedAssignments[i]) {
+          continue;
+        }
+
+        const auto& assignment = workspaceAssignments[i];
+        if (assignment.workspaceKey.empty() || assignment.appId.empty()) {
+          continue;
+        }
+        TaskModel task{};
+        task.handleKey = syntheticTaskKey(assignment, i);
+        task.order = static_cast<std::uint64_t>(std::numeric_limits<std::int32_t>::max()) + i;
+        task.appId = assignment.appId;
+        task.idLower = toLower(task.appId);
+        task.startupWmClassLower = task.idLower;
+        task.nameLower = task.idLower;
+        task.appIdLower = task.idLower;
+        task.title = assignment.title;
+        task.iconPath = resolveIconPath(task.appId, {});
+        task.workspaceKey = assignment.workspaceKey;
+        task.workspaceWindowId = assignment.windowId;
+        task.workspaceOrder = i;
+        nextTasks.push_back(std::move(task));
+      }
     }
   }
 
@@ -710,7 +895,8 @@ void TaskbarWidget::updateModels() {
     }
   }
 
-  if (m_groupByWorkspace && !nextWorkspaces.empty()) {
+  if (m_groupByWorkspace && !nextWorkspaces.empty() &&
+      assignmentMode != TaskbarAssignmentMode::WorkspaceOccurrenceTitle) {
     std::string activeWorkspaceKey;
     for (const auto& workspace : nextWorkspaces) {
       if (workspace.workspace.active) {
@@ -735,41 +921,45 @@ void TaskbarWidget::updateModels() {
       previousWorkspaceByHandle[task.handleKey] = task.workspaceKey;
     }
   }
-  std::unordered_set<std::uintptr_t> seenHandles;
-  seenHandles.reserve(nextTasks.size());
-  for (auto& task : nextTasks) {
-    seenHandles.insert(task.handleKey);
-    const auto previous = previousWorkspaceByHandle.find(task.handleKey);
-    if (previous == previousWorkspaceByHandle.end() || previous->second.empty() || task.workspaceKey.empty()) {
-      m_pendingWorkspaceTransitions.erase(task.handleKey);
-      continue;
-    }
-    if (task.workspaceKey == previous->second) {
-      m_pendingWorkspaceTransitions.erase(task.handleKey);
-      continue;
+  if (assignmentMode != TaskbarAssignmentMode::WorkspaceOccurrenceTitle) {
+    std::unordered_set<std::uintptr_t> seenHandles;
+    seenHandles.reserve(nextTasks.size());
+    for (auto& task : nextTasks) {
+      seenHandles.insert(task.handleKey);
+      const auto previous = previousWorkspaceByHandle.find(task.handleKey);
+      if (previous == previousWorkspaceByHandle.end() || previous->second.empty() || task.workspaceKey.empty()) {
+        m_pendingWorkspaceTransitions.erase(task.handleKey);
+        continue;
+      }
+      if (task.workspaceKey == previous->second) {
+        m_pendingWorkspaceTransitions.erase(task.handleKey);
+        continue;
+      }
+
+      auto& pending = m_pendingWorkspaceTransitions[task.handleKey];
+      if (pending.targetWorkspaceKey != task.workspaceKey) {
+        pending.targetWorkspaceKey = task.workspaceKey;
+        pending.votes = 1;
+      } else if (pending.votes < 255) {
+        ++pending.votes;
+      }
+
+      if (pending.votes < 2) {
+        task.workspaceKey = previous->second;
+      } else {
+        m_pendingWorkspaceTransitions.erase(task.handleKey);
+      }
     }
 
-    auto& pending = m_pendingWorkspaceTransitions[task.handleKey];
-    if (pending.targetWorkspaceKey != task.workspaceKey) {
-      pending.targetWorkspaceKey = task.workspaceKey;
-      pending.votes = 1;
-    } else if (pending.votes < 255) {
-      ++pending.votes;
+    for (auto it = m_pendingWorkspaceTransitions.begin(); it != m_pendingWorkspaceTransitions.end();) {
+      if (!seenHandles.contains(it->first)) {
+        it = m_pendingWorkspaceTransitions.erase(it);
+      } else {
+        ++it;
+      }
     }
-
-    if (pending.votes < 2) {
-      task.workspaceKey = previous->second;
-    } else {
-      m_pendingWorkspaceTransitions.erase(task.handleKey);
-    }
-  }
-
-  for (auto it = m_pendingWorkspaceTransitions.begin(); it != m_pendingWorkspaceTransitions.end();) {
-    if (!seenHandles.contains(it->first)) {
-      it = m_pendingWorkspaceTransitions.erase(it);
-    } else {
-      ++it;
-    }
+  } else {
+    m_pendingWorkspaceTransitions.clear();
   }
 
   if (modelsEqual(nextTasks, nextWorkspaces)) {

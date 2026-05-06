@@ -27,6 +27,14 @@ namespace {
   constexpr std::uint32_t kIpcWorkspaceEvent = 0x80000000u;
   constexpr std::uint32_t kIpcWindowEvent = 0x80000003u;
 
+  std::string jsonStringValue(const nlohmann::json& object, std::string_view key) {
+    const auto it = object.find(key);
+    if (it == object.end() || it->is_null() || !it->is_string()) {
+      return {};
+    }
+    return it->get<std::string>();
+  }
+
   void tallyWorkspaceWindows(const nlohmann::json& node, const std::string& currentWorkspace,
                              std::unordered_map<std::string, std::size_t>& counts) {
     if (!node.is_object()) {
@@ -36,8 +44,8 @@ namespace {
     std::string workspaceName = currentWorkspace;
     if (const auto typeIt = node.find("type"); typeIt != node.end() && typeIt->is_string()) {
       if (typeIt->get<std::string>() == "workspace") {
-        if (const auto nameIt = node.find("name"); nameIt != node.end() && nameIt->is_string()) {
-          workspaceName = nameIt->get<std::string>();
+        if (const std::string name = jsonStringValue(node, "name"); !name.empty()) {
+          workspaceName = name;
         }
       }
     }
@@ -82,8 +90,8 @@ namespace {
     std::string workspaceName = currentWorkspace;
     if (const auto typeIt = node.find("type"); typeIt != node.end() && typeIt->is_string()) {
       if (typeIt->get<std::string>() == "workspace") {
-        if (const auto nameIt = node.find("name"); nameIt != node.end() && nameIt->is_string()) {
-          workspaceName = nameIt->get<std::string>();
+        if (const std::string name = jsonStringValue(node, "name"); !name.empty()) {
+          workspaceName = name;
         }
       }
     }
@@ -131,8 +139,8 @@ namespace {
     std::string workspaceKey = currentWorkspaceKey;
     if (const auto typeIt = node.find("type"); typeIt != node.end() && typeIt->is_string()) {
       if (typeIt->get<std::string>() == "workspace") {
-        if (const auto nameIt = node.find("name"); nameIt != node.end() && nameIt->is_string()) {
-          workspaceName = nameIt->get<std::string>();
+        if (const std::string name = jsonStringValue(node, "name"); !name.empty()) {
+          workspaceName = name;
         }
         if (const auto numIt = node.find("num"); numIt != node.end() && numIt->is_number_integer()) {
           const int num = numIt->get<int>();
@@ -177,7 +185,7 @@ namespace {
           .windowId = windowId,
           .workspaceKey = workspaceKey,
           .appId = appId,
-          .title = node.value("name", ""),
+          .title = jsonStringValue(node, "name"),
           .x = x,
           .y = y,
       });
@@ -203,6 +211,23 @@ namespace {
       return i3Sock;
     }
     return {};
+  }
+
+  std::string toLowerCopy(std::string value) {
+    std::transform(value.begin(), value.end(), value.begin(),
+                   [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+    return value;
+  }
+
+  std::string assignmentLookupKey(std::string_view workspaceKey, std::string_view appId, std::string_view title) {
+    std::string key;
+    key.reserve(workspaceKey.size() + appId.size() + title.size() + 2);
+    key.append(workspaceKey);
+    key.push_back('\n');
+    key.append(appId);
+    key.push_back('\n');
+    key.append(title);
+    return key;
   }
 
 } // namespace
@@ -313,6 +338,75 @@ SwayWorkspaceBackend::appIdsByWorkspace(wl_output* output) const {
     }
   }
   return filtered;
+}
+
+std::unordered_map<std::uintptr_t, WorkspaceWindow>
+SwayWorkspaceBackend::assignTaskbarWindows(const std::vector<TaskbarWindowCandidate>& windows,
+                                           wl_output* output) const {
+  const std::string outputName = m_outputNameResolver != nullptr ? m_outputNameResolver(output) : std::string{};
+  if (output != nullptr && outputName.empty()) {
+    return {};
+  }
+
+  std::vector<const SwayWorkspace*> orderedWorkspaces;
+  orderedWorkspaces.reserve(m_workspaces.size());
+  for (const auto& workspace : m_workspaces) {
+    if (!outputName.empty() && workspace.output != outputName) {
+      continue;
+    }
+    orderedWorkspaces.push_back(&workspace);
+  }
+
+  std::vector<WorkspaceWindow> outputWindows = workspaceWindows(output);
+  std::unordered_map<std::string, std::vector<const WorkspaceWindow*>> windowsByLookupKey;
+  windowsByLookupKey.reserve(outputWindows.size());
+  for (const auto& window : outputWindows) {
+    const std::string appIdLower = toLowerCopy(window.appId);
+    windowsByLookupKey[assignmentLookupKey(window.workspaceKey, appIdLower, window.title)].push_back(&window);
+  }
+
+  std::unordered_map<std::string, std::size_t> usageCounts;
+  std::unordered_map<std::uintptr_t, WorkspaceWindow> assigned;
+  assigned.reserve(windows.size());
+
+  for (const auto& window : windows) {
+    if (window.handleKey == 0 || window.appIds.empty()) {
+      continue;
+    }
+
+    bool matched = false;
+    for (const SwayWorkspace* workspace : orderedWorkspaces) {
+      if (workspace == nullptr) {
+        continue;
+      }
+      const std::string workspaceKey = workspace->num > 0 ? std::to_string(workspace->num) : workspace->name;
+      if (workspaceKey.empty()) {
+        continue;
+      }
+
+      for (const auto& candidateAppId : window.appIds) {
+        const std::string lookupKey = assignmentLookupKey(workspaceKey, toLowerCopy(candidateAppId), window.title);
+        auto it = windowsByLookupKey.find(lookupKey);
+        if (it == windowsByLookupKey.end()) {
+          continue;
+        }
+        std::size_t& occurrence = usageCounts[lookupKey];
+        if (occurrence >= it->second.size()) {
+          continue;
+        }
+        assigned.emplace(window.handleKey, *it->second[occurrence]);
+        ++occurrence;
+        matched = true;
+        break;
+      }
+
+      if (matched) {
+        break;
+      }
+    }
+  }
+
+  return assigned;
 }
 
 std::vector<WorkspaceWindow> SwayWorkspaceBackend::workspaceWindows(wl_output* output) const {
@@ -504,8 +598,8 @@ void SwayWorkspaceBackend::parseWorkspaceList(const std::string& payload) {
         continue;
       }
       SwayWorkspace workspace;
-      workspace.name = item.value("name", "");
-      workspace.output = item.value("output", "");
+      workspace.name = jsonStringValue(item, "name");
+      workspace.output = jsonStringValue(item, "output");
       workspace.visible = item.value("visible", false);
       workspace.urgent = item.value("urgent", false);
       workspace.num = item.value("num", -1);

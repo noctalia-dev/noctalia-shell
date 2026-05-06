@@ -184,6 +184,16 @@ WaylandWorkspaces::appIdsByWorkspace(wl_output* output) const {
                                     : std::unordered_map<std::string, std::vector<std::string>>{};
 }
 
+TaskbarAssignmentMode WaylandWorkspaces::taskbarAssignmentMode() const noexcept {
+  return m_activeBackend != nullptr ? m_activeBackend->taskbarAssignmentMode() : TaskbarAssignmentMode::Generic;
+}
+
+std::unordered_map<std::uintptr_t, WorkspaceWindow>
+WaylandWorkspaces::assignTaskbarWindows(const std::vector<TaskbarWindowCandidate>& windows, wl_output* output) const {
+  return m_activeBackend != nullptr ? m_activeBackend->assignTaskbarWindows(windows, output)
+                                    : std::unordered_map<std::uintptr_t, WorkspaceWindow>{};
+}
+
 std::vector<WorkspaceWindow> WaylandWorkspaces::workspaceWindows(wl_output* output) const {
   return m_activeBackend != nullptr ? m_activeBackend->workspaceWindows(output) : std::vector<WorkspaceWindow>{};
 }
