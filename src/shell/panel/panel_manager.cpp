@@ -91,9 +91,26 @@ void PanelManager::setOpenSettingsWindowCallback(std::function<void()> callback)
   m_openSettingsWindow = std::move(callback);
 }
 
+void PanelManager::setToggleSettingsWindowCallback(std::function<void()> callback) {
+  m_toggleSettingsWindow = std::move(callback);
+}
+
 void PanelManager::openSettingsWindow() {
   if (isOpen() && !m_closing) {
     closePanel();
+  }
+  if (m_openSettingsWindow) {
+    m_openSettingsWindow();
+  }
+}
+
+void PanelManager::toggleSettingsWindow() {
+  if (isOpen() && !m_closing) {
+    closePanel();
+  }
+  if (m_toggleSettingsWindow) {
+    m_toggleSettingsWindow();
+    return;
   }
   if (m_openSettingsWindow) {
     m_openSettingsWindow();
@@ -1545,7 +1562,7 @@ void PanelManager::registerIpc(IpcService& ipc) {
   ipc.registerHandler(
       "settings-toggle",
       [this](const std::string&) -> std::string {
-        openSettingsWindow();
+        toggleSettingsWindow();
         return "ok\n";
       },
       "settings-toggle", "Toggle the settings window");

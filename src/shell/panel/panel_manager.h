@@ -55,7 +55,9 @@ public:
 
   // Optional: invoked from shell UI (e.g. control center) to spawn the standalone settings toplevel.
   void setOpenSettingsWindowCallback(std::function<void()> callback);
+  void setToggleSettingsWindowCallback(std::function<void()> callback);
   void openSettingsWindow();
+  void toggleSettingsWindow();
   void setAttachedPanelGeometryCallback(std::function<void(wl_output*, std::optional<AttachedPanelGeometry>)> callback);
   // Callback to query the bar surface rects on a given output, in output-local
   // coordinates. The click shield's input region excludes these rects so
@@ -145,6 +147,7 @@ private:
   ConfigService* m_config = nullptr;
   RenderContext* m_renderContext = nullptr;
   std::function<void()> m_openSettingsWindow;
+  std::function<void()> m_toggleSettingsWindow;
   std::function<void(wl_output*, std::optional<AttachedPanelGeometry>)> m_attachedPanelGeometryCallback;
   std::function<std::vector<InputRect>(wl_output*)> m_clickShieldExcludeRectsProvider;
   std::function<std::vector<wl_surface*>()> m_focusGrabBarSurfacesProvider;
