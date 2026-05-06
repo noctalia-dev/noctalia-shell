@@ -17,6 +17,7 @@
 #include <exception>
 #include <filesystem>
 #include <fstream>
+#include <gio/gio.h>
 #include <json.hpp>
 #include <sstream>
 #include <string>
@@ -38,7 +39,37 @@ namespace noctalia::theme {
       std::string mode;
     };
 
-    std::string resolvedModeName(const ThemeConfig& cfg) { return cfg.mode == ThemeMode::Light ? "light" : "dark"; }
+    // Returns "light" or "dark" from org.gnome.desktop.interface color-scheme.
+    std::string_view readSystemColorScheme() {
+      static GSettings* settings = []() -> GSettings* {
+        GSettingsSchemaSource* source = g_settings_schema_source_get_default();
+        if (source == nullptr)
+          return nullptr;
+        GSettingsSchema* schema = g_settings_schema_source_lookup(source, "org.gnome.desktop.interface", TRUE);
+        if (schema == nullptr)
+          return nullptr;
+        const bool hasKey = g_settings_schema_has_key(schema, "color-scheme") != FALSE;
+        g_settings_schema_unref(schema);
+        if (!hasKey)
+          return nullptr;
+        return g_settings_new("org.gnome.desktop.interface");
+      }();
+
+      if (settings == nullptr)
+        return "dark";
+      gchar* raw = g_settings_get_string(settings, "color-scheme");
+      if (raw == nullptr)
+        return "dark";
+      const bool isLight = (std::string_view(raw) == "prefer-light");
+      g_free(raw);
+      return isLight ? "light" : "dark";
+    }
+
+    std::string resolvedModeName(const ThemeConfig& cfg) {
+      if (cfg.mode == ThemeMode::Auto)
+        return std::string(readSystemColorScheme());
+      return cfg.mode == ThemeMode::Light ? "light" : "dark";
+    }
 
     ResolvedTheme resolveBuiltin(const ThemeConfig& cfg) {
       const auto* palette = findBuiltinPalette(cfg.builtinPalette);
@@ -236,6 +267,12 @@ namespace noctalia::theme {
 
   void ThemeService::onWallpaperChange() {
     if (m_config.config().theme.source == ThemeSource::Wallpaper) {
+      resolveAndSet(/*animate=*/true);
+    }
+  }
+
+  void ThemeService::onAutoSchemeChanged() {
+    if (m_config.config().theme.mode == ThemeMode::Auto) {
       resolveAndSet(/*animate=*/true);
     }
   }

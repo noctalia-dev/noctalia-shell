@@ -330,6 +330,22 @@ void Application::initServices() {
   m_themeService.apply();
   m_configService.addReloadCallback([this]() { m_themeService.onConfigReload(); });
 
+  // Watch the dconf user database so Auto mode reacts immediately to system
+  // color-scheme changes (org.gnome.desktop.interface color-scheme).
+  {
+    const char* xdg = std::getenv("XDG_CONFIG_HOME");
+    const char* home = std::getenv("HOME");
+    std::filesystem::path dconfDb;
+    if (xdg != nullptr && xdg[0] != '\0') {
+      dconfDb = std::filesystem::path(xdg) / "dconf" / "user";
+    } else if (home != nullptr && home[0] != '\0') {
+      dconfDb = std::filesystem::path(home) / ".config" / "dconf" / "user";
+    }
+    if (!dconfDb.empty()) {
+      m_fileWatcher.watch(dconfDb, [this]() { m_themeService.onAutoSchemeChanged(); });
+    }
+  }
+
   if (!m_wayland.connect()) {
     throw std::runtime_error("failed to connect to Wayland display");
   }
