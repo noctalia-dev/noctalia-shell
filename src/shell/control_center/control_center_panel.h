@@ -23,6 +23,7 @@ class BluetoothService;
 class BrightnessService;
 class Button;
 class ConfigService;
+class DependencyService;
 class Flex;
 class HttpClient;
 class IdleInhibitor;
@@ -56,8 +57,8 @@ public:
                      BluetoothService* bluetooth = nullptr, BluetoothAgent* bluetoothAgent = nullptr,
                      BrightnessService* brightness = nullptr, SystemMonitorService* sysmon = nullptr,
                      NightLightManager* nightLight = nullptr, noctalia::theme::ThemeService* theme = nullptr,
-                     IdleInhibitor* idleInhibitor = nullptr, WaylandConnection* wayland = nullptr,
-                     Wallpaper* wallpaper = nullptr);
+                     IdleInhibitor* idleInhibitor = nullptr, DependencyService* dependencies = nullptr,
+                     WaylandConnection* wayland = nullptr, Wallpaper* wallpaper = nullptr);
 
   void create() override;
   void onFrameTick(float deltaMs) override;
@@ -135,4 +136,5 @@ private:
   std::array<Flex*, kTabCount> m_tabHeaderActions{};
   TabId m_activeTab = TabId::Overview;
   NotificationManager* m_notificationManager = nullptr;
+  DependencyService* m_dependencies = nullptr;
 };

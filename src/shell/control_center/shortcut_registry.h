@@ -15,6 +15,7 @@ public:
   [[nodiscard]] virtual std::string_view iconOn() const = 0;
   [[nodiscard]] virtual std::string_view iconOff() const = 0;
   [[nodiscard]] virtual bool isToggle() const { return false; }
+  [[nodiscard]] virtual bool enabled() const { return true; }
 
   [[nodiscard]] virtual bool active() const { return false; }
 

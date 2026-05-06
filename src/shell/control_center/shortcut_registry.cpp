@@ -13,6 +13,7 @@
 #include "shell/bar/widgets/keyboard_layout_widget.h"
 #include "shell/control_center/shortcut_services.h"
 #include "shell/panel/panel_manager.h"
+#include "system/dependency_service.h"
 #include "system/night_light_manager.h"
 #include "system/weather_service.h"
 #include "theme/theme_service.h"
@@ -88,9 +89,10 @@ namespace {
 
   class NightlightShortcut final : public Shortcut {
   public:
-    explicit NightlightShortcut(NightLightManager* svc) : m_svc(svc) {}
+    NightlightShortcut(NightLightManager* svc, DependencyService* deps) : m_svc(svc), m_deps(deps) {}
     std::string_view id() const override { return "nightlight"; }
     std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.nightlight"); }
+    bool enabled() const override { return m_deps != nullptr && m_deps->hasWlsunset(); }
     std::string displayLabel() const override {
       if (m_svc == nullptr) {
         return defaultLabel();
@@ -116,7 +118,7 @@ namespace {
     bool isToggle() const override { return true; }
     bool active() const override { return m_svc != nullptr && (m_svc->forceEnabled() || m_svc->active()); }
     void onClick() override {
-      if (m_svc == nullptr) {
+      if (!enabled() || m_svc == nullptr) {
         return;
       }
       // Mirror the bar widget: primary toggles on/off; if currently forced,
@@ -130,13 +132,14 @@ namespace {
       }
     }
     void onRightClick() override {
-      if (m_svc != nullptr) {
+      if (enabled() && m_svc != nullptr) {
         m_svc->toggleForceEnabled();
       }
     }
 
   private:
     NightLightManager* m_svc;
+    DependencyService* m_deps;
   };
 
   class NotificationShortcut final : public Shortcut {
@@ -502,7 +505,7 @@ std::unique_ptr<Shortcut> ShortcutRegistry::create(std::string_view type, const 
   if (type == "bluetooth")
     return std::make_unique<BluetoothShortcut>(s.bluetooth);
   if (type == "nightlight")
-    return std::make_unique<NightlightShortcut>(s.nightLight);
+    return std::make_unique<NightlightShortcut>(s.nightLight, s.dependencies);
   if (type == "notification")
     return std::make_unique<NotificationShortcut>(s.notifications);
   if (type == "dark_mode")

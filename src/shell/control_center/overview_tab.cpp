@@ -8,6 +8,7 @@
 #include "shell/control_center/shortcut_registry.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/wallpaper/wallpaper.h"
+#include "system/dependency_service.h"
 #include "system/distro_info.h"
 #include "system/weather_service.h"
 #include "time/time_format.h"
@@ -55,10 +56,23 @@ OverviewTab::OverviewTab(MprisService* mpris, WeatherService* weather, PipeWireS
                          PowerProfilesService* powerProfiles, ConfigService* config, NetworkService* network,
                          BluetoothService* bluetooth, NightLightManager* nightLight,
                          noctalia::theme::ThemeService* theme, NotificationManager* notifications,
-                         IdleInhibitor* idleInhibitor, WaylandConnection* wayland, Wallpaper* wallpaper)
-    : m_mpris(mpris), m_weather(weather), m_config(config), m_wallpaper(wallpaper),
-      m_services{network, bluetooth,     nightLight, theme,   notifications, idleInhibitor,
-                 audio,   powerProfiles, mpris,      weather, config,        wayland} {}
+                         IdleInhibitor* idleInhibitor, DependencyService* dependencies, WaylandConnection* wayland,
+                         Wallpaper* wallpaper)
+    : m_mpris(mpris), m_weather(weather), m_config(config), m_wallpaper(wallpaper), m_services{
+                                                                                        .network = network,
+                                                                                        .bluetooth = bluetooth,
+                                                                                        .nightLight = nightLight,
+                                                                                        .theme = theme,
+                                                                                        .notifications = notifications,
+                                                                                        .idleInhibitor = idleInhibitor,
+                                                                                        .audio = audio,
+                                                                                        .powerProfiles = powerProfiles,
+                                                                                        .mpris = mpris,
+                                                                                        .weather = weather,
+                                                                                        .config = config,
+                                                                                        .dependencies = dependencies,
+                                                                                        .wayland = wayland,
+                                                                                    } {}
 
 OverviewTab::~OverviewTab() = default;
 
@@ -321,6 +335,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
     }
 
     const std::string label = sc.label.has_value() ? *sc.label : shortcut->displayLabel();
+    const bool enabled = shortcut->enabled();
     const bool isActive = shortcut->isToggle() && shortcut->active();
 
     auto btn = std::make_unique<Button>();
@@ -343,6 +358,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
     btn->setPadding(Style::spaceSm * scale);
     btn->setRadius(Style::radiusLg * scale);
     btn->setVariant(isActive ? ButtonVariant::Accent : ButtonVariant::Outline);
+    btn->setEnabled(enabled);
 
     const std::size_t padIdx = m_shortcutPads.size();
     btn->setOnClick([this, padIdx]() {
@@ -904,10 +920,12 @@ void OverviewTab::sync(Renderer& renderer) {
 void OverviewTab::syncShortcuts() {
   for (auto& pad : m_shortcutPads) {
     auto& sc = *pad.shortcut;
+    const bool enabled = sc.enabled();
     const bool on = sc.isToggle() && sc.active();
 
     if (pad.button != nullptr) {
-      pad.button->setVariant(on ? ButtonVariant::Accent : ButtonVariant::Outline);
+      pad.button->setEnabled(enabled);
+      pad.button->setVariant((enabled && on) ? ButtonVariant::Accent : ButtonVariant::Outline);
     }
     if (pad.glyph != nullptr) {
       pad.glyph->setGlyph(sc.displayIcon());

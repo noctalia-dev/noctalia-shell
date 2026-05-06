@@ -128,6 +128,11 @@ void SettingsWindow::open() {
   if (m_wayland == nullptr || m_renderContext == nullptr || !m_wayland->hasXdgShell()) {
     return;
   }
+
+  if (m_dependencies != nullptr) {
+    m_dependencies->rescan();
+  }
+
   if (isOpen()) {
     m_wayland->activateSurface(m_surface->wlSurface());
     return;

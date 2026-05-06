@@ -2,6 +2,7 @@
 
 class BluetoothService;
 class ConfigService;
+class DependencyService;
 class IdleInhibitor;
 class MprisService;
 class NetworkService;
@@ -28,5 +29,6 @@ struct ShortcutServices {
   MprisService* mpris = nullptr;
   WeatherService* weather = nullptr;
   ConfigService* config = nullptr;
+  DependencyService* dependencies = nullptr;
   WaylandConnection* wayland = nullptr;
 };
