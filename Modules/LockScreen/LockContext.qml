@@ -18,6 +18,13 @@ Scope {
   property string errorMessage: ""
   property string infoMessage: ""
 
+  property real lockedAt: 0
+  property bool graceAllowed: false
+
+  function isInGracePeriod() {
+    return graceAllowed && lockedAt > 0 && Settings.data.general.lockScreenGracePeriod > 0 && Date.now() < lockedAt + Settings.data.general.lockScreenGracePeriod * 1000;
+  }
+
   readonly property string pamConfigDirectory: "/etc/pam.d"
   property string pamConfig: Quickshell.env("NOCTALIA_PAM_SERVICE") || "login"
   property bool pamReady: false
@@ -91,6 +98,16 @@ Scope {
         pam.start();
       }
     }
+  }
+
+  function tryGraceUnlock() {
+    if (!isInGracePeriod()) {
+      return false
+    }
+
+    Logger.i("LockContext", "Unlocking within grace period (lockedAt=" + lockedAt + ")");
+    root.unlocked();
+    return true;
   }
 
   function tryUnlock() {
