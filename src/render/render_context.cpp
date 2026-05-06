@@ -56,12 +56,24 @@ namespace {
                                float bottom) {
     const float scaleX = sw > 0.0f ? bw / sw : 1.0f;
     const float scaleY = sh > 0.0f ? bh / sh : 1.0f;
+    const auto clampX = [bw](std::int32_t value) {
+      return std::clamp(value, std::int32_t{0}, static_cast<std::int32_t>(std::ceil(bw)));
+    };
+    const auto clampY = [bh](std::int32_t value) {
+      return std::clamp(value, std::int32_t{0}, static_cast<std::int32_t>(std::ceil(bh)));
+    };
 
+    // Round clip edges independently in buffer space. Rounding the size after
+    // flooring the origin can drop the final column/row for fractional origins.
+    const std::int32_t x0 = clampX(static_cast<std::int32_t>(std::floor(left * scaleX)));
+    const std::int32_t x1 = clampX(static_cast<std::int32_t>(std::ceil(right * scaleX)));
+    const std::int32_t y0 = clampY(static_cast<std::int32_t>(std::floor((sh - bottom) * scaleY)));
+    const std::int32_t y1 = clampY(static_cast<std::int32_t>(std::ceil((sh - top) * scaleY)));
     return RenderScissor{
-        .x = static_cast<std::int32_t>(std::floor(left * scaleX)),
-        .y = static_cast<std::int32_t>(std::floor((sh - bottom) * scaleY)),
-        .width = static_cast<std::int32_t>(std::ceil(std::max(0.0f, right - left) * scaleX)),
-        .height = static_cast<std::int32_t>(std::ceil(std::max(0.0f, bottom - top) * scaleY)),
+        .x = x0,
+        .y = y0,
+        .width = std::max(std::int32_t{0}, x1 - x0),
+        .height = std::max(std::int32_t{0}, y1 - y0),
     };
   }
 
