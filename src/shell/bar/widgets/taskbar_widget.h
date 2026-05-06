@@ -38,6 +38,7 @@ private:
     std::string title;
     std::string iconPath;
     std::string workspaceKey;
+    std::string workspaceWindowId;
     std::uint64_t workspaceOrder = std::numeric_limits<std::uint64_t>::max();
     bool active = false;
     zwlr_foreign_toplevel_handle_v1* firstHandle = nullptr;

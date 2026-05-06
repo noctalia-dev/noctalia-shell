@@ -15,6 +15,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <unordered_set>
+#include <utility>
 
 namespace {
 
@@ -126,8 +127,7 @@ int NiriWorkspaceBackend::pollTimeoutMs() const noexcept {
   }
 
   const auto remaining =
-      std::chrono::duration_cast<std::chrono::milliseconds>(m_nextReconnectAt - std::chrono::steady_clock::now())
-          .count();
+      std::chrono::ceil<std::chrono::milliseconds>(m_nextReconnectAt - std::chrono::steady_clock::now()).count();
   return static_cast<int>(std::max<std::int64_t>(0, remaining));
 }
 
@@ -538,9 +538,12 @@ bool NiriWorkspaceBackend::handleWindowsChanged(const nlohmann::json& payload) {
     return false;
   }
 
+  const bool membershipChanged = !sameWindowMembership(next, m_windows);
   m_windows = std::move(next);
-  recomputeOccupancy();
-  return true;
+  if (membershipChanged) {
+    recomputeOccupancy();
+  }
+  return membershipChanged;
 }
 
 bool NiriWorkspaceBackend::handleOverviewChanged(const nlohmann::json& payload) {
@@ -580,20 +583,27 @@ bool NiriWorkspaceBackend::handleWindowOpenedOrChanged(const nlohmann::json& pay
     return false;
   }
 
-  const auto parsed = parseWindow(*window);
-  if (!parsed.has_value()) {
+  const auto id = jsonOptionalUnsigned(*window, "id");
+  if (!id.has_value()) {
     return false;
   }
 
-  const auto [id, state] = *parsed;
-  const auto existing = m_windows.find(id);
+  const auto existing = m_windows.find(*id);
+  WindowState state = existing != m_windows.end() ? existing->second : WindowState{};
+  if (!applyWindowFields(*window, state)) {
+    return false;
+  }
   if (existing != m_windows.end() && existing->second == state) {
     return false;
   }
 
-  m_windows[id] = state;
-  recomputeOccupancy();
-  return true;
+  const bool membershipChanged = existing == m_windows.end() ? (state.workspaceId.has_value() || !state.appId.empty())
+                                                             : !sameWindowMembership(existing->second, state);
+  m_windows[*id] = state;
+  if (membershipChanged) {
+    recomputeOccupancy();
+  }
+  return membershipChanged;
 }
 
 bool NiriWorkspaceBackend::handleWindowLayoutsChanged(const nlohmann::json& payload) {
@@ -602,7 +612,6 @@ bool NiriWorkspaceBackend::handleWindowLayoutsChanged(const nlohmann::json& payl
     return false;
   }
 
-  bool changed = false;
   for (const auto& item : *changes) {
     if (!item.is_array() || item.size() < 2) {
       continue;
@@ -624,13 +633,14 @@ bool NiriWorkspaceBackend::handleWindowLayoutsChanged(const nlohmann::json& payl
         if (it->second.x != x || it->second.y != y) {
           it->second.x = x;
           it->second.y = y;
-          changed = true;
         }
       }
     }
   }
 
-  return changed;
+  // Layout positions are useful when a taskbar asks for ordering, but they do
+  // not affect workspace occupancy or the normal workspace indicators.
+  return false;
 }
 
 bool NiriWorkspaceBackend::handleWindowClosed(const nlohmann::json& payload) {
@@ -682,36 +692,67 @@ NiriWorkspaceBackend::parseWindow(const nlohmann::json& json) {
     return std::nullopt;
   }
 
-  std::int32_t x = 0;
-  std::int32_t y = 0;
+  WindowState state;
+  (void)applyWindowFields(json, state);
+  return std::pair<std::uint64_t, WindowState>{*id, state};
+}
+
+bool NiriWorkspaceBackend::applyWindowFields(const nlohmann::json& json, WindowState& state) {
+  if (!json.is_object()) {
+    return false;
+  }
+
+  bool changed = false;
+  if (json.contains("workspace_id")) {
+    state.workspaceId = jsonOptionalUnsigned(json, "workspace_id");
+    changed = true;
+  }
+
+  if (json.contains("app_id") || json.contains("class")) {
+    auto appId = jsonOptionalString(json, "app_id");
+    if (appId.empty()) {
+      appId = jsonOptionalString(json, "class");
+    }
+    state.appId = std::move(appId);
+    changed = true;
+  }
+
+  if (json.contains("title")) {
+    state.title = jsonOptionalString(json, "title");
+    changed = true;
+  }
+
   if (json.contains("layout")) {
     const auto& layout = json["layout"];
     if (layout.contains("pos_in_scrolling_layout")) {
       const auto& pos = layout["pos_in_scrolling_layout"];
       if (pos.is_array() && pos.size() >= 2) {
-        x = pos[0].get<std::int32_t>();
-        y = pos[1].get<std::int32_t>();
+        state.x = pos[0].get<std::int32_t>();
+        state.y = pos[1].get<std::int32_t>();
+        changed = true;
       }
     }
   }
 
-  return std::pair<std::uint64_t, WindowState>{
-      *id,
-      WindowState{
-          .workspaceId = jsonOptionalUnsigned(json, "workspace_id"),
-          .appId =
-              [&json]() {
-                auto appId = jsonOptionalString(json, "app_id");
-                if (appId.empty()) {
-                  appId = jsonOptionalString(json, "class");
-                }
-                return appId;
-              }(),
-          .title = jsonOptionalString(json, "title"),
-          .x = x,
-          .y = y,
-      },
-  };
+  return changed;
+}
+
+bool NiriWorkspaceBackend::sameWindowMembership(const WindowState& lhs, const WindowState& rhs) noexcept {
+  return lhs.workspaceId == rhs.workspaceId && lhs.appId == rhs.appId;
+}
+
+bool NiriWorkspaceBackend::sameWindowMembership(const std::unordered_map<std::uint64_t, WindowState>& lhs,
+                                                const std::unordered_map<std::uint64_t, WindowState>& rhs) noexcept {
+  if (lhs.size() != rhs.size()) {
+    return false;
+  }
+  for (const auto& [id, lhsWindow] : lhs) {
+    const auto rhsIt = rhs.find(id);
+    if (rhsIt == rhs.end() || !sameWindowMembership(lhsWindow, rhsIt->second)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 std::optional<std::uint64_t> NiriWorkspaceBackend::parseUnsigned(const std::string& value) {

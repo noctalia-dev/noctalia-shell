@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <stdexcept>
+#include <utility>
 #include <wayland-client.h>
 
 namespace {
@@ -214,7 +215,13 @@ void WaylandConnection::setOutputChangeCallback(ChangeCallback callback) {
 
 void WaylandConnection::setWorkspaceChangeCallback(ChangeCallback callback) {
   m_workspaceChangeCallback = std::move(callback);
+  m_lastWorkspaceModelSnapshot = workspaceModelSnapshot();
   auto wrapper = [this]() {
+    auto nextSnapshot = workspaceModelSnapshot();
+    if (sameWorkspaceModelSnapshot(nextSnapshot, m_lastWorkspaceModelSnapshot)) {
+      return;
+    }
+    m_lastWorkspaceModelSnapshot = std::move(nextSnapshot);
     if (m_workspaceChangeCallback) {
       m_workspaceChangeCallback();
     }
@@ -448,6 +455,74 @@ std::vector<Workspace> WaylandConnection::workspaces(wl_output* output) const {
     m_niriWorkspaceBackend->apply(current, found != nullptr ? found->connectorName : std::string{});
   }
   return current;
+}
+
+std::vector<WaylandConnection::WorkspaceModelSnapshot> WaylandConnection::workspaceModelSnapshot() const {
+  auto sortedAssignments = [](std::vector<WorkspaceWindowAssignment> assignments) {
+    std::sort(assignments.begin(), assignments.end(), [](const auto& lhs, const auto& rhs) {
+      if (lhs.windowId != rhs.windowId) {
+        return lhs.windowId < rhs.windowId;
+      }
+      if (lhs.workspaceKey != rhs.workspaceKey) {
+        return lhs.workspaceKey < rhs.workspaceKey;
+      }
+      return lhs.appId < rhs.appId;
+    });
+    return assignments;
+  };
+
+  auto makeSnapshot = [&](const WaylandOutput* output) {
+    auto* wlOutput = output != nullptr ? output->output : nullptr;
+    return WorkspaceModelSnapshot{
+        .outputName = output != nullptr ? output->name : 0,
+        .workspaces = workspaces(wlOutput),
+        .assignments = sortedAssignments(workspaceWindowAssignments(wlOutput)),
+    };
+  };
+
+  std::vector<WorkspaceModelSnapshot> snapshot;
+  if (m_outputs.empty()) {
+    snapshot.push_back(makeSnapshot(nullptr));
+    return snapshot;
+  }
+
+  snapshot.reserve(m_outputs.size());
+  for (const auto& output : m_outputs) {
+    snapshot.push_back(makeSnapshot(&output));
+  }
+  return snapshot;
+}
+
+bool WaylandConnection::sameWorkspaceModelSnapshot(const std::vector<WorkspaceModelSnapshot>& lhs,
+                                                   const std::vector<WorkspaceModelSnapshot>& rhs) {
+  auto sameWorkspace = [](const Workspace& a, const Workspace& b) {
+    return a.id == b.id && a.name == b.name && a.coordinates == b.coordinates && a.active == b.active &&
+           a.urgent == b.urgent && a.occupied == b.occupied;
+  };
+  auto sameAssignment = [](const WorkspaceWindowAssignment& a, const WorkspaceWindowAssignment& b) {
+    return a.windowId == b.windowId && a.workspaceKey == b.workspaceKey && a.appId == b.appId;
+  };
+
+  if (lhs.size() != rhs.size()) {
+    return false;
+  }
+  for (std::size_t i = 0; i < lhs.size(); ++i) {
+    if (lhs[i].outputName != rhs[i].outputName || lhs[i].workspaces.size() != rhs[i].workspaces.size() ||
+        lhs[i].assignments.size() != rhs[i].assignments.size()) {
+      return false;
+    }
+    for (std::size_t w = 0; w < lhs[i].workspaces.size(); ++w) {
+      if (!sameWorkspace(lhs[i].workspaces[w], rhs[i].workspaces[w])) {
+        return false;
+      }
+    }
+    for (std::size_t a = 0; a < lhs[i].assignments.size(); ++a) {
+      if (!sameAssignment(lhs[i].assignments[a], rhs[i].assignments[a])) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 std::optional<ActiveToplevel> WaylandConnection::activeToplevel() const { return m_toplevelsHandler.current(); }

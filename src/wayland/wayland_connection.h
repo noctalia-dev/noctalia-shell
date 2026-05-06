@@ -187,11 +187,20 @@ public:
   void onBackgroundEffectCapabilities(std::uint32_t capabilities) noexcept;
 
 private:
+  struct WorkspaceModelSnapshot {
+    std::uint32_t outputName = 0;
+    std::vector<Workspace> workspaces;
+    std::vector<WorkspaceWindowAssignment> assignments;
+  };
+
   void bindGlobal(wl_registry* registry, std::uint32_t name, const char* interface, std::uint32_t version);
   void bindClipboardService();
   void bindVirtualKeyboardService();
   void cleanup();
   void logStartupSummary() const;
+  [[nodiscard]] std::vector<WorkspaceModelSnapshot> workspaceModelSnapshot() const;
+  [[nodiscard]] static bool sameWorkspaceModelSnapshot(const std::vector<WorkspaceModelSnapshot>& lhs,
+                                                       const std::vector<WorkspaceModelSnapshot>& rhs);
 
   wl_display* m_display = nullptr;
   wl_registry* m_registry = nullptr;
@@ -225,6 +234,7 @@ private:
   std::vector<WaylandOutput> m_outputs;
   ChangeCallback m_outputChangeCallback;
   ChangeCallback m_workspaceChangeCallback;
+  std::vector<WorkspaceModelSnapshot> m_lastWorkspaceModelSnapshot;
   std::unordered_map<wl_surface*, wl_output*> m_surfaceOutputMap;
   std::unordered_map<wl_surface*, zwlr_layer_surface_v1*> m_layerSurfaceMap;
   wl_output* m_lastPointerOutput = nullptr;
