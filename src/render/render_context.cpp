@@ -8,6 +8,7 @@
 #include "render/core/texture_manager.h"
 #include "render/gl_shared_context.h"
 #include "render/render_target.h"
+#include "render/scene/audio_spectrum_node.h"
 #include "render/scene/effect_node.h"
 #include "render/scene/glyph_node.h"
 #include "render/scene/graph_node.h"
@@ -305,6 +306,17 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
     auto style = spinner->style();
     style.color.a *= effectiveOpacity;
     m_backend->drawSpinner(sw, sh, node->width(), node->height(), style, worldTransform);
+    break;
+  }
+  case NodeType::AudioSpectrum: {
+    const auto* spectrum = static_cast<const AudioSpectrumNode*>(node);
+    auto style = spectrum->style();
+    style.lowColor.a *= effectiveOpacity;
+    style.highColor.a *= effectiveOpacity;
+    const float pixelScaleX = sw > 0.0f ? bw / sw : 1.0f;
+    const float pixelScaleY = sh > 0.0f ? bh / sh : 1.0f;
+    m_backend->drawAudioSpectrum(sw, sh, pixelScaleX, pixelScaleY, node->width(), node->height(), style,
+                                 spectrum->values(), worldTransform);
     break;
   }
   case NodeType::Effect: {
