@@ -426,9 +426,11 @@ namespace settings {
     };
 
     const auto makeRow = [&](Flex& section, const SettingEntry& entry, std::unique_ptr<Node> control) {
-      const bool overridden = (ctx.configService != nullptr && ctx.configService->hasOverride(entry.path));
+      const bool overridden = (ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(entry.path));
+      const bool redundantGuiOverride =
+          ctx.configService != nullptr && ctx.configService->hasOverride(entry.path) && !overridden;
       const bool monitorSetting = isMonitorOverrideSettingPath(entry.path);
-      const bool monitorExplicit = monitorOverrideHasExplicitValue(cfg, entry.path);
+      const bool monitorExplicit = monitorOverrideHasExplicitValue(cfg, entry.path) && !redundantGuiOverride;
       const bool monitorInherited = monitorSetting && !monitorExplicit;
 
       auto row = std::make_unique<Flex>();
@@ -792,7 +794,7 @@ namespace settings {
 
     const auto makeSearchPickerBlock = [&](Flex& section, const SettingEntry& entry,
                                            const SearchPickerSetting& setting) {
-      const bool overridden = (ctx.configService != nullptr && ctx.configService->hasOverride(entry.path));
+      const bool overridden = (ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(entry.path));
       const std::string pickerPath = pathKey(entry.path);
 
       auto block = std::make_unique<Flex>();
@@ -912,7 +914,7 @@ namespace settings {
     };
 
     const auto makeMultiSelectBlock = [&](Flex& section, const SettingEntry& entry, const MultiSelectSetting& setting) {
-      const bool overridden = (ctx.configService != nullptr && ctx.configService->hasOverride(entry.path));
+      const bool overridden = (ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(entry.path));
 
       auto block = std::make_unique<Flex>();
       block->setDirection(FlexDirection::Vertical);
@@ -1004,7 +1006,7 @@ namespace settings {
     };
 
     const auto makeListBlock = [&](Flex& section, const SettingEntry& entry, const ListSetting& list) {
-      const bool overridden = (ctx.configService != nullptr && ctx.configService->hasOverride(entry.path));
+      const bool overridden = (ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(entry.path));
 
       auto block = std::make_unique<Flex>();
       block->setDirection(FlexDirection::Vertical);
@@ -1176,7 +1178,8 @@ namespace settings {
       if (!ctx.showAdvanced && entry.advanced) {
         continue;
       }
-      if (ctx.showOverriddenOnly && ctx.configService != nullptr && !ctx.configService->hasOverride(entry.path)) {
+      if (ctx.showOverriddenOnly && ctx.configService != nullptr &&
+          !ctx.configService->hasEffectiveOverride(entry.path)) {
         continue;
       }
       if (!matchesNormalizedSettingQuery(entry, normalizedSearchQuery)) {

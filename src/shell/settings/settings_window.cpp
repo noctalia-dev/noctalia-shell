@@ -1014,7 +1014,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   if (m_config != nullptr) {
     for (const auto& entry : m_settingsRegistry) {
       if (settingEntryBelongsToPage(entry, m_selectedSection, m_selectedBarName, m_selectedMonitorOverride) &&
-          m_config->hasOverride(entry.path) && !containsPath(resetPagePaths, entry.path)) {
+          m_config->hasEffectiveOverride(entry.path) && !containsPath(resetPagePaths, entry.path)) {
         resetPagePaths.push_back(entry.path);
       }
     }

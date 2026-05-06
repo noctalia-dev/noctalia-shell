@@ -691,7 +691,7 @@ namespace settings {
           continue;
         }
         const auto path = widgetSettingPath(std::string(widgetName), key);
-        const bool overridden = ctx.configService != nullptr && ctx.configService->hasOverride(path);
+        const bool overridden = ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(path);
         if (ctx.showOverriddenOnly && !overridden) {
           continue;
         }
@@ -722,7 +722,7 @@ namespace settings {
         }
         const auto path = widgetSettingPath(std::string(widgetName), key);
         const std::string deleteKey = pathKey(path);
-        const bool overridden = ctx.configService != nullptr && ctx.configService->hasOverride(path);
+        const bool overridden = ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(path);
         const bool pendingDelete = ctx.pendingDeleteWidgetSettingPath == deleteKey;
 
         auto row = std::make_unique<Flex>();
@@ -781,7 +781,7 @@ namespace settings {
       }
 
       auto path = widgetSettingPath(std::string(widgetName), "type");
-      const bool overridden = ctx.configService != nullptr && ctx.configService->hasOverride(path);
+      const bool overridden = ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(path);
       if (ctx.showOverriddenOnly && !overridden) {
         return;
       }
@@ -856,7 +856,7 @@ namespace settings {
           continue;
         }
         const auto path = widgetSettingPath(widgetName, spec.key);
-        const bool overridden = ctx.configService != nullptr && ctx.configService->hasOverride(path);
+        const bool overridden = ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(path);
         if (ctx.showOverriddenOnly && !overridden) {
           continue;
         }
@@ -1065,8 +1065,14 @@ namespace settings {
             currentLaneKey = std::string(laneKey);
             currentLanePath = std::move(p);
             currentLaneItems = std::move(items);
-            currentLaneInherited = isMonitorWidgetListPath(currentLanePath) &&
-                                   !monitorWidgetListHasExplicitValue(ctx.config, currentLanePath);
+            const bool currentLaneOverridden =
+                ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(currentLanePath);
+            const bool currentLaneRedundantGuiOverride = ctx.configService != nullptr &&
+                                                         ctx.configService->hasOverride(currentLanePath) &&
+                                                         !currentLaneOverridden;
+            currentLaneInherited =
+                isMonitorWidgetListPath(currentLanePath) &&
+                (!monitorWidgetListHasExplicitValue(ctx.config, currentLanePath) || currentLaneRedundantGuiOverride);
             break;
           }
         }
@@ -1580,9 +1586,11 @@ namespace settings {
     for (const auto laneKey : kLaneKeys) {
       auto lanePath = pathWithLastSegment(entry.path, std::string(laneKey));
       const auto laneItems = barWidgetItemsForPath(ctx.config, lanePath);
-      const bool overridden = ctx.configService != nullptr && ctx.configService->hasOverride(lanePath);
-      const bool inherited =
-          isMonitorWidgetListPath(lanePath) && !monitorWidgetListHasExplicitValue(ctx.config, lanePath);
+      const bool overridden = ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(lanePath);
+      const bool redundantGuiOverride =
+          ctx.configService != nullptr && ctx.configService->hasOverride(lanePath) && !overridden;
+      const bool inherited = isMonitorWidgetListPath(lanePath) &&
+                             (!monitorWidgetListHasExplicitValue(ctx.config, lanePath) || redundantGuiOverride);
 
       auto lane = std::make_unique<Flex>();
       lane->setDirection(FlexDirection::Vertical);

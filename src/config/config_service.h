@@ -66,6 +66,7 @@ public:
   void setDockEnabled(bool enabled);
   bool markSetupWizardCompleted();
   [[nodiscard]] bool hasOverride(const std::vector<std::string>& path) const;
+  [[nodiscard]] bool hasEffectiveOverride(const std::vector<std::string>& path) const;
   [[nodiscard]] bool isOverrideOnlyBar(std::string_view name) const;
   [[nodiscard]] bool canMoveBarOverride(std::string_view name, int direction) const;
   [[nodiscard]] bool canDeleteBarOverride(std::string_view name) const;
@@ -88,6 +89,11 @@ private:
   static void deepMerge(toml::table& base, const toml::table& overlay);
   void loadAll();
   void parseTable(const toml::table& tbl);
+  void parseTableInto(const toml::table& tbl, Config& config, bool logSummary) const;
+  [[nodiscard]] std::optional<Config> configForOverrides(const toml::table& overrides) const;
+  [[nodiscard]] bool overridePathEffectiveInTable(const std::vector<std::string>& path, const toml::table& overrides,
+                                                  const Config* parsedWith = nullptr) const;
+  [[nodiscard]] std::size_t overridePreserveDepthForPath(const std::vector<std::string>& path) const;
   void setupWatch();
   void fireReloadCallbacks();
   void loadOverridesFromFile();
@@ -108,6 +114,7 @@ private:
   std::string m_defaultWallpaperPath;
   std::unordered_map<std::string, std::string> m_monitorWallpaperPaths;
   bool m_setupWizardCompleted = false;
+  mutable std::unordered_map<std::string, bool> m_effectiveOverrideCache;
 
   std::string m_pendingError; // parse error from initial load, sent as notification once manager is wired up
   uint32_t m_configErrorNotificationId = 0; // ID of the active config-error notification, 0 if none

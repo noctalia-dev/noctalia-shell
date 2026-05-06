@@ -770,6 +770,7 @@ void ConfigService::seedBuiltinWidgets(Config& config) {
 }
 
 void ConfigService::loadAll() {
+  m_effectiveOverrideCache.clear();
   m_config = Config{};
   seedBuiltinWidgets(m_config);
 
@@ -866,7 +867,9 @@ void ConfigService::loadAll() {
   }
 }
 
-void ConfigService::parseTable(const toml::table& tbl) {
+void ConfigService::parseTable(const toml::table& tbl) { parseTableInto(tbl, m_config, true); }
+
+void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool logSummary) const {
   // Parse [bar.*] named subtables
   if (auto* barTblMap = tbl["bar"].as_table()) {
     std::vector<BarConfig> parsedBars;
@@ -1064,7 +1067,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
       for (std::size_t i = 0; i < parsedBars.size(); ++i) {
         if (!used[i] && parsedBars[i].name == orderedName) {
           used[i] = true;
-          m_config.bars.push_back(std::move(parsedBars[i]));
+          config.bars.push_back(std::move(parsedBars[i]));
           break;
         }
       }
@@ -1072,7 +1075,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
     for (std::size_t i = 0; i < parsedBars.size(); ++i) {
       if (!used[i]) {
-        m_config.bars.push_back(std::move(parsedBars[i]));
+        config.bars.push_back(std::move(parsedBars[i]));
       }
     }
   }
@@ -1090,10 +1093,10 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
       if (auto v = (*entryTbl)["type"].value<std::string>()) {
         wc.type = *v;
-        if (auto it = m_config.widgets.find(widgetName); it != m_config.widgets.end() && it->second.type == wc.type) {
+        if (auto it = config.widgets.find(widgetName); it != config.widgets.end() && it->second.type == wc.type) {
           wc.settings = it->second.settings;
         }
-      } else if (auto it = m_config.widgets.find(widgetName); it != m_config.widgets.end()) {
+      } else if (auto it = config.widgets.find(widgetName); it != config.widgets.end()) {
         wc = it->second;
       } else {
         wc.type = widgetName;
@@ -1123,13 +1126,13 @@ void ConfigService::parseTable(const toml::table& tbl) {
         }
       }
 
-      m_config.widgets[widgetName] = std::move(wc);
+      config.widgets[widgetName] = std::move(wc);
     }
   }
 
   // Parse [shell]
   if (auto* shellTbl = tbl["shell"].as_table()) {
-    auto& shell = m_config.shell;
+    auto& shell = config.shell;
     if (auto v = (*shellTbl)["ui_scale"].value<double>()) {
       shell.uiScale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
     }
@@ -1214,7 +1217,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
   // Parse [theme]
   if (auto* themeTbl = tbl["theme"].as_table()) {
-    auto& theme = m_config.theme;
+    auto& theme = config.theme;
     if (auto v = (*themeTbl)["source"].value<std::string>()) {
       if (auto parsed = enumFromKey(kThemeSources, *v)) {
         theme.source = *parsed;
@@ -1264,7 +1267,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
   // Parse [wallpaper]
   if (auto* wpTbl = tbl["wallpaper"].as_table()) {
-    auto& wp = m_config.wallpaper;
+    auto& wp = config.wallpaper;
     if (auto v = (*wpTbl)["enabled"].value<bool>())
       wp.enabled = *v;
     if (auto v = (*wpTbl)["fill_mode"].value<std::string>()) {
@@ -1354,7 +1357,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
   // Parse [backdrop]
   if (auto* ovTbl = tbl["backdrop"].as_table()) {
-    auto& ov = m_config.backdrop;
+    auto& ov = config.backdrop;
     if (auto v = (*ovTbl)["enabled"].value<bool>())
       ov.enabled = *v;
     if (auto v = (*ovTbl)["blur_intensity"].value<double>())
@@ -1365,13 +1368,13 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
   // Parse [osd]
   if (auto* osdTbl = tbl["osd"].as_table()) {
-    auto& osd = m_config.osd;
+    auto& osd = config.osd;
     if (auto v = (*osdTbl)["position"].value<std::string>())
       osd.position = *v;
   }
 
-  auto parseNotificationTable = [this](const toml::table& notifTable) {
-    auto& notif = m_config.notification;
+  auto parseNotificationTable = [&config](const toml::table& notifTable) {
+    auto& notif = config.notification;
     if (auto v = notifTable["enable_daemon"].value<bool>())
       notif.enableDaemon = *v;
     if (auto v = notifTable["position"].value<std::string>())
@@ -1395,7 +1398,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
   // Parse [dock]
   if (auto* dockTbl = tbl["dock"].as_table()) {
-    auto& dock = m_config.dock;
+    auto& dock = config.dock;
     if (auto v = (*dockTbl)["enabled"].value<bool>())
       dock.enabled = *v;
     if (auto v = (*dockTbl)["active_monitor_only"].value<bool>())
@@ -1440,7 +1443,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
   // Parse [desktop_widgets]
   if (auto* desktopWidgetsTbl = tbl["desktop_widgets"].as_table()) {
-    auto& desktopWidgets = m_config.desktopWidgets;
+    auto& desktopWidgets = config.desktopWidgets;
     if (auto v = (*desktopWidgetsTbl)["enabled"].value<bool>()) {
       desktopWidgets.enabled = *v;
     }
@@ -1448,7 +1451,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
   // Parse [weather]
   if (auto* weatherTbl = tbl["weather"].as_table()) {
-    auto& weather = m_config.weather;
+    auto& weather = config.weather;
     if (auto v = (*weatherTbl)["enabled"].value<bool>())
       weather.enabled = *v;
     if (auto v = (*weatherTbl)["auto_locate"].value<bool>())
@@ -1465,7 +1468,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
   // Parse [system]
   if (auto* systemTbl = tbl["system"].as_table()) {
-    auto& system = m_config.system;
+    auto& system = config.system;
     if (const auto* monitorTbl = (*systemTbl)["monitor"].as_table()) {
       if (auto v = (*monitorTbl)["enabled"].value<bool>()) {
         system.monitor.enabled = *v;
@@ -1475,7 +1478,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
   // Parse [audio]
   if (auto* audioTbl = tbl["audio"].as_table()) {
-    auto& audio = m_config.audio;
+    auto& audio = config.audio;
     if (auto v = (*audioTbl)["enable_overdrive"].value<bool>()) {
       audio.enableOverdrive = *v;
     }
@@ -1495,7 +1498,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
   // Parse [brightness]
   if (auto* brightnessTbl = tbl["brightness"].as_table()) {
-    auto& brightness = m_config.brightness;
+    auto& brightness = config.brightness;
     if (auto v = (*brightnessTbl)["enable_ddcutil"].value<bool>()) {
       brightness.enableDdcutil = *v;
     }
@@ -1535,7 +1538,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
   // Parse [keybinds]
   if (auto* keybindsTbl = tbl["keybinds"].as_table()) {
-    auto& keybinds = m_config.keybinds;
+    auto& keybinds = config.keybinds;
 
     auto parseAction = [&](std::string_view key, std::vector<KeyChord>& out) {
       out.clear();
@@ -1580,7 +1583,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
   // Parse [nightlight]
   if (auto* nightlightTbl = tbl["nightlight"].as_table()) {
-    auto& nightlight = m_config.nightlight;
+    auto& nightlight = config.nightlight;
     if (auto v = (*nightlightTbl)["enabled"].value<bool>()) {
       nightlight.enabled = *v;
     }
@@ -1624,7 +1627,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
   // Parse [hooks]
   if (auto* hooksTbl = tbl["hooks"].as_table()) {
-    auto& hooks = m_config.hooks;
+    auto& hooks = config.hooks;
     for (const auto& [name, node] : *hooksTbl) {
       const std::string_view keyView{name.str()};
       if (keyView == "battery_low_percent_threshold") {
@@ -1643,7 +1646,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
   // Parse [[control_center.shortcuts]]
   if (auto* ccTbl = tbl["control_center"].as_table()) {
     if (auto* shortcutsArr = (*ccTbl)["shortcuts"].as_array()) {
-      m_config.controlCenter.shortcuts.clear();
+      config.controlCenter.shortcuts.clear();
       for (const auto& entry : *shortcutsArr) {
         auto* entryTbl = entry.as_table();
         if (entryTbl == nullptr) {
@@ -1660,13 +1663,13 @@ void ConfigService::parseTable(const toml::table& tbl) {
           sc.icon = *v;
         }
         if (!sc.type.empty()) {
-          m_config.controlCenter.shortcuts.push_back(std::move(sc));
+          config.controlCenter.shortcuts.push_back(std::move(sc));
         }
       }
     }
   }
-  if (m_config.controlCenter.shortcuts.empty()) {
-    m_config.controlCenter.shortcuts = {
+  if (config.controlCenter.shortcuts.empty()) {
+    config.controlCenter.shortcuts = {
         {"wifi", {}, {}},       {"bluetooth", {}, {}},    {"caffeine", {}, {}},
         {"nightlight", {}, {}}, {"notification", {}, {}}, {"power_profile", {}, {}},
     };
@@ -1697,34 +1700,38 @@ void ConfigService::parseTable(const toml::table& tbl) {
           behavior.resumeCommand = *v;
         }
 
-        m_config.idle.behaviors.push_back(std::move(behavior));
+        config.idle.behaviors.push_back(std::move(behavior));
       }
     }
   }
 
-  if (m_config.bars.empty()) {
-    kLog.info("no [bar.*] defined, using defaults");
-    m_config.bars.push_back(BarConfig{});
+  if (config.bars.empty()) {
+    if (logSummary) {
+      kLog.info("no [bar.*] defined, using defaults");
+    }
+    config.bars.push_back(BarConfig{});
   }
 
-  std::string barOrder;
-  for (const auto& bar : m_config.bars) {
-    if (!barOrder.empty()) {
-      barOrder += ", ";
+  if (logSummary) {
+    std::string barOrder;
+    for (const auto& bar : config.bars) {
+      if (!barOrder.empty()) {
+        barOrder += ", ";
+      }
+      barOrder += bar.name;
     }
-    barOrder += bar.name;
-  }
-  kLog.info("{} bar(s) defined", m_config.bars.size());
-  kLog.info("bar order: {}", barOrder);
-  kLog.info("idle behaviors={}", m_config.idle.behaviors.size());
-  std::size_t hookKindsUsed = 0;
-  for (const auto& cmds : m_config.hooks.commands) {
-    if (!cmds.empty()) {
-      ++hookKindsUsed;
+    kLog.info("{} bar(s) defined", config.bars.size());
+    kLog.info("bar order: {}", barOrder);
+    kLog.info("idle behaviors={}", config.idle.behaviors.size());
+    std::size_t hookKindsUsed = 0;
+    for (const auto& cmds : config.hooks.commands) {
+      if (!cmds.empty()) {
+        ++hookKindsUsed;
+      }
     }
+    kLog.info("hooks kinds with commands={} battery_low_threshold={}%", hookKindsUsed,
+              config.hooks.batteryLowPercentThreshold);
   }
-  kLog.info("hooks kinds with commands={} battery_low_threshold={}%", hookKindsUsed,
-            m_config.hooks.batteryLowPercentThreshold);
 }
 
 bool ConfigService::matchesKeybind(KeybindAction action, std::uint32_t sym, std::uint32_t modifiers) const {
