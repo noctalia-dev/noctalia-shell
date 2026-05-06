@@ -455,7 +455,7 @@ namespace settings {
       const auto makeBadge = [&](std::string_view label, const ColorSpec& fill, const ColorSpec& color) {
         auto badge = std::make_unique<Flex>();
         badge->setAlign(FlexAlign::Center);
-        badge->setPadding(1.0f * scale, Style::spaceXs * scale);
+        badge->setPadding(0, Style::spaceXs * scale);
         badge->setRadius(Style::radiusSm * scale);
         badge->setFill(fill);
         badge->addChild(makeLabel(label, Style::fontSizeCaption * scale, color, true));
@@ -803,7 +803,7 @@ namespace settings {
       const auto makeBadge = [&](std::string_view label, const ColorSpec& fill, const ColorSpec& color) {
         auto badge = std::make_unique<Flex>();
         badge->setAlign(FlexAlign::Center);
-        badge->setPadding(1.0f * scale, Style::spaceXs * scale);
+        badge->setPadding(0, Style::spaceXs * scale);
         badge->setRadius(Style::radiusSm * scale);
         badge->setFill(fill);
         badge->addChild(makeLabel(label, Style::fontSizeCaption * scale, color, true));

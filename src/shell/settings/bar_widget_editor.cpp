@@ -1088,7 +1088,7 @@ namespace settings {
 
         auto kindBadge = std::make_unique<Flex>();
         kindBadge->setAlign(FlexAlign::Center);
-        kindBadge->setPadding(1.0f * ctx.scale, Style::spaceXs * ctx.scale);
+        kindBadge->setPadding(0, Style::spaceXs * ctx.scale);
         kindBadge->setRadius(Style::radiusSm * ctx.scale);
         kindBadge->setFill(widgetBadgeColor(info.kind));
         kindBadge->addChild(
@@ -1623,7 +1623,7 @@ namespace settings {
       if (overridden) {
         auto badge = std::make_unique<Flex>();
         badge->setAlign(FlexAlign::Center);
-        badge->setPadding(1.0f * ctx.scale, Style::spaceXs * ctx.scale);
+        badge->setPadding(0, Style::spaceXs * ctx.scale);
         badge->setRadius(Style::radiusSm * ctx.scale);
         badge->setFill(colorSpecFromRole(ColorRole::Primary, 0.15f));
         badge->addChild(makeLabel(i18n::tr("settings.badges.override"), Style::fontSizeCaption * ctx.scale,
@@ -1633,7 +1633,7 @@ namespace settings {
       if (inherited) {
         auto badge = std::make_unique<Flex>();
         badge->setAlign(FlexAlign::Center);
-        badge->setPadding(1.0f * ctx.scale, Style::spaceXs * ctx.scale);
+        badge->setPadding(0, Style::spaceXs * ctx.scale);
         badge->setRadius(Style::radiusSm * ctx.scale);
         badge->setFill(colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.14f));
         badge->addChild(makeLabel(i18n::tr("settings.badges.inherited"), Style::fontSizeCaption * ctx.scale,
@@ -1688,7 +1688,7 @@ namespace settings {
         }
         auto kindBadge = std::make_unique<Flex>();
         kindBadge->setAlign(FlexAlign::Center);
-        kindBadge->setPadding(1.0f * ctx.scale, Style::spaceXs * ctx.scale);
+        kindBadge->setPadding(0, Style::spaceXs * ctx.scale);
         kindBadge->setRadius(Style::radiusSm * ctx.scale);
         kindBadge->setFill(widgetBadgeColor(info.kind));
         kindBadge->addChild(
