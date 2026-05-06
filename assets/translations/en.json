@@ -925,6 +925,11 @@
           "label": "Color",
           "description": "Color role for widget foreground"
         },
+        "custom_image": {
+          "label": "Custom image",
+          "description": "Path to a custom image. Leave empty to use the icon glyph.",
+          "dialog-title": "Select custom image"
+        },
         "cycle_command": {
           "label": "Cycle Command",
           "description": "Command run when cycling keyboard layouts"
@@ -1056,10 +1061,6 @@
         "type": {
           "label": "Type",
           "description": "Built-in widget type for this named instance"
-        },
-        "use_distro_logo": {
-          "label": "Use distribution logo",
-          "description": "Use the system distribution logo instead of a generic icon."
         },
         "vertical_format": {
           "label": "Vertical Format",

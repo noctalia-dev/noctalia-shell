@@ -10,6 +10,7 @@
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/search_picker.h"
+#include "ui/dialogs/file_dialog.h"
 #include "ui/dialogs/glyph_picker_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -19,10 +20,12 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <format>
 #include <memory>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <unordered_set>
 #include <utility>
 #include <variant>
@@ -839,6 +842,49 @@ namespace settings {
                       requestRebuild();
                     }
                   });
+            });
+            wrap->addChild(std::move(pickerButton));
+
+            ctx.makeRow(*panel, entry, std::move(wrap));
+          } else if (spec.key == "custom_image") {
+            auto wrap = std::make_unique<Flex>();
+            wrap->setDirection(FlexDirection::Horizontal);
+            wrap->setAlign(FlexAlign::Center);
+            wrap->setGap(Style::spaceSm * ctx.scale);
+            wrap->addChild(std::move(textNode));
+
+            auto pickerButton = std::make_unique<Button>();
+            pickerButton->setVariant(ButtonVariant::Secondary);
+            pickerButton->setGlyph("photo");
+            pickerButton->setGlyphSize(Style::fontSizeBody * ctx.scale);
+            pickerButton->setMinHeight(Style::controlHeight * ctx.scale);
+            pickerButton->setMinWidth(Style::controlHeight * ctx.scale);
+            pickerButton->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
+            pickerButton->setRadius(Style::radiusMd * ctx.scale);
+            pickerButton->setOnClick([setOverride = ctx.setOverride, requestRebuild = ctx.requestRebuild, path,
+                                      currentValue = settingValueAsString(value)]() {
+              FileDialogOptions options;
+              options.mode = FileDialogMode::Open;
+              options.defaultViewMode = FileDialogViewMode::Grid;
+              options.title = i18n::tr("settings.widgets.settings.custom_image.dialog-title");
+              options.extensions = {".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp", ".gif"};
+              if (!currentValue.empty()) {
+                std::filesystem::path current(currentValue);
+                std::error_code ec;
+                if (current.has_parent_path() && std::filesystem::exists(current.parent_path(), ec)) {
+                  options.startDirectory = current.parent_path();
+                }
+              }
+              (void)FileDialog::open(std::move(options),
+                                     [setOverride, requestRebuild, path](std::optional<std::filesystem::path> picked) {
+                                       if (!picked.has_value()) {
+                                         return;
+                                       }
+                                       setOverride(path, picked->string());
+                                       if (requestRebuild) {
+                                         requestRebuild();
+                                       }
+                                     });
             });
             wrap->addChild(std::move(pickerButton));
 

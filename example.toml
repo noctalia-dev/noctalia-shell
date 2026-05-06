@@ -256,10 +256,10 @@ battery_low_percent_threshold = 0   # set to e.g. 15 to enable battery_under_thr
 # battery_state_changed   = "notify-send 'Power' \"Battery: $NOCTALIA_BATTERY_STATE\""
 # battery_under_threshold = "notify-send 'Power' \"Battery at ${NOCTALIA_BATTERY_PERCENT}%\""
 # [widget.launcher]
-# use_distro_logo = true
+# custom_image = "/path/to/image.png"
 
 # [widget.control-center]
-# use_distro_logo = true
+# custom_image = "/path/to/image.png"
 
 # [widget.notifications]
 # hide_when_no_unread = true

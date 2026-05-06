@@ -39,8 +39,6 @@
 #include "shell/bar/widgets/wallpaper_widget.h"
 #include "shell/bar/widgets/weather_widget.h"
 #include "shell/bar/widgets/workspaces_widget.h"
-#include "system/distro_info.h"
-#include "system/icon_resolver.h"
 #include "system/lock_keys_service.h"
 #include "system/system_monitor_service.h"
 #include "system/weather_service.h"
@@ -55,19 +53,6 @@
 
 namespace {
   constexpr Logger kLog("shell");
-
-  std::string resolveDistroLogo(IconResolver& iconResolver) {
-    if (const auto info = DistroDetector::detect(); info.has_value()) {
-      for (const auto& name : distroLogoIconNames(*info)) {
-        const auto& resolved = iconResolver.resolve(name);
-        if (!resolved.empty()) {
-          return resolved;
-        }
-      }
-    }
-
-    return {};
-  }
 } // namespace
 
 WidgetFactory::WidgetFactory(WaylandConnection& wayland, const Config& config, NotificationManager* notifications,
@@ -166,13 +151,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
       barGlyph = "search";
     }
 
-    std::string logoPath;
-    if (wc != nullptr && wc->getBool("use_distro_logo", false)) {
-      if (!m_iconResolver) {
-        m_iconResolver = std::make_unique<IconResolver>();
-      }
-      logoPath = resolveDistroLogo(*m_iconResolver);
-    }
+    std::string logoPath = wc != nullptr ? wc->getString("custom_image", "") : std::string{};
 
     auto widget = std::make_unique<ControlCenterWidget>(output, std::move(barGlyph), std::move(logoPath));
     widget->setContentScale(contentScale);
@@ -200,13 +179,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
       barGlyph = "search";
     }
 
-    std::string logoPath;
-    if (wc != nullptr && wc->getBool("use_distro_logo", false)) {
-      if (!m_iconResolver) {
-        m_iconResolver = std::make_unique<IconResolver>();
-      }
-      logoPath = resolveDistroLogo(*m_iconResolver);
-    }
+    std::string logoPath = wc != nullptr ? wc->getString("custom_image", "") : std::string{};
 
     auto widget = std::make_unique<LauncherWidget>(output, std::move(barGlyph), std::move(logoPath));
     widget->setContentScale(contentScale);

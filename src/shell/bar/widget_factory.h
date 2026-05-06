@@ -25,7 +25,6 @@ class WeatherService;
 struct wl_output;
 class NightLightManager;
 class WaylandConnection;
-class IconResolver;
 namespace noctalia::theme {
   class ThemeService;
 }
@@ -64,5 +63,4 @@ private:
   BrightnessService* m_brightness;
   LockKeysService* m_lockKeys;
   FileWatcher* m_fileWatcher;
-  mutable std::unique_ptr<IconResolver> m_iconResolver;
 };

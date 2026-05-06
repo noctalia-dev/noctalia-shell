@@ -445,10 +445,10 @@ namespace settings {
       add(segmentedSpec("display", "short", shortFull));
     } else if (type == "launcher") {
       add(stringSpec("glyph", "search"));
-      add(boolSpec("use_distro_logo", false));
+      add(stringSpec("custom_image", ""));
     } else if (type == "control-center") {
       add(stringSpec("glyph", "noctalia"));
-      add(boolSpec("use_distro_logo", false));
+      add(stringSpec("custom_image", ""));
     } else if (type == "lock_keys") {
       add(boolSpec("show_caps_lock", true));
       add(boolSpec("show_num_lock", true));

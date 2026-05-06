@@ -2,7 +2,6 @@
 
 #include "i18n/i18n.h"
 
-#include <algorithm>
 #include <cctype>
 #include <cstdint>
 #include <cstdlib>
@@ -19,7 +18,6 @@
 #include <unistd.h>
 #include <unordered_map>
 #include <utility>
-#include <vector>
 
 namespace {
 
@@ -88,15 +86,6 @@ namespace {
     return values;
   }
 
-  void pushUnique(std::vector<std::string>& values, std::string value) {
-    if (value.empty()) {
-      return;
-    }
-    if (std::find(values.begin(), values.end(), value) == values.end()) {
-      values.push_back(std::move(value));
-    }
-  }
-
 } // namespace
 
 std::optional<DistroInfo> DistroDetector::detect() {
@@ -121,9 +110,6 @@ std::optional<DistroInfo> DistroDetector::detect() {
     if (const auto it = parsed->find("PRETTY_NAME"); it != parsed->end()) {
       info.prettyName = it->second;
     }
-    if (const auto it = parsed->find("LOGO"); it != parsed->end()) {
-      info.logo = it->second;
-    }
 
     if (!info.prettyName.empty() || !info.name.empty() || !info.id.empty()) {
       return info;
@@ -146,17 +132,6 @@ std::string distroLabel() {
     }
   }
   return i18n::tr("system.hardware.unknown-distro");
-}
-
-std::vector<std::string> distroLogoIconNames(const DistroInfo& info) {
-  std::vector<std::string> names;
-  pushUnique(names, info.logo);
-
-  pushUnique(names, "distribution-logos/square-hicolor");
-  pushUnique(names, "distribution-logos/square-symbolic");
-  pushUnique(names, "distribution-logos/apple-touch-icon");
-
-  return names;
 }
 
 std::string kernelRelease() {
