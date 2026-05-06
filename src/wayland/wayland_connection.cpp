@@ -500,7 +500,8 @@ bool WaylandConnection::sameWorkspaceModelSnapshot(const std::vector<WorkspaceMo
            a.urgent == b.urgent && a.occupied == b.occupied;
   };
   auto sameAssignment = [](const WorkspaceWindowAssignment& a, const WorkspaceWindowAssignment& b) {
-    return a.windowId == b.windowId && a.workspaceKey == b.workspaceKey && a.appId == b.appId;
+    return a.windowId == b.windowId && a.workspaceKey == b.workspaceKey && a.appId == b.appId && a.title == b.title &&
+           a.x == b.x && a.y == b.y;
   };
 
   if (lhs.size() != rhs.size()) {
