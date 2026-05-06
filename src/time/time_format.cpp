@@ -51,9 +51,24 @@ namespace {
 
 namespace {
 
+  std::string normalizeFormatEscapes(std::string_view fmt) {
+    std::string out;
+    out.reserve(fmt.size());
+    for (std::size_t i = 0; i < fmt.size(); ++i) {
+      if (fmt[i] == '\\' && i + 1 < fmt.size() && fmt[i + 1] == 'n') {
+        out.push_back('\n');
+        ++i;
+      } else {
+        out.push_back(fmt[i]);
+      }
+    }
+    return out;
+  }
+
   bool shouldUseStrftimeCompat(std::string_view fmt) {
     return fmt.find("%-") != std::string_view::npos ||
-           (fmt.find('{') == std::string_view::npos && fmt.find('%') != std::string_view::npos);
+           (fmt.find('%') != std::string_view::npos &&
+            (fmt.find('{') == std::string_view::npos || fmt.find("{:") != std::string_view::npos));
   }
 
   std::string strftimeSpec(std::string_view spec, const std::tm& local) {
@@ -129,19 +144,20 @@ namespace {
 
 std::string formatLocalTime(const char* fmt) {
   using namespace std::chrono;
+  const std::string normalizedFmt = normalizeFormatEscapes(fmt);
   const auto now = floor<seconds>(system_clock::now());
   const std::time_t raw = system_clock::to_time_t(now);
   std::tm localTm{};
   localtime_r(&raw, &localTm);
-  if (auto compat = formatStrftimeCompat(fmt, localTm)) {
+  if (auto compat = formatStrftimeCompat(normalizedFmt, localTm)) {
     return *compat;
   }
 
   const auto local = current_zone()->to_local(now);
   try {
-    return std::vformat(std::locale(""), fmt, std::make_format_args(local));
+    return std::vformat(std::locale(""), normalizedFmt, std::make_format_args(local));
   } catch (...) {
-    return fmt;
+    return normalizedFmt;
   }
 }
 

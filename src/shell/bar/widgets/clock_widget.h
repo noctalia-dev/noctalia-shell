@@ -23,5 +23,8 @@ private:
   std::string m_verticalFormat;
   bool m_isVertical = false;
   Label* m_label = nullptr;
+  Label* m_secondaryLabel = nullptr;
   std::string m_lastText;
+  std::string m_lastPrimaryText;
+  std::string m_lastSecondaryText;
 };
