@@ -71,7 +71,7 @@ body:
   - type: dropdown
     id: compositor
     attributes:
-      label: Desktop environment / compositor
+      label: Compositor
       description: Select the compositor where the issue occurs.
       options:
         - Niri
@@ -87,7 +87,7 @@ body:
   - type: dropdown
     id: distribution
     attributes:
-      label: Distribution family
+      label: Distribution
       description: Select the Linux distribution family where the issue occurs.
       options:
         - Arch-based
