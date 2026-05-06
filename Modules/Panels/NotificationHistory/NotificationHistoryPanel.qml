@@ -498,7 +498,6 @@ SmartPanel {
           horizontalPolicy: ScrollBar.AlwaysOff
           verticalPolicy: ScrollBar.AsNeeded
           reserveScrollbarSpace: false
-          gradientColor: Color.mSurface
 
           // Track which notification is expanded
           property string expandedId: ""

@@ -91,7 +91,6 @@ Popup {
       Layout.fillWidth: true
       Layout.fillHeight: true
       Layout.minimumHeight: 100
-      gradientColor: Color.mSurface
       reserveScrollbarSpace: false
 
       ColumnLayout {

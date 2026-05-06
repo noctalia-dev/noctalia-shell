@@ -60,12 +60,7 @@ Item {
   implicitHeight: titleText.height
 
   layer.enabled: contentWidth > maxWidth
-  layer.effect: MultiEffect {
-    maskEnabled: true
-    maskThresholdMin: 0.5
-    maskSpreadAtMin: 1.0
-    maskSource: fadeMask
-  }
+  layer.effect: fadeMask.effectComponent
 
   enum ScrollState {
     None = 0,
@@ -194,36 +189,19 @@ Item {
     }
   }
 
-  // Transparency Fade Rectangle
-  Rectangle {
+  NFadeMask {
     id: fadeMask
-    width: root.width
-    height: root.height
-    topLeftRadius: fadeRoundLeftCorners ? fadeCornerRadius : 0
-    bottomLeftRadius: fadeRoundLeftCorners ? fadeCornerRadius : 0
-    topRightRadius: fadeCornerRadius
-    bottomRightRadius: fadeCornerRadius
-    gradient: Gradient {
-      GradientStop {
-        position: 0.0
-        color: "transparent"
-      }
-      GradientStop {
-        position: fadeExtent
-        color: "white"
-      }
-      GradientStop {
-        position: 1 - fadeExtent
-        color: "white"
-      }
-      GradientStop {
-        position: 1.0
-        color: "transparent"
-      }
-      orientation: Gradient.Horizontal
-    }
-    layer.enabled: true
-    layer.smooth: true
-    opacity: 0
+    anchors.fill: root
+    orientation: Gradient.Horizontal
+    fadeExtent: root.fadeExtent
+    heightAdjustment: -2 * Style.capsuleBorderWidth
+    topLeftRadius: root.fadeRoundLeftCorners ? root.fadeCornerRadius : 0
+    bottomLeftRadius: root.fadeRoundLeftCorners ? root.fadeCornerRadius : 0
+    topRightRadius: root.fadeCornerRadius
+    bottomRightRadius: root.fadeCornerRadius
+    animateColors: true
+    animationDuration: Style.animationFast
+    startColor: scrollContainer.x < -1 ? "transparent" : "white"
+    endColor: root.contentWidth > root.maxWidth ? "transparent" : "white"
   }
 }

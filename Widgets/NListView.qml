@@ -21,9 +21,9 @@ Item {
   }
   readonly property bool contentOverflows: listView.contentHeight > listView.height
 
+  // Fade controls (fadeExtent: 0.0–0.5, fraction of height that fades)
+  property real fadeExtent: 0.03
   property bool showGradientMasks: true
-  property color gradientColor: Color.mSurfaceVariant
-  property int gradientHeight: 16
   property bool reserveScrollbarSpace: true
 
   // Keep scrollbars visible whenever overflow exists (without forcing visibility when not scrollable)
@@ -187,60 +187,33 @@ Item {
   }
 
   // Dynamically create gradient overlays
+  Component {
+    id: fadeMaskComponent
+    NFadeMask {
+      anchors.fill: parent
+      orientation: Gradient.Vertical
+      fadeExtent: root.fadeExtent
+      animateColors: true
+      animationDuration: Style.animationFast
+      startColor: {
+        if (listView.contentY <= 1)
+          return "white";
+        return "transparent";
+      }
+      endColor: {
+        if (listView.contentY + listView.height >= listView.contentHeight - 1)
+          return "white";
+        return "transparent";
+      }
+    }
+  }
+
   function createGradients() {
     if (!showGradientMasks)
       return;
-
-    Qt.createQmlObject(`
-      import QtQuick
-      import qs.Commons
-      Rectangle {
-        x: 0
-        y: 0
-        width: root.availableWidth
-        height: root.gradientHeight
-        z: 1
-        visible: root.showGradientMasks && root.contentOverflows
-        opacity: {
-          if (listView.contentY <= 1) return 0;
-          if (listView.currentItem && listView.currentItem.y - listView.contentY < root.gradientHeight) return 0;
-          return 1;
-        }
-        Behavior on opacity {
-          NumberAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
-        }
-        gradient: Gradient {
-          GradientStop { position: 0.0; color: root.gradientColor }
-          GradientStop { position: 1.0; color: "transparent" }
-        }
-      }
-    `, root, "topGradient");
-
-    Qt.createQmlObject(`
-      import QtQuick
-      import qs.Commons
-      Rectangle {
-        x: 0
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: -1
-        width: root.availableWidth
-        height: root.gradientHeight + 1
-        z: 1
-        visible: root.showGradientMasks && root.contentOverflows
-        opacity: {
-          if (listView.contentY + listView.height >= listView.contentHeight - 1) return 0;
-          if (listView.currentItem && listView.currentItem.y + listView.currentItem.height > listView.contentY + listView.height - root.gradientHeight) return 0;
-          return 1;
-        }
-        Behavior on opacity {
-          NumberAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
-        }
-        gradient: Gradient {
-          GradientStop { position: 0.0; color: "transparent" }
-          GradientStop { position: 1.0; color: root.gradientColor }
-        }
-      }
-    `, root, "bottomGradient");
+    var mask = fadeMaskComponent.createObject(listView);
+    listView.layer.enabled = Qt.binding(() => root.showGradientMasks && root.contentOverflows);
+    mask.applyTo(listView);
   }
 
   ListView {

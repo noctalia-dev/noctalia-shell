@@ -24,10 +24,9 @@ Item {
   }
   readonly property bool contentOverflows: gridView.contentHeight > gridView.height
 
-  // Gradient properties
+  // Fade controls (fadeExtent: 0.0–0.5, fraction of height that fades)
+  property real fadeExtent: 0.03
   property bool showGradientMasks: true
-  property color gradientColor: Color.mSurfaceVariant
-  property int gradientHeight: 16
   property bool reserveScrollbarSpace: true
 
   // Keep scrollbars visible whenever overflow exists (without forcing visibility when not scrollable)
@@ -260,52 +259,25 @@ Item {
   }
 
   // Dynamically create gradient overlays
+  Component {
+    id: fadeMaskComponent
+    NFadeMask {
+      anchors.fill: parent
+      orientation: Gradient.Vertical
+      fadeExtent: root.fadeExtent
+      animateColors: true
+      animationDuration: Style.animationFast
+      startColor: (gridView.contentY <= 1 || root.selectionOnFirstVisibleRow) ? "white" : "transparent"
+      endColor: (gridView.contentY + gridView.height >= gridView.contentHeight - 1 || root.selectionOnLastVisibleRow) ? "white" : "transparent"
+    }
+  }
+
   function createGradients() {
     if (!showGradientMasks)
       return;
-
-    Qt.createQmlObject(`
-      import QtQuick
-      import qs.Commons
-      Rectangle {
-        x: 0
-        y: 0
-        width: root.availableWidth
-        height: root.gradientHeight
-        z: 1
-        visible: root.showGradientMasks && root.contentOverflows
-        opacity: (gridView.contentY <= 1 || root.selectionOnFirstVisibleRow) ? 0 : 1
-        Behavior on opacity {
-          NumberAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
-        }
-        gradient: Gradient {
-          GradientStop { position: 0.0; color: root.gradientColor }
-          GradientStop { position: 1.0; color: "transparent" }
-        }
-      }
-    `, root, "topGradient");
-
-    Qt.createQmlObject(`
-      import QtQuick
-      import qs.Commons
-      Rectangle {
-        x: 0
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: -1
-        width: root.availableWidth
-        height: root.gradientHeight + 1
-        z: 1
-        visible: root.showGradientMasks && root.contentOverflows
-        opacity: ((gridView.contentY + gridView.height >= gridView.contentHeight - 1) || root.selectionOnLastVisibleRow) ? 0 : 1
-        Behavior on opacity {
-          NumberAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
-        }
-        gradient: Gradient {
-          GradientStop { position: 0.0; color: "transparent" }
-          GradientStop { position: 1.0; color: root.gradientColor }
-        }
-      }
-    `, root, "bottomGradient");
+    var mask = fadeMaskComponent.createObject(gridView);
+    gridView.layer.enabled = Qt.binding(() => root.showGradientMasks && root.contentOverflows);
+    mask.applyTo(gridView);
   }
 
   GridView {

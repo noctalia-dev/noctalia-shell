@@ -245,7 +245,6 @@ SmartPanel {
           horizontalPolicy: ScrollBar.AlwaysOff
           verticalPolicy: ScrollBar.AsNeeded
           reserveScrollbarSpace: false
-          gradientColor: Color.mSurface
 
           ColumnLayout {
             id: contentColumn

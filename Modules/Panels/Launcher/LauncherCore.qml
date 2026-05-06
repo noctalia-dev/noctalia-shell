@@ -730,7 +730,6 @@ Rectangle {
         horizontalPolicy: ScrollBar.AlwaysOff
         verticalPolicy: ScrollBar.AlwaysOff
         reserveScrollbarSpace: false
-        gradientColor: Settings.data.ui.panelBackgroundOpacity < 1 ? "transparent" : Color.mSurface
         wheelScrollMultiplier: 4.0
 
         width: parent.width
@@ -822,7 +821,6 @@ Rectangle {
         horizontalPolicy: ScrollBar.AlwaysOff
         verticalPolicy: ScrollBar.AlwaysOff
         reserveScrollbarSpace: false
-        gradientColor: Settings.data.ui.panelBackgroundOpacity < 1 ? "transparent" : Color.mSurface
         wheelScrollMultiplier: 4.0
         trackedSelectionIndex: root.selectedIndex
 

@@ -146,7 +146,6 @@ SmartPanel {
         verticalPolicy: ScrollBar.AsNeeded
         contentWidth: availableWidth
         reserveScrollbarSpace: false
-        gradientColor: Color.mSurface
 
         // AudioService Devices
         ColumnLayout {
