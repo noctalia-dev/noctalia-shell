@@ -843,7 +843,7 @@ Loader {
           color: "transparent"
 
           WlrLayershell.namespace: "noctalia-dock-" + (screen?.name || "unknown")
-          WlrLayershell.exclusionMode: exclusive ? ExclusionMode.Auto : ExclusionMode.Ignore
+          WlrLayershell.exclusionMode: exclusive ? ExclusionMode.Auto : ExclusionMode.Normal
 
           // Slide animation: content slides inside a fixed window, no margin animation.
           // Only reserve extra space for sliding when auto-hide is enabled
@@ -887,31 +887,18 @@ Loader {
           anchors.right: dockPosition === "right"
 
           // Static margins — no animation, window stays put
-          margins.top: dockPosition === "top" ? (barAtSameEdge && !exclusive ? barHeight + (barFloating ? Settings.data.bar.marginVertical : 0) + floatingMargin : floatingMargin) : 0
-          margins.bottom: dockPosition === "bottom" ? (barAtSameEdge && !exclusive ? barHeight + (barFloating ? Settings.data.bar.marginVertical : 0) + floatingMargin : floatingMargin) : 0
-          margins.left: dockPosition === "left" ? (barAtSameEdge && !exclusive ? barHeight + (barFloating ? Settings.data.bar.marginHorizontal : 0) + floatingMargin : floatingMargin) : 0
-          margins.right: dockPosition === "right" ? (barAtSameEdge && !exclusive ? barHeight + (barFloating ? Settings.data.bar.marginHorizontal : 0) + floatingMargin : floatingMargin) : 0
+          margins.top: dockPosition === "top" ? floatingMargin : 0
+          margins.bottom: dockPosition === "bottom" ? floatingMargin : 0
+          margins.left: dockPosition === "left" ? floatingMargin : 0
+          margins.right: dockPosition === "right" ? floatingMargin : 0
 
           // Container wrapper for animations
           Item {
             id: dockContainerWrapper
 
-            // Helper properties for orthogonal bar detection
-            readonly property string screenBarPosition: Settings.getBarPositionForScreen(modelData?.name)
-            readonly property bool barOnLeft: hasBar && screenBarPosition === "left" && !barFloating
-            readonly property bool barOnRight: hasBar && screenBarPosition === "right" && !barFloating
-            readonly property bool barOnTop: hasBar && screenBarPosition === "top" && !barFloating
-            readonly property bool barOnBottom: hasBar && screenBarPosition === "bottom" && !barFloating
-
-            // Calculate padding needed to shift center to match exclusive mode
-            readonly property int extraTop: (isVertical && !exclusive && barOnTop) ? barHeight : 0
-            readonly property int extraBottom: (isVertical && !exclusive && barOnBottom) ? barHeight : 0
-            readonly property int extraLeft: (!isVertical && !exclusive && barOnLeft) ? barHeight : 0
-            readonly property int extraRight: (!isVertical && !exclusive && barOnRight) ? barHeight : 0
-
             // Expose content size for window sizing (before slide padding)
-            readonly property int contentWidth: dockContent.dockContainer.width + extraLeft + extraRight + 2
-            readonly property int contentHeight: dockContent.dockContainer.height + extraTop + extraBottom + 2
+            readonly property int contentWidth: dockContent.dockContainer.width + 2
+            readonly property int contentHeight: dockContent.dockContainer.height + 2
 
             // Add +2 buffer for fractional scaling issues
             width: contentWidth
@@ -938,10 +925,10 @@ Loader {
               id: dockContent
               anchors.fill: parent
               dockRoot: root
-              extraTop: dockContainerWrapper.extraTop
-              extraBottom: dockContainerWrapper.extraBottom
-              extraLeft: dockContainerWrapper.extraLeft
-              extraRight: dockContainerWrapper.extraRight
+              extraTop: 0
+              extraBottom: 0
+              extraLeft: 0
+              extraRight: 0
             }
           }
         }

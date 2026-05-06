@@ -56,14 +56,14 @@ PanelWindow {
   // Size based on orientation
   implicitWidth: {
     if (edge === "left" || edge === "right") {
-      return thickness + barMarginH - bleedInset;
+      return thickness + (2 * barMarginH) - bleedInset;
     }
     return 0; // Auto-width when left/right anchors are true
   }
 
   implicitHeight: {
     if (edge === "top" || edge === "bottom") {
-      return thickness + barMarginV - bleedInset;
+      return thickness + (2 * barMarginV) - bleedInset;
     }
     return 0; // Auto-height when top/bottom anchors are true
   }
