@@ -20,10 +20,10 @@
 
 namespace {
   constexpr Logger kLog("workspace");
-  constexpr float kWorkspaceGap = Style::spaceSm;
+  constexpr float kWorkspaceGap = Style::spaceXs;
   constexpr float kWorkspacePillMinWidth = Style::controlHeight + Style::spaceXs;
   constexpr float kWorkspaceLabelPadH = Style::spaceSm;
-  constexpr float kWorkspacePillMinHeight = Style::fontSizeCaption;
+  constexpr float kWorkspacePillMinHeight = Style::fontSizeMini - Style::spaceXs;
   constexpr float kWorkspaceAnimDurationMs = static_cast<float>(Style::animNormal);
 } // namespace
 
@@ -121,7 +121,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
   const auto& workspaces = m_cachedState;
   const float gap = kWorkspaceGap * m_contentScale;
   const float pillMin = kWorkspacePillMinWidth * m_contentScale;
-  const float labelFontSize = Style::fontSizeCaption * m_contentScale;
+  const float labelFontSize = Style::fontSizeMini * m_contentScale;
   // Workspace pills are decorative indicators, so keep their body closer to
   // caption text than to the full bar capsule height used by regular widgets.
   const auto labelRefMetrics = renderer.measureFont(labelFontSize, true);
