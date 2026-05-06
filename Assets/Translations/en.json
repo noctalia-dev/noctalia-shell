@@ -810,6 +810,7 @@
       "media-title": "Media players",
       "on-middle-clicked-description": "Command to execute when the button is middle-clicked.",
       "panel-applications-empty": "No applications are currently playing audio",
+      "bluetooth-profile-tooltip": "Bluetooth profile: {profile}",
       "spectrum-mirrored-description": "Mirror the spectrum so low frequencies are in the center. When off, low frequencies are on the left and high on the right.",
       "spectrum-mirrored-label": "Mirror spectrum",
       "title": "Audio",

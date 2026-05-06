@@ -774,17 +774,28 @@ SmartPanel {
 
                 Repeater {
                   model: AudioService.sinks
-                  NRadioButton {
-                    ButtonGroup.group: sinks
+
+                  RowLayout {
                     required property PwNode modelData
-                    pointSize: Style.fontSizeS
-                    text: modelData.description
-                    checked: AudioService.sink?.id === modelData.id
-                    onClicked: {
-                      AudioService.setAudioSink(modelData);
-                      localOutputVolume = AudioService.volume;
-                    }
                     Layout.fillWidth: true
+                    spacing: Style.marginS
+
+                    NRadioButton {
+                      ButtonGroup.group: sinks
+                      pointSize: Style.fontSizeS
+                      text: parent.modelData.description
+                      checked: AudioService.sink?.id === parent.modelData.id
+                      onClicked: {
+                        AudioService.setAudioSink(parent.modelData);
+                        localOutputVolume = AudioService.volume;
+                      }
+                      Layout.fillWidth: true
+                    }
+
+                    BluetoothProfileSelector {
+                      device: parent.modelData
+                      screen: root.screen
+                    }
                   }
                 }
               }
@@ -817,14 +828,25 @@ SmartPanel {
 
                 Repeater {
                   model: AudioService.sources
-                  NRadioButton {
-                    ButtonGroup.group: sources
+
+                  RowLayout {
                     required property PwNode modelData
-                    pointSize: Style.fontSizeS
-                    text: modelData.description
-                    checked: AudioService.source?.id === modelData.id
-                    onClicked: AudioService.setAudioSource(modelData)
                     Layout.fillWidth: true
+                    spacing: Style.marginS
+
+                    NRadioButton {
+                      ButtonGroup.group: sources
+                      pointSize: Style.fontSizeS
+                      text: parent.modelData.description
+                      checked: AudioService.source?.id === parent.modelData.id
+                      onClicked: AudioService.setAudioSource(parent.modelData)
+                      Layout.fillWidth: true
+                    }
+
+                    BluetoothProfileSelector {
+                      device: parent.modelData
+                      screen: root.screen
+                    }
                   }
                 }
               }
