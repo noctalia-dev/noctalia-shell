@@ -109,6 +109,8 @@ ShellRoot {
           NightLightService.apply();
           IdleInhibitorService.init();
           IdleService.init();
+          // Listen for system-level sleep signals (e.g. lid close) to trigger auto-lock
+          SleepListenerService.init();
           PowerProfileService.init();
           HostService.init();
           NotificationRulesService.init();
