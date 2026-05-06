@@ -102,6 +102,90 @@ void ListEditor::rebuildRows() {
   const float itemRowHeight = kItemRowHeight * m_scale;
   const float suggestedAddHeight = kSuggestedAddHeight * m_scale;
 
+  std::unique_ptr<Flex> addRow;
+  if (m_maxItems == 0 || m_items.size() < m_maxItems) {
+    addRow = std::make_unique<Flex>();
+    addRow->setDirection(FlexDirection::Horizontal);
+    addRow->setAlign(FlexAlign::Center);
+    addRow->setGap(Style::spaceSm * m_scale);
+
+    if (!m_suggestedOptions.empty()) {
+      const auto remaining = remainingOptions();
+      if (!remaining.empty()) {
+        std::vector<std::string> remainingLabels;
+        remainingLabels.reserve(remaining.size());
+        for (const auto& opt : remaining) {
+          remainingLabels.push_back(opt.label);
+        }
+
+        auto select = std::make_unique<Select>();
+        select->setOptions(std::move(remainingLabels));
+        select->setPlaceholder(m_addPlaceholder);
+        select->setFontSize(Style::fontSizeCaption * m_scale);
+        select->setControlHeight(suggestedAddHeight);
+        select->setGlyphSize(Style::fontSizeCaption * m_scale);
+        select->setSize(labelCellWidth, suggestedAddHeight);
+        auto* selectPtr = select.get();
+
+        auto addBtn = std::make_unique<Button>();
+        addBtn->setGlyph("add");
+        addBtn->setVariant(ButtonVariant::Ghost);
+        addBtn->setGlyphSize(Style::fontSizeCaption * m_scale);
+        addBtn->setMinWidth(suggestedAddHeight);
+        addBtn->setMinHeight(suggestedAddHeight);
+        addBtn->setPadding(Style::spaceXs * m_scale);
+        addBtn->setRadius(Style::radiusSm * m_scale);
+        addBtn->setOnClick([this, selectPtr, remaining] {
+          const std::size_t index = selectPtr->selectedIndex();
+          if (index < remaining.size() && m_onAddRequested) {
+            m_onAddRequested(remaining[index].value);
+          }
+        });
+
+        addRow->addChild(std::move(select));
+        addRow->addChild(std::move(addBtn));
+      } else {
+        addRow.reset();
+      }
+    } else {
+      auto addInput = std::make_unique<Input>();
+      addInput->setPlaceholder(m_addPlaceholder);
+      addInput->setFontSize(Style::fontSizeBody * m_scale);
+      addInput->setControlHeight(Style::controlHeight * m_scale);
+      addInput->setHorizontalPadding(Style::spaceSm * m_scale);
+      addInput->setSize(kFreeformInputWidth * m_scale, Style::controlHeight * m_scale);
+      auto* addInputPtr = addInput.get();
+
+      auto addBtn = std::make_unique<Button>();
+      addBtn->setGlyph("add");
+      addBtn->setVariant(ButtonVariant::Ghost);
+      addBtn->setGlyphSize(Style::fontSizeBody * m_scale);
+      addBtn->setMinWidth(Style::controlHeight * m_scale);
+      addBtn->setMinHeight(Style::controlHeight * m_scale);
+      addBtn->setPadding(Style::spaceSm * m_scale);
+      addBtn->setRadius(Style::radiusMd * m_scale);
+      addBtn->setOnClick([this, addInputPtr] {
+        const auto& text = addInputPtr->value();
+        if (!text.empty() && m_onAddRequested) {
+          m_onAddRequested(text);
+        }
+      });
+
+      addInput->setOnSubmit([this](const std::string& text) {
+        if (!text.empty() && m_onAddRequested) {
+          m_onAddRequested(text);
+        }
+      });
+
+      addRow->addChild(std::move(addInput));
+      addRow->addChild(std::move(addBtn));
+    }
+  }
+
+  if (addRow) {
+    addChild(std::move(addRow));
+  }
+
   for (std::size_t i = 0; i < m_items.size(); ++i) {
     auto itemRow = std::make_unique<Flex>();
     itemRow->setDirection(FlexDirection::Horizontal);
@@ -140,90 +224,6 @@ void ListEditor::rebuildRows() {
     addChild(std::move(itemRow));
   }
 
-  if (m_maxItems > 0 && m_items.size() >= m_maxItems) {
-    markLayoutDirty();
-    return;
-  }
-
-  auto addRow = std::make_unique<Flex>();
-  addRow->setDirection(FlexDirection::Horizontal);
-  addRow->setAlign(FlexAlign::Center);
-  addRow->setGap(Style::spaceSm * m_scale);
-
-  if (!m_suggestedOptions.empty()) {
-    const auto remaining = remainingOptions();
-    if (remaining.empty()) {
-      markLayoutDirty();
-      return;
-    }
-
-    std::vector<std::string> remainingLabels;
-    remainingLabels.reserve(remaining.size());
-    for (const auto& opt : remaining) {
-      remainingLabels.push_back(opt.label);
-    }
-
-    auto select = std::make_unique<Select>();
-    select->setOptions(std::move(remainingLabels));
-    select->setPlaceholder(m_addPlaceholder);
-    select->setFontSize(Style::fontSizeCaption * m_scale);
-    select->setControlHeight(suggestedAddHeight);
-    select->setGlyphSize(Style::fontSizeCaption * m_scale);
-    select->setSize(labelCellWidth, suggestedAddHeight);
-    auto* selectPtr = select.get();
-
-    auto addBtn = std::make_unique<Button>();
-    addBtn->setGlyph("add");
-    addBtn->setVariant(ButtonVariant::Ghost);
-    addBtn->setGlyphSize(Style::fontSizeCaption * m_scale);
-    addBtn->setMinWidth(suggestedAddHeight);
-    addBtn->setMinHeight(suggestedAddHeight);
-    addBtn->setPadding(Style::spaceXs * m_scale);
-    addBtn->setRadius(Style::radiusSm * m_scale);
-    addBtn->setOnClick([this, selectPtr, remaining] {
-      const std::size_t index = selectPtr->selectedIndex();
-      if (index < remaining.size() && m_onAddRequested) {
-        m_onAddRequested(remaining[index].value);
-      }
-    });
-
-    addRow->addChild(std::move(select));
-    addRow->addChild(std::move(addBtn));
-  } else {
-    auto addInput = std::make_unique<Input>();
-    addInput->setPlaceholder(m_addPlaceholder);
-    addInput->setFontSize(Style::fontSizeBody * m_scale);
-    addInput->setControlHeight(Style::controlHeight * m_scale);
-    addInput->setHorizontalPadding(Style::spaceSm * m_scale);
-    addInput->setSize(kFreeformInputWidth * m_scale, Style::controlHeight * m_scale);
-    auto* addInputPtr = addInput.get();
-
-    auto addBtn = std::make_unique<Button>();
-    addBtn->setGlyph("add");
-    addBtn->setVariant(ButtonVariant::Ghost);
-    addBtn->setGlyphSize(Style::fontSizeBody * m_scale);
-    addBtn->setMinWidth(Style::controlHeight * m_scale);
-    addBtn->setMinHeight(Style::controlHeight * m_scale);
-    addBtn->setPadding(Style::spaceSm * m_scale);
-    addBtn->setRadius(Style::radiusMd * m_scale);
-    addBtn->setOnClick([this, addInputPtr] {
-      const auto& text = addInputPtr->value();
-      if (!text.empty() && m_onAddRequested) {
-        m_onAddRequested(text);
-      }
-    });
-
-    addInput->setOnSubmit([this](const std::string& text) {
-      if (!text.empty() && m_onAddRequested) {
-        m_onAddRequested(text);
-      }
-    });
-
-    addRow->addChild(std::move(addInput));
-    addRow->addChild(std::move(addBtn));
-  }
-
-  addChild(std::move(addRow));
   markLayoutDirty();
 }
 
