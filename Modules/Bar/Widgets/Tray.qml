@@ -9,6 +9,7 @@ import qs.Commons
 import qs.Modules.Bar.Extras
 import qs.Services.UI
 import qs.Widgets
+import "../../../Helpers/TrayIconResolver.js" as TrayIconResolver
 
 Item {
   id: root
@@ -413,22 +414,23 @@ Item {
           asynchronous: true
           backer.fillMode: Image.PreserveAspectFit
 
-          source: {
-            let icon = modelData?.icon || "";
-            if (!icon) {
-              return "";
-            }
+          property string rawIcon: modelData?.icon || ""
+          property var _candidates: []
+          property int _tryIndex: 0
 
-            // Process icon path
-            if (icon.includes("?path=")) {
-              const chunks = icon.split("?path=");
-              const name = chunks[0];
-              const path = chunks[1];
-              const fileName = name.substring(name.lastIndexOf("/") + 1);
-              return `file://${path}/${fileName}`;
-            }
-            return icon;
+          onRawIconChanged: {
+            _candidates = TrayIconResolver.resolveCandidates(rawIcon);
+            _tryIndex = 0;
+            source = _candidates.length > 0 ? _candidates[0] : "";
           }
+
+          onStatusChanged: {
+            if (status === Image.Error && _tryIndex < _candidates.length - 1) {
+              _tryIndex++;
+              source = _candidates[_tryIndex];
+            }
+          }
+
           opacity: status === Image.Ready ? 1 : 0
 
           layer.enabled: widgetSettings.colorizeIcons !== false

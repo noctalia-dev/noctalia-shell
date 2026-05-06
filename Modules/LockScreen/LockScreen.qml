@@ -16,20 +16,33 @@ Loader {
   id: root
   active: false
 
-  // Track if the visualizer should be shown (lockscreen active + media playing + non-compact mode)
+  property real lockedAt: 0
+  property bool graceAllowed: false
+
   readonly property bool needsSpectrum: root.active && !Settings.data.general.compactLockScreen && Settings.data.audio.visualizerType !== "" && Settings.data.audio.visualizerType !== "none"
 
   onActiveChanged: {
-    if (root.active && root.needsSpectrum) {
-      SpectrumService.registerComponent("lockscreen");
-    } else {
-      SpectrumService.unregisterComponent("lockscreen");
-    }
-
     if (root.active) {
+      root.lockedAt = Date.now();
+      root.graceAllowed = true;
+      Logger.i("LockScreen", "Lock activated, lockedAt=" + root.lockedAt + " gracePeriod=" + Settings.data.general.lockScreenGracePeriod + "s");
       LockKeysService.registerComponent("lockscreen");
+      if (root.needsSpectrum)
+        SpectrumService.registerComponent("lockscreen");
     } else {
+      root.lockedAt = 0;
+      root.graceAllowed = false;
+      SpectrumService.unregisterComponent("lockscreen");
       LockKeysService.unregisterComponent("lockscreen");
+    }
+  }
+
+  Connections {
+    target: Time
+    function onResumed() {
+      Logger.i("LockScreen", "System resumed, killing grace (graceAllowed was " + root.graceAllowed + ", lockedAt was " + root.lockedAt + ")");
+      root.graceAllowed = false;
+      root.lockedAt = 0;
     }
   }
 
@@ -68,6 +81,8 @@ Loader {
 
       LockContext {
         id: lockContext
+        lockedAt: root.lockedAt
+        graceAllowed: root.graceAllowed
         onUnlocked: {
           lockSession.locked = false;
           root.scheduleUnloadAfterUnlock();
@@ -119,6 +134,15 @@ Loader {
                 property string currentLayout: KeyboardLayoutService.currentLayout
               }
 
+              Connections {
+                target: Time
+                function onResumed() {
+                  if (!passwordInput.activeFocus) {
+                    passwordInput.forceActiveFocus();
+                  }
+                }
+              }
+
               // Background with wallpaper, gradient, and screen corners
               LockScreenBackground {
                 id: backgroundComponent
@@ -133,11 +157,28 @@ Loader {
                   anchors.fill: parent
                   hoverEnabled: true
                   acceptedButtons: Qt.NoButton
+
+                  property real lastEnterX: 0
+                  property real lastEnterY: 0
+
                   onEntered: {
-                    // Avoid repeatedly forcing focus on every mouse move.
-                    // This can churn text-input surface state during monitor/suspend transitions.
+                    lastEnterX = mouseX;
+                    lastEnterY = mouseY;
                     if (passwordInput && !passwordInput.activeFocus) {
                       passwordInput.forceActiveFocus();
+                    }
+                  }
+
+                  onMouseXChanged: _checkGraceMouse()
+                  onMouseYChanged: _checkGraceMouse()
+
+                  function _checkGraceMouse() {
+                    if (!lockContext.isInGracePeriod())
+                      return;
+                    var dx = mouseX - lastEnterX;
+                    var dy = mouseY - lastEnterY;
+                    if (Math.sqrt(dx * dx + dy * dy) > 5) {
+                      lockContext.tryGraceUnlock();
                     }
                   }
                 }
@@ -307,6 +348,11 @@ Loader {
                   }
 
                   Keys.onPressed: function (event) {
+                    if (lockContext.isInGracePeriod()) {
+                      lockContext.tryGraceUnlock();
+                      event.accepted = true;
+                      return;
+                    }
                     if (Keybinds.checkKey(event, 'enter', Settings)) {
                       lockContext.tryUnlock();
                       event.accepted = true;
@@ -340,6 +386,13 @@ Loader {
               anchors.fill: parent
               color: "black"
 
+              Connections {
+                target: Time
+                function onResumed() {
+                  blackScreenPasswordInput.forceActiveFocus();
+                }
+              }
+
               TextInput {
                 id: blackScreenPasswordInput
                 width: 0
@@ -363,20 +416,46 @@ Loader {
                 }
 
                 Keys.onPressed: function (event) {
-                  if (Keybinds.checkKey(event, 'enter', Settings)) {
-                    lockContext.tryUnlock();
-                    event.accepted = true;
+                    if (lockContext.isInGracePeriod()) {
+                      lockContext.tryGraceUnlock();
+                      event.accepted = true;
+                      return;
+                    }
+                    if (Keybinds.checkKey(event, 'enter', Settings)) {
+                      lockContext.tryUnlock();
+                      event.accepted = true;
+                    }
                   }
-                }
 
-                Component.onCompleted: forceActiveFocus()
-              }
+                  Component.onCompleted: forceActiveFocus()
+                }
 
               MouseArea {
                 anchors.fill: parent
                 hoverEnabled: true
                 acceptedButtons: Qt.NoButton
-                onPositionChanged: blackScreenPasswordInput.forceActiveFocus()
+
+                property real lastEnterX: 0
+                property real lastEnterY: 0
+
+                onEntered: {
+                  lastEnterX = mouseX;
+                  lastEnterY = mouseY;
+                  blackScreenPasswordInput.forceActiveFocus();
+                }
+
+                onMouseXChanged: _checkGraceMouse()
+                onMouseYChanged: _checkGraceMouse()
+
+                function _checkGraceMouse() {
+                  if (!lockContext.isInGracePeriod())
+                    return;
+                  var dx = mouseX - lastEnterX;
+                  var dy = mouseY - lastEnterY;
+                  if (Math.sqrt(dx * dx + dy * dy) > 5) {
+                    lockContext.tryGraceUnlock();
+                  }
+                }
               }
             }
           }
