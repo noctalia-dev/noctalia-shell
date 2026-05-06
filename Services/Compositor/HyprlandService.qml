@@ -458,17 +458,10 @@ Item {
 
   function handleActiveLayoutEvent(ev) {
     try {
-      let beforeParenthesis;
-      const parenthesisPos = ev.lastIndexOf('(');
-
-      if (parenthesisPos === -1) {
-        beforeParenthesis = ev;
-      } else {
-        beforeParenthesis = ev.substring(0, parenthesisPos);
-      }
-
-      const layoutNameStart = beforeParenthesis.lastIndexOf(',') + 1;
-      const layoutName = ev.substring(layoutNameStart);
+      const commaPos = ev.lastIndexOf(',') + 1;
+      if (commaPos === -1)
+        return;
+      const layoutName = ev.substring(commaPos).trim();
 
       // Ignore bogus "error" layout reported by virtual keyboards (e.g. wtype)
       if (layoutName.toLowerCase() === "error") {
