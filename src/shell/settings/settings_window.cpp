@@ -11,6 +11,7 @@
 #include "shell/settings/settings_entity_editor.h"
 #include "shell/settings/settings_registry.h"
 #include "shell/settings/settings_sidebar.h"
+#include "system/dependency_service.h"
 #include "theme/community_palettes.h"
 #include "theme/community_templates.h"
 #include "ui/controls/box.h"
@@ -107,10 +108,12 @@ namespace {
 
 SettingsWindow::~SettingsWindow() = default;
 
-void SettingsWindow::initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext) {
+void SettingsWindow::initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext,
+                                DependencyService* dependencies) {
   m_wayland = &wayland;
   m_config = config;
   m_renderContext = renderContext;
+  m_dependencies = dependencies;
   m_showAdvanced = m_config != nullptr ? m_config->config().shell.settingsShowAdvanced : false;
 }
 
@@ -940,6 +943,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   }
   settings::RegistryEnvironment env;
   env.niriBackdropSupported = (m_wayland != nullptr && compositors::isNiri());
+  env.wlsunsetAvailable = (m_dependencies != nullptr && m_dependencies->hasWlsunset());
   for (const auto& paletteInfo : noctalia::theme::availableCommunityPalettes()) {
     env.communityPalettes.push_back(settings::SelectOption{paletteInfo.name, paletteInfo.name});
   }

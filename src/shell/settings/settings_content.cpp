@@ -419,11 +419,14 @@ namespace settings {
       section.addChild(std::move(row));
     };
 
-    const auto makeToggle = [&](bool checked, std::vector<std::string> path) {
+    const auto makeToggle = [&](bool checked, bool enabled, std::vector<std::string> path) {
       auto toggle = std::make_unique<Toggle>();
       toggle->setScale(scale);
       toggle->setChecked(checked);
-      toggle->setOnChange([setOverride = ctx.setOverride, path](bool value) { setOverride(path, value); });
+      toggle->setEnabled(enabled);
+      if (enabled) {
+        toggle->setOnChange([setOverride = ctx.setOverride, path](bool value) { setOverride(path, value); });
+      }
       return toggle;
     };
 
@@ -1124,7 +1127,7 @@ namespace settings {
           [&](const auto& control) -> std::unique_ptr<Node> {
             using T = std::decay_t<decltype(control)>;
             if constexpr (std::is_same_v<T, ToggleSetting>) {
-              return makeToggle(control.checked, entry.path);
+              return makeToggle(control.checked, control.enabled, entry.path);
             } else if constexpr (std::is_same_v<T, SelectSetting>) {
               return makeSelect(control, entry.path);
             } else if constexpr (std::is_same_v<T, SliderSetting>) {
@@ -1187,7 +1190,7 @@ namespace settings {
         .makeResetButton = makeResetButton,
         .makeRow = makeRow,
         .makeToggle = [&](bool checked, std::vector<std::string> path) -> std::unique_ptr<Node> {
-          return makeToggle(checked, std::move(path));
+          return makeToggle(checked, true, std::move(path));
         },
         .makeSelect = [&](const SelectSetting& setting, std::vector<std::string> path) -> std::unique_ptr<Node> {
           return makeSelect(setting, std::move(path));

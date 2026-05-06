@@ -17,6 +17,7 @@
 class Box;
 class Button;
 class ConfigService;
+class DependencyService;
 class Flex;
 class RenderContext;
 class WaylandConnection;
@@ -30,7 +31,8 @@ class SettingsWindow {
 public:
   ~SettingsWindow();
 
-  void initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext);
+  void initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext,
+                  DependencyService* dependencies);
 
   void open();
   void close();
@@ -76,6 +78,7 @@ private:
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
   RenderContext* m_renderContext = nullptr;
+  DependencyService* m_dependencies = nullptr;
 
   std::unique_ptr<ToplevelSurface> m_surface;
   std::unique_ptr<Node> m_sceneRoot;

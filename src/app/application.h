@@ -61,6 +61,7 @@
 #include "shell/wallpaper/wallpaper.h"
 #include "system/brightness_poll_source.h"
 #include "system/brightness_service.h"
+#include "system/dependency_service.h"
 #include "system/desktop_entry_poll_source.h"
 #include "system/icon_theme_poll_source.h"
 #include "system/lock_keys_poll_source.h"
@@ -136,6 +137,7 @@ private:
   IdleInhibitor m_idleInhibitor;
   IdleManager m_idleManager;
   HookManager m_hookManager;
+  DependencyService m_dependencyService;
   NightLightManager m_nightLightManager;
   std::unique_ptr<MprisService> m_mprisService;
   std::unique_ptr<PowerProfilesService> m_powerProfilesService;

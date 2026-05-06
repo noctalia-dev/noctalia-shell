@@ -1457,7 +1457,8 @@
         },
         "night-light": {
           "label": "Night Light",
-          "description": "Shift screen colors warmer at night"
+          "description": "Shift screen colors warmer at night",
+          "requires-wlsunset": "Install wlsunset to enable Night Light"
         },
         "force-night-light": {
           "label": "Force Night Light",

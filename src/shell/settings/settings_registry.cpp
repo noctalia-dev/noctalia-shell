@@ -622,42 +622,51 @@ namespace settings {
     entries.push_back(makeEntry("services", "brightness", tr("settings.schema.services.ddcutil.label"),
                                 tr("settings.schema.services.ddcutil.description"), {"brightness", "enable_ddcutil"},
                                 ToggleSetting{cfg.brightness.enableDdcutil}, "monitor ddcutil"));
-    entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.night-light.label"),
-                                tr("settings.schema.services.night-light.description"), {"nightlight", "enabled"},
-                                ToggleSetting{cfg.nightlight.enabled}, "wlsunset"));
-    entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.force-night-light.label"),
-                                tr("settings.schema.services.force-night-light.description"), {"nightlight", "force"},
-                                ToggleSetting{cfg.nightlight.force}, "wlsunset"));
-    entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.use-weather-location.label"),
-                                tr("settings.schema.services.use-weather-location.description"),
-                                {"nightlight", "use_weather_location"},
-                                ToggleSetting{cfg.nightlight.useWeatherLocation}, "location"));
-    entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.night-light-start-time.label"),
-                                tr("settings.schema.services.night-light-start-time.description"),
-                                {"nightlight", "start_time"}, TextSetting{cfg.nightlight.startTime, "20:30"},
-                                "time schedule sunset"));
-    entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.night-light-stop-time.label"),
-                                tr("settings.schema.services.night-light-stop-time.description"),
-                                {"nightlight", "stop_time"}, TextSetting{cfg.nightlight.stopTime, "07:30"},
-                                "time schedule sunrise"));
-    entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.latitude.label"),
-                                tr("settings.schema.services.latitude.description"), {"nightlight", "latitude"},
-                                OptionalNumberSetting{cfg.nightlight.latitude, -90.0, 90.0, "52.5200"},
-                                "coordinate location sunrise sunset", true));
-    entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.longitude.label"),
-                                tr("settings.schema.services.longitude.description"), {"nightlight", "longitude"},
-                                OptionalNumberSetting{cfg.nightlight.longitude, -180.0, 180.0, "13.4050"},
-                                "coordinate location sunrise sunset", true));
-    entries.push_back(
-        makeEntry("services", "night-light", tr("settings.schema.services.day-temperature.label"),
-                  tr("settings.schema.services.day-temperature.description"), {"nightlight", "temperature_day"},
-                  SliderSetting{static_cast<float>(cfg.nightlight.dayTemperature), 1000.0f, 10000.0f, 100.0f, true},
-                  "wlsunset kelvin"));
-    entries.push_back(
-        makeEntry("services", "night-light", tr("settings.schema.services.night-temperature.label"),
-                  tr("settings.schema.services.night-temperature.description"), {"nightlight", "temperature_night"},
-                  SliderSetting{static_cast<float>(cfg.nightlight.nightTemperature), 1000.0f, 10000.0f, 100.0f, true},
-                  "wlsunset kelvin"));
+    if (!env.wlsunsetAvailable) {
+      // Show only the master toggle in a disabled state so users can discover the feature
+      // and learn the dependency requirement. The remaining settings are hidden until wlsunset is installed.
+      entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.night-light.label"),
+                                  tr("settings.schema.services.night-light.requires-wlsunset"),
+                                  {"nightlight", "enabled"},
+                                  ToggleSetting{.checked = cfg.nightlight.enabled, .enabled = false}, "wlsunset"));
+    } else {
+      entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.night-light.label"),
+                                  tr("settings.schema.services.night-light.description"), {"nightlight", "enabled"},
+                                  ToggleSetting{cfg.nightlight.enabled}, "wlsunset"));
+      entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.force-night-light.label"),
+                                  tr("settings.schema.services.force-night-light.description"), {"nightlight", "force"},
+                                  ToggleSetting{cfg.nightlight.force}, "wlsunset"));
+      entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.use-weather-location.label"),
+                                  tr("settings.schema.services.use-weather-location.description"),
+                                  {"nightlight", "use_weather_location"},
+                                  ToggleSetting{cfg.nightlight.useWeatherLocation}, "location"));
+      entries.push_back(
+          makeEntry("services", "night-light", tr("settings.schema.services.night-light-start-time.label"),
+                    tr("settings.schema.services.night-light-start-time.description"), {"nightlight", "start_time"},
+                    TextSetting{cfg.nightlight.startTime, "20:30"}, "time schedule sunset"));
+      entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.night-light-stop-time.label"),
+                                  tr("settings.schema.services.night-light-stop-time.description"),
+                                  {"nightlight", "stop_time"}, TextSetting{cfg.nightlight.stopTime, "07:30"},
+                                  "time schedule sunrise"));
+      entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.latitude.label"),
+                                  tr("settings.schema.services.latitude.description"), {"nightlight", "latitude"},
+                                  OptionalNumberSetting{cfg.nightlight.latitude, -90.0, 90.0, "52.5200"},
+                                  "coordinate location sunrise sunset", true));
+      entries.push_back(makeEntry("services", "night-light", tr("settings.schema.services.longitude.label"),
+                                  tr("settings.schema.services.longitude.description"), {"nightlight", "longitude"},
+                                  OptionalNumberSetting{cfg.nightlight.longitude, -180.0, 180.0, "13.4050"},
+                                  "coordinate location sunrise sunset", true));
+      entries.push_back(
+          makeEntry("services", "night-light", tr("settings.schema.services.day-temperature.label"),
+                    tr("settings.schema.services.day-temperature.description"), {"nightlight", "temperature_day"},
+                    SliderSetting{static_cast<float>(cfg.nightlight.dayTemperature), 1000.0f, 10000.0f, 100.0f, true},
+                    "wlsunset kelvin"));
+      entries.push_back(
+          makeEntry("services", "night-light", tr("settings.schema.services.night-temperature.label"),
+                    tr("settings.schema.services.night-temperature.description"), {"nightlight", "temperature_night"},
+                    SliderSetting{static_cast<float>(cfg.nightlight.nightTemperature), 1000.0f, 10000.0f, 100.0f, true},
+                    "wlsunset kelvin"));
+    }
 
     // Notifications
     entries.push_back(makeEntry("notifications", "general", tr("settings.schema.notifications.daemon.label"),
