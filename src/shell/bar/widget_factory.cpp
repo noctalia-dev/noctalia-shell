@@ -54,6 +54,16 @@
 namespace {
   constexpr Logger kLog("shell");
 
+  ActiveWindowTitleScrollMode parseActiveWindowTitleScrollMode(std::string_view value) {
+    if (value == "always") {
+      return ActiveWindowTitleScrollMode::Always;
+    }
+    if (value == "on_hover" || value == "hover") {
+      return ActiveWindowTitleScrollMode::OnHover;
+    }
+    return ActiveWindowTitleScrollMode::None;
+  }
+
   MediaTitleScrollMode parseMediaTitleScrollMode(std::string_view value) {
     if (value == "always") {
       return MediaTitleScrollMode::Always;
@@ -94,10 +104,13 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "active_window") {
-    const float maxTitleWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_length", 260.0) : 260.0);
+    const float maxWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_length", 260.0) : 260.0);
+    const float minWidth = static_cast<float>(wc != nullptr ? wc->getDouble("min_length", 80.0) : 80.0);
     const float iconSize =
         static_cast<float>(wc != nullptr ? wc->getDouble("icon_size", Style::fontSizeBody) : Style::fontSizeBody);
-    auto widget = std::make_unique<ActiveWindowWidget>(m_wayland, maxTitleWidth, iconSize);
+    const std::string titleScroll = wc != nullptr ? wc->getString("title_scroll", "none") : std::string("none");
+    auto widget = std::make_unique<ActiveWindowWidget>(m_wayland, maxWidth, minWidth, iconSize,
+                                                       parseActiveWindowTitleScrollMode(titleScroll));
     widget->setContentScale(contentScale);
     return widget;
   }

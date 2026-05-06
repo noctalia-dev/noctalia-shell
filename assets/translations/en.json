@@ -1022,7 +1022,7 @@
         },
         "title_scroll": {
           "label": "Title Scroll",
-          "description": "When the media title should scroll"
+          "description": "When the widget title should scroll"
         },
         "mirrored": {
           "label": "Mirrored",

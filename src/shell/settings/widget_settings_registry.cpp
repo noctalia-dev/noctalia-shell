@@ -427,8 +427,10 @@ namespace settings {
     };
 
     if (type == "active_window") {
+      add(doubleSpec("min_length", 80.0, 0.0, 800.0, 1.0));
       add(doubleSpec("max_length", 260.0, 40.0, 800.0, 1.0));
       add(doubleSpec("icon_size", static_cast<double>(Style::fontSizeBody), 8.0, 64.0, 1.0));
+      add(selectSpec("title_scroll", "none", mediaTitleScroll));
     } else if (type == "audio_visualizer") {
       add(doubleSpec("width", 56.0, 8.0, 400.0, 1.0));
       add(intSpec("bands", 16, 2.0, 128.0, 1.0));

@@ -2,6 +2,7 @@
 
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
+#include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "system/desktop_entry.h"
 #include "system/internal_app_metadata.h"
@@ -27,13 +28,24 @@ namespace {
 
 } // namespace
 
-ActiveWindowWidget::ActiveWindowWidget(WaylandConnection& connection, float maxTitleWidth, float iconSize)
-    : m_connection(connection), m_maxTitleWidth(maxTitleWidth), m_iconSize(iconSize) {
+ActiveWindowWidget::ActiveWindowWidget(WaylandConnection& connection, float maxWidth, float minWidth, float iconSize,
+                                       ActiveWindowTitleScrollMode titleScrollMode)
+    : m_connection(connection), m_maxWidth(maxWidth), m_minWidth(minWidth), m_iconSize(iconSize),
+      m_titleScrollMode(titleScrollMode) {
   buildDesktopIconIndex();
 }
 
 void ActiveWindowWidget::create() {
-  auto rootNode = std::make_unique<Node>();
+  auto rootNode = std::make_unique<InputArea>();
+  rootNode->setOnEnter([this](const InputArea::PointerData&) {
+    applyTitleScrollMode(m_title != nullptr && m_title->visible());
+    requestUpdate();
+  });
+  rootNode->setOnLeave([this]() {
+    applyTitleScrollMode(m_title != nullptr && m_title->visible());
+    requestUpdate();
+  });
+  m_area = rootNode.get();
 
   auto icon = std::make_unique<Image>();
   icon->setRadius(Style::radiusSm);
@@ -45,8 +57,9 @@ void ActiveWindowWidget::create() {
   title->setBold(true);
   title->setFontSize(Style::fontSizeBody * m_contentScale);
   title->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
-  title->setMaxWidth(m_maxTitleWidth * m_contentScale);
+  title->setMaxWidth(m_maxWidth * m_contentScale);
   title->setMaxLines(1);
+  title->setAutoScroll(false);
   m_title = static_cast<Label*>(rootNode->addChild(std::move(title)));
 
   setRoot(std::move(rootNode));
@@ -67,18 +80,25 @@ void ActiveWindowWidget::doLayout(Renderer& renderer, float containerWidth, floa
 
   const bool isVertical = containerHeight > containerWidth;
   const float iconSize = m_iconSize * m_contentScale;
+  const float maxLength = std::max(0.0f, m_maxWidth * m_contentScale);
+  const float minLength = std::clamp(m_minWidth * m_contentScale, 0.0f, maxLength);
   m_icon->setSize(iconSize, iconSize);
   m_icon->setVisible(true);
 
-  m_title->setMaxWidth(m_maxTitleWidth * m_contentScale);
   m_title->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
 
   if (isVertical) {
     m_title->setVisible(false);
+    applyTitleScrollMode(false);
     m_icon->setPosition(0.0f, 0.0f);
     rootNode->setSize(m_icon->width(), m_icon->height());
   } else {
-    m_title->setVisible(true);
+    m_title->setVisible(!m_lastTitle.empty());
+    const bool showTitle = m_title->visible();
+    applyTitleScrollMode(showTitle);
+    const float spacing = showTitle ? Style::spaceXs : 0.0f;
+    const float labelMaxWidth = showTitle ? std::max(0.0f, maxLength - m_icon->width() - spacing) : 0.0f;
+    m_title->setMaxWidth(labelMaxWidth);
     m_title->measure(renderer);
 
     const float contentHeight = std::max(m_icon->height(), m_title->height());
@@ -86,13 +106,27 @@ void ActiveWindowWidget::doLayout(Renderer& renderer, float containerWidth, floa
     const float labelY = std::round((contentHeight - m_title->height()) * 0.5f);
 
     m_icon->setPosition(0.0f, iconY);
-    m_title->setPosition(m_icon->width() + Style::spaceXs, labelY);
+    m_title->setPosition(m_icon->width() + spacing, labelY);
 
-    rootNode->setSize(m_title->x() + m_title->width(), contentHeight);
+    const float contentWidth = showTitle ? m_title->x() + m_title->width() : m_icon->width();
+    rootNode->setSize(std::clamp(contentWidth, minLength, maxLength), contentHeight);
   }
 }
 
 void ActiveWindowWidget::doUpdate(Renderer& renderer) { syncState(renderer); }
+
+void ActiveWindowWidget::applyTitleScrollMode(bool titleVisible) {
+  if (m_title == nullptr) {
+    return;
+  }
+
+  const bool shouldScroll =
+      titleVisible &&
+      (m_titleScrollMode == ActiveWindowTitleScrollMode::Always ||
+       (m_titleScrollMode == ActiveWindowTitleScrollMode::OnHover && m_area != nullptr && m_area->hovered()));
+  m_title->setAutoScroll(shouldScroll);
+  m_title->setAutoScrollOnlyWhenHovered(false);
+}
 
 void ActiveWindowWidget::syncState(Renderer& renderer) {
   if (m_icon == nullptr || m_title == nullptr) {
@@ -138,10 +172,10 @@ void ActiveWindowWidget::syncState(Renderer& renderer) {
 
   std::string iconPath = emptyState ? std::string{} : resolveIconPath(appId);
 
-  m_title->setMaxWidth(m_maxTitleWidth * m_contentScale);
   m_title->setText(m_lastTitle);
   m_title->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
-  m_title->setVisible(true);
+  m_title->setVisible(!m_lastTitle.empty());
+  applyTitleScrollMode(m_title->visible());
   m_title->measure(renderer);
 
   if (iconPath != m_lastIconPath) {

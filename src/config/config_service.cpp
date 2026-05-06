@@ -731,6 +731,14 @@ void ConfigService::seedBuiltinWidgets(Config& config) {
   date.settings["format"] = std::string("{:%a %d %b}");
   seed("date", std::move(date));
 
+  WidgetConfig activeWindow;
+  activeWindow.type = "active_window";
+  activeWindow.settings["max_length"] = 260.0;
+  activeWindow.settings["min_length"] = 80.0;
+  activeWindow.settings["icon_size"] = static_cast<double>(Style::fontSizeBody);
+  activeWindow.settings["title_scroll"] = std::string("none");
+  seed("active_window", std::move(activeWindow));
+
   WidgetConfig media;
   media.type = "media";
   media.settings["max_length"] = 220.0;
