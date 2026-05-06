@@ -1,5 +1,6 @@
 #include "ui/controls/stepper.h"
 
+#include "cursor-shape-v1-client-protocol.h"
 #include "render/core/render_styles.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
@@ -12,6 +13,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -23,6 +25,8 @@ namespace {
   // Matches Input's internal text viewport inset so the layout minimum reserves
   // the visible text box, not just ink.
   constexpr float kInputTextInnerInset = 3.0f;
+  constexpr std::chrono::milliseconds kStepRepeatDelay{350};
+  constexpr std::chrono::milliseconds kStepRepeatInterval{70};
 
   float valueInputHorizontalPadding(float scale) { return Style::spaceSm * scale; }
 
@@ -69,7 +73,15 @@ Stepper::Stepper() {
     btn->setPadding(Style::spaceXs, Style::spaceMd);
     btn->setContentAlign(ButtonContentAlign::Center);
     btn->setFlexGrow(0.0f);
-    btn->setOnClick([this, increment]() { stepBy(increment ? 1 : -1); });
+    btn->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
+    btn->setOnPress([this, directionSign = increment ? 1 : -1](float /*localX*/, float /*localY*/, bool pressed) {
+      if (pressed) {
+        beginStepRepeat(directionSign);
+      } else {
+        stopStepRepeat();
+      }
+    });
+    btn->setOnLeave([this]() { stopStepRepeat(); });
     return btn;
   };
 
@@ -174,6 +186,9 @@ void Stepper::setEnabled(bool enabled) {
     return;
   }
   m_enabled = enabled;
+  if (!m_enabled) {
+    stopStepRepeat();
+  }
   refreshButtons();
   if (m_valueInput != nullptr) {
     m_valueInput->inputArea()->setEnabled(enabled);
@@ -183,6 +198,8 @@ void Stepper::setEnabled(bool enabled) {
 }
 
 void Stepper::setOnValueChanged(std::function<void(int)> callback) { m_onValueChanged = std::move(callback); }
+
+void Stepper::setOnValueCommitted(std::function<void(int)> callback) { m_onValueCommitted = std::move(callback); }
 
 void Stepper::setScale(float scale) {
   m_scale = std::max(0.1f, scale);
@@ -239,6 +256,56 @@ void Stepper::doLayout(Renderer& renderer) {
   }
 }
 
+void Stepper::beginStepRepeat(int directionSign) {
+  stopStepRepeat();
+  if (!m_enabled || directionSign == 0) {
+    return;
+  }
+  m_repeatDirection = directionSign;
+  m_repeatStartValue = m_value;
+  repeatStep();
+  if (m_repeatDirection == 0) {
+    return;
+  }
+  m_repeatDelayTimer.start(kStepRepeatDelay, [this]() {
+    if (m_repeatDirection == 0) {
+      return;
+    }
+    m_repeatTimer.startRepeating(kStepRepeatInterval, [this]() { repeatStep(); });
+  });
+}
+
+void Stepper::repeatStep() {
+  if (!m_enabled || m_repeatDirection == 0) {
+    stopStepRepeat();
+    return;
+  }
+  if ((m_repeatDirection < 0 && m_value <= m_min) || (m_repeatDirection > 0 && m_value >= m_max)) {
+    stopStepRepeat();
+    return;
+  }
+  stepBy(m_repeatDirection);
+  if ((m_repeatDirection < 0 && m_value <= m_min) || (m_repeatDirection > 0 && m_value >= m_max)) {
+    stopStepRepeat();
+  }
+}
+
+void Stepper::stopStepRepeat() {
+  const bool changed = m_repeatDirection != 0 && m_value != m_repeatStartValue;
+  m_repeatDelayTimer.stop();
+  m_repeatTimer.stop();
+  m_repeatDirection = 0;
+  if (changed) {
+    emitValueCommitted();
+  }
+}
+
+void Stepper::emitValueCommitted() {
+  if (m_onValueCommitted) {
+    m_onValueCommitted(m_value);
+  }
+}
+
 void Stepper::stepBy(int directionSign) {
   if (!m_enabled || directionSign == 0) {
     return;
@@ -259,6 +326,7 @@ void Stepper::commitValueField() {
   if (m_valueInput == nullptr || !m_enabled) {
     return;
   }
+  const int previous = m_value;
   const std::string t = trimAscii(m_valueInput->value());
   if (t.empty()) {
     syncValueField();
@@ -272,6 +340,9 @@ void Stepper::commitValueField() {
       return;
     }
     setValue(static_cast<int>(v));
+    if (m_value != previous) {
+      emitValueCommitted();
+    }
   } catch (const std::logic_error&) {
     syncValueField();
   }

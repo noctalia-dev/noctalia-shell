@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/timer_manager.h"
 #include "ui/controls/flex.h"
 
 #include <cstdint>
@@ -20,6 +21,7 @@ public:
   void setValue(int value);
   void setEnabled(bool enabled);
   void setOnValueChanged(std::function<void(int)> callback);
+  void setOnValueCommitted(std::function<void(int)> callback);
   void setScale(float scale);
 
   [[nodiscard]] int value() const noexcept { return m_value; }
@@ -36,6 +38,10 @@ private:
   LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints) override;
   void doLayout(Renderer& renderer) override;
   void syncValueFieldMinWidth(Renderer& renderer);
+  void beginStepRepeat(int directionSign);
+  void repeatStep();
+  void stopStepRepeat();
+  void emitValueCommitted();
   void stepBy(int directionSign);
   void syncValueField();
   void commitValueField();
@@ -51,6 +57,7 @@ private:
   Input* m_valueInput = nullptr;
 
   std::function<void(int)> m_onValueChanged;
+  std::function<void(int)> m_onValueCommitted;
 
   int m_min = 0;
   int m_max = 100;
@@ -58,4 +65,8 @@ private:
   int m_value = 0;
   bool m_enabled = true;
   float m_scale = 1.0f;
+  int m_repeatDirection = 0;
+  int m_repeatStartValue = 0;
+  Timer m_repeatDelayTimer;
+  Timer m_repeatTimer;
 };
