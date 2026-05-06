@@ -1,0 +1,307 @@
+{
+  "_comments": [
+    "Noctalia Shell — KSyntaxHighlighting dynamic theme template.",
+    "This file is a Noctalia user template. Place it as input_path in",
+    "your user-templates.toml and point output_path to:",
+    "~/.local/share/org.kde.syntax-highlighting/themes/ksyntax-noctalia.theme",
+    "The colors are driven by your active Noctalia color scheme and will",
+    "regenerate automatically whenever you change the scheme/wallpaper.",
+    "Based on the Material Design 3 palette exposed by Noctalia Shell."
+  ],
+  "metadata": {
+    "name": "Noctalia Shell",
+    "revision": 1,
+    "copyright": [
+      "SPDX-FileCopyrightText: Noctalia Shell contributors"
+    ],
+    "license": "SPDX-License-Identifier: MIT"
+  },
+  "editor-colors": {
+    "BackgroundColor": "{{colors.surface.default.hex}}",
+    "TextSelection": "{{colors.primary.default.hex | set_alpha 0.3}}",
+    "CurrentLine": "{{colors.surface_container.default.hex}}",
+    "SearchHighlight": "{{colors.tertiary_container.default.hex}}",
+    "ReplaceHighlight": "{{colors.secondary_container.default.hex}}",
+    "BracketMatching": "{{colors.primary_container.default.hex}}",
+    "CodeFolding": "{{colors.surface_container_high.default.hex}}",
+    "ModifiedLines": "{{colors.tertiary.default.hex}}",
+    "SavedLines": "{{colors.secondary.default.hex}}",
+    "IconBorder": "{{colors.surface_container_low.default.hex}}",
+    "IndentationLine": "{{colors.outline_variant.default.hex}}",
+    "LineNumbers": "{{colors.on_surface_variant.default.hex}}",
+    "CurrentLineNumber": "{{colors.on_surface.default.hex}}",
+    "WordWrapMarker": "{{colors.outline_variant.default.hex}}",
+    "SpellChecking": "{{colors.error.default.hex}}",
+    "TabMarker": "{{colors.outline_variant.default.hex | set_alpha 0.5}}",
+    "TemplateBackground": "{{colors.surface_container_lowest.default.hex}}",
+    "TemplatePlaceholder": "{{colors.primary_container.default.hex}}",
+    "TemplateFocusedPlaceholder": "{{colors.primary.default.hex | set_alpha 0.4}}",
+    "TemplateReadOnlyPlaceholder": "{{colors.surface_container_highest.default.hex}}"
+  },
+  "text-styles": {
+    "Normal": {
+      "text-color": "{{colors.on_surface.default.hex}}",
+      "selected-text-color": "{{colors.inverse_on_surface.default.hex}}",
+      "bold": false,
+      "italic": false,
+      "underline": false,
+      "strike-through": false
+    },
+    "Keyword": {
+      "text-color": "{{colors.primary.default.hex}}",
+      "selected-text-color": "{{colors.on_primary.default.hex}}",
+      "bold": true
+    },
+    "Function": {
+      "text-color": "{{colors.tertiary.default.hex}}",
+      "selected-text-color": "{{colors.on_tertiary.default.hex}}"
+    },
+    "Variable": {
+      "text-color": "{{colors.secondary.default.hex}}",
+      "selected-text-color": "{{colors.on_secondary.default.hex}}"
+    },
+    "ControlFlow": {
+      "text-color": "{{colors.primary.default.hex}}",
+      "selected-text-color": "{{colors.on_primary.default.hex}}",
+      "bold": true,
+      "italic": true
+    },
+    "Operator": {
+      "text-color": "{{colors.on_surface_variant.default.hex}}",
+      "selected-text-color": "{{colors.inverse_on_surface.default.hex}}"
+    },
+    "BuiltIn": {
+      "text-color": "{{colors.primary_fixed.default.hex}}",
+      "selected-text-color": "{{colors.on_primary_fixed.default.hex}}"
+    },
+    "Extension": {
+      "text-color": "{{colors.tertiary.default.hex}}",
+      "selected-text-color": "{{colors.on_tertiary.default.hex}}"
+    },
+    "Preprocessor": {
+      "text-color": "{{colors.secondary.default.hex}}",
+      "selected-text-color": "{{colors.on_secondary.default.hex}}"
+    },
+    "Attribute": {
+      "text-color": "{{colors.tertiary.default.hex | lighten 5}}",
+      "selected-text-color": "{{colors.on_tertiary.default.hex}}"
+    },
+    "Char": {
+      "text-color": "{{colors.secondary.default.hex | lighten 5}}",
+      "selected-text-color": "{{colors.on_secondary.default.hex}}"
+    },
+    "SpecialChar": {
+      "text-color": "{{colors.tertiary.default.hex}}",
+      "selected-text-color": "{{colors.on_tertiary.default.hex}}",
+      "bold": true
+    },
+    "String": {
+      "text-color": "{{colors.secondary.default.hex}}",
+      "selected-text-color": "{{colors.on_secondary.default.hex}}"
+    },
+    "VerbatimString": {
+      "text-color": "{{colors.secondary.default.hex}}",
+      "selected-text-color": "{{colors.on_secondary.default.hex}}"
+    },
+    "SpecialString": {
+      "text-color": "{{colors.secondary.default.hex | lighten 5}}",
+      "selected-text-color": "{{colors.on_secondary.default.hex}}",
+      "italic": true
+    },
+    "Import": {
+      "text-color": "{{colors.primary.default.hex | lighten 5}}",
+      "selected-text-color": "{{colors.on_primary.default.hex}}",
+      "italic": true
+    },
+    "DataType": {
+      "text-color": "{{colors.tertiary.default.hex}}",
+      "selected-text-color": "{{colors.on_tertiary.default.hex}}",
+      "bold": true
+    },
+    "DecVal": {
+      "text-color": "{{colors.primary_fixed_dim.default.hex}}",
+      "selected-text-color": "{{colors.on_primary_fixed.default.hex}}"
+    },
+    "BaseN": {
+      "text-color": "{{colors.primary_fixed_dim.default.hex}}",
+      "selected-text-color": "{{colors.on_primary_fixed.default.hex}}"
+    },
+    "Float": {
+      "text-color": "{{colors.secondary_fixed.default.hex}}",
+      "selected-text-color": "{{colors.on_secondary_fixed.default.hex}}"
+    },
+    "Constant": {
+      "text-color": "{{colors.tertiary_fixed.default.hex}}",
+      "selected-text-color": "{{colors.on_tertiary_fixed.default.hex}}",
+      "bold": true
+    },
+    "Comment": {
+      "text-color": "{{colors.on_surface_variant.default.hex | set_alpha 0.8}}",
+      "selected-text-color": "{{colors.outline.default.hex}}",
+      "italic": true
+    },
+    "Documentation": {
+      "text-color": "{{colors.on_surface_variant.default.hex}}",
+      "selected-text-color": "{{colors.outline.default.hex}}",
+      "italic": true
+    },
+    "Annotation": {
+      "text-color": "{{colors.secondary.default.hex}}",
+      "selected-text-color": "{{colors.on_secondary.default.hex}}",
+      "italic": true
+    },
+    "CommentVar": {
+      "text-color": "{{colors.on_surface_variant.default.hex | lighten 5}}",
+      "selected-text-color": "{{colors.outline.default.hex}}"
+    },
+    "RegionMarker": {
+      "text-color": "{{colors.outline_variant.default.hex}}",
+      "selected-text-color": "{{colors.on_surface.default.hex}}",
+      "italic": true
+    },
+    "Information": {
+      "text-color": "{{colors.secondary.default.hex}}",
+      "selected-text-color": "{{colors.on_secondary.default.hex}}"
+    },
+    "Warning": {
+      "text-color": "{{colors.tertiary.default.hex}}",
+      "selected-text-color": "{{colors.on_tertiary.default.hex}}"
+    },
+    "Alert": {
+      "text-color": "{{colors.error.default.hex}}",
+      "selected-text-color": "{{colors.on_error.default.hex}}",
+      "bold": true
+    },
+    "Error": {
+      "text-color": "{{colors.error.default.hex}}",
+      "selected-text-color": "{{colors.on_error.default.hex}}",
+      "underline": true
+    },
+    "Others": {
+      "text-color": "{{colors.on_surface_variant.default.hex}}",
+      "selected-text-color": "{{colors.inverse_on_surface.default.hex}}"
+    }
+  },
+  "custom-styles": {
+    "ISO C++": {
+      "Data Type": {
+        "text-color": "{{colors.primary_fixed.default.hex}}",
+        "selected-text-color": "{{colors.on_primary_fixed.default.hex}}",
+        "bold": true
+      },
+      "Keyword": {
+        "text-color": "{{colors.primary.default.hex}}",
+        "bold": true
+      },
+      "Class": {
+        "text-color": "{{colors.tertiary.default.hex}}",
+        "bold": true
+      },
+      "Namespace": {
+        "text-color": "{{colors.secondary.default.hex}}"
+      },
+      "Macro": {
+        "text-color": "{{colors.secondary.default.hex}}"
+      }
+    },
+    "Python": {
+      "Decorator": {
+        "text-color": "{{colors.tertiary.default.hex}}",
+        "italic": true
+      },
+      "Builtin Function": {
+        "text-color": "{{colors.primary_fixed.default.hex}}"
+      },
+      "Keyword": {
+        "text-color": "{{colors.primary.default.hex}}",
+        "bold": true
+      },
+      "String": {
+        "text-color": "{{colors.secondary.default.hex}}"
+      }
+    },
+    "JavaScript": {
+      "Keyword": {
+        "text-color": "{{colors.primary.default.hex}}",
+        "bold": true
+      },
+      "Node.js Globals": {
+        "text-color": "{{colors.tertiary.default.hex}}"
+      },
+      "Template String": {
+        "text-color": "{{colors.secondary.default.hex | lighten 5}}"
+      },
+      "Module": {
+        "text-color": "{{colors.primary.default.hex}}"
+      }
+    },
+    "QML": {
+      "QML Item": {
+        "text-color": "{{colors.tertiary.default.hex}}",
+        "bold": true
+      },
+      "Property": {
+        "text-color": "{{colors.secondary.default.hex}}"
+      },
+      "Signal Handler": {
+        "text-color": "{{colors.primary.default.hex}}",
+        "italic": true
+      },
+      "JavaScript Embedded": {
+        "text-color": "{{colors.on_surface.default.hex}}"
+      }
+    },
+    "YAML": {
+      "Attribute": {
+        "text-color": "{{colors.primary.default.hex}}",
+        "selected-text-color": "{{colors.on_primary.default.hex}}",
+        "bold": true
+      },
+      "Anchor": {
+        "text-color": "{{colors.tertiary.default.hex}}"
+      },
+      "Alias": {
+        "text-color": "{{colors.secondary.default.hex}}",
+        "italic": true
+      }
+    },
+    "JSON": {
+      "Attribute": {
+        "text-color": "{{colors.primary.default.hex}}"
+      },
+      "String": {
+        "text-color": "{{colors.secondary.default.hex}}"
+      },
+      "Number": {
+        "text-color": "{{colors.tertiary.default.hex}}"
+      }
+    },
+    "Bash": {
+      "Command": {
+        "text-color": "{{colors.primary.default.hex}}"
+      },
+      "Option": {
+        "text-color": "{{colors.secondary.default.hex}}"
+      },
+      "Variable": {
+        "text-color": "{{colors.tertiary.default.hex}}"
+      },
+      "Builtin": {
+        "text-color": "{{colors.primary_fixed.default.hex}}"
+      }
+    },
+    "Rust": {
+      "Trait": {
+        "text-color": "{{colors.tertiary.default.hex}}",
+        "bold": true
+      },
+      "Lifetime": {
+        "text-color": "{{colors.secondary.default.hex}}",
+        "italic": true
+      },
+      "Macro": {
+        "text-color": "{{colors.primary.default.hex}}"
+      }
+    }
+  }
+}

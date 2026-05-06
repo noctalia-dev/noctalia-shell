@@ -121,6 +121,17 @@ Singleton {
       "postProcess": () => `${kdeApplyScript} noctalia`
     },
     {
+      "id": "ksyntax",
+      "name": "KSyntaxHighlighting",
+      "category": "system",
+      "input": "ksyntax-noctalia.theme",
+      "outputs": [
+        {
+          "path": "~/.local/share/org.kde.syntax-highlighting/themes/noctalia-shell.theme"
+        }
+      ]
+    },
+    {
       "id": "fuzzel",
       "name": "Fuzzel",
       "category": "launcher",
