@@ -68,7 +68,7 @@ Item {
     if (smartWidth && combinedModel.length > 0) {
       if (maxTaskbarWidth > 0) {
         var entriesCount = combinedModel.length;
-        var maxWidthPerEntry = (maxTaskbarWidth / entriesCount) - itemSize - Style.marginS - Style.margin2M;
+        var maxWidthPerEntry = (maxTaskbarWidth / entriesCount) - itemSize - Style.marginS - Style.margin2M - Style.marginXXS;
         calculatedWidth = Math.min(calculatedWidth, maxWidthPerEntry);
       }
 
