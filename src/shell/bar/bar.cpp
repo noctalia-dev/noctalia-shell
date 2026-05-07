@@ -204,6 +204,71 @@ namespace {
     return {-(contentRight + k), 0.0f};
   }
 
+  void applyBarShadowStyle(BarInstance& instance, const ShellConfig::ShadowConfig& shadowConfig, float surfaceWidth,
+                           float surfaceHeight) {
+    if (instance.shadow == nullptr) {
+      return;
+    }
+
+    const Radii barRadii{
+        static_cast<float>(instance.barConfig.radiusTopLeft),
+        static_cast<float>(instance.barConfig.radiusTopRight),
+        static_cast<float>(instance.barConfig.radiusBottomRight),
+        static_cast<float>(instance.barConfig.radiusBottomLeft),
+    };
+    const auto barVisual = computeBarVisualGeometry(instance.barConfig, shadowConfig, surfaceWidth, surfaceHeight);
+    const float barAreaW = barVisual.width;
+    const float barAreaH = barVisual.height;
+    const float bgOpacity = std::clamp(instance.barConfig.backgroundOpacity, 0.0f, 1.0f);
+    const float shadowX = barVisual.x + static_cast<float>(shadowConfig.offsetX);
+    const float shadowY = barVisual.y + static_cast<float>(shadowConfig.offsetY);
+    RoundedRectStyle shadowStyle =
+        shell::surface_shadow::style(shadowConfig, bgOpacity, shell::surface_shadow::Shape{.radius = barRadii});
+
+    const bool panelShadowExclusion = instance.attachedPanelGeometry.has_value() &&
+                                      instance.attachedPanelGeometry->width > 0.0f &&
+                                      instance.attachedPanelGeometry->height > 0.0f;
+    if (panelShadowExclusion) {
+      const auto& attached = *instance.attachedPanelGeometry;
+      const float convexRadius = std::max(0.0f, attached.cornerRadius);
+      const float bulgeRadius = std::max(0.0f, attached.bulgeRadius);
+      const std::string_view barPosition = instance.barConfig.position;
+      const auto corners = attached_panel::cornerShapes(barPosition);
+      const auto pickRadius = [&](CornerShape shape) {
+        return shape == CornerShape::Concave ? bulgeRadius : convexRadius;
+      };
+      shadowStyle.shadowExclusion = true;
+      shadowStyle.shadowExclusionOffsetX = shadowX - attached.x;
+      shadowStyle.shadowExclusionOffsetY = shadowY - attached.y;
+      shadowStyle.shadowExclusionWidth = attached.width;
+      shadowStyle.shadowExclusionHeight = attached.height;
+      shadowStyle.shadowExclusionCorners = corners;
+      shadowStyle.shadowExclusionLogicalInset = attached_panel::logicalInset(barPosition, bulgeRadius);
+      shadowStyle.shadowExclusionRadius =
+          Radii{pickRadius(corners.tl), pickRadius(corners.tr), pickRadius(corners.br), pickRadius(corners.bl)};
+    }
+
+    auto configureShadow = [&](Box* node, float x, float y) {
+      if (node == nullptr) {
+        return;
+      }
+      node->setStyle(shadowStyle);
+      node->setZIndex(-1);
+      node->setPosition(x, y);
+      node->setSize(barAreaW, barAreaH);
+    };
+
+    instance.shadow->setVisible(true);
+    configureShadow(instance.shadow, shadowX, shadowY);
+
+    if (instance.shadowLeftClip != nullptr) {
+      instance.shadowLeftClip->setVisible(false);
+    }
+    if (instance.shadowRightClip != nullptr) {
+      instance.shadowRightClip->setVisible(false);
+    }
+  }
+
   void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW, float barAreaH, float padding,
                          bool isVertical) {
     const float slotCross = isVertical ? barAreaW : barAreaH;
@@ -711,10 +776,8 @@ void Bar::setAttachedPanelGeometry(wl_output* output, std::optional<AttachedPane
 
   instance->attachedPanelGeometry = geometry;
   if (instance->surface != nullptr && instance->surface->width() > 0 && instance->surface->height() > 0) {
-    if (m_renderContext != nullptr) {
-      m_renderContext->syncContentScale(instance->surface->renderTarget());
-    }
-    buildScene(*instance, instance->surface->width(), instance->surface->height());
+    applyBarShadowStyle(*instance, m_config->config().shell.shadow, static_cast<float>(instance->surface->width()),
+                        static_cast<float>(instance->surface->height()));
     instance->surface->requestRedraw();
   }
 }
@@ -1425,58 +1488,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     instance.contentClip->setSize(barAreaW, barAreaH);
   }
 
-  // Shadow — same shape as the bar, offset by (shadowOffsetX, shadowOffsetY), rendered with large
-  // SDF softness to produce a Gaussian-like blurred drop shadow. Rendered at z=-1 so the bar sits
-  // on top and hides the shadow's opaque interior.
-  if (instance.shadow != nullptr) {
-    const float bgOpacity = std::clamp(instance.barConfig.backgroundOpacity, 0.0f, 1.0f);
-    const float shadowX = barAreaX + shadowOffsetX;
-    const float shadowY = barAreaY + shadowOffsetY;
-    RoundedRectStyle shadowStyle =
-        shell::surface_shadow::style(shadowConfig, bgOpacity, shell::surface_shadow::Shape{.radius = barRadii});
-    const bool panelShadowExclusion = instance.attachedPanelGeometry.has_value() &&
-                                      instance.attachedPanelGeometry->width > 0.0f &&
-                                      instance.attachedPanelGeometry->height > 0.0f;
-    if (panelShadowExclusion) {
-      const auto& attached = *instance.attachedPanelGeometry;
-      const float convexRadius = std::max(0.0f, attached.cornerRadius);
-      const float bulgeRadius = std::max(0.0f, attached.bulgeRadius);
-      const std::string_view barPosition = instance.barConfig.position;
-      const auto corners = attached_panel::cornerShapes(barPosition);
-      const auto pickRadius = [&](CornerShape shape) {
-        return shape == CornerShape::Concave ? bulgeRadius : convexRadius;
-      };
-      shadowStyle.shadowExclusion = true;
-      shadowStyle.shadowExclusionOffsetX = shadowX - attached.x;
-      shadowStyle.shadowExclusionOffsetY = shadowY - attached.y;
-      shadowStyle.shadowExclusionWidth = attached.width;
-      shadowStyle.shadowExclusionHeight = attached.height;
-      shadowStyle.shadowExclusionCorners = corners;
-      shadowStyle.shadowExclusionLogicalInset = attached_panel::logicalInset(barPosition, bulgeRadius);
-      shadowStyle.shadowExclusionRadius =
-          Radii{pickRadius(corners.tl), pickRadius(corners.tr), pickRadius(corners.br), pickRadius(corners.bl)};
-    }
-
-    auto configureShadow = [&](Box* node, float x, float y) {
-      if (node == nullptr) {
-        return;
-      }
-      node->setStyle(shadowStyle);
-      node->setZIndex(-1);
-      node->setPosition(x, y);
-      node->setSize(barAreaW, barAreaH);
-    };
-
-    instance.shadow->setVisible(true);
-    configureShadow(instance.shadow, shadowX, shadowY);
-
-    if (instance.shadowLeftClip != nullptr) {
-      instance.shadowLeftClip->setVisible(false);
-    }
-    if (instance.shadowRightClip != nullptr) {
-      instance.shadowRightClip->setVisible(false);
-    }
-  }
+  applyBarShadowStyle(instance, shadowConfig, w, h);
 
   layoutBarSections(instance, *renderer, barAreaW, barAreaH, padding, isVertical);
 
