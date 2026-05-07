@@ -612,6 +612,7 @@ bool NiriWorkspaceBackend::handleWindowLayoutsChanged(const nlohmann::json& payl
     return false;
   }
 
+  bool changed = false;
   for (const auto& item : *changes) {
     if (!item.is_array() || item.size() < 2) {
       continue;
@@ -633,6 +634,7 @@ bool NiriWorkspaceBackend::handleWindowLayoutsChanged(const nlohmann::json& payl
         if (it->second.x != x || it->second.y != y) {
           it->second.x = x;
           it->second.y = y;
+          changed = true;
         }
       }
     }
@@ -640,7 +642,7 @@ bool NiriWorkspaceBackend::handleWindowLayoutsChanged(const nlohmann::json& payl
 
   // Layout positions are useful when a taskbar asks for ordering, but they do
   // not affect workspace occupancy or the normal workspace indicators.
-  return false;
+  return changed;
 }
 
 bool NiriWorkspaceBackend::handleWindowClosed(const nlohmann::json& payload) {

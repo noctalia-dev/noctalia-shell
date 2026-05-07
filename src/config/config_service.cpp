@@ -729,6 +729,16 @@ void ConfigService::seedBuiltinWidgets(Config& config) {
   ram.settings["stat"] = std::string("ram_used");
   seed("ram", std::move(ram));
 
+  WidgetConfig outputVolume;
+  outputVolume.type = "volume";
+  outputVolume.settings["device"] = std::string("output");
+  seed("output_volume", std::move(outputVolume));
+
+  WidgetConfig inputVolume;
+  inputVolume.type = "volume";
+  inputVolume.settings["device"] = std::string("input");
+  seed("input_volume", std::move(inputVolume));
+
   WidgetConfig date;
   date.type = "clock";
   date.settings["format"] = std::string("{:%a %d %b}");

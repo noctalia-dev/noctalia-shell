@@ -9,9 +9,14 @@ class Label;
 class PipeWireService;
 struct wl_output;
 
+enum class VolumeWidgetTarget {
+  Output,
+  Input,
+};
+
 class VolumeWidget : public Widget {
 public:
-  VolumeWidget(PipeWireService* audio, wl_output* output, bool showLabel);
+  VolumeWidget(PipeWireService* audio, wl_output* output, bool showLabel, VolumeWidgetTarget target);
 
   void create() override;
 
@@ -23,6 +28,7 @@ private:
   PipeWireService* m_audio = nullptr;
   wl_output* m_output = nullptr;
   bool m_showLabel = true;
+  VolumeWidgetTarget m_target = VolumeWidgetTarget::Output;
   Glyph* m_glyph = nullptr;
   Label* m_label = nullptr;
   float m_lastVolume = -1.0f;

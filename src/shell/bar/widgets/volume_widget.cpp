@@ -15,7 +15,11 @@
 
 namespace {
 
-  const char* volumeGlyphName(float volume, bool muted) {
+  const char* volumeGlyphName(float volume, bool muted, VolumeWidgetTarget target) {
+    if (target == VolumeWidgetTarget::Input) {
+      return muted ? "microphone-mute" : "microphone";
+    }
+
     if (muted || volume <= 0.0f) {
       return "volume-mute";
     }
@@ -29,8 +33,8 @@ namespace {
 
 } // namespace
 
-VolumeWidget::VolumeWidget(PipeWireService* audio, wl_output* output, bool showLabel)
-    : m_audio(audio), m_output(output), m_showLabel(showLabel) {}
+VolumeWidget::VolumeWidget(PipeWireService* audio, wl_output* output, bool showLabel, VolumeWidgetTarget target)
+    : m_audio(audio), m_output(output), m_showLabel(showLabel), m_target(target) {}
 
 void VolumeWidget::create() {
   auto area = std::make_unique<InputArea>();
@@ -39,13 +43,17 @@ void VolumeWidget::create() {
     if (m_audio == nullptr) {
       return;
     }
-    const auto* sink = m_audio->defaultSink();
-    if (sink == nullptr) {
+    const auto* node = m_target == VolumeWidgetTarget::Input ? m_audio->defaultSource() : m_audio->defaultSink();
+    if (node == nullptr) {
       return;
     }
     const float delta = data.scrollDelta(1.0f) > 0 ? -kScrollStep : kScrollStep;
-    const float newValue = std::clamp(sink->volume + delta, 0.0f, 1.0f);
-    m_audio->setSinkVolume(sink->id, newValue);
+    const float newValue = std::clamp(node->volume + delta, 0.0f, 1.0f);
+    if (m_target == VolumeWidgetTarget::Input) {
+      m_audio->setSourceVolume(node->id, newValue);
+    } else {
+      m_audio->setSinkVolume(node->id, newValue);
+    }
   });
 
   auto glyph = std::make_unique<Glyph>();
@@ -103,9 +111,9 @@ void VolumeWidget::syncState(Renderer& renderer) {
     return;
   }
 
-  const auto* sink = m_audio->defaultSink();
-  float volume = sink != nullptr ? sink->volume : 0.0f;
-  bool muted = sink != nullptr ? sink->muted : false;
+  const auto* node = m_target == VolumeWidgetTarget::Input ? m_audio->defaultSource() : m_audio->defaultSink();
+  float volume = node != nullptr ? node->volume : 0.0f;
+  bool muted = node != nullptr ? node->muted : false;
 
   if (volume == m_lastVolume && muted == m_lastMuted && m_isVertical == m_lastVertical) {
     return;
@@ -115,7 +123,7 @@ void VolumeWidget::syncState(Renderer& renderer) {
   m_lastMuted = muted;
   m_lastVertical = m_isVertical;
 
-  m_glyph->setGlyph(volumeGlyphName(volume, muted));
+  m_glyph->setGlyph(volumeGlyphName(volume, muted, m_target));
   m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   m_glyph->setColor(muted ? colorSpecFromRole(ColorRole::OnSurfaceVariant)
                           : widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));

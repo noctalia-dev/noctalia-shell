@@ -5,6 +5,7 @@
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
+#include "cursor-shape-v1-client-protocol.h"
 #include "i18n/i18n.h"
 #include "net/http_client.h"
 #include "net/uri.h"
@@ -162,6 +163,13 @@ namespace {
   float notificationTextStartX() { return kCardInnerPad + kNotificationIconSize + kIconTextGap; }
 
   float notificationTextMaxWidth() { return std::max(0.0f, kCardWidth - notificationTextStartX() - kCardInnerPad); }
+
+  bool isCloseButtonHit(float localX, float localY) {
+    const float closeLeft = static_cast<float>(kCardWidth) - kCardInnerPad - kCloseButtonSize;
+    const float closeTop = kCardInnerPad;
+    return localX >= closeLeft && localX < closeLeft + kCloseButtonSize && localY >= closeTop &&
+           localY < closeTop + kCloseButtonSize;
+  }
 
   bool isBlankText(std::string_view text) {
     return text.empty() ||
@@ -729,25 +737,37 @@ void NotificationToast::addCardToInstance(Instance& inst, std::size_t entryIndex
   const uint32_t notificationId = entry.notificationId;
   Glyph* closeGlyphPtr = cs.closeGlyph;
   ProgressBar* progressBarPtr = cs.progressBar;
+  InputArea* cardInput = card;
 
-  card->setOnEnter(
-      [this, closeGlyphPtr, closeColorHover, notificationId, progressBarPtr](const InputArea::PointerData&) {
-        closeGlyphPtr->setColor(closeColorHover);
-        if (auto* popup = findEntry(notificationId); popup != nullptr) {
-          popup->hovered = true;
-          popup->remainingProgress = std::clamp(progressBarPtr->progress(), 0.0f, 1.0f);
-        }
-        pauseCountdowns(notificationId);
-        // Pause the server-side expiry — otherwise NotificationManager's own timer
-        // would fire Closed behind our back, which is what "the progress bar stops
-        // but the timer keeps running" was.
-        if (m_notifications != nullptr) {
-          m_notifications->pauseExpiry(notificationId);
-        }
-      });
+  card->setOnEnter([this, closeGlyphPtr, closeColorNormal, closeColorHover, notificationId, progressBarPtr,
+                    cardInput](const InputArea::PointerData& data) {
+    const bool closeHovered = isCloseButtonHit(data.localX, data.localY);
+    closeGlyphPtr->setColor(closeHovered ? closeColorHover : closeColorNormal);
+    cardInput->setCursorShape(closeHovered ? WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER
+                                           : WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
+    if (auto* popup = findEntry(notificationId); popup != nullptr) {
+      popup->hovered = true;
+      popup->remainingProgress = std::clamp(progressBarPtr->progress(), 0.0f, 1.0f);
+    }
+    pauseCountdowns(notificationId);
+    // Pause the server-side expiry — otherwise NotificationManager's own timer
+    // would fire Closed behind our back, which is what "the progress bar stops
+    // but the timer keeps running" was.
+    if (m_notifications != nullptr) {
+      m_notifications->pauseExpiry(notificationId);
+    }
+  });
 
-  card->setOnLeave([this, notificationId, totalDuration, closeGlyphPtr, closeColorNormal, progressBarPtr]() {
+  card->setOnMotion([closeGlyphPtr, closeColorNormal, closeColorHover, cardInput](const InputArea::PointerData& data) {
+    const bool closeHovered = isCloseButtonHit(data.localX, data.localY);
+    closeGlyphPtr->setColor(closeHovered ? closeColorHover : closeColorNormal);
+    cardInput->setCursorShape(closeHovered ? WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER
+                                           : WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
+  });
+
+  card->setOnLeave([this, notificationId, totalDuration, closeGlyphPtr, closeColorNormal, progressBarPtr, cardInput]() {
     closeGlyphPtr->setColor(closeColorNormal);
+    cardInput->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
     if (auto* popup = findEntry(notificationId); popup != nullptr) {
       popup->hovered = false;
       popup->remainingProgress = std::clamp(progressBarPtr->progress(), 0.0f, 1.0f);
@@ -1464,14 +1484,15 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
   auto viewport = std::make_unique<InputArea>();
   viewport->setSize(kCardWidth, cardHeight);
   viewport->setClipChildren(true);
-  // Unified close mechanism: right-clicking anywhere on the card dismisses it. The (X) glyph
-  // is purely visual — it brightens while the card is hovered via the card's own
-  // onEnter/onLeave handlers installed in addCardToInstance().
+  viewport->setAcceptedButtons(BTN_LEFT | BTN_RIGHT);
+  // Right-clicking anywhere dismisses the card, while the visual (X) keeps its
+  // familiar left-click close affordance without adding a nested hover target.
   viewport->setOnClick([this, id = entry.notificationId](const InputArea::PointerData& data) {
-    if (data.button == BTN_RIGHT) {
+    if (data.button == BTN_RIGHT || (data.button == BTN_LEFT && isCloseButtonHit(data.localX, data.localY))) {
       removePopup(id);
     }
   });
+  viewport->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
 
   auto cardRoot = std::make_unique<Node>();
   cardRoot->setSize(kCardWidth, cardHeight);
@@ -1628,6 +1649,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
       actionButton->setVariant(ButtonVariant::Outline);
       actionButton->setFontSize(Style::fontSizeCaption);
       actionButton->setText(actionLabel);
+      actionButton->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
       actionButton->setOnEnter([this, notificationId]() {
         pauseCountdowns(notificationId);
         if (m_notifications != nullptr) {

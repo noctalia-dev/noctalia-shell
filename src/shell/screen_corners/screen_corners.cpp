@@ -3,7 +3,7 @@
 #include "config/config_service.h"
 #include "core/ui_phase.h"
 #include "render/render_context.h"
-#include "ui/controls/box.h"
+#include "ui/controls/screen_corner.h"
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
@@ -17,18 +17,18 @@ namespace {
       LayerShellAnchor::Bottom | LayerShellAnchor::Left,
   };
 
-  Radii cornerRadii(int cornerIndex, float size) {
+  ScreenCornerPosition cornerPosition(int cornerIndex) {
     switch (cornerIndex) {
     case 0:
-      return Radii{size, 0.0f, 0.0f, 0.0f};
+      return ScreenCornerPosition::TopLeft;
     case 1:
-      return Radii{0.0f, size, 0.0f, 0.0f};
+      return ScreenCornerPosition::TopRight;
     case 2:
-      return Radii{0.0f, 0.0f, size, 0.0f};
+      return ScreenCornerPosition::BottomRight;
     case 3:
-      return Radii{0.0f, 0.0f, 0.0f, size};
+      return ScreenCornerPosition::BottomLeft;
     default:
-      return Radii{};
+      return ScreenCornerPosition::TopLeft;
     }
   }
 
@@ -105,14 +105,16 @@ void ScreenCorners::ensureSurfaces() {
 
       auto* cornerPtr = &corner;
       const int cornerIndex = i;
-      const float cornerSize = static_cast<float>(size);
 
       corner.surface->setConfigureCallback(
           [cornerPtr](std::uint32_t, std::uint32_t) { cornerPtr->surface->requestLayout(); });
-      corner.surface->setPrepareFrameCallback([this, cornerPtr, cornerSize, cornerIndex](bool, bool) {
-        if (cornerPtr->sceneRoot == nullptr) {
+      corner.surface->setPrepareFrameCallback([this, cornerPtr, size, cornerIndex](bool, bool) {
+        auto& target = cornerPtr->surface->renderTarget();
+        const auto width = target.logicalWidth() == 0 ? size : target.logicalWidth();
+        const auto height = target.logicalHeight() == 0 ? size : target.logicalHeight();
+        if (cornerPtr->sceneRoot == nullptr || cornerPtr->builtWidth != width || cornerPtr->builtHeight != height) {
           UiPhaseScope layoutPhase(UiPhase::Layout);
-          buildCornerScene(*cornerPtr, cornerSize, cornerIndex);
+          buildCornerScene(*cornerPtr, width, height, cornerIndex);
         }
       });
       corner.surface->setRenderContext(m_renderContext);
@@ -132,17 +134,19 @@ void ScreenCorners::ensureSurfaces() {
 
 void ScreenCorners::destroySurfaces() { m_instances.clear(); }
 
-void ScreenCorners::buildCornerScene(Corner& corner, float size, int cornerIndex) {
-  auto root = std::make_unique<Box>();
-  root->setSize(size, size);
-  root->setStyle(RoundedRectStyle{
-      .fill = Color{0.0f, 0.0f, 0.0f, 1.0f},
-      .fillMode = FillMode::Solid,
-      .radius = cornerRadii(cornerIndex, size),
-      .softness = 0.5f,
-      .invertFill = true,
-  });
+void ScreenCorners::buildCornerScene(Corner& corner, std::uint32_t width, std::uint32_t height, int cornerIndex) {
+  const float logicalWidth = static_cast<float>(std::max<std::uint32_t>(1, width));
+  const float logicalHeight = static_cast<float>(std::max<std::uint32_t>(1, height));
+
+  auto root = std::make_unique<ScreenCorner>();
+  root->setSize(logicalWidth, logicalHeight);
+  root->setColor(Color{0.0f, 0.0f, 0.0f, 1.0f});
+  root->setCorner(cornerPosition(cornerIndex));
+  root->setExponent(4.0f);
+  root->setSoftness(1.5f);
 
   corner.sceneRoot = std::move(root);
+  corner.builtWidth = width;
+  corner.builtHeight = height;
   corner.surface->setSceneRoot(corner.sceneRoot.get());
 }

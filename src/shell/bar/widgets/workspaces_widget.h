@@ -58,7 +58,6 @@ private:
     float targetWidth = 0.0f;
     float currentX = 0.0f;
     float currentWidth = 0.0f;
-    float textInkCenterX = 0.0f;
   };
 
   [[nodiscard]] ColorRole workspaceFillRole(const Workspace& workspace) const;

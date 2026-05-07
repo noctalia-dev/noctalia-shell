@@ -15,6 +15,7 @@
 #include "render/scene/image_node.h"
 #include "render/scene/node.h"
 #include "render/scene/rect_node.h"
+#include "render/scene/screen_corner_node.h"
 #include "render/scene/spinner_node.h"
 #include "render/scene/text_node.h"
 #include "render/scene/wallpaper_node.h"
@@ -318,6 +319,15 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
     auto style = spinner->style();
     style.color.a *= effectiveOpacity;
     m_backend->drawSpinner(sw, sh, node->width(), node->height(), style, worldTransform);
+    break;
+  }
+  case NodeType::ScreenCorner: {
+    const auto* corner = static_cast<const ScreenCornerNode*>(node);
+    auto style = corner->style();
+    style.color.a *= effectiveOpacity;
+    const float pixelScaleX = sw > 0.0f ? bw / sw : 1.0f;
+    const float pixelScaleY = sh > 0.0f ? bh / sh : 1.0f;
+    m_backend->drawScreenCorner(sw, sh, pixelScaleX, pixelScaleY, node->width(), node->height(), style, worldTransform);
     break;
   }
   case NodeType::AudioSpectrum: {
