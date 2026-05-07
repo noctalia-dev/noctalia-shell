@@ -238,6 +238,28 @@ namespace settings {
       return spec;
     }
 
+    std::string widgetInstanceDisplayLabel(std::string_view name) {
+      if (name == "cpu") {
+        return tr("settings.widgets.instances.cpu");
+      }
+      if (name == "temp") {
+        return tr("settings.widgets.instances.temp");
+      }
+      if (name == "ram") {
+        return tr("settings.widgets.instances.ram");
+      }
+      if (name == "date") {
+        return tr("settings.widgets.instances.date");
+      }
+      if (name == "output_volume") {
+        return tr("settings.widgets.instances.output-volume");
+      }
+      if (name == "input_volume") {
+        return tr("settings.widgets.instances.input-volume");
+      }
+      return std::string(name);
+    }
+
     void addPickerEntry(std::vector<WidgetPickerEntry>& entries, std::unordered_set<std::string>& seen,
                         std::string value, std::string label, std::string description, std::string category,
                         WidgetReferenceKind kind) {
@@ -317,7 +339,7 @@ namespace settings {
 
     if (const auto it = cfg.widgets.find(std::string(name)); it != cfg.widgets.end()) {
       return WidgetReferenceInfo{
-          .title = std::string(name),
+          .title = widgetInstanceDisplayLabel(name),
           .detail = it->second.type.empty() ? tr("settings.entities.widget.detail.custom")
                                             : tr("settings.entities.widget.detail.type", "type", it->second.type),
           .badge = tr("settings.entities.widget.kinds.named"),
@@ -349,7 +371,7 @@ namespace settings {
       if (isBuiltInWidgetType(name)) {
         continue;
       }
-      addPickerEntry(entries, seen, name, name,
+      addPickerEntry(entries, seen, name, widgetInstanceDisplayLabel(name),
                      widget.type.empty() ? tr("settings.entities.widget.detail.custom")
                                          : tr("settings.entities.widget.detail.type", "type", widget.type),
                      tr("settings.entities.widget.kinds.named"), WidgetReferenceKind::Named);
@@ -423,6 +445,10 @@ namespace settings {
         {"always", "settings.widgets.options.always"},
         {"on_hover", "settings.widgets.options.on-hover"},
     };
+    const std::vector<WidgetSettingSelectOption> volumeDeviceOptions = {
+        {"output", "settings.widgets.options.output"},
+        {"input", "settings.widgets.options.input"},
+    };
     const std::vector<WidgetSettingSelectOption> workspaceColorRoles = {
         {"on_surface", ""}, {"primary", ""}, {"secondary", ""}, {"tertiary", ""}, {"error", ""},
     };
@@ -494,6 +520,7 @@ namespace settings {
       add(boolSpec("drawer", false));
       add(intSpec("drawer_columns", 3, 1.0, 5.0, 1.0));
     } else if (type == "volume") {
+      add(segmentedSpec("device", "output", volumeDeviceOptions));
       add(boolSpec("show_label", true));
     } else if (type == "wallpaper") {
       add(stringSpec("glyph", "wallpaper-selector"));
