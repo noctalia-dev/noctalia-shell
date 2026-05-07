@@ -18,6 +18,8 @@ ColumnLayout {
   property string valueLabelMode: widgetData.labelMode !== undefined ? widgetData.labelMode : widgetMetadata.labelMode
   property bool valueHideUnoccupied: widgetData.hideUnoccupied !== undefined ? widgetData.hideUnoccupied : widgetMetadata.hideUnoccupied
   property bool valueFollowFocusedScreen: widgetData.followFocusedScreen !== undefined ? widgetData.followFocusedScreen : widgetMetadata.followFocusedScreen
+  property bool valueShowAllWorkspaces: widgetData.showAllWorkspaces !== undefined ? widgetData.showAllWorkspaces : widgetMetadata.showAllWorkspaces
+  property bool valueFocusWorkspaceOnCurrentMonitor: widgetData.focusWorkspaceOnCurrentMonitor !== undefined ? widgetData.focusWorkspaceOnCurrentMonitor : widgetMetadata.focusWorkspaceOnCurrentMonitor
   property int valueCharacterCount: widgetData.characterCount !== undefined ? widgetData.characterCount : widgetMetadata.characterCount
 
   // Grouped mode settings
@@ -42,6 +44,8 @@ ColumnLayout {
     settings.hideUnoccupied = valueHideUnoccupied;
     settings.characterCount = valueCharacterCount;
     settings.followFocusedScreen = valueFollowFocusedScreen;
+    settings.showAllWorkspaces = valueShowAllWorkspaces;
+    settings.focusWorkspaceOnCurrentMonitor = valueFocusWorkspaceOnCurrentMonitor;
     settings.showApplications = valueShowApplications;
     settings.showApplicationsHover = valueShowApplicationsHover;
     settings.showLabelsOnlyWhenOccupied = valueShowLabelsOnlyWhenOccupied;
@@ -175,6 +179,26 @@ ColumnLayout {
     checked: valueFollowFocusedScreen
     onToggled: checked => {
                  valueFollowFocusedScreen = checked;
+                 saveSettings();
+               }
+  }
+
+  NToggle {
+    label: I18n.tr("bar.workspace.show-all-workspaces-label")
+    description: I18n.tr("bar.workspace.show-all-workspaces-description")
+    checked: valueShowAllWorkspaces
+    onToggled: checked => {
+                 valueShowAllWorkspaces = checked;
+                 saveSettings();
+               }
+  }
+
+  NToggle {
+    label: I18n.tr("bar.workspace.focus-workspace-on-current-monitor-label")
+    description: I18n.tr("bar.workspace.focus-workspace-on-current-monitor-description")
+    checked: valueFocusWorkspaceOnCurrentMonitor
+    onToggled: checked => {
+                 valueFocusWorkspaceOnCurrentMonitor = checked;
                  saveSettings();
                }
   }

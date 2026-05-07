@@ -59,6 +59,8 @@ Item {
   }
   readonly property bool hideUnoccupied: (widgetSettings.hideUnoccupied !== undefined) ? widgetSettings.hideUnoccupied : widgetMetadata.hideUnoccupied
   readonly property bool followFocusedScreen: (widgetSettings.followFocusedScreen !== undefined) ? widgetSettings.followFocusedScreen : widgetMetadata.followFocusedScreen
+  readonly property bool focusWorkspaceOnCurrentMonitor: (widgetSettings.focusWorkspaceOnCurrentMonitor !== undefined) ? widgetSettings.focusWorkspaceOnCurrentMonitor : widgetMetadata.focusWorkspaceOnCurrentMonitor
+  readonly property bool showAllWorkspaces: (widgetSettings.showAllWorkspaces !== undefined) ? widgetSettings.showAllWorkspaces : widgetMetadata.showAllWorkspaces
   readonly property int characterCount: {
     const count = (widgetSettings.characterCount !== undefined) ? widgetSettings.characterCount : widgetMetadata.characterCount;
     return isVertical ? Math.min(count, 2) : count;
@@ -235,7 +237,9 @@ Item {
       return;
     const ws = localWorkspaces.get(next);
     if (ws && ws.idx !== undefined)
-      CompositorService.switchToWorkspace(ws);
+      CompositorService.switchToWorkspace(ws, {
+                                            focusWorkspaceOnCurrentMonitor: root.focusWorkspaceOnCurrentMonitor
+                                          });
   }
 
   // Helper function to normalize app IDs for case-insensitive matching
@@ -340,7 +344,7 @@ Item {
       for (var i = 0; i < CompositorService.workspaces.count; i++) {
         const ws = CompositorService.workspaces.get(i);
         // For global workspaces (e.g., LabWC), show all workspaces on all screens
-        const matchesScreen = CompositorService.globalWorkspaces || (followFocusedScreen && ws.output.toLowerCase() == focusedOutput) || (!followFocusedScreen && ws.output.toLowerCase() == screenName);
+        const matchesScreen = CompositorService.globalWorkspaces || showAllWorkspaces || (followFocusedScreen && ws.output.toLowerCase() == focusedOutput) || (!followFocusedScreen && ws.output.toLowerCase() == screenName);
 
         if (!matchesScreen)
           continue;
@@ -628,6 +632,7 @@ Item {
         characterCount: root.characterCount
         textRatio: root.textRatio
         showLabelsOnlyWhenOccupied: root.showLabelsOnlyWhenOccupied
+        focusWorkspaceOnCurrentMonitor: root.focusWorkspaceOnCurrentMonitor
         focusedColor: root.focusedColor
         occupiedColor: root.occupiedColor
         emptyColor: root.emptyColor
@@ -671,6 +676,7 @@ Item {
         characterCount: root.characterCount
         textRatio: root.textRatio
         showLabelsOnlyWhenOccupied: root.showLabelsOnlyWhenOccupied
+        focusWorkspaceOnCurrentMonitor: root.focusWorkspaceOnCurrentMonitor
         focusedColor: root.focusedColor
         occupiedColor: root.occupiedColor
         emptyColor: root.emptyColor
@@ -751,7 +757,9 @@ Item {
         preventStealing: true
         onPressed: mouse => {
                      if (mouse.button === Qt.LeftButton) {
-                       CompositorService.switchToWorkspace(groupedContainer.workspaceModel);
+                       CompositorService.switchToWorkspace(groupedContainer.workspaceModel, {
+                                                             focusWorkspaceOnCurrentMonitor: root.focusWorkspaceOnCurrentMonitor
+                                                           });
                      }
                    }
         onReleased: mouse => {

@@ -18,6 +18,7 @@ Item {
   required property int characterCount
   required property real textRatio
   required property bool showLabelsOnlyWhenOccupied
+  required property bool focusWorkspaceOnCurrentMonitor
   required property string focusedColor
   required property string occupiedColor
   required property string emptyColor
@@ -207,7 +208,9 @@ Item {
     cursorShape: Qt.PointingHandCursor
     hoverEnabled: true
     onClicked: {
-      CompositorService.switchToWorkspace(workspace);
+      CompositorService.switchToWorkspace(workspace, {
+                                            focusWorkspaceOnCurrentMonitor: focusWorkspaceOnCurrentMonitor
+                                          });
     }
   }
 
