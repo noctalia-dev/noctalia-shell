@@ -27,6 +27,8 @@ private:
   struct Corner {
     std::unique_ptr<LayerSurface> surface;
     std::unique_ptr<Node> sceneRoot;
+    std::uint32_t builtWidth = 0;
+    std::uint32_t builtHeight = 0;
   };
 
   struct OutputInstance {
@@ -36,7 +38,7 @@ private:
 
   void ensureSurfaces();
   void destroySurfaces();
-  void buildCornerScene(Corner& corner, float size, int cornerIndex);
+  void buildCornerScene(Corner& corner, std::uint32_t width, std::uint32_t height, int cornerIndex);
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;

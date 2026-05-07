@@ -340,6 +340,13 @@ void GlesRenderBackend::drawSpinner(float surfaceWidth, float surfaceHeight, flo
   m_spinnerProgram.draw(surfaceWidth, surfaceHeight, width, height, style, transform);
 }
 
+void GlesRenderBackend::drawScreenCorner(float surfaceWidth, float surfaceHeight, float pixelScaleX, float pixelScaleY,
+                                         float width, float height, const ScreenCornerStyle& style,
+                                         const Mat3& transform) {
+  m_screenCornerProgram.ensureInitialized();
+  m_screenCornerProgram.draw(surfaceWidth, surfaceHeight, pixelScaleX, pixelScaleY, width, height, style, transform);
+}
+
 void GlesRenderBackend::drawAudioSpectrum(float surfaceWidth, float surfaceHeight, float pixelScaleX, float pixelScaleY,
                                           float width, float height, const AudioSpectrumStyle& style,
                                           std::span<const float> values, const Mat3& transform) {
@@ -429,6 +436,7 @@ void GlesRenderBackend::cleanup() {
   m_imageProgram.destroy();
   m_glyphProgram.destroy();
   m_spinnerProgram.destroy();
+  m_screenCornerProgram.destroy();
   m_audioSpectrumProgram.destroy();
   m_effectProgram.destroy();
   m_graphProgram.destroy();

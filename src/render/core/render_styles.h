@@ -117,6 +117,25 @@ struct SpinnerStyle {
   float thickness = 2.0f;
 };
 
+enum class ScreenCornerPosition : std::uint8_t {
+  TopLeft,
+  TopRight,
+  BottomRight,
+  BottomLeft,
+};
+
+struct ScreenCornerStyle {
+  Color color = rgba(0.0f, 0.0f, 0.0f, 1.0f);
+  ScreenCornerPosition position = ScreenCornerPosition::TopLeft;
+  float exponent = 4.0f;
+  float softness = 1.0f;
+};
+
+constexpr bool operator==(const ScreenCornerStyle& lhs, const ScreenCornerStyle& rhs) noexcept {
+  return lhs.color == rhs.color && lhs.position == rhs.position && lhs.exponent == rhs.exponent &&
+         lhs.softness == rhs.softness;
+}
+
 enum class AudioSpectrumOrientation : std::uint8_t {
   Horizontal,
   Vertical,

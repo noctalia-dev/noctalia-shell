@@ -18,6 +18,7 @@ struct AudioSpectrumStyle;
 struct EffectStyle;
 struct GraphStyle;
 struct RoundedRectStyle;
+struct ScreenCornerStyle;
 struct SpinnerStyle;
 struct TransitionParams;
 
@@ -122,6 +123,8 @@ public:
   virtual void drawGlyph(const RenderGlyphDraw& draw) = 0;
   virtual void drawSpinner(float surfaceWidth, float surfaceHeight, float width, float height,
                            const SpinnerStyle& style, const Mat3& transform) = 0;
+  virtual void drawScreenCorner(float surfaceWidth, float surfaceHeight, float pixelScaleX, float pixelScaleY,
+                                float width, float height, const ScreenCornerStyle& style, const Mat3& transform) = 0;
   virtual void drawAudioSpectrum(float surfaceWidth, float surfaceHeight, float pixelScaleX, float pixelScaleY,
                                  float width, float height, const AudioSpectrumStyle& style,
                                  std::span<const float> values, const Mat3& transform) = 0;
