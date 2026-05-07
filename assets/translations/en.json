@@ -831,6 +831,14 @@
       }
     },
     "widgets": {
+      "instances": {
+        "cpu": "CPU",
+        "date": "Date",
+        "input-volume": "Input Volume",
+        "output-volume": "Output Volume",
+        "ram": "RAM",
+        "temp": "Temperature"
+      },
       "categories": {
         "custom": "Custom",
         "info": "Info",
@@ -883,9 +891,11 @@
         "gauge": "Gauge",
         "graph": "Graph",
         "id": "ID",
+        "input": "Input",
         "name": "Name",
         "none": "None",
         "on-hover": "On Hover",
+        "output": "Output",
         "ram-percent": "RAM Percent",
         "ram-used": "RAM Used",
         "short": "Short",
@@ -945,6 +955,10 @@
         "cycle_command": {
           "label": "Cycle Command",
           "description": "Command run when cycling keyboard layouts"
+        },
+        "device": {
+          "label": "Device",
+          "description": "Audio stream to control"
         },
         "display": {
           "label": "Display",

@@ -356,7 +356,9 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "volume") {
     const bool showLabel = wc != nullptr ? wc->getBool("show_label", true) : true;
-    auto widget = std::make_unique<VolumeWidget>(m_audio, output, showLabel);
+    const std::string target = wc != nullptr ? wc->getString("device", "output") : std::string("output");
+    const auto volumeTarget = target == "input" ? VolumeWidgetTarget::Input : VolumeWidgetTarget::Output;
+    auto widget = std::make_unique<VolumeWidget>(m_audio, output, showLabel, volumeTarget);
     widget->setContentScale(contentScale);
     return widget;
   }
