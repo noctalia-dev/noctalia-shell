@@ -3,6 +3,7 @@
 #include "compositors/compositor_detect.h"
 #include "compositors/niri/niri_output_backend.h"
 #include "compositors/niri/niri_workspace_backend.h"
+#include "compositors/sway/sway_output_backend.h"
 #include "core/log.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "dwl-ipc-unstable-v2-client-protocol.h"
@@ -204,6 +205,7 @@ bool WaylandConnection::connect() {
   const std::string compositorHint(compositors::envHint());
   m_workspacesHandler.initialize(compositorHint);
   m_niriOutputBackend = std::make_unique<NiriOutputBackend>(compositorHint);
+  m_swayOutputBackend = std::make_unique<SwayOutputBackend>(compositorHint);
   m_niriWorkspaceBackend = std::make_unique<NiriWorkspaceBackend>(compositorHint);
   logStartupSummary();
   return true;
@@ -318,6 +320,19 @@ bool WaylandConnection::hasFreshPointerOutput(std::chrono::milliseconds maxAge) 
 wl_output* WaylandConnection::preferredPanelOutput(std::chrono::milliseconds pointerMaxAge) const {
   if (m_niriOutputBackend != nullptr && m_niriOutputBackend->isAvailable()) {
     if (const auto focusedName = m_niriOutputBackend->focusedOutputName(); focusedName.has_value()) {
+      for (const auto& output : m_outputs) {
+        if (output.output == nullptr) {
+          continue;
+        }
+        if (output.connectorName == *focusedName || output.description == *focusedName) {
+          return output.output;
+        }
+      }
+    }
+  }
+
+  if (m_swayOutputBackend != nullptr && m_swayOutputBackend->isAvailable()) {
+    if (const auto focusedName = m_swayOutputBackend->focusedOutputName(); focusedName.has_value()) {
       for (const auto& output : m_outputs) {
         if (output.output == nullptr) {
           continue;
@@ -1104,6 +1119,7 @@ void WaylandConnection::cleanup() {
   m_hasMangoWorkspaceGlobal = false;
   m_hasForeignToplevelManagerGlobal = false;
   m_niriOutputBackend.reset();
+  m_swayOutputBackend.reset();
 }
 
 void WaylandConnection::logStartupSummary() const {
