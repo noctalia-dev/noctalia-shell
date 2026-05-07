@@ -233,6 +233,7 @@ Singleton {
                                   },
                                   "SystemMonitor": {
                                     "compactMode": true,
+                                    "showIcons": true,
                                     "iconColor": "none",
                                     "textColor": "none",
                                     "useMonospaceFont": true,

@@ -21,6 +21,7 @@ ColumnLayout {
 
   // Local, editable state for checkboxes
   property bool valueCompactMode: widgetData.compactMode !== undefined ? widgetData.compactMode : widgetMetadata.compactMode
+  property bool valueShowIcons: widgetData.showIcons !== undefined ? widgetData.showIcons : widgetMetadata.showIcons
   property string valueIconColor: widgetData.iconColor !== undefined ? widgetData.iconColor : widgetMetadata.iconColor
   property string valueTextColor: widgetData.textColor !== undefined ? widgetData.textColor : widgetMetadata.textColor
   property bool valueUseMonospaceFont: widgetData.useMonospaceFont !== undefined ? widgetData.useMonospaceFont : widgetMetadata.useMonospaceFont
@@ -43,6 +44,7 @@ ColumnLayout {
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.compactMode = valueCompactMode;
+    settings.showIcons = valueShowIcons;
     settings.iconColor = valueIconColor;
     settings.textColor = valueTextColor;
     settings.useMonospaceFont = valueUseMonospaceFont;
@@ -77,6 +79,18 @@ ColumnLayout {
     defaultValue: widgetMetadata.compactMode
   }
 
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("bar.system-monitor.show-icons-label")
+    description: I18n.tr("bar.system-monitor.show-icons-description")
+    checked: valueShowIcons
+    onToggled: checked => {
+                 valueShowIcons = checked;
+                 saveSettings();
+               }
+    defaultValue: widgetMetadata.showIcons
+  }
+
   NColorChoice {
     label: I18n.tr("common.select-icon-color")
     currentKey: valueIconColor
@@ -84,6 +98,7 @@ ColumnLayout {
                   valueIconColor = key;
                   saveSettings();
                 }
+    visible: valueShowIcons
     defaultValue: widgetMetadata.iconColor
   }
 

@@ -227,6 +227,8 @@
     "system-monitor": {
       "compact-mode-description": "Display stats as mini bar charts instead of text values. Prevents layout shifting.",
       "compact-mode-label": "Compact mode",
+      "show-icons-description": "Show icons for each monitored resource.",
+      "show-icons-label": "Show icons",
       "cpu-cores-description": "Display CPU cores usage individually.",
       "cpu-cores-label": "CPU Cores",
       "cpu-frequency-description": "Display the current CPU clock speed in GHz.",
