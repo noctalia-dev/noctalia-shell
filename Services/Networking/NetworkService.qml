@@ -101,6 +101,17 @@ Singleton {
     }
   }
 
+  // Handle system resume to refresh network status and trigger a scan
+  Connections {
+    target: Time
+    function onResumed() {
+      Logger.i("Network", "System resumed - refreshing state");
+      deviceStatusProcess.running = true;
+      connectivityCheckProcess.running = true;
+      scan();
+    }
+  }
+
   // Start initial checks when nmcli becomes available
   Connections {
     target: ProgramCheckerService
@@ -179,6 +190,14 @@ Singleton {
     id: delayedScanTimer
     interval: 7000
     onTriggered: scan()
+  }
+
+  // Timer to restart the monitor process if it exits (e.g. after sleep or NM restart)
+  Timer {
+    id: monitorRestartTimer
+    interval: 2000
+    repeat: false
+    onTriggered: networkMonitorProcess.running = true
   }
 
   // Core functions
@@ -1135,10 +1154,16 @@ Singleton {
       onRead: data => {
         if (data.endsWith(": connected") || data.endsWith(": disconnected")) {
           Logger.d("Network", "State changed: " + data);
+          // Refresh status and trigger a scan to update SSID
           deviceStatusProcess.running = true;
           connectivityCheckProcess.running = true;
+          root.scan();
         }
       }
+    }
+    onExited: {
+      Logger.w("Network", "Monitor process exited. Restarting in 2s...");
+      monitorRestartTimer.start();
     }
   }
 }
