@@ -345,14 +345,47 @@ Item {
       }
 
       function onKbLayoutChanged() {
-        if (KeyboardLayoutService) {
-          KeyboardLayoutService.setCurrentLayout(modelData.kbLayout);
-        }
+        // Not reliable for XKB-driven switches on MangoWC; handled by kbLayoutPoll
       }
     }
   }
 
   // ===== PROCESSES =====
+
+  // Keyboard layout polling - MangoWC doesn't send DWL IPC events for XKB-driven
+  // layout switches (grp:win_space_toggle), so we poll mmsg periodically.
+  property QtObject _kbLayoutPoll: Timer {
+    id: kbLayoutPoll
+    interval: 300
+    running: false
+    repeat: true
+
+    property bool busy: false
+
+    onTriggered: {
+      if (busy) return;
+      busy = true;
+      kbLayoutQuery.running = true;
+    }
+  }
+
+  property QtObject _kbLayoutQuery: Process {
+    id: kbLayoutQuery
+    command: ["mmsg", "-g", "-k"]
+
+    stdout: SplitParser {
+      onRead: line => {
+        var parts = line.trim().split(/\s+/);
+        if (parts.length >= 3 && parts[1] === "kb_layout") {
+          KeyboardLayoutService.setCurrentLayout(parts.slice(2).join(" "));
+        }
+      }
+    }
+
+    onExited: code => {
+      kbLayoutPoll.busy = false;
+    }
+  }
 
   // Scale query (mmsg -g -A) - DWL doesn't provide scale info
   property QtObject _scaleQuery: Process {
@@ -402,6 +435,9 @@ Item {
       internal.rebuildWorkspaces();
       internal.updateWindows();
     }
+
+    // Start keyboard layout polling
+    kbLayoutPoll.running = true;
 
     initialized = true;
   }
@@ -474,7 +510,7 @@ Item {
   }
 
   function cycleKeyboardLayout() {
-    Logger.w("MangoService", "Keyboard layout cycling not supported");
+    Quickshell.execDetached(["mmsg", "-s", "-d", "switch_keyboard_layout"]);
   }
 
   function getFocusedScreen() {
