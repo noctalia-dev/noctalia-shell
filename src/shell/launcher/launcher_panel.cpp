@@ -4,20 +4,20 @@
 #include "core/deferred_call.h"
 #include "core/ui_phase.h"
 #include "i18n/i18n.h"
+#include "launcher/app_provider.h"
 #include "render/core/async_texture_cache.h"
 #include "render/core/renderer.h"
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
-#include "render/scene/node.h"
+#include "shell/launcher/launcher_result_adapter.h"
 #include "shell/panel/panel_manager.h"
 #include "system/desktop_entry.h"
 #include "ui/controls/context_menu_popup.h"
 #include "ui/controls/flex.h"
-#include "ui/controls/glyph.h"
-#include "ui/controls/image.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
+#include "ui/controls/segmented.h"
 #include "ui/controls/virtual_grid_view.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -27,7 +27,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include <functional>
 #include <memory>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
@@ -35,7 +34,7 @@ namespace {
 
   constexpr std::size_t kMaxResults = 50;
   constexpr std::size_t kRowOverscan = 3;
-  constexpr float kIconSize = 32.0f;
+  constexpr std::uint32_t kModShift = 1u << 0;
   constexpr double kUsageScorePerCount = 0.1;
   constexpr double kTypedUsageScoreCap = 0.5;
 
@@ -57,227 +56,7 @@ namespace {
     return std::min(rawBoost, kTypedUsageScoreCap);
   }
 
-  float launcherRowHeight(float scale) {
-    const float paddingY = Style::spaceXs * scale;
-    const float textGap = Style::spaceXs * scale;
-    const float titleHeight = Style::fontSizeBody * scale * 1.35f;
-    const float subtitleHeight = Style::fontSizeCaption * scale * 1.25f;
-    const float textHeight = titleHeight + textGap + subtitleHeight;
-    return std::ceil(std::max(kIconSize * scale, textHeight) + paddingY * 2.0f);
-  }
-
-  class LauncherResultRow final : public Node {
-  public:
-    LauncherResultRow(float scale, AsyncTextureCache* asyncTextures)
-        : m_scale(scale), m_rowHeight(launcherRowHeight(scale)), m_asyncTextures(asyncTextures) {
-      auto row = std::make_unique<Flex>();
-      row->setDirection(FlexDirection::Horizontal);
-      row->setAlign(FlexAlign::Center);
-      row->setGap(Style::spaceMd * scale);
-      row->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
-      row->setRadius(Style::radiusMd * scale);
-      m_row = static_cast<Flex*>(addChild(std::move(row)));
-
-      auto actionLabel = std::make_unique<Label>();
-      actionLabel->setFontSize(kIconSize * scale);
-      actionLabel->setColor(colorSpecFromRole(ColorRole::OnSurface));
-      actionLabel->setVisible(false);
-      m_actionLabel = static_cast<Label*>(m_row->addChild(std::move(actionLabel)));
-
-      auto image = std::make_unique<Image>();
-      image->setSize(kIconSize * scale, kIconSize * scale);
-      image->setVisible(false);
-      m_image = static_cast<Image*>(m_row->addChild(std::move(image)));
-
-      auto glyph = std::make_unique<Glyph>();
-      glyph->setGlyphSize(kIconSize * scale);
-      glyph->setColor(colorSpecFromRole(ColorRole::OnSurface));
-      glyph->setVisible(false);
-      m_glyph = static_cast<Glyph*>(m_row->addChild(std::move(glyph)));
-
-      m_image->setAsyncReadyCallback([this]() {
-        if (m_actionTextVisible || m_iconPath.empty() || m_image == nullptr || m_glyph == nullptr ||
-            !m_image->hasImage()) {
-          return;
-        }
-        m_image->setVisible(true);
-        m_glyph->setVisible(false);
-      });
-
-      auto textCol = std::make_unique<Flex>();
-      textCol->setDirection(FlexDirection::Vertical);
-      textCol->setAlign(FlexAlign::Start);
-      textCol->setGap(Style::spaceXs * 0.5f * scale);
-      textCol->setFlexGrow(1.0f);
-      m_textCol = static_cast<Flex*>(m_row->addChild(std::move(textCol)));
-
-      auto title = std::make_unique<Label>();
-      title->setFontSize(Style::fontSizeBody * scale);
-      title->setBold(true);
-      title->setColor(colorSpecFromRole(ColorRole::OnSurface));
-      title->setMaxLines(1);
-      m_title = static_cast<Label*>(m_textCol->addChild(std::move(title)));
-
-      auto subtitle = std::make_unique<Label>();
-      subtitle->setCaptionStyle();
-      subtitle->setFontSize(Style::fontSizeCaption * scale);
-      subtitle->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
-      subtitle->setMaxLines(1);
-      m_subtitle = static_cast<Label*>(m_textCol->addChild(std::move(subtitle)));
-    }
-
-    void bind(Renderer& renderer, const LauncherResult& result, float width, bool selected, bool hovered) {
-      m_selected = selected;
-      m_hovered = hovered;
-      m_iconPath = result.iconPath;
-      m_fallbackGlyph = result.glyphName.empty() ? "app-window" : result.glyphName;
-      m_iconTargetSize = static_cast<int>(std::round(kIconSize * m_scale));
-      m_actionTextVisible = !result.actionText.empty();
-
-      setSize(width, m_rowHeight);
-      m_row->setFrameSize(width, m_rowHeight);
-
-      m_actionLabel->setVisible(false);
-      m_image->setVisible(false);
-      m_glyph->setVisible(false);
-
-      if (m_actionTextVisible) {
-        m_actionLabel->setText(result.actionText);
-        m_actionLabel->setSize(kIconSize * m_scale, kIconSize * m_scale);
-        m_actionLabel->setVisible(true);
-        m_image->clear(renderer);
-      } else if (!m_iconPath.empty()) {
-        const bool ready = refreshAsyncIcon(renderer);
-        m_image->setVisible(ready);
-        m_glyph->setGlyph(m_fallbackGlyph);
-        m_glyph->setVisible(!ready);
-      } else {
-        m_image->clear(renderer);
-        m_glyph->setGlyph(m_fallbackGlyph);
-        m_glyph->setVisible(true);
-      }
-
-      const float textWidth =
-          std::max(0.0f, width - kIconSize * m_scale - Style::spaceSm * m_scale * 2.0f - Style::spaceMd * m_scale);
-      m_title->setText(result.title);
-      m_title->setMaxWidth(textWidth);
-
-      if (result.subtitle.empty()) {
-        m_subtitle->setVisible(false);
-        m_subtitle->setText("");
-      } else {
-        m_subtitle->setVisible(true);
-        m_subtitle->setText(result.subtitle);
-        m_subtitle->setMaxWidth(textWidth);
-      }
-
-      applyVisualState();
-    }
-
-    bool refreshAsyncIcon(Renderer& renderer) {
-      if (m_actionTextVisible || m_iconPath.empty()) {
-        return false;
-      }
-
-      bool ready = false;
-      if (m_asyncTextures != nullptr) {
-        ready = m_image->setSourceFileAsync(renderer, *m_asyncTextures, m_iconPath, m_iconTargetSize, true);
-      } else {
-        ready = m_image->setSourceFile(renderer, m_iconPath, m_iconTargetSize, true);
-      }
-
-      m_image->setSize(kIconSize * m_scale, kIconSize * m_scale);
-      m_image->setVisible(ready);
-      m_glyph->setGlyph(m_fallbackGlyph);
-      m_glyph->setVisible(!ready);
-      return ready;
-    }
-
-  protected:
-    void doLayout(Renderer& renderer) override {
-      if (!m_actionTextVisible && !m_iconPath.empty()) {
-        (void)refreshAsyncIcon(renderer);
-      }
-      Node::doLayout(renderer);
-    }
-
-  private:
-    void applyVisualState() {
-      if (m_selected) {
-        m_row->setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
-      } else if (m_hovered) {
-        m_row->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, 0.45f));
-      } else {
-        m_row->setFill(rgba(0, 0, 0, 0));
-      }
-    }
-
-    float m_scale = 1.0f;
-    float m_rowHeight = 0.0f;
-    bool m_selected = false;
-    bool m_hovered = false;
-    Flex* m_row = nullptr;
-    Label* m_actionLabel = nullptr;
-    Image* m_image = nullptr;
-    Glyph* m_glyph = nullptr;
-    Flex* m_textCol = nullptr;
-    Label* m_title = nullptr;
-    Label* m_subtitle = nullptr;
-    AsyncTextureCache* m_asyncTextures = nullptr;
-    std::string m_iconPath;
-    std::string m_fallbackGlyph;
-    int m_iconTargetSize = 0;
-    bool m_actionTextVisible = false;
-  };
-
 } // namespace
-
-class LauncherResultAdapter final : public VirtualGridAdapter {
-public:
-  using ActivateCallback = std::function<void(std::size_t)>;
-  using SecondaryActivateCallback = std::function<void(std::size_t, float, float)>;
-
-  LauncherResultAdapter(float scale, AsyncTextureCache* cache) : m_scale(scale), m_cache(cache) {}
-
-  void setResults(const std::vector<LauncherResult>* results) { m_results = results; }
-  void setRenderer(Renderer* renderer) { m_renderer = renderer; }
-  void setOnActivate(ActivateCallback callback) { m_onActivate = std::move(callback); }
-  void setOnSecondaryActivate(SecondaryActivateCallback callback) { m_onSecondaryActivate = std::move(callback); }
-
-  [[nodiscard]] std::size_t itemCount() const override { return m_results == nullptr ? 0u : m_results->size(); }
-
-  [[nodiscard]] std::unique_ptr<Node> createTile() override {
-    return std::make_unique<LauncherResultRow>(m_scale, m_cache);
-  }
-
-  void bindTile(Node& tile, std::size_t index, bool selected, bool hovered) override {
-    if (m_renderer == nullptr || m_results == nullptr || index >= m_results->size()) {
-      return;
-    }
-    auto* row = static_cast<LauncherResultRow*>(&tile);
-    row->bind(*m_renderer, (*m_results)[index], tile.width(), selected, hovered);
-  }
-
-  void onActivate(std::size_t index) override {
-    if (m_onActivate) {
-      m_onActivate(index);
-    }
-  }
-
-  void onSecondaryActivate(std::size_t index, float anchorX, float anchorY) override {
-    if (m_onSecondaryActivate) {
-      m_onSecondaryActivate(index, anchorX, anchorY);
-    }
-  }
-
-private:
-  float m_scale;
-  AsyncTextureCache* m_cache = nullptr;
-  Renderer* m_renderer = nullptr;
-  const std::vector<LauncherResult>* m_results = nullptr;
-  ActivateCallback m_onActivate;
-  SecondaryActivateCallback m_onSecondaryActivate;
-};
 
 LauncherPanel::LauncherPanel(ConfigService* config, AsyncTextureCache* asyncTextures)
     : m_config(config), m_asyncTextures(asyncTextures) {}
@@ -312,6 +91,9 @@ void LauncherPanel::create() {
   m_input = input.get();
   container->addChild(std::move(input));
 
+  auto categoryTabs = createCategoryTabs(scale);
+  m_categoryTabs = static_cast<Segmented*>(container->addChild(std::move(categoryTabs)));
+
   auto body = std::make_unique<Flex>();
   body->setDirection(FlexDirection::Vertical);
   body->setAlign(FlexAlign::Stretch);
@@ -328,7 +110,7 @@ void LauncherPanel::create() {
   auto grid = std::make_unique<VirtualGridView>();
   grid->setColumns(1);
   grid->setSquareCells(false);
-  grid->setCellHeight(launcherRowHeight(scale));
+  grid->setCellHeight(launcherResultRowHeight(scale));
   grid->setColumnGap(0.0f);
   grid->setRowGap(0.0f);
   grid->setOverscanRows(kRowOverscan);
@@ -351,6 +133,9 @@ void LauncherPanel::create() {
 
   container->addChild(std::move(body));
 
+  auto tooltip = createCategoryTooltip(scale);
+  m_categoryTooltip = static_cast<Flex*>(container->addChild(std::move(tooltip)));
+
   m_container = container.get();
   setRoot(std::move(container));
 
@@ -370,6 +155,7 @@ void LauncherPanel::doLayout(Renderer& renderer, float width, float height) {
 
   m_container->setSize(width, height);
   m_container->layout(renderer);
+  layoutCategoryTooltip(renderer);
 }
 
 void LauncherPanel::onOpen(std::string_view context) {
@@ -379,6 +165,9 @@ void LauncherPanel::onOpen(std::string_view context) {
   }
   if (m_grid != nullptr) {
     m_grid->scrollView().setScrollOffset(0.0f);
+  }
+  if (auto* apps = appProvider()) {
+    apps->resetCategory();
   }
   // Clear cached icon misses before each open so newly installed app icons appear.
   m_iconResolver.invalidateCache();
@@ -396,7 +185,9 @@ void LauncherPanel::onClose() {
 
   m_query.clear();
   m_results.clear();
+  m_categories.clear();
   m_selectedIndex = 0;
+  m_categoryTooltipAnchorX.reset();
 
   if (m_grid != nullptr) {
     m_grid->setAdapter(nullptr);
@@ -406,6 +197,9 @@ void LauncherPanel::onClose() {
   // The scene tree (and all nodes) is destroyed by PanelManager after onClose().
   m_container = nullptr;
   m_input = nullptr;
+  m_categoryTabs = nullptr;
+  m_categoryTooltip = nullptr;
+  m_categoryTooltipLabel = nullptr;
   m_body = nullptr;
   m_grid = nullptr;
   m_emptyLabel = nullptr;
@@ -438,6 +232,7 @@ InputArea* LauncherPanel::initialFocusArea() const { return m_input != nullptr ?
 void LauncherPanel::onInputChanged(const std::string& text) {
   m_query = text;
   m_results.clear();
+  updateCategoryTabs();
 
   // Route query to providers
   LauncherProvider* activeProvider = nullptr;
@@ -685,6 +480,11 @@ void LauncherPanel::activateSelected() {
 }
 
 bool LauncherPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
+  if (sym == XKB_KEY_Tab && m_categoryTabs != nullptr && m_categoryTabs->visible()) {
+    cycleCategory((modifiers & kModShift) != 0);
+    return true;
+  }
+
   if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Up, sym, modifiers)) {
     if (m_selectedIndex > 0) {
       --m_selectedIndex;

@@ -63,6 +63,20 @@
     "context-menu": {
       "open": "Open"
     },
+    "categories": {
+      "all": "All",
+      "audiovideo": "Media",
+      "chat": "Chat",
+      "development": "Dev",
+      "education": "Education",
+      "game": "Games",
+      "graphics": "Graphics",
+      "network": "Network",
+      "office": "Office",
+      "system": "System",
+      "misc": "Misc",
+      "webbrowser": "Web"
+    },
     "empty": {
       "type-to-search": "Type to search...",
       "no-results": "No results found"

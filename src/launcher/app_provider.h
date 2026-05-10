@@ -1,5 +1,6 @@
 #pragma once
 
+#include "launcher/app_categories.h"
 #include "launcher/launcher_provider.h"
 #include "system/desktop_entry.h"
 
@@ -22,10 +23,17 @@ public:
 
   bool activate(const LauncherResult& result) override;
 
+  [[nodiscard]] std::vector<LauncherAppCategory> availableCategories() const;
+  [[nodiscard]] std::string_view selectedCategory() const noexcept { return m_selectedCategory; }
+  void selectCategory(std::string_view category);
+  void resetCategory();
+
 private:
   void refreshEntriesIfNeeded() const;
+  void ensureSelectedCategoryIsAvailable() const;
 
   WaylandConnection* m_wayland = nullptr;
   mutable std::vector<DesktopEntry> m_entries;
   mutable std::uint64_t m_entriesVersion = 0;
+  mutable std::string m_selectedCategory{LauncherAppCategories::All};
 };

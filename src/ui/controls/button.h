@@ -28,6 +28,8 @@ enum class ButtonVariant : std::uint8_t {
   Accent,
   Tab,
   TabActive,
+  ToolbarTab,
+  ToolbarTabActive,
 };
 
 class Button : public Flex {
@@ -66,6 +68,7 @@ public:
   void setOnLeave(std::function<void()> callback);
   void setHoverSuppressed(bool suppressed);
   void setCursorShape(std::uint32_t shape);
+  void setGlyphOnlySquare(bool square);
 
   // Call after layout() to sync InputArea bounds
   void updateInputArea();
@@ -113,6 +116,7 @@ private:
   bool m_enabled = true;
   bool m_selected = false;
   bool m_hoverSuppressed = false;
+  bool m_glyphOnlySquare = true;
   bool m_visualStateInitialized = false;
   Signal<>::ScopedConnection m_paletteConn;
 };

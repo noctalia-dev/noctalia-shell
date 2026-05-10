@@ -284,7 +284,37 @@ void AppProvider::refreshEntriesIfNeeded() const {
 
   m_entries = desktopEntries();
   m_entriesVersion = version;
+  ensureSelectedCategoryIsAvailable();
 }
+
+void AppProvider::ensureSelectedCategoryIsAvailable() const {
+  if (m_selectedCategory == LauncherAppCategories::All) {
+    return;
+  }
+
+  const auto categories = availableLauncherAppCategories(m_entries);
+  const auto selected = std::string_view(m_selectedCategory);
+  const auto found = std::find_if(categories.begin(), categories.end(),
+                                  [selected](const LauncherAppCategory& category) { return category.id == selected; });
+  if (found == categories.end()) {
+    m_selectedCategory = LauncherAppCategories::All;
+  }
+}
+
+std::vector<LauncherAppCategory> AppProvider::availableCategories() const {
+  refreshEntriesIfNeeded();
+  return availableLauncherAppCategories(m_entries);
+}
+
+void AppProvider::selectCategory(std::string_view category) {
+  refreshEntriesIfNeeded();
+  const auto categories = availableLauncherAppCategories(m_entries);
+  const auto found = std::find_if(categories.begin(), categories.end(),
+                                  [category](const LauncherAppCategory& item) { return item.id == category; });
+  m_selectedCategory = found == categories.end() ? std::string(LauncherAppCategories::All) : found->id;
+}
+
+void AppProvider::resetCategory() { m_selectedCategory = LauncherAppCategories::All; }
 
 std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
   refreshEntriesIfNeeded();
@@ -307,6 +337,9 @@ std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
     std::vector<LauncherResult> results;
     results.reserve(m_entries.size());
     for (const auto& entry : m_entries) {
+      if (!launcherAppEntryMatchesCategory(entry, m_selectedCategory)) {
+        continue;
+      }
       results.push_back(buildResult(entry, 0));
     }
     return results;

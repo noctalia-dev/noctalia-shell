@@ -122,6 +122,28 @@ namespace {
           .disabled = makeState(colorSpecFromRole(ColorRole::Primary, kDisabledAlpha), clearColorSpec(),
                                 colorSpecFromRole(ColorRole::OnPrimary)),
       };
+    case ButtonVariant::ToolbarTab:
+      return Button::ButtonPalette{
+          .borderWidth = 0.0f,
+          .normal = makeState(clearColorSpec(), clearColorSpec(), colorSpecFromRole(ColorRole::OnSurfaceVariant)),
+          .hover = makeState(colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.16f), clearColorSpec(),
+                             colorSpecFromRole(ColorRole::OnSurface)),
+          .pressed = makeState(colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.16f), clearColorSpec(),
+                               colorSpecFromRole(ColorRole::OnSurface)),
+          .disabled = makeState(clearColorSpec(), clearColorSpec(), colorSpecFromRole(ColorRole::OnSurfaceVariant)),
+      };
+    case ButtonVariant::ToolbarTabActive:
+      return Button::ButtonPalette{
+          .borderWidth = 0.0f,
+          .normal = makeState(colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.24f), clearColorSpec(),
+                              colorSpecFromRole(ColorRole::OnSurface)),
+          .hover = makeState(colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.24f), clearColorSpec(),
+                             colorSpecFromRole(ColorRole::OnSurface)),
+          .pressed = makeState(colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.24f), clearColorSpec(),
+                               colorSpecFromRole(ColorRole::OnSurface)),
+          .disabled = makeState(colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.14f), clearColorSpec(),
+                                colorSpecFromRole(ColorRole::OnSurfaceVariant)),
+      };
     }
 
     return {};
@@ -271,6 +293,14 @@ void Button::setCursorShape(std::uint32_t shape) {
   if (m_inputArea != nullptr) {
     m_inputArea->setCursorShape(shape);
   }
+}
+
+void Button::setGlyphOnlySquare(bool square) {
+  if (m_glyphOnlySquare == square) {
+    return;
+  }
+  m_glyphOnlySquare = square;
+  markLayoutDirty();
 }
 
 void Button::updateInputArea() {
@@ -441,6 +471,18 @@ void Button::applyVisualState() {
     return;
   }
 
+  if (m_variant == ButtonVariant::ToolbarTab || m_variant == ButtonVariant::ToolbarTabActive) {
+    if (m_animId != 0 && animationManager() != nullptr) {
+      animationManager()->cancel(m_animId);
+      m_animId = 0;
+    }
+    applyColors(targetBg, targetBorder, targetLabel);
+    m_targetBg = targetBg;
+    m_targetBorder = targetBorder;
+    m_targetLabel = targetLabel;
+    return;
+  }
+
   if (animationManager() == nullptr) {
     applyColors(targetBg, targetBorder, targetLabel);
     m_targetBg = targetBg;
@@ -493,7 +535,7 @@ void Button::doLayout(Renderer& renderer) {
     setSize(std::max(width(), assignedWidth), std::max(height(), assignedHeight));
   }
 
-  if (glyphOnly && m_contentAlign == ButtonContentAlign::Center) {
+  if (glyphOnly && m_glyphOnlySquare && m_contentAlign == ButtonContentAlign::Center) {
     const float squareSize = std::max(width(), height());
     setSize(squareSize, squareSize);
   }
