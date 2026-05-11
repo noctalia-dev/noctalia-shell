@@ -303,10 +303,6 @@ void SessionPanel::create() {
 
 Button* SessionPanel::createActionButton(const SessionPanelActionConfig& cfg, std::size_t index, float scale) {
   auto button = std::make_unique<Button>();
-  const std::string labelText =
-      cfg.label.has_value() && !cfg.label->empty() ? *cfg.label : i18n::tr(labelKeyForAction(cfg.action));
-  button->setText(labelText);
-  button->setGlyph(cfg.glyph.has_value() && !cfg.glyph->empty() ? *cfg.glyph : defaultGlyphForAction(cfg.action));
   button->setVariant(variantFor(cfg));
   button->setDirection(FlexDirection::Vertical);
   button->setAlign(FlexAlign::Center);
@@ -339,6 +335,11 @@ Button* SessionPanel::createActionButton(const SessionPanelActionConfig& cfg, st
     badgeLabel->setZIndex(3);
     button->addChild(std::move(badgeLabel));
   }
+
+  const std::string labelText =
+      cfg.label.has_value() && !cfg.label->empty() ? *cfg.label : i18n::tr(labelKeyForAction(cfg.action));
+  button->setText(labelText);
+  button->setGlyph(cfg.glyph.has_value() && !cfg.glyph->empty() ? *cfg.glyph : defaultGlyphForAction(cfg.action));
 
   SessionPanelActionConfig cfgCopy = cfg;
   button->setOnClick([this, cfgCopy]() {
@@ -546,6 +547,8 @@ void SessionPanel::doLayout(Renderer& renderer, float width, float height) {
   m_rootLayout->setSize(width, height);
   m_rootLayout->layout(renderer);
 
+  doUpdate(renderer);
+
   const float scale = contentScale();
   for (Button* button : m_visibleButtons) {
     if (button != nullptr) {
@@ -577,7 +580,31 @@ void SessionPanel::doLayout(Renderer& renderer, float width, float height) {
   }
 }
 
-void SessionPanel::doUpdate(Renderer& /*renderer*/) {}
+void SessionPanel::doUpdate(Renderer& /*renderer*/) {
+  for (Button* button : m_visibleButtons) {
+    if (button == nullptr || button->label() == nullptr) {
+      continue;
+    }
+
+    const Color activeColor = button->label()->color();
+
+    for (auto& child : button->children()) {
+      if (child->participatesInLayout()) {
+        continue;
+      }
+
+      if (child->zIndex() == 2) {
+        if (auto* glyph = dynamic_cast<Glyph*>(child.get())) {
+          glyph->setColor(activeColor);
+        }
+      } else if (child->zIndex() == 3) {
+        if (auto* label = dynamic_cast<Label*>(child.get())) {
+          label->setColor(activeColor);
+        }
+      }
+    }
+  }
+}
 
 void SessionPanel::onClose() {
   m_rootLayout = nullptr;
