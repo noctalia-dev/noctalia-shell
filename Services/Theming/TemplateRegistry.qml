@@ -445,6 +445,17 @@ Singleton {
           "path": "~/.steam/steam/steamui/skins/Material-Theme/css/main/colors/matugen.css"
         }
       ]
+    },
+    {
+      "id": "ncspot",
+      "name": "ncspot",
+      "category": "Audio",
+      "input": "ncspot.toml",
+      "outputs": [
+        {
+          "path": "~/.confg/ncspot/colors.toml"
+        }
+      ]
     }
   ]
 
