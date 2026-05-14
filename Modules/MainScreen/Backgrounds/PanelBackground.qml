@@ -49,11 +49,15 @@ ShapePath {
   }
 
   // Panel position - panelBg is in screen coordinates already
-  readonly property real panelX: panelBg ? panelBg.x : 0
-  readonly property real panelY: panelBg ? panelBg.y : 0
-  readonly property real panelWidth: panelBg ? panelBg.width : 0
-  readonly property real panelHeight: panelBg ? panelBg.height : 0
-  readonly property bool isRenderable: assignedPanel && panelBg && panelWidth > 0 && panelHeight > 0
+  readonly property real panelScale: panelBg ? (panelBg.visualScale ?? 1) : 1
+  readonly property real panelRawWidth: panelBg ? panelBg.width : 0
+  readonly property real panelRawHeight: panelBg ? panelBg.height : 0
+  readonly property real panelWidth: panelRawWidth * panelScale
+  readonly property real panelHeight: panelRawHeight * panelScale
+  readonly property real panelX: panelBg ? panelBg.x + (panelRawWidth - panelWidth) / 2 : 0
+  readonly property real panelY: panelBg ? panelBg.y + (panelRawHeight - panelHeight) / 2 : 0
+  readonly property real panelOpacity: assignedPanel ? assignedPanel.opacity : 0
+  readonly property bool isRenderable: assignedPanel && panelBg && panelOpacity > 0.01 && panelWidth > 1 && panelHeight > 1
 
   // Flatten corners if panel is too small
   readonly property bool shouldFlatten: panelBg ? ShapeCornerHelper.shouldFlatten(panelWidth, panelHeight, radius) : false
@@ -99,7 +103,7 @@ ShapePath {
   startX: isRenderable ? (panelX + tlRadius * tlMultX) : -0.75
   startY: isRenderable ? panelY : -1
 
-  fillColor: isRenderable ? effectiveBackgroundColor : "transparent"
+  fillColor: isRenderable ? Qt.rgba(effectiveBackgroundColor.r, effectiveBackgroundColor.g, effectiveBackgroundColor.b, effectiveBackgroundColor.a * panelOpacity) : "transparent"
 
   // ========== PATH DEFINITION ==========
   // Draws a rectangle with potentially inverted corners

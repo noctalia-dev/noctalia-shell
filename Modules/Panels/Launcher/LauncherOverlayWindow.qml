@@ -123,6 +123,7 @@ Variants {
 
         // Entrance animation
         opacity: 0
+        scale: panelPosition === "center" ? 0.92 : 1
         transformOrigin: {
           if (touchingTop && touchingLeft)
             return Item.TopLeft;
@@ -145,9 +146,17 @@ Variants {
 
         Component.onCompleted: {
           opacity = 1;
+          scale = 1;
         }
 
         Behavior on opacity {
+          NumberAnimation {
+            duration: Style.animationNormal
+            easing.type: Easing.OutCubic
+          }
+        }
+
+        Behavior on scale {
           NumberAnimation {
             duration: Style.animationNormal
             easing.type: Easing.OutCubic

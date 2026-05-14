@@ -85,6 +85,9 @@ Item {
 
   property bool exclusiveKeyboard: true
 
+  // Use center zoom instead of edge growth for detached centered panels.
+  property bool panelZoomFromCenter: false
+
   // Keyboard event handler
   // These are called from MainScreen's centralized shortcuts
   // override these in specific panels to handle shortcuts
@@ -699,6 +702,8 @@ Item {
   opacity: {
     if (isClosing)
       return 0.0; // Fade out when closing
+    if (panelZoomFromCenter && isPanelVisible)
+      return 1.0; // Fade with center zoom
     if (isPanelVisible && sizeAnimationComplete)
       return 1.0; // Fade in when opening
     return 0.0;
@@ -1049,8 +1054,8 @@ Item {
       // Priority: horizontal edges (top/bottom) take precedence over vertical edges (left/right)
       // This prevents diagonal animations when panel is attached to a corner
       // Use reactive values here - they're evaluated BEFORE isPanelVisible becomes true
-      readonly property bool shouldAnimateWidth: !shouldAnimateHeight && (animateFromLeft || animateFromRight)
-      readonly property bool shouldAnimateHeight: animateFromTop || animateFromBottom
+      readonly property bool shouldAnimateWidth: !root.panelZoomFromCenter && !shouldAnimateHeight && (animateFromLeft || animateFromRight)
+      readonly property bool shouldAnimateHeight: !root.panelZoomFromCenter && (animateFromTop || animateFromBottom)
 
       // Current animated width/height (referenced by x/y for right/bottom positioning)
       readonly property real currentWidth: {
@@ -1074,6 +1079,7 @@ Item {
 
       width: currentWidth
       height: currentHeight
+      property real visualScale: root.panelZoomFromCenter ? ((root.isClosing || !root.isPanelVisible) ? 0.88 : 1.0) : 1.0
 
       x: {
         // Offset x to make panel grow/shrink from the appropriate edge
@@ -1094,6 +1100,20 @@ Item {
           return targetBottomEdge - height;
         }
         return targetY;
+      }
+
+      Behavior on visualScale {
+        enabled: !PanelService.closedImmediately && root.panelZoomFromCenter && panelBackground.dimensionsInitialized
+        NumberAnimation {
+          duration: Style.animationNormal
+          easing.type: root.isClosing ? Easing.InCubic : Easing.OutCubic
+
+          onRunningChanged: {
+            if (!running && root.isClosing && root.panelZoomFromCenter) {
+              Qt.callLater(root.finalizeClose);
+            }
+          }
+        }
       }
 
       Behavior on width {
@@ -1315,6 +1335,8 @@ Item {
       y: panelBackground.y
       width: panelBackground.width
       height: panelBackground.height
+      scale: panelBackground.visualScale
+      transformOrigin: Item.Center
       sourceComponent: root.panelContent
 
       onLoaded: {
@@ -1338,15 +1360,15 @@ Item {
           // Make panel visible, now only the intended dimension will animate
           root.isPanelVisible = true;
 
-          if (root.animationsDisabled) {
-            // Skip delay when animations are disabled
+          if (root.animationsDisabled || root.panelZoomFromCenter) {
+            // Skip size delay when not needed
             root.sizeAnimationComplete = true;
           } else {
             opacityTrigger.start();
           }
 
           // Start open watchdog timer (skip when animations disabled - everything completes synchronously)
-          if (!root.animationsDisabled) {
+          if (!root.animationsDisabled && !root.panelZoomFromCenter) {
             root.openWatchdogActive = true;
             openWatchdogTimer.start();
           }

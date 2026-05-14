@@ -72,6 +72,7 @@ SmartPanel {
   panelAnchorRight: !root.useButtonPosition && panelPosition !== "center" && panelPosition.endsWith("_right")
   panelAnchorBottom: !root.useButtonPosition && panelPosition.startsWith("bottom_")
   panelAnchorTop: !root.useButtonPosition && panelPosition.startsWith("top_")
+  panelZoomFromCenter: !root.useButtonPosition && panelPosition === "center"
 
   panelContent: Rectangle {
     id: ui

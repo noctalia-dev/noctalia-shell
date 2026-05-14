@@ -238,10 +238,10 @@ PanelWindow {
     // ── Panel blur regions ──
     // Opening panel
     Region {
-      x: backgroundBlur.panelBg ? Math.round(backgroundBlur.panelBg.x) : 0
-      y: backgroundBlur.panelBg ? Math.round(backgroundBlur.panelBg.y) : 0
-      width: backgroundBlur.panelBg ? Math.round(backgroundBlur.panelBg.width) : 0
-      height: backgroundBlur.panelBg ? Math.round(backgroundBlur.panelBg.height) : 0
+      x: Math.round(backgroundBlur.panelVisualX(backgroundBlur.panelBg))
+      y: Math.round(backgroundBlur.panelVisualY(backgroundBlur.panelBg))
+      width: Math.round(backgroundBlur.panelVisualWidth(backgroundBlur.panelBg))
+      height: Math.round(backgroundBlur.panelVisualHeight(backgroundBlur.panelBg))
       radius: Style.radiusL
       topLeftCorner: backgroundBlur.panelBg ? backgroundBlur.panelBg.topLeftCornerState : CornerState.Normal
       topRightCorner: backgroundBlur.panelBg ? backgroundBlur.panelBg.topRightCornerState : CornerState.Normal
@@ -251,10 +251,10 @@ PanelWindow {
 
     // Closing panel (coexists with opening panel during transition)
     Region {
-      x: backgroundBlur.closingPanelBg ? Math.round(backgroundBlur.closingPanelBg.x) : 0
-      y: backgroundBlur.closingPanelBg ? Math.round(backgroundBlur.closingPanelBg.y) : 0
-      width: backgroundBlur.closingPanelBg ? Math.round(backgroundBlur.closingPanelBg.width) : 0
-      height: backgroundBlur.closingPanelBg ? Math.round(backgroundBlur.closingPanelBg.height) : 0
+      x: Math.round(backgroundBlur.panelVisualX(backgroundBlur.closingPanelBg))
+      y: Math.round(backgroundBlur.panelVisualY(backgroundBlur.closingPanelBg))
+      width: Math.round(backgroundBlur.panelVisualWidth(backgroundBlur.closingPanelBg))
+      height: Math.round(backgroundBlur.panelVisualHeight(backgroundBlur.closingPanelBg))
       radius: Style.radiusL
       topLeftCorner: backgroundBlur.closingPanelBg ? backgroundBlur.closingPanelBg.topLeftCornerState : CornerState.Normal
       topRightCorner: backgroundBlur.closingPanelBg ? backgroundBlur.closingPanelBg.topRightCornerState : CornerState.Normal
@@ -568,6 +568,36 @@ PanelWindow {
           return null;
         var region = cp.panelRegion;
         return (region && region.visible) ? region.panelItem : null;
+      }
+
+      function panelVisualScale(bg) {
+        return bg ? (bg.visualScale ?? 1) : 1;
+      }
+
+      function panelBlurReady(bg) {
+        return bg && panelVisualScale(bg) > 0.99;
+      }
+
+      function panelVisualX(bg) {
+        if (!panelBlurReady(bg))
+          return 0;
+        var scale = panelVisualScale(bg);
+        return bg ? bg.x + (bg.width - bg.width * scale) / 2 : 0;
+      }
+
+      function panelVisualY(bg) {
+        if (!panelBlurReady(bg))
+          return 0;
+        var scale = panelVisualScale(bg);
+        return bg ? bg.y + (bg.height - bg.height * scale) / 2 : 0;
+      }
+
+      function panelVisualWidth(bg) {
+        return panelBlurReady(bg) ? bg.width : 0;
+      }
+
+      function panelVisualHeight(bg) {
+        return panelBlurReady(bg) ? bg.height : 0;
       }
 
       // Framed bar: inner hole boundary (where the hole begins on each axis)
