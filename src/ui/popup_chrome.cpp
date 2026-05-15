@@ -89,10 +89,10 @@ namespace popup_chrome {
     surface.setInputRegion({geometry.inputRect()});
   }
 
-  void addShadow(Node& parent, const Geometry& geometry, const ShellConfig::ShadowConfig& shadow, float radius,
-                 float backgroundOpacity) {
+  RectNode* addShadow(Node& parent, const Geometry& geometry, const ShellConfig::ShadowConfig& shadow, float radius,
+                      float backgroundOpacity) {
     if (!shell::surface_shadow::enabled(true, shadow)) {
-      return;
+      return nullptr;
     }
 
     auto shadowNode = std::make_unique<RectNode>();
@@ -102,7 +102,7 @@ namespace popup_chrome {
                             geometry.contentY() + static_cast<float>(shadow.offsetY));
     shadowNode->setFrameSize(geometry.contentWidth, geometry.contentHeight);
     shadowNode->setZIndex(-1);
-    parent.addChild(std::move(shadowNode));
+    return static_cast<RectNode*>(parent.addChild(std::move(shadowNode)));
   }
 
 } // namespace popup_chrome

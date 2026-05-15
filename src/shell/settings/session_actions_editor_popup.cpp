@@ -10,6 +10,7 @@
 #include "ui/controls/label.h"
 #include "ui/controls/select_dropdown_popup.h"
 #include "ui/palette.h"
+#include "ui/popup_chrome.h"
 #include "ui/style.h"
 #include "wayland/popup_surface.h"
 #include "wayland/wayland_connection.h"
@@ -212,35 +213,31 @@ namespace settings {
 
     Renderer& renderer = *renderContext();
     const float pad = computePadding(uiScale());
-    const float outerPadding = pad * 2.0f;
+    const float panelW = kPopupWidth * m_scale;
 
-    auto innerFromSurface = [&]() {
-      return std::pair{std::max(1.0f, static_cast<float>(m_surface->width()) - outerPadding),
-                       std::max(1.0f, static_cast<float>(m_surface->height()) - outerPadding)};
-    };
-
-    float cw = contentWidth;
-    float ch = contentHeight;
+    float cw = std::max(1.0f, contentWidth);
+    float ch = std::max(1.0f, contentHeight);
 
     LayoutSize pref = m_root->measure(renderer, LayoutConstraints::available(cw, 1.0e6f));
-    const float desiredOuterHeight = std::ceil(pref.height + outerPadding);
+    const float panelH = std::ceil(pref.height + pad * 2.0f);
+    const ShellConfig::ShadowConfig shadow =
+        config() != nullptr ? config()->config().shell.shadow : ShellConfig::ShadowConfig{};
+    const auto geo = popup_chrome::computeGeometry(panelW, panelH, shadow);
     const float maxOuterHeight =
         m_parentHeight > 0 ? std::max(1.0f, static_cast<float>(m_parentHeight) - (kParentMargin * m_scale)) : 1.0e6f;
     const std::uint32_t nextHeight =
-        static_cast<std::uint32_t>(std::max(1.0f, std::min(desiredOuterHeight, maxOuterHeight)));
-    const std::uint32_t nextWidth = static_cast<std::uint32_t>(std::max(1.0f, std::ceil(kPopupWidth * m_scale)));
+        static_cast<std::uint32_t>(std::max(1.0f, std::min(static_cast<float>(geo.surfaceHeight), maxOuterHeight)));
+    const std::uint32_t nextWidth = geo.surfaceWidth;
 
     if (m_surface->height() != nextHeight || m_surface->width() != nextWidth) {
       m_surface->resize(nextWidth, nextHeight);
       syncSceneGeometryFromSurface();
-      const auto inner = innerFromSurface();
-      cw = inner.first;
-      ch = inner.second;
+      cw = std::max(1.0f, m_chrome.contentWidth - pad * 2.0f);
+      ch = std::max(1.0f, m_chrome.contentHeight - pad * 2.0f);
       pref = m_root->measure(renderer, LayoutConstraints::available(cw, 1.0e6f));
     }
 
     const float sheetH = std::max(1.0f, std::min(pref.height, ch));
-
     m_root->arrange(renderer, LayoutRect{.x = 0.0f, .y = 0.0f, .width = cw, .height = sheetH});
   }
 

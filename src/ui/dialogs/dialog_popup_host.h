@@ -14,6 +14,7 @@ class Box;
 class ConfigService;
 class InputArea;
 class Node;
+class RectNode;
 class RenderContext;
 class WaylandConnection;
 struct KeyboardEvent;
@@ -177,6 +178,7 @@ protected:
   AnimationManager m_animations;
   std::unique_ptr<Node> m_sceneRoot;
   Box* m_bgNode = nullptr;
+  RectNode* m_panelShadow = nullptr;
   Node* m_contentNode = nullptr;
   InputDispatcher m_inputDispatcher;
   bool m_attachedToHost = false;

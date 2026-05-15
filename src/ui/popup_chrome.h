@@ -7,6 +7,7 @@
 #include <cstdint>
 
 class Node;
+class RectNode;
 
 namespace popup_chrome {
 
@@ -50,7 +51,7 @@ namespace popup_chrome {
 
   void applyToConfig(PopupSurfaceConfig& config, const Geometry& geometry, Attachment attachment) noexcept;
   void setContentInputRegion(PopupSurface& surface, const Geometry& geometry);
-  void addShadow(Node& parent, const Geometry& geometry, const ShellConfig::ShadowConfig& shadow, float radius,
-                 float backgroundOpacity = 1.0f);
+  [[nodiscard]] RectNode* addShadow(Node& parent, const Geometry& geometry, const ShellConfig::ShadowConfig& shadow,
+                                    float radius, float backgroundOpacity = 1.0f);
 
 } // namespace popup_chrome

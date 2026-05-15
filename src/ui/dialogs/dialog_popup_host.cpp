@@ -4,6 +4,7 @@
 #include "core/ui_phase.h"
 #include "render/render_context.h"
 #include "render/scene/node.h"
+#include "render/scene/rect_node.h"
 #include "ui/controls/box.h"
 #include "ui/popup_chrome.h"
 #include "ui/style.h"
@@ -145,6 +146,7 @@ void DialogPopupHost::destroyPopup() {
     onSheetClose();
   }
   m_bgNode = nullptr;
+  m_panelShadow = nullptr;
   m_contentNode = nullptr;
   m_sceneRoot.reset();
   m_surface.reset();
@@ -346,7 +348,7 @@ void DialogPopupHost::buildScene(std::uint32_t width, std::uint32_t height) {
   (void)height;
   m_sceneRoot = std::make_unique<Node>();
   m_sceneRoot->setAnimationManager(&m_animations);
-  popup_chrome::addShadow(*m_sceneRoot, m_chrome, popupShadowConfig(m_config), Style::scaledRadiusXl());
+  m_panelShadow = popup_chrome::addShadow(*m_sceneRoot, m_chrome, popupShadowConfig(m_config), Style::scaledRadiusXl());
 
   auto bg = std::make_unique<Box>();
   bg->setPanelStyle();
@@ -375,16 +377,34 @@ void DialogPopupHost::syncSceneGeometryFromSurface() {
   if (m_sceneRoot == nullptr || m_surface == nullptr) {
     return;
   }
-  const float surfW = static_cast<float>(m_surface->width());
-  const float surfH = static_cast<float>(m_surface->height());
-  if (surfW <= 0.0f || surfH <= 0.0f) {
+  const std::uint32_t surfaceWidth = m_surface->width();
+  const std::uint32_t surfaceHeight = m_surface->height();
+  if (surfaceWidth == 0 || surfaceHeight == 0) {
     return;
   }
+
+  const float surfW = static_cast<float>(surfaceWidth);
+  const float surfH = static_cast<float>(surfaceHeight);
+  if (surfaceWidth != m_chrome.surfaceWidth || surfaceHeight != m_chrome.surfaceHeight) {
+    const auto& bleed = m_chrome.bleed;
+    m_chrome.contentWidth = std::max(1.0f, surfW - static_cast<float>(bleed.left + bleed.right));
+    m_chrome.contentHeight = std::max(1.0f, surfH - static_cast<float>(bleed.up + bleed.down));
+    m_chrome.surfaceWidth = surfaceWidth;
+    m_chrome.surfaceHeight = surfaceHeight;
+    popup_chrome::setContentInputRegion(*m_surface, m_chrome);
+  }
+
   m_sceneRoot->setSize(surfW, surfH);
   const float panelX = m_chrome.contentX();
   const float panelY = m_chrome.contentY();
   const float panelW = m_chrome.contentWidth;
   const float panelH = m_chrome.contentHeight;
+  if (m_panelShadow != nullptr) {
+    const ShellConfig::ShadowConfig shadow = popupShadowConfig(m_config);
+    m_panelShadow->setPosition(panelX + static_cast<float>(shadow.offsetX),
+                               panelY + static_cast<float>(shadow.offsetY));
+    m_panelShadow->setFrameSize(panelW, panelH);
+  }
   if (m_bgNode != nullptr) {
     m_bgNode->setPosition(panelX, panelY);
     m_bgNode->setSize(panelW, panelH);
