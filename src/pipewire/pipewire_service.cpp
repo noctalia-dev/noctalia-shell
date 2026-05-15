@@ -1262,7 +1262,15 @@ void PipeWireService::flushPendingNodeVolumes() {
   auto pending = std::move(m_pendingNodeVolumes);
 
   for (const auto& [id, volume] : pending) {
-    dirty |= applyNodeVolumeImmediate(id, volume);
+    if (!applyNodeVolumeImmediate(id, volume)) {
+      continue;
+    }
+    dirty = true;
+    if (id == m_state.defaultSinkId && m_state.defaultSinkId != 0) {
+      emitVolumePreview(false, id, volume);
+    } else if (id == m_state.defaultSourceId && m_state.defaultSourceId != 0) {
+      emitVolumePreview(true, id, volume);
+    }
   }
 
   if (dirty) {
@@ -1358,6 +1366,11 @@ void PipeWireService::setNodeMuted(std::uint32_t id, bool muted) {
       nd.swMute = muted;
       recomputeEffectiveMute(nd);
       if (before != nd.muted) {
+        if (id == m_state.defaultSinkId && m_state.defaultSinkId != 0) {
+          emitVolumePreview(false, id, nd.volume);
+        } else if (id == m_state.defaultSourceId && m_state.defaultSourceId != 0) {
+          emitVolumePreview(true, id, nd.volume);
+        }
         rebuildState();
       }
       return;
@@ -1409,14 +1422,29 @@ void PipeWireService::setNodeMuted(std::uint32_t id, bool muted) {
   }
   recomputeEffectiveMute(nd);
   if (before != nd.muted) {
+    if (id == m_state.defaultSinkId && m_state.defaultSinkId != 0) {
+      emitVolumePreview(false, id, nd.volume);
+    } else if (id == m_state.defaultSourceId && m_state.defaultSourceId != 0) {
+      emitVolumePreview(true, id, nd.volume);
+    }
     rebuildState();
   }
 }
 
-void PipeWireService::setSinkVolume(std::uint32_t id, float volume) { setNodeVolume(id, volume); }
+void PipeWireService::setSinkVolume(std::uint32_t id, float volume) {
+  setNodeVolume(id, volume);
+  if (id == m_state.defaultSinkId && m_state.defaultSinkId != 0) {
+    emitVolumePreview(false, id, volume);
+  }
+}
 void PipeWireService::setSinkMuted(std::uint32_t id, bool muted) { setNodeMuted(id, muted); }
 void PipeWireService::setDefaultSink(std::uint32_t id) { setDefaultNode(id, "default.audio.sink"); }
-void PipeWireService::setSourceVolume(std::uint32_t id, float volume) { setNodeVolume(id, volume); }
+void PipeWireService::setSourceVolume(std::uint32_t id, float volume) {
+  setNodeVolume(id, volume);
+  if (id == m_state.defaultSourceId && m_state.defaultSourceId != 0) {
+    emitVolumePreview(true, id, volume);
+  }
+}
 void PipeWireService::setSourceMuted(std::uint32_t id, bool muted) { setNodeMuted(id, muted); }
 void PipeWireService::setDefaultSource(std::uint32_t id) { setDefaultNode(id, "default.audio.source"); }
 
@@ -1462,30 +1490,40 @@ void PipeWireService::setDefaultNode(std::uint32_t id, const char* key) {
 
 void PipeWireService::setVolume(float volume) {
   const auto* sink = defaultSink();
-  if (sink != nullptr) {
-    setNodeVolume(sink->id, volume);
+  if (sink == nullptr) {
+    return;
   }
+  volume = std::clamp(volume, 0.0f, 1.5f);
+  setNodeVolume(sink->id, volume);
+  emitVolumePreview(false, sink->id, volume);
 }
 
 void PipeWireService::setMuted(bool muted) {
   const auto* sink = defaultSink();
-  if (sink != nullptr) {
-    setNodeMuted(sink->id, muted);
+  if (sink == nullptr) {
+    return;
   }
+  setNodeMuted(sink->id, muted);
+  emitVolumePreview(false, sink->id, sink->volume);
 }
 
 void PipeWireService::setMicVolume(float volume) {
   const auto* source = defaultSource();
-  if (source != nullptr) {
-    setNodeVolume(source->id, volume);
+  if (source == nullptr) {
+    return;
   }
+  volume = std::clamp(volume, 0.0f, 1.5f);
+  setNodeVolume(source->id, volume);
+  emitVolumePreview(true, source->id, volume);
 }
 
 void PipeWireService::setMicMuted(bool muted) {
   const auto* source = defaultSource();
-  if (source != nullptr) {
-    setNodeMuted(source->id, muted);
+  if (source == nullptr) {
+    return;
   }
+  setNodeMuted(source->id, muted);
+  emitVolumePreview(true, source->id, source->volume);
 }
 
 void PipeWireService::emitVolumePreview(bool isInput, std::uint32_t id, float volume) const {
