@@ -136,6 +136,7 @@ private:
   void deactivateOutsideClickHandlers();
   void applyAttachedReveal(float progress);
   void applyDetachedReveal(float progress);
+  void startAttachedOpenAnimation();
   void publishAttachedPanelGeometry(float revealProgress);
   // Restyle the attached-panel decoration nodes (bg fill, drop shadow, contact shadow)
   // using m_attachedBackgroundOpacity / m_attachedBarPosition. Geometry/positions are not
@@ -198,6 +199,7 @@ private:
   bool m_inTransition = false;
   bool m_closing = false;
   bool m_attachedToBar = false;
+  bool m_attachedOpenAnimationPending = false;
   std::size_t m_attachedPopupCount = 0;
   ContextMenuPopup* m_activePopup = nullptr;
   std::unique_ptr<SelectDropdownPopup> m_selectPopup;

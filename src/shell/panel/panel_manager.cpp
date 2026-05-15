@@ -261,6 +261,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     surface.setPrepareFrameCallback(
         [this](bool needsUpdate, bool needsLayout) { prepareFrame(needsUpdate, needsLayout); });
     surface.setFrameTickCallback([this](float deltaMs) {
+      startAttachedOpenAnimation();
       if (m_activePanel != nullptr) {
         m_activePanel->onFrameTick(deltaMs);
       }
@@ -290,6 +291,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_sourceBarName.clear();
     m_attachedPanelGeometry.reset();
     m_attachedToBar = false;
+    m_attachedOpenAnimationPending = false;
   };
 
   if (m_activePanel->prefersAttachedToBar() && barConfig.attachPanels && barConfig.thickness > 0 && outputWidth > 0 &&
@@ -511,6 +513,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_attachedKeyboardModeAfterOpen = LayerShellKeyboard::None;
     m_attachedBarPosition.clear();
     m_attachedPanelGeometry.reset();
+    m_attachedOpenAnimationPending = false;
     kLog.warn("panel manager: attached layer-shell failed for \"{}\", falling back to standalone", panelId);
   }
 
@@ -627,6 +630,7 @@ void PanelManager::closePanel() {
   // Disable input during close animation
   m_inputDispatcher.setSceneRoot(nullptr);
   m_closing = true;
+  m_attachedOpenAnimationPending = false;
 
   if (m_sceneRoot != nullptr && m_activePanel != nullptr && m_activePanel->wantsCloseAnimation()) {
     const std::uint64_t gen = ++m_destroyGeneration;
@@ -706,6 +710,7 @@ void PanelManager::destroyPanel() {
   m_sourceBarName.clear();
   m_attachedPanelGeometry.reset();
   m_attachedToBar = false;
+  m_attachedOpenAnimationPending = false;
   if (m_platform != nullptr) {
     m_platform->stopKeyRepeat();
   }
@@ -1096,6 +1101,28 @@ void PanelManager::applyDetachedReveal(float progress) {
   applyPanelCompositorBlur();
 }
 
+void PanelManager::startAttachedOpenAnimation() {
+  if (!m_attachedOpenAnimationPending || !m_attachedToBar || m_attachedRevealClipNode == nullptr || m_closing) {
+    return;
+  }
+
+  m_attachedOpenAnimationPending = false;
+  const std::uint64_t gen = m_destroyGeneration;
+  m_animations.animate(
+      m_attachedRevealProgress, 1.0f, Style::animNormal, Easing::EaseOutCubic,
+      [this](float v) { applyAttachedReveal(v); },
+      [this, gen]() {
+        DeferredCall::callLater([this, gen]() {
+          if (m_destroyGeneration != gen || !isAttachedOpen() || m_layerSurface == nullptr || m_closing) {
+            return;
+          }
+          m_layerSurface->setKeyboardInteractivity(m_attachedKeyboardModeAfterOpen);
+          activateFocusGrab();
+        });
+      },
+      m_attachedRevealClipNode);
+}
+
 void PanelManager::publishAttachedPanelGeometry(float revealProgress) {
   if (!m_attachedToBar || !m_attachedPanelGeometryCallback || m_output == nullptr || !m_attachedPanelGeometry) {
     return;
@@ -1440,19 +1467,7 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     if (m_attachedToBar && m_attachedRevealClipNode != nullptr) {
       m_sceneRoot->setOpacity(1.0f);
       applyAttachedReveal(0.0f);
-      const std::uint64_t gen = m_destroyGeneration;
-      m_animations.animate(
-          0.0f, 1.0f, Style::animNormal, Easing::EaseOutCubic, [this](float v) { applyAttachedReveal(v); },
-          [this, gen]() {
-            DeferredCall::callLater([this, gen]() {
-              if (m_destroyGeneration != gen || !isAttachedOpen() || m_layerSurface == nullptr || m_closing) {
-                return;
-              }
-              m_layerSurface->setKeyboardInteractivity(m_attachedKeyboardModeAfterOpen);
-              activateFocusGrab();
-            });
-          },
-          m_attachedRevealClipNode);
+      m_attachedOpenAnimationPending = true;
     } else {
       applyDetachedReveal(0.0f);
       m_animations.animate(
