@@ -390,8 +390,8 @@ void TaskbarWidget::updateModels() {
   std::unordered_map<std::string, std::vector<std::string>> runningByWorkspace;
   std::vector<WorkspaceWindowAssignment> workspaceAssignments;
 
-  const bool workspaceAware = m_groupByWorkspace || m_onlyActiveWorkspace;
-  if (workspaceAware) {
+  {
+    // Always load compositor workspace layout so flat-strip tile order can track window moves.
     nextWorkspaces.reserve(32);
     std::unordered_map<wl_output*, int> monitorOrdinal;
     int nextOrdinal = 1;
@@ -522,7 +522,7 @@ void TaskbarWidget::updateModels() {
     return a.handleKey < b.handleKey;
   });
 
-  if (workspaceAware && !workspaceAssignments.empty()) {
+  if (!workspaceAssignments.empty()) {
     if (assignmentMode == TaskbarAssignmentMode::WorkspaceOccurrenceTitle) {
       std::vector<TaskbarWindowCandidate> candidates;
       candidates.reserve(nextTasks.size());
@@ -902,7 +902,7 @@ void TaskbarWidget::updateModels() {
     }
   }
 
-  if (workspaceAware && workspaceAssignments.empty() && !runningByWorkspace.empty()) {
+  if (workspaceAssignments.empty() && !runningByWorkspace.empty()) {
     std::unordered_map<std::uintptr_t, std::string> workspaceByHandle;
     std::unordered_map<std::string, std::size_t> appOccurrence;
     for (const auto& ws : nextWorkspaces) {
@@ -938,7 +938,7 @@ void TaskbarWidget::updateModels() {
     }
   }
 
-  if (workspaceAware && !nextWorkspaces.empty() && assignmentMode != TaskbarAssignmentMode::WorkspaceOccurrenceTitle) {
+  if (!nextWorkspaces.empty() && assignmentMode != TaskbarAssignmentMode::WorkspaceOccurrenceTitle) {
     wl_output* activeOut = m_platform.activeToplevelOutput();
     if (activeOut != nullptr) {
       for (auto& task : nextTasks) {
@@ -1063,6 +1063,15 @@ void TaskbarWidget::updateModels() {
 
   if (!m_groupByWorkspace) {
     nextWorkspaces.clear();
+    std::stable_sort(nextTasks.begin(), nextTasks.end(), [](const TaskModel& a, const TaskModel& b) {
+      if (a.workspaceOrder != b.workspaceOrder) {
+        return a.workspaceOrder < b.workspaceOrder;
+      }
+      if (a.order != b.order) {
+        return a.order < b.order;
+      }
+      return a.handleKey < b.handleKey;
+    });
   }
 
   if (modelsEqual(nextTasks, nextWorkspaces)) {
