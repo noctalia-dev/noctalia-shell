@@ -285,6 +285,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_attachedContactShadow = false;
     m_attachedRevealProgress = 1.0f;
     m_attachedRevealDirection = AttachedRevealDirection::Down;
+    m_attachedKeyboardModeAfterOpen = LayerShellKeyboard::None;
     m_attachedBarPosition.clear();
     m_sourceBarName.clear();
     m_attachedPanelGeometry.reset();
@@ -407,6 +408,10 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_attachedContactShadow = barConfig.contactShadow;
     m_attachedRevealProgress = 0.0f;
     m_attachedRevealDirection = attached_panel::revealDirection(barPosition);
+    m_attachedKeyboardModeAfterOpen = (m_platform != nullptr && m_platform->focusGrabService() != nullptr &&
+                                       m_platform->focusGrabService()->available())
+                                          ? LayerShellKeyboard::OnDemand
+                                          : LayerShellKeyboard::Exclusive;
     m_attachedBarPosition = std::string(barPosition);
     m_attachedToBar = true;
 
@@ -458,12 +463,12 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
         .marginRight = 0,
         .marginBottom = 0,
         .marginLeft = surfaceX,
-        // Force exclusive keyboard so panels with text inputs work without a prior click.
-        // On Hyprland, Exclusive also grabs the pointer which breaks outside-click dismissal.
-        .keyboard = (m_platform != nullptr && m_platform->focusGrabService() != nullptr &&
-                     m_platform->focusGrabService()->available())
-                        ? LayerShellKeyboard::OnDemand
-                        : LayerShellKeyboard::Exclusive,
+        // Keep the app focused while the open reveal is running. Some
+        // compositors and clients do noticeable work when keyboard focus leaves
+        // the active toplevel; delaying that transition keeps the animation on
+        // the panel surface smooth. Keyboard interactivity is restored when the
+        // reveal animation completes.
+        .keyboard = LayerShellKeyboard::None,
         .defaultWidth = surfaceWidth,
         .defaultHeight = surfaceHeight,
     };
@@ -485,13 +490,6 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
       applyPanelCompositorBlur();
       publishAttachedPanelGeometry(m_attachedRevealProgress);
       m_surface->requestRedraw();
-      // Defer the focus grab to the next tick after configure round-trip completes.
-      const std::uint64_t gen = m_destroyGeneration;
-      DeferredCall::callLater([this, gen]() {
-        if (m_destroyGeneration == gen) {
-          activateFocusGrab();
-        }
-      });
       kLog.debug("panel manager: opened \"{}\" as attached layer-shell", panelId);
       return;
     }
@@ -510,6 +508,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_attachedContactShadow = false;
     m_attachedRevealProgress = 1.0f;
     m_attachedRevealDirection = AttachedRevealDirection::Down;
+    m_attachedKeyboardModeAfterOpen = LayerShellKeyboard::None;
     m_attachedBarPosition.clear();
     m_attachedPanelGeometry.reset();
     kLog.warn("panel manager: attached layer-shell failed for \"{}\", falling back to standalone", panelId);
@@ -702,6 +701,7 @@ void PanelManager::destroyPanel() {
   m_attachedContactShadow = false;
   m_attachedRevealProgress = 1.0f;
   m_attachedRevealDirection = AttachedRevealDirection::Down;
+  m_attachedKeyboardModeAfterOpen = LayerShellKeyboard::None;
   m_attachedBarPosition.clear();
   m_sourceBarName.clear();
   m_attachedPanelGeometry.reset();
@@ -1440,8 +1440,18 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     if (m_attachedToBar && m_attachedRevealClipNode != nullptr) {
       m_sceneRoot->setOpacity(1.0f);
       applyAttachedReveal(0.0f);
+      const std::uint64_t gen = m_destroyGeneration;
       m_animations.animate(
-          0.0f, 1.0f, Style::animNormal, Easing::EaseOutCubic, [this](float v) { applyAttachedReveal(v); }, {},
+          0.0f, 1.0f, Style::animNormal, Easing::EaseOutCubic, [this](float v) { applyAttachedReveal(v); },
+          [this, gen]() {
+            DeferredCall::callLater([this, gen]() {
+              if (m_destroyGeneration != gen || !isAttachedOpen() || m_layerSurface == nullptr || m_closing) {
+                return;
+              }
+              m_layerSurface->setKeyboardInteractivity(m_attachedKeyboardModeAfterOpen);
+              activateFocusGrab();
+            });
+          },
           m_attachedRevealClipNode);
     } else {
       applyDetachedReveal(0.0f);
