@@ -678,13 +678,51 @@ constexpr EnumOption<ThemeMode> kThemeModes[] = {
 };
 
 struct ThemeConfig {
+  struct TemplateColorConfig {
+    std::string name;
+    std::string color;
+    bool blend = true;
+
+    bool operator==(const TemplateColorConfig&) const = default;
+  };
+
+  struct TemplateInputPathModesConfig {
+    std::string dark;
+    std::string light;
+
+    bool operator==(const TemplateInputPathModesConfig&) const = default;
+  };
+
+  struct TemplateCompareColorConfig {
+    std::string name;
+    std::string color;
+
+    bool operator==(const TemplateCompareColorConfig&) const = default;
+  };
+
+  struct UserTemplateConfig {
+    std::string id;
+    bool enabled = true;
+    std::string inputPath;
+    std::optional<TemplateInputPathModesConfig> inputPathModes;
+    std::vector<std::string> outputPaths;
+    std::string outputPathDynamic;
+    std::string compareTo;
+    std::vector<TemplateCompareColorConfig> colorsToCompare;
+    std::string preHook;
+    std::string postHook;
+    int index = 0;
+
+    bool operator==(const UserTemplateConfig&) const = default;
+  };
+
   struct TemplatesConfig {
     bool enableBuiltinTemplates = true;
     std::vector<std::string> builtinIds;
     bool enableCommunityTemplates = true;
     std::vector<std::string> communityIds;
-    bool enableUserTemplates = false;
-    std::string userConfig = "~/.config/noctalia/user-templates.toml";
+    std::vector<TemplateColorConfig> customColors;
+    std::vector<UserTemplateConfig> userTemplates;
 
     bool operator==(const TemplatesConfig&) const = default;
   };

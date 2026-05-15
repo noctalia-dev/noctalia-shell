@@ -80,8 +80,12 @@ enable_builtin_templates            = true
 builtin_ids                = []     # opt-in; list ids with: noctalia theme --list-templates
 enable_community_templates = true
 community_ids              = []     # fetched from api.noctalia.dev/templates, cached locally
-enable_user_templates      = false
-user_config                = "~/.config/noctalia/user-templates.toml"
+
+# User-defined templates are declared directly in config.
+# [theme.templates.user.my_app]
+# input_path  = "templates/my-app.css"
+# output_path = "~/.config/my-app/theme.css"
+# post_hook   = "my-app --reload-theme"
 
 # ── Backdrop ──────────────────────────────────────────────────────────────────
 

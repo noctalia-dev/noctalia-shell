@@ -486,18 +486,6 @@ namespace settings {
                   tr("settings.schema.templates.community-ids.description"), {"theme", "templates", "community_ids"},
                   ListSetting{.items = cfg.theme.templates.communityIds, .suggestedOptions = env.communityTemplates},
                   "theme templates community apps discord fuzzel vscode walker"));
-    entries.push_back(makeEntry("templates", "user", tr("settings.schema.templates.enable-user-templates.label"),
-                                tr("settings.schema.templates.enable-user-templates.description"),
-                                {"theme", "templates", "enable_user_templates"},
-                                ToggleSetting{cfg.theme.templates.enableUserTemplates}, "theme templates user custom"));
-    entries.push_back(makeEntry("templates", "user", tr("settings.schema.templates.user-config.label"),
-                                tr("settings.schema.templates.user-config.description"),
-                                {"theme", "templates", "user_config"},
-                                TextSetting{.value = cfg.theme.templates.userConfig,
-                                            .placeholder = "~/.config/noctalia/user-templates.toml",
-                                            .browseMode = TextSettingBrowseMode::OpenFile,
-                                            .browseFileExtensions = {".toml"}},
-                                "theme templates path file", true));
 
     // Dock
     entries.push_back(makeEntry("dock", "general", tr("settings.schema.shared.enabled.label"),

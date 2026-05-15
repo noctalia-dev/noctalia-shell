@@ -57,6 +57,34 @@ namespace {
     return result;
   }
 
+  std::vector<std::string> readStringOrArray(const toml::node& node) {
+    if (auto* str = node.as_string()) {
+      return {str->get()};
+    }
+    return readStringArray(node);
+  }
+
+  std::vector<ThemeConfig::TemplateCompareColorConfig> readTemplateCompareColors(const toml::node& node) {
+    std::vector<ThemeConfig::TemplateCompareColorConfig> result;
+    const auto* arr = node.as_array();
+    if (arr == nullptr) {
+      return result;
+    }
+    result.reserve(arr->size());
+    for (const auto& item : *arr) {
+      const auto* tbl = item.as_table();
+      if (tbl == nullptr) {
+        continue;
+      }
+      auto name = tbl->get_as<std::string>("name");
+      auto color = tbl->get_as<std::string>("color");
+      if (name != nullptr && color != nullptr) {
+        result.push_back(ThemeConfig::TemplateCompareColorConfig{.name = name->get(), .color = color->get()});
+      }
+    }
+    return result;
+  }
+
   void setHookCommandsFromNode(const toml::node& node, std::vector<std::string>& out) {
     out.clear();
     if (auto* s = node.as_string()) {
@@ -1329,10 +1357,6 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
         templates.enableBuiltinTemplates = *v;
       if (auto v = (*templatesTbl)["enable_community_templates"].value<bool>())
         templates.enableCommunityTemplates = *v;
-      if (auto v = (*templatesTbl)["enable_user_templates"].value<bool>())
-        templates.enableUserTemplates = *v;
-      if (auto v = (*templatesTbl)["user_config"].value<std::string>())
-        templates.userConfig = *v;
       if (const auto* builtinIds = (*templatesTbl)["builtin_ids"].as_array()) {
         templates.builtinIds.clear();
         templates.builtinIds.reserve(builtinIds->size());
@@ -1347,6 +1371,78 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
         for (const auto& item : *communityIds) {
           if (const auto* id = item.as_string())
             templates.communityIds.push_back(id->get());
+        }
+      }
+      if (const auto* customColorsTbl = (*templatesTbl)["custom_colors"].as_table()) {
+        templates.customColors.clear();
+        templates.customColors.reserve(customColorsTbl->size());
+        for (const auto& [nameNode, valueNode] : *customColorsTbl) {
+          ThemeConfig::TemplateColorConfig color;
+          color.name = std::string(nameNode.str());
+          if (const auto* str = valueNode.as_string()) {
+            color.color = str->get();
+          } else if (const auto* colorTbl = valueNode.as_table()) {
+            if (auto value = colorTbl->get_as<std::string>("color")) {
+              color.color = value->get();
+            }
+            if (auto blend = colorTbl->get_as<bool>("blend")) {
+              color.blend = blend->get();
+            }
+          }
+          if (!StringUtils::trim(color.name).empty() && !StringUtils::trim(color.color).empty()) {
+            templates.customColors.push_back(std::move(color));
+          }
+        }
+      }
+      if (const auto* userTemplatesTbl = (*templatesTbl)["user"].as_table()) {
+        templates.userTemplates.clear();
+        templates.userTemplates.reserve(userTemplatesTbl->size());
+        for (const auto& [idNode, templateNode] : *userTemplatesTbl) {
+          const auto* templateTbl = templateNode.as_table();
+          if (templateTbl == nullptr) {
+            continue;
+          }
+
+          ThemeConfig::UserTemplateConfig entry;
+          entry.id = std::string(idNode.str());
+          if (auto enabled = templateTbl->get_as<bool>("enabled")) {
+            entry.enabled = enabled->get();
+          }
+          if (auto inputPath = templateTbl->get_as<std::string>("input_path")) {
+            entry.inputPath = inputPath->get();
+          }
+          if (const auto* inputPathModesTbl = (*templateTbl)["input_path_modes"].as_table()) {
+            auto dark = inputPathModesTbl->get_as<std::string>("dark");
+            auto light = inputPathModesTbl->get_as<std::string>("light");
+            if (dark != nullptr && light != nullptr) {
+              entry.inputPathModes =
+                  ThemeConfig::TemplateInputPathModesConfig{.dark = dark->get(), .light = light->get()};
+            }
+          }
+          if (const auto* outputPath = templateTbl->get("output_path")) {
+            entry.outputPaths = readStringOrArray(*outputPath);
+          }
+          if (auto outputPathDynamic = templateTbl->get_as<std::string>("output_path_dynamic")) {
+            entry.outputPathDynamic = outputPathDynamic->get();
+          }
+          if (auto compareTo = templateTbl->get_as<std::string>("compare_to")) {
+            entry.compareTo = compareTo->get();
+          }
+          if (const auto* colorsToCompare = templateTbl->get("colors_to_compare")) {
+            entry.colorsToCompare = readTemplateCompareColors(*colorsToCompare);
+          }
+          if (auto preHook = templateTbl->get_as<std::string>("pre_hook")) {
+            entry.preHook = preHook->get();
+          }
+          if (auto postHook = templateTbl->get_as<std::string>("post_hook")) {
+            entry.postHook = postHook->get();
+          }
+          if (auto index = templateTbl->get_as<int64_t>("index")) {
+            entry.index = static_cast<int>(index->get());
+          }
+          if (!StringUtils::trim(entry.id).empty()) {
+            templates.userTemplates.push_back(std::move(entry));
+          }
         }
       }
     }

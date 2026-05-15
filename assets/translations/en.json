@@ -1410,14 +1410,6 @@
         "community-ids": {
           "label": "Active Community Templates",
           "description": "Community template IDs to render on each theme change."
-        },
-        "enable-user-templates": {
-          "label": "Enable User Templates",
-          "description": "Load additional theme templates from the user template config file"
-        },
-        "user-config": {
-          "label": "User Template Config",
-          "description": "Path to the user template TOML file (created on first use when enabled)"
         }
       },
       "shell": {

@@ -1181,6 +1181,15 @@ namespace noctalia::theme {
       return false;
     }
 
+    return processConfigTable(root, configPath);
+  }
+
+  bool TemplateEngine::processConfigTable(const toml::table& root, const std::filesystem::path& configPath) {
+    auto cancelRequested = [this]() { return m_options.cancelRequested && m_options.cancelRequested(); };
+    if (cancelRequested()) {
+      return true;
+    }
+
     if (const toml::table* config = root["config"].as_table()) {
       if (const toml::table* customColors = (*config)["custom_colors"].as_table()) {
         std::string sourceHex;

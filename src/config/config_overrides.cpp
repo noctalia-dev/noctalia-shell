@@ -350,8 +350,8 @@ namespace {
            a.templates.builtinIds == b.templates.builtinIds &&
            a.templates.enableCommunityTemplates == b.templates.enableCommunityTemplates &&
            a.templates.communityIds == b.templates.communityIds &&
-           a.templates.enableUserTemplates == b.templates.enableUserTemplates &&
-           a.templates.userConfig == b.templates.userConfig;
+           a.templates.customColors == b.templates.customColors &&
+           a.templates.userTemplates == b.templates.userTemplates;
   }
 
   bool configEqual(const Config& a, const Config& b) {

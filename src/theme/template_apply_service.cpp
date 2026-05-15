@@ -7,9 +7,10 @@
 #include "theme/template_engine.h"
 #include "util/file_utils.h"
 
-#include <fstream>
+#include <filesystem>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace noctalia::theme {
 
@@ -23,6 +24,100 @@ namespace noctalia::theme {
       if (theme.wallpaperScheme.rfind("m3-", 0) == 0)
         return theme.wallpaperScheme.substr(3);
       return theme.wallpaperScheme;
+    }
+
+    std::filesystem::path userTemplateConfigPath() {
+      const std::string configDir = FileUtils::configDir();
+      if (configDir.empty()) {
+        return "noctalia.toml";
+      }
+      return std::filesystem::path(configDir) / "config.toml";
+    }
+
+    toml::array stringArray(const std::vector<std::string>& values) {
+      toml::array out;
+      for (const auto& value : values) {
+        out.push_back(value);
+      }
+      return out;
+    }
+
+    void insertStringOrArray(toml::table& table, std::string_view key, const std::vector<std::string>& values) {
+      if (values.empty()) {
+        return;
+      }
+      if (values.size() == 1) {
+        table.insert_or_assign(std::string(key), values.front());
+        return;
+      }
+      table.insert_or_assign(std::string(key), stringArray(values));
+    }
+
+    toml::table buildUserTemplateRoot(const ThemeConfig::TemplatesConfig& templatesConfig) {
+      toml::table root;
+
+      if (!templatesConfig.customColors.empty()) {
+        toml::table customColors;
+        for (const auto& color : templatesConfig.customColors) {
+          toml::table colorTable;
+          colorTable.insert_or_assign("color", color.color);
+          colorTable.insert_or_assign("blend", color.blend);
+          customColors.insert_or_assign(color.name, std::move(colorTable));
+        }
+
+        toml::table config;
+        config.insert_or_assign("custom_colors", std::move(customColors));
+        root.insert_or_assign("config", std::move(config));
+      }
+
+      toml::table userTemplates;
+      for (const auto& userTemplate : templatesConfig.userTemplates) {
+        if (!userTemplate.enabled) {
+          continue;
+        }
+
+        toml::table templateTable;
+        if (userTemplate.inputPathModes.has_value()) {
+          toml::table inputPathModes;
+          inputPathModes.insert_or_assign("dark", userTemplate.inputPathModes->dark);
+          inputPathModes.insert_or_assign("light", userTemplate.inputPathModes->light);
+          templateTable.insert_or_assign("input_path_modes", std::move(inputPathModes));
+        } else if (!userTemplate.inputPath.empty()) {
+          templateTable.insert_or_assign("input_path", userTemplate.inputPath);
+        }
+        insertStringOrArray(templateTable, "output_path", userTemplate.outputPaths);
+        if (!userTemplate.outputPathDynamic.empty()) {
+          templateTable.insert_or_assign("output_path_dynamic", userTemplate.outputPathDynamic);
+        }
+        if (!userTemplate.compareTo.empty()) {
+          templateTable.insert_or_assign("compare_to", userTemplate.compareTo);
+        }
+        if (!userTemplate.colorsToCompare.empty()) {
+          toml::array colors;
+          for (const auto& color : userTemplate.colorsToCompare) {
+            toml::table colorTable;
+            colorTable.insert_or_assign("name", color.name);
+            colorTable.insert_or_assign("color", color.color);
+            colors.push_back(std::move(colorTable));
+          }
+          templateTable.insert_or_assign("colors_to_compare", std::move(colors));
+        }
+        if (!userTemplate.preHook.empty()) {
+          templateTable.insert_or_assign("pre_hook", userTemplate.preHook);
+        }
+        if (!userTemplate.postHook.empty()) {
+          templateTable.insert_or_assign("post_hook", userTemplate.postHook);
+        }
+        if (userTemplate.index != 0) {
+          templateTable.insert_or_assign("index", static_cast<std::int64_t>(userTemplate.index));
+        }
+        userTemplates.insert_or_assign(userTemplate.id, std::move(templateTable));
+      }
+
+      if (!userTemplates.empty()) {
+        root.insert_or_assign("templates", std::move(userTemplates));
+      }
+      return root;
     }
 
   } // namespace
@@ -108,15 +203,13 @@ namespace noctalia::theme {
       }
     }
 
-    if (!request.templates.enableUserTemplates || requestSuperseded(request.generation))
+    if (request.templates.userTemplates.empty() || requestSuperseded(request.generation))
       return;
 
-    const std::filesystem::path userConfigPath = FileUtils::expandUserPath(request.templates.userConfig);
-    ensureUserConfigStub(userConfigPath);
-    if (!std::filesystem::exists(userConfigPath))
-      return;
-    if (!engine.processConfigFile(userConfigPath)) {
-      kLog.warn("failed to apply user templates from {}", userConfigPath.string());
+    const toml::table userTemplateRoot = buildUserTemplateRoot(request.templates);
+    const std::filesystem::path configPath = userTemplateConfigPath();
+    if (!engine.processConfigTable(userTemplateRoot, configPath)) {
+      kLog.warn("failed to apply user templates from main config");
     }
   }
 
@@ -140,28 +233,6 @@ namespace noctalia::theme {
   bool TemplateApplyService::requestSuperseded(std::uint64_t generation) const {
     std::lock_guard lock(m_mutex);
     return m_shutdown || generation != m_nextGeneration;
-  }
-
-  void TemplateApplyService::ensureUserConfigStub(const std::filesystem::path& path) {
-    std::error_code ec;
-    if (std::filesystem::exists(path, ec))
-      return;
-
-    if (path.has_parent_path())
-      std::filesystem::create_directories(path.parent_path(), ec);
-    std::ofstream out(path);
-    if (!out)
-      return;
-
-    out << "[config]\n\n";
-    out << "[templates]\n\n";
-    out << "# User-defined templates live here.\n";
-    out << "# Example:\n";
-    out << "# [templates.my_app]\n";
-    out << "# input_path = \"~/.config/noctalia/templates/my-app.css\"\n";
-    out << "# output_path = \"~/.config/my-app/theme.css\"\n";
-    out << "# output_path_dynamic = \"bash '~/.config/noctalia/templates/resolve-paths.sh'\"\n";
-    out << "# post_hook = \"my-app --reload-theme\"\n";
   }
 
 } // namespace noctalia::theme
