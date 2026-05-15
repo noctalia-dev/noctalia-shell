@@ -425,8 +425,9 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     if (wc != nullptr && wc->hasSetting("max_label_chars")) {
       maxLabelChars = static_cast<std::size_t>(wc->getInt("max_label_chars", 1));
     }
+    const bool hideWhenEmpty = wc != nullptr ? wc->getBool("hide_when_empty", false) : false;
     auto widget = std::make_unique<WorkspacesWidget>(m_platform, output, displayMode, focusedColor, occupiedColor,
-                                                     emptyColor, maxLabelChars);
+                                                     emptyColor, maxLabelChars, hideWhenEmpty);
     widget->setContentScale(contentScale);
     return widget;
   }

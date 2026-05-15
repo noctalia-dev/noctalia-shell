@@ -20,6 +20,14 @@
 
 namespace {
   constexpr Logger kLog("workspace");
+  [[nodiscard]] bool isEmptyWorkspace(const Workspace& workspace) {
+    return !workspace.occupied && !workspace.active && !workspace.urgent;
+  }
+
+  void filterEmptyWorkspaces(std::vector<Workspace>& workspaces) {
+    workspaces.erase(std::remove_if(workspaces.begin(), workspaces.end(), isEmptyWorkspace), workspaces.end());
+  }
+
   constexpr float kWorkspaceGap = Style::spaceXs;
   constexpr float kWorkspacePillMinWidth = Style::controlHeight + Style::spaceXs;
   constexpr float kWorkspaceLabelPadH = Style::spaceSm;
@@ -29,10 +37,10 @@ namespace {
 
 WorkspacesWidget::WorkspacesWidget(CompositorPlatform& platform, wl_output* output, DisplayMode displayMode,
                                    ColorSpec focusedColor, ColorSpec occupiedColor, ColorSpec emptyColor,
-                                   std::size_t maxLabelChars)
+                                   std::size_t maxLabelChars, bool hideWhenEmpty)
     : m_platform(platform), m_output(output), m_displayMode(displayMode), m_maxLabelChars(maxLabelChars),
-      m_focusedColor(std::move(focusedColor)), m_occupiedColor(std::move(occupiedColor)),
-      m_emptyColor(std::move(emptyColor)) {}
+      m_hideWhenEmpty(hideWhenEmpty), m_focusedColor(std::move(focusedColor)),
+      m_occupiedColor(std::move(occupiedColor)), m_emptyColor(std::move(emptyColor)) {}
 
 void WorkspacesWidget::create() {
   auto container = std::make_unique<InputArea>();
@@ -64,8 +72,32 @@ void WorkspacesWidget::doLayout(Renderer& renderer, float containerWidth, float 
   }
 }
 
+void WorkspacesWidget::syncWidgetVisibility(bool showWidget) {
+  if (Node* rootNode = root(); rootNode != nullptr) {
+    rootNode->setVisible(showWidget);
+    rootNode->setParticipatesInLayout(showWidget);
+  }
+}
+
 void WorkspacesWidget::doUpdate(Renderer& renderer) {
   auto current = m_platform.workspaces(m_output);
+  if (m_hideWhenEmpty) {
+    filterEmptyWorkspaces(current);
+  }
+
+  const bool showWidget = !current.empty();
+  syncWidgetVisibility(showWidget);
+  if (!showWidget) {
+    if (!m_cachedState.empty() || !m_items.empty()) {
+      m_cachedState.clear();
+      m_rebuildPending = true;
+      if (root() != nullptr) {
+        root()->markLayoutDirty();
+      }
+    }
+    return;
+  }
+
   if (m_cachedState.empty() && current.empty()) {
     return;
   }

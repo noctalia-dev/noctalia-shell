@@ -1174,6 +1174,11 @@
           "label": "Hide When No New",
           "description": "Hide the notifications widget when there are no unread notifications"
         },
+        "hide_when_empty": {
+          "label": "Hide When Empty",
+          "description": "Hide workspace pills whne there are no open windows",
+          "workspaces-description": "Hide workspace pills that have no open windows"
+        },
         "high_color": {
           "label": "High Color",
           "description": "Color used for high visualizer values"
