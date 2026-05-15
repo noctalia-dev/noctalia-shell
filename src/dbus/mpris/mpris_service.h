@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/timer_manager.h"
+
 #include <chrono>
 #include <cstdint>
 #include <deque>
@@ -182,6 +184,7 @@ private:
   std::vector<std::string> m_blacklist;
   std::function<void()> m_changeCallback;
   int m_startupRediscoveryPassesRemaining = 4;
-  bool m_recoveryDiscoveryScheduled = false;
+  Timer m_recoveryTimer;
+  std::chrono::milliseconds m_recoveryBackoffMs{500};
   bool m_discoveryDrainScheduled = false;
 };
