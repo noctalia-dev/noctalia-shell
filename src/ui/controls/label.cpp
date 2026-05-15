@@ -1,5 +1,6 @@
 #include "ui/controls/label.h"
 
+#include "core/deferred_call.h"
 #include "render/animation/animation.h"
 #include "render/animation/animation_manager.h"
 #include "render/core/renderer.h"
@@ -277,7 +278,7 @@ void Label::startMarqueeLoop() {
         m_scrollOffset = 0.0f;
         applyScrollPosition();
         markPaintDirty();
-        startMarqueeLoop();
+        DeferredCall::callLater([this]() { startMarqueeLoop(); });
       },
       this);
 }
