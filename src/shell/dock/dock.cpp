@@ -1053,7 +1053,15 @@ void Dock::rebuildItems(DockInstance& instance) {
     item.background = static_cast<Box*>(areaNode->addChild(std::move(bg)));
 
     // Icon centred inside the padded cell.
-    const std::string& iconPath = m_iconResolver.resolve(entry.icon);
+    const std::string& iconPath = [&]() -> const std::string& {
+      if (!entry.icon.empty()) {
+        const std::string& primary = m_iconResolver.resolve(entry.icon);
+        if (!primary.empty()) {
+          return primary;
+        }
+      }
+      return m_iconResolver.resolve("application-x-executable");
+    }();
     auto iconImg = std::make_unique<Image>();
     if (!iconPath.empty() && m_renderContext != nullptr) {
       iconImg->setSourceFile(*m_renderContext, iconPath, cfg.iconSize, true);
@@ -1064,10 +1072,10 @@ void Dock::rebuildItems(DockInstance& instance) {
     if (iconImg->hasImage()) {
       item.iconImage = static_cast<Image*>(areaNode->addChild(std::move(iconImg)));
     } else {
-      // Fallback: app glyph.
+      // Fallback: Tabler app-window glyph (matches launcher when theme icons are unavailable).
       auto glyph = std::make_unique<Glyph>();
-      glyph->setGlyph("apps");
-      glyph->setGlyphSize(iSize * 0.8f);
+      glyph->setGlyph("app-window");
+      glyph->setGlyphSize(iSize);
       glyph->setColor(colorSpecFromRole(ColorRole::OnSurface));
       glyph->setSize(iSize, iSize);
       glyph->setPosition(kCellPad, kCellPad);
