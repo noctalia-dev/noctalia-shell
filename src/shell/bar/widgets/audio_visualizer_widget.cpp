@@ -24,7 +24,6 @@ AudioVisualizerWidget::~AudioVisualizerWidget() {
 void AudioVisualizerWidget::create() {
   auto root = std::make_unique<InputArea>();
   root->setEnabled(false);
-  root->setClipChildren(true);
 
   auto visualizer = std::make_unique<AudioSpectrum>();
   visualizer->setOrientation(AudioSpectrumOrientation::Horizontal);
@@ -54,17 +53,14 @@ void AudioVisualizerWidget::doLayout(Renderer& renderer, float containerWidth, f
     return;
   }
 
-  // containerWidth/Height are the bar's logical cross/main extents (not the widget slot).
-  const bool barIsVertical = containerHeight > containerWidth;
-  const float crossLimit = std::max(1.0f, barIsVertical ? containerWidth : containerHeight);
+  m_isVertical = containerHeight > containerWidth;
   const auto refMetrics = renderer.measureFont(Style::fontSizeBody * m_contentScale);
   const float bodyExtent = std::round(refMetrics.bottom - refMetrics.top);
-  const float crossExtent = std::min(bodyExtent, crossLimit);
-  const float width = std::max(1.0f, barIsVertical ? crossExtent : m_width * m_contentScale);
-  const float height = std::max(1.0f, barIsVertical ? m_width * m_contentScale : crossExtent);
+  const float width = std::max(1.0f, m_isVertical ? bodyExtent : m_width * m_contentScale);
+  const float height = std::max(1.0f, m_isVertical ? m_width * m_contentScale : bodyExtent);
   if (m_visualizer != nullptr) {
-    m_visualizer->setOrientation(barIsVertical ? AudioSpectrumOrientation::Vertical
-                                               : AudioSpectrumOrientation::Horizontal);
+    m_visualizer->setOrientation(m_isVertical ? AudioSpectrumOrientation::Vertical
+                                              : AudioSpectrumOrientation::Horizontal);
     m_visualizer->setPosition(0.0f, 0.0f);
     m_visualizer->setSize(width, height);
   }

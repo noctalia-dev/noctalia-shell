@@ -158,16 +158,8 @@ void AudioSpectrumProgram::draw(float surfaceWidth, float surfaceHeight, float p
     }
     const float crossSize = crossPixels / crossPixelScale;
 
-    float mainStart = snapToPixel(startOffset + static_cast<float>(i) * stride, mainPixelScale);
-    float mainEnd = mainStart + barThickness;
-    if (mainStart < 0.0f) {
-      mainEnd -= mainStart;
-      mainStart = 0.0f;
-    }
-    if (mainEnd > mainAxisLen) {
-      mainStart = std::max(0.0f, mainStart - (mainEnd - mainAxisLen));
-      mainEnd = mainAxisLen;
-    }
+    const float mainStart = snapToPixel(startOffset + static_cast<float>(i) * stride, mainPixelScale);
+    const float mainEnd = mainStart + barThickness;
     float crossStart =
         snapToPixel(style.centered ? (crossAxisLen - crossSize) * 0.5f : crossAxisLen - crossSize, crossPixelScale);
     float crossEnd = crossStart + crossSize;

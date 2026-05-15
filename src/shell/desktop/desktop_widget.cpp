@@ -89,6 +89,5 @@ void DesktopWidget::applyBackground() {
 
   if (m_outerRoot) {
     m_outerRoot->setSize(w, h);
-    m_outerRoot->setClipChildren(true);
   }
 }
