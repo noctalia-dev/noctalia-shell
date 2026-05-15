@@ -811,16 +811,6 @@ void HomeTab::setActive(bool active) {
       PanelManager::instance().requestLayout();
       PanelManager::instance().requestUpdateOnly();
     });
-    if (m_mpris != nullptr) {
-      DeferredCall::callLater([this]() {
-        if (!m_active || m_mpris == nullptr) {
-          return;
-        }
-        m_mpris->refreshPlayers();
-        PanelManager::instance().requestLayout();
-        PanelManager::instance().requestUpdateOnly();
-      });
-    }
   }
 }
 

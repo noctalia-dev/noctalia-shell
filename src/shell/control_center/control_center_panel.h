@@ -14,6 +14,7 @@
 #include "shell/panel/panel.h"
 
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <string_view>
@@ -116,6 +117,7 @@ private:
   }};
 
   void selectTab(TabId tab);
+  void scheduleMprisRefreshFor(TabId tab);
   [[nodiscard]] static TabId tabFromContext(std::string_view context);
   [[nodiscard]] static std::size_t tabIndex(TabId id);
 
@@ -137,6 +139,9 @@ private:
   std::array<Flex*, kTabCount> m_tabHeaderActions{};
   TabId m_activeTab = TabId::Home;
   ConfigService* m_config = nullptr;
+  MprisService* m_mpris = nullptr;
   NotificationManager* m_notificationManager = nullptr;
   DependencyService* m_dependencies = nullptr;
+  bool m_mprisRefreshScheduled = false;
+  std::chrono::steady_clock::time_point m_lastMprisRefreshAt{};
 };

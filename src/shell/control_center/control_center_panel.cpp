@@ -2,6 +2,8 @@
 
 #include "compositors/compositor_platform.h"
 #include "config/config_service.h"
+#include "core/deferred_call.h"
+#include "dbus/mpris/mpris_service.h"
 #include "i18n/i18n.h"
 #include "notification/notification_manager.h"
 #include "render/core/renderer.h"
@@ -12,9 +14,14 @@
 #include "ui/controls/flex.h"
 #include "ui/controls/label.h"
 
+#include <chrono>
 #include <memory>
 
 using namespace control_center;
+
+namespace {
+  constexpr auto kMprisRefreshMinInterval = std::chrono::milliseconds(750);
+}
 
 ControlCenterPanel::ControlCenterPanel(
     NotificationManager* notifications, PipeWireService* audio, MprisService* mpris, ConfigService* config,
@@ -26,6 +33,7 @@ ControlCenterPanel::ControlCenterPanel(
   (void)upower;
   WaylandConnection* wayland = platform != nullptr ? &platform->wayland() : nullptr;
   m_config = config;
+  m_mpris = mpris;
   m_notificationManager = notifications;
   m_dependencies = dependencies;
   m_tabs[tabIndex(TabId::Home)] =
@@ -330,6 +338,31 @@ void ControlCenterPanel::selectTab(TabId tab) {
   if (m_contentHeaderActions != nullptr) {
     m_contentHeaderActions->setVisible(true);
   }
+
+  scheduleMprisRefreshFor(tab);
+}
+
+void ControlCenterPanel::scheduleMprisRefreshFor(TabId tab) {
+  if (m_mpris == nullptr || m_mprisRefreshScheduled || (tab != TabId::Home && tab != TabId::Media)) {
+    return;
+  }
+
+  const auto now = std::chrono::steady_clock::now();
+  if (m_lastMprisRefreshAt.time_since_epoch().count() != 0 && now - m_lastMprisRefreshAt < kMprisRefreshMinInterval) {
+    return;
+  }
+
+  m_lastMprisRefreshAt = now;
+  m_mprisRefreshScheduled = true;
+  DeferredCall::callLater([this]() {
+    m_mprisRefreshScheduled = false;
+    if (m_mpris == nullptr || !PanelManager::instance().isOpenPanel("control-center")) {
+      return;
+    }
+    m_mpris->refreshPlayers();
+    PanelManager::instance().requestUpdateOnly();
+    PanelManager::instance().requestRedraw();
+  });
 }
 
 ControlCenterPanel::TabId ControlCenterPanel::tabFromContext(std::string_view context) {

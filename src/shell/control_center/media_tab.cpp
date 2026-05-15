@@ -630,19 +630,7 @@ void MediaTab::setActive(bool active) {
     m_lastRealtimeMprisPollAt = {};
   }
   if (becameActive && m_mpris != nullptr) {
-    // Pull a fresh snapshot (including Position) when the tab opens so the
-    // progress slider starts at the current playback position.
     m_positionSampleAt = {};
-    const std::weak_ptr<void> aliveGuard = m_aliveGuard;
-    DeferredCall::callLater([this, aliveGuard]() {
-      if (aliveGuard.expired() || m_mpris == nullptr) {
-        return;
-      }
-      m_mpris->refreshPlayers();
-      PanelManager::instance().requestUpdateOnly();
-      PanelManager::instance().requestRedraw();
-    });
-    m_lastMprisRefreshAttempt = std::chrono::steady_clock::now();
   }
 }
 
@@ -707,23 +695,6 @@ void MediaTab::refresh(Renderer& renderer) {
     active = m_mpris->activePlayer();
     kLog.debug("media tab refresh initial players={} active={} active_bus=\"{}\"", players.size(), active.has_value(),
                active.has_value() ? active->busName : std::string{});
-
-    const bool shouldRetryMpris =
-        (!active.has_value() || players.empty()) && (m_lastMprisRefreshAttempt.time_since_epoch().count() == 0 ||
-                                                     now - m_lastMprisRefreshAttempt >= std::chrono::milliseconds(750));
-    if (shouldRetryMpris) {
-      m_lastMprisRefreshAttempt = now;
-      kLog.debug("media tab retrying mpris discovery players={} active={}", players.size(), active.has_value());
-      const std::weak_ptr<void> aliveGuard = m_aliveGuard;
-      DeferredCall::callLater([this, aliveGuard]() {
-        if (aliveGuard.expired() || m_mpris == nullptr) {
-          return;
-        }
-        m_mpris->refreshPlayers();
-        PanelManager::instance().requestUpdateOnly();
-        PanelManager::instance().requestRedraw();
-      });
-    }
   }
 
   if (!active.has_value() && m_lastActiveSnapshot.has_value() && now - m_lastActiveSeenAt <= kNoActivePlayerGrace) {
