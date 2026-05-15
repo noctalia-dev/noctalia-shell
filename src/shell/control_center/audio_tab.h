@@ -72,6 +72,8 @@ private:
   std::vector<Flex*> m_programRows;
   std::string m_lastProgramListKey;
   float m_lastProgramSliderMax = -1.0f;
+  float m_syncedPercentLabelMinWidth = -1.0f;
+  float m_lastSyncedPercentLabelSliderMax = -1.0f;
   Label* m_outputDeviceLabel = nullptr;
   Label* m_inputDeviceLabel = nullptr;
   Flex* m_outputDeviceMenuAnchor = nullptr;
