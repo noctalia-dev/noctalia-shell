@@ -79,9 +79,9 @@ case "$command" in
   output)
     # Used by output_path_dynamic
     if [ "$(detect_mode)" = "lua" ]; then
-      printf '%s\n' "$lua_config_file"
+      printf '%s\n' "$lua_output_file"
     else
-      printf '%s\n' "$conf_config_file"
+      printf '%s\n' "$conf_output_file"
     fi
     ;;
 
