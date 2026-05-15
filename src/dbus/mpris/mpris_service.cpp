@@ -589,7 +589,8 @@ void MprisService::applyPositionSample(const std::string& busName, int64_t rawPo
         auto& timerId = m_positionResyncTimers[busName];
         const std::weak_ptr<void> timerAliveGuard = m_aliveGuard;
         const auto backoffIt = m_positionRefreshBackoffMs.find(busName);
-        const auto retryInterval = (backoffIt != m_positionRefreshBackoffMs.end()) ? backoffIt->second : k_position_retry_interval;
+        const auto retryInterval =
+            (backoffIt != m_positionRefreshBackoffMs.end()) ? backoffIt->second : k_position_retry_interval;
         timerId = TimerManager::instance().start(timerId, retryInterval, [this, timerAliveGuard, busName]() {
           if (timerAliveGuard.expired()) {
             return;
@@ -1601,7 +1602,7 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
                   if (rootFailed || playerFailed) {
                     int& failureCount = m_positionRefreshFailures[busName];
                     ++failureCount;
-                    
+
                     if (failureCount >= k_position_refresh_failure_threshold) {
                       kLog.warn("player position query disabled after {} failures name={}", failureCount, busName);
                       // Cancel the timer to stop polling this player
@@ -1618,7 +1619,8 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
                       } else {
                         backoff = std::min(backoff * 2, k_position_retry_max_backoff);
                       }
-                      kLog.debug("player position query backoff failures={} interval={}ms name={}", failureCount, backoff.count(), busName);
+                      kLog.debug("player position query backoff failures={} interval={}ms name={}", failureCount,
+                                 backoff.count(), busName);
                     }
                   }
 
@@ -1705,12 +1707,13 @@ void MprisService::applyPlayerSnapshot(const std::string& busName, const MprisPl
       if (failureIt == m_positionRefreshFailures.end() || failureIt->second < k_position_refresh_failure_threshold) {
         auto& timerId = m_positionResyncTimers[busName];
         const std::weak_ptr<void> timerAliveGuard = m_aliveGuard;
-        timerId = TimerManager::instance().start(timerId, k_position_retry_interval, [this, timerAliveGuard, busName]() {
-          if (timerAliveGuard.expired()) {
-            return;
-          }
-          refreshPlayerPosition(busName, true);
-        });
+        timerId =
+            TimerManager::instance().start(timerId, k_position_retry_interval, [this, timerAliveGuard, busName]() {
+              if (timerAliveGuard.expired()) {
+                return;
+              }
+              refreshPlayerPosition(busName, true);
+            });
       }
     }
     return;
@@ -1871,12 +1874,13 @@ void MprisService::applyPlayerSnapshot(const std::string& busName, const MprisPl
       if (failureIt == m_positionRefreshFailures.end() || failureIt->second < k_position_refresh_failure_threshold) {
         auto& timerId = m_positionResyncTimers[busName];
         const std::weak_ptr<void> timerAliveGuard = m_aliveGuard;
-        timerId = TimerManager::instance().start(timerId, k_position_retry_interval, [this, timerAliveGuard, busName]() {
-          if (timerAliveGuard.expired()) {
-            return;
-          }
-          refreshPlayerPosition(busName, true);
-        });
+        timerId =
+            TimerManager::instance().start(timerId, k_position_retry_interval, [this, timerAliveGuard, busName]() {
+              if (timerAliveGuard.expired()) {
+                return;
+              }
+              refreshPlayerPosition(busName, true);
+            });
       }
     }
 
