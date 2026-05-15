@@ -176,6 +176,8 @@ private:
   std::unordered_map<std::string, std::chrono::steady_clock::time_point> m_lastPropertiesUpdate;
   std::unordered_map<std::string, std::chrono::steady_clock::time_point> m_lastPlayingUpdate;
   std::unordered_map<std::string, std::chrono::steady_clock::time_point> m_lastStrongMetadataUpdate;
+  std::unordered_map<std::string, int> m_positionRefreshFailures;
+  std::unordered_map<std::string, std::chrono::milliseconds> m_positionRefreshBackoffMs;
   std::deque<std::string> m_pendingDiscoveryBusNames;
   std::string m_lastActivePlayer;
   std::string m_lastEmittedActivePlayer;
