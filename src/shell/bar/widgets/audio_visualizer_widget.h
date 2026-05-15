@@ -36,6 +36,5 @@ private:
   std::uint64_t m_listenerId = 0;
   AudioSpectrum* m_visualizer = nullptr;
   bool m_pendingSpectrumUpdate = false;
-  bool m_isVertical = false;
   bool m_visible = true;
 };
