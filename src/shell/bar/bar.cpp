@@ -1201,6 +1201,7 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
       const auto& cap = widget.barCapsuleSpec();
       auto shell = std::make_unique<Node>();
       Node* shellPtr = shell.get();
+      shellPtr->setClipChildren(true);
       auto capsuleBg = std::make_unique<Box>();
       Box* bgPtr = capsuleBg.get();
       capsuleBg->setFill(withOpacity(cap.fill, cap.opacity));
@@ -1273,6 +1274,7 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
 
       auto shell = std::make_unique<Node>();
       Node* shellPtr = shell.get();
+      shellPtr->setClipChildren(true);
       auto capsuleBg = std::make_unique<Box>();
       Box* bgPtr = capsuleBg.get();
       capsuleBg->setFill(withOpacity(cap.fill, cap.opacity));

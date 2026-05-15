@@ -39,6 +39,7 @@ DesktopAudioVisualizerWidget::~DesktopAudioVisualizerWidget() {
 
 void DesktopAudioVisualizerWidget::create() {
   auto rootNode = std::make_unique<Node>();
+  rootNode->setClipChildren(true);
 
   auto visualizer = std::make_unique<AudioSpectrum>();
   visualizer->setOrientation(AudioSpectrumOrientation::Horizontal);
