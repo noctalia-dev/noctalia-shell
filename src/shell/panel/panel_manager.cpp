@@ -230,6 +230,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
   const bool useExplicitAnchorForDetached = request.hasExplicitAnchor;
   const auto marginBottomFromAnchor =
       std::max(0, outputHeight - marginTopFromAnchor - static_cast<std::int32_t>(panelHeight));
+  const auto marginRightFromAnchor = std::max(0, outputWidth - marginLeft - static_cast<std::int32_t>(panelWidth));
 
   auto surfaceConfig = LayerSurfaceConfig{
       .nameSpace = "noctalia-panel",
@@ -243,9 +244,9 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
                    : (isLeft || isRight)
                        ? marginTopFromAnchor
                        : (isBottom ? 0 : (useExplicitAnchorForDetached ? marginTopFromAnchor : barOffset)),
-      .marginRight = isRight ? barOffset : 0,
+      .marginRight = isRight ? (useExplicitAnchorForDetached ? marginRightFromAnchor : barOffset) : 0,
       .marginBottom = isBottom ? (useExplicitAnchorForDetached ? marginBottomFromAnchor : barOffset) : 0,
-      .marginLeft = centeredH ? 0 : (isLeft ? barOffset : marginLeft),
+      .marginLeft = centeredH ? 0 : (isLeft ? (useExplicitAnchorForDetached ? marginLeft : barOffset) : marginLeft),
       .keyboard = m_activePanel->keyboardMode(),
       .defaultWidth = panelWidth,
       .defaultHeight = panelHeight,
