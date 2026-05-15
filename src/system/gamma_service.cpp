@@ -522,6 +522,11 @@ void GammaService::startTransition(int fromKelvin, int toKelvin) {
     applyGammaToAll(fromKelvin);
   }
   if (fromKelvin == toKelvin) {
+    m_transitionTimer.stop();
+    m_currentKelvin = toKelvin;
+    m_targetKelvin = toKelvin;
+    m_transitionFromKelvin = toKelvin;
+    m_transitionProgress = 1.0f;
     if (m_restoreAfterTransition) {
       restoreAll();
       m_restoreAfterTransition = false;
