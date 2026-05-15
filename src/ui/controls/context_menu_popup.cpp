@@ -108,7 +108,7 @@ void ContextMenuPopup::openCommon(std::vector<ContextMenuControlEntry> entries, 
 
         self->m_sceneRoot = std::make_unique<Node>();
         self->m_sceneRoot->setSize(fw, fh);
-        popup_chrome::addShadow(*self->m_sceneRoot, chrome, self->m_shadowConfig, Style::scaledRadiusLg());
+        (void)popup_chrome::addShadow(*self->m_sceneRoot, chrome, self->m_shadowConfig, Style::scaledRadiusLg());
 
         auto ctrl = std::make_unique<ContextMenuControl>();
         ctrl->setMenuWidth(chrome.contentWidth);

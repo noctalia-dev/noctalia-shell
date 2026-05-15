@@ -1579,8 +1579,8 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item, std::vec
 
     menuPtr->sceneRoot = std::make_unique<Node>();
     menuPtr->sceneRoot->setSize(fw, fh);
-    popup_chrome::addShadow(*menuPtr->sceneRoot, menuPtr->chrome, m_config->config().shell.shadow,
-                            Style::scaledRadiusLg());
+    (void)popup_chrome::addShadow(*menuPtr->sceneRoot, menuPtr->chrome, m_config->config().shell.shadow,
+                                  Style::scaledRadiusLg());
 
     auto ctrl = std::make_unique<ContextMenuControl>();
     ctrl->setMenuWidth(menuPtr->chrome.contentWidth);
@@ -1950,8 +1950,8 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
 
         menuPtr->sceneRoot = std::make_unique<Node>();
         menuPtr->sceneRoot->setSize(fw, fh);
-        popup_chrome::addShadow(*menuPtr->sceneRoot, menuPtr->chrome, m_config->config().shell.shadow,
-                                Style::scaledRadiusLg());
+        (void)popup_chrome::addShadow(*menuPtr->sceneRoot, menuPtr->chrome, m_config->config().shell.shadow,
+                                      Style::scaledRadiusLg());
 
         auto ctrl = std::make_unique<ContextMenuControl>();
         ctrl->setMenuWidth(menuPtr->chrome.contentWidth);

@@ -201,7 +201,7 @@ void SelectDropdownPopup::buildScene(const DropdownRequest& request) {
   const float menuY = chrome.contentY();
   const float radius = Style::scaledRadiusMd();
 
-  popup_chrome::addShadow(*m_sceneRoot, chrome, m_shadowConfig, radius);
+  (void)popup_chrome::addShadow(*m_sceneRoot, chrome, m_shadowConfig, radius);
 
   auto bg = std::make_unique<RectNode>();
   bg->setStyle(RoundedRectStyle{
