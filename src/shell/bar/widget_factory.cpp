@@ -421,8 +421,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     } else if (display == "none") {
       displayMode = WorkspacesWidget::DisplayMode::None;
     }
-    auto widget =
-        std::make_unique<WorkspacesWidget>(m_platform, output, displayMode, focusedColor, occupiedColor, emptyColor);
+    std::size_t maxLabelChars = 1; // Default: truncate names to 1 char (v4 behavior)
+    if (wc != nullptr && wc->hasSetting("max_label_chars")) {
+      maxLabelChars = static_cast<std::size_t>(wc->getInt("max_label_chars", 1));
+    }
+    auto widget = std::make_unique<WorkspacesWidget>(m_platform, output, displayMode, focusedColor, occupiedColor,
+                                                     emptyColor, maxLabelChars);
     widget->setContentScale(contentScale);
     return widget;
   }

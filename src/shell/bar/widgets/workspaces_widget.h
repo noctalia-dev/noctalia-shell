@@ -23,7 +23,7 @@ public:
   };
 
   WorkspacesWidget(CompositorPlatform& platform, wl_output* output, DisplayMode displayMode, ColorSpec focusedColor,
-                   ColorSpec occupiedColor, ColorSpec emptyColor);
+                   ColorSpec occupiedColor, ColorSpec emptyColor, std::size_t maxLabelChars);
   ~WorkspacesWidget() override;
 
   void create() override;
@@ -69,6 +69,7 @@ private:
   CompositorPlatform& m_platform;
   wl_output* m_output = nullptr;
   DisplayMode m_displayMode = DisplayMode::None;
+  std::size_t m_maxLabelChars = 1;
   Node* m_container = nullptr;
   std::vector<Workspace> m_cachedState;
   std::vector<Item> m_items;

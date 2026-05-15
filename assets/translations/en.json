@@ -1182,6 +1182,11 @@
           "label": "Label Min Width",
           "description": "Minimum label width in pixels to prevent resizing"
         },
+        "max_label_chars": {
+          "label": "Max Label Characters",
+          "description": "Maximum number of characters to show for workspace names",
+          "workspaces-description": "Maximum characters for workspace name labels"
+        },
         "hot_reload": {
           "label": "Hot Reload",
           "description": "Reload the scripted widget when its source changes"

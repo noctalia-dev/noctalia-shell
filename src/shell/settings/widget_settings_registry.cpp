@@ -500,6 +500,11 @@ namespace settings {
       }
       add(segmentedSpec("display", "id", workspaceDisplay));
       {
+        auto maxLabelChars = intSpec("max_label_chars", 1, 1.0, 20.0, 1.0);
+        maxLabelChars.descriptionKey = "settings.widgets.settings.max_label_chars.workspaces-description";
+        add(std::move(maxLabelChars));
+      }
+      {
         auto focusedColor = colorRoleSpec("focused_color", "primary");
         applyAccentColorRolePicker(focusedColor);
         add(std::move(focusedColor));
