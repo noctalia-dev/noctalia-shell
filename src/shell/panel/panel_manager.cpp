@@ -83,6 +83,26 @@ namespace {
     return detachedPanelBackgroundOpacityForTransparencyMode(mode);
   }
 
+  [[nodiscard]] bool openNearClickEnabledForPanel(const ConfigService* configService, std::string_view panelId) {
+    if (configService == nullptr) {
+      return false;
+    }
+    const auto& pc = configService->config().shell.panel;
+    if (panelId == "control-center") {
+      return pc.openNearClickControlCenter;
+    }
+    if (panelId == "launcher") {
+      return pc.openNearClickLauncher;
+    }
+    if (panelId == "clipboard") {
+      return pc.openNearClickClipboard;
+    }
+    if (panelId == "wallpaper") {
+      return pc.openNearClickWallpaper;
+    }
+    return false;
+  }
+
 } // namespace
 
 PanelManager::PanelManager() { s_instance = this; }
@@ -357,19 +377,8 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     const auto totalEndInset = computeTotalInset(barREnd);
     std::int32_t visualX = 0;
     std::int32_t visualY = 0;
-    const bool openNearClickEnabled = [&]() {
-      const auto& pc = m_config->config().shell.panel;
-      if (m_activePanelId == "control-center")
-        return pc.openNearClickControlCenter;
-      if (m_activePanelId == "launcher")
-        return pc.openNearClickLauncher;
-      if (m_activePanelId == "clipboard")
-        return pc.openNearClickClipboard;
-      if (m_activePanelId == "wallpaper")
-        return pc.openNearClickWallpaper;
-      return false;
-    }();
-    const bool useAnchorForAttached = request.hasAnchorPosition && openNearClickEnabled;
+    const bool useAnchorForAttached =
+        request.hasAnchorPosition && openNearClickEnabledForPanel(m_config, m_activePanelId);
     if (barIsVertical) {
       const auto minY = barTop + totalStartInset;
       const auto maxY = std::max(minY, barBottom - static_cast<std::int32_t>(panelHeight) - totalEndInset);
@@ -723,6 +732,12 @@ void PanelManager::togglePanel(const std::string& panelId, PanelOpenRequest requ
     if (!request.context.empty() && m_activePanel != nullptr) {
       if (m_activePanel->isContextActive(request.context)) {
         closePanel();
+        return;
+      }
+      // Attached panels placed near the clicked widget must fully reopen so geometry
+      // and bar decoration track the new anchor
+      if (m_attachedToBar && request.hasAnchorPosition && openNearClickEnabledForPanel(m_config, panelId)) {
+        openPanel(panelId, request);
         return;
       }
       m_activePanel->onOpen(request.context);
