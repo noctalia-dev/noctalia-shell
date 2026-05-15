@@ -379,7 +379,7 @@ void HyprlandWorkspaceBackend::handleEvent(std::string_view event, std::string_v
 
   if (event == "workspacev2") {
     const auto args = parseEventArgs(data, 2);
-    const auto id = parseInt(args[1]);
+    const auto id = parseInt(args[0]);
     if (!id.has_value()) {
       return;
     }
