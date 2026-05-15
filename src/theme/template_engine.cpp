@@ -152,6 +152,7 @@ namespace noctalia::theme {
       std::vector<std::string> outputPaths;
       // Rendered like hooks, then run via sh -lc; non-comment stdout lines become extra output paths.
       std::string outputPathDynamic;
+      std::string inputPathDynamic;
       std::string compareTo;
       std::vector<CompareColorEntry> colorsToCompare;
       std::string preHook;
@@ -1142,12 +1143,20 @@ namespace noctalia::theme {
         inputPath = input->get();
       }
 
-      if (inputPath.empty())
+      std::string inputPathDynamic;
+      if (const auto ipd = tpl.get_as<std::string>("input_path_dynamic"))
+        inputPathDynamic = ipd->get();
+
+      if (inputPath.empty() && inputPathDynamic.empty())
         return std::nullopt;
 
       ParsedTemplateEntry entry;
       entry.name = std::string(name);
-      entry.inputPath = resolveConfigPath(configPath, inputPath).string();
+
+      if (!inputPath.empty())
+        entry.inputPath = resolveConfigPath(configPath, inputPath).string();
+
+      entry.inputPathDynamic = inputPathDynamic;
       entry.outputPaths = parseOutputPaths(tpl.get("output_path"));
       for (std::string& output : entry.outputPaths)
         output = resolveConfigPath(configPath, output).string();
@@ -1278,6 +1287,21 @@ namespace noctalia::theme {
       renderOptions.configDir = configPath.has_parent_path() ? configPath.parent_path().string() : "";
       renderOptions.configFile = configPath.string();
 
+      std::string effectiveInput = entry.inputPath;
+      if (!entry.inputPathDynamic.empty()) {
+        const auto cmdRendered = EngineImpl(m_themeData, renderOptions).render(entry.inputPathDynamic);
+        if (cmdRendered.errorCount == 0 && !cmdRendered.text.empty()) {
+          const auto dynResult = process::runSync(cmdRendered.text);
+          if (dynResult.exitCode == 0) {
+            std::vector<std::string> dynamicInputs;
+            appendPathsFromDynamicStdout(configPath, dynamicInputs, dynResult.out);
+
+            if (!dynamicInputs.empty())
+              effectiveInput = dynamicInputs.front();
+          }
+        }
+      }
+
       std::vector<std::string> effectiveOutputs = entry.outputPaths;
       if (!entry.outputPathDynamic.empty()) {
         const auto cmdRendered = EngineImpl(m_themeData, renderOptions).render(entry.outputPathDynamic);
@@ -1308,7 +1332,7 @@ namespace noctalia::theme {
         }
 
         const auto fileResult =
-            EngineImpl(m_themeData, renderOptions).renderFile(entry.inputPath, std::filesystem::path(outputPath));
+            EngineImpl(m_themeData, renderOptions).renderFile(effectiveInput, std::filesystem::path(outputPath));
         if (!fileResult.success) {
           ok = false;
           continue;
