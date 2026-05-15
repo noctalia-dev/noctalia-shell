@@ -52,8 +52,13 @@ namespace {
   constexpr float kCloseButtonSize = 20.0f;
   constexpr float kCloseGlyphSize = 12.0f;
   constexpr float kNotificationIconSize = 42.0f;
-  constexpr float kNotificationIconRadius = 10.0f;
   constexpr float kNotificationIconGlyphSize = 24.0f;
+  constexpr float kNotificationIconReferenceSize = 36.0f;
+
+  float notificationIconRadius(float iconSize, float localScale = 1.0f) {
+    const float baseRadius = Style::radiusMd * (iconSize / kNotificationIconReferenceSize);
+    return std::min(iconSize * 0.5f, Style::scaledRadius(baseRadius, localScale));
+  }
   constexpr std::string_view kNoctaliaGlyphIconPrefix = "noctalia-glyph:";
   constexpr float kIconTextGap = Style::spaceSm;
   constexpr float kActionGap = Style::spaceXs;
@@ -1642,7 +1647,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
       auto appIcon = std::make_unique<Image>();
       appIcon->setSize(kNotificationIconSize, kNotificationIconSize);
       appIcon->setPosition(0.0f, 0.0f);
-      appIcon->setRadius(kNotificationIconRadius);
+      appIcon->setRadius(notificationIconRadius(kNotificationIconSize));
       appIcon->setFit(ImageFit::Cover);
       if (appIcon->setSourceFile(*m_renderContext, iconPath, static_cast<int>(std::round(kNotificationIconSize)))) {
         *outAppIcon = iconSlot->addChild(std::move(appIcon));
@@ -1656,7 +1661,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
         auto appIcon = std::make_unique<Image>();
         appIcon->setSize(kNotificationIconSize, kNotificationIconSize);
         appIcon->setPosition(0.0f, 0.0f);
-        appIcon->setRadius(kNotificationIconRadius);
+        appIcon->setRadius(notificationIconRadius(kNotificationIconSize));
         appIcon->setFit(ImageFit::Cover);
         const bool validImageMetadata = image.bitsPerSample == 8 && ((image.channels == 4 && image.hasAlpha) ||
                                                                      (image.channels == 3 && !image.hasAlpha));

@@ -37,9 +37,11 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <csignal>
 #include <cstdint>
 #include <filesystem>
+#include <limits>
 #include <malloc.h>
 #include <optional>
 #include <stdexcept>
@@ -355,7 +357,17 @@ void Application::initServices() {
     motion.setSpeed(m_configService.config().shell.animation.speed);
     motion.setEnabled(m_configService.config().shell.animation.enabled);
   };
-  auto applyStyleConfig = [this]() { Style::setCornerRadiusScale(m_configService.config().shell.cornerRadiusScale); };
+  auto applyStyleConfig = [this, lastCornerRadiusScale = std::numeric_limits<float>::quiet_NaN()]() mutable {
+    const float corner = m_configService.config().shell.cornerRadiusScale;
+    const bool cornerChanged =
+        std::isfinite(lastCornerRadiusScale) && std::abs(corner - lastCornerRadiusScale) > 1.0e-4f;
+    Style::setCornerRadiusScale(corner);
+    lastCornerRadiusScale = corner;
+    if (cornerChanged) {
+      m_notificationToast.requestLayout();
+      m_panelManager.requestLayout();
+    }
+  };
   auto applyPasswordMaskStyle = [this]() {
     const auto style = m_configService.config().shell.passwordMaskStyle == PasswordMaskStyle::RandomIcons
                            ? Input::PasswordMaskStyle::RandomIcons

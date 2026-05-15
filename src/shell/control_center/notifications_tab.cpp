@@ -19,6 +19,7 @@
 #include "ui/controls/segmented.h"
 #include "ui/controls/virtual_list_view.h"
 #include "ui/palette.h"
+#include "ui/style.h"
 #include "util/string_utils.h"
 
 #include <algorithm>
@@ -42,8 +43,13 @@ namespace {
   constexpr Logger kLog("control-center-notifications");
 
   constexpr float kHistoryIconSize = 36.0f;
-  constexpr float kHistoryIconRadius = 8.0f;
   constexpr float kHistoryIconGlyphSize = 22.0f;
+  constexpr float kHistoryIconReferenceSize = 36.0f;
+
+  float notificationIconRadius(float iconSize, float localScale) {
+    const float baseRadius = Style::radiusMd * (iconSize / kHistoryIconReferenceSize);
+    return std::min(iconSize * 0.5f, Style::scaledRadius(baseRadius, localScale));
+  }
   constexpr int kHistoryMaxActionButtons = 2;
 
   constexpr float kNotificationActionButtonSize = Style::controlHeightSm;
@@ -327,7 +333,7 @@ namespace {
       auto iconSlot = std::make_unique<Box>();
       iconSlot->setSize(kHistoryIconSize * scale, kHistoryIconSize * scale);
       iconSlot->setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
-      iconSlot->setRadius(kHistoryIconRadius * scale);
+      iconSlot->setRadius(notificationIconRadius(kHistoryIconSize, scale));
       m_iconSlot = static_cast<Box*>(m_leftCluster->addChild(std::move(iconSlot)));
 
       auto image = std::make_unique<Image>();
@@ -494,9 +500,11 @@ namespace {
 
     void bindIcon(Renderer& renderer, const NotificationHistoryEntry& entry, IconResolver& iconResolver) {
       const float iconPx = kHistoryIconSize * m_scale;
+      const float iconRadius = notificationIconRadius(iconPx, m_scale);
+      m_iconSlot->setRadius(iconRadius);
       m_image->setSize(iconPx, iconPx);
       m_image->setPosition(0.0f, 0.0f);
-      m_image->setRadius(kHistoryIconRadius * m_scale);
+      m_image->setRadius(iconRadius);
       m_image->setFit(ImageFit::Cover);
 
       const std::string iconPath = resolveHistoryIconPath(entry.notification, iconResolver);
@@ -577,7 +585,9 @@ public:
     }
     const auto& entry = *m_owner.m_filtered[index];
     const bool expanded = m_owner.m_expandedIds.contains(entry.notification.id);
-    return revisionForEntry(entry, expanded, m_owner.m_lastRelativeTimeSlot);
+    std::uint64_t revision = revisionForEntry(entry, expanded, m_owner.m_lastRelativeTimeSlot);
+    revision ^= static_cast<std::uint64_t>(Style::cornerRadiusScale() * 10000.0f) * 0xC2B2AE3D27D4EB4FULL;
+    return revision;
   }
 
   [[nodiscard]] float measureItem(Renderer& renderer, std::size_t index, float width) override {
