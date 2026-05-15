@@ -85,6 +85,68 @@ namespace {
     return result;
   }
 
+  std::optional<WidgetSettingValue> readWidgetSetting(const toml::node& node) {
+    if (const auto* stringValue = node.as_string()) {
+      return WidgetSettingValue{stringValue->get()};
+    }
+    if (const auto* intValue = node.as_integer()) {
+      return WidgetSettingValue{intValue->get()};
+    }
+    if (const auto* floatValue = node.as_floating_point()) {
+      return WidgetSettingValue{floatValue->get()};
+    }
+    if (const auto* boolValue = node.as_boolean()) {
+      return WidgetSettingValue{boolValue->get()};
+    }
+    if (const auto* arrayValue = node.as_array()) {
+      std::vector<std::string> strings;
+      for (const auto& item : *arrayValue) {
+        if (auto value = item.value<std::string>()) {
+          strings.push_back(*value);
+        }
+      }
+      return WidgetSettingValue{std::move(strings)};
+    }
+    return std::nullopt;
+  }
+
+  DesktopWidgetState readDesktopWidgetState(std::string_view id, const toml::table& widgetTable) {
+    DesktopWidgetState widget;
+    widget.id = std::string(id);
+    if (auto explicitId = widgetTable["id"].value<std::string>()) {
+      widget.id = *explicitId;
+    }
+    if (auto type = widgetTable["type"].value<std::string>()) {
+      widget.type = *type;
+    }
+    if (auto output = widgetTable["output"].value<std::string>()) {
+      widget.outputName = *output;
+    }
+    if (auto cx = finiteDouble(widgetTable["cx"])) {
+      widget.cx = static_cast<float>(*cx);
+    }
+    if (auto cy = finiteDouble(widgetTable["cy"])) {
+      widget.cy = static_cast<float>(*cy);
+    }
+    if (auto scale = finiteDouble(widgetTable["scale"])) {
+      widget.scale = std::clamp(static_cast<float>(*scale), 0.2f, 8.0f);
+    }
+    if (auto rotation = finiteDouble(widgetTable["rotation"])) {
+      widget.rotationRad = static_cast<float>(*rotation);
+    }
+    if (auto enabled = widgetTable["enabled"].value<bool>()) {
+      widget.enabled = *enabled;
+    }
+    if (const auto* settingsTable = widgetTable["settings"].as_table()) {
+      for (const auto& [key, value] : *settingsTable) {
+        if (auto parsed = readWidgetSetting(value); parsed.has_value()) {
+          widget.settings.emplace(std::string(key.str()), std::move(*parsed));
+        }
+      }
+    }
+    return widget;
+  }
+
   void setHookCommandsFromNode(const toml::node& node, std::vector<std::string>& out) {
     out.clear();
     if (auto* s = node.as_string()) {
@@ -1660,6 +1722,60 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
     auto& desktopWidgets = config.desktopWidgets;
     if (auto v = (*desktopWidgetsTbl)["enabled"].value<bool>()) {
       desktopWidgets.enabled = *v;
+    }
+    if (auto schemaVersion = (*desktopWidgetsTbl)["schema_version"].value<int64_t>()) {
+      desktopWidgets.schemaVersion = static_cast<std::int32_t>(*schemaVersion);
+    }
+    if (const auto* gridTable = (*desktopWidgetsTbl)["grid"].as_table()) {
+      if (auto visible = (*gridTable)["visible"].value<bool>()) {
+        desktopWidgets.grid.visible = *visible;
+      }
+      if (auto cellSize = (*gridTable)["cell_size"].value<int64_t>()) {
+        desktopWidgets.grid.cellSize = std::clamp(static_cast<std::int32_t>(*cellSize), 8, 256);
+      }
+      if (auto majorInterval = (*gridTable)["major_interval"].value<int64_t>()) {
+        desktopWidgets.grid.majorInterval = std::clamp(static_cast<std::int32_t>(*majorInterval), 1, 16);
+      }
+    }
+    if (const auto* widgetsTable = (*desktopWidgetsTbl)["widget"].as_table()) {
+      std::vector<DesktopWidgetState> parsedWidgets;
+      parsedWidgets.reserve(widgetsTable->size());
+      for (const auto& [idNode, widgetNode] : *widgetsTable) {
+        const auto* widgetTable = widgetNode.as_table();
+        if (widgetTable == nullptr) {
+          continue;
+        }
+        auto widget = readDesktopWidgetState(idNode.str(), *widgetTable);
+        if (!widget.id.empty() && !widget.type.empty()) {
+          parsedWidgets.push_back(std::move(widget));
+        }
+      }
+
+      std::vector<std::string> order;
+      bool orderSpecified = false;
+      if (const auto* orderNode = desktopWidgetsTbl->get("widget_order")) {
+        order = readStringArray(*orderNode);
+        orderSpecified = true;
+      }
+
+      desktopWidgets.widgets.clear();
+      std::vector<bool> used(parsedWidgets.size(), false);
+      for (const auto& orderedId : order) {
+        for (std::size_t i = 0; i < parsedWidgets.size(); ++i) {
+          if (!used[i] && parsedWidgets[i].id == orderedId) {
+            used[i] = true;
+            desktopWidgets.widgets.push_back(std::move(parsedWidgets[i]));
+            break;
+          }
+        }
+      }
+      if (!orderSpecified) {
+        for (std::size_t i = 0; i < parsedWidgets.size(); ++i) {
+          if (!used[i]) {
+            desktopWidgets.widgets.push_back(std::move(parsedWidgets[i]));
+          }
+        }
+      }
     }
   }
 

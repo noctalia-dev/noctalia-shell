@@ -255,6 +255,24 @@ pinned              = []            # e.g. ["firefox", "code", "kitty"]
 
 [desktop_widgets]
 enabled = false
+# When set, widget_order is the active widget list and stacking order.
+# widget_order = ["clock_main"]
+
+# [desktop_widgets.grid]
+# visible        = true
+# cell_size      = 16
+# major_interval = 4
+
+# [desktop_widgets.widget.clock_main]
+# type     = "clock"
+# output   = "DP-1"
+# cx       = 960.0
+# cy       = 540.0
+# scale    = 1.5
+# rotation = 0.0
+
+# [desktop_widgets.widget.clock_main.settings]
+# format = "{:%H:%M}"
 
 # ── Control Center ────────────────────────────────────────────────────────────
 

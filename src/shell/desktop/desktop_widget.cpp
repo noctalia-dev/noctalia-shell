@@ -87,8 +87,9 @@ void DesktopWidget::applyBackground() {
   m_bgBox->setFill(m_bgColor);
   m_bgBox->setRadius(radius);
 
-  if (m_outerRoot) {
-    m_outerRoot->setSize(w, h);
-    m_outerRoot->setClipChildren(true);
+  Node* outerRoot = m_outerRoot ? m_outerRoot.get() : m_outerRootPtr;
+  if (outerRoot != nullptr) {
+    outerRoot->setSize(w, h);
+    outerRoot->setClipChildren(true);
   }
 }

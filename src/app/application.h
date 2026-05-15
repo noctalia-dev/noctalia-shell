@@ -47,7 +47,6 @@
 #include "shell/backdrop/backdrop.h"
 #include "shell/bar/bar.h"
 #include "shell/desktop/desktop_widgets_controller.h"
-#include "shell/desktop/desktop_widgets_poll_source.h"
 #include "shell/dock/dock.h"
 #include "shell/lockscreen/lock_screen.h"
 #include "shell/notification/notification_toast.h"
@@ -205,7 +204,6 @@ private:
   NotificationPollSource m_notificationPollSource{m_notificationManager};
   TimePollSource m_timePollSource{m_timeService};
   ConfigPollSource m_configPollSource{m_configService};
-  DesktopWidgetsPollSource m_desktopWidgetsPollSource{m_desktopWidgetsController};
   DesktopEntryPollSource m_desktopEntryPollSource;
   IconThemePollSource m_iconThemePollSource;
   ClipboardPollSource m_clipboardPollSource{m_clipboardService};

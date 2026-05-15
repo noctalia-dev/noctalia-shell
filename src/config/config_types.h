@@ -343,8 +343,33 @@ struct DockConfig {
   bool operator==(const DockConfig&) const = default;
 };
 
+struct DesktopWidgetsGridState {
+  bool visible = true;
+  std::int32_t cellSize = 16;
+  std::int32_t majorInterval = 4;
+
+  bool operator==(const DesktopWidgetsGridState&) const = default;
+};
+
+struct DesktopWidgetState {
+  std::string id;
+  std::string type = "clock";
+  std::string outputName;
+  float cx = 0.0f;
+  float cy = 0.0f;
+  float scale = 1.0f;
+  float rotationRad = 0.0f;
+  bool enabled = true;
+  std::unordered_map<std::string, WidgetSettingValue> settings;
+
+  bool operator==(const DesktopWidgetState&) const = default;
+};
+
 struct DesktopWidgetsConfig {
   bool enabled = true;
+  std::int32_t schemaVersion = 1;
+  DesktopWidgetsGridState grid;
+  std::vector<DesktopWidgetState> widgets;
 
   bool operator==(const DesktopWidgetsConfig&) const = default;
 };

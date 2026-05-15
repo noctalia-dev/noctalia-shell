@@ -16,11 +16,15 @@
 
 namespace {
 
+  constexpr float kBaseWidth = 180.0f;
+  constexpr float kBaseHeight = 72.0f;
+  constexpr float kGlyphSlotWidth = 52.0f;
+  constexpr float kColumnGap = 8.0f;
+  constexpr float kLineGap = 2.0f;
+
   float temperatureFontSize(float contentScale) { return Style::fontSizeBody * 2.25f * contentScale; }
   float conditionFontSize(float contentScale) { return Style::fontSizeBody * contentScale; }
   float glyphFontSize(float contentScale) { return Style::fontSizeBody * 3.0f * contentScale; }
-  float columnSpacing(float contentScale) { return Style::spaceSm * contentScale; }
-  float stackedLineGap(float contentScale) { return -Style::fontSizeBody * 0.5f * contentScale; }
 
 } // namespace
 
@@ -36,6 +40,7 @@ DesktopWeatherWidget::DesktopWeatherWidget(const WeatherService* weather, ColorS
 
 void DesktopWeatherWidget::create() {
   auto rootNode = std::make_unique<Node>();
+  rootNode->setClipChildren(true);
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("weather-cloud");
@@ -48,6 +53,7 @@ void DesktopWeatherWidget::create() {
   temperature->setBold(true);
   temperature->setTextAlign(TextAlign::Start);
   temperature->setFontSize(temperatureFontSize(contentScale()));
+  temperature->setMaxLines(1);
   temperature->setColor(m_color);
   m_temperature = temperature.get();
   rootNode->addChild(std::move(temperature));
@@ -55,6 +61,7 @@ void DesktopWeatherWidget::create() {
   auto condition = std::make_unique<Label>();
   condition->setTextAlign(TextAlign::Start);
   condition->setFontSize(conditionFontSize(contentScale()));
+  condition->setMaxLines(1);
   condition->setColor(m_color);
   m_condition = condition.get();
   rootNode->addChild(std::move(condition));
@@ -68,46 +75,54 @@ void DesktopWeatherWidget::doLayout(Renderer& renderer) {
     return;
   }
 
-  m_temperature->setFontSize(temperatureFontSize(contentScale()));
-  m_condition->setFontSize(conditionFontSize(contentScale()));
-  m_glyph->setGlyphSize(glyphFontSize(contentScale()));
+  const float scale = contentScale();
+  const float width = kBaseWidth * scale;
+  const float height = kBaseHeight * scale;
+  const float glyphSlotWidth = kGlyphSlotWidth * scale;
+  const float textX = glyphSlotWidth + kColumnGap * scale;
+  const float textWidth = std::max(1.0f, width - textX);
+
+  m_temperature->setFontSize(temperatureFontSize(scale));
+  m_temperature->setMaxWidth(textWidth);
+  m_temperature->setMaxLines(1);
+
+  m_condition->setFontSize(conditionFontSize(scale));
+  m_condition->setMaxWidth(textWidth);
+  m_condition->setMaxLines(1);
+
+  m_glyph->setGlyphSize(glyphFontSize(scale));
   applyShadow();
 
-  sync(renderer);
+  sync();
 
   m_temperature->measure(renderer);
   m_condition->measure(renderer);
   m_glyph->measure(renderer);
 
   const bool hasCondition = !m_condition->text().empty();
-  const float lineGap = hasCondition ? stackedLineGap(contentScale()) : 0.0f;
-
-  float textWidth = m_temperature->width();
+  const float lineGap = hasCondition ? kLineGap * scale : 0.0f;
   float textHeight = m_temperature->height();
   if (hasCondition) {
-    textWidth = std::max(textWidth, m_condition->width());
     textHeight += lineGap + m_condition->height();
   }
 
-  const float hSpacing = std::round(columnSpacing(contentScale()));
-  const float totalHeight = std::round(std::max(m_glyph->height(), textHeight));
-  const float totalWidth = std::round(m_glyph->width() + hSpacing + textWidth);
+  m_glyph->setPosition(std::round((glyphSlotWidth - m_glyph->width()) * 0.5f),
+                       std::round((height - m_glyph->height()) * 0.5f));
 
-  m_glyph->setPosition(0.0f, std::round((totalHeight - m_glyph->height()) * 0.5f));
-
-  const float textColX = m_glyph->width() + hSpacing;
-  float y = std::round((totalHeight - textHeight) * 0.5f);
-  m_temperature->setPosition(textColX, y);
+  float y = std::round((height - textHeight) * 0.5f);
+  m_temperature->setPosition(textX, y);
   y += std::round(m_temperature->height() + lineGap);
+  m_condition->setPosition(textX, y);
 
-  if (hasCondition) {
-    m_condition->setPosition(textColX, y);
-  }
-
-  root()->setSize(totalWidth, totalHeight);
+  root()->setSize(width, height);
 }
 
-void DesktopWeatherWidget::doUpdate(Renderer& renderer) { sync(renderer); }
+void DesktopWeatherWidget::doUpdate(Renderer& renderer) {
+  (void)renderer;
+  if (sync()) {
+    requestLayout();
+  }
+}
 
 void DesktopWeatherWidget::applyShadow() {
   if (m_glyph == nullptr || m_temperature == nullptr || m_condition == nullptr) {
@@ -126,9 +141,9 @@ void DesktopWeatherWidget::applyShadow() {
   }
 }
 
-void DesktopWeatherWidget::sync(Renderer& renderer) {
+bool DesktopWeatherWidget::sync() {
   if (m_glyph == nullptr || m_temperature == nullptr || m_condition == nullptr) {
-    return;
+    return false;
   }
 
   std::string glyphName = "weather-cloud";
@@ -156,25 +171,20 @@ void DesktopWeatherWidget::sync(Renderer& renderer) {
   if (glyphName != m_lastGlyph) {
     m_lastGlyph = glyphName;
     m_glyph->setGlyph(glyphName);
-    m_glyph->measure(renderer);
     changed = true;
   }
 
   if (temperatureText != m_lastTemperature) {
     m_lastTemperature = temperatureText;
     m_temperature->setText(temperatureText);
-    m_temperature->measure(renderer);
     changed = true;
   }
 
   if (conditionText != m_lastCondition) {
     m_lastCondition = conditionText;
     m_condition->setText(conditionText);
-    m_condition->measure(renderer);
     changed = true;
   }
 
-  if (changed) {
-    requestRedraw();
-  }
+  return changed;
 }

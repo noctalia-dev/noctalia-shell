@@ -110,6 +110,18 @@ namespace {
     return true;
   }
 
+  bool desktopWidgetEqual(const DesktopWidgetState& a, const DesktopWidgetState& b) {
+    return a.id == b.id && a.type == b.type && a.outputName == b.outputName && nearlyEqual(a.cx, b.cx) &&
+           nearlyEqual(a.cy, b.cy) && nearlyEqual(a.scale, b.scale) && nearlyEqual(a.rotationRad, b.rotationRad) &&
+           a.enabled == b.enabled && widgetSettingsEqual(a.settings, b.settings);
+  }
+
+  bool desktopWidgetsConfigEqual(const DesktopWidgetsConfig& a, const DesktopWidgetsConfig& b) {
+    return a.enabled == b.enabled && a.schemaVersion == b.schemaVersion && a.grid.visible == b.grid.visible &&
+           a.grid.cellSize == b.grid.cellSize && a.grid.majorInterval == b.grid.majorInterval &&
+           vectorEqual(a.widgets, b.widgets, desktopWidgetEqual);
+  }
+
   bool barBaseConfigEqual(const BarConfig& a, const BarConfig& b) {
     return a.name == b.name && a.position == b.position && a.enabled == b.enabled && a.autoHide == b.autoHide &&
            a.reserveSpace == b.reserveSpace && a.thickness == b.thickness &&
@@ -359,7 +371,7 @@ namespace {
            wallpaperConfigEqual(a.wallpaper, b.wallpaper) && a.backdrop.enabled == b.backdrop.enabled &&
            nearlyEqual(a.backdrop.blurIntensity, b.backdrop.blurIntensity) &&
            nearlyEqual(a.backdrop.tintIntensity, b.backdrop.tintIntensity) && dockConfigEqual(a.dock, b.dock) &&
-           a.desktopWidgets == b.desktopWidgets && shellConfigEqual(a.shell, b.shell) &&
+           desktopWidgetsConfigEqual(a.desktopWidgets, b.desktopWidgets) && shellConfigEqual(a.shell, b.shell) &&
            a.osd.position == b.osd.position && a.osd.lockKeys == b.osd.lockKeys &&
            notificationConfigEqual(a.notification, b.notification) && a.weather.enabled == b.weather.enabled &&
            a.weather.autoLocate == b.weather.autoLocate && a.weather.effects == b.weather.effects &&
@@ -379,6 +391,44 @@ namespace {
     }
     auto [it, _] = parent.insert_or_assign(key, toml::table{});
     return it->second.as_table();
+  }
+
+  void insertWidgetSetting(toml::table& table, const std::string& key, const WidgetSettingValue& value) {
+    std::visit(
+        [&](const auto& concrete) {
+          using T = std::decay_t<decltype(concrete)>;
+          if constexpr (std::is_same_v<T, std::vector<std::string>>) {
+            toml::array array;
+            for (const auto& item : concrete) {
+              array.push_back(item);
+            }
+            table.insert_or_assign(key, std::move(array));
+          } else {
+            table.insert_or_assign(key, concrete);
+          }
+        },
+        value);
+  }
+
+  toml::table desktopWidgetTable(const DesktopWidgetState& widget) {
+    toml::table widgetTable;
+    widgetTable.insert_or_assign("type", widget.type);
+    widgetTable.insert_or_assign("output", widget.outputName);
+    widgetTable.insert_or_assign("cx", static_cast<double>(widget.cx));
+    widgetTable.insert_or_assign("cy", static_cast<double>(widget.cy));
+    widgetTable.insert_or_assign("scale", static_cast<double>(widget.scale));
+    widgetTable.insert_or_assign("rotation", static_cast<double>(widget.rotationRad));
+    if (!widget.enabled) {
+      widgetTable.insert_or_assign("enabled", false);
+    }
+    if (!widget.settings.empty()) {
+      toml::table settingsTable;
+      for (const auto& [key, value] : widget.settings) {
+        insertWidgetSetting(settingsTable, key, value);
+      }
+      widgetTable.insert_or_assign("settings", std::move(settingsTable));
+    }
+    return widgetTable;
   }
 
   void insertOverrideValue(toml::table& table, std::string_view key, const ConfigOverrideValue& value) {
@@ -642,6 +692,47 @@ void ConfigService::setDockEnabled(bool enabled) {
 
   loadAll();
   fireReloadCallbacks();
+}
+
+bool ConfigService::setDesktopWidgetsState(const DesktopWidgetsConfig& desktopWidgets) {
+  if (m_overridesPath.empty()) {
+    return false;
+  }
+
+  auto* desktopWidgetsTbl = ensureTable(m_overridesTable, "desktop_widgets");
+  if (desktopWidgetsTbl == nullptr) {
+    return false;
+  }
+
+  desktopWidgetsTbl->insert_or_assign("schema_version", static_cast<std::int64_t>(desktopWidgets.schemaVersion));
+
+  toml::table grid;
+  grid.insert_or_assign("visible", desktopWidgets.grid.visible);
+  grid.insert_or_assign("cell_size", static_cast<std::int64_t>(desktopWidgets.grid.cellSize));
+  grid.insert_or_assign("major_interval", static_cast<std::int64_t>(desktopWidgets.grid.majorInterval));
+  desktopWidgetsTbl->insert_or_assign("grid", std::move(grid));
+
+  toml::table widgets;
+  toml::array widgetOrder;
+  for (const auto& widget : desktopWidgets.widgets) {
+    if (widget.id.empty() || widget.type.empty()) {
+      continue;
+    }
+    widgets.insert_or_assign(widget.id, desktopWidgetTable(widget));
+    widgetOrder.push_back(widget.id);
+  }
+  desktopWidgetsTbl->insert_or_assign("widget", std::move(widgets));
+  desktopWidgetsTbl->insert_or_assign("widget_order", std::move(widgetOrder));
+
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return false;
+  }
+
+  m_ownOverridesWritePending = true;
+  loadAll();
+  fireReloadCallbacks();
+  return true;
 }
 
 bool ConfigService::markSetupWizardCompleted() {

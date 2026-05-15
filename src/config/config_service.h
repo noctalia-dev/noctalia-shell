@@ -69,6 +69,8 @@ public:
   [[nodiscard]] bool setThemeWallpaperScheme(std::string_view scheme);
   // Persist dock enabled override to settings.toml and trigger the reload pipeline.
   void setDockEnabled(bool enabled);
+  // Persist desktop widget layout/editor state to settings.toml and trigger the reload pipeline.
+  bool setDesktopWidgetsState(const DesktopWidgetsConfig& desktopWidgets);
   bool markSetupWizardCompleted();
   [[nodiscard]] bool hasOverride(const std::vector<std::string>& path) const;
   [[nodiscard]] bool hasEffectiveOverride(const std::vector<std::string>& path) const;
