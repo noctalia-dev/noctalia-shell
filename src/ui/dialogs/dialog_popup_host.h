@@ -3,6 +3,7 @@
 #include "render/animation/animation_manager.h"
 #include "render/scene/input_dispatcher.h"
 #include "ui/dialogs/layer_popup_host.h"
+#include "ui/popup_chrome.h"
 #include "wayland/popup_surface.h"
 
 #include <cstdint>
@@ -172,6 +173,7 @@ protected:
   LayerPopupHostRegistry* m_popupHosts = nullptr;
 
   std::unique_ptr<PopupSurface> m_surface;
+  popup_chrome::Geometry m_chrome;
   AnimationManager m_animations;
   std::unique_ptr<Node> m_sceneRoot;
   Box* m_bgNode = nullptr;

@@ -1255,6 +1255,9 @@ void AudioTab::openDeviceMenu(bool isOutput) {
   const float scale = contentScale();
   const float menuWidth = std::min(280.0f * scale, anchor->width());
 
+  if (m_config != nullptr) {
+    m_deviceMenuPopup->setShadowConfig(m_config->config().shell.shadow);
+  }
   PanelManager::instance().beginAttachedPopup(parentCtx->surface);
   PanelManager::instance().setActivePopup(m_deviceMenuPopup.get());
 

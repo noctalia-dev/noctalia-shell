@@ -1,5 +1,6 @@
 #include "shell/control_center/media_tab.h"
 
+#include "config/config_service.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "dbus/mpris/mpris_art.h"
@@ -67,9 +68,9 @@ namespace {
 
 } // namespace
 
-MediaTab::MediaTab(MprisService* mpris, HttpClient* httpClient, PipeWireSpectrum* spectrum, WaylandConnection* wayland,
-                   RenderContext* renderContext)
-    : m_mpris(mpris), m_httpClient(httpClient), m_spectrum(spectrum), m_wayland(wayland),
+MediaTab::MediaTab(MprisService* mpris, HttpClient* httpClient, PipeWireSpectrum* spectrum, ConfigService* config,
+                   WaylandConnection* wayland, RenderContext* renderContext)
+    : m_mpris(mpris), m_httpClient(httpClient), m_spectrum(spectrum), m_config(config), m_wayland(wayland),
       m_renderContext(renderContext) {}
 
 MediaTab::~MediaTab() { m_aliveGuard.reset(); }
@@ -121,6 +122,9 @@ void MediaTab::openPlayerMenu() {
   const float menuWidth = std::clamp(kMediaUnit * 6.0f * scale, kMediaUnit * 4.2f * scale,
                                      m_nowCard != nullptr ? std::max(1.0f, m_nowCard->width()) : 240.0f * scale);
 
+  if (m_config != nullptr) {
+    m_playerMenuPopup->setShadowConfig(m_config->config().shell.shadow);
+  }
   PanelManager::instance().beginAttachedPopup(parentCtx->surface);
   PanelManager::instance().setActivePopup(m_playerMenuPopup.get());
 

@@ -607,6 +607,9 @@ void LauncherPanel::openAppActionsMenu(std::size_t index, float anchorX, float a
   constexpr float kMenuWidth = 240.0f;
   const float menuWidth = kMenuWidth * scale;
 
+  if (m_config != nullptr) {
+    m_actionsMenu->setShadowConfig(m_config->config().shell.shadow);
+  }
   PanelManager::instance().beginAttachedPopup(parentCtx->surface);
   PanelManager::instance().setActivePopup(m_actionsMenu.get());
 

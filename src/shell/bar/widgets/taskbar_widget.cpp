@@ -34,10 +34,11 @@
 
 TaskbarWidget::TaskbarWidget(CompositorPlatform& platform, wl_output* output, bool groupByWorkspace,
                              bool showAllOutputs, bool onlyActiveWorkspace, bool showWorkspaceLabel,
-                             bool hideEmptyWorkspaces, std::string barPosition)
+                             bool hideEmptyWorkspaces, std::string barPosition, ShellConfig::ShadowConfig shadowConfig)
     : m_platform(platform), m_output(output), m_groupByWorkspace(groupByWorkspace), m_showAllOutputs(showAllOutputs),
       m_onlyActiveWorkspace(onlyActiveWorkspace), m_showWorkspaceLabel(showWorkspaceLabel),
-      m_hideEmptyWorkspaces(hideEmptyWorkspaces), m_barPosition(std::move(barPosition)) {
+      m_hideEmptyWorkspaces(hideEmptyWorkspaces), m_barPosition(std::move(barPosition)),
+      m_shadowConfig(std::move(shadowConfig)) {
   buildDesktopIconIndex();
 }
 
@@ -1164,6 +1165,7 @@ void TaskbarWidget::openTaskContextMenu(const TaskModel& task, InputArea& area) 
   if (m_contextMenuPopup == nullptr) {
     m_contextMenuPopup = std::make_unique<ContextMenuPopup>(m_platform.wayland(), *renderContext);
   }
+  m_contextMenuPopup->setShadowConfig(m_shadowConfig);
   m_contextMenuPopup->setOnActivate([this, entryActions](const ContextMenuControlEntry& entry) {
     if (entry.id >= 0) {
       const auto idx = static_cast<std::size_t>(entry.id);

@@ -22,12 +22,13 @@ class PipeWireSpectrum;
 class RenderContext;
 class Slider;
 class AudioSpectrum;
+class ConfigService;
 class WaylandConnection;
 
 class MediaTab : public Tab {
 public:
-  MediaTab(MprisService* mpris, HttpClient* httpClient, PipeWireSpectrum* spectrum, WaylandConnection* wayland,
-           RenderContext* renderContext);
+  MediaTab(MprisService* mpris, HttpClient* httpClient, PipeWireSpectrum* spectrum, ConfigService* config,
+           WaylandConnection* wayland, RenderContext* renderContext);
   ~MediaTab() override;
 
   std::unique_ptr<Flex> create() override;
@@ -51,6 +52,7 @@ private:
   MprisService* m_mpris = nullptr;
   HttpClient* m_httpClient = nullptr;
   PipeWireSpectrum* m_spectrum = nullptr;
+  ConfigService* m_config = nullptr;
   WaylandConnection* m_wayland = nullptr;
   RenderContext* m_renderContext = nullptr;
   std::uint64_t m_spectrumListenerId = 0;

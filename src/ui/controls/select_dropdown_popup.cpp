@@ -9,11 +9,11 @@
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "render/scene/rect_node.h"
-#include "shell/surface_shadow.h"
 #include "ui/controls/box.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
+#include "ui/popup_chrome.h"
 #include "ui/style.h"
 #include "wayland/popup_surface.h"
 #include "wayland/wayland_connection.h"
@@ -31,22 +31,8 @@ namespace {
 
   constexpr Logger kLog("select-dropdown-popup");
   constexpr float kMenuPadding = Style::spaceXs;
-  constexpr std::int32_t kShadowSafetyPadding = 2;
 
   Color resolved(ColorRole role, float alpha = 1.0f) { return colorForRole(role, alpha); }
-
-  shell::surface_shadow::Bleed shadowInsets(const ShellConfig::ShadowConfig& shadow) {
-    if (!shell::surface_shadow::enabled(true, shadow)) {
-      return {};
-    }
-
-    auto insets = shell::surface_shadow::bleed(true, shadow);
-    insets.left += kShadowSafetyPadding;
-    insets.right += kShadowSafetyPadding;
-    insets.up += kShadowSafetyPadding;
-    insets.down += kShadowSafetyPadding;
-    return insets;
-  }
 
 } // namespace
 
@@ -96,7 +82,7 @@ void SelectDropdownPopup::openSelectDropdown(const DropdownRequest& request, Dro
   m_viewportHeight = static_cast<float>(visibleCount) * m_optionHeight + kMenuPadding * 2.0f;
   m_totalHeight = static_cast<float>(m_options.size()) * m_optionHeight;
   m_scrollOffset = 0.0f;
-  const auto shadow = shadowInsets(m_shadowConfig);
+  const auto chrome = popup_chrome::computeGeometry(m_menuWidth, m_viewportHeight, m_shadowConfig);
 
   if (m_selectedIndex < m_options.size()) {
     const float selectedTop = static_cast<float>(m_selectedIndex) * m_optionHeight;
@@ -107,28 +93,26 @@ void SelectDropdownPopup::openSelectDropdown(const DropdownRequest& request, Dro
     clampScrollOffset();
   }
 
-  const auto popupW =
-      static_cast<std::uint32_t>(std::max(1.0f, m_menuWidth + static_cast<float>(shadow.left + shadow.right)));
-  const auto popupH =
-      static_cast<std::uint32_t>(std::max(1.0f, m_viewportHeight + static_cast<float>(shadow.up + shadow.down)));
-
   PopupSurfaceConfig popupCfg{
       .anchorX = request.anchorX,
       .anchorY = request.anchorY,
       .anchorWidth = std::max(1, request.anchorWidth),
       .anchorHeight = std::max(1, request.anchorHeight),
-      .width = popupW,
-      .height = popupH,
+      .width = chrome.surfaceWidth,
+      .height = chrome.surfaceHeight,
       .anchor = XDG_POSITIONER_ANCHOR_BOTTOM,
       .gravity = XDG_POSITIONER_GRAVITY_BOTTOM,
       .constraintAdjustment = XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X |
                               XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_Y |
                               XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_Y,
-      .offsetX = static_cast<std::int32_t>(std::lround(static_cast<float>(shadow.right - shadow.left) * 0.5f)),
-      .offsetY = static_cast<std::int32_t>(std::lround(Style::spaceXs - static_cast<float>(shadow.up))),
+      .offsetX = 0,
+      .offsetY = static_cast<std::int32_t>(std::lround(Style::spaceXs)),
       .serial = m_wayland.lastInputSerial(),
       .grab = true,
   };
+  popup_chrome::applyToConfig(popupCfg, chrome,
+                              popup_chrome::Attachment{.horizontal = popup_chrome::HorizontalAttachment::Center,
+                                                       .vertical = popup_chrome::VerticalAttachment::Top});
 
   m_surface = std::make_unique<PopupSurface>(m_wayland);
   m_surface->setRenderContext(&m_renderContext);
@@ -187,12 +171,7 @@ void SelectDropdownPopup::openSelectDropdown(const DropdownRequest& request, Dro
     return;
   }
 
-  m_surface->setInputRegion({InputRect{
-      .x = shadow.left,
-      .y = shadow.up,
-      .width = static_cast<int>(std::lround(m_menuWidth)),
-      .height = static_cast<int>(std::lround(m_viewportHeight)),
-  }});
+  popup_chrome::setContentInputRegion(*m_surface, chrome);
 
   m_wlSurface = m_surface->wlSurface();
 }
@@ -217,21 +196,12 @@ bool SelectDropdownPopup::isSelectDropdownOpen() const { return m_surface != nul
 void SelectDropdownPopup::buildScene(const DropdownRequest& request) {
   m_sceneRoot = std::make_unique<Node>();
   m_optionViews.clear();
-  const auto shadow = shadowInsets(m_shadowConfig);
-  const float menuX = static_cast<float>(shadow.left);
-  const float menuY = static_cast<float>(shadow.up);
+  const auto chrome = popup_chrome::computeGeometry(m_menuWidth, m_viewportHeight, m_shadowConfig);
+  const float menuX = chrome.contentX();
+  const float menuY = chrome.contentY();
   const float radius = Style::scaledRadiusMd();
 
-  if (shell::surface_shadow::enabled(true, m_shadowConfig)) {
-    auto shadowNode = std::make_unique<RectNode>();
-    shadowNode->setStyle(shell::surface_shadow::style(
-        m_shadowConfig, 1.0f, shell::surface_shadow::Shape{.radius = Radii{radius, radius, radius, radius}}));
-    shadowNode->setPosition(menuX + static_cast<float>(m_shadowConfig.offsetX),
-                            menuY + static_cast<float>(m_shadowConfig.offsetY));
-    shadowNode->setFrameSize(m_menuWidth, m_viewportHeight);
-    shadowNode->setZIndex(-1);
-    m_sceneRoot->addChild(std::move(shadowNode));
-  }
+  popup_chrome::addShadow(*m_sceneRoot, chrome, m_shadowConfig, radius);
 
   auto bg = std::make_unique<RectNode>();
   bg->setStyle(RoundedRectStyle{

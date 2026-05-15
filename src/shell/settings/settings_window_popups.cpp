@@ -195,6 +195,9 @@ void SettingsWindow::openActionsMenu() {
     output = m_output;
   }
 
+  if (m_config != nullptr) {
+    m_actionsMenuPopup->setShadowConfig(m_config->config().shell.shadow);
+  }
   m_actionsMenuPopup->openAsChild(
       std::move(entries), 220.0f * scale, 8, static_cast<std::int32_t>(anchorAbsX),
       static_cast<std::int32_t>(anchorAbsY), static_cast<std::int32_t>(m_actionsMenuButton->width()),

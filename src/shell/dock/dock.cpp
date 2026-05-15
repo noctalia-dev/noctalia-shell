@@ -23,6 +23,7 @@
 #include "ui/controls/image.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
+#include "ui/popup_chrome.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
 #include "wayland/layer_surface.h"
@@ -85,6 +86,23 @@ namespace {
       return nullptr;
     }
     return instanceOutput;
+  }
+
+  popup_chrome::Attachment popupAttachmentForDockPosition(bool isBottom, bool isTop, bool isRight) {
+    if (isBottom) {
+      return popup_chrome::Attachment{.horizontal = popup_chrome::HorizontalAttachment::Center,
+                                      .vertical = popup_chrome::VerticalAttachment::Bottom};
+    }
+    if (isTop) {
+      return popup_chrome::Attachment{.horizontal = popup_chrome::HorizontalAttachment::Center,
+                                      .vertical = popup_chrome::VerticalAttachment::Top};
+    }
+    if (isRight) {
+      return popup_chrome::Attachment{.horizontal = popup_chrome::HorizontalAttachment::Right,
+                                      .vertical = popup_chrome::VerticalAttachment::Center};
+    }
+    return popup_chrome::Attachment{.horizontal = popup_chrome::HorizontalAttachment::Left,
+                                    .vertical = popup_chrome::VerticalAttachment::Center};
   }
 
   template <typename T> void appendOptionalStackPart(std::string& out, const std::optional<T>& value) {
@@ -1498,13 +1516,14 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item, std::vec
     aH = halfCell * 2;
   }
 
+  const auto menuChrome = popup_chrome::computeGeometry(kMenuWidth, menuHeight, m_config->config().shell.shadow);
   PopupSurfaceConfig popupCfg{
       .anchorX = aX,
       .anchorY = aY,
       .anchorWidth = std::max(1, aW),
       .anchorHeight = std::max(1, aH),
-      .width = static_cast<std::uint32_t>(kMenuWidth),
-      .height = static_cast<std::uint32_t>(std::max(1.0f, menuHeight)),
+      .width = menuChrome.surfaceWidth,
+      .height = menuChrome.surfaceHeight,
       .anchor = anchor,
       .gravity = gravity,
       .constraintAdjustment = XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X |
@@ -1515,9 +1534,11 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item, std::vec
       .serial = m_platform->lastInputSerial(),
       .grab = true,
   };
+  popup_chrome::applyToConfig(popupCfg, menuChrome, popupAttachmentForDockPosition(isBottom, isTop, isRight));
 
   menu->surface = std::make_unique<PopupSurface>(m_platform->wayland());
   menu->surface->setRenderContext(m_renderContext);
+  menu->chrome = menuChrome;
 
   auto* menuPtr = menu.get();
 
@@ -1550,9 +1571,11 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item, std::vec
 
     menuPtr->sceneRoot = std::make_unique<Node>();
     menuPtr->sceneRoot->setSize(fw, fh);
+    popup_chrome::addShadow(*menuPtr->sceneRoot, menuPtr->chrome, m_config->config().shell.shadow,
+                            Style::scaledRadiusLg());
 
     auto ctrl = std::make_unique<ContextMenuControl>();
-    ctrl->setMenuWidth(fw);
+    ctrl->setMenuWidth(menuPtr->chrome.contentWidth);
     ctrl->setMaxVisible(entries.size());
     ctrl->setEntries(entries);
     ctrl->setRedrawCallback([menuPtr]() {
@@ -1569,8 +1592,8 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item, std::vec
         closeWindowPicker();
       });
     });
-    ctrl->setPosition(0.0f, 0.0f);
-    ctrl->setSize(fw, fh);
+    ctrl->setPosition(menuPtr->chrome.contentX(), menuPtr->chrome.contentY());
+    ctrl->setSize(menuPtr->chrome.contentWidth, menuPtr->chrome.contentHeight);
     ctrl->layout(*m_renderContext);
 
     menuPtr->sceneRoot->addChild(std::move(ctrl));
@@ -1588,6 +1611,7 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item, std::vec
     return;
   }
 
+  popup_chrome::setContentInputRegion(*menu->surface, menu->chrome);
   menu->wlSurface = menu->surface->wlSurface();
   m_windowMenu = std::move(menu);
 }
@@ -1859,13 +1883,14 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
     aH = halfCell * 2;
   }
 
+  const auto menuChrome = popup_chrome::computeGeometry(kMenuWidth, menuHeight, m_config->config().shell.shadow);
   PopupSurfaceConfig popupCfg{
       .anchorX = aX,
       .anchorY = aY,
       .anchorWidth = std::max(1, aW),
       .anchorHeight = std::max(1, aH),
-      .width = static_cast<std::uint32_t>(kMenuWidth),
-      .height = static_cast<std::uint32_t>(std::max(1.0f, menuHeight)),
+      .width = menuChrome.surfaceWidth,
+      .height = menuChrome.surfaceHeight,
       .anchor = anchor,
       .gravity = gravity,
       .constraintAdjustment = XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X |
@@ -1876,9 +1901,11 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
       .serial = m_platform->lastInputSerial(),
       .grab = true,
   };
+  popup_chrome::applyToConfig(popupCfg, menuChrome, popupAttachmentForDockPosition(isBottom, isTop, isRight));
 
   menu->surface = std::make_unique<PopupSurface>(m_platform->wayland());
   menu->surface->setRenderContext(m_renderContext);
+  menu->chrome = menuChrome;
 
   auto* menuPtr = menu.get();
 
@@ -1915,9 +1942,11 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
 
         menuPtr->sceneRoot = std::make_unique<Node>();
         menuPtr->sceneRoot->setSize(fw, fh);
+        popup_chrome::addShadow(*menuPtr->sceneRoot, menuPtr->chrome, m_config->config().shell.shadow,
+                                Style::scaledRadiusLg());
 
         auto ctrl = std::make_unique<ContextMenuControl>();
-        ctrl->setMenuWidth(fw);
+        ctrl->setMenuWidth(menuPtr->chrome.contentWidth);
         ctrl->setMaxVisible(entries.size());
         ctrl->setEntries(entries);
         ctrl->setRedrawCallback([menuPtr]() {
@@ -1943,8 +1972,8 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
             closeItemMenu();
           });
         });
-        ctrl->setPosition(0.0f, 0.0f);
-        ctrl->setSize(fw, fh);
+        ctrl->setPosition(menuPtr->chrome.contentX(), menuPtr->chrome.contentY());
+        ctrl->setSize(menuPtr->chrome.contentWidth, menuPtr->chrome.contentHeight);
         ctrl->layout(*m_renderContext);
 
         menuPtr->sceneRoot->addChild(std::move(ctrl));
@@ -1962,6 +1991,7 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
     return;
   }
 
+  popup_chrome::setContentInputRegion(*menu->surface, menu->chrome);
   menu->wlSurface = menu->surface->wlSurface();
   m_itemMenu = std::move(menu);
 }

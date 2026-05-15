@@ -5,6 +5,7 @@
 #include "core/ui_phase.h"
 #include "render/render_context.h"
 #include "render/scene/node.h"
+#include "ui/popup_chrome.h"
 #include "ui/style.h"
 #include "wayland/popup_surface.h"
 #include "wayland/wayland_connection.h"
@@ -48,14 +49,15 @@ void ContextMenuPopup::openCommon(std::vector<ContextMenuControlEntry> entries, 
   close();
 
   const float menuHeight = ContextMenuControl::preferredHeight(entries, maxVisible);
+  const auto chrome = popup_chrome::computeGeometry(menuWidth, menuHeight, m_shadowConfig);
 
   PopupSurfaceConfig popupCfg{
       .anchorX = anchorX,
       .anchorY = anchorY,
       .anchorWidth = std::max(1, anchorW),
       .anchorHeight = std::max(1, anchorH),
-      .width = static_cast<std::uint32_t>(std::max(1.0f, menuWidth)),
-      .height = static_cast<std::uint32_t>(std::max(1.0f, menuHeight)),
+      .width = chrome.surfaceWidth,
+      .height = chrome.surfaceHeight,
       .anchor = XDG_POSITIONER_ANCHOR_BOTTOM,
       .gravity = XDG_POSITIONER_GRAVITY_BOTTOM,
       .constraintAdjustment = XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X |
@@ -66,6 +68,9 @@ void ContextMenuPopup::openCommon(std::vector<ContextMenuControlEntry> entries, 
       .serial = m_wayland.lastInputSerial(),
       .grab = true,
   };
+  popup_chrome::applyToConfig(popupCfg, chrome,
+                              popup_chrome::Attachment{.horizontal = popup_chrome::HorizontalAttachment::Center,
+                                                       .vertical = popup_chrome::VerticalAttachment::Top});
 
   m_surface = std::make_unique<PopupSurface>(m_wayland);
   m_surface->setRenderContext(&m_renderContext);
@@ -76,7 +81,7 @@ void ContextMenuPopup::openCommon(std::vector<ContextMenuControlEntry> entries, 
       [self](std::uint32_t /*w*/, std::uint32_t /*h*/) { self->m_surface->requestLayout(); });
 
   m_surface->setPrepareFrameCallback(
-      [self, entries = std::move(entries), maxVisible](bool /*needsUpdate*/, bool needsLayout) {
+      [self, entries = std::move(entries), maxVisible, chrome](bool /*needsUpdate*/, bool needsLayout) {
         if (self->m_surface == nullptr) {
           return;
         }
@@ -103,9 +108,10 @@ void ContextMenuPopup::openCommon(std::vector<ContextMenuControlEntry> entries, 
 
         self->m_sceneRoot = std::make_unique<Node>();
         self->m_sceneRoot->setSize(fw, fh);
+        popup_chrome::addShadow(*self->m_sceneRoot, chrome, self->m_shadowConfig, Style::scaledRadiusLg());
 
         auto ctrl = std::make_unique<ContextMenuControl>();
-        ctrl->setMenuWidth(fw);
+        ctrl->setMenuWidth(chrome.contentWidth);
         ctrl->setMaxVisible(maxVisible);
         ctrl->setEntries(entries);
         ctrl->setRedrawCallback([self]() {
@@ -121,8 +127,8 @@ void ContextMenuPopup::openCommon(std::vector<ContextMenuControlEntry> entries, 
             self->close();
           });
         });
-        ctrl->setPosition(0.0f, 0.0f);
-        ctrl->setSize(fw, fh);
+        ctrl->setPosition(chrome.contentX(), chrome.contentY());
+        ctrl->setSize(chrome.contentWidth, chrome.contentHeight);
         ctrl->layout(self->m_renderContext);
 
         self->m_sceneRoot->addChild(std::move(ctrl));
@@ -143,6 +149,7 @@ void ContextMenuPopup::openCommon(std::vector<ContextMenuControlEntry> entries, 
     return;
   }
 
+  popup_chrome::setContentInputRegion(*m_surface, chrome);
   m_wlSurface = m_surface->wlSurface();
 }
 
@@ -164,6 +171,16 @@ void ContextMenuPopup::setOnActivate(std::function<void(const ContextMenuControl
 }
 
 void ContextMenuPopup::setOnDismissed(std::function<void()> callback) { m_onDismissed = std::move(callback); }
+
+void ContextMenuPopup::setShadowConfig(const ShellConfig::ShadowConfig& shadow) {
+  if (m_shadowConfig == shadow) {
+    return;
+  }
+  m_shadowConfig = shadow;
+  if (isOpen()) {
+    close();
+  }
+}
 
 bool ContextMenuPopup::onPointerEvent(const PointerEvent& event) {
   if (!isOpen()) {

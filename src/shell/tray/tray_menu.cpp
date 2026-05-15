@@ -11,6 +11,7 @@
 #include "shell/tray/tray_identifier.h"
 #include "ui/controls/context_menu.h"
 #include "ui/controls/scroll_view.h"
+#include "ui/popup_chrome.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
 #include "wayland/layer_surface.h"
@@ -19,6 +20,7 @@
 #include "xdg-shell-client-protocol.h"
 
 #include <algorithm>
+#include <cmath>
 #include <optional>
 #include <string>
 
@@ -177,6 +179,8 @@ namespace {
     std::uint32_t gravity = XDG_POSITIONER_GRAVITY_TOP;
     std::int32_t offsetX = 0;
     std::int32_t offsetY = 2;
+    popup_chrome::Attachment chromeAttachment{.horizontal = popup_chrome::HorizontalAttachment::Center,
+                                              .vertical = popup_chrome::VerticalAttachment::Top};
     ContextSubmenuDirection submenuDirection = ContextSubmenuDirection::Right;
   };
 
@@ -196,6 +200,10 @@ namespace {
       placement.gravity = XDG_POSITIONER_GRAVITY_TOP;
       placement.offsetX = 0;
       placement.offsetY = -kGap;
+      placement.chromeAttachment = popup_chrome::Attachment{
+          .horizontal = popup_chrome::HorizontalAttachment::Center,
+          .vertical = popup_chrome::VerticalAttachment::Bottom,
+      };
       placement.submenuDirection = ContextSubmenuDirection::Right;
       return placement;
     }
@@ -205,6 +213,10 @@ namespace {
       placement.gravity = XDG_POSITIONER_GRAVITY_RIGHT;
       placement.offsetX = kGap;
       placement.offsetY = 0;
+      placement.chromeAttachment = popup_chrome::Attachment{
+          .horizontal = popup_chrome::HorizontalAttachment::Left,
+          .vertical = popup_chrome::VerticalAttachment::Center,
+      };
       placement.submenuDirection = ContextSubmenuDirection::Right;
       return placement;
     }
@@ -214,6 +226,10 @@ namespace {
       placement.gravity = XDG_POSITIONER_GRAVITY_LEFT;
       placement.offsetX = -kGap;
       placement.offsetY = 0;
+      placement.chromeAttachment = popup_chrome::Attachment{
+          .horizontal = popup_chrome::HorizontalAttachment::Right,
+          .vertical = popup_chrome::VerticalAttachment::Center,
+      };
       placement.submenuDirection = ContextSubmenuDirection::Left;
       return placement;
     }
@@ -222,8 +238,16 @@ namespace {
     placement.gravity = XDG_POSITIONER_GRAVITY_BOTTOM;
     placement.offsetX = 0;
     placement.offsetY = kGap;
+    placement.chromeAttachment = popup_chrome::Attachment{
+        .horizontal = popup_chrome::HorizontalAttachment::Center,
+        .vertical = popup_chrome::VerticalAttachment::Top,
+    };
     placement.submenuDirection = ContextSubmenuDirection::Right;
     return placement;
+  }
+
+  ShellConfig::ShadowConfig popupShadowConfig(ConfigService* config) {
+    return config != nullptr ? config->config().shell.shadow : ShellConfig::ShadowConfig{};
   }
 
 } // namespace
@@ -648,8 +672,8 @@ void TrayMenu::ensureSurface() {
   });
   inst->surface->setDismissedCallback([this]() { close(); });
 
-  const auto surfaceWidth = static_cast<uint32_t>(kSurfaceWidth);
-  const auto surfaceHeight = surfaceHeightPx();
+  const auto chrome =
+      popup_chrome::computeGeometry(kSurfaceWidth, static_cast<float>(surfaceHeightPx()), popupShadowConfig(m_config));
   PopupPlacement placement{};
   if (const auto bar = resolveTrayBarConfig(m_config, m_wayland, output); bar.has_value()) {
     placement = popupPlacementForBar(*bar, anchorX, anchorY);
@@ -664,13 +688,14 @@ void TrayMenu::ensureSurface() {
   auto* grabService = m_wayland->focusGrabService();
   const bool useFocusGrab = grabService != nullptr && grabService->available();
   inst->submenuDirection = placement.submenuDirection;
+  inst->chrome = chrome;
   auto popupConfig = PopupSurfaceConfig{
       .anchorX = anchorX,
       .anchorY = anchorY,
       .anchorWidth = placement.anchorWidth,
       .anchorHeight = placement.anchorHeight,
-      .width = surfaceWidth,
-      .height = surfaceHeight,
+      .width = chrome.surfaceWidth,
+      .height = chrome.surfaceHeight,
       .anchor = placement.anchor,
       .gravity = placement.gravity,
       .constraintAdjustment = kPopupConstraintAdjust,
@@ -679,12 +704,14 @@ void TrayMenu::ensureSurface() {
       .serial = serial,
       .grab = !useFocusGrab,
   };
+  popup_chrome::applyToConfig(popupConfig, chrome, placement.chromeAttachment);
 
   if (!inst->surface->initialize(parentLayerSurface, output, popupConfig)) {
     kLog.debug("tray menu: failed to create popup surface");
     return;
   }
 
+  popup_chrome::setContentInputRegion(*inst->surface, inst->chrome);
   inst->wlSurface = inst->surface->wlSurface();
   m_instance = std::move(inst);
 
@@ -724,16 +751,17 @@ void TrayMenu::resizeMainSurfaceToEntries() {
     return;
   }
 
-  const auto desiredWidth = static_cast<std::uint32_t>(kSurfaceWidth);
-  const auto desiredHeight = surfaceHeightPx();
-  if (desiredHeight == 0) {
-    return;
-  }
+  const auto chrome =
+      popup_chrome::computeGeometry(kSurfaceWidth, static_cast<float>(surfaceHeightPx()), popupShadowConfig(m_config));
+  const auto desiredWidth = chrome.surfaceWidth;
+  const auto desiredHeight = chrome.surfaceHeight;
   if (m_instance->surface->width() == desiredWidth && m_instance->surface->height() == desiredHeight) {
     return;
   }
 
   closeSubmenu();
+  m_instance->chrome = chrome;
+  popup_chrome::setContentInputRegion(*m_instance->surface, m_instance->chrome);
   if (!m_instance->surface->resize(desiredWidth, desiredHeight)) {
     m_instance->surface->requestLayout();
   }
@@ -789,6 +817,7 @@ void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
 
   inst.sceneRoot = std::make_unique<Node>();
   inst.sceneRoot->setSize(w, h);
+  popup_chrome::addShadow(*inst.sceneRoot, inst.chrome, popupShadowConfig(m_config), Style::scaledRadiusLg());
 
   std::vector<ContextMenuControlEntry> entries;
   entries.reserve(m_entries.size());
@@ -806,10 +835,11 @@ void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
   }
 
   const bool useScrollbar = entries.size() > kTrayMenuVisibleItems;
-  const float menuWidth = std::max(1.0f, w - (useScrollbar ? kScrollGutter : 0.0f));
+  const float menuWidth = std::max(1.0f, inst.chrome.contentWidth - (useScrollbar ? kScrollGutter : 0.0f));
 
   auto scrollView = std::make_unique<ScrollView>();
-  scrollView->setSize(w, h);
+  scrollView->setPosition(inst.chrome.contentX(), inst.chrome.contentY());
+  scrollView->setSize(inst.chrome.contentWidth, inst.chrome.contentHeight);
   scrollView->setViewportPaddingH(0.0f);
   scrollView->setViewportPaddingV(0.0f);
   scrollView->clearFill();
@@ -981,22 +1011,23 @@ void TrayMenu::openSubmenu(std::int32_t parentEntryId, float rowCenterY) {
   m_tray->notifyMenuOpened(m_activeItemId, parentEntryId);
 
   // Anchor rect is in the main popup's coordinate space (0,0 = top-left of main popup surface)
-  const auto mainWidth = static_cast<std::int32_t>(m_instance->surface->width());
-  const auto mainX = m_instance->surface->configuredX();
+  const auto mainContentX = static_cast<std::int32_t>(std::lround(m_instance->chrome.contentX()));
+  const auto mainWidth = static_cast<std::int32_t>(std::lround(m_instance->chrome.contentWidth));
+  const auto mainX = m_instance->surface->configuredX() + mainContentX;
   const auto rowTop = static_cast<std::int32_t>(rowCenterY - Style::controlHeightSm * 0.5f);
   const auto rowH = static_cast<std::int32_t>(Style::controlHeightSm);
   constexpr std::int32_t kSubGap = 4;
 
-  const auto surfaceWidth = static_cast<uint32_t>(kSurfaceWidth);
-  const auto surfaceHeight = submenuHeightPx();
+  const auto chrome =
+      popup_chrome::computeGeometry(kSurfaceWidth, static_cast<float>(submenuHeightPx()), popupShadowConfig(m_config));
 
   const auto* wlOutput = m_wayland->findOutputByWl(m_instance->output);
   const std::int32_t outputWidth = (wlOutput != nullptr && wlOutput->logicalWidth > 0)
                                        ? wlOutput->logicalWidth
-                                       : static_cast<std::int32_t>(surfaceWidth);
+                                       : static_cast<std::int32_t>(chrome.surfaceWidth);
 
   bool isRight = (m_instance->submenuDirection == ContextSubmenuDirection::Right);
-  const std::int32_t submenuExtent = static_cast<std::int32_t>(surfaceWidth) + kSubGap;
+  const std::int32_t submenuExtent = static_cast<std::int32_t>(chrome.surfaceWidth) + kSubGap;
   if (isRight) {
     if (mainX + mainWidth + submenuExtent > outputWidth) {
       isRight = false;
@@ -1007,17 +1038,28 @@ void TrayMenu::openSubmenu(std::int32_t parentEntryId, float rowCenterY) {
     }
   }
 
-  const std::int32_t anchorX = isRight ? mainWidth : 0;
+  const std::int32_t anchorX = isRight ? mainContentX + mainWidth : mainContentX;
+  const std::int32_t anchorY = static_cast<std::int32_t>(std::lround(m_instance->chrome.contentY())) + rowTop;
   const std::uint32_t anchor = isRight ? XDG_POSITIONER_ANCHOR_TOP_RIGHT : XDG_POSITIONER_ANCHOR_TOP_LEFT;
   const std::uint32_t gravity = isRight ? XDG_POSITIONER_GRAVITY_BOTTOM_RIGHT : XDG_POSITIONER_GRAVITY_BOTTOM_LEFT;
   const std::int32_t offsetX = isRight ? kSubGap : -kSubGap;
   const auto subDir = isRight ? ContextSubmenuDirection::Right : ContextSubmenuDirection::Left;
+  const auto chromeAttachment = isRight
+                                    ? popup_chrome::Attachment{
+                                          .horizontal = popup_chrome::HorizontalAttachment::Left,
+                                          .vertical = popup_chrome::VerticalAttachment::Top,
+                                      }
+                                    : popup_chrome::Attachment{
+                                          .horizontal = popup_chrome::HorizontalAttachment::Right,
+                                          .vertical = popup_chrome::VerticalAttachment::Top,
+                                      };
 
   auto inst = std::make_unique<MenuInstance>();
   inst->output = m_instance->output;
   inst->surface = std::make_unique<PopupSurface>(*m_wayland);
   inst->surface->setRenderContext(m_renderContext);
   inst->submenuDirection = subDir;
+  inst->chrome = chrome;
   auto* instPtr = inst.get();
 
   inst->surface->setConfigureCallback([instPtr](uint32_t /*w*/, uint32_t /*h*/) { instPtr->surface->requestLayout(); });
@@ -1027,11 +1069,11 @@ void TrayMenu::openSubmenu(std::int32_t parentEntryId, float rowCenterY) {
 
   auto popupConfig = PopupSurfaceConfig{
       .anchorX = anchorX,
-      .anchorY = rowTop,
+      .anchorY = anchorY,
       .anchorWidth = 1,
       .anchorHeight = rowH,
-      .width = surfaceWidth,
-      .height = surfaceHeight,
+      .width = chrome.surfaceWidth,
+      .height = chrome.surfaceHeight,
       .anchor = anchor,
       .gravity = gravity,
       .constraintAdjustment = kPopupConstraintAdjust,
@@ -1040,6 +1082,7 @@ void TrayMenu::openSubmenu(std::int32_t parentEntryId, float rowCenterY) {
       .serial = m_wayland->lastInputSerial(),
       .grab = (m_focusGrab == nullptr),
   };
+  popup_chrome::applyToConfig(popupConfig, chrome, chromeAttachment);
 
   xdg_surface* parentXdg = m_instance->surface->xdgSurface();
   if (!inst->surface->initializeAsChild(parentXdg, m_instance->output, popupConfig)) {
@@ -1049,6 +1092,7 @@ void TrayMenu::openSubmenu(std::int32_t parentEntryId, float rowCenterY) {
     return;
   }
 
+  popup_chrome::setContentInputRegion(*inst->surface, inst->chrome);
   inst->wlSurface = inst->surface->wlSurface();
   m_submenuInstance = std::move(inst);
 
@@ -1087,6 +1131,7 @@ void TrayMenu::buildSubmenuScene(MenuInstance& inst, uint32_t width, uint32_t he
 
   inst.sceneRoot = std::make_unique<Node>();
   inst.sceneRoot->setSize(w, h);
+  popup_chrome::addShadow(*inst.sceneRoot, inst.chrome, popupShadowConfig(m_config), Style::scaledRadiusLg());
 
   std::vector<ContextMenuControlEntry> entries;
   entries.reserve(m_submenuEntries.size());
@@ -1104,10 +1149,11 @@ void TrayMenu::buildSubmenuScene(MenuInstance& inst, uint32_t width, uint32_t he
   }
 
   const bool useScrollbar = entries.size() > kTrayMenuVisibleItems;
-  const float menuWidth = std::max(1.0f, w - (useScrollbar ? kScrollGutter : 0.0f));
+  const float menuWidth = std::max(1.0f, inst.chrome.contentWidth - (useScrollbar ? kScrollGutter : 0.0f));
 
   auto scrollView = std::make_unique<ScrollView>();
-  scrollView->setSize(w, h);
+  scrollView->setPosition(inst.chrome.contentX(), inst.chrome.contentY());
+  scrollView->setSize(inst.chrome.contentWidth, inst.chrome.contentHeight);
   scrollView->setViewportPaddingH(0.0f);
   scrollView->setViewportPaddingV(0.0f);
   scrollView->clearFill();

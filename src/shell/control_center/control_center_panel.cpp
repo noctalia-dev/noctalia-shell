@@ -31,8 +31,8 @@ ControlCenterPanel::ControlCenterPanel(
   m_tabs[tabIndex(TabId::Home)] =
       std::make_unique<HomeTab>(mpris, httpClient, weather, audio, powerProfiles, config, network, bluetooth,
                                 nightLight, theme, notifications, idleInhibitor, dependencies, platform, wallpaper);
-  m_tabs[tabIndex(TabId::Media)] =
-      std::make_unique<MediaTab>(mpris, httpClient, spectrum, wayland, PanelManager::instance().renderContext());
+  m_tabs[tabIndex(TabId::Media)] = std::make_unique<MediaTab>(mpris, httpClient, spectrum, config, wayland,
+                                                              PanelManager::instance().renderContext());
   m_tabs[tabIndex(TabId::Audio)] =
       std::make_unique<AudioTab>(audio, mpris, config, wayland, PanelManager::instance().renderContext());
   m_tabs[tabIndex(TabId::Weather)] = std::make_unique<WeatherTab>(weather, config);
