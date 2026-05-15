@@ -831,7 +831,6 @@ namespace {
           m_onCommitVolume(std::move(onCommitVolume)) {
       setDirection(FlexDirection::Vertical);
       setAlign(FlexAlign::Stretch);
-      setGap(Style::spaceXs * scale);
       setPadding(Style::spaceXs * scale, Style::spaceMd * scale);
       setMinHeight((Style::controlHeightLg + Style::spaceXs) * scale);
       setRadius(Style::scaledRadiusMd(scale));
