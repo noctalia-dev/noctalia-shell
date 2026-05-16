@@ -734,3 +734,15 @@ notification_history_utf8_test = executable('notification_history_utf8_test',
 )
 
 test('notification_history_utf8', notification_history_utf8_test)
+
+animation_manager_test = executable('animation_manager_test',
+  sources: files(
+    'tests/animation_manager_test.cpp',
+    'src/render/animation/animation.cpp',
+    'src/render/animation/animation_manager.cpp',
+    'src/render/animation/motion_service.cpp',
+  ),
+  include_directories: _noctalia_inc,
+)
+
+test('animation_manager', animation_manager_test)

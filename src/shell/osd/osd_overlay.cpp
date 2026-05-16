@@ -436,7 +436,7 @@ void OsdOverlay::animateInstance(Instance& inst) {
     }
   }
 
-  inst.hideAnimId = inst.animations.animate(
+  inst.hideAnimId = inst.animations.animateTimer(
       1.0f, 0.0f, kHideDelayMs, Easing::Linear, [](float /*v*/) {},
       [this, &inst, baseY, slideDirection, slidePx]() {
         inst.hideAnimId = inst.animations.animate(
