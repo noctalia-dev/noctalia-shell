@@ -92,7 +92,7 @@ WidgetFactory::WidgetFactory(CompositorPlatform& platform, const Config& config,
 WidgetFactory::~WidgetFactory() = default;
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output, float contentScale,
-                                              const std::string& barPosition) const {
+                                              const std::string& barPosition, const std::string& barName) const {
   // Resolve: if name matches a [widget.<name>] entry, use its type + settings.
   // Otherwise treat the name itself as the widget type with default settings.
   const WidgetConfig* wc = nullptr;
@@ -272,7 +272,10 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "scripted") {
     std::string script = wc != nullptr ? wc->getString("script", "") : std::string();
-    auto widget = std::make_unique<ScriptedWidget>(std::move(script), wc, m_fileWatcher, &m_platform);
+    const auto* outputInfo = m_platform.findOutputByWl(output);
+    const std::string outputName = outputInfo != nullptr ? outputInfo->connectorName : std::string{};
+    auto widget =
+        std::make_unique<ScriptedWidget>(name, std::move(script), barName, outputName, wc, m_fileWatcher, &m_platform);
     widget->setContentScale(contentScale);
     return widget;
   }

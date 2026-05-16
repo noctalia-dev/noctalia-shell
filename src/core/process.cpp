@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iterator>
 #include <limits>
+#include <mutex>
 #include <optional>
 #include <sstream>
 #include <string_view>
@@ -188,7 +189,13 @@ namespace {
     return cache;
   }
 
-  [[nodiscard]] const std::vector<std::string>& cachedProcessCommandLines() {
+  std::mutex& processCommandLineCacheMutex() {
+    static std::mutex mutex;
+    return mutex;
+  }
+
+  [[nodiscard]] std::vector<std::string> cachedProcessCommandLines() {
+    std::lock_guard lock(processCommandLineCacheMutex());
     auto& cache = processCommandLineCache();
     const auto now = std::chrono::steady_clock::now();
     if (cache.capturedAt.time_since_epoch().count() == 0 || now - cache.capturedAt >= kProcessCommandLineCacheTtl) {

@@ -359,6 +359,10 @@ namespace settings {
         {"always", "settings.widgets.options.always"},
         {"on_hover", "settings.widgets.options.on-hover"},
     };
+    const std::vector<WidgetSettingSelectOption> scriptedScopes = {
+        {"instance", "settings.widgets.options.instance"},
+        {"shared", "settings.widgets.options.shared"},
+    };
     const std::vector<WidgetSettingSelectOption> volumeDeviceOptions = {
         {"output", "settings.widgets.options.output"},
         {"input", "settings.widgets.options.input"},
@@ -426,6 +430,7 @@ namespace settings {
       add(boolSpec("hide_when_no_unread", false));
     } else if (type == "scripted") {
       add(stringSpec("script"));
+      add(selectSpec("scope", "instance", scriptedScopes));
       add(boolSpec("hot_reload", false, true));
     } else if (type == "session") {
       add(stringSpec("glyph", "shutdown"));

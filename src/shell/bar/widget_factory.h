@@ -40,7 +40,8 @@ public:
   ~WidgetFactory();
 
   [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output, float contentScale = 1.0f,
-                                               const std::string& barPosition = "top") const;
+                                               const std::string& barPosition = "top",
+                                               const std::string& barName = "default") const;
 
 private:
   CompositorPlatform& m_platform;

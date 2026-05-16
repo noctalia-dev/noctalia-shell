@@ -1028,6 +1028,7 @@
         "graph": "Graph",
         "id": "ID",
         "input": "Input",
+        "instance": "Instance",
         "name": "Name",
         "net-rx": "Network RX",
         "net-tx": "Network TX",
@@ -1037,6 +1038,7 @@
         "ram-percent": "RAM Percent",
         "ram-used": "RAM Used",
         "short": "Short",
+        "shared": "Shared",
         "swap-percent": "Swap Percent",
         "text": "Text"
       },
@@ -1233,6 +1235,10 @@
         "script": {
           "label": "Script",
           "description": "Script path or command"
+        },
+        "scope": {
+          "label": "Scope",
+          "description": "Run one script runtime per widget instance, or share one runtime across bars with the same widget id"
         },
         "show_caps_lock": {
           "label": "Show Caps Lock",

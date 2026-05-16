@@ -1,5 +1,6 @@
 #include "shell/bar/widgets/scripted_widget.h"
 
+#include "compositors/compositor_platform.h"
 #include "core/log.h"
 #include "core/resource_paths.h"
 #include "cursor-shape-v1-client-protocol.h"
@@ -7,8 +8,6 @@
 #include "notification/notifications.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
-#include "scripting/luau_host.h"
-#include "scripting/scripted_widget_bindings.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
@@ -60,26 +59,38 @@ namespace {
 
 } // namespace
 
-ScriptedWidget::ScriptedWidget(std::string scriptPath, const WidgetConfig* config, FileWatcher* fileWatcher,
+ScriptedWidget::ScriptedWidget(std::string configName, std::string scriptPath, std::string barName,
+                               std::string outputName, const WidgetConfig* config, FileWatcher* fileWatcher,
                                CompositorPlatform* platform)
-    : m_scriptPath(std::move(scriptPath)), m_fileWatcher(fileWatcher), m_platform(platform),
+    : m_scriptPath(std::move(scriptPath)), m_widgetConfigName(std::move(configName)), m_barName(std::move(barName)),
+      m_outputName(std::move(outputName)), m_fileWatcher(fileWatcher), m_platform(platform),
       m_timerPhase(nextTimerPhase()) {
   if (config) {
     m_settings = config->settings;
     m_hotReload = config->getBool("hot_reload", false);
+    m_sharedScope = config->getString("scope", "instance") == "shared";
   }
 }
 
-ScriptedWidget::~ScriptedWidget() { teardownScriptWatch(); }
+ScriptedWidget::~ScriptedWidget() {
+  if (m_alive) {
+    *m_alive = false;
+  }
+  teardownScriptWatch();
+  if (m_runtime != nullptr && m_runtimeSubscription != 0) {
+    m_runtime->unsubscribe(m_runtimeSubscription);
+  }
+  if (m_runtime != nullptr && !m_sharedScope) {
+    m_runtime->stop();
+  }
+}
 
 void ScriptedWidget::create() {
-  m_host = std::make_unique<LuauHost>(m_platform);
-
   auto area = std::make_unique<InputArea>();
   area->setAcceptedButtons(InputArea::buttonMask({BTN_LEFT, BTN_RIGHT, BTN_MIDDLE}));
   area->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
   area->setOnClick([this](const InputArea::PointerData& data) {
-    if (!m_host)
+    if (!m_runtime)
       return;
     const char* fn = nullptr;
     switch (data.button) {
@@ -95,18 +106,15 @@ void ScriptedWidget::create() {
     default:
       return;
     }
-    m_host->callGlobal(fn);
-    requestUpdate();
+    (void)m_runtime->enqueueCall(fn, makeScriptSnapshot());
   });
   area->setOnEnter([this](const InputArea::PointerData&) {
-    if (m_host)
-      m_host->callGlobalWithBool("onHover", true);
-    requestUpdate();
+    if (m_runtime)
+      (void)m_runtime->enqueueCallBool("onHover", true, makeScriptSnapshot());
   });
   area->setOnLeave([this]() {
-    if (m_host)
-      m_host->callGlobalWithBool("onHover", false);
-    requestUpdate();
+    if (m_runtime)
+      (void)m_runtime->enqueueCallBool("onHover", false, makeScriptSnapshot());
   });
 
   auto flex = std::make_unique<Flex>();
@@ -132,8 +140,6 @@ void ScriptedWidget::create() {
   m_area = area.get();
   setRoot(std::move(area));
 
-  registerScriptedWidgetBindings(m_host->state(), this);
-
   if (m_scriptPath.empty()) {
     kLog.warn("scripted widget: no script path");
     return;
@@ -144,8 +150,29 @@ void ScriptedWidget::create() {
     kLog.warn("scripted widget: failed to read '{}'", m_resolvedPath.string());
     return;
   }
-  m_host->exec(m_resolvedPath.string(), source);
-  m_host->callGlobal("update");
+
+  bool createdRuntime = true;
+  if (m_sharedScope) {
+    auto acquired = scripting::SharedScriptRuntimeRegistry::acquire(m_widgetConfigName, m_settings);
+    m_runtime = std::move(acquired.runtime);
+    createdRuntime = acquired.created;
+  } else {
+    m_runtime = std::make_shared<scripting::ScriptRuntime>(m_widgetConfigName + ":" + m_barName + ":" + m_outputName,
+                                                           m_settings);
+  }
+
+  auto alive = std::weak_ptr<bool>(m_alive);
+  m_runtimeSubscription = m_runtime->subscribe([this, alive](scripting::ScriptWidgetResult result) {
+    auto token = alive.lock();
+    if (token == nullptr || !*token) {
+      return;
+    }
+    handleScriptResult(std::move(result));
+  });
+
+  if (createdRuntime) {
+    m_runtime->start(m_resolvedPath.string(), std::move(source), makeScriptSnapshot());
+  }
   startUpdateTimer();
 
   if (m_hotReload)
@@ -240,16 +267,15 @@ void ScriptedWidget::luaSetVisible(bool visible) {
 }
 
 ScriptedWidget::IpcDispatchResult ScriptedWidget::dispatchIpcEvent(std::string_view event, std::string_view payload) {
-  if (!m_host) {
+  if (!m_runtime) {
     return IpcDispatchResult::MissingHost;
   }
-  if (!m_host->hasGlobal("onIpc")) {
+  if (m_hasOnIpcKnown && !m_hasOnIpc) {
     return IpcDispatchResult::MissingCallback;
   }
-  if (!m_host->callGlobalWithStrings("onIpc", event, payload)) {
+  if (!m_runtime->enqueueCallStrings("onIpc", std::string(event), std::string(payload), makeScriptSnapshot())) {
     return IpcDispatchResult::Failed;
   }
-  requestUpdate();
   return IpcDispatchResult::Handled;
 }
 
@@ -344,13 +370,67 @@ std::chrono::milliseconds ScriptedWidget::initialUpdateDelay(std::chrono::millis
 }
 
 void ScriptedWidget::runScriptUpdate() {
-  m_dirty = false;
-  if (m_host) {
-    m_host->callGlobal("update");
+  if (m_runtime) {
+    (void)m_runtime->enqueueUpdate(makeScriptSnapshot());
   }
+}
+
+void ScriptedWidget::handleScriptResult(scripting::ScriptWidgetResult result) {
+  if (result.hasOnIpcKnown) {
+    m_hasOnIpc = result.hasOnIpc;
+    m_hasOnIpcKnown = true;
+  }
+
+  if (result.unhealthy) {
+    m_updateTimer.stop();
+    m_deferredUpdateTimer.stop();
+    kLog.warn("scripted widget '{}' disabled after repeated timeouts", m_widgetConfigName);
+  }
+
+  m_dirty = false;
+  applyScriptPatch(result.patch);
   if (m_dirty) {
     requestUpdate();
   }
+}
+
+void ScriptedWidget::applyScriptPatch(const scripting::ScriptWidgetPatch& patch) {
+  if (patch.text.has_value()) {
+    luaSetText(*patch.text);
+  }
+  if (patch.glyph.has_value()) {
+    luaSetGlyph(*patch.glyph);
+  }
+  if (patch.textColor.has_value()) {
+    luaSetColor(patch.textColor->role, patch.textColor->mode);
+  }
+  if (patch.glyphColor.has_value()) {
+    luaSetGlyphColor(patch.glyphColor->role, patch.glyphColor->mode);
+  }
+  if (patch.visible.has_value()) {
+    luaSetVisible(*patch.visible);
+  }
+  if (patch.updateIntervalMs.has_value()) {
+    luaSetUpdateInterval(static_cast<float>(*patch.updateIntervalMs));
+  }
+}
+
+scripting::ScriptWidgetSnapshot ScriptedWidget::makeScriptSnapshot() const {
+  return scripting::ScriptWidgetSnapshot{
+      .isVertical = m_isVertical,
+      .outputName = m_outputName,
+      .barName = m_barName,
+      .focusedOutputName = focusedOutputName(),
+  };
+}
+
+std::string ScriptedWidget::focusedOutputName() const {
+  if (m_platform == nullptr) {
+    return {};
+  }
+  wl_output* output = m_platform->preferredInteractiveOutput();
+  const auto* info = m_platform->findOutputByWl(output);
+  return info != nullptr ? info->connectorName : std::string{};
 }
 
 bool ScriptedWidget::shouldDeferUpdate() const { return m_updateDeferralCallback && m_updateDeferralCallback(); }
@@ -381,19 +461,19 @@ void ScriptedWidget::reloadScript() {
     m_label->setVisible(false);
   }
 
-  m_host = std::make_unique<LuauHost>(m_platform);
-  registerScriptedWidgetBindings(m_host->state(), this);
+  m_hasOnIpc = false;
+  m_hasOnIpcKnown = false;
 
   std::string source = readFile(m_resolvedPath);
   auto name = m_resolvedPath.filename().string();
-  if (source.empty() || !m_host->exec(m_resolvedPath.string(), source)) {
+  if (source.empty() || !m_runtime) {
     kLog.warn("hot reload: failed to reload '{}'", name);
     notify::error("Noctalia", i18n::tr("bar.widgets.scripted.reload-failed"), name);
     requestRedraw();
     return;
   }
 
-  m_host->callGlobal("update");
+  m_runtime->reload(m_resolvedPath.string(), std::move(source), makeScriptSnapshot());
   startUpdateTimer();
   requestRedraw();
   kLog.info("hot reload: reloaded '{}'", name);

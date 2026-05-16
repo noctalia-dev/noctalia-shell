@@ -3,6 +3,7 @@
 #include "config/config_service.h"
 #include "core/file_watcher.h"
 #include "core/timer_manager.h"
+#include "scripting/script_runtime.h"
 #include "shell/bar/widget.h"
 #include "ui/palette.h"
 
@@ -20,7 +21,6 @@ class Flex;
 class Glyph;
 class InputArea;
 class Label;
-class LuauHost;
 class CompositorPlatform;
 
 class ScriptedWidget : public Widget {
@@ -32,8 +32,9 @@ public:
     Failed,
   };
 
-  explicit ScriptedWidget(std::string scriptPath, const WidgetConfig* config = nullptr,
-                          FileWatcher* fileWatcher = nullptr, CompositorPlatform* platform = nullptr);
+  explicit ScriptedWidget(std::string configName, std::string scriptPath, std::string barName, std::string outputName,
+                          const WidgetConfig* config = nullptr, FileWatcher* fileWatcher = nullptr,
+                          CompositorPlatform* platform = nullptr);
   ~ScriptedWidget() override;
 
   void create() override;
@@ -70,6 +71,10 @@ private:
   [[nodiscard]] static ScriptColorMode scriptColorModeFromToken(std::string_view token) noexcept;
 
   void reloadScript();
+  void handleScriptResult(scripting::ScriptWidgetResult result);
+  void applyScriptPatch(const scripting::ScriptWidgetPatch& patch);
+  [[nodiscard]] scripting::ScriptWidgetSnapshot makeScriptSnapshot() const;
+  [[nodiscard]] std::string focusedOutputName() const;
   void setupScriptWatch();
   void teardownScriptWatch();
   void startUpdateTimer();
@@ -81,9 +86,13 @@ private:
   [[nodiscard]] bool shouldDeferUpdate() const;
 
   std::string m_scriptPath;
+  std::string m_widgetConfigName;
+  std::string m_barName;
+  std::string m_outputName;
   std::filesystem::path m_resolvedPath;
   std::unordered_map<std::string, WidgetSettingValue> m_settings;
-  std::unique_ptr<LuauHost> m_host;
+  std::shared_ptr<scripting::ScriptRuntime> m_runtime;
+  scripting::ScriptRuntime::SubscriberId m_runtimeSubscription = 0;
   FileWatcher* m_fileWatcher = nullptr;
   CompositorPlatform* m_platform = nullptr;
   FileWatcher::WatchId m_watchId = 0;
@@ -104,4 +113,8 @@ private:
   bool m_isVertical = false;
   bool m_glyphVisible = false;
   bool m_hotReload = false;
+  bool m_sharedScope = false;
+  bool m_hasOnIpc = false;
+  bool m_hasOnIpcKnown = false;
+  std::shared_ptr<bool> m_alive = std::make_shared<bool>(true);
 };

@@ -1106,8 +1106,8 @@ void Bar::populateWidgets(BarInstance& instance) {
   const auto& widgetConfigs = m_config->config().widgets;
   auto createWidgets = [&](const std::vector<std::string>& names, std::vector<std::unique_ptr<Widget>>& dest) {
     for (const auto& name : names) {
-      auto widget =
-          m_widgetFactory->create(name, instance.output, instance.barConfig.scale, instance.barConfig.position);
+      auto widget = m_widgetFactory->create(name, instance.output, instance.barConfig.scale,
+                                            instance.barConfig.position, instance.barConfig.name);
       if (widget != nullptr) {
         widget->setConfigName(name);
         const WidgetConfig* wcPtr = nullptr;

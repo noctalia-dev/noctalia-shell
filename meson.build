@@ -417,6 +417,8 @@ _noctalia_sources = files(
   'src/render/text/cairo_glyph_renderer.cpp',
   'src/render/wallpaper_renderer.cpp',
   'src/scripting/luau_host.cpp',
+  'src/scripting/script_runtime.cpp',
+  'src/scripting/script_worker_pool.cpp',
   'src/scripting/scripted_widget_bindings.cpp',
   'src/shell/bar/bar.cpp',
   'src/shell/clipboard/clipboard_paste.cpp',
