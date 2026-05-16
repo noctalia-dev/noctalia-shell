@@ -14,3 +14,5 @@ fi
 if ! grep -q 'include ".*noctalia\.conf"' "$config_file"; then
     printf '\n%s\n' "$include_line" >>"$config_file"
 fi
+
+mmsg -d reload_config 2>/dev/null || true
