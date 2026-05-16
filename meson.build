@@ -55,6 +55,10 @@ curl_dep            = dependency('libcurl')
 pam_dep             = cc.find_library('pam')
 jemalloc_dep        = dependency('jemalloc', required: false)
 dl_dep              = cpp.find_library('dl', required: false)
+# libprojectM 4 drives the [wallpaper.live_paper] Milkdrop visualizer. Nix
+# users get this from the libprojectm-gles overlay declared in nix/package.nix;
+# other distros need a GLES-enabled libprojectM build on the pkg-config path.
+projectm_dep        = dependency('projectM-4')
 
 egl_dep = dependency('egl', required: false)
 gles2_dep = dependency('glesv2', required: false)
@@ -376,6 +380,7 @@ _noctalia_sources = files(
   'src/net/uri.cpp',
   'src/notification/notification_manager.cpp',
   'src/notification/notification_history_store.cpp',
+  'src/pipewire/pipewire_pcm_tap.cpp',
   'src/pipewire/pipewire_service.cpp',
   'src/pipewire/pipewire_spectrum.cpp',
   'src/pipewire/sound_player.cpp',
@@ -415,6 +420,7 @@ _noctalia_sources = files(
   'src/render/scene/node.cpp',
   'src/render/text/cairo_text_renderer.cpp',
   'src/render/text/cairo_glyph_renderer.cpp',
+  'src/render/visualizer/projectm_renderer.cpp',
   'src/render/wallpaper_renderer.cpp',
   'src/scripting/luau_host.cpp',
   'src/scripting/script_runtime.cpp',
@@ -499,6 +505,7 @@ _noctalia_sources = files(
   'src/shell/backdrop/backdrop.cpp',
   'src/shell/backdrop/backdrop_surface.cpp',
   'src/system/app_identity.cpp',
+  'src/shell/wallpaper/visualizer_service.cpp',
   'src/shell/wallpaper/wallpaper.cpp',
   'src/shell/wallpaper/panel/wallpaper_panel.cpp',
   'src/shell/wallpaper/panel/wallpaper_scanner.cpp',
@@ -707,6 +714,7 @@ executable('noctalia',
     stb_dep,
     libwebp_dep,
     luau_dep,
+    projectm_dep,
   ] + (jemalloc_dep.found() ? [jemalloc_dep] : []) + (dl_dep.found() ? [dl_dep] : []),
   include_directories: _noctalia_inc,
   cpp_args: [

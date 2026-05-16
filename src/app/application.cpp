@@ -752,6 +752,7 @@ void Application::initServices() {
   try {
     m_pipewireService = std::make_unique<PipeWireService>();
     m_pipewireSpectrum = std::make_unique<PipeWireSpectrum>(*m_pipewireService);
+    m_pipewirePcmTap = std::make_unique<PipeWirePcmTap>(*m_pipewireService);
     m_soundPlayer = std::make_unique<SoundPlayer>(m_pipewireService->loop());
 
     auto applySoundConfig = [this]() {
@@ -781,6 +782,7 @@ void Application::initServices() {
   } catch (const std::exception& e) {
     kLog.warn("pipewire disabled: {}", e.what());
     m_soundPlayer.reset();
+    m_pipewirePcmTap.reset();
     m_pipewireSpectrum.reset();
     m_pipewireService.reset();
   }
@@ -818,7 +820,13 @@ void Application::initServices() {
         if (shouldRefreshControlCenter()) {
           m_panelManager.refresh();
         }
+        if (m_visualizerService != nullptr) {
+          m_visualizerService->onMprisChanged();
+        }
       });
+      if (m_visualizerService != nullptr) {
+        m_visualizerService->setMpris(m_mprisService.get());
+      }
       kLog.info("mpris discovery active");
     } catch (const std::exception& e) {
       kLog.warn("mpris disabled: {}", e.what());
@@ -882,7 +890,29 @@ void Application::initUi() {
 
   m_renderContext.initialize(m_glShared);
   m_renderContext.setTextFontFamily(m_configService.config().shell.fontFamily);
+
+  // Optional live-paper plumbing. ProjectMRenderer keeps a private GL FBO in
+  // the shared EGL group at a fixed working resolution — visualizer content
+  // doesn't need per-output sharpness, the wallpaper's fill_mode handles
+  // scaling. The texture is created up front so any output that turns on
+  // live_paper later can pick it up without renegotiating GL.
+  m_projectMRenderer = std::make_unique<ProjectMRenderer>();
+  if (!m_projectMRenderer->initialize(m_glShared, 1280, 720)) {
+    kLog.warn("live_paper visualizer unavailable: ProjectMRenderer::initialize failed");
+    m_projectMRenderer.reset();
+  }
+  if (m_pipewirePcmTap != nullptr && m_projectMRenderer != nullptr) {
+    m_pipewirePcmTap->start(m_configService.config().wallpaper.livePaper.audioSource);
+    m_projectMRenderer->setPcmTap(m_pipewirePcmTap.get());
+  }
+  if (m_projectMRenderer != nullptr) {
+    m_visualizerService = std::make_unique<VisualizerService>();
+  }
   m_wallpaper.initialize(m_wayland, &m_configService, &m_renderContext, &m_sharedTextureCache);
+  if (m_visualizerService != nullptr) {
+    m_visualizerService->initialize(m_projectMRenderer.get(), &m_configService, /*mpris=*/nullptr);
+    m_wallpaper.setVisualizer(m_projectMRenderer.get(), m_visualizerService.get());
+  }
   m_backdrop.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
   m_settingsWindow.initialize(m_wayland, &m_configService, &m_renderContext, &m_dependencyService,
                               m_upowerService.get());
@@ -890,6 +920,9 @@ void Application::initUi() {
   m_lockScreen.initialize(m_wayland, &m_renderContext, &m_configService, &m_sharedTextureCache);
   m_lockScreen.setSessionHooks([this]() { m_hookManager.fire(HookKind::SessionLocked); },
                                [this]() { m_hookManager.fire(HookKind::SessionUnlocked); });
+  if (m_projectMRenderer != nullptr) {
+    m_lockScreen.setVisualizer(m_projectMRenderer.get());
+  }
 
   m_sessionActionHooks.onLogout = [this]() { return m_hookManager.fireBlocking(HookKind::LoggingOut); };
   m_sessionActionHooks.onReboot = [this]() { return m_hookManager.fireBlocking(HookKind::Rebooting); };

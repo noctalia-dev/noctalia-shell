@@ -39,6 +39,13 @@ public:
   void setWallpaperPath(std::string wallpaperPath);
   void setWallpaperFillMode(WallpaperFillMode fillMode);
   void setWallpaperFillColor(Color fillColor);
+  // When set, the lock surface draws the visualizer's GL texture instead of
+  // the static wallpaper image. Passing a zero TextureHandle disables it.
+  void setLivePaperTexture(TextureHandle tex);
+  // Force a repaint of the wallpaper node. The visualizer reuses one GL
+  // texture id whose contents change every tick; the node dedups on id, so
+  // the live-paper driver must invalidate it explicitly each frame.
+  void invalidateLivePaper();
   void setOnLogin(std::function<void()> onLogin);
   void setOnPasswordChanged(std::function<void(const std::string&)> onPasswordChanged);
   void selectAllPassword();
@@ -76,6 +83,7 @@ private:
   WallpaperFillMode m_wallpaperFillMode = WallpaperFillMode::Crop;
   Color m_wallpaperFillColor = rgba(0.0f, 0.0f, 0.0f, 0.0f);
   bool m_wallpaperDirty = false;
+  TextureHandle m_livePaperTexture{};
   InputDispatcher m_inputDispatcher;
   std::function<void()> m_onLogin;
   std::function<void(const std::string&)> m_onPasswordChanged;

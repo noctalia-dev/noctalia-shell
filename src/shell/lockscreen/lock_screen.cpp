@@ -7,6 +7,7 @@
 #include "i18n/i18n.h"
 #include "ipc/ipc_service.h"
 #include "render/render_context.h"
+#include "render/visualizer/projectm_renderer.h"
 #include "shell/lockscreen/lock_surface.h"
 #include "ui/palette.h"
 #include "wayland/wayland_connection.h"
@@ -57,6 +58,55 @@ bool LockScreen::initialize(WaylandConnection& wayland, RenderContext* renderCon
   m_textureCache = textureCache;
   m_user = PamAuthenticator::currentUsername();
   return true;
+}
+
+void LockScreen::setVisualizer(ProjectMRenderer* renderer) {
+  m_visualizer = renderer;
+  // Propagate to any already-live surfaces; createInstance() does the same
+  // for surfaces spawned later.
+  TextureHandle tex = (renderer != nullptr) ? renderer->textureHandle() : TextureHandle{};
+  for (auto& inst : m_instances) {
+    if (inst.surface != nullptr) {
+      inst.surface->setLivePaperTexture(livePaperActive() ? tex : TextureHandle{});
+      inst.surface->requestRedraw();
+    }
+  }
+  syncVisualizerTimer();
+}
+
+bool LockScreen::livePaperActive() const noexcept {
+  if (m_visualizer == nullptr || m_configService == nullptr || !m_locked) {
+    return false;
+  }
+  return m_configService->config().wallpaper.livePaper.enabled && m_visualizer->textureHandle().valid();
+}
+
+void LockScreen::syncVisualizerTimer() {
+  if (!livePaperActive()) {
+    if (m_visualizerTimer.active()) {
+      m_visualizerTimer.stop();
+    }
+    m_visualizerTickFps = 0;
+    return;
+  }
+  const int fps = std::clamp(m_configService->config().wallpaper.livePaper.fps, 1, 240);
+  if (m_visualizerTimer.active() && fps == m_visualizerTickFps) {
+    return;
+  }
+  m_visualizerTickFps = fps;
+  const auto interval = std::chrono::milliseconds(std::max(1, 1000 / fps));
+  m_visualizerTimer.startRepeating(interval, [this]() { onVisualizerTick(); });
+}
+
+void LockScreen::onVisualizerTick() {
+  // The Wallpaper subsystem owns the global renderFrame() schedule — it pumps
+  // libprojectM and updates the shared texture. Here we only need to ask each
+  // lock surface to redraw so it picks up the new texture contents.
+  for (auto& inst : m_instances) {
+    if (inst.surface != nullptr) {
+      inst.surface->invalidateLivePaper();
+    }
+  }
 }
 
 void LockScreen::setSessionHooks(std::function<void()> onLocked, std::function<void()> onUnlocked) {
@@ -129,6 +179,8 @@ void LockScreen::unlock() {
 
   m_lockPending = false;
   m_locked = false;
+  m_visualizerTimer.stop();
+  m_visualizerTickFps = 0;
   clearSensitiveString(m_password);
   m_status.clear();
   m_statusIsError = false;
@@ -299,7 +351,11 @@ void LockScreen::handleLocked(void* data, ext_session_lock_v1* /*lock*/) {
   for (auto& instance : self->m_instances) {
     instance.surface->setLockedState(true);
     instance.surface->setOnLogin([self]() { self->tryAuthenticate(); });
+    if (self->m_visualizer != nullptr && self->livePaperActive()) {
+      instance.surface->setLivePaperTexture(self->m_visualizer->textureHandle());
+    }
   }
+  self->syncVisualizerTimer();
   self->updatePromptOnSurfaces();
   kLog.info("session is locked");
   if (self->m_onSessionLocked) {
@@ -327,6 +383,8 @@ void LockScreen::handleFinished(void* data, ext_session_lock_v1* /*lock*/) {
   }
   self->m_lockPending = false;
   self->m_locked = false;
+  self->m_visualizerTimer.stop();
+  self->m_visualizerTickFps = 0;
   clearSensitiveString(self->m_password);
   self->m_status.clear();
   self->m_statusIsError = false;
@@ -368,6 +426,9 @@ void LockScreen::createInstance(const WaylandOutput& output) {
     surface->setWallpaperPath(m_configService->getWallpaperPath(output.connectorName));
     surface->setWallpaperFillMode(m_configService->config().wallpaper.fillMode);
     surface->setWallpaperFillColor(resolveWallpaperFillColor(m_configService->config().wallpaper));
+  }
+  if (livePaperActive()) {
+    surface->setLivePaperTexture(m_visualizer->textureHandle());
   }
   surface->setOnLogin([this]() { tryAuthenticate(); });
   surface->setOnPasswordChanged([this](const std::string& value) { handlePasswordEdited(value); });

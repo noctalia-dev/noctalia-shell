@@ -279,6 +279,12 @@ namespace {
            a.directory == b.directory && a.directoryLight == b.directoryLight && a.directoryDark == b.directoryDark;
   }
 
+  bool livePaperConfigEqual(const LivePaperConfig& a, const LivePaperConfig& b) {
+    return a.enabled == b.enabled && a.intervalSeconds == b.intervalSeconds && a.fps == b.fps && a.meshW == b.meshW &&
+           a.meshH == b.meshH && nearlyEqual(a.darken, b.darken) && a.presetsDir == b.presetsDir &&
+           a.audioSource == b.audioSource;
+  }
+
   bool wallpaperConfigEqual(const WallpaperConfig& a, const WallpaperConfig& b) {
     return a.enabled == b.enabled && a.fillMode == b.fillMode && optionalColorSpecEqual(a.fillColor, b.fillColor) &&
            a.transitions == b.transitions && nearlyEqual(a.transitionDurationMs, b.transitionDurationMs) &&
@@ -287,7 +293,8 @@ namespace {
            a.perMonitorDirectories == b.perMonitorDirectories && a.automation.enabled == b.automation.enabled &&
            a.automation.intervalMinutes == b.automation.intervalMinutes && a.automation.order == b.automation.order &&
            a.automation.recursive == b.automation.recursive &&
-           vectorEqual(a.monitorOverrides, b.monitorOverrides, wallpaperMonitorOverrideEqual);
+           vectorEqual(a.monitorOverrides, b.monitorOverrides, wallpaperMonitorOverrideEqual) &&
+           livePaperConfigEqual(a.livePaper, b.livePaper);
   }
 
   bool dockConfigEqual(const DockConfig& a, const DockConfig& b) {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/timer_manager.h"
 #include "shell/wallpaper/wallpaper_instance.h"
 #include "ui/signal.h"
 
@@ -10,8 +11,10 @@
 
 class ConfigService;
 class IpcService;
+class ProjectMRenderer;
 class RenderContext;
 class SharedTextureCache;
+class VisualizerService;
 class WaylandConnection;
 struct WaylandOutput;
 
@@ -22,6 +25,11 @@ public:
 
   bool initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext,
                   SharedTextureCache* textureCache);
+
+  // Optional live-paper plumbing. Both pointers are non-owning. Pass nulls
+  // to keep the static-image-only behaviour.
+  void setVisualizer(ProjectMRenderer* renderer, VisualizerService* service);
+
   void onOutputChange();
   void onStateChange();
   void onSecondTick();
@@ -41,13 +49,25 @@ private:
   void updateRendererState(WallpaperInstance& instance);
   void releaseInstanceTextures(WallpaperInstance& inst);
 
+  // Live-paper drive: a global timer that renders one libprojectM frame and
+  // then asks each wallpaper surface to redraw. Honors fps from
+  // [wallpaper.live_paper]; reschedules on config change.
+  [[nodiscard]] bool livePaperActive() const noexcept;
+  void syncVisualizerTimer();
+  void onVisualizerTick();
+
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
   RenderContext* m_renderContext = nullptr;
   SharedTextureCache* m_textureCache = nullptr;
+  ProjectMRenderer* m_visualizer = nullptr;
+  VisualizerService* m_visualizerService = nullptr;
   bool m_wallpaperEnabled = false;
   std::int64_t m_lastAutomationMinuteStamp = -1;
   std::int64_t m_lastAutomationSwitchMinute = -1;
   Signal<>::ScopedConnection m_paletteConn;
   std::vector<std::unique_ptr<WallpaperInstance>> m_instances;
+
+  Timer m_visualizerTimer;
+  int m_visualizerTickFps = 0; // last fps we scheduled for
 };

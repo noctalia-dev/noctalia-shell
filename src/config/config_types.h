@@ -289,6 +289,21 @@ struct WallpaperAutomationConfig {
   bool recursive = true;
 };
 
+// Live (projectM/Milkdrop) visualizer wallpaper. When enabled, replaces the
+// static image source on every wallpaper instance (and the lock surface).
+// presetsDir defaults to "" → resolved at runtime to
+// $XDG_DATA_HOME/waylivepaper/presets (staged by the home-module).
+struct LivePaperConfig {
+  bool enabled = false;
+  std::int32_t intervalSeconds = 120; // preset rotation; 0 = no rotation
+  std::int32_t fps = 30;
+  std::int32_t meshW = 24;
+  std::int32_t meshH = 18;
+  float darken = 0.7f; // 0.0 = no overlay, 1.0 = fully black
+  std::string presetsDir;
+  std::string audioSource; // PipeWire node target; "" = default monitor
+};
+
 struct WallpaperConfig {
   bool enabled = true;
   WallpaperFillMode fillMode = WallpaperFillMode::Crop;
@@ -304,6 +319,7 @@ struct WallpaperConfig {
   bool perMonitorDirectories = false;
   WallpaperAutomationConfig automation;
   std::vector<WallpaperMonitorOverride> monitorOverrides;
+  LivePaperConfig livePaper;
 };
 
 struct BackdropConfig {

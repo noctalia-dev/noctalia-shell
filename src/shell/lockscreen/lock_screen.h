@@ -1,6 +1,7 @@
 #pragma once
 
 #include "auth/pam_authenticator.h"
+#include "core/timer_manager.h"
 
 #include <cstdint>
 #include <functional>
@@ -18,6 +19,7 @@ class ConfigService;
 class IpcService;
 
 class LockSurface;
+class ProjectMRenderer;
 class RenderContext;
 class SharedTextureCache;
 class WaylandConnection;
@@ -29,6 +31,9 @@ public:
 
   bool initialize(WaylandConnection& wayland, RenderContext* renderContext, ConfigService* configService,
                   SharedTextureCache* textureCache);
+  // Optional live-paper plumbing. Non-owning; pass null to disable.
+  void setVisualizer(ProjectMRenderer* renderer);
+
   void setSessionHooks(std::function<void()> onLocked, std::function<void()> onUnlocked);
   bool lock();
   void unlock();
@@ -71,10 +76,20 @@ private:
   void tryAuthenticate();
   static void clearSensitiveString(std::string& value);
 
+  // Drive live-paper redraws on the lock surfaces. Texture content is updated
+  // by the Wallpaper's global tick; here we just call requestRedraw at the
+  // configured fps while the session is locked + live_paper is enabled.
+  [[nodiscard]] bool livePaperActive() const noexcept;
+  void syncVisualizerTimer();
+  void onVisualizerTick();
+
   WaylandConnection* m_wayland = nullptr;
   RenderContext* m_renderContext = nullptr;
   ConfigService* m_configService = nullptr;
   SharedTextureCache* m_textureCache = nullptr;
+  ProjectMRenderer* m_visualizer = nullptr;
+  Timer m_visualizerTimer;
+  int m_visualizerTickFps = 0;
   ext_session_lock_v1* m_lock = nullptr;
   std::vector<Instance> m_instances;
   PamAuthenticator m_authenticator;

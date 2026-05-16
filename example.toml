@@ -64,6 +64,20 @@ interval_minutes           = 0       # 0 = disabled
 order                      = "random" # random | alphabetical
 recursive                  = true    # include subdirectories when picking random wallpapers
 
+[wallpaper.live_paper]
+# projectM/Milkdrop visualizer wallpaper. When enabled, replaces the static
+# image source on every output (and on the lock surface). Presets are staged
+# by the home-module under $XDG_DATA_HOME/waylivepaper/presets — override the
+# location with presets_dir below.
+enabled          = false
+interval_seconds = 120              # 0 = no rotation
+fps              = 30
+mesh_w           = 24               # projectM warp mesh width
+mesh_h           = 18               # projectM warp mesh height
+darken           = 0.7              # 0.0 = no overlay, 1.0 = fully black
+presets_dir      = ""               # "" = default XDG location
+audio_source     = ""               # PipeWire node target; "" = default monitor
+
 # ── Theme ─────────────────────────────────────────────────────────────────────
 
 [theme]

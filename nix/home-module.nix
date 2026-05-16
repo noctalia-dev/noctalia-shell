@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.programs.noctalia;
+  cfgWlp = cfg.waylivepaper;
   jsonFormat = pkgs.formats.json { };
   tomlFormat = pkgs.formats.toml { };
 
@@ -80,6 +81,25 @@ in
         See <https://docs.noctalia.dev/v5/theming/#custom_palette>.
       '';
     };
+
+    # Optional projectM/Milkdrop visualizer wallpaper. At this stage the
+    # module only stages the presets pack on disk under
+    # `$XDG_DATA_HOME/waylivepaper/presets`; the shell-side renderer that
+    # consumes them lands in a later port stage. Configuration (interval,
+    # fps, darken, audio source, …) lives in noctalia/config.toml.
+    waylivepaper = {
+      enable = lib.mkEnableOption "projectM Milkdrop visualizer wallpaper presets staging";
+
+      presetsSource = lib.mkOption {
+        type = lib.types.path;
+        description = ''
+          Directory of `.milk` / `.prjm` presets symlinked into
+          `$XDG_DATA_HOME/waylivepaper/presets`. Defaults to the
+          `presets-cream-of-the-crop` pack bundled with this flake,
+          filtered for excessive brightness / strobing.
+        '';
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -118,12 +138,22 @@ in
           }
         ) cfg.customPalettes)
       ];
+
+      # Stage the presets pack so the visualizer renderer (later stage) can
+      # discover it at the well-known XDG location without extra config.
+      dataFile."waylivepaper/presets" = lib.mkIf cfgWlp.enable {
+        source = cfgWlp.presetsSource;
+      };
     };
 
     assertions = [
       {
         assertion = !cfg.systemd.enable || cfg.package != null;
         message = "programs.noctalia.package cannot be null when programs.noctalia.systemd.enable is true";
+      }
+      {
+        assertion = !cfgWlp.enable || cfg.enable;
+        message = "programs.noctalia.waylivepaper.enable requires programs.noctalia.enable";
       }
     ];
   };

@@ -1,0 +1,82 @@
+#pragma once
+
+#include "render/core/texture_handle.h"
+
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <vector>
+
+class GlSharedContext;
+class PipeWirePcmTap;
+
+// Drives a single libprojectM (Milkdrop) instance and exposes its latest frame
+// as a GL texture handle. The texture lives in the root EGL share group, so
+// any WallpaperRenderer / LockSurface in the same group can sample it without
+// extra blits.
+//
+// The renderer takes the root surfaceless context current when rendering, then
+// restores whatever context/surface was current on entry. Callers can safely
+// invoke renderFrame() from the main loop without worrying about clobbering a
+// render target they had bound.
+class ProjectMRenderer {
+public:
+  ProjectMRenderer();
+  ~ProjectMRenderer();
+
+  ProjectMRenderer(const ProjectMRenderer&) = delete;
+  ProjectMRenderer& operator=(const ProjectMRenderer&) = delete;
+
+  // Bind to the shared GL group and create the offscreen FBO + texture. Must
+  // be called exactly once before renderFrame(). pcmTap may be null at init
+  // time — set it later with setPcmTap(); the renderer simply feeds silence
+  // until a tap is attached.
+  bool initialize(GlSharedContext& shared, std::uint32_t width, std::uint32_t height);
+  void shutdown();
+
+  // Texture size. resize() recreates the FBO/texture; cheap, but the
+  // libprojectM internal mesh is also resized to the new dimensions.
+  void resize(std::uint32_t width, std::uint32_t height);
+  [[nodiscard]] std::uint32_t width() const noexcept { return m_width; }
+  [[nodiscard]] std::uint32_t height() const noexcept { return m_height; }
+  [[nodiscard]] TextureHandle textureHandle() const noexcept;
+
+  // Knobs from [wallpaper.live_paper] in TOML. Safe to call after init.
+  void setMeshSize(int meshW, int meshH);
+  void setFps(int fps);
+
+  // Load a specific Milkdrop preset (.milk / .prjm) with a soft cross-fade.
+  // Empty path is silently ignored — the existing preset keeps running.
+  void loadPreset(const std::string& path);
+
+  // Audio source. Renderer holds a non-owning pointer; null = silent.
+  void setPcmTap(PipeWirePcmTap* tap) noexcept { m_pcmTap = tap; }
+
+  // Drive one frame of the visualizer. Pulls whatever PCM is buffered in the
+  // tap, feeds it to libprojectM, then renders into the internal FBO. Safe
+  // to call when libprojectM is not initialised — returns silently.
+  void renderFrame();
+
+private:
+  struct GlState; // forward — defined in .cpp to keep EGL/GL types out of the header
+  void makeCurrentSaved(GlState& saved);
+  static void restore(const GlState& saved);
+  void destroyFbo();
+  bool createFbo(std::uint32_t width, std::uint32_t height);
+  void pumpPcm();
+
+  GlSharedContext* m_shared = nullptr;
+  void* m_projectm = nullptr; // projectm_handle — opaque to keep header clean
+
+  std::uint32_t m_width = 0;
+  std::uint32_t m_height = 0;
+  std::uint32_t m_fboName = 0;
+  std::uint32_t m_textureName = 0;
+
+  int m_meshW = 24;
+  int m_meshH = 18;
+  int m_fps = 30;
+
+  PipeWirePcmTap* m_pcmTap = nullptr;
+  std::vector<float> m_pcmScratch; // pre-sized to avoid per-frame allocs
+};
