@@ -66,10 +66,12 @@ apply_conf() {
   fi
 }
 
+mode="$(detect_mode)"
+
 case "$command" in
   input)
     # Used by input_path_dynamic
-    if [ "$(detect_mode)" = "lua" ]; then
+    if [ "$mode" = "lua" ]; then
       printf './hyprland/hyprland.lua\n'
     else
       printf './hyprland/hyprland.conf\n'
@@ -78,7 +80,7 @@ case "$command" in
 
   output)
     # Used by output_path_dynamic
-    if [ "$(detect_mode)" = "lua" ]; then
+    if [ "$mode" = "lua" ]; then
       printf '%s\n' "$lua_output_file"
     else
       printf '%s\n' "$conf_output_file"
@@ -87,7 +89,7 @@ case "$command" in
 
   apply)
     # Used by post_hook after the selected template has been rendered
-    if [ "$(detect_mode)" = "lua" ]; then
+    if [ "$mode" = "lua" ]; then
       apply_lua
     else
       apply_conf
