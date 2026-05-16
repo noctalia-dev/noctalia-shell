@@ -24,7 +24,7 @@
   libwebp,
   glib,
   polkit,
-  librsvg
+  librsvg,
 }:
 
 stdenv.mkDerivation {
