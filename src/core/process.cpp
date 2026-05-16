@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iterator>
 #include <optional>
+#include <sstream>
 #include <string_view>
 #include <sys/poll.h>
 #include <sys/wait.h>
@@ -90,6 +91,35 @@ namespace {
     return argv;
   }
 
+  [[nodiscard]] bool isSafeFlatpakAppId(std::string_view appId) {
+    if (appId.empty() || appId.find('/') != std::string_view::npos || appId.find('\\') != std::string_view::npos) {
+      return false;
+    }
+    return appId.find("..") == std::string_view::npos;
+  }
+
+  void appendFlatpakDataRoots(std::vector<std::filesystem::path>& roots) {
+    const char* home = std::getenv("HOME");
+    const char* xdgDataHome = std::getenv("XDG_DATA_HOME");
+    if (xdgDataHome != nullptr && xdgDataHome[0] != '\0') {
+      roots.emplace_back(xdgDataHome);
+    } else if (home != nullptr && home[0] != '\0') {
+      roots.emplace_back(std::filesystem::path(home) / ".local/share");
+    }
+
+    const char* xdgDataDirs = std::getenv("XDG_DATA_DIRS");
+    std::string dirs = (xdgDataDirs != nullptr && xdgDataDirs[0] != '\0') ? xdgDataDirs : "/usr/local/share:/usr/share";
+    std::stringstream ss(dirs);
+    std::string dir;
+    while (std::getline(ss, dir, ':')) {
+      if (!dir.empty()) {
+        roots.emplace_back(dir);
+      }
+    }
+
+    roots.emplace_back("/var/lib");
+  }
+
   [[nodiscard]] bool isProcPidName(std::string_view name) {
     if (name.empty()) {
       return false;
@@ -165,6 +195,15 @@ namespace {
       cache.capturedAt = now;
     }
     return cache.commandLines;
+  }
+
+  [[nodiscard]] bool cachedProcessMatchesAny(std::initializer_list<std::string_view> needles) {
+    const auto& commandLines = cachedProcessCommandLines();
+    return std::any_of(commandLines.begin(), commandLines.end(), [needles](const auto& commandLine) {
+      return std::any_of(needles.begin(), needles.end(), [&commandLine](std::string_view needle) {
+        return commandLine.find(needle) != std::string::npos;
+      });
+    });
   }
 
   bool setNonBlocking(int fd) {
@@ -585,6 +624,34 @@ namespace process {
       return std::all_of(needles.begin(), needles.end(),
                          [&commandLine](const auto& needle) { return commandLine.find(needle) != std::string::npos; });
     });
+  }
+
+  bool desktopPortalAvailable() {
+    const bool portal = cachedProcessMatchesAny({"xdg-desktop-portal "});
+    if (!portal) {
+      return false;
+    }
+    return cachedProcessMatchesAny({"xdg-desktop-portal-wlr ", "xdg-desktop-portal-hyprland ",
+                                    "xdg-desktop-portal-gnome ", "xdg-desktop-portal-kde "});
+  }
+
+  bool flatpakAppInstalled(std::string_view appId) {
+    if (!isSafeFlatpakAppId(appId)) {
+      return false;
+    }
+
+    std::vector<std::filesystem::path> roots;
+    appendFlatpakDataRoots(roots);
+
+    std::error_code ec;
+    const std::filesystem::path app(appId);
+    for (const auto& root : roots) {
+      if (std::filesystem::exists(root / "flatpak/app" / app, ec) && !ec) {
+        return true;
+      }
+      ec.clear();
+    }
+    return false;
   }
 
   RunResult runSync(const std::string& command) {

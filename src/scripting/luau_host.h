@@ -5,10 +5,11 @@
 #include <string_view>
 
 struct lua_State;
+class CompositorPlatform;
 
 class LuauHost {
 public:
-  LuauHost();
+  explicit LuauHost(CompositorPlatform* platform = nullptr);
   ~LuauHost();
 
   LuauHost(const LuauHost&) = delete;
@@ -32,8 +33,10 @@ public:
   std::optional<std::string> callGlobalReturningString(const char* name);
 
   lua_State* state() { return m_T; }
+  [[nodiscard]] CompositorPlatform* platform() const noexcept { return m_platform; }
 
 private:
+  CompositorPlatform* m_platform = nullptr;
   lua_State* m_L = nullptr; // main state, frozen by luaL_sandbox
   lua_State* m_T = nullptr; // sandboxed thread; user code runs here
   int m_threadRef = -1;     // registry ref pinning m_T against the GC

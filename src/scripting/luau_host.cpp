@@ -1,5 +1,6 @@
 #include "scripting/luau_host.h"
 
+#include "compositors/compositor_platform.h"
 #include "core/log.h"
 #include "core/process.h"
 #include "lua.h"
@@ -13,6 +14,14 @@
 
 namespace {
   Logger log{"luau"};
+  constexpr const char* kHostKey = "__noctalia_host";
+
+  LuauHost* hostForState(lua_State* L) {
+    lua_getglobal(L, kHostKey);
+    auto* host = static_cast<LuauHost*>(lua_touserdata(L, -1));
+    lua_pop(L, 1);
+    return host;
+  }
 
   int luau_log(lua_State* L) {
     const char* msg = luaL_checkstring(L, 1);
@@ -27,18 +36,39 @@ namespace {
     return 1;
   }
 
-  int luau_runSync(lua_State* L) {
-    const char* cmd = luaL_checkstring(L, 1);
-    auto result = process::runSync(std::string(cmd));
-    lua_pushnumber(L, result.exitCode);
-    lua_pushlstring(L, result.out.data(), result.out.size());
-    lua_pushlstring(L, result.err.data(), result.err.size());
-    return 3;
-  }
-
   int luau_commandExists(lua_State* L) {
     const char* name = luaL_checkstring(L, 1);
     lua_pushboolean(L, process::commandExists(name) ? 1 : 0);
+    return 1;
+  }
+
+  int luau_flatpakAppInstalled(lua_State* L) {
+    size_t len = 0;
+    const char* appId = luaL_checklstring(L, 1, &len);
+    lua_pushboolean(L, process::flatpakAppInstalled(std::string_view(appId, len)) ? 1 : 0);
+    return 1;
+  }
+
+  int luau_portalAvailable(lua_State* L) {
+    lua_pushboolean(L, process::desktopPortalAvailable() ? 1 : 0);
+    return 1;
+  }
+
+  int luau_focusedOutputName(lua_State* L) {
+    auto* host = hostForState(L);
+    if (host == nullptr || host->platform() == nullptr) {
+      lua_pushnil(L);
+      return 1;
+    }
+
+    wl_output* output = host->platform()->preferredInteractiveOutput();
+    const auto* info = host->platform()->findOutputByWl(output);
+    if (info == nullptr || info->connectorName.empty()) {
+      lua_pushnil(L);
+      return 1;
+    }
+
+    lua_pushlstring(L, info->connectorName.data(), info->connectorName.size());
     return 1;
   }
 
@@ -82,9 +112,11 @@ namespace {
   const luaL_Reg kNoctaliaBaseLib[] = {
       {"log", luau_log},
       {"runAsync", luau_runAsync},
-      {"runSync", luau_runSync},
       {"commandExists", luau_commandExists},
       {"processMatches", luau_processMatches},
+      {"flatpakAppInstalled", luau_flatpakAppInstalled},
+      {"portalAvailable", luau_portalAvailable},
+      {"focusedOutputName", luau_focusedOutputName},
       {"notify", luau_notify},
       {"notifyError", luau_notifyError},
       {"getenv", luau_getenv},
@@ -97,7 +129,7 @@ namespace {
   }
 } // namespace
 
-LuauHost::LuauHost() {
+LuauHost::LuauHost(CompositorPlatform* platform) : m_platform(platform) {
   m_L = luaL_newstate();
   luaL_openlibs(m_L);
   registerNoctaliaLib(m_L);
@@ -108,6 +140,8 @@ LuauHost::LuauHost() {
 
   m_T = lua_newthread(m_L);
   luaL_sandboxthread(m_T);
+  lua_pushlightuserdata(m_T, this);
+  lua_setglobal(m_T, kHostKey);
   // lua_newthread leaves the thread on the main stack; pin it in the registry
   // so the GC can't collect it, then drop the stack reference.
   m_threadRef = lua_ref(m_L, -1);

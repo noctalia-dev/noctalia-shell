@@ -22,68 +22,33 @@ local function cfg(key, default)
     return barWidget.getConfig(key, default)
 end
 
-local function hasToken(args, token)
-    return args:find(token, 1, true) ~= nil
-end
-
-local function isGsrProcessArgs(args)
-    if not hasToken(args, "gpu-screen-recorder") and not hasToken(args, "com.dec05eba.gpu_screen_recorder") then
-        return false
-    end
-    return hasToken(args, " -w ") or hasToken(args, " -r ") or hasToken(args, " -o ")
-end
-
-local function isReplayArgs(args)
-    return hasToken(args, " -r ")
-end
-
-local function detectProcessStateViaPs()
-    local exitCode, stdout = noctalia.runSync("ps -eo args=")
-    if exitCode ~= 0 or stdout == "" then
-        return nil
-    end
-
-    local hasRecording = false
-    for args in (stdout .. "\n"):gmatch("(.-)\n") do
-        if isGsrProcessArgs(args) then
-            if isReplayArgs(args) then
-                return "replaying"
-            end
-            hasRecording = true
-        end
-    end
-
-    if hasRecording then
-        return "recording"
-    end
-    return nil
-end
-
 local function gsrProcessMatches(token)
     return noctalia.processMatches("gpu-screen-recorder", token)
         or noctalia.processMatches("com.dec05eba.gpu_screen_recorder", token)
 end
 
 local function detectProcessState()
-    if noctalia.processMatches then
-        if gsrProcessMatches(" -r ") then
-            return "replaying"
-        end
-        if gsrProcessMatches(" -w ") or gsrProcessMatches(" -o ") then
-            return "recording"
-        end
+    if gsrProcessMatches(" -r ") then
+        return "replaying"
+    end
+    if gsrProcessMatches(" -w ") or gsrProcessMatches(" -o ") then
+        return "recording"
+    end
+    return nil
+end
+
+local function flatpakGsrInstalled()
+    if not noctalia.flatpakAppInstalled then
         return nil
     end
-
-    return detectProcessStateViaPs()
+    return noctalia.flatpakAppInstalled("com.dec05eba.gpu_screen_recorder")
 end
 
 local function checkAvailability()
     if noctalia.commandExists("gpu-screen-recorder") then
         return true
     end
-    local exitCode = noctalia.runSync("command -v flatpak >/dev/null 2>&1 && flatpak list --app 2>/dev/null | grep -q com.dec05eba.gpu_screen_recorder")
-    return exitCode == 0
+    return noctalia.commandExists("flatpak") and flatpakGsrInstalled() == true
 end
 
 local function copyToClipboard(path)
@@ -112,21 +77,10 @@ local function buildResolutionFlag()
 end
 
 local function detectFocusedMonitor()
-    local script = [[
-set -euo pipefail
-pos=$(hyprctl cursorpos)
-cx=${pos%,*}; cy=${pos#*,}
-mon=$(hyprctl monitors -j | jq -r --argjson cx "$cx" --argjson cy "$cy" \
-  '.[] | select(($cx>=.x) and ($cx<(.x+.width)) and ($cy>=.y) and ($cy<(.y+.height))) | .name' \
-  | head -n1)
-[ -n "${mon:-}" ] || exit 1
-echo "$mon"
-]]
-    local exitCode, stdout = noctalia.runSync(script)
-    if exitCode == 0 and stdout ~= "" then
-        return stdout
+    if not noctalia.focusedOutputName then
+        return nil
     end
-    return nil
+    return noctalia.focusedOutputName()
 end
 
 local function buildGsrPrefix()
@@ -220,14 +174,7 @@ end
 -- ── Portal check ─────────────────────────────────────────────────────────
 
 local function checkPortals()
-    local exitCode = noctalia.runSync(
-        "pidof xdg-desktop-portal >/dev/null 2>&1 && " ..
-        "(pidof xdg-desktop-portal-wlr >/dev/null 2>&1 || " ..
-        "pidof xdg-desktop-portal-hyprland >/dev/null 2>&1 || " ..
-        "pidof xdg-desktop-portal-gnome >/dev/null 2>&1 || " ..
-        "pidof xdg-desktop-portal-kde >/dev/null 2>&1)"
-    )
-    return exitCode == 0
+    return noctalia.portalAvailable()
 end
 
 -- ── Recording controls ───────────────────────────────────────────────────

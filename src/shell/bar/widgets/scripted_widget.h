@@ -21,6 +21,7 @@ class Glyph;
 class InputArea;
 class Label;
 class LuauHost;
+class CompositorPlatform;
 
 class ScriptedWidget : public Widget {
 public:
@@ -32,7 +33,7 @@ public:
   };
 
   explicit ScriptedWidget(std::string scriptPath, const WidgetConfig* config = nullptr,
-                          FileWatcher* fileWatcher = nullptr);
+                          FileWatcher* fileWatcher = nullptr, CompositorPlatform* platform = nullptr);
   ~ScriptedWidget() override;
 
   void create() override;
@@ -84,6 +85,7 @@ private:
   std::unordered_map<std::string, WidgetSettingValue> m_settings;
   std::unique_ptr<LuauHost> m_host;
   FileWatcher* m_fileWatcher = nullptr;
+  CompositorPlatform* m_platform = nullptr;
   FileWatcher::WatchId m_watchId = 0;
   Timer m_updateTimer;
   Timer m_deferredUpdateTimer;

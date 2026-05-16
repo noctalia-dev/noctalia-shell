@@ -4,6 +4,7 @@
 #include <initializer_list>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace process {
@@ -34,6 +35,8 @@ namespace process {
   [[nodiscard]] RunResult runSyncWithTimeout(std::initializer_list<const char*> args,
                                              std::chrono::milliseconds timeout);
   [[nodiscard]] bool commandLineMatchesAll(const std::vector<std::string>& needles);
+  [[nodiscard]] bool desktopPortalAvailable();
+  [[nodiscard]] bool flatpakAppInstalled(std::string_view appId);
 
   // Like runAsync(args), but returns the grandchild pid for terminateTracked (optional API).
   [[nodiscard]] std::optional<int> launchDetachedTracked(const std::vector<std::string>& args);

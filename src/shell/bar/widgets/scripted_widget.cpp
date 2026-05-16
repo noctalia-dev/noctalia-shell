@@ -60,8 +60,10 @@ namespace {
 
 } // namespace
 
-ScriptedWidget::ScriptedWidget(std::string scriptPath, const WidgetConfig* config, FileWatcher* fileWatcher)
-    : m_scriptPath(std::move(scriptPath)), m_fileWatcher(fileWatcher), m_timerPhase(nextTimerPhase()) {
+ScriptedWidget::ScriptedWidget(std::string scriptPath, const WidgetConfig* config, FileWatcher* fileWatcher,
+                               CompositorPlatform* platform)
+    : m_scriptPath(std::move(scriptPath)), m_fileWatcher(fileWatcher), m_platform(platform),
+      m_timerPhase(nextTimerPhase()) {
   if (config) {
     m_settings = config->settings;
     m_hotReload = config->getBool("hot_reload", false);
@@ -71,7 +73,7 @@ ScriptedWidget::ScriptedWidget(std::string scriptPath, const WidgetConfig* confi
 ScriptedWidget::~ScriptedWidget() { teardownScriptWatch(); }
 
 void ScriptedWidget::create() {
-  m_host = std::make_unique<LuauHost>();
+  m_host = std::make_unique<LuauHost>(m_platform);
 
   auto area = std::make_unique<InputArea>();
   area->setAcceptedButtons(InputArea::buttonMask({BTN_LEFT, BTN_RIGHT, BTN_MIDDLE}));
@@ -379,7 +381,7 @@ void ScriptedWidget::reloadScript() {
     m_label->setVisible(false);
   }
 
-  m_host = std::make_unique<LuauHost>();
+  m_host = std::make_unique<LuauHost>(m_platform);
   registerScriptedWidgetBindings(m_host->state(), this);
 
   std::string source = readFile(m_resolvedPath);
