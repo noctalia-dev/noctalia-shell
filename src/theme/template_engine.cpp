@@ -1331,6 +1331,12 @@ namespace noctalia::theme {
           return ok;
         }
 
+        if (effectiveInput.empty()) {
+          kLog.warn("failed to resolve input path for template {} -> {}; skipping", entry.name, outputPath);
+          ok = false;
+          continue;
+        }
+
         const auto fileResult =
             EngineImpl(m_themeData, renderOptions).renderFile(effectiveInput, std::filesystem::path(outputPath));
         if (!fileResult.success) {
