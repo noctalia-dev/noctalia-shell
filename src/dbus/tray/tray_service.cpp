@@ -40,16 +40,45 @@ namespace {
 
   bool looks_like_dbus_name(std::string_view value) { return !value.empty() && value != "__path_only__"; }
 
+  bool isGenericProcessName(std::string_view value) {
+    if (value.empty()) {
+      return true;
+    }
+    const auto lower = StringUtils::toLower(value);
+    return lower == "electron" || lower == "xdg-dbus-proxy";
+  }
+
+  std::string basenameFromPath(std::string value) {
+    if (value.empty()) {
+      return {};
+    }
+    if (const auto slash = value.find_last_of('/'); slash != std::string::npos && slash + 1 < value.size()) {
+      value = value.substr(slash + 1);
+    }
+    return value;
+  }
+
   std::string processNameForPid(std::uint32_t pid) {
     if (pid == 0) {
       return {};
     }
 
     const std::filesystem::path procDir = std::filesystem::path("/proc") / std::to_string(pid);
+    std::string argv0;
+    {
+      std::ifstream cmdline(procDir / "cmdline", std::ios::binary);
+      std::getline(cmdline, argv0, '\0');
+      argv0 = basenameFromPath(StringUtils::trim(argv0));
+    }
+
     std::error_code ec;
     const auto exe = std::filesystem::read_symlink(procDir / "exe", ec);
     if (!ec && !exe.empty()) {
-      return exe.filename().string();
+      auto exeName = exe.filename().string();
+      if (!isGenericProcessName(exeName) || argv0.empty()) {
+        return exeName;
+      }
+      return argv0;
     }
 
     std::ifstream comm(procDir / "comm");
@@ -145,6 +174,8 @@ namespace {
 
   using IconPixmapTuple = std::tuple<std::int32_t, std::int32_t, std::vector<std::uint8_t>>;
   using IconPixmapStruct = sdbus::Struct<std::int32_t, std::int32_t, std::vector<std::uint8_t>>;
+  using StatusNotifierTextTuple = std::tuple<std::string, std::vector<IconPixmapTuple>, std::string, std::string>;
+  using StatusNotifierTextStruct = sdbus::Struct<std::string, std::vector<IconPixmapStruct>, std::string, std::string>;
   using DbusMenuLayout =
       sdbus::Struct<std::int32_t, std::map<std::string, sdbus::Variant>, std::vector<sdbus::Variant>>;
   using DbusMenuItemProperties = sdbus::Struct<std::int32_t, std::map<std::string, sdbus::Variant>>;
@@ -441,6 +472,26 @@ namespace {
     }
 
     return fallback;
+  }
+
+  std::pair<std::string, std::string> get_status_notifier_text_or(sdbus::IProxy& proxy, std::string fallbackTitle,
+                                                                  std::string fallbackDescription) {
+    try {
+      const sdbus::Variant value = proxy.getProperty("ToolTip").onInterface(k_item_interface);
+      try {
+        const auto text = value.get<StatusNotifierTextTuple>();
+        return {std::get<2>(text), std::get<3>(text)};
+      } catch (const sdbus::Error&) {
+      }
+      try {
+        const auto text = value.get<StatusNotifierTextStruct>();
+        return {std::get<2>(text), std::get<3>(text)};
+      } catch (const sdbus::Error&) {
+      }
+    } catch (const sdbus::Error&) {
+    }
+
+    return {std::move(fallbackTitle), std::move(fallbackDescription)};
   }
 
   bool pickBestPixmap(const std::vector<IconPixmapTuple>& pixmaps, std::vector<std::uint8_t>& outArgb,
@@ -1315,7 +1366,8 @@ bool TrayService::isMetadataReady(const TrayItemInfo& item) const {
   if (!item.iconArgb32.empty() || !item.attentionArgb32.empty() || !item.overlayArgb32.empty()) {
     return true;
   }
-  if (!item.itemName.empty() || !item.title.empty()) {
+  if (!item.itemName.empty() || !item.title.empty() || !item.statusNotifierTitle.empty() ||
+      !item.statusNotifierDescription.empty()) {
     return true;
   }
   return false;
@@ -1399,6 +1451,8 @@ void TrayService::registerOrRefreshItem(const std::string& busName, const std::s
                                 .itemName = {},
                                 .processName = processNameForBusName(busName),
                                 .title = {},
+                                .statusNotifierTitle = {},
+                                .statusNotifierDescription = {},
                                 .status = {},
                                 .iconArgb32 = {},
                                 .iconWidth = 0,
@@ -1589,6 +1643,10 @@ void TrayService::refreshItemMetadata(const std::string& itemId) {
   next.menuObjectPath = get_item_property_string_or(*proxyIt->second, "Menu", cur.menuObjectPath);
   next.itemName = get_item_property_string_or(*proxyIt->second, "Id", cur.itemName);
   next.title = get_item_property_string_or(*proxyIt->second, "Title", cur.title);
+  auto [statusNotifierTitle, statusNotifierDescription] =
+      get_status_notifier_text_or(*proxyIt->second, cur.statusNotifierTitle, cur.statusNotifierDescription);
+  next.statusNotifierTitle = std::move(statusNotifierTitle);
+  next.statusNotifierDescription = std::move(statusNotifierDescription);
   next.status = get_item_property_string_or(*proxyIt->second, "Status", cur.status);
   next.needsAttention = (next.status == "NeedsAttention");
 
@@ -1614,9 +1672,10 @@ void TrayService::refreshItemMetadata(const std::string& itemId) {
   }
 
   itemIt->second = std::move(next);
-  kLog.debug("tray metadata updated id={} status={} icon='{}' overlay='{}' attention='{}' pixmap={}x{} overlay={}x{} "
-             "attention={}x{}",
-             itemId, itemIt->second.status, itemIt->second.iconName, itemIt->second.overlayIconName,
+  kLog.debug("tray metadata updated id={} status={} itemName='{}' title='{}' sniTitle='{}' icon='{}' overlay='{}' "
+             "attention='{}' pixmap={}x{} overlay={}x{} attention={}x{}",
+             itemId, itemIt->second.status, itemIt->second.itemName, itemIt->second.title,
+             itemIt->second.statusNotifierTitle, itemIt->second.iconName, itemIt->second.overlayIconName,
              itemIt->second.attentionIconName, itemIt->second.iconWidth, itemIt->second.iconHeight,
              itemIt->second.overlayWidth, itemIt->second.overlayHeight, itemIt->second.attentionWidth,
              itemIt->second.attentionHeight);

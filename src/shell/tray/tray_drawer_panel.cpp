@@ -3,6 +3,7 @@
 #include "config/config_service.h"
 #include "shell/bar/widgets/tray_widget.h"
 #include "shell/panel/panel_manager.h"
+#include "shell/tray/tray_identifier.h"
 
 #include <algorithm>
 #include <cctype>
@@ -112,7 +113,7 @@ std::size_t TrayDrawerPanel::visibleItemCount() const {
     const bool hidden =
         std::ranges::any_of(hiddenLower, [&](const std::string& token) { return tokenMatches(token, item); });
     const bool pinned =
-        std::ranges::any_of(pinnedLower, [&](const std::string& token) { return tokenMatches(token, item); });
+        std::ranges::any_of(pinnedLower, [&](const std::string& token) { return tray::tokenMatchesItem(token, item); });
     if (!hidden && !pinned) {
       ++visible;
     }

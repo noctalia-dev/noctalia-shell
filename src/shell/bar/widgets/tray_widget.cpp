@@ -657,27 +657,8 @@ bool TrayWidget::isPinnedItem(const TrayItemInfo& item) const {
     return false;
   }
 
-  std::vector<std::string> candidates;
-  auto appendVariants = [&candidates](std::string_view text) {
-    for (const auto& variant : identifierVariants(text)) {
-      if (std::ranges::find(candidates, variant) == candidates.end()) {
-        candidates.push_back(variant);
-      }
-    }
-  };
-
-  appendVariants(item.id);
-  appendVariants(item.busName);
-  appendVariants(item.itemName);
-  appendVariants(item.processName);
-  appendVariants(item.title);
-  appendVariants(item.objectPath);
-  appendVariants(item.iconName);
-  appendVariants(item.overlayIconName);
-  appendVariants(item.attentionIconName);
-
   for (const auto& needle : m_pinnedItems) {
-    if (std::ranges::find(candidates, needle) != candidates.end()) {
+    if (tray::tokenMatchesItem(needle, item)) {
       return true;
     }
   }
@@ -689,15 +670,18 @@ void TrayWidget::buildDesktopIconIndex() {
   m_appIcons.clear();
   const auto& entries = desktopEntries();
   for (const auto& entry : entries) {
-    if (entry.id.empty() || entry.icon.empty()) {
+    if (entry.id.empty()) {
       continue;
     }
 
-    addIconAlias(m_appIcons, entry.id, entry.icon);
-    addIconAlias(m_appIcons, entry.name, entry.icon);
-    addIconAlias(m_appIcons, entry.nameLower, entry.icon);
-    addIconAlias(m_appIcons, entry.icon, entry.icon);
-    addIconAlias(m_appIcons, execBasename(entry.exec), entry.icon);
+    if (!entry.icon.empty()) {
+      addIconAlias(m_appIcons, entry.id, entry.icon);
+      addIconAlias(m_appIcons, entry.name, entry.icon);
+      addIconAlias(m_appIcons, entry.nameLower, entry.icon);
+      addIconAlias(m_appIcons, entry.icon, entry.icon);
+      addIconAlias(m_appIcons, execBasename(entry.exec), entry.icon);
+      addIconAlias(m_appIcons, entry.startupWmClass, entry.icon);
+    }
   }
   m_desktopEntriesVersion = desktopEntriesVersion();
 }
@@ -723,6 +707,9 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
     preferred = "";
   } else {
     preferred = item.iconName;
+  }
+  if (tray::looksGenericStatusItemName(preferred)) {
+    preferred.clear();
   }
 
   if (const auto themed = resolveFromTrayThemePath(item.iconThemePath, preferred); !themed.empty()) {
@@ -798,6 +785,10 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
 
   for (const auto& [_, candidate] : candidates) {
     for (const auto& variant : identifierVariants(*candidate)) {
+      if (tray::looksGenericStatusItemName(variant)) {
+        continue;
+      }
+
       if (const auto mapped = resolveMapped(variant); !mapped.empty()) {
         if (!isSymbolicIconPath(mapped)) {
           m_preferredIconPaths[item.id] = mapped;
