@@ -1124,22 +1124,25 @@ namespace settings {
 
           slider->setOnDragEnd([commit, sliderPtr]() { commit(static_cast<double>(sliderPtr->value())); });
 
+          const auto commitInputText = [commit, sliderPtr, valueInputPtr, minValue, maxValue,
+                                        integerValue](const std::string& text) {
+            const auto parsed = parseFloatInput(text);
+            if (!parsed.has_value() || *parsed < minValue || *parsed > maxValue) {
+              valueInputPtr->setInvalid(true);
+              return;
+            }
+            const float v = *parsed;
+            valueInputPtr->setInvalid(false);
+            sliderPtr->setValue(v);
+            if (!integerValue) {
+              valueInputPtr->setValue(formatSliderValue(sliderPtr->value(), false));
+            }
+            commit(static_cast<double>(v));
+          };
+
           valueInput->setOnChange([valueInputPtr](const std::string& /*text*/) { valueInputPtr->setInvalid(false); });
-          valueInput->setOnSubmit(
-              [commit, sliderPtr, valueInputPtr, minValue, maxValue, integerValue](const std::string& text) {
-                const auto parsed = parseFloatInput(text);
-                if (!parsed.has_value() || *parsed < minValue || *parsed > maxValue) {
-                  valueInputPtr->setInvalid(true);
-                  return;
-                }
-                const float v = *parsed;
-                valueInputPtr->setInvalid(false);
-                sliderPtr->setValue(v);
-                if (!integerValue) {
-                  valueInputPtr->setValue(formatSliderValue(sliderPtr->value(), false));
-                }
-                commit(static_cast<double>(v));
-              });
+          valueInput->setOnSubmit([commitInputText](const std::string& text) { commitInputText(text); });
+          valueInput->setOnFocusLoss([commitInputText, valueInputPtr]() { commitInputText(valueInputPtr->value()); });
 
           // Slider first, numeric value field on the right (reset from makeRow stays left of this cluster).
           wrap->addChild(std::move(slider));
