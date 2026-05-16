@@ -3,16 +3,43 @@
 #include "system/internal_app_metadata.h"
 #include "util/string_utils.h"
 
+#include <cctype>
 #include <unordered_set>
 
 namespace app_identity {
+
+  namespace {
+
+    std::string identityKey(std::string_view value) {
+      std::string key;
+      key.reserve(value.size());
+      for (const unsigned char ch : value) {
+        if (ch == '.' || ch == '-' || ch == '_' || std::isspace(ch) != 0) {
+          continue;
+        }
+        key.push_back(static_cast<char>(std::tolower(ch)));
+      }
+      return key;
+    }
+
+    bool identityKeyMatches(std::string_view valueKey, std::string_view candidate) {
+      if (candidate.empty()) {
+        return false;
+      }
+      return valueKey == identityKey(candidate);
+    }
+
+  } // namespace
 
   bool matchesLower(std::string_view valueLower, std::string_view idLower, std::string_view startupWmClassLower,
                     std::string_view nameLower) {
     if (valueLower.empty()) {
       return false;
     }
-    return valueLower == idLower || valueLower == startupWmClassLower || valueLower == nameLower;
+    const auto valueKey = identityKey(valueLower);
+    return valueLower == idLower || valueLower == startupWmClassLower || valueLower == nameLower ||
+           (!valueKey.empty() &&
+            (identityKeyMatches(valueKey, idLower) || identityKeyMatches(valueKey, startupWmClassLower)));
   }
 
   bool desktopEntryMatchesLower(const DesktopEntry& entry, std::string_view valueLower) {
@@ -55,7 +82,11 @@ namespace app_identity {
 
     for (const auto& runningAppId : runningAppIds) {
       const std::string runningLower = StringUtils::toLower(runningAppId);
-      if (!seen.insert(runningLower).second) {
+      std::string runningKey = identityKey(runningAppId);
+      if (runningKey.empty()) {
+        runningKey = runningLower;
+      }
+      if (!seen.insert(runningKey).second) {
         continue;
       }
 

@@ -746,3 +746,27 @@ animation_manager_test = executable('animation_manager_test',
 )
 
 test('animation_manager', animation_manager_test)
+
+app_identity_test = executable('app_identity_test',
+  sources: files(
+    'tests/app_identity_test.cpp',
+    'src/system/app_identity.cpp',
+  ),
+  include_directories: _noctalia_inc,
+)
+
+test('app_identity', app_identity_test)
+
+wayland_toplevels_identity_test = executable('wayland_toplevels_identity_test',
+  sources: files(
+    'tests/wayland_toplevels_identity_test.cpp',
+    'src/system/app_identity.cpp',
+    'src/wayland/wayland_toplevels.cpp',
+  ) + _protocol_sources,
+  dependencies: [
+    wayland_client_dep,
+  ],
+  include_directories: _noctalia_inc,
+)
+
+test('wayland_toplevels_identity', wayland_toplevels_identity_test)

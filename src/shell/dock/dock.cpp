@@ -489,8 +489,7 @@ bool Dock::refreshPinnedAppsIfNeeded() {
         return (dot == std::string::npos) ? base : base.substr(0, dot);
       }());
 
-      if (stemLower == pinnedLower || StringUtils::toLower(entry.startupWmClass) == pinnedLower ||
-          entry.nameLower == pinnedLower || entry.id == pinnedId) {
+      if (stemLower == pinnedLower || app_identity::desktopEntryMatchesLower(entry, pinnedLower)) {
         m_pinnedEntries.push_back(entry);
         found = true;
         break;
