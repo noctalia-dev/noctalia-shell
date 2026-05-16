@@ -269,6 +269,7 @@
       "unavailable": "Bluetooth service unavailable",
       "off": "Bluetooth is off",
       "no-devices": "No devices found. Start scanning to discover nearby Bluetooth devices.",
+      "auto-reconnect": "Auto-reconnect",
       "sections": {
         "connected": "Connected",
         "paired": "Paired",
