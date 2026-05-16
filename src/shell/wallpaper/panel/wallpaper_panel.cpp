@@ -480,6 +480,9 @@ std::filesystem::path WallpaperPanel::rootDirectoryForSelection() const {
     return {};
   }
   const auto& wp = m_config->config().wallpaper;
+  if (!wp.perMonitorDirectories) {
+    return wp.directory;
+  }
   const auto& choice = m_monitorChoices[m_selectedMonitorIndex];
   if (choice.connector.empty()) {
     return wp.directory;

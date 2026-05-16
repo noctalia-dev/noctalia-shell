@@ -401,6 +401,45 @@ namespace settings {
                                             .browseMode = TextSettingBrowseMode::SelectFolder,
                                             .browseFileExtensions = {}},
                                 "folder path dark theme", true));
+    entries.push_back(makeEntry(
+        "wallpaper", "directories", tr("settings.schema.wallpaper.per-monitor-directories.label"),
+        tr("settings.schema.wallpaper.per-monitor-directories.description"), {"wallpaper", "per_monitor_directories"},
+        ToggleSetting{cfg.wallpaper.perMonitorDirectories}, "per display folder"));
+    for (const auto& ovr : cfg.wallpaper.monitorOverrides) {
+      if (ovr.match.empty()) {
+        continue;
+      }
+      const std::vector<std::string> root = {"wallpaper", "monitor", ovr.match};
+      auto mpath = [&](std::string key) {
+        std::vector<std::string> p = root;
+        p.push_back(std::move(key));
+        return p;
+      };
+      const std::string section = "wallpaper";
+      entries.push_back(makeEntry(section, "monitors", ovr.match,
+                                  tr("settings.schema.wallpaper.monitor-directory.label"), mpath("directory"),
+                                  TextSetting{.value = ovr.directory.value_or(""),
+                                              .placeholder = "~/Pictures/Wallpapers",
+                                              .browseMode = TextSettingBrowseMode::SelectFolder,
+                                              .browseFileExtensions = {}},
+                                  "monitor folder"));
+      entries.push_back(
+          makeEntry(section, "monitors", ovr.match, tr("settings.schema.wallpaper.monitor-directory-light.label"),
+                    mpath("directory_light"),
+                    TextSetting{.value = ovr.directoryLight.value_or(""),
+                                .placeholder = tr("settings.schema.wallpaper.monitor-directory-light.placeholder"),
+                                .browseMode = TextSettingBrowseMode::SelectFolder,
+                                .browseFileExtensions = {}},
+                    "monitor light folder", true));
+      entries.push_back(
+          makeEntry(section, "monitors", ovr.match, tr("settings.schema.wallpaper.monitor-directory-dark.label"),
+                    mpath("directory_dark"),
+                    TextSetting{.value = ovr.directoryDark.value_or(""),
+                                .placeholder = tr("settings.schema.wallpaper.monitor-directory-dark.placeholder"),
+                                .browseMode = TextSettingBrowseMode::SelectFolder,
+                                .browseFileExtensions = {}},
+                    "monitor dark folder", true));
+    }
     {
       MultiSelectSetting transitions;
       transitions.options.reserve(std::size(kWallpaperTransitions));

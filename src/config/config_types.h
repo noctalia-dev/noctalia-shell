@@ -301,6 +301,7 @@ struct WallpaperConfig {
   std::string directory;
   std::string directoryLight;
   std::string directoryDark;
+  bool perMonitorDirectories = false;
   WallpaperAutomationConfig automation;
   std::vector<WallpaperMonitorOverride> monitorOverrides;
 };
