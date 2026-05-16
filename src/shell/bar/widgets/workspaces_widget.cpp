@@ -300,6 +300,24 @@ void WorkspacesWidget::computeTargets() {
   }
 }
 
+void WorkspacesWidget::updateContainerSize() {
+  if (m_container == nullptr || m_items.empty()) {
+    return;
+  }
+  float total = 0.0f;
+  for (std::size_t i = 0; i < m_items.size(); ++i) {
+    total += m_items[i].currentWidth;
+  }
+  if (m_items.size() > 1) {
+    total += m_gap * static_cast<float>(m_items.size() - 1);
+  }
+  if (m_isVertical) {
+    m_container->setFrameSize(m_indicatorHeight, total);
+  } else {
+    m_container->setFrameSize(total, m_indicatorHeight);
+  }
+}
+
 void WorkspacesWidget::retarget(Renderer& renderer) {
   (void)renderer;
   // Snapshot current positions as "from" values and compute new targets.
@@ -335,6 +353,7 @@ void WorkspacesWidget::startAnimation() {
       it.currentWidth = it.targetWidth;
       applyItemLayout(i);
     }
+    updateContainerSize();
     return;
   }
   cancelAnimation();
@@ -347,6 +366,7 @@ void WorkspacesWidget::startAnimation() {
           it.currentWidth = it.fromWidth + (it.targetWidth - it.fromWidth) * t;
           applyItemLayout(i);
         }
+        updateContainerSize();
         if (root() != nullptr) {
           root()->markPaintDirty();
         }

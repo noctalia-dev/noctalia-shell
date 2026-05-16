@@ -34,6 +34,7 @@ private:
   void rebuild(Renderer& renderer);
   void computeTargets();
   void retarget(Renderer& renderer);
+  void updateContainerSize();
   void startAnimation();
   void cancelAnimation();
   void applyItemLayout(std::size_t i);
