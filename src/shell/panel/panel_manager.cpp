@@ -1274,6 +1274,21 @@ void PanelManager::applyPanelCompositorBlur() {
       bx += static_cast<int>(std::lround(panelW * (1.0f - progress)));
       break;
     }
+
+    if (progress < 0.999f && m_sceneRoot != nullptr) {
+      const int clipMaxX = static_cast<int>(std::lround(m_sceneRoot->width()));
+      const int clipMaxY = static_cast<int>(std::lround(m_sceneRoot->height()));
+      const int sxLeft = std::max(bx, 0);
+      const int sxRight = std::min(bx + bw, clipMaxX);
+      const int syTop = std::max(by, 0);
+      const int syBot = std::min(by + bh, clipMaxY);
+      if (sxRight > sxLeft && syBot > syTop) {
+        m_surface->setBlurRegion({InputRect{sxLeft, syTop, sxRight - sxLeft, syBot - syTop}});
+      } else {
+        m_surface->clearBlurRegion();
+      }
+      return;
+    }
   }
 
   const float radius = Style::scaledRadiusXl(m_activePanel->contentScale());
@@ -1613,11 +1628,11 @@ void PanelManager::prepareFrame(bool needsUpdate, bool needsLayout) {
     buildScene(width, height);
   }
 
-  if (needsUpdate) {
+  if (!needsSceneBuild && needsUpdate) {
     UiPhaseScope updatePhase(UiPhase::Update);
     m_activePanel->update(*m_renderContext);
   }
-  if (needsLayout) {
+  if (!needsSceneBuild && needsLayout) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
     if (m_activePanel != nullptr) {
       m_activePanel->layout(*m_renderContext, m_contentWidth, m_contentHeight);
