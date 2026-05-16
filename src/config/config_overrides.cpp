@@ -284,7 +284,7 @@ namespace {
            a.transitions == b.transitions && nearlyEqual(a.transitionDurationMs, b.transitionDurationMs) &&
            nearlyEqual(a.edgeSmoothness, b.edgeSmoothness) && a.directory == b.directory &&
            a.directoryLight == b.directoryLight && a.directoryDark == b.directoryDark &&
-           a.automation.enabled == b.automation.enabled &&
+           a.perMonitorDirectories == b.perMonitorDirectories && a.automation.enabled == b.automation.enabled &&
            a.automation.intervalMinutes == b.automation.intervalMinutes && a.automation.order == b.automation.order &&
            a.automation.recursive == b.automation.recursive &&
            vectorEqual(a.monitorOverrides, b.monitorOverrides, wallpaperMonitorOverrideEqual);
@@ -776,6 +776,9 @@ bool ConfigService::hasEffectiveOverride(const std::vector<std::string>& path) c
 
 std::size_t ConfigService::overridePreserveDepthForPath(const std::vector<std::string>& path) const {
   if (path.size() > 4 && path[0] == "bar" && path[2] == "monitor" && isOverrideOnlyMonitorOverride(path[1], path[3])) {
+    return 4;
+  }
+  if (path.size() > 4 && path[0] == "wallpaper" && path[2] == "monitor" && path[3].size() > 0) {
     return 4;
   }
   if (path.size() > 2 && path[0] == "bar" && isOverrideOnlyBar(path[1])) {
