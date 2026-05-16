@@ -313,6 +313,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_attachedContactShadow = false;
     m_attachedRevealProgress = 1.0f;
     m_attachedRevealDirection = AttachedRevealDirection::Down;
+    m_keyboardRelaxTimer.stop();
     m_attachedBarPosition.clear();
     m_sourceBarName.clear();
     m_attachedPanelGeometry.reset();
@@ -425,6 +426,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_attachedContactShadow = barConfig.contactShadow;
     m_attachedRevealProgress = 0.0f;
     m_attachedRevealDirection = attached_panel::revealDirection(barPosition);
+    m_keyboardRelaxTimer.stop();
     m_attachedBarPosition = std::string(barPosition);
     m_attachedToBar = true;
 
@@ -476,12 +478,10 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
         .marginRight = 0,
         .marginBottom = 0,
         .marginLeft = surfaceX,
-        // Force exclusive keyboard so panels with text inputs work without a prior click.
-        // On Hyprland, Exclusive also grabs the pointer which breaks outside-click dismissal.
         .keyboard = (m_platform != nullptr && m_platform->focusGrabService() != nullptr &&
                      m_platform->focusGrabService()->available())
-                        ? LayerShellKeyboard::OnDemand
-                        : LayerShellKeyboard::Exclusive,
+                        ? LayerShellKeyboard::Exclusive
+                        : LayerShellKeyboard::None,
         .defaultWidth = surfaceWidth,
         .defaultHeight = surfaceHeight,
     };
@@ -503,13 +503,25 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
       applyPanelCompositorBlur();
       publishAttachedPanelGeometry(m_attachedRevealProgress);
       m_surface->requestRedraw();
-      // Defer the focus grab to the next tick after configure round-trip completes.
+      const bool hasFocusGrab = m_platform != nullptr && m_platform->focusGrabService() != nullptr &&
+                                m_platform->focusGrabService()->available();
       const std::uint64_t gen = m_destroyGeneration;
-      DeferredCall::callLater([this, gen]() {
-        if (m_destroyGeneration == gen) {
-          activateFocusGrab();
-        }
-      });
+      if (hasFocusGrab) {
+        activateFocusGrab();
+        m_keyboardRelaxTimer.start(std::chrono::milliseconds(100), [this, gen]() {
+          if (m_destroyGeneration != gen || !isAttachedOpen() || m_layerSurface == nullptr || m_closing) {
+            return;
+          }
+          m_layerSurface->setKeyboardInteractivity(LayerShellKeyboard::OnDemand);
+        });
+      } else {
+        m_keyboardRelaxTimer.start(std::chrono::milliseconds(100), [this, gen]() {
+          if (m_destroyGeneration != gen || !isAttachedOpen() || m_layerSurface == nullptr || m_closing) {
+            return;
+          }
+          m_layerSurface->setKeyboardInteractivity(LayerShellKeyboard::Exclusive);
+        });
+      }
       kLog.debug("panel manager: opened \"{}\" as attached layer-shell", panelId);
       return;
     }
@@ -528,6 +540,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_attachedContactShadow = false;
     m_attachedRevealProgress = 1.0f;
     m_attachedRevealDirection = AttachedRevealDirection::Down;
+    m_keyboardRelaxTimer.stop();
     m_attachedBarPosition.clear();
     m_attachedPanelGeometry.reset();
     m_attachedOpenAnimationPending = false;
@@ -722,6 +735,7 @@ void PanelManager::destroyPanel() {
   m_attachedContactShadow = false;
   m_attachedRevealProgress = 1.0f;
   m_attachedRevealDirection = AttachedRevealDirection::Down;
+  m_keyboardRelaxTimer.stop();
   m_attachedBarPosition.clear();
   m_sourceBarName.clear();
   m_attachedPanelGeometry.reset();

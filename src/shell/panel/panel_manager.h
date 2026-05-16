@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/timer_manager.h"
 #include "render/animation/animation_manager.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
@@ -191,6 +192,7 @@ private:
   float m_attachedRevealProgress = 1.0f;
   float m_detachedRevealProgress = 1.0f;
   AttachedRevealDirection m_attachedRevealDirection = AttachedRevealDirection::Down;
+  Timer m_keyboardRelaxTimer;
   std::string m_attachedBarPosition; // "top" / "bottom" / "left" / "right" while attached, empty otherwise
   std::string m_sourceBarName;       // name of the bar that opened the current panel
   std::optional<AttachedPanelGeometry> m_attachedPanelGeometry;
