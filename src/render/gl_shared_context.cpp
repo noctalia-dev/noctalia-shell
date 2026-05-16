@@ -10,6 +10,10 @@ namespace {
 
   constexpr EGLint kConfigAttributes[] = {
       EGL_SURFACE_TYPE,
+      // Window only: the Wayland EGL platform exposes no pbuffer configs. The
+      // visualizer's producer (which needs a real default framebuffer for
+      // libprojectM's hard-coded draw-FBO-0 composite) uses a hidden,
+      // never-committed wl_surface-backed window surface instead.
       EGL_WINDOW_BIT,
       EGL_RENDERABLE_TYPE,
       EGL_OPENGL_ES2_BIT,
@@ -24,9 +28,19 @@ namespace {
       EGL_NONE,
   };
 
+  // Request a GLES3 context. libprojectM 4.x renders through Vertex Array
+  // Objects, which are core in GLES3 but only an extension in GLES2; asking
+  // for 3 explicitly is the portable, correct thing for the libprojectM
+  // visualizer in this share group. GLES3 is a strict superset of GLES2 so the
+  // ES2-targeted surface backends are unaffected.
+  //
+  // NOTE: on Mesa this is effectively defensive — Mesa hands back a 3.2
+  // context with working VAOs even for an ES2 request. It is NOT what fixed
+  // the projectM first-frame crash; that was a context-ownership bug in
+  // ProjectMRenderer::loadPreset (see the comment there).
   constexpr EGLint kContextAttributes[] = {
       EGL_CONTEXT_CLIENT_VERSION,
-      2,
+      3,
       EGL_NONE,
   };
 

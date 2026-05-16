@@ -383,32 +383,67 @@ void LockSurface::updateCopy() {
   updateClockText();
 }
 
+void LockSurface::invalidateLivePaper() {
+  if (m_wallpaper == nullptr || !m_livePaperTexture.valid()) {
+    return;
+  }
+  // The texture binding is already in place and stable; we only need the
+  // scene to re-sample it. Mark the node paint-dirty and schedule a redraw.
+  m_wallpaper->markPaintDirty();
+  requestRedraw();
+}
+
 void LockSurface::applyWallpaperTexture() {
   if (!m_wallpaperDirty) {
     return;
   }
 
-  Color color = rgba(0.0f, 0.0f, 0.0f, 1.0f);
-  if (parseColorWallpaperPath(m_wallpaperPath, color)) {
+  // Live-paper short-circuits the image path: feed the visualizer texture
+  // straight into the wallpaper node. The texture id is stable; only its
+  // pixel contents change between frames, so we just leave the binding in
+  // place across redraws.
+  if (m_livePaperTexture.valid()) {
     m_wallpaperTexture = {};
-    m_wallpaper->setSources(WallpaperSourceKind::Color, {}, color, WallpaperSourceKind::Image, {},
-                            rgba(0.0f, 0.0f, 0.0f, 1.0f), 0.0f, 0.0f, 0.0f, 0.0f);
-    m_wallpaper->setTransition(WallpaperTransition::Fade, 0.0f, TransitionParams{});
-    m_wallpaper->setFillMode(m_wallpaperFillMode);
-    m_wallpaper->setFillColor(m_wallpaperFillColor);
-  } else if (m_textureCache != nullptr && !m_wallpaperPath.empty()) {
-    m_wallpaperTexture = m_textureCache->acquire(m_wallpaperPath);
-    m_wallpaper->setTextures(m_wallpaperTexture.id, {}, static_cast<float>(m_wallpaperTexture.width),
-                             static_cast<float>(m_wallpaperTexture.height), 0.0f, 0.0f);
+    m_wallpaper->setLiveImage(m_livePaperImage);
+    m_wallpaper->setTextures(m_livePaperTexture.id, {}, static_cast<float>(m_livePaperTexture.width),
+                             static_cast<float>(m_livePaperTexture.height), 0.0f, 0.0f);
     m_wallpaper->setTransition(WallpaperTransition::Fade, 0.0f, TransitionParams{});
     m_wallpaper->setFillMode(m_wallpaperFillMode);
     m_wallpaper->setFillColor(m_wallpaperFillColor);
   } else {
-    m_wallpaperTexture = {};
-    m_wallpaper->setTextures({}, {}, 0.0f, 0.0f, 0.0f, 0.0f);
+    m_wallpaper->setLiveImage(nullptr);
+    Color color = rgba(0.0f, 0.0f, 0.0f, 1.0f);
+    if (parseColorWallpaperPath(m_wallpaperPath, color)) {
+      m_wallpaperTexture = {};
+      m_wallpaper->setSources(WallpaperSourceKind::Color, {}, color, WallpaperSourceKind::Image, {},
+                              rgba(0.0f, 0.0f, 0.0f, 1.0f), 0.0f, 0.0f, 0.0f, 0.0f);
+      m_wallpaper->setTransition(WallpaperTransition::Fade, 0.0f, TransitionParams{});
+      m_wallpaper->setFillMode(m_wallpaperFillMode);
+      m_wallpaper->setFillColor(m_wallpaperFillColor);
+    } else if (m_textureCache != nullptr && !m_wallpaperPath.empty()) {
+      m_wallpaperTexture = m_textureCache->acquire(m_wallpaperPath);
+      m_wallpaper->setTextures(m_wallpaperTexture.id, {}, static_cast<float>(m_wallpaperTexture.width),
+                               static_cast<float>(m_wallpaperTexture.height), 0.0f, 0.0f);
+      m_wallpaper->setTransition(WallpaperTransition::Fade, 0.0f, TransitionParams{});
+      m_wallpaper->setFillMode(m_wallpaperFillMode);
+      m_wallpaper->setFillColor(m_wallpaperFillColor);
+    } else {
+      m_wallpaperTexture = {};
+      m_wallpaper->setTextures({}, {}, 0.0f, 0.0f, 0.0f, 0.0f);
+    }
   }
 
   m_wallpaperDirty = false;
+}
+
+void LockSurface::setLivePaperTexture(TextureHandle tex, void* eglImage) {
+  if (m_livePaperTexture.id == tex.id && m_livePaperTexture.width == tex.width &&
+      m_livePaperTexture.height == tex.height && m_livePaperImage == eglImage) {
+    return;
+  }
+  m_livePaperTexture = tex;
+  m_livePaperImage = eglImage;
+  m_wallpaperDirty = true;
 }
 
 void LockSurface::updateClockText() { m_clock->setText(formatLocalTime(shellTimeFormat(m_config))); }

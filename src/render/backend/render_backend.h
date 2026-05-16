@@ -115,6 +115,14 @@ public:
   virtual void clear(Color color) = 0;
   virtual void setBlendMode(RenderBlendMode mode) = 0;
   [[nodiscard]] virtual int maxTextureSize() = 0;
+
+  // Import an EGLImageKHR (opaque void*) as a GL texture *in this backend's
+  // context* and return its id, so a texture rendered by the visualizer in a
+  // different share-group context can be sampled here. Cached per image; the
+  // returned texture aliases the image storage, so the producer's subsequent
+  // renders are reflected without re-importing. Returns an invalid id on
+  // failure or a null image.
+  [[nodiscard]] virtual TextureId importLiveImage(void* eglImage) = 0;
   virtual void setScissor(RenderScissor scissor) = 0;
   virtual void disableScissor() = 0;
   virtual void drawRect(float surfaceWidth, float surfaceHeight, float width, float height,

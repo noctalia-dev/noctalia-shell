@@ -7,6 +7,8 @@
 #include "render/core/render_styles.h"
 #include "render/core/shared_texture_cache.h"
 #include "render/render_context.h"
+#include "render/visualizer/projectm_renderer.h"
+#include "shell/wallpaper/visualizer_service.h"
 #include "ui/controls/box.h"
 #include "ui/palette.h"
 #include "util/file_utils.h"
@@ -221,8 +223,69 @@ namespace {
 Wallpaper::Wallpaper() = default;
 
 Wallpaper::~Wallpaper() {
+  m_visualizerTimer.stop();
   for (auto& inst : m_instances) {
     releaseInstanceTextures(*inst);
+  }
+}
+
+void Wallpaper::setVisualizer(ProjectMRenderer* renderer, VisualizerService* service) {
+  m_visualizer = renderer;
+  m_visualizerService = service;
+  syncVisualizerTimer();
+  // Repaint with the new texture (or revert to image) on the next frame.
+  for (auto& inst : m_instances) {
+    updateRendererState(*inst);
+    if (inst->surface != nullptr) {
+      inst->surface->requestRedraw();
+    }
+  }
+}
+
+bool Wallpaper::livePaperActive() const noexcept {
+  if (m_visualizer == nullptr || m_config == nullptr || !m_wallpaperEnabled) {
+    return false;
+  }
+  if (!m_config->config().wallpaper.livePaper.enabled) {
+    return false;
+  }
+  return m_visualizer->textureHandle().valid();
+}
+
+void Wallpaper::syncVisualizerTimer() {
+  if (!livePaperActive()) {
+    if (m_visualizerTimer.active()) {
+      m_visualizerTimer.stop();
+    }
+    m_visualizerTickFps = 0;
+    return;
+  }
+  const int fps = std::clamp(m_config->config().wallpaper.livePaper.fps, 1, 240);
+  if (m_visualizerTimer.active() && fps == m_visualizerTickFps) {
+    return;
+  }
+  m_visualizerTickFps = fps;
+  const auto interval = std::chrono::milliseconds(std::max(1, 1000 / fps));
+  m_visualizerTimer.startRepeating(interval, [this]() { onVisualizerTick(); });
+}
+
+void Wallpaper::onVisualizerTick() {
+  if (m_visualizer == nullptr) {
+    return;
+  }
+  m_visualizer->renderFrame();
+  for (auto& inst : m_instances) {
+    // The visualizer renders into a fixed GL texture name whose *contents*
+    // change every tick but whose id never does. WallpaperNode::setSources()
+    // dedups on id, so without an explicit invalidation the node stays
+    // paint-clean and the surface freezes on the first frame. Force the node
+    // paint-dirty so each tick actually re-samples the updated texture.
+    if (inst->wallpaperNode != nullptr) {
+      inst->wallpaperNode->markPaintDirty();
+    }
+    if (inst->surface != nullptr) {
+      inst->surface->requestRedraw();
+    }
   }
 }
 
@@ -297,6 +360,14 @@ void Wallpaper::reload() {
     updateRendererState(*inst);
     inst->surface->requestRedraw();
   }
+
+  // Live-paper config (interval, fps, presets_dir, …) may have shifted; tell
+  // the service first so the renderer has the right mesh/fps before the next
+  // tick fires, then resync the tick cadence.
+  if (m_visualizerService != nullptr) {
+    m_visualizerService->onConfigChanged();
+  }
+  syncVisualizerTimer();
 }
 
 void Wallpaper::onOutputChange() {
@@ -457,6 +528,60 @@ void Wallpaper::registerIpc(IpcService& ipc) {
         return "ok\n";
       },
       "wallpaper-set [<connector>] <path>", "Set wallpaper for all or a specific output (persisted)");
+
+  // ── live_paper handlers ─────────────────────────────────────────────────
+  // No-ops (with a clear error) when the visualizer service isn't available
+  // — either libprojectM wasn't initialized or the build was started before
+  // the visualizer integration was active.
+  auto requireService = [this]() -> VisualizerService* { return m_visualizerService; };
+
+  ipc.registerHandler(
+      "livepaper-next",
+      [requireService](const std::string&) -> std::string {
+        VisualizerService* svc = requireService();
+        if (svc == nullptr) {
+          return "error: live_paper unavailable\n";
+        }
+        svc->advancePreset();
+        return "ok\n";
+      },
+      "livepaper-next", "Advance the live_paper visualizer to the next preset");
+
+  ipc.registerHandler(
+      "livepaper-toggle",
+      [requireService](const std::string&) -> std::string {
+        VisualizerService* svc = requireService();
+        if (svc == nullptr) {
+          return "error: live_paper unavailable\n";
+        }
+        svc->toggleEnabled();
+        return svc->enabled() ? "enabled\n" : "disabled\n";
+      },
+      "livepaper-toggle", "Toggle the live_paper visualizer on/off (persisted)");
+
+  ipc.registerHandler(
+      "livepaper-enable",
+      [requireService](const std::string&) -> std::string {
+        VisualizerService* svc = requireService();
+        if (svc == nullptr) {
+          return "error: live_paper unavailable\n";
+        }
+        svc->setEnabled(true);
+        return "ok\n";
+      },
+      "livepaper-enable", "Enable the live_paper visualizer (persisted)");
+
+  ipc.registerHandler(
+      "livepaper-disable",
+      [requireService](const std::string&) -> std::string {
+        VisualizerService* svc = requireService();
+        if (svc == nullptr) {
+          return "error: live_paper unavailable\n";
+        }
+        svc->setEnabled(false);
+        return "ok\n";
+      },
+      "livepaper-disable", "Disable the live_paper visualizer (persisted)");
 }
 
 void Wallpaper::syncInstances() {
@@ -733,6 +858,8 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
   instance->fillNode = static_cast<Box*>(instance->sceneRoot->addChild(std::move(fillNode)));
   auto wallpaperNode = std::make_unique<WallpaperNode>();
   instance->wallpaperNode = static_cast<WallpaperNode*>(instance->sceneRoot->addChild(std::move(wallpaperNode)));
+  auto darkenNode = std::make_unique<Box>();
+  instance->darkenNode = static_cast<Box*>(instance->sceneRoot->addChild(std::move(darkenNode)));
   instance->surface->setSceneRoot(instance->sceneRoot.get());
 
   auto* inst = instance.get();
@@ -744,6 +871,8 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
     inst->fillNode->setSize(sw, sh);
     inst->wallpaperNode->setPosition(0.0f, 0.0f);
     inst->wallpaperNode->setSize(sw, sh);
+    inst->darkenNode->setPosition(0.0f, 0.0f);
+    inst->darkenNode->setSize(sw, sh);
 
     if (inst->currentPath.empty() && !wallpaperPath.empty()) {
       loadWallpaper(*inst, wallpaperPath);
@@ -891,11 +1020,32 @@ void Wallpaper::updateRendererState(WallpaperInstance& instance) {
         .fillMode = FillMode::Solid,
     });
   }
-  wallpaperNode->setSources(
-      instance.currentSourceKind, instance.currentTexture.id, instance.currentColor, instance.nextSourceKind,
-      instance.nextTexture.id, instance.nextColor, static_cast<float>(instance.currentTexture.width),
-      static_cast<float>(instance.currentTexture.height), static_cast<float>(instance.nextTexture.width),
-      static_cast<float>(instance.nextTexture.height));
+  if (instance.darkenNode != nullptr) {
+    const float darkenAlpha = livePaperActive() ? wpConfig.livePaper.darken : 0.0f;
+    instance.darkenNode->setFill(rgba(0.0f, 0.0f, 0.0f, darkenAlpha));
+  }
+
+  // Live-paper overrides the image texture path entirely: we hand the
+  // wallpaper node the visualizer's offscreen texture and skip image
+  // transitions (libprojectM does its own cross-fade between presets).
+  if (livePaperActive()) {
+    const TextureHandle vizTex = m_visualizer->textureHandle();
+    // Hand the node the visualizer's EGLImage; render_context imports it into
+    // the backend context and samples that. The raw texture id is kept only
+    // for its dimensions / non-zero source gate.
+    wallpaperNode->setLiveImage(m_visualizer->eglImage());
+    wallpaperNode->setSources(WallpaperSourceKind::Image, vizTex.id, instance.currentColor, WallpaperSourceKind::Image,
+                              vizTex.id, instance.nextColor, static_cast<float>(vizTex.width),
+                              static_cast<float>(vizTex.height), static_cast<float>(vizTex.width),
+                              static_cast<float>(vizTex.height));
+  } else {
+    wallpaperNode->setLiveImage(nullptr);
+    wallpaperNode->setSources(
+        instance.currentSourceKind, instance.currentTexture.id, instance.currentColor, instance.nextSourceKind,
+        instance.nextTexture.id, instance.nextColor, static_cast<float>(instance.currentTexture.width),
+        static_cast<float>(instance.currentTexture.height), static_cast<float>(instance.nextTexture.width),
+        static_cast<float>(instance.nextTexture.height));
+  }
   wallpaperNode->setTransition(instance.activeTransition, instance.transitionProgress, instance.transitionParams);
   wallpaperNode->setFillMode(wpConfig.fillMode);
   wallpaperNode->setFillColor(fillColor);

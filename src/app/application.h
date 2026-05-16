@@ -35,6 +35,7 @@
 #include "net/http_client.h"
 #include "net/http_client_poll_source.h"
 #include "notification/notification_manager.h"
+#include "pipewire/pipewire_pcm_tap.h"
 #include "pipewire/pipewire_poll_source.h"
 #include "pipewire/pipewire_service.h"
 #include "pipewire/pipewire_spectrum.h"
@@ -45,6 +46,8 @@
 #include "render/core/thumbnail_service.h"
 #include "render/gl_shared_context.h"
 #include "render/render_context.h"
+#include "render/visualizer/projectm_renderer.h"
+#include "shell/wallpaper/visualizer_service.h"
 #include "shell/backdrop/backdrop.h"
 #include "shell/bar/bar.h"
 #include "shell/desktop/desktop_widgets_controller.h"
@@ -173,7 +176,10 @@ private:
   std::unique_ptr<NotificationService> m_notificationDbus;
   std::unique_ptr<PipeWireService> m_pipewireService;
   std::unique_ptr<PipeWireSpectrum> m_pipewireSpectrum;
+  std::unique_ptr<PipeWirePcmTap> m_pipewirePcmTap;
   std::unique_ptr<SoundPlayer> m_soundPlayer;
+  std::unique_ptr<ProjectMRenderer> m_projectMRenderer;
+  std::unique_ptr<VisualizerService> m_visualizerService;
 
   TelemetryService m_telemetryService;
   ScreenTimeService m_screenTimeService;

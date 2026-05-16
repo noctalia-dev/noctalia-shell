@@ -1,6 +1,7 @@
 #include "render/render_context.h"
 
 #include "core/log.h"
+
 #include "core/resource_paths.h"
 #include "core/ui_phase.h"
 #include "render/backend/render_backend.h"
@@ -366,20 +367,31 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
   }
   case NodeType::Wallpaper: {
     const auto* wallpaper = static_cast<const WallpaperNode*>(node);
-    const bool hasSource1 = wallpaper->sourceKind1() == WallpaperSourceKind::Color || wallpaper->texture1() != 0;
+    // Live paper: the visualizer renders in another share-group context, so we
+    // import its EGLImage as a texture in *this* (backend) context and sample
+    // that for both sources (libprojectM cross-fades presets internally, so no
+    // node-level transition is needed).
+    TextureId liveTex{};
+    if (wallpaper->liveImage() != nullptr) {
+      liveTex = m_backend->importLiveImage(wallpaper->liveImage());
+    }
+    const bool live = liveTex != 0;
+    const TextureId tex1 = live ? liveTex : wallpaper->texture1();
+    const bool hasSource1 = wallpaper->sourceKind1() == WallpaperSourceKind::Color || tex1 != 0;
     if (hasSource1) {
-      const bool hasSource2 = wallpaper->sourceKind2() == WallpaperSourceKind::Color || wallpaper->texture2() != 0;
+      const bool hasSource2 =
+          live || wallpaper->sourceKind2() == WallpaperSourceKind::Color || wallpaper->texture2() != 0;
       const WallpaperSourceKind sourceKind2 = hasSource2 ? wallpaper->sourceKind2() : wallpaper->sourceKind1();
-      const TextureId texture2 = hasSource2 ? wallpaper->texture2() : wallpaper->texture1();
+      const TextureId texture2 = live ? liveTex : (hasSource2 ? wallpaper->texture2() : wallpaper->texture1());
       const Color& sourceColor2 = hasSource2 ? wallpaper->sourceColor2() : wallpaper->sourceColor1();
       const float imageWidth2 = hasSource2 ? wallpaper->imageWidth2() : wallpaper->imageWidth1();
       const float imageHeight2 = hasSource2 ? wallpaper->imageHeight2() : wallpaper->imageHeight1();
-      const float progress = hasSource2 ? wallpaper->progress() : 0.0f;
-      m_backend->drawWallpaper(wallpaper->transition(), wallpaper->sourceKind1(), wallpaper->texture1(),
-                               wallpaper->sourceColor1(), sourceKind2, texture2, sourceColor2, sw, sh, node->width(),
-                               node->height(), wallpaper->imageWidth1(), wallpaper->imageHeight1(), imageWidth2,
-                               imageHeight2, progress, static_cast<float>(wallpaper->fillMode()),
-                               wallpaper->transitionParams(), wallpaper->fillColor(), worldTransform);
+      const float progress = live ? 0.0f : (hasSource2 ? wallpaper->progress() : 0.0f);
+      m_backend->drawWallpaper(wallpaper->transition(), wallpaper->sourceKind1(), tex1, wallpaper->sourceColor1(),
+                               sourceKind2, texture2, sourceColor2, sw, sh, node->width(), node->height(),
+                               wallpaper->imageWidth1(), wallpaper->imageHeight1(), imageWidth2, imageHeight2,
+                               progress, static_cast<float>(wallpaper->fillMode()), wallpaper->transitionParams(),
+                               wallpaper->fillColor(), worldTransform);
     }
     break;
   }

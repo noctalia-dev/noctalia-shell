@@ -1701,6 +1701,36 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
       }
     }
 
+    // [wallpaper.live_paper] — projectM/Milkdrop visualizer wallpaper.
+    // The home-module stages presets at $XDG_DATA_HOME/waylivepaper/presets;
+    // presets_dir overrides that location.
+    if (auto* lpTbl = (*wpTbl)["live_paper"].as_table()) {
+      auto& lp = wp.livePaper;
+      if (auto v = (*lpTbl)["enabled"].value<bool>())
+        lp.enabled = *v;
+      if (auto v = (*lpTbl)["interval_seconds"].value<int64_t>()) {
+        lp.intervalSeconds = std::clamp(static_cast<std::int32_t>(*v), 0, 86400);
+      }
+      if (auto v = (*lpTbl)["fps"].value<int64_t>()) {
+        lp.fps = std::clamp(static_cast<std::int32_t>(*v), 1, 240);
+      }
+      if (auto v = (*lpTbl)["mesh_w"].value<int64_t>()) {
+        lp.meshW = std::clamp(static_cast<std::int32_t>(*v), 4, 256);
+      }
+      if (auto v = (*lpTbl)["mesh_h"].value<int64_t>()) {
+        lp.meshH = std::clamp(static_cast<std::int32_t>(*v), 4, 256);
+      }
+      if (auto v = finiteDouble((*lpTbl)["darken"])) {
+        lp.darken = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
+      }
+      if (auto v = (*lpTbl)["presets_dir"].value<std::string>()) {
+        lp.presetsDir = expandUserPathString(*v);
+      }
+      if (auto v = (*lpTbl)["audio_source"].value<std::string>()) {
+        lp.audioSource = *v;
+      }
+    }
+
     if (auto* monTblMap = (*wpTbl)["monitor"].as_table()) {
       for (const auto& [monName, monNode] : *monTblMap) {
         auto* monTbl = monNode.as_table();
