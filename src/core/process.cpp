@@ -1,16 +1,23 @@
 #include "core/process.h"
 
+#include <algorithm>
+#include <array>
 #include <cerrno>
+#include <chrono>
 #include <csignal>
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
 #include <filesystem>
+#include <optional>
 #include <string_view>
+#include <sys/poll.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
 namespace {
+
+  constexpr std::chrono::milliseconds kProcessPollInterval{100};
 
   void writePipeOrIgnore(int fd, const void* data, size_t len) {
     auto p = reinterpret_cast<const char*>(data);
@@ -38,6 +45,250 @@ namespace {
         ::close(devnull);
       }
     }
+  }
+
+  void closeFd(int& fd) {
+    if (fd >= 0) {
+      ::close(fd);
+      fd = -1;
+    }
+  }
+
+  void closePipe(int (&pipeFds)[2]) {
+    closeFd(pipeFds[0]);
+    closeFd(pipeFds[1]);
+  }
+
+  void trimTrailingLineEndings(std::string& value) {
+    while (!value.empty() && (value.back() == '\n' || value.back() == '\r')) {
+      value.pop_back();
+    }
+  }
+
+  [[nodiscard]] std::optional<std::vector<std::string>> makeCommand(std::initializer_list<const char*> args) {
+    std::vector<std::string> command;
+    command.reserve(args.size());
+    for (const char* arg : args) {
+      if (arg == nullptr) {
+        return std::nullopt;
+      }
+      command.emplace_back(arg);
+    }
+    return command;
+  }
+
+  [[nodiscard]] std::vector<char*> makeArgv(const std::vector<std::string>& args) {
+    std::vector<char*> argv;
+    argv.reserve(args.size() + 1);
+    for (const auto& arg : args) {
+      argv.push_back(const_cast<char*>(arg.c_str()));
+    }
+    argv.push_back(nullptr);
+    return argv;
+  }
+
+  bool setNonBlocking(int fd) {
+    const int flags = ::fcntl(fd, F_GETFL, 0);
+    return flags >= 0 && ::fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0;
+  }
+
+  void drainAvailable(int& fd, std::string& out) {
+    if (fd < 0) {
+      return;
+    }
+
+    char tmp[4096];
+    for (;;) {
+      const ssize_t n = ::read(fd, tmp, sizeof(tmp));
+      if (n > 0) {
+        out.append(tmp, static_cast<std::size_t>(n));
+        continue;
+      }
+      if (n == 0) {
+        closeFd(fd);
+        return;
+      }
+      if (errno == EINTR) {
+        continue;
+      }
+      if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        return;
+      }
+      closeFd(fd);
+      return;
+    }
+  }
+
+  [[nodiscard]] int exitCodeFromStatus(int status) {
+    if (WIFEXITED(status)) {
+      return WEXITSTATUS(status);
+    }
+    if (WIFSIGNALED(status)) {
+      return 128 + WTERMSIG(status);
+    }
+    return -1;
+  }
+
+  [[nodiscard]] bool waitNoHang(pid_t pid, int& exitCode) {
+    int status = 0;
+    for (;;) {
+      const pid_t result = ::waitpid(pid, &status, WNOHANG);
+      if (result == pid) {
+        exitCode = exitCodeFromStatus(status);
+        return true;
+      }
+      if (result == 0) {
+        return false;
+      }
+      if (errno == EINTR) {
+        continue;
+      }
+      exitCode = -1;
+      return true;
+    }
+  }
+
+  [[nodiscard]] int waitBlocking(pid_t pid) {
+    int status = 0;
+    while (::waitpid(pid, &status, 0) < 0) {
+      if (errno != EINTR) {
+        return -1;
+      }
+    }
+    return exitCodeFromStatus(status);
+  }
+
+  void terminateAndWait(pid_t pid, int& exitCode) {
+    ::kill(pid, SIGTERM);
+    for (int i = 0; i < 10; ++i) {
+      if (waitNoHang(pid, exitCode)) {
+        return;
+      }
+      ::poll(nullptr, 0, 10);
+    }
+
+    ::kill(pid, SIGKILL);
+    exitCode = waitBlocking(pid);
+  }
+
+  [[nodiscard]] int pollTimeoutMs(std::optional<std::chrono::steady_clock::time_point> deadline) {
+    if (!deadline.has_value()) {
+      return static_cast<int>(kProcessPollInterval.count());
+    }
+
+    const auto now = std::chrono::steady_clock::now();
+    if (now >= *deadline) {
+      return 0;
+    }
+    const auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(*deadline - now);
+    const auto bounded = std::clamp(remaining, std::chrono::milliseconds(1), kProcessPollInterval);
+    return static_cast<int>(bounded.count());
+  }
+
+  process::RunResult runSyncProcess(const std::vector<std::string>& args,
+                                    std::optional<std::chrono::milliseconds> timeout) {
+    if (args.empty() || args.front().empty()) {
+      return {-1, {}, {}};
+    }
+
+    int outPipe[2] = {-1, -1};
+    int errPipe[2] = {-1, -1};
+    if (::pipe(outPipe) != 0) {
+      return {-1, {}, {}};
+    }
+    if (::pipe(errPipe) != 0) {
+      closePipe(outPipe);
+      return {-1, {}, {}};
+    }
+
+    const pid_t pid = ::fork();
+    if (pid < 0) {
+      closePipe(outPipe);
+      closePipe(errPipe);
+      return {-1, {}, {}};
+    }
+
+    if (pid == 0) {
+      closeFd(outPipe[0]);
+      closeFd(errPipe[0]);
+      ::dup2(outPipe[1], STDOUT_FILENO);
+      ::dup2(errPipe[1], STDERR_FILENO);
+      closeFd(outPipe[1]);
+      closeFd(errPipe[1]);
+
+      std::vector<char*> argv = makeArgv(args);
+
+      ::execvp(argv[0], argv.data());
+      ::_exit(127);
+    }
+
+    closeFd(outPipe[1]);
+    closeFd(errPipe[1]);
+    (void)setNonBlocking(outPipe[0]);
+    (void)setNonBlocking(errPipe[0]);
+
+    std::string out;
+    std::string err;
+    bool exited = false;
+    bool timedOut = false;
+    int exitCode = -1;
+    std::optional<std::chrono::steady_clock::time_point> deadline;
+    if (timeout.has_value()) {
+      deadline = std::chrono::steady_clock::now() + std::max(*timeout, std::chrono::milliseconds(0));
+    }
+
+    for (;;) {
+      drainAvailable(outPipe[0], out);
+      drainAvailable(errPipe[0], err);
+
+      if (!exited) {
+        exited = waitNoHang(pid, exitCode);
+      }
+      if (exited) {
+        drainAvailable(outPipe[0], out);
+        drainAvailable(errPipe[0], err);
+        closeFd(outPipe[0]);
+        closeFd(errPipe[0]);
+        break;
+      }
+
+      if (deadline.has_value() && std::chrono::steady_clock::now() >= *deadline) {
+        timedOut = true;
+        terminateAndWait(pid, exitCode);
+      }
+
+      if (timedOut) {
+        drainAvailable(outPipe[0], out);
+        drainAvailable(errPipe[0], err);
+        closeFd(outPipe[0]);
+        closeFd(errPipe[0]);
+        break;
+      }
+
+      std::array<pollfd, 2> fds{};
+      nfds_t count = 0;
+      if (outPipe[0] >= 0) {
+        fds[count++] = pollfd{.fd = outPipe[0], .events = POLLIN, .revents = 0};
+      }
+      if (errPipe[0] >= 0) {
+        fds[count++] = pollfd{.fd = errPipe[0], .events = POLLIN, .revents = 0};
+      }
+
+      const int waitMs = exited ? 0 : pollTimeoutMs(deadline);
+      if (count > 0) {
+        if (::poll(fds.data(), count, waitMs) < 0 && errno != EINTR) {
+          break;
+        }
+      } else if (!exited) {
+        ::poll(nullptr, 0, waitMs);
+      }
+    }
+
+    closeFd(outPipe[0]);
+    closeFd(errPipe[0]);
+    trimTrailingLineEndings(out);
+    trimTrailingLineEndings(err);
+    return {exitCode, std::move(out), std::move(err), timedOut};
   }
 
   // Double-fork + setsid so the exec'd process is not a direct child of the caller (matches
@@ -126,12 +377,7 @@ namespace {
 
     attachStdioToDevNull();
 
-    std::vector<char*> argv;
-    argv.reserve(args.size() + 1);
-    for (const auto& arg : args) {
-      argv.push_back(const_cast<char*>(arg.c_str()));
-    }
-    argv.push_back(nullptr);
+    std::vector<char*> argv = makeArgv(args);
 
     ::execvp(argv[0], argv.data());
     ::_exit(127);
@@ -182,15 +428,8 @@ namespace process {
   }
 
   bool runAsync(std::initializer_list<const char*> args) {
-    std::vector<std::string> command;
-    command.reserve(args.size());
-    for (const char* arg : args) {
-      if (arg == nullptr) {
-        return false;
-      }
-      command.emplace_back(arg);
-    }
-    return runAsync(command, {});
+    const auto command = makeCommand(args);
+    return command.has_value() && runAsync(*command, {});
   }
 
   bool runAsync(const std::string& command) {
@@ -212,15 +451,11 @@ namespace process {
   }
 
   std::optional<int> launchDetachedTracked(std::initializer_list<const char*> args) {
-    std::vector<std::string> command;
-    command.reserve(args.size());
-    for (const char* arg : args) {
-      if (arg == nullptr) {
-        return std::nullopt;
-      }
-      command.emplace_back(arg);
+    const auto command = makeCommand(args);
+    if (!command.has_value()) {
+      return std::nullopt;
     }
-    return launchDetachedTracked(command);
+    return launchDetachedTracked(*command);
   }
 
   void terminateTracked(int pid) {
@@ -236,80 +471,20 @@ namespace process {
     }
   }
 
-  RunResult runSync(const std::vector<std::string>& args) {
-    if (args.empty() || args.front().empty())
-      return {-1, {}, {}};
-
-    int outPipe[2]{};
-    int errPipe[2]{};
-    if (::pipe(outPipe) != 0 || ::pipe(errPipe) != 0)
-      return {-1, {}, {}};
-
-    const pid_t pid = ::fork();
-    if (pid < 0) {
-      ::close(outPipe[0]);
-      ::close(outPipe[1]);
-      ::close(errPipe[0]);
-      ::close(errPipe[1]);
-      return {-1, {}, {}};
-    }
-
-    if (pid == 0) {
-      ::close(outPipe[0]);
-      ::close(errPipe[0]);
-      ::dup2(outPipe[1], STDOUT_FILENO);
-      ::dup2(errPipe[1], STDERR_FILENO);
-      ::close(outPipe[1]);
-      ::close(errPipe[1]);
-
-      std::vector<char*> argv;
-      argv.reserve(args.size() + 1);
-      for (const auto& arg : args)
-        argv.push_back(const_cast<char*>(arg.c_str()));
-      argv.push_back(nullptr);
-
-      ::execvp(argv[0], argv.data());
-      ::_exit(127);
-    }
-
-    ::close(outPipe[1]);
-    ::close(errPipe[1]);
-
-    auto drain = [](int fd) {
-      std::string buf;
-      char tmp[4096];
-      for (;;) {
-        const auto n = ::read(fd, tmp, sizeof(tmp));
-        if (n <= 0)
-          break;
-        buf.append(tmp, static_cast<size_t>(n));
-      }
-      ::close(fd);
-      while (!buf.empty() && (buf.back() == '\n' || buf.back() == '\r'))
-        buf.pop_back();
-      return buf;
-    };
-
-    std::string out = drain(outPipe[0]);
-    std::string err = drain(errPipe[0]);
-
-    int status = 0;
-    ::waitpid(pid, &status, 0);
-    int exitCode = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
-
-    return {exitCode, std::move(out), std::move(err)};
-  }
+  RunResult runSync(const std::vector<std::string>& args) { return runSyncProcess(args, std::nullopt); }
 
   RunResult runSync(std::initializer_list<const char*> args) {
-    std::vector<std::string> command;
-    command.reserve(args.size());
-    for (const char* arg : args) {
-      if (arg == nullptr) {
-        return {-1, {}, {}};
-      }
-      command.emplace_back(arg);
-    }
-    return runSync(command);
+    const auto command = makeCommand(args);
+    return command.has_value() ? runSync(*command) : RunResult{-1, {}, {}};
+  }
+
+  RunResult runSyncWithTimeout(const std::vector<std::string>& args, std::chrono::milliseconds timeout) {
+    return runSyncProcess(args, timeout);
+  }
+
+  RunResult runSyncWithTimeout(std::initializer_list<const char*> args, std::chrono::milliseconds timeout) {
+    const auto command = makeCommand(args);
+    return command.has_value() ? runSyncWithTimeout(*command, timeout) : RunResult{-1, {}, {}};
   }
 
   RunResult runSync(const std::string& command) {
@@ -320,14 +495,14 @@ namespace process {
 
   bool launchFirstAvailable(std::initializer_list<std::initializer_list<const char*>> commandVariants) {
     for (const auto& variant : commandVariants) {
-      if (variant.size() == 0) {
+      const auto command = makeCommand(variant);
+      if (!command.has_value() || command->empty()) {
         continue;
       }
-      const char* executable = *variant.begin();
-      if (!commandExists(executable)) {
+      if (!commandExists(command->front().c_str())) {
         continue;
       }
-      if (runAsync(variant)) {
+      if (runAsync(*command)) {
         return true;
       }
     }

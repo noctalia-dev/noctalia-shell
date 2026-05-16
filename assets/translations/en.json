@@ -415,7 +415,7 @@
       "logout-title": "Logout unavailable",
       "logout-body": "Could not determine how to terminate this session.",
       "reboot-title": "Reboot failed",
-      "reboot-body": "Could not launch systemctl reboot.",
+      "reboot-body": "Could not launch a reboot command.",
       "shutdown-title": "Shutdown failed",
       "shutdown-body": "Could not launch a shutdown command.",
       "lock-title": "Lock unavailable",

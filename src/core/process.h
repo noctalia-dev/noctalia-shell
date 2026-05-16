@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <initializer_list>
 #include <optional>
 #include <string>
@@ -11,8 +12,9 @@ namespace process {
     int exitCode = -1;
     std::string out;
     std::string err;
+    bool timedOut = false;
 
-    operator bool() const { return exitCode == 0; }
+    operator bool() const { return exitCode == 0 && !timedOut; }
   };
 
   [[nodiscard]] bool commandExists(const char* name);
@@ -28,6 +30,9 @@ namespace process {
   [[nodiscard]] bool runAsync(std::initializer_list<const char*> args);
   [[nodiscard]] RunResult runSync(const std::vector<std::string>& args);
   [[nodiscard]] RunResult runSync(std::initializer_list<const char*> args);
+  [[nodiscard]] RunResult runSyncWithTimeout(const std::vector<std::string>& args, std::chrono::milliseconds timeout);
+  [[nodiscard]] RunResult runSyncWithTimeout(std::initializer_list<const char*> args,
+                                             std::chrono::milliseconds timeout);
 
   // Like runAsync(args), but returns the grandchild pid for terminateTracked (optional API).
   [[nodiscard]] std::optional<int> launchDetachedTracked(const std::vector<std::string>& args);
