@@ -40,13 +40,12 @@ jobs:
               return;
             }
 
-            const message = `Thanks so much for reaching out and sharing this with us!
-
-Right now, our team is entirely focused on building v5. Since the v4 lifecycle has officially come to an end, we are wrapping up old issues and won’t be shipping any further updates or fixes to that codebase.
-
-We are closing this issue for now, but we truly appreciate you taking the time to report it. We aren’t quite ready to open up the v5 tracker for public bug reports or feature requests just yet, but we’ll definitely keep your feedback in mind as we develop the new version!
-
-Cheers!`;
+            const message = [
+              "Thanks so much for reaching out and sharing this with us!",
+              "Right now, our team is entirely focused on building v5. Since the v4 lifecycle has officially come to an end, we are wrapping up old issues and won't be shipping any further updates or fixes to that codebase.",
+              "We are closing this issue for now, but we truly appreciate you taking the time to report it. We aren't quite ready to open up the v5 tracker for public bug reports or feature requests just yet, but we'll definitely keep your feedback in mind as we develop the new version!",
+              "Cheers!"
+            ].join("\n\n");
 
             await github.rest.issues.createComment({
               owner,
