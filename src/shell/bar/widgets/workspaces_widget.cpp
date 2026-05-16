@@ -316,6 +316,9 @@ void WorkspacesWidget::updateContainerSize() {
   } else {
     m_container->setFrameSize(total, m_indicatorHeight);
   }
+  if (Node* shell = barCapsuleShell(); shell != nullptr) {
+    shell->markLayoutDirty();
+  }
 }
 
 void WorkspacesWidget::retarget(Renderer& renderer) {
