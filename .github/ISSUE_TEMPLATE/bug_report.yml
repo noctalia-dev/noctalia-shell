@@ -120,8 +120,8 @@ body:
         - Installation method:
         - GPU:
       placeholder: |
-        Installation method: AUR
-        GPU: AMD RX 7800 XT (amdgpu)
+        Installation method: e.g. AUR, source build, Nix
+        GPU: e.g. AMD RX 7800 XT (amdgpu)
       render: text
     validations:
       required: true
