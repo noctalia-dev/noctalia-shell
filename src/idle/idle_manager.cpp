@@ -137,6 +137,7 @@ void IdleManager::cancelActiveGrace(bool userCancelled) {
     }
   }
   m_graceBehaviors.clear();
+  m_graceFallbackTimer.stop();
   ++m_graceGeneration;
   if (m_onGraceEnd) {
     m_onGraceEnd(userCancelled);
@@ -149,6 +150,8 @@ void IdleManager::graceFadeComplete() {
   }
   auto behaviors = std::move(m_graceBehaviors);
   m_graceBehaviors.clear();
+  m_graceFallbackTimer.stop();
+  m_graceFallbackTimer.stop();
   if (m_onGraceEnd) {
     m_onGraceEnd(false);
   }
@@ -195,6 +198,13 @@ void IdleManager::handleIdled(void* data, ext_idle_notification_v1* /*notificati
     kLog.info("idle behavior '{}' pre-action fade {}ms", behavior->config.name, fade.count());
     self.joinActiveGrace(*behavior);
     const std::uint64_t generation = ++self.m_graceGeneration;
+    self.m_graceFallbackTimer.start(fade + std::chrono::milliseconds(250), [&self, generation]() {
+      if (self.m_graceGeneration != generation || !self.hasActiveGrace()) {
+        return;
+      }
+      kLog.debug("idle pre-action fade fallback completed");
+      self.graceFadeComplete();
+    });
     self.m_onGraceBegin(behavior->config.name, fade, [ptr = &self, generation]() {
       DeferredCall::callLater([ptr, generation]() {
         if (ptr->m_graceGeneration != generation || !ptr->hasActiveGrace()) {
