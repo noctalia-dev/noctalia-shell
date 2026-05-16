@@ -78,15 +78,15 @@ Sanitizer runtime packages are only needed for ASan/UBSan builds configured with
 Requires [just](https://github.com/casey/just) and [meson](https://mesonbuild.com/).
 
 ```sh
-# Debug build in build-debug/
-just configure
-just build
-just run
-
 # Optimized release build in build-release/
 just configure release
 just build release
 just run release
+
+# Debug build in build-debug/ don't use debug unless you are debugging...
+just configure
+just build
+just run
 
 # Clean rebuild
 just rebuild
