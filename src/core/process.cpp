@@ -274,13 +274,18 @@ namespace {
         fds[count++] = pollfd{.fd = errPipe[0], .events = POLLIN, .revents = 0};
       }
 
-      const int waitMs = exited ? 0 : pollTimeoutMs(deadline);
       if (count > 0) {
+        const int waitMs = exited ? 0 : pollTimeoutMs(deadline);
         if (::poll(fds.data(), count, waitMs) < 0 && errno != EINTR) {
           break;
         }
       } else if (!exited) {
-        ::poll(nullptr, 0, waitMs);
+        if (!deadline.has_value()) {
+          exitCode = waitBlocking(pid);
+          exited = true;
+          continue;
+        }
+        ::poll(nullptr, 0, std::min(10, pollTimeoutMs(deadline)));
       }
     }
 
