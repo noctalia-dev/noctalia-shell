@@ -571,27 +571,63 @@ bool Wallpaper::switchToRandomWallpaper() {
   }
 
   const auto& wallpaper = m_config->config().wallpaper;
-  std::vector<std::string> candidates;
-  collectWallpaperCandidates(wallpaper.directory, wallpaper.automation.recursive, candidates);
-  if (candidates.empty()) {
-    return false;
-  }
-
-  const std::string currentDefault = m_config->getDefaultWallpaperPath();
-  const std::string picked = pickRandomWallpaperPath(candidates, currentDefault);
-  if (picked.empty() || picked == currentDefault) {
-    return false;
-  }
+  const ThemeMode mode = wallpaper.perMonitorDirectories
+                             ? (m_config->config().theme.mode == ThemeMode::Light ? ThemeMode::Light : ThemeMode::Dark)
+                             : ThemeMode::Dark;
 
   ConfigService::WallpaperBatch batch(*m_config);
+  bool anyChanged = false;
+
   for (const auto& inst : m_instances) {
-    if (!inst->connectorName.empty()) {
-      m_config->setWallpaperPath(inst->connectorName, picked);
+    if (inst->connectorName.empty()) {
+      continue;
+    }
+    const WaylandOutput* output = nullptr;
+    if (m_wayland != nullptr) {
+      for (const auto& out : m_wayland->outputs()) {
+        if (out.output == inst->output) {
+          output = &out;
+          break;
+        }
+      }
+    }
+    std::vector<std::string> candidates;
+    const std::string dir =
+        output != nullptr ? resolveWallpaperDirectory(wallpaper, *output, mode) : wallpaper.directory;
+    collectWallpaperCandidates(dir, wallpaper.automation.recursive, candidates);
+    if (candidates.empty()) {
+      continue;
+    }
+    const std::string currentPath = m_config->getWallpaperPath(inst->connectorName);
+    const std::string picked = pickRandomWallpaperPath(candidates, currentPath);
+    if (picked.empty() || picked == currentPath) {
+      continue;
+    }
+    m_config->setWallpaperPath(inst->connectorName, picked);
+    kLog.info("ipc set {} → {}", inst->connectorName, picked);
+    anyChanged = true;
+  }
+
+  if (!wallpaper.perMonitorDirectories) {
+    std::vector<std::string> candidates;
+    collectWallpaperCandidates(wallpaper.directory, wallpaper.automation.recursive, candidates);
+    if (!candidates.empty()) {
+      const std::string currentDefault = m_config->getDefaultWallpaperPath();
+      const std::string picked = pickRandomWallpaperPath(candidates, currentDefault);
+      if (!picked.empty() && picked != currentDefault) {
+        for (const auto& inst : m_instances) {
+          if (!inst->connectorName.empty()) {
+            m_config->setWallpaperPath(inst->connectorName, picked);
+          }
+        }
+        m_config->setWallpaperPath(std::nullopt, picked);
+        kLog.info("ipc set all outputs → {}", picked);
+        anyChanged = true;
+      }
     }
   }
-  m_config->setWallpaperPath(std::nullopt, picked);
-  kLog.info("ipc set all outputs → {}", picked);
-  return true;
+
+  return anyChanged;
 }
 
 void Wallpaper::createInstance(const WaylandOutput& output) {

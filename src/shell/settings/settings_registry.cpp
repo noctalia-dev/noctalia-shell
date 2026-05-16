@@ -424,29 +424,42 @@ namespace settings {
           break;
         }
       }
-      entries.push_back(makeEntry(
-          section, "monitors", connector, tr("settings.schema.wallpaper.monitor-directory.label"), mpath("directory"),
-          TextSetting{.value = ovr != nullptr && ovr->directory.has_value() ? *ovr->directory : "",
-                      .placeholder = "~/Pictures/Wallpapers",
-                      .browseMode = TextSettingBrowseMode::SelectFolder,
-                      .browseFileExtensions = {}},
-          "monitor folder"));
-      entries.push_back(
-          makeEntry(section, "monitors", connector, tr("settings.schema.wallpaper.monitor-directory-light.label"),
-                    mpath("directory_light"),
-                    TextSetting{.value = ovr != nullptr && ovr->directoryLight.has_value() ? *ovr->directoryLight : "",
-                                .placeholder = tr("settings.schema.wallpaper.monitor-directory-light.placeholder"),
-                                .browseMode = TextSettingBrowseMode::SelectFolder,
-                                .browseFileExtensions = {}},
-                    "monitor light folder", true));
-      entries.push_back(
-          makeEntry(section, "monitors", connector, tr("settings.schema.wallpaper.monitor-directory-dark.label"),
-                    mpath("directory_dark"),
-                    TextSetting{.value = ovr != nullptr && ovr->directoryDark.has_value() ? *ovr->directoryDark : "",
-                                .placeholder = tr("settings.schema.wallpaper.monitor-directory-dark.placeholder"),
-                                .browseMode = TextSettingBrowseMode::SelectFolder,
-                                .browseFileExtensions = {}},
-                    "monitor dark folder", true));
+      auto perMonOn = SettingVisibility{{"wallpaper", "per_monitor_directories"}, {"true"}};
+      {
+        auto e = makeEntry(section, "monitors", connector, tr("settings.schema.wallpaper.monitor-directory.label"),
+                           mpath("directory"),
+                           TextSetting{.value = ovr != nullptr && ovr->directory.has_value() ? *ovr->directory : "",
+                                       .placeholder = "~/Pictures/Wallpapers",
+                                       .browseMode = TextSettingBrowseMode::SelectFolder,
+                                       .browseFileExtensions = {}},
+                           "monitor folder");
+        e.visibleWhen = perMonOn;
+        entries.push_back(std::move(e));
+      }
+      {
+        auto e = makeEntry(
+            section, "monitors", connector, tr("settings.schema.wallpaper.monitor-directory-light.label"),
+            mpath("directory_light"),
+            TextSetting{.value = ovr != nullptr && ovr->directoryLight.has_value() ? *ovr->directoryLight : "",
+                        .placeholder = tr("settings.schema.wallpaper.monitor-directory-light.placeholder"),
+                        .browseMode = TextSettingBrowseMode::SelectFolder,
+                        .browseFileExtensions = {}},
+            "monitor light folder", true);
+        e.visibleWhen = perMonOn;
+        entries.push_back(std::move(e));
+      }
+      {
+        auto e =
+            makeEntry(section, "monitors", connector, tr("settings.schema.wallpaper.monitor-directory-dark.label"),
+                      mpath("directory_dark"),
+                      TextSetting{.value = ovr != nullptr && ovr->directoryDark.has_value() ? *ovr->directoryDark : "",
+                                  .placeholder = tr("settings.schema.wallpaper.monitor-directory-dark.placeholder"),
+                                  .browseMode = TextSettingBrowseMode::SelectFolder,
+                                  .browseFileExtensions = {}},
+                      "monitor dark folder", true);
+        e.visibleWhen = perMonOn;
+        entries.push_back(std::move(e));
+      }
     }
     {
       MultiSelectSetting transitions;
