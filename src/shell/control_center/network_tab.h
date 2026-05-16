@@ -33,8 +33,9 @@ private:
   void syncPasswordCard();
   void showPasswordPrompt(const NetworkSecretAgent::SecretRequest& request);
   void clearPasswordPrompt();
-  [[nodiscard]] std::string apListKey(const std::vector<AccessPointInfo>& aps) const;
-  [[nodiscard]] std::string vpnListKey(const std::vector<VpnConnectionInfo>& vpns) const;
+  [[nodiscard]] std::string structureKey(const std::vector<AccessPointInfo>& aps,
+                                         const std::vector<VpnConnectionInfo>& vpns) const;
+  [[nodiscard]] std::string apRowsKey(const std::vector<AccessPointInfo>& aps) const;
 
   NetworkService* m_network = nullptr;
   NetworkSecretAgent* m_secrets = nullptr;
@@ -59,7 +60,11 @@ private:
   Spinner* m_scanSpinner = nullptr;
   bool m_vpnVisible = true;
 
-  std::string m_lastListKey;
+  Flex* m_vpnSection = nullptr;
+  Flex* m_apRows = nullptr;
+
+  std::string m_lastStructureKey;
+  std::string m_lastApRowsKey;
   float m_lastListWidth = -1.0f;
 
   bool m_hasPendingSecret = false;
