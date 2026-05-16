@@ -64,6 +64,14 @@ void SelectDropdownPopup::setShadowConfig(const ShellConfig::ShadowConfig& shado
 }
 
 void SelectDropdownPopup::openSelectDropdown(const DropdownRequest& request, DropdownCallbacks callbacks) {
+  if (m_openInProgress) {
+    m_closeRequestedDuringOpen = true;
+    if (callbacks.onDismiss) {
+      callbacks.onDismiss();
+    }
+    return;
+  }
+
   closeSelectDropdown();
 
   if (m_parentLayerSurface == nullptr && m_parentXdgSurface == nullptr) {
@@ -71,6 +79,7 @@ void SelectDropdownPopup::openSelectDropdown(const DropdownRequest& request, Dro
     return;
   }
 
+  m_closeRequestedDuringOpen = false;
   m_callbacks = std::move(callbacks);
   m_options = request.options;
   m_selectedIndex = request.selectedIndex;
@@ -162,12 +171,18 @@ void SelectDropdownPopup::openSelectDropdown(const DropdownRequest& request, Dro
 
   m_surface->setDismissedCallback([self]() { DeferredCall::callLater([self]() { self->closeSelectDropdown(); }); });
 
+  m_openInProgress = true;
   const bool initialized = m_parentLayerSurface != nullptr
                                ? m_surface->initialize(m_parentLayerSurface, m_parentOutput, popupCfg)
                                : m_surface->initializeAsChild(m_parentXdgSurface, m_parentOutput, popupCfg);
+  m_openInProgress = false;
   if (!initialized) {
     kLog.warn("failed to create select dropdown popup");
-    m_surface.reset();
+    closeSelectDropdown();
+    return;
+  }
+  if (m_closeRequestedDuringOpen) {
+    closeSelectDropdown();
     return;
   }
 
@@ -179,8 +194,14 @@ void SelectDropdownPopup::openSelectDropdown(const DropdownRequest& request, Dro
 void SelectDropdownPopup::closeSelectDropdown() {
   auto onDismiss = std::move(m_callbacks.onDismiss);
   m_optionViews.clear();
+  m_inputDispatcher.setSceneRoot(nullptr);
   m_sceneRoot.reset();
-  m_surface.reset();
+  if (m_openInProgress) {
+    m_closeRequestedDuringOpen = true;
+  } else {
+    m_surface.reset();
+    m_closeRequestedDuringOpen = false;
+  }
   m_wlSurface = nullptr;
   m_pointerInside = false;
   m_options.clear();

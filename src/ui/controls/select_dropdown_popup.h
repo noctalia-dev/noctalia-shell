@@ -81,4 +81,6 @@ private:
   float m_menuWidth = 0.0f;
   ShellConfig::ShadowConfig m_shadowConfig;
   bool m_sceneDirty = false;
+  bool m_openInProgress = false;
+  bool m_closeRequestedDuringOpen = false;
 };
