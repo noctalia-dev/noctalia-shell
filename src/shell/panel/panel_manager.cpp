@@ -121,6 +121,8 @@ PanelManager::~PanelManager() {
 
 PanelManager& PanelManager::instance() { return *s_instance; }
 
+PanelManager* PanelManager::current() noexcept { return s_instance; }
+
 WaylandConnection* PanelManager::wayland() const noexcept {
   return m_platform != nullptr ? &m_platform->wayland() : nullptr;
 }
@@ -888,6 +890,19 @@ bool PanelManager::isOpen() const noexcept { return m_surface != nullptr && m_ac
 
 bool PanelManager::isOpenPanel(std::string_view panelId) const noexcept {
   return isOpen() && m_activePanelId == panelId;
+}
+
+bool PanelManager::isPanelTransitionActive() const noexcept {
+  if (!isOpen() && !m_closing) {
+    return false;
+  }
+  if (m_closing || m_attachedOpenAnimationPending) {
+    return true;
+  }
+  if (m_attachedToBar) {
+    return m_attachedRevealProgress < 0.999f;
+  }
+  return m_detachedRevealProgress < 0.999f;
 }
 
 bool PanelManager::isAttachedOpen() const noexcept { return isOpen() && m_attachedToBar; }

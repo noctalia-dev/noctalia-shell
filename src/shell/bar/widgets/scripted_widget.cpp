@@ -15,6 +15,10 @@
 #include "ui/palette.h"
 #include "ui/style.h"
 
+#include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <cstdint>
 #include <cstdlib>
 #include <fstream>
 #include <linux/input-event-codes.h>
@@ -22,6 +26,14 @@
 
 namespace {
   constexpr Logger kLog("scripted-widget");
+  constexpr std::chrono::milliseconds kDeferredUpdateRetry{50};
+  constexpr std::chrono::milliseconds kTimerPhaseStep{50};
+  constexpr std::chrono::milliseconds kTimerMaxPhase{500};
+
+  std::uint32_t nextTimerPhase() {
+    static std::atomic<std::uint32_t> next{0};
+    return next.fetch_add(1, std::memory_order_relaxed);
+  }
 
   std::filesystem::path resolveScriptPath(const std::string& path) {
     if (path.empty())
@@ -49,7 +61,7 @@ namespace {
 } // namespace
 
 ScriptedWidget::ScriptedWidget(std::string scriptPath, const WidgetConfig* config, FileWatcher* fileWatcher)
-    : m_scriptPath(std::move(scriptPath)), m_fileWatcher(fileWatcher) {
+    : m_scriptPath(std::move(scriptPath)), m_fileWatcher(fileWatcher), m_timerPhase(nextTimerPhase()) {
   if (config) {
     m_settings = config->settings;
     m_hotReload = config->getBool("hot_reload", false);
@@ -213,6 +225,10 @@ void ScriptedWidget::luaSetUpdateInterval(float ms) {
   startUpdateTimer();
 }
 
+void ScriptedWidget::setUpdateDeferralCallback(std::function<bool()> callback) {
+  m_updateDeferralCallback = std::move(callback);
+}
+
 void ScriptedWidget::luaSetVisible(bool visible) {
   auto* node = root();
   if (!node || node->visible() == visible)
@@ -254,14 +270,88 @@ ScriptedWidget::ScriptColorMode ScriptedWidget::scriptColorModeFromToken(std::st
 }
 
 void ScriptedWidget::startUpdateTimer() {
-  m_updateTimer.startRepeating(std::chrono::milliseconds(m_updateIntervalMs), [this] {
-    m_dirty = false;
-    if (m_host)
-      m_host->callGlobal("update");
-    if (m_dirty)
-      requestUpdate();
+  ++m_updateTimerGeneration;
+  m_updateDeferred = false;
+  m_deferredUpdateTimer.stop();
+
+  const auto interval = std::chrono::milliseconds(m_updateIntervalMs);
+  const auto generation = m_updateTimerGeneration;
+  m_updateTimer.start(initialUpdateDelay(interval), [this, generation, interval] {
+    if (m_updateTimerGeneration != generation) {
+      return;
+    }
+    handleUpdateTimer();
+    if (m_updateTimerGeneration != generation) {
+      return;
+    }
+    m_updateTimer.startRepeating(interval, [this, generation] {
+      if (m_updateTimerGeneration == generation) {
+        handleUpdateTimer();
+      }
+    });
   });
 }
+
+void ScriptedWidget::handleUpdateTimer() {
+  if (shouldDeferUpdate()) {
+    scheduleDeferredUpdate();
+    return;
+  }
+  runScriptUpdate();
+}
+
+void ScriptedWidget::scheduleDeferredUpdate() {
+  m_updateDeferred = true;
+  if (m_deferredUpdateTimer.active()) {
+    return;
+  }
+  armDeferredUpdate(m_updateTimerGeneration);
+}
+
+void ScriptedWidget::armDeferredUpdate(std::uint64_t generation) {
+  m_deferredUpdateTimer.start(kDeferredUpdateRetry, [this, generation] {
+    if (m_updateTimerGeneration != generation || !m_updateDeferred) {
+      return;
+    }
+    if (shouldDeferUpdate()) {
+      armDeferredUpdate(generation);
+      return;
+    }
+
+    m_updateDeferred = false;
+    runScriptUpdate();
+    if (m_updateTimerGeneration == generation) {
+      startUpdateTimer();
+    }
+  });
+}
+
+std::chrono::milliseconds ScriptedWidget::initialUpdateDelay(std::chrono::milliseconds interval) const noexcept {
+  if (interval <= std::chrono::milliseconds(1)) {
+    return interval;
+  }
+
+  const auto maxPhase = std::min({interval / 2, kTimerMaxPhase, interval - std::chrono::milliseconds(1)});
+  const auto maxPhaseMs = maxPhase.count();
+  if (maxPhaseMs <= 0) {
+    return interval;
+  }
+
+  const auto phaseMs = (static_cast<std::int64_t>(m_timerPhase) * kTimerPhaseStep.count()) % (maxPhaseMs + 1);
+  return interval + std::chrono::milliseconds(phaseMs);
+}
+
+void ScriptedWidget::runScriptUpdate() {
+  m_dirty = false;
+  if (m_host) {
+    m_host->callGlobal("update");
+  }
+  if (m_dirty) {
+    requestUpdate();
+  }
+}
+
+bool ScriptedWidget::shouldDeferUpdate() const { return m_updateDeferralCallback && m_updateDeferralCallback(); }
 
 void ScriptedWidget::setupScriptWatch() {
   if (m_resolvedPath.empty() || !m_fileWatcher)

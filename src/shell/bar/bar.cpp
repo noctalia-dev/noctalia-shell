@@ -1158,6 +1158,12 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
           surface->requestFrameTick();
         }
       });
+      if (auto* scripted = dynamic_cast<ScriptedWidget*>(widget.get()); scripted != nullptr) {
+        scripted->setUpdateDeferralCallback([]() {
+          auto* panel = PanelManager::current();
+          return panel != nullptr && panel->isPanelTransitionActive();
+        });
+      }
       widget->setPanelToggleCallback([this, inst = &instance](std::string_view panelId, std::string_view context,
                                                               std::optional<float> anchorSurfaceX,
                                                               std::optional<float> anchorSurfaceY) {
