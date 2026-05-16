@@ -67,6 +67,15 @@ body:
         Large outputs can be wrapped in a `<details>` block.
       render: text
 
+  - type: input
+    id: noctalia-version
+    attributes:
+      label: Noctalia version
+      description: Enter the version shown by Noctalia, or the commit hash if you are running a development build.
+      placeholder: "v5.x.x (commit hash)"
+    validations:
+      required: true
+
   - type: dropdown
     id: compositor
     attributes:
@@ -108,11 +117,9 @@ body:
         Please provide relevant system information:
 
         If you selected `Other` for distribution and/or compositor, please specify the exact one(s) here.
-        - Noctalia version or commit:
         - Installation method:
         - GPU:
       placeholder: |
-        Noctalia version: main / commit hash
         Installation method: AUR
         GPU: AMD RX 7800 XT (amdgpu)
       render: text
