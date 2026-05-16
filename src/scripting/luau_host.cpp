@@ -1,6 +1,7 @@
 #include "scripting/luau_host.h"
 
 #include "compositors/compositor_platform.h"
+#include "core/deferred_call.h"
 #include "core/log.h"
 #include "core/process.h"
 #include "lua.h"
@@ -8,13 +9,72 @@
 #include "lualib.h"
 #include "notification/notifications.h"
 
+#include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <cmath>
+#include <cstdint>
 #include <cstdlib>
 #include <string>
+#include <thread>
+#include <unordered_map>
 #include <vector>
 
 namespace {
-  Logger log{"luau"};
+  Logger kLog{"luau"};
   constexpr const char* kHostKey = "__noctalia_host";
+  constexpr auto kDefaultCommandTimeout = std::chrono::milliseconds(5000);
+  constexpr auto kMinCommandTimeout = std::chrono::milliseconds(50);
+  constexpr auto kMaxCommandTimeout = std::chrono::milliseconds(60000);
+  constexpr std::size_t kMaxAsyncCommandOutputBytes = 1024 * 1024;
+  constexpr std::size_t kMaxAsyncCommandsPerHost = 8;
+  constexpr int kMaxGlobalAsyncCommands = 32;
+
+  std::uint64_t& nextHostId() {
+    static std::uint64_t id = 1;
+    return id;
+  }
+
+  std::unordered_map<std::uint64_t, LuauHost*>& liveHosts() {
+    static std::unordered_map<std::uint64_t, LuauHost*> hosts;
+    return hosts;
+  }
+
+  std::atomic<int>& inFlightAsyncCommands() {
+    static std::atomic<int> count{0};
+    return count;
+  }
+
+  LuauHost* findHost(std::uint64_t hostId) {
+    const auto it = liveHosts().find(hostId);
+    return it != liveHosts().end() ? it->second : nullptr;
+  }
+
+  std::chrono::milliseconds commandTimeoutFromLua(lua_State* L) {
+    const double rawTimeout = luaL_optnumber(
+        L, 3,
+        static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(kDefaultCommandTimeout).count()));
+    const double timeoutMs =
+        std::isfinite(rawTimeout) ? rawTimeout : static_cast<double>(kDefaultCommandTimeout.count());
+    const double bounded = std::clamp(timeoutMs, static_cast<double>(kMinCommandTimeout.count()),
+                                      static_cast<double>(kMaxCommandTimeout.count()));
+    return std::chrono::milliseconds(static_cast<int>(bounded));
+  }
+
+  void setTableInteger(lua_State* L, const char* key, int value) {
+    lua_pushinteger(L, value);
+    lua_setfield(L, -2, key);
+  }
+
+  void setTableString(lua_State* L, const char* key, const std::string& value) {
+    lua_pushlstring(L, value.data(), value.size());
+    lua_setfield(L, -2, key);
+  }
+
+  void setTableBool(lua_State* L, const char* key, bool value) {
+    lua_pushboolean(L, value ? 1 : 0);
+    lua_setfield(L, -2, key);
+  }
 
   LuauHost* hostForState(lua_State* L) {
     lua_getglobal(L, kHostKey);
@@ -25,13 +85,35 @@ namespace {
 
   int luau_log(lua_State* L) {
     const char* msg = luaL_checkstring(L, 1);
-    log.info("{}", msg);
+    kLog.info("{}", msg);
     return 0;
   }
 
   int luau_runAsync(lua_State* L) {
-    const char* cmd = luaL_checkstring(L, 1);
-    bool ok = process::runAsync(std::string(cmd));
+    size_t len = 0;
+    const char* cmd = luaL_checklstring(L, 1, &len);
+    std::string command(cmd, len);
+
+    if (lua_isnoneornil(L, 2)) {
+      bool ok = process::runAsync(command);
+      lua_pushboolean(L, ok ? 1 : 0);
+      return 1;
+    }
+
+    luaL_checktype(L, 2, LUA_TFUNCTION);
+
+    auto* host = hostForState(L);
+    if (host == nullptr) {
+      lua_pushboolean(L, 0);
+      return 1;
+    }
+
+    const auto timeout = commandTimeoutFromLua(L);
+    const int callbackRef = lua_ref(L, 2);
+    bool ok = host->startAsyncCommand(std::move(command), callbackRef, timeout);
+    if (!ok) {
+      lua_unref(L, callbackRef);
+    }
     lua_pushboolean(L, ok ? 1 : 0);
     return 1;
   }
@@ -130,6 +212,9 @@ namespace {
 } // namespace
 
 LuauHost::LuauHost(CompositorPlatform* platform) : m_platform(platform) {
+  m_hostId = nextHostId()++;
+  liveHosts()[m_hostId] = this;
+
   m_L = luaL_newstate();
   luaL_openlibs(m_L);
   registerNoctaliaLib(m_L);
@@ -149,10 +234,94 @@ LuauHost::LuauHost(CompositorPlatform* platform) : m_platform(platform) {
 }
 
 LuauHost::~LuauHost() {
+  if (m_hostId != 0) {
+    const auto it = liveHosts().find(m_hostId);
+    if (it != liveHosts().end() && it->second == this) {
+      liveHosts().erase(it);
+    }
+  }
+
   if (m_L) {
+    if (m_T != nullptr) {
+      for (int callbackRef : m_asyncCommandCallbackRefs) {
+        lua_unref(m_T, callbackRef);
+      }
+      m_asyncCommandCallbackRefs.clear();
+    }
     if (m_threadRef != -1)
       lua_unref(m_L, m_threadRef);
     lua_close(m_L);
+  }
+}
+
+bool LuauHost::startAsyncCommand(std::string command, int callbackRef, std::chrono::milliseconds timeout) {
+  if (command.empty() || callbackRef <= LUA_REFNIL || m_asyncCommandCallbackRefs.size() >= kMaxAsyncCommandsPerHost) {
+    return false;
+  }
+
+  auto& globalInFlight = inFlightAsyncCommands();
+  int current = globalInFlight.load(std::memory_order_relaxed);
+  while (current < kMaxGlobalAsyncCommands) {
+    if (globalInFlight.compare_exchange_weak(current, current + 1, std::memory_order_relaxed)) {
+      break;
+    }
+  }
+  if (current >= kMaxGlobalAsyncCommands) {
+    return false;
+  }
+
+  m_asyncCommandCallbackRefs.insert(callbackRef);
+  try {
+    std::thread([hostId = m_hostId, callbackRef, command = std::move(command), timeout]() mutable {
+      auto result =
+          process::runSyncWithTimeoutAndOutputLimit({"/bin/sh", "-lc", command}, timeout, kMaxAsyncCommandOutputBytes);
+      inFlightAsyncCommands().fetch_sub(1, std::memory_order_relaxed);
+      DeferredCall::callLater([hostId, callbackRef, result = std::move(result)]() mutable {
+        auto* host = findHost(hostId);
+        if (host != nullptr) {
+          host->deliverAsyncCommandResult(callbackRef, std::move(result));
+        }
+      });
+    }).detach();
+  } catch (...) {
+    m_asyncCommandCallbackRefs.erase(callbackRef);
+    globalInFlight.fetch_sub(1, std::memory_order_relaxed);
+    return false;
+  }
+
+  return true;
+}
+
+void LuauHost::deliverAsyncCommandResult(int callbackRef, process::RunResult result) {
+  if (m_T == nullptr) {
+    return;
+  }
+  const auto it = m_asyncCommandCallbackRefs.find(callbackRef);
+  if (it == m_asyncCommandCallbackRefs.end()) {
+    return;
+  }
+  m_asyncCommandCallbackRefs.erase(it);
+
+  lua_getref(m_T, callbackRef);
+  lua_unref(m_T, callbackRef);
+  if (!lua_isfunction(m_T, -1)) {
+    lua_pop(m_T, 1);
+    return;
+  }
+
+  lua_createtable(m_T, 0, 6);
+  setTableInteger(m_T, "exitCode", result.exitCode);
+  setTableString(m_T, "stdout", result.out);
+  setTableString(m_T, "stderr", result.err);
+  setTableBool(m_T, "timedOut", result.timedOut);
+  setTableBool(m_T, "stdoutTruncated", result.outTruncated);
+  setTableBool(m_T, "stderrTruncated", result.errTruncated);
+
+  int rc = lua_pcall(m_T, 1, 0, 0);
+  if (rc != 0) {
+    const char* err = lua_tostring(m_T, -1);
+    kLog.error("async command callback failed: {}", err ? err : "(no error)");
+    lua_pop(m_T, 1);
   }
 }
 
@@ -160,7 +329,7 @@ bool LuauHost::loadString(std::string_view chunkName, std::string_view source) {
   size_t bytecodeSize = 0;
   char* bytecode = luau_compile(source.data(), source.size(), nullptr, &bytecodeSize);
   if (!bytecode) {
-    log.error("luau_compile returned null for chunk '{}'", std::string(chunkName));
+    kLog.error("luau_compile returned null for chunk '{}'", std::string(chunkName));
     return false;
   }
   std::string name(chunkName);
@@ -168,7 +337,7 @@ bool LuauHost::loadString(std::string_view chunkName, std::string_view source) {
   std::free(bytecode);
   if (loadResult != 0) {
     const char* err = lua_tostring(m_T, -1);
-    log.error("luau_load failed for '{}': {}", name, err ? err : "(no error)");
+    kLog.error("luau_load failed for '{}': {}", name, err ? err : "(no error)");
     lua_pop(m_T, 1);
     return false;
   }
@@ -179,7 +348,7 @@ bool LuauHost::run() {
   int rc = lua_pcall(m_T, 0, 0, 0);
   if (rc != 0) {
     const char* err = lua_tostring(m_T, -1);
-    log.error("lua_pcall failed: {}", err ? err : "(no error)");
+    kLog.error("lua_pcall failed: {}", err ? err : "(no error)");
     lua_pop(m_T, 1);
     return false;
   }
@@ -202,7 +371,7 @@ bool LuauHost::callGlobal(const char* name) {
   int rc = lua_pcall(m_T, 0, 0, 0);
   if (rc != 0) {
     const char* err = lua_tostring(m_T, -1);
-    log.error("call to '{}' failed: {}", name, err ? err : "(no error)");
+    kLog.error("call to '{}' failed: {}", name, err ? err : "(no error)");
     lua_pop(m_T, 1);
     return false;
   }
@@ -219,7 +388,7 @@ bool LuauHost::callGlobalWithBool(const char* name, bool value) {
   int rc = lua_pcall(m_T, 1, 0, 0);
   if (rc != 0) {
     const char* err = lua_tostring(m_T, -1);
-    log.error("call to '{}' failed: {}", name, err ? err : "(no error)");
+    kLog.error("call to '{}' failed: {}", name, err ? err : "(no error)");
     lua_pop(m_T, 1);
     return false;
   }
@@ -237,7 +406,7 @@ bool LuauHost::callGlobalWithStrings(const char* name, std::string_view first, s
   int rc = lua_pcall(m_T, 2, 0, 0);
   if (rc != 0) {
     const char* err = lua_tostring(m_T, -1);
-    log.error("call to '{}' failed: {}", name, err ? err : "(no error)");
+    kLog.error("call to '{}' failed: {}", name, err ? err : "(no error)");
     lua_pop(m_T, 1);
     return false;
   }
@@ -253,7 +422,7 @@ std::optional<std::string> LuauHost::callGlobalReturningString(const char* name)
   int rc = lua_pcall(m_T, 0, 1, 0);
   if (rc != 0) {
     const char* err = lua_tostring(m_T, -1);
-    log.error("call to '{}' failed: {}", name, err ? err : "(no error)");
+    kLog.error("call to '{}' failed: {}", name, err ? err : "(no error)");
     lua_pop(m_T, 1);
     return std::nullopt;
   }

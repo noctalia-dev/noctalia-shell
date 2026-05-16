@@ -1479,6 +1479,7 @@ std::vector<PollSource*> Application::currentPollSources() {
     sources.push_back(m_systemBusPollSource.get());
   }
   sources.push_back(&m_notificationPollSource);
+  sources.push_back(&m_deferredCallPollSource);
   sources.push_back(&m_timePollSource);
   sources.push_back(&m_configPollSource);
   sources.push_back(&m_desktopEntryPollSource);

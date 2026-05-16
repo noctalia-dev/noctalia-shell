@@ -1,11 +1,18 @@
 #pragma once
 
+#include <chrono>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_set>
 
 struct lua_State;
 class CompositorPlatform;
+
+namespace process {
+  struct RunResult;
+}
 
 class LuauHost {
 public:
@@ -34,10 +41,14 @@ public:
 
   lua_State* state() { return m_T; }
   [[nodiscard]] CompositorPlatform* platform() const noexcept { return m_platform; }
+  [[nodiscard]] bool startAsyncCommand(std::string command, int callbackRef, std::chrono::milliseconds timeout);
+  void deliverAsyncCommandResult(int callbackRef, process::RunResult result);
 
 private:
+  std::uint64_t m_hostId = 0;
   CompositorPlatform* m_platform = nullptr;
   lua_State* m_L = nullptr; // main state, frozen by luaL_sandbox
   lua_State* m_T = nullptr; // sandboxed thread; user code runs here
   int m_threadRef = -1;     // registry ref pinning m_T against the GC
+  std::unordered_set<int> m_asyncCommandCallbackRefs;
 };

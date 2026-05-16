@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <cstddef>
 #include <initializer_list>
 #include <optional>
 #include <string>
@@ -14,6 +15,8 @@ namespace process {
     std::string out;
     std::string err;
     bool timedOut = false;
+    bool outTruncated = false;
+    bool errTruncated = false;
 
     operator bool() const { return exitCode == 0 && !timedOut; }
   };
@@ -34,6 +37,9 @@ namespace process {
   [[nodiscard]] RunResult runSyncWithTimeout(const std::vector<std::string>& args, std::chrono::milliseconds timeout);
   [[nodiscard]] RunResult runSyncWithTimeout(std::initializer_list<const char*> args,
                                              std::chrono::milliseconds timeout);
+  [[nodiscard]] RunResult runSyncWithTimeoutAndOutputLimit(const std::vector<std::string>& args,
+                                                           std::chrono::milliseconds timeout,
+                                                           std::size_t maxOutputBytes);
   [[nodiscard]] bool commandLineMatchesAll(const std::vector<std::string>& needles);
   [[nodiscard]] bool desktopPortalAvailable();
   [[nodiscard]] bool flatpakAppInstalled(std::string_view appId);

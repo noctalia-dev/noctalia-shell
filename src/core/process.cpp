@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <limits>
 #include <optional>
 #include <sstream>
 #include <string_view>
@@ -211,7 +212,8 @@ namespace {
     return flags >= 0 && ::fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0;
   }
 
-  void drainAvailable(int& fd, std::string& out) {
+  void drainAvailable(int& fd, std::string& out, std::size_t maxBytes = std::numeric_limits<std::size_t>::max(),
+                      bool* truncated = nullptr) {
     if (fd < 0) {
       return;
     }
@@ -220,7 +222,15 @@ namespace {
     for (;;) {
       const ssize_t n = ::read(fd, tmp, sizeof(tmp));
       if (n > 0) {
-        out.append(tmp, static_cast<std::size_t>(n));
+        const auto bytesRead = static_cast<std::size_t>(n);
+        const auto remaining = out.size() < maxBytes ? maxBytes - out.size() : 0;
+        const auto appendBytes = std::min(bytesRead, remaining);
+        if (appendBytes > 0) {
+          out.append(tmp, appendBytes);
+        }
+        if (appendBytes < bytesRead && truncated != nullptr) {
+          *truncated = true;
+        }
         continue;
       }
       if (n == 0) {
@@ -305,7 +315,8 @@ namespace {
   }
 
   process::RunResult runSyncProcess(const std::vector<std::string>& args,
-                                    std::optional<std::chrono::milliseconds> timeout) {
+                                    std::optional<std::chrono::milliseconds> timeout,
+                                    std::size_t maxOutputBytes = std::numeric_limits<std::size_t>::max()) {
     if (args.empty() || args.front().empty()) {
       return {-1, {}, {}};
     }
@@ -350,6 +361,8 @@ namespace {
     std::string err;
     bool exited = false;
     bool timedOut = false;
+    bool outTruncated = false;
+    bool errTruncated = false;
     int exitCode = -1;
     std::optional<std::chrono::steady_clock::time_point> deadline;
     if (timeout.has_value()) {
@@ -357,15 +370,15 @@ namespace {
     }
 
     for (;;) {
-      drainAvailable(outPipe[0], out);
-      drainAvailable(errPipe[0], err);
+      drainAvailable(outPipe[0], out, maxOutputBytes, &outTruncated);
+      drainAvailable(errPipe[0], err, maxOutputBytes, &errTruncated);
 
       if (!exited) {
         exited = waitNoHang(pid, exitCode);
       }
       if (exited) {
-        drainAvailable(outPipe[0], out);
-        drainAvailable(errPipe[0], err);
+        drainAvailable(outPipe[0], out, maxOutputBytes, &outTruncated);
+        drainAvailable(errPipe[0], err, maxOutputBytes, &errTruncated);
         closeFd(outPipe[0]);
         closeFd(errPipe[0]);
         break;
@@ -377,8 +390,8 @@ namespace {
       }
 
       if (timedOut) {
-        drainAvailable(outPipe[0], out);
-        drainAvailable(errPipe[0], err);
+        drainAvailable(outPipe[0], out, maxOutputBytes, &outTruncated);
+        drainAvailable(errPipe[0], err, maxOutputBytes, &errTruncated);
         closeFd(outPipe[0]);
         closeFd(errPipe[0]);
         break;
@@ -412,7 +425,7 @@ namespace {
     closeFd(errPipe[0]);
     trimTrailingLineEndings(out);
     trimTrailingLineEndings(err);
-    return {exitCode, std::move(out), std::move(err), timedOut};
+    return {exitCode, std::move(out), std::move(err), timedOut, outTruncated, errTruncated};
   }
 
   // Double-fork + setsid so the exec'd process is not a direct child of the caller (matches
@@ -609,6 +622,11 @@ namespace process {
   RunResult runSyncWithTimeout(std::initializer_list<const char*> args, std::chrono::milliseconds timeout) {
     const auto command = makeCommand(args);
     return command.has_value() ? runSyncWithTimeout(*command, timeout) : RunResult{-1, {}, {}};
+  }
+
+  RunResult runSyncWithTimeoutAndOutputLimit(const std::vector<std::string>& args, std::chrono::milliseconds timeout,
+                                             std::size_t maxOutputBytes) {
+    return runSyncProcess(args, timeout, maxOutputBytes);
   }
 
   bool commandLineMatchesAll(const std::vector<std::string>& needles) {

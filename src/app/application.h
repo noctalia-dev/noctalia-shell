@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/deferred_call_poll_source.h"
 #include "app/main_loop.h"
 #include "app/timer_poll_source.h"
 #include "compositors/compositor_platform.h"
@@ -202,6 +203,7 @@ private:
   std::unique_ptr<SessionBusPollSource> m_busPollSource;
   std::unique_ptr<SystemBusPollSource> m_systemBusPollSource;
   NotificationPollSource m_notificationPollSource{m_notificationManager};
+  DeferredCallPollSource m_deferredCallPollSource;
   TimePollSource m_timePollSource{m_timeService};
   ConfigPollSource m_configPollSource{m_configService};
   DesktopEntryPollSource m_desktopEntryPollSource;
