@@ -1585,6 +1585,10 @@
           "label": "Attach to Bar",
           "description": "Attach the Wallpaper panel to the bar when a suitable bar is available"
         },
+        "attach-session": {
+          "label": "Attach to Bar",
+          "description": "Attach the Session panel to the bar when a suitable bar is available"
+        },
         "open-near-click-control-center": {
           "label": "Open Near Click",
           "description": "Position the Control Center near the click location on the bar instead of centering it"
@@ -1600,6 +1604,10 @@
         "open-near-click-wallpaper": {
           "label": "Open Near Click",
           "description": "Position the Wallpaper picker near the click location on the bar instead of centering it"
+        },
+        "open-near-click-session": {
+          "label": "Open Near Click",
+          "description": "Position the Session panel near the click location on the bar instead of centering it"
         },
         "session-actions": {
           "label": "Entries",

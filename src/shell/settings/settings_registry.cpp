@@ -651,6 +651,18 @@ namespace settings {
       e.visibleWhen = SettingVisibility{{"shell", "panel", "attach_wallpaper"}, {"true"}};
       entries.push_back(std::move(e));
     }
+    entries.push_back(makeEntry("panels", "session-panel", tr("settings.schema.panels.attach-session.label"),
+                                tr("settings.schema.panels.attach-session.description"),
+                                {"shell", "panel", "attach_session"}, ToggleSetting{cfg.shell.panel.attachSession},
+                                "attach bar panel power menu"));
+    {
+      auto e = makeEntry("panels", "session-panel", tr("settings.schema.panels.open-near-click-session.label"),
+                         tr("settings.schema.panels.open-near-click-session.description"),
+                         {"shell", "panel", "open_near_click_session"},
+                         ToggleSetting{cfg.shell.panel.openNearClickSession}, "open near click position anchor");
+      e.visibleWhen = SettingVisibility{{"shell", "panel", "attach_session"}, {"true"}};
+      entries.push_back(std::move(e));
+    }
     entries.push_back(makeEntry("panels", "session-panel", tr("settings.schema.panels.session-actions.label"),
                                 tr("settings.schema.panels.session-actions.description"),
                                 {"shell", "session", "actions"},

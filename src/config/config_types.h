@@ -500,10 +500,12 @@ struct ShellConfig {
     bool attachClipboard = false;
     bool attachControlCenter = true;
     bool attachWallpaper = true;
+    bool attachSession = false;
     bool openNearClickControlCenter = false;
     bool openNearClickLauncher = false;
     bool openNearClickClipboard = false;
     bool openNearClickWallpaper = false;
+    bool openNearClickSession = false;
 
     bool operator==(const PanelConfig&) const = default;
   };

@@ -40,6 +40,7 @@ attach_launcher       = false       # attach launcher to the bar when a suitable
 attach_clipboard      = false       # attach clipboard history to the bar when a suitable bar is available
 attach_control_center = true        # attach Control Center to the bar when a suitable bar is available
 attach_wallpaper      = true        # attach wallpaper picker to the bar when a suitable bar is available
+attach_session        = false       # attach session power menu to the bar when a suitable bar is available
 
 [shell.mpris]
 blacklist = []                      # ignore MPRIS players by bus/identity/desktop entry token

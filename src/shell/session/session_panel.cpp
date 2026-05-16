@@ -15,6 +15,7 @@
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/grid_view.h"
+#include "ui/palette.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
 
@@ -247,6 +248,46 @@ namespace {
     return ButtonVariant::Default;
   }
 
+  [[nodiscard]] Button::ButtonPalette actionButtonPalette(const SessionPanelActionConfig& cfg, float fillOpacity) {
+    constexpr float kDisabledAlpha = 0.55f;
+    const float opacity = std::clamp(fillOpacity, 0.0f, 1.0f);
+    const bool destructive = variantFor(cfg) == ButtonVariant::Destructive;
+
+    return Button::ButtonPalette{
+        .borderWidth = Style::borderWidth,
+        .normal =
+            Button::ButtonStateColors{
+                .bg = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::SurfaceVariant, opacity),
+                .border = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::Outline, 0.5f),
+                .label = colorSpecFromRole(destructive ? ColorRole::OnError : ColorRole::OnSurface),
+            },
+        .hover =
+            Button::ButtonStateColors{
+                .bg = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::Hover, std::max(opacity, 0.78f)),
+                .border = clearColorSpec(),
+                .label = colorSpecFromRole(destructive ? ColorRole::OnError : ColorRole::OnHover),
+            },
+        .pressed =
+            Button::ButtonStateColors{
+                .bg = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::Primary),
+                .border = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::Primary),
+                .label = colorSpecFromRole(destructive ? ColorRole::OnError : ColorRole::OnPrimary),
+            },
+        .disabled =
+            Button::ButtonStateColors{
+                .bg = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::SurfaceVariant,
+                                        opacity * kDisabledAlpha),
+                .border = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::Outline, 0.5f * kDisabledAlpha),
+                .label = colorSpecFromRole(destructive ? ColorRole::OnError : ColorRole::OnSurface, kDisabledAlpha),
+            },
+    };
+  }
+
+  void applyActionButtonPalette(Button& button, const SessionPanelActionConfig& cfg, float fillOpacity) {
+    button.setVariant(variantFor(cfg));
+    button.setCustomPalette(actionButtonPalette(cfg, fillOpacity));
+  }
+
 } // namespace
 
 std::vector<SessionPanelActionConfig> SessionPanel::effectiveActions() const {
@@ -288,6 +329,10 @@ std::function<bool()> SessionPanel::hookFor(const std::string& action) const {
     return m_actionHooks.onShutdown;
   }
   return {};
+}
+
+bool SessionPanel::prefersAttachedToBar() const noexcept {
+  return m_config != nullptr && m_config->config().shell.panel.attachSession;
 }
 
 float SessionPanel::preferredWidth() const {
@@ -376,7 +421,7 @@ Button* SessionPanel::createActionButton(const SessionPanelActionConfig& cfg, fl
       cfg.label.has_value() && !cfg.label->empty() ? *cfg.label : i18n::tr(labelKeyForAction(cfg.action));
   button->setText(labelText);
   button->setGlyph(cfg.glyph.has_value() && !cfg.glyph->empty() ? *cfg.glyph : defaultGlyphForAction(cfg.action));
-  button->setVariant(variantFor(cfg));
+  applyActionButtonPalette(*button, cfg, panelCardOpacity());
   button->setDirection(FlexDirection::Vertical);
   button->setAlign(FlexAlign::Center);
   button->setJustify(FlexJustify::Center);
@@ -399,6 +444,17 @@ Button* SessionPanel::createActionButton(const SessionPanelActionConfig& cfg, fl
   button->setHoverSuppressed(!m_mouseActive);
 
   return button.release();
+}
+
+void SessionPanel::onPanelCardOpacityChanged(float opacity) {
+  const std::size_t count = std::min(m_visibleButtons.size(), m_visibleEntries.size());
+  for (std::size_t i = 0; i < count; ++i) {
+    Button* button = m_visibleButtons[i];
+    if (button == nullptr) {
+      continue;
+    }
+    applyActionButtonPalette(*button, m_visibleEntries[i], opacity);
+  }
 }
 
 InputArea* SessionPanel::initialFocusArea() const { return m_focusArea; }

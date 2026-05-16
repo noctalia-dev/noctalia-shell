@@ -45,6 +45,7 @@ public:
   [[nodiscard]] LayerShellLayer layer() const override { return LayerShellLayer::Overlay; }
   [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::Exclusive; }
   [[nodiscard]] InputArea* initialFocusArea() const override;
+  [[nodiscard]] bool prefersAttachedToBar() const noexcept override;
 
 private:
   static constexpr float kActionButtonMinHeight = 112.0f;
@@ -54,6 +55,7 @@ private:
 
   void doLayout(Renderer& renderer, float width, float height) override;
   void doUpdate(Renderer& renderer) override;
+  void onPanelCardOpacityChanged(float opacity) override;
   void activateSelected();
   bool handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers);
   void updateSelectionVisuals();

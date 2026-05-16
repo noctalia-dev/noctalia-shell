@@ -319,11 +319,12 @@ namespace {
            a.panel.transparencyMode == b.panel.transparencyMode && a.panel.attachLauncher == b.panel.attachLauncher &&
            a.panel.attachClipboard == b.panel.attachClipboard &&
            a.panel.attachControlCenter == b.panel.attachControlCenter &&
-           a.panel.attachWallpaper == b.panel.attachWallpaper &&
+           a.panel.attachWallpaper == b.panel.attachWallpaper && a.panel.attachSession == b.panel.attachSession &&
            a.panel.openNearClickControlCenter == b.panel.openNearClickControlCenter &&
            a.panel.openNearClickLauncher == b.panel.openNearClickLauncher &&
            a.panel.openNearClickClipboard == b.panel.openNearClickClipboard &&
            a.panel.openNearClickWallpaper == b.panel.openNearClickWallpaper &&
+           a.panel.openNearClickSession == b.panel.openNearClickSession &&
            a.screenCorners.enabled == b.screenCorners.enabled && a.screenCorners.size == b.screenCorners.size &&
            a.mpris.blacklist == b.mpris.blacklist && a.session.actions == b.session.actions;
   }

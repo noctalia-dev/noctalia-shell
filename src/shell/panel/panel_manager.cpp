@@ -100,6 +100,9 @@ namespace {
     if (panelId == "wallpaper") {
       return pc.openNearClickWallpaper;
     }
+    if (panelId == "session") {
+      return pc.openNearClickSession;
+    }
     if (panelId == "tray-drawer") {
       return true;
     }
