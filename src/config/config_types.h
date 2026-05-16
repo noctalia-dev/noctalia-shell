@@ -763,6 +763,7 @@ struct ThemeConfig {
 
 struct ControlCenterConfig {
   std::vector<ShortcutConfig> shortcuts;
+  bool compact = true;
   bool operator==(const ControlCenterConfig&) const = default;
 };
 

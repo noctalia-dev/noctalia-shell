@@ -1976,6 +1976,9 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
   // Parse [[control_center.shortcuts]]
   bool controlCenterShortcutsConfigured = false;
   if (auto* ccTbl = tbl["control_center"].as_table()) {
+    if (auto v = (*ccTbl)["compact"].value<bool>()) {
+      config.controlCenter.compact = *v;
+    }
     if (auto* shortcutsArr = (*ccTbl)["shortcuts"].as_array()) {
       controlCenterShortcutsConfigured = true;
       config.controlCenter.shortcuts.clear();

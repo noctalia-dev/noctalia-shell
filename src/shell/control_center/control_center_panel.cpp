@@ -55,6 +55,11 @@ ControlCenterPanel::ControlCenterPanel(
   m_tabHeaderActions.fill(nullptr);
 }
 
+float ControlCenterPanel::preferredWidth() const {
+  const bool compact = m_config != nullptr && m_config->config().controlCenter.compact;
+  return scaled(compact ? 660.0f : 780.0f);
+}
+
 bool ControlCenterPanel::prefersAttachedToBar() const noexcept {
   return m_config == nullptr || m_config->config().shell.panel.attachControlCenter;
 }
@@ -66,6 +71,7 @@ bool ControlCenterPanel::dismissTransientUi() {
 
 void ControlCenterPanel::create() {
   const float scale = contentScale();
+  m_compact = m_config != nullptr && m_config->config().controlCenter.compact;
 
   for (auto& tab : m_tabs) {
     tab->setContentScale(scale);
@@ -91,16 +97,25 @@ void ControlCenterPanel::create() {
 
   for (const auto& tab : kTabs) {
     auto button = std::make_unique<Button>();
-    button->setText(i18n::tr(tab.titleKey));
+    if (!m_compact) {
+      button->setText(i18n::tr(tab.titleKey));
+    }
     button->setGlyph(tab.glyph);
     button->setGlyphSize(21.0f * scale);
     button->setGap(Style::spaceSm * scale);
-    button->label()->setBold(true);
-    button->label()->setFontSize(Style::fontSizeBody * scale);
+    if (button->label() != nullptr) {
+      button->label()->setBold(true);
+      button->label()->setFontSize(Style::fontSizeBody * scale);
+    }
     button->setVariant(ButtonVariant::Tab);
-    button->setContentAlign(ButtonContentAlign::Start);
+    button->setContentAlign(m_compact ? ButtonContentAlign::Center : ButtonContentAlign::Start);
     button->setMinHeight(Style::controlHeight * scale);
-    button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+    if (m_compact) {
+      button->setMinWidth(Style::controlHeight * scale);
+      button->setPadding(Style::spaceSm * scale);
+    } else {
+      button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+    }
     button->setRadius(Style::scaledRadiusLg(scale));
     button->setOnClick([this, id = tab.id]() {
       selectTab(id);

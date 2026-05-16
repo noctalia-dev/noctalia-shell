@@ -605,6 +605,10 @@ namespace settings {
       e.visibleWhen = SettingVisibility{{"shell", "panel", "attach_control_center"}, {"true"}};
       entries.push_back(std::move(e));
     }
+    entries.push_back(makeEntry("panels", "control-center", tr("settings.schema.panels.compact-control-center.label"),
+                                tr("settings.schema.panels.compact-control-center.description"),
+                                {"control_center", "compact"}, ToggleSetting{cfg.controlCenter.compact},
+                                "compact sidebar icons narrow"));
     entries.push_back(makeEntry(
         "panels", "control-center", tr("settings.schema.panels.home-shortcuts.label"),
         tr("settings.schema.panels.home-shortcuts.description"), {"control_center", "shortcuts"},

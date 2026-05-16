@@ -70,7 +70,8 @@ public:
   [[nodiscard]] bool deferExternalRefresh() const override;
   [[nodiscard]] bool deferPointerRelayout() const override;
 
-  [[nodiscard]] float preferredWidth() const override { return scaled(780.0f); }
+  [[nodiscard]] float preferredWidth() const override;
+
   [[nodiscard]] float preferredHeight() const override { return scaled(520.0f); }
   [[nodiscard]] bool centeredHorizontally() const override { return true; }
   [[nodiscard]] bool centeredVertically() const override { return true; }
@@ -142,6 +143,7 @@ private:
   MprisService* m_mpris = nullptr;
   NotificationManager* m_notificationManager = nullptr;
   DependencyService* m_dependencies = nullptr;
+  bool m_compact = false;
   bool m_mprisRefreshScheduled = false;
   std::chrono::steady_clock::time_point m_lastMprisRefreshAt{};
 };

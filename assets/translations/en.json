@@ -1569,6 +1569,10 @@
           "label": "Attach to Bar",
           "description": "Attach the Control Center panel to the bar when a suitable bar is available"
         },
+        "compact-control-center": {
+          "label": "Compact Sidebar",
+          "description": "Show only icons in the sidebar to make the Control Center narrower"
+        },
         "attach-launcher": {
           "label": "Attach to Bar",
           "description": "Attach the Launcher panel to the bar when a suitable bar is available"
