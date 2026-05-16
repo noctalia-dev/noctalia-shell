@@ -33,6 +33,7 @@ namespace process {
   [[nodiscard]] RunResult runSyncWithTimeout(const std::vector<std::string>& args, std::chrono::milliseconds timeout);
   [[nodiscard]] RunResult runSyncWithTimeout(std::initializer_list<const char*> args,
                                              std::chrono::milliseconds timeout);
+  [[nodiscard]] bool commandLineMatchesAll(const std::vector<std::string>& needles);
 
   // Like runAsync(args), but returns the grandchild pid for terminateTracked (optional API).
   [[nodiscard]] std::optional<int> launchDetachedTracked(const std::vector<std::string>& args);

@@ -37,7 +37,7 @@ local function isReplayArgs(args)
     return hasToken(args, " -r ")
 end
 
-local function detectProcessState()
+local function detectProcessStateViaPs()
     local exitCode, stdout = noctalia.runSync("ps -eo args=")
     if exitCode ~= 0 or stdout == "" then
         return nil
@@ -57,6 +57,25 @@ local function detectProcessState()
         return "recording"
     end
     return nil
+end
+
+local function gsrProcessMatches(token)
+    return noctalia.processMatches("gpu-screen-recorder", token)
+        or noctalia.processMatches("com.dec05eba.gpu_screen_recorder", token)
+end
+
+local function detectProcessState()
+    if noctalia.processMatches then
+        if gsrProcessMatches(" -r ") then
+            return "replaying"
+        end
+        if gsrProcessMatches(" -w ") or gsrProcessMatches(" -o ") then
+            return "recording"
+        end
+        return nil
+    end
+
+    return detectProcessStateViaPs()
 end
 
 local function checkAvailability()

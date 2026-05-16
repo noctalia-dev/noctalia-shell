@@ -9,6 +9,7 @@
 
 #include <cstdlib>
 #include <string>
+#include <vector>
 
 namespace {
   Logger log{"luau"};
@@ -41,6 +42,19 @@ namespace {
     return 1;
   }
 
+  int luau_processMatches(lua_State* L) {
+    const int count = lua_gettop(L);
+    std::vector<std::string> needles;
+    needles.reserve(static_cast<std::size_t>(count));
+    for (int i = 1; i <= count; ++i) {
+      size_t len = 0;
+      const char* needle = luaL_checklstring(L, i, &len);
+      needles.emplace_back(needle, len);
+    }
+    lua_pushboolean(L, process::commandLineMatchesAll(needles) ? 1 : 0);
+    return 1;
+  }
+
   int luau_notify(lua_State* L) {
     const char* title = luaL_checkstring(L, 1);
     const char* body = luaL_optstring(L, 2, "");
@@ -66,10 +80,15 @@ namespace {
   }
 
   const luaL_Reg kNoctaliaBaseLib[] = {
-      {"log", luau_log},         {"runAsync", luau_runAsync},
-      {"runSync", luau_runSync}, {"commandExists", luau_commandExists},
-      {"notify", luau_notify},   {"notifyError", luau_notifyError},
-      {"getenv", luau_getenv},   {nullptr, nullptr},
+      {"log", luau_log},
+      {"runAsync", luau_runAsync},
+      {"runSync", luau_runSync},
+      {"commandExists", luau_commandExists},
+      {"processMatches", luau_processMatches},
+      {"notify", luau_notify},
+      {"notifyError", luau_notifyError},
+      {"getenv", luau_getenv},
+      {nullptr, nullptr},
   };
 
   void registerNoctaliaLib(lua_State* L) {

@@ -9,6 +9,8 @@
 #include <cstring>
 #include <fcntl.h>
 #include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <optional>
 #include <string_view>
 #include <sys/poll.h>
@@ -18,6 +20,7 @@
 namespace {
 
   constexpr std::chrono::milliseconds kProcessPollInterval{100};
+  constexpr std::chrono::milliseconds kProcessCommandLineCacheTtl{250};
 
   void writePipeOrIgnore(int fd, const void* data, size_t len) {
     auto p = reinterpret_cast<const char*>(data);
@@ -85,6 +88,83 @@ namespace {
     }
     argv.push_back(nullptr);
     return argv;
+  }
+
+  [[nodiscard]] bool isProcPidName(std::string_view name) {
+    if (name.empty()) {
+      return false;
+    }
+    return std::all_of(name.begin(), name.end(), [](char ch) { return ch >= '0' && ch <= '9'; });
+  }
+
+  [[nodiscard]] std::string readProcCmdline(const std::filesystem::path& path) {
+    std::ifstream file(path / "cmdline", std::ios::binary);
+    if (!file) {
+      return {};
+    }
+
+    std::string cmdline{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+    if (cmdline.empty()) {
+      return {};
+    }
+
+    for (char& ch : cmdline) {
+      if (ch == '\0') {
+        ch = ' ';
+      }
+    }
+    while (!cmdline.empty() && cmdline.back() == ' ') {
+      cmdline.pop_back();
+    }
+    if (cmdline.empty()) {
+      return {};
+    }
+
+    return ' ' + cmdline + ' ';
+  }
+
+  [[nodiscard]] std::vector<std::string> readProcessCommandLines() {
+    std::vector<std::string> commandLines;
+    std::error_code ec;
+    for (const auto& entry :
+         std::filesystem::directory_iterator("/proc", std::filesystem::directory_options::skip_permission_denied, ec)) {
+      if (ec) {
+        break;
+      }
+      if (!entry.is_directory(ec) || ec) {
+        ec.clear();
+        continue;
+      }
+      const auto name = entry.path().filename().string();
+      if (!isProcPidName(name)) {
+        continue;
+      }
+      auto cmdline = readProcCmdline(entry.path());
+      if (!cmdline.empty()) {
+        commandLines.push_back(std::move(cmdline));
+      }
+    }
+    return commandLines;
+  }
+
+  struct ProcessCommandLineCache {
+    std::chrono::steady_clock::time_point capturedAt{};
+    std::vector<std::string> commandLines;
+  };
+
+  ProcessCommandLineCache& processCommandLineCache() {
+    static ProcessCommandLineCache cache;
+    return cache;
+  }
+
+  [[nodiscard]] const std::vector<std::string>& cachedProcessCommandLines() {
+    auto& cache = processCommandLineCache();
+    const auto now = std::chrono::steady_clock::now();
+    if (cache.capturedAt.time_since_epoch().count() == 0 || now - cache.capturedAt >= kProcessCommandLineCacheTtl) {
+      cache.commandLines = readProcessCommandLines();
+      cache.capturedAt = now;
+    }
+    return cache.commandLines;
   }
 
   bool setNonBlocking(int fd) {
@@ -490,6 +570,21 @@ namespace process {
   RunResult runSyncWithTimeout(std::initializer_list<const char*> args, std::chrono::milliseconds timeout) {
     const auto command = makeCommand(args);
     return command.has_value() ? runSyncWithTimeout(*command, timeout) : RunResult{-1, {}, {}};
+  }
+
+  bool commandLineMatchesAll(const std::vector<std::string>& needles) {
+    if (needles.empty()) {
+      return false;
+    }
+    if (std::any_of(needles.begin(), needles.end(), [](const auto& needle) { return needle.empty(); })) {
+      return false;
+    }
+
+    const auto& commandLines = cachedProcessCommandLines();
+    return std::any_of(commandLines.begin(), commandLines.end(), [&needles](const auto& commandLine) {
+      return std::all_of(needles.begin(), needles.end(),
+                         [&commandLine](const auto& needle) { return commandLine.find(needle) != std::string::npos; });
+    });
   }
 
   RunResult runSync(const std::string& command) {
