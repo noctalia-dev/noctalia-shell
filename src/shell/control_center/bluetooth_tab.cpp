@@ -155,15 +155,6 @@ namespace {
 
       const auto bucket = bucketFor(m_device);
 
-      auto check = std::make_unique<Button>();
-      check->setVariant(ButtonVariant::Ghost);
-      check->setGlyph("check");
-      check->setGlyphSize(Style::fontSizeBody * scale);
-      check->setPadding(Style::spaceXs * scale);
-      check->setRadius(Style::scaledRadiusSm(scale));
-      check->setOpacity(bucket == DeviceBucket::Connected ? 1.0f : 0.0f);
-      header->addChild(std::move(check));
-
       auto primary = std::make_unique<Button>();
       primary->setGlyphSize(Style::fontSizeBody * scale);
       primary->setPadding(Style::spaceXs * scale);
