@@ -405,36 +405,44 @@ namespace settings {
         "wallpaper", "directories", tr("settings.schema.wallpaper.per-monitor-directories.label"),
         tr("settings.schema.wallpaper.per-monitor-directories.description"), {"wallpaper", "per_monitor_directories"},
         ToggleSetting{cfg.wallpaper.perMonitorDirectories}, "per display folder"));
-    for (const auto& ovr : cfg.wallpaper.monitorOverrides) {
-      if (ovr.match.empty()) {
+    for (const auto& outputOpt : env.availableOutputs) {
+      const std::string& connector = outputOpt.value;
+      if (connector.empty()) {
         continue;
       }
-      const std::vector<std::string> root = {"wallpaper", "monitor", ovr.match};
+      const std::vector<std::string> root = {"wallpaper", "monitor", connector};
       auto mpath = [&](std::string key) {
         std::vector<std::string> p = root;
         p.push_back(std::move(key));
         return p;
       };
       const std::string section = "wallpaper";
-      entries.push_back(makeEntry(section, "monitors", ovr.match,
-                                  tr("settings.schema.wallpaper.monitor-directory.label"), mpath("directory"),
-                                  TextSetting{.value = ovr.directory.value_or(""),
-                                              .placeholder = "~/Pictures/Wallpapers",
-                                              .browseMode = TextSettingBrowseMode::SelectFolder,
-                                              .browseFileExtensions = {}},
-                                  "monitor folder"));
+      const WallpaperMonitorOverride* ovr = nullptr;
+      for (const auto& candidate : cfg.wallpaper.monitorOverrides) {
+        if (candidate.match == connector) {
+          ovr = &candidate;
+          break;
+        }
+      }
+      entries.push_back(makeEntry(
+          section, "monitors", connector, tr("settings.schema.wallpaper.monitor-directory.label"), mpath("directory"),
+          TextSetting{.value = ovr != nullptr && ovr->directory.has_value() ? *ovr->directory : "",
+                      .placeholder = "~/Pictures/Wallpapers",
+                      .browseMode = TextSettingBrowseMode::SelectFolder,
+                      .browseFileExtensions = {}},
+          "monitor folder"));
       entries.push_back(
-          makeEntry(section, "monitors", ovr.match, tr("settings.schema.wallpaper.monitor-directory-light.label"),
+          makeEntry(section, "monitors", connector, tr("settings.schema.wallpaper.monitor-directory-light.label"),
                     mpath("directory_light"),
-                    TextSetting{.value = ovr.directoryLight.value_or(""),
+                    TextSetting{.value = ovr != nullptr && ovr->directoryLight.has_value() ? *ovr->directoryLight : "",
                                 .placeholder = tr("settings.schema.wallpaper.monitor-directory-light.placeholder"),
                                 .browseMode = TextSettingBrowseMode::SelectFolder,
                                 .browseFileExtensions = {}},
                     "monitor light folder", true));
       entries.push_back(
-          makeEntry(section, "monitors", ovr.match, tr("settings.schema.wallpaper.monitor-directory-dark.label"),
+          makeEntry(section, "monitors", connector, tr("settings.schema.wallpaper.monitor-directory-dark.label"),
                     mpath("directory_dark"),
-                    TextSetting{.value = ovr.directoryDark.value_or(""),
+                    TextSetting{.value = ovr != nullptr && ovr->directoryDark.has_value() ? *ovr->directoryDark : "",
                                 .placeholder = tr("settings.schema.wallpaper.monitor-directory-dark.placeholder"),
                                 .browseMode = TextSettingBrowseMode::SelectFolder,
                                 .browseFileExtensions = {}},
