@@ -117,8 +117,8 @@ body:
         Please provide relevant system information:
 
         If you selected `Other` for distribution and/or compositor, please specify the exact one(s) here.
-        - Installation method:
-        - GPU:
+        - Installation method: e.g. AUR, source build, Nix
+        - GPU: e.g. AMD RX 7800 XT (amdgpu)
       placeholder: |
         Installation method: e.g. AUR, source build, Nix
         GPU: e.g. AMD RX 7800 XT (amdgpu)
