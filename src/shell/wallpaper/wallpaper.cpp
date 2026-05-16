@@ -374,13 +374,18 @@ void Wallpaper::onSecondTick() {
 void Wallpaper::registerIpc(IpcService& ipc) {
   ipc.registerHandler(
       "wallpaper-random",
-      [this](const std::string&) -> std::string {
-        if (!switchToRandomWallpaper()) {
+      [this](const std::string& args) -> std::string {
+        const auto trimmed = StringUtils::trim(args);
+        std::optional<std::string_view> connector;
+        if (!trimmed.empty()) {
+          connector = trimmed;
+        }
+        if (!switchToRandomWallpaper(connector)) {
           return "error: failed to pick a random wallpaper\n";
         }
         return "ok\n";
       },
-      "wallpaper-random", "Switch to a random wallpaper immediately");
+      "wallpaper-random [<connector>]", "Switch to a random wallpaper immediately");
   ipc.registerHandler(
       "wallpaper-set",
       [this](const std::string& args) -> std::string {
@@ -565,7 +570,7 @@ void Wallpaper::runAutomation(std::int64_t minuteStamp) {
   m_lastAutomationSwitchMinute = minuteStamp;
 }
 
-bool Wallpaper::switchToRandomWallpaper() {
+bool Wallpaper::switchToRandomWallpaper(std::optional<std::string_view> connector) {
   if (m_config == nullptr || !m_config->config().wallpaper.enabled || m_instances.empty()) {
     return false;
   }
@@ -574,6 +579,54 @@ bool Wallpaper::switchToRandomWallpaper() {
   const ThemeMode mode = wallpaper.perMonitorDirectories
                              ? (m_config->config().theme.mode == ThemeMode::Light ? ThemeMode::Light : ThemeMode::Dark)
                              : ThemeMode::Dark;
+
+  if (connector.has_value()) {
+    if (m_wayland != nullptr) {
+      const auto& outputs = m_wayland->outputs();
+      const bool found = std::any_of(outputs.begin(), outputs.end(), [&](const WaylandOutput& out) {
+        return !out.connectorName.empty() && out.connectorName == *connector;
+      });
+      if (!found) {
+        return false;
+      }
+    }
+
+    WallpaperInstance* targetInst = nullptr;
+    for (const auto& inst : m_instances) {
+      if (inst->connectorName == *connector) {
+        targetInst = inst.get();
+        break;
+      }
+    }
+    if (targetInst == nullptr) {
+      return false;
+    }
+
+    const WaylandOutput* output = nullptr;
+    if (m_wayland != nullptr) {
+      for (const auto& out : m_wayland->outputs()) {
+        if (out.output == targetInst->output) {
+          output = &out;
+          break;
+        }
+      }
+    }
+    std::vector<std::string> candidates;
+    const std::string dir =
+        output != nullptr ? resolveWallpaperDirectory(wallpaper, *output, mode) : wallpaper.directory;
+    collectWallpaperCandidates(dir, wallpaper.automation.recursive, candidates);
+    if (candidates.empty()) {
+      return false;
+    }
+    const std::string currentPath = m_config->getWallpaperPath(std::string(*connector));
+    const std::string picked = pickRandomWallpaperPath(candidates, currentPath);
+    if (picked.empty() || picked == currentPath) {
+      return false;
+    }
+    m_config->setWallpaperPath(std::string(*connector), picked);
+    kLog.info("ipc set {} → {}", *connector, picked);
+    return true;
+  }
 
   ConfigService::WallpaperBatch batch(*m_config);
   bool anyChanged = false;
