@@ -1046,6 +1046,7 @@ namespace {
       if (m_muteButton != nullptr) {
         m_muteButton->setEnabled(nodeEnabled);
         m_muteButton->setGlyph(m_muted ? "volume-mute" : "volume-high");
+        m_muteButton->setVariant(m_muted ? ButtonVariant::Destructive : ButtonVariant::Default);
       }
 
       if (shouldSetSlider) {
@@ -1682,8 +1683,10 @@ void AudioTab::doUpdate(Renderer& renderer) {
     }
   }
   if (m_outputMuteButton != nullptr) {
+    const bool outputMuted = sink != nullptr && sink->muted;
     m_outputMuteButton->setEnabled(sink != nullptr);
-    m_outputMuteButton->setGlyph((sink != nullptr && sink->muted) ? "volume-mute" : "volume-high");
+    m_outputMuteButton->setGlyph(outputMuted ? "volume-mute" : "volume-high");
+    m_outputMuteButton->setVariant(outputMuted ? ButtonVariant::Destructive : ButtonVariant::Default);
   }
 
   if (m_inputSlider != nullptr) {
@@ -1699,8 +1702,10 @@ void AudioTab::doUpdate(Renderer& renderer) {
     }
   }
   if (m_inputMuteButton != nullptr) {
+    const bool inputMuted = source != nullptr && source->muted;
     m_inputMuteButton->setEnabled(source != nullptr);
-    m_inputMuteButton->setGlyph((source != nullptr && source->muted) ? "microphone-mute" : "microphone");
+    m_inputMuteButton->setGlyph(inputMuted ? "microphone-mute" : "microphone");
+    m_inputMuteButton->setVariant(inputMuted ? ButtonVariant::Destructive : ButtonVariant::Default);
   }
 }
 
