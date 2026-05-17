@@ -29,9 +29,7 @@ namespace {
   }
 
   constexpr float kWorkspaceGap = Style::spaceXs;
-  constexpr float kWorkspacePillMinWidth = Style::controlHeight + Style::spaceXs;
-  constexpr float kWorkspaceLabelPadH = Style::spaceSm;
-  constexpr float kWorkspacePillMinHeight = Style::fontSizeMini - Style::spaceXs;
+  constexpr float kWorkspacePillHeight = Style::barGlyphSize;
   constexpr float kWorkspaceAnimDurationMs = static_cast<float>(Style::animNormal);
 } // namespace
 
@@ -159,9 +157,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
   const auto& workspaces = m_cachedState;
   const float gap = kWorkspaceGap * m_contentScale;
   const float labelFontSize = Style::fontSizeMini * m_contentScale;
-  const auto labelRefMetrics = renderer.measureFont(labelFontSize, true);
-  const float labelRefHeight = labelRefMetrics.bottom - labelRefMetrics.top;
-  float indicatorHeight = std::round(std::max(labelRefHeight, kWorkspacePillMinHeight * m_contentScale));
+  const float indicatorHeight = std::round(kWorkspacePillHeight * m_contentScale);
 
   std::vector<std::string> labels;
   labels.reserve(workspaces.size());
@@ -196,8 +192,6 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     if (slot.showLabel) {
       const TextMetrics tm = renderer.measureText(labels[i], labelFontSize, true);
       slot.textWidth = tm.right - tm.left;
-      const float inkHeight = std::max(0.0f, tm.inkBottom - tm.inkTop);
-      indicatorHeight = std::max(indicatorHeight, std::round(std::max(labelRefHeight, inkHeight)));
     }
   }
 
