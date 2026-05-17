@@ -24,9 +24,16 @@ namespace {
       EGL_NONE,
   };
 
+  // GLES 3, not 2. libprojectM 4.x renders through Vertex Array Objects,
+  // which are not core in GLES2 — under an ES2 context its VAO/element-buffer
+  // binding silently no-ops, Mesa then treats libprojectM's VBO index offset
+  // as a client-side pointer and memcpys from a garbage address, crashing
+  // deterministically inside FinalComposite::Draw on the first frame. GLES3 is
+  // a strict superset of GLES2, so every other (ES2-targeted) renderer in the
+  // share group keeps working unchanged. The driver advertises ES 3.2.
   constexpr EGLint kContextAttributes[] = {
       EGL_CONTEXT_CLIENT_VERSION,
-      2,
+      3,
       EGL_NONE,
   };
 

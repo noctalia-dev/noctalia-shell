@@ -163,16 +163,12 @@ void ProjectMRenderer::renderFrame() {
   projectm_opengl_render_frame(static_cast<projectm_handle>(m_projectm));
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-  // Fully drain this context before we release it. libprojectM submits draws
-  // with client-side index arrays; under Mesa glthread those are marshalled
-  // asynchronously. Releasing the context (eglMakeCurrent away, below) with
-  // batches still pending leaves glthread's command buffer inconsistent, and
-  // the *next* frame's projectM draw then crashes inside
-  // tc_draw_user_indices_single. glFinish forces glthread to flush while the
-  // context is still current, so every frame starts from a clean slate. The
-  // cost is negligible at the visualizer's frame cadence.
-  glFinish();
-
+  // restore() calls eglMakeCurrent back to the caller's context, which per the
+  // EGL spec implicitly flushes this context first, so no explicit glFinish is
+  // needed. (An earlier glFinish here was a misdiagnosed workaround for what
+  // was really a GLES2-context bug — see kContextAttributes in
+  // gl_shared_context.cpp. A per-frame glFinish would stall the CPU on the GPU
+  // every visualizer tick for no benefit.)
   restore(prev);
 }
 
