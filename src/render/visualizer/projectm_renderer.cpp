@@ -137,12 +137,24 @@ void ProjectMRenderer::setFps(int fps) {
 }
 
 void ProjectMRenderer::loadPreset(const std::string& path) {
-  if (m_projectm == nullptr || path.empty()) {
+  if (m_projectm == nullptr || m_shared == nullptr || path.empty()) {
     return;
   }
+  // projectm_load_preset_file constructs the preset's GL objects *synchronously*
+  // — in particular FinalComposite's VAO + element buffer (libprojectM
+  // RenderItem::Init). VAOs are container objects and are NOT shared across an
+  // EGL share group, so the preset's VAO must be created in the very same
+  // context renderFrame() draws with (the shared surfaceless root context). If
+  // we load with the caller's context current instead, the VAO name is invalid
+  // when renderFrame() binds it, no element buffer is bound, and libprojectM's
+  // glDrawElements(..., nullptr) faults reading indices from a null offset.
+  // Hence the same make-current/restore dance as renderFrame().
+  GlState prev{};
+  makeCurrentSaved(prev);
   // Smooth = true: libprojectM cross-fades over its built-in transition window
   // rather than hard-cutting. Cheap enough that we always opt in.
   projectm_load_preset_file(static_cast<projectm_handle>(m_projectm), path.c_str(), /*smooth=*/true);
+  restore(prev);
 }
 
 void ProjectMRenderer::renderFrame() {
@@ -163,12 +175,17 @@ void ProjectMRenderer::renderFrame() {
   projectm_opengl_render_frame(static_cast<projectm_handle>(m_projectm));
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-  // restore() calls eglMakeCurrent back to the caller's context, which per the
-  // EGL spec implicitly flushes this context first, so no explicit glFinish is
-  // needed. (An earlier glFinish here was a misdiagnosed workaround for what
-  // was really a GLES2-context bug — see kContextAttributes in
-  // gl_shared_context.cpp. A per-frame glFinish would stall the CPU on the GPU
-  // every visualizer tick for no benefit.)
+  // Drain the GPU fully before releasing this context. libprojectM's
+  // FinalComposite pass issues glDrawElements with a client-side index array;
+  // under Mesa glthread that draw is marshalled asynchronously. eglMakeCurrent
+  // (in restore() below) only *flushes* — it does not wait — so without an
+  // explicit finish the next visualizer tick can re-enter libprojectM while
+  // glthread is still consuming the previous frame's client arrays, and the
+  // marshalling memcpy faults inside tc_draw_user_indices_single. The GLES3
+  // context (see kContextAttributes in gl_shared_context.cpp) and this
+  // glFinish are BOTH required; neither alone prevents the crash. The sync
+  // cost is acceptable at the visualizer's frame cadence.
+  glFinish();
   restore(prev);
 }
 
