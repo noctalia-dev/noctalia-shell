@@ -224,21 +224,6 @@ void AppProvider::refreshEntriesIfNeeded() const {
 
   m_entries = desktopEntries();
   m_entriesVersion = version;
-  ensureSelectedCategoryIsAvailable();
-}
-
-void AppProvider::ensureSelectedCategoryIsAvailable() const {
-  if (m_selectedCategory == LauncherAppCategories::All) {
-    return;
-  }
-
-  const auto categories = availableLauncherAppCategories(m_entries);
-  const auto selected = std::string_view(m_selectedCategory);
-  const auto found = std::find_if(categories.begin(), categories.end(),
-                                  [selected](const LauncherCategory& category) { return category.id == selected; });
-  if (found == categories.end()) {
-    m_selectedCategory = LauncherAppCategories::All;
-  }
 }
 
 std::vector<LauncherCategory> AppProvider::availableCategories() const {
@@ -246,17 +231,7 @@ std::vector<LauncherCategory> AppProvider::availableCategories() const {
   return availableLauncherAppCategories(m_entries);
 }
 
-void AppProvider::selectCategory(std::string_view category) {
-  refreshEntriesIfNeeded();
-  const auto categories = availableLauncherAppCategories(m_entries);
-  const auto found = std::find_if(categories.begin(), categories.end(),
-                                  [category](const LauncherCategory& item) { return item.id == category; });
-  m_selectedCategory = found == categories.end() ? std::string(LauncherAppCategories::All) : found->id;
-}
-
-void AppProvider::resetCategory() { m_selectedCategory = LauncherAppCategories::All; }
-
-std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
+std::vector<LauncherResult> AppProvider::query(std::string_view text, std::string_view category) const {
   refreshEntriesIfNeeded();
   const std::string normalizedText = StringUtils::toLower(text);
   const std::string_view pattern = normalizedText;
@@ -277,7 +252,7 @@ std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
     std::vector<LauncherResult> results;
     results.reserve(m_entries.size());
     for (const auto& entry : m_entries) {
-      if (!launcherAppEntryMatchesCategory(entry, m_selectedCategory)) {
+      if (!launcherAppEntryMatchesCategory(entry, category)) {
         continue;
       }
       results.push_back(buildResult(entry, 0));

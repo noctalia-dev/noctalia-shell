@@ -161,9 +161,7 @@ void LauncherPanel::onOpen(std::string_view context) {
   if (m_grid != nullptr) {
     m_grid->scrollView().setScrollOffset(0.0f);
   }
-  for (auto& provider : m_providers) {
-    provider->resetCategory();
-  }
+  m_selectedCategory.clear();
   // Clear cached icon misses before each open so newly installed app icons appear.
   m_iconResolver.invalidateCache();
   onInputChanged(initialValue);
@@ -179,6 +177,7 @@ void LauncherPanel::onClose() {
   }
 
   m_query.clear();
+  m_selectedCategory.clear();
   m_results.clear();
   m_categories.clear();
   m_selectedIndex = 0;
@@ -250,6 +249,8 @@ void LauncherPanel::onInputChanged(const std::string& text) {
   }
 
   const bool typedQuery = !queryText.empty();
+  const std::string_view category =
+      activeProvider == nullptr && queryText.empty() ? std::string_view(m_selectedCategory) : std::string_view{};
 
   auto applyUsageBoost = [&](std::vector<LauncherResult>& results, const LauncherProvider& provider) {
     if (!provider.trackUsage()) {
@@ -271,7 +272,7 @@ void LauncherPanel::onInputChanged(const std::string& text) {
     // Query default providers (empty prefix)
     for (auto& provider : m_providers) {
       if (provider->prefix().empty()) {
-        auto results = provider->query(queryText);
+        auto results = provider->query(queryText, category);
         applyUsageBoost(results, *provider);
         for (auto& result : results) {
           result.providerName = provider->name();

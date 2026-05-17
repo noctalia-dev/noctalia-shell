@@ -73,7 +73,7 @@ namespace {
 
 } // namespace
 
-std::vector<LauncherResult> MathProvider::query(std::string_view text) const {
+std::vector<LauncherResult> MathProvider::query(std::string_view text, std::string_view /*category*/) const {
   if (!looksLikeMath(text)) {
     return {};
   }

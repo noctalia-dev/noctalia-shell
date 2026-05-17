@@ -48,7 +48,7 @@ void EmojiProvider::initialize() {
   }
 }
 
-std::vector<LauncherResult> EmojiProvider::query(std::string_view text) const {
+std::vector<LauncherResult> EmojiProvider::query(std::string_view text, std::string_view /*category*/) const {
   std::string query = StringUtils::toLower(text);
   if (query.empty()) {
     // Show first batch when no query

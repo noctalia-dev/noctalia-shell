@@ -38,11 +38,9 @@ public:
   virtual void initialize() {}
 
   [[nodiscard]] virtual std::vector<LauncherCategory> availableCategories() const { return {}; }
-  [[nodiscard]] virtual std::string_view selectedCategory() const { return {}; }
-  virtual void selectCategory(std::string_view /*category*/) {}
-  virtual void resetCategory() {}
 
-  [[nodiscard]] virtual std::vector<LauncherResult> query(std::string_view text) const = 0;
+  [[nodiscard]] virtual std::vector<LauncherResult> query(std::string_view text,
+                                                          std::string_view category = {}) const = 0;
 
   virtual bool activate(const LauncherResult& result) = 0;
 };

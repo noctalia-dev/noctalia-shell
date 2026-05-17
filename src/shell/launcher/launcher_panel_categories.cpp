@@ -1,6 +1,5 @@
 #include "config/config_service.h"
 #include "i18n/i18n.h"
-#include "launcher/launcher_category_state.h"
 #include "shell/launcher/launcher_panel.h"
 #include "ui/controls/segmented.h"
 #include "ui/style.h"
@@ -27,7 +26,17 @@ std::unique_ptr<Segmented> LauncherPanel::createCategoryTabs(float scale) {
 }
 
 LauncherProvider* LauncherPanel::categoryProvider() const {
-  return LauncherCategoryState::singleCategoryProvider(m_providers);
+  LauncherProvider* candidate = nullptr;
+  for (const auto& provider : m_providers) {
+    if (provider == nullptr || !provider->prefix().empty() || provider->availableCategories().empty()) {
+      continue;
+    }
+    if (candidate != nullptr) {
+      return nullptr;
+    }
+    candidate = provider.get();
+  }
+  return candidate;
 }
 
 bool LauncherPanel::categoryTabsEnabled() const noexcept {
@@ -39,10 +48,21 @@ void LauncherPanel::updateCategoryTabs() {
     return;
   }
 
-  const auto state = LauncherCategoryState::resolveTabs(m_providers, m_query, categoryTabsEnabled());
-  LauncherProvider* provider = state.provider;
-  const auto& categories = state.categories;
-  const bool visible = state.visible;
+  LauncherProvider* provider = nullptr;
+  std::vector<LauncherCategory> categories;
+  bool visible = false;
+
+  if (categoryTabsEnabled() && m_query.empty()) {
+    provider = categoryProvider();
+    if (provider != nullptr) {
+      categories = provider->availableCategories();
+      visible = categories.size() > 1;
+    }
+  }
+
+  if (!visible) {
+    m_selectedCategory.clear();
+  }
 
   auto sameCategories = [&]() {
     if (m_categories.size() != categories.size()) {
@@ -67,13 +87,17 @@ void LauncherPanel::updateCategoryTabs() {
   }
 
   std::size_t selected = 0;
-  if (provider != nullptr) {
-    const auto selectedCategory = provider->selectedCategory();
+  if (!m_selectedCategory.empty()) {
+    bool foundSelectedCategory = false;
     for (std::size_t i = 0; i < m_categories.size(); ++i) {
-      if (m_categories[i].id == selectedCategory) {
+      if (m_categories[i].id == m_selectedCategory) {
         selected = i;
+        foundSelectedCategory = true;
         break;
       }
+    }
+    if (!foundSelectedCategory) {
+      m_selectedCategory.clear();
     }
   }
   m_categoryTabs->setSelectedIndex(selected);
@@ -91,7 +115,11 @@ void LauncherPanel::selectCategory(std::size_t index) {
   if (provider == nullptr || index >= m_categories.size()) {
     return;
   }
-  provider->selectCategory(m_categories[index].id);
+  if (index == 0) {
+    m_selectedCategory.clear();
+  } else {
+    m_selectedCategory = m_categories[index].id;
+  }
   onInputChanged(m_query);
 }
 

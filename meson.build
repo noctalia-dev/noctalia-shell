@@ -368,7 +368,6 @@ _noctalia_sources = files(
   'src/ipc/ipc_client.cpp',
   'src/ipc/ipc_service.cpp',
   'src/launcher/app_categories.cpp',
-  'src/launcher/launcher_category_state.cpp',
   'src/launcher/app_provider.cpp',
   'src/launcher/emoji_provider.cpp',
   'src/launcher/math_provider.cpp',
@@ -756,12 +755,12 @@ animation_manager_test = executable('animation_manager_test',
 
 test('animation_manager', animation_manager_test)
 
-launcher_category_state_test = executable('launcher_category_state_test',
+launcher_app_categories_test = executable('launcher_app_categories_test',
   sources: files(
-    'tests/launcher_category_state_test.cpp',
-    'src/launcher/launcher_category_state.cpp',
+    'tests/launcher_app_categories_test.cpp',
+    'src/launcher/app_categories.cpp',
   ),
   include_directories: _noctalia_inc,
 )
 
-test('launcher_category_state', launcher_category_state_test)
+test('launcher_app_categories', launcher_app_categories_test)

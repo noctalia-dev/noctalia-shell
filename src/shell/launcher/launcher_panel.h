@@ -78,6 +78,7 @@ private:
   std::unique_ptr<LauncherResultAdapter> m_adapter;
 
   std::string m_query;
+  std::string m_selectedCategory;
   std::size_t m_selectedIndex = 0;
   bool m_updatingCategoryTabs = false;
   ConfigService* m_config = nullptr;

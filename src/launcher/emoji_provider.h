@@ -16,7 +16,8 @@ public:
 
   void initialize() override;
 
-  [[nodiscard]] std::vector<LauncherResult> query(std::string_view text) const override;
+  [[nodiscard]] std::vector<LauncherResult> query(std::string_view text,
+                                                  std::string_view category = {}) const override;
 
   bool activate(const LauncherResult& result) override;
 

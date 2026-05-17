@@ -78,7 +78,7 @@ namespace {
 WallpaperProvider::WallpaperProvider(ConfigService* config, WaylandConnection* wayland)
     : m_config(config), m_wayland(wayland) {}
 
-std::vector<LauncherResult> WallpaperProvider::query(std::string_view text) const {
+std::vector<LauncherResult> WallpaperProvider::query(std::string_view text, std::string_view /*category*/) const {
   if (m_config == nullptr) {
     return {};
   }
