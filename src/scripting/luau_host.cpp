@@ -29,6 +29,9 @@ namespace {
   constexpr std::size_t kMaxAsyncCommandOutputBytes = 1024 * 1024;
   constexpr std::size_t kMaxAsyncCommandsPerHost = 8;
   constexpr int kMaxGlobalAsyncCommands = 32;
+  constexpr std::size_t kMaxAsyncProcessMatchesPerHost = 16;
+  constexpr int kMaxGlobalAsyncProcessMatches = 64;
+  constexpr int kMaxGlobalDetachedCommands = 32;
 
   std::uint64_t& nextHostId() {
     static std::uint64_t id = 1;
@@ -38,6 +41,48 @@ namespace {
   std::atomic<int>& inFlightAsyncCommands() {
     static std::atomic<int> count{0};
     return count;
+  }
+
+  std::atomic<int>& inFlightAsyncProcessMatches() {
+    static std::atomic<int> count{0};
+    return count;
+  }
+
+  std::atomic<int>& inFlightDetachedCommands() {
+    static std::atomic<int> count{0};
+    return count;
+  }
+
+  bool startDetachedCommandAsync(std::string command) {
+    if (command.empty()) {
+      return false;
+    }
+
+    auto& globalInFlight = inFlightDetachedCommands();
+    int current = globalInFlight.load(std::memory_order_relaxed);
+    while (current < kMaxGlobalDetachedCommands) {
+      if (globalInFlight.compare_exchange_weak(current, current + 1, std::memory_order_relaxed)) {
+        break;
+      }
+    }
+    if (current >= kMaxGlobalDetachedCommands) {
+      return false;
+    }
+
+    try {
+      std::thread([command = std::move(command)]() mutable {
+        try {
+          (void)process::runAsync(command);
+        } catch (...) {
+        }
+        inFlightDetachedCommands().fetch_sub(1, std::memory_order_relaxed);
+      }).detach();
+    } catch (...) {
+      globalInFlight.fetch_sub(1, std::memory_order_relaxed);
+      return false;
+    }
+
+    return true;
   }
 
   std::chrono::milliseconds commandTimeoutFromLua(lua_State* L) {
@@ -96,7 +141,7 @@ namespace {
     std::string command(cmd, len);
 
     if (lua_isnoneornil(L, 2)) {
-      bool ok = process::runAsync(command);
+      bool ok = startDetachedCommandAsync(std::move(command));
       lua_pushboolean(L, ok ? 1 : 0);
       return 1;
     }
@@ -167,14 +212,28 @@ namespace {
 
   int luau_processMatches(lua_State* L) {
     const int count = lua_gettop(L);
+    luaL_checktype(L, 1, LUA_TFUNCTION);
+
+    auto* host = hostForState(L);
+    if (host == nullptr) {
+      lua_pushboolean(L, 0);
+      return 1;
+    }
+
     std::vector<std::string> needles;
-    needles.reserve(static_cast<std::size_t>(count));
-    for (int i = 1; i <= count; ++i) {
+    needles.reserve(static_cast<std::size_t>(std::max(0, count - 1)));
+    for (int i = 2; i <= count; ++i) {
       size_t len = 0;
       const char* needle = luaL_checklstring(L, i, &len);
       needles.emplace_back(needle, len);
     }
-    lua_pushboolean(L, process::commandLineMatchesAll(needles) ? 1 : 0);
+
+    const int callbackRef = lua_ref(L, 1);
+    bool ok = host->startAsyncProcessMatch(std::move(needles), callbackRef);
+    if (!ok) {
+      lua_unref(L, callbackRef);
+    }
+    lua_pushboolean(L, ok ? 1 : 0);
     return 1;
   }
 
@@ -260,6 +319,10 @@ LuauHost::~LuauHost() {
         lua_unref(m_T, callbackRef);
       }
       m_asyncCommandCallbackRefs.clear();
+      for (int callbackRef : m_asyncProcessMatchCallbackRefs) {
+        lua_unref(m_T, callbackRef);
+      }
+      m_asyncProcessMatchCallbackRefs.clear();
     }
     if (m_threadRef != -1)
       lua_unref(m_L, m_threadRef);
@@ -307,8 +370,60 @@ bool LuauHost::startAsyncCommand(std::string command, int callbackRef, std::chro
   return true;
 }
 
+bool LuauHost::startAsyncProcessMatch(std::vector<std::string> needles, int callbackRef) {
+  if (needles.empty() || callbackRef <= LUA_REFNIL ||
+      m_asyncProcessMatchCallbackRefs.size() >= kMaxAsyncProcessMatchesPerHost) {
+    return false;
+  }
+
+  if (std::any_of(needles.begin(), needles.end(), [](const auto& needle) { return needle.empty(); })) {
+    return false;
+  }
+
+  auto& globalInFlight = inFlightAsyncProcessMatches();
+  int current = globalInFlight.load(std::memory_order_relaxed);
+  while (current < kMaxGlobalAsyncProcessMatches) {
+    if (globalInFlight.compare_exchange_weak(current, current + 1, std::memory_order_relaxed)) {
+      break;
+    }
+  }
+  if (current >= kMaxGlobalAsyncProcessMatches) {
+    return false;
+  }
+
+  m_asyncProcessMatchCallbackRefs.insert(callbackRef);
+  auto handler = m_asyncProcessMatchResultHandler;
+  if (!handler) {
+    m_asyncProcessMatchCallbackRefs.erase(callbackRef);
+    globalInFlight.fetch_sub(1, std::memory_order_relaxed);
+    return false;
+  }
+
+  try {
+    std::thread([hostId = m_hostId, callbackRef, needles = std::move(needles), handler = std::move(handler)]() mutable {
+      bool matched = false;
+      try {
+        matched = process::commandLineMatchesAll(needles);
+      } catch (...) {
+      }
+      inFlightAsyncProcessMatches().fetch_sub(1, std::memory_order_relaxed);
+      handler(hostId, callbackRef, matched);
+    }).detach();
+  } catch (...) {
+    m_asyncProcessMatchCallbackRefs.erase(callbackRef);
+    globalInFlight.fetch_sub(1, std::memory_order_relaxed);
+    return false;
+  }
+
+  return true;
+}
+
 bool LuauHost::hasAsyncCommandCallback(int callbackRef) const {
   return m_asyncCommandCallbackRefs.find(callbackRef) != m_asyncCommandCallbackRefs.end();
+}
+
+bool LuauHost::hasAsyncProcessMatchCallback(int callbackRef) const {
+  return m_asyncProcessMatchCallbackRefs.find(callbackRef) != m_asyncProcessMatchCallbackRefs.end();
 }
 
 bool LuauHost::callAsyncCommandCallback(int callbackRef, const process::RunResult& result,
@@ -338,6 +453,27 @@ bool LuauHost::callAsyncCommandCallback(int callbackRef, const process::RunResul
   setTableBool(m_T, "stderrTruncated", result.errTruncated);
 
   return callWithBudget("async command callback", 1, 0, budget);
+}
+
+bool LuauHost::callAsyncProcessMatchCallback(int callbackRef, bool matched, std::chrono::milliseconds budget) {
+  if (m_T == nullptr) {
+    return false;
+  }
+  const auto it = m_asyncProcessMatchCallbackRefs.find(callbackRef);
+  if (it == m_asyncProcessMatchCallbackRefs.end()) {
+    return false;
+  }
+  m_asyncProcessMatchCallbackRefs.erase(it);
+
+  lua_getref(m_T, callbackRef);
+  lua_unref(m_T, callbackRef);
+  if (!lua_isfunction(m_T, -1)) {
+    lua_pop(m_T, 1);
+    return false;
+  }
+
+  lua_pushboolean(m_T, matched ? 1 : 0);
+  return callWithBudget("process match callback", 1, 0, budget);
 }
 
 void LuauHost::interruptIfBudgetExceeded(lua_State* L) {

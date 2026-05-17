@@ -62,6 +62,7 @@ namespace scripting {
     CallBool,
     CallStrings,
     AsyncCommandResult,
+    AsyncProcessMatchResult,
     Stop,
   };
 
@@ -75,6 +76,7 @@ namespace scripting {
     std::string first;
     std::string second;
     bool boolValue = false;
+    bool processMatchResult = false;
     int callbackRef = 0;
     process::RunResult commandResult;
     ScriptWidgetSnapshot snapshot;

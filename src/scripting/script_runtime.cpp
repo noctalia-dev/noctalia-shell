@@ -209,6 +209,16 @@ namespace scripting {
       (void)enqueue(std::move(event));
     }
 
+    void enqueueAsyncProcessMatchResult(std::uint64_t hostId, int callbackRef, bool matched) {
+      ScriptWidgetEvent event;
+      event.kind = ScriptWidgetEventKind::AsyncProcessMatchResult;
+      event.hostId = hostId;
+      event.callbackRef = callbackRef;
+      event.processMatchResult = matched;
+      event.budget = kCallbackBudget;
+      (void)enqueue(std::move(event));
+    }
+
     void drain() {
       for (;;) {
         ScriptWidgetEvent event;
@@ -263,6 +273,15 @@ namespace scripting {
         return collectResult(event, "async command callback", ok);
       }
 
+      if (event.kind == ScriptWidgetEventKind::AsyncProcessMatchResult) {
+        if (event.hostId != host->hostId() || !host->hasAsyncProcessMatchCallback(event.callbackRef)) {
+          return std::nullopt;
+        }
+        bindingContext.beginCall(event.snapshot);
+        const bool ok = host->callAsyncProcessMatchCallback(event.callbackRef, event.processMatchResult, event.budget);
+        return collectResult(event, "process match callback", ok);
+      }
+
       bindingContext.beginCall(event.snapshot);
       bool ok = false;
       switch (event.kind) {
@@ -302,6 +321,11 @@ namespace scripting {
       host->setAsyncCommandResultHandler([weak](std::uint64_t hostId, int callbackRef, process::RunResult result) {
         if (auto state = weak.lock()) {
           state->enqueueAsyncResult(hostId, callbackRef, std::move(result));
+        }
+      });
+      host->setAsyncProcessMatchResultHandler([weak](std::uint64_t hostId, int callbackRef, bool matched) {
+        if (auto state = weak.lock()) {
+          state->enqueueAsyncProcessMatchResult(hostId, callbackRef, matched);
         }
       });
 

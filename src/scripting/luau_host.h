@@ -7,6 +7,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_set>
+#include <vector>
 
 struct lua_State;
 class CompositorPlatform;
@@ -25,6 +26,10 @@ public:
 
   LuauHost(const LuauHost&) = delete;
   LuauHost& operator=(const LuauHost&) = delete;
+
+  using AsyncCommandResultHandler =
+      std::function<void(std::uint64_t hostId, int callbackRef, process::RunResult result)>;
+  using AsyncProcessMatchResultHandler = std::function<void(std::uint64_t hostId, int callbackRef, bool matched)>;
 
   // Compile and load `source` as a chunk named `chunkName`. The chunk is left
   // on the Lua stack as a callable; call run() to execute it.
@@ -47,18 +52,23 @@ public:
   bool callGlobalWithStringsAndBudget(const char* name, std::string_view first, std::string_view second,
                                       std::chrono::milliseconds budget);
   bool callAsyncCommandCallback(int callbackRef, const process::RunResult& result, std::chrono::milliseconds budget);
+  bool callAsyncProcessMatchCallback(int callbackRef, bool matched, std::chrono::milliseconds budget);
   [[nodiscard]] bool lastCallTimedOut() const noexcept { return m_lastCallTimedOut; }
 
   lua_State* state() { return m_T; }
   [[nodiscard]] CompositorPlatform* platform() const noexcept { return m_platform; }
   [[nodiscard]] std::uint64_t hostId() const noexcept { return m_hostId; }
   void setScriptContext(scripting::ScriptedWidgetBindingContext* context) { m_scriptContext = context; }
-  void setAsyncCommandResultHandler(
-      std::function<void(std::uint64_t hostId, int callbackRef, process::RunResult result)> handler) {
+  void setAsyncCommandResultHandler(AsyncCommandResultHandler handler) {
     m_asyncCommandResultHandler = std::move(handler);
   }
+  void setAsyncProcessMatchResultHandler(AsyncProcessMatchResultHandler handler) {
+    m_asyncProcessMatchResultHandler = std::move(handler);
+  }
   [[nodiscard]] bool startAsyncCommand(std::string command, int callbackRef, std::chrono::milliseconds timeout);
+  [[nodiscard]] bool startAsyncProcessMatch(std::vector<std::string> needles, int callbackRef);
   [[nodiscard]] bool hasAsyncCommandCallback(int callbackRef) const;
+  [[nodiscard]] bool hasAsyncProcessMatchCallback(int callbackRef) const;
   void interruptIfBudgetExceeded(lua_State* L);
   void scriptLog(std::string message);
   void scriptNotifyInfo(std::string title, std::string body);
@@ -78,7 +88,9 @@ private:
   lua_State* m_T = nullptr; // sandboxed thread; user code runs here
   int m_threadRef = -1;     // registry ref pinning m_T against the GC
   std::unordered_set<int> m_asyncCommandCallbackRefs;
-  std::function<void(std::uint64_t hostId, int callbackRef, process::RunResult result)> m_asyncCommandResultHandler;
+  std::unordered_set<int> m_asyncProcessMatchCallbackRefs;
+  AsyncCommandResultHandler m_asyncCommandResultHandler;
+  AsyncProcessMatchResultHandler m_asyncProcessMatchResultHandler;
   std::chrono::steady_clock::time_point m_callDeadline{};
   std::string m_currentCallName;
   bool m_budgetActive = false;

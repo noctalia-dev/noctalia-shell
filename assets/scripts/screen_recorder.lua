@@ -15,6 +15,9 @@ local isAvailable = false
 local tickCount = 0
 local pendingTick = 0
 local checkedAvailability = false
+local processCheckPending = false
+local stateGeneration = 0
+local updateDisplay
 
 -- ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -22,19 +25,53 @@ local function cfg(key, default)
     return barWidget.getConfig(key, default)
 end
 
-local function gsrProcessMatches(token)
-    return noctalia.processMatches("gpu-screen-recorder", token)
-        or noctalia.processMatches("com.dec05eba.gpu_screen_recorder", token)
+local function setState(nextState)
+    if state == nextState then return end
+    state = nextState
+    stateGeneration = stateGeneration + 1
 end
 
-local function detectProcessState()
-    if gsrProcessMatches(" -r ") then
-        return "replaying"
+local function detectProcessStateAsync(callback)
+    local pending = 6
+    local isReplaying = false
+    local isRecording = false
+
+    local function finish(kind, matched)
+        if matched then
+            if kind == "replaying" then
+                isReplaying = true
+            elseif kind == "recording" then
+                isRecording = true
+            end
+        end
+
+        pending = pending - 1
+        if pending > 0 then return end
+
+        if isReplaying then
+            callback("replaying")
+        elseif isRecording then
+            callback("recording")
+        else
+            callback(nil)
+        end
     end
-    if gsrProcessMatches(" -w ") or gsrProcessMatches(" -o ") then
-        return "recording"
+
+    local function queue(kind, name, token)
+        local ok = noctalia.processMatches(function(matched)
+            finish(kind, matched)
+        end, name, token)
+        if not ok then
+            finish(kind, false)
+        end
     end
-    return nil
+
+    queue("replaying", "gpu-screen-recorder", " -r ")
+    queue("replaying", "com.dec05eba.gpu_screen_recorder", " -r ")
+    queue("recording", "gpu-screen-recorder", " -w ")
+    queue("recording", "com.dec05eba.gpu_screen_recorder", " -w ")
+    queue("recording", "gpu-screen-recorder", " -o ")
+    queue("recording", "com.dec05eba.gpu_screen_recorder", " -o ")
 end
 
 local function flatpakGsrInstalled()
@@ -173,8 +210,40 @@ end
 
 -- ── Portal check ─────────────────────────────────────────────────────────
 
-local function checkPortals()
-    return noctalia.portalAvailable()
+local function checkPortalsAsync(callback)
+    local pending = 5
+    local hasPortal = false
+    local hasBackend = false
+
+    local function finish(kind, matched)
+        if matched then
+            if kind == "portal" then
+                hasPortal = true
+            elseif kind == "backend" then
+                hasBackend = true
+            end
+        end
+
+        pending = pending - 1
+        if pending == 0 then
+            callback(hasPortal and hasBackend)
+        end
+    end
+
+    local function queue(kind, token)
+        local ok = noctalia.processMatches(function(matched)
+            finish(kind, matched)
+        end, token)
+        if not ok then
+            finish(kind, false)
+        end
+    end
+
+    queue("portal", "xdg-desktop-portal ")
+    queue("backend", "xdg-desktop-portal-wlr ")
+    queue("backend", "xdg-desktop-portal-hyprland ")
+    queue("backend", "xdg-desktop-portal-gnome ")
+    queue("backend", "xdg-desktop-portal-kde ")
 end
 
 -- ── Recording controls ───────────────────────────────────────────────────
@@ -182,17 +251,33 @@ end
 local function startRecording()
     if not isAvailable or state ~= "idle" then return end
 
-    if not checkPortals() then
-        noctalia.notifyError("Recording failed", "xdg-desktop-portal is not running")
-        return
-    end
-
-    local cmd = buildRecordCommand()
-    if not cmd then return end
-
-    state = "pending"
+    setState("pending")
     pendingTick = 0
-    noctalia.runAsync(cmd)
+    updateDisplay()
+
+    checkPortalsAsync(function(portalAvailable)
+        if state ~= "pending" then return end
+
+        if not portalAvailable then
+            setState("idle")
+            noctalia.notifyError("Recording failed", "xdg-desktop-portal is not running")
+            updateDisplay()
+            return
+        end
+
+        local cmd = buildRecordCommand()
+        if not cmd then
+            setState("idle")
+            updateDisplay()
+            return
+        end
+
+        if not noctalia.runAsync(cmd) then
+            setState("idle")
+            noctalia.notifyError("Recording failed", "Could not launch gpu-screen-recorder")
+            updateDisplay()
+        end
+    end)
 end
 
 local function stopRecording()
@@ -209,7 +294,7 @@ local function stopRecording()
         end
     end
 
-    state = "idle"
+    setState("idle")
 end
 
 -- ── Replay controls ──────────────────────────────────────────────────────
@@ -218,17 +303,33 @@ local function startReplay()
     if not isAvailable or state ~= "idle" then return end
     if not cfg("replay_enabled", false) then return end
 
-    if not checkPortals() then
-        noctalia.notifyError("Replay failed", "xdg-desktop-portal is not running")
-        return
-    end
-
-    local cmd = buildReplayCommand()
-    if not cmd then return end
-
-    state = "replay_pending"
+    setState("replay_pending")
     pendingTick = 0
-    noctalia.runAsync(cmd)
+    updateDisplay()
+
+    checkPortalsAsync(function(portalAvailable)
+        if state ~= "replay_pending" then return end
+
+        if not portalAvailable then
+            setState("idle")
+            noctalia.notifyError("Replay failed", "xdg-desktop-portal is not running")
+            updateDisplay()
+            return
+        end
+
+        local cmd = buildReplayCommand()
+        if not cmd then
+            setState("idle")
+            updateDisplay()
+            return
+        end
+
+        if not noctalia.runAsync(cmd) then
+            setState("idle")
+            noctalia.notifyError("Replay failed", "Could not launch gpu-screen-recorder")
+            updateDisplay()
+        end
+    end)
 end
 
 local function stopReplay()
@@ -237,7 +338,7 @@ local function stopReplay()
     noctalia.runAsync("pkill -SIGINT -f 'gpu-screen-recorder.*-r ' 2>/dev/null || true")
     noctalia.runAsync("(sleep 3 && pkill -9 -f 'gpu-screen-recorder.*-r ' 2>/dev/null || true) &")
 
-    state = "idle"
+    setState("idle")
     noctalia.notify("Replay buffer stopped")
 end
 
@@ -249,32 +350,30 @@ end
 
 -- ── State polling ────────────────────────────────────────────────────────
 
-local function checkProcessState()
-    local processState = detectProcessState()
-
+local function checkProcessState(processState)
     if state == "pending" then
         pendingTick = pendingTick + CHECK_TICKS
         if pendingTick >= PENDING_TICKS then
             if processState == "recording" then
-                state = "recording"
+                setState("recording")
                 noctalia.notify("Recording started")
             else
-                state = "idle"
+                setState("idle")
             end
         end
     elseif state == "replay_pending" then
         pendingTick = pendingTick + CHECK_TICKS
         if pendingTick >= PENDING_TICKS then
             if processState == "replaying" then
-                state = "replaying"
+                setState("replaying")
                 noctalia.notify("Replay buffer active")
             else
-                state = "idle"
+                setState("idle")
             end
         end
     elseif state == "recording" then
         if processState ~= "recording" then
-            state = "idle"
+            setState("idle")
             noctalia.notify("Recording saved", outputPath)
             if cfg("copy_to_clipboard", false) and outputPath ~= "" then
                 copyToClipboard(outputPath)
@@ -282,19 +381,35 @@ local function checkProcessState()
         end
     elseif state == "replaying" then
         if processState ~= "replaying" then
-            state = "idle"
+            setState("idle")
             noctalia.notify("Replay buffer stopped")
         end
     elseif state == "idle" then
         if processState ~= nil then
-            state = processState
+            setState(processState)
         end
     end
 end
 
+local function requestProcessStateCheck()
+    if processCheckPending then return end
+
+    processCheckPending = true
+    local generation = stateGeneration
+    detectProcessStateAsync(function(processState)
+        processCheckPending = false
+        if generation ~= stateGeneration then return end
+        if processState ~= nil then
+            isAvailable = true
+        end
+        checkProcessState(processState)
+        updateDisplay()
+    end)
+end
+
 -- ── Display ──────────────────────────────────────────────────────────────
 
-local function updateDisplay()
+function updateDisplay()
     local hideInactive = cfg("hide_inactive", false)
 
     if not isAvailable then
@@ -333,17 +448,12 @@ function update()
 
     if not checkedAvailability then
         checkedAvailability = true
-        local processState = detectProcessState()
-        if processState ~= nil then
-            isAvailable = true
-            state = processState
-        else
-            isAvailable = checkAvailability()
-        end
+        isAvailable = checkAvailability()
+        requestProcessStateCheck()
     end
 
     if tickCount % CHECK_TICKS == 0 then
-        checkProcessState()
+        requestProcessStateCheck()
     end
 
     updateDisplay()
