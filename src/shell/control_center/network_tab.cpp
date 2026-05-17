@@ -402,13 +402,7 @@ std::unique_ptr<Flex> NetworkTab::create() {
   passwordInput->setPlaceholder(i18n::tr("control-center.network.password"));
   passwordInput->setFlexGrow(1.0f);
   passwordInput->setPasswordMode(true);
-  passwordInput->setOnSubmit([this](const std::string& value) {
-    if (m_secrets != nullptr) {
-      m_secrets->submitSecret(value);
-    }
-    clearPasswordPrompt();
-    PanelManager::instance().refresh();
-  });
+  passwordInput->setOnSubmit([this](const std::string& value) { submitPasswordPrompt(value); });
   m_passwordInput = passwordInput.get();
   inputRow->addChild(std::move(passwordInput));
 
@@ -436,25 +430,14 @@ std::unique_ptr<Flex> NetworkTab::create() {
   auto connectButton = std::make_unique<Button>();
   connectButton->setVariant(ButtonVariant::Default);
   connectButton->setText(i18n::tr("control-center.network.connect"));
-  connectButton->setOnClick([this]() {
-    if (m_secrets != nullptr && m_passwordInput != nullptr) {
-      m_secrets->submitSecret(m_passwordInput->value());
-    }
-    clearPasswordPrompt();
-    PanelManager::instance().refresh();
-  });
+  connectButton->setOnClick(
+      [this]() { submitPasswordPrompt(m_passwordInput != nullptr ? m_passwordInput->value() : std::string{}); });
   inputRow->addChild(std::move(connectButton));
 
   auto cancelButton = std::make_unique<Button>();
   cancelButton->setVariant(ButtonVariant::Ghost);
   cancelButton->setText(i18n::tr("common.actions.cancel"));
-  cancelButton->setOnClick([this]() {
-    if (m_secrets != nullptr) {
-      m_secrets->cancelSecret();
-    }
-    clearPasswordPrompt();
-    PanelManager::instance().refresh();
-  });
+  cancelButton->setOnClick([this]() { cancelPasswordPrompt(); });
   inputRow->addChild(std::move(cancelButton));
 
   passwordCard->addChild(std::move(inputRow));
@@ -485,6 +468,16 @@ std::unique_ptr<Flex> NetworkTab::create() {
 }
 
 std::unique_ptr<Flex> NetworkTab::createHeaderActions() { return nullptr; }
+
+void NetworkTab::setActive(bool active) {
+  if (m_active == active) {
+    return;
+  }
+  m_active = active;
+  if (m_active && m_network != nullptr) {
+    m_network->requestScan();
+  }
+}
 
 void NetworkTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
   if (m_rootLayout == nullptr) {
@@ -527,6 +520,8 @@ void NetworkTab::onClose() {
   m_lastStructureKey.clear();
   m_lastApRowsKey.clear();
   m_lastListWidth = -1.0f;
+  m_pendingAccessPoint.reset();
+  m_active = false;
 }
 
 void NetworkTab::syncPasswordCard() {
@@ -544,6 +539,7 @@ void NetworkTab::syncPasswordCard() {
 void NetworkTab::showPasswordPrompt(const NetworkSecretAgent::SecretRequest& request) {
   m_hasPendingSecret = true;
   m_pendingSsid = request.ssid;
+  m_pendingAccessPoint.reset();
   m_passwordRevealed = false;
   if (m_passwordInput != nullptr) {
     m_passwordInput->setValue("");
@@ -554,9 +550,47 @@ void NetworkTab::showPasswordPrompt(const NetworkSecretAgent::SecretRequest& req
   }
 }
 
+void NetworkTab::showPasswordPrompt(const AccessPointInfo& ap) {
+  m_hasPendingSecret = true;
+  m_pendingSsid = ap.ssid;
+  m_pendingAccessPoint = ap;
+  m_passwordRevealed = false;
+  if (m_passwordInput != nullptr) {
+    m_passwordInput->setValue("");
+    m_passwordInput->setPasswordMode(true);
+  }
+  if (m_passwordRevealButton != nullptr) {
+    m_passwordRevealButton->setGlyph("eye");
+  }
+}
+
+void NetworkTab::submitPasswordPrompt(const std::string& value) {
+  if (m_pendingAccessPoint.has_value()) {
+    if (value.empty()) {
+      return;
+    }
+    if (m_network != nullptr) {
+      m_network->activateAccessPoint(*m_pendingAccessPoint, value);
+    }
+  } else if (m_secrets != nullptr) {
+    m_secrets->submitSecret(value);
+  }
+  clearPasswordPrompt();
+  PanelManager::instance().refresh();
+}
+
+void NetworkTab::cancelPasswordPrompt() {
+  if (!m_pendingAccessPoint.has_value() && m_secrets != nullptr) {
+    m_secrets->cancelSecret();
+  }
+  clearPasswordPrompt();
+  PanelManager::instance().refresh();
+}
+
 void NetworkTab::clearPasswordPrompt() {
   m_hasPendingSecret = false;
   m_pendingSsid.clear();
+  m_pendingAccessPoint.reset();
   m_passwordRevealed = false;
   if (m_passwordInput != nullptr) {
     m_passwordInput->setValue("");
@@ -685,9 +719,15 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
         auto row = std::make_unique<AccessPointRow>(
             scale, ap, saved,
             [this](const AccessPointInfo& clicked) {
-              if (m_network != nullptr) {
-                m_network->activateAccessPoint(clicked);
+              if (clicked.active || m_network == nullptr) {
+                return;
               }
+              if (clicked.secured && !m_network->hasSavedConnection(clicked.ssid)) {
+                showPasswordPrompt(clicked);
+                PanelManager::instance().refresh();
+                return;
+              }
+              m_network->activateAccessPoint(clicked);
             },
             [this](const AccessPointInfo& clicked) {
               if (m_network != nullptr) {

@@ -83,12 +83,12 @@ public:
   // Trigger a Wi-Fi scan on every wifi device. Results arrive via PropertiesChanged.
   void requestScan();
 
-  // Activate a known saved connection for the given access point. NM picks the
-  // matching saved connection automatically when the first argument is "/".
-  // Returns false only on an immediate D-Bus error. For secured networks that
-  // have no saved secrets, the activation will fail asynchronously (slice 3
-  // handles that via a SecretAgent).
+  // Activate a saved connection for the given access point, or create an
+  // in-memory profile for a new network and persist it after activation succeeds.
+  // NM picks the matching saved connection automatically when the first argument is "/".
+  // Returns false only on an immediate D-Bus error.
   bool activateAccessPoint(const AccessPointInfo& ap);
+  bool activateAccessPoint(const AccessPointInfo& ap, const std::string& psk);
 
   // Activate / deactivate a saved VPN connection profile.
   bool activateVpnConnection(const VpnConnectionInfo& vpn);
@@ -112,6 +112,12 @@ private:
   void refreshVpnConnections(std::function<void()> onComplete);
   void finishSavedConnections(std::vector<std::string>& ssids, std::function<void()> onComplete);
   void finishRefreshAccessPoints(std::vector<AccessPointInfo>& aps, std::function<void()> onComplete);
+  bool addAndActivateAccessPoint(const AccessPointInfo& ap, const std::optional<std::string>& psk);
+  void watchPendingAccessPointActivation(const std::string& ssid, const std::string& connectionPath,
+                                         const std::string& activePath);
+  void handlePendingAccessPointActivationState(const std::string& activePath, std::uint32_t state);
+  void persistConnectionToDisk(const std::string& connectionPath, const std::string& ssid);
+  void deleteUnsavedConnection(const std::string& connectionPath, const std::string& ssid);
   void rebindActiveConnection();
   void rebindActiveDevice(const std::string& devicePath);
   void rebindActiveAccessPoint(const std::string& apPath);
@@ -119,6 +125,8 @@ private:
   void readStateAsync(std::function<void(NetworkState)> onComplete);
   [[nodiscard]] NetworkChangeOrigin consumeWirelessEnabledChangeOrigin(bool enabled);
   void emitChangedIfNeeded(NetworkState next);
+
+  struct PendingAccessPointActivation;
 
   SystemBus& m_bus;
   std::unique_ptr<sdbus::IProxy> m_nm;
@@ -133,6 +141,7 @@ private:
   std::vector<AccessPointInfo> m_accessPoints;
   std::vector<VpnConnectionInfo> m_vpnConnections;
   std::vector<std::string> m_savedSsids;
+  std::unordered_map<std::string, std::unique_ptr<PendingAccessPointActivation>> m_pendingApActivations;
   std::shared_ptr<int> m_lifetimeToken;
   bool m_refreshInFlight = false;
   bool m_refreshQueued = false;

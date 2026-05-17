@@ -4,6 +4,7 @@
 #include "dbus/network/network_service.h"
 #include "shell/control_center/tab.h"
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -22,6 +23,7 @@ public:
 
   std::unique_ptr<Flex> create() override;
   std::unique_ptr<Flex> createHeaderActions() override;
+  void setActive(bool active) override;
   void onClose() override;
 
 private:
@@ -32,6 +34,9 @@ private:
   void rebuildApList(Renderer& renderer);
   void syncPasswordCard();
   void showPasswordPrompt(const NetworkSecretAgent::SecretRequest& request);
+  void showPasswordPrompt(const AccessPointInfo& ap);
+  void submitPasswordPrompt(const std::string& value);
+  void cancelPasswordPrompt();
   void clearPasswordPrompt();
   [[nodiscard]] std::string structureKey(const std::vector<AccessPointInfo>& aps,
                                          const std::vector<VpnConnectionInfo>& vpns) const;
@@ -69,4 +74,6 @@ private:
 
   bool m_hasPendingSecret = false;
   std::string m_pendingSsid;
+  std::optional<AccessPointInfo> m_pendingAccessPoint;
+  bool m_active = false;
 };
