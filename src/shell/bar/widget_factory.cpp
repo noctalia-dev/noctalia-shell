@@ -78,7 +78,7 @@ namespace {
 
 WidgetFactory::WidgetFactory(CompositorPlatform& platform, const Config& config, NotificationManager* notifications,
                              TrayService* tray, PipeWireService* audio, UPowerService* upower,
-                             SystemMonitorService* sysmon, PowerProfilesService* powerProfiles, NetworkService* network,
+                             SystemMonitorService* sysmon, PowerProfilesService* powerProfiles, INetworkService* network,
                              IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
                              HttpClient* httpClient, WeatherService* weather, GammaService* nightLight,
                              noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,

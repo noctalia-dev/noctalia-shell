@@ -4,6 +4,7 @@
 #include "config/config_service.h"
 #include "dbus/bluetooth/bluetooth_service.h"
 #include "dbus/mpris/mpris_service.h"
+#include "dbus/network/inetwork_service.h"
 #include "dbus/network/network_service.h"
 #include "dbus/power/power_profiles_service.h"
 #include "i18n/i18n.h"
@@ -53,7 +54,7 @@ namespace {
 
   class WifiShortcut final : public Shortcut {
   public:
-    explicit WifiShortcut(NetworkService* svc) : m_svc(svc) {}
+    explicit WifiShortcut(INetworkService* svc) : m_svc(svc) {}
     std::string_view id() const override { return "wifi"; }
     std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.wifi"); }
     std::string displayLabel() const override {
@@ -83,7 +84,7 @@ namespace {
     void onRightClick() override { openTab("network"); }
 
   private:
-    NetworkService* m_svc;
+    INetworkService* m_svc;
   };
 
   class BluetoothShortcut final : public Shortcut {

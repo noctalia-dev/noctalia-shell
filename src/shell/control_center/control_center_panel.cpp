@@ -4,6 +4,7 @@
 #include "config/config_service.h"
 #include "core/deferred_call.h"
 #include "dbus/mpris/mpris_service.h"
+#include "dbus/network/inetwork_service.h"
 #include "i18n/i18n.h"
 #include "notification/notification_manager.h"
 #include "render/core/renderer.h"
@@ -26,7 +27,7 @@ namespace {
 ControlCenterPanel::ControlCenterPanel(
     NotificationManager* notifications, PipeWireService* audio, MprisService* mpris, ConfigService* config,
     HttpClient* httpClient, WeatherService* weather, PipeWireSpectrum* spectrum, UPowerService* upower,
-    PowerProfilesService* powerProfiles, NetworkService* network, NetworkSecretAgent* networkSecrets,
+    PowerProfilesService* powerProfiles, INetworkService* network, NetworkSecretAgent* networkSecrets,
     BluetoothService* bluetooth, BluetoothAgent* bluetoothAgent, BrightnessService* brightness,
     SystemMonitorService* sysmon, GammaService* nightLight, noctalia::theme::ThemeService* theme,
     IdleInhibitor* idleInhibitor, DependencyService* dependencies, CompositorPlatform* platform, Wallpaper* wallpaper) {

@@ -1,6 +1,7 @@
 #include "application.h"
 
 #include "app/poll_source.h"
+#include "dbus/network/wpa_supplicant_service.h"
 #include "config/config_types.h"
 #include "core/build_info.h"
 #include "core/deferred_call.h"
@@ -690,11 +691,28 @@ void Application::initServices() {
       }
       kLog.info("network service active");
     } catch (const std::exception& e) {
-      kLog.warn("network service disabled: {}", e.what());
-      m_networkService.reset();
+      kLog.warn("NetworkManager unavailable ({}), trying wpa_supplicant", e.what());
+      try {
+        m_networkService = std::make_unique<WpaSupplicantService>(*m_systemBus);
+        m_networkService->setChangeCallback(
+            [this, shouldRefreshControlCenter](const NetworkState& state, NetworkChangeOrigin origin) {
+              onNetworkStateChangedForEvents(state, origin);
+              m_bar.refresh();
+              if (shouldRefreshControlCenter()) {
+                m_panelManager.refresh();
+              }
+            });
+        if (m_networkService->hasStateSnapshot()) {
+          m_prevWirelessEnabledForEvents = m_networkService->state().wirelessEnabled;
+        }
+        kLog.info("network service active (wpa_supplicant)");
+      } catch (const std::exception& e2) {
+        kLog.warn("network service disabled: {}", e2.what());
+        m_networkService.reset();
+      }
     }
 
-    if (m_networkService != nullptr) {
+    if (dynamic_cast<NetworkService*>(m_networkService.get()) != nullptr) {
       try {
         m_networkSecretAgent = std::make_unique<NetworkSecretAgent>(*m_systemBus);
       } catch (const std::exception& e) {

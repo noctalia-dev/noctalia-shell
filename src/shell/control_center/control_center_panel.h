@@ -33,7 +33,7 @@ class InputArea;
 class Label;
 class MprisService;
 class NetworkSecretAgent;
-class NetworkService;
+class INetworkService;
 class GammaService;
 class NotificationManager;
 class PipeWireService;
@@ -54,7 +54,7 @@ public:
                      ConfigService* config = nullptr, HttpClient* httpClient = nullptr,
                      WeatherService* weather = nullptr, PipeWireSpectrum* spectrum = nullptr,
                      UPowerService* upower = nullptr, PowerProfilesService* powerProfiles = nullptr,
-                     NetworkService* network = nullptr, NetworkSecretAgent* networkSecrets = nullptr,
+                     INetworkService* network = nullptr, NetworkSecretAgent* networkSecrets = nullptr,
                      BluetoothService* bluetooth = nullptr, BluetoothAgent* bluetoothAgent = nullptr,
                      BrightnessService* brightness = nullptr, SystemMonitorService* sysmon = nullptr,
                      GammaService* nightLight = nullptr, noctalia::theme::ThemeService* theme = nullptr,

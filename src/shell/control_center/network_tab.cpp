@@ -312,7 +312,7 @@ namespace {
 
 } // namespace
 
-NetworkTab::NetworkTab(NetworkService* network, NetworkSecretAgent* secrets) : m_network(network), m_secrets(secrets) {
+NetworkTab::NetworkTab(INetworkService* network, NetworkSecretAgent* secrets) : m_network(network), m_secrets(secrets) {
   if (m_secrets != nullptr) {
     m_secrets->setRequestCallback([this](const NetworkSecretAgent::SecretRequest& request) {
       showPasswordPrompt(request);
