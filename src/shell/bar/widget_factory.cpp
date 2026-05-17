@@ -278,7 +278,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     const auto* outputInfo = m_platform.findOutputByWl(output);
     const std::string outputName = outputInfo != nullptr ? outputInfo->connectorName : std::string{};
     auto widget = std::make_unique<ScriptedWidget>(name, std::move(script), barName, outputName, wc, m_fileWatcher,
-                                                   &m_platform, m_clipboard);
+                                                   &m_platform, m_clipboard, m_audioSpectrum, m_mpris);
     widget->setContentScale(contentScale);
     return widget;
   }

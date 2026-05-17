@@ -23,6 +23,8 @@ class InputArea;
 class Label;
 class CompositorPlatform;
 class ClipboardService;
+class MprisService;
+class PipeWireSpectrum;
 
 class ScriptedWidget : public Widget {
 public:
@@ -35,7 +37,8 @@ public:
 
   explicit ScriptedWidget(std::string configName, std::string scriptPath, std::string barName, std::string outputName,
                           const WidgetConfig* config = nullptr, FileWatcher* fileWatcher = nullptr,
-                          CompositorPlatform* platform = nullptr, ClipboardService* clipboard = nullptr);
+                          CompositorPlatform* platform = nullptr, ClipboardService* clipboard = nullptr,
+                          PipeWireSpectrum* audioSpectrum = nullptr, MprisService* mpris = nullptr);
   ~ScriptedWidget() override;
 
   void create() override;
@@ -60,7 +63,7 @@ private:
   };
 
   struct ScriptColorState {
-    std::optional<ColorRole> role;
+    std::optional<ColorSpec> color;
     ScriptColorMode mode = ScriptColorMode::Auto;
 
     bool operator==(const ScriptColorState&) const = default;
@@ -71,12 +74,16 @@ private:
 
   [[nodiscard]] ColorSpec resolveScriptColor(const ScriptColorState& state) const noexcept;
   [[nodiscard]] static ScriptColorMode scriptColorModeFromToken(std::string_view token) noexcept;
+  [[nodiscard]] static std::optional<ColorSpec> scriptColorFromToken(std::string_view token) noexcept;
 
   void reloadScript();
   void handleScriptResult(scripting::ScriptWidgetResult result);
   void applyScriptPatch(const scripting::ScriptWidgetPatch& patch);
   [[nodiscard]] scripting::ScriptWidgetSnapshot makeScriptSnapshot() const;
   [[nodiscard]] std::string focusedOutputName() const;
+  void setupAudioSpectrum();
+  void teardownAudioSpectrum();
+  void handleAudioSpectrumChanged();
   void setupScriptWatch();
   void teardownScriptWatch();
   void startUpdateTimer();
@@ -98,6 +105,8 @@ private:
   FileWatcher* m_fileWatcher = nullptr;
   CompositorPlatform* m_platform = nullptr;
   ClipboardService* m_clipboard = nullptr;
+  PipeWireSpectrum* m_audioSpectrum = nullptr;
+  MprisService* m_mpris = nullptr;
   FileWatcher::WatchId m_watchId = 0;
   Timer m_updateTimer;
   Timer m_deferredUpdateTimer;
@@ -111,12 +120,15 @@ private:
   int m_updateIntervalMs = 250;
   std::uint32_t m_timerPhase = 0;
   std::uint64_t m_updateTimerGeneration = 0;
+  std::uint64_t m_audioSpectrumListenerId = 0;
+  int m_audioSpectrumBands = 16;
   bool m_dirty = false;
   bool m_updateDeferred = false;
   bool m_isVertical = false;
   bool m_glyphVisible = false;
   bool m_hotReload = false;
   bool m_sharedScope = false;
+  bool m_audioSpectrumEnabled = false;
   bool m_hasOnIpc = false;
   bool m_hasOnIpcKnown = false;
   bool m_fontConfigDirty = false;
