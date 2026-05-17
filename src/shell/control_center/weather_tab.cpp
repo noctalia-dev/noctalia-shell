@@ -659,16 +659,22 @@ void WeatherTab::sync(Renderer& renderer) {
   }
   auto unit = m_weather->displayTemperatureUnit();
   if (m_tempMaxLabel != nullptr) {
-    auto temp = (snapshot.forecastDays.empty() ? 0
-                                               : static_cast<int>(std::lround(m_weather->displayTemperature(
-                                                     snapshot.forecastDays.front().temperatureMaxC))));
-    m_tempMaxLabel->setText(!snapshot.forecastDays.empty() ? std::format("{}{}", temp, unit) : std::string("--"));
+    if (!snapshot.forecastDays.empty()) {
+      const int temp =
+          static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.forecastDays.front().temperatureMaxC)));
+      m_tempMaxLabel->setText(std::format("{}{}", temp, unit));
+    } else {
+      m_tempMaxLabel->setText("--");
+    }
   }
   if (m_tempMinLabel != nullptr) {
-    auto temp = (snapshot.forecastDays.empty() ? 0
-                                               : static_cast<int>(std::lround(m_weather->displayTemperature(
-                                                     snapshot.forecastDays.front().temperatureMinC))));
-    m_tempMinLabel->setText(!snapshot.forecastDays.empty() ? std::format("{}{}", temp, unit) : std::string("--"));
+    if (!snapshot.forecastDays.empty()) {
+      const int temp =
+          static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.forecastDays.front().temperatureMinC)));
+      m_tempMinLabel->setText(std::format("{}{}", temp, unit));
+    } else {
+      m_tempMinLabel->setText("--");
+    }
   }
   if (m_elevationLabel != nullptr) {
     const bool imperial = m_weather->useImperial();
