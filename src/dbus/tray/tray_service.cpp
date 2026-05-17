@@ -716,6 +716,8 @@ void TrayService::fetchMenuProperties(const std::string& itemId, const std::vect
             if (const auto propsIt = propertiesById.find(entryId); propsIt != propertiesById.end()) {
               applyMenuEntryProperties(entry, propsIt->second, true);
             }
+            // Note: This write is intentionally generation-agnostic. If the cache's generation has changed,
+            // a new layout fetch will soon clear or overwrite entriesById. The caller checks generation before acting.
             replyCache.entriesById[entryId] = entry;
             hasDisplayable = hasDisplayable || displayableMenuEntry(entry);
           }
@@ -1282,6 +1284,11 @@ void TrayService::onRegisterStatusNotifierItem(const std::string& serviceOrPath,
     return;
   }
 
+  // For non-bus-only registrations, we deliberately do not check NameHasOwner before registering.
+  // Async metadata fetch and NameOwnerChanged cleanup are robust, so we tolerate briefly registering
+  // items for dead/unowned bus names—they are quickly cleaned up on failure. This avoids a synchronous
+  // or extra async round-trip for every registration and improves responsiveness.
+  // (See also: busOnlyRegistration branch above for the async owner check.)
   registerOrRefreshItem(busName, objectPath);
   const auto elapsedMs =
       std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
@@ -1356,6 +1363,8 @@ void TrayService::tryRegisterItemForBusName(const std::string& busName, std::fun
     }
   };
 
+  // Note: This lambda captures 'this' without a lifetime guard. TrayService is application-lifetime,
+  // so this is safe in practice, but if that ever changes, a guard is needed to avoid use-after-free.
   for (const auto candidatePath : candidatePaths) {
     const auto candidatePathString = std::string(candidatePath);
     try {
@@ -1636,6 +1645,7 @@ void TrayService::resolvePathOnlyItemProxy(const std::string& itemId) {
               kLog.debug("could not resolve bus name for path-only tray item path={} probes={}", objectPath,
                          candidates->size());
               m_pathOnlyResolutionsInFlight.erase(itemId);
+              *probeNext = nullptr; // break self-cycle
               return;
             }
 
@@ -1645,6 +1655,8 @@ void TrayService::resolvePathOnlyItemProxy(const std::string& itemId) {
               return;
             }
 
+            // Note: This lambda captures 'this' without a lifetime guard. TrayService is application-lifetime,
+            // so this is safe in practice, but if that ever changes, a guard is needed to avoid use-after-free.
             try {
               auto probe = std::shared_ptr<sdbus::IProxy>(
                   sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{candidate}, sdbus::ObjectPath{objectPath}));
@@ -1662,6 +1674,7 @@ void TrayService::resolvePathOnlyItemProxy(const std::string& itemId) {
                     auto resolvedItemIt = m_items.find(itemId);
                     if (resolvedItemIt == m_items.end()) {
                       m_pathOnlyResolutionsInFlight.erase(itemId);
+                      *probeNext = nullptr;
                       return;
                     }
 
@@ -1678,6 +1691,7 @@ void TrayService::resolvePathOnlyItemProxy(const std::string& itemId) {
                     m_pathOnlyResolutionsInFlight.erase(itemId);
                     refreshItemMetadata(itemId);
                     emitChanged();
+                    *probeNext = nullptr; // break self-cycle on success
                   });
             } catch (const sdbus::Error&) {
               (*probeNext)();
@@ -1686,6 +1700,7 @@ void TrayService::resolvePathOnlyItemProxy(const std::string& itemId) {
 
           if (candidates->empty()) {
             m_pathOnlyResolutionsInFlight.erase(itemId);
+            *probeNext = nullptr; // break self-cycle
             return;
           }
           (*probeNext)();
