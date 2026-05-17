@@ -373,17 +373,18 @@ namespace {
            nearlyEqual(a.backdrop.blurIntensity, b.backdrop.blurIntensity) &&
            nearlyEqual(a.backdrop.tintIntensity, b.backdrop.tintIntensity) && dockConfigEqual(a.dock, b.dock) &&
            desktopWidgetsConfigEqual(a.desktopWidgets, b.desktopWidgets) && shellConfigEqual(a.shell, b.shell) &&
-           a.osd.position == b.osd.position && a.osd.lockKeys == b.osd.lockKeys &&
-           notificationConfigEqual(a.notification, b.notification) && a.weather.enabled == b.weather.enabled &&
-           a.weather.autoLocate == b.weather.autoLocate && a.weather.effects == b.weather.effects &&
-           a.weather.address == b.weather.address && a.weather.refreshMinutes == b.weather.refreshMinutes &&
-           a.weather.unit == b.weather.unit && a.system.monitor.enabled == b.system.monitor.enabled &&
-           audioConfigEqual(a.audio, b.audio) && a.brightness == b.brightness &&
-           a.keybinds.validate == b.keybinds.validate && a.keybinds.cancel == b.keybinds.cancel &&
-           a.keybinds.left == b.keybinds.left && a.keybinds.right == b.keybinds.right &&
-           a.keybinds.up == b.keybinds.up && a.keybinds.down == b.keybinds.down &&
-           nightLightConfigEqual(a.nightlight, b.nightlight) && idleConfigEqual(a.idle, b.idle) && a.hooks == b.hooks &&
-           themeConfigEqual(a.theme, b.theme) && a.controlCenter == b.controlCenter;
+           a.osd.position == b.osd.position && a.osd.orientation == b.osd.orientation &&
+           a.osd.lockKeys == b.osd.lockKeys && notificationConfigEqual(a.notification, b.notification) &&
+           a.weather.enabled == b.weather.enabled && a.weather.autoLocate == b.weather.autoLocate &&
+           a.weather.effects == b.weather.effects && a.weather.address == b.weather.address &&
+           a.weather.refreshMinutes == b.weather.refreshMinutes && a.weather.unit == b.weather.unit &&
+           a.system.monitor.enabled == b.system.monitor.enabled && audioConfigEqual(a.audio, b.audio) &&
+           a.brightness == b.brightness && a.keybinds.validate == b.keybinds.validate &&
+           a.keybinds.cancel == b.keybinds.cancel && a.keybinds.left == b.keybinds.left &&
+           a.keybinds.right == b.keybinds.right && a.keybinds.up == b.keybinds.up &&
+           a.keybinds.down == b.keybinds.down && nightLightConfigEqual(a.nightlight, b.nightlight) &&
+           idleConfigEqual(a.idle, b.idle) && a.hooks == b.hooks && themeConfigEqual(a.theme, b.theme) &&
+           a.controlCenter == b.controlCenter;
   }
 
   toml::table* ensureTable(toml::table& parent, std::string_view key) {

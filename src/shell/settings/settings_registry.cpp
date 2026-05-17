@@ -820,9 +820,17 @@ namespace settings {
                                              {"top_center", "settings.options.screen-position.top-center"},
                                              {"bottom_right", "settings.options.screen-position.bottom-right"},
                                              {"bottom_left", "settings.options.screen-position.bottom-left"},
-                                             {"bottom_center", "settings.options.screen-position.bottom-center"}},
+                                             {"bottom_center", "settings.options.screen-position.bottom-center"},
+                                             {"center_right", "settings.options.screen-position.center-right"},
+                                             {"center_left", "settings.options.screen-position.center-left"}},
                                             cfg.osd.position),
                                 "hud overlay volume brightness"));
+    entries.push_back(makeEntry("popups", "osd", tr("settings.schema.shell.osd-orientation.label"),
+                                tr("settings.schema.shell.osd-orientation.description"), {"osd", "orientation"},
+                                asSegmented(plainSelect({{"horizontal", "settings.options.orientation.horizontal"},
+                                                         {"vertical", "settings.options.orientation.vertical"}},
+                                                        cfg.osd.orientation)),
+                                "hud overlay volume brightness vertical"));
     entries.push_back(makeEntry("popups", "osd", tr("settings.schema.shell.osd-lock-keys.label"),
                                 tr("settings.schema.shell.osd-lock-keys.description"), {"osd", "lock_keys"},
                                 ToggleSetting{cfg.osd.lockKeys}, "hud overlay caps num scroll keyboard"));

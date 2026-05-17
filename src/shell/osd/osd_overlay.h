@@ -76,6 +76,8 @@ private:
   RenderContext* m_renderContext = nullptr;
   OsdContent m_content;
   std::string m_lastPosition;
+  std::string m_lastOrientation;
+  bool m_lastShowProgress = true;
   float m_lastLayoutScale = 1.0f;
   float m_lastCornerRadiusScale = 1.0f;
   std::vector<std::unique_ptr<Instance>> m_instances;

@@ -923,7 +923,13 @@
         "top-center": "Top Center",
         "bottom-right": "Bottom Right",
         "bottom-left": "Bottom Left",
-        "bottom-center": "Bottom Center"
+        "bottom-center": "Bottom Center",
+        "center-right": "Center Right",
+        "center-left": "Center Left"
+      },
+      "orientation": {
+        "horizontal": "Horizontal",
+        "vertical": "Vertical"
       },
       "edge": {
         "top": "Top",
@@ -1478,6 +1484,10 @@
         "osd-position": {
           "label": "Screen Position",
           "description": "Screen position for OSD popups"
+        },
+        "osd-orientation": {
+          "label": "Orientation",
+          "description": "Layout direction for OSD popups"
         },
         "osd-lock-keys": {
           "label": "Lock Keys",

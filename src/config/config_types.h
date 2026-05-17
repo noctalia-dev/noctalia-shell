@@ -377,6 +377,7 @@ struct DesktopWidgetsConfig {
 
 struct OsdConfig {
   std::string position = "top_right";
+  std::string orientation = "horizontal";
   bool lockKeys = true;
 };
 
