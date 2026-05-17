@@ -162,9 +162,12 @@ public:
   void parseDefaultNodes(const struct spa_dict* props);
 
 private:
+  bool m_pendingDefaultAudioDevicePropsEnum = false;
+  void enumDefaultAudioDeviceParams();
+
   void rebuildState();
   void refreshNodeIdentity(NodeData& nd);
-  void applyVolumePropsFromDict(NodeData& nd, const spa_dict* props);
+  void applyVolumePropsFromDict(NodeData& nd, const spa_dict* props, bool applyMixerFieldsFromDict = true);
   void recomputeEffectiveMute(NodeData& nd);
   [[nodiscard]] bool deviceRouteIndicatesMuted(const NodeData& nd) const;
   void setNodeVolume(std::uint32_t id, float volume);

@@ -65,6 +65,13 @@ void main() {
 
   const char* safeCString(const char* value) { return value != nullptr ? value : "unknown"; }
 
+  bool isCurrentEglSurface(EGLDisplay display, EGLSurface surface) {
+    if (display == EGL_NO_DISPLAY || surface == EGL_NO_SURFACE || eglGetCurrentDisplay() != display) {
+      return false;
+    }
+    return eglGetCurrentSurface(EGL_DRAW) == surface || eglGetCurrentSurface(EGL_READ) == surface;
+  }
+
   class GlesSurfaceTarget final : public RenderSurfaceTarget {
   public:
     GlesSurfaceTarget(EGLDisplay display, EGLConfig config, wl_surface* surface)
@@ -105,6 +112,20 @@ void main() {
 
     void destroy() override {
       if (m_surface != EGL_NO_SURFACE) {
+        if (isCurrentEglSurface(m_display, m_surface)) {
+          const EGLContext currentContext = eglGetCurrentContext();
+          if (currentContext != EGL_NO_CONTEXT &&
+              eglMakeCurrent(m_display, EGL_NO_SURFACE, EGL_NO_SURFACE, currentContext) != EGL_TRUE) {
+            const EGLint error = eglGetError();
+            kLog.warn("eglMakeCurrent(EGL_NO_SURFACE) before surface destroy failed (EGL error 0x{:04x})",
+                      static_cast<unsigned>(error));
+            if (eglMakeCurrent(m_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT) != EGL_TRUE) {
+              const EGLint releaseError = eglGetError();
+              kLog.warn("eglMakeCurrent(EGL_NO_CONTEXT) before surface destroy failed (EGL error 0x{:04x})",
+                        static_cast<unsigned>(releaseError));
+            }
+          }
+        }
         eglDestroySurface(m_display, m_surface);
         m_surface = EGL_NO_SURFACE;
       }

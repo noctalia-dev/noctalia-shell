@@ -6,6 +6,7 @@
 #include "net/http_client.h"
 #include "system/distro_info.h"
 #include "system/hardware_info.h"
+#include "util/file_utils.h"
 #include "wayland/wayland_connection.h"
 
 #include <cstdint>
@@ -20,16 +21,9 @@ namespace {
   constexpr Logger kLog("telemetry");
 
   std::string instanceIdPath() {
-    const char* xdg = std::getenv("XDG_STATE_HOME");
-    std::string dir;
-    if (xdg != nullptr && xdg[0] != '\0') {
-      dir = std::string(xdg) + "/noctalia";
-    } else {
-      const char* home = std::getenv("HOME");
-      if (home == nullptr || home[0] == '\0') {
-        return {};
-      }
-      dir = std::string(home) + "/.local/state/noctalia";
+    const std::string dir = FileUtils::stateDir();
+    if (dir.empty()) {
+      return {};
     }
     return dir + "/instance.id";
   }

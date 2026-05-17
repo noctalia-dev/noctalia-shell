@@ -5,7 +5,6 @@
 
 #include <condition_variable>
 #include <cstdint>
-#include <filesystem>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -40,7 +39,6 @@ namespace noctalia::theme {
     void applyRequest(const ApplyRequest& request) const;
     void workerLoop();
     [[nodiscard]] bool requestSuperseded(std::uint64_t generation) const;
-    static void ensureUserConfigStub(const std::filesystem::path& path);
 
     const ConfigService& m_config;
     mutable std::mutex m_mutex;

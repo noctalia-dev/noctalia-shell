@@ -1,6 +1,7 @@
 #include "shell/bar/widgets/battery_widget.h"
 
 #include "render/core/renderer.h"
+#include "render/scene/input_area.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
@@ -39,11 +40,13 @@ namespace {
 
 } // namespace
 
-BatteryWidget::BatteryWidget(UPowerService* upower, std::string deviceSelector)
-    : m_upower(upower), m_deviceSelector(std::move(deviceSelector)) {}
+BatteryWidget::BatteryWidget(UPowerService* upower, std::string deviceSelector, int warningThreshold,
+                             ColorSpec warningColor)
+    : m_upower(upower), m_deviceSelector(std::move(deviceSelector)), m_warningThreshold(warningThreshold),
+      m_warningColor(std::move(warningColor)) {}
 
 void BatteryWidget::create() {
-  auto container = std::make_unique<Node>();
+  auto container = std::make_unique<InputArea>();
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("battery-4");
@@ -117,16 +120,34 @@ void BatteryWidget::syncState(Renderer& renderer) {
     rootNode->setVisible(true);
   }
 
+  const int pct = static_cast<int>(std::round(s.percentage));
+  const bool isWarning = m_warningThreshold > 0 && pct <= m_warningThreshold && s.state != BatteryState::Charging &&
+                         s.state != BatteryState::FullyCharged && s.state != BatteryState::PendingCharge;
+  const ColorSpec fgColor = isWarning ? m_warningColor : widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface));
+
   m_glyph->setGlyph(batteryGlyphName(s.percentage, s.state));
   m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
-  m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
+  m_glyph->setColor(fgColor);
   m_glyph->measure(renderer);
 
-  const int pct = static_cast<int>(std::round(s.percentage));
   m_label->setFontSize((m_isVertical ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
   m_label->setText(m_isVertical ? std::to_string(pct) : std::to_string(pct) + "%");
-  m_label->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
+  m_label->setColor(fgColor);
   m_label->measure(renderer);
+
+  if (rootNode != nullptr) {
+    std::vector<TooltipRow> rows;
+    for (const auto& dev : m_upower->batteryDevices()) {
+      std::string name = !dev.model.empty() ? dev.model : (!dev.nativePath.empty() ? dev.nativePath : "Battery");
+      int dp = static_cast<int>(std::round(dev.state.percentage));
+      rows.push_back({std::move(name), std::to_string(dp) + "%"});
+    }
+    if (!rows.empty()) {
+      static_cast<InputArea*>(rootNode)->setTooltip(std::move(rows));
+    } else {
+      static_cast<InputArea*>(rootNode)->clearTooltip();
+    }
+  }
 
   requestRedraw();
 }

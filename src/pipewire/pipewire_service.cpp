@@ -5,6 +5,7 @@
 #include "core/process.h"
 #include "ipc/ipc_arg_parse.h"
 #include "ipc/ipc_service.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
 #include <charconv>
@@ -17,6 +18,7 @@
 #include <pipewire/extensions/metadata.h>
 #include <pipewire/pipewire.h>
 #include <spa/param/audio/format-utils.h>
+#include <spa/param/param.h>
 #include <spa/param/props.h>
 #include <spa/param/route.h>
 #include <spa/pod/builder.h>
@@ -24,6 +26,7 @@
 #include <spa/pod/parser.h>
 #include <spa/utils/defs.h>
 #include <spa/utils/result.h>
+#include <spa/utils/type.h>
 #include <string>
 #include <string_view>
 
@@ -95,6 +98,52 @@ namespace {
       .param = onNodeParam,
   };
 
+  // default.audio.{sink,source} values are often JSON {"name":"…"} but may be a plain node.name string.
+  std::string extractDefaultMetadataNodeName(std::string_view val) {
+    constexpr std::string_view kNameKey = "\"name\"";
+    const auto namePos = val.find(kNameKey);
+    if (namePos != std::string_view::npos) {
+      const auto colonPos = val.find(':', namePos + kNameKey.size());
+      if (colonPos != std::string_view::npos) {
+        std::size_t i = colonPos + 1;
+        while (i < val.size() && (val[i] == ' ' || val[i] == '\t')) {
+          ++i;
+        }
+        if (i < val.size() && val[i] == '"') {
+          const std::size_t v0 = i + 1;
+          const auto v1 = val.find('"', v0);
+          if (v1 != std::string_view::npos && v1 > v0) {
+            return std::string(val.substr(v0, v1 - v0));
+          }
+        }
+      }
+    }
+
+    std::string_view s = val;
+    while (!s.empty() && (s.front() == ' ' || s.front() == '\t' || s.front() == '\n' || s.front() == '\r')) {
+      s.remove_prefix(1);
+    }
+    while (!s.empty() && (s.back() == ' ' || s.back() == '\t' || s.back() == '\n' || s.back() == '\r')) {
+      s.remove_suffix(1);
+    }
+    if (s.size() >= 2 && s.front() == '"' && s.back() == '"') {
+      s = s.substr(1, s.size() - 2);
+      while (!s.empty() && (s.front() == ' ' || s.front() == '\t')) {
+        s.remove_prefix(1);
+      }
+      while (!s.empty() && (s.back() == ' ' || s.back() == '\t')) {
+        s.remove_suffix(1);
+      }
+    }
+    if (!s.empty()) {
+      const char c = s.front();
+      if (c != '{' && c != '[') {
+        return std::string(s);
+      }
+    }
+    return {};
+  }
+
   // Default sink/source metadata.
   struct MetadataData {
     PipeWireService* service = nullptr;
@@ -107,23 +156,13 @@ namespace {
       return 0;
     }
     auto* md = static_cast<MetadataData*>(data);
-    // Parse the JSON value to extract the name - format is {"name":"sink_name"}
-    std::string val(value);
     if (std::strcmp(key, "default.audio.sink") == 0 || std::strcmp(key, "default.audio.source") == 0) {
-      auto namePos = val.find("\"name\"");
-      if (namePos != std::string::npos) {
-        auto colonPos = val.find(':', namePos);
-        if (colonPos != std::string::npos) {
-          auto firstQuote = val.find('"', colonPos + 1);
-          auto secondQuote = val.find('"', firstQuote + 1);
-          if (firstQuote != std::string::npos && secondQuote != std::string::npos) {
-            std::string name = val.substr(firstQuote + 1, secondQuote - firstQuote - 1);
-            spa_dict_item items[1];
-            items[0] = SPA_DICT_ITEM_INIT(key, name.c_str());
-            spa_dict dict = SPA_DICT_INIT(items, 1);
-            md->service->parseDefaultNodes(&dict);
-          }
-        }
+      const std::string name = extractDefaultMetadataNodeName(std::string_view(value));
+      if (!name.empty()) {
+        spa_dict_item items[1];
+        items[0] = SPA_DICT_ITEM_INIT(key, name.c_str());
+        spa_dict dict = SPA_DICT_INIT(items, 1);
+        md->service->parseDefaultNodes(&dict);
       }
     }
     return 0;
@@ -174,11 +213,7 @@ namespace {
     if (value.empty()) {
       return std::nullopt;
     }
-    try {
-      return std::stof(value);
-    } catch (...) {
-      return std::nullopt;
-    }
+    return StringUtils::parseDotDecimal<float>(value);
   }
 
   std::optional<bool> parseBool(const std::string& value) {
@@ -234,24 +269,108 @@ namespace {
     if (prop == nullptr) {
       return;
     }
-    const auto* array = reinterpret_cast<const spa_pod_array*>(&prop->value);
-    spa_pod* iter = nullptr;
-    float maxVol = 0.0f;
-    std::uint32_t count = 0;
-    SPA_POD_ARRAY_FOREACH(array, iter) {
-      const float cubic = *reinterpret_cast<const float*>(iter);
-      const float linear = std::cbrt(std::max(0.0f, cubic));
-      if (linear > maxVol) {
-        maxVol = linear;
-      }
-      ++count;
+    std::uint32_t nVals = 0;
+    std::uint32_t choiceType = SPA_CHOICE_None;
+    const spa_pod* inner = spa_pod_get_values(&prop->value, &nVals, &choiceType);
+    (void)nVals;
+    (void)choiceType;
+    if (inner == nullptr) {
+      return;
     }
-    if (count > 0) {
-      outVolume = maxVol;
+    if (spa_pod_is_array(inner)) {
+      const auto* arr = reinterpret_cast<const spa_pod_array*>(inner);
+      const auto n = static_cast<std::uint32_t>(SPA_POD_ARRAY_N_VALUES(arr));
+      const std::uint32_t elemSize = SPA_POD_ARRAY_VALUE_SIZE(arr);
+      const std::uint32_t elemType = SPA_POD_ARRAY_VALUE_TYPE(arr);
+      if (n > 0 && elemType == SPA_TYPE_Float && elemSize == sizeof(float)) {
+        const auto* samples = static_cast<const float*>(SPA_POD_ARRAY_VALUES(arr));
+        float maxVol = 0.0f;
+        for (std::uint32_t i = 0; i < n; ++i) {
+          const float cubic = samples[i];
+          const float linear = std::cbrt(std::max(0.0f, cubic));
+          if (linear > maxVol) {
+            maxVol = linear;
+          }
+        }
+        outVolume = maxVol;
+        if (outChannelCount != nullptr) {
+          *outChannelCount = n;
+        }
+        return;
+      }
+    }
+    float cubic = 0.0f;
+    if (spa_pod_get_float(inner, &cubic) == 0) {
+      outVolume = std::cbrt(std::max(0.0f, cubic));
       if (outChannelCount != nullptr) {
-        *outChannelCount = count;
+        *outChannelCount = 1;
       }
     }
+  }
+
+  struct ParsedPropsVolumes {
+    float channelVol = 1.0f;
+    float scalarVol = 1.0f;
+    float softVol = 1.0f;
+    std::uint32_t channelCount = 0;
+    bool hasChannel = false;
+    bool hasScalar = false;
+    bool hasSoft = false;
+  };
+
+  void parsePropsObjectVolumeFields(const spa_pod* propsPod, ParsedPropsVolumes basis, ParsedPropsVolumes* out) {
+    *out = basis;
+    out->hasChannel = false;
+    out->hasScalar = false;
+    out->hasSoft = false;
+    if (propsPod == nullptr) {
+      return;
+    }
+    auto* obj = reinterpret_cast<spa_pod_object*>(const_cast<spa_pod*>(propsPod));
+    spa_pod_prop* prop = nullptr;
+    SPA_POD_OBJECT_FOREACH(obj, prop) {
+      if (prop->key == SPA_PROP_channelVolumes) {
+        parseVolumeArrayProp(prop, out->channelVol, &out->channelCount);
+        out->hasChannel = true;
+      } else if (prop->key == SPA_PROP_volume) {
+        std::uint32_t nVals = 0;
+        std::uint32_t choiceType = SPA_CHOICE_None;
+        const spa_pod* inner = spa_pod_get_values(&prop->value, &nVals, &choiceType);
+        (void)nVals;
+        (void)choiceType;
+        float cubic = 0.0f;
+        if (inner != nullptr && spa_pod_get_float(inner, &cubic) == 0) {
+          out->scalarVol = std::cbrt(std::max(0.0f, cubic));
+          out->hasScalar = true;
+        }
+      } else if (prop->key == SPA_PROP_softVolumes) {
+        parseVolumeArrayProp(prop, out->softVol);
+        out->hasSoft = true;
+      }
+    }
+  }
+
+  void mergeParsedVolumesIntoNode(PipeWireService::NodeData& nd, const ParsedPropsVolumes& p) {
+    if (p.hasChannel) {
+      nd.volume = p.channelVol;
+      nd.channelCount = p.channelCount;
+    } else if (p.hasScalar) {
+      nd.volume = p.scalarVol;
+    } else if (p.hasSoft) {
+      nd.volume = p.softVol;
+    }
+  }
+
+  // Device ParamRoute updates are per-direction; applying every route's volume to all nodes on the same
+  // device.id merges playback and capture on combo hardware (see deviceRouteIndicatesMuted).
+  [[nodiscard]] bool routeVolumeDirectionMatchesNode(std::string_view mediaClass, std::uint32_t routeDirection) {
+    if (mediaClass == "Audio/Sink") {
+      return routeDirection == SPA_DIRECTION_OUTPUT;
+    }
+    if (mediaClass == "Audio/Source") {
+      return routeDirection == SPA_DIRECTION_INPUT;
+    }
+    return true;
   }
 
   constexpr Logger kLog("pipewire");
@@ -309,6 +428,11 @@ PipeWireService::PipeWireService() {
   pw_core_sync(m_core, PW_ID_CORE, 0);
   while (pw_loop_iterate(loop, 0) > 0) {
   }
+
+  enumDefaultAudioDeviceParams();
+  while (pw_loop_iterate(loop, 0) > 0) {
+  }
+  rebuildState();
 
   kLog.info("connected (version {})", pw_get_library_version());
   const auto* sink = defaultSink();
@@ -397,6 +521,26 @@ void PipeWireService::dispatch() {
   // Process all pending events without blocking
   while (pw_loop_iterate(loop, 0) > 0) {
   }
+  if (m_pendingDefaultAudioDevicePropsEnum) {
+    m_pendingDefaultAudioDevicePropsEnum = false;
+    enumDefaultAudioDeviceParams();
+    while (pw_loop_iterate(loop, 0) > 0) {
+    }
+  }
+}
+
+void PipeWireService::enumDefaultAudioDeviceParams() {
+  for (auto& [id, nd] : m_nodes) {
+    (void)id;
+    if (nd == nullptr || nd->proxy == nullptr) {
+      continue;
+    }
+    if (nd->mediaClass != "Audio/Sink" && nd->mediaClass != "Audio/Source") {
+      continue;
+    }
+    pw_node_enum_params(nd->proxy, 0, SPA_PARAM_Props, 0, UINT32_MAX, nullptr);
+    pw_node_enum_params(nd->proxy, 0, SPA_PARAM_Route, 0, UINT32_MAX, nullptr);
+  }
 }
 
 const AudioNode* PipeWireService::defaultSink() const noexcept {
@@ -405,7 +549,7 @@ const AudioNode* PipeWireService::defaultSink() const noexcept {
       return &sink;
     }
   }
-  return m_state.sinks.empty() ? nullptr : &m_state.sinks.front();
+  return nullptr;
 }
 
 const AudioNode* PipeWireService::defaultSource() const noexcept {
@@ -414,7 +558,7 @@ const AudioNode* PipeWireService::defaultSource() const noexcept {
       return &source;
     }
   }
-  return m_state.sources.empty() ? nullptr : &m_state.sources.front();
+  return nullptr;
 }
 
 void PipeWireService::onRegistryGlobal(std::uint32_t id, const char* type, std::uint32_t, const spa_dict* props) {
@@ -523,7 +667,8 @@ void PipeWireService::onRegistryGlobal(std::uint32_t id, const char* type, std::
       nd->iconName = nd->applicationBinary;
     }
     nd->mediaClass = mediaClass;
-    applyVolumePropsFromDict(*nd, props);
+    const bool audioDeviceNode = mediaClass == "Audio/Sink" || mediaClass == "Audio/Source";
+    applyVolumePropsFromDict(*nd, props, !audioDeviceNode);
     refreshNodeIdentity(*nd);
     logProgramStreamMetadata("registry-global", id, *nd);
 
@@ -544,6 +689,10 @@ void PipeWireService::onRegistryGlobal(std::uint32_t id, const char* type, std::
     }
 
     m_nodes[id] = std::move(nd);
+    NodeData& stored = *m_nodes[id];
+    if (stored.mediaClass == "Audio/Sink" || stored.mediaClass == "Audio/Source") {
+      m_pendingDefaultAudioDevicePropsEnum = true;
+    }
     rebuildState();
   }
 
@@ -558,6 +707,7 @@ void PipeWireService::onRegistryGlobal(std::uint32_t id, const char* type, std::
         auto* md = new MetadataData{this, proxy, new spa_hook{}};
         spa_zero(*md->listener);
         pw_metadata_add_listener(proxy, md->listener, &kMetadataEvents, md);
+        pw_core_sync(md->service->coreHandle(), PW_ID_CORE, 0);
         m_metadataCleanups.push_back([md]() {
           if (md->listener != nullptr) {
             spa_hook_remove(md->listener);
@@ -693,7 +843,8 @@ void PipeWireService::onNodeInfo(std::uint32_t id, const pw_node_info* info) {
     if (!iconName.empty()) {
       it->second->iconName = iconName;
     }
-    applyVolumePropsFromDict(*it->second, info->props);
+    const bool audioDevice = it->second->mediaClass == "Audio/Sink" || it->second->mediaClass == "Audio/Source";
+    applyVolumePropsFromDict(*it->second, info->props, !audioDevice);
     refreshNodeIdentity(*it->second);
     logProgramStreamMetadata("node-info", id, *it->second);
   }
@@ -731,6 +882,11 @@ void PipeWireService::onNodeParam(std::uint32_t id, std::uint32_t paramId, std::
                              SPA_POD_Int(&routeIndex), SPA_PARAM_ROUTE_direction, SPA_POD_Id(&routeDirection),
                              SPA_PARAM_ROUTE_device, SPA_POD_Int(&routeDevice), SPA_PARAM_ROUTE_props,
                              SPA_POD_Pod(&routeProps)) >= 0) {
+      const spa_pod_prop* availProp = spa_pod_find_prop(param, nullptr, SPA_PARAM_ROUTE_available);
+      std::uint32_t routeAvailable = SPA_PARAM_AVAILABILITY_unknown;
+      if (availProp != nullptr) {
+        spa_pod_get_id(&availProp->value, &routeAvailable);
+      }
       if (routeIndex >= 0) {
         nd.routeIndex = routeIndex;
         nd.routeDevice = routeDevice;
@@ -749,39 +905,35 @@ void PipeWireService::onNodeParam(std::uint32_t id, std::uint32_t paramId, std::
           }
         }
       }
+      if (routeAvailable != SPA_PARAM_AVAILABILITY_no && routeProps != nullptr &&
+          routeVolumeDirectionMatchesNode(nd.mediaClass, routeDirection)) {
+        ParsedPropsVolumes basis{};
+        basis.channelVol = nd.volume;
+        basis.scalarVol = nd.volume;
+        basis.softVol = nd.volume;
+        basis.channelCount = nd.channelCount;
+        ParsedPropsVolumes fromRoute{};
+        parsePropsObjectVolumeFields(routeProps, basis, &fromRoute);
+        mergeParsedVolumesIntoNode(nd, fromRoute);
+      }
       recomputeEffectiveMute(nd);
       rebuildState();
     }
     return;
   }
 
-  float parsedChannelVolumes = nd.volume;
-  float parsedVolume = nd.volume;
-  float parsedSoftVolumes = nd.volume;
-  std::uint32_t parsedChannelCount = nd.channelCount;
-  bool hasChannelVolumes = false;
-  bool hasVolume = false;
-  bool hasSoftVolumes = false;
+  ParsedPropsVolumes basis{};
+  basis.channelVol = nd.volume;
+  basis.scalarVol = nd.volume;
+  basis.softVol = nd.volume;
+  basis.channelCount = nd.channelCount;
+  ParsedPropsVolumes parsed{};
+  parsePropsObjectVolumeFields(param, basis, &parsed);
 
-  // Parse volume and mute from the Props param
-  spa_pod_prop* prop = nullptr;
   auto* obj = reinterpret_cast<spa_pod_object*>(const_cast<spa_pod*>(param));
-
+  spa_pod_prop* prop = nullptr;
   SPA_POD_OBJECT_FOREACH(obj, prop) {
-    if (prop->key == SPA_PROP_channelVolumes) {
-      // Channel volumes - take the max across channels.
-      parseVolumeArrayProp(prop, parsedChannelVolumes, &parsedChannelCount);
-      hasChannelVolumes = true;
-    } else if (prop->key == SPA_PROP_volume) {
-      float cubic = 0.0f;
-      if (spa_pod_get_float(&prop->value, &cubic) == 0) {
-        parsedVolume = std::cbrt(std::max(0.0f, cubic));
-        hasVolume = true;
-      }
-    } else if (prop->key == SPA_PROP_softVolumes) {
-      parseVolumeArrayProp(prop, parsedSoftVolumes);
-      hasSoftVolumes = true;
-    } else if (prop->key == SPA_PROP_mute) {
+    if (prop->key == SPA_PROP_mute) {
       bool swMuted = false;
       if (spa_pod_get_bool(&prop->value, &swMuted) == 0) {
         nd.swMute = swMuted;
@@ -789,21 +941,23 @@ void PipeWireService::onNodeParam(std::uint32_t id, std::uint32_t paramId, std::
     }
   }
 
-  if (hasChannelVolumes) {
-    nd.volume = parsedChannelVolumes;
-    nd.channelCount = parsedChannelCount;
-  } else if (hasVolume) {
-    nd.volume = parsedVolume;
-  } else if (hasSoftVolumes) {
-    nd.volume = parsedSoftVolumes;
+  float candidateVol = -1.0f;
+  if (parsed.hasChannel) {
+    candidateVol = parsed.channelVol;
+  } else if (parsed.hasScalar) {
+    candidateVol = parsed.scalarVol;
+  } else if (parsed.hasSoft) {
+    candidateVol = parsed.softVol;
+  }
+  const bool isAudioDeviceNode = nd.mediaClass == "Audio/Sink" || nd.mediaClass == "Audio/Source";
+  const bool rejectStaleFullScaleProps =
+      isAudioDeviceNode && candidateVol >= 0.0f && candidateVol >= 0.99f && nd.volume < 0.93f;
+
+  if (!rejectStaleFullScaleProps) {
+    mergeParsedVolumesIntoNode(nd, parsed);
   }
 
   recomputeEffectiveMute(nd);
-
-  if (isProgramStreamClass(nd.mediaClass)) {
-    kLog.debug("[program-stream] node-param id={} class='{}' volume={:.3f} muted={} channels={}", id, nd.mediaClass,
-               nd.volume, nd.muted, nd.channelCount);
-  }
 
   rebuildState();
 }
@@ -869,6 +1023,24 @@ void PipeWireService::onDeviceParam(std::uint32_t id, std::uint32_t paramId, std
     return;
   }
 
+  const spa_pod_prop* availProp = spa_pod_find_prop(param, nullptr, SPA_PARAM_ROUTE_available);
+  std::uint32_t routeAvailable = SPA_PARAM_AVAILABILITY_unknown;
+  if (availProp != nullptr) {
+    spa_pod_get_id(&availProp->value, &routeAvailable);
+  }
+
+  ParsedPropsVolumes fromRoute{};
+  bool parsedRouteVolume = false;
+  if (routeProps != nullptr && routeAvailable != SPA_PARAM_AVAILABILITY_no) {
+    ParsedPropsVolumes basis{};
+    basis.channelVol = 1.0f;
+    basis.scalarVol = 1.0f;
+    basis.softVol = 1.0f;
+    basis.channelCount = 0;
+    parsePropsObjectVolumeFields(routeProps, basis, &fromRoute);
+    parsedRouteVolume = fromRoute.hasChannel || fromRoute.hasScalar || fromRoute.hasSoft;
+  }
+
   bool muted = false;
   if (routeProps != nullptr) {
     spa_pod_prop* prop = nullptr;
@@ -899,6 +1071,16 @@ void PipeWireService::onDeviceParam(std::uint32_t id, std::uint32_t paramId, std
     existing->muted = muted;
   }
 
+  if (parsedRouteVolume) {
+    for (auto& [nid, node] : m_nodes) {
+      (void)nid;
+      if (node != nullptr && node->deviceId == id &&
+          routeVolumeDirectionMatchesNode(node->mediaClass, routeDirection)) {
+        mergeParsedVolumesIntoNode(*node, fromRoute);
+      }
+    }
+  }
+
   for (auto& [nid, node] : m_nodes) {
     if (node != nullptr && node->deviceId == id) {
       recomputeEffectiveMute(*node);
@@ -922,6 +1104,7 @@ void PipeWireService::parseDefaultNodes(const spa_dict* props) {
   }
 
   if (changed) {
+    m_pendingDefaultAudioDevicePropsEnum = true;
     rebuildState();
   }
 }
@@ -1025,23 +1208,25 @@ void PipeWireService::recomputeEffectiveMute(NodeData& nd) {
   nd.muted = nd.swMute || nd.nodeRouteMute || deviceRouteIndicatesMuted(nd);
 }
 
-void PipeWireService::applyVolumePropsFromDict(NodeData& nd, const spa_dict* props) {
+void PipeWireService::applyVolumePropsFromDict(NodeData& nd, const spa_dict* props, bool applyMixerFieldsFromDict) {
   if (props == nullptr) {
     return;
   }
 
-  if (const auto maybeChannelmixVolume = parseFloat(dictGet(props, "channelmix.volume"));
-      maybeChannelmixVolume.has_value()) {
-    nd.volume = std::clamp(*maybeChannelmixVolume, 0.0f, 1.5f);
-  } else if (const auto maybeVolume = parseFloat(dictGet(props, "volume")); maybeVolume.has_value()) {
-    nd.volume = std::clamp(*maybeVolume, 0.0f, 1.5f);
-  }
+  if (applyMixerFieldsFromDict) {
+    if (const auto maybeChannelmixVolume = parseFloat(dictGet(props, "channelmix.volume"));
+        maybeChannelmixVolume.has_value()) {
+      nd.volume = std::clamp(*maybeChannelmixVolume, 0.0f, 1.5f);
+    } else if (const auto maybeVolume = parseFloat(dictGet(props, "volume")); maybeVolume.has_value()) {
+      nd.volume = std::clamp(*maybeVolume, 0.0f, 1.5f);
+    }
 
-  if (const auto maybeChannelmixMuted = parseBool(dictGet(props, "channelmix.mute"));
-      maybeChannelmixMuted.has_value()) {
-    nd.swMute = *maybeChannelmixMuted;
-  } else if (const auto maybeMuted = parseBool(dictGet(props, "mute")); maybeMuted.has_value()) {
-    nd.swMute = *maybeMuted;
+    if (const auto maybeChannelmixMuted = parseBool(dictGet(props, "channelmix.mute"));
+        maybeChannelmixMuted.has_value()) {
+      nd.swMute = *maybeChannelmixMuted;
+    } else if (const auto maybeMuted = parseBool(dictGet(props, "mute")); maybeMuted.has_value()) {
+      nd.swMute = *maybeMuted;
+    }
   }
 
   recomputeEffectiveMute(nd);
@@ -1077,7 +1262,15 @@ void PipeWireService::flushPendingNodeVolumes() {
   auto pending = std::move(m_pendingNodeVolumes);
 
   for (const auto& [id, volume] : pending) {
-    dirty |= applyNodeVolumeImmediate(id, volume);
+    if (!applyNodeVolumeImmediate(id, volume)) {
+      continue;
+    }
+    dirty = true;
+    if (id == m_state.defaultSinkId && m_state.defaultSinkId != 0) {
+      emitVolumePreview(false, id, volume);
+    } else if (id == m_state.defaultSourceId && m_state.defaultSourceId != 0) {
+      emitVolumePreview(true, id, volume);
+    }
   }
 
   if (dirty) {
@@ -1173,6 +1366,11 @@ void PipeWireService::setNodeMuted(std::uint32_t id, bool muted) {
       nd.swMute = muted;
       recomputeEffectiveMute(nd);
       if (before != nd.muted) {
+        if (id == m_state.defaultSinkId && m_state.defaultSinkId != 0) {
+          emitVolumePreview(false, id, nd.volume);
+        } else if (id == m_state.defaultSourceId && m_state.defaultSourceId != 0) {
+          emitVolumePreview(true, id, nd.volume);
+        }
         rebuildState();
       }
       return;
@@ -1224,14 +1422,29 @@ void PipeWireService::setNodeMuted(std::uint32_t id, bool muted) {
   }
   recomputeEffectiveMute(nd);
   if (before != nd.muted) {
+    if (id == m_state.defaultSinkId && m_state.defaultSinkId != 0) {
+      emitVolumePreview(false, id, nd.volume);
+    } else if (id == m_state.defaultSourceId && m_state.defaultSourceId != 0) {
+      emitVolumePreview(true, id, nd.volume);
+    }
     rebuildState();
   }
 }
 
-void PipeWireService::setSinkVolume(std::uint32_t id, float volume) { setNodeVolume(id, volume); }
+void PipeWireService::setSinkVolume(std::uint32_t id, float volume) {
+  setNodeVolume(id, volume);
+  if (id == m_state.defaultSinkId && m_state.defaultSinkId != 0) {
+    emitVolumePreview(false, id, volume);
+  }
+}
 void PipeWireService::setSinkMuted(std::uint32_t id, bool muted) { setNodeMuted(id, muted); }
 void PipeWireService::setDefaultSink(std::uint32_t id) { setDefaultNode(id, "default.audio.sink"); }
-void PipeWireService::setSourceVolume(std::uint32_t id, float volume) { setNodeVolume(id, volume); }
+void PipeWireService::setSourceVolume(std::uint32_t id, float volume) {
+  setNodeVolume(id, volume);
+  if (id == m_state.defaultSourceId && m_state.defaultSourceId != 0) {
+    emitVolumePreview(true, id, volume);
+  }
+}
 void PipeWireService::setSourceMuted(std::uint32_t id, bool muted) { setNodeMuted(id, muted); }
 void PipeWireService::setDefaultSource(std::uint32_t id) { setDefaultNode(id, "default.audio.source"); }
 
@@ -1277,30 +1490,40 @@ void PipeWireService::setDefaultNode(std::uint32_t id, const char* key) {
 
 void PipeWireService::setVolume(float volume) {
   const auto* sink = defaultSink();
-  if (sink != nullptr) {
-    setNodeVolume(sink->id, volume);
+  if (sink == nullptr) {
+    return;
   }
+  volume = std::clamp(volume, 0.0f, 1.5f);
+  setNodeVolume(sink->id, volume);
+  emitVolumePreview(false, sink->id, volume);
 }
 
 void PipeWireService::setMuted(bool muted) {
   const auto* sink = defaultSink();
-  if (sink != nullptr) {
-    setNodeMuted(sink->id, muted);
+  if (sink == nullptr) {
+    return;
   }
+  setNodeMuted(sink->id, muted);
+  emitVolumePreview(false, sink->id, sink->volume);
 }
 
 void PipeWireService::setMicVolume(float volume) {
   const auto* source = defaultSource();
-  if (source != nullptr) {
-    setNodeVolume(source->id, volume);
+  if (source == nullptr) {
+    return;
   }
+  volume = std::clamp(volume, 0.0f, 1.5f);
+  setNodeVolume(source->id, volume);
+  emitVolumePreview(true, source->id, volume);
 }
 
 void PipeWireService::setMicMuted(bool muted) {
   const auto* source = defaultSource();
-  if (source != nullptr) {
-    setNodeMuted(source->id, muted);
+  if (source == nullptr) {
+    return;
   }
+  setNodeMuted(source->id, muted);
+  emitVolumePreview(true, source->id, source->volume);
 }
 
 void PipeWireService::emitVolumePreview(bool isInput, std::uint32_t id, float volume) const {

@@ -109,7 +109,7 @@ void ContextMenuControl::rebuild(Renderer& renderer) {
 
   auto bg = std::make_unique<Box>();
   bg->setCardStyle();
-  bg->setRadius(Style::radiusLg);
+  bg->setRadius(Style::scaledRadiusLg());
   bg->setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
   bg->setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth);
   bg->setFrameSize(width(), height());
@@ -159,7 +159,7 @@ void ContextMenuControl::rebuildRows(Renderer& renderer) {
     if (!entry.separator) {
       auto rowBg = std::make_unique<Box>();
       rowBg->setFill(clearColorSpec());
-      rowBg->setRadius(Style::radiusSm);
+      rowBg->setRadius(Style::scaledRadiusSm());
       rowBg->setFrameSize(rowWidth, rowHeight);
       rowBgPtr = static_cast<Box*>(row->addChild(std::move(rowBg)));
 
@@ -198,7 +198,7 @@ void ContextMenuControl::rebuildRows(Renderer& renderer) {
     } else {
       auto rowBg = std::make_unique<Box>();
       rowBg->setFill(clearColorSpec());
-      rowBg->setRadius(Style::radiusSm);
+      rowBg->setRadius(Style::scaledRadiusSm());
       rowBg->setFrameSize(rowWidth, rowHeight);
       rowBgPtr = static_cast<Box*>(row->addChild(std::move(rowBg)));
 

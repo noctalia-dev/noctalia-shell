@@ -6,6 +6,7 @@
 #include "system/desktop_entry.h"
 #include "system/icon_resolver.h"
 #include "ui/controls/context_menu.h"
+#include "ui/popup_chrome.h"
 #include "ui/signal.h"
 #include "wayland/popup_surface.h"
 
@@ -114,6 +115,7 @@ private:
   void resizeSurface(DockInstance& instance);
   void updateVisuals(DockInstance& instance);
   void applyPanelPalette(DockInstance& instance);
+  std::unique_ptr<InputArea> createLauncherButton(DockInstance& instance);
   void launchEntry(const DesktopEntry& entry);
   void launchAction(const DesktopAction& action);
   void handleItemClick(DockInstance& instance, DockItemView& item);
@@ -135,6 +137,7 @@ private:
   struct DockPopup {
     std::unique_ptr<PopupSurface> surface;
     std::unique_ptr<Node> sceneRoot;
+    popup_chrome::Geometry chrome;
     InputDispatcher inputDispatcher;
     wl_surface* wlSurface = nullptr;
     bool pointerInside = false;

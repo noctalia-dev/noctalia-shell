@@ -72,7 +72,7 @@ FileEntryRow::FileEntryRow(float scale) : m_scale(scale), m_rowHeight(std::ceil(
   });
 
   auto background = std::make_unique<Box>();
-  background->setRadius(Style::radiusMd * scale);
+  background->setRadius(Style::scaledRadiusMd(scale));
   m_background = static_cast<Box*>(addChild(std::move(background)));
 
   auto row = std::make_unique<Flex>();

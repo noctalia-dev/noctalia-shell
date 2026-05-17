@@ -15,7 +15,7 @@ class GraphNode;
 class Label;
 class SystemMonitorService;
 
-enum class DesktopSysmonStat : std::uint8_t { CpuUsage, CpuTemp, GpuTemp, RamPct, SwapPct, NetRx, NetTx };
+enum class DesktopSysmonStat : std::uint8_t { CpuUsage, CpuTemp, GpuTemp, GpuVram, RamPct, SwapPct, NetRx, NetTx };
 
 class DesktopSysmonWidget : public DesktopWidget {
 public:

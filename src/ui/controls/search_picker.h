@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui/controls/flex.h"
+#include "ui/controls/virtual_list_view.h"
 
 #include <cstddef>
 #include <functional>
@@ -12,7 +13,7 @@ class Input;
 class InputArea;
 class Label;
 class Renderer;
-class ScrollView;
+class VirtualListView;
 
 struct SearchPickerOption {
   std::string value;
@@ -21,7 +22,7 @@ struct SearchPickerOption {
   bool enabled = true;
 };
 
-class SearchPicker : public Flex {
+class SearchPicker : public Flex, private VirtualListAdapter {
 public:
   SearchPicker();
 
@@ -39,34 +40,35 @@ public:
   [[nodiscard]] InputArea* filterInputArea() const noexcept;
 
 private:
-  struct RowView {
-    Flex* row = nullptr;
-    Label* title = nullptr;
-    Label* detail = nullptr;
-    InputArea* area = nullptr;
-  };
-
   void doLayout(Renderer& renderer) override;
   LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints) override;
   void doArrange(Renderer& renderer, const LayoutRect& rect) override;
+  [[nodiscard]] std::size_t itemCount() const override;
+  [[nodiscard]] std::uint64_t itemKey(std::size_t index) const override;
+  [[nodiscard]] std::uint64_t itemRevision(std::size_t index) const override;
+  [[nodiscard]] bool itemInteractive(std::size_t index) const override;
+  [[nodiscard]] float measureItem(Renderer& renderer, std::size_t index, float width) override;
+  [[nodiscard]] std::unique_ptr<Node> createItem() override;
+  void bindItem(Renderer& renderer, Node& item, std::size_t index, float width, bool hovered) override;
+  void onActivate(std::size_t index) override;
   void applyFilter();
-  void rebuildRows();
   void setHighlightedVisibleIndex(std::size_t index);
   void moveHighlight(int delta);
   void activateHighlighted();
   void ensureHighlightedVisible();
-  void applyRowStates();
+  void notifyHighlightedChanged(std::size_t previous, std::size_t next);
   [[nodiscard]] double matchScore(const SearchPickerOption& option, std::string_view query) const;
 
   Input* m_input = nullptr;
-  ScrollView* m_scroll = nullptr;
+  Label* m_emptyLabel = nullptr;
+  VirtualListView* m_list = nullptr;
   std::vector<SearchPickerOption> m_options;
   std::vector<std::size_t> m_visible;
-  std::vector<RowView> m_rows;
   std::string m_filter;
   std::string m_emptyText;
   std::string m_selectedValue;
   std::size_t m_highlightedVisibleIndex = 0;
+  std::uint64_t m_revision = 0;
   std::function<void(const SearchPickerOption&)> m_onActivated;
   std::function<void()> m_onCancel;
   bool m_enabled = true;

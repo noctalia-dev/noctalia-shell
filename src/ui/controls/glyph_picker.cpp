@@ -24,7 +24,7 @@ namespace {
     button.setMinHeight(Style::controlHeight * scale);
     button.setMinWidth(92.0f * scale);
     button.setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-    button.setRadius(Style::radiusMd * scale);
+    button.setRadius(Style::scaledRadiusMd(scale));
   }
 
   void configureDialogCloseButton(Button& button, float scale) {
@@ -34,7 +34,7 @@ namespace {
     button.setMinWidth(Style::controlHeightSm * scale);
     button.setMinHeight(Style::controlHeightSm * scale);
     button.setPadding(Style::spaceXs * scale);
-    button.setRadius(Style::radiusMd * scale);
+    button.setRadius(Style::scaledRadiusMd(scale));
   }
 
 } // namespace
@@ -54,9 +54,11 @@ public:
     seen.reserve(tabler.size() + aliases.size());
     m_master.reserve(tabler.size() + aliases.size());
 
-    for (const auto& [name, codepoint] : aliases) {
+    for (const auto& [name, target] : aliases) {
       if (seen.insert(name).second) {
-        m_master.push_back({name, codepoint});
+        if (const auto it = tabler.find(std::string(target)); it != tabler.end()) {
+          m_master.push_back({name, it->second});
+        }
       }
     }
     for (const auto& [name, codepoint] : tabler) {
@@ -78,7 +80,7 @@ public:
     tile->setAlign(FlexAlign::Center);
     tile->setJustify(FlexJustify::Center);
     tile->setPadding(0.0f);
-    tile->setRadius(Style::radiusMd * m_chromeScale);
+    tile->setRadius(Style::scaledRadiusMd(m_chromeScale));
     tile->clearBorder();
 
     auto glyph = std::make_unique<Glyph>();

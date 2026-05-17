@@ -4,6 +4,7 @@
 #include "render/scene/node.h"
 #include "wayland/layer_surface.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <memory>
 #include <string_view>
@@ -68,8 +69,17 @@ public:
 
   [[nodiscard]] Node* root() const noexcept { return m_root ? m_root.get() : m_rootPtr; }
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
+  [[nodiscard]] float panelCardOpacity() const noexcept { return m_panelCardOpacity; }
 
   void setContentScale(float scale) noexcept { m_contentScale = scale; }
+  void setPanelCardOpacity(float opacity) noexcept {
+    const float clamped = std::clamp(opacity, 0.0f, 1.0f);
+    if (m_panelCardOpacity == clamped) {
+      return;
+    }
+    m_panelCardOpacity = clamped;
+    onPanelCardOpacityChanged(clamped);
+  }
 
   std::unique_ptr<Node> releaseRoot() {
     m_rootPtr = m_root.get();
@@ -82,10 +92,12 @@ protected:
   [[nodiscard]] float scaled(float value) const noexcept { return value * m_contentScale; }
   void setRoot(std::unique_ptr<Node> root) { m_root = std::move(root); }
   void clearReleasedRoot() noexcept { m_rootPtr = nullptr; }
+  virtual void onPanelCardOpacityChanged(float opacity) { (void)opacity; }
   virtual void doLayout(Renderer& renderer, float width, float height) = 0;
   virtual void doUpdate(Renderer& renderer) { (void)renderer; }
 
   float m_contentScale = 1.0f;
+  float m_panelCardOpacity = 1.0f;
   AnimationManager* m_animations = nullptr;
 
 private:

@@ -263,9 +263,6 @@ void MangoWorkspaceBackend::onOutputTag(zdwl_ipc_output_v2* handle, std::uint32_
   tagInfo.active = (stateValue & ZDWL_IPC_OUTPUT_V2_TAG_STATE_ACTIVE) != 0;
   tagInfo.urgent = (stateValue & ZDWL_IPC_OUTPUT_V2_TAG_STATE_URGENT) != 0;
   tagInfo.occupied = clients > 0;
-  kLog.debug("tag event output={} protocol_tag={} active={} urgent={} occupied={} total_tags={} snapshot={}",
-             static_cast<const void*>(output->second.output), tag + 1, tagInfo.active ? "yes" : "no",
-             tagInfo.urgent ? "yes" : "no", tagInfo.occupied ? "yes" : "no", m_tagCount, summarizeTags(output->second));
 }
 
 void MangoWorkspaceBackend::onOutputFrame(zdwl_ipc_output_v2* handle) {
@@ -293,8 +290,6 @@ void MangoWorkspaceBackend::onOutputFrame(zdwl_ipc_output_v2* handle) {
         st.dwlAppId = std::move(st.pendingAppId);
         st.hasPendingAppId = false;
       }
-      kLog.debug("frame output={} total_tags={} snapshot={}", static_cast<const void*>(st.output), m_tagCount,
-                 summarizeTags(st));
     }
   }
   notifyChanged();

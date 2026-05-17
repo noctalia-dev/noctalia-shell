@@ -99,3 +99,34 @@ public:
   virtual ~WorkspaceSocketConnector() = default;
   [[nodiscard]] virtual bool connectSocket() = 0;
 };
+
+namespace compositors {
+
+  class WorkspaceMetadataBackend {
+  public:
+    using ChangeCallback = std::function<void()>;
+
+    virtual ~WorkspaceMetadataBackend() = default;
+    virtual void setChangeCallback(ChangeCallback callback) = 0;
+    [[nodiscard]] virtual int pollFd() const noexcept { return -1; }
+    [[nodiscard]] virtual short pollEvents() const noexcept { return POLLIN | POLLHUP | POLLERR; }
+    [[nodiscard]] virtual int pollTimeoutMs() const noexcept { return -1; }
+    virtual void dispatchPoll(short /*revents*/) {}
+    virtual void apply(std::vector<Workspace>& /*workspaces*/, const std::string& /*outputName*/ = {}) const {}
+    [[nodiscard]] virtual std::vector<std::string> workspaceKeys(const std::string& /*outputName*/ = {}) const {
+      return {};
+    }
+    [[nodiscard]] virtual std::unordered_map<std::string, std::vector<std::string>>
+    appIdsByWorkspace(const std::string& /*outputName*/ = {}) const {
+      return {};
+    }
+    [[nodiscard]] virtual std::vector<WorkspaceWindow> workspaceWindows(const std::string& /*outputName*/ = {}) const {
+      return {};
+    }
+    [[nodiscard]] virtual bool canTrackOverviewState() const noexcept { return false; }
+    [[nodiscard]] virtual bool hasOverviewState() const noexcept { return false; }
+    [[nodiscard]] virtual bool isOverviewOpen() const noexcept { return true; }
+    virtual void cleanup() = 0;
+  };
+
+} // namespace compositors

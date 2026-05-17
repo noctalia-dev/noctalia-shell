@@ -33,17 +33,18 @@
           (builtins.substring 6 2 longDate)
         ];
 
-      version = mkDate (self.lastModifiedDate or "19700101") + "" + (self.shortRev or "dirty");
+      shortRev = self.shortRev or "dirty";
+      version = mkDate (self.lastModifiedDate or "19700101") + "_" + shortRev;
     in
     {
       overlays.default = final: prev: {
-        noctalia = final.callPackage ./nix/package.nix { inherit version; };
+        noctalia = final.callPackage ./nix/package.nix { inherit version shortRev; };
       };
 
       packages = forEachSystem (
         { pkgs, ... }:
         {
-          default = pkgs.callPackage ./nix/package.nix { inherit version; };
+          default = pkgs.callPackage ./nix/package.nix { inherit version shortRev; };
         }
       );
 
@@ -65,5 +66,12 @@
           };
         }
       );
+
+      homeModules.default =
+        { pkgs, lib, ... }:
+        {
+          imports = [ ./nix/home-module.nix ];
+          programs.noctalia.package = lib.mkDefault self.packages.${pkgs.stdenv.hostPlatform.system}.default;
+        };
     };
 }

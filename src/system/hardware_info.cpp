@@ -32,7 +32,48 @@ namespace {
     return i18n::tr("system.hardware.unknown-cpu");
   }
 
-  std::string lookupPciIds(const std::string& vendorId, const std::string& deviceId) {
+  std::string shortVendorPrefix(const std::string& vendorName) {
+    if (vendorName.find("AMD") != std::string::npos || vendorName.find("ATI") != std::string::npos) {
+      return "AMD";
+    }
+    if (vendorName.find("NVIDIA") != std::string::npos) {
+      return "NVIDIA";
+    }
+    if (vendorName.find("Intel") != std::string::npos) {
+      return "Intel";
+    }
+    return {};
+  }
+
+  std::string formatGpuName(const std::string& vendorName, const std::string& rawName) {
+    std::string prefix = shortVendorPrefix(vendorName);
+    std::string name = rawName;
+
+    // pci.ids uses brackets inconsistently:
+    //   device line:    "Navi 32 [Radeon RX 7700 XT / 7800 XT]"  → bracket = marketing name
+    //   subsystem line: "RX 7800 XT [Hellhound / Red Devil]"     → bracket = board partner
+    // Heuristic: if text before '[' already looks like a GPU model (contains "RX"/"GTX"/"RTX"/"Arc"/"HD"),
+    // keep that and drop the bracket content. Otherwise use the bracket content.
+    const auto bracketOpen = rawName.find('[');
+    const auto bracketClose = rawName.rfind(']');
+    if (bracketOpen != std::string::npos && bracketClose != std::string::npos && bracketClose > bracketOpen) {
+      std::string before = StringUtils::trim(rawName.substr(0, bracketOpen));
+      std::string inside = rawName.substr(bracketOpen + 1, bracketClose - bracketOpen - 1);
+
+      const bool beforeIsModel = before.find("RX") != std::string::npos || before.find("GTX") != std::string::npos ||
+                                 before.find("RTX") != std::string::npos || before.find("Arc") != std::string::npos ||
+                                 before.find("HD ") != std::string::npos;
+      name = beforeIsModel ? before : inside;
+    }
+
+    if (!prefix.empty() && name.find(prefix) == std::string::npos) {
+      return prefix + " " + name;
+    }
+    return name;
+  }
+
+  std::string lookupPciIds(const std::string& vendorId, const std::string& deviceId,
+                           const std::string& subVendorId = {}, const std::string& subDeviceId = {}) {
     std::ifstream file{"/usr/share/hwdata/pci.ids"};
     if (!file.is_open()) {
       return {};
@@ -40,7 +81,9 @@ namespace {
 
     std::string line;
     bool inVendor = false;
+    bool inDevice = false;
     std::string vendorName;
+    std::string deviceName;
 
     while (std::getline(file, line)) {
       if (line.empty() || line[0] == '#') {
@@ -65,22 +108,43 @@ namespace {
         continue;
       }
 
-      if (line[0] == '\t' && (line.size() < 2 || line[1] != '\t')) {
-        auto stripped = StringUtils::trim(line);
-        if (stripped.starts_with(deviceId)) {
-          const auto nameStart = stripped.find("  ");
-          if (nameStart != std::string::npos) {
-            auto deviceName = StringUtils::trim(stripped.substr(nameStart));
-            if (!deviceName.empty()) {
-              return deviceName;
+      // Subsystem line (two tabs)
+      if (line.size() >= 2 && line[0] == '\t' && line[1] == '\t') {
+        if (inDevice && !subVendorId.empty() && !subDeviceId.empty()) {
+          auto stripped = StringUtils::trim(line);
+          const std::string subKey = subVendorId + " " + subDeviceId;
+          if (stripped.starts_with(subKey)) {
+            const auto nameStart = stripped.find("  ");
+            if (nameStart != std::string::npos) {
+              auto subName = StringUtils::trim(stripped.substr(nameStart));
+              if (!subName.empty()) {
+                return formatGpuName(vendorName, subName);
+              }
             }
           }
+        }
+        continue;
+      }
+
+      // Device line (one tab)
+      if (inDevice) {
+        break;
+      }
+      auto stripped = StringUtils::trim(line);
+      if (stripped.starts_with(deviceId)) {
+        const auto nameStart = stripped.find("  ");
+        if (nameStart != std::string::npos) {
+          deviceName = StringUtils::trim(stripped.substr(nameStart));
+          inDevice = true;
         }
       }
     }
 
+    if (!deviceName.empty()) {
+      return formatGpuName(vendorName, deviceName);
+    }
     if (!vendorName.empty()) {
-      return vendorName;
+      return shortVendorPrefix(vendorName).empty() ? vendorName : shortVendorPrefix(vendorName);
     }
     return {};
   }
@@ -134,17 +198,21 @@ namespace {
 
       auto vendorHex = readSysfsLine(deviceDir / "vendor");
       auto deviceHex = readSysfsLine(deviceDir / "device");
+      auto subVendorHex = readSysfsLine(deviceDir / "subsystem_vendor");
+      auto subDeviceHex = readSysfsLine(deviceDir / "subsystem_device");
 
-      // Strip 0x prefix
-      if (vendorHex.starts_with("0x") || vendorHex.starts_with("0X")) {
-        vendorHex = vendorHex.substr(2);
-      }
-      if (deviceHex.starts_with("0x") || deviceHex.starts_with("0X")) {
-        deviceHex = deviceHex.substr(2);
-      }
+      auto stripHexPrefix = [](std::string& s) {
+        if (s.starts_with("0x") || s.starts_with("0X")) {
+          s = s.substr(2);
+        }
+      };
+      stripHexPrefix(vendorHex);
+      stripHexPrefix(deviceHex);
+      stripHexPrefix(subVendorHex);
+      stripHexPrefix(subDeviceHex);
 
       if (!vendorHex.empty() && !deviceHex.empty()) {
-        auto pciName = lookupPciIds(vendorHex, deviceHex);
+        auto pciName = lookupPciIds(vendorHex, deviceHex, subVendorHex, subDeviceHex);
         if (!pciName.empty()) {
           return pciName;
         }
@@ -170,14 +238,14 @@ namespace {
   std::string readDmiField(const char* path) { return readSysfsLine(path); }
 
   std::string detectMotherboard() {
-    const std::string boardVendor = readDmiField("/sys/class/dmi/id/board_vendor");
     const std::string boardName = readDmiField("/sys/class/dmi/id/board_name");
+    const std::string boardVersion = readDmiField("/sys/class/dmi/id/board_version");
     const std::string productName = readDmiField("/sys/class/dmi/id/product_name");
 
-    if (!boardVendor.empty() && !boardName.empty()) {
-      return boardVendor + " " + boardName;
-    }
     if (!boardName.empty()) {
+      if (!boardVersion.empty()) {
+        return boardName + " (" + boardVersion + ")";
+      }
       return boardName;
     }
     if (!productName.empty()) {

@@ -46,7 +46,19 @@ sudo apt install meson g++ just \
   libcurl4-openssl-dev libwebp-dev librsvg2-dev
 ```
 
-Vendored dependencies, with no system package needed: `Wuffs`, `nanosvg`, `tomlplusplus`, `tinyexpr`,
+### AerynOS
+```sh
+sudo moss it meson g++ just \
+  wayland-devel wayland-protocols-devel \
+  mesa-libegl-devel mesa-libgl-devel \
+  freetype-devel fontconfig-devel \
+  cairo-devel pango-devel \
+  libxkbcommon-devel glib2-devel \
+  sdbus-cpp-devel pipewire-devel \
+  linux-pam-devel polkit-devel curl-devel libwebp-devel librsvg-devel extra-cmake-modules
+```
+
+Vendored dependencies, with no system package needed: `Wuffs`, `tomlplusplus`, `tinyexpr`,
 `nlohmann/json`, `Luau`, `dr_wav`, `fzy`, `stb_image_resize2`, and Material Color Utilities.
 
 System packages required beyond the Wayland/GL stack: `libwebp` handles WebP decoding and thumbnail encoding. Wuffs
@@ -61,35 +73,29 @@ reduces memory fragmentation in long-running sessions. When detected at build ti
 
 Sanitizer runtime packages are only needed for ASan/UBSan builds configured with `just configure asan`.
 
-## Build
+## Building and install
 
 Requires [just](https://github.com/casey/just) and [meson](https://mesonbuild.com/).
 
+#### Release build
 ```sh
-# Debug build in build-debug/
-just configure
-just build
-just run
-
 # Optimized release build in build-release/
 just configure release
 just build release
-just run release
 
-# Clean rebuild
-just rebuild
-just rebuild release
-```
-
-## Installation
-
-After building, install with `just`:
-
-```sh
+# After building, install
 sudo just install release
 ```
 
-Use `sudo just install` instead if you configured the default debug build.
+#### Debug build
+```sh
+# Debug build in build-debug/ don't use debug unless you are debugging...
+just configure
+just build
+
+# Test your local debug build with
+just run
+```
 
 Meson installs the binary and shipped assets using the normal prefix layout:
 
@@ -120,13 +126,20 @@ See [CONTRIBUTING.md](CONTRIBUTING.md#runtime-assets) for the full runtime asset
 
 Noctalia has two configuration layers:
 
-- Declarative user config lives in `$XDG_CONFIG_HOME/noctalia/` or `~/.config/noctalia/`.
+- Declarative user config lives in `$NOCTALIA_CONFIG_HOME/noctalia/`, `$XDG_CONFIG_HOME/noctalia/`, or
+  `~/.config/noctalia/`.
   Noctalia reads every `*.toml` file in that directory, sorted alphabetically, and deep-merges them into one config.
   A single `config.toml` is the simplest setup, but splitting config into files such as `bar.toml`, `theme.toml`,
   or `widgets.toml` is also supported.
-- GUI-managed overrides live in `$XDG_STATE_HOME/noctalia/settings.toml` or
-  `~/.local/state/noctalia/settings.toml`. This file is written by Noctalia itself for settings changed through the
-  UI, IPC-backed controls, setup flows, and other runtime actions that need persistence.
+- GUI-managed overrides live in `$NOCTALIA_STATE_HOME/noctalia/settings.toml`,
+  `$XDG_STATE_HOME/noctalia/settings.toml`, or `~/.local/state/noctalia/settings.toml`. This file is written by
+  Noctalia itself for settings changed through the UI, IPC-backed controls, setup flows, and other runtime actions
+  that need persistence.
+
+`NOCTALIA_CONFIG_HOME` and `NOCTALIA_STATE_HOME` are Noctalia-specific overrides with the same "home root" semantics
+as the XDG variables. For example, `NOCTALIA_CONFIG_HOME=/tmp/profile` loads config from
+`/tmp/profile/noctalia/`. Prefer these variables over overriding `XDG_CONFIG_HOME` when launching Noctalia from a
+session, because applications started through Noctalia's launcher inherit the shell environment.
 
 Load order is built-in defaults first, then declarative config files, then `settings.toml`.
 Because the state file is applied last, GUI overrides win over matching values in `config.toml`.

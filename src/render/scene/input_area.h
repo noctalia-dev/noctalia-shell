@@ -1,6 +1,7 @@
 #pragma once
 
 #include "render/scene/node.h"
+#include "shell/tooltip/tooltip_content.h"
 
 #include <cstdint>
 #include <functional>
@@ -85,6 +86,13 @@ public:
   void setEnabled(bool enabled);
   [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
 
+  // Tooltip
+  void setTooltip(std::string text);
+  void setTooltip(std::vector<TooltipRow> rows);
+  void clearTooltip();
+  [[nodiscard]] bool hasTooltip() const noexcept;
+  [[nodiscard]] const TooltipContent& tooltipContent() const noexcept { return m_tooltipContent; }
+
   // Auto-tracked state (read-only)
   [[nodiscard]] bool hovered() const noexcept { return m_hovered; }
   [[nodiscard]] bool pressed() const noexcept { return m_pressed; }
@@ -127,4 +135,6 @@ private:
   std::uint32_t m_pressedButton = 0;
   bool m_focusable = false;
   bool m_focused = false;
+
+  TooltipContent m_tooltipContent;
 };

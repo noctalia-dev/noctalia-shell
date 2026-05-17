@@ -29,10 +29,13 @@ private:
   GLint m_transformLoc = -1;
   GLint m_lineColor1Loc = -1;
   GLint m_lineColor2Loc = -1;
+  GLint m_lineColor3Loc = -1;
   GLint m_count1Loc = -1;
   GLint m_count2Loc = -1;
+  GLint m_count3Loc = -1;
   GLint m_scroll1Loc = -1;
   GLint m_scroll2Loc = -1;
+  GLint m_scroll3Loc = -1;
   GLint m_lineWidthLoc = -1;
   GLint m_graphFillOpacityLoc = -1;
   GLint m_texWidthLoc = -1;

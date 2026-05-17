@@ -130,7 +130,7 @@ namespace settings {
     closeBtn->setMinWidth(Style::controlHeightSm * m_scale);
     closeBtn->setMinHeight(Style::controlHeightSm * m_scale);
     closeBtn->setPadding(Style::spaceXs * m_scale);
-    closeBtn->setRadius(Style::radiusMd * m_scale);
+    closeBtn->setRadius(Style::scaledRadiusMd(m_scale));
     closeBtn->setOnClick([this]() { DeferredCall::callLater([this]() { close(); }); });
     header->addChild(std::move(closeBtn));
     root->addChild(std::move(header));
@@ -147,8 +147,8 @@ namespace settings {
     picker->setRadius(0.0f);
     picker->setPadding(0.0f);
     picker->setFlexGrow(1.0f);
-    picker->setOptions(m_options);
     picker->setSelectedValue(m_selectedValue);
+    picker->setOptions(m_options);
     picker->setOnActivated([this](const SearchPickerOption& option) {
       if (option.value.empty()) {
         return;

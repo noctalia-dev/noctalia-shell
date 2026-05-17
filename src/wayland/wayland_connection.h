@@ -113,6 +113,7 @@ public:
   [[nodiscard]] FocusGrabService* focusGrabService() const noexcept;
   [[nodiscard]] wp_viewporter* viewporter() const noexcept;
   [[nodiscard]] wl_display* display() const noexcept;
+  [[nodiscard]] std::string describeDisplayError(int operationErrno = 0) const;
   [[nodiscard]] wl_compositor* compositor() const noexcept;
   [[nodiscard]] wl_seat* seat() const noexcept;
   [[nodiscard]] wl_shm* shm() const noexcept;
@@ -151,6 +152,7 @@ public:
   [[nodiscard]] std::vector<std::string> keyboardLayoutNames() const;
   [[nodiscard]] WaylandSeat::LockKeysState keyboardLockKeysState() const;
   [[nodiscard]] std::uint32_t lastInputSerial() const noexcept;
+  [[nodiscard]] double userIdleSeconds() const noexcept;
   [[nodiscard]] bool hasFreshPointerOutput(std::chrono::milliseconds maxAge) const noexcept;
   [[nodiscard]] wl_output* outputForSurface(wl_surface* surface) const noexcept;
 

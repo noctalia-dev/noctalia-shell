@@ -5,6 +5,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -22,6 +23,8 @@ struct SystemStats {
   std::uint64_t swapTotalMb{0};
   std::optional<double> cpuTempC;
   std::optional<double> gpuTempC;
+  std::optional<std::uint64_t> gpuVramUsedBytes;
+  std::optional<std::uint64_t> gpuVramTotalBytes;
   double netRxBytesPerSec{0.0};
   double netTxBytesPerSec{0.0};
   double loadAvg1{0.0};
@@ -48,12 +51,16 @@ public:
   void releaseCpuTemp();
   void retainGpuTemp();
   void releaseGpuTemp();
+  void retainGpuVram();
+  void releaseGpuVram();
   void retainDiskPath(const std::string& path);
   void releaseDiskPath(const std::string& path);
   [[nodiscard]] float diskUsagePercent(const std::string& path) const;
   [[nodiscard]] std::vector<float> diskHistory(const std::string& path, int windowSize = kHistorySize) const;
 
 private:
+  struct NvidiaNvmlReader;
+
   struct DiskHistory {
     int refs = 0;
     float latestPercent = 0.0f;
@@ -65,9 +72,16 @@ private:
     std::uint64_t idle{0};
   };
 
+  struct GpuVramData {
+    std::uint64_t usedBytes{0};
+    std::uint64_t totalBytes{0};
+    std::string source;
+  };
+
   void start();
   void stop();
   void samplingLoop();
+  void logDetectedSources();
 
   [[nodiscard]] static std::optional<CpuTotals> readCpuTotals();
   struct MemData {
@@ -78,7 +92,8 @@ private:
   };
   [[nodiscard]] static std::optional<MemData> readMemoryKb();
   [[nodiscard]] static std::optional<double> readCpuTempCelsius();
-  [[nodiscard]] static std::optional<double> readGpuTempCelsius();
+  [[nodiscard]] std::optional<double> readGpuTempCelsius();
+  [[nodiscard]] std::optional<GpuVramData> readGpuVram();
   [[nodiscard]] static float readDiskUsagePercent(const std::string& path);
 
   struct NetIfaceBytes {
@@ -91,6 +106,7 @@ private:
   std::atomic<bool> m_running{false};
   std::atomic<int> m_cpuTempRefs{0};
   std::atomic<int> m_gpuTempRefs{0};
+  std::atomic<int> m_gpuVramRefs{0};
   std::thread m_thread;
   std::mutex m_wakeMutex;
   std::condition_variable m_wakeCv;
@@ -101,4 +117,5 @@ private:
   int m_historyHead = 0;
   std::unordered_map<std::string, DiskHistory> m_diskHistories;
   std::unordered_map<std::string, NetIfaceBytes> m_prevNetBytes;
+  std::unique_ptr<NvidiaNvmlReader> m_nvidiaNvmlReader;
 };

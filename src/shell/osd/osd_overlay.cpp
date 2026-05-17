@@ -61,6 +61,16 @@ namespace {
 
   [[nodiscard]] int screenMargin(float s) { return static_cast<int>(std::lround(Style::spaceSm * s)); }
 
+  [[nodiscard]] float osdCardRadius(float cw, float ch, float layoutScale) {
+    const float maxR = std::min(cw, ch) * 0.5f;
+    return std::min(maxR, Style::scaledRadiusXl(layoutScale));
+  }
+
+  [[nodiscard]] float osdProgressRadius(float layoutScale) {
+    const float ph = progressHeight(layoutScale);
+    return std::min(ph * 0.5f, Style::scaledRadiusSm(layoutScale));
+  }
+
   bool isBottomPosition(const std::string& position) { return position.starts_with("bottom_"); }
 
   float cardBaseYForPosition(const std::string& position, float surfaceHeight, float cardH) {
@@ -126,6 +136,10 @@ void OsdOverlay::ensureSurfaces() {
     destroySurfaces();
   }
 
+  if (!m_instances.empty() && std::abs(Style::cornerRadiusScale() - m_lastCornerRadiusScale) > 1.0e-4f) {
+    destroySurfaces();
+  }
+
   if (!m_instances.empty() && m_instances.size() != m_wayland->outputs().size()) {
     destroySurfaces();
   }
@@ -135,6 +149,7 @@ void OsdOverlay::ensureSurfaces() {
 
   m_lastPosition = position;
   m_lastLayoutScale = layoutScale;
+  m_lastCornerRadiusScale = Style::cornerRadiusScale();
 
   const auto surfaceWidth = osdSurfaceWidth(layoutScale);
   const auto surfaceHeight = osdSurfaceHeight(layoutScale);
@@ -193,13 +208,13 @@ void OsdOverlay::ensureSurfaces() {
     };
 
     inst->surface = std::make_unique<LayerSurface>(*m_wayland, std::move(surfaceConfig));
+    inst->surface->setRenderContext(m_renderContext);
     auto* instPtr = inst.get();
     inst->surface->setConfigureCallback(
         [instPtr](std::uint32_t /*width*/, std::uint32_t /*height*/) { instPtr->surface->requestLayout(); });
     inst->surface->setPrepareFrameCallback(
         [this, instPtr](bool needsUpdate, bool needsLayout) { prepareFrame(*instPtr, needsUpdate, needsLayout); });
     inst->surface->setAnimationManager(&inst->animations);
-    inst->surface->setRenderContext(m_renderContext);
 
     if (!inst->surface->initialize(output.output)) {
       kLog.warn("osd overlay: failed to initialize surface on {}", output.connectorName);
@@ -245,6 +260,21 @@ void OsdOverlay::prepareFrame(Instance& inst, bool needsUpdate, bool needsLayout
     updateInstanceContent(inst);
   }
 
+  if (inst.sceneRoot != nullptr && inst.background != nullptr) {
+    const float corner = Style::cornerRadiusScale();
+    if (std::abs(corner - inst.appliedCornerRadiusScale) > 1.0e-4f) {
+      const float s = inst.uiLayoutScale;
+      const float cw = cardWidth(s);
+      const float ch = cardHeight(s);
+      inst.background->setRadius(osdCardRadius(cw, ch, s));
+      if (inst.progress != nullptr) {
+        inst.progress->setRadius(osdProgressRadius(s));
+      }
+      inst.appliedCornerRadiusScale = corner;
+      inst.surface->requestRedraw();
+    }
+  }
+
   if (needsUpdate && inst.showPending) {
     animateInstance(inst);
     inst.showPending = false;
@@ -278,7 +308,7 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   background->setCardStyle();
   background->setFill(colorSpecFromRole(ColorRole::Surface));
   background->setBorder(colorSpecFromRole(ColorRole::Outline), border);
-  background->setRadius(ch * 0.5f);
+  background->setRadius(osdCardRadius(cw, ch, s));
   background->setSize(cw, ch);
   background->setPosition(cardX, cardY);
   background->setZIndex(0);
@@ -326,7 +356,7 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   progress->setFill(colorSpecFromRole(ColorRole::Primary));
   progress->setFlexGrow(1.0f);
   progress->setSize(0.0f, ph);
-  progress->setRadius(ph * 0.5f);
+  progress->setRadius(osdProgressRadius(s));
   inst.progress = progress.get();
   inst.progress->setZIndex(1);
   inst.row->addChild(std::move(progress));
@@ -334,6 +364,8 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   inst.card->addChild(std::move(row));
 
   inst.sceneRoot->addChild(std::move(card));
+
+  inst.appliedCornerRadiusScale = Style::cornerRadiusScale();
 }
 
 void OsdOverlay::updateInstanceContent(Instance& inst) {
@@ -350,7 +382,7 @@ void OsdOverlay::updateInstanceContent(Instance& inst) {
   inst.value->setTextAlign(m_content.showProgress ? TextAlign::End : TextAlign::Center);
   inst.value->setMinWidth(m_content.showProgress ? inst.progressValueMinWidth : 0.0f);
   inst.value->setText(m_content.value);
-  inst.progress->setRadius(progressHeight(s) * 0.5f);
+  inst.progress->setRadius(osdProgressRadius(s));
   inst.progress->setProgress(m_content.progress);
   inst.row->layout(*m_renderContext);
   inst.row->setPosition(cardPadding(s), std::round((inst.card->height() - inst.row->height()) * 0.5f));
@@ -404,7 +436,7 @@ void OsdOverlay::animateInstance(Instance& inst) {
     }
   }
 
-  inst.hideAnimId = inst.animations.animate(
+  inst.hideAnimId = inst.animations.animateTimer(
       1.0f, 0.0f, kHideDelayMs, Easing::Linear, [](float /*v*/) {},
       [this, &inst, baseY, slideDirection, slidePx]() {
         inst.hideAnimId = inst.animations.animate(

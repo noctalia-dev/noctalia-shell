@@ -6,6 +6,18 @@
 #include <cstdio>
 #include <string>
 
+namespace {
+
+  float linearizedColorChannel(float channel) {
+    channel = std::clamp(channel, 0.0f, 1.0f);
+    if (channel <= 0.03928f) {
+      return channel / 12.92f;
+    }
+    return std::pow((channel + 0.055f) / 1.055f, 2.4f);
+  }
+
+} // namespace
+
 Color hsv(float h, float s, float v, float a) {
   h = h - std::floor(h);
   const float saturation = std::clamp(s, 0.0f, 1.0f);
@@ -76,6 +88,15 @@ void rgbToHsv(const Color& rgb, float& h, float& s, float& v) {
 
   h /= 6.0f;
   h = h - std::floor(h);
+}
+
+float relativeLuminance(const Color& color) {
+  return 0.2126f * linearizedColorChannel(color.r) + 0.7152f * linearizedColorChannel(color.g) +
+         0.0722f * linearizedColorChannel(color.b);
+}
+
+Color readableTextColorForBackground(const Color& background) {
+  return relativeLuminance(background) > 0.179f ? rgba(0.0f, 0.0f, 0.0f) : rgba(1.0f, 1.0f, 1.0f);
 }
 
 std::string formatRgbHex(const Color& color) {

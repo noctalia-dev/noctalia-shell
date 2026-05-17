@@ -25,6 +25,9 @@
 #include "xdg-shell-client-protocol.h"
 
 #include <algorithm>
+#include <cerrno>
+#include <cstring>
+#include <format>
 #include <stdexcept>
 #include <utility>
 #include <wayland-client.h>
@@ -57,6 +60,14 @@ namespace {
       .global = &WaylandConnection::handleGlobal,
       .global_remove = &WaylandConnection::handleGlobalRemove,
   };
+
+  std::string errnoText(int value) {
+    if (value == 0) {
+      return "none";
+    }
+    const char* text = std::strerror(value);
+    return text != nullptr ? std::string(text) : std::string("unknown");
+  }
 
   void backgroundEffectCapabilities(void* data, ext_background_effect_manager_v1* /*manager*/,
                                     std::uint32_t capabilities) {
@@ -100,9 +111,18 @@ namespace {
   }
 
   void outputName(void* data, wl_output* wlOut, const char* name) {
-    auto* out = static_cast<WaylandConnection*>(data)->findOutputByWl(wlOut);
+    auto* self = static_cast<WaylandConnection*>(data);
+    auto* out = self->findOutputByWl(wlOut);
     if (out != nullptr && name != nullptr) {
-      out->connectorName = name;
+      const std::string nextName = name;
+      if (out->connectorName == nextName) {
+        return;
+      }
+      out->connectorName = nextName;
+
+      if (out->done) {
+        self->notifyOutputReady(wlOut);
+      }
     }
   }
 
@@ -188,13 +208,17 @@ bool WaylandConnection::connect() {
   }
 
   if (wl_display_roundtrip(m_display) < 0) {
+    const int roundtripErrno = errno;
+    const std::string detail = describeDisplayError(roundtripErrno);
     cleanup();
-    throw std::runtime_error("failed during Wayland registry roundtrip");
+    throw std::runtime_error(std::format("failed during Wayland registry roundtrip: {}", detail));
   }
 
   if (wl_display_roundtrip(m_display) < 0) {
+    const int roundtripErrno = errno;
+    const std::string detail = describeDisplayError(roundtripErrno);
     cleanup();
-    throw std::runtime_error("failed during Wayland output discovery roundtrip");
+    throw std::runtime_error(std::format("failed during Wayland output discovery roundtrip: {}", detail));
   }
 
   m_focusGrabService = std::make_unique<FocusGrabService>();
@@ -252,6 +276,7 @@ void WaylandConnection::registerLayerSurface(wl_surface* surface, zwlr_layer_sur
 
 void WaylandConnection::unregisterSurface(wl_surface* surface) {
   if (surface != nullptr) {
+    m_seatHandler.forgetSurface(surface);
     m_surfaceOutputMap.erase(surface);
     m_layerSurfaceMap.erase(surface);
     if (m_lastPointerOutput != nullptr) {
@@ -287,6 +312,8 @@ std::string WaylandConnection::currentKeyboardLayoutName() const { return m_seat
 std::vector<std::string> WaylandConnection::keyboardLayoutNames() const { return m_seatHandler.layoutNames(); }
 WaylandSeat::LockKeysState WaylandConnection::keyboardLockKeysState() const { return m_seatHandler.lockKeysState(); }
 std::uint32_t WaylandConnection::lastInputSerial() const noexcept { return m_seatHandler.lastSerial(); }
+
+double WaylandConnection::userIdleSeconds() const noexcept { return m_seatHandler.userIdleSeconds(); }
 
 bool WaylandConnection::hasFreshPointerOutput(std::chrono::milliseconds maxAge) const noexcept {
   if (m_lastPointerOutput == nullptr || m_lastPointerOutputAt.time_since_epoch().count() == 0) {
@@ -422,6 +449,31 @@ void WaylandConnection::activateSurface(wl_surface* surface) {
 
 wl_display* WaylandConnection::display() const noexcept { return m_display; }
 
+std::string WaylandConnection::describeDisplayError(int operationErrno) const {
+  if (m_display == nullptr) {
+    if (operationErrno != 0) {
+      return std::format("display=null, operation_errno={} ({})", operationErrno, errnoText(operationErrno));
+    }
+    return "display=null";
+  }
+
+  const int displayError = wl_display_get_error(m_display);
+  std::string detail = std::format("display_error={} ({})", displayError, errnoText(displayError));
+  if (operationErrno != 0 && operationErrno != displayError) {
+    detail += std::format(", operation_errno={} ({})", operationErrno, errnoText(operationErrno));
+  }
+
+  if (displayError == EPROTO) {
+    const wl_interface* interface = nullptr;
+    std::uint32_t objectId = 0;
+    const std::uint32_t code = wl_display_get_protocol_error(m_display, &interface, &objectId);
+    const char* interfaceName = interface != nullptr && interface->name != nullptr ? interface->name : "unknown";
+    detail += std::format(", protocol_error.interface={}, object_id={}, code={}", interfaceName, objectId, code);
+  }
+
+  return detail;
+}
+
 wl_compositor* WaylandConnection::compositor() const noexcept { return m_compositor; }
 
 wl_seat* WaylandConnection::seat() const noexcept { return m_seatHandler.seat(); }
@@ -498,6 +550,9 @@ void WaylandConnection::handleGlobalRemove(void* data, wl_registry* /*registry*/
     }
     if (self->m_outputRemovedCallback && output.output != nullptr) {
       self->m_outputRemovedCallback(output.output);
+    }
+    if (output.xdgOutput != nullptr) {
+      zxdg_output_v1_destroy(output.xdgOutput);
     }
     if (output.output != nullptr) {
       if (wl_output_get_version(output.output) >= WL_OUTPUT_RELEASE_SINCE_VERSION) {

@@ -16,7 +16,6 @@
 namespace {
 
   constexpr float kDefaultWidth = 260.0f;
-  constexpr float kDefaultHeight = 180.0f;
   constexpr float kScrollbarWidth = 6.0f;
   constexpr float kScrollbarPadding = Style::borderWidth;
   constexpr float kViewportPaddingH = Style::spaceXs;
@@ -46,7 +45,7 @@ ScrollView::ScrollView() {
       .fill = clearColor(),
       .border = clearColor(),
       .fillMode = FillMode::Solid,
-      .radius = Style::radiusMd,
+      .radius = Style::scaledRadiusMd(),
       .softness = 1.0f,
       .borderWidth = 0,
   });
@@ -191,10 +190,10 @@ void ScrollView::setSoftness(float softness) {
   applyPalette();
 }
 
-void ScrollView::setCardStyle(float scale) {
-  setFill(colorSpecFromRole(ColorRole::Surface));
+void ScrollView::setCardStyle(float scale, float fillOpacity) {
+  setFill(colorSpecFromRole(ColorRole::SurfaceVariant, fillOpacity));
   setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), Style::borderWidth);
-  setRadius(Style::radiusXl * scale);
+  setRadius(Style::scaledRadiusXl(scale));
   setViewportPaddingH(Style::cardPadding * scale);
   setViewportPaddingV(Style::cardPadding * scale);
 }
@@ -250,10 +249,18 @@ void ScrollView::doLayout(Renderer& renderer) {
   }
 
   const float w = width() > 0.0f ? width() : kDefaultWidth;
-  const float h = height() > 0.0f ? height() : kDefaultHeight;
   const float viewportX = m_viewportPaddingH;
   const float viewportY = m_viewportPaddingV;
   const float viewportW = std::max(0.0f, w - m_viewportPaddingH * 2.0f);
+
+  m_content->setPosition(0.0f, 0.0f);
+  LayoutConstraints contentConstraints;
+  contentConstraints.setExactWidth(viewportW);
+  LayoutSize contentSize = m_content->measure(renderer, contentConstraints);
+  m_content->arrange(renderer, LayoutRect{.x = 0.0f, .y = 0.0f, .width = viewportW, .height = contentSize.height});
+
+  const float naturalH = contentSize.height + m_viewportPaddingV * 2.0f;
+  const float h = height() > 0.0f ? height() : naturalH;
   const float viewportH = std::max(0.0f, h - m_viewportPaddingV * 2.0f);
   m_viewportHeight = viewportH;
   m_viewportWidth = viewportW;
@@ -263,12 +270,6 @@ void ScrollView::doLayout(Renderer& renderer) {
   m_background->setFrameSize(w, h);
   m_viewportArea->setPosition(viewportX, viewportY);
   m_viewportArea->setFrameSize(viewportW, viewportH);
-
-  m_content->setPosition(0.0f, 0.0f);
-  LayoutConstraints contentConstraints;
-  contentConstraints.setExactWidth(viewportW);
-  LayoutSize contentSize = m_content->measure(renderer, contentConstraints);
-  m_content->arrange(renderer, LayoutRect{.x = 0.0f, .y = 0.0f, .width = viewportW, .height = contentSize.height});
 
   m_scrollbarShown = m_showScrollbar && m_content->height() > viewportH + 0.5f;
   const float gutter = m_scrollbarShown ? (kScrollbarWidth + kScrollbarGap) : 0.0f;

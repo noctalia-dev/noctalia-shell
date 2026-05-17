@@ -75,7 +75,7 @@ namespace {
       row->setAlign(FlexAlign::Center);
       row->setGap(Style::spaceMd * scale);
       row->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
-      row->setRadius(Style::radiusMd * scale);
+      row->setRadius(Style::scaledRadiusMd(scale));
       m_row = static_cast<Flex*>(addChild(std::move(row)));
 
       auto actionLabel = std::make_unique<Label>();
@@ -607,6 +607,9 @@ void LauncherPanel::openAppActionsMenu(std::size_t index, float anchorX, float a
   constexpr float kMenuWidth = 240.0f;
   const float menuWidth = kMenuWidth * scale;
 
+  if (m_config != nullptr) {
+    m_actionsMenu->setShadowConfig(m_config->config().shell.shadow);
+  }
   PanelManager::instance().beginAttachedPopup(parentCtx->surface);
   PanelManager::instance().setActivePopup(m_actionsMenu.get());
 

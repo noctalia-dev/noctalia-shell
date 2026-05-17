@@ -406,7 +406,7 @@ namespace settings {
     closeBtn->setMinWidth(Style::controlHeightSm * m_scale);
     closeBtn->setMinHeight(Style::controlHeightSm * m_scale);
     closeBtn->setPadding(Style::spaceXs * m_scale);
-    closeBtn->setRadius(Style::radiusMd * m_scale);
+    closeBtn->setRadius(Style::scaledRadiusMd(m_scale));
     closeBtn->setOnClick([this]() { DeferredCall::callLater([this]() { close(); }); });
     header->addChild(std::move(closeBtn));
     root->addChild(std::move(header));
@@ -474,7 +474,7 @@ namespace settings {
     backBtn->setFontSize(Style::fontSizeCaption * m_scale);
     backBtn->setMinHeight(Style::controlHeightSm * m_scale);
     backBtn->setPadding(Style::spaceXs * m_scale, Style::spaceSm * m_scale);
-    backBtn->setRadius(Style::radiusSm * m_scale);
+    backBtn->setRadius(Style::scaledRadiusSm(m_scale));
     backBtn->setOnClick([this]() {
       m_createFormVisible = false;
       m_createType.clear();
@@ -492,7 +492,7 @@ namespace settings {
     createBtn->setFontSize(Style::fontSizeCaption * m_scale);
     createBtn->setMinHeight(Style::controlHeightSm * m_scale);
     createBtn->setPadding(Style::spaceXs * m_scale, Style::spaceSm * m_scale);
-    createBtn->setRadius(Style::radiusSm * m_scale);
+    createBtn->setRadius(Style::scaledRadiusSm(m_scale));
     createBtn->setOnClick([this]() { finishCreateFlow(); });
     actionRow->addChild(std::move(createBtn));
     root->addChild(std::move(actionRow));

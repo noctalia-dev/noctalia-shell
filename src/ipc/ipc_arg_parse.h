@@ -2,7 +2,6 @@
 
 #include "util/string_utils.h"
 
-#include <cmath>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -23,16 +22,11 @@ namespace noctalia::ipc {
       return std::nullopt;
     }
 
-    std::size_t parsed = 0;
-    float amount = 0.0f;
-    try {
-      amount = std::stof(value, &parsed);
-    } catch (...) {
+    const auto parsed = StringUtils::parseDotDecimal<float>(value);
+    if (!parsed.has_value()) {
       return std::nullopt;
     }
-    if (parsed != value.size() || !std::isfinite(amount)) {
-      return std::nullopt;
-    }
+    const float amount = *parsed;
 
     if (isPercent || value.find('.') == std::string::npos) {
       if (amount < 0.0f || amount > maxPercent) {

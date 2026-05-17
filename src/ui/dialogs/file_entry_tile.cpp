@@ -45,12 +45,12 @@ FileEntryTile::FileEntryTile(float scale, ThumbnailService* thumbnails) : m_scal
   });
 
   auto background = std::make_unique<Box>();
-  background->setRadius(Style::radiusLg * scale);
+  background->setRadius(Style::scaledRadiusLg(scale));
   m_background = static_cast<Box*>(addChild(std::move(background)));
 
   auto preview = std::make_unique<Box>();
   preview->setCardStyle(scale);
-  preview->setRadius(Style::radiusMd * scale);
+  preview->setRadius(Style::scaledRadiusMd(scale));
   m_preview = static_cast<Box*>(addChild(std::move(preview)));
 
   auto image = std::make_unique<Image>();

@@ -18,7 +18,7 @@ public:
 private:
   void doLayout(Renderer& renderer) override;
   void doUpdate(Renderer& renderer) override;
-  void sync(Renderer& renderer);
+  bool sync();
   void applyShadow();
 
   const WeatherService* m_weather = nullptr;

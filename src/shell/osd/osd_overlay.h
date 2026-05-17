@@ -61,6 +61,7 @@ private:
     AnimationManager::Id hideAnimId = 0;
     bool showPending = false;
     bool visible = false;
+    float appliedCornerRadiusScale = -1.0f;
   };
 
   void ensureSurfaces();
@@ -76,5 +77,6 @@ private:
   OsdContent m_content;
   std::string m_lastPosition;
   float m_lastLayoutScale = 1.0f;
+  float m_lastCornerRadiusScale = 1.0f;
   std::vector<std::unique_ptr<Instance>> m_instances;
 };

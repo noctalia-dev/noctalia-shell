@@ -10,14 +10,16 @@
 #include "shell/panel/panel_manager.h"
 #include "shell/tray/tray_identifier.h"
 #include "ui/controls/context_menu.h"
+#include "ui/controls/scroll_view.h"
+#include "ui/popup_chrome.h"
 #include "ui/style.h"
-#include "util/string_utils.h"
 #include "wayland/layer_surface.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
 #include "xdg-shell-client-protocol.h"
 
 #include <algorithm>
+#include <cmath>
 #include <optional>
 #include <string>
 
@@ -26,6 +28,8 @@ namespace {
   constexpr Logger kLog("tray");
 
   constexpr float kMenuWidth = 246.0f;
+  constexpr std::size_t kTrayMenuVisibleItems = 20;
+  constexpr float kScrollGutter = 14.0f;
   constexpr std::int32_t kPinToggleEntryId = -2147000000;
 
   constexpr float kSurfaceWidth = kMenuWidth;
@@ -56,7 +60,9 @@ namespace {
     return it->second.getBool("drawer", false);
   }
 
-  std::size_t visibleEntryLimit(std::size_t entryCount) { return std::max<std::size_t>(1, entryCount); }
+  std::size_t visibleEntryLimit(std::size_t entryCount) {
+    return std::max<std::size_t>(1, std::min<std::size_t>(entryCount, kTrayMenuVisibleItems));
+  }
 
   // Convert an icon name like "audio-input-microphone-symbolic" to a readable label like "Audio Input Microphone".
   std::string iconNameToLabel(std::string_view iconName) {
@@ -80,57 +86,6 @@ namespace {
       }
     }
     return out;
-  }
-
-  using tray::identifierVariants;
-
-  bool tokenMatchesItem(std::string_view token, const TrayItemInfo& item) {
-    if (token.empty()) {
-      return false;
-    }
-    const auto normalizedToken = StringUtils::toLower(token);
-
-    std::vector<std::string> candidates;
-    auto appendVariants = [&candidates](std::string_view text) {
-      for (const auto& variant : identifierVariants(text)) {
-        if (std::ranges::find(candidates, variant) == candidates.end()) {
-          candidates.push_back(variant);
-        }
-      }
-    };
-    appendVariants(item.id);
-    appendVariants(item.busName);
-    appendVariants(item.itemName);
-    appendVariants(item.processName);
-    appendVariants(item.title);
-    appendVariants(item.objectPath);
-    appendVariants(item.iconName);
-    appendVariants(item.overlayIconName);
-    appendVariants(item.attentionIconName);
-    return std::ranges::find(candidates, normalizedToken) != candidates.end();
-  }
-
-  bool isUniqueBusName(std::string_view value) { return !value.empty() && value.front() == ':'; }
-
-  bool looksGenericStatusItemName(std::string_view value) {
-    if (value.empty()) {
-      return true;
-    }
-    const auto lower = StringUtils::toLower(value);
-    return lower.find("status_icon") != std::string::npos || lower.find("statusnotifieritem") != std::string::npos ||
-           lower.find("statusnotifier") != std::string::npos || lower.find("status-notifier") != std::string::npos ||
-           lower.find("status notifier") != std::string::npos;
-  }
-
-  std::string lastPathSegment(std::string_view value) {
-    if (value.empty()) {
-      return {};
-    }
-    const auto slash = value.find_last_of('/');
-    if (slash == std::string::npos || slash + 1 >= value.size()) {
-      return std::string(value);
-    }
-    return std::string(value.substr(slash + 1));
   }
 
   std::optional<BarConfig> resolveTrayBarConfig(ConfigService* config, WaylandConnection* wayland, wl_output* output) {
@@ -172,6 +127,8 @@ namespace {
     std::uint32_t gravity = XDG_POSITIONER_GRAVITY_TOP;
     std::int32_t offsetX = 0;
     std::int32_t offsetY = 2;
+    popup_chrome::Attachment chromeAttachment{.horizontal = popup_chrome::HorizontalAttachment::Center,
+                                              .vertical = popup_chrome::VerticalAttachment::Top};
     ContextSubmenuDirection submenuDirection = ContextSubmenuDirection::Right;
   };
 
@@ -191,6 +148,10 @@ namespace {
       placement.gravity = XDG_POSITIONER_GRAVITY_TOP;
       placement.offsetX = 0;
       placement.offsetY = -kGap;
+      placement.chromeAttachment = popup_chrome::Attachment{
+          .horizontal = popup_chrome::HorizontalAttachment::Center,
+          .vertical = popup_chrome::VerticalAttachment::Bottom,
+      };
       placement.submenuDirection = ContextSubmenuDirection::Right;
       return placement;
     }
@@ -200,6 +161,10 @@ namespace {
       placement.gravity = XDG_POSITIONER_GRAVITY_RIGHT;
       placement.offsetX = kGap;
       placement.offsetY = 0;
+      placement.chromeAttachment = popup_chrome::Attachment{
+          .horizontal = popup_chrome::HorizontalAttachment::Left,
+          .vertical = popup_chrome::VerticalAttachment::Center,
+      };
       placement.submenuDirection = ContextSubmenuDirection::Right;
       return placement;
     }
@@ -209,6 +174,10 @@ namespace {
       placement.gravity = XDG_POSITIONER_GRAVITY_LEFT;
       placement.offsetX = -kGap;
       placement.offsetY = 0;
+      placement.chromeAttachment = popup_chrome::Attachment{
+          .horizontal = popup_chrome::HorizontalAttachment::Right,
+          .vertical = popup_chrome::VerticalAttachment::Center,
+      };
       placement.submenuDirection = ContextSubmenuDirection::Left;
       return placement;
     }
@@ -217,8 +186,16 @@ namespace {
     placement.gravity = XDG_POSITIONER_GRAVITY_BOTTOM;
     placement.offsetX = 0;
     placement.offsetY = kGap;
+    placement.chromeAttachment = popup_chrome::Attachment{
+        .horizontal = popup_chrome::HorizontalAttachment::Center,
+        .vertical = popup_chrome::VerticalAttachment::Top,
+    };
     placement.submenuDirection = ContextSubmenuDirection::Right;
     return placement;
+  }
+
+  ShellConfig::ShadowConfig popupShadowConfig(ConfigService* config) {
+    return config != nullptr ? config->config().shell.shadow : ShellConfig::ShadowConfig{};
   }
 
 } // namespace
@@ -384,6 +361,13 @@ bool TrayMenu::onPointerEvent(const PointerEvent& event) {
       }
       break;
     case PointerEvent::Type::Axis:
+      if (onSub || sub->pointerInside) {
+        if (onSub)
+          sub->pointerInside = true;
+        subConsumed = sub->inputDispatcher.pointerAxis(static_cast<float>(event.sx), static_cast<float>(event.sy),
+                                                       event.axis, event.axisSource, event.axisValue,
+                                                       event.axisDiscrete, event.axisValue120, event.axisLines);
+      }
       break;
     }
 
@@ -442,6 +426,14 @@ bool TrayMenu::onPointerEvent(const PointerEvent& event) {
     }
     break;
   case PointerEvent::Type::Axis:
+    if (onThisSurface || inst->pointerInside) {
+      if (onThisSurface) {
+        inst->pointerInside = true;
+      }
+      consumed = inst->inputDispatcher.pointerAxis(static_cast<float>(event.sx), static_cast<float>(event.sy),
+                                                   event.axis, event.axisSource, event.axisValue, event.axisDiscrete,
+                                                   event.axisValue120, event.axisLines);
+    }
     break;
   }
 
@@ -618,6 +610,7 @@ void TrayMenu::ensureSurface() {
   auto inst = std::make_unique<MenuInstance>();
   inst->output = output;
   inst->surface = std::make_unique<PopupSurface>(*m_wayland);
+  inst->surface->setRenderContext(m_renderContext);
   auto* instPtr = inst.get();
 
   inst->surface->setConfigureCallback(
@@ -626,10 +619,9 @@ void TrayMenu::ensureSurface() {
     prepareMainMenuFrame(*instPtr, needsUpdate, needsLayout);
   });
   inst->surface->setDismissedCallback([this]() { close(); });
-  inst->surface->setRenderContext(m_renderContext);
 
-  const auto surfaceWidth = static_cast<uint32_t>(kSurfaceWidth);
-  const auto surfaceHeight = surfaceHeightPx();
+  const auto chrome =
+      popup_chrome::computeGeometry(kSurfaceWidth, static_cast<float>(surfaceHeightPx()), popupShadowConfig(m_config));
   PopupPlacement placement{};
   if (const auto bar = resolveTrayBarConfig(m_config, m_wayland, output); bar.has_value()) {
     placement = popupPlacementForBar(*bar, anchorX, anchorY);
@@ -644,13 +636,14 @@ void TrayMenu::ensureSurface() {
   auto* grabService = m_wayland->focusGrabService();
   const bool useFocusGrab = grabService != nullptr && grabService->available();
   inst->submenuDirection = placement.submenuDirection;
+  inst->chrome = chrome;
   auto popupConfig = PopupSurfaceConfig{
       .anchorX = anchorX,
       .anchorY = anchorY,
       .anchorWidth = placement.anchorWidth,
       .anchorHeight = placement.anchorHeight,
-      .width = surfaceWidth,
-      .height = surfaceHeight,
+      .width = chrome.surfaceWidth,
+      .height = chrome.surfaceHeight,
       .anchor = placement.anchor,
       .gravity = placement.gravity,
       .constraintAdjustment = kPopupConstraintAdjust,
@@ -659,12 +652,14 @@ void TrayMenu::ensureSurface() {
       .serial = serial,
       .grab = !useFocusGrab,
   };
+  popup_chrome::applyToConfig(popupConfig, chrome, placement.chromeAttachment);
 
   if (!inst->surface->initialize(parentLayerSurface, output, popupConfig)) {
     kLog.debug("tray menu: failed to create popup surface");
     return;
   }
 
+  popup_chrome::setContentInputRegion(*inst->surface, inst->chrome);
   inst->wlSurface = inst->surface->wlSurface();
   m_instance = std::move(inst);
 
@@ -704,16 +699,17 @@ void TrayMenu::resizeMainSurfaceToEntries() {
     return;
   }
 
-  const auto desiredWidth = static_cast<std::uint32_t>(kSurfaceWidth);
-  const auto desiredHeight = surfaceHeightPx();
-  if (desiredHeight == 0) {
-    return;
-  }
+  const auto chrome =
+      popup_chrome::computeGeometry(kSurfaceWidth, static_cast<float>(surfaceHeightPx()), popupShadowConfig(m_config));
+  const auto desiredWidth = chrome.surfaceWidth;
+  const auto desiredHeight = chrome.surfaceHeight;
   if (m_instance->surface->width() == desiredWidth && m_instance->surface->height() == desiredHeight) {
     return;
   }
 
   closeSubmenu();
+  m_instance->chrome = chrome;
+  popup_chrome::setContentInputRegion(*m_instance->surface, m_instance->chrome);
   if (!m_instance->surface->resize(desiredWidth, desiredHeight)) {
     m_instance->surface->requestLayout();
   }
@@ -769,6 +765,7 @@ void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
 
   inst.sceneRoot = std::make_unique<Node>();
   inst.sceneRoot->setSize(w, h);
+  (void)popup_chrome::addShadow(*inst.sceneRoot, inst.chrome, popupShadowConfig(m_config), Style::scaledRadiusLg());
 
   std::vector<ContextMenuControlEntry> entries;
   entries.reserve(m_entries.size());
@@ -785,9 +782,22 @@ void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
     });
   }
 
+  const bool useScrollbar = entries.size() > kTrayMenuVisibleItems;
+  const float menuWidth = std::max(1.0f, inst.chrome.contentWidth - (useScrollbar ? kScrollGutter : 0.0f));
+
+  auto scrollView = std::make_unique<ScrollView>();
+  scrollView->setPosition(inst.chrome.contentX(), inst.chrome.contentY());
+  scrollView->setSize(inst.chrome.contentWidth, inst.chrome.contentHeight);
+  scrollView->setViewportPaddingH(0.0f);
+  scrollView->setViewportPaddingV(0.0f);
+  scrollView->clearFill();
+  scrollView->clearBorder();
+  scrollView->setRadius(0.0f);
+  scrollView->bindState(&inst.scrollState);
+
   auto menu = std::make_unique<ContextMenuControl>();
-  menu->setMenuWidth(w);
-  menu->setMaxVisible(visibleEntryLimit(m_entries.size()));
+  menu->setMenuWidth(menuWidth);
+  menu->setMaxVisible(std::max<std::size_t>(1, entries.size()));
   menu->setSubmenuDirection(inst.submenuDirection);
   menu->setEntries(std::move(entries));
   menu->setRedrawCallback([&inst]() {
@@ -817,10 +827,9 @@ void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
   });
   menu->setOnSubmenuOpen(
       [this](const ContextMenuControlEntry& entry, float rowCenterY) { openSubmenu(entry.id, rowCenterY); });
-  menu->setPosition(0.0f, 0.0f);
-  menu->setSize(w, h);
-  menu->layout(*m_renderContext);
-  inst.sceneRoot->addChild(std::move(menu));
+  scrollView->content()->addChild(std::move(menu));
+  scrollView->layout(*m_renderContext);
+  inst.sceneRoot->addChild(std::move(scrollView));
 
   inst.inputDispatcher.setSceneRoot(inst.sceneRoot.get());
   inst.inputDispatcher.setCursorShapeCallback(
@@ -853,7 +862,7 @@ bool TrayMenu::activeItemPinned() const {
   const auto pinned =
       cfgIt != m_config->config().widgets.end() ? cfgIt->second.getStringList("pinned") : std::vector<std::string>{};
   for (const auto& token : pinned) {
-    if (tokenMatchesItem(token, *item)) {
+    if (tray::tokenMatchesItem(token, *item)) {
       return true;
     }
   }
@@ -872,38 +881,31 @@ bool TrayMenu::toggleActiveItemPinned() {
   auto cfgIt = m_config->config().widgets.find("tray");
   std::vector<std::string> pinned =
       cfgIt != m_config->config().widgets.end() ? cfgIt->second.getStringList("pinned") : std::vector<std::string>{};
+  std::erase_if(pinned, [](const std::string& token) {
+    return tray::looksGenericStatusItemName(token) || tray::isTransientUniqueIdentifier(token);
+  });
   const bool currentlyPinned =
-      std::ranges::any_of(pinned, [&](const std::string& token) { return tokenMatchesItem(token, *item); });
+      std::ranges::any_of(pinned, [&](const std::string& token) { return tray::tokenMatchesItem(token, *item); });
 
   if (currentlyPinned) {
-    std::erase_if(pinned, [&](const std::string& token) { return tokenMatchesItem(token, *item); });
+    std::erase_if(pinned, [&](const std::string& token) { return tray::tokenMatchesItem(token, *item); });
+    kLog.info("tray pin removed token for id={} itemName='{}' title='{}' sniTitle='{}' icon='{}' process='{}' "
+              "bus='{}'",
+              item->id, item->itemName, item->title, item->statusNotifierTitle, item->iconName, item->processName,
+              item->busName);
   } else {
-    std::string token;
-    // Persist stable human-readable tokens; avoid transient :1.xxx ids.
-    if (!looksGenericStatusItemName(item->itemName)) {
-      token = item->itemName;
-    } else if (!item->iconName.empty()) {
-      token = item->iconName;
-    } else if (!item->overlayIconName.empty()) {
-      token = item->overlayIconName;
-    } else if (!item->attentionIconName.empty()) {
-      token = item->attentionIconName;
-    } else if (!looksGenericStatusItemName(item->title)) {
-      token = item->title;
-    } else if (!looksGenericStatusItemName(item->processName)) {
-      token = item->processName;
-    } else if (const auto objectToken = lastPathSegment(item->objectPath);
-               !objectToken.empty() && !looksGenericStatusItemName(objectToken) && !isUniqueBusName(objectToken)) {
-      token = objectToken;
-    } else if (const auto idToken = lastPathSegment(item->id);
-               !idToken.empty() && !looksGenericStatusItemName(idToken) && !isUniqueBusName(idToken)) {
-      token = idToken;
-    } else if (!isUniqueBusName(item->busName)) {
-      token = item->busName;
-    }
+    std::string token = tray::preferredPinToken(*item);
     if (token.empty()) {
-      token = item->id;
+      kLog.info("tray pin skipped: no stable token for id={} itemName='{}' title='{}' sniTitle='{}' icon='{}' "
+                "process='{}' bus='{}' objectPath='{}'",
+                item->id, item->itemName, item->title, item->statusNotifierTitle, item->iconName, item->processName,
+                item->busName, item->objectPath);
+      return false;
     }
+    kLog.info("tray pin added token='{}' for id={} itemName='{}' title='{}' sniTitle='{}' icon='{}' process='{}' "
+              "bus='{}'",
+              token, item->id, item->itemName, item->title, item->statusNotifierTitle, item->iconName,
+              item->processName, item->busName);
     pinned.push_back(token);
   }
 
@@ -950,40 +952,69 @@ void TrayMenu::openSubmenu(std::int32_t parentEntryId, float rowCenterY) {
   m_tray->notifyMenuOpened(m_activeItemId, parentEntryId);
 
   // Anchor rect is in the main popup's coordinate space (0,0 = top-left of main popup surface)
-  const auto mainWidth = static_cast<std::int32_t>(m_instance->surface->width());
+  const auto mainContentX = static_cast<std::int32_t>(std::lround(m_instance->chrome.contentX()));
+  const auto mainWidth = static_cast<std::int32_t>(std::lround(m_instance->chrome.contentWidth));
+  const auto mainX = m_instance->surface->configuredX() + mainContentX;
   const auto rowTop = static_cast<std::int32_t>(rowCenterY - Style::controlHeightSm * 0.5f);
   const auto rowH = static_cast<std::int32_t>(Style::controlHeightSm);
   constexpr std::int32_t kSubGap = 4;
 
-  const auto surfaceWidth = static_cast<uint32_t>(kSurfaceWidth);
-  const auto surfaceHeight = submenuHeightPx();
+  const auto chrome =
+      popup_chrome::computeGeometry(kSurfaceWidth, static_cast<float>(submenuHeightPx()), popupShadowConfig(m_config));
 
-  const bool isRight = (m_instance->submenuDirection == ContextSubmenuDirection::Right);
-  const std::int32_t anchorX = isRight ? mainWidth : 0;
+  const auto* wlOutput = m_wayland->findOutputByWl(m_instance->output);
+  const std::int32_t outputWidth = (wlOutput != nullptr && wlOutput->logicalWidth > 0)
+                                       ? wlOutput->logicalWidth
+                                       : static_cast<std::int32_t>(chrome.surfaceWidth);
+
+  bool isRight = (m_instance->submenuDirection == ContextSubmenuDirection::Right);
+  const std::int32_t submenuExtent = static_cast<std::int32_t>(chrome.surfaceWidth) + kSubGap;
+  if (isRight) {
+    if (mainX + mainWidth + submenuExtent > outputWidth) {
+      isRight = false;
+    }
+  } else {
+    if (mainX - submenuExtent < 0) {
+      isRight = true;
+    }
+  }
+
+  const std::int32_t anchorX = isRight ? mainContentX + mainWidth : mainContentX;
+  const std::int32_t anchorY = static_cast<std::int32_t>(std::lround(m_instance->chrome.contentY())) + rowTop;
   const std::uint32_t anchor = isRight ? XDG_POSITIONER_ANCHOR_TOP_RIGHT : XDG_POSITIONER_ANCHOR_TOP_LEFT;
   const std::uint32_t gravity = isRight ? XDG_POSITIONER_GRAVITY_BOTTOM_RIGHT : XDG_POSITIONER_GRAVITY_BOTTOM_LEFT;
   const std::int32_t offsetX = isRight ? kSubGap : -kSubGap;
   const auto subDir = isRight ? ContextSubmenuDirection::Right : ContextSubmenuDirection::Left;
+  const auto chromeAttachment = isRight
+                                    ? popup_chrome::Attachment{
+                                          .horizontal = popup_chrome::HorizontalAttachment::Left,
+                                          .vertical = popup_chrome::VerticalAttachment::Top,
+                                      }
+                                    : popup_chrome::Attachment{
+                                          .horizontal = popup_chrome::HorizontalAttachment::Right,
+                                          .vertical = popup_chrome::VerticalAttachment::Top,
+                                      };
 
   auto inst = std::make_unique<MenuInstance>();
   inst->output = m_instance->output;
   inst->surface = std::make_unique<PopupSurface>(*m_wayland);
+  inst->surface->setRenderContext(m_renderContext);
   inst->submenuDirection = subDir;
+  inst->chrome = chrome;
   auto* instPtr = inst.get();
 
   inst->surface->setConfigureCallback([instPtr](uint32_t /*w*/, uint32_t /*h*/) { instPtr->surface->requestLayout(); });
   inst->surface->setPrepareFrameCallback(
       [this, instPtr](bool needsUpdate, bool needsLayout) { prepareSubmenuFrame(*instPtr, needsUpdate, needsLayout); });
   inst->surface->setDismissedCallback([this]() { closeSubmenu(); });
-  inst->surface->setRenderContext(m_renderContext);
 
   auto popupConfig = PopupSurfaceConfig{
       .anchorX = anchorX,
-      .anchorY = rowTop,
+      .anchorY = anchorY,
       .anchorWidth = 1,
       .anchorHeight = rowH,
-      .width = surfaceWidth,
-      .height = surfaceHeight,
+      .width = chrome.surfaceWidth,
+      .height = chrome.surfaceHeight,
       .anchor = anchor,
       .gravity = gravity,
       .constraintAdjustment = kPopupConstraintAdjust,
@@ -992,6 +1023,7 @@ void TrayMenu::openSubmenu(std::int32_t parentEntryId, float rowCenterY) {
       .serial = m_wayland->lastInputSerial(),
       .grab = (m_focusGrab == nullptr),
   };
+  popup_chrome::applyToConfig(popupConfig, chrome, chromeAttachment);
 
   xdg_surface* parentXdg = m_instance->surface->xdgSurface();
   if (!inst->surface->initializeAsChild(parentXdg, m_instance->output, popupConfig)) {
@@ -1001,6 +1033,7 @@ void TrayMenu::openSubmenu(std::int32_t parentEntryId, float rowCenterY) {
     return;
   }
 
+  popup_chrome::setContentInputRegion(*inst->surface, inst->chrome);
   inst->wlSurface = inst->surface->wlSurface();
   m_submenuInstance = std::move(inst);
 
@@ -1039,6 +1072,7 @@ void TrayMenu::buildSubmenuScene(MenuInstance& inst, uint32_t width, uint32_t he
 
   inst.sceneRoot = std::make_unique<Node>();
   inst.sceneRoot->setSize(w, h);
+  (void)popup_chrome::addShadow(*inst.sceneRoot, inst.chrome, popupShadowConfig(m_config), Style::scaledRadiusLg());
 
   std::vector<ContextMenuControlEntry> entries;
   entries.reserve(m_submenuEntries.size());
@@ -1055,9 +1089,22 @@ void TrayMenu::buildSubmenuScene(MenuInstance& inst, uint32_t width, uint32_t he
     });
   }
 
+  const bool useScrollbar = entries.size() > kTrayMenuVisibleItems;
+  const float menuWidth = std::max(1.0f, inst.chrome.contentWidth - (useScrollbar ? kScrollGutter : 0.0f));
+
+  auto scrollView = std::make_unique<ScrollView>();
+  scrollView->setPosition(inst.chrome.contentX(), inst.chrome.contentY());
+  scrollView->setSize(inst.chrome.contentWidth, inst.chrome.contentHeight);
+  scrollView->setViewportPaddingH(0.0f);
+  scrollView->setViewportPaddingV(0.0f);
+  scrollView->clearFill();
+  scrollView->clearBorder();
+  scrollView->setRadius(0.0f);
+  scrollView->bindState(&inst.scrollState);
+
   auto menu = std::make_unique<ContextMenuControl>();
-  menu->setMenuWidth(w);
-  menu->setMaxVisible(visibleEntryLimit(m_submenuEntries.size()));
+  menu->setMenuWidth(menuWidth);
+  menu->setMaxVisible(std::max<std::size_t>(1, entries.size()));
   menu->setSubmenuDirection(inst.submenuDirection);
   menu->setEntries(std::move(entries));
   menu->setRedrawCallback([&inst]() {
@@ -1077,10 +1124,9 @@ void TrayMenu::buildSubmenuScene(MenuInstance& inst, uint32_t width, uint32_t he
       closeTrayDrawerPanelIfOpen();
     });
   });
-  menu->setPosition(0.0f, 0.0f);
-  menu->setSize(w, h);
-  menu->layout(*m_renderContext);
-  inst.sceneRoot->addChild(std::move(menu));
+  scrollView->content()->addChild(std::move(menu));
+  scrollView->layout(*m_renderContext);
+  inst.sceneRoot->addChild(std::move(scrollView));
 
   inst.inputDispatcher.setSceneRoot(inst.sceneRoot.get());
   inst.inputDispatcher.setCursorShapeCallback(

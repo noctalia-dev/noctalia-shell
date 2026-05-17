@@ -99,15 +99,14 @@ void main() {
     float inner_distance = rounded_rect_distance(centered, inner_half, inner_radius);
     float inner_coverage = 1.0 - smoothstep(-aa, aa, inner_distance);
 
+    // Match the rect shader: the border is a stroke ring, not a full-area
+    // backplane behind transparent image pixels.
     vec3 border_pm = u_border_color.rgb * u_border_color.a * u_opacity;
     float border_a = u_border_color.a * u_opacity;
     vec3 fill_pm = fill.rgb * fill.a;
 
-    vec3 combined_rgb = fill_pm + border_pm * (1.0 - fill.a);
-    float combined_a = fill.a + border_a * (1.0 - fill.a);
-
-    vec3 interior_rgb = mix(border_pm, combined_rgb, inner_coverage);
-    float interior_a = mix(border_a, combined_a, inner_coverage);
+    vec3 interior_rgb = mix(border_pm, fill_pm, inner_coverage);
+    float interior_a = mix(border_a, fill.a, inner_coverage);
 
     float out_a = interior_a * outer_coverage;
     gl_FragColor = vec4(interior_rgb * outer_coverage, out_a);

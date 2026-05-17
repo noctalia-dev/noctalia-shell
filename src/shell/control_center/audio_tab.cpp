@@ -549,10 +549,6 @@ namespace {
     return result;
   }
 
-  std::string resolveProgramAppName(const AudioNode& node, const MprisPlayerInfo* player) {
-    return resolveProgramDisplayName(node, player).displayName;
-  }
-
   void logDesktopEntryMatchIfChanged(std::string& lastKey, std::uint32_t nodeId, const DesktopEntryMatch& desk) {
     if (desk.entry == nullptr || desk.matchedVia == nullptr) {
       return;
@@ -722,7 +718,7 @@ namespace {
       setGap(Style::spaceSm * scale);
       setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
       setMinHeight(Style::controlHeightLg * scale);
-      setRadius(Style::radiusMd * scale);
+      setRadius(Style::scaledRadiusMd(scale));
       setFill(colorSpecFromRole(ColorRole::Surface));
       clearBorder();
 
@@ -835,10 +831,9 @@ namespace {
           m_onCommitVolume(std::move(onCommitVolume)) {
       setDirection(FlexDirection::Vertical);
       setAlign(FlexAlign::Stretch);
-      setGap(Style::spaceXs * scale);
       setPadding(Style::spaceXs * scale, Style::spaceMd * scale);
       setMinHeight((Style::controlHeightLg + Style::spaceXs) * scale);
-      setRadius(Style::radiusMd * scale);
+      setRadius(Style::scaledRadiusMd(scale));
       setFill(colorSpecFromRole(ColorRole::Surface));
       clearBorder();
 
@@ -854,7 +849,7 @@ namespace {
 
       auto icon = std::make_unique<Image>();
       icon->setFit(ImageFit::Contain);
-      icon->setRadius(Style::radiusMd * scale);
+      icon->setRadius(Style::scaledRadiusMd(scale));
       icon->setSize(m_iconSize, m_iconSize);
       icon->setVisible(false);
       m_icon = icon.get();
@@ -937,7 +932,7 @@ namespace {
       mute->setMinWidth(Style::controlHeightSm * scale);
       mute->setMinHeight(Style::controlHeightSm * scale);
       mute->setPadding(Style::spaceXs * scale);
-      mute->setRadius(Style::radiusMd * scale);
+      mute->setRadius(Style::scaledRadiusMd(scale));
       mute->setOnClick([this]() {
         if (m_audio == nullptr) {
           return;
@@ -954,8 +949,8 @@ namespace {
     void doLayout(Renderer& renderer) override {
       if (m_icon != nullptr) {
         // Load icons lazily during layout.
-        const bool iconKeyChanged = m_lastIconKey != m_iconKey;
-        if (iconKeyChanged && !m_iconKey.empty()) {
+        const bool iconIdentityChanged = m_lastLoadedIconIdentity != m_iconIdentityKey;
+        if (iconIdentityChanged && !m_iconIdentityKey.empty() && !m_iconCandidates.empty()) {
           bool loaded = false;
           for (const std::string& candidate : m_iconCandidates) {
             const auto& resolved = g_iconResolver.resolve(candidate);
@@ -977,16 +972,20 @@ namespace {
             m_icon->setVisible(false);
             m_lastIconPath.clear();
           }
-          m_lastIconKey = m_iconKey;
+          m_lastLoadedIconIdentity = m_iconIdentityKey;
         }
       }
 
-      // Bound labels to protect row layout.
+      // Bound labels to protect row layout; only react when the row width actually changes.
       if (m_appNameLabel != nullptr) {
-        const float textMax = std::max(80.0f, width() - m_iconSize - gap() - paddingLeft() - paddingRight());
-        m_appNameLabel->setMaxWidth(textMax);
-        if (m_subtitleLabel != nullptr) {
-          m_subtitleLabel->setMaxWidth(textMax);
+        const float rowWidth = width();
+        if (std::abs(rowWidth - m_lastLabelLayoutWidth) >= 0.5f) {
+          m_lastLabelLayoutWidth = rowWidth;
+          const float textMax = std::max(80.0f, rowWidth - m_iconSize - gap() - paddingLeft() - paddingRight());
+          m_appNameLabel->setMaxWidth(textMax);
+          if (m_subtitleLabel != nullptr) {
+            m_subtitleLabel->setMaxWidth(textMax);
+          }
         }
       }
 
@@ -1017,12 +1016,19 @@ namespace {
         title = nowPlayingLabel(player);
       }
 
-      m_appNameLabel->setText((isDefault ? "• " : "") + resolvedAppName);
-      if (!title.empty() && title != resolvedAppName) {
-        m_subtitleLabel->setVisible(true);
-        m_subtitleLabel->setText(title);
-      } else {
-        m_subtitleLabel->setVisible(false);
+      const std::string appNameText = (isDefault ? "• " : "") + resolvedAppName;
+      if (m_appNameLabel->text() != appNameText) {
+        m_appNameLabel->setText(appNameText);
+      }
+      const bool showSubtitle = !title.empty() && title != resolvedAppName;
+      if (m_subtitleLabel->visible() != showSubtitle) {
+        m_subtitleLabel->setVisible(showSubtitle);
+      }
+      if (showSubtitle) {
+        if (m_subtitleLabel->text() != title) {
+          m_subtitleLabel->setText(title);
+        }
+      } else if (!m_subtitleLabel->text().empty()) {
         m_subtitleLabel->setText("");
       }
 
@@ -1049,12 +1055,14 @@ namespace {
         }
         m_syncing = false;
         if (m_valueLabel != nullptr) {
-          m_valueLabel->setText(std::to_string(static_cast<int>(std::round(clampedVolume * 100.0f))) + "%");
+          const std::string nextValue = std::to_string(static_cast<int>(std::round(clampedVolume * 100.0f))) + "%";
+          if (m_valueLabel->text() != nextValue) {
+            m_valueLabel->setText(nextValue);
+          }
         }
       }
 
-      m_iconCandidates.clear();
-      m_iconKey.clear();
+      std::vector<std::string> candidates;
       auto sanitize = [](std::string s) {
         const auto lastSlash = s.find_last_of('/');
         if (lastSlash != std::string::npos) {
@@ -1088,29 +1096,42 @@ namespace {
       const std::string candidateFallback =
           sanitize(node.applicationBinary.empty() ? node.name : node.applicationBinary);
       if (!candidateApp.empty()) {
-        pushUnique(m_iconCandidates, candidateApp);
-        pushUnique(m_iconCandidates, candidateApp + ".desktop");
+        pushUnique(candidates, candidateApp);
+        pushUnique(candidates, candidateApp + ".desktop");
       }
       if (!candidateFallback.empty() && candidateFallback != candidateApp) {
-        pushUnique(m_iconCandidates, candidateFallback);
-        pushUnique(m_iconCandidates, candidateFallback + ".desktop");
+        pushUnique(candidates, candidateFallback);
+        pushUnique(candidates, candidateFallback + ".desktop");
       }
       if (!candidateId.empty() && candidateId != candidateApp && candidateId != candidateFallback) {
-        pushUnique(m_iconCandidates, candidateId);
-        pushUnique(m_iconCandidates, candidateId + ".desktop");
+        pushUnique(candidates, candidateId);
+        pushUnique(candidates, candidateId + ".desktop");
       }
-      appendDesktopIconCandidates(m_iconCandidates, node, resolvedAppName);
-      appendFallbackIconCandidates(m_iconCandidates, node);
+      appendDesktopIconCandidates(candidates, node, resolvedAppName);
+      appendFallbackIconCandidates(candidates, node);
       // Keep raw node icon as final fallback (Electron streams often report Chromium icon names).
       if (!candidateIcon.empty()) {
-        pushUnique(m_iconCandidates, candidateIcon);
-        pushUnique(m_iconCandidates, candidateIcon + ".desktop");
+        pushUnique(candidates, candidateIcon);
+        pushUnique(candidates, candidateIcon + ".desktop");
       }
-      for (const auto& candidate : m_iconCandidates) {
-        m_iconKey += candidate;
-        m_iconKey.push_back('|');
+      std::string nextIconIdentity;
+      nextIconIdentity.reserve(128);
+      for (const auto& candidate : candidates) {
+        nextIconIdentity += candidate;
+        nextIconIdentity.push_back('|');
       }
-      m_iconKey += title;
+      if (nextIconIdentity != m_iconIdentityKey) {
+        m_iconIdentityKey = std::move(nextIconIdentity);
+        m_iconCandidates = std::move(candidates);
+        m_lastLoadedIconIdentity.clear();
+        m_lastIconPath.clear();
+      }
+    }
+
+    void setValueLabelMinWidth(float minWidth) {
+      if (m_valueLabel != nullptr) {
+        m_valueLabel->setMinWidth(minWidth);
+      }
     }
 
     [[nodiscard]] std::uint32_t id() const noexcept { return m_id; }
@@ -1128,10 +1149,11 @@ namespace {
     Label* m_subtitleLabel = nullptr;
     Flex* m_textCol = nullptr;
 
-    std::string m_iconKey;
-    std::string m_lastIconKey;
+    std::string m_iconIdentityKey;
+    std::string m_lastLoadedIconIdentity;
     std::string m_lastIconPath;
     std::vector<std::string> m_iconCandidates;
+    float m_lastLabelLayoutWidth = -1.0f;
     std::string m_programResolutionLogKey;
     std::string m_desktopMatchLogKey;
 
@@ -1166,7 +1188,7 @@ namespace {
     card->setAlign(FlexAlign::Start);
     card->setGap(Style::spaceXs * scale);
     card->setPadding(Style::spaceMd * scale);
-    card->setRadius(Style::radiusMd * scale);
+    card->setRadius(Style::scaledRadiusMd(scale));
     card->setFill(colorSpecFromRole(ColorRole::Surface));
     card->clearBorder();
 
@@ -1255,6 +1277,9 @@ void AudioTab::openDeviceMenu(bool isOutput) {
   const float scale = contentScale();
   const float menuWidth = std::min(280.0f * scale, anchor->width());
 
+  if (m_config != nullptr) {
+    m_deviceMenuPopup->setShadowConfig(m_config->config().shell.shadow);
+  }
   PanelManager::instance().beginAttachedPopup(parentCtx->surface);
   PanelManager::instance().setActivePopup(m_deviceMenuPopup.get());
 
@@ -1310,7 +1335,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   m_volumeColumn = volumeRow.get();
 
   auto outputVolumeCard = std::make_unique<Flex>();
-  applySectionCardStyle(*outputVolumeCard, scale);
+  applySectionCardStyle(*outputVolumeCard, scale, panelCardOpacity());
   outputVolumeCard->setFlexGrow(1.0f);
   m_outputVolumeCard = outputVolumeCard.get();
 
@@ -1333,7 +1358,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   outputMenuButton->setVariant(ButtonVariant::Ghost);
   outputMenuButton->setGlyphSize(Style::fontSizeCaption * scale);
   outputMenuButton->setPadding(Style::spaceXs * scale);
-  outputMenuButton->setRadius(Style::radiusMd * scale);
+  outputMenuButton->setRadius(Style::scaledRadiusMd(scale));
   outputMenuButton->setEnabled(false);
   outputMenuButton->setOnClick([this]() {
     const bool wasOpen = m_deviceMenuPopup != nullptr && m_deviceMenuPopup->isOpen();
@@ -1398,7 +1423,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   outputMuteButton->setMinWidth(Style::controlHeightSm * scale);
   outputMuteButton->setMinHeight(Style::controlHeightSm * scale);
   outputMuteButton->setPadding(Style::spaceXs * scale);
-  outputMuteButton->setRadius(Style::radiusMd * scale);
+  outputMuteButton->setRadius(Style::scaledRadiusMd(scale));
   outputMuteButton->setOnClick([this]() {
     if (m_audio == nullptr) {
       return;
@@ -1414,7 +1439,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   volumeRow->addChild(std::move(outputVolumeCard));
 
   auto inputVolumeCard = std::make_unique<Flex>();
-  applySectionCardStyle(*inputVolumeCard, scale);
+  applySectionCardStyle(*inputVolumeCard, scale, panelCardOpacity());
   inputVolumeCard->setFlexGrow(1.0f);
   m_inputVolumeCard = inputVolumeCard.get();
 
@@ -1437,7 +1462,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   inputMenuButton->setVariant(ButtonVariant::Ghost);
   inputMenuButton->setGlyphSize(Style::fontSizeCaption * scale);
   inputMenuButton->setPadding(Style::spaceXs * scale);
-  inputMenuButton->setRadius(Style::radiusMd * scale);
+  inputMenuButton->setRadius(Style::scaledRadiusMd(scale));
   inputMenuButton->setEnabled(false);
   inputMenuButton->setOnClick([this]() {
     const bool wasOpen = m_deviceMenuPopup != nullptr && m_deviceMenuPopup->isOpen();
@@ -1502,7 +1527,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   inputMuteButton->setMinWidth(Style::controlHeightSm * scale);
   inputMuteButton->setMinHeight(Style::controlHeightSm * scale);
   inputMuteButton->setPadding(Style::spaceXs * scale);
-  inputMuteButton->setRadius(Style::radiusMd * scale);
+  inputMuteButton->setRadius(Style::scaledRadiusMd(scale));
   inputMuteButton->setOnClick([this]() {
     if (m_audio == nullptr) {
       return;
@@ -1520,7 +1545,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   tab->addChild(std::move(volumeRow));
 
   auto programCard = std::make_unique<Flex>();
-  applySectionCardStyle(*programCard, scale);
+  applySectionCardStyle(*programCard, scale, panelCardOpacity());
   programCard->setFlexGrow(1.0f);
   m_programCard = programCard.get();
 
@@ -1567,8 +1592,6 @@ void AudioTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight
   }
 
   syncValueLabelWidths(renderer);
-  m_rootLayout->setSize(contentWidth, bodyHeight);
-  m_rootLayout->layout(renderer);
 
   if (m_outputDeviceLabel != nullptr && m_outputVolumeCard != nullptr) {
     m_outputDeviceLabel->setMaxWidth(std::max(0.0f, m_outputVolumeCard->width() - m_outputVolumeCard->paddingLeft() -
@@ -1578,9 +1601,9 @@ void AudioTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight
     m_inputDeviceLabel->setMaxWidth(std::max(0.0f, m_inputVolumeCard->width() - m_inputVolumeCard->paddingLeft() -
                                                        m_inputVolumeCard->paddingRight()));
   }
-  m_rootLayout->layout(renderer);
 
-  rebuildProgramVolumes(renderer);
+  m_rootLayout->setSize(contentWidth, bodyHeight);
+  m_rootLayout->layout(renderer);
 }
 
 void AudioTab::doUpdate(Renderer& renderer) {
@@ -1716,6 +1739,8 @@ void AudioTab::onClose() {
   m_programRows.clear();
   m_lastProgramListKey.clear();
   m_lastProgramSliderMax = -1.0f;
+  m_syncedPercentLabelMinWidth = -1.0f;
+  m_lastSyncedPercentLabelSliderMax = -1.0f;
   m_outputDeviceMenuAnchor = nullptr;
   m_inputDeviceMenuAnchor = nullptr;
   m_outputDeviceMenuButton = nullptr;
@@ -1751,23 +1776,18 @@ void AudioTab::rebuildProgramVolumes(Renderer& renderer) {
   const float sliderMaxAbs = std::abs(sliderMax - m_lastProgramSliderMax);
   const std::vector<MprisPlayerInfo> players = allMprisPlayers(m_mpris);
 
-  auto identityKey = [&players](const std::vector<AudioNode>& devices) -> std::string {
+  auto identityKey = [](const std::vector<AudioNode>& devices) -> std::string {
     std::string key;
     const auto sorted = sortedDevices(devices);
+    key.reserve(sorted.size() * 48);
     for (const auto& node : sorted) {
-      const MprisPlayerInfo* player = findMatchingPlayer(players, node, node.applicationName);
-      std::string resolvedAppName = resolveProgramAppName(node, player);
       key += std::to_string(node.id);
       key.push_back(':');
-      key += !node.description.empty() ? node.description : node.name;
-      if (player != nullptr) {
-        key.push_back(':');
-        key += player->busName;
-        key.push_back(':');
-        key += player->title;
-        key.push_back(':');
-        key += joinedArtists(player->artists);
-      }
+      key += node.applicationId;
+      key.push_back(':');
+      key += node.applicationBinary;
+      key.push_back(':');
+      key += node.applicationName;
       key.push_back('\n');
     }
     return key;
@@ -1811,6 +1831,7 @@ void AudioTab::rebuildProgramVolumes(Renderer& renderer) {
     }
   }
 
+  syncValueLabelWidths(renderer);
   m_programList->layout(renderer);
   m_lastProgramListKey = nextKey;
   m_lastProgramSliderMax = sliderMax;
@@ -1972,14 +1993,25 @@ void AudioTab::rebuildLists(Renderer& renderer) {
 }
 
 void AudioTab::syncValueLabelWidths(Renderer& renderer) {
-  const std::string sampleLabel = widestPercentLabel(sliderMaxPercent());
-  const TextMetrics metrics = renderer.measureText(sampleLabel, Style::fontSizeBody * contentScale(), true);
-  const float minWidth = std::round(metrics.width);
+  const float sliderMax = sliderMaxPercent();
+  if (m_syncedPercentLabelMinWidth < 0.0f || std::abs(sliderMax - m_lastSyncedPercentLabelSliderMax) >= 0.0001f) {
+    const std::string sampleLabel = widestPercentLabel(sliderMax);
+    const TextMetrics metrics = renderer.measureText(sampleLabel, Style::fontSizeBody * contentScale(), true);
+    m_syncedPercentLabelMinWidth = std::round(metrics.width);
+    m_lastSyncedPercentLabelSliderMax = sliderMax;
+  }
+
+  const float minWidth = m_syncedPercentLabelMinWidth;
   if (m_outputValue != nullptr) {
     m_outputValue->setMinWidth(minWidth);
   }
   if (m_inputValue != nullptr) {
     m_inputValue->setMinWidth(minWidth);
+  }
+  for (Flex* row : m_programRows) {
+    if (auto* programRow = static_cast<ProgramVolumeRow*>(row); programRow != nullptr) {
+      programRow->setValueLabelMinWidth(minWidth);
+    }
   }
 }
 

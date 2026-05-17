@@ -6,6 +6,7 @@
 
 [shell]
 ui_scale              = 1.0
+corner_radius_scale   = 1.0          # 0 = square, 1 = default, 2 = extra rounded
 font_family           = "sans-serif"
 time_format           = "{:%H:%M}"  # default shell UI time format
 date_format           = "%A, %x"    # default shell UI date format
@@ -16,6 +17,7 @@ password_style        = "default"    # default | random
 settings_show_advanced = false       # show advanced settings by default in Settings
 middle_click_opens_widget_settings = true # middle-click bar widgets to open their Settings entry
 show_location         = true         # hide weather location text in shell UI when false
+clipboard_enabled     = true         # false disables clipboard panel, history, and compositor clipboard hooks
 clipboard_auto_paste  = "auto"       # off | auto | ctrl_v | ctrl_shift_v | shift_insert
 clipboard_image_action_command = ""  # image preview action: gimp {path}, or satty -f - via stdin
 # avatar_path         = "~/Pictures/avatar.png"
@@ -26,17 +28,19 @@ enabled = true
 speed   = 1.0                       # 0.5 = 2× slower, 2.0 = 2× faster
 
 [shell.shadow]
-blur     = 12                       # global surface shadow blur radius
+blur     = 12                       # global surface/popup shadow blur radius
 offset_x = 2
 offset_y = 2                        # positive = down
 alpha    = 0.55                     # multiplied by each component's background opacity
 
 [shell.panel]
 background_blur       = true        # request compositor blur behind panels
+transparency_mode     = "solid"     # solid | soft | glass; controls detached panel opacity and card translucency
 attach_launcher       = false       # attach launcher to the bar when a suitable bar is available
 attach_clipboard      = false       # attach clipboard history to the bar when a suitable bar is available
 attach_control_center = true        # attach Control Center to the bar when a suitable bar is available
 attach_wallpaper      = true        # attach wallpaper picker to the bar when a suitable bar is available
+attach_session        = false       # attach session power menu to the bar when a suitable bar is available
 
 [shell.mpris]
 blacklist = []                      # ignore MPRIS players by bus/identity/desktop entry token
@@ -74,11 +78,15 @@ builtin = "Noctalia"                # Ayu | Catppuccin | Dracula | Eldritch | Gr
 
 [theme.templates]
 enable_builtin_templates            = true
-builtin_ids                = []     # opt-in; list ids with: noctalia theme --list-builtins
+builtin_ids                = []     # opt-in; list ids with: noctalia theme --list-templates
 enable_community_templates = true
 community_ids              = []     # fetched from api.noctalia.dev/templates, cached locally
-enable_user_templates      = false
-user_config                = "~/.config/noctalia/user-templates.toml"
+
+# User-defined templates are declared directly in config.
+# [theme.templates.user.my_app]
+# input_path  = "templates/my-app.css"
+# output_path = "~/.config/my-app/theme.css"
+# post_hook   = "my-app --reload-theme"
 
 # ── Backdrop ──────────────────────────────────────────────────────────────────
 
@@ -93,6 +101,8 @@ tint_intensity         = 0.3        # 0.0 = no tint, 1.0 = opaque
 enable_daemon      = true
 layer              = "top"          # top | overlay
 background_opacity = 0.97
+offset_x           = 20             # absolute horizontal margin from the screen edge
+offset_y           = 8              # absolute vertical margin from the screen edge
 # IPC examples:
 # noctalia msg notification-clear-active
 # noctalia msg notification-clear-history
@@ -101,11 +111,12 @@ background_opacity = 0.97
 
 [osd]
 position = "top_right"              # top_right | top_left | top_center | bottom_right | bottom_left | bottom_center
+lock_keys = true                    # show Caps/Num/Scroll Lock OSD popups; disable to stop polling when no widget uses them
 
 # ── System Monitor ────────────────────────────────────────────────────────────
 
 [system.monitor]
-enabled = true                      # sample CPU, memory, network, load, temperature, and disk statistics
+enabled = true                      # sample CPU, memory, network, load, temperature, GPU VRAM, and disk statistics
 
 # ── Weather ───────────────────────────────────────────────────────────────────
 
@@ -152,15 +163,22 @@ temperature_night    = 4000         # Kelvin
 
 # ── Idle ──────────────────────────────────────────────────────────────────────
 
+# Optional `[idle]` keys:
+#   pre_action_fade_seconds — fade a fullscreen surface-color overlay in over this many seconds, then run `command`.
+#                             Use 0 for immediate commands with no overlay. Input during the fade cancels.
+# [idle]
+# pre_action_fade_seconds = 2.0
+
 [idle.behavior.lock]
-timeout = 660
+timeout = 600
 command = "noctalia:screen-lock"
 enabled = false
 
-# [idle.behavior.screen-off]
-# timeout = 600
-# command = "noctalia:dpms-off"
-# resume_command = "noctalia:dpms-on"
+[idle.behavior.screen-off]
+timeout = 660
+command = "noctalia:dpms-off"
+resume_command = "noctalia:dpms-on"
+enabled = false
 
 # ── Keybinds ──────────────────────────────────────────────────────────────────
 
@@ -213,6 +231,10 @@ padding             = 8
 item_spacing        = 6
 background_opacity  = 0.88
 radius              = 16
+radius_top_left     = 16
+radius_top_right    = 16
+radius_bottom_left  = 16
+radius_bottom_right = 16
 margin_h            = 0
 margin_v            = 8
 shadow              = true
@@ -225,6 +247,8 @@ active_opacity      = 1.0
 inactive_opacity    = 0.85
 show_dots           = false
 show_instance_count = true
+launcher_position   = "none"       # none | start | end
+launcher_icon       = "grid-dots"  # Tabler glyph name
 active_monitor_only = false
 pinned              = []            # e.g. ["firefox", "code", "kitty"]
 
@@ -232,6 +256,24 @@ pinned              = []            # e.g. ["firefox", "code", "kitty"]
 
 [desktop_widgets]
 enabled = false
+# When set, widget_order is the active widget list and stacking order.
+# widget_order = ["clock_main"]
+
+# [desktop_widgets.grid]
+# visible        = true
+# cell_size      = 16
+# major_interval = 4
+
+# [desktop_widgets.widget.clock_main]
+# type     = "clock"
+# output   = "DP-1"
+# cx       = 960.0
+# cy       = 540.0
+# scale    = 1.5
+# rotation = 0.0
+
+# [desktop_widgets.widget.clock_main.settings]
+# format = "{:%H:%M}"
 
 # ── Control Center ────────────────────────────────────────────────────────────
 

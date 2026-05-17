@@ -34,6 +34,7 @@ public:
 
   void initialize(WaylandConnection& wayland, ConfigService* config, NotificationManager* notifications,
                   RenderContext* renderContext, HttpClient* httpClient = nullptr);
+  void onConfigReload();
   void requestLayout();
   void requestRedraw();
 
@@ -139,6 +140,7 @@ private:
   void refreshEntryGeometry(PopupEntry& entry) const;
   [[nodiscard]] float layoutBottomForSurfaceHeight(float surfaceHeight) const;
   [[nodiscard]] float maxPlacementBottom() const;
+  void alignBottomStackToPlacementBottom();
   [[nodiscard]] std::optional<float> findPlacementY(float entryHeight,
                                                     std::optional<uint32_t> ignoreNotificationId = std::nullopt) const;
   [[nodiscard]] uint32_t surfaceHeightForOutput(wl_output* output) const;

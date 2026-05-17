@@ -126,7 +126,7 @@ namespace settings {
           saveBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           saveBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           saveBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          saveBtn->setRadius(Style::radiusSm * ctx.scale);
+          saveBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           saveBtn->setOnClick([doRename, inputPtr]() mutable { doRename(inputPtr->value()); });
 
           auto cancelBtn = std::make_unique<Button>();
@@ -135,7 +135,7 @@ namespace settings {
           cancelBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           cancelBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           cancelBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          cancelBtn->setRadius(Style::radiusSm * ctx.scale);
+          cancelBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           cancelBtn->setOnClick([&renamingMonitorOverrideBarName = ctx.renamingMonitorOverrideBarName,
                                  &renamingMonitorOverrideMatch = ctx.renamingMonitorOverrideMatch,
                                  requestRebuild = ctx.requestRebuild]() {
@@ -154,7 +154,7 @@ namespace settings {
           confirmPanel->setAlign(FlexAlign::Stretch);
           confirmPanel->setGap(Style::spaceXs * ctx.scale);
           confirmPanel->setPadding(Style::spaceSm * ctx.scale);
-          confirmPanel->setRadius(Style::radiusSm * ctx.scale);
+          confirmPanel->setRadius(Style::scaledRadiusSm(ctx.scale));
           confirmPanel->setFill(colorSpecFromRole(ColorRole::Error, 0.10f));
           confirmPanel->setBorder(colorSpecFromRole(ColorRole::Error, 0.5f), Style::borderWidth);
 
@@ -180,7 +180,7 @@ namespace settings {
           cancelBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           cancelBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           cancelBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          cancelBtn->setRadius(Style::radiusSm * ctx.scale);
+          cancelBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           cancelBtn->setOnClick([&pendingDeleteMonitorOverrideBarName = ctx.pendingDeleteMonitorOverrideBarName,
                                  &pendingDeleteMonitorOverrideMatch = ctx.pendingDeleteMonitorOverrideMatch,
                                  requestRebuild = ctx.requestRebuild]() {
@@ -198,7 +198,7 @@ namespace settings {
           confirmBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
           confirmBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           confirmBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          confirmBtn->setRadius(Style::radiusSm * ctx.scale);
+          confirmBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           confirmBtn->setOnClick([deleteMonitorOverride = ctx.deleteMonitorOverride, barName, match]() {
             deleteMonitorOverride(barName, match);
           });
@@ -222,7 +222,7 @@ namespace settings {
           renameBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           renameBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           renameBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          renameBtn->setRadius(Style::radiusSm * ctx.scale);
+          renameBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           renameBtn->setOnClick([&renamingMonitorOverrideBarName = ctx.renamingMonitorOverrideBarName,
                                  &renamingMonitorOverrideMatch = ctx.renamingMonitorOverrideMatch,
                                  &pendingDeleteMonitorOverrideBarName = ctx.pendingDeleteMonitorOverrideBarName,
@@ -244,7 +244,7 @@ namespace settings {
           deleteBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
           deleteBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           deleteBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          deleteBtn->setRadius(Style::radiusSm * ctx.scale);
+          deleteBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           deleteBtn->setOnClick([&pendingDeleteMonitorOverrideBarName = ctx.pendingDeleteMonitorOverrideBarName,
                                  &pendingDeleteMonitorOverrideMatch = ctx.pendingDeleteMonitorOverrideMatch,
                                  &renamingMonitorOverrideBarName = ctx.renamingMonitorOverrideBarName,
@@ -321,7 +321,7 @@ namespace settings {
           saveBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           saveBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           saveBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          saveBtn->setRadius(Style::radiusSm * ctx.scale);
+          saveBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           saveBtn->setOnClick([doRename, inputPtr]() mutable { doRename(inputPtr->value()); });
 
           auto cancelBtn = std::make_unique<Button>();
@@ -330,7 +330,7 @@ namespace settings {
           cancelBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           cancelBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           cancelBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          cancelBtn->setRadius(Style::radiusSm * ctx.scale);
+          cancelBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           cancelBtn->setOnClick([&renamingBarName = ctx.renamingBarName, requestRebuild = ctx.requestRebuild]() {
             renamingBarName.clear();
             requestRebuild();
@@ -346,7 +346,7 @@ namespace settings {
           confirmPanel->setAlign(FlexAlign::Stretch);
           confirmPanel->setGap(Style::spaceXs * ctx.scale);
           confirmPanel->setPadding(Style::spaceSm * ctx.scale);
-          confirmPanel->setRadius(Style::radiusSm * ctx.scale);
+          confirmPanel->setRadius(Style::scaledRadiusSm(ctx.scale));
           confirmPanel->setFill(colorSpecFromRole(ColorRole::Error, 0.10f));
           confirmPanel->setBorder(colorSpecFromRole(ColorRole::Error, 0.5f), Style::borderWidth);
 
@@ -371,7 +371,7 @@ namespace settings {
           cancelBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           cancelBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           cancelBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          cancelBtn->setRadius(Style::radiusSm * ctx.scale);
+          cancelBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           cancelBtn->setOnClick(
               [&pendingDeleteBarName = ctx.pendingDeleteBarName, requestRebuild = ctx.requestRebuild]() {
                 pendingDeleteBarName.clear();
@@ -387,7 +387,7 @@ namespace settings {
           confirmBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
           confirmBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           confirmBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          confirmBtn->setRadius(Style::radiusSm * ctx.scale);
+          confirmBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           confirmBtn->setOnClick([deleteBar = ctx.deleteBar, barName]() { deleteBar(barName); });
           confirmRow->addChild(std::move(confirmBtn));
 
@@ -412,7 +412,7 @@ namespace settings {
             moveUpBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
             moveUpBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
             moveUpBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-            moveUpBtn->setRadius(Style::radiusSm * ctx.scale);
+            moveUpBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
             moveUpBtn->setEnabled(canMoveUp);
             moveUpBtn->setOnClick([moveBar = ctx.moveBar, barName]() { moveBar(barName, -1); });
             actionRow->addChild(std::move(moveUpBtn));
@@ -425,7 +425,7 @@ namespace settings {
             moveDownBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
             moveDownBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
             moveDownBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-            moveDownBtn->setRadius(Style::radiusSm * ctx.scale);
+            moveDownBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
             moveDownBtn->setEnabled(canMoveDown);
             moveDownBtn->setOnClick([moveBar = ctx.moveBar, barName]() { moveBar(barName, 1); });
             actionRow->addChild(std::move(moveDownBtn));
@@ -438,7 +438,7 @@ namespace settings {
             renameBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
             renameBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
             renameBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-            renameBtn->setRadius(Style::radiusSm * ctx.scale);
+            renameBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
             renameBtn->setOnClick([&renamingBarName = ctx.renamingBarName,
                                    &pendingDeleteBarName = ctx.pendingDeleteBarName, barName,
                                    requestRebuild = ctx.requestRebuild]() {
@@ -458,7 +458,7 @@ namespace settings {
             deleteBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
             deleteBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
             deleteBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-            deleteBtn->setRadius(Style::radiusSm * ctx.scale);
+            deleteBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
             deleteBtn->setOnClick([&pendingDeleteBarName = ctx.pendingDeleteBarName,
                                    &renamingBarName = ctx.renamingBarName, barName,
                                    requestRebuild = ctx.requestRebuild]() {

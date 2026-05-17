@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <string>
 
 class Button;
 class Input;
@@ -23,6 +24,8 @@ public:
   void setOnValueChanged(std::function<void(int)> callback);
   void setOnValueCommitted(std::function<void(int)> callback);
   void setScale(float scale);
+  /// When non-empty, appended to the value field for display (e.g. "s" → "5s"). Stripped before parsing on commit.
+  void setValueSuffix(std::string suffix);
 
   [[nodiscard]] int value() const noexcept { return m_value; }
   [[nodiscard]] int minValue() const noexcept { return m_min; }
@@ -69,4 +72,5 @@ private:
   int m_repeatStartValue = 0;
   Timer m_repeatDelayTimer;
   Timer m_repeatTimer;
+  std::string m_valueSuffix;
 };

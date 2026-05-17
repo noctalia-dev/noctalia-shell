@@ -9,6 +9,7 @@
 #include "shell/settings/widget_add_popup.h"
 #include "ui/controls/context_menu_popup.h"
 #include "ui/controls/scroll_view.h"
+#include "ui/controls/select_dropdown_popup.h"
 #include "ui/dialogs/layer_popup_host.h"
 #include "wayland/toplevel_surface.h"
 
@@ -24,6 +25,7 @@ class Button;
 class ConfigService;
 class DependencyService;
 class Flex;
+class Label;
 class RenderContext;
 class UPowerService;
 class WaylandConnection;
@@ -31,6 +33,10 @@ struct KeyboardEvent;
 struct PointerEvent;
 struct wl_output;
 struct wl_surface;
+
+namespace settings {
+  struct SettingsContentContext;
+} // namespace settings
 
 // Standalone xdg-toplevel settings UI (same binary as the shell; shares RenderContext).
 class SettingsWindow {
@@ -56,12 +62,27 @@ public:
   void onFontChanged();
   void onExternalOptionsChanged();
   void setOpenDesktopWidgetEditor(std::function<void()> callback) { m_openDesktopWidgetEditor = std::move(callback); }
+  void setOpenWallpaperPanel(std::function<void()> callback) { m_openWallpaperPanel = std::move(callback); }
+
+  void onSecondTick();
 
 private:
   void destroyWindow();
   void prepareFrame(bool needsUpdate, bool needsLayout);
   void buildScene(std::uint32_t width, std::uint32_t height);
   void rebuildSettingsContent();
+  [[nodiscard]] settings::RegistryEnvironment buildRegistryEnvironment() const;
+  void syncSelectedBarState(const Config& cfg, const std::vector<std::string>& availableBars);
+  [[nodiscard]] std::unique_ptr<Flex> buildHeaderRow(float scale);
+  [[nodiscard]] std::unique_ptr<Flex> buildFilterRow(float scale, const std::string& resetPageScope,
+                                                     std::vector<std::vector<std::string>> resetPagePaths);
+  [[nodiscard]] std::unique_ptr<Flex> buildStatusRow(float scale);
+  [[nodiscard]] std::unique_ptr<Flex> buildBody(float scale, const Config& cfg,
+                                                const std::vector<std::string>& sections,
+                                                const std::vector<std::string>& availableBars);
+  [[nodiscard]] std::vector<settings::SelectOption> batteryDeviceOptions() const;
+  [[nodiscard]] settings::SettingsContentContext makeContentContext(const Config& cfg, const BarConfig* selectedBar,
+                                                                    const BarMonitorOverride* selectedMonitorOverride);
   void requestSceneRebuild();
   void requestContentRebuild();
   void applyPendingContentScrollTarget(float margin);
@@ -73,12 +94,18 @@ private:
                              const std::string& selectedValue, const std::string& placeholder,
                              const std::string& emptyText, const std::vector<std::string>& settingPath);
   void openSessionActionEntryEditor(std::size_t index);
+  void openIdleBehaviorEntryEditor(std::size_t index);
+  void openIdleBehaviorCreateEditor();
+  void refreshIdleLiveStatusText();
   void saveSupportReport();
   void saveFlattenedConfig();
+  [[nodiscard]] bool headerDragRegionContains(float sceneX, float sceneY) const;
   void setSettingOverride(std::vector<std::string> path, ConfigOverrideValue value);
   void setSettingOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides);
   void clearSettingOverride(std::vector<std::string> path);
   void clearSettingOverrides(std::vector<std::vector<std::string>> paths);
+  void markSettingsWriteSuccess(bool requestRebuild = true);
+  void markSettingsWriteError(std::string message);
   void renameWidgetInstance(std::string oldName, std::string newName,
                             std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> referenceOverrides);
   void createBar(std::string name);
@@ -95,6 +122,7 @@ private:
   RenderContext* m_renderContext = nullptr;
   DependencyService* m_dependencies = nullptr;
   UPowerService* m_upower = nullptr;
+  Label* m_idleLiveStatusLabel = nullptr;
 
   std::unique_ptr<ToplevelSurface> m_surface;
   std::unique_ptr<Node> m_sceneRoot;
@@ -110,6 +138,7 @@ private:
   std::unique_ptr<settings::SessionActionsEditorPopup> m_sessionActionsEditorPopup;
   InputDispatcher m_inputDispatcher;
   AnimationManager m_animations;
+  std::unique_ptr<SelectDropdownPopup> m_selectPopup;
   bool m_pointerInside = false;
   wl_output* m_output = nullptr;
 
@@ -148,4 +177,5 @@ private:
   bool m_showOverriddenOnly = false;
   bool m_statusIsError = false;
   std::function<void()> m_openDesktopWidgetEditor;
+  std::function<void()> m_openWallpaperPanel;
 };

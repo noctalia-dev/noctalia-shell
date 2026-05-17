@@ -34,7 +34,7 @@ private:
   void syncInstances();
   void resetAutomationState();
   void runAutomation(std::int64_t minuteStamp);
-  [[nodiscard]] bool switchToRandomWallpaper();
+  [[nodiscard]] bool switchToRandomWallpaper(std::optional<std::string_view> connector = std::nullopt);
   void createInstance(const WaylandOutput& output);
   void loadWallpaper(WallpaperInstance& instance, const std::string& path);
   void startTransition(WallpaperInstance& instance);

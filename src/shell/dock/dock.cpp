@@ -11,7 +11,9 @@
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
+#include "shell/panel/panel_manager.h"
 #include "shell/surface_shadow.h"
+#include "shell/tooltip/tooltip_manager.h"
 #include "system/app_identity.h"
 #include "system/desktop_entry.h"
 #include "ui/controls/box.h"
@@ -21,6 +23,7 @@
 #include "ui/controls/image.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
+#include "ui/popup_chrome.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
 #include "wayland/layer_surface.h"
@@ -29,6 +32,7 @@
 #include "wayland/wayland_toplevels.h"
 #include "xdg-shell-client-protocol.h"
 
+#include <cerrno>
 #include <format>
 #include <optional>
 #include <wayland-client-core.h>
@@ -84,6 +88,23 @@ namespace {
     return instanceOutput;
   }
 
+  popup_chrome::Attachment popupAttachmentForDockPosition(bool isBottom, bool isTop, bool isRight) {
+    if (isBottom) {
+      return popup_chrome::Attachment{.horizontal = popup_chrome::HorizontalAttachment::Center,
+                                      .vertical = popup_chrome::VerticalAttachment::Bottom};
+    }
+    if (isTop) {
+      return popup_chrome::Attachment{.horizontal = popup_chrome::HorizontalAttachment::Center,
+                                      .vertical = popup_chrome::VerticalAttachment::Top};
+    }
+    if (isRight) {
+      return popup_chrome::Attachment{.horizontal = popup_chrome::HorizontalAttachment::Right,
+                                      .vertical = popup_chrome::VerticalAttachment::Center};
+    }
+    return popup_chrome::Attachment{.horizontal = popup_chrome::HorizontalAttachment::Left,
+                                    .vertical = popup_chrome::VerticalAttachment::Center};
+  }
+
   template <typename T> void appendOptionalStackPart(std::string& out, const std::optional<T>& value) {
     out += value.has_value() ? std::format("{}", *value) : "-";
     out.push_back('\x1f');
@@ -127,6 +148,23 @@ namespace {
     if (pos == "right")
       return LayerShellAnchor::Right;
     return LayerShellAnchor::Bottom; // default
+  }
+
+  std::size_t dockLauncherButtonCount(const DockConfig& cfg) {
+    return (cfg.launcherPosition == "start" || cfg.launcherPosition == "end") ? 1U : 0U;
+  }
+
+  std::string_view dockLauncherIconGlyph(const DockConfig& cfg) {
+    return cfg.launcherIcon.empty() ? "grid-dots" : std::string_view{cfg.launcherIcon};
+  }
+
+  Radii dockCornerRadii(const DockConfig& cfg) {
+    return Radii{
+        static_cast<float>(cfg.radiusTopLeft),
+        static_cast<float>(cfg.radiusTopRight),
+        static_cast<float>(cfg.radiusBottomRight),
+        static_cast<float>(cfg.radiusBottomLeft),
+    };
   }
 
 } // namespace
@@ -187,7 +225,11 @@ void Dock::reload() {
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;
 
-  wl_display_roundtrip(m_platform->display());
+  if (wl_display_roundtrip(m_platform->display()) < 0) {
+    const int roundtripErrno = errno;
+    kLog.error("Wayland roundtrip failed while reloading dock surfaces: {}",
+               m_platform->wayland().describeDisplayError(roundtripErrno));
+  }
   syncInstances();
 }
 
@@ -505,7 +547,7 @@ void Dock::createInstance(const WaylandOutput& output) {
   const auto& shadowConfig = m_config->config().shell.shadow;
   const auto sb = shell::surface_shadow::bleed(cfg.shadow, shadowConfig);
   const bool hiddenOverlayMode = cfg.autoHide && !cfg.reserveSpace;
-  const auto panelW = dockContentSize(cfg.pinned.size());
+  const auto panelW = dockContentSize(cfg.pinned.size() + dockLauncherButtonCount(cfg));
   const auto panelH = dockThickness();
   const auto anchor = positionToAnchor(cfg.position);
   const bool isBottom = (cfg.position == "bottom");
@@ -710,7 +752,8 @@ void Dock::applyDockCompositorBlur(DockInstance& instance) {
   const int py = static_cast<int>(std::lround(absY));
   const int pw = static_cast<int>(std::lround(instance.panel->width()));
   const int ph = static_cast<int>(std::lround(instance.panel->height()));
-  auto blurStrips = Surface::tessellateRoundedRect(px, py, pw, ph, static_cast<float>(cfg.radius));
+  const Radii radii = dockCornerRadii(cfg);
+  auto blurStrips = Surface::tessellateRoundedRect(px, py, pw, ph, radii.tl, radii.tr, radii.br, radii.bl);
   instance.surface->setBlurRegion(blurStrips);
 }
 
@@ -750,8 +793,7 @@ void Dock::buildScene(DockInstance& instance) {
     panelH = h - bleedU - bleedD;
   }
 
-  const Radii radii{static_cast<float>(cfg.radius), static_cast<float>(cfg.radius), static_cast<float>(cfg.radius),
-                    static_cast<float>(cfg.radius)};
+  const Radii radii = dockCornerRadii(cfg);
 
   if (instance.sceneRoot == nullptr) {
     instance.sceneRoot = std::make_unique<Node>();
@@ -771,7 +813,7 @@ void Dock::buildScene(DockInstance& instance) {
 
     // Panel background
     auto panel = std::make_unique<Box>();
-    panel->setRadius(static_cast<float>(cfg.radius));
+    panel->setRadii(radii);
     instance.panel = static_cast<Box*>(instance.slideRoot->addChild(std::move(panel)));
 
     // Item row
@@ -786,6 +828,9 @@ void Dock::buildScene(DockInstance& instance) {
     instance.inputDispatcher.setSceneRoot(instance.sceneRoot.get());
     instance.inputDispatcher.setCursorShapeCallback(
         [this](std::uint32_t serial, std::uint32_t shape) { m_platform->setCursorShape(serial, shape); });
+    instance.inputDispatcher.setHoverChangeCallback([inst = &instance](InputArea* /*old*/, InputArea* next) {
+      TooltipManager::instance().onHoverChange(next, inst->surface->layerSurface(), inst->output);
+    });
 
     // Populate items and wire up palette reactivity.
     rebuildItems(instance);
@@ -973,6 +1018,10 @@ void Dock::rebuildItems(DockInstance& instance) {
     runningLower.push_back(StringUtils::toLower(run.entry.id));
   }
 
+  if (cfg.launcherPosition == "start") {
+    instance.row->addChild(createLauncherButton(instance));
+  }
+
   // Reserve up-front so emplace_back never reallocates while lambdas hold raw pointers.
   instance.items.reserve(itemEntries.size());
 
@@ -1004,7 +1053,15 @@ void Dock::rebuildItems(DockInstance& instance) {
     item.background = static_cast<Box*>(areaNode->addChild(std::move(bg)));
 
     // Icon centred inside the padded cell.
-    const std::string& iconPath = m_iconResolver.resolve(entry.icon);
+    const std::string& iconPath = [&]() -> const std::string& {
+      if (!entry.icon.empty()) {
+        const std::string& primary = m_iconResolver.resolve(entry.icon);
+        if (!primary.empty()) {
+          return primary;
+        }
+      }
+      return m_iconResolver.resolve("application-x-executable");
+    }();
     auto iconImg = std::make_unique<Image>();
     if (!iconPath.empty() && m_renderContext != nullptr) {
       iconImg->setSourceFile(*m_renderContext, iconPath, cfg.iconSize, true);
@@ -1015,10 +1072,10 @@ void Dock::rebuildItems(DockInstance& instance) {
     if (iconImg->hasImage()) {
       item.iconImage = static_cast<Image*>(areaNode->addChild(std::move(iconImg)));
     } else {
-      // Fallback: app glyph.
+      // Fallback: Tabler app-window glyph (matches launcher when theme icons are unavailable).
       auto glyph = std::make_unique<Glyph>();
-      glyph->setGlyph("apps");
-      glyph->setGlyphSize(iSize * 0.8f);
+      glyph->setGlyph("app-window");
+      glyph->setGlyphSize(iSize);
       glyph->setColor(colorSpecFromRole(ColorRole::OnSurface));
       glyph->setSize(iSize, iSize);
       glyph->setPosition(kCellPad, kCellPad);
@@ -1105,6 +1162,10 @@ void Dock::rebuildItems(DockInstance& instance) {
     item.area = static_cast<InputArea*>(instance.row->addChild(std::move(areaNode)));
   }
 
+  if (cfg.launcherPosition == "end") {
+    instance.row->addChild(createLauncherButton(instance));
+  }
+
   instance.modelSerial = m_modelSerial;
 
   // Force surface resize when item count changes.
@@ -1119,7 +1180,7 @@ void Dock::resizeSurface(DockInstance& instance) {
   const auto& cfg = m_config->config().dock;
   const bool vert = isVertical();
   const auto sb = shell::surface_shadow::bleed(cfg.shadow, m_config->config().shell.shadow);
-  const auto panelW = dockContentSize(instance.items.size());
+  const auto panelW = dockContentSize(instance.items.size() + dockLauncherButtonCount(cfg));
   const auto panelH = dockThickness();
   const bool isBottom = (cfg.position == "bottom");
 
@@ -1260,6 +1321,62 @@ bool Dock::matchesRunningApp(const DockItemView& item, const std::vector<std::st
     }
   }
   return false;
+}
+
+std::unique_ptr<InputArea> Dock::createLauncherButton(DockInstance& instance) {
+  const auto& cfg = m_config->config().dock;
+  const bool vert = isVertical();
+  const float iSize = static_cast<float>(cfg.iconSize);
+  constexpr float kCellPad = 6.0f;
+  const float cellMain = iSize + 2.0f * kCellPad;
+  const float cellCross = iSize + 2.0f * kCellPad;
+
+  auto areaNode = std::make_unique<InputArea>();
+  if (!vert) {
+    areaNode->setSize(cellMain, cellCross);
+  } else {
+    areaNode->setSize(cellCross, cellMain);
+  }
+
+  auto bg = std::make_unique<Box>();
+  bg->setSize(cellMain, cellMain);
+  bg->setPosition(0.0f, 0.0f);
+  bg->setRadius(static_cast<float>(cfg.radius));
+  bg->setFill(clearColorSpec());
+  auto* bgPtr = bg.get();
+  areaNode->addChild(std::move(bg));
+
+  auto glyph = std::make_unique<Glyph>();
+  if (!glyph->setGlyph(dockLauncherIconGlyph(cfg))) {
+    glyph->setGlyph("grid-dots");
+  }
+  glyph->setGlyphSize(iSize * 0.8f);
+  glyph->setColor(colorSpecFromRole(ColorRole::OnSurface));
+  glyph->setSize(iSize, iSize);
+  glyph->setPosition(kCellPad, kCellPad);
+  areaNode->addChild(std::move(glyph));
+
+  auto* instPtr = &instance;
+  areaNode->setOnEnter([bgPtr, instPtr](const InputArea::PointerData&) {
+    bgPtr->setFill(colorSpecFromRole(ColorRole::Hover, 0.8f));
+    if (instPtr->sceneRoot != nullptr) {
+      instPtr->sceneRoot->markPaintDirty();
+    }
+  });
+  areaNode->setOnLeave([bgPtr, instPtr]() {
+    bgPtr->setFill(clearColorSpec());
+    if (instPtr->sceneRoot != nullptr) {
+      instPtr->sceneRoot->markPaintDirty();
+    }
+  });
+  areaNode->setAcceptedButtons(InputArea::buttonMask({BTN_LEFT}));
+  areaNode->setOnClick([instPtr](const InputArea::PointerData& d) {
+    if (d.button == BTN_LEFT) {
+      PanelManager::instance().togglePanel("launcher", PanelOpenRequest{.output = instPtr->output});
+    }
+  });
+
+  return areaNode;
 }
 
 void Dock::launchEntry(const DesktopEntry& entry) {
@@ -1407,13 +1524,14 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item, std::vec
     aH = halfCell * 2;
   }
 
+  const auto menuChrome = popup_chrome::computeGeometry(kMenuWidth, menuHeight, m_config->config().shell.shadow);
   PopupSurfaceConfig popupCfg{
       .anchorX = aX,
       .anchorY = aY,
       .anchorWidth = std::max(1, aW),
       .anchorHeight = std::max(1, aH),
-      .width = static_cast<std::uint32_t>(kMenuWidth),
-      .height = static_cast<std::uint32_t>(std::max(1.0f, menuHeight)),
+      .width = menuChrome.surfaceWidth,
+      .height = menuChrome.surfaceHeight,
       .anchor = anchor,
       .gravity = gravity,
       .constraintAdjustment = XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X |
@@ -1424,9 +1542,11 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item, std::vec
       .serial = m_platform->lastInputSerial(),
       .grab = true,
   };
+  popup_chrome::applyToConfig(popupCfg, menuChrome, popupAttachmentForDockPosition(isBottom, isTop, isRight));
 
   menu->surface = std::make_unique<PopupSurface>(m_platform->wayland());
   menu->surface->setRenderContext(m_renderContext);
+  menu->chrome = menuChrome;
 
   auto* menuPtr = menu.get();
 
@@ -1459,9 +1579,11 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item, std::vec
 
     menuPtr->sceneRoot = std::make_unique<Node>();
     menuPtr->sceneRoot->setSize(fw, fh);
+    (void)popup_chrome::addShadow(*menuPtr->sceneRoot, menuPtr->chrome, m_config->config().shell.shadow,
+                                  Style::scaledRadiusLg());
 
     auto ctrl = std::make_unique<ContextMenuControl>();
-    ctrl->setMenuWidth(fw);
+    ctrl->setMenuWidth(menuPtr->chrome.contentWidth);
     ctrl->setMaxVisible(entries.size());
     ctrl->setEntries(entries);
     ctrl->setRedrawCallback([menuPtr]() {
@@ -1478,8 +1600,8 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item, std::vec
         closeWindowPicker();
       });
     });
-    ctrl->setPosition(0.0f, 0.0f);
-    ctrl->setSize(fw, fh);
+    ctrl->setPosition(menuPtr->chrome.contentX(), menuPtr->chrome.contentY());
+    ctrl->setSize(menuPtr->chrome.contentWidth, menuPtr->chrome.contentHeight);
     ctrl->layout(*m_renderContext);
 
     menuPtr->sceneRoot->addChild(std::move(ctrl));
@@ -1497,6 +1619,7 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item, std::vec
     return;
   }
 
+  popup_chrome::setContentInputRegion(*menu->surface, menu->chrome);
   menu->wlSurface = menu->surface->wlSurface();
   m_windowMenu = std::move(menu);
 }
@@ -1768,13 +1891,14 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
     aH = halfCell * 2;
   }
 
+  const auto menuChrome = popup_chrome::computeGeometry(kMenuWidth, menuHeight, m_config->config().shell.shadow);
   PopupSurfaceConfig popupCfg{
       .anchorX = aX,
       .anchorY = aY,
       .anchorWidth = std::max(1, aW),
       .anchorHeight = std::max(1, aH),
-      .width = static_cast<std::uint32_t>(kMenuWidth),
-      .height = static_cast<std::uint32_t>(std::max(1.0f, menuHeight)),
+      .width = menuChrome.surfaceWidth,
+      .height = menuChrome.surfaceHeight,
       .anchor = anchor,
       .gravity = gravity,
       .constraintAdjustment = XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X |
@@ -1785,9 +1909,11 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
       .serial = m_platform->lastInputSerial(),
       .grab = true,
   };
+  popup_chrome::applyToConfig(popupCfg, menuChrome, popupAttachmentForDockPosition(isBottom, isTop, isRight));
 
   menu->surface = std::make_unique<PopupSurface>(m_platform->wayland());
   menu->surface->setRenderContext(m_renderContext);
+  menu->chrome = menuChrome;
 
   auto* menuPtr = menu.get();
 
@@ -1824,9 +1950,11 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
 
         menuPtr->sceneRoot = std::make_unique<Node>();
         menuPtr->sceneRoot->setSize(fw, fh);
+        (void)popup_chrome::addShadow(*menuPtr->sceneRoot, menuPtr->chrome, m_config->config().shell.shadow,
+                                      Style::scaledRadiusLg());
 
         auto ctrl = std::make_unique<ContextMenuControl>();
-        ctrl->setMenuWidth(fw);
+        ctrl->setMenuWidth(menuPtr->chrome.contentWidth);
         ctrl->setMaxVisible(entries.size());
         ctrl->setEntries(entries);
         ctrl->setRedrawCallback([menuPtr]() {
@@ -1852,8 +1980,8 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
             closeItemMenu();
           });
         });
-        ctrl->setPosition(0.0f, 0.0f);
-        ctrl->setSize(fw, fh);
+        ctrl->setPosition(menuPtr->chrome.contentX(), menuPtr->chrome.contentY());
+        ctrl->setSize(menuPtr->chrome.contentWidth, menuPtr->chrome.contentHeight);
         ctrl->layout(*m_renderContext);
 
         menuPtr->sceneRoot->addChild(std::move(ctrl));
@@ -1871,6 +1999,7 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
     return;
   }
 
+  popup_chrome::setContentInputRegion(*menu->surface, menu->chrome);
   menu->wlSurface = menu->surface->wlSurface();
   m_itemMenu = std::move(menu);
 }

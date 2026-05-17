@@ -18,6 +18,6 @@ private:
 
 namespace compositors::hyprland {
 
-  [[nodiscard]] bool setOutputPower(bool on);
+  [[nodiscard]] bool setOutputPower(HyprlandRuntime& runtime, bool on);
 
 } // namespace compositors::hyprland

@@ -37,7 +37,7 @@ namespace {
     button.setMinHeight(Style::controlHeight * scale);
     button.setMinWidth(92.0f * scale);
     button.setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-    button.setRadius(Style::radiusMd * scale);
+    button.setRadius(Style::scaledRadiusMd(scale));
   }
 
 } // namespace
@@ -139,7 +139,7 @@ void FileDialogView::create() {
     button->setMinWidth(Style::controlHeightSm * scale);
     button->setMinHeight(Style::controlHeightSm * scale);
     button->setPadding(Style::spaceXs * scale);
-    button->setRadius(Style::radiusMd * scale);
+    button->setRadius(Style::scaledRadiusMd(scale));
   };
 
   auto root = std::make_unique<Flex>();

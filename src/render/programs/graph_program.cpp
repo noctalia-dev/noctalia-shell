@@ -33,10 +33,13 @@ precision highp float;
 uniform sampler2D u_data_source;
 uniform vec4 u_line_color1;
 uniform vec4 u_line_color2;
+uniform vec4 u_line_color3;
 uniform float u_count1;
 uniform float u_count2;
+uniform float u_count3;
 uniform float u_scroll1;
 uniform float u_scroll2;
+uniform float u_scroll3;
 uniform float u_line_width;
 uniform float u_graph_fill_opacity;
 uniform float u_tex_width;
@@ -49,7 +52,9 @@ float fetchData(float idx, int ch) {
     float i = clamp(idx, 0.0, u_tex_width - 1.0);
     float u = (floor(i) + 0.5) / u_tex_width;
     vec4 t = texture2D(u_data_source, vec2(u, 0.5));
-    return ch == 0 ? t.r : t.a;
+    if (ch == 0) return t.r;
+    if (ch == 1) return t.g;
+    return t.b;
 }
 
 float cubicHermite(float y0, float y1, float y2, float y3, float t) {
@@ -177,6 +182,21 @@ void main() {
         result = blendOver(vec4(u_line_color2.rgb * sa, sa), result);
     }
 
+    if (u_count3 >= 4.0) {
+        float segs = u_count3 - 3.0;
+        float di = 2.0 + u_scroll3 + uv.x * segs;
+        float pixStep = segs / u_res_x;
+        float cy = evalCurve(di, 2);
+
+        if (u_graph_fill_opacity > 0.0 && normY >= pad && normY <= min(cy, plotTop)) {
+            float a = u_graph_fill_opacity * ((normY - pad) / max(plotTop - pad, 0.0001)) * u_line_color3.a;
+            result = blendOver(vec4(u_line_color3.rgb * a, a), result);
+        }
+
+        float sa = lineCoverage(di, pixStep, normY, 2, halfW) * u_line_color3.a;
+        result = blendOver(vec4(u_line_color3.rgb * sa, sa), result);
+    }
+
     gl_FragColor = result;
 }
 )";
@@ -197,10 +217,13 @@ void GraphProgram::ensureInitialized() {
   m_transformLoc = glGetUniformLocation(id, "u_transform");
   m_lineColor1Loc = glGetUniformLocation(id, "u_line_color1");
   m_lineColor2Loc = glGetUniformLocation(id, "u_line_color2");
+  m_lineColor3Loc = glGetUniformLocation(id, "u_line_color3");
   m_count1Loc = glGetUniformLocation(id, "u_count1");
   m_count2Loc = glGetUniformLocation(id, "u_count2");
+  m_count3Loc = glGetUniformLocation(id, "u_count3");
   m_scroll1Loc = glGetUniformLocation(id, "u_scroll1");
   m_scroll2Loc = glGetUniformLocation(id, "u_scroll2");
+  m_scroll3Loc = glGetUniformLocation(id, "u_scroll3");
   m_lineWidthLoc = glGetUniformLocation(id, "u_line_width");
   m_graphFillOpacityLoc = glGetUniformLocation(id, "u_graph_fill_opacity");
   m_texWidthLoc = glGetUniformLocation(id, "u_tex_width");
@@ -222,10 +245,13 @@ void GraphProgram::destroy() {
   m_transformLoc = -1;
   m_lineColor1Loc = -1;
   m_lineColor2Loc = -1;
+  m_lineColor3Loc = -1;
   m_count1Loc = -1;
   m_count2Loc = -1;
+  m_count3Loc = -1;
   m_scroll1Loc = -1;
   m_scroll2Loc = -1;
+  m_scroll3Loc = -1;
   m_lineWidthLoc = -1;
   m_graphFillOpacityLoc = -1;
   m_texWidthLoc = -1;
@@ -252,10 +278,13 @@ void GraphProgram::draw(TextureId dataTexture, int texWidth, float surfaceWidth,
 
   glUniform4f(m_lineColor1Loc, style.lineColor1.r, style.lineColor1.g, style.lineColor1.b, style.lineColor1.a);
   glUniform4f(m_lineColor2Loc, style.lineColor2.r, style.lineColor2.g, style.lineColor2.b, style.lineColor2.a);
+  glUniform4f(m_lineColor3Loc, style.lineColor3.r, style.lineColor3.g, style.lineColor3.b, style.lineColor3.a);
   glUniform1f(m_count1Loc, style.count1);
   glUniform1f(m_count2Loc, style.count2);
+  glUniform1f(m_count3Loc, style.count3);
   glUniform1f(m_scroll1Loc, style.scroll1);
   glUniform1f(m_scroll2Loc, style.scroll2);
+  glUniform1f(m_scroll3Loc, style.scroll3);
   glUniform1f(m_lineWidthLoc, style.lineWidth);
   glUniform1f(m_graphFillOpacityLoc, style.graphFillOpacity);
   glUniform1f(m_texWidthLoc, static_cast<float>(texWidth));

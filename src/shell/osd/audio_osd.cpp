@@ -10,6 +10,10 @@
 
 namespace {
   constexpr auto kVolumeSoundCooldown = std::chrono::milliseconds(70);
+  constexpr auto kSuppressInputOsdAfterOutput = std::chrono::milliseconds(500);
+  constexpr float kVolumeChangeEpsilon = 0.003f;
+
+  [[nodiscard]] bool volumeChanged(float a, float b) { return std::abs(a - b) > kVolumeChangeEpsilon; }
 
   const char* volumeIconName(float volume, bool muted) {
     if (muted || volume <= 0.0f) {
@@ -47,12 +51,14 @@ void AudioOsd::setSoundPlayer(SoundPlayer* soundPlayer) { m_soundPlayer = soundP
 void AudioOsd::primeFromService(const PipeWireService& service) {
   if (const auto* sink = service.defaultSink(); sink != nullptr) {
     m_lastSinkId = sink->id;
+    m_lastSinkVolume = sink->volume;
     m_lastSinkPercent = static_cast<int>(std::round(std::max(0.0f, sink->volume) * 100.0f));
     m_lastSinkMuted = sink->muted;
   }
 
   if (const auto* source = service.defaultSource(); source != nullptr) {
     m_lastSourceId = source->id;
+    m_lastSourceVolume = source->volume;
     m_lastSourcePercent = static_cast<int>(std::round(std::max(0.0f, source->volume) * 100.0f));
     m_lastSourceMuted = source->muted;
   }
@@ -67,6 +73,7 @@ void AudioOsd::showOutput(std::uint32_t sinkId, float volume, bool muted) {
   if (now < m_suppressUntil) {
     return;
   }
+  m_suppressAutoInputOsdUntil = now + kSuppressInputOsdAfterOutput;
   if (m_overlay != nullptr) {
     m_overlay->show(makeOutputContent(volume, muted));
   }
@@ -75,6 +82,7 @@ void AudioOsd::showOutput(std::uint32_t sinkId, float volume, bool muted) {
     m_lastSoundAt = now;
   }
   m_lastSinkId = sinkId;
+  m_lastSinkVolume = volume;
   m_lastSinkPercent = static_cast<int>(std::round(std::max(0.0f, volume) * 100.0f));
   m_lastSinkMuted = muted;
 }
@@ -92,6 +100,7 @@ void AudioOsd::showInput(std::uint32_t sourceId, float volume, bool muted) {
     m_lastSoundAt = now;
   }
   m_lastSourceId = sourceId;
+  m_lastSourceVolume = volume;
   m_lastSourcePercent = static_cast<int>(std::round(std::max(0.0f, volume) * 100.0f));
   m_lastSourceMuted = muted;
 }
@@ -101,38 +110,54 @@ void AudioOsd::onAudioStateChanged(const PipeWireService& service) {
   const auto* source = service.defaultSource();
 
   const std::uint32_t sinkId = sink != nullptr ? sink->id : 0;
-  const int sinkPercent = sink != nullptr ? static_cast<int>(std::round(std::max(0.0f, sink->volume) * 100.0f)) : 0;
+  const float sinkVolume = sink != nullptr ? sink->volume : 0.0f;
+  const int sinkPercent = sink != nullptr ? static_cast<int>(std::round(std::max(0.0f, sinkVolume) * 100.0f)) : 0;
   const bool sinkMuted = sink != nullptr ? sink->muted : false;
 
   const std::uint32_t sourceId = source != nullptr ? source->id : 0;
-  const int sourcePercent =
-      source != nullptr ? static_cast<int>(std::round(std::max(0.0f, source->volume) * 100.0f)) : 0;
+  const float sourceVolume = source != nullptr ? source->volume : 0.0f;
+  const int sourcePercent = source != nullptr ? static_cast<int>(std::round(std::max(0.0f, sourceVolume) * 100.0f)) : 0;
   const bool sourceMuted = source != nullptr ? source->muted : false;
 
-  if (std::chrono::steady_clock::now() < m_suppressUntil) {
+  const auto now = std::chrono::steady_clock::now();
+  if (now < m_suppressUntil) {
     m_lastSinkId = sinkId;
+    m_lastSinkVolume = sinkVolume;
     m_lastSinkPercent = sinkPercent;
     m_lastSinkMuted = sinkMuted;
     m_lastSourceId = sourceId;
+    m_lastSourceVolume = sourceVolume;
     m_lastSourcePercent = sourcePercent;
     m_lastSourceMuted = sourceMuted;
     return;
   }
 
+  const bool sinkChanged = sink != nullptr && (sinkId != m_lastSinkId || volumeChanged(sinkVolume, m_lastSinkVolume) ||
+                                               sinkMuted != m_lastSinkMuted);
+  const bool sinkRouteChanged = sink != nullptr && sinkId != m_lastSinkId;
+  const bool sinkDisappeared = sink == nullptr && m_lastSinkId != 0;
+  const bool sourceChanged =
+      source != nullptr && (sourceId != m_lastSourceId || volumeChanged(sourceVolume, m_lastSourceVolume) ||
+                            sourceMuted != m_lastSourceMuted);
+
+  if (sinkRouteChanged || sinkDisappeared) {
+    m_suppressAutoInputOsdUntil = now + std::chrono::milliseconds(400);
+  }
+
   if (m_overlay != nullptr) {
-    if (sink != nullptr &&
-        (sinkId != m_lastSinkId || sinkPercent != m_lastSinkPercent || sinkMuted != m_lastSinkMuted)) {
+    if (sinkChanged) {
       showOutput(sink->id, sink->volume, sinkMuted);
-    } else if (source != nullptr && (sourceId != m_lastSourceId || sourcePercent != m_lastSourcePercent ||
-                                     sourceMuted != m_lastSourceMuted)) {
+    } else if (sourceChanged && now >= m_suppressAutoInputOsdUntil) {
       showInput(source->id, source->volume, sourceMuted);
     }
   }
 
   m_lastSinkId = sinkId;
+  m_lastSinkVolume = sinkVolume;
   m_lastSinkPercent = sinkPercent;
   m_lastSinkMuted = sinkMuted;
   m_lastSourceId = sourceId;
+  m_lastSourceVolume = sourceVolume;
   m_lastSourcePercent = sourcePercent;
   m_lastSourceMuted = sourceMuted;
 }

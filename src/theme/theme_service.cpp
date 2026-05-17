@@ -12,6 +12,7 @@
 #include "theme/image_loader.h"
 #include "theme/palette_generator.h"
 #include "theme/scheme.h"
+#include "util/string_utils.h"
 
 #include <cctype>
 #include <chrono>
@@ -385,7 +386,7 @@ namespace noctalia::theme {
         kLog.warn("custom palette '{}' not found or invalid; falling back to builtin", cfg.customPalette);
       }
     } else if (cfg.source == PaletteSource::Wallpaper) {
-      resolved = resolveWallpaper(cfg, m_config.getDefaultWallpaperPath());
+      resolved = resolveWallpaper(cfg, m_config.getPaletteWallpaperPath());
     } else if (cfg.source == PaletteSource::Community && !cfg.communityPalette.empty()) {
       const auto cachePath = communityPaletteCachePath(cfg.communityPalette);
       if (std::filesystem::exists(cachePath)) {
@@ -491,6 +492,32 @@ namespace noctalia::theme {
           return "ok\n";
         },
         "theme-mode-toggle", "Toggle theme mode between dark and light");
+    ipc.registerHandler(
+        "theme-mode-set",
+        [this](const std::string& args) -> std::string {
+          const std::string token = StringUtils::trim(args);
+          const auto mode = enumFromKey(kThemeModes, token);
+          if (!mode.has_value()) {
+            return "error: expected dark, light, or auto\n";
+          }
+          m_config.setThemeMode(*mode);
+          return "ok\n";
+        },
+        "theme-mode-set <dark|light|auto>", "Set theme mode and persist to settings.toml");
+    ipc.registerHandler(
+        "theme-wallpaper-scheme-set",
+        [this](const std::string& args) -> std::string {
+          const std::string scheme = StringUtils::trim(args);
+          if (scheme.empty()) {
+            return "error: scheme name required\n";
+          }
+          if (!m_config.setThemeWallpaperScheme(scheme)) {
+            return "error: unknown scheme or settings not writable (see docs for valid names)\n";
+          }
+          return "ok\n";
+        },
+        "theme-wallpaper-scheme-set <scheme>",
+        "Set wallpaper palette generation scheme ([theme].wallpaper_scheme), e.g. m3-content or vibrant");
   }
 
 } // namespace noctalia::theme

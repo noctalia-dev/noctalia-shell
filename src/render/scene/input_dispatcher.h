@@ -9,11 +9,13 @@ class Node;
 class InputDispatcher {
 public:
   using CursorShapeCallback = std::function<void(std::uint32_t serial, std::uint32_t shape)>;
+  using HoverChangeCallback = std::function<void(InputArea* oldArea, InputArea* newArea)>;
 
   InputDispatcher() = default;
 
   void setSceneRoot(Node* root);
   void setCursorShapeCallback(CursorShapeCallback callback);
+  void setHoverChangeCallback(HoverChangeCallback callback);
 
   // Dispatch Wayland pointer events into the scene graph
   void pointerEnter(float x, float y, std::uint32_t serial);
@@ -44,6 +46,7 @@ private:
 
   Node* m_sceneRoot = nullptr;
   CursorShapeCallback m_cursorShapeCallback;
+  HoverChangeCallback m_hoverChangeCallback;
   InputArea* m_hoveredArea = nullptr;
   InputArea* m_focusedArea = nullptr;
   InputArea* m_capturedArea = nullptr; // held while any button is pressed

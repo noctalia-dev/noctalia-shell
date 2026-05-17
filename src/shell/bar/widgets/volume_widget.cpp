@@ -139,5 +139,20 @@ void VolumeWidget::syncState(Renderer& renderer) {
     m_label->measure(renderer);
   }
 
+  if (auto* rootNode = root(); rootNode != nullptr) {
+    auto* area = static_cast<InputArea*>(rootNode);
+    if (node != nullptr) {
+      int pct = static_cast<int>(std::round(volume * 100.0f));
+      std::vector<TooltipRow> rows;
+      rows.push_back({m_target == VolumeWidgetTarget::Input ? "Mic" : "Volume", std::to_string(pct) + "%"});
+      if (!node->description.empty()) {
+        rows.push_back({"Device", node->description});
+      }
+      area->setTooltip(std::move(rows));
+    } else {
+      area->clearTooltip();
+    }
+  }
+
   requestRedraw();
 }

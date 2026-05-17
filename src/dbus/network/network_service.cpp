@@ -32,12 +32,20 @@ namespace {
   constexpr auto k_nmIp4ConfigInterface = "org.freedesktop.NetworkManager.IP4Config";
   constexpr auto k_propertiesInterface = "org.freedesktop.DBus.Properties";
 
+  using ConnectionSettings = std::map<std::string, std::map<std::string, sdbus::Variant>>;
+  using VariantMap = std::map<std::string, sdbus::Variant>;
+
   // NMDeviceType values from NetworkManager D-Bus API.
   constexpr std::uint32_t k_nmDeviceTypeWifi = 2;
 
   // NMActiveConnectionState
   constexpr std::uint32_t k_nmActiveConnectionStateActivating = 1;
   constexpr std::uint32_t k_nmActiveConnectionStateActivated = 2;
+  constexpr std::uint32_t k_nmActiveConnectionStateDeactivated = 4;
+
+  // NMSettingsConnectionFlags / NMSettingsUpdate2Flags.
+  constexpr std::uint32_t k_nmSettingsConnectionFlagUnsaved = 0x01;
+  constexpr std::uint32_t k_nmSettingsUpdate2FlagToDisk = 0x01;
 
   template <typename T>
   T getPropertyOr(sdbus::IProxy& proxy, std::string_view interfaceName, std::string_view propertyName, T fallback) {
@@ -98,6 +106,12 @@ namespace {
   };
 
 } // namespace
+
+struct NetworkService::PendingAccessPointActivation {
+  std::string ssid;
+  std::string connectionPath;
+  std::unique_ptr<sdbus::IProxy> activeProxy;
+};
 
 const char* NetworkService::glyphForState(const NetworkState& state) noexcept {
   if (state.vpnActive) {
@@ -195,6 +209,7 @@ NetworkService::NetworkService(SystemBus& bus) : m_bus(bus) {
       });
 
   rebindActiveConnection();
+  requestScan();
 }
 
 NetworkService::~NetworkService() { m_lifetimeToken.reset(); }
@@ -301,13 +316,17 @@ bool NetworkService::activateAccessPoint(const AccessPointInfo& ap) {
   if (ap.devicePath.empty() || ap.path.empty()) {
     return false;
   }
+  if (ap.active) {
+    return true;
+  }
 
   // Only try ActivateConnection("/") when we actually have a saved profile for
   // this SSID — NM matches by best fit, and a stray saved connection (e.g. for
   // another device, or a profile we thought was forgotten) would otherwise be
   // silently reused with whatever PSK it carries. When there is no saved
-  // profile we go straight to AddAndActivateConnection so NM creates a fresh
-  // one and (for secured APs) calls GetSecrets against our agent.
+  // profile we create a temporary profile below. Secured new networks must use
+  // the psk overload so the current connection is not torn down just to ask for
+  // credentials.
   if (hasSavedConnection(ap.ssid)) {
     try {
       const sdbus::ObjectPath emptyConnectionPath{"/"};
@@ -325,28 +344,185 @@ bool NetworkService::activateAccessPoint(const AccessPointInfo& ap) {
     }
   }
 
+  if (ap.secured) {
+    return false;
+  }
+  return addAndActivateAccessPoint(ap, std::nullopt);
+}
+
+bool NetworkService::activateAccessPoint(const AccessPointInfo& ap, const std::string& psk) {
+  if (ap.devicePath.empty() || ap.path.empty()) {
+    return false;
+  }
+  if (ap.active) {
+    return true;
+  }
+  if (ap.secured && psk.empty()) {
+    return false;
+  }
+  return addAndActivateAccessPoint(ap, psk);
+}
+
+bool NetworkService::addAndActivateAccessPoint(const AccessPointInfo& ap, const std::optional<std::string>& psk) {
   try {
-    using SettingsDict = std::map<std::string, std::map<std::string, sdbus::Variant>>;
-    SettingsDict settings;
+    ConnectionSettings settings;
     if (ap.secured) {
-      // Minimal secured-wifi settings — NM fills in ssid from the specific_object
-      // and calls GetSecrets against us for the PSK.
+      // Minimal secured-wifi settings — NM fills in ssid from the specific_object.
       settings["802-11-wireless-security"]["key-mgmt"] = sdbus::Variant{std::string("wpa-psk")};
+      if (psk.has_value()) {
+        settings["802-11-wireless-security"]["psk"] = sdbus::Variant{*psk};
+      }
     }
     const sdbus::ObjectPath devicePath{ap.devicePath};
     const sdbus::ObjectPath apPath{ap.path};
     sdbus::ObjectPath connectionPath;
     sdbus::ObjectPath activePath;
-    m_nm->callMethod("AddAndActivateConnection")
-        .onInterface(k_nmInterface)
-        .withArguments(settings, devicePath, apPath)
-        .storeResultsTo(connectionPath, activePath);
+    VariantMap result;
+    const VariantMap options{{"persist", sdbus::Variant{std::string("memory")}}};
+    try {
+      m_nm->callMethod("AddAndActivateConnection2")
+          .onInterface(k_nmInterface)
+          .withArguments(settings, devicePath, apPath, options)
+          .storeResultsTo(connectionPath, activePath, result);
+    } catch (const sdbus::Error& e) {
+      if (e.getName() != sdbus::Error::Name{"org.freedesktop.DBus.Error.UnknownMethod"}) {
+        throw;
+      }
+      kLog.debug("AddAndActivateConnection2 unavailable for ssid={}; falling back to AddAndActivateConnection",
+                 ap.ssid);
+      m_nm->callMethod("AddAndActivateConnection")
+          .onInterface(k_nmInterface)
+          .withArguments(settings, devicePath, apPath)
+          .storeResultsTo(connectionPath, activePath);
+    }
     kLog.info("add+activate ap ssid={} conn={} active={}", ap.ssid, std::string(connectionPath),
               std::string(activePath));
+    watchPendingAccessPointActivation(ap.ssid, std::string(connectionPath), std::string(activePath));
+    refresh();
     return true;
   } catch (const sdbus::Error& e) {
     kLog.warn("AddAndActivateConnection failed ssid={} err={}", ap.ssid, e.what());
     return false;
+  }
+}
+
+void NetworkService::watchPendingAccessPointActivation(const std::string& ssid, const std::string& connectionPath,
+                                                       const std::string& activePath) {
+  if (activePath.empty() || activePath == "/") {
+    return;
+  }
+  try {
+    auto pending = std::make_unique<PendingAccessPointActivation>();
+    pending->ssid = ssid;
+    pending->connectionPath = connectionPath;
+    pending->activeProxy = sdbus::createProxy(m_bus.connection(), k_nmBusName, sdbus::ObjectPath{activePath});
+
+    const std::weak_ptr<int> lifetimeToken = m_lifetimeToken;
+    pending->activeProxy->uponSignal("PropertiesChanged")
+        .onInterface(k_propertiesInterface)
+        .call([this, lifetimeToken, activePath](const std::string& interfaceName,
+                                                const std::map<std::string, sdbus::Variant>& changedProperties,
+                                                const std::vector<std::string>& /*invalidatedProperties*/) {
+          if (lifetimeToken.expired() || interfaceName != k_nmActiveConnectionInterface) {
+            return;
+          }
+          auto stateIt = changedProperties.find("State");
+          if (stateIt == changedProperties.end()) {
+            return;
+          }
+          try {
+            handlePendingAccessPointActivationState(activePath, stateIt->second.get<std::uint32_t>());
+          } catch (const sdbus::Error&) {
+          }
+        });
+
+    auto* activeProxy = pending->activeProxy.get();
+    m_pendingApActivations[activePath] = std::move(pending);
+    const auto state =
+        getPropertyOr<std::uint32_t>(*activeProxy, k_nmActiveConnectionInterface, "State", std::uint32_t{0});
+    handlePendingAccessPointActivationState(activePath, state);
+  } catch (const sdbus::Error& e) {
+    kLog.debug("pending ap activation watch failed ssid={} active={}: {}", ssid, activePath, e.what());
+  }
+}
+
+void NetworkService::handlePendingAccessPointActivationState(const std::string& activePath, std::uint32_t state) {
+  auto it = m_pendingApActivations.find(activePath);
+  if (it == m_pendingApActivations.end()) {
+    return;
+  }
+  if (state == k_nmActiveConnectionStateActivated) {
+    const std::string ssid = it->second->ssid;
+    const std::string connectionPath = it->second->connectionPath;
+    m_pendingApActivations.erase(it);
+    kLog.info("ap activation succeeded ssid={} conn={}", ssid, connectionPath);
+    persistConnectionToDisk(connectionPath, ssid);
+    refresh();
+    return;
+  }
+  if (state == k_nmActiveConnectionStateDeactivated) {
+    const std::string ssid = it->second->ssid;
+    const std::string connectionPath = it->second->connectionPath;
+    m_pendingApActivations.erase(it);
+    kLog.info("ap activation did not complete ssid={} conn={}", ssid, connectionPath);
+    deleteUnsavedConnection(connectionPath, ssid);
+    refresh();
+  }
+}
+
+void NetworkService::persistConnectionToDisk(const std::string& connectionPath, const std::string& ssid) {
+  if (connectionPath.empty() || connectionPath == "/") {
+    return;
+  }
+  try {
+    auto connection = std::shared_ptr<sdbus::IProxy>(
+        sdbus::createProxy(m_bus.connection(), k_nmBusName, sdbus::ObjectPath{connectionPath}));
+    const std::weak_ptr<int> lifetimeToken = m_lifetimeToken;
+    const ConnectionSettings settings;
+    const VariantMap args;
+    connection->callMethodAsync("Update2")
+        .onInterface(k_nmSettingsConnectionInterface)
+        .withArguments(settings, k_nmSettingsUpdate2FlagToDisk, args)
+        .uponReplyInvoke([this, lifetimeToken, connection, connectionPath, ssid](std::optional<sdbus::Error> err,
+                                                                                 VariantMap /*result*/) {
+          if (lifetimeToken.expired()) {
+            return;
+          }
+          if (err.has_value()) {
+            kLog.warn("persist connection failed ssid={} conn={}: {}", ssid, connectionPath, err->what());
+          } else {
+            kLog.info("persisted connection ssid={} conn={}", ssid, connectionPath);
+          }
+          refresh();
+        });
+  } catch (const sdbus::Error& e) {
+    kLog.warn("persist connection dispatch failed ssid={} conn={}: {}", ssid, connectionPath, e.what());
+  }
+}
+
+void NetworkService::deleteUnsavedConnection(const std::string& connectionPath, const std::string& ssid) {
+  if (connectionPath.empty() || connectionPath == "/") {
+    return;
+  }
+  try {
+    auto connection = std::shared_ptr<sdbus::IProxy>(
+        sdbus::createProxy(m_bus.connection(), k_nmBusName, sdbus::ObjectPath{connectionPath}));
+    const std::weak_ptr<int> lifetimeToken = m_lifetimeToken;
+    connection->callMethodAsync("Delete")
+        .onInterface(k_nmSettingsConnectionInterface)
+        .uponReplyInvoke([this, lifetimeToken, connection, connectionPath, ssid](std::optional<sdbus::Error> err) {
+          if (lifetimeToken.expired()) {
+            return;
+          }
+          if (err.has_value()) {
+            kLog.warn("delete unsaved connection failed ssid={} conn={}: {}", ssid, connectionPath, err->what());
+          } else {
+            kLog.info("deleted unsaved connection ssid={} conn={}", ssid, connectionPath);
+          }
+          refresh();
+        });
+  } catch (const sdbus::Error& e) {
+    kLog.warn("delete unsaved connection dispatch failed ssid={} conn={}: {}", ssid, connectionPath, e.what());
   }
 }
 
@@ -605,6 +781,12 @@ bool NetworkService::hasSavedConnection(const std::string& ssid) const {
   if (ssid.empty()) {
     return false;
   }
+  for (const auto& [activePath, pending] : m_pendingApActivations) {
+    (void)activePath;
+    if (pending != nullptr && pending->ssid == ssid) {
+      return false;
+    }
+  }
   return std::find(m_savedSsids.begin(), m_savedSsids.end(), ssid) != m_savedSsids.end();
 }
 
@@ -639,6 +821,16 @@ void NetworkService::refreshSavedConnections(std::function<void()> onComplete) {
             try {
               auto connection =
                   std::shared_ptr<sdbus::IProxy>(sdbus::createProxy(m_bus.connection(), k_nmBusName, connectionPath));
+              const auto flags =
+                  getPropertyOr<std::uint32_t>(*connection, k_nmSettingsConnectionInterface, "Flags", std::uint32_t{0});
+              const auto filename =
+                  getPropertyOr<std::string>(*connection, k_nmSettingsConnectionInterface, "Filename", {});
+              if ((flags & k_nmSettingsConnectionFlagUnsaved) != 0U && filename.empty()) {
+                if (--savedState->pending == 0) {
+                  finishSavedConnections(savedState->ssids, onComplete);
+                }
+                continue;
+              }
               connection->callMethodAsync("GetSettings")
                   .onInterface(k_nmSettingsConnectionInterface)
                   .uponReplyInvoke([this, lifetimeToken, connection, savedState,
@@ -1102,7 +1294,15 @@ void NetworkService::finishRefreshAccessPoints(std::vector<AccessPointInfo>& aps
       continue;
     }
     if (ap.active) {
-      it->active = true;
+      if (!it->active || ap.strength > it->strength) {
+        *it = std::move(ap);
+      } else {
+        it->active = true;
+      }
+      continue;
+    }
+    if (it->active) {
+      continue;
     }
     if (ap.strength > it->strength) {
       it->strength = ap.strength;

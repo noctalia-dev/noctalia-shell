@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -55,10 +56,19 @@ namespace settings {
         linkedCommit;
   };
 
+  enum class TextSettingBrowseMode : std::uint8_t {
+    None = 0,
+    SelectFolder,
+    OpenFile,
+  };
+
   struct TextSetting {
     std::string value;
     std::string placeholder;
     float width = 0.0f; // 0 = use default
+    TextSettingBrowseMode browseMode = TextSettingBrowseMode::None;
+    /// When browseMode == OpenFile, optional filter (e.g. `{".wav", ".ogg"}`); empty allows any file.
+    std::vector<std::string> browseFileExtensions;
   };
 
   struct OptionalNumberSetting {
@@ -78,6 +88,16 @@ namespace settings {
     std::string customLabel;
   };
 
+  /// Integer stepper (always has a value; no unset/custom segmented UI).
+  struct StepperSetting {
+    int value = 0;
+    int minValue = 0;
+    int maxValue = 100;
+    int step = 1;
+    /// Appended to the value display (e.g. `"s"` → `5s`). Empty = plain number.
+    std::string valueSuffix = {};
+  };
+
   struct ListSetting {
     std::vector<std::string> items;
     // When non-empty, the add UI presents a Select limited to these options (minus already-added values)
@@ -92,8 +112,17 @@ namespace settings {
     std::size_t maxItems = 0;
   };
 
+  struct KeybindListSetting {
+    std::vector<KeyChord> items;
+    std::size_t maxItems = 0;
+  };
+
   struct SessionPanelActionsSetting {
     std::vector<SessionPanelActionConfig> items;
+  };
+
+  struct IdleBehaviorsSetting {
+    std::vector<IdleBehaviorConfig> items;
   };
 
   struct ColorSetting {
@@ -110,22 +139,34 @@ namespace settings {
   struct ButtonSetting {
     std::string label;
     std::function<void()> action;
+    std::string glyph;
   };
 
   struct ColorRolePickerSetting {
     std::vector<ColorRole> roles;
     std::string selectedValue;
     bool allowNone = false;
+    bool allowCustomColor = false;
   };
 
   using SettingControl =
       std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting, OptionalNumberSetting,
-                   OptionalStepperSetting, ListSetting, ShortcutListSetting, SessionPanelActionsSetting, ColorSetting,
-                   MultiSelectSetting, ButtonSetting, ColorRolePickerSetting, SearchPickerSetting>;
+                   OptionalStepperSetting, StepperSetting, ListSetting, ShortcutListSetting, KeybindListSetting,
+                   SessionPanelActionsSetting, IdleBehaviorsSetting, ColorSetting, MultiSelectSetting, ButtonSetting,
+                   ColorRolePickerSetting, SearchPickerSetting>;
 
-  struct SettingVisibility {
+  struct SettingVisibilityCondition {
     std::vector<std::string> path;
     std::vector<std::string> values;
+  };
+
+  struct SettingVisibility {
+    SettingVisibility() = default;
+    SettingVisibility(std::vector<std::string> pathIn, std::vector<std::string> valuesIn)
+        : all{SettingVisibilityCondition{std::move(pathIn), std::move(valuesIn)}} {}
+    explicit SettingVisibility(std::vector<SettingVisibilityCondition> conditions) : all(std::move(conditions)) {}
+
+    std::vector<SettingVisibilityCondition> all;
   };
 
   struct SettingEntry {
@@ -149,6 +190,7 @@ namespace settings {
     std::vector<SelectOption> communityPalettes;
     std::vector<SelectOption> customPalettes;
     std::vector<SelectOption> communityTemplates;
+    std::vector<SelectOption> fontFamilies;
   };
 
   [[nodiscard]] const BarConfig* findBar(const Config& cfg, std::string_view name);

@@ -4,6 +4,7 @@
 #include "ui/palette.h"
 #include "ui/style.h"
 
+#include <algorithm>
 #include <memory>
 #include <string>
 
@@ -13,7 +14,7 @@ class Renderer;
 
 namespace control_center {
 
-  void applySectionCardStyle(Flex& card, float scale = 1.0f);
+  void applySectionCardStyle(Flex& card, float scale = 1.0f, float fillOpacity = 1.0f);
   Label* addTitle(Flex& parent, const std::string& text, float scale = 1.0f);
   void addBody(Flex& parent, const std::string& text, float scale = 1.0f);
 
@@ -59,9 +60,11 @@ public:
   virtual bool dismissTransientUi() { return false; }
 
   void setContentScale(float scale) noexcept { m_contentScale = scale; }
+  void setPanelCardOpacity(float opacity) noexcept { m_panelCardOpacity = std::clamp(opacity, 0.0f, 1.0f); }
 
 protected:
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
+  [[nodiscard]] float panelCardOpacity() const noexcept { return m_panelCardOpacity; }
   [[nodiscard]] float scaled(float value) const noexcept { return value * m_contentScale; }
   virtual void doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
     (void)renderer;
@@ -72,4 +75,5 @@ protected:
 
 private:
   float m_contentScale = 1.0f;
+  float m_panelCardOpacity = 1.0f;
 };

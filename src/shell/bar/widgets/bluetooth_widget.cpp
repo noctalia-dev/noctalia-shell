@@ -63,6 +63,7 @@ void BluetoothWidget::create() {
   if (m_showLabel) {
     auto label = std::make_unique<Label>();
     label->setFontSize(Style::fontSizeBody * m_contentScale);
+    label->setBold(true);
     m_label = label.get();
     area->addChild(std::move(label));
   }
@@ -139,6 +140,21 @@ void BluetoothWidget::syncState(Renderer& renderer) {
     m_label->setColor(s.powered ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
                                 : colorSpecFromRole(ColorRole::OnSurfaceVariant));
     m_label->measure(renderer);
+  }
+
+  if (rootNode != nullptr) {
+    if (numConnected > 0) {
+      std::vector<TooltipRow> rows;
+      for (const auto& d : devices) {
+        if (d.connected) {
+          std::string value = d.hasBattery ? std::to_string(d.batteryPercent) + "%" : "Connected";
+          rows.push_back({d.alias, std::move(value)});
+        }
+      }
+      static_cast<InputArea*>(rootNode)->setTooltip(std::move(rows));
+    } else {
+      static_cast<InputArea*>(rootNode)->clearTooltip();
+    }
   }
 
   requestRedraw();

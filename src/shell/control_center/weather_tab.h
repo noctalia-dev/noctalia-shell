@@ -40,6 +40,7 @@ private:
   Flex* m_rootLayout = nullptr;
   Flex* m_leftColumn = nullptr;
   Flex* m_currentCard = nullptr;
+  Flex* m_glyphColumn = nullptr;
   Flex* m_detailsCard = nullptr;
   Flex* m_currentText = nullptr;
   Flex* m_forecastColumn = nullptr;

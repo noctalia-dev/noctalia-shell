@@ -59,9 +59,9 @@ namespace noctalia::theme {
       AvailableTemplate t;
       t.id = std::move(entry.id);
       t.displayName = entry.name.empty() ? t.id : std::move(entry.name);
+      t.category = std::move(entry.category);
       out.push_back(std::move(t));
     }
-    // Future: merge in templates from downloaded/external sources here.
     std::sort(out.begin(), out.end(), [](const AvailableTemplate& a, const AvailableTemplate& b) {
       if (a.displayName != b.displayName) {
         return a.displayName < b.displayName;

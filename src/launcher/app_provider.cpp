@@ -1,5 +1,6 @@
 #include "launcher/app_provider.h"
 
+#include "core/process.h"
 #include "util/file_utils.h"
 #include "util/fuzzy_match.h"
 #include "util/string_utils.h"
@@ -7,13 +8,9 @@
 
 #include <algorithm>
 #include <array>
-#include <cerrno>
-#include <csignal>
 #include <cstdlib>
 #include <cstring>
-#include <fcntl.h>
 #include <string_view>
-#include <sys/wait.h>
 #include <unistd.h>
 
 namespace {
@@ -206,62 +203,11 @@ namespace {
       args.front() = expandExecutablePath(args.front());
     }
 
-    pid_t pid = fork();
-    if (pid < 0) {
+    if (args.empty()) {
       return;
     }
 
-    if (pid == 0) {
-      // Intermediate child: create a new session, then fork again so the
-      // grandchild is fully detached and re-parented away from noctalia.
-      if (setsid() < 0) {
-        _exit(1);
-      }
-
-      const pid_t detachedPid = fork();
-      if (detachedPid < 0) {
-        _exit(1);
-      }
-      if (detachedPid > 0) {
-        _exit(0);
-      }
-
-      // Set activation token so the compositor can focus the app's window
-      if (!activationToken.empty()) {
-        setenv("XDG_ACTIVATION_TOKEN", activationToken.c_str(), 1);
-        setenv("DESKTOP_STARTUP_ID", activationToken.c_str(), 1);
-      }
-
-      // Close stdin/stdout/stderr
-      int devnull = open("/dev/null", O_RDWR);
-      if (devnull >= 0) {
-        dup2(devnull, STDIN_FILENO);
-        dup2(devnull, STDOUT_FILENO);
-        dup2(devnull, STDERR_FILENO);
-        if (devnull > STDERR_FILENO) {
-          close(devnull);
-        }
-      }
-
-      if (args.empty()) {
-        _exit(1);
-      }
-
-      std::vector<char*> argv;
-      argv.reserve(args.size() + 1);
-      for (auto& arg : args) {
-        argv.push_back(arg.data());
-      }
-      argv.push_back(nullptr);
-
-      execvp(argv[0], argv.data());
-      _exit(1);
-    }
-
-    // Reap only the intermediate child to avoid zombies.
-    int status = 0;
-    while (waitpid(pid, &status, 0) < 0 && errno == EINTR) {
-    }
+    (void)process::runAsync(args, activationToken);
   }
 
 } // namespace

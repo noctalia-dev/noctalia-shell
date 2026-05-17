@@ -133,7 +133,7 @@ void WallpaperPanel::create() {
     button->setMinWidth(Style::controlHeightSm * scale);
     button->setMinHeight(Style::controlHeightSm * scale);
     button->setPadding(Style::spaceXs * scale);
-    button->setRadius(Style::radiusMd * scale);
+    button->setRadius(Style::scaledRadiusMd(scale));
   };
 
   auto root = std::make_unique<Flex>();
@@ -141,8 +141,6 @@ void WallpaperPanel::create() {
   root->setAlign(FlexAlign::Stretch);
   root->setGap(Style::spaceSm * scale);
   root->setPadding(Style::spaceMd * scale);
-  root->setFill(colorSpecFromRole(ColorRole::Surface));
-  root->setRadius(Style::radiusXl * scale);
   m_rootLayout = root.get();
 
   auto header = std::make_unique<Flex>();
@@ -482,6 +480,9 @@ std::filesystem::path WallpaperPanel::rootDirectoryForSelection() const {
     return {};
   }
   const auto& wp = m_config->config().wallpaper;
+  if (!wp.perMonitorDirectories) {
+    return wp.directory;
+  }
   const auto& choice = m_monitorChoices[m_selectedMonitorIndex];
   if (choice.connector.empty()) {
     return wp.directory;

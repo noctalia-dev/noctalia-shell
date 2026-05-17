@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <string>
 #include <unordered_set>
 #include <vector>
 
@@ -34,6 +35,7 @@ private:
   void clearAllNotifications();
   void removeNotificationEntry(uint32_t id, bool wasActive);
   void toggleNotificationExpanded(uint32_t id);
+  void invokeNotificationAction(uint32_t id, const std::string& actionKey);
   bool refreshDataSnapshot();
   void updateEmptyState(bool hasHistory, bool hasFiltered);
   std::optional<std::size_t> filteredIndexForId(uint32_t id) const;

@@ -1440,17 +1440,19 @@ void MprisService::scheduleStartupRediscovery() {
 }
 
 void MprisService::scheduleRecoveryDiscovery() {
-  if (m_recoveryDiscoveryScheduled) {
+  if (m_recoveryTimer.active()) {
     return;
   }
 
-  m_recoveryDiscoveryScheduled = true;
+  static constexpr std::chrono::milliseconds kMaxBackoff{30'000};
+  const auto delay = m_recoveryBackoffMs;
+  m_recoveryBackoffMs = std::min(m_recoveryBackoffMs * 2, kMaxBackoff);
+
   const std::weak_ptr<void> aliveGuard = m_aliveGuard;
-  DeferredCall::callLater([this, aliveGuard]() {
+  m_recoveryTimer.start(delay, [this, aliveGuard]() {
     if (aliveGuard.expired()) {
       return;
     }
-    m_recoveryDiscoveryScheduled = false;
     discoverPlayers();
   });
 }
@@ -1618,6 +1620,7 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
 
 void MprisService::applyPlayerSnapshot(const std::string& busName, const MprisPlayerInfo& info,
                                        bool hadPositionSignal) {
+  m_recoveryBackoffMs = std::chrono::milliseconds{500};
   const auto previousActive = activePlayer();
   const auto now = std::chrono::steady_clock::now();
   if (info.playbackStatus == "Playing") {

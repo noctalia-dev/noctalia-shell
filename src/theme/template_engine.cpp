@@ -1,5 +1,6 @@
 #include "theme/template_engine.h"
 
+#include "core/log.h"
 #include "core/process.h"
 #include "core/toml.h"
 #include "cpp/cam/hct.h"
@@ -13,6 +14,7 @@
 #include "util/file_utils.h"
 #include "util/string_utils.h"
 
+#include <algorithm>
 #include <array>
 #include <cctype>
 #include <cmath>
@@ -30,6 +32,8 @@
 namespace noctalia::theme {
 
   namespace {
+
+    constexpr Logger kLog("template_engine");
 
     struct RichColor {
       Color color;
@@ -148,6 +152,7 @@ namespace noctalia::theme {
       std::vector<std::string> outputPaths;
       // Rendered like hooks, then run via sh -lc; non-comment stdout lines become extra output paths.
       std::string outputPathDynamic;
+      std::string inputPathDynamic;
       std::string compareTo;
       std::vector<CompareColorEntry> colorsToCompare;
       std::string preHook;
@@ -226,9 +231,7 @@ namespace noctalia::theme {
           oss << static_cast<long long>(rounded);
           return oss.str();
         }
-        std::ostringstream oss;
-        oss << *n;
-        return oss.str();
+        return StringUtils::formatDotDecimal(*n);
       }
       if (const auto* color = std::get_if<RichColor>(&value.value))
         return color->color.toHex();
@@ -261,19 +264,17 @@ namespace noctalia::theme {
                std::to_string(color.color.b);
       }
       if (formatType == "rgba") {
-        std::ostringstream oss;
-        oss << "rgba(" << color.color.r << ", " << color.color.g << ", " << color.color.b << ", " << color.alpha << ")";
-        return oss.str();
+        return "rgba(" + std::to_string(color.color.r) + ", " + std::to_string(color.color.g) + ", " +
+               std::to_string(color.color.b) + ", " + StringUtils::formatDotDecimal(color.alpha) + ")";
       }
       auto [h, s, l] = color.color.toHsl();
       if (formatType == "hsl")
         return "hsl(" + std::to_string(static_cast<int>(h)) + ", " + std::to_string(static_cast<int>(s * 100.0)) +
                "%, " + std::to_string(static_cast<int>(l * 100.0)) + "%)";
       if (formatType == "hsla") {
-        std::ostringstream oss;
-        oss << "hsla(" << static_cast<int>(h) << ", " << static_cast<int>(s * 100.0) << "%, "
-            << static_cast<int>(l * 100.0) << "%, " << color.alpha << ")";
-        return oss.str();
+        return "hsla(" + std::to_string(static_cast<int>(h)) + ", " + std::to_string(static_cast<int>(s * 100.0)) +
+               "%, " + std::to_string(static_cast<int>(l * 100.0)) + "%, " +
+               StringUtils::formatDotDecimal(color.alpha) + ")";
       }
       if (formatType == "hue")
         return std::to_string(static_cast<int>(h));
@@ -288,9 +289,7 @@ namespace noctalia::theme {
       if (formatType == "blue")
         return std::to_string(color.color.b);
       if (formatType == "alpha") {
-        std::ostringstream oss;
-        oss << color.alpha;
-        return oss.str();
+        return StringUtils::formatDotDecimal(color.alpha);
       }
       return color.color.toHex();
     }
@@ -335,7 +334,9 @@ namespace noctalia::theme {
     double parseNumber(const std::optional<std::string>& arg, double fallback = 0.0) {
       if (!arg)
         return fallback;
-      return std::stod(*arg);
+      if (const auto value = StringUtils::parseDotDecimal<double>(*arg))
+        return *value;
+      throw std::invalid_argument("invalid numeric filter argument");
     }
 
     std::vector<std::string> splitWords(std::string s) {
@@ -440,8 +441,9 @@ namespace noctalia::theme {
         diff += 360.0;
       double newHue = srcHue;
       if (name == "blend") {
-        const double amount =
-            std::clamp(match[2].matched ? std::stod(StringUtils::trim(match[2].str())) : 0.0, 0.0, 1.0);
+        const std::optional<std::string> amountArg =
+            match[2].matched ? std::optional<std::string>(match[2].str()) : std::nullopt;
+        const double amount = std::clamp(parseNumber(amountArg), 0.0, 1.0);
         newHue = std::fmod(srcHue + diff * amount + 360.0, 360.0);
       } else if (name == "harmonize") {
         double rotation = std::min(std::fabs(diff) * 0.5, 15.0);
@@ -512,14 +514,22 @@ namespace noctalia::theme {
       RenderFileResult renderFile(const std::filesystem::path& inputPath, const std::filesystem::path& outputPath) {
         RenderFileResult result;
         std::ifstream in(inputPath);
-        if (!in)
+        if (!in) {
+          if (m_options.verbose)
+            kLog.warn("failed to open template input {}", inputPath.string());
           return result;
+        }
         std::stringstream buffer;
         buffer << in.rdbuf();
         auto rendered = render(buffer.str());
         result.errorCount = rendered.errorCount;
-        if (rendered.errorCount > 0)
+        if (rendered.errorCount > 0) {
+          if (m_options.verbose) {
+            kLog.warn("failed to render template {} -> {}: {} template error(s); output not written",
+                      inputPath.string(), outputPath.string(), rendered.errorCount);
+          }
           return result;
+        }
         std::error_code ec;
         std::filesystem::create_directories(outputPath.parent_path(), ec);
         std::string previous;
@@ -536,8 +546,11 @@ namespace noctalia::theme {
           return result;
         }
         std::ofstream out(outputPath);
-        if (!out)
+        if (!out) {
+          if (m_options.verbose)
+            kLog.warn("failed to open template output {}", outputPath.string());
           return result;
+        }
         out << rendered.text;
         result.success = true;
         result.wrote = true;
@@ -857,9 +870,19 @@ namespace noctalia::theme {
           if (name == "to_color") {
             continue;
           } else if (kColorArgFilters.contains(name)) {
-            color = applyColorArgFilter(color, name, arg);
+            try {
+              color = applyColorArgFilter(color, name, arg);
+            } catch (...) {
+              logError();
+              return "{{" + base + "}}";
+            }
           } else if (kSupportedFilters.contains(name)) {
-            color = applyColorFilter(color, name, arg);
+            try {
+              color = applyColorFilter(color, name, arg);
+            } catch (...) {
+              logError();
+              return "{{" + base + "}}";
+            }
           }
         }
         return formatColor(color, formatType);
@@ -1120,12 +1143,20 @@ namespace noctalia::theme {
         inputPath = input->get();
       }
 
-      if (inputPath.empty())
+      std::string inputPathDynamic;
+      if (const auto ipd = tpl.get_as<std::string>("input_path_dynamic"))
+        inputPathDynamic = ipd->get();
+
+      if (inputPath.empty() && inputPathDynamic.empty())
         return std::nullopt;
 
       ParsedTemplateEntry entry;
       entry.name = std::string(name);
-      entry.inputPath = resolveConfigPath(configPath, inputPath).string();
+
+      if (!inputPath.empty())
+        entry.inputPath = resolveConfigPath(configPath, inputPath).string();
+
+      entry.inputPathDynamic = inputPathDynamic;
       entry.outputPaths = parseOutputPaths(tpl.get("output_path"));
       for (std::string& output : entry.outputPaths)
         output = resolveConfigPath(configPath, output).string();
@@ -1157,6 +1188,15 @@ namespace noctalia::theme {
       root = toml::parse_file(configPath.string());
     } catch (const toml::parse_error&) {
       return false;
+    }
+
+    return processConfigTable(root, configPath);
+  }
+
+  bool TemplateEngine::processConfigTable(const toml::table& root, const std::filesystem::path& configPath) {
+    auto cancelRequested = [this]() { return m_options.cancelRequested && m_options.cancelRequested(); };
+    if (cancelRequested()) {
+      return true;
     }
 
     if (const toml::table* config = root["config"].as_table()) {
@@ -1256,6 +1296,21 @@ namespace noctalia::theme {
       renderOptions.configDir = configPath.has_parent_path() ? configPath.parent_path().string() : "";
       renderOptions.configFile = configPath.string();
 
+      std::string effectiveInput = entry.inputPath;
+      if (!entry.inputPathDynamic.empty()) {
+        const auto cmdRendered = EngineImpl(m_themeData, renderOptions).render(entry.inputPathDynamic);
+        if (cmdRendered.errorCount == 0 && !cmdRendered.text.empty()) {
+          const auto dynResult = process::runSync(cmdRendered.text);
+          if (dynResult.exitCode == 0) {
+            std::vector<std::string> dynamicInputs;
+            appendPathsFromDynamicStdout(configPath, dynamicInputs, dynResult.out);
+
+            if (!dynamicInputs.empty())
+              effectiveInput = dynamicInputs.front();
+          }
+        }
+      }
+
       std::vector<std::string> effectiveOutputs = entry.outputPaths;
       if (!entry.outputPathDynamic.empty()) {
         const auto cmdRendered = EngineImpl(m_themeData, renderOptions).render(entry.outputPathDynamic);
@@ -1285,8 +1340,14 @@ namespace noctalia::theme {
           return ok;
         }
 
+        if (effectiveInput.empty()) {
+          kLog.warn("failed to resolve input path for template {} -> {}; skipping", entry.name, outputPath);
+          ok = false;
+          continue;
+        }
+
         const auto fileResult =
-            EngineImpl(m_themeData, renderOptions).renderFile(entry.inputPath, std::filesystem::path(outputPath));
+            EngineImpl(m_themeData, renderOptions).renderFile(effectiveInput, std::filesystem::path(outputPath));
         if (!fileResult.success) {
           ok = false;
           continue;

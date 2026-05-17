@@ -57,13 +57,20 @@ public:
   // Persisted wallpaper paths (written to settings.toml, app-managed).
   [[nodiscard]] std::string getWallpaperPath(const std::string& connectorName) const;
   [[nodiscard]] std::string getDefaultWallpaperPath() const;
+  // Most recently applied wallpaper path (any output, or default). Used as the palette/template input
+  // so colors are generated even when wallpaper management is only used on a subset of displays.
+  [[nodiscard]] std::string getPaletteWallpaperPath() const;
   void setWallpaperPath(const std::optional<std::string>& connectorName, const std::string& path);
   void setWallpaperChangeCallback(ChangeCallback callback);
 
   // Persist a theme-mode override to settings.toml and trigger the reload pipeline.
   void setThemeMode(ThemeMode mode);
+  // Persist `[theme].wallpaper_scheme` (palette-from-wallpaper generation) and reload. Returns false if unknown.
+  [[nodiscard]] bool setThemeWallpaperScheme(std::string_view scheme);
   // Persist dock enabled override to settings.toml and trigger the reload pipeline.
   void setDockEnabled(bool enabled);
+  // Persist desktop widget layout/editor state to settings.toml and trigger the reload pipeline.
+  bool setDesktopWidgetsState(const DesktopWidgetsConfig& desktopWidgets);
   bool markSetupWizardCompleted();
   [[nodiscard]] bool hasOverride(const std::vector<std::string>& path) const;
   [[nodiscard]] bool hasEffectiveOverride(const std::vector<std::string>& path) const;
@@ -113,6 +120,7 @@ private:
   std::unordered_set<std::string> m_configFileBarNames;
   std::unordered_map<std::string, std::unordered_set<std::string>> m_configFileMonitorOverrideNames;
   std::string m_defaultWallpaperPath;
+  std::string m_lastWallpaperPath;
   std::unordered_map<std::string, std::string> m_monitorWallpaperPaths;
   bool m_setupWizardCompleted = false;
   mutable std::unordered_map<std::string, bool> m_effectiveOverrideCache;

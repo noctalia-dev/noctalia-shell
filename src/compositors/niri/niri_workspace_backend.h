@@ -17,30 +17,28 @@ namespace compositors::niri {
   class NiriRuntime;
 } // namespace compositors::niri
 
-class NiriWorkspaceBackend {
+class NiriWorkspaceBackend final : public compositors::WorkspaceMetadataBackend {
 public:
-  using ChangeCallback = std::function<void()>;
-
   explicit NiriWorkspaceBackend(compositors::niri::NiriRuntime& runtime);
-  ~NiriWorkspaceBackend();
+  ~NiriWorkspaceBackend() override;
 
   NiriWorkspaceBackend(const NiriWorkspaceBackend&) = delete;
   NiriWorkspaceBackend& operator=(const NiriWorkspaceBackend&) = delete;
 
-  void setChangeCallback(ChangeCallback callback);
-  [[nodiscard]] bool canTrackOverviewState() const noexcept;
-  [[nodiscard]] bool hasOverviewState() const noexcept { return m_overviewKnown; }
-  [[nodiscard]] bool isOverviewOpen() const noexcept { return m_overviewOpen; }
-  [[nodiscard]] int pollFd() const noexcept { return m_socketFd; }
-  [[nodiscard]] short pollEvents() const noexcept { return POLLIN | POLLHUP | POLLERR; }
-  [[nodiscard]] int pollTimeoutMs() const noexcept;
-  void dispatchPoll(short revents);
-  void apply(std::vector<Workspace>& workspaces, const std::string& outputName = {}) const;
-  [[nodiscard]] std::vector<std::string> workspaceKeys(const std::string& outputName = {}) const;
+  void setChangeCallback(ChangeCallback callback) override;
+  [[nodiscard]] bool canTrackOverviewState() const noexcept override;
+  [[nodiscard]] bool hasOverviewState() const noexcept override { return m_overviewKnown; }
+  [[nodiscard]] bool isOverviewOpen() const noexcept override { return m_overviewOpen; }
+  [[nodiscard]] int pollFd() const noexcept override { return m_socketFd; }
+  [[nodiscard]] short pollEvents() const noexcept override { return POLLIN | POLLHUP | POLLERR; }
+  [[nodiscard]] int pollTimeoutMs() const noexcept override;
+  void dispatchPoll(short revents) override;
+  void apply(std::vector<Workspace>& workspaces, const std::string& outputName = {}) const override;
+  [[nodiscard]] std::vector<std::string> workspaceKeys(const std::string& outputName = {}) const override;
   [[nodiscard]] std::unordered_map<std::string, std::vector<std::string>>
-  appIdsByWorkspace(const std::string& outputName = {}) const;
-  [[nodiscard]] std::vector<WorkspaceWindow> workspaceWindows(const std::string& outputName = {}) const;
-  void cleanup();
+  appIdsByWorkspace(const std::string& outputName = {}) const override;
+  [[nodiscard]] std::vector<WorkspaceWindow> workspaceWindows(const std::string& outputName = {}) const override;
+  void cleanup() override;
 
 private:
   struct WindowState {
@@ -83,6 +81,8 @@ private:
   [[nodiscard]] static std::optional<std::uint64_t> parseUnsigned(const std::string& value);
   [[nodiscard]] static std::optional<std::size_t> parseLeadingNumber(const std::string& value);
   [[nodiscard]] static std::string workspaceKey(const WorkspaceState& workspace);
+  [[nodiscard]] std::vector<const WorkspaceState*>
+  sortedWorkspaceCandidatesForOutput(const std::string& outputName) const;
   void recomputeOccupancy();
   void notifyChanged() const;
 
@@ -95,5 +95,6 @@ private:
   bool m_overviewKnown = false;
   bool m_overviewOpen = false;
   std::chrono::steady_clock::time_point m_nextReconnectAt{};
+  std::chrono::seconds m_reconnectBackoff{2};
   ChangeCallback m_changeCallback;
 };

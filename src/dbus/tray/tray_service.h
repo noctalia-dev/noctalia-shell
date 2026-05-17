@@ -23,6 +23,8 @@ struct TrayItemInfo {
   std::string itemName;
   std::string processName;
   std::string title;
+  std::string statusNotifierTitle;
+  std::string statusNotifierDescription;
   std::string status;
   std::vector<std::uint8_t> iconArgb32;
   std::int32_t iconWidth = 0;

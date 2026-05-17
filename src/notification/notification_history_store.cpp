@@ -697,7 +697,7 @@ bool saveNotificationHistoryToFile(const std::filesystem::path& path,
     kLog.warn("could not write notification history tmp {}", tmpPath);
     return false;
   }
-  out << root.dump(2);
+  out << root.dump(2, ' ', false, nlohmann::json::error_handler_t::replace);
   out.close();
 
   std::error_code ec;

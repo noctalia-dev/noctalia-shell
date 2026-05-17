@@ -76,7 +76,7 @@ void TestPanel::create() {
   closeButton->setMinWidth(Style::controlHeightSm * scale);
   closeButton->setMinHeight(Style::controlHeightSm * scale);
   closeButton->setPadding(Style::spaceXs * scale);
-  closeButton->setRadius(Style::radiusMd * scale);
+  closeButton->setRadius(Style::scaledRadiusMd(scale));
   closeButton->setOnClick([]() { PanelManager::instance().closePanel(); });
   m_closeButton = closeButton.get();
   headerRow->addChild(std::move(closeButton));
@@ -157,7 +157,7 @@ void TestPanel::create() {
       btn->setVariant(spec.variant);
       btn->setMinHeight(Style::controlHeight * scale);
       btn->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-      btn->setRadius(Style::radiusMd * scale);
+      btn->setRadius(Style::scaledRadiusMd(scale));
       btn->setOnClick([]() {});
       btn->setEnabled(enabled);
       return btn;
@@ -189,7 +189,7 @@ void TestPanel::create() {
     glyphTextButton->setVariant(ButtonVariant::Default);
     glyphTextButton->setMinHeight(Style::controlHeight * scale);
     glyphTextButton->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-    glyphTextButton->setRadius(Style::radiusMd * scale);
+    glyphTextButton->setRadius(Style::scaledRadiusMd(scale));
     glyphTextButton->setOnClick([]() {});
     m_glyphTextButton = glyphTextButton.get();
 
@@ -200,7 +200,7 @@ void TestPanel::create() {
     glyphButton->setMinHeight(Style::controlHeight * scale);
     glyphButton->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale,
                             Style::spaceMd * scale);
-    glyphButton->setRadius(Style::radiusMd * scale);
+    glyphButton->setRadius(Style::scaledRadiusMd(scale));
     glyphButton->setOnClick([]() {});
     m_glyphButton = glyphButton.get();
 
@@ -481,7 +481,7 @@ void TestPanel::create() {
     openFileDialog->setVariant(ButtonVariant::Default);
     openFileDialog->setMinHeight(Style::controlHeight * scale);
     openFileDialog->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-    openFileDialog->setRadius(Style::radiusMd * scale);
+    openFileDialog->setRadius(Style::scaledRadiusMd(scale));
     openFileDialog->setOnClick([this]() {
       FileDialogOptions options;
       options.mode = FileDialogMode::Open;
@@ -513,7 +513,7 @@ void TestPanel::create() {
   {
     auto resultSwatch = std::make_unique<Box>();
     resultSwatch->setSize(28.0f * scale, 28.0f * scale);
-    resultSwatch->setRadius(Style::radiusMd * scale);
+    resultSwatch->setRadius(Style::scaledRadiusMd(scale));
     resultSwatch->setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth * scale);
     if (const auto last = ColorPickerDialog::lastResult()) {
       resultSwatch->setFill(*last);
@@ -528,7 +528,7 @@ void TestPanel::create() {
     openPicker->setVariant(ButtonVariant::Default);
     openPicker->setMinHeight(Style::controlHeight * scale);
     openPicker->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-    openPicker->setRadius(Style::radiusMd * scale);
+    openPicker->setRadius(Style::scaledRadiusMd(scale));
     openPicker->setOnClick([this]() {
       ColorPickerDialogOptions options;
       if (const auto last = ColorPickerDialog::lastResult()) {
@@ -571,7 +571,7 @@ void TestPanel::create() {
     openPicker->setVariant(ButtonVariant::Default);
     openPicker->setMinHeight(Style::controlHeight * scale);
     openPicker->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-    openPicker->setRadius(Style::radiusMd * scale);
+    openPicker->setRadius(Style::scaledRadiusMd(scale));
     openPicker->setOnClick([this]() {
       GlyphPickerDialogOptions options;
       if (const auto last = GlyphPickerDialog::lastResult()) {
@@ -628,12 +628,12 @@ void TestPanel::create() {
       tile->setGap(Style::spaceXs * scale);
       tile->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
       if (tileData.accent) {
-        tile->setRadius(Style::radiusMd * scale);
+        tile->setRadius(Style::scaledRadiusMd(scale));
         tile->setFill(colorSpecFromRole(ColorRole::Primary));
         tile->setBorder(colorSpecFromRole(ColorRole::Primary), Style::borderWidth);
       } else {
-        tile->setCardStyle(scale);
-        tile->setRadius(Style::radiusMd * scale);
+        tile->setCardStyle(scale, panelCardOpacity());
+        tile->setRadius(Style::scaledRadiusMd(scale));
       }
 
       auto icon = std::make_unique<Glyph>();
@@ -663,14 +663,14 @@ void TestPanel::create() {
     transformStage->setSize(280.0f * scale, 220.0f * scale);
     transformStage->setFill(colorSpecFromRole(ColorRole::Surface));
     transformStage->setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth * scale);
-    transformStage->setRadius(Style::radiusLg * scale);
+    transformStage->setRadius(Style::scaledRadiusLg(scale));
     m_transformStage = transformStage.get();
 
     auto demoBox = std::make_unique<Box>();
     demoBox->setSize(180.0f * scale, 100.0f * scale);
     demoBox->setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
     demoBox->setBorder(colorSpecFromRole(ColorRole::Primary), Style::borderWidth * scale);
-    demoBox->setRadius(Style::radiusLg * scale);
+    demoBox->setRadius(Style::scaledRadiusLg(scale));
     demoBox->setRotation(0.0f);
     m_transformDemoBox = demoBox.get();
 
@@ -681,7 +681,7 @@ void TestPanel::create() {
     demoButton->setGlyphSize(Style::fontSizeBody * scale);
     demoButton->setVariant(ButtonVariant::Accent);
     demoButton->setPadding(Style::spaceSm * scale, Style::spaceLg * scale);
-    demoButton->setRadius(Style::radiusMd * scale);
+    demoButton->setRadius(Style::scaledRadiusMd(scale));
     demoButton->setOnClick([this]() {
       if (m_transformHelp != nullptr) {
         m_transformHelp->setText("Transform button clicked!");
@@ -826,7 +826,7 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
     applyBtn->setFontSize(Style::fontSizeBody * scale);
     applyBtn->setMinHeight(Style::controlHeight * scale);
     applyBtn->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-    applyBtn->setRadius(Style::radiusMd * scale);
+    applyBtn->setRadius(Style::scaledRadiusMd(scale));
     applyBtn->setOnClick([this]() {
       if (m_fontFamilyInput != nullptr) {
         applyTestFontFamily(m_fontFamilyInput->value());
@@ -842,7 +842,7 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
       btn->setFontSize(Style::fontSizeCaption * scale);
       btn->setMinHeight(Style::controlHeightSm * scale);
       btn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
-      btn->setRadius(Style::radiusMd * scale);
+      btn->setRadius(Style::scaledRadiusMd(scale));
       btn->setOnClick([this, preset]() { applyTestFontFamily(preset); });
       row->addChild(std::move(btn));
     }
@@ -870,8 +870,8 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
     col->setDirection(FlexDirection::Vertical);
     col->setAlign(FlexAlign::Start);
     col->setGap(Style::spaceSm * scale);
-    col->setCardStyle(scale);
-    col->setRadius(Style::radiusLg * scale);
+    col->setCardStyle(scale, panelCardOpacity());
+    col->setRadius(Style::scaledRadiusLg(scale));
     col->setPadding(Style::spaceMd * scale);
 
     auto title = std::make_unique<Label>();
@@ -938,8 +938,8 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
     col->setDirection(FlexDirection::Vertical);
     col->setAlign(FlexAlign::Start);
     col->setGap(Style::spaceSm * scale);
-    col->setCardStyle(scale);
-    col->setRadius(Style::radiusLg * scale);
+    col->setCardStyle(scale, panelCardOpacity());
+    col->setRadius(Style::scaledRadiusLg(scale));
     col->setPadding(Style::spaceMd * scale);
 
     auto title = std::make_unique<Label>();
@@ -986,8 +986,8 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
     col->setDirection(FlexDirection::Vertical);
     col->setAlign(FlexAlign::Start);
     col->setGap(Style::spaceSm * scale);
-    col->setCardStyle(scale);
-    col->setRadius(Style::radiusLg * scale);
+    col->setCardStyle(scale, panelCardOpacity());
+    col->setRadius(Style::scaledRadiusLg(scale));
     col->setPadding(Style::spaceMd * scale);
 
     auto title = std::make_unique<Label>();
@@ -1029,8 +1029,8 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
     col->setDirection(FlexDirection::Vertical);
     col->setAlign(FlexAlign::Start);
     col->setGap(Style::spaceSm * scale);
-    col->setCardStyle(scale);
-    col->setRadius(Style::radiusLg * scale);
+    col->setCardStyle(scale, panelCardOpacity());
+    col->setRadius(Style::scaledRadiusLg(scale));
     col->setPadding(Style::spaceMd * scale);
 
     auto title = std::make_unique<Label>();
@@ -1103,8 +1103,8 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
     col->setDirection(FlexDirection::Vertical);
     col->setAlign(FlexAlign::Start);
     col->setGap(Style::spaceSm * scale);
-    col->setCardStyle(scale);
-    col->setRadius(Style::radiusLg * scale);
+    col->setCardStyle(scale, panelCardOpacity());
+    col->setRadius(Style::scaledRadiusLg(scale));
     col->setPadding(Style::spaceMd * scale);
 
     auto title = std::make_unique<Label>();
@@ -1133,7 +1133,7 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
       frame->setAlign(FlexAlign::Center);
       frame->setSize(w * scale, 0.0f);
       frame->setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth);
-      frame->setRadius(Style::radiusSm * scale);
+      frame->setRadius(Style::scaledRadiusSm(scale));
       frame->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
 
       auto lbl = std::make_unique<Label>();
@@ -1160,8 +1160,8 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
     col->setDirection(FlexDirection::Vertical);
     col->setAlign(FlexAlign::Start);
     col->setGap(Style::spaceSm * scale);
-    col->setCardStyle(scale);
-    col->setRadius(Style::radiusLg * scale);
+    col->setCardStyle(scale, panelCardOpacity());
+    col->setRadius(Style::scaledRadiusLg(scale));
     col->setPadding(Style::spaceMd * scale);
 
     auto title = std::make_unique<Label>();
@@ -1191,7 +1191,7 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
       frame->setAlign(FlexAlign::Center);
       frame->setSize(kBoxW * scale, 0.0f);
       frame->setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth);
-      frame->setRadius(Style::radiusSm * scale);
+      frame->setRadius(Style::scaledRadiusSm(scale));
       frame->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
 
       auto lbl = std::make_unique<Label>();
@@ -1233,8 +1233,8 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
     col->setDirection(FlexDirection::Vertical);
     col->setAlign(FlexAlign::Start);
     col->setGap(Style::spaceSm * scale);
-    col->setCardStyle(scale);
-    col->setRadius(Style::radiusLg * scale);
+    col->setCardStyle(scale, panelCardOpacity());
+    col->setRadius(Style::scaledRadiusLg(scale));
     col->setPadding(Style::spaceMd * scale);
 
     auto title = std::make_unique<Label>();
@@ -1279,8 +1279,8 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
     col->setDirection(FlexDirection::Vertical);
     col->setAlign(FlexAlign::Start);
     col->setGap(Style::spaceSm * scale);
-    col->setCardStyle(scale);
-    col->setRadius(Style::radiusLg * scale);
+    col->setCardStyle(scale, panelCardOpacity());
+    col->setRadius(Style::scaledRadiusLg(scale));
     col->setPadding(Style::spaceMd * scale);
 
     auto title = std::make_unique<Label>();
@@ -1308,7 +1308,7 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
       pill->setDirection(FlexDirection::Horizontal);
       pill->setAlign(FlexAlign::Center);
       pill->setGap(Style::spaceXs * scale);
-      pill->setRadius(Style::radiusMd * scale);
+      pill->setRadius(Style::scaledRadiusMd(scale));
       pill->setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth);
       pill->setPadding(0.0f, Style::spaceSm * scale);
 
@@ -1339,8 +1339,8 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
     col->setDirection(FlexDirection::Vertical);
     col->setAlign(FlexAlign::Start);
     col->setGap(Style::spaceSm * scale);
-    col->setCardStyle(scale);
-    col->setRadius(Style::radiusLg * scale);
+    col->setCardStyle(scale, panelCardOpacity());
+    col->setRadius(Style::scaledRadiusLg(scale));
     col->setPadding(Style::spaceMd * scale);
 
     auto title = std::make_unique<Label>();
@@ -1373,8 +1373,8 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
     col->setDirection(FlexDirection::Vertical);
     col->setAlign(FlexAlign::Start);
     col->setGap(Style::spaceSm * scale);
-    col->setCardStyle(scale);
-    col->setRadius(Style::radiusLg * scale);
+    col->setCardStyle(scale, panelCardOpacity());
+    col->setRadius(Style::scaledRadiusLg(scale));
     col->setPadding(Style::spaceMd * scale);
 
     auto title = std::make_unique<Label>();

@@ -17,7 +17,7 @@ namespace {
 IdleInhibitor::IdleInhibitor() = default;
 
 IdleInhibitor::~IdleInhibitor() {
-  destroyInhibitor();
+  destroyInhibitor(false);
   m_surface.reset();
 }
 
@@ -41,7 +41,7 @@ void IdleInhibitor::setEnabled(bool enabled) {
   }
 
   m_enabled = enabled;
-  syncInhibitor();
+  syncInhibitor(true);
   notifyChanged();
 }
 
@@ -87,13 +87,13 @@ void IdleInhibitor::ensureSurface() {
   m_surface = std::move(surface);
 }
 
-void IdleInhibitor::syncInhibitor() {
+void IdleInhibitor::syncInhibitor(bool logTransitions) {
   if (m_manager == nullptr) {
     return;
   }
 
   if (!m_enabled) {
-    destroyInhibitor();
+    destroyInhibitor(logTransitions);
     return;
   }
 
@@ -103,22 +103,39 @@ void IdleInhibitor::syncInhibitor() {
   }
 
   m_inhibitor = zwp_idle_inhibit_manager_v1_create_inhibitor(m_manager, m_surface->wlSurface());
-  if (m_inhibitor != nullptr) {
+  if (m_inhibitor != nullptr && logTransitions) {
     kLog.info("idle inhibitor enabled");
   }
 }
 
-void IdleInhibitor::destroyInhibitor() {
+void IdleInhibitor::destroyInhibitor(bool logDisable) {
   if (m_inhibitor != nullptr) {
     zwp_idle_inhibitor_v1_destroy(m_inhibitor);
     m_inhibitor = nullptr;
-    kLog.info("idle inhibitor disabled");
+    if (logDisable) {
+      kLog.info("idle inhibitor disabled");
+    }
   }
 }
 
 void IdleInhibitor::notifyChanged() {
   if (m_changeCallback) {
     m_changeCallback();
+  }
+}
+
+void IdleInhibitor::onOutputChange() {
+  if (m_manager == nullptr) {
+    return;
+  }
+
+  destroyInhibitor(false);
+  if (m_surface != nullptr) {
+    m_surface.reset();
+  }
+
+  if (m_enabled) {
+    syncInhibitor(false);
   }
 }
 

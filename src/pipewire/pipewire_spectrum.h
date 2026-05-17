@@ -5,9 +5,11 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
+struct AudioNode;
 class PipeWireService;
 
 class PipeWireSpectrum {
@@ -68,7 +70,7 @@ private:
   [[nodiscard]] bool hasListeners() const noexcept { return !m_listeners.empty(); }
   void rebuildStream();
   [[nodiscard]] std::uint32_t resolvedTargetNodeId() const noexcept;
-  [[nodiscard]] bool hasResolvedTargetNode() const noexcept;
+  [[nodiscard]] const AudioNode* resolvedTargetNode() const noexcept;
   void clearValues(bool notify);
   void emitChanged(ListenerId id);
 
@@ -88,6 +90,7 @@ private:
 
   std::uint32_t m_targetNodeId = 0;
   std::uint32_t m_boundNodeId = 0;
+  std::string m_boundTargetObject;
   int m_analysisBandCount = 32;
   int m_lowerCutoff = 50;
   int m_upperCutoff = 12000;

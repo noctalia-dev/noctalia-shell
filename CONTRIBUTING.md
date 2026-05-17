@@ -29,7 +29,7 @@ For dependencies and normal build commands, start with [README.md](README.md).
 | Keyboard | `xkbcommon` |
 | Rendering | `EGL`, `OpenGL ES 2.0+`, `wayland-egl` |
 | Text | `cairo`, `pango`, `pangocairo`, `freetype`, `fontconfig` |
-| Images | `Wuffs` (vendored), `nanosvg` (vendored), `stb_image_resize2` (vendored), `libwebp` |
+| Images | `Wuffs` (vendored), `stb_image_resize2` (vendored), `libwebp`, `librsvg` |
 | IPC | `sdbus-c++` |
 | Audio | `libpipewire`, `dr_wav` (vendored) |
 | Authentication | `PAM`, `polkit-agent-1`, `polkit-gobject-1`, `glib-2.0`, `gobject-2.0` |
@@ -153,7 +153,6 @@ src/
 third_party/
   tomlplusplus/   TOML parser (vendored)
   wuffs/          Raster image decoding (vendored)
-  nanosvg/        SVG rasterization (vendored)
   stb/            Image resizing (vendored)
   tinyexpr/       Math expression evaluator (vendored)
   nlohmann/       JSON parser (vendored, header-only)

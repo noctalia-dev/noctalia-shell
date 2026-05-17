@@ -9,6 +9,7 @@
 #include "compositors/mango/mango_output_backend.h"
 #include "compositors/niri/niri_keyboard_backend.h"
 #include "compositors/niri/niri_output_backend.h"
+#include "compositors/niri/niri_runtime.h"
 #include "compositors/niri/niri_workspace_backend.h"
 #include "compositors/sway/sway_keyboard_backend.h"
 #include "compositors/sway/sway_output_backend.h"
@@ -33,33 +34,7 @@ namespace compositors {
   public:
     virtual ~OutputPowerBackend() = default;
     [[nodiscard]] virtual bool setOutputPower(WaylandConnection& wayland, bool on) const = 0;
-  };
-
-  class WorkspaceMetadataBackend {
-  public:
-    using ChangeCallback = std::function<void()>;
-
-    virtual ~WorkspaceMetadataBackend() = default;
-    virtual void setChangeCallback(ChangeCallback callback) = 0;
-    [[nodiscard]] virtual int pollFd() const noexcept { return -1; }
-    [[nodiscard]] virtual short pollEvents() const noexcept { return POLLIN | POLLHUP | POLLERR; }
-    [[nodiscard]] virtual int pollTimeoutMs() const noexcept { return -1; }
-    virtual void dispatchPoll(short /*revents*/) {}
-    virtual void apply(std::vector<Workspace>& /*workspaces*/, const std::string& /*outputName*/ = {}) const {}
-    [[nodiscard]] virtual std::vector<std::string> workspaceKeys(const std::string& /*outputName*/ = {}) const {
-      return {};
-    }
-    [[nodiscard]] virtual std::unordered_map<std::string, std::vector<std::string>>
-    appIdsByWorkspace(const std::string& /*outputName*/ = {}) const {
-      return {};
-    }
-    [[nodiscard]] virtual std::vector<WorkspaceWindow> workspaceWindows(const std::string& /*outputName*/ = {}) const {
-      return {};
-    }
-    [[nodiscard]] virtual bool canTrackOverviewState() const noexcept { return false; }
-    [[nodiscard]] virtual bool hasOverviewState() const noexcept { return false; }
-    [[nodiscard]] virtual bool isOverviewOpen() const noexcept { return true; }
-    virtual void cleanup() = 0;
+    [[nodiscard]] virtual bool isPerOutputTargeted() const noexcept { return false; }
   };
 
 } // namespace compositors
@@ -131,54 +106,18 @@ namespace {
   public:
     using Callback = std::function<bool(WaylandConnection&, bool)>;
 
-    explicit LambdaOutputPowerBackend(Callback callback) : m_callback(std::move(callback)) {}
+    explicit LambdaOutputPowerBackend(Callback callback, bool perOutputTargeted = false)
+        : m_callback(std::move(callback)), m_perOutputTargeted(perOutputTargeted) {}
 
     [[nodiscard]] bool setOutputPower(WaylandConnection& wayland, bool on) const override {
       return m_callback && m_callback(wayland, on);
     }
+    [[nodiscard]] bool isPerOutputTargeted() const noexcept override { return m_perOutputTargeted; }
 
   private:
     Callback m_callback;
+    bool m_perOutputTargeted = false;
   };
-
-  class NiriWorkspaceMetadataBackend final : public compositors::WorkspaceMetadataBackend {
-  public:
-    explicit NiriWorkspaceMetadataBackend(compositors::niri::NiriRuntime& runtime) : m_backend(runtime) {}
-
-    void setChangeCallback(ChangeCallback callback) override { m_backend.setChangeCallback(std::move(callback)); }
-    [[nodiscard]] int pollFd() const noexcept override { return m_backend.pollFd(); }
-    [[nodiscard]] short pollEvents() const noexcept override { return m_backend.pollEvents(); }
-    [[nodiscard]] int pollTimeoutMs() const noexcept override { return m_backend.pollTimeoutMs(); }
-    void dispatchPoll(short revents) override { m_backend.dispatchPoll(revents); }
-    void apply(std::vector<Workspace>& workspaces, const std::string& outputName = {}) const override {
-      m_backend.apply(workspaces, outputName);
-    }
-    [[nodiscard]] std::vector<std::string> workspaceKeys(const std::string& outputName = {}) const override {
-      return m_backend.workspaceKeys(outputName);
-    }
-    [[nodiscard]] std::unordered_map<std::string, std::vector<std::string>>
-    appIdsByWorkspace(const std::string& outputName = {}) const override {
-      return m_backend.appIdsByWorkspace(outputName);
-    }
-    [[nodiscard]] std::vector<WorkspaceWindow> workspaceWindows(const std::string& outputName = {}) const override {
-      return m_backend.workspaceWindows(outputName);
-    }
-    [[nodiscard]] bool canTrackOverviewState() const noexcept override { return m_backend.canTrackOverviewState(); }
-    [[nodiscard]] bool hasOverviewState() const noexcept override { return m_backend.hasOverviewState(); }
-    [[nodiscard]] bool isOverviewOpen() const noexcept override { return m_backend.isOverviewOpen(); }
-    void cleanup() override { m_backend.cleanup(); }
-
-  private:
-    NiriWorkspaceBackend m_backend;
-  };
-
-  [[nodiscard]] bool setHyprlandOutputPower(WaylandConnection& /*wayland*/, bool on) {
-    return compositors::hyprland::setOutputPower(on);
-  }
-
-  [[nodiscard]] bool setNiriOutputPower(WaylandConnection& /*wayland*/, bool on) {
-    return compositors::niri::setOutputPower(on);
-  }
 
   [[nodiscard]] bool setMangoOutputPower(WaylandConnection& wayland, bool on) {
     return compositors::mango::setOutputPower(wayland, on);
@@ -192,9 +131,15 @@ namespace {
   createOutputPowerBackend(compositors::CompositorRuntimeRegistry& runtimeRegistry) {
     switch (compositors::detect()) {
     case compositors::CompositorKind::Hyprland:
-      return std::make_unique<LambdaOutputPowerBackend>(&setHyprlandOutputPower);
+      return std::make_unique<LambdaOutputPowerBackend>(
+          [&runtime = runtimeRegistry.hyprland()](WaylandConnection& /*wayland*/, bool on) {
+            return compositors::hyprland::setOutputPower(runtime, on);
+          });
     case compositors::CompositorKind::Niri:
-      return std::make_unique<LambdaOutputPowerBackend>(&setNiriOutputPower);
+      return std::make_unique<LambdaOutputPowerBackend>(
+          [&runtime = runtimeRegistry.niri()](WaylandConnection& /*wayland*/, bool on) {
+            return compositors::niri::setOutputPower(runtime, on);
+          });
     case compositors::CompositorKind::Sway:
       return std::make_unique<LambdaOutputPowerBackend>(
           [&runtime = runtimeRegistry.sway()](WaylandConnection& wayland, bool on) {
@@ -202,7 +147,8 @@ namespace {
             return compositors::sway::setOutputPower(runtime, on);
           });
     case compositors::CompositorKind::Mango:
-      return std::make_unique<LambdaOutputPowerBackend>(&setMangoOutputPower);
+      return std::make_unique<LambdaOutputPowerBackend>(&setMangoOutputPower, true);
+    case compositors::CompositorKind::Labwc:
     case compositors::CompositorKind::Unknown:
       return std::make_unique<LambdaOutputPowerBackend>(&setGenericOutputPower);
     }
@@ -215,9 +161,10 @@ namespace {
     case compositors::CompositorKind::Hyprland:
       return std::make_unique<FocusedOutputAdapter<HyprlandOutputBackend>>(runtimeRegistry.hyprland());
     case compositors::CompositorKind::Niri:
-      return std::make_unique<FocusedOutputAdapter<NiriOutputBackend>>();
+      return std::make_unique<FocusedOutputAdapter<NiriOutputBackend>>(runtimeRegistry.niri());
     case compositors::CompositorKind::Sway:
       return std::make_unique<FocusedOutputAdapter<SwayOutputBackend>>(runtimeRegistry.sway());
+    case compositors::CompositorKind::Labwc:
     case compositors::CompositorKind::Mango:
     case compositors::CompositorKind::Unknown:
       break;
@@ -229,10 +176,11 @@ namespace {
   createWorkspaceMetadataBackend(compositors::CompositorRuntimeRegistry& runtimeRegistry) {
     switch (compositors::detect()) {
     case compositors::CompositorKind::Niri:
-      return std::make_unique<NiriWorkspaceMetadataBackend>(runtimeRegistry.niri());
+      return std::make_unique<NiriWorkspaceBackend>(runtimeRegistry.niri());
     case compositors::CompositorKind::Hyprland:
     case compositors::CompositorKind::Sway:
     case compositors::CompositorKind::Mango:
+    case compositors::CompositorKind::Labwc:
     case compositors::CompositorKind::Unknown:
       break;
     }
@@ -250,6 +198,7 @@ namespace {
       return std::make_unique<KeyboardLayoutBackendAdapter<MangoKeyboardBackend>>();
     case compositors::CompositorKind::Sway:
       return std::make_unique<KeyboardLayoutBackendAdapter<SwayKeyboardBackend>>(runtimeRegistry.sway());
+    case compositors::CompositorKind::Labwc:
     case compositors::CompositorKind::Unknown:
       break;
     }
@@ -307,6 +256,12 @@ void CompositorPlatform::cleanup() {
 }
 
 wl_display* CompositorPlatform::display() const noexcept { return m_wayland.display(); }
+
+compositors::niri::NiriRuntime& CompositorPlatform::niriRuntime() noexcept { return m_runtimeRegistry->niri(); }
+
+const compositors::niri::NiriRuntime& CompositorPlatform::niriRuntime() const noexcept {
+  return m_runtimeRegistry->niri();
+}
 
 bool CompositorPlatform::hasXdgShell() const noexcept { return m_wayland.hasXdgShell(); }
 
@@ -633,7 +588,13 @@ void CompositorPlatform::dispatchKeyboardLayoutPoll(const std::vector<pollfd>& f
 }
 
 bool CompositorPlatform::setOutputPower(bool on) const {
-  return m_outputPowerBackend != nullptr && m_outputPowerBackend->setOutputPower(m_wayland, on);
+  if (m_outputPowerBackend == nullptr) {
+    return false;
+  }
+  if (m_outputPowerBackend->isPerOutputTargeted()) {
+    m_lastRequestedOutputPowerState = on;
+  }
+  return m_outputPowerBackend->setOutputPower(m_wayland, on);
 }
 
 bool CompositorPlatform::tracksOverviewState() const noexcept {
@@ -666,6 +627,10 @@ void CompositorPlatform::bindDwlIpcWorkspace(zdwl_ipc_manager_v2* manager) {
 void CompositorPlatform::onOutputAdded(wl_output* output) {
   if (m_workspaces != nullptr) {
     m_workspaces->onOutputAdded(output);
+  }
+  if (m_outputPowerBackend != nullptr && m_outputPowerBackend->isPerOutputTargeted() &&
+      m_lastRequestedOutputPowerState.has_value()) {
+    (void)m_outputPowerBackend->setOutputPower(m_wayland, *m_lastRequestedOutputPowerState);
   }
 }
 

@@ -143,7 +143,7 @@ namespace {
       setVisible(false);
 
       auto background = std::make_unique<Box>();
-      background->setRadius(Style::radiusMd * scale);
+      background->setRadius(Style::scaledRadiusMd(scale));
       m_background = static_cast<Box*>(addChild(std::move(background)));
 
       auto row = std::make_unique<Flex>();
@@ -161,7 +161,7 @@ namespace {
 
       auto image = std::make_unique<Image>();
       image->setFit(ImageFit::Cover);
-      image->setRadius(Style::radiusSm * scale);
+      image->setRadius(Style::scaledRadiusSm(scale));
       image->setVisible(false);
       m_image = static_cast<Image*>(m_lead->addChild(std::move(image)));
 
@@ -457,7 +457,7 @@ void ClipboardPanel::create() {
   clearHistoryButton->setMinWidth(Style::controlHeightSm * scale);
   clearHistoryButton->setMinHeight(Style::controlHeightSm * scale);
   clearHistoryButton->setPadding(Style::spaceXs * scale);
-  clearHistoryButton->setRadius(Style::radiusMd * scale);
+  clearHistoryButton->setRadius(Style::scaledRadiusMd(scale));
   clearHistoryButton->setOnClick([this]() {
     if (m_clipboard != nullptr) {
       m_clipboard->clearHistory();
@@ -547,7 +547,7 @@ void ClipboardPanel::create() {
   imageActionButton->setMinWidth(Style::controlHeightSm * scale);
   imageActionButton->setMinHeight(Style::controlHeightSm * scale);
   imageActionButton->setPadding(Style::spaceXs * scale);
-  imageActionButton->setRadius(Style::radiusMd * scale);
+  imageActionButton->setRadius(Style::scaledRadiusMd(scale));
   imageActionButton->setVisible(false);
   imageActionButton->setParticipatesInLayout(false);
   imageActionButton->setOnClick([this]() { runImageAction(); });
@@ -561,7 +561,7 @@ void ClipboardPanel::create() {
   copyButton->setMinWidth(Style::controlHeightSm * scale);
   copyButton->setMinHeight(Style::controlHeightSm * scale);
   copyButton->setPadding(Style::spaceXs * scale);
-  copyButton->setRadius(Style::radiusMd * scale);
+  copyButton->setRadius(Style::scaledRadiusMd(scale));
   copyButton->setOnClick([this]() { activateSelected(); });
   m_copyButton = copyButton.get();
   previewActions->addChild(std::move(copyButton));
@@ -573,7 +573,7 @@ void ClipboardPanel::create() {
   deleteEntryButton->setMinWidth(Style::controlHeightSm * scale);
   deleteEntryButton->setMinHeight(Style::controlHeightSm * scale);
   deleteEntryButton->setPadding(Style::spaceXs * scale);
-  deleteEntryButton->setRadius(Style::radiusMd * scale);
+  deleteEntryButton->setRadius(Style::scaledRadiusMd(scale));
   deleteEntryButton->setOnClick([this]() { deleteSelectedEntry(); });
   m_deleteEntryButton = deleteEntryButton.get();
   previewActions->addChild(std::move(deleteEntryButton));
@@ -590,7 +590,7 @@ void ClipboardPanel::create() {
 
   auto previewScroll = std::make_unique<ScrollView>();
   previewScroll->setScrollbarVisible(true);
-  previewScroll->setCardStyle(scale);
+  previewScroll->setCardStyle(scale, panelCardOpacity());
   previewScroll->setFlexGrow(1.0f);
   m_previewScrollView = previewScroll.get();
   m_previewContent = previewScroll->content();

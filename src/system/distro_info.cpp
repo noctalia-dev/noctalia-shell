@@ -144,7 +144,7 @@ std::string osAgeLabel() {
     }
     return std::format("{}y", years);
   }
-  return std::format("{}d", days);
+  return std::format("{} days", days);
 }
 
 std::string sessionDisplayName() {

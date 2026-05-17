@@ -3,9 +3,11 @@
 #include "compositors/compositor_platform.h"
 #include "config/config_service.h"
 #include "core/build_info.h"
+#include "core/deferred_call.h"
 #include "dbus/mpris/mpris_art.h"
 #include "dbus/mpris/mpris_service.h"
 #include "i18n/i18n.h"
+#include "net/http_client.h"
 #include "shell/control_center/shortcut_registry.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/wallpaper/wallpaper.h"
@@ -27,6 +29,7 @@
 #include <format>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <system_error>
 
 using namespace control_center;
@@ -43,8 +46,13 @@ namespace {
   constexpr std::int64_t kHomeTransientPositionRegressionFloorUs = 5'000'000;
   constexpr std::int64_t kHomeTransientPositionRegressionCeilingUs = 1'500'000;
   constexpr std::int64_t kHomeTransientPositionRegressionDeltaUs = 5'000'000;
+  constexpr int kHomeMediaArtLayoutPassLimit = 8;
 
   float homeAvatarSize(float scale) { return Style::controlHeightLg * kHomeAvatarScale * scale; }
+
+  void openControlCenterTab(std::string_view tab) {
+    PanelManager::instance().togglePanel("control-center", PanelOpenRequest{.context = tab});
+  }
 
   std::string formatShellTime(const ConfigService* config) {
     const char* format = config != nullptr ? config->config().shell.timeFormat.c_str() : "{:%H:%M}";
@@ -56,33 +64,76 @@ namespace {
     return formatLocalTime(format);
   }
 
-  void applyHomeCardStyle(Flex& card, float scale) {
-    applySectionCardStyle(card, scale);
+  void applyHomeCardStyle(Flex& card, float scale, float fillOpacity) {
+    applySectionCardStyle(card, scale, fillOpacity);
     card.setGap(Style::spaceSm * scale);
+  }
+
+  Button::ButtonPalette inactiveShortcutPalette(float fillOpacity) {
+    constexpr float kDisabledAlpha = 0.55f;
+    const float opacity = std::clamp(fillOpacity, 0.0f, 1.0f);
+    return Button::ButtonPalette{
+        .borderWidth = Style::borderWidth,
+        .normal =
+            Button::ButtonStateColors{
+                .bg = colorSpecFromRole(ColorRole::SurfaceVariant, opacity),
+                .border = colorSpecFromRole(ColorRole::Outline, 0.5f),
+                .label = colorSpecFromRole(ColorRole::OnSurface),
+            },
+        .hover =
+            Button::ButtonStateColors{
+                .bg = colorSpecFromRole(ColorRole::Hover, std::max(opacity, 0.78f)),
+                .border = clearColorSpec(),
+                .label = colorSpecFromRole(ColorRole::OnHover),
+            },
+        .pressed =
+            Button::ButtonStateColors{
+                .bg = colorSpecFromRole(ColorRole::Primary),
+                .border = colorSpecFromRole(ColorRole::Primary),
+                .label = colorSpecFromRole(ColorRole::OnPrimary),
+            },
+        .disabled =
+            Button::ButtonStateColors{
+                .bg = colorSpecFromRole(ColorRole::SurfaceVariant, opacity * kDisabledAlpha),
+                .border = colorSpecFromRole(ColorRole::Outline, 0.5f * kDisabledAlpha),
+                .label = colorSpecFromRole(ColorRole::OnSurface, kDisabledAlpha),
+            },
+    };
+  }
+
+  void applyShortcutButtonStyle(Button& button, bool enabled, bool active, float fillOpacity) {
+    if (enabled && active) {
+      button.setVariant(ButtonVariant::Accent);
+    } else {
+      button.setVariant(ButtonVariant::Outline);
+      button.setCustomPalette(inactiveShortcutPalette(fillOpacity));
+    }
+    button.setEnabled(enabled);
   }
 
 } // namespace
 
-HomeTab::HomeTab(MprisService* mpris, WeatherService* weather, PipeWireService* audio,
+HomeTab::HomeTab(MprisService* mpris, HttpClient* httpClient, WeatherService* weather, PipeWireService* audio,
                  PowerProfilesService* powerProfiles, ConfigService* config, NetworkService* network,
                  BluetoothService* bluetooth, GammaService* nightLight, noctalia::theme::ThemeService* theme,
                  NotificationManager* notifications, IdleInhibitor* idleInhibitor, DependencyService* dependencies,
                  CompositorPlatform* platform, Wallpaper* wallpaper)
-    : m_mpris(mpris), m_weather(weather), m_config(config), m_wallpaper(wallpaper), m_services{
-                                                                                        .network = network,
-                                                                                        .bluetooth = bluetooth,
-                                                                                        .nightLight = nightLight,
-                                                                                        .theme = theme,
-                                                                                        .notifications = notifications,
-                                                                                        .idleInhibitor = idleInhibitor,
-                                                                                        .audio = audio,
-                                                                                        .powerProfiles = powerProfiles,
-                                                                                        .mpris = mpris,
-                                                                                        .weather = weather,
-                                                                                        .config = config,
-                                                                                        .dependencies = dependencies,
-                                                                                        .platform = platform,
-                                                                                    } {}
+    : m_mpris(mpris), m_httpClient(httpClient), m_weather(weather), m_config(config), m_wallpaper(wallpaper),
+      m_services{
+          .network = network,
+          .bluetooth = bluetooth,
+          .nightLight = nightLight,
+          .theme = theme,
+          .notifications = notifications,
+          .idleInhibitor = idleInhibitor,
+          .audio = audio,
+          .powerProfiles = powerProfiles,
+          .mpris = mpris,
+          .weather = weather,
+          .config = config,
+          .dependencies = dependencies,
+          .platform = platform,
+      } {}
 
 HomeTab::~HomeTab() = default;
 
@@ -98,7 +149,7 @@ std::unique_ptr<Flex> HomeTab::create() {
 
   // --- User card ---
   auto userCard = std::make_unique<Flex>();
-  applyHomeCardStyle(*userCard, scale);
+  applyHomeCardStyle(*userCard, scale, panelCardOpacity());
   userCard->setFlexGrow(1.0f);
   userCard->setFillHeight(true);
   userCard->setJustify(FlexJustify::Center);
@@ -107,7 +158,7 @@ std::unique_ptr<Flex> HomeTab::create() {
   {
     auto wpBg = std::make_unique<Image>();
     wpBg->setFit(ImageFit::Cover);
-    wpBg->setRadius(std::max(0.0f, Style::radiusXl * scale - Style::borderWidth));
+    wpBg->setRadius(std::max(0.0f, Style::scaledRadiusXl(scale) - Style::borderWidth));
     wpBg->setParticipatesInLayout(false);
     wpBg->setZIndex(-1);
     m_wallpaperBg = wpBg.get();
@@ -163,6 +214,21 @@ std::unique_ptr<Flex> HomeTab::create() {
 
   userRow->addChild(std::move(userMain));
   userCard->addChild(std::move(userRow));
+
+  auto wallpaperBtn = std::make_unique<Button>();
+  wallpaperBtn->setGlyph("wallpaper-selector");
+  wallpaperBtn->setVariant(ButtonVariant::Ghost);
+  wallpaperBtn->setGlyphSize(Style::fontSizeBody * scale);
+  wallpaperBtn->setMinWidth(Style::controlHeightSm * scale);
+  wallpaperBtn->setMinHeight(Style::controlHeightSm * scale);
+  wallpaperBtn->setPadding(Style::spaceXs * scale);
+  wallpaperBtn->setRadius(Style::scaledRadiusMd(scale));
+  wallpaperBtn->setParticipatesInLayout(false);
+  wallpaperBtn->setZIndex(2);
+  wallpaperBtn->setOnClick([]() { PanelManager::instance().togglePanel("wallpaper"); });
+  m_wallpaperButton = wallpaperBtn.get();
+  userCard->addChild(std::move(wallpaperBtn));
+
   tab->addChild(std::move(userCard));
 
   auto bottomRow = std::make_unique<Flex>();
@@ -182,7 +248,7 @@ std::unique_ptr<Flex> HomeTab::create() {
 
   // --- Media (top of left column) ---
   auto mediaCard = std::make_unique<Flex>();
-  applyHomeCardStyle(*mediaCard, scale);
+  applyHomeCardStyle(*mediaCard, scale, panelCardOpacity());
   mediaCard->setFillWidth(true);
   mediaCard->setFillHeight(true);
   mediaCard->setFlexGrow(1.4f);
@@ -212,7 +278,7 @@ std::unique_ptr<Flex> HomeTab::create() {
 
   auto mediaArt = std::make_unique<Image>();
   mediaArt->setSize(artSize, artSize);
-  mediaArt->setRadius(Style::radiusLg * scale);
+  mediaArt->setRadius(Style::scaledRadiusLg(scale));
   mediaArt->setFit(ImageFit::Cover);
   mediaArt->setParticipatesInLayout(false);
   mediaArt->setZIndex(1);
@@ -260,9 +326,23 @@ std::unique_ptr<Flex> HomeTab::create() {
   mediaContent->addChild(std::move(mediaText));
   mediaCard->addChild(std::move(mediaContent));
 
+  auto mediaBtn = std::make_unique<Button>();
+  mediaBtn->setGlyph("disc-filled");
+  mediaBtn->setVariant(ButtonVariant::Ghost);
+  mediaBtn->setGlyphSize(Style::fontSizeBody * scale);
+  mediaBtn->setMinWidth(Style::controlHeightSm * scale);
+  mediaBtn->setMinHeight(Style::controlHeightSm * scale);
+  mediaBtn->setPadding(Style::spaceXs * scale);
+  mediaBtn->setRadius(Style::scaledRadiusMd(scale));
+  mediaBtn->setParticipatesInLayout(false);
+  mediaBtn->setZIndex(2);
+  mediaBtn->setOnClick([]() { openControlCenterTab("media"); });
+  m_mediaButton = mediaBtn.get();
+  mediaCard->addChild(std::move(mediaBtn));
+
   // --- Date/Time + Weather (below media) ---
   auto dateTimeCard = std::make_unique<Flex>();
-  applyHomeCardStyle(*dateTimeCard, scale);
+  applyHomeCardStyle(*dateTimeCard, scale, panelCardOpacity());
   dateTimeCard->setDirection(FlexDirection::Horizontal);
   dateTimeCard->setAlign(FlexAlign::Center);
   dateTimeCard->setJustify(FlexJustify::Center);
@@ -315,6 +395,20 @@ std::unique_ptr<Flex> HomeTab::create() {
   dateTimeRight->addChild(std::move(weatherRow));
   dateTimeCard->addChild(std::move(dateTimeRight));
 
+  auto weatherBtn = std::make_unique<Button>();
+  weatherBtn->setGlyph("weather-cloud-sun");
+  weatherBtn->setVariant(ButtonVariant::Ghost);
+  weatherBtn->setGlyphSize(Style::fontSizeBody * scale);
+  weatherBtn->setMinWidth(Style::controlHeightSm * scale);
+  weatherBtn->setMinHeight(Style::controlHeightSm * scale);
+  weatherBtn->setPadding(Style::spaceXs * scale);
+  weatherBtn->setRadius(Style::scaledRadiusMd(scale));
+  weatherBtn->setParticipatesInLayout(false);
+  weatherBtn->setZIndex(2);
+  weatherBtn->setOnClick([]() { openControlCenterTab("weather"); });
+  m_weatherButton = weatherBtn.get();
+  dateTimeCard->addChild(std::move(weatherBtn));
+
   leftColumn->addChild(std::move(mediaCard));
   leftColumn->addChild(std::move(dateTimeCard));
   bottomRow->addChild(std::move(leftColumn));
@@ -366,9 +460,8 @@ std::unique_ptr<Flex> HomeTab::create() {
     btn->setGap(Style::spaceXs * scale);
     btn->setMinHeight(0.0f);
     btn->setPadding(Style::spaceSm * scale);
-    btn->setRadius(Style::radiusLg * scale);
-    btn->setVariant(isActive ? ButtonVariant::Accent : ButtonVariant::Outline);
-    btn->setEnabled(enabled);
+    btn->setRadius(Style::scaledRadiusLg(scale));
+    applyShortcutButtonStyle(*btn, enabled, isActive, panelCardOpacity());
 
     const std::size_t padIdx = m_shortcutPads.size();
     btn->setOnClick([this, padIdx]() {
@@ -412,7 +505,7 @@ std::unique_ptr<Flex> HomeTab::createHeaderActions() {
   settingsBtn->setMinWidth(Style::controlHeightSm * scale);
   settingsBtn->setMinHeight(Style::controlHeightSm * scale);
   settingsBtn->setPadding(Style::spaceXs * scale);
-  settingsBtn->setRadius(Style::radiusMd * scale);
+  settingsBtn->setRadius(Style::scaledRadiusMd(scale));
   settingsBtn->setOnClick([]() { PanelManager::instance().openSettingsWindow(); });
   m_settingsButton = settingsBtn.get();
   actions->addChild(std::move(settingsBtn));
@@ -424,7 +517,7 @@ std::unique_ptr<Flex> HomeTab::createHeaderActions() {
   sessionBtn->setMinWidth(Style::controlHeightSm * scale);
   sessionBtn->setMinHeight(Style::controlHeightSm * scale);
   sessionBtn->setPadding(Style::spaceXs * scale);
-  sessionBtn->setRadius(Style::radiusMd * scale);
+  sessionBtn->setRadius(Style::scaledRadiusMd(scale));
   sessionBtn->setOnClick([]() { PanelManager::instance().togglePanel("session"); });
   m_sessionButton = sessionBtn.get();
   actions->addChild(std::move(sessionBtn));
@@ -503,24 +596,9 @@ void HomeTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight)
     m_weatherLine->setMaxLines(2);
   }
   // Grow the album art square to fill the media card height so the row feels balanced
-  // when the card flex-grows. Done before label maxWidth so the text wrap width matches
-  // the final art size on the very first frame.
-  if (m_mediaCard != nullptr && m_mediaArt != nullptr && m_mediaArtSlot != nullptr) {
-    const float scale = contentScale();
-    const float minArt = Style::controlHeightLg * 1.22f * scale;
-    const float maxArt = Style::controlHeightLg * 2.6f * scale;
-    const float available =
-        std::max(0.0f, m_mediaCard->height() - m_mediaCard->paddingTop() - m_mediaCard->paddingBottom());
-    const float desired = std::clamp(available, minArt, maxArt);
-    if (std::abs(m_mediaArtSlot->width() - desired) > 0.5f) {
-      m_mediaArtSlot->setSize(desired, desired);
-      m_mediaArt->setSize(desired, desired);
-      m_mediaArt->setRadius(Style::radiusLg * scale);
-      if (m_mediaArtFallback != nullptr) {
-        m_mediaArtFallback->setGlyphSize(desired * 0.55f);
-      }
-    }
-  }
+  // when the card flex-grows. A later bottom-row min-height pass can change the card
+  // height, so this runs again after that final layout pass below.
+  resizeMediaArtToCard();
 
   // Labels auto-wrap to mediaText's assigned width via Flex stretch propagation.
   for (Label* label : {m_mediaArtist, m_mediaStatus, m_mediaProgress}) {
@@ -571,11 +649,49 @@ void HomeTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight)
     }
   }
 
-  m_rootLayout->layout(renderer);
+  bool artSizeChanged = false;
+  for (int pass = 0; pass < kHomeMediaArtLayoutPassLimit; ++pass) {
+    m_rootLayout->layout(renderer);
+    artSizeChanged = resizeMediaArtToCard();
+    if (!artSizeChanged) {
+      break;
+    }
+  }
+  if (artSizeChanged) {
+    // Keep the final tree consistent even if an unusual layout combination hits the pass cap.
+    m_rootLayout->layout(renderer);
+  }
   layoutWallpaperBackground(renderer);
+  layoutCardButton(renderer, m_userCard, m_wallpaperButton);
+  layoutCardButton(renderer, m_mediaCard, m_mediaButton);
+  layoutCardButton(renderer, m_dateTimeCard, m_weatherButton);
   if (m_weatherGlyph != nullptr) {
     m_weatherGlyph->measure(renderer);
   }
+}
+
+bool HomeTab::resizeMediaArtToCard() {
+  if (m_mediaCard == nullptr || m_mediaArt == nullptr || m_mediaArtSlot == nullptr) {
+    return false;
+  }
+
+  const float scale = contentScale();
+  const float minArt = Style::controlHeightLg * 1.22f * scale;
+  const float maxArt = Style::controlHeightLg * 2.6f * scale;
+  const float available =
+      std::max(0.0f, m_mediaCard->height() - m_mediaCard->paddingTop() - m_mediaCard->paddingBottom());
+  const float desired = std::clamp(available, minArt, maxArt);
+  if (std::abs(m_mediaArtSlot->width() - desired) <= 0.5f) {
+    return false;
+  }
+
+  m_mediaArtSlot->setSize(desired, desired);
+  m_mediaArt->setSize(desired, desired);
+  m_mediaArt->setRadius(Style::scaledRadiusLg(scale));
+  if (m_mediaArtFallback != nullptr) {
+    m_mediaArtFallback->setGlyphSize(desired * 0.55f);
+  }
+  return true;
 }
 
 void HomeTab::layoutWallpaperBackground(Renderer& renderer) {
@@ -590,7 +706,7 @@ void HomeTab::layoutWallpaperBackground(Renderer& renderer) {
   m_wallpaperBg->setSize(cw, ch);
 
   if (m_wallpaperGradient != nullptr) {
-    const float radius = std::max(0.0f, Style::radiusXl * contentScale() - bw);
+    const float radius = std::max(0.0f, Style::scaledRadiusXl(contentScale()) - bw);
     m_wallpaperGradient->setPosition(bw, bw);
     m_wallpaperGradient->setFrameSize(cw, ch);
     const Color surface = colorForRole(ColorRole::Surface);
@@ -630,6 +746,20 @@ void HomeTab::syncWallpaperBackground(Renderer& renderer) {
   m_wallpaperBg->setVisible(true);
 }
 
+void HomeTab::layoutCardButton(Renderer& renderer, Flex* card, Button* button) {
+  if (card == nullptr || button == nullptr) {
+    return;
+  }
+
+  const float scale = contentScale();
+  button->setGlyphSize(Style::fontSizeBody * scale);
+  button->layout(renderer);
+
+  const float x = std::max(0.0f, card->width() - card->paddingRight() - button->width());
+  const float y = std::max(0.0f, card->height() - card->paddingBottom() - button->height());
+  button->setPosition(x, y);
+}
+
 void HomeTab::doUpdate(Renderer& renderer) {
   if (!m_active) {
     m_progressTimer.stop();
@@ -644,7 +774,9 @@ void HomeTab::doUpdate(Renderer& renderer) {
         if (!m_active) {
           return;
         }
-        PanelManager::instance().requestUpdateOnly();
+        // refresh() schedules update+layout (Surface::requestUpdate); update-only ticks skipped
+        // HomeTab::doLayout so album art never picked up the final media card height.
+        PanelManager::instance().refresh();
         PanelManager::instance().requestRedraw();
       });
     }
@@ -657,6 +789,7 @@ void HomeTab::doUpdate(Renderer& renderer) {
 void HomeTab::onFrameTick(float /*deltaMs*/) {}
 
 void HomeTab::setActive(bool active) {
+  const bool becameActive = active && !m_active;
   m_active = active;
   if (!active) {
     m_progressTimer.stop();
@@ -668,6 +801,16 @@ void HomeTab::setActive(bool active) {
     m_mediaLastPlaybackStatus.clear();
     m_mediaPositionUs = 0;
     m_mediaPositionSampleAt = {};
+    return;
+  }
+
+  if (becameActive) {
+    // Other tabs were laid out while this body was hidden; flex sizes for the media row can be stale.
+    // Defer so the tab container receives its configure size before HomeTab::doLayout runs.
+    DeferredCall::callLater([]() {
+      PanelManager::instance().requestLayout();
+      PanelManager::instance().requestUpdateOnly();
+    });
   }
 }
 
@@ -688,6 +831,9 @@ void HomeTab::onClose() {
   m_userFacts = nullptr;
   m_settingsButton = nullptr;
   m_sessionButton = nullptr;
+  m_wallpaperButton = nullptr;
+  m_mediaButton = nullptr;
+  m_weatherButton = nullptr;
   m_loadedAvatarPath.clear();
   m_wallpaperBg = nullptr;
   m_wallpaperGradient = nullptr;
@@ -727,6 +873,15 @@ void HomeTab::syncScaledFonts() {
   }
   if (m_userFacts != nullptr) {
     m_userFacts->setFontSize(Style::fontSizeCaption * s);
+  }
+  if (m_wallpaperButton != nullptr) {
+    m_wallpaperButton->setGlyphSize(Style::fontSizeBody * s);
+  }
+  if (m_mediaButton != nullptr) {
+    m_mediaButton->setGlyphSize(Style::fontSizeBody * s);
+  }
+  if (m_weatherButton != nullptr) {
+    m_weatherButton->setGlyphSize(Style::fontSizeBody * s);
   }
   if (m_mediaTrack != nullptr) {
     m_mediaTrack->setFontSize(Style::fontSizeBody * 0.95f * s);
@@ -823,6 +978,7 @@ void HomeTab::sync(Renderer& renderer) {
         m_mediaArt->setVisible(false);
       }
       m_loadedMediaArtUrl.clear();
+      PanelManager::instance().requestLayout();
     } else {
       const auto active = m_mpris->activePlayer();
       if (!active.has_value()) {
@@ -844,11 +1000,17 @@ void HomeTab::sync(Renderer& renderer) {
           m_mediaArt->setVisible(false);
         }
         m_loadedMediaArtUrl.clear();
+        PanelManager::instance().requestLayout();
       } else {
-        m_mediaTrack->setText(active->title.empty() ? i18n::tr("control-center.home.media.unknown-track")
-                                                    : active->title);
+        const std::string trackText =
+            active->title.empty() ? i18n::tr("control-center.home.media.unknown-track") : active->title;
         const std::string artists = mpris::joinArtists(active->artists);
-        m_mediaArtist->setText(artists.empty() ? i18n::tr("control-center.home.media.unknown-artist") : artists);
+        const std::string artistText = artists.empty() ? i18n::tr("control-center.home.media.unknown-artist") : artists;
+        if (m_mediaTrack->text() != trackText || m_mediaArtist->text() != artistText) {
+          m_mediaTrack->setText(trackText);
+          m_mediaArtist->setText(artistText);
+          PanelManager::instance().requestLayout();
+        }
         m_mediaArtist->setVisible(true);
         const std::string trackSignature = std::format("{}\n{}\n{}\n{}\n{}", active->trackId, active->title, artists,
                                                        active->album, active->sourceUrl);
@@ -896,13 +1058,24 @@ void HomeTab::sync(Renderer& renderer) {
         m_mediaProgress->setVisible(false);
         if (m_mediaArt != nullptr) {
           const std::string artUrl = mpris::effectiveArtUrl(*active);
-          if (artUrl != m_loadedMediaArtUrl) {
+          const bool artRetry = !artUrl.empty() && !m_mediaArt->hasImage();
+          if (artUrl != m_loadedMediaArtUrl || artRetry) {
             std::string artPath = mpris::normalizeArtPath(artUrl);
             if (artPath.empty() && mpris::isRemoteArtUrl(artUrl)) {
               const auto cached = mpris::artCachePath(artUrl);
               std::error_code ec;
               if (std::filesystem::exists(cached, ec) && std::filesystem::file_size(cached, ec) > 0) {
                 artPath = cached.string();
+              } else if (m_httpClient != nullptr && m_pendingArtDownloads.find(artUrl) == m_pendingArtDownloads.end()) {
+                std::filesystem::create_directories(cached.parent_path(), ec);
+                m_pendingArtDownloads.insert(artUrl);
+                m_httpClient->download(artUrl, cached, [this, url = artUrl](bool success) {
+                  m_pendingArtDownloads.erase(url);
+                  if (success) {
+                    m_loadedMediaArtUrl.clear();
+                    PanelManager::instance().refresh();
+                  }
+                });
               }
             }
             bool loaded = false;
@@ -916,7 +1089,8 @@ void HomeTab::sync(Renderer& renderer) {
               m_mediaArt->clear(renderer);
             }
             m_mediaArt->setVisible(loaded);
-            m_loadedMediaArtUrl = artUrl;
+            m_loadedMediaArtUrl = loaded ? artUrl : std::string{};
+            PanelManager::instance().requestLayout();
           }
         }
         std::string statusText;
@@ -933,7 +1107,10 @@ void HomeTab::sync(Renderer& renderer) {
         if (!progressText.empty()) {
           statusText = std::format("{} · {}", statusText, progressText);
         }
-        m_mediaStatus->setText(statusText);
+        if (m_mediaStatus->text() != statusText) {
+          m_mediaStatus->setText(statusText);
+          PanelManager::instance().requestLayout();
+        }
       }
     }
   }
@@ -946,8 +1123,7 @@ void HomeTab::syncShortcuts() {
     const bool on = sc.isToggle() && sc.active();
 
     if (pad.button != nullptr) {
-      pad.button->setEnabled(enabled);
-      pad.button->setVariant((enabled && on) ? ButtonVariant::Accent : ButtonVariant::Outline);
+      applyShortcutButtonStyle(*pad.button, enabled, on, panelCardOpacity());
     }
     if (pad.glyph != nullptr) {
       pad.glyph->setGlyph(sc.displayIcon());

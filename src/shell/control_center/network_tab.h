@@ -4,6 +4,7 @@
 #include "dbus/network/network_service.h"
 #include "shell/control_center/tab.h"
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -22,6 +23,7 @@ public:
 
   std::unique_ptr<Flex> create() override;
   std::unique_ptr<Flex> createHeaderActions() override;
+  void setActive(bool active) override;
   void onClose() override;
 
 private:
@@ -32,9 +34,13 @@ private:
   void rebuildApList(Renderer& renderer);
   void syncPasswordCard();
   void showPasswordPrompt(const NetworkSecretAgent::SecretRequest& request);
+  void showPasswordPrompt(const AccessPointInfo& ap);
+  void submitPasswordPrompt(const std::string& value);
+  void cancelPasswordPrompt();
   void clearPasswordPrompt();
-  [[nodiscard]] std::string apListKey(const std::vector<AccessPointInfo>& aps) const;
-  [[nodiscard]] std::string vpnListKey(const std::vector<VpnConnectionInfo>& vpns) const;
+  [[nodiscard]] std::string structureKey(const std::vector<AccessPointInfo>& aps,
+                                         const std::vector<VpnConnectionInfo>& vpns) const;
+  [[nodiscard]] std::string apRowsKey(const std::vector<AccessPointInfo>& aps) const;
 
   NetworkService* m_network = nullptr;
   NetworkSecretAgent* m_secrets = nullptr;
@@ -59,9 +65,15 @@ private:
   Spinner* m_scanSpinner = nullptr;
   bool m_vpnVisible = true;
 
-  std::string m_lastListKey;
+  Flex* m_vpnSection = nullptr;
+  Flex* m_apRows = nullptr;
+
+  std::string m_lastStructureKey;
+  std::string m_lastApRowsKey;
   float m_lastListWidth = -1.0f;
 
   bool m_hasPendingSecret = false;
   std::string m_pendingSsid;
+  std::optional<AccessPointInfo> m_pendingAccessPoint;
+  bool m_active = false;
 };

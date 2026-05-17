@@ -136,7 +136,7 @@ void Segmented::setEqualSegmentWidths(bool equalWidths) {
 
 void Segmented::refreshVariants() {
   const std::size_t n = m_buttons.size();
-  const float r = Style::radiusMd * m_scale;
+  const float r = Style::scaledRadiusMd(m_scale);
   for (std::size_t i = 0; i < n; ++i) {
     if (m_buttons[i] == nullptr) {
       continue;
@@ -160,7 +160,7 @@ void Segmented::applyOuterStyle() {
   setPadding(0.0f);
   setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
   clearBorder();
-  setRadius(Style::radiusMd * m_scale);
+  setRadius(Style::scaledRadiusMd(m_scale));
 }
 
 float Segmented::effectiveFontSize() const noexcept {

@@ -13,6 +13,7 @@
 #include "shell/bar/widgets/scripted_widget.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/surface_shadow.h"
+#include "shell/tooltip/tooltip_manager.h"
 #include "system/gamma_service.h"
 #include "system/system_monitor_service.h"
 #include "system/weather_service.h"
@@ -27,6 +28,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cerrno>
 #include <cmath>
 #include <linux/input-event-codes.h>
 #include <optional>
@@ -579,7 +581,8 @@ bool Bar::initialize(CompositorPlatform& platform, ConfigService* config, TimeSe
                      PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weatherService,
                      RenderContext* renderContext, GammaService* nightLight,
                      noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
-                     BrightnessService* brightness, LockKeysService* lockKeys, FileWatcher* fileWatcher) {
+                     BrightnessService* brightness, LockKeysService* lockKeys, ClipboardService* clipboard,
+                     FileWatcher* fileWatcher) {
   m_platform = &platform;
   m_config = config;
   m_notifications = notifications;
@@ -600,12 +603,13 @@ bool Bar::initialize(CompositorPlatform& platform, ConfigService* config, TimeSe
   m_bluetooth = bluetooth;
   m_brightness = brightness;
   m_lockKeys = lockKeys;
+  m_clipboard = clipboard;
   m_fileWatcher = fileWatcher;
 
   m_widgetFactory = std::make_unique<WidgetFactory>(
       *m_platform, m_config->config(), m_notifications, m_tray, m_audio, m_upower, m_sysmon, m_powerProfiles, m_network,
       m_idleInhibitor, m_mpris, m_audioSpectrum, m_httpClient, m_weatherService, m_nightLight, m_themeService,
-      m_bluetooth, m_brightness, m_lockKeys, m_fileWatcher);
+      m_bluetooth, m_brightness, m_lockKeys, m_clipboard, m_fileWatcher);
 
   if (timeService != nullptr) {
     timeService->setTickSecondCallback([this]() {
@@ -651,12 +655,16 @@ void Bar::reload() {
   m_widgetFactory = std::make_unique<WidgetFactory>(
       *m_platform, m_config->config(), m_notifications, m_tray, m_audio, m_upower, m_sysmon, m_powerProfiles, m_network,
       m_idleInhibitor, m_mpris, m_audioSpectrum, m_httpClient, m_weatherService, m_nightLight, m_themeService,
-      m_bluetooth, m_brightness, m_lockKeys, m_fileWatcher);
+      m_bluetooth, m_brightness, m_lockKeys, m_clipboard, m_fileWatcher);
 
   if (recreateForOrder) {
     kLog.info("bar order changed; recreating layer-shell surfaces");
     closeAllInstances();
-    wl_display_roundtrip(m_platform->display());
+    if (wl_display_roundtrip(m_platform->display()) < 0) {
+      const int roundtripErrno = errno;
+      kLog.error("Wayland roundtrip failed after destroying bar surfaces for order change: {}",
+                 m_platform->wayland().describeDisplayError(roundtripErrno));
+    }
     syncInstances();
     return;
   }
@@ -713,7 +721,11 @@ void Bar::reload() {
     // Drain pending Wayland events for the just-destroyed surfaces before
     // creating new ones. Without this, the roundtrip inside LayerSurface::initialize
     // reads stale closures for dead proxies, which libwayland drops without freeing.
-    wl_display_roundtrip(m_platform->display());
+    if (wl_display_roundtrip(m_platform->display()) < 0) {
+      const int roundtripErrno = errno;
+      kLog.error("Wayland roundtrip failed after destroying stale bar surfaces: {}",
+                 m_platform->wayland().describeDisplayError(roundtripErrno));
+    }
   }
 
   syncInstances();
@@ -1096,8 +1108,8 @@ void Bar::populateWidgets(BarInstance& instance) {
   const auto& widgetConfigs = m_config->config().widgets;
   auto createWidgets = [&](const std::vector<std::string>& names, std::vector<std::unique_ptr<Widget>>& dest) {
     for (const auto& name : names) {
-      auto widget =
-          m_widgetFactory->create(name, instance.output, instance.barConfig.scale, instance.barConfig.position);
+      auto widget = m_widgetFactory->create(name, instance.output, instance.barConfig.scale,
+                                            instance.barConfig.position, instance.barConfig.name);
       if (widget != nullptr) {
         widget->setConfigName(name);
         const WidgetConfig* wcPtr = nullptr;
@@ -1148,6 +1160,12 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
           surface->requestFrameTick();
         }
       });
+      if (auto* scripted = dynamic_cast<ScriptedWidget*>(widget.get()); scripted != nullptr) {
+        scripted->setUpdateDeferralCallback([]() {
+          auto* panel = PanelManager::current();
+          return panel != nullptr && panel->isPanelTransitionActive();
+        });
+      }
       widget->setPanelToggleCallback([this, inst = &instance](std::string_view panelId, std::string_view context,
                                                               std::optional<float> anchorSurfaceX,
                                                               std::optional<float> anchorSurfaceY) {
@@ -1173,6 +1191,7 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
                              .anchorX = anchorX,
                              .anchorY = anchorY,
                              .hasExplicitAnchor = anchorSurfaceX.has_value() || anchorSurfaceY.has_value(),
+                             .hasAnchorPosition = true,
                              .context = context,
                              .sourceBarName = inst->barConfig.name});
       });
@@ -1190,6 +1209,7 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
       const auto& cap = widget.barCapsuleSpec();
       auto shell = std::make_unique<Node>();
       Node* shellPtr = shell.get();
+      shellPtr->setClipChildren(true);
       auto capsuleBg = std::make_unique<Box>();
       Box* bgPtr = capsuleBg.get();
       capsuleBg->setFill(withOpacity(cap.fill, cap.opacity));
@@ -1262,6 +1282,7 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
 
       auto shell = std::make_unique<Node>();
       Node* shellPtr = shell.get();
+      shellPtr->setClipChildren(true);
       auto capsuleBg = std::make_unique<Box>();
       Box* bgPtr = capsuleBg.get();
       capsuleBg->setFill(withOpacity(cap.fill, cap.opacity));
@@ -1560,6 +1581,9 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     instance.inputDispatcher.setSceneRoot(instance.sceneRoot.get());
     instance.inputDispatcher.setCursorShapeCallback(
         [this](std::uint32_t serial, std::uint32_t shape) { m_platform->setCursorShape(serial, shape); });
+    instance.inputDispatcher.setHoverChangeCallback([inst = &instance](InputArea* /*old*/, InputArea* next) {
+      TooltipManager::instance().onHoverChange(next, inst->surface->layerSurface(), inst->output);
+    });
 
     if (instance.barConfig.autoHide) {
       instance.slideRoot->setOpacity(1.0f);
@@ -1820,7 +1844,20 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
         if (panelManager.isOpenPanel("control-center")) {
           panelManager.closePanel();
         } else {
+          float anchorX = static_cast<float>(event.sx);
+          float anchorY = static_cast<float>(event.sy);
+          if (m_platform != nullptr && targetInstance->output != nullptr) {
+            if (const auto* out = m_platform->findOutputByWl(targetInstance->output);
+                out != nullptr && out->logicalWidth > 0 && out->logicalHeight > 0) {
+              const auto [surfaceX, surfaceY] = surfaceOriginForOutputLocal(*targetInstance, *out);
+              anchorX += surfaceX;
+              anchorY += surfaceY;
+            }
+          }
           panelManager.openPanel("control-center", PanelOpenRequest{.output = targetInstance->output,
+                                                                    .anchorX = anchorX,
+                                                                    .anchorY = anchorY,
+                                                                    .hasAnchorPosition = true,
                                                                     .context = "home",
                                                                     .sourceBarName = targetInstance->barConfig.name});
         }
@@ -1900,8 +1937,21 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
         if (panelManager.isOpenPanel("control-center")) {
           panelManager.closePanel();
         } else {
+          float anchorX = sx;
+          float anchorY = sy;
+          if (m_platform != nullptr && m_hoveredInstance->output != nullptr) {
+            if (const auto* out = m_platform->findOutputByWl(m_hoveredInstance->output);
+                out != nullptr && out->logicalWidth > 0 && out->logicalHeight > 0) {
+              const auto [surfaceX, surfaceY] = surfaceOriginForOutputLocal(*m_hoveredInstance, *out);
+              anchorX += surfaceX;
+              anchorY += surfaceY;
+            }
+          }
           panelManager.openPanel("control-center",
                                  PanelOpenRequest{.output = m_hoveredInstance->output,
+                                                  .anchorX = anchorX,
+                                                  .anchorY = anchorY,
+                                                  .hasAnchorPosition = true,
                                                   .context = "home",
                                                   .sourceBarName = m_hoveredInstance->barConfig.name});
         }

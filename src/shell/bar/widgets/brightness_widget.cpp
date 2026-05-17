@@ -144,5 +144,15 @@ void BrightnessWidget::syncState(Renderer& renderer) {
     m_label->measure(renderer);
   }
 
+  if (rootNode != nullptr) {
+    int pct = static_cast<int>(std::round(brightness * 100.0f));
+    std::vector<TooltipRow> rows;
+    rows.push_back({"Brightness", std::to_string(pct) + "%"});
+    if (!display->label.empty()) {
+      rows.push_back({"Display", display->label});
+    }
+    static_cast<InputArea*>(rootNode)->setTooltip(std::move(rows));
+  }
+
   requestRedraw();
 }

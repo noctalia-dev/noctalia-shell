@@ -32,6 +32,13 @@ public:
     markPaintDirty();
   }
 
+  void setLineColor3(const Color& color) {
+    if (m_style.lineColor3 == color)
+      return;
+    m_style.lineColor3 = color;
+    markPaintDirty();
+  }
+
   void setCount1(float count) {
     if (m_style.count1 == count)
       return;
@@ -46,6 +53,13 @@ public:
     markPaintDirty();
   }
 
+  void setCount3(float count) {
+    if (m_style.count3 == count)
+      return;
+    m_style.count3 = count;
+    markPaintDirty();
+  }
+
   void setScroll1(float scroll) {
     m_style.scroll1 = scroll;
     markPaintDirty();
@@ -53,6 +67,11 @@ public:
 
   void setScroll2(float scroll) {
     m_style.scroll2 = scroll;
+    markPaintDirty();
+  }
+
+  void setScroll3(float scroll) {
+    m_style.scroll3 = scroll;
     markPaintDirty();
   }
 
@@ -81,7 +100,7 @@ public:
   // primary/secondary arrays contain normalized [0..1] values.
   // Pass nullptr and 0 for unused channels.
   void setData(TextureManager& textures, const float* primary, int primaryCount, const float* secondary,
-               int secondaryCount);
+               int secondaryCount, const float* tertiary = nullptr, int tertiaryCount = 0);
 
 private:
   GraphStyle m_style;

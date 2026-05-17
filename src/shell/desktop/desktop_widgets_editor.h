@@ -1,10 +1,12 @@
 #pragma once
 
 #include "render/animation/animation_manager.h"
+#include "render/core/color.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
 #include "shell/desktop/desktop_widget_factory.h"
 #include "shell/desktop/desktop_widgets_controller.h"
+#include "ui/controls/select_dropdown_popup.h"
 #include "wayland/layer_surface.h"
 
 #include <array>
@@ -52,6 +54,9 @@ public:
   void requestLayout();
   void requestRedraw();
 
+  void applySettingChange(const std::string& key, WidgetSettingValue value);
+  void openColorPicker(const std::string& key, const Color& currentColor);
+
 private:
   enum class ScaleCorner : std::uint8_t {
     TopLeft = 0,
@@ -66,6 +71,7 @@ private:
     Scale,
     Rotate,
     ToolbarMove,
+    InspectorMove,
   };
 
   struct EditorWidgetView {
@@ -99,6 +105,11 @@ private:
     float toolbarX = 0.0f;
     float toolbarY = 0.0f;
     bool toolbarPositionInitialized = false;
+    Node* inspector = nullptr;
+    float inspectorX = 0.0f;
+    float inspectorY = 0.0f;
+    bool inspectorPositionInitialized = false;
+    std::unique_ptr<SelectDropdownPopup> selectPopup;
     bool pointerInside = false;
   };
 
@@ -110,13 +121,15 @@ private:
     DesktopWidgetState initialState;
     float intrinsicWidth = 0.0f;
     float intrinsicHeight = 0.0f;
-    float sourceIntrinsicWidth = 0.0f;
-    float sourceIntrinsicHeight = 0.0f;
-    float sourceScale = 0.0f;
+    float previewIntrinsicWidth = 0.0f;
+    float previewIntrinsicHeight = 0.0f;
+    float previewScale = 0.0f;
     ScaleCorner scaleCorner = ScaleCorner::BottomRight;
     std::string surfaceOutputName;
     float initialToolbarX = 0.0f;
     float initialToolbarY = 0.0f;
+    float initialInspectorX = 0.0f;
+    float initialInspectorY = 0.0f;
     bool rebuildOnFinish = false;
   };
 
@@ -133,7 +146,10 @@ private:
   void sendSelectedWidgetToBack();
   void bringSelectedWidgetToFront();
   void startToolbarDrag(const std::string& outputName);
+  void startInspectorDrag(const std::string& outputName);
   void clampToolbarPosition(OverlaySurface& surface, float toolbarWidth, float toolbarHeight);
+  void clampInspectorPosition(OverlaySurface& surface, float inspectorWidth, float inspectorHeight);
+  void buildInspector(OverlaySurface& surface, Node& root, const DesktopWidgetState& selectedState);
   void deferEditorMutation(std::function<void()> action);
   void requestExit();
   void startDrag(DragMode mode, const std::string& widgetId, bool rebuildOnFinish,
@@ -164,6 +180,10 @@ private:
   bool m_shiftHeld = false;
   bool m_leftShiftHeld = false;
   bool m_rightShiftHeld = false;
+  bool m_altHeld = false;
+  bool m_leftAltHeld = false;
+  bool m_rightAltHeld = false;
   float m_currentEventSceneX = 0.0f;
   float m_currentEventSceneY = 0.0f;
+  bool m_inspectorOpen = false;
 };

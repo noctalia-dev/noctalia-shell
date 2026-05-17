@@ -82,17 +82,18 @@ WidgetFactory::WidgetFactory(CompositorPlatform& platform, const Config& config,
                              IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
                              HttpClient* httpClient, WeatherService* weather, GammaService* nightLight,
                              noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
-                             BrightnessService* brightness, LockKeysService* lockKeys, FileWatcher* fileWatcher)
+                             BrightnessService* brightness, LockKeysService* lockKeys, ClipboardService* clipboard,
+                             FileWatcher* fileWatcher)
     : m_platform(platform), m_config(config), m_notifications(notifications), m_tray(tray), m_audio(audio),
       m_upower(upower), m_sysmon(sysmon), m_powerProfiles(powerProfiles), m_network(network),
       m_idleInhibitor(idleInhibitor), m_mpris(mpris), m_audioSpectrum(audioSpectrum), m_httpClient(httpClient),
       m_weather(weather), m_nightLight(nightLight), m_themeService(themeService), m_bluetooth(bluetooth),
-      m_brightness(brightness), m_lockKeys(lockKeys), m_fileWatcher(fileWatcher) {}
+      m_brightness(brightness), m_lockKeys(lockKeys), m_clipboard(clipboard), m_fileWatcher(fileWatcher) {}
 
 WidgetFactory::~WidgetFactory() = default;
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output, float contentScale,
-                                              const std::string& barPosition) const {
+                                              const std::string& barPosition, const std::string& barName) const {
   // Resolve: if name matches a [widget.<name>] entry, use its type + settings.
   // Otherwise treat the name itself as the widget type with default settings.
   const WidgetConfig* wc = nullptr;
@@ -133,7 +134,10 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "battery") {
     const std::string deviceSelector = wc != nullptr ? wc->getString("device", "auto") : std::string("auto");
-    auto widget = std::make_unique<BatteryWidget>(m_upower, deviceSelector);
+    const int warningThreshold = static_cast<int>(wc != nullptr ? wc->getInt("warning_threshold", 20) : 20);
+    const ColorSpec warningColor =
+        colorSpecFromConfigString(wc != nullptr ? wc->getString("warning_color", "error") : std::string("error"));
+    auto widget = std::make_unique<BatteryWidget>(m_upower, deviceSelector, warningThreshold, warningColor);
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -161,6 +165,9 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "clipboard") {
+    if (!m_config.shell.clipboardEnabled) {
+      return nullptr;
+    }
     auto barGlyph = wc != nullptr ? wc->getString("glyph", "clipboard") : std::string{"clipboard"};
     if (barGlyph.empty()) {
       barGlyph = "clipboard";
@@ -266,7 +273,10 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "scripted") {
     std::string script = wc != nullptr ? wc->getString("script", "") : std::string();
-    auto widget = std::make_unique<ScriptedWidget>(std::move(script), wc, m_fileWatcher);
+    const auto* outputInfo = m_platform.findOutputByWl(output);
+    const std::string outputName = outputInfo != nullptr ? outputInfo->connectorName : std::string{};
+    auto widget = std::make_unique<ScriptedWidget>(name, std::move(script), barName, outputName, wc, m_fileWatcher,
+                                                   &m_platform, m_clipboard);
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -306,6 +316,8 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
       stat = SysmonStat::CpuTemp;
     } else if (statStr == "gpu_temp") {
       stat = SysmonStat::GpuTemp;
+    } else if (statStr == "gpu_vram") {
+      stat = SysmonStat::GpuVram;
     } else if (statStr == "ram_used") {
       stat = SysmonStat::RamUsed;
     } else if (statStr == "ram_pct") {
@@ -326,7 +338,9 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     else if (display == "graph")
       displayMode = SysmonDisplayMode::Graph;
     const bool showLabel = wc != nullptr ? wc->getBool("show_label", true) : true;
-    auto widget = std::make_unique<SysmonWidget>(m_sysmon, output, stat, std::move(path), displayMode, showLabel);
+    const auto labelMinWidth = static_cast<float>(wc != nullptr ? wc->getDouble("label_min_width", 0.0) : 0.0);
+    auto widget =
+        std::make_unique<SysmonWidget>(m_sysmon, output, stat, std::move(path), displayMode, showLabel, labelMinWidth);
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -340,7 +354,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   if (type == "taskbar") {
     const bool groupByWorkspace = wc != nullptr ? wc->getBool("group_by_workspace", false) : false;
     const bool showAllOutputs = wc != nullptr ? wc->getBool("show_all_outputs", false) : false;
-    auto widget = std::make_unique<TaskbarWidget>(m_platform, output, groupByWorkspace, showAllOutputs, barPosition);
+    const bool onlyActiveWorkspace = wc != nullptr ? wc->getBool("only_active_workspace", false) : false;
+    const bool showWorkspaceLabel = wc != nullptr ? wc->getBool("show_workspace_label", true) : true;
+    const bool hideEmptyWorkspaces = wc != nullptr ? wc->getBool("hide_empty_workspaces", false) : false;
+    auto widget =
+        std::make_unique<TaskbarWidget>(m_platform, output, groupByWorkspace, showAllOutputs, onlyActiveWorkspace,
+                                        showWorkspaceLabel, hideEmptyWorkspaces, barPosition, m_config.shell.shadow);
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -406,8 +425,13 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     } else if (display == "none") {
       displayMode = WorkspacesWidget::DisplayMode::None;
     }
-    auto widget =
-        std::make_unique<WorkspacesWidget>(m_platform, output, displayMode, focusedColor, occupiedColor, emptyColor);
+    std::size_t maxLabelChars = 1; // Default: truncate names to 1 char (v4 behavior)
+    if (wc != nullptr && wc->hasSetting("max_label_chars")) {
+      maxLabelChars = static_cast<std::size_t>(wc->getInt("max_label_chars", 1));
+    }
+    const bool hideWhenEmpty = wc != nullptr ? wc->getBool("hide_when_empty", false) : false;
+    auto widget = std::make_unique<WorkspacesWidget>(m_platform, output, displayMode, focusedColor, occupiedColor,
+                                                     emptyColor, maxLabelChars, hideWhenEmpty);
     widget->setContentScale(contentScale);
     return widget;
   }

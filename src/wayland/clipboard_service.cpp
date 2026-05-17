@@ -2,13 +2,13 @@
 
 #include "core/log.h"
 #include "ext-data-control-v1-client-protocol.h"
+#include "util/file_utils.h"
 #include "wlr-data-control-unstable-v1-client-protocol.h"
 
 #include <algorithm>
 #include <array>
 #include <cerrno>
 #include <chrono>
-#include <cstdlib>
 #include <fcntl.h>
 #include <filesystem>
 #include <fstream>
@@ -42,6 +42,21 @@ namespace {
       std::string_view{"image/png"},
       std::string_view{"image/jpeg"},
   };
+
+  constexpr std::array kPasswordHintMimeTypes = {
+      std::string_view{"x-kde-passwordManagerHint"},
+  };
+
+  [[nodiscard]] bool selectionAdvertisesPasswordHint(const std::vector<std::string>& mimeTypes) {
+    for (const std::string& advertised : mimeTypes) {
+      for (const std::string_view hint : kPasswordHintMimeTypes) {
+        if (advertised == hint) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 
   constexpr Logger kLog("clipboard");
   std::uint64_t gStorageCounter = 0;
@@ -510,6 +525,11 @@ bool ClipboardService::copyText(std::string text) {
   return copyData({"text/plain;charset=utf-8", "text/plain"}, std::move(data));
 }
 
+bool ClipboardService::copyText(std::string text, std::string mimeType) {
+  std::vector<std::uint8_t> data(text.begin(), text.end());
+  return copyData({std::move(mimeType)}, std::move(data));
+}
+
 bool ClipboardService::copyEntry(const ClipboardEntry& entry) {
   if (entry.data.empty() || entry.dataMimeType.empty()) {
     return false;
@@ -801,6 +821,11 @@ bool ClipboardService::startReceive(void* offer) {
 
   const OfferState* state = findOffer(offer);
   if (state == nullptr) {
+    return false;
+  }
+
+  if (selectionAdvertisesPasswordHint(state->mimeTypes)) {
+    kLog.debug("ignoring clipboard selection: password-hint MIME advertised");
     return false;
   }
 
@@ -1107,13 +1132,9 @@ void ClipboardService::evictPayloadData(ClipboardEntry& entry) {
 }
 
 std::string ClipboardService::stateDirectory() {
-  const char* stateHome = std::getenv("XDG_STATE_HOME");
-  if (stateHome != nullptr && stateHome[0] != '\0') {
-    return std::string(stateHome) + "/noctalia/clipboard";
-  }
-  const char* home = std::getenv("HOME");
-  if (home != nullptr && home[0] != '\0') {
-    return std::string(home) + "/.local/state/noctalia/clipboard";
+  const std::string dir = FileUtils::stateDir();
+  if (!dir.empty()) {
+    return dir + "/clipboard";
   }
   return "/tmp/noctalia-clipboard";
 }
