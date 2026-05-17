@@ -175,16 +175,16 @@ void ProjectMRenderer::renderFrame() {
   projectm_opengl_render_frame(static_cast<projectm_handle>(m_projectm));
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-  // Drain the GPU fully before releasing this context. libprojectM's
-  // FinalComposite pass issues glDrawElements with a client-side index array;
-  // under Mesa glthread that draw is marshalled asynchronously. eglMakeCurrent
-  // (in restore() below) only *flushes* — it does not wait — so without an
-  // explicit finish the next visualizer tick can re-enter libprojectM while
-  // glthread is still consuming the previous frame's client arrays, and the
-  // marshalling memcpy faults inside tc_draw_user_indices_single. The GLES3
-  // context (see kContextAttributes in gl_shared_context.cpp) and this
-  // glFinish are BOTH required; neither alone prevents the crash. The sync
-  // cost is acceptable at the visualizer's frame cadence.
+  // Finish this context's work before eglMakeCurrent (in restore()) releases
+  // it. eglMakeCurrent only flushes, it does not wait; a hard finish keeps the
+  // shared root context and the surface contexts that sample our texture from
+  // racing on the FBO contents across the per-frame context handoff.
+  //
+  // NOTE: this is conservative defence, not the crash fix. The first-frame
+  // SIGSEGV was a context-ownership bug in loadPreset() (see above), not an
+  // async-marshalling race. This could likely be relaxed to glFlush, or
+  // dropped, with separate testing — left as glFinish for now because that is
+  // the configuration verified stable end-to-end.
   glFinish();
   restore(prev);
 }
