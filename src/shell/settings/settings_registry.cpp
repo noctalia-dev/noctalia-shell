@@ -1106,6 +1106,7 @@ namespace settings {
         return "network";
       case HookKind::BatteryStateChanged:
       case HookKind::BatteryUnderThreshold:
+      case HookKind::PowerProfileChanged:
         return "power";
       case HookKind::Count:
         break;
@@ -1117,6 +1118,9 @@ namespace settings {
       std::string tags = "hook command script exec event trigger";
       if (kind == HookKind::BatteryUnderThreshold || kind == HookKind::BatteryStateChanged) {
         tags += " battery power";
+      }
+      if (kind == HookKind::PowerProfileChanged) {
+        tags += " power profile performance balanced saver";
       }
       if (kind == HookKind::WallpaperChanged || kind == HookKind::ColorsChanged) {
         tags += " wallpaper colors theme";

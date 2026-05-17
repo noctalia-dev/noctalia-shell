@@ -645,6 +645,7 @@ enum class HookKind : std::uint8_t {
   BluetoothDisabled,
   BatteryStateChanged,
   BatteryUnderThreshold,
+  PowerProfileChanged,
   Count
 };
 
@@ -663,6 +664,7 @@ constexpr EnumOption<HookKind> kHookKinds[] = {
     {HookKind::BluetoothDisabled, "bluetooth_disabled", ""},
     {HookKind::BatteryStateChanged, "battery_state_changed", ""},
     {HookKind::BatteryUnderThreshold, "battery_under_threshold", ""},
+    {HookKind::PowerProfileChanged, "power_profile_changed", ""},
 };
 
 static_assert(sizeof(kHookKinds) / sizeof(kHookKinds[0]) == static_cast<std::size_t>(HookKind::Count));

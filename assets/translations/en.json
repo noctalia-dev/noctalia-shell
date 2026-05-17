@@ -1927,6 +1927,10 @@
           "battery_under_threshold": {
             "label": "On Battery Under Threshold",
             "description": "Command to run when battery percent drops under the configured threshold"
+          },
+          "power_profile_changed": {
+            "label": "On Power Profile Changed",
+            "description": "Command to run when the active UPower/PPD power profile changes"
           }
         },
         "command-placeholder": "shell command or script path",

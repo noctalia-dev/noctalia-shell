@@ -122,6 +122,7 @@ private:
   void onUpowerStateChangedForHooks();
   void onNetworkStateChangedForEvents(const NetworkState& state, NetworkChangeOrigin origin);
   void onBluetoothStateChangedForEvents(const BluetoothState& state, BluetoothStateChangeOrigin origin);
+  void onPowerProfileChangedForEvents(const PowerProfilesState& state, PowerProfilesChangeOrigin origin);
   [[nodiscard]] std::vector<PollSource*> currentPollSources();
   [[nodiscard]] std::vector<PollSource*> buildPollSources();
 
@@ -162,7 +163,7 @@ private:
   std::optional<UPowerState> m_prevUpowerForHooks;
   std::optional<bool> m_prevWirelessEnabledForEvents;
   std::optional<bool> m_prevBluetoothPoweredForEvents;
-  std::optional<std::string> m_prevPowerProfileActiveForNotification;
+  std::optional<std::string> m_prevPowerProfileActiveForEvents;
   SessionActionHooks m_sessionActionHooks;
   std::unique_ptr<BrightnessService> m_brightnessService;
   std::unique_ptr<TrayService> m_trayService;

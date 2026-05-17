@@ -77,6 +77,16 @@ namespace {
                        [&config](const std::string& name) { return widgetIsLockKeys(name, config); });
   }
 
+  std::string_view powerProfileOriginName(PowerProfilesChangeOrigin origin) {
+    switch (origin) {
+    case PowerProfilesChangeOrigin::Noctalia:
+      return "noctalia";
+    case PowerProfilesChangeOrigin::External:
+      return "external";
+    }
+    return "external";
+  }
+
   bool barMayRender(const BarConfig& bar) {
     if (bar.enabled) {
       return true;
@@ -620,7 +630,7 @@ void Application::initServices() {
         if (active.empty()) {
           return;
         }
-        if (m_prevPowerProfileActiveForNotification.has_value() && *m_prevPowerProfileActiveForNotification != active &&
+        if (m_prevPowerProfileActiveForEvents.has_value() && *m_prevPowerProfileActiveForEvents != active &&
             origin != PowerProfilesChangeOrigin::Noctalia) {
           std::string glyphIconSpec("noctalia-glyph:");
           glyphIconSpec.append(profileGlyphName(active));
@@ -629,9 +639,10 @@ void Application::initServices() {
               i18n::tr("notifications.internal.power-profile-body", "profile", profileLabel(active)), Urgency::Normal,
               kDefaultNotificationTimeout, std::move(glyphIconSpec));
         }
-        m_prevPowerProfileActiveForNotification = active;
+        onPowerProfileChangedForEvents(state, origin);
       });
       if (!m_powerProfilesService->activeProfile().empty()) {
+        m_prevPowerProfileActiveForEvents = m_powerProfilesService->activeProfile();
         kLog.info("power profiles active profile: {}", m_powerProfilesService->activeProfile());
       } else {
         kLog.info("power profiles service active");
@@ -1468,6 +1479,24 @@ void Application::onBluetoothStateChangedForEvents(const BluetoothState& state, 
     }
   }
   m_prevBluetoothPoweredForEvents = state.powered;
+}
+
+void Application::onPowerProfileChangedForEvents(const PowerProfilesState& state, PowerProfilesChangeOrigin origin) {
+  if (state.activeProfile.empty()) {
+    return;
+  }
+  if (!m_prevPowerProfileActiveForEvents.has_value()) {
+    m_prevPowerProfileActiveForEvents = state.activeProfile;
+    return;
+  }
+  const std::string prev = *m_prevPowerProfileActiveForEvents;
+  if (prev != state.activeProfile) {
+    m_hookManager.fire(HookKind::PowerProfileChanged,
+                       {{"NOCTALIA_POWER_PROFILE", state.activeProfile},
+                        {"NOCTALIA_POWER_PROFILE_PREVIOUS", prev},
+                        {"NOCTALIA_POWER_PROFILE_ORIGIN", std::string(powerProfileOriginName(origin))}});
+  }
+  m_prevPowerProfileActiveForEvents = state.activeProfile;
 }
 
 std::vector<PollSource*> Application::currentPollSources() {
