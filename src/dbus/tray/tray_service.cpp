@@ -1261,9 +1261,24 @@ void TrayService::onRegisterStatusNotifierItem(const std::string& serviceOrPath,
   }
 
   if (busOnlyRegistration) {
-    // Match watcher semantics for service-only registrations while tolerating
-    // late object-path readiness by probing known paths for a few ticks.
-    scheduleBusOnlyRegistrationProbe(busName, 5);
+    // Async hasServiceOwner check before probing.
+    if (m_dbusProxy) {
+      m_dbusProxy->callMethodAsync("NameHasOwner")
+          .onInterface(k_dbus_interface)
+          .withTimeout(std::chrono::milliseconds(200))
+          .withArguments(busName)
+          .uponReplyInvoke([this, busName](std::optional<sdbus::Error> error, bool hasOwner) {
+            if (error.has_value()) {
+              kLog.debug("register item ignored: NameHasOwner failed for bus='{}' err={}", busName, error->what());
+              return;
+            }
+            if (!hasOwner) {
+              kLog.debug("register item ignored: no DBus owner for bus='{}'", busName);
+              return;
+            }
+            scheduleBusOnlyRegistrationProbe(busName, 5);
+          });
+    }
     return;
   }
 
