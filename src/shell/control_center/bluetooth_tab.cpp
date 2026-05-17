@@ -159,7 +159,7 @@ namespace {
         auto spinner = std::make_unique<Spinner>();
         spinner->setSpinnerSize(Style::fontSizeBody * scale);
         spinner->setColor(colorSpecFromRole(ColorRole::Primary));
-        spinner->start();
+        m_connectingSpinner = spinner.get();
         header->addChild(std::move(spinner));
       } else {
         auto primary = std::make_unique<Button>();
@@ -249,9 +249,16 @@ namespace {
       }
     }
 
+    void startConnectingSpinner() {
+      if (m_connectingSpinner != nullptr) {
+        m_connectingSpinner->start();
+      }
+    }
+
   private:
     BluetoothDeviceInfo m_device;
     BluetoothService* m_service = nullptr;
+    Spinner* m_connectingSpinner = nullptr;
   };
 
 } // namespace
@@ -786,7 +793,9 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
       first = false;
     }
     auto row = std::make_unique<BluetoothDeviceRow>(device, m_service, scale);
+    auto* rowPtr = row.get();
     m_list->addChild(std::move(row));
+    rowPtr->startConnectingSpinner();
   }
   m_list->layout(renderer);
 }
