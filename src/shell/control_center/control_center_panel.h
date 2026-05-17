@@ -109,7 +109,7 @@ private:
       {TabId::Media, "media", "control-center.tabs.media", "disc-filled"},
       {TabId::Audio, "audio", "control-center.tabs.audio", "volume"},
       {TabId::Display, "display", "control-center.tabs.display", "device-desktop"},
-      {TabId::System, "system", "control-center.tabs.system", "activity"},
+      {TabId::System, "system", "control-center.tabs.system", "activity-heartbeat"},
       {TabId::Network, "network", "control-center.tabs.network", "wifi"},
       {TabId::Bluetooth, "bluetooth", "control-center.tabs.bluetooth", "bluetooth"},
       {TabId::Weather, "weather", "control-center.tabs.weather", "weather-cloud-sun"},
