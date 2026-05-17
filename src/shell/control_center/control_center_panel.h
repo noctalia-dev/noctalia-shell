@@ -107,7 +107,7 @@ private:
   static constexpr std::array<TabMeta, kTabCount> kTabs{{
       {TabId::Home, "home", "control-center.tabs.home", "home"},
       {TabId::Media, "media", "control-center.tabs.media", "disc-filled"},
-      {TabId::Audio, "audio", "control-center.tabs.audio", "device-speaker"},
+      {TabId::Audio, "audio", "control-center.tabs.audio", "volume"},
       {TabId::Display, "display", "control-center.tabs.display", "device-desktop"},
       {TabId::System, "system", "control-center.tabs.system", "activity"},
       {TabId::Network, "network", "control-center.tabs.network", "wifi"},
