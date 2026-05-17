@@ -590,6 +590,14 @@ void TrayWidget::rebuild(Renderer& renderer) {
       }
     });
     area->addChild(std::move(iconNode));
+
+    // Set tooltip with item title
+    if (!item.title.empty()) {
+      area->setTooltip(item.title);
+    } else if (!item.statusNotifierTitle.empty()) {
+      area->setTooltip(item.statusNotifierTitle);
+    }
+
     if (m_panelGridMode) {
       if (gridRow == nullptr || gridCol >= m_panelGridColumns) {
         auto row = std::make_unique<Flex>();
