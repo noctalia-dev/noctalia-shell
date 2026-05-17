@@ -591,16 +591,27 @@ void TrayWidget::rebuild(Renderer& renderer) {
     });
     area->addChild(std::move(iconNode));
 
-    // Set tooltip: prefer title, combine with tooltipTitle if different, fall back to statusNotifierTitle
+    // Set tooltip: show tooltipTitle alone when title is already contained, otherwise prefix with title
     std::string tooltipText;
-    if (!item.title.empty()) {
-      if (!item.statusNotifierDescription.empty() && item.statusNotifierDescription != item.title) {
-        tooltipText = item.title + " · " + item.statusNotifierDescription;
+    if (!item.statusNotifierDescription.empty()) {
+      std::string tooltipTitle = item.statusNotifierDescription;
+      std::string lowerTooltipTitle = StringUtils::toLower(tooltipTitle);
+      lowerTooltipTitle.erase(std::remove(lowerTooltipTitle.begin(), lowerTooltipTitle.end(), ' '),
+                              lowerTooltipTitle.end());
+
+      std::string lowerTitle = StringUtils::toLower(item.title);
+
+      if (lowerTitle.empty() || lowerTooltipTitle.find(lowerTitle) != std::string::npos) {
+        tooltipText = tooltipTitle;
       } else {
-        tooltipText = item.title;
+        std::string wordTitle = item.title;
+        if (!wordTitle.empty()) {
+          wordTitle.front() = static_cast<char>(std::toupper(static_cast<unsigned char>(wordTitle.front())));
+        }
+        tooltipText = wordTitle + " - " + tooltipTitle;
       }
-    } else if (!item.statusNotifierDescription.empty()) {
-      tooltipText = item.statusNotifierDescription;
+    } else if (!item.title.empty()) {
+      tooltipText = item.title;
     } else if (!item.statusNotifierTitle.empty()) {
       tooltipText = item.statusNotifierTitle;
     }
