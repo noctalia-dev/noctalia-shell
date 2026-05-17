@@ -41,6 +41,7 @@ public:
 
   void luaSetText(std::string_view text);
   void luaSetGlyph(std::string_view name);
+  void luaSetFont(std::string_view familyOrPath);
   void luaSetColor(std::string_view role, std::string_view mode);
   void luaSetGlyphColor(std::string_view role, std::string_view mode);
   void luaSetVisible(bool visible);
@@ -116,5 +117,6 @@ private:
   bool m_sharedScope = false;
   bool m_hasOnIpc = false;
   bool m_hasOnIpcKnown = false;
+  bool m_fontConfigDirty = false;
   std::shared_ptr<bool> m_alive = std::make_shared<bool>(true);
 };

@@ -19,15 +19,45 @@
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
+#include <fontconfig/fontconfig.h>
 #include <fstream>
 #include <linux/input-event-codes.h>
 #include <sstream>
+#include <unordered_set>
 
 namespace {
   constexpr Logger kLog("scripted-widget");
   constexpr std::chrono::milliseconds kDeferredUpdateRetry{50};
   constexpr std::chrono::milliseconds kTimerPhaseStep{50};
   constexpr std::chrono::milliseconds kTimerMaxPhase{500};
+
+  std::unordered_set<std::string>& registeredFontFiles() {
+    static std::unordered_set<std::string> s;
+    return s;
+  }
+
+  std::string registerFontFile(const std::filesystem::path& path) {
+    auto pathStr = path.string();
+    const bool firstTime = !registeredFontFiles().contains(pathStr);
+    if (firstTime) {
+      if (!FcConfigAppFontAddFile(nullptr, reinterpret_cast<const FcChar8*>(pathStr.c_str()))) {
+        kLog.warn("failed to register font file: {}", pathStr);
+        return {};
+      }
+      registeredFontFiles().insert(pathStr);
+    }
+    // Extract family name from the font file
+    FcPattern* pat = FcFreeTypeQuery(reinterpret_cast<const FcChar8*>(pathStr.c_str()), 0, nullptr, nullptr);
+    if (!pat) {
+      kLog.warn("failed to query font family from: {}", pathStr);
+      return {};
+    }
+    FcChar8* family = nullptr;
+    FcPatternGetString(pat, FC_FAMILY, 0, &family);
+    std::string result = family ? reinterpret_cast<const char*>(family) : "";
+    FcPatternDestroy(pat);
+    return result;
+  }
 
   std::uint32_t nextTimerPhase() {
     static std::atomic<std::uint32_t> next{0};
@@ -184,6 +214,11 @@ void ScriptedWidget::doLayout(Renderer& renderer, float containerWidth, float co
   if (!m_flex)
     return;
 
+  if (m_fontConfigDirty) {
+    renderer.notifyFontConfigChanged();
+    m_fontConfigDirty = false;
+  }
+
   m_label->setColor(resolveScriptColor(m_textColor));
   m_label->setVisible(!m_label->text().empty());
   if (m_label->visible()) {
@@ -225,6 +260,27 @@ void ScriptedWidget::luaSetGlyph(std::string_view name) {
     changed = true;
   }
   m_dirty |= changed;
+}
+
+void ScriptedWidget::luaSetFont(std::string_view familyOrPath) {
+  if (!m_label)
+    return;
+  std::string family;
+  // If it looks like a font file path, resolve and register it
+  if (familyOrPath.ends_with(".otf") || familyOrPath.ends_with(".ttf") || familyOrPath.ends_with(".woff2")) {
+    auto resolved = resolveScriptPath(std::string(familyOrPath));
+    bool alreadyRegistered = registeredFontFiles().contains(resolved.string());
+    family = registerFontFile(resolved);
+    if (family.empty())
+      return;
+    if (!alreadyRegistered) {
+      m_fontConfigDirty = true;
+    }
+  } else {
+    family = std::string(familyOrPath);
+  }
+  m_label->setFontFamily(std::move(family));
+  m_dirty = true;
 }
 
 void ScriptedWidget::luaSetColor(std::string_view role, std::string_view mode) {
@@ -395,6 +451,9 @@ void ScriptedWidget::handleScriptResult(scripting::ScriptWidgetResult result) {
 }
 
 void ScriptedWidget::applyScriptPatch(const scripting::ScriptWidgetPatch& patch) {
+  if (patch.fontFamily.has_value()) {
+    luaSetFont(*patch.fontFamily);
+  }
   if (patch.text.has_value()) {
     luaSetText(*patch.text);
   }

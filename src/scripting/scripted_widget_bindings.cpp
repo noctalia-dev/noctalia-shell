@@ -44,6 +44,15 @@ namespace {
     return 0;
   }
 
+  int luau_setFont(lua_State* L) {
+    size_t len = 0;
+    const char* family = luaL_checklstring(L, 1, &len);
+    if (auto* context = getContext(L)) {
+      context->patch.fontFamily = std::string(family, len);
+    }
+    return 0;
+  }
+
   int luau_setColor(lua_State* L) {
     size_t len = 0;
     const char* role = luaL_checklstring(L, 1, &len);
@@ -130,6 +139,7 @@ namespace {
   const luaL_Reg kWidgetLib[] = {
       {"setText", luau_setText},
       {"setGlyph", luau_setGlyph},
+      {"setFont", luau_setFont},
       {"setColor", luau_setColor},
       {"setGlyphColor", luau_setGlyphColor},
       {"isVertical", luau_isVertical},

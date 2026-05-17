@@ -28,6 +28,9 @@ namespace scripting {
       if (src.glyph.has_value()) {
         dest.glyph = src.glyph;
       }
+      if (src.fontFamily.has_value()) {
+        dest.fontFamily = src.fontFamily;
+      }
       if (src.textColor.has_value()) {
         dest.textColor = src.textColor;
       }

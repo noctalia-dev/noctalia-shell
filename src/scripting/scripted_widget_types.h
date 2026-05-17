@@ -23,14 +23,15 @@ namespace scripting {
   struct ScriptWidgetPatch {
     std::optional<std::string> text;
     std::optional<std::string> glyph;
+    std::optional<std::string> fontFamily;
     std::optional<ScriptWidgetColorPatch> textColor;
     std::optional<ScriptWidgetColorPatch> glyphColor;
     std::optional<bool> visible;
     std::optional<int> updateIntervalMs;
 
     [[nodiscard]] bool empty() const {
-      return !text.has_value() && !glyph.has_value() && !textColor.has_value() && !glyphColor.has_value() &&
-             !visible.has_value() && !updateIntervalMs.has_value();
+      return !text.has_value() && !glyph.has_value() && !fontFamily.has_value() && !textColor.has_value() &&
+             !glyphColor.has_value() && !visible.has_value() && !updateIntervalMs.has_value();
     }
   };
 
