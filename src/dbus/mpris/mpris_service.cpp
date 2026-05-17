@@ -314,6 +314,7 @@ namespace {
   constexpr Logger kLog("mpris");
   constexpr auto k_position_retry_interval = std::chrono::milliseconds{1000};
   constexpr auto k_position_candidate_retry_interval = std::chrono::milliseconds{250};
+  constexpr auto k_position_retry_initial_backoff = std::chrono::milliseconds{2000};
   constexpr auto k_position_retry_max_backoff = std::chrono::milliseconds{30'000};
   // Threshold for consecutive failures while fetching full player properties in addOrRefreshPlayer.
   constexpr int k_player_properties_failure_threshold = 5;
@@ -410,25 +411,29 @@ void MprisService::refreshPlayerPosition(const std::string& busName, bool notify
   }
 }
 
-bool MprisService::shouldRetryPositionRefresh(const std::string& busName) const {
-  const auto failureIt = m_positionRefreshFailures.find(busName);
-  // This guard uses full-properties fetch failures tracked in addOrRefreshPlayer.
-  // Position-only Get(Position) failures in refreshPlayerPosition are logged but do not increment this counter.
-  return failureIt == m_positionRefreshFailures.end() || failureIt->second < k_player_properties_failure_threshold;
+bool MprisService::shouldRetryPropertiesRefresh(const std::string& busName) const {
+  const auto failureIt = m_playerPropertiesFailures.find(busName);
+  return failureIt == m_playerPropertiesFailures.end() || failureIt->second < k_player_properties_failure_threshold;
 }
 
-std::chrono::milliseconds MprisService::positionRetryInterval(const std::string& busName,
-                                                              std::chrono::milliseconds fallback) const {
-  if (const auto backoffIt = m_positionRefreshBackoffMs.find(busName); backoffIt != m_positionRefreshBackoffMs.end()) {
+std::chrono::milliseconds MprisService::propertiesRefreshRetryInterval(const std::string& busName,
+                                                                       std::chrono::milliseconds fallback,
+                                                                       bool usePropertiesBackoff) const {
+  if (!usePropertiesBackoff) {
+    return fallback;
+  }
+  if (const auto backoffIt = m_playerPropertiesRefreshBackoffMs.find(busName);
+      backoffIt != m_playerPropertiesRefreshBackoffMs.end()) {
     return backoffIt->second;
   }
   return fallback;
 }
 
-void MprisService::schedulePositionRefreshRetry(const std::string& busName, std::chrono::milliseconds fallback) {
+void MprisService::schedulePositionRefreshRetry(const std::string& busName, std::chrono::milliseconds fallback,
+                                                bool usePropertiesBackoff) {
   auto& timerId = m_positionResyncTimers[busName];
   const std::weak_ptr<void> timerAliveGuard = m_aliveGuard;
-  const auto retryInterval = positionRetryInterval(busName, fallback);
+  const auto retryInterval = propertiesRefreshRetryInterval(busName, fallback, usePropertiesBackoff);
   timerId = TimerManager::instance().start(timerId, retryInterval, [this, timerAliveGuard, busName]() {
     if (timerAliveGuard.expired()) {
       return;
@@ -491,10 +496,8 @@ void MprisService::applyPositionSample(const std::string& busName, int64_t rawPo
         m_changeCallback();
       }
     }
-    if (playerIt->second.playbackStatus != "Stopped") {
-      m_positionRefreshFailures[busName] = 0;
-      m_positionRefreshBackoffMs.erase(busName);
-      schedulePositionRefreshRetry(busName, k_position_retry_interval);
+    if (playerIt->second.playbackStatus != "Stopped" && shouldRetryPropertiesRefresh(busName)) {
+      schedulePositionRefreshRetry(busName, k_position_retry_interval, true);
     }
     return;
   }
@@ -562,8 +565,8 @@ void MprisService::applyPositionSample(const std::string& busName, int64_t rawPo
       m_pendingPositionCandidateUs[busName] = normalizedUs;
       m_pendingPositionCandidateMatches[busName] = 0;
       m_pendingPositionCandidateAt[busName] = now;
-      if (playerIt->second.playbackStatus == "Playing" && shouldRetryPositionRefresh(busName)) {
-        schedulePositionRefreshRetry(busName, k_position_candidate_retry_interval);
+      if (playerIt->second.playbackStatus == "Playing" && shouldRetryPropertiesRefresh(busName)) {
+        schedulePositionRefreshRetry(busName, k_position_candidate_retry_interval, false);
       }
       return;
     }
@@ -574,7 +577,9 @@ void MprisService::applyPositionSample(const std::string& busName, int64_t rawPo
       if (matchCount < 2) {
         m_pendingPositionCandidateUs[busName] = normalizedUs;
         m_pendingPositionCandidateAt[busName] = now;
-        schedulePositionRefreshRetry(busName, k_position_candidate_retry_interval);
+        if (shouldRetryPropertiesRefresh(busName)) {
+          schedulePositionRefreshRetry(busName, k_position_candidate_retry_interval, false);
+        }
         return;
       }
     }
@@ -586,8 +591,8 @@ void MprisService::applyPositionSample(const std::string& busName, int64_t rawPo
     const bool hasAuthoritativeSample =
         m_hasAuthoritativePositionSample.contains(busName) && m_hasAuthoritativePositionSample.at(busName);
     if (playerIt->second.playbackStatus == "Playing" && !hasAuthoritativeSample &&
-        shouldRetryPositionRefresh(busName)) {
-      schedulePositionRefreshRetry(busName, k_position_retry_interval);
+        shouldRetryPropertiesRefresh(busName)) {
+      schedulePositionRefreshRetry(busName, k_position_retry_interval, true);
     }
     return;
   }
@@ -1587,14 +1592,14 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
 
                   const bool rootFailed = rootErr.has_value();
                   const bool playerFailed = playerErr.has_value();
-                  const bool hadRefreshFailure = rootFailed || playerFailed;
+                  const bool hadFullRefreshFailure = rootFailed && playerFailed;
 
                   // Track full-properties fetch failures and give up after threshold.
-                  if (hadRefreshFailure) {
-                    int& failureCount = m_positionRefreshFailures[busName];
+                  if (hadFullRefreshFailure) {
+                    int& failureCount = m_playerPropertiesFailures[busName];
                     ++failureCount;
 
-                    if (failureCount >= k_player_properties_failure_threshold) {
+                    if (failureCount == k_player_properties_failure_threshold) {
                       kLog.warn("player properties refresh disabled after {} failures name={}", failureCount, busName);
                       // Cancel the timer to stop polling this player
                       if (auto it = m_positionResyncTimers.find(busName); it != m_positionResyncTimers.end()) {
@@ -1602,11 +1607,14 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
                         m_positionResyncTimers.erase(it);
                       }
                       return;
+                    } else if (failureCount > k_player_properties_failure_threshold) {
+                      return;
                     } else if (failureCount > 1) {
+                      // Keep the first failure on the normal retry cadence before backing off.
                       // Apply exponential backoff
-                      auto& backoff = m_positionRefreshBackoffMs[busName];
+                      auto& backoff = m_playerPropertiesRefreshBackoffMs[busName];
                       if (backoff.count() == 0) {
-                        backoff = std::chrono::milliseconds{2000};
+                        backoff = k_position_retry_initial_backoff;
                       } else {
                         backoff = std::min(backoff * 2, k_position_retry_max_backoff);
                       }
@@ -1635,7 +1643,7 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
 
                   const MprisPlayerInfo info =
                       readPlayerInfoFromProperties(busName, effectiveRootProps, effectivePlayerProps);
-                  applyPlayerSnapshot(busName, info, hadPositionSignal, hadRefreshFailure);
+                  applyPlayerSnapshot(busName, info, hadPositionSignal, hadFullRefreshFailure);
                 });
           } catch (const sdbus::Error& e) {
             kLog.warn("player query failed name={} err={}", busName, e.what());
@@ -1649,12 +1657,11 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
 }
 
 void MprisService::applyPlayerSnapshot(const std::string& busName, const MprisPlayerInfo& info, bool hadPositionSignal,
-                                       bool hadRefreshFailure) {
+                                       bool hadFullRefreshFailure) {
   m_recoveryBackoffMs = std::chrono::milliseconds{500};
-  // Reset position refresh state only when both interfaces were fetched successfully.
-  if (!hadRefreshFailure) {
-    m_positionRefreshFailures[busName] = 0;
-    m_positionRefreshBackoffMs.erase(busName);
+  if (!hadFullRefreshFailure) {
+    m_playerPropertiesFailures[busName] = 0;
+    m_playerPropertiesRefreshBackoffMs.erase(busName);
   }
   const auto previousActive = activePlayer();
   const auto now = std::chrono::steady_clock::now();
@@ -1696,8 +1703,8 @@ void MprisService::applyPlayerSnapshot(const std::string& busName, const MprisPl
         }
         refreshPlayerPosition(busName, true);
       });
-      if (shouldRetryPositionRefresh(busName)) {
-        schedulePositionRefreshRetry(busName, k_position_retry_interval);
+      if (shouldRetryPropertiesRefresh(busName)) {
+        schedulePositionRefreshRetry(busName, k_position_retry_interval, true);
       }
     }
     return;
@@ -1854,8 +1861,8 @@ void MprisService::applyPlayerSnapshot(const std::string& busName, const MprisPl
         }
         refreshPlayerPosition(busName, true);
       });
-      if (shouldRetryPositionRefresh(busName)) {
-        schedulePositionRefreshRetry(busName, k_position_retry_interval);
+      if (shouldRetryPropertiesRefresh(busName)) {
+        schedulePositionRefreshRetry(busName, k_position_retry_interval, true);
       }
     }
 
@@ -1898,8 +1905,8 @@ void MprisService::removePlayer(const std::string& busName) {
   m_lastPropertiesUpdate.erase(busName);
   m_lastPlayingUpdate.erase(busName);
   m_lastStrongMetadataUpdate.erase(busName);
-  m_positionRefreshFailures.erase(busName);
-  m_positionRefreshBackoffMs.erase(busName);
+  m_playerPropertiesFailures.erase(busName);
+  m_playerPropertiesRefreshBackoffMs.erase(busName);
   if (m_lastActivePlayer == busName) {
     m_lastActivePlayer.clear();
   }

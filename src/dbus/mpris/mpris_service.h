@@ -109,11 +109,13 @@ private:
   void scheduleRecoveryDiscovery();
   void addOrRefreshPlayer(const std::string& busName);
   void applyPlayerSnapshot(const std::string& busName, const MprisPlayerInfo& info, bool hadPositionSignal,
-                           bool hadRefreshFailure);
-  [[nodiscard]] bool shouldRetryPositionRefresh(const std::string& busName) const;
-  [[nodiscard]] std::chrono::milliseconds positionRetryInterval(const std::string& busName,
-                                                                std::chrono::milliseconds fallback) const;
-  void schedulePositionRefreshRetry(const std::string& busName, std::chrono::milliseconds fallback);
+                           bool hadFullRefreshFailure);
+  [[nodiscard]] bool shouldRetryPropertiesRefresh(const std::string& busName) const;
+  [[nodiscard]] std::chrono::milliseconds propertiesRefreshRetryInterval(const std::string& busName,
+                                                                         std::chrono::milliseconds fallback,
+                                                                         bool usePropertiesBackoff) const;
+  void schedulePositionRefreshRetry(const std::string& busName, std::chrono::milliseconds fallback,
+                                    bool usePropertiesBackoff);
   void refreshPlayerPosition(const std::string& busName, bool notifyChange);
   void applyPositionSample(const std::string& busName, int64_t rawPositionUs, bool notifyChange);
   void removePlayer(const std::string& busName);
@@ -181,8 +183,8 @@ private:
   std::unordered_map<std::string, std::chrono::steady_clock::time_point> m_lastPropertiesUpdate;
   std::unordered_map<std::string, std::chrono::steady_clock::time_point> m_lastPlayingUpdate;
   std::unordered_map<std::string, std::chrono::steady_clock::time_point> m_lastStrongMetadataUpdate;
-  std::unordered_map<std::string, int> m_positionRefreshFailures;
-  std::unordered_map<std::string, std::chrono::milliseconds> m_positionRefreshBackoffMs;
+  std::unordered_map<std::string, int> m_playerPropertiesFailures;
+  std::unordered_map<std::string, std::chrono::milliseconds> m_playerPropertiesRefreshBackoffMs;
   std::deque<std::string> m_pendingDiscoveryBusNames;
   std::string m_lastActivePlayer;
   std::string m_lastEmittedActivePlayer;
