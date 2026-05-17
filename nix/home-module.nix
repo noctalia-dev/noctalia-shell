@@ -6,7 +6,12 @@
 }:
 let
   cfg = config.programs.noctalia;
-  cfgWlp = cfg.waylivepaper;
+  cfgLp = cfg.wallpaper.live_paper;
+  # Best-effort read of the runtime live_paper toggle so presets staging can
+  # default to "on whenever the visualizer is on". cfg.settings is freeform
+  # (attrset | string | path); only an attrset is introspectable.
+  livePaperEnabledInSettings =
+    lib.isAttrs cfg.settings && (lib.attrByPath [ "wallpaper" "live_paper" "enabled" ] false cfg.settings);
   jsonFormat = pkgs.formats.json { };
   tomlFormat = pkgs.formats.toml { };
 
@@ -82,21 +87,37 @@ in
       '';
     };
 
-    # Optional projectM/Milkdrop visualizer wallpaper. At this stage the
-    # module only stages the presets pack on disk under
-    # `$XDG_DATA_HOME/waylivepaper/presets`; the shell-side renderer that
-    # consumes them lands in a later port stage. Configuration (interval,
-    # fps, darken, audio source, …) lives in noctalia/config.toml.
-    waylivepaper = {
-      enable = lib.mkEnableOption "projectM Milkdrop visualizer wallpaper presets staging";
+    # projectM/Milkdrop visualizer wallpaper. Runtime behaviour (enabled,
+    # interval, fps, darken, audio source, …) lives in the freeform
+    # `settings.wallpaper.live_paper` TOML table; the options here only
+    # govern staging the presets pack on disk under
+    # `$XDG_DATA_HOME/waylivepaper/presets` so the shell can find it.
+    wallpaper.live_paper = {
+      defaultPresets = lib.mkOption {
+        type = lib.types.bool;
+        default = livePaperEnabledInSettings;
+        defaultText = lib.literalExpression ''
+          settings.wallpaper.live_paper.enabled or false
+        '';
+        description = ''
+          Symlink the bundled, brightness/strobe-filtered Milkdrop
+          presets pack into `$XDG_DATA_HOME/waylivepaper/presets` so the
+          live-paper visualizer has presets with no extra setup. Defaults
+          to `true` whenever `settings.wallpaper.live_paper.enabled` is
+          set, so enabling the visualizer is a single switch. Set to
+          `false` to manage presets yourself (e.g. via
+          `settings.wallpaper.live_paper.presets_dir`).
+        '';
+      };
 
       presetsSource = lib.mkOption {
         type = lib.types.path;
         description = ''
           Directory of `.milk` / `.prjm` presets symlinked into
-          `$XDG_DATA_HOME/waylivepaper/presets`. Defaults to the
-          `presets-cream-of-the-crop` pack bundled with this flake,
-          filtered for excessive brightness / strobing.
+          `$XDG_DATA_HOME/waylivepaper/presets` when `defaultPresets` is
+          enabled. Defaults to the `presets-cream-of-the-crop` pack
+          bundled with this flake, filtered for excessive brightness /
+          strobing.
         '';
       };
     };
@@ -139,10 +160,10 @@ in
         ) cfg.customPalettes)
       ];
 
-      # Stage the presets pack so the visualizer renderer (later stage) can
-      # discover it at the well-known XDG location without extra config.
-      dataFile."waylivepaper/presets" = lib.mkIf cfgWlp.enable {
-        source = cfgWlp.presetsSource;
+      # Stage the presets pack so the visualizer renderer discovers it at
+      # the well-known XDG location without any extra configuration.
+      dataFile."waylivepaper/presets" = lib.mkIf cfgLp.defaultPresets {
+        source = cfgLp.presetsSource;
       };
     };
 
@@ -150,10 +171,6 @@ in
       {
         assertion = !cfg.systemd.enable || cfg.package != null;
         message = "programs.noctalia.package cannot be null when programs.noctalia.systemd.enable is true";
-      }
-      {
-        assertion = !cfgWlp.enable || cfg.enable;
-        message = "programs.noctalia.waylivepaper.enable requires programs.noctalia.enable";
       }
     ];
   };

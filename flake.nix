@@ -95,7 +95,7 @@
         {
           imports = [ ./nix/home-module.nix ];
           programs.noctalia.package = lib.mkDefault self.packages.${pkgs.stdenv.hostPlatform.system}.default;
-          programs.noctalia.waylivepaper.presetsSource =
+          programs.noctalia.wallpaper.live_paper.presetsSource =
             lib.mkDefault self.packages.${pkgs.stdenv.hostPlatform.system}.presets;
         };
     };
