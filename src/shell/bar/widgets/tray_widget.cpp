@@ -591,8 +591,10 @@ void TrayWidget::rebuild(Renderer& renderer) {
     });
     area->addChild(std::move(iconNode));
 
-    // Set tooltip with item title
-    if (!item.title.empty()) {
+    // Set tooltip with item title (prefer tooltipTitle/description, fall back to title, then statusNotifierTitle)
+    if (!item.statusNotifierDescription.empty()) {
+      area->setTooltip(item.statusNotifierDescription);
+    } else if (!item.title.empty()) {
       area->setTooltip(item.title);
     } else if (!item.statusNotifierTitle.empty()) {
       area->setTooltip(item.statusNotifierTitle);
