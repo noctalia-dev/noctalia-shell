@@ -95,6 +95,11 @@ void TaskbarWidget::doLayout(Renderer& renderer, float containerWidth, float con
   if (m_vertical != wasVertical) {
     m_rebuildPending = true;
   }
+  const std::uint64_t textMetricsGeneration = renderer.textMetricsGeneration();
+  if (m_textMetricsGeneration != textMetricsGeneration) {
+    m_textMetricsGeneration = textMetricsGeneration;
+    m_rebuildPending = true;
+  }
 
   m_root->setDirection(m_vertical ? FlexDirection::Vertical : FlexDirection::Horizontal);
   m_root->setAlign(FlexAlign::Center);

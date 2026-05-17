@@ -66,6 +66,11 @@ void WorkspacesWidget::doLayout(Renderer& renderer, float containerWidth, float 
   if (wasVertical != m_isVertical) {
     m_rebuildPending = true;
   }
+  const std::uint64_t textMetricsGeneration = renderer.textMetricsGeneration();
+  if (m_textMetricsGeneration != textMetricsGeneration) {
+    m_textMetricsGeneration = textMetricsGeneration;
+    m_rebuildPending = true;
+  }
   if (m_rebuildPending) {
     rebuild(renderer);
     m_rebuildPending = false;

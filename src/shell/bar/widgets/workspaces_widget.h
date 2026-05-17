@@ -77,6 +77,7 @@ private:
   std::vector<Workspace> m_cachedState;
   std::vector<Item> m_items;
   bool m_rebuildPending = true;
+  std::uint64_t m_textMetricsGeneration = 0;
 
   float m_gap = 0.0f;
   float m_indicatorHeight = 0.0f;
