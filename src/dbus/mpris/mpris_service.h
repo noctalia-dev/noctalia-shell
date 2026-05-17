@@ -108,7 +108,12 @@ private:
   void scheduleStartupRediscovery();
   void scheduleRecoveryDiscovery();
   void addOrRefreshPlayer(const std::string& busName);
-  void applyPlayerSnapshot(const std::string& busName, const MprisPlayerInfo& info, bool hadPositionSignal);
+  void applyPlayerSnapshot(const std::string& busName, const MprisPlayerInfo& info, bool hadPositionSignal,
+                           bool hadRefreshFailure);
+  [[nodiscard]] bool shouldRetryPositionRefresh(const std::string& busName) const;
+  [[nodiscard]] std::chrono::milliseconds positionRetryInterval(const std::string& busName,
+                                                                std::chrono::milliseconds fallback) const;
+  void schedulePositionRefreshRetry(const std::string& busName, std::chrono::milliseconds fallback);
   void refreshPlayerPosition(const std::string& busName, bool notifyChange);
   void applyPositionSample(const std::string& busName, int64_t rawPositionUs, bool notifyChange);
   void removePlayer(const std::string& busName);
