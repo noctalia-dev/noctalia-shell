@@ -55,9 +55,6 @@ namespace {
       {"theme.scheme.muted", "muted"},
   };
 
-  constexpr std::string_view kDefaultPaletteSource = "builtin";
-  constexpr std::string_view kDefaultBuiltinPalette = "Noctalia";
-
   std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ColorSpec& color, bool bold = false) {
     auto label = std::make_unique<Label>();
     label->setText(text);
@@ -315,11 +312,15 @@ void SetupWizardPanel::create() {
 
       auto select = std::make_unique<Select>();
       select->setOptions(labelsFromOptions(kSetupPaletteSources));
-      m_paletteSource = PaletteSource::Builtin;
-      m_builtinPalette = std::string(kDefaultBuiltinPalette);
-      m_config->setOverride({"theme", "source"}, std::string(kDefaultPaletteSource));
-      m_config->setOverride({"theme", "builtin"}, m_builtinPalette);
-      select->setSelectedIndex(selectedOptionIndex(kSetupPaletteSources, kDefaultPaletteSource));
+      // Respect the user's existing palette: seed controls from current config
+      // and write no override until the user actually changes a control. The
+      // wizard only offers builtin/wallpaper, so community/custom sources are
+      // displayed as builtin but left untouched in config unless changed.
+      m_paletteSource =
+          cfg.theme.source == PaletteSource::Wallpaper ? PaletteSource::Wallpaper : PaletteSource::Builtin;
+      m_builtinPalette = cfg.theme.builtinPalette;
+      const std::string_view currentSource = m_paletteSource == PaletteSource::Wallpaper ? "wallpaper" : "builtin";
+      select->setSelectedIndex(selectedOptionIndex(kSetupPaletteSources, currentSource));
       select->setFontSize(Style::fontSizeBody * scale);
       select->setControlHeight(Style::controlHeight * scale);
       select->setHorizontalPadding(Style::spaceMd * scale);
@@ -423,9 +424,11 @@ void SetupWizardPanel::configureThemeOptionSelect() {
     });
   } else {
     m_themeOptionLabel->setText(i18n::tr("setup-wizard.builtin-palette"));
-    m_builtinPalette = std::string(kDefaultBuiltinPalette);
+    if (m_builtinPalette.empty()) {
+      m_builtinPalette = cfg.theme.builtinPalette;
+    }
     m_themeOptionSelect->setOptions(builtinPaletteNames());
-    m_themeOptionSelect->setSelectedIndex(selectedBuiltinPaletteIndex(kDefaultBuiltinPalette));
+    m_themeOptionSelect->setSelectedIndex(selectedBuiltinPaletteIndex(m_builtinPalette));
     m_themeOptionSelect->setOnSelectionChanged([this](std::size_t /*index*/, std::string_view name) {
       if (m_configuringThemeOptionSelect) {
         return;
@@ -443,11 +446,8 @@ void SetupWizardPanel::commit() {
   if (m_telemetryToggle != nullptr) {
     m_config->setOverride({"shell", "telemetry_enabled"}, m_telemetryToggle->checked());
   }
-  if (m_paletteSource == PaletteSource::Builtin) {
-    m_config->setOverride({"theme", "source"}, std::string(kDefaultPaletteSource));
-    m_config->setOverride({"theme", "builtin"},
-                          m_builtinPalette.empty() ? std::string(kDefaultBuiltinPalette) : m_builtinPalette);
-  }
+  // Theme/palette overrides are written live by the select callbacks only when
+  // the user actually changes them, so commit must not force any defaults here.
   if (m_config != nullptr) {
     (void)m_config->markSetupWizardCompleted();
   }

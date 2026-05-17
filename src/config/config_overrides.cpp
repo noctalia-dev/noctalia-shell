@@ -16,8 +16,6 @@
 
 namespace {
   constexpr Logger kLog("config");
-  constexpr const char* kInternalStateTable = "noctalia_state";
-  constexpr const char* kSetupWizardCompletedKey = "setup_wizard_completed";
   constexpr double kConfigFloatEpsilon = 1.0e-5;
 
   std::string overrideCacheKey(const std::vector<std::string>& path) {
@@ -738,18 +736,18 @@ bool ConfigService::setDesktopWidgetsState(const DesktopWidgetsConfig& desktopWi
 }
 
 bool ConfigService::markSetupWizardCompleted() {
-  if (m_setupWizardCompleted) {
+  if (m_setupMarkerPath.empty()) {
+    return false;
+  }
+  if (std::filesystem::exists(m_setupMarkerPath)) {
     return true;
   }
 
-  m_setupWizardCompleted = true;
-  if (!writeOverridesToFile()) {
-    m_setupWizardCompleted = false;
-    kLog.warn("failed to write {}", m_overridesPath);
+  std::ofstream out(m_setupMarkerPath, std::ios::trunc);
+  if (!out.is_open()) {
+    kLog.warn("failed to write {}", m_setupMarkerPath);
     return false;
   }
-
-  m_ownOverridesWritePending = true;
   return true;
 }
 
@@ -1313,10 +1311,6 @@ bool ConfigService::writeOverridesToFile() {
     return false;
   }
   toml::table output = m_overridesTable;
-  if (m_setupWizardCompleted) {
-    auto* state = ensureTable(output, kInternalStateTable);
-    state->insert_or_assign(kSetupWizardCompletedKey, true);
-  }
 
   const std::string tmpPath = m_overridesPath + ".tmp";
   {
