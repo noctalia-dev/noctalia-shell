@@ -199,8 +199,9 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   if (type == "keyboard_layout") {
     const std::string cycleCommand = wc != nullptr ? wc->getString("cycle_command", "") : std::string{};
     const std::string display = wc != nullptr ? wc->getString("display", "short") : std::string("short");
+    const bool hideLabel = wc != nullptr ? wc->getBool("hide_label", false) : false;
     auto widget = std::make_unique<KeyboardLayoutWidget>(m_platform, cycleCommand,
-                                                         KeyboardLayoutWidget::parseDisplayMode(display));
+                                                         KeyboardLayoutWidget::parseDisplayMode(display), hideLabel);
     widget->setContentScale(contentScale);
     return widget;
   }

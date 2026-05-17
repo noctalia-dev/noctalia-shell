@@ -407,6 +407,7 @@ namespace settings {
     } else if (type == "keyboard_layout") {
       add(stringSpec("cycle_command"));
       add(segmentedSpec("display", "short", shortFull));
+      add(boolSpec("hide_label", false));
     } else if (type == "launcher") {
       add(stringSpec("glyph", "search"));
       add(stringSpec("custom_image", ""));

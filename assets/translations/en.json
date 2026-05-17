@@ -1183,6 +1183,10 @@
           "description": "Hide workspace pills whne there are no open windows",
           "workspaces-description": "Hide workspace pills that have no open windows"
         },
+        "hide_label": {
+          "label": "Hide Label",
+          "description": "Hide this widget's text label"
+        },
         "high_color": {
           "label": "High Color",
           "description": "Color used for high visualizer values"
