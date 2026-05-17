@@ -17,7 +17,7 @@ ProgressBar::ProgressBar() {
 
   setTrack(colorSpecFromRole(ColorRole::SurfaceVariant));
   setFill(colorSpecFromRole(ColorRole::Primary));
-  setRadius(Style::radiusSm);
+  setRadius(Style::scaledRadiusSm());
   m_paletteConn = paletteChanged().connect([this] { applyPalette(); });
 }
 

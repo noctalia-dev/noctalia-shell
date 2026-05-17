@@ -90,6 +90,14 @@ namespace settings {
       return spec;
     }
 
+    WidgetSettingSpec optionalDoubleSpec(std::string_view key, double minValue, double maxValue,
+                                         bool advanced = false) {
+      auto spec = baseSpec(key, WidgetSettingValueType::OptionalDouble, 0.0, advanced);
+      spec.minValue = minValue;
+      spec.maxValue = maxValue;
+      return spec;
+    }
+
     WidgetSettingSpec stringSpec(std::string_view key, std::string defaultValue = {}, bool advanced = false) {
       return baseSpec(key, WidgetSettingValueType::String, std::move(defaultValue), advanced);
     }
@@ -115,6 +123,16 @@ namespace settings {
       auto spec = selectSpec(key, std::move(defaultValue), std::move(options), advanced);
       spec.segmented = true;
       return spec;
+    }
+
+    const std::vector<WidgetSettingSelectOption> kAccentColorRoleOptions = {
+        {"on_surface", ""},   {"primary", ""},  {"on_primary", ""},  {"secondary", ""},
+        {"on_secondary", ""}, {"tertiary", ""}, {"on_tertiary", ""}, {"error", ""},
+    };
+
+    void applyAccentColorRolePicker(WidgetSettingSpec& spec) {
+      spec.options = kAccentColorRoleOptions;
+      spec.allowCustomColor = true;
     }
 
     std::string widgetInstanceDisplayLabel(std::string_view name) {
@@ -277,22 +295,37 @@ namespace settings {
 
   std::vector<WidgetSettingSpec> commonWidgetSettingSpecs() {
     const WidgetSettingVisibility capsuleOn{"capsule", {"true"}};
+
+    auto anchor = boolSpec("anchor", false, true);
+    auto widgetColor = colorRoleSpec("color", {}, true);
+    applyAccentColorRolePicker(widgetColor);
+
+    auto capsuleToggle = boolSpec("capsule", false);
     auto capsuleGroup = stringSpec("capsule_group");
     capsuleGroup.visibleWhen = capsuleOn;
-    auto capsuleFill = colorRoleSpec("capsule_fill", "surface_variant");
+
+    auto capsuleFill = colorRoleSpec("capsule_fill", "", true);
     capsuleFill.visibleWhen = capsuleOn;
+    applyAccentColorRolePicker(capsuleFill);
+
     auto capsuleBorder = colorRoleSpec("capsule_border", {}, true);
     capsuleBorder.visibleWhen = capsuleOn;
+    applyAccentColorRolePicker(capsuleBorder);
+
     auto capsuleForeground = colorRoleSpec("capsule_foreground", {}, true);
     capsuleForeground.visibleWhen = capsuleOn;
+    applyAccentColorRolePicker(capsuleForeground);
+
     auto capsulePadding = doubleSpec("capsule_padding", static_cast<double>(Style::barCapsulePadding), 0.0, 48.0, 1.0);
     capsulePadding.visibleWhen = capsuleOn;
+    auto capsuleRadius = optionalDoubleSpec("capsule_radius", 0.0, 80.0);
+    capsuleRadius.visibleWhen = capsuleOn;
     auto capsuleOpacity = doubleSpec("capsule_opacity", 1.0, 0.0, 1.0, 0.01);
     capsuleOpacity.visibleWhen = capsuleOn;
     return {
-        boolSpec("anchor", false, true), colorRoleSpec("color", {}, true), boolSpec("capsule", false),
-        std::move(capsuleGroup),         std::move(capsuleFill),           std::move(capsuleBorder),
-        std::move(capsuleForeground),    std::move(capsulePadding),        std::move(capsuleOpacity),
+        std::move(anchor),         std::move(widgetColor),    std::move(capsuleToggle), std::move(capsuleRadius),
+        std::move(capsuleGroup),   std::move(capsuleFill),    std::move(capsuleBorder), std::move(capsuleForeground),
+        std::move(capsulePadding), std::move(capsuleOpacity),
     };
   }
 
@@ -306,10 +339,10 @@ namespace settings {
     };
     const std::vector<WidgetSettingSelectOption> sysmonStats = {
         {"cpu_usage", "settings.widgets.options.cpu-usage"},   {"cpu_temp", "settings.widgets.options.cpu-temp"},
-        {"gpu_temp", "settings.widgets.options.gpu-temp"},     {"ram_used", "settings.widgets.options.ram-used"},
-        {"ram_pct", "settings.widgets.options.ram-percent"},   {"swap_pct", "settings.widgets.options.swap-percent"},
-        {"disk_pct", "settings.widgets.options.disk-percent"}, {"net_rx", "settings.widgets.options.net-rx"},
-        {"net_tx", "settings.widgets.options.net-tx"},
+        {"gpu_temp", "settings.widgets.options.gpu-temp"},     {"gpu_vram", "settings.widgets.options.gpu-vram"},
+        {"ram_used", "settings.widgets.options.ram-used"},     {"ram_pct", "settings.widgets.options.ram-percent"},
+        {"swap_pct", "settings.widgets.options.swap-percent"}, {"disk_pct", "settings.widgets.options.disk-percent"},
+        {"net_rx", "settings.widgets.options.net-rx"},         {"net_tx", "settings.widgets.options.net-tx"},
     };
     const std::vector<WidgetSettingSelectOption> sysmonDisplay = {
         {"gauge", "settings.widgets.options.gauge"},
@@ -326,14 +359,14 @@ namespace settings {
         {"always", "settings.widgets.options.always"},
         {"on_hover", "settings.widgets.options.on-hover"},
     };
+    const std::vector<WidgetSettingSelectOption> scriptedScopes = {
+        {"instance", "settings.widgets.options.instance"},
+        {"shared", "settings.widgets.options.shared"},
+    };
     const std::vector<WidgetSettingSelectOption> volumeDeviceOptions = {
         {"output", "settings.widgets.options.output"},
         {"input", "settings.widgets.options.input"},
     };
-    const std::vector<WidgetSettingSelectOption> workspaceColorRoles = {
-        {"on_surface", ""}, {"primary", ""}, {"secondary", ""}, {"tertiary", ""}, {"error", ""},
-    };
-
     if (type == "active_window") {
       add(doubleSpec("min_length", 80.0, 0.0, 800.0, 1.0));
       add(doubleSpec("max_length", 260.0, 40.0, 800.0, 1.0));
@@ -343,11 +376,26 @@ namespace settings {
       add(doubleSpec("width", 56.0, 8.0, 400.0, 1.0));
       add(intSpec("bands", 16, 2.0, 128.0, 1.0));
       add(boolSpec("mirrored", true));
+      add(boolSpec("centered", true));
       add(boolSpec("show_when_idle", false));
-      add(colorRoleSpec("low_color", "primary"));
-      add(colorRoleSpec("high_color", "primary"));
+      {
+        auto low = colorRoleSpec("low_color", "primary");
+        applyAccentColorRolePicker(low);
+        add(std::move(low));
+      }
+      {
+        auto high = colorRoleSpec("high_color", "primary");
+        applyAccentColorRolePicker(high);
+        add(std::move(high));
+      }
     } else if (type == "battery") {
       add(selectSpec("device", "auto", {{"auto", "common.states.auto"}}));
+      add(intSpec("warning_threshold", 20, 0.0, 100.0, 1.0));
+      {
+        auto warn = colorRoleSpec("warning_color", "error");
+        applyAccentColorRolePicker(warn);
+        add(std::move(warn));
+      }
     } else if (type == "bluetooth") {
       add(boolSpec("show_label", false));
     } else if (type == "brightness") {
@@ -359,7 +407,12 @@ namespace settings {
       add(stringSpec("glyph", "clipboard"));
     } else if (type == "keyboard_layout") {
       add(stringSpec("cycle_command"));
-      add(segmentedSpec("display", "short", shortFull));
+      add(boolSpec("hide_label", false));
+      {
+        auto display = segmentedSpec("display", "short", shortFull);
+        display.visibleWhen = WidgetSettingVisibility{"hide_label", {"false"}};
+        add(std::move(display));
+      }
     } else if (type == "launcher") {
       add(stringSpec("glyph", "search"));
       add(stringSpec("custom_image", ""));
@@ -383,6 +436,7 @@ namespace settings {
       add(boolSpec("hide_when_no_unread", false));
     } else if (type == "scripted") {
       add(stringSpec("script"));
+      add(selectSpec("scope", "instance", scriptedScopes));
       add(boolSpec("hot_reload", false, true));
     } else if (type == "session") {
       add(stringSpec("glyph", "shutdown"));
@@ -399,9 +453,37 @@ namespace settings {
       }
       add(segmentedSpec("display", "gauge", sysmonDisplay));
       add(boolSpec("show_label", true));
+      {
+        auto minW = doubleSpec("label_min_width", 0.0, 0.0, 200.0, 1.0);
+        minW.visibleWhen = WidgetSettingVisibility{"show_label", {"true"}};
+        add(std::move(minW));
+      }
     } else if (type == "taskbar") {
       add(boolSpec("group_by_workspace", false));
       add(boolSpec("show_all_outputs", false));
+      add(boolSpec("only_active_workspace", false));
+      {
+        auto showWsLabel = boolSpec("show_workspace_label", true);
+        showWsLabel.visibleWhen =
+            WidgetSettingVisibility{WidgetSettingVisibilityCondition{"group_by_workspace", {"true"}}};
+        add(std::move(showWsLabel));
+      }
+      {
+        auto hideEmpty = boolSpec("hide_empty_workspaces", false);
+        hideEmpty.visibleWhen =
+            WidgetSettingVisibility{WidgetSettingVisibilityCondition{"group_by_workspace", {"true"}}};
+        add(std::move(hideEmpty));
+      }
+      for (auto& spec : specs) {
+        if (spec.key == "capsule_radius") {
+          spec.descriptionKey = "settings.widgets.settings.capsule_radius.taskbar-description";
+          spec.visibleWhen = WidgetSettingVisibility{
+              WidgetSettingVisibilityCondition{"capsule", {"true"}},
+              WidgetSettingVisibilityCondition{"group_by_workspace", {"true"}},
+          };
+          break;
+        }
+      }
     } else if (type == "tray") {
       add(stringListSpec("hidden"));
       add(stringListSpec("pinned"));
@@ -420,20 +502,37 @@ namespace settings {
       add(doubleSpec("max_length", 160.0, 40.0, 800.0, 1.0));
       add(boolSpec("show_condition", true));
     } else if (type == "workspaces") {
+      for (auto& spec : specs) {
+        if (spec.key == "capsule_radius") {
+          spec.descriptionKey = "settings.widgets.settings.capsule_radius.workspaces-description";
+          spec.visibleWhen.reset();
+          break;
+        }
+      }
       add(segmentedSpec("display", "id", workspaceDisplay));
       {
+        auto hideWhenEmpty = boolSpec("hide_when_empty", false);
+        hideWhenEmpty.descriptionKey = "settings.widgets.settings.hide_when_empty.workspaces-description";
+        add(std::move(hideWhenEmpty));
+      }
+      {
+        auto maxLabelChars = intSpec("max_label_chars", 1, 1.0, 20.0, 1.0);
+        maxLabelChars.descriptionKey = "settings.widgets.settings.max_label_chars.workspaces-description";
+        add(std::move(maxLabelChars));
+      }
+      {
         auto focusedColor = colorRoleSpec("focused_color", "primary");
-        focusedColor.options = workspaceColorRoles;
+        applyAccentColorRolePicker(focusedColor);
         add(std::move(focusedColor));
       }
       {
         auto occupiedColor = colorRoleSpec("occupied_color", "secondary");
-        occupiedColor.options = workspaceColorRoles;
+        applyAccentColorRolePicker(occupiedColor);
         add(std::move(occupiedColor));
       }
       {
         auto emptyColor = colorRoleSpec("empty_color", "secondary");
-        emptyColor.options = workspaceColorRoles;
+        applyAccentColorRolePicker(emptyColor);
         add(std::move(emptyColor));
       }
     }

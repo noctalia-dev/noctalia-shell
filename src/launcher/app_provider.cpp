@@ -1,31 +1,22 @@
 #include "launcher/app_provider.h"
 
+#include "core/process.h"
 #include "util/file_utils.h"
 #include "util/fuzzy_match.h"
+#include "util/string_utils.h"
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
 #include <array>
-#include <cerrno>
-#include <csignal>
 #include <cstdlib>
 #include <cstring>
-#include <fcntl.h>
 #include <string_view>
-#include <sys/wait.h>
 #include <unistd.h>
 
 namespace {
 
   constexpr std::size_t kMaxSearchResults = 50;
   constexpr std::string_view kDefaultAppIcon = "application-x-executable";
-
-  std::string toLower(std::string_view s) {
-    std::string result(s);
-    std::transform(result.begin(), result.end(), result.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    return result;
-  }
 
   double scoreEntry(std::string_view pattern, const DesktopEntry& entry) {
     if (pattern.empty()) {
@@ -212,62 +203,11 @@ namespace {
       args.front() = expandExecutablePath(args.front());
     }
 
-    pid_t pid = fork();
-    if (pid < 0) {
+    if (args.empty()) {
       return;
     }
 
-    if (pid == 0) {
-      // Intermediate child: create a new session, then fork again so the
-      // grandchild is fully detached and re-parented away from noctalia.
-      if (setsid() < 0) {
-        _exit(1);
-      }
-
-      const pid_t detachedPid = fork();
-      if (detachedPid < 0) {
-        _exit(1);
-      }
-      if (detachedPid > 0) {
-        _exit(0);
-      }
-
-      // Set activation token so the compositor can focus the app's window
-      if (!activationToken.empty()) {
-        setenv("XDG_ACTIVATION_TOKEN", activationToken.c_str(), 1);
-        setenv("DESKTOP_STARTUP_ID", activationToken.c_str(), 1);
-      }
-
-      // Close stdin/stdout/stderr
-      int devnull = open("/dev/null", O_RDWR);
-      if (devnull >= 0) {
-        dup2(devnull, STDIN_FILENO);
-        dup2(devnull, STDOUT_FILENO);
-        dup2(devnull, STDERR_FILENO);
-        if (devnull > STDERR_FILENO) {
-          close(devnull);
-        }
-      }
-
-      if (args.empty()) {
-        _exit(1);
-      }
-
-      std::vector<char*> argv;
-      argv.reserve(args.size() + 1);
-      for (auto& arg : args) {
-        argv.push_back(arg.data());
-      }
-      argv.push_back(nullptr);
-
-      execvp(argv[0], argv.data());
-      _exit(1);
-    }
-
-    // Reap only the intermediate child to avoid zombies.
-    int status = 0;
-    while (waitpid(pid, &status, 0) < 0 && errno == EINTR) {
-    }
+    (void)process::runAsync(args, activationToken);
   }
 
 } // namespace
@@ -295,13 +235,13 @@ void AppProvider::ensureSelectedCategoryIsAvailable() const {
   const auto categories = availableLauncherAppCategories(m_entries);
   const auto selected = std::string_view(m_selectedCategory);
   const auto found = std::find_if(categories.begin(), categories.end(),
-                                  [selected](const LauncherAppCategory& category) { return category.id == selected; });
+                                  [selected](const LauncherCategory& category) { return category.id == selected; });
   if (found == categories.end()) {
     m_selectedCategory = LauncherAppCategories::All;
   }
 }
 
-std::vector<LauncherAppCategory> AppProvider::availableCategories() const {
+std::vector<LauncherCategory> AppProvider::availableCategories() const {
   refreshEntriesIfNeeded();
   return availableLauncherAppCategories(m_entries);
 }
@@ -310,7 +250,7 @@ void AppProvider::selectCategory(std::string_view category) {
   refreshEntriesIfNeeded();
   const auto categories = availableLauncherAppCategories(m_entries);
   const auto found = std::find_if(categories.begin(), categories.end(),
-                                  [category](const LauncherAppCategory& item) { return item.id == category; });
+                                  [category](const LauncherCategory& item) { return item.id == category; });
   m_selectedCategory = found == categories.end() ? std::string(LauncherAppCategories::All) : found->id;
 }
 
@@ -318,7 +258,7 @@ void AppProvider::resetCategory() { m_selectedCategory = LauncherAppCategories::
 
 std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
   refreshEntriesIfNeeded();
-  const std::string normalizedText = toLower(text);
+  const std::string normalizedText = StringUtils::toLower(text);
   const std::string_view pattern = normalizedText;
 
   auto buildResult = [&](const DesktopEntry& entry, double s) {

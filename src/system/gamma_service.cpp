@@ -22,6 +22,7 @@ namespace {
 
   constexpr float kTransitionDurationMs = 1500.0f;
   constexpr int kTransitionIntervalMs = 100;
+  constexpr auto kScheduleRecheckInterval = std::chrono::minutes(1);
 
   int timeToMinutes(std::string_view hhmm) {
     return (hhmm[0] - '0') * 600 + (hhmm[1] - '0') * 60 + (hhmm[3] - '0') * 10 + (hhmm[4] - '0');
@@ -57,6 +58,14 @@ void GammaService::setEnabled(bool enabled) {
 }
 
 void GammaService::toggleEnabled() { setEnabled(!enabled()); }
+
+void GammaService::setWeatherLocationConfigured(bool configured) {
+  if (m_weatherLocationConfigured == configured) {
+    return;
+  }
+  m_weatherLocationConfigured = configured;
+  apply();
+}
 
 void GammaService::setWeatherCoordinates(std::optional<double> latitude, std::optional<double> longitude) {
   if (latitude.has_value() && !std::isfinite(*latitude)) {
@@ -105,6 +114,8 @@ void GammaService::onOutputsChanged() {
   }
   apply();
 }
+
+void GammaService::reevaluateSchedule() { apply(); }
 
 bool GammaService::effectiveConfiguredEnabled() const {
   if (m_enabledOverride.has_value()) {
@@ -184,10 +195,15 @@ std::chrono::milliseconds GammaService::msUntilNextManualBoundary() const {
 }
 
 void GammaService::scheduleManualTimer() {
-  const auto delay = msUntilNextManualBoundary();
-  kLog.debug("manual schedule: next phase boundary in {}s", delay.count() / 1000);
-  m_scheduleTimer.start(delay, [this]() {
-    kLog.info("manual schedule: phase boundary reached");
+  const auto boundaryDelay = msUntilNextManualBoundary();
+  const auto delay =
+      std::min(boundaryDelay, std::chrono::duration_cast<std::chrono::milliseconds>(kScheduleRecheckInterval));
+  kLog.debug("manual schedule: next phase boundary in {}s, recheck in {}s", boundaryDelay.count() / 1000,
+             delay.count() / 1000);
+  m_scheduleTimer.start(delay, [this, boundaryTimer = delay == boundaryDelay]() {
+    if (boundaryTimer) {
+      kLog.info("manual schedule: phase boundary reached");
+    }
     apply();
   });
 }
@@ -315,10 +331,15 @@ std::chrono::milliseconds GammaService::msUntilNextGeoBoundary() const {
 }
 
 void GammaService::scheduleGeoTimer() {
-  const auto delay = msUntilNextGeoBoundary();
-  kLog.debug("geo schedule: next phase boundary in {}s", delay.count() / 1000);
-  m_scheduleTimer.start(delay, [this]() {
-    kLog.info("geo schedule: phase boundary reached");
+  const auto boundaryDelay = msUntilNextGeoBoundary();
+  const auto delay =
+      std::min(boundaryDelay, std::chrono::duration_cast<std::chrono::milliseconds>(kScheduleRecheckInterval));
+  kLog.debug("geo schedule: next phase boundary in {}s, recheck in {}s", boundaryDelay.count() / 1000,
+             delay.count() / 1000);
+  m_scheduleTimer.start(delay, [this, boundaryTimer = delay == boundaryDelay]() {
+    if (boundaryTimer) {
+      kLog.info("geo schedule: phase boundary reached");
+    }
     apply();
   });
 }
@@ -501,6 +522,11 @@ void GammaService::startTransition(int fromKelvin, int toKelvin) {
     applyGammaToAll(fromKelvin);
   }
   if (fromKelvin == toKelvin) {
+    m_transitionTimer.stop();
+    m_currentKelvin = toKelvin;
+    m_targetKelvin = toKelvin;
+    m_transitionFromKelvin = toKelvin;
+    m_transitionProgress = 1.0f;
     if (m_restoreAfterTransition) {
       restoreAll();
       m_restoreAfterTransition = false;
@@ -565,13 +591,15 @@ int GammaService::targetTemperature() const {
     return isManualNightPhase() ? nightTemp : dayTemp;
   }
 
-  // Geo mode — need coordinates.
+  // Geo mode - need coordinates.
   const auto coords = scheduleCoordinates();
   if (!coords.latitude.has_value() || !coords.longitude.has_value()) {
     if (!m_config.useWeatherLocation && (m_config.latitude.has_value() || m_config.longitude.has_value())) {
       kLog.warn("need both latitude and longitude when overriding location mode");
     } else if (!m_config.useWeatherLocation) {
       kLog.warn("no schedule: set start_time/stop_time or latitude/longitude, or enable weather location");
+    } else if (m_weatherLocationConfigured) {
+      kLog.debug("night light schedule waiting for weather location");
     } else {
       kLog.warn("no schedule: configure weather location or disable weather location and set start_time/stop_time or "
                 "latitude/longitude");
@@ -594,10 +622,16 @@ void GammaService::apply() {
     return;
   }
 
-  if (effectiveEnabled() && isManualMode()) {
+  const bool manualMode = isManualMode();
+  if (effectiveEnabled() && manualMode) {
     scheduleManualTimer();
-  } else if (effectiveEnabled() && !effectiveForce() && !isManualMode()) {
-    scheduleGeoTimer();
+  } else if (effectiveEnabled() && !effectiveForce()) {
+    const auto coords = scheduleCoordinates();
+    if (coords.latitude.has_value() && coords.longitude.has_value()) {
+      scheduleGeoTimer();
+    } else {
+      m_scheduleTimer.stop();
+    }
   } else {
     m_scheduleTimer.stop();
   }

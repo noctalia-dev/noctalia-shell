@@ -1,5 +1,6 @@
 #include "shell/control_center/notifications_tab.h"
 
+#include "core/log.h"
 #include "i18n/i18n.h"
 #include "net/uri.h"
 #include "notification/notification.h"
@@ -18,6 +19,7 @@
 #include "ui/controls/segmented.h"
 #include "ui/controls/virtual_list_view.h"
 #include "ui/palette.h"
+#include "ui/style.h"
 #include "util/string_utils.h"
 
 #include <algorithm>
@@ -38,11 +40,51 @@ using namespace control_center;
 
 namespace {
 
+  constexpr Logger kLog("control-center-notifications");
+
   constexpr float kHistoryIconSize = 36.0f;
-  constexpr float kHistoryIconRadius = 8.0f;
   constexpr float kHistoryIconGlyphSize = 22.0f;
+  constexpr float kHistoryIconReferenceSize = 36.0f;
+
+  float notificationIconRadius(float iconSize, float localScale) {
+    const float baseRadius = Style::radiusMd * (iconSize / kHistoryIconReferenceSize);
+    return std::min(iconSize * 0.5f, Style::scaledRadius(baseRadius, localScale));
+  }
+  constexpr int kHistoryMaxActionButtons = 2;
 
   constexpr float kNotificationActionButtonSize = Style::controlHeightSm;
+
+  float measureHistoryActionsRowHeight(Renderer& renderer, const std::vector<std::string>& actions, float scale) {
+    if (actions.empty()) {
+      return 0.0f;
+    }
+    auto row = std::make_unique<Flex>();
+    row->setDirection(FlexDirection::Horizontal);
+    row->setAlign(FlexAlign::Center);
+    row->setGap(Style::spaceXs * scale);
+    int actionCount = 0;
+    for (std::size_t i = 0; i + 1 < actions.size() && actionCount < kHistoryMaxActionButtons; i += 2) {
+      const std::string& actionKey = actions[i];
+      std::string actionLabel = actions[i + 1];
+      if (StringUtils::isBlank(actionLabel)) {
+        actionLabel = i18n::tr("notifications.actions.fallback");
+      }
+      if (actionKey.empty()) {
+        continue;
+      }
+      auto actionButton = std::make_unique<Button>();
+      actionButton->setVariant(ButtonVariant::Outline);
+      actionButton->setFontSize(Style::fontSizeCaption * scale);
+      actionButton->setText(actionLabel);
+      row->addChild(std::move(actionButton));
+      ++actionCount;
+    }
+    if (actionCount == 0) {
+      return 0.0f;
+    }
+    row->layout(renderer);
+    return row->height();
+  }
   constexpr int kSummaryMaxLines = 2;
   constexpr int kBodyMaxLines = 3;
   constexpr int kExpandedMaxLines = 500;
@@ -111,7 +153,9 @@ namespace {
     return ColorRole::OnSurfaceVariant;
   }
 
-  void applyNotificationCardStyle(Flex& card, float scale) { applySectionCardStyle(card, scale); }
+  void applyNotificationCardStyle(Flex& card, float scale, float fillOpacity) {
+    applySectionCardStyle(card, scale, fillOpacity);
+  }
 
   std::string relativeMetaLine(const Notification& n) {
     if (n.receivedWallClock.has_value()) {
@@ -237,10 +281,19 @@ namespace {
             : measuredTextHeight(renderer, metrics.bodyText, Style::fontSizeCaption * scale, false,
                                  metrics.cardTextWidth, metrics.expanded ? kExpandedMaxLines : kBodyMaxLines);
 
+    const float actionsRowHeight =
+        entry.active ? measureHistoryActionsRowHeight(renderer, entry.notification.actions, scale) : 0.0f;
+
     const float paddingY = (Style::spaceSm + Style::spaceXs) * scale * 2.0f;
-    const int childCount = metrics.bodyText.empty() ? 2 : 3;
-    const float gaps = Style::spaceSm * scale * static_cast<float>(childCount - 1);
-    metrics.height = paddingY + headerHeight + summaryHeight + bodyHeight + gaps;
+    int visibleSegments = 2;
+    if (!metrics.bodyText.empty()) {
+      ++visibleSegments;
+    }
+    if (actionsRowHeight > 0.5f) {
+      ++visibleSegments;
+    }
+    const float gaps = Style::spaceSm * scale * static_cast<float>(std::max(0, visibleSegments - 1));
+    metrics.height = paddingY + headerHeight + summaryHeight + bodyHeight + actionsRowHeight + gaps;
     return metrics;
   }
 
@@ -259,8 +312,8 @@ namespace {
 
   class NotificationHistoryRow final : public Flex {
   public:
-    explicit NotificationHistoryRow(float scale) : m_scale(scale) {
-      applyNotificationCardStyle(*this, scale);
+    explicit NotificationHistoryRow(float scale, float fillOpacity) : m_scale(scale) {
+      applyNotificationCardStyle(*this, scale, fillOpacity);
       setFillWidth(true);
 
       auto header = std::make_unique<Flex>();
@@ -279,6 +332,8 @@ namespace {
 
       auto iconSlot = std::make_unique<Box>();
       iconSlot->setSize(kHistoryIconSize * scale, kHistoryIconSize * scale);
+      iconSlot->setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
+      iconSlot->setRadius(notificationIconRadius(kHistoryIconSize, scale));
       m_iconSlot = static_cast<Box*>(m_leftCluster->addChild(std::move(iconSlot)));
 
       auto image = std::make_unique<Image>();
@@ -315,11 +370,28 @@ namespace {
       body->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
       body->setVisible(false);
       m_body = static_cast<Label*>(addChild(std::move(body)));
+
+      auto actionsRow = std::make_unique<Flex>();
+      actionsRow->setDirection(FlexDirection::Horizontal);
+      actionsRow->setAlign(FlexAlign::Center);
+      actionsRow->setGap(Style::spaceXs * scale);
+      actionsRow->setFillWidth(true);
+      actionsRow->setVisible(false);
+      m_actionsRow = static_cast<Flex*>(addChild(std::move(actionsRow)));
+      for (int i = 0; i < kHistoryMaxActionButtons; ++i) {
+        auto actionButton = std::make_unique<Button>();
+        actionButton->setVariant(ButtonVariant::Outline);
+        actionButton->setFontSize(Style::fontSizeCaption * scale);
+        actionButton->setVisible(false);
+        m_actionButtons[static_cast<std::size_t>(i)] =
+            static_cast<Button*>(m_actionsRow->addChild(std::move(actionButton)));
+      }
     }
 
     void bind(Renderer& renderer, const NotificationHistoryEntry& entry, float width, bool expanded,
               IconResolver& iconResolver, std::function<void(uint32_t)> onToggleExpanded,
-              std::function<void(uint32_t, bool)> onRemove) {
+              std::function<void(uint32_t, bool)> onRemove,
+              const std::function<void(uint32_t, const std::string&)>& onAction) {
       const NotificationCardMetrics metrics = measureNotificationCard(renderer, entry, m_scale, width, expanded);
       setMinWidth(width);
       setSize(width, metrics.height);
@@ -359,6 +431,34 @@ namespace {
         m_body->setMaxLines(metrics.expanded ? kExpandedMaxLines : kBodyMaxLines);
         m_body->measure(renderer);
       }
+
+      for (int ai = 0; ai < kHistoryMaxActionButtons; ++ai) {
+        m_actionButtons[static_cast<std::size_t>(ai)]->setVisible(false);
+        m_actionButtons[static_cast<std::size_t>(ai)]->setOnClick(nullptr);
+      }
+      m_actionsRow->setVisible(false);
+      if (entry.active) {
+        int shownActions = 0;
+        for (std::size_t i = 0; i + 1 < entry.notification.actions.size() && shownActions < kHistoryMaxActionButtons;
+             i += 2) {
+          const std::string& actionKey = entry.notification.actions[i];
+          std::string actionLabel = entry.notification.actions[i + 1];
+          if (StringUtils::isBlank(actionLabel)) {
+            actionLabel = i18n::tr("notifications.actions.fallback");
+          }
+          if (actionKey.empty()) {
+            continue;
+          }
+          Button* btn = m_actionButtons[static_cast<std::size_t>(shownActions)];
+          btn->setText(actionLabel);
+          btn->setEnabled(true);
+          btn->setOnClick(
+              [onAction, id = entry.notification.id, key = std::string(actionKey)]() { onAction(id, key); });
+          btn->setVisible(true);
+          ++shownActions;
+        }
+        m_actionsRow->setVisible(shownActions > 0);
+      }
     }
 
   private:
@@ -376,7 +476,7 @@ namespace {
       button->setMinWidth(kNotificationActionButtonSize * scale);
       button->setMinHeight(kNotificationActionButtonSize * scale);
       button->setPadding(Style::spaceXs * scale);
-      button->setRadius(Style::radiusMd * scale);
+      button->setRadius(Style::scaledRadiusMd(scale));
       return button;
     }
 
@@ -400,9 +500,11 @@ namespace {
 
     void bindIcon(Renderer& renderer, const NotificationHistoryEntry& entry, IconResolver& iconResolver) {
       const float iconPx = kHistoryIconSize * m_scale;
+      const float iconRadius = notificationIconRadius(iconPx, m_scale);
+      m_iconSlot->setRadius(iconRadius);
       m_image->setSize(iconPx, iconPx);
       m_image->setPosition(0.0f, 0.0f);
-      m_image->setRadius(kHistoryIconRadius * m_scale);
+      m_image->setRadius(iconRadius);
       m_image->setFit(ImageFit::Cover);
 
       const std::string iconPath = resolveHistoryIconPath(entry.notification, iconResolver);
@@ -455,6 +557,8 @@ namespace {
     Button* m_dismiss = nullptr;
     Label* m_summary = nullptr;
     Label* m_body = nullptr;
+    Flex* m_actionsRow = nullptr;
+    Button* m_actionButtons[kHistoryMaxActionButtons] = {};
     ImageKind m_imageKind = ImageKind::None;
     std::uint64_t m_rawImageKey = 0;
   };
@@ -463,7 +567,8 @@ namespace {
 
 class NotificationHistoryAdapter final : public VirtualListAdapter {
 public:
-  NotificationHistoryAdapter(NotificationsTab& owner, float scale) : m_owner(owner), m_scale(scale) {}
+  NotificationHistoryAdapter(NotificationsTab& owner, float scale, float fillOpacity)
+      : m_owner(owner), m_scale(scale), m_fillOpacity(fillOpacity) {}
 
   [[nodiscard]] std::size_t itemCount() const override { return m_owner.m_filtered.size(); }
 
@@ -480,7 +585,9 @@ public:
     }
     const auto& entry = *m_owner.m_filtered[index];
     const bool expanded = m_owner.m_expandedIds.contains(entry.notification.id);
-    return revisionForEntry(entry, expanded, m_owner.m_lastRelativeTimeSlot);
+    std::uint64_t revision = revisionForEntry(entry, expanded, m_owner.m_lastRelativeTimeSlot);
+    revision ^= static_cast<std::uint64_t>(Style::cornerRadiusScale() * 10000.0f) * 0xC2B2AE3D27D4EB4FULL;
+    return revision;
   }
 
   [[nodiscard]] float measureItem(Renderer& renderer, std::size_t index, float width) override {
@@ -493,7 +600,7 @@ public:
   }
 
   [[nodiscard]] std::unique_ptr<Node> createItem() override {
-    return std::make_unique<NotificationHistoryRow>(m_scale);
+    return std::make_unique<NotificationHistoryRow>(m_scale, m_fillOpacity);
   }
 
   void bindItem(Renderer& renderer, Node& item, std::size_t index, float width, bool /*hovered*/) override {
@@ -508,12 +615,14 @@ public:
     row->bind(
         renderer, entry, width, m_owner.m_expandedIds.contains(entry.notification.id), m_owner.m_iconResolver,
         [this](uint32_t id) { m_owner.toggleNotificationExpanded(id); },
-        [this](uint32_t id, bool active) { m_owner.removeNotificationEntry(id, active); });
+        [this](uint32_t id, bool active) { m_owner.removeNotificationEntry(id, active); },
+        [this](uint32_t id, const std::string& key) { m_owner.invokeNotificationAction(id, key); });
   }
 
 private:
   NotificationsTab& m_owner;
   float m_scale = 1.0f;
+  float m_fillOpacity = 1.0f;
 };
 
 NotificationsTab::NotificationsTab(NotificationManager* notifications) : m_notifications(notifications) {}
@@ -548,7 +657,7 @@ std::unique_ptr<Flex> NotificationsTab::create() {
   m_filter = filter.get();
   tab->addChild(std::move(filter));
 
-  m_adapter = std::make_unique<NotificationHistoryAdapter>(*this, scale);
+  m_adapter = std::make_unique<NotificationHistoryAdapter>(*this, scale, panelCardOpacity());
 
   auto list = std::make_unique<VirtualListView>();
   list->setFlexGrow(1.0f);
@@ -560,7 +669,7 @@ std::unique_ptr<Flex> NotificationsTab::create() {
   m_list = static_cast<VirtualListView*>(tab->addChild(std::move(list)));
 
   auto empty = std::make_unique<Flex>();
-  applyNotificationCardStyle(*empty, scale);
+  applyNotificationCardStyle(*empty, scale, panelCardOpacity());
   empty->setAlign(FlexAlign::Center);
   empty->setGap(Style::spaceSm * scale);
   empty->setPadding(Style::spaceLg * scale, Style::spaceMd * scale);
@@ -694,6 +803,15 @@ void NotificationsTab::toggleNotificationExpanded(uint32_t id) {
     }
   }
   PanelManager::instance().refresh();
+}
+
+void NotificationsTab::invokeNotificationAction(uint32_t id, const std::string& actionKey) {
+  if (m_notifications == nullptr || actionKey.empty()) {
+    return;
+  }
+  if (!m_notifications->invokeAction(id, actionKey, true)) {
+    kLog.warn("notification history: failed to invoke action '{}' for #{}", actionKey, id);
+  }
 }
 
 bool NotificationsTab::refreshDataSnapshot() {

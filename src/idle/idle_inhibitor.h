@@ -28,11 +28,13 @@ public:
   void setChangeCallback(ChangeCallback callback);
 
   void registerIpc(IpcService& ipc);
+  /// Recreate the 1x1 layer-shell anchor when outputs change (hotplug). Keeps this service instance stable.
+  void onOutputChange();
 
 private:
   void ensureSurface();
-  void syncInhibitor();
-  void destroyInhibitor();
+  void syncInhibitor(bool logTransitions = true);
+  void destroyInhibitor(bool logDisable = true);
   void notifyChanged();
 
   WaylandConnection* m_wayland = nullptr;

@@ -23,6 +23,7 @@
 #include "shell/session/session_panel.h"
 #include "shell/setup_wizard/setup_wizard_panel.h"
 #include "shell/test/test_panel.h"
+#include "shell/tooltip/tooltip_manager.h"
 #include "shell/tray/tray_drawer_panel.h"
 #include "shell/wallpaper/panel/wallpaper_panel.h"
 #include "system/distro_info.h"
@@ -36,14 +37,15 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <csignal>
 #include <cstdint>
 #include <filesystem>
+#include <limits>
 #include <malloc.h>
 #include <optional>
 #include <stdexcept>
 #include <string_view>
-#include <thread>
 #include <utility>
 
 std::atomic<bool> Application::s_shutdownRequested{false};
@@ -54,40 +56,54 @@ namespace {
   constexpr bool kLockKeysEnabled = true;
   constexpr std::string_view kPolkitAuthorityBusName = "org.freedesktop.PolicyKit1";
 
-  template <typename Factory>
-  auto makeWithStartupBackoff(std::string_view label, Factory&& factory) -> decltype(factory()) {
-    using namespace std::chrono_literals;
-
-    constexpr int kAttempts = 7;
-    auto delay = 50ms;
-    int failedAttempts = 0;
-
-    for (int attempt = 1; attempt <= kAttempts; ++attempt) {
-      try {
-        auto value = factory();
-        if (failedAttempts > 0) {
-          kLog.info("{} init succeeded after {} retr{}", label, failedAttempts, failedAttempts == 1 ? "y" : "ies");
-        }
-        return value;
-      } catch (const std::exception& e) {
-        if (attempt == kAttempts) {
-          throw;
-        }
-
-        failedAttempts = attempt;
-        kLog.warn("{} init attempt {}/{} failed: {}; retrying in {}ms", label, attempt, kAttempts, e.what(),
-                  delay.count());
-        std::this_thread::sleep_for(delay);
-        delay *= 2;
-      }
-    }
-
-    throw std::runtime_error(std::string(label) + " init failed");
-  }
-
   float elapsedSince(std::chrono::steady_clock::time_point start) {
     return std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - start).count();
   }
+
+  bool weatherLocationConfiguredForNightLight(const WeatherConfig& weather) {
+    return weather.enabled && (weather.autoLocate || !weather.address.empty());
+  }
+
+  bool widgetIsLockKeys(std::string_view widgetName, const Config& config) {
+    auto it = config.widgets.find(std::string(widgetName));
+    if (it == config.widgets.end()) {
+      return widgetName == "lock_keys";
+    }
+    return it->second.type == "lock_keys";
+  }
+
+  bool widgetListHasLockKeys(const std::vector<std::string>& widgets, const Config& config) {
+    return std::any_of(widgets.begin(), widgets.end(),
+                       [&config](const std::string& name) { return widgetIsLockKeys(name, config); });
+  }
+
+  std::string_view powerProfileOriginName(PowerProfilesChangeOrigin origin) {
+    switch (origin) {
+    case PowerProfilesChangeOrigin::Noctalia:
+      return "noctalia";
+    case PowerProfilesChangeOrigin::External:
+      return "external";
+    }
+    return "external";
+  }
+
+  bool barMayRender(const BarConfig& bar) {
+    if (bar.enabled) {
+      return true;
+    }
+    return std::any_of(bar.monitorOverrides.begin(), bar.monitorOverrides.end(),
+                       [](const BarMonitorOverride& ovr) { return ovr.enabled.value_or(false); });
+  }
+
+  bool configHasLockKeysWidget(const Config& config) {
+    return std::any_of(config.bars.begin(), config.bars.end(), [&config](const BarConfig& bar) {
+      return barMayRender(bar) &&
+             (widgetListHasLockKeys(bar.startWidgets, config) || widgetListHasLockKeys(bar.centerWidgets, config) ||
+              widgetListHasLockKeys(bar.endWidgets, config));
+    });
+  }
+
+  bool lockKeysConsumersEnabled(const Config& config) { return config.osd.lockKeys || configHasLockKeysWidget(config); }
 
   template <typename Fn> void runStartupPhase(std::string_view label, Fn&& fn) {
     constexpr float kSlowStartupPhaseDebugMs = 50.0f;
@@ -167,32 +183,44 @@ void Application::syncNotificationDaemon() {
   if (m_bus == nullptr) {
     m_notificationPollSource.setDbusService(nullptr);
     m_notificationDbus.reset();
+    m_notificationDaemonEnabled.reset();
+    m_notificationDaemonInitFailed = false;
     return;
   }
 
-  if (!m_configService.config().notification.enableDaemon) {
+  const bool enabled = m_configService.config().notification.enableDaemon;
+  const bool enabledChanged = !m_notificationDaemonEnabled.has_value() || *m_notificationDaemonEnabled != enabled;
+  m_notificationDaemonEnabled = enabled;
+
+  if (!enabled) {
     if (m_notificationDbus != nullptr) {
       kLog.info("notification daemon disabled by config");
     }
     m_notificationPollSource.setDbusService(nullptr);
     m_notificationDbus.reset();
+    m_notificationDaemonInitFailed = false;
     return;
   }
 
   if (m_notificationDbus != nullptr) {
+    m_notificationDaemonInitFailed = false;
+    return;
+  }
+
+  if (m_notificationDaemonInitFailed && !enabledChanged) {
     return;
   }
 
   try {
-    m_notificationDbus = makeWithStartupBackoff("notification service", [this]() {
-      return std::make_unique<NotificationService>(*m_bus, m_notificationManager);
-    });
+    m_notificationDbus = std::make_unique<NotificationService>(*m_bus, m_notificationManager);
     m_notificationPollSource.setDbusService(m_notificationDbus.get());
+    m_notificationDaemonInitFailed = false;
     kLog.info("listening on org.freedesktop.Notifications");
   } catch (const std::exception& e) {
     kLog.warn("notifications disabled: {}", e.what());
     m_notificationDbus.reset();
     m_notificationPollSource.setDbusService(nullptr);
+    m_notificationDaemonInitFailed = true;
     m_notificationManager.addInternal("Noctalia", i18n::tr("notifications.internal.dbus-disabled"), e.what(),
                                       Urgency::Low);
   }
@@ -271,6 +299,33 @@ void Application::syncPolkitAgent() {
   m_polkitAgent->start();
 }
 
+void Application::syncClipboardService() {
+  const bool enabled = m_configService.config().shell.clipboardEnabled;
+  const auto shouldRefreshControlCenter = [this]() { return m_panelManager.isOpenPanel("control-center"); };
+
+  if (!enabled) {
+    m_clipboardService.cleanup();
+    m_wayland.setClipboardService(nullptr);
+    Input::setClipboardService(nullptr);
+    if (m_panelManager.isOpenPanel("clipboard")) {
+      m_panelManager.close();
+    }
+    kLog.info("clipboard integration disabled by config");
+    m_bar.refresh();
+    if (shouldRefreshControlCenter()) {
+      m_panelManager.refresh();
+    }
+    return;
+  }
+
+  m_wayland.setClipboardService(&m_clipboardService);
+  Input::setClipboardService(&m_clipboardService);
+  m_bar.refresh();
+  if (shouldRefreshControlCenter()) {
+    m_panelManager.refresh();
+  }
+}
+
 void Application::run(std::function<void()> startupReadyCallback) {
   initLogFile();
   kLog.info("noctalia {}", noctalia::build_info::displayVersion());
@@ -312,6 +367,17 @@ void Application::initServices() {
     motion.setSpeed(m_configService.config().shell.animation.speed);
     motion.setEnabled(m_configService.config().shell.animation.enabled);
   };
+  auto applyStyleConfig = [this, lastCornerRadiusScale = std::numeric_limits<float>::quiet_NaN()]() mutable {
+    const float corner = m_configService.config().shell.cornerRadiusScale;
+    const bool cornerChanged =
+        std::isfinite(lastCornerRadiusScale) && std::abs(corner - lastCornerRadiusScale) > 1.0e-4f;
+    Style::setCornerRadiusScale(corner);
+    lastCornerRadiusScale = corner;
+    if (cornerChanged) {
+      m_notificationToast.requestLayout();
+      m_panelManager.requestLayout();
+    }
+  };
   auto applyPasswordMaskStyle = [this]() {
     const auto style = m_configService.config().shell.passwordMaskStyle == PasswordMaskStyle::RandomIcons
                            ? Input::PasswordMaskStyle::RandomIcons
@@ -319,12 +385,15 @@ void Application::initServices() {
     Input::setPasswordMaskStyle(style);
   };
   applyMotionConfig();
+  applyStyleConfig();
   applyPasswordMaskStyle();
   m_httpClient.setOfflineMode(m_configService.config().shell.offlineMode);
   m_configService.addReloadCallback(applyMotionConfig);
+  m_configService.addReloadCallback(applyStyleConfig);
   m_configService.addReloadCallback(applyPasswordMaskStyle);
   m_configService.addReloadCallback(
       [this]() { m_httpClient.setOfflineMode(m_configService.config().shell.offlineMode); });
+  m_configService.addReloadCallback([this]() { syncClipboardService(); });
   m_communityPaletteService.setReadyCallback([this]() { m_settingsWindow.onExternalOptionsChanged(); });
   m_communityPaletteService.sync();
   m_configService.addReloadCallback([this]() { m_communityPaletteService.sync(); });
@@ -345,10 +414,20 @@ void Application::initServices() {
       [this]() { i18n::Service::instance().setLanguage(m_configService.config().shell.lang); });
 
   // Apply theme before any UI constructs palette-dependent scene nodes.
-  m_themeService.setResolvedCallback([this](const noctalia::theme::GeneratedPalette& generated, std::string_view mode) {
-    m_templateApplyService.apply(generated, mode);
-    m_hookManager.fire(HookKind::ColorsChanged);
-  });
+  m_themeService.setResolvedCallback(
+      [this, lastResolvedThemeMode = std::optional<std::string>{}](const noctalia::theme::GeneratedPalette& generated,
+                                                                   std::string_view mode) mutable {
+        const std::string resolvedMode(mode);
+        const std::string configuredMode(enumToKey(kThemeModes, m_themeService.configuredMode()));
+        m_templateApplyService.apply(generated, mode);
+        m_hookManager.fire(HookKind::ColorsChanged);
+        if (lastResolvedThemeMode.has_value() && *lastResolvedThemeMode != resolvedMode) {
+          m_hookManager.fire(HookKind::ThemeModeChanged, {{"NOCTALIA_THEME_MODE", resolvedMode},
+                                                          {"NOCTALIA_THEME_MODE_PREVIOUS", *lastResolvedThemeMode},
+                                                          {"NOCTALIA_THEME_MODE_CONFIGURED", configuredMode}});
+        }
+        lastResolvedThemeMode = resolvedMode;
+      });
   m_themeService.apply();
   m_configService.addReloadCallback([this]() { m_themeService.onConfigReload(); });
 
@@ -375,9 +454,7 @@ void Application::initServices() {
   m_glShared.initialize(m_wayland.display());
   m_sharedTextureCache.initialize(&m_glShared);
   m_asyncTextureCache.initialize(&m_glShared);
-  m_wayland.setClipboardService(&m_clipboardService);
   m_wayland.setVirtualKeyboardService(&m_virtualKeyboardService);
-  Input::setClipboardService(&m_clipboardService);
   Input::setValidateKeyMatcher([this](std::uint32_t sym, std::uint32_t modifiers) {
     return m_configService.matchesKeybind(KeybindAction::Validate, sym, modifiers);
   });
@@ -394,6 +471,8 @@ void Application::initServices() {
     m_desktopWidgetsController.onOutputChange();
     m_screenCorners.onOutputChange();
     m_lockScreen.onOutputChange();
+    m_idleGraceOverlay.onOutputChange();
+    m_idleInhibitor.onOutputChange();
   });
   m_clipboardService.setChangeCallback([this]() {
     if (m_panelManager.isOpenPanel("clipboard")) {
@@ -407,11 +486,18 @@ void Application::initServices() {
     m_dock.refresh();
   });
   if constexpr (kLockKeysEnabled) {
-    m_lockKeysService.refreshNow();
+    if (lockKeysConsumersEnabled(m_configService.config())) {
+      m_lockKeysService.refreshNow();
+    }
     m_lockKeysService.setChangeCallback(
         [this](const WaylandSeat::LockKeysState& previous, const WaylandSeat::LockKeysState& current) {
-          m_lockKeysOsd.onLockKeysChanged(previous, current);
-          m_bar.refresh();
+          const Config& config = m_configService.config();
+          if (config.osd.lockKeys) {
+            m_lockKeysOsd.onLockKeysChanged(previous, current);
+          }
+          if (configHasLockKeysWidget(config)) {
+            m_bar.refresh();
+          }
         });
   }
   m_idleInhibitor.initialize(m_wayland, &m_renderContext);
@@ -421,16 +507,16 @@ void Application::initServices() {
       m_panelManager.refresh();
     }
   });
-  m_idleManager.initialize(m_wayland);
-  m_idleManager.setCommandRunner([this](const std::string& command) { return runUserCommand(command); });
-  m_idleManager.reload(m_configService.config().idle);
-  m_configService.addReloadCallback([this]() { m_idleManager.reload(m_configService.config().idle); });
-
   m_hookManager.setCommandRunner([this](const std::string& command) { return runUserCommand(command); });
   m_hookManager.setBlockingCommandRunner(
       [this](const std::string& command) { return runUserCommandBlocking(command); });
   m_hookManager.reload(m_configService.config().hooks);
   m_configService.addReloadCallback([this]() { m_hookManager.reload(m_configService.config().hooks); });
+  auto syncNightLightWeatherConfig = [this]() {
+    m_gammaService.setWeatherLocationConfigured(
+        weatherLocationConfiguredForNightLight(m_configService.config().weather));
+  };
+  syncNightLightWeatherConfig();
   m_gammaService.reload(m_configService.config().nightlight);
   m_gammaService.setChangeCallback([this, shouldRefreshControlCenter]() {
     m_bar.refresh();
@@ -438,7 +524,10 @@ void Application::initServices() {
       m_panelManager.refresh();
     }
   });
-  m_configService.addReloadCallback([this]() { m_gammaService.reload(m_configService.config().nightlight); });
+  m_configService.addReloadCallback([this, syncNightLightWeatherConfig]() {
+    syncNightLightWeatherConfig();
+    m_gammaService.reload(m_configService.config().nightlight);
+  });
 
   // Register all wallpaper consumers in the single-callback slot.
   m_configService.setWallpaperChangeCallback([this]() {
@@ -515,7 +604,7 @@ void Application::initServices() {
   }
 
   try {
-    m_systemBus = makeWithStartupBackoff("system dbus", []() { return std::make_unique<SystemBus>(); });
+    m_systemBus = std::make_unique<SystemBus>();
     kLog.info("connected to system bus");
   } catch (const std::exception& e) {
     kLog.warn("system dbus disabled: {}", e.what());
@@ -524,15 +613,46 @@ void Application::initServices() {
 
   if (m_systemBus != nullptr) {
     try {
+      m_logindService = std::make_unique<LogindService>(*m_systemBus);
+      m_logindService->setPrepareForSleepCallback([this](bool sleeping) {
+        if (sleeping) {
+          return;
+        }
+        kLog.info("system resumed; rechecking night light schedule");
+        m_gammaService.reevaluateSchedule();
+      });
+      kLog.info("logind sleep monitor active");
+    } catch (const std::exception& e) {
+      kLog.warn("logind sleep monitor disabled: {}", e.what());
+      m_logindService.reset();
+    }
+
+    try {
       m_powerProfilesService = std::make_unique<PowerProfilesService>(*m_systemBus);
-      m_powerProfilesService->setChangeCallback(
-          [this, shouldRefreshControlCenter](const PowerProfilesState& /*state*/) {
-            m_bar.refresh();
-            if (shouldRefreshControlCenter()) {
-              m_panelManager.refresh();
-            }
-          });
+      m_powerProfilesService->setChangeCallback([this, shouldRefreshControlCenter](const PowerProfilesState& state,
+                                                                                   PowerProfilesChangeOrigin origin) {
+        m_bar.refresh();
+        if (shouldRefreshControlCenter()) {
+          m_panelManager.refresh();
+        }
+
+        const std::string& active = state.activeProfile;
+        if (active.empty()) {
+          return;
+        }
+        if (m_prevPowerProfileActiveForEvents.has_value() && *m_prevPowerProfileActiveForEvents != active &&
+            origin != PowerProfilesChangeOrigin::Noctalia) {
+          std::string glyphIconSpec("noctalia-glyph:");
+          glyphIconSpec.append(profileGlyphName(active));
+          m_notificationManager.addInternal(
+              i18n::tr("notifications.internal.power-profiles"), i18n::tr("notifications.internal.power-profile-title"),
+              i18n::tr("notifications.internal.power-profile-body", "profile", profileLabel(active)), Urgency::Normal,
+              kDefaultNotificationTimeout, std::move(glyphIconSpec));
+        }
+        onPowerProfileChangedForEvents(state, origin);
+      });
       if (!m_powerProfilesService->activeProfile().empty()) {
+        m_prevPowerProfileActiveForEvents = m_powerProfilesService->activeProfile();
         kLog.info("power profiles active profile: {}", m_powerProfilesService->activeProfile());
       } else {
         kLog.info("power profiles service active");
@@ -687,7 +807,7 @@ void Application::initServices() {
   }
 
   try {
-    m_bus = makeWithStartupBackoff("session dbus", []() { return std::make_unique<SessionBus>(); });
+    m_bus = std::make_unique<SessionBus>();
     kLog.info("connected to session bus");
   } catch (const std::exception& e) {
     kLog.warn("dbus disabled: {}", e.what());
@@ -697,8 +817,7 @@ void Application::initServices() {
 
   if (m_bus != nullptr) {
     try {
-      m_debugService = makeWithStartupBackoff(
-          "debug service", [this]() { return std::make_unique<DebugService>(*m_bus, m_notificationManager); });
+      m_debugService = std::make_unique<DebugService>(*m_bus, m_notificationManager);
       kLog.info("debug service active on dev.noctalia.Debug");
     } catch (const std::exception& e) {
       kLog.warn("debug service disabled: {}", e.what());
@@ -706,8 +825,7 @@ void Application::initServices() {
     }
 
     try {
-      m_mprisService =
-          makeWithStartupBackoff("mpris service", [this]() { return std::make_unique<MprisService>(*m_bus); });
+      m_mprisService = std::make_unique<MprisService>(*m_bus);
       auto applyMprisConfig = [this]() {
         if (m_mprisService == nullptr) {
           return;
@@ -743,6 +861,7 @@ void Application::initServices() {
 
   m_weatherService.initialize();
   auto syncNightLightWeatherCoordinates = [this]() {
+    m_gammaService.setWeatherLocationConfigured(m_weatherService.enabled() && m_weatherService.locationConfigured());
     const auto coords = m_weatherService.resolvedCoordinates();
     if (coords.has_value()) {
       m_gammaService.setWeatherCoordinates(coords->latitude, coords->longitude);
@@ -752,6 +871,7 @@ void Application::initServices() {
   };
   syncNightLightWeatherCoordinates();
   m_weatherService.addChangeCallback([this, shouldRefreshControlCenter]() {
+    m_gammaService.setWeatherLocationConfigured(m_weatherService.enabled() && m_weatherService.locationConfigured());
     const auto coords = m_weatherService.resolvedCoordinates();
     if (coords.has_value()) {
       m_gammaService.setWeatherCoordinates(coords->latitude, coords->longitude);
@@ -806,13 +926,13 @@ void Application::initUi() {
     }
     if (m_trayMenu.onPointerEvent(event))
       return;
-    if (m_settingsWindow.onPointerEvent(event))
-      return;
     if (m_colorPickerDialogPopup.onPointerEvent(event))
       return;
     if (m_glyphPickerDialogPopup.onPointerEvent(event))
       return;
     if (m_fileDialogPopup.onPointerEvent(event))
+      return;
+    if (m_settingsWindow.onPointerEvent(event))
       return;
     if (m_bar.onPointerEvent(event))
       return;
@@ -861,6 +981,10 @@ void Application::initUi() {
     }
     m_settingsWindow.open();
   });
+  m_settingsWindow.setOpenWallpaperPanel([this]() {
+    wl_output* output = m_compositorPlatform.preferredInteractiveOutput(std::chrono::milliseconds(1200));
+    m_panelManager.openPanel("wallpaper", PanelOpenRequest{.output = output});
+  });
   auto clipboardPanel = std::make_unique<ClipboardPanel>(&m_clipboardService, &m_configService, &m_thumbnailService,
                                                          &m_asyncTextureCache);
   clipboardPanel->setActivateCallback([this](const ClipboardEntry& entry) {
@@ -879,7 +1003,9 @@ void Application::initUi() {
     });
   });
   m_panelManager.registerPanel("clipboard", std::move(clipboardPanel));
-  m_panelManager.registerPanel("session", std::make_unique<SessionPanel>(&m_configService, m_sessionActionHooks));
+  syncClipboardService();
+  m_panelManager.registerPanel("session", std::make_unique<SessionPanel>(&m_configService, m_sessionActionHooks,
+                                                                         &m_compositorPlatform.niriRuntime()));
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
   m_panelManager.registerPanel("control-center",
                                std::make_unique<ControlCenterPanel>(
@@ -915,10 +1041,29 @@ void Application::initUi() {
   }
 
   m_notificationToast.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext, &m_httpClient);
+  m_configService.addReloadCallback([this]() { m_notificationToast.onConfigReload(); });
   m_configService.setNotificationManager(&m_notificationManager);
   m_notificationManager.setSoundPlayer(m_soundPlayer.get());
 
+  TooltipManager::instance().initialize(m_wayland, &m_renderContext);
   m_osdOverlay.initialize(m_wayland, &m_configService, &m_renderContext);
+  m_idleGraceOverlay.initialize(m_wayland, &m_renderContext);
+  m_idleManager.initialize(
+      m_wayland,
+      [this](const std::string& behaviorName, std::chrono::milliseconds fadeIn, std::function<void()> onFadeComplete) {
+        (void)behaviorName;
+        DeferredCall::callLater([this, fadeIn, done = std::move(onFadeComplete)]() mutable {
+          m_idleGraceOverlay.show(fadeIn, std::move(done));
+        });
+      },
+      [this](bool userCancelled) {
+        (void)userCancelled;
+        DeferredCall::callLater([this]() { m_idleGraceOverlay.hide(); });
+      });
+  m_idleManager.setActionRunner([this](const IdleBehaviorConfig& /*behavior*/,
+                                       const IdleActionRequest& action) -> bool { return runIdleAction(action); });
+  m_idleManager.reload(m_configService.config().idle);
+  m_configService.addReloadCallback([this]() { m_idleManager.reload(m_configService.config().idle); });
   m_audioOsd.bindOverlay(m_osdOverlay);
   m_audioOsd.setSoundPlayer(m_soundPlayer.get());
   if (m_pipewireService != nullptr) {
@@ -942,7 +1087,7 @@ void Application::initUi() {
                    m_networkService.get(), &m_idleInhibitor, m_mprisService.get(), m_pipewireSpectrum.get(),
                    &m_httpClient, &m_weatherService, &m_renderContext, &m_gammaService, &m_themeService,
                    m_bluetoothService.get(), m_brightnessService.get(), kLockKeysEnabled ? &m_lockKeysService : nullptr,
-                   &m_fileWatcher);
+                   &m_clipboardService, &m_fileWatcher);
   m_bar.setOpenWidgetSettingsCallback([this](std::string barName, std::string widgetName) {
     if (m_panelManager.isOpen()) {
       m_panelManager.closePanel();
@@ -975,6 +1120,8 @@ void Application::initUi() {
         return m_bar.preferredPopupParentContext(
             m_compositorPlatform.preferredInteractiveOutput(std::chrono::milliseconds(1200)));
       });
+  m_layerPopupHosts.registerHost(
+      [this](wl_surface* surface) { return m_settingsWindow.popupParentContextForSurface(surface); });
 
   m_colorPickerDialogPopup.initialize(m_wayland, m_configService, m_renderContext, m_layerPopupHosts);
   ColorPickerDialog::setPresenter(&m_colorPickerDialogPopup);
@@ -1023,6 +1170,7 @@ void Application::initUi() {
     } else {
       m_bar.onSecondTick();
       m_desktopWidgetsController.onSecondTick();
+      m_settingsWindow.onSecondTick();
     }
   });
 
@@ -1163,6 +1311,20 @@ void Application::initIpc() {
       },
       "dpms-off", "Turn monitors off");
 
+  m_ipcService.registerHandler(
+      "suspend",
+      [](const std::string&) -> std::string {
+        if (!process::launchFirstAvailable({{"systemctl", "suspend"}, {"loginctl", "suspend"}})) {
+          return "error: failed to suspend\n";
+        }
+        return "ok\n";
+      },
+      "suspend", "Suspend the system");
+
+  if (m_powerProfilesService != nullptr) {
+    m_powerProfilesService->registerIpc(m_ipcService);
+  }
+
   if (m_brightnessService != nullptr) {
     m_brightnessService->registerIpc(m_ipcService,
                                      [this]() { m_brightnessOsd.suppressFor(std::chrono::milliseconds(250)); });
@@ -1224,7 +1386,27 @@ bool Application::runUserCommandBlocking(const std::string& command) {
   return true;
 }
 
-bool Application::runIdleCommand(const std::string& command) { return runUserCommand(command); }
+bool Application::runIdleAction(const IdleActionRequest& action) {
+  switch (action.kind) {
+  case IdleActionKind::None:
+    return true;
+  case IdleActionKind::Command:
+    return runUserCommand(action.command);
+  case IdleActionKind::Lock:
+    return runUserCommand("noctalia:screen-lock");
+  case IdleActionKind::ScreenOff:
+    return runUserCommand("noctalia:dpms-off");
+  case IdleActionKind::ScreenOn:
+    return runUserCommand("noctalia:dpms-on");
+  case IdleActionKind::Suspend:
+    if (action.lockBeforeSuspend) {
+      m_lockScreen.runAfterSessionLocked([this]() { (void)runUserCommand("noctalia:suspend"); });
+      return true;
+    }
+    return runUserCommand("noctalia:suspend");
+  }
+  return false;
+}
 
 void Application::onIconThemeChanged() {
   kLog.info("system icon theme changed; refreshing icon consumers");
@@ -1309,6 +1491,24 @@ void Application::onBluetoothStateChangedForEvents(const BluetoothState& state, 
   m_prevBluetoothPoweredForEvents = state.powered;
 }
 
+void Application::onPowerProfileChangedForEvents(const PowerProfilesState& state, PowerProfilesChangeOrigin origin) {
+  if (state.activeProfile.empty()) {
+    return;
+  }
+  if (!m_prevPowerProfileActiveForEvents.has_value()) {
+    m_prevPowerProfileActiveForEvents = state.activeProfile;
+    return;
+  }
+  const std::string prev = *m_prevPowerProfileActiveForEvents;
+  if (prev != state.activeProfile) {
+    m_hookManager.fire(HookKind::PowerProfileChanged,
+                       {{"NOCTALIA_POWER_PROFILE", state.activeProfile},
+                        {"NOCTALIA_POWER_PROFILE_PREVIOUS", prev},
+                        {"NOCTALIA_POWER_PROFILE_ORIGIN", std::string(powerProfileOriginName(origin))}});
+  }
+  m_prevPowerProfileActiveForEvents = state.activeProfile;
+}
+
 std::vector<PollSource*> Application::currentPollSources() {
   std::vector<PollSource*> sources;
   if (m_busPollSource != nullptr) {
@@ -1318,9 +1518,9 @@ std::vector<PollSource*> Application::currentPollSources() {
     sources.push_back(m_systemBusPollSource.get());
   }
   sources.push_back(&m_notificationPollSource);
+  sources.push_back(&m_deferredCallPollSource);
   sources.push_back(&m_timePollSource);
   sources.push_back(&m_configPollSource);
-  sources.push_back(&m_desktopWidgetsPollSource);
   sources.push_back(&m_desktopEntryPollSource);
   sources.push_back(&m_iconThemePollSource);
   sources.push_back(&m_clipboardPollSource);
@@ -1329,7 +1529,9 @@ std::vector<PollSource*> Application::currentPollSources() {
   sources.push_back(&m_workspacePollSource);
   sources.push_back(&m_keyboardLayoutPollSource);
   if constexpr (kLockKeysEnabled) {
-    sources.push_back(&m_lockKeysPollSource);
+    if (lockKeysConsumersEnabled(m_configService.config())) {
+      sources.push_back(&m_lockKeysPollSource);
+    }
   }
   if (m_pipewirePollSource != nullptr) {
     sources.push_back(m_pipewirePollSource.get());

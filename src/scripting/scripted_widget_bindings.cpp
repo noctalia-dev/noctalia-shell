@@ -2,79 +2,109 @@
 
 #include "lua.h"
 #include "lualib.h"
-#include "shell/bar/widgets/scripted_widget.h"
 
+#include <algorithm>
+#include <string>
+#include <string_view>
 #include <variant>
 
 namespace {
 
   constexpr const char* kWidgetKey = "__scripted_widget";
 
-  ScriptedWidget* getWidget(lua_State* L) {
+  scripting::ScriptedWidgetBindingContext* getContext(lua_State* L) {
     lua_getglobal(L, kWidgetKey);
-    auto* w = static_cast<ScriptedWidget*>(lua_touserdata(L, -1));
+    auto* context = static_cast<scripting::ScriptedWidgetBindingContext*>(lua_touserdata(L, -1));
     lua_pop(L, 1);
-    return w;
+    return context;
+  }
+
+  std::string_view optionalStringArg(lua_State* L, int index) {
+    if (lua_gettop(L) < index || lua_isnil(L, index)) {
+      return {};
+    }
+    return luaL_checkstring(L, index);
   }
 
   int luau_setText(lua_State* L) {
-    const char* text = luaL_checkstring(L, 1);
-    if (auto* w = getWidget(L))
-      w->luaSetText(text);
+    size_t len = 0;
+    const char* text = luaL_checklstring(L, 1, &len);
+    if (auto* context = getContext(L)) {
+      context->patch.text = std::string(text, len);
+    }
     return 0;
   }
 
   int luau_setGlyph(lua_State* L) {
-    const char* name = luaL_checkstring(L, 1);
-    if (auto* w = getWidget(L))
-      w->luaSetGlyph(name);
+    size_t len = 0;
+    const char* name = luaL_checklstring(L, 1, &len);
+    if (auto* context = getContext(L)) {
+      context->patch.glyph = std::string(name, len);
+    }
+    return 0;
+  }
+
+  int luau_setFont(lua_State* L) {
+    size_t len = 0;
+    const char* family = luaL_checklstring(L, 1, &len);
+    if (auto* context = getContext(L)) {
+      context->patch.fontFamily = std::string(family, len);
+    }
     return 0;
   }
 
   int luau_setColor(lua_State* L) {
-    const char* role = luaL_checkstring(L, 1);
-    if (auto* w = getWidget(L))
-      w->luaSetColor(role);
+    size_t len = 0;
+    const char* role = luaL_checklstring(L, 1, &len);
+    if (auto* context = getContext(L)) {
+      context->patch.textColor = scripting::ScriptWidgetColorPatch{.role = std::string(role, len),
+                                                                   .mode = std::string(optionalStringArg(L, 2))};
+    }
     return 0;
   }
 
   int luau_setGlyphColor(lua_State* L) {
-    const char* role = luaL_checkstring(L, 1);
-    if (auto* w = getWidget(L))
-      w->luaSetGlyphColor(role);
+    size_t len = 0;
+    const char* role = luaL_checklstring(L, 1, &len);
+    if (auto* context = getContext(L)) {
+      context->patch.glyphColor = scripting::ScriptWidgetColorPatch{.role = std::string(role, len),
+                                                                    .mode = std::string(optionalStringArg(L, 2))};
+    }
     return 0;
   }
 
   int luau_isVertical(lua_State* L) {
-    auto* w = getWidget(L);
-    lua_pushboolean(L, w && w->isVertical() ? 1 : 0);
+    auto* context = getContext(L);
+    lua_pushboolean(L, context != nullptr && context->snapshot.isVertical ? 1 : 0);
     return 1;
   }
 
   int luau_setUpdateInterval(lua_State* L) {
     auto ms = static_cast<float>(luaL_checknumber(L, 1));
-    if (auto* w = getWidget(L))
-      w->luaSetUpdateInterval(ms);
+    if (auto* context = getContext(L)) {
+      context->patch.updateIntervalMs = std::max(16, static_cast<int>(ms));
+    }
     return 0;
   }
 
   int luau_setVisible(lua_State* L) {
     bool visible = lua_toboolean(L, 1) != 0;
-    if (auto* w = getWidget(L))
-      w->luaSetVisible(visible);
+    if (auto* context = getContext(L)) {
+      context->patch.visible = visible;
+    }
     return 0;
   }
 
   int luau_getConfig(lua_State* L) {
     const char* key = luaL_checkstring(L, 1);
-    auto* w = getWidget(L);
-    if (!w) {
+    auto* context = getContext(L);
+    if (context == nullptr || context->settings == nullptr) {
       lua_pushnil(L);
       return 1;
     }
 
-    auto it = w->settings().find(key);
-    if (it == w->settings().end()) {
+    auto it = context->settings->find(key);
+    if (it == context->settings->end()) {
       if (lua_gettop(L) >= 2) {
         lua_pushvalue(L, 2);
         return 1;
@@ -109,6 +139,7 @@ namespace {
   const luaL_Reg kWidgetLib[] = {
       {"setText", luau_setText},
       {"setGlyph", luau_setGlyph},
+      {"setFont", luau_setFont},
       {"setColor", luau_setColor},
       {"setGlyphColor", luau_setGlyphColor},
       {"isVertical", luau_isVertical},
@@ -120,10 +151,14 @@ namespace {
 
 } // namespace
 
-void registerScriptedWidgetBindings(lua_State* L, ScriptedWidget* widget) {
-  lua_pushlightuserdata(L, widget);
-  lua_setglobal(L, kWidgetKey);
+namespace scripting {
 
-  luaL_register(L, "barWidget", kWidgetLib);
-  lua_pop(L, 1);
-}
+  void registerScriptedWidgetBindings(lua_State* L, ScriptedWidgetBindingContext* context) {
+    lua_pushlightuserdata(L, context);
+    lua_setglobal(L, kWidgetKey);
+
+    luaL_register(L, "barWidget", kWidgetLib);
+    lua_pop(L, 1);
+  }
+
+} // namespace scripting

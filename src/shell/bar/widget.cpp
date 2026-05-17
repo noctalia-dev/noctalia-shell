@@ -4,6 +4,8 @@
 #include "ui/controls/box.h"
 #include "ui/palette.h"
 
+#include <algorithm>
+
 namespace {
 
   constexpr float kCapsuleInkEpsilon = 0.5f;
@@ -17,7 +19,7 @@ ColorSpec Widget::widgetForegroundOr(const ColorSpec& fallback) const noexcept {
     return *m_widgetForeground;
   }
   const auto& spec = m_barCapsuleSpec;
-  if (spec.enabled && spec.foreground.has_value() && shouldShowBarCapsule()) {
+  if (spec.enabled && spec.foreground.has_value()) {
     return *spec.foreground;
   }
   return fallback;
@@ -39,6 +41,14 @@ bool Widget::shouldShowBarCapsule() const {
     return false;
   }
   return true;
+}
+
+float Widget::resolvedBarCapsuleRadius(float width, float height) const noexcept {
+  const float maxRadius = std::max(0.0f, std::min(width, height) * 0.5f);
+  if (!m_barCapsuleSpec.radius.has_value()) {
+    return maxRadius;
+  }
+  return std::clamp(*m_barCapsuleSpec.radius * m_contentScale, 0.0f, maxRadius);
 }
 
 void Widget::setBarCapsuleScene(Node* shell, Box* box) noexcept {

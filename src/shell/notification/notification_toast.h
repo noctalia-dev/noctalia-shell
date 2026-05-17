@@ -26,6 +26,8 @@ struct WaylandOutput;
 
 class NotificationToast {
 public:
+  enum class RevealDirection { FromLeft, FromRight, FromTop, FromBottom };
+
   NotificationToast();
   ~NotificationToast();
 
@@ -34,6 +36,7 @@ public:
 
   void initialize(WaylandConnection& wayland, ConfigService* config, NotificationManager* notifications,
                   RenderContext* renderContext, HttpClient* httpClient = nullptr);
+  void onConfigReload();
   void requestLayout();
   void requestRedraw();
 
@@ -112,8 +115,8 @@ private:
   InputArea* buildCard(const PopupEntry& entry, Node** outCardContent, Node** outCardForeground, Label** outAppName,
                        Label** outSummary, Label** outBody, Node** outBg, Node** outAppIcon, ProgressBar** outProgress,
                        Glyph** outCloseGlyph);
-  void applyCardReveal(Instance::CardState& cs, float reveal, float y) const;
-  [[nodiscard]] float cardReveal(const Instance::CardState& cs) const;
+  void applyCardReveal(Instance::CardState& cs, float reveal, float y, float cardHeight) const;
+  [[nodiscard]] float cardReveal(const Instance::CardState& cs, float cardHeight) const;
   void addCardToInstance(Instance& inst, std::size_t entryIndex);
   void removeCardFromInstance(Instance& inst, std::size_t entryIndex);
   void syncEntryVisibility(std::size_t entryIndex);
@@ -135,10 +138,11 @@ private:
   [[nodiscard]] std::vector<std::string> notificationMonitors() const;
   [[nodiscard]] bool shouldRenderOnOutput(const WaylandOutput& output) const;
   [[nodiscard]] bool isBottomStacking() const;
-  [[nodiscard]] bool revealFromLeftEdge() const;
+  [[nodiscard]] RevealDirection revealDirection() const;
   void refreshEntryGeometry(PopupEntry& entry) const;
   [[nodiscard]] float layoutBottomForSurfaceHeight(float surfaceHeight) const;
   [[nodiscard]] float maxPlacementBottom() const;
+  void alignBottomStackToPlacementBottom();
   [[nodiscard]] std::optional<float> findPlacementY(float entryHeight,
                                                     std::optional<uint32_t> ignoreNotificationId = std::nullopt) const;
   [[nodiscard]] uint32_t surfaceHeightForOutput(wl_output* output) const;

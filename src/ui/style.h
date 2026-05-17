@@ -56,4 +56,13 @@ namespace Style {
   inline constexpr float sliderThumbSize = 18.0f;
   inline constexpr float sliderHorizontalPadding = 2.0f;
 
+  [[nodiscard]] float cornerRadiusScale() noexcept;
+  void setCornerRadiusScale(float scale) noexcept;
+
+  [[nodiscard]] float scaledRadius(float radius, float localScale = 1.0f) noexcept;
+  [[nodiscard]] float scaledRadiusSm(float localScale = 1.0f) noexcept;
+  [[nodiscard]] float scaledRadiusMd(float localScale = 1.0f) noexcept;
+  [[nodiscard]] float scaledRadiusLg(float localScale = 1.0f) noexcept;
+  [[nodiscard]] float scaledRadiusXl(float localScale = 1.0f) noexcept;
+
 } // namespace Style

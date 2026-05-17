@@ -1,11 +1,9 @@
 #include "compositors/niri/niri_output_backend.h"
 
+#include "compositors/niri/niri_runtime.h"
 #include "core/log.h"
-#include "core/process.h"
 #include "util/string_utils.h"
 
-#include <array>
-#include <cstdio>
 #include <json.hpp>
 #include <optional>
 #include <string>
@@ -14,91 +12,49 @@
 namespace {
 
   constexpr Logger kLog("niri_output");
+  constexpr std::string_view kFocusedOutputRequest = "\"FocusedOutput\"\n";
 
-  [[nodiscard]] std::string readCommand(const char* cmd) {
-    FILE* pipe = ::popen(cmd, "r");
-    if (pipe == nullptr) {
-      return {};
+  [[nodiscard]] std::optional<std::string> trimOutputName(const nlohmann::json& value) {
+    if (value.is_string()) {
+      const auto trimmed = StringUtils::trim(value.get<std::string>());
+      return trimmed.empty() ? std::nullopt : std::optional<std::string>{trimmed};
     }
-
-    std::array<char, 512> buffer{};
-    std::string output;
-    while (std::fgets(buffer.data(), static_cast<int>(buffer.size()), pipe) != nullptr) {
-      output += buffer.data();
+    if (value.is_object()) {
+      if (auto it = value.find("name"); it != value.end()) {
+        return trimOutputName(*it);
+      }
     }
-    ::pclose(pipe);
-    return StringUtils::trim(output);
+    return std::nullopt;
   }
 
-  [[nodiscard]] std::optional<std::string> parseFocusedOutputName(std::string_view payload) {
-    if (payload.empty()) {
+  // niri IPC returns one JSON line per request: {"Ok": ...} or {"Err": ...}
+  [[nodiscard]] std::optional<std::string> parseFocusedOutputName(const nlohmann::json& json) {
+    if (!json.is_object()) {
       return std::nullopt;
     }
-
-    try {
-      const auto json = nlohmann::json::parse(payload);
-
-      if (json.is_string()) {
-        const auto value = StringUtils::trim(json.get<std::string>());
-        return value.empty() ? std::nullopt : std::optional<std::string>{value};
-      }
-
-      if (json.is_object()) {
-        if (auto it = json.find("name"); it != json.end() && it->is_string()) {
-          const auto value = StringUtils::trim(it->get<std::string>());
-          if (!value.empty()) {
-            return value;
-          }
-        }
-        if (auto it = json.find("output"); it != json.end()) {
-          if (it->is_string()) {
-            const auto value = StringUtils::trim(it->get<std::string>());
-            if (!value.empty()) {
-              return value;
-            }
-          }
-          if (it->is_object()) {
-            if (auto nameIt = it->find("name"); nameIt != it->end() && nameIt->is_string()) {
-              const auto value = StringUtils::trim(nameIt->get<std::string>());
-              if (!value.empty()) {
-                return value;
-              }
-            }
-          }
-        }
-      }
-
-      if (json.is_array()) {
-        for (const auto& item : json) {
-          if (!item.is_object()) {
-            continue;
-          }
-          if (auto it = item.find("name"); it != item.end() && it->is_string()) {
-            const auto value = StringUtils::trim(it->get<std::string>());
-            if (!value.empty()) {
-              return value;
-            }
-          }
-        }
-      }
-    } catch (const nlohmann::json::exception&) {
-      const auto value = StringUtils::trim(std::string(payload));
-      return value.empty() ? std::nullopt : std::optional<std::string>{value};
+    if (json.contains("Err")) {
+      return std::nullopt;
     }
-
-    return std::nullopt;
+    const auto okIt = json.find("Ok");
+    if (okIt == json.end() || !okIt->is_object()) {
+      return std::nullopt;
+    }
+    const auto focusedIt = okIt->find("FocusedOutput");
+    if (focusedIt == okIt->end() || focusedIt->is_null()) {
+      return std::nullopt;
+    }
+    return trimOutputName(*focusedIt);
   }
 
 } // namespace
 
+NiriOutputBackend::NiriOutputBackend(compositors::niri::NiriRuntime& runtime) : m_runtime(runtime) {}
+
 std::optional<std::string> NiriOutputBackend::focusedOutputName() const {
-  // niri changed flags over time; support both forms.
-  if (auto parsed = parseFocusedOutputName(readCommand("niri msg --json focused-output 2>/dev/null"));
-      parsed.has_value()) {
-    return parsed;
-  }
-  if (auto parsed = parseFocusedOutputName(readCommand("niri msg -j focused-output 2>/dev/null")); parsed.has_value()) {
-    return parsed;
+  if (auto response = m_runtime.requestJson(kFocusedOutputRequest); response.has_value()) {
+    if (auto parsed = parseFocusedOutputName(*response); parsed.has_value()) {
+      return parsed;
+    }
   }
 
   kLog.debug("failed to resolve focused output from niri IPC");
@@ -107,8 +63,10 @@ std::optional<std::string> NiriOutputBackend::focusedOutputName() const {
 
 namespace compositors::niri {
 
-  bool setOutputPower(bool on) {
-    return process::runAsync({"niri", "msg", "action", on ? "power-on-monitors" : "power-off-monitors"});
+  bool setOutputPower(NiriRuntime& runtime, bool on) {
+    return runtime.requestAction(nlohmann::json{
+        {on ? "PowerOnMonitors" : "PowerOffMonitors", nlohmann::json::object()},
+    });
   }
 
 } // namespace compositors::niri

@@ -23,6 +23,7 @@
 #include "ui/controls/virtual_grid_view.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "util/string_utils.h"
 #include "wayland/clipboard_service.h"
 
 #include <algorithm>
@@ -47,30 +48,6 @@ namespace {
   constexpr auto kFilterDebounceInterval = std::chrono::milliseconds(120);
   constexpr Logger kLog("clipboard");
 
-  std::string trim(std::string_view text) {
-    const auto first = text.find_first_not_of(" \t\r\n");
-    if (first == std::string_view::npos) {
-      return {};
-    }
-    const auto last = text.find_last_not_of(" \t\r\n");
-    return std::string(text.substr(first, last - first + 1));
-  }
-
-  std::string shellQuote(std::string_view text) {
-    std::string quoted;
-    quoted.reserve(text.size() + 2);
-    quoted.push_back('\'');
-    for (char ch : text) {
-      if (ch == '\'') {
-        quoted += "'\\''";
-      } else {
-        quoted.push_back(ch);
-      }
-    }
-    quoted.push_back('\'');
-    return quoted;
-  }
-
   void replaceAll(std::string& text, std::string_view needle, std::string_view replacement) {
     if (needle.empty()) {
       return;
@@ -86,7 +63,7 @@ namespace {
   std::string buildImageActionCommand(std::string command, std::string_view imagePath) {
     const bool hasPathPlaceholder = command.find("{path}") != std::string::npos;
     const bool hasStdinPlaceholder = command.find("{stdin}") != std::string::npos;
-    const std::string quotedPath = shellQuote(imagePath);
+    const std::string quotedPath = StringUtils::shellQuote(imagePath);
 
     if (hasPathPlaceholder) {
       replaceAll(command, "{path}", quotedPath);
@@ -166,7 +143,7 @@ namespace {
       setVisible(false);
 
       auto background = std::make_unique<Box>();
-      background->setRadius(Style::radiusMd * scale);
+      background->setRadius(Style::scaledRadiusMd(scale));
       m_background = static_cast<Box*>(addChild(std::move(background)));
 
       auto row = std::make_unique<Flex>();
@@ -184,7 +161,7 @@ namespace {
 
       auto image = std::make_unique<Image>();
       image->setFit(ImageFit::Cover);
-      image->setRadius(Style::radiusSm * scale);
+      image->setRadius(Style::scaledRadiusSm(scale));
       image->setVisible(false);
       m_image = static_cast<Image*>(m_lead->addChild(std::move(image)));
 
@@ -480,7 +457,7 @@ void ClipboardPanel::create() {
   clearHistoryButton->setMinWidth(Style::controlHeightSm * scale);
   clearHistoryButton->setMinHeight(Style::controlHeightSm * scale);
   clearHistoryButton->setPadding(Style::spaceXs * scale);
-  clearHistoryButton->setRadius(Style::radiusMd * scale);
+  clearHistoryButton->setRadius(Style::scaledRadiusMd(scale));
   clearHistoryButton->setOnClick([this]() {
     if (m_clipboard != nullptr) {
       m_clipboard->clearHistory();
@@ -570,7 +547,7 @@ void ClipboardPanel::create() {
   imageActionButton->setMinWidth(Style::controlHeightSm * scale);
   imageActionButton->setMinHeight(Style::controlHeightSm * scale);
   imageActionButton->setPadding(Style::spaceXs * scale);
-  imageActionButton->setRadius(Style::radiusMd * scale);
+  imageActionButton->setRadius(Style::scaledRadiusMd(scale));
   imageActionButton->setVisible(false);
   imageActionButton->setParticipatesInLayout(false);
   imageActionButton->setOnClick([this]() { runImageAction(); });
@@ -584,7 +561,7 @@ void ClipboardPanel::create() {
   copyButton->setMinWidth(Style::controlHeightSm * scale);
   copyButton->setMinHeight(Style::controlHeightSm * scale);
   copyButton->setPadding(Style::spaceXs * scale);
-  copyButton->setRadius(Style::radiusMd * scale);
+  copyButton->setRadius(Style::scaledRadiusMd(scale));
   copyButton->setOnClick([this]() { activateSelected(); });
   m_copyButton = copyButton.get();
   previewActions->addChild(std::move(copyButton));
@@ -596,7 +573,7 @@ void ClipboardPanel::create() {
   deleteEntryButton->setMinWidth(Style::controlHeightSm * scale);
   deleteEntryButton->setMinHeight(Style::controlHeightSm * scale);
   deleteEntryButton->setPadding(Style::spaceXs * scale);
-  deleteEntryButton->setRadius(Style::radiusMd * scale);
+  deleteEntryButton->setRadius(Style::scaledRadiusMd(scale));
   deleteEntryButton->setOnClick([this]() { deleteSelectedEntry(); });
   m_deleteEntryButton = deleteEntryButton.get();
   previewActions->addChild(std::move(deleteEntryButton));
@@ -613,7 +590,7 @@ void ClipboardPanel::create() {
 
   auto previewScroll = std::make_unique<ScrollView>();
   previewScroll->setScrollbarVisible(true);
-  previewScroll->setCardStyle(scale);
+  previewScroll->setCardStyle(scale, panelCardOpacity());
   previewScroll->setFlexGrow(1.0f);
   m_previewScrollView = previewScroll.get();
   m_previewContent = previewScroll->content();
@@ -866,7 +843,7 @@ void ClipboardPanel::updatePreviewActions() {
 
   bool showImageAction = false;
   if (m_clipboard != nullptr && m_config != nullptr &&
-      !trim(m_config->config().shell.clipboardImageActionCommand).empty()) {
+      !StringUtils::trim(m_config->config().shell.clipboardImageActionCommand).empty()) {
     const std::size_t historyIndex = selectedHistoryIndex();
     const auto& history = m_clipboard->history();
     showImageAction = historyIndex != static_cast<std::size_t>(-1) && historyIndex < history.size() &&
@@ -1113,7 +1090,7 @@ void ClipboardPanel::runImageAction() {
     return;
   }
 
-  const std::string configuredCommand = trim(m_config->config().shell.clipboardImageActionCommand);
+  const std::string configuredCommand = StringUtils::trim(m_config->config().shell.clipboardImageActionCommand);
   if (configuredCommand.empty()) {
     return;
   }

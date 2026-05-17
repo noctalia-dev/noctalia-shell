@@ -56,7 +56,7 @@ namespace settings {
       button.setMinHeight(Style::controlHeight * scale);
       button.setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
       button.setGap(Style::spaceSm * scale);
-      button.setRadius(Style::radiusLg * scale);
+      button.setRadius(Style::scaledRadiusLg(scale));
       if (button.label() != nullptr) {
         button.label()->setBold(true);
       }
@@ -70,7 +70,7 @@ namespace settings {
       button.setMinHeight(Style::controlHeightSm * scale);
       button.setPadding(Style::spaceXs * scale, Style::spaceMd * scale, Style::spaceXs * scale, Style::spaceLg * scale);
       button.setGap(Style::spaceXs * scale);
-      button.setRadius(Style::radiusMd * scale);
+      button.setRadius(Style::scaledRadiusMd(scale));
     }
 
   } // namespace
@@ -106,7 +106,7 @@ namespace settings {
     sidebarScroll->setViewportPaddingH(0.0f);
     sidebarScroll->setViewportPaddingV(0.0f);
     sidebarScroll->setFill(colorSpecFromRole(ColorRole::Surface));
-    sidebarScroll->setRadius(Style::radiusXl * scale);
+    sidebarScroll->setRadius(Style::scaledRadiusXl(scale));
     sidebarScroll->clearBorder();
     sidebarScroll->setFillHeight(true);
     sidebarScroll->setSize(kSidebarWidth * scale, 0.0f);
@@ -203,7 +203,7 @@ namespace settings {
       newMonitorBtn->setPadding(Style::spaceXs * scale, Style::spaceMd * scale, Style::spaceXs * scale,
                                 Style::spaceLg * scale);
       newMonitorBtn->setGap(Style::spaceXs * scale);
-      newMonitorBtn->setRadius(Style::radiusMd * scale);
+      newMonitorBtn->setRadius(Style::scaledRadiusMd(scale));
       newMonitorBtn->setOnClick([creatingMonitorOverrideBarName, creatingMonitorOverrideMatch, barName,
                                  clearTransientState, requestRebuild]() {
         clearTransientState();
@@ -267,7 +267,7 @@ namespace settings {
       saveBtn->setFontSize(Style::fontSizeCaption * scale);
       saveBtn->setMinHeight(Style::controlHeightSm * scale);
       saveBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
-      saveBtn->setRadius(Style::radiusSm * scale);
+      saveBtn->setRadius(Style::scaledRadiusSm(scale));
       saveBtn->setOnClick([doCreate, inputPtr]() mutable { doCreate(inputPtr->value()); });
       actions->addChild(std::move(saveBtn));
 
@@ -278,7 +278,7 @@ namespace settings {
       cancelBtn->setMinWidth(Style::controlHeightSm * scale);
       cancelBtn->setMinHeight(Style::controlHeightSm * scale);
       cancelBtn->setPadding(Style::spaceXs * scale);
-      cancelBtn->setRadius(Style::radiusSm * scale);
+      cancelBtn->setRadius(Style::scaledRadiusSm(scale));
       cancelBtn->setOnClick([creatingMonitorOverrideBarName, creatingMonitorOverrideMatch, requestRebuild]() {
         creatingMonitorOverrideBarName->clear();
         creatingMonitorOverrideMatch->clear();
@@ -301,7 +301,7 @@ namespace settings {
     newBarBtn->setMinHeight(Style::controlHeight * scale);
     newBarBtn->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
     newBarBtn->setGap(Style::spaceSm * scale);
-    newBarBtn->setRadius(Style::radiusLg * scale);
+    newBarBtn->setRadius(Style::scaledRadiusLg(scale));
     if (newBarBtn->label() != nullptr) {
       newBarBtn->label()->setBold(true);
     }
@@ -355,7 +355,7 @@ namespace settings {
       saveBtn->setFontSize(Style::fontSizeCaption * scale);
       saveBtn->setMinHeight(Style::controlHeightSm * scale);
       saveBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
-      saveBtn->setRadius(Style::radiusSm * scale);
+      saveBtn->setRadius(Style::scaledRadiusSm(scale));
       saveBtn->setOnClick([doCreate, inputPtr]() mutable { doCreate(inputPtr->value()); });
       actions->addChild(std::move(saveBtn));
 
@@ -366,7 +366,7 @@ namespace settings {
       cancelBtn->setMinWidth(Style::controlHeightSm * scale);
       cancelBtn->setMinHeight(Style::controlHeightSm * scale);
       cancelBtn->setPadding(Style::spaceXs * scale);
-      cancelBtn->setRadius(Style::radiusSm * scale);
+      cancelBtn->setRadius(Style::scaledRadiusSm(scale));
       cancelBtn->setOnClick([creatingBarName, requestRebuild]() {
         creatingBarName->clear();
         requestRebuild();

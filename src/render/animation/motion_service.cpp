@@ -3,6 +3,7 @@
 #include "render/animation/animation_manager.h"
 
 #include <algorithm>
+#include <vector>
 
 MotionService& MotionService::instance() {
   static MotionService service;
@@ -29,9 +30,10 @@ void MotionService::setEnabled(bool enabled) {
   }
   m_enabled = enabled;
   if (!m_enabled) {
-    for (auto* manager : m_managers) {
-      if (manager != nullptr) {
-        manager->cancelAll();
+    const std::vector<AnimationManager*> managers(m_managers.begin(), m_managers.end());
+    for (auto* manager : managers) {
+      if (manager != nullptr && m_managers.contains(manager)) {
+        manager->reduceMotion();
       }
     }
   }

@@ -155,7 +155,7 @@ Button::Button() {
   setAlign(FlexAlign::Center);
   setMinHeight(Style::controlHeightSm);
   setPadding(Style::spaceSm);
-  setRadius(Style::radiusMd);
+  setRadius(Style::scaledRadiusMd());
 
   auto area = std::make_unique<InputArea>();
   area->setOnEnter([this](const InputArea::PointerData& /*data*/) {
@@ -295,12 +295,15 @@ void Button::setCursorShape(std::uint32_t shape) {
   }
 }
 
-void Button::setGlyphOnlySquare(bool square) {
-  if (m_glyphOnlySquare == square) {
+void Button::setTooltip(std::string text) {
+  if (m_inputArea == nullptr) {
     return;
   }
-  m_glyphOnlySquare = square;
-  markLayoutDirty();
+  if (text.empty()) {
+    m_inputArea->clearTooltip();
+  } else {
+    m_inputArea->setTooltip(std::move(text));
+  }
 }
 
 void Button::updateInputArea() {
@@ -338,11 +341,17 @@ void Button::setVariant(ButtonVariant variant) {
     return;
   }
   m_variant = variant;
+  m_customPalette.reset();
+  applyVariant();
+}
+
+void Button::setCustomPalette(ButtonPalette customPalette) {
+  m_customPalette = std::move(customPalette);
   applyVariant();
 }
 
 void Button::applyVariant() {
-  m_palette = paletteForVariant(m_variant);
+  m_palette = m_customPalette.value_or(paletteForVariant(m_variant));
   setBorder(m_palette.normal.border, m_palette.borderWidth);
 
   // Only seed targets before the first visual state application. Once the
@@ -535,7 +544,7 @@ void Button::doLayout(Renderer& renderer) {
     setSize(std::max(width(), assignedWidth), std::max(height(), assignedHeight));
   }
 
-  if (glyphOnly && m_glyphOnlySquare && m_contentAlign == ButtonContentAlign::Center) {
+  if (glyphOnly && m_contentAlign == ButtonContentAlign::Center) {
     const float squareSize = std::max(width(), height());
     setSize(squareSize, squareSize);
   }

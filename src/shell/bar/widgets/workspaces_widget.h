@@ -23,7 +23,7 @@ public:
   };
 
   WorkspacesWidget(CompositorPlatform& platform, wl_output* output, DisplayMode displayMode, ColorSpec focusedColor,
-                   ColorSpec occupiedColor, ColorSpec emptyColor);
+                   ColorSpec occupiedColor, ColorSpec emptyColor, std::size_t maxLabelChars, bool hideWhenEmpty);
   ~WorkspacesWidget() override;
 
   void create() override;
@@ -34,14 +34,17 @@ private:
   void rebuild(Renderer& renderer);
   void computeTargets();
   void retarget(Renderer& renderer);
+  void updateContainerSize();
   void startAnimation();
   void cancelAnimation();
   void applyItemLayout(std::size_t i);
+  [[nodiscard]] float workspacePillRadius(float width, float height) const noexcept;
   [[nodiscard]] std::optional<std::size_t> activeWorkspaceIndex() const;
   void activateAdjacentWorkspace(int direction);
 
   [[nodiscard]] static std::optional<std::size_t> numericWorkspaceId(const Workspace& workspace);
   [[nodiscard]] std::string workspaceLabel(const Workspace& workspace, std::size_t displayIndex) const;
+  void syncWidgetVisibility(bool showWidget);
 
   struct Item {
     InputArea* area = nullptr;
@@ -60,19 +63,21 @@ private:
     float currentWidth = 0.0f;
   };
 
-  [[nodiscard]] ColorRole workspaceFillRole(const Workspace& workspace) const;
-  [[nodiscard]] ColorRole workspaceTextRole(const Workspace& workspace) const;
-  [[nodiscard]] float workspaceFillAlpha(const Workspace& workspace) const;
+  [[nodiscard]] ColorSpec workspaceFillColor(const Workspace& workspace) const;
+  [[nodiscard]] ColorSpec workspaceTextColor(const Workspace& workspace) const;
   [[nodiscard]] static ColorRole onRoleForFill(ColorRole fill);
-  [[nodiscard]] ColorRole emptyWorkspaceTextRole() const;
+  [[nodiscard]] static ColorSpec readableColorForFill(const ColorSpec& fill);
 
   CompositorPlatform& m_platform;
   wl_output* m_output = nullptr;
   DisplayMode m_displayMode = DisplayMode::None;
+  std::size_t m_maxLabelChars = 1;
+  bool m_hideWhenEmpty = false;
   Node* m_container = nullptr;
   std::vector<Workspace> m_cachedState;
   std::vector<Item> m_items;
   bool m_rebuildPending = true;
+  std::uint64_t m_textMetricsGeneration = 0;
 
   float m_gap = 0.0f;
   float m_indicatorHeight = 0.0f;

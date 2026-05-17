@@ -38,5 +38,4 @@ private:
                                              const std::vector<std::string>& extensions);
   [[nodiscard]] static bool isHiddenName(std::string_view name);
   [[nodiscard]] static std::string normalizeExtension(std::string_view extension);
-  [[nodiscard]] static std::string lower(std::string_view text);
 };

@@ -121,6 +121,26 @@ void NetworkWidget::syncState(Renderer& renderer) {
 
   if (auto* rootNode = root(); rootNode != nullptr) {
     rootNode->setOpacity(s.connected ? 1.0f : 0.55f);
+
+    auto* area = static_cast<InputArea*>(rootNode);
+    if (s.connected) {
+      std::vector<TooltipRow> rows;
+      if (s.kind == NetworkConnectivity::Wireless && !s.ssid.empty()) {
+        rows.push_back({"Network", s.ssid});
+        rows.push_back({"Signal", std::to_string(s.signalStrength) + "%"});
+      } else if (s.kind == NetworkConnectivity::Wired) {
+        rows.push_back({"Network", s.interfaceName.empty() ? "Wired" : s.interfaceName});
+      }
+      if (!s.ipv4.empty()) {
+        rows.push_back({"IP", s.ipv4});
+      }
+      if (s.vpnActive) {
+        rows.push_back({"VPN", "Active"});
+      }
+      area->setTooltip(std::move(rows));
+    } else {
+      area->clearTooltip();
+    }
   }
 
   requestRedraw();

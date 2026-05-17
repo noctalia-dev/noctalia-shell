@@ -128,6 +128,12 @@ void Node::arrange(Renderer& renderer, const LayoutRect& rect) {
   m_sizeAssignedByLayout = true;
 }
 
+bool Node::containsScenePoint(float sceneX, float sceneY) const {
+  float localX = 0.0f;
+  float localY = 0.0f;
+  return pointInsideNode(this, sceneX, sceneY, localX, localY);
+}
+
 void Node::doLayout(Renderer& renderer) {
   for (auto& child : m_children) {
     if (child->visible()) {
@@ -254,6 +260,13 @@ void Node::setAnimationManager(AnimationManager* mgr) {
   }
 }
 
+void Node::setPopupContext(SelectPopupContext* ctx) {
+  m_popupContext = ctx;
+  for (auto& child : m_children) {
+    child->setPopupContext(ctx);
+  }
+}
+
 void Node::setInvalidationCallback(std::function<void(NodeInvalidation)> callback) {
   m_invalidationCallback = std::move(callback);
 }
@@ -263,6 +276,9 @@ Node* Node::addChild(std::unique_ptr<Node> child) {
   child->m_parent = this;
   if (m_animationManager != nullptr && child->m_animationManager == nullptr) {
     child->setAnimationManager(m_animationManager);
+  }
+  if (m_popupContext != nullptr && child->m_popupContext == nullptr) {
+    child->setPopupContext(m_popupContext);
   }
   auto* raw = child.get();
   m_children.push_back(std::move(child));
@@ -275,6 +291,9 @@ Node* Node::insertChildAt(std::size_t index, std::unique_ptr<Node> child) {
   child->m_parent = this;
   if (m_animationManager != nullptr && child->m_animationManager == nullptr) {
     child->setAnimationManager(m_animationManager);
+  }
+  if (m_popupContext != nullptr && child->m_popupContext == nullptr) {
+    child->setPopupContext(m_popupContext);
   }
   auto* raw = child.get();
   if (index >= m_children.size()) {

@@ -1,5 +1,7 @@
 #include "system/icon_resolver.h"
 
+#include "util/string_utils.h"
+
 #include <algorithm>
 #include <cstdlib>
 #include <filesystem>
@@ -34,17 +36,7 @@ namespace {
     return state;
   }
 
-  std::string trim(std::string_view value) {
-    while (!value.empty() && (value.front() == '\'' || value.front() == '"' || value.front() == ' ' ||
-                              value.front() == '\t' || value.front() == '\r' || value.front() == '\n')) {
-      value = value.substr(1);
-    }
-    while (!value.empty() && (value.back() == '\'' || value.back() == '"' || value.back() == ' ' ||
-                              value.back() == '\t' || value.back() == '\r' || value.back() == '\n')) {
-      value = value.substr(0, value.size() - 1);
-    }
-    return std::string(value);
-  }
+  std::string trimAndUnquote(std::string_view value) { return StringUtils::unquote(StringUtils::trim(value)); }
 
   void pushUnique(std::vector<std::string>& values, std::string value) {
     if (value.empty()) {
@@ -61,7 +53,7 @@ namespace {
     while (start <= value.size()) {
       const auto next = value.find(separator, start);
       const auto part = next == std::string_view::npos ? value.substr(start) : value.substr(start, next - start);
-      const std::string trimmed = trim(part);
+      const std::string trimmed = trimAndUnquote(part);
       if (!trimmed.empty()) {
         parts.push_back(trimmed);
       }
@@ -181,7 +173,7 @@ namespace {
       return std::nullopt;
     }
 
-    std::string value = trim(raw);
+    std::string value = trimAndUnquote(raw);
     g_free(raw);
     if (value.empty()) {
       return std::nullopt;
@@ -217,7 +209,7 @@ namespace {
           if (eq == std::string::npos) {
             continue;
           }
-          std::string value = trim(std::string_view(line.data() + eq + 1, line.size() - eq - 1));
+          std::string value = trimAndUnquote(std::string_view(line.data() + eq + 1, line.size() - eq - 1));
           if (!value.empty()) {
             candidates.emplace_back(std::move(value));
           }

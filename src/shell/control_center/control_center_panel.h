@@ -14,6 +14,7 @@
 #include "shell/panel/panel.h"
 
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <string_view>
@@ -69,13 +70,15 @@ public:
   [[nodiscard]] bool deferExternalRefresh() const override;
   [[nodiscard]] bool deferPointerRelayout() const override;
 
-  [[nodiscard]] float preferredWidth() const override { return scaled(780.0f); }
+  [[nodiscard]] float preferredWidth() const override;
+
   [[nodiscard]] float preferredHeight() const override { return scaled(520.0f); }
   [[nodiscard]] bool centeredHorizontally() const override { return true; }
   [[nodiscard]] bool centeredVertically() const override { return true; }
   [[nodiscard]] bool prefersAttachedToBar() const noexcept override;
 
 private:
+  void onPanelCardOpacityChanged(float opacity) override;
   void doLayout(Renderer& renderer, float width, float height) override;
   void doUpdate(Renderer& renderer) override;
 
@@ -104,9 +107,9 @@ private:
   static constexpr std::array<TabMeta, kTabCount> kTabs{{
       {TabId::Home, "home", "control-center.tabs.home", "home"},
       {TabId::Media, "media", "control-center.tabs.media", "disc-filled"},
-      {TabId::Audio, "audio", "control-center.tabs.audio", "device-speaker"},
+      {TabId::Audio, "audio", "control-center.tabs.audio", "volume"},
       {TabId::Display, "display", "control-center.tabs.display", "device-desktop"},
-      {TabId::System, "system", "control-center.tabs.system", "activity"},
+      {TabId::System, "system", "control-center.tabs.system", "activity-heartbeat"},
       {TabId::Network, "network", "control-center.tabs.network", "wifi"},
       {TabId::Bluetooth, "bluetooth", "control-center.tabs.bluetooth", "bluetooth"},
       {TabId::Weather, "weather", "control-center.tabs.weather", "weather-cloud-sun"},
@@ -115,6 +118,7 @@ private:
   }};
 
   void selectTab(TabId tab);
+  void scheduleMprisRefreshFor(TabId tab);
   [[nodiscard]] static TabId tabFromContext(std::string_view context);
   [[nodiscard]] static std::size_t tabIndex(TabId id);
 
@@ -136,6 +140,10 @@ private:
   std::array<Flex*, kTabCount> m_tabHeaderActions{};
   TabId m_activeTab = TabId::Home;
   ConfigService* m_config = nullptr;
+  MprisService* m_mpris = nullptr;
   NotificationManager* m_notificationManager = nullptr;
   DependencyService* m_dependencies = nullptr;
+  bool m_compact = false;
+  bool m_mprisRefreshScheduled = false;
+  std::chrono::steady_clock::time_point m_lastMprisRefreshAt{};
 };

@@ -1,6 +1,7 @@
 #include "config/cli.h"
 
 #include "core/toml.h"
+#include "util/string_utils.h"
 
 #include <cstdio>
 #include <cstring>
@@ -38,19 +39,6 @@ namespace noctalia::config {
       bool flattened = false;
       bool force = false;
     };
-
-    std::string shellQuote(std::string_view raw) {
-      std::string out = "'";
-      for (const char c : raw) {
-        if (c == '\'') {
-          out += "'\\''";
-        } else {
-          out.push_back(c);
-        }
-      }
-      out.push_back('\'');
-      return out;
-    }
 
     bool writeTextFile(const std::filesystem::path& path, std::string_view content, std::string& error) {
       std::error_code ec;
@@ -257,8 +245,9 @@ namespace noctalia::config {
       std::printf("Config home: %s\n", configHome.string().c_str());
       std::printf("State home:  %s\n\n", stateHome.string().c_str());
       std::printf("Run with:\n");
-      std::printf("  XDG_CONFIG_HOME=%s XDG_STATE_HOME=%s %s\n", shellQuote(configHome.string()).c_str(),
-                  shellQuote(stateHome.string()).c_str(), shellQuote(argv0).c_str());
+      std::printf("  NOCTALIA_CONFIG_HOME=%s NOCTALIA_STATE_HOME=%s %s\n",
+                  StringUtils::shellQuote(configHome.string()).c_str(),
+                  StringUtils::shellQuote(stateHome.string()).c_str(), StringUtils::shellQuote(argv0).c_str());
       return 0;
     }
 

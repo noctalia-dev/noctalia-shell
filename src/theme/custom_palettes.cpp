@@ -1,7 +1,8 @@
 #include "theme/custom_palettes.h"
 
+#include "util/file_utils.h"
+
 #include <algorithm>
-#include <cstdlib>
 #include <filesystem>
 #include <string>
 #include <system_error>
@@ -9,13 +10,8 @@
 namespace noctalia::theme {
 
   std::filesystem::path customPaletteDir() {
-    if (const char* xdg = std::getenv("XDG_CONFIG_HOME"); xdg != nullptr && xdg[0] != '\0') {
-      return std::filesystem::path(xdg) / "noctalia" / "palettes";
-    }
-    if (const char* home = std::getenv("HOME"); home != nullptr && home[0] != '\0') {
-      return std::filesystem::path(home) / ".config" / "noctalia" / "palettes";
-    }
-    return {};
+    const std::string dir = FileUtils::configDir();
+    return dir.empty() ? std::filesystem::path{} : std::filesystem::path(dir) / "palettes";
   }
 
   std::filesystem::path customPalettePath(std::string_view name) {

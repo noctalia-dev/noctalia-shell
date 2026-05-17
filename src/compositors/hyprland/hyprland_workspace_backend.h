@@ -1,10 +1,10 @@
 #pragma once
 
 #include "compositors/workspace_backend.h"
+#include "hyprland_event_handler.h"
 
 #include <cstdint>
 #include <functional>
-#include <json.hpp>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -13,11 +13,13 @@
 
 namespace compositors::hyprland {
   class HyprlandRuntime;
+  class HyprlandEventHandler;
 } // namespace compositors::hyprland
 
 class HyprlandWorkspaceBackend final : public WorkspaceBackend,
                                        public WorkspaceOutputNameResolver,
-                                       public WorkspaceSocketConnector {
+                                       public WorkspaceSocketConnector,
+                                       public compositors::hyprland::HyprlandEventHandler {
 public:
   using OutputNameResolver = WorkspaceOutputNameResolver::Resolver;
 
@@ -27,7 +29,7 @@ public:
   void setOutputNameResolver(OutputNameResolver outputNameResolver) override;
 
   [[nodiscard]] const char* backendName() const override { return "hyprland-ipc"; }
-  [[nodiscard]] bool isAvailable() const noexcept override { return m_eventSocketFd >= 0; }
+  [[nodiscard]] bool isAvailable() const noexcept override;
   void setChangeCallback(ChangeCallback callback) override;
   void activate(const std::string& id) override;
   void activateForOutput(wl_output* output, const std::string& id) override;
@@ -38,8 +40,10 @@ public:
   appIdsByWorkspace(wl_output* output) const override;
   [[nodiscard]] std::vector<WorkspaceWindow> workspaceWindows(wl_output* output) const override;
   void cleanup() override;
+  void notifyCleanup();
+  void notifyChanged();
 
-  [[nodiscard]] int pollFd() const noexcept override { return m_eventSocketFd; }
+  [[nodiscard]] int pollFd() const noexcept override;
   void dispatchPoll(short revents) override;
 
 private:
@@ -54,7 +58,7 @@ private:
   };
 
   struct ToplevelState {
-    std::string workspace;
+    int workspaceId;
     std::string appId;
     std::string title;
     bool urgent = false;
@@ -62,39 +66,29 @@ private:
     std::int32_t y = 0;
   };
 
-  void updateConfigProvider();
-  [[nodiscard]] std::optional<nlohmann::json> requestJson(const std::string& request) const;
   void refreshSnapshot();
   void refreshWorkspaces();
   void refreshMonitors();
   void refreshClients();
   void recomputeWorkspaceFlags();
-  void notifyChanged() const;
 
-  void readSocket();
-  void parseMessages();
-  void handleEvent(std::string_view line);
-  void handleFocusedMonitor(std::string_view monitorName, std::string_view workspaceName);
-  void handleWorkspaceActivated(std::string_view workspaceName);
-  void clearUrgentForWorkspace(std::string_view workspaceName);
-  void moveToplevel(std::uint64_t address, std::string_view workspaceName);
+  void handleEvent(std::string_view event, std::string_view data);
+  void handleFocusedMonitor(std::string_view monitorName, int workspaceId);
+  void handleWorkspaceActivated(int workspaceId);
+  void clearUrgentForWorkspace(int workspaceId);
+  void moveToplevel(std::uint64_t address, int workspaceId);
 
   [[nodiscard]] WorkspaceState* findWorkspaceById(int id);
   [[nodiscard]] WorkspaceState* findWorkspaceByName(std::string_view name);
   [[nodiscard]] static std::optional<std::uint64_t> parseHexAddress(std::string_view value);
   [[nodiscard]] static std::optional<int> parseInt(std::string_view value);
   [[nodiscard]] static std::vector<std::string_view> parseEventArgs(std::string_view data, std::size_t count);
-  [[nodiscard]] static std::string quoteCommandArg(const std::string& value);
   [[nodiscard]] static Workspace toWorkspace(const WorkspaceState& state);
 
   OutputNameResolver m_outputNameResolver;
-  compositors::hyprland::HyprlandRuntime& m_runtime;
-  int m_eventSocketFd = -1;
-  bool m_configLua;
-  std::vector<char> m_readBuffer;
   std::vector<WorkspaceState> m_workspaces;
   std::unordered_map<std::uint64_t, ToplevelState> m_toplevels;
-  std::unordered_map<std::string, std::string> m_activeWorkspaceByMonitor;
+  std::unordered_map<std::string, int> m_activeWorkspaceByMonitor;
   std::size_t m_nextOrdinal = 0;
   ChangeCallback m_changeCallback;
 };

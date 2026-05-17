@@ -30,6 +30,7 @@ public:
   bool initialize(wl_output* output, ToplevelSurfaceConfig config);
 
   void setClosedCallback(std::function<void()> callback);
+  void beginMove(std::uint32_t serial);
 
   [[nodiscard]] xdg_surface* xdgSurface() const noexcept { return m_xdgSurface; }
 

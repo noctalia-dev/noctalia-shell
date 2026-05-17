@@ -6,7 +6,6 @@
 #include "ui/style.h"
 
 #include <functional>
-#include <optional>
 
 class InputArea;
 class RectNode;
@@ -36,7 +35,7 @@ public:
   void clearBorder();
   void setRadius(float radius);
   void setSoftness(float softness);
-  void setCardStyle(float scale = 1.0f);
+  void setCardStyle(float scale = 1.0f, float fillOpacity = 1.0f);
   void bindState(ScrollViewState* state);
   void setOnScrollChanged(std::function<void(float)> callback);
 
@@ -68,7 +67,7 @@ private:
   std::function<void(float)> m_onScrollChanged;
   ColorSpec m_backgroundFill = clearColorSpec();
   ColorSpec m_backgroundBorder = clearColorSpec();
-  ColorSpec m_scrollbarTrackColor = colorSpecFromRole(ColorRole::Outline, 0.45f);
+  ColorSpec m_scrollbarTrackColor = colorSpecFromRole(ColorRole::Outline, 0.5f);
   ColorSpec m_scrollbarThumbColor = colorSpecFromRole(ColorRole::Primary);
   Signal<>::ScopedConnection m_paletteConn;
 
@@ -83,7 +82,7 @@ private:
   float m_viewportHeight = 0.0f;
   float m_viewportWidth = 0.0f;
   float m_backgroundBorderWidth = 0.0f;
-  float m_backgroundRadius = Style::radiusMd;
+  float m_backgroundRadius = Style::scaledRadiusMd();
   float m_backgroundSoftness = 1.0f;
   bool m_scrollbarShown = false;
   bool m_showScrollbar = true;

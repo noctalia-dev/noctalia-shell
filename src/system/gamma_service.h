@@ -27,6 +27,7 @@ public:
   GammaService& operator=(const GammaService&) = delete;
 
   void reload(const NightLightConfig& config);
+  void setWeatherLocationConfigured(bool configured);
   void setWeatherCoordinates(std::optional<double> latitude, std::optional<double> longitude);
   void setEnabled(bool enabled);
   void toggleEnabled();
@@ -35,6 +36,7 @@ public:
   void clearForceOverride();
   void setChangeCallback(ChangeCallback callback);
   void onOutputsChanged();
+  void reevaluateSchedule();
 
   [[nodiscard]] bool enabled() const;
   [[nodiscard]] bool forceEnabled() const;
@@ -106,6 +108,7 @@ private:
   NightLightConfig m_config;
   std::optional<bool> m_enabledOverride;
   std::optional<bool> m_forceOverride;
+  bool m_weatherLocationConfigured = false;
   std::optional<double> m_weatherLatitude;
   std::optional<double> m_weatherLongitude;
   ChangeCallback m_changeCallback;

@@ -8,6 +8,7 @@
 #include "dbus/system_bus.h"
 #include "ipc/ipc_arg_parse.h"
 #include "ipc/ipc_service.h"
+#include "util/string_utils.h"
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
@@ -129,25 +130,6 @@ namespace {
       }
       out += display.id;
     }
-    return out;
-  }
-
-  std::string trim(std::string_view input) {
-    std::size_t start = 0;
-    while (start < input.size() && std::isspace(static_cast<unsigned char>(input[start])) != 0) {
-      ++start;
-    }
-    std::size_t end = input.size();
-    while (end > start && std::isspace(static_cast<unsigned char>(input[end - 1])) != 0) {
-      --end;
-    }
-    return std::string(input.substr(start, end - start));
-  }
-
-  std::string toLower(std::string_view input) {
-    std::string out(input);
-    std::transform(out.begin(), out.end(), out.begin(),
-                   [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
     return out;
   }
 
@@ -337,7 +319,7 @@ namespace {
   }
 
   std::string normalizeConnectorName(std::string_view raw) {
-    std::string connector = trim(raw);
+    std::string connector = StringUtils::trim(raw);
     if (connector.starts_with("card")) {
       const auto dash = connector.find('-');
       if (dash != std::string::npos) {
@@ -352,7 +334,7 @@ namespace {
     while (start <= output.size()) {
       const std::size_t end = output.find('\n', start);
       const std::string line = output.substr(start, end == std::string::npos ? output.size() - start : end - start);
-      const std::string lower = toLower(line);
+      const std::string lower = StringUtils::toLower(line);
       const std::size_t currentPos = lower.find("current value");
       const std::size_t maxPos = lower.find("max value");
       if (currentPos == std::string::npos || maxPos == std::string::npos || maxPos <= currentPos) {
@@ -520,7 +502,8 @@ namespace {
       return {};
     }
     if (detectResult.exitCode != 0) {
-      kLog.warn("ddcutil detect failed with exit code {}: {}", detectResult.exitCode, trim(detectResult.output));
+      kLog.warn("ddcutil detect failed with exit code {}: {}", detectResult.exitCode,
+                StringUtils::trim(detectResult.output));
       return {};
     }
 
@@ -536,7 +519,8 @@ namespace {
             current.currentRaw = brightness->first;
             current.maxRaw = brightness->second;
           } else {
-            kLog.warn("ddcutil: skipping bus {} because brightness query failed: {}", current.bus, trim(getvcpDetail));
+            kLog.warn("ddcutil: skipping bus {} because brightness query failed: {}", current.bus,
+                      StringUtils::trim(getvcpDetail));
           }
         }
         if (current.currentRaw >= 0 && current.maxRaw > 0) {
@@ -549,7 +533,7 @@ namespace {
     std::size_t start = 0;
     while (start <= detectResult.output.size()) {
       const std::size_t end = detectResult.output.find('\n', start);
-      const std::string line = trim(detectResult.output.substr(
+      const std::string line = StringUtils::trim(detectResult.output.substr(
           start, end == std::string::npos ? detectResult.output.size() - start : end - start));
       if (line.starts_with("Display ")) {
         flushCurrent();
@@ -566,9 +550,9 @@ namespace {
       } else if (line.starts_with("DRM_connector:")) {
         current.connectorName = normalizeConnectorName(line.substr(std::strlen("DRM_connector:")));
       } else if (line.starts_with("Monitor:")) {
-        current.label = trim(line.substr(std::strlen("Monitor:")));
+        current.label = StringUtils::trim(line.substr(std::strlen("Monitor:")));
       } else if (line.starts_with("Model:") && current.label.empty()) {
-        current.label = trim(line.substr(std::strlen("Model:")));
+        current.label = StringUtils::trim(line.substr(std::strlen("Model:")));
       }
 
       if (end == std::string::npos) {
@@ -1232,7 +1216,7 @@ struct BrightnessService::Impl {
                 display->failureCount, kDdcFailureCooldown.count());
     } else {
       kLog.warn("ddcutil {} failed for '{}': {}", completion.type == WorkerCompletion::Type::Set ? "write" : "refresh",
-                display->pub.id, trim(completion.detail));
+                display->pub.id, StringUtils::trim(completion.detail));
     }
 
     return false;

@@ -1,23 +1,11 @@
 #include "core/files/directory_scanner.h"
 
+#include "util/string_utils.h"
+
 #include <algorithm>
 #include <array>
-#include <cctype>
 #include <numeric>
 #include <system_error>
-
-namespace {
-
-  std::string lowerText(std::string_view text) {
-    std::string out;
-    out.reserve(text.size());
-    for (char ch : text) {
-      out.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
-    }
-    return out;
-  }
-
-} // namespace
 
 std::vector<FileEntry> DirectoryScanner::scan(const std::filesystem::path& dir,
                                               const std::vector<std::string>& extensions, bool showHiddenFiles,
@@ -92,7 +80,7 @@ std::vector<FileEntry> DirectoryScanner::scan(const std::filesystem::path& dir,
   std::vector<std::string> lowerNames;
   lowerNames.reserve(entries.size());
   for (const auto& entry : entries) {
-    lowerNames.push_back(lowerText(entry.name));
+    lowerNames.push_back(StringUtils::toLower(entry.name));
   }
 
   std::vector<std::size_t> indices(entries.size());
@@ -174,15 +162,6 @@ std::string DirectoryScanner::normalizeExtension(std::string_view extension) {
     out.push_back('.');
   }
   for (char ch : extension) {
-    out.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
-  }
-  return out;
-}
-
-std::string DirectoryScanner::lower(std::string_view text) {
-  std::string out;
-  out.reserve(text.size());
-  for (char ch : text) {
     out.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
   }
   return out;

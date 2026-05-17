@@ -39,7 +39,7 @@ WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentSca
     }
   });
 
-  const float frameRadius = Style::radiusLg * m_contentScale;
+  const float frameRadius = Style::scaledRadiusLg(m_contentScale);
   const float outlineWidth = Style::borderWidth * 2.0f;
 
   auto layout = std::make_unique<Flex>();

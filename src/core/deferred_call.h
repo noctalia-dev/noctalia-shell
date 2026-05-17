@@ -9,6 +9,9 @@
 class DeferredCall {
 public:
   static void callLater(std::function<void()> fn);
+  static std::vector<std::function<void()>> takePending();
+  static void drainWakeFd();
+  [[nodiscard]] static int wakeFd();
 
 private:
   friend class MainLoop;

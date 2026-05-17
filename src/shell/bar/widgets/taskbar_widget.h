@@ -21,7 +21,8 @@ struct PointerEvent;
 class TaskbarWidget : public Widget {
 public:
   TaskbarWidget(CompositorPlatform& platform, wl_output* output, bool groupByWorkspace, bool showAllOutputs,
-                std::string barPosition);
+                bool onlyActiveWorkspace, bool showWorkspaceLabel, bool hideEmptyWorkspaces, std::string barPosition,
+                ShellConfig::ShadowConfig shadowConfig);
   ~TaskbarWidget() override;
 
   void create() override;
@@ -82,9 +83,14 @@ private:
   wl_output* m_output = nullptr;
   bool m_groupByWorkspace = false;
   bool m_showAllOutputs = false;
+  bool m_onlyActiveWorkspace = false;
+  bool m_showWorkspaceLabel = true;
+  bool m_hideEmptyWorkspaces = false;
   std::string m_barPosition;
+  ShellConfig::ShadowConfig m_shadowConfig;
   bool m_rebuildPending = true;
   bool m_vertical = false;
+  std::uint64_t m_textMetricsGeneration = 0;
 
   Flex* m_root = nullptr;
   Flex* m_taskStrip = nullptr;

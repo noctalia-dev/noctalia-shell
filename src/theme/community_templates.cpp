@@ -372,6 +372,8 @@ namespace noctalia::theme {
         if (const toml::table* info = it->second.as_table()) {
           if (const auto name = info->get_as<std::string>("name"))
             out.displayName = name->get();
+          if (const auto category = info->get_as<std::string>("category"))
+            out.category = category->get();
         }
         return out;
       } catch (const toml::parse_error&) {
@@ -404,6 +406,12 @@ namespace noctalia::theme {
           if (!success) {
             kLog.warn("failed to refresh community template catalog; using cached metadata when available");
           }
+          if (ids.empty()) {
+            if (m_readyCallback) {
+              DeferredCall::callLater([callback = m_readyCallback]() { callback(); });
+            }
+            return;
+          }
           syncSelectedFromCatalog(ids, generation, success);
         });
   }
@@ -419,7 +427,6 @@ namespace noctalia::theme {
 
     auto pending = std::make_shared<std::size_t>(0);
     auto completed = std::make_shared<std::size_t>(0);
-    bool wroteMetadata = false;
 
     auto notifyIfReady = [this, generation, notifyWhenReady, pending, completed]() {
       if (!notifyWhenReady || generation != m_generation || *completed < *pending)
@@ -444,7 +451,6 @@ namespace noctalia::theme {
       std::filesystem::create_directories(dir, ec);
       if (!info->entries.empty()) {
         writeGeneratedTemplateToml(*info);
-        wroteMetadata = true;
       }
 
       for (const auto& file : info->files) {
@@ -475,7 +481,7 @@ namespace noctalia::theme {
       }
     }
 
-    if (*pending == 0 && wroteMetadata && notifyWhenReady && m_readyCallback) {
+    if (*pending == 0 && notifyWhenReady && m_readyCallback) {
       DeferredCall::callLater([callback = m_readyCallback]() { callback(); });
     }
   }
@@ -488,6 +494,7 @@ namespace noctalia::theme {
       AvailableTemplate t;
       t.id = info.id;
       t.displayName = info.displayName.empty() ? info.id : info.displayName;
+      t.category = info.category;
       out.push_back(std::move(t));
     }
 
@@ -510,6 +517,8 @@ namespace noctalia::theme {
     }
 
     std::sort(out.begin(), out.end(), [](const AvailableTemplate& a, const AvailableTemplate& b) {
+      if (a.category != b.category)
+        return a.category < b.category;
       if (a.displayName != b.displayName)
         return a.displayName < b.displayName;
       return a.id < b.id;

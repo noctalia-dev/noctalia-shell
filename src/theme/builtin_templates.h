@@ -14,6 +14,7 @@ namespace noctalia::theme {
   struct AvailableTemplate {
     std::string id;          // canonical TOML value (what gets written to config)
     std::string displayName; // friendly label for the GUI; falls back to id when not provided
+    std::string category;
   };
 
   // Loads the built-in template catalog from the shipped assets/templates/builtin.toml.
@@ -21,9 +22,7 @@ namespace noctalia::theme {
   // Entries are sorted by category, then id.
   [[nodiscard]] std::vector<BuiltinTemplateInfo> loadBuiltinTemplateInfo(std::string* err = nullptr);
 
-  // Every template the user can opt into. Currently the built-in catalog only;
-  // when downloaded/external template sources land, this is the place to merge them
-  // so callers (e.g. the settings GUI) keep working without changes.
+  // Every built-in template the user can opt into.
   [[nodiscard]] std::vector<AvailableTemplate> availableTemplates();
 
 } // namespace noctalia::theme

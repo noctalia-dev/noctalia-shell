@@ -23,10 +23,10 @@ public:
 
   bool activate(const LauncherResult& result) override;
 
-  [[nodiscard]] std::vector<LauncherAppCategory> availableCategories() const;
-  [[nodiscard]] std::string_view selectedCategory() const noexcept { return m_selectedCategory; }
-  void selectCategory(std::string_view category);
-  void resetCategory();
+  [[nodiscard]] std::vector<LauncherCategory> availableCategories() const override;
+  [[nodiscard]] std::string_view selectedCategory() const override { return m_selectedCategory; }
+  void selectCategory(std::string_view category) override;
+  void resetCategory() override;
 
 private:
   void refreshEntriesIfNeeded() const;

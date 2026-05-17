@@ -1,11 +1,14 @@
 #include "system/system_monitor_service.h"
 
 #include "core/log.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
-#include <cctype>
 #include <chrono>
+#include <cstring>
+#include <dlfcn.h>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -75,46 +78,120 @@ namespace {
     return static_cast<double>(raw);
   }
 
-  std::string toLower(std::string value) {
-    std::transform(value.begin(), value.end(), value.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+  std::optional<std::uint64_t> readUint64File(const std::filesystem::path& path) {
+    std::ifstream file{path};
+    if (!file.is_open()) {
+      return std::nullopt;
+    }
+
+    std::uint64_t value = 0;
+    file >> value;
+    if (file.fail()) {
+      return std::nullopt;
+    }
     return value;
   }
 
-  int scoreHwmonSensor(const std::string& hwmon_name, const std::string& label) {
+  struct TempSensorReading {
+    double tempC = 0.0;
+    int score = -1;
+    std::string source;
+    bool isNvidia = false;
+  };
+
+  struct GpuHwmonProbe {
+    std::optional<TempSensorReading> reading;
+    bool foundNvidia = false;
+  };
+
+  struct GpuVramReading {
+    std::uint64_t usedBytes = 0;
+    std::uint64_t totalBytes = 0;
+    std::string source;
+    bool isNvidia = false;
+  };
+
+  [[nodiscard]] bool hasUsableVram(const GpuVramReading& reading) {
+    return reading.totalBytes > 0 && reading.usedBytes <= reading.totalBytes;
+  }
+
+  void mergeGpuVram(GpuVramReading& target, const GpuVramReading& source) {
+    if (!hasUsableVram(source)) {
+      return;
+    }
+    target.usedBytes += source.usedBytes;
+    target.totalBytes += source.totalBytes;
+    if (target.source.empty()) {
+      target.source = source.source;
+    } else if (!source.source.empty()) {
+      target.source += " + " + source.source;
+    }
+    target.isNvidia = target.isNvidia || source.isNvidia;
+  }
+
+  std::string formatHwmonTempSource(const std::string& hwmonName, const std::string& label,
+                                    const std::filesystem::path& inputPath) {
+    const std::string name = hwmonName.empty() ? "unknown" : hwmonName;
+    if (label.empty()) {
+      return std::format("hwmon:{} {}", name, inputPath.string());
+    }
+    return std::format("hwmon:{} label=\"{}\" {}", name, label, inputPath.string());
+  }
+
+  std::string formatThermalZoneTempSource(const std::string& zoneType, const std::filesystem::path& inputPath) {
+    const std::string type = zoneType.empty() ? "unknown" : zoneType;
+    return std::format("thermal_zone:{} {}", type, inputPath.string());
+  }
+
+  std::string formatBytesGiB(std::uint64_t bytes) {
+    return std::format("{:.1f} GiB", static_cast<double>(bytes) / (1024.0 * 1024.0 * 1024.0));
+  }
+
+  int scoreHwmonSensor(const std::string& hwmonName, const std::string& label) {
     int score = 0;
-    const std::string name = toLower(hwmon_name);
-    const std::string lbl = toLower(label);
+    const std::string name = StringUtils::toLower(hwmonName);
+    const std::string lbl = StringUtils::toLower(label);
 
     if (name.find("coretemp") != std::string::npos || name.find("k10temp") != std::string::npos ||
         name.find("zenpower") != std::string::npos || name.find("cpu") != std::string::npos) {
       score += 20;
     }
 
-    if (lbl.find("package") != std::string::npos || lbl.find("tctl") != std::string::npos ||
-        lbl.find("tdie") != std::string::npos || lbl.find("cpu") != std::string::npos) {
-      score += 30;
+    // AMD k10temp exposes Tctl first, but Tctl is a fan-control value. Prefer
+    // physical die/CCD readings when the kernel provides them.
+    if (lbl.find("tdie") != std::string::npos) {
+      score += 80;
+    } else if (lbl.find("tccd") != std::string::npos) {
+      score += 70;
+    } else if (lbl.find("package") != std::string::npos) {
+      score += 60;
+    } else if (lbl.find("cpu") != std::string::npos) {
+      score += 50;
+    } else if (lbl.find("tctl") != std::string::npos) {
+      score += 40;
     }
 
     return score;
   }
 
+  bool isBetterHwmonSensor(int score, double tempC, int bestScore, const std::optional<double>& bestTemp) {
+    return score > bestScore || (score == bestScore && (!bestTemp.has_value() || tempC > *bestTemp));
+  }
+
   bool isCpuThermalZoneType(const std::string& type) {
-    const std::string t = toLower(type);
+    const std::string t = StringUtils::toLower(type);
     return t.find("x86_pkg_temp") != std::string::npos || t.find("cpu") != std::string::npos ||
            t.find("soc") != std::string::npos || t.find("package") != std::string::npos;
   }
 
-  int scoreGpuHwmonSensor(const std::string& hwmon_name, const std::string& label) {
-    const std::string name = toLower(hwmon_name);
-    const std::string lbl = toLower(label);
-
-    if (name.find("nvidia") != std::string::npos) {
-      return -1;
-    }
+  int scoreGpuHwmonSensor(const std::string& hwmonName, const std::string& label) {
+    const std::string name = StringUtils::toLower(hwmonName);
+    const std::string lbl = StringUtils::toLower(label);
 
     int score = 0;
     if (name == "amdgpu") {
+      score += 20;
+    } else if (name == "nvidia" || name.find("nvidia") != std::string::npos) {
       score += 20;
     } else if (name == "i915" || name == "xe") {
       score += 20;
@@ -146,9 +223,433 @@ namespace {
     return *status == "active";
   }
 
+  bool isDevicePathAwake(const std::filesystem::path& devicePath) {
+    const auto status = readSmallTextFile(devicePath / "power" / "runtime_status");
+    if (!status.has_value()) {
+      return true;
+    }
+    return *status == "active";
+  }
+
+  bool isDrmCardName(const std::string& name) {
+    if (!name.starts_with("card") || name.size() == 4) {
+      return false;
+    }
+    return std::all_of(name.begin() + 4, name.end(), [](char ch) { return ch >= '0' && ch <= '9'; });
+  }
+
+  std::optional<GpuVramReading> readAmdGpuVram() {
+    namespace fs = std::filesystem;
+
+    const fs::path drmRoot{"/sys/class/drm"};
+    if (!fs::exists(drmRoot) || !fs::is_directory(drmRoot)) {
+      return std::nullopt;
+    }
+
+    GpuVramReading total;
+    int deviceCount = 0;
+    std::string firstSource;
+
+    for (const auto& entry : fs::directory_iterator{drmRoot}) {
+      if (!entry.is_directory() || !isDrmCardName(entry.path().filename().string())) {
+        continue;
+      }
+
+      const fs::path devicePath = entry.path() / "device";
+      if (!fs::exists(devicePath) || !isDevicePathAwake(devicePath)) {
+        continue;
+      }
+
+      const fs::path usedPath = devicePath / "mem_info_vram_used";
+      const fs::path totalPath = devicePath / "mem_info_vram_total";
+      const auto used = readUint64File(usedPath);
+      const auto available = readUint64File(totalPath);
+      if (!used.has_value() || !available.has_value() || *available == 0 || *used > *available) {
+        continue;
+      }
+
+      ++deviceCount;
+      if (firstSource.empty()) {
+        firstSource = usedPath.string();
+      }
+      mergeGpuVram(total,
+                   GpuVramReading{.usedBytes = *used, .totalBytes = *available, .source = {}, .isNvidia = false});
+    }
+
+    if (deviceCount <= 0 || !hasUsableVram(total)) {
+      return std::nullopt;
+    }
+
+    total.source = deviceCount == 1 ? std::format("amdgpu:{}", firstSource)
+                                    : std::format("amdgpu sysfs ({} devices)", deviceCount);
+    return total;
+  }
+
+  std::optional<TempSensorReading> readCpuHwmonTempSensor() {
+    namespace fs = std::filesystem;
+
+    const fs::path hwmonRoot{"/sys/class/hwmon"};
+    if (!fs::exists(hwmonRoot) || !fs::is_directory(hwmonRoot)) {
+      return std::nullopt;
+    }
+
+    int bestScore = -1;
+    std::optional<TempSensorReading> best;
+
+    for (const auto& hwmonEntry : fs::directory_iterator{hwmonRoot}) {
+      if (!hwmonEntry.is_directory()) {
+        continue;
+      }
+
+      const std::string hwmonName = readSmallTextFile(hwmonEntry.path() / "name").value_or("");
+      for (const auto& fileEntry : fs::directory_iterator{hwmonEntry.path()}) {
+        if (!fileEntry.is_regular_file()) {
+          continue;
+        }
+
+        const std::string fileName = fileEntry.path().filename().string();
+        if (!fileName.starts_with("temp") || !fileName.ends_with("_input")) {
+          continue;
+        }
+
+        const std::string base = fileName.substr(0, fileName.size() - 6);
+        const std::string label = readSmallTextFile(hwmonEntry.path() / (base + "_label")).value_or("");
+        const auto tempC = readTempInputCelsius(fileEntry.path());
+        if (!tempC.has_value()) {
+          continue;
+        }
+
+        const int score = scoreHwmonSensor(hwmonName, label);
+        if (score <= 0) {
+          continue;
+        }
+        if (isBetterHwmonSensor(score, *tempC, bestScore,
+                                best.has_value() ? std::optional<double>{best->tempC} : std::nullopt)) {
+          bestScore = score;
+          best = TempSensorReading{
+              .tempC = *tempC, .score = score, .source = formatHwmonTempSource(hwmonName, label, fileEntry.path())};
+        }
+      }
+    }
+
+    return best;
+  }
+
+  std::optional<TempSensorReading> readCpuThermalZoneTempSensor() {
+    namespace fs = std::filesystem;
+
+    const fs::path thermalRoot{"/sys/class/thermal"};
+    if (!fs::exists(thermalRoot) || !fs::is_directory(thermalRoot)) {
+      return std::nullopt;
+    }
+
+    std::optional<TempSensorReading> fallback;
+    for (const auto& entry : fs::directory_iterator{thermalRoot}) {
+      if (!entry.is_directory()) {
+        continue;
+      }
+
+      const auto zoneName = entry.path().filename().string();
+      if (!zoneName.starts_with("thermal_zone")) {
+        continue;
+      }
+
+      const std::string zoneType = readSmallTextFile(entry.path() / "type").value_or("");
+      const fs::path tempPath = entry.path() / "temp";
+      const auto tempC = readTempInputCelsius(tempPath);
+      if (!tempC.has_value()) {
+        continue;
+      }
+
+      TempSensorReading reading{.tempC = *tempC, .score = 0, .source = formatThermalZoneTempSource(zoneType, tempPath)};
+      if (isCpuThermalZoneType(zoneType)) {
+        return reading;
+      }
+
+      if (!fallback.has_value()) {
+        fallback = std::move(reading);
+      }
+    }
+
+    return fallback;
+  }
+
+  std::optional<TempSensorReading> readCpuTempSensor() {
+    if (const auto hwmon = readCpuHwmonTempSensor(); hwmon.has_value()) {
+      return hwmon;
+    }
+    return readCpuThermalZoneTempSensor();
+  }
+
+  GpuHwmonProbe readGpuHwmonTempSensor() {
+    namespace fs = std::filesystem;
+
+    GpuHwmonProbe probe;
+    const fs::path hwmonRoot{"/sys/class/hwmon"};
+    if (!fs::exists(hwmonRoot) || !fs::is_directory(hwmonRoot)) {
+      return probe;
+    }
+
+    int bestScore = -1;
+    for (const auto& hwmonEntry : fs::directory_iterator{hwmonRoot}) {
+      if (!hwmonEntry.is_directory()) {
+        continue;
+      }
+
+      const std::string hwmonName = readSmallTextFile(hwmonEntry.path() / "name").value_or("");
+      const int nameScore = scoreGpuHwmonSensor(hwmonName, "");
+      if (nameScore < 0) {
+        continue;
+      }
+
+      const std::string normalizedName = StringUtils::toLower(hwmonName);
+      const bool isNvidia = normalizedName == "nvidia" || normalizedName.find("nvidia") != std::string::npos;
+
+      if (!isGpuHwmonAwake(hwmonEntry.path())) {
+        continue;
+      }
+
+      for (const auto& fileEntry : fs::directory_iterator{hwmonEntry.path()}) {
+        if (!fileEntry.is_regular_file()) {
+          continue;
+        }
+
+        const std::string fileName = fileEntry.path().filename().string();
+        if (!fileName.starts_with("temp") || !fileName.ends_with("_input")) {
+          continue;
+        }
+
+        const std::string base = fileName.substr(0, fileName.size() - 6);
+        const std::string label = readSmallTextFile(hwmonEntry.path() / (base + "_label")).value_or("");
+        const auto tempC = readTempInputCelsius(fileEntry.path());
+        if (!tempC.has_value()) {
+          continue;
+        }
+
+        const int score = scoreGpuHwmonSensor(hwmonName, label);
+        if (isNvidia) {
+          probe.foundNvidia = true;
+        }
+        if (isBetterHwmonSensor(score, *tempC, bestScore,
+                                probe.reading.has_value() ? std::optional<double>{probe.reading->tempC}
+                                                          : std::nullopt)) {
+          bestScore = score;
+          probe.reading = TempSensorReading{.tempC = *tempC,
+                                            .score = score,
+                                            .source = formatHwmonTempSource(hwmonName, label, fileEntry.path()),
+                                            .isNvidia = isNvidia};
+        }
+      }
+    }
+
+    return probe;
+  }
+
+  bool isInactiveRuntimeStatus(const std::string& status) {
+    const std::string normalized = StringUtils::toLower(status);
+    return normalized == "suspended" || normalized == "suspending";
+  }
+
+  bool hasInactiveNvidiaPciDisplayDevice() {
+    namespace fs = std::filesystem;
+
+    const fs::path pciRoot{"/sys/bus/pci/devices"};
+    if (!fs::exists(pciRoot) || !fs::is_directory(pciRoot)) {
+      return false;
+    }
+
+    for (const auto& entry : fs::directory_iterator{pciRoot}) {
+      if (!entry.is_directory()) {
+        continue;
+      }
+
+      const std::string vendor = StringUtils::toLower(readSmallTextFile(entry.path() / "vendor").value_or(""));
+      if (vendor != "0x10de") {
+        continue;
+      }
+
+      const std::string deviceClass = StringUtils::toLower(readSmallTextFile(entry.path() / "class").value_or(""));
+      if (!deviceClass.starts_with("0x03")) {
+        continue;
+      }
+
+      const auto runtimeStatus = readSmallTextFile(entry.path() / "power" / "runtime_status");
+      if (runtimeStatus.has_value() && isInactiveRuntimeStatus(*runtimeStatus)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  constexpr int kNvmlSuccess = 0;
+  constexpr unsigned int kNvmlTemperatureGpu = 0;
+
+  using NvmlReturn = int;
+  using NvmlDevice = struct nvmlDevice_st*;
+  using NvmlInitFn = NvmlReturn (*)();
+  using NvmlShutdownFn = NvmlReturn (*)();
+  using NvmlDeviceGetCountFn = NvmlReturn (*)(unsigned int*);
+  using NvmlDeviceGetHandleByIndexFn = NvmlReturn (*)(unsigned int, NvmlDevice*);
+  using NvmlDeviceGetTemperatureFn = NvmlReturn (*)(NvmlDevice, unsigned int, unsigned int*);
+
+  struct NvmlMemory {
+    unsigned long long total = 0;
+    unsigned long long free = 0;
+    unsigned long long used = 0;
+  };
+  using NvmlDeviceGetMemoryInfoFn = NvmlReturn (*)(NvmlDevice, NvmlMemory*);
+
+  template <typename T> bool loadDlsymFunction(void* library, const char* name, T& out) {
+    void* symbol = dlsym(library, name);
+    if (symbol == nullptr) {
+      return false;
+    }
+    std::memcpy(&out, &symbol, sizeof(out));
+    return true;
+  }
+
+  template <typename T> bool loadDlsymFunction(void* library, const char* preferred, const char* fallback, T& out) {
+    return loadDlsymFunction(library, preferred, out) || loadDlsymFunction(library, fallback, out);
+  }
+
   constexpr Logger kLog("sysmon");
 
 } // namespace
+
+struct SystemMonitorService::NvidiaNvmlReader {
+  ~NvidiaNvmlReader() { close(); }
+
+  [[nodiscard]] std::optional<TempSensorReading> readGpuTempSensor() {
+    if (!ensureReady() || m_devices.empty()) {
+      return std::nullopt;
+    }
+
+    std::optional<double> bestTemp;
+    unsigned int bestIndex = 0;
+    for (const auto& device : m_devices) {
+      unsigned int tempC = 0;
+      if (m_getTemperature(device.handle, kNvmlTemperatureGpu, &tempC) != kNvmlSuccess || tempC == 0) {
+        continue;
+      }
+      if (!bestTemp.has_value() || static_cast<double>(tempC) > *bestTemp) {
+        bestTemp = static_cast<double>(tempC);
+        bestIndex = device.index;
+      }
+    }
+
+    if (!bestTemp.has_value()) {
+      return std::nullopt;
+    }
+
+    const std::string source = m_devices.size() == 1 ? std::string{"nvml"} : std::format("nvml:device{}", bestIndex);
+    return TempSensorReading{.tempC = *bestTemp, .score = 0, .source = source, .isNvidia = true};
+  }
+
+  [[nodiscard]] std::optional<GpuVramReading> readGpuVram() {
+    if (!ensureReady() || m_devices.empty()) {
+      return std::nullopt;
+    }
+
+    GpuVramReading total{.source = m_devices.size() == 1 ? std::string{"nvml"}
+                                                         : std::format("nvml ({} devices)", m_devices.size()),
+                         .isNvidia = true};
+    for (const auto& device : m_devices) {
+      NvmlMemory memory{};
+      if (m_getMemoryInfo(device.handle, &memory) != kNvmlSuccess || memory.total == 0 || memory.used > memory.total) {
+        continue;
+      }
+      total.usedBytes += static_cast<std::uint64_t>(memory.used);
+      total.totalBytes += static_cast<std::uint64_t>(memory.total);
+    }
+
+    return hasUsableVram(total) ? std::optional<GpuVramReading>{total} : std::nullopt;
+  }
+
+private:
+  struct DeviceRef {
+    unsigned int index = 0;
+    NvmlDevice handle = nullptr;
+  };
+
+  enum class State { Uninitialized, Unavailable, Ready };
+
+  [[nodiscard]] bool ensureReady() {
+    if (m_state == State::Ready) {
+      return true;
+    }
+    if (m_state == State::Unavailable) {
+      return false;
+    }
+
+    m_library = dlopen("libnvidia-ml.so.1", RTLD_LAZY | RTLD_LOCAL);
+    if (m_library == nullptr) {
+      m_state = State::Unavailable;
+      return false;
+    }
+
+    if (!loadDlsymFunction(m_library, "nvmlInit_v2", "nvmlInit", m_init) ||
+        !loadDlsymFunction(m_library, "nvmlShutdown", m_shutdown) ||
+        !loadDlsymFunction(m_library, "nvmlDeviceGetCount_v2", "nvmlDeviceGetCount", m_getCount) ||
+        !loadDlsymFunction(m_library, "nvmlDeviceGetHandleByIndex_v2", "nvmlDeviceGetHandleByIndex", m_getHandle) ||
+        !loadDlsymFunction(m_library, "nvmlDeviceGetTemperature", m_getTemperature) ||
+        !loadDlsymFunction(m_library, "nvmlDeviceGetMemoryInfo", m_getMemoryInfo)) {
+      close();
+      m_state = State::Unavailable;
+      return false;
+    }
+
+    if (m_init() != kNvmlSuccess) {
+      close();
+      m_state = State::Unavailable;
+      return false;
+    }
+    m_nvmlInitialized = true;
+
+    unsigned int count = 0;
+    if (m_getCount(&count) != kNvmlSuccess) {
+      close();
+      m_state = State::Unavailable;
+      return false;
+    }
+
+    m_devices.reserve(count);
+    for (unsigned int i = 0; i < count; ++i) {
+      NvmlDevice device = nullptr;
+      if (m_getHandle(i, &device) == kNvmlSuccess && device != nullptr) {
+        m_devices.push_back({.index = i, .handle = device});
+      }
+    }
+
+    m_state = State::Ready;
+    return true;
+  }
+
+  void close() {
+    m_devices.clear();
+
+    if (m_nvmlInitialized && m_shutdown != nullptr) {
+      (void)m_shutdown();
+    }
+    m_nvmlInitialized = false;
+
+    if (m_library != nullptr) {
+      (void)dlclose(m_library);
+      m_library = nullptr;
+    }
+  }
+
+  State m_state = State::Uninitialized;
+  void* m_library = nullptr;
+  bool m_nvmlInitialized = false;
+  std::vector<DeviceRef> m_devices;
+  NvmlInitFn m_init = nullptr;
+  NvmlShutdownFn m_shutdown = nullptr;
+  NvmlDeviceGetCountFn m_getCount = nullptr;
+  NvmlDeviceGetHandleByIndexFn m_getHandle = nullptr;
+  NvmlDeviceGetTemperatureFn m_getTemperature = nullptr;
+  NvmlDeviceGetMemoryInfoFn m_getMemoryInfo = nullptr;
+};
 
 SystemMonitorService::SystemMonitorService(bool enabled) {
   m_latest = makeInitialHistoryStats();
@@ -187,6 +688,10 @@ void SystemMonitorService::releaseCpuTemp() { m_cpuTempRefs.fetch_sub(1, std::me
 void SystemMonitorService::retainGpuTemp() { m_gpuTempRefs.fetch_add(1, std::memory_order_relaxed); }
 
 void SystemMonitorService::releaseGpuTemp() { m_gpuTempRefs.fetch_sub(1, std::memory_order_relaxed); }
+
+void SystemMonitorService::retainGpuVram() { m_gpuVramRefs.fetch_add(1, std::memory_order_relaxed); }
+
+void SystemMonitorService::releaseGpuVram() { m_gpuVramRefs.fetch_sub(1, std::memory_order_relaxed); }
 
 void SystemMonitorService::retainDiskPath(const std::string& path) {
   const float initialPercent = isRunning() ? readDiskUsagePercent(path) : 0.0f;
@@ -231,6 +736,7 @@ void SystemMonitorService::start() {
     return;
   }
 
+  logDetectedSources();
   m_running = true;
   m_prevNetBytes.clear();
   try {
@@ -249,6 +755,60 @@ void SystemMonitorService::stop() {
   }
 }
 
+void SystemMonitorService::logDetectedSources() {
+  const auto cpu = readCpuTotals();
+  const auto mem = readMemoryKb();
+  const auto net = readNetBytes();
+  const auto load = readLoadAvg();
+
+  kLog.info("detected stats sources: cpu={} memory={} network={} load={} disk=statvfs",
+            cpu.has_value() ? "/proc/stat" : "unavailable", mem.has_value() ? "/proc/meminfo" : "unavailable",
+            net.has_value() ? std::format("/proc/net/dev ({} active)", net->size()) : std::string{"unavailable"},
+            load.has_value() ? "/proc/loadavg" : "unavailable");
+
+  if (const auto cpuTemp = readCpuTempSensor(); cpuTemp.has_value()) {
+    kLog.info("detected CPU temperature source: {} ({:.0f}C)", cpuTemp->source, cpuTemp->tempC);
+  } else {
+    kLog.info("detected CPU temperature source: unavailable");
+  }
+
+  const GpuHwmonProbe gpuHwmon = readGpuHwmonTempSensor();
+  std::optional<TempSensorReading> gpuTemp = gpuHwmon.reading;
+  std::string gpuDetail;
+
+  if (gpuHwmon.foundNvidia) {
+    gpuDetail = "NVIDIA hwmon present; NVML fallback not needed";
+  } else if (hasInactiveNvidiaPciDisplayDevice()) {
+    gpuDetail = "NVML skipped; NVIDIA display device is runtime-suspended";
+  } else {
+    if (m_nvidiaNvmlReader == nullptr) {
+      m_nvidiaNvmlReader = std::make_unique<NvidiaNvmlReader>();
+    }
+    const auto nvml = m_nvidiaNvmlReader->readGpuTempSensor();
+    if (nvml.has_value()) {
+      gpuDetail = "NVML fallback available";
+      if (!gpuTemp.has_value() || nvml->tempC > gpuTemp->tempC) {
+        gpuTemp = nvml;
+      }
+    } else {
+      gpuDetail = "NVML fallback unavailable";
+    }
+  }
+
+  if (gpuTemp.has_value()) {
+    kLog.info("detected GPU temperature source: {} ({:.0f}C); {}", gpuTemp->source, gpuTemp->tempC, gpuDetail);
+  } else {
+    kLog.info("detected GPU temperature source: unavailable; {}", gpuDetail);
+  }
+
+  if (const auto gpuVram = readGpuVram(); gpuVram.has_value()) {
+    kLog.info("detected GPU VRAM source: {} ({} / {})", gpuVram->source, formatBytesGiB(gpuVram->usedBytes),
+              formatBytesGiB(gpuVram->totalBytes));
+  } else {
+    kLog.info("detected GPU VRAM source: unavailable");
+  }
+}
+
 void SystemMonitorService::samplingLoop() {
   auto prevCpu = readCpuTotals();
 
@@ -258,6 +818,8 @@ void SystemMonitorService::samplingLoop() {
     std::vector<std::string> diskPaths;
     std::optional<double> previousCpuTemp;
     std::optional<double> previousGpuTemp;
+    std::optional<std::uint64_t> previousGpuVramUsed;
+    std::optional<std::uint64_t> previousGpuVramTotal;
 
     const auto currentCpu = readCpuTotals();
     if (prevCpu.has_value() && currentCpu.has_value()) {
@@ -313,6 +875,8 @@ void SystemMonitorService::samplingLoop() {
       std::lock_guard lock{m_statsMutex};
       previousCpuTemp = m_latest.cpuTempC;
       previousGpuTemp = m_latest.gpuTempC;
+      previousGpuVramUsed = m_latest.gpuVramUsedBytes;
+      previousGpuVramTotal = m_latest.gpuVramTotalBytes;
       diskPaths.reserve(m_diskHistories.size());
       for (const auto& [path, disk] : m_diskHistories) {
         if (disk.refs > 0) {
@@ -333,6 +897,18 @@ void SystemMonitorService::samplingLoop() {
     }
     if (!next.gpuTempC.has_value()) {
       next.gpuTempC = previousGpuTemp;
+    }
+
+    if (m_gpuVramRefs.load(std::memory_order_relaxed) > 0) {
+      const auto gpuVram = readGpuVram();
+      if (gpuVram.has_value()) {
+        next.gpuVramUsedBytes = gpuVram->usedBytes;
+        next.gpuVramTotalBytes = gpuVram->totalBytes;
+      }
+    }
+    if (!next.gpuVramUsedBytes.has_value() || !next.gpuVramTotalBytes.has_value()) {
+      next.gpuVramUsedBytes = previousGpuVramUsed;
+      next.gpuVramTotalBytes = previousGpuVramTotal;
     }
 
     std::vector<std::pair<std::string, float>> diskPercents;
@@ -449,136 +1025,51 @@ std::optional<SystemMonitorService::MemData> SystemMonitorService::readMemoryKb(
 }
 
 std::optional<double> SystemMonitorService::readCpuTempCelsius() {
-  namespace fs = std::filesystem;
-
-  const fs::path hwmon_root{"/sys/class/hwmon"};
-  if (fs::exists(hwmon_root) && fs::is_directory(hwmon_root)) {
-    int bestScore = -1;
-    std::optional<double> best_temp;
-
-    for (const auto& hwmon_entry : fs::directory_iterator{hwmon_root}) {
-      if (!hwmon_entry.is_directory()) {
-        continue;
-      }
-
-      const std::string hwmonName = readSmallTextFile(hwmon_entry.path() / "name").value_or("");
-      for (const auto& file_entry : fs::directory_iterator{hwmon_entry.path()}) {
-        if (!file_entry.is_regular_file()) {
-          continue;
-        }
-
-        const std::string fileName = file_entry.path().filename().string();
-        if (!fileName.starts_with("temp") || !fileName.ends_with("_input")) {
-          continue;
-        }
-
-        const std::string base = fileName.substr(0, fileName.size() - 6);
-        const std::string label = readSmallTextFile(hwmon_entry.path() / (base + "_label")).value_or("");
-        const auto tempC = readTempInputCelsius(file_entry.path());
-        if (!tempC.has_value()) {
-          continue;
-        }
-
-        const int score = scoreHwmonSensor(hwmonName, label);
-        if (score > bestScore) {
-          bestScore = score;
-          best_temp = *tempC;
-        }
-      }
-    }
-
-    if (best_temp.has_value()) {
-      return best_temp;
-    }
-  }
-
-  const fs::path thermal_root{"/sys/class/thermal"};
-  if (!fs::exists(thermal_root) || !fs::is_directory(thermal_root)) {
-    return std::nullopt;
-  }
-
-  std::optional<double> fallback_temp;
-  for (const auto& entry : fs::directory_iterator{thermal_root}) {
-    if (!entry.is_directory()) {
-      continue;
-    }
-
-    const auto zoneName = entry.path().filename().string();
-    if (!zoneName.starts_with("thermal_zone")) {
-      continue;
-    }
-
-    const std::string zoneType = readSmallTextFile(entry.path() / "type").value_or("");
-    const fs::path temp_path = entry.path() / "temp";
-    const auto tempC = readTempInputCelsius(temp_path);
-    if (!tempC.has_value()) {
-      continue;
-    }
-
-    if (isCpuThermalZoneType(zoneType)) {
-      return tempC;
-    }
-
-    if (!fallback_temp.has_value()) {
-      fallback_temp = tempC;
-    }
-  }
-
-  return fallback_temp;
+  const auto reading = readCpuTempSensor();
+  return reading.has_value() ? std::optional<double>{reading->tempC} : std::nullopt;
 }
 
 std::optional<double> SystemMonitorService::readGpuTempCelsius() {
-  namespace fs = std::filesystem;
+  const GpuHwmonProbe hwmon = readGpuHwmonTempSensor();
+  if (hwmon.reading.has_value() && hwmon.foundNvidia) {
+    return hwmon.reading->tempC;
+  }
 
-  const fs::path hwmon_root{"/sys/class/hwmon"};
-  if (!fs::exists(hwmon_root) || !fs::is_directory(hwmon_root)) {
+  std::optional<TempSensorReading> best = hwmon.reading;
+  if (!hasInactiveNvidiaPciDisplayDevice() && !hwmon.foundNvidia) {
+    if (m_nvidiaNvmlReader == nullptr) {
+      m_nvidiaNvmlReader = std::make_unique<NvidiaNvmlReader>();
+    }
+    const auto nvml = m_nvidiaNvmlReader->readGpuTempSensor();
+    if (nvml.has_value() && (!best.has_value() || nvml->tempC > best->tempC)) {
+      best = nvml;
+    }
+  }
+
+  return best.has_value() ? std::optional<double>{best->tempC} : std::nullopt;
+}
+
+std::optional<SystemMonitorService::GpuVramData> SystemMonitorService::readGpuVram() {
+  std::optional<GpuVramReading> combined = readAmdGpuVram();
+
+  if (!hasInactiveNvidiaPciDisplayDevice()) {
+    if (m_nvidiaNvmlReader == nullptr) {
+      m_nvidiaNvmlReader = std::make_unique<NvidiaNvmlReader>();
+    }
+    const auto nvml = m_nvidiaNvmlReader->readGpuVram();
+    if (nvml.has_value()) {
+      if (combined.has_value()) {
+        mergeGpuVram(*combined, *nvml);
+      } else {
+        combined = nvml;
+      }
+    }
+  }
+
+  if (!combined.has_value() || !hasUsableVram(*combined)) {
     return std::nullopt;
   }
-
-  int bestScore = -1;
-  std::optional<double> best_temp;
-
-  for (const auto& hwmon_entry : fs::directory_iterator{hwmon_root}) {
-    if (!hwmon_entry.is_directory()) {
-      continue;
-    }
-
-    const std::string hwmonName = readSmallTextFile(hwmon_entry.path() / "name").value_or("");
-    const int nameScore = scoreGpuHwmonSensor(hwmonName, "");
-    if (nameScore < 0) {
-      continue;
-    }
-
-    if (!isGpuHwmonAwake(hwmon_entry.path())) {
-      continue;
-    }
-
-    for (const auto& file_entry : fs::directory_iterator{hwmon_entry.path()}) {
-      if (!file_entry.is_regular_file()) {
-        continue;
-      }
-
-      const std::string fileName = file_entry.path().filename().string();
-      if (!fileName.starts_with("temp") || !fileName.ends_with("_input")) {
-        continue;
-      }
-
-      const std::string base = fileName.substr(0, fileName.size() - 6);
-      const std::string label = readSmallTextFile(hwmon_entry.path() / (base + "_label")).value_or("");
-      const auto tempC = readTempInputCelsius(file_entry.path());
-      if (!tempC.has_value()) {
-        continue;
-      }
-
-      const int score = scoreGpuHwmonSensor(hwmonName, label);
-      if (score > bestScore) {
-        bestScore = score;
-        best_temp = *tempC;
-      }
-    }
-  }
-
-  return best_temp;
+  return GpuVramData{.usedBytes = combined->usedBytes, .totalBytes = combined->totalBytes, .source = combined->source};
 }
 
 float SystemMonitorService::readDiskUsagePercent(const std::string& path) {

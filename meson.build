@@ -41,6 +41,7 @@ cairo_dep           = dependency('cairo')
 cairo_ft_dep        = dependency('cairo-ft')
 pango_dep           = dependency('pango')
 pangocairo_dep      = dependency('pangocairo')
+pangoft2_dep        = dependency('pangoft2')
 librsvg_dep         = dependency('librsvg-2.0')
 xkbcommon_dep       = dependency('xkbcommon')
 glib_dep            = dependency('glib-2.0')
@@ -54,6 +55,7 @@ pipewire_dep        = dependency('libpipewire-0.3', include_type: 'system')
 curl_dep            = dependency('libcurl')
 pam_dep             = cc.find_library('pam')
 jemalloc_dep        = dependency('jemalloc', required: false)
+dl_dep              = cpp.find_library('dl', required: false)
 
 egl_dep = dependency('egl', required: false)
 gles2_dep = dependency('glesv2', required: false)
@@ -343,6 +345,7 @@ _noctalia_sources = files(
   'src/core/ui_phase.cpp',
   'src/dbus/bluetooth/bluetooth_agent.cpp',
   'src/dbus/bluetooth/bluetooth_service.cpp',
+  'src/dbus/logind/logind_service.cpp',
   'src/dbus/mpris/mpris_art.cpp',
   'src/dbus/mpris/mpris_service.cpp',
   'src/dbus/network/network_secret_agent.cpp',
@@ -360,10 +363,12 @@ _noctalia_sources = files(
   'src/i18n/i18n_service.cpp',
   'src/hooks/hook_manager.cpp',
   'src/idle/idle_inhibitor.cpp',
+  'src/idle/idle_grace_overlay.cpp',
   'src/idle/idle_manager.cpp',
   'src/ipc/ipc_client.cpp',
   'src/ipc/ipc_service.cpp',
   'src/launcher/app_categories.cpp',
+  'src/launcher/launcher_category_state.cpp',
   'src/launcher/app_provider.cpp',
   'src/launcher/emoji_provider.cpp',
   'src/launcher/math_provider.cpp',
@@ -415,14 +420,18 @@ _noctalia_sources = files(
   'src/render/text/cairo_glyph_renderer.cpp',
   'src/render/wallpaper_renderer.cpp',
   'src/scripting/luau_host.cpp',
+  'src/scripting/script_runtime.cpp',
+  'src/scripting/script_worker_pool.cpp',
   'src/scripting/scripted_widget_bindings.cpp',
   'src/shell/bar/bar.cpp',
   'src/shell/clipboard/clipboard_paste.cpp',
   'src/shell/dock/dock.cpp',
   'src/shell/desktop/desktop_widget.cpp',
   'src/shell/desktop/desktop_widget_factory.cpp',
+  'src/shell/desktop/desktop_widget_settings_registry.cpp',
   'src/shell/desktop/desktop_widgets_controller.cpp',
   'src/shell/desktop/desktop_widgets_editor.cpp',
+  'src/shell/desktop/desktop_widgets_editor_settings.cpp',
   'src/shell/desktop/desktop_widgets_host.cpp',
   'src/shell/desktop/widgets/desktop_audio_visualizer_widget.cpp',
   'src/shell/desktop/widgets/desktop_clock_widget.cpp',
@@ -466,6 +475,7 @@ _noctalia_sources = files(
   'src/shell/osd/brightness_osd.cpp',
   'src/shell/osd/lock_keys_osd.cpp',
   'src/shell/osd/osd_overlay.cpp',
+  'src/shell/tooltip/tooltip_manager.cpp',
   'src/shell/screen_corners/screen_corners.cpp',
   'src/shell/panel/panel_click_shield.cpp',
   'src/wayland/hyprland/focus_grab_service.cpp',
@@ -484,6 +494,9 @@ _noctalia_sources = files(
   'src/shell/settings/widget_add_popup.cpp',
   'src/shell/settings/search_picker_popup.cpp',
   'src/shell/settings/session_actions_editor_popup.cpp',
+  'src/shell/settings/settings_window_mutations.cpp',
+  'src/shell/settings/settings_window_popups.cpp',
+  'src/shell/settings/settings_window_scene.cpp',
   'src/shell/settings/settings_window.cpp',
   'src/shell/test/test_panel.cpp',
   'src/shell/tray/tray_drawer_panel.cpp',
@@ -546,6 +559,7 @@ _noctalia_sources = files(
   'src/ui/controls/checkbox.cpp',
   'src/ui/controls/color_picker.cpp',
   'src/ui/controls/chip.cpp',
+  'src/ui/controls/collapsible.cpp',
   'src/ui/controls/context_menu.cpp',
   'src/ui/controls/context_menu_popup.cpp',
   'src/ui/controls/flex.cpp',
@@ -556,6 +570,7 @@ _noctalia_sources = files(
   'src/ui/controls/grid_tile.cpp',
   'src/ui/controls/image.cpp',
   'src/ui/controls/input.cpp',
+  'src/ui/controls/keybind_recorder.cpp',
   'src/ui/controls/label.cpp',
   'src/ui/controls/list_editor.cpp',
   'src/ui/controls/progress_bar.cpp',
@@ -565,6 +580,7 @@ _noctalia_sources = files(
   'src/ui/controls/screen_corner.cpp',
   'src/ui/controls/segmented.cpp',
   'src/ui/controls/select.cpp',
+  'src/ui/controls/select_dropdown_popup.cpp',
   'src/ui/controls/separator.cpp',
   'src/ui/controls/slider.cpp',
   'src/ui/controls/spacer.cpp',
@@ -574,6 +590,8 @@ _noctalia_sources = files(
   'src/ui/controls/virtual_grid_view.cpp',
   'src/ui/controls/virtual_list_view.cpp',
   'src/ui/palette.cpp',
+  'src/ui/popup_chrome.cpp',
+  'src/ui/style.cpp',
   'src/util/fuzzy_match.cpp',
   'src/wayland/clipboard_service.cpp',
   'src/wayland/virtual_keyboard_service.cpp',
@@ -583,6 +601,7 @@ _noctalia_sources = files(
   'src/compositors/ext_workspace/ext_workspace_output_backend.cpp',
   'src/compositors/ext_workspace/ext_workspace_backend.cpp',
   'src/compositors/hyprland/hyprland_runtime.cpp',
+  'src/compositors/hyprland/hyprland_event_handler.cpp',
   'src/compositors/hyprland/hyprland_output_backend.cpp',
   'src/compositors/hyprland/hyprland_workspace_backend.cpp',
   'src/compositors/hyprland/hyprland_keyboard_backend.cpp',
@@ -676,6 +695,7 @@ executable('noctalia',
     cairo_ft_dep,
     pango_dep,
     pangocairo_dep,
+    pangoft2_dep,
     librsvg_dep,
     xkbcommon_dep,
     glib_dep,
@@ -693,7 +713,7 @@ executable('noctalia',
     stb_dep,
     libwebp_dep,
     luau_dep,
-  ] + (jemalloc_dep.found() ? [jemalloc_dep] : []),
+  ] + (jemalloc_dep.found() ? [jemalloc_dep] : []) + (dl_dep.found() ? [dl_dep] : []),
   include_directories: _noctalia_inc,
   cpp_args: [
     '-Wall', '-Wextra', '-Wpedantic', '-Wconversion', '-Wshadow',
@@ -708,3 +728,40 @@ executable('noctalia',
 install_subdir('assets',
   install_dir: get_option('datadir') / 'noctalia',
 )
+
+notification_history_utf8_test = executable('notification_history_utf8_test',
+  sources: files(
+    'tests/notification_history_utf8_test.cpp',
+    'src/core/log.cpp',
+    'src/notification/notification_history_store.cpp',
+    'src/render/core/image_decoder.cpp',
+  ),
+  dependencies: [
+    libwebp_dep,
+  ],
+  include_directories: _noctalia_inc,
+)
+
+test('notification_history_utf8', notification_history_utf8_test)
+
+animation_manager_test = executable('animation_manager_test',
+  sources: files(
+    'tests/animation_manager_test.cpp',
+    'src/render/animation/animation.cpp',
+    'src/render/animation/animation_manager.cpp',
+    'src/render/animation/motion_service.cpp',
+  ),
+  include_directories: _noctalia_inc,
+)
+
+test('animation_manager', animation_manager_test)
+
+launcher_category_state_test = executable('launcher_category_state_test',
+  sources: files(
+    'tests/launcher_category_state_test.cpp',
+    'src/launcher/launcher_category_state.cpp',
+  ),
+  include_directories: _noctalia_inc,
+)
+
+test('launcher_category_state', launcher_category_state_test)

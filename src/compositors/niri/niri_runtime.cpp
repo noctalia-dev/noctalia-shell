@@ -9,6 +9,20 @@
 
 namespace compositors::niri {
 
+  struct NiriRuntime::IpcReply {
+    enum class Status {
+      Unavailable,
+      WriteFailed,
+      ReadFailed,
+      NoResponse,
+      InvalidJson,
+      Replied,
+    };
+
+    Status status = Status::Unavailable;
+    std::optional<nlohmann::json> json;
+  };
+
   bool NiriRuntime::available() const {
     ensureResolved();
     return !m_socketPath.empty();
@@ -20,27 +34,50 @@ namespace compositors::niri {
   }
 
   std::optional<nlohmann::json> NiriRuntime::requestJson(std::string_view request) const {
+    return this->request(request).json;
+  }
+
+  bool NiriRuntime::requestOk(std::string_view request, bool acceptNoResponse) const {
+    const auto reply = this->request(request);
+    if (reply.status == IpcReply::Status::NoResponse) {
+      return acceptNoResponse;
+    }
+    if (!reply.json.has_value() || !reply.json->is_object()) {
+      return false;
+    }
+    return reply.json->contains("Ok");
+  }
+
+  bool NiriRuntime::requestAction(const nlohmann::json& action, bool acceptNoResponse) const {
+    nlohmann::json request = nlohmann::json::object();
+    request["Action"] = action;
+    auto payload = request.dump();
+    payload.push_back('\n');
+    return requestOk(payload, acceptNoResponse);
+  }
+
+  NiriRuntime::IpcReply NiriRuntime::request(std::string_view request) const {
     ensureResolved();
     if (m_socketPath.empty() || request.empty()) {
-      return std::nullopt;
+      return {IpcReply::Status::Unavailable, std::nullopt};
     }
 
     const int fd = ::socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
     if (fd < 0) {
-      return std::nullopt;
+      return {IpcReply::Status::Unavailable, std::nullopt};
     }
 
     sockaddr_un addr{};
     addr.sun_family = AF_UNIX;
     if (m_socketPath.size() >= sizeof(addr.sun_path)) {
       ::close(fd);
-      return std::nullopt;
+      return {IpcReply::Status::Unavailable, std::nullopt};
     }
     std::memcpy(addr.sun_path, m_socketPath.c_str(), m_socketPath.size() + 1);
 
     if (::connect(fd, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr)) < 0) {
       ::close(fd);
-      return std::nullopt;
+      return {IpcReply::Status::Unavailable, std::nullopt};
     }
 
     std::size_t offset = 0;
@@ -51,7 +88,7 @@ namespace compositors::niri {
           continue;
         }
         ::close(fd);
-        return std::nullopt;
+        return {IpcReply::Status::WriteFailed, std::nullopt};
       }
       offset += static_cast<std::size_t>(written);
     }
@@ -74,7 +111,7 @@ namespace compositors::niri {
         continue;
       }
       ::close(fd);
-      return std::nullopt;
+      return {IpcReply::Status::ReadFailed, std::nullopt};
     }
 
     ::close(fd);
@@ -84,13 +121,13 @@ namespace compositors::niri {
       response.resize(newline);
     }
     if (response.empty()) {
-      return std::nullopt;
+      return {IpcReply::Status::NoResponse, std::nullopt};
     }
 
     try {
-      return nlohmann::json::parse(response);
+      return {IpcReply::Status::Replied, nlohmann::json::parse(response)};
     } catch (const nlohmann::json::exception&) {
-      return std::nullopt;
+      return {IpcReply::Status::InvalidJson, std::nullopt};
     }
   }
 

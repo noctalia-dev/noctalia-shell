@@ -93,6 +93,12 @@ bool ToplevelSurface::initialize(wl_output* output, ToplevelSurfaceConfig config
 
 void ToplevelSurface::setClosedCallback(std::function<void()> callback) { m_closedCallback = std::move(callback); }
 
+void ToplevelSurface::beginMove(std::uint32_t serial) {
+  if (m_toplevel != nullptr) {
+    xdg_toplevel_move(m_toplevel, m_connection.seat(), serial);
+  }
+}
+
 void ToplevelSurface::handleXdgSurfaceConfigure(void* data, xdg_surface* surface, std::uint32_t serial) {
   auto* self = static_cast<ToplevelSurface*>(data);
   xdg_surface_ack_configure(surface, serial);

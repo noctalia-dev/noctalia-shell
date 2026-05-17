@@ -5,6 +5,8 @@
 #include "ui/signal.h"
 
 #include <functional>
+#include <optional>
+#include <string>
 #include <string_view>
 
 class AnimationManager;
@@ -59,6 +61,7 @@ public:
   void setSelected(bool selected);
   void setContentAlign(ButtonContentAlign align);
   void setVariant(ButtonVariant variant);
+  void setCustomPalette(ButtonPalette customPalette);
   void setOnClick(std::function<void()> callback);
   void setOnRightClick(std::function<void()> callback);
   void setOnPress(std::function<void(float localX, float localY, bool pressed)> callback);
@@ -68,7 +71,7 @@ public:
   void setOnLeave(std::function<void()> callback);
   void setHoverSuppressed(bool suppressed);
   void setCursorShape(std::uint32_t shape);
-  void setGlyphOnlySquare(bool square);
+  void setTooltip(std::string text);
 
   // Call after layout() to sync InputArea bounds
   void updateInputArea();
@@ -105,6 +108,7 @@ private:
   std::function<void()> m_onLeave;
   ButtonVariant m_variant = ButtonVariant::Default;
   ButtonPalette m_palette;
+  std::optional<ButtonPalette> m_customPalette;
   // Animation: snapshot of colors at transition start
   Color m_fromBg{};
   Color m_fromBorder{};
@@ -116,7 +120,6 @@ private:
   bool m_enabled = true;
   bool m_selected = false;
   bool m_hoverSuppressed = false;
-  bool m_glyphOnlySquare = true;
   bool m_visualStateInitialized = false;
   Signal<>::ScopedConnection m_paletteConn;
 };

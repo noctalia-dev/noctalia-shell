@@ -50,10 +50,13 @@ namespace {
     return std::nullopt;
   }
 
-  bool has_same_content(const Notification& notification, const std::string& appName, const std::string& summary,
-                        const std::string& body) {
-    return notification.appName == appName && notification.summary == summary && notification.body == body;
+  bool has_same_content(const Notification& notification, NotificationOrigin origin, const std::string& appName,
+                        const std::string& summary, const std::string& body) {
+    return notification.origin == origin && notification.appName == appName && notification.summary == summary &&
+           notification.body == body;
   }
+
+  bool should_track_history(NotificationOrigin origin) noexcept { return origin == NotificationOrigin::External; }
 
 } // namespace
 
@@ -136,7 +139,9 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
       n.expiryWallClock = schedule_expiry_wall(wallNow, timeout);
 
       log_notification(n, "updated");
-      upsertHistory(n, true, std::nullopt);
+      if (should_track_history(n.origin)) {
+        upsertHistory(n, true, std::nullopt);
+      }
 
       if (changed) {
         for (auto& [token, cb] : m_eventCallbacks) {
@@ -151,7 +156,8 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
   // Suppress immediate duplicate bursts. Later same-content notifications should still be visible.
   for (auto it = m_notifications.rbegin(); it != m_notifications.rend(); ++it) {
     const auto& existing = *it;
-    if (has_same_content(existing, app_name, summary, body) && now - existing.receivedTime < kImplicitDuplicateWindow) {
+    if (has_same_content(existing, origin, app_name, summary, body) &&
+        now - existing.receivedTime < kImplicitDuplicateWindow) {
       log_notification(existing, "duplicate ignored");
       return existing.id;
     }
@@ -180,8 +186,10 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
 
   const auto& n = m_notifications.back();
   log_notification(n, "added");
-  upsertHistory(n, true, std::nullopt);
-  m_unreadSinceHistoryVisit = true;
+  if (should_track_history(n.origin)) {
+    upsertHistory(n, true, std::nullopt);
+    m_unreadSinceHistoryVisit = true;
+  }
 
   for (auto& [token, cb] : m_eventCallbacks) {
     cb(n, NotificationEvent::Added);
@@ -247,7 +255,9 @@ bool NotificationManager::close(uint32_t id, CloseReason reason) {
                            : (reason == CloseReason::Dismissed) ? "dismissed"
                                                                 : "closed";
   kLog.debug("notification {} #{}", reason_str, id);
-  upsertHistory(closed, false, reason);
+  if (should_track_history(closed.origin)) {
+    upsertHistory(closed, false, reason);
+  }
 
   m_notifications.erase(m_notifications.begin() + static_cast<std::ptrdiff_t>(index));
   m_idToIndex.erase(it);
@@ -419,6 +429,8 @@ void NotificationManager::loadPersistedHistory() {
   if (!loadNotificationHistoryFromFile(path, loaded, nextId, serial)) {
     return;
   }
+  std::erase_if(loaded,
+                [](const NotificationHistoryEntry& entry) { return !should_track_history(entry.notification.origin); });
   m_history = std::move(loaded);
   m_nextId = nextId;
   m_changeSerial = serial;

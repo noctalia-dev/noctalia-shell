@@ -120,7 +120,7 @@ std::unique_ptr<Flex> CalendarTab::create() {
   m_calendarArea = calendarArea.get();
 
   auto calendarCard = std::make_unique<Flex>();
-  control_center::applySectionCardStyle(*calendarCard, scale);
+  control_center::applySectionCardStyle(*calendarCard, scale, panelCardOpacity());
   calendarCard->setGap(Style::spaceMd * scale);
   m_card = calendarCard.get();
 
@@ -208,7 +208,7 @@ std::unique_ptr<Flex> CalendarTab::create() {
   tab->addChild(std::move(calendarArea));
 
   auto tasksCard = std::make_unique<Flex>();
-  control_center::applySectionCardStyle(*tasksCard, scale);
+  control_center::applySectionCardStyle(*tasksCard, scale, panelCardOpacity());
   tasksCard->setFlexGrow(2.0f);
 
   auto tasksTitle = std::make_unique<Label>();
@@ -405,7 +405,7 @@ void CalendarTab::rebuild() {
     dayButton->setMinWidth(dayButtonSize);
     dayButton->setMinHeight(dayButtonSize);
     dayButton->setSize(dayButtonSize, dayButtonSize);
-    dayButton->setRadius(Style::radiusMd * scale);
+    dayButton->setRadius(Style::scaledRadiusMd(scale));
     dayButton->setFontSize(Style::fontSizeBody * scale);
     dayButton->setText("");
 

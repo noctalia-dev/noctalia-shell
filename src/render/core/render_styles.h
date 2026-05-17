@@ -172,6 +172,10 @@ struct GraphStyle {
   float count2 = 0.0f;
   float scroll2 = 1.0f;
 
+  Color lineColor3{};
+  float count3 = 0.0f;
+  float scroll3 = 1.0f;
+
   float lineWidth = 1.5f;
   float graphFillOpacity = 0.15f;
   float aaSize = 0.5f;

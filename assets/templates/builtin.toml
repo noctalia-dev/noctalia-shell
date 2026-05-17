@@ -80,10 +80,6 @@ category = "terminal"
 name = "Wezterm"
 category = "terminal"
 
-[catalog.yazi]
-name = "Yazi"
-category = "misc"
-
 [templates.alacritty]
 input_path = "./alacritty/alacritty.toml"
 output_path = "~/.config/alacritty/themes/noctalia.toml"
@@ -145,13 +141,13 @@ post_hook = "bash '{{ config_dir }}/labwc/apply.sh'"
 
 [templates.niri]
 input_path = "./niri/niri.kdl"
-output_path = "~/.config/niri/noctalia.kdl"
-post_hook = "bash '{{ config_dir }}/niri/apply.sh'"
+output_path_dynamic = "bash '{{ config_dir }}/niri/apply.sh' output"
+post_hook = "bash '{{ config_dir }}/niri/apply.sh' apply"
 
 [templates.hyprland]
-input_path = "./hyprland/hyprland.conf"
-output_path = "~/.config/hypr/noctalia.conf"
-post_hook = "bash '{{ config_dir }}/hyprland/apply.sh'"
+input_path_dynamic = "bash '{{ config_dir }}/hyprland/apply.sh' input"
+output_path_dynamic = "bash '{{ config_dir }}/hyprland/apply.sh' output"
+post_hook = "bash '{{ config_dir }}/hyprland/apply.sh' apply"
 
 [templates.mango]
 input_path = "./mango/mango.conf"
@@ -181,8 +177,3 @@ post_hook = "bash '{{ config_dir }}/starship/apply.sh'"
 input_path = "./wezterm/wezterm.toml"
 output_path = "~/.config/wezterm/colors/Noctalia.toml"
 post_hook = "bash '{{ config_dir }}/wezterm/apply.sh'"
-
-[templates.yazi]
-input_path = "./yazi/yazi.toml"
-output_path = "~/.config/yazi/flavors/noctalia.yazi/flavor.toml"
-post_hook = "bash '{{ config_dir }}/yazi/apply.sh'"

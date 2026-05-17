@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "cursor-shape-v1-client-protocol.h"
 
+#include <algorithm>
 #include <clocale>
 #include <cstring>
 #include <sys/mman.h>
@@ -50,7 +51,16 @@ namespace {
 
 void WaylandSeat::bind(wl_seat* seat) {
   m_seat = seat;
+  m_lastUserActivitySteady = SteadyClock::now();
   wl_seat_add_listener(seat, &kSeatListener, this);
+}
+
+void WaylandSeat::bumpUserActivity() noexcept { m_lastUserActivitySteady = SteadyClock::now(); }
+
+double WaylandSeat::userIdleSeconds() const noexcept {
+  const auto now = SteadyClock::now();
+  const auto dur = std::chrono::duration<double>(now - m_lastUserActivitySteady);
+  return std::max(0.0, dur.count());
 }
 
 void WaylandSeat::setCursorShapeManager(wp_cursor_shape_manager_v1* manager) { m_cursorShapeManager = manager; }
@@ -68,6 +78,21 @@ void WaylandSeat::setCursorShape(std::uint32_t serial, std::uint32_t shape) {
     return;
   }
   wp_cursor_shape_device_v1_set_shape(m_cursorShapeDevice, serial, shape);
+}
+
+void WaylandSeat::forgetSurface(wl_surface* surface) noexcept {
+  if (surface == nullptr) {
+    return;
+  }
+  if (m_lastPointerSurface == surface) {
+    m_lastPointerSurface = nullptr;
+    m_hasPointerPosition = false;
+  }
+  if (m_lastKeyboardSurface == surface) {
+    m_lastKeyboardSurface = nullptr;
+    m_repeatActive = false;
+  }
+  std::erase_if(m_pendingPointerEvents, [surface](const PointerEvent& event) { return event.surface == surface; });
 }
 
 void WaylandSeat::cleanup() {
@@ -270,6 +295,17 @@ void WaylandSeat::handlePointerFrame(void* data, wl_pointer* /*pointer*/) {
         event.axisLines = static_cast<float>(event.axisValue / kLegacyWheelAxisUnitsPerStep);
       }
 
+      switch (event.type) {
+      case PointerEvent::Type::Enter:
+      case PointerEvent::Type::Motion:
+      case PointerEvent::Type::Button:
+      case PointerEvent::Type::Axis:
+        self->bumpUserActivity();
+        break;
+      case PointerEvent::Type::Leave:
+        break;
+      }
+
       self->m_pointerEventCallback(event);
     }
   }
@@ -403,6 +439,7 @@ void WaylandSeat::handleKeyboardKey(void* data, wl_keyboard* /*keyboard*/, std::
         }
       }
       if (utf32 != 0) {
+        self->bumpUserActivity();
         self->m_keyboardEventCallback(KeyboardEvent{
             .sym = sym,
             .utf32 = utf32,
@@ -431,6 +468,7 @@ void WaylandSeat::handleKeyboardKey(void* data, wl_keyboard* /*keyboard*/, std::
     self->m_repeatActive = false;
   }
 
+  self->bumpUserActivity();
   self->m_keyboardEventCallback(KeyboardEvent{
       .sym = sym,
       .utf32 = utf32,
@@ -478,6 +516,7 @@ void WaylandSeat::repeatTick() {
   if (now < m_repeatNextFire) {
     return;
   }
+  bumpUserActivity();
   m_keyboardEventCallback(m_repeatKey);
   m_repeatInDelay = false;
   const auto intervalMs = std::chrono::milliseconds(1000 / m_repeatRate);

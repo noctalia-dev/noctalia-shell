@@ -19,7 +19,6 @@ private:
   void doUpdate(Renderer& renderer) override;
   void syncState(Renderer& renderer);
   void cycleProfile();
-  [[nodiscard]] static const char* glyphForProfile(std::string_view profile);
 
   PowerProfilesService* m_powerProfiles = nullptr;
   InputArea* m_area = nullptr;

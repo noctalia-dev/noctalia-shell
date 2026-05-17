@@ -6,7 +6,6 @@
 #include "util/string_utils.h"
 
 #include <algorithm>
-#include <cctype>
 #include <cstdint>
 #include <tuple>
 
@@ -127,29 +126,19 @@ static constexpr int32_t k_min_timeout = -1;
 
 namespace {
 
-  std::string clamp_str(std::string_view s) {
-    const auto len = std::min(s.size(), k_max_string_len);
-    return std::string{s.substr(0, len)};
-  }
-
-  bool isBlankText(std::string_view text) {
-    return text.empty() ||
-           std::all_of(text.begin(), text.end(), [](unsigned char ch) { return std::isspace(ch) != 0; });
-  }
-
-  std::vector<std::string> sanitize_actions(const std::vector<std::string>& actions) {
+  std::vector<std::string> sanitizeActions(const std::vector<std::string>& actions) {
     std::vector<std::string> sanitized;
     sanitized.reserve(actions.size() - (actions.size() % 2));
 
     for (size_t i = 0; i + 1 < actions.size(); i += 2) {
-      std::string actionKey = clamp_str(actions[i]);
-      std::string label = clamp_str(actions[i + 1]);
+      std::string actionKey = StringUtils::truncateUtf8(actions[i], k_max_string_len);
+      std::string label = StringUtils::truncateUtf8(actions[i + 1], k_max_string_len);
 
       if (actionKey.empty()) {
         continue;
       }
 
-      if (isBlankText(label)) {
+      if (StringUtils::isBlank(label)) {
         label = i18n::tr("notifications.actions.fallback");
       }
 
@@ -163,7 +152,7 @@ namespace {
   using NotificationImageDataStruct = sdbus::Struct<std::int32_t, std::int32_t, std::int32_t, bool, std::int32_t,
                                                     std::int32_t, std::vector<std::uint8_t>>;
 
-  std::optional<NotificationImageData> decode_image_data_variant(const sdbus::Variant& value) {
+  std::optional<NotificationImageData> decodeImageDataVariant(const sdbus::Variant& value) {
     try {
       const auto data = value.get<NotificationImageDataStruct>();
       NotificationImageData out;
@@ -196,15 +185,15 @@ namespace {
     return std::nullopt;
   }
 
-  std::optional<NotificationImageData> decode_image_hint(const std::map<std::string, sdbus::Variant>& hints,
-                                                         std::string* outSourceKey = nullptr) {
+  std::optional<NotificationImageData> decodeImageHint(const std::map<std::string, sdbus::Variant>& hints,
+                                                       std::string* outSourceKey = nullptr) {
     for (const char* key : {"image-data", "image_data", "icon_data"}) {
       const auto it = hints.find(key);
       if (it == hints.end()) {
         continue;
       }
 
-      auto decoded = decode_image_data_variant(it->second);
+      auto decoded = decodeImageDataVariant(it->second);
       if (decoded.has_value()) {
         if (outSourceKey != nullptr) {
           *outSourceKey = key;
@@ -224,7 +213,7 @@ uint32_t NotificationService::onNotify(const std::string& app_name, uint32_t rep
                                        const std::map<std::string, sdbus::Variant>& hints, int32_t expire_timeout) {
   // Sanitize scalar inputs
   const int32_t timeout = std::max(expire_timeout, k_min_timeout);
-  const auto sanitizedActions = sanitize_actions(actions);
+  const auto sanitizedActions = sanitizeActions(actions);
 
   // Urgency: default Normal, reject out-of-range byte values
   Urgency urgency = Urgency::Normal;
@@ -240,17 +229,17 @@ uint32_t NotificationService::onNotify(const std::string& app_name, uint32_t rep
 
   std::optional<std::string> icon;
   if (!app_icon.empty()) {
-    icon = clamp_str(app_icon);
+    icon = StringUtils::truncateUtf8(app_icon, k_max_string_len);
   }
   if (auto it = hints.find("image-path"); it != hints.end()) {
     try {
-      icon = clamp_str(it->second.get<std::string>());
+      icon = StringUtils::truncateUtf8(it->second.get<std::string>(), k_max_string_len);
     } catch (...) {
     }
   }
   if (auto it = hints.find("image_path"); it != hints.end()) {
     try {
-      icon = clamp_str(it->second.get<std::string>());
+      icon = StringUtils::truncateUtf8(it->second.get<std::string>(), k_max_string_len);
     } catch (...) {
     }
   }
@@ -258,25 +247,26 @@ uint32_t NotificationService::onNotify(const std::string& app_name, uint32_t rep
   std::optional<std::string> category;
   if (auto it = hints.find("category"); it != hints.end()) {
     try {
-      category = clamp_str(it->second.get<std::string>());
+      category = StringUtils::truncateUtf8(it->second.get<std::string>(), k_max_string_len);
     } catch (...) {
     }
   }
 
-  std::optional<std::string> desktop_entry;
+  std::optional<std::string> desktopEntry;
   if (auto it = hints.find("desktop-entry"); it != hints.end()) {
     try {
-      desktop_entry = clamp_str(it->second.get<std::string>());
+      desktopEntry = StringUtils::truncateUtf8(it->second.get<std::string>(), k_max_string_len);
     } catch (...) {
     }
   }
 
-  std::optional<NotificationImageData> imageData = decode_image_hint(hints);
+  std::optional<NotificationImageData> imageData = decodeImageHint(hints);
 
-  return m_manager.addOrReplace(replaces_id, clamp_str(app_name), StringUtils::sanitizeMarkup(clamp_str(summary)),
-                                StringUtils::sanitizeMarkup(clamp_str(body)), urgency, timeout,
-                                NotificationOrigin::External, sanitizedActions, icon, imageData, category,
-                                desktop_entry);
+  return m_manager.addOrReplace(replaces_id, StringUtils::truncateUtf8(app_name, k_max_string_len),
+                                StringUtils::sanitizeMarkup(StringUtils::truncateUtf8(summary, k_max_string_len)),
+                                StringUtils::sanitizeMarkup(StringUtils::truncateUtf8(body, k_max_string_len)), urgency,
+                                timeout, NotificationOrigin::External, sanitizedActions, icon, imageData, category,
+                                desktopEntry);
 }
 
 std::vector<std::string> NotificationService::onGetCapabilities() { return {"body", "actions"}; }
@@ -313,7 +303,7 @@ void NotificationService::emitClose(uint32_t id, CloseReason reason) {
 }
 
 void NotificationService::onInvokeAction(uint32_t id, const std::string& actionKey) {
-  const std::string sanitizedKey = clamp_str(actionKey);
+  const std::string sanitizedKey = StringUtils::truncateUtf8(actionKey, k_max_string_len);
   if (sanitizedKey.empty()) {
     throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.InvalidAction"},
                        "action_key must not be empty");

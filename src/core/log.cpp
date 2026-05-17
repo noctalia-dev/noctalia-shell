@@ -1,5 +1,6 @@
 #include "core/log.h"
 
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
@@ -13,8 +14,13 @@ namespace {
   LogLevel gMinLevel = LogLevel::Info;
   FILE* gLogFile = nullptr;
   std::mutex gLogMutex;
+  std::size_t gBufferedFileLogLines = 0;
+  std::chrono::steady_clock::time_point gLastFileFlushAt = std::chrono::steady_clock::now();
+  bool gRegisteredExitFlush = false;
 
   constexpr std::size_t kMaxLogBytes = 1 * 1024 * 1024; // 1 MB
+  constexpr std::size_t kBufferedFileLogFlushLines = 64;
+  constexpr auto kBufferedFileLogFlushInterval = std::chrono::milliseconds(500);
 
   const char* levelTagAnsi(LogLevel level) {
     switch (level) {
@@ -42,6 +48,31 @@ namespace {
       return "ERR";
     }
     return "???";
+  }
+
+  void flushLogFileUnlocked() {
+    if (gLogFile == nullptr) {
+      return;
+    }
+    std::fflush(gLogFile);
+    gBufferedFileLogLines = 0;
+    gLastFileFlushAt = std::chrono::steady_clock::now();
+  }
+
+  void flushLogFileAtExit() {
+    std::lock_guard lock(gLogMutex);
+    flushLogFileUnlocked();
+  }
+
+  bool shouldFlushLogFile(LogLevel level) {
+    if (level >= LogLevel::Warn) {
+      return true;
+    }
+
+    ++gBufferedFileLogLines;
+    const auto now = std::chrono::steady_clock::now();
+    return gBufferedFileLogLines >= kBufferedFileLogFlushLines ||
+           now - gLastFileFlushAt >= kBufferedFileLogFlushInterval;
   }
 
 } // namespace
@@ -75,6 +106,12 @@ void initLogFile() {
 
   std::lock_guard lock(gLogMutex);
   gLogFile = std::fopen(logPath.c_str(), "a");
+  gBufferedFileLogLines = 0;
+  gLastFileFlushAt = std::chrono::steady_clock::now();
+  if (gLogFile != nullptr && !gRegisteredExitFlush) {
+    (void)std::atexit(flushLogFileAtExit);
+    gRegisteredExitFlush = true;
+  }
 }
 
 namespace detail {
@@ -109,7 +146,9 @@ namespace detail {
                      tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, ts.tv_nsec / 1'000'000, levelTagPlain(level),
                      static_cast<int>(msg.size()), msg.data());
       }
-      std::fflush(gLogFile);
+      if (shouldFlushLogFile(level)) {
+        flushLogFileUnlocked();
+      }
     }
   }
 

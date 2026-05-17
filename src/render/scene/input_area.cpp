@@ -63,6 +63,11 @@ bool InputArea::acceptsButton(std::uint32_t button) const noexcept {
 }
 void InputArea::setPropagateEvents(bool propagate) { m_propagateEvents = propagate; }
 void InputArea::setEnabled(bool enabled) { m_enabled = enabled; }
+
+void InputArea::setTooltip(std::string text) { m_tooltipContent = std::move(text); }
+void InputArea::setTooltip(std::vector<TooltipRow> rows) { m_tooltipContent = std::move(rows); }
+void InputArea::clearTooltip() { m_tooltipContent = std::monostate{}; }
+bool InputArea::hasTooltip() const noexcept { return !std::holds_alternative<std::monostate>(m_tooltipContent); }
 void InputArea::setFocusable(bool focusable) { m_focusable = focusable; }
 void InputArea::setOnKeyDown(KeyCallback callback) { m_onKeyDown = std::move(callback); }
 void InputArea::setOnKeyUp(KeyCallback callback) { m_onKeyUp = std::move(callback); }

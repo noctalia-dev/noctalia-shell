@@ -4,7 +4,6 @@
 #include "core/deferred_call.h"
 #include "core/ui_phase.h"
 #include "i18n/i18n.h"
-#include "launcher/app_provider.h"
 #include "render/core/async_texture_cache.h"
 #include "render/core/renderer.h"
 #include "render/render_context.h"
@@ -133,9 +132,6 @@ void LauncherPanel::create() {
 
   container->addChild(std::move(body));
 
-  auto tooltip = createCategoryTooltip(scale);
-  m_categoryTooltip = static_cast<Flex*>(container->addChild(std::move(tooltip)));
-
   m_container = container.get();
   setRoot(std::move(container));
 
@@ -155,7 +151,6 @@ void LauncherPanel::doLayout(Renderer& renderer, float width, float height) {
 
   m_container->setSize(width, height);
   m_container->layout(renderer);
-  layoutCategoryTooltip(renderer);
 }
 
 void LauncherPanel::onOpen(std::string_view context) {
@@ -166,8 +161,8 @@ void LauncherPanel::onOpen(std::string_view context) {
   if (m_grid != nullptr) {
     m_grid->scrollView().setScrollOffset(0.0f);
   }
-  if (auto* apps = appProvider()) {
-    apps->resetCategory();
+  for (auto& provider : m_providers) {
+    provider->resetCategory();
   }
   // Clear cached icon misses before each open so newly installed app icons appear.
   m_iconResolver.invalidateCache();
@@ -187,7 +182,6 @@ void LauncherPanel::onClose() {
   m_results.clear();
   m_categories.clear();
   m_selectedIndex = 0;
-  m_categoryTooltipAnchorX.reset();
 
   if (m_grid != nullptr) {
     m_grid->setAdapter(nullptr);
@@ -198,8 +192,6 @@ void LauncherPanel::onClose() {
   m_container = nullptr;
   m_input = nullptr;
   m_categoryTabs = nullptr;
-  m_categoryTooltip = nullptr;
-  m_categoryTooltipLabel = nullptr;
   m_body = nullptr;
   m_grid = nullptr;
   m_emptyLabel = nullptr;
@@ -226,6 +218,8 @@ void LauncherPanel::onIconThemeChanged() {
   }
   refreshResults();
 }
+
+void LauncherPanel::onConfigReloaded() { onInputChanged(m_query); }
 
 InputArea* LauncherPanel::initialFocusArea() const { return m_input != nullptr ? m_input->inputArea() : nullptr; }
 
@@ -402,6 +396,9 @@ void LauncherPanel::openAppActionsMenu(std::size_t index, float anchorX, float a
   constexpr float kMenuWidth = 240.0f;
   const float menuWidth = kMenuWidth * scale;
 
+  if (m_config != nullptr) {
+    m_actionsMenu->setShadowConfig(m_config->config().shell.shadow);
+  }
   PanelManager::instance().beginAttachedPopup(parentCtx->surface);
   PanelManager::instance().setActivePopup(m_actionsMenu.get());
 

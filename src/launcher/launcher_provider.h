@@ -4,6 +4,12 @@
 #include <string_view>
 #include <vector>
 
+struct LauncherCategory {
+  std::string id;
+  std::string labelKey;
+  std::string glyphName;
+};
+
 struct LauncherResult {
   std::string id;
   std::string providerName; // Set by LauncherPanel after query; used for activation dispatch and usage tracking
@@ -30,6 +36,11 @@ public:
   [[nodiscard]] virtual bool trackUsage() const { return false; }
 
   virtual void initialize() {}
+
+  [[nodiscard]] virtual std::vector<LauncherCategory> availableCategories() const { return {}; }
+  [[nodiscard]] virtual std::string_view selectedCategory() const { return {}; }
+  virtual void selectCategory(std::string_view /*category*/) {}
+  virtual void resetCategory() {}
 
   [[nodiscard]] virtual std::vector<LauncherResult> query(std::string_view text) const = 0;
 

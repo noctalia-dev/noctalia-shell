@@ -10,6 +10,7 @@
 #include <json.hpp>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <unordered_map>
 
@@ -18,252 +19,115 @@ namespace {
   constexpr Logger kLog("glyph");
   constexpr char32_t kMissingGlyph = 0xF292; // skull
 
-  // Hand-curated alias → codepoint map.
+  // Hand-curated alias -> native Tabler icon name map.
   // Use these for semantic shell states and stable Noctalia-facing names.
   // clang-format off
-const std::unordered_map<std::string, char32_t> kIcons = {
+const std::unordered_map<std::string, std::string_view> kAliases = {
     // General
-    {"close", 0xEB55},             // x
-    {"check", 0xEA5E},
-    {"settings", 0xEB20},
-    {"refresh", 0xEB13},           // refresh
-    {"add", 0xEB0B},               // plus
-    {"plus", 0xEB0B},
-    {"minus", 0xEAF2},
-    {"trash", 0xEB41},
-    {"menu-2", 0xEC42},
-    {"more-vertical", 0xEA94},     // dots-vertical
-    {"person", 0xEB4D},            // user
-    {"folder-open", 0xFAF7},
-    {"download", 0xEA96},
-    {"search", 0xEB1C},
-    {"apps", 0xEBB6},
-    {"app-window", 0xEFE6},
-    {"question-mark", 0xEC9D},
-    {"info", 0xF028},              // file-description
-    {"eye", 0xEA9A},
-    {"pin", 0xEC9C},
-    {"unpin", 0xED5F},             // pinned-off
-    {"image", 0xEB0A},             // photo
-    {"keyboard", 0xEBD6},
-    {"capslock", 0xEBD6},
-    {"numlock", 0xEBD6},
-    {"scrolllock", 0xEBD6},
-    {"lock", 0xEAE2},
-    {"star", 0xEB2E},
-    {"star-off", 0xED62},
-    {"plugin", 0xF00A},            // plug-connected
-    {"official-plugin", 0xF69F},   // shield-filled
-    {"circle-filled", 0xF671},
-    {"pentagon-filled", 0xF68C},
-    {"michelin-star-filled", 0x1000C},
-    {"square-rounded-filled", 0xF6A5},
-    {"guitar-pick-filled", 0xF67B},
-    {"blob-filled", 0xFEB1},
-    {"triangle-filled", 0xF6AD},
-    {"calendar", 0xEA53},
-    {"calculator", 0xEB80},
-    {"copy", 0xEA7A},
-    {"photo", 0xEB0A},
-    {"file-text", 0xEAA2},
-    {"home", 0xEAC1},
-    {"hourglass-empty", 0XF146},
-    {"clipboard", 0XEA6f},
+    {"close", "x"},
+    {"add", "plus"},
+    {"more-vertical", "dots-vertical"},
+    {"person", "user"},
+    {"info", "file-description"},
+    {"unpin", "pinned-off"},
+    {"image", "photo"},
+    {"capslock", "keyboard"},
+    {"numlock", "keyboard"},
+    {"scrolllock", "keyboard"},
+    {"plugin", "plug-connected"},
+    {"official-plugin", "shield-filled"},
 
     // Toast / warnings
-    {"toast-notice", 0xEA67},      // circle-check
-    {"toast-warning", 0xEA05},     // alert-circle
-    {"toast-error", 0xEA6A},       // circle-x
-    {"warning", 0xF634},           // exclamation-circle
+    {"toast-notice", "circle-check"},
+    {"toast-warning", "alert-circle"},
+    {"toast-error", "circle-x"},
+    {"warning", "exclamation-circle"},
 
     // Media
-    {"media-pause", 0xF690},       // player-pause-filled
-    {"media-play", 0xF691},        // player-play-filled
-    {"media-prev", 0xF693},        // player-skip-back-filled
-    {"media-next", 0xF694},        // player-skip-forward-filled
-    {"shuffle", 0xF000},           // arrows-shuffle
-    {"repeat", 0xEB72},
-    {"repeat-once", 0xEB71},
-    {"stop", 0xF695},              // player-stop-filled
-    {"disc-filled", 0x1003E},
-    {"headphones", 0xEABD},
-    {"microphone", 0xEAF0},
-    {"microphone-mute", 0xED16},   // microphone-off
-    {"music-off", 0xF166},
-    {"video", 0xED22},
-    {"video-off", 0xED20},
-    {"device-speaker", 0xEA8B},
+    {"media-pause", "player-pause-filled"},
+    {"media-play", "player-play-filled"},
+    {"media-prev", "player-skip-back-filled"},
+    {"media-next", "player-skip-forward-filled"},
+    {"shuffle", "arrows-shuffle"},
+    {"stop", "player-stop-filled"},
+    {"microphone-mute", "microphone-off"},
 
     // Volume
-    {"volume-high", 0xEB51},       // volume
-    {"volume-low", 0xEB4F},        // volume-2
-    {"volume-mute", 0xF1C3},       // volume-off
-    {"volume-x", 0xEB50},          // volume-3
-    {"volume-zero", 0xEB50},       // volume-3
+    {"volume-high", "volume"},
+    {"volume-low", "volume-2"},
+    {"volume-mute", "volume-off"},
+    {"volume-x", "volume-3"},
+    {"volume-zero", "volume-3"},
 
     // Network speed
-    {"download-speed", 0xEA96},    // download
-    {"upload-speed", 0xEB47},      // upload
+    {"download-speed", "download"},
+    {"upload-speed", "upload"},
 
     // System monitor
-    {"activity", 0xED23},
-    {"cpu-intensive", 0xECC6},     // alert-octagon
-    {"cpu-usage", 0xFA77},         // brand-speedtest
-    {"cpu-temperature", 0xEC2C},   // flame
-    {"memory", 0xEF8E},            // cpu
-    {"storage", 0xEA88},           // database
-    {"busy", 0xF146},              // hourglass-empty
+    {"cpu-intensive", "alert-octagon"},
+    {"cpu-usage", "brand-speedtest"},
+    {"cpu-temperature", "flame"},
+    {"memory", "cpu"},
+    {"storage", "database"},
+    {"busy", "hourglass-empty"},
 
     // Power
-    {"performance", 0xEAB1},       // gauge
-    {"balanced", 0xEBC2},          // scale
-    {"powersaver", 0xED4F},        // leaf
-    {"shutdown", 0xEB0D},          // power
-    {"lock", 0xEAE2},
-    {"lock-pause", 0xF92E},
-    {"logout", 0xEBA8},
-    {"reboot", 0xEB13},            // refresh
-    {"suspend", 0xED45},           // player-pause
-    {"hibernate", 0xF228},         // zzz
+    {"performance", "gauge"},
+    {"balanced", "scale"},
+    {"powersaver", "leaf"},
+    {"shutdown", "power"},
+    {"reboot", "refresh"},
+    {"suspend", "player-pause"},
+    {"hibernate", "zzz"},
 
     // Night light / dark mode
-    {"nightlight-on", 0xEAF8},     // moon
-    {"nightlight-off", 0xF162},    // moon-off
-    {"nightlight-forced", 0xECE7}, // moon-stars
-    {"theme-mode", 0xFE56},        // contrast-filled
-
-    // Notifications
-    {"bell", 0xEA35},
-    {"bell-off", 0xECE9},
+    {"nightlight-on", "moon"},
+    {"nightlight-off", "moon-off"},
+    {"nightlight-forced", "moon-stars"},
+    {"theme-mode", "contrast-filled"},
 
     // Caffeine (idle inhibitor)
-    {"caffeine-on", 0x10009},     // mug-filled
-    {"caffeine-off", 0xEAFB},    // mug
+    {"caffeine-on", "mug-filled"},
+    {"caffeine-off", "mug"},
 
     // Brightness / Display
-    {"device-desktop", 0xEA89},
-    {"device-laptop", 0xEB64},
-    {"brightness-low", 0xFB23},    // brightness-down-filled
-    {"brightness-high", 0xFB24},   // brightness-up-filled
-
-    // Chevrons / carets / arrows
-    {"chevron-left", 0xEA60},
-    {"chevron-right", 0xEA61},
-    {"chevron-up", 0xEA62},
-    {"chevron-down", 0xEA5F},
-    {"caret-up-filled", 0xFB2D},
-    {"caret-down-filled", 0xFB2A},
-    {"caret-left-filled", 0xFB2B},
-    {"caret-right-filled", 0xFB2C},
-    {"square-filled", 0xFC40},     // square-filled
-    {"arrow-left", 0xEA19},        // arrow-left
-    {"arrow-back", 0xEA0c},        // arrow-back
-    {"list", 0xEB6B},              // list
-    {"layout-grid", 0XEDBA},       // layout-grid
-    {"sort-ascending", 0xEB26},    // sort-ascending
-    {"sort-descending", 0xEB27},   // sort-descending
+    {"brightness-low", "brightness-down-filled"},
+    {"brightness-high", "brightness-up-filled"},
 
     // Wallpaper / color
-    {"wallpaper-selector", 0xFD4A},
-    {"color-picker", 0xEBE6},       // color-picker
+    {"wallpaper-selector", "library-photo"},
 
     // Battery
-    {"battery-0", 0xEA34},         // battery
-    {"battery-1", 0xEA2F},
-    {"battery-2", 0xEA30},
-    {"battery-3", 0xEA31},
-    {"battery-4", 0xEA32},
-    {"battery-charging", 0xEA33},
-    {"battery-plugged", 0xEF3B},    // battery-charging-2
-    {"battery-exclamation", 0xFF1D},
-    {"battery-off", 0xED1C},
-
-    // WiFi & Network
-    {"wifi", 0xEB52},
-    {"wifi-0", 0xEBA3},
-    {"wifi-1", 0xEBA4},
-    {"wifi-2", 0xEBA5},
-    {"wifi-3",  0xEBFC},
-    {"wifi-off", 0xECFA},
-    {"wifi-exclamation", 0xEBFD},
-    {"wifi-question", 0xEBFE},
-    {"ethernet", 0xECCC},
-    {"ethernet-off", 0xECCD},
-    {"ethernet-exclamation", 0xECCE},
-    {"ethernet-question", 0xECCF},
-    {"shield-check", 0xEB22},
+    {"battery-0", "battery"},
+    {"battery-plugged", "battery-charging-2"},
 
     // Bluetooth devices
-    {"bluetooth", 0xEA37},
-    {"bluetooth-connected", 0xECEA},
-    {"bluetooth-off", 0xECEB},
-    {"bluetooth-device-generic", 0xEA37}, // bluetooth
-    {"bluetooth-device-gamepad", 0xF1D2}, // device-gamepad-2
-    {"bluetooth-device-microphone", 0xEAF0}, // microphone
-    {"bluetooth-device-headset", 0xEB90}, // headset
-    {"bluetooth-device-earbuds", 0xF5A9}, // device-airpods
-    {"bluetooth-device-headphones", 0xEABD}, // headphones
-    {"bluetooth-device-mouse", 0xF1D7},   // mouse-2
-    {"bluetooth-device-keyboard", 0xEA37}, // bluetooth
-    {"bluetooth-device-phone", 0xEA8A},   // device-mobile
-    {"bluetooth-device-watch", 0xEBF9},   // device-watch
-    {"bluetooth-device-speaker", 0xEA8B}, // device-speaker
-    {"bluetooth-device-tv", 0xEA8D},      // device-tv
-
-    // Antenna
-    {"antenna-bars-1", 0xECC7},
-    {"antenna-bars-2", 0xECC8},
-    {"antenna-bars-3", 0xECC9},
-    {"antenna-bars-4", 0xECCA},
-    {"antenna-bars-5", 0xECCB},
-    {"antenna-bars-off", 0xF0AA},
+    {"bluetooth-device-generic", "bluetooth"},
+    {"bluetooth-device-gamepad", "device-gamepad-2"},
+    {"bluetooth-device-microphone", "microphone"},
+    {"bluetooth-device-headset", "headset"},
+    {"bluetooth-device-earbuds", "device-airpods"},
+    {"bluetooth-device-headphones", "headphones"},
+    {"bluetooth-device-mouse", "mouse-2"},
+    {"bluetooth-device-keyboard", "bluetooth"},
+    {"bluetooth-device-phone", "device-mobile"},
+    {"bluetooth-device-watch", "device-watch"},
+    {"bluetooth-device-speaker", "device-speaker"},
+    {"bluetooth-device-tv", "device-tv"},
 
     // Weather
-    {"weather-sun", 0xEB30},       // sun
-    {"weather-moon", 0xEAF8},      // moon
-    {"weather-moon-stars", 0xECE7}, // moon-stars
-    {"weather-cloud", 0xEA76},     // cloud
-    {"weather-cloud-off", 0xED3E}, // cloud-off
-    {"weather-cloud-haze", 0xECD9}, // cloud-fog
-    {"weather-cloud-lightning", 0xF84B}, // cloud-bolt
-    {"weather-cloud-rain", 0xEA72}, // cloud-rain
-    {"weather-cloud-snow", 0xEA73}, // cloud-snow
-    {"weather-cloud-sun", 0xEC6D}, // cloud-sun
-    {"weather-sunrise", 0xEF1C},   // sunrise
-    {"weather-sunset", 0xEC31},    // sunset
-    {"wind", 0xEC34},
-    {"compass", 0xEA79},
-    {"clock", 0xEA70},
-    {"world", 0xEB54},
-    {"world-pin", 0xF9E4},
-    {"map-pin", 0xEAE8},
-    {"mountain", 0xEF97},
-    {"temperature", 0xeb38},
-    {"temperature-sun", 0xfda4},
-
-    // Files & Folders
-    {"folder", 0xEAAD},
-    {"file", 0xEAA4},
-
-    // Branding
-    {"noctalia", 0xEC33},
-    {"hyprland", 0xEC6A},
-    {"niri", 0xEC32},
-
-    // Misc
-    {"flask", 0xEBD2},
-    {"color-swatch", 0xEB61},
-    {"adjustments-horizontal", 0xEC38},
-    {"stack-back", 0xFD26},
-    {"stack-2", 0xEEF7},
-    {"layout-board", 0xEF95},
-    {"layout-dashboard", 0xF02C},
-    {"layout-bottombar", 0xEAD3},
-    {"layout-bottombar-inactive", 0xFD45},
-    {"line-dotted", 0xEEA8},
-    {"paint", 0xEB00},
-    {"crop-3-2", 0xFD52},
-    {"dashboard", 0xEA87},
+    {"weather-sun", "sun"},
+    {"weather-moon", "moon"},
+    {"weather-moon-stars", "moon-stars"},
+    {"weather-cloud", "cloud"},
+    {"weather-cloud-off", "cloud-off"},
+    {"weather-cloud-haze", "cloud-fog"},
+    {"weather-cloud-lightning", "cloud-bolt"},
+    {"weather-cloud-rain", "cloud-rain"},
+    {"weather-cloud-snow", "cloud-snow"},
+    {"weather-cloud-sun", "cloud-sun"},
+    {"weather-sunrise", "sunrise"},
+    {"weather-sunset", "sunset"},
 };
   // clang-format on
 
@@ -336,26 +200,36 @@ const std::unordered_map<std::string, char32_t> kIcons = {
 } // namespace
 
 bool GlyphRegistry::contains(std::string_view name) {
-  const std::string key{name};
-  if (kIcons.contains(key) || parseCodepointLiteral(name).has_value()) {
+  if (parseCodepointLiteral(name).has_value()) {
     return true;
   }
-  return tablerIcons().contains(key);
+
+  const auto& tabler = tablerIcons();
+  const std::string key{name};
+  if (const auto alias = kAliases.find(key); alias != kAliases.end()) {
+    return tabler.contains(std::string(alias->second));
+  }
+  return tabler.contains(key);
 }
 
 char32_t GlyphRegistry::lookup(std::string_view name) {
-  const std::string key{name};
-  auto it = kIcons.find(key);
-  if (it != kIcons.end()) {
-    return it->second;
-  }
-
   if (auto codepoint = parseCodepointLiteral(name)) {
     return *codepoint;
   }
 
   const auto& tabler = tablerIcons();
-  it = tabler.find(key);
+  const std::string key{name};
+  if (const auto alias = kAliases.find(key); alias != kAliases.end()) {
+    const auto it = tabler.find(std::string(alias->second));
+    if (it != tabler.end()) {
+      return it->second;
+    }
+
+    kLog.warn("missing Tabler glyph '{}' for alias '{}'", alias->second, name);
+    return kMissingGlyph;
+  }
+
+  const auto it = tabler.find(key);
   if (it != tabler.end()) {
     return it->second;
   }
@@ -366,4 +240,4 @@ char32_t GlyphRegistry::lookup(std::string_view name) {
 
 const std::unordered_map<std::string, char32_t>& GlyphRegistry::tablerIcons() { return ::tablerIcons(); }
 
-const std::unordered_map<std::string, char32_t>& GlyphRegistry::aliases() { return kIcons; }
+const std::unordered_map<std::string, std::string_view>& GlyphRegistry::aliases() { return kAliases; }

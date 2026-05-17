@@ -66,6 +66,20 @@ public:
   [[nodiscard]] bool invalid() const noexcept { return m_invalid; }
 
 private:
+  enum class EditCoalesceKind : std::uint8_t {
+    None = 0,
+    Typing = 1,
+    Discrete = 2,
+  };
+
+  struct EditSnapshot {
+    std::string value;
+    std::size_t cursorPos = 0;
+    std::size_t selectionAnchor = 0;
+
+    bool operator==(const EditSnapshot&) const = default;
+  };
+
   void doLayout(Renderer& renderer) override;
   LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints) override;
   void handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool preedit = false);
@@ -82,6 +96,9 @@ private:
   void selectWordAtByteOffset(std::size_t offset);
   [[nodiscard]] std::size_t wordStartForByteOffset(std::size_t offset) const;
   [[nodiscard]] std::size_t wordEndForByteOffset(std::size_t offset) const;
+  [[nodiscard]] std::size_t previousWordStartForByteOffset(std::size_t offset) const;
+  [[nodiscard]] std::size_t nextWordStartForByteOffset(std::size_t offset) const;
+  [[nodiscard]] std::size_t nextWordEndForByteOffset(std::size_t offset) const;
   [[nodiscard]] float textViewportWidth() const noexcept;
   [[nodiscard]] bool clearButtonVisible() const noexcept;
   [[nodiscard]] float clearButtonHitWidth() const noexcept;
@@ -90,7 +107,16 @@ private:
   [[nodiscard]] std::size_t selectionStart() const noexcept;
   [[nodiscard]] std::size_t selectionEnd() const noexcept;
   [[nodiscard]] bool isReadOnlyVisual() const noexcept;
+  [[nodiscard]] EditSnapshot currentEditSnapshot() const;
   void deleteSelection();
+  void clearEditHistory();
+  void resetUndoCoalescing();
+  void pushUndoSnapshot(EditCoalesceKind kind);
+  void noteTypingEditEnd();
+  bool undoEdit();
+  bool redoEdit();
+  bool restoreFromHistory(std::vector<EditSnapshot>& source, std::vector<EditSnapshot>& target);
+  void restoreEditSnapshot(const EditSnapshot& snapshot);
   [[nodiscard]] std::size_t xToByteOffset(float localX) const;
   [[nodiscard]] float stopXForByte(std::size_t bytePos) const;
   void syncPasswordGlyphNodes(std::size_t count);
@@ -114,6 +140,11 @@ private:
   std::size_t m_selectionAnchor = 0;
   std::size_t m_preeditStart = 0;
   std::size_t m_preeditLen = 0;
+  std::vector<EditSnapshot> m_undoStack;
+  std::vector<EditSnapshot> m_redoStack;
+  EditCoalesceKind m_lastEditCoalesceKind = EditCoalesceKind::None;
+  std::chrono::steady_clock::time_point m_lastUndoRecordTime{};
+  std::size_t m_typingCoalesceCursorPos = 0;
 
   std::vector<float> m_stopX;
   std::vector<std::size_t> m_stopByte;

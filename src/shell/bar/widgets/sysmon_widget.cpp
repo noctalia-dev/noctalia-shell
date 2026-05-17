@@ -34,6 +34,32 @@ namespace {
 
   bool needsCpuTemp(SysmonStat stat) { return stat == SysmonStat::CpuTemp; }
   bool needsGpuTemp(SysmonStat stat) { return stat == SysmonStat::GpuTemp; }
+  bool needsGpuVram(SysmonStat stat) { return stat == SysmonStat::GpuVram; }
+
+  const char* statDisplayName(SysmonStat stat) {
+    switch (stat) {
+    case SysmonStat::CpuUsage:
+      return "CPU";
+    case SysmonStat::CpuTemp:
+      return "CPU Temp";
+    case SysmonStat::GpuTemp:
+      return "GPU Temp";
+    case SysmonStat::GpuVram:
+      return "GPU VRAM";
+    case SysmonStat::RamUsed:
+    case SysmonStat::RamPct:
+      return "RAM";
+    case SysmonStat::SwapPct:
+      return "Swap";
+    case SysmonStat::DiskPct:
+      return "Disk";
+    case SysmonStat::NetRx:
+      return "Download";
+    case SysmonStat::NetTx:
+      return "Upload";
+    }
+    return "System";
+  }
 
   [[nodiscard]] std::string formatNetSpeed(double bytesPerSec) {
     if (bytesPerSec < 1024.0)
@@ -48,15 +74,18 @@ namespace {
 } // namespace
 
 SysmonWidget::SysmonWidget(SystemMonitorService* monitor, wl_output* output, SysmonStat stat, std::string diskPath,
-                           SysmonDisplayMode displayMode, bool showLabel)
+                           SysmonDisplayMode displayMode, bool showLabel, float labelMinWidth)
     : m_monitor(monitor), m_output(output), m_stat(stat), m_displayMode(displayMode), m_showLabel(showLabel),
-      m_diskPath(std::move(diskPath)) {
+      m_labelMinWidth(labelMinWidth), m_diskPath(std::move(diskPath)) {
   if (m_monitor != nullptr) {
     if (needsCpuTemp(m_stat)) {
       m_monitor->retainCpuTemp();
     }
     if (needsGpuTemp(m_stat)) {
       m_monitor->retainGpuTemp();
+    }
+    if (needsGpuVram(m_stat)) {
+      m_monitor->retainGpuVram();
     }
     if (m_stat == SysmonStat::DiskPct && !m_diskPath.empty()) {
       m_monitor->retainDiskPath(m_diskPath);
@@ -71,6 +100,9 @@ SysmonWidget::~SysmonWidget() {
     }
     if (needsGpuTemp(m_stat)) {
       m_monitor->releaseGpuTemp();
+    }
+    if (needsGpuVram(m_stat)) {
+      m_monitor->releaseGpuVram();
     }
     if (m_stat == SysmonStat::DiskPct && !m_diskPath.empty()) {
       m_monitor->releaseDiskPath(m_diskPath);
@@ -94,7 +126,7 @@ void SysmonWidget::create() {
     auto chartBg = std::make_unique<Box>();
     RoundedRectStyle bgStyle;
     bgStyle.fill = colorForRole(ColorRole::SurfaceVariant);
-    bgStyle.radius = Style::radiusSm;
+    bgStyle.radius = Style::scaledRadiusSm();
     bgStyle.softness = 0.5f;
     chartBg->setStyle(bgStyle);
     m_chartBg = static_cast<Box*>(container->addChild(std::move(chartBg)));
@@ -118,6 +150,9 @@ void SysmonWidget::create() {
     auto label = std::make_unique<Label>();
     label->setBold(true);
     label->setFontSize(Style::fontSizeBody * m_contentScale);
+    if (m_labelMinWidth > 0.0f) {
+      label->setMinWidth(m_labelMinWidth * m_contentScale);
+    }
     m_label = label.get();
     container->addChild(std::move(label));
   }
@@ -288,11 +323,16 @@ void SysmonWidget::doUpdate(Renderer& renderer) {
     return;
   }
 
+  const std::string value = formatValue();
   if (m_label != nullptr) {
     m_label->setFontSize((m_isVerticalBar ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
-    if (syncLabelText(formatValue())) {
+    if (syncLabelText(value)) {
       m_label->measure(renderer);
     }
+  }
+
+  if (auto* rootNode = root(); rootNode != nullptr) {
+    static_cast<InputArea*>(rootNode)->setTooltip(std::vector<TooltipRow>{{statDisplayName(m_stat), value}});
   }
 
   if (m_displayMode == SysmonDisplayMode::Gauge) {
@@ -446,6 +486,12 @@ double SysmonWidget::normalizedFromStats(SysmonStat stat, const SystemStats& sta
     }
     return 0.0;
 
+  case SysmonStat::GpuVram:
+    if (stats.gpuVramUsedBytes.has_value() && stats.gpuVramTotalBytes.has_value() && *stats.gpuVramTotalBytes > 0) {
+      return static_cast<double>(*stats.gpuVramUsedBytes) / static_cast<double>(*stats.gpuVramTotalBytes);
+    }
+    return 0.0;
+
   case SysmonStat::RamUsed:
     if (stats.ramTotalMb > 0) {
       return static_cast<double>(stats.ramUsedMb) / static_cast<double>(stats.ramTotalMb);
@@ -518,6 +564,13 @@ std::string SysmonWidget::formatValue() const {
     }
     return "--";
 
+  case SysmonStat::GpuVram:
+    if (stats.gpuVramUsedBytes.has_value() && stats.gpuVramTotalBytes.has_value() && *stats.gpuVramTotalBytes > 0) {
+      return std::format("{:.0f}%", 100.0 * static_cast<double>(*stats.gpuVramUsedBytes) /
+                                        static_cast<double>(*stats.gpuVramTotalBytes));
+    }
+    return "--";
+
   case SysmonStat::RamUsed:
     if (stats.ramUsedMb >= 1024) {
       return std::format("{:.1f}G", static_cast<double>(stats.ramUsedMb) / 1024.0);
@@ -555,6 +608,8 @@ const char* SysmonWidget::glyphName(SysmonStat stat) {
     return "cpu-temperature";
   case SysmonStat::GpuTemp:
     return "temperature";
+  case SysmonStat::GpuVram:
+    return "memory";
   case SysmonStat::RamUsed:
   case SysmonStat::RamPct:
     return "memory";

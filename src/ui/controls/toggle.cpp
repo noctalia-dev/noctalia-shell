@@ -64,6 +64,18 @@ void Toggle::setChecked(bool checked) {
   }
 }
 
+void Toggle::setCheckedImmediate(bool checked) {
+  if (m_checked == checked) {
+    return;
+  }
+  m_checked = checked;
+  if (m_animId != 0 && animationManager() != nullptr) {
+    animationManager()->cancel(m_animId);
+    m_animId = 0;
+  }
+  applyState();
+}
+
 void Toggle::setEnabled(bool enabled) {
   if (m_enabled == enabled) {
     return;

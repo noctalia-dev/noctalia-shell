@@ -103,6 +103,7 @@ LockSurface::~LockSurface() {
   if (m_textureCache != nullptr && m_wallpaperTexture.id != 0) {
     m_textureCache->release(m_wallpaperTexture, m_wallpaperPath);
   }
+  m_connection.unregisterSurface(m_surface);
   if (m_lockSurface != nullptr) {
     ext_session_lock_surface_v1_destroy(m_lockSurface);
     m_lockSurface = nullptr;
@@ -119,6 +120,7 @@ bool LockSurface::initialize(ext_session_lock_v1* lock, wl_output* output, std::
   }
 
   m_output = output;
+  m_connection.registerSurfaceOutput(m_surface, output);
   setBufferScale(scale);
 
   m_lockSurface = ext_session_lock_v1_get_lock_surface(lock, m_surface, output);
@@ -354,7 +356,7 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
       .fill = colorForRole(ColorRole::SurfaceVariant, 0.88f),
       .border = colorForRole(ColorRole::Outline, 0.95f),
       .fillMode = FillMode::Solid,
-      .radius = Style::radiusXl,
+      .radius = Style::scaledRadiusXl(),
       .softness = 1.0f,
       .borderWidth = Style::borderWidth,
   });

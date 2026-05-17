@@ -24,6 +24,15 @@ namespace {
 
   using Clock = std::chrono::system_clock;
 
+  bool weatherConfigEqual(const WeatherConfig& lhs, const WeatherConfig& rhs) {
+    return lhs.enabled == rhs.enabled && lhs.autoLocate == rhs.autoLocate && lhs.effects == rhs.effects &&
+           lhs.address == rhs.address && lhs.refreshMinutes == rhs.refreshMinutes && lhs.unit == rhs.unit;
+  }
+
+  bool weatherLocationConfigEqual(const WeatherConfig& lhs, const WeatherConfig& rhs) {
+    return lhs.enabled == rhs.enabled && lhs.autoLocate == rhs.autoLocate && lhs.address == rhs.address;
+  }
+
   std::chrono::system_clock::time_point fromUnixSeconds(std::int64_t value) {
     return Clock::time_point{std::chrono::seconds{value}};
   }
@@ -391,19 +400,39 @@ std::string WeatherService::descriptionForCode(std::int32_t code) {
 }
 
 void WeatherService::onConfigReload() {
-  m_activeConfig = m_configService.config().weather;
+  const WeatherConfig previousConfig = m_activeConfig;
+  const WeatherConfig nextConfig = m_configService.config().weather;
+  if (weatherConfigEqual(previousConfig, nextConfig)) {
+    return;
+  }
+
+  m_activeConfig = nextConfig;
   m_error.clear();
   if (!m_activeConfig.enabled || !locationConfigured()) {
     clearState();
     notifyChanged();
     return;
   }
+
+  if (weatherLocationConfigEqual(previousConfig, m_activeConfig)) {
+    if (m_snapshot.valid) {
+      m_nextRefreshAt = m_snapshot.fetchedAt + std::chrono::minutes(std::max(5, m_activeConfig.refreshMinutes));
+    } else {
+      requestRefresh(false);
+    }
+    if (previousConfig.unit != m_activeConfig.unit || previousConfig.effects != m_activeConfig.effects) {
+      notifyChanged();
+    }
+    return;
+  }
+
   loadCache();
   requestRefresh(!m_snapshot.valid);
   notifyChanged();
 }
 
 void WeatherService::clearState() {
+  ++m_requestSerial;
   m_loading = false;
   m_error.clear();
   m_requestKind = RequestKind::None;

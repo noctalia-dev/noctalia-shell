@@ -10,22 +10,11 @@
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
-#include <cctype>
 #include <cmath>
 #include <string_view>
-
-namespace {
-
-  std::string toLower(std::string_view value) {
-    std::string out(value);
-    std::transform(out.begin(), out.end(), out.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    return out;
-  }
-
-} // namespace
 
 ActiveWindowWidget::ActiveWindowWidget(CompositorPlatform& platform, float maxWidth, float minWidth, float iconSize,
                                        ActiveWindowTitleScrollMode titleScrollMode)
@@ -212,7 +201,7 @@ std::string ActiveWindowWidget::resolveIconPath(const std::string& appId) {
     }
   }
 
-  const std::string appIdLower = toLower(appId);
+  const std::string appIdLower = StringUtils::toLower(appId);
   if (auto it = m_appIcons.find(appIdLower); it != m_appIcons.end()) {
     const auto path = resolveByName(it->second);
     if (!path.empty()) {
@@ -240,7 +229,7 @@ void ActiveWindowWidget::buildDesktopIconIndex() {
       return;
     }
     m_appIcons.try_emplace(std::string{key}, icon);
-    m_appIcons.try_emplace(toLower(key), icon);
+    m_appIcons.try_emplace(StringUtils::toLower(key), icon);
   };
 
   const auto& entries = desktopEntries();

@@ -9,7 +9,7 @@
 Chip::Chip() {
   setAlign(FlexAlign::Center);
   setPadding(Style::spaceSm, Style::spaceMd);
-  setRadius(Style::radiusMd);
+  setRadius(Style::scaledRadiusMd());
 
   auto label = std::make_unique<Label>();
   m_label = static_cast<Label*>(addChild(std::move(label)));

@@ -134,7 +134,7 @@ void ListEditor::rebuildRows() {
         addBtn->setMinWidth(suggestedAddHeight);
         addBtn->setMinHeight(suggestedAddHeight);
         addBtn->setPadding(Style::spaceXs * m_scale);
-        addBtn->setRadius(Style::radiusSm * m_scale);
+        addBtn->setRadius(Style::scaledRadiusSm(m_scale));
         addBtn->setOnClick([this, selectPtr, remaining] {
           const std::size_t index = selectPtr->selectedIndex();
           if (index < remaining.size() && m_onAddRequested) {
@@ -163,7 +163,7 @@ void ListEditor::rebuildRows() {
       addBtn->setMinWidth(Style::controlHeight * m_scale);
       addBtn->setMinHeight(Style::controlHeight * m_scale);
       addBtn->setPadding(Style::spaceSm * m_scale);
-      addBtn->setRadius(Style::radiusMd * m_scale);
+      addBtn->setRadius(Style::scaledRadiusMd(m_scale));
       addBtn->setOnClick([this, addInputPtr] {
         const auto& text = addInputPtr->value();
         if (!text.empty() && m_onAddRequested) {
@@ -235,7 +235,7 @@ void ListEditor::addGhostIconButton(Flex& row, std::string_view glyph, float siz
   button->setMinWidth(kItemRowHeight * m_scale);
   button->setMinHeight(kItemRowHeight * m_scale);
   button->setPadding(Style::spaceXs * m_scale);
-  button->setRadius(Style::radiusSm * m_scale);
+  button->setRadius(Style::scaledRadiusSm(m_scale));
   button->setOnClick(std::move(callback));
   row.addChild(std::move(button));
 }

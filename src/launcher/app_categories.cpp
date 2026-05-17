@@ -90,8 +90,8 @@ namespace {
     return "Misc";
   }
 
-  LauncherAppCategory makeCategory(const CategoryDefinition& definition) {
-    return LauncherAppCategory{
+  LauncherCategory makeCategory(const CategoryDefinition& definition) {
+    return LauncherCategory{
         std::string(definition.id),
         std::string(definition.labelKey),
         std::string(definition.glyphName),
@@ -100,7 +100,7 @@ namespace {
 
 } // namespace
 
-std::vector<LauncherAppCategory> availableLauncherAppCategories(const std::vector<DesktopEntry>& entries) {
+std::vector<LauncherCategory> availableLauncherAppCategories(const std::vector<DesktopEntry>& entries) {
   std::unordered_set<std::string_view> present;
   for (const auto& entry : entries) {
     const auto category = primaryCategory(entry);
@@ -109,7 +109,7 @@ std::vector<LauncherAppCategory> availableLauncherAppCategories(const std::vecto
     }
   }
 
-  std::vector<LauncherAppCategory> result;
+  std::vector<LauncherCategory> result;
   result.push_back(makeCategory(kCategories.front()));
   for (std::size_t i = 1; i < kCategories.size(); ++i) {
     if (present.contains(kCategories[i].id)) {

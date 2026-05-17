@@ -8,11 +8,13 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 class Button;
 class Box;
 class CompositorPlatform;
+class HttpClient;
 class ConfigService;
 class DependencyService;
 class Glyph;
@@ -31,10 +33,11 @@ struct ShortcutPad {
 
 class HomeTab : public Tab {
 public:
-  HomeTab(MprisService* mpris, WeatherService* weather, PipeWireService* audio, PowerProfilesService* powerProfiles,
-          ConfigService* config, NetworkService* network, BluetoothService* bluetooth, GammaService* nightLight,
-          noctalia::theme::ThemeService* theme, NotificationManager* notifications, IdleInhibitor* idleInhibitor,
-          DependencyService* dependencies, CompositorPlatform* platform, Wallpaper* wallpaper = nullptr);
+  HomeTab(MprisService* mpris, HttpClient* httpClient, WeatherService* weather, PipeWireService* audio,
+          PowerProfilesService* powerProfiles, ConfigService* config, NetworkService* network,
+          BluetoothService* bluetooth, GammaService* nightLight, noctalia::theme::ThemeService* theme,
+          NotificationManager* notifications, IdleInhibitor* idleInhibitor, DependencyService* dependencies,
+          CompositorPlatform* platform, Wallpaper* wallpaper = nullptr);
   ~HomeTab() override;
 
   std::unique_ptr<Flex> create() override;
@@ -47,12 +50,15 @@ private:
   void doLayout(Renderer& renderer, float contentWidth, float bodyHeight) override;
   void doUpdate(Renderer& renderer) override;
   void layoutWallpaperBackground(Renderer& renderer);
+  void layoutCardButton(Renderer& renderer, Flex* card, Button* button);
   void syncWallpaperBackground(Renderer& renderer);
   void sync(Renderer& renderer);
   void syncScaledFonts();
   void syncShortcuts();
+  bool resizeMediaArtToCard();
 
   MprisService* m_mpris = nullptr;
+  HttpClient* m_httpClient = nullptr;
   WeatherService* m_weather = nullptr;
   ConfigService* m_config = nullptr;
   Wallpaper* m_wallpaper = nullptr;
@@ -75,6 +81,9 @@ private:
   Label* m_userFacts = nullptr;
   Button* m_settingsButton = nullptr;
   Button* m_sessionButton = nullptr;
+  Button* m_wallpaperButton = nullptr;
+  Button* m_mediaButton = nullptr;
+  Button* m_weatherButton = nullptr;
   std::string m_loadedAvatarPath;
 
   Image* m_wallpaperBg = nullptr;
@@ -88,6 +97,7 @@ private:
   Glyph* m_mediaArtFallback = nullptr;
   Image* m_mediaArt = nullptr;
   std::string m_loadedMediaArtUrl;
+  std::unordered_set<std::string> m_pendingArtDownloads;
   std::string m_mediaPositionBusName;
   std::string m_mediaPositionTrackId;
   std::string m_mediaPositionTrackSignature;

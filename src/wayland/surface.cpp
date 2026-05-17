@@ -685,7 +685,15 @@ std::vector<InputRect> Surface::tessellateShape(int x, int y, int w, int h, cons
     const int rRight = visualX + static_cast<int>(std::floor(right));
     const int rw = rRight - rx;
     if (rw > 0) {
-      out.push_back({rx, visualY + row, rw, rowH});
+      const int ry = visualY + row;
+      if (!out.empty()) {
+        auto& previous = out.back();
+        if (previous.x == rx && previous.width == rw && previous.y + previous.height == ry) {
+          previous.height += rowH;
+          continue;
+        }
+      }
+      out.push_back({rx, ry, rw, rowH});
     }
   }
 

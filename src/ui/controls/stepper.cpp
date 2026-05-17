@@ -62,7 +62,7 @@ Stepper::Stepper() {
   setMinWidth(kDefaultMinWidth);
   setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
   clearBorder();
-  setRadius(Style::radiusMd);
+  setRadius(Style::scaledRadiusMd());
 
   auto makeStepButton = [this](bool increment) -> std::unique_ptr<Button> {
     auto btn = std::make_unique<Button>();
@@ -201,6 +201,15 @@ void Stepper::setOnValueChanged(std::function<void(int)> callback) { m_onValueCh
 
 void Stepper::setOnValueCommitted(std::function<void(int)> callback) { m_onValueCommitted = std::move(callback); }
 
+void Stepper::setValueSuffix(std::string suffix) {
+  if (m_valueSuffix == suffix) {
+    return;
+  }
+  m_valueSuffix = std::move(suffix);
+  syncValueField();
+  markLayoutDirty();
+}
+
 void Stepper::setScale(float scale) {
   m_scale = std::max(0.1f, scale);
   setGap(0.0f);
@@ -234,8 +243,10 @@ void Stepper::syncValueFieldMinWidth(Renderer& renderer) {
     return;
   }
   const float fs = Style::fontSizeBody * m_scale;
-  const float wMin = renderer.measureText(std::to_string(m_min), fs, false).width;
-  const float wMax = renderer.measureText(std::to_string(m_max), fs, false).width;
+  const std::string minText = std::to_string(m_min) + m_valueSuffix;
+  const std::string maxText = std::to_string(m_max) + m_valueSuffix;
+  const float wMin = renderer.measureText(minText, fs, false).width;
+  const float wMax = renderer.measureText(maxText, fs, false).width;
   const float textInset = valueInputHorizontalPadding(m_scale) + kInputTextInnerInset;
   m_valueInput->setMinLayoutWidth(std::max(wMin, wMax) + textInset * 2.0f);
 }
@@ -318,7 +329,7 @@ void Stepper::stepBy(int directionSign) {
 
 void Stepper::syncValueField() {
   if (m_valueInput != nullptr) {
-    m_valueInput->setValue(std::to_string(m_value));
+    m_valueInput->setValue(std::to_string(m_value) + m_valueSuffix);
   }
 }
 
@@ -327,7 +338,16 @@ void Stepper::commitValueField() {
     return;
   }
   const int previous = m_value;
-  const std::string t = trimAscii(m_valueInput->value());
+  std::string t = trimAscii(m_valueInput->value());
+  if (t.empty()) {
+    syncValueField();
+    return;
+  }
+  while (!m_valueSuffix.empty() && t.size() >= m_valueSuffix.size() &&
+         t.compare(t.size() - m_valueSuffix.size(), m_valueSuffix.size(), m_valueSuffix) == 0) {
+    t.resize(t.size() - m_valueSuffix.size());
+    t = trimAscii(t);
+  }
   if (t.empty()) {
     syncValueField();
     return;
@@ -389,7 +409,7 @@ void Stepper::refreshButtons() {
 }
 
 void Stepper::refreshSegmentStyle() {
-  const float r = Style::radiusMd * m_scale;
+  const float r = Style::scaledRadiusMd(m_scale);
   setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
   clearBorder();
   setRadius(r);

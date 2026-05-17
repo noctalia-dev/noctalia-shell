@@ -33,7 +33,7 @@ public:
 
   // Presets
   void setFlatStyle();
-  void setCardStyle(float scale = 1.0f);
+  void setCardStyle(float scale = 1.0f, float fillOpacity = 1.0f);
   void setPanelStyle();
 
   void setSize(float width, float height) override;

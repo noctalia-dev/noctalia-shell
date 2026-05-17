@@ -1,6 +1,7 @@
 {
   lib,
   stdenv,
+  shortRev,
   version,
   meson,
   ninja,
@@ -23,7 +24,7 @@
   libwebp,
   glib,
   polkit,
-  librsvg
+  librsvg,
 }:
 
 stdenv.mkDerivation {
@@ -35,6 +36,8 @@ stdenv.mkDerivation {
   postPatch = ''
     # Remove -march=native and -mtune=native for reproducible builds
     sed -i "s/'-march=native', '-mtune=native',//" meson.build
+
+    sed -i "s|@VCS_TAG@|${shortRev}|g" src/core/git_revision.h.in
   '';
 
   nativeBuildInputs = [

@@ -14,7 +14,7 @@ namespace {
 
   namespace fs = std::filesystem;
 
-  constexpr auto kRefreshInterval = std::chrono::milliseconds(500);
+  constexpr auto kRefreshInterval = std::chrono::milliseconds(200);
   constexpr int kSysfsFailureRescanThreshold = 3;
 
   bool readBrightness(const fs::path& path, bool& on) {

@@ -4,6 +4,7 @@
 #include "ui/dialogs/dialog_popup_host.h"
 
 #include <functional>
+#include <memory>
 #include <string>
 
 class Flex;
@@ -14,6 +15,8 @@ struct PointerEvent;
 struct wl_output;
 struct wl_surface;
 struct xdg_surface;
+
+class SelectDropdownPopup;
 
 namespace settings {
 
@@ -33,6 +36,8 @@ namespace settings {
     [[nodiscard]] bool onPointerEvent(const PointerEvent& event);
     void onKeyboardEvent(const KeyboardEvent& event);
     [[nodiscard]] wl_surface* wlSurface() const noexcept;
+    [[nodiscard]] bool ownsSelectDropdownSurface(wl_surface* surface) const noexcept;
+    [[nodiscard]] bool isSelectDropdownOpen() const noexcept;
 
   protected:
     void populateContent(Node* contentParent, std::uint32_t width, std::uint32_t height) override;
@@ -50,6 +55,9 @@ namespace settings {
     Flex* m_root = nullptr;
     std::uint32_t m_parentWidth = 0;
     std::uint32_t m_parentHeight = 0;
+
+    std::unique_ptr<SelectDropdownPopup> m_selectPopup;
+    wl_output* m_parentOutput = nullptr;
   };
 
 } // namespace settings

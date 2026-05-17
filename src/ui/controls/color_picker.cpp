@@ -28,7 +28,7 @@ namespace {
     button.setMinHeight(Style::controlHeight * scale);
     button.setMinWidth(92.0f * scale);
     button.setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-    button.setRadius(Style::radiusMd * scale);
+    button.setRadius(Style::scaledRadiusMd(scale));
   }
 
   void configureDialogCloseButton(Button& button, float scale) {
@@ -38,7 +38,7 @@ namespace {
     button.setMinWidth(Style::controlHeightSm * scale);
     button.setMinHeight(Style::controlHeightSm * scale);
     button.setPadding(Style::spaceXs * scale);
-    button.setRadius(Style::radiusMd * scale);
+    button.setRadius(Style::scaledRadiusMd(scale));
   }
 
   int parseIntClamp(const std::string& s, int lo, int hi) {

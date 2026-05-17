@@ -43,7 +43,7 @@ void DesktopMediaPlayerWidget::create() {
 
   auto artwork = std::make_unique<Image>();
   artwork->setFit(ImageFit::Cover);
-  artwork->setRadius(Style::radiusMd * contentScale());
+  artwork->setRadius(Style::scaledRadiusMd(contentScale()));
   m_artwork = artwork.get();
   rootNode->addChild(std::move(artwork));
 
@@ -128,7 +128,7 @@ void DesktopMediaPlayerWidget::layoutVertical(Renderer& renderer, float scale) {
   const float fontSize = Style::fontSizeBody * scale;
 
   m_artwork->setSize(artW, artW);
-  m_artwork->setRadius(Style::radiusMd * scale);
+  m_artwork->setRadius(Style::scaledRadiusMd(scale));
   m_artwork->setPosition(0.0f, 0.0f);
 
   m_title->setFontSize(fontSize);
@@ -159,7 +159,7 @@ void DesktopMediaPlayerWidget::layoutHorizontal(Renderer& renderer, float scale)
   const float textWidth = artH * 1.5f;
 
   m_artwork->setSize(artH, artH);
-  m_artwork->setRadius(Style::radiusMd * scale);
+  m_artwork->setRadius(Style::scaledRadiusMd(scale));
   m_artwork->setPosition(0.0f, 0.0f);
 
   const float textX = artH + spacing;
@@ -203,19 +203,19 @@ void DesktopMediaPlayerWidget::layoutButtons(Renderer& renderer, float scale) {
   m_prev->setMinHeight(controlBtnSize);
   m_prev->setGlyphSize(glyphSize);
   m_prev->setPadding(Style::spaceXs * scale, Style::spaceXs * scale);
-  m_prev->setRadius(Style::radiusMd * scale);
+  m_prev->setRadius(Style::scaledRadiusMd(scale));
 
   m_playPause->setMinWidth(playPauseBtnSize);
   m_playPause->setMinHeight(playPauseBtnSize);
   m_playPause->setGlyphSize(playPauseGlyphSize);
   m_playPause->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
-  m_playPause->setRadius(Style::radiusLg * scale);
+  m_playPause->setRadius(Style::scaledRadiusLg(scale));
 
   m_next->setMinWidth(controlBtnSize);
   m_next->setMinHeight(controlBtnSize);
   m_next->setGlyphSize(glyphSize);
   m_next->setPadding(Style::spaceXs * scale, Style::spaceXs * scale);
-  m_next->setRadius(Style::radiusMd * scale);
+  m_next->setRadius(Style::scaledRadiusMd(scale));
 
   m_controls->layout(renderer);
   m_prev->updateInputArea();
@@ -247,7 +247,8 @@ void DesktopMediaPlayerWidget::sync(Renderer& renderer) {
   const bool artistChanged = artist != m_lastArtist;
   const bool artChanged = artUrl != m_lastArtUrl;
   const bool statusChanged = playbackStatus != m_lastPlaybackStatus;
-  if (!titleChanged && !artistChanged && !artChanged && !statusChanged)
+  const bool artAwaitingDecode = m_artwork != nullptr && !artUrl.empty() && !m_artwork->hasImage();
+  if (!titleChanged && !artistChanged && !artChanged && !statusChanged && !artAwaitingDecode)
     return;
 
   m_lastTitle = title;
@@ -273,8 +274,9 @@ void DesktopMediaPlayerWidget::sync(Renderer& renderer) {
         m_pendingArtDownloads.insert(m_lastArtUrl);
         m_httpClient->download(m_lastArtUrl, cached, [this, url = m_lastArtUrl](bool success) {
           m_pendingArtDownloads.erase(url);
-          if (success && url == m_lastArtUrl)
-            requestRedraw();
+          if (success) {
+            requestUpdate();
+          }
         });
       }
     }

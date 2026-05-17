@@ -69,12 +69,13 @@ public:
   [[nodiscard]] Box* barCapsuleBox() const noexcept { return m_capsuleBox; }
   // Outermost node for flex layout / anchor alignment (capsule shell when enabled).
   [[nodiscard]] Node* layoutBoundsNode() const noexcept { return m_capsuleShell != nullptr ? m_capsuleShell : root(); }
+  [[nodiscard]] float resolvedBarCapsuleRadius(float width, float height) const noexcept;
 
   // Whether the bar should paint the decorative capsule for this frame (spec enabled + visible ink).
   [[nodiscard]] virtual bool shouldShowBarCapsule() const;
 
-  // Resolved icon + primary label color: `[widget.*] color` when set, else `capsule_foreground` when the capsule is
-  // visible, else `fallback` (e.g. colorSpecFromRole(OnSurface)).
+  // Resolved icon + primary label color: `[widget.*] color` when set, else `capsule_foreground` when capsule styling is
+  // enabled, else `fallback` (e.g. colorSpecFromRole(OnSurface)).
   [[nodiscard]] ColorSpec widgetForegroundOr(const ColorSpec& fallback) const noexcept;
 
 protected:

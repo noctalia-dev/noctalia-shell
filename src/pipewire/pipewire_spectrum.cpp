@@ -15,6 +15,7 @@
 #include <spa/param/audio/raw.h>
 #include <spa/param/format-utils.h>
 #include <spa/pod/pod.h>
+#include <string>
 #include <utility>
 
 namespace {
@@ -117,7 +118,8 @@ void PipeWireSpectrum::removeChangeListener(ListenerId id) {
 
 class PipeWireSpectrum::Stream {
 public:
-  Stream(PipeWireSpectrum& spectrum, std::uint32_t nodeId) : m_spectrum(spectrum), m_nodeId(nodeId) {}
+  Stream(PipeWireSpectrum& spectrum, std::uint32_t nodeId, std::string targetObject)
+      : m_spectrum(spectrum), m_nodeId(nodeId), m_targetObject(std::move(targetObject)) {}
   ~Stream() { destroy(); }
 
   Stream(const Stream&) = delete;
@@ -139,6 +141,7 @@ private:
 
   PipeWireSpectrum& m_spectrum;
   std::uint32_t m_nodeId = 0;
+  std::string m_targetObject;
   pw_stream* m_stream = nullptr;
   spa_hook m_listener{};
   spa_audio_info_raw m_format = SPA_AUDIO_INFO_RAW_INIT(.format = SPA_AUDIO_FORMAT_UNKNOWN);
@@ -157,15 +160,14 @@ const pw_stream_events PipeWireSpectrum::Stream::kEvents = [] {
 
 bool PipeWireSpectrum::Stream::start() {
   pw_core* core = m_spectrum.m_service.coreHandle();
-  if (core == nullptr || m_nodeId == 0) {
+  if (core == nullptr || m_nodeId == 0 || m_targetObject.empty()) {
     return false;
   }
 
-  const auto target = std::to_string(m_nodeId);
   auto* props = pw_properties_new(PW_KEY_MEDIA_TYPE, "Audio", PW_KEY_MEDIA_CATEGORY, "Monitor", PW_KEY_MEDIA_NAME,
                                   "Noctalia Spectrum", PW_KEY_APP_NAME, "Noctalia Spectrum", PW_KEY_STREAM_MONITOR,
-                                  "true", PW_KEY_STREAM_CAPTURE_SINK, "true", PW_KEY_TARGET_OBJECT, target.c_str(),
-                                  PW_KEY_NODE_PASSIVE, "true", nullptr);
+                                  "true", PW_KEY_STREAM_CAPTURE_SINK, "true", PW_KEY_TARGET_OBJECT,
+                                  m_targetObject.c_str(), PW_KEY_NODE_PASSIVE, "true", nullptr);
   if (props == nullptr) {
     kLog.warn("failed to create spectrum stream properties");
     return false;
@@ -410,7 +412,10 @@ void PipeWireSpectrum::tick() {
 
 void PipeWireSpectrum::handleAudioStateChanged() {
   const std::uint32_t target = resolvedTargetNodeId();
-  if (target != m_boundNodeId || (target == 0 && m_stream != nullptr) || (target != 0 && !hasResolvedTargetNode())) {
+  const auto* targetNode = resolvedTargetNode();
+  const std::string targetObject = targetNode != nullptr ? targetNode->name : std::string{};
+  if (target != m_boundNodeId || targetObject != m_boundTargetObject || (target == 0 && m_stream != nullptr) ||
+      (target != 0 && targetNode == nullptr)) {
     rebuildStream();
   }
 }
@@ -418,14 +423,21 @@ void PipeWireSpectrum::handleAudioStateChanged() {
 void PipeWireSpectrum::rebuildStream() {
   m_stream.reset();
   m_boundNodeId = 0;
+  m_boundTargetObject.clear();
 
   const std::uint32_t target = resolvedTargetNodeId();
-  if (!hasListeners() || target == 0 || !hasResolvedTargetNode()) {
+  const auto* targetNode = resolvedTargetNode();
+  if (!hasListeners() || target == 0 || targetNode == nullptr) {
+    clearValues(true);
+    return;
+  }
+  if (targetNode->name.empty()) {
+    kLog.warn("spectrum target node {} has no PipeWire node name", target);
     clearValues(true);
     return;
   }
 
-  m_stream = std::make_unique<Stream>(*this, target);
+  m_stream = std::make_unique<Stream>(*this, target, targetNode->name);
   if (!m_stream->start()) {
     m_stream.reset();
     clearValues(true);
@@ -433,6 +445,7 @@ void PipeWireSpectrum::rebuildStream() {
   }
 
   m_boundNodeId = target;
+  m_boundTargetObject = targetNode->name;
   m_ringPos = 0;
   m_ringFull = false;
   m_idleFrames = 0;
@@ -460,15 +473,22 @@ std::uint32_t PipeWireSpectrum::resolvedTargetNodeId() const noexcept {
   return m_service.state().defaultSinkId;
 }
 
-bool PipeWireSpectrum::hasResolvedTargetNode() const noexcept {
+const AudioNode* PipeWireSpectrum::resolvedTargetNode() const noexcept {
   const std::uint32_t id = resolvedTargetNodeId();
   if (id == 0) {
-    return false;
+    return nullptr;
   }
 
   const auto& state = m_service.state();
-  return std::ranges::any_of(state.sinks, [id](const AudioNode& node) { return node.id == id; }) ||
-         std::ranges::any_of(state.sources, [id](const AudioNode& node) { return node.id == id; });
+  auto sink = std::ranges::find_if(state.sinks, [id](const AudioNode& node) { return node.id == id; });
+  if (sink != state.sinks.end()) {
+    return &*sink;
+  }
+  auto source = std::ranges::find_if(state.sources, [id](const AudioNode& node) { return node.id == id; });
+  if (source != state.sources.end()) {
+    return &*source;
+  }
+  return nullptr;
 }
 
 void PipeWireSpectrum::clearValues(bool notify) {

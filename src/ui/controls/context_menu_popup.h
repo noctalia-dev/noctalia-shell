@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config/config_types.h"
 #include "render/scene/input_dispatcher.h"
 #include "ui/controls/context_menu.h"
 
@@ -34,6 +35,7 @@ public:
 
   void setOnActivate(std::function<void(const ContextMenuControlEntry&)> callback);
   void setOnDismissed(std::function<void()> callback);
+  void setShadowConfig(const ShellConfig::ShadowConfig& shadow);
 
   bool onPointerEvent(const PointerEvent& event);
   [[nodiscard]] wl_surface* wlSurface() const noexcept;
@@ -53,4 +55,5 @@ private:
 
   std::function<void(const ContextMenuControlEntry&)> m_onActivate;
   std::function<void()> m_onDismissed;
+  ShellConfig::ShadowConfig m_shadowConfig;
 };

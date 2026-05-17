@@ -194,7 +194,8 @@ void MediaWidget::syncState(Renderer& renderer) {
   const bool textChanged = displayText != m_lastText;
   const bool artChanged = artUrl != m_lastArtUrl;
   const bool playbackChanged = playbackStatus != m_lastPlaybackStatus;
-  if (!textChanged && !artChanged && !playbackChanged) {
+  const bool artAwaitingDecode = !artUrl.empty() && !m_art->hasImage();
+  if (!textChanged && !artChanged && !playbackChanged && !artAwaitingDecode) {
     return;
   }
 
@@ -221,8 +222,8 @@ void MediaWidget::syncState(Renderer& renderer) {
         m_pendingArtDownloads.insert(m_lastArtUrl);
         m_httpClient->download(m_lastArtUrl, cached, [this, url = m_lastArtUrl](bool success) {
           m_pendingArtDownloads.erase(url);
-          if (success && url == m_lastArtUrl) {
-            requestRedraw();
+          if (success) {
+            requestUpdate();
           }
         });
       }

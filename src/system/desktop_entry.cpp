@@ -1,6 +1,7 @@
 #include "system/desktop_entry.h"
 
 #include "core/log.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -18,15 +19,8 @@ namespace {
 
   constexpr Logger kLog("desktop_entry");
 
-  std::string toLower(std::string_view s) {
-    std::string result(s);
-    std::transform(result.begin(), result.end(), result.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    return result;
-  }
-
   bool parseDesktopBool(std::string_view value) {
-    const std::string lower = toLower(value);
+    const std::string lower = StringUtils::toLower(value);
     return lower == "true" || lower == "1" || lower == "yes";
   }
 
@@ -263,13 +257,13 @@ namespace {
     }
 
     // Pre-lowercase for matching
-    entry.nameLower = toLower(entry.name);
-    entry.genericNameLower = toLower(entry.genericName);
-    entry.keywordsLower = toLower(entry.keywords);
-    entry.categoriesLower = toLower(entry.categories);
-    entry.startupWmClassLower = toLower(entry.startupWmClass);
-    entry.idLower = toLower(entry.id);
-    entry.execLower = toLower(entry.exec);
+    entry.nameLower = StringUtils::toLower(entry.name);
+    entry.genericNameLower = StringUtils::toLower(entry.genericName);
+    entry.keywordsLower = StringUtils::toLower(entry.keywords);
+    entry.categoriesLower = StringUtils::toLower(entry.categories);
+    entry.startupWmClassLower = StringUtils::toLower(entry.startupWmClass);
+    entry.idLower = StringUtils::toLower(entry.id);
+    entry.execLower = StringUtils::toLower(entry.exec);
 
     // Build actions in the declared order.
     for (const auto& id : actionOrder) {

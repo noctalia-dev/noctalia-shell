@@ -25,6 +25,7 @@
 #include <filesystem>
 #include <format>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -81,8 +82,7 @@ namespace settings {
       wrap->setGap(Style::spaceXs * scale);
       wrap->setPadding(Style::spaceSm * scale, 0.0f, 0.0f, 0.0f);
       wrap->addChild(std::make_unique<Separator>());
-      wrap->addChild(
-          makeLabel(title, Style::fontSizeCaption * scale, colorSpecFromRole(ColorRole::OnSurfaceVariant), true));
+      wrap->addChild(makeLabel(title, Style::fontSizeCaption * scale, colorSpecFromRole(ColorRole::Secondary), true));
       return wrap;
     }
 
@@ -597,10 +597,17 @@ namespace settings {
       if (!spec.visibleWhen.has_value()) {
         return true;
       }
-      const auto& cond = *spec.visibleWhen;
-      const auto currentValue = settingCurrentString(cfg, widgetName, cond.key, allSpecs);
-      for (const auto& v : cond.values) {
-        if (v == currentValue) {
+      auto matches = [&](const std::string& key, const std::vector<std::string>& values) {
+        const auto currentValue = settingCurrentString(cfg, widgetName, key, allSpecs);
+        for (const auto& v : values) {
+          if (v == currentValue) {
+            return true;
+          }
+        }
+        return false;
+      };
+      for (const auto& condition : spec.visibleWhen->any) {
+        if (matches(condition.key, condition.values)) {
           return true;
         }
       }
@@ -632,6 +639,50 @@ namespace settings {
         return static_cast<double>(*v);
       }
       return 0.0;
+    }
+
+    std::optional<double> widgetSettingOptionalDouble(const Config& cfg, std::string_view widgetName,
+                                                      const std::string& key) {
+      if (const auto it = cfg.widgets.find(std::string(widgetName)); it != cfg.widgets.end()) {
+        if (const auto settingIt = it->second.settings.find(key); settingIt != it->second.settings.end()) {
+          if (const auto* v = std::get_if<double>(&settingIt->second)) {
+            return *v;
+          }
+          if (const auto* v = std::get_if<std::int64_t>(&settingIt->second)) {
+            return static_cast<double>(*v);
+          }
+        }
+      }
+      return std::nullopt;
+    }
+
+    std::optional<int> widgetSettingOptionalStepperValue(const Config& cfg, std::string_view widgetName,
+                                                         const std::string& key) {
+      const auto value = widgetSettingOptionalDouble(cfg, widgetName, key);
+      if (!value.has_value()) {
+        return std::nullopt;
+      }
+      return std::clamp(static_cast<int>(std::lround(*value)), 0, 80);
+    }
+
+    int inheritedCapsuleRadiusForLane(const Config& cfg, const std::vector<std::string>& lanePath) {
+      if (lanePath.size() < 2 || lanePath[0] != "bar") {
+        return 8;
+      }
+      const BarConfig* bar = findBar(cfg, lanePath[1]);
+      if (bar == nullptr) {
+        return 8;
+      }
+      if (isMonitorWidgetListPath(lanePath) && lanePath.size() >= 4) {
+        if (const auto* ovr = findMonitorOverride(*bar, lanePath[3]);
+            ovr != nullptr && ovr->widgetCapsuleRadius.has_value()) {
+          return std::clamp(static_cast<int>(std::lround(*ovr->widgetCapsuleRadius)), 0, 80);
+        }
+      }
+      if (bar->widgetCapsuleRadius.has_value()) {
+        return std::clamp(static_cast<int>(std::lround(*bar->widgetCapsuleRadius)), 0, 80);
+      }
+      return 8;
     }
 
     std::string settingValueAsString(const WidgetSettingValue& value) {
@@ -814,7 +865,7 @@ namespace settings {
           deleteBtn->setMinWidth(Style::controlHeightSm * ctx.scale);
           deleteBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           deleteBtn->setPadding(Style::spaceXs * ctx.scale);
-          deleteBtn->setRadius(Style::radiusSm * ctx.scale);
+          deleteBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           deleteBtn->setOnClick([&pendingDeleteWidgetSettingPath = ctx.pendingDeleteWidgetSettingPath, deleteKey, path,
                                  clearOverride = ctx.clearOverride, requestRebuild = ctx.requestRebuild]() {
             if (pendingDeleteWidgetSettingPath != deleteKey) {
@@ -872,7 +923,7 @@ namespace settings {
       ++visibleSpecs;
     }
 
-    void addWidgetSettingsPanel(Flex& item, std::string widgetName,
+    void addWidgetSettingsPanel(Flex& item, std::string widgetName, const std::vector<std::string>& lanePath,
                                 const std::vector<SelectOption>& managedCapsuleGroups,
                                 const BarWidgetEditorContext& ctx) {
       const auto widgetType = widgetTypeForReference(ctx.config, widgetName);
@@ -890,7 +941,7 @@ namespace settings {
       panel->setAlign(FlexAlign::Stretch);
       panel->setGap(Style::spaceXs * ctx.scale);
       panel->setPadding(Style::spaceSm * ctx.scale);
-      panel->setRadius(Style::radiusSm * ctx.scale);
+      panel->setRadius(Style::scaledRadiusSm(ctx.scale));
       panel->setFill(colorSpecFromRole(ColorRole::Surface));
       panel->setBorder(colorSpecFromRole(ColorRole::Outline, 0.22f), Style::borderWidth);
 
@@ -962,6 +1013,20 @@ namespace settings {
                                      static_cast<float>(spec.step), path, false));
           break;
         }
+        case WidgetSettingValueType::OptionalDouble: {
+          ctx.makeRow(
+              *panel, entry,
+              ctx.makeOptionalStepper(
+                  OptionalStepperSetting{.value = widgetSettingOptionalStepperValue(ctx.config, widgetName, spec.key),
+                                         .minValue = static_cast<int>(std::lround(spec.minValue.value_or(0.0))),
+                                         .maxValue = static_cast<int>(std::lround(spec.maxValue.value_or(80.0))),
+                                         .step = static_cast<int>(std::max(1.0, spec.step)),
+                                         .fallbackValue = inheritedCapsuleRadiusForLane(ctx.config, lanePath),
+                                         .unsetLabel = i18n::tr("common.states.inherit"),
+                                         .customLabel = i18n::tr("common.states.custom")},
+                  path));
+          break;
+        }
         case WidgetSettingValueType::String: {
           auto textNode = ctx.makeText(settingValueAsString(value), {}, path);
           if (spec.key == "glyph") {
@@ -972,13 +1037,13 @@ namespace settings {
             wrap->addChild(std::move(textNode));
 
             auto pickerButton = std::make_unique<Button>();
-            pickerButton->setVariant(ButtonVariant::Secondary);
+            pickerButton->setVariant(ButtonVariant::Outline);
             pickerButton->setGlyph("apps");
             pickerButton->setGlyphSize(Style::fontSizeBody * ctx.scale);
             pickerButton->setMinHeight(Style::controlHeight * ctx.scale);
             pickerButton->setMinWidth(Style::controlHeight * ctx.scale);
             pickerButton->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-            pickerButton->setRadius(Style::radiusMd * ctx.scale);
+            pickerButton->setRadius(Style::scaledRadiusMd(ctx.scale));
             pickerButton->setOnClick([setOverride = ctx.setOverride, requestRebuild = ctx.requestRebuild, path,
                                       currentValue = settingValueAsString(value)]() {
               GlyphPickerDialogOptions options;
@@ -1011,13 +1076,13 @@ namespace settings {
             wrap->addChild(std::move(textNode));
 
             auto pickerButton = std::make_unique<Button>();
-            pickerButton->setVariant(ButtonVariant::Secondary);
+            pickerButton->setVariant(ButtonVariant::Outline);
             pickerButton->setGlyph("photo");
             pickerButton->setGlyphSize(Style::fontSizeBody * ctx.scale);
             pickerButton->setMinHeight(Style::controlHeight * ctx.scale);
             pickerButton->setMinWidth(Style::controlHeight * ctx.scale);
             pickerButton->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-            pickerButton->setRadius(Style::radiusMd * ctx.scale);
+            pickerButton->setRadius(Style::scaledRadiusMd(ctx.scale));
             pickerButton->setOnClick([setOverride = ctx.setOverride, requestRebuild = ctx.requestRebuild, path,
                                       currentValue = settingValueAsString(value)]() {
               FileDialogOptions options;
@@ -1075,6 +1140,7 @@ namespace settings {
           ColorRolePickerSetting pickerSetting;
           pickerSetting.selectedValue = settingValueAsString(value);
           pickerSetting.allowNone = spec.advanced;
+          pickerSetting.allowCustomColor = spec.allowCustomColor;
           if (!spec.options.empty()) {
             for (const auto& option : spec.options) {
               if (const auto role = colorRoleFromToken(option.value); role.has_value()) {
@@ -1117,9 +1183,9 @@ namespace settings {
       inspector->setAlign(FlexAlign::Stretch);
       inspector->setGap(Style::spaceSm * ctx.scale);
       inspector->setPadding(Style::spaceMd * ctx.scale);
-      inspector->setRadius(Style::radiusMd * ctx.scale);
+      inspector->setRadius(Style::scaledRadiusMd(ctx.scale));
       inspector->setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
-      inspector->setBorder(colorSpecFromRole(ColorRole::Outline, 0.35f), Style::borderWidth);
+      inspector->setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), Style::borderWidth);
 
       if (hasEdit) {
         const std::string widgetName = ctx.editingWidgetName;
@@ -1168,7 +1234,7 @@ namespace settings {
         auto kindBadge = std::make_unique<Flex>();
         kindBadge->setAlign(FlexAlign::Center);
         kindBadge->setPadding(0, Style::spaceXs * ctx.scale);
-        kindBadge->setRadius(Style::radiusSm * ctx.scale);
+        kindBadge->setRadius(Style::scaledRadiusSm(ctx.scale));
         kindBadge->setFill(widgetBadgeColor(info.kind));
         kindBadge->addChild(
             makeLabel(info.badge, Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurface), true));
@@ -1185,7 +1251,7 @@ namespace settings {
         closeBtn->setMinWidth(Style::controlHeightSm * ctx.scale);
         closeBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
         closeBtn->setPadding(Style::spaceXs * ctx.scale);
-        closeBtn->setRadius(Style::radiusSm * ctx.scale);
+        closeBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
         closeBtn->setOnClick([&openWidgetPickerPath = ctx.openWidgetPickerPath,
                               &editingWidgetName = ctx.editingWidgetName, &renamingWidgetName = ctx.renamingWidgetName,
                               &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
@@ -1233,7 +1299,7 @@ namespace settings {
             moveBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
             moveBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
             moveBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-            moveBtn->setRadius(Style::radiusSm * ctx.scale);
+            moveBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
             auto sourceItems = currentLaneItems;
             auto sourcePath = currentLanePath;
             auto targetPath = pathWithLastSegment(entry.path, std::string(targetLane));
@@ -1258,7 +1324,7 @@ namespace settings {
             renameBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
             renameBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
             renameBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-            renameBtn->setRadius(Style::radiusSm * ctx.scale);
+            renameBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
             renameBtn->setOnClick(
                 [&renamingWidgetName = ctx.renamingWidgetName, widgetName, requestRebuild = ctx.requestRebuild]() {
                   renamingWidgetName = widgetName;
@@ -1274,7 +1340,7 @@ namespace settings {
             deleteBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
             deleteBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
             deleteBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-            deleteBtn->setRadius(Style::radiusSm * ctx.scale);
+            deleteBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
             deleteBtn->setOnClick([&pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
                                    &renamingWidgetName = ctx.renamingWidgetName, widgetName,
                                    requestRebuild = ctx.requestRebuild]() {
@@ -1288,7 +1354,8 @@ namespace settings {
           inspector->addChild(std::move(actionRow));
         }
 
-        addWidgetSettingsPanel(*inspector, widgetName, managedCapsuleGroupOptions(ctx.config, currentLanePath), ctx);
+        addWidgetSettingsPanel(*inspector, widgetName, currentLanePath,
+                               managedCapsuleGroupOptions(ctx.config, currentLanePath), ctx);
 
         if (renaming) {
           auto renameRow = std::make_unique<Flex>();
@@ -1331,7 +1398,7 @@ namespace settings {
           saveBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           saveBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           saveBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          saveBtn->setRadius(Style::radiusSm * ctx.scale);
+          saveBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           saveBtn->setOnClick([doRename, inputPtr]() mutable { doRename(inputPtr->value()); });
 
           auto cancelBtn = std::make_unique<Button>();
@@ -1340,7 +1407,7 @@ namespace settings {
           cancelBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           cancelBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           cancelBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          cancelBtn->setRadius(Style::radiusSm * ctx.scale);
+          cancelBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           cancelBtn->setOnClick([&renamingWidgetName = ctx.renamingWidgetName, requestRebuild = ctx.requestRebuild]() {
             renamingWidgetName.clear();
             requestRebuild();
@@ -1358,9 +1425,9 @@ namespace settings {
           confirmPanel->setAlign(FlexAlign::Stretch);
           confirmPanel->setGap(Style::spaceXs * ctx.scale);
           confirmPanel->setPadding(Style::spaceSm * ctx.scale);
-          confirmPanel->setRadius(Style::radiusSm * ctx.scale);
+          confirmPanel->setRadius(Style::scaledRadiusSm(ctx.scale));
           confirmPanel->setFill(colorSpecFromRole(ColorRole::Error, 0.10f));
-          confirmPanel->setBorder(colorSpecFromRole(ColorRole::Error, 0.35f), Style::borderWidth);
+          confirmPanel->setBorder(colorSpecFromRole(ColorRole::Error, 0.5f), Style::borderWidth);
 
           confirmPanel->addChild(
               makeLabel(i18n::tr("settings.entities.widget.instance.delete-confirm-title", "name", widgetName),
@@ -1384,7 +1451,7 @@ namespace settings {
           cancelBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           cancelBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           cancelBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          cancelBtn->setRadius(Style::radiusSm * ctx.scale);
+          cancelBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           cancelBtn->setOnClick(
               [&pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, requestRebuild = ctx.requestRebuild]() {
                 pendingDeleteWidgetName.clear();
@@ -1400,7 +1467,7 @@ namespace settings {
           confirmBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
           confirmBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           confirmBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          confirmBtn->setRadius(Style::radiusSm * ctx.scale);
+          confirmBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           confirmBtn->setOnClick([&editingWidgetName = ctx.editingWidgetName,
                                   &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, config = ctx.config,
                                   widgetName, clearOverride = ctx.clearOverride, setOverrides = ctx.setOverrides]() {
@@ -1455,7 +1522,7 @@ namespace settings {
         closeBtn->setMinWidth(Style::controlHeightSm * ctx.scale);
         closeBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
         closeBtn->setPadding(Style::spaceXs * ctx.scale);
-        closeBtn->setRadius(Style::radiusSm * ctx.scale);
+        closeBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
         closeBtn->setOnClick([&openWidgetPickerPath = ctx.openWidgetPickerPath,
                               &editingWidgetName = ctx.editingWidgetName, &renamingWidgetName = ctx.renamingWidgetName,
                               &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
@@ -1517,7 +1584,7 @@ namespace settings {
           createBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           createBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           createBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          createBtn->setRadius(Style::radiusSm * ctx.scale);
+          createBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           createBtn->setOnClick([doCreate, inputPtr]() mutable { doCreate(inputPtr->value()); });
 
           auto cancelBtn = std::make_unique<Button>();
@@ -1526,7 +1593,7 @@ namespace settings {
           cancelBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
           cancelBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           cancelBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          cancelBtn->setRadius(Style::radiusSm * ctx.scale);
+          cancelBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           cancelBtn->setOnClick([&creatingWidgetType = ctx.creatingWidgetType, requestRebuild = ctx.requestRebuild]() {
             creatingWidgetType.clear();
             requestRebuild();
@@ -1653,9 +1720,9 @@ namespace settings {
       lane->setAlign(FlexAlign::Stretch);
       lane->setGap(Style::spaceXs * ctx.scale);
       lane->setPadding(Style::spaceSm * ctx.scale);
-      lane->setRadius(Style::radiusMd * ctx.scale);
+      lane->setRadius(Style::scaledRadiusMd(ctx.scale));
       lane->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, 0.45f));
-      lane->setBorder(colorSpecFromRole(ColorRole::Outline, 0.35f), Style::borderWidth);
+      lane->setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), Style::borderWidth);
       lane->setFlexGrow(1.0f);
       lane->setMinWidth(160.0f * ctx.scale);
       auto* lanePtr = lane.get();
@@ -1688,7 +1755,7 @@ namespace settings {
         auto badge = std::make_unique<Flex>();
         badge->setAlign(FlexAlign::Center);
         badge->setPadding(0, Style::spaceXs * ctx.scale);
-        badge->setRadius(Style::radiusSm * ctx.scale);
+        badge->setRadius(Style::scaledRadiusSm(ctx.scale));
         badge->setFill(colorSpecFromRole(ColorRole::Primary, 0.15f));
         badge->addChild(makeLabel(i18n::tr("settings.badges.override"), Style::fontSizeCaption * ctx.scale,
                                   colorSpecFromRole(ColorRole::Primary), true));
@@ -1698,7 +1765,7 @@ namespace settings {
         auto badge = std::make_unique<Flex>();
         badge->setAlign(FlexAlign::Center);
         badge->setPadding(0, Style::spaceXs * ctx.scale);
-        badge->setRadius(Style::radiusSm * ctx.scale);
+        badge->setRadius(Style::scaledRadiusSm(ctx.scale));
         badge->setFill(colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.14f));
         badge->addChild(makeLabel(i18n::tr("settings.badges.inherited"), Style::fontSizeCaption * ctx.scale,
                                   colorSpecFromRole(ColorRole::OnSurfaceVariant), true));
@@ -1714,7 +1781,7 @@ namespace settings {
         customizeBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
         customizeBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
         customizeBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-        customizeBtn->setRadius(Style::radiusSm * ctx.scale);
+        customizeBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
         auto items = laneItems;
         auto path = lanePath;
         customizeBtn->setOnClick([setOverride = ctx.setOverride, items, path]() { setOverride(path, items); });
@@ -1733,7 +1800,7 @@ namespace settings {
         item->setAlign(FlexAlign::Stretch);
         item->setGap(Style::spaceXs * ctx.scale);
         item->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-        item->setRadius(Style::radiusSm * ctx.scale);
+        item->setRadius(Style::scaledRadiusSm(ctx.scale));
         item->setFill(colorSpecFromRole(ColorRole::Surface, 0.72f));
         item->setBorder(colorSpecFromRole(ColorRole::Outline, 0.22f), Style::borderWidth);
         auto* itemPtr = item.get();
@@ -1753,7 +1820,7 @@ namespace settings {
         auto kindBadge = std::make_unique<Flex>();
         kindBadge->setAlign(FlexAlign::Center);
         kindBadge->setPadding(0, Style::spaceXs * ctx.scale);
-        kindBadge->setRadius(Style::radiusSm * ctx.scale);
+        kindBadge->setRadius(Style::scaledRadiusSm(ctx.scale));
         kindBadge->setFill(widgetBadgeColor(info.kind));
         kindBadge->addChild(
             makeLabel(info.badge, Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurface), true));
@@ -1795,7 +1862,7 @@ namespace settings {
           dragBtn->setMinWidth(Style::controlHeightSm * ctx.scale);
           dragBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           dragBtn->setPadding(Style::spaceXs * ctx.scale);
-          dragBtn->setRadius(Style::radiusSm * ctx.scale);
+          dragBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           dragBtn->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_MOVE);
           auto* dragBtnPtr = dragBtn.get();
 
@@ -1914,7 +1981,7 @@ namespace settings {
           editBtn->setMinWidth(Style::controlHeightSm * ctx.scale);
           editBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           editBtn->setPadding(Style::spaceXs * ctx.scale);
-          editBtn->setRadius(Style::radiusSm * ctx.scale);
+          editBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           editBtn->setOnClick(
               [&editingWidgetName = ctx.editingWidgetName, &openWidgetPickerPath = ctx.openWidgetPickerPath, widgetName,
                &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, &renamingWidgetName = ctx.renamingWidgetName,
@@ -1943,7 +2010,7 @@ namespace settings {
           removeBtn->setMinWidth(Style::controlHeightSm * ctx.scale);
           removeBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           removeBtn->setPadding(Style::spaceXs * ctx.scale);
-          removeBtn->setRadius(Style::radiusSm * ctx.scale);
+          removeBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
           auto items = laneItems;
           auto path = lanePath;
           removeBtn->setOnClick([setOverride = ctx.setOverride, items, path, i]() mutable {
@@ -1963,7 +2030,7 @@ namespace settings {
         emptyState->setAlign(FlexAlign::Center);
         emptyState->setGap(2.0f * ctx.scale);
         emptyState->setPadding(Style::spaceMd * ctx.scale, Style::spaceSm * ctx.scale);
-        emptyState->setRadius(Style::radiusSm * ctx.scale);
+        emptyState->setRadius(Style::scaledRadiusSm(ctx.scale));
         emptyState->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, 0.25f));
         emptyState->setBorder(colorSpecFromRole(ColorRole::Outline, 0.18f), Style::borderWidth);
         emptyState->addChild(makeLabel(i18n::tr("settings.entities.widget.lanes.empty"),
@@ -1986,7 +2053,7 @@ namespace settings {
         addBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
         addBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
         addBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-        addBtn->setRadius(Style::radiusSm * ctx.scale);
+        addBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
         addBtn->setOnClick([&openWidgetPickerPath = ctx.openWidgetPickerPath,
                             &editingWidgetName = ctx.editingWidgetName, &renamingWidgetName = ctx.renamingWidgetName,
                             &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, pickerKey,

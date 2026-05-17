@@ -86,7 +86,7 @@ namespace {
   constexpr float kDefaultBgPadding = 10.0f;
 
   void applyCommonSettings(DesktopWidget& widget, const std::unordered_map<std::string, WidgetSettingValue>& settings) {
-    if (getBoolSetting(settings, "background", false)) {
+    if (getBoolSetting(settings, "background", true)) {
       const ColorSpec bgColor =
           getColorSpecSetting(settings, "background_color", colorSpecFromRole(ColorRole::Surface, 0.8f));
       const float radius = getFloatSetting(settings, "background_radius", kDefaultBgRadius);
@@ -125,7 +125,8 @@ DesktopWidgetFactory::create(const std::string& type,
         m_pipewireSpectrum, getFloatSetting(settings, "aspect_ratio", kDefaultDesktopAudioVisualizerAspectRatio),
         getIntSetting(settings, "bands", 32), getBoolSetting(settings, "mirrored", true),
         getColorSpecSetting(settings, "low_color", colorSpecFromRole(ColorRole::Primary)),
-        getColorSpecSetting(settings, "high_color", colorSpecFromRole(ColorRole::Primary)));
+        getColorSpecSetting(settings, "high_color", colorSpecFromRole(ColorRole::Primary)),
+        getBoolSetting(settings, "centered", true), getBoolSetting(settings, "show_when_idle", false));
     applyCommonSettings(*widget, settings);
     widget->setContentScale(contentScale);
     return widget;
@@ -177,6 +178,8 @@ DesktopWidgetFactory::create(const std::string& type,
         return DesktopSysmonStat::CpuTemp;
       if (s == "gpu_temp")
         return DesktopSysmonStat::GpuTemp;
+      if (s == "gpu_vram")
+        return DesktopSysmonStat::GpuVram;
       if (s == "ram_pct")
         return DesktopSysmonStat::RamPct;
       if (s == "swap_pct")

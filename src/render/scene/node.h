@@ -9,6 +9,7 @@ struct Mat3;
 
 class AnimationManager;
 class Renderer;
+class SelectPopupContext;
 
 enum class NodeType : std::uint8_t {
   Base,
@@ -115,10 +116,13 @@ public:
 
   void setAnimationManager(AnimationManager* mgr);
   [[nodiscard]] AnimationManager* animationManager() const noexcept { return m_animationManager; }
+  void setPopupContext(SelectPopupContext* ctx);
+  [[nodiscard]] SelectPopupContext* popupContext() const noexcept { return m_popupContext; }
   void setInvalidationCallback(std::function<void(NodeInvalidation)> callback);
   void layout(Renderer& renderer);
   [[nodiscard]] LayoutSize measure(Renderer& renderer, const LayoutConstraints& constraints);
   void arrange(Renderer& renderer, const LayoutRect& rect);
+  [[nodiscard]] bool containsScenePoint(float sceneX, float sceneY) const;
 
   void setUserData(void* data) noexcept { m_userData = data; }
   [[nodiscard]] void* userData() const noexcept { return m_userData; }
@@ -161,6 +165,7 @@ private:
   std::int32_t m_zIndex = 0;
   void* m_userData = nullptr;
   AnimationManager* m_animationManager = nullptr;
+  SelectPopupContext* m_popupContext = nullptr;
   std::function<void(NodeInvalidation)> m_invalidationCallback;
   Node* m_parent = nullptr;
   std::vector<std::unique_ptr<Node>> m_children;

@@ -64,7 +64,6 @@ private:
   void requestTree();
   void refreshFromWorkspaceEvent();
   [[nodiscard]] static Workspace toWorkspace(const SwayWorkspace& workspace);
-  [[nodiscard]] static std::string quoteCommandArg(const std::string& value);
 
   OutputNameResolver m_outputNameResolver;
   compositors::sway::SwayRuntime& m_runtime;

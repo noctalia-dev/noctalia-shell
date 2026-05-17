@@ -23,6 +23,8 @@ struct TrayItemInfo {
   std::string itemName;
   std::string processName;
   std::string title;
+  std::string statusNotifierTitle;
+  std::string statusNotifierDescription;
   std::string status;
   std::vector<std::uint8_t> iconArgb32;
   std::int32_t iconWidth = 0;
@@ -72,6 +74,8 @@ public:
   [[nodiscard]] std::vector<TrayItemInfo> items() const;
   [[nodiscard]] std::vector<TrayMenuEntry> menuEntries(const std::string& itemId);
   [[nodiscard]] std::vector<TrayMenuEntry> menuEntriesForParent(const std::string& itemId, std::int32_t parentId);
+  // Returns true if the click event was dispatched to DBus successfully.
+  // This does not imply the remote menu action completed successfully.
   [[nodiscard]] bool activateMenuEntry(const std::string& itemId, std::int32_t entryId);
   // Notify the dbusmenu server that a (sub)menu is being opened/closed. `entryId`
   // is the menu item id: 0 for the root menu, or a submenu parent id otherwise.
@@ -90,11 +94,15 @@ private:
     std::unordered_map<std::int32_t, TrayMenuEntry> entriesById;
     // Decoded child ids per parent-id. parentId=0 is the root menu.
     std::unordered_map<std::int32_t, std::vector<std::int32_t>> childrenByParent;
+    std::unordered_map<std::int32_t, std::chrono::steady_clock::time_point> nextRetryAt;
+    std::unordered_map<std::int32_t, std::uint8_t> failureStreak;
+    std::unordered_map<std::int32_t, std::uint32_t> lastLayoutUpdatedRevisionByParent;
     std::unordered_set<std::int32_t> loadedParents;
     std::unordered_set<std::int32_t> loadingParents;
     std::uint32_t revision = 0;
     std::uint64_t generation = 0;
     bool rootLoaded = false;
+    bool rootAboutToShowPrimed = false;
   };
 
   void onRegisterStatusNotifierItem(const std::string& serviceOrPath, const std::string& senderBusName);

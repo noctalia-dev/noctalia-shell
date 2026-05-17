@@ -8,6 +8,9 @@ public:
   explicit SystemBusPollSource(SystemBus& bus) : m_bus(bus) {}
 
   [[nodiscard]] int pollTimeoutMs() const override {
+    if (m_bus.hasPendingEvents()) {
+      return 0;
+    }
     const int t = m_bus.getPollData().getPollTimeout();
     return t;
   }

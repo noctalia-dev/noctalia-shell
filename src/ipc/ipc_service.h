@@ -50,6 +50,6 @@ private:
 
   int m_listenFd = -1;
   std::string m_socketPath;
-  // Ordered so --help output is stable
+  // Registration order is retained; --help output is sorted for display.
   std::vector<std::pair<std::string, HandlerEntry>> m_handlers;
 };

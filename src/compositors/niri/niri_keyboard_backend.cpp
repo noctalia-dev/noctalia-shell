@@ -1,7 +1,6 @@
 #include "compositors/niri/niri_keyboard_backend.h"
 
 #include "compositors/niri/niri_runtime.h"
-#include "core/process.h"
 
 #include <json.hpp>
 
@@ -55,7 +54,9 @@ bool NiriKeyboardBackend::cycleLayout() const {
   if (!isAvailable()) {
     return false;
   }
-  return process::runSync({"niri", "msg", "action", "switch-layout", "next"});
+  return m_runtime.requestAction(nlohmann::json{
+      {"SwitchLayout", nlohmann::json{{"layout", "Next"}}},
+  });
 }
 
 std::optional<KeyboardLayoutState> NiriKeyboardBackend::layoutState() const {

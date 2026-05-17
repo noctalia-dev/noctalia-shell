@@ -18,7 +18,6 @@
 #include "theme/theme_service.h"
 #include "wayland/wayland_connection.h"
 
-#include <algorithm>
 #include <array>
 #include <cmath>
 #include <format>
@@ -292,16 +291,6 @@ namespace {
     PipeWireService* m_svc;
   };
 
-  const char* powerProfileIcon(std::string_view profile) {
-    if (profile == "performance") {
-      return "performance";
-    }
-    if (profile == "power-saver") {
-      return "powersaver";
-    }
-    return "balanced";
-  }
-
   const WidgetConfig* findKeyboardLayoutWidgetConfig(const Config& config) {
     auto resolve = [&config](const std::string& name) -> const WidgetConfig* {
       const auto it = config.widgets.find(name);
@@ -356,7 +345,7 @@ namespace {
       return defaultLabel();
     }
     std::string_view iconOn() const override {
-      return powerProfileIcon(m_svc != nullptr ? m_svc->activeProfile() : "");
+      return profileGlyphName(m_svc != nullptr ? m_svc->activeProfile() : "");
     }
     std::string_view iconOff() const override { return "balanced"; }
     bool isToggle() const override { return true; }
@@ -367,17 +356,7 @@ namespace {
       if (m_svc == nullptr) {
         return;
       }
-      const auto& profiles = m_svc->profiles();
-      if (profiles.empty()) {
-        return;
-      }
-      const auto& current = m_svc->activeProfile();
-      auto it = std::find(profiles.begin(), profiles.end(), current);
-      std::size_t nextIdx = 0;
-      if (it != profiles.end()) {
-        nextIdx = (static_cast<std::size_t>(std::distance(profiles.begin(), it)) + 1) % profiles.size();
-      }
-      (void)m_svc->setActiveProfile(profiles[nextIdx]);
+      (void)m_svc->cycleActiveProfile();
     }
     void onRightClick() override { openTab("system"); }
 
@@ -554,7 +533,11 @@ std::unique_ptr<Shortcut> ShortcutRegistry::create(std::string_view type, const 
     return std::make_unique<WallpaperShortcut>();
   if (type == "session")
     return std::make_unique<SessionShortcut>();
-  if (type == "clipboard")
+  if (type == "clipboard") {
+    if (s.config != nullptr && !s.config->config().shell.clipboardEnabled) {
+      return nullptr;
+    }
     return std::make_unique<ClipboardShortcut>();
+  }
   return nullptr;
 }

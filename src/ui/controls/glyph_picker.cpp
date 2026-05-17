@@ -12,9 +12,9 @@
 #include "ui/controls/virtual_grid_view.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
-#include <cctype>
 #include <memory>
 #include <unordered_set>
 
@@ -24,7 +24,7 @@ namespace {
     button.setMinHeight(Style::controlHeight * scale);
     button.setMinWidth(92.0f * scale);
     button.setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-    button.setRadius(Style::radiusMd * scale);
+    button.setRadius(Style::scaledRadiusMd(scale));
   }
 
   void configureDialogCloseButton(Button& button, float scale) {
@@ -34,14 +34,7 @@ namespace {
     button.setMinWidth(Style::controlHeightSm * scale);
     button.setMinHeight(Style::controlHeightSm * scale);
     button.setPadding(Style::spaceXs * scale);
-    button.setRadius(Style::radiusMd * scale);
-  }
-
-  std::string toLowerCopy(std::string_view value) {
-    std::string out(value);
-    std::transform(out.begin(), out.end(), out.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    return out;
+    button.setRadius(Style::scaledRadiusMd(scale));
   }
 
 } // namespace
@@ -61,9 +54,11 @@ public:
     seen.reserve(tabler.size() + aliases.size());
     m_master.reserve(tabler.size() + aliases.size());
 
-    for (const auto& [name, codepoint] : aliases) {
+    for (const auto& [name, target] : aliases) {
       if (seen.insert(name).second) {
-        m_master.push_back({name, codepoint});
+        if (const auto it = tabler.find(std::string(target)); it != tabler.end()) {
+          m_master.push_back({name, it->second});
+        }
       }
     }
     for (const auto& [name, codepoint] : tabler) {
@@ -85,7 +80,7 @@ public:
     tile->setAlign(FlexAlign::Center);
     tile->setJustify(FlexJustify::Center);
     tile->setPadding(0.0f);
-    tile->setRadius(Style::radiusMd * m_chromeScale);
+    tile->setRadius(Style::scaledRadiusMd(m_chromeScale));
     tile->clearBorder();
 
     auto glyph = std::make_unique<Glyph>();
@@ -136,7 +131,7 @@ public:
       }
       return;
     }
-    const std::string needle = toLowerCopy(filter);
+    const std::string needle = StringUtils::toLower(filter);
     for (std::size_t i = 0; i < m_master.size(); ++i) {
       // Names in the registry are already lowercase; no need to lower each entry.
       if (m_master[i].name.find(needle) != std::string::npos) {

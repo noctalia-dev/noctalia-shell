@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/timer_manager.h"
+
 #include <chrono>
 #include <cstdint>
 #include <deque>
@@ -106,7 +108,14 @@ private:
   void scheduleStartupRediscovery();
   void scheduleRecoveryDiscovery();
   void addOrRefreshPlayer(const std::string& busName);
-  void applyPlayerSnapshot(const std::string& busName, const MprisPlayerInfo& info, bool hadPositionSignal);
+  void applyPlayerSnapshot(const std::string& busName, const MprisPlayerInfo& info, bool hadPositionSignal,
+                           bool hadFullRefreshFailure);
+  [[nodiscard]] bool shouldRetryPropertiesRefresh(const std::string& busName) const;
+  [[nodiscard]] std::chrono::milliseconds propertiesRefreshRetryInterval(const std::string& busName,
+                                                                         std::chrono::milliseconds fallback,
+                                                                         bool usePropertiesBackoff) const;
+  void schedulePositionRefreshRetry(const std::string& busName, std::chrono::milliseconds fallback,
+                                    bool usePropertiesBackoff);
   void refreshPlayerPosition(const std::string& busName, bool notifyChange);
   void applyPositionSample(const std::string& busName, int64_t rawPositionUs, bool notifyChange);
   void removePlayer(const std::string& busName);
@@ -174,6 +183,8 @@ private:
   std::unordered_map<std::string, std::chrono::steady_clock::time_point> m_lastPropertiesUpdate;
   std::unordered_map<std::string, std::chrono::steady_clock::time_point> m_lastPlayingUpdate;
   std::unordered_map<std::string, std::chrono::steady_clock::time_point> m_lastStrongMetadataUpdate;
+  std::unordered_map<std::string, int> m_playerPropertiesFailures;
+  std::unordered_map<std::string, std::chrono::milliseconds> m_playerPropertiesRefreshBackoffMs;
   std::deque<std::string> m_pendingDiscoveryBusNames;
   std::string m_lastActivePlayer;
   std::string m_lastEmittedActivePlayer;
@@ -182,6 +193,7 @@ private:
   std::vector<std::string> m_blacklist;
   std::function<void()> m_changeCallback;
   int m_startupRediscoveryPassesRemaining = 4;
-  bool m_recoveryDiscoveryScheduled = false;
+  Timer m_recoveryTimer;
+  std::chrono::milliseconds m_recoveryBackoffMs{500};
   bool m_discoveryDrainScheduled = false;
 };

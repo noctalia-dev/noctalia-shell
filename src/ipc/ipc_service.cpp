@@ -5,10 +5,12 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
+#include <numeric>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <vector>
 
 namespace {
 
@@ -152,6 +154,11 @@ void IpcService::handleConnection(int connFd) {
 }
 
 std::string IpcService::buildHelp() const {
+  std::vector<std::size_t> order(m_handlers.size());
+  std::iota(order.begin(), order.end(), 0);
+  std::sort(order.begin(), order.end(),
+            [this](std::size_t lhs, std::size_t rhs) { return m_handlers[lhs].first < m_handlers[rhs].first; });
+
   // Find the longest usage string for alignment
   std::size_t maxUsage = 0;
   for (const auto& [cmd, entry] : m_handlers) {
@@ -160,7 +167,8 @@ std::string IpcService::buildHelp() const {
   }
 
   std::string out = "Usage: noctalia msg <command> [args]\n\nCommands:\n";
-  for (const auto& [cmd, entry] : m_handlers) {
+  for (const auto index : order) {
+    const auto& [cmd, entry] = m_handlers[index];
     const auto& u = entry.usage.empty() ? cmd : entry.usage;
     out += "  ";
     out += u;

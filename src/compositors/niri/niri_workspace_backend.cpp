@@ -11,6 +11,7 @@
 #include <cstring>
 #include <fcntl.h>
 #include <json.hpp>
+#include <limits>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -20,8 +21,25 @@
 namespace {
 
   constexpr Logger kLog("niri_workspace");
-  constexpr auto kReconnectDelay = std::chrono::seconds(2);
+  constexpr auto kReconnectInitial = std::chrono::seconds(2);
+  constexpr auto kReconnectMax = std::chrono::seconds(30);
+  constexpr std::size_t kReadBufferMaxBytes = 1024U * 1024U;
   constexpr std::string_view kEventStreamRequest = "\"EventStream\"\n";
+
+  [[nodiscard]] bool writeAll(int fd, std::string_view data) {
+    std::size_t offset = 0;
+    while (offset < data.size()) {
+      const ssize_t written = ::write(fd, data.data() + offset, data.size() - offset);
+      if (written <= 0) {
+        if (written < 0 && errno == EINTR) {
+          continue;
+        }
+        return false;
+      }
+      offset += static_cast<std::size_t>(written);
+    }
+    return true;
+  }
 
   [[nodiscard]] std::optional<std::uint64_t> jsonUnsigned(const nlohmann::json& json) {
     if (json.is_number_unsigned()) {
@@ -32,6 +50,24 @@ namespace {
       if (value >= 0) {
         return static_cast<std::uint64_t>(value);
       }
+    }
+    return std::nullopt;
+  }
+
+  [[nodiscard]] std::optional<std::int32_t> jsonInt32(const nlohmann::json& json) {
+    if (json.is_number_integer()) {
+      const auto value = json.get<std::int64_t>();
+      if (value < std::numeric_limits<std::int32_t>::min() || value > std::numeric_limits<std::int32_t>::max()) {
+        return std::nullopt;
+      }
+      return static_cast<std::int32_t>(value);
+    }
+    if (json.is_number_unsigned()) {
+      const auto value = json.get<std::uint64_t>();
+      if (value > static_cast<std::uint64_t>(std::numeric_limits<std::int32_t>::max())) {
+        return std::nullopt;
+      }
+      return static_cast<std::int32_t>(value);
     }
     return std::nullopt;
   }
@@ -152,22 +188,7 @@ void NiriWorkspaceBackend::apply(std::vector<Workspace>& workspaces, const std::
     return;
   }
 
-  std::vector<const WorkspaceState*> candidates;
-  candidates.reserve(m_workspaces.size());
-  for (const auto& [workspaceId, workspace] : m_workspaces) {
-    (void)workspaceId;
-    if (!outputName.empty() && workspace.output != outputName) {
-      continue;
-    }
-    candidates.push_back(&workspace);
-  }
-
-  std::sort(candidates.begin(), candidates.end(), [](const WorkspaceState* lhs, const WorkspaceState* rhs) {
-    if (lhs->idx != rhs->idx) {
-      return lhs->idx < rhs->idx;
-    }
-    return lhs->id < rhs->id;
-  });
+  const std::vector<const WorkspaceState*> candidates = sortedWorkspaceCandidatesForOutput(outputName);
 
   std::vector<const WorkspaceState*> matches(workspaces.size(), nullptr);
   std::unordered_map<std::uint64_t, bool> used;
@@ -231,7 +252,8 @@ void NiriWorkspaceBackend::apply(std::vector<Workspace>& workspaces, const std::
   }
 }
 
-std::vector<std::string> NiriWorkspaceBackend::workspaceKeys(const std::string& outputName) const {
+std::vector<const NiriWorkspaceBackend::WorkspaceState*>
+NiriWorkspaceBackend::sortedWorkspaceCandidatesForOutput(const std::string& outputName) const {
   std::vector<const WorkspaceState*> candidates;
   candidates.reserve(m_workspaces.size());
   for (const auto& [workspaceId, workspace] : m_workspaces) {
@@ -248,6 +270,11 @@ std::vector<std::string> NiriWorkspaceBackend::workspaceKeys(const std::string& 
     }
     return lhs->id < rhs->id;
   });
+  return candidates;
+}
+
+std::vector<std::string> NiriWorkspaceBackend::workspaceKeys(const std::string& outputName) const {
+  const std::vector<const WorkspaceState*> candidates = sortedWorkspaceCandidatesForOutput(outputName);
 
   std::vector<std::string> result;
   result.reserve(candidates.size());
@@ -326,6 +353,7 @@ void NiriWorkspaceBackend::cleanup() {
   m_overviewKnown = false;
   m_overviewOpen = false;
   m_readBuffer.clear();
+  m_reconnectBackoff = kReconnectInitial;
 }
 
 void NiriWorkspaceBackend::connectIfNeeded() {
@@ -361,8 +389,7 @@ void NiriWorkspaceBackend::connectIfNeeded() {
     return;
   }
 
-  const auto written = ::write(fd, kEventStreamRequest.data(), kEventStreamRequest.size());
-  if (written < 0 || static_cast<std::size_t>(written) != kEventStreamRequest.size()) {
+  if (!writeAll(fd, kEventStreamRequest)) {
     ::close(fd);
     scheduleReconnect();
     return;
@@ -375,6 +402,7 @@ void NiriWorkspaceBackend::connectIfNeeded() {
 
   m_socketFd = fd;
   m_nextReconnectAt = {};
+  m_reconnectBackoff = kReconnectInitial;
   m_readBuffer.clear();
   kLog.debug("connected to niri event stream");
 }
@@ -393,7 +421,10 @@ void NiriWorkspaceBackend::closeSocket(bool scheduleReconnectFlag) {
 }
 
 void NiriWorkspaceBackend::scheduleReconnect() {
-  m_nextReconnectAt = std::chrono::steady_clock::now() + kReconnectDelay;
+  const auto now = std::chrono::steady_clock::now();
+  m_nextReconnectAt = now + m_reconnectBackoff;
+  const auto doubled = m_reconnectBackoff * 2;
+  m_reconnectBackoff = std::min(doubled, kReconnectMax);
 }
 
 void NiriWorkspaceBackend::readSocket() {
@@ -402,6 +433,12 @@ void NiriWorkspaceBackend::readSocket() {
     const ssize_t readBytes = ::read(m_socketFd, buffer.data(), buffer.size());
     if (readBytes > 0) {
       m_readBuffer.insert(m_readBuffer.end(), buffer.begin(), buffer.begin() + readBytes);
+      if (m_readBuffer.size() > kReadBufferMaxBytes) {
+        kLog.warn("niri event stream read buffer exceeded {} bytes; reconnecting", kReadBufferMaxBytes);
+        closeSocket(true);
+        m_readBuffer.clear();
+        return;
+      }
       continue;
     }
 
@@ -410,6 +447,9 @@ void NiriWorkspaceBackend::readSocket() {
       return;
     }
 
+    if (errno == EINTR) {
+      continue;
+    }
     if (errno == EAGAIN || errno == EWOULDBLOCK) {
       break;
     }
@@ -615,7 +655,11 @@ bool NiriWorkspaceBackend::handleWindowLayoutsChanged(const nlohmann::json& payl
       continue;
     }
 
-    const auto id = item[0].get<std::uint64_t>();
+    const auto idOpt = jsonUnsigned(item[0]);
+    if (!idOpt.has_value()) {
+      continue;
+    }
+    const std::uint64_t id = *idOpt;
     const auto& layout = item[1];
 
     auto it = m_windows.find(id);
@@ -626,8 +670,13 @@ bool NiriWorkspaceBackend::handleWindowLayoutsChanged(const nlohmann::json& payl
     if (layout.contains("pos_in_scrolling_layout")) {
       const auto& pos = layout["pos_in_scrolling_layout"];
       if (pos.is_array() && pos.size() >= 2) {
-        std::int32_t x = pos[0].get<std::int32_t>();
-        std::int32_t y = pos[1].get<std::int32_t>();
+        const auto xOpt = jsonInt32(pos[0]);
+        const auto yOpt = jsonInt32(pos[1]);
+        if (!xOpt.has_value() || !yOpt.has_value()) {
+          continue;
+        }
+        const std::int32_t x = *xOpt;
+        const std::int32_t y = *yOpt;
         if (it->second.x != x || it->second.y != y) {
           it->second.x = x;
           it->second.y = y;

@@ -102,6 +102,7 @@ void ScreenCorners::ensureSurfaces() {
 
       auto& corner = inst->corners[i];
       corner.surface = std::make_unique<LayerSurface>(*m_wayland, std::move(surfaceConfig));
+      corner.surface->setRenderContext(m_renderContext);
 
       auto* cornerPtr = &corner;
       const int cornerIndex = i;
@@ -117,7 +118,6 @@ void ScreenCorners::ensureSurfaces() {
           buildCornerScene(*cornerPtr, width, height, cornerIndex);
         }
       });
-      corner.surface->setRenderContext(m_renderContext);
 
       if (!corner.surface->initialize(output.output)) {
         ok = false;

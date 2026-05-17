@@ -58,7 +58,7 @@ public:
   void setSoftness(float softness);
 
   // Default app card chrome: filled surface variant with a soft outline.
-  void setCardStyle(float scale = 1.0f);
+  void setCardStyle(float scale = 1.0f, float fillOpacity = 1.0f);
 
   void setMinWidth(float minWidth);
   void setMinHeight(float minHeight);
@@ -77,6 +77,8 @@ public:
   [[nodiscard]] FlexJustify justify() const noexcept { return m_justify; }
   [[nodiscard]] FlexSizePolicy widthPolicy() const noexcept { return m_widthPolicy; }
   [[nodiscard]] FlexSizePolicy heightPolicy() const noexcept { return m_heightPolicy; }
+  [[nodiscard]] float minWidth() const noexcept { return m_minWidth; }
+  [[nodiscard]] float minHeight() const noexcept { return m_minHeight; }
   [[nodiscard]] float paddingTop() const noexcept { return m_paddingTop; }
   [[nodiscard]] float paddingRight() const noexcept { return m_paddingRight; }
   [[nodiscard]] float paddingBottom() const noexcept { return m_paddingBottom; }

@@ -2,6 +2,7 @@
 
 #include "compositors/sway/sway_runtime.h"
 #include "core/log.h"
+#include "util/string_utils.h"
 
 #include <arpa/inet.h>
 #include <cerrno>
@@ -203,12 +204,6 @@ namespace {
     }
   }
 
-  std::string toLowerCopy(std::string value) {
-    std::transform(value.begin(), value.end(), value.begin(),
-                   [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
-    return value;
-  }
-
   std::string assignmentLookupKey(std::string_view workspaceKey, std::string_view appId, std::string_view title) {
     std::string key;
     key.reserve(workspaceKey.size() + appId.size() + title.size() + 2);
@@ -272,7 +267,7 @@ void SwayWorkspaceBackend::activate(const std::string& id) {
     return;
   }
 
-  sendMessage(kIpcRunCommand, "workspace " + quoteCommandArg(id));
+  sendMessage(kIpcRunCommand, "workspace " + StringUtils::quoteDouble(id));
 }
 
 void SwayWorkspaceBackend::activateForOutput(wl_output* /*output*/, const std::string& id) { activate(id); }
@@ -352,7 +347,7 @@ SwayWorkspaceBackend::assignTaskbarWindows(const std::vector<TaskbarWindowCandid
   std::unordered_map<std::string, std::vector<const WorkspaceWindow*>> windowsByLookupKey;
   windowsByLookupKey.reserve(outputWindows.size());
   for (const auto& window : outputWindows) {
-    const std::string appIdLower = toLowerCopy(window.appId);
+    const std::string appIdLower = StringUtils::toLower(window.appId);
     windowsByLookupKey[assignmentLookupKey(window.workspaceKey, appIdLower, window.title)].push_back(&window);
   }
 
@@ -376,7 +371,8 @@ SwayWorkspaceBackend::assignTaskbarWindows(const std::vector<TaskbarWindowCandid
       }
 
       for (const auto& candidateAppId : window.appIds) {
-        const std::string lookupKey = assignmentLookupKey(workspaceKey, toLowerCopy(candidateAppId), window.title);
+        const std::string lookupKey =
+            assignmentLookupKey(workspaceKey, StringUtils::toLower(candidateAppId), window.title);
         auto it = windowsByLookupKey.find(lookupKey);
         if (it == windowsByLookupKey.end()) {
           continue;
@@ -666,16 +662,4 @@ Workspace SwayWorkspaceBackend::toWorkspace(const SwayWorkspace& workspace) {
       .urgent = workspace.urgent,
       .occupied = workspace.occupied,
   };
-}
-
-std::string SwayWorkspaceBackend::quoteCommandArg(const std::string& value) {
-  std::string escaped = "\"";
-  for (const char c : value) {
-    if (c == '\\' || c == '"') {
-      escaped.push_back('\\');
-    }
-    escaped.push_back(c);
-  }
-  escaped.push_back('"');
-  return escaped;
 }

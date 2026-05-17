@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <string>
 #include <utility>
 
 Segmented::Segmented() {
@@ -22,12 +23,13 @@ std::size_t Segmented::addOption(std::string_view label) { return addOption(labe
 
 std::size_t Segmented::addOption(std::string_view label, std::string_view glyph) {
   const std::size_t index = m_buttons.size();
+  m_optionLabels.emplace_back(label);
   if (index > 0) {
     auto sep = makeSegmentSeparator();
     m_separators.push_back(sep.get());
     addChild(std::move(sep));
   }
-  auto btn = makeSegmentButton(label, glyph, index);
+  auto btn = makeSegmentButton(m_optionLabels.back(), glyph, index);
   Button* raw = btn.get();
   m_buttons.push_back(raw);
   addChild(std::move(btn));
@@ -48,7 +50,7 @@ void Segmented::clearOptions() {
   }
   m_separators.clear();
   m_buttons.clear();
-  m_hoveredIndex.reset();
+  m_optionLabels.clear();
   m_selected = 0;
   markLayoutDirty();
 }
@@ -132,13 +134,7 @@ std::unique_ptr<Button> Segmented::makeSegmentButton(std::string_view label, std
   btn->setFontSize(effectiveFontSize());
   btn->setMinHeight(segmentHeight());
   btn->setPadding(Style::spaceXs * m_scale, horizontalPadding());
-  if (m_iconOnlyHoverLabelsEnabled) {
-    btn->setText("");
-    btn->setGlyphOnlySquare(false);
-    auto storedLabel = std::make_shared<std::string>(label);
-    btn->setOnEnter([this, index, storedLabel]() { emitHoverLabel(index, *storedLabel); });
-    btn->setOnLeave([this, index]() { clearHoverLabel(index); });
-  }
+  applyButtonLabelMode(*btn, label);
   btn->setOnPress([this, index](float /*localX*/, float /*localY*/, bool pressed) {
     if (m_selectOnPress && pressed) {
       setSelectedIndex(index);
@@ -149,6 +145,17 @@ std::unique_ptr<Button> Segmented::makeSegmentButton(std::string_view label, std
   btn->setContentAlign(ButtonContentAlign::Center);
   btn->setEnabled(m_enabled);
   return btn;
+}
+
+void Segmented::applyButtonLabelMode(Button& button, std::string_view label) const {
+  if (m_iconOnlyHoverLabelsEnabled) {
+    button.setText("");
+    button.setTooltip(std::string(label));
+    return;
+  }
+
+  button.setText(label);
+  button.setTooltip("");
 }
 
 void Segmented::setEqualSegmentWidths(bool equalWidths) {
@@ -169,22 +176,17 @@ void Segmented::setIconOnlyHoverLabelsEnabled(bool enabled) {
     return;
   }
   m_iconOnlyHoverLabelsEnabled = enabled;
-  for (Button* btn : m_buttons) {
+  for (std::size_t i = 0; i < m_buttons.size(); ++i) {
+    Button* btn = m_buttons[i];
     if (btn != nullptr) {
       btn->setMinHeight(segmentHeight());
       btn->setPadding(Style::spaceXs * m_scale, horizontalPadding());
+      if (i < m_optionLabels.size()) {
+        applyButtonLabelMode(*btn, m_optionLabels[i]);
+      }
     }
   }
-  if (!enabled && m_onHoverLabelChange) {
-    m_hoveredIndex.reset();
-    m_onHoverLabelChange(std::nullopt, {}, 0.0f);
-  }
   markLayoutDirty();
-}
-
-void Segmented::setOnHoverLabelChange(
-    std::function<void(std::optional<std::size_t>, std::string_view, float)> callback) {
-  m_onHoverLabelChange = std::move(callback);
 }
 
 void Segmented::setToolbarStyle(bool toolbarStyle) {
@@ -200,7 +202,7 @@ void Segmented::setSelectOnPress(bool selectOnPress) { m_selectOnPress = selectO
 
 void Segmented::refreshVariants() {
   const std::size_t n = m_buttons.size();
-  const float r = Style::radiusMd * m_scale;
+  const float r = Style::scaledRadiusMd(m_scale);
   for (std::size_t i = 0; i < n; ++i) {
     if (m_buttons[i] == nullptr) {
       continue;
@@ -226,33 +228,7 @@ void Segmented::applyOuterStyle() {
   setPadding(0.0f);
   setFill(m_toolbarStyle ? colorSpecFromRole(ColorRole::Surface) : colorSpecFromRole(ColorRole::SurfaceVariant));
   clearBorder();
-  setRadius(Style::radiusMd * m_scale);
-}
-
-void Segmented::emitHoverLabel(std::size_t index, std::string_view label) {
-  if (!m_iconOnlyHoverLabelsEnabled || index >= m_buttons.size()) {
-    return;
-  }
-
-  Button* button = m_buttons[index];
-  if (button == nullptr) {
-    return;
-  }
-
-  m_hoveredIndex = index;
-  if (m_onHoverLabelChange) {
-    m_onHoverLabelChange(index, label, button->x() + button->width() * 0.5f);
-  }
-}
-
-void Segmented::clearHoverLabel(std::size_t index) {
-  if (!m_hoveredIndex.has_value() || *m_hoveredIndex != index) {
-    return;
-  }
-  m_hoveredIndex.reset();
-  if (m_onHoverLabelChange) {
-    m_onHoverLabelChange(std::nullopt, {}, 0.0f);
-  }
+  setRadius(Style::scaledRadiusMd(m_scale));
 }
 
 float Segmented::segmentHeight() const noexcept {
