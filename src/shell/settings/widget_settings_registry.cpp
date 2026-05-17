@@ -376,6 +376,7 @@ namespace settings {
       add(doubleSpec("width", 56.0, 8.0, 400.0, 1.0));
       add(intSpec("bands", 16, 2.0, 128.0, 1.0));
       add(boolSpec("mirrored", true));
+      add(boolSpec("centered", true));
       add(boolSpec("show_when_idle", false));
       {
         auto low = colorRoleSpec("low_color", "primary");

@@ -103,6 +103,8 @@ namespace desktop_settings {
       add(doubleSpec("aspect_ratio", 2.5, 0.5, 6.0, 0.1));
       add(doubleSpec("bands", 32.0, 4.0, 128.0, 4.0));
       add(boolSpec("mirrored", true));
+      add(boolSpec("centered", true));
+      add(boolSpec("show_when_idle", false));
       add(colorRoleSpec("low_color", "primary"));
       add(colorRoleSpec("high_color", "primary"));
     } else if (type == "sticker") {

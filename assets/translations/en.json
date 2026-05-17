@@ -457,6 +457,8 @@
         "aspect-ratio": "Aspect Ratio",
         "bands": "Bands",
         "mirrored": "Mirrored",
+        "centered": "Centered",
+        "show-when-idle": "Show When Idle",
         "low-color": "Low Color",
         "high-color": "High Color",
         "image-path": "Image",
@@ -1237,6 +1239,10 @@
         "mirrored": {
           "label": "Mirrored",
           "description": "Mirror the visualizer around its center"
+        },
+        "centered": {
+          "label": "Centered",
+          "description": "Center visualizer bars instead of aligning them to the edge"
         },
         "path": {
           "label": "Path",
