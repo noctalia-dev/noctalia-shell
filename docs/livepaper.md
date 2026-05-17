@@ -22,32 +22,57 @@ with no extra blits. `ProjectMRenderer::renderFrame()` makes the root
 surfaceless context current, renders, then restores the caller's
 context.
 
-## Critical: the shared GL context must be GLES3, not GLES2
+## Critical: load presets with the shared context current
 
-`GlSharedContext` requests `EGL_CONTEXT_CLIENT_VERSION = 3`
-(`src/render/gl_shared_context.cpp`). **Do not lower this to 2.**
-
-libprojectM 4.x renders through Vertex Array Objects, which are not core
-in GLES2. Under a GLES2 context libprojectM's VAO / element-buffer
-binding silently no-ops; Mesa then interprets libprojectM's VBO index
-*offset* as a client-side pointer and `memcpy`s from a garbage address,
-crashing deterministically on the first frame:
+Every `projectm_*` call that touches GL **must** run with the shared
+surfaceless root context current — `initialize()` (`projectm_create`),
+`renderFrame()` (`projectm_opengl_render_frame`), **and `loadPreset()`
+(`projectm_load_preset_file`)**. `loadPreset()` originally omitted the
+`makeCurrentSaved()` / `restore()` guard, which caused a deterministic
+first-frame crash:
 
 ```
-__memcpy_avx_unaligned_erms
-tc_draw_user_indices_single        (Mesa glthread)
+__memcpy_avx_unaligned_erms          <- driver reads indices from NULL
+tc_draw_user_indices_single / iris_emit_index_buffer
 _mesa_DrawElementsBaseVertex
-libprojectM::MilkdropPreset::FinalComposite::Draw
+libprojectM::MilkdropPreset::FinalComposite::Draw   (glDrawElements ..., nullptr)
 ProjectMRenderer::renderFrame
 Wallpaper::onVisualizerTick
 ```
 
-GLES3 is a strict superset of GLES2, so the ES2-targeted per-surface
-render backends in the same share group (`gles_render_backend.cpp`) are
-unaffected and intentionally remain ES2.
+Why: libprojectM builds each preset's GL objects **synchronously**
+inside `projectm_load_preset_file()` — `FinalComposite`'s VAO and its
+element buffer (`RenderItem::Init` → `InitVertexAttrib`). **VAOs are
+container objects and are not shared across an EGL share group.** If the
+preset is loaded with the caller's context (a surface backend, or none)
+current, the VAO is created there; when `renderFrame()` later binds that
+VAO id in the root context it is invalid, no `GL_ELEMENT_ARRAY_BUFFER`
+is bound, and libprojectM's
+`glDrawElements(GL_TRIANGLES, n, GL_UNSIGNED_INT, nullptr)` makes the
+driver read indices from offset 0 of no buffer → NULL deref.
 
-The original Qt `livepaper-v5` did not hit this because Qt's context
-supported VAOs.
+The Qt `livepaper-v5` prototype was unaffected because it used a single
+consistent GL context for both preset loading and rendering.
+
+Rule of thumb: **any future `projectm_*` call that allocates or touches
+GL objects must be wrapped in the same make-current/restore dance.** The
+CPU-only setters (`projectm_set_window_size` / `_mesa_size` / `_fps` /
+`_preset_locked`, `projectm_pcm_add_float`) do not need it.
+
+### Non-fixes (historical)
+
+The `EGL_CONTEXT_CLIENT_VERSION = 3` request in `gl_shared_context.cpp`
+and the per-frame `glFinish()` in `renderFrame()` were dead-ends from
+debugging this crash, kept only as harmless defence:
+
+- An EGL probe showed Mesa returns a 3.2 context with working VAOs even
+  for an `EGL_CONTEXT_CLIENT_VERSION = 2` request, so the GLES2/3
+  distinction never mattered here (still, requesting 3 is the portable
+  thing for libprojectM and the ES2 surface backends are unaffected).
+- The crash reproduced identically with Mesa glthread disabled
+  (`MESA_GLTHREAD=false`), so it was never an async-marshalling race;
+  `glFinish` could likely be relaxed to `glFlush` or removed with
+  separate testing.
 
 ## Live-texture invalidation
 
