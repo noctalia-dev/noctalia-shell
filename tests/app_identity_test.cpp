@@ -107,5 +107,10 @@ int main() {
   assert(resolvedApps[0].entry.id == "sample-chat-desktop");
   assert(resolvedApps[1].entry.id == "sample-mail");
 
+  const auto unknownApps = app_identity::resolveRunningApps({"Unknown.App", "unknown-app"}, multipleEntries);
+  assert(unknownApps.size() == 2);
+  assert(unknownApps[0].entry.id == "Unknown.App");
+  assert(unknownApps[1].entry.id == "unknown-app");
+
   return 0;
 }
