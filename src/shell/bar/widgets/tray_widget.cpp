@@ -591,11 +591,22 @@ void TrayWidget::rebuild(Renderer& renderer) {
     });
     area->addChild(std::move(iconNode));
 
-    // Set tooltip with item title
+    // Set tooltip: prefer title, combine with tooltipTitle if different, fall back to statusNotifierTitle
+    std::string tooltipText;
     if (!item.title.empty()) {
-      area->setTooltip(item.title);
+      if (!item.statusNotifierDescription.empty() && item.statusNotifierDescription != item.title) {
+        tooltipText = item.title + " · " + item.statusNotifierDescription;
+      } else {
+        tooltipText = item.title;
+      }
+    } else if (!item.statusNotifierDescription.empty()) {
+      tooltipText = item.statusNotifierDescription;
     } else if (!item.statusNotifierTitle.empty()) {
-      area->setTooltip(item.statusNotifierTitle);
+      tooltipText = item.statusNotifierTitle;
+    }
+
+    if (!tooltipText.empty()) {
+      area->setTooltip(tooltipText);
     }
 
     if (m_panelGridMode) {
