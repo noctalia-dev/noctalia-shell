@@ -90,7 +90,7 @@ end
 
 local function copyToClipboard(path)
     local uri = "file://" .. path:gsub(" ", "%%20"):gsub("'", "%%27"):gsub('"', "%%22")
-    noctalia.runAsync("printf '%s' '" .. uri .. "' | wl-copy --type text/uri-list")
+    noctalia.copyToClipboard(uri, "text/uri-list")
 end
 
 -- ── Command builders ─────────────────────────────────────────────────────

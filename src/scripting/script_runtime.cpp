@@ -6,6 +6,7 @@
 #include "scripting/luau_host.h"
 #include "scripting/script_worker_pool.h"
 #include "scripting/scripted_widget_bindings.h"
+#include "wayland/clipboard_service.h"
 
 #include <algorithm>
 #include <deque>
@@ -60,7 +61,7 @@ namespace scripting {
       dest.unhealthy = dest.unhealthy || src.unhealthy;
     }
 
-    void dispatchSideEffects(const std::vector<ScriptWidgetSideEffect>& effects) {
+    void dispatchSideEffects(const std::vector<ScriptWidgetSideEffect>& effects, ClipboardService* clipboard) {
       for (const auto& effect : effects) {
         switch (effect.kind) {
         case ScriptWidgetSideEffectKind::Log:
@@ -72,14 +73,19 @@ namespace scripting {
         case ScriptWidgetSideEffectKind::NotifyError:
           notify::error("Noctalia", effect.title, effect.body);
           break;
+        case ScriptWidgetSideEffectKind::CopyToClipboard:
+          if (clipboard == nullptr || !clipboard->copyText(effect.title, effect.body)) {
+            kLog.warn("scripted clipboard copy failed");
+          }
+          break;
         }
       }
     }
   } // namespace
 
   struct ScriptRuntime::State : public std::enable_shared_from_this<ScriptRuntime::State> {
-    explicit State(std::string name, ScriptWidgetSettings widgetSettings)
-        : runtimeName(std::move(name)), settings(std::move(widgetSettings)) {}
+    explicit State(std::string name, ScriptWidgetSettings widgetSettings, ClipboardService* clipboardService)
+        : runtimeName(std::move(name)), settings(std::move(widgetSettings)), clipboard(clipboardService) {}
 
     mutable std::mutex mutex;
     std::string runtimeName;
@@ -88,6 +94,7 @@ namespace scripting {
     std::unordered_map<SubscriberId, ScriptWidgetResultCallback> subscribers;
     std::unique_ptr<LuauHost> host;
     ScriptedWidgetBindingContext bindingContext;
+    ClipboardService* clipboard = nullptr;
     SubscriberId nextSubscriberId = 1;
     std::uint64_t generation = 0;
     std::chrono::milliseconds updateInterval{250};
@@ -419,7 +426,7 @@ namespace scripting {
         }
       }
 
-      dispatchSideEffects(result.sideEffects);
+      dispatchSideEffects(result.sideEffects, clipboard);
       result.sideEffects.clear();
 
       for (auto& callback : callbacks) {
@@ -430,8 +437,8 @@ namespace scripting {
     }
   };
 
-  ScriptRuntime::ScriptRuntime(std::string runtimeName, ScriptWidgetSettings settings)
-      : m_state(std::make_shared<State>(std::move(runtimeName), std::move(settings))) {}
+  ScriptRuntime::ScriptRuntime(std::string runtimeName, ScriptWidgetSettings settings, ClipboardService* clipboard)
+      : m_state(std::make_shared<State>(std::move(runtimeName), std::move(settings), clipboard)) {}
 
   ScriptRuntime::~ScriptRuntime() { stop(); }
 
@@ -533,7 +540,8 @@ namespace scripting {
   }
 
   SharedScriptRuntimeAcquireResult SharedScriptRuntimeRegistry::acquire(const std::string& key,
-                                                                        ScriptWidgetSettings settings) {
+                                                                        ScriptWidgetSettings settings,
+                                                                        ClipboardService* clipboard) {
     static std::mutex mutex;
     static std::unordered_map<std::string, std::weak_ptr<ScriptRuntime>> runtimes;
 
@@ -544,7 +552,7 @@ namespace scripting {
       }
     }
 
-    auto runtime = std::make_shared<ScriptRuntime>(key, std::move(settings));
+    auto runtime = std::make_shared<ScriptRuntime>(key, std::move(settings), clipboard);
     runtimes[key] = runtime;
     return {.runtime = std::move(runtime), .created = true};
   }

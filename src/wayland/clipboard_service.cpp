@@ -525,6 +525,11 @@ bool ClipboardService::copyText(std::string text) {
   return copyData({"text/plain;charset=utf-8", "text/plain"}, std::move(data));
 }
 
+bool ClipboardService::copyText(std::string text, std::string mimeType) {
+  std::vector<std::uint8_t> data(text.begin(), text.end());
+  return copyData({std::move(mimeType)}, std::move(data));
+}
+
 bool ClipboardService::copyEntry(const ClipboardEntry& entry) {
   if (entry.data.empty() || entry.dataMimeType.empty()) {
     return false;

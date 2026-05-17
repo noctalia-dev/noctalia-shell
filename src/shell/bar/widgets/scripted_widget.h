@@ -22,6 +22,7 @@ class Glyph;
 class InputArea;
 class Label;
 class CompositorPlatform;
+class ClipboardService;
 
 class ScriptedWidget : public Widget {
 public:
@@ -34,7 +35,7 @@ public:
 
   explicit ScriptedWidget(std::string configName, std::string scriptPath, std::string barName, std::string outputName,
                           const WidgetConfig* config = nullptr, FileWatcher* fileWatcher = nullptr,
-                          CompositorPlatform* platform = nullptr);
+                          CompositorPlatform* platform = nullptr, ClipboardService* clipboard = nullptr);
   ~ScriptedWidget() override;
 
   void create() override;
@@ -96,6 +97,7 @@ private:
   scripting::ScriptRuntime::SubscriberId m_runtimeSubscription = 0;
   FileWatcher* m_fileWatcher = nullptr;
   CompositorPlatform* m_platform = nullptr;
+  ClipboardService* m_clipboard = nullptr;
   FileWatcher::WatchId m_watchId = 0;
   Timer m_updateTimer;
   Timer m_deferredUpdateTimer;

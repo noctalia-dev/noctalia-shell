@@ -78,6 +78,7 @@ public:
   void evictEntryPayload(std::size_t index);
   void evictAllPayloads();
   bool copyText(std::string text);
+  bool copyText(std::string text, std::string mimeType);
   bool copyEntry(const ClipboardEntry& entry);
   bool promoteEntry(std::size_t index);
   bool removeHistoryEntry(std::size_t index);

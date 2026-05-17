@@ -91,9 +91,9 @@ namespace {
 
 ScriptedWidget::ScriptedWidget(std::string configName, std::string scriptPath, std::string barName,
                                std::string outputName, const WidgetConfig* config, FileWatcher* fileWatcher,
-                               CompositorPlatform* platform)
+                               CompositorPlatform* platform, ClipboardService* clipboard)
     : m_scriptPath(std::move(scriptPath)), m_widgetConfigName(std::move(configName)), m_barName(std::move(barName)),
-      m_outputName(std::move(outputName)), m_fileWatcher(fileWatcher), m_platform(platform),
+      m_outputName(std::move(outputName)), m_fileWatcher(fileWatcher), m_platform(platform), m_clipboard(clipboard),
       m_timerPhase(nextTimerPhase()) {
   if (config) {
     m_settings = config->settings;
@@ -183,12 +183,12 @@ void ScriptedWidget::create() {
 
   bool createdRuntime = true;
   if (m_sharedScope) {
-    auto acquired = scripting::SharedScriptRuntimeRegistry::acquire(m_widgetConfigName, m_settings);
+    auto acquired = scripting::SharedScriptRuntimeRegistry::acquire(m_widgetConfigName, m_settings, m_clipboard);
     m_runtime = std::move(acquired.runtime);
     createdRuntime = acquired.created;
   } else {
     m_runtime = std::make_shared<scripting::ScriptRuntime>(m_widgetConfigName + ":" + m_barName + ":" + m_outputName,
-                                                           m_settings);
+                                                           m_settings, m_clipboard);
   }
 
   auto alive = std::weak_ptr<bool>(m_alive);

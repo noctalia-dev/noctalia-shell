@@ -73,6 +73,7 @@ public:
   void scriptLog(std::string message);
   void scriptNotifyInfo(std::string title, std::string body);
   void scriptNotifyError(std::string title, std::string body);
+  [[nodiscard]] bool scriptCopyToClipboard(std::string text, std::string mimeType);
   [[nodiscard]] std::optional<std::string> scriptFocusedOutputName() const;
 
 private:

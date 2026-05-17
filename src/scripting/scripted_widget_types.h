@@ -39,6 +39,7 @@ namespace scripting {
     Log,
     NotifyInfo,
     NotifyError,
+    CopyToClipboard,
   };
 
   struct ScriptWidgetSideEffect {

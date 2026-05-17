@@ -82,12 +82,13 @@ WidgetFactory::WidgetFactory(CompositorPlatform& platform, const Config& config,
                              IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
                              HttpClient* httpClient, WeatherService* weather, GammaService* nightLight,
                              noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
-                             BrightnessService* brightness, LockKeysService* lockKeys, FileWatcher* fileWatcher)
+                             BrightnessService* brightness, LockKeysService* lockKeys, ClipboardService* clipboard,
+                             FileWatcher* fileWatcher)
     : m_platform(platform), m_config(config), m_notifications(notifications), m_tray(tray), m_audio(audio),
       m_upower(upower), m_sysmon(sysmon), m_powerProfiles(powerProfiles), m_network(network),
       m_idleInhibitor(idleInhibitor), m_mpris(mpris), m_audioSpectrum(audioSpectrum), m_httpClient(httpClient),
       m_weather(weather), m_nightLight(nightLight), m_themeService(themeService), m_bluetooth(bluetooth),
-      m_brightness(brightness), m_lockKeys(lockKeys), m_fileWatcher(fileWatcher) {}
+      m_brightness(brightness), m_lockKeys(lockKeys), m_clipboard(clipboard), m_fileWatcher(fileWatcher) {}
 
 WidgetFactory::~WidgetFactory() = default;
 
@@ -274,8 +275,8 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     std::string script = wc != nullptr ? wc->getString("script", "") : std::string();
     const auto* outputInfo = m_platform.findOutputByWl(output);
     const std::string outputName = outputInfo != nullptr ? outputInfo->connectorName : std::string{};
-    auto widget =
-        std::make_unique<ScriptedWidget>(name, std::move(script), barName, outputName, wc, m_fileWatcher, &m_platform);
+    auto widget = std::make_unique<ScriptedWidget>(name, std::move(script), barName, outputName, wc, m_fileWatcher,
+                                                   &m_platform, m_clipboard);
     widget->setContentScale(contentScale);
     return widget;
   }

@@ -259,6 +259,25 @@ namespace {
     return 0;
   }
 
+  int luau_copyToClipboard(lua_State* L) {
+    size_t textLen = 0;
+    const char* text = luaL_checklstring(L, 1, &textLen);
+    size_t mimeLen = 0;
+    const char* mimeType = luaL_checklstring(L, 2, &mimeLen);
+
+    bool ok = textLen > 0 && mimeLen > 0;
+    if (ok) {
+      if (auto* host = hostForState(L)) {
+        ok = host->scriptCopyToClipboard(std::string(text, textLen), std::string(mimeType, mimeLen));
+      } else {
+        ok = false;
+      }
+    }
+
+    lua_pushboolean(L, ok ? 1 : 0);
+    return 1;
+  }
+
   int luau_getenv(lua_State* L) {
     const char* name = luaL_checkstring(L, 1);
     const char* val = std::getenv(name);
@@ -279,6 +298,7 @@ namespace {
       {"focusedOutputName", luau_focusedOutputName},
       {"notify", luau_notify},
       {"notifyError", luau_notifyError},
+      {"copyToClipboard", luau_copyToClipboard},
       {"getenv", luau_getenv},
       {nullptr, nullptr},
   };
@@ -514,6 +534,16 @@ void LuauHost::scriptNotifyError(std::string title, std::string body) {
     return;
   }
   notify::error("Noctalia", title, body);
+}
+
+bool LuauHost::scriptCopyToClipboard(std::string text, std::string mimeType) {
+  if (m_scriptContext == nullptr || text.empty() || mimeType.empty()) {
+    return false;
+  }
+  m_scriptContext->sideEffects.push_back({.kind = scripting::ScriptWidgetSideEffectKind::CopyToClipboard,
+                                          .title = std::move(text),
+                                          .body = std::move(mimeType)});
+  return true;
 }
 
 std::optional<std::string> LuauHost::scriptFocusedOutputName() const {

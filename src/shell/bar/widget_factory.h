@@ -15,6 +15,7 @@ class LockKeysService;
 class MprisService;
 class BluetoothService;
 class BrightnessService;
+class ClipboardService;
 class NetworkService;
 class PipeWireService;
 class PipeWireSpectrum;
@@ -36,7 +37,8 @@ public:
                 PowerProfilesService* powerProfiles, NetworkService* network, IdleInhibitor* idleInhibitor,
                 MprisService* mpris, PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weather,
                 GammaService* nightLight, noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
-                BrightnessService* brightness, LockKeysService* lockKeys, FileWatcher* fileWatcher = nullptr);
+                BrightnessService* brightness, LockKeysService* lockKeys, ClipboardService* clipboard,
+                FileWatcher* fileWatcher = nullptr);
   ~WidgetFactory();
 
   [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output, float contentScale = 1.0f,
@@ -63,5 +65,6 @@ private:
   BluetoothService* m_bluetooth;
   BrightnessService* m_brightness;
   LockKeysService* m_lockKeys;
+  ClipboardService* m_clipboard;
   FileWatcher* m_fileWatcher;
 };
