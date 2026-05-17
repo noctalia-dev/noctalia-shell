@@ -435,6 +435,8 @@ std::unique_ptr<Flex> MediaTab::create() {
   visualizerSpectrum->setOrientation(AudioSpectrumOrientation::Vertical);
   visualizerSpectrum->setMirrored(true);
   visualizerSpectrum->setCentered(true);
+  visualizerSpectrum->setValues(std::vector<float>(kVisualizerBandCount, 0.0f));
+  visualizerSpectrum->tick(0.0f);
   visualizerSpectrum->setFlexGrow(1.0f);
   m_visualizerSpectrum = visualizerSpectrum.get();
   visualizerBody->addChild(std::move(visualizerSpectrum));
