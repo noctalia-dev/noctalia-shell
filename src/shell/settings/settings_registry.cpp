@@ -1106,6 +1106,7 @@ namespace settings {
         return "lifecycle";
       case HookKind::WallpaperChanged:
       case HookKind::ColorsChanged:
+      case HookKind::ThemeModeChanged:
         return "theme";
       case HookKind::WifiEnabled:
       case HookKind::WifiDisabled:
@@ -1130,8 +1131,8 @@ namespace settings {
       if (kind == HookKind::PowerProfileChanged) {
         tags += " power profile performance balanced saver";
       }
-      if (kind == HookKind::WallpaperChanged || kind == HookKind::ColorsChanged) {
-        tags += " wallpaper colors theme";
+      if (kind == HookKind::WallpaperChanged || kind == HookKind::ColorsChanged || kind == HookKind::ThemeModeChanged) {
+        tags += " wallpaper colors theme mode light dark auto";
       }
       if (kind == HookKind::WifiEnabled || kind == HookKind::WifiDisabled || kind == HookKind::BluetoothEnabled ||
           kind == HookKind::BluetoothDisabled) {

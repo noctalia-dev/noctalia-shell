@@ -414,10 +414,20 @@ void Application::initServices() {
       [this]() { i18n::Service::instance().setLanguage(m_configService.config().shell.lang); });
 
   // Apply theme before any UI constructs palette-dependent scene nodes.
-  m_themeService.setResolvedCallback([this](const noctalia::theme::GeneratedPalette& generated, std::string_view mode) {
-    m_templateApplyService.apply(generated, mode);
-    m_hookManager.fire(HookKind::ColorsChanged);
-  });
+  m_themeService.setResolvedCallback(
+      [this, lastResolvedThemeMode = std::optional<std::string>{}](const noctalia::theme::GeneratedPalette& generated,
+                                                                   std::string_view mode) mutable {
+        const std::string resolvedMode(mode);
+        const std::string configuredMode(enumToKey(kThemeModes, m_themeService.configuredMode()));
+        m_templateApplyService.apply(generated, mode);
+        m_hookManager.fire(HookKind::ColorsChanged);
+        if (lastResolvedThemeMode.has_value() && *lastResolvedThemeMode != resolvedMode) {
+          m_hookManager.fire(HookKind::ThemeModeChanged, {{"NOCTALIA_THEME_MODE", resolvedMode},
+                                                          {"NOCTALIA_THEME_MODE_PREVIOUS", *lastResolvedThemeMode},
+                                                          {"NOCTALIA_THEME_MODE_CONFIGURED", configuredMode}});
+        }
+        lastResolvedThemeMode = resolvedMode;
+      });
   m_themeService.apply();
   m_configService.addReloadCallback([this]() { m_themeService.onConfigReload(); });
 

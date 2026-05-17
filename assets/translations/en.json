@@ -1898,6 +1898,10 @@
             "label": "On Colors Changed",
             "description": "Command to run when the active color palette changes"
           },
+          "theme_mode_changed": {
+            "label": "On Theme Mode Changed",
+            "description": "Command to run when the resolved theme mode changes between light and dark"
+          },
           "session_locked": {
             "label": "On Session Locked",
             "description": "Command to run when the session is locked"

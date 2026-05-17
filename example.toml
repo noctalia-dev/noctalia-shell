@@ -300,6 +300,7 @@ battery_low_percent_threshold = 0   # set to e.g. 15 to enable battery_under_thr
 # started           = "notify-send 'Noctalia' 'Shell started'"
 # wallpaper_changed = []
 # colors_changed    = []
+# theme_mode_changed = "notify-send 'Noctalia' \"Theme mode: $NOCTALIA_THEME_MODE\""
 # session_locked    = []
 # session_unlocked  = []
 # logging_out       = []
