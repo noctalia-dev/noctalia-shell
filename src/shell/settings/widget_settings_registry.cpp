@@ -406,8 +406,12 @@ namespace settings {
       add(stringSpec("glyph", "clipboard"));
     } else if (type == "keyboard_layout") {
       add(stringSpec("cycle_command"));
-      add(segmentedSpec("display", "short", shortFull));
       add(boolSpec("hide_label", false));
+      {
+        auto display = segmentedSpec("display", "short", shortFull);
+        display.visibleWhen = WidgetSettingVisibility{"hide_label", {"false"}};
+        add(std::move(display));
+      }
     } else if (type == "launcher") {
       add(stringSpec("glyph", "search"));
       add(stringSpec("custom_image", ""));
