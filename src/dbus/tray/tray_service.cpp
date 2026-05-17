@@ -1639,71 +1639,65 @@ void TrayService::resolvePathOnlyItemProxy(const std::string& itemId) {
           }
 
           auto index = std::make_shared<std::size_t>(0);
+          // Iterative async probe for path-only item resolution (no recursion, no self-reset)
           auto probeNext = std::make_shared<std::function<void()>>();
           *probeNext = [this, itemId, objectPath, candidates, index, probeNext, kProbeTimeout]() {
-            if (*index >= candidates->size()) {
-              kLog.debug("could not resolve bus name for path-only tray item path={} probes={}", objectPath,
-                         candidates->size());
-              m_pathOnlyResolutionsInFlight.erase(itemId);
-              *probeNext = nullptr; // break self-cycle
-              return;
+            // Loop to skip invalid candidates synchronously
+            while (*index < candidates->size()) {
+              const auto candidate = (*candidates)[(*index)++];
+              if (!looks_like_dbus_name(candidate)) {
+                continue; // skip to next candidate
+              }
+              try {
+                auto probe = std::shared_ptr<sdbus::IProxy>(sdbus::createProxy(
+                    m_bus.connection(), sdbus::ServiceName{candidate}, sdbus::ObjectPath{objectPath}));
+                probe->callMethodAsync("GetAll")
+                    .onInterface("org.freedesktop.DBus.Properties")
+                    .withTimeout(kProbeTimeout)
+                    .withArguments(k_item_interface)
+                    .uponReplyInvoke(
+                        [this, itemId, candidate, objectPath, probeNext, probe, index, candidates,
+                         kProbeTimeout](std::optional<sdbus::Error> probeError, std::map<std::string, sdbus::Variant>) {
+                          if (probeError.has_value()) {
+                            // Try next candidate (async tail call)
+                            (*probeNext)();
+                            return;
+                          }
+                          auto resolvedItemIt = m_items.find(itemId);
+                          if (resolvedItemIt == m_items.end()) {
+                            m_pathOnlyResolutionsInFlight.erase(itemId);
+                            return;
+                          }
+                          resolvedItemIt->second.busName = candidate;
+                          auto [proxyIt, inserted] = m_itemProxies.emplace(
+                              itemId, sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{candidate},
+                                                         sdbus::ObjectPath{objectPath}));
+                          if (!inserted) {
+                            proxyIt->second = sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{candidate},
+                                                                 sdbus::ObjectPath{objectPath});
+                          }
+                          attachItemProxySignals(itemId, *proxyIt->second);
+                          m_pathOnlyResolutionsInFlight.erase(itemId);
+                          refreshItemMetadata(itemId);
+                          emitChanged();
+                          // Success: do not continue probing
+                        });
+                // Only one async probe at a time; return and let the callback continue if needed
+                return;
+              } catch (const sdbus::Error&) {
+                // Continue to next candidate
+              }
             }
-
-            const auto candidate = (*candidates)[(*index)++];
-            if (!looks_like_dbus_name(candidate)) {
-              (*probeNext)();
-              return;
-            }
-
-            // Note: This lambda captures 'this' without a lifetime guard. TrayService is application-lifetime,
-            // so this is safe in practice, but if that ever changes, a guard is needed to avoid use-after-free.
-            try {
-              auto probe = std::shared_ptr<sdbus::IProxy>(
-                  sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{candidate}, sdbus::ObjectPath{objectPath}));
-              probe->callMethodAsync("GetAll")
-                  .onInterface("org.freedesktop.DBus.Properties")
-                  .withTimeout(kProbeTimeout)
-                  .withArguments(k_item_interface)
-                  .uponReplyInvoke([this, itemId, candidate, objectPath, probeNext, probe](
-                                       std::optional<sdbus::Error> probeError, std::map<std::string, sdbus::Variant>) {
-                    if (probeError.has_value()) {
-                      (*probeNext)();
-                      return;
-                    }
-
-                    auto resolvedItemIt = m_items.find(itemId);
-                    if (resolvedItemIt == m_items.end()) {
-                      m_pathOnlyResolutionsInFlight.erase(itemId);
-                      *probeNext = nullptr;
-                      return;
-                    }
-
-                    resolvedItemIt->second.busName = candidate;
-                    auto [proxyIt, inserted] = m_itemProxies.emplace(
-                        itemId, sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{candidate},
-                                                   sdbus::ObjectPath{objectPath}));
-                    if (!inserted) {
-                      proxyIt->second = sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{candidate},
-                                                           sdbus::ObjectPath{objectPath});
-                    }
-
-                    attachItemProxySignals(itemId, *proxyIt->second);
-                    m_pathOnlyResolutionsInFlight.erase(itemId);
-                    refreshItemMetadata(itemId);
-                    emitChanged();
-                    *probeNext = nullptr; // break self-cycle on success
-                  });
-            } catch (const sdbus::Error&) {
-              (*probeNext)();
-            }
-          };
-
-          if (candidates->empty()) {
+            // If we get here, all candidates are exhausted
+            kLog.debug("could not resolve bus name for path-only tray item path={} probes={}", objectPath,
+                       candidates->size());
             m_pathOnlyResolutionsInFlight.erase(itemId);
-            *probeNext = nullptr; // break self-cycle
-            return;
+          };
+          if (!candidates->empty()) {
+            (*probeNext)();
+          } else {
+            m_pathOnlyResolutionsInFlight.erase(itemId);
           }
-          (*probeNext)();
         });
   } catch (const sdbus::Error& e) {
     kLog.debug("lazy path-only resolve dispatch failed path={} err={}", objectPath, e.what());
