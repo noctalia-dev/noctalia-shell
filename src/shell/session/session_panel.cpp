@@ -13,8 +13,9 @@
 #include "shell/lockscreen/lock_screen.h"
 #include "shell/panel/panel_manager.h"
 #include "ui/controls/button.h"
-#include "ui/controls/flex.h"
+#include "ui/controls/glyph.h"
 #include "ui/controls/grid_view.h"
+#include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
@@ -466,8 +467,8 @@ void SessionPanel::create() {
 
   m_visibleButtons.clear();
   m_visibleButtons.reserve(m_visibleEntries.size());
-  for (const auto& cfg : m_visibleEntries) {
-    if (Button* b = createActionButton(cfg, scale); b != nullptr) {
+  for (std::size_t i = 0; i < m_visibleEntries.size(); ++i) {
+    if (Button* b = createActionButton(m_visibleEntries[i], i, scale); b != nullptr) {
       m_visibleButtons.push_back(b);
       rootLayout->addChild(std::unique_ptr<Button>(b));
     }
@@ -482,7 +483,7 @@ void SessionPanel::create() {
   updateSelectionVisuals();
 }
 
-Button* SessionPanel::createActionButton(const SessionPanelActionConfig& cfg, float scale) {
+Button* SessionPanel::createActionButton(const SessionPanelActionConfig& cfg, std::size_t index, float scale) {
   auto button = std::make_unique<Button>();
   const std::string labelText =
       cfg.label.has_value() && !cfg.label->empty() ? *cfg.label : i18n::tr(labelKeyForAction(cfg.action));
@@ -501,6 +502,30 @@ Button* SessionPanel::createActionButton(const SessionPanelActionConfig& cfg, fl
   button->setMinWidth(kButtonMinWidth * scale);
   button->setMinHeight(kActionButtonMinHeight * scale);
   button->setFlexGrow(1.0f);
+
+  if (index < 9) {
+    const float badgeSize = 22.0f * scale;
+    auto badge = std::make_unique<Glyph>();
+    badge->setGlyph("circle");
+    badge->setGlyphSize(badgeSize);
+    badge->setParticipatesInLayout(false);
+    badge->setZIndex(2);
+    badge->setOpacity(0.7f);
+    button->addChild(std::move(badge));
+
+    auto badgeLabel = std::make_unique<Label>();
+    badgeLabel->setText(std::to_string(index + 1));
+    badgeLabel->setFontSize((Style::fontSizeCaption - 1.0f) * scale);
+    badgeLabel->setBold(true);
+    badgeLabel->setParticipatesInLayout(false);
+    badgeLabel->setZIndex(3);
+    button->addChild(std::move(badgeLabel));
+  }
+
+  const std::string labelText =
+      cfg.label.has_value() && !cfg.label->empty() ? *cfg.label : i18n::tr(labelKeyForAction(cfg.action));
+  button->setText(labelText);
+  button->setGlyph(cfg.glyph.has_value() && !cfg.glyph->empty() ? *cfg.glyph : defaultGlyphForAction(cfg.action));
 
   SessionPanelActionConfig cfgCopy = cfg;
   button->setOnClick([this, cfgCopy]() {
@@ -673,6 +698,26 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
     return true;
   }
 
+  if (sym >= XKB_KEY_1 && sym <= XKB_KEY_9) {
+    const std::size_t index = sym - XKB_KEY_1;
+    if (index < m_visibleButtons.size()) {
+      m_selectedIndex = index;
+      updateSelectionVisuals();
+      activateSelected();
+      return true;
+    }
+  }
+
+  if (sym >= XKB_KEY_KP_1 && sym <= XKB_KEY_KP_9) {
+    const std::size_t index = sym - XKB_KEY_KP_1;
+    if (index < m_visibleButtons.size()) {
+      m_selectedIndex = index;
+      updateSelectionVisuals();
+      activateSelected();
+      return true;
+    }
+  }
+
   if ((m_config != nullptr && m_config->matchesKeybind(KeybindAction::Validate, sym, modifiers)) ||
       sym == XKB_KEY_space) {
     activateSelected();
@@ -700,14 +745,64 @@ void SessionPanel::doLayout(Renderer& renderer, float width, float height) {
   m_rootLayout->setSize(width, height);
   m_rootLayout->layout(renderer);
 
+  doUpdate(renderer);
+
+  const float scale = contentScale();
   for (Button* button : m_visibleButtons) {
     if (button != nullptr) {
       button->updateInputArea();
+
+      for (auto& child : button->children()) {
+        if (child->participatesInLayout()) {
+          continue;
+        }
+
+        if (child->zIndex() == 2) {
+          if (auto* glyph = dynamic_cast<Glyph*>(child.get())) {
+            glyph->measure(renderer);
+          }
+          const float margin = Style::spaceMd * scale;
+          child->setPosition(button->width() - child->width() - margin, margin);
+        } else if (child->zIndex() == 3) {
+          if (auto* label = dynamic_cast<Label*>(child.get())) {
+            label->measure(renderer);
+            const float margin = Style::spaceMd * scale;
+            const float badgeSize = 22.0f * scale;
+            const float centerX = button->width() - margin - badgeSize * 0.5f;
+            const float centerY = margin + badgeSize * 0.5f;
+            label->setPosition(centerX - label->width() * 0.5f, centerY - label->height() * 0.5f + 0.5f * scale);
+          }
+        }
+      }
     }
   }
 }
 
-void SessionPanel::doUpdate(Renderer& /*renderer*/) {}
+void SessionPanel::doUpdate(Renderer& /*renderer*/) {
+  for (Button* button : m_visibleButtons) {
+    if (button == nullptr || button->label() == nullptr) {
+      continue;
+    }
+
+    const Color activeColor = button->label()->color();
+
+    for (auto& child : button->children()) {
+      if (child->participatesInLayout()) {
+        continue;
+      }
+
+      if (child->zIndex() == 2) {
+        if (auto* glyph = dynamic_cast<Glyph*>(child.get())) {
+          glyph->setColor(activeColor);
+        }
+      } else if (child->zIndex() == 3) {
+        if (auto* label = dynamic_cast<Label*>(child.get())) {
+          label->setColor(activeColor);
+        }
+      }
+    }
+  }
+}
 
 void SessionPanel::onClose() {
   m_rootLayout = nullptr;
