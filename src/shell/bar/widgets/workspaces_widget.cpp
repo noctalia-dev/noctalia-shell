@@ -248,6 +248,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
       text->setFontSize(labelFontSize);
       text->setBold(true);
       text->setColor(workspaceTextColor(ws));
+      text->setBaselineMode(LabelBaselineMode::InkCentered);
       text->measure(renderer);
       item.text = static_cast<Label*>(area->addChild(std::move(text)));
     }
@@ -408,7 +409,7 @@ void WorkspacesWidget::applyItemLayout(std::size_t i) {
     const float itemW = m_isVertical ? m_indicatorHeight : it.currentWidth;
     const float itemH = m_isVertical ? it.currentWidth : m_indicatorHeight;
     const float textX = std::round((itemW - it.text->width()) * 0.5f);
-    it.text->setPosition(std::max(0.0f, textX), (itemH - it.text->height()) * 0.5f);
+    it.text->setPosition(textX, (itemH - it.text->height()) * 0.5f);
   }
   if (it.indicator != nullptr) {
     const float itemW = m_isVertical ? m_indicatorHeight : it.currentWidth;
