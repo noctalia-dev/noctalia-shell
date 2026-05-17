@@ -38,7 +38,6 @@ using namespace control_center;
 
 namespace {
 
-  constexpr float kDevicesColumnGrow = 3.0f;
   constexpr float kValueLabelWidth = Style::controlHeightLg + Style::spaceLg;
   constexpr Logger kLogProgramUi{"audio_tab"};
   constexpr float kVolumeSyncEpsilon = 0.005f; // 0.5%
@@ -289,8 +288,8 @@ namespace {
     });
 
     bool allDigit = true;
-    for (unsigned char c : tok) {
-      if (std::isdigit(c) == 0) {
+    for (char c : tok) {
+      if (std::isdigit(static_cast<unsigned char>(c)) == 0) {
         allDigit = false;
         break;
       }
