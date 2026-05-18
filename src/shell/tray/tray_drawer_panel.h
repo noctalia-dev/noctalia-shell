@@ -29,6 +29,7 @@ public:
 private:
   void doLayout(Renderer& renderer, float width, float height) override;
   void doUpdate(Renderer& renderer) override;
+  [[nodiscard]] std::size_t currentDrawerColumns() const;
   [[nodiscard]] std::vector<std::string> currentHiddenItems() const;
   [[nodiscard]] std::vector<std::string> currentPinnedItems() const;
   [[nodiscard]] std::size_t visibleItemCount() const;

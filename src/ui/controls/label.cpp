@@ -47,6 +47,14 @@ void Label::setFontSize(float size) {
   m_measureCached = false;
 }
 
+void Label::setFontFamily(std::string family) {
+  if (m_textNode->fontFamily() == family) {
+    return;
+  }
+  m_textNode->setFontFamily(std::move(family));
+  m_measureCached = false;
+}
+
 void Label::setColor(const ColorSpec& color) {
   m_color = color;
   applyPalette();
@@ -415,7 +423,7 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
   }
 
   auto metrics = renderer.measureText(m_plainText, m_textNode->fontSize(), m_textNode->bold(), measureMaxWidth,
-                                      effectiveMaxLines, align);
+                                      effectiveMaxLines, align, m_textNode->fontFamily());
   const float measuredWidth = measureMaxWidth > 0.0f ? std::min(metrics.width, measureMaxWidth) : metrics.width;
   m_fullTextWidth = m_autoScroll ? measuredWidth : 0.0f;
   const bool hasAssignedWidth = constraints.hasExactWidth();

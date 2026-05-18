@@ -8,6 +8,7 @@ namespace desktop_settings {
     using settings::WidgetSettingSelectOption;
     using settings::WidgetSettingSpec;
     using settings::WidgetSettingValueType;
+    using settings::WidgetSettingVisibility;
 
     const std::vector<DesktopWidgetTypeSpec> kDesktopWidgetTypeSpecs = {
         {.type = "clock", .labelKey = "desktop-widgets.editor.types.clock"},
@@ -67,11 +68,22 @@ namespace desktop_settings {
   const std::vector<DesktopWidgetTypeSpec>& desktopWidgetTypeSpecs() { return kDesktopWidgetTypeSpecs; }
 
   std::vector<WidgetSettingSpec> commonDesktopWidgetSettingSpecs() {
+    const WidgetSettingVisibility backgroundOn{"background", {"true"}};
+
+    auto bgColor = colorRoleSpec("background_color", "surface");
+    bgColor.visibleWhen = backgroundOn;
+
+    auto bgRadius = doubleSpec("background_radius", 12.0, 0.0, 32.0, 1.0);
+    bgRadius.visibleWhen = backgroundOn;
+
+    auto bgPadding = doubleSpec("background_padding", 10.0, 0.0, 32.0, 1.0);
+    bgPadding.visibleWhen = backgroundOn;
+
     return {
         boolSpec("background", true),
-        colorRoleSpec("background_color", "surface"),
-        doubleSpec("background_radius", 12.0, 0.0, 32.0, 1.0),
-        doubleSpec("background_padding", 10.0, 0.0, 32.0, 1.0),
+        std::move(bgColor),
+        std::move(bgRadius),
+        std::move(bgPadding),
     };
   }
 
@@ -103,6 +115,8 @@ namespace desktop_settings {
       add(doubleSpec("aspect_ratio", 2.5, 0.5, 6.0, 0.1));
       add(doubleSpec("bands", 32.0, 4.0, 128.0, 4.0));
       add(boolSpec("mirrored", true));
+      add(boolSpec("centered", true));
+      add(boolSpec("show_when_idle", false));
       add(colorRoleSpec("low_color", "primary"));
       add(colorRoleSpec("high_color", "primary"));
     } else if (type == "sticker") {

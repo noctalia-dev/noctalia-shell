@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "render/core/image_decoder.h"
 #include "render/core/image_file_loader.h"
+#include "render/core/image_source_log.h"
 
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
@@ -53,7 +54,7 @@ TextureHandle GlesTextureManager::decodeEncodedRaster(const std::uint8_t* data, 
   }
 
   if (debugPath != nullptr) {
-    kLog.warn("failed to decode image: {} ({})", *debugPath, errorMessage);
+    kLog.warn("failed to decode image: {} ({})", ImageSourceLog::describe(*debugPath), errorMessage);
   }
   return {};
 }
@@ -65,9 +66,9 @@ TextureHandle GlesTextureManager::loadFromFile(const std::string& path, int targ
   auto loaded = loadImageFile(path, targetSize, &errorMessage);
   if (!loaded.has_value()) {
     if (!errorMessage.empty()) {
-      kLog.warn("failed to load image: {} ({})", path, errorMessage);
+      kLog.warn("failed to load image: {} ({})", ImageSourceLog::describe(path), errorMessage);
     } else {
-      kLog.warn("failed to load image: {}", path);
+      kLog.warn("failed to load image: {}", ImageSourceLog::describe(path));
     }
     return {};
   }

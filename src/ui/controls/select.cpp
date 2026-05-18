@@ -8,6 +8,7 @@
 #include "render/scene/rect_node.h"
 #include "ui/controls/box.h"
 #include "ui/controls/glyph.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/controls/label.h"
 #include "ui/controls/select_popup_context.h"
 #include "ui/palette.h"
@@ -17,7 +18,6 @@
 #include <cmath>
 #include <linux/input-event-codes.h>
 #include <memory>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -253,8 +253,8 @@ void Select::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, bool pressed)
     return;
   }
 
-  if (sym == XKB_KEY_Down || sym == XKB_KEY_Up || sym == XKB_KEY_space || sym == XKB_KEY_Return ||
-      sym == XKB_KEY_KP_Enter) {
+  if (KeybindMatcher::matches(KeybindAction::Down, sym, 0) || KeybindMatcher::matches(KeybindAction::Up, sym, 0) ||
+      KeybindMatcher::matches(KeybindAction::Validate, sym, 0)) {
     if (!m_open) {
       toggleOpen();
     }

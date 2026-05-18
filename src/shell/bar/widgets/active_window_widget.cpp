@@ -187,11 +187,12 @@ std::string ActiveWindowWidget::resolveIconPath(const std::string& appId) {
     return internal->iconPath;
   }
 
-  auto resolveByName = [this](const std::string& name) -> std::string {
+  const int iconTargetSize = static_cast<int>(std::round(48.0f * m_contentScale));
+  auto resolveByName = [this, iconTargetSize](const std::string& name) -> std::string {
     if (name.empty()) {
       return {};
     }
-    return m_iconResolver.resolve(name);
+    return m_iconResolver.resolve(name, iconTargetSize);
   };
 
   if (auto it = m_appIcons.find(appId); it != m_appIcons.end()) {

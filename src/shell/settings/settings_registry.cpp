@@ -401,6 +401,66 @@ namespace settings {
                                             .browseMode = TextSettingBrowseMode::SelectFolder,
                                             .browseFileExtensions = {}},
                                 "folder path dark theme", true));
+    entries.push_back(makeEntry(
+        "wallpaper", "directories", tr("settings.schema.wallpaper.per-monitor-directories.label"),
+        tr("settings.schema.wallpaper.per-monitor-directories.description"), {"wallpaper", "per_monitor_directories"},
+        ToggleSetting{cfg.wallpaper.perMonitorDirectories}, "per display folder"));
+    for (const auto& outputOpt : env.availableOutputs) {
+      const std::string& connector = outputOpt.value;
+      if (connector.empty()) {
+        continue;
+      }
+      const std::vector<std::string> root = {"wallpaper", "monitor", connector};
+      auto mpath = [&](std::string key) {
+        std::vector<std::string> p = root;
+        p.push_back(std::move(key));
+        return p;
+      };
+      const std::string section = "wallpaper";
+      const WallpaperMonitorOverride* ovr = nullptr;
+      for (const auto& candidate : cfg.wallpaper.monitorOverrides) {
+        if (candidate.match == connector) {
+          ovr = &candidate;
+          break;
+        }
+      }
+      auto perMonOn = SettingVisibility{{"wallpaper", "per_monitor_directories"}, {"true"}};
+      {
+        auto e = makeEntry(section, "monitors", connector, tr("settings.schema.wallpaper.monitor-directory.label"),
+                           mpath("directory"),
+                           TextSetting{.value = ovr != nullptr && ovr->directory.has_value() ? *ovr->directory : "",
+                                       .placeholder = "~/Pictures/Wallpapers",
+                                       .browseMode = TextSettingBrowseMode::SelectFolder,
+                                       .browseFileExtensions = {}},
+                           "monitor folder");
+        e.visibleWhen = perMonOn;
+        entries.push_back(std::move(e));
+      }
+      {
+        auto e = makeEntry(
+            section, "monitors", connector, tr("settings.schema.wallpaper.monitor-directory-light.label"),
+            mpath("directory_light"),
+            TextSetting{.value = ovr != nullptr && ovr->directoryLight.has_value() ? *ovr->directoryLight : "",
+                        .placeholder = tr("settings.schema.wallpaper.monitor-directory-light.placeholder"),
+                        .browseMode = TextSettingBrowseMode::SelectFolder,
+                        .browseFileExtensions = {}},
+            "monitor light folder", true);
+        e.visibleWhen = perMonOn;
+        entries.push_back(std::move(e));
+      }
+      {
+        auto e =
+            makeEntry(section, "monitors", connector, tr("settings.schema.wallpaper.monitor-directory-dark.label"),
+                      mpath("directory_dark"),
+                      TextSetting{.value = ovr != nullptr && ovr->directoryDark.has_value() ? *ovr->directoryDark : "",
+                                  .placeholder = tr("settings.schema.wallpaper.monitor-directory-dark.placeholder"),
+                                  .browseMode = TextSettingBrowseMode::SelectFolder,
+                                  .browseFileExtensions = {}},
+                      "monitor dark folder", true);
+        e.visibleWhen = perMonOn;
+        entries.push_back(std::move(e));
+      }
+    }
     {
       MultiSelectSetting transitions;
       transitions.options.reserve(std::size(kWallpaperTransitions));
@@ -760,9 +820,17 @@ namespace settings {
                                              {"top_center", "settings.options.screen-position.top-center"},
                                              {"bottom_right", "settings.options.screen-position.bottom-right"},
                                              {"bottom_left", "settings.options.screen-position.bottom-left"},
-                                             {"bottom_center", "settings.options.screen-position.bottom-center"}},
+                                             {"bottom_center", "settings.options.screen-position.bottom-center"},
+                                             {"center_right", "settings.options.screen-position.center-right"},
+                                             {"center_left", "settings.options.screen-position.center-left"}},
                                             cfg.osd.position),
                                 "hud overlay volume brightness"));
+    entries.push_back(makeEntry("popups", "osd", tr("settings.schema.shell.osd-orientation.label"),
+                                tr("settings.schema.shell.osd-orientation.description"), {"osd", "orientation"},
+                                asSegmented(plainSelect({{"horizontal", "settings.options.orientation.horizontal"},
+                                                         {"vertical", "settings.options.orientation.vertical"}},
+                                                        cfg.osd.orientation)),
+                                "hud overlay volume brightness vertical"));
     entries.push_back(makeEntry("popups", "osd", tr("settings.schema.shell.osd-lock-keys.label"),
                                 tr("settings.schema.shell.osd-lock-keys.description"), {"osd", "lock_keys"},
                                 ToggleSetting{cfg.osd.lockKeys}, "hud overlay caps num scroll keyboard"));
@@ -1038,6 +1106,7 @@ namespace settings {
         return "lifecycle";
       case HookKind::WallpaperChanged:
       case HookKind::ColorsChanged:
+      case HookKind::ThemeModeChanged:
         return "theme";
       case HookKind::WifiEnabled:
       case HookKind::WifiDisabled:
@@ -1046,6 +1115,7 @@ namespace settings {
         return "network";
       case HookKind::BatteryStateChanged:
       case HookKind::BatteryUnderThreshold:
+      case HookKind::PowerProfileChanged:
         return "power";
       case HookKind::Count:
         break;
@@ -1058,8 +1128,11 @@ namespace settings {
       if (kind == HookKind::BatteryUnderThreshold || kind == HookKind::BatteryStateChanged) {
         tags += " battery power";
       }
-      if (kind == HookKind::WallpaperChanged || kind == HookKind::ColorsChanged) {
-        tags += " wallpaper colors theme";
+      if (kind == HookKind::PowerProfileChanged) {
+        tags += " power profile performance balanced saver";
+      }
+      if (kind == HookKind::WallpaperChanged || kind == HookKind::ColorsChanged || kind == HookKind::ThemeModeChanged) {
+        tags += " wallpaper colors theme mode light dark auto";
       }
       if (kind == HookKind::WifiEnabled || kind == HookKind::WifiDisabled || kind == HookKind::BluetoothEnabled ||
           kind == HookKind::BluetoothDisabled) {

@@ -1,7 +1,9 @@
 #include "ui/controls/search_picker.h"
 
 #include "i18n/i18n.h"
+#include "ui/controls/glyph.h"
 #include "ui/controls/input.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/palette.h"
@@ -13,7 +15,6 @@
 #include <cstdint>
 #include <memory>
 #include <string>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -23,46 +24,85 @@ namespace {
   class SearchPickerRow : public Flex {
   public:
     SearchPickerRow() {
-      setDirection(FlexDirection::Vertical);
-      setAlign(FlexAlign::Stretch);
+      setDirection(FlexDirection::Horizontal);
+      setAlign(FlexAlign::Center);
+      setGap(Style::spaceSm);
       setPadding(Style::spaceXs, Style::spaceSm);
       setRadius(Style::scaledRadiusSm());
       setFillWidth(true);
 
+      auto icon = std::make_unique<Glyph>();
+      icon->setGlyphSize(Style::barGlyphSize);
+      icon->setVisible(false);
+      icon->setParticipatesInLayout(false);
+      m_icon = static_cast<Glyph*>(addChild(std::move(icon)));
+
+      auto text = std::make_unique<Flex>();
+      text->setDirection(FlexDirection::Vertical);
+      text->setAlign(FlexAlign::Stretch);
+      text->setJustify(FlexJustify::Center);
+      text->setFlexGrow(1.0f);
+      m_text = static_cast<Flex*>(addChild(std::move(text)));
+
       auto title = std::make_unique<Label>();
       title->setFontSize(Style::fontSizeBody);
-      m_title = static_cast<Label*>(addChild(std::move(title)));
+      m_title = static_cast<Label*>(m_text->addChild(std::move(title)));
 
       auto detail = std::make_unique<Label>();
       detail->setFontSize(Style::fontSizeCaption);
       detail->setVisible(false);
-      m_detail = static_cast<Label*>(addChild(std::move(detail)));
+      m_detail = static_cast<Label*>(m_text->addChild(std::move(detail)));
     }
 
     void bind(const SearchPickerOption& option, bool highlighted, bool selected, bool hovered) {
       const bool hasDetail = !option.description.empty();
-      setJustify(FlexJustify::Center);
-      setFill(highlighted || hovered ? colorSpecFromRole(ColorRole::Primary)
-                                     : (selected ? colorSpecFromRole(ColorRole::Primary, 0.16f) : clearColorSpec()));
+      const bool hasIcon = !option.icon.empty();
 
+      if (highlighted) {
+        setFill(colorSpecFromRole(ColorRole::Primary));
+      } else if (hovered) {
+        setFill(colorSpecFromRole(ColorRole::Hover));
+      } else if (selected) {
+        setFill(colorSpecFromRole(ColorRole::Primary, 0.16f));
+      } else {
+        setFill(clearColorSpec());
+      }
+
+      ColorSpec foreground =
+          option.enabled ? colorSpecFromRole(ColorRole::OnSurface) : colorSpecFromRole(ColorRole::OnSurface, 0.55f);
+      ColorSpec detailForeground = colorSpecFromRole(ColorRole::OnSurfaceVariant, option.enabled ? 1.0f : 0.55f);
+      if (highlighted) {
+        foreground = colorSpecFromRole(ColorRole::OnPrimary);
+        detailForeground = colorSpecFromRole(ColorRole::OnPrimary, 0.78f);
+      } else if (hovered) {
+        foreground = colorSpecFromRole(ColorRole::OnHover);
+        detailForeground = colorSpecFromRole(ColorRole::OnHover, 0.78f);
+      }
+
+      if (m_icon != nullptr) {
+        if (hasIcon) {
+          m_icon->setGlyph(option.icon);
+          m_icon->setColor(foreground);
+        }
+        m_icon->setVisible(hasIcon);
+        m_icon->setParticipatesInLayout(hasIcon);
+      }
       if (m_title != nullptr) {
         m_title->setText(option.label);
         m_title->setBold(hasDetail);
-        m_title->setColor(highlighted || hovered ? colorSpecFromRole(ColorRole::OnPrimary)
-                                                 : (option.enabled ? colorSpecFromRole(ColorRole::OnSurface)
-                                                                   : colorSpecFromRole(ColorRole::OnSurface, 0.55f)));
+        m_title->setColor(foreground);
       }
       if (m_detail != nullptr) {
         m_detail->setVisible(hasDetail);
         m_detail->setParticipatesInLayout(hasDetail);
         m_detail->setText(option.description);
-        m_detail->setColor(highlighted || hovered
-                               ? colorSpecFromRole(ColorRole::OnPrimary, 0.78f)
-                               : colorSpecFromRole(ColorRole::OnSurfaceVariant, option.enabled ? 1.0f : 0.55f));
+        m_detail->setColor(detailForeground);
       }
     }
 
   private:
+    Glyph* m_icon = nullptr;
+    Flex* m_text = nullptr;
     Label* m_title = nullptr;
     Label* m_detail = nullptr;
   };
@@ -88,20 +128,20 @@ SearchPicker::SearchPicker() {
     m_filter = value;
     applyFilter();
   });
-  input->setOnKeyEvent([this](std::uint32_t sym, std::uint32_t /*modifiers*/) {
-    if (sym == XKB_KEY_Down) {
+  input->setOnKeyEvent([this](std::uint32_t sym, std::uint32_t modifiers) {
+    if (KeybindMatcher::matches(KeybindAction::Down, sym, modifiers)) {
       moveHighlight(1);
       return true;
     }
-    if (sym == XKB_KEY_Up) {
+    if (KeybindMatcher::matches(KeybindAction::Up, sym, modifiers)) {
       moveHighlight(-1);
       return true;
     }
-    if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter) {
+    if (KeybindMatcher::matches(KeybindAction::Validate, sym, modifiers)) {
       activateHighlighted();
       return true;
     }
-    if (sym == XKB_KEY_Escape) {
+    if (KeybindMatcher::matches(KeybindAction::Cancel, sym, modifiers)) {
       if (m_onCancel) {
         m_onCancel();
       }

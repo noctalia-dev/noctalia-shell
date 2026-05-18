@@ -1,6 +1,8 @@
 #include "ui/dialogs/file_dialog_view.h"
 
 #include "core/deferred_call.h"
+#include "core/key_modifiers.h"
+#include "core/key_symbols.h"
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/core/thumbnail_service.h"
@@ -8,6 +10,7 @@
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/input.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/separator.h"
@@ -27,8 +30,6 @@
 
 namespace {
 
-  constexpr std::uint32_t kModShift = 1u << 0;
-  constexpr std::uint32_t kModCtrl = 1u << 1;
   constexpr std::size_t kListRowOverscan = 3;
   constexpr std::size_t kGridRowOverscan = 1;
   constexpr float kGridMinCellWidth = 140.0f;
@@ -514,28 +515,28 @@ bool FileDialogView::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers,
     return false;
   }
 
-  if ((modifiers & kModCtrl) != 0 && (sym == XKB_KEY_l || sym == XKB_KEY_L)) {
+  if ((modifiers & KeyMod::Ctrl) != 0 && (sym == XKB_KEY_l || sym == XKB_KEY_L)) {
     focusSearch();
     return true;
   }
 
   if (sym == XKB_KEY_Tab) {
-    cycleFocus((modifiers & kModShift) != 0);
+    cycleFocus((modifiers & KeyMod::Shift) != 0);
     return true;
   }
 
-  if (sym == XKB_KEY_Escape) {
+  if (KeybindMatcher::matches(KeybindAction::Cancel, sym, modifiers)) {
     cancelDialog();
     return true;
   }
 
-  if (sym == XKB_KEY_BackSpace && !isTextInputFocused()) {
+  if (KeySymbol::isBackspace(sym) && !isTextInputFocused()) {
     navigateUp();
     return true;
   }
 
   if (m_visibleEntries.empty()) {
-    if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter) {
+    if (KeybindMatcher::matches(KeybindAction::Validate, sym, modifiers)) {
       if (m_options.mode == FileDialogMode::SelectFolder) {
         submitDialog();
         return true;
@@ -544,7 +545,7 @@ bool FileDialogView::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers,
     return false;
   }
 
-  if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter) {
+  if (KeybindMatcher::matches(KeybindAction::Validate, sym, modifiers)) {
     if (!isTextInputFocused() || hostFocusedArea() == m_listFocusArea) {
       activateSelection();
       return true;
@@ -577,19 +578,19 @@ bool FileDialogView::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers,
     }
   };
 
-  if (sym == XKB_KEY_Up) {
+  if (KeybindMatcher::matches(KeybindAction::Up, sym, modifiers)) {
     moveSelection(m_viewMode == ViewMode::Grid ? -static_cast<int>(m_gridColumns) : -1);
     return true;
   }
-  if (sym == XKB_KEY_Down) {
+  if (KeybindMatcher::matches(KeybindAction::Down, sym, modifiers)) {
     moveSelection(m_viewMode == ViewMode::Grid ? static_cast<int>(m_gridColumns) : 1);
     return true;
   }
-  if (m_viewMode == ViewMode::Grid && sym == XKB_KEY_Left) {
+  if (m_viewMode == ViewMode::Grid && KeybindMatcher::matches(KeybindAction::Left, sym, modifiers)) {
     moveSelection(-1);
     return true;
   }
-  if (m_viewMode == ViewMode::Grid && sym == XKB_KEY_Right) {
+  if (m_viewMode == ViewMode::Grid && KeybindMatcher::matches(KeybindAction::Right, sym, modifiers)) {
     moveSelection(1);
     return true;
   }

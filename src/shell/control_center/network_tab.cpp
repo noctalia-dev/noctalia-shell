@@ -99,17 +99,25 @@ namespace {
       strength->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
       addChild(std::move(strength));
 
-      if (saved) {
-        auto forget = std::make_unique<Button>();
-        forget->setVariant(ButtonVariant::Ghost);
-        forget->setText(i18n::tr("control-center.network.forget"));
-        forget->setOnClick([this]() {
+      auto action = std::make_unique<Button>();
+      action->setVariant(ButtonVariant::Ghost);
+      action->setGlyphSize(Style::fontSizeBody * scale);
+      action->setPadding(Style::spaceXs * scale);
+      action->setRadius(Style::scaledRadiusSm(scale));
+      if (m_ap.active) {
+        action->setGlyph("check");
+      } else if (saved) {
+        action->setGlyph("trash");
+        action->setOnClick([this]() {
           if (m_onForget) {
             m_onForget(m_ap);
           }
         });
-        m_forgetButton = static_cast<Button*>(addChild(std::move(forget)));
+      } else {
+        action->setOpacity(0.0f);
       }
+      m_actionButton = action.get();
+      addChild(std::move(action));
 
       auto area = std::make_unique<InputArea>();
       area->setPropagateEvents(true);
@@ -136,9 +144,8 @@ namespace {
       m_inputArea->setVisible(true);
       m_inputArea->setPosition(0.0f, 0.0f);
       m_inputArea->setSize(width(), height());
-      // Carve out the forget button so its own InputArea gets clicks first.
-      if (m_forgetButton != nullptr) {
-        const float areaWidth = std::max(0.0f, m_forgetButton->x() - gap());
+      if (m_actionButton != nullptr) {
+        const float areaWidth = std::max(0.0f, m_actionButton->x() - gap());
         m_inputArea->setSize(areaWidth, height());
       }
       applyState();
@@ -160,16 +167,16 @@ namespace {
         if (m_title != nullptr) {
           m_title->setColor(colorSpecFromRole(ColorRole::OnPrimary));
         }
-        return;
-      }
-      setFill(colorSpecFromRole(m_ap.active ? ColorRole::SurfaceVariant : ColorRole::Surface));
-      if (hov) {
-        setBorder(colorSpecFromRole(ColorRole::Primary), Style::borderWidth);
       } else {
-        clearBorder();
-      }
-      if (m_title != nullptr) {
-        m_title->setColor(colorSpecFromRole(ColorRole::OnSurface));
+        setFill(colorSpecFromRole(ColorRole::Surface));
+        if (hov) {
+          setBorder(colorSpecFromRole(ColorRole::Hover), Style::borderWidth);
+        } else {
+          clearBorder();
+        }
+        if (m_title != nullptr) {
+          m_title->setColor(colorSpecFromRole(ColorRole::OnSurface));
+        }
       }
     }
 
@@ -177,8 +184,8 @@ namespace {
     std::function<void(const AccessPointInfo&)> m_onActivate;
     std::function<void(const AccessPointInfo&)> m_onForget;
     Label* m_title = nullptr;
+    Button* m_actionButton = nullptr;
     InputArea* m_inputArea = nullptr;
-    Button* m_forgetButton = nullptr;
     Signal<>::ScopedConnection m_paletteConn;
   };
 
@@ -205,9 +212,22 @@ namespace {
       m_title = name.get();
       addChild(std::move(name));
 
+      auto check = std::make_unique<Button>();
+      check->setVariant(ButtonVariant::Ghost);
+      check->setGlyph("check");
+      check->setGlyphSize(Style::fontSizeBody * scale);
+      check->setPadding(Style::spaceXs * scale);
+      check->setRadius(Style::scaledRadiusSm(scale));
+      check->setOpacity(m_vpn.active ? 1.0f : 0.0f);
+      m_checkButton = check.get();
+      addChild(std::move(check));
+
       auto action = std::make_unique<Button>();
       action->setVariant(m_vpn.active ? ButtonVariant::Destructive : ButtonVariant::Default);
-      action->setText(i18n::tr(m_vpn.active ? "control-center.network.disconnect" : "control-center.network.connect"));
+      action->setGlyph(m_vpn.active ? "plug-off" : "plug");
+      action->setGlyphSize(Style::fontSizeBody * scale);
+      action->setPadding(Style::spaceXs * scale);
+      action->setRadius(Style::scaledRadiusSm(scale));
       action->setOnClick([this]() { triggerAction(); });
       m_actionButton = static_cast<Button*>(addChild(std::move(action)));
 
@@ -269,9 +289,9 @@ namespace {
         }
         return;
       }
-      setFill(colorSpecFromRole(m_vpn.active ? ColorRole::SurfaceVariant : ColorRole::Surface));
+      setFill(colorSpecFromRole(ColorRole::Surface));
       if (hov) {
-        setBorder(colorSpecFromRole(ColorRole::Primary), Style::borderWidth);
+        setBorder(colorSpecFromRole(ColorRole::Hover), Style::borderWidth);
       } else {
         clearBorder();
       }
@@ -284,6 +304,7 @@ namespace {
     std::function<void(const VpnConnectionInfo&)> m_onActivate;
     std::function<void(const VpnConnectionInfo&)> m_onDeactivate;
     Label* m_title = nullptr;
+    Button* m_checkButton = nullptr;
     Button* m_actionButton = nullptr;
     InputArea* m_inputArea = nullptr;
     Signal<>::ScopedConnection m_paletteConn;
@@ -344,7 +365,10 @@ std::unique_ptr<Flex> NetworkTab::create() {
 
   auto disconnect = std::make_unique<Button>();
   disconnect->setVariant(ButtonVariant::Destructive);
-  disconnect->setText(i18n::tr("control-center.network.disconnect"));
+  disconnect->setGlyph("plug-off");
+  disconnect->setGlyphSize(Style::fontSizeBody * scale);
+  disconnect->setPadding(Style::spaceXs * scale);
+  disconnect->setRadius(Style::scaledRadiusSm(scale));
   disconnect->setOnClick([this]() {
     if (m_network != nullptr) {
       m_network->disconnect();
@@ -378,13 +402,7 @@ std::unique_ptr<Flex> NetworkTab::create() {
   passwordInput->setPlaceholder(i18n::tr("control-center.network.password"));
   passwordInput->setFlexGrow(1.0f);
   passwordInput->setPasswordMode(true);
-  passwordInput->setOnSubmit([this](const std::string& value) {
-    if (m_secrets != nullptr) {
-      m_secrets->submitSecret(value);
-    }
-    clearPasswordPrompt();
-    PanelManager::instance().refresh();
-  });
+  passwordInput->setOnSubmit([this](const std::string& value) { submitPasswordPrompt(value); });
   m_passwordInput = passwordInput.get();
   inputRow->addChild(std::move(passwordInput));
 
@@ -412,25 +430,14 @@ std::unique_ptr<Flex> NetworkTab::create() {
   auto connectButton = std::make_unique<Button>();
   connectButton->setVariant(ButtonVariant::Default);
   connectButton->setText(i18n::tr("control-center.network.connect"));
-  connectButton->setOnClick([this]() {
-    if (m_secrets != nullptr && m_passwordInput != nullptr) {
-      m_secrets->submitSecret(m_passwordInput->value());
-    }
-    clearPasswordPrompt();
-    PanelManager::instance().refresh();
-  });
+  connectButton->setOnClick(
+      [this]() { submitPasswordPrompt(m_passwordInput != nullptr ? m_passwordInput->value() : std::string{}); });
   inputRow->addChild(std::move(connectButton));
 
   auto cancelButton = std::make_unique<Button>();
   cancelButton->setVariant(ButtonVariant::Ghost);
   cancelButton->setText(i18n::tr("common.actions.cancel"));
-  cancelButton->setOnClick([this]() {
-    if (m_secrets != nullptr) {
-      m_secrets->cancelSecret();
-    }
-    clearPasswordPrompt();
-    PanelManager::instance().refresh();
-  });
+  cancelButton->setOnClick([this]() { cancelPasswordPrompt(); });
   inputRow->addChild(std::move(cancelButton));
 
   passwordCard->addChild(std::move(inputRow));
@@ -461,6 +468,16 @@ std::unique_ptr<Flex> NetworkTab::create() {
 }
 
 std::unique_ptr<Flex> NetworkTab::createHeaderActions() { return nullptr; }
+
+void NetworkTab::setActive(bool active) {
+  if (m_active == active) {
+    return;
+  }
+  m_active = active;
+  if (m_active && m_network != nullptr) {
+    m_network->requestScan();
+  }
+}
 
 void NetworkTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
   if (m_rootLayout == nullptr) {
@@ -498,8 +515,13 @@ void NetworkTab::onClose() {
   m_scanSpinner = nullptr;
   m_disconnectRow = nullptr;
   m_disconnectButton = nullptr;
-  m_lastListKey.clear();
+  m_vpnSection = nullptr;
+  m_apRows = nullptr;
+  m_lastStructureKey.clear();
+  m_lastApRowsKey.clear();
   m_lastListWidth = -1.0f;
+  m_pendingAccessPoint.reset();
+  m_active = false;
 }
 
 void NetworkTab::syncPasswordCard() {
@@ -517,6 +539,7 @@ void NetworkTab::syncPasswordCard() {
 void NetworkTab::showPasswordPrompt(const NetworkSecretAgent::SecretRequest& request) {
   m_hasPendingSecret = true;
   m_pendingSsid = request.ssid;
+  m_pendingAccessPoint.reset();
   m_passwordRevealed = false;
   if (m_passwordInput != nullptr) {
     m_passwordInput->setValue("");
@@ -527,9 +550,47 @@ void NetworkTab::showPasswordPrompt(const NetworkSecretAgent::SecretRequest& req
   }
 }
 
+void NetworkTab::showPasswordPrompt(const AccessPointInfo& ap) {
+  m_hasPendingSecret = true;
+  m_pendingSsid = ap.ssid;
+  m_pendingAccessPoint = ap;
+  m_passwordRevealed = false;
+  if (m_passwordInput != nullptr) {
+    m_passwordInput->setValue("");
+    m_passwordInput->setPasswordMode(true);
+  }
+  if (m_passwordRevealButton != nullptr) {
+    m_passwordRevealButton->setGlyph("eye");
+  }
+}
+
+void NetworkTab::submitPasswordPrompt(const std::string& value) {
+  if (m_pendingAccessPoint.has_value()) {
+    if (value.empty()) {
+      return;
+    }
+    if (m_network != nullptr) {
+      m_network->activateAccessPoint(*m_pendingAccessPoint, value);
+    }
+  } else if (m_secrets != nullptr) {
+    m_secrets->submitSecret(value);
+  }
+  clearPasswordPrompt();
+  PanelManager::instance().refresh();
+}
+
+void NetworkTab::cancelPasswordPrompt() {
+  if (!m_pendingAccessPoint.has_value() && m_secrets != nullptr) {
+    m_secrets->cancelSecret();
+  }
+  clearPasswordPrompt();
+  PanelManager::instance().refresh();
+}
+
 void NetworkTab::clearPasswordPrompt() {
   m_hasPendingSecret = false;
   m_pendingSsid.clear();
+  m_pendingAccessPoint.reset();
   m_passwordRevealed = false;
   if (m_passwordInput != nullptr) {
     m_passwordInput->setValue("");
@@ -571,12 +632,11 @@ void NetworkTab::syncCurrentCard() {
   }
 }
 
-std::string NetworkTab::apListKey(const std::vector<AccessPointInfo>& aps) const {
+std::string NetworkTab::structureKey(const std::vector<AccessPointInfo>& aps,
+                                     const std::vector<VpnConnectionInfo>& vpns) const {
   std::string key;
   for (const auto& ap : aps) {
     key += ap.ssid;
-    key.push_back(':');
-    key += std::to_string(ap.strength);
     key.push_back(':');
     key += ap.secured ? '1' : '0';
     key.push_back(':');
@@ -585,17 +645,32 @@ std::string NetworkTab::apListKey(const std::vector<AccessPointInfo>& aps) const
     key += (m_network != nullptr && m_network->hasSavedConnection(ap.ssid)) ? '1' : '0';
     key.push_back('\n');
   }
-  return key;
-}
-
-std::string NetworkTab::vpnListKey(const std::vector<VpnConnectionInfo>& vpns) const {
-  std::string key;
+  key += "---\n";
   for (const auto& vpn : vpns) {
     key += vpn.path;
     key.push_back(':');
     key += vpn.name;
     key.push_back(':');
     key += vpn.active ? '1' : '0';
+    key.push_back('\n');
+  }
+  const bool wirelessEnabled = m_network != nullptr && m_network->state().wirelessEnabled;
+  const bool scanning = m_network != nullptr && m_network->state().scanning;
+  key += "vis:";
+  key += m_vpnVisible ? '1' : '0';
+  key += "\nwifi:";
+  key += wirelessEnabled ? '1' : '0';
+  key += "\nscan:";
+  key += scanning ? '1' : '0';
+  return key;
+}
+
+std::string NetworkTab::apRowsKey(const std::vector<AccessPointInfo>& aps) const {
+  std::string key;
+  for (const auto& ap : aps) {
+    key += ap.ssid;
+    key.push_back(':');
+    key += std::to_string(ap.strength);
     key.push_back('\n');
   }
   return key;
@@ -613,20 +688,82 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
 
   const auto& aps = m_network != nullptr ? m_network->accessPoints() : std::vector<AccessPointInfo>{};
   const auto& vpns = m_network != nullptr ? m_network->vpnConnections() : std::vector<VpnConnectionInfo>{};
-  const bool wirelessEnabled = m_network != nullptr && m_network->state().wirelessEnabled;
-  const bool scanning = m_network != nullptr && m_network->state().scanning;
-  const std::string nextKey = apListKey(aps) + "\n---\n" + vpnListKey(vpns) + "\nvis:" + (m_vpnVisible ? '1' : '0') +
-                              "\nwifi:" + (wirelessEnabled ? '1' : '0') + "\nscan:" + (scanning ? '1' : '0');
-  if (listWidth == m_lastListWidth && nextKey == m_lastListKey) {
+  const std::string nextStructure = structureKey(aps, vpns);
+  const std::string nextApRows = apRowsKey(aps);
+  const bool structureChanged = listWidth != m_lastListWidth || nextStructure != m_lastStructureKey;
+  const bool apRowsChanged = nextApRows != m_lastApRowsKey;
+
+  if (!structureChanged && !apRowsChanged) {
     return;
   }
   m_lastListWidth = listWidth;
-  m_lastListKey = nextKey;
+  m_lastStructureKey = nextStructure;
+  m_lastApRowsKey = nextApRows;
   const float scale = contentScale();
+
+  auto buildApRows = [&]() {
+    auto container = std::make_unique<Flex>();
+    container->setDirection(FlexDirection::Vertical);
+    container->setAlign(FlexAlign::Stretch);
+    container->setGap(Style::spaceXs * scale);
+    if (aps.empty()) {
+      auto empty = std::make_unique<Label>();
+      empty->setText(i18n::tr("control-center.network.no-networks"));
+      empty->setCaptionStyle();
+      empty->setFontSize(Style::fontSizeCaption * scale);
+      empty->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+      container->addChild(std::move(empty));
+    } else {
+      for (const auto& ap : aps) {
+        const bool saved = m_network != nullptr && m_network->hasSavedConnection(ap.ssid);
+        auto row = std::make_unique<AccessPointRow>(
+            scale, ap, saved,
+            [this](const AccessPointInfo& clicked) {
+              if (clicked.active || m_network == nullptr) {
+                return;
+              }
+              if (clicked.secured && !m_network->hasSavedConnection(clicked.ssid)) {
+                showPasswordPrompt(clicked);
+                PanelManager::instance().refresh();
+                return;
+              }
+              m_network->activateAccessPoint(clicked);
+            },
+            [this](const AccessPointInfo& clicked) {
+              if (m_network != nullptr) {
+                m_network->forgetSsid(clicked.ssid);
+              }
+              PanelManager::instance().refresh();
+            });
+        container->addChild(std::move(row));
+      }
+    }
+    return container;
+  };
+
+  if (!structureChanged) {
+    if (m_apRows != nullptr) {
+      const auto& siblings = m_list->children();
+      std::size_t idx = 0;
+      for (; idx < siblings.size(); ++idx) {
+        if (siblings[idx].get() == m_apRows) {
+          break;
+        }
+      }
+      m_list->removeChild(m_apRows);
+      auto newRows = buildApRows();
+      m_apRows = newRows.get();
+      m_list->insertChildAt(idx, std::move(newRows));
+    }
+    m_list->layout(renderer);
+    return;
+  }
 
   m_wifiToggle = nullptr;
   m_scanSpinner = nullptr;
   m_rescanButton = nullptr;
+  m_vpnSection = nullptr;
+  m_apRows = nullptr;
 
   while (!m_list->children().empty()) {
     m_list->removeChild(m_list->children().front().get());
@@ -641,6 +778,11 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
     m_list->addChild(std::move(empty));
   } else {
     if (!vpns.empty()) {
+      auto vpnSection = std::make_unique<Flex>();
+      vpnSection->setDirection(FlexDirection::Vertical);
+      vpnSection->setAlign(FlexAlign::Stretch);
+      vpnSection->setGap(Style::spaceXs * scale);
+
       auto vpnHeader = std::make_unique<Flex>();
       vpnHeader->setDirection(FlexDirection::Horizontal);
       vpnHeader->setAlign(FlexAlign::Center);
@@ -651,20 +793,20 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
       vpnLabel->setText(i18n::tr("control-center.network.vpns"));
       vpnLabel->setCaptionStyle();
       vpnLabel->setFontSize(Style::fontSizeCaption * scale);
-      vpnLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+      vpnLabel->setColor(colorSpecFromRole(ColorRole::Secondary));
       vpnLabel->setFlexGrow(1.0f);
       vpnHeader->addChild(std::move(vpnLabel));
 
       auto vpnToggle = std::make_unique<Toggle>();
       vpnToggle->setToggleSize(ToggleSize::Small);
       vpnToggle->setScale(scale);
-      vpnToggle->setChecked(m_vpnVisible);
+      vpnToggle->setCheckedImmediate(m_vpnVisible);
       vpnToggle->setOnChange([this](bool checked) {
         m_vpnVisible = checked;
         PanelManager::instance().refresh();
       });
       vpnHeader->addChild(std::move(vpnToggle));
-      m_list->addChild(std::move(vpnHeader));
+      vpnSection->addChild(std::move(vpnHeader));
 
       if (m_vpnVisible) {
         for (const auto& vpn : vpns) {
@@ -682,12 +824,12 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
                 }
                 PanelManager::instance().refresh();
               });
-          m_list->addChild(std::move(row));
+          vpnSection->addChild(std::move(row));
         }
       }
-    }
 
-    if (!vpns.empty()) {
+      m_vpnSection = vpnSection.get();
+      m_list->addChild(std::move(vpnSection));
       m_list->addChild(std::make_unique<Separator>());
     }
 
@@ -703,7 +845,7 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
       wifiLabel->setText(i18n::tr("control-center.network.wireless"));
       wifiLabel->setCaptionStyle();
       wifiLabel->setFontSize(Style::fontSizeCaption * scale);
-      wifiLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+      wifiLabel->setColor(colorSpecFromRole(ColorRole::Secondary));
       wifiLabel->setFlexGrow(1.0f);
       wifiHeader->addChild(std::move(wifiLabel));
 
@@ -740,39 +882,16 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
       m_list->addChild(std::move(wifiHeader));
 
       const auto& s = m_network->state();
-      m_wifiToggle->setChecked(s.wirelessEnabled);
+      m_wifiToggle->setCheckedImmediate(s.wirelessEnabled);
       m_scanSpinner->setVisible(s.scanning);
       if (s.scanning) {
         m_scanSpinner->start();
       }
     }
 
-    if (aps.empty()) {
-      auto empty = std::make_unique<Label>();
-      empty->setText(i18n::tr("control-center.network.no-networks"));
-      empty->setCaptionStyle();
-      empty->setFontSize(Style::fontSizeCaption * scale);
-      empty->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
-      m_list->addChild(std::move(empty));
-    } else {
-      for (const auto& ap : aps) {
-        const bool saved = m_network != nullptr && m_network->hasSavedConnection(ap.ssid);
-        auto row = std::make_unique<AccessPointRow>(
-            scale, ap, saved,
-            [this](const AccessPointInfo& clicked) {
-              if (m_network != nullptr) {
-                m_network->activateAccessPoint(clicked);
-              }
-            },
-            [this](const AccessPointInfo& clicked) {
-              if (m_network != nullptr) {
-                m_network->forgetSsid(clicked.ssid);
-              }
-              PanelManager::instance().refresh();
-            });
-        m_list->addChild(std::move(row));
-      }
-    }
+    auto apRows = buildApRows();
+    m_apRows = apRows.get();
+    m_list->addChild(std::move(apRows));
   }
   m_list->layout(renderer);
 }

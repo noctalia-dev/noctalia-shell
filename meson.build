@@ -41,6 +41,7 @@ cairo_dep           = dependency('cairo')
 cairo_ft_dep        = dependency('cairo-ft')
 pango_dep           = dependency('pango')
 pangocairo_dep      = dependency('pangocairo')
+pangoft2_dep        = dependency('pangoft2')
 librsvg_dep         = dependency('librsvg-2.0')
 xkbcommon_dep       = dependency('xkbcommon')
 glib_dep            = dependency('glib-2.0')
@@ -337,6 +338,7 @@ _noctalia_sources = files(
   'src/config/cli.cpp',
   'src/core/deferred_call.cpp',
   'src/core/file_watcher.cpp',
+  'src/core/key_chord.cpp',
   'src/core/log.cpp',
   'src/core/process.cpp',
   'src/core/resource_paths.cpp',
@@ -390,6 +392,7 @@ _noctalia_sources = files(
   'src/render/core/color.cpp',
   'src/render/core/image_file_loader.cpp',
   'src/render/core/shader_program.cpp',
+  'src/render/core/stb_image_resize_impl.cpp',
   'src/render/core/thumbnail_service.cpp',
   'src/render/core/image_decoder.cpp',
   'src/render/programs/glyph_program.cpp',
@@ -417,6 +420,8 @@ _noctalia_sources = files(
   'src/render/text/cairo_glyph_renderer.cpp',
   'src/render/wallpaper_renderer.cpp',
   'src/scripting/luau_host.cpp',
+  'src/scripting/script_runtime.cpp',
+  'src/scripting/script_worker_pool.cpp',
   'src/scripting/scripted_widget_bindings.cpp',
   'src/shell/bar/bar.cpp',
   'src/shell/clipboard/clipboard_paste.cpp',
@@ -496,6 +501,7 @@ _noctalia_sources = files(
   'src/shell/tray/tray_menu.cpp',
   'src/shell/backdrop/backdrop.cpp',
   'src/shell/backdrop/backdrop_surface.cpp',
+  'src/shell/overview/overview_launcher_capture.cpp',
   'src/system/app_identity.cpp',
   'src/shell/wallpaper/wallpaper.cpp',
   'src/shell/wallpaper/panel/wallpaper_panel.cpp',
@@ -552,6 +558,7 @@ _noctalia_sources = files(
   'src/ui/controls/checkbox.cpp',
   'src/ui/controls/color_picker.cpp',
   'src/ui/controls/chip.cpp',
+  'src/ui/controls/collapsible.cpp',
   'src/ui/controls/context_menu.cpp',
   'src/ui/controls/context_menu_popup.cpp',
   'src/ui/controls/flex.cpp',
@@ -562,6 +569,7 @@ _noctalia_sources = files(
   'src/ui/controls/grid_tile.cpp',
   'src/ui/controls/image.cpp',
   'src/ui/controls/input.cpp',
+  'src/ui/controls/keybind_matcher.cpp',
   'src/ui/controls/keybind_recorder.cpp',
   'src/ui/controls/label.cpp',
   'src/ui/controls/list_editor.cpp',
@@ -687,6 +695,7 @@ executable('noctalia',
     cairo_ft_dep,
     pango_dep,
     pangocairo_dep,
+    pangoft2_dep,
     librsvg_dep,
     xkbcommon_dep,
     glib_dep,
@@ -746,6 +755,43 @@ animation_manager_test = executable('animation_manager_test',
 )
 
 test('animation_manager', animation_manager_test)
+
+log_test = executable('log_test',
+  sources: files(
+    'tests/log_test.cpp',
+    'src/core/log.cpp',
+  ),
+  include_directories: _noctalia_inc,
+)
+
+test('log', log_test)
+
+image_source_log_test = executable('image_source_log_test',
+  sources: files(
+    'tests/image_source_log_test.cpp',
+  ),
+  include_directories: _noctalia_inc,
+)
+
+test('image_source_log', image_source_log_test)
+
+image_file_loader_data_uri_test = executable('image_file_loader_data_uri_test',
+  sources: files(
+    'tests/image_file_loader_data_uri_test.cpp',
+    'src/render/core/image_file_loader.cpp',
+    'src/render/core/image_decoder.cpp',
+    'src/render/core/stb_image_resize_impl.cpp',
+  ),
+  dependencies: [
+    cairo_dep,
+    librsvg_dep,
+    libwebp_dep,
+    stb_dep,
+  ],
+  include_directories: _noctalia_inc,
+)
+
+test('image_file_loader_data_uri', image_file_loader_data_uri_test)
 
 app_identity_test = executable('app_identity_test',
   sources: files(

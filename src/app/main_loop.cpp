@@ -290,13 +290,13 @@ void MainLoop::run() {
 
     // Process deferred callbacks from the previous iteration
     auto opStart = std::chrono::steady_clock::now();
-    auto& deferred = DeferredCall::queue();
-    if (!deferred.empty()) {
-      auto pending = std::move(deferred);
+    auto pending = DeferredCall::takePending();
+    if (!pending.empty()) {
       const std::size_t count = pending.size();
-      deferred.clear();
       for (auto& fn : pending) {
-        fn();
+        if (fn) {
+          fn();
+        }
       }
       const float ms = elapsedSince(opStart);
       if (idleProfileEnabled()) {

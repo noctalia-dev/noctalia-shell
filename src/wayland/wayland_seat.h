@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/key_modifiers.h"
+
 #include <chrono>
 #include <cstdint>
 #include <functional>
@@ -37,13 +39,6 @@ struct PointerEvent {
   std::int32_t axisValue120 = 0;
   float axisLines = 0.0f;
 };
-
-namespace KeyMod {
-  inline constexpr std::uint32_t Shift = 1u << 0;
-  inline constexpr std::uint32_t Ctrl = 1u << 1;
-  inline constexpr std::uint32_t Alt = 1u << 2;
-  inline constexpr std::uint32_t Super = 1u << 3;
-} // namespace KeyMod
 
 struct KeyboardEvent {
   std::uint32_t sym = 0;       // XKB keysym

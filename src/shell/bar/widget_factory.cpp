@@ -82,17 +82,18 @@ WidgetFactory::WidgetFactory(CompositorPlatform& platform, const Config& config,
                              IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
                              HttpClient* httpClient, WeatherService* weather, GammaService* nightLight,
                              noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
-                             BrightnessService* brightness, LockKeysService* lockKeys, FileWatcher* fileWatcher)
+                             BrightnessService* brightness, LockKeysService* lockKeys, ClipboardService* clipboard,
+                             FileWatcher* fileWatcher)
     : m_platform(platform), m_config(config), m_notifications(notifications), m_tray(tray), m_audio(audio),
       m_upower(upower), m_sysmon(sysmon), m_powerProfiles(powerProfiles), m_network(network),
       m_idleInhibitor(idleInhibitor), m_mpris(mpris), m_audioSpectrum(audioSpectrum), m_httpClient(httpClient),
       m_weather(weather), m_nightLight(nightLight), m_themeService(themeService), m_bluetooth(bluetooth),
-      m_brightness(brightness), m_lockKeys(lockKeys), m_fileWatcher(fileWatcher) {}
+      m_brightness(brightness), m_lockKeys(lockKeys), m_clipboard(clipboard), m_fileWatcher(fileWatcher) {}
 
 WidgetFactory::~WidgetFactory() = default;
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output, float contentScale,
-                                              const std::string& barPosition) const {
+                                              const std::string& barPosition, const std::string& barName) const {
   // Resolve: if name matches a [widget.<name>] entry, use its type + settings.
   // Otherwise treat the name itself as the widget type with default settings.
   const WidgetConfig* wc = nullptr;
@@ -120,13 +121,14 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     const float width = static_cast<float>(wc != nullptr ? wc->getDouble("width", 56.0) : 56.0);
     const int bands = static_cast<int>(wc != nullptr ? wc->getInt("bands", 16) : 16);
     const bool mirrored = wc != nullptr ? wc->getBool("mirrored", true) : true;
+    const bool centered = wc != nullptr ? wc->getBool("centered", true) : true;
     const bool showWhenIdle = wc != nullptr ? wc->getBool("show_when_idle", false) : false;
     const ColorSpec lowColor =
         colorSpecFromConfigString(wc != nullptr ? wc->getString("low_color", "primary") : std::string("primary"));
     const ColorSpec highColor =
         colorSpecFromConfigString(wc != nullptr ? wc->getString("high_color", "primary") : std::string("primary"));
     auto widget = std::make_unique<AudioVisualizerWidget>(m_audioSpectrum, width, bands, mirrored, lowColor, highColor,
-                                                          showWhenIdle);
+                                                          centered, showWhenIdle);
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -198,8 +200,9 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   if (type == "keyboard_layout") {
     const std::string cycleCommand = wc != nullptr ? wc->getString("cycle_command", "") : std::string{};
     const std::string display = wc != nullptr ? wc->getString("display", "short") : std::string("short");
+    const bool hideLabel = wc != nullptr ? wc->getBool("hide_label", false) : false;
     auto widget = std::make_unique<KeyboardLayoutWidget>(m_platform, cycleCommand,
-                                                         KeyboardLayoutWidget::parseDisplayMode(display));
+                                                         KeyboardLayoutWidget::parseDisplayMode(display), hideLabel);
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -272,7 +275,10 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "scripted") {
     std::string script = wc != nullptr ? wc->getString("script", "") : std::string();
-    auto widget = std::make_unique<ScriptedWidget>(std::move(script), wc, m_fileWatcher);
+    const auto* outputInfo = m_platform.findOutputByWl(output);
+    const std::string outputName = outputInfo != nullptr ? outputInfo->connectorName : std::string{};
+    auto widget = std::make_unique<ScriptedWidget>(name, std::move(script), barName, outputName, wc, m_fileWatcher,
+                                                   &m_platform, m_clipboard, m_audioSpectrum, m_mpris);
     widget->setContentScale(contentScale);
     return widget;
   }

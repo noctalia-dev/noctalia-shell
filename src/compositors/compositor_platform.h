@@ -81,6 +81,7 @@ public:
   void closeToplevel(zwlr_foreign_toplevel_handle_v1* handle);
 
   void setWorkspaceChangeCallback(ChangeCallback callback);
+  void setOverviewChangeCallback(ChangeCallback callback);
   void activateWorkspace(const std::string& id);
   void activateWorkspace(wl_output* output, const std::string& id);
   void activateWorkspace(wl_output* output, const Workspace& workspace);
@@ -144,6 +145,7 @@ private:
   mutable std::optional<bool> m_lastRequestedOutputPowerState;
   std::unique_ptr<KeyboardLayoutBackend> m_keyboardLayoutBackend;
   ChangeCallback m_workspaceChangeCallback;
+  ChangeCallback m_overviewChangeCallback;
   ChangeCallback m_keyboardLayoutChangeCallback;
   std::vector<WorkspaceModelSnapshot> m_lastWorkspaceModelSnapshot;
   bool m_initialized = false;

@@ -236,14 +236,10 @@ void SettingsWindow::openBarWidgetAddPopup(const std::vector<std::string>& laneP
 
       if (!newInstanceType.empty() && !newInstanceId.empty()) {
         laneItems.push_back(newInstanceId);
-        m_creatingWidgetType.clear();
-        m_openWidgetPickerPath.clear();
         setSettingOverrides({{{"widget", newInstanceId, "type"}, newInstanceType}, {selectedLanePath, laneItems}});
         return;
       }
 
-      m_creatingWidgetType.clear();
-      m_openWidgetPickerPath.clear();
       laneItems.push_back(value);
       setSettingOverride(selectedLanePath, laneItems);
     });
@@ -287,8 +283,8 @@ void SettingsWindow::openSearchPickerPopup(const std::string& title, const std::
   std::vector<SearchPickerOption> pickerOptions;
   pickerOptions.reserve(options.size());
   for (const auto& opt : options) {
-    pickerOptions.push_back(
-        SearchPickerOption{.value = opt.value, .label = opt.label, .description = opt.description, .enabled = true});
+    pickerOptions.push_back(SearchPickerOption{
+        .value = opt.value, .label = opt.label, .description = opt.description, .enabled = true, .icon = {}});
   }
 
   wl_output* output = m_wayland->lastPointerOutput();

@@ -26,7 +26,7 @@
 #include <unistd.h>
 #include <unordered_map>
 #include <vector>
-#include <xkbcommon/xkbcommon.h>
+#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -200,8 +200,6 @@ namespace {
   }
 
   constexpr Logger kLog("config");
-  constexpr const char* kInternalStateTable = "noctalia_state";
-  constexpr const char* kSetupWizardCompletedKey = "setup_wizard_completed";
 
   std::vector<std::filesystem::path> sortedConfigTomlFiles(std::string_view configDir) {
     std::vector<std::filesystem::path> files;
@@ -271,16 +269,6 @@ namespace {
     return path.filename().string();
   }
 
-  bool setupWizardCompletedFrom(const toml::table& table) {
-    const auto* state = table[kInternalStateTable].as_table();
-    if (state == nullptr) {
-      return false;
-    }
-    return (*state)[kSetupWizardCompletedKey].value<bool>().value_or(false);
-  }
-
-  void stripInternalState(toml::table& table) { table.erase(kInternalStateTable); }
-
   std::optional<ColorSpec> optionalCapsuleBorder(const std::string& raw) {
     if (StringUtils::trim(raw).empty()) {
       return std::nullopt;
@@ -315,6 +303,7 @@ ConfigService::ConfigService() {
     std::error_code ec;
     std::filesystem::create_directories(dir, ec);
     m_overridesPath = dir + "/settings.toml";
+    m_setupMarkerPath = dir + "/.setup-complete";
   }
 
   loadOverridesFromFile();
@@ -374,7 +363,9 @@ void ConfigService::fireReloadCallbacks() {
 }
 
 bool ConfigService::shouldRunSetupWizard() const {
-  return !m_setupWizardCompleted && sortedConfigTomlFiles(m_configDir).empty() && m_overridesTable.empty();
+  // Single canonical signal: the marker file. If we have no state dir we cannot
+  // persist completion, so never show the wizard (it would loop forever).
+  return !m_setupMarkerPath.empty() && !std::filesystem::exists(m_setupMarkerPath);
 }
 
 std::string ConfigService::buildSupportReport() const {
@@ -437,7 +428,6 @@ std::string ConfigService::buildSupportReport() const {
     } else {
       try {
         auto table = toml::parse_file(m_overridesPath);
-        stripInternalState(table);
         deepMerge(merged, table);
       } catch (const toml::parse_error& e) {
         state.insert_or_assign("parse_error", e.what());
@@ -470,7 +460,6 @@ std::string ConfigService::buildFlattenedConfig() const {
   if (!m_overridesPath.empty() && std::filesystem::exists(m_overridesPath)) {
     try {
       auto table = toml::parse_file(m_overridesPath);
-      stripInternalState(table);
       deepMerge(merged, table);
     } catch (const toml::parse_error& e) {
       kLog.warn("skipping parse error in flattened config export {}: {}", m_overridesPath, e.description());
@@ -724,7 +713,6 @@ void ConfigService::loadOverridesFromFile() {
   m_defaultWallpaperPath.clear();
   m_lastWallpaperPath.clear();
   m_monitorWallpaperPaths.clear();
-  m_setupWizardCompleted = false;
   m_overridesParseError.clear();
 
   if (m_overridesPath.empty() || !std::filesystem::exists(m_overridesPath)) {
@@ -744,8 +732,6 @@ void ConfigService::loadOverridesFromFile() {
     m_overridesTable = toml::table{};
     return;
   }
-  m_setupWizardCompleted = setupWizardCompletedFrom(m_overridesTable);
-  stripInternalState(m_overridesTable);
   extractWallpaperFromOverrides();
 }
 
@@ -1555,6 +1541,8 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
       wp.directoryLight = expandUserPathString(*v);
     if (auto v = (*wpTbl)["directory_dark"].value<std::string>())
       wp.directoryDark = expandUserPathString(*v);
+    if (auto v = (*wpTbl)["per_monitor_directories"].value<bool>())
+      wp.perMonitorDirectories = *v;
     if (auto* automationTbl = (*wpTbl)["automation"].as_table()) {
       if (auto v = (*automationTbl)["enabled"].value<bool>()) {
         wp.automation.enabled = *v;
@@ -1622,6 +1610,8 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
     auto& osd = config.osd;
     if (auto v = (*osdTbl)["position"].value<std::string>())
       osd.position = *v;
+    if (auto v = (*osdTbl)["orientation"].value<std::string>())
+      osd.orientation = *v;
     if (auto v = (*osdTbl)["lock_keys"].value<bool>())
       osd.lockKeys = *v;
   }
@@ -2119,9 +2109,8 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
 bool ConfigService::matchesKeybind(KeybindAction action, std::uint32_t sym, std::uint32_t modifiers) const {
   const auto& configured = keybindSet(m_config.keybinds, action);
   const auto active = configured.empty() ? defaultKeybindSet(action) : configured;
-  return std::any_of(active.begin(), active.end(), [sym, modifiers](const KeyChord& chord) {
-    return chord.sym == sym && chord.modifiers == modifiers;
-  });
+  return std::any_of(active.begin(), active.end(),
+                     [sym, modifiers](const KeyChord& chord) { return keyChordMatches(chord, sym, modifiers); });
 }
 
 void ConfigService::registerIpc(IpcService& ipc) {

@@ -581,7 +581,8 @@ bool Bar::initialize(CompositorPlatform& platform, ConfigService* config, TimeSe
                      PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weatherService,
                      RenderContext* renderContext, GammaService* nightLight,
                      noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
-                     BrightnessService* brightness, LockKeysService* lockKeys, FileWatcher* fileWatcher) {
+                     BrightnessService* brightness, LockKeysService* lockKeys, ClipboardService* clipboard,
+                     FileWatcher* fileWatcher) {
   m_platform = &platform;
   m_config = config;
   m_notifications = notifications;
@@ -602,12 +603,13 @@ bool Bar::initialize(CompositorPlatform& platform, ConfigService* config, TimeSe
   m_bluetooth = bluetooth;
   m_brightness = brightness;
   m_lockKeys = lockKeys;
+  m_clipboard = clipboard;
   m_fileWatcher = fileWatcher;
 
   m_widgetFactory = std::make_unique<WidgetFactory>(
       *m_platform, m_config->config(), m_notifications, m_tray, m_audio, m_upower, m_sysmon, m_powerProfiles, m_network,
       m_idleInhibitor, m_mpris, m_audioSpectrum, m_httpClient, m_weatherService, m_nightLight, m_themeService,
-      m_bluetooth, m_brightness, m_lockKeys, m_fileWatcher);
+      m_bluetooth, m_brightness, m_lockKeys, m_clipboard, m_fileWatcher);
 
   if (timeService != nullptr) {
     timeService->setTickSecondCallback([this]() {
@@ -653,7 +655,7 @@ void Bar::reload() {
   m_widgetFactory = std::make_unique<WidgetFactory>(
       *m_platform, m_config->config(), m_notifications, m_tray, m_audio, m_upower, m_sysmon, m_powerProfiles, m_network,
       m_idleInhibitor, m_mpris, m_audioSpectrum, m_httpClient, m_weatherService, m_nightLight, m_themeService,
-      m_bluetooth, m_brightness, m_lockKeys, m_fileWatcher);
+      m_bluetooth, m_brightness, m_lockKeys, m_clipboard, m_fileWatcher);
 
   if (recreateForOrder) {
     kLog.info("bar order changed; recreating layer-shell surfaces");
@@ -1106,8 +1108,8 @@ void Bar::populateWidgets(BarInstance& instance) {
   const auto& widgetConfigs = m_config->config().widgets;
   auto createWidgets = [&](const std::vector<std::string>& names, std::vector<std::unique_ptr<Widget>>& dest) {
     for (const auto& name : names) {
-      auto widget =
-          m_widgetFactory->create(name, instance.output, instance.barConfig.scale, instance.barConfig.position);
+      auto widget = m_widgetFactory->create(name, instance.output, instance.barConfig.scale,
+                                            instance.barConfig.position, instance.barConfig.name);
       if (widget != nullptr) {
         widget->setConfigName(name);
         const WidgetConfig* wcPtr = nullptr;
@@ -1158,6 +1160,12 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
           surface->requestFrameTick();
         }
       });
+      if (auto* scripted = dynamic_cast<ScriptedWidget*>(widget.get()); scripted != nullptr) {
+        scripted->setUpdateDeferralCallback([]() {
+          auto* panel = PanelManager::current();
+          return panel != nullptr && panel->isPanelTransitionActive();
+        });
+      }
       widget->setPanelToggleCallback([this, inst = &instance](std::string_view panelId, std::string_view context,
                                                               std::optional<float> anchorSurfaceX,
                                                               std::optional<float> anchorSurfaceY) {

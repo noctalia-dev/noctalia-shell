@@ -1,6 +1,7 @@
 #include "ui/controls/select_dropdown_popup.h"
 
 #include "core/deferred_call.h"
+#include "core/key_symbols.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "cursor-shape-v1-client-protocol.h"
@@ -11,6 +12,7 @@
 #include "render/scene/rect_node.h"
 #include "ui/controls/box.h"
 #include "ui/controls/glyph.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/popup_chrome.h"
@@ -25,7 +27,6 @@
 #include <linux/input-event-codes.h>
 #include <utility>
 #include <wayland-client-protocol.h>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -64,6 +65,14 @@ void SelectDropdownPopup::setShadowConfig(const ShellConfig::ShadowConfig& shado
 }
 
 void SelectDropdownPopup::openSelectDropdown(const DropdownRequest& request, DropdownCallbacks callbacks) {
+  if (m_openInProgress) {
+    m_closeRequestedDuringOpen = true;
+    if (callbacks.onDismiss) {
+      callbacks.onDismiss();
+    }
+    return;
+  }
+
   closeSelectDropdown();
 
   if (m_parentLayerSurface == nullptr && m_parentXdgSurface == nullptr) {
@@ -71,6 +80,7 @@ void SelectDropdownPopup::openSelectDropdown(const DropdownRequest& request, Dro
     return;
   }
 
+  m_closeRequestedDuringOpen = false;
   m_callbacks = std::move(callbacks);
   m_options = request.options;
   m_selectedIndex = request.selectedIndex;
@@ -162,12 +172,18 @@ void SelectDropdownPopup::openSelectDropdown(const DropdownRequest& request, Dro
 
   m_surface->setDismissedCallback([self]() { DeferredCall::callLater([self]() { self->closeSelectDropdown(); }); });
 
+  m_openInProgress = true;
   const bool initialized = m_parentLayerSurface != nullptr
                                ? m_surface->initialize(m_parentLayerSurface, m_parentOutput, popupCfg)
                                : m_surface->initializeAsChild(m_parentXdgSurface, m_parentOutput, popupCfg);
+  m_openInProgress = false;
   if (!initialized) {
     kLog.warn("failed to create select dropdown popup");
-    m_surface.reset();
+    closeSelectDropdown();
+    return;
+  }
+  if (m_closeRequestedDuringOpen) {
+    closeSelectDropdown();
     return;
   }
 
@@ -179,8 +195,14 @@ void SelectDropdownPopup::openSelectDropdown(const DropdownRequest& request, Dro
 void SelectDropdownPopup::closeSelectDropdown() {
   auto onDismiss = std::move(m_callbacks.onDismiss);
   m_optionViews.clear();
+  m_inputDispatcher.setSceneRoot(nullptr);
   m_sceneRoot.reset();
-  m_surface.reset();
+  if (m_openInProgress) {
+    m_closeRequestedDuringOpen = true;
+  } else {
+    m_surface.reset();
+    m_closeRequestedDuringOpen = false;
+  }
   m_wlSurface = nullptr;
   m_pointerInside = false;
   m_options.clear();
@@ -424,7 +446,7 @@ void SelectDropdownPopup::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, 
     return;
   }
 
-  if (sym == XKB_KEY_Escape) {
+  if (KeybindMatcher::matches(KeybindAction::Cancel, sym, 0)) {
     auto onDismiss = m_callbacks.onDismiss;
     DeferredCall::callLater([this, onDismiss]() {
       closeSelectDropdown();
@@ -432,7 +454,7 @@ void SelectDropdownPopup::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, 
         onDismiss();
       }
     });
-  } else if (sym == XKB_KEY_Down) {
+  } else if (KeybindMatcher::matches(KeybindAction::Down, sym, 0)) {
     if (!m_options.empty()) {
       m_hoveredIndex = (m_hoveredIndex + 1) % m_options.size();
       applyHoverVisuals();
@@ -440,7 +462,7 @@ void SelectDropdownPopup::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, 
         m_surface->requestRedraw();
       }
     }
-  } else if (sym == XKB_KEY_Up) {
+  } else if (KeybindMatcher::matches(KeybindAction::Up, sym, 0)) {
     if (!m_options.empty()) {
       m_hoveredIndex = (m_hoveredIndex + m_options.size() - 1) % m_options.size();
       applyHoverVisuals();
@@ -448,17 +470,17 @@ void SelectDropdownPopup::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, 
         m_surface->requestRedraw();
       }
     }
-  } else if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter || sym == XKB_KEY_space) {
+  } else if (KeybindMatcher::matches(KeybindAction::Validate, sym, 0)) {
     if (m_hoveredIndex < m_options.size()) {
       selectAndClose(m_hoveredIndex);
     }
-  } else if (sym == XKB_KEY_Home) {
+  } else if (KeySymbol::isHome(sym)) {
     m_hoveredIndex = 0;
     applyHoverVisuals();
     if (m_surface) {
       m_surface->requestRedraw();
     }
-  } else if (sym == XKB_KEY_End) {
+  } else if (KeySymbol::isEnd(sym)) {
     if (!m_options.empty()) {
       m_hoveredIndex = m_options.size() - 1;
       applyHoverVisuals();

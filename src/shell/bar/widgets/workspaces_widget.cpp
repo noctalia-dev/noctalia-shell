@@ -29,9 +29,7 @@ namespace {
   }
 
   constexpr float kWorkspaceGap = Style::spaceXs;
-  constexpr float kWorkspacePillMinWidth = Style::controlHeight + Style::spaceXs;
-  constexpr float kWorkspaceLabelPadH = Style::spaceSm;
-  constexpr float kWorkspacePillMinHeight = Style::fontSizeMini - Style::spaceXs;
+  constexpr float kWorkspacePillHeight = Style::barGlyphSize;
   constexpr float kWorkspaceAnimDurationMs = static_cast<float>(Style::animNormal);
 } // namespace
 
@@ -64,6 +62,11 @@ void WorkspacesWidget::doLayout(Renderer& renderer, float containerWidth, float 
   const bool wasVertical = m_isVertical;
   m_isVertical = containerHeight > containerWidth;
   if (wasVertical != m_isVertical) {
+    m_rebuildPending = true;
+  }
+  const std::uint64_t textMetricsGeneration = renderer.textMetricsGeneration();
+  if (m_textMetricsGeneration != textMetricsGeneration) {
+    m_textMetricsGeneration = textMetricsGeneration;
     m_rebuildPending = true;
   }
   if (m_rebuildPending) {
@@ -154,9 +157,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
   const auto& workspaces = m_cachedState;
   const float gap = kWorkspaceGap * m_contentScale;
   const float labelFontSize = Style::fontSizeMini * m_contentScale;
-  const auto labelRefMetrics = renderer.measureFont(labelFontSize, true);
-  const float labelRefHeight = labelRefMetrics.bottom - labelRefMetrics.top;
-  float indicatorHeight = std::round(std::max(labelRefHeight, kWorkspacePillMinHeight * m_contentScale));
+  const float indicatorHeight = std::round(kWorkspacePillHeight * m_contentScale);
 
   std::vector<std::string> labels;
   labels.reserve(workspaces.size());
@@ -191,8 +192,6 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     if (slot.showLabel) {
       const TextMetrics tm = renderer.measureText(labels[i], labelFontSize, true);
       slot.textWidth = tm.right - tm.left;
-      const float inkHeight = std::max(0.0f, tm.inkBottom - tm.inkTop);
-      indicatorHeight = std::max(indicatorHeight, std::round(std::max(labelRefHeight, inkHeight)));
     }
   }
 
@@ -249,6 +248,9 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
       text->setFontSize(labelFontSize);
       text->setBold(true);
       text->setColor(workspaceTextColor(ws));
+      if (m_isVertical) {
+        text->setBaselineMode(LabelBaselineMode::InkCentered);
+      }
       text->measure(renderer);
       item.text = static_cast<Label*>(area->addChild(std::move(text)));
     }
@@ -300,6 +302,27 @@ void WorkspacesWidget::computeTargets() {
   }
 }
 
+void WorkspacesWidget::updateContainerSize() {
+  if (m_container == nullptr || m_items.empty()) {
+    return;
+  }
+  float total = 0.0f;
+  for (std::size_t i = 0; i < m_items.size(); ++i) {
+    total += m_items[i].currentWidth;
+  }
+  if (m_items.size() > 1) {
+    total += m_gap * static_cast<float>(m_items.size() - 1);
+  }
+  if (m_isVertical) {
+    m_container->setFrameSize(m_indicatorHeight, total);
+  } else {
+    m_container->setFrameSize(total, m_indicatorHeight);
+  }
+  if (Node* shell = barCapsuleShell(); shell != nullptr) {
+    shell->markLayoutDirty();
+  }
+}
+
 void WorkspacesWidget::retarget(Renderer& renderer) {
   (void)renderer;
   // Snapshot current positions as "from" values and compute new targets.
@@ -335,6 +358,7 @@ void WorkspacesWidget::startAnimation() {
       it.currentWidth = it.targetWidth;
       applyItemLayout(i);
     }
+    updateContainerSize();
     return;
   }
   cancelAnimation();
@@ -347,6 +371,7 @@ void WorkspacesWidget::startAnimation() {
           it.currentWidth = it.fromWidth + (it.targetWidth - it.fromWidth) * t;
           applyItemLayout(i);
         }
+        updateContainerSize();
         if (root() != nullptr) {
           root()->markPaintDirty();
         }

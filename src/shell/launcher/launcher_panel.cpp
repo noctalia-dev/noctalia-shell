@@ -16,6 +16,7 @@
 #include "ui/controls/glyph.h"
 #include "ui/controls/image.h"
 #include "ui/controls/input.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/virtual_grid_view.h"
@@ -29,13 +30,12 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
   constexpr std::size_t kMaxResults = 50;
   constexpr std::size_t kRowOverscan = 3;
-  constexpr float kIconSize = 32.0f;
+  constexpr float kIconSize = 40.0f;
   constexpr double kUsageScorePerCount = 0.1;
   constexpr double kTypedUsageScoreCap = 0.5;
 
@@ -380,8 +380,6 @@ void LauncherPanel::onOpen(std::string_view context) {
   if (m_grid != nullptr) {
     m_grid->scrollView().setScrollOffset(0.0f);
   }
-  // Clear cached icon misses before each open so newly installed app icons appear.
-  m_iconResolver.invalidateCache();
   onInputChanged(initialValue);
 }
 
@@ -500,13 +498,14 @@ void LauncherPanel::onInputChanged(const std::string& text) {
     m_results.resize(kMaxResults);
   }
 
+  const int iconTargetSize = static_cast<int>(std::round(kIconSize * contentScale()));
   for (auto& result : m_results) {
     if (result.iconPath.empty() && !result.iconName.empty()) {
-      const std::string& resolved = m_iconResolver.resolve(result.iconName);
+      const std::string& resolved = m_iconResolver.resolve(result.iconName, iconTargetSize);
       if (!resolved.empty()) {
         result.iconPath = resolved;
       } else if (result.iconName != "application-x-executable") {
-        const std::string& fallback = m_iconResolver.resolve("application-x-executable");
+        const std::string& fallback = m_iconResolver.resolve("application-x-executable", iconTargetSize);
         if (!fallback.empty()) {
           result.iconPath = fallback;
         }
@@ -688,7 +687,7 @@ void LauncherPanel::activateSelected() {
 }
 
 bool LauncherPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Up, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Up, sym, modifiers)) {
     if (m_selectedIndex > 0) {
       --m_selectedIndex;
       if (m_grid != nullptr) {
@@ -698,7 +697,7 @@ bool LauncherPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Down, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Down, sym, modifiers)) {
     if (!m_results.empty() && m_selectedIndex < m_results.size() - 1) {
       ++m_selectedIndex;
       if (m_grid != nullptr) {
@@ -708,7 +707,7 @@ bool LauncherPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Validate, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Validate, sym, modifiers)) {
     activateSelected();
     return true;
   }

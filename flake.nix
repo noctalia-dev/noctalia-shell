@@ -66,5 +66,12 @@
           };
         }
       );
+
+      homeModules.default =
+        { pkgs, lib, ... }:
+        {
+          imports = [ ./nix/home-module.nix ];
+          programs.noctalia.package = lib.mkDefault self.packages.${pkgs.stdenv.hostPlatform.system}.default;
+        };
     };
 }

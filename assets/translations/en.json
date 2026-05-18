@@ -269,6 +269,7 @@
       "unavailable": "Bluetooth service unavailable",
       "off": "Bluetooth is off",
       "no-devices": "No devices found. Start scanning to discover nearby Bluetooth devices.",
+      "auto-reconnect": "Auto-reconnect",
       "sections": {
         "connected": "Connected",
         "paired": "Paired",
@@ -415,7 +416,7 @@
       "logout-title": "Logout unavailable",
       "logout-body": "Could not determine how to terminate this session.",
       "reboot-title": "Reboot failed",
-      "reboot-body": "Could not launch systemctl reboot.",
+      "reboot-body": "Could not launch a reboot command.",
       "shutdown-title": "Shutdown failed",
       "shutdown-body": "Could not launch a shutdown command.",
       "lock-title": "Lock unavailable",
@@ -456,6 +457,8 @@
         "aspect-ratio": "Aspect Ratio",
         "bands": "Bands",
         "mirrored": "Mirrored",
+        "centered": "Centered",
+        "show-when-idle": "Show When Idle",
         "low-color": "Low Color",
         "high-color": "High Color",
         "image-path": "Image",
@@ -573,6 +576,7 @@
       "keybind-app": "Noctalia",
       "keybind-invalid-title": "Keybind not allowed",
       "keybind-invalid-super": "The Super/Windows key cannot be used in shell keybinds.",
+      "keybind-invalid-printable": "Printable keys (letters, numbers, symbols) require a modifier such as Ctrl or Alt.",
       "power-profiles": "Power profiles",
       "power-profile-title": "Power mode",
       "power-profile-body": "Switched to: {profile}"
@@ -721,7 +725,7 @@
       "support-report": "Failed to save support report.",
       "flattened-config": "Failed to save flattened config.",
       "widget": {
-        "rename": "Could not rename widget instance."
+        "rename": "Could not rename named widget."
       },
       "bar": {
         "create": "Could not create bar.",
@@ -752,7 +756,7 @@
       },
       "monitor-override": {
         "label": "Monitor: {name}",
-        "new": "New Monitor",
+        "new": "Monitor Override",
         "match-placeholder": "Monitor match",
         "create": "Create",
         "management": "Monitor Override",
@@ -776,7 +780,7 @@
           "built-in": "Built-in",
           "named": "Named",
           "unknown": "Unknown",
-          "new-instance": "New Instance"
+          "new-instance": "New Named Widget"
         },
         "editor": {
           "title": "Bar Widgets",
@@ -794,20 +798,20 @@
         "picker": {
           "placeholder": "Search widgets...",
           "empty": "No widgets found",
-          "instance-toggle": "New Instance",
-          "instance-description": "New instance for type \"{type}\"",
-          "create-label": "New {label} Instance",
-          "create-description": "Choose an id for type \"{type}\""
+          "instance-toggle": "Named Widget",
+          "instance-description": "Named widget for type \"{type}\"",
+          "create-label": "New Named {label}",
+          "create-description": "Choose a widget id for type \"{type}\""
         },
         "instance": {
-          "create-title": "New {type} instance",
+          "create-title": "New named {type} widget",
           "create-save": "Create",
           "rename": "Rename",
           "id-placeholder": "Widget id",
           "rename-save": "Save",
           "delete": "Delete",
           "delete-confirm-title": "Delete \"{name}\"?",
-          "delete-confirm-desc": "This widget instance will be removed from every bar and its settings discarded."
+          "delete-confirm-desc": "This named widget will be removed from every bar and its settings discarded."
         },
         "inspector": {
           "edit-title": "Editing widget",
@@ -860,6 +864,7 @@
         "layout": "Layout",
         "location": "Location",
         "media": "Media",
+        "monitors": "Monitors",
         "motion": "Motion",
         "network": "Network",
         "night-light": "Night Light",
@@ -921,7 +926,13 @@
         "top-center": "Top Center",
         "bottom-right": "Bottom Right",
         "bottom-left": "Bottom Left",
-        "bottom-center": "Bottom Center"
+        "bottom-center": "Bottom Center",
+        "center-right": "Center Right",
+        "center-left": "Center Left"
+      },
+      "orientation": {
+        "horizontal": "Horizontal",
+        "vertical": "Vertical"
       },
       "edge": {
         "top": "Top",
@@ -1026,6 +1037,7 @@
         "graph": "Graph",
         "id": "ID",
         "input": "Input",
+        "instance": "Per Placement",
         "name": "Name",
         "net-rx": "Network RX",
         "net-tx": "Network TX",
@@ -1035,6 +1047,7 @@
         "ram-percent": "RAM Percent",
         "ram-used": "RAM Used",
         "short": "Short",
+        "shared": "Shared",
         "swap-percent": "Swap Percent",
         "text": "Text"
       },
@@ -1179,6 +1192,10 @@
           "description": "Hide workspace pills whne there are no open windows",
           "workspaces-description": "Hide workspace pills that have no open windows"
         },
+        "hide_label": {
+          "label": "Hide Label",
+          "description": "Hide this widget's text label"
+        },
         "high_color": {
           "label": "High Color",
           "description": "Color used for high visualizer values"
@@ -1224,6 +1241,10 @@
           "label": "Mirrored",
           "description": "Mirror the visualizer around its center"
         },
+        "centered": {
+          "label": "Centered",
+          "description": "Center visualizer bars instead of aligning them to the edge"
+        },
         "path": {
           "label": "Path",
           "description": "Path used by disk statistics"
@@ -1231,6 +1252,10 @@
         "script": {
           "label": "Script",
           "description": "Script path or command"
+        },
+        "scope": {
+          "label": "Runtime Scope",
+          "description": "Run one script runtime per live widget placement, or share one runtime across bars with the same widget id"
         },
         "show_caps_lock": {
           "label": "Show Caps Lock",
@@ -1262,7 +1287,7 @@
         },
         "type": {
           "label": "Type",
-          "description": "Built-in widget type for this named instance"
+          "description": "Built-in widget type for this named widget"
         },
         "vertical_format": {
           "label": "Vertical Format",
@@ -1466,6 +1491,10 @@
         "osd-position": {
           "label": "Screen Position",
           "description": "Screen position for OSD popups"
+        },
+        "osd-orientation": {
+          "label": "Orientation",
+          "description": "Layout direction for OSD popups"
         },
         "osd-lock-keys": {
           "label": "Lock Keys",
@@ -1742,6 +1771,24 @@
         },
         "enabled": {
           "description": "Enable the wallpaper service"
+        },
+        "per-monitor-directories": {
+          "label": "Per-Monitor Directories",
+          "description": "Use separate wallpaper folders for each display"
+        },
+        "monitor-directory": {
+          "label": "Wallpaper Directory",
+          "description": "Wallpaper folder for this display"
+        },
+        "monitor-directory-light": {
+          "label": "Light Mode Directory",
+          "description": "Wallpaper folder for this display in Light theme mode",
+          "placeholder": "~/Pictures/Wallpapers"
+        },
+        "monitor-directory-dark": {
+          "label": "Dark Mode Directory",
+          "description": "Wallpaper folder for this display in Dark theme mode",
+          "placeholder": "~/Pictures/Wallpapers"
         }
       },
       "services": {
@@ -1858,6 +1905,10 @@
             "label": "On Colors Changed",
             "description": "Command to run when the active color palette changes"
           },
+          "theme_mode_changed": {
+            "label": "On Theme Mode Changed",
+            "description": "Command to run when the resolved theme mode changes between light and dark"
+          },
           "session_locked": {
             "label": "On Session Locked",
             "description": "Command to run when the session is locked"
@@ -1901,6 +1952,10 @@
           "battery_under_threshold": {
             "label": "On Battery Under Threshold",
             "description": "Command to run when battery percent drops under the configured threshold"
+          },
+          "power_profile_changed": {
+            "label": "On Power Profile Changed",
+            "description": "Command to run when the active UPower/PPD power profile changes"
           }
         },
         "command-placeholder": "shell command or script path",

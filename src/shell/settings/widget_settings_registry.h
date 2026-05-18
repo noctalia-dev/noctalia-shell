@@ -21,6 +21,7 @@ namespace settings {
   struct WidgetTypeSpec {
     std::string_view type;
     std::string_view labelKey;
+    std::string_view glyph;
     bool supportsMultipleInstances = true;
     bool visibleInPicker = true;
   };
@@ -36,6 +37,7 @@ namespace settings {
     std::string value;
     std::string label;
     std::string description;
+    std::string icon;
     WidgetReferenceKind kind = WidgetReferenceKind::Unknown;
   };
 
@@ -87,6 +89,7 @@ namespace settings {
 
   [[nodiscard]] const std::vector<WidgetTypeSpec>& widgetTypeSpecs();
   [[nodiscard]] bool isBuiltInWidgetType(std::string_view type);
+  [[nodiscard]] bool widgetTypeRequiresNamedConfig(std::string_view type);
   [[nodiscard]] std::string widgetTypeForReference(const Config& cfg, std::string_view name);
   [[nodiscard]] std::string titleFromWidgetKey(std::string_view key);
   [[nodiscard]] WidgetReferenceInfo widgetReferenceInfo(const Config& cfg, std::string_view name);

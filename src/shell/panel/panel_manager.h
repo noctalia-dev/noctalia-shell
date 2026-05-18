@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/timer_manager.h"
 #include "render/animation/animation_manager.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
@@ -53,6 +54,7 @@ public:
   PanelManager& operator=(const PanelManager&) = delete;
 
   static PanelManager& instance();
+  static PanelManager* current() noexcept;
 
   void initialize(CompositorPlatform& platform, ConfigService* config, RenderContext* renderContext);
 
@@ -69,6 +71,7 @@ public:
   // Callback returning every bar wl_surface. Used to seed the Hyprland focus
   // grab whitelist so bar widgets keep receiving clicks while a panel is open.
   void setFocusGrabBarSurfacesProvider(std::function<std::vector<wl_surface*>()> provider);
+  void setPanelClosedCallback(std::function<void()> callback);
 
   void registerPanel(const std::string& id, std::unique_ptr<Panel> content);
 
@@ -83,6 +86,7 @@ public:
 
   [[nodiscard]] bool isOpen() const noexcept;
   [[nodiscard]] bool isOpenPanel(std::string_view panelId) const noexcept;
+  [[nodiscard]] bool isPanelTransitionActive() const noexcept;
   [[nodiscard]] bool isAttachedOpen() const noexcept;
   [[nodiscard]] const std::string& activePanelId() const noexcept;
   // True when a panel is open and it reports the given context as active (e.g. control-center tab).
@@ -155,6 +159,7 @@ private:
   std::function<void(wl_output*, std::optional<AttachedPanelGeometry>)> m_attachedPanelGeometryCallback;
   std::function<std::vector<InputRect>(wl_output*)> m_clickShieldExcludeRectsProvider;
   std::function<std::vector<wl_surface*>()> m_focusGrabBarSurfacesProvider;
+  std::function<void()> m_panelClosedCallback;
   PanelClickShield m_clickShield;
   std::unique_ptr<FocusGrab> m_focusGrab;
 
@@ -191,7 +196,7 @@ private:
   float m_attachedRevealProgress = 1.0f;
   float m_detachedRevealProgress = 1.0f;
   AttachedRevealDirection m_attachedRevealDirection = AttachedRevealDirection::Down;
-  LayerShellKeyboard m_attachedKeyboardModeAfterOpen = LayerShellKeyboard::None;
+  Timer m_keyboardRelaxTimer;
   std::string m_attachedBarPosition; // "top" / "bottom" / "left" / "right" while attached, empty otherwise
   std::string m_sourceBarName;       // name of the bar that opened the current panel
   std::optional<AttachedPanelGeometry> m_attachedPanelGeometry;

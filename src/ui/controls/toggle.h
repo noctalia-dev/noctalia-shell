@@ -19,6 +19,7 @@ public:
   Toggle();
 
   void setChecked(bool checked);
+  void setCheckedImmediate(bool checked);
   void setEnabled(bool enabled);
   void setToggleSize(ToggleSize size);
   void setScale(float scale);

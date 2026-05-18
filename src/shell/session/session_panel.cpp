@@ -15,12 +15,14 @@
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/grid_view.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
 
 #include <algorithm>
 #include <cerrno>
+#include <chrono>
 #include <csignal>
 #include <cstdlib>
 #include <json.hpp>
@@ -29,11 +31,11 @@
 #include <string_view>
 #include <thread>
 #include <utility>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
   constexpr Logger kLog("session");
+  constexpr std::chrono::milliseconds kPowerCommandTimeout{5000};
 
   [[nodiscard]] const char* valueOrUnset(const char* value) {
     return value != nullptr && value[0] != '\0' ? value : "<unset>";
@@ -55,6 +57,67 @@ namespace {
     } else {
       kLog.warn("logout: {} failed with code {}", command, result.exitCode);
     }
+  }
+
+  [[nodiscard]] std::string commandLabel(std::initializer_list<const char*> args) {
+    std::string label;
+    for (const char* arg : args) {
+      if (arg == nullptr) {
+        continue;
+      }
+      if (!label.empty()) {
+        label += ' ';
+      }
+      label += arg;
+    }
+    return label.empty() ? "<empty>" : label;
+  }
+
+  void logSessionCommandFailure(std::string_view action, std::string_view commandLabel,
+                                const process::RunResult& result) {
+    if (result.timedOut) {
+      kLog.warn("{}: {} timed out after {}ms", action, commandLabel, kPowerCommandTimeout.count());
+    } else if (!result.err.empty()) {
+      kLog.warn("{}: {} failed with code {}: {}", action, commandLabel, result.exitCode, result.err);
+    } else if (!result.out.empty()) {
+      kLog.warn("{}: {} failed with code {}: {}", action, commandLabel, result.exitCode, result.out);
+    } else {
+      kLog.warn("{}: {} failed with code {}", action, commandLabel, result.exitCode);
+    }
+  }
+
+  [[nodiscard]] bool runCheckedSessionCommand(std::string_view action,
+                                              std::initializer_list<std::initializer_list<const char*>> commands) {
+    bool attempted = false;
+    for (const auto& command : commands) {
+      if (command.size() == 0) {
+        continue;
+      }
+      const char* executable = *command.begin();
+      if (executable == nullptr || executable[0] == '\0') {
+        continue;
+      }
+      if (!process::commandExists(executable)) {
+        kLog.debug("{}: {} not found", action, executable);
+        continue;
+      }
+
+      attempted = true;
+      const std::string label = commandLabel(command);
+      const process::RunResult result = process::runSyncWithTimeout(command, kPowerCommandTimeout);
+      if (result) {
+        kLog.info("{}: {} accepted", action, label);
+        return true;
+      }
+      logSessionCommandFailure(action, label, result);
+    }
+
+    if (!attempted) {
+      kLog.warn("{}: no supported command found", action);
+    } else {
+      kLog.warn("{}: all command methods failed", action);
+    }
+    return false;
   }
 
   bool terminateLabwcPid() {
@@ -147,20 +210,24 @@ namespace {
 
   bool doReboot() {
     logActionContext("reboot");
-    const bool launched = process::launchFirstAvailable({{"systemctl", "reboot"}, {"loginctl", "reboot"}});
-    if (!launched) {
-      kLog.warn("reboot: all reboot methods failed");
-    }
-    return launched;
+    return runCheckedSessionCommand("reboot", {
+                                                  {"systemctl", "reboot"},
+                                                  {"loginctl", "reboot"},
+                                                  {"reboot"},
+                                                  {"/sbin/reboot"},
+                                                  {"/usr/sbin/reboot"},
+                                              });
   }
 
   bool doShutdown() {
     logActionContext("shutdown");
-    const bool launched = process::launchFirstAvailable({{"systemctl", "poweroff"}, {"loginctl", "poweroff"}});
-    if (!launched) {
-      kLog.warn("shutdown: all shutdown methods failed");
-    }
-    return launched;
+    return runCheckedSessionCommand("shutdown", {
+                                                    {"systemctl", "poweroff"},
+                                                    {"loginctl", "poweroff"},
+                                                    {"poweroff"},
+                                                    {"/sbin/poweroff"},
+                                                    {"/usr/sbin/poweroff"},
+                                                });
   }
 
   bool doLock() {
@@ -538,7 +605,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
   }
   const std::size_t lastIndex = m_visibleButtons.size() - 1;
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Left, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Left, sym, modifiers)) {
     if (!m_selectedIndex.has_value()) {
       m_selectedIndex = lastIndex;
       updateSelectionVisuals();
@@ -557,7 +624,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Right, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Right, sym, modifiers)) {
     if (!m_selectedIndex.has_value()) {
       m_selectedIndex = 0;
       updateSelectionVisuals();
@@ -576,7 +643,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Up, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Up, sym, modifiers)) {
     const std::size_t columns = visibleColumnCount();
     if (!m_selectedIndex.has_value()) {
       m_selectedIndex = lastIndex;
@@ -591,7 +658,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Down, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Down, sym, modifiers)) {
     const std::size_t columns = visibleColumnCount();
     if (!m_selectedIndex.has_value()) {
       m_selectedIndex = 0;
@@ -606,8 +673,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
     return true;
   }
 
-  if ((m_config != nullptr && m_config->matchesKeybind(KeybindAction::Validate, sym, modifiers)) ||
-      sym == XKB_KEY_space) {
+  if (KeybindMatcher::matches(KeybindAction::Validate, sym, modifiers)) {
     activateSelected();
     return true;
   }

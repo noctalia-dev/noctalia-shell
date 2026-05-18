@@ -29,6 +29,7 @@
 #include "system/distro_info.h"
 #include "time/time_format.h"
 #include "ui/controls/input.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/dialogs/color_picker_dialog.h"
 #include "ui/dialogs/file_dialog.h"
 #include "ui/dialogs/glyph_picker_dialog.h"
@@ -75,6 +76,16 @@ namespace {
   bool widgetListHasLockKeys(const std::vector<std::string>& widgets, const Config& config) {
     return std::any_of(widgets.begin(), widgets.end(),
                        [&config](const std::string& name) { return widgetIsLockKeys(name, config); });
+  }
+
+  std::string_view powerProfileOriginName(PowerProfilesChangeOrigin origin) {
+    switch (origin) {
+    case PowerProfilesChangeOrigin::Noctalia:
+      return "noctalia";
+    case PowerProfilesChangeOrigin::External:
+      return "external";
+    }
+    return "external";
   }
 
   bool barMayRender(const BarConfig& bar) {
@@ -404,10 +415,20 @@ void Application::initServices() {
       [this]() { i18n::Service::instance().setLanguage(m_configService.config().shell.lang); });
 
   // Apply theme before any UI constructs palette-dependent scene nodes.
-  m_themeService.setResolvedCallback([this](const noctalia::theme::GeneratedPalette& generated, std::string_view mode) {
-    m_templateApplyService.apply(generated, mode);
-    m_hookManager.fire(HookKind::ColorsChanged);
-  });
+  m_themeService.setResolvedCallback(
+      [this, lastResolvedThemeMode = std::optional<std::string>{}](const noctalia::theme::GeneratedPalette& generated,
+                                                                   std::string_view mode) mutable {
+        const std::string resolvedMode(mode);
+        const std::string configuredMode(enumToKey(kThemeModes, m_themeService.configuredMode()));
+        m_templateApplyService.apply(generated, mode);
+        m_hookManager.fire(HookKind::ColorsChanged);
+        if (lastResolvedThemeMode.has_value() && *lastResolvedThemeMode != resolvedMode) {
+          m_hookManager.fire(HookKind::ThemeModeChanged, {{"NOCTALIA_THEME_MODE", resolvedMode},
+                                                          {"NOCTALIA_THEME_MODE_PREVIOUS", *lastResolvedThemeMode},
+                                                          {"NOCTALIA_THEME_MODE_CONFIGURED", configuredMode}});
+        }
+        lastResolvedThemeMode = resolvedMode;
+      });
   m_themeService.apply();
   m_configService.addReloadCallback([this]() { m_themeService.onConfigReload(); });
 
@@ -435,6 +456,19 @@ void Application::initServices() {
   m_sharedTextureCache.initialize(&m_glShared);
   m_asyncTextureCache.initialize(&m_glShared);
   m_wayland.setVirtualKeyboardService(&m_virtualKeyboardService);
+
+  auto bindKeybind = [this](KeybindAction action) {
+    return [this, action](std::uint32_t sym, std::uint32_t modifiers) {
+      return m_configService.matchesKeybind(action, sym, modifiers);
+    };
+  };
+  KeybindMatcher::setMatcher(KeybindAction::Validate, bindKeybind(KeybindAction::Validate));
+  KeybindMatcher::setMatcher(KeybindAction::Cancel, bindKeybind(KeybindAction::Cancel));
+  KeybindMatcher::setMatcher(KeybindAction::Left, bindKeybind(KeybindAction::Left));
+  KeybindMatcher::setMatcher(KeybindAction::Right, bindKeybind(KeybindAction::Right));
+  KeybindMatcher::setMatcher(KeybindAction::Up, bindKeybind(KeybindAction::Up));
+  KeybindMatcher::setMatcher(KeybindAction::Down, bindKeybind(KeybindAction::Down));
+
   Input::setValidateKeyMatcher([this](std::uint32_t sym, std::uint32_t modifiers) {
     return m_configService.matchesKeybind(KeybindAction::Validate, sym, modifiers);
   });
@@ -453,6 +487,7 @@ void Application::initServices() {
     m_lockScreen.onOutputChange();
     m_idleGraceOverlay.onOutputChange();
     m_idleInhibitor.onOutputChange();
+    m_overviewLauncherCapture.onOutputChange();
   });
   m_clipboardService.setChangeCallback([this]() {
     if (m_panelManager.isOpenPanel("clipboard")) {
@@ -620,7 +655,7 @@ void Application::initServices() {
         if (active.empty()) {
           return;
         }
-        if (m_prevPowerProfileActiveForNotification.has_value() && *m_prevPowerProfileActiveForNotification != active &&
+        if (m_prevPowerProfileActiveForEvents.has_value() && *m_prevPowerProfileActiveForEvents != active &&
             origin != PowerProfilesChangeOrigin::Noctalia) {
           std::string glyphIconSpec("noctalia-glyph:");
           glyphIconSpec.append(profileGlyphName(active));
@@ -629,9 +664,10 @@ void Application::initServices() {
               i18n::tr("notifications.internal.power-profile-body", "profile", profileLabel(active)), Urgency::Normal,
               kDefaultNotificationTimeout, std::move(glyphIconSpec));
         }
-        m_prevPowerProfileActiveForNotification = active;
+        onPowerProfileChangedForEvents(state, origin);
       });
       if (!m_powerProfilesService->activeProfile().empty()) {
+        m_prevPowerProfileActiveForEvents = m_powerProfilesService->activeProfile();
         kLog.info("power profiles active profile: {}", m_powerProfilesService->activeProfile());
       } else {
         kLog.info("power profiles service active");
@@ -947,6 +983,9 @@ void Application::initUi() {
       m_settingsWindow.onKeyboardEvent(event);
       return;
     }
+    if (m_overviewLauncherCapture.handleKeyboardEvent(event)) {
+      return;
+    }
     m_panelManager.onKeyboardEvent(event);
   });
 
@@ -1002,6 +1041,15 @@ void Application::initUi() {
     launcherPanel->addProvider(std::make_unique<EmojiProvider>(&m_clipboardService));
     m_panelManager.registerPanel("launcher", std::move(launcherPanel));
   }
+  m_overviewLauncherCapture.initialize(m_wayland, &m_renderContext, m_compositorPlatform, m_panelManager);
+  m_overviewLauncherCapture.setOpenLauncherCallback(
+      [this](std::string_view initialQuery, wl_output* output, std::string_view sourceBarName) {
+        m_panelManager.openPanel(
+            "launcher", PanelOpenRequest{.output = output, .context = initialQuery, .sourceBarName = sourceBarName});
+      });
+  m_compositorPlatform.setOverviewChangeCallback([this]() { m_overviewLauncherCapture.sync(); });
+  m_panelManager.setPanelClosedCallback([this]() { m_overviewLauncherCapture.sync(); });
+  m_overviewLauncherCapture.sync();
   m_panelManager.registerPanel("wallpaper",
                                std::make_unique<WallpaperPanel>(&m_wayland, &m_configService, &m_thumbnailService));
   std::size_t trayDrawerColumns = 3;
@@ -1066,7 +1114,7 @@ void Application::initUi() {
                    m_networkService.get(), &m_idleInhibitor, m_mprisService.get(), m_pipewireSpectrum.get(),
                    &m_httpClient, &m_weatherService, &m_renderContext, &m_gammaService, &m_themeService,
                    m_bluetoothService.get(), m_brightnessService.get(), kLockKeysEnabled ? &m_lockKeysService : nullptr,
-                   &m_fileWatcher);
+                   &m_clipboardService, &m_fileWatcher);
   m_bar.setOpenWidgetSettingsCallback([this](std::string barName, std::string widgetName) {
     if (m_panelManager.isOpen()) {
       m_panelManager.closePanel();
@@ -1470,6 +1518,24 @@ void Application::onBluetoothStateChangedForEvents(const BluetoothState& state, 
   m_prevBluetoothPoweredForEvents = state.powered;
 }
 
+void Application::onPowerProfileChangedForEvents(const PowerProfilesState& state, PowerProfilesChangeOrigin origin) {
+  if (state.activeProfile.empty()) {
+    return;
+  }
+  if (!m_prevPowerProfileActiveForEvents.has_value()) {
+    m_prevPowerProfileActiveForEvents = state.activeProfile;
+    return;
+  }
+  const std::string prev = *m_prevPowerProfileActiveForEvents;
+  if (prev != state.activeProfile) {
+    m_hookManager.fire(HookKind::PowerProfileChanged,
+                       {{"NOCTALIA_POWER_PROFILE", state.activeProfile},
+                        {"NOCTALIA_POWER_PROFILE_PREVIOUS", prev},
+                        {"NOCTALIA_POWER_PROFILE_ORIGIN", std::string(powerProfileOriginName(origin))}});
+  }
+  m_prevPowerProfileActiveForEvents = state.activeProfile;
+}
+
 std::vector<PollSource*> Application::currentPollSources() {
   std::vector<PollSource*> sources;
   if (m_busPollSource != nullptr) {
@@ -1479,6 +1545,7 @@ std::vector<PollSource*> Application::currentPollSources() {
     sources.push_back(m_systemBusPollSource.get());
   }
   sources.push_back(&m_notificationPollSource);
+  sources.push_back(&m_deferredCallPollSource);
   sources.push_back(&m_timePollSource);
   sources.push_back(&m_configPollSource);
   sources.push_back(&m_desktopEntryPollSource);

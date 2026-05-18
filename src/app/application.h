@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/deferred_call_poll_source.h"
 #include "app/main_loop.h"
 #include "app/timer_poll_source.h"
 #include "compositors/compositor_platform.h"
@@ -54,6 +55,7 @@
 #include "shell/osd/brightness_osd.h"
 #include "shell/osd/lock_keys_osd.h"
 #include "shell/osd/osd_overlay.h"
+#include "shell/overview/overview_launcher_capture.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/polkit/polkit_panel.h"
 #include "shell/screen_corners/screen_corners.h"
@@ -121,6 +123,7 @@ private:
   void onUpowerStateChangedForHooks();
   void onNetworkStateChangedForEvents(const NetworkState& state, NetworkChangeOrigin origin);
   void onBluetoothStateChangedForEvents(const BluetoothState& state, BluetoothStateChangeOrigin origin);
+  void onPowerProfileChangedForEvents(const PowerProfilesState& state, PowerProfilesChangeOrigin origin);
   [[nodiscard]] std::vector<PollSource*> currentPollSources();
   [[nodiscard]] std::vector<PollSource*> buildPollSources();
 
@@ -161,7 +164,7 @@ private:
   std::optional<UPowerState> m_prevUpowerForHooks;
   std::optional<bool> m_prevWirelessEnabledForEvents;
   std::optional<bool> m_prevBluetoothPoweredForEvents;
-  std::optional<std::string> m_prevPowerProfileActiveForNotification;
+  std::optional<std::string> m_prevPowerProfileActiveForEvents;
   SessionActionHooks m_sessionActionHooks;
   std::unique_ptr<BrightnessService> m_brightnessService;
   std::unique_ptr<TrayService> m_trayService;
@@ -182,6 +185,7 @@ private:
   DesktopWidgetsController m_desktopWidgetsController;
   LockScreen m_lockScreen;
   PanelManager m_panelManager;
+  OverviewLauncherCapture m_overviewLauncherCapture;
   NotificationToast m_notificationToast;
   AudioOsd m_audioOsd;
   BrightnessOsd m_brightnessOsd;
@@ -202,6 +206,7 @@ private:
   std::unique_ptr<SessionBusPollSource> m_busPollSource;
   std::unique_ptr<SystemBusPollSource> m_systemBusPollSource;
   NotificationPollSource m_notificationPollSource{m_notificationManager};
+  DeferredCallPollSource m_deferredCallPollSource;
   TimePollSource m_timePollSource{m_timeService};
   ConfigPollSource m_configPollSource{m_configService};
   DesktopEntryPollSource m_desktopEntryPollSource;

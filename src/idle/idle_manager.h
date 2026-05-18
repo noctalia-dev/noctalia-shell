@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config/config_service.h"
+#include "core/timer_manager.h"
 
 #include <chrono>
 #include <cstdint>
@@ -66,6 +67,7 @@ private:
   GraceBeginCallback m_onGraceBegin;
   GraceEndCallback m_onGraceEnd;
   IdleConfig m_idleConfig;
+  Timer m_graceFallbackTimer;
   std::vector<BehaviorState*> m_graceBehaviors;
   std::uint64_t m_graceGeneration = 0;
   std::vector<std::unique_ptr<BehaviorState>> m_behaviors;

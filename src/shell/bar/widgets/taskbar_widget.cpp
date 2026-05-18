@@ -95,6 +95,11 @@ void TaskbarWidget::doLayout(Renderer& renderer, float containerWidth, float con
   if (m_vertical != wasVertical) {
     m_rebuildPending = true;
   }
+  const std::uint64_t textMetricsGeneration = renderer.textMetricsGeneration();
+  if (m_textMetricsGeneration != textMetricsGeneration) {
+    m_textMetricsGeneration = textMetricsGeneration;
+    m_rebuildPending = true;
+  }
 
   m_root->setDirection(m_vertical ? FlexDirection::Vertical : FlexDirection::Horizontal);
   m_root->setAlign(FlexAlign::Center);
@@ -1329,8 +1334,10 @@ std::string TaskbarWidget::resolveIconPath(const std::string& appId, const std::
     return {};
   }
 
+  const int iconTargetSize = static_cast<int>(std::round(48.0f * m_contentScale));
+
   if (!iconNameOrPath.empty()) {
-    return m_iconResolver.resolve(iconNameOrPath);
+    return m_iconResolver.resolve(iconNameOrPath, iconTargetSize);
   }
 
   if (const auto internal = internal_apps::metadataForAppId(appId); internal.has_value()) {
@@ -1340,9 +1347,9 @@ std::string TaskbarWidget::resolveIconPath(const std::string& appId, const std::
   const std::string appIdLower = toLower(appId);
   const auto it = m_appIconsByLower.find(appIdLower);
   if (it != m_appIconsByLower.end()) {
-    return m_iconResolver.resolve(it->second);
+    return m_iconResolver.resolve(it->second, iconTargetSize);
   }
-  return m_iconResolver.resolve(appId);
+  return m_iconResolver.resolve(appId, iconTargetSize);
 }
 
 bool TaskbarWidget::activeWorkspaceIndex(std::size_t& index) const {

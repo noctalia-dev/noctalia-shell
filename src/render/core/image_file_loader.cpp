@@ -4,11 +4,14 @@
 #include "util/file_utils.h"
 
 #include <algorithm>
+#include <array>
 #include <cairo.h>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <optional>
 #include <stb_image_resize2.h>
+#include <string_view>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wexpansion-to-defined"
 #include <librsvg/rsvg.h>
@@ -40,6 +43,330 @@ namespace {
         outRow[(x * 4) + 3] = a;
       }
     }
+  }
+
+  std::optional<LoadedImageFile> rasterizeSvg(const std::vector<std::uint8_t>& fileData, int targetSize,
+                                              std::string* errorMessage);
+
+  [[nodiscard]] bool asciiStartsWithDataScheme(std::string_view source) {
+    if (source.size() < 5) {
+      return false;
+    }
+    return (source[0] == 'd' || source[0] == 'D') && (source[1] == 'a' || source[1] == 'A') &&
+           (source[2] == 't' || source[2] == 'T') && (source[3] == 'a' || source[3] == 'A') && source[4] == ':';
+  }
+
+  [[nodiscard]] char asciiLower(char ch) { return ch >= 'A' && ch <= 'Z' ? static_cast<char>(ch - 'A' + 'a') : ch; }
+
+  [[nodiscard]] bool asciiEqualInsensitive(std::string_view lhs, std::string_view rhs) {
+    if (lhs.size() != rhs.size()) {
+      return false;
+    }
+    for (std::size_t i = 0; i < lhs.size(); ++i) {
+      if (asciiLower(lhs[i]) != asciiLower(rhs[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  [[nodiscard]] bool asciiWhitespace(char ch) {
+    return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n' || ch == '\f';
+  }
+
+  [[nodiscard]] std::string_view trimAscii(std::string_view value) {
+    while (!value.empty() && asciiWhitespace(value.front())) {
+      value.remove_prefix(1);
+    }
+    while (!value.empty() && asciiWhitespace(value.back())) {
+      value.remove_suffix(1);
+    }
+    return value;
+  }
+
+  [[nodiscard]] int hexValue(char ch) {
+    if (ch >= '0' && ch <= '9') {
+      return ch - '0';
+    }
+    if (ch >= 'a' && ch <= 'f') {
+      return ch - 'a' + 10;
+    }
+    if (ch >= 'A' && ch <= 'F') {
+      return ch - 'A' + 10;
+    }
+    return -1;
+  }
+
+  [[nodiscard]] std::optional<std::vector<std::uint8_t>> percentDecode(std::string_view value,
+                                                                       std::string* errorMessage) {
+    std::vector<std::uint8_t> out;
+    out.reserve(value.size());
+
+    for (std::size_t i = 0; i < value.size(); ++i) {
+      const char ch = value[i];
+      if (ch != '%') {
+        out.push_back(static_cast<std::uint8_t>(ch));
+        continue;
+      }
+
+      if (i + 2 >= value.size()) {
+        if (errorMessage != nullptr) {
+          *errorMessage = "data URI has truncated percent escape";
+        }
+        return std::nullopt;
+      }
+
+      const int hi = hexValue(value[i + 1]);
+      const int lo = hexValue(value[i + 2]);
+      if (hi < 0 || lo < 0) {
+        if (errorMessage != nullptr) {
+          *errorMessage = "data URI has invalid percent escape";
+        }
+        return std::nullopt;
+      }
+
+      out.push_back(static_cast<std::uint8_t>((hi << 4) | lo));
+      i += 2;
+    }
+
+    return out;
+  }
+
+  [[nodiscard]] int base64Value(unsigned char ch) {
+    if (ch >= 'A' && ch <= 'Z') {
+      return ch - 'A';
+    }
+    if (ch >= 'a' && ch <= 'z') {
+      return ch - 'a' + 26;
+    }
+    if (ch >= '0' && ch <= '9') {
+      return ch - '0' + 52;
+    }
+    if (ch == '+') {
+      return 62;
+    }
+    if (ch == '/') {
+      return 63;
+    }
+    return -1;
+  }
+
+  [[nodiscard]] std::optional<std::vector<std::uint8_t>> base64Decode(std::string_view value,
+                                                                      std::string* errorMessage) {
+    std::vector<std::uint8_t> out;
+    out.reserve((value.size() * 3U) / 4U);
+
+    std::array<int, 4> quad{};
+    int quadSize = 0;
+    bool finished = false;
+
+    auto fail = [&](const char* message) -> std::optional<std::vector<std::uint8_t>> {
+      if (errorMessage != nullptr) {
+        *errorMessage = message;
+      }
+      return std::nullopt;
+    };
+
+    auto emitQuad = [&]() -> bool {
+      if (quad[0] < 0 || quad[1] < 0) {
+        return false;
+      }
+
+      out.push_back(static_cast<std::uint8_t>((quad[0] << 2) | (quad[1] >> 4)));
+      if (quad[2] == -2) {
+        return quad[3] == -2;
+      }
+      if (quad[2] < 0) {
+        return false;
+      }
+
+      out.push_back(static_cast<std::uint8_t>(((quad[1] & 0x0F) << 4) | (quad[2] >> 2)));
+      if (quad[3] == -2) {
+        return true;
+      }
+      if (quad[3] < 0) {
+        return false;
+      }
+
+      out.push_back(static_cast<std::uint8_t>(((quad[2] & 0x03) << 6) | quad[3]));
+      return true;
+    };
+
+    for (unsigned char ch : value) {
+      if (asciiWhitespace(static_cast<char>(ch))) {
+        continue;
+      }
+      if (finished) {
+        return fail("data URI has trailing base64 data after padding");
+      }
+
+      int decoded = -1;
+      if (ch == '=') {
+        decoded = -2;
+      } else {
+        decoded = base64Value(ch);
+        if (decoded < 0) {
+          return fail("data URI has invalid base64 data");
+        }
+      }
+
+      quad[static_cast<std::size_t>(quadSize++)] = decoded;
+      if (quadSize == 4) {
+        if (!emitQuad()) {
+          return fail("data URI has invalid base64 padding");
+        }
+        finished = quad[2] == -2 || quad[3] == -2;
+        quadSize = 0;
+      }
+    }
+
+    if (quadSize == 0) {
+      return out;
+    }
+    if (finished || quadSize == 1) {
+      return fail("data URI has incomplete base64 data");
+    }
+    if (quad[0] < 0 || quad[1] < 0) {
+      return fail("data URI has invalid base64 padding");
+    }
+
+    out.push_back(static_cast<std::uint8_t>((quad[0] << 2) | (quad[1] >> 4)));
+    if (quadSize == 3) {
+      if (quad[2] < 0) {
+        return fail("data URI has invalid base64 padding");
+      }
+      out.push_back(static_cast<std::uint8_t>(((quad[1] & 0x0F) << 4) | (quad[2] >> 2)));
+    }
+    return out;
+  }
+
+  struct DecodedDataUri {
+    std::vector<std::uint8_t> bytes;
+    bool declaredSvg = false;
+  };
+
+  [[nodiscard]] std::optional<DecodedDataUri> decodeDataUri(std::string_view source, std::string* errorMessage) {
+    const std::size_t comma = source.find(',');
+    if (comma == std::string_view::npos) {
+      if (errorMessage != nullptr) {
+        *errorMessage = "data URI is missing payload separator";
+      }
+      return std::nullopt;
+    }
+
+    const std::string_view header = source.substr(5, comma - 5);
+    const std::string_view payload = source.substr(comma + 1);
+
+    bool base64 = false;
+    bool declaredSvg = false;
+    std::size_t tokenStart = 0;
+    bool firstToken = true;
+    while (tokenStart <= header.size()) {
+      const std::size_t tokenEnd = header.find(';', tokenStart);
+      const std::string_view token = trimAscii(header.substr(
+          tokenStart, tokenEnd == std::string_view::npos ? std::string_view::npos : tokenEnd - tokenStart));
+      if (firstToken && asciiEqualInsensitive(token, "image/svg+xml")) {
+        declaredSvg = true;
+      } else if (asciiEqualInsensitive(token, "base64")) {
+        base64 = true;
+      }
+
+      if (tokenEnd == std::string_view::npos) {
+        break;
+      }
+      tokenStart = tokenEnd + 1;
+      firstToken = false;
+    }
+
+    auto decodedPayload = percentDecode(payload, errorMessage);
+    if (!decodedPayload.has_value()) {
+      return std::nullopt;
+    }
+
+    if (!base64) {
+      return DecodedDataUri{.bytes = std::move(*decodedPayload), .declaredSvg = declaredSvg};
+    }
+
+    std::string decodedText;
+    decodedText.reserve(decodedPayload->size());
+    for (std::uint8_t byte : *decodedPayload) {
+      decodedText.push_back(static_cast<char>(byte));
+    }
+
+    auto decodedBytes = base64Decode(decodedText, errorMessage);
+    if (!decodedBytes.has_value()) {
+      return std::nullopt;
+    }
+    return DecodedDataUri{.bytes = std::move(*decodedBytes), .declaredSvg = declaredSvg};
+  }
+
+  [[nodiscard]] bool startsWithUtf8Bom(const std::vector<std::uint8_t>& data) {
+    return data.size() >= 3 && data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF;
+  }
+
+  [[nodiscard]] bool looksLikeSvg(const std::vector<std::uint8_t>& data) {
+    std::size_t pos = startsWithUtf8Bom(data) ? 3U : 0U;
+    while (pos < data.size() && asciiWhitespace(static_cast<char>(data[pos]))) {
+      ++pos;
+    }
+
+    const std::size_t scanEnd = std::min(data.size(), pos + 256U);
+    for (; pos < scanEnd; ++pos) {
+      if (pos + 4 <= data.size() && data[pos] == '<' && asciiLower(static_cast<char>(data[pos + 1])) == 's' &&
+          asciiLower(static_cast<char>(data[pos + 2])) == 'v' && asciiLower(static_cast<char>(data[pos + 3])) == 'g') {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  std::optional<LoadedImageFile> loadImageBytes(std::vector<std::uint8_t> fileData, bool preferSvg, int targetSize,
+                                                std::string* errorMessage) {
+    if (fileData.empty()) {
+      if (errorMessage != nullptr) {
+        *errorMessage = "empty image data";
+      }
+      return std::nullopt;
+    }
+
+    const bool svgLike = looksLikeSvg(fileData);
+    if (preferSvg || svgLike) {
+      if (auto loaded = rasterizeSvg(fileData, targetSize, errorMessage)) {
+        return loaded;
+      }
+      if (svgLike) {
+        return std::nullopt;
+      }
+    }
+
+    if (auto decoded = decodeRasterImage(fileData.data(), fileData.size(), errorMessage)) {
+      int width = decoded->width;
+      int height = decoded->height;
+      auto pixels = std::move(decoded->pixels);
+
+      const int maxDim = std::max(width, height);
+      if (targetSize > 0 && maxDim > targetSize && width > 0 && height > 0) {
+        const float scale = static_cast<float>(targetSize) / static_cast<float>(maxDim);
+        const int resizedW = std::max(1, static_cast<int>(std::lround(static_cast<float>(width) * scale)));
+        const int resizedH = std::max(1, static_cast<int>(std::lround(static_cast<float>(height) * scale)));
+
+        std::vector<std::uint8_t> resized(static_cast<std::size_t>(resizedW) * static_cast<std::size_t>(resizedH) * 4U);
+        // Use the sRGB resize: image bytes are sRGB-encoded, so averaging them
+        // directly (the _linear variant) darkens and muddies downscaled icons.
+        // STBIR_RGBA handles the non-premultiplied alpha correctly.
+        unsigned char* result =
+            stbir_resize_uint8_srgb(pixels.data(), width, height, 0, resized.data(), resizedW, resizedH, 0, STBIR_RGBA);
+        if (result != nullptr) {
+          pixels = std::move(resized);
+          width = resizedW;
+          height = resizedH;
+        }
+      }
+
+      return LoadedImageFile{.rgba = std::move(pixels), .width = width, .height = height};
+    }
+
+    return std::nullopt;
   }
 
   std::optional<LoadedImageFile> rasterizeSvg(const std::vector<std::uint8_t>& fileData, int targetSize,
@@ -152,6 +479,14 @@ std::optional<LoadedImageFile> loadImageFile(const std::string& path, int target
     return std::nullopt;
   }
 
+  if (asciiStartsWithDataScheme(path)) {
+    auto dataUri = decodeDataUri(path, errorMessage);
+    if (!dataUri.has_value()) {
+      return std::nullopt;
+    }
+    return loadImageBytes(std::move(dataUri->bytes), dataUri->declaredSvg, targetSize, errorMessage);
+  }
+
   auto fileData = FileUtils::readBinaryFile(path);
   if (fileData.empty()) {
     if (errorMessage != nullptr) {
@@ -160,33 +495,6 @@ std::optional<LoadedImageFile> loadImageFile(const std::string& path, int target
     return std::nullopt;
   }
 
-  if (path.ends_with(".svg") || path.ends_with(".SVG")) {
-    return rasterizeSvg(fileData, targetSize, errorMessage);
-  }
-
-  if (auto decoded = decodeRasterImage(fileData.data(), fileData.size(), errorMessage)) {
-    int width = decoded->width;
-    int height = decoded->height;
-    auto pixels = std::move(decoded->pixels);
-
-    const int maxDim = std::max(width, height);
-    if (targetSize > 0 && maxDim > targetSize && width > 0 && height > 0) {
-      const float scale = static_cast<float>(targetSize) / static_cast<float>(maxDim);
-      const int resizedW = std::max(1, static_cast<int>(std::lround(static_cast<float>(width) * scale)));
-      const int resizedH = std::max(1, static_cast<int>(std::lround(static_cast<float>(height) * scale)));
-
-      std::vector<std::uint8_t> resized(static_cast<std::size_t>(resizedW) * static_cast<std::size_t>(resizedH) * 4U);
-      unsigned char* result =
-          stbir_resize_uint8_linear(pixels.data(), width, height, 0, resized.data(), resizedW, resizedH, 0, STBIR_RGBA);
-      if (result != nullptr) {
-        pixels = std::move(resized);
-        width = resizedW;
-        height = resizedH;
-      }
-    }
-
-    return LoadedImageFile{.rgba = std::move(pixels), .width = width, .height = height};
-  }
-
-  return std::nullopt;
+  return loadImageBytes(std::move(fileData), path.ends_with(".svg") || path.ends_with(".SVG"), targetSize,
+                        errorMessage);
 }

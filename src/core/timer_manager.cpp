@@ -1,13 +1,23 @@
 #include "core/timer_manager.h"
 
+#include "core/log.h"
+
 #include <algorithm>
 #include <cstdint>
+#include <cstdlib>
+#include <cxxabi.h>
 #include <limits>
+#include <memory>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 namespace {
+
+  constexpr Logger kLog("timer");
+  constexpr float kSlowTimerCallbackDebugMs = 16.0f;
+  constexpr float kSlowTimerCallbackWarnMs = 1000.0f;
 
   struct TimerEntry {
     TimerManager::TimerId id = 0;
@@ -35,6 +45,16 @@ namespace {
   std::unordered_set<TimerManager::TimerId>& inFlightTimerIds() {
     static std::unordered_set<TimerManager::TimerId> ids;
     return ids;
+  }
+
+  std::string demangleTypeName(const char* name) {
+    int status = 0;
+    std::unique_ptr<char, decltype(&std::free)> demangled{abi::__cxa_demangle(name, nullptr, nullptr, &status),
+                                                          &std::free};
+    if (status == 0 && demangled != nullptr) {
+      return demangled.get();
+    }
+    return name != nullptr ? std::string(name) : std::string("<unknown>");
   }
 
 } // namespace
@@ -137,7 +157,17 @@ void TimerManager::tick() {
     }
 
     if (entry.callback) {
+      const auto callbackStart = std::chrono::steady_clock::now();
       entry.callback();
+      const float callbackMs =
+          std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - callbackStart).count();
+      if (callbackMs >= kSlowTimerCallbackWarnMs) {
+        const auto callbackType = demangleTypeName(entry.callback.target_type().name());
+        kLog.warn("timer callback {} id={} took {:.1f}ms", callbackType, entry.id, callbackMs);
+      } else if (callbackMs >= kSlowTimerCallbackDebugMs) {
+        const auto callbackType = demangleTypeName(entry.callback.target_type().name());
+        kLog.debug("timer callback {} id={} took {:.1f}ms", callbackType, entry.id, callbackMs);
+      }
     }
 
     if (entry.repeating && entry.id != 0 && !canceledTimerIds().contains(entry.id)) {

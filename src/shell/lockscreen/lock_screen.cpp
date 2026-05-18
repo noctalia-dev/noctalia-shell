@@ -8,6 +8,7 @@
 #include "ipc/ipc_service.h"
 #include "render/render_context.h"
 #include "shell/lockscreen/lock_surface.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/palette.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
@@ -15,7 +16,6 @@
 #include <algorithm>
 #include <string>
 #include <wayland-client.h>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -234,12 +234,12 @@ void LockScreen::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  if (event.sym == XKB_KEY_Return || event.sym == XKB_KEY_KP_Enter) {
+  if (KeybindMatcher::matches(KeybindAction::Validate, event.sym, event.modifiers)) {
     tryAuthenticate();
     return;
   }
 
-  if (event.sym == XKB_KEY_Escape) {
+  if (KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
     clearSensitiveString(m_password);
     m_status = i18n::tr("lockscreen.password-cleared");
     m_statusIsError = false;

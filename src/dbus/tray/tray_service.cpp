@@ -28,6 +28,7 @@ namespace {
   static constexpr auto k_menu_interface = "com.canonical.dbusmenu";
   static constexpr auto k_default_item_path = "/StatusNotifierItem";
   static constexpr auto k_ayatana_item_path = "/org/ayatana/NotificationItem";
+  constexpr auto k_item_property_timeout = std::chrono::milliseconds(200);
 
   bool isStatusNotifierItemBusName(std::string_view value) {
     // Different implementations use different bus-name prefixes for SNI items.
@@ -40,16 +41,45 @@ namespace {
 
   bool looks_like_dbus_name(std::string_view value) { return !value.empty() && value != "__path_only__"; }
 
+  bool isGenericProcessName(std::string_view value) {
+    if (value.empty()) {
+      return true;
+    }
+    const auto lower = StringUtils::toLower(value);
+    return lower == "electron" || lower == "xdg-dbus-proxy";
+  }
+
+  std::string basenameFromPath(std::string value) {
+    if (value.empty()) {
+      return {};
+    }
+    if (const auto slash = value.find_last_of('/'); slash != std::string::npos && slash + 1 < value.size()) {
+      value = value.substr(slash + 1);
+    }
+    return value;
+  }
+
   std::string processNameForPid(std::uint32_t pid) {
     if (pid == 0) {
       return {};
     }
 
     const std::filesystem::path procDir = std::filesystem::path("/proc") / std::to_string(pid);
+    std::string argv0;
+    {
+      std::ifstream cmdline(procDir / "cmdline", std::ios::binary);
+      std::getline(cmdline, argv0, '\0');
+      argv0 = basenameFromPath(StringUtils::trim(argv0));
+    }
+
     std::error_code ec;
     const auto exe = std::filesystem::read_symlink(procDir / "exe", ec);
     if (!ec && !exe.empty()) {
-      return exe.filename().string();
+      auto exeName = exe.filename().string();
+      if (!isGenericProcessName(exeName) || argv0.empty()) {
+        return exeName;
+      }
+      return argv0;
     }
 
     std::ifstream comm(procDir / "comm");
@@ -118,26 +148,27 @@ namespace {
     return out;
   }
 
-  template <typename T> T get_property_or(sdbus::IProxy& proxy, std::string_view property_name, T fallback) {
-    try {
-      const sdbus::Variant value = proxy.getProperty(property_name).onInterface(k_item_interface);
-      return value.get<T>();
-    } catch (const sdbus::Error&) {
-      return fallback;
+  const sdbus::Variant* findProperty(const std::map<std::string, sdbus::Variant>& properties,
+                                     std::string_view propertyName) {
+    const auto it = properties.find(std::string(propertyName));
+    if (it == properties.end()) {
+      return nullptr;
     }
+    return &it->second;
   }
 
-  std::string get_item_property_string_or(sdbus::IProxy& proxy, std::string_view propertyName, std::string fallback) {
+  std::string get_item_property_string_from(const std::map<std::string, sdbus::Variant>& properties,
+                                            std::string_view propertyName, std::string fallback) {
+    const auto* value = findProperty(properties, propertyName);
+    if (value == nullptr) {
+      return fallback;
+    }
     try {
-      const sdbus::Variant value = proxy.getProperty(propertyName).onInterface(k_item_interface);
-      try {
-        return value.get<std::string>();
-      } catch (const sdbus::Error&) {
-      }
-      try {
-        return value.get<sdbus::ObjectPath>();
-      } catch (const sdbus::Error&) {
-      }
+      return value->get<std::string>();
+    } catch (const sdbus::Error&) {
+    }
+    try {
+      return value->get<sdbus::ObjectPath>();
     } catch (const sdbus::Error&) {
     }
     return fallback;
@@ -145,6 +176,8 @@ namespace {
 
   using IconPixmapTuple = std::tuple<std::int32_t, std::int32_t, std::vector<std::uint8_t>>;
   using IconPixmapStruct = sdbus::Struct<std::int32_t, std::int32_t, std::vector<std::uint8_t>>;
+  using StatusNotifierTextTuple = std::tuple<std::string, std::vector<IconPixmapTuple>, std::string, std::string>;
+  using StatusNotifierTextStruct = sdbus::Struct<std::string, std::vector<IconPixmapStruct>, std::string, std::string>;
   using DbusMenuLayout =
       sdbus::Struct<std::int32_t, std::map<std::string, sdbus::Variant>, std::vector<sdbus::Variant>>;
   using DbusMenuItemProperties = sdbus::Struct<std::int32_t, std::map<std::string, sdbus::Variant>>;
@@ -413,34 +446,38 @@ namespace {
     return {};
   }
 
-  std::vector<IconPixmapTuple> get_icon_pixmaps_or(sdbus::IProxy& proxy, std::string_view property_name,
-                                                   const std::vector<IconPixmapTuple>& fallback) {
-    try {
-      const sdbus::Variant value = proxy.getProperty(property_name).onInterface(k_item_interface);
-      const auto decoded = iconPixmapsFromVariant(value);
-      if (!decoded.empty()) {
-        return decoded;
-      }
-    } catch (const sdbus::Error&) {
+  std::vector<IconPixmapTuple> get_icon_pixmaps_from(const std::map<std::string, sdbus::Variant>& properties,
+                                                     std::string_view propertyName,
+                                                     const std::vector<IconPixmapTuple>& fallback) {
+    const auto* value = findProperty(properties, propertyName);
+    if (value == nullptr) {
+      return fallback;
     }
-
-    try {
-      std::map<std::string, sdbus::Variant> all;
-      proxy.callMethod("GetAll")
-          .onInterface("org.freedesktop.DBus.Properties")
-          .withArguments(k_item_interface)
-          .storeResultsTo(all);
-      const auto it = all.find(std::string(property_name));
-      if (it != all.end()) {
-        const auto decoded = iconPixmapsFromVariant(it->second);
-        if (!decoded.empty()) {
-          return decoded;
-        }
-      }
-    } catch (const sdbus::Error&) {
+    const auto decoded = iconPixmapsFromVariant(*value);
+    if (!decoded.empty()) {
+      return decoded;
     }
-
     return fallback;
+  }
+
+  std::pair<std::string, std::string>
+  get_status_notifier_text_from(const std::map<std::string, sdbus::Variant>& properties, std::string fallbackTitle,
+                                std::string fallbackDescription) {
+    const auto* value = findProperty(properties, "ToolTip");
+    if (value != nullptr) {
+      try {
+        const auto text = value->get<StatusNotifierTextTuple>();
+        return {std::get<2>(text), std::get<3>(text)};
+      } catch (const sdbus::Error&) {
+      }
+      try {
+        const auto text = value->get<StatusNotifierTextStruct>();
+        return {std::get<2>(text), std::get<3>(text)};
+      } catch (const sdbus::Error&) {
+      }
+    }
+
+    return {std::move(fallbackTitle), std::move(fallbackDescription)};
   }
 
   bool pickBestPixmap(const std::vector<IconPixmapTuple>& pixmaps, std::vector<std::uint8_t>& outArgb,
@@ -539,7 +576,7 @@ void TrayService::start() {
         if (old_owner.empty() && !new_owner.empty() && isStatusNotifierItemBusName(name)) {
           // Some apps miss the re-registration signal race at startup; probing
           // newly-owned SNI bus names keeps tray entries self-healing.
-          DeferredCall::callLater([this, name]() { (void)tryRegisterItemForBusName(name); });
+          DeferredCall::callLater([this, name]() { tryRegisterItemForBusName(name); });
         }
         if (!old_owner.empty() && new_owner.empty()) {
           removeItemsForBusName(name);
@@ -632,49 +669,64 @@ namespace {
 
 } // namespace
 
-bool TrayService::fetchMenuProperties(const std::string& itemId, const std::vector<std::int32_t>& entryIds,
-                                      std::vector<TrayMenuEntry>& outEntries) {
+void TrayService::fetchMenuProperties(const std::string& itemId, const std::vector<std::int32_t>& entryIds,
+                                      std::function<void(bool)> callback) {
   if (entryIds.empty()) {
-    return false;
+    callback(false);
+    return;
   }
 
   auto cacheIt = m_menuCache.find(itemId);
   if (cacheIt == m_menuCache.end() || cacheIt->second.proxy == nullptr) {
-    return false;
+    callback(false);
+    return;
   }
   auto& cache = cacheIt->second;
 
   try {
-    std::vector<DbusMenuItemProperties> properties;
-    cache.proxy->callMethod("GetGroupProperties")
+    cache.proxy->callMethodAsync("GetGroupProperties")
         .onInterface(k_menu_interface)
         .withTimeout(std::chrono::milliseconds(1000))
         .withArguments(entryIds, requestedMenuProperties())
-        .storeResultsTo(properties);
+        .uponReplyInvoke([this, itemId, entryIds, callback = std::move(callback)](
+                             std::optional<sdbus::Error> error, std::vector<DbusMenuItemProperties> properties) {
+          auto replyCacheIt = m_menuCache.find(itemId);
+          if (replyCacheIt == m_menuCache.end() || replyCacheIt->second.proxy == nullptr) {
+            callback(false);
+            return;
+          }
+          auto& replyCache = replyCacheIt->second;
 
-    std::unordered_map<std::int32_t, std::map<std::string, sdbus::Variant>> propertiesById;
-    propertiesById.reserve(properties.size());
-    for (const auto& itemProperties : properties) {
-      propertiesById.emplace(std::get<0>(itemProperties), std::get<1>(itemProperties));
-    }
+          if (error.has_value()) {
+            kLog.debug("GetGroupProperties failed id={} entries={} err={}", itemId, entryIds.size(), error->what());
+            callback(false);
+            return;
+          }
 
-    outEntries.clear();
-    outEntries.reserve(entryIds.size());
-    for (const auto entryId : entryIds) {
-      TrayMenuEntry entry;
-      entry.id = entryId;
-      if (const auto propsIt = propertiesById.find(entryId); propsIt != propertiesById.end()) {
-        applyMenuEntryProperties(entry, propsIt->second, true);
-      }
-      cache.entriesById[entryId] = entry;
-      if (displayableMenuEntry(entry)) {
-        outEntries.push_back(std::move(entry));
-      }
-    }
-    return !outEntries.empty();
+          std::unordered_map<std::int32_t, std::map<std::string, sdbus::Variant>> propertiesById;
+          propertiesById.reserve(properties.size());
+          for (const auto& itemProperties : properties) {
+            propertiesById.emplace(std::get<0>(itemProperties), std::get<1>(itemProperties));
+          }
+
+          bool hasDisplayable = false;
+          for (const auto entryId : entryIds) {
+            TrayMenuEntry entry;
+            entry.id = entryId;
+            if (const auto propsIt = propertiesById.find(entryId); propsIt != propertiesById.end()) {
+              applyMenuEntryProperties(entry, propsIt->second, true);
+            }
+            // Note: This write is intentionally generation-agnostic. If the cache's generation has changed,
+            // a new layout fetch will soon clear or overwrite entriesById. The caller checks generation before acting.
+            replyCache.entriesById[entryId] = entry;
+            hasDisplayable = hasDisplayable || displayableMenuEntry(entry);
+          }
+
+          callback(hasDisplayable);
+        });
   } catch (const sdbus::Error& e) {
     kLog.debug("GetGroupProperties failed id={} entries={} err={}", itemId, entryIds.size(), e.what());
-    return false;
+    callback(false);
   }
 }
 
@@ -803,22 +855,42 @@ void TrayService::requestMenuLayoutAfterAboutToShow(const std::string& itemId, s
           }
 
           auto after = entriesForParent(replyCache.entriesById, replyCache.childrenByParent, parentId);
-          if (after.empty()) {
-            const auto layoutChildIds = childIdsFromLayoutProperties(layout);
-            if (!layoutChildIds.empty()) {
-              replyCache.childrenByParent[parentId] = layoutChildIds;
-              std::vector<TrayMenuEntry> propertyEntries;
-              if (fetchMenuProperties(itemId, layoutChildIds, propertyEntries)) {
-                kLog.debug("dbusmenu children-property fallback id={} parentId={} children={} entries={}", itemId,
-                           parentId, layoutChildIds.size(), propertyEntries.size());
-                after = entriesForParent(replyCache.entriesById, replyCache.childrenByParent, parentId);
-              }
-            }
+          const bool needsPropertyFallback = after.empty();
+          std::vector<std::int32_t> layoutChildIds;
+          if (needsPropertyFallback) {
+            layoutChildIds = childIdsFromLayoutProperties(layout);
           }
 
           replyCache.loadedParents.insert(parentId);
           if (parentId == 0) {
             replyCache.rootLoaded = true;
+          }
+
+          if (needsPropertyFallback) {
+            if (!layoutChildIds.empty()) {
+              replyCache.childrenByParent[parentId] = layoutChildIds;
+              fetchMenuProperties(itemId, layoutChildIds, [this, itemId, parentId, generation, before](bool fetched) {
+                auto postFetchCacheIt = m_menuCache.find(itemId);
+                if (postFetchCacheIt == m_menuCache.end() || postFetchCacheIt->second.proxy == nullptr) {
+                  return;
+                }
+                auto& postFetchCache = postFetchCacheIt->second;
+                if (postFetchCache.generation != generation) {
+                  return;
+                }
+
+                const auto afterFallback =
+                    entriesForParent(postFetchCache.entriesById, postFetchCache.childrenByParent, parentId);
+                if (fetched) {
+                  kLog.debug("dbusmenu children-property fallback id={} parentId={} children={} entries={}", itemId,
+                             parentId, postFetchCache.childrenByParent[parentId].size(), afterFallback.size());
+                }
+                if (before != afterFallback) {
+                  emitChanged();
+                }
+              });
+              return;
+            }
           }
 
           if (before != after) {
@@ -1190,18 +1262,33 @@ void TrayService::onRegisterStatusNotifierItem(const std::string& serviceOrPath,
     return;
   }
 
-  if (!hasServiceOwner(busName)) {
-    kLog.debug("register item ignored: no DBus owner for bus='{}' service/path='{}'", busName, serviceOrPath);
-    return;
-  }
-
   if (busOnlyRegistration) {
-    // Match watcher semantics for service-only registrations while tolerating
-    // late object-path readiness by probing known paths for a few ticks.
-    scheduleBusOnlyRegistrationProbe(busName, 5);
+    // Async hasServiceOwner check before probing.
+    if (m_dbusProxy) {
+      m_dbusProxy->callMethodAsync("NameHasOwner")
+          .onInterface(k_dbus_interface)
+          .withTimeout(std::chrono::milliseconds(200))
+          .withArguments(busName)
+          .uponReplyInvoke([this, busName](std::optional<sdbus::Error> error, bool hasOwner) {
+            if (error.has_value()) {
+              kLog.debug("register item ignored: NameHasOwner failed for bus='{}' err={}", busName, error->what());
+              return;
+            }
+            if (!hasOwner) {
+              kLog.debug("register item ignored: no DBus owner for bus='{}'", busName);
+              return;
+            }
+            scheduleBusOnlyRegistrationProbe(busName, 5);
+          });
+    }
     return;
   }
 
+  // For non-bus-only registrations, we deliberately do not check NameHasOwner before registering.
+  // Async metadata fetch and NameOwnerChanged cleanup are robust, so we tolerate briefly registering
+  // items for dead/unowned bus names—they are quickly cleaned up on failure. This avoids a synchronous
+  // or extra async round-trip for every registration and improves responsiveness.
+  // (See also: busOnlyRegistration branch above for the async owner check.)
   registerOrRefreshItem(busName, objectPath);
   const auto elapsedMs =
       std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
@@ -1223,57 +1310,91 @@ void TrayService::onRegisterStatusNotifierHost(const std::string& host) {
 }
 
 void TrayService::discoverExistingItems() {
-  std::vector<std::string> names;
   try {
-    m_dbusProxy->callMethod("ListNames").onInterface(k_dbus_interface).storeResultsTo(names);
-  } catch (const sdbus::Error& e) {
-    kLog.debug("tray discover failed: {}", e.what());
-    return;
-  }
+    m_dbusProxy->callMethodAsync("ListNames")
+        .onInterface(k_dbus_interface)
+        .withTimeout(std::chrono::milliseconds(200))
+        .uponReplyInvoke([this](std::optional<sdbus::Error> error, std::vector<std::string> names) {
+          if (error.has_value()) {
+            kLog.debug("tray discover failed: {}", error->what());
+            return;
+          }
 
-  for (const auto& name : names) {
-    if (isStatusNotifierItemBusName(name)) {
-      (void)tryRegisterItemForBusName(name);
-    }
+          for (const auto& name : names) {
+            if (isStatusNotifierItemBusName(name)) {
+              tryRegisterItemForBusName(name);
+            }
+          }
+        });
+  } catch (const sdbus::Error& e) {
+    kLog.debug("tray discover dispatch failed: {}", e.what());
   }
 }
 
-bool TrayService::tryRegisterItemForBusName(const std::string& busName) {
+void TrayService::tryRegisterItemForBusName(const std::string& busName, std::function<void(bool)> callback) {
   const auto t0 = std::chrono::steady_clock::now();
   if (!looks_like_dbus_name(busName)) {
-    return false;
+    if (callback) {
+      callback(false);
+    }
+    return;
   }
 
   const std::array<std::string_view, 2> candidatePaths = {k_default_item_path, k_ayatana_item_path};
-  bool registeredAny = false;
+  auto pending = std::make_shared<std::size_t>(candidatePaths.size());
+  auto registeredAny = std::make_shared<bool>(false);
+
+  auto finish = std::make_shared<std::function<void()>>();
+  *finish = [this, busName, t0, pending, registeredAny, callback = std::move(callback)]() mutable {
+    if (*pending != 0) {
+      return;
+    }
+
+    if (*registeredAny) {
+      emitChanged();
+    } else {
+      const auto elapsedMs =
+          std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
+      kLog.debug("tray probe exhausted bus='{}' elapsed={}ms", busName, elapsedMs);
+    }
+
+    if (callback) {
+      callback(*registeredAny);
+    }
+  };
+
+  // Note: This lambda captures 'this' without a lifetime guard. TrayService is application-lifetime,
+  // so this is safe in practice, but if that ever changes, a guard is needed to avoid use-after-free.
   for (const auto candidatePath : candidatePaths) {
-    const auto probeStart = std::chrono::steady_clock::now();
+    const auto candidatePathString = std::string(candidatePath);
     try {
-      auto probe = sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{busName},
-                                      sdbus::ObjectPath{std::string(candidatePath)});
-      std::map<std::string, sdbus::Variant> props;
-      probe->callMethod("GetAll")
+      auto probe = std::shared_ptr<sdbus::IProxy>(
+          sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{busName}, sdbus::ObjectPath{candidatePathString}));
+      probe->callMethodAsync("GetAll")
           .onInterface("org.freedesktop.DBus.Properties")
           .withTimeout(std::chrono::milliseconds(200))
           .withArguments(k_item_interface)
-          .storeResultsTo(props);
-      registerOrRefreshItem(busName, std::string(candidatePath));
-      registeredAny = true;
-    } catch (const sdbus::Error&) {
-      const auto probeElapsed =
-          std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - probeStart).count();
-      kLog.debug("tray probe failed bus='{}' path='{}' elapsed={}ms", busName, candidatePath, probeElapsed);
+          .uponReplyInvoke([this, busName, candidatePathString, pending, registeredAny, finish,
+                            probe](std::optional<sdbus::Error> error, std::map<std::string, sdbus::Variant>) {
+            if (!error.has_value()) {
+              registerOrRefreshItem(busName, candidatePathString);
+              *registeredAny = true;
+            } else {
+              kLog.debug("tray probe failed bus='{}' path='{}' err={}", busName, candidatePathString, error->what());
+            }
+            if (*pending > 0) {
+              --(*pending);
+            }
+            (*finish)();
+          });
+    } catch (const sdbus::Error& e) {
+      kLog.debug("tray probe dispatch failed bus='{}' path='{}' err={}", busName, candidatePathString, e.what());
+      if (*pending > 0) {
+        --(*pending);
+      }
+      (*finish)();
     }
   }
-
-  if (registeredAny) {
-    emitChanged();
-  } else {
-    const auto elapsedMs =
-        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
-    kLog.debug("tray probe exhausted bus='{}' elapsed={}ms", busName, elapsedMs);
-  }
-  return registeredAny;
 }
 
 void TrayService::scheduleBusOnlyRegistrationProbe(const std::string& busName, int retriesRemaining) {
@@ -1281,9 +1402,11 @@ void TrayService::scheduleBusOnlyRegistrationProbe(const std::string& busName, i
     return;
   }
   DeferredCall::callLater([this, busName, retriesRemaining]() {
-    if (!tryRegisterItemForBusName(busName)) {
-      scheduleBusOnlyRegistrationProbe(busName, retriesRemaining - 1);
-    }
+    tryRegisterItemForBusName(busName, [this, busName, retriesRemaining](bool registered) {
+      if (!registered) {
+        scheduleBusOnlyRegistrationProbe(busName, retriesRemaining - 1);
+      }
+    });
   });
 }
 
@@ -1315,44 +1438,41 @@ bool TrayService::isMetadataReady(const TrayItemInfo& item) const {
   if (!item.iconArgb32.empty() || !item.attentionArgb32.empty() || !item.overlayArgb32.empty()) {
     return true;
   }
-  if (!item.itemName.empty() || !item.title.empty()) {
+  if (!item.itemName.empty() || !item.title.empty() || !item.statusNotifierTitle.empty() ||
+      !item.statusNotifierDescription.empty()) {
     return true;
   }
   return false;
 }
 
-bool TrayService::hasServiceOwner(const std::string& serviceName) const {
-  if (serviceName.empty() || m_dbusProxy == nullptr) {
-    return false;
-  }
-  try {
-    std::string owner;
-    m_dbusProxy->callMethod("GetNameOwner")
-        .onInterface(k_dbus_interface)
-        .withTimeout(std::chrono::milliseconds(200))
-        .withArguments(serviceName)
-        .storeResultsTo(owner);
-    return !owner.empty();
-  } catch (const sdbus::Error&) {
-    return false;
-  }
-}
-
-std::string TrayService::processNameForBusName(const std::string& busName) const {
-  if (busName.empty() || m_dbusProxy == nullptr || !looks_like_dbus_name(busName)) {
-    return {};
+void TrayService::requestProcessNameForItem(const std::string& itemId, const std::string& busName) {
+  if (itemId.empty() || busName.empty() || m_dbusProxy == nullptr || !looks_like_dbus_name(busName)) {
+    return;
   }
 
   try {
-    std::uint32_t pid = 0;
-    m_dbusProxy->callMethod("GetConnectionUnixProcessID")
+    m_dbusProxy->callMethodAsync("GetConnectionUnixProcessID")
         .onInterface(k_dbus_interface)
         .withTimeout(std::chrono::milliseconds(200))
         .withArguments(busName)
-        .storeResultsTo(pid);
-    return processNameForPid(pid);
-  } catch (const sdbus::Error&) {
-    return {};
+        .uponReplyInvoke([this, itemId, busName](std::optional<sdbus::Error> error, std::uint32_t pid) {
+          if (error.has_value()) {
+            return;
+          }
+
+          auto itemIt = m_items.find(itemId);
+          if (itemIt == m_items.end() || itemIt->second.busName != busName) {
+            return;
+          }
+
+          const auto processName = processNameForPid(pid);
+          if (!processName.empty() && processName != itemIt->second.processName) {
+            itemIt->second.processName = processName;
+            emitChanged();
+          }
+        });
+  } catch (const sdbus::Error& e) {
+    kLog.debug("process-name dispatch failed item={} bus={} err={}", itemId, busName, e.what());
   }
 }
 
@@ -1397,8 +1517,10 @@ void TrayService::registerOrRefreshItem(const std::string& busName, const std::s
                                 .attentionIconName = {},
                                 .menuObjectPath = {},
                                 .itemName = {},
-                                .processName = processNameForBusName(busName),
+                                .processName = {},
                                 .title = {},
+                                .statusNotifierTitle = {},
+                                .statusNotifierDescription = {},
                                 .status = {},
                                 .iconArgb32 = {},
                                 .iconWidth = 0,
@@ -1415,33 +1537,7 @@ void TrayService::registerOrRefreshItem(const std::string& busName, const std::s
     if (looks_like_dbus_name(busName)) {
       auto [proxyIt, _] = m_itemProxies.emplace(
           itemId, sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{busName}, sdbus::ObjectPath{objectPath}));
-
-      proxyIt->second->uponSignal("NewIcon").onInterface(k_item_interface).call([this, itemId]() {
-        refreshItemMetadata(itemId);
-      });
-      proxyIt->second->uponSignal("NewAttentionIcon").onInterface(k_item_interface).call([this, itemId]() {
-        refreshItemMetadata(itemId);
-      });
-      proxyIt->second->uponSignal("NewOverlayIcon").onInterface(k_item_interface).call([this, itemId]() {
-        refreshItemMetadata(itemId);
-      });
-      proxyIt->second->uponSignal("NewToolTip").onInterface(k_item_interface).call([this, itemId]() {
-        refreshItemMetadata(itemId);
-      });
-      proxyIt->second->uponSignal("NewStatus")
-          .onInterface(k_item_interface)
-          .call([this, itemId](const std::string& /*status*/) { refreshItemMetadata(itemId); });
-      proxyIt->second->uponSignal("NewTitle")
-          .onInterface(k_item_interface)
-          .call([this, itemId](const std::string& /*title*/) { refreshItemMetadata(itemId); });
-      proxyIt->second->uponSignal("PropertiesChanged")
-          .onInterface("org.freedesktop.DBus.Properties")
-          .call([this, itemId](const std::string& iface, const std::map<std::string, sdbus::Variant>& /*changed*/,
-                               const std::vector<std::string>& /*invalidated*/) {
-            if (iface == k_item_interface) {
-              refreshItemMetadata(itemId);
-            }
-          });
+      attachItemProxySignals(itemId, *proxyIt->second);
     }
 
     m_watcherObject->emitSignal("StatusNotifierItemRegistered").onInterface(k_watcher_interface).withArguments(itemId);
@@ -1450,8 +1546,168 @@ void TrayService::registerOrRefreshItem(const std::string& busName, const std::s
   }
 
   if (looks_like_dbus_name(busName)) {
+    requestProcessNameForItem(itemId, busName);
     DeferredCall::callLater([this, itemId]() { refreshItemMetadata(itemId); });
     scheduleMetadataRefreshRetry(itemId, 4);
+  }
+}
+
+void TrayService::attachItemProxySignals(const std::string& itemId, sdbus::IProxy& proxy) {
+  proxy.uponSignal("NewIcon").onInterface(k_item_interface).call([this, itemId]() { refreshItemMetadata(itemId); });
+  proxy.uponSignal("NewAttentionIcon").onInterface(k_item_interface).call([this, itemId]() {
+    refreshItemMetadata(itemId);
+  });
+  proxy.uponSignal("NewOverlayIcon").onInterface(k_item_interface).call([this, itemId]() {
+    refreshItemMetadata(itemId);
+  });
+  proxy.uponSignal("NewToolTip").onInterface(k_item_interface).call([this, itemId]() { refreshItemMetadata(itemId); });
+  proxy.uponSignal("NewStatus").onInterface(k_item_interface).call([this, itemId](const std::string& /*status*/) {
+    refreshItemMetadata(itemId);
+  });
+  proxy.uponSignal("NewTitle").onInterface(k_item_interface).call([this, itemId](const std::string& /*title*/) {
+    refreshItemMetadata(itemId);
+  });
+  proxy.uponSignal("PropertiesChanged")
+      .onInterface("org.freedesktop.DBus.Properties")
+      .call([this, itemId](const std::string& iface, const std::map<std::string, sdbus::Variant>& /*changed*/,
+                           const std::vector<std::string>& /*invalidated*/) {
+        if (iface == k_item_interface) {
+          refreshItemMetadata(itemId);
+        }
+      });
+}
+
+void TrayService::resolvePathOnlyItemProxy(const std::string& itemId) {
+  auto itemIt = m_items.find(itemId);
+  if (itemIt == m_items.end()) {
+    m_pathOnlyResolutionsInFlight.erase(itemId);
+    return;
+  }
+  if (itemIt->second.busName != "__path_only__") {
+    m_pathOnlyResolutionsInFlight.erase(itemId);
+    return;
+  }
+
+  const auto objectPath = itemIt->second.objectPath;
+  const auto hints = path_name_hints(objectPath);
+
+  try {
+    m_dbusProxy->callMethodAsync("ListNames")
+        .onInterface(k_dbus_interface)
+        .withTimeout(std::chrono::milliseconds(200))
+        .uponReplyInvoke([this, itemId, objectPath, hints](std::optional<sdbus::Error> error,
+                                                           std::vector<std::string> names) {
+          if (error.has_value()) {
+            kLog.debug("lazy path-only resolve failed to list dbus names path={} err={}", objectPath, error->what());
+            m_pathOnlyResolutionsInFlight.erase(itemId);
+            return;
+          }
+
+          constexpr std::size_t kMaxProbeAttempts = 16;
+          constexpr auto kProbeTimeout = std::chrono::milliseconds(80);
+
+          auto candidates = std::make_shared<std::vector<std::string>>();
+          candidates->reserve(std::min<std::size_t>(names.size(), kMaxProbeAttempts));
+
+          auto appendCandidate = [candidates](const std::string& candidate) {
+            if (std::ranges::find(*candidates, candidate) == candidates->end()) {
+              candidates->push_back(candidate);
+            }
+          };
+
+          for (const auto& hint : hints) {
+            if (candidates->size() >= kMaxProbeAttempts) {
+              break;
+            }
+            for (const auto& candidate : names) {
+              if (candidates->size() >= kMaxProbeAttempts) {
+                break;
+              }
+              if (StringUtils::toLower(candidate).find(hint) != std::string::npos) {
+                appendCandidate(candidate);
+              }
+            }
+          }
+
+          for (const auto& candidate : names) {
+            if (candidates->size() >= kMaxProbeAttempts) {
+              break;
+            }
+            if (!candidate.empty() && candidate[0] == ':') {
+              appendCandidate(candidate);
+            }
+          }
+
+          auto index = std::make_shared<std::size_t>(0);
+          auto probeNext = std::make_shared<std::function<void()>>();
+          *probeNext = [this, itemId, objectPath, candidates, index, probeNext, kProbeTimeout]() {
+            if (*index >= candidates->size()) {
+              kLog.debug("could not resolve bus name for path-only tray item path={} probes={}", objectPath,
+                         candidates->size());
+              m_pathOnlyResolutionsInFlight.erase(itemId);
+              *probeNext = nullptr; // break self-cycle
+              return;
+            }
+
+            const auto candidate = (*candidates)[(*index)++];
+            if (!looks_like_dbus_name(candidate)) {
+              (*probeNext)();
+              return;
+            }
+
+            // Note: This lambda captures 'this' without a lifetime guard. TrayService is application-lifetime,
+            // so this is safe in practice, but if that ever changes, a guard is needed to avoid use-after-free.
+            try {
+              auto probe = std::shared_ptr<sdbus::IProxy>(
+                  sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{candidate}, sdbus::ObjectPath{objectPath}));
+              probe->callMethodAsync("GetAll")
+                  .onInterface("org.freedesktop.DBus.Properties")
+                  .withTimeout(kProbeTimeout)
+                  .withArguments(k_item_interface)
+                  .uponReplyInvoke([this, itemId, candidate, objectPath, probeNext, probe](
+                                       std::optional<sdbus::Error> probeError, std::map<std::string, sdbus::Variant>) {
+                    if (probeError.has_value()) {
+                      (*probeNext)();
+                      return;
+                    }
+
+                    auto resolvedItemIt = m_items.find(itemId);
+                    if (resolvedItemIt == m_items.end()) {
+                      m_pathOnlyResolutionsInFlight.erase(itemId);
+                      *probeNext = nullptr;
+                      return;
+                    }
+
+                    resolvedItemIt->second.busName = candidate;
+                    auto [proxyIt, inserted] = m_itemProxies.emplace(
+                        itemId, sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{candidate},
+                                                   sdbus::ObjectPath{objectPath}));
+                    if (!inserted) {
+                      proxyIt->second = sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{candidate},
+                                                           sdbus::ObjectPath{objectPath});
+                    }
+
+                    attachItemProxySignals(itemId, *proxyIt->second);
+                    m_pathOnlyResolutionsInFlight.erase(itemId);
+                    refreshItemMetadata(itemId);
+                    emitChanged();
+                    *probeNext = nullptr; // break self-cycle on success
+                  });
+            } catch (const sdbus::Error&) {
+              (*probeNext)();
+            }
+          };
+
+          if (candidates->empty()) {
+            m_pathOnlyResolutionsInFlight.erase(itemId);
+            *probeNext = nullptr; // break self-cycle
+            return;
+          }
+          (*probeNext)();
+        });
+  } catch (const sdbus::Error& e) {
+    kLog.debug("lazy path-only resolve dispatch failed path={} err={}", objectPath, e.what());
+    m_pathOnlyResolutionsInFlight.erase(itemId);
   }
 }
 
@@ -1465,109 +1721,10 @@ bool TrayService::ensureItemProxy(const std::string& itemId) {
     return m_itemProxies.contains(itemId);
   }
 
-  std::vector<std::string> names;
-  try {
-    m_dbusProxy->callMethod("ListNames").onInterface(k_dbus_interface).storeResultsTo(names);
-  } catch (const sdbus::Error& e) {
-    kLog.debug("lazy path-only resolve failed to list dbus names path={} err={}", itemIt->second.objectPath, e.what());
-    return false;
+  if (!m_pathOnlyResolutionsInFlight.contains(itemId)) {
+    m_pathOnlyResolutionsInFlight.insert(itemId);
+    resolvePathOnlyItemProxy(itemId);
   }
-
-  const auto hints = path_name_hints(itemIt->second.objectPath);
-
-  // Path-only fallback probing is synchronous; keep it tightly bounded to avoid
-  // long compositor stalls when many bus names are present.
-  constexpr std::size_t kMaxProbeAttempts = 16;
-  constexpr auto kProbeTimeout = std::chrono::milliseconds(80);
-  std::size_t probeAttempts = 0;
-
-  auto tryCandidate = [&](const std::string& candidate) -> bool {
-    if (probeAttempts >= kMaxProbeAttempts) {
-      return false;
-    }
-    ++probeAttempts;
-
-    if (!looks_like_dbus_name(candidate)) {
-      return false;
-    }
-    try {
-      auto probe = sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{candidate},
-                                      sdbus::ObjectPath{itemIt->second.objectPath});
-      std::map<std::string, sdbus::Variant> props;
-      probe->callMethod("GetAll")
-          .onInterface("org.freedesktop.DBus.Properties")
-          .withTimeout(kProbeTimeout)
-          .withArguments(k_item_interface)
-          .storeResultsTo(props);
-
-      auto& item = m_items[itemId];
-      item.busName = candidate;
-      auto [proxyIt, _] =
-          m_itemProxies.emplace(itemId, sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{candidate},
-                                                           sdbus::ObjectPath{item.objectPath}));
-
-      proxyIt->second->uponSignal("NewIcon").onInterface(k_item_interface).call([this, itemId]() {
-        refreshItemMetadata(itemId);
-      });
-      proxyIt->second->uponSignal("NewAttentionIcon").onInterface(k_item_interface).call([this, itemId]() {
-        refreshItemMetadata(itemId);
-      });
-      proxyIt->second->uponSignal("NewOverlayIcon").onInterface(k_item_interface).call([this, itemId]() {
-        refreshItemMetadata(itemId);
-      });
-      proxyIt->second->uponSignal("NewToolTip").onInterface(k_item_interface).call([this, itemId]() {
-        refreshItemMetadata(itemId);
-      });
-      proxyIt->second->uponSignal("NewStatus")
-          .onInterface(k_item_interface)
-          .call([this, itemId](const std::string& /*status*/) { refreshItemMetadata(itemId); });
-      proxyIt->second->uponSignal("NewTitle")
-          .onInterface(k_item_interface)
-          .call([this, itemId](const std::string& /*title*/) { refreshItemMetadata(itemId); });
-      proxyIt->second->uponSignal("PropertiesChanged")
-          .onInterface("org.freedesktop.DBus.Properties")
-          .call([this, itemId](const std::string& iface, const std::map<std::string, sdbus::Variant>& /*changed*/,
-                               const std::vector<std::string>& /*invalidated*/) {
-            if (iface == k_item_interface) {
-              refreshItemMetadata(itemId);
-            }
-          });
-
-      refreshItemMetadata(itemId);
-      return true;
-    } catch (const sdbus::Error&) {
-      return false;
-    }
-  };
-
-  for (const auto& hint : hints) {
-    if (probeAttempts >= kMaxProbeAttempts) {
-      break;
-    }
-    for (const auto& candidate : names) {
-      if (probeAttempts >= kMaxProbeAttempts) {
-        break;
-      }
-      if (StringUtils::toLower(candidate).find(hint) != std::string::npos && tryCandidate(candidate)) {
-        return true;
-      }
-    }
-  }
-
-  // Fallback: only probe unique names (":1.xxx"). Well-known names may trigger
-  // D-Bus service auto-activation which blocks for hundreds of ms per candidate.
-  // Unique names represent currently-running processes and respond immediately.
-  for (const auto& candidate : names) {
-    if (probeAttempts >= kMaxProbeAttempts) {
-      break;
-    }
-    if (!candidate.empty() && candidate[0] == ':' && tryCandidate(candidate)) {
-      return true;
-    }
-  }
-
-  kLog.debug("could not resolve bus name for path-only tray item path={} probes={}", itemIt->second.objectPath,
-             probeAttempts);
   return false;
 }
 
@@ -1578,50 +1735,78 @@ void TrayService::refreshItemMetadata(const std::string& itemId) {
     return;
   }
 
-  const auto& cur = itemIt->second;
-  auto next = cur;
-  // Use the existing value as the fallback so a transient D-Bus failure doesn't
-  // wipe out data that was successfully fetched earlier (e.g. menuObjectPath).
-  next.iconName = get_item_property_string_or(*proxyIt->second, "IconName", cur.iconName);
-  next.iconThemePath = get_item_property_string_or(*proxyIt->second, "IconThemePath", cur.iconThemePath);
-  next.overlayIconName = get_item_property_string_or(*proxyIt->second, "OverlayIconName", cur.overlayIconName);
-  next.attentionIconName = get_item_property_string_or(*proxyIt->second, "AttentionIconName", cur.attentionIconName);
-  next.menuObjectPath = get_item_property_string_or(*proxyIt->second, "Menu", cur.menuObjectPath);
-  next.itemName = get_item_property_string_or(*proxyIt->second, "Id", cur.itemName);
-  next.title = get_item_property_string_or(*proxyIt->second, "Title", cur.title);
-  next.status = get_item_property_string_or(*proxyIt->second, "Status", cur.status);
-  next.needsAttention = (next.status == "NeedsAttention");
+  try {
+    proxyIt->second->callMethodAsync("GetAll")
+        .onInterface("org.freedesktop.DBus.Properties")
+        .withTimeout(k_item_property_timeout)
+        .withArguments(k_item_interface)
+        .uponReplyInvoke([this, itemId](std::optional<sdbus::Error> error,
+                                        std::map<std::string, sdbus::Variant> properties) {
+          auto currentItemIt = m_items.find(itemId);
+          if (currentItemIt == m_items.end()) {
+            return;
+          }
 
-  const auto iconPixmaps = get_icon_pixmaps_or(*proxyIt->second, "IconPixmap", {});
-  pickBestPixmap(iconPixmaps, next.iconArgb32, next.iconWidth, next.iconHeight);
+          if (error.has_value()) {
+            kLog.debug("metadata GetAll failed id={} err={}", itemId, error->what());
+            ensureMenuCache(itemId, currentItemIt->second.busName, currentItemIt->second.menuObjectPath);
+            return;
+          }
 
-  const auto overlayPixmaps = get_icon_pixmaps_or(*proxyIt->second, "OverlayIconPixmap", {});
-  pickBestPixmap(overlayPixmaps, next.overlayArgb32, next.overlayWidth, next.overlayHeight);
+          const auto& cur = currentItemIt->second;
+          auto next = cur;
+          // Use current values as fallback so transient DBus failures don't wipe data.
+          next.iconName = get_item_property_string_from(properties, "IconName", cur.iconName);
+          next.iconThemePath = get_item_property_string_from(properties, "IconThemePath", cur.iconThemePath);
+          next.overlayIconName = get_item_property_string_from(properties, "OverlayIconName", cur.overlayIconName);
+          next.attentionIconName =
+              get_item_property_string_from(properties, "AttentionIconName", cur.attentionIconName);
+          next.menuObjectPath = get_item_property_string_from(properties, "Menu", cur.menuObjectPath);
+          next.itemName = get_item_property_string_from(properties, "Id", cur.itemName);
+          next.title = get_item_property_string_from(properties, "Title", cur.title);
+          auto [statusNotifierTitle, statusNotifierDescription] =
+              get_status_notifier_text_from(properties, cur.statusNotifierTitle, cur.statusNotifierDescription);
+          next.statusNotifierTitle = std::move(statusNotifierTitle);
+          next.statusNotifierDescription = std::move(statusNotifierDescription);
+          next.status = get_item_property_string_from(properties, "Status", cur.status);
+          next.needsAttention = (next.status == "NeedsAttention");
 
-  const auto attentionPixmaps = get_icon_pixmaps_or(*proxyIt->second, "AttentionIconPixmap", {});
-  pickBestPixmap(attentionPixmaps, next.attentionArgb32, next.attentionWidth, next.attentionHeight);
+          const auto iconPixmaps = get_icon_pixmaps_from(properties, "IconPixmap", {});
+          pickBestPixmap(iconPixmaps, next.iconArgb32, next.iconWidth, next.iconHeight);
 
-  if (next == itemIt->second) {
-    // Menu path unchanged — make sure the cache/subscription exists (may not have
-    // been set up yet if the Menu property was empty on first registration).
-    ensureMenuCache(itemId, next.busName, next.menuObjectPath);
-    return;
+          const auto overlayPixmaps = get_icon_pixmaps_from(properties, "OverlayIconPixmap", {});
+          pickBestPixmap(overlayPixmaps, next.overlayArgb32, next.overlayWidth, next.overlayHeight);
+
+          const auto attentionPixmaps = get_icon_pixmaps_from(properties, "AttentionIconPixmap", {});
+          pickBestPixmap(attentionPixmaps, next.attentionArgb32, next.attentionWidth, next.attentionHeight);
+
+          if (next == currentItemIt->second) {
+            // Menu path unchanged — make sure the cache/subscription exists (may not have
+            // been set up yet if the Menu property was empty on first registration).
+            ensureMenuCache(itemId, next.busName, next.menuObjectPath);
+            return;
+          }
+
+          // If the menu path changed, drop the cache so it gets recreated against the new endpoint.
+          if (next.menuObjectPath != currentItemIt->second.menuObjectPath) {
+            dropMenuCache(itemId);
+          }
+
+          currentItemIt->second = std::move(next);
+          kLog.debug("tray metadata updated id={} status={} itemName='{}' title='{}' sniTitle='{}' icon='{}' "
+                     "overlay='{}' attention='{}' pixmap={}x{} overlay={}x{} attention={}x{}",
+                     itemId, currentItemIt->second.status, currentItemIt->second.itemName, currentItemIt->second.title,
+                     currentItemIt->second.statusNotifierTitle, currentItemIt->second.iconName,
+                     currentItemIt->second.overlayIconName, currentItemIt->second.attentionIconName,
+                     currentItemIt->second.iconWidth, currentItemIt->second.iconHeight,
+                     currentItemIt->second.overlayWidth, currentItemIt->second.overlayHeight,
+                     currentItemIt->second.attentionWidth, currentItemIt->second.attentionHeight);
+          ensureMenuCache(itemId, currentItemIt->second.busName, currentItemIt->second.menuObjectPath);
+          emitChanged();
+        });
+  } catch (const sdbus::Error& e) {
+    kLog.debug("metadata GetAll dispatch failed id={} err={}", itemId, e.what());
   }
-
-  // If the menu path changed, drop the cache so it gets recreated against the new endpoint.
-  if (next.menuObjectPath != itemIt->second.menuObjectPath) {
-    dropMenuCache(itemId);
-  }
-
-  itemIt->second = std::move(next);
-  kLog.debug("tray metadata updated id={} status={} icon='{}' overlay='{}' attention='{}' pixmap={}x{} overlay={}x{} "
-             "attention={}x{}",
-             itemId, itemIt->second.status, itemIt->second.iconName, itemIt->second.overlayIconName,
-             itemIt->second.attentionIconName, itemIt->second.iconWidth, itemIt->second.iconHeight,
-             itemIt->second.overlayWidth, itemIt->second.overlayHeight, itemIt->second.attentionWidth,
-             itemIt->second.attentionHeight);
-  ensureMenuCache(itemId, itemIt->second.busName, itemIt->second.menuObjectPath);
-  emitChanged();
 }
 
 void TrayService::removeItemsForBusName(const std::string& busName) {

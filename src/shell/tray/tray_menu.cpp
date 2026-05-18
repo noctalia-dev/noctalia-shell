@@ -13,7 +13,6 @@
 #include "ui/controls/scroll_view.h"
 #include "ui/popup_chrome.h"
 #include "ui/style.h"
-#include "util/string_utils.h"
 #include "wayland/layer_surface.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
@@ -87,57 +86,6 @@ namespace {
       }
     }
     return out;
-  }
-
-  using tray::identifierVariants;
-
-  bool tokenMatchesItem(std::string_view token, const TrayItemInfo& item) {
-    if (token.empty()) {
-      return false;
-    }
-    const auto normalizedToken = StringUtils::toLower(token);
-
-    std::vector<std::string> candidates;
-    auto appendVariants = [&candidates](std::string_view text) {
-      for (const auto& variant : identifierVariants(text)) {
-        if (std::ranges::find(candidates, variant) == candidates.end()) {
-          candidates.push_back(variant);
-        }
-      }
-    };
-    appendVariants(item.id);
-    appendVariants(item.busName);
-    appendVariants(item.itemName);
-    appendVariants(item.processName);
-    appendVariants(item.title);
-    appendVariants(item.objectPath);
-    appendVariants(item.iconName);
-    appendVariants(item.overlayIconName);
-    appendVariants(item.attentionIconName);
-    return std::ranges::find(candidates, normalizedToken) != candidates.end();
-  }
-
-  bool isUniqueBusName(std::string_view value) { return !value.empty() && value.front() == ':'; }
-
-  bool looksGenericStatusItemName(std::string_view value) {
-    if (value.empty()) {
-      return true;
-    }
-    const auto lower = StringUtils::toLower(value);
-    return lower.find("status_icon") != std::string::npos || lower.find("statusnotifieritem") != std::string::npos ||
-           lower.find("statusnotifier") != std::string::npos || lower.find("status-notifier") != std::string::npos ||
-           lower.find("status notifier") != std::string::npos;
-  }
-
-  std::string lastPathSegment(std::string_view value) {
-    if (value.empty()) {
-      return {};
-    }
-    const auto slash = value.find_last_of('/');
-    if (slash == std::string::npos || slash + 1 >= value.size()) {
-      return std::string(value);
-    }
-    return std::string(value.substr(slash + 1));
   }
 
   std::optional<BarConfig> resolveTrayBarConfig(ConfigService* config, WaylandConnection* wayland, wl_output* output) {
@@ -914,7 +862,7 @@ bool TrayMenu::activeItemPinned() const {
   const auto pinned =
       cfgIt != m_config->config().widgets.end() ? cfgIt->second.getStringList("pinned") : std::vector<std::string>{};
   for (const auto& token : pinned) {
-    if (tokenMatchesItem(token, *item)) {
+    if (tray::tokenMatchesItem(token, *item)) {
       return true;
     }
   }
@@ -933,38 +881,31 @@ bool TrayMenu::toggleActiveItemPinned() {
   auto cfgIt = m_config->config().widgets.find("tray");
   std::vector<std::string> pinned =
       cfgIt != m_config->config().widgets.end() ? cfgIt->second.getStringList("pinned") : std::vector<std::string>{};
+  std::erase_if(pinned, [](const std::string& token) {
+    return tray::looksGenericStatusItemName(token) || tray::isTransientUniqueIdentifier(token);
+  });
   const bool currentlyPinned =
-      std::ranges::any_of(pinned, [&](const std::string& token) { return tokenMatchesItem(token, *item); });
+      std::ranges::any_of(pinned, [&](const std::string& token) { return tray::tokenMatchesItem(token, *item); });
 
   if (currentlyPinned) {
-    std::erase_if(pinned, [&](const std::string& token) { return tokenMatchesItem(token, *item); });
+    std::erase_if(pinned, [&](const std::string& token) { return tray::tokenMatchesItem(token, *item); });
+    kLog.info("tray pin removed token for id={} itemName='{}' title='{}' sniTitle='{}' icon='{}' process='{}' "
+              "bus='{}'",
+              item->id, item->itemName, item->title, item->statusNotifierTitle, item->iconName, item->processName,
+              item->busName);
   } else {
-    std::string token;
-    // Persist stable human-readable tokens; avoid transient :1.xxx ids.
-    if (!looksGenericStatusItemName(item->itemName)) {
-      token = item->itemName;
-    } else if (!item->iconName.empty()) {
-      token = item->iconName;
-    } else if (!item->overlayIconName.empty()) {
-      token = item->overlayIconName;
-    } else if (!item->attentionIconName.empty()) {
-      token = item->attentionIconName;
-    } else if (!looksGenericStatusItemName(item->title)) {
-      token = item->title;
-    } else if (!looksGenericStatusItemName(item->processName)) {
-      token = item->processName;
-    } else if (const auto objectToken = lastPathSegment(item->objectPath);
-               !objectToken.empty() && !looksGenericStatusItemName(objectToken) && !isUniqueBusName(objectToken)) {
-      token = objectToken;
-    } else if (const auto idToken = lastPathSegment(item->id);
-               !idToken.empty() && !looksGenericStatusItemName(idToken) && !isUniqueBusName(idToken)) {
-      token = idToken;
-    } else if (!isUniqueBusName(item->busName)) {
-      token = item->busName;
-    }
+    std::string token = tray::preferredPinToken(*item);
     if (token.empty()) {
-      token = item->id;
+      kLog.info("tray pin skipped: no stable token for id={} itemName='{}' title='{}' sniTitle='{}' icon='{}' "
+                "process='{}' bus='{}' objectPath='{}'",
+                item->id, item->itemName, item->title, item->statusNotifierTitle, item->iconName, item->processName,
+                item->busName, item->objectPath);
+      return false;
     }
+    kLog.info("tray pin added token='{}' for id={} itemName='{}' title='{}' sniTitle='{}' icon='{}' process='{}' "
+              "bus='{}'",
+              token, item->id, item->itemName, item->title, item->statusNotifierTitle, item->iconName,
+              item->processName, item->busName);
     pinned.push_back(token);
   }
 

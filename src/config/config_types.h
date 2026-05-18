@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/key_chord.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -187,18 +188,6 @@ enum class KeybindAction : std::uint8_t {
   Down = 5,
 };
 
-struct KeyChord {
-  std::uint32_t sym = 0;       // XKB keysym
-  std::uint32_t modifiers = 0; // KeyMod bitmask
-
-  bool operator==(const KeyChord&) const = default;
-};
-
-// Throws std::runtime_error if spec contains a Super-family modifier.
-[[nodiscard]] std::optional<KeyChord> parseKeyChordSpec(std::string_view spec);
-[[nodiscard]] std::string keyChordToString(const KeyChord& chord);
-[[nodiscard]] std::string keyChordDisplayLabel(const KeyChord& chord);
-
 using WidgetSettingValue = std::variant<bool, std::int64_t, double, std::string, std::vector<std::string>>;
 using ConfigOverrideValue =
     std::variant<bool, std::int64_t, double, std::string, std::vector<std::string>, std::vector<ShortcutConfig>,
@@ -301,6 +290,7 @@ struct WallpaperConfig {
   std::string directory;
   std::string directoryLight;
   std::string directoryDark;
+  bool perMonitorDirectories = false;
   WallpaperAutomationConfig automation;
   std::vector<WallpaperMonitorOverride> monitorOverrides;
 };
@@ -376,6 +366,7 @@ struct DesktopWidgetsConfig {
 
 struct OsdConfig {
   std::string position = "top_right";
+  std::string orientation = "horizontal";
   bool lockKeys = true;
 };
 
@@ -633,6 +624,7 @@ enum class HookKind : std::uint8_t {
   Started = 0,
   WallpaperChanged,
   ColorsChanged,
+  ThemeModeChanged,
   SessionLocked,
   SessionUnlocked,
   LoggingOut,
@@ -644,6 +636,7 @@ enum class HookKind : std::uint8_t {
   BluetoothDisabled,
   BatteryStateChanged,
   BatteryUnderThreshold,
+  PowerProfileChanged,
   Count
 };
 
@@ -651,6 +644,7 @@ constexpr EnumOption<HookKind> kHookKinds[] = {
     {HookKind::Started, "started", ""},
     {HookKind::WallpaperChanged, "wallpaper_changed", ""},
     {HookKind::ColorsChanged, "colors_changed", ""},
+    {HookKind::ThemeModeChanged, "theme_mode_changed", ""},
     {HookKind::SessionLocked, "session_locked", ""},
     {HookKind::SessionUnlocked, "session_unlocked", ""},
     {HookKind::LoggingOut, "logging_out", ""},
@@ -662,6 +656,7 @@ constexpr EnumOption<HookKind> kHookKinds[] = {
     {HookKind::BluetoothDisabled, "bluetooth_disabled", ""},
     {HookKind::BatteryStateChanged, "battery_state_changed", ""},
     {HookKind::BatteryUnderThreshold, "battery_under_threshold", ""},
+    {HookKind::PowerProfileChanged, "power_profile_changed", ""},
 };
 
 static_assert(sizeof(kHookKinds) / sizeof(kHookKinds[0]) == static_cast<std::size_t>(HookKind::Count));

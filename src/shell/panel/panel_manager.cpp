@@ -13,6 +13,7 @@
 #include "shell/tooltip/tooltip_manager.h"
 #include "ui/controls/box.h"
 #include "ui/controls/context_menu_popup.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/controls/select_dropdown_popup.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -121,6 +122,8 @@ PanelManager::~PanelManager() {
 
 PanelManager& PanelManager::instance() { return *s_instance; }
 
+PanelManager* PanelManager::current() noexcept { return s_instance; }
+
 WaylandConnection* PanelManager::wayland() const noexcept {
   return m_platform != nullptr ? &m_platform->wayland() : nullptr;
 }
@@ -173,6 +176,10 @@ void PanelManager::setClickShieldExcludeRectsProvider(std::function<std::vector<
 
 void PanelManager::setFocusGrabBarSurfacesProvider(std::function<std::vector<wl_surface*>()> provider) {
   m_focusGrabBarSurfacesProvider = std::move(provider);
+}
+
+void PanelManager::setPanelClosedCallback(std::function<void()> callback) {
+  m_panelClosedCallback = std::move(callback);
 }
 
 void PanelManager::registerPanel(const std::string& id, std::unique_ptr<Panel> content) {
@@ -313,7 +320,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_attachedContactShadow = false;
     m_attachedRevealProgress = 1.0f;
     m_attachedRevealDirection = AttachedRevealDirection::Down;
-    m_attachedKeyboardModeAfterOpen = LayerShellKeyboard::None;
+    m_keyboardRelaxTimer.stop();
     m_attachedBarPosition.clear();
     m_sourceBarName.clear();
     m_attachedPanelGeometry.reset();
@@ -426,10 +433,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_attachedContactShadow = barConfig.contactShadow;
     m_attachedRevealProgress = 0.0f;
     m_attachedRevealDirection = attached_panel::revealDirection(barPosition);
-    m_attachedKeyboardModeAfterOpen = (m_platform != nullptr && m_platform->focusGrabService() != nullptr &&
-                                       m_platform->focusGrabService()->available())
-                                          ? LayerShellKeyboard::OnDemand
-                                          : LayerShellKeyboard::Exclusive;
+    m_keyboardRelaxTimer.stop();
     m_attachedBarPosition = std::string(barPosition);
     m_attachedToBar = true;
 
@@ -481,12 +485,10 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
         .marginRight = 0,
         .marginBottom = 0,
         .marginLeft = surfaceX,
-        // Keep the app focused while the open reveal is running. Some
-        // compositors and clients do noticeable work when keyboard focus leaves
-        // the active toplevel; delaying that transition keeps the animation on
-        // the panel surface smooth. Keyboard interactivity is restored when the
-        // reveal animation completes.
-        .keyboard = LayerShellKeyboard::None,
+        .keyboard = (m_platform != nullptr && m_platform->focusGrabService() != nullptr &&
+                     m_platform->focusGrabService()->available())
+                        ? LayerShellKeyboard::Exclusive
+                        : LayerShellKeyboard::None,
         .defaultWidth = surfaceWidth,
         .defaultHeight = surfaceHeight,
     };
@@ -508,6 +510,25 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
       applyPanelCompositorBlur();
       publishAttachedPanelGeometry(m_attachedRevealProgress);
       m_surface->requestRedraw();
+      const bool hasFocusGrab = m_platform != nullptr && m_platform->focusGrabService() != nullptr &&
+                                m_platform->focusGrabService()->available();
+      const std::uint64_t gen = m_destroyGeneration;
+      if (hasFocusGrab) {
+        activateFocusGrab();
+        m_keyboardRelaxTimer.start(std::chrono::milliseconds(100), [this, gen]() {
+          if (m_destroyGeneration != gen || !isAttachedOpen() || m_layerSurface == nullptr || m_closing) {
+            return;
+          }
+          m_layerSurface->setKeyboardInteractivity(LayerShellKeyboard::OnDemand);
+        });
+      } else {
+        m_keyboardRelaxTimer.start(std::chrono::milliseconds(100), [this, gen]() {
+          if (m_destroyGeneration != gen || !isAttachedOpen() || m_layerSurface == nullptr || m_closing) {
+            return;
+          }
+          m_layerSurface->setKeyboardInteractivity(LayerShellKeyboard::Exclusive);
+        });
+      }
       kLog.debug("panel manager: opened \"{}\" as attached layer-shell", panelId);
       return;
     }
@@ -526,7 +547,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_attachedContactShadow = false;
     m_attachedRevealProgress = 1.0f;
     m_attachedRevealDirection = AttachedRevealDirection::Down;
-    m_attachedKeyboardModeAfterOpen = LayerShellKeyboard::None;
+    m_keyboardRelaxTimer.stop();
     m_attachedBarPosition.clear();
     m_attachedPanelGeometry.reset();
     m_attachedOpenAnimationPending = false;
@@ -721,7 +742,7 @@ void PanelManager::destroyPanel() {
   m_attachedContactShadow = false;
   m_attachedRevealProgress = 1.0f;
   m_attachedRevealDirection = AttachedRevealDirection::Down;
-  m_attachedKeyboardModeAfterOpen = LayerShellKeyboard::None;
+  m_keyboardRelaxTimer.stop();
   m_attachedBarPosition.clear();
   m_sourceBarName.clear();
   m_attachedPanelGeometry.reset();
@@ -729,6 +750,9 @@ void PanelManager::destroyPanel() {
   m_attachedOpenAnimationPending = false;
   if (m_platform != nullptr) {
     m_platform->stopKeyRepeat();
+  }
+  if (m_panelClosedCallback) {
+    m_panelClosedCallback();
   }
 }
 
@@ -874,6 +898,19 @@ bool PanelManager::isOpen() const noexcept { return m_surface != nullptr && m_ac
 
 bool PanelManager::isOpenPanel(std::string_view panelId) const noexcept {
   return isOpen() && m_activePanelId == panelId;
+}
+
+bool PanelManager::isPanelTransitionActive() const noexcept {
+  if (!isOpen() && !m_closing) {
+    return false;
+  }
+  if (m_closing || m_attachedOpenAnimationPending) {
+    return true;
+  }
+  if (m_attachedToBar) {
+    return m_attachedRevealProgress < 0.999f;
+  }
+  return m_detachedRevealProgress < 0.999f;
 }
 
 bool PanelManager::isAttachedOpen() const noexcept { return isOpen() && m_attachedToBar; }
@@ -1024,8 +1061,7 @@ void PanelManager::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  if (event.pressed && m_config != nullptr &&
-      m_config->matchesKeybind(KeybindAction::Cancel, event.sym, event.modifiers)) {
+  if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
     closePanel();
     return;
   }
@@ -1129,20 +1165,9 @@ void PanelManager::startAttachedOpenAnimation() {
   }
 
   m_attachedOpenAnimationPending = false;
-  const std::uint64_t gen = m_destroyGeneration;
   m_animations.animate(
       m_attachedRevealProgress, 1.0f, Style::animNormal, Easing::EaseOutCubic,
-      [this](float v) { applyAttachedReveal(v); },
-      [this, gen]() {
-        DeferredCall::callLater([this, gen]() {
-          if (m_destroyGeneration != gen || !isAttachedOpen() || m_layerSurface == nullptr || m_closing) {
-            return;
-          }
-          m_layerSurface->setKeyboardInteractivity(m_attachedKeyboardModeAfterOpen);
-          activateFocusGrab();
-        });
-      },
-      m_attachedRevealClipNode);
+      [this](float v) { applyAttachedReveal(v); }, {}, m_attachedRevealClipNode);
 }
 
 void PanelManager::publishAttachedPanelGeometry(float revealProgress) {
@@ -1270,6 +1295,21 @@ void PanelManager::applyPanelCompositorBlur() {
     case AttachedRevealDirection::Left:
       bx += static_cast<int>(std::lround(panelW * (1.0f - progress)));
       break;
+    }
+
+    if (progress < 0.999f && m_sceneRoot != nullptr) {
+      const int clipMaxX = static_cast<int>(std::lround(m_sceneRoot->width()));
+      const int clipMaxY = static_cast<int>(std::lround(m_sceneRoot->height()));
+      const int sxLeft = std::max(bx, 0);
+      const int sxRight = std::min(bx + bw, clipMaxX);
+      const int syTop = std::max(by, 0);
+      const int syBot = std::min(by + bh, clipMaxY);
+      if (sxRight > sxLeft && syBot > syTop) {
+        m_surface->setBlurRegion({InputRect{sxLeft, syTop, sxRight - sxLeft, syBot - syTop}});
+      } else {
+        m_surface->clearBlurRegion();
+      }
+      return;
     }
   }
 
@@ -1610,11 +1650,11 @@ void PanelManager::prepareFrame(bool needsUpdate, bool needsLayout) {
     buildScene(width, height);
   }
 
-  if (needsUpdate) {
+  if (!needsSceneBuild && needsUpdate) {
     UiPhaseScope updatePhase(UiPhase::Update);
     m_activePanel->update(*m_renderContext);
   }
-  if (needsLayout) {
+  if (!needsSceneBuild && needsLayout) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
     if (m_activePanel != nullptr) {
       m_activePanel->layout(*m_renderContext, m_contentWidth, m_contentHeight);

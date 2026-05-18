@@ -16,8 +16,6 @@
 
 namespace {
   constexpr Logger kLog("config");
-  constexpr const char* kInternalStateTable = "noctalia_state";
-  constexpr const char* kSetupWizardCompletedKey = "setup_wizard_completed";
   constexpr double kConfigFloatEpsilon = 1.0e-5;
 
   std::string overrideCacheKey(const std::vector<std::string>& path) {
@@ -284,7 +282,7 @@ namespace {
            a.transitions == b.transitions && nearlyEqual(a.transitionDurationMs, b.transitionDurationMs) &&
            nearlyEqual(a.edgeSmoothness, b.edgeSmoothness) && a.directory == b.directory &&
            a.directoryLight == b.directoryLight && a.directoryDark == b.directoryDark &&
-           a.automation.enabled == b.automation.enabled &&
+           a.perMonitorDirectories == b.perMonitorDirectories && a.automation.enabled == b.automation.enabled &&
            a.automation.intervalMinutes == b.automation.intervalMinutes && a.automation.order == b.automation.order &&
            a.automation.recursive == b.automation.recursive &&
            vectorEqual(a.monitorOverrides, b.monitorOverrides, wallpaperMonitorOverrideEqual);
@@ -373,17 +371,18 @@ namespace {
            nearlyEqual(a.backdrop.blurIntensity, b.backdrop.blurIntensity) &&
            nearlyEqual(a.backdrop.tintIntensity, b.backdrop.tintIntensity) && dockConfigEqual(a.dock, b.dock) &&
            desktopWidgetsConfigEqual(a.desktopWidgets, b.desktopWidgets) && shellConfigEqual(a.shell, b.shell) &&
-           a.osd.position == b.osd.position && a.osd.lockKeys == b.osd.lockKeys &&
-           notificationConfigEqual(a.notification, b.notification) && a.weather.enabled == b.weather.enabled &&
-           a.weather.autoLocate == b.weather.autoLocate && a.weather.effects == b.weather.effects &&
-           a.weather.address == b.weather.address && a.weather.refreshMinutes == b.weather.refreshMinutes &&
-           a.weather.unit == b.weather.unit && a.system.monitor.enabled == b.system.monitor.enabled &&
-           audioConfigEqual(a.audio, b.audio) && a.brightness == b.brightness &&
-           a.keybinds.validate == b.keybinds.validate && a.keybinds.cancel == b.keybinds.cancel &&
-           a.keybinds.left == b.keybinds.left && a.keybinds.right == b.keybinds.right &&
-           a.keybinds.up == b.keybinds.up && a.keybinds.down == b.keybinds.down &&
-           nightLightConfigEqual(a.nightlight, b.nightlight) && idleConfigEqual(a.idle, b.idle) && a.hooks == b.hooks &&
-           themeConfigEqual(a.theme, b.theme) && a.controlCenter == b.controlCenter;
+           a.osd.position == b.osd.position && a.osd.orientation == b.osd.orientation &&
+           a.osd.lockKeys == b.osd.lockKeys && notificationConfigEqual(a.notification, b.notification) &&
+           a.weather.enabled == b.weather.enabled && a.weather.autoLocate == b.weather.autoLocate &&
+           a.weather.effects == b.weather.effects && a.weather.address == b.weather.address &&
+           a.weather.refreshMinutes == b.weather.refreshMinutes && a.weather.unit == b.weather.unit &&
+           a.system.monitor.enabled == b.system.monitor.enabled && audioConfigEqual(a.audio, b.audio) &&
+           a.brightness == b.brightness && a.keybinds.validate == b.keybinds.validate &&
+           a.keybinds.cancel == b.keybinds.cancel && a.keybinds.left == b.keybinds.left &&
+           a.keybinds.right == b.keybinds.right && a.keybinds.up == b.keybinds.up &&
+           a.keybinds.down == b.keybinds.down && nightLightConfigEqual(a.nightlight, b.nightlight) &&
+           idleConfigEqual(a.idle, b.idle) && a.hooks == b.hooks && themeConfigEqual(a.theme, b.theme) &&
+           a.controlCenter == b.controlCenter;
   }
 
   toml::table* ensureTable(toml::table& parent, std::string_view key) {
@@ -737,18 +736,18 @@ bool ConfigService::setDesktopWidgetsState(const DesktopWidgetsConfig& desktopWi
 }
 
 bool ConfigService::markSetupWizardCompleted() {
-  if (m_setupWizardCompleted) {
+  if (m_setupMarkerPath.empty()) {
+    return false;
+  }
+  if (std::filesystem::exists(m_setupMarkerPath)) {
     return true;
   }
 
-  m_setupWizardCompleted = true;
-  if (!writeOverridesToFile()) {
-    m_setupWizardCompleted = false;
-    kLog.warn("failed to write {}", m_overridesPath);
+  std::ofstream out(m_setupMarkerPath, std::ios::trunc);
+  if (!out.is_open()) {
+    kLog.warn("failed to write {}", m_setupMarkerPath);
     return false;
   }
-
-  m_ownOverridesWritePending = true;
   return true;
 }
 
@@ -776,6 +775,9 @@ bool ConfigService::hasEffectiveOverride(const std::vector<std::string>& path) c
 
 std::size_t ConfigService::overridePreserveDepthForPath(const std::vector<std::string>& path) const {
   if (path.size() > 4 && path[0] == "bar" && path[2] == "monitor" && isOverrideOnlyMonitorOverride(path[1], path[3])) {
+    return 4;
+  }
+  if (path.size() > 4 && path[0] == "wallpaper" && path[2] == "monitor" && path[3].size() > 0) {
     return 4;
   }
   if (path.size() > 2 && path[0] == "bar" && isOverrideOnlyBar(path[1])) {
@@ -1309,10 +1311,6 @@ bool ConfigService::writeOverridesToFile() {
     return false;
   }
   toml::table output = m_overridesTable;
-  if (m_setupWizardCompleted) {
-    auto* state = ensureTable(output, kInternalStateTable);
-    state->insert_or_assign(kSetupWizardCompletedKey, true);
-  }
 
   const std::string tmpPath = m_overridesPath + ".tmp";
   {

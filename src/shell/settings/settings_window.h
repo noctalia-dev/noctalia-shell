@@ -153,12 +153,10 @@ private:
   bool m_scrollToPendingContentTarget = false;
   Node* m_pendingContentScrollTarget = nullptr;
   std::string m_searchQuery;
-  std::string m_openWidgetPickerPath;
   std::string m_editingWidgetName;
   std::string m_pendingDeleteWidgetName;
   std::string m_pendingDeleteWidgetSettingPath;
   std::string m_renamingWidgetName;
-  std::string m_creatingWidgetType;
   std::string m_creatingBarName;
   std::string m_renamingBarName;
   std::string m_pendingDeleteBarName;

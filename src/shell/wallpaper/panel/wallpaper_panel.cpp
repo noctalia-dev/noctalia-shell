@@ -12,6 +12,7 @@
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/input.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/select.h"
@@ -29,7 +30,6 @@
 #include <memory>
 #include <string_view>
 #include <utility>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -480,6 +480,9 @@ std::filesystem::path WallpaperPanel::rootDirectoryForSelection() const {
     return {};
   }
   const auto& wp = m_config->config().wallpaper;
+  if (!wp.perMonitorDirectories) {
+    return wp.directory;
+  }
   const auto& choice = m_monitorChoices[m_selectedMonitorIndex];
   if (choice.connector.empty()) {
     return wp.directory;
@@ -630,28 +633,28 @@ bool WallpaperPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) 
     }
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Left, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Left, sym, modifiers)) {
     if (m_selectedVisibleIndex > 0) {
       selectVisibleIndex(m_selectedVisibleIndex - 1);
     }
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Right, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Right, sym, modifiers)) {
     if (m_selectedVisibleIndex + 1 < m_visibleEntries.size()) {
       selectVisibleIndex(m_selectedVisibleIndex + 1);
     }
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Up, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Up, sym, modifiers)) {
     if (m_selectedVisibleIndex >= columns) {
       selectVisibleIndex(m_selectedVisibleIndex - columns);
     }
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Down, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Down, sym, modifiers)) {
     const std::size_t nextIndex = m_selectedVisibleIndex + columns;
     if (nextIndex < m_visibleEntries.size()) {
       selectVisibleIndex(nextIndex);
@@ -659,7 +662,7 @@ bool WallpaperPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) 
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Validate, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Validate, sym, modifiers)) {
     activateSelectedEntry();
     return true;
   }
