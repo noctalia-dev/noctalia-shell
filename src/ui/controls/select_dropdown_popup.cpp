@@ -32,6 +32,8 @@ namespace {
 
   constexpr Logger kLog("select-dropdown-popup");
   constexpr float kMenuPadding = Style::spaceXs;
+  constexpr float kScrollbarWidth = 4.0f;
+  constexpr float kScrollbarMargin = 3.0f;
 
   Color resolved(ColorRole role, float alpha = 1.0f) { return colorForRole(role, alpha); }
 
@@ -316,6 +318,36 @@ void SelectDropdownPopup::buildScene(const DropdownRequest& request) {
       return true;
     });
     viewportNode->addChild(std::move(area));
+  }
+
+  // Only draw scrollbar when total content is taller than the visible viewport
+  const float contentViewport = m_viewportHeight - kMenuPadding * 2.0f;
+  if (m_totalHeight > contentViewport) {
+    // Thumb height is proportional to how much of the list is visible
+    const float trackHeight = contentViewport;
+    const float thumbRatio = contentViewport / m_totalHeight;
+    const float thumbHeight = std::max(20.f, trackHeight * thumbRatio);
+
+    // Thumb Y position tracks scroll offset proportionally along the remaining track space
+    const float maxScroll = m_totalHeight - contentViewport;
+    const float thumbTravel = trackHeight - thumbHeight;
+    const float thumbY = menuY + kMenuPadding + (m_scrollOffset / maxScroll) * thumbTravel;
+
+    // Pin thumb to the right edge of menu, inset by the margin
+    const float thumbX = menuX + m_menuWidth - kScrollbarWidth - kScrollbarMargin;
+
+    auto scrollThumb = std::make_unique<RectNode>();
+    scrollThumb->setStyle(RoundedRectStyle{
+        .fill = resolved(ColorRole::OnSurface, 0.3f), // semi-transparent to feel like an overlay
+        .border = clearColor(),
+        .fillMode = FillMode::Solid,
+        .radius = kScrollbarWidth * 0.5f,
+        .softness = 1.0f,
+        .borderWidth = 0.0f,
+    });
+    scrollThumb->setPosition(thumbX, thumbY);
+    scrollThumb->setFrameSize(kScrollbarWidth, thumbHeight);
+    m_sceneRoot->addChild(std::move(scrollThumb));
   }
 
   applyHoverVisuals();
