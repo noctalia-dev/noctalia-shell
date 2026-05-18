@@ -528,6 +528,11 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
           if (layoutChanged) {
             const float preservedReveal = cardReveal(cs, m_entries[i].height);
             const float preservedContentOpacity = cs.cardForeground != nullptr ? cs.cardForeground->opacity() : 1.0f;
+            // If the entry reveal animation was still running when this update/replace
+            // arrived (e.g. Thunar replacing its USB notification mid-reveal), the rebuilt
+            // card would otherwise be frozen at the partial reveal forever — leaving it
+            // permanently clipped by the viewport's clipChildren scissor.
+            const bool entryRevealInFlight = cs.entryAnimId != 0;
 
             if (cs.countdownAnimId != 0) {
               inst->animations.cancel(cs.countdownAnimId);
@@ -558,6 +563,24 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
             }
             if (inst->sceneRoot != nullptr) {
               inst->sceneRoot->addChild(std::unique_ptr<Node>(rebuilt));
+            }
+            // Resume an interrupted reveal so the card finishes opening instead of
+            // staying scissored at its partial size.
+            if (entryRevealInFlight && preservedReveal < 1.0f && m_entries[i].y >= 0.0f) {
+              const float targetY = m_entries[i].y;
+              Instance* instPtr = inst.get();
+              cs.entryAnimId = inst->animations.animate(
+                  preservedReveal, 1.0f, Style::animNormal, Easing::EaseOutCubic,
+                  [this, viewport = cs.cardNode, content = cs.cardContent, foreground = cs.cardForeground, targetY,
+                   cardHeight = m_entries[i].height](float v) {
+                    applyCardRevealNodes(viewport, content, foreground, v, targetY, revealDirection(), cardHeight);
+                  },
+                  [instPtr, i]() {
+                    if (i < instPtr->cards.size()) {
+                      instPtr->cards[i].entryAnimId = 0;
+                    }
+                  },
+                  cs.cardNode);
             }
             regionChanged = true;
           } else if (!layoutChanged) {
