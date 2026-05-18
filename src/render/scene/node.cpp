@@ -25,7 +25,8 @@ namespace {
     return world;
   }
 
-  bool pointInsideNode(const Node* node, float sceneX, float sceneY, float& localX, float& localY) {
+  bool pointInsideNode(const Node* node, float sceneX, float sceneY, float& localX, float& localY,
+                       bool includeHitOutset) {
     if (node == nullptr) {
       return false;
     }
@@ -34,7 +35,12 @@ namespace {
     const Vec2 local = inverse.transformPoint(sceneX, sceneY);
     localX = local.x;
     localY = local.y;
-    return localX >= 0.0f && localX < node->width() && localY >= 0.0f && localY < node->height();
+    if (!includeHitOutset) {
+      return localX >= 0.0f && localX < node->width() && localY >= 0.0f && localY < node->height();
+    }
+    const HitTestOutset outset = node->hitTestOutset();
+    return localX >= -outset.left && localX < node->width() + outset.right && localY >= -outset.top &&
+           localY < node->height() + outset.bottom;
   }
 
 } // namespace
@@ -131,7 +137,7 @@ void Node::arrange(Renderer& renderer, const LayoutRect& rect) {
 bool Node::containsScenePoint(float sceneX, float sceneY) const {
   float localX = 0.0f;
   float localY = 0.0f;
-  return pointInsideNode(this, sceneX, sceneY, localX, localY);
+  return pointInsideNode(this, sceneX, sceneY, localX, localY, false);
 }
 
 void Node::doLayout(Renderer& renderer) {
@@ -244,6 +250,20 @@ void Node::setClipChildren(bool clipChildren) {
 }
 
 void Node::setHitTestVisible(bool hitTestVisible) { m_hitTestVisible = hitTestVisible; }
+
+void Node::setHitTestOutset(const HitTestOutset& outset) {
+  const HitTestOutset clamped{
+      .left = std::max(0.0f, outset.left),
+      .top = std::max(0.0f, outset.top),
+      .right = std::max(0.0f, outset.right),
+      .bottom = std::max(0.0f, outset.bottom),
+  };
+  if (m_hitTestOutset.left == clamped.left && m_hitTestOutset.top == clamped.top &&
+      m_hitTestOutset.right == clamped.right && m_hitTestOutset.bottom == clamped.bottom) {
+    return;
+  }
+  m_hitTestOutset = clamped;
+}
 
 void Node::setZIndex(std::int32_t zIndex) {
   if (m_zIndex == zIndex) {
@@ -376,7 +396,7 @@ Node* Node::hitTestImpl(Node* node, float px, float py) {
 
   float localX = 0.0f;
   float localY = 0.0f;
-  const bool inside = pointInsideNode(node, px, py, localX, localY);
+  const bool inside = pointInsideNode(node, px, py, localX, localY, true);
 
   if (node->m_clipChildren && !inside) {
     return nullptr;
@@ -436,7 +456,7 @@ bool Node::mapFromScene(const Node* node, float sceneX, float sceneY, float& out
     return false;
   }
 
-  return pointInsideNode(node, sceneX, sceneY, outLocalX, outLocalY);
+  return pointInsideNode(node, sceneX, sceneY, outLocalX, outLocalY, false);
 }
 
 void Node::transformedBounds(const Node* node, const Mat3& world, float& outLeft, float& outTop, float& outRight,
