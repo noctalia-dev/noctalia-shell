@@ -4,7 +4,6 @@
 #include "compositors/hyprland/hyprland_runtime.h"
 #include "compositors/niri/niri_runtime.h"
 #include "config/config_service.h"
-#include "core/key_symbols.h"
 #include "core/log.h"
 #include "core/process.h"
 #include "i18n/i18n.h"
@@ -16,6 +15,7 @@
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/grid_view.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
@@ -605,7 +605,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
   }
   const std::size_t lastIndex = m_visibleButtons.size() - 1;
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Left, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Left, sym, modifiers)) {
     if (!m_selectedIndex.has_value()) {
       m_selectedIndex = lastIndex;
       updateSelectionVisuals();
@@ -624,7 +624,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Right, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Right, sym, modifiers)) {
     if (!m_selectedIndex.has_value()) {
       m_selectedIndex = 0;
       updateSelectionVisuals();
@@ -643,7 +643,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Up, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Up, sym, modifiers)) {
     const std::size_t columns = visibleColumnCount();
     if (!m_selectedIndex.has_value()) {
       m_selectedIndex = lastIndex;
@@ -658,7 +658,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Down, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Down, sym, modifiers)) {
     const std::size_t columns = visibleColumnCount();
     if (!m_selectedIndex.has_value()) {
       m_selectedIndex = 0;
@@ -673,8 +673,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
     return true;
   }
 
-  if ((m_config != nullptr && m_config->matchesKeybind(KeybindAction::Validate, sym, modifiers)) ||
-      KeySymbol::isSpace(sym)) {
+  if (KeybindMatcher::matches(KeybindAction::Validate, sym, modifiers)) {
     activateSelected();
     return true;
   }
