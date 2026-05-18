@@ -2,6 +2,8 @@
 
 #include "config/config_service.h"
 #include "config/config_types.h"
+#include "core/key_modifiers.h"
+#include "core/key_symbols.h"
 #include "dbus/polkit/polkit_agent.h"
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
@@ -13,11 +15,9 @@
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
-#include "wayland/wayland_seat.h"
 
 #include <cctype>
 #include <memory>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -205,7 +205,7 @@ bool PolkitPanel::handleInputKeyEvent(std::uint32_t sym, std::uint32_t modifiers
     submit();
     return true;
   }
-  if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter) {
+  if (KeySymbol::isEnter(sym)) {
     return true;
   }
   const bool shift = (modifiers & KeyMod::Shift) != 0;

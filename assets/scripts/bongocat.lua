@@ -1,10 +1,13 @@
--- Bongo Cat — a cat that sits in your bar and slaps when you type.
+-- Bongo Cat — a cat that sits in your bar and slaps when you type or to the beat.
 --
 -- Configure the keyboard device in your bar config:
 --   [widget.bongocat]
 --   type         = "scripted"
 --   script       = "scripts/bongocat.lua"
---   input_device = "/dev/input/event6"
+--   input_device    = "/dev/input/event6"
+--   audio_spectrum = true
+--   tappy_mode     = true
+--   rave_mode      = true
 --
 -- When input_device is set and `evtest` is installed, the widget
 -- automatically starts a single background reader (flock-guarded, so
@@ -21,7 +24,7 @@
 
 barWidget.setFont("fonts/bongocat.otf")
 barWidget.setText("bc")
-barWidget.setUpdateInterval(250)
+barWidget.setUpdateInterval(50)
 
 -- ── Auto-start keyboard reader ───────────────────────────────────────────
 -- The Lua runtime can't consume a long-running process's streaming output,
@@ -82,17 +85,35 @@ local paused = false
 local waiting = false
 local blinking = false
 
+local AUDIO_SPECTRUM_ENABLED = barWidget.getConfig("audio_spectrum", false) == true
+local RAVE_MODE = barWidget.getConfig("rave_mode", false) == true
+local TAPPY_MODE = barWidget.getConfig("tappy_mode", false) == true
+local USE_MPRIS_FILTER = barWidget.getConfig("use_mpris_filter", false) == true
+
 local idleTicks = 0
 local waitingTicks = 0
 local blinkTicks = 0
 local blinkDuration = 0
 local nextBlinkIn = 0
 
-local IDLE_TICKS = 1       -- 250ms to return paws to idle after typing stops
-local WAITING_TICKS = 20   -- 5s of idle → sleeping
-local BLINK_DURATION = 2   -- ~500ms blink
-local BLINK_MIN = 24       -- ~6s minimum between blinks
-local BLINK_MAX = 56       -- ~14s max between blinks
+local IDLE_TICKS = 5       -- 250ms to return paws to idle after typing stops
+local WAITING_TICKS = 100  -- 5s of idle -> sleeping
+local BLINK_DURATION = 9   -- ~450ms blink
+local BLINK_MIN = 120      -- ~6s minimum between blinks
+local BLINK_MAX = 280      -- ~14s max between blinks
+
+local rainbowIndex = 1
+local rainbowColors = { "#aa0000", "#b65c02", "#bb9c14", "#00a100", "#01019b", "#37005c", "#6a0196" }
+local audioIntensity = 0
+local smoothedIntensity = 0
+local previousIntensity = 0
+local bassIntensity = 0
+local beatThreshold = 0.07
+local bigBeatThreshold = 0.67
+local beatDeltaThreshold = 0.014
+local beatCooldownTicks = 0 -- ~100ms
+local raveFlashTicks = 0    -- ~100ms
+local audioConfigWarned = false
 
 local function randomBlinkDelay()
   return BLINK_MIN + math.floor(math.random() * (BLINK_MAX - BLINK_MIN))
@@ -100,7 +121,16 @@ end
 
 nextBlinkIn = randomBlinkDelay()
 
+local function applyCatColor()
+  if RAVE_MODE and raveFlashTicks > 0 then
+    barWidget.setColor(rainbowColors[rainbowIndex], "script")
+  else
+    barWidget.setColor("on_surface")
+  end
+end
+
 local function refreshDisplay()
+  applyCatColor()
   if paused or waiting then
     barWidget.setText(SLEEP_GLYPH)
   elseif blinking then
@@ -158,7 +188,72 @@ local function onKeyRepeat(isBigHit)
   refreshDisplay()
 end
 
+local function onBeatTap(isBigHit)
+  if paused then return end
+  waiting = false
+  waitingTicks = 0
+  blinking = false
+
+  if isBigHit then
+    catState = STATE_BOTH
+  else
+    leftWasLast = not leftWasLast
+    catState = leftWasLast and STATE_LEFT or STATE_RIGHT
+  end
+
+  idleTicks = 0
+  refreshDisplay()
+end
+
+local function parseCsvNumbers(csv)
+  local values = {}
+  if csv == nil or csv == "" then
+    return values
+  end
+  for part in string.gmatch(csv, "([^,]+)") do
+    values[#values + 1] = tonumber(part) or 0
+  end
+  return values
+end
+
+local function parseAudioState(csv)
+  local parts = parseCsvNumbers(csv)
+  return parts[1] == 1, parts[2] == 1
+end
+
+local function average(values, firstIndex, lastIndex)
+  if lastIndex < firstIndex then
+    return 0
+  end
+  local sum = 0
+  local count = 0
+  for i = firstIndex, lastIndex do
+    sum = sum + (values[i] or 0)
+    count = count + 1
+  end
+  if count == 0 then
+    return 0
+  end
+  return sum / count
+end
+
 function update()
+  if (RAVE_MODE or TAPPY_MODE) and not AUDIO_SPECTRUM_ENABLED and not audioConfigWarned then
+    audioConfigWarned = true
+    noctalia.notifyError("Bongo Cat", "Set audio_spectrum = true to use rave_mode or tappy_mode.")
+  end
+
+  if beatCooldownTicks > 0 then
+    beatCooldownTicks = beatCooldownTicks - 1
+  end
+
+  if raveFlashTicks > 0 then
+    raveFlashTicks = raveFlashTicks - 1
+    if raveFlashTicks == 0 then
+      refreshDisplay()
+    end
+  end
+
   if paused then return end
 
   -- Idle timeout: return paws to rest
@@ -198,6 +293,58 @@ function update()
         refreshDisplay()
       end
     end
+  end
+end
+
+function onAudioSpectrum(valuesCsv, stateCsv)
+  if paused then return end
+  if not RAVE_MODE and not TAPPY_MODE then return end
+
+  local audioActive, mprisPlaying = parseAudioState(stateCsv)
+  if not audioActive then
+    audioIntensity = 0
+    return
+  end
+  if USE_MPRIS_FILTER and not mprisPlaying then
+    return
+  end
+
+  local values = parseCsvNumbers(valuesCsv)
+  if #values == 0 then
+    audioIntensity = 0
+    return
+  end
+
+  local subBassCount = math.min(4, #values)
+  local bassCount = math.min(8, #values)
+  local midCount = math.min(16, #values)
+  local subBassAvg = average(values, 1, subBassCount)
+  local bassAvg = average(values, 1, bassCount)
+  local midAvg = average(values, 9, midCount)
+
+  bassIntensity = subBassAvg
+  audioIntensity = (bassAvg * 0.8) + (midAvg * 0.6)
+
+  local alpha = 0.75
+  previousIntensity = smoothedIntensity
+  smoothedIntensity = alpha * audioIntensity + (1 - alpha) * smoothedIntensity
+
+  local intensityDelta = smoothedIntensity - previousIntensity
+  local isBeat = (intensityDelta > beatDeltaThreshold and smoothedIntensity > beatThreshold * 0.5)
+      or (smoothedIntensity > beatThreshold and intensityDelta > 0)
+
+  if isBeat and beatCooldownTicks <= 0 then
+    if RAVE_MODE then
+      rainbowIndex = (rainbowIndex % #rainbowColors) + 1
+      raveFlashTicks = 2
+      refreshDisplay()
+    end
+
+    if TAPPY_MODE then
+      onBeatTap(bassIntensity > bigBeatThreshold)
+    end
+
+    beatCooldownTicks = 2
   end
 end
 

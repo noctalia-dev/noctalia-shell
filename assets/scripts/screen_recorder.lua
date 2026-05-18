@@ -356,7 +356,6 @@ local function checkProcessState(processState)
         if pendingTick >= PENDING_TICKS then
             if processState == "recording" then
                 setState("recording")
-                noctalia.notify("Recording started")
             else
                 setState("idle")
             end

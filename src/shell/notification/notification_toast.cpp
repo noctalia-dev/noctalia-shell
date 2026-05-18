@@ -528,6 +528,11 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
           if (layoutChanged) {
             const float preservedReveal = cardReveal(cs, m_entries[i].height);
             const float preservedContentOpacity = cs.cardForeground != nullptr ? cs.cardForeground->opacity() : 1.0f;
+            // If the entry reveal animation was still running when this update/replace
+            // arrived (e.g. Thunar replacing its USB notification mid-reveal), the rebuilt
+            // card would otherwise be frozen at the partial reveal forever — leaving it
+            // permanently clipped by the viewport's clipChildren scissor.
+            const bool entryRevealInFlight = cs.entryAnimId != 0;
 
             if (cs.countdownAnimId != 0) {
               inst->animations.cancel(cs.countdownAnimId);
@@ -558,6 +563,24 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
             }
             if (inst->sceneRoot != nullptr) {
               inst->sceneRoot->addChild(std::unique_ptr<Node>(rebuilt));
+            }
+            // Resume an interrupted reveal so the card finishes opening instead of
+            // staying scissored at its partial size.
+            if (entryRevealInFlight && preservedReveal < 1.0f && m_entries[i].y >= 0.0f) {
+              const float targetY = m_entries[i].y;
+              Instance* instPtr = inst.get();
+              cs.entryAnimId = inst->animations.animate(
+                  preservedReveal, 1.0f, Style::animNormal, Easing::EaseOutCubic,
+                  [this, viewport = cs.cardNode, content = cs.cardContent, foreground = cs.cardForeground, targetY,
+                   cardHeight = m_entries[i].height](float v) {
+                    applyCardRevealNodes(viewport, content, foreground, v, targetY, revealDirection(), cardHeight);
+                  },
+                  [this, instPtr, id = n.id]() {
+                    if (auto* state = findCardState(*instPtr, id); state != nullptr) {
+                      state->entryAnimId = 0;
+                    }
+                  },
+                  cs.cardNode);
             }
             regionChanged = true;
           } else if (!layoutChanged) {
@@ -781,9 +804,9 @@ void NotificationToast::addCardToInstance(Instance& inst, std::size_t entryIndex
        cardHeight = entry.height](float v) {
         applyCardRevealNodes(viewport, content, foreground, v, targetY, revealDirection(), cardHeight);
       },
-      [&inst, entryIndex]() {
-        if (entryIndex < inst.cards.size()) {
-          inst.cards[entryIndex].entryAnimId = 0;
+      [this, &inst, id = entry.notificationId]() {
+        if (auto* state = findCardState(inst, id); state != nullptr) {
+          state->entryAnimId = 0;
         }
       },
       card);
@@ -993,11 +1016,11 @@ void NotificationToast::dismissCardFromInstance(Instance& inst, std::size_t entr
       [this, card, content, foreground, targetY, cardHeight](float v) {
         applyCardRevealNodes(card, content, foreground, v, targetY, revealDirection(), cardHeight);
       },
-      [this, &inst, entryIndex, removingId]() {
-        if (entryIndex < inst.cards.size()) {
-          inst.cards[entryIndex].exitAnimId = 0;
-        }
+      [this, &inst, removingId]() {
         if (removingId != 0) {
+          if (auto* state = findCardState(inst, removingId); state != nullptr) {
+            state->exitAnimId = 0;
+          }
           DeferredCall::callLater([this, removingId]() { finishRemoval(removingId); });
         }
       },
@@ -2021,7 +2044,7 @@ std::string NotificationToast::resolveNotificationIconPath(const PopupEntry& ent
     return {};
   }
 
-  const std::string& resolved = m_iconResolver.resolve(localPath);
+  const std::string& resolved = m_iconResolver.resolve(localPath, static_cast<int>(std::round(kNotificationIconSize)));
   if (!resolved.empty()) {
     return resolved;
   }

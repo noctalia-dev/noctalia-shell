@@ -1,5 +1,6 @@
 #include "ui/controls/search_picker.h"
 
+#include "core/key_symbols.h"
 #include "i18n/i18n.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
@@ -13,7 +14,6 @@
 #include <cstdint>
 #include <memory>
 #include <string>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -89,19 +89,19 @@ SearchPicker::SearchPicker() {
     applyFilter();
   });
   input->setOnKeyEvent([this](std::uint32_t sym, std::uint32_t /*modifiers*/) {
-    if (sym == XKB_KEY_Down) {
+    if (KeySymbol::isDown(sym)) {
       moveHighlight(1);
       return true;
     }
-    if (sym == XKB_KEY_Up) {
+    if (KeySymbol::isUp(sym)) {
       moveHighlight(-1);
       return true;
     }
-    if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter) {
+    if (KeySymbol::isEnter(sym)) {
       activateHighlighted();
       return true;
     }
-    if (sym == XKB_KEY_Escape) {
+    if (KeySymbol::isEscape(sym)) {
       if (m_onCancel) {
         m_onCancel();
       }

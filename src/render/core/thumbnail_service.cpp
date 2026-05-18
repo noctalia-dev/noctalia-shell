@@ -4,9 +4,6 @@
 #include "render/core/image_decoder.h"
 #include "util/file_utils.h"
 
-#include <webp/encode.h>
-
-#define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include <algorithm>
 #include <cerrno>
 #include <cmath>
@@ -21,6 +18,7 @@
 #include <unistd.h>
 #include <utility>
 #include <vector>
+#include <webp/encode.h>
 
 namespace {
 

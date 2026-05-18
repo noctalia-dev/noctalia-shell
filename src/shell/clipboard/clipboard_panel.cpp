@@ -34,7 +34,6 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 

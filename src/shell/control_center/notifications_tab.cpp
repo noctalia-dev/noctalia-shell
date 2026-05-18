@@ -96,7 +96,7 @@ namespace {
 
   std::string normalizeLocalIconPath(std::string_view iconValue) { return uri::normalizeFileUrl(iconValue); }
 
-  std::string resolveHistoryIconPath(const Notification& n, IconResolver& resolver) {
+  std::string resolveHistoryIconPath(const Notification& n, IconResolver& resolver, int targetSize) {
     if (!n.icon.has_value() || n.icon->empty()) {
       return {};
     }
@@ -121,7 +121,7 @@ namespace {
       return {};
     }
 
-    const std::string& resolved = resolver.resolve(localPath);
+    const std::string& resolved = resolver.resolve(localPath, targetSize);
     return resolved.empty() ? std::string() : resolved;
   }
 
@@ -507,9 +507,9 @@ namespace {
       m_image->setRadius(iconRadius);
       m_image->setFit(ImageFit::Cover);
 
-      const std::string iconPath = resolveHistoryIconPath(entry.notification, iconResolver);
+      const int targetSize = static_cast<int>(std::round(iconPx));
+      const std::string iconPath = resolveHistoryIconPath(entry.notification, iconResolver, targetSize);
       if (!iconPath.empty()) {
-        const int targetSize = static_cast<int>(std::round(iconPx));
         const bool ready = m_image->setSourceFile(renderer, iconPath, targetSize);
         if (ready) {
           m_imageKind = ImageKind::File;

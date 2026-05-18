@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/key_chord.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -186,18 +187,6 @@ enum class KeybindAction : std::uint8_t {
   Up = 4,
   Down = 5,
 };
-
-struct KeyChord {
-  std::uint32_t sym = 0;       // XKB keysym
-  std::uint32_t modifiers = 0; // KeyMod bitmask
-
-  bool operator==(const KeyChord&) const = default;
-};
-
-// Throws std::runtime_error if spec contains a Super-family modifier.
-[[nodiscard]] std::optional<KeyChord> parseKeyChordSpec(std::string_view spec);
-[[nodiscard]] std::string keyChordToString(const KeyChord& chord);
-[[nodiscard]] std::string keyChordDisplayLabel(const KeyChord& chord);
 
 using WidgetSettingValue = std::variant<bool, std::int64_t, double, std::string, std::vector<std::string>>;
 using ConfigOverrideValue =

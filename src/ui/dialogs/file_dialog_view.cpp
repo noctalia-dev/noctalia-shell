@@ -1,6 +1,8 @@
 #include "ui/dialogs/file_dialog_view.h"
 
 #include "core/deferred_call.h"
+#include "core/key_modifiers.h"
+#include "core/key_symbols.h"
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/core/thumbnail_service.h"
@@ -27,8 +29,6 @@
 
 namespace {
 
-  constexpr std::uint32_t kModShift = 1u << 0;
-  constexpr std::uint32_t kModCtrl = 1u << 1;
   constexpr std::size_t kListRowOverscan = 3;
   constexpr std::size_t kGridRowOverscan = 1;
   constexpr float kGridMinCellWidth = 140.0f;
@@ -514,28 +514,28 @@ bool FileDialogView::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers,
     return false;
   }
 
-  if ((modifiers & kModCtrl) != 0 && (sym == XKB_KEY_l || sym == XKB_KEY_L)) {
+  if ((modifiers & KeyMod::Ctrl) != 0 && (sym == XKB_KEY_l || sym == XKB_KEY_L)) {
     focusSearch();
     return true;
   }
 
   if (sym == XKB_KEY_Tab) {
-    cycleFocus((modifiers & kModShift) != 0);
+    cycleFocus((modifiers & KeyMod::Shift) != 0);
     return true;
   }
 
-  if (sym == XKB_KEY_Escape) {
+  if (KeySymbol::isEscape(sym)) {
     cancelDialog();
     return true;
   }
 
-  if (sym == XKB_KEY_BackSpace && !isTextInputFocused()) {
+  if (KeySymbol::isBackspace(sym) && !isTextInputFocused()) {
     navigateUp();
     return true;
   }
 
   if (m_visibleEntries.empty()) {
-    if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter) {
+    if (KeySymbol::isEnter(sym)) {
       if (m_options.mode == FileDialogMode::SelectFolder) {
         submitDialog();
         return true;
@@ -544,7 +544,7 @@ bool FileDialogView::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers,
     return false;
   }
 
-  if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter) {
+  if (KeySymbol::isEnter(sym)) {
     if (!isTextInputFocused() || hostFocusedArea() == m_listFocusArea) {
       activateSelection();
       return true;
@@ -577,19 +577,19 @@ bool FileDialogView::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers,
     }
   };
 
-  if (sym == XKB_KEY_Up) {
+  if (KeySymbol::isUp(sym)) {
     moveSelection(m_viewMode == ViewMode::Grid ? -static_cast<int>(m_gridColumns) : -1);
     return true;
   }
-  if (sym == XKB_KEY_Down) {
+  if (KeySymbol::isDown(sym)) {
     moveSelection(m_viewMode == ViewMode::Grid ? static_cast<int>(m_gridColumns) : 1);
     return true;
   }
-  if (m_viewMode == ViewMode::Grid && sym == XKB_KEY_Left) {
+  if (m_viewMode == ViewMode::Grid && KeySymbol::isLeft(sym)) {
     moveSelection(-1);
     return true;
   }
-  if (m_viewMode == ViewMode::Grid && sym == XKB_KEY_Right) {
+  if (m_viewMode == ViewMode::Grid && KeySymbol::isRight(sym)) {
     moveSelection(1);
     return true;
   }
