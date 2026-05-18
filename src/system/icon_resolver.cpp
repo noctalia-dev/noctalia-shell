@@ -416,8 +416,6 @@ namespace {
 
 IconResolver::IconResolver() { rebuild(); }
 
-void IconResolver::invalidateCache() { rebuild(); }
-
 bool IconResolver::checkThemeChanged() {
   auto& state = iconThemeState();
   IconThemePlan next = buildThemePlan();

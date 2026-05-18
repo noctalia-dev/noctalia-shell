@@ -23,7 +23,6 @@ public:
   // gently instead of crushing a 1024px PNG. targetSize == 0 keeps the legacy
   // "prefer scalable, then largest" behavior for callers that have no size.
   const std::string& resolve(const std::string& iconName, int targetSize = 0);
-  void invalidateCache();
 
   static bool checkThemeChanged();
   static std::uint64_t themeGeneration();
