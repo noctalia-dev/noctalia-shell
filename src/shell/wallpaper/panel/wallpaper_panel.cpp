@@ -7,6 +7,7 @@
 #include "render/core/renderer.h"
 #include "render/core/thumbnail_service.h"
 #include "render/scene/input_area.h"
+#include "shell/panel/panel_button_style.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/wallpaper/panel/wallpaper_tile.h"
 #include "ui/controls/button.h"
@@ -36,6 +37,7 @@ namespace {
   constexpr Logger kLog("wp-panel");
   constexpr auto kFilterDebounceInterval = std::chrono::milliseconds(120);
   constexpr float kMinTileWidth = 180.0f;
+  constexpr float kMonitorSelectMinWidth = 136.0f;
   constexpr float kTileAspect = 0.78f; // height / width — leaves room for label under widescreen thumb
 
   bool parseColorWallpaperPath(std::string_view path, Color& out) {
@@ -182,8 +184,7 @@ void WallpaperPanel::create() {
 
   auto closeButton = std::make_unique<Button>();
   closeButton->setGlyph("close");
-  closeButton->setVariant(ButtonVariant::Default);
-  configureIconButton(closeButton.get());
+  panel_button_style::configureHeaderIconButton(*closeButton, scale, panelCardOpacity());
   closeButton->setOnClick([]() { PanelManager::instance().close(); });
   m_closeButton = closeButton.get();
   headerRight->addChild(std::move(closeButton));
@@ -257,6 +258,7 @@ void WallpaperPanel::create() {
   auto monitorSelect = std::make_unique<Select>();
   monitorSelect->setFontSize(Style::fontSizeBody * scale);
   monitorSelect->setControlHeight(Style::controlHeight * scale);
+  monitorSelect->setMinWidth(kMonitorSelectMinWidth * scale);
   monitorSelect->setOnSelectionChanged([this](std::size_t idx, std::string_view) {
     m_selectedMonitorIndex = idx;
     m_navStack.clear();
@@ -272,14 +274,14 @@ void WallpaperPanel::create() {
 
   auto color = std::make_unique<Button>();
   color->setGlyph("color-picker");
-  color->setVariant(ButtonVariant::Secondary);
+  color->setVariant(ButtonVariant::Default);
   configureIconButton(color.get());
   color->setOnClick([this]() { applyColorWallpaper(); });
   m_colorButton = static_cast<Button*>(toolbar->addChild(std::move(color)));
 
   auto refresh = std::make_unique<Button>();
   refresh->setGlyph("refresh");
-  refresh->setVariant(ButtonVariant::Secondary);
+  refresh->setVariant(ButtonVariant::Default);
   configureIconButton(refresh.get());
   refresh->setOnClick([this]() {
     m_scanner.invalidate();
@@ -377,6 +379,12 @@ void WallpaperPanel::doUpdate(Renderer& renderer) {
       m_adapter->setRenderer(&renderer);
       m_adapter->refreshVisibleThumbnails(renderer);
     }
+  }
+}
+
+void WallpaperPanel::onPanelCardOpacityChanged(float opacity) {
+  if (m_closeButton != nullptr) {
+    panel_button_style::applyHeaderButtonStyle(*m_closeButton, opacity);
   }
 }
 

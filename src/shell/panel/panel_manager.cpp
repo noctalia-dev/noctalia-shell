@@ -801,6 +801,7 @@ bool PanelManager::onPointerEvent(const PointerEvent& event) {
     }
     if (event.type == PointerEvent::Type::Button && event.state == 1) {
       m_selectPopup->closeSelectDropdown();
+      return true;
     }
   }
 

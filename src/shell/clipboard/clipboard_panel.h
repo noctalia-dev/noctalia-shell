@@ -50,6 +50,7 @@ public:
 private:
   void doLayout(Renderer& renderer, float width, float height) override;
   void doUpdate(Renderer& renderer) override;
+  void onPanelCardOpacityChanged(float opacity) override;
   void schedulePreviewPayloadRefresh(bool debounced);
   void updateListState();
   void updatePreviewActions();
@@ -76,6 +77,7 @@ private:
   Flex* m_sidebarHeaderRow = nullptr;
   Label* m_sidebarTitle = nullptr;
   Button* m_clearHistoryButton = nullptr;
+  Button* m_closeButton = nullptr;
   Input* m_filterInput = nullptr;
   VirtualGridView* m_listGrid = nullptr;
   Label* m_listEmptyLabel = nullptr;

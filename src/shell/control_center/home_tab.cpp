@@ -9,6 +9,7 @@
 #include "i18n/i18n.h"
 #include "net/http_client.h"
 #include "shell/control_center/shortcut_registry.h"
+#include "shell/panel/panel_button_style.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/wallpaper/wallpaper.h"
 #include "system/dependency_service.h"
@@ -500,24 +501,14 @@ std::unique_ptr<Flex> HomeTab::createHeaderActions() {
 
   auto settingsBtn = std::make_unique<Button>();
   settingsBtn->setGlyph("settings");
-  settingsBtn->setVariant(ButtonVariant::Default);
-  settingsBtn->setGlyphSize(Style::fontSizeBody * scale);
-  settingsBtn->setMinWidth(Style::controlHeightSm * scale);
-  settingsBtn->setMinHeight(Style::controlHeightSm * scale);
-  settingsBtn->setPadding(Style::spaceXs * scale);
-  settingsBtn->setRadius(Style::scaledRadiusMd(scale));
+  panel_button_style::configureHeaderIconButton(*settingsBtn, scale, panelCardOpacity());
   settingsBtn->setOnClick([]() { PanelManager::instance().openSettingsWindow(); });
   m_settingsButton = settingsBtn.get();
   actions->addChild(std::move(settingsBtn));
 
   auto sessionBtn = std::make_unique<Button>();
   sessionBtn->setGlyph("shutdown");
-  sessionBtn->setVariant(ButtonVariant::Default);
-  sessionBtn->setGlyphSize(Style::fontSizeBody * scale);
-  sessionBtn->setMinWidth(Style::controlHeightSm * scale);
-  sessionBtn->setMinHeight(Style::controlHeightSm * scale);
-  sessionBtn->setPadding(Style::spaceXs * scale);
-  sessionBtn->setRadius(Style::scaledRadiusMd(scale));
+  panel_button_style::configureHeaderIconButton(*sessionBtn, scale, panelCardOpacity());
   sessionBtn->setOnClick([]() { PanelManager::instance().togglePanel("session"); });
   m_sessionButton = sessionBtn.get();
   actions->addChild(std::move(sessionBtn));
@@ -855,6 +846,16 @@ void HomeTab::onClose() {
   m_lastRealtimeMprisPollAt = {};
   m_shortcutsGrid = nullptr;
   m_shortcutPads.clear();
+}
+
+void HomeTab::onPanelCardOpacityChanged(float opacity) {
+  if (m_settingsButton != nullptr) {
+    panel_button_style::applyHeaderButtonStyle(*m_settingsButton, opacity);
+  }
+  if (m_sessionButton != nullptr) {
+    panel_button_style::applyHeaderButtonStyle(*m_sessionButton, opacity);
+  }
+  syncShortcuts();
 }
 
 void HomeTab::syncScaledFonts() {
