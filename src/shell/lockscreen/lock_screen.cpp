@@ -2,13 +2,13 @@
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
-#include "core/key_symbols.h"
 #include "core/log.h"
 #include "ext-session-lock-v1-client-protocol.h"
 #include "i18n/i18n.h"
 #include "ipc/ipc_service.h"
 #include "render/render_context.h"
 #include "shell/lockscreen/lock_surface.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/palette.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
@@ -234,12 +234,12 @@ void LockScreen::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  if (KeySymbol::isEnter(event.sym)) {
+  if (KeybindMatcher::matches(KeybindAction::Validate, event.sym, event.modifiers)) {
     tryAuthenticate();
     return;
   }
 
-  if (KeySymbol::isEscape(event.sym)) {
+  if (KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
     clearSensitiveString(m_password);
     m_status = i18n::tr("lockscreen.password-cleared");
     m_statusIsError = false;
