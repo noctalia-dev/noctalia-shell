@@ -10,6 +10,7 @@
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "shell/control_center/tab.h"
+#include "shell/panel/panel_button_style.h"
 #include "shell/panel/panel_manager.h"
 #include "time/time_format.h"
 #include "ui/controls/box.h"
@@ -554,18 +555,6 @@ void ClipboardPanel::create() {
   m_imageActionButton = imageActionButton.get();
   previewActions->addChild(std::move(imageActionButton));
 
-  auto copyButton = std::make_unique<Button>();
-  copyButton->setGlyph("copy");
-  copyButton->setVariant(ButtonVariant::Secondary);
-  copyButton->setGlyphSize(Style::fontSizeBody * scale);
-  copyButton->setMinWidth(Style::controlHeightSm * scale);
-  copyButton->setMinHeight(Style::controlHeightSm * scale);
-  copyButton->setPadding(Style::spaceXs * scale);
-  copyButton->setRadius(Style::scaledRadiusMd(scale));
-  copyButton->setOnClick([this]() { activateSelected(); });
-  m_copyButton = copyButton.get();
-  previewActions->addChild(std::move(copyButton));
-
   auto deleteEntryButton = std::make_unique<Button>();
   deleteEntryButton->setGlyph("trash");
   deleteEntryButton->setVariant(ButtonVariant::Destructive);
@@ -577,6 +566,25 @@ void ClipboardPanel::create() {
   deleteEntryButton->setOnClick([this]() { deleteSelectedEntry(); });
   m_deleteEntryButton = deleteEntryButton.get();
   previewActions->addChild(std::move(deleteEntryButton));
+
+  auto copyButton = std::make_unique<Button>();
+  copyButton->setGlyph("copy");
+  copyButton->setVariant(ButtonVariant::Default);
+  copyButton->setGlyphSize(Style::fontSizeBody * scale);
+  copyButton->setMinWidth(Style::controlHeightSm * scale);
+  copyButton->setMinHeight(Style::controlHeightSm * scale);
+  copyButton->setPadding(Style::spaceXs * scale);
+  copyButton->setRadius(Style::scaledRadiusMd(scale));
+  copyButton->setOnClick([this]() { activateSelected(); });
+  m_copyButton = copyButton.get();
+  previewActions->addChild(std::move(copyButton));
+
+  auto closeButton = std::make_unique<Button>();
+  closeButton->setGlyph("close");
+  panel_button_style::configureHeaderIconButton(*closeButton, scale, panelCardOpacity());
+  closeButton->setOnClick([]() { PanelManager::instance().close(); });
+  m_closeButton = closeButton.get();
+  previewActions->addChild(std::move(closeButton));
 
   previewHeader->addChild(std::move(previewActions));
   preview->addChild(std::move(previewHeader));
@@ -748,6 +756,7 @@ void ClipboardPanel::onClose() {
   m_sidebarHeaderRow = nullptr;
   m_sidebarTitle = nullptr;
   m_clearHistoryButton = nullptr;
+  m_closeButton = nullptr;
   m_filterInput = nullptr;
   m_listGrid = nullptr;
   m_listEmptyLabel = nullptr;
@@ -782,6 +791,15 @@ void ClipboardPanel::onClose() {
 
 InputArea* ClipboardPanel::initialFocusArea() const {
   return m_filterInput != nullptr ? m_filterInput->inputArea() : m_focusArea;
+}
+
+void ClipboardPanel::onPanelCardOpacityChanged(float opacity) {
+  if (m_closeButton != nullptr) {
+    panel_button_style::applyHeaderButtonStyle(*m_closeButton, opacity);
+  }
+  if (m_previewScrollView != nullptr) {
+    m_previewScrollView->setCardStyle(contentScale(), opacity);
+  }
 }
 
 void ClipboardPanel::schedulePreviewPayloadRefresh(bool debounced) {

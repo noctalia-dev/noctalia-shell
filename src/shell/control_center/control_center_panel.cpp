@@ -8,6 +8,7 @@
 #include "notification/notification_manager.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
+#include "shell/panel/panel_button_style.h"
 #include "shell/panel/panel_manager.h"
 #include "system/dependency_service.h"
 #include "ui/controls/button.h"
@@ -178,12 +179,7 @@ void ControlCenterPanel::create() {
 
   auto closeButton = std::make_unique<Button>();
   closeButton->setGlyph("close");
-  closeButton->setVariant(ButtonVariant::Default);
-  closeButton->setGlyphSize(Style::fontSizeBody * scale);
-  closeButton->setMinWidth(Style::controlHeightSm * scale);
-  closeButton->setMinHeight(Style::controlHeightSm * scale);
-  closeButton->setPadding(Style::spaceXs * scale);
-  closeButton->setRadius(Style::scaledRadiusMd(scale));
+  panel_button_style::configureHeaderIconButton(*closeButton, scale, panelCardOpacity());
   closeButton->setOnClick([]() { PanelManager::instance().close(); });
   m_closeButton = closeButton.get();
   m_contentHeaderActions->addChild(std::move(closeButton));
@@ -224,6 +220,9 @@ void ControlCenterPanel::onPanelCardOpacityChanged(float opacity) {
   }
   if (m_sidebar != nullptr) {
     m_sidebar->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, opacity));
+  }
+  if (m_closeButton != nullptr) {
+    panel_button_style::applyHeaderButtonStyle(*m_closeButton, opacity);
   }
 }
 
