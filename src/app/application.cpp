@@ -29,6 +29,7 @@
 #include "system/distro_info.h"
 #include "time/time_format.h"
 #include "ui/controls/input.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/dialogs/color_picker_dialog.h"
 #include "ui/dialogs/file_dialog.h"
 #include "ui/dialogs/glyph_picker_dialog.h"
@@ -455,6 +456,19 @@ void Application::initServices() {
   m_sharedTextureCache.initialize(&m_glShared);
   m_asyncTextureCache.initialize(&m_glShared);
   m_wayland.setVirtualKeyboardService(&m_virtualKeyboardService);
+
+  auto bindKeybind = [this](KeybindAction action) {
+    return [this, action](std::uint32_t sym, std::uint32_t modifiers) {
+      return m_configService.matchesKeybind(action, sym, modifiers);
+    };
+  };
+  KeybindMatcher::setMatcher(KeybindAction::Validate, bindKeybind(KeybindAction::Validate));
+  KeybindMatcher::setMatcher(KeybindAction::Cancel, bindKeybind(KeybindAction::Cancel));
+  KeybindMatcher::setMatcher(KeybindAction::Left, bindKeybind(KeybindAction::Left));
+  KeybindMatcher::setMatcher(KeybindAction::Right, bindKeybind(KeybindAction::Right));
+  KeybindMatcher::setMatcher(KeybindAction::Up, bindKeybind(KeybindAction::Up));
+  KeybindMatcher::setMatcher(KeybindAction::Down, bindKeybind(KeybindAction::Down));
+
   Input::setValidateKeyMatcher([this](std::uint32_t sym, std::uint32_t modifiers) {
     return m_configService.matchesKeybind(KeybindAction::Validate, sym, modifiers);
   });
