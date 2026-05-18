@@ -85,6 +85,9 @@ bool SettingsWindow::ownsKeyboardSurface(wl_surface* surface) const noexcept {
   if (m_widgetAddPopup != nullptr && m_widgetAddPopup->wlSurface() == surface) {
     return true;
   }
+  if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->wlSurface() == surface) {
+    return true;
+  }
   if (m_searchPickerPopup != nullptr && m_searchPickerPopup->wlSurface() == surface) {
     return true;
   }
@@ -127,6 +130,10 @@ std::optional<LayerPopupParentContext> SettingsWindow::popupParentContextForSurf
   if (m_widgetAddPopup != nullptr && surface == m_widgetAddPopup->wlSurface()) {
     return makeContext(m_widgetAddPopup->wlSurface(), m_widgetAddPopup->xdgSurface(), m_widgetAddPopup->width(),
                        m_widgetAddPopup->height());
+  }
+  if (m_configExportDialogPopup != nullptr && surface == m_configExportDialogPopup->wlSurface()) {
+    return makeContext(m_configExportDialogPopup->wlSurface(), m_configExportDialogPopup->xdgSurface(),
+                       m_configExportDialogPopup->width(), m_configExportDialogPopup->height());
   }
   if (m_searchPickerPopup != nullptr && surface == m_searchPickerPopup->wlSurface()) {
     return makeContext(m_searchPickerPopup->wlSurface(), m_searchPickerPopup->xdgSurface(),
@@ -255,6 +262,10 @@ void SettingsWindow::destroyWindow() {
   if (m_widgetAddPopup != nullptr) {
     m_widgetAddPopup->close();
     m_widgetAddPopup.reset();
+  }
+  if (m_configExportDialogPopup != nullptr) {
+    m_configExportDialogPopup->close();
+    m_configExportDialogPopup.reset();
   }
   if (m_searchPickerPopup != nullptr) {
     m_searchPickerPopup->close();
@@ -401,6 +412,9 @@ void SettingsWindow::clearTransientSettingsState() {
   if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen()) {
     m_widgetAddPopup->close();
   }
+  if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->isOpen()) {
+    m_configExportDialogPopup->close();
+  }
   if (m_searchPickerPopup != nullptr && m_searchPickerPopup->isOpen()) {
     m_searchPickerPopup->close();
   }
@@ -417,6 +431,14 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
   if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen() && event.type == PointerEvent::Type::Button &&
       event.state == 1) {
     m_widgetAddPopup->close();
+    return true;
+  }
+  if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->onPointerEvent(event)) {
+    return true;
+  }
+  if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->isOpen() &&
+      event.type == PointerEvent::Type::Button && event.state == 1) {
+    m_configExportDialogPopup->close();
     return true;
   }
   if (m_searchPickerPopup != nullptr && m_searchPickerPopup->onPointerEvent(event)) {
@@ -535,6 +557,15 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
+  if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->isOpen()) {
+    if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
+      m_configExportDialogPopup->close();
+      return;
+    }
+    m_configExportDialogPopup->onKeyboardEvent(event);
+    return;
+  }
+
   if (m_searchPickerPopup != nullptr && m_searchPickerPopup->isOpen()) {
     if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
       m_searchPickerPopup->close();
@@ -609,6 +640,9 @@ void SettingsWindow::onThemeChanged() {
     if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen()) {
       m_widgetAddPopup->requestRedraw();
     }
+    if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->isOpen()) {
+      m_configExportDialogPopup->requestRedraw();
+    }
     if (m_sessionActionsEditorPopup != nullptr && m_sessionActionsEditorPopup->isOpen()) {
       m_sessionActionsEditorPopup->requestRedraw();
     }
@@ -620,6 +654,9 @@ void SettingsWindow::onFontChanged() {
   if (isOpen()) {
     if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen()) {
       m_widgetAddPopup->requestLayout();
+    }
+    if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->isOpen()) {
+      m_configExportDialogPopup->requestLayout();
     }
     if (m_sessionActionsEditorPopup != nullptr && m_sessionActionsEditorPopup->isOpen()) {
       m_sessionActionsEditorPopup->requestLayout();

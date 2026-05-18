@@ -8,6 +8,7 @@
 #include <cctype>
 #include <cstddef>
 #include <utility>
+#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
   constexpr Logger kLog("config");
@@ -86,6 +87,24 @@ std::vector<IdleBehaviorConfig> defaultIdleBehaviors() {
           .lockBeforeSuspend = true,
       },
   };
+}
+
+std::vector<KeyChord> defaultKeybindSet(KeybindAction action) {
+  switch (action) {
+  case KeybindAction::Validate:
+    return {{.sym = XKB_KEY_Return, .modifiers = 0}, {.sym = XKB_KEY_KP_Enter, .modifiers = 0}};
+  case KeybindAction::Cancel:
+    return {{.sym = XKB_KEY_Escape, .modifiers = 0}};
+  case KeybindAction::Left:
+    return {{.sym = XKB_KEY_Left, .modifiers = 0}};
+  case KeybindAction::Right:
+    return {{.sym = XKB_KEY_Right, .modifiers = 0}};
+  case KeybindAction::Up:
+    return {{.sym = XKB_KEY_Up, .modifiers = 0}};
+  case KeybindAction::Down:
+    return {{.sym = XKB_KEY_Down, .modifiers = 0}};
+  }
+  return {};
 }
 
 float panelCardOpacityForTransparencyMode(PanelTransparencyMode mode, float panelBackgroundOpacity) noexcept {

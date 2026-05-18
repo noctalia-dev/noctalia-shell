@@ -188,6 +188,8 @@ enum class KeybindAction : std::uint8_t {
   Down = 5,
 };
 
+[[nodiscard]] std::vector<KeyChord> defaultKeybindSet(KeybindAction action);
+
 using WidgetSettingValue = std::variant<bool, std::int64_t, double, std::string, std::vector<std::string>>;
 using ConfigOverrideValue =
     std::variant<bool, std::int64_t, double, std::string, std::vector<std::string>, std::vector<ShortcutConfig>,

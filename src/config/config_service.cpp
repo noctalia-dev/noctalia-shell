@@ -1,5 +1,6 @@
 #include "config/config_service.h"
 
+#include "config/config_export.h"
 #include "core/build_info.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
@@ -26,7 +27,6 @@
 #include <unistd.h>
 #include <unordered_map>
 #include <vector>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -179,24 +179,6 @@ namespace {
       return keybinds.down;
     }
     return keybinds.validate;
-  }
-
-  std::vector<KeyChord> defaultKeybindSet(KeybindAction action) {
-    switch (action) {
-    case KeybindAction::Validate:
-      return {{.sym = XKB_KEY_Return, .modifiers = 0}, {.sym = XKB_KEY_KP_Enter, .modifiers = 0}};
-    case KeybindAction::Cancel:
-      return {{.sym = XKB_KEY_Escape, .modifiers = 0}};
-    case KeybindAction::Left:
-      return {{.sym = XKB_KEY_Left, .modifiers = 0}};
-    case KeybindAction::Right:
-      return {{.sym = XKB_KEY_Right, .modifiers = 0}};
-    case KeybindAction::Up:
-      return {{.sym = XKB_KEY_Up, .modifiers = 0}};
-    case KeybindAction::Down:
-      return {{.sym = XKB_KEY_Down, .modifiers = 0}};
-    }
-    return {};
   }
 
   constexpr Logger kLog("config");
@@ -445,7 +427,7 @@ std::string ConfigService::buildSupportReport() const {
   return formatToml(root) + "\n";
 }
 
-std::string ConfigService::buildFlattenedConfig() const {
+std::string ConfigService::buildMergedUserConfig() const {
   toml::table merged;
 
   for (const auto& path : sortedConfigTomlFiles(m_configDir)) {
@@ -453,7 +435,7 @@ std::string ConfigService::buildFlattenedConfig() const {
       auto table = toml::parse_file(path.string());
       deepMerge(merged, table);
     } catch (const toml::parse_error& e) {
-      kLog.warn("skipping parse error in flattened config export {}: {}", path.filename().string(), e.description());
+      kLog.warn("skipping parse error in merged user config export {}: {}", path.filename().string(), e.description());
     }
   }
 
@@ -462,11 +444,15 @@ std::string ConfigService::buildFlattenedConfig() const {
       auto table = toml::parse_file(m_overridesPath);
       deepMerge(merged, table);
     } catch (const toml::parse_error& e) {
-      kLog.warn("skipping parse error in flattened config export {}: {}", m_overridesPath, e.description());
+      kLog.warn("skipping parse error in merged user config export {}: {}", m_overridesPath, e.description());
     }
   }
 
   return formatToml(merged) + "\n";
+}
+
+std::string ConfigService::buildEffectiveConfig() const {
+  return formatToml(config_export::configToToml(m_config)) + "\n";
 }
 
 void ConfigService::checkReload() {

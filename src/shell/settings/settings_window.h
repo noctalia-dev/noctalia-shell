@@ -3,6 +3,7 @@
 #include "render/animation/animation_manager.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
+#include "shell/settings/config_export_dialog_popup.h"
 #include "shell/settings/search_picker_popup.h"
 #include "shell/settings/session_actions_editor_popup.h"
 #include "shell/settings/settings_registry.h"
@@ -89,6 +90,7 @@ private:
   void clearStatusMessage();
   void clearTransientSettingsState();
   void openActionsMenu();
+  void openConfigExportDialog();
   void openBarWidgetAddPopup(const std::vector<std::string>& lanePath);
   void openSearchPickerPopup(const std::string& title, const std::vector<settings::SelectOption>& options,
                              const std::string& selectedValue, const std::string& placeholder,
@@ -98,7 +100,7 @@ private:
   void openIdleBehaviorCreateEditor();
   void refreshIdleLiveStatusText();
   void saveSupportReport();
-  void saveFlattenedConfig();
+  void saveConfigExport(settings::ConfigExportMode mode);
   [[nodiscard]] bool headerDragRegionContains(float sceneX, float sceneY) const;
   void setSettingOverride(std::vector<std::string> path, ConfigOverrideValue value);
   void setSettingOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides);
@@ -134,6 +136,7 @@ private:
   ScrollView* m_contentScrollView = nullptr;
   std::unique_ptr<ContextMenuPopup> m_actionsMenuPopup;
   std::unique_ptr<settings::WidgetAddPopup> m_widgetAddPopup;
+  std::unique_ptr<settings::ConfigExportDialogPopup> m_configExportDialogPopup;
   std::unique_ptr<settings::SearchPickerPopup> m_searchPickerPopup;
   std::unique_ptr<settings::SessionActionsEditorPopup> m_sessionActionsEditorPopup;
   InputDispatcher m_inputDispatcher;
