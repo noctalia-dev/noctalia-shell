@@ -4,6 +4,7 @@
 #include "render/scene/input_area.h"
 #include "shell/desktop/desktop_widget_settings_registry.h"
 #include "shell/desktop/desktop_widgets_editor.h"
+#include "shell/settings/widget_settings_registry.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
@@ -65,6 +66,29 @@ namespace {
       return *v;
     }
     return fallback;
+  }
+
+  static bool isSpecVisible(const settings::WidgetSettingSpec& spec, const Settings& s) {
+    if (!spec.visibleWhen.has_value()) {
+      return true;
+    }
+    for (const auto& cond : spec.visibleWhen->any) {
+      const auto it = s.find(cond.key);
+      std::string current;
+      if (it != s.end()) {
+        if (const auto* vb = std::get_if<bool>(&it->second)) {
+          current = *vb ? "true" : "false";
+        } else if (const auto* vs = std::get_if<std::string>(&it->second)) {
+          current = *vs;
+        }
+      }
+      for (const auto& val : cond.values) {
+        if (val == current) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   ColorSpec getColorSpec(const Settings& s, const std::string& key, const ColorSpec& fallback) {
@@ -252,6 +276,9 @@ namespace {
   void addSpecSettings(Flex& content, const std::vector<settings::WidgetSettingSpec>& specs, const Settings& s,
                        DesktopWidgetsEditor* editor) {
     for (const auto& spec : specs) {
+      if (!isSpecVisible(spec, s)) {
+        continue;
+      }
       const auto label = i18n::tr(spec.labelKey);
 
       switch (spec.valueType) {
@@ -310,6 +337,18 @@ namespace {
   }
 
   void addBackgroundSection(Flex& content, const Settings& s, DesktopWidgetsEditor* editor) {
+    const auto& specs = desktop_settings::commonDesktopWidgetSettingSpecs();
+    bool hasVisibleChildren = false;
+    for (const auto& spec : specs) {
+      if (isSpecVisible(spec, s)) {
+        hasVisibleChildren = true;
+        break;
+      }
+    }
+    if (!hasVisibleChildren) {
+      return;
+    }
+
     auto sep = std::make_unique<Separator>();
     sep->setOrientation(SeparatorOrientation::HorizontalRule);
     content.addChild(std::move(sep));
@@ -321,7 +360,7 @@ namespace {
     heading->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
     content.addChild(std::move(heading));
 
-    addSpecSettings(content, desktop_settings::commonDesktopWidgetSettingSpecs(), s, editor);
+    addSpecSettings(content, specs, s, editor);
   }
 
 } // namespace
@@ -406,6 +445,7 @@ void DesktopWidgetsEditor::applySettingChange(const std::string& key, WidgetSett
     applyViewState(view, *state, false);
     updateSelectionVisuals(*surface);
     surface->surface->requestRedraw();
+    requestLayout();
   });
 }
 
