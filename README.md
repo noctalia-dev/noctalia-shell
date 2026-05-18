@@ -40,7 +40,7 @@
 
 ## What is Noctalia?
 
-A beautiful, minimal desktop shell for Wayland that actually gets out of your way. Built on [Quickshell](https://quickshell.outfoxxed.me/) (Qt/QML) with a warm lavender aesthetic that you can easily customize to match your vibe.
+A beautiful, minimal desktop shell for Wayland that actually gets out of your way. Built on [Quickshell](https://quickshell.org/) (Qt/QML) with a warm lavender aesthetic that you can easily customize to match your vibe.
 
 **✨ Key Features:**
 - 🪟 Native support for Niri, Hyprland, Sway, Scroll, Labwc and MangoWC
