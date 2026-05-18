@@ -659,13 +659,12 @@ namespace settings {
                                 asSegmented(enumSelect(kPanelTextureStyles, cfg.shell.panel.effects.texture)),
                                 "grain texture material diagonal horizontal"));
     {
-      auto e = makeEntry(
-          "panels", "effects", tr("settings.schema.panels.texture-opacity.label"),
-          tr("settings.schema.panels.texture-opacity.description"), {"shell", "panel", "effects", "texture_opacity"},
-          SliderSetting{cfg.shell.panel.effects.textureOpacity, 0.0f, 1.0f, 0.01f, false},
-          "grain texture material diagonal horizontal opacity strength");
-      e.visibleWhen =
-          SettingVisibility{{"shell", "panel", "effects", "texture"}, {"noise", "diagonal", "horizontal"}};
+      auto e = makeEntry("panels", "effects", tr("settings.schema.panels.texture-opacity.label"),
+                         tr("settings.schema.panels.texture-opacity.description"),
+                         {"shell", "panel", "effects", "texture_opacity"},
+                         SliderSetting{cfg.shell.panel.effects.textureOpacity, 0.0f, 1.0f, 0.01f, false},
+                         "grain texture material diagonal horizontal opacity strength");
+      e.visibleWhen = SettingVisibility{{"shell", "panel", "effects", "texture"}, {"noise", "diagonal", "horizontal"}};
       entries.push_back(std::move(e));
     }
     entries.push_back(makeEntry("panels", "effects", tr("settings.schema.panels.highlight.label"),

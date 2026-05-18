@@ -524,10 +524,10 @@ void RectProgram::ensureInitialized() {
       m_gradientColor3Location < 0 || m_invertFillLocation < 0 || m_noAaLocation < 0 || m_cornerShapesLocation < 0 ||
       m_logicalInsetLocation < 0 || m_borderWidthLocation < 0 || m_materialTextureStyleLocation < 0 ||
       m_materialTextureOpacityLocation < 0 || m_materialHighlightStyleLocation < 0 ||
-      m_materialHighlightOpacityLocation < 0 || m_outerShadowLocation < 0 ||
-      m_shadowCutoutOffsetLocation < 0 || m_shadowExclusionLocation < 0 || m_shadowExclusionOffsetLocation < 0 ||
-      m_shadowExclusionSizeLocation < 0 || m_shadowExclusionCornerShapesLocation < 0 ||
-      m_shadowExclusionLogicalInsetLocation < 0 || m_shadowExclusionRadiiLocation < 0 || m_transformLocation < 0) {
+      m_materialHighlightOpacityLocation < 0 || m_outerShadowLocation < 0 || m_shadowCutoutOffsetLocation < 0 ||
+      m_shadowExclusionLocation < 0 || m_shadowExclusionOffsetLocation < 0 || m_shadowExclusionSizeLocation < 0 ||
+      m_shadowExclusionCornerShapesLocation < 0 || m_shadowExclusionLogicalInsetLocation < 0 ||
+      m_shadowExclusionRadiiLocation < 0 || m_transformLocation < 0) {
     throw std::runtime_error("failed to query rounded-rect shader locations");
   }
 }

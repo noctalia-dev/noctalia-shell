@@ -315,8 +315,7 @@ namespace {
            a.shadow.offsetX == b.shadow.offsetX && a.shadow.offsetY == b.shadow.offsetY &&
            nearlyEqual(a.shadow.alpha, b.shadow.alpha) && a.panel.backgroundBlur == b.panel.backgroundBlur &&
            a.panel.transparencyMode == b.panel.transparencyMode && a.panel.effects == b.panel.effects &&
-           a.panel.attachLauncher == b.panel.attachLauncher &&
-           a.panel.attachClipboard == b.panel.attachClipboard &&
+           a.panel.attachLauncher == b.panel.attachLauncher && a.panel.attachClipboard == b.panel.attachClipboard &&
            a.panel.attachControlCenter == b.panel.attachControlCenter &&
            a.panel.attachWallpaper == b.panel.attachWallpaper && a.panel.attachSession == b.panel.attachSession &&
            a.panel.openNearClickControlCenter == b.panel.openNearClickControlCenter &&
