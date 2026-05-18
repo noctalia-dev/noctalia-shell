@@ -466,7 +466,11 @@ const std::string& IconResolver::resolve(const std::string& iconName, int target
   if (it != m_cache.end()) {
     return it->second;
   }
-  auto [ins, _] = m_cache.emplace(key, findIcon(iconName, targetSize));
+  auto icon = findIcon(iconName, targetSize);
+  if (icon.empty()) {
+    return m_empty;
+  }
+  auto [ins, _] = m_cache.emplace(key, icon);
   return ins->second;
 }
 
