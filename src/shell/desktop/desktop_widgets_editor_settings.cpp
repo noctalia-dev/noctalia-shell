@@ -463,7 +463,9 @@ void DesktopWidgetsEditor::applySettingChange(const std::string& key, WidgetSett
     applyViewState(view, *state, false);
     updateSelectionVisuals(*surface);
     surface->surface->requestRedraw();
-    requestLayout();
+    if (key == "background") {
+      requestLayout();
+    }
   });
 }
 
