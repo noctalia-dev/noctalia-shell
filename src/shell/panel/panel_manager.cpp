@@ -13,6 +13,7 @@
 #include "shell/tooltip/tooltip_manager.h"
 #include "ui/controls/box.h"
 #include "ui/controls/context_menu_popup.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/controls/select_dropdown_popup.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -1060,8 +1061,7 @@ void PanelManager::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  if (event.pressed && m_config != nullptr &&
-      m_config->matchesKeybind(KeybindAction::Cancel, event.sym, event.modifiers)) {
+  if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
     closePanel();
     return;
   }
