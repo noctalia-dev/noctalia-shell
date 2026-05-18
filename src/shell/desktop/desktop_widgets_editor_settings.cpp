@@ -68,20 +68,38 @@ namespace {
     return fallback;
   }
 
-  static bool isSpecVisible(const settings::WidgetSettingSpec& spec, const Settings& s) {
+  static std::string settingValueAsString(const Settings& s, const std::string& key,
+                                          const std::vector<settings::WidgetSettingSpec>& allSpecs) {
+    const auto it = s.find(key);
+    if (it != s.end()) {
+      if (const auto* vb = std::get_if<bool>(&it->second)) {
+        return *vb ? "true" : "false";
+      }
+      if (const auto* vs = std::get_if<std::string>(&it->second)) {
+        return *vs;
+      }
+    }
+    for (const auto& spec : allSpecs) {
+      if (spec.key == key) {
+        if (const auto* vb = std::get_if<bool>(&spec.defaultValue)) {
+          return *vb ? "true" : "false";
+        }
+        if (const auto* vs = std::get_if<std::string>(&spec.defaultValue)) {
+          return *vs;
+        }
+        break;
+      }
+    }
+    return {};
+  }
+
+  static bool isSpecVisible(const settings::WidgetSettingSpec& spec, const Settings& s,
+                            const std::vector<settings::WidgetSettingSpec>& allSpecs) {
     if (!spec.visibleWhen.has_value()) {
       return true;
     }
     for (const auto& cond : spec.visibleWhen->any) {
-      const auto it = s.find(cond.key);
-      std::string current;
-      if (it != s.end()) {
-        if (const auto* vb = std::get_if<bool>(&it->second)) {
-          current = *vb ? "true" : "false";
-        } else if (const auto* vs = std::get_if<std::string>(&it->second)) {
-          current = *vs;
-        }
-      }
+      const auto current = settingValueAsString(s, cond.key, allSpecs);
       for (const auto& val : cond.values) {
         if (val == current) {
           return true;
@@ -276,7 +294,7 @@ namespace {
   void addSpecSettings(Flex& content, const std::vector<settings::WidgetSettingSpec>& specs, const Settings& s,
                        DesktopWidgetsEditor* editor) {
     for (const auto& spec : specs) {
-      if (!isSpecVisible(spec, s)) {
+      if (!isSpecVisible(spec, s, specs)) {
         continue;
       }
       const auto label = i18n::tr(spec.labelKey);
@@ -340,7 +358,7 @@ namespace {
     const auto& specs = desktop_settings::commonDesktopWidgetSettingSpecs();
     bool hasVisibleChildren = false;
     for (const auto& spec : specs) {
-      if (isSpecVisible(spec, s)) {
+      if (isSpecVisible(spec, s, specs)) {
         hasVisibleChildren = true;
         break;
       }
