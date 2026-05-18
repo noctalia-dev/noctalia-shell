@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
+#include "core/keybind_matcher.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "i18n/i18n.h"
@@ -9,7 +10,6 @@
 #include "system/dependency_service.h"
 #include "ui/controls/box.h"
 #include "ui/controls/flex.h"
-#include "ui/controls/keybind_matcher.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/select_dropdown_popup.h"

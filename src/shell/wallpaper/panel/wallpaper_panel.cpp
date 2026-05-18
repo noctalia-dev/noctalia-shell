@@ -1,6 +1,7 @@
 #include "shell/wallpaper/panel/wallpaper_panel.h"
 
 #include "config/config_service.h"
+#include "core/keybind_matcher.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "i18n/i18n.h"
@@ -13,7 +14,6 @@
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/input.h"
-#include "ui/controls/keybind_matcher.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/select.h"

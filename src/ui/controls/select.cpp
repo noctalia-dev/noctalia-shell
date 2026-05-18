@@ -1,5 +1,6 @@
 #include "ui/controls/select.h"
 
+#include "core/keybind_matcher.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "i18n/i18n.h"
 #include "render/core/render_styles.h"
@@ -8,7 +9,6 @@
 #include "render/scene/rect_node.h"
 #include "ui/controls/box.h"
 #include "ui/controls/glyph.h"
-#include "ui/controls/keybind_matcher.h"
 #include "ui/controls/label.h"
 #include "ui/controls/select_popup_context.h"
 #include "ui/palette.h"
