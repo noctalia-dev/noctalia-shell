@@ -762,3 +762,12 @@ log_test = executable('log_test',
 )
 
 test('log', log_test)
+
+image_source_log_test = executable('image_source_log_test',
+  sources: files(
+    'tests/image_source_log_test.cpp',
+  ),
+  include_directories: _noctalia_inc,
+)
+
+test('image_source_log', image_source_log_test)

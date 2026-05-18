@@ -4,6 +4,7 @@
 #include "core/ui_phase.h"
 #include "dbus/tray/tray_service.h"
 #include "render/core/image_file_loader.h"
+#include "render/core/image_source_log.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
@@ -89,7 +90,7 @@ namespace {
     std::string loadError;
     auto loaded = loadImageFile(path, targetSize, &loadError);
     if (!loaded) {
-      kLog.debug("tray widget symbolic icon decode failed path={} error={}", path, loadError);
+      kLog.debug("tray widget symbolic icon decode failed path={} error={}", ImageSourceLog::describe(path), loadError);
       return std::nullopt;
     }
 
