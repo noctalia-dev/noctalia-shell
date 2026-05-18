@@ -42,23 +42,40 @@ namespace {
     void bind(const SearchPickerOption& option, bool highlighted, bool selected, bool hovered) {
       const bool hasDetail = !option.description.empty();
       setJustify(FlexJustify::Center);
-      setFill(highlighted || hovered ? colorSpecFromRole(ColorRole::Primary)
-                                     : (selected ? colorSpecFromRole(ColorRole::Primary, 0.16f) : clearColorSpec()));
+
+      if (highlighted) {
+        setFill(colorSpecFromRole(ColorRole::Primary));
+      } else if (hovered) {
+        setFill(colorSpecFromRole(ColorRole::Hover));
+      } else if (selected) {
+        setFill(colorSpecFromRole(ColorRole::Primary, 0.16f));
+      } else {
+        setFill(clearColorSpec());
+      }
 
       if (m_title != nullptr) {
         m_title->setText(option.label);
         m_title->setBold(hasDetail);
-        m_title->setColor(highlighted || hovered ? colorSpecFromRole(ColorRole::OnPrimary)
-                                                 : (option.enabled ? colorSpecFromRole(ColorRole::OnSurface)
-                                                                   : colorSpecFromRole(ColorRole::OnSurface, 0.55f)));
+        if (highlighted) {
+          m_title->setColor(colorSpecFromRole(ColorRole::OnPrimary));
+        } else if (hovered) {
+          m_title->setColor(colorSpecFromRole(ColorRole::OnHover));
+        } else {
+          m_title->setColor(option.enabled ? colorSpecFromRole(ColorRole::OnSurface)
+                                           : colorSpecFromRole(ColorRole::OnSurface, 0.55f));
+        }
       }
       if (m_detail != nullptr) {
         m_detail->setVisible(hasDetail);
         m_detail->setParticipatesInLayout(hasDetail);
         m_detail->setText(option.description);
-        m_detail->setColor(highlighted || hovered
-                               ? colorSpecFromRole(ColorRole::OnPrimary, 0.78f)
-                               : colorSpecFromRole(ColorRole::OnSurfaceVariant, option.enabled ? 1.0f : 0.55f));
+        if (highlighted) {
+          m_detail->setColor(colorSpecFromRole(ColorRole::OnPrimary, 0.78f));
+        } else if (hovered) {
+          m_detail->setColor(colorSpecFromRole(ColorRole::OnHover, 0.78f));
+        } else {
+          m_detail->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant, option.enabled ? 1.0f : 0.55f));
+        }
       }
     }
 
