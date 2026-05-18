@@ -189,6 +189,12 @@ namespace settings {
       if (key == "background_opacity") {
         return override->backgroundOpacity.has_value();
       }
+      if (key == "border") {
+        return override->border.has_value();
+      }
+      if (key == "border_width") {
+        return override->borderWidth.has_value();
+      }
       if (key == "shadow") {
         return override->shadow.has_value();
       }

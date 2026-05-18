@@ -554,6 +554,10 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.thickness = *ovr.thickness;
     if (ovr.backgroundOpacity)
       resolved.backgroundOpacity = *ovr.backgroundOpacity;
+    if (ovr.border)
+      resolved.border = *ovr.border;
+    if (ovr.borderWidth)
+      resolved.borderWidth = *ovr.borderWidth;
     if (ovr.radius) {
       resolved.radius = *ovr.radius;
       resolved.radiusTopLeft = *ovr.radius;
@@ -935,6 +939,10 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
         bar.thickness = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
       if (auto v = finiteDouble((*barTbl)["background_opacity"]))
         bar.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
+      if (auto borderStr = (*barTbl)["border"].value<std::string>())
+        bar.border = colorSpecFromConfigString(*borderStr);
+      if (auto v = finiteDouble((*barTbl)["border_width"]))
+        bar.borderWidth = std::clamp(static_cast<float>(*v), 0.0f, 20.0f);
       if (auto v = (*barTbl)["radius"].value<int64_t>()) {
         const auto r = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
         bar.radius = r;
@@ -1032,6 +1040,10 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
             ovr.thickness = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
           if (auto v = finiteDouble((*monTbl)["background_opacity"]))
             ovr.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
+          if (auto borderStr = (*monTbl)["border"].value<std::string>())
+            ovr.border = colorSpecFromConfigString(*borderStr);
+          if (auto v = finiteDouble((*monTbl)["border_width"]))
+            ovr.borderWidth = std::clamp(static_cast<float>(*v), 0.0f, 20.0f);
           if (auto v = (*monTbl)["radius"].value<int64_t>())
             ovr.radius = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
           if (auto v = (*monTbl)["radius_top_left"].value<int64_t>())

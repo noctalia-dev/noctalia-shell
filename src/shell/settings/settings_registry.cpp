@@ -136,6 +136,18 @@ namespace settings {
       return ColorRolePickerSetting{barAccentColorRoles(), std::move(selectedValue), true, true};
     }
 
+    const std::vector<ColorRole>& barBorderColorRoles() {
+      static const std::vector<ColorRole> kRoles = {
+          ColorRole::Outline,   ColorRole::OnSurface, ColorRole::Primary,    ColorRole::OnPrimary,
+          ColorRole::Secondary, ColorRole::Tertiary,  ColorRole::OnTertiary, ColorRole::Error,
+      };
+      return kRoles;
+    }
+
+    ColorRolePickerSetting barBorderColorRolePicker(const ColorSpec& selected) {
+      return ColorRolePickerSetting{barBorderColorRoles(), colorRoleValue(selected), false, true};
+    }
+
     std::string pathText(const std::vector<std::string>& path) {
       std::string out;
       for (const auto& part : path) {
@@ -1283,6 +1295,13 @@ namespace settings {
       entries.push_back(makeEntry(section, "shape", tr("settings.schema.shared.background-opacity.label"),
                                   tr("settings.schema.bar.background-opacity.description"), path("background_opacity"),
                                   SliderSetting{selectedBar->backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "alpha"));
+      entries.push_back(makeEntry(section, "shape", tr("settings.schema.bar.border.label"),
+                                  tr("settings.schema.bar.border.description"), path("border"),
+                                  barBorderColorRolePicker(selectedBar->border), "outline color role", true));
+      entries.push_back(makeEntry(section, "shape", tr("settings.schema.bar.border-width.label"),
+                                  tr("settings.schema.bar.border-width.description"), path("border_width"),
+                                  SliderSetting{selectedBar->borderWidth, 0.0f, 20.0f, 0.5f, false}, "outline stroke",
+                                  true));
       entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.shadow.label"),
                                   tr("settings.schema.bar.shadow.description"), path("shadow"),
                                   ToggleSetting{selectedBar->shadow}, "shadow"));
@@ -1448,6 +1467,13 @@ namespace settings {
           section, "shape", tr("settings.schema.shared.background-opacity.label"),
           tr("settings.schema.bar.background-opacity.description"), mpath("background_opacity"),
           SliderSetting{ovr.backgroundOpacity.value_or(bar.backgroundOpacity), 0.0f, 1.0f, 0.01f, false}, "alpha"));
+      entries.push_back(makeEntry(
+          section, "shape", tr("settings.schema.bar.border.label"), tr("settings.schema.bar.border.description"),
+          mpath("border"), barBorderColorRolePicker(ovr.border.value_or(bar.border)), "outline color role", true));
+      entries.push_back(makeEntry(section, "shape", tr("settings.schema.bar.border-width.label"),
+                                  tr("settings.schema.bar.border-width.description"), mpath("border_width"),
+                                  SliderSetting{ovr.borderWidth.value_or(bar.borderWidth), 0.0f, 20.0f, 0.5f, false},
+                                  "outline stroke", true));
       entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.shadow.label"),
                                   tr("settings.schema.bar.shadow.description"), mpath("shadow"),
                                   ToggleSetting{ovr.shadow.value_or(bar.shadow)}, "shadow"));

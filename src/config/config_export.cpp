@@ -153,6 +153,8 @@ namespace config_export {
       table.insert_or_assign("attach_panels", bar.attachPanels);
       table.insert_or_assign("thickness", static_cast<std::int64_t>(bar.thickness));
       table.insert_or_assign("background_opacity", static_cast<double>(bar.backgroundOpacity));
+      table.insert_or_assign("border", colorSpecToConfigString(bar.border));
+      table.insert_or_assign("border_width", static_cast<double>(bar.borderWidth));
       table.insert_or_assign("radius", static_cast<std::int64_t>(bar.radius));
       table.insert_or_assign("radius_top_left", static_cast<std::int64_t>(bar.radiusTopLeft));
       table.insert_or_assign("radius_top_right", static_cast<std::int64_t>(bar.radiusTopRight));
@@ -201,6 +203,10 @@ namespace config_export {
         resolved.thickness = *ovr.thickness;
       if (ovr.backgroundOpacity)
         resolved.backgroundOpacity = *ovr.backgroundOpacity;
+      if (ovr.border)
+        resolved.border = *ovr.border;
+      if (ovr.borderWidth)
+        resolved.borderWidth = *ovr.borderWidth;
       if (ovr.radius) {
         resolved.radius = *ovr.radius;
         resolved.radiusTopLeft = *ovr.radius;

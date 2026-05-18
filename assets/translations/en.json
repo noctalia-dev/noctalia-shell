@@ -2121,6 +2121,14 @@
         "background-opacity": {
           "description": "Background opacity of the bar"
         },
+        "border": {
+          "label": "Border",
+          "description": "Color role for the bar outline"
+        },
+        "border-width": {
+          "label": "Border Width",
+          "description": "Inside outline width for the bar"
+        },
         "shadow": {
           "description": "Cast the global surface shadow from the bar"
         },

@@ -1455,7 +1455,8 @@ void Bar::applyBackgroundPalette(BarInstance& instance) {
   }
   auto style = instance.bg->style();
   style.fill = colorForRole(ColorRole::Surface, instance.barConfig.backgroundOpacity);
-  style.border = colorForRole(ColorRole::Outline);
+  style.border = resolveColorSpec(instance.barConfig.border);
+  style.borderWidth = instance.barConfig.borderWidth;
   instance.bg->setStyle(style);
 }
 
@@ -1659,11 +1660,11 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   if (instance.bg != nullptr) {
     const RoundedRectStyle bgStyle{
         .fill = colorForRole(ColorRole::Surface, instance.barConfig.backgroundOpacity),
-        .border = colorForRole(ColorRole::Outline),
+        .border = resolveColorSpec(instance.barConfig.border),
         .fillMode = FillMode::Solid,
         .radius = barRadii,
         .softness = 0.0f,
-        .borderWidth = 0.0f,
+        .borderWidth = instance.barConfig.borderWidth,
     };
     instance.bg->setStyle(bgStyle);
     instance.bg->setPosition(barAreaX, barAreaY);

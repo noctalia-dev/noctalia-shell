@@ -23,6 +23,8 @@ struct BarMonitorOverride {
   std::optional<bool> reserveSpace;
   std::optional<std::int32_t> thickness;
   std::optional<float> backgroundOpacity;
+  std::optional<ColorSpec> border;
+  std::optional<float> borderWidth;
   std::optional<std::int32_t> radius;
   std::optional<std::int32_t> radiusTopLeft;
   std::optional<std::int32_t> radiusTopRight;
@@ -61,6 +63,9 @@ struct BarConfig {
   bool reserveSpace = true; // reserve compositor exclusive zone for this bar
   std::int32_t thickness = Style::barThicknessDefault;
   float backgroundOpacity = 1.0f;
+  // Inside outline for the bar background; attached panels inherit the resolved values.
+  ColorSpec border = colorSpecFromRole(ColorRole::Outline);
+  float borderWidth = 0.0f;
   std::int32_t radius = static_cast<std::int32_t>(Style::radiusXl);
   std::int32_t radiusTopLeft = static_cast<std::int32_t>(Style::radiusXl);
   std::int32_t radiusTopRight = static_cast<std::int32_t>(Style::radiusXl);

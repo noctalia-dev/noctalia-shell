@@ -123,13 +123,13 @@ namespace {
   bool barBaseConfigEqual(const BarConfig& a, const BarConfig& b) {
     return a.name == b.name && a.position == b.position && a.enabled == b.enabled && a.autoHide == b.autoHide &&
            a.reserveSpace == b.reserveSpace && a.thickness == b.thickness &&
-           nearlyEqual(a.backgroundOpacity, b.backgroundOpacity) && a.radius == b.radius &&
-           a.radiusTopLeft == b.radiusTopLeft && a.radiusTopRight == b.radiusTopRight &&
-           a.radiusBottomLeft == b.radiusBottomLeft && a.radiusBottomRight == b.radiusBottomRight &&
-           a.marginEnds == b.marginEnds && a.marginEdge == b.marginEdge && a.padding == b.padding &&
-           a.widgetSpacing == b.widgetSpacing && a.shadow == b.shadow && a.contactShadow == b.contactShadow &&
-           a.attachPanels == b.attachPanels && nearlyEqual(a.scale, b.scale) && a.startWidgets == b.startWidgets &&
-           a.centerWidgets == b.centerWidgets && a.endWidgets == b.endWidgets &&
+           nearlyEqual(a.backgroundOpacity, b.backgroundOpacity) && colorSpecEqual(a.border, b.border) &&
+           nearlyEqual(a.borderWidth, b.borderWidth) && a.radius == b.radius && a.radiusTopLeft == b.radiusTopLeft &&
+           a.radiusTopRight == b.radiusTopRight && a.radiusBottomLeft == b.radiusBottomLeft &&
+           a.radiusBottomRight == b.radiusBottomRight && a.marginEnds == b.marginEnds && a.marginEdge == b.marginEdge &&
+           a.padding == b.padding && a.widgetSpacing == b.widgetSpacing && a.shadow == b.shadow &&
+           a.contactShadow == b.contactShadow && a.attachPanels == b.attachPanels && nearlyEqual(a.scale, b.scale) &&
+           a.startWidgets == b.startWidgets && a.centerWidgets == b.centerWidgets && a.endWidgets == b.endWidgets &&
            a.widgetCapsuleDefault == b.widgetCapsuleDefault &&
            colorSpecEqual(a.widgetCapsuleFill, b.widgetCapsuleFill) &&
            optionalColorSpecEqual(a.widgetCapsuleForeground, b.widgetCapsuleForeground) &&
@@ -158,6 +158,12 @@ namespace {
     }
     if (ovr.backgroundOpacity) {
       resolved.backgroundOpacity = *ovr.backgroundOpacity;
+    }
+    if (ovr.border) {
+      resolved.border = *ovr.border;
+    }
+    if (ovr.borderWidth) {
+      resolved.borderWidth = *ovr.borderWidth;
     }
     if (ovr.radius) {
       resolved.radius = *ovr.radius;

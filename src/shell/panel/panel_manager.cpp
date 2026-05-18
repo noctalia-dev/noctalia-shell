@@ -1538,16 +1538,21 @@ void PanelManager::onConfigReloaded() {
   if (!isAttachedOpen() || m_output == nullptr) {
     return;
   }
-  // Panels that opt out of inheritance hold a fixed alpha; bar config reload doesn't affect them.
-  if (!m_activePanel->inheritsBarBackgroundOpacity()) {
+
+  const auto barConfig = resolvePanelBarConfig(m_config, m_platform, m_output, m_sourceBarName);
+  bool changed = false;
+  if (m_activePanel->inheritsBarBackgroundOpacity()) {
+    const float newOpacity = barConfig.backgroundOpacity;
+    if (std::abs(newOpacity - m_attachedBackgroundOpacity) >= 0.001f) {
+      m_attachedBackgroundOpacity = newOpacity;
+      m_activePanel->setPanelCardOpacity(resolvePanelCardOpacity(m_config, m_attachedBackgroundOpacity));
+      changed = true;
+    }
+  }
+  if (!changed) {
     return;
   }
-  const float newOpacity = resolvePanelBarConfig(m_config, m_platform, m_output, m_sourceBarName).backgroundOpacity;
-  if (std::abs(newOpacity - m_attachedBackgroundOpacity) < 0.001f) {
-    return;
-  }
-  m_attachedBackgroundOpacity = newOpacity;
-  m_activePanel->setPanelCardOpacity(resolvePanelCardOpacity(m_config, m_attachedBackgroundOpacity));
+
   applyAttachedDecorationStyle();
   if (m_surface != nullptr) {
     m_surface->requestRedraw();

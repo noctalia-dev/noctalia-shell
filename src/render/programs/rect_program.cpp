@@ -355,11 +355,17 @@ void main() {
         return;
     }
 
-    vec4 inner_radii = max(u_radii - vec4(u_border_width), vec4(0.0));
-    vec2 inner_size = max(u_rect_size - vec2(u_border_width * 2.0), vec2(0.0));
-    vec2 inner_point = local_point - vec2(u_border_width);
-    vec4 inner_inset = max(u_logical_inset - vec4(u_border_width), vec4(0.0));
-    vec2 inner = shape_distance_with_corner(inner_point, inner_size, inner_radii, u_corner_shapes, inner_inset);
+    bool any_concave = u_corner_shapes.x > 0.5 || u_corner_shapes.y > 0.5 || u_corner_shapes.z > 0.5 || u_corner_shapes.w > 0.5;
+    vec2 inner;
+    if (any_concave) {
+        inner = vec2(outer_distance + u_border_width, outer.y);
+    } else {
+        vec4 inner_radii = max(u_radii - vec4(u_border_width), vec4(0.0));
+        vec2 inner_size = max(u_rect_size - vec2(u_border_width * 2.0), vec2(0.0));
+        vec2 inner_point = local_point - vec2(u_border_width);
+        vec4 inner_inset = max(u_logical_inset - vec4(u_border_width), vec4(0.0));
+        inner = shape_distance_with_corner(inner_point, inner_size, inner_radii, u_corner_shapes, inner_inset);
+    }
     float inner_coverage = coverage_for(inner, aa);
 
     if (fill_base.a <= 0.0) {
