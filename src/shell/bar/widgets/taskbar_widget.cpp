@@ -1334,8 +1334,10 @@ std::string TaskbarWidget::resolveIconPath(const std::string& appId, const std::
     return {};
   }
 
+  const int iconTargetSize = static_cast<int>(std::round(48.0f * m_contentScale));
+
   if (!iconNameOrPath.empty()) {
-    return m_iconResolver.resolve(iconNameOrPath);
+    return m_iconResolver.resolve(iconNameOrPath, iconTargetSize);
   }
 
   if (const auto internal = internal_apps::metadataForAppId(appId); internal.has_value()) {
@@ -1345,9 +1347,9 @@ std::string TaskbarWidget::resolveIconPath(const std::string& appId, const std::
   const std::string appIdLower = toLower(appId);
   const auto it = m_appIconsByLower.find(appIdLower);
   if (it != m_appIconsByLower.end()) {
-    return m_iconResolver.resolve(it->second);
+    return m_iconResolver.resolve(it->second, iconTargetSize);
   }
-  return m_iconResolver.resolve(appId);
+  return m_iconResolver.resolve(appId, iconTargetSize);
 }
 
 bool TaskbarWidget::activeWorkspaceIndex(std::size_t& index) const {

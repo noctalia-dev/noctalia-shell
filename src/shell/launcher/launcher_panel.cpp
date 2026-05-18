@@ -35,7 +35,7 @@ namespace {
 
   constexpr std::size_t kMaxResults = 50;
   constexpr std::size_t kRowOverscan = 3;
-  constexpr float kIconSize = 32.0f;
+  constexpr float kIconSize = 40.0f;
   constexpr double kUsageScorePerCount = 0.1;
   constexpr double kTypedUsageScoreCap = 0.5;
 
@@ -500,13 +500,14 @@ void LauncherPanel::onInputChanged(const std::string& text) {
     m_results.resize(kMaxResults);
   }
 
+  const int iconTargetSize = static_cast<int>(std::round(kIconSize * contentScale()));
   for (auto& result : m_results) {
     if (result.iconPath.empty() && !result.iconName.empty()) {
-      const std::string& resolved = m_iconResolver.resolve(result.iconName);
+      const std::string& resolved = m_iconResolver.resolve(result.iconName, iconTargetSize);
       if (!resolved.empty()) {
         result.iconPath = resolved;
       } else if (result.iconName != "application-x-executable") {
-        const std::string& fallback = m_iconResolver.resolve("application-x-executable");
+        const std::string& fallback = m_iconResolver.resolve("application-x-executable", iconTargetSize);
         if (!fallback.empty()) {
           result.iconPath = fallback;
         }

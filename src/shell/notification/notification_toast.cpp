@@ -2021,7 +2021,7 @@ std::string NotificationToast::resolveNotificationIconPath(const PopupEntry& ent
     return {};
   }
 
-  const std::string& resolved = m_iconResolver.resolve(localPath);
+  const std::string& resolved = m_iconResolver.resolve(localPath, static_cast<int>(std::round(kNotificationIconSize)));
   if (!resolved.empty()) {
     return resolved;
   }

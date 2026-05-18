@@ -1055,12 +1055,12 @@ void Dock::rebuildItems(DockInstance& instance) {
     // Icon centred inside the padded cell.
     const std::string& iconPath = [&]() -> const std::string& {
       if (!entry.icon.empty()) {
-        const std::string& primary = m_iconResolver.resolve(entry.icon);
+        const std::string& primary = m_iconResolver.resolve(entry.icon, cfg.iconSize);
         if (!primary.empty()) {
           return primary;
         }
       }
-      return m_iconResolver.resolve("application-x-executable");
+      return m_iconResolver.resolve("application-x-executable", cfg.iconSize);
     }();
     auto iconImg = std::make_unique<Image>();
     if (!iconPath.empty() && m_renderContext != nullptr) {

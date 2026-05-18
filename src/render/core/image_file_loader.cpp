@@ -176,8 +176,11 @@ std::optional<LoadedImageFile> loadImageFile(const std::string& path, int target
       const int resizedH = std::max(1, static_cast<int>(std::lround(static_cast<float>(height) * scale)));
 
       std::vector<std::uint8_t> resized(static_cast<std::size_t>(resizedW) * static_cast<std::size_t>(resizedH) * 4U);
+      // Use the sRGB resize: image bytes are sRGB-encoded, so averaging them
+      // directly (the _linear variant) darkens and muddies downscaled icons.
+      // STBIR_RGBA handles the non-premultiplied alpha correctly.
       unsigned char* result =
-          stbir_resize_uint8_linear(pixels.data(), width, height, 0, resized.data(), resizedW, resizedH, 0, STBIR_RGBA);
+          stbir_resize_uint8_srgb(pixels.data(), width, height, 0, resized.data(), resizedW, resizedH, 0, STBIR_RGBA);
       if (result != nullptr) {
         pixels = std::move(resized);
         width = resizedW;

@@ -951,14 +951,14 @@ namespace {
         const bool iconIdentityChanged = m_lastLoadedIconIdentity != m_iconIdentityKey;
         if (iconIdentityChanged && !m_iconIdentityKey.empty() && !m_iconCandidates.empty()) {
           bool loaded = false;
+          const int targetPx = static_cast<int>(std::round(m_iconSize));
           for (const std::string& candidate : m_iconCandidates) {
-            const auto& resolved = g_iconResolver.resolve(candidate);
+            const auto& resolved = g_iconResolver.resolve(candidate, targetPx);
             if (!resolved.empty()) {
               if (!m_lastIconPath.empty() && resolved == m_lastIconPath) {
                 loaded = true;
                 break;
               }
-              const int targetPx = static_cast<int>(std::round(m_iconSize));
               loaded = m_icon->setSourceFile(renderer, resolved, targetPx, true);
               if (loaded) {
                 m_lastIconPath = resolved;
