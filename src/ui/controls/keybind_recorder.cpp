@@ -7,6 +7,7 @@
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "ui/controls/glyph.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -157,6 +158,15 @@ void KeybindRecorder::handleKeyDown(std::uint32_t sym, std::uint32_t modifiers) 
   if (KeySymbol::isModifier(sym)) {
     m_pendingModifiers = modifiers;
     refreshLabel();
+    return;
+  }
+
+  // Reject bare printable keys (a-z, 0-9, punctuation) without a modifier.
+  if (modifiers == 0 && KeybindMatcher::isPrintableKey(sym)) {
+    notify::error(i18n::tr("notifications.internal.keybind-app"),
+                  i18n::tr("notifications.internal.keybind-invalid-title"),
+                  i18n::tr("notifications.internal.keybind-invalid-printable"));
+    exitRecording(false);
     return;
   }
 
