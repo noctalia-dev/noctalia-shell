@@ -8,9 +8,60 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <xkbcommon/xkbcommon-keysyms.h>
 #include <xkbcommon/xkbcommon.h>
 
 namespace {
+  bool isPrintableKey(std::uint32_t sym) {
+    if (sym >= XKB_KEY_a && sym <= XKB_KEY_z) {
+      return true;
+    }
+    if (sym >= XKB_KEY_A && sym <= XKB_KEY_Z) {
+      return true;
+    }
+    if (sym >= XKB_KEY_0 && sym <= XKB_KEY_9) {
+      return true;
+    }
+    switch (sym) {
+    case XKB_KEY_space:
+    case XKB_KEY_exclam:
+    case XKB_KEY_quotedbl:
+    case XKB_KEY_numbersign:
+    case XKB_KEY_dollar:
+    case XKB_KEY_percent:
+    case XKB_KEY_ampersand:
+    case XKB_KEY_apostrophe:
+    case XKB_KEY_parenleft:
+    case XKB_KEY_parenright:
+    case XKB_KEY_asterisk:
+    case XKB_KEY_plus:
+    case XKB_KEY_comma:
+    case XKB_KEY_minus:
+    case XKB_KEY_period:
+    case XKB_KEY_slash:
+    case XKB_KEY_colon:
+    case XKB_KEY_semicolon:
+    case XKB_KEY_less:
+    case XKB_KEY_equal:
+    case XKB_KEY_greater:
+    case XKB_KEY_question:
+    case XKB_KEY_at:
+    case XKB_KEY_bracketleft:
+    case XKB_KEY_backslash:
+    case XKB_KEY_bracketright:
+    case XKB_KEY_asciicircum:
+    case XKB_KEY_underscore:
+    case XKB_KEY_grave:
+    case XKB_KEY_braceleft:
+    case XKB_KEY_bar:
+    case XKB_KEY_braceright:
+    case XKB_KEY_asciitilde:
+      return true;
+    default:
+      return false;
+    }
+  }
+
   std::string canonicalKeyName(std::string raw) {
     const std::string lower = StringUtils::toLower(raw);
     if (lower == "esc") {
@@ -99,6 +150,10 @@ std::optional<KeyChord> parseKeyChordSpec(std::string_view rawSpec) {
   const xkb_keysym_t sym = xkb_keysym_from_name(keyName.c_str(), XKB_KEYSYM_CASE_INSENSITIVE);
   if (sym == XKB_KEY_NoSymbol) {
     return std::nullopt;
+  }
+
+  if (modifiers == 0 && isPrintableKey(static_cast<std::uint32_t>(sym))) {
+    throw std::runtime_error("printable keys require a modifier (e.g. \"Ctrl+a\")");
   }
 
   return KeyChord{.sym = static_cast<std::uint32_t>(sym), .modifiers = modifiers};
