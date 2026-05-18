@@ -17,6 +17,7 @@
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/controls/label.h"
 #include "ui/controls/select.h"
 #include "ui/controls/select_dropdown_popup.h"
@@ -1616,7 +1617,7 @@ void DesktopWidgetsEditor::onKeyboardEvent(const KeyboardEvent& event) {
   }
 
   if (focused != nullptr) {
-    if (KeySymbol::isEscape(event.sym)) {
+    if (KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
       for (auto& surface : m_surfaces) {
         surface->inputDispatcher.setFocus(nullptr);
       }
@@ -1624,7 +1625,7 @@ void DesktopWidgetsEditor::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  if (KeySymbol::isEscape(event.sym)) {
+  if (KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
     requestExit();
     return;
   }
