@@ -575,9 +575,9 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
                    cardHeight = m_entries[i].height](float v) {
                     applyCardRevealNodes(viewport, content, foreground, v, targetY, revealDirection(), cardHeight);
                   },
-                  [instPtr, i]() {
-                    if (i < instPtr->cards.size()) {
-                      instPtr->cards[i].entryAnimId = 0;
+                  [this, instPtr, id = n.id]() {
+                    if (auto* state = findCardState(*instPtr, id); state != nullptr) {
+                      state->entryAnimId = 0;
                     }
                   },
                   cs.cardNode);
@@ -804,9 +804,9 @@ void NotificationToast::addCardToInstance(Instance& inst, std::size_t entryIndex
        cardHeight = entry.height](float v) {
         applyCardRevealNodes(viewport, content, foreground, v, targetY, revealDirection(), cardHeight);
       },
-      [&inst, entryIndex]() {
-        if (entryIndex < inst.cards.size()) {
-          inst.cards[entryIndex].entryAnimId = 0;
+      [this, &inst, id = entry.notificationId]() {
+        if (auto* state = findCardState(inst, id); state != nullptr) {
+          state->entryAnimId = 0;
         }
       },
       card);
@@ -1016,11 +1016,11 @@ void NotificationToast::dismissCardFromInstance(Instance& inst, std::size_t entr
       [this, card, content, foreground, targetY, cardHeight](float v) {
         applyCardRevealNodes(card, content, foreground, v, targetY, revealDirection(), cardHeight);
       },
-      [this, &inst, entryIndex, removingId]() {
-        if (entryIndex < inst.cards.size()) {
-          inst.cards[entryIndex].exitAnimId = 0;
-        }
+      [this, &inst, removingId]() {
         if (removingId != 0) {
+          if (auto* state = findCardState(inst, removingId); state != nullptr) {
+            state->exitAnimId = 0;
+          }
           DeferredCall::callLater([this, removingId]() { finishRemoval(removingId); });
         }
       },
