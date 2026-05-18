@@ -1,9 +1,9 @@
 #include "ui/controls/search_picker.h"
 
-#include "core/key_symbols.h"
 #include "i18n/i18n.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/input.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/palette.h"
@@ -128,20 +128,20 @@ SearchPicker::SearchPicker() {
     m_filter = value;
     applyFilter();
   });
-  input->setOnKeyEvent([this](std::uint32_t sym, std::uint32_t /*modifiers*/) {
-    if (KeySymbol::isDown(sym)) {
+  input->setOnKeyEvent([this](std::uint32_t sym, std::uint32_t modifiers) {
+    if (KeybindMatcher::matches(KeybindAction::Down, sym, modifiers)) {
       moveHighlight(1);
       return true;
     }
-    if (KeySymbol::isUp(sym)) {
+    if (KeybindMatcher::matches(KeybindAction::Up, sym, modifiers)) {
       moveHighlight(-1);
       return true;
     }
-    if (KeySymbol::isEnter(sym)) {
+    if (KeybindMatcher::matches(KeybindAction::Validate, sym, modifiers)) {
       activateHighlighted();
       return true;
     }
-    if (KeySymbol::isEscape(sym)) {
+    if (KeybindMatcher::matches(KeybindAction::Cancel, sym, modifiers)) {
       if (m_onCancel) {
         m_onCancel();
       }
