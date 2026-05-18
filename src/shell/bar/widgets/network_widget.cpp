@@ -1,5 +1,6 @@
 #include "shell/bar/widgets/network_widget.h"
 
+#include "dbus/network/network_glyphs.h"
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
@@ -97,7 +98,7 @@ void NetworkWidget::syncState(Renderer& renderer) {
   m_haveLastState = true;
   m_lastVertical = m_isVertical;
 
-  m_glyph->setGlyph(NetworkService::glyphForState(s));
+  m_glyph->setGlyph(network_glyphs::glyphForState(s));
   m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   m_glyph->setColor(s.connected ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
                                 : colorSpecFromRole(ColorRole::OnSurfaceVariant));

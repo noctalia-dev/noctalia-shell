@@ -8,6 +8,7 @@
 #include "core/log.h"
 #include "core/process.h"
 #include "core/resource_paths.h"
+#include "dbus/network/network_manager_service.h"
 #include "dbus/network/wpa_supplicant_service.h"
 #include "i18n/i18n.h"
 #include "i18n/i18n_service.h"
@@ -692,7 +693,7 @@ void Application::initServices() {
     }
 
     try {
-      m_networkService = std::make_unique<NetworkService>(*m_systemBus);
+      m_networkService = std::make_unique<NetworkManagerService>(*m_systemBus);
       m_networkService->setChangeCallback(
           [this, shouldRefreshControlCenter](const NetworkState& state, NetworkChangeOrigin origin) {
             onNetworkStateChangedForEvents(state, origin);

@@ -1,16 +1,13 @@
 #pragma once
 
+#include "dbus/network/network_types.h"
+
 #include <cstdint>
 #include <functional>
 #include <string>
 #include <vector>
 
-struct AccessPointInfo;
-struct VpnConnectionInfo;
-struct NetworkState;
-enum class NetworkChangeOrigin : std::uint8_t;
-
-// Abstract interface shared by NetworkService (NetworkManager backend) and
+// Abstract interface shared by NetworkManagerService (NetworkManager backend) and
 // WpaSupplicantService (wpa_supplicant backend).  UI code should use this type
 // so it works with either backend.
 class INetworkService {

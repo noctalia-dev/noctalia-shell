@@ -1,7 +1,6 @@
 #pragma once
 
 #include "dbus/network/inetwork_service.h"
-#include "dbus/network/network_service.h"
 #include "shell/bar/widget.h"
 
 #include <string>

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "dbus/network/inetwork_service.h"
-#include "dbus/network/network_service.h" // for static glyph helpers and shared types
 
 #include <memory>
 #include <optional>
@@ -16,7 +15,7 @@ namespace sdbus {
 }
 
 // Network backend for systems running wpa_supplicant without NetworkManager.
-// Exposes the same INetworkService interface as NetworkService.
+// Exposes the same INetworkService interface as NetworkManagerService.
 class WpaSupplicantService : public INetworkService {
 public:
   explicit WpaSupplicantService(SystemBus& bus);
