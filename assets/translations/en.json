@@ -755,7 +755,7 @@
       },
       "monitor-override": {
         "label": "Monitor: {name}",
-        "new": "New Monitor",
+        "new": "Monitor Override",
         "match-placeholder": "Monitor match",
         "create": "Create",
         "management": "Monitor Override",
