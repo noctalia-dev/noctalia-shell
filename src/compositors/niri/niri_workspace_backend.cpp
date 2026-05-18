@@ -147,6 +147,10 @@ NiriWorkspaceBackend::~NiriWorkspaceBackend() { cleanup(); }
 
 void NiriWorkspaceBackend::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
 
+void NiriWorkspaceBackend::setOverviewChangeCallback(ChangeCallback callback) {
+  m_overviewChangeCallback = std::move(callback);
+}
+
 bool NiriWorkspaceBackend::canTrackOverviewState() const noexcept { return m_runtime.available(); }
 
 int NiriWorkspaceBackend::pollTimeoutMs() const noexcept {
@@ -348,12 +352,16 @@ std::vector<WorkspaceWindow> NiriWorkspaceBackend::workspaceWindows(const std::s
 
 void NiriWorkspaceBackend::cleanup() {
   closeSocket(false);
+  const bool overviewWasOpen = m_overviewKnown && m_overviewOpen;
   m_windows.clear();
   m_workspaces.clear();
   m_overviewKnown = false;
   m_overviewOpen = false;
   m_readBuffer.clear();
   m_reconnectBackoff = kReconnectInitial;
+  if (overviewWasOpen) {
+    notifyOverviewChanged();
+  }
 }
 
 void NiriWorkspaceBackend::connectIfNeeded() {
@@ -518,11 +526,20 @@ bool NiriWorkspaceBackend::handleMessage(std::string_view line) {
   } else if (it.key() == "WindowsChanged") {
     changed = handleWindowsChanged(it.value());
   } else if (it.key() == "OverviewOpenedOrClosed") {
-    changed = handleOverviewChanged(it.value());
+    if (handleOverviewChanged(it.value())) {
+      notifyOverviewChanged();
+    }
+    return true;
   } else if (it.key() == "OverviewOpened") {
-    changed = handleOverviewChanged(nlohmann::json{{"is_open", true}});
+    if (handleOverviewChanged(nlohmann::json{{"is_open", true}})) {
+      notifyOverviewChanged();
+    }
+    return true;
   } else if (it.key() == "OverviewClosed") {
-    changed = handleOverviewChanged(nlohmann::json{{"is_open", false}});
+    if (handleOverviewChanged(nlohmann::json{{"is_open", false}})) {
+      notifyOverviewChanged();
+    }
+    return true;
   } else if (it.key() == "WindowOpenedOrChanged") {
     changed = handleWindowOpenedOrChanged(it.value());
   } else if (it.key() == "WindowLayoutsChanged") {
@@ -853,5 +870,11 @@ void NiriWorkspaceBackend::recomputeOccupancy() {
 void NiriWorkspaceBackend::notifyChanged() const {
   if (m_changeCallback) {
     m_changeCallback();
+  }
+}
+
+void NiriWorkspaceBackend::notifyOverviewChanged() const {
+  if (m_overviewChangeCallback) {
+    m_overviewChangeCallback();
   }
 }

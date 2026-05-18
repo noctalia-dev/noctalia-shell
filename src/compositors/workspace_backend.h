@@ -108,6 +108,7 @@ namespace compositors {
 
     virtual ~WorkspaceMetadataBackend() = default;
     virtual void setChangeCallback(ChangeCallback callback) = 0;
+    virtual void setOverviewChangeCallback(ChangeCallback callback) { (void)callback; }
     [[nodiscard]] virtual int pollFd() const noexcept { return -1; }
     [[nodiscard]] virtual short pollEvents() const noexcept { return POLLIN | POLLHUP | POLLERR; }
     [[nodiscard]] virtual int pollTimeoutMs() const noexcept { return -1; }

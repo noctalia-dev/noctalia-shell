@@ -177,6 +177,10 @@ void PanelManager::setFocusGrabBarSurfacesProvider(std::function<std::vector<wl_
   m_focusGrabBarSurfacesProvider = std::move(provider);
 }
 
+void PanelManager::setPanelClosedCallback(std::function<void()> callback) {
+  m_panelClosedCallback = std::move(callback);
+}
+
 void PanelManager::registerPanel(const std::string& id, std::unique_ptr<Panel> content) {
   m_panels[id] = std::move(content);
 }
@@ -745,6 +749,9 @@ void PanelManager::destroyPanel() {
   m_attachedOpenAnimationPending = false;
   if (m_platform != nullptr) {
     m_platform->stopKeyRepeat();
+  }
+  if (m_panelClosedCallback) {
+    m_panelClosedCallback();
   }
 }
 
