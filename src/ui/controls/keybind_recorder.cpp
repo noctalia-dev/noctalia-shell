@@ -1,5 +1,6 @@
 #include "ui/controls/keybind_recorder.h"
 
+#include "core/key_chord.h"
 #include "core/key_modifiers.h"
 #include "core/key_symbols.h"
 #include "i18n/i18n.h"
@@ -162,7 +163,7 @@ void KeybindRecorder::handleKeyDown(std::uint32_t sym, std::uint32_t modifiers) 
   }
 
   // Reject bare printable keys (a-z, 0-9, punctuation) without a modifier.
-  if (modifiers == 0 && KeybindMatcher::isPrintableKey(sym)) {
+  if (modifiers == 0 && isPrintableKey(sym)) {
     notify::error(i18n::tr("notifications.internal.keybind-app"),
                   i18n::tr("notifications.internal.keybind-invalid-title"),
                   i18n::tr("notifications.internal.keybind-invalid-printable"));

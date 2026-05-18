@@ -17,3 +17,4 @@ struct KeyChord {
 [[nodiscard]] std::string keyChordToString(const KeyChord& chord);
 [[nodiscard]] std::string keyChordDisplayLabel(const KeyChord& chord);
 [[nodiscard]] bool keyChordMatches(const KeyChord& chord, std::uint32_t sym, std::uint32_t modifiers) noexcept;
+[[nodiscard]] bool isPrintableKey(std::uint32_t sym);
