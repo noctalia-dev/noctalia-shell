@@ -109,6 +109,15 @@ namespace {
     return false;
   }
 
+  bool hasVisibleSpecs(const std::vector<settings::WidgetSettingSpec>& specs, const Settings& s) {
+    for (const auto& spec : specs) {
+      if (isSpecVisible(spec, s, specs)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   ColorSpec getColorSpec(const Settings& s, const std::string& key, const ColorSpec& fallback) {
     const auto it = s.find(key);
     if (it == s.end()) {
@@ -354,31 +363,34 @@ namespace {
     }
   }
 
-  void addBackgroundSection(Flex& content, const Settings& s, DesktopWidgetsEditor* editor) {
-    const auto& specs = desktop_settings::commonDesktopWidgetSettingSpecs();
-    bool hasVisibleChildren = false;
-    for (const auto& spec : specs) {
-      if (isSpecVisible(spec, s, specs)) {
-        hasVisibleChildren = true;
-        break;
-      }
+  void addSectionHeading(Flex& content, std::string_view labelKey, bool separator) {
+    if (separator) {
+      auto sep = std::make_unique<Separator>();
+      sep->setOrientation(SeparatorOrientation::HorizontalRule);
+      content.addChild(std::move(sep));
     }
-    if (!hasVisibleChildren) {
+
+    auto heading = std::make_unique<Label>();
+    heading->setText(i18n::tr(labelKey));
+    heading->setBold(true);
+    heading->setFontSize(Style::fontSizeCaption);
+    heading->setColor(colorSpecFromRole(ColorRole::Secondary));
+    content.addChild(std::move(heading));
+  }
+
+  void addSettingsSection(Flex& content, const std::vector<settings::WidgetSettingSpec>& specs, const Settings& s,
+                          DesktopWidgetsEditor* editor, std::string_view labelKey, bool separator) {
+    if (!hasVisibleSpecs(specs, s)) {
       return;
     }
 
-    auto sep = std::make_unique<Separator>();
-    sep->setOrientation(SeparatorOrientation::HorizontalRule);
-    content.addChild(std::move(sep));
-
-    auto heading = std::make_unique<Label>();
-    heading->setText(i18n::tr("desktop-widgets.editor.settings.background-section"));
-    heading->setBold(true);
-    heading->setFontSize(Style::fontSizeCaption);
-    heading->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
-    content.addChild(std::move(heading));
-
+    addSectionHeading(content, labelKey, separator);
     addSpecSettings(content, specs, s, editor);
+  }
+
+  void addBackgroundSection(Flex& content, const Settings& s, DesktopWidgetsEditor* editor) {
+    const auto specs = desktop_settings::commonDesktopWidgetSettingSpecs();
+    addSettingsSection(content, specs, s, editor, "desktop-widgets.editor.settings.background-section", true);
   }
 
 } // namespace
@@ -535,8 +547,9 @@ void DesktopWidgetsEditor::buildInspector(OverlaySurface& surface, Node& root,
   content->setGap(Style::spaceXs);
   content->setPadding(Style::spaceSm, Style::spaceMd);
 
-  addSpecSettings(*content, desktop_settings::desktopWidgetSettingSpecs(selectedState.type), selectedState.settings,
-                  this);
+  const auto typeSpecs = desktop_settings::desktopWidgetSettingSpecs(selectedState.type);
+  addSettingsSection(*content, typeSpecs, selectedState.settings, this,
+                     "desktop-widgets.editor.settings.widget-section", false);
   addBackgroundSection(*content, selectedState.settings, this);
 
   panel->addChild(std::move(scrollView));

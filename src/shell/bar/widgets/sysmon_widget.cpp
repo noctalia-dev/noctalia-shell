@@ -4,6 +4,7 @@
 #include "render/scene/graph_node.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
+#include "system/format_units.h"
 #include "system/system_monitor_service.h"
 #include "ui/controls/box.h"
 #include "ui/controls/glyph.h"
@@ -59,16 +60,6 @@ namespace {
       return "Upload";
     }
     return "System";
-  }
-
-  [[nodiscard]] std::string formatNetSpeed(double bytesPerSec) {
-    if (bytesPerSec < 1024.0)
-      return std::format("{:.0f}B", bytesPerSec);
-    if (bytesPerSec < 1024.0 * 1024.0)
-      return std::format("{:.0f}K", bytesPerSec / 1024.0);
-    if (bytesPerSec < 1024.0 * 1024.0 * 1024.0)
-      return std::format("{:.1f}M", bytesPerSec / (1024.0 * 1024.0));
-    return std::format("{:.1f}G", bytesPerSec / (1024.0 * 1024.0 * 1024.0));
   }
 
 } // namespace
@@ -572,10 +563,7 @@ std::string SysmonWidget::formatValue() const {
     return "--";
 
   case SysmonStat::RamUsed:
-    if (stats.ramUsedMb >= 1024) {
-      return std::format("{:.1f}G", static_cast<double>(stats.ramUsedMb) / 1024.0);
-    }
-    return std::format("{}M", stats.ramUsedMb);
+    return FormatUnits::formatBinaryMib(stats.ramUsedMb, FormatUnits::Spacing::Compact);
 
   case SysmonStat::RamPct:
     return std::format("{:.0f}%", stats.ramUsagePercent);
@@ -588,10 +576,10 @@ std::string SysmonWidget::formatValue() const {
     return "--";
 
   case SysmonStat::NetRx:
-    return formatNetSpeed(stats.netRxBytesPerSec);
+    return FormatUnits::formatDecimalBytesPerSecond(stats.netRxBytesPerSec, FormatUnits::Spacing::Compact);
 
   case SysmonStat::NetTx:
-    return formatNetSpeed(stats.netTxBytesPerSec);
+    return FormatUnits::formatDecimalBytesPerSecond(stats.netTxBytesPerSec, FormatUnits::Spacing::Compact);
 
   case SysmonStat::DiskPct:
     break; // handled above

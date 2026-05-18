@@ -29,7 +29,7 @@
 namespace {
 
   constexpr std::int32_t kActionSupportReport = 1;
-  constexpr std::int32_t kActionFlattenedConfig = 2;
+  constexpr std::int32_t kActionExportConfig = 2;
 
   std::string sessionActionTitle(const SessionPanelActionConfig& row) {
     if (row.label.has_value() && !StringUtils::trim(*row.label).empty()) {
@@ -158,11 +158,11 @@ void SettingsWindow::openActionsMenu() {
         }
         DeferredCall::callLater([this]() { saveSupportReport(); });
         break;
-      case kActionFlattenedConfig:
+      case kActionExportConfig:
         if (m_actionsMenuPopup != nullptr) {
           m_actionsMenuPopup->close();
         }
-        DeferredCall::callLater([this]() { saveFlattenedConfig(); });
+        DeferredCall::callLater([this]() { openConfigExportDialog(); });
         break;
       default:
         break;
@@ -179,8 +179,8 @@ void SettingsWindow::openActionsMenu() {
                      .enabled = true,
                      .separator = false,
                      .hasSubmenu = false});
-  entries.push_back({.id = kActionFlattenedConfig,
-                     .label = i18n::tr("settings.window.flattened-config"),
+  entries.push_back({.id = kActionExportConfig,
+                     .label = i18n::tr("settings.window.export-config"),
                      .enabled = true,
                      .separator = false,
                      .hasSubmenu = false});
@@ -202,6 +202,27 @@ void SettingsWindow::openActionsMenu() {
       std::move(entries), 220.0f * scale, 8, static_cast<std::int32_t>(anchorAbsX),
       static_cast<std::int32_t>(anchorAbsY), static_cast<std::int32_t>(m_actionsMenuButton->width()),
       static_cast<std::int32_t>(m_actionsMenuButton->height()), m_surface->xdgSurface(), output);
+}
+
+void SettingsWindow::openConfigExportDialog() {
+  if (m_wayland == nullptr || m_renderContext == nullptr || m_surface == nullptr ||
+      m_surface->xdgSurface() == nullptr || m_config == nullptr) {
+    return;
+  }
+
+  if (m_configExportDialogPopup == nullptr) {
+    m_configExportDialogPopup = std::make_unique<settings::ConfigExportDialogPopup>();
+    m_configExportDialogPopup->initialize(*m_wayland, *m_config, *m_renderContext);
+  }
+
+  wl_output* output = m_wayland->lastPointerOutput();
+  if (output == nullptr) {
+    output = m_output;
+  }
+
+  m_configExportDialogPopup->open(m_surface->xdgSurface(), output, m_wayland->lastInputSerial(), m_surface->wlSurface(),
+                                  m_surface->width(), m_surface->height(), uiScale(),
+                                  [this](settings::ConfigExportMode mode) { saveConfigExport(mode); });
 }
 
 void SettingsWindow::openBarWidgetAddPopup(const std::vector<std::string>& lanePath) {
@@ -613,18 +634,21 @@ void SettingsWindow::saveSupportReport() {
   }
 }
 
-void SettingsWindow::saveFlattenedConfig() {
+void SettingsWindow::saveConfigExport(settings::ConfigExportMode mode) {
   if (m_config == nullptr) {
     return;
   }
 
+  const bool fullEffective = mode == settings::ConfigExportMode::FullEffective;
+
   FileDialogOptions options;
   options.mode = FileDialogMode::Save;
-  options.defaultFilename = "noctalia-flattened-config.toml";
-  options.title = i18n::tr("settings.window.flattened-config-title");
+  options.defaultFilename = fullEffective ? "noctalia-full-config.toml" : "noctalia-config.toml";
+  options.title = fullEffective ? i18n::tr("settings.export-config.full-effective-save-title")
+                                : i18n::tr("settings.export-config.merged-user-save-title");
   options.extensions = {".toml"};
 
-  const bool opened = FileDialog::open(std::move(options), [this](std::optional<std::filesystem::path> result) {
+  const bool opened = FileDialog::open(std::move(options), [this, mode](std::optional<std::filesystem::path> result) {
     if (!result.has_value() || m_config == nullptr) {
       return;
     }
@@ -636,27 +660,29 @@ void SettingsWindow::saveFlattenedConfig() {
 
     std::ofstream out(path, std::ios::trunc);
     if (!out.is_open()) {
-      m_statusMessage = i18n::tr("settings.errors.flattened-config");
+      m_statusMessage = i18n::tr("settings.errors.export-config");
       m_statusIsError = true;
       requestSceneRebuild();
       return;
     }
 
-    out << m_config->buildFlattenedConfig();
+    const std::string content = mode == settings::ConfigExportMode::FullEffective ? m_config->buildEffectiveConfig()
+                                                                                  : m_config->buildMergedUserConfig();
+    out << content;
     if (!out.good()) {
-      m_statusMessage = i18n::tr("settings.errors.flattened-config");
+      m_statusMessage = i18n::tr("settings.errors.export-config");
       m_statusIsError = true;
       requestSceneRebuild();
       return;
     }
 
-    m_statusMessage = i18n::tr("settings.window.flattened-config-saved");
+    m_statusMessage = i18n::tr("settings.window.export-config-saved");
     m_statusIsError = false;
     requestSceneRebuild();
   });
 
   if (!opened) {
-    m_statusMessage = i18n::tr("settings.errors.flattened-config");
+    m_statusMessage = i18n::tr("settings.errors.export-config");
     m_statusIsError = true;
     requestSceneRebuild();
   }

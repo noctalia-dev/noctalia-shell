@@ -451,6 +451,7 @@
       },
       "settings": {
         "title": "Settings",
+        "widget-section": "Widget",
         "format": "Format",
         "color": "Color",
         "shadow": "Shadow",
@@ -626,12 +627,21 @@
       "support-report": "Support Report",
       "support-report-title": "Save Support Report",
       "support-report-saved": "Support report saved.",
-      "flattened-config": "Flattened Config",
-      "flattened-config-title": "Export Flattened Config",
-      "flattened-config-saved": "Flattened config saved.",
+      "export-config": "Export Config…",
+      "export-config-saved": "Config export saved.",
       "no-results": "No settings found",
       "no-results-hint": "Try a different setting name or config key.",
       "native-title": "Noctalia Settings"
+    },
+    "export-config": {
+      "title": "Export Config",
+      "merged-user-title": "Merged User Config (Recommended)",
+      "merged-user-description": "Combines config files and GUI overrides into one TOML file. Built-in defaults stay implicit.",
+      "merged-user-save-title": "Save Merged User Config",
+      "full-effective-title": "Full Effective Config",
+      "full-effective-description": "Exports every active setting, including built-in defaults. Useful for inspection or sharing a snapshot, but pins current defaults explicitly.",
+      "full-effective-save-title": "Save Full Effective Config",
+      "export": "Export"
     },
     "controls": {
       "select": {
@@ -726,7 +736,7 @@
       "clear": "Failed to reset setting.",
       "reset-page": "Failed to reset some settings.",
       "support-report": "Failed to save support report.",
-      "flattened-config": "Failed to save flattened config.",
+      "export-config": "Failed to save config export.",
       "widget": {
         "rename": "Could not rename named widget."
       },

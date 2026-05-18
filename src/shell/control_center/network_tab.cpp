@@ -1,6 +1,7 @@
 #include "shell/control_center/network_tab.h"
 
 #include "core/ui_phase.h"
+#include "dbus/network/network_glyphs.h"
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
@@ -70,7 +71,7 @@ namespace {
       clearBorder();
 
       auto signalGlyph = std::make_unique<Glyph>();
-      signalGlyph->setGlyph(NetworkService::wifiGlyphForSignal(m_ap.strength));
+      signalGlyph->setGlyph(network_glyphs::wifiGlyphForSignal(m_ap.strength));
       signalGlyph->setGlyphSize(Style::fontSizeBody * scale);
       signalGlyph->setColor(colorSpecFromRole(ColorRole::OnSurface));
       addChild(std::move(signalGlyph));

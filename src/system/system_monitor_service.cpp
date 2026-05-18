@@ -1,6 +1,7 @@
 #include "system/system_monitor_service.h"
 
 #include "core/log.h"
+#include "system/format_units.h"
 #include "util/string_utils.h"
 
 #include <algorithm>
@@ -141,10 +142,6 @@ namespace {
   std::string formatThermalZoneTempSource(const std::string& zoneType, const std::filesystem::path& inputPath) {
     const std::string type = zoneType.empty() ? "unknown" : zoneType;
     return std::format("thermal_zone:{} {}", type, inputPath.string());
-  }
-
-  std::string formatBytesGiB(std::uint64_t bytes) {
-    return std::format("{:.1f} GiB", static_cast<double>(bytes) / (1024.0 * 1024.0 * 1024.0));
   }
 
   int scoreHwmonSensor(const std::string& hwmonName, const std::string& label) {
@@ -802,8 +799,9 @@ void SystemMonitorService::logDetectedSources() {
   }
 
   if (const auto gpuVram = readGpuVram(); gpuVram.has_value()) {
-    kLog.info("detected GPU VRAM source: {} ({} / {})", gpuVram->source, formatBytesGiB(gpuVram->usedBytes),
-              formatBytesGiB(gpuVram->totalBytes));
+    kLog.info("detected GPU VRAM source: {} ({} / {})", gpuVram->source,
+              FormatUnits::formatBinaryBytesAsGib(gpuVram->usedBytes),
+              FormatUnits::formatBinaryBytesAsGib(gpuVram->totalBytes));
   } else {
     kLog.info("detected GPU VRAM source: unavailable");
   }

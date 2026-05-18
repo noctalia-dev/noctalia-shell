@@ -1,4 +1,4 @@
-#include "dbus/network/network_service.h"
+#include "dbus/network/network_manager_service.h"
 
 #include "core/log.h"
 #include "dbus/system_bus.h"
@@ -107,52 +107,13 @@ namespace {
 
 } // namespace
 
-struct NetworkService::PendingAccessPointActivation {
+struct NetworkManagerService::PendingAccessPointActivation {
   std::string ssid;
   std::string connectionPath;
   std::unique_ptr<sdbus::IProxy> activeProxy;
 };
 
-const char* NetworkService::glyphForState(const NetworkState& state) noexcept {
-  if (state.vpnActive) {
-    return "shield-check";
-  }
-  if (state.kind == NetworkConnectivity::Wired) {
-    return state.connected ? "ethernet" : "ethernet-off";
-  }
-  return wifiGlyphForState(state);
-}
-
-const char* NetworkService::wifiGlyphForState(const NetworkState& state) noexcept {
-  if (!state.wirelessEnabled) {
-    return "wifi-off";
-  }
-  if (state.kind == NetworkConnectivity::Unknown) {
-    return "wifi-question";
-  }
-  if (state.kind == NetworkConnectivity::Wireless && state.connected) {
-    return wifiGlyphForSignal(state.signalStrength);
-  }
-  return "wifi-exclamation";
-}
-
-const char* NetworkService::wifiGlyphForSignal(std::uint8_t signal) noexcept {
-  if (signal >= 80) {
-    return "wifi";
-  }
-  if (signal >= 60) {
-    return "wifi-3";
-  }
-  if (signal >= 35) {
-    return "wifi-2";
-  }
-  if (signal >= 15) {
-    return "wifi-1";
-  }
-  return "wifi-0";
-}
-
-NetworkService::NetworkService(SystemBus& bus) : m_bus(bus) {
+NetworkManagerService::NetworkManagerService(SystemBus& bus) : m_bus(bus) {
   if (!bus.nameHasOwner("org.freedesktop.NetworkManager")) {
     throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.DBus.Error.ServiceUnknown"},
                        "The name org.freedesktop.NetworkManager was not provided by any .service files");
@@ -216,11 +177,11 @@ NetworkService::NetworkService(SystemBus& bus) : m_bus(bus) {
   requestScan();
 }
 
-NetworkService::~NetworkService() { m_lifetimeToken.reset(); }
+NetworkManagerService::~NetworkManagerService() { m_lifetimeToken.reset(); }
 
-void NetworkService::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
+void NetworkManagerService::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
 
-void NetworkService::refresh() {
+void NetworkManagerService::refresh() {
   const std::weak_ptr<int> lifetimeToken = m_lifetimeToken;
   if (m_refreshInFlight) {
     m_refreshQueued = true;
@@ -281,7 +242,7 @@ void NetworkService::refresh() {
   refreshSavedConnections(onOpComplete);
 }
 
-void NetworkService::requestScan() {
+void NetworkManagerService::requestScan() {
   std::int64_t baseline = 0;
   bool anyRequested = false;
   try {
@@ -316,7 +277,7 @@ void NetworkService::requestScan() {
   }
 }
 
-bool NetworkService::activateAccessPoint(const AccessPointInfo& ap) {
+bool NetworkManagerService::activateAccessPoint(const AccessPointInfo& ap) {
   if (ap.devicePath.empty() || ap.path.empty()) {
     return false;
   }
@@ -354,7 +315,7 @@ bool NetworkService::activateAccessPoint(const AccessPointInfo& ap) {
   return addAndActivateAccessPoint(ap, std::nullopt);
 }
 
-bool NetworkService::activateAccessPoint(const AccessPointInfo& ap, const std::string& psk) {
+bool NetworkManagerService::activateAccessPoint(const AccessPointInfo& ap, const std::string& psk) {
   if (ap.devicePath.empty() || ap.path.empty()) {
     return false;
   }
@@ -367,7 +328,8 @@ bool NetworkService::activateAccessPoint(const AccessPointInfo& ap, const std::s
   return addAndActivateAccessPoint(ap, psk);
 }
 
-bool NetworkService::addAndActivateAccessPoint(const AccessPointInfo& ap, const std::optional<std::string>& psk) {
+bool NetworkManagerService::addAndActivateAccessPoint(const AccessPointInfo& ap,
+                                                      const std::optional<std::string>& psk) {
   try {
     ConnectionSettings settings;
     if (ap.secured) {
@@ -410,8 +372,9 @@ bool NetworkService::addAndActivateAccessPoint(const AccessPointInfo& ap, const 
   }
 }
 
-void NetworkService::watchPendingAccessPointActivation(const std::string& ssid, const std::string& connectionPath,
-                                                       const std::string& activePath) {
+void NetworkManagerService::watchPendingAccessPointActivation(const std::string& ssid,
+                                                              const std::string& connectionPath,
+                                                              const std::string& activePath) {
   if (activePath.empty() || activePath == "/") {
     return;
   }
@@ -450,7 +413,8 @@ void NetworkService::watchPendingAccessPointActivation(const std::string& ssid, 
   }
 }
 
-void NetworkService::handlePendingAccessPointActivationState(const std::string& activePath, std::uint32_t state) {
+void NetworkManagerService::handlePendingAccessPointActivationState(const std::string& activePath,
+                                                                    std::uint32_t state) {
   auto it = m_pendingApActivations.find(activePath);
   if (it == m_pendingApActivations.end()) {
     return;
@@ -474,7 +438,7 @@ void NetworkService::handlePendingAccessPointActivationState(const std::string& 
   }
 }
 
-void NetworkService::persistConnectionToDisk(const std::string& connectionPath, const std::string& ssid) {
+void NetworkManagerService::persistConnectionToDisk(const std::string& connectionPath, const std::string& ssid) {
   if (connectionPath.empty() || connectionPath == "/") {
     return;
   }
@@ -504,7 +468,7 @@ void NetworkService::persistConnectionToDisk(const std::string& connectionPath, 
   }
 }
 
-void NetworkService::deleteUnsavedConnection(const std::string& connectionPath, const std::string& ssid) {
+void NetworkManagerService::deleteUnsavedConnection(const std::string& connectionPath, const std::string& ssid) {
   if (connectionPath.empty() || connectionPath == "/") {
     return;
   }
@@ -530,7 +494,7 @@ void NetworkService::deleteUnsavedConnection(const std::string& connectionPath, 
   }
 }
 
-bool NetworkService::activateVpnConnection(const VpnConnectionInfo& vpn) {
+bool NetworkManagerService::activateVpnConnection(const VpnConnectionInfo& vpn) {
   if (vpn.path.empty()) {
     return false;
   }
@@ -562,7 +526,7 @@ bool NetworkService::activateVpnConnection(const VpnConnectionInfo& vpn) {
   }
 }
 
-bool NetworkService::deactivateVpnConnection(const VpnConnectionInfo& vpn) {
+bool NetworkManagerService::deactivateVpnConnection(const VpnConnectionInfo& vpn) {
   if (vpn.path.empty()) {
     return false;
   }
@@ -606,7 +570,7 @@ bool NetworkService::deactivateVpnConnection(const VpnConnectionInfo& vpn) {
   return false;
 }
 
-void NetworkService::setWirelessEnabled(bool enabled) {
+void NetworkManagerService::setWirelessEnabled(bool enabled) {
   if (enabled != m_state.wirelessEnabled) {
     m_pendingLocalWirelessEnabled = enabled;
   }
@@ -620,7 +584,7 @@ void NetworkService::setWirelessEnabled(bool enabled) {
   }
 }
 
-void NetworkService::disconnect() {
+void NetworkManagerService::disconnect() {
   if (m_activeConnectionPath.empty() || m_activeConnectionPath == "/") {
     return;
   }
@@ -686,7 +650,7 @@ namespace {
   }
 } // namespace
 
-void NetworkService::forgetSsid(const std::string& ssid) {
+void NetworkManagerService::forgetSsid(const std::string& ssid) {
   if (ssid.empty()) {
     return;
   }
@@ -781,7 +745,7 @@ void NetworkService::forgetSsid(const std::string& ssid) {
       });
 }
 
-bool NetworkService::hasSavedConnection(const std::string& ssid) const {
+bool NetworkManagerService::hasSavedConnection(const std::string& ssid) const {
   if (ssid.empty()) {
     return false;
   }
@@ -794,7 +758,7 @@ bool NetworkService::hasSavedConnection(const std::string& ssid) const {
   return std::find(m_savedSsids.begin(), m_savedSsids.end(), ssid) != m_savedSsids.end();
 }
 
-void NetworkService::refreshSavedConnections(std::function<void()> onComplete) {
+void NetworkManagerService::refreshSavedConnections(std::function<void()> onComplete) {
   const std::weak_ptr<int> lifetimeToken = m_lifetimeToken;
   try {
     auto settings =
@@ -876,7 +840,7 @@ void NetworkService::refreshSavedConnections(std::function<void()> onComplete) {
   }
 }
 
-void NetworkService::refreshVpnConnections(std::function<void()> onComplete) {
+void NetworkManagerService::refreshVpnConnections(std::function<void()> onComplete) {
   const std::weak_ptr<int> lifetimeToken = m_lifetimeToken;
   try {
     auto settings =
@@ -1068,7 +1032,7 @@ void NetworkService::refreshVpnConnections(std::function<void()> onComplete) {
   }
 }
 
-void NetworkService::ensureWifiDeviceSubscribed(const std::string& devicePath) {
+void NetworkManagerService::ensureWifiDeviceSubscribed(const std::string& devicePath) {
   if (m_wifiDevices.contains(devicePath)) {
     return;
   }
@@ -1103,7 +1067,7 @@ void NetworkService::ensureWifiDeviceSubscribed(const std::string& devicePath) {
   }
 }
 
-void NetworkService::refreshAccessPoints(std::function<void()> onComplete) {
+void NetworkManagerService::refreshAccessPoints(std::function<void()> onComplete) {
   const std::weak_ptr<int> lifetimeToken = m_lifetimeToken;
   try {
     m_nm->callMethodAsync("GetDevices")
@@ -1279,14 +1243,15 @@ void NetworkService::refreshAccessPoints(std::function<void()> onComplete) {
   }
 }
 
-void NetworkService::finishSavedConnections(std::vector<std::string>& ssids, std::function<void()> onComplete) {
+void NetworkManagerService::finishSavedConnections(std::vector<std::string>& ssids, std::function<void()> onComplete) {
   std::ranges::sort(ssids);
   ssids.erase(std::unique(ssids.begin(), ssids.end()), ssids.end());
   m_savedSsids = std::move(ssids);
   onComplete();
 }
 
-void NetworkService::finishRefreshAccessPoints(std::vector<AccessPointInfo>& aps, std::function<void()> onComplete) {
+void NetworkManagerService::finishRefreshAccessPoints(std::vector<AccessPointInfo>& aps,
+                                                      std::function<void()> onComplete) {
   // Deduplicate by SSID, keeping the strongest (and marking active if any entry is active).
   std::vector<AccessPointInfo> deduped;
   deduped.reserve(aps.size());
@@ -1326,7 +1291,7 @@ void NetworkService::finishRefreshAccessPoints(std::vector<AccessPointInfo>& aps
   onComplete();
 }
 
-void NetworkService::rebindActiveConnection() {
+void NetworkManagerService::rebindActiveConnection() {
   std::string newPath;
   try {
     const sdbus::Variant value = m_nm->getProperty("PrimaryConnection").onInterface(k_nmInterface);
@@ -1378,7 +1343,7 @@ void NetworkService::rebindActiveConnection() {
   refresh();
 }
 
-void NetworkService::rebindActiveDevice(const std::string& devicePath) {
+void NetworkManagerService::rebindActiveDevice(const std::string& devicePath) {
   if (devicePath == m_activeDevicePath && m_activeDevice != nullptr) {
     return;
   }
@@ -1433,7 +1398,7 @@ void NetworkService::rebindActiveDevice(const std::string& devicePath) {
   }
 }
 
-void NetworkService::rebindActiveAccessPoint(const std::string& apPath) {
+void NetworkManagerService::rebindActiveAccessPoint(const std::string& apPath) {
   if (apPath == m_activeApPath && m_activeAp != nullptr) {
     return;
   }
@@ -1461,7 +1426,7 @@ void NetworkService::rebindActiveAccessPoint(const std::string& apPath) {
   }
 }
 
-void NetworkService::readStateAsync(std::function<void(NetworkState)> onComplete) {
+void NetworkManagerService::readStateAsync(std::function<void(NetworkState)> onComplete) {
   const std::weak_ptr<int> lifetimeToken = m_lifetimeToken;
   auto next = std::make_shared<NetworkState>();
   next->scanning = m_scanning;
@@ -1727,7 +1692,7 @@ void NetworkService::readStateAsync(std::function<void(NetworkState)> onComplete
   }
 }
 
-NetworkChangeOrigin NetworkService::consumeWirelessEnabledChangeOrigin(bool enabled) {
+NetworkChangeOrigin NetworkManagerService::consumeWirelessEnabledChangeOrigin(bool enabled) {
   if (!m_pendingLocalWirelessEnabled.has_value()) {
     return NetworkChangeOrigin::External;
   }
@@ -1736,7 +1701,7 @@ NetworkChangeOrigin NetworkService::consumeWirelessEnabledChangeOrigin(bool enab
   return matchesLocalRequest ? NetworkChangeOrigin::Noctalia : NetworkChangeOrigin::External;
 }
 
-void NetworkService::emitChangedIfNeeded(NetworkState next) {
+void NetworkManagerService::emitChangedIfNeeded(NetworkState next) {
   if (next == m_state) {
     return;
   }

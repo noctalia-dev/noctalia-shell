@@ -9,6 +9,7 @@
 #include "dbus/upower/upower_service.h"
 #include "ipc/ipc_service.h"
 #include "render/render_context.h"
+#include "render/scene/input_area.h"
 #include "shell/bar/widget.h"
 #include "shell/bar/widgets/scripted_widget.h"
 #include "shell/panel/panel_manager.h"
@@ -52,13 +53,56 @@ namespace {
     return localX >= 0.0f && localX < node->width() && localY >= 0.0f && localY < node->height();
   }
 
+  HitTestOutset crossAxisOutsetToSlot(const Node* node, const Node* slot, bool isVertical) {
+    if (node == nullptr || slot == nullptr) {
+      return {};
+    }
+
+    float nodeX = 0.0f;
+    float nodeY = 0.0f;
+    float slotX = 0.0f;
+    float slotY = 0.0f;
+    Node::absolutePosition(node, nodeX, nodeY);
+    Node::absolutePosition(slot, slotX, slotY);
+
+    if (isVertical) {
+      return {
+          .left = std::max(0.0f, nodeX - slotX),
+          .top = 0.0f,
+          .right = std::max(0.0f, (slotX + slot->width()) - (nodeX + node->width())),
+          .bottom = 0.0f,
+      };
+    }
+
+    return {
+        .left = 0.0f,
+        .top = std::max(0.0f, nodeY - slotY),
+        .right = 0.0f,
+        .bottom = std::max(0.0f, (slotY + slot->height()) - (nodeY + node->height())),
+    };
+  }
+
+  void applyBarWidgetHitTargets(Node* node, const Node* slot, bool isVertical) {
+    if (node == nullptr || slot == nullptr) {
+      return;
+    }
+
+    if (dynamic_cast<InputArea*>(node) != nullptr || node->clipChildren()) {
+      node->setHitTestOutset(crossAxisOutsetToSlot(node, slot, isVertical));
+    }
+
+    for (const auto& child : node->children()) {
+      applyBarWidgetHitTargets(child.get(), slot, isVertical);
+    }
+  }
+
   Widget* widgetAtPoint(const std::vector<std::unique_ptr<Widget>>& widgets, float sceneX, float sceneY) {
     for (auto it = widgets.rbegin(); it != widgets.rend(); ++it) {
       auto* widget = it->get();
       if (widget == nullptr || widget->root() == nullptr || !widget->root()->visible()) {
         continue;
       }
-      if (pointInsideNode(widget->root(), sceneX, sceneY)) {
+      if (Node::hitTest(widget->root(), sceneX, sceneY) != nullptr || pointInsideNode(widget->root(), sceneX, sceneY)) {
         return widget;
       }
     }
@@ -69,7 +113,7 @@ namespace {
       if (root == nullptr || bounds == nullptr || bounds == root || root->parent() != bounds || !bounds->visible()) {
         continue;
       }
-      if (pointInsideNode(bounds, sceneX, sceneY)) {
+      if (Node::hitTest(bounds, sceneX, sceneY) != nullptr || pointInsideNode(bounds, sceneX, sceneY)) {
         return widget;
       }
     }
@@ -555,6 +599,10 @@ namespace {
       instance.endSection->setPosition(endSlotMain - instance.endSection->width(),
                                        (slotCross - instance.endSection->height()) * 0.5f);
     }
+
+    applyBarWidgetHitTargets(instance.startSection, instance.startSlot, isVertical);
+    applyBarWidgetHitTargets(instance.centerSection, instance.centerSlot, isVertical);
+    applyBarWidgetHitTargets(instance.endSection, instance.endSlot, isVertical);
   }
 
   void tickWidgets(std::vector<std::unique_ptr<Widget>>& widgets, float deltaMs) {
@@ -1932,7 +1980,8 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
       const bool insideAnySection = pointInsideNode(m_hoveredInstance->startSection, sx, sy) ||
                                     pointInsideNode(m_hoveredInstance->centerSection, sx, sy) ||
                                     pointInsideNode(m_hoveredInstance->endSection, sx, sy);
-      if (!insideAnySection) {
+      const bool insideAnyWidget = widgetAtPoint(*m_hoveredInstance, sx, sy) != nullptr;
+      if (!insideAnySection && !insideAnyWidget) {
         auto& panelManager = PanelManager::instance();
         if (panelManager.isOpenPanel("control-center")) {
           panelManager.closePanel();
