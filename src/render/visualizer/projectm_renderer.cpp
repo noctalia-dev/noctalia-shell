@@ -5,9 +5,12 @@
 #include "render/gl_shared_context.h"
 
 #include <EGL/egl.h>
+#include <EGL/eglext.h>
 #include <GLES2/gl2.h>
 #include <algorithm>
 #include <cstdint>
+#include <wayland-client.h>
+#include <wayland-egl.h>
 
 #include <projectM-4/audio.h>
 #include <projectM-4/core.h>
@@ -42,7 +45,8 @@ ProjectMRenderer::ProjectMRenderer() = default;
 
 ProjectMRenderer::~ProjectMRenderer() { shutdown(); }
 
-bool ProjectMRenderer::initialize(GlSharedContext& shared, std::uint32_t width, std::uint32_t height) {
+bool ProjectMRenderer::initialize(GlSharedContext& shared, wl_compositor* compositor, std::uint32_t width,
+                                  std::uint32_t height) {
   if (m_projectm != nullptr) {
     kLog.warn("initialize() called twice");
     return false;
@@ -51,7 +55,12 @@ bool ProjectMRenderer::initialize(GlSharedContext& shared, std::uint32_t width, 
     kLog.warn("refusing to initialise with zero-sized framebuffer");
     return false;
   }
+  if (compositor == nullptr) {
+    kLog.warn("refusing to initialise without a wl_compositor");
+    return false;
+  }
   m_shared = &shared;
+  m_compositor = compositor;
 
   GlState prev{};
   makeCurrentSaved(prev);
@@ -158,7 +167,7 @@ void ProjectMRenderer::loadPreset(const std::string& path) {
 }
 
 void ProjectMRenderer::renderFrame() {
-  if (m_projectm == nullptr || m_shared == nullptr || m_fboName == 0) {
+  if (m_projectm == nullptr || m_shared == nullptr || m_eglSurface == nullptr) {
     return;
   }
   GlState prev{};
@@ -166,14 +175,21 @@ void ProjectMRenderer::renderFrame() {
 
   pumpPcm();
 
-  // Render into our private FBO. libprojectM honours the currently bound FBO
-  // and viewport. We restore the viewport to whatever was last set inside the
-  // shared context after, which is unused by other consumers (they each set
-  // their own).
-  glBindFramebuffer(GL_FRAMEBUFFER, m_fboName);
+  // libprojectM 4.1.x ignores any externally bound FBO and composites its
+  // final image to draw framebuffer 0 (== our hidden window surface's back
+  // buffer, made current above).
   glViewport(0, 0, static_cast<GLsizei>(m_width), static_cast<GLsizei>(m_height));
   projectm_opengl_render_frame(static_cast<projectm_handle>(m_projectm));
+
+  // Pull the back buffer into m_textureName, which the EGLImage aliases for
+  // cross-context sampling. GL_FRAMEBUFFER binds both read and draw to 0, so
+  // glCopyTexSubImage2D's source is the just-rendered frame. We never
+  // eglSwapBuffers — the surface is never presented, only read back.
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glBindTexture(GL_TEXTURE_2D, m_textureName);
+  glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, static_cast<GLsizei>(m_width),
+                      static_cast<GLsizei>(m_height));
+  glBindTexture(GL_TEXTURE_2D, 0);
 
   // Finish this context's work before eglMakeCurrent (in restore()) releases
   // it. eglMakeCurrent only flushes, it does not wait; a hard finish keeps the
@@ -237,6 +253,18 @@ void ProjectMRenderer::makeCurrentSaved(GlState& saved) {
   saved.context = eglGetCurrentContext();
   saved.drawSurface = eglGetCurrentSurface(EGL_DRAW);
   saved.readSurface = eglGetCurrentSurface(EGL_READ);
+  // Bind the root context with the hidden window surface so libprojectM's
+  // hard-coded draw-framebuffer-0 composite has a real target. Before
+  // createFbo() has run (the first makeCurrentSaved() in initialize()) there is
+  // no surface yet, so fall back to surfaceless just to create GL objects.
+  if (m_eglSurface != nullptr) {
+    if (eglMakeCurrent(m_shared->display(), static_cast<EGLSurface>(m_eglSurface),
+                       static_cast<EGLSurface>(m_eglSurface), m_shared->rootContext()) != EGL_TRUE) {
+      kLog.warn("eglMakeCurrent (producer surface) failed (EGL error 0x{:x})",
+                static_cast<unsigned>(eglGetError()));
+    }
+    return;
+  }
   m_shared->makeCurrentSurfaceless();
 }
 
@@ -260,31 +288,90 @@ bool ProjectMRenderer::createFbo(std::uint32_t width, std::uint32_t height) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-  glGenFramebuffers(1, &m_fboName);
-  if (m_fboName == 0) {
+  // libprojectM 4.1.x forces its final composite to draw framebuffer 0, and
+  // the Wayland EGL platform exposes no pbuffer configs, so the producer needs
+  // a real window surface. Back it with a private wl_surface that is never
+  // assigned a role nor committed — the compositor therefore never shows it.
+  // renderFrame() copies its back buffer into m_textureName afterwards.
+  auto* surface = wl_compositor_create_surface(m_compositor);
+  if (surface == nullptr) {
+    kLog.warn("wl_compositor_create_surface failed");
     glDeleteTextures(1, &m_textureName);
     m_textureName = 0;
-    kLog.warn("glGenFramebuffers failed");
     return false;
   }
-  glBindFramebuffer(GL_FRAMEBUFFER, m_fboName);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_textureName, 0);
-  const GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  if (status != GL_FRAMEBUFFER_COMPLETE) {
-    kLog.warn("FBO incomplete: 0x{:x}", static_cast<unsigned>(status));
-    destroyFbo();
+  auto* eglWindow = wl_egl_window_create(surface, static_cast<int>(width), static_cast<int>(height));
+  if (eglWindow == nullptr) {
+    kLog.warn("wl_egl_window_create failed");
+    wl_surface_destroy(surface);
+    glDeleteTextures(1, &m_textureName);
+    m_textureName = 0;
     return false;
   }
+  EGLSurface eglSurface =
+      eglCreateWindowSurface(m_shared->display(), m_shared->config(),
+                             reinterpret_cast<EGLNativeWindowType>(eglWindow), nullptr);
+  if (eglSurface == EGL_NO_SURFACE) {
+    kLog.warn("eglCreateWindowSurface (producer) failed (EGL error 0x{:x})",
+              static_cast<unsigned>(eglGetError()));
+    wl_egl_window_destroy(eglWindow);
+    wl_surface_destroy(surface);
+    glDeleteTextures(1, &m_textureName);
+    m_textureName = 0;
+    return false;
+  }
+  m_wlSurface = surface;
+  m_wlEglWindow = eglWindow;
+  m_eglSurface = eglSurface;
+
+  // Wrap the offscreen texture in an EGLImage so the wallpaper/lock surfaces
+  // (different contexts in the share group) can import and sample it. A raw
+  // shared GL texture name written via FBO in this context is not reliably
+  // sampleable in another context on Mesa; an EGLImage is the supported
+  // cross-context primitive. Created against the root context that owns the
+  // texture (current here via makeCurrentSaved()).
+  auto* createImg = reinterpret_cast<PFNEGLCREATEIMAGEKHRPROC>(eglGetProcAddress("eglCreateImageKHR"));
+  if (createImg != nullptr && m_shared != nullptr) {
+    const EGLint imgAttrs[] = {EGL_GL_TEXTURE_LEVEL_KHR, 0, EGL_NONE};
+    EGLImageKHR img =
+        createImg(m_shared->display(), m_shared->rootContext(), EGL_GL_TEXTURE_2D_KHR,
+                  reinterpret_cast<EGLClientBuffer>(static_cast<std::uintptr_t>(m_textureName)), imgAttrs);
+    if (img == EGL_NO_IMAGE_KHR) {
+      kLog.warn("eglCreateImageKHR failed (EGL error 0x{:x}); live paper will not be visible",
+                static_cast<unsigned>(eglGetError()));
+      m_eglImage = nullptr;
+    } else {
+      m_eglImage = img;
+    }
+  } else {
+    kLog.warn("eglCreateImageKHR unavailable; live paper will not be visible");
+    m_eglImage = nullptr;
+  }
+
   m_width = width;
   m_height = height;
   return true;
 }
 
 void ProjectMRenderer::destroyFbo() {
-  if (m_fboName != 0) {
-    glDeleteFramebuffers(1, &m_fboName);
-    m_fboName = 0;
+  if (m_eglImage != nullptr && m_shared != nullptr) {
+    auto* destroyImg = reinterpret_cast<PFNEGLDESTROYIMAGEKHRPROC>(eglGetProcAddress("eglDestroyImageKHR"));
+    if (destroyImg != nullptr) {
+      destroyImg(m_shared->display(), static_cast<EGLImageKHR>(m_eglImage));
+    }
+  }
+  m_eglImage = nullptr;
+  if (m_eglSurface != nullptr && m_shared != nullptr) {
+    eglDestroySurface(m_shared->display(), static_cast<EGLSurface>(m_eglSurface));
+    m_eglSurface = nullptr;
+  }
+  if (m_wlEglWindow != nullptr) {
+    wl_egl_window_destroy(static_cast<wl_egl_window*>(m_wlEglWindow));
+    m_wlEglWindow = nullptr;
+  }
+  if (m_wlSurface != nullptr) {
+    wl_surface_destroy(static_cast<wl_surface*>(m_wlSurface));
+    m_wlSurface = nullptr;
   }
   if (m_textureName != 0) {
     glDeleteTextures(1, &m_textureName);

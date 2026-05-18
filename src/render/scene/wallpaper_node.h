@@ -28,6 +28,21 @@ public:
   [[nodiscard]] const Color& fillColor() const noexcept { return m_fillColor; }
   [[nodiscard]] const TransitionParams& transitionParams() const noexcept { return m_params; }
 
+  // Optional EGLImage (as an opaque void* = EGLImageKHR) backing the live-paper
+  // source. The visualizer renders into a texture in a *separate* GL context;
+  // a raw shared texture name is not reliably sampleable across an EGL share
+  // group on Mesa, so when this is set the render backend imports the image
+  // into its own context (glEGLImageTargetTexture2DOES) and samples that
+  // instead of texture1/texture2.
+  [[nodiscard]] void* liveImage() const noexcept { return m_liveImage; }
+  void setLiveImage(void* image) noexcept {
+    if (m_liveImage == image) {
+      return;
+    }
+    m_liveImage = image;
+    markPaintDirty();
+  }
+
   void setTextures(TextureId texture1, TextureId texture2, float imageWidth1, float imageHeight1, float imageWidth2,
                    float imageHeight2) {
     setSources(WallpaperSourceKind::Image, texture1, rgba(0.0f, 0.0f, 0.0f, 1.0f), WallpaperSourceKind::Image, texture2,
@@ -102,4 +117,5 @@ private:
   WallpaperFillMode m_fillMode = WallpaperFillMode::Crop;
   Color m_fillColor = rgba(0.0f, 0.0f, 0.0f, 1.0f);
   TransitionParams m_params;
+  void* m_liveImage = nullptr; // EGLImageKHR for the live-paper visualizer source
 };

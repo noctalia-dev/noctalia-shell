@@ -404,12 +404,14 @@ void LockSurface::applyWallpaperTexture() {
   // place across redraws.
   if (m_livePaperTexture.valid()) {
     m_wallpaperTexture = {};
+    m_wallpaper->setLiveImage(m_livePaperImage);
     m_wallpaper->setTextures(m_livePaperTexture.id, {}, static_cast<float>(m_livePaperTexture.width),
                              static_cast<float>(m_livePaperTexture.height), 0.0f, 0.0f);
     m_wallpaper->setTransition(WallpaperTransition::Fade, 0.0f, TransitionParams{});
     m_wallpaper->setFillMode(m_wallpaperFillMode);
     m_wallpaper->setFillColor(m_wallpaperFillColor);
   } else {
+    m_wallpaper->setLiveImage(nullptr);
     Color color = rgba(0.0f, 0.0f, 0.0f, 1.0f);
     if (parseColorWallpaperPath(m_wallpaperPath, color)) {
       m_wallpaperTexture = {};
@@ -434,12 +436,13 @@ void LockSurface::applyWallpaperTexture() {
   m_wallpaperDirty = false;
 }
 
-void LockSurface::setLivePaperTexture(TextureHandle tex) {
+void LockSurface::setLivePaperTexture(TextureHandle tex, void* eglImage) {
   if (m_livePaperTexture.id == tex.id && m_livePaperTexture.width == tex.width &&
-      m_livePaperTexture.height == tex.height) {
+      m_livePaperTexture.height == tex.height && m_livePaperImage == eglImage) {
     return;
   }
   m_livePaperTexture = tex;
+  m_livePaperImage = eglImage;
   m_wallpaperDirty = true;
 }
 

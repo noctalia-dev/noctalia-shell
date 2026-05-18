@@ -10,6 +10,10 @@ namespace {
 
   constexpr EGLint kConfigAttributes[] = {
       EGL_SURFACE_TYPE,
+      // Window only: the Wayland EGL platform exposes no pbuffer configs. The
+      // visualizer's producer (which needs a real default framebuffer for
+      // libprojectM's hard-coded draw-FBO-0 composite) uses a hidden,
+      // never-committed wl_surface-backed window surface instead.
       EGL_WINDOW_BIT,
       EGL_RENDERABLE_TYPE,
       EGL_OPENGL_ES2_BIT,

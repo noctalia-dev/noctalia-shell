@@ -39,9 +39,11 @@ public:
   void setWallpaperPath(std::string wallpaperPath);
   void setWallpaperFillMode(WallpaperFillMode fillMode);
   void setWallpaperFillColor(Color fillColor);
-  // When set, the lock surface draws the visualizer's GL texture instead of
-  // the static wallpaper image. Passing a zero TextureHandle disables it.
-  void setLivePaperTexture(TextureHandle tex);
+  // When set, the lock surface draws the visualizer instead of the static
+  // wallpaper image. eglImage (EGLImageKHR as void*) is the cross-context
+  // handle the backend imports to sample it; tex carries the dimensions.
+  // Passing a zero TextureHandle / null image disables it.
+  void setLivePaperTexture(TextureHandle tex, void* eglImage);
   // Force a repaint of the wallpaper node. The visualizer reuses one GL
   // texture id whose contents change every tick; the node dedups on id, so
   // the live-paper driver must invalidate it explicitly each frame.
@@ -84,6 +86,7 @@ private:
   Color m_wallpaperFillColor = rgba(0.0f, 0.0f, 0.0f, 0.0f);
   bool m_wallpaperDirty = false;
   TextureHandle m_livePaperTexture{};
+  void* m_livePaperImage = nullptr; // EGLImageKHR for the live-paper visualizer source
   InputDispatcher m_inputDispatcher;
   std::function<void()> m_onLogin;
   std::function<void(const std::string&)> m_onPasswordChanged;

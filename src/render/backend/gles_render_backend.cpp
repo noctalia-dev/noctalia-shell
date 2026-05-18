@@ -6,8 +6,12 @@
 #include "render/gl_shared_context.h"
 #include "render/render_target.h"
 
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
 #include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 #include <chrono>
+#include <cstdint>
 #include <format>
 #include <stdexcept>
 #include <utility>
@@ -303,6 +307,45 @@ int GlesRenderBackend::maxTextureSize() {
   return m_maxTextureSize;
 }
 
+TextureId GlesRenderBackend::importLiveImage(void* eglImage) {
+  if (eglImage == nullptr) {
+    return TextureId{};
+  }
+  // Reuse the alias texture: it points at the EGLImage's storage, so the
+  // producer's per-frame renders show up without re-importing. Only the
+  // visualizer's image handle changes (on resize), which arrives as a new
+  // pointer and gets its own alias here.
+  if (auto it = m_liveImageTextures.find(eglImage); it != m_liveImageTextures.end()) {
+    return TextureId{it->second};
+  }
+  static auto* targetTex2D =
+      reinterpret_cast<PFNGLEGLIMAGETARGETTEXTURE2DOESPROC>(eglGetProcAddress("glEGLImageTargetTexture2DOES"));
+  if (targetTex2D == nullptr) {
+    kLog.warn("glEGLImageTargetTexture2DOES unavailable; live paper cannot be sampled");
+    return TextureId{};
+  }
+  GLuint tex = 0;
+  glGenTextures(1, &tex);
+  if (tex == 0) {
+    return TextureId{};
+  }
+  glBindTexture(GL_TEXTURE_2D, tex);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  targetTex2D(GL_TEXTURE_2D, static_cast<GLeglImageOES>(eglImage));
+  const GLenum err = glGetError();
+  glBindTexture(GL_TEXTURE_2D, 0);
+  if (err != GL_NO_ERROR) {
+    kLog.warn("glEGLImageTargetTexture2DOES failed (GL error 0x{:x})", static_cast<unsigned>(err));
+    glDeleteTextures(1, &tex);
+    return TextureId{};
+  }
+  m_liveImageTextures.emplace(eglImage, tex);
+  return TextureId{tex};
+}
+
 void GlesRenderBackend::drawFullscreenQuad(const ShaderProgram& program) {
   const GLint posAttr = glGetAttribLocation(program.id(), "a_position");
   if (posAttr < 0) {
@@ -465,6 +508,11 @@ void GlesRenderBackend::cleanup() {
   m_blurProgram.destroy();
   m_fullscreenTextureProgram.destroy();
   m_fullscreenTintProgram.destroy();
+  for (const auto& [image, tex] : m_liveImageTextures) {
+    GLuint t = tex;
+    glDeleteTextures(1, &t);
+  }
+  m_liveImageTextures.clear();
   m_textureManager.cleanup();
 
   if (m_display != EGL_NO_DISPLAY) {

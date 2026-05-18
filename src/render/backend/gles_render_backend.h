@@ -16,6 +16,9 @@
 
 #include <EGL/egl.h>
 
+#include <cstdint>
+#include <unordered_map>
+
 class GlesRenderBackend final : public RenderBackend {
 public:
   GlesRenderBackend() = default;
@@ -41,6 +44,7 @@ public:
   void clear(Color color) override;
   void setBlendMode(RenderBlendMode mode) override;
   [[nodiscard]] int maxTextureSize() override;
+  [[nodiscard]] TextureId importLiveImage(void* eglImage) override;
   void setScissor(RenderScissor scissor) override;
   void disableScissor() override;
   void drawRect(float surfaceWidth, float surfaceHeight, float width, float height, const RoundedRectStyle& style,
@@ -80,6 +84,8 @@ private:
   EGLConfig m_config = nullptr;
   EGLContext m_context = EGL_NO_CONTEXT;
   int m_maxTextureSize = 0;
+  // EGLImageKHR -> GL texture name, imported into m_context for live paper.
+  std::unordered_map<void*, std::uint32_t> m_liveImageTextures;
   GlesTextureManager m_textureManager;
   RectProgram m_rectProgram;
   ImageProgram m_imageProgram;

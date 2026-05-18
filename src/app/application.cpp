@@ -891,13 +891,14 @@ void Application::initUi() {
   m_renderContext.initialize(m_glShared);
   m_renderContext.setTextFontFamily(m_configService.config().shell.fontFamily);
 
-  // Optional live-paper plumbing. ProjectMRenderer keeps a private GL FBO in
-  // the shared EGL group at a fixed working resolution — visualizer content
-  // doesn't need per-output sharpness, the wallpaper's fill_mode handles
-  // scaling. The texture is created up front so any output that turns on
-  // live_paper later can pick it up without renegotiating GL.
+  // Optional live-paper plumbing. ProjectMRenderer renders libprojectM into a
+  // hidden window surface in the shared EGL group at a fixed working
+  // resolution — visualizer content doesn't need per-output sharpness, the
+  // wallpaper's fill_mode handles scaling. The texture is created up front so
+  // any output that turns on live_paper later can pick it up without
+  // renegotiating GL.
   m_projectMRenderer = std::make_unique<ProjectMRenderer>();
-  if (!m_projectMRenderer->initialize(m_glShared, 1280, 720)) {
+  if (!m_projectMRenderer->initialize(m_glShared, m_wayland.compositor(), 1280, 720)) {
     kLog.warn("live_paper visualizer unavailable: ProjectMRenderer::initialize failed");
     m_projectMRenderer.reset();
   }

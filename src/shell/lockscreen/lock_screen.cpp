@@ -65,9 +65,11 @@ void LockScreen::setVisualizer(ProjectMRenderer* renderer) {
   // Propagate to any already-live surfaces; createInstance() does the same
   // for surfaces spawned later.
   TextureHandle tex = (renderer != nullptr) ? renderer->textureHandle() : TextureHandle{};
+  void* img = (renderer != nullptr) ? renderer->eglImage() : nullptr;
   for (auto& inst : m_instances) {
     if (inst.surface != nullptr) {
-      inst.surface->setLivePaperTexture(livePaperActive() ? tex : TextureHandle{});
+      const bool on = livePaperActive();
+      inst.surface->setLivePaperTexture(on ? tex : TextureHandle{}, on ? img : nullptr);
       inst.surface->requestRedraw();
     }
   }
@@ -352,7 +354,8 @@ void LockScreen::handleLocked(void* data, ext_session_lock_v1* /*lock*/) {
     instance.surface->setLockedState(true);
     instance.surface->setOnLogin([self]() { self->tryAuthenticate(); });
     if (self->m_visualizer != nullptr && self->livePaperActive()) {
-      instance.surface->setLivePaperTexture(self->m_visualizer->textureHandle());
+      instance.surface->setLivePaperTexture(self->m_visualizer->textureHandle(),
+                                            self->m_visualizer->eglImage());
     }
   }
   self->syncVisualizerTimer();
@@ -428,7 +431,7 @@ void LockScreen::createInstance(const WaylandOutput& output) {
     surface->setWallpaperFillColor(resolveWallpaperFillColor(m_configService->config().wallpaper));
   }
   if (livePaperActive()) {
-    surface->setLivePaperTexture(m_visualizer->textureHandle());
+    surface->setLivePaperTexture(m_visualizer->textureHandle(), m_visualizer->eglImage());
   }
   surface->setOnLogin([this]() { tryAuthenticate(); });
   surface->setOnPasswordChanged([this](const std::string& value) { handlePasswordEdited(value); });

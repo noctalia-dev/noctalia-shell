@@ -9,18 +9,19 @@ Wayland + EGL/GLES v5 stack.
 
 | Piece | File |
 |-------|------|
-| Visualizer renderer (drives one libprojectM instance into an FBO texture) | `src/render/visualizer/projectm_renderer.{h,cpp}` |
+| Visualizer renderer (drives one libprojectM instance into a shared texture) | `src/render/visualizer/projectm_renderer.{h,cpp}` |
 | Audio source (raw PCM tap, sibling of the spectrum tap) | `src/pipewire/pipewire_pcm_tap.{h,cpp}` |
 | Preset scanning / rotation | visualizer service |
 | Desktop wallpaper integration | `src/shell/wallpaper/wallpaper.cpp` |
 | Lock-screen integration | `src/shell/lockscreen/lock_surface.cpp`, `lock_screen.cpp` |
 | Shared EGL context | `src/render/gl_shared_context.cpp` |
 
-The visualizer renders into a private FBO/texture that lives in the root
-EGL share group, so the wallpaper and lock surfaces sample it directly
-with no extra blits. `ProjectMRenderer::renderFrame()` makes the root
-surfaceless context current, renders, then restores the caller's
-context.
+`ProjectMRenderer::renderFrame()` makes the root context current with a
+private hidden Wayland window surface, drives one libprojectM frame,
+copies the result into a texture, and restores the caller's context. The
+wallpaper / lock surfaces (each a different context in the share group)
+sample that texture through an **EGLImage** — see the two sections below
+for why neither a plain shared texture name nor a private FBO works.
 
 ## Critical: load presets with the shared context current
 
@@ -73,6 +74,53 @@ debugging this crash, kept only as harmless defence:
   (`MESA_GLTHREAD=false`), so it was never an async-marshalling race;
   `glFinish` could likely be relaxed to `glFlush` or removed with
   separate testing.
+
+## Critical: libprojectM composites to framebuffer 0, not your FBO
+
+After the first-frame crash was fixed the wallpaper still rendered
+**black**. Root cause: libprojectM 4.1.x `ProjectM::RenderFrame()` ends
+with
+
+```cpp
+// ToDo: Allow external apps to provide a custom target framebuffer.
+glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+m_textureCopier->Draw(m_activePreset->OutputTexture(), false, false);
+```
+
+i.e. it **ignores any externally bound FBO** and blits its final image
+to **draw framebuffer 0**. With the producer on a *surfaceless* context,
+framebuffer 0 is nowhere, so the visualizer's output was discarded and
+our texture kept its cleared (all-zero) content.
+
+The producer therefore needs a real default framebuffer. The Wayland EGL
+platform exposes **no pbuffer configs** (probed: 180 window configs, 0
+pbuffer), so the only option is a window surface. `createFbo()` makes a
+private `wl_surface` that is **never assigned a role nor committed** (the
+compositor never shows it), wraps it in a `wl_egl_window` + EGLSurface,
+and `renderFrame()` makes the root context current *with* that surface.
+libprojectM's hard-coded FBO-0 composite then lands in its back buffer,
+which `glCopyTexSubImage2D` pulls into `m_textureName`. We never
+`eglSwapBuffers` — the surface is only ever read back.
+
+## Critical: cross-context sampling needs an EGLImage
+
+An EGL share group shares object *names*, but on Mesa/iris a texture
+whose contents were written in one context (here: the surfaceless-ish
+producer) is **not reliably sampleable from another** (the per-output
+wallpaper backend / lock surface contexts). A raw shared texture name
+sampled black.
+
+Fix: `createFbo()` wraps `m_textureName` in an `EGLImageKHR`
+(`eglCreateImageKHR`, `EGL_GL_TEXTURE_2D_KHR`). Each consuming backend
+imports it once as an alias texture
+(`glEGLImageTargetTexture2DOES`, cached in
+`GlesRenderBackend::importLiveImage`) and samples that. The producer's
+per-frame `glCopyTexSubImage2D` writes the EGLImage's storage, so the
+alias updates with no re-import. `WallpaperNode::liveImage()` carries the
+`EGLImageKHR` (as `void*`) through the scene graph;
+`render_context.cpp`'s `Wallpaper` case imports it and uses it for both
+wallpaper sources (libprojectM cross-fades presets internally, so no
+node-level transition is needed).
 
 ## Live-texture invalidation
 

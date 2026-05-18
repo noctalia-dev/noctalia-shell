@@ -9,6 +9,7 @@
 
 class GlSharedContext;
 class PipeWirePcmTap;
+struct wl_compositor;
 
 // Drives a single libprojectM (Milkdrop) instance and exposes its latest frame
 // as a GL texture handle. The texture lives in the root EGL share group, so
@@ -31,7 +32,12 @@ public:
   // be called exactly once before renderFrame(). pcmTap may be null at init
   // time — set it later with setPcmTap(); the renderer simply feeds silence
   // until a tap is attached.
-  bool initialize(GlSharedContext& shared, std::uint32_t width, std::uint32_t height);
+  // compositor is used to create a hidden, never-committed wl_surface that
+  // backs the producer's EGL window surface. libprojectM 4.1.x hard-codes its
+  // final composite to draw framebuffer 0, and the Wayland EGL platform has no
+  // pbuffer configs, so a (never-shown) window surface is the only way to give
+  // libprojectM a real default framebuffer.
+  bool initialize(GlSharedContext& shared, wl_compositor* compositor, std::uint32_t width, std::uint32_t height);
   void shutdown();
 
   // Texture size. resize() recreates the FBO/texture; cheap, but the
@@ -40,6 +46,13 @@ public:
   [[nodiscard]] std::uint32_t width() const noexcept { return m_width; }
   [[nodiscard]] std::uint32_t height() const noexcept { return m_height; }
   [[nodiscard]] TextureHandle textureHandle() const noexcept;
+
+  // EGLImageKHR (opaque void*) wrapping the offscreen texture. The visualizer
+  // renders in the shared root context; consumers in other share-group
+  // contexts (the wallpaper/lock surfaces) cannot reliably sample the raw
+  // texture name on Mesa, so they import this image into their own context
+  // instead. Null until initialize() succeeds.
+  [[nodiscard]] void* eglImage() const noexcept { return m_eglImage; }
 
   // Knobs from [wallpaper.live_paper] in TOML. Safe to call after init.
   void setMeshSize(int meshW, int meshH);
@@ -68,10 +81,20 @@ private:
   GlSharedContext* m_shared = nullptr;
   void* m_projectm = nullptr; // projectm_handle — opaque to keep header clean
 
+  wl_compositor* m_compositor = nullptr;
+
   std::uint32_t m_width = 0;
   std::uint32_t m_height = 0;
-  std::uint32_t m_fboName = 0;
   std::uint32_t m_textureName = 0;
+  // Hidden producer drawable. libprojectM 4.1.x composites to draw framebuffer
+  // 0, so the root context is made current *with* this window surface (FBO 0
+  // == its back buffer) and renderFrame() copies it into m_textureName. The
+  // wl_surface is never assigned a role nor committed, so it is never shown.
+  // All void* to keep wayland/EGL types out of the header.
+  void* m_wlSurface = nullptr;    // wl_surface*
+  void* m_wlEglWindow = nullptr;  // wl_egl_window*
+  void* m_eglSurface = nullptr;   // EGLSurface
+  void* m_eglImage = nullptr; // EGLImageKHR aliasing m_textureName for cross-context sharing
 
   int m_meshW = 24;
   int m_meshH = 18;
