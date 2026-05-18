@@ -29,7 +29,7 @@ namespace {
       row->setAlign(FlexAlign::Center);
       row->setGap(Style::spaceMd * scale);
       row->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
-      row->setRadius(Style::radiusMd * scale);
+      row->setRadius(Style::scaledRadiusMd(scale));
       m_row = static_cast<Flex*>(addChild(std::move(row)));
 
       auto actionLabel = std::make_unique<Label>();
