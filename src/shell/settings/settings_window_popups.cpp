@@ -283,8 +283,8 @@ void SettingsWindow::openSearchPickerPopup(const std::string& title, const std::
   std::vector<SearchPickerOption> pickerOptions;
   pickerOptions.reserve(options.size());
   for (const auto& opt : options) {
-    pickerOptions.push_back(
-        SearchPickerOption{.value = opt.value, .label = opt.label, .description = opt.description, .enabled = true});
+    pickerOptions.push_back(SearchPickerOption{
+        .value = opt.value, .label = opt.label, .description = opt.description, .enabled = true, .icon = {}});
   }
 
   wl_output* output = m_wayland->lastPointerOutput();

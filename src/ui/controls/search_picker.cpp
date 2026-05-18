@@ -2,6 +2,7 @@
 
 #include "core/key_symbols.h"
 #include "i18n/i18n.h"
+#include "ui/controls/glyph.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
@@ -23,25 +24,39 @@ namespace {
   class SearchPickerRow : public Flex {
   public:
     SearchPickerRow() {
-      setDirection(FlexDirection::Vertical);
-      setAlign(FlexAlign::Stretch);
+      setDirection(FlexDirection::Horizontal);
+      setAlign(FlexAlign::Center);
+      setGap(Style::spaceSm);
       setPadding(Style::spaceXs, Style::spaceSm);
       setRadius(Style::scaledRadiusSm());
       setFillWidth(true);
 
+      auto icon = std::make_unique<Glyph>();
+      icon->setGlyphSize(Style::barGlyphSize);
+      icon->setVisible(false);
+      icon->setParticipatesInLayout(false);
+      m_icon = static_cast<Glyph*>(addChild(std::move(icon)));
+
+      auto text = std::make_unique<Flex>();
+      text->setDirection(FlexDirection::Vertical);
+      text->setAlign(FlexAlign::Stretch);
+      text->setJustify(FlexJustify::Center);
+      text->setFlexGrow(1.0f);
+      m_text = static_cast<Flex*>(addChild(std::move(text)));
+
       auto title = std::make_unique<Label>();
       title->setFontSize(Style::fontSizeBody);
-      m_title = static_cast<Label*>(addChild(std::move(title)));
+      m_title = static_cast<Label*>(m_text->addChild(std::move(title)));
 
       auto detail = std::make_unique<Label>();
       detail->setFontSize(Style::fontSizeCaption);
       detail->setVisible(false);
-      m_detail = static_cast<Label*>(addChild(std::move(detail)));
+      m_detail = static_cast<Label*>(m_text->addChild(std::move(detail)));
     }
 
     void bind(const SearchPickerOption& option, bool highlighted, bool selected, bool hovered) {
       const bool hasDetail = !option.description.empty();
-      setJustify(FlexJustify::Center);
+      const bool hasIcon = !option.icon.empty();
 
       if (highlighted) {
         setFill(colorSpecFromRole(ColorRole::Primary));
@@ -53,33 +68,41 @@ namespace {
         setFill(clearColorSpec());
       }
 
+      ColorSpec foreground =
+          option.enabled ? colorSpecFromRole(ColorRole::OnSurface) : colorSpecFromRole(ColorRole::OnSurface, 0.55f);
+      ColorSpec detailForeground = colorSpecFromRole(ColorRole::OnSurfaceVariant, option.enabled ? 1.0f : 0.55f);
+      if (highlighted) {
+        foreground = colorSpecFromRole(ColorRole::OnPrimary);
+        detailForeground = colorSpecFromRole(ColorRole::OnPrimary, 0.78f);
+      } else if (hovered) {
+        foreground = colorSpecFromRole(ColorRole::OnHover);
+        detailForeground = colorSpecFromRole(ColorRole::OnHover, 0.78f);
+      }
+
+      if (m_icon != nullptr) {
+        if (hasIcon) {
+          m_icon->setGlyph(option.icon);
+          m_icon->setColor(foreground);
+        }
+        m_icon->setVisible(hasIcon);
+        m_icon->setParticipatesInLayout(hasIcon);
+      }
       if (m_title != nullptr) {
         m_title->setText(option.label);
         m_title->setBold(hasDetail);
-        if (highlighted) {
-          m_title->setColor(colorSpecFromRole(ColorRole::OnPrimary));
-        } else if (hovered) {
-          m_title->setColor(colorSpecFromRole(ColorRole::OnHover));
-        } else {
-          m_title->setColor(option.enabled ? colorSpecFromRole(ColorRole::OnSurface)
-                                           : colorSpecFromRole(ColorRole::OnSurface, 0.55f));
-        }
+        m_title->setColor(foreground);
       }
       if (m_detail != nullptr) {
         m_detail->setVisible(hasDetail);
         m_detail->setParticipatesInLayout(hasDetail);
         m_detail->setText(option.description);
-        if (highlighted) {
-          m_detail->setColor(colorSpecFromRole(ColorRole::OnPrimary, 0.78f));
-        } else if (hovered) {
-          m_detail->setColor(colorSpecFromRole(ColorRole::OnHover, 0.78f));
-        } else {
-          m_detail->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant, option.enabled ? 1.0f : 0.55f));
-        }
+        m_detail->setColor(detailForeground);
       }
     }
 
   private:
+    Glyph* m_icon = nullptr;
+    Flex* m_text = nullptr;
     Label* m_title = nullptr;
     Label* m_detail = nullptr;
   };

@@ -15,36 +15,36 @@ namespace settings {
     using i18n::tr;
 
     const std::vector<WidgetTypeSpec> kWidgetTypeSpecs = {
-        {.type = "active_window", .labelKey = "settings.widgets.types.active-window"},
-        {.type = "audio_visualizer", .labelKey = "settings.widgets.types.audio-visualizer"},
-        {.type = "battery", .labelKey = "settings.widgets.types.battery"},
-        {.type = "bluetooth", .labelKey = "settings.widgets.types.bluetooth"},
-        {.type = "brightness", .labelKey = "settings.widgets.types.brightness"},
-        {.type = "clock", .labelKey = "settings.widgets.types.clock"},
-        {.type = "control-center", .labelKey = "settings.widgets.types.control-center"},
-        {.type = "clipboard", .labelKey = "settings.widgets.types.clipboard"},
-        {.type = "caffeine", .labelKey = "settings.widgets.types.caffeine"},
-        {.type = "keyboard_layout", .labelKey = "settings.widgets.types.keyboard-layout"},
-        {.type = "launcher", .labelKey = "settings.widgets.types.launcher"},
-        {.type = "lock_keys", .labelKey = "settings.widgets.types.lock-keys"},
-        {.type = "media", .labelKey = "settings.widgets.types.media"},
-        {.type = "network", .labelKey = "settings.widgets.types.network"},
-        {.type = "nightlight", .labelKey = "settings.widgets.types.nightlight"},
-        {.type = "notifications", .labelKey = "settings.widgets.types.notifications"},
-        {.type = "power_profiles", .labelKey = "settings.widgets.types.power-profiles"},
-        {.type = "scripted", .labelKey = "settings.widgets.types.scripted"},
-        {.type = "session", .labelKey = "settings.widgets.types.session"},
-        {.type = "settings", .labelKey = "settings.widgets.types.settings"},
-        {.type = "spacer", .labelKey = "settings.widgets.types.spacer"},
-        {.type = "sysmon", .labelKey = "settings.widgets.types.sysmon"},
-        {.type = "taskbar", .labelKey = "settings.widgets.types.taskbar"},
-        {.type = "test", .labelKey = "settings.widgets.types.test", .visibleInPicker = false},
-        {.type = "theme_mode", .labelKey = "settings.widgets.types.theme-mode"},
-        {.type = "tray", .labelKey = "settings.widgets.types.tray"},
-        {.type = "volume", .labelKey = "settings.widgets.types.volume"},
-        {.type = "wallpaper", .labelKey = "settings.widgets.types.wallpaper"},
-        {.type = "weather", .labelKey = "settings.widgets.types.weather"},
-        {.type = "workspaces", .labelKey = "settings.widgets.types.workspaces"},
+        {.type = "active_window", .labelKey = "settings.widgets.types.active-window", .glyph = "app-window"},
+        {.type = "audio_visualizer", .labelKey = "settings.widgets.types.audio-visualizer", .glyph = "wave-sine"},
+        {.type = "battery", .labelKey = "settings.widgets.types.battery", .glyph = "battery-4"},
+        {.type = "bluetooth", .labelKey = "settings.widgets.types.bluetooth", .glyph = "bluetooth"},
+        {.type = "brightness", .labelKey = "settings.widgets.types.brightness", .glyph = "brightness-high"},
+        {.type = "clock", .labelKey = "settings.widgets.types.clock", .glyph = "clock"},
+        {.type = "control-center", .labelKey = "settings.widgets.types.control-center", .glyph = "noctalia"},
+        {.type = "clipboard", .labelKey = "settings.widgets.types.clipboard", .glyph = "clipboard"},
+        {.type = "caffeine", .labelKey = "settings.widgets.types.caffeine", .glyph = "caffeine-off"},
+        {.type = "keyboard_layout", .labelKey = "settings.widgets.types.keyboard-layout", .glyph = "keyboard"},
+        {.type = "launcher", .labelKey = "settings.widgets.types.launcher", .glyph = "search"},
+        {.type = "lock_keys", .labelKey = "settings.widgets.types.lock-keys", .glyph = "lock"},
+        {.type = "media", .labelKey = "settings.widgets.types.media", .glyph = "disc-filled"},
+        {.type = "network", .labelKey = "settings.widgets.types.network", .glyph = "wifi-off"},
+        {.type = "nightlight", .labelKey = "settings.widgets.types.nightlight", .glyph = "nightlight-off"},
+        {.type = "notifications", .labelKey = "settings.widgets.types.notifications", .glyph = "bell"},
+        {.type = "power_profiles", .labelKey = "settings.widgets.types.power-profiles", .glyph = "balanced"},
+        {.type = "scripted", .labelKey = "settings.widgets.types.scripted", .glyph = "script"},
+        {.type = "session", .labelKey = "settings.widgets.types.session", .glyph = "shutdown"},
+        {.type = "settings", .labelKey = "settings.widgets.types.settings", .glyph = "settings"},
+        {.type = "spacer", .labelKey = "settings.widgets.types.spacer", .glyph = "arrows-horizontal"},
+        {.type = "sysmon", .labelKey = "settings.widgets.types.sysmon", .glyph = "cpu-usage"},
+        {.type = "taskbar", .labelKey = "settings.widgets.types.taskbar", .glyph = "apps"},
+        {.type = "test", .labelKey = "settings.widgets.types.test", .glyph = "flask", .visibleInPicker = false},
+        {.type = "theme_mode", .labelKey = "settings.widgets.types.theme-mode", .glyph = "theme-mode"},
+        {.type = "tray", .labelKey = "settings.widgets.types.tray", .glyph = "apps"},
+        {.type = "volume", .labelKey = "settings.widgets.types.volume", .glyph = "volume-high"},
+        {.type = "wallpaper", .labelKey = "settings.widgets.types.wallpaper", .glyph = "wallpaper-selector"},
+        {.type = "weather", .labelKey = "settings.widgets.types.weather", .glyph = "weather-cloud"},
+        {.type = "workspaces", .labelKey = "settings.widgets.types.workspaces", .glyph = "layout-grid"},
     };
 
     const WidgetTypeSpec* findWidgetTypeSpec(std::string_view type) {
@@ -54,6 +54,67 @@ namespace settings {
         }
       }
       return nullptr;
+    }
+
+    std::string defaultWidgetGlyph(std::string_view type) {
+      const auto* spec = findWidgetTypeSpec(type);
+      if (spec != nullptr && !spec->glyph.empty()) {
+        return std::string(spec->glyph);
+      }
+      return "apps";
+    }
+
+    std::string nonEmptyGlyph(std::string value, std::string_view fallback) {
+      return value.empty() ? std::string(fallback) : std::move(value);
+    }
+
+    std::string widgetGlyph(std::string_view type, const WidgetConfig* config = nullptr) {
+      if (config == nullptr) {
+        return defaultWidgetGlyph(type);
+      }
+      if (type == "clipboard") {
+        return nonEmptyGlyph(config->getString("glyph", "clipboard"), "clipboard");
+      }
+      if (type == "control-center") {
+        return nonEmptyGlyph(config->getString("glyph", "noctalia"), "search");
+      }
+      if (type == "launcher") {
+        return nonEmptyGlyph(config->getString("glyph", "search"), "search");
+      }
+      if (type == "session") {
+        return nonEmptyGlyph(config->getString("glyph", "shutdown"), "shutdown");
+      }
+      if (type == "settings") {
+        return nonEmptyGlyph(config->getString("glyph", "settings"), "search");
+      }
+      if (type == "wallpaper") {
+        return nonEmptyGlyph(config->getString("glyph", "wallpaper-selector"), "wallpaper-selector");
+      }
+      if (type == "sysmon") {
+        const std::string stat = config->getString("stat", "cpu_usage");
+        if (stat == "cpu_temp") {
+          return "cpu-temperature";
+        }
+        if (stat == "gpu_temp") {
+          return "temperature";
+        }
+        if (stat == "gpu_vram" || stat == "ram_used" || stat == "ram_pct") {
+          return "memory";
+        }
+        if (stat == "swap_pct" || stat == "disk_pct") {
+          return "storage";
+        }
+        if (stat == "net_rx") {
+          return "download";
+        }
+        if (stat == "net_tx") {
+          return "upload";
+        }
+      }
+      if (type == "volume" && config->getString("device", "output") == "input") {
+        return "microphone";
+      }
+      return defaultWidgetGlyph(type);
     }
 
     WidgetSettingSpec baseSpec(std::string_view key, WidgetSettingValueType type, WidgetSettingValue defaultValue,
@@ -158,12 +219,18 @@ namespace settings {
     }
 
     void addPickerEntry(std::vector<WidgetPickerEntry>& entries, std::unordered_set<std::string>& seen,
-                        std::string value, std::string label, std::string description, WidgetReferenceKind kind) {
+                        std::string value, std::string label, std::string description, std::string icon,
+                        WidgetReferenceKind kind) {
       if (!seen.insert(value).second) {
         return;
       }
       entries.push_back(WidgetPickerEntry{
-          .value = std::move(value), .label = std::move(label), .description = std::move(description), .kind = kind});
+          .value = std::move(value),
+          .label = std::move(label),
+          .description = std::move(description),
+          .icon = std::move(icon),
+          .kind = kind,
+      });
     }
 
     void collectLaneUnknowns(const std::vector<std::string>& widgets, std::vector<WidgetPickerEntry>& entries,
@@ -172,7 +239,7 @@ namespace settings {
         if (isBuiltInWidgetType(name) || cfg.widgets.contains(name)) {
           continue;
         }
-        addPickerEntry(entries, seen, name, name, name, WidgetReferenceKind::Unknown);
+        addPickerEntry(entries, seen, name, name, name, "warning", WidgetReferenceKind::Unknown);
       }
     }
 
@@ -256,8 +323,13 @@ namespace settings {
       if (!spec.visibleInPicker) {
         continue;
       }
-      addPickerEntry(entries, seen, std::string(spec.type), tr(spec.labelKey), std::string(spec.type),
-                     WidgetReferenceKind::BuiltIn);
+      const auto configIt = cfg.widgets.find(std::string(spec.type));
+      const WidgetConfig* widgetConfig = configIt != cfg.widgets.end() ? &configIt->second : nullptr;
+      addPickerEntry(
+          entries, seen, std::string(spec.type), tr(spec.labelKey), std::string(spec.type),
+          widgetGlyph(widgetConfig != nullptr && !widgetConfig->type.empty() ? widgetConfig->type : spec.type,
+                      widgetConfig),
+          WidgetReferenceKind::BuiltIn);
     }
 
     for (const auto& [name, widget] : cfg.widgets) {
@@ -266,7 +338,7 @@ namespace settings {
       }
       addPickerEntry(entries, seen, name, widgetInstanceDisplayLabel(name),
                      widget.type.empty() ? tr("settings.entities.widget.detail.custom") : widget.type,
-                     WidgetReferenceKind::Named);
+                     widgetGlyph(widget.type, &widget), WidgetReferenceKind::Named);
     }
 
     for (const auto& bar : cfg.bars) {

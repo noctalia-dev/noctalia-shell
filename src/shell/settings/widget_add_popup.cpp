@@ -183,7 +183,12 @@ namespace settings {
 
     for (const auto& entry : pickerEntries) {
       normalOptions.push_back(SearchPickerOption{
-          .value = entry.value, .label = entry.label, .description = entry.description, .enabled = true});
+          .value = entry.value,
+          .label = entry.label,
+          .description = entry.description,
+          .enabled = true,
+          .icon = entry.icon,
+      });
 
       if (entry.kind != WidgetReferenceKind::BuiltIn) {
         continue;
@@ -197,6 +202,7 @@ namespace settings {
             .label = entry.label,
             .description = i18n::tr("settings.entities.widget.picker.instance-description", "type", entry.value),
             .enabled = true,
+            .icon = entry.icon,
         });
         break;
       }
