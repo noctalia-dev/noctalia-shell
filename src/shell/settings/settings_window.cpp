@@ -9,6 +9,7 @@
 #include "system/dependency_service.h"
 #include "ui/controls/box.h"
 #include "ui/controls/flex.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/select_dropdown_popup.h"
@@ -521,12 +522,12 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
 }
 
 void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
-  if (!isOpen() || m_config == nullptr) {
+  if (!isOpen()) {
     return;
   }
 
   if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen()) {
-    if (event.pressed && m_config->matchesKeybind(KeybindAction::Cancel, event.sym, event.modifiers)) {
+    if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
       m_widgetAddPopup->close();
       return;
     }
@@ -535,7 +536,7 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
   }
 
   if (m_searchPickerPopup != nullptr && m_searchPickerPopup->isOpen()) {
-    if (event.pressed && m_config->matchesKeybind(KeybindAction::Cancel, event.sym, event.modifiers)) {
+    if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
       m_searchPickerPopup->close();
       return;
     }
@@ -548,7 +549,7 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
       m_sessionActionsEditorPopup->onKeyboardEvent(event);
       return;
     }
-    if (event.pressed && m_config->matchesKeybind(KeybindAction::Cancel, event.sym, event.modifiers)) {
+    if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
       m_sessionActionsEditorPopup->close();
       return;
     }
@@ -567,7 +568,7 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
       m_surface->requestLayout();
     }
   };
-  if (event.pressed && m_config->matchesKeybind(KeybindAction::Cancel, event.sym, event.modifiers)) {
+  if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
     if (m_actionsMenuPopup != nullptr && m_actionsMenuPopup->isOpen()) {
       m_actionsMenuPopup->close();
       return;
