@@ -380,8 +380,6 @@ void LauncherPanel::onOpen(std::string_view context) {
   if (m_grid != nullptr) {
     m_grid->scrollView().setScrollOffset(0.0f);
   }
-  // Clear cached icon misses before each open so newly installed app icons appear.
-  m_iconResolver.invalidateCache();
   onInputChanged(initialValue);
 }
 
