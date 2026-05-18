@@ -11,8 +11,7 @@ public:
   [[nodiscard]] std::string_view prefix() const override { return ""; }
   [[nodiscard]] std::string_view name() const override { return "Calculator"; }
 
-  [[nodiscard]] std::vector<LauncherResult> query(std::string_view text,
-                                                  std::string_view category = {}) const override;
+  [[nodiscard]] std::vector<LauncherResult> query(std::string_view text, std::string_view category = {}) const override;
 
   bool activate(const LauncherResult& result) override;
 
