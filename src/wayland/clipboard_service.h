@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/text_clipboard.h"
+
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -56,7 +58,7 @@ struct DataControlOps {
 [[nodiscard]] const DataControlOps* extDataControlOps();
 [[nodiscard]] const DataControlOps* wlrDataControlOps();
 
-class ClipboardService {
+class ClipboardService : public TextClipboard {
 public:
   using ChangeCallback = std::function<void()>;
 
@@ -78,6 +80,14 @@ public:
   [[nodiscard]] std::optional<std::string> exportEntryForExternalTool(std::size_t index);
   void evictEntryPayload(std::size_t index);
   void evictAllPayloads();
+  // TextClipboard implementation (used by UI controls for copy/paste).
+  [[nodiscard]] std::optional<std::string> clipboardText() override;
+  void setClipboardText(std::string text) override;
+
+  // When disabled, the live clipboard transport stays active (so basic
+  // copy/paste keeps working) but history is neither accumulated nor persisted.
+  void setHistoryRetentionEnabled(bool enabled);
+
   bool copyText(std::string text);
   bool copyText(std::string text, std::string mimeType);
   bool copyEntry(const ClipboardEntry& entry);
@@ -170,5 +180,6 @@ private:
   std::deque<ClipboardEntry> m_history;
   std::size_t m_historyBytes = 0;
   std::uint64_t m_changeSerial = 0;
+  bool m_historyRetention = true;
   ChangeCallback m_changeCallback;
 };

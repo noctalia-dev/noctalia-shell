@@ -14,7 +14,7 @@
 #include <string_view>
 #include <vector>
 
-class ClipboardService;
+class TextClipboard;
 class GlyphNode;
 class InputArea;
 class Label;
@@ -55,7 +55,7 @@ public:
   void moveCaretRight(bool shift = false);
 
   // Set once at application startup; all Input instances use this for Ctrl+C/X/V.
-  static void setClipboardService(ClipboardService* clipboard) noexcept;
+  static void setTextClipboard(TextClipboard* clipboard) noexcept;
   /// Submit invokes onSubmit only when this matcher returns true (Application wires ConfigService validate keybinds).
   static void setValidateKeyMatcher(std::function<bool(std::uint32_t sym, std::uint32_t modifiers)> matcher) noexcept;
   static void setPasswordMaskStyle(PasswordMaskStyle style) noexcept;

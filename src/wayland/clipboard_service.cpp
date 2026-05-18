@@ -366,6 +366,33 @@ namespace {
 } // namespace
 
 ClipboardService::ClipboardService() { loadPersistedHistory(); }
+
+void ClipboardService::setHistoryRetentionEnabled(bool enabled) {
+  if (m_historyRetention == enabled) {
+    return;
+  }
+  m_historyRetention = enabled;
+
+  if (enabled) {
+    // Restore the persisted history that was set aside while retention was off.
+    loadPersistedHistory();
+  } else {
+    // Keep only the live selection (most recent unpinned entry) in memory so
+    // paste keeps working; drop pins and older/persisted history.
+    std::deque<ClipboardEntry> live;
+    for (auto& entry : m_history) {
+      if (!entry.pinned) {
+        live.push_back(std::move(entry));
+        break;
+      }
+    }
+    m_history = std::move(live);
+    m_historyBytes = m_history.empty() ? 0 : m_history.front().byteSize;
+  }
+
+  ++m_changeSerial;
+  notifyChanged();
+}
 ClipboardService::~ClipboardService() { cleanup(); }
 
 const DataControlOps* extDataControlOps() { return &kExtDataControlOps; }
@@ -519,6 +546,23 @@ void ClipboardService::evictAllPayloads() {
     evictEntryPayload(i);
   }
 }
+
+std::optional<std::string> ClipboardService::clipboardText() {
+  for (auto& entry : m_history) {
+    // Pinned entries sit at the front but are not the newest capture; paste
+    // must reflect the most recent real clipboard content.
+    if (entry.pinned || entry.isImage()) {
+      continue;
+    }
+    if (!loadEntryPayload(entry) || entry.data.empty()) {
+      continue;
+    }
+    return std::string(entry.data.begin(), entry.data.end());
+  }
+  return std::nullopt;
+}
+
+void ClipboardService::setClipboardText(std::string text) { (void)copyText(std::move(text)); }
 
 bool ClipboardService::copyText(std::string text) {
   std::vector<std::uint8_t> data(text.begin(), text.end());
@@ -957,6 +1001,22 @@ void ClipboardService::addToHistory(ClipboardEntry entry) {
     entry.textPreview = buildTextPreview(entry.data);
   }
 
+  if (!m_historyRetention) {
+    // History is disabled: retain only the live selection in memory (so paste
+    // still works) and never persist. Ignore the self-copy echo of unchanged
+    // content to avoid needless churn.
+    if (!m_history.empty() && !entry.data.empty() && m_history.front().byteSize == entry.byteSize &&
+        m_history.front().data == entry.data && m_history.front().dataMimeType == entry.dataMimeType) {
+      return;
+    }
+    m_history.clear();
+    m_historyBytes = entry.byteSize;
+    m_history.push_back(std::move(entry));
+    ++m_changeSerial;
+    notifyChanged();
+    return;
+  }
+
   // Pinned entries form a contiguous block at the front; new captures join the
   // top of the unpinned region just below it.
   const std::size_t insertAt = pinnedCount();
@@ -1068,6 +1128,10 @@ void ClipboardService::loadPersistedHistory() {
 }
 
 bool ClipboardService::persistHistory() {
+  if (!m_historyRetention) {
+    return false;
+  }
+
   namespace fs = std::filesystem;
 
   try {

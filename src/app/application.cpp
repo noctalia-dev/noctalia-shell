@@ -306,23 +306,21 @@ void Application::syncClipboardService() {
   const bool enabled = m_configService.config().shell.clipboardEnabled;
   const auto shouldRefreshControlCenter = [this]() { return m_panelManager.isOpenPanel("control-center"); };
 
+  // The live clipboard transport (read current selection + set selection)
+  // stays active regardless of config so basic copy/paste keeps working in
+  // every text field. The toggle only controls history retention/persistence
+  // and the history UI.
+  m_wayland.setClipboardService(&m_clipboardService);
+  Input::setTextClipboard(&m_clipboardService);
+  m_clipboardService.setHistoryRetentionEnabled(enabled);
+
   if (!enabled) {
-    m_clipboardService.cleanup();
-    m_wayland.setClipboardService(nullptr);
-    Input::setClipboardService(nullptr);
     if (m_panelManager.isOpenPanel("clipboard")) {
       m_panelManager.close();
     }
-    kLog.info("clipboard integration disabled by config");
-    m_bar.refresh();
-    if (shouldRefreshControlCenter()) {
-      m_panelManager.refresh();
-    }
-    return;
+    kLog.info("clipboard history disabled by config (live copy/paste still active)");
   }
 
-  m_wayland.setClipboardService(&m_clipboardService);
-  Input::setClipboardService(&m_clipboardService);
   m_bar.refresh();
   if (shouldRefreshControlCenter()) {
     m_panelManager.refresh();

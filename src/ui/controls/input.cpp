@@ -2,6 +2,7 @@
 
 #include "core/key_modifiers.h"
 #include "core/key_symbols.h"
+#include "core/text_clipboard.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "render/core/color.h"
 #include "render/core/render_styles.h"
@@ -13,7 +14,6 @@
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
-#include "wayland/clipboard_service.h"
 
 #include <algorithm>
 #include <array>
@@ -27,34 +27,12 @@
 
 namespace {
 
-  ClipboardService* g_clipboard = nullptr;
+  TextClipboard* g_clipboard = nullptr;
   Input::PasswordMaskStyle g_passwordMaskStyle = Input::PasswordMaskStyle::CircleFilled;
   std::function<bool(std::uint32_t, std::uint32_t)> g_validateKeyMatcher;
 
   std::optional<std::string> readClipboardText() {
-    if (g_clipboard == nullptr) {
-      return std::nullopt;
-    }
-    const auto& hist = g_clipboard->history();
-    for (std::size_t i = 0; i < hist.size(); ++i) {
-      // Pinned entries sit at the front but are not the newest capture; paste
-      // must reflect the most recent real clipboard content.
-      if (hist[i].pinned) {
-        continue;
-      }
-      if (hist[i].isImage()) {
-        continue;
-      }
-      if (!g_clipboard->ensureEntryLoaded(i)) {
-        continue;
-      }
-      const auto& entry = g_clipboard->history()[i];
-      if (entry.data.empty()) {
-        continue;
-      }
-      return std::string(entry.data.begin(), entry.data.end());
-    }
-    return std::nullopt;
+    return g_clipboard != nullptr ? g_clipboard->clipboardText() : std::nullopt;
   }
 
   constexpr float kMinWidth = 48.0f;
@@ -412,7 +390,7 @@ void Input::setEnabled(bool enabled) {
   applyVisualState();
 }
 
-void Input::setClipboardService(ClipboardService* clipboard) noexcept { g_clipboard = clipboard; }
+void Input::setTextClipboard(TextClipboard* clipboard) noexcept { g_clipboard = clipboard; }
 
 void Input::setValidateKeyMatcher(std::function<bool(std::uint32_t, std::uint32_t)> matcher) noexcept {
   g_validateKeyMatcher = std::move(matcher);
@@ -664,12 +642,12 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
     m_cursorPos = m_value.size();
   } else if (copyShortcut) {
     if (g_clipboard != nullptr && hasSelection()) {
-      g_clipboard->copyText(m_value.substr(selectionStart(), selectionEnd() - selectionStart()));
+      g_clipboard->setClipboardText(m_value.substr(selectionStart(), selectionEnd() - selectionStart()));
     }
   } else if (cutShortcut) {
     if (g_clipboard != nullptr && hasSelection()) {
       pushUndoSnapshot(EditCoalesceKind::Discrete);
-      g_clipboard->copyText(m_value.substr(selectionStart(), selectionEnd() - selectionStart()));
+      g_clipboard->setClipboardText(m_value.substr(selectionStart(), selectionEnd() - selectionStart()));
       deleteSelection();
       changed = true;
     }
