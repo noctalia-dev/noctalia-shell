@@ -89,13 +89,15 @@ namespace {
     return i18n::tr("notifications.inline-reply.placeholder");
   }
 
-  // Maps the raw DBus timeout value to a popup display duration.
-  // Returns -1 to mean "persistent — never auto-dismiss".
+  // Maps the raw DBus expire_timeout to a toast display duration in milliseconds.
+  // expire_timeout == 0 is explicitly persistent; -1 uses the server default.
   int resolveDisplayDuration(int32_t timeout) {
-    if (timeout == 0)
+    if (timeout == 0) {
       return -1;
-    if (timeout == -1)
+    }
+    if (timeout == -1) {
       return kDefaultNotificationTimeout;
+    }
     return std::max(1000, static_cast<int>(timeout));
   }
   constexpr int kProgressHeight = 3;
@@ -652,7 +654,10 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
                       popup->remainingProgress = v;
                     }
                   },
-                  [this, id = n.id]() { DeferredCall::callLater([this, id]() { removePopup(id); }); }, cs.progressBar);
+                  [this, id = n.id]() {
+                    DeferredCall::callLater([this, id]() { requestClose(id, CloseReason::Expired); });
+                  },
+                  cs.progressBar);
             }
           }
 
@@ -739,6 +744,18 @@ void NotificationToast::addPopup(const Notification& n) {
   revealQueuedEntries();
 
   kLog.debug("notification toast: showing #{}", n.id);
+}
+
+void NotificationToast::requestClose(uint32_t notificationId, CloseReason reason) {
+  if (m_notifications != nullptr) {
+    for (const auto& notification : m_notifications->all()) {
+      if (notification.id == notificationId) {
+        (void)m_notifications->close(notificationId, reason);
+        return;
+      }
+    }
+  }
+  removePopup(notificationId);
 }
 
 void NotificationToast::removePopup(uint32_t notificationId) {
@@ -859,7 +876,9 @@ void NotificationToast::addCardToInstance(Instance& inst, std::size_t entryIndex
               popup->remainingProgress = v;
             }
           },
-          [this, id = entry.notificationId]() { DeferredCall::callLater([this, id]() { removePopup(id); }); },
+          [this, id = entry.notificationId]() {
+            DeferredCall::callLater([this, id]() { requestClose(id, CloseReason::Expired); });
+          },
           cs.progressBar);
     }
   }
@@ -1140,7 +1159,7 @@ void NotificationToast::resumeCountdowns(uint32_t notificationId) {
         },
         [this, notificationId, isDriver]() {
           if (isDriver) {
-            DeferredCall::callLater([this, notificationId]() { removePopup(notificationId); });
+            DeferredCall::callLater([this, notificationId]() { requestClose(notificationId, CloseReason::Expired); });
           }
         },
         state->progressBar);
@@ -1681,7 +1700,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
                         hasDefaultAction = !entry.actions.empty() && entry.actions.size() >= 2 &&
                                            entry.actions[0] == "default"](const InputArea::PointerData& data) {
     if (data.button == BTN_RIGHT || (data.button == BTN_LEFT && isCloseButtonHit(data.localX, data.localY))) {
-      removePopup(id);
+      requestClose(id, CloseReason::Dismissed);
     } else if (data.button == BTN_LEFT && hasDefaultAction) {
       if (m_notifications != nullptr) {
         if (!m_notifications->invokeAction(id, "default", true)) {

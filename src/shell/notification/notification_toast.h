@@ -112,6 +112,7 @@ private:
   void onNotificationEvent(const Notification& n, NotificationEvent event);
   void addPopup(const Notification& n);
   void dismissPopup(std::size_t index);
+  void requestClose(uint32_t notificationId, CloseReason reason);
   void removePopup(uint32_t notificationId);
   void finishRemoval(uint32_t notificationId);
   void updateInputRegion(Instance& inst) const;

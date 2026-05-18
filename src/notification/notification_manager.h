@@ -30,6 +30,7 @@ public:
 
   using EventCallback = std::function<void(const Notification&, NotificationEvent)>;
   using ActionInvokeCallback = std::function<void(uint32_t, const std::string&)>;
+  using CloseCallback = std::function<void(uint32_t, CloseReason)>;
   using StateCallback = std::function<void()>;
 
   // Register a callback for notification events. Returns a token for removal.
@@ -52,6 +53,7 @@ public:
                        std::optional<std::string> desktopEntry = std::nullopt);
 
   void setActionInvokeCallback(ActionInvokeCallback callback);
+  void setCloseCallback(CloseCallback callback);
   [[nodiscard]] bool invokeAction(uint32_t id, const std::string& actionKey, bool closeAfterInvoke = true);
   // Emits ActionInvoked with "inline-reply::<text>" (KDE quick-reply convention).
   [[nodiscard]] bool invokeInlineReply(uint32_t id, const std::string& replyText, bool closeAfterInvoke = true);
@@ -112,6 +114,7 @@ private:
   std::unordered_map<uint32_t, size_t> m_historyIndex;
   std::vector<std::pair<int, EventCallback>> m_eventCallbacks;
   ActionInvokeCallback m_actionInvokeCallback;
+  CloseCallback m_closeCallback;
   StateCallback m_stateCallback;
   int m_nextCallbackToken{0};
   uint32_t m_nextId{1};

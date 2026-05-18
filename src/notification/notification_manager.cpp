@@ -231,6 +231,8 @@ void NotificationManager::setActionInvokeCallback(ActionInvokeCallback callback)
   m_actionInvokeCallback = std::move(callback);
 }
 
+void NotificationManager::setCloseCallback(CloseCallback callback) { m_closeCallback = std::move(callback); }
+
 bool NotificationManager::invokeAction(uint32_t id, const std::string& actionKey, bool closeAfterInvoke) {
   const auto it = m_idToIndex.find(id);
   if (it == m_idToIndex.end() || actionKey.empty()) {
@@ -298,6 +300,10 @@ bool NotificationManager::close(uint32_t id, CloseReason reason) {
 
   for (auto& [token, cb] : m_eventCallbacks) {
     cb(closed, NotificationEvent::Closed);
+  }
+
+  if (m_closeCallback) {
+    m_closeCallback(id, reason);
   }
 
   return true;

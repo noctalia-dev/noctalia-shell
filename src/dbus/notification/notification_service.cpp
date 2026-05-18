@@ -79,7 +79,9 @@ NotificationService::NotificationService(SessionBus& bus, NotificationManager& m
     m_nameAcquired = true;
     m_manager.setActionInvokeCallback(
         [this](uint32_t id, const std::string& actionKey) { emitActionInvoked(id, actionKey); });
+    m_manager.setCloseCallback([this](uint32_t id, CloseReason reason) { emitClose(id, reason); });
   } catch (...) {
+    m_manager.setCloseCallback(nullptr);
     m_manager.setActionInvokeCallback(nullptr);
     if (m_nameAcquired) {
       try {
@@ -94,6 +96,7 @@ NotificationService::NotificationService(SessionBus& bus, NotificationManager& m
 }
 
 NotificationService::~NotificationService() {
+  m_manager.setCloseCallback(nullptr);
   m_manager.setActionInvokeCallback(nullptr);
 
   if (m_nameAcquired) {
@@ -115,9 +118,9 @@ NotificationService::~NotificationService() {
 }
 
 void NotificationService::processExpired() {
-  for (const uint32_t id : m_manager.expiredIds()) {
-    emitClose(id, CloseReason::Expired);
-    m_manager.close(id, CloseReason::Expired);
+  const std::vector<uint32_t> ids = m_manager.expiredIds();
+  for (const uint32_t id : ids) {
+    (void)m_manager.close(id, CloseReason::Expired);
   }
 }
 
@@ -295,11 +298,20 @@ void NotificationService::onCloseNotification(uint32_t id) {
     throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.NotFound"},
                        "notification id was not found");
   }
-  emitClose(id, CloseReason::ClosedByCall);
 }
 
 void NotificationService::emitClose(uint32_t id, CloseReason reason) {
-  m_object->emitSignal("NotificationClosed").onInterface(k_interface).withArguments(id, static_cast<uint32_t>(reason));
+  if (m_object == nullptr) {
+    return;
+  }
+  try {
+    m_object->emitSignal("NotificationClosed")
+        .onInterface(k_interface)
+        .withArguments(id, static_cast<uint32_t>(reason));
+    m_bus.connection().processPendingEvent();
+  } catch (const sdbus::Error& e) {
+    kLog.warn("notification #{}: NotificationClosed emit failed: {}", id, e.what());
+  }
 }
 
 void NotificationService::onInvokeAction(uint32_t id, const std::string& actionKey) {
@@ -322,8 +334,18 @@ void NotificationService::emitActionInvoked(uint32_t id, const std::string& acti
     kLog.warn("notification #{}: ActionInvoked with bare inline-reply (missing reply text)", id);
   } else if (actionKey.starts_with("inline-reply::")) {
     kLog.debug("notification #{}: inline-reply action invoked ({} bytes)", id, actionKey.size());
+  } else {
+    kLog.debug("notification #{}: action '{}'", id, actionKey);
   }
-  m_object->emitSignal("ActionInvoked").onInterface(k_interface).withArguments(id, actionKey);
+  if (m_object == nullptr) {
+    return;
+  }
+  try {
+    m_object->emitSignal("ActionInvoked").onInterface(k_interface).withArguments(id, actionKey);
+    m_bus.connection().processPendingEvent();
+  } catch (const sdbus::Error& e) {
+    kLog.warn("notification #{}: ActionInvoked emit failed key='{}': {}", id, actionKey, e.what());
+  }
 }
 
 std::tuple<std::string, std::string, std::string, std::string> NotificationService::onGetServerInformation() {
