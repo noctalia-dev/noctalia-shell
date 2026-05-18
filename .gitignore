@@ -12,6 +12,8 @@ noctalia
 .vscode/
 .idea/
 .cache/
+.superpowers/
+.worktrees/
 *.swp
 *.swo
 *~
