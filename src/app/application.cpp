@@ -986,6 +986,9 @@ void Application::initUi() {
     if (m_overviewLauncherCapture.handleKeyboardEvent(event)) {
       return;
     }
+    if (m_notificationToast.onKeyboardEvent(event)) {
+      return;
+    }
     m_panelManager.onKeyboardEvent(event);
   });
 

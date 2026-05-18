@@ -66,11 +66,11 @@ namespace {
     for (std::size_t i = 0; i + 1 < actions.size() && actionCount < kHistoryMaxActionButtons; i += 2) {
       const std::string& actionKey = actions[i];
       std::string actionLabel = actions[i + 1];
+      if (actionKey.empty() || actionKey == "default" || actionKey == "inline-reply") {
+        continue;
+      }
       if (StringUtils::isBlank(actionLabel)) {
         actionLabel = i18n::tr("notifications.actions.fallback");
-      }
-      if (actionKey.empty()) {
-        continue;
       }
       auto actionButton = std::make_unique<Button>();
       actionButton->setVariant(ButtonVariant::Outline);
@@ -443,11 +443,11 @@ namespace {
              i += 2) {
           const std::string& actionKey = entry.notification.actions[i];
           std::string actionLabel = entry.notification.actions[i + 1];
+          if (actionKey.empty() || actionKey == "default" || actionKey == "inline-reply") {
+            continue;
+          }
           if (StringUtils::isBlank(actionLabel)) {
             actionLabel = i18n::tr("notifications.actions.fallback");
-          }
-          if (actionKey.empty()) {
-            continue;
           }
           Button* btn = m_actionButtons[static_cast<std::size_t>(shownActions)];
           btn->setText(actionLabel);

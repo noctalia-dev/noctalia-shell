@@ -5,6 +5,7 @@
 #include "notification/notification_history_store.h"
 #include "pipewire/sound_player.h"
 #include "util/file_utils.h"
+#include "util/string_utils.h"
 
 #include <filesystem>
 #include <string_view>
@@ -24,6 +25,19 @@ namespace {
       return "critical";
     }
     return "unknown";
+  }
+
+  constexpr std::string_view kInlineReplyAction = "inline-reply";
+  constexpr std::string_view kInlineReplyActionPrefix = "inline-reply::";
+  constexpr std::size_t kMaxActionKeyLength = 1024;
+
+  bool notificationHasAction(const Notification& notification, std::string_view actionKey) {
+    for (std::size_t i = 0; i + 1 < notification.actions.size(); i += 2) {
+      if (notification.actions[i] == actionKey) {
+        return true;
+      }
+    }
+    return false;
   }
 
   constexpr std::string_view originStr(NotificationOrigin o) noexcept {
@@ -224,14 +238,16 @@ bool NotificationManager::invokeAction(uint32_t id, const std::string& actionKey
   }
 
   const Notification& notification = m_notifications[it->second];
-  bool actionFound = false;
-  for (std::size_t i = 0; i + 1 < notification.actions.size(); i += 2) {
-    if (notification.actions[i] == actionKey) {
-      actionFound = true;
-      break;
-    }
+  if (actionKey == kInlineReplyAction) {
+    // This server delivers reply text via invokeInlineReply() as "inline-reply::<text>".
+    return false;
   }
-  if (!actionFound) {
+  const bool inlineReplyWithPayload = actionKey.starts_with(std::string(kInlineReplyActionPrefix));
+  if (inlineReplyWithPayload) {
+    if (!notificationHasAction(notification, kInlineReplyAction)) {
+      return false;
+    }
+  } else if (!notificationHasAction(notification, actionKey)) {
     return false;
   }
 
@@ -243,6 +259,18 @@ bool NotificationManager::invokeAction(uint32_t id, const std::string& actionKey
     (void)close(id, CloseReason::Dismissed);
   }
   return true;
+}
+
+bool NotificationManager::invokeInlineReply(uint32_t id, const std::string& replyText, bool closeAfterInvoke) {
+  if (StringUtils::isBlank(replyText)) {
+    return false;
+  }
+
+  std::string actionKey;
+  actionKey.reserve(kInlineReplyActionPrefix.size() + replyText.size());
+  actionKey.append(kInlineReplyActionPrefix);
+  actionKey.append(StringUtils::truncateUtf8(replyText, kMaxActionKeyLength - kInlineReplyActionPrefix.size()));
+  return invokeAction(id, actionKey, closeAfterInvoke);
 }
 
 bool NotificationManager::close(uint32_t id, CloseReason reason) {
