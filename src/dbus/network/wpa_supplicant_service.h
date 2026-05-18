@@ -4,6 +4,7 @@
 #include "dbus/network/network_service.h" // for static glyph helpers and shared types
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -14,14 +15,8 @@ namespace sdbus {
   class IProxy;
 }
 
-// Read-only network backend for systems running wpa_supplicant without NetworkManager.
-// Exposes the same INetworkService interface as NetworkService so the UI works with
-// either backend transparently.
-//
-// Limitations compared to the NM backend:
-//   - No VPN support (wpa_supplicant has no VPN concept).
-//   - activateAccessPoint / disconnect / forgetSsid are no-ops.
-//   - setWirelessEnabled is a no-op (rfkill is a separate interface).
+// Network backend for systems running wpa_supplicant without NetworkManager.
+// Exposes the same INetworkService interface as NetworkService.
 class WpaSupplicantService : public INetworkService {
 public:
   explicit WpaSupplicantService(SystemBus& bus);
@@ -42,27 +37,35 @@ public:
 
   void requestScan() override;
 
-  // No-ops — wpa_supplicant connection management is not implemented.
-  bool activateAccessPoint(const AccessPointInfo& /*ap*/) override { return false; }
-  bool activateAccessPoint(const AccessPointInfo& /*ap*/, const std::string& /*psk*/) override { return false; }
+  bool activateAccessPoint(const AccessPointInfo& ap) override;
+  bool activateAccessPoint(const AccessPointInfo& ap, const std::string& psk) override;
   bool activateVpnConnection(const VpnConnectionInfo& /*vpn*/) override { return false; }
   bool deactivateVpnConnection(const VpnConnectionInfo& /*vpn*/) override { return false; }
-  void setWirelessEnabled(bool /*enabled*/) override {}
-  void disconnect() override {}
-  void forgetSsid(const std::string& /*ssid*/) override {}
-  [[nodiscard]] bool hasSavedConnection(const std::string& /*ssid*/) const override { return false; }
+  void setWirelessEnabled(bool enabled) override;
+  void disconnect() override;
+  void forgetSsid(const std::string& ssid) override;
+  [[nodiscard]] bool hasSavedConnection(const std::string& ssid) const override;
 
 private:
   void subscribeInterface(const std::string& ifacePath);
+  void scheduleRebuild();
   void rebuildState();
   void emitChangedIfNeeded(NetworkState next);
+  void loadSavedNetworks(const std::string& ifacePath, sdbus::IProxy& proxy);
+  sdbus::IProxy* firstInterface() const;
 
   SystemBus& m_bus;
   std::unique_ptr<sdbus::IProxy> m_wpa;
   std::unordered_map<std::string, std::unique_ptr<sdbus::IProxy>> m_interfaces;
+  // BSS path -> cached proxy, populated via BSSAdded/BSSRemoved signals.
+  std::unordered_map<std::string, std::unique_ptr<sdbus::IProxy>> m_bssProxies;
+  // ssid -> network object path.
+  std::unordered_map<std::string, std::string> m_savedNetworks;
   NetworkState m_state;
   std::vector<AccessPointInfo> m_accessPoints;
   const std::vector<VpnConnectionInfo> m_vpnConnections; // always empty
   bool m_hasStateSnapshot = false;
+  bool m_rebuildPending = false;
+  std::optional<bool> m_wirelessEnabledOverride;
   ChangeCallback m_changeCallback;
 };
