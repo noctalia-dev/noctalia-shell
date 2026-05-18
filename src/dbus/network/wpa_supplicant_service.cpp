@@ -332,7 +332,7 @@ void WpaSupplicantService::setWirelessEnabled(bool enabled) {
         kLog.warn("setWirelessEnabled: cannot open /dev/rfkill");
         break;
       }
-      struct rfkill_event ev {};
+      struct rfkill_event ev{};
       ev.idx = idx;
       ev.type = RFKILL_TYPE_WLAN;
       ev.op = RFKILL_OP_CHANGE;
