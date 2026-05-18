@@ -24,7 +24,7 @@ class MprisService;
 class BluetoothService;
 class BrightnessService;
 class ClipboardService;
-class NetworkService;
+class INetworkService;
 class NotificationManager;
 class PipeWireService;
 class PipeWireSpectrum;
@@ -48,7 +48,7 @@ public:
 
   bool initialize(CompositorPlatform& platform, ConfigService* config, TimeService* timeService,
                   NotificationManager* notifications, TrayService* tray, PipeWireService* audio, UPowerService* upower,
-                  SystemMonitorService* sysmon, PowerProfilesService* powerProfiles, NetworkService* network,
+                  SystemMonitorService* sysmon, PowerProfilesService* powerProfiles, INetworkService* network,
                   IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
                   HttpClient* httpClient, WeatherService* weatherService, RenderContext* renderContext,
                   GammaService* nightLight, noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
@@ -116,7 +116,7 @@ private:
   UPowerService* m_upower = nullptr;
   SystemMonitorService* m_sysmon = nullptr;
   PowerProfilesService* m_powerProfiles = nullptr;
-  NetworkService* m_network = nullptr;
+  INetworkService* m_network = nullptr;
   IdleInhibitor* m_idleInhibitor = nullptr;
   MprisService* m_mpris = nullptr;
   PipeWireSpectrum* m_audioSpectrum = nullptr;

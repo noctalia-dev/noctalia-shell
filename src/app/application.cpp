@@ -8,6 +8,7 @@
 #include "core/log.h"
 #include "core/process.h"
 #include "core/resource_paths.h"
+#include "dbus/network/wpa_supplicant_service.h"
 #include "i18n/i18n.h"
 #include "i18n/i18n_service.h"
 #include "ipc/ipc_arg_parse.h"
@@ -705,11 +706,28 @@ void Application::initServices() {
       }
       kLog.info("network service active");
     } catch (const std::exception& e) {
-      kLog.warn("network service disabled: {}", e.what());
-      m_networkService.reset();
+      kLog.warn("NetworkManager unavailable ({}), trying wpa_supplicant", e.what());
+      try {
+        m_networkService = std::make_unique<WpaSupplicantService>(*m_systemBus);
+        m_networkService->setChangeCallback(
+            [this, shouldRefreshControlCenter](const NetworkState& state, NetworkChangeOrigin origin) {
+              onNetworkStateChangedForEvents(state, origin);
+              m_bar.refresh();
+              if (shouldRefreshControlCenter()) {
+                m_panelManager.refresh();
+              }
+            });
+        if (m_networkService->hasStateSnapshot()) {
+          m_prevWirelessEnabledForEvents = m_networkService->state().wirelessEnabled;
+        }
+        kLog.info("network service active (wpa_supplicant)");
+      } catch (const std::exception& e2) {
+        kLog.warn("network service disabled: {}", e2.what());
+        m_networkService.reset();
+      }
     }
 
-    if (m_networkService != nullptr) {
+    if (m_networkService != nullptr && m_networkService->supportsSecretAgent()) {
       try {
         m_networkSecretAgent = std::make_unique<NetworkSecretAgent>(*m_systemBus);
       } catch (const std::exception& e) {

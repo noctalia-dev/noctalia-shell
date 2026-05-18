@@ -577,7 +577,7 @@ Bar::Bar() = default;
 bool Bar::initialize(CompositorPlatform& platform, ConfigService* config, TimeService* timeService,
                      NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
                      UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
-                     NetworkService* network, IdleInhibitor* idleInhibitor, MprisService* mpris,
+                     INetworkService* network, IdleInhibitor* idleInhibitor, MprisService* mpris,
                      PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weatherService,
                      RenderContext* renderContext, GammaService* nightLight,
                      noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,

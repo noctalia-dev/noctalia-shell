@@ -25,7 +25,7 @@ namespace {
 
 } // namespace
 
-NetworkWidget::NetworkWidget(NetworkService* network, wl_output* output, bool showLabel)
+NetworkWidget::NetworkWidget(INetworkService* network, wl_output* output, bool showLabel)
     : m_network(network), m_output(output), m_showLabel(showLabel) {}
 
 void NetworkWidget::create() {

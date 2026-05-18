@@ -1,5 +1,7 @@
 #pragma once
 
+#include "dbus/network/inetwork_service.h"
+
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -59,52 +61,55 @@ enum class NetworkChangeOrigin : std::uint8_t {
   Noctalia,
 };
 
-class NetworkService {
+class NetworkService : public INetworkService {
 public:
   using ChangeCallback = std::function<void(const NetworkState&, NetworkChangeOrigin)>;
 
   explicit NetworkService(SystemBus& bus);
-  ~NetworkService();
+  ~NetworkService() override;
 
   NetworkService(const NetworkService&) = delete;
   NetworkService& operator=(const NetworkService&) = delete;
 
-  void setChangeCallback(ChangeCallback callback);
-  void refresh();
+  void setChangeCallback(ChangeCallback callback) override;
+  void refresh() override;
 
-  [[nodiscard]] const NetworkState& state() const noexcept { return m_state; }
-  [[nodiscard]] bool hasStateSnapshot() const noexcept { return m_hasStateSnapshot; }
-  [[nodiscard]] const std::vector<AccessPointInfo>& accessPoints() const noexcept { return m_accessPoints; }
-  [[nodiscard]] const std::vector<VpnConnectionInfo>& vpnConnections() const noexcept { return m_vpnConnections; }
+  [[nodiscard]] const NetworkState& state() const noexcept override { return m_state; }
+  [[nodiscard]] bool hasStateSnapshot() const noexcept override { return m_hasStateSnapshot; }
+  [[nodiscard]] const std::vector<AccessPointInfo>& accessPoints() const noexcept override { return m_accessPoints; }
+  [[nodiscard]] const std::vector<VpnConnectionInfo>& vpnConnections() const noexcept override {
+    return m_vpnConnections;
+  }
   [[nodiscard]] static const char* glyphForState(const NetworkState& state) noexcept;
   [[nodiscard]] static const char* wifiGlyphForState(const NetworkState& state) noexcept;
   [[nodiscard]] static const char* wifiGlyphForSignal(std::uint8_t signal) noexcept;
 
   // Trigger a Wi-Fi scan on every wifi device. Results arrive via PropertiesChanged.
-  void requestScan();
+  void requestScan() override;
 
   // Activate a saved connection for the given access point, or create an
   // in-memory profile for a new network and persist it after activation succeeds.
   // NM picks the matching saved connection automatically when the first argument is "/".
   // Returns false only on an immediate D-Bus error.
-  bool activateAccessPoint(const AccessPointInfo& ap);
-  bool activateAccessPoint(const AccessPointInfo& ap, const std::string& psk);
+  bool activateAccessPoint(const AccessPointInfo& ap) override;
+  bool activateAccessPoint(const AccessPointInfo& ap, const std::string& psk) override;
 
   // Activate / deactivate a saved VPN connection profile.
-  bool activateVpnConnection(const VpnConnectionInfo& vpn);
-  bool deactivateVpnConnection(const VpnConnectionInfo& vpn);
+  bool activateVpnConnection(const VpnConnectionInfo& vpn) override;
+  bool deactivateVpnConnection(const VpnConnectionInfo& vpn) override;
 
   // Enable / disable the Wi-Fi radio.
-  void setWirelessEnabled(bool enabled);
+  void setWirelessEnabled(bool enabled) override;
 
   // Deactivate the current primary connection.
-  void disconnect();
+  void disconnect() override;
 
   // Delete every saved connection whose 802-11-wireless SSID matches.
-  void forgetSsid(const std::string& ssid);
+  void forgetSsid(const std::string& ssid) override;
 
   // Whether any saved connection matches the SSID (uses cached snapshot refreshed on every refresh()).
-  [[nodiscard]] bool hasSavedConnection(const std::string& ssid) const;
+  [[nodiscard]] bool hasSavedConnection(const std::string& ssid) const override;
+  [[nodiscard]] bool supportsSecretAgent() const noexcept override { return true; }
 
 private:
   void refreshAccessPoints(std::function<void()> onComplete);

@@ -16,7 +16,7 @@ class MprisService;
 class BluetoothService;
 class BrightnessService;
 class ClipboardService;
-class NetworkService;
+class INetworkService;
 class PipeWireService;
 class PipeWireSpectrum;
 class PowerProfilesService;
@@ -34,7 +34,7 @@ class WidgetFactory {
 public:
   WidgetFactory(CompositorPlatform& platform, const Config& config, NotificationManager* notifications,
                 TrayService* tray, PipeWireService* audio, UPowerService* upower, SystemMonitorService* sysmon,
-                PowerProfilesService* powerProfiles, NetworkService* network, IdleInhibitor* idleInhibitor,
+                PowerProfilesService* powerProfiles, INetworkService* network, IdleInhibitor* idleInhibitor,
                 MprisService* mpris, PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weather,
                 GammaService* nightLight, noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
                 BrightnessService* brightness, LockKeysService* lockKeys, ClipboardService* clipboard,
@@ -54,7 +54,7 @@ private:
   UPowerService* m_upower;
   SystemMonitorService* m_sysmon;
   PowerProfilesService* m_powerProfiles;
-  NetworkService* m_network;
+  INetworkService* m_network;
   IdleInhibitor* m_idleInhibitor;
   MprisService* m_mpris;
   PipeWireSpectrum* m_audioSpectrum;

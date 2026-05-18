@@ -1,5 +1,6 @@
 #pragma once
 
+#include "dbus/network/inetwork_service.h"
 #include "dbus/network/network_service.h"
 #include "shell/bar/widget.h"
 
@@ -11,7 +12,7 @@ struct wl_output;
 
 class NetworkWidget : public Widget {
 public:
-  NetworkWidget(NetworkService* network, wl_output* output, bool showLabel);
+  NetworkWidget(INetworkService* network, wl_output* output, bool showLabel);
 
   void create() override;
 
@@ -20,7 +21,7 @@ private:
   void doUpdate(Renderer& renderer) override;
   void syncState(Renderer& renderer);
 
-  NetworkService* m_network = nullptr;
+  INetworkService* m_network = nullptr;
   wl_output* m_output = nullptr;
   bool m_showLabel = true;
   Glyph* m_glyph = nullptr;

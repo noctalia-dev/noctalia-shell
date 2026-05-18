@@ -1,5 +1,6 @@
 #pragma once
 
+#include "dbus/network/inetwork_service.h"
 #include "dbus/network/network_secret_agent.h"
 #include "dbus/network/network_service.h"
 #include "shell/control_center/tab.h"
@@ -18,7 +19,7 @@ class Toggle;
 
 class NetworkTab : public Tab {
 public:
-  NetworkTab(NetworkService* network, NetworkSecretAgent* secrets);
+  NetworkTab(INetworkService* network, NetworkSecretAgent* secrets);
   ~NetworkTab() override;
 
   std::unique_ptr<Flex> create() override;
@@ -42,7 +43,7 @@ private:
                                          const std::vector<VpnConnectionInfo>& vpns) const;
   [[nodiscard]] std::string apRowsKey(const std::vector<AccessPointInfo>& aps) const;
 
-  NetworkService* m_network = nullptr;
+  INetworkService* m_network = nullptr;
   NetworkSecretAgent* m_secrets = nullptr;
 
   Flex* m_rootLayout = nullptr;

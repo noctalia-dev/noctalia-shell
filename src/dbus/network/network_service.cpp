@@ -153,6 +153,10 @@ const char* NetworkService::wifiGlyphForSignal(std::uint8_t signal) noexcept {
 }
 
 NetworkService::NetworkService(SystemBus& bus) : m_bus(bus) {
+  if (!bus.nameHasOwner("org.freedesktop.NetworkManager")) {
+    throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.DBus.Error.ServiceUnknown"},
+                       "The name org.freedesktop.NetworkManager was not provided by any .service files");
+  }
   m_lifetimeToken = std::make_shared<int>(0);
   m_nm = sdbus::createProxy(m_bus.connection(), k_nmBusName, k_nmObjectPath);
 
