@@ -12,6 +12,7 @@
 #include "render/scene/rect_node.h"
 #include "ui/controls/box.h"
 #include "ui/controls/glyph.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/popup_chrome.h"
@@ -445,7 +446,7 @@ void SelectDropdownPopup::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, 
     return;
   }
 
-  if (KeySymbol::isEscape(sym)) {
+  if (KeybindMatcher::matches(KeybindAction::Cancel, sym, 0)) {
     auto onDismiss = m_callbacks.onDismiss;
     DeferredCall::callLater([this, onDismiss]() {
       closeSelectDropdown();
@@ -453,7 +454,7 @@ void SelectDropdownPopup::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, 
         onDismiss();
       }
     });
-  } else if (KeySymbol::isDown(sym)) {
+  } else if (KeybindMatcher::matches(KeybindAction::Down, sym, 0)) {
     if (!m_options.empty()) {
       m_hoveredIndex = (m_hoveredIndex + 1) % m_options.size();
       applyHoverVisuals();
@@ -461,7 +462,7 @@ void SelectDropdownPopup::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, 
         m_surface->requestRedraw();
       }
     }
-  } else if (KeySymbol::isUp(sym)) {
+  } else if (KeybindMatcher::matches(KeybindAction::Up, sym, 0)) {
     if (!m_options.empty()) {
       m_hoveredIndex = (m_hoveredIndex + m_options.size() - 1) % m_options.size();
       applyHoverVisuals();
@@ -469,7 +470,7 @@ void SelectDropdownPopup::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, 
         m_surface->requestRedraw();
       }
     }
-  } else if (KeySymbol::isEnterOrSpace(sym)) {
+  } else if (KeybindMatcher::matches(KeybindAction::Validate, sym, 0)) {
     if (m_hoveredIndex < m_options.size()) {
       selectAndClose(m_hoveredIndex);
     }
