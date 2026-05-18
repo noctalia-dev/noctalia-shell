@@ -56,6 +56,7 @@ private:
   void syncScaledFonts();
   void syncShortcuts();
   bool resizeMediaArtToCard();
+  void onPanelCardOpacityChanged(float opacity) override;
 
   MprisService* m_mpris = nullptr;
   HttpClient* m_httpClient = nullptr;

@@ -47,6 +47,7 @@ public:
 private:
   void doLayout(Renderer& renderer, float width, float height) override;
   void doUpdate(Renderer& renderer) override;
+  void onPanelCardOpacityChanged(float opacity) override;
   // "ALL" is represented by an empty connector string.
   struct MonitorChoice {
     std::string connector; // empty = ALL
