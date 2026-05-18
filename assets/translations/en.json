@@ -451,6 +451,7 @@
       },
       "settings": {
         "title": "Settings",
+        "widget-section": "Widget",
         "format": "Format",
         "color": "Color",
         "shadow": "Shadow",
