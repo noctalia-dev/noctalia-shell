@@ -29,7 +29,6 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 

@@ -29,7 +29,6 @@
 #include <memory>
 #include <string_view>
 #include <utility>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 

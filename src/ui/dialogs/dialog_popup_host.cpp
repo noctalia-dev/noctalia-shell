@@ -1,6 +1,7 @@
 #include "ui/dialogs/dialog_popup_host.h"
 
 #include "config/config_service.h"
+#include "core/key_symbols.h"
 #include "core/ui_phase.h"
 #include "render/render_context.h"
 #include "render/scene/node.h"
@@ -12,7 +13,6 @@
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
 #include "xdg-shell-client-protocol.h"
-#include "xkbcommon/xkbcommon-keysyms.h"
 
 #include <algorithm>
 #include <cassert>
@@ -258,7 +258,7 @@ void DialogPopupHost::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  if (event.pressed && !event.preedit && event.sym == XKB_KEY_Escape) {
+  if (event.pressed && !event.preedit && KeySymbol::isEscape(event.sym)) {
     cancel();
     return;
   }

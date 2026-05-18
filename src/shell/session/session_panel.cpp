@@ -4,6 +4,7 @@
 #include "compositors/hyprland/hyprland_runtime.h"
 #include "compositors/niri/niri_runtime.h"
 #include "config/config_service.h"
+#include "core/key_symbols.h"
 #include "core/log.h"
 #include "core/process.h"
 #include "i18n/i18n.h"
@@ -30,7 +31,6 @@
 #include <string_view>
 #include <thread>
 #include <utility>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -674,7 +674,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
   }
 
   if ((m_config != nullptr && m_config->matchesKeybind(KeybindAction::Validate, sym, modifiers)) ||
-      sym == XKB_KEY_space) {
+      KeySymbol::isSpace(sym)) {
     activateSelected();
     return true;
   }

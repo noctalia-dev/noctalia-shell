@@ -26,7 +26,7 @@
 #include <unistd.h>
 #include <unordered_map>
 #include <vector>
-#include <xkbcommon/xkbcommon.h>
+#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -2109,9 +2109,8 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
 bool ConfigService::matchesKeybind(KeybindAction action, std::uint32_t sym, std::uint32_t modifiers) const {
   const auto& configured = keybindSet(m_config.keybinds, action);
   const auto active = configured.empty() ? defaultKeybindSet(action) : configured;
-  return std::any_of(active.begin(), active.end(), [sym, modifiers](const KeyChord& chord) {
-    return chord.sym == sym && chord.modifiers == modifiers;
-  });
+  return std::any_of(active.begin(), active.end(),
+                     [sym, modifiers](const KeyChord& chord) { return keyChordMatches(chord, sym, modifiers); });
 }
 
 void ConfigService::registerIpc(IpcService& ipc) {

@@ -1,6 +1,7 @@
 #include "ui/controls/select_dropdown_popup.h"
 
 #include "core/deferred_call.h"
+#include "core/key_symbols.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "cursor-shape-v1-client-protocol.h"
@@ -25,7 +26,6 @@
 #include <linux/input-event-codes.h>
 #include <utility>
 #include <wayland-client-protocol.h>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -445,7 +445,7 @@ void SelectDropdownPopup::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, 
     return;
   }
 
-  if (sym == XKB_KEY_Escape) {
+  if (KeySymbol::isEscape(sym)) {
     auto onDismiss = m_callbacks.onDismiss;
     DeferredCall::callLater([this, onDismiss]() {
       closeSelectDropdown();
@@ -453,7 +453,7 @@ void SelectDropdownPopup::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, 
         onDismiss();
       }
     });
-  } else if (sym == XKB_KEY_Down) {
+  } else if (KeySymbol::isDown(sym)) {
     if (!m_options.empty()) {
       m_hoveredIndex = (m_hoveredIndex + 1) % m_options.size();
       applyHoverVisuals();
@@ -461,7 +461,7 @@ void SelectDropdownPopup::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, 
         m_surface->requestRedraw();
       }
     }
-  } else if (sym == XKB_KEY_Up) {
+  } else if (KeySymbol::isUp(sym)) {
     if (!m_options.empty()) {
       m_hoveredIndex = (m_hoveredIndex + m_options.size() - 1) % m_options.size();
       applyHoverVisuals();
@@ -469,17 +469,17 @@ void SelectDropdownPopup::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, 
         m_surface->requestRedraw();
       }
     }
-  } else if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter || sym == XKB_KEY_space) {
+  } else if (KeySymbol::isEnterOrSpace(sym)) {
     if (m_hoveredIndex < m_options.size()) {
       selectAndClose(m_hoveredIndex);
     }
-  } else if (sym == XKB_KEY_Home) {
+  } else if (KeySymbol::isHome(sym)) {
     m_hoveredIndex = 0;
     applyHoverVisuals();
     if (m_surface) {
       m_surface->requestRedraw();
     }
-  } else if (sym == XKB_KEY_End) {
+  } else if (KeySymbol::isEnd(sym)) {
     if (!m_options.empty()) {
       m_hoveredIndex = m_options.size() - 1;
       applyHoverVisuals();

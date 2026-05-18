@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
+#include "core/key_symbols.h"
 #include "core/log.h"
 #include "ext-session-lock-v1-client-protocol.h"
 #include "i18n/i18n.h"
@@ -15,7 +16,6 @@
 #include <algorithm>
 #include <string>
 #include <wayland-client.h>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -234,12 +234,12 @@ void LockScreen::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  if (event.sym == XKB_KEY_Return || event.sym == XKB_KEY_KP_Enter) {
+  if (KeySymbol::isEnter(event.sym)) {
     tryAuthenticate();
     return;
   }
 
-  if (event.sym == XKB_KEY_Escape) {
+  if (KeySymbol::isEscape(event.sym)) {
     clearSensitiveString(m_password);
     m_status = i18n::tr("lockscreen.password-cleared");
     m_statusIsError = false;

@@ -1,5 +1,6 @@
 #include "ui/controls/select.h"
 
+#include "core/key_symbols.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "i18n/i18n.h"
 #include "render/core/render_styles.h"
@@ -17,7 +18,6 @@
 #include <cmath>
 #include <linux/input-event-codes.h>
 #include <memory>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -253,8 +253,7 @@ void Select::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, bool pressed)
     return;
   }
 
-  if (sym == XKB_KEY_Down || sym == XKB_KEY_Up || sym == XKB_KEY_space || sym == XKB_KEY_Return ||
-      sym == XKB_KEY_KP_Enter) {
+  if (KeySymbol::isDown(sym) || KeySymbol::isUp(sym) || KeySymbol::isEnterOrSpace(sym)) {
     if (!m_open) {
       toggleOpen();
     }

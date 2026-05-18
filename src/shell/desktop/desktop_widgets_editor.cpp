@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
+#include "core/key_symbols.h"
 #include "core/log.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "i18n/i18n.h"
@@ -1615,7 +1616,7 @@ void DesktopWidgetsEditor::onKeyboardEvent(const KeyboardEvent& event) {
   }
 
   if (focused != nullptr) {
-    if (event.sym == XKB_KEY_Escape) {
+    if (KeySymbol::isEscape(event.sym)) {
       for (auto& surface : m_surfaces) {
         surface->inputDispatcher.setFocus(nullptr);
       }
@@ -1623,12 +1624,12 @@ void DesktopWidgetsEditor::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  if (event.sym == XKB_KEY_Escape) {
+  if (KeySymbol::isEscape(event.sym)) {
     requestExit();
     return;
   }
 
-  if (event.sym == XKB_KEY_Delete || event.sym == XKB_KEY_BackSpace) {
+  if (KeySymbol::isBackspaceOrDelete(event.sym)) {
     removeSelectedWidget();
     return;
   }
