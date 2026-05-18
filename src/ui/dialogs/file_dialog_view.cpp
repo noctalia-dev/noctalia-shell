@@ -10,6 +10,7 @@
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/input.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/separator.h"
@@ -524,7 +525,7 @@ bool FileDialogView::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers,
     return true;
   }
 
-  if (KeySymbol::isEscape(sym)) {
+  if (KeybindMatcher::matches(KeybindAction::Cancel, sym, modifiers)) {
     cancelDialog();
     return true;
   }
@@ -535,7 +536,7 @@ bool FileDialogView::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers,
   }
 
   if (m_visibleEntries.empty()) {
-    if (KeySymbol::isEnter(sym)) {
+    if (KeybindMatcher::matches(KeybindAction::Validate, sym, modifiers)) {
       if (m_options.mode == FileDialogMode::SelectFolder) {
         submitDialog();
         return true;
@@ -544,7 +545,7 @@ bool FileDialogView::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers,
     return false;
   }
 
-  if (KeySymbol::isEnter(sym)) {
+  if (KeybindMatcher::matches(KeybindAction::Validate, sym, modifiers)) {
     if (!isTextInputFocused() || hostFocusedArea() == m_listFocusArea) {
       activateSelection();
       return true;
@@ -577,19 +578,19 @@ bool FileDialogView::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers,
     }
   };
 
-  if (KeySymbol::isUp(sym)) {
+  if (KeybindMatcher::matches(KeybindAction::Up, sym, modifiers)) {
     moveSelection(m_viewMode == ViewMode::Grid ? -static_cast<int>(m_gridColumns) : -1);
     return true;
   }
-  if (KeySymbol::isDown(sym)) {
+  if (KeybindMatcher::matches(KeybindAction::Down, sym, modifiers)) {
     moveSelection(m_viewMode == ViewMode::Grid ? static_cast<int>(m_gridColumns) : 1);
     return true;
   }
-  if (m_viewMode == ViewMode::Grid && KeySymbol::isLeft(sym)) {
+  if (m_viewMode == ViewMode::Grid && KeybindMatcher::matches(KeybindAction::Left, sym, modifiers)) {
     moveSelection(-1);
     return true;
   }
-  if (m_viewMode == ViewMode::Grid && KeySymbol::isRight(sym)) {
+  if (m_viewMode == ViewMode::Grid && KeybindMatcher::matches(KeybindAction::Right, sym, modifiers)) {
     moveSelection(1);
     return true;
   }
