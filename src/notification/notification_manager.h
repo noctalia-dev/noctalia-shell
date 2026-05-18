@@ -53,6 +53,8 @@ public:
 
   void setActionInvokeCallback(ActionInvokeCallback callback);
   [[nodiscard]] bool invokeAction(uint32_t id, const std::string& actionKey, bool closeAfterInvoke = true);
+  // Emits ActionInvoked with "inline-reply::<text>" (KDE quick-reply convention).
+  [[nodiscard]] bool invokeInlineReply(uint32_t id, const std::string& replyText, bool closeAfterInvoke = true);
 
   // Closes a notification by ID. Returns false if not found.
   bool close(uint32_t id, CloseReason reason = CloseReason::ClosedByCall);

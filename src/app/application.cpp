@@ -4,6 +4,7 @@
 #include "config/config_types.h"
 #include "core/build_info.h"
 #include "core/deferred_call.h"
+#include "core/keybind_matcher.h"
 #include "core/log.h"
 #include "core/process.h"
 #include "core/resource_paths.h"
@@ -29,7 +30,6 @@
 #include "system/distro_info.h"
 #include "time/time_format.h"
 #include "ui/controls/input.h"
-#include "ui/controls/keybind_matcher.h"
 #include "ui/dialogs/color_picker_dialog.h"
 #include "ui/dialogs/file_dialog.h"
 #include "ui/dialogs/glyph_picker_dialog.h"
@@ -984,6 +984,9 @@ void Application::initUi() {
       return;
     }
     if (m_overviewLauncherCapture.handleKeyboardEvent(event)) {
+      return;
+    }
+    if (m_notificationToast.onKeyboardEvent(event)) {
       return;
     }
     m_panelManager.onKeyboardEvent(event);

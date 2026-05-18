@@ -2,6 +2,7 @@
 
 #include "core/deferred_call.h"
 #include "core/key_symbols.h"
+#include "core/keybind_matcher.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "cursor-shape-v1-client-protocol.h"
@@ -12,7 +13,6 @@
 #include "render/scene/rect_node.h"
 #include "ui/controls/box.h"
 #include "ui/controls/glyph.h"
-#include "ui/controls/keybind_matcher.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/popup_chrome.h"

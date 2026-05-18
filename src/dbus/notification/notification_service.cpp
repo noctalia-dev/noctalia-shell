@@ -269,7 +269,7 @@ uint32_t NotificationService::onNotify(const std::string& app_name, uint32_t rep
                                 desktopEntry);
 }
 
-std::vector<std::string> NotificationService::onGetCapabilities() { return {"body", "actions"}; }
+std::vector<std::string> NotificationService::onGetCapabilities() { return {"body", "actions", "inline-reply"}; }
 
 std::vector<std::map<std::string, sdbus::Variant>> NotificationService::onGetNotifications() {
   std::vector<std::map<std::string, sdbus::Variant>> result;
@@ -318,6 +318,11 @@ void NotificationService::onInvokeAction(uint32_t id, const std::string& actionK
 }
 
 void NotificationService::emitActionInvoked(uint32_t id, const std::string& actionKey) {
+  if (actionKey == "inline-reply") {
+    kLog.warn("notification #{}: ActionInvoked with bare inline-reply (missing reply text)", id);
+  } else if (actionKey.starts_with("inline-reply::")) {
+    kLog.debug("notification #{}: inline-reply action invoked ({} bytes)", id, actionKey.size());
+  }
   m_object->emitSignal("ActionInvoked").onInterface(k_interface).withArguments(id, actionKey);
 }
 

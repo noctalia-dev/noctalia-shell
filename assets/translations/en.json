@@ -563,6 +563,9 @@
     "actions": {
       "fallback": "Action"
     },
+    "inline-reply": {
+      "placeholder": "Type a reply..."
+    },
     "internal": {
       "dbus-disabled": "DBus notifications disabled",
       "network": "Network",

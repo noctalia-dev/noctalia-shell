@@ -66,21 +66,23 @@ namespace {
   };
 
   CalendarBuildState currentCalendarState(int monthOffset) {
-    std::time_t now = std::time(nullptr);
-    std::tm local = *std::localtime(&now);
+    const auto now = std::chrono::system_clock::now();
+    const auto today = std::chrono::floor<std::chrono::days>(now);
+    const auto ymd = std::chrono::year_month_day(today);
 
     CalendarBuildState state;
-    state.currentYear = local.tm_year + 1900;
-    state.currentMonth = local.tm_mon;
-    state.today = local.tm_mday;
+    state.currentYear = static_cast<int>(static_cast<std::int32_t>(ymd.year()));
+    state.currentMonth = static_cast<int>(static_cast<unsigned>(ymd.month()) - 1);
+    state.today = static_cast<int>(static_cast<unsigned>(ymd.day()));
 
-    std::tm display = local;
-    display.tm_mday = 1;
-    display.tm_mon += monthOffset;
-    std::mktime(&display);
-    state.displayYear = display.tm_year + 1900;
-    state.displayMonth = display.tm_mon;
-    state.displayWeekday = display.tm_wday;
+    auto displayMonth = ymd.month() + std::chrono::months(monthOffset);
+    auto displayYmd = std::chrono::year_month_day(ymd.year() / displayMonth / std::chrono::day(1));
+    auto displaySys = std::chrono::sys_days(displayYmd);
+    displayYmd = std::chrono::year_month_day(displaySys);
+
+    state.displayYear = static_cast<int>(static_cast<std::int32_t>(displayYmd.year()));
+    state.displayMonth = static_cast<int>(static_cast<unsigned>(displayYmd.month()) - 1);
+    state.displayWeekday = static_cast<int>(std::chrono::weekday(displaySys).c_encoding());
     state.isCurrentMonth = state.displayYear == state.currentYear && state.displayMonth == state.currentMonth;
     return state;
   }
@@ -113,9 +115,16 @@ std::unique_ptr<Flex> CalendarTab::create() {
     if (delta == 0.0f) {
       return;
     }
-    // Wayland wheel convention: positive is scroll down.
-    m_monthOffset += (delta > 0.0f) ? 1 : -1;
-    PanelManager::instance().refresh();
+    m_scrollAccum += delta;
+    if (m_scrollAccum >= 1.0f) {
+      m_monthOffset += 1;
+      m_scrollAccum -= 1.0f;
+      PanelManager::instance().refresh();
+    } else if (m_scrollAccum <= -1.0f) {
+      m_monthOffset -= 1;
+      m_scrollAccum += 1.0f;
+      PanelManager::instance().refresh();
+    }
   });
   m_calendarArea = calendarArea.get();
 
@@ -285,6 +294,8 @@ void CalendarTab::onClose() {
   m_previousButton = nullptr;
   m_nextButton = nullptr;
   m_grid = nullptr;
+  m_monthOffset = 0;
+  m_scrollAccum = 0.0f;
   m_lastInnerWidth = -1.0f;
   m_lastInnerHeight = -1.0f;
   m_lastDisplayYear = std::numeric_limits<int>::min();
