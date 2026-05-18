@@ -78,12 +78,12 @@ namespace {
 
 WidgetFactory::WidgetFactory(CompositorPlatform& platform, const Config& config, NotificationManager* notifications,
                              TrayService* tray, PipeWireService* audio, UPowerService* upower,
-                             SystemMonitorService* sysmon, PowerProfilesService* powerProfiles, INetworkService* network,
-                             IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
-                             HttpClient* httpClient, WeatherService* weather, GammaService* nightLight,
-                             noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
-                             BrightnessService* brightness, LockKeysService* lockKeys, ClipboardService* clipboard,
-                             FileWatcher* fileWatcher)
+                             SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
+                             INetworkService* network, IdleInhibitor* idleInhibitor, MprisService* mpris,
+                             PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weather,
+                             GammaService* nightLight, noctalia::theme::ThemeService* themeService,
+                             BluetoothService* bluetooth, BrightnessService* brightness, LockKeysService* lockKeys,
+                             ClipboardService* clipboard, FileWatcher* fileWatcher)
     : m_platform(platform), m_config(config), m_notifications(notifications), m_tray(tray), m_audio(audio),
       m_upower(upower), m_sysmon(sysmon), m_powerProfiles(powerProfiles), m_network(network),
       m_idleInhibitor(idleInhibitor), m_mpris(mpris), m_audioSpectrum(audioSpectrum), m_httpClient(httpClient),

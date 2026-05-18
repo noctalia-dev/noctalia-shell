@@ -77,7 +77,9 @@ public:
   [[nodiscard]] const NetworkState& state() const noexcept override { return m_state; }
   [[nodiscard]] bool hasStateSnapshot() const noexcept override { return m_hasStateSnapshot; }
   [[nodiscard]] const std::vector<AccessPointInfo>& accessPoints() const noexcept override { return m_accessPoints; }
-  [[nodiscard]] const std::vector<VpnConnectionInfo>& vpnConnections() const noexcept override { return m_vpnConnections; }
+  [[nodiscard]] const std::vector<VpnConnectionInfo>& vpnConnections() const noexcept override {
+    return m_vpnConnections;
+  }
   [[nodiscard]] static const char* glyphForState(const NetworkState& state) noexcept;
   [[nodiscard]] static const char* wifiGlyphForState(const NetworkState& state) noexcept;
   [[nodiscard]] static const char* wifiGlyphForSignal(std::uint8_t signal) noexcept;
