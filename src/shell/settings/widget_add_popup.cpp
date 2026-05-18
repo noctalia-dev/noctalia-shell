@@ -136,20 +136,6 @@ namespace settings {
       return base + "_custom";
     }
 
-    std::string trimmedText(std::string_view text) {
-      std::size_t start = 0;
-      while (start < text.size() && std::isspace(static_cast<unsigned char>(text[start]))) {
-        ++start;
-      }
-
-      std::size_t end = text.size();
-      while (end > start && std::isspace(static_cast<unsigned char>(text[end - 1]))) {
-        --end;
-      }
-
-      return std::string(text.substr(start, end - start));
-    }
-
     PopupSurfaceConfig centeredPopupConfig(std::uint32_t parentWidth, std::uint32_t parentHeight, std::uint32_t width,
                                            std::uint32_t height, std::uint32_t serial) {
       return PopupSurfaceConfig{
@@ -337,7 +323,7 @@ namespace settings {
     if (m_instanceInput == nullptr) {
       return;
     }
-    const std::string id = trimmedText(m_instanceInput->value());
+    const std::string id = StringUtils::trim(m_instanceInput->value());
     if (!canCreateInstanceId(id)) {
       m_instanceInput->setInvalid(true);
       return;
@@ -424,7 +410,7 @@ namespace settings {
       if (option.value.empty()) {
         return;
       }
-      if (m_instanceModeEnabled) {
+      if (m_instanceModeEnabled || widgetTypeRequiresNamedConfig(option.value)) {
         beginCreateFlow(option);
         return;
       }

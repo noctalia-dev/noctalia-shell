@@ -182,6 +182,8 @@ namespace settings {
 
   bool isBuiltInWidgetType(std::string_view type) { return findWidgetTypeSpec(type) != nullptr; }
 
+  bool widgetTypeRequiresNamedConfig(std::string_view type) { return type == "scripted"; }
+
   std::string widgetTypeForReference(const Config& cfg, std::string_view name) {
     if (const auto it = cfg.widgets.find(std::string(name)); it != cfg.widgets.end() && !it->second.type.empty()) {
       return it->second.type;

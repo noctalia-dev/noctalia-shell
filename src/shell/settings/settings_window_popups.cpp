@@ -236,14 +236,10 @@ void SettingsWindow::openBarWidgetAddPopup(const std::vector<std::string>& laneP
 
       if (!newInstanceType.empty() && !newInstanceId.empty()) {
         laneItems.push_back(newInstanceId);
-        m_creatingWidgetType.clear();
-        m_openWidgetPickerPath.clear();
         setSettingOverrides({{{"widget", newInstanceId, "type"}, newInstanceType}, {selectedLanePath, laneItems}});
         return;
       }
 
-      m_creatingWidgetType.clear();
-      m_openWidgetPickerPath.clear();
       laneItems.push_back(value);
       setSettingOverride(selectedLanePath, laneItems);
     });

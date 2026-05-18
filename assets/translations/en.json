@@ -724,7 +724,7 @@
       "support-report": "Failed to save support report.",
       "flattened-config": "Failed to save flattened config.",
       "widget": {
-        "rename": "Could not rename widget instance."
+        "rename": "Could not rename named widget."
       },
       "bar": {
         "create": "Could not create bar.",
@@ -779,7 +779,7 @@
           "built-in": "Built-in",
           "named": "Named",
           "unknown": "Unknown",
-          "new-instance": "New Instance"
+          "new-instance": "New Named Widget"
         },
         "editor": {
           "title": "Bar Widgets",
@@ -797,20 +797,20 @@
         "picker": {
           "placeholder": "Search widgets...",
           "empty": "No widgets found",
-          "instance-toggle": "New Instance",
-          "instance-description": "New instance for type \"{type}\"",
-          "create-label": "New {label} Instance",
-          "create-description": "Choose an id for type \"{type}\""
+          "instance-toggle": "Named Widget",
+          "instance-description": "Named widget for type \"{type}\"",
+          "create-label": "New Named {label}",
+          "create-description": "Choose a widget id for type \"{type}\""
         },
         "instance": {
-          "create-title": "New {type} instance",
+          "create-title": "New named {type} widget",
           "create-save": "Create",
           "rename": "Rename",
           "id-placeholder": "Widget id",
           "rename-save": "Save",
           "delete": "Delete",
           "delete-confirm-title": "Delete \"{name}\"?",
-          "delete-confirm-desc": "This widget instance will be removed from every bar and its settings discarded."
+          "delete-confirm-desc": "This named widget will be removed from every bar and its settings discarded."
         },
         "inspector": {
           "edit-title": "Editing widget",
@@ -1036,7 +1036,7 @@
         "graph": "Graph",
         "id": "ID",
         "input": "Input",
-        "instance": "Instance",
+        "instance": "Per Placement",
         "name": "Name",
         "net-rx": "Network RX",
         "net-tx": "Network TX",
@@ -1253,8 +1253,8 @@
           "description": "Script path or command"
         },
         "scope": {
-          "label": "Scope",
-          "description": "Run one script runtime per widget instance, or share one runtime across bars with the same widget id"
+          "label": "Runtime Scope",
+          "description": "Run one script runtime per live widget placement, or share one runtime across bars with the same widget id"
         },
         "show_caps_lock": {
           "label": "Show Caps Lock",
@@ -1286,7 +1286,7 @@
         },
         "type": {
           "label": "Type",
-          "description": "Built-in widget type for this named instance"
+          "description": "Built-in widget type for this named widget"
         },
         "vertical_format": {
           "label": "Vertical Format",

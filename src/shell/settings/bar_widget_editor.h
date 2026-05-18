@@ -22,12 +22,10 @@ namespace settings {
     bool showAdvanced = false;
     bool showOverriddenOnly = false;
     std::vector<SelectOption> batteryDeviceOptions;
-    std::string& openWidgetPickerPath;
     std::string& editingWidgetName;
     std::string& pendingDeleteWidgetName;
     std::string& pendingDeleteWidgetSettingPath;
     std::string& renamingWidgetName;
-    std::string& creatingWidgetType;
 
     std::function<void()> requestRebuild;
     std::function<void()> resetContentScroll;

@@ -292,11 +292,9 @@ void SettingsWindow::destroyWindow() {
   m_selectedBarName.clear();
   m_selectedMonitorOverride.clear();
   m_editingWidgetName.clear();
-  m_openWidgetPickerPath.clear();
   m_pendingDeleteWidgetName.clear();
   m_pendingDeleteWidgetSettingPath.clear();
   m_renamingWidgetName.clear();
-  m_creatingWidgetType.clear();
   m_showOverriddenOnly = false;
   m_sidebarScrollState = {};
   m_contentScrollState = {};
@@ -385,13 +383,10 @@ void SettingsWindow::clearStatusMessage() {
 }
 
 void SettingsWindow::clearTransientSettingsState() {
-  m_openWidgetPickerPath.clear();
-
   m_editingWidgetName.clear();
   m_renamingWidgetName.clear();
   m_pendingDeleteWidgetName.clear();
   m_pendingDeleteWidgetSettingPath.clear();
-  m_creatingWidgetType.clear();
   m_creatingBarName.clear();
   m_renamingBarName.clear();
   m_pendingDeleteBarName.clear();
@@ -577,17 +572,14 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
       m_actionsMenuPopup->close();
       return;
     }
-    if (!m_openWidgetPickerPath.empty() || !m_editingWidgetName.empty() || !m_creatingWidgetType.empty() ||
-        !m_renamingWidgetName.empty() || !m_pendingDeleteWidgetName.empty() ||
+    if (!m_editingWidgetName.empty() || !m_renamingWidgetName.empty() || !m_pendingDeleteWidgetName.empty() ||
         !m_pendingDeleteWidgetSettingPath.empty() || !m_creatingBarName.empty() || !m_renamingBarName.empty() ||
         !m_pendingDeleteBarName.empty() || !m_creatingMonitorOverrideBarName.empty() ||
         !m_renamingMonitorOverrideBarName.empty() || !m_pendingDeleteMonitorOverrideBarName.empty()) {
-      m_openWidgetPickerPath.clear();
       m_editingWidgetName.clear();
       m_renamingWidgetName.clear();
       m_pendingDeleteWidgetName.clear();
       m_pendingDeleteWidgetSettingPath.clear();
-      m_creatingWidgetType.clear();
       m_creatingBarName.clear();
       m_renamingBarName.clear();
       m_pendingDeleteBarName.clear();
