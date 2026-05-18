@@ -592,32 +592,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
     });
     area->addChild(std::move(iconNode));
 
-    // Set tooltip: show tooltipTitle alone when title is already contained, otherwise prefix with title
-    std::string tooltipText;
-    if (!item.statusNotifierDescription.empty()) {
-      std::string tooltipTitle = item.statusNotifierDescription;
-      std::string lowerTooltipTitle = StringUtils::toLower(tooltipTitle);
-      lowerTooltipTitle.erase(std::remove(lowerTooltipTitle.begin(), lowerTooltipTitle.end(), ' '),
-                              lowerTooltipTitle.end());
-
-      std::string lowerTitle = StringUtils::toLower(item.title);
-
-      if (lowerTitle.empty() || lowerTooltipTitle.find(lowerTitle) != std::string::npos) {
-        tooltipText = tooltipTitle;
-      } else {
-        std::string wordTitle = item.title;
-        if (!wordTitle.empty()) {
-          wordTitle.front() = static_cast<char>(std::toupper(static_cast<unsigned char>(wordTitle.front())));
-        }
-        tooltipText = wordTitle + " - " + tooltipTitle;
-      }
-    } else if (!item.title.empty()) {
-      tooltipText = item.title;
-    } else if (!item.statusNotifierTitle.empty()) {
-      tooltipText = item.statusNotifierTitle;
-    }
-
-    if (!tooltipText.empty()) {
+    if (const std::string tooltipText = tray::formatTrayItemTooltip(item); !tooltipText.empty()) {
       area->setTooltip(tooltipText);
     }
 
