@@ -12,6 +12,9 @@ namespace KeybindMatcher {
 
   using Matcher = std::function<bool(std::uint32_t sym, std::uint32_t modifiers)>;
 
+  /// Returns true if the keysym produces a printable character (a-z, 0-9, common punctuation).
+  bool isPrintableKey(std::uint32_t sym);
+
   void setMatcher(KeybindAction action, Matcher matcher);
   bool matches(KeybindAction action, std::uint32_t sym, std::uint32_t modifiers);
 
