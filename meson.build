@@ -752,3 +752,13 @@ animation_manager_test = executable('animation_manager_test',
 )
 
 test('animation_manager', animation_manager_test)
+
+log_test = executable('log_test',
+  sources: files(
+    'tests/log_test.cpp',
+    'src/core/log.cpp',
+  ),
+  include_directories: _noctalia_inc,
+)
+
+test('log', log_test)
