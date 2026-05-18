@@ -35,6 +35,7 @@ struct BarInstance {
   std::int32_t scale = 1;
   std::size_t barIndex = 0;
   BarConfig barConfig;
+  ShellConfig::PanelConfig::EffectsConfig panelEffects;
   std::unique_ptr<LayerSurface> surface;
   // sceneRoot must be destroyed before `animations` — ~Node() calls cancelForOwner().
   AnimationManager animations;

@@ -918,6 +918,18 @@
           "solid": "Solid",
           "soft": "Soft",
           "glass": "Glass"
+        },
+        "panel-texture": {
+          "disabled": "Disabled",
+          "noise": "Noise",
+          "diagonal": "Diagonal",
+          "horizontal": "Horizontal"
+        },
+        "panel-highlight": {
+          "disabled": "Disabled",
+          "edge": "Edge",
+          "glass": "Glass",
+          "sweep": "Sweep"
         }
       },
       "screen-position": {
@@ -1589,6 +1601,22 @@
         "transparency-mode": {
           "label": "Transparency",
           "description": "Panel glass style, including detached panel opacity and card translucency"
+        },
+        "texture": {
+          "label": "Texture",
+          "description": "Add a subtle material texture to bar and dock panel surfaces"
+        },
+        "texture-opacity": {
+          "label": "Texture Strength",
+          "description": "Strength of the material texture overlay"
+        },
+        "highlight": {
+          "label": "Inner Highlight",
+          "description": "Add a soft top-left highlight to bar and dock panel surfaces"
+        },
+        "highlight-opacity": {
+          "label": "Highlight Opacity",
+          "description": "Strength of the inner highlight"
         },
         "home-shortcuts": {
           "label": "Home Shortcuts",

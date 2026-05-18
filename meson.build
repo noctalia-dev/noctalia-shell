@@ -473,6 +473,7 @@ _noctalia_sources = files(
   'src/shell/osd/brightness_osd.cpp',
   'src/shell/osd/lock_keys_osd.cpp',
   'src/shell/osd/osd_overlay.cpp',
+  'src/shell/panel/panel_effects.cpp',
   'src/shell/tooltip/tooltip_manager.cpp',
   'src/shell/screen_corners/screen_corners.cpp',
   'src/shell/panel/panel_click_shield.cpp',

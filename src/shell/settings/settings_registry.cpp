@@ -653,6 +653,35 @@ namespace settings {
                                 {"shell", "panel", "transparency_mode"},
                                 asSegmented(enumSelect(kPanelTransparencyModes, cfg.shell.panel.transparencyMode)),
                                 "glass opacity alpha translucent cards blur"));
+    entries.push_back(makeEntry("panels", "effects", tr("settings.schema.panels.texture.label"),
+                                tr("settings.schema.panels.texture.description"),
+                                {"shell", "panel", "effects", "texture"},
+                                asSegmented(enumSelect(kPanelTextureStyles, cfg.shell.panel.effects.texture)),
+                                "grain texture material diagonal horizontal"));
+    {
+      auto e = makeEntry(
+          "panels", "effects", tr("settings.schema.panels.texture-opacity.label"),
+          tr("settings.schema.panels.texture-opacity.description"), {"shell", "panel", "effects", "texture_opacity"},
+          SliderSetting{cfg.shell.panel.effects.textureOpacity, 0.0f, 1.0f, 0.01f, false},
+          "grain texture material diagonal horizontal opacity strength");
+      e.visibleWhen =
+          SettingVisibility{{"shell", "panel", "effects", "texture"}, {"noise", "diagonal", "horizontal"}};
+      entries.push_back(std::move(e));
+    }
+    entries.push_back(makeEntry("panels", "effects", tr("settings.schema.panels.highlight.label"),
+                                tr("settings.schema.panels.highlight.description"),
+                                {"shell", "panel", "effects", "highlight"},
+                                asSegmented(enumSelect(kPanelHighlightStyles, cfg.shell.panel.effects.highlight)),
+                                "inner highlight material light"));
+    {
+      auto e = makeEntry("panels", "effects", tr("settings.schema.panels.highlight-opacity.label"),
+                         tr("settings.schema.panels.highlight-opacity.description"),
+                         {"shell", "panel", "effects", "highlight_opacity"},
+                         SliderSetting{cfg.shell.panel.effects.highlightOpacity, 0.0f, 1.0f, 0.01f, false},
+                         "inner highlight material light opacity strength");
+      e.visibleWhen = SettingVisibility{{"shell", "panel", "effects", "highlight"}, {"edge", "glass", "sweep"}};
+      entries.push_back(std::move(e));
+    }
     entries.push_back(makeEntry("panels", "control-center", tr("settings.schema.panels.attach-control-center.label"),
                                 tr("settings.schema.panels.attach-control-center.description"),
                                 {"shell", "panel", "attach_control_center"},

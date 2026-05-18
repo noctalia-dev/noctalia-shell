@@ -443,6 +443,34 @@ constexpr EnumOption<PanelTransparencyMode> kPanelTransparencyModes[] = {
     {PanelTransparencyMode::Glass, "glass", "settings.options.shell.panel-transparency.glass"},
 };
 
+enum class PanelTextureStyle : std::uint8_t {
+  Disabled = 0,
+  Noise = 1,
+  Diagonal = 2,
+  Horizontal = 3,
+};
+
+constexpr EnumOption<PanelTextureStyle> kPanelTextureStyles[] = {
+    {PanelTextureStyle::Disabled, "disabled", "settings.options.shell.panel-texture.disabled"},
+    {PanelTextureStyle::Noise, "noise", "settings.options.shell.panel-texture.noise"},
+    {PanelTextureStyle::Diagonal, "diagonal", "settings.options.shell.panel-texture.diagonal"},
+    {PanelTextureStyle::Horizontal, "horizontal", "settings.options.shell.panel-texture.horizontal"},
+};
+
+enum class PanelHighlightStyle : std::uint8_t {
+  Disabled = 0,
+  Edge = 1,
+  Glass = 2,
+  Sweep = 3,
+};
+
+constexpr EnumOption<PanelHighlightStyle> kPanelHighlightStyles[] = {
+    {PanelHighlightStyle::Disabled, "disabled", "settings.options.shell.panel-highlight.disabled"},
+    {PanelHighlightStyle::Edge, "edge", "settings.options.shell.panel-highlight.edge"},
+    {PanelHighlightStyle::Glass, "glass", "settings.options.shell.panel-highlight.glass"},
+    {PanelHighlightStyle::Sweep, "sweep", "settings.options.shell.panel-highlight.sweep"},
+};
+
 [[nodiscard]] float panelCardOpacityForTransparencyMode(PanelTransparencyMode mode,
                                                         float panelBackgroundOpacity) noexcept;
 [[nodiscard]] float detachedPanelBackgroundOpacityForTransparencyMode(PanelTransparencyMode mode) noexcept;
@@ -485,8 +513,18 @@ struct ShellConfig {
   };
 
   struct PanelConfig {
+    struct EffectsConfig {
+      PanelTextureStyle texture = PanelTextureStyle::Disabled;
+      float textureOpacity = 0.50f;
+      PanelHighlightStyle highlight = PanelHighlightStyle::Disabled;
+      float highlightOpacity = 0.50f;
+
+      bool operator==(const EffectsConfig&) const = default;
+    };
+
     bool backgroundBlur = true; // request compositor blur behind panels via ext-background-effect-v1
     PanelTransparencyMode transparencyMode = PanelTransparencyMode::Solid;
+    EffectsConfig effects;
     bool attachLauncher = false;
     bool attachClipboard = false;
     bool attachControlCenter = true;

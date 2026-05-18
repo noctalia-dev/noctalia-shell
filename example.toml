@@ -42,6 +42,12 @@ attach_control_center = true        # attach Control Center to the bar when a su
 attach_wallpaper      = true        # attach wallpaper picker to the bar when a suitable bar is available
 attach_session        = false       # attach session power menu to the bar when a suitable bar is available
 
+# [shell.panel.effects]
+# texture          = "disabled"     # disabled | noise | diagonal | horizontal
+# texture_opacity  = 0.50           # 0.0 = hidden, 1.0 = maximum texture strength
+# highlight         = "disabled"     # disabled | edge | glass | sweep
+# highlight_opacity = 0.50           # 0.0 = hidden, 1.0 = maximum highlight strength
+
 [shell.mpris]
 blacklist = []                      # ignore MPRIS players by bus/identity/desktop entry token
 

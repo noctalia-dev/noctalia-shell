@@ -138,6 +138,7 @@ private:
   std::vector<BarConfig> m_lastBars;
   std::unordered_map<std::string, WidgetConfig> m_lastWidgets;
   ShellConfig::ShadowConfig m_lastShadow;
+  ShellConfig::PanelConfig::EffectsConfig m_lastPanelEffects;
 
   // Surface → BarInstance mapping for pointer event routing
   std::unordered_map<wl_surface*, BarInstance*> m_surfaceMap;

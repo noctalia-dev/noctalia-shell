@@ -152,6 +152,7 @@ private:
   RenderContext* m_renderContext = nullptr;
   DockConfig m_lastDockConfig{};
   ShellConfig::ShadowConfig m_lastShadow;
+  ShellConfig::PanelConfig::EffectsConfig m_lastPanelEffects;
   std::vector<std::string> m_lastPinnedConfig;
   std::vector<std::string> m_lastBarLayerStack;
   std::vector<DesktopEntry> m_pinnedEntries;

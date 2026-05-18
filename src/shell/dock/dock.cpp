@@ -12,6 +12,7 @@
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "shell/panel/panel_manager.h"
+#include "shell/panel/panel_effects.h"
 #include "shell/surface_shadow.h"
 #include "shell/tooltip/tooltip_manager.h"
 #include "system/app_identity.h"
@@ -182,11 +183,14 @@ bool Dock::initialize(CompositorPlatform& platform, ConfigService* config, Rende
   m_config->addReloadCallback([this]() {
     const auto& newCfg = m_config->config().dock;
     const auto& newShadow = m_config->config().shell.shadow;
+    const auto& newPanelEffects = m_config->config().shell.panel.effects;
     const auto newBarLayerStack = barLayerStackSignature(m_config->config());
-    if (newCfg == m_lastDockConfig && newShadow == m_lastShadow && newBarLayerStack == m_lastBarLayerStack) {
+    if (newCfg == m_lastDockConfig && newShadow == m_lastShadow && newPanelEffects == m_lastPanelEffects &&
+        newBarLayerStack == m_lastBarLayerStack) {
       return;
     }
-    if (newBarLayerStack != m_lastBarLayerStack && newCfg == m_lastDockConfig && newShadow == m_lastShadow) {
+    if (newBarLayerStack != m_lastBarLayerStack && newCfg == m_lastDockConfig && newShadow == m_lastShadow &&
+        newPanelEffects == m_lastPanelEffects) {
       kLog.info("bar layer stack changed; recreating dock surfaces");
     }
     reload();
@@ -194,6 +198,7 @@ bool Dock::initialize(CompositorPlatform& platform, ConfigService* config, Rende
 
   m_lastDockConfig = cfg;
   m_lastShadow = m_config->config().shell.shadow;
+  m_lastPanelEffects = m_config->config().shell.panel.effects;
   m_lastPinnedConfig = cfg.pinned;
   m_lastBarLayerStack = barLayerStackSignature(m_config->config());
 
@@ -212,6 +217,7 @@ void Dock::reload() {
   const auto& cfg = m_config->config().dock;
   m_lastDockConfig = cfg;
   m_lastShadow = m_config->config().shell.shadow;
+  m_lastPanelEffects = m_config->config().shell.panel.effects;
   m_lastBarLayerStack = barLayerStackSignature(m_config->config());
 
   if (!cfg.enabled) {
@@ -942,6 +948,9 @@ void Dock::applyPanelPalette(DockInstance& instance) {
   const float opacity = m_config->config().dock.backgroundOpacity;
   instance.panel->setFill(colorSpecFromRole(ColorRole::Surface, opacity));
   instance.panel->setBorder(colorSpecFromRole(ColorRole::Outline), 0.0f);
+  auto style = instance.panel->style();
+  shell::panel_effects::apply(style, m_config->config().shell.panel.effects);
+  instance.panel->setStyle(style);
 }
 
 // ── Private: item population ──────────────────────────────────────────────────

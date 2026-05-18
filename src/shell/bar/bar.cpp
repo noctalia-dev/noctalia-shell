@@ -11,6 +11,7 @@
 #include "render/render_context.h"
 #include "shell/bar/widget.h"
 #include "shell/bar/widgets/scripted_widget.h"
+#include "shell/panel/panel_effects.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/surface_shadow.h"
 #include "shell/tooltip/tooltip_manager.h"
@@ -624,9 +625,11 @@ bool Bar::initialize(CompositorPlatform& platform, ConfigService* config, TimeSe
   m_lastBars = m_config->config().bars;
   m_lastWidgets = m_config->config().widgets;
   m_lastShadow = m_config->config().shell.shadow;
+  m_lastPanelEffects = m_config->config().shell.panel.effects;
   m_config->addReloadCallback([this]() {
     const auto& cfg = m_config->config();
-    if (cfg.bars == m_lastBars && cfg.widgets == m_lastWidgets && cfg.shell.shadow == m_lastShadow) {
+    if (cfg.bars == m_lastBars && cfg.widgets == m_lastWidgets && cfg.shell.shadow == m_lastShadow &&
+        cfg.shell.panel.effects == m_lastPanelEffects) {
       return;
     }
     reload();
@@ -652,6 +655,7 @@ void Bar::reload() {
   m_lastBars = m_config->config().bars;
   m_lastWidgets = m_config->config().widgets;
   m_lastShadow = m_config->config().shell.shadow;
+  m_lastPanelEffects = m_config->config().shell.panel.effects;
   m_widgetFactory = std::make_unique<WidgetFactory>(
       *m_platform, m_config->config(), m_notifications, m_tray, m_audio, m_upower, m_sysmon, m_powerProfiles, m_network,
       m_idleInhibitor, m_mpris, m_audioSpectrum, m_httpClient, m_weatherService, m_nightLight, m_themeService,
@@ -1002,6 +1006,7 @@ void Bar::createInstance(const WaylandOutput& output, std::size_t barIndex, cons
   instance->output = output.output;
   instance->scale = output.scale;
   instance->barConfig = barConfig;
+  instance->panelEffects = m_config->config().shell.panel.effects;
   instance->barIndex = barIndex;
 
   const auto anchor = positionToAnchor(barConfig.position);
@@ -1336,6 +1341,7 @@ void Bar::rebuildInstanceContents(BarInstance& instance, const BarConfig& newCon
   instance.inputDispatcher.pointerLeave();
 
   instance.barConfig = newConfig;
+  instance.panelEffects = m_config->config().shell.panel.effects;
 
   // Detach old widget root nodes from their sections and destroy the widgets.
   // Widgets release their root into the section on creation, so the section
@@ -1408,6 +1414,7 @@ void Bar::applyBackgroundPalette(BarInstance& instance) {
   auto style = instance.bg->style();
   style.fill = colorForRole(ColorRole::Surface, instance.barConfig.backgroundOpacity);
   style.border = colorForRole(ColorRole::Outline);
+  shell::panel_effects::apply(style, instance.panelEffects);
   instance.bg->setStyle(style);
 }
 
@@ -1609,7 +1616,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   // Keep it exactly aligned with the shadow shape; the shadow shader now
   // draws only outside the rect, so any size mismatch is visible at corners.
   if (instance.bg != nullptr) {
-    const RoundedRectStyle bgStyle{
+    RoundedRectStyle bgStyle{
         .fill = colorForRole(ColorRole::Surface, instance.barConfig.backgroundOpacity),
         .border = colorForRole(ColorRole::Outline),
         .fillMode = FillMode::Solid,
@@ -1617,6 +1624,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
         .softness = 0.0f,
         .borderWidth = 0.0f,
     };
+    shell::panel_effects::apply(bgStyle, instance.panelEffects);
     instance.bg->setStyle(bgStyle);
     instance.bg->setPosition(barAreaX, barAreaY);
     instance.bg->setSize(barAreaW, barAreaH);

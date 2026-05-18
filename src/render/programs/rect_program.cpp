@@ -49,6 +49,10 @@ uniform float u_softness;
 uniform int u_no_aa;
 uniform int u_invert_fill;
 uniform float u_border_width;
+uniform int u_material_texture_style;
+uniform float u_material_texture_opacity;
+uniform int u_material_highlight_style;
+uniform float u_material_highlight_opacity;
 uniform int u_outer_shadow;
 uniform vec2 u_shadow_cutout_offset;
 uniform int u_shadow_exclusion;
@@ -306,6 +310,82 @@ vec4 gradient_fill(float position) {
     return mix(c2, c3, gradient_segment_t(position, stops.z, stops.w));
 }
 
+float material_hash(vec2 p) {
+    p = fract(p * vec2(0.1031, 0.11369));
+    p += dot(p, p.yx + 19.19);
+    return fract((p.x + p.y) * p.x);
+}
+
+float material_value_noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+
+    float a = material_hash(i);
+    float b = material_hash(i + vec2(1.0, 0.0));
+    float c = material_hash(i + vec2(0.0, 1.0));
+    float d = material_hash(i + vec2(1.0, 1.0));
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y) - 0.5;
+}
+
+float material_line(float value, float period, float width) {
+    float pos = fract(value / period) * period;
+    return 1.0 - smoothstep(width, width + 0.75, pos);
+}
+
+float material_texture(vec2 local_point, int style) {
+    if (style == 2) {
+        float band = floor((local_point.x + local_point.y) / 18.0);
+        return mod(band, 2.0) < 1.0 ? 0.032 : -0.006;
+    }
+    if (style == 3) {
+        float light_line = material_line(local_point.y, 4.0, 0.45) * 0.032;
+        float dark_line = material_line(local_point.y + 2.0, 4.0, 0.35) * -0.006;
+        return light_line + dark_line;
+    }
+    float fine = material_value_noise(local_point / vec2(1.75, 1.75)) * 0.045;
+    float soft = material_value_noise(local_point / vec2(5.5, 5.5)) * 0.018;
+    return fine + soft;
+}
+
+float material_highlight(vec2 local_point, vec2 uv, int style) {
+    if (style == 2) {
+        float glow = 1.0 - smoothstep(0.0, 0.72, distance(uv, vec2(0.42, 0.0)));
+        float top = 1.0 - smoothstep(0.0, max(min(u_rect_size.y * 0.62, 26.0), 1.0), local_point.y);
+        return max(glow * 0.72, top * 0.34);
+    }
+    if (style == 3) {
+        float sweep = 1.0 - smoothstep(0.0, 0.42, uv.x + uv.y);
+        float warm_edge = 1.0 - smoothstep(0.0, 0.58, (1.0 - uv.x) + (1.0 - uv.y));
+        return max(sweep * 0.84, warm_edge * 0.22);
+    }
+    float top_span = max(min(u_rect_size.y * 0.45, 18.0), 1.0);
+    float left_span = max(min(u_rect_size.x * 0.45, 18.0), 1.0);
+    float top = 1.0 - smoothstep(0.0, top_span, local_point.y);
+    float left = 1.0 - smoothstep(0.0, left_span, local_point.x);
+    return max(top * 0.85, left * 0.45);
+}
+
+vec4 material_fill(vec4 fill_base, vec2 local_point, vec2 uv) {
+    if (fill_base.a <= 0.0) {
+        return fill_base;
+    }
+    vec3 rgb = fill_base.rgb;
+    float highlight = 0.0;
+    if (u_material_highlight_style > 0 && u_material_highlight_opacity > 0.0) {
+        highlight = material_highlight(local_point, uv, u_material_highlight_style) * u_material_highlight_opacity;
+        float luminance = dot(rgb, vec3(0.2126, 0.7152, 0.0722));
+        vec3 highlight_target = mix(vec3(1.0), rgb * 0.62, smoothstep(0.58, 0.82, luminance));
+        rgb = mix(rgb, highlight_target, clamp(highlight, 0.0, 1.0));
+    }
+    if (u_material_texture_style > 0 && u_material_texture_opacity > 0.0) {
+        float grain = material_texture(local_point, u_material_texture_style);
+        float edge_damping = 1.0 - clamp(highlight * 2.5, 0.0, 0.65);
+        rgb = clamp(rgb + vec3(grain * u_material_texture_opacity * edge_damping), vec3(0.0), vec3(1.0));
+    }
+    return vec4(rgb, fill_base.a);
+}
+
 void main() {
     float aa = max(u_softness, 0.85);
     vec2 local_point = v_pixel;
@@ -345,6 +425,7 @@ void main() {
     } else {
         fill_base = gradient_fill(gradient_pos);
     }
+    fill_base = material_fill(fill_base, local_point, uv);
 
     if (u_border_width <= 0.0 || u_border_color.a <= 0.0) {
         float out_alpha = fill_base.a * outer_coverage;
@@ -422,6 +503,10 @@ void RectProgram::ensureInitialized() {
   m_noAaLocation = glGetUniformLocation(m_program.id(), "u_no_aa");
   m_invertFillLocation = glGetUniformLocation(m_program.id(), "u_invert_fill");
   m_borderWidthLocation = glGetUniformLocation(m_program.id(), "u_border_width");
+  m_materialTextureStyleLocation = glGetUniformLocation(m_program.id(), "u_material_texture_style");
+  m_materialTextureOpacityLocation = glGetUniformLocation(m_program.id(), "u_material_texture_opacity");
+  m_materialHighlightStyleLocation = glGetUniformLocation(m_program.id(), "u_material_highlight_style");
+  m_materialHighlightOpacityLocation = glGetUniformLocation(m_program.id(), "u_material_highlight_opacity");
   m_outerShadowLocation = glGetUniformLocation(m_program.id(), "u_outer_shadow");
   m_shadowCutoutOffsetLocation = glGetUniformLocation(m_program.id(), "u_shadow_cutout_offset");
   m_shadowExclusionLocation = glGetUniformLocation(m_program.id(), "u_shadow_exclusion");
@@ -437,7 +522,9 @@ void RectProgram::ensureInitialized() {
       m_gradientDirectionLocation < 0 || m_radiiLocation < 0 || m_softnessLocation < 0 || m_gradientStopsLocation < 0 ||
       m_gradientColor0Location < 0 || m_gradientColor1Location < 0 || m_gradientColor2Location < 0 ||
       m_gradientColor3Location < 0 || m_invertFillLocation < 0 || m_noAaLocation < 0 || m_cornerShapesLocation < 0 ||
-      m_logicalInsetLocation < 0 || m_borderWidthLocation < 0 || m_outerShadowLocation < 0 ||
+      m_logicalInsetLocation < 0 || m_borderWidthLocation < 0 || m_materialTextureStyleLocation < 0 ||
+      m_materialTextureOpacityLocation < 0 || m_materialHighlightStyleLocation < 0 ||
+      m_materialHighlightOpacityLocation < 0 || m_outerShadowLocation < 0 ||
       m_shadowCutoutOffsetLocation < 0 || m_shadowExclusionLocation < 0 || m_shadowExclusionOffsetLocation < 0 ||
       m_shadowExclusionSizeLocation < 0 || m_shadowExclusionCornerShapesLocation < 0 ||
       m_shadowExclusionLogicalInsetLocation < 0 || m_shadowExclusionRadiiLocation < 0 || m_transformLocation < 0) {
@@ -468,6 +555,10 @@ void RectProgram::destroy() {
   m_noAaLocation = -1;
   m_invertFillLocation = -1;
   m_borderWidthLocation = -1;
+  m_materialTextureStyleLocation = -1;
+  m_materialTextureOpacityLocation = -1;
+  m_materialHighlightStyleLocation = -1;
+  m_materialHighlightOpacityLocation = -1;
   m_outerShadowLocation = -1;
   m_shadowCutoutOffsetLocation = -1;
   m_shadowExclusionLocation = -1;
@@ -530,6 +621,10 @@ void RectProgram::draw(float surfaceWidth, float surfaceHeight, float width, flo
   glUniform1i(m_noAaLocation, style.noAa ? 1 : 0);
   glUniform1i(m_invertFillLocation, style.invertFill ? 1 : 0);
   glUniform1f(m_borderWidthLocation, style.borderWidth);
+  glUniform1i(m_materialTextureStyleLocation, style.materialTextureStyle);
+  glUniform1f(m_materialTextureOpacityLocation, style.materialTextureOpacity);
+  glUniform1i(m_materialHighlightStyleLocation, style.materialHighlightStyle);
+  glUniform1f(m_materialHighlightOpacityLocation, style.materialHighlightOpacity);
   glUniform1i(m_outerShadowLocation, style.outerShadow ? 1 : 0);
   glUniform2f(m_shadowCutoutOffsetLocation, style.shadowCutoutOffsetX, style.shadowCutoutOffsetY);
   glUniform1i(m_shadowExclusionLocation, style.shadowExclusion ? 1 : 0);

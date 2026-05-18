@@ -1259,6 +1259,24 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
           shell.panel.transparencyMode = *parsed;
         }
       }
+      if (const auto* effectsTbl = (*panelTbl)["effects"].as_table()) {
+        if (auto v = (*effectsTbl)["texture"].value<std::string>()) {
+          if (auto parsed = enumFromKey(kPanelTextureStyles, StringUtils::trim(*v))) {
+            shell.panel.effects.texture = *parsed;
+          }
+        }
+        if (auto v = finiteDouble((*effectsTbl)["texture_opacity"])) {
+          shell.panel.effects.textureOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
+        }
+        if (auto v = (*effectsTbl)["highlight"].value<std::string>()) {
+          if (auto parsed = enumFromKey(kPanelHighlightStyles, StringUtils::trim(*v))) {
+            shell.panel.effects.highlight = *parsed;
+          }
+        }
+        if (auto v = finiteDouble((*effectsTbl)["highlight_opacity"])) {
+          shell.panel.effects.highlightOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
+        }
+      }
       if (auto v = (*panelTbl)["attach_launcher"].value<bool>()) {
         shell.panel.attachLauncher = *v;
       }
