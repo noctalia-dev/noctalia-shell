@@ -555,6 +555,18 @@ void ClipboardPanel::create() {
   m_imageActionButton = imageActionButton.get();
   previewActions->addChild(std::move(imageActionButton));
 
+  auto pinButton = std::make_unique<Button>();
+  pinButton->setGlyph("pin");
+  pinButton->setVariant(ButtonVariant::Secondary);
+  pinButton->setGlyphSize(Style::fontSizeBody * scale);
+  pinButton->setMinWidth(Style::controlHeightSm * scale);
+  pinButton->setMinHeight(Style::controlHeightSm * scale);
+  pinButton->setPadding(Style::spaceXs * scale);
+  pinButton->setRadius(Style::scaledRadiusMd(scale));
+  pinButton->setOnClick([this]() { togglePinSelected(); });
+  m_pinButton = pinButton.get();
+  previewActions->addChild(std::move(pinButton));
+
   auto deleteEntryButton = std::make_unique<Button>();
   deleteEntryButton->setGlyph("trash");
   deleteEntryButton->setVariant(ButtonVariant::Destructive);
@@ -766,6 +778,7 @@ void ClipboardPanel::onClose() {
   m_previewTitle = nullptr;
   m_previewMeta = nullptr;
   m_imageActionButton = nullptr;
+  m_pinButton = nullptr;
   m_copyButton = nullptr;
   m_deleteEntryButton = nullptr;
   m_previewScrollView = nullptr;
@@ -871,6 +884,31 @@ void ClipboardPanel::updatePreviewActions() {
   m_imageActionButton->setVisible(showImageAction);
   m_imageActionButton->setParticipatesInLayout(showImageAction);
   m_imageActionButton->setEnabled(showImageAction);
+
+  updatePinButton();
+}
+
+void ClipboardPanel::updatePinButton() {
+  if (m_pinButton == nullptr) {
+    return;
+  }
+
+  bool hasSelection = false;
+  bool pinned = false;
+  if (m_clipboard != nullptr) {
+    const std::size_t historyIndex = selectedHistoryIndex();
+    const auto& history = m_clipboard->history();
+    if (historyIndex != static_cast<std::size_t>(-1) && historyIndex < history.size()) {
+      hasSelection = true;
+      pinned = history[historyIndex].pinned;
+    }
+  }
+
+  m_pinButton->setVisible(hasSelection);
+  m_pinButton->setParticipatesInLayout(hasSelection);
+  m_pinButton->setEnabled(hasSelection);
+  m_pinButton->setGlyph(pinned ? "unpin" : "pin");
+  m_pinButton->setVariant(pinned ? ButtonVariant::Accent : ButtonVariant::Secondary);
 }
 
 void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float height) {
@@ -1103,6 +1141,51 @@ void ClipboardPanel::deleteSelectedEntry() {
   PanelManager::instance().refresh();
 }
 
+void ClipboardPanel::togglePinSelected() {
+  if (m_clipboard == nullptr) {
+    return;
+  }
+  const std::size_t historyIndex = selectedHistoryIndex();
+  if (historyIndex == static_cast<std::size_t>(-1)) {
+    return;
+  }
+  const auto& history = m_clipboard->history();
+  if (historyIndex >= history.size()) {
+    return;
+  }
+
+  const std::string storageId = history[historyIndex].storageId;
+  const bool nextPinned = !history[historyIndex].pinned;
+  if (!m_clipboard->setEntryPinned(historyIndex, nextPinned)) {
+    return;
+  }
+
+  applyFilter();
+
+  // The toggled entry moved within the deque; keep it selected by locating it
+  // again via its stable storage id.
+  std::size_t newSelected = 0;
+  const auto& updated = m_clipboard->history();
+  for (std::size_t pos = 0; pos < m_filteredIndices.size(); ++pos) {
+    const std::size_t idx = m_filteredIndices[pos];
+    if (idx < updated.size() && updated[idx].storageId == storageId) {
+      newSelected = pos;
+      break;
+    }
+  }
+  m_selectedIndex = m_filteredIndices.empty() ? 0 : newSelected;
+
+  updateListState();
+  if (m_listGrid != nullptr) {
+    m_listGrid->notifyDataChanged();
+    m_listGrid->setSelectedIndex(m_filteredIndices.empty() ? std::nullopt
+                                                           : std::optional<std::size_t>(m_selectedIndex));
+  }
+  schedulePreviewPayloadRefresh(false);
+  m_pendingScrollToSelected = true;
+  PanelManager::instance().refresh();
+}
+
 void ClipboardPanel::runImageAction() {
   if (m_clipboard == nullptr || m_config == nullptr) {
     return;
@@ -1147,22 +1230,27 @@ void ClipboardPanel::activateSelected() {
     return;
   }
   const ClipboardEntry entry = m_clipboard->history()[historyIndex];
-  const bool promoted = m_clipboard->promoteEntry(historyIndex);
+  // Pinned entries already sit at the top; don't reorder them or jump the
+  // selection back to the front when they are actioned — just copy.
+  const bool wasPinned = entry.pinned;
+  const bool promoted = wasPinned ? false : m_clipboard->promoteEntry(historyIndex);
   const bool copied = m_clipboard->copyEntry(entry);
   if (copied || promoted) {
     if (m_activateCallback) {
       m_activateCallback(entry);
       return;
     }
-    m_selectedIndex = 0;
-    applyFilter();
-    updateListState();
-    if (m_listGrid != nullptr) {
-      m_listGrid->notifyDataChanged();
-      m_listGrid->setSelectedIndex(m_filteredIndices.empty() ? std::nullopt
-                                                             : std::optional<std::size_t>(m_selectedIndex));
+    if (!wasPinned) {
+      m_selectedIndex = 0;
+      applyFilter();
+      updateListState();
+      if (m_listGrid != nullptr) {
+        m_listGrid->notifyDataChanged();
+        m_listGrid->setSelectedIndex(m_filteredIndices.empty() ? std::nullopt
+                                                               : std::optional<std::size_t>(m_selectedIndex));
+      }
+      schedulePreviewPayloadRefresh(false);
     }
-    schedulePreviewPayloadRefresh(false);
     PanelManager::instance().refresh();
   }
 }

@@ -55,6 +55,8 @@ private:
   void rebuildPreview(Renderer& renderer, float width, float height);
   void selectIndex(std::size_t index);
   void activateSelected();
+  void togglePinSelected();
+  void updatePinButton();
   void runImageAction();
   bool handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers);
   void scrollToSelected();
@@ -88,6 +90,7 @@ private:
   Label* m_previewTitle = nullptr;
   Label* m_previewMeta = nullptr;
   Button* m_imageActionButton = nullptr;
+  Button* m_pinButton = nullptr;
   Button* m_copyButton = nullptr;
   Button* m_deleteEntryButton = nullptr;
   ScrollView* m_previewScrollView = nullptr;

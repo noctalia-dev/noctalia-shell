@@ -26,6 +26,7 @@ struct ClipboardEntry {
   std::string textPreview;
   std::chrono::system_clock::time_point capturedAt;
   std::chrono::steady_clock::time_point timestamp;
+  bool pinned = false;
 
   [[nodiscard]] bool isImage() const;
 };
@@ -81,6 +82,7 @@ public:
   bool copyText(std::string text, std::string mimeType);
   bool copyEntry(const ClipboardEntry& entry);
   bool promoteEntry(std::size_t index);
+  bool setEntryPinned(std::size_t index, bool pinned);
   bool removeHistoryEntry(std::size_t index);
   void clearHistory();
   void setChangeCallback(ChangeCallback callback);
@@ -132,6 +134,7 @@ private:
   bool startReceive(void* offer);
   void finishRead(bool discard);
   void addToHistory(ClipboardEntry entry);
+  [[nodiscard]] std::size_t pinnedCount() const noexcept;
   void loadPersistedHistory();
   bool persistHistory();
   void trimHistoryToBudget();

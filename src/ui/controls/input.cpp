@@ -37,6 +37,11 @@ namespace {
     }
     const auto& hist = g_clipboard->history();
     for (std::size_t i = 0; i < hist.size(); ++i) {
+      // Pinned entries sit at the front but are not the newest capture; paste
+      // must reflect the most recent real clipboard content.
+      if (hist[i].pinned) {
+        continue;
+      }
       if (hist[i].isImage()) {
         continue;
       }
