@@ -712,7 +712,7 @@ void Application::initServices() {
       }
     }
 
-    if (dynamic_cast<NetworkService*>(m_networkService.get()) != nullptr) {
+    if (m_networkService != nullptr && m_networkService->supportsSecretAgent()) {
       try {
         m_networkSecretAgent = std::make_unique<NetworkSecretAgent>(*m_systemBus);
       } catch (const std::exception& e) {
