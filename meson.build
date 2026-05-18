@@ -548,6 +548,7 @@ _noctalia_sources = files(
   'src/system/brightness_service.cpp',
   'src/system/lock_keys_service.cpp',
   'src/system/distro_info.cpp',
+  'src/system/format_units.cpp',
   'src/system/hardware_info.cpp',
   'src/system/icon_resolver.cpp',
   'src/system/internal_app_metadata.cpp',

@@ -3,6 +3,7 @@
 #include "render/core/renderer.h"
 #include "render/scene/graph_node.h"
 #include "render/scene/node.h"
+#include "system/format_units.h"
 #include "system/system_monitor_service.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
@@ -23,16 +24,6 @@ namespace {
   bool needsCpuTemp(DesktopSysmonStat stat) { return stat == DesktopSysmonStat::CpuTemp; }
   bool needsGpuTemp(DesktopSysmonStat stat) { return stat == DesktopSysmonStat::GpuTemp; }
   bool needsGpuVram(DesktopSysmonStat stat) { return stat == DesktopSysmonStat::GpuVram; }
-
-  [[nodiscard]] std::string formatNetSpeed(double bytesPerSec) {
-    if (bytesPerSec < 1024.0)
-      return std::format("{:.0f}B", bytesPerSec);
-    if (bytesPerSec < 1024.0 * 1024.0)
-      return std::format("{:.0f}K", bytesPerSec / 1024.0);
-    if (bytesPerSec < 1024.0 * 1024.0 * 1024.0)
-      return std::format("{:.1f}M", bytesPerSec / (1024.0 * 1024.0));
-    return std::format("{:.1f}G", bytesPerSec / (1024.0 * 1024.0 * 1024.0));
-  }
 
 } // namespace
 
@@ -309,10 +300,10 @@ std::string DesktopSysmonWidget::formatValueFor(DesktopSysmonStat stat) const {
     return "--";
 
   case DesktopSysmonStat::NetRx:
-    return formatNetSpeed(stats.netRxBytesPerSec);
+    return FormatUnits::formatDecimalBytesPerSecond(stats.netRxBytesPerSec, FormatUnits::Spacing::Compact);
 
   case DesktopSysmonStat::NetTx:
-    return formatNetSpeed(stats.netTxBytesPerSec);
+    return FormatUnits::formatDecimalBytesPerSecond(stats.netTxBytesPerSec, FormatUnits::Spacing::Compact);
   }
 
   return "--";

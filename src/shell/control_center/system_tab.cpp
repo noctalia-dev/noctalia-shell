@@ -4,6 +4,7 @@
 #include "render/scene/graph_node.h"
 #include "shell/panel/panel_manager.h"
 #include "system/distro_info.h"
+#include "system/format_units.h"
 #include "system/hardware_info.h"
 #include "system/system_monitor_service.h"
 #include "time/time_format.h"
@@ -23,7 +24,7 @@ namespace {
 
   constexpr float kGraphLineWidth = 0.75f;
   constexpr float kGraphFillOpacity = 0.15f;
-  constexpr double kNetMinScaleBps = 10.0 * 1024.0;
+  constexpr double kNetMinScaleBps = 10000.0;
   const auto kSampleInterval = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::seconds(1));
 
   Flex* makeHeaderRow(Flex& parent, const std::string& title, float scale) {
@@ -86,17 +87,14 @@ namespace {
     if (stats.ramTotalMb == 0) {
       return memoryTotalLabel();
     }
-    const double usedGb = static_cast<double>(stats.ramUsedMb) / 1024.0;
-    const double totalGb = static_cast<double>(stats.ramTotalMb) / 1024.0;
-    return std::format("{:.1f} / {:.1f} GB", usedGb, totalGb);
+    return FormatUnits::formatBinaryMibUsageAsGib(stats.ramUsedMb, stats.ramTotalMb);
   }
 
   std::string formatGpuVramUsed(const SystemStats& stats) {
     if (!stats.gpuVramUsedBytes.has_value()) {
       return "--";
     }
-    const double usedGb = static_cast<double>(*stats.gpuVramUsedBytes) / (1024.0 * 1024.0 * 1024.0);
-    return std::format("{:.1f} GB", usedGb);
+    return FormatUnits::formatBinaryBytesAsGib(*stats.gpuVramUsedBytes);
   }
 
   Flex* makeInfoCard(Flex& parent, const std::string& title, float scale, float fillOpacity, Label** outLines,
@@ -686,14 +684,14 @@ void SystemTab::syncLabels() {
     m_gpuVramLabel->setText(formatGpuVramUsed(stats));
   }
   if (m_ramLabel != nullptr) {
-    const double usedGb = static_cast<double>(stats.ramUsedMb) / 1024.0;
-    m_ramLabel->setText(std::format("{:.1f} GB · {:.0f}%", usedGb, stats.ramUsagePercent));
+    m_ramLabel->setText(FormatUnits::formatBinaryMibAsGib(stats.ramUsedMb) +
+                        std::format(" · {:.0f}%", stats.ramUsagePercent));
   }
   if (m_rxLabel != nullptr) {
-    m_rxLabel->setText(formatBytesPerSec(stats.netRxBytesPerSec));
+    m_rxLabel->setText(FormatUnits::formatDecimalBytesPerSecond(stats.netRxBytesPerSec));
   }
   if (m_txLabel != nullptr) {
-    m_txLabel->setText(formatBytesPerSec(stats.netTxBytesPerSec));
+    m_txLabel->setText(FormatUnits::formatDecimalBytesPerSecond(stats.netTxBytesPerSec));
   }
 
   // System info
@@ -740,17 +738,4 @@ float SystemTab::scrollProgressForSample(std::chrono::steady_clock::time_point s
   const auto elapsed = std::chrono::steady_clock::now() - sampledAt;
   const auto clamped = std::clamp(elapsed, std::chrono::steady_clock::duration::zero(), kSampleInterval);
   return std::chrono::duration<float>(clamped).count() / std::chrono::duration<float>(kSampleInterval).count();
-}
-
-std::string SystemTab::formatBytesPerSec(double bytesPerSec) {
-  if (bytesPerSec >= 1024.0 * 1024.0 * 1024.0) {
-    return std::format("{:.1f} GB/s", bytesPerSec / (1024.0 * 1024.0 * 1024.0));
-  }
-  if (bytesPerSec >= 1024.0 * 1024.0) {
-    return std::format("{:.1f} MB/s", bytesPerSec / (1024.0 * 1024.0));
-  }
-  if (bytesPerSec >= 1024.0) {
-    return std::format("{:.1f} KB/s", bytesPerSec / 1024.0);
-  }
-  return std::format("{:.0f} B/s", bytesPerSec);
 }
