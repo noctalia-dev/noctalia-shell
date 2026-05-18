@@ -392,6 +392,7 @@ _noctalia_sources = files(
   'src/render/core/color.cpp',
   'src/render/core/image_file_loader.cpp',
   'src/render/core/shader_program.cpp',
+  'src/render/core/stb_image_resize_impl.cpp',
   'src/render/core/thumbnail_service.cpp',
   'src/render/core/image_decoder.cpp',
   'src/render/programs/glyph_program.cpp',
@@ -771,3 +772,21 @@ image_source_log_test = executable('image_source_log_test',
 )
 
 test('image_source_log', image_source_log_test)
+
+image_file_loader_data_uri_test = executable('image_file_loader_data_uri_test',
+  sources: files(
+    'tests/image_file_loader_data_uri_test.cpp',
+    'src/render/core/image_file_loader.cpp',
+    'src/render/core/image_decoder.cpp',
+    'src/render/core/stb_image_resize_impl.cpp',
+  ),
+  dependencies: [
+    cairo_dep,
+    librsvg_dep,
+    libwebp_dep,
+    stb_dep,
+  ],
+  include_directories: _noctalia_inc,
+)
+
+test('image_file_loader_data_uri', image_file_loader_data_uri_test)
