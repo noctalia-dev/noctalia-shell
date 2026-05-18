@@ -1,6 +1,5 @@
 #include "ui/controls/select.h"
 
-#include "core/key_symbols.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "i18n/i18n.h"
 #include "render/core/render_styles.h"
@@ -9,6 +8,7 @@
 #include "render/scene/rect_node.h"
 #include "ui/controls/box.h"
 #include "ui/controls/glyph.h"
+#include "ui/controls/keybind_matcher.h"
 #include "ui/controls/label.h"
 #include "ui/controls/select_popup_context.h"
 #include "ui/palette.h"
@@ -253,7 +253,8 @@ void Select::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, bool pressed)
     return;
   }
 
-  if (KeySymbol::isDown(sym) || KeySymbol::isUp(sym) || KeySymbol::isEnterOrSpace(sym)) {
+  if (KeybindMatcher::matches(KeybindAction::Down, sym, 0) || KeybindMatcher::matches(KeybindAction::Up, sym, 0) ||
+      KeybindMatcher::matches(KeybindAction::Validate, sym, 0)) {
     if (!m_open) {
       toggleOpen();
     }
