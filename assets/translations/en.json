@@ -576,6 +576,7 @@
       "keybind-app": "Noctalia",
       "keybind-invalid-title": "Keybind not allowed",
       "keybind-invalid-super": "The Super/Windows key cannot be used in shell keybinds.",
+      "keybind-invalid-printable": "Printable keys (letters, numbers, symbols) require a modifier such as Ctrl or Alt.",
       "power-profiles": "Power profiles",
       "power-profile-title": "Power mode",
       "power-profile-body": "Switched to: {profile}"
