@@ -918,6 +918,11 @@
           "solid": "Solid",
           "soft": "Soft",
           "glass": "Glass"
+        },
+        "panel-placement": {
+          "attached": "Attached",
+          "floating": "Floating",
+          "centered": "Centered"
         }
       },
       "screen-position": {
@@ -1588,55 +1593,55 @@
       "panels": {
         "transparency-mode": {
           "label": "Transparency",
-          "description": "Panel glass style, including detached panel opacity and card translucency"
+          "description": "Panel glass style, including floating/centered panel opacity and card translucency"
         },
         "home-shortcuts": {
           "label": "Home Shortcuts",
           "description": "Choose up to six shortcut buttons for the home tab"
         },
-        "attach-control-center": {
-          "label": "Attach to Bar",
-          "description": "Attach the Control Center panel to the bar when a suitable bar is available"
+        "placement-control-center": {
+          "label": "Placement",
+          "description": "Choose whether Control Center attaches to the bar, floats near it, or opens centered"
         },
         "compact-control-center": {
           "label": "Compact Sidebar",
           "description": "Show only icons in the sidebar to make the Control Center narrower"
         },
-        "attach-launcher": {
-          "label": "Attach to Bar",
-          "description": "Attach the Launcher panel to the bar when a suitable bar is available"
+        "placement-launcher": {
+          "label": "Placement",
+          "description": "Choose whether Launcher attaches to the bar, floats near it, or opens centered"
         },
-        "attach-clipboard": {
-          "label": "Attach to Bar",
-          "description": "Attach the Clipboard panel to the bar when a suitable bar is available"
+        "placement-clipboard": {
+          "label": "Placement",
+          "description": "Choose whether Clipboard attaches to the bar, floats near it, or opens centered"
         },
-        "attach-wallpaper": {
-          "label": "Attach to Bar",
-          "description": "Attach the Wallpaper panel to the bar when a suitable bar is available"
+        "placement-wallpaper": {
+          "label": "Placement",
+          "description": "Choose whether Wallpaper attaches to the bar, floats near it, or opens centered"
         },
-        "attach-session": {
-          "label": "Attach to Bar",
-          "description": "Attach the Session panel to the bar when a suitable bar is available"
+        "placement-session": {
+          "label": "Placement",
+          "description": "Choose whether Session attaches to the bar, floats near it, or opens centered"
         },
         "open-near-click-control-center": {
           "label": "Open Near Click",
-          "description": "Position the Control Center near the click location on the bar instead of centering it"
+          "description": "Position the Control Center near the bar click instead of centering it along the bar"
         },
         "open-near-click-launcher": {
           "label": "Open Near Click",
-          "description": "Position the Launcher near the click location on the bar instead of centering it"
+          "description": "Position the Launcher near the bar click instead of centering it along the bar"
         },
         "open-near-click-clipboard": {
           "label": "Open Near Click",
-          "description": "Position the Clipboard near the click location on the bar instead of centering it"
+          "description": "Position the Clipboard near the bar click instead of centering it along the bar"
         },
         "open-near-click-wallpaper": {
           "label": "Open Near Click",
-          "description": "Position the Wallpaper picker near the click location on the bar instead of centering it"
+          "description": "Position the Wallpaper picker near the bar click instead of centering it along the bar"
         },
         "open-near-click-session": {
           "label": "Open Near Click",
-          "description": "Position the Session panel near the click location on the bar instead of centering it"
+          "description": "Position the Session panel near the bar click instead of centering it along the bar"
         },
         "session-actions": {
           "label": "Entries",

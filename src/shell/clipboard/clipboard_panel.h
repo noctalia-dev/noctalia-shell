@@ -40,12 +40,10 @@ public:
 
   [[nodiscard]] float preferredWidth() const override { return scaled(920.0f); }
   [[nodiscard]] float preferredHeight() const override { return scaled(560.0f); }
-  [[nodiscard]] bool centeredHorizontally() const override { return true; }
-  [[nodiscard]] bool centeredVertically() const override { return true; }
   [[nodiscard]] LayerShellLayer layer() const override { return LayerShellLayer::Overlay; }
   [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::Exclusive; }
   [[nodiscard]] InputArea* initialFocusArea() const override;
-  [[nodiscard]] bool prefersAttachedToBar() const noexcept override;
+  [[nodiscard]] PanelPlacement panelPlacement() const noexcept override;
 
 private:
   void doLayout(Renderer& renderer, float width, float height) override;

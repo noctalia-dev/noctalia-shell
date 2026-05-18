@@ -25,8 +25,6 @@ public:
 
   [[nodiscard]] float preferredWidth() const override { return scaled(560.0f); }
   [[nodiscard]] float preferredHeight() const override { return scaled(530.0f); }
-  [[nodiscard]] bool centeredHorizontally() const override { return true; }
-  [[nodiscard]] bool centeredVertically() const override { return true; }
   [[nodiscard]] bool hasDecoration() const override { return true; }
   [[nodiscard]] LayerShellLayer layer() const override { return LayerShellLayer::Overlay; }
   [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::OnDemand; }

@@ -61,8 +61,8 @@ float ControlCenterPanel::preferredWidth() const {
   return scaled(compact ? 660.0f : 780.0f);
 }
 
-bool ControlCenterPanel::prefersAttachedToBar() const noexcept {
-  return m_config == nullptr || m_config->config().shell.panel.attachControlCenter;
+PanelPlacement ControlCenterPanel::panelPlacement() const noexcept {
+  return m_config == nullptr ? PanelPlacement::Attached : m_config->config().shell.panel.controlCenterPlacement;
 }
 
 bool ControlCenterPanel::dismissTransientUi() {

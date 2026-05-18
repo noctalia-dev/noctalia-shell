@@ -653,16 +653,17 @@ namespace settings {
                                 {"shell", "panel", "transparency_mode"},
                                 asSegmented(enumSelect(kPanelTransparencyModes, cfg.shell.panel.transparencyMode)),
                                 "glass opacity alpha translucent cards blur"));
-    entries.push_back(makeEntry("panels", "control-center", tr("settings.schema.panels.attach-control-center.label"),
-                                tr("settings.schema.panels.attach-control-center.description"),
-                                {"shell", "panel", "attach_control_center"},
-                                ToggleSetting{cfg.shell.panel.attachControlCenter}, "attach bar panel"));
+    entries.push_back(makeEntry("panels", "control-center", tr("settings.schema.panels.placement-control-center.label"),
+                                tr("settings.schema.panels.placement-control-center.description"),
+                                {"shell", "panel", "control_center_placement"},
+                                asSegmented(enumSelect(kPanelPlacements, cfg.shell.panel.controlCenterPlacement)),
+                                "attached floating centered bar panel position"));
     {
       auto e = makeEntry("panels", "control-center", tr("settings.schema.panels.open-near-click-control-center.label"),
                          tr("settings.schema.panels.open-near-click-control-center.description"),
                          {"shell", "panel", "open_near_click_control_center"},
                          ToggleSetting{cfg.shell.panel.openNearClickControlCenter}, "open near click position anchor");
-      e.visibleWhen = SettingVisibility{{"shell", "panel", "attach_control_center"}, {"true"}};
+      e.visibleWhen = SettingVisibility{{"shell", "panel", "control_center_placement"}, {"attached", "floating"}};
       entries.push_back(std::move(e));
     }
     entries.push_back(makeEntry("panels", "control-center", tr("settings.schema.panels.compact-control-center.label"),
@@ -675,52 +676,56 @@ namespace settings {
         ShortcutListSetting{
             .items = cfg.controlCenter.shortcuts, .suggestedOptions = controlCenterShortcutOptions(), .maxItems = 6},
         "quick settings shortcuts toggles wifi bluetooth caffeine night light dnd power media weather clipboard"));
-    entries.push_back(makeEntry("panels", "launcher", tr("settings.schema.panels.attach-launcher.label"),
-                                tr("settings.schema.panels.attach-launcher.description"),
-                                {"shell", "panel", "attach_launcher"}, ToggleSetting{cfg.shell.panel.attachLauncher},
-                                "attach bar panel"));
+    entries.push_back(makeEntry("panels", "launcher", tr("settings.schema.panels.placement-launcher.label"),
+                                tr("settings.schema.panels.placement-launcher.description"),
+                                {"shell", "panel", "launcher_placement"},
+                                asSegmented(enumSelect(kPanelPlacements, cfg.shell.panel.launcherPlacement)),
+                                "attached floating centered bar panel position"));
     {
       auto e = makeEntry("panels", "launcher", tr("settings.schema.panels.open-near-click-launcher.label"),
                          tr("settings.schema.panels.open-near-click-launcher.description"),
                          {"shell", "panel", "open_near_click_launcher"},
                          ToggleSetting{cfg.shell.panel.openNearClickLauncher}, "open near click position anchor");
-      e.visibleWhen = SettingVisibility{{"shell", "panel", "attach_launcher"}, {"true"}};
+      e.visibleWhen = SettingVisibility{{"shell", "panel", "launcher_placement"}, {"attached", "floating"}};
       entries.push_back(std::move(e));
     }
-    entries.push_back(makeEntry("panels", "clipboard", tr("settings.schema.panels.attach-clipboard.label"),
-                                tr("settings.schema.panels.attach-clipboard.description"),
-                                {"shell", "panel", "attach_clipboard"}, ToggleSetting{cfg.shell.panel.attachClipboard},
-                                "attach bar panel"));
+    entries.push_back(makeEntry("panels", "clipboard", tr("settings.schema.panels.placement-clipboard.label"),
+                                tr("settings.schema.panels.placement-clipboard.description"),
+                                {"shell", "panel", "clipboard_placement"},
+                                asSegmented(enumSelect(kPanelPlacements, cfg.shell.panel.clipboardPlacement)),
+                                "attached floating centered bar panel position"));
     {
       auto e = makeEntry("panels", "clipboard", tr("settings.schema.panels.open-near-click-clipboard.label"),
                          tr("settings.schema.panels.open-near-click-clipboard.description"),
                          {"shell", "panel", "open_near_click_clipboard"},
                          ToggleSetting{cfg.shell.panel.openNearClickClipboard}, "open near click position anchor");
-      e.visibleWhen = SettingVisibility{{"shell", "panel", "attach_clipboard"}, {"true"}};
+      e.visibleWhen = SettingVisibility{{"shell", "panel", "clipboard_placement"}, {"attached", "floating"}};
       entries.push_back(std::move(e));
     }
-    entries.push_back(makeEntry("panels", "wallpaper", tr("settings.schema.panels.attach-wallpaper.label"),
-                                tr("settings.schema.panels.attach-wallpaper.description"),
-                                {"shell", "panel", "attach_wallpaper"}, ToggleSetting{cfg.shell.panel.attachWallpaper},
-                                "attach bar panel"));
+    entries.push_back(makeEntry("panels", "wallpaper", tr("settings.schema.panels.placement-wallpaper.label"),
+                                tr("settings.schema.panels.placement-wallpaper.description"),
+                                {"shell", "panel", "wallpaper_placement"},
+                                asSegmented(enumSelect(kPanelPlacements, cfg.shell.panel.wallpaperPlacement)),
+                                "attached floating centered bar panel position"));
     {
       auto e = makeEntry("panels", "wallpaper", tr("settings.schema.panels.open-near-click-wallpaper.label"),
                          tr("settings.schema.panels.open-near-click-wallpaper.description"),
                          {"shell", "panel", "open_near_click_wallpaper"},
                          ToggleSetting{cfg.shell.panel.openNearClickWallpaper}, "open near click position anchor");
-      e.visibleWhen = SettingVisibility{{"shell", "panel", "attach_wallpaper"}, {"true"}};
+      e.visibleWhen = SettingVisibility{{"shell", "panel", "wallpaper_placement"}, {"attached", "floating"}};
       entries.push_back(std::move(e));
     }
-    entries.push_back(makeEntry("panels", "session-panel", tr("settings.schema.panels.attach-session.label"),
-                                tr("settings.schema.panels.attach-session.description"),
-                                {"shell", "panel", "attach_session"}, ToggleSetting{cfg.shell.panel.attachSession},
-                                "attach bar panel power menu"));
+    entries.push_back(makeEntry("panels", "session-panel", tr("settings.schema.panels.placement-session.label"),
+                                tr("settings.schema.panels.placement-session.description"),
+                                {"shell", "panel", "session_placement"},
+                                asSegmented(enumSelect(kPanelPlacements, cfg.shell.panel.sessionPlacement)),
+                                "attached floating centered bar panel power menu position"));
     {
       auto e = makeEntry("panels", "session-panel", tr("settings.schema.panels.open-near-click-session.label"),
                          tr("settings.schema.panels.open-near-click-session.description"),
                          {"shell", "panel", "open_near_click_session"},
                          ToggleSetting{cfg.shell.panel.openNearClickSession}, "open near click position anchor");
-      e.visibleWhen = SettingVisibility{{"shell", "panel", "attach_session"}, {"true"}};
+      e.visibleWhen = SettingVisibility{{"shell", "panel", "session_placement"}, {"attached", "floating"}};
       entries.push_back(std::move(e));
     }
     entries.push_back(makeEntry("panels", "session-panel", tr("settings.schema.panels.session-actions.label"),

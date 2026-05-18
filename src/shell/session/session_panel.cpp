@@ -398,8 +398,8 @@ std::function<bool()> SessionPanel::hookFor(const std::string& action) const {
   return {};
 }
 
-bool SessionPanel::prefersAttachedToBar() const noexcept {
-  return m_config != nullptr && m_config->config().shell.panel.attachSession;
+PanelPlacement SessionPanel::panelPlacement() const noexcept {
+  return m_config != nullptr ? m_config->config().shell.panel.sessionPlacement : PanelPlacement::Attached;
 }
 
 float SessionPanel::preferredWidth() const {

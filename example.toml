@@ -35,12 +35,17 @@ alpha    = 0.55                     # multiplied by each component's background 
 
 [shell.panel]
 background_blur       = true        # request compositor blur behind panels
-transparency_mode     = "solid"     # solid | soft | glass; controls detached panel opacity and card translucency
-attach_launcher       = false       # attach launcher to the bar when a suitable bar is available
-attach_clipboard      = false       # attach clipboard history to the bar when a suitable bar is available
-attach_control_center = true        # attach Control Center to the bar when a suitable bar is available
-attach_wallpaper      = true        # attach wallpaper picker to the bar when a suitable bar is available
-attach_session        = false       # attach session power menu to the bar when a suitable bar is available
+transparency_mode     = "solid"     # solid | soft | glass; controls floating/centered opacity and card translucency
+launcher_placement       = "centered" # attached | floating | centered
+clipboard_placement      = "centered" # attached | floating | centered
+control_center_placement = "attached" # attached | floating | centered
+wallpaper_placement      = "attached" # attached | floating | centered
+session_placement        = "attached" # attached | floating | centered
+open_near_click_control_center = false # for attached/floating placement, follow the bar click instead of bar-center
+open_near_click_launcher       = false # for attached/floating placement, follow the bar click instead of bar-center
+open_near_click_clipboard      = false # for attached/floating placement, follow the bar click instead of bar-center
+open_near_click_wallpaper      = false # for attached/floating placement, follow the bar click instead of bar-center
+open_near_click_session        = false # for attached/floating placement, follow the bar click instead of bar-center
 
 [shell.mpris]
 blacklist = []                      # ignore MPRIS players by bus/identity/desktop entry token

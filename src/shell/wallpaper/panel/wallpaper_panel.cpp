@@ -121,8 +121,8 @@ WallpaperPanel::WallpaperPanel(WaylandConnection* wayland, ConfigService* config
 
 WallpaperPanel::~WallpaperPanel() = default;
 
-bool WallpaperPanel::prefersAttachedToBar() const noexcept {
-  return m_config == nullptr || m_config->config().shell.panel.attachWallpaper;
+PanelPlacement WallpaperPanel::panelPlacement() const noexcept {
+  return m_config == nullptr ? PanelPlacement::Attached : m_config->config().shell.panel.wallpaperPlacement;
 }
 
 void WallpaperPanel::create() {

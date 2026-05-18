@@ -32,6 +32,38 @@ namespace {
   constexpr Logger kLog("panel");
   constexpr std::int32_t kAttachedPanelBarOverlap = 1;
 
+  struct BarVisibleRect {
+    std::int32_t left = 0;
+    std::int32_t top = 0;
+    std::int32_t right = 0;
+    std::int32_t bottom = 0;
+  };
+
+  BarVisibleRect resolveBarVisibleRect(const BarConfig& barConfig, std::int32_t outputWidth,
+                                       std::int32_t outputHeight) {
+    const bool barIsBottom = barConfig.position == "bottom";
+    const bool barIsLeft = barConfig.position == "left";
+    const bool barIsRight = barConfig.position == "right";
+    const bool barIsVertical = barIsLeft || barIsRight;
+    const std::int32_t mEdge = std::max(0, barConfig.marginEdge);
+    const std::int32_t mEnds = std::max(0, barConfig.marginEnds);
+    const std::int32_t thickness = std::max(0, barConfig.thickness);
+
+    const std::int32_t left =
+        barIsRight ? std::max(0, outputWidth - mEdge - thickness) : (barIsVertical ? mEdge : mEnds);
+    const std::int32_t top =
+        barIsBottom ? std::max(0, outputHeight - mEdge - thickness) : (barIsVertical ? mEnds : mEdge);
+    const std::int32_t right = barIsVertical ? left + thickness : std::max(left, outputWidth - mEnds);
+    const std::int32_t bottom = barIsVertical ? std::max(top, outputHeight - mEnds) : top + thickness;
+
+    return BarVisibleRect{
+        .left = left,
+        .top = top,
+        .right = right,
+        .bottom = bottom,
+    };
+  }
+
   BarConfig resolvePanelBarConfig(ConfigService* configService, CompositorPlatform* platform, wl_output* output,
                                   std::string_view barName = {}) {
     BarConfig barConfig;
@@ -65,6 +97,31 @@ namespace {
     return barConfig;
   }
 
+  bool hasMultipleEnabledBarsOnEdge(ConfigService* configService, CompositorPlatform* platform, wl_output* output,
+                                    std::string_view position) {
+    if (configService == nullptr || position.empty()) {
+      return false;
+    }
+
+    const WaylandOutput* wlOutput = nullptr;
+    if (platform != nullptr && output != nullptr) {
+      wlOutput = platform->findOutputByWl(output);
+    }
+
+    std::size_t count = 0;
+    for (const auto& bar : configService->config().bars) {
+      const BarConfig resolved = wlOutput != nullptr ? ConfigService::resolveForOutput(bar, *wlOutput) : bar;
+      if (!resolved.enabled || resolved.position != position) {
+        continue;
+      }
+      ++count;
+      if (count > 1) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   float resolvePanelContentScale(ConfigService* configService) {
     if (configService == nullptr) {
       return 1.0f;
@@ -85,27 +142,42 @@ namespace {
   }
 
   [[nodiscard]] bool openNearClickEnabledForPanel(const ConfigService* configService, std::string_view panelId) {
+    if (panelId == "tray-drawer") {
+      return true;
+    }
     if (configService == nullptr) {
       return false;
     }
     const auto& pc = configService->config().shell.panel;
     if (panelId == "control-center") {
+      if (pc.controlCenterPlacement == PanelPlacement::Centered) {
+        return false;
+      }
       return pc.openNearClickControlCenter;
     }
     if (panelId == "launcher") {
+      if (pc.launcherPlacement == PanelPlacement::Centered) {
+        return false;
+      }
       return pc.openNearClickLauncher;
     }
     if (panelId == "clipboard") {
+      if (pc.clipboardPlacement == PanelPlacement::Centered) {
+        return false;
+      }
       return pc.openNearClickClipboard;
     }
     if (panelId == "wallpaper") {
+      if (pc.wallpaperPlacement == PanelPlacement::Centered) {
+        return false;
+      }
       return pc.openNearClickWallpaper;
     }
     if (panelId == "session") {
+      if (pc.sessionPlacement == PanelPlacement::Centered) {
+        return false;
+      }
       return pc.openNearClickSession;
-    }
-    if (panelId == "tray-drawer") {
-      return true;
     }
     return false;
   }
@@ -244,42 +316,88 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     return static_cast<std::int32_t>(std::clamp(desired, static_cast<float>(padding), static_cast<float>(maxValue)));
   };
 
-  const bool centeredH = m_activePanel->centeredHorizontally();
-  const bool centeredV = m_activePanel->centeredVertically();
-  const std::uint32_t anchor = centeredH  ? (isBottom ? LayerShellAnchor::Bottom : LayerShellAnchor::Top)
-                               : isBottom ? LayerShellAnchor::Bottom | LayerShellAnchor::Left
-                               : isLeft   ? LayerShellAnchor::Left | LayerShellAnchor::Top
-                               : isRight  ? LayerShellAnchor::Right | LayerShellAnchor::Top
-                                          : LayerShellAnchor::Top | LayerShellAnchor::Left;
-  const std::int32_t barOffset = barConfig.thickness + std::max(0, barConfig.marginEdge) + panelGap;
-
-  const auto marginLeft = centeredH ? 0
-                                    : clampMargin(request.anchorX - static_cast<float>(panelWidth) * 0.5f,
-                                                  static_cast<std::int32_t>(panelWidth), outputWidth, screenPadding);
+  const PanelPlacement activePlacement = m_activePanel->panelPlacement();
+  const bool useCenteredPlacement = activePlacement == PanelPlacement::Centered;
+  const bool useFloatingAnchor =
+      !useCenteredPlacement && request.hasAnchorPosition && openNearClickEnabledForPanel(m_config, m_activePanelId);
+  const auto barRect = resolveBarVisibleRect(barConfig, outputWidth, outputHeight);
+  const bool multipleBarsOnEdge =
+      hasMultipleEnabledBarsOnEdge(m_config, m_platform, request.output, barConfig.position);
+  const bool useReservedEdgePlacement =
+      !useCenteredPlacement && multipleBarsOnEdge && barConfig.reserveSpace && barConfig.thickness > 0;
+  const auto marginLeftFromAnchor = clampMargin(request.anchorX - static_cast<float>(panelWidth) * 0.5f,
+                                                static_cast<std::int32_t>(panelWidth), outputWidth, screenPadding);
   const auto marginTopFromAnchor = clampMargin(request.anchorY - static_cast<float>(panelHeight) * 0.5f,
                                                static_cast<std::int32_t>(panelHeight), outputHeight, screenPadding);
-  // Detached panels with explicit widget-provided anchors should follow that anchor.
-  // Otherwise they pick up fixed bar offsets intended for centered panels.
-  const bool useExplicitAnchorForDetached = request.hasExplicitAnchor;
-  const auto marginBottomFromAnchor =
-      std::max(0, outputHeight - marginTopFromAnchor - static_cast<std::int32_t>(panelHeight));
-  const auto marginRightFromAnchor = std::max(0, outputWidth - marginLeft - static_cast<std::int32_t>(panelWidth));
+
+  std::uint32_t standaloneAnchor = 0;
+  std::int32_t standaloneMarginTop = 0;
+  std::int32_t standaloneMarginRight = 0;
+  std::int32_t standaloneMarginBottom = 0;
+  std::int32_t standaloneMarginLeft = 0;
+  if (!useCenteredPlacement) {
+    const std::int32_t barWidth = std::max(0, barRect.right - barRect.left);
+    const std::int32_t barHeight = std::max(0, barRect.bottom - barRect.top);
+    const auto centeredAlongBarX =
+        clampMargin(static_cast<float>(barRect.left + (barWidth - static_cast<std::int32_t>(panelWidth)) / 2),
+                    static_cast<std::int32_t>(panelWidth), outputWidth, screenPadding);
+    const auto centeredAlongBarY =
+        clampMargin(static_cast<float>(barRect.top + (barHeight - static_cast<std::int32_t>(panelHeight)) / 2),
+                    static_cast<std::int32_t>(panelHeight), outputHeight, screenPadding);
+
+    if (useReservedEdgePlacement) {
+      if (isLeft) {
+        standaloneAnchor = LayerShellAnchor::Left | LayerShellAnchor::Top;
+        standaloneMarginLeft = panelGap;
+        standaloneMarginTop = useFloatingAnchor ? marginTopFromAnchor : centeredAlongBarY;
+      } else if (isRight) {
+        standaloneAnchor = LayerShellAnchor::Right | LayerShellAnchor::Top;
+        standaloneMarginRight = panelGap;
+        standaloneMarginTop = useFloatingAnchor ? marginTopFromAnchor : centeredAlongBarY;
+      } else if (isBottom) {
+        standaloneAnchor = LayerShellAnchor::Bottom | LayerShellAnchor::Left;
+        standaloneMarginBottom = panelGap;
+        standaloneMarginLeft = useFloatingAnchor ? marginLeftFromAnchor : centeredAlongBarX;
+      } else {
+        standaloneAnchor = LayerShellAnchor::Top | LayerShellAnchor::Left;
+        standaloneMarginTop = panelGap;
+        standaloneMarginLeft = useFloatingAnchor ? marginLeftFromAnchor : centeredAlongBarX;
+      }
+    } else {
+      standaloneAnchor = LayerShellAnchor::Top | LayerShellAnchor::Left;
+      if (isLeft) {
+        standaloneMarginLeft = clampMargin(static_cast<float>(barRect.right + panelGap),
+                                           static_cast<std::int32_t>(panelWidth), outputWidth, screenPadding);
+        standaloneMarginTop = useFloatingAnchor ? marginTopFromAnchor : centeredAlongBarY;
+      } else if (isRight) {
+        standaloneMarginLeft =
+            clampMargin(static_cast<float>(barRect.left - static_cast<std::int32_t>(panelWidth) - panelGap),
+                        static_cast<std::int32_t>(panelWidth), outputWidth, screenPadding);
+        standaloneMarginTop = useFloatingAnchor ? marginTopFromAnchor : centeredAlongBarY;
+      } else if (isBottom) {
+        standaloneMarginTop =
+            clampMargin(static_cast<float>(barRect.top - static_cast<std::int32_t>(panelHeight) - panelGap),
+                        static_cast<std::int32_t>(panelHeight), outputHeight, screenPadding);
+        standaloneMarginLeft = useFloatingAnchor ? marginLeftFromAnchor : centeredAlongBarX;
+      } else {
+        standaloneMarginTop = clampMargin(static_cast<float>(barRect.bottom + panelGap),
+                                          static_cast<std::int32_t>(panelHeight), outputHeight, screenPadding);
+        standaloneMarginLeft = useFloatingAnchor ? marginLeftFromAnchor : centeredAlongBarX;
+      }
+    }
+  }
 
   auto surfaceConfig = LayerSurfaceConfig{
       .nameSpace = "noctalia-panel",
       .layer = m_activePanel->layer(),
-      .anchor = anchor,
+      .anchor = standaloneAnchor,
       .width = panelWidth,
       .height = panelHeight,
-      .exclusiveZone = 0,
-      .marginTop = centeredV   ? static_cast<std::int32_t>((outputHeight - static_cast<std::int32_t>(panelHeight)) / 2)
-                   : centeredH ? (isBottom ? 0 : barOffset)
-                   : (isLeft || isRight)
-                       ? marginTopFromAnchor
-                       : (isBottom ? 0 : (useExplicitAnchorForDetached ? marginTopFromAnchor : barOffset)),
-      .marginRight = isRight ? (useExplicitAnchorForDetached ? marginRightFromAnchor : barOffset) : 0,
-      .marginBottom = isBottom ? (useExplicitAnchorForDetached ? marginBottomFromAnchor : barOffset) : 0,
-      .marginLeft = centeredH ? 0 : (isLeft ? (useExplicitAnchorForDetached ? marginLeft : barOffset) : marginLeft),
+      .exclusiveZone = (useCenteredPlacement || useReservedEdgePlacement) ? 0 : -1,
+      .marginTop = standaloneMarginTop,
+      .marginRight = standaloneMarginRight,
+      .marginBottom = standaloneMarginBottom,
+      .marginLeft = standaloneMarginLeft,
       .keyboard = m_activePanel->keyboardMode(),
       .defaultWidth = panelWidth,
       .defaultHeight = panelHeight,
@@ -328,8 +446,8 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_attachedOpenAnimationPending = false;
   };
 
-  if (m_activePanel->prefersAttachedToBar() && barConfig.attachPanels && barConfig.thickness > 0 && outputWidth > 0 &&
-      outputHeight > 0) {
+  if (activePlacement == PanelPlacement::Attached && !multipleBarsOnEdge && barConfig.attachPanels &&
+      barConfig.thickness > 0 && outputWidth > 0 && outputHeight > 0) {
     const std::string_view barPosition = barConfig.position;
     const bool barIsBottom = barPosition == "bottom";
     const bool barIsLeft = barPosition == "left";
@@ -363,16 +481,11 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     const std::uint32_t surfaceHeight = barIsVertical ? (panelHeight + crossPad) : (panelHeight + mainPad);
 
     // Bar visible rect in screen coords, derived from BarConfig + output dimensions.
-    const std::int32_t mEdge = std::max(0, barConfig.marginEdge);
     const std::int32_t mEnds = std::max(0, barConfig.marginEnds);
-    const std::int32_t barLeft =
-        barIsRight ? std::max(0, outputWidth - mEdge - barConfig.thickness) : (barIsVertical ? mEdge : mEnds);
-    const std::int32_t barTop =
-        barIsBottom ? std::max(0, outputHeight - mEdge - barConfig.thickness) : (barIsVertical ? mEnds : mEdge);
-    const std::int32_t barRight =
-        barIsVertical ? barLeft + barConfig.thickness : std::max(barLeft, outputWidth - mEnds);
-    const std::int32_t barBottom =
-        barIsVertical ? std::max(barTop, outputHeight - mEnds) : barTop + barConfig.thickness;
+    const std::int32_t barLeft = barRect.left;
+    const std::int32_t barTop = barRect.top;
+    const std::int32_t barRight = barRect.right;
+    const std::int32_t barBottom = barRect.bottom;
 
     // Place panel along bar main axis using click anchor or center fallback.
     // Inset from bar end equals barR plus panelR for concave cutout nesting.
@@ -445,12 +558,12 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     if (barIsVertical) {
       barSurfaceLocalVisualY = visualY - (barTop - std::min(mEnds, barShadowBleed.up));
       const std::int32_t barSurfaceOriginX =
-          barIsLeft ? std::max(0, mEdge - barShadowBleed.left) : barLeft - barShadowBleed.left;
+          barIsLeft ? std::max(0, barLeft - barShadowBleed.left) : barLeft - barShadowBleed.left;
       barSurfaceLocalVisualX = visualX - barSurfaceOriginX;
     } else {
       barSurfaceLocalVisualX = visualX - (barLeft - std::min(mEnds, barShadowBleed.left));
       const std::int32_t barSurfaceOriginY =
-          barIsBottom ? barTop - barShadowBleed.up : std::max(0, mEdge - barShadowBleed.up);
+          barIsBottom ? barTop - barShadowBleed.up : std::max(0, barTop - barShadowBleed.up);
       barSurfaceLocalVisualY = visualY - barSurfaceOriginY;
     }
 
@@ -764,9 +877,10 @@ void PanelManager::togglePanel(const std::string& panelId, PanelOpenRequest requ
         closePanel();
         return;
       }
-      // Attached panels placed near the clicked widget must fully reopen so geometry
-      // and bar decoration track the new anchor
-      if (m_attachedToBar && request.hasAnchorPosition && openNearClickEnabledForPanel(m_config, panelId)) {
+      // Panels placed near the clicked widget must fully reopen so geometry
+      // and bar decoration track the new anchor.
+      if (request.hasAnchorPosition && m_activePanel->panelPlacement() != PanelPlacement::Centered &&
+          openNearClickEnabledForPanel(m_config, panelId)) {
         openPanel(panelId, request);
         return;
       }

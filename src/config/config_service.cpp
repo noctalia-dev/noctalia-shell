@@ -1259,20 +1259,30 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
           shell.panel.transparencyMode = *parsed;
         }
       }
-      if (auto v = (*panelTbl)["attach_launcher"].value<bool>()) {
-        shell.panel.attachLauncher = *v;
+      if (auto v = (*panelTbl)["launcher_placement"].value<std::string>()) {
+        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
+          shell.panel.launcherPlacement = *parsed;
+        }
       }
-      if (auto v = (*panelTbl)["attach_clipboard"].value<bool>()) {
-        shell.panel.attachClipboard = *v;
+      if (auto v = (*panelTbl)["clipboard_placement"].value<std::string>()) {
+        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
+          shell.panel.clipboardPlacement = *parsed;
+        }
       }
-      if (auto v = (*panelTbl)["attach_control_center"].value<bool>()) {
-        shell.panel.attachControlCenter = *v;
+      if (auto v = (*panelTbl)["control_center_placement"].value<std::string>()) {
+        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
+          shell.panel.controlCenterPlacement = *parsed;
+        }
       }
-      if (auto v = (*panelTbl)["attach_wallpaper"].value<bool>()) {
-        shell.panel.attachWallpaper = *v;
+      if (auto v = (*panelTbl)["wallpaper_placement"].value<std::string>()) {
+        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
+          shell.panel.wallpaperPlacement = *parsed;
+        }
       }
-      if (auto v = (*panelTbl)["attach_session"].value<bool>()) {
-        shell.panel.attachSession = *v;
+      if (auto v = (*panelTbl)["session_placement"].value<std::string>()) {
+        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
+          shell.panel.sessionPlacement = *parsed;
+        }
       }
       if (auto v = (*panelTbl)["open_near_click_control_center"].value<bool>()) {
         shell.panel.openNearClickControlCenter = *v;

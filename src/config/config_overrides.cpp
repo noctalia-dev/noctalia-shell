@@ -314,10 +314,12 @@ namespace {
            a.clipboardImageActionCommand == b.clipboardImageActionCommand && a.shadow.blur == b.shadow.blur &&
            a.shadow.offsetX == b.shadow.offsetX && a.shadow.offsetY == b.shadow.offsetY &&
            nearlyEqual(a.shadow.alpha, b.shadow.alpha) && a.panel.backgroundBlur == b.panel.backgroundBlur &&
-           a.panel.transparencyMode == b.panel.transparencyMode && a.panel.attachLauncher == b.panel.attachLauncher &&
-           a.panel.attachClipboard == b.panel.attachClipboard &&
-           a.panel.attachControlCenter == b.panel.attachControlCenter &&
-           a.panel.attachWallpaper == b.panel.attachWallpaper && a.panel.attachSession == b.panel.attachSession &&
+           a.panel.transparencyMode == b.panel.transparencyMode &&
+           a.panel.launcherPlacement == b.panel.launcherPlacement &&
+           a.panel.clipboardPlacement == b.panel.clipboardPlacement &&
+           a.panel.controlCenterPlacement == b.panel.controlCenterPlacement &&
+           a.panel.wallpaperPlacement == b.panel.wallpaperPlacement &&
+           a.panel.sessionPlacement == b.panel.sessionPlacement &&
            a.panel.openNearClickControlCenter == b.panel.openNearClickControlCenter &&
            a.panel.openNearClickLauncher == b.panel.openNearClickLauncher &&
            a.panel.openNearClickClipboard == b.panel.openNearClickClipboard &&

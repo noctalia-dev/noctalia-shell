@@ -73,9 +73,7 @@ public:
   [[nodiscard]] float preferredWidth() const override;
 
   [[nodiscard]] float preferredHeight() const override { return scaled(520.0f); }
-  [[nodiscard]] bool centeredHorizontally() const override { return true; }
-  [[nodiscard]] bool centeredVertically() const override { return true; }
-  [[nodiscard]] bool prefersAttachedToBar() const noexcept override;
+  [[nodiscard]] PanelPlacement panelPlacement() const noexcept override;
 
 private:
   void onPanelCardOpacityChanged(float opacity) override;

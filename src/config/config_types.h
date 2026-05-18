@@ -447,6 +447,18 @@ constexpr EnumOption<PanelTransparencyMode> kPanelTransparencyModes[] = {
                                                         float panelBackgroundOpacity) noexcept;
 [[nodiscard]] float detachedPanelBackgroundOpacityForTransparencyMode(PanelTransparencyMode mode) noexcept;
 
+enum class PanelPlacement : std::uint8_t {
+  Attached = 0,
+  Floating = 1,
+  Centered = 2,
+};
+
+constexpr EnumOption<PanelPlacement> kPanelPlacements[] = {
+    {PanelPlacement::Attached, "attached", "settings.options.shell.panel-placement.attached"},
+    {PanelPlacement::Floating, "floating", "settings.options.shell.panel-placement.floating"},
+    {PanelPlacement::Centered, "centered", "settings.options.shell.panel-placement.centered"},
+};
+
 constexpr EnumOption<WallpaperFillMode> kWallpaperFillModes[] = {
     {WallpaperFillMode::Center, "center", "settings.options.wallpaper.fill.center"},
     {WallpaperFillMode::Crop, "crop", "settings.options.wallpaper.fill.crop"},
@@ -487,11 +499,11 @@ struct ShellConfig {
   struct PanelConfig {
     bool backgroundBlur = true; // request compositor blur behind panels via ext-background-effect-v1
     PanelTransparencyMode transparencyMode = PanelTransparencyMode::Solid;
-    bool attachLauncher = false;
-    bool attachClipboard = false;
-    bool attachControlCenter = true;
-    bool attachWallpaper = true;
-    bool attachSession = false;
+    PanelPlacement launcherPlacement = PanelPlacement::Centered;
+    PanelPlacement clipboardPlacement = PanelPlacement::Centered;
+    PanelPlacement controlCenterPlacement = PanelPlacement::Attached;
+    PanelPlacement wallpaperPlacement = PanelPlacement::Attached;
+    PanelPlacement sessionPlacement = PanelPlacement::Attached;
     bool openNearClickControlCenter = false;
     bool openNearClickLauncher = false;
     bool openNearClickClipboard = false;

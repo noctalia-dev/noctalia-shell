@@ -403,8 +403,8 @@ ClipboardPanel::ClipboardPanel(ClipboardService* clipboard, ConfigService* confi
 
 ClipboardPanel::~ClipboardPanel() = default;
 
-bool ClipboardPanel::prefersAttachedToBar() const noexcept {
-  return m_config != nullptr && m_config->config().shell.panel.attachClipboard;
+PanelPlacement ClipboardPanel::panelPlacement() const noexcept {
+  return m_config != nullptr ? m_config->config().shell.panel.clipboardPlacement : PanelPlacement::Centered;
 }
 
 void ClipboardPanel::setActivateCallback(std::function<void(const ClipboardEntry&)> callback) {
