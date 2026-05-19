@@ -399,6 +399,13 @@ void CompositorPlatform::setWorkspaceChangeCallback(ChangeCallback callback) {
   }
 }
 
+void CompositorPlatform::setOverviewChangeCallback(ChangeCallback callback) {
+  m_overviewChangeCallback = std::move(callback);
+  if (m_workspaceMetadataBackend != nullptr) {
+    m_workspaceMetadataBackend->setOverviewChangeCallback(m_overviewChangeCallback);
+  }
+}
+
 void CompositorPlatform::activateWorkspace(const std::string& id) {
   if (m_workspaces != nullptr) {
     m_workspaces->activate(id);

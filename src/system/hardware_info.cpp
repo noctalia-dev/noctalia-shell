@@ -2,6 +2,7 @@
 
 #include "compositors/compositor_detect.h"
 #include "i18n/i18n.h"
+#include "system/format_units.h"
 #include "util/string_utils.h"
 
 #include <cstdlib>
@@ -276,8 +277,7 @@ namespace {
       } catch (...) {
         return i18n::tr("system.hardware.unknown");
       }
-      const double totalGb = static_cast<double>(totalKb) / (1024.0 * 1024.0);
-      return std::format("{:.1f} GB", totalGb);
+      return FormatUnits::formatBinaryBytesAsGib(totalKb * 1024ULL);
     }
     return i18n::tr("system.hardware.unknown");
   }
@@ -290,10 +290,8 @@ namespace {
     const double total = static_cast<double>(sv.f_blocks) * static_cast<double>(sv.f_frsize);
     const double avail = static_cast<double>(sv.f_bavail) * static_cast<double>(sv.f_frsize);
     const double used = std::max(0.0, total - avail);
-    const double usedGb = used / (1024.0 * 1024.0 * 1024.0);
-    const double totalGb = total / (1024.0 * 1024.0 * 1024.0);
     const double percent = total > 0.0 ? (used / total) * 100.0 : 0.0;
-    return std::format("{:.1f} / {:.1f} GB ({:.0f}%)", usedGb, totalGb, percent);
+    return std::format("{} ({:.0f}%)", FormatUnits::formatDecimalBytesUsageAsGb(used, total), percent);
   }
 
   std::string detectCompositor() {

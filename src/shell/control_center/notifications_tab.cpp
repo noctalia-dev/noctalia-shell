@@ -66,11 +66,11 @@ namespace {
     for (std::size_t i = 0; i + 1 < actions.size() && actionCount < kHistoryMaxActionButtons; i += 2) {
       const std::string& actionKey = actions[i];
       std::string actionLabel = actions[i + 1];
+      if (actionKey.empty() || actionKey == "default" || actionKey == "inline-reply") {
+        continue;
+      }
       if (StringUtils::isBlank(actionLabel)) {
         actionLabel = i18n::tr("notifications.actions.fallback");
-      }
-      if (actionKey.empty()) {
-        continue;
       }
       auto actionButton = std::make_unique<Button>();
       actionButton->setVariant(ButtonVariant::Outline);
@@ -96,7 +96,7 @@ namespace {
 
   std::string normalizeLocalIconPath(std::string_view iconValue) { return uri::normalizeFileUrl(iconValue); }
 
-  std::string resolveHistoryIconPath(const Notification& n, IconResolver& resolver) {
+  std::string resolveHistoryIconPath(const Notification& n, IconResolver& resolver, int targetSize) {
     if (!n.icon.has_value() || n.icon->empty()) {
       return {};
     }
@@ -121,7 +121,7 @@ namespace {
       return {};
     }
 
-    const std::string& resolved = resolver.resolve(localPath);
+    const std::string& resolved = resolver.resolve(localPath, targetSize);
     return resolved.empty() ? std::string() : resolved;
   }
 
@@ -443,11 +443,11 @@ namespace {
              i += 2) {
           const std::string& actionKey = entry.notification.actions[i];
           std::string actionLabel = entry.notification.actions[i + 1];
+          if (actionKey.empty() || actionKey == "default" || actionKey == "inline-reply") {
+            continue;
+          }
           if (StringUtils::isBlank(actionLabel)) {
             actionLabel = i18n::tr("notifications.actions.fallback");
-          }
-          if (actionKey.empty()) {
-            continue;
           }
           Button* btn = m_actionButtons[static_cast<std::size_t>(shownActions)];
           btn->setText(actionLabel);
@@ -507,9 +507,9 @@ namespace {
       m_image->setRadius(iconRadius);
       m_image->setFit(ImageFit::Cover);
 
-      const std::string iconPath = resolveHistoryIconPath(entry.notification, iconResolver);
+      const int targetSize = static_cast<int>(std::round(iconPx));
+      const std::string iconPath = resolveHistoryIconPath(entry.notification, iconResolver, targetSize);
       if (!iconPath.empty()) {
-        const int targetSize = static_cast<int>(std::round(iconPx));
         const bool ready = m_image->setSourceFile(renderer, iconPath, targetSize);
         if (ready) {
           m_imageKind = ImageKind::File;

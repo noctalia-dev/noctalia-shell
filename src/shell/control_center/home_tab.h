@@ -34,7 +34,7 @@ struct ShortcutPad {
 class HomeTab : public Tab {
 public:
   HomeTab(MprisService* mpris, HttpClient* httpClient, WeatherService* weather, PipeWireService* audio,
-          PowerProfilesService* powerProfiles, ConfigService* config, NetworkService* network,
+          PowerProfilesService* powerProfiles, ConfigService* config, INetworkService* network,
           BluetoothService* bluetooth, GammaService* nightLight, noctalia::theme::ThemeService* theme,
           NotificationManager* notifications, IdleInhibitor* idleInhibitor, DependencyService* dependencies,
           CompositorPlatform* platform, Wallpaper* wallpaper = nullptr);
@@ -56,6 +56,7 @@ private:
   void syncScaledFonts();
   void syncShortcuts();
   bool resizeMediaArtToCard();
+  void onPanelCardOpacityChanged(float opacity) override;
 
   MprisService* m_mpris = nullptr;
   HttpClient* m_httpClient = nullptr;

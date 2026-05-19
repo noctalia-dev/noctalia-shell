@@ -19,11 +19,37 @@ namespace {
 
   struct IconThemePlan {
     std::vector<std::string> baseDirs;
-    std::vector<std::string> searchDirs;
+    std::vector<IconSearchDir> searchDirs;
     std::vector<std::string> pixmapDirs;
     std::string activeTheme;
     std::string signature;
   };
+
+  void pushUniqueDir(std::vector<IconSearchDir>& dirs, IconSearchDir dir) {
+    if (dir.path.empty()) {
+      return;
+    }
+    if (std::find_if(dirs.begin(), dirs.end(), [&](const IconSearchDir& d) { return d.path == dir.path; }) ==
+        dirs.end()) {
+      dirs.push_back(std::move(dir));
+    }
+  }
+
+  // Nominal size encoded in a well-known subdir name like "48x48" or "scalable".
+  int sizeFromDirName(std::string_view dirName) {
+    if (dirName.find("scalable") != std::string_view::npos) {
+      return 0;
+    }
+    int size = 0;
+    for (char c : dirName) {
+      if (c >= '0' && c <= '9') {
+        size = size * 10 + (c - '0');
+      } else if (size > 0) {
+        break;
+      }
+    }
+    return size;
+  }
 
   struct IconThemeState {
     bool initialized = false;
@@ -120,7 +146,7 @@ namespace {
     }
     for (const auto& dir : plan.searchDirs) {
       signature += "theme:";
-      signature += dir;
+      signature += dir.path;
       signature += '\n';
     }
     for (const auto& dir : plan.pixmapDirs) {
@@ -222,7 +248,7 @@ namespace {
 
   // Parse index.theme and return (subdir paths sorted by preference, parent theme names).
   // Preference: scalable/large dirs first so we get crisp icons at any size.
-  std::pair<std::vector<std::string>, std::vector<std::string>> parseIndexTheme(const std::string& themeRoot) {
+  std::pair<std::vector<IconSearchDir>, std::vector<std::string>> parseIndexTheme(const std::string& themeRoot) {
     std::ifstream file(themeRoot + "/index.theme");
     if (!file.is_open()) {
       return {};
@@ -300,17 +326,18 @@ namespace {
       return da.size > db.size;
     });
 
-    std::vector<std::string> sortedPaths;
+    std::vector<IconSearchDir> sortedPaths;
     sortedPaths.reserve(dirNames.size());
     for (const auto& name : dirNames) {
-      sortedPaths.push_back(name);
+      const auto& entry = dirMap[name];
+      sortedPaths.push_back(IconSearchDir{.path = name, .size = entry.size, .scalable = entry.scalable});
     }
 
     return {sortedPaths, inherits};
   }
 
   void buildThemeSearchPaths(const std::string& themeName, const std::vector<std::string>& baseDirs,
-                             std::set<std::string>& visited, std::vector<std::string>& searchDirs) {
+                             std::set<std::string>& visited, std::vector<IconSearchDir>& searchDirs) {
     if (visited.count(themeName)) {
       return;
     }
@@ -327,12 +354,17 @@ namespace {
       if (dirs.empty()) {
         // No index.theme — fall back to common paths so the theme isn't silently skipped
         for (const char* path :
-             {"/scalable/apps/", "/48x48/apps/", "/64x64/apps/", "/128x128/apps/", "/256x256/apps/", "/32x32/apps/"}) {
-          pushUnique(searchDirs, themeRoot + path);
+             {"/scalable/apps/", "/256x256/apps/", "/128x128/apps/", "/64x64/apps/", "/48x48/apps/", "/32x32/apps/"}) {
+          const std::string_view name(path);
+          pushUniqueDir(searchDirs, IconSearchDir{.path = themeRoot + path,
+                                                  .size = sizeFromDirName(name),
+                                                  .scalable = name.find("scalable") != std::string_view::npos});
         }
       } else {
         for (const auto& dir : dirs) {
-          pushUnique(searchDirs, themeRoot + "/" + dir + "/");
+          pushUniqueDir(
+              searchDirs,
+              IconSearchDir{.path = themeRoot + "/" + dir.path + "/", .size = dir.size, .scalable = dir.scalable});
         }
       }
 
@@ -384,8 +416,6 @@ namespace {
 
 IconResolver::IconResolver() { rebuild(); }
 
-void IconResolver::invalidateCache() { rebuild(); }
-
 bool IconResolver::checkThemeChanged() {
   auto& state = iconThemeState();
   IconThemePlan next = buildThemePlan();
@@ -424,39 +454,88 @@ void IconResolver::ensureFresh() {
   }
 }
 
-const std::string& IconResolver::resolve(const std::string& iconName) {
+const std::string& IconResolver::resolve(const std::string& iconName, int targetSize) {
   if (iconName.empty()) {
     return m_empty;
   }
   ensureFresh();
-  auto it = m_cache.find(iconName);
+  const std::string key = iconName + '\x1f' + std::to_string(std::max(0, targetSize));
+  auto it = m_cache.find(key);
   if (it != m_cache.end()) {
     return it->second;
   }
-  auto [ins, _] = m_cache.emplace(iconName, findIcon(iconName));
+  auto icon = findIcon(iconName, targetSize);
+  if (icon.empty()) {
+    return m_empty;
+  }
+  auto [ins, _] = m_cache.emplace(key, icon);
   return ins->second;
 }
 
-std::string IconResolver::findIcon(const std::string& name) const {
+std::string IconResolver::findIcon(const std::string& name, int targetSize) const {
   // Absolute path — use directly
   if (!name.empty() && name[0] == '/') {
     return fs::exists(name) ? name : std::string{};
   }
 
-  static const std::vector<std::string> extensions = {".svg", ".png"};
-
-  for (const auto& dir : m_searchDirs) {
-    for (const auto& ext : extensions) {
-      std::string path = dir + name + ext;
-      if (fs::exists(path)) {
-        return path;
+  if (targetSize <= 0) {
+    // Legacy behavior: search dirs are pre-sorted scalable-first then largest;
+    // return the first match. Callers with no size budget keep this exactly.
+    for (const auto& dir : m_searchDirs) {
+      for (const char* ext : {".svg", ".png"}) {
+        std::string path = dir.path + name + ext;
+        if (fs::exists(path)) {
+          return path;
+        }
       }
+    }
+  } else {
+    // Size-aware: a vector icon is crisp at any size, so an SVG always wins
+    // (first match honours theme inheritance order).
+    for (const auto& dir : m_searchDirs) {
+      std::string svg = dir.path + name + ".svg";
+      if (fs::exists(svg)) {
+        return svg;
+      }
+    }
+
+    // Among bitmaps, prefer the smallest theme size that is still >= the
+    // requested size (gentle downscale); otherwise the largest available
+    // (least upscaling). Unknown-size dirs are a last resort.
+    std::string best;
+    int bestSize = 0;
+    bool bestIsUpscale = true;
+    for (const auto& dir : m_searchDirs) {
+      std::string png = dir.path + name + ".png";
+      if (!fs::exists(png)) {
+        continue;
+      }
+      const int size = dir.size;
+      const bool isUpscale = size < targetSize; // size 0 (unknown) counts as upscale
+      bool better = false;
+      if (best.empty()) {
+        better = true;
+      } else if (bestIsUpscale != isUpscale) {
+        better = !isUpscale; // a downscale source always beats an upscale one
+      } else if (isUpscale) {
+        better = size > bestSize; // upscaling: the bigger the source the better
+      } else {
+        better = size < bestSize; // downscaling: the closer to target the better
+      }
+      if (better) {
+        best = std::move(png);
+        bestSize = size;
+        bestIsUpscale = isUpscale;
+      }
+    }
+    if (!best.empty()) {
+      return best;
     }
   }
 
   // Fallback: pixmaps
   for (const auto& dir : m_pixmapDirs) {
-    for (const auto& ext : extensions) {
+    for (const char* ext : {".svg", ".png"}) {
       std::string path = dir + "/" + name + ext;
       if (fs::exists(path)) {
         return path;

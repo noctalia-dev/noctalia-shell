@@ -8,13 +8,16 @@
 #include <string>
 #include <string_view>
 
+class ClipboardService;
+
 namespace scripting {
 
   class ScriptRuntime {
   public:
     using SubscriberId = std::uint64_t;
 
-    explicit ScriptRuntime(std::string runtimeName, ScriptWidgetSettings settings);
+    explicit ScriptRuntime(std::string runtimeName, ScriptWidgetSettings settings,
+                           ClipboardService* clipboard = nullptr);
     ~ScriptRuntime();
 
     ScriptRuntime(const ScriptRuntime&) = delete;
@@ -47,7 +50,8 @@ namespace scripting {
 
   class SharedScriptRuntimeRegistry {
   public:
-    static SharedScriptRuntimeAcquireResult acquire(const std::string& key, ScriptWidgetSettings settings);
+    static SharedScriptRuntimeAcquireResult acquire(const std::string& key, ScriptWidgetSettings settings,
+                                                    ClipboardService* clipboard = nullptr);
   };
 
 } // namespace scripting

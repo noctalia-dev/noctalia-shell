@@ -90,6 +90,7 @@ private:
   ShellConfig::ShadowConfig m_shadowConfig;
   bool m_rebuildPending = true;
   bool m_vertical = false;
+  std::uint64_t m_textMetricsGeneration = 0;
 
   Flex* m_root = nullptr;
   Flex* m_taskStrip = nullptr;

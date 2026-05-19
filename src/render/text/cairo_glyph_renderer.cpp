@@ -1,6 +1,5 @@
 #include "render/text/cairo_glyph_renderer.h"
 
-#include "core/log.h"
 #include "render/backend/render_backend.h"
 #include "render/core/texture_manager.h"
 
@@ -16,8 +15,6 @@
 #include <vector>
 
 namespace {
-
-  constexpr Logger kLog("text");
 
   constexpr std::uint32_t kSizeQuant = 64;
   constexpr std::uint32_t kScaleQuant = 64;
@@ -271,7 +268,8 @@ CairoGlyphRenderer::CacheEntry* CairoGlyphRenderer::lookupOrRasterize(char32_t c
   // Repack tightly to pxWidth bytes per row (cairo's stride is 4-byte aligned).
   std::vector<unsigned char> tight(static_cast<std::size_t>(pxWidth) * static_cast<std::size_t>(pxHeight));
   for (int y = 0; y < pxHeight; ++y) {
-    std::memcpy(tight.data() + static_cast<std::size_t>(y) * pxWidth, data + y * stride,
+    const auto row = static_cast<std::size_t>(y);
+    std::memcpy(tight.data() + row * static_cast<std::size_t>(pxWidth), data + row * static_cast<std::size_t>(stride),
                 static_cast<std::size_t>(pxWidth));
   }
   cairo_surface_destroy(surface);

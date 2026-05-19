@@ -155,51 +155,50 @@ namespace {
 
       const auto bucket = bucketFor(m_device);
 
-      auto check = std::make_unique<Button>();
-      check->setVariant(ButtonVariant::Ghost);
-      check->setGlyph("check");
-      check->setGlyphSize(Style::fontSizeBody * scale);
-      check->setPadding(Style::spaceXs * scale);
-      check->setRadius(Style::scaledRadiusSm(scale));
-      check->setOpacity(bucket == DeviceBucket::Connected ? 1.0f : 0.0f);
-      header->addChild(std::move(check));
-
-      auto primary = std::make_unique<Button>();
-      primary->setGlyphSize(Style::fontSizeBody * scale);
-      primary->setPadding(Style::spaceXs * scale);
-      primary->setRadius(Style::scaledRadiusSm(scale));
-      switch (bucket) {
-      case DeviceBucket::Connected:
-        primary->setVariant(ButtonVariant::Destructive);
-        primary->setGlyph("plug-off");
-        break;
-      case DeviceBucket::Paired:
-        primary->setVariant(ButtonVariant::Default);
-        primary->setGlyph("plug");
-        break;
-      case DeviceBucket::Available:
-        primary->setVariant(ButtonVariant::Default);
-        primary->setGlyph("bluetooth");
-        break;
-      }
-      primary->setOnClick([this]() {
-        if (m_service == nullptr) {
-          return;
-        }
-        switch (bucketFor(m_device)) {
+      if (m_device.connecting) {
+        auto spinner = std::make_unique<Spinner>();
+        spinner->setSpinnerSize(Style::fontSizeBody * scale);
+        spinner->setColor(colorSpecFromRole(ColorRole::Primary));
+        m_connectingSpinner = spinner.get();
+        header->addChild(std::move(spinner));
+      } else {
+        auto primary = std::make_unique<Button>();
+        primary->setGlyphSize(Style::fontSizeBody * scale);
+        primary->setPadding(Style::spaceXs * scale);
+        primary->setRadius(Style::scaledRadiusSm(scale));
+        switch (bucket) {
         case DeviceBucket::Connected:
-          m_service->disconnectDevice(m_device.path);
+          primary->setVariant(ButtonVariant::Destructive);
+          primary->setGlyph("plug-off");
           break;
         case DeviceBucket::Paired:
-          m_service->connect(m_device.path);
+          primary->setVariant(ButtonVariant::Default);
+          primary->setGlyph("plug");
           break;
         case DeviceBucket::Available:
-          m_service->pair(m_device.path);
+          primary->setVariant(ButtonVariant::Default);
+          primary->setGlyph("bluetooth");
           break;
         }
-        PanelManager::instance().refresh();
-      });
-      header->addChild(std::move(primary));
+        primary->setOnClick([this]() {
+          if (m_service == nullptr) {
+            return;
+          }
+          switch (bucketFor(m_device)) {
+          case DeviceBucket::Connected:
+            m_service->disconnectDevice(m_device.path);
+            break;
+          case DeviceBucket::Paired:
+            m_service->connect(m_device.path);
+            break;
+          case DeviceBucket::Available:
+            m_service->pair(m_device.path);
+            break;
+          }
+          PanelManager::instance().refresh();
+        });
+        header->addChild(std::move(primary));
+      }
 
       if (m_device.paired) {
         auto forget = std::make_unique<Button>();
@@ -250,9 +249,16 @@ namespace {
       }
     }
 
+    void startConnectingSpinner() {
+      if (m_connectingSpinner != nullptr) {
+        m_connectingSpinner->start();
+      }
+    }
+
   private:
     BluetoothDeviceInfo m_device;
     BluetoothService* m_service = nullptr;
+    Spinner* m_connectingSpinner = nullptr;
   };
 
 } // namespace
@@ -787,7 +793,9 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
       first = false;
     }
     auto row = std::make_unique<BluetoothDeviceRow>(device, m_service, scale);
+    auto* rowPtr = row.get();
     m_list->addChild(std::move(row));
+    rowPtr->startConnectingSpinner();
   }
   m_list->layout(renderer);
 }

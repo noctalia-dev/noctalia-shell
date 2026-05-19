@@ -19,7 +19,6 @@
 #include "xdg-shell-client-protocol.h"
 
 #include <algorithm>
-#include <cmath>
 #include <cstddef>
 #include <string>
 #include <string_view>
@@ -98,8 +97,9 @@ namespace settings {
       if (id.empty()) {
         return false;
       }
-      for (const unsigned char c : id) {
-        if (!std::isalnum(c) && c != '_' && c != '-') {
+      for (char c : id) {
+        const auto uc = static_cast<unsigned char>(c);
+        if (!std::isalnum(uc) && c != '_' && c != '-') {
           return false;
         }
       }
@@ -110,9 +110,10 @@ namespace settings {
       std::string out;
       out.reserve(type.size());
       bool lastUnderscore = false;
-      for (const unsigned char c : type) {
-        if (std::isalnum(c)) {
-          out.push_back(static_cast<char>(std::tolower(c)));
+      for (char c : type) {
+        const auto uc = static_cast<unsigned char>(c);
+        if (std::isalnum(uc)) {
+          out.push_back(static_cast<char>(std::tolower(uc)));
           lastUnderscore = false;
         } else if (!lastUnderscore && !out.empty()) {
           out.push_back('_');
@@ -134,20 +135,6 @@ namespace settings {
         }
       }
       return base + "_custom";
-    }
-
-    std::string trimmedText(std::string_view text) {
-      std::size_t start = 0;
-      while (start < text.size() && std::isspace(static_cast<unsigned char>(text[start]))) {
-        ++start;
-      }
-
-      std::size_t end = text.size();
-      while (end > start && std::isspace(static_cast<unsigned char>(text[end - 1]))) {
-        --end;
-      }
-
-      return std::string(text.substr(start, end - start));
     }
 
     PopupSurfaceConfig centeredPopupConfig(std::uint32_t parentWidth, std::uint32_t parentHeight, std::uint32_t width,
@@ -197,7 +184,12 @@ namespace settings {
 
     for (const auto& entry : pickerEntries) {
       normalOptions.push_back(SearchPickerOption{
-          .value = entry.value, .label = entry.label, .description = entry.description, .enabled = true});
+          .value = entry.value,
+          .label = entry.label,
+          .description = entry.description,
+          .enabled = true,
+          .icon = entry.icon,
+      });
 
       if (entry.kind != WidgetReferenceKind::BuiltIn) {
         continue;
@@ -211,6 +203,7 @@ namespace settings {
             .label = entry.label,
             .description = i18n::tr("settings.entities.widget.picker.instance-description", "type", entry.value),
             .enabled = true,
+            .icon = entry.icon,
         });
         break;
       }
@@ -337,7 +330,7 @@ namespace settings {
     if (m_instanceInput == nullptr) {
       return;
     }
-    const std::string id = trimmedText(m_instanceInput->value());
+    const std::string id = StringUtils::trim(m_instanceInput->value());
     if (!canCreateInstanceId(id)) {
       m_instanceInput->setInvalid(true);
       return;
@@ -424,7 +417,7 @@ namespace settings {
       if (option.value.empty()) {
         return;
       }
-      if (m_instanceModeEnabled) {
+      if (m_instanceModeEnabled || widgetTypeRequiresNamedConfig(option.value)) {
         beginCreateFlow(option);
         return;
       }

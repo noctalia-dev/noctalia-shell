@@ -20,6 +20,7 @@ struct SearchPickerOption {
   std::string label;
   std::string description;
   bool enabled = true;
+  std::string icon;
 };
 
 class SearchPicker : public Flex, private VirtualListAdapter {

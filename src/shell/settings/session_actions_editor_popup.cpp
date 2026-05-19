@@ -2,7 +2,6 @@
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
-#include "i18n/i18n.h"
 #include "render/render_context.h"
 #include "render/scene/node.h"
 #include "ui/controls/button.h"

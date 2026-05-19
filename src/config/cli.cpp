@@ -1,6 +1,6 @@
 #include "config/cli.h"
 
-#include "core/toml.h"
+#include "core/toml.h" // IWYU pragma: keep
 #include "util/string_utils.h"
 
 #include <cstdio>
@@ -8,7 +8,6 @@
 #include <filesystem>
 #include <fstream>
 #include <optional>
-#include <sstream>
 #include <string>
 #include <string_view>
 

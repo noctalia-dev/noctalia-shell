@@ -71,6 +71,7 @@ public:
   // Callback returning every bar wl_surface. Used to seed the Hyprland focus
   // grab whitelist so bar widgets keep receiving clicks while a panel is open.
   void setFocusGrabBarSurfacesProvider(std::function<std::vector<wl_surface*>()> provider);
+  void setPanelClosedCallback(std::function<void()> callback);
 
   void registerPanel(const std::string& id, std::unique_ptr<Panel> content);
 
@@ -101,7 +102,7 @@ public:
 
   void refresh();
   // Reacts to a ConfigService reload while a panel is open: re-pulls the host bar's
-  // per-panel-relevant config (currently backgroundOpacity, attached panels only) and
+  // per-panel-relevant config (attached background opacity) and
   // re-applies the compositor blur region (which depends on shell.panel.background_blur,
   // affects both attached and layer-shell panels). No-op when no panel is open.
   void onConfigReloaded();
@@ -142,8 +143,8 @@ private:
   void startAttachedOpenAnimation();
   void publishAttachedPanelGeometry(float revealProgress);
   // Restyle the attached-panel decoration nodes (bg fill, drop shadow, contact shadow)
-  // using m_attachedBackgroundOpacity / m_attachedBarPosition. Geometry/positions are not
-  // touched. Safe to call any time after buildScene has run.
+  // using the cached attached background opacity and bar position. Geometry/positions are not touched.
+  // Safe to call any time after buildScene has run.
   void applyAttachedDecorationStyle();
   // Submit a wl_region matching the visible panel body to the compositor for blur.
   // Honors shell.panel.background_blur; clips by m_attachedRevealProgress so the blur
@@ -158,6 +159,7 @@ private:
   std::function<void(wl_output*, std::optional<AttachedPanelGeometry>)> m_attachedPanelGeometryCallback;
   std::function<std::vector<InputRect>(wl_output*)> m_clickShieldExcludeRectsProvider;
   std::function<std::vector<wl_surface*>()> m_focusGrabBarSurfacesProvider;
+  std::function<void()> m_panelClosedCallback;
   PanelClickShield m_clickShield;
   std::unique_ptr<FocusGrab> m_focusGrab;
 

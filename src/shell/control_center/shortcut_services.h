@@ -5,8 +5,8 @@ class CompositorPlatform;
 class ConfigService;
 class DependencyService;
 class IdleInhibitor;
+class INetworkService;
 class MprisService;
-class NetworkService;
 class GammaService;
 class NotificationManager;
 class PipeWireService;
@@ -18,7 +18,7 @@ namespace noctalia::theme {
 }
 
 struct ShortcutServices {
-  NetworkService* network = nullptr;
+  INetworkService* network = nullptr;
   BluetoothService* bluetooth = nullptr;
   GammaService* nightLight = nullptr;
   noctalia::theme::ThemeService* theme = nullptr;

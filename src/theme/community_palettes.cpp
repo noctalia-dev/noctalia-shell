@@ -3,13 +3,12 @@
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "net/http_client.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
-#include <cctype>
 #include <cstdlib>
 #include <exception>
 #include <filesystem>
-#include <format>
 #include <fstream>
 #include <json.hpp>
 #include <sstream>
@@ -27,23 +26,6 @@ namespace noctalia::theme {
     constexpr std::string_view kPaletteUrlBase = "https://api.noctalia.dev/palette";
 
     std::filesystem::path catalogCachePath() { return communityPaletteCacheDir() / ".catalog" / "palettes.json"; }
-
-    std::string urlEncode(std::string_view text) {
-      std::string encoded;
-      encoded.reserve(text.size() * 3);
-      auto isUnreserved = [](unsigned char ch) {
-        return std::isalnum(ch) != 0 || ch == '-' || ch == '_' || ch == '.' || ch == '~';
-      };
-      for (char rawCh : text) {
-        const auto ch = static_cast<unsigned char>(rawCh);
-        if (isUnreserved(ch)) {
-          encoded.push_back(static_cast<char>(ch));
-        } else {
-          encoded += std::format("%{:02X}", static_cast<unsigned int>(ch));
-        }
-      }
-      return encoded;
-    }
 
     std::string stringField(const nlohmann::json& obj, std::string_view key) {
       auto it = obj.find(std::string(key));
@@ -146,11 +128,11 @@ namespace noctalia::theme {
   }
 
   std::filesystem::path communityPaletteCachePath(std::string_view name) {
-    return communityPaletteCacheDir() / (urlEncode(name) + ".json");
+    return communityPaletteCacheDir() / (StringUtils::urlEncode(name) + ".json");
   }
 
   std::string communityPaletteDownloadUrl(std::string_view name) {
-    return std::string(kPaletteUrlBase) + "/" + urlEncode(name);
+    return std::string(kPaletteUrlBase) + "/" + StringUtils::urlEncode(name);
   }
 
 } // namespace noctalia::theme

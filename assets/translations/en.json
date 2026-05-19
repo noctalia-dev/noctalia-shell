@@ -451,12 +451,15 @@
       },
       "settings": {
         "title": "Settings",
+        "widget-section": "Widget",
         "format": "Format",
         "color": "Color",
         "shadow": "Shadow",
         "aspect-ratio": "Aspect Ratio",
         "bands": "Bands",
         "mirrored": "Mirrored",
+        "centered": "Centered",
+        "show-when-idle": "Show When Idle",
         "low-color": "Low Color",
         "high-color": "High Color",
         "image-path": "Image",
@@ -481,6 +484,7 @@
         "background-section": "Background",
         "background": "Background",
         "background-color": "Color",
+        "background-opacity": "Opacity",
         "background-radius": "Radius",
         "background-padding": "Padding",
         "custom-color": "Custom…"
@@ -561,6 +565,9 @@
     "actions": {
       "fallback": "Action"
     },
+    "inline-reply": {
+      "placeholder": "Type a reply..."
+    },
     "internal": {
       "dbus-disabled": "DBus notifications disabled",
       "network": "Network",
@@ -574,6 +581,7 @@
       "keybind-app": "Noctalia",
       "keybind-invalid-title": "Keybind not allowed",
       "keybind-invalid-super": "The Super/Windows key cannot be used in shell keybinds.",
+      "keybind-invalid-printable": "Printable keys (letters, numbers, symbols) require a modifier such as Ctrl or Alt.",
       "power-profiles": "Power profiles",
       "power-profile-title": "Power mode",
       "power-profile-body": "Switched to: {profile}"
@@ -620,12 +628,21 @@
       "support-report": "Support Report",
       "support-report-title": "Save Support Report",
       "support-report-saved": "Support report saved.",
-      "flattened-config": "Flattened Config",
-      "flattened-config-title": "Export Flattened Config",
-      "flattened-config-saved": "Flattened config saved.",
+      "export-config": "Export Config…",
+      "export-config-saved": "Config export saved.",
       "no-results": "No settings found",
       "no-results-hint": "Try a different setting name or config key.",
       "native-title": "Noctalia Settings"
+    },
+    "export-config": {
+      "title": "Export Config",
+      "merged-user-title": "Merged User Config (Recommended)",
+      "merged-user-description": "Combines config files and GUI overrides into one TOML file. Built-in defaults stay implicit.",
+      "merged-user-save-title": "Save Merged User Config",
+      "full-effective-title": "Full Effective Config",
+      "full-effective-description": "Exports every active setting, including built-in defaults. Useful for inspection or sharing a snapshot, but pins current defaults explicitly.",
+      "full-effective-save-title": "Save Full Effective Config",
+      "export": "Export"
     },
     "controls": {
       "select": {
@@ -720,9 +737,9 @@
       "clear": "Failed to reset setting.",
       "reset-page": "Failed to reset some settings.",
       "support-report": "Failed to save support report.",
-      "flattened-config": "Failed to save flattened config.",
+      "export-config": "Failed to save config export.",
       "widget": {
-        "rename": "Could not rename widget instance."
+        "rename": "Could not rename named widget."
       },
       "bar": {
         "create": "Could not create bar.",
@@ -753,7 +770,7 @@
       },
       "monitor-override": {
         "label": "Monitor: {name}",
-        "new": "New Monitor",
+        "new": "Monitor Override",
         "match-placeholder": "Monitor match",
         "create": "Create",
         "management": "Monitor Override",
@@ -777,7 +794,7 @@
           "built-in": "Built-in",
           "named": "Named",
           "unknown": "Unknown",
-          "new-instance": "New Instance"
+          "new-instance": "New Named Widget"
         },
         "editor": {
           "title": "Bar Widgets",
@@ -795,20 +812,20 @@
         "picker": {
           "placeholder": "Search widgets...",
           "empty": "No widgets found",
-          "instance-toggle": "New Instance",
-          "instance-description": "New instance for type \"{type}\"",
-          "create-label": "New {label} Instance",
-          "create-description": "Choose an id for type \"{type}\""
+          "instance-toggle": "Named Widget",
+          "instance-description": "Named widget for type \"{type}\"",
+          "create-label": "New Named {label}",
+          "create-description": "Choose a widget id for type \"{type}\""
         },
         "instance": {
-          "create-title": "New {type} instance",
+          "create-title": "New named {type} widget",
           "create-save": "Create",
           "rename": "Rename",
           "id-placeholder": "Widget id",
           "rename-save": "Save",
           "delete": "Delete",
           "delete-confirm-title": "Delete \"{name}\"?",
-          "delete-confirm-desc": "This widget instance will be removed from every bar and its settings discarded."
+          "delete-confirm-desc": "This named widget will be removed from every bar and its settings discarded."
         },
         "inspector": {
           "edit-title": "Editing widget",
@@ -828,6 +845,7 @@
         "dock": "Dock",
         "hooks": "Hooks",
         "idle": "Idle",
+        "niri": "Niri",
         "panels": "Panels",
         "notifications": "Notifications",
         "popups": "Popups",
@@ -866,6 +884,7 @@
         "network": "Network",
         "night-light": "Night Light",
         "notifications": "Notifications",
+        "overview": "Overview",
         "osd": "OSD",
         "home": "Home",
         "pinned-apps": "Pinned Apps",
@@ -915,6 +934,11 @@
           "solid": "Solid",
           "soft": "Soft",
           "glass": "Glass"
+        },
+        "panel-placement": {
+          "attached": "Attached",
+          "floating": "Floating",
+          "centered": "Centered"
         }
       },
       "screen-position": {
@@ -923,7 +947,13 @@
         "top-center": "Top Center",
         "bottom-right": "Bottom Right",
         "bottom-left": "Bottom Left",
-        "bottom-center": "Bottom Center"
+        "bottom-center": "Bottom Center",
+        "center-right": "Center Right",
+        "center-left": "Center Left"
+      },
+      "orientation": {
+        "horizontal": "Horizontal",
+        "vertical": "Vertical"
       },
       "edge": {
         "top": "Top",
@@ -1026,9 +1056,11 @@
         "full": "Full",
         "gauge": "Gauge",
         "graph": "Graph",
+        "graphic": "Graphic",
+        "icon": "Icon",
         "id": "ID",
         "input": "Input",
-        "instance": "Instance",
+        "instance": "Per Placement",
         "name": "Name",
         "net-rx": "Network RX",
         "net-tx": "Network TX",
@@ -1110,6 +1142,10 @@
           "label": "Display",
           "description": "Display mode for this widget"
         },
+        "display_mode": {
+          "label": "Display Mode",
+          "description": "Render the battery as a graphical shape or a glyph icon"
+        },
         "focused_color": {
           "label": "Focused Color",
           "description": "Color role or hex color used for the focused workspace"
@@ -1183,6 +1219,10 @@
           "description": "Hide workspace pills whne there are no open windows",
           "workspaces-description": "Hide workspace pills that have no open windows"
         },
+        "hide_label": {
+          "label": "Hide Label",
+          "description": "Hide this widget's text label"
+        },
         "high_color": {
           "label": "High Color",
           "description": "Color used for high visualizer values"
@@ -1228,6 +1268,10 @@
           "label": "Mirrored",
           "description": "Mirror the visualizer around its center"
         },
+        "centered": {
+          "label": "Centered",
+          "description": "Center visualizer bars instead of aligning them to the edge"
+        },
         "path": {
           "label": "Path",
           "description": "Path used by disk statistics"
@@ -1237,8 +1281,8 @@
           "description": "Script path or command"
         },
         "scope": {
-          "label": "Scope",
-          "description": "Run one script runtime per widget instance, or share one runtime across bars with the same widget id"
+          "label": "Runtime Scope",
+          "description": "Run one script runtime per live widget placement, or share one runtime across bars with the same widget id"
         },
         "show_caps_lock": {
           "label": "Show Caps Lock",
@@ -1270,7 +1314,7 @@
         },
         "type": {
           "label": "Type",
-          "description": "Built-in widget type for this named instance"
+          "description": "Built-in widget type for this named widget"
         },
         "vertical_format": {
           "label": "Vertical Format",
@@ -1431,8 +1475,12 @@
           "description": "Block all outgoing network requests"
         },
         "telemetry": {
-          "label": "Usage Statistics",
-          "description": "Send an anonymous ping on startup to help improve Noctalia"
+          "label": "Anonymous Startup Ping",
+          "description": "Sends a small anonymous startup ping with version, OS, compositor, display sizes, RAM, and UI scale"
+        },
+        "niri-overview-type-to-launch": {
+          "label": "Type to Launch",
+          "description": "Open the launcher when typing in niri overview. Uses a tiny keyboard-focus surface while overview is open."
         },
         "polkit-agent": {
           "label": "Polkit Agent",
@@ -1474,6 +1522,10 @@
         "osd-position": {
           "label": "Screen Position",
           "description": "Screen position for OSD popups"
+        },
+        "osd-orientation": {
+          "label": "Orientation",
+          "description": "Layout direction for OSD popups"
         },
         "osd-lock-keys": {
           "label": "Lock Keys",
@@ -1567,55 +1619,55 @@
       "panels": {
         "transparency-mode": {
           "label": "Transparency",
-          "description": "Panel glass style, including detached panel opacity and card translucency"
+          "description": "Panel glass style, including floating/centered panel opacity and card translucency"
         },
         "home-shortcuts": {
           "label": "Home Shortcuts",
           "description": "Choose up to six shortcut buttons for the home tab"
         },
-        "attach-control-center": {
-          "label": "Attach to Bar",
-          "description": "Attach the Control Center panel to the bar when a suitable bar is available"
+        "placement-control-center": {
+          "label": "Placement",
+          "description": "Choose whether Control Center attaches to the bar, floats near it, or opens centered"
         },
         "compact-control-center": {
           "label": "Compact Sidebar",
           "description": "Show only icons in the sidebar to make the Control Center narrower"
         },
-        "attach-launcher": {
-          "label": "Attach to Bar",
-          "description": "Attach the Launcher panel to the bar when a suitable bar is available"
+        "placement-launcher": {
+          "label": "Placement",
+          "description": "Choose whether Launcher attaches to the bar, floats near it, or opens centered"
         },
-        "attach-clipboard": {
-          "label": "Attach to Bar",
-          "description": "Attach the Clipboard panel to the bar when a suitable bar is available"
+        "placement-clipboard": {
+          "label": "Placement",
+          "description": "Choose whether Clipboard attaches to the bar, floats near it, or opens centered"
         },
-        "attach-wallpaper": {
-          "label": "Attach to Bar",
-          "description": "Attach the Wallpaper panel to the bar when a suitable bar is available"
+        "placement-wallpaper": {
+          "label": "Placement",
+          "description": "Choose whether Wallpaper attaches to the bar, floats near it, or opens centered"
         },
-        "attach-session": {
-          "label": "Attach to Bar",
-          "description": "Attach the Session panel to the bar when a suitable bar is available"
+        "placement-session": {
+          "label": "Placement",
+          "description": "Choose whether Session attaches to the bar, floats near it, or opens centered"
         },
         "open-near-click-control-center": {
           "label": "Open Near Click",
-          "description": "Position the Control Center near the click location on the bar instead of centering it"
+          "description": "Position the Control Center near the bar click instead of centering it along the bar"
         },
         "open-near-click-launcher": {
           "label": "Open Near Click",
-          "description": "Position the Launcher near the click location on the bar instead of centering it"
+          "description": "Position the Launcher near the bar click instead of centering it along the bar"
         },
         "open-near-click-clipboard": {
           "label": "Open Near Click",
-          "description": "Position the Clipboard near the click location on the bar instead of centering it"
+          "description": "Position the Clipboard near the bar click instead of centering it along the bar"
         },
         "open-near-click-wallpaper": {
           "label": "Open Near Click",
-          "description": "Position the Wallpaper picker near the click location on the bar instead of centering it"
+          "description": "Position the Wallpaper picker near the bar click instead of centering it along the bar"
         },
         "open-near-click-session": {
           "label": "Open Near Click",
-          "description": "Position the Session panel near the click location on the bar instead of centering it"
+          "description": "Position the Session panel near the bar click instead of centering it along the bar"
         },
         "session-actions": {
           "label": "Entries",
@@ -1777,7 +1829,39 @@
         },
         "system-monitor": {
           "label": "System Monitor",
-          "description": "Sample CPU, memory, network, load, temperature, and disk statistics"
+          "description": "Sample CPU, memory, network, load, temperature, and disk statistics",
+          "cpu-poll": {
+            "label": "CPU poll interval",
+            "description": "Seconds between CPU usage, CPU temperature, and load-average samples"
+          },
+          "gpu-temp-poll": {
+            "label": "GPU temperature poll interval",
+            "description": "Seconds between GPU temperature samples"
+          },
+          "gpu-vram-poll": {
+            "label": "GPU VRAM poll interval",
+            "description": "Seconds between GPU memory usage samples"
+          },
+          "memory-poll": {
+            "label": "Memory poll interval",
+            "description": "Seconds between RAM usage samples"
+          },
+          "swap-poll": {
+            "label": "Swap poll interval",
+            "description": "Seconds between swap usage samples"
+          },
+          "network-poll": {
+            "label": "Network poll interval",
+            "description": "Seconds between network throughput samples"
+          },
+          "disk-poll": {
+            "label": "Disk poll interval",
+            "description": "Seconds between disk usage samples"
+          },
+          "history-poll": {
+            "label": "Graph history interval",
+            "description": "Seconds between graph history samples for system monitor widgets"
+          }
         },
         "weather-location": {
           "label": "Auto-Locate",
@@ -1884,6 +1968,10 @@
             "label": "On Colors Changed",
             "description": "Command to run when the active color palette changes"
           },
+          "theme_mode_changed": {
+            "label": "On Theme Mode Changed",
+            "description": "Command to run when the resolved theme mode changes between light and dark"
+          },
           "session_locked": {
             "label": "On Session Locked",
             "description": "Command to run when the session is locked"
@@ -1927,6 +2015,10 @@
           "battery_under_threshold": {
             "label": "On Battery Under Threshold",
             "description": "Command to run when battery percent drops under the configured threshold"
+          },
+          "power_profile_changed": {
+            "label": "On Power Profile Changed",
+            "description": "Command to run when the active UPower/PPD power profile changes"
           }
         },
         "command-placeholder": "shell command or script path",
@@ -2073,6 +2165,14 @@
         },
         "background-opacity": {
           "description": "Background opacity of the bar"
+        },
+        "border": {
+          "label": "Border",
+          "description": "Color role for the bar outline"
+        },
+        "border-width": {
+          "label": "Border Width",
+          "description": "Inside outline width for the bar"
         },
         "shadow": {
           "description": "Cast the global surface shadow from the bar"

@@ -1,5 +1,8 @@
 #include "ui/controls/input.h"
 
+#include "core/key_modifiers.h"
+#include "core/key_symbols.h"
+#include "core/text_clipboard.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "render/core/color.h"
 #include "render/core/render_styles.h"
@@ -11,7 +14,6 @@
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
-#include "wayland/clipboard_service.h"
 
 #include <algorithm>
 #include <array>
@@ -22,38 +24,16 @@
 #include <optional>
 #include <string>
 #include <wayland-client-protocol.h>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
-  ClipboardService* g_clipboard = nullptr;
+  TextClipboard* g_clipboard = nullptr;
   Input::PasswordMaskStyle g_passwordMaskStyle = Input::PasswordMaskStyle::CircleFilled;
   std::function<bool(std::uint32_t, std::uint32_t)> g_validateKeyMatcher;
 
   std::optional<std::string> readClipboardText() {
-    if (g_clipboard == nullptr) {
-      return std::nullopt;
-    }
-    const auto& hist = g_clipboard->history();
-    for (std::size_t i = 0; i < hist.size(); ++i) {
-      if (hist[i].isImage()) {
-        continue;
-      }
-      if (!g_clipboard->ensureEntryLoaded(i)) {
-        continue;
-      }
-      const auto& entry = g_clipboard->history()[i];
-      if (entry.data.empty()) {
-        continue;
-      }
-      return std::string(entry.data.begin(), entry.data.end());
-    }
-    return std::nullopt;
+    return g_clipboard != nullptr ? g_clipboard->clipboardText() : std::nullopt;
   }
-
-  // Modifier bitmask — must match KeyMod constants in wayland/wayland_seat.h
-  constexpr std::uint32_t kModShift = 1u << 0;
-  constexpr std::uint32_t kModCtrl = 1u << 1;
 
   constexpr float kMinWidth = 48.0f;
   constexpr float kCursorWidth = 1.25f;
@@ -410,7 +390,7 @@ void Input::setEnabled(bool enabled) {
   applyVisualState();
 }
 
-void Input::setClipboardService(ClipboardService* clipboard) noexcept { g_clipboard = clipboard; }
+void Input::setTextClipboard(TextClipboard* clipboard) noexcept { g_clipboard = clipboard; }
 
 void Input::setValidateKeyMatcher(std::function<bool(std::uint32_t, std::uint32_t)> matcher) noexcept {
   g_validateKeyMatcher = std::move(matcher);
@@ -595,16 +575,16 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
   }
 
   const bool validateMatch = g_validateKeyMatcher && g_validateKeyMatcher(sym, modifiers);
-  const bool shift = (modifiers & kModShift) != 0;
-  const bool ctrl = (modifiers & kModCtrl) != 0;
+  const bool shift = (modifiers & KeyMod::Shift) != 0;
+  const bool ctrl = (modifiers & KeyMod::Ctrl) != 0;
   const bool undoShortcut = ctrl && !shift && (sym == 'z' || sym == 'Z');
   const bool redoShortcut = (ctrl && (sym == 'y' || sym == 'Y')) || (ctrl && shift && (sym == 'z' || sym == 'Z'));
 
   // Ignore keys that produce no text and aren't action keys we handle below
   if (utf32 == 0 && !preedit) {
-    const bool navigationOrEdit = sym == XKB_KEY_BackSpace || sym == XKB_KEY_Delete || sym == XKB_KEY_Left ||
-                                  sym == XKB_KEY_Right || sym == XKB_KEY_Home || sym == XKB_KEY_End ||
-                                  sym == XKB_KEY_Insert || undoShortcut || redoShortcut;
+    const bool navigationOrEdit = KeySymbol::isBackspace(sym) || KeySymbol::isDelete(sym) || KeySymbol::isLeft(sym) ||
+                                  KeySymbol::isRight(sym) || KeySymbol::isHome(sym) || KeySymbol::isEnd(sym) ||
+                                  KeySymbol::isInsert(sym) || undoShortcut || redoShortcut;
     if (!navigationOrEdit && !validateMatch) {
       return;
     }
@@ -621,10 +601,10 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
     changed = true;
   }
 
-  const bool copyShortcut = ctrl && (sym == XKB_KEY_Insert || sym == 'c' || sym == 'C');
+  const bool copyShortcut = ctrl && (KeySymbol::isInsert(sym) || sym == 'c' || sym == 'C');
   const bool cutShortcut =
-      (ctrl && (sym == 'x' || sym == 'X')) || (!ctrl && shift && sym == XKB_KEY_Delete && hasSelection());
-  const bool pasteShortcut = (ctrl && (sym == 'v' || sym == 'V')) || (!ctrl && shift && sym == XKB_KEY_Insert);
+      (ctrl && (sym == 'x' || sym == 'X')) || (!ctrl && shift && KeySymbol::isDelete(sym) && hasSelection());
+  const bool pasteShortcut = (ctrl && (sym == 'v' || sym == 'V')) || (!ctrl && shift && KeySymbol::isInsert(sym));
 
   if (undoShortcut) {
     if (undoEdit()) {
@@ -662,12 +642,12 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
     m_cursorPos = m_value.size();
   } else if (copyShortcut) {
     if (g_clipboard != nullptr && hasSelection()) {
-      g_clipboard->copyText(m_value.substr(selectionStart(), selectionEnd() - selectionStart()));
+      g_clipboard->setClipboardText(m_value.substr(selectionStart(), selectionEnd() - selectionStart()));
     }
   } else if (cutShortcut) {
     if (g_clipboard != nullptr && hasSelection()) {
       pushUndoSnapshot(EditCoalesceKind::Discrete);
-      g_clipboard->copyText(m_value.substr(selectionStart(), selectionEnd() - selectionStart()));
+      g_clipboard->setClipboardText(m_value.substr(selectionStart(), selectionEnd() - selectionStart()));
       deleteSelection();
       changed = true;
     }
@@ -684,7 +664,7 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
         changed = true;
       }
     }
-  } else if (sym == XKB_KEY_BackSpace) {
+  } else if (KeySymbol::isBackspace(sym)) {
     if (hasSelection()) {
       pushUndoSnapshot(EditCoalesceKind::Discrete);
       deleteSelection();
@@ -697,7 +677,7 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
       m_selectionAnchor = prev;
       changed = true;
     }
-  } else if (sym == XKB_KEY_Delete) {
+  } else if (KeySymbol::isDelete(sym)) {
     if (hasSelection()) {
       pushUndoSnapshot(EditCoalesceKind::Discrete);
       deleteSelection();
@@ -708,7 +688,7 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
       m_value.erase(m_cursorPos, next - m_cursorPos);
       changed = true;
     }
-  } else if (sym == XKB_KEY_Left) {
+  } else if (KeySymbol::isLeft(sym)) {
     resetUndoCoalescing();
     if (!shift && hasSelection()) {
       // Collapse to start of selection
@@ -720,7 +700,7 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
         m_selectionAnchor = m_cursorPos;
       }
     }
-  } else if (sym == XKB_KEY_Right) {
+  } else if (KeySymbol::isRight(sym)) {
     resetUndoCoalescing();
     if (!shift && hasSelection()) {
       // Collapse to end of selection
@@ -732,13 +712,13 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
         m_selectionAnchor = m_cursorPos;
       }
     }
-  } else if (sym == XKB_KEY_Home) {
+  } else if (KeySymbol::isHome(sym)) {
     resetUndoCoalescing();
     m_cursorPos = 0;
     if (!shift) {
       m_selectionAnchor = 0;
     }
-  } else if (sym == XKB_KEY_End) {
+  } else if (KeySymbol::isEnd(sym)) {
     resetUndoCoalescing();
     m_cursorPos = m_value.size();
     if (!shift) {

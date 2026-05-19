@@ -1,5 +1,8 @@
 #include "ui/controls/keybind_recorder.h"
 
+#include "core/key_chord.h"
+#include "core/key_modifiers.h"
+#include "core/key_symbols.h"
 #include "i18n/i18n.h"
 #include "notification/notifications.h"
 #include "render/core/renderer.h"
@@ -8,11 +11,9 @@
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
-#include "wayland/wayland_seat.h"
 
 #include <algorithm>
 #include <memory>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -146,7 +147,7 @@ void KeybindRecorder::handleKeyDown(std::uint32_t sym, std::uint32_t modifiers) 
   }
 
   // Must run before the modifier-preview branch so a bare Super press is also caught.
-  if ((modifiers & KeyMod::Super) != 0 || isSuperKeysym(sym)) {
+  if ((modifiers & KeyMod::Super) != 0 || KeySymbol::isSuperModifier(sym)) {
     notify::error(i18n::tr("notifications.internal.keybind-app"),
                   i18n::tr("notifications.internal.keybind-invalid-title"),
                   i18n::tr("notifications.internal.keybind-invalid-super"));
@@ -154,9 +155,18 @@ void KeybindRecorder::handleKeyDown(std::uint32_t sym, std::uint32_t modifiers) 
     return;
   }
 
-  if (isModifierKeysym(sym)) {
+  if (KeySymbol::isModifier(sym)) {
     m_pendingModifiers = modifiers;
     refreshLabel();
+    return;
+  }
+
+  // Reject bare printable keys (a-z, 0-9, punctuation) without a modifier.
+  if (modifiers == 0 && isPrintableKey(sym)) {
+    notify::error(i18n::tr("notifications.internal.keybind-app"),
+                  i18n::tr("notifications.internal.keybind-invalid-title"),
+                  i18n::tr("notifications.internal.keybind-invalid-printable"));
+    exitRecording(false);
     return;
   }
 
@@ -173,7 +183,7 @@ void KeybindRecorder::handleKeyUp(std::uint32_t sym, std::uint32_t modifiers) {
   if (!m_recording) {
     return;
   }
-  if (isModifierKeysym(sym)) {
+  if (KeySymbol::isModifier(sym)) {
     m_pendingModifiers = modifiers;
     refreshLabel();
   }
@@ -267,35 +277,4 @@ void KeybindRecorder::applyVisualState(VisualState state) {
     }
     break;
   }
-}
-
-bool KeybindRecorder::isModifierKeysym(std::uint32_t sym) {
-  switch (sym) {
-  case XKB_KEY_Shift_L:
-  case XKB_KEY_Shift_R:
-  case XKB_KEY_Control_L:
-  case XKB_KEY_Control_R:
-  case XKB_KEY_Caps_Lock:
-  case XKB_KEY_Shift_Lock:
-  case XKB_KEY_Meta_L:
-  case XKB_KEY_Meta_R:
-  case XKB_KEY_Alt_L:
-  case XKB_KEY_Alt_R:
-  case XKB_KEY_Super_L:
-  case XKB_KEY_Super_R:
-  case XKB_KEY_Hyper_L:
-  case XKB_KEY_Hyper_R:
-  case XKB_KEY_ISO_Level3_Shift:
-  case XKB_KEY_ISO_Level5_Shift:
-  case XKB_KEY_Mode_switch:
-  case XKB_KEY_Num_Lock:
-    return true;
-  default:
-    return false;
-  }
-}
-
-bool KeybindRecorder::isSuperKeysym(std::uint32_t sym) {
-  return sym == XKB_KEY_Super_L || sym == XKB_KEY_Super_R || sym == XKB_KEY_Hyper_L || sym == XKB_KEY_Hyper_R ||
-         sym == XKB_KEY_Meta_L || sym == XKB_KEY_Meta_R;
 }

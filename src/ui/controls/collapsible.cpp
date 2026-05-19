@@ -14,24 +14,24 @@ Collapsible::Collapsible() {
   setDirection(FlexDirection::Vertical);
   setAlign(FlexAlign::Stretch);
 
+  auto area = std::make_unique<InputArea>();
+  area->setOnClick([this](const InputArea::PointerData&) { setExpanded(!m_expanded); });
+  area->setEnabled(false);
+  m_headerInput = static_cast<InputArea*>(addChild(std::move(area)));
+
   auto headerRow = std::make_unique<Flex>();
   headerRow->setDirection(FlexDirection::Horizontal);
   headerRow->setAlign(FlexAlign::Center);
   headerRow->setGap(Style::spaceXs);
   headerRow->setPadding(0.0f, Style::spaceMd);
-  m_headerRow = static_cast<Flex*>(addChild(std::move(headerRow)));
+  m_headerRow = static_cast<Flex*>(m_headerInput->addChild(std::move(headerRow)));
 
   auto chevron = std::make_unique<Glyph>();
   chevron->setGlyph("chevron-down");
   chevron->setGlyphSize(Style::fontSizeBody);
   chevron->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+  chevron->setVisible(false);
   m_chevron = static_cast<Glyph*>(m_headerRow->addChild(std::move(chevron)));
-
-  auto area = std::make_unique<InputArea>();
-  area->setOnClick([this](const InputArea::PointerData&) { setExpanded(!m_expanded); });
-  m_headerInput = static_cast<InputArea*>(addChild(std::move(area)));
-  m_headerInput->setParticipatesInLayout(false);
-  m_headerInput->setZIndex(1);
 
   auto clip = std::make_unique<Node>();
   clip->setClipChildren(true);
@@ -59,6 +59,13 @@ void Collapsible::setBody(std::unique_ptr<Node> body) {
   if (body != nullptr) {
     m_bodyNode = m_clipContainer->addChild(std::move(body));
     m_bodyNode->setPosition(0.0f, 0.0f);
+  }
+  const bool hasBody = m_bodyNode != nullptr;
+  if (m_chevron != nullptr) {
+    m_chevron->setVisible(hasBody);
+  }
+  if (m_headerInput != nullptr) {
+    m_headerInput->setEnabled(hasBody);
   }
   m_bodyNaturalHeight = 0.0f;
   markLayoutDirty();
@@ -141,21 +148,21 @@ void Collapsible::doLayout(Renderer& renderer) {
     }
   }
 
+  if (m_headerInput != nullptr && m_headerRow != nullptr) {
+    m_headerInput->setFrameSize(width(), m_headerRow->height());
+    m_headerRow->arrange(renderer, LayoutRect{0.0f, 0.0f, width(), m_headerRow->height()});
+  }
+
+  const float headerH = (m_headerInput != nullptr) ? m_headerInput->height() : 0.0f;
+
   if (m_clipContainer != nullptr) {
     m_clipContainer->setFrameSize(width(), m_clipHeight);
-    const float headerBottom = (m_headerRow != nullptr) ? (m_headerRow->y() + m_headerRow->height()) : 0.0f;
-    m_clipContainer->setPosition(0.0f, headerBottom);
+    m_clipContainer->setPosition(0.0f, headerH);
     if (m_bodyNode != nullptr && m_bodyNaturalHeight > 0.0f) {
       m_bodyNode->arrange(renderer, LayoutRect{0.0f, 0.0f, width(), m_bodyNaturalHeight});
     }
   }
 
-  if (m_headerInput != nullptr && m_headerRow != nullptr) {
-    m_headerInput->setPosition(0.0f, 0.0f);
-    m_headerInput->setFrameSize(width(), m_headerRow->height());
-  }
-
-  const float headerH = (m_headerRow != nullptr) ? m_headerRow->height() : 0.0f;
   setFrameSize(width(), headerH + m_clipHeight);
 }
 
@@ -163,6 +170,9 @@ LayoutSize Collapsible::doMeasure(Renderer& renderer, const LayoutConstraints& c
   LayoutSize headerSize;
   if (m_headerRow != nullptr) {
     headerSize = m_headerRow->measure(renderer, constraints);
+    if (m_headerInput != nullptr) {
+      m_headerInput->setFrameSize(headerSize.width, headerSize.height);
+    }
   }
 
   if (m_bodyNode != nullptr) {

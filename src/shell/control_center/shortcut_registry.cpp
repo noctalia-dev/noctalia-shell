@@ -4,7 +4,8 @@
 #include "config/config_service.h"
 #include "dbus/bluetooth/bluetooth_service.h"
 #include "dbus/mpris/mpris_service.h"
-#include "dbus/network/network_service.h"
+#include "dbus/network/inetwork_service.h"
+#include "dbus/network/network_glyphs.h"
 #include "dbus/power/power_profiles_service.h"
 #include "i18n/i18n.h"
 #include "idle/idle_inhibitor.h"
@@ -16,7 +17,6 @@
 #include "system/gamma_service.h"
 #include "system/weather_service.h"
 #include "theme/theme_service.h"
-#include "wayland/wayland_connection.h"
 
 #include <array>
 #include <cmath>
@@ -53,7 +53,7 @@ namespace {
 
   class WifiShortcut final : public Shortcut {
   public:
-    explicit WifiShortcut(NetworkService* svc) : m_svc(svc) {}
+    explicit WifiShortcut(INetworkService* svc) : m_svc(svc) {}
     std::string_view id() const override { return "wifi"; }
     std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.wifi"); }
     std::string displayLabel() const override {
@@ -71,7 +71,7 @@ namespace {
       if (m_svc == nullptr) {
         return "wifi-question";
       }
-      return NetworkService::wifiGlyphForState(m_svc->state());
+      return network_glyphs::wifiGlyphForState(m_svc->state());
     }
     bool isToggle() const override { return true; }
     bool active() const override { return m_svc != nullptr && m_svc->state().wirelessEnabled; }
@@ -83,7 +83,7 @@ namespace {
     void onRightClick() override { openTab("network"); }
 
   private:
-    NetworkService* m_svc;
+    INetworkService* m_svc;
   };
 
   class BluetoothShortcut final : public Shortcut {

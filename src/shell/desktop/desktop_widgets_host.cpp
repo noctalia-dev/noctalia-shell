@@ -13,7 +13,6 @@
 #include "wayland/wayland_seat.h"
 
 #include <algorithm>
-#include <cmath>
 #include <string>
 
 namespace {

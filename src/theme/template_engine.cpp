@@ -2,7 +2,7 @@
 
 #include "core/log.h"
 #include "core/process.h"
-#include "core/toml.h"
+#include "core/toml.h" // IWYU pragma: keep
 #include "cpp/cam/hct.h"
 #include "cpp/palettes/tones.h"
 #include "cpp/scheme/scheme_content.h"

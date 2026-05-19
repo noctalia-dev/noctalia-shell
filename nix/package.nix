@@ -26,6 +26,7 @@
   polkit,
   librsvg,
   libprojectm,
+  jemalloc,
 }:
 
 let
@@ -70,6 +71,7 @@ stdenv.mkDerivation {
     ninja
     pkg-config
     wayland-scanner
+    jemalloc
   ];
 
   buildInputs = [

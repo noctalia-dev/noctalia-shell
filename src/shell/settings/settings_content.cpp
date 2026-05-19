@@ -1,7 +1,6 @@
 #include "shell/settings/settings_content.h"
 
 #include "config/config_types.h"
-#include "core/deferred_call.h"
 #include "i18n/i18n.h"
 #include "render/core/color.h"
 #include "shell/settings/bar_widget_editor.h"
@@ -188,6 +187,12 @@ namespace settings {
       }
       if (key == "background_opacity") {
         return override->backgroundOpacity.has_value();
+      }
+      if (key == "border") {
+        return override->border.has_value();
+      }
+      if (key == "border_width") {
+        return override->borderWidth.has_value();
       }
       if (key == "shadow") {
         return override->shadow.has_value();
@@ -2311,12 +2316,10 @@ namespace settings {
         .showAdvanced = ctx.showAdvanced,
         .showOverriddenOnly = ctx.showOverriddenOnly,
         .batteryDeviceOptions = ctx.batteryDeviceOptions,
-        .openWidgetPickerPath = ctx.openWidgetPickerPath,
         .editingWidgetName = ctx.editingWidgetName,
         .pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
         .pendingDeleteWidgetSettingPath = ctx.pendingDeleteWidgetSettingPath,
         .renamingWidgetName = ctx.renamingWidgetName,
-        .creatingWidgetType = ctx.creatingWidgetType,
         .requestRebuild = ctx.requestRebuild,
         .resetContentScroll = ctx.resetContentScroll,
         .setScrollTarget = ctx.setScrollTarget,

@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "render/backend/render_backend.h"
 #include "render/core/image_file_loader.h"
+#include "render/core/image_source_log.h"
 #include "render/gl_shared_context.h"
 
 #include <algorithm>
@@ -308,7 +309,7 @@ void AsyncTextureCache::workerLoop() {
       result.height = loaded->height;
     } else {
       result.failed = true;
-      kLog.warn("failed to decode image: {} ({})", key.path, errorMessage);
+      kLog.warn("failed to decode image: {} ({})", ImageSourceLog::describe(key.path), errorMessage);
     }
 
     pushResult(std::move(result));

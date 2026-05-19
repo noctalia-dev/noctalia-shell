@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/key_chord.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -22,6 +23,8 @@ struct BarMonitorOverride {
   std::optional<bool> reserveSpace;
   std::optional<std::int32_t> thickness;
   std::optional<float> backgroundOpacity;
+  std::optional<ColorSpec> border;
+  std::optional<float> borderWidth;
   std::optional<std::int32_t> radius;
   std::optional<std::int32_t> radiusTopLeft;
   std::optional<std::int32_t> radiusTopRight;
@@ -60,6 +63,9 @@ struct BarConfig {
   bool reserveSpace = true; // reserve compositor exclusive zone for this bar
   std::int32_t thickness = Style::barThicknessDefault;
   float backgroundOpacity = 1.0f;
+  // Inside outline for the bar background; attached panels inherit the resolved values.
+  ColorSpec border = colorSpecFromRole(ColorRole::Outline);
+  float borderWidth = 0.0f;
   std::int32_t radius = static_cast<std::int32_t>(Style::radiusXl);
   std::int32_t radiusTopLeft = static_cast<std::int32_t>(Style::radiusXl);
   std::int32_t radiusTopRight = static_cast<std::int32_t>(Style::radiusXl);
@@ -187,17 +193,7 @@ enum class KeybindAction : std::uint8_t {
   Down = 5,
 };
 
-struct KeyChord {
-  std::uint32_t sym = 0;       // XKB keysym
-  std::uint32_t modifiers = 0; // KeyMod bitmask
-
-  bool operator==(const KeyChord&) const = default;
-};
-
-// Throws std::runtime_error if spec contains a Super-family modifier.
-[[nodiscard]] std::optional<KeyChord> parseKeyChordSpec(std::string_view spec);
-[[nodiscard]] std::string keyChordToString(const KeyChord& chord);
-[[nodiscard]] std::string keyChordDisplayLabel(const KeyChord& chord);
+[[nodiscard]] std::vector<KeyChord> defaultKeybindSet(KeybindAction action);
 
 using WidgetSettingValue = std::variant<bool, std::int64_t, double, std::string, std::vector<std::string>>;
 using ConfigOverrideValue =
@@ -393,6 +389,7 @@ struct DesktopWidgetsConfig {
 
 struct OsdConfig {
   std::string position = "top_right";
+  std::string orientation = "horizontal";
   bool lockKeys = true;
 };
 
@@ -473,6 +470,18 @@ constexpr EnumOption<PanelTransparencyMode> kPanelTransparencyModes[] = {
                                                         float panelBackgroundOpacity) noexcept;
 [[nodiscard]] float detachedPanelBackgroundOpacityForTransparencyMode(PanelTransparencyMode mode) noexcept;
 
+enum class PanelPlacement : std::uint8_t {
+  Attached = 0,
+  Floating = 1,
+  Centered = 2,
+};
+
+constexpr EnumOption<PanelPlacement> kPanelPlacements[] = {
+    {PanelPlacement::Attached, "attached", "settings.options.shell.panel-placement.attached"},
+    {PanelPlacement::Floating, "floating", "settings.options.shell.panel-placement.floating"},
+    {PanelPlacement::Centered, "centered", "settings.options.shell.panel-placement.centered"},
+};
+
 constexpr EnumOption<WallpaperFillMode> kWallpaperFillModes[] = {
     {WallpaperFillMode::Center, "center", "settings.options.wallpaper.fill.center"},
     {WallpaperFillMode::Crop, "crop", "settings.options.wallpaper.fill.crop"},
@@ -513,11 +522,11 @@ struct ShellConfig {
   struct PanelConfig {
     bool backgroundBlur = true; // request compositor blur behind panels via ext-background-effect-v1
     PanelTransparencyMode transparencyMode = PanelTransparencyMode::Solid;
-    bool attachLauncher = false;
-    bool attachClipboard = false;
-    bool attachControlCenter = true;
-    bool attachWallpaper = true;
-    bool attachSession = false;
+    PanelPlacement launcherPlacement = PanelPlacement::Centered;
+    PanelPlacement clipboardPlacement = PanelPlacement::Centered;
+    PanelPlacement controlCenterPlacement = PanelPlacement::Attached;
+    PanelPlacement wallpaperPlacement = PanelPlacement::Attached;
+    PanelPlacement sessionPlacement = PanelPlacement::Attached;
     bool openNearClickControlCenter = false;
     bool openNearClickLauncher = false;
     bool openNearClickClipboard = false;
@@ -548,6 +557,7 @@ struct ShellConfig {
   std::string dateFormat = "%A, %x";
   bool offlineMode = false;
   bool telemetryEnabled = false;
+  bool niriOverviewTypeToLaunchEnabled = false;
   bool polkitAgent = false;
   PasswordMaskStyle passwordMaskStyle = PasswordMaskStyle::CircleFilled;
   AnimationConfig animation;
@@ -578,6 +588,14 @@ struct WeatherConfig {
 struct SystemConfig {
   struct MonitorConfig {
     bool enabled = true;
+    float cpuPollSeconds = 1.0f;
+    float gpuTempPollSeconds = 2.0f;
+    float gpuVramPollSeconds = 2.0f;
+    float memoryPollSeconds = 1.0f;
+    float swapPollSeconds = 1.0f;
+    float networkPollSeconds = 1.0f;
+    float diskPollSeconds = 5.0f;
+    float historyPollSeconds = 1.0f;
   };
 
   MonitorConfig monitor;
@@ -650,6 +668,7 @@ enum class HookKind : std::uint8_t {
   Started = 0,
   WallpaperChanged,
   ColorsChanged,
+  ThemeModeChanged,
   SessionLocked,
   SessionUnlocked,
   LoggingOut,
@@ -661,6 +680,7 @@ enum class HookKind : std::uint8_t {
   BluetoothDisabled,
   BatteryStateChanged,
   BatteryUnderThreshold,
+  PowerProfileChanged,
   Count
 };
 
@@ -668,6 +688,7 @@ constexpr EnumOption<HookKind> kHookKinds[] = {
     {HookKind::Started, "started", ""},
     {HookKind::WallpaperChanged, "wallpaper_changed", ""},
     {HookKind::ColorsChanged, "colors_changed", ""},
+    {HookKind::ThemeModeChanged, "theme_mode_changed", ""},
     {HookKind::SessionLocked, "session_locked", ""},
     {HookKind::SessionUnlocked, "session_unlocked", ""},
     {HookKind::LoggingOut, "logging_out", ""},
@@ -679,6 +700,7 @@ constexpr EnumOption<HookKind> kHookKinds[] = {
     {HookKind::BluetoothDisabled, "bluetooth_disabled", ""},
     {HookKind::BatteryStateChanged, "battery_state_changed", ""},
     {HookKind::BatteryUnderThreshold, "battery_under_threshold", ""},
+    {HookKind::PowerProfileChanged, "power_profile_changed", ""},
 };
 
 static_assert(sizeof(kHookKinds) / sizeof(kHookKinds[0]) == static_cast<std::size_t>(HookKind::Count));

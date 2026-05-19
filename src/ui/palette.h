@@ -107,6 +107,11 @@ extern Palette palette;
 
 void setPalette(const Palette& p);
 
+[[nodiscard]] inline ColorSpec scrollbarTrackColor() noexcept { return colorSpecFromRole(ColorRole::Outline, 0.5f); }
+[[nodiscard]] inline ColorSpec scrollbarThumbColor() noexcept {
+  return colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.5f);
+}
+
 // Fired after setPalette() writes. Controls subscribe in their constructor
 // and re-apply palette-derived colors to their scene nodes on each emit.
 Signal<>& paletteChanged();

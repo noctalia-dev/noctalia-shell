@@ -169,6 +169,45 @@ namespace tray {
     return std::ranges::find(candidates, normalizedToken) != candidates.end();
   }
 
+  [[nodiscard]] inline std::string capitalizeFirstLetter(std::string text) {
+    if (!text.empty()) {
+      text.front() = static_cast<char>(std::toupper(static_cast<unsigned char>(text.front())));
+    }
+    return text;
+  }
+
+  [[nodiscard]] inline std::string normalizedTooltipMatchKey(std::string text) {
+    text = StringUtils::toLower(std::move(text));
+    text.erase(std::remove(text.begin(), text.end(), ' '), text.end());
+    return text;
+  }
+
+  // Merge StatusNotifierItem Title with ToolTip title/description for hover text.
+  [[nodiscard]] inline std::string formatTrayItemTooltip(const TrayItemInfo& item) {
+    std::string tooltipTitle;
+    if (!item.statusNotifierDescription.empty()) {
+      tooltipTitle = item.statusNotifierDescription;
+    } else if (!item.statusNotifierTitle.empty()) {
+      tooltipTitle = item.statusNotifierTitle;
+    }
+
+    if (tooltipTitle.empty()) {
+      return capitalizeFirstLetter(item.title);
+    }
+
+    if (item.title.empty()) {
+      return tooltipTitle;
+    }
+
+    const std::string lowerTitle = StringUtils::toLower(item.title);
+    const std::string lowerTooltipTitle = normalizedTooltipMatchKey(tooltipTitle);
+    if (lowerTooltipTitle.find(lowerTitle) != std::string::npos) {
+      return tooltipTitle;
+    }
+
+    return capitalizeFirstLetter(item.title) + " - " + tooltipTitle;
+  }
+
   inline std::string preferredPinToken(const TrayItemInfo& item) {
     // Persist stable human-readable tokens; avoid transient :1.xxx ids and
     // generic Electron/proxy/SNI names shared by unrelated applications.

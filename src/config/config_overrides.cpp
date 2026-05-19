@@ -16,8 +16,6 @@
 
 namespace {
   constexpr Logger kLog("config");
-  constexpr const char* kInternalStateTable = "noctalia_state";
-  constexpr const char* kSetupWizardCompletedKey = "setup_wizard_completed";
   constexpr double kConfigFloatEpsilon = 1.0e-5;
 
   std::string overrideCacheKey(const std::vector<std::string>& path) {
@@ -125,13 +123,13 @@ namespace {
   bool barBaseConfigEqual(const BarConfig& a, const BarConfig& b) {
     return a.name == b.name && a.position == b.position && a.enabled == b.enabled && a.autoHide == b.autoHide &&
            a.reserveSpace == b.reserveSpace && a.thickness == b.thickness &&
-           nearlyEqual(a.backgroundOpacity, b.backgroundOpacity) && a.radius == b.radius &&
-           a.radiusTopLeft == b.radiusTopLeft && a.radiusTopRight == b.radiusTopRight &&
-           a.radiusBottomLeft == b.radiusBottomLeft && a.radiusBottomRight == b.radiusBottomRight &&
-           a.marginEnds == b.marginEnds && a.marginEdge == b.marginEdge && a.padding == b.padding &&
-           a.widgetSpacing == b.widgetSpacing && a.shadow == b.shadow && a.contactShadow == b.contactShadow &&
-           a.attachPanels == b.attachPanels && nearlyEqual(a.scale, b.scale) && a.startWidgets == b.startWidgets &&
-           a.centerWidgets == b.centerWidgets && a.endWidgets == b.endWidgets &&
+           nearlyEqual(a.backgroundOpacity, b.backgroundOpacity) && colorSpecEqual(a.border, b.border) &&
+           nearlyEqual(a.borderWidth, b.borderWidth) && a.radius == b.radius && a.radiusTopLeft == b.radiusTopLeft &&
+           a.radiusTopRight == b.radiusTopRight && a.radiusBottomLeft == b.radiusBottomLeft &&
+           a.radiusBottomRight == b.radiusBottomRight && a.marginEnds == b.marginEnds && a.marginEdge == b.marginEdge &&
+           a.padding == b.padding && a.widgetSpacing == b.widgetSpacing && a.shadow == b.shadow &&
+           a.contactShadow == b.contactShadow && a.attachPanels == b.attachPanels && nearlyEqual(a.scale, b.scale) &&
+           a.startWidgets == b.startWidgets && a.centerWidgets == b.centerWidgets && a.endWidgets == b.endWidgets &&
            a.widgetCapsuleDefault == b.widgetCapsuleDefault &&
            colorSpecEqual(a.widgetCapsuleFill, b.widgetCapsuleFill) &&
            optionalColorSpecEqual(a.widgetCapsuleForeground, b.widgetCapsuleForeground) &&
@@ -160,6 +158,12 @@ namespace {
     }
     if (ovr.backgroundOpacity) {
       resolved.backgroundOpacity = *ovr.backgroundOpacity;
+    }
+    if (ovr.border) {
+      resolved.border = *ovr.border;
+    }
+    if (ovr.borderWidth) {
+      resolved.borderWidth = *ovr.borderWidth;
     }
     if (ovr.radius) {
       resolved.radius = *ovr.radius;
@@ -315,18 +319,21 @@ namespace {
     return nearlyEqual(a.uiScale, b.uiScale) && nearlyEqual(a.cornerRadiusScale, b.cornerRadiusScale) &&
            a.fontFamily == b.fontFamily && a.lang == b.lang && a.timeFormat == b.timeFormat &&
            a.dateFormat == b.dateFormat && a.offlineMode == b.offlineMode && a.telemetryEnabled == b.telemetryEnabled &&
-           a.polkitAgent == b.polkitAgent && a.passwordMaskStyle == b.passwordMaskStyle &&
-           a.animation.enabled == b.animation.enabled && nearlyEqual(a.animation.speed, b.animation.speed) &&
-           a.avatarPath == b.avatarPath && a.settingsShowAdvanced == b.settingsShowAdvanced &&
+           a.niriOverviewTypeToLaunchEnabled == b.niriOverviewTypeToLaunchEnabled && a.polkitAgent == b.polkitAgent &&
+           a.passwordMaskStyle == b.passwordMaskStyle && a.animation.enabled == b.animation.enabled &&
+           nearlyEqual(a.animation.speed, b.animation.speed) && a.avatarPath == b.avatarPath &&
+           a.settingsShowAdvanced == b.settingsShowAdvanced &&
            a.middleClickOpensWidgetSettings == b.middleClickOpensWidgetSettings && a.showLocation == b.showLocation &&
            a.clipboardEnabled == b.clipboardEnabled && a.clipboardAutoPaste == b.clipboardAutoPaste &&
            a.clipboardImageActionCommand == b.clipboardImageActionCommand && a.shadow.blur == b.shadow.blur &&
            a.shadow.offsetX == b.shadow.offsetX && a.shadow.offsetY == b.shadow.offsetY &&
            nearlyEqual(a.shadow.alpha, b.shadow.alpha) && a.panel.backgroundBlur == b.panel.backgroundBlur &&
-           a.panel.transparencyMode == b.panel.transparencyMode && a.panel.attachLauncher == b.panel.attachLauncher &&
-           a.panel.attachClipboard == b.panel.attachClipboard &&
-           a.panel.attachControlCenter == b.panel.attachControlCenter &&
-           a.panel.attachWallpaper == b.panel.attachWallpaper && a.panel.attachSession == b.panel.attachSession &&
+           a.panel.transparencyMode == b.panel.transparencyMode &&
+           a.panel.launcherPlacement == b.panel.launcherPlacement &&
+           a.panel.clipboardPlacement == b.panel.clipboardPlacement &&
+           a.panel.controlCenterPlacement == b.panel.controlCenterPlacement &&
+           a.panel.wallpaperPlacement == b.panel.wallpaperPlacement &&
+           a.panel.sessionPlacement == b.panel.sessionPlacement &&
            a.panel.openNearClickControlCenter == b.panel.openNearClickControlCenter &&
            a.panel.openNearClickLauncher == b.panel.openNearClickLauncher &&
            a.panel.openNearClickClipboard == b.panel.openNearClickClipboard &&
@@ -380,11 +387,20 @@ namespace {
            nearlyEqual(a.backdrop.blurIntensity, b.backdrop.blurIntensity) &&
            nearlyEqual(a.backdrop.tintIntensity, b.backdrop.tintIntensity) && dockConfigEqual(a.dock, b.dock) &&
            desktopWidgetsConfigEqual(a.desktopWidgets, b.desktopWidgets) && shellConfigEqual(a.shell, b.shell) &&
-           a.osd.position == b.osd.position && a.osd.lockKeys == b.osd.lockKeys &&
-           notificationConfigEqual(a.notification, b.notification) && a.weather.enabled == b.weather.enabled &&
-           a.weather.autoLocate == b.weather.autoLocate && a.weather.effects == b.weather.effects &&
-           a.weather.address == b.weather.address && a.weather.refreshMinutes == b.weather.refreshMinutes &&
-           a.weather.unit == b.weather.unit && a.system.monitor.enabled == b.system.monitor.enabled &&
+           a.osd.position == b.osd.position && a.osd.orientation == b.osd.orientation &&
+           a.osd.lockKeys == b.osd.lockKeys && notificationConfigEqual(a.notification, b.notification) &&
+           a.weather.enabled == b.weather.enabled && a.weather.autoLocate == b.weather.autoLocate &&
+           a.weather.effects == b.weather.effects && a.weather.address == b.weather.address &&
+           a.weather.refreshMinutes == b.weather.refreshMinutes && a.weather.unit == b.weather.unit &&
+           a.system.monitor.enabled == b.system.monitor.enabled &&
+           a.system.monitor.cpuPollSeconds == b.system.monitor.cpuPollSeconds &&
+           a.system.monitor.gpuTempPollSeconds == b.system.monitor.gpuTempPollSeconds &&
+           a.system.monitor.gpuVramPollSeconds == b.system.monitor.gpuVramPollSeconds &&
+           a.system.monitor.memoryPollSeconds == b.system.monitor.memoryPollSeconds &&
+           a.system.monitor.swapPollSeconds == b.system.monitor.swapPollSeconds &&
+           a.system.monitor.networkPollSeconds == b.system.monitor.networkPollSeconds &&
+           a.system.monitor.diskPollSeconds == b.system.monitor.diskPollSeconds &&
+           a.system.monitor.historyPollSeconds == b.system.monitor.historyPollSeconds &&
            audioConfigEqual(a.audio, b.audio) && a.brightness == b.brightness &&
            a.keybinds.validate == b.keybinds.validate && a.keybinds.cancel == b.keybinds.cancel &&
            a.keybinds.left == b.keybinds.left && a.keybinds.right == b.keybinds.right &&
@@ -614,6 +630,14 @@ namespace {
     return true;
   }
 
+  bool overridePresenceIsSemantic(const std::vector<std::string>& path) {
+    if (path.size() != 5 || path[0] != "bar" || path[2] != "monitor") {
+      return false;
+    }
+    const auto& key = path[4];
+    return key == "start" || key == "center" || key == "end";
+  }
+
   std::vector<std::filesystem::path> sortedConfigTomlFiles(std::string_view configDir) {
     std::vector<std::filesystem::path> files;
     if (configDir.empty()) {
@@ -744,18 +768,18 @@ bool ConfigService::setDesktopWidgetsState(const DesktopWidgetsConfig& desktopWi
 }
 
 bool ConfigService::markSetupWizardCompleted() {
-  if (m_setupWizardCompleted) {
+  if (m_setupMarkerPath.empty()) {
+    return false;
+  }
+  if (std::filesystem::exists(m_setupMarkerPath)) {
     return true;
   }
 
-  m_setupWizardCompleted = true;
-  if (!writeOverridesToFile()) {
-    m_setupWizardCompleted = false;
-    kLog.warn("failed to write {}", m_overridesPath);
+  std::ofstream out(m_setupMarkerPath, std::ios::trunc);
+  if (!out.is_open()) {
+    kLog.warn("failed to write {}", m_setupMarkerPath);
     return false;
   }
-
-  m_ownOverridesWritePending = true;
   return true;
 }
 
@@ -1097,7 +1121,7 @@ bool ConfigService::setOverride(const std::vector<std::string>& path, ConfigOver
   }
 
   insertOverrideValue(*table, path.back(), value);
-  if (!overridePathEffectiveInTable(path, m_overridesTable)) {
+  if (!overridePresenceIsSemantic(path) && !overridePathEffectiveInTable(path, m_overridesTable)) {
     eraseOverridePath(m_overridesTable, path, overridePreserveDepthForPath(path));
     if (path.size() == 2 && path[0] == "idle" && path[1] == "behavior") {
       eraseOverridePath(m_overridesTable, {"idle", "behavior_order"}, overridePreserveDepthForPath(path));
@@ -1319,10 +1343,6 @@ bool ConfigService::writeOverridesToFile() {
     return false;
   }
   toml::table output = m_overridesTable;
-  if (m_setupWizardCompleted) {
-    auto* state = ensureTable(output, kInternalStateTable);
-    state->insert_or_assign(kSetupWizardCompletedKey, true);
-  }
 
   const std::string tmpPath = m_overridesPath + ".tmp";
   {

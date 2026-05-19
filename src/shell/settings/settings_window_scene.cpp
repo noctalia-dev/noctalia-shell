@@ -268,6 +268,7 @@ void SettingsWindow::applyPendingContentScrollTarget(float margin) {
 settings::RegistryEnvironment SettingsWindow::buildRegistryEnvironment() const {
   settings::RegistryEnvironment env;
   env.niriBackdropSupported = (m_wayland != nullptr && compositors::isNiri());
+  env.niriOverviewTypeToLaunchSupported = (m_wayland != nullptr && compositors::isNiri());
   env.ddcutilAvailable = (m_dependencies != nullptr && m_dependencies->hasDdcutil());
   env.gammaControlAvailable = (m_wayland != nullptr && m_wayland->hasGammaControl());
   for (const auto& paletteInfo : noctalia::theme::availableCommunityPalettes()) {
@@ -342,12 +343,10 @@ settings::SettingsContentContext SettingsWindow::makeContentContext(const Config
       .showAdvanced = m_showAdvanced,
       .showOverriddenOnly = m_showOverriddenOnly,
       .batteryDeviceOptions = batteryDeviceOptions(),
-      .openWidgetPickerPath = m_openWidgetPickerPath,
       .editingWidgetName = m_editingWidgetName,
       .pendingDeleteWidgetName = m_pendingDeleteWidgetName,
       .pendingDeleteWidgetSettingPath = m_pendingDeleteWidgetSettingPath,
       .renamingWidgetName = m_renamingWidgetName,
-      .creatingWidgetType = m_creatingWidgetType,
       .requestRebuild = requestRebuild,
       .requestContentRebuild = requestContent,
       .resetContentScroll = [this]() { m_contentScrollState.offset = 0.0f; },

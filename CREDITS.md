@@ -8,6 +8,7 @@ Noctalia is made possible by the incredible work of many open-source projects an
 - **[SaberJ2X](https://www.reddit.com/user/SaberJ64/)** — Creator of Talia, the Noctalia mascot
 - **[Tabler Icons](https://tabler.io/icons)** — Icon set used throughout the shell
 - **[Riyan Resdian on Noun Project](https://thenounproject.com/creator/yaicon/)** — Plug icon
+- **[@StrayRogue](https://x.com/StrayRogue)** — Creator of the original Bongo Cat artwork used by the bongocat widget
 
 ## Audio Assets
 

@@ -4,10 +4,12 @@
 #include "config/config_service.h"
 #include "core/deferred_call.h"
 #include "dbus/mpris/mpris_service.h"
+#include "dbus/network/inetwork_service.h"
 #include "i18n/i18n.h"
 #include "notification/notification_manager.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
+#include "shell/panel/panel_button_style.h"
 #include "shell/panel/panel_manager.h"
 #include "system/dependency_service.h"
 #include "ui/controls/button.h"
@@ -26,7 +28,7 @@ namespace {
 ControlCenterPanel::ControlCenterPanel(
     NotificationManager* notifications, PipeWireService* audio, MprisService* mpris, ConfigService* config,
     HttpClient* httpClient, WeatherService* weather, PipeWireSpectrum* spectrum, UPowerService* upower,
-    PowerProfilesService* powerProfiles, NetworkService* network, NetworkSecretAgent* networkSecrets,
+    PowerProfilesService* powerProfiles, INetworkService* network, NetworkSecretAgent* networkSecrets,
     BluetoothService* bluetooth, BluetoothAgent* bluetoothAgent, BrightnessService* brightness,
     SystemMonitorService* sysmon, GammaService* nightLight, noctalia::theme::ThemeService* theme,
     IdleInhibitor* idleInhibitor, DependencyService* dependencies, CompositorPlatform* platform, Wallpaper* wallpaper) {
@@ -60,8 +62,8 @@ float ControlCenterPanel::preferredWidth() const {
   return scaled(compact ? 660.0f : 780.0f);
 }
 
-bool ControlCenterPanel::prefersAttachedToBar() const noexcept {
-  return m_config == nullptr || m_config->config().shell.panel.attachControlCenter;
+PanelPlacement ControlCenterPanel::panelPlacement() const noexcept {
+  return m_config == nullptr ? PanelPlacement::Attached : m_config->config().shell.panel.controlCenterPlacement;
 }
 
 bool ControlCenterPanel::dismissTransientUi() {
@@ -178,12 +180,7 @@ void ControlCenterPanel::create() {
 
   auto closeButton = std::make_unique<Button>();
   closeButton->setGlyph("close");
-  closeButton->setVariant(ButtonVariant::Default);
-  closeButton->setGlyphSize(Style::fontSizeBody * scale);
-  closeButton->setMinWidth(Style::controlHeightSm * scale);
-  closeButton->setMinHeight(Style::controlHeightSm * scale);
-  closeButton->setPadding(Style::spaceXs * scale);
-  closeButton->setRadius(Style::scaledRadiusMd(scale));
+  panel_button_style::configureHeaderIconButton(*closeButton, scale, panelCardOpacity());
   closeButton->setOnClick([]() { PanelManager::instance().close(); });
   m_closeButton = closeButton.get();
   m_contentHeaderActions->addChild(std::move(closeButton));
@@ -224,6 +221,9 @@ void ControlCenterPanel::onPanelCardOpacityChanged(float opacity) {
   }
   if (m_sidebar != nullptr) {
     m_sidebar->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, opacity));
+  }
+  if (m_closeButton != nullptr) {
+    panel_button_style::applyHeaderButtonStyle(*m_closeButton, opacity);
   }
 }
 

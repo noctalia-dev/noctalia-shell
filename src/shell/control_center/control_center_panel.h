@@ -33,7 +33,7 @@ class InputArea;
 class Label;
 class MprisService;
 class NetworkSecretAgent;
-class NetworkService;
+class INetworkService;
 class GammaService;
 class NotificationManager;
 class PipeWireService;
@@ -54,7 +54,7 @@ public:
                      ConfigService* config = nullptr, HttpClient* httpClient = nullptr,
                      WeatherService* weather = nullptr, PipeWireSpectrum* spectrum = nullptr,
                      UPowerService* upower = nullptr, PowerProfilesService* powerProfiles = nullptr,
-                     NetworkService* network = nullptr, NetworkSecretAgent* networkSecrets = nullptr,
+                     INetworkService* network = nullptr, NetworkSecretAgent* networkSecrets = nullptr,
                      BluetoothService* bluetooth = nullptr, BluetoothAgent* bluetoothAgent = nullptr,
                      BrightnessService* brightness = nullptr, SystemMonitorService* sysmon = nullptr,
                      GammaService* nightLight = nullptr, noctalia::theme::ThemeService* theme = nullptr,
@@ -73,9 +73,7 @@ public:
   [[nodiscard]] float preferredWidth() const override;
 
   [[nodiscard]] float preferredHeight() const override { return scaled(520.0f); }
-  [[nodiscard]] bool centeredHorizontally() const override { return true; }
-  [[nodiscard]] bool centeredVertically() const override { return true; }
-  [[nodiscard]] bool prefersAttachedToBar() const noexcept override;
+  [[nodiscard]] PanelPlacement panelPlacement() const noexcept override;
 
 private:
   void onPanelCardOpacityChanged(float opacity) override;
@@ -107,9 +105,9 @@ private:
   static constexpr std::array<TabMeta, kTabCount> kTabs{{
       {TabId::Home, "home", "control-center.tabs.home", "home"},
       {TabId::Media, "media", "control-center.tabs.media", "disc-filled"},
-      {TabId::Audio, "audio", "control-center.tabs.audio", "device-speaker"},
+      {TabId::Audio, "audio", "control-center.tabs.audio", "volume"},
       {TabId::Display, "display", "control-center.tabs.display", "device-desktop"},
-      {TabId::System, "system", "control-center.tabs.system", "activity"},
+      {TabId::System, "system", "control-center.tabs.system", "activity-heartbeat"},
       {TabId::Network, "network", "control-center.tabs.network", "wifi"},
       {TabId::Bluetooth, "bluetooth", "control-center.tabs.bluetooth", "bluetooth"},
       {TabId::Weather, "weather", "control-center.tabs.weather", "weather-cloud-sun"},

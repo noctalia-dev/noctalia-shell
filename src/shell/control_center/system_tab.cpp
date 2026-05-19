@@ -4,6 +4,7 @@
 #include "render/scene/graph_node.h"
 #include "shell/panel/panel_manager.h"
 #include "system/distro_info.h"
+#include "system/format_units.h"
 #include "system/hardware_info.h"
 #include "system/system_monitor_service.h"
 #include "time/time_format.h"
@@ -12,8 +13,6 @@
 #include "ui/controls/label.h"
 
 #include <algorithm>
-#include <cmath>
-#include <cstdint>
 #include <format>
 #include <vector>
 
@@ -23,7 +22,7 @@ namespace {
 
   constexpr float kGraphLineWidth = 0.75f;
   constexpr float kGraphFillOpacity = 0.15f;
-  constexpr double kNetMinScaleBps = 10.0 * 1024.0;
+  constexpr double kNetMinScaleBps = 10000.0;
   const auto kSampleInterval = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::seconds(1));
 
   Flex* makeHeaderRow(Flex& parent, const std::string& title, float scale) {
@@ -86,17 +85,14 @@ namespace {
     if (stats.ramTotalMb == 0) {
       return memoryTotalLabel();
     }
-    const double usedGb = static_cast<double>(stats.ramUsedMb) / 1024.0;
-    const double totalGb = static_cast<double>(stats.ramTotalMb) / 1024.0;
-    return std::format("{:.1f} / {:.1f} GB", usedGb, totalGb);
+    return FormatUnits::formatBinaryMibUsageAsGib(stats.ramUsedMb, stats.ramTotalMb);
   }
 
   std::string formatGpuVramUsed(const SystemStats& stats) {
     if (!stats.gpuVramUsedBytes.has_value()) {
       return "--";
     }
-    const double usedGb = static_cast<double>(*stats.gpuVramUsedBytes) / (1024.0 * 1024.0 * 1024.0);
-    return std::format("{:.1f} GB", usedGb);
+    return FormatUnits::formatBinaryBytesAsGib(*stats.gpuVramUsedBytes);
   }
 
   Flex* makeInfoCard(Flex& parent, const std::string& title, float scale, float fillOpacity, Label** outLines,
@@ -492,17 +488,20 @@ void SystemTab::updateGraphs(Renderer& renderer) {
     return;
   }
 
-  const int n = static_cast<int>(hist.size());
-  const int texSize = n + 1;
-  const auto sz = static_cast<std::size_t>(texSize);
+  const auto n = hist.size();
+  const int texSize = static_cast<int>(n + 1U);
+  const auto sz = n + 1U;
+  const auto last = n;
+  const auto prev = n - 1U;
+  const auto prev2 = n - 2U;
 
   // CPU: usage (primary) + CPU temp (secondary)
   if (m_cpuGraph != nullptr) {
     std::vector<float> usage(sz);
     std::vector<float> cpuTemp(sz);
-    for (int i = 0; i < n; ++i) {
-      const auto& s = hist[static_cast<std::size_t>(i)];
-      usage[static_cast<std::size_t>(i)] = static_cast<float>(std::clamp(s.cpuUsagePercent / 100.0, 0.0, 1.0));
+    for (std::size_t i = 0; i < n; ++i) {
+      const auto& s = hist[i];
+      usage[i] = static_cast<float>(std::clamp(s.cpuUsagePercent / 100.0, 0.0, 1.0));
 
       if (s.cpuTempC.has_value()) {
         const double t = *s.cpuTempC;
@@ -511,12 +510,11 @@ void SystemTab::updateGraphs(Renderer& renderer) {
         if (t > m_cpuTempMax)
           m_cpuTempMax = t;
         const double range = m_cpuTempMax - m_cpuTempMin;
-        cpuTemp[static_cast<std::size_t>(i)] =
-            range > 0.0 ? static_cast<float>(std::clamp((t - m_cpuTempMin) / range, 0.0, 1.0)) : 0.5f;
+        cpuTemp[i] = range > 0.0 ? static_cast<float>(std::clamp((t - m_cpuTempMin) / range, 0.0, 1.0)) : 0.5f;
       }
     }
-    usage[n] = std::clamp(usage[n - 1] + (usage[n - 1] - usage[n - 2]) * 0.5f, 0.0f, 1.0f);
-    cpuTemp[n] = std::clamp(cpuTemp[n - 1] + (cpuTemp[n - 1] - cpuTemp[n - 2]) * 0.5f, 0.0f, 1.0f);
+    usage[last] = std::clamp(usage[prev] + (usage[prev] - usage[prev2]) * 0.5f, 0.0f, 1.0f);
+    cpuTemp[last] = std::clamp(cpuTemp[prev] + (cpuTemp[prev] - cpuTemp[prev2]) * 0.5f, 0.0f, 1.0f);
     m_cpuGraph->setData(renderer.textureManager(), usage.data(), texSize, cpuTemp.data(), texSize);
     m_cpuGraph->setCount1(static_cast<float>(n));
     m_cpuGraph->setCount2(static_cast<float>(n));
@@ -525,11 +523,10 @@ void SystemTab::updateGraphs(Renderer& renderer) {
   // Memory
   if (m_ramGraph != nullptr) {
     std::vector<float> ram(sz);
-    for (int i = 0; i < n; ++i) {
-      ram[static_cast<std::size_t>(i)] =
-          static_cast<float>(std::clamp(hist[static_cast<std::size_t>(i)].ramUsagePercent / 100.0, 0.0, 1.0));
+    for (std::size_t i = 0; i < n; ++i) {
+      ram[i] = static_cast<float>(std::clamp(hist[i].ramUsagePercent / 100.0, 0.0, 1.0));
     }
-    ram[n] = std::clamp(ram[n - 1] + (ram[n - 1] - ram[n - 2]) * 0.5f, 0.0f, 1.0f);
+    ram[last] = std::clamp(ram[prev] + (ram[prev] - ram[prev2]) * 0.5f, 0.0f, 1.0f);
     m_ramGraph->setData(renderer.textureManager(), ram.data(), texSize, nullptr, 0);
     m_ramGraph->setCount1(static_cast<float>(n));
   }
@@ -540,11 +537,11 @@ void SystemTab::updateGraphs(Renderer& renderer) {
     bool hasGpuVram = false;
     std::vector<float> gpuVram(sz);
     std::vector<float> gpuTemp(sz);
-    for (int i = 0; i < n; ++i) {
-      const auto& s = hist[static_cast<std::size_t>(i)];
+    for (std::size_t i = 0; i < n; ++i) {
+      const auto& s = hist[i];
       if (s.gpuVramUsedBytes.has_value() && s.gpuVramTotalBytes.has_value() && *s.gpuVramTotalBytes > 0) {
         hasGpuVram = true;
-        gpuVram[static_cast<std::size_t>(i)] = static_cast<float>(
+        gpuVram[i] = static_cast<float>(
             std::clamp(static_cast<double>(*s.gpuVramUsedBytes) / static_cast<double>(*s.gpuVramTotalBytes), 0.0, 1.0));
       }
       if (s.gpuTempC.has_value()) {
@@ -555,15 +552,14 @@ void SystemTab::updateGraphs(Renderer& renderer) {
         if (t > m_gpuTempMax)
           m_gpuTempMax = t;
         const double range = m_gpuTempMax - m_gpuTempMin;
-        gpuTemp[static_cast<std::size_t>(i)] =
-            range > 0.0 ? static_cast<float>(std::clamp((t - m_gpuTempMin) / range, 0.0, 1.0)) : 0.5f;
+        gpuTemp[i] = range > 0.0 ? static_cast<float>(std::clamp((t - m_gpuTempMin) / range, 0.0, 1.0)) : 0.5f;
       }
     }
     if (hasGpuVram) {
-      gpuVram[n] = std::clamp(gpuVram[n - 1] + (gpuVram[n - 1] - gpuVram[n - 2]) * 0.5f, 0.0f, 1.0f);
+      gpuVram[last] = std::clamp(gpuVram[prev] + (gpuVram[prev] - gpuVram[prev2]) * 0.5f, 0.0f, 1.0f);
     }
     if (hasGpuTemp) {
-      gpuTemp[n] = std::clamp(gpuTemp[n - 1] + (gpuTemp[n - 1] - gpuTemp[n - 2]) * 0.5f, 0.0f, 1.0f);
+      gpuTemp[last] = std::clamp(gpuTemp[prev] + (gpuTemp[prev] - gpuTemp[prev2]) * 0.5f, 0.0f, 1.0f);
     }
     if (hasGpuVram || hasGpuTemp) {
       m_gpuGraph->setData(renderer.textureManager(), hasGpuVram ? gpuVram.data() : nullptr, hasGpuVram ? texSize : 0,
@@ -584,21 +580,21 @@ void SystemTab::updateGraphs(Renderer& renderer) {
   // Network
   if (m_netGraph != nullptr) {
     double maxVal = kNetMinScaleBps;
-    for (int i = 0; i < n; ++i) {
-      const auto& s = hist[static_cast<std::size_t>(i)];
+    for (std::size_t i = 0; i < n; ++i) {
+      const auto& s = hist[i];
       maxVal = std::max({maxVal, s.netRxBytesPerSec, s.netTxBytesPerSec});
     }
     m_netPeak = maxVal;
 
     std::vector<float> rx(sz);
     std::vector<float> tx(sz);
-    for (int i = 0; i < n; ++i) {
-      const auto& s = hist[static_cast<std::size_t>(i)];
-      rx[static_cast<std::size_t>(i)] = static_cast<float>(std::clamp(s.netRxBytesPerSec / m_netPeak, 0.0, 1.0));
-      tx[static_cast<std::size_t>(i)] = static_cast<float>(std::clamp(s.netTxBytesPerSec / m_netPeak, 0.0, 1.0));
+    for (std::size_t i = 0; i < n; ++i) {
+      const auto& s = hist[i];
+      rx[i] = static_cast<float>(std::clamp(s.netRxBytesPerSec / m_netPeak, 0.0, 1.0));
+      tx[i] = static_cast<float>(std::clamp(s.netTxBytesPerSec / m_netPeak, 0.0, 1.0));
     }
-    rx[n] = std::clamp(rx[n - 1] + (rx[n - 1] - rx[n - 2]) * 0.5f, 0.0f, 1.0f);
-    tx[n] = std::clamp(tx[n - 1] + (tx[n - 1] - tx[n - 2]) * 0.5f, 0.0f, 1.0f);
+    rx[last] = std::clamp(rx[prev] + (rx[prev] - rx[prev2]) * 0.5f, 0.0f, 1.0f);
+    tx[last] = std::clamp(tx[prev] + (tx[prev] - tx[prev2]) * 0.5f, 0.0f, 1.0f);
     m_netGraph->setData(renderer.textureManager(), rx.data(), texSize, tx.data(), texSize);
     m_netGraph->setCount1(static_cast<float>(n));
     m_netGraph->setCount2(static_cast<float>(n));
@@ -686,14 +682,14 @@ void SystemTab::syncLabels() {
     m_gpuVramLabel->setText(formatGpuVramUsed(stats));
   }
   if (m_ramLabel != nullptr) {
-    const double usedGb = static_cast<double>(stats.ramUsedMb) / 1024.0;
-    m_ramLabel->setText(std::format("{:.1f} GB · {:.0f}%", usedGb, stats.ramUsagePercent));
+    m_ramLabel->setText(FormatUnits::formatBinaryMibAsGib(stats.ramUsedMb) +
+                        std::format(" · {:.0f}%", stats.ramUsagePercent));
   }
   if (m_rxLabel != nullptr) {
-    m_rxLabel->setText(formatBytesPerSec(stats.netRxBytesPerSec));
+    m_rxLabel->setText(FormatUnits::formatDecimalBytesPerSecond(stats.netRxBytesPerSec));
   }
   if (m_txLabel != nullptr) {
-    m_txLabel->setText(formatBytesPerSec(stats.netTxBytesPerSec));
+    m_txLabel->setText(FormatUnits::formatDecimalBytesPerSecond(stats.netTxBytesPerSec));
   }
 
   // System info
@@ -740,17 +736,4 @@ float SystemTab::scrollProgressForSample(std::chrono::steady_clock::time_point s
   const auto elapsed = std::chrono::steady_clock::now() - sampledAt;
   const auto clamped = std::clamp(elapsed, std::chrono::steady_clock::duration::zero(), kSampleInterval);
   return std::chrono::duration<float>(clamped).count() / std::chrono::duration<float>(kSampleInterval).count();
-}
-
-std::string SystemTab::formatBytesPerSec(double bytesPerSec) {
-  if (bytesPerSec >= 1024.0 * 1024.0 * 1024.0) {
-    return std::format("{:.1f} GB/s", bytesPerSec / (1024.0 * 1024.0 * 1024.0));
-  }
-  if (bytesPerSec >= 1024.0 * 1024.0) {
-    return std::format("{:.1f} MB/s", bytesPerSec / (1024.0 * 1024.0));
-  }
-  if (bytesPerSec >= 1024.0) {
-    return std::format("{:.1f} KB/s", bytesPerSec / 1024.0);
-  }
-  return std::format("{:.0f} B/s", bytesPerSec);
 }

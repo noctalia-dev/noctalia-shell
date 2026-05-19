@@ -1,5 +1,6 @@
 #include "config/config_service.h"
 
+#include "config/config_export.h"
 #include "core/build_info.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
@@ -26,7 +27,6 @@
 #include <unistd.h>
 #include <unordered_map>
 #include <vector>
-#include <xkbcommon/xkbcommon.h>
 
 namespace {
 
@@ -181,27 +181,7 @@ namespace {
     return keybinds.validate;
   }
 
-  std::vector<KeyChord> defaultKeybindSet(KeybindAction action) {
-    switch (action) {
-    case KeybindAction::Validate:
-      return {{.sym = XKB_KEY_Return, .modifiers = 0}, {.sym = XKB_KEY_KP_Enter, .modifiers = 0}};
-    case KeybindAction::Cancel:
-      return {{.sym = XKB_KEY_Escape, .modifiers = 0}};
-    case KeybindAction::Left:
-      return {{.sym = XKB_KEY_Left, .modifiers = 0}};
-    case KeybindAction::Right:
-      return {{.sym = XKB_KEY_Right, .modifiers = 0}};
-    case KeybindAction::Up:
-      return {{.sym = XKB_KEY_Up, .modifiers = 0}};
-    case KeybindAction::Down:
-      return {{.sym = XKB_KEY_Down, .modifiers = 0}};
-    }
-    return {};
-  }
-
   constexpr Logger kLog("config");
-  constexpr const char* kInternalStateTable = "noctalia_state";
-  constexpr const char* kSetupWizardCompletedKey = "setup_wizard_completed";
 
   std::vector<std::filesystem::path> sortedConfigTomlFiles(std::string_view configDir) {
     std::vector<std::filesystem::path> files;
@@ -271,16 +251,6 @@ namespace {
     return path.filename().string();
   }
 
-  bool setupWizardCompletedFrom(const toml::table& table) {
-    const auto* state = table[kInternalStateTable].as_table();
-    if (state == nullptr) {
-      return false;
-    }
-    return (*state)[kSetupWizardCompletedKey].value<bool>().value_or(false);
-  }
-
-  void stripInternalState(toml::table& table) { table.erase(kInternalStateTable); }
-
   std::optional<ColorSpec> optionalCapsuleBorder(const std::string& raw) {
     if (StringUtils::trim(raw).empty()) {
       return std::nullopt;
@@ -315,6 +285,7 @@ ConfigService::ConfigService() {
     std::error_code ec;
     std::filesystem::create_directories(dir, ec);
     m_overridesPath = dir + "/settings.toml";
+    m_setupMarkerPath = dir + "/.setup-complete";
   }
 
   loadOverridesFromFile();
@@ -374,7 +345,9 @@ void ConfigService::fireReloadCallbacks() {
 }
 
 bool ConfigService::shouldRunSetupWizard() const {
-  return !m_setupWizardCompleted && sortedConfigTomlFiles(m_configDir).empty() && m_overridesTable.empty();
+  // Single canonical signal: the marker file. If we have no state dir we cannot
+  // persist completion, so never show the wizard (it would loop forever).
+  return !m_setupMarkerPath.empty() && !std::filesystem::exists(m_setupMarkerPath);
 }
 
 std::string ConfigService::buildSupportReport() const {
@@ -437,7 +410,6 @@ std::string ConfigService::buildSupportReport() const {
     } else {
       try {
         auto table = toml::parse_file(m_overridesPath);
-        stripInternalState(table);
         deepMerge(merged, table);
       } catch (const toml::parse_error& e) {
         state.insert_or_assign("parse_error", e.what());
@@ -455,7 +427,7 @@ std::string ConfigService::buildSupportReport() const {
   return formatToml(root) + "\n";
 }
 
-std::string ConfigService::buildFlattenedConfig() const {
+std::string ConfigService::buildMergedUserConfig() const {
   toml::table merged;
 
   for (const auto& path : sortedConfigTomlFiles(m_configDir)) {
@@ -463,21 +435,24 @@ std::string ConfigService::buildFlattenedConfig() const {
       auto table = toml::parse_file(path.string());
       deepMerge(merged, table);
     } catch (const toml::parse_error& e) {
-      kLog.warn("skipping parse error in flattened config export {}: {}", path.filename().string(), e.description());
+      kLog.warn("skipping parse error in merged user config export {}: {}", path.filename().string(), e.description());
     }
   }
 
   if (!m_overridesPath.empty() && std::filesystem::exists(m_overridesPath)) {
     try {
       auto table = toml::parse_file(m_overridesPath);
-      stripInternalState(table);
       deepMerge(merged, table);
     } catch (const toml::parse_error& e) {
-      kLog.warn("skipping parse error in flattened config export {}: {}", m_overridesPath, e.description());
+      kLog.warn("skipping parse error in merged user config export {}: {}", m_overridesPath, e.description());
     }
   }
 
   return formatToml(merged) + "\n";
+}
+
+std::string ConfigService::buildEffectiveConfig() const {
+  return formatToml(config_export::configToToml(m_config)) + "\n";
 }
 
 void ConfigService::checkReload() {
@@ -579,6 +554,10 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.thickness = *ovr.thickness;
     if (ovr.backgroundOpacity)
       resolved.backgroundOpacity = *ovr.backgroundOpacity;
+    if (ovr.border)
+      resolved.border = *ovr.border;
+    if (ovr.borderWidth)
+      resolved.borderWidth = *ovr.borderWidth;
     if (ovr.radius) {
       resolved.radius = *ovr.radius;
       resolved.radiusTopLeft = *ovr.radius;
@@ -724,7 +703,6 @@ void ConfigService::loadOverridesFromFile() {
   m_defaultWallpaperPath.clear();
   m_lastWallpaperPath.clear();
   m_monitorWallpaperPaths.clear();
-  m_setupWizardCompleted = false;
   m_overridesParseError.clear();
 
   if (m_overridesPath.empty() || !std::filesystem::exists(m_overridesPath)) {
@@ -744,8 +722,6 @@ void ConfigService::loadOverridesFromFile() {
     m_overridesTable = toml::table{};
     return;
   }
-  m_setupWizardCompleted = setupWizardCompletedFrom(m_overridesTable);
-  stripInternalState(m_overridesTable);
   extractWallpaperFromOverrides();
 }
 
@@ -963,6 +939,10 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
         bar.thickness = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
       if (auto v = finiteDouble((*barTbl)["background_opacity"]))
         bar.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
+      if (auto borderStr = (*barTbl)["border"].value<std::string>())
+        bar.border = colorSpecFromConfigString(*borderStr);
+      if (auto v = finiteDouble((*barTbl)["border_width"]))
+        bar.borderWidth = std::clamp(static_cast<float>(*v), 0.0f, 20.0f);
       if (auto v = (*barTbl)["radius"].value<int64_t>()) {
         const auto r = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
         bar.radius = r;
@@ -1060,6 +1040,10 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
             ovr.thickness = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
           if (auto v = finiteDouble((*monTbl)["background_opacity"]))
             ovr.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
+          if (auto borderStr = (*monTbl)["border"].value<std::string>())
+            ovr.border = colorSpecFromConfigString(*borderStr);
+          if (auto v = finiteDouble((*monTbl)["border_width"]))
+            ovr.borderWidth = std::clamp(static_cast<float>(*v), 0.0f, 20.0f);
           if (auto v = (*monTbl)["radius"].value<int64_t>())
             ovr.radius = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
           if (auto v = (*monTbl)["radius_top_left"].value<int64_t>())
@@ -1234,6 +1218,9 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
     if (auto v = (*shellTbl)["telemetry_enabled"].value<bool>()) {
       shell.telemetryEnabled = *v;
     }
+    if (auto v = (*shellTbl)["niri_overview_type_to_launch_enabled"].value<bool>()) {
+      shell.niriOverviewTypeToLaunchEnabled = *v;
+    }
     if (auto polkitAgent = (*shellTbl)["polkit_agent"].value<bool>()) {
       shell.polkitAgent = *polkitAgent;
     }
@@ -1273,20 +1260,30 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
           shell.panel.transparencyMode = *parsed;
         }
       }
-      if (auto v = (*panelTbl)["attach_launcher"].value<bool>()) {
-        shell.panel.attachLauncher = *v;
+      if (auto v = (*panelTbl)["launcher_placement"].value<std::string>()) {
+        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
+          shell.panel.launcherPlacement = *parsed;
+        }
       }
-      if (auto v = (*panelTbl)["attach_clipboard"].value<bool>()) {
-        shell.panel.attachClipboard = *v;
+      if (auto v = (*panelTbl)["clipboard_placement"].value<std::string>()) {
+        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
+          shell.panel.clipboardPlacement = *parsed;
+        }
       }
-      if (auto v = (*panelTbl)["attach_control_center"].value<bool>()) {
-        shell.panel.attachControlCenter = *v;
+      if (auto v = (*panelTbl)["control_center_placement"].value<std::string>()) {
+        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
+          shell.panel.controlCenterPlacement = *parsed;
+        }
       }
-      if (auto v = (*panelTbl)["attach_wallpaper"].value<bool>()) {
-        shell.panel.attachWallpaper = *v;
+      if (auto v = (*panelTbl)["wallpaper_placement"].value<std::string>()) {
+        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
+          shell.panel.wallpaperPlacement = *parsed;
+        }
       }
-      if (auto v = (*panelTbl)["attach_session"].value<bool>()) {
-        shell.panel.attachSession = *v;
+      if (auto v = (*panelTbl)["session_placement"].value<std::string>()) {
+        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
+          shell.panel.sessionPlacement = *parsed;
+        }
       }
       if (auto v = (*panelTbl)["open_near_click_control_center"].value<bool>()) {
         shell.panel.openNearClickControlCenter = *v;
@@ -1654,6 +1651,8 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
     auto& osd = config.osd;
     if (auto v = (*osdTbl)["position"].value<std::string>())
       osd.position = *v;
+    if (auto v = (*osdTbl)["orientation"].value<std::string>())
+      osd.orientation = *v;
     if (auto v = (*osdTbl)["lock_keys"].value<bool>())
       osd.lockKeys = *v;
   }
@@ -1838,8 +1837,33 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
   if (auto* systemTbl = tbl["system"].as_table()) {
     auto& system = config.system;
     if (const auto* monitorTbl = (*systemTbl)["monitor"].as_table()) {
+      auto& monitor = system.monitor;
       if (auto v = (*monitorTbl)["enabled"].value<bool>()) {
-        system.monitor.enabled = *v;
+        monitor.enabled = *v;
+      }
+      if (auto v = finiteDouble((*monitorTbl)["cpu_poll_seconds"])) {
+        monitor.cpuPollSeconds = static_cast<float>(*v);
+      }
+      if (auto v = finiteDouble((*monitorTbl)["gpu_temp_poll_seconds"])) {
+        monitor.gpuTempPollSeconds = static_cast<float>(*v);
+      }
+      if (auto v = finiteDouble((*monitorTbl)["gpu_vram_poll_seconds"])) {
+        monitor.gpuVramPollSeconds = static_cast<float>(*v);
+      }
+      if (auto v = finiteDouble((*monitorTbl)["memory_poll_seconds"])) {
+        monitor.memoryPollSeconds = static_cast<float>(*v);
+      }
+      if (auto v = finiteDouble((*monitorTbl)["swap_poll_seconds"])) {
+        monitor.swapPollSeconds = static_cast<float>(*v);
+      }
+      if (auto v = finiteDouble((*monitorTbl)["network_poll_seconds"])) {
+        monitor.networkPollSeconds = static_cast<float>(*v);
+      }
+      if (auto v = finiteDouble((*monitorTbl)["disk_poll_seconds"])) {
+        monitor.diskPollSeconds = static_cast<float>(*v);
+      }
+      if (auto v = finiteDouble((*monitorTbl)["history_poll_seconds"])) {
+        monitor.historyPollSeconds = static_cast<float>(*v);
       }
     }
   }
@@ -2151,9 +2175,8 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
 bool ConfigService::matchesKeybind(KeybindAction action, std::uint32_t sym, std::uint32_t modifiers) const {
   const auto& configured = keybindSet(m_config.keybinds, action);
   const auto active = configured.empty() ? defaultKeybindSet(action) : configured;
-  return std::any_of(active.begin(), active.end(), [sym, modifiers](const KeyChord& chord) {
-    return chord.sym == sym && chord.modifiers == modifiers;
-  });
+  return std::any_of(active.begin(), active.end(),
+                     [sym, modifiers](const KeyChord& chord) { return keyChordMatches(chord, sym, modifiers); });
 }
 
 void ConfigService::registerIpc(IpcService& ipc) {

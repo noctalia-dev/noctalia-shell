@@ -4,6 +4,7 @@
 #include "i18n/i18n.h"
 #include "json.hpp"
 #include "net/http_client.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
 #include <cctype>
@@ -136,25 +137,6 @@ namespace {
       return it->get<int>() != 0;
     }
     return fallback;
-  }
-
-  std::string urlEncode(std::string_view text) {
-    std::string encoded;
-    encoded.reserve(text.size() * 3);
-
-    auto isUnreserved = [](unsigned char ch) {
-      return std::isalnum(ch) != 0 || ch == '-' || ch == '_' || ch == '.' || ch == '~';
-    };
-
-    for (unsigned char ch : text) {
-      if (isUnreserved(ch)) {
-        encoded.push_back(static_cast<char>(ch));
-      } else {
-        encoded += std::format("%{:02X}", static_cast<unsigned int>(ch));
-      }
-    }
-
-    return encoded;
   }
 
   nlohmann::json currentUnitsToJson(const WeatherCurrentUnits& units) {
@@ -463,7 +445,7 @@ void WeatherService::startAddressGeocode() {
   std::error_code ec;
   std::filesystem::create_directories(transportCacheDir(), ec);
   const auto path = transportCacheDir() / "geocode.json";
-  const std::string url = "https://api.noctalia.dev/geocode?city=" + urlEncode(m_activeConfig.address);
+  const std::string url = "https://api.noctalia.dev/geocode?city=" + StringUtils::urlEncode(m_activeConfig.address);
   const std::uint64_t serial = ++m_requestSerial;
   m_loading = true;
   m_error.clear();

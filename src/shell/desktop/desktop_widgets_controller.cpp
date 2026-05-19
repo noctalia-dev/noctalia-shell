@@ -17,7 +17,25 @@ namespace {
   constexpr std::string_view kDesktopWidgetIdPrefix = "desktop-widget-";
   constexpr float kDefaultDesktopAudioVisualizerAspectRatio = 240.0f / 96.0f;
 
+  void clampOpacitySetting(DesktopWidgetState& widget, const std::string& key, double fallback) {
+    const auto it = widget.settings.find(key);
+    if (it == widget.settings.end()) {
+      return;
+    }
+    if (const auto* doubleValue = std::get_if<double>(&it->second)) {
+      widget.settings.insert_or_assign(key, std::clamp(*doubleValue, 0.0, 1.0));
+      return;
+    }
+    if (const auto* intValue = std::get_if<std::int64_t>(&it->second)) {
+      widget.settings.insert_or_assign(key, std::clamp(static_cast<double>(*intValue), 0.0, 1.0));
+      return;
+    }
+    widget.settings.insert_or_assign(key, fallback);
+  }
+
   void normalizeDesktopWidgetSettings(DesktopWidgetState& widget) {
+    clampOpacitySetting(widget, "background_opacity", 0.8);
+
     if (widget.type == "sticker") {
       const auto opacityIt = widget.settings.find("opacity");
       if (opacityIt == widget.settings.end()) {

@@ -60,12 +60,20 @@ public:
   virtual bool dismissTransientUi() { return false; }
 
   void setContentScale(float scale) noexcept { m_contentScale = scale; }
-  void setPanelCardOpacity(float opacity) noexcept { m_panelCardOpacity = std::clamp(opacity, 0.0f, 1.0f); }
+  void setPanelCardOpacity(float opacity) noexcept {
+    const float clamped = std::clamp(opacity, 0.0f, 1.0f);
+    if (m_panelCardOpacity == clamped) {
+      return;
+    }
+    m_panelCardOpacity = clamped;
+    onPanelCardOpacityChanged(clamped);
+  }
 
 protected:
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
   [[nodiscard]] float panelCardOpacity() const noexcept { return m_panelCardOpacity; }
   [[nodiscard]] float scaled(float value) const noexcept { return value * m_contentScale; }
+  virtual void onPanelCardOpacityChanged(float opacity) { (void)opacity; }
   virtual void doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
     (void)renderer;
     (void)contentWidth;

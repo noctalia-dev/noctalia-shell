@@ -39,6 +39,10 @@ namespace Style {
   inline constexpr float controlHeightLg = 44.0f;
   inline constexpr float scrollWheelStep = 56.0f;
 
+  inline constexpr float scrollbarWidth = 6.0f;
+  inline constexpr float scrollbarGap = spaceSm;
+  inline constexpr float scrollbarMinThumbHeight = 24.0f;
+
   // Toggle preset geometry. Track height = thumb + 2 * inset; track width = thumb + 2 * inset + travel.
   inline constexpr float toggleThumbSizeSm = 14.0f;
   inline constexpr float toggleInsetSm = 2.0f;

@@ -58,6 +58,18 @@ sudo moss it meson g++ just \
   linux-pam-devel polkit-devel curl-devel libwebp-devel librsvg-devel extra-cmake-modules
 ```
 
+### VoidLinux
+```sh
+sudo xbps-install meson ninja pkg-config git \
+  wayland-devel wayland-protocols libepoxy-devel \
+  MesaLib-devel libglvnd-devel cairo-devel \
+  pango-devel fontconfig-devel freetype-devel \
+  harfbuzz-devel libxkbcommon-devel pipewire-devel \
+  libcurl-devel pam-devel libwebp-devel \
+  basu-devel libcurl-devel sdbus-c++-devel \
+  polkit-devel  librsvg-devel
+```
+
 Vendored dependencies, with no system package needed: `Wuffs`, `tomlplusplus`, `tinyexpr`,
 `nlohmann/json`, `Luau`, `dr_wav`, `fzy`, `stb_image_resize2`, and Material Color Utilities.
 

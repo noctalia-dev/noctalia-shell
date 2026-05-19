@@ -307,6 +307,8 @@ namespace noctalia::theme {
 
   bool ThemeService::isLightMode() const noexcept { return m_isLightMode; }
 
+  std::string_view ThemeService::resolvedMode() const noexcept { return m_isLightMode ? "light" : "dark"; }
+
   void ThemeService::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
 
   void ThemeService::setResolvedCallback(ResolvedCallback callback) { m_resolvedCallback = std::move(callback); }
@@ -492,6 +494,14 @@ namespace noctalia::theme {
           return "ok\n";
         },
         "theme-mode-toggle", "Toggle theme mode between dark and light");
+    ipc.registerHandler(
+        "theme-mode-get",
+        [this](const std::string&) -> std::string {
+          std::string out(resolvedMode());
+          out.push_back('\n');
+          return out;
+        },
+        "theme-mode-get", "Print the current resolved theme mode");
     ipc.registerHandler(
         "theme-mode-set",
         [this](const std::string& args) -> std::string {

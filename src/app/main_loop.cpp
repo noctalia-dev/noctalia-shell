@@ -17,7 +17,6 @@
 #include <cxxabi.h>
 #include <format>
 #include <memory>
-#include <optional>
 #include <poll.h>
 #include <stdexcept>
 #include <string>

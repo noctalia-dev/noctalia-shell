@@ -26,6 +26,7 @@ public:
   NiriWorkspaceBackend& operator=(const NiriWorkspaceBackend&) = delete;
 
   void setChangeCallback(ChangeCallback callback) override;
+  void setOverviewChangeCallback(ChangeCallback callback) override;
   [[nodiscard]] bool canTrackOverviewState() const noexcept override;
   [[nodiscard]] bool hasOverviewState() const noexcept override { return m_overviewKnown; }
   [[nodiscard]] bool isOverviewOpen() const noexcept override { return m_overviewOpen; }
@@ -85,6 +86,7 @@ private:
   sortedWorkspaceCandidatesForOutput(const std::string& outputName) const;
   void recomputeOccupancy();
   void notifyChanged() const;
+  void notifyOverviewChanged() const;
 
   compositors::niri::NiriRuntime& m_runtime;
   int m_socketFd = -1;
@@ -97,4 +99,5 @@ private:
   std::chrono::steady_clock::time_point m_nextReconnectAt{};
   std::chrono::seconds m_reconnectBackoff{2};
   ChangeCallback m_changeCallback;
+  ChangeCallback m_overviewChangeCallback;
 };

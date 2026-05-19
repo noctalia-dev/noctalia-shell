@@ -4,8 +4,10 @@
 #include "core/log.h"
 #include "core/resource_paths.h"
 #include "cursor-shape-v1-client-protocol.h"
+#include "dbus/mpris/mpris_service.h"
 #include "i18n/i18n.h"
 #include "notification/notifications.h"
+#include "pipewire/pipewire_spectrum.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "ui/controls/flex.h"
@@ -19,15 +21,47 @@
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
+#include <fontconfig/fontconfig.h>
 #include <fstream>
+#include <iomanip>
 #include <linux/input-event-codes.h>
+#include <optional>
 #include <sstream>
+#include <unordered_set>
 
 namespace {
   constexpr Logger kLog("scripted-widget");
   constexpr std::chrono::milliseconds kDeferredUpdateRetry{50};
   constexpr std::chrono::milliseconds kTimerPhaseStep{50};
   constexpr std::chrono::milliseconds kTimerMaxPhase{500};
+
+  std::unordered_set<std::string>& registeredFontFiles() {
+    static std::unordered_set<std::string> s;
+    return s;
+  }
+
+  std::string registerFontFile(const std::filesystem::path& path) {
+    auto pathStr = path.string();
+    const bool firstTime = !registeredFontFiles().contains(pathStr);
+    if (firstTime) {
+      if (!FcConfigAppFontAddFile(nullptr, reinterpret_cast<const FcChar8*>(pathStr.c_str()))) {
+        kLog.warn("failed to register font file: {}", pathStr);
+        return {};
+      }
+      registeredFontFiles().insert(pathStr);
+    }
+    // Extract family name from the font file
+    FcPattern* pat = FcFreeTypeQuery(reinterpret_cast<const FcChar8*>(pathStr.c_str()), 0, nullptr, nullptr);
+    if (!pat) {
+      kLog.warn("failed to query font family from: {}", pathStr);
+      return {};
+    }
+    FcChar8* family = nullptr;
+    FcPatternGetString(pat, FC_FAMILY, 0, &family);
+    std::string result = family ? reinterpret_cast<const char*>(family) : "";
+    FcPatternDestroy(pat);
+    return result;
+  }
 
   std::uint32_t nextTimerPhase() {
     static std::atomic<std::uint32_t> next{0};
@@ -48,6 +82,19 @@ namespace {
     return paths::assetPath(path);
   }
 
+  std::string joinSpectrumValues(const std::vector<float>& values) {
+    std::ostringstream out;
+    out.setf(std::ios::fixed, std::ios::floatfield);
+    out << std::setprecision(4);
+    for (std::size_t i = 0; i < values.size(); ++i) {
+      if (i != 0) {
+        out << ',';
+      }
+      out << values[i];
+    }
+    return out.str();
+  }
+
   std::string readFile(const std::filesystem::path& path) {
     std::ifstream f(path);
     if (!f)
@@ -61,14 +108,18 @@ namespace {
 
 ScriptedWidget::ScriptedWidget(std::string configName, std::string scriptPath, std::string barName,
                                std::string outputName, const WidgetConfig* config, FileWatcher* fileWatcher,
-                               CompositorPlatform* platform)
+                               CompositorPlatform* platform, ClipboardService* clipboard,
+                               PipeWireSpectrum* audioSpectrum, MprisService* mpris)
     : m_scriptPath(std::move(scriptPath)), m_widgetConfigName(std::move(configName)), m_barName(std::move(barName)),
-      m_outputName(std::move(outputName)), m_fileWatcher(fileWatcher), m_platform(platform),
-      m_timerPhase(nextTimerPhase()) {
+      m_outputName(std::move(outputName)), m_fileWatcher(fileWatcher), m_platform(platform), m_clipboard(clipboard),
+      m_audioSpectrum(audioSpectrum), m_mpris(mpris), m_timerPhase(nextTimerPhase()) {
   if (config) {
     m_settings = config->settings;
     m_hotReload = config->getBool("hot_reload", false);
     m_sharedScope = config->getString("scope", "instance") == "shared";
+    m_audioSpectrumEnabled = config->getBool("audio_spectrum", false);
+    m_audioSpectrumBands =
+        static_cast<int>(std::clamp<std::int64_t>(config->getInt("audio_spectrum_bands", 16), 1, 128));
   }
 }
 
@@ -76,6 +127,7 @@ ScriptedWidget::~ScriptedWidget() {
   if (m_alive) {
     *m_alive = false;
   }
+  teardownAudioSpectrum();
   teardownScriptWatch();
   if (m_runtime != nullptr && m_runtimeSubscription != 0) {
     m_runtime->unsubscribe(m_runtimeSubscription);
@@ -153,12 +205,12 @@ void ScriptedWidget::create() {
 
   bool createdRuntime = true;
   if (m_sharedScope) {
-    auto acquired = scripting::SharedScriptRuntimeRegistry::acquire(m_widgetConfigName, m_settings);
+    auto acquired = scripting::SharedScriptRuntimeRegistry::acquire(m_widgetConfigName, m_settings, m_clipboard);
     m_runtime = std::move(acquired.runtime);
     createdRuntime = acquired.created;
   } else {
     m_runtime = std::make_shared<scripting::ScriptRuntime>(m_widgetConfigName + ":" + m_barName + ":" + m_outputName,
-                                                           m_settings);
+                                                           m_settings, m_clipboard);
   }
 
   auto alive = std::weak_ptr<bool>(m_alive);
@@ -174,6 +226,7 @@ void ScriptedWidget::create() {
     m_runtime->start(m_resolvedPath.string(), std::move(source), makeScriptSnapshot());
   }
   startUpdateTimer();
+  setupAudioSpectrum();
 
   if (m_hotReload)
     setupScriptWatch();
@@ -183,6 +236,11 @@ void ScriptedWidget::doLayout(Renderer& renderer, float containerWidth, float co
   m_isVertical = containerHeight > containerWidth;
   if (!m_flex)
     return;
+
+  if (m_fontConfigDirty) {
+    renderer.notifyFontConfigChanged();
+    m_fontConfigDirty = false;
+  }
 
   m_label->setColor(resolveScriptColor(m_textColor));
   m_label->setVisible(!m_label->text().empty());
@@ -227,9 +285,30 @@ void ScriptedWidget::luaSetGlyph(std::string_view name) {
   m_dirty |= changed;
 }
 
+void ScriptedWidget::luaSetFont(std::string_view familyOrPath) {
+  if (!m_label)
+    return;
+  std::string family;
+  // If it looks like a font file path, resolve and register it
+  if (familyOrPath.ends_with(".otf") || familyOrPath.ends_with(".ttf") || familyOrPath.ends_with(".woff2")) {
+    auto resolved = resolveScriptPath(std::string(familyOrPath));
+    bool alreadyRegistered = registeredFontFiles().contains(resolved.string());
+    family = registerFontFile(resolved);
+    if (family.empty())
+      return;
+    if (!alreadyRegistered) {
+      m_fontConfigDirty = true;
+    }
+  } else {
+    family = std::string(familyOrPath);
+  }
+  m_label->setFontFamily(std::move(family));
+  m_dirty = true;
+}
+
 void ScriptedWidget::luaSetColor(std::string_view role, std::string_view mode) {
-  ScriptColorState next{.role = colorRoleFromToken(role), .mode = scriptColorModeFromToken(mode)};
-  if (!next.role.has_value()) {
+  ScriptColorState next{.color = scriptColorFromToken(role), .mode = scriptColorModeFromToken(mode)};
+  if (!next.color.has_value()) {
     next.mode = ScriptColorMode::Auto;
   }
   if (next != m_textColor) {
@@ -239,8 +318,8 @@ void ScriptedWidget::luaSetColor(std::string_view role, std::string_view mode) {
 }
 
 void ScriptedWidget::luaSetGlyphColor(std::string_view role, std::string_view mode) {
-  ScriptColorState next{.role = colorRoleFromToken(role), .mode = scriptColorModeFromToken(mode)};
-  if (!next.role.has_value()) {
+  ScriptColorState next{.color = scriptColorFromToken(role), .mode = scriptColorModeFromToken(mode)};
+  if (!next.color.has_value()) {
     next.mode = ScriptColorMode::Auto;
   }
   if (next != m_glyphColor) {
@@ -284,17 +363,29 @@ ColorSpec ScriptedWidget::resolveScriptColor(const ScriptColorState& state) cons
     return *m_widgetForeground;
   }
   const ColorSpec fallback = colorSpecFromRole(ColorRole::OnSurface);
-  if (!state.role.has_value()) {
+  if (!state.color.has_value()) {
     return widgetForegroundOr(fallback);
   }
-  if (state.mode == ScriptColorMode::Script || *state.role != ColorRole::OnSurface) {
-    return colorSpecFromRole(*state.role);
+  if (!state.color->role.has_value() || state.mode == ScriptColorMode::Script ||
+      *state.color->role != ColorRole::OnSurface) {
+    return *state.color;
   }
   return widgetForegroundOr(fallback);
 }
 
 ScriptedWidget::ScriptColorMode ScriptedWidget::scriptColorModeFromToken(std::string_view token) noexcept {
   return token == "script" ? ScriptColorMode::Script : ScriptColorMode::Auto;
+}
+
+std::optional<ColorSpec> ScriptedWidget::scriptColorFromToken(std::string_view token) noexcept {
+  if (auto role = colorRoleFromToken(token); role.has_value()) {
+    return colorSpecFromRole(*role);
+  }
+  Color fixed;
+  if (tryParseHexColor(token, fixed)) {
+    return fixedColorSpec(fixed);
+  }
+  return std::nullopt;
 }
 
 void ScriptedWidget::startUpdateTimer() {
@@ -395,6 +486,9 @@ void ScriptedWidget::handleScriptResult(scripting::ScriptWidgetResult result) {
 }
 
 void ScriptedWidget::applyScriptPatch(const scripting::ScriptWidgetPatch& patch) {
+  if (patch.fontFamily.has_value()) {
+    luaSetFont(*patch.fontFamily);
+  }
   if (patch.text.has_value()) {
     luaSetText(*patch.text);
   }
@@ -431,6 +525,38 @@ std::string ScriptedWidget::focusedOutputName() const {
   wl_output* output = m_platform->preferredInteractiveOutput();
   const auto* info = m_platform->findOutputByWl(output);
   return info != nullptr ? info->connectorName : std::string{};
+}
+
+void ScriptedWidget::setupAudioSpectrum() {
+  if (!m_audioSpectrumEnabled || m_audioSpectrumListenerId != 0) {
+    return;
+  }
+  if (m_audioSpectrum == nullptr) {
+    kLog.warn("scripted widget '{}': audio_spectrum requested but PipeWireSpectrum is unavailable", m_widgetConfigName);
+    return;
+  }
+  m_audioSpectrumListenerId =
+      m_audioSpectrum->addChangeListener(m_audioSpectrumBands, [this]() { handleAudioSpectrumChanged(); });
+}
+
+void ScriptedWidget::teardownAudioSpectrum() {
+  if (m_audioSpectrum != nullptr && m_audioSpectrumListenerId != 0) {
+    m_audioSpectrum->removeChangeListener(m_audioSpectrumListenerId);
+  }
+  m_audioSpectrumListenerId = 0;
+}
+
+void ScriptedWidget::handleAudioSpectrumChanged() {
+  if (m_runtime == nullptr || m_audioSpectrum == nullptr || m_audioSpectrumListenerId == 0) {
+    return;
+  }
+  const bool audioActive = !m_audioSpectrum->idle();
+  const auto active = m_mpris != nullptr ? m_mpris->activePlayer() : std::nullopt;
+  const bool mprisPlaying = active.has_value() && active->playbackStatus == "Playing";
+  const std::string state = std::string(audioActive ? "1" : "0") + "," + (mprisPlaying ? "1" : "0");
+  (void)m_runtime->enqueueCallStrings("onAudioSpectrum",
+                                      joinSpectrumValues(m_audioSpectrum->values(m_audioSpectrumListenerId)), state,
+                                      makeScriptSnapshot());
 }
 
 bool ScriptedWidget::shouldDeferUpdate() const { return m_updateDeferralCallback && m_updateDeferralCallback(); }

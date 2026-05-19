@@ -16,6 +16,7 @@
 #include "theme/scheme.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -23,7 +24,6 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <utility>
 #include <vector>
 
 // Material Design 3 scheme path. Quantize the resized pixels, score for the
@@ -61,7 +61,7 @@ namespace noctalia::theme {
 
     struct DistanceToIndex {
       double distance = 0.0;
-      int index = 0;
+      std::size_t index = 0;
       bool operator<(const DistanceToIndex& a) const { return distance < a.distance; }
     };
 
@@ -89,8 +89,8 @@ namespace noctalia::theme {
 
       // Dedupe input pixels in insertion order, building parallel
       // pixels/points/counts arrays. Matches matugen's IndexMap loop.
-      std::unordered_map<mcu::Argb, int> pixel_to_count;
-      std::vector<uint32_t> pixels;
+      std::unordered_map<mcu::Argb, std::uint32_t> pixel_to_count;
+      std::vector<mcu::Argb> pixels;
       std::vector<mcu::Lab> points;
       pixels.reserve(input_pixels.size());
       points.reserve(input_pixels.size());
@@ -105,52 +105,52 @@ namespace noctalia::theme {
         }
       }
 
-      int cluster_count = std::min((int)max_colors, (int)points.size());
+      std::size_t cluster_count = std::min(static_cast<std::size_t>(max_colors), points.size());
 
       std::vector<mcu::Lab> clusters;
       clusters.reserve(starting_clusters.size());
-      for (int argb : starting_clusters)
+      for (mcu::Argb argb : starting_clusters)
         clusters.push_back(mcu::LabFromInt(argb));
       // matugen relies on Wu returning max_colors entries and would index
       // OOB otherwise. Clamp here (matches MCU's wsmeans.cc) so we don't
       // crash on low-cardinality images where Wu returns fewer cubes; the
       // result still matches matugen for the common case.
       if (!starting_clusters.empty())
-        cluster_count = std::min(cluster_count, (int)starting_clusters.size());
+        cluster_count = std::min(cluster_count, starting_clusters.size());
 
       // Deterministic init, no rand.
-      std::vector<int> cluster_indices;
+      std::vector<std::size_t> cluster_indices;
       cluster_indices.reserve(points.size());
-      for (size_t i = 0; i < points.size(); i++)
-        cluster_indices.push_back((int)(i % (size_t)cluster_count));
+      for (std::size_t i = 0; i < points.size(); i++)
+        cluster_indices.push_back(i % cluster_count);
 
       std::vector<std::vector<DistanceToIndex>> dmat(cluster_count, std::vector<DistanceToIndex>(cluster_count));
-      int pixel_count_sums[256] = {};
+      std::array<std::uint32_t, 256> pixel_count_sums{};
 
-      constexpr int kMaxIterations = 10;
+      constexpr std::size_t kMaxIterations = 10;
 
-      for (int iter = 0; iter < kMaxIterations; iter++) {
+      for (std::size_t iter = 0; iter < kMaxIterations; iter++) {
         // Build pairwise cluster distance matrix, then sort each row IN
         // PLACE by distance ascending. NB: matugen does the same in-place
         // sort, which has a curious side effect — see the reassign loop.
-        for (int i = 0; i < cluster_count; i++) {
-          for (int j = i + 1; j < cluster_count; j++) {
+        for (std::size_t i = 0; i < cluster_count; i++) {
+          for (std::size_t j = i + 1; j < cluster_count; j++) {
             double d = clusters[i].DeltaE(clusters[j]);
             dmat[j][i] = {d, i};
             dmat[i][j] = {d, j};
           }
         }
-        for (int i = 0; i < cluster_count; i++) {
+        for (std::size_t i = 0; i < cluster_count; i++) {
           std::sort(dmat[i].begin(), dmat[i].end());
         }
 
         int points_moved = 0;
-        for (size_t i = 0; i < points.size(); i++) {
+        for (std::size_t i = 0; i < points.size(); i++) {
           mcu::Lab point = points[i];
-          int prev_idx = cluster_indices[i];
+          std::size_t prev_idx = cluster_indices[i];
           double prev_d = point.DeltaE(clusters[prev_idx]);
           double min_d = prev_d;
-          int new_idx = -1;
+          std::size_t new_idx = cluster_count;
           // Quirk match: matugen's reassign loop reads dmat[prev_idx][j]
           // (the j-th SMALLEST distance from prev_idx, after the in-place
           // sort) but compares against clusters[j] (the j-th cluster by
@@ -159,7 +159,7 @@ namespace noctalia::theme {
           // up only checking the first N clusters (in original order) where
           // N is the count of cluster pairs within 4× of prev_d. We replicate
           // the same indexing for byte-for-byte parity.
-          for (int j = 0; j < cluster_count; j++) {
+          for (std::size_t j = 0; j < cluster_count; j++) {
             if (dmat[prev_idx][j].distance >= 4.0 * prev_d)
               continue;
             double d = point.DeltaE(clusters[j]);
@@ -168,7 +168,7 @@ namespace noctalia::theme {
               new_idx = j;
             }
           }
-          if (new_idx != -1) {
+          if (new_idx != cluster_count) {
             points_moved++;
             cluster_indices[i] = new_idx;
           }
@@ -176,32 +176,33 @@ namespace noctalia::theme {
         if (points_moved == 0 && iter > 0)
           break;
 
-        double sa[256] = {}, sb[256] = {}, sc[256] = {};
-        for (int i = 0; i < cluster_count; i++)
+        std::array<double, 256> sa{}, sb{}, sc{};
+        for (std::size_t i = 0; i < cluster_count; i++)
           pixel_count_sums[i] = 0;
-        for (size_t i = 0; i < points.size(); i++) {
-          int ci = cluster_indices[i];
-          int cnt = pixel_to_count[pixels[i]];
+        for (std::size_t i = 0; i < points.size(); i++) {
+          const std::size_t ci = cluster_indices[i];
+          const std::uint32_t cnt = pixel_to_count[pixels[i]];
           pixel_count_sums[ci] += cnt;
-          sa[ci] += points[i].l * cnt;
-          sb[ci] += points[i].a * cnt;
-          sc[ci] += points[i].b * cnt;
+          sa[ci] += points[i].l * static_cast<double>(cnt);
+          sb[ci] += points[i].a * static_cast<double>(cnt);
+          sc[ci] += points[i].b * static_cast<double>(cnt);
         }
-        for (int i = 0; i < cluster_count; i++) {
-          int cnt = pixel_count_sums[i];
+        for (std::size_t i = 0; i < cluster_count; i++) {
+          const std::uint32_t cnt = pixel_count_sums[i];
           if (cnt == 0) {
             clusters[i] = {0, 0, 0};
             continue;
           }
-          clusters[i] = {sa[i] / cnt, sb[i] / cnt, sc[i] / cnt};
+          clusters[i] = {sa[i] / static_cast<double>(cnt), sb[i] / static_cast<double>(cnt),
+                         sc[i] / static_cast<double>(cnt)};
         }
       }
 
       // Cluster index order, dedupe by argb, drop empties. Matches matugen
       // wsmeans.rs:275-294 exactly (no population sort, no std::map rekey).
       std::vector<ClusterEntry> result;
-      for (int i = 0; i < cluster_count; i++) {
-        int cnt = pixel_count_sums[i];
+      for (std::size_t i = 0; i < cluster_count; i++) {
+        const std::uint32_t cnt = pixel_count_sums[i];
         if (cnt == 0)
           continue;
         mcu::Argb argb = mcu::IntFromLab(clusters[i]);
@@ -214,7 +215,7 @@ namespace noctalia::theme {
         }
         if (dup)
           continue;
-        result.push_back({argb, (uint32_t)cnt});
+        result.push_back({argb, cnt});
       }
       return result;
     }
@@ -232,22 +233,24 @@ namespace noctalia::theme {
 
       std::vector<mcu::Hct> colors_hct;
       colors_hct.reserve(clusters.size());
-      std::vector<uint32_t> hue_population(360, 0);
+      constexpr std::size_t kHueCount = 360;
+      std::vector<uint32_t> hue_population(kHueCount, 0);
       double population_sum = 0.0;
       for (const auto& c : clusters) {
         mcu::Hct hct(c.argb);
         colors_hct.push_back(hct);
-        int hue = (int)std::floor(hct.get_hue());
-        hue_population[hue] += c.population;
+        const int hue = mcu::SanitizeDegreesInt(static_cast<int>(std::floor(hct.get_hue())));
+        hue_population[static_cast<std::size_t>(hue)] += c.population;
         population_sum += c.population;
       }
 
-      std::vector<double> hue_excited(360, 0.0);
-      for (int hue = 0; hue < 360; hue++) {
+      std::vector<double> hue_excited(kHueCount, 0.0);
+      for (std::size_t hue = 0; hue < kHueCount; hue++) {
         double prop = hue_population[hue] / population_sum;
-        for (int i = hue - 14; i < hue + 16; i++) {
+        const int hueInt = static_cast<int>(hue);
+        for (int i = hueInt - 14; i < hueInt + 16; i++) {
           int nh = mcu::SanitizeDegreesInt(i);
-          hue_excited[nh] += prop;
+          hue_excited[static_cast<std::size_t>(nh)] += prop;
         }
       }
 
@@ -258,8 +261,8 @@ namespace noctalia::theme {
       std::vector<Scored> scored;
       scored.reserve(colors_hct.size());
       for (mcu::Hct hct : colors_hct) {
-        int hue = mcu::SanitizeDegreesInt((int)std::round(hct.get_hue()));
-        double prop = hue_excited[hue];
+        int hue = mcu::SanitizeDegreesInt(static_cast<int>(std::round(hct.get_hue())));
+        double prop = hue_excited[static_cast<std::size_t>(hue)];
         if (filter && (hct.get_chroma() < kCutoffChroma || prop <= kCutoffExcitedProportion))
           continue;
         double prop_score = prop * 100.0 * kWeightProportion;

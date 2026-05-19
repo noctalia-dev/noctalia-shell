@@ -14,7 +14,7 @@ class KeyboardLayoutWidget : public Widget {
 public:
   enum class DisplayMode : std::uint8_t { Short = 0, Full = 1 };
 
-  KeyboardLayoutWidget(CompositorPlatform& platform, std::string cycleCommand, DisplayMode displayMode);
+  KeyboardLayoutWidget(CompositorPlatform& platform, std::string cycleCommand, DisplayMode displayMode, bool hideLabel);
   static DisplayMode parseDisplayMode(const std::string& value);
   static std::string formatLayoutLabel(const std::string& layoutName, DisplayMode displayMode);
 
@@ -32,6 +32,7 @@ private:
   CompositorPlatform& m_platform;
   std::string m_cycleCommand;
   DisplayMode m_displayMode = DisplayMode::Short;
+  bool m_hideLabel = false;
 
   Glyph* m_glyph = nullptr;
   Label* m_label = nullptr;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "config/config_types.h"
+#include "core/key_chord.h"
 #include "ui/controls/flex.h"
 
 #include <cstdint>
@@ -45,9 +45,6 @@ private:
   void exitRecording(bool commit);
   void refreshLabel();
   void applyVisualState(VisualState state);
-  [[nodiscard]] static bool isModifierKeysym(std::uint32_t sym);
-  [[nodiscard]] static bool isSuperKeysym(std::uint32_t sym);
-
   Label* m_label = nullptr;
   Glyph* m_glyph = nullptr;
   InputArea* m_inputArea = nullptr;

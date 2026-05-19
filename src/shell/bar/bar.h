@@ -23,7 +23,8 @@ class LockKeysService;
 class MprisService;
 class BluetoothService;
 class BrightnessService;
-class NetworkService;
+class ClipboardService;
+class INetworkService;
 class NotificationManager;
 class PipeWireService;
 class PipeWireSpectrum;
@@ -47,11 +48,12 @@ public:
 
   bool initialize(CompositorPlatform& platform, ConfigService* config, TimeService* timeService,
                   NotificationManager* notifications, TrayService* tray, PipeWireService* audio, UPowerService* upower,
-                  SystemMonitorService* sysmon, PowerProfilesService* powerProfiles, NetworkService* network,
+                  SystemMonitorService* sysmon, PowerProfilesService* powerProfiles, INetworkService* network,
                   IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
                   HttpClient* httpClient, WeatherService* weatherService, RenderContext* renderContext,
                   GammaService* nightLight, noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
-                  BrightnessService* brightness, LockKeysService* lockKeys, FileWatcher* fileWatcher = nullptr);
+                  BrightnessService* brightness, LockKeysService* lockKeys, ClipboardService* clipboard,
+                  FileWatcher* fileWatcher = nullptr);
   void reload();
   void closeAllInstances();
   void show();
@@ -114,7 +116,7 @@ private:
   UPowerService* m_upower = nullptr;
   SystemMonitorService* m_sysmon = nullptr;
   PowerProfilesService* m_powerProfiles = nullptr;
-  NetworkService* m_network = nullptr;
+  INetworkService* m_network = nullptr;
   IdleInhibitor* m_idleInhibitor = nullptr;
   MprisService* m_mpris = nullptr;
   PipeWireSpectrum* m_audioSpectrum = nullptr;
@@ -126,6 +128,7 @@ private:
   BluetoothService* m_bluetooth = nullptr;
   BrightnessService* m_brightness = nullptr;
   LockKeysService* m_lockKeys = nullptr;
+  ClipboardService* m_clipboard = nullptr;
   FileWatcher* m_fileWatcher = nullptr;
   std::unique_ptr<WidgetFactory> m_widgetFactory;
   std::vector<std::unique_ptr<BarInstance>> m_instances;

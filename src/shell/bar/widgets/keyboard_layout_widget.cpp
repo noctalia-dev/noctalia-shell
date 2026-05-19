@@ -289,8 +289,9 @@ namespace {
 } // namespace
 
 KeyboardLayoutWidget::KeyboardLayoutWidget(CompositorPlatform& platform, std::string cycleCommand,
-                                           DisplayMode displayMode)
-    : m_platform(platform), m_cycleCommand(std::move(cycleCommand)), m_displayMode(displayMode) {}
+                                           DisplayMode displayMode, bool hideLabel)
+    : m_platform(platform), m_cycleCommand(std::move(cycleCommand)), m_displayMode(displayMode),
+      m_hideLabel(hideLabel) {}
 
 void KeyboardLayoutWidget::create() {
   auto area = std::make_unique<InputArea>();
@@ -349,30 +350,41 @@ void KeyboardLayoutWidget::doLayout(Renderer& renderer, float containerWidth, fl
   }
 
   m_label->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
+  m_label->setVisible(!m_hideLabel);
   m_label->setTextAlign(m_isVertical ? TextAlign::Center : TextAlign::Start);
-  const float stableLabelWidth =
-      std::round(renderer.measureText(kVerticalStableLabel, m_label->fontSize(), true).width);
-  m_label->setMinWidth(m_isVertical ? std::min(containerWidth, stableLabelWidth) : 0.0f);
-  m_label->measure(renderer);
+  if (!m_hideLabel) {
+    const float stableLabelWidth =
+        std::round(renderer.measureText(kVerticalStableLabel, m_label->fontSize(), true).width);
+    m_label->setMinWidth(m_isVertical ? std::min(containerWidth, stableLabelWidth) : 0.0f);
+    m_label->measure(renderer);
+  }
 
   if (m_isVertical && m_glyph != nullptr) {
-    const float w = std::max(m_glyph->width(), m_label->width());
+    const float w = m_hideLabel ? m_glyph->width() : std::max(m_glyph->width(), m_label->width());
     m_glyph->setPosition(std::round((w - m_glyph->width()) * 0.5f), 0.0f);
-    m_label->setPosition(std::round((w - m_label->width()) * 0.5f), m_glyph->height());
-    root()->setSize(w, m_glyph->height() + m_label->height());
+    if (m_hideLabel) {
+      root()->setSize(w, m_glyph->height());
+    } else {
+      m_label->setPosition(std::round((w - m_label->width()) * 0.5f), m_glyph->height());
+      root()->setSize(w, m_glyph->height() + m_label->height());
+    }
   } else {
     const float spacing = Style::spaceXs;
     float x = 0.0f;
-    float h = m_label->height();
+    float h = m_hideLabel ? 0.0f : m_label->height();
     if (m_glyph != nullptr) {
       h = std::max(h, m_glyph->height());
       const float glyphY = std::round((h - m_glyph->height()) * 0.5f);
       m_glyph->setPosition(0.0f, glyphY);
-      x = m_glyph->width() + spacing;
+      x = m_hideLabel ? m_glyph->width() : (m_glyph->width() + spacing);
     }
-    const float labelY = std::round((h - m_label->height()) * 0.5f);
-    m_label->setPosition(x, labelY);
-    root()->setSize(m_label->x() + m_label->width(), h);
+    if (m_hideLabel) {
+      root()->setSize(x, h);
+    } else {
+      const float labelY = std::round((h - m_label->height()) * 0.5f);
+      m_label->setPosition(x, labelY);
+      root()->setSize(m_label->x() + m_label->width(), h);
+    }
   }
 }
 
@@ -423,10 +435,13 @@ void KeyboardLayoutWidget::sync(Renderer& renderer) {
   m_lastLabel = layoutLabel;
   m_lastVertical = m_isVertical;
 
-  m_label->setFontSize((m_isVertical ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
-  m_label->setText(layoutLabel);
-  m_label->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
-  m_label->measure(renderer);
+  m_label->setVisible(!m_hideLabel);
+  if (!m_hideLabel) {
+    m_label->setFontSize((m_isVertical ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
+    m_label->setText(layoutLabel);
+    m_label->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
+    m_label->measure(renderer);
+  }
 
   if (auto* node = root(); node != nullptr) {
     node->setOpacity((m_cycleCommand.empty() && !m_platform.hasKeyboardLayoutBackend()) ? 0.85f : 1.0f);

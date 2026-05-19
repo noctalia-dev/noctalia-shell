@@ -44,7 +44,8 @@ public:
   [[nodiscard]] bool matchesKeybind(KeybindAction action, std::uint32_t sym, std::uint32_t modifiers) const;
   [[nodiscard]] int watchFd() const noexcept { return m_inotifyFd; }
   [[nodiscard]] std::string buildSupportReport() const;
-  [[nodiscard]] std::string buildFlattenedConfig() const;
+  [[nodiscard]] std::string buildMergedUserConfig() const;
+  [[nodiscard]] std::string buildEffectiveConfig() const;
   [[nodiscard]] bool shouldRunSetupWizard() const;
 
   void addReloadCallback(ReloadCallback callback);
@@ -116,13 +117,15 @@ private:
   // App-writable settings file (state dir): lives outside config dir so it
   // can still be written when the config dir is read-only (e.g. NixOS).
   std::string m_overridesPath;
+  // Marker file (state dir): its existence means onboarding has been completed
+  // or dismissed. Single canonical signal for the setup wizard.
+  std::string m_setupMarkerPath;
   toml::table m_overridesTable;
   std::unordered_set<std::string> m_configFileBarNames;
   std::unordered_map<std::string, std::unordered_set<std::string>> m_configFileMonitorOverrideNames;
   std::string m_defaultWallpaperPath;
   std::string m_lastWallpaperPath;
   std::unordered_map<std::string, std::string> m_monitorWallpaperPaths;
-  bool m_setupWizardCompleted = false;
   mutable std::unordered_map<std::string, bool> m_effectiveOverrideCache;
 
   std::string m_overridesParseError;

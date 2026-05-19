@@ -50,8 +50,6 @@ namespace {
   constexpr float kMediaPlayPauseHeight = kMediaUnit + Style::spaceSm;
   constexpr float kMediaArtworkMinHeight = kMediaUnit * 4;
   constexpr auto kNoActivePlayerGrace = std::chrono::milliseconds(2000);
-  constexpr auto kRealtimeProgressUpdateInterval = std::chrono::milliseconds(1000);
-  constexpr auto kRealtimeMprisPollInterval = std::chrono::milliseconds(1000);
   constexpr auto kTransientPositionRegressionWindow = std::chrono::milliseconds(1500);
   constexpr std::int64_t kTransientPositionRegressionFloorUs = 5'000'000;
   constexpr std::int64_t kTransientPositionRegressionCeilingUs = 1'500'000;
@@ -435,6 +433,8 @@ std::unique_ptr<Flex> MediaTab::create() {
   visualizerSpectrum->setOrientation(AudioSpectrumOrientation::Vertical);
   visualizerSpectrum->setMirrored(true);
   visualizerSpectrum->setCentered(true);
+  visualizerSpectrum->setValues(std::vector<float>(kVisualizerBandCount, 0.0f));
+  visualizerSpectrum->tick(0.0f);
   visualizerSpectrum->setFlexGrow(1.0f);
   m_visualizerSpectrum = visualizerSpectrum.get();
   visualizerBody->addChild(std::move(visualizerSpectrum));

@@ -3,7 +3,6 @@
 #include "i18n/i18n.h"
 #include "util/string_utils.h"
 
-#include <cctype>
 #include <cstdint>
 #include <cstdlib>
 #include <ctime>

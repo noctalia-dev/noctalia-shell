@@ -45,7 +45,7 @@ namespace {
   PolkitRequestIdentity toRequestIdentity(PolkitIdentity* identity) {
     PolkitRequestIdentity out;
     if (POLKIT_IS_UNIX_USER(identity)) {
-      const uid_t uid = polkit_unix_user_get_uid(POLKIT_UNIX_USER(identity));
+      const auto uid = static_cast<uid_t>(polkit_unix_user_get_uid(POLKIT_UNIX_USER(identity)));
       out.kind = "unix-user";
       out.uid = static_cast<std::uint32_t>(uid);
       out.userName = usernameFromUid(uid).value_or(std::to_string(uid));
@@ -58,7 +58,7 @@ namespace {
 
   std::string identityDisplayName(PolkitIdentity* identity) {
     if (POLKIT_IS_UNIX_USER(identity)) {
-      const uid_t uid = polkit_unix_user_get_uid(POLKIT_UNIX_USER(identity));
+      const auto uid = static_cast<uid_t>(polkit_unix_user_get_uid(POLKIT_UNIX_USER(identity)));
       return usernameFromUid(uid).value_or(std::to_string(uid));
     }
     if (POLKIT_IS_UNIX_GROUP(identity)) {

@@ -141,8 +141,8 @@ post_hook = "bash '{{ config_dir }}/labwc/apply.sh'"
 
 [templates.niri]
 input_path = "./niri/niri.kdl"
-output_path = "~/.config/niri/noctalia.kdl"
-post_hook = "bash '{{ config_dir }}/niri/apply.sh'"
+output_path_dynamic = "bash '{{ config_dir }}/niri/apply.sh' output"
+post_hook = "bash '{{ config_dir }}/niri/apply.sh' apply"
 
 [templates.hyprland]
 input_path_dynamic = "bash '{{ config_dir }}/hyprland/apply.sh' input"

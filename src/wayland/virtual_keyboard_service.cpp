@@ -7,7 +7,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <linux/input-event-codes.h>
-#include <string>
 #include <unistd.h>
 #include <wayland-client-core.h>
 #include <xkbcommon/xkbcommon.h>

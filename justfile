@@ -17,6 +17,7 @@ configure m=mode:
     else
         meson setup "build-{{m}}" "${args[@]}"
     fi
+    ln -sfn "build-{{m}}/compile_commands.json" compile_commands.json
 
 build m=mode:
     meson compile -C build-{{m}}
@@ -32,6 +33,11 @@ format:
     find src \( -name '*.cpp' -o -name '*.h' \) -print0 | xargs -0 grep -ZlP '\s+$' | xargs -0 -r sed -i 's/[[:space:]]*$//'
 
 clean m=mode:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ -L compile_commands.json && "$(readlink compile_commands.json)" == "build-{{m}}/compile_commands.json" ]]; then
+        rm -f compile_commands.json
+    fi
     rm -rf build-{{m}}
 
 rebuild m=mode:

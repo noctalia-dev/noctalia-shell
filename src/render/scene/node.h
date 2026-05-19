@@ -42,6 +42,13 @@ struct LayoutRect {
   float height = 0.0f;
 };
 
+struct HitTestOutset {
+  float left = 0.0f;
+  float top = 0.0f;
+  float right = 0.0f;
+  float bottom = 0.0f;
+};
+
 struct LayoutConstraints {
   float minWidth = 0.0f;
   float minHeight = 0.0f;
@@ -90,6 +97,7 @@ public:
   [[nodiscard]] bool layoutDirty() const noexcept { return m_layoutDirty; }
   [[nodiscard]] bool clipChildren() const noexcept { return m_clipChildren; }
   [[nodiscard]] bool hitTestVisible() const noexcept { return m_hitTestVisible; }
+  [[nodiscard]] HitTestOutset hitTestOutset() const noexcept { return m_hitTestOutset; }
   [[nodiscard]] bool sizeAssignedByLayout() const noexcept { return m_sizeAssignedByLayout; }
   [[nodiscard]] bool arrangingByLayout() const noexcept { return m_arranging; }
   [[nodiscard]] std::int32_t zIndex() const noexcept { return m_zIndex; }
@@ -107,6 +115,7 @@ public:
   void setParticipatesInLayout(bool participatesInLayout);
   void setClipChildren(bool clipChildren);
   void setHitTestVisible(bool hitTestVisible);
+  void setHitTestOutset(const HitTestOutset& outset);
   void setZIndex(std::int32_t zIndex);
 
   Node* addChild(std::unique_ptr<Node> child);
@@ -160,6 +169,7 @@ private:
   bool m_layoutDirty = true;
   bool m_clipChildren = false;
   bool m_hitTestVisible = true;
+  HitTestOutset m_hitTestOutset{};
   bool m_sizeAssignedByLayout = false;
   bool m_arranging = false;
   std::int32_t m_zIndex = 0;

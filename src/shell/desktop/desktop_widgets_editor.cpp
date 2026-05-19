@@ -2,6 +2,8 @@
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
+#include "core/key_symbols.h"
+#include "core/keybind_matcher.h"
 #include "core/log.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "i18n/i18n.h"
@@ -1019,6 +1021,7 @@ void DesktopWidgetsEditor::addWidget(const std::string& outputName, const std::s
   if (widget.type == "audio_visualizer") {
     widget.settings.emplace("aspect_ratio", static_cast<double>(kDefaultDesktopAudioVisualizerAspectRatio));
     widget.settings.emplace("bands", static_cast<std::int64_t>(32));
+    widget.settings.emplace("show_when_idle", true);
   }
 
   if (widget.type == "sticker") {
@@ -1615,7 +1618,7 @@ void DesktopWidgetsEditor::onKeyboardEvent(const KeyboardEvent& event) {
   }
 
   if (focused != nullptr) {
-    if (event.sym == XKB_KEY_Escape) {
+    if (KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
       for (auto& surface : m_surfaces) {
         surface->inputDispatcher.setFocus(nullptr);
       }
@@ -1623,12 +1626,12 @@ void DesktopWidgetsEditor::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  if (event.sym == XKB_KEY_Escape) {
+  if (KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
     requestExit();
     return;
   }
 
-  if (event.sym == XKB_KEY_Delete || event.sym == XKB_KEY_BackSpace) {
+  if (KeySymbol::isBackspaceOrDelete(event.sym)) {
     removeSelectedWidget();
     return;
   }

@@ -6,6 +6,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <vector>
 
 struct zwlr_foreign_toplevel_handle_v1;
 struct zwlr_foreign_toplevel_manager_v1;

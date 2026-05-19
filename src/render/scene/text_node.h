@@ -16,6 +16,7 @@ public:
   [[nodiscard]] float maxWidth() const noexcept { return m_maxWidth; }
   [[nodiscard]] int maxLines() const noexcept { return m_maxLines; }
   [[nodiscard]] bool bold() const noexcept { return m_bold; }
+  [[nodiscard]] const std::string& fontFamily() const noexcept { return m_fontFamily; }
 
   void setText(std::string text) {
     if (m_text == text) {
@@ -65,6 +66,14 @@ public:
     markLayoutDirty();
   }
 
+  void setFontFamily(std::string family) {
+    if (m_fontFamily == family) {
+      return;
+    }
+    m_fontFamily = std::move(family);
+    markLayoutDirty();
+  }
+
   [[nodiscard]] TextAlign textAlign() const noexcept { return m_textAlign; }
 
   void setTextAlign(TextAlign align) {
@@ -98,6 +107,7 @@ public:
 
 private:
   std::string m_text;
+  std::string m_fontFamily;
   float m_fontSize = 14.0f;
   float m_maxWidth = 0.0f;
   int m_maxLines = 0;

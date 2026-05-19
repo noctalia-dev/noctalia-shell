@@ -489,8 +489,7 @@ bool Dock::refreshPinnedAppsIfNeeded() {
         return (dot == std::string::npos) ? base : base.substr(0, dot);
       }());
 
-      if (stemLower == pinnedLower || StringUtils::toLower(entry.startupWmClass) == pinnedLower ||
-          entry.nameLower == pinnedLower || entry.id == pinnedId) {
+      if (stemLower == pinnedLower || app_identity::desktopEntryMatchesLower(entry, pinnedLower)) {
         m_pinnedEntries.push_back(entry);
         found = true;
         break;
@@ -1055,12 +1054,12 @@ void Dock::rebuildItems(DockInstance& instance) {
     // Icon centred inside the padded cell.
     const std::string& iconPath = [&]() -> const std::string& {
       if (!entry.icon.empty()) {
-        const std::string& primary = m_iconResolver.resolve(entry.icon);
+        const std::string& primary = m_iconResolver.resolve(entry.icon, cfg.iconSize);
         if (!primary.empty()) {
           return primary;
         }
       }
-      return m_iconResolver.resolve("application-x-executable");
+      return m_iconResolver.resolve("application-x-executable", cfg.iconSize);
     }();
     auto iconImg = std::make_unique<Image>();
     if (!iconPath.empty() && m_renderContext != nullptr) {
@@ -1130,7 +1129,7 @@ void Dock::rebuildItems(DockInstance& instance) {
     auto* itemPtr = &item;
     auto* instPtr = &instance;
 
-    areaNode->setOnEnter([itemPtr, instPtr, this](const InputArea::PointerData&) {
+    areaNode->setOnEnter([itemPtr, instPtr](const InputArea::PointerData&) {
       if (!itemPtr->hovered) {
         itemPtr->hovered = true;
         if (itemPtr->background) {
@@ -1445,10 +1444,10 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item, std::vec
   // Build context menu entries (window titles).
   std::vector<ContextMenuControlEntry> entries;
   entries.reserve(windows.size());
-  for (std::int32_t i = 0; i < static_cast<std::int32_t>(windows.size()); ++i) {
+  for (std::size_t i = 0; i < windows.size(); ++i) {
     const auto& title = windows[i].title.empty() ? item.entry.name : windows[i].title;
     entries.push_back(ContextMenuControlEntry{
-        .id = i,
+        .id = static_cast<std::int32_t>(i),
         .label = title,
         .enabled = true,
         .separator = false,

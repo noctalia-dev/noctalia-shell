@@ -136,6 +136,18 @@ namespace settings {
       return ColorRolePickerSetting{barAccentColorRoles(), std::move(selectedValue), true, true};
     }
 
+    const std::vector<ColorRole>& barBorderColorRoles() {
+      static const std::vector<ColorRole> kRoles = {
+          ColorRole::Outline,   ColorRole::OnSurface, ColorRole::Primary,    ColorRole::OnPrimary,
+          ColorRole::Secondary, ColorRole::Tertiary,  ColorRole::OnTertiary, ColorRole::Error,
+      };
+      return kRoles;
+    }
+
+    ColorRolePickerSetting barBorderColorRolePicker(const ColorSpec& selected) {
+      return ColorRolePickerSetting{barBorderColorRoles(), colorRoleValue(selected), false, true};
+    }
+
     std::string pathText(const std::vector<std::string>& path) {
       std::string out;
       for (const auto& part : path) {
@@ -222,7 +234,7 @@ namespace settings {
       return "layout-bottombar";
     if (section == "idle")
       return "coffee";
-    if (section == "backdrop")
+    if (section == "niri")
       return "niri";
     if (section == "wallpaper")
       return "paint";
@@ -503,21 +515,6 @@ namespace settings {
                                 {"wallpaper", "automation", "recursive"},
                                 ToggleSetting{cfg.wallpaper.automation.recursive}, "subdirectories", true));
 
-    // Backdrop (niri-only)
-    if (env.niriBackdropSupported) {
-      entries.push_back(makeEntry("backdrop", "general", tr("settings.schema.shared.enabled.label"),
-                                  tr("settings.schema.backdrop.enabled.description"), {"backdrop", "enabled"},
-                                  ToggleSetting{cfg.backdrop.enabled}, "wallpaper backdrop"));
-      entries.push_back(makeEntry("backdrop", "backdrop", tr("settings.schema.backdrop.blur-intensity.label"),
-                                  tr("settings.schema.backdrop.blur-intensity.description"),
-                                  {"backdrop", "blur_intensity"},
-                                  SliderSetting{cfg.backdrop.blurIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
-      entries.push_back(makeEntry("backdrop", "backdrop", tr("settings.schema.backdrop.tint-intensity.label"),
-                                  tr("settings.schema.backdrop.tint-intensity.description"),
-                                  {"backdrop", "tint_intensity"},
-                                  SliderSetting{cfg.backdrop.tintIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
-    }
-
     // Templates
     entries.push_back(makeEntry("templates", "built-in", tr("settings.schema.templates.enable-builtins.label"),
                                 tr("settings.schema.templates.enable-builtins.description"),
@@ -653,16 +650,17 @@ namespace settings {
                                 {"shell", "panel", "transparency_mode"},
                                 asSegmented(enumSelect(kPanelTransparencyModes, cfg.shell.panel.transparencyMode)),
                                 "glass opacity alpha translucent cards blur"));
-    entries.push_back(makeEntry("panels", "control-center", tr("settings.schema.panels.attach-control-center.label"),
-                                tr("settings.schema.panels.attach-control-center.description"),
-                                {"shell", "panel", "attach_control_center"},
-                                ToggleSetting{cfg.shell.panel.attachControlCenter}, "attach bar panel"));
+    entries.push_back(makeEntry("panels", "control-center", tr("settings.schema.panels.placement-control-center.label"),
+                                tr("settings.schema.panels.placement-control-center.description"),
+                                {"shell", "panel", "control_center_placement"},
+                                asSegmented(enumSelect(kPanelPlacements, cfg.shell.panel.controlCenterPlacement)),
+                                "attached floating centered bar panel position"));
     {
       auto e = makeEntry("panels", "control-center", tr("settings.schema.panels.open-near-click-control-center.label"),
                          tr("settings.schema.panels.open-near-click-control-center.description"),
                          {"shell", "panel", "open_near_click_control_center"},
                          ToggleSetting{cfg.shell.panel.openNearClickControlCenter}, "open near click position anchor");
-      e.visibleWhen = SettingVisibility{{"shell", "panel", "attach_control_center"}, {"true"}};
+      e.visibleWhen = SettingVisibility{{"shell", "panel", "control_center_placement"}, {"attached", "floating"}};
       entries.push_back(std::move(e));
     }
     entries.push_back(makeEntry("panels", "control-center", tr("settings.schema.panels.compact-control-center.label"),
@@ -675,52 +673,56 @@ namespace settings {
         ShortcutListSetting{
             .items = cfg.controlCenter.shortcuts, .suggestedOptions = controlCenterShortcutOptions(), .maxItems = 6},
         "quick settings shortcuts toggles wifi bluetooth caffeine night light dnd power media weather clipboard"));
-    entries.push_back(makeEntry("panels", "launcher", tr("settings.schema.panels.attach-launcher.label"),
-                                tr("settings.schema.panels.attach-launcher.description"),
-                                {"shell", "panel", "attach_launcher"}, ToggleSetting{cfg.shell.panel.attachLauncher},
-                                "attach bar panel"));
+    entries.push_back(makeEntry("panels", "launcher", tr("settings.schema.panels.placement-launcher.label"),
+                                tr("settings.schema.panels.placement-launcher.description"),
+                                {"shell", "panel", "launcher_placement"},
+                                asSegmented(enumSelect(kPanelPlacements, cfg.shell.panel.launcherPlacement)),
+                                "attached floating centered bar panel position"));
     {
       auto e = makeEntry("panels", "launcher", tr("settings.schema.panels.open-near-click-launcher.label"),
                          tr("settings.schema.panels.open-near-click-launcher.description"),
                          {"shell", "panel", "open_near_click_launcher"},
                          ToggleSetting{cfg.shell.panel.openNearClickLauncher}, "open near click position anchor");
-      e.visibleWhen = SettingVisibility{{"shell", "panel", "attach_launcher"}, {"true"}};
+      e.visibleWhen = SettingVisibility{{"shell", "panel", "launcher_placement"}, {"attached", "floating"}};
       entries.push_back(std::move(e));
     }
-    entries.push_back(makeEntry("panels", "clipboard", tr("settings.schema.panels.attach-clipboard.label"),
-                                tr("settings.schema.panels.attach-clipboard.description"),
-                                {"shell", "panel", "attach_clipboard"}, ToggleSetting{cfg.shell.panel.attachClipboard},
-                                "attach bar panel"));
+    entries.push_back(makeEntry("panels", "clipboard", tr("settings.schema.panels.placement-clipboard.label"),
+                                tr("settings.schema.panels.placement-clipboard.description"),
+                                {"shell", "panel", "clipboard_placement"},
+                                asSegmented(enumSelect(kPanelPlacements, cfg.shell.panel.clipboardPlacement)),
+                                "attached floating centered bar panel position"));
     {
       auto e = makeEntry("panels", "clipboard", tr("settings.schema.panels.open-near-click-clipboard.label"),
                          tr("settings.schema.panels.open-near-click-clipboard.description"),
                          {"shell", "panel", "open_near_click_clipboard"},
                          ToggleSetting{cfg.shell.panel.openNearClickClipboard}, "open near click position anchor");
-      e.visibleWhen = SettingVisibility{{"shell", "panel", "attach_clipboard"}, {"true"}};
+      e.visibleWhen = SettingVisibility{{"shell", "panel", "clipboard_placement"}, {"attached", "floating"}};
       entries.push_back(std::move(e));
     }
-    entries.push_back(makeEntry("panels", "wallpaper", tr("settings.schema.panels.attach-wallpaper.label"),
-                                tr("settings.schema.panels.attach-wallpaper.description"),
-                                {"shell", "panel", "attach_wallpaper"}, ToggleSetting{cfg.shell.panel.attachWallpaper},
-                                "attach bar panel"));
+    entries.push_back(makeEntry("panels", "wallpaper", tr("settings.schema.panels.placement-wallpaper.label"),
+                                tr("settings.schema.panels.placement-wallpaper.description"),
+                                {"shell", "panel", "wallpaper_placement"},
+                                asSegmented(enumSelect(kPanelPlacements, cfg.shell.panel.wallpaperPlacement)),
+                                "attached floating centered bar panel position"));
     {
       auto e = makeEntry("panels", "wallpaper", tr("settings.schema.panels.open-near-click-wallpaper.label"),
                          tr("settings.schema.panels.open-near-click-wallpaper.description"),
                          {"shell", "panel", "open_near_click_wallpaper"},
                          ToggleSetting{cfg.shell.panel.openNearClickWallpaper}, "open near click position anchor");
-      e.visibleWhen = SettingVisibility{{"shell", "panel", "attach_wallpaper"}, {"true"}};
+      e.visibleWhen = SettingVisibility{{"shell", "panel", "wallpaper_placement"}, {"attached", "floating"}};
       entries.push_back(std::move(e));
     }
-    entries.push_back(makeEntry("panels", "session-panel", tr("settings.schema.panels.attach-session.label"),
-                                tr("settings.schema.panels.attach-session.description"),
-                                {"shell", "panel", "attach_session"}, ToggleSetting{cfg.shell.panel.attachSession},
-                                "attach bar panel power menu"));
+    entries.push_back(makeEntry("panels", "session-panel", tr("settings.schema.panels.placement-session.label"),
+                                tr("settings.schema.panels.placement-session.description"),
+                                {"shell", "panel", "session_placement"},
+                                asSegmented(enumSelect(kPanelPlacements, cfg.shell.panel.sessionPlacement)),
+                                "attached floating centered bar panel power menu position"));
     {
       auto e = makeEntry("panels", "session-panel", tr("settings.schema.panels.open-near-click-session.label"),
                          tr("settings.schema.panels.open-near-click-session.description"),
                          {"shell", "panel", "open_near_click_session"},
                          ToggleSetting{cfg.shell.panel.openNearClickSession}, "open near click position anchor");
-      e.visibleWhen = SettingVisibility{{"shell", "panel", "attach_session"}, {"true"}};
+      e.visibleWhen = SettingVisibility{{"shell", "panel", "session_placement"}, {"attached", "floating"}};
       entries.push_back(std::move(e));
     }
     entries.push_back(makeEntry("panels", "session-panel", tr("settings.schema.panels.session-actions.label"),
@@ -820,9 +822,17 @@ namespace settings {
                                              {"top_center", "settings.options.screen-position.top-center"},
                                              {"bottom_right", "settings.options.screen-position.bottom-right"},
                                              {"bottom_left", "settings.options.screen-position.bottom-left"},
-                                             {"bottom_center", "settings.options.screen-position.bottom-center"}},
+                                             {"bottom_center", "settings.options.screen-position.bottom-center"},
+                                             {"center_right", "settings.options.screen-position.center-right"},
+                                             {"center_left", "settings.options.screen-position.center-left"}},
                                             cfg.osd.position),
                                 "hud overlay volume brightness"));
+    entries.push_back(makeEntry("popups", "osd", tr("settings.schema.shell.osd-orientation.label"),
+                                tr("settings.schema.shell.osd-orientation.description"), {"osd", "orientation"},
+                                asSegmented(plainSelect({{"horizontal", "settings.options.orientation.horizontal"},
+                                                         {"vertical", "settings.options.orientation.vertical"}},
+                                                        cfg.osd.orientation)),
+                                "hud overlay volume brightness vertical"));
     entries.push_back(makeEntry("popups", "osd", tr("settings.schema.shell.osd-lock-keys.label"),
                                 tr("settings.schema.shell.osd-lock-keys.description"), {"osd", "lock_keys"},
                                 ToggleSetting{cfg.osd.lockKeys}, "hud overlay caps num scroll keyboard"));
@@ -853,11 +863,73 @@ namespace settings {
                                 KeybindListSetting{.items = cfg.keybinds.down, .maxItems = 4},
                                 "keybind shortcut hotkey arrow move"));
 
+    // Niri-specific integrations
+    if (env.niriOverviewTypeToLaunchSupported || env.niriBackdropSupported) {
+      if (env.niriOverviewTypeToLaunchSupported) {
+        entries.push_back(makeEntry("niri", "overview", tr("settings.schema.shell.niri-overview-type-to-launch.label"),
+                                    tr("settings.schema.shell.niri-overview-type-to-launch.description"),
+                                    {"shell", "niri_overview_type_to_launch_enabled"},
+                                    ToggleSetting{cfg.shell.niriOverviewTypeToLaunchEnabled},
+                                    "niri overview type launch launcher search keyboard focus"));
+      }
+      if (env.niriBackdropSupported) {
+        entries.push_back(makeEntry("niri", "backdrop", tr("settings.schema.shared.enabled.label"),
+                                    tr("settings.schema.backdrop.enabled.description"), {"backdrop", "enabled"},
+                                    ToggleSetting{cfg.backdrop.enabled}, "wallpaper backdrop"));
+        entries.push_back(makeEntry("niri", "backdrop", tr("settings.schema.backdrop.blur-intensity.label"),
+                                    tr("settings.schema.backdrop.blur-intensity.description"),
+                                    {"backdrop", "blur_intensity"},
+                                    SliderSetting{cfg.backdrop.blurIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
+        entries.push_back(makeEntry("niri", "backdrop", tr("settings.schema.backdrop.tint-intensity.label"),
+                                    tr("settings.schema.backdrop.tint-intensity.description"),
+                                    {"backdrop", "tint_intensity"},
+                                    SliderSetting{cfg.backdrop.tintIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
+      }
+    }
+
     // Services
+    const SettingVisibility monitorOn{{"system", "monitor", "enabled"}, {"true"}};
     entries.push_back(makeEntry("services", "system", tr("settings.schema.services.system-monitor.label"),
                                 tr("settings.schema.services.system-monitor.description"),
                                 {"system", "monitor", "enabled"}, ToggleSetting{cfg.system.monitor.enabled},
                                 "system monitor cpu ram memory"));
+    {
+      constexpr float kPollMin = 0.1f;
+      constexpr float kPollMax = 60.0f;
+      constexpr float kPollStep = 0.1f;
+      const auto& mon = cfg.system.monitor;
+      auto addPoll = [&](std::string_view labelKey, std::string_view descKey, std::vector<std::string> path,
+                         float value) {
+        auto entry = makeEntry("services", "system", tr(labelKey), tr(descKey), std::move(path),
+                               SliderSetting{value, kPollMin, kPollMax, kPollStep, false}, "system monitor");
+        entry.visibleWhen = monitorOn;
+        entries.push_back(std::move(entry));
+      };
+      addPoll("settings.schema.services.system-monitor.cpu-poll.label",
+              "settings.schema.services.system-monitor.cpu-poll.description", {"system", "monitor", "cpu_poll_seconds"},
+              mon.cpuPollSeconds);
+      addPoll("settings.schema.services.system-monitor.gpu-temp-poll.label",
+              "settings.schema.services.system-monitor.gpu-temp-poll.description",
+              {"system", "monitor", "gpu_temp_poll_seconds"}, mon.gpuTempPollSeconds);
+      addPoll("settings.schema.services.system-monitor.gpu-vram-poll.label",
+              "settings.schema.services.system-monitor.gpu-vram-poll.description",
+              {"system", "monitor", "gpu_vram_poll_seconds"}, mon.gpuVramPollSeconds);
+      addPoll("settings.schema.services.system-monitor.memory-poll.label",
+              "settings.schema.services.system-monitor.memory-poll.description",
+              {"system", "monitor", "memory_poll_seconds"}, mon.memoryPollSeconds);
+      addPoll("settings.schema.services.system-monitor.swap-poll.label",
+              "settings.schema.services.system-monitor.swap-poll.description",
+              {"system", "monitor", "swap_poll_seconds"}, mon.swapPollSeconds);
+      addPoll("settings.schema.services.system-monitor.network-poll.label",
+              "settings.schema.services.system-monitor.network-poll.description",
+              {"system", "monitor", "network_poll_seconds"}, mon.networkPollSeconds);
+      addPoll("settings.schema.services.system-monitor.disk-poll.label",
+              "settings.schema.services.system-monitor.disk-poll.description",
+              {"system", "monitor", "disk_poll_seconds"}, mon.diskPollSeconds);
+      addPoll("settings.schema.services.system-monitor.history-poll.label",
+              "settings.schema.services.system-monitor.history-poll.description",
+              {"system", "monitor", "history_poll_seconds"}, mon.historyPollSeconds);
+    }
     entries.push_back(makeEntry("services", "weather", tr("settings.schema.services.weather.label"),
                                 tr("settings.schema.services.weather.description"), {"weather", "enabled"},
                                 ToggleSetting{cfg.weather.enabled}, "forecast"));
@@ -1098,6 +1170,7 @@ namespace settings {
         return "lifecycle";
       case HookKind::WallpaperChanged:
       case HookKind::ColorsChanged:
+      case HookKind::ThemeModeChanged:
         return "theme";
       case HookKind::WifiEnabled:
       case HookKind::WifiDisabled:
@@ -1106,6 +1179,7 @@ namespace settings {
         return "network";
       case HookKind::BatteryStateChanged:
       case HookKind::BatteryUnderThreshold:
+      case HookKind::PowerProfileChanged:
         return "power";
       case HookKind::Count:
         break;
@@ -1118,8 +1192,11 @@ namespace settings {
       if (kind == HookKind::BatteryUnderThreshold || kind == HookKind::BatteryStateChanged) {
         tags += " battery power";
       }
-      if (kind == HookKind::WallpaperChanged || kind == HookKind::ColorsChanged) {
-        tags += " wallpaper colors theme";
+      if (kind == HookKind::PowerProfileChanged) {
+        tags += " power profile performance balanced saver";
+      }
+      if (kind == HookKind::WallpaperChanged || kind == HookKind::ColorsChanged || kind == HookKind::ThemeModeChanged) {
+        tags += " wallpaper colors theme mode light dark auto";
       }
       if (kind == HookKind::WifiEnabled || kind == HookKind::WifiDisabled || kind == HookKind::BluetoothEnabled ||
           kind == HookKind::BluetoothDisabled) {
@@ -1265,6 +1342,13 @@ namespace settings {
       entries.push_back(makeEntry(section, "shape", tr("settings.schema.shared.background-opacity.label"),
                                   tr("settings.schema.bar.background-opacity.description"), path("background_opacity"),
                                   SliderSetting{selectedBar->backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "alpha"));
+      entries.push_back(makeEntry(section, "shape", tr("settings.schema.bar.border.label"),
+                                  tr("settings.schema.bar.border.description"), path("border"),
+                                  barBorderColorRolePicker(selectedBar->border), "outline color role", true));
+      entries.push_back(makeEntry(section, "shape", tr("settings.schema.bar.border-width.label"),
+                                  tr("settings.schema.bar.border-width.description"), path("border_width"),
+                                  SliderSetting{selectedBar->borderWidth, 0.0f, 20.0f, 0.5f, false}, "outline stroke",
+                                  true));
       entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.shadow.label"),
                                   tr("settings.schema.bar.shadow.description"), path("shadow"),
                                   ToggleSetting{selectedBar->shadow}, "shadow"));
@@ -1430,6 +1514,13 @@ namespace settings {
           section, "shape", tr("settings.schema.shared.background-opacity.label"),
           tr("settings.schema.bar.background-opacity.description"), mpath("background_opacity"),
           SliderSetting{ovr.backgroundOpacity.value_or(bar.backgroundOpacity), 0.0f, 1.0f, 0.01f, false}, "alpha"));
+      entries.push_back(makeEntry(
+          section, "shape", tr("settings.schema.bar.border.label"), tr("settings.schema.bar.border.description"),
+          mpath("border"), barBorderColorRolePicker(ovr.border.value_or(bar.border)), "outline color role", true));
+      entries.push_back(makeEntry(section, "shape", tr("settings.schema.bar.border-width.label"),
+                                  tr("settings.schema.bar.border-width.description"), mpath("border_width"),
+                                  SliderSetting{ovr.borderWidth.value_or(bar.borderWidth), 0.0f, 20.0f, 0.5f, false},
+                                  "outline stroke", true));
       entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.shadow.label"),
                                   tr("settings.schema.bar.shadow.description"), mpath("shadow"),
                                   ToggleSetting{ovr.shadow.value_or(bar.shadow)}, "shadow"));

@@ -21,9 +21,7 @@ public:
 
   [[nodiscard]] float preferredWidth() const override;
   [[nodiscard]] float preferredHeight() const override;
-  [[nodiscard]] bool centeredHorizontally() const override { return false; }
-  [[nodiscard]] bool centeredVertically() const override { return false; }
-  [[nodiscard]] bool prefersAttachedToBar() const noexcept override { return true; }
+  [[nodiscard]] PanelPlacement panelPlacement() const noexcept override { return PanelPlacement::Attached; }
   [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::OnDemand; }
 
 private:

@@ -36,6 +36,7 @@ namespace noctalia::theme {
     void cycleMode();
     [[nodiscard]] ThemeMode configuredMode() const noexcept;
     [[nodiscard]] bool isLightMode() const noexcept;
+    [[nodiscard]] std::string_view resolvedMode() const noexcept;
 
     void setChangeCallback(ChangeCallback callback);
     void setResolvedCallback(ResolvedCallback callback);

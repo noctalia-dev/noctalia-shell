@@ -1,5 +1,6 @@
 #include "ui/controls/stepper.h"
 
+#include "core/key_symbols.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "render/core/render_styles.h"
 #include "render/core/renderer.h"
@@ -387,7 +388,7 @@ bool Stepper::swallowNonNumericKey(std::uint32_t sym, std::uint32_t modifiers) {
   if ((sym >= XKB_KEY_a && sym <= XKB_KEY_z) || (sym >= XKB_KEY_A && sym <= XKB_KEY_Z)) {
     return true;
   }
-  if (sym == XKB_KEY_space) {
+  if (KeySymbol::isSpace(sym)) {
     return true;
   }
   if (sym == XKB_KEY_period || sym == XKB_KEY_comma) {

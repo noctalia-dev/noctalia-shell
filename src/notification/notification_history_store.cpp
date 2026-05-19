@@ -133,7 +133,8 @@ namespace {
     out.reserve(in.size() * 3 / 4);
     int val = 0;
     int valb = -8;
-    for (unsigned char c : in) {
+    for (char rawc : in) {
+      const auto c = static_cast<unsigned char>(rawc);
       if (c == '=') {
         break;
       }
@@ -282,10 +283,10 @@ namespace {
     outH = img.height;
     const int c = img.channels;
     const int rs = (img.rowStride > 0) ? img.rowStride : (outW * c);
-    outRgba.resize(static_cast<std::size_t>(outW) * outH * 4);
+    outRgba.resize(static_cast<std::size_t>(outW) * static_cast<std::size_t>(outH) * 4);
     for (int y = 0; y < outH; ++y) {
-      const std::uint8_t* row = img.data.data() + static_cast<std::size_t>(y) * rs;
-      std::uint8_t* dst = outRgba.data() + static_cast<std::size_t>(y) * outW * 4;
+      const std::uint8_t* row = img.data.data() + static_cast<std::size_t>(y) * static_cast<std::size_t>(rs);
+      std::uint8_t* dst = outRgba.data() + static_cast<std::size_t>(y) * static_cast<std::size_t>(outW) * 4;
       if (c == 4) {
         std::memcpy(dst, row, static_cast<std::size_t>(outW) * 4);
       } else {
@@ -308,13 +309,16 @@ namespace {
                                  static_cast<float>(maxSide) / static_cast<float>(h));
     const int nw = std::max(1, static_cast<int>(std::lround(static_cast<float>(w) * scale)));
     const int nh = std::max(1, static_cast<int>(std::lround(static_cast<float>(h) * scale)));
-    std::vector<std::uint8_t> dst(static_cast<std::size_t>(nw) * nh * 4);
+    std::vector<std::uint8_t> dst(static_cast<std::size_t>(nw) * static_cast<std::size_t>(nh) * 4);
     for (int y = 0; y < nh; ++y) {
       const int sy = y * h / nh;
       for (int x = 0; x < nw; ++x) {
         const int sx = x * w / nw;
-        const std::uint8_t* srcPx = rgba.data() + (static_cast<std::size_t>(sy) * w + sx) * 4;
-        std::uint8_t* dstPx = dst.data() + (static_cast<std::size_t>(y) * nw + x) * 4;
+        const std::uint8_t* srcPx =
+            rgba.data() +
+            (static_cast<std::size_t>(sy) * static_cast<std::size_t>(w) + static_cast<std::size_t>(sx)) * 4;
+        std::uint8_t* dstPx =
+            dst.data() + (static_cast<std::size_t>(y) * static_cast<std::size_t>(nw) + static_cast<std::size_t>(x)) * 4;
         std::memcpy(dstPx, srcPx, 4);
       }
     }
@@ -354,8 +358,8 @@ namespace {
         }
         // Legacy sidecar: raw RGBA bytes (not a supported container format).
         if (img.width > 0 && img.height > 0 && img.channels >= 3) {
-          const std::size_t expected =
-              static_cast<std::size_t>(img.width) * img.height * static_cast<std::size_t>(img.channels);
+          const std::size_t expected = static_cast<std::size_t>(img.width) * static_cast<std::size_t>(img.height) *
+                                       static_cast<std::size_t>(img.channels);
           if (img.data.size() >= expected) {
             return img;
           }

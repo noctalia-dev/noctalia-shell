@@ -1,11 +1,8 @@
 #include "compositors/hyprland/hyprland_workspace_backend.h"
 
 #include "compositors/hyprland/hyprland_runtime.h"
-#include "core/log.h"
 
 #include <algorithm>
-#include <cctype>
-#include <cerrno>
 #include <charconv>
 #include <cstring>
 #include <format>
@@ -14,10 +11,6 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <unordered_set>
-
-namespace {
-  constexpr Logger kLog("workspace_hyprland");
-} // namespace
 
 HyprlandWorkspaceBackend::HyprlandWorkspaceBackend(OutputNameResolver outputNameResolver,
                                                    compositors::hyprland::HyprlandRuntime& runtime)

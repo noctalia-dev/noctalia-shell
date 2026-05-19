@@ -2,7 +2,6 @@
 
 #include "compositors/hyprland/hyprland_runtime.h"
 #include "core/log.h"
-#include "core/process.h"
 #include "util/string_utils.h"
 
 #include <json.hpp>

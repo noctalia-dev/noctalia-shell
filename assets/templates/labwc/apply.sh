@@ -25,10 +25,22 @@ EOF
     exit 0
 fi
 
-if grep -q '<theme>' "$rc_file" && grep -q '<name>.*</name>' "$rc_file"; then
-    sed -i 's|<name>.*</name>|<name>noctalia</name>|' "$rc_file"
-elif grep -q '<theme>' "$rc_file"; then
-    sed -i 's|<theme>|<theme>\n    <name>noctalia</name>|' "$rc_file"
+if grep -q '<theme>' "$rc_file"; then
+    if ! grep -q '</theme>' "$rc_file"; then
+        echo "Cannot update Labwc theme: $rc_file contains <theme> without </theme>" >&2
+        exit 1
+    fi
+
+    if sed -n '/<theme>/,/<\/theme>/p' "$rc_file" | grep -q '<name>.*</name>'; then
+        sed -i '/<theme>/,/<\/theme>/s|<name>.*</name>|<name>noctalia</name>|' "$rc_file"
+    else
+        sed -i '/<theme>/a\    <name>noctalia</name>' "$rc_file"
+    fi
 else
-    sed -i '1i <theme>\n    <name>noctalia</name>\n  </theme>' "$rc_file"
+    if ! grep -qE '<labwc_config([[:space:]>])' "$rc_file"; then
+        echo "Cannot update Labwc theme: $rc_file does not contain <labwc_config>" >&2
+        exit 1
+    fi
+
+    sed -i '/<labwc_config[[:space:]>]/a\  <theme>\n    <name>noctalia</name>\n  </theme>' "$rc_file"
 fi

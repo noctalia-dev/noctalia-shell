@@ -1,7 +1,9 @@
 #include "ui/controls/select.h"
 
+#include "core/keybind_matcher.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "i18n/i18n.h"
+#include "render/animation/animation_manager.h"
 #include "render/core/render_styles.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
@@ -17,7 +19,6 @@
 #include <cmath>
 #include <linux/input-event-codes.h>
 #include <memory>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -84,6 +85,9 @@ Select::Select() {
 }
 
 Select::~Select() {
+  if (m_caretAnimId != 0 && animationManager() != nullptr) {
+    animationManager()->cancel(m_caretAnimId);
+  }
   if (m_open) {
     auto* ctx = popupContext();
     if (ctx != nullptr && ctx->isSelectDropdownOpen()) {
@@ -253,8 +257,8 @@ void Select::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, bool pressed)
     return;
   }
 
-  if (sym == XKB_KEY_Down || sym == XKB_KEY_Up || sym == XKB_KEY_space || sym == XKB_KEY_Return ||
-      sym == XKB_KEY_KP_Enter) {
+  if (KeybindMatcher::matches(KeybindAction::Down, sym, 0) || KeybindMatcher::matches(KeybindAction::Up, sym, 0) ||
+      KeybindMatcher::matches(KeybindAction::Validate, sym, 0)) {
     if (!m_open) {
       toggleOpen();
     }
@@ -288,7 +292,7 @@ void Select::applyVisualState() {
 
   m_triggerLabel->setColor(triggerText);
   m_triggerGlyph->setColor(triggerText);
-  m_triggerGlyph->setGlyph(m_open ? "chevron-up" : "chevron-down");
+  m_triggerGlyph->setRotation(m_caretProgress * static_cast<float>(M_PI));
 
   m_triggerBackground->setStyle(RoundedRectStyle{
       .fill = triggerBg,
@@ -298,6 +302,26 @@ void Select::applyVisualState() {
       .softness = 1.0f,
       .borderWidth = Style::borderWidth,
   });
+}
+
+void Select::animateCaret(bool open) {
+  const float to = open ? 1.0f : 0.0f;
+  if (animationManager() != nullptr) {
+    if (m_caretAnimId != 0) {
+      animationManager()->cancel(m_caretAnimId);
+    }
+    m_caretAnimId = animationManager()->animate(
+        m_caretProgress, to, Style::animNormal, Easing::EaseOutCubic,
+        [this](float t) {
+          m_caretProgress = t;
+          applyVisualState();
+          markPaintDirty();
+        },
+        [this]() { m_caretAnimId = 0; }, this);
+    markPaintDirty();
+  } else {
+    m_caretProgress = to;
+  }
 }
 
 void Select::syncTriggerText() {
@@ -328,8 +352,7 @@ void Select::closeMenu() {
   if (ctx != nullptr && ctx->isSelectDropdownOpen()) {
     ctx->closeSelectDropdown();
   }
-  applyVisualState();
-  markPaintDirty();
+  animateCaret(false);
 }
 
 void Select::openPopupDropdown() {
@@ -370,21 +393,18 @@ void Select::openPopupDropdown() {
       .onSelect =
           [this](std::size_t index) {
             m_open = false;
-            applyVisualState();
-            markPaintDirty();
+            animateCaret(false);
             setSelectedIndex(index);
           },
       .onDismiss =
           [this]() {
             m_open = false;
-            applyVisualState();
-            markPaintDirty();
+            animateCaret(false);
           },
       .onHoverChanged = nullptr,
   };
 
   m_open = true;
-  applyVisualState();
-  markPaintDirty();
+  animateCaret(true);
   ctx->openSelectDropdown(request, std::move(callbacks));
 }

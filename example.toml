@@ -11,7 +11,8 @@ font_family           = "sans-serif"
 time_format           = "{:%H:%M}"  # default shell UI time format
 date_format           = "%A, %x"    # default shell UI date format
 offline_mode          = false        # block all outgoing HTTP when true
-telemetry_enabled     = false        # send an anonymous usage ping on startup
+telemetry_enabled     = false        # send an anonymous startup ping
+niri_overview_type_to_launch_enabled = false # opt in to type-to-launch from niri overview
 polkit_agent          = false
 password_style        = "default"    # default | random
 settings_show_advanced = false       # show advanced settings by default in Settings
@@ -35,12 +36,17 @@ alpha    = 0.55                     # multiplied by each component's background 
 
 [shell.panel]
 background_blur       = true        # request compositor blur behind panels
-transparency_mode     = "solid"     # solid | soft | glass; controls detached panel opacity and card translucency
-attach_launcher       = false       # attach launcher to the bar when a suitable bar is available
-attach_clipboard      = false       # attach clipboard history to the bar when a suitable bar is available
-attach_control_center = true        # attach Control Center to the bar when a suitable bar is available
-attach_wallpaper      = true        # attach wallpaper picker to the bar when a suitable bar is available
-attach_session        = false       # attach session power menu to the bar when a suitable bar is available
+transparency_mode     = "solid"     # solid | soft | glass; controls floating/centered opacity and card translucency
+launcher_placement       = "centered" # attached | floating | centered
+clipboard_placement      = "centered" # attached | floating | centered
+control_center_placement = "attached" # attached | floating | centered
+wallpaper_placement      = "attached" # attached | floating | centered
+session_placement        = "attached" # attached | floating | centered
+open_near_click_control_center = false # for attached/floating placement, follow the bar click instead of bar-center
+open_near_click_launcher       = false # for attached/floating placement, follow the bar click instead of bar-center
+open_near_click_clipboard      = false # for attached/floating placement, follow the bar click instead of bar-center
+open_near_click_wallpaper      = false # for attached/floating placement, follow the bar click instead of bar-center
+open_near_click_session        = false # for attached/floating placement, follow the bar click instead of bar-center
 
 [shell.mpris]
 blacklist = []                      # ignore MPRIS players by bus/identity/desktop entry token
@@ -124,13 +130,22 @@ offset_y           = 8              # absolute vertical margin from the screen e
 # ── OSD ───────────────────────────────────────────────────────────────────────
 
 [osd]
-position = "top_right"              # top_right | top_left | top_center | bottom_right | bottom_left | bottom_center
+position = "top_right"              # top_right | top_left | top_center | bottom_right | bottom_left | bottom_center | center_right | center_left
+orientation = "horizontal"          # horizontal | vertical
 lock_keys = true                    # show Caps/Num/Scroll Lock OSD popups; disable to stop polling when no widget uses them
 
 # ── System Monitor ────────────────────────────────────────────────────────────
 
 [system.monitor]
 enabled = true                      # sample CPU, memory, network, load, temperature, GPU VRAM, and disk statistics
+cpu_poll_seconds = 1.0              # CPU usage, CPU temperature, and load average
+gpu_temp_poll_seconds = 2.0
+gpu_vram_poll_seconds = 2.0
+memory_poll_seconds = 1.0
+swap_poll_seconds = 1.0
+network_poll_seconds = 1.0
+disk_poll_seconds = 5.0
+history_poll_seconds = 1.0          # graph history cadence for sysmon widgets
 
 # ── Weather ───────────────────────────────────────────────────────────────────
 
@@ -288,6 +303,7 @@ enabled = false
 
 # [desktop_widgets.widget.clock_main.settings]
 # format = "{:%H:%M}"
+# background_opacity = 0.8
 
 # ── Control Center ────────────────────────────────────────────────────────────
 
@@ -313,6 +329,7 @@ battery_low_percent_threshold = 0   # set to e.g. 15 to enable battery_under_thr
 # started           = "notify-send 'Noctalia' 'Shell started'"
 # wallpaper_changed = []
 # colors_changed    = []
+# theme_mode_changed = "notify-send 'Noctalia' \"Theme mode: $NOCTALIA_THEME_MODE\""
 # session_locked    = []
 # session_unlocked  = []
 # logging_out       = []
@@ -324,6 +341,7 @@ battery_low_percent_threshold = 0   # set to e.g. 15 to enable battery_under_thr
 # bluetooth_disabled = []
 # battery_state_changed   = "notify-send 'Power' \"Battery: $NOCTALIA_BATTERY_STATE\""
 # battery_under_threshold = "notify-send 'Power' \"Battery at ${NOCTALIA_BATTERY_PERCENT}%\""
+# power_profile_changed   = "notify-send 'Power' \"Profile: $NOCTALIA_POWER_PROFILE\""
 # [widget.launcher]
 # custom_image = "/path/to/image.png"
 

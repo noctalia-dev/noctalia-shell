@@ -4,9 +4,6 @@
 #include "render/core/image_decoder.h"
 #include "util/file_utils.h"
 
-#include <webp/encode.h>
-
-#define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include <algorithm>
 #include <cerrno>
 #include <cmath>
@@ -21,6 +18,7 @@
 #include <unistd.h>
 #include <utility>
 #include <vector>
+#include <webp/encode.h>
 
 namespace {
 
@@ -43,8 +41,8 @@ namespace {
 
   std::uint64_t fnv1a64(std::string_view text) {
     std::uint64_t hash = 14695981039346656037ull;
-    for (const unsigned char ch : text) {
-      hash ^= static_cast<std::uint64_t>(ch);
+    for (char ch : text) {
+      hash ^= static_cast<std::uint64_t>(static_cast<unsigned char>(ch));
       hash *= 1099511628211ull;
     }
     return hash;

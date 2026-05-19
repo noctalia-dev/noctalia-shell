@@ -4,6 +4,7 @@
 #include "render/scene/input_area.h"
 #include "shell/desktop/desktop_widget_settings_registry.h"
 #include "shell/desktop/desktop_widgets_editor.h"
+#include "shell/settings/widget_settings_registry.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
@@ -65,6 +66,56 @@ namespace {
       return *v;
     }
     return fallback;
+  }
+
+  static std::string settingValueAsString(const Settings& s, const std::string& key,
+                                          const std::vector<settings::WidgetSettingSpec>& allSpecs) {
+    const auto it = s.find(key);
+    if (it != s.end()) {
+      if (const auto* vb = std::get_if<bool>(&it->second)) {
+        return *vb ? "true" : "false";
+      }
+      if (const auto* vs = std::get_if<std::string>(&it->second)) {
+        return *vs;
+      }
+    }
+    for (const auto& spec : allSpecs) {
+      if (spec.key == key) {
+        if (const auto* vb = std::get_if<bool>(&spec.defaultValue)) {
+          return *vb ? "true" : "false";
+        }
+        if (const auto* vs = std::get_if<std::string>(&spec.defaultValue)) {
+          return *vs;
+        }
+        break;
+      }
+    }
+    return {};
+  }
+
+  static bool isSpecVisible(const settings::WidgetSettingSpec& spec, const Settings& s,
+                            const std::vector<settings::WidgetSettingSpec>& allSpecs) {
+    if (!spec.visibleWhen.has_value()) {
+      return true;
+    }
+    for (const auto& cond : spec.visibleWhen->any) {
+      const auto current = settingValueAsString(s, cond.key, allSpecs);
+      for (const auto& val : cond.values) {
+        if (val == current) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  bool hasVisibleSpecs(const std::vector<settings::WidgetSettingSpec>& specs, const Settings& s) {
+    for (const auto& spec : specs) {
+      if (isSpecVisible(spec, s, specs)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   ColorSpec getColorSpec(const Settings& s, const std::string& key, const ColorSpec& fallback) {
@@ -252,6 +303,9 @@ namespace {
   void addSpecSettings(Flex& content, const std::vector<settings::WidgetSettingSpec>& specs, const Settings& s,
                        DesktopWidgetsEditor* editor) {
     for (const auto& spec : specs) {
+      if (!isSpecVisible(spec, s, specs)) {
+        continue;
+      }
       const auto label = i18n::tr(spec.labelKey);
 
       switch (spec.valueType) {
@@ -309,19 +363,34 @@ namespace {
     }
   }
 
-  void addBackgroundSection(Flex& content, const Settings& s, DesktopWidgetsEditor* editor) {
-    auto sep = std::make_unique<Separator>();
-    sep->setOrientation(SeparatorOrientation::HorizontalRule);
-    content.addChild(std::move(sep));
+  void addSectionHeading(Flex& content, std::string_view labelKey, bool separator) {
+    if (separator) {
+      auto sep = std::make_unique<Separator>();
+      sep->setOrientation(SeparatorOrientation::HorizontalRule);
+      content.addChild(std::move(sep));
+    }
 
     auto heading = std::make_unique<Label>();
-    heading->setText(i18n::tr("desktop-widgets.editor.settings.background-section"));
+    heading->setText(i18n::tr(labelKey));
     heading->setBold(true);
     heading->setFontSize(Style::fontSizeCaption);
-    heading->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+    heading->setColor(colorSpecFromRole(ColorRole::Secondary));
     content.addChild(std::move(heading));
+  }
 
-    addSpecSettings(content, desktop_settings::commonDesktopWidgetSettingSpecs(), s, editor);
+  void addSettingsSection(Flex& content, const std::vector<settings::WidgetSettingSpec>& specs, const Settings& s,
+                          DesktopWidgetsEditor* editor, std::string_view labelKey, bool separator) {
+    if (!hasVisibleSpecs(specs, s)) {
+      return;
+    }
+
+    addSectionHeading(content, labelKey, separator);
+    addSpecSettings(content, specs, s, editor);
+  }
+
+  void addBackgroundSection(Flex& content, const Settings& s, DesktopWidgetsEditor* editor) {
+    const auto specs = desktop_settings::commonDesktopWidgetSettingSpecs();
+    addSettingsSection(content, specs, s, editor, "desktop-widgets.editor.settings.background-section", true);
   }
 
 } // namespace
@@ -406,6 +475,9 @@ void DesktopWidgetsEditor::applySettingChange(const std::string& key, WidgetSett
     applyViewState(view, *state, false);
     updateSelectionVisuals(*surface);
     surface->surface->requestRedraw();
+    if (key == "background") {
+      requestLayout();
+    }
   });
 }
 
@@ -475,8 +547,9 @@ void DesktopWidgetsEditor::buildInspector(OverlaySurface& surface, Node& root,
   content->setGap(Style::spaceXs);
   content->setPadding(Style::spaceSm, Style::spaceMd);
 
-  addSpecSettings(*content, desktop_settings::desktopWidgetSettingSpecs(selectedState.type), selectedState.settings,
-                  this);
+  const auto typeSpecs = desktop_settings::desktopWidgetSettingSpecs(selectedState.type);
+  addSettingsSection(*content, typeSpecs, selectedState.settings, this,
+                     "desktop-widgets.editor.settings.widget-section", false);
   addBackgroundSection(*content, selectedState.settings, this);
 
   panel->addChild(std::move(scrollView));

@@ -23,14 +23,15 @@ namespace scripting {
   struct ScriptWidgetPatch {
     std::optional<std::string> text;
     std::optional<std::string> glyph;
+    std::optional<std::string> fontFamily;
     std::optional<ScriptWidgetColorPatch> textColor;
     std::optional<ScriptWidgetColorPatch> glyphColor;
     std::optional<bool> visible;
     std::optional<int> updateIntervalMs;
 
     [[nodiscard]] bool empty() const {
-      return !text.has_value() && !glyph.has_value() && !textColor.has_value() && !glyphColor.has_value() &&
-             !visible.has_value() && !updateIntervalMs.has_value();
+      return !text.has_value() && !glyph.has_value() && !fontFamily.has_value() && !textColor.has_value() &&
+             !glyphColor.has_value() && !visible.has_value() && !updateIntervalMs.has_value();
     }
   };
 
@@ -38,6 +39,7 @@ namespace scripting {
     Log,
     NotifyInfo,
     NotifyError,
+    CopyToClipboard,
   };
 
   struct ScriptWidgetSideEffect {
@@ -61,6 +63,7 @@ namespace scripting {
     CallBool,
     CallStrings,
     AsyncCommandResult,
+    AsyncProcessMatchResult,
     Stop,
   };
 
@@ -74,6 +77,7 @@ namespace scripting {
     std::string first;
     std::string second;
     bool boolValue = false;
+    bool processMatchResult = false;
     int callbackRef = 0;
     process::RunResult commandResult;
     ScriptWidgetSnapshot snapshot;

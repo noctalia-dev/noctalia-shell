@@ -87,8 +87,9 @@ void LinearGradientProgram::draw(float surfaceWidth, float surfaceHeight, float 
   glUniform4f(m_startColorLocation, style.start.r, style.start.g, style.start.b, style.start.a);
   glUniform4f(m_endColorLocation, style.end.r, style.end.g, style.end.b, style.end.a);
   glUniform2f(m_directionLocation, style.horizontal ? 1.0f : 0.0f, style.horizontal ? 0.0f : 1.0f);
-  glVertexAttribPointer(m_positionLocation, 2, GL_FLOAT, GL_FALSE, 0, vertices.data());
-  glEnableVertexAttribArray(m_positionLocation);
+  const auto posAttr = static_cast<GLuint>(m_positionLocation);
+  glVertexAttribPointer(posAttr, 2, GL_FLOAT, GL_FALSE, 0, vertices.data());
+  glEnableVertexAttribArray(posAttr);
   glDrawArrays(GL_TRIANGLES, 0, 6);
-  glDisableVertexAttribArray(m_positionLocation);
+  glDisableVertexAttribArray(posAttr);
 }

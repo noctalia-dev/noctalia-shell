@@ -38,7 +38,6 @@ using namespace control_center;
 
 namespace {
 
-  constexpr float kDevicesColumnGrow = 3.0f;
   constexpr float kValueLabelWidth = Style::controlHeightLg + Style::spaceLg;
   constexpr Logger kLogProgramUi{"audio_tab"};
   constexpr float kVolumeSyncEpsilon = 0.005f; // 0.5%
@@ -289,8 +288,8 @@ namespace {
     });
 
     bool allDigit = true;
-    for (unsigned char c : tok) {
-      if (std::isdigit(c) == 0) {
+    for (char c : tok) {
+      if (std::isdigit(static_cast<unsigned char>(c)) == 0) {
         allDigit = false;
         break;
       }
@@ -952,14 +951,14 @@ namespace {
         const bool iconIdentityChanged = m_lastLoadedIconIdentity != m_iconIdentityKey;
         if (iconIdentityChanged && !m_iconIdentityKey.empty() && !m_iconCandidates.empty()) {
           bool loaded = false;
+          const int targetPx = static_cast<int>(std::round(m_iconSize));
           for (const std::string& candidate : m_iconCandidates) {
-            const auto& resolved = g_iconResolver.resolve(candidate);
+            const auto& resolved = g_iconResolver.resolve(candidate, targetPx);
             if (!resolved.empty()) {
               if (!m_lastIconPath.empty() && resolved == m_lastIconPath) {
                 loaded = true;
                 break;
               }
-              const int targetPx = static_cast<int>(std::round(m_iconSize));
               loaded = m_icon->setSourceFile(renderer, resolved, targetPx, true);
               if (loaded) {
                 m_lastIconPath = resolved;
@@ -1046,6 +1045,7 @@ namespace {
       if (m_muteButton != nullptr) {
         m_muteButton->setEnabled(nodeEnabled);
         m_muteButton->setGlyph(m_muted ? "volume-mute" : "volume-high");
+        m_muteButton->setVariant(m_muted ? ButtonVariant::Destructive : ButtonVariant::Default);
       }
 
       if (shouldSetSlider) {
@@ -1682,8 +1682,10 @@ void AudioTab::doUpdate(Renderer& renderer) {
     }
   }
   if (m_outputMuteButton != nullptr) {
+    const bool outputMuted = sink != nullptr && sink->muted;
     m_outputMuteButton->setEnabled(sink != nullptr);
-    m_outputMuteButton->setGlyph((sink != nullptr && sink->muted) ? "volume-mute" : "volume-high");
+    m_outputMuteButton->setGlyph(outputMuted ? "volume-mute" : "volume-high");
+    m_outputMuteButton->setVariant(outputMuted ? ButtonVariant::Destructive : ButtonVariant::Default);
   }
 
   if (m_inputSlider != nullptr) {
@@ -1699,8 +1701,10 @@ void AudioTab::doUpdate(Renderer& renderer) {
     }
   }
   if (m_inputMuteButton != nullptr) {
+    const bool inputMuted = source != nullptr && source->muted;
     m_inputMuteButton->setEnabled(source != nullptr);
-    m_inputMuteButton->setGlyph((source != nullptr && source->muted) ? "microphone-mute" : "microphone");
+    m_inputMuteButton->setGlyph(inputMuted ? "microphone-mute" : "microphone");
+    m_inputMuteButton->setVariant(inputMuted ? ButtonVariant::Destructive : ButtonVariant::Default);
   }
 }
 
