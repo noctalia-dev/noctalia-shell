@@ -1,5 +1,6 @@
 #include "wayland/wayland_toplevels.h"
 
+#include "system/app_identity.h"
 #include "system/internal_app_metadata.h"
 #include "wlr-foreign-toplevel-management-unstable-v1-client-protocol.h"
 
@@ -311,7 +312,7 @@ std::vector<ToplevelInfo> WaylandToplevels::windowsForApp(const std::string& idL
         c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
       return s;
     }();
-    if (appLower == idLower || (!wmClassLower.empty() && appLower == wmClassLower)) {
+    if (app_identity::matchesLower(appLower, idLower, wmClassLower, {})) {
       matched.push_back(MatchedWindow{
           .order = state.order,
           .info =
