@@ -70,7 +70,14 @@ namespace {
            notification.body == body;
   }
 
-  bool shouldTrackHistory(NotificationOrigin origin) noexcept { return origin == NotificationOrigin::External; }
+  bool shouldTrackHistory(NotificationOrigin origin, Urgency urgency) noexcept {
+    return origin == NotificationOrigin::External && urgency != Urgency::Low;
+  }
+
+  bool shouldRetainHistoryEntry(const NotificationHistoryEntry& entry) noexcept {
+    return shouldTrackHistory(entry.notification.origin, entry.notification.urgency) &&
+           entry.closeReason != CloseReason::Dismissed;
+  }
 
 } // namespace
 
@@ -155,8 +162,10 @@ uint32_t NotificationManager::addOrReplace(uint32_t replacesId, std::string appN
       n.expiryWallClock = scheduleExpiryWall(wallNow, timeout);
 
       logNotification(n, "updated");
-      if (shouldTrackHistory(n.origin)) {
+      if (shouldTrackHistory(n.origin, n.urgency)) {
         upsertHistory(n, true, std::nullopt);
+      } else {
+        removeHistoryEntry(n.id);
       }
 
       if (changed) {
@@ -202,7 +211,7 @@ uint32_t NotificationManager::addOrReplace(uint32_t replacesId, std::string appN
 
   const auto& n = m_notifications.back();
   logNotification(n, "added");
-  if (shouldTrackHistory(n.origin)) {
+  if (shouldTrackHistory(n.origin, n.urgency)) {
     upsertHistory(n, true, std::nullopt);
     m_unreadSinceHistoryVisit = true;
   }
@@ -287,8 +296,12 @@ bool NotificationManager::close(uint32_t id, CloseReason reason) {
                           : (reason == CloseReason::Dismissed) ? "dismissed"
                                                                : "closed";
   kLog.debug("notification {} #{}", reasonStr, id);
-  if (shouldTrackHistory(closed.origin)) {
-    upsertHistory(closed, false, reason);
+  if (shouldTrackHistory(closed.origin, closed.urgency)) {
+    if (reason == CloseReason::Dismissed) {
+      removeHistoryEntry(id);
+    } else {
+      upsertHistory(closed, false, reason);
+    }
   }
 
   m_notifications.erase(m_notifications.begin() + static_cast<std::ptrdiff_t>(index));
@@ -465,8 +478,7 @@ void NotificationManager::loadPersistedHistory() {
   if (!loadNotificationHistoryFromFile(path, loaded, nextId, serial)) {
     return;
   }
-  std::erase_if(loaded,
-                [](const NotificationHistoryEntry& entry) { return !shouldTrackHistory(entry.notification.origin); });
+  std::erase_if(loaded, [](const NotificationHistoryEntry& entry) { return !shouldRetainHistoryEntry(entry); });
   m_history = std::move(loaded);
   m_nextId = nextId;
   m_changeSerial = serial;
