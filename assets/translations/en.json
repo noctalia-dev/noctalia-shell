@@ -1829,7 +1829,39 @@
         },
         "system-monitor": {
           "label": "System Monitor",
-          "description": "Sample CPU, memory, network, load, temperature, and disk statistics"
+          "description": "Sample CPU, memory, network, load, temperature, and disk statistics",
+          "cpu-poll": {
+            "label": "CPU poll interval",
+            "description": "Seconds between CPU usage, CPU temperature, and load-average samples"
+          },
+          "gpu-temp-poll": {
+            "label": "GPU temperature poll interval",
+            "description": "Seconds between GPU temperature samples"
+          },
+          "gpu-vram-poll": {
+            "label": "GPU VRAM poll interval",
+            "description": "Seconds between GPU memory usage samples"
+          },
+          "memory-poll": {
+            "label": "Memory poll interval",
+            "description": "Seconds between RAM usage samples"
+          },
+          "swap-poll": {
+            "label": "Swap poll interval",
+            "description": "Seconds between swap usage samples"
+          },
+          "network-poll": {
+            "label": "Network poll interval",
+            "description": "Seconds between network throughput samples"
+          },
+          "disk-poll": {
+            "label": "Disk poll interval",
+            "description": "Seconds between disk usage samples"
+          },
+          "history-poll": {
+            "label": "Graph history interval",
+            "description": "Seconds between graph history samples for system monitor widgets"
+          }
         },
         "weather-location": {
           "label": "Auto-Locate",

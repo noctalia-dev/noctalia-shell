@@ -385,13 +385,21 @@ namespace {
            a.weather.enabled == b.weather.enabled && a.weather.autoLocate == b.weather.autoLocate &&
            a.weather.effects == b.weather.effects && a.weather.address == b.weather.address &&
            a.weather.refreshMinutes == b.weather.refreshMinutes && a.weather.unit == b.weather.unit &&
-           a.system.monitor.enabled == b.system.monitor.enabled && audioConfigEqual(a.audio, b.audio) &&
-           a.brightness == b.brightness && a.keybinds.validate == b.keybinds.validate &&
-           a.keybinds.cancel == b.keybinds.cancel && a.keybinds.left == b.keybinds.left &&
-           a.keybinds.right == b.keybinds.right && a.keybinds.up == b.keybinds.up &&
-           a.keybinds.down == b.keybinds.down && nightLightConfigEqual(a.nightlight, b.nightlight) &&
-           idleConfigEqual(a.idle, b.idle) && a.hooks == b.hooks && themeConfigEqual(a.theme, b.theme) &&
-           a.controlCenter == b.controlCenter;
+           a.system.monitor.enabled == b.system.monitor.enabled &&
+           a.system.monitor.cpuPollSeconds == b.system.monitor.cpuPollSeconds &&
+           a.system.monitor.gpuTempPollSeconds == b.system.monitor.gpuTempPollSeconds &&
+           a.system.monitor.gpuVramPollSeconds == b.system.monitor.gpuVramPollSeconds &&
+           a.system.monitor.memoryPollSeconds == b.system.monitor.memoryPollSeconds &&
+           a.system.monitor.swapPollSeconds == b.system.monitor.swapPollSeconds &&
+           a.system.monitor.networkPollSeconds == b.system.monitor.networkPollSeconds &&
+           a.system.monitor.diskPollSeconds == b.system.monitor.diskPollSeconds &&
+           a.system.monitor.historyPollSeconds == b.system.monitor.historyPollSeconds &&
+           audioConfigEqual(a.audio, b.audio) && a.brightness == b.brightness &&
+           a.keybinds.validate == b.keybinds.validate && a.keybinds.cancel == b.keybinds.cancel &&
+           a.keybinds.left == b.keybinds.left && a.keybinds.right == b.keybinds.right &&
+           a.keybinds.up == b.keybinds.up && a.keybinds.down == b.keybinds.down &&
+           nightLightConfigEqual(a.nightlight, b.nightlight) && idleConfigEqual(a.idle, b.idle) && a.hooks == b.hooks &&
+           themeConfigEqual(a.theme, b.theme) && a.controlCenter == b.controlCenter;
   }
 
   toml::table* ensureTable(toml::table& parent, std::string_view key) {

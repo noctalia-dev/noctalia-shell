@@ -19,8 +19,6 @@ namespace {
   constexpr float kBaseWidth = 180.0f;
   constexpr float kBaseHeight = 80.0f;
   constexpr float kGraphLineWidth = 0.75f;
-  const auto kSampleInterval = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::seconds(1));
-
   bool needsCpuTemp(DesktopSysmonStat stat) { return stat == DesktopSysmonStat::CpuTemp; }
   bool needsGpuTemp(DesktopSysmonStat stat) { return stat == DesktopSysmonStat::GpuTemp; }
   bool needsGpuVram(DesktopSysmonStat stat) { return stat == DesktopSysmonStat::GpuVram; }
@@ -379,14 +377,20 @@ void DesktopSysmonWidget::updateGraph(Renderer& renderer) {
   requestRedraw();
 }
 
-float DesktopSysmonWidget::scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt) {
+float DesktopSysmonWidget::scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt) const {
   if (sampledAt == std::chrono::steady_clock::time_point{}) {
     return 1.0f;
   }
 
+  const auto sampleInterval = m_monitor != nullptr ? m_monitor->historySampleInterval()
+                                                   : std::chrono::steady_clock::duration{std::chrono::seconds(1)};
+  if (sampleInterval.count() <= 0) {
+    return 1.0f;
+  }
+
   const auto elapsed = std::chrono::steady_clock::now() - sampledAt;
-  const auto clamped = std::clamp(elapsed, std::chrono::steady_clock::duration::zero(), kSampleInterval);
-  return std::chrono::duration<float>(clamped).count() / std::chrono::duration<float>(kSampleInterval).count();
+  const auto clamped = std::clamp(elapsed, std::chrono::steady_clock::duration::zero(), sampleInterval);
+  return std::chrono::duration<float>(clamped).count() / std::chrono::duration<float>(sampleInterval).count();
 }
 
 const char* DesktopSysmonWidget::glyphName(DesktopSysmonStat stat) {

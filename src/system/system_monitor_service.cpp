@@ -116,6 +116,24 @@ namespace {
     return reading.totalBytes > 0 && reading.usedBytes <= reading.totalBytes;
   }
 
+  [[nodiscard]] float clampPollSeconds(float seconds) noexcept { return std::clamp(seconds, 0.1f, 120.0f); }
+
+  [[nodiscard]] SystemConfig::MonitorConfig sanitizeMonitorConfig(SystemConfig::MonitorConfig config) {
+    config.cpuPollSeconds = clampPollSeconds(config.cpuPollSeconds);
+    config.gpuTempPollSeconds = clampPollSeconds(config.gpuTempPollSeconds);
+    config.gpuVramPollSeconds = clampPollSeconds(config.gpuVramPollSeconds);
+    config.memoryPollSeconds = clampPollSeconds(config.memoryPollSeconds);
+    config.swapPollSeconds = clampPollSeconds(config.swapPollSeconds);
+    config.networkPollSeconds = clampPollSeconds(config.networkPollSeconds);
+    config.diskPollSeconds = clampPollSeconds(config.diskPollSeconds);
+    config.historyPollSeconds = clampPollSeconds(config.historyPollSeconds);
+    return config;
+  }
+
+  [[nodiscard]] std::chrono::steady_clock::duration pollDuration(float seconds) {
+    return std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double>(seconds));
+  }
+
   void mergeGpuVram(GpuVramReading& target, const GpuVramReading& source) {
     if (!hasUsableVram(source)) {
       return;
@@ -648,21 +666,42 @@ private:
   NvmlDeviceGetMemoryInfoFn m_getMemoryInfo = nullptr;
 };
 
-SystemMonitorService::SystemMonitorService(bool enabled) {
+SystemMonitorService::SystemMonitorService(const SystemConfig::MonitorConfig& config) {
   m_latest = makeInitialHistoryStats();
   m_history.fill(m_latest);
-  if (enabled) {
-    start();
-  }
+  applyConfig(config);
 }
 
 SystemMonitorService::~SystemMonitorService() { stop(); }
 
 bool SystemMonitorService::isRunning() const noexcept { return m_running.load(); }
 
+SystemConfig::MonitorConfig SystemMonitorService::pollConfig() const {
+  std::lock_guard lock{m_configMutex};
+  return m_pollConfig;
+}
+
+std::chrono::steady_clock::duration SystemMonitorService::historySampleInterval() const noexcept {
+  std::lock_guard lock{m_configMutex};
+  return m_historyInterval;
+}
+
+void SystemMonitorService::applyConfig(const SystemConfig::MonitorConfig& config) {
+  const SystemConfig::MonitorConfig sanitized = sanitizeMonitorConfig(config);
+  {
+    std::lock_guard lock{m_configMutex};
+    m_pollConfig = sanitized;
+    m_historyInterval = pollDuration(sanitized.historyPollSeconds);
+  }
+  m_wakeCv.notify_all();
+  setEnabled(sanitized.enabled);
+}
+
 void SystemMonitorService::setEnabled(bool enabled) {
   if (enabled) {
-    start();
+    if (!m_running.load()) {
+      start();
+    }
   } else {
     stop();
   }
@@ -808,140 +847,186 @@ void SystemMonitorService::logDetectedSources() {
 }
 
 void SystemMonitorService::samplingLoop() {
+  using Clock = std::chrono::steady_clock;
+
   auto prevCpu = readCpuTotals();
+  auto nextCpu = Clock::now();
+  auto nextGpuTemp = Clock::now();
+  auto nextGpuVram = Clock::now();
+  auto nextMemory = Clock::now();
+  auto nextSwap = Clock::now();
+  auto nextNetwork = Clock::now();
+  auto nextDisk = Clock::now();
+  auto nextHistory = Clock::now();
 
   while (m_running.load()) {
-    SystemStats next{};
-    next.sampledAt = std::chrono::steady_clock::now();
-    std::vector<std::string> diskPaths;
-    std::optional<double> previousCpuTemp;
-    std::optional<double> previousGpuTemp;
-    std::optional<std::uint64_t> previousGpuVramUsed;
-    std::optional<std::uint64_t> previousGpuVramTotal;
+    const SystemConfig::MonitorConfig pollCfg = pollConfig();
+    const auto cpuInterval = pollDuration(pollCfg.cpuPollSeconds);
+    const auto gpuTempInterval = pollDuration(pollCfg.gpuTempPollSeconds);
+    const auto gpuVramInterval = pollDuration(pollCfg.gpuVramPollSeconds);
+    const auto memoryInterval = pollDuration(pollCfg.memoryPollSeconds);
+    const auto swapInterval = pollDuration(pollCfg.swapPollSeconds);
+    const auto networkInterval = pollDuration(pollCfg.networkPollSeconds);
+    const auto diskInterval = pollDuration(pollCfg.diskPollSeconds);
+    const auto historyInterval = pollDuration(pollCfg.historyPollSeconds);
 
-    const auto currentCpu = readCpuTotals();
-    if (prevCpu.has_value() && currentCpu.has_value()) {
-      const std::uint64_t totalDelta = currentCpu->total - prevCpu->total;
-      const std::uint64_t idleDelta = currentCpu->idle - prevCpu->idle;
-      if (totalDelta > 0) {
-        next.cpuUsagePercent = 100.0 * (1.0 - static_cast<double>(idleDelta) / static_cast<double>(totalDelta));
+    const auto now = Clock::now();
+    bool statsTouched = false;
+
+    if (now >= nextCpu) {
+      const auto currentCpu = readCpuTotals();
+      if (prevCpu.has_value() && currentCpu.has_value()) {
+        const std::uint64_t totalDelta = currentCpu->total - prevCpu->total;
+        const std::uint64_t idleDelta = currentCpu->idle - prevCpu->idle;
+        if (totalDelta > 0) {
+          std::lock_guard lock{m_statsMutex};
+          m_latest.cpuUsagePercent = 100.0 * (1.0 - static_cast<double>(idleDelta) / static_cast<double>(totalDelta));
+        }
       }
-    }
-    if (currentCpu.has_value()) {
-      prevCpu = currentCpu;
-    }
-
-    const auto memKb = readMemoryKb();
-    if (memKb.has_value()) {
-      next.ramTotalMb = memKb->totalKb / 1024;
-      next.ramUsedMb = memKb->usedKb / 1024;
-      if (memKb->totalKb > 0) {
-        next.ramUsagePercent = 100.0 * static_cast<double>(memKb->usedKb) / static_cast<double>(memKb->totalKb);
+      if (currentCpu.has_value()) {
+        prevCpu = currentCpu;
       }
-      next.swapTotalMb = memKb->swapTotalKb / 1024;
-      next.swapUsedMb = memKb->swapUsedKb / 1024;
+
+      if (const auto la = readLoadAvg(); la.has_value()) {
+        std::lock_guard lock{m_statsMutex};
+        m_latest.loadAvg1 = (*la)[0];
+        m_latest.loadAvg5 = (*la)[1];
+        m_latest.loadAvg15 = (*la)[2];
+      }
+
+      if (m_cpuTempRefs.load(std::memory_order_relaxed) > 0) {
+        std::optional<double> cpuTemp = readCpuTempCelsius();
+        std::lock_guard lock{m_statsMutex};
+        if (cpuTemp.has_value()) {
+          m_latest.cpuTempC = cpuTemp;
+        } else if (!m_latest.cpuTempC.has_value()) {
+          m_latest.cpuTempC = 40.0;
+        }
+      }
+
+      nextCpu = now + cpuInterval;
+      statsTouched = true;
     }
 
-    const auto currentNetBytes = readNetBytes();
-    if (currentNetBytes.has_value()) {
-      double totalRx = 0.0;
-      double totalTx = 0.0;
-      for (const auto& [iface, cur] : *currentNetBytes) {
-        const auto it = m_prevNetBytes.find(iface);
-        if (it != m_prevNetBytes.end()) {
-          if (cur.rx >= it->second.rx) {
-            totalRx += static_cast<double>(cur.rx - it->second.rx);
+    if (now >= nextMemory) {
+      if (const auto memKb = readMemoryKb(); memKb.has_value()) {
+        std::lock_guard lock{m_statsMutex};
+        m_latest.ramTotalMb = memKb->totalKb / 1024;
+        m_latest.ramUsedMb = memKb->usedKb / 1024;
+        if (memKb->totalKb > 0) {
+          m_latest.ramUsagePercent = 100.0 * static_cast<double>(memKb->usedKb) / static_cast<double>(memKb->totalKb);
+        }
+      }
+      nextMemory = now + memoryInterval;
+      statsTouched = true;
+    }
+
+    if (now >= nextSwap) {
+      if (const auto memKb = readMemoryKb(); memKb.has_value()) {
+        std::lock_guard lock{m_statsMutex};
+        m_latest.swapTotalMb = memKb->swapTotalKb / 1024;
+        m_latest.swapUsedMb = memKb->swapUsedKb / 1024;
+      }
+      nextSwap = now + swapInterval;
+      statsTouched = true;
+    }
+
+    if (now >= nextNetwork) {
+      if (const auto currentNetBytes = readNetBytes(); currentNetBytes.has_value()) {
+        const double intervalSeconds = std::chrono::duration<double>(networkInterval).count();
+        const double scale = intervalSeconds > 0.0 ? 1.0 / intervalSeconds : 1.0;
+        double totalRx = 0.0;
+        double totalTx = 0.0;
+        for (const auto& [iface, cur] : *currentNetBytes) {
+          const auto it = m_prevNetBytes.find(iface);
+          if (it != m_prevNetBytes.end()) {
+            if (cur.rx >= it->second.rx) {
+              totalRx += static_cast<double>(cur.rx - it->second.rx) * scale;
+            }
+            if (cur.tx >= it->second.tx) {
+              totalTx += static_cast<double>(cur.tx - it->second.tx) * scale;
+            }
           }
-          if (cur.tx >= it->second.tx) {
-            totalTx += static_cast<double>(cur.tx - it->second.tx);
+        }
+        m_prevNetBytes = *currentNetBytes;
+        std::lock_guard lock{m_statsMutex};
+        m_latest.netRxBytesPerSec = totalRx;
+        m_latest.netTxBytesPerSec = totalTx;
+      }
+      nextNetwork = now + networkInterval;
+      statsTouched = true;
+    }
+
+    if (now >= nextGpuTemp) {
+      if (m_gpuTempRefs.load(std::memory_order_relaxed) > 0) {
+        const auto gpuTemp = readGpuTempCelsius();
+        std::lock_guard lock{m_statsMutex};
+        if (gpuTemp.has_value()) {
+          m_latest.gpuTempC = gpuTemp;
+        }
+      }
+      nextGpuTemp = now + gpuTempInterval;
+      statsTouched = true;
+    }
+
+    if (now >= nextGpuVram) {
+      if (m_gpuVramRefs.load(std::memory_order_relaxed) > 0) {
+        if (const auto gpuVram = readGpuVram(); gpuVram.has_value()) {
+          std::lock_guard lock{m_statsMutex};
+          m_latest.gpuVramUsedBytes = gpuVram->usedBytes;
+          m_latest.gpuVramTotalBytes = gpuVram->totalBytes;
+        }
+      }
+      nextGpuVram = now + gpuVramInterval;
+      statsTouched = true;
+    }
+
+    if (now >= nextDisk) {
+      std::vector<std::string> diskPaths;
+      {
+        std::lock_guard lock{m_statsMutex};
+        diskPaths.reserve(m_diskHistories.size());
+        for (const auto& [path, disk] : m_diskHistories) {
+          if (disk.refs > 0) {
+            diskPaths.push_back(path);
           }
         }
       }
-      m_prevNetBytes = *currentNetBytes;
-      next.netRxBytesPerSec = totalRx;
-      next.netTxBytesPerSec = totalTx;
+      for (const auto& path : diskPaths) {
+        const float percent = readDiskUsagePercent(path);
+        std::lock_guard lock{m_statsMutex};
+        const auto it = m_diskHistories.find(path);
+        if (it != m_diskHistories.end() && it->second.refs > 0) {
+          it->second.latestPercent = percent;
+        }
+      }
+      nextDisk = now + diskInterval;
     }
 
-    const auto la = readLoadAvg();
-    if (la.has_value()) {
-      next.loadAvg1 = (*la)[0];
-      next.loadAvg5 = (*la)[1];
-      next.loadAvg15 = (*la)[2];
-    }
-
-    {
+    if (statsTouched) {
       std::lock_guard lock{m_statsMutex};
-      previousCpuTemp = m_latest.cpuTempC;
-      previousGpuTemp = m_latest.gpuTempC;
-      previousGpuVramUsed = m_latest.gpuVramUsedBytes;
-      previousGpuVramTotal = m_latest.gpuVramTotalBytes;
-      diskPaths.reserve(m_diskHistories.size());
-      for (const auto& [path, disk] : m_diskHistories) {
-        if (disk.refs > 0) {
-          diskPaths.push_back(path);
-        }
-      }
+      m_latest.sampledAt = now;
     }
 
-    if (m_cpuTempRefs.load(std::memory_order_relaxed) > 0) {
-      next.cpuTempC = readCpuTempCelsius();
-    }
-    if (!next.cpuTempC.has_value()) {
-      next.cpuTempC = previousCpuTemp.value_or(40.0);
-    }
-
-    if (m_gpuTempRefs.load(std::memory_order_relaxed) > 0) {
-      next.gpuTempC = readGpuTempCelsius();
-    }
-    if (!next.gpuTempC.has_value()) {
-      next.gpuTempC = previousGpuTemp;
-    }
-
-    if (m_gpuVramRefs.load(std::memory_order_relaxed) > 0) {
-      const auto gpuVram = readGpuVram();
-      if (gpuVram.has_value()) {
-        next.gpuVramUsedBytes = gpuVram->usedBytes;
-        next.gpuVramTotalBytes = gpuVram->totalBytes;
-      }
-    }
-    if (!next.gpuVramUsedBytes.has_value() || !next.gpuVramTotalBytes.has_value()) {
-      next.gpuVramUsedBytes = previousGpuVramUsed;
-      next.gpuVramTotalBytes = previousGpuVramTotal;
-    }
-
-    std::vector<std::pair<std::string, float>> diskPercents;
-    diskPercents.reserve(diskPaths.size());
-    for (const auto& path : diskPaths) {
-      diskPercents.emplace_back(path, readDiskUsagePercent(path));
-    }
-
-    {
+    if (now >= nextHistory) {
       std::lock_guard lock{m_statsMutex};
       const auto writeIndex = static_cast<std::size_t>(m_historyHead);
-      m_latest = next;
-      m_history[writeIndex] = next;
-      for (const auto& [path, percent] : diskPercents) {
-        const auto it = m_diskHistories.find(path);
-        if (it == m_diskHistories.end() || it->second.refs <= 0) {
+      m_history[writeIndex] = m_latest;
+      for (auto& [path, disk] : m_diskHistories) {
+        if (disk.refs <= 0) {
           continue;
         }
-        it->second.latestPercent = percent;
-        it->second.history[writeIndex] = percent;
+        (void)path;
+        disk.history[writeIndex] = disk.latestPercent;
       }
       m_historyHead = (m_historyHead + 1) % kHistorySize;
+      nextHistory = now + historyInterval;
     }
 
-    // if (next.cpuTempC.has_value()) {
-    //   kLog.debug("cpu={:.1f}% ram={:.1f}% ({}/{} MB) swap={}/{} MB temp={:.1f}C", next.cpuUsagePercent,
-    //              next.ramUsagePercent, next.ramUsedMb, next.ramTotalMb, next.swapUsedMb, next.swapTotalMb,
-    //              *next.cpuTempC);
-    // } else {
-    //   kLog.debug("cpu={:.1f}% ram={:.1f}% ({}/{} MB) swap={}/{} MB temp=n/a", next.cpuUsagePercent,
-    //              next.ramUsagePercent, next.ramUsedMb, next.ramTotalMb, next.swapUsedMb, next.swapTotalMb);
-    // }
-
+    const auto nextWake =
+        std::min({nextCpu, nextGpuTemp, nextGpuVram, nextMemory, nextSwap, nextNetwork, nextDisk, nextHistory});
     std::unique_lock wakeLock{m_wakeMutex};
-    m_wakeCv.wait_for(wakeLock, std::chrono::seconds(1), [this]() { return !m_running.load(); });
+    m_wakeCv.wait_until(wakeLock, nextWake, [this]() { return !m_running.load(); });
   }
 }
 

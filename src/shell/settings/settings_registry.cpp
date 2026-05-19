@@ -888,10 +888,48 @@ namespace settings {
     }
 
     // Services
+    const SettingVisibility monitorOn{{"system", "monitor", "enabled"}, {"true"}};
     entries.push_back(makeEntry("services", "system", tr("settings.schema.services.system-monitor.label"),
                                 tr("settings.schema.services.system-monitor.description"),
                                 {"system", "monitor", "enabled"}, ToggleSetting{cfg.system.monitor.enabled},
                                 "system monitor cpu ram memory"));
+    {
+      constexpr float kPollMin = 0.1f;
+      constexpr float kPollMax = 60.0f;
+      constexpr float kPollStep = 0.1f;
+      const auto& mon = cfg.system.monitor;
+      auto addPoll = [&](std::string_view labelKey, std::string_view descKey, std::vector<std::string> path,
+                         float value) {
+        auto entry = makeEntry("services", "system", tr(labelKey), tr(descKey), std::move(path),
+                               SliderSetting{value, kPollMin, kPollMax, kPollStep, false}, "system monitor");
+        entry.visibleWhen = monitorOn;
+        entries.push_back(std::move(entry));
+      };
+      addPoll("settings.schema.services.system-monitor.cpu-poll.label",
+              "settings.schema.services.system-monitor.cpu-poll.description", {"system", "monitor", "cpu_poll_seconds"},
+              mon.cpuPollSeconds);
+      addPoll("settings.schema.services.system-monitor.gpu-temp-poll.label",
+              "settings.schema.services.system-monitor.gpu-temp-poll.description",
+              {"system", "monitor", "gpu_temp_poll_seconds"}, mon.gpuTempPollSeconds);
+      addPoll("settings.schema.services.system-monitor.gpu-vram-poll.label",
+              "settings.schema.services.system-monitor.gpu-vram-poll.description",
+              {"system", "monitor", "gpu_vram_poll_seconds"}, mon.gpuVramPollSeconds);
+      addPoll("settings.schema.services.system-monitor.memory-poll.label",
+              "settings.schema.services.system-monitor.memory-poll.description",
+              {"system", "monitor", "memory_poll_seconds"}, mon.memoryPollSeconds);
+      addPoll("settings.schema.services.system-monitor.swap-poll.label",
+              "settings.schema.services.system-monitor.swap-poll.description",
+              {"system", "monitor", "swap_poll_seconds"}, mon.swapPollSeconds);
+      addPoll("settings.schema.services.system-monitor.network-poll.label",
+              "settings.schema.services.system-monitor.network-poll.description",
+              {"system", "monitor", "network_poll_seconds"}, mon.networkPollSeconds);
+      addPoll("settings.schema.services.system-monitor.disk-poll.label",
+              "settings.schema.services.system-monitor.disk-poll.description",
+              {"system", "monitor", "disk_poll_seconds"}, mon.diskPollSeconds);
+      addPoll("settings.schema.services.system-monitor.history-poll.label",
+              "settings.schema.services.system-monitor.history-poll.description",
+              {"system", "monitor", "history_poll_seconds"}, mon.historyPollSeconds);
+    }
     entries.push_back(makeEntry("services", "weather", tr("settings.schema.services.weather.label"),
                                 tr("settings.schema.services.weather.description"), {"weather", "enabled"},
                                 ToggleSetting{cfg.weather.enabled}, "forecast"));

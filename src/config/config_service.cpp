@@ -1807,8 +1807,33 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
   if (auto* systemTbl = tbl["system"].as_table()) {
     auto& system = config.system;
     if (const auto* monitorTbl = (*systemTbl)["monitor"].as_table()) {
+      auto& monitor = system.monitor;
       if (auto v = (*monitorTbl)["enabled"].value<bool>()) {
-        system.monitor.enabled = *v;
+        monitor.enabled = *v;
+      }
+      if (auto v = finiteDouble((*monitorTbl)["cpu_poll_seconds"])) {
+        monitor.cpuPollSeconds = static_cast<float>(*v);
+      }
+      if (auto v = finiteDouble((*monitorTbl)["gpu_temp_poll_seconds"])) {
+        monitor.gpuTempPollSeconds = static_cast<float>(*v);
+      }
+      if (auto v = finiteDouble((*monitorTbl)["gpu_vram_poll_seconds"])) {
+        monitor.gpuVramPollSeconds = static_cast<float>(*v);
+      }
+      if (auto v = finiteDouble((*monitorTbl)["memory_poll_seconds"])) {
+        monitor.memoryPollSeconds = static_cast<float>(*v);
+      }
+      if (auto v = finiteDouble((*monitorTbl)["swap_poll_seconds"])) {
+        monitor.swapPollSeconds = static_cast<float>(*v);
+      }
+      if (auto v = finiteDouble((*monitorTbl)["network_poll_seconds"])) {
+        monitor.networkPollSeconds = static_cast<float>(*v);
+      }
+      if (auto v = finiteDouble((*monitorTbl)["disk_poll_seconds"])) {
+        monitor.diskPollSeconds = static_cast<float>(*v);
+      }
+      if (auto v = finiteDouble((*monitorTbl)["history_poll_seconds"])) {
+        monitor.historyPollSeconds = static_cast<float>(*v);
       }
     }
   }

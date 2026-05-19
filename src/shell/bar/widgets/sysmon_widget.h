@@ -39,7 +39,7 @@ private:
   void scheduleNextUpdate(std::chrono::steady_clock::time_point latestSampleAt);
   void clearGraph();
   void updateGraph(Renderer& renderer);
-  [[nodiscard]] static float scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt);
+  [[nodiscard]] float scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt) const;
   [[nodiscard]] static double normalizedFromStats(SysmonStat stat, const SystemStats& stats, double& tempMin,
                                                   double& tempMax);
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "config/config_types.h"
+
 #include <array>
 #include <atomic>
 #include <chrono>
@@ -34,7 +36,7 @@ struct SystemStats {
 
 class SystemMonitorService {
 public:
-  explicit SystemMonitorService(bool enabled = true);
+  explicit SystemMonitorService(const SystemConfig::MonitorConfig& config = {});
   ~SystemMonitorService();
 
   SystemMonitorService(const SystemMonitorService&) = delete;
@@ -43,9 +45,11 @@ public:
   static constexpr int kHistorySize = 120;
 
   [[nodiscard]] bool isRunning() const noexcept;
+  void applyConfig(const SystemConfig::MonitorConfig& config);
   void setEnabled(bool enabled);
   [[nodiscard]] SystemStats latest() const;
   [[nodiscard]] std::vector<SystemStats> history(int windowSize = kHistorySize) const;
+  [[nodiscard]] std::chrono::steady_clock::duration historySampleInterval() const noexcept;
 
   void retainCpuTemp();
   void releaseCpuTemp();
@@ -103,6 +107,8 @@ private:
   [[nodiscard]] static std::optional<std::unordered_map<std::string, NetIfaceBytes>> readNetBytes();
   [[nodiscard]] static std::optional<std::array<double, 3>> readLoadAvg();
 
+  [[nodiscard]] SystemConfig::MonitorConfig pollConfig() const;
+
   std::atomic<bool> m_running{false};
   std::atomic<int> m_cpuTempRefs{0};
   std::atomic<int> m_gpuTempRefs{0};
@@ -110,6 +116,10 @@ private:
   std::thread m_thread;
   std::mutex m_wakeMutex;
   std::condition_variable m_wakeCv;
+
+  mutable std::mutex m_configMutex;
+  SystemConfig::MonitorConfig m_pollConfig;
+  std::chrono::steady_clock::duration m_historyInterval{std::chrono::seconds(1)};
 
   mutable std::mutex m_statsMutex;
   SystemStats m_latest;
