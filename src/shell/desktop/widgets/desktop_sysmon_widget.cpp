@@ -300,10 +300,10 @@ std::string DesktopSysmonWidget::formatValueFor(DesktopSysmonStat stat) const {
     return "--";
 
   case DesktopSysmonStat::NetRx:
-    return FormatUnits::formatDecimalBytesPerSecond(stats.netRxBytesPerSec, FormatUnits::Spacing::Compact);
+    return FormatUnits::formatDecimalBytesPerSecond(stats.netRxBytesPerSec);
 
   case DesktopSysmonStat::NetTx:
-    return FormatUnits::formatDecimalBytesPerSecond(stats.netTxBytesPerSec, FormatUnits::Spacing::Compact);
+    return FormatUnits::formatDecimalBytesPerSecond(stats.netTxBytesPerSec);
   }
 
   return "--";

@@ -563,7 +563,7 @@ std::string SysmonWidget::formatValue() const {
     return "--";
 
   case SysmonStat::RamUsed:
-    return FormatUnits::formatBinaryMib(stats.ramUsedMb, FormatUnits::Spacing::Compact);
+    return FormatUnits::formatBinaryMib(stats.ramUsedMb);
 
   case SysmonStat::RamPct:
     return std::format("{:.0f}%", stats.ramUsagePercent);
@@ -576,10 +576,10 @@ std::string SysmonWidget::formatValue() const {
     return "--";
 
   case SysmonStat::NetRx:
-    return FormatUnits::formatDecimalBytesPerSecond(stats.netRxBytesPerSec, FormatUnits::Spacing::Compact);
+    return FormatUnits::formatDecimalBytesPerSecond(stats.netRxBytesPerSec);
 
   case SysmonStat::NetTx:
-    return FormatUnits::formatDecimalBytesPerSecond(stats.netTxBytesPerSec, FormatUnits::Spacing::Compact);
+    return FormatUnits::formatDecimalBytesPerSecond(stats.netTxBytesPerSec);
 
   case SysmonStat::DiskPct:
     break; // handled above
