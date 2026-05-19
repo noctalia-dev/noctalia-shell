@@ -445,8 +445,8 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_attachedOpenAnimationPending = false;
   };
 
-  if (activePlacement == PanelPlacement::Attached && !multipleBarsOnEdge && barConfig.attachPanels &&
-      barConfig.thickness > 0 && outputWidth > 0 && outputHeight > 0) {
+  if (activePlacement == PanelPlacement::Attached && !multipleBarsOnEdge && barConfig.thickness > 0 &&
+      outputWidth > 0 && outputHeight > 0) {
     const std::string_view barPosition = barConfig.position;
     const bool barIsBottom = barPosition == "bottom";
     const bool barIsLeft = barPosition == "left";

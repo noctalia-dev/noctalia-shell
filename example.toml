@@ -217,7 +217,6 @@ scale              = 1.0
 shadow             = true
 auto_hide          = false
 reserve_space      = true
-attach_panels      = true
 capsule            = false
 # capsule_fill     = "surface_variant"
 # capsule_radius   = 8.0            # omit/blank in Settings for automatic pill radius
