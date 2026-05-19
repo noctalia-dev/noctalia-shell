@@ -290,6 +290,13 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  {
+    const char* home = std::getenv("HOME");
+    if (home != nullptr && home[0] != '\0') {
+      (void)::chdir(home);
+    }
+  }
+
   if (shouldDaemonize && !isDaemonChild) {
     pid_t pid = -1;
     int parentPipe = -1;
