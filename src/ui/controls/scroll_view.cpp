@@ -1,9 +1,9 @@
 #include "ui/controls/scroll_view.h"
 
-#include "cursor-shape-v1-client-protocol.h"
 #include "render/core/render_styles.h"
 #include "render/scene/input_area.h"
 #include "render/scene/rect_node.h"
+#include "ui/controls/scrollbar.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -16,22 +16,6 @@
 namespace {
 
   constexpr float kDefaultWidth = 260.0f;
-  constexpr float kScrollbarWidth = 6.0f;
-  constexpr float kScrollbarPadding = Style::borderWidth;
-  constexpr float kViewportPaddingH = Style::spaceXs;
-  constexpr float kScrollbarGap = Style::spaceSm;
-  constexpr float kMinThumbHeight = 24.0f;
-
-  RoundedRectStyle makeSolid(const Color& fill, float radius) {
-    return RoundedRectStyle{
-        .fill = fill,
-        .border = fill,
-        .fillMode = FillMode::Solid,
-        .radius = radius,
-        .softness = 1.0f,
-        .borderWidth = 0.0f,
-    };
-  }
 
 } // namespace
 
@@ -55,7 +39,6 @@ ScrollView::ScrollView() {
     if (data.button != BTN_LEFT || !data.pressed || !scrollable()) {
       return;
     }
-    // Background drag can be useful when content itself has no interactive children.
     m_dragStartLocalY = data.localY;
     m_dragStartOffset = m_scrollOffset;
   });
@@ -84,46 +67,9 @@ ScrollView::ScrollView() {
   content->setAlign(FlexAlign::Start);
   m_content = static_cast<Flex*>(m_viewportArea->addChild(std::move(content)));
 
-  auto scrollbarTrack = std::make_unique<RectNode>();
-  m_scrollbarTrack = static_cast<RectNode*>(addChild(std::move(scrollbarTrack)));
-
-  auto scrollbarThumb = std::make_unique<RectNode>();
-  m_scrollbarThumb = static_cast<RectNode*>(addChild(std::move(scrollbarThumb)));
-
-  auto scrollbarTrackArea = std::make_unique<InputArea>();
-  scrollbarTrackArea->setOnAxis([this](const InputArea::PointerData& data) {
-    if (!scrollable() || data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL) {
-      return;
-    }
-    scrollBy(data.scrollDelta(m_scrollWheelStep));
-  });
-  m_scrollbarTrackArea = static_cast<InputArea*>(addChild(std::move(scrollbarTrackArea)));
-
-  auto scrollbarThumbArea = std::make_unique<InputArea>();
-  scrollbarThumbArea->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
-  scrollbarThumbArea->setOnPress([this](const InputArea::PointerData& data) {
-    if (data.button != BTN_LEFT || !data.pressed || !scrollable()) {
-      return;
-    }
-    m_dragStartLocalY = data.localY + (m_scrollbarThumbArea != nullptr ? m_scrollbarThumbArea->y() : 0.0f);
-    m_dragStartOffset = m_scrollOffset;
-  });
-  scrollbarThumbArea->setOnMotion([this](const InputArea::PointerData& data) {
-    if (m_scrollbarThumbArea == nullptr || !m_scrollbarThumbArea->pressed() || !scrollable() || m_thumbTravel <= 0.0f) {
-      return;
-    }
-    const float pointerY = data.localY + m_scrollbarThumbArea->y();
-    const float deltaY = pointerY - m_dragStartLocalY;
-    const float offsetPerPx = m_maxScrollOffset / m_thumbTravel;
-    setScrollOffset(m_dragStartOffset + deltaY * offsetPerPx);
-  });
-  scrollbarThumbArea->setOnAxis([this](const InputArea::PointerData& data) {
-    if (!scrollable() || data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL) {
-      return;
-    }
-    scrollBy(data.scrollDelta(m_scrollWheelStep));
-  });
-  m_scrollbarThumbArea = static_cast<InputArea*>(addChild(std::move(scrollbarThumbArea)));
+  auto scrollbar = std::make_unique<Scrollbar>();
+  scrollbar->setOnScrollChanged([this](float offset) { setScrollOffset(offset); });
+  m_scrollbar = static_cast<Scrollbar*>(addChild(std::move(scrollbar)));
 
   applyPalette();
 }
@@ -219,17 +165,11 @@ void ScrollView::setViewportPaddingV(float padding) {
 }
 
 float ScrollView::contentViewportWidth() const noexcept {
-  const float gutter = m_scrollbarShown ? (kScrollbarWidth + kScrollbarGap) : 0.0f;
+  const float gutter = m_scrollbarShown ? (Style::scrollbarWidth + Style::scrollbarGap) : 0.0f;
   return std::max(0.0f, width() - m_viewportPaddingH * 2.0f - gutter);
 }
 
 void ScrollView::applyPalette() {
-  if (m_scrollbarTrack != nullptr) {
-    m_scrollbarTrack->setStyle(makeSolid(resolveColorSpec(m_scrollbarTrackColor), kScrollbarWidth * 0.5f));
-  }
-  if (m_scrollbarThumb != nullptr) {
-    m_scrollbarThumb->setStyle(makeSolid(resolveColorSpec(m_scrollbarThumbColor), kScrollbarWidth * 0.5f));
-  }
   if (m_background != nullptr) {
     m_background->setStyle(RoundedRectStyle{
         .fill = resolveColorSpec(m_backgroundFill),
@@ -243,8 +183,7 @@ void ScrollView::applyPalette() {
 }
 
 void ScrollView::doLayout(Renderer& renderer) {
-  if (m_background == nullptr || m_viewportArea == nullptr || m_content == nullptr || m_scrollbarTrack == nullptr ||
-      m_scrollbarThumb == nullptr || m_scrollbarTrackArea == nullptr || m_scrollbarThumbArea == nullptr) {
+  if (m_background == nullptr || m_viewportArea == nullptr || m_content == nullptr || m_scrollbar == nullptr) {
     return;
   }
 
@@ -272,7 +211,7 @@ void ScrollView::doLayout(Renderer& renderer) {
   m_viewportArea->setFrameSize(viewportW, viewportH);
 
   m_scrollbarShown = m_showScrollbar && m_content->height() > viewportH + 0.5f;
-  const float gutter = m_scrollbarShown ? (kScrollbarWidth + kScrollbarGap) : 0.0f;
+  const float gutter = m_scrollbarShown ? (Style::scrollbarWidth + Style::scrollbarGap) : 0.0f;
   const float contentWidth = std::max(0.0f, viewportW - gutter);
   if (std::abs(m_content->width() - contentWidth) >= 0.5f) {
     contentConstraints = {};
@@ -290,7 +229,11 @@ void ScrollView::doLayout(Renderer& renderer) {
     m_scrollOffset = clampOffset(m_scrollOffset);
   }
 
-  updateScrollbarGeometry(viewportH, contentHeight);
+  const float scrollbarX = m_viewportPaddingH + m_viewportWidth - Style::scrollbarWidth;
+  m_scrollbar->setPosition(scrollbarX, m_viewportPaddingV);
+  m_scrollbar->setVisible(m_showScrollbar);
+  m_scrollbar->update(viewportH, contentHeight, m_scrollOffset);
+
   applyScrollOffset();
 }
 
@@ -304,46 +247,9 @@ void ScrollView::applyScrollOffset() {
   if (m_content != nullptr) {
     m_content->setPosition(0.0f, -m_scrollOffset);
   }
-
-  if (m_scrollbarThumb == nullptr || m_scrollbarTrack == nullptr || m_scrollbarThumbArea == nullptr ||
-      m_maxScrollOffset <= 0.0f) {
-    return;
+  if (m_scrollbar != nullptr && m_scrollbarShown) {
+    m_scrollbar->update(m_viewportHeight, m_content != nullptr ? m_content->height() : 0.0f, m_scrollOffset);
   }
-
-  const float trackY = m_scrollbarTrack->y();
-  const float thumbH = m_scrollbarThumb->height();
-  const float t = std::clamp(m_scrollOffset / m_maxScrollOffset, 0.0f, 1.0f);
-  const float thumbY = trackY + t * m_thumbTravel;
-
-  m_scrollbarThumb->setPosition(m_scrollbarTrack->x(), thumbY);
-  m_scrollbarThumbArea->setPosition(m_scrollbarTrack->x(), thumbY);
-  m_scrollbarThumbArea->setFrameSize(kScrollbarWidth, thumbH);
-}
-
-void ScrollView::updateScrollbarGeometry(float viewportHeight, float contentHeight) {
-  const bool show = m_showScrollbar && contentHeight > viewportHeight + 0.5f;
-  m_scrollbarShown = show;
-  m_scrollbarTrack->setVisible(show);
-  m_scrollbarThumb->setVisible(show);
-  m_scrollbarTrackArea->setVisible(show);
-  m_scrollbarThumbArea->setVisible(show);
-  if (!show) {
-    m_thumbTravel = 0.0f;
-    return;
-  }
-
-  const float trackX = m_viewportPaddingH + m_viewportWidth - kScrollbarWidth;
-  const float trackY = m_viewportPaddingV;
-  const float trackH = std::max(0.0f, viewportHeight);
-  m_scrollbarTrack->setPosition(trackX, trackY);
-  m_scrollbarTrack->setFrameSize(kScrollbarWidth, trackH);
-  m_scrollbarTrackArea->setPosition(trackX, trackY);
-  m_scrollbarTrackArea->setFrameSize(kScrollbarWidth, trackH);
-
-  const float thumbH =
-      std::clamp((viewportHeight * viewportHeight) / std::max(viewportHeight, contentHeight), kMinThumbHeight, trackH);
-  m_thumbTravel = std::max(0.0f, trackH - thumbH);
-  m_scrollbarThumb->setFrameSize(kScrollbarWidth, thumbH);
 }
 
 float ScrollView::clampOffset(float offset) const noexcept { return std::clamp(offset, 0.0f, m_maxScrollOffset); }
