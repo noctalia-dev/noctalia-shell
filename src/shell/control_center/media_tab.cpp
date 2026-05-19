@@ -50,8 +50,6 @@ namespace {
   constexpr float kMediaPlayPauseHeight = kMediaUnit + Style::spaceSm;
   constexpr float kMediaArtworkMinHeight = kMediaUnit * 4;
   constexpr auto kNoActivePlayerGrace = std::chrono::milliseconds(2000);
-  constexpr auto kRealtimeProgressUpdateInterval = std::chrono::milliseconds(1000);
-  constexpr auto kRealtimeMprisPollInterval = std::chrono::milliseconds(1000);
   constexpr auto kTransientPositionRegressionWindow = std::chrono::milliseconds(1500);
   constexpr std::int64_t kTransientPositionRegressionFloorUs = 5'000'000;
   constexpr std::int64_t kTransientPositionRegressionCeilingUs = 1'500'000;

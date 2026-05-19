@@ -5,7 +5,6 @@
 #include "render/core/mat3.h"
 
 #include <algorithm>
-#include <cmath>
 #include <utility>
 
 namespace {

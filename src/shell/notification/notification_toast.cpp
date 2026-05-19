@@ -41,7 +41,6 @@ namespace {
   constexpr int kCardWidth = 360;
   constexpr int kCardHeightCompact = 132;
   constexpr int kCardHeightWithActions = 170;
-  constexpr int kCardHeightWithInlineReply = 210;
   constexpr float kInlineReplyInputHeight = Style::controlHeightSm;
   constexpr float kInlineReplyGap = Style::spaceSm;
   constexpr float kInlineReplySendButtonSize = Style::controlHeightSm;

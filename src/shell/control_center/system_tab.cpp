@@ -13,8 +13,6 @@
 #include "ui/controls/label.h"
 
 #include <algorithm>
-#include <cmath>
-#include <cstdint>
 #include <format>
 #include <vector>
 
@@ -490,17 +488,20 @@ void SystemTab::updateGraphs(Renderer& renderer) {
     return;
   }
 
-  const int n = static_cast<int>(hist.size());
-  const int texSize = n + 1;
-  const auto sz = static_cast<std::size_t>(texSize);
+  const auto n = hist.size();
+  const int texSize = static_cast<int>(n + 1U);
+  const auto sz = n + 1U;
+  const auto last = n;
+  const auto prev = n - 1U;
+  const auto prev2 = n - 2U;
 
   // CPU: usage (primary) + CPU temp (secondary)
   if (m_cpuGraph != nullptr) {
     std::vector<float> usage(sz);
     std::vector<float> cpuTemp(sz);
-    for (int i = 0; i < n; ++i) {
-      const auto& s = hist[static_cast<std::size_t>(i)];
-      usage[static_cast<std::size_t>(i)] = static_cast<float>(std::clamp(s.cpuUsagePercent / 100.0, 0.0, 1.0));
+    for (std::size_t i = 0; i < n; ++i) {
+      const auto& s = hist[i];
+      usage[i] = static_cast<float>(std::clamp(s.cpuUsagePercent / 100.0, 0.0, 1.0));
 
       if (s.cpuTempC.has_value()) {
         const double t = *s.cpuTempC;
@@ -509,12 +510,11 @@ void SystemTab::updateGraphs(Renderer& renderer) {
         if (t > m_cpuTempMax)
           m_cpuTempMax = t;
         const double range = m_cpuTempMax - m_cpuTempMin;
-        cpuTemp[static_cast<std::size_t>(i)] =
-            range > 0.0 ? static_cast<float>(std::clamp((t - m_cpuTempMin) / range, 0.0, 1.0)) : 0.5f;
+        cpuTemp[i] = range > 0.0 ? static_cast<float>(std::clamp((t - m_cpuTempMin) / range, 0.0, 1.0)) : 0.5f;
       }
     }
-    usage[n] = std::clamp(usage[n - 1] + (usage[n - 1] - usage[n - 2]) * 0.5f, 0.0f, 1.0f);
-    cpuTemp[n] = std::clamp(cpuTemp[n - 1] + (cpuTemp[n - 1] - cpuTemp[n - 2]) * 0.5f, 0.0f, 1.0f);
+    usage[last] = std::clamp(usage[prev] + (usage[prev] - usage[prev2]) * 0.5f, 0.0f, 1.0f);
+    cpuTemp[last] = std::clamp(cpuTemp[prev] + (cpuTemp[prev] - cpuTemp[prev2]) * 0.5f, 0.0f, 1.0f);
     m_cpuGraph->setData(renderer.textureManager(), usage.data(), texSize, cpuTemp.data(), texSize);
     m_cpuGraph->setCount1(static_cast<float>(n));
     m_cpuGraph->setCount2(static_cast<float>(n));
@@ -523,11 +523,10 @@ void SystemTab::updateGraphs(Renderer& renderer) {
   // Memory
   if (m_ramGraph != nullptr) {
     std::vector<float> ram(sz);
-    for (int i = 0; i < n; ++i) {
-      ram[static_cast<std::size_t>(i)] =
-          static_cast<float>(std::clamp(hist[static_cast<std::size_t>(i)].ramUsagePercent / 100.0, 0.0, 1.0));
+    for (std::size_t i = 0; i < n; ++i) {
+      ram[i] = static_cast<float>(std::clamp(hist[i].ramUsagePercent / 100.0, 0.0, 1.0));
     }
-    ram[n] = std::clamp(ram[n - 1] + (ram[n - 1] - ram[n - 2]) * 0.5f, 0.0f, 1.0f);
+    ram[last] = std::clamp(ram[prev] + (ram[prev] - ram[prev2]) * 0.5f, 0.0f, 1.0f);
     m_ramGraph->setData(renderer.textureManager(), ram.data(), texSize, nullptr, 0);
     m_ramGraph->setCount1(static_cast<float>(n));
   }
@@ -538,11 +537,11 @@ void SystemTab::updateGraphs(Renderer& renderer) {
     bool hasGpuVram = false;
     std::vector<float> gpuVram(sz);
     std::vector<float> gpuTemp(sz);
-    for (int i = 0; i < n; ++i) {
-      const auto& s = hist[static_cast<std::size_t>(i)];
+    for (std::size_t i = 0; i < n; ++i) {
+      const auto& s = hist[i];
       if (s.gpuVramUsedBytes.has_value() && s.gpuVramTotalBytes.has_value() && *s.gpuVramTotalBytes > 0) {
         hasGpuVram = true;
-        gpuVram[static_cast<std::size_t>(i)] = static_cast<float>(
+        gpuVram[i] = static_cast<float>(
             std::clamp(static_cast<double>(*s.gpuVramUsedBytes) / static_cast<double>(*s.gpuVramTotalBytes), 0.0, 1.0));
       }
       if (s.gpuTempC.has_value()) {
@@ -553,15 +552,14 @@ void SystemTab::updateGraphs(Renderer& renderer) {
         if (t > m_gpuTempMax)
           m_gpuTempMax = t;
         const double range = m_gpuTempMax - m_gpuTempMin;
-        gpuTemp[static_cast<std::size_t>(i)] =
-            range > 0.0 ? static_cast<float>(std::clamp((t - m_gpuTempMin) / range, 0.0, 1.0)) : 0.5f;
+        gpuTemp[i] = range > 0.0 ? static_cast<float>(std::clamp((t - m_gpuTempMin) / range, 0.0, 1.0)) : 0.5f;
       }
     }
     if (hasGpuVram) {
-      gpuVram[n] = std::clamp(gpuVram[n - 1] + (gpuVram[n - 1] - gpuVram[n - 2]) * 0.5f, 0.0f, 1.0f);
+      gpuVram[last] = std::clamp(gpuVram[prev] + (gpuVram[prev] - gpuVram[prev2]) * 0.5f, 0.0f, 1.0f);
     }
     if (hasGpuTemp) {
-      gpuTemp[n] = std::clamp(gpuTemp[n - 1] + (gpuTemp[n - 1] - gpuTemp[n - 2]) * 0.5f, 0.0f, 1.0f);
+      gpuTemp[last] = std::clamp(gpuTemp[prev] + (gpuTemp[prev] - gpuTemp[prev2]) * 0.5f, 0.0f, 1.0f);
     }
     if (hasGpuVram || hasGpuTemp) {
       m_gpuGraph->setData(renderer.textureManager(), hasGpuVram ? gpuVram.data() : nullptr, hasGpuVram ? texSize : 0,
@@ -582,21 +580,21 @@ void SystemTab::updateGraphs(Renderer& renderer) {
   // Network
   if (m_netGraph != nullptr) {
     double maxVal = kNetMinScaleBps;
-    for (int i = 0; i < n; ++i) {
-      const auto& s = hist[static_cast<std::size_t>(i)];
+    for (std::size_t i = 0; i < n; ++i) {
+      const auto& s = hist[i];
       maxVal = std::max({maxVal, s.netRxBytesPerSec, s.netTxBytesPerSec});
     }
     m_netPeak = maxVal;
 
     std::vector<float> rx(sz);
     std::vector<float> tx(sz);
-    for (int i = 0; i < n; ++i) {
-      const auto& s = hist[static_cast<std::size_t>(i)];
-      rx[static_cast<std::size_t>(i)] = static_cast<float>(std::clamp(s.netRxBytesPerSec / m_netPeak, 0.0, 1.0));
-      tx[static_cast<std::size_t>(i)] = static_cast<float>(std::clamp(s.netTxBytesPerSec / m_netPeak, 0.0, 1.0));
+    for (std::size_t i = 0; i < n; ++i) {
+      const auto& s = hist[i];
+      rx[i] = static_cast<float>(std::clamp(s.netRxBytesPerSec / m_netPeak, 0.0, 1.0));
+      tx[i] = static_cast<float>(std::clamp(s.netTxBytesPerSec / m_netPeak, 0.0, 1.0));
     }
-    rx[n] = std::clamp(rx[n - 1] + (rx[n - 1] - rx[n - 2]) * 0.5f, 0.0f, 1.0f);
-    tx[n] = std::clamp(tx[n - 1] + (tx[n - 1] - tx[n - 2]) * 0.5f, 0.0f, 1.0f);
+    rx[last] = std::clamp(rx[prev] + (rx[prev] - rx[prev2]) * 0.5f, 0.0f, 1.0f);
+    tx[last] = std::clamp(tx[prev] + (tx[prev] - tx[prev2]) * 0.5f, 0.0f, 1.0f);
     m_netGraph->setData(renderer.textureManager(), rx.data(), texSize, tx.data(), texSize);
     m_netGraph->setCount1(static_cast<float>(n));
     m_netGraph->setCount2(static_cast<float>(n));

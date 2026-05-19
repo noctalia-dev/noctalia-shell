@@ -192,8 +192,8 @@ namespace {
       return true;
     };
 
-    for (unsigned char ch : value) {
-      if (asciiWhitespace(static_cast<char>(ch))) {
+    for (char rawCh : value) {
+      if (asciiWhitespace(rawCh)) {
         continue;
       }
       if (finished) {
@@ -201,6 +201,7 @@ namespace {
       }
 
       int decoded = -1;
+      const auto ch = static_cast<unsigned char>(rawCh);
       if (ch == '=') {
         decoded = -2;
       } else {

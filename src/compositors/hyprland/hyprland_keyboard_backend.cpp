@@ -1,22 +1,12 @@
 #include "compositors/hyprland/hyprland_keyboard_backend.h"
 
 #include "compositors/hyprland/hyprland_runtime.h"
-#include "core/log.h"
 
-#include <algorithm>
-#include <cerrno>
-#include <cstring>
 #include <fcntl.h>
 #include <string_view>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
-
-namespace {
-
-  constexpr Logger kLog("keyboard_hyprland");
-
-} // namespace
 
 HyprlandKeyboardBackend::HyprlandKeyboardBackend(compositors::hyprland::HyprlandRuntime& runtime)
     : compositors::hyprland::HyprlandEventHandler(runtime) {}

@@ -7,7 +7,6 @@
 #include <filesystem>
 #include <fstream>
 #include <json.hpp>
-#include <sstream>
 #include <string_view>
 
 void EmojiProvider::initialize() {

@@ -1,7 +1,6 @@
 #include "shell/settings/settings_content.h"
 
 #include "config/config_types.h"
-#include "core/deferred_call.h"
 #include "i18n/i18n.h"
 #include "render/core/color.h"
 #include "shell/settings/bar_widget_editor.h"

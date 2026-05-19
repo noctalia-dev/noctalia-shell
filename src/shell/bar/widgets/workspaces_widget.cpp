@@ -1,6 +1,5 @@
 #include "shell/bar/widgets/workspaces_widget.h"
 
-#include "core/log.h"
 #include "core/ui_phase.h"
 #include "render/animation/animation.h"
 #include "render/animation/animation_manager.h"
@@ -19,7 +18,6 @@
 #include <wayland-client-protocol.h>
 
 namespace {
-  constexpr Logger kLog("workspace");
   [[nodiscard]] bool isEmptyWorkspace(const Workspace& workspace) {
     return !workspace.occupied && !workspace.active && !workspace.urgent;
   }

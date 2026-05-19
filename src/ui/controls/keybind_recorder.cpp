@@ -3,7 +3,6 @@
 #include "core/key_chord.h"
 #include "core/key_modifiers.h"
 #include "core/key_symbols.h"
-#include "core/keybind_matcher.h"
 #include "i18n/i18n.h"
 #include "notification/notifications.h"
 #include "render/core/renderer.h"

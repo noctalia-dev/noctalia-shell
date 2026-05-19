@@ -917,7 +917,7 @@ void SystemMonitorService::samplingLoop() {
 
     {
       std::lock_guard lock{m_statsMutex};
-      const int writeIndex = m_historyHead;
+      const auto writeIndex = static_cast<std::size_t>(m_historyHead);
       m_latest = next;
       m_history[writeIndex] = next;
       for (const auto& [path, percent] : diskPercents) {

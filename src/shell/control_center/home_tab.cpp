@@ -41,8 +41,6 @@ namespace {
   // Bottom row: 1 : 1 — equal split so media/clock and shortcuts feel balanced (tweak either value slightly if needed).
   constexpr float kHomeMainColumnFlexGrow = 1.66f;
   constexpr float kHomeShortcutsFlexGrow = 1.0f;
-  constexpr auto kHomeRealtimeUpdateInterval = std::chrono::milliseconds(1000);
-  constexpr auto kHomeMprisPollInterval = std::chrono::milliseconds(1000);
   constexpr auto kHomeTransientPositionRegressionWindow = std::chrono::milliseconds(1500);
   constexpr std::int64_t kHomeTransientPositionRegressionFloorUs = 5'000'000;
   constexpr std::int64_t kHomeTransientPositionRegressionCeilingUs = 1'500'000;

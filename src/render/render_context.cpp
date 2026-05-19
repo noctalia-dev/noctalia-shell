@@ -19,14 +19,12 @@
 #include "render/scene/spinner_node.h"
 #include "render/scene/text_node.h"
 #include "render/scene/wallpaper_node.h"
-#include "ui/style.h"
 
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <format>
-#include <optional>
 #include <stdexcept>
 #include <utility>
 #include <vector>

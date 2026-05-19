@@ -342,8 +342,9 @@ namespace settings {
       if (id.empty()) {
         return false;
       }
-      for (const unsigned char c : id) {
-        if (!std::isalnum(c) && c != '_' && c != '-') {
+      for (char c : id) {
+        const auto uc = static_cast<unsigned char>(c);
+        if (!std::isalnum(uc) && c != '_' && c != '-') {
           return false;
         }
       }
@@ -1614,9 +1615,9 @@ namespace settings {
           auto dragState = std::make_shared<LaneWidgetDragState>();
           auto items = laneItems;
           auto path = lanePath;
-          dragBtn->setOnPress([dragState, itemPtr, dragBtnPtr, laneTargets, setOverride = ctx.setOverride,
-                               setOverrides = ctx.setOverrides, items, path, i, laneTargetIndex,
-                               scale = ctx.scale](float localX, float localY, bool pressed) mutable {
+          dragBtn->setOnPress([dragState, itemPtr, laneTargets, setOverride = ctx.setOverride,
+                               setOverrides = ctx.setOverrides, items, path, i,
+                               laneTargetIndex](float localX, float localY, bool pressed) mutable {
             if (pressed) {
               dragState->active = true;
               dragState->moved = false;

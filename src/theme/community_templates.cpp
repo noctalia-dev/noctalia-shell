@@ -2,7 +2,7 @@
 
 #include "core/deferred_call.h"
 #include "core/log.h"
-#include "core/toml.h"
+#include "core/toml.h" // IWYU pragma: keep
 #include "net/http_client.h"
 #include "util/string_utils.h"
 

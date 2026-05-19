@@ -338,27 +338,29 @@ void DesktopSysmonWidget::updateGraph(Renderer& renderer) {
     return;
   }
 
-  const int n = static_cast<int>(hist.size());
-  const int texSize = n + 1;
+  const auto n = hist.size();
+  const int texSize = static_cast<int>(n + 1U);
+  const auto last = n;
+  const auto prev = n - 1U;
+  const auto prev2 = n - 2U;
 
-  std::vector<float> data1(static_cast<std::size_t>(texSize));
-  for (int i = 0; i < n; ++i) {
-    data1[static_cast<std::size_t>(i)] = static_cast<float>(
-        std::clamp(normalizedFromStats(m_stat, hist[static_cast<std::size_t>(i)], m_tempMin1, m_tempMax1), 0.0, 1.0));
+  std::vector<float> data1(n + 1U);
+  for (std::size_t i = 0; i < n; ++i) {
+    data1[i] = static_cast<float>(std::clamp(normalizedFromStats(m_stat, hist[i], m_tempMin1, m_tempMax1), 0.0, 1.0));
   }
-  const float last1 = data1[n - 1];
-  const float prev1 = data1[n - 2];
-  data1[n] = std::clamp(last1 + (last1 - prev1) * 0.5f, 0.0f, 1.0f);
+  const float last1 = data1[prev];
+  const float prev1 = data1[prev2];
+  data1[last] = std::clamp(last1 + (last1 - prev1) * 0.5f, 0.0f, 1.0f);
 
   if (m_stat2.has_value()) {
-    std::vector<float> data2(static_cast<std::size_t>(texSize));
-    for (int i = 0; i < n; ++i) {
-      data2[static_cast<std::size_t>(i)] = static_cast<float>(std::clamp(
-          normalizedFromStats(*m_stat2, hist[static_cast<std::size_t>(i)], m_tempMin2, m_tempMax2), 0.0, 1.0));
+    std::vector<float> data2(n + 1U);
+    for (std::size_t i = 0; i < n; ++i) {
+      data2[i] =
+          static_cast<float>(std::clamp(normalizedFromStats(*m_stat2, hist[i], m_tempMin2, m_tempMax2), 0.0, 1.0));
     }
-    const float last2 = data2[n - 1];
-    const float prev2 = data2[n - 2];
-    data2[n] = std::clamp(last2 + (last2 - prev2) * 0.5f, 0.0f, 1.0f);
+    const float last2 = data2[prev];
+    const float previous2 = data2[prev2];
+    data2[last] = std::clamp(last2 + (last2 - previous2) * 0.5f, 0.0f, 1.0f);
 
     m_graphNode->setData(renderer.textureManager(), data1.data(), texSize, data2.data(), texSize);
     m_graphNode->setCount2(static_cast<float>(n));

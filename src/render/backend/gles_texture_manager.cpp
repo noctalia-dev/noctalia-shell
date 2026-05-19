@@ -137,7 +137,8 @@ TextureHandle GlesTextureManager::loadFromRaw(const std::uint8_t* data, std::siz
     }
     std::vector<std::uint8_t> tight(widthBytes4 * static_cast<std::size_t>(height));
     for (int y = 0; y < height; ++y) {
-      std::memcpy(tight.data() + static_cast<std::size_t>(y) * widthBytes4, data + y * actualStride, widthBytes4);
+      const auto row = static_cast<std::size_t>(y);
+      std::memcpy(tight.data() + row * widthBytes4, data + row * actualStride, widthBytes4);
     }
     return uploadBgra(tight.data(), width, height, mipmap);
   }
@@ -145,7 +146,8 @@ TextureHandle GlesTextureManager::loadFromRaw(const std::uint8_t* data, std::siz
   if (format == PixmapFormat::RGBA) {
     std::vector<std::uint8_t> tight(widthBytes4 * static_cast<std::size_t>(height));
     for (int y = 0; y < height; ++y) {
-      std::memcpy(tight.data() + static_cast<std::size_t>(y) * widthBytes4, data + y * actualStride, widthBytes4);
+      const auto row = static_cast<std::size_t>(y);
+      std::memcpy(tight.data() + row * widthBytes4, data + row * actualStride, widthBytes4);
     }
     return uploadRgba(tight.data(), width, height, mipmap);
   }
@@ -154,12 +156,13 @@ TextureHandle GlesTextureManager::loadFromRaw(const std::uint8_t* data, std::siz
   std::vector<std::uint8_t> rgba(pixelCount * 4);
 
   for (int y = 0; y < height; ++y) {
-    const std::uint8_t* srcRow = data + (y * actualStride);
-    std::uint8_t* dstRow = rgba.data() + (y * width * 4);
+    const auto row = static_cast<std::size_t>(y);
+    const std::uint8_t* srcRow = data + row * actualStride;
+    std::uint8_t* dstRow = rgba.data() + row * widthSize * 4U;
 
     for (int x = 0; x < width; ++x) {
       const std::uint8_t* s = srcRow + (static_cast<std::size_t>(x) * channels);
-      std::uint8_t* d = dstRow + (x * 4);
+      std::uint8_t* d = dstRow + static_cast<std::size_t>(x) * 4U;
 
       switch (format) {
       case PixmapFormat::BGRA:

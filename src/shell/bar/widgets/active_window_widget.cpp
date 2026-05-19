@@ -1,6 +1,5 @@
 #include "shell/bar/widgets/active_window_widget.h"
 
-#include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"

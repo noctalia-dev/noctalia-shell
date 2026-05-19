@@ -19,7 +19,6 @@
 #include "xdg-shell-client-protocol.h"
 
 #include <algorithm>
-#include <cmath>
 #include <cstddef>
 #include <string>
 #include <string_view>
@@ -98,8 +97,9 @@ namespace settings {
       if (id.empty()) {
         return false;
       }
-      for (const unsigned char c : id) {
-        if (!std::isalnum(c) && c != '_' && c != '-') {
+      for (char c : id) {
+        const auto uc = static_cast<unsigned char>(c);
+        if (!std::isalnum(uc) && c != '_' && c != '-') {
           return false;
         }
       }
@@ -110,9 +110,10 @@ namespace settings {
       std::string out;
       out.reserve(type.size());
       bool lastUnderscore = false;
-      for (const unsigned char c : type) {
-        if (std::isalnum(c)) {
-          out.push_back(static_cast<char>(std::tolower(c)));
+      for (char c : type) {
+        const auto uc = static_cast<unsigned char>(c);
+        if (std::isalnum(uc)) {
+          out.push_back(static_cast<char>(std::tolower(uc)));
           lastUnderscore = false;
         } else if (!lastUnderscore && !out.empty()) {
           out.push_back('_');

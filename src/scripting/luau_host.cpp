@@ -1,7 +1,6 @@
 #include "scripting/luau_host.h"
 
 #include "compositors/compositor_platform.h"
-#include "core/deferred_call.h"
 #include "core/log.h"
 #include "core/process.h"
 #include "lua.h"

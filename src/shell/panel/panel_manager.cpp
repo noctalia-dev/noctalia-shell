@@ -7,7 +7,6 @@
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "ipc/ipc_service.h"
-#include "render/core/renderer.h"
 #include "render/render_context.h"
 #include "shell/control_center/control_center_panel.h"
 #include "shell/surface_shadow.h"
@@ -338,12 +337,12 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
   if (!useCenteredPlacement) {
     const std::int32_t barWidth = std::max(0, barRect.right - barRect.left);
     const std::int32_t barHeight = std::max(0, barRect.bottom - barRect.top);
-    const auto centeredAlongBarX =
-        clampMargin(static_cast<float>(barRect.left + (barWidth - static_cast<std::int32_t>(panelWidth)) / 2),
-                    static_cast<std::int32_t>(panelWidth), outputWidth, screenPadding);
-    const auto centeredAlongBarY =
-        clampMargin(static_cast<float>(barRect.top + (barHeight - static_cast<std::int32_t>(panelHeight)) / 2),
-                    static_cast<std::int32_t>(panelHeight), outputHeight, screenPadding);
+    const auto centeredAlongBarX = clampMargin(
+        static_cast<float>(barRect.left) + (static_cast<float>(barWidth) - static_cast<float>(panelWidth)) * 0.5f,
+        static_cast<std::int32_t>(panelWidth), outputWidth, screenPadding);
+    const auto centeredAlongBarY = clampMargin(
+        static_cast<float>(barRect.top) + (static_cast<float>(barHeight) - static_cast<float>(panelHeight)) * 0.5f,
+        static_cast<std::int32_t>(panelHeight), outputHeight, screenPadding);
 
     if (useReservedEdgePlacement) {
       if (isLeft) {

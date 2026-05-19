@@ -2,9 +2,7 @@
 
 #include "wayland/wayland_connection.h"
 
-#include <algorithm>
 #include <chrono>
-#include <cstdint>
 #include <fstream>
 #include <optional>
 #include <string>

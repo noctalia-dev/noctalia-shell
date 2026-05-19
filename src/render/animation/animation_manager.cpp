@@ -2,7 +2,6 @@
 
 #include "render/animation/motion_service.h"
 
-#include <algorithm>
 #include <chrono>
 
 namespace {

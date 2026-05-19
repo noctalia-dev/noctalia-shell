@@ -2,7 +2,7 @@
 
 #include "config/config_service.h"
 #include "core/resource_paths.h"
-#include "core/toml.h"
+#include "core/toml.h" // IWYU pragma: keep
 #include "theme/builtin_templates.h"
 #include "theme/color.h"
 #include "theme/community_templates.h"

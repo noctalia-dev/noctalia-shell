@@ -17,7 +17,6 @@
 #include "system/gamma_service.h"
 #include "system/weather_service.h"
 #include "theme/theme_service.h"
-#include "wayland/wayland_connection.h"
 
 #include <array>
 #include <cmath>

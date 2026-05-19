@@ -1130,7 +1130,7 @@ void Dock::rebuildItems(DockInstance& instance) {
     auto* itemPtr = &item;
     auto* instPtr = &instance;
 
-    areaNode->setOnEnter([itemPtr, instPtr, this](const InputArea::PointerData&) {
+    areaNode->setOnEnter([itemPtr, instPtr](const InputArea::PointerData&) {
       if (!itemPtr->hovered) {
         itemPtr->hovered = true;
         if (itemPtr->background) {
@@ -1445,10 +1445,10 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item, std::vec
   // Build context menu entries (window titles).
   std::vector<ContextMenuControlEntry> entries;
   entries.reserve(windows.size());
-  for (std::int32_t i = 0; i < static_cast<std::int32_t>(windows.size()); ++i) {
+  for (std::size_t i = 0; i < windows.size(); ++i) {
     const auto& title = windows[i].title.empty() ? item.entry.name : windows[i].title;
     entries.push_back(ContextMenuControlEntry{
-        .id = i,
+        .id = static_cast<std::int32_t>(i),
         .label = title,
         .enabled = true,
         .separator = false,

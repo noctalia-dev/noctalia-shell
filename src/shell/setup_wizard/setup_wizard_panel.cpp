@@ -7,7 +7,6 @@
 #include "render/core/renderer.h"
 #include "shell/panel/panel_manager.h"
 #include "theme/builtin_palettes.h"
-#include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/image.h"
@@ -18,7 +17,6 @@
 #include "ui/dialogs/file_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
-#include "wayland/wayland_connection.h"
 
 #include <cstdlib>
 #include <filesystem>

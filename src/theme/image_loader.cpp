@@ -138,15 +138,15 @@ namespace noctalia::theme {
 
     // Vertical pass: src is RGBA u8 (srcW × srcH), dst is RGBA f32 (srcW × dstH).
     void verticalSampleU8ToF32(const uint8_t* src, int srcW, int srcH, float* dst, int dstH) {
-      const float ratio = (float)srcH / (float)dstH;
+      const float ratio = static_cast<float>(srcH) / static_cast<float>(dstH);
       const float sratio = ratio < 1.0f ? 1.0f : ratio;
       const float srcSupport = 1.0f * sratio;
 
       std::vector<float> ws;
       for (int outy = 0; outy < dstH; ++outy) {
-        const float inputyOrig = ((float)outy + 0.5f) * ratio;
-        int left = (int)std::floor(inputyOrig - srcSupport);
-        int right = (int)std::ceil(inputyOrig + srcSupport);
+        const float inputyOrig = (static_cast<float>(outy) + 0.5f) * ratio;
+        int left = static_cast<int>(std::floor(inputyOrig - srcSupport));
+        int right = static_cast<int>(std::ceil(inputyOrig + srcSupport));
         if (left < 0)
           left = 0;
         if (left > srcH - 1)
@@ -160,7 +160,7 @@ namespace noctalia::theme {
         ws.clear();
         float sum = 0.0f;
         for (int i = left; i < right; ++i) {
-          float w = triangleKernel(((float)i - inputy) / sratio);
+          float w = triangleKernel((static_cast<float>(i) - inputy) / sratio);
           ws.push_back(w);
           sum += w;
         }
@@ -169,13 +169,14 @@ namespace noctalia::theme {
 
         for (int x = 0; x < srcW; ++x) {
           float t0 = 0, t1 = 0, t2 = 0, t3 = 0;
-          for (int k = 0; k < (int)ws.size(); ++k) {
+          for (int k = 0; k < static_cast<int>(ws.size()); ++k) {
+            const auto weightIndex = static_cast<std::size_t>(k);
             const uint8_t* p = src + ((left + k) * srcW + x) * 4;
-            const float w = ws[k];
-            t0 += (float)p[0] * w;
-            t1 += (float)p[1] * w;
-            t2 += (float)p[2] * w;
-            t3 += (float)p[3] * w;
+            const float w = ws[weightIndex];
+            t0 += static_cast<float>(p[0]) * w;
+            t1 += static_cast<float>(p[1]) * w;
+            t2 += static_cast<float>(p[2]) * w;
+            t3 += static_cast<float>(p[3]) * w;
           }
           float* dp = dst + (outy * srcW + x) * 4;
           // No clamp / no round — image crate's vertical_sample writes raw
@@ -190,15 +191,15 @@ namespace noctalia::theme {
 
     // Horizontal pass: src is RGBA f32 (srcW × srcH), dst is RGBA u8 (dstW × srcH).
     void horizontalSampleF32ToU8(const float* src, int srcW, int srcH, uint8_t* dst, int dstW) {
-      const float ratio = (float)srcW / (float)dstW;
+      const float ratio = static_cast<float>(srcW) / static_cast<float>(dstW);
       const float sratio = ratio < 1.0f ? 1.0f : ratio;
       const float srcSupport = 1.0f * sratio;
 
       std::vector<float> ws;
       for (int outx = 0; outx < dstW; ++outx) {
-        const float inputxOrig = ((float)outx + 0.5f) * ratio;
-        int left = (int)std::floor(inputxOrig - srcSupport);
-        int right = (int)std::ceil(inputxOrig + srcSupport);
+        const float inputxOrig = (static_cast<float>(outx) + 0.5f) * ratio;
+        int left = static_cast<int>(std::floor(inputxOrig - srcSupport));
+        int right = static_cast<int>(std::ceil(inputxOrig + srcSupport));
         if (left < 0)
           left = 0;
         if (left > srcW - 1)
@@ -212,7 +213,7 @@ namespace noctalia::theme {
         ws.clear();
         float sum = 0.0f;
         for (int i = left; i < right; ++i) {
-          float w = triangleKernel(((float)i - inputx) / sratio);
+          float w = triangleKernel((static_cast<float>(i) - inputx) / sratio);
           ws.push_back(w);
           sum += w;
         }
@@ -221,9 +222,10 @@ namespace noctalia::theme {
 
         for (int y = 0; y < srcH; ++y) {
           float t0 = 0, t1 = 0, t2 = 0, t3 = 0;
-          for (int k = 0; k < (int)ws.size(); ++k) {
+          for (int k = 0; k < static_cast<int>(ws.size()); ++k) {
+            const auto weightIndex = static_cast<std::size_t>(k);
             const float* p = src + (y * srcW + (left + k)) * 4;
-            const float w = ws[k];
+            const float w = ws[weightIndex];
             t0 += p[0] * w;
             t1 += p[1] * w;
             t2 += p[2] * w;
@@ -237,7 +239,7 @@ namespace noctalia::theme {
             if (v > 255)
               v = 255;
             float r = v < 0.0f ? std::ceil(v - 0.5f) : std::floor(v + 0.5f);
-            return (uint8_t)r;
+            return static_cast<uint8_t>(r);
           };
           uint8_t* dp = dst + (y * dstW + outx) * 4;
           dp[0] = toU8(t0);
@@ -251,17 +253,17 @@ namespace noctalia::theme {
     std::vector<uint8_t> triangleResize(const uint8_t* srcRgba, int srcW, int srcH, int dstW, int dstH) {
       // image crate order: vertical first → Rgba32FImage(srcW × dstH)
       //                    horizontal      → RgbaImage(dstW × dstH)
-      std::vector<float> tmp((size_t)srcW * (size_t)dstH * 4);
+      std::vector<float> tmp(static_cast<std::size_t>(srcW) * static_cast<std::size_t>(dstH) * 4U);
       verticalSampleU8ToF32(srcRgba, srcW, srcH, tmp.data(), dstH);
-      std::vector<uint8_t> dst((size_t)dstW * (size_t)dstH * 4);
+      std::vector<uint8_t> dst(static_cast<std::size_t>(dstW) * static_cast<std::size_t>(dstH) * 4U);
       horizontalSampleF32ToU8(tmp.data(), srcW, dstH, dst.data(), dstW);
       return dst;
     }
 
     std::vector<uint8_t> boxResize(const uint8_t* srcRgba, int srcW, int srcH, int dstW, int dstH) {
-      std::vector<float> tmp((size_t)srcW * (size_t)dstH * 4);
+      std::vector<float> tmp(static_cast<std::size_t>(srcW) * static_cast<std::size_t>(dstH) * 4U);
       verticalBoxSampleU8ToF32(srcRgba, srcW, srcH, tmp.data(), dstH);
-      std::vector<uint8_t> dst((size_t)dstW * (size_t)dstH * 4);
+      std::vector<uint8_t> dst(static_cast<std::size_t>(dstW) * static_cast<std::size_t>(dstH) * 4U);
       horizontalBoxSampleF32ToU8(tmp.data(), srcW, dstH, dst.data(), dstW);
       return dst;
     }
@@ -293,9 +295,11 @@ namespace noctalia::theme {
     LoadedImage out;
     out.rgb.resize(kTarget * kTarget * 3);
     for (int i = 0; i < kTarget * kTarget; ++i) {
-      out.rgb[i * 3 + 0] = resizedRgba[i * 4 + 0];
-      out.rgb[i * 3 + 1] = resizedRgba[i * 4 + 1];
-      out.rgb[i * 3 + 2] = resizedRgba[i * 4 + 2];
+      const auto rgbIndex = static_cast<std::size_t>(i) * 3U;
+      const auto rgbaIndex = static_cast<std::size_t>(i) * 4U;
+      out.rgb[rgbIndex + 0U] = resizedRgba[rgbaIndex + 0U];
+      out.rgb[rgbIndex + 1U] = resizedRgba[rgbaIndex + 1U];
+      out.rgb[rgbIndex + 2U] = resizedRgba[rgbaIndex + 2U];
     }
     return out;
   }

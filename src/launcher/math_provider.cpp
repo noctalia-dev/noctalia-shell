@@ -3,7 +3,6 @@
 #include "tinyexpr.h"
 #include "wayland/clipboard_service.h"
 
-#include <algorithm>
 #include <cctype>
 #include <cmath>
 #include <sstream>
