@@ -185,6 +185,7 @@ void SetupWizardPanel::create() {
       auto description = makeLabel(i18n::tr("settings.schema.shell.telemetry.description"),
                                    Style::fontSizeCaption * scale, colorSpecFromRole(ColorRole::OnSurfaceVariant));
       description->setMaxWidth(360.0f * scale);
+      description->setMaxLines(3);
       col->addChild(std::move(description));
       row->addChild(std::move(col));
     }
