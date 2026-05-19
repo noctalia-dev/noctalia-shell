@@ -484,6 +484,7 @@
         "background-section": "Background",
         "background": "Background",
         "background-color": "Color",
+        "background-opacity": "Opacity",
         "background-radius": "Radius",
         "background-padding": "Padding",
         "custom-color": "Custom…"

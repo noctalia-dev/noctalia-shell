@@ -281,6 +281,7 @@ enabled = false
 
 # [desktop_widgets.widget.clock_main.settings]
 # format = "{:%H:%M}"
+# background_opacity = 0.8
 
 # ── Control Center ────────────────────────────────────────────────────────────
 

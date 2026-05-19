@@ -79,11 +79,12 @@ namespace desktop_settings {
     auto bgPadding = doubleSpec("background_padding", 10.0, 0.0, 32.0, 1.0);
     bgPadding.visibleWhen = backgroundOn;
 
+    auto bgOpacity = doubleSpec("background_opacity", 0.8, 0.0, 1.0, 0.01);
+    bgOpacity.visibleWhen = backgroundOn;
+
     return {
-        boolSpec("background", true),
-        std::move(bgColor),
-        std::move(bgRadius),
-        std::move(bgPadding),
+        boolSpec("background", true), std::move(bgColor),   std::move(bgOpacity),
+        std::move(bgRadius),          std::move(bgPadding),
     };
   }
 

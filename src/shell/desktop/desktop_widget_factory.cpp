@@ -87,8 +87,8 @@ namespace {
 
   void applyCommonSettings(DesktopWidget& widget, const std::unordered_map<std::string, WidgetSettingValue>& settings) {
     if (getBoolSetting(settings, "background", true)) {
-      const ColorSpec bgColor =
-          getColorSpecSetting(settings, "background_color", colorSpecFromRole(ColorRole::Surface, 0.8f));
+      ColorSpec bgColor = getColorSpecSetting(settings, "background_color", colorSpecFromRole(ColorRole::Surface));
+      bgColor.alpha *= std::clamp(getFloatSetting(settings, "background_opacity", 0.8f), 0.0f, 1.0f);
       const float radius = getFloatSetting(settings, "background_radius", kDefaultBgRadius);
       const float padding = getFloatSetting(settings, "background_padding", kDefaultBgPadding);
       widget.setBackgroundStyle(bgColor, radius, padding);
