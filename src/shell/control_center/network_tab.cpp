@@ -618,7 +618,7 @@ void NetworkTab::syncCurrentCard() {
   m_currentTitle->setText(currentTitle(s));
   m_currentDetail->setText(currentDetail(s));
   if (m_disconnectButton != nullptr) {
-      m_disconnectButton->setVisible(s.connected);
+    m_disconnectButton->setVisible(s.connected);
   }
   if (m_wifiToggle != nullptr) {
     m_wifiToggle->setChecked(s.wirelessEnabled);

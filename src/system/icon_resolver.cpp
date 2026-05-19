@@ -322,7 +322,7 @@ namespace {
       if (da.scalable != db.scalable)
         return da.scalable > db.scalable;
       if (da.maxSize != db.maxSize)
-        return da.maxSize  > db.maxSize;
+        return da.maxSize > db.maxSize;
       return da.size > db.size;
     });
 
