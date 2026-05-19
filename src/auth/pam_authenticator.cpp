@@ -97,10 +97,6 @@ namespace {
 } // namespace
 
 PamAuthenticator::Result PamAuthenticator::authenticateCurrentUser(std::string_view password) const {
-  if (password.empty()) {
-    return Result{.success = false, .message = i18n::tr("auth.pam.password-required")};
-  }
-
   std::string user = currentUsername();
   if (user.empty()) {
     return Result{.success = false, .message = i18n::tr("auth.pam.user-unavailable")};

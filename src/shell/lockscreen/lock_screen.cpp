@@ -485,13 +485,6 @@ void LockScreen::handlePasswordEdited(const std::string& value) {
 }
 
 void LockScreen::tryAuthenticate() {
-  if (m_password.empty()) {
-    m_status = i18n::tr("lockscreen.password-required");
-    m_statusIsError = true;
-    updatePromptOnSurfaces();
-    return;
-  }
-
   m_status = i18n::tr("lockscreen.authenticating");
   m_statusIsError = false;
   updatePromptOnSurfaces();
