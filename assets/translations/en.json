@@ -1834,21 +1834,13 @@
             "label": "CPU poll interval",
             "description": "Seconds between CPU usage, CPU temperature, and load-average samples"
           },
-          "gpu-temp-poll": {
-            "label": "GPU temperature poll interval",
-            "description": "Seconds between GPU temperature samples"
-          },
-          "gpu-vram-poll": {
-            "label": "GPU VRAM poll interval",
-            "description": "Seconds between GPU memory usage samples"
+          "gpu-poll": {
+            "label": "GPU poll interval",
+            "description": "Seconds between GPU temperature and VRAM samples"
           },
           "memory-poll": {
             "label": "Memory poll interval",
             "description": "Seconds between RAM usage samples"
-          },
-          "swap-poll": {
-            "label": "Swap poll interval",
-            "description": "Seconds between swap usage samples"
           },
           "network-poll": {
             "label": "Network poll interval",
@@ -1856,11 +1848,7 @@
           },
           "disk-poll": {
             "label": "Disk poll interval",
-            "description": "Seconds between disk usage samples"
-          },
-          "history-poll": {
-            "label": "Graph history interval",
-            "description": "Seconds between graph history samples for system monitor widgets"
+            "description": "Seconds between disk usage and swap usage samples"
           }
         },
         "weather-location": {

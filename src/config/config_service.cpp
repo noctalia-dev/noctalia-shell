@@ -1814,26 +1814,17 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
       if (auto v = finiteDouble((*monitorTbl)["cpu_poll_seconds"])) {
         monitor.cpuPollSeconds = static_cast<float>(*v);
       }
-      if (auto v = finiteDouble((*monitorTbl)["gpu_temp_poll_seconds"])) {
-        monitor.gpuTempPollSeconds = static_cast<float>(*v);
-      }
-      if (auto v = finiteDouble((*monitorTbl)["gpu_vram_poll_seconds"])) {
-        monitor.gpuVramPollSeconds = static_cast<float>(*v);
+      if (auto v = finiteDouble((*monitorTbl)["gpu_poll_seconds"])) {
+        monitor.gpuPollSeconds = static_cast<float>(*v);
       }
       if (auto v = finiteDouble((*monitorTbl)["memory_poll_seconds"])) {
         monitor.memoryPollSeconds = static_cast<float>(*v);
-      }
-      if (auto v = finiteDouble((*monitorTbl)["swap_poll_seconds"])) {
-        monitor.swapPollSeconds = static_cast<float>(*v);
       }
       if (auto v = finiteDouble((*monitorTbl)["network_poll_seconds"])) {
         monitor.networkPollSeconds = static_cast<float>(*v);
       }
       if (auto v = finiteDouble((*monitorTbl)["disk_poll_seconds"])) {
         monitor.diskPollSeconds = static_cast<float>(*v);
-      }
-      if (auto v = finiteDouble((*monitorTbl)["history_poll_seconds"])) {
-        monitor.historyPollSeconds = static_cast<float>(*v);
       }
     }
   }

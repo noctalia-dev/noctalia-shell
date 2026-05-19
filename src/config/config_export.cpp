@@ -659,13 +659,10 @@ namespace config_export {
     const auto& mon = config.system.monitor;
     monitor.insert_or_assign("enabled", mon.enabled);
     monitor.insert_or_assign("cpu_poll_seconds", static_cast<double>(mon.cpuPollSeconds));
-    monitor.insert_or_assign("gpu_temp_poll_seconds", static_cast<double>(mon.gpuTempPollSeconds));
-    monitor.insert_or_assign("gpu_vram_poll_seconds", static_cast<double>(mon.gpuVramPollSeconds));
+    monitor.insert_or_assign("gpu_poll_seconds", static_cast<double>(mon.gpuPollSeconds));
     monitor.insert_or_assign("memory_poll_seconds", static_cast<double>(mon.memoryPollSeconds));
-    monitor.insert_or_assign("swap_poll_seconds", static_cast<double>(mon.swapPollSeconds));
     monitor.insert_or_assign("network_poll_seconds", static_cast<double>(mon.networkPollSeconds));
     monitor.insert_or_assign("disk_poll_seconds", static_cast<double>(mon.diskPollSeconds));
-    monitor.insert_or_assign("history_poll_seconds", static_cast<double>(mon.historyPollSeconds));
     system.insert_or_assign("monitor", std::move(monitor));
     root.insert_or_assign("system", std::move(system));
 

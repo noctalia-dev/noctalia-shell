@@ -310,7 +310,7 @@ void NotificationService::emitClose(uint32_t id, CloseReason reason) {
         .withArguments(id, static_cast<uint32_t>(reason));
     m_bus.connection().processPendingEvent();
   } catch (const sdbus::Error& e) {
-    kLog.warn("notification #{}: NotificationClosed emit failed: {}", id, e.what());
+    kLog.debug("notification #{}: NotificationClosed emit failed: {}", id, e.what());
   }
 }
 
@@ -344,7 +344,7 @@ void NotificationService::emitActionInvoked(uint32_t id, const std::string& acti
     m_object->emitSignal("ActionInvoked").onInterface(k_interface).withArguments(id, actionKey);
     m_bus.connection().processPendingEvent();
   } catch (const sdbus::Error& e) {
-    kLog.warn("notification #{}: ActionInvoked emit failed key='{}': {}", id, actionKey, e.what());
+    kLog.debug("notification #{}: ActionInvoked emit failed key='{}': {}", id, actionKey, e.what());
   }
 }
 

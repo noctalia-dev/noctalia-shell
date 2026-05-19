@@ -901,34 +901,25 @@ namespace settings {
       auto addPoll = [&](std::string_view labelKey, std::string_view descKey, std::vector<std::string> path,
                          float value) {
         auto entry = makeEntry("services", "system", tr(labelKey), tr(descKey), std::move(path),
-                               SliderSetting{value, kPollMin, kPollMax, kPollStep, false}, "system monitor");
+                               SliderSetting{value, kPollMin, kPollMax, kPollStep, false}, "system monitor", true);
         entry.visibleWhen = monitorOn;
         entries.push_back(std::move(entry));
       };
       addPoll("settings.schema.services.system-monitor.cpu-poll.label",
               "settings.schema.services.system-monitor.cpu-poll.description", {"system", "monitor", "cpu_poll_seconds"},
               mon.cpuPollSeconds);
-      addPoll("settings.schema.services.system-monitor.gpu-temp-poll.label",
-              "settings.schema.services.system-monitor.gpu-temp-poll.description",
-              {"system", "monitor", "gpu_temp_poll_seconds"}, mon.gpuTempPollSeconds);
-      addPoll("settings.schema.services.system-monitor.gpu-vram-poll.label",
-              "settings.schema.services.system-monitor.gpu-vram-poll.description",
-              {"system", "monitor", "gpu_vram_poll_seconds"}, mon.gpuVramPollSeconds);
+      addPoll("settings.schema.services.system-monitor.gpu-poll.label",
+              "settings.schema.services.system-monitor.gpu-poll.description", {"system", "monitor", "gpu_poll_seconds"},
+              mon.gpuPollSeconds);
       addPoll("settings.schema.services.system-monitor.memory-poll.label",
               "settings.schema.services.system-monitor.memory-poll.description",
               {"system", "monitor", "memory_poll_seconds"}, mon.memoryPollSeconds);
-      addPoll("settings.schema.services.system-monitor.swap-poll.label",
-              "settings.schema.services.system-monitor.swap-poll.description",
-              {"system", "monitor", "swap_poll_seconds"}, mon.swapPollSeconds);
       addPoll("settings.schema.services.system-monitor.network-poll.label",
               "settings.schema.services.system-monitor.network-poll.description",
               {"system", "monitor", "network_poll_seconds"}, mon.networkPollSeconds);
       addPoll("settings.schema.services.system-monitor.disk-poll.label",
               "settings.schema.services.system-monitor.disk-poll.description",
               {"system", "monitor", "disk_poll_seconds"}, mon.diskPollSeconds);
-      addPoll("settings.schema.services.system-monitor.history-poll.label",
-              "settings.schema.services.system-monitor.history-poll.description",
-              {"system", "monitor", "history_poll_seconds"}, mon.historyPollSeconds);
     }
     entries.push_back(makeEntry("services", "weather", tr("settings.schema.services.weather.label"),
                                 tr("settings.schema.services.weather.description"), {"weather", "enabled"},

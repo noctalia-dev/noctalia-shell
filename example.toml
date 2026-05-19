@@ -125,13 +125,10 @@ lock_keys = true                    # show Caps/Num/Scroll Lock OSD popups; disa
 [system.monitor]
 enabled = true                      # sample CPU, memory, network, load, temperature, GPU VRAM, and disk statistics
 cpu_poll_seconds = 1.0              # CPU usage, CPU temperature, and load average
-gpu_temp_poll_seconds = 2.0
-gpu_vram_poll_seconds = 2.0
-memory_poll_seconds = 1.0
-swap_poll_seconds = 1.0
+gpu_poll_seconds = 2.0              # GPU temperature and VRAM usage
+memory_poll_seconds = 1.0           # RAM usage
 network_poll_seconds = 1.0
-disk_poll_seconds = 5.0
-history_poll_seconds = 1.0          # graph history cadence for sysmon widgets
+disk_poll_seconds = 5.0             # disk usage and swap usage; graph widgets use the fastest poll above
 
 # ── Weather ───────────────────────────────────────────────────────────────────
 

@@ -118,15 +118,19 @@ namespace {
 
   [[nodiscard]] float clampPollSeconds(float seconds) noexcept { return std::clamp(seconds, 0.1f, 120.0f); }
 
+  // Graph history snapshots and scroll timing follow the fastest metric poll so users
+  // only configure how often each stat is read, not a separate graph-only cadence.
+  [[nodiscard]] float effectiveHistoryPollSeconds(const SystemConfig::MonitorConfig& config) noexcept {
+    return std::min({config.cpuPollSeconds, config.gpuPollSeconds, config.memoryPollSeconds, config.networkPollSeconds,
+                     config.diskPollSeconds});
+  }
+
   [[nodiscard]] SystemConfig::MonitorConfig sanitizeMonitorConfig(SystemConfig::MonitorConfig config) {
     config.cpuPollSeconds = clampPollSeconds(config.cpuPollSeconds);
-    config.gpuTempPollSeconds = clampPollSeconds(config.gpuTempPollSeconds);
-    config.gpuVramPollSeconds = clampPollSeconds(config.gpuVramPollSeconds);
+    config.gpuPollSeconds = clampPollSeconds(config.gpuPollSeconds);
     config.memoryPollSeconds = clampPollSeconds(config.memoryPollSeconds);
-    config.swapPollSeconds = clampPollSeconds(config.swapPollSeconds);
     config.networkPollSeconds = clampPollSeconds(config.networkPollSeconds);
     config.diskPollSeconds = clampPollSeconds(config.diskPollSeconds);
-    config.historyPollSeconds = clampPollSeconds(config.historyPollSeconds);
     return config;
   }
 
@@ -691,7 +695,7 @@ void SystemMonitorService::applyConfig(const SystemConfig::MonitorConfig& config
   {
     std::lock_guard lock{m_configMutex};
     m_pollConfig = sanitized;
-    m_historyInterval = pollDuration(sanitized.historyPollSeconds);
+    m_historyInterval = pollDuration(effectiveHistoryPollSeconds(sanitized));
   }
   m_wakeCv.notify_all();
   setEnabled(sanitized.enabled);
@@ -851,10 +855,8 @@ void SystemMonitorService::samplingLoop() {
 
   auto prevCpu = readCpuTotals();
   auto nextCpu = Clock::now();
-  auto nextGpuTemp = Clock::now();
-  auto nextGpuVram = Clock::now();
+  auto nextGpu = Clock::now();
   auto nextMemory = Clock::now();
-  auto nextSwap = Clock::now();
   auto nextNetwork = Clock::now();
   auto nextDisk = Clock::now();
   auto nextHistory = Clock::now();
@@ -862,13 +864,11 @@ void SystemMonitorService::samplingLoop() {
   while (m_running.load()) {
     const SystemConfig::MonitorConfig pollCfg = pollConfig();
     const auto cpuInterval = pollDuration(pollCfg.cpuPollSeconds);
-    const auto gpuTempInterval = pollDuration(pollCfg.gpuTempPollSeconds);
-    const auto gpuVramInterval = pollDuration(pollCfg.gpuVramPollSeconds);
+    const auto gpuInterval = pollDuration(pollCfg.gpuPollSeconds);
     const auto memoryInterval = pollDuration(pollCfg.memoryPollSeconds);
-    const auto swapInterval = pollDuration(pollCfg.swapPollSeconds);
     const auto networkInterval = pollDuration(pollCfg.networkPollSeconds);
     const auto diskInterval = pollDuration(pollCfg.diskPollSeconds);
-    const auto historyInterval = pollDuration(pollCfg.historyPollSeconds);
+    const auto historyInterval = pollDuration(effectiveHistoryPollSeconds(pollCfg));
 
     const auto now = Clock::now();
     bool statsTouched = false;
@@ -921,16 +921,6 @@ void SystemMonitorService::samplingLoop() {
       statsTouched = true;
     }
 
-    if (now >= nextSwap) {
-      if (const auto memKb = readMemoryKb(); memKb.has_value()) {
-        std::lock_guard lock{m_statsMutex};
-        m_latest.swapTotalMb = memKb->swapTotalKb / 1024;
-        m_latest.swapUsedMb = memKb->swapUsedKb / 1024;
-      }
-      nextSwap = now + swapInterval;
-      statsTouched = true;
-    }
-
     if (now >= nextNetwork) {
       if (const auto currentNetBytes = readNetBytes(); currentNetBytes.has_value()) {
         const double intervalSeconds = std::chrono::duration<double>(networkInterval).count();
@@ -957,7 +947,7 @@ void SystemMonitorService::samplingLoop() {
       statsTouched = true;
     }
 
-    if (now >= nextGpuTemp) {
+    if (now >= nextGpu) {
       if (m_gpuTempRefs.load(std::memory_order_relaxed) > 0) {
         const auto gpuTemp = readGpuTempCelsius();
         std::lock_guard lock{m_statsMutex};
@@ -965,11 +955,6 @@ void SystemMonitorService::samplingLoop() {
           m_latest.gpuTempC = gpuTemp;
         }
       }
-      nextGpuTemp = now + gpuTempInterval;
-      statsTouched = true;
-    }
-
-    if (now >= nextGpuVram) {
       if (m_gpuVramRefs.load(std::memory_order_relaxed) > 0) {
         if (const auto gpuVram = readGpuVram(); gpuVram.has_value()) {
           std::lock_guard lock{m_statsMutex};
@@ -977,11 +962,16 @@ void SystemMonitorService::samplingLoop() {
           m_latest.gpuVramTotalBytes = gpuVram->totalBytes;
         }
       }
-      nextGpuVram = now + gpuVramInterval;
+      nextGpu = now + gpuInterval;
       statsTouched = true;
     }
 
     if (now >= nextDisk) {
+      if (const auto memKb = readMemoryKb(); memKb.has_value()) {
+        std::lock_guard lock{m_statsMutex};
+        m_latest.swapTotalMb = memKb->swapTotalKb / 1024;
+        m_latest.swapUsedMb = memKb->swapUsedKb / 1024;
+      }
       std::vector<std::string> diskPaths;
       {
         std::lock_guard lock{m_statsMutex};
@@ -1023,8 +1013,7 @@ void SystemMonitorService::samplingLoop() {
       nextHistory = now + historyInterval;
     }
 
-    const auto nextWake =
-        std::min({nextCpu, nextGpuTemp, nextGpuVram, nextMemory, nextSwap, nextNetwork, nextDisk, nextHistory});
+    const auto nextWake = std::min({nextCpu, nextGpu, nextMemory, nextNetwork, nextDisk, nextHistory});
     std::unique_lock wakeLock{m_wakeMutex};
     m_wakeCv.wait_until(wakeLock, nextWake, [this]() { return !m_running.load(); });
   }
