@@ -603,19 +603,19 @@ namespace settings {
                                 SliderSetting{static_cast<float>(cfg.dock.radius), 0.0f, 80.0f, 1.0f, true},
                                 "rounded"));
     entries.push_back(makeEntry("dock", "shape", tr("settings.schema.shared.corner-top-left.label"),
-                                tr("settings.schema.bar.corner-top-left.description"), {"dock", "radius_top_left"},
+                                tr("settings.schema.dock.corner-top-left.description"), {"dock", "radius_top_left"},
                                 SliderSetting{static_cast<float>(cfg.dock.radiusTopLeft), 0.0f, 80.0f, 1.0f, true},
                                 "rounded corner", true));
     entries.push_back(makeEntry("dock", "shape", tr("settings.schema.shared.corner-top-right.label"),
-                                tr("settings.schema.bar.corner-top-right.description"), {"dock", "radius_top_right"},
+                                tr("settings.schema.dock.corner-top-right.description"), {"dock", "radius_top_right"},
                                 SliderSetting{static_cast<float>(cfg.dock.radiusTopRight), 0.0f, 80.0f, 1.0f, true},
                                 "rounded corner", true));
     entries.push_back(makeEntry(
         "dock", "shape", tr("settings.schema.shared.corner-bottom-left.label"),
-        tr("settings.schema.bar.corner-bottom-left.description"), {"dock", "radius_bottom_left"},
+        tr("settings.schema.dock.corner-bottom-left.description"), {"dock", "radius_bottom_left"},
         SliderSetting{static_cast<float>(cfg.dock.radiusBottomLeft), 0.0f, 80.0f, 1.0f, true}, "rounded corner", true));
     entries.push_back(makeEntry("dock", "shape", tr("settings.schema.shared.corner-bottom-right.label"),
-                                tr("settings.schema.bar.corner-bottom-right.description"),
+                                tr("settings.schema.dock.corner-bottom-right.description"),
                                 {"dock", "radius_bottom_right"},
                                 SliderSetting{static_cast<float>(cfg.dock.radiusBottomRight), 0.0f, 80.0f, 1.0f, true},
                                 "rounded corner", true));
