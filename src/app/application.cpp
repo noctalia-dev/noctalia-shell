@@ -488,6 +488,7 @@ void Application::initServices() {
     m_idleGraceOverlay.onOutputChange();
     m_idleInhibitor.onOutputChange();
     m_overviewLauncherCapture.onOutputChange();
+    m_notificationToast.onOutputChange();
   });
   m_clipboardService.setChangeCallback([this]() {
     if (m_panelManager.isOpenPanel("clipboard")) {

@@ -474,6 +474,17 @@ void NotificationToast::onConfigReload() {
   requestLayout();
 }
 
+void NotificationToast::onOutputChange() {
+  if (m_entries.empty() && m_instances.empty()) {
+    return;
+  }
+  ensureSurfaces();
+  for (std::size_t i = 0; i < m_entries.size(); ++i) {
+    syncEntryVisibility(i);
+  }
+  requestLayout();
+}
+
 void NotificationToast::requestLayout() {
   for (auto& inst : m_instances) {
     if (inst->surface != nullptr) {
@@ -581,7 +592,10 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
                           &cs.bodyLabel, &cs.cardBg, &cs.appIconNode, &cs.progressBar, &cs.closeGlyph,
                           &cs.actionsRowNode, &cs.inlineReplyRowNode, &cs.inlineReplyInput);
             cs.cardNode = rebuilt;
-            applyCardReveal(cs, preservedReveal, m_entries[i].y >= 0.0f ? m_entries[i].y : 0.0f, m_entries[i].height);
+            const float revealY = hasPlacement(m_entries[i])
+                                      ? entryYForSurface(m_entries[i], static_cast<float>(inst->surface->height()))
+                                      : 0.0f;
+            applyCardReveal(cs, preservedReveal, revealY, m_entries[i].height);
             if (cs.cardForeground != nullptr) {
               cs.cardForeground->setOpacity(preservedContentOpacity);
               cs.cardForeground->setPosition(contentOffsetForReveal(preservedReveal), 0.0f);
@@ -591,8 +605,8 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
             }
             // Resume an interrupted reveal so the card finishes opening instead of
             // staying scissored at its partial size.
-            if (entryRevealInFlight && preservedReveal < 1.0f && m_entries[i].y >= 0.0f) {
-              const float targetY = m_entries[i].y;
+            if (entryRevealInFlight && preservedReveal < 1.0f && hasPlacement(m_entries[i])) {
+              const float targetY = entryYForSurface(m_entries[i], static_cast<float>(inst->surface->height()));
               Instance* instPtr = inst.get();
               cs.entryAnimId = inst->animations.animate(
                   preservedReveal, 1.0f, Style::animNormal, Easing::EaseOutCubic,
@@ -833,7 +847,7 @@ void NotificationToast::addCardToInstance(Instance& inst, std::size_t entryIndex
                               &cs.actionsRowNode, &cs.inlineReplyRowNode, &cs.inlineReplyInput);
   cs.cardNode = card;
 
-  const float targetY = entry.y;
+  const float targetY = entryYForSurface(entry, static_cast<float>(inst.surface->height()));
   applyCardReveal(cs, 0.0f, targetY, entry.height);
 
   inst.sceneRoot->addChild(std::unique_ptr<Node>(card));
@@ -1254,7 +1268,18 @@ bool NotificationToast::canKeepPlacement(const PopupEntry& entry, std::optional<
 }
 
 bool NotificationToast::fitsOnSurface(const PopupEntry& entry, float surfaceHeight) const {
-  return hasPlacement(entry) && entry.y + entry.height <= layoutBottomForSurfaceHeight(surfaceHeight) + 0.5f;
+  if (!hasPlacement(entry)) {
+    return false;
+  }
+  if (surfaceHeight <= 0.5f) {
+    return false;
+  }
+  if (isBottomStacking()) {
+    // Placement Y is stored in the tallest monitor's coordinate space; map from the
+    // bottom edge so shorter outputs still host the same stack.
+    return entryOffsetFromPlacementBottom(entry) <= layoutBottomForSurfaceHeight(surfaceHeight) + 0.5f;
+  }
+  return entry.y + entry.height <= layoutBottomForSurfaceHeight(surfaceHeight) + 0.5f;
 }
 
 float NotificationToast::entryHeight(const PopupEntry& entry) const {
@@ -1322,6 +1347,20 @@ void NotificationToast::refreshEntryGeometry(PopupEntry& entry) const {
 float NotificationToast::layoutBottomForSurfaceHeight(float surfaceHeight) const {
   const float edgePadding = isBottomStacking() ? 0.0f : kPaddingBottom;
   return std::max(kPaddingTop, surfaceHeight - edgePadding);
+}
+
+float NotificationToast::entryOffsetFromPlacementBottom(const PopupEntry& entry) const {
+  return maxPlacementBottom() - entry.y;
+}
+
+float NotificationToast::entryYForSurface(const PopupEntry& entry, float surfaceHeight) const {
+  if (!hasPlacement(entry)) {
+    return entry.y;
+  }
+  if (isBottomStacking()) {
+    return layoutBottomForSurfaceHeight(surfaceHeight) - entryOffsetFromPlacementBottom(entry);
+  }
+  return entry.y;
 }
 
 float NotificationToast::maxPlacementBottom() const {
