@@ -4,8 +4,10 @@
 #include "dbus/system_bus.h"
 
 #include <algorithm>
+#include <cerrno>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <dirent.h>
 #include <fcntl.h>
 #include <linux/rfkill.h>
@@ -325,11 +327,15 @@ void WpaSupplicantService::setWirelessEnabled(bool enabled) {
       if (f == nullptr)
         continue;
       std::uint32_t idx = 0;
-      fscanf(f, "%u", &idx);
+      const int scanned = fscanf(f, "%u", &idx);
       fclose(f);
+      if (scanned != 1) {
+        kLog.warn("setWirelessEnabled: cannot read rfkill index");
+        continue;
+      }
       const int fd = open("/dev/rfkill", O_WRONLY | O_CLOEXEC);
       if (fd < 0) {
-        kLog.warn("setWirelessEnabled: cannot open /dev/rfkill");
+        kLog.warn("setWirelessEnabled: cannot open /dev/rfkill: {}", std::strerror(errno));
         break;
       }
       struct rfkill_event ev{};
@@ -337,8 +343,17 @@ void WpaSupplicantService::setWirelessEnabled(bool enabled) {
       ev.type = RFKILL_TYPE_WLAN;
       ev.op = RFKILL_OP_CHANGE;
       ev.soft = enabled ? 0 : 1;
-      write(fd, &ev, sizeof(ev));
+      ssize_t written = 0;
+      do {
+        written = write(fd, &ev, sizeof(ev));
+      } while (written < 0 && errno == EINTR);
+      const int writeErrno = errno;
       close(fd);
+      if (written != static_cast<ssize_t>(sizeof(ev))) {
+        kLog.warn("setWirelessEnabled: /dev/rfkill write failed: {}",
+                  written < 0 ? std::strerror(writeErrno) : "short write");
+        break;
+      }
       rfkillDone = true;
       break;
     }
