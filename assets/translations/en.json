@@ -1611,7 +1611,7 @@
       "dock": {
         "active-monitor-only": {
           "label": "Active Monitor Only",
-          "description": "Only show the dock on the active monitor"
+          "description": "Only show applications running on the active monitor"
         },
         "monitors": {
           "label": "Displays",
