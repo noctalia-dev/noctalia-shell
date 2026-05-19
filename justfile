@@ -19,8 +19,11 @@ configure m=mode:
     fi
     ln -sfn "build-{{m}}/compile_commands.json" compile_commands.json
 
-build m=mode: (configure m)
+build m=mode: (_ensure-configured m)
     meson compile -C build-{{m}}
+
+_ensure-configured m=mode:
+    @if [ ! -d "build-{{m}}" ]; then just configure {{m}}; fi
 
 run m=mode: (build m)
     ./build-{{m}}/noctalia
