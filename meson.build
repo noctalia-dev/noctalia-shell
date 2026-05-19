@@ -354,6 +354,8 @@ _noctalia_sources = files(
   'src/dbus/network/network_manager_service.cpp',
   'src/dbus/network/network_secret_agent.cpp',
   'src/dbus/network/wpa_supplicant_service.cpp',
+  'src/dbus/network/iwd_service.cpp',
+  'src/dbus/network/iwd_agent.cpp',
   'src/dbus/polkit/polkit_agent.cpp',
   'src/dbus/notification/notification_poll_source.cpp',
   'src/dbus/notification/notification_service.cpp',

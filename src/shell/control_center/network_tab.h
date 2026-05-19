@@ -1,6 +1,7 @@
 #pragma once
 
 #include "dbus/network/inetwork_service.h"
+#include "dbus/network/iwd_agent.h"
 #include "dbus/network/network_secret_agent.h"
 #include "shell/control_center/tab.h"
 
@@ -18,7 +19,7 @@ class Toggle;
 
 class NetworkTab : public Tab {
 public:
-  NetworkTab(INetworkService* network, NetworkSecretAgent* secrets);
+  NetworkTab(INetworkService* network, NetworkSecretAgent* secrets, IwdAgent* iwdAgent = nullptr);
   ~NetworkTab() override;
 
   std::unique_ptr<Flex> create() override;
@@ -44,6 +45,7 @@ private:
 
   INetworkService* m_network = nullptr;
   NetworkSecretAgent* m_secrets = nullptr;
+  IwdAgent* m_iwdAgent = nullptr;
 
   Flex* m_rootLayout = nullptr;
   Flex* m_currentCard = nullptr;
