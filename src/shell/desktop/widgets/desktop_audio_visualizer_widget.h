@@ -23,6 +23,7 @@ private:
   void doLayout(Renderer& renderer) override;
   void doUpdate(Renderer& renderer) override;
   void syncSpectrum(Renderer* renderer);
+  void layoutContentSize(Renderer& renderer);
   [[nodiscard]] bool shouldBeVisible() const;
   bool applyVisibility();
   void cancelVisibilityAnimation();

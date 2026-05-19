@@ -1021,6 +1021,7 @@ void DesktopWidgetsEditor::addWidget(const std::string& outputName, const std::s
   if (widget.type == "audio_visualizer") {
     widget.settings.emplace("aspect_ratio", static_cast<double>(kDefaultDesktopAudioVisualizerAspectRatio));
     widget.settings.emplace("bands", static_cast<std::int64_t>(32));
+    widget.settings.emplace("show_when_idle", true);
   }
 
   if (widget.type == "sticker") {

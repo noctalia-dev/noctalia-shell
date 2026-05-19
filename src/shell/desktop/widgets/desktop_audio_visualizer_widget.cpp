@@ -81,24 +81,29 @@ void DesktopAudioVisualizerWidget::onFrameTick(float deltaMs, Renderer& renderer
   m_visualizer->tick(deltaMs);
 }
 
+void DesktopAudioVisualizerWidget::layoutContentSize(Renderer& renderer) {
+  const float width = visualizerBaseWidth(m_aspectRatio) * m_contentScale;
+  const float height = visualizerBaseHeight(m_aspectRatio) * m_contentScale;
+  if (m_visualizer != nullptr) {
+    if (m_visible) {
+      syncSpectrum(&renderer);
+    }
+    m_visualizer->setPosition(0.0f, 0.0f);
+    m_visualizer->setSize(width, height);
+  }
+  if (root() != nullptr) {
+    root()->setSize(width, height);
+  }
+}
+
 void DesktopAudioVisualizerWidget::doLayout(Renderer& renderer) {
   if (root() == nullptr) {
     return;
   }
   applyVisibility();
-  if (!m_visible) {
-    root()->setSize(0.0f, 0.0f);
-    return;
-  }
-
-  const float width = visualizerBaseWidth(m_aspectRatio) * m_contentScale;
-  const float height = visualizerBaseHeight(m_aspectRatio) * m_contentScale;
-  if (m_visualizer != nullptr) {
-    syncSpectrum(&renderer);
-    m_visualizer->setPosition(0.0f, 0.0f);
-    m_visualizer->setSize(width, height);
-  }
-  root()->setSize(width, height);
+  // Keep the desktop footprint at the design size even when idle-hidden. Collapsing
+  // to 0x0 left only background padding visible as a tiny circle in the editor.
+  layoutContentSize(renderer);
 }
 
 void DesktopAudioVisualizerWidget::doUpdate(Renderer& renderer) {
@@ -168,12 +173,8 @@ void DesktopAudioVisualizerWidget::setVisibilityCollapsed(bool collapsed) {
   if (root() == nullptr) {
     return;
   }
-  root()->setVisible(!collapsed);
   if (m_visualizer != nullptr) {
     m_visualizer->setVisible(!collapsed);
-  }
-  if (collapsed) {
-    root()->setSize(0.0f, 0.0f);
   }
 }
 

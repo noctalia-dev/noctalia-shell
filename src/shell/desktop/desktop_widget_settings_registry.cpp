@@ -117,7 +117,7 @@ namespace desktop_settings {
       add(doubleSpec("bands", 32.0, 4.0, 128.0, 4.0));
       add(boolSpec("mirrored", true));
       add(boolSpec("centered", true));
-      add(boolSpec("show_when_idle", false));
+      add(boolSpec("show_when_idle", true));
       add(colorRoleSpec("low_color", "primary"));
       add(colorRoleSpec("high_color", "primary"));
     } else if (type == "sticker") {
