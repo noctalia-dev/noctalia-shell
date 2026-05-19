@@ -487,6 +487,7 @@ void Application::initServices() {
     m_lockScreen.onOutputChange();
     m_idleGraceOverlay.onOutputChange();
     m_idleInhibitor.onOutputChange();
+    m_overviewLauncherCapture.onOutputChange();
   });
   m_clipboardService.setChangeCallback([this]() {
     if (m_panelManager.isOpenPanel("clipboard")) {
@@ -999,6 +1000,9 @@ void Application::initUi() {
       m_settingsWindow.onKeyboardEvent(event);
       return;
     }
+    if (m_overviewLauncherCapture.handleKeyboardEvent(event)) {
+      return;
+    }
     if (m_notificationToast.onKeyboardEvent(event)) {
       return;
     }
@@ -1057,6 +1061,19 @@ void Application::initUi() {
     launcherPanel->addProvider(std::make_unique<EmojiProvider>(&m_clipboardService));
     m_panelManager.registerPanel("launcher", std::move(launcherPanel));
   }
+  m_overviewLauncherCapture.initialize(m_wayland, &m_renderContext, m_compositorPlatform, m_panelManager);
+  m_overviewLauncherCapture.setEnabled(m_configService.config().shell.niriOverviewTypeToLaunchEnabled);
+  m_overviewLauncherCapture.setOpenLauncherCallback(
+      [this](std::string_view initialQuery, wl_output* output, std::string_view sourceBarName) {
+        m_panelManager.openPanel(
+            "launcher", PanelOpenRequest{.output = output, .context = initialQuery, .sourceBarName = sourceBarName});
+      });
+  m_compositorPlatform.setOverviewChangeCallback([this]() { m_overviewLauncherCapture.sync(); });
+  m_panelManager.setPanelClosedCallback([this]() { m_overviewLauncherCapture.sync(); });
+  m_configService.addReloadCallback([this]() {
+    m_overviewLauncherCapture.setEnabled(m_configService.config().shell.niriOverviewTypeToLaunchEnabled);
+  });
+  m_overviewLauncherCapture.sync();
   m_panelManager.registerPanel("wallpaper",
                                std::make_unique<WallpaperPanel>(&m_wayland, &m_configService, &m_thumbnailService));
   std::size_t trayDrawerColumns = 3;

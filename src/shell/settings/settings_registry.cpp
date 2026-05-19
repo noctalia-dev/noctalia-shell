@@ -234,7 +234,7 @@ namespace settings {
       return "layout-bottombar";
     if (section == "idle")
       return "coffee";
-    if (section == "backdrop")
+    if (section == "niri")
       return "niri";
     if (section == "wallpaper")
       return "paint";
@@ -514,21 +514,6 @@ namespace settings {
                                 tr("settings.schema.wallpaper.automation-recursive.description"),
                                 {"wallpaper", "automation", "recursive"},
                                 ToggleSetting{cfg.wallpaper.automation.recursive}, "subdirectories", true));
-
-    // Backdrop (niri-only)
-    if (env.niriBackdropSupported) {
-      entries.push_back(makeEntry("backdrop", "general", tr("settings.schema.shared.enabled.label"),
-                                  tr("settings.schema.backdrop.enabled.description"), {"backdrop", "enabled"},
-                                  ToggleSetting{cfg.backdrop.enabled}, "wallpaper backdrop"));
-      entries.push_back(makeEntry("backdrop", "backdrop", tr("settings.schema.backdrop.blur-intensity.label"),
-                                  tr("settings.schema.backdrop.blur-intensity.description"),
-                                  {"backdrop", "blur_intensity"},
-                                  SliderSetting{cfg.backdrop.blurIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
-      entries.push_back(makeEntry("backdrop", "backdrop", tr("settings.schema.backdrop.tint-intensity.label"),
-                                  tr("settings.schema.backdrop.tint-intensity.description"),
-                                  {"backdrop", "tint_intensity"},
-                                  SliderSetting{cfg.backdrop.tintIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
-    }
 
     // Templates
     entries.push_back(makeEntry("templates", "built-in", tr("settings.schema.templates.enable-builtins.label"),
@@ -877,6 +862,30 @@ namespace settings {
                                 tr("settings.schema.keybinds.down.description"), {"keybinds", "down"},
                                 KeybindListSetting{.items = cfg.keybinds.down, .maxItems = 4},
                                 "keybind shortcut hotkey arrow move"));
+
+    // Niri-specific integrations
+    if (env.niriOverviewTypeToLaunchSupported || env.niriBackdropSupported) {
+      if (env.niriOverviewTypeToLaunchSupported) {
+        entries.push_back(makeEntry("niri", "overview", tr("settings.schema.shell.niri-overview-type-to-launch.label"),
+                                    tr("settings.schema.shell.niri-overview-type-to-launch.description"),
+                                    {"shell", "niri_overview_type_to_launch_enabled"},
+                                    ToggleSetting{cfg.shell.niriOverviewTypeToLaunchEnabled},
+                                    "niri overview type launch launcher search keyboard focus"));
+      }
+      if (env.niriBackdropSupported) {
+        entries.push_back(makeEntry("niri", "backdrop", tr("settings.schema.shared.enabled.label"),
+                                    tr("settings.schema.backdrop.enabled.description"), {"backdrop", "enabled"},
+                                    ToggleSetting{cfg.backdrop.enabled}, "wallpaper backdrop"));
+        entries.push_back(makeEntry("niri", "backdrop", tr("settings.schema.backdrop.blur-intensity.label"),
+                                    tr("settings.schema.backdrop.blur-intensity.description"),
+                                    {"backdrop", "blur_intensity"},
+                                    SliderSetting{cfg.backdrop.blurIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
+        entries.push_back(makeEntry("niri", "backdrop", tr("settings.schema.backdrop.tint-intensity.label"),
+                                    tr("settings.schema.backdrop.tint-intensity.description"),
+                                    {"backdrop", "tint_intensity"},
+                                    SliderSetting{cfg.backdrop.tintIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
+      }
+    }
 
     // Services
     entries.push_back(makeEntry("services", "system", tr("settings.schema.services.system-monitor.label"),

@@ -183,10 +183,11 @@ namespace settings {
 
   // Runtime conditions that gate optional sections (e.g. compositor-specific features).
   struct RegistryEnvironment {
-    bool niriBackdropSupported = false;         // hide the [backdrop] section when false
-    bool ddcutilAvailable = false;              // disable ddcutil toggle when ddcutil is not on PATH
-    bool gammaControlAvailable = false;         // hide night-light entries when gamma control is unavailable
-    std::vector<SelectOption> availableOutputs; // monitor selectors available on this machine
+    bool niriBackdropSupported = false;             // hide niri backdrop entries when false
+    bool niriOverviewTypeToLaunchSupported = false; // show niri-only type-to-launch integration
+    bool ddcutilAvailable = false;                  // disable ddcutil toggle when ddcutil is not on PATH
+    bool gammaControlAvailable = false;             // hide night-light entries when gamma control is unavailable
+    std::vector<SelectOption> availableOutputs;     // monitor selectors available on this machine
     std::vector<SelectOption> communityPalettes;
     std::vector<SelectOption> customPalettes;
     std::vector<SelectOption> communityTemplates;

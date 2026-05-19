@@ -844,6 +844,7 @@
         "dock": "Dock",
         "hooks": "Hooks",
         "idle": "Idle",
+        "niri": "Niri",
         "panels": "Panels",
         "notifications": "Notifications",
         "popups": "Popups",
@@ -882,6 +883,7 @@
         "network": "Network",
         "night-light": "Night Light",
         "notifications": "Notifications",
+        "overview": "Overview",
         "osd": "OSD",
         "home": "Home",
         "pinned-apps": "Pinned Apps",
@@ -1468,6 +1470,10 @@
         "telemetry": {
           "label": "Anonymous Startup Ping",
           "description": "Sends a small anonymous startup ping with version, OS, compositor, display sizes, RAM, and UI scale"
+        },
+        "niri-overview-type-to-launch": {
+          "label": "Type to Launch",
+          "description": "Open the launcher when typing in niri overview. Uses a tiny keyboard-focus surface while overview is open."
         },
         "polkit-agent": {
           "label": "Polkit Agent",

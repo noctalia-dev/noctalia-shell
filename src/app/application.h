@@ -55,6 +55,7 @@
 #include "shell/osd/brightness_osd.h"
 #include "shell/osd/lock_keys_osd.h"
 #include "shell/osd/osd_overlay.h"
+#include "shell/overview/overview_launcher_capture.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/polkit/polkit_panel.h"
 #include "shell/screen_corners/screen_corners.h"
@@ -184,6 +185,7 @@ private:
   DesktopWidgetsController m_desktopWidgetsController;
   LockScreen m_lockScreen;
   PanelManager m_panelManager;
+  OverviewLauncherCapture m_overviewLauncherCapture;
   NotificationToast m_notificationToast;
   AudioOsd m_audioOsd;
   BrightnessOsd m_brightnessOsd;

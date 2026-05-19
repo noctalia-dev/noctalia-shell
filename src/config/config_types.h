@@ -541,6 +541,7 @@ struct ShellConfig {
   std::string dateFormat = "%A, %x";
   bool offlineMode = false;
   bool telemetryEnabled = false;
+  bool niriOverviewTypeToLaunchEnabled = false;
   bool polkitAgent = false;
   PasswordMaskStyle passwordMaskStyle = PasswordMaskStyle::CircleFilled;
   AnimationConfig animation;

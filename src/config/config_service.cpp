@@ -1218,6 +1218,9 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
     if (auto v = (*shellTbl)["telemetry_enabled"].value<bool>()) {
       shell.telemetryEnabled = *v;
     }
+    if (auto v = (*shellTbl)["niri_overview_type_to_launch_enabled"].value<bool>()) {
+      shell.niriOverviewTypeToLaunchEnabled = *v;
+    }
     if (auto polkitAgent = (*shellTbl)["polkit_agent"].value<bool>()) {
       shell.polkitAgent = *polkitAgent;
     }

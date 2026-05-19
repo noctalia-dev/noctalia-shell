@@ -505,6 +505,7 @@ _noctalia_sources = files(
   'src/shell/tray/tray_menu.cpp',
   'src/shell/backdrop/backdrop.cpp',
   'src/shell/backdrop/backdrop_surface.cpp',
+  'src/shell/overview/overview_launcher_capture.cpp',
   'src/system/app_identity.cpp',
   'src/shell/wallpaper/wallpaper.cpp',
   'src/shell/wallpaper/panel/wallpaper_panel.cpp',

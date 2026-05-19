@@ -312,9 +312,10 @@ namespace {
     return nearlyEqual(a.uiScale, b.uiScale) && nearlyEqual(a.cornerRadiusScale, b.cornerRadiusScale) &&
            a.fontFamily == b.fontFamily && a.lang == b.lang && a.timeFormat == b.timeFormat &&
            a.dateFormat == b.dateFormat && a.offlineMode == b.offlineMode && a.telemetryEnabled == b.telemetryEnabled &&
-           a.polkitAgent == b.polkitAgent && a.passwordMaskStyle == b.passwordMaskStyle &&
-           a.animation.enabled == b.animation.enabled && nearlyEqual(a.animation.speed, b.animation.speed) &&
-           a.avatarPath == b.avatarPath && a.settingsShowAdvanced == b.settingsShowAdvanced &&
+           a.niriOverviewTypeToLaunchEnabled == b.niriOverviewTypeToLaunchEnabled && a.polkitAgent == b.polkitAgent &&
+           a.passwordMaskStyle == b.passwordMaskStyle && a.animation.enabled == b.animation.enabled &&
+           nearlyEqual(a.animation.speed, b.animation.speed) && a.avatarPath == b.avatarPath &&
+           a.settingsShowAdvanced == b.settingsShowAdvanced &&
            a.middleClickOpensWidgetSettings == b.middleClickOpensWidgetSettings && a.showLocation == b.showLocation &&
            a.clipboardEnabled == b.clipboardEnabled && a.clipboardAutoPaste == b.clipboardAutoPaste &&
            a.clipboardImageActionCommand == b.clipboardImageActionCommand && a.shadow.blur == b.shadow.blur &&
