@@ -570,11 +570,11 @@ struct WeatherConfig {
 struct SystemConfig {
   struct MonitorConfig {
     bool enabled = true;
-    float cpuPollSeconds = 1.0f;
-    float gpuPollSeconds = 2.0f;
-    float memoryPollSeconds = 1.0f;
-    float networkPollSeconds = 1.0f;
-    float diskPollSeconds = 5.0f;
+    float cpuPollSeconds = 2.0f;
+    float gpuPollSeconds = 5.0f;
+    float memoryPollSeconds = 2.0f;
+    float networkPollSeconds = 3.0f;
+    float diskPollSeconds = 10.0f;
   };
 
   MonitorConfig monitor;
