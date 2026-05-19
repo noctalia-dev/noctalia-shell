@@ -858,6 +858,8 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
   instance->fillNode = static_cast<Box*>(instance->sceneRoot->addChild(std::move(fillNode)));
   auto wallpaperNode = std::make_unique<WallpaperNode>();
   instance->wallpaperNode = static_cast<WallpaperNode*>(instance->sceneRoot->addChild(std::move(wallpaperNode)));
+  auto darkenNode = std::make_unique<Box>();
+  instance->darkenNode = static_cast<Box*>(instance->sceneRoot->addChild(std::move(darkenNode)));
   instance->surface->setSceneRoot(instance->sceneRoot.get());
 
   auto* inst = instance.get();
@@ -869,6 +871,8 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
     inst->fillNode->setSize(sw, sh);
     inst->wallpaperNode->setPosition(0.0f, 0.0f);
     inst->wallpaperNode->setSize(sw, sh);
+    inst->darkenNode->setPosition(0.0f, 0.0f);
+    inst->darkenNode->setSize(sw, sh);
 
     if (inst->currentPath.empty() && !wallpaperPath.empty()) {
       loadWallpaper(*inst, wallpaperPath);
@@ -1016,6 +1020,11 @@ void Wallpaper::updateRendererState(WallpaperInstance& instance) {
         .fillMode = FillMode::Solid,
     });
   }
+  if (instance.darkenNode != nullptr) {
+    const float darkenAlpha = livePaperActive() ? wpConfig.livePaper.darken : 0.0f;
+    instance.darkenNode->setFill(rgba(0.0f, 0.0f, 0.0f, darkenAlpha));
+  }
+
   // Live-paper overrides the image texture path entirely: we hand the
   // wallpaper node the visualizer's offscreen texture and skip image
   // transitions (libprojectM does its own cross-fade between presets).

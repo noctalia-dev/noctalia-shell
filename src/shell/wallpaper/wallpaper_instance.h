@@ -26,6 +26,7 @@ struct WallpaperInstance {
   std::unique_ptr<Node> sceneRoot;
   Box* fillNode = nullptr;
   WallpaperNode* wallpaperNode = nullptr;
+  Box* darkenNode = nullptr;
   AnimationManager animations;
 
   // Wallpaper state
