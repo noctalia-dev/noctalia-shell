@@ -200,8 +200,11 @@ void DesktopWidgetsController::enterEdit() {
   if (m_config != nullptr && !m_config->config().desktopWidgets.enabled) {
     return;
   }
-  m_host->hide();
+  // Open the editor before tearing down host widgets so the PipeWire spectrum
+  // listener hand-off does not briefly drop to zero listeners (which resets the
+  // stream and leaves a new editor instance with empty spectrum values).
   m_editor->open(m_snapshot);
+  m_host->hide();
 }
 
 void DesktopWidgetsController::exitEdit() {
@@ -209,8 +212,10 @@ void DesktopWidgetsController::exitEdit() {
     return;
   }
 
-  m_snapshot = m_editor->close();
+  m_snapshot = m_editor->snapshot();
   normalizeSnapshot();
+  m_host->show(m_snapshot);
+  (void)m_editor->close();
   saveSnapshotToConfig();
   applyVisibility();
 }

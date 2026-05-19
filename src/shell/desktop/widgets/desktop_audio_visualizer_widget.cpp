@@ -64,9 +64,29 @@ void DesktopAudioVisualizerWidget::create() {
   setRoot(std::move(rootNode));
 }
 
+void DesktopAudioVisualizerWidget::setEditorPreview(bool enabled) noexcept {
+  if (m_editorPreview == enabled) {
+    return;
+  }
+  m_editorPreview = enabled;
+  if (root() == nullptr) {
+    return;
+  }
+  if (enabled) {
+    pullSpectrumValues();
+  }
+  if (applyVisibility()) {
+    requestLayout();
+  } else if (enabled && m_visible) {
+    requestFrameTick();
+    requestRedraw();
+  }
+}
+
 bool DesktopAudioVisualizerWidget::needsFrameTick() const {
-  return m_visualizer != nullptr && (m_pendingSpectrumUpdate || (m_visible && !m_visualizer->converged()) ||
-                                     shouldBeVisible() != m_visible || m_fadingOut || m_visibilityAnimId != 0);
+  return m_visualizer != nullptr &&
+         (m_pendingSpectrumUpdate || (m_editorPreview && m_visible) || (m_visible && !m_visualizer->converged()) ||
+          shouldBeVisible() != m_visible || m_fadingOut || m_visibilityAnimId != 0);
 }
 
 void DesktopAudioVisualizerWidget::onFrameTick(float deltaMs, Renderer& renderer) {
@@ -113,17 +133,36 @@ void DesktopAudioVisualizerWidget::doUpdate(Renderer& renderer) {
   syncSpectrum(&renderer);
 }
 
-void DesktopAudioVisualizerWidget::syncSpectrum(Renderer* /*renderer*/) {
-  if (!m_pendingSpectrumUpdate || m_visualizer == nullptr || m_spectrum == nullptr || m_listenerId == 0) {
+void DesktopAudioVisualizerWidget::pullSpectrumValues() {
+  if (m_visualizer == nullptr || m_spectrum == nullptr || m_listenerId == 0) {
     return;
   }
 
-  m_visualizer->setValues(m_spectrum->values(m_listenerId));
+  const auto& spectrumValues = m_spectrum->values(m_listenerId);
+  if (spectrumValues.empty()) {
+    return;
+  }
+
+  m_visualizer->setValues(spectrumValues);
   m_pendingSpectrumUpdate = false;
 }
 
+void DesktopAudioVisualizerWidget::syncSpectrum(Renderer* /*renderer*/) {
+  if (m_visualizer == nullptr || m_spectrum == nullptr || m_listenerId == 0) {
+    return;
+  }
+  if (!m_pendingSpectrumUpdate && !m_editorPreview) {
+    return;
+  }
+
+  pullSpectrumValues();
+}
+
 bool DesktopAudioVisualizerWidget::shouldBeVisible() const {
-  return m_spectrum != nullptr && (m_showWhenIdle || !m_spectrum->idle());
+  if (m_spectrum == nullptr) {
+    return false;
+  }
+  return m_editorPreview || m_showWhenIdle || !m_spectrum->idle();
 }
 
 bool DesktopAudioVisualizerWidget::applyVisibility() {

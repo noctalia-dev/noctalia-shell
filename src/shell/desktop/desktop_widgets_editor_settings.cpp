@@ -442,6 +442,9 @@ void DesktopWidgetsEditor::applySettingChange(const std::string& key, WidgetSett
     }
 
     newWidget->create();
+    if (state->type == "audio_visualizer") {
+      newWidget->setEditorPreview(true);
+    }
     newWidget->setAnimationManager(&surface->animations);
     auto* surfacePtr = surface;
     newWidget->setUpdateCallback([surfacePtr]() {
@@ -473,6 +476,9 @@ void DesktopWidgetsEditor::applySettingChange(const std::string& key, WidgetSett
     view.widget = std::move(newWidget);
 
     applyViewState(view, *state, false);
+    if (state->type == "audio_visualizer" && surface->surface != nullptr) {
+      surface->surface->requestFrameTick();
+    }
     updateSelectionVisuals(*surface);
     surface->surface->requestRedraw();
     if (key == "background") {

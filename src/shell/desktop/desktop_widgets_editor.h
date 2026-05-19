@@ -44,6 +44,7 @@ public:
   void setExitRequestedCallback(std::function<void()> callback);
 
   void open(const DesktopWidgetsSnapshot& snapshot);
+  [[nodiscard]] const DesktopWidgetsSnapshot& snapshot() const noexcept { return m_snapshot; }
   [[nodiscard]] DesktopWidgetsSnapshot close();
   [[nodiscard]] bool isOpen() const noexcept;
 
@@ -121,9 +122,6 @@ private:
     DesktopWidgetState initialState;
     float intrinsicWidth = 0.0f;
     float intrinsicHeight = 0.0f;
-    float previewIntrinsicWidth = 0.0f;
-    float previewIntrinsicHeight = 0.0f;
-    float previewScale = 0.0f;
     ScaleCorner scaleCorner = ScaleCorner::BottomRight;
     std::string surfaceOutputName;
     float initialToolbarX = 0.0f;

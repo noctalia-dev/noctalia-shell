@@ -16,12 +16,14 @@ public:
   ~DesktopAudioVisualizerWidget() override;
 
   void create() override;
+  void setEditorPreview(bool enabled) noexcept override;
   [[nodiscard]] bool needsFrameTick() const override;
   void onFrameTick(float deltaMs, Renderer& renderer) override;
 
 private:
   void doLayout(Renderer& renderer) override;
   void doUpdate(Renderer& renderer) override;
+  void pullSpectrumValues();
   void syncSpectrum(Renderer* renderer);
   void layoutContentSize(Renderer& renderer);
   [[nodiscard]] bool shouldBeVisible() const;
@@ -36,6 +38,7 @@ private:
   bool m_mirrored = true;
   bool m_centered = true;
   bool m_showWhenIdle = false;
+  bool m_editorPreview = false;
   ColorSpec m_lowColor = colorSpecFromRole(ColorRole::Primary);
   ColorSpec m_highColor = colorSpecFromRole(ColorRole::Primary);
   std::uint64_t m_listenerId = 0;

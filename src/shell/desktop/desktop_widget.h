@@ -51,6 +51,8 @@ public:
   }
   void setContentScale(float scale) noexcept { m_contentScale = scale; }
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
+  // Desktop widget editor keeps widgets visible for layout even when runtime idle-hide applies.
+  virtual void setEditorPreview(bool enabled) noexcept { (void)enabled; }
   void setBackgroundStyle(const ColorSpec& color, float radius, float padding);
 
 protected:

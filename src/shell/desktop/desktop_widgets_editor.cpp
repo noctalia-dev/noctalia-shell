@@ -228,6 +228,9 @@ void DesktopWidgetsEditor::open(const DesktopWidgetsSnapshot& snapshot) {
 }
 
 DesktopWidgetsSnapshot DesktopWidgetsEditor::close() {
+  if (m_drag.mode != DragMode::None) {
+    finishDrag();
+  }
   m_surfaces.clear();
   m_drag = {};
   m_selectedWidgetId.clear();
@@ -509,6 +512,9 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
     }
 
     widget->create();
+    if (widgetState.type == "audio_visualizer") {
+      widget->setEditorPreview(true);
+    }
     widget->setAnimationManager(&surface.animations);
     auto* surfacePtr = &surface;
     widget->setUpdateCallback([surfacePtr]() {
@@ -533,6 +539,9 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
     });
     widget->update(*m_renderContext);
     widget->layout(*m_renderContext);
+    if (widgetState.type == "audio_visualizer" && surface.surface != nullptr) {
+      surface.surface->requestFrameTick();
+    }
 
     EditorWidgetView view;
     view.intrinsicWidth = std::max(1.0f, widget->intrinsicWidth());
@@ -1215,28 +1224,13 @@ void DesktopWidgetsEditor::startDrag(DragMode mode, const std::string& widgetId,
     m_drag.surfaceOutputName = surface->outputName;
   }
 
-  if (mode == DragMode::Scale && view->widget != nullptr && view->transformNode != nullptr &&
-      m_renderContext != nullptr) {
+  if (mode == DragMode::Scale && view->widget != nullptr && m_renderContext != nullptr) {
     if (OverlaySurface* surface = findSurfaceForWidget(widgetId); surface != nullptr && surface->surface != nullptr) {
       m_renderContext->makeCurrent(surface->surface->renderTarget());
     }
-
-    DesktopWidgetState previewState = *state;
-    previewState.scale = kMaxScale;
-    view->widget->setContentScale(widgetContentScale(previewState));
-    view->widget->update(*m_renderContext);
-    view->widget->layout(*m_renderContext);
-    m_drag.previewIntrinsicWidth = std::max(1.0f, view->widget->intrinsicWidth());
-    m_drag.previewIntrinsicHeight = std::max(1.0f, view->widget->intrinsicHeight());
-    m_drag.previewScale = kMaxScale;
-
-    const float previewVisualScale = state->scale / std::max(0.001f, m_drag.previewScale);
-    view->intrinsicWidth = m_drag.previewIntrinsicWidth * previewVisualScale;
-    view->intrinsicHeight = m_drag.previewIntrinsicHeight * previewVisualScale;
-    view->transformNode->setScale(previewVisualScale);
-    view->transformNode->setFrameSize(m_drag.previewIntrinsicWidth, m_drag.previewIntrinsicHeight);
-    view->transformNode->setPosition(state->cx - m_drag.previewIntrinsicWidth * 0.5f,
-                                     state->cy - m_drag.previewIntrinsicHeight * 0.5f);
+    applyViewState(*view, *state, true);
+    m_drag.intrinsicWidth = view->intrinsicWidth;
+    m_drag.intrinsicHeight = view->intrinsicHeight;
   }
 }
 
@@ -1397,21 +1391,9 @@ void DesktopWidgetsEditor::updateDrag() {
   float clampHeight = m_drag.intrinsicHeight;
   float dragVisualScale = 1.0f;
   if (m_drag.mode == DragMode::Scale && hasScaleDragGeometry) {
-    const bool hasPreview =
-        m_drag.previewScale > 0.0f && m_drag.previewIntrinsicWidth > 0.0f && m_drag.previewIntrinsicHeight > 0.0f;
-    const auto updateDragVisualSize = [&]() {
-      if (hasPreview) {
-        dragVisualScale = state->scale / std::max(0.001f, m_drag.previewScale);
-        clampWidth = m_drag.previewIntrinsicWidth * dragVisualScale;
-        clampHeight = m_drag.previewIntrinsicHeight * dragVisualScale;
-      } else {
-        dragVisualScale = state->scale / std::max(0.001f, m_drag.initialState.scale);
-        clampWidth = m_drag.intrinsicWidth * dragVisualScale;
-        clampHeight = m_drag.intrinsicHeight * dragVisualScale;
-      }
-    };
-
-    updateDragVisualSize();
+    dragVisualScale = state->scale / std::max(0.001f, m_drag.initialState.scale);
+    clampWidth = m_drag.intrinsicWidth * dragVisualScale;
+    clampHeight = m_drag.intrinsicHeight * dragVisualScale;
 
     if (shouldSnap()) {
       const bool axisX = snapScaleByWidth;
@@ -1443,7 +1425,6 @@ void DesktopWidgetsEditor::updateDrag() {
           if (std::abs(snappedScale - state->scale) > 0.0001f) {
             state->scale = snappedScale;
             applyScaleDragState();
-            updateDragVisualSize();
           }
         }
       }
@@ -1452,8 +1433,6 @@ void DesktopWidgetsEditor::updateDrag() {
     if (EditorWidgetView* view = findView(m_drag.widgetId); view != nullptr) {
       view->intrinsicWidth = clampWidth;
       view->intrinsicHeight = clampHeight;
-      clampWidth = view->intrinsicWidth;
-      clampHeight = view->intrinsicHeight;
     }
   }
 
@@ -1465,18 +1444,10 @@ void DesktopWidgetsEditor::updateDrag() {
 
   if (m_drag.mode == DragMode::Scale && hasScaleDragGeometry) {
     if (EditorWidgetView* view = findView(m_drag.widgetId); view != nullptr && view->transformNode != nullptr) {
-      const bool hasPreview =
-          m_drag.previewScale > 0.0f && m_drag.previewIntrinsicWidth > 0.0f && m_drag.previewIntrinsicHeight > 0.0f;
       view->transformNode->setScale(dragVisualScale);
-      if (hasPreview) {
-        view->transformNode->setFrameSize(m_drag.previewIntrinsicWidth, m_drag.previewIntrinsicHeight);
-        view->transformNode->setPosition(state->cx - m_drag.previewIntrinsicWidth * 0.5f,
-                                         state->cy - m_drag.previewIntrinsicHeight * 0.5f);
-      } else {
-        view->transformNode->setFrameSize(m_drag.intrinsicWidth, m_drag.intrinsicHeight);
-        view->transformNode->setPosition(state->cx - m_drag.intrinsicWidth * 0.5f,
-                                         state->cy - m_drag.intrinsicHeight * 0.5f);
-      }
+      view->transformNode->setFrameSize(m_drag.intrinsicWidth, m_drag.intrinsicHeight);
+      view->transformNode->setPosition(state->cx - m_drag.intrinsicWidth * 0.5f,
+                                       state->cy - m_drag.intrinsicHeight * 0.5f);
     }
   }
 
@@ -1487,9 +1458,30 @@ void DesktopWidgetsEditor::updateDrag() {
 }
 
 void DesktopWidgetsEditor::finishDrag() {
-  const bool rebuild = m_drag.rebuildOnFinish || m_drag.mode == DragMode::Scale;
+  const DragMode mode = m_drag.mode;
+  const std::string widgetId = m_drag.widgetId;
+  const bool rebuildOnFinish = m_drag.rebuildOnFinish;
   m_drag = {};
-  if (rebuild) {
+
+  if (mode == DragMode::Scale && !widgetId.empty()) {
+    if (m_renderContext != nullptr) {
+      if (OverlaySurface* surface = findSurfaceForWidget(widgetId); surface != nullptr && surface->surface != nullptr) {
+        m_renderContext->makeCurrent(surface->surface->renderTarget());
+      }
+    }
+    if (DesktopWidgetState* state = findWidgetState(widgetId); state != nullptr) {
+      if (EditorWidgetView* view = findView(widgetId); view != nullptr) {
+        applyViewState(*view, *state, true);
+      }
+    }
+    updateViewTransforms();
+    if (OverlaySurface* surface = findSurfaceForWidget(widgetId); surface != nullptr && surface->surface != nullptr) {
+      surface->surface->requestRedraw();
+    }
+    return;
+  }
+
+  if (rebuildOnFinish) {
     requestLayout();
   }
 }
