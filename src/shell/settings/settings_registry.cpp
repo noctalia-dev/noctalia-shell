@@ -602,19 +602,19 @@ namespace settings {
                                 tr("settings.schema.dock.corner-radius.description"), {"dock", "radius"},
                                 SliderSetting{static_cast<float>(cfg.dock.radius), 0.0f, 80.0f, 1.0f, true},
                                 "rounded"));
-    entries.push_back(makeEntry("dock", "shape", tr("settings.schema.bar.corner-top-left.label"),
+    entries.push_back(makeEntry("dock", "shape", tr("settings.schema.shared.corner-top-left.label"),
                                 tr("settings.schema.bar.corner-top-left.description"), {"dock", "radius_top_left"},
                                 SliderSetting{static_cast<float>(cfg.dock.radiusTopLeft), 0.0f, 80.0f, 1.0f, true},
                                 "rounded corner", true));
-    entries.push_back(makeEntry("dock", "shape", tr("settings.schema.bar.corner-top-right.label"),
+    entries.push_back(makeEntry("dock", "shape", tr("settings.schema.shared.corner-top-right.label"),
                                 tr("settings.schema.bar.corner-top-right.description"), {"dock", "radius_top_right"},
                                 SliderSetting{static_cast<float>(cfg.dock.radiusTopRight), 0.0f, 80.0f, 1.0f, true},
                                 "rounded corner", true));
     entries.push_back(makeEntry(
-        "dock", "shape", tr("settings.schema.bar.corner-bottom-left.label"),
+        "dock", "shape", tr("settings.schema.shared.corner-bottom-left.label"),
         tr("settings.schema.bar.corner-bottom-left.description"), {"dock", "radius_bottom_left"},
         SliderSetting{static_cast<float>(cfg.dock.radiusBottomLeft), 0.0f, 80.0f, 1.0f, true}, "rounded corner", true));
-    entries.push_back(makeEntry("dock", "shape", tr("settings.schema.bar.corner-bottom-right.label"),
+    entries.push_back(makeEntry("dock", "shape", tr("settings.schema.shared.corner-bottom-right.label"),
                                 tr("settings.schema.bar.corner-bottom-right.description"),
                                 {"dock", "radius_bottom_right"},
                                 SliderSetting{static_cast<float>(cfg.dock.radiusBottomRight), 0.0f, 80.0f, 1.0f, true},
@@ -1308,22 +1308,22 @@ namespace settings {
                                   SliderSetting{static_cast<float>(selectedBar->radius), 0.0f, 80.0f, 1.0f, true},
                                   "rounded"));
       entries.push_back(
-          makeEntry(section, "shape", tr("settings.schema.bar.corner-top-left.label"),
+          makeEntry(section, "shape", tr("settings.schema.shared.corner-top-left.label"),
                     tr("settings.schema.bar.corner-top-left.description"), path("radius_top_left"),
                     SliderSetting{static_cast<float>(selectedBar->radiusTopLeft), 0.0f, 80.0f, 1.0f, true},
                     "rounded corner", true));
       entries.push_back(
-          makeEntry(section, "shape", tr("settings.schema.bar.corner-top-right.label"),
+          makeEntry(section, "shape", tr("settings.schema.shared.corner-top-right.label"),
                     tr("settings.schema.bar.corner-top-right.description"), path("radius_top_right"),
                     SliderSetting{static_cast<float>(selectedBar->radiusTopRight), 0.0f, 80.0f, 1.0f, true},
                     "rounded corner", true));
       entries.push_back(
-          makeEntry(section, "shape", tr("settings.schema.bar.corner-bottom-left.label"),
+          makeEntry(section, "shape", tr("settings.schema.shared.corner-bottom-left.label"),
                     tr("settings.schema.bar.corner-bottom-left.description"), path("radius_bottom_left"),
                     SliderSetting{static_cast<float>(selectedBar->radiusBottomLeft), 0.0f, 80.0f, 1.0f, true},
                     "rounded corner", true));
       entries.push_back(
-          makeEntry(section, "shape", tr("settings.schema.bar.corner-bottom-right.label"),
+          makeEntry(section, "shape", tr("settings.schema.shared.corner-bottom-right.label"),
                     tr("settings.schema.bar.corner-bottom-right.description"), path("radius_bottom_right"),
                     SliderSetting{static_cast<float>(selectedBar->radiusBottomRight), 0.0f, 80.0f, 1.0f, true},
                     "rounded corner", true));
@@ -1474,22 +1474,22 @@ namespace settings {
           tr("settings.schema.bar.corner-radius.description"), mpath("radius"),
           SliderSetting{static_cast<float>(ovr.radius.value_or(bar.radius)), 0.0f, 80.0f, 1.0f, true}, "rounded"));
       entries.push_back(makeEntry(
-          section, "shape", tr("settings.schema.bar.corner-top-left.label"),
+          section, "shape", tr("settings.schema.shared.corner-top-left.label"),
           tr("settings.schema.bar.corner-top-left.description"), mpath("radius_top_left"),
           SliderSetting{static_cast<float>(ovr.radiusTopLeft.value_or(bar.radiusTopLeft)), 0.0f, 80.0f, 1.0f, true},
           "rounded corner", true));
       entries.push_back(makeEntry(
-          section, "shape", tr("settings.schema.bar.corner-top-right.label"),
+          section, "shape", tr("settings.schema.shared.corner-top-right.label"),
           tr("settings.schema.bar.corner-top-right.description"), mpath("radius_top_right"),
           SliderSetting{static_cast<float>(ovr.radiusTopRight.value_or(bar.radiusTopRight)), 0.0f, 80.0f, 1.0f, true},
           "rounded corner", true));
-      entries.push_back(makeEntry(section, "shape", tr("settings.schema.bar.corner-bottom-left.label"),
+      entries.push_back(makeEntry(section, "shape", tr("settings.schema.shared.corner-bottom-left.label"),
                                   tr("settings.schema.bar.corner-bottom-left.description"), mpath("radius_bottom_left"),
                                   SliderSetting{static_cast<float>(ovr.radiusBottomLeft.value_or(bar.radiusBottomLeft)),
                                                 0.0f, 80.0f, 1.0f, true},
                                   "rounded corner", true));
       entries.push_back(
-          makeEntry(section, "shape", tr("settings.schema.bar.corner-bottom-right.label"),
+          makeEntry(section, "shape", tr("settings.schema.shared.corner-bottom-right.label"),
                     tr("settings.schema.bar.corner-bottom-right.description"), mpath("radius_bottom_right"),
                     SliderSetting{static_cast<float>(ovr.radiusBottomRight.value_or(bar.radiusBottomRight)), 0.0f,
                                   80.0f, 1.0f, true},

@@ -29,7 +29,7 @@
     },
     "empty": {
       "history-title": "Clipboard history is empty",
-      "history-message": "Clipboard history is empty.",
+      "history-message": "No entries in the clipboard history.",
       "no-matches-title": "No matching entries",
       "no-matches-message": "No entries match the current filter."
     }
@@ -231,8 +231,8 @@
       "clipboard": "Clipboard"
     },
     "network": {
-      "current-connection": "Current connection",
-      "available-networks": "Available networks",
+      "current-connection": "Current Connection",
+      "available-networks": "Available Networks",
       "wired-connection": "Wired connection",
       "not-connected": "Not connected",
       "wifi-on": "Wi-Fi is on",
@@ -781,14 +781,14 @@
         "delete-confirm-desc": "This GUI-created monitor override will be removed from settings.toml."
       },
       "widget": {
-        "add": "Add Widget",
+        "add": "Add widget",
         "lanes": {
           "start": "Start",
           "center": "Center",
           "end": "End",
           "customize": "Customize",
           "empty": "No widgets",
-          "empty-hint": "Use Add Widget to populate this lane."
+          "empty-hint": "Add a widget to populate this lane."
         },
         "kinds": {
           "built-in": "Built-in",
@@ -865,7 +865,7 @@
         "capsules": "Capsules",
         "clipboard": "Clipboard",
         "community": "Community",
-        "control-center": "Control Center:",
+        "control-center": "Control Center",
         "directories": "Directories",
         "effects": "Effects",
         "focus-styling": "Focus Styling",
@@ -1354,6 +1354,18 @@
         "corner-radius": {
           "label": "Corner Radius"
         },
+        "corner-top-left": {
+          "label": "Top Left Radius"
+        },
+        "corner-top-right": {
+          "label": "Top Right Radius"
+        },
+        "corner-bottom-left": {
+          "label": "Bottom Left Radius"
+        },
+        "corner-bottom-right": {
+          "label": "Bottom Right Radius"
+        },
         "background-opacity": {
           "label": "Background Opacity"
         },
@@ -1453,7 +1465,7 @@
         },
         "builtin-ids": {
           "label": "Active Built-in Templates",
-          "description": "Template IDs to render on each theme change."
+          "description": "Template IDs to render on each theme change"
         },
         "enable-community-templates": {
           "label": "Enable Community Templates",
@@ -1461,7 +1473,7 @@
         },
         "community-ids": {
           "label": "Active Community Templates",
-          "description": "Community template IDs to render on each theme change."
+          "description": "Community template IDs to render on each theme change"
         }
       },
       "shell": {
@@ -1516,7 +1528,7 @@
         },
         "clipboard-image-action": {
           "label": "Image Action Command",
-          "description": "Command to run from image clipboard entries. Use {path} for an exported image file; use {stdin} or omit {path} to pipe the image to stdin.",
+          "description": "Command to run from image clipboard entries; use {path} for the file path, {stdin} to mark the stdin position, or omit {path} to pipe automatically",
           "placeholder": "gimp {path} or satty -f -"
         },
         "osd-position": {
@@ -1603,6 +1615,18 @@
         "corner-radius": {
           "description": "Corner radius of the dock"
         },
+        "corner-top-left": {
+          "description": "Top left corner radius for the dock"
+        },
+        "corner-top-right": {
+          "description": "Top right corner radius for the dock"
+        },
+        "corner-bottom-left": {
+          "description": "Bottom left corner radius for the dock"
+        },
+        "corner-bottom-right": {
+          "description": "Bottom right corner radius for the dock"
+        },
         "background-opacity": {
           "description": "Background opacity of the dock"
         },
@@ -1631,7 +1655,7 @@
         },
         "compact-control-center": {
           "label": "Compact Sidebar",
-          "description": "Show only icons in the sidebar to make the Control Center narrower"
+          "description": "Show only icons in the sidebar to make the control center narrower"
         },
         "placement-launcher": {
           "label": "Placement",
@@ -1651,27 +1675,27 @@
         },
         "open-near-click-control-center": {
           "label": "Open Near Click",
-          "description": "Position the Control Center near the bar click instead of centering it along the bar"
+          "description": "Position the control center panel near the bar click instead of centering it along the bar"
         },
         "open-near-click-launcher": {
           "label": "Open Near Click",
-          "description": "Position the Launcher near the bar click instead of centering it along the bar"
+          "description": "Position the launcher panel near the bar click instead of centering it along the bar"
         },
         "open-near-click-clipboard": {
           "label": "Open Near Click",
-          "description": "Position the Clipboard near the bar click instead of centering it along the bar"
+          "description": "Position the clipboard panel near the bar click instead of centering it along the bar"
         },
         "open-near-click-wallpaper": {
           "label": "Open Near Click",
-          "description": "Position the Wallpaper picker near the bar click instead of centering it along the bar"
+          "description": "Position the wallpaper picker panel near the bar click instead of centering it along the bar"
         },
         "open-near-click-session": {
           "label": "Open Near Click",
-          "description": "Position the Session panel near the bar click instead of centering it along the bar"
+          "description": "Position the session panel near the bar click instead of centering it along the bar"
         },
         "session-actions": {
           "label": "Entries",
-          "description": "Power menu entries, order, custom commands, and icons.",
+          "description": "Power menu entries, order, custom commands, and icons",
           "configure": "Configure…",
           "entry-settings": "Details…"
         }
@@ -1679,37 +1703,37 @@
       "idle": {
         "pre-action-fade": {
           "label": "Idle dim",
-          "description": "Seconds of fullscreen dim before the idle command. Use 0 to disable."
+          "description": "Seconds of fullscreen dim before the idle command; use 0 to disable"
         },
         "behaviors": {
           "label": "Behaviors",
-          "description": "Named idle actions with presets (lock, displays off, suspend) or custom commands, timeouts, resume pairing, and order."
+          "description": "Named idle actions with presets (lock, displays off, suspend) or custom commands, timeouts, resume pairing, and order"
         }
       },
       "keybinds": {
         "validate": {
           "label": "Confirm",
-          "description": "Confirm selections, submit inputs, or activate the focused item."
+          "description": "Confirm selections, submit inputs, or activate the focused item"
         },
         "cancel": {
           "label": "Cancel",
-          "description": "Close popups, dismiss panels, or abort the current operation."
+          "description": "Close popups, dismiss panels, or abort the current operation"
         },
         "left": {
           "label": "Navigate left",
-          "description": "Move focus or selection to the left."
+          "description": "Move focus or selection to the left"
         },
         "right": {
           "label": "Navigate right",
-          "description": "Move focus or selection to the right."
+          "description": "Move focus or selection to the right"
         },
         "up": {
           "label": "Navigate up",
-          "description": "Move focus or selection up one row."
+          "description": "Move focus or selection up one row"
         },
         "down": {
           "label": "Navigate down",
-          "description": "Move focus or selection down one row."
+          "description": "Move focus or selection down one row"
         }
       },
       "backdrop": {
@@ -1764,12 +1788,12 @@
         },
         "directory-light": {
           "label": "Light Mode Directory",
-          "description": "Wallpaper folder used in Light theme mode",
+          "description": "Wallpaper folder used in light theme mode",
           "placeholder": "~/Pictures/Wallpapers"
         },
         "directory-dark": {
           "label": "Dark Mode Directory",
-          "description": "Wallpaper folder used in Dark theme mode",
+          "description": "Wallpaper folder used in dark theme mode",
           "placeholder": "~/Pictures/Wallpapers"
         },
         "transitions": {
@@ -1896,7 +1920,7 @@
         },
         "mpris-blacklist": {
           "label": "MPRIS player blacklist",
-          "description": "Players to ignore for media controls and Now Playing."
+          "description": "Players to ignore for media controls and Now Playing"
         },
         "ddcutil": {
           "label": "DDC/CI (ddcutil)",
@@ -2058,22 +2082,6 @@
           "label": "Content Padding",
           "description": "Padding inside the bar content area"
         },
-        "corner-top-left": {
-          "label": "Top Left Radius",
-          "description": "Top-left corner radius for the bar"
-        },
-        "corner-top-right": {
-          "label": "Top Right Radius",
-          "description": "Top-right corner radius for the bar"
-        },
-        "corner-bottom-left": {
-          "label": "Bottom Left Radius",
-          "description": "Bottom-left corner radius for the bar"
-        },
-        "corner-bottom-right": {
-          "label": "Bottom Right Radius",
-          "description": "Bottom-right corner radius for the bar"
-        },
         "widget-capsules": {
           "label": "Widget Capsules",
           "description": "Wrap widgets in capsule backgrounds"
@@ -2142,10 +2150,22 @@
           "description": "Inset from each end of the bar along its main axis"
         },
         "edge-margin": {
-          "description": "Distance from the nearest screen edge,  positive values float the bar away from it"
+          "description": "Distance from the nearest screen edge; positive values float the bar away from it"
         },
         "corner-radius": {
           "description": "Corner radius of the bar"
+        },
+        "corner-top-left": {
+          "description": "Top left corner radius for the bar"
+        },
+        "corner-top-right": {
+          "description": "Top right corner radius for the bar"
+        },
+        "corner-bottom-left": {
+          "description": "Bottom left corner radius for the bar"
+        },
+        "corner-bottom-right": {
+          "description": "Bottom right corner radius for the bar"
         },
         "background-opacity": {
           "description": "Background opacity of the bar"
