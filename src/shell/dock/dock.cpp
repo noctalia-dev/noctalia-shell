@@ -237,9 +237,7 @@ void Dock::reload() {
 
   refreshPinnedAppsIfNeeded();
 
-  m_instances.clear();
-  m_surfaceMap.clear();
-  m_hoveredInstance = nullptr;
+  closeAllInstances();
 
   if (wl_display_roundtrip(m_platform->display()) < 0) {
     const int roundtripErrno = errno;
@@ -268,7 +266,24 @@ void Dock::closeAllInstances() {
   m_itemMenu.reset();
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;
+  m_popupOwnerInstance = nullptr;
   m_instances.clear();
+}
+
+void Dock::detachInstanceState(DockInstance& inst) {
+  if (inst.surface != nullptr) {
+    if (wl_surface* const wls = inst.surface->wlSurface()) {
+      m_surfaceMap.erase(wls);
+    }
+  }
+  if (m_hoveredInstance == &inst) {
+    m_hoveredInstance = nullptr;
+  }
+  if (m_popupOwnerInstance == &inst) {
+    m_windowMenu.reset();
+    m_itemMenu.reset();
+    m_popupOwnerInstance = nullptr;
+  }
 }
 
 void Dock::onOutputChange() {
@@ -541,7 +556,7 @@ void Dock::syncInstances() {
   const auto outputAllowed = [&](const WaylandOutput& output) {
     if (!selectedMonitors.empty() &&
         std::none_of(selectedMonitors.begin(), selectedMonitors.end(),
-                     [&output](const std::string& m) { return m == output.connectorName; })) {
+                     [&output](const std::string& m) { return outputMatchesSelector(m, output); })) {
       return false;
     }
     if (!outputHasAnyDockItems(cfg, *m_platform, output)) {
@@ -551,12 +566,14 @@ void Dock::syncInstances() {
   };
 
   // Remove instances for dead outputs or outputs no longer selected.
-  std::erase_if(m_instances, [&outputs, &outputAllowed](const auto& inst) {
+  std::erase_if(m_instances, [this, &outputs, &outputAllowed](const auto& inst) {
     const auto it =
         std::find_if(outputs.begin(), outputs.end(), [&inst](const auto& o) { return o.name == inst->outputName; });
-    if (it == outputs.end())
-      return true;
-    return !outputAllowed(*it);
+    const bool drop = (it == outputs.end()) || !outputAllowed(*it);
+    if (drop) {
+      detachInstanceState(*inst);
+    }
+    return drop;
   });
 
   for (const auto& output : outputs) {
