@@ -11,6 +11,7 @@
 #include "ui/controls/flex.h"
 #include "ui/controls/image.h"
 #include "ui/controls/label.h"
+#include "ui/controls/scroll_view.h"
 #include "ui/controls/select.h"
 #include "ui/controls/separator.h"
 #include "ui/controls/toggle.h"
@@ -144,7 +145,15 @@ void SetupWizardPanel::create() {
   root->setPadding(24.0f * scale, 28.0f * scale);
   m_root = root.get();
 
-  auto content = std::make_unique<Flex>();
+  auto scroll = std::make_unique<ScrollView>();
+  scroll->setFlexGrow(1.0f);
+  scroll->setScrollbarVisible(true);
+  scroll->setViewportPaddingH(0.0f);
+  scroll->setViewportPaddingV(0.0f);
+  scroll->clearFill();
+  scroll->clearBorder();
+
+  auto* content = scroll->content();
   content->setDirection(FlexDirection::Vertical);
   content->setAlign(FlexAlign::Stretch);
   content->setGap(Style::spaceLg * scale);
@@ -184,8 +193,7 @@ void SetupWizardPanel::create() {
                               colorSpecFromRole(ColorRole::OnSurface), true));
       auto description = makeLabel(i18n::tr("settings.schema.shell.telemetry.description"),
                                    Style::fontSizeCaption * scale, colorSpecFromRole(ColorRole::OnSurfaceVariant));
-      description->setMaxWidth(360.0f * scale);
-      description->setMaxLines(3);
+      description->setMaxLines(8);
       col->addChild(std::move(description));
       row->addChild(std::move(col));
     }
@@ -360,7 +368,7 @@ void SetupWizardPanel::create() {
     content->addChild(std::move(card));
   }
 
-  root->addChild(std::move(content));
+  root->addChild(std::move(scroll));
 
   // Footer
   {

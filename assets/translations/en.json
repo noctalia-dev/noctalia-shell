@@ -1466,8 +1466,8 @@
           "description": "Block all outgoing network requests"
         },
         "telemetry": {
-          "label": "Usage Statistics",
-          "description": "Send an anonymous ping on startup to help improve Noctalia"
+          "label": "Anonymous Startup Ping",
+          "description": "Sends a small anonymous startup ping with version, OS, compositor, display sizes, RAM, and UI scale"
         },
         "polkit-agent": {
           "label": "Polkit Agent",
