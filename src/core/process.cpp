@@ -438,7 +438,7 @@ namespace {
   // Double-fork + setsid so the exec'd process is not a direct child of the caller (matches
   // launcher app activation). Parent reaps the short-lived intermediate child.
   bool doubleForkExecDetached(const std::vector<std::string>& args, pid_t* reportPid,
-                              const std::string& activationToken) {
+                              const std::string& activationToken, const std::string& workingDir = {}) {
     int reportPipe[2] = {-1, -1};
     const bool needPid = reportPid != nullptr;
     if (needPid && ::pipe(reportPipe) != 0) {
@@ -514,6 +514,10 @@ namespace {
       ::close(reportPipe[1]);
     }
 
+    if (!workingDir.empty()) {
+      (void)::chdir(workingDir.c_str());
+    }
+
     if (!activationToken.empty()) {
       ::setenv("XDG_ACTIVATION_TOKEN", activationToken.c_str(), 1);
       ::setenv("DESKTOP_STARTUP_ID", activationToken.c_str(), 1);
@@ -564,11 +568,12 @@ namespace process {
     return false;
   }
 
-  bool runAsync(const std::vector<std::string>& args, const std::string& activationToken) {
+  bool runAsync(const std::vector<std::string>& args, const std::string& activationToken,
+                const std::string& workingDir) {
     if (args.empty() || args.front().empty()) {
       return false;
     }
-    return doubleForkExecDetached(args, nullptr, activationToken);
+    return doubleForkExecDetached(args, nullptr, activationToken, workingDir);
   }
 
   bool runAsync(std::initializer_list<const char*> args) {
