@@ -772,6 +772,15 @@ log_test = executable('log_test',
 
 test('log', log_test)
 
+string_utils_test = executable('string_utils_test',
+  sources: files(
+    'tests/string_utils_test.cpp',
+  ),
+  include_directories: _noctalia_inc,
+)
+
+test('string_utils', string_utils_test)
+
 image_source_log_test = executable('image_source_log_test',
   sources: files(
     'tests/image_source_log_test.cpp',

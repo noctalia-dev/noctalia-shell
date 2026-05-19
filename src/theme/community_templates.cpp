@@ -4,12 +4,12 @@
 #include "core/log.h"
 #include "core/toml.h"
 #include "net/http_client.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
 #include <filesystem>
-#include <format>
 #include <fstream>
 #include <json.hpp>
 #include <memory>
@@ -295,23 +295,6 @@ namespace noctalia::theme {
       return readSmallFile(sidecarPath(dest)) == file.md5;
     }
 
-    std::string urlEncode(std::string_view text) {
-      std::string encoded;
-      encoded.reserve(text.size() * 3);
-      auto isUnreserved = [](unsigned char ch) {
-        return std::isalnum(ch) != 0 || ch == '-' || ch == '_' || ch == '.' || ch == '~';
-      };
-      for (char rawCh : text) {
-        const auto ch = static_cast<unsigned char>(rawCh);
-        if (isUnreserved(ch)) {
-          encoded.push_back(static_cast<char>(ch));
-        } else {
-          encoded += std::format("%{:02X}", static_cast<unsigned int>(ch));
-        }
-      }
-      return encoded;
-    }
-
     std::string urlEncodePath(std::string_view path) {
       std::string out;
       std::size_t start = 0;
@@ -320,7 +303,7 @@ namespace noctalia::theme {
         const std::size_t end = slash == std::string_view::npos ? path.size() : slash;
         if (!out.empty())
           out.push_back('/');
-        out += urlEncode(path.substr(start, end - start));
+        out += StringUtils::urlEncode(path.substr(start, end - start));
         if (slash == std::string_view::npos)
           break;
         start = slash + 1;
@@ -464,7 +447,8 @@ namespace noctalia::theme {
         if (dest.has_parent_path())
           std::filesystem::create_directories(dest.parent_path(), ec);
         ++(*pending);
-        const std::string url = std::string(kCatalogUrl) + "/" + urlEncode(id) + "/" + urlEncodePath(file.name);
+        const std::string url =
+            std::string(kCatalogUrl) + "/" + StringUtils::urlEncode(id) + "/" + urlEncodePath(file.name);
         m_httpClient.download(url, dest,
                               [this, file, dest, generation, pending, completed, notifyIfReady](bool success) {
                                 ++(*completed);
