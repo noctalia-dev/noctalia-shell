@@ -12,6 +12,7 @@
 #include <string>
 #include <tuple>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace sdbus {
@@ -63,9 +64,11 @@ public:
   void registerIpc(IpcService& ipc);
 
   bool playPause(const std::string& busName);
+  bool stop(const std::string& busName);
   bool next(const std::string& busName);
   bool previous(const std::string& busName);
   bool playPauseActive();
+  bool stopActive();
   bool nextActive();
   bool previousActive();
   bool seek(const std::string& busName, int64_t offsetUs);
@@ -131,11 +134,14 @@ private:
                                                                          std::string_view method);
   [[nodiscard]] bool callPlayerMethod(const std::string& busName, const char* methodName);
   [[nodiscard]] bool canInvoke(const MprisPlayerInfo& player, const char* methodName) const;
+  void dismissPlayer(const std::string& busName);
 
   bool onPlayPausePlayer(const std::string& busName);
+  bool onStopPlayer(const std::string& busName);
   bool onNextPlayer(const std::string& busName);
   bool onPreviousPlayer(const std::string& busName);
   bool onPlayPauseActive();
+  bool onStopActive();
   bool onNextActive();
   bool onPreviousActive();
   bool onSeekPlayer(const std::string& busName, int64_t offsetUs);
@@ -186,6 +192,7 @@ private:
   std::unordered_map<std::string, int> m_playerPropertiesFailures;
   std::unordered_map<std::string, std::chrono::milliseconds> m_playerPropertiesRefreshBackoffMs;
   std::deque<std::string> m_pendingDiscoveryBusNames;
+  std::unordered_set<std::string> m_stoppedPlayers;
   std::string m_lastActivePlayer;
   std::string m_lastEmittedActivePlayer;
   std::optional<std::string> m_pinnedPlayerPreference;

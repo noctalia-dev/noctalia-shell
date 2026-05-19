@@ -670,7 +670,7 @@ void MprisService::registerIpc(IpcService& ipc) {
       [this](const std::string& args) -> std::string {
         const auto parts = noctalia::ipc::splitWords(args);
         if (parts.size() != 1) {
-          return "error: media requires exactly one action <next|previous|toggle>\n";
+          return "error: media requires exactly one action <next|previous|toggle|stop>\n";
         }
 
         const std::string& action = parts[0];
@@ -683,10 +683,13 @@ void MprisService::registerIpc(IpcService& ipc) {
         if (action == "toggle" || action == "playPause" || action == "play-pause") {
           return playPauseActive() ? "ok\n" : "error: no active player or PlayPause unsupported\n";
         }
+        if (action == "stop") {
+          return stopActive() ? "ok\n" : "error: no active player or Stop unsupported\n";
+        }
 
-        return "error: invalid media action (use next, previous, toggle)\n";
+        return "error: invalid media action (use next, previous, toggle, stop)\n";
       },
-      "media <next|previous|toggle>", "Control active media playback");
+      "media <next|previous|toggle|stop>", "Control active media playback");
 }
 
 std::function<void(std::optional<sdbus::Error>)> MprisService::makeAsyncReplyHandler(std::string op,
@@ -742,7 +745,23 @@ bool MprisService::playPause(const std::string& busName) {
   if (!canInvoke(it->second, "PlayPause")) {
     return false;
   }
+  m_stoppedPlayers.erase(busName);
   return callPlayerMethod(busName, "PlayPause");
+}
+
+bool MprisService::stop(const std::string& busName) {
+  const auto it = m_players.find(busName);
+  if (it == m_players.end()) {
+    return false;
+  }
+  if (!canInvoke(it->second, "Stop")) {
+    return false;
+  }
+  if (!callPlayerMethod(busName, "Stop")) {
+    return false;
+  }
+  dismissPlayer(busName);
+  return true;
 }
 
 bool MprisService::next(const std::string& busName) {
@@ -773,6 +792,14 @@ bool MprisService::playPauseActive() {
     return false;
   }
   return playPause(*active);
+}
+
+bool MprisService::stopActive() {
+  const auto active = chooseActivePlayer();
+  if (!active.has_value()) {
+    return false;
+  }
+  return stop(*active);
 }
 
 bool MprisService::nextActive() {
@@ -1284,6 +1311,11 @@ void MprisService::registerControlApi() {
               .withOutputParamNames("success")
               .implementedAs([this](const std::string& busName) { return onPlayPausePlayer(busName); }),
 
+          sdbus::registerMethod("StopPlayer")
+              .withInputParamNames("player_bus_name")
+              .withOutputParamNames("success")
+              .implementedAs([this](const std::string& busName) { return onStopPlayer(busName); }),
+
           sdbus::registerMethod("NextPlayer")
               .withInputParamNames("player_bus_name")
               .withOutputParamNames("success")
@@ -1296,6 +1328,10 @@ void MprisService::registerControlApi() {
 
           sdbus::registerMethod("PlayPauseActive").withOutputParamNames("success").implementedAs([this]() {
             return onPlayPauseActive();
+          }),
+
+          sdbus::registerMethod("StopActive").withOutputParamNames("success").implementedAs([this]() {
+            return onStopActive();
           }),
 
           sdbus::registerMethod("NextActive").withOutputParamNames("success").implementedAs([this]() {
@@ -1666,6 +1702,7 @@ void MprisService::applyPlayerSnapshot(const std::string& busName, const MprisPl
   const auto previousActive = activePlayer();
   const auto now = std::chrono::steady_clock::now();
   if (info.playbackStatus == "Playing") {
+    m_stoppedPlayers.erase(busName);
     m_lastActivePlayer = busName;
     m_lastPlayingUpdate[busName] = now;
   }
@@ -1910,6 +1947,7 @@ void MprisService::removePlayer(const std::string& busName) {
   if (m_lastActivePlayer == busName) {
     m_lastActivePlayer.clear();
   }
+  m_stoppedPlayers.erase(busName);
   emitPlayersChanged();
   syncSignals(previousActive);
   if (m_changeCallback) {
@@ -1922,9 +1960,11 @@ void MprisService::removePlayer(const std::string& busName) {
 }
 
 std::optional<std::string> MprisService::chooseActivePlayer() const {
+  const auto isDismissed = [this](const std::string& busName) { return m_stoppedPlayers.contains(busName); };
+
   if (m_pinnedPlayerPreference.has_value()) {
     const auto it = m_players.find(*m_pinnedPlayerPreference);
-    if (it != m_players.end() && !isBlacklisted(it->second)) {
+    if (it != m_players.end() && !isBlacklisted(it->second) && !isDismissed(*m_pinnedPlayerPreference)) {
       // kLog.debug("choose active player source=pinned name={}", *m_pinnedPlayerPreference);
       return *m_pinnedPlayerPreference;
     }
@@ -1933,7 +1973,7 @@ std::optional<std::string> MprisService::chooseActivePlayer() const {
   std::optional<std::string> mostRecentPlaying;
   std::chrono::steady_clock::time_point mostRecentPlayingAt{};
   for (const auto& [busName, player] : m_players) {
-    if (isBlacklisted(player) || player.playbackStatus != "Playing") {
+    if (isBlacklisted(player) || isDismissed(busName) || player.playbackStatus != "Playing") {
       continue;
     }
     const auto playingIt = m_lastPlayingUpdate.find(busName);
@@ -1951,7 +1991,8 @@ std::optional<std::string> MprisService::chooseActivePlayer() const {
 
   for (const auto& busName : m_preferredPlayers) {
     const auto it = m_players.find(busName);
-    if (it != m_players.end() && !isBlacklisted(it->second) && it->second.playbackStatus == "Playing") {
+    if (it != m_players.end() && !isBlacklisted(it->second) && !isDismissed(busName) &&
+        it->second.playbackStatus == "Playing") {
       // kLog.debug("choose active player source=preferred_playing name={}", busName);
       return busName;
     }
@@ -1959,7 +2000,7 @@ std::optional<std::string> MprisService::chooseActivePlayer() const {
 
   for (const auto& busName : m_preferredPlayers) {
     const auto it = m_players.find(busName);
-    if (it != m_players.end() && !isBlacklisted(it->second)) {
+    if (it != m_players.end() && !isBlacklisted(it->second) && !isDismissed(busName)) {
       // kLog.debug("choose active player source=preferred_any name={}", busName);
       return busName;
     }
@@ -1967,14 +2008,14 @@ std::optional<std::string> MprisService::chooseActivePlayer() const {
 
   if (!m_lastActivePlayer.empty()) {
     const auto it = m_players.find(m_lastActivePlayer);
-    if (it != m_players.end() && !isBlacklisted(it->second)) {
+    if (it != m_players.end() && !isBlacklisted(it->second) && !isDismissed(m_lastActivePlayer)) {
       // kLog.debug("choose active player source=last_active name={}", m_lastActivePlayer);
       return m_lastActivePlayer;
     }
   }
 
   for (const auto& [busName, player] : m_players) {
-    if (!isBlacklisted(player)) {
+    if (!isBlacklisted(player) && !isDismissed(busName)) {
       // kLog.debug("choose active player source=first_cached name={}", busName);
       return busName;
     }
@@ -2026,7 +2067,7 @@ bool MprisService::callPlayerMethod(const std::string& busName, const char* meth
 
 bool MprisService::canInvoke(const MprisPlayerInfo& player, const char* methodName) const {
   const std::string_view method{methodName};
-  if (method == "PlayPause") {
+  if (method == "PlayPause" || method == "Stop") {
     return player.canPlay || player.canPause;
   }
   if (method == "Next") {
@@ -2036,6 +2077,27 @@ bool MprisService::canInvoke(const MprisPlayerInfo& player, const char* methodNa
     return player.canGoPrevious;
   }
   return false;
+}
+
+void MprisService::dismissPlayer(const std::string& busName) {
+  if (busName.empty()) {
+    return;
+  }
+
+  const auto previousActive = chooseActivePlayer();
+  m_stoppedPlayers.insert(busName);
+  if (m_lastActivePlayer == busName) {
+    m_lastActivePlayer.clear();
+  }
+
+  if (!previousActive.has_value() || *previousActive != busName) {
+    return;
+  }
+
+  emitActivePlayerChanged();
+  if (m_changeCallback) {
+    m_changeCallback();
+  }
 }
 
 bool MprisService::onPlayPausePlayer(const std::string& busName) {
@@ -2051,6 +2113,22 @@ bool MprisService::onPlayPausePlayer(const std::string& busName) {
   if (!ok) {
     throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotSupported"},
                        "player does not support PlayPause");
+  }
+  return true;
+}
+
+bool MprisService::onStopPlayer(const std::string& busName) {
+  if (busName.empty()) {
+    throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.InvalidArgs"}, "player_bus_name must not be empty");
+  }
+
+  if (!m_players.contains(busName)) {
+    throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"}, "player was not found");
+  }
+
+  const bool ok = stop(busName);
+  if (!ok) {
+    throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotSupported"}, "player does not support Stop");
   }
   return true;
 }
@@ -2093,6 +2171,14 @@ bool MprisService::onPlayPauseActive() {
     throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"}, "no active player available");
   }
   return onPlayPausePlayer(*active);
+}
+
+bool MprisService::onStopActive() {
+  const auto active = chooseActivePlayer();
+  if (!active.has_value()) {
+    throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"}, "no active player available");
+  }
+  return onStopPlayer(*active);
 }
 
 bool MprisService::onNextActive() {
