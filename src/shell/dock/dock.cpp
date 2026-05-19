@@ -154,6 +154,22 @@ namespace {
     return (cfg.launcherPosition == "start" || cfg.launcherPosition == "end") ? 1U : 0U;
   }
 
+  bool outputHasAnyDockItems(const DockConfig& cfg, const CompositorPlatform& platform, const WaylandOutput& output) {
+    if (!cfg.pinned.empty()) {
+      return true;
+    }
+    if (dockLauncherButtonCount(cfg) > 0) {
+      return true;
+    }
+    if (cfg.showRunning) {
+      wl_output* const filter = cfg.activeMonitorOnly ? output.output : nullptr;
+      if (!platform.runningAppIds(filter).empty()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   std::string_view dockLauncherIconGlyph(const DockConfig& cfg) {
     return cfg.launcherIcon.empty() ? "grid-dots" : std::string_view{cfg.launcherIcon};
   }
@@ -263,11 +279,17 @@ void Dock::onOutputChange() {
 }
 
 void Dock::refresh() {
-  if (m_instances.empty()) {
+  if (m_config == nullptr || m_platform == nullptr || !m_config->config().dock.enabled) {
     return;
   }
 
   refreshPinnedAppsIfNeeded();
+
+  syncInstances();
+
+  if (m_instances.empty()) {
+    return;
+  }
 
   for (auto& inst : m_instances) {
     if (inst->surface == nullptr) {
@@ -516,12 +538,16 @@ void Dock::syncInstances() {
   const auto& outputs = m_platform->outputs();
   const auto& cfg = m_config->config().dock;
   const auto& selectedMonitors = cfg.monitors;
-  const auto outputAllowed = [&selectedMonitors](const WaylandOutput& output) {
-    if (selectedMonitors.empty()) {
-      return true;
+  const auto outputAllowed = [&](const WaylandOutput& output) {
+    if (!selectedMonitors.empty() &&
+        std::none_of(selectedMonitors.begin(), selectedMonitors.end(),
+                     [&output](const std::string& m) { return m == output.connectorName; })) {
+      return false;
     }
-    return std::any_of(selectedMonitors.begin(), selectedMonitors.end(),
-                       [&output](const std::string& m) { return m == output.connectorName; });
+    if (!outputHasAnyDockItems(cfg, *m_platform, output)) {
+      return false;
+    }
+    return true;
   };
 
   // Remove instances for dead outputs or outputs no longer selected.
