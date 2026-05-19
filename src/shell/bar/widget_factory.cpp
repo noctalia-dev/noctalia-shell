@@ -11,6 +11,14 @@
 #include "notification/notification_manager.h"
 #include "pipewire/pipewire_spectrum.h"
 #include "shell/bar/widgets/active_window_widget.h"
+
+#include <memory>
+
+// Only compile debug_indicator_widget when building debug
+#ifndef NDBUG
+#include "shell/bar/widgets/debug_indicator_widget.h"
+#endif
+
 #include "shell/bar/widgets/audio_visualizer_widget.h"
 #include "shell/bar/widgets/battery_widget.h"
 #include "shell/bar/widgets/bluetooth_widget.h"
@@ -466,6 +474,14 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     widget->setContentScale(contentScale);
     return widget;
   }
+
+#ifndef NDEBUG
+  if (type == "debug_indicator") {
+    auto widget = std::make_unique<DebugIndicatorWidget>();
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+#endif
 
   kLog.warn("widget factory: unknown widget \"{}\"", name);
   return nullptr;
