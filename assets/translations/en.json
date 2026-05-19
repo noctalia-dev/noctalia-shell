@@ -1055,6 +1055,8 @@
         "full": "Full",
         "gauge": "Gauge",
         "graph": "Graph",
+        "graphic": "Graphic",
+        "icon": "Icon",
         "id": "ID",
         "input": "Input",
         "instance": "Per Placement",
@@ -1138,6 +1140,10 @@
         "display": {
           "label": "Display",
           "description": "Display mode for this widget"
+        },
+        "display_mode": {
+          "label": "Display Mode",
+          "description": "Render the battery as a graphical shape or a glyph icon"
         },
         "focused_color": {
           "label": "Focused Color",

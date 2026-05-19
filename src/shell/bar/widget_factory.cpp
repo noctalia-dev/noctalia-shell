@@ -138,7 +138,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     const int warningThreshold = static_cast<int>(wc != nullptr ? wc->getInt("warning_threshold", 20) : 20);
     const ColorSpec warningColor =
         colorSpecFromConfigString(wc != nullptr ? wc->getString("warning_color", "error") : std::string("error"));
-    auto widget = std::make_unique<BatteryWidget>(m_upower, deviceSelector, warningThreshold, warningColor);
+    const std::string displayModeStr = wc != nullptr ? wc->getString("display_mode", "icon") : std::string("icon");
+    const bool showLabel = wc != nullptr ? wc->getBool("show_label", true) : true;
+    const BatteryDisplayMode displayMode =
+        displayModeStr == "graphic" ? BatteryDisplayMode::Graphic : BatteryDisplayMode::Icon;
+    auto widget = std::make_unique<BatteryWidget>(m_upower, deviceSelector, warningThreshold, warningColor, displayMode,
+                                                  showLabel);
     widget->setContentScale(contentScale);
     return widget;
   }

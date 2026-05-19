@@ -463,6 +463,9 @@ namespace settings {
         add(std::move(high));
       }
     } else if (type == "battery") {
+      add(selectSpec("display_mode", "icon",
+                     {{"icon", "settings.widgets.options.icon"}, {"graphic", "settings.widgets.options.graphic"}}));
+      add(boolSpec("show_label", true));
       add(selectSpec("device", "auto", {{"auto", "common.states.auto"}}));
       add(intSpec("warning_threshold", 20, 0.0, 100.0, 1.0));
       {
