@@ -1613,6 +1613,10 @@
           "label": "Active Monitor Only",
           "description": "Only show the dock on the active monitor"
         },
+        "monitors": {
+          "label": "Displays",
+          "description": "Choose which displays show the dock; leave empty to show on all displays"
+        },
         "icon-size": {
           "label": "Icon Size",
           "description": "Size of dock icons in pixels"

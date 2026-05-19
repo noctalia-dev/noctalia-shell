@@ -1837,6 +1837,8 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
       dock.launcherIcon = *v;
     if (auto* arr = (*dockTbl)["pinned"].as_array())
       dock.pinned = readStringArray(*arr);
+    if (const auto* v = (*dockTbl).get("monitors"))
+      dock.monitors = readStringArray(*v);
   }
 
   // Parse [desktop_widgets]

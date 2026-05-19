@@ -319,7 +319,8 @@ namespace {
            nearlyEqual(a.activeScale, b.activeScale) && nearlyEqual(a.inactiveScale, b.inactiveScale) &&
            nearlyEqual(a.activeOpacity, b.activeOpacity) && nearlyEqual(a.inactiveOpacity, b.inactiveOpacity) &&
            a.showDots == b.showDots && a.showInstanceCount == b.showInstanceCount &&
-           a.launcherPosition == b.launcherPosition && a.launcherIcon == b.launcherIcon && a.pinned == b.pinned;
+           a.launcherPosition == b.launcherPosition && a.launcherIcon == b.launcherIcon && a.pinned == b.pinned &&
+           a.monitors == b.monitors;
   }
 
   bool shellConfigEqual(const ShellConfig& a, const ShellConfig& b) {

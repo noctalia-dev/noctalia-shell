@@ -514,14 +514,29 @@ bool Dock::refreshPinnedAppsIfNeeded() {
 
 void Dock::syncInstances() {
   const auto& outputs = m_platform->outputs();
+  const auto& cfg = m_config->config().dock;
+  const auto& selectedMonitors = cfg.monitors;
+  const auto outputAllowed = [&selectedMonitors](const WaylandOutput& output) {
+    if (selectedMonitors.empty()) {
+      return true;
+    }
+    return std::any_of(selectedMonitors.begin(), selectedMonitors.end(),
+                       [&output](const std::string& m) { return m == output.connectorName; });
+  };
 
-  // Remove instances for dead outputs.
-  std::erase_if(m_instances, [&outputs](const auto& inst) {
-    return !std::any_of(outputs.begin(), outputs.end(), [&inst](const auto& o) { return o.name == inst->outputName; });
+  // Remove instances for dead outputs or outputs no longer selected.
+  std::erase_if(m_instances, [&outputs, &outputAllowed](const auto& inst) {
+    const auto it =
+        std::find_if(outputs.begin(), outputs.end(), [&inst](const auto& o) { return o.name == inst->outputName; });
+    if (it == outputs.end())
+      return true;
+    return !outputAllowed(*it);
   });
 
   for (const auto& output : outputs) {
     if (!output.done)
+      continue;
+    if (!outputAllowed(output))
       continue;
     const bool exists = std::any_of(m_instances.begin(), m_instances.end(),
                                     [&output](const auto& inst) { return inst->outputName == output.name; });

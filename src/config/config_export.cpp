@@ -507,6 +507,7 @@ namespace config_export {
       table.insert_or_assign("launcher_position", dock.launcherPosition);
       table.insert_or_assign("launcher_icon", dock.launcherIcon);
       table.insert_or_assign("pinned", stringArray(dock.pinned));
+      table.insert_or_assign("monitors", stringArray(dock.monitors));
       return table;
     }
 

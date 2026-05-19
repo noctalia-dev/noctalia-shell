@@ -347,6 +347,7 @@ struct DockConfig {
   std::string launcherPosition = "none";  // none | start | end
   std::string launcherIcon = "grid-dots"; // Tabler glyph name
   std::vector<std::string> pinned;        // desktop entry IDs to always show
+  std::vector<std::string> monitors;      // connector names to show on; empty = all outputs
 
   bool operator==(const DockConfig&) const = default;
 };
