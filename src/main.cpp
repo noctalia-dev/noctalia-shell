@@ -252,6 +252,7 @@ int main(int argc, char* argv[]) {
 #endif
 
   std::setlocale(LC_ALL, "");
+  std::setlocale(LC_NUMERIC, "C");
 
   const bool isDaemonChild = takeDaemonPipeFromEnv();
   bool shouldDaemonize = false;
