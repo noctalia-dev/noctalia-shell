@@ -150,7 +150,6 @@ namespace config_export {
       table.insert_or_assign("enabled", bar.enabled);
       table.insert_or_assign("auto_hide", bar.autoHide);
       table.insert_or_assign("reserve_space", bar.reserveSpace);
-      table.insert_or_assign("attach_panels", bar.attachPanels);
       table.insert_or_assign("thickness", static_cast<std::int64_t>(bar.thickness));
       table.insert_or_assign("background_opacity", static_cast<double>(bar.backgroundOpacity));
       table.insert_or_assign("border", colorSpecToConfigString(bar.border));
@@ -234,8 +233,6 @@ namespace config_export {
         resolved.shadow = *ovr.shadow;
       if (ovr.contactShadow)
         resolved.contactShadow = *ovr.contactShadow;
-      if (ovr.attachPanels)
-        resolved.attachPanels = *ovr.attachPanels;
       if (ovr.startWidgets)
         resolved.startWidgets = *ovr.startWidgets;
       if (ovr.centerWidgets)

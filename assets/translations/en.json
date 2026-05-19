@@ -2138,10 +2138,6 @@
         "reserve-space": {
           "description": "Reserve screen space for the bar"
         },
-        "attach-panels": {
-          "label": "Attach Panels",
-          "description": "Attach panels opened from this bar to the bar edge"
-        },
         "ends-margin": {
           "description": "Inset from each end of the bar along its main axis"
         },
