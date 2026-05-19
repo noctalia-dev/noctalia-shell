@@ -1112,14 +1112,8 @@ namespace settings {
             currentLaneKey = std::string(laneKey);
             currentLanePath = std::move(p);
             currentLaneItems = std::move(items);
-            const bool currentLaneOverridden =
-                ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(currentLanePath);
-            const bool currentLaneRedundantGuiOverride = ctx.configService != nullptr &&
-                                                         ctx.configService->hasOverride(currentLanePath) &&
-                                                         !currentLaneOverridden;
-            currentLaneInherited =
-                isMonitorWidgetListPath(currentLanePath) &&
-                (!monitorWidgetListHasExplicitValue(ctx.config, currentLanePath) || currentLaneRedundantGuiOverride);
+            currentLaneInherited = isMonitorWidgetListPath(currentLanePath) &&
+                                   !monitorWidgetListHasExplicitValue(ctx.config, currentLanePath);
             break;
           }
         }
@@ -1456,10 +1450,9 @@ namespace settings {
       auto lanePath = pathWithLastSegment(entry.path, std::string(laneKey));
       const auto laneItems = barWidgetItemsForPath(ctx.config, lanePath);
       const bool overridden = ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(lanePath);
-      const bool redundantGuiOverride =
-          ctx.configService != nullptr && ctx.configService->hasOverride(lanePath) && !overridden;
-      const bool inherited = isMonitorWidgetListPath(lanePath) &&
-                             (!monitorWidgetListHasExplicitValue(ctx.config, lanePath) || redundantGuiOverride);
+      const bool hasGuiOverride = ctx.configService != nullptr && ctx.configService->hasOverride(lanePath);
+      const bool monitorLaneExplicit = monitorWidgetListHasExplicitValue(ctx.config, lanePath);
+      const bool inherited = isMonitorWidgetListPath(lanePath) && !monitorLaneExplicit;
 
       auto lane = std::make_unique<Flex>();
       lane->setDirection(FlexDirection::Vertical);
@@ -1533,7 +1526,7 @@ namespace settings {
         customizeBtn->setOnClick([setOverride = ctx.setOverride, items, path]() { setOverride(path, items); });
         laneHeader->addChild(std::move(customizeBtn));
       }
-      if (overridden) {
+      if (overridden || (monitorLaneExplicit && hasGuiOverride)) {
         laneHeader->addChild(ctx.makeResetButton(lanePath));
       }
       lane->addChild(std::move(laneHeader));

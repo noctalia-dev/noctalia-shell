@@ -614,6 +614,14 @@ namespace {
     return true;
   }
 
+  bool overridePresenceIsSemantic(const std::vector<std::string>& path) {
+    if (path.size() != 5 || path[0] != "bar" || path[2] != "monitor") {
+      return false;
+    }
+    const auto& key = path[4];
+    return key == "start" || key == "center" || key == "end";
+  }
+
   std::vector<std::filesystem::path> sortedConfigTomlFiles(std::string_view configDir) {
     std::vector<std::filesystem::path> files;
     if (configDir.empty()) {
@@ -1097,7 +1105,7 @@ bool ConfigService::setOverride(const std::vector<std::string>& path, ConfigOver
   }
 
   insertOverrideValue(*table, path.back(), value);
-  if (!overridePathEffectiveInTable(path, m_overridesTable)) {
+  if (!overridePresenceIsSemantic(path) && !overridePathEffectiveInTable(path, m_overridesTable)) {
     eraseOverridePath(m_overridesTable, path, overridePreserveDepthForPath(path));
     if (path.size() == 2 && path[0] == "idle" && path[1] == "behavior") {
       eraseOverridePath(m_overridesTable, {"idle", "behavior_order"}, overridePreserveDepthForPath(path));
