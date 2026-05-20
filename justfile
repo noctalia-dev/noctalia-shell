@@ -31,7 +31,7 @@ run m=mode: (build m)
 
 install m=mode p=prefix: (configure m p)
     meson install -C build-{{m}}
-    
+
 uninstall m=mode:
     ninja -C build-{{m}} uninstall
 
