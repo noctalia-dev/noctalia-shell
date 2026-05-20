@@ -1,6 +1,5 @@
 #pragma once
 
-#include "core/timer_manager.h"
 #include "dbus/upower/upower_service.h"
 #include "render/animation/animation_manager.h"
 #include "shell/bar/widget.h"
@@ -56,10 +55,6 @@ private:
   // Animated fill
   float m_animatedPct = 0.0f;
   AnimationManager::Id m_fillAnim = 0;
-
-  // Charging icon/text alternation
-  Timer m_alternateTimer;
-  bool m_showStateIcon = false;
 
   double m_lastPct = -1.0;
   BatteryState m_lastState = BatteryState::Unknown;
