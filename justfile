@@ -2,20 +2,21 @@ set positional-arguments
 
 mode := "debug"
 build-dir := "build-" + mode
+prefix := "/usr/local"
 
 default:
     @just --list
 
-configure m=mode:
+configure m=mode p=prefix:
     #!/usr/bin/env bash
     set -euo pipefail
     args=(--buildtype={{ if m == "release" { "release" } else { "debug" } }})
     [[ "{{m}}" == "release" ]] && args+=(-Db_lto=true)
     [[ "{{m}}" == "asan"    ]] && args+=(-Db_sanitize=address,undefined)
     if [[ -d "build-{{m}}" ]]; then
-        meson setup "build-{{m}}" "${args[@]}" --reconfigure
+        meson setup "build-{{m}}" "${args[@]}" --prefix={{p}} --reconfigure
     else
-        meson setup "build-{{m}}" "${args[@]}"
+        meson setup "build-{{m}}" "${args[@]}" --prefix={{p}}
     fi
     ln -sfn "build-{{m}}/compile_commands.json" compile_commands.json
 
@@ -28,8 +29,11 @@ _ensure-configured m=mode:
 run m=mode: (build m)
     ./build-{{m}}/noctalia
 
-install m=mode: (configure m)
+install m=mode p=prefix: (configure m p)
     meson install -C build-{{m}}
+    
+uninstall m=mode:
+    ninja -C build-{{m}} uninstall
 
 format:
     find src \( -name '*.cpp' -o -name '*.h' \) -print0 | xargs -0 clang-format -i
