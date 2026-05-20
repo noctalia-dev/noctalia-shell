@@ -14,7 +14,6 @@ DebugIndicatorWidget::DebugIndicatorWidget() = default;
 void DebugIndicatorWidget::create() {
   auto chip = std::make_unique<Chip>();
 
-  // Override Chip's default active/inactive styling with a red pill
   chip->setFill(colorSpecFromRole(ColorRole::Error));
   chip->label()->setColor(colorSpecFromRole(ColorRole::OnError));
   chip->label()->setBold(true);
