@@ -425,6 +425,7 @@
     "actions": {
       "lock": "Lock",
       "logout": "Log Out",
+      "suspend": "Suspend",
       "reboot": "Reboot",
       "shutdown": "Shut Down",
       "custom": "Custom"
@@ -697,6 +698,7 @@
       "kind": {
         "lock": "Lock",
         "logout": "Log out",
+        "suspend": "Suspend",
         "reboot": "Reboot",
         "shutdown": "Shut down",
         "command": "Custom command"

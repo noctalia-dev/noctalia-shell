@@ -208,6 +208,14 @@ namespace {
     return false;
   }
 
+  bool doSuspend() {
+    logActionContext("suspend");
+    return runCheckedSessionCommand("suspend", {
+                                                   {"systemctl", "suspend"},
+                                                   {"loginctl", "suspend"},
+                                               });
+  }
+
   bool doReboot() {
     logActionContext("reboot");
     return runCheckedSessionCommand("reboot", {
@@ -270,7 +278,8 @@ namespace {
   }
 
   [[nodiscard]] bool isKnownAction(std::string_view action) {
-    return action == "lock" || action == "logout" || action == "reboot" || action == "shutdown" || action == "command";
+    return action == "lock" || action == "logout" || action == "suspend" || action == "reboot" ||
+           action == "shutdown" || action == "command";
   }
 
   [[nodiscard]] const char* labelKeyForAction(std::string_view action) {
@@ -279,6 +288,9 @@ namespace {
     }
     if (action == "logout") {
       return "session.actions.logout";
+    }
+    if (action == "suspend") {
+      return "session.actions.suspend";
     }
     if (action == "reboot") {
       return "session.actions.reboot";
@@ -295,6 +307,9 @@ namespace {
     }
     if (action == "logout") {
       return "logout";
+    }
+    if (action == "suspend") {
+      return "suspend";
     }
     if (action == "reboot") {
       return "reboot";
@@ -581,6 +596,10 @@ void SessionPanel::invokeEntry(const SessionPanelActionConfig& cfg) {
   if (cfg.action == "logout") {
     compositors::niri::NiriRuntime* niri = m_niriRuntime;
     runPowerAction(m_actionHooks.onLogout, [niri]() { return doLogout(niri); }, "logout");
+    return;
+  }
+  if (cfg.action == "suspend") {
+    runPowerAction({}, []() { return doSuspend(); }, "suspend");
     return;
   }
   if (cfg.action == "reboot") {

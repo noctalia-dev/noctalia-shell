@@ -111,7 +111,7 @@ struct ShortcutConfig {
 };
 
 struct SessionPanelActionConfig {
-  // "lock" | "logout" | "reboot" | "shutdown" | "command"
+  // "lock" | "logout" | "suspend" | "reboot" | "shutdown" | "command"
   std::string action;
   bool enabled = true;
   // When set, runs via `process::runAsync` (shell string) instead of the built-in handler.

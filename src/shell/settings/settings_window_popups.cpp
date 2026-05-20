@@ -41,6 +41,9 @@ namespace {
     if (row.action == "logout") {
       return i18n::tr("settings.session-actions.kind.logout");
     }
+    if (row.action == "suspend") {
+      return i18n::tr("settings.session-actions.kind.suspend");
+    }
     if (row.action == "reboot") {
       return i18n::tr("settings.session-actions.kind.reboot");
     }

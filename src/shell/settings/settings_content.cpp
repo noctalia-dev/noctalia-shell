@@ -90,6 +90,9 @@ namespace settings {
       if (action == "logout") {
         return "logout";
       }
+      if (action == "suspend") {
+        return "suspend";
+      }
       if (action == "reboot") {
         return "reboot";
       }
@@ -411,6 +414,7 @@ namespace settings {
       const std::vector<SelectOption> kindOptions = {
           {"lock", i18n::tr("settings.session-actions.kind.lock"), {}},
           {"logout", i18n::tr("settings.session-actions.kind.logout"), {}},
+          {"suspend", i18n::tr("settings.session-actions.kind.suspend"), {}},
           {"reboot", i18n::tr("settings.session-actions.kind.reboot"), {}},
           {"shutdown", i18n::tr("settings.session-actions.kind.shutdown"), {}},
           {"command", i18n::tr("settings.session-actions.kind.command"), {}},
@@ -1851,6 +1855,7 @@ namespace settings {
       const std::vector<SelectOption> kindOptions = {
           {"lock", i18n::tr("settings.session-actions.kind.lock"), {}},
           {"logout", i18n::tr("settings.session-actions.kind.logout"), {}},
+          {"suspend", i18n::tr("settings.session-actions.kind.suspend"), {}},
           {"reboot", i18n::tr("settings.session-actions.kind.reboot"), {}},
           {"shutdown", i18n::tr("settings.session-actions.kind.shutdown"), {}},
           {"command", i18n::tr("settings.session-actions.kind.command"), {}},
