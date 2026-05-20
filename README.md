@@ -101,6 +101,16 @@ just build release
 sudo just install release
 ```
 
+Pass a prefix to `configure` to install somewhere other than `/usr/local`:
+
+```sh
+just configure release "$HOME/.local"
+just build release
+just install release
+```
+
+To remove files installed from a build directory, run `just uninstall release`.
+
 #### Debug build
 ```sh
 # Debug build in build-debug/ don't use debug unless you are debugging...
