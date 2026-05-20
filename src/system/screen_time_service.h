@@ -69,6 +69,12 @@ private:
   [[nodiscard]] static std::string localDayKey(std::chrono::system_clock::time_point tp);
   [[nodiscard]] static std::string shortDayLabel(const std::string& dayKey);
   [[nodiscard]] static int localHour(std::chrono::system_clock::time_point tp);
+  [[nodiscard]] static DayRecord materializeDayForCharts(const DayRecord& source);
+  [[nodiscard]] static std::chrono::seconds sumApps(const DayRecord& day);
+  [[nodiscard]] static std::chrono::seconds sumHourly(const DayRecord& day);
+  [[nodiscard]] static std::chrono::seconds appSecondsForKey(const DayRecord& day, const std::string& appKey);
+  static void distributeSecondsAcrossHourly(std::chrono::seconds amount, const DayRecord& profile,
+                                            std::vector<std::chrono::seconds>& buckets);
 
   WaylandConnection* m_wayland = nullptr;
   std::function<void()> m_changeCallback;

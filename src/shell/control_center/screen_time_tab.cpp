@@ -551,6 +551,9 @@ void ScreenTimeTab::syncContent(Renderer& renderer) {
         chartBucketTotal += series.buckets[bucket].count();
       }
     }
+    if (chartBucketTotal <= 0 && bucket < snapshot.buckets.size()) {
+      chartBucketTotal = snapshot.buckets[bucket].count();
+    }
     peakChartBucketSeconds = std::max(peakChartBucketSeconds, chartBucketTotal);
   }
 
@@ -622,6 +625,9 @@ void ScreenTimeTab::syncContent(Renderer& renderer) {
       if (bucket < series.buckets.size()) {
         bucketChartTotal += series.buckets[bucket];
       }
+    }
+    if (bucketChartTotal.count() <= 0 && bucket < snapshot.buckets.size()) {
+      bucketChartTotal = snapshot.buckets[bucket];
     }
     const float columnHeight = peakChartBucketSeconds > 0 ? chartHeight * static_cast<float>(bucketChartTotal.count()) /
                                                                 static_cast<float>(peakChartBucketSeconds)
@@ -752,10 +758,21 @@ void ScreenTimeTab::layoutChart(Renderer& renderer) {
   if (rowWidth <= 0.0f && m_usageCard != nullptr) {
     rowWidth = m_usageCard->width();
   }
-  const float columnWidth =
+  auto columnWidth =
       activeBuckets > 0 && rowWidth > 0.0f
           ? (rowWidth - barGap * static_cast<float>(activeBuckets - 1)) / static_cast<float>(activeBuckets)
           : 0.0f;
+
+  if (columnWidth <= 0.0f && activeBuckets > 0 && m_usageCard != nullptr) {
+    m_usageCard->layout(renderer);
+    rowWidth = m_chartPlotRow->width();
+    if (rowWidth <= 0.0f) {
+      rowWidth = m_usageCard->width();
+    }
+    columnWidth = activeBuckets > 0 && rowWidth > 0.0f
+                      ? (rowWidth - barGap * static_cast<float>(activeBuckets - 1)) / static_cast<float>(activeBuckets)
+                      : 0.0f;
+  }
 
   if (columnWidth > 0.0f) {
     for (auto& columnWidgets : m_bucketColumns) {

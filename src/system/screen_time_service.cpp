@@ -16,6 +16,7 @@
 #include <format>
 #include <fstream>
 #include <json.hpp>
+#include <optional>
 #include <utility>
 
 namespace {
@@ -84,6 +85,87 @@ namespace {
   }
 
 } // namespace
+
+std::chrono::seconds ScreenTimeService::sumApps(const DayRecord& day) {
+  std::chrono::seconds total{0};
+  for (const auto& [_, seconds] : day.apps) {
+    total += seconds;
+  }
+  return total;
+}
+
+std::chrono::seconds ScreenTimeService::sumHourly(const DayRecord& day) {
+  std::chrono::seconds total{0};
+  for (const auto& bucket : day.hourly) {
+    total += bucket;
+  }
+  return total;
+}
+
+std::chrono::seconds ScreenTimeService::appSecondsForKey(const DayRecord& day, const std::string& appKey) {
+  std::chrono::seconds total{0};
+  for (const auto& [storedKey, seconds] : day.apps) {
+    if (canonicalAppKey(storedKey) == appKey) {
+      total += seconds;
+    }
+  }
+  return total;
+}
+
+void ScreenTimeService::distributeSecondsAcrossHourly(std::chrono::seconds amount, const DayRecord& profile,
+                                                      std::vector<std::chrono::seconds>& buckets) {
+  if (amount.count() <= 0 || buckets.empty()) {
+    return;
+  }
+
+  const std::chrono::seconds profileTotal = sumHourly(profile);
+  if (profileTotal.count() <= 0) {
+    const int hour = std::clamp(localHour(localNow()), 0, 23);
+    buckets[static_cast<std::size_t>(hour)] += amount;
+    return;
+  }
+
+  std::int64_t assigned = 0;
+  std::size_t largestHour = 0;
+  std::int64_t largestShare = -1;
+  for (std::size_t hour = 0; hour < buckets.size() && hour < profile.hourly.size(); ++hour) {
+    const std::int64_t share = (amount.count() * profile.hourly[hour].count()) / profileTotal.count();
+    buckets[hour] += std::chrono::seconds(share);
+    assigned += share;
+    if (share > largestShare) {
+      largestShare = share;
+      largestHour = hour;
+    }
+  }
+  const std::int64_t remainder = amount.count() - assigned;
+  if (remainder > 0) {
+    buckets[largestHour] += std::chrono::seconds(remainder);
+  }
+}
+
+ScreenTimeService::DayRecord ScreenTimeService::materializeDayForCharts(const DayRecord& source) {
+  DayRecord day = source;
+  const std::chrono::seconds appsTotal = sumApps(day);
+  std::chrono::seconds hourlyTotal = sumHourly(day);
+
+  if (hourlyTotal < appsTotal) {
+    day.hourly.fill(std::chrono::seconds{0});
+    for (const auto& [_, buckets] : day.appHourly) {
+      for (std::size_t hour = 0; hour < buckets.size() && hour < day.hourly.size(); ++hour) {
+        day.hourly[hour] += buckets[hour];
+      }
+    }
+    hourlyTotal = sumHourly(day);
+  }
+
+  if (hourlyTotal < appsTotal) {
+    day.hourly.fill(std::chrono::seconds{0});
+    const int hour = std::clamp(localHour(localNow()), 0, 23);
+    day.hourly[static_cast<std::size_t>(hour)] = appsTotal;
+  }
+
+  return day;
+}
 
 void ScreenTimeService::initialize(WaylandConnection* wayland) {
   m_wayland = wayland;
@@ -202,15 +284,18 @@ ScreenTimeSnapshot ScreenTimeService::snapshot(int rangeDays) {
   const std::vector<std::string> dayKeys = dayKeysForRange(rangeDays);
   std::unordered_map<std::string, std::chrono::seconds> mergedApps;
 
+  std::optional<DayRecord> materializedToday;
+  const DayRecord* todayForCharts = nullptr;
   if (snapshot.hourlyBuckets) {
     snapshot.buckets.resize(24);
-    const DayRecord* today = dayRecordForKey(dayKeys.front());
-    if (today != nullptr) {
-      for (std::size_t hour = 0; hour < today->hourly.size(); ++hour) {
-        snapshot.buckets[hour] = today->hourly[hour];
-        snapshot.total += today->hourly[hour];
+    if (const DayRecord* today = dayRecordForKey(dayKeys.front()); today != nullptr) {
+      materializedToday = materializeDayForCharts(*today);
+      todayForCharts = &*materializedToday;
+      for (std::size_t hour = 0; hour < todayForCharts->hourly.size(); ++hour) {
+        snapshot.buckets[hour] = todayForCharts->hourly[hour];
+        snapshot.total += todayForCharts->hourly[hour];
       }
-      for (const auto& [appKey, seconds] : today->apps) {
+      for (const auto& [appKey, seconds] : todayForCharts->apps) {
         if (seconds.count() > 0) {
           mergedApps[canonicalAppKey(appKey)] += seconds;
         }
@@ -265,16 +350,23 @@ ScreenTimeSnapshot ScreenTimeService::snapshot(int rangeDays) {
 
   const auto fillSeriesBuckets = [&](ScreenTimeChartSeries& series, const std::string& appKey) {
     if (snapshot.hourlyBuckets) {
-      const DayRecord* today = dayRecordForKey(dayKeys.front());
-      if (today == nullptr) {
+      if (todayForCharts == nullptr) {
         return;
       }
-      for (const auto& [storedKey, hourly] : today->appHourly) {
+      bool matchedHourly = false;
+      for (const auto& [storedKey, hourly] : todayForCharts->appHourly) {
         if (canonicalAppKey(storedKey) != appKey) {
           continue;
         }
+        matchedHourly = true;
         for (std::size_t hour = 0; hour < hourly.size() && hour < series.buckets.size(); ++hour) {
           series.buckets[hour] += hourly[hour];
+        }
+      }
+      if (!matchedHourly) {
+        const std::chrono::seconds appTotal = appSecondsForKey(*todayForCharts, appKey);
+        if (appTotal.count() > 0) {
+          distributeSecondsAcrossHourly(appTotal, *todayForCharts, series.buckets);
         }
       }
       return;
