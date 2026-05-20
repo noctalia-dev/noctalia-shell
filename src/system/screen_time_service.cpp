@@ -34,6 +34,20 @@ namespace {
     return out;
   }
 
+  // Match ScreenTimeService::localDayKey(localNow()) — not std::chrono::days on system_clock (UTC).
+  [[nodiscard]] std::string localDayKeyForCalendarOffset(int daysAgo) {
+    std::tm tm = localTm(localNow());
+    tm.tm_hour = 12;
+    tm.tm_min = 0;
+    tm.tm_sec = 0;
+    tm.tm_isdst = -1;
+    tm.tm_mday -= daysAgo;
+    if (std::mktime(&tm) == -1) {
+      tm = localTm(localNow());
+    }
+    return std::format("{:04d}-{:02d}-{:02d}", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+  }
+
   // Control center UI limits.
   constexpr std::size_t kMaxListedApps = 12;
   constexpr std::size_t kMaxChartSeries = 5;
@@ -243,10 +257,8 @@ const ScreenTimeService::DayRecord* ScreenTimeService::dayRecordForKey(const std
 std::vector<std::string> ScreenTimeService::dayKeysForRange(int rangeDays) const {
   std::vector<std::string> keys;
   keys.reserve(static_cast<std::size_t>(rangeDays));
-  const auto today = std::chrono::floor<std::chrono::days>(localNow());
   for (int offset = 0; offset < rangeDays; ++offset) {
-    const auto day = today - std::chrono::days{offset};
-    keys.push_back(localDayKey(std::chrono::system_clock::time_point{day}));
+    keys.push_back(localDayKeyForCalendarOffset(offset));
   }
   return keys;
 }
@@ -288,7 +300,11 @@ ScreenTimeSnapshot ScreenTimeService::snapshot(int rangeDays) {
   const DayRecord* todayForCharts = nullptr;
   if (snapshot.hourlyBuckets) {
     snapshot.buckets.resize(24);
-    if (const DayRecord* today = dayRecordForKey(dayKeys.front()); today != nullptr) {
+    const DayRecord* today = dayRecordForKey(dayKeys.front());
+    if (today == nullptr && !m_currentDayKey.empty()) {
+      today = dayRecordForKey(m_currentDayKey);
+    }
+    if (today != nullptr) {
       materializedToday = materializeDayForCharts(*today);
       todayForCharts = &*materializedToday;
       for (std::size_t hour = 0; hour < todayForCharts->hourly.size(); ++hour) {
