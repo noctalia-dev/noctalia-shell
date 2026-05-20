@@ -13,7 +13,6 @@
 
 class WaylandConnection;
 struct ext_idle_notification_v1;
-struct ext_idle_notifier_v1;
 
 class IdleManager {
 public:
@@ -33,9 +32,15 @@ public:
 
   bool initialize(WaylandConnection& wayland, GraceBeginCallback onBegin, GraceEndCallback onEnd);
   void setActionRunner(ActionRunner runner);
+  void setLiveIdleChangeCallback(std::function<void()> callback);
   void reload(const IdleConfig& config);
+  /// Seconds the compositor has reported session-idle (1s heartbeat notification); 0 when active.
+  [[nodiscard]] std::int64_t liveIdleSeconds() const noexcept { return m_liveIdleSeconds; }
+  void onSecondTick();
   static void handleIdled(void* data, ext_idle_notification_v1* notification);
   static void handleResumed(void* data, ext_idle_notification_v1* notification);
+  static void handleHeartbeatIdled(void* data, ext_idle_notification_v1* notification);
+  static void handleHeartbeatResumed(void* data, ext_idle_notification_v1* notification);
 
 private:
   enum class BehaviorPhase : std::uint8_t {
@@ -52,6 +57,9 @@ private:
   };
 
   void clearBehaviors();
+  void syncHeartbeat();
+  void destroyHeartbeat();
+  void notifyLiveIdleChanged();
   void createBehavior(const IdleBehaviorConfig& config);
   void runBehavior(BehaviorState& behavior);
   void runResumeBehavior(BehaviorState& behavior);
@@ -62,13 +70,16 @@ private:
   [[nodiscard]] bool hasActiveGrace() const noexcept { return !m_graceBehaviors.empty(); }
 
   WaylandConnection* m_wayland = nullptr;
-  ext_idle_notifier_v1* m_notifier = nullptr;
   ActionRunner m_actionRunner;
   GraceBeginCallback m_onGraceBegin;
   GraceEndCallback m_onGraceEnd;
+  std::function<void()> m_onLiveIdleChange;
   IdleConfig m_idleConfig;
   Timer m_graceFallbackTimer;
   std::vector<BehaviorState*> m_graceBehaviors;
   std::uint64_t m_graceGeneration = 0;
   std::vector<std::unique_ptr<BehaviorState>> m_behaviors;
+  ext_idle_notification_v1* m_heartbeatNotification = nullptr;
+  bool m_heartbeatCompositorIdle = false;
+  std::int64_t m_liveIdleSeconds = 0;
 };

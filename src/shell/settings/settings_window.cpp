@@ -6,6 +6,7 @@
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "i18n/i18n.h"
+#include "idle/idle_manager.h"
 #include "render/render_context.h"
 #include "system/dependency_service.h"
 #include "ui/controls/box.h"
@@ -13,6 +14,7 @@
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/select_dropdown_popup.h"
+#include "ui/palette.h"
 #include "ui/style.h"
 #include "wayland/toplevel_surface.h"
 #include "wayland/wayland_connection.h"
@@ -39,8 +41,9 @@ namespace {
 SettingsWindow::~SettingsWindow() = default;
 
 void SettingsWindow::initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext,
-                                DependencyService* dependencies, UPowerService* upower) {
+                                DependencyService* dependencies, UPowerService* upower, IdleManager* idleManager) {
   m_wayland = &wayland;
+  m_idleManager = idleManager;
   m_config = config;
   m_renderContext = renderContext;
   m_dependencies = dependencies;
@@ -668,13 +671,18 @@ void SettingsWindow::onFontChanged() {
 void SettingsWindow::onExternalOptionsChanged() { requestSceneRebuild(); }
 
 void SettingsWindow::refreshIdleLiveStatusText() {
-  if (m_idleLiveStatusLabel == nullptr || m_wayland == nullptr) {
+  if (m_idleLiveStatusLabel == nullptr) {
     return;
   }
 
-  const double idleSec = m_wayland->userIdleSeconds();
-  const auto sec = static_cast<std::int64_t>(std::floor(idleSec));
+  const std::int64_t sec = m_idleManager != nullptr ? m_idleManager->liveIdleSeconds() : 0;
+  if (sec <= 0) {
+    m_idleLiveStatusLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+    m_idleLiveStatusLabel->setText(i18n::tr("settings.idle.live-status.active"));
+    return;
+  }
 
+  m_idleLiveStatusLabel->setColor(colorSpecFromRole(ColorRole::Primary));
   if (sec == 1) {
     m_idleLiveStatusLabel->setText(i18n::tr("settings.idle.live-status.idle-for-one"));
   } else {
@@ -683,10 +691,12 @@ void SettingsWindow::refreshIdleLiveStatusText() {
   }
 }
 
-void SettingsWindow::onSecondTick() {
+void SettingsWindow::onIdleLiveStatusChanged() {
   if (m_idleLiveStatusLabel == nullptr || m_surface == nullptr) {
     return;
   }
   refreshIdleLiveStatusText();
   m_surface->requestRedraw();
 }
+
+void SettingsWindow::onSecondTick() { onIdleLiveStatusChanged(); }

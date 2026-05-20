@@ -28,6 +28,7 @@ struct zxdg_output_v1;
 struct xdg_wm_base;
 struct wp_cursor_shape_manager_v1;
 struct ext_idle_notifier_v1;
+struct ext_idle_notification_v1;
 struct zwp_idle_inhibit_manager_v1;
 struct ext_background_effect_manager_v1;
 struct xdg_activation_v1;
@@ -82,6 +83,8 @@ public:
   void setToplevelChangeCallback(ChangeCallback callback);
   void setPointerEventCallback(WaylandSeat::PointerEventCallback callback);
   void setKeyboardEventCallback(WaylandSeat::KeyboardEventCallback callback);
+  /// Fired when both `ext_idle_notifier_v1` and `wl_seat` are bound (including late registry globals).
+  void setIdleCapabilitiesReadyCallback(ChangeCallback callback);
   void setClipboardService(ClipboardService* clipboardService);
   void setVirtualKeyboardService(VirtualKeyboardService* virtualKeyboardService);
   void setCursorShape(std::uint32_t serial, std::uint32_t shape);
@@ -122,6 +125,8 @@ public:
   [[nodiscard]] xdg_wm_base* xdgWmBase() const noexcept;
   [[nodiscard]] ext_session_lock_manager_v1* sessionLockManager() const noexcept;
   [[nodiscard]] ext_idle_notifier_v1* idleNotifier() const noexcept;
+  /// Inhibitor-aware idle notification (`get_idle_notification`); honors `zwp_idle_inhibitor_v1`.
+  [[nodiscard]] ext_idle_notification_v1* createIdleNotification(std::uint32_t timeoutMs) const;
   [[nodiscard]] zwp_idle_inhibit_manager_v1* idleInhibitManager() const noexcept;
   [[nodiscard]] const std::vector<WaylandOutput>& outputs() const noexcept;
   [[nodiscard]] WaylandOutput* findOutputByWl(wl_output* wlOutput);
@@ -168,6 +173,7 @@ public:
   static void handleGlobalRemove(void* data, wl_registry* registry, std::uint32_t name);
 
   void onBackgroundEffectCapabilities(std::uint32_t capabilities) noexcept;
+  void notifyIdleCapabilitiesReady();
 
 private:
   void bindGlobal(wl_registry* registry, std::uint32_t name, const char* interface, std::uint32_t version);
@@ -208,6 +214,7 @@ private:
   bool m_hasForeignToplevelManagerGlobal = false;
   std::vector<WaylandOutput> m_outputs;
   ChangeCallback m_outputChangeCallback;
+  ChangeCallback m_idleCapabilitiesReadyCallback;
   std::function<void(wl_output*)> m_outputAddedCallback;
   std::function<void(wl_output*)> m_outputRemovedCallback;
   std::function<void(ext_workspace_manager_v1*)> m_extWorkspaceManagerCallback;

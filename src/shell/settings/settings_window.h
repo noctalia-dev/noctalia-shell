@@ -26,6 +26,7 @@ class Button;
 class ConfigService;
 class DependencyService;
 class Flex;
+class IdleManager;
 class Label;
 class RenderContext;
 class UPowerService;
@@ -45,7 +46,7 @@ public:
   ~SettingsWindow();
 
   void initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext,
-                  DependencyService* dependencies, UPowerService* upower);
+                  DependencyService* dependencies, UPowerService* upower, IdleManager* idleManager);
 
   void open();
   void openToBarWidget(std::string barName, std::string widgetName);
@@ -66,6 +67,7 @@ public:
   void setOpenWallpaperPanel(std::function<void()> callback) { m_openWallpaperPanel = std::move(callback); }
 
   void onSecondTick();
+  void onIdleLiveStatusChanged();
 
 private:
   void destroyWindow();
@@ -120,6 +122,7 @@ private:
   [[nodiscard]] float uiScale() const;
 
   WaylandConnection* m_wayland = nullptr;
+  IdleManager* m_idleManager = nullptr;
   ConfigService* m_config = nullptr;
   RenderContext* m_renderContext = nullptr;
   DependencyService* m_dependencies = nullptr;

@@ -46,7 +46,7 @@ namespace {
   constexpr std::uint32_t kCursorShapeManagerVersion = 1;
   constexpr std::uint32_t kXdgActivationVersion = 1;
   constexpr std::uint32_t kExtSessionLockManagerVersion = 1;
-  constexpr std::uint32_t kExtIdleNotifierVersion = 1;
+  constexpr std::uint32_t kExtIdleNotifierVersion = 2;
   constexpr std::uint32_t kIdleInhibitManagerVersion = 1;
   constexpr std::uint32_t kExtBackgroundEffectManagerVersion = 1;
   constexpr std::uint32_t kFractionalScaleManagerVersion = 1;
@@ -246,6 +246,18 @@ void WaylandConnection::setWorkspaceManagerCallbacks(std::function<void(ext_work
 
 void WaylandConnection::setToplevelChangeCallback(ChangeCallback callback) {
   m_toplevelsHandler.setChangeCallback(std::move(callback));
+}
+
+void WaylandConnection::setIdleCapabilitiesReadyCallback(ChangeCallback callback) {
+  m_idleCapabilitiesReadyCallback = std::move(callback);
+  notifyIdleCapabilitiesReady();
+}
+
+void WaylandConnection::notifyIdleCapabilitiesReady() {
+  if (m_idleNotifier == nullptr || m_seat == nullptr || !m_idleCapabilitiesReadyCallback) {
+    return;
+  }
+  m_idleCapabilitiesReadyCallback();
 }
 
 void WaylandConnection::setPointerEventCallback(WaylandSeat::PointerEventCallback callback) {
@@ -487,6 +499,16 @@ xdg_wm_base* WaylandConnection::xdgWmBase() const noexcept { return m_xdgWmBase;
 
 ext_session_lock_manager_v1* WaylandConnection::sessionLockManager() const noexcept { return m_sessionLockManager; }
 ext_idle_notifier_v1* WaylandConnection::idleNotifier() const noexcept { return m_idleNotifier; }
+
+ext_idle_notification_v1* WaylandConnection::createIdleNotification(std::uint32_t timeoutMs) const {
+  wl_seat* const seat = this->seat();
+  if (m_idleNotifier == nullptr || seat == nullptr) {
+    return nullptr;
+  }
+
+  return ext_idle_notifier_v1_get_idle_notification(m_idleNotifier, timeoutMs, seat);
+}
+
 zwp_idle_inhibit_manager_v1* WaylandConnection::idleInhibitManager() const noexcept { return m_idleInhibitManager; }
 bool WaylandConnection::hasBackgroundEffectBlur() const noexcept { return m_backgroundEffectBlurSupported; }
 ext_background_effect_manager_v1* WaylandConnection::backgroundEffectManager() const noexcept {
@@ -583,6 +605,7 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
     m_seat = static_cast<wl_seat*>(wl_registry_bind(registry, name, &wl_seat_interface, bindVersion));
     m_seatHandler.bind(m_seat);
     bindClipboardService();
+    notifyIdleCapabilitiesReady();
     return;
   }
 
@@ -681,6 +704,7 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
     const auto bindVersion = std::min(version, kExtIdleNotifierVersion);
     m_idleNotifier = static_cast<ext_idle_notifier_v1*>(
         wl_registry_bind(registry, name, &ext_idle_notifier_v1_interface, bindVersion));
+    notifyIdleCapabilitiesReady();
     return;
   }
 
