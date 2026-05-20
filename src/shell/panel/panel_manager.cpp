@@ -1410,21 +1410,6 @@ void PanelManager::applyPanelCompositorBlur() {
       bx += static_cast<int>(std::lround(panelW * (1.0f - progress)));
       break;
     }
-
-    if (progress < 0.999f && m_sceneRoot != nullptr) {
-      const int clipMaxX = static_cast<int>(std::lround(m_sceneRoot->width()));
-      const int clipMaxY = static_cast<int>(std::lround(m_sceneRoot->height()));
-      const int sxLeft = std::max(bx, 0);
-      const int sxRight = std::min(bx + bw, clipMaxX);
-      const int syTop = std::max(by, 0);
-      const int syBot = std::min(by + bh, clipMaxY);
-      if (sxRight > sxLeft && syBot > syTop) {
-        m_surface->setBlurRegion({InputRect{sxLeft, syTop, sxRight - sxLeft, syBot - syTop}});
-      } else {
-        m_surface->clearBlurRegion();
-      }
-      return;
-    }
   }
 
   const float radius = Style::scaledRadiusXl(m_activePanel->contentScale());
