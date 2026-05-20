@@ -1,5 +1,6 @@
 #include "config/config_service.h"
 #include "core/log.h"
+#include "shell/settings/widget_settings_registry.h"
 #include "theme/scheme.h"
 #include "util/file_utils.h"
 #include "util/string_utils.h"
@@ -274,6 +275,21 @@ namespace {
       }
     }
     return true;
+  }
+
+  bool isWidgetSettingOverridePath(const std::vector<std::string>& path) {
+    return path.size() == 3 && path[0] == "widget";
+  }
+
+  std::string widgetTypeForOverridePath(const toml::table& overrides, std::string_view widgetName) {
+    if (const auto* widgetTable = overrides.get_as<toml::table>("widget")) {
+      if (const auto* entry = widgetTable->get_as<toml::table>(widgetName)) {
+        if (const auto type = (*entry)["type"].value<std::string>()) {
+          return *type;
+        }
+      }
+    }
+    return std::string(widgetName);
   }
 
   bool wallpaperMonitorOverrideEqual(const WallpaperMonitorOverride& a, const WallpaperMonitorOverride& b) {
@@ -863,6 +879,10 @@ bool ConfigService::overridePathEffectiveInTable(const std::vector<std::string>&
     return true;
   }
 
+  if (isWidgetSettingOverridePath(path)) {
+    return settings::widgetSettingOverrideIsEffective(path[1], path[2], *parsedWith, *withoutOverride);
+  }
+
   return !configEqual(*parsedWith, *withoutOverride);
 }
 
@@ -1125,11 +1145,20 @@ bool ConfigService::setOverrides(std::vector<std::pair<std::vector<std::string>,
   }
 
   for (const auto& [path, value] : overrides) {
-    (void)value;
-    if (!overridePresenceIsSemantic(path) && !overridePathEffectiveInTable(path, next)) {
-      eraseOverridePath(next, path, overridePreserveDepthForPath(path));
-      if (path.size() == 2 && path[0] == "idle" && path[1] == "behavior") {
-        eraseOverridePath(next, {"idle", "behavior_order"}, overridePreserveDepthForPath(path));
+    if (!overridePresenceIsSemantic(path)) {
+      bool shouldErase = false;
+      if (isWidgetSettingOverridePath(path)) {
+        const std::string widgetType = widgetTypeForOverridePath(next, path[1]);
+        shouldErase = settings::widgetOverrideValueMatchesRegistryDefault(widgetType, path[2], value) ||
+                      !overridePathEffectiveInTable(path, next);
+      } else {
+        shouldErase = !overridePathEffectiveInTable(path, next);
+      }
+      if (shouldErase) {
+        eraseOverridePath(next, path, overridePreserveDepthForPath(path));
+        if (path.size() == 2 && path[0] == "idle" && path[1] == "behavior") {
+          eraseOverridePath(next, {"idle", "behavior_order"}, overridePreserveDepthForPath(path));
+        }
       }
     }
   }

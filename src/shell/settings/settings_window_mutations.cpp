@@ -2,6 +2,7 @@
 #include "core/deferred_call.h"
 #include "i18n/i18n.h"
 #include "shell/settings/settings_window.h"
+#include "shell/settings/widget_settings_registry.h"
 
 #include <string>
 #include <utility>
@@ -26,6 +27,24 @@ void SettingsWindow::setSettingOverride(std::vector<std::string> path, ConfigOve
   DeferredCall::callLater([this, path = std::move(path), value = std::move(value)]() mutable {
     if (m_config == nullptr) {
       return;
+    }
+    if (path.size() == 3 && path[0] == "widget") {
+      std::string widgetType = path[1];
+      if (const auto it = m_config->config().widgets.find(path[1]); it != m_config->config().widgets.end()) {
+        widgetType = it->second.type;
+      }
+      if (settings::widgetOverrideValueMatchesRegistryDefault(widgetType, path[2], value)) {
+        if (m_config->hasOverride(path)) {
+          if (m_config->clearOverride(path)) {
+            markSettingsWriteSuccess();
+            return;
+          }
+          markSettingsWriteError(i18n::tr("settings.errors.clear"));
+          return;
+        }
+        markSettingsWriteSuccess();
+        return;
+      }
     }
     if (m_config->setOverride(path, std::move(value))) {
       markSettingsWriteSuccess();

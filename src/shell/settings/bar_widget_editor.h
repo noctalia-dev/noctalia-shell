@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -39,7 +40,7 @@ namespace settings {
         renameWidgetInstance;
     std::function<std::unique_ptr<Button>(const std::vector<std::string>&)> makeResetButton;
     std::function<void(Flex&, const SettingEntry&, std::unique_ptr<Node>)> makeRow;
-    std::function<std::unique_ptr<Node>(bool, std::vector<std::string>)> makeToggle;
+    std::function<std::unique_ptr<Node>(bool, std::vector<std::string>, std::optional<bool> clearWhenValue)> makeToggle;
     std::function<std::unique_ptr<Node>(const SelectSetting&, std::vector<std::string>)> makeSelect;
     std::function<std::unique_ptr<Node>(float, float, float, float, std::vector<std::string>, bool)> makeSlider;
     std::function<std::unique_ptr<Node>(const OptionalNumberSetting&, std::vector<std::string>)> makeOptionalNumber;

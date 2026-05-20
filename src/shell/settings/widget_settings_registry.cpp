@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -608,6 +609,165 @@ namespace settings {
     }
 
     return specs;
+  }
+
+  namespace {
+
+    bool widgetSettingValuesEqual(const WidgetSettingValue& a, const WidgetSettingValue& b) {
+      const auto numericValue = [](const WidgetSettingValue& value) -> std::optional<double> {
+        if (const auto* i = std::get_if<std::int64_t>(&value)) {
+          return static_cast<double>(*i);
+        }
+        if (const auto* d = std::get_if<double>(&value)) {
+          return *d;
+        }
+        return std::nullopt;
+      };
+
+      const auto aNum = numericValue(a);
+      const auto bNum = numericValue(b);
+      if (aNum.has_value() || bNum.has_value()) {
+        return aNum.has_value() && bNum.has_value() && std::abs(*aNum - *bNum) <= 1.0e-5;
+      }
+      if (a.index() != b.index()) {
+        return false;
+      }
+      return std::visit(
+          [&](const auto& lhs) {
+            using T = std::decay_t<decltype(lhs)>;
+            const auto* rhs = std::get_if<T>(&b);
+            return rhs != nullptr && lhs == *rhs;
+          },
+          a);
+    }
+
+  } // namespace
+
+  const WidgetSettingSpec* findWidgetSettingSpec(std::string_view widgetType, std::string_view settingKey) {
+    const std::string key(settingKey);
+    for (const auto& spec : widgetSettingSpecs(widgetType)) {
+      if (spec.key == key) {
+        return &spec;
+      }
+    }
+    return nullptr;
+  }
+
+  bool configOverrideValueMatchesWidgetSetting(const ConfigOverrideValue& overrideValue,
+                                               const WidgetSettingValue& settingValue) {
+    const auto matchesBool = [&](bool value) {
+      if (const auto* settingBool = std::get_if<bool>(&settingValue)) {
+        return value == *settingBool;
+      }
+      return false;
+    };
+    const auto matchesInt = [&](std::int64_t value) {
+      if (const auto* settingInt = std::get_if<std::int64_t>(&settingValue)) {
+        return value == *settingInt;
+      }
+      if (const auto* settingDouble = std::get_if<double>(&settingValue)) {
+        return std::abs(static_cast<double>(value) - *settingDouble) <= 1.0e-5;
+      }
+      return false;
+    };
+    const auto matchesDouble = [&](double value) {
+      if (const auto* settingDouble = std::get_if<double>(&settingValue)) {
+        return std::abs(value - *settingDouble) <= 1.0e-5;
+      }
+      if (const auto* settingInt = std::get_if<std::int64_t>(&settingValue)) {
+        return std::abs(value - static_cast<double>(*settingInt)) <= 1.0e-5;
+      }
+      return false;
+    };
+    const auto matchesString = [&](const std::string& value) {
+      if (const auto* settingString = std::get_if<std::string>(&settingValue)) {
+        return value == *settingString;
+      }
+      return false;
+    };
+    const auto matchesStringList = [&](const std::vector<std::string>& value) {
+      if (const auto* settingList = std::get_if<std::vector<std::string>>(&settingValue)) {
+        return value == *settingList;
+      }
+      return false;
+    };
+
+    return std::visit(
+        [&](const auto& value) -> bool {
+          using T = std::decay_t<decltype(value)>;
+          if constexpr (std::is_same_v<T, bool>) {
+            return matchesBool(value);
+          } else if constexpr (std::is_same_v<T, std::int64_t>) {
+            return matchesInt(value);
+          } else if constexpr (std::is_same_v<T, double>) {
+            return matchesDouble(value);
+          } else if constexpr (std::is_same_v<T, std::string>) {
+            return matchesString(value);
+          } else if constexpr (std::is_same_v<T, std::vector<std::string>>) {
+            return matchesStringList(value);
+          }
+          return false;
+        },
+        overrideValue);
+  }
+
+  bool widgetOverrideValueMatchesRegistryDefault(std::string_view widgetType, std::string_view settingKey,
+                                                 const ConfigOverrideValue& overrideValue) {
+    const auto* spec = findWidgetSettingSpec(widgetType, settingKey);
+    if (spec == nullptr) {
+      return false;
+    }
+    return configOverrideValueMatchesWidgetSetting(overrideValue, spec->defaultValue);
+  }
+
+  bool widgetSettingOverrideIsEffective(std::string_view widgetName, std::string_view settingKey,
+                                        const Config& withOverride, const Config& withoutOverride) {
+    std::string widgetType(widgetName);
+    if (const auto withIt = withOverride.widgets.find(std::string(widgetName)); withIt != withOverride.widgets.end()) {
+      widgetType = withIt->second.type;
+    } else if (const auto withoutIt = withoutOverride.widgets.find(std::string(widgetName));
+               withoutIt != withoutOverride.widgets.end()) {
+      widgetType = withoutIt->second.type;
+    }
+
+    const auto* spec = findWidgetSettingSpec(widgetType, settingKey);
+    if (spec == nullptr) {
+      const auto valueInConfig = [](const Config& cfg, std::string_view name,
+                                    std::string_view key) -> std::optional<WidgetSettingValue> {
+        const auto widgetIt = cfg.widgets.find(std::string(name));
+        if (widgetIt == cfg.widgets.end()) {
+          return std::nullopt;
+        }
+        const auto settingIt = widgetIt->second.settings.find(std::string(key));
+        if (settingIt == widgetIt->second.settings.end()) {
+          return std::nullopt;
+        }
+        return settingIt->second;
+      };
+
+      const auto withValue = valueInConfig(withOverride, widgetName, settingKey);
+      const auto withoutValue = valueInConfig(withoutOverride, widgetName, settingKey);
+      if (!withValue.has_value() && !withoutValue.has_value()) {
+        return false;
+      }
+      if (!withValue.has_value() || !withoutValue.has_value()) {
+        return true;
+      }
+      return !widgetSettingValuesEqual(*withValue, *withoutValue);
+    }
+
+    const auto resolvedValue = [&](const Config& cfg) -> WidgetSettingValue {
+      const auto widgetIt = cfg.widgets.find(std::string(widgetName));
+      if (widgetIt != cfg.widgets.end()) {
+        const auto settingIt = widgetIt->second.settings.find(std::string(settingKey));
+        if (settingIt != widgetIt->second.settings.end()) {
+          return settingIt->second;
+        }
+      }
+      return spec->defaultValue;
+    };
+
+    return !widgetSettingValuesEqual(resolvedValue(withOverride), resolvedValue(withoutOverride));
   }
 
 } // namespace settings

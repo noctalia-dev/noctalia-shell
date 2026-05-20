@@ -97,4 +97,13 @@ namespace settings {
   [[nodiscard]] std::vector<WidgetSettingSpec> commonWidgetSettingSpecs();
   [[nodiscard]] std::vector<WidgetSettingSpec> widgetSettingSpecs(std::string_view type);
 
+  [[nodiscard]] const WidgetSettingSpec* findWidgetSettingSpec(std::string_view widgetType,
+                                                               std::string_view settingKey);
+  [[nodiscard]] bool configOverrideValueMatchesWidgetSetting(const ConfigOverrideValue& overrideValue,
+                                                             const WidgetSettingValue& settingValue);
+  [[nodiscard]] bool widgetOverrideValueMatchesRegistryDefault(std::string_view widgetType, std::string_view settingKey,
+                                                               const ConfigOverrideValue& overrideValue);
+  [[nodiscard]] bool widgetSettingOverrideIsEffective(std::string_view widgetName, std::string_view settingKey,
+                                                      const Config& withOverride, const Config& withoutOverride);
+
 } // namespace settings

@@ -900,9 +900,14 @@ namespace settings {
         };
 
         switch (spec.valueType) {
-        case WidgetSettingValueType::Bool:
-          ctx.makeRow(*panel, entry, ctx.makeToggle(settingValueAsBool(value), path));
+        case WidgetSettingValueType::Bool: {
+          std::optional<bool> clearWhenValue;
+          if (const auto* defaultBool = std::get_if<bool>(&spec.defaultValue)) {
+            clearWhenValue = *defaultBool;
+          }
+          ctx.makeRow(*panel, entry, ctx.makeToggle(settingValueAsBool(value), path, clearWhenValue));
           break;
+        }
         case WidgetSettingValueType::Int: {
           const auto minValue = static_cast<float>(spec.minValue.value_or(0.0));
           const auto maxValue = static_cast<float>(spec.maxValue.value_or(100.0));

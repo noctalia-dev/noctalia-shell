@@ -1015,13 +1015,22 @@ namespace settings {
       section.addChild(std::move(row));
     };
 
-    const auto makeToggle = [&](bool checked, bool enabled, std::vector<std::string> path) {
+    const auto makeToggle = [&](bool checked, bool enabled, std::vector<std::string> path,
+                                std::optional<bool> clearWhenValue = std::nullopt) {
       auto toggle = std::make_unique<Toggle>();
       toggle->setScale(scale);
       toggle->setChecked(checked);
       toggle->setEnabled(enabled);
       if (enabled) {
-        toggle->setOnChange([setOverride = ctx.setOverride, path](bool value) { setOverride(path, value); });
+        toggle->setOnChange([configService = ctx.configService, setOverride = ctx.setOverride,
+                             clearOverride = ctx.clearOverride, path, clearWhenValue](bool value) {
+          if (clearWhenValue.has_value() && value == *clearWhenValue && configService != nullptr &&
+              configService->hasOverride(path)) {
+            clearOverride(path);
+            return;
+          }
+          setOverride(path, value);
+        });
       }
       return toggle;
     };
@@ -2210,9 +2219,8 @@ namespace settings {
         .renameWidgetInstance = ctx.renameWidgetInstance,
         .makeResetButton = makeResetButton,
         .makeRow = makeRow,
-        .makeToggle = [&](bool checked, std::vector<std::string> path) -> std::unique_ptr<Node> {
-          return makeToggle(checked, true, std::move(path));
-        },
+        .makeToggle = [&](bool checked, std::vector<std::string> path, std::optional<bool> clearWhenValue)
+            -> std::unique_ptr<Node> { return makeToggle(checked, true, std::move(path), clearWhenValue); },
         .makeSelect = [&](const SelectSetting& setting, std::vector<std::string> path) -> std::unique_ptr<Node> {
           return makeSelect(setting, std::move(path));
         },
