@@ -2,6 +2,7 @@
 
 #include "core/log.h"
 #include "dbus/system_bus.h"
+#include "system/rfkill_helper.h"
 
 #include <algorithm>
 #include <array>
@@ -571,6 +572,16 @@ bool NetworkManagerService::deactivateVpnConnection(const VpnConnectionInfo& vpn
 }
 
 void NetworkManagerService::setWirelessEnabled(bool enabled) {
+  if (enabled) {
+    const RfkillSwitchResult rfkillResult = setRfkillSoftBlocked(RfkillDeviceType::Wlan, false);
+    if (rfkillResult.hardBlocked) {
+      kLog.warn("setWirelessEnabled: wlan rfkill hard block is active");
+      return;
+    }
+    if (!rfkillResult.success) {
+      kLog.warn("setWirelessEnabled: rfkill unblock failed ({}), trying NetworkManager anyway", rfkillResult.detail);
+    }
+  }
   if (enabled != m_state.wirelessEnabled) {
     m_pendingLocalWirelessEnabled = enabled;
   }

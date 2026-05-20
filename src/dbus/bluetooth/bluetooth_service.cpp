@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "dbus/system_bus.h"
 #include "i18n/i18n.h"
+#include "system/rfkill_helper.h"
 
 #include <algorithm>
 #include <map>
@@ -116,11 +117,22 @@ namespace {
     }
   }
 
+  void applyRfkillState(BluetoothState& out) {
+    out.rfkillSoftBlocked = isRfkillSoftBlocked(RfkillDeviceType::Bluetooth);
+    out.rfkillHardBlocked = isRfkillHardBlocked(RfkillDeviceType::Bluetooth);
+  }
+
   void readAdapterProps(const InterfaceProps& props, BluetoothState& out) {
     out.adapterPresent = true;
     if (auto it = props.find("Powered"); it != props.end()) {
       if (auto v = variantGet<bool>(it->second)) {
         out.powered = *v;
+      }
+    }
+    bool powerStateBlocked = false;
+    if (auto it = props.find("PowerState"); it != props.end()) {
+      if (auto v = variantGet<std::string>(it->second)) {
+        powerStateBlocked = (*v == "off-blocked");
       }
     }
     if (auto it = props.find("Discoverable"); it != props.end()) {
@@ -147,6 +159,8 @@ namespace {
         out.adapterName = std::move(*v);
       }
     }
+    applyRfkillState(out);
+    out.rfkillSoftBlocked = out.rfkillSoftBlocked || powerStateBlocked;
   }
 
   void mergeDeviceProps(const InterfaceProps& props, BluetoothDeviceInfo& out) {
@@ -467,6 +481,21 @@ void BluetoothService::refresh() {
 void BluetoothService::setPowered(bool enabled) {
   if (m_impl->adapter == nullptr) {
     return;
+  }
+  if (enabled) {
+    const RfkillSwitchResult rfkillResult = setRfkillSoftBlocked(RfkillDeviceType::Bluetooth, false);
+    if (rfkillResult.hardBlocked) {
+      kLog.warn("setPowered: bluetooth rfkill hard block is active");
+      return;
+    }
+    if (!rfkillResult.success) {
+      kLog.warn("setPowered: rfkill unblock failed ({}), trying BlueZ Powered anyway", rfkillResult.detail);
+    }
+    const bool wasSoftBlocked = m_state.rfkillSoftBlocked;
+    applyRfkillState(m_state);
+    if (wasSoftBlocked && !m_state.rfkillSoftBlocked) {
+      emitState(BluetoothStateChangeOrigin::Noctalia);
+    }
   }
   if (enabled != m_state.powered) {
     m_pendingLocalPowered = enabled;

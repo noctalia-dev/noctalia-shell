@@ -569,6 +569,7 @@ std::string BluetoothTab::listKey() const {
   std::string key;
   key += s.adapterPresent ? '1' : '0';
   key += s.powered ? '1' : '0';
+  key += s.rfkillSoftBlocked ? '1' : '0';
   key += s.discovering ? '1' : '0';
   key.push_back('|');
   for (const auto& d : m_service->devices()) {
@@ -726,7 +727,8 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
 
   if (!s.powered) {
     auto empty = std::make_unique<Label>();
-    empty->setText(i18n::tr("control-center.bluetooth.off"));
+    empty->setText(s.rfkillSoftBlocked ? i18n::tr("control-center.bluetooth.rfkill-blocked")
+                                       : i18n::tr("control-center.bluetooth.off"));
     empty->setCaptionStyle();
     empty->setFontSize(Style::fontSizeCaption * scale);
     empty->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));

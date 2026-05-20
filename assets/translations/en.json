@@ -285,6 +285,7 @@
       "unknown-device": "Unknown device",
       "unavailable": "Bluetooth service unavailable",
       "off": "Bluetooth is off",
+      "rfkill-blocked": "Bluetooth is blocked by the system. Turn it on to clear the block.",
       "no-devices": "No devices found. Start scanning to discover nearby Bluetooth devices.",
       "auto-reconnect": "Auto-reconnect",
       "sections": {

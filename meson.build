@@ -556,6 +556,7 @@ _noctalia_sources = files(
   'src/system/icon_resolver.cpp',
   'src/system/internal_app_metadata.cpp',
   'src/system/gamma_service.cpp',
+  'src/system/rfkill_helper.cpp',
   'src/system/screen_time_service.cpp',
   'src/system/system_monitor_service.cpp',
   'src/system/weather_service.cpp',

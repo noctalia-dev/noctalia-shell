@@ -2,15 +2,13 @@
 
 #include "core/log.h"
 #include "dbus/system_bus.h"
+#include "system/rfkill_helper.h"
 
 #include <algorithm>
 #include <cerrno>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <dirent.h>
-#include <fcntl.h>
-#include <linux/rfkill.h>
 #include <map>
 #include <sdbus-c++/IProxy.h>
 #include <sdbus-c++/Types.h>
@@ -308,58 +306,34 @@ void WpaSupplicantService::disconnect() {
 void WpaSupplicantService::setWirelessEnabled(bool enabled) {
   m_wirelessEnabledOverride = enabled;
 
+  const bool softBlocked = !enabled;
   bool rfkillDone = false;
   for (const auto& [ifacePath, proxy] : m_interfaces) {
+    (void)ifacePath;
     const std::string ifname = getPropertyOr<std::string>(*proxy, k_wpaIfaceInterface, "Ifname", "");
-    if (ifname.empty())
+    if (ifname.empty()) {
       continue;
-
-    const std::string phyPath = "/sys/class/net/" + ifname + "/phy80211/";
-    DIR* dir = opendir(phyPath.c_str());
-    if (dir == nullptr)
-      continue;
-    struct dirent* ent = nullptr;
-    while ((ent = readdir(dir)) != nullptr) {
-      const std::string name = ent->d_name;
-      if (name.rfind("rfkill", 0) != 0)
-        continue;
-      FILE* f = fopen((phyPath + name + "/index").c_str(), "r");
-      if (f == nullptr)
-        continue;
-      std::uint32_t idx = 0;
-      const int scanned = fscanf(f, "%u", &idx);
-      fclose(f);
-      if (scanned != 1) {
-        kLog.warn("setWirelessEnabled: cannot read rfkill index");
-        continue;
-      }
-      const int fd = open("/dev/rfkill", O_WRONLY | O_CLOEXEC);
-      if (fd < 0) {
-        kLog.warn("setWirelessEnabled: cannot open /dev/rfkill: {}", std::strerror(errno));
-        break;
-      }
-      struct rfkill_event ev{};
-      ev.idx = idx;
-      ev.type = RFKILL_TYPE_WLAN;
-      ev.op = RFKILL_OP_CHANGE;
-      ev.soft = enabled ? 0 : 1;
-      ssize_t written = 0;
-      do {
-        written = write(fd, &ev, sizeof(ev));
-      } while (written < 0 && errno == EINTR);
-      const int writeErrno = errno;
-      close(fd);
-      if (written != static_cast<ssize_t>(sizeof(ev))) {
-        kLog.warn("setWirelessEnabled: /dev/rfkill write failed: {}",
-                  written < 0 ? std::strerror(writeErrno) : "short write");
-        break;
-      }
+    }
+    const RfkillSwitchResult result = setRfkillSoftBlockedForNetInterface(ifname, softBlocked);
+    if (result.hardBlocked) {
+      kLog.warn("setWirelessEnabled: rfkill hard block on {}", ifname);
+      break;
+    }
+    if (result.success) {
       rfkillDone = true;
       break;
     }
-    closedir(dir);
-    if (rfkillDone)
-      break;
+  }
+
+  if (!rfkillDone) {
+    const RfkillSwitchResult fallback = setRfkillSoftBlocked(RfkillDeviceType::Wlan, softBlocked);
+    if (fallback.hardBlocked) {
+      kLog.warn("setWirelessEnabled: wlan rfkill hard block is active");
+    } else if (fallback.success) {
+      rfkillDone = true;
+    } else if (!fallback.detail.empty()) {
+      kLog.debug("setWirelessEnabled: wlan rfkill fallback: {}", fallback.detail);
+    }
   }
 
   if (!rfkillDone) {
