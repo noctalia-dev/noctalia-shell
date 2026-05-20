@@ -24,11 +24,10 @@ namespace {
 
 CustomButtonWidget::CustomButtonWidget(std::string glyph, std::string label, std::string tooltip, std::string command,
                                        std::string rightCommand, std::string middleCommand, std::string scrollUpCommand,
-                                       std::string scrollDownCommand, float maxWidth)
+                                       std::string scrollDownCommand)
     : m_glyphName(std::move(glyph)), m_labelText(std::move(label)), m_tooltip(std::move(tooltip)),
       m_command(std::move(command)), m_rightCommand(std::move(rightCommand)), m_middleCommand(std::move(middleCommand)),
-      m_scrollUpCommand(std::move(scrollUpCommand)), m_scrollDownCommand(std::move(scrollDownCommand)),
-      m_maxWidth(std::max(0.0f, maxWidth)) {}
+      m_scrollUpCommand(std::move(scrollUpCommand)), m_scrollDownCommand(std::move(scrollDownCommand)) {}
 
 void CustomButtonWidget::create() {
   auto area = std::make_unique<InputArea>();
@@ -135,8 +134,7 @@ void CustomButtonWidget::doLayout(Renderer& renderer, float containerWidth, floa
   if (showLabel) {
     m_label->setFontSize((isVertical ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
     m_label->setTextAlign(isVertical ? TextAlign::Center : TextAlign::Start);
-    const float labelMaxWidth = m_maxWidth > 0.0f ? m_maxWidth * m_contentScale : 0.0f;
-    m_label->setMaxWidth(isVertical ? containerWidth : labelMaxWidth);
+    m_label->setMaxWidth(isVertical ? containerWidth : 0.0f);
     m_label->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
     m_label->measure(renderer);
   }

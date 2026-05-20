@@ -492,7 +492,6 @@ namespace settings {
       add(stringSpec("middle_command"));
       add(stringSpec("scroll_up_command"));
       add(stringSpec("scroll_down_command"));
-      add(doubleSpec("max_width", 160.0, 0.0, 800.0, 1.0, true));
     } else if (type == "lock_keys") {
       add(boolSpec("show_caps_lock", true));
       add(boolSpec("show_num_lock", true));

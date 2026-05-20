@@ -1171,6 +1171,10 @@
           "label": "Glyph",
           "description": "Icon glyph name"
         },
+        "label": {
+          "label": "Label",
+          "description": "Optional static text shown on this button"
+        },
         "group_by_workspace": {
           "label": "Group by Workspace",
           "description": "Group taskbar icons into workspace capsules when compositor data is available"
@@ -1260,10 +1264,6 @@
         "max_length": {
           "label": "Max Length",
           "description": "Maximum widget length in pixels"
-        },
-        "max_width": {
-          "label": "Max Width",
-          "description": "Maximum label width in pixels. Set to 0 for no limit."
         },
         "middle_command": {
           "label": "Middle Click Command",

@@ -206,11 +206,10 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     auto trimSetting = [wc](const char* key, const char* fallback = "") {
       return wc != nullptr ? StringUtils::trim(wc->getString(key, fallback)) : std::string(fallback);
     };
-    const float maxWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_width", 160.0) : 160.0);
     auto widget = std::make_unique<CustomButtonWidget>(
         trimSetting("glyph", "heart"), trimSetting("label"), trimSetting("tooltip"), trimSetting("command"),
         trimSetting("right_command"), trimSetting("middle_command"), trimSetting("scroll_up_command"),
-        trimSetting("scroll_down_command"), std::clamp(maxWidth, 0.0f, 800.0f));
+        trimSetting("scroll_down_command"));
     widget->setContentScale(contentScale);
     return widget;
   }

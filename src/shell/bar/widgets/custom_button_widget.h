@@ -12,7 +12,7 @@ class CustomButtonWidget : public Widget {
 public:
   CustomButtonWidget(std::string glyph, std::string label, std::string tooltip, std::string command,
                      std::string rightCommand, std::string middleCommand, std::string scrollUpCommand,
-                     std::string scrollDownCommand, float maxWidth);
+                     std::string scrollDownCommand);
 
   void create() override;
   [[nodiscard]] bool reservesMiddleClick() const noexcept override;
@@ -29,7 +29,6 @@ private:
   std::string m_middleCommand;
   std::string m_scrollUpCommand;
   std::string m_scrollDownCommand;
-  float m_maxWidth = 0.0f;
   InputArea* m_area = nullptr;
   Glyph* m_glyph = nullptr;
   Label* m_label = nullptr;
