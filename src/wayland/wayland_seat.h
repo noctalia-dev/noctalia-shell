@@ -14,6 +14,7 @@ struct wl_keyboard;
 struct wl_pointer;
 struct wl_seat;
 struct wl_surface;
+struct wl_touch;
 struct wp_cursor_shape_manager_v1;
 struct wp_cursor_shape_device_v1;
 struct xkb_compose_state;
@@ -55,6 +56,7 @@ public:
     None,
     Pointer,
     Keyboard,
+    Touch,
   };
 
   struct LockKeysState {
@@ -101,6 +103,15 @@ public:
   static void handlePointerAxisValue120(void* data, wl_pointer* pointer, std::uint32_t axis, std::int32_t value120);
   static void handlePointerFrame(void* data, wl_pointer* pointer);
 
+  // Touch listener entrypoints
+  static void handleTouchDown(void* data, wl_touch* touch, std::uint32_t serial, std::uint32_t time,
+                              wl_surface* surface, std::int32_t id, std::int32_t x, std::int32_t y);
+  static void handleTouchUp(void* data, wl_touch* touch, std::uint32_t serial, std::uint32_t time, std::int32_t id);
+  static void handleTouchMotion(void* data, wl_touch* touch, std::uint32_t time, std::int32_t id, std::int32_t x,
+                                std::int32_t y);
+  static void handleTouchFrame(void* data, wl_touch* touch);
+  static void handleTouchCancel(void* data, wl_touch* touch);
+
   // Keyboard listener entrypoints
   static void handleKeyboardKeymap(void* data, wl_keyboard* keyboard, std::uint32_t format, int fd, std::uint32_t size);
   static void handleKeyboardEnter(void* data, wl_keyboard* keyboard, std::uint32_t serial, wl_surface* surface,
@@ -142,6 +153,12 @@ private:
   double m_lastPointerY = 0.0;
   bool m_hasPointerPosition = false;
   wl_surface* m_lastKeyboardSurface = nullptr;
+
+  // Touch
+  wl_touch* m_touch = nullptr;
+  std::int32_t m_activeTouchId = -1;
+  wl_surface* m_touchSurface = nullptr;
+  std::vector<PointerEvent> m_pendingTouchEvents;
 
   wl_seat* m_seat = nullptr;
   std::uint32_t m_lastSerial = 0;
