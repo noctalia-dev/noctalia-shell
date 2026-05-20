@@ -206,6 +206,60 @@ namespace {
     ok = check(result->width == 2, "BMP sub-image: width should be 2") && ok;
     ok = check(result->height == 2, "BMP sub-image: height should be 2") && ok;
     ok = check(result->pixels.size() == 2 * 2 * 4, "BMP sub-image: should have 16 bytes") && ok;
+    // Verify BGRA→RGBA swizzle: input is B=0xFF G=0x00 R=0x00 A=0xFF
+    if (result->pixels.size() >= 4) {
+      ok = check(result->pixels[0] == 0x00, "BMP sub-image: R should be 0x00") && ok;
+      ok = check(result->pixels[1] == 0x00, "BMP sub-image: G should be 0x00") && ok;
+      ok = check(result->pixels[2] == 0xFF, "BMP sub-image: B should be 0xFF") && ok;
+      ok = check(result->pixels[3] == 0xFF, "BMP sub-image: A should be 0xFF (preserved)") && ok;
+    }
+    return ok;
+  }
+
+  bool testBmpAlphaPreserved() {
+    // Build a 2x2 32bpp ICO where pixels have varying alpha
+    auto ico = buildIcoWithBmp(2, 2, 32);
+    // Patch the first pixel's alpha to 0x80 (semi-transparent).
+    // Pixel data starts at offset: 6 (ICONDIR) + 16 (entry) + 40 (DIB header)
+    const std::size_t firstPixel = 6 + 16 + 40;
+    ico[firstPixel + 3] = 0x80; // A
+    // Patch the second pixel to fully transparent.
+    ico[firstPixel + 4 + 3] = 0x00; // A
+
+    std::string error;
+    auto result = decodeRasterImage(ico.data(), ico.size(), &error);
+    if (!check(result.has_value(), ("alpha-preserved decode failed: " + error).c_str()))
+      return false;
+    bool ok = true;
+    // BMP is bottom-up, so first BMP row = last output row.
+    // 2x2 image: BMP row 0 (bottom) → output row 1, BMP row 1 (top) → output row 0.
+    const std::size_t bottomRowOut = static_cast<std::size_t>(1) * 2 * 4;
+    ok = check(result->pixels[bottomRowOut + 3] == 0x80, "alpha 0x80 should be preserved") && ok;
+    ok = check(result->pixels[bottomRowOut + 4 + 3] == 0x00, "alpha 0x00 should be preserved") && ok;
+    return ok;
+  }
+
+  bool testAndMask() {
+    // Build a 2x1 24bpp ICO, then set the AND mask to make the second pixel transparent.
+    auto ico = buildIcoWithBmp(2, 1, 24);
+    // AND mask starts after pixel data.
+    // Pixel data: rowBytes = ((2*24+31)/32)*4 = ((48+31)/32)*4 = (79/32)*4 = 2*4 = 8
+    // AND mask: andRowBytes = ((2+31)/32)*4 = 4
+    // Offset: 6 (ICONDIR) + 16 (entry) + 40 (DIB header) + 8 (pixel row) = 70
+    const std::size_t andMaskOffset = 6 + 16 + 40 + 8;
+    // Bit 7 = pixel 0 (opaque), bit 6 = pixel 1 (transparent)
+    ico[andMaskOffset] = 0x40;
+
+    std::string error;
+    auto result = decodeRasterImage(ico.data(), ico.size(), &error);
+    if (!check(result.has_value(), ("AND mask decode failed: " + error).c_str()))
+      return false;
+    bool ok = true;
+    ok = check(result->width == 2, "AND mask: width should be 2") && ok;
+    ok = check(result->height == 1, "AND mask: height should be 1") && ok;
+    // Pixel 0 should be opaque (AND bit = 0), pixel 1 should be transparent (AND bit = 1)
+    ok = check(result->pixels[3] == 0xFF, "AND mask: pixel 0 alpha should be 0xFF") && ok;
+    ok = check(result->pixels[7] == 0x00, "AND mask: pixel 1 alpha should be 0x00") && ok;
     return ok;
   }
 
@@ -278,6 +332,8 @@ int main() {
   bool ok = true;
   ok = testPngSubImage() && ok;
   ok = testBmpSubImage() && ok;
+  ok = testBmpAlphaPreserved() && ok;
+  ok = testAndMask() && ok;
   ok = testMultiEntryPicksBest() && ok;
   ok = testEmptyIco() && ok;
   ok = testTruncatedDirectory() && ok;
