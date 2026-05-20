@@ -1,5 +1,6 @@
 #include "shell/bar/widget.h"
 
+#include "render/animation/animation_manager.h"
 #include "render/scene/node.h"
 #include "ui/controls/box.h"
 #include "ui/palette.h"
@@ -11,6 +12,12 @@ namespace {
   constexpr float kCapsuleInkEpsilon = 0.5f;
 
 } // namespace
+
+Widget::~Widget() {
+  if (m_animations != nullptr) {
+    m_animations->cancelForOwner(this);
+  }
+}
 
 ColorSpec Widget::widgetForegroundOr(const ColorSpec& fallback) const noexcept {
   // Per-widget `color` must win over bar/widget `capsule_foreground`, otherwise a bar-level

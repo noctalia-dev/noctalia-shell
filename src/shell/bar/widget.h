@@ -25,7 +25,7 @@ public:
       std::function<void(std::string_view panelId, std::string_view context, std::optional<float> anchorSurfaceX,
                          std::optional<float> anchorSurfaceY)>;
 
-  virtual ~Widget() = default;
+  virtual ~Widget();
 
   virtual void create() = 0;
   void layout(Renderer& renderer, float containerWidth, float containerHeight) {

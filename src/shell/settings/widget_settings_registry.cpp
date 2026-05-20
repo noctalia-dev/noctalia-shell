@@ -167,8 +167,8 @@ namespace settings {
       return baseSpec(key, WidgetSettingValueType::String, std::move(defaultValue), advanced);
     }
 
-    WidgetSettingSpec colorRoleSpec(std::string_view key, std::string defaultValue = {}, bool advanced = false) {
-      return baseSpec(key, WidgetSettingValueType::ColorRole, std::move(defaultValue), advanced);
+    WidgetSettingSpec colorSpec(std::string_view key, std::string defaultValue = {}, bool advanced = false) {
+      return baseSpec(key, WidgetSettingValueType::ColorSpec, std::move(defaultValue), advanced);
     }
 
     WidgetSettingSpec stringListSpec(std::string_view key, std::vector<std::string> defaultValue = {},
@@ -188,16 +188,6 @@ namespace settings {
       auto spec = selectSpec(key, std::move(defaultValue), std::move(options), advanced);
       spec.segmented = true;
       return spec;
-    }
-
-    const std::vector<WidgetSettingSelectOption> kAccentColorRoleOptions = {
-        {"on_surface", ""},   {"primary", ""},  {"on_primary", ""},  {"secondary", ""},
-        {"on_secondary", ""}, {"tertiary", ""}, {"on_tertiary", ""}, {"error", ""},
-    };
-
-    void applyAccentColorRolePicker(WidgetSettingSpec& spec) {
-      spec.options = kAccentColorRoleOptions;
-      spec.allowCustomColor = true;
     }
 
     std::string widgetInstanceDisplayLabel(std::string_view name) {
@@ -375,24 +365,20 @@ namespace settings {
     const WidgetSettingVisibility capsuleOn{"capsule", {"true"}};
 
     auto anchor = boolSpec("anchor", false, true);
-    auto widgetColor = colorRoleSpec("color", {}, true);
-    applyAccentColorRolePicker(widgetColor);
+    auto widgetColor = colorSpec("color", {}, true);
 
     auto capsuleToggle = boolSpec("capsule", false);
     auto capsuleGroup = stringSpec("capsule_group");
     capsuleGroup.visibleWhen = capsuleOn;
 
-    auto capsuleFill = colorRoleSpec("capsule_fill", "", true);
+    auto capsuleFill = colorSpec("capsule_fill", "", true);
     capsuleFill.visibleWhen = capsuleOn;
-    applyAccentColorRolePicker(capsuleFill);
 
-    auto capsuleBorder = colorRoleSpec("capsule_border", {}, true);
+    auto capsuleBorder = colorSpec("capsule_border", {}, true);
     capsuleBorder.visibleWhen = capsuleOn;
-    applyAccentColorRolePicker(capsuleBorder);
 
-    auto capsuleForeground = colorRoleSpec("capsule_foreground", {}, true);
+    auto capsuleForeground = colorSpec("capsule_foreground", {}, true);
     capsuleForeground.visibleWhen = capsuleOn;
-    applyAccentColorRolePicker(capsuleForeground);
 
     auto capsulePadding = doubleSpec("capsule_padding", static_cast<double>(Style::barCapsulePadding), 0.0, 48.0, 1.0);
     capsulePadding.visibleWhen = capsuleOn;
@@ -457,13 +443,11 @@ namespace settings {
       add(boolSpec("centered", true));
       add(boolSpec("show_when_idle", false));
       {
-        auto low = colorRoleSpec("low_color", "primary");
-        applyAccentColorRolePicker(low);
+        auto low = colorSpec("low_color", "primary");
         add(std::move(low));
       }
       {
-        auto high = colorRoleSpec("high_color", "primary");
-        applyAccentColorRolePicker(high);
+        auto high = colorSpec("high_color", "primary");
         add(std::move(high));
       }
     } else if (type == "battery") {
@@ -473,8 +457,7 @@ namespace settings {
       add(selectSpec("device", "auto", {{"auto", "common.states.auto"}}));
       add(intSpec("warning_threshold", 20, 0.0, 100.0, 1.0));
       {
-        auto warn = colorRoleSpec("warning_color", "error");
-        applyAccentColorRolePicker(warn);
+        auto warn = colorSpec("warning_color", "error");
         add(std::move(warn));
       }
     } else if (type == "bluetooth") {
@@ -612,18 +595,15 @@ namespace settings {
         add(std::move(maxLabelChars));
       }
       {
-        auto focusedColor = colorRoleSpec("focused_color", "primary");
-        applyAccentColorRolePicker(focusedColor);
+        auto focusedColor = colorSpec("focused_color", "primary");
         add(std::move(focusedColor));
       }
       {
-        auto occupiedColor = colorRoleSpec("occupied_color", "secondary");
-        applyAccentColorRolePicker(occupiedColor);
+        auto occupiedColor = colorSpec("occupied_color", "secondary");
         add(std::move(occupiedColor));
       }
       {
-        auto emptyColor = colorRoleSpec("empty_color", "secondary");
-        applyAccentColorRolePicker(emptyColor);
+        auto emptyColor = colorSpec("empty_color", "secondary");
         add(std::move(emptyColor));
       }
     }

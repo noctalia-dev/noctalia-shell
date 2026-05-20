@@ -125,11 +125,6 @@ namespace settings {
     std::vector<IdleBehaviorConfig> items;
   };
 
-  struct ColorSetting {
-    std::string hex; // current resolved value as #RRGGBB; empty when unset
-    bool unset = true;
-  };
-
   struct MultiSelectSetting {
     std::vector<SelectOption> options;
     std::vector<std::string> selectedValues;
@@ -142,18 +137,18 @@ namespace settings {
     std::string glyph;
   };
 
-  struct ColorRolePickerSetting {
+  struct ColorSpecPickerSetting {
     std::vector<ColorRole> roles;
     std::string selectedValue;
     bool allowNone = false;
-    bool allowCustomColor = false;
+    bool allowCustomColor = true;
+    std::string noneLabel;
   };
 
-  using SettingControl =
-      std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting, OptionalNumberSetting,
-                   OptionalStepperSetting, StepperSetting, ListSetting, ShortcutListSetting, KeybindListSetting,
-                   SessionPanelActionsSetting, IdleBehaviorsSetting, ColorSetting, MultiSelectSetting, ButtonSetting,
-                   ColorRolePickerSetting, SearchPickerSetting>;
+  using SettingControl = std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting, OptionalNumberSetting,
+                                      OptionalStepperSetting, StepperSetting, ListSetting, ShortcutListSetting,
+                                      KeybindListSetting, SessionPanelActionsSetting, IdleBehaviorsSetting,
+                                      MultiSelectSetting, ButtonSetting, ColorSpecPickerSetting, SearchPickerSetting>;
 
   struct SettingVisibilityCondition {
     std::vector<std::string> path;

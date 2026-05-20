@@ -10,6 +10,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 class IpcService;
@@ -87,6 +88,7 @@ public:
   bool renameMonitorOverride(std::string_view barName, std::string_view oldMatch, std::string_view newMatch);
   bool deleteMonitorOverride(std::string_view barName, std::string_view match);
   bool setOverride(const std::vector<std::string>& path, ConfigOverrideValue value);
+  bool setOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides);
   bool clearOverride(const std::vector<std::string>& path);
   bool renameOverrideTable(const std::vector<std::string>& oldPath, const std::vector<std::string>& newPath);
 
@@ -96,7 +98,6 @@ private:
   static void seedBuiltinWidgets(Config& config);
   static void deepMerge(toml::table& base, const toml::table& overlay);
   void loadAll();
-  void parseTable(const toml::table& tbl);
   void parseTableInto(const toml::table& tbl, Config& config, bool logSummary) const;
   [[nodiscard]] std::optional<Config> configForOverrides(const toml::table& overrides) const;
   [[nodiscard]] bool overridePathEffectiveInTable(const std::vector<std::string>& path, const toml::table& overrides,

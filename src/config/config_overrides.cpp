@@ -12,6 +12,7 @@
 #include <iterator>
 #include <optional>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -1095,27 +1096,47 @@ bool ConfigService::deleteMonitorOverride(std::string_view barName, std::string_
 }
 
 bool ConfigService::setOverride(const std::vector<std::string>& path, ConfigOverrideValue value) {
-  if (m_overridesPath.empty() || path.empty()) {
+  std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides;
+  overrides.emplace_back(path, std::move(value));
+  return setOverrides(std::move(overrides));
+}
+
+bool ConfigService::setOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides) {
+  if (m_overridesPath.empty() || overrides.empty()) {
     return false;
   }
 
-  toml::table* table = &m_overridesTable;
-  for (std::size_t i = 0; i + 1 < path.size(); ++i) {
-    table = ensureTable(*table, path[i]);
-    if (table == nullptr) {
+  toml::table next = m_overridesTable;
+  for (const auto& [path, value] : overrides) {
+    if (path.empty()) {
       return false;
     }
+
+    toml::table* table = &next;
+    for (std::size_t i = 0; i + 1 < path.size(); ++i) {
+      table = ensureTable(*table, path[i]);
+      if (table == nullptr) {
+        return false;
+      }
+    }
+
+    insertOverrideValue(*table, path.back(), value);
   }
 
-  insertOverrideValue(*table, path.back(), value);
-  if (!overridePresenceIsSemantic(path) && !overridePathEffectiveInTable(path, m_overridesTable)) {
-    eraseOverridePath(m_overridesTable, path, overridePreserveDepthForPath(path));
-    if (path.size() == 2 && path[0] == "idle" && path[1] == "behavior") {
-      eraseOverridePath(m_overridesTable, {"idle", "behavior_order"}, overridePreserveDepthForPath(path));
+  for (const auto& [path, value] : overrides) {
+    (void)value;
+    if (!overridePresenceIsSemantic(path) && !overridePathEffectiveInTable(path, next)) {
+      eraseOverridePath(next, path, overridePreserveDepthForPath(path));
+      if (path.size() == 2 && path[0] == "idle" && path[1] == "behavior") {
+        eraseOverridePath(next, {"idle", "behavior_order"}, overridePreserveDepthForPath(path));
+      }
     }
   }
 
+  toml::table previous = std::move(m_overridesTable);
+  m_overridesTable = std::move(next);
   if (!writeOverridesToFile()) {
+    m_overridesTable = std::move(previous);
     kLog.warn("failed to write {}", m_overridesPath);
     return false;
   }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "render/animation/animation_manager.h"
-#include "render/core/color.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
 #include "shell/desktop/desktop_widget_factory.h"
@@ -56,7 +55,6 @@ public:
   void requestRedraw();
 
   void applySettingChange(const std::string& key, WidgetSettingValue value);
-  void openColorPicker(const std::string& key, const Color& currentColor);
 
 private:
   enum class ScaleCorner : std::uint8_t {

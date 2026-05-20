@@ -77,7 +77,7 @@ namespace {
       return fallback;
     }
     if (const auto* value = std::get_if<std::string>(&it->second)) {
-      return colorSpecFromConfigString(*value);
+      return colorSpecFromConfigString(*value, key);
     }
     return fallback;
   }

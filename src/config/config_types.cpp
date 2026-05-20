@@ -1,18 +1,16 @@
 #include "config/config_types.h"
 
-#include "core/log.h"
 #include "util/string_utils.h"
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
 #include <cctype>
 #include <cstddef>
+#include <stdexcept>
 #include <utility>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
-  constexpr Logger kLog("config");
-
   IdleActionRequest commandIdleAction(std::string command) {
     if (command.empty()) {
       return {};
@@ -22,7 +20,19 @@ namespace {
 
   IdleActionRequest idleAction(IdleActionKind kind) { return IdleActionRequest{.kind = kind, .command = {}}; }
 
-  ColorSpec parseColorSpecString(const std::string& raw) {
+  std::string colorSpecError(const std::string& raw, std::string_view context) {
+    std::string message;
+    if (!context.empty()) {
+      message += context;
+      message += ": ";
+    }
+    message += "invalid color value \"";
+    message += raw;
+    message += "\" (expected a color role token or hex color)";
+    return message;
+  }
+
+  ColorSpec parseColorSpecString(const std::string& raw, std::string_view context) {
     const std::string trimmed = StringUtils::trim(raw);
     Color fixed;
     if (tryParseHexColor(trimmed, fixed)) {
@@ -31,15 +41,7 @@ namespace {
     if (auto role = colorRoleFromToken(trimmed)) {
       return colorSpecFromRole(*role);
     }
-    kLog.warn("unknown color role \"{}\", using surface_variant", raw);
-    return colorSpecFromRole(ColorRole::SurfaceVariant);
-  }
-
-  std::optional<ColorSpec> optionalCapsuleBorder(const std::string& raw) {
-    if (StringUtils::trim(raw).empty()) {
-      return std::nullopt;
-    }
-    return parseColorSpecString(raw);
+    throw std::runtime_error(colorSpecError(raw, context));
   }
 
 } // namespace
@@ -248,6 +250,32 @@ bool WidgetConfig::getBool(const std::string& key, bool fallback) const {
   return fallback;
 }
 
+ColorSpec WidgetConfig::getColorSpec(const std::string& key, const ColorSpec& fallback,
+                                     std::string_view context) const {
+  auto it = settings.find(key);
+  if (it == settings.end()) {
+    return fallback;
+  }
+  if (const auto* v = std::get_if<std::string>(&it->second)) {
+    return colorSpecFromConfigString(*v, context.empty() ? std::string_view(key) : context);
+  }
+  return fallback;
+}
+
+std::optional<ColorSpec> WidgetConfig::getOptionalColorSpec(const std::string& key, std::string_view context) const {
+  auto it = settings.find(key);
+  if (it == settings.end()) {
+    return std::nullopt;
+  }
+  if (const auto* v = std::get_if<std::string>(&it->second)) {
+    if (StringUtils::trim(*v).empty()) {
+      return std::nullopt;
+    }
+    return colorSpecFromConfigString(*v, context.empty() ? std::string_view(key) : context);
+  }
+  return std::nullopt;
+}
+
 bool WidgetConfig::hasSetting(const std::string& key) const { return settings.find(key) != settings.end(); }
 
 WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const WidgetConfig* widget) {
@@ -290,13 +318,13 @@ WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const Wid
   }
 
   if (widgetHasFillKey) {
-    spec.fill = parseColorSpecString(widget->getString("capsule_fill", ""));
+    spec.fill = widget->getColorSpec("capsule_fill", bar.widgetCapsuleFill, "widget.capsule_fill");
   } else {
     spec.fill = bar.widgetCapsuleFill;
   }
 
   if (widgetHasBorderKey) {
-    spec.border = optionalCapsuleBorder(widget->getString("capsule_border", ""));
+    spec.border = widget->getOptionalColorSpec("capsule_border", "widget.capsule_border");
   } else if (bar.widgetCapsuleBorderSpecified) {
     spec.border = bar.widgetCapsuleBorder;
   } else {
@@ -304,7 +332,7 @@ WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const Wid
   }
 
   if (widget != nullptr && widget->hasSetting("capsule_foreground")) {
-    spec.foreground = parseColorSpecString(widget->getString("capsule_foreground", ""));
+    spec.foreground = widget->getOptionalColorSpec("capsule_foreground", "widget.capsule_foreground");
   } else if (bar.widgetCapsuleForeground.has_value()) {
     spec.foreground = bar.widgetCapsuleForeground;
   } else {
@@ -313,7 +341,9 @@ WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const Wid
   return spec;
 }
 
-ColorSpec colorSpecFromConfigString(const std::string& raw) { return parseColorSpecString(raw); }
+ColorSpec colorSpecFromConfigString(const std::string& raw, std::string_view context) {
+  return parseColorSpecString(raw, context);
+}
 
 std::optional<HookKind> hookKindFromKey(std::string_view key) { return enumFromKey(kHookKinds, key); }
 

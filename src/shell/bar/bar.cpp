@@ -1167,7 +1167,7 @@ void Bar::populateWidgets(BarInstance& instance) {
         }
         widget->setBarCapsuleSpec(resolveWidgetBarCapsuleSpec(instance.barConfig, wcPtr));
         if (wcPtr != nullptr && wcPtr->hasSetting("color")) {
-          widget->setWidgetForeground(colorSpecFromConfigString(wcPtr->getString("color", "")));
+          widget->setWidgetForeground(wcPtr->getOptionalColorSpec("color", "widget." + name + ".color"));
         } else if (instance.barConfig.widgetColor.has_value()) {
           widget->setWidgetForeground(*instance.barConfig.widgetColor);
         }

@@ -229,6 +229,10 @@ struct WidgetConfig {
   [[nodiscard]] std::int64_t getInt(const std::string& key, std::int64_t fallback = 0) const;
   [[nodiscard]] double getDouble(const std::string& key, double fallback = 0.0) const;
   [[nodiscard]] bool getBool(const std::string& key, bool fallback = false) const;
+  [[nodiscard]] ColorSpec getColorSpec(const std::string& key, const ColorSpec& fallback,
+                                       std::string_view context = {}) const;
+  [[nodiscard]] std::optional<ColorSpec> getOptionalColorSpec(const std::string& key,
+                                                              std::string_view context = {}) const;
   [[nodiscard]] bool hasSetting(const std::string& key) const;
 
   bool operator==(const WidgetConfig&) const = default;
@@ -238,8 +242,8 @@ struct WidgetConfig {
 // `radius` are populated even when `enabled` is false so widgets can reuse capsule styling internally.
 [[nodiscard]] WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const WidgetConfig* widget);
 
-// Color spec for `[widget.*] color` and other user color strings (same rules as `capsule_fill`).
-[[nodiscard]] ColorSpec colorSpecFromConfigString(const std::string& raw);
+// Color spec for user color strings: either a palette color role token or a hex color.
+[[nodiscard]] ColorSpec colorSpecFromConfigString(const std::string& raw, std::string_view context = {});
 
 // Shared output selector matching used by monitor-scoped config and IPC selectors.
 // Matches connector name exactly, or a word-boundary token within output description.

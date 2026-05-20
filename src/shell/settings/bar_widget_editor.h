@@ -45,7 +45,7 @@ namespace settings {
     std::function<std::unique_ptr<Node>(const OptionalNumberSetting&, std::vector<std::string>)> makeOptionalNumber;
     std::function<std::unique_ptr<Node>(const OptionalStepperSetting&, std::vector<std::string>)> makeOptionalStepper;
     std::function<std::unique_ptr<Node>(const std::string&, const std::string&, std::vector<std::string>)> makeText;
-    std::function<std::unique_ptr<Node>(const ColorRolePickerSetting&, std::vector<std::string>)> makeColorRolePicker;
+    std::function<std::unique_ptr<Node>(const ColorSpecPickerSetting&, std::vector<std::string>)> makeColorSpecPicker;
     std::function<void(Flex&, const SettingEntry&, const ListSetting&)> makeListBlock;
   };
 

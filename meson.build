@@ -487,6 +487,7 @@ _noctalia_sources = files(
   'src/shell/surface_shadow.cpp',
   'src/system/telemetry_service.cpp',
   'src/shell/settings/bar_widget_editor.cpp',
+  'src/shell/settings/color_spec_picker.cpp',
   'src/shell/settings/config_export_dialog_popup.cpp',
   'src/shell/settings/settings_content.cpp',
   'src/shell/settings/settings_entity_editor.cpp',

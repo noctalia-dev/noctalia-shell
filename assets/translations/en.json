@@ -1098,15 +1098,15 @@
         },
         "capsule_border": {
           "label": "Capsule Border",
-          "description": "Color role for the capsule outline"
+          "description": "Color role for the capsule outline; fixed hex colors are also supported"
         },
         "capsule_fill": {
           "label": "Capsule Fill",
-          "description": "Color role for the capsule background"
+          "description": "Color role for the capsule background; fixed hex colors are also supported"
         },
         "capsule_foreground": {
           "label": "Capsule Foreground",
-          "description": "Color role for content inside the capsule"
+          "description": "Color role for content inside the capsule; fixed hex colors are also supported"
         },
         "capsule_opacity": {
           "label": "Capsule Opacity",
@@ -1124,7 +1124,7 @@
         },
         "color": {
           "label": "Color",
-          "description": "Color role for widget foreground"
+          "description": "Color role for widget foreground; fixed hex colors are also supported"
         },
         "command": {
           "label": "Left Click Command",
@@ -1153,15 +1153,15 @@
         },
         "focused_color": {
           "label": "Focused Color",
-          "description": "Color role or hex color used for the focused workspace"
+          "description": "Color role used for the focused workspace; fixed hex colors are also supported"
         },
         "occupied_color": {
           "label": "Occupied Color",
-          "description": "Color role or hex color used for occupied workspaces"
+          "description": "Color role used for occupied workspaces; fixed hex colors are also supported"
         },
         "empty_color": {
           "label": "Empty Color",
-          "description": "Color role or hex color used for empty workspaces"
+          "description": "Color role used for empty workspaces; fixed hex colors are also supported"
         },
         "format": {
           "label": "Format",
@@ -2121,19 +2121,19 @@
         },
         "widget-color": {
           "label": "Widget Color",
-          "description": "Default icon and label color role for widgets on this bar"
+          "description": "Default icon and label color role for widgets on this bar; fixed hex colors are also supported"
         },
         "capsule-fill": {
           "label": "Capsule Fill",
-          "description": "Default capsule background color role"
+          "description": "Default capsule background color role; fixed hex colors are also supported"
         },
         "capsule-border": {
           "label": "Capsule Border",
-          "description": "Default capsule outline color role"
+          "description": "Default capsule outline color role; fixed hex colors are also supported"
         },
         "capsule-foreground": {
           "label": "Capsule Foreground",
-          "description": "Default icon and label color role inside capsules"
+          "description": "Default icon and label color role inside capsules; fixed hex colors are also supported"
         },
         "widget-spacing": {
           "label": "Widget Spacing",
@@ -2201,7 +2201,7 @@
         },
         "border": {
           "label": "Border",
-          "description": "Color role for the bar outline"
+          "description": "Color role for the bar outline; fixed hex colors are also supported"
         },
         "border-width": {
           "label": "Border Width",
