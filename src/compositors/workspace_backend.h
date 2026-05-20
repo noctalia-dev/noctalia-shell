@@ -15,6 +15,7 @@ struct Workspace {
   std::string id;
   std::string name;
   std::vector<std::uint32_t> coordinates;
+  std::uint32_t index = 0;
   bool active = false;
   bool urgent = false;
   bool occupied = false;

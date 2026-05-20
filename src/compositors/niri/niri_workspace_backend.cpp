@@ -199,14 +199,9 @@ void NiriWorkspaceBackend::apply(std::vector<Workspace>& workspaces, const std::
 
   for (std::size_t i = 0; i < workspaces.size(); ++i) {
     const auto parsedId = parseUnsigned(workspaces[i].id);
-    std::optional<std::size_t> parsedIndex;
-    if (!workspaces[i].coordinates.empty()) {
-      parsedIndex = static_cast<std::size_t>(workspaces[i].coordinates.front() + 1u);
-    } else {
-      parsedIndex = parseLeadingNumber(workspaces[i].id);
-      if (!parsedIndex.has_value()) {
-        parsedIndex = parseLeadingNumber(workspaces[i].name);
-      }
+    std::optional<std::size_t> parsedIndex = parseLeadingNumber(workspaces[i].id);
+    if (!parsedIndex.has_value()) {
+      parsedIndex = parseLeadingNumber(workspaces[i].name);
     }
 
     auto pickCandidate = [&](auto&& predicate) -> const WorkspaceState* {
@@ -251,8 +246,15 @@ void NiriWorkspaceBackend::apply(std::vector<Workspace>& workspaces, const std::
   }
 
   for (std::size_t i = 0; i < workspaces.size(); ++i) {
-    workspaces[i].occupied =
-        matches[i] != nullptr && m_occupancy.contains(matches[i]->id) && m_occupancy.at(matches[i]->id) > 0;
+    if (matches[i] != nullptr) {
+      if (matches[i]->idx > 0) {
+        workspaces[i].index = matches[i]->idx;
+      }
+      workspaces[i].occupied = m_occupancy.contains(matches[i]->id) && m_occupancy.at(matches[i]->id) > 0;
+    } else {
+      workspaces[i].index = 0;
+      workspaces[i].occupied = false;
+    }
   }
 }
 

@@ -109,7 +109,7 @@ void WorkspacesWidget::doUpdate(Renderer& renderer) {
     for (std::size_t i = 0; i < current.size(); ++i) {
       const auto& a = current[i];
       const auto& b = m_cachedState[i];
-      if (a.name != b.name || a.coordinates != b.coordinates) {
+      if (a.id != b.id || a.name != b.name || a.index != b.index || a.coordinates != b.coordinates) {
         structuralChange = true;
         break;
       }
@@ -129,6 +129,7 @@ void WorkspacesWidget::doUpdate(Renderer& renderer) {
     m_cachedState.push_back(Workspace{.id = ws.id,
                                       .name = ws.name,
                                       .coordinates = ws.coordinates,
+                                      .index = ws.index,
                                       .active = ws.active,
                                       .urgent = ws.urgent,
                                       .occupied = ws.occupied});
@@ -330,16 +331,22 @@ void WorkspacesWidget::retarget(Renderer& renderer) {
   }
   computeTargets();
 
-  // Update per-item label text color (no animation on color — instant).
   for (std::size_t i = 0; i < m_items.size(); ++i) {
     auto& it = m_items[i];
+    const auto& ws = m_cachedState[i];
+    const std::string label = workspaceLabel(ws, i);
+    if (it.label != label) {
+      it.label = label;
+      if (it.text != nullptr) {
+        it.text->setText(label);
+        it.text->measure(renderer);
+      }
+    }
     if (it.indicator != nullptr) {
-      const auto& ws = m_cachedState[i];
       it.indicator->setFill(workspaceFillColor(ws));
       it.indicator->clearBorder();
     }
     if (it.text != nullptr) {
-      const auto& ws = m_cachedState[i];
       it.text->setColor(workspaceTextColor(ws));
     }
   }
@@ -462,6 +469,9 @@ void WorkspacesWidget::activateAdjacentWorkspace(int direction) {
 
 std::string WorkspacesWidget::workspaceLabel(const Workspace& workspace, std::size_t displayIndex) const {
   if (m_displayMode == DisplayMode::Id) {
+    if (workspace.index > 0) {
+      return std::to_string(workspace.index);
+    }
     if (const auto numericId = numericWorkspaceId(workspace); numericId.has_value()) {
       return std::to_string(*numericId);
     }
