@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "dbus/session_bus.h"
 #include "i18n/i18n.h"
+#include "notification/notification_manager.h"
 #include "util/string_utils.h"
 
 #include <algorithm>
@@ -125,8 +126,6 @@ void NotificationService::processExpired() {
 }
 
 static constexpr size_t k_max_string_len = 1024;
-static constexpr int32_t k_min_timeout = -1;
-
 namespace {
 
   std::vector<std::string> sanitizeActions(const std::vector<std::string>& actions) {
@@ -215,7 +214,7 @@ uint32_t NotificationService::onNotify(const std::string& app_name, uint32_t rep
                                        const std::vector<std::string>& actions,
                                        const std::map<std::string, sdbus::Variant>& hints, int32_t expire_timeout) {
   // Sanitize scalar inputs
-  const int32_t timeout = std::max(expire_timeout, k_min_timeout);
+  const int32_t timeout = normalizeNotifyExpireTimeout(expire_timeout);
   const auto sanitizedActions = sanitizeActions(actions);
 
   // Urgency: default Normal, reject out-of-range byte values

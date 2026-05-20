@@ -370,13 +370,7 @@
         "yesterday": "Yesterday",
         "older": "Older"
       },
-      "untitled": "Untitled notification",
-      "status": {
-        "active": "Active",
-        "closed": "Closed",
-        "expired": "Expired",
-        "dismissed": "Dismissed"
-      }
+      "untitled": "Untitled notification"
     },
     "calendar": {
       "today": "Today",

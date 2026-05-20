@@ -24,6 +24,18 @@ struct NotificationHistoryEntry {
 
 constexpr int32_t kDefaultNotificationTimeout = 6000;
 
+// Freedesktop expire_timeout: 0 = persistent, -1 = server default, positive = milliseconds.
+// Normalize once at Notify ingress so manager timers and toast countdowns stay aligned.
+[[nodiscard]] inline int32_t normalizeNotifyExpireTimeout(int32_t expireTimeout) noexcept {
+  if (expireTimeout == 0) {
+    return 0;
+  }
+  if (expireTimeout < 0) {
+    return kDefaultNotificationTimeout;
+  }
+  return expireTimeout;
+}
+
 class NotificationManager {
 public:
   NotificationManager() = default;

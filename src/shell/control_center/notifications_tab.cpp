@@ -125,34 +125,6 @@ namespace {
     return resolved.empty() ? std::string() : resolved;
   }
 
-  std::string statusText(const NotificationHistoryEntry& entry) {
-    if (entry.active) {
-      return i18n::tr("control-center.notifications.status.active");
-    }
-    if (!entry.closeReason.has_value()) {
-      return i18n::tr("control-center.notifications.status.closed");
-    }
-    switch (*entry.closeReason) {
-    case CloseReason::Expired:
-      return i18n::tr("control-center.notifications.status.expired");
-    case CloseReason::Dismissed:
-      return i18n::tr("control-center.notifications.status.dismissed");
-    case CloseReason::ClosedByCall:
-      return i18n::tr("control-center.notifications.status.closed");
-    }
-    return i18n::tr("control-center.notifications.status.closed");
-  }
-
-  ColorRole statusColorRole(const NotificationHistoryEntry& entry) {
-    if (entry.active) {
-      return ColorRole::Primary;
-    }
-    if (entry.closeReason == CloseReason::Dismissed) {
-      return ColorRole::Secondary;
-    }
-    return ColorRole::OnSurfaceVariant;
-  }
-
   void applyNotificationCardStyle(Flex& card, float scale, float fillOpacity) {
     applySectionCardStyle(card, scale, fillOpacity);
   }
@@ -264,10 +236,6 @@ namespace {
     metrics.metaTextWidth = std::max(0.0f, leftClusterWidth - iconColumn);
 
     metrics.metaLine = entry.notification.appName + " • " + relativeMetaLine(entry.notification);
-    if (!entry.active) {
-      metrics.metaLine += " • ";
-      metrics.metaLine += statusText(entry);
-    }
 
     const float metaHeight =
         measuredTextHeight(renderer, metrics.metaLine, Style::fontSizeCaption * scale, false, metrics.metaTextWidth, 0);
@@ -402,7 +370,7 @@ namespace {
       bindIcon(renderer, entry, iconResolver);
 
       m_meta->setText(metrics.metaLine);
-      m_meta->setColor(colorSpecFromRole(statusColorRole(entry)));
+      m_meta->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
       m_meta->setMaxWidth(metrics.metaTextWidth);
       m_meta->measure(renderer);
 

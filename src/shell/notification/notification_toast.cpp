@@ -88,14 +88,11 @@ namespace {
     return i18n::tr("notifications.inline-reply.placeholder");
   }
 
-  // Maps the raw DBus expire_timeout to a toast display duration in milliseconds.
-  // expire_timeout == 0 is explicitly persistent; -1 uses the server default.
+  // Maps normalized Notify expire_timeout (see normalizeNotifyExpireTimeout) to toast ms.
+  // 0 is persistent; positive values are already the effective server/client timeout.
   int resolveDisplayDuration(int32_t timeout) {
-    if (timeout == 0) {
+    if (timeout <= 0) {
       return -1;
-    }
-    if (timeout == -1) {
-      return kDefaultNotificationTimeout;
     }
     return std::max(1000, static_cast<int>(timeout));
   }

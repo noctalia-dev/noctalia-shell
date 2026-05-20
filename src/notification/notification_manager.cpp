@@ -54,7 +54,7 @@ namespace {
     if (timeoutMs > 0) {
       return now + std::chrono::milliseconds(timeoutMs);
     }
-    return std::nullopt; // 0 = persistent, -1 = server default (treat as persistent for now)
+    return std::nullopt; // 0 = persistent (non-positive after normalizeNotifyExpireTimeout)
   }
 
   std::optional<WallTimePoint> scheduleExpiryWall(WallTimePoint wallNow, int32_t timeoutMs) noexcept {
