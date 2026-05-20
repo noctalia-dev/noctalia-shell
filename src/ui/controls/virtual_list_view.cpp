@@ -2,6 +2,7 @@
 
 #include "render/scene/input_area.h"
 #include "ui/controls/scroll_view.h"
+#include "ui/style.h"
 
 #include <algorithm>
 #include <cmath>
@@ -165,15 +166,21 @@ void VirtualListView::doLayout(Renderer& renderer) {
     return;
   }
 
-  constexpr float kScrollbarGutter = 14.0f; // ScrollView scrollbar width + gap.
   const float ourW = std::max(0.0f, width());
   const float ourH = std::max(0.0f, height());
   const float padH = m_scroll->viewportPaddingH();
   const float padV = m_scroll->viewportPaddingV();
-  const float viewportW = std::max(0.0f, ourW - 2.0f * padH - kScrollbarGutter);
+  const float innerW = std::max(0.0f, ourW - 2.0f * padH);
   const float viewportH = std::max(0.0f, ourH - 2.0f * padV);
+  const float scrollbarGutter = Style::scrollbarWidth + Style::scrollbarGap;
 
-  recomputeMetrics(renderer, viewportW);
+  // Match ScrollView: only reserve the scrollbar gutter when content overflows vertically.
+  recomputeMetrics(renderer, innerW);
+  float viewportW = innerW;
+  if (m_virtualHeight > viewportH + 0.5f) {
+    viewportW = std::max(0.0f, innerW - scrollbarGutter);
+    recomputeMetrics(renderer, viewportW);
+  }
   m_canvas->setVirtualSize(m_virtualWidth, m_virtualHeight);
 
   if (m_pendingScrollToIndex) {
