@@ -23,6 +23,7 @@ namespace settings {
         {.type = "clock", .labelKey = "settings.widgets.types.clock", .glyph = "clock"},
         {.type = "control-center", .labelKey = "settings.widgets.types.control-center", .glyph = "noctalia"},
         {.type = "clipboard", .labelKey = "settings.widgets.types.clipboard", .glyph = "clipboard"},
+        {.type = "custom_button", .labelKey = "settings.widgets.types.custom-button", .glyph = "circuit-pushbutton"},
         {.type = "caffeine", .labelKey = "settings.widgets.types.caffeine", .glyph = "caffeine-off"},
         {.type = "keyboard_layout", .labelKey = "settings.widgets.types.keyboard-layout", .glyph = "keyboard"},
         {.type = "launcher", .labelKey = "settings.widgets.types.launcher", .glyph = "search"},
@@ -77,6 +78,9 @@ namespace settings {
       }
       if (type == "control-center") {
         return nonEmptyGlyph(config->getString("glyph", "noctalia"), "search");
+      }
+      if (type == "custom_button") {
+        return nonEmptyGlyph(config->getString("glyph", "heart"), "heart");
       }
       if (type == "launcher") {
         return nonEmptyGlyph(config->getString("glyph", "search"), "search");
@@ -163,8 +167,8 @@ namespace settings {
       return baseSpec(key, WidgetSettingValueType::String, std::move(defaultValue), advanced);
     }
 
-    WidgetSettingSpec colorRoleSpec(std::string_view key, std::string defaultValue = {}, bool advanced = false) {
-      return baseSpec(key, WidgetSettingValueType::ColorRole, std::move(defaultValue), advanced);
+    WidgetSettingSpec colorSpec(std::string_view key, std::string defaultValue = {}, bool advanced = false) {
+      return baseSpec(key, WidgetSettingValueType::ColorSpec, std::move(defaultValue), advanced);
     }
 
     WidgetSettingSpec stringListSpec(std::string_view key, std::vector<std::string> defaultValue = {},
@@ -184,16 +188,6 @@ namespace settings {
       auto spec = selectSpec(key, std::move(defaultValue), std::move(options), advanced);
       spec.segmented = true;
       return spec;
-    }
-
-    const std::vector<WidgetSettingSelectOption> kAccentColorRoleOptions = {
-        {"on_surface", ""},   {"primary", ""},  {"on_primary", ""},  {"secondary", ""},
-        {"on_secondary", ""}, {"tertiary", ""}, {"on_tertiary", ""}, {"error", ""},
-    };
-
-    void applyAccentColorRolePicker(WidgetSettingSpec& spec) {
-      spec.options = kAccentColorRoleOptions;
-      spec.allowCustomColor = true;
     }
 
     std::string widgetInstanceDisplayLabel(std::string_view name) {
@@ -249,7 +243,7 @@ namespace settings {
 
   bool isBuiltInWidgetType(std::string_view type) { return findWidgetTypeSpec(type) != nullptr; }
 
-  bool widgetTypeRequiresNamedConfig(std::string_view type) { return type == "scripted"; }
+  bool widgetTypeRequiresNamedConfig(std::string_view type) { return type == "custom_button" || type == "scripted"; }
 
   std::string widgetTypeForReference(const Config& cfg, std::string_view name) {
     if (const auto it = cfg.widgets.find(std::string(name)); it != cfg.widgets.end() && !it->second.type.empty()) {
@@ -371,24 +365,20 @@ namespace settings {
     const WidgetSettingVisibility capsuleOn{"capsule", {"true"}};
 
     auto anchor = boolSpec("anchor", false, true);
-    auto widgetColor = colorRoleSpec("color", {}, true);
-    applyAccentColorRolePicker(widgetColor);
+    auto widgetColor = colorSpec("color", {}, true);
 
     auto capsuleToggle = boolSpec("capsule", false);
     auto capsuleGroup = stringSpec("capsule_group");
     capsuleGroup.visibleWhen = capsuleOn;
 
-    auto capsuleFill = colorRoleSpec("capsule_fill", "", true);
+    auto capsuleFill = colorSpec("capsule_fill", "", true);
     capsuleFill.visibleWhen = capsuleOn;
-    applyAccentColorRolePicker(capsuleFill);
 
-    auto capsuleBorder = colorRoleSpec("capsule_border", {}, true);
+    auto capsuleBorder = colorSpec("capsule_border", {}, true);
     capsuleBorder.visibleWhen = capsuleOn;
-    applyAccentColorRolePicker(capsuleBorder);
 
-    auto capsuleForeground = colorRoleSpec("capsule_foreground", {}, true);
+    auto capsuleForeground = colorSpec("capsule_foreground", {}, true);
     capsuleForeground.visibleWhen = capsuleOn;
-    applyAccentColorRolePicker(capsuleForeground);
 
     auto capsulePadding = doubleSpec("capsule_padding", static_cast<double>(Style::barCapsulePadding), 0.0, 48.0, 1.0);
     capsulePadding.visibleWhen = capsuleOn;
@@ -453,13 +443,11 @@ namespace settings {
       add(boolSpec("centered", true));
       add(boolSpec("show_when_idle", false));
       {
-        auto low = colorRoleSpec("low_color", "primary");
-        applyAccentColorRolePicker(low);
+        auto low = colorSpec("low_color", "primary");
         add(std::move(low));
       }
       {
-        auto high = colorRoleSpec("high_color", "primary");
-        applyAccentColorRolePicker(high);
+        auto high = colorSpec("high_color", "primary");
         add(std::move(high));
       }
     } else if (type == "battery") {
@@ -469,8 +457,7 @@ namespace settings {
       add(selectSpec("device", "auto", {{"auto", "common.states.auto"}}));
       add(intSpec("warning_threshold", 20, 0.0, 100.0, 1.0));
       {
-        auto warn = colorRoleSpec("warning_color", "error");
-        applyAccentColorRolePicker(warn);
+        auto warn = colorSpec("warning_color", "error");
         add(std::move(warn));
       }
     } else if (type == "bluetooth") {
@@ -496,6 +483,15 @@ namespace settings {
     } else if (type == "control-center") {
       add(stringSpec("glyph", "noctalia"));
       add(stringSpec("custom_image", ""));
+    } else if (type == "custom_button") {
+      add(stringSpec("glyph", "heart"));
+      add(stringSpec("label"));
+      add(stringSpec("tooltip"));
+      add(stringSpec("command"));
+      add(stringSpec("right_command"));
+      add(stringSpec("middle_command"));
+      add(stringSpec("scroll_up_command"));
+      add(stringSpec("scroll_down_command"));
     } else if (type == "lock_keys") {
       add(boolSpec("show_caps_lock", true));
       add(boolSpec("show_num_lock", true));
@@ -598,18 +594,15 @@ namespace settings {
         add(std::move(maxLabelChars));
       }
       {
-        auto focusedColor = colorRoleSpec("focused_color", "primary");
-        applyAccentColorRolePicker(focusedColor);
+        auto focusedColor = colorSpec("focused_color", "primary");
         add(std::move(focusedColor));
       }
       {
-        auto occupiedColor = colorRoleSpec("occupied_color", "secondary");
-        applyAccentColorRolePicker(occupiedColor);
+        auto occupiedColor = colorSpec("occupied_color", "secondary");
         add(std::move(occupiedColor));
       }
       {
-        auto emptyColor = colorRoleSpec("empty_color", "secondary");
-        applyAccentColorRolePicker(emptyColor);
+        auto emptyColor = colorSpec("empty_color", "secondary");
         add(std::move(emptyColor));
       }
     }

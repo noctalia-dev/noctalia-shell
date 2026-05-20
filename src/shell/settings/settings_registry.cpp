@@ -3,6 +3,7 @@
 #include "i18n/i18n.h"
 #include "render/core/color.h"
 #include "shell/control_center/shortcut_registry.h"
+#include "shell/settings/color_spec_picker.h"
 #include "theme/builtin_palettes.h"
 #include "theme/builtin_templates.h"
 #include "util/string_utils.h"
@@ -99,53 +100,20 @@ namespace settings {
       return SelectSetting{std::move(opts), std::string(selected)};
     }
 
-    std::string colorRoleValue(const ColorSpec& color) {
-      if (color.role.has_value()) {
-        return std::string(colorRoleToken(*color.role));
-      }
-      Color rgb = color.fixed;
-      rgb.a = 1.0f;
-      return formatRgbHex(rgb);
-    }
-
-    std::string optionalColorRoleValue(const std::optional<ColorSpec>& color) {
-      if (color.has_value()) {
-        return colorRoleValue(*color);
-      }
-      return {};
-    }
-
-    const std::vector<ColorRole>& barAccentColorRoles() {
-      static const std::vector<ColorRole> kRoles = {ColorRole::OnSurface,  ColorRole::Primary,     ColorRole::OnPrimary,
-                                                    ColorRole::Secondary,  ColorRole::OnSecondary, ColorRole::Tertiary,
-                                                    ColorRole::OnTertiary, ColorRole::Error};
-      return kRoles;
-    }
-
-    ColorRolePickerSetting barOptionalAccentColorRolePicker(const std::optional<ColorSpec>& selected) {
-      return ColorRolePickerSetting{barAccentColorRoles(), optionalColorRoleValue(selected), true, true};
-    }
-
-    ColorRolePickerSetting barCapsuleFillColorRolePicker(const ColorSpec& selected) {
-      std::string selectedValue = colorRoleValue(selected);
-      // Capsule fill defaults to surface_variant in config. Since the picker intentionally
-      // does not expose surface_variant as a standalone option, map it to "Default".
-      if (selectedValue == "surface_variant") {
-        selectedValue.clear();
-      }
-      return ColorRolePickerSetting{barAccentColorRoles(), std::move(selectedValue), true, true};
-    }
-
-    const std::vector<ColorRole>& barBorderColorRoles() {
-      static const std::vector<ColorRole> kRoles = {
-          ColorRole::Outline,   ColorRole::OnSurface, ColorRole::Primary,    ColorRole::OnPrimary,
-          ColorRole::Secondary, ColorRole::Tertiary,  ColorRole::OnTertiary, ColorRole::Error,
+    ColorSpecPickerSetting colorSpecPicker(const std::optional<ColorSpec>& selected, bool allowNone,
+                                           std::string noneLabel = {}) {
+      return ColorSpecPickerSetting{
+          .roles = {},
+          .selectedValue = optionalColorSpecConfigValue(selected),
+          .allowNone = allowNone,
+          .allowCustomColor = true,
+          .noneLabel = std::move(noneLabel),
       };
-      return kRoles;
     }
 
-    ColorRolePickerSetting barBorderColorRolePicker(const ColorSpec& selected) {
-      return ColorRolePickerSetting{barBorderColorRoles(), colorRoleValue(selected), false, true};
+    ColorSpecPickerSetting colorSpecPicker(const ColorSpec& selected, bool allowNone = false,
+                                           std::string noneLabel = {}) {
+      return colorSpecPicker(std::optional<ColorSpec>{selected}, allowNone, std::move(noneLabel));
     }
 
     std::string pathText(const std::vector<std::string>& path) {
@@ -380,16 +348,9 @@ namespace settings {
     entries.push_back(makeEntry("wallpaper", "general", tr("settings.schema.wallpaper.fill-mode.label"),
                                 tr("settings.schema.wallpaper.fill-mode.description"), {"wallpaper", "fill_mode"},
                                 asSegmented(enumSelect(kWallpaperFillModes, cfg.wallpaper.fillMode)), "scale aspect"));
-    {
-      ColorSetting fillColor;
-      fillColor.unset = !cfg.wallpaper.fillColor.has_value();
-      if (!fillColor.unset) {
-        fillColor.hex = formatRgbHex(resolveColorSpec(*cfg.wallpaper.fillColor));
-      }
-      entries.push_back(makeEntry("wallpaper", "general", tr("settings.schema.wallpaper.fill-color.label"),
-                                  tr("settings.schema.wallpaper.fill-color.description"), {"wallpaper", "fill_color"},
-                                  std::move(fillColor), "background solid color"));
-    }
+    entries.push_back(makeEntry("wallpaper", "general", tr("settings.schema.wallpaper.fill-color.label"),
+                                tr("settings.schema.wallpaper.fill-color.description"), {"wallpaper", "fill_color"},
+                                colorSpecPicker(cfg.wallpaper.fillColor, true), "background solid color"));
     entries.push_back(makeEntry("wallpaper", "directories", tr("settings.schema.wallpaper.directory.label"),
                                 tr("settings.schema.wallpaper.directory.description"), {"wallpaper", "directory"},
                                 TextSetting{.value = cfg.wallpaper.directory,
@@ -437,6 +398,14 @@ namespace settings {
         }
       }
       auto perMonOn = SettingVisibility{{"wallpaper", "per_monitor_directories"}, {"true"}};
+      {
+        auto e = makeEntry(section, "monitors", connector, tr("settings.schema.wallpaper.fill-color.label"),
+                           mpath("fill_color"),
+                           colorSpecPicker(ovr != nullptr ? ovr->fillColor : std::optional<ColorSpec>{}, true,
+                                           tr("common.states.inherit")),
+                           "monitor background solid color", true);
+        entries.push_back(std::move(e));
+      }
       {
         auto e = makeEntry(section, "monitors", connector, tr("settings.schema.wallpaper.monitor-directory.label"),
                            mpath("directory"),
@@ -602,20 +571,20 @@ namespace settings {
                                 tr("settings.schema.dock.corner-radius.description"), {"dock", "radius"},
                                 SliderSetting{static_cast<float>(cfg.dock.radius), 0.0f, 80.0f, 1.0f, true},
                                 "rounded"));
-    entries.push_back(makeEntry("dock", "shape", tr("settings.schema.bar.corner-top-left.label"),
-                                tr("settings.schema.bar.corner-top-left.description"), {"dock", "radius_top_left"},
+    entries.push_back(makeEntry("dock", "shape", tr("settings.schema.shared.corner-top-left.label"),
+                                tr("settings.schema.dock.corner-top-left.description"), {"dock", "radius_top_left"},
                                 SliderSetting{static_cast<float>(cfg.dock.radiusTopLeft), 0.0f, 80.0f, 1.0f, true},
                                 "rounded corner", true));
-    entries.push_back(makeEntry("dock", "shape", tr("settings.schema.bar.corner-top-right.label"),
-                                tr("settings.schema.bar.corner-top-right.description"), {"dock", "radius_top_right"},
+    entries.push_back(makeEntry("dock", "shape", tr("settings.schema.shared.corner-top-right.label"),
+                                tr("settings.schema.dock.corner-top-right.description"), {"dock", "radius_top_right"},
                                 SliderSetting{static_cast<float>(cfg.dock.radiusTopRight), 0.0f, 80.0f, 1.0f, true},
                                 "rounded corner", true));
     entries.push_back(makeEntry(
-        "dock", "shape", tr("settings.schema.bar.corner-bottom-left.label"),
-        tr("settings.schema.bar.corner-bottom-left.description"), {"dock", "radius_bottom_left"},
+        "dock", "shape", tr("settings.schema.shared.corner-bottom-left.label"),
+        tr("settings.schema.dock.corner-bottom-left.description"), {"dock", "radius_bottom_left"},
         SliderSetting{static_cast<float>(cfg.dock.radiusBottomLeft), 0.0f, 80.0f, 1.0f, true}, "rounded corner", true));
-    entries.push_back(makeEntry("dock", "shape", tr("settings.schema.bar.corner-bottom-right.label"),
-                                tr("settings.schema.bar.corner-bottom-right.description"),
+    entries.push_back(makeEntry("dock", "shape", tr("settings.schema.shared.corner-bottom-right.label"),
+                                tr("settings.schema.dock.corner-bottom-right.description"),
                                 {"dock", "radius_bottom_right"},
                                 SliderSetting{static_cast<float>(cfg.dock.radiusBottomRight), 0.0f, 80.0f, 1.0f, true},
                                 "rounded corner", true));
@@ -979,22 +948,22 @@ namespace settings {
     entries.push_back(makeEntry("services", "audio", tr("settings.schema.services.sound-volume.label"),
                                 tr("settings.schema.services.sound-volume.description"), {"audio", "sound_volume"},
                                 SliderSetting{cfg.audio.soundVolume, 0.0f, 1.0f, 0.01f, false}, "sound"));
-    entries.push_back(makeEntry(
-        "services", "audio", tr("settings.schema.services.volume-change-sound.label"),
-        tr("settings.schema.services.volume-change-sound.description"), {"audio", "volume_change_sound"},
-        TextSetting{.value = cfg.audio.volumeChangeSound,
-                    .placeholder = tr("settings.schema.services.volume-change-sound.placeholder"),
-                    .browseMode = TextSettingBrowseMode::OpenFile,
-                    .browseFileExtensions = {".wav", ".ogg", ".oga", ".mp3", ".flac", ".opus", ".m4a", ".aac"}},
-        "sound path file", true));
-    entries.push_back(makeEntry(
-        "services", "audio", tr("settings.schema.services.notification-sound.label"),
-        tr("settings.schema.services.notification-sound.description"), {"audio", "notification_sound"},
-        TextSetting{.value = cfg.audio.notificationSound,
-                    .placeholder = tr("settings.schema.services.notification-sound.placeholder"),
-                    .browseMode = TextSettingBrowseMode::OpenFile,
-                    .browseFileExtensions = {".wav", ".ogg", ".oga", ".mp3", ".flac", ".opus", ".m4a", ".aac"}},
-        "sound path file", true));
+    entries.push_back(
+        makeEntry("services", "audio", tr("settings.schema.services.volume-change-sound.label"),
+                  tr("settings.schema.services.volume-change-sound.description"), {"audio", "volume_change_sound"},
+                  TextSetting{.value = cfg.audio.volumeChangeSound,
+                              .placeholder = tr("settings.schema.services.volume-change-sound.placeholder"),
+                              .browseMode = TextSettingBrowseMode::OpenFile,
+                              .browseFileExtensions = {".wav"}},
+                  "sound path file", true));
+    entries.push_back(
+        makeEntry("services", "audio", tr("settings.schema.services.notification-sound.label"),
+                  tr("settings.schema.services.notification-sound.description"), {"audio", "notification_sound"},
+                  TextSetting{.value = cfg.audio.notificationSound,
+                              .placeholder = tr("settings.schema.services.notification-sound.placeholder"),
+                              .browseMode = TextSettingBrowseMode::OpenFile,
+                              .browseFileExtensions = {".wav"}},
+                  "sound path file", true));
     entries.push_back(makeEntry("services", "media", tr("settings.schema.services.mpris-blacklist.label"),
                                 tr("settings.schema.services.mpris-blacklist.description"),
                                 {"shell", "mpris", "blacklist"}, ListSetting{.items = cfg.shell.mpris.blacklist},
@@ -1288,9 +1257,6 @@ namespace settings {
       entries.push_back(makeEntry(section, "general", tr("settings.schema.shared.reserve-space.label"),
                                   tr("settings.schema.bar.reserve-space.description"), path("reserve_space"),
                                   ToggleSetting{selectedBar->reserveSpace}, "exclusive zone"));
-      entries.push_back(makeEntry(section, "general", tr("settings.schema.bar.attach-panels.label"),
-                                  tr("settings.schema.bar.attach-panels.description"), path("attach_panels"),
-                                  ToggleSetting{selectedBar->attachPanels}, "panel popup attach float"));
       entries.push_back(makeEntry(section, "layout", tr("settings.schema.bar.thickness.label"),
                                   tr("settings.schema.bar.thickness.description"), path("thickness"),
                                   SliderSetting{static_cast<float>(selectedBar->thickness), 10.0f, 120.0f, 1.0f, true},
@@ -1315,22 +1281,22 @@ namespace settings {
                                   SliderSetting{static_cast<float>(selectedBar->radius), 0.0f, 80.0f, 1.0f, true},
                                   "rounded"));
       entries.push_back(
-          makeEntry(section, "shape", tr("settings.schema.bar.corner-top-left.label"),
+          makeEntry(section, "shape", tr("settings.schema.shared.corner-top-left.label"),
                     tr("settings.schema.bar.corner-top-left.description"), path("radius_top_left"),
                     SliderSetting{static_cast<float>(selectedBar->radiusTopLeft), 0.0f, 80.0f, 1.0f, true},
                     "rounded corner", true));
       entries.push_back(
-          makeEntry(section, "shape", tr("settings.schema.bar.corner-top-right.label"),
+          makeEntry(section, "shape", tr("settings.schema.shared.corner-top-right.label"),
                     tr("settings.schema.bar.corner-top-right.description"), path("radius_top_right"),
                     SliderSetting{static_cast<float>(selectedBar->radiusTopRight), 0.0f, 80.0f, 1.0f, true},
                     "rounded corner", true));
       entries.push_back(
-          makeEntry(section, "shape", tr("settings.schema.bar.corner-bottom-left.label"),
+          makeEntry(section, "shape", tr("settings.schema.shared.corner-bottom-left.label"),
                     tr("settings.schema.bar.corner-bottom-left.description"), path("radius_bottom_left"),
                     SliderSetting{static_cast<float>(selectedBar->radiusBottomLeft), 0.0f, 80.0f, 1.0f, true},
                     "rounded corner", true));
       entries.push_back(
-          makeEntry(section, "shape", tr("settings.schema.bar.corner-bottom-right.label"),
+          makeEntry(section, "shape", tr("settings.schema.shared.corner-bottom-right.label"),
                     tr("settings.schema.bar.corner-bottom-right.description"), path("radius_bottom_right"),
                     SliderSetting{static_cast<float>(selectedBar->radiusBottomRight), 0.0f, 80.0f, 1.0f, true},
                     "rounded corner", true));
@@ -1339,7 +1305,7 @@ namespace settings {
                                   SliderSetting{selectedBar->backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "alpha"));
       entries.push_back(makeEntry(section, "shape", tr("settings.schema.bar.border.label"),
                                   tr("settings.schema.bar.border.description"), path("border"),
-                                  barBorderColorRolePicker(selectedBar->border), "outline color role", true));
+                                  colorSpecPicker(selectedBar->border), "outline color", true));
       entries.push_back(makeEntry(section, "shape", tr("settings.schema.bar.border-width.label"),
                                   tr("settings.schema.bar.border-width.description"), path("border_width"),
                                   SliderSetting{selectedBar->borderWidth, 0.0f, 20.0f, 0.5f, false}, "outline stroke",
@@ -1356,8 +1322,7 @@ namespace settings {
                     SliderSetting{static_cast<float>(selectedBar->widgetSpacing), 0.0f, 32.0f, 1.0f, true}, "gap"));
       entries.push_back(makeEntry(section, "widgets", tr("settings.schema.bar.widget-color.label"),
                                   tr("settings.schema.bar.widget-color.description"), path("color"),
-                                  barOptionalAccentColorRolePicker(selectedBar->widgetColor), "color role foreground",
-                                  true));
+                                  colorSpecPicker(selectedBar->widgetColor, true), "color foreground", true));
       entries.push_back(makeEntry(section, "capsules", tr("settings.schema.bar.widget-capsules.label"),
                                   tr("settings.schema.bar.widget-capsules.description"), path("capsule"),
                                   ToggleSetting{selectedBar->widgetCapsuleDefault}, "pill"));
@@ -1386,23 +1351,21 @@ namespace settings {
       {
         auto e = makeEntry(section, "capsules", tr("settings.schema.bar.capsule-fill.label"),
                            tr("settings.schema.bar.capsule-fill.description"), path("capsule_fill"),
-                           barCapsuleFillColorRolePicker(selectedBar->widgetCapsuleFill), "color role pill", true);
+                           colorSpecPicker(selectedBar->widgetCapsuleFill), "color pill", true);
         e.visibleWhen = capsuleOn;
         entries.push_back(std::move(e));
       }
       {
         auto e = makeEntry(section, "capsules", tr("settings.schema.bar.capsule-foreground.label"),
                            tr("settings.schema.bar.capsule-foreground.description"), path("capsule_foreground"),
-                           barOptionalAccentColorRolePicker(selectedBar->widgetCapsuleForeground),
-                           "color role foreground pill", true);
+                           colorSpecPicker(selectedBar->widgetCapsuleForeground, true), "color foreground pill", true);
         e.visibleWhen = capsuleOn;
         entries.push_back(std::move(e));
       }
       {
         auto e = makeEntry(section, "capsules", tr("settings.schema.bar.capsule-border.label"),
                            tr("settings.schema.bar.capsule-border.description"), path("capsule_border"),
-                           barOptionalAccentColorRolePicker(selectedBar->widgetCapsuleBorder),
-                           "color role pill outline", true);
+                           colorSpecPicker(selectedBar->widgetCapsuleBorder, true), "color pill outline", true);
         e.visibleWhen = capsuleOn;
         entries.push_back(std::move(e));
       }
@@ -1454,10 +1417,6 @@ namespace settings {
       entries.push_back(makeEntry(section, "general", tr("settings.schema.shared.reserve-space.label"),
                                   tr("settings.schema.bar.reserve-space.description"), mpath("reserve_space"),
                                   ToggleSetting{ovr.reserveSpace.value_or(bar.reserveSpace)}, "exclusive zone"));
-      entries.push_back(makeEntry(section, "general", tr("settings.schema.bar.attach-panels.label"),
-                                  tr("settings.schema.bar.attach-panels.description"), mpath("attach_panels"),
-                                  ToggleSetting{ovr.attachPanels.value_or(bar.attachPanels)},
-                                  "panel popup attach float"));
       entries.push_back(
           makeEntry(section, "layout", tr("settings.schema.bar.thickness.label"),
                     tr("settings.schema.bar.thickness.description"), mpath("thickness"),
@@ -1485,22 +1444,22 @@ namespace settings {
           tr("settings.schema.bar.corner-radius.description"), mpath("radius"),
           SliderSetting{static_cast<float>(ovr.radius.value_or(bar.radius)), 0.0f, 80.0f, 1.0f, true}, "rounded"));
       entries.push_back(makeEntry(
-          section, "shape", tr("settings.schema.bar.corner-top-left.label"),
+          section, "shape", tr("settings.schema.shared.corner-top-left.label"),
           tr("settings.schema.bar.corner-top-left.description"), mpath("radius_top_left"),
           SliderSetting{static_cast<float>(ovr.radiusTopLeft.value_or(bar.radiusTopLeft)), 0.0f, 80.0f, 1.0f, true},
           "rounded corner", true));
       entries.push_back(makeEntry(
-          section, "shape", tr("settings.schema.bar.corner-top-right.label"),
+          section, "shape", tr("settings.schema.shared.corner-top-right.label"),
           tr("settings.schema.bar.corner-top-right.description"), mpath("radius_top_right"),
           SliderSetting{static_cast<float>(ovr.radiusTopRight.value_or(bar.radiusTopRight)), 0.0f, 80.0f, 1.0f, true},
           "rounded corner", true));
-      entries.push_back(makeEntry(section, "shape", tr("settings.schema.bar.corner-bottom-left.label"),
+      entries.push_back(makeEntry(section, "shape", tr("settings.schema.shared.corner-bottom-left.label"),
                                   tr("settings.schema.bar.corner-bottom-left.description"), mpath("radius_bottom_left"),
                                   SliderSetting{static_cast<float>(ovr.radiusBottomLeft.value_or(bar.radiusBottomLeft)),
                                                 0.0f, 80.0f, 1.0f, true},
                                   "rounded corner", true));
       entries.push_back(
-          makeEntry(section, "shape", tr("settings.schema.bar.corner-bottom-right.label"),
+          makeEntry(section, "shape", tr("settings.schema.shared.corner-bottom-right.label"),
                     tr("settings.schema.bar.corner-bottom-right.description"), mpath("radius_bottom_right"),
                     SliderSetting{static_cast<float>(ovr.radiusBottomRight.value_or(bar.radiusBottomRight)), 0.0f,
                                   80.0f, 1.0f, true},
@@ -1511,7 +1470,7 @@ namespace settings {
           SliderSetting{ovr.backgroundOpacity.value_or(bar.backgroundOpacity), 0.0f, 1.0f, 0.01f, false}, "alpha"));
       entries.push_back(makeEntry(
           section, "shape", tr("settings.schema.bar.border.label"), tr("settings.schema.bar.border.description"),
-          mpath("border"), barBorderColorRolePicker(ovr.border.value_or(bar.border)), "outline color role", true));
+          mpath("border"), colorSpecPicker(ovr.border, true, tr("common.states.inherit")), "outline color", true));
       entries.push_back(makeEntry(section, "shape", tr("settings.schema.bar.border-width.label"),
                                   tr("settings.schema.bar.border-width.description"), mpath("border_width"),
                                   SliderSetting{ovr.borderWidth.value_or(bar.borderWidth), 0.0f, 20.0f, 0.5f, false},
@@ -1528,11 +1487,10 @@ namespace settings {
           tr("settings.schema.bar.widget-spacing.description"), mpath("widget_spacing"),
           SliderSetting{static_cast<float>(ovr.widgetSpacing.value_or(bar.widgetSpacing)), 0.0f, 32.0f, 1.0f, true},
           "gap"));
-      entries.push_back(
-          makeEntry(section, "widgets", tr("settings.schema.bar.widget-color.label"),
-                    tr("settings.schema.bar.widget-color.description"), mpath("color"),
-                    barOptionalAccentColorRolePicker(ovr.widgetColor.has_value() ? ovr.widgetColor : bar.widgetColor),
-                    "color role foreground", true));
+      entries.push_back(makeEntry(section, "widgets", tr("settings.schema.bar.widget-color.label"),
+                                  tr("settings.schema.bar.widget-color.description"), mpath("color"),
+                                  colorSpecPicker(ovr.widgetColor, true, tr("common.states.inherit")),
+                                  "color foreground", true));
       entries.push_back(makeEntry(section, "capsules", tr("settings.schema.bar.widget-capsules.label"),
                                   tr("settings.schema.bar.widget-capsules.description"), mpath("capsule"),
                                   ToggleSetting{ovr.widgetCapsuleDefault.value_or(bar.widgetCapsuleDefault)}, "pill"));
@@ -1559,29 +1517,28 @@ namespace settings {
         entries.push_back(std::move(e));
       }
       {
-        auto e = makeEntry(section, "capsules", tr("settings.schema.bar.capsule-fill.label"),
-                           tr("settings.schema.bar.capsule-fill.description"), mpath("capsule_fill"),
-                           barCapsuleFillColorRolePicker(ovr.widgetCapsuleFill.value_or(bar.widgetCapsuleFill)),
-                           "color role pill", true);
+        auto e =
+            makeEntry(section, "capsules", tr("settings.schema.bar.capsule-fill.label"),
+                      tr("settings.schema.bar.capsule-fill.description"), mpath("capsule_fill"),
+                      colorSpecPicker(ovr.widgetCapsuleFill, true, tr("common.states.inherit")), "color pill", true);
         e.visibleWhen = mCapsuleOn;
         entries.push_back(std::move(e));
       }
       {
         auto e = makeEntry(section, "capsules", tr("settings.schema.bar.capsule-foreground.label"),
                            tr("settings.schema.bar.capsule-foreground.description"), mpath("capsule_foreground"),
-                           barOptionalAccentColorRolePicker(ovr.widgetCapsuleForeground.has_value()
-                                                                ? ovr.widgetCapsuleForeground
-                                                                : bar.widgetCapsuleForeground),
-                           "color role foreground pill", true);
+                           colorSpecPicker(ovr.widgetCapsuleForeground, true, tr("common.states.inherit")),
+                           "color foreground pill", true);
         e.visibleWhen = mCapsuleOn;
         entries.push_back(std::move(e));
       }
       {
-        auto e = makeEntry(section, "capsules", tr("settings.schema.bar.capsule-border.label"),
-                           tr("settings.schema.bar.capsule-border.description"), mpath("capsule_border"),
-                           barOptionalAccentColorRolePicker(ovr.widgetCapsuleBorderSpecified ? ovr.widgetCapsuleBorder
-                                                                                             : bar.widgetCapsuleBorder),
-                           "color role pill outline", true);
+        auto e = makeEntry(
+            section, "capsules", tr("settings.schema.bar.capsule-border.label"),
+            tr("settings.schema.bar.capsule-border.description"), mpath("capsule_border"),
+            colorSpecPicker(ovr.widgetCapsuleBorderSpecified ? ovr.widgetCapsuleBorder : std::optional<ColorSpec>{},
+                            true, tr("common.states.inherit")),
+            "color pill outline", true);
         e.visibleWhen = mCapsuleOn;
         entries.push_back(std::move(e));
       }

@@ -488,6 +488,7 @@ _noctalia_sources = files(
   'src/shell/surface_shadow.cpp',
   'src/system/telemetry_service.cpp',
   'src/shell/settings/bar_widget_editor.cpp',
+  'src/shell/settings/color_spec_picker.cpp',
   'src/shell/settings/config_export_dialog_popup.cpp',
   'src/shell/settings/settings_content.cpp',
   'src/shell/settings/settings_entity_editor.cpp',
@@ -519,6 +520,7 @@ _noctalia_sources = files(
   'src/shell/bar/widgets/battery_widget.cpp',
   'src/shell/bar/widgets/bluetooth_widget.cpp',
   'src/shell/bar/widgets/control_center_widget.cpp',
+  'src/shell/bar/widgets/custom_button_widget.cpp',
   'src/shell/bar/widgets/clipboard_widget.cpp',
   'src/shell/bar/widgets/clock_widget.cpp',
   'src/shell/bar/widgets/idle_inhibitor_widget.cpp',
@@ -809,6 +811,19 @@ image_file_loader_data_uri_test = executable('image_file_loader_data_uri_test',
 )
 
 test('image_file_loader_data_uri', image_file_loader_data_uri_test)
+
+ico_decoder_test = executable('ico_decoder_test',
+  sources: files(
+    'tests/ico_decoder_test.cpp',
+    'src/render/core/image_decoder.cpp',
+  ),
+  dependencies: [
+    libwebp_dep,
+  ],
+  include_directories: _noctalia_inc,
+)
+
+test('ico_decoder', ico_decoder_test)
 
 app_identity_test = executable('app_identity_test',
   sources: files(

@@ -38,7 +38,7 @@ public:
   void onOpen(std::string_view context) override;
   void onClose() override;
 
-  [[nodiscard]] float preferredWidth() const override { return scaled(920.0f); }
+  [[nodiscard]] float preferredWidth() const override { return scaled(720.0f); }
   [[nodiscard]] float preferredHeight() const override { return scaled(560.0f); }
   [[nodiscard]] LayerShellLayer layer() const override { return LayerShellLayer::Overlay; }
   [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::Exclusive; }

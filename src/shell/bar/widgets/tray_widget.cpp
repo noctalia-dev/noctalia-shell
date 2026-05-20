@@ -611,6 +611,8 @@ void TrayWidget::rebuild(Renderer& renderer) {
       m_container->addChild(std::move(area));
     }
   }
+
+  m_container->setVisible(!m_container->children().empty());
 }
 
 std::string TrayWidget::drawerChevronGlyph(bool panelOpen) const {

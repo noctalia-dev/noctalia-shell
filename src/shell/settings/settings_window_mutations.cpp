@@ -41,21 +41,15 @@ void SettingsWindow::setSettingOverrides(
     if (m_config == nullptr) {
       return;
     }
-    bool changed = false;
-    bool failed = false;
-    for (auto& [path, value] : overrides) {
-      if (m_config->setOverride(path, std::move(value))) {
-        changed = true;
-      } else {
-        failed = true;
-      }
-    }
-    if (failed) {
-      markSettingsWriteError(i18n::tr("settings.errors.batch-write"));
+    if (overrides.empty()) {
+      markSettingsWriteSuccess(!m_statusMessage.empty());
       return;
     }
-    const bool hadStatus = !m_statusMessage.empty();
-    markSettingsWriteSuccess(changed || hadStatus);
+    if (m_config->setOverrides(std::move(overrides))) {
+      markSettingsWriteSuccess(true);
+      return;
+    }
+    markSettingsWriteError(i18n::tr("settings.errors.batch-write"));
   });
 }
 

@@ -1042,23 +1042,12 @@ namespace settings {
           ctx.makeRow(*panel, entry, ctx.makeSelect(std::move(selectSetting), path));
           break;
         }
-        case WidgetSettingValueType::ColorRole: {
-          ColorRolePickerSetting pickerSetting;
+        case WidgetSettingValueType::ColorSpec: {
+          ColorSpecPickerSetting pickerSetting;
           pickerSetting.selectedValue = settingValueAsString(value);
           pickerSetting.allowNone = spec.advanced;
           pickerSetting.allowCustomColor = spec.allowCustomColor;
-          if (!spec.options.empty()) {
-            for (const auto& option : spec.options) {
-              if (const auto role = colorRoleFromToken(option.value); role.has_value()) {
-                pickerSetting.roles.push_back(*role);
-              }
-            }
-          } else {
-            for (const auto& token : kColorRoleTokens) {
-              pickerSetting.roles.push_back(token.role);
-            }
-          }
-          ctx.makeRow(*panel, entry, ctx.makeColorRolePicker(std::move(pickerSetting), path));
+          ctx.makeRow(*panel, entry, ctx.makeColorSpecPicker(std::move(pickerSetting), path));
           break;
         }
         }

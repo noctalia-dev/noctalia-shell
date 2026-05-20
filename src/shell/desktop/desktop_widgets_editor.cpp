@@ -1178,7 +1178,7 @@ void DesktopWidgetsEditor::clampInspectorPosition(OverlaySurface& surface, float
   surface.inspectorY = std::clamp(surface.inspectorY, 0.0f, maxY);
 }
 
-// buildInspector, applySettingChange, and openColorPicker are in desktop_widgets_editor_settings.cpp
+// buildInspector and applySettingChange are in desktop_widgets_editor_settings.cpp
 
 void DesktopWidgetsEditor::deferEditorMutation(std::function<void()> action) {
   DeferredCall::callLater([this, action = std::move(action)]() mutable {

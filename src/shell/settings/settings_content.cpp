@@ -4,6 +4,7 @@
 #include "i18n/i18n.h"
 #include "render/core/color.h"
 #include "shell/settings/bar_widget_editor.h"
+#include "shell/settings/color_spec_picker.h"
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/checkbox.h"
@@ -19,7 +20,6 @@
 #include "ui/controls/slider.h"
 #include "ui/controls/stepper.h"
 #include "ui/controls/toggle.h"
-#include "ui/dialogs/color_picker_dialog.h"
 #include "ui/dialogs/file_dialog.h"
 #include "ui/dialogs/glyph_picker_dialog.h"
 #include "ui/palette.h"
@@ -1369,153 +1369,29 @@ namespace settings {
       return wrap;
     };
 
-    const auto makeColor = [&](const ColorSetting& setting, std::vector<std::string> path) {
-      auto wrap = std::make_unique<Flex>();
-      wrap->setDirection(FlexDirection::Horizontal);
-      wrap->setAlign(FlexAlign::Center);
-      wrap->setGap(Style::spaceSm * scale);
-
-      const float swatchSize = Style::controlHeight * scale;
-      auto swatch = std::make_unique<Box>();
-      swatch->setSize(swatchSize, swatchSize);
-      swatch->setRadius(Style::scaledRadiusSm(scale));
-      swatch->setBorder(colorSpecFromRole(ColorRole::Outline), 1.0f);
-      Color initialColor;
-      const bool hasColor = !setting.unset && tryParseHexColor(setting.hex, initialColor);
-      if (hasColor) {
-        swatch->setFill(initialColor);
-      } else {
-        swatch->setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
-      }
-
-      auto button = std::make_unique<Button>();
-      button->setVariant(ButtonVariant::Outline);
-      button->setText(setting.unset ? i18n::tr("settings.options.theme-role.default") : setting.hex);
-      button->setFontSize(Style::fontSizeBody * scale);
-      button->setMinHeight(Style::controlHeight * scale);
-      button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-      button->setRadius(Style::scaledRadiusMd(scale));
-      const std::optional<Color> initialOpt = hasColor ? std::optional<Color>{initialColor} : std::nullopt;
-      const std::string title = i18n::tr("settings.dialogs.color-picker.title");
-      button->setOnClick([setOverride = ctx.setOverride, path, initialOpt, title]() {
-        ColorPickerDialogOptions options;
-        options.title = title;
-        if (initialOpt.has_value()) {
-          options.initialColor = *initialOpt;
-        } else if (const auto last = ColorPickerDialog::lastResult()) {
-          options.initialColor = *last;
-        }
-        (void)ColorPickerDialog::open(std::move(options), [setOverride, path](std::optional<Color> result) {
-          if (!result.has_value()) {
-            return;
-          }
-          Color rgb = *result;
-          rgb.a = 1.0f;
-          setOverride(path, formatRgbHex(rgb));
-        });
-      });
-
-      wrap->addChild(std::move(swatch));
-      wrap->addChild(std::move(button));
-      return wrap;
-    };
-
-    const auto makeColorRolePicker = [&](const ColorRolePickerSetting& setting,
+    const auto makeColorSpecPicker = [&](const ColorSpecPickerSetting& setting,
                                          std::vector<std::string> path) -> std::unique_ptr<Node> {
-      std::vector<SelectOption> opts;
-      opts.reserve(setting.roles.size() + (setting.allowNone ? 1 : 0) + (setting.allowCustomColor ? 1 : 0));
-      std::vector<ColorSpec> indicators;
-      indicators.reserve(setting.roles.size() + (setting.allowNone ? 1 : 0) + (setting.allowCustomColor ? 1 : 0));
-
-      if (setting.allowNone) {
-        opts.push_back(SelectOption{"", i18n::tr("settings.options.theme-role.default")});
-        indicators.push_back(clearColorSpec());
-      }
-      for (const auto role : setting.roles) {
-        opts.push_back(SelectOption{std::string(colorRoleToken(role)), std::string(colorRoleToken(role))});
-        indicators.push_back(colorSpecFromRole(role));
-      }
-
-      static constexpr std::string_view kCustomColorValue = "__custom_color__";
-      Color selectedFixedColor;
-      const bool selectedIsFixedColor =
-          setting.allowCustomColor && tryParseHexColor(setting.selectedValue, selectedFixedColor);
-      if (setting.allowCustomColor) {
-        opts.push_back(SelectOption{
-            .value = std::string(kCustomColorValue),
-            .label = selectedIsFixedColor ? formatRgbHex(selectedFixedColor)
-                                          : i18n::tr("settings.options.theme-role.custom"),
-        });
-        indicators.push_back(selectedIsFixedColor ? fixedColorSpec(selectedFixedColor) : clearColorSpec());
-      }
-
-      SelectSetting selectSetting{std::move(opts), setting.selectedValue, setting.allowNone};
-      if (!setting.allowCustomColor) {
-        auto select = makeSelect(selectSetting, std::move(path));
-        if (auto* sel = dynamic_cast<Select*>(select.get())) {
-          sel->setOptionIndicators(std::move(indicators));
-        }
-        return select;
-      }
-
-      std::optional<Color> customInitialColor;
-      if (selectedIsFixedColor) {
-        customInitialColor = selectedFixedColor;
-        selectSetting.selectedValue = std::string(kCustomColorValue);
-      } else if (const auto selectedRole = colorRoleFromToken(setting.selectedValue); selectedRole.has_value()) {
-        customInitialColor = colorForRole(*selectedRole);
-      }
-
-      auto select = std::make_unique<Select>();
-      select->setOptions(optionLabels(selectSetting.options));
-      if (const auto index = optionIndex(selectSetting.options, selectSetting.selectedValue)) {
-        select->setSelectedIndex(*index);
-      } else if (!setting.selectedValue.empty()) {
-        select->clearSelection();
-        select->setPlaceholder(i18n::tr("settings.controls.select.unknown-value", "value", setting.selectedValue));
-      }
-      select->setOptionIndicators(std::move(indicators));
-      select->setFontSize(Style::fontSizeBody * scale);
-      select->setControlHeight(Style::controlHeight * scale);
-      select->setGlyphSize(Style::fontSizeBody * scale);
-      select->setSize(190.0f * scale, Style::controlHeight * scale);
-      auto options = selectSetting.options;
-      select->setOnSelectionChanged([configService = ctx.configService, clearOverride = ctx.clearOverride,
-                                     setOverride = ctx.setOverride, requestRebuild = ctx.requestRebuild, path,
-                                     options = std::move(options),
-                                     initialColor = customInitialColor](std::size_t index, std::string_view /*label*/) {
-        if (index >= options.size()) {
-          return;
-        }
-        if (options[index].value == kCustomColorValue) {
-          ColorPickerDialogOptions dialogOptions;
-          dialogOptions.title = i18n::tr("settings.dialogs.color-picker.title");
-          if (initialColor.has_value()) {
-            dialogOptions.initialColor = *initialColor;
-          } else if (const auto last = ColorPickerDialog::lastResult()) {
-            dialogOptions.initialColor = *last;
-          }
-          (void)ColorPickerDialog::open(std::move(dialogOptions), [setOverride, path](std::optional<Color> result) {
-            if (!result.has_value()) {
-              return;
+      ColorSpecSelectOptions options{
+          .roles = setting.roles,
+          .selectedValue = setting.selectedValue,
+          .allowNone = setting.allowNone,
+          .allowCustomColor = setting.allowCustomColor,
+          .noneLabel = setting.noneLabel,
+          .fontSize = Style::fontSizeBody * scale,
+          .controlHeight = Style::controlHeight * scale,
+          .glyphSize = Style::fontSizeBody * scale,
+          .width = 190.0f * scale,
+      };
+      return makeColorSpecSelect(
+          std::move(options), [setOverride = ctx.setOverride, path](std::string value) { setOverride(path, value); },
+          [configService = ctx.configService, clearOverride = ctx.clearOverride, requestRebuild = ctx.requestRebuild,
+           path]() {
+            if (configService != nullptr && configService->hasOverride(path)) {
+              clearOverride(path);
+            } else {
+              requestRebuild();
             }
-            Color rgb = *result;
-            rgb.a = 1.0f;
-            setOverride(path, formatRgbHex(rgb));
           });
-          return;
-        }
-        if (options[index].value.empty()) {
-          if (configService != nullptr && configService->hasOverride(path)) {
-            clearOverride(path);
-          } else {
-            requestRebuild();
-          }
-          return;
-        }
-        setOverride(path, options[index].value);
-      });
-      return select;
     };
 
     const auto makeSearchPickerButton = [&](const SettingEntry& entry,
@@ -2262,8 +2138,6 @@ namespace settings {
               return makeOptionalStepper(control, entry.path);
             } else if constexpr (std::is_same_v<T, StepperSetting>) {
               return makeStepper(control, entry.path);
-            } else if constexpr (std::is_same_v<T, ColorSetting>) {
-              return makeColor(control, entry.path);
             } else if constexpr (std::is_same_v<T, SearchPickerSetting>) {
               return nullptr;
             } else if constexpr (std::is_same_v<T, MultiSelectSetting>) {
@@ -2292,8 +2166,8 @@ namespace settings {
               button->setRadius(Style::scaledRadiusMd(scale));
               button->setOnClick(control.action);
               return button;
-            } else if constexpr (std::is_same_v<T, ColorRolePickerSetting>) {
-              return makeColorRolePicker(control, entry.path);
+            } else if constexpr (std::is_same_v<T, ColorSpecPickerSetting>) {
+              return makeColorSpecPicker(control, entry.path);
             }
           },
           entry.control);
@@ -2349,8 +2223,8 @@ namespace settings {
                         std::vector<std::string> path) -> std::unique_ptr<Node> {
           return makeText(value, placeholder, std::move(path));
         }, // width not used in search
-        .makeColorRolePicker = [&](const ColorRolePickerSetting& setting, std::vector<std::string> path)
-            -> std::unique_ptr<Node> { return makeColorRolePicker(setting, std::move(path)); },
+        .makeColorSpecPicker = [&](const ColorSpecPickerSetting& setting, std::vector<std::string> path)
+            -> std::unique_ptr<Node> { return makeColorSpecPicker(setting, std::move(path)); },
         .makeListBlock = [&](Flex& section, const SettingEntry& entry,
                              const ListSetting& list) { makeListBlock(section, entry, list); },
     };

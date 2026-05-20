@@ -541,9 +541,21 @@ void ClipboardPanel::create() {
   previewActions->setAlign(FlexAlign::Center);
   previewActions->setGap(Style::spaceXs * scale);
 
+  auto copyButton = std::make_unique<Button>();
+  copyButton->setGlyph("copy");
+  copyButton->setVariant(ButtonVariant::Default);
+  copyButton->setGlyphSize(Style::fontSizeBody * scale);
+  copyButton->setMinWidth(Style::controlHeightSm * scale);
+  copyButton->setMinHeight(Style::controlHeightSm * scale);
+  copyButton->setPadding(Style::spaceXs * scale);
+  copyButton->setRadius(Style::scaledRadiusMd(scale));
+  copyButton->setOnClick([this]() { activateSelected(); });
+  m_copyButton = copyButton.get();
+  previewActions->addChild(std::move(copyButton));
+
   auto imageActionButton = std::make_unique<Button>();
   imageActionButton->setGlyph("photo-edit");
-  imageActionButton->setVariant(ButtonVariant::Secondary);
+  imageActionButton->setVariant(ButtonVariant::Default);
   imageActionButton->setGlyphSize(Style::fontSizeBody * scale);
   imageActionButton->setMinWidth(Style::controlHeightSm * scale);
   imageActionButton->setMinHeight(Style::controlHeightSm * scale);
@@ -557,7 +569,7 @@ void ClipboardPanel::create() {
 
   auto pinButton = std::make_unique<Button>();
   pinButton->setGlyph("pin");
-  pinButton->setVariant(ButtonVariant::Secondary);
+  pinButton->setVariant(ButtonVariant::Default);
   pinButton->setGlyphSize(Style::fontSizeBody * scale);
   pinButton->setMinWidth(Style::controlHeightSm * scale);
   pinButton->setMinHeight(Style::controlHeightSm * scale);
@@ -578,18 +590,6 @@ void ClipboardPanel::create() {
   deleteEntryButton->setOnClick([this]() { deleteSelectedEntry(); });
   m_deleteEntryButton = deleteEntryButton.get();
   previewActions->addChild(std::move(deleteEntryButton));
-
-  auto copyButton = std::make_unique<Button>();
-  copyButton->setGlyph("copy");
-  copyButton->setVariant(ButtonVariant::Default);
-  copyButton->setGlyphSize(Style::fontSizeBody * scale);
-  copyButton->setMinWidth(Style::controlHeightSm * scale);
-  copyButton->setMinHeight(Style::controlHeightSm * scale);
-  copyButton->setPadding(Style::spaceXs * scale);
-  copyButton->setRadius(Style::scaledRadiusMd(scale));
-  copyButton->setOnClick([this]() { activateSelected(); });
-  m_copyButton = copyButton.get();
-  previewActions->addChild(std::move(copyButton));
 
   auto closeButton = std::make_unique<Button>();
   closeButton->setGlyph("close");
@@ -908,7 +908,7 @@ void ClipboardPanel::updatePinButton() {
   m_pinButton->setParticipatesInLayout(hasSelection);
   m_pinButton->setEnabled(hasSelection);
   m_pinButton->setGlyph(pinned ? "unpin" : "pin");
-  m_pinButton->setVariant(pinned ? ButtonVariant::Accent : ButtonVariant::Secondary);
+  m_pinButton->setVariant(pinned ? ButtonVariant::Accent : ButtonVariant::Default);
 }
 
 void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float height) {

@@ -641,19 +641,23 @@ void Application::initServices() {
   }
 
   if (m_systemBus != nullptr) {
-    try {
-      m_logindService = std::make_unique<LogindService>(*m_systemBus);
-      m_logindService->setPrepareForSleepCallback([this](bool sleeping) {
-        if (sleeping) {
-          return;
-        }
-        kLog.info("system resumed; rechecking night light schedule");
-        m_gammaService.reevaluateSchedule();
-      });
-      kLog.info("logind sleep monitor active");
-    } catch (const std::exception& e) {
-      kLog.warn("logind sleep monitor disabled: {}", e.what());
-      m_logindService.reset();
+    if (m_systemBus->nameHasOwner("org.freedesktop.login1")) {
+      try {
+        m_logindService = std::make_unique<LogindService>(*m_systemBus);
+        m_logindService->setPrepareForSleepCallback([this](bool sleeping) {
+          if (sleeping) {
+            return;
+          }
+          kLog.info("system resumed; rechecking night light schedule");
+          m_gammaService.reevaluateSchedule();
+        });
+        kLog.info("logind sleep monitor active");
+      } catch (const std::exception& e) {
+        kLog.warn("logind sleep monitor disabled: {}", e.what());
+        m_logindService.reset();
+      }
+    } else {
+      kLog.info("logind not available on system bus; sleep monitor disabled");
     }
 
     try {

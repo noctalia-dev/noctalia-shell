@@ -36,7 +36,6 @@ struct BarMonitorOverride {
   std::optional<std::int32_t> widgetSpacing; // gap between widgets within a section
   std::optional<bool> shadow;                // use the global shell shadow on this bar
   std::optional<bool> contactShadow;         // dark gradient between attached panel and bar
-  std::optional<bool> attachPanels;          // allow panels to attach to this bar
   std::optional<float> scale;
   std::optional<std::vector<std::string>> startWidgets;
   std::optional<std::vector<std::string>> centerWidgets;
@@ -77,7 +76,6 @@ struct BarConfig {
   std::int32_t widgetSpacing = 6; // gap between widgets within a section
   bool shadow = true;             // use the global shell shadow
   bool contactShadow = false;     // dark gradient between attached panel and bar
-  bool attachPanels = true;       // allow panels to attach to this bar
   float scale = 1.0f;             // content scale multiplier for glyphs and text
   std::vector<std::string> startWidgets = {"launcher", "wallpaper", "workspaces"};
   std::vector<std::string> centerWidgets = {"clock"};
@@ -231,6 +229,10 @@ struct WidgetConfig {
   [[nodiscard]] std::int64_t getInt(const std::string& key, std::int64_t fallback = 0) const;
   [[nodiscard]] double getDouble(const std::string& key, double fallback = 0.0) const;
   [[nodiscard]] bool getBool(const std::string& key, bool fallback = false) const;
+  [[nodiscard]] ColorSpec getColorSpec(const std::string& key, const ColorSpec& fallback,
+                                       std::string_view context = {}) const;
+  [[nodiscard]] std::optional<ColorSpec> getOptionalColorSpec(const std::string& key,
+                                                              std::string_view context = {}) const;
   [[nodiscard]] bool hasSetting(const std::string& key) const;
 
   bool operator==(const WidgetConfig&) const = default;
@@ -240,8 +242,8 @@ struct WidgetConfig {
 // `radius` are populated even when `enabled` is false so widgets can reuse capsule styling internally.
 [[nodiscard]] WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const WidgetConfig* widget);
 
-// Color spec for `[widget.*] color` and other user color strings (same rules as `capsule_fill`).
-[[nodiscard]] ColorSpec colorSpecFromConfigString(const std::string& raw);
+// Color spec for user color strings: either a palette color role token or a hex color.
+[[nodiscard]] ColorSpec colorSpecFromConfigString(const std::string& raw, std::string_view context = {});
 
 // Shared output selector matching used by monitor-scoped config and IPC selectors.
 // Matches connector name exactly, or a word-boundary token within output description.
@@ -574,11 +576,11 @@ struct WeatherConfig {
 struct SystemConfig {
   struct MonitorConfig {
     bool enabled = true;
-    float cpuPollSeconds = 1.0f;
-    float gpuPollSeconds = 2.0f;
-    float memoryPollSeconds = 1.0f;
-    float networkPollSeconds = 1.0f;
-    float diskPollSeconds = 5.0f;
+    float cpuPollSeconds = 2.0f;
+    float gpuPollSeconds = 5.0f;
+    float memoryPollSeconds = 2.0f;
+    float networkPollSeconds = 3.0f;
+    float diskPollSeconds = 10.0f;
   };
 
   MonitorConfig monitor;

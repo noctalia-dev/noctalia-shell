@@ -4,6 +4,7 @@
 #include "render/scene/input_area.h"
 #include "shell/desktop/desktop_widget_settings_registry.h"
 #include "shell/desktop/desktop_widgets_editor.h"
+#include "shell/settings/color_spec_picker.h"
 #include "shell/settings/widget_settings_registry.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
@@ -16,7 +17,6 @@
 #include "ui/controls/separator.h"
 #include "ui/controls/slider.h"
 #include "ui/controls/toggle.h"
-#include "ui/dialogs/color_picker_dialog.h"
 #include "ui/dialogs/file_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -118,17 +118,6 @@ namespace {
     return false;
   }
 
-  ColorSpec getColorSpec(const Settings& s, const std::string& key, const ColorSpec& fallback) {
-    const auto it = s.find(key);
-    if (it == s.end()) {
-      return fallback;
-    }
-    if (const auto* v = std::get_if<std::string>(&it->second)) {
-      return colorSpecFromConfigString(*v);
-    }
-    return fallback;
-  }
-
   std::unique_ptr<Flex> makeRow(std::string_view labelText, std::unique_ptr<Node> control) {
     auto row = std::make_unique<Flex>();
     row->setDirection(FlexDirection::Horizontal);
@@ -172,45 +161,21 @@ namespace {
     return makeRow(labelText, std::move(slider));
   }
 
-  std::unique_ptr<Flex> makeColorRoleSelect(std::string_view labelText, const std::string& key,
-                                            const ColorSpec& fallback, const Settings& s,
-                                            DesktopWidgetsEditor* editor) {
-    auto currentSpec = getColorSpec(s, key, fallback);
-
-    std::vector<std::string> options;
-    std::vector<ColorSpec> indicators;
-    options.reserve(kColorRoleTokens.size() + 1);
-    indicators.reserve(kColorRoleTokens.size() + 1);
-
-    std::size_t selectedIndex = kColorRoleTokens.size(); // default to Custom
-    for (std::size_t i = 0; i < kColorRoleTokens.size(); ++i) {
-      options.emplace_back(kColorRoleTokens[i].token);
-      indicators.push_back(colorSpecFromRole(kColorRoleTokens[i].role));
-      if (currentSpec.role.has_value() && *currentSpec.role == kColorRoleTokens[i].role) {
-        selectedIndex = i;
-      }
-    }
-
-    auto customLabel = currentSpec.role.has_value() ? i18n::tr("desktop-widgets.editor.settings.custom-color")
-                                                    : formatRgbHex(resolveColorSpec(currentSpec));
-    options.push_back(customLabel);
-    indicators.push_back(currentSpec.role.has_value() ? clearColorSpec()
-                                                      : fixedColorSpec(resolveColorSpec(currentSpec)));
-
-    auto select = std::make_unique<Select>();
-    select->setOptions(options);
-    select->setOptionIndicators(std::move(indicators));
-    select->setSelectedIndex(selectedIndex);
-    select->setControlHeight(Style::controlHeightSm);
-    select->setFlexGrow(1.0f);
-    select->setOnSelectionChanged([editor, key, currentSpec](std::size_t index, std::string_view) {
-      if (index < kColorRoleTokens.size()) {
-        editor->applySettingChange(key, std::string(kColorRoleTokens[index].token));
-      } else {
-        auto currentColor = resolveColorSpec(currentSpec);
-        editor->openColorPicker(key, currentColor);
-      }
-    });
+  std::unique_ptr<Flex> makeColorSpecRow(std::string_view labelText, const std::string& key, std::string fallbackValue,
+                                         const Settings& s, DesktopWidgetsEditor* editor) {
+    settings::ColorSpecSelectOptions options{
+        .roles = {},
+        .selectedValue = getStr(s, key, std::move(fallbackValue)),
+        .allowNone = false,
+        .allowCustomColor = true,
+        .noneLabel = {},
+        .controlHeight = Style::controlHeightSm,
+        .glyphSize = Style::fontSizeCaption,
+        .flexGrow = true,
+    };
+    auto select = settings::makeColorSpecSelect(
+        std::move(options), [editor, key](std::string value) { editor->applySettingChange(key, std::move(value)); },
+        []() {});
     return makeRow(labelText, std::move(select));
   }
 
@@ -348,12 +313,9 @@ namespace {
         break;
       }
 
-      case settings::WidgetSettingValueType::ColorRole: {
+      case settings::WidgetSettingValueType::ColorSpec: {
         const auto* defVal = std::get_if<std::string>(&spec.defaultValue);
-        const std::string token = defVal != nullptr ? *defVal : std::string{};
-        const ColorSpec fallback =
-            token.empty() ? colorSpecFromRole(ColorRole::OnSurface) : colorSpecFromConfigString(token);
-        content.addChild(makeColorRoleSelect(label, spec.key, fallback, s, editor));
+        content.addChild(makeColorSpecRow(label, spec.key, defVal != nullptr ? *defVal : std::string{}, s, editor));
         break;
       }
 
@@ -394,17 +356,6 @@ namespace {
   }
 
 } // namespace
-
-void DesktopWidgetsEditor::openColorPicker(const std::string& key, const Color& currentColor) {
-  ColorPickerDialogOptions options;
-  options.initialColor = currentColor;
-  options.title = key;
-  (void)ColorPickerDialog::open(std::move(options), [this, key](std::optional<Color> result) {
-    if (result) {
-      applySettingChange(key, formatRgbHex(*result));
-    }
-  });
-}
 
 void DesktopWidgetsEditor::applySettingChange(const std::string& key, WidgetSettingValue value) {
   deferEditorMutation([this, key, value = std::move(value)]() {

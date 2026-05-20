@@ -49,7 +49,7 @@ namespace settings {
     String,
     StringList,
     Select,
-    ColorRole,
+    ColorSpec,
   };
 
   struct WidgetSettingSelectOption {
@@ -82,8 +82,8 @@ namespace settings {
     double step = 1.0;
     std::vector<WidgetSettingSelectOption> options;
     bool advanced = false;
-    bool segmented = false;        // applies when valueType == Select
-    bool allowCustomColor = false; // applies when valueType == ColorRole
+    bool segmented = false;       // applies when valueType == Select
+    bool allowCustomColor = true; // applies when valueType == ColorSpec
     std::optional<WidgetSettingVisibility> visibleWhen;
   };
 

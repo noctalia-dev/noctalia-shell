@@ -252,6 +252,7 @@ int main(int argc, char* argv[]) {
 #endif
 
   std::setlocale(LC_ALL, "");
+  std::setlocale(LC_NUMERIC, "C");
 
   const bool isDaemonChild = takeDaemonPipeFromEnv();
   bool shouldDaemonize = false;
@@ -286,6 +287,13 @@ int main(int argc, char* argv[]) {
 
       std::fprintf(stderr, "error: unknown option: %s\n", argv[i]);
       return 1;
+    }
+  }
+
+  {
+    const char* home = std::getenv("HOME");
+    if (home != nullptr && home[0] != '\0') {
+      (void)::chdir(home);
     }
   }
 

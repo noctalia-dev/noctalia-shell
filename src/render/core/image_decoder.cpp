@@ -27,6 +27,186 @@ namespace {
            data[9] == 'E' && data[10] == 'B' && data[11] == 'P';
   }
 
+  bool isIco(const std::uint8_t* data, std::size_t size) {
+    return size >= 6 && data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01 && data[3] == 0x00;
+  }
+
+  bool isPng(const std::uint8_t* data, std::size_t size) {
+    return size >= 8 && data[0] == 0x89 && data[1] == 'P' && data[2] == 'N' && data[3] == 'G' && data[4] == 0x0D &&
+           data[5] == 0x0A && data[6] == 0x1A && data[7] == 0x0A;
+  }
+
+  std::uint16_t readU16LE(const std::uint8_t* p) { return static_cast<std::uint16_t>(p[0] | (p[1] << 8)); }
+
+  std::uint32_t readU32LE(const std::uint8_t* p) {
+    return static_cast<std::uint32_t>(p[0]) | (static_cast<std::uint32_t>(p[1]) << 8) |
+           (static_cast<std::uint32_t>(p[2]) << 16) | (static_cast<std::uint32_t>(p[3]) << 24);
+  }
+
+  // ICO files contain a directory of sub-images (PNG or BMP DIB). Pick the
+  // largest one and decode it through the normal raster pipeline. For BMP
+  // sub-images we prepend a synthetic BITMAPFILEHEADER so wuffs sees a
+  // complete BMP.
+  std::optional<DecodedRasterImage> decodeIco(const std::uint8_t* data, std::size_t size, std::string* errorMessage) {
+    const std::uint16_t count = readU16LE(data + 4);
+    if (count == 0) {
+      if (errorMessage != nullptr)
+        *errorMessage = "ICO file has no images";
+      return std::nullopt;
+    }
+
+    const std::size_t dirEnd = 6 + static_cast<std::size_t>(count) * 16;
+    if (dirEnd > size) {
+      if (errorMessage != nullptr)
+        *errorMessage = "ICO directory extends past end of file";
+      return std::nullopt;
+    }
+
+    int bestIdx = -1;
+    int bestArea = 0;
+    int bestBpp = 0;
+    for (int i = 0; i < count; ++i) {
+      const std::uint8_t* entry = data + 6 + i * 16;
+      int w = entry[0] == 0 ? 256 : entry[0];
+      int h = entry[1] == 0 ? 256 : entry[1];
+      int bpp = readU16LE(entry + 6);
+      int area = w * h;
+      if (area > bestArea || (area == bestArea && bpp > bestBpp)) {
+        bestArea = area;
+        bestBpp = bpp;
+        bestIdx = i;
+      }
+    }
+
+    const std::uint8_t* entry = data + 6 + bestIdx * 16;
+    const std::uint32_t imgSize = readU32LE(entry + 8);
+    const std::uint32_t imgOffset = readU32LE(entry + 12);
+
+    if (static_cast<std::size_t>(imgOffset) + imgSize > size || imgSize == 0) {
+      if (errorMessage != nullptr)
+        *errorMessage = "ICO entry points outside file";
+      return std::nullopt;
+    }
+
+    const std::uint8_t* imgData = data + imgOffset;
+
+    if (isPng(imgData, imgSize)) {
+      return decodeRasterImage(imgData, imgSize, errorMessage);
+    }
+
+    // BMP DIB sub-image. Standard BMP decoders (wuffs) treat 32bpp as BGRX
+    // (alpha forced to 0xFF), but ICO uses that byte as real alpha. Decode
+    // 32bpp manually; for other depths fall back to wuffs + AND mask.
+    if (imgSize < 40) {
+      if (errorMessage != nullptr)
+        *errorMessage = "ICO BMP sub-image too small for BITMAPINFOHEADER";
+      return std::nullopt;
+    }
+
+    const std::uint32_t dibHeaderSize = readU32LE(imgData);
+    const std::int32_t dibWidth = static_cast<std::int32_t>(readU32LE(imgData + 4));
+    const std::int32_t dibHeight = static_cast<std::int32_t>(readU32LE(imgData + 8));
+    const std::uint16_t bpp = readU16LE(imgData + 14);
+    const int width = dibWidth > 0 ? dibWidth : -dibWidth;
+    const int height = (dibHeight > 0 ? dibHeight : -dibHeight) / 2;
+
+    if (width <= 0 || height <= 0 || width > 1024 || height > 1024) {
+      if (errorMessage != nullptr)
+        *errorMessage = "ICO BMP sub-image has invalid dimensions";
+      return std::nullopt;
+    }
+
+    const std::size_t rowStride = static_cast<std::size_t>(((width * bpp + 31) / 32)) * 4;
+    const std::size_t pixelDataSize = rowStride * static_cast<std::size_t>(height);
+    const std::size_t pixelDataOffset = dibHeaderSize;
+
+    if (pixelDataOffset + pixelDataSize > imgSize) {
+      if (errorMessage != nullptr)
+        *errorMessage = "ICO BMP pixel data extends past sub-image";
+      return std::nullopt;
+    }
+
+    if (bpp == 32) {
+      DecodedRasterImage decoded;
+      decoded.width = width;
+      decoded.height = height;
+      decoded.pixels.resize(static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 4);
+
+      const std::uint8_t* pixels = imgData + pixelDataOffset;
+      const bool bottomUp = dibHeight > 0;
+      for (int y = 0; y < height; ++y) {
+        const int srcRow = bottomUp ? (height - 1 - y) : y;
+        const std::uint8_t* srcLine = pixels + static_cast<std::size_t>(srcRow) * rowStride;
+        std::uint8_t* dstLine =
+            decoded.pixels.data() + static_cast<std::size_t>(y) * static_cast<std::size_t>(width) * 4;
+        for (int x = 0; x < width; ++x) {
+          dstLine[x * 4 + 0] = srcLine[x * 4 + 2]; // R
+          dstLine[x * 4 + 1] = srcLine[x * 4 + 1]; // G
+          dstLine[x * 4 + 2] = srcLine[x * 4 + 0]; // B
+          dstLine[x * 4 + 3] = srcLine[x * 4 + 3]; // A
+        }
+      }
+      return decoded;
+    }
+
+    // Non-32bpp: delegate to wuffs, then apply the AND mask for transparency.
+    constexpr std::size_t kBmpHeaderSize = 14;
+    std::vector<std::uint8_t> bmp(kBmpHeaderSize + imgSize);
+    std::memcpy(bmp.data() + kBmpHeaderSize, imgData, imgSize);
+
+    // Fix double-height → real height in the DIB header.
+    {
+      const std::int32_t realHeight = dibHeight > 0 ? dibHeight / 2 : dibHeight;
+      const auto rh = static_cast<std::uint32_t>(realHeight);
+      bmp[kBmpHeaderSize + 8] = static_cast<std::uint8_t>(rh & 0xFF);
+      bmp[kBmpHeaderSize + 9] = static_cast<std::uint8_t>((rh >> 8) & 0xFF);
+      bmp[kBmpHeaderSize + 10] = static_cast<std::uint8_t>((rh >> 16) & 0xFF);
+      bmp[kBmpHeaderSize + 11] = static_cast<std::uint8_t>((rh >> 24) & 0xFF);
+    }
+
+    const std::uint32_t pixelOffset = static_cast<std::uint32_t>(kBmpHeaderSize + dibHeaderSize);
+    const auto totalSize = static_cast<std::uint32_t>(bmp.size());
+
+    bmp[0] = 'B';
+    bmp[1] = 'M';
+    bmp[2] = static_cast<std::uint8_t>(totalSize & 0xFF);
+    bmp[3] = static_cast<std::uint8_t>((totalSize >> 8) & 0xFF);
+    bmp[4] = static_cast<std::uint8_t>((totalSize >> 16) & 0xFF);
+    bmp[5] = static_cast<std::uint8_t>((totalSize >> 24) & 0xFF);
+    bmp[6] = 0;
+    bmp[7] = 0;
+    bmp[8] = 0;
+    bmp[9] = 0;
+    bmp[10] = static_cast<std::uint8_t>(pixelOffset & 0xFF);
+    bmp[11] = static_cast<std::uint8_t>((pixelOffset >> 8) & 0xFF);
+    bmp[12] = static_cast<std::uint8_t>((pixelOffset >> 16) & 0xFF);
+    bmp[13] = static_cast<std::uint8_t>((pixelOffset >> 24) & 0xFF);
+
+    auto decoded = decodeRasterImage(bmp.data(), bmp.size(), errorMessage);
+    if (!decoded.has_value())
+      return std::nullopt;
+
+    // Apply the 1bpp AND mask that follows the pixel data.
+    const std::size_t andRowStride = static_cast<std::size_t>(((width + 31) / 32)) * 4;
+    const std::size_t andOffset = pixelDataOffset + pixelDataSize;
+    if (andOffset + andRowStride * static_cast<std::size_t>(height) <= imgSize) {
+      const std::uint8_t* andMask = imgData + andOffset;
+      const bool bottomUp = dibHeight > 0;
+      for (int y = 0; y < height; ++y) {
+        const int maskRow = bottomUp ? (height - 1 - y) : y;
+        const std::uint8_t* maskLine = andMask + static_cast<std::size_t>(maskRow) * andRowStride;
+        std::uint8_t* dstLine =
+            decoded->pixels.data() + static_cast<std::size_t>(y) * static_cast<std::size_t>(width) * 4;
+        for (int x = 0; x < width; ++x) {
+          if (maskLine[x / 8] & (0x80 >> (x % 8)))
+            dstLine[x * 4 + 3] = 0;
+        }
+      }
+    }
+
+    return decoded;
+  }
+
   std::optional<DecodedRasterImage> decodeWebP(const std::uint8_t* data, std::size_t size, std::string* errorMessage) {
     int width = 0, height = 0;
     std::uint8_t* rgba = WebPDecodeRGBA(data, size, &width, &height);
@@ -59,6 +239,9 @@ std::optional<DecodedRasterImage> decodeRasterImage(const std::uint8_t* data, st
 
   if (isWebP(data, size))
     return decodeWebP(data, size, errorMessage);
+
+  if (isIco(data, size))
+    return decodeIco(data, size, errorMessage);
 
   auto input = wuffs_aux::sync_io::MemoryInput(data, size);
   auto callbacks = RgbaDecodeCallbacks();

@@ -29,7 +29,6 @@ namespace {
 
   constexpr float kMenuWidth = 246.0f;
   constexpr std::size_t kTrayMenuVisibleItems = 20;
-  constexpr float kScrollGutter = 14.0f;
   constexpr std::int32_t kPinToggleEntryId = -2147000000;
 
   constexpr float kSurfaceWidth = kMenuWidth;
@@ -782,8 +781,7 @@ void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
     });
   }
 
-  const bool useScrollbar = entries.size() > kTrayMenuVisibleItems;
-  const float menuWidth = std::max(1.0f, inst.chrome.contentWidth - (useScrollbar ? kScrollGutter : 0.0f));
+  const float menuWidth = std::max(1.0f, inst.chrome.contentWidth);
 
   auto scrollView = std::make_unique<ScrollView>();
   scrollView->setPosition(inst.chrome.contentX(), inst.chrome.contentY());
@@ -794,10 +792,11 @@ void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
   scrollView->clearBorder();
   scrollView->setRadius(0.0f);
   scrollView->bindState(&inst.scrollState);
+  scrollView->setScrollbarVisible(true);
 
   auto menu = std::make_unique<ContextMenuControl>();
   menu->setMenuWidth(menuWidth);
-  menu->setMaxVisible(std::max<std::size_t>(1, entries.size()));
+  menu->setMaxVisible(entries.size()); // Always lay out all entries for scrolling
   menu->setSubmenuDirection(inst.submenuDirection);
   menu->setEntries(std::move(entries));
   menu->setRedrawCallback([&inst]() {
@@ -1089,8 +1088,7 @@ void TrayMenu::buildSubmenuScene(MenuInstance& inst, uint32_t width, uint32_t he
     });
   }
 
-  const bool useScrollbar = entries.size() > kTrayMenuVisibleItems;
-  const float menuWidth = std::max(1.0f, inst.chrome.contentWidth - (useScrollbar ? kScrollGutter : 0.0f));
+  const float menuWidth = std::max(1.0f, inst.chrome.contentWidth);
 
   auto scrollView = std::make_unique<ScrollView>();
   scrollView->setPosition(inst.chrome.contentX(), inst.chrome.contentY());
@@ -1101,10 +1099,11 @@ void TrayMenu::buildSubmenuScene(MenuInstance& inst, uint32_t width, uint32_t he
   scrollView->clearBorder();
   scrollView->setRadius(0.0f);
   scrollView->bindState(&inst.scrollState);
+  scrollView->setScrollbarVisible(true);
 
   auto menu = std::make_unique<ContextMenuControl>();
   menu->setMenuWidth(menuWidth);
-  menu->setMaxVisible(std::max<std::size_t>(1, entries.size()));
+  menu->setMaxVisible(entries.size()); // Always lay out all entries for scrolling
   menu->setSubmenuDirection(inst.submenuDirection);
   menu->setEntries(std::move(entries));
   menu->setRedrawCallback([&inst]() {

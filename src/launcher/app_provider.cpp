@@ -195,7 +195,8 @@ namespace {
     return terminal;
   }
 
-  void launchCommand(const std::string& exec, bool terminal, const std::string& activationToken) {
+  void launchCommand(const std::string& exec, bool terminal, const std::string& activationToken,
+                     const std::string& workingDir) {
     std::string cleanExec = stripFieldCodes(exec);
     std::vector<std::string> args = terminal ? terminalLaunchArgs(cleanExec) : tokenize(cleanExec);
 
@@ -207,7 +208,7 @@ namespace {
       return;
     }
 
-    (void)process::runAsync(args, activationToken);
+    (void)process::runAsync(args, activationToken, workingDir);
   }
 
 } // namespace
@@ -299,7 +300,7 @@ bool AppProvider::activate(const LauncherResult& result) {
     if (m_wayland != nullptr && m_wayland->hasXdgActivation()) {
       token = m_wayland->requestActivationToken(nullptr);
     }
-    launchCommand(execLine, entry.terminal, token);
+    launchCommand(execLine, entry.terminal, token, entry.workingDir);
     return true;
   }
   return false;

@@ -45,8 +45,8 @@ namespace desktop_settings {
       return baseSpec(key, WidgetSettingValueType::String, std::move(defaultValue));
     }
 
-    WidgetSettingSpec colorRoleSpec(std::string_view key, std::string defaultValue = {}) {
-      return baseSpec(key, WidgetSettingValueType::ColorRole, std::move(defaultValue));
+    WidgetSettingSpec colorSpec(std::string_view key, std::string defaultValue = {}) {
+      return baseSpec(key, WidgetSettingValueType::ColorSpec, std::move(defaultValue));
     }
 
     WidgetSettingSpec selectSpec(std::string_view key, std::string defaultValue,
@@ -70,7 +70,7 @@ namespace desktop_settings {
   std::vector<WidgetSettingSpec> commonDesktopWidgetSettingSpecs() {
     const WidgetSettingVisibility backgroundOn{"background", {"true"}};
 
-    auto bgColor = colorRoleSpec("background_color", "surface");
+    auto bgColor = colorSpec("background_color", "surface");
     bgColor.visibleWhen = backgroundOn;
 
     auto bgRadius = doubleSpec("background_radius", 12.0, 0.0, 32.0, 1.0);
@@ -110,7 +110,7 @@ namespace desktop_settings {
 
     if (type == "clock") {
       add(stringSpec("format", "{:%H:%M}"));
-      add(colorRoleSpec("color", "on_surface"));
+      add(colorSpec("color", "on_surface"));
       add(boolSpec("shadow", true));
     } else if (type == "audio_visualizer") {
       add(doubleSpec("aspect_ratio", 2.5, 0.5, 6.0, 0.1));
@@ -118,25 +118,25 @@ namespace desktop_settings {
       add(boolSpec("mirrored", true));
       add(boolSpec("centered", true));
       add(boolSpec("show_when_idle", true));
-      add(colorRoleSpec("low_color", "primary"));
-      add(colorRoleSpec("high_color", "primary"));
+      add(colorSpec("low_color", "primary"));
+      add(colorSpec("high_color", "primary"));
     } else if (type == "sticker") {
       add(stringSpec("image_path"));
       add(doubleSpec("opacity", 1.0, 0.0, 1.0, 0.01));
     } else if (type == "weather") {
-      add(colorRoleSpec("color", "on_surface"));
+      add(colorSpec("color", "on_surface"));
       add(boolSpec("shadow", true));
     } else if (type == "media_player") {
       add(segmentedSpec("layout", "horizontal",
                         {{"horizontal", "desktop-widgets.editor.settings.horizontal"},
                          {"vertical", "desktop-widgets.editor.settings.vertical"}}));
-      add(colorRoleSpec("color", "on_surface"));
+      add(colorSpec("color", "on_surface"));
       add(boolSpec("shadow", true));
     } else if (type == "sysmon") {
       add(selectSpec("stat", "cpu_usage", sysmonStats));
       add(selectSpec("stat2", "", sysmonStatsWithNone));
-      add(colorRoleSpec("color", "primary"));
-      add(colorRoleSpec("color2", "secondary"));
+      add(colorSpec("color", "primary"));
+      add(colorSpec("color2", "secondary"));
       add(boolSpec("show_label", true));
       add(boolSpec("shadow", true));
     }

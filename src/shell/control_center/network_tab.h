@@ -60,7 +60,7 @@ private:
 
   Button* m_rescanButton = nullptr;
   Toggle* m_wifiToggle = nullptr;
-  Flex* m_disconnectRow = nullptr;
+  Flex* m_currentRow = nullptr;
   Button* m_disconnectButton = nullptr;
   Spinner* m_scanSpinner = nullptr;
   bool m_vpnVisible = true;

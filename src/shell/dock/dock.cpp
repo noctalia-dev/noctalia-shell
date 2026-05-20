@@ -1329,6 +1329,8 @@ std::unique_ptr<InputArea> Dock::createLauncherButton(DockInstance& instance) {
   constexpr float kCellPad = 6.0f;
   const float cellMain = iSize + 2.0f * kCellPad;
   const float cellCross = iSize + 2.0f * kCellPad;
+  const float glyphSize = iSize * 0.8f;
+  const float glyphOffsetY = kCellPad + (iSize - glyphSize) * 0.5f;
 
   auto areaNode = std::make_unique<InputArea>();
   if (!vert) {
@@ -1349,10 +1351,10 @@ std::unique_ptr<InputArea> Dock::createLauncherButton(DockInstance& instance) {
   if (!glyph->setGlyph(dockLauncherIconGlyph(cfg))) {
     glyph->setGlyph("grid-dots");
   }
-  glyph->setGlyphSize(iSize * 0.8f);
+  glyph->setGlyphSize(glyphSize);
   glyph->setColor(colorSpecFromRole(ColorRole::OnSurface));
   glyph->setSize(iSize, iSize);
-  glyph->setPosition(kCellPad, kCellPad);
+  glyph->setPosition(kCellPad, glyphOffsetY);
   areaNode->addChild(std::move(glyph));
 
   auto* instPtr = &instance;

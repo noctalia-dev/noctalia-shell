@@ -56,13 +56,16 @@ blacklist = []                      # ignore MPRIS players by bus/identity/deskt
 [wallpaper]
 enabled             = true
 fill_mode           = "crop"        # center | crop | fit | stretch | repeat
-fill_color          = ""            # optional fallback/fill color: #RRGGBB, #RRGGBBAA, or color role
+fill_color          = ""            # optional fallback/fill color: prefer a color role token; fixed hex also works
 transition          = ["fade", "wipe", "disc", "stripes", "zoom", "honeycomb"]
 transition_duration = 1500          # milliseconds
 edge_smoothness     = 0.3
 directory           = "~/Pictures/Wallpapers"
 directory_light     = ""            # optional day-mode directory
 directory_dark      = ""            # optional night-mode directory
+
+[wallpaper.default]
+path = ""                            # optional initial/default wallpaper path
 
 [wallpaper.automation]
 enabled                    = false
@@ -124,11 +127,11 @@ lock_keys = true                    # show Caps/Num/Scroll Lock OSD popups; disa
 
 [system.monitor]
 enabled = true                      # sample CPU, memory, network, load, temperature, GPU VRAM, and disk statistics
-cpu_poll_seconds = 1.0              # CPU usage, CPU temperature, and load average
-gpu_poll_seconds = 2.0              # GPU temperature and VRAM usage
-memory_poll_seconds = 1.0           # RAM usage
-network_poll_seconds = 1.0
-disk_poll_seconds = 5.0             # disk usage and swap usage; graph widgets use the fastest poll above
+cpu_poll_seconds = 2.0              # CPU usage, CPU temperature, and load average
+gpu_poll_seconds = 5.0              # GPU temperature and VRAM usage
+memory_poll_seconds = 2.0           # RAM usage
+network_poll_seconds = 3.0          # network throughput
+disk_poll_seconds = 10.0            # disk usage and swap usage; graph widgets use the fastest poll above
 
 # ── Weather ───────────────────────────────────────────────────────────────────
 
@@ -217,7 +220,6 @@ scale              = 1.0
 shadow             = true
 auto_hide          = false
 reserve_space      = true
-attach_panels      = true
 capsule            = false
 # capsule_fill     = "surface_variant"
 # capsule_radius   = 8.0            # omit/blank in Settings for automatic pill radius
@@ -334,6 +336,16 @@ battery_low_percent_threshold = 0   # set to e.g. 15 to enable battery_under_thr
 # [widget.notifications]
 # hide_when_no_unread = true
 
+# [widget.lock_button]
+# type                = "custom_button"
+# glyph               = "lock"
+# tooltip             = "Lock screen"
+# command             = "loginctl lock-session"
+# right_command       = ""
+# middle_command      = ""
+# scroll_up_command   = ""
+# scroll_down_command = ""
+#
 # [widget.clock]
 # format = "{:%H:%M}\n{:%d/%m}"
 # vertical_format = "{:%H\n%M}"
