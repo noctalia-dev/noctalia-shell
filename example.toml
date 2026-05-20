@@ -336,6 +336,16 @@ battery_low_percent_threshold = 0   # set to e.g. 15 to enable battery_under_thr
 # [widget.notifications]
 # hide_when_no_unread = true
 
+# [widget.lock_button]
+# type                = "custom_button"
+# glyph               = "lock"
+# tooltip             = "Lock screen"
+# command             = "loginctl lock-session"
+# right_command       = ""
+# middle_command      = ""
+# scroll_up_command   = ""
+# scroll_down_command = ""
+#
 # [widget.clock]
 # format = "{:%H:%M}\n{:%d/%m}"
 # vertical_format = "{:%H\n%M}"

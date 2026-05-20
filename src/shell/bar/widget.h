@@ -42,6 +42,7 @@ public:
     (void)event;
     return false;
   }
+  [[nodiscard]] virtual bool reservesMiddleClick() const noexcept { return false; }
 
   [[nodiscard]] Node* root() const noexcept { return m_root ? m_root.get() : m_rootPtr; }
   [[nodiscard]] float width() const noexcept;

@@ -1867,7 +1867,8 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
   if (targetInstance != nullptr && event.type == PointerEvent::Type::Button && event.button == BTN_MIDDLE &&
       event.state == 1 && m_config != nullptr && m_config->config().shell.middleClickOpensWidgetSettings) {
     auto* widget = widgetAtPoint(*targetInstance, static_cast<float>(event.sx), static_cast<float>(event.sy));
-    if (widget != nullptr && !widget->configName().empty() && m_openWidgetSettingsCallback) {
+    if (widget != nullptr && !widget->reservesMiddleClick() && !widget->configName().empty() &&
+        m_openWidgetSettingsCallback) {
       m_openWidgetSettingsCallback(targetInstance->barConfig.name, std::string(widget->configName()));
       return true;
     }

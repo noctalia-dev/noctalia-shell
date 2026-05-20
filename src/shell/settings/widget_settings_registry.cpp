@@ -23,6 +23,7 @@ namespace settings {
         {.type = "clock", .labelKey = "settings.widgets.types.clock", .glyph = "clock"},
         {.type = "control-center", .labelKey = "settings.widgets.types.control-center", .glyph = "noctalia"},
         {.type = "clipboard", .labelKey = "settings.widgets.types.clipboard", .glyph = "clipboard"},
+        {.type = "custom_button", .labelKey = "settings.widgets.types.custom-button", .glyph = "circuit-pushbutton"},
         {.type = "caffeine", .labelKey = "settings.widgets.types.caffeine", .glyph = "caffeine-off"},
         {.type = "keyboard_layout", .labelKey = "settings.widgets.types.keyboard-layout", .glyph = "keyboard"},
         {.type = "launcher", .labelKey = "settings.widgets.types.launcher", .glyph = "search"},
@@ -77,6 +78,9 @@ namespace settings {
       }
       if (type == "control-center") {
         return nonEmptyGlyph(config->getString("glyph", "noctalia"), "search");
+      }
+      if (type == "custom_button") {
+        return nonEmptyGlyph(config->getString("glyph", "heart"), "heart");
       }
       if (type == "launcher") {
         return nonEmptyGlyph(config->getString("glyph", "search"), "search");
@@ -249,7 +253,7 @@ namespace settings {
 
   bool isBuiltInWidgetType(std::string_view type) { return findWidgetTypeSpec(type) != nullptr; }
 
-  bool widgetTypeRequiresNamedConfig(std::string_view type) { return type == "scripted"; }
+  bool widgetTypeRequiresNamedConfig(std::string_view type) { return type == "custom_button" || type == "scripted"; }
 
   std::string widgetTypeForReference(const Config& cfg, std::string_view name) {
     if (const auto it = cfg.widgets.find(std::string(name)); it != cfg.widgets.end() && !it->second.type.empty()) {
@@ -496,6 +500,16 @@ namespace settings {
     } else if (type == "control-center") {
       add(stringSpec("glyph", "noctalia"));
       add(stringSpec("custom_image", ""));
+    } else if (type == "custom_button") {
+      add(stringSpec("glyph", "heart"));
+      add(stringSpec("label"));
+      add(stringSpec("tooltip"));
+      add(stringSpec("command"));
+      add(stringSpec("right_command"));
+      add(stringSpec("middle_command"));
+      add(stringSpec("scroll_up_command"));
+      add(stringSpec("scroll_down_command"));
+      add(doubleSpec("max_width", 160.0, 0.0, 800.0, 1.0, true));
     } else if (type == "lock_keys") {
       add(boolSpec("show_caps_lock", true));
       add(boolSpec("show_num_lock", true));

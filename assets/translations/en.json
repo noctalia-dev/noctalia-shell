@@ -1023,6 +1023,7 @@
         "clock": "Clock",
         "control-center": "Control Center",
         "clipboard": "Clipboard",
+        "custom-button": "Custom Button",
         "caffeine": "Caffeine",
         "keyboard-layout": "Keyboard Layout",
         "launcher": "Launcher",
@@ -1124,6 +1125,10 @@
         "color": {
           "label": "Color",
           "description": "Color role for widget foreground"
+        },
+        "command": {
+          "label": "Left Click Command",
+          "description": "Shell command run when left-clicking this button"
         },
         "custom_image": {
           "label": "Custom image",
@@ -1256,13 +1261,37 @@
           "label": "Max Length",
           "description": "Maximum widget length in pixels"
         },
+        "max_width": {
+          "label": "Max Width",
+          "description": "Maximum label width in pixels. Set to 0 for no limit."
+        },
+        "middle_command": {
+          "label": "Middle Click Command",
+          "description": "Shell command run when middle-clicking this button. When set, middle-click opens this command instead of widget settings."
+        },
         "min_length": {
           "label": "Min Length",
           "description": "Minimum widget length in pixels"
         },
+        "right_command": {
+          "label": "Right Click Command",
+          "description": "Shell command run when right-clicking this button"
+        },
+        "scroll_down_command": {
+          "label": "Scroll Down Command",
+          "description": "Shell command run when scrolling down over this button"
+        },
+        "scroll_up_command": {
+          "label": "Scroll Up Command",
+          "description": "Shell command run when scrolling up over this button"
+        },
         "title_scroll": {
           "label": "Title Scroll",
           "description": "When the widget title should scroll"
+        },
+        "tooltip": {
+          "label": "Tooltip",
+          "description": "Tooltip shown when hovering this button"
         },
         "mirrored": {
           "label": "Mirrored",
