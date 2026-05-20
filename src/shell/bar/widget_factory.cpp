@@ -12,10 +12,7 @@
 #include "pipewire/pipewire_spectrum.h"
 #include "shell/bar/widgets/active_window_widget.h"
 
-#include <memory>
-
-// Only compile debug_indicator_widget when building debug
-#ifndef NDBUG
+#ifndef NDEBUG
 #include "shell/bar/widgets/debug_indicator_widget.h"
 #endif
 
@@ -60,6 +57,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <string>
 
 namespace {
