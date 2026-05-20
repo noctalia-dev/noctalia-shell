@@ -30,6 +30,7 @@ class Flex;
 class HttpClient;
 class IdleInhibitor;
 class InputArea;
+class IwdAgent;
 class Label;
 class MprisService;
 class NetworkSecretAgent;
@@ -59,7 +60,8 @@ public:
                      BrightnessService* brightness = nullptr, SystemMonitorService* sysmon = nullptr,
                      GammaService* nightLight = nullptr, noctalia::theme::ThemeService* theme = nullptr,
                      IdleInhibitor* idleInhibitor = nullptr, DependencyService* dependencies = nullptr,
-                     CompositorPlatform* platform = nullptr, Wallpaper* wallpaper = nullptr);
+                     CompositorPlatform* platform = nullptr, Wallpaper* wallpaper = nullptr,
+                     IwdAgent* iwdAgent = nullptr);
 
   void create() override;
   void onFrameTick(float deltaMs) override;

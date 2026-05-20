@@ -313,10 +313,19 @@ namespace {
 
 } // namespace
 
-NetworkTab::NetworkTab(INetworkService* network, NetworkSecretAgent* secrets) : m_network(network), m_secrets(secrets) {
+NetworkTab::NetworkTab(INetworkService* network, NetworkSecretAgent* secrets, IwdAgent* iwdAgent)
+    : m_network(network), m_secrets(secrets), m_iwdAgent(iwdAgent) {
   if (m_secrets != nullptr) {
     m_secrets->setRequestCallback([this](const NetworkSecretAgent::SecretRequest& request) {
       showPasswordPrompt(request);
+      PanelManager::instance().refresh();
+    });
+  }
+  if (m_iwdAgent != nullptr) {
+    m_iwdAgent->setRequestCallback([this](const IwdAgent::SecretRequest& request) {
+      NetworkSecretAgent::SecretRequest r;
+      r.ssid = request.ssid;
+      showPasswordPrompt(r);
       PanelManager::instance().refresh();
     });
   }
@@ -326,6 +335,10 @@ NetworkTab::~NetworkTab() {
   if (m_secrets != nullptr) {
     m_secrets->setRequestCallback(nullptr);
     m_secrets->cancelSecret();
+  }
+  if (m_iwdAgent != nullptr) {
+    m_iwdAgent->setRequestCallback(nullptr);
+    m_iwdAgent->cancelSecret();
   }
 }
 
@@ -575,14 +588,20 @@ void NetworkTab::submitPasswordPrompt(const std::string& value) {
     }
   } else if (m_secrets != nullptr) {
     m_secrets->submitSecret(value);
+  } else if (m_iwdAgent != nullptr) {
+    m_iwdAgent->submitSecret(value);
   }
   clearPasswordPrompt();
   PanelManager::instance().refresh();
 }
 
 void NetworkTab::cancelPasswordPrompt() {
-  if (!m_pendingAccessPoint.has_value() && m_secrets != nullptr) {
-    m_secrets->cancelSecret();
+  if (!m_pendingAccessPoint.has_value()) {
+    if (m_secrets != nullptr) {
+      m_secrets->cancelSecret();
+    } else if (m_iwdAgent != nullptr) {
+      m_iwdAgent->cancelSecret();
+    }
   }
   clearPasswordPrompt();
   PanelManager::instance().refresh();

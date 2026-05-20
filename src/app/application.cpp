@@ -8,6 +8,8 @@
 #include "core/log.h"
 #include "core/process.h"
 #include "core/resource_paths.h"
+#include "dbus/network/iwd_agent.h"
+#include "dbus/network/iwd_service.h"
 #include "dbus/network/network_manager_service.h"
 #include "dbus/network/wpa_supplicant_service.h"
 #include "i18n/i18n.h"
@@ -723,8 +725,31 @@ void Application::initServices() {
         }
         kLog.info("network service active (wpa_supplicant)");
       } catch (const std::exception& e2) {
-        kLog.warn("network service disabled: {}", e2.what());
-        m_networkService.reset();
+        kLog.warn("wpa_supplicant unavailable ({}), trying iwd", e2.what());
+        try {
+          m_networkService = std::make_unique<IwdService>(*m_systemBus);
+          m_networkService->setChangeCallback(
+              [this, shouldRefreshControlCenter](const NetworkState& state, NetworkChangeOrigin origin) {
+                onNetworkStateChangedForEvents(state, origin);
+                m_bar.refresh();
+                if (shouldRefreshControlCenter()) {
+                  m_panelManager.refresh();
+                }
+              });
+          if (m_networkService->hasStateSnapshot()) {
+            m_prevWirelessEnabledForEvents = m_networkService->state().wirelessEnabled;
+          }
+          kLog.info("network service active (iwd)");
+          try {
+            m_iwdAgent = std::make_unique<IwdAgent>(*m_systemBus);
+          } catch (const std::exception& e) {
+            kLog.warn("iwd agent disabled: {}", e.what());
+            m_iwdAgent.reset();
+          }
+        } catch (const std::exception& e3) {
+          kLog.warn("network service disabled: {}", e3.what());
+          m_networkService.reset();
+        }
       }
     }
 
@@ -1054,7 +1079,8 @@ void Application::initUi() {
                                    m_upowerService.get(), m_powerProfilesService.get(), m_networkService.get(),
                                    m_networkSecretAgent.get(), m_bluetoothService.get(), m_bluetoothAgent.get(),
                                    m_brightnessService.get(), m_systemMonitor.get(), &m_gammaService, &m_themeService,
-                                   &m_idleInhibitor, &m_dependencyService, &m_compositorPlatform, &m_wallpaper));
+                                   &m_idleInhibitor, &m_dependencyService, &m_compositorPlatform, &m_wallpaper,
+                                   m_iwdAgent.get()));
   {
     auto launcherPanel = std::make_unique<LauncherPanel>(&m_configService, &m_asyncTextureCache);
     launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));
