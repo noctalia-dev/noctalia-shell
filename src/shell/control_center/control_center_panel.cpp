@@ -294,6 +294,7 @@ bool ControlCenterPanel::isContextActive(std::string_view context) const {
 }
 
 void ControlCenterPanel::onClose() {
+  m_activeTab = TabId::Home;
   for (auto& tab : m_tabs) {
     tab->setActive(false);
     tab->onClose();
