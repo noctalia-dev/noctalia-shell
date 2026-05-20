@@ -2,6 +2,7 @@
 
 #include "core/log.h"
 #include "dwl-ipc-unstable-v2-client-protocol.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
 #include <charconv>
@@ -217,7 +218,7 @@ void MangoWorkspaceBackend::onOutputTitle(zdwl_ipc_output_v2* handle, const char
   auto state = m_outputs.find(it->second);
   if (state != m_outputs.end()) {
     state->second.hasPendingTitle = true;
-    state->second.pendingTitle = title != nullptr ? title : "";
+    state->second.pendingTitle = StringUtils::windowTitleSingleLine(title != nullptr ? title : "");
   }
 }
 

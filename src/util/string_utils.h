@@ -30,6 +30,29 @@ namespace StringUtils {
 
   [[nodiscard]] inline std::string trim(std::string_view s) { return std::string(trimRightView(trimLeftView(s))); }
 
+  // Window titles may contain embedded newlines, collapse to a single display/match line.
+  [[nodiscard]] inline std::string windowTitleSingleLine(std::string_view text) {
+    if (text.empty()) {
+      return {};
+    }
+
+    std::string out;
+    out.reserve(text.size());
+    bool pendingSpace = false;
+    for (unsigned char ch : text) {
+      if (ch == '\n' || ch == '\r' || ch == '\t' || ch == '\v' || ch == '\f' || ch == ' ' || std::isspace(ch) != 0) {
+        pendingSpace = !out.empty();
+        continue;
+      }
+      if (pendingSpace) {
+        out.push_back(' ');
+        pendingSpace = false;
+      }
+      out.push_back(static_cast<char>(ch));
+    }
+    return out;
+  }
+
   template <typename T> [[nodiscard]] inline std::optional<T> parseDotDecimal(std::string_view text) {
     static_assert(std::is_floating_point_v<T>);
 

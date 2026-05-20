@@ -2,6 +2,7 @@
 
 #include "compositors/niri/niri_runtime.h"
 #include "core/log.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
 #include <array>
@@ -785,7 +786,7 @@ bool NiriWorkspaceBackend::applyWindowFields(const nlohmann::json& json, WindowS
   }
 
   if (json.contains("title")) {
-    state.title = jsonOptionalString(json, "title");
+    state.title = StringUtils::windowTitleSingleLine(jsonOptionalString(json, "title"));
     changed = true;
   }
 

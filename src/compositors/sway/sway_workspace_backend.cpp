@@ -184,7 +184,7 @@ namespace {
           .windowId = windowId,
           .workspaceKey = workspaceKey,
           .appId = appId,
-          .title = jsonStringValue(node, "name"),
+          .title = StringUtils::windowTitleSingleLine(jsonStringValue(node, "name")),
           .x = x,
           .y = y,
       });

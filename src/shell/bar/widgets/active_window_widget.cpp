@@ -140,7 +140,7 @@ void ActiveWindowWidget::syncState(Renderer& renderer) {
     emptyState = true;
   } else {
     identifier = current->identifier;
-    title = current->title;
+    title = StringUtils::windowTitleSingleLine(current->title);
     appId = current->appId;
     if (title.empty()) {
       title = appId;

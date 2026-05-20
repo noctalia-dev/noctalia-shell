@@ -1,6 +1,7 @@
 #include "compositors/hyprland/hyprland_workspace_backend.h"
 
 #include "compositors/hyprland/hyprland_runtime.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
 #include <charconv>
@@ -297,7 +298,7 @@ void HyprlandWorkspaceBackend::refreshClients() {
     if (state.appId.empty()) {
       state.appId = item.value("initialClass", "");
     }
-    state.title = item.value("title", "");
+    state.title = StringUtils::windowTitleSingleLine(item.value("title", ""));
     if (const auto atIt = item.find("at"); atIt != item.end() && atIt->is_array() && atIt->size() >= 2) {
       state.x = (*atIt)[0].get<std::int32_t>();
       state.y = (*atIt)[1].get<std::int32_t>();
@@ -484,7 +485,7 @@ void HyprlandWorkspaceBackend::handleEvent(std::string_view event, std::string_v
     moveToplevel(*address, workspace->id);
     if (auto it = m_toplevels.find(*address); it != m_toplevels.end()) {
       it->second.appId = std::string(args[2]);
-      it->second.title = std::string(args[3]);
+      it->second.title = StringUtils::windowTitleSingleLine(args[3]);
     }
     refreshClients();
     recomputeWorkspaceFlags();

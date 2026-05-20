@@ -2,6 +2,7 @@
 
 #include "system/app_identity.h"
 #include "system/internal_app_metadata.h"
+#include "util/string_utils.h"
 #include "wlr-foreign-toplevel-management-unstable-v1-client-protocol.h"
 
 #include <algorithm>
@@ -207,7 +208,7 @@ void WaylandToplevels::onHandleTitle(zwlr_foreign_toplevel_handle_v1* handle, co
   if (it == m_handles.end()) {
     return;
   }
-  it->second.title = title != nullptr ? title : "";
+  it->second.title = StringUtils::windowTitleSingleLine(title != nullptr ? title : "");
   it->second.dirty = true;
   it->second.generation = ++m_generation;
 }
