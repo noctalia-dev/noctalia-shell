@@ -44,6 +44,13 @@ public:
   [[nodiscard]] const std::vector<float>& values(ListenerId id) const noexcept;
   [[nodiscard]] bool idle() const noexcept { return m_idle; }
 
+  // The node the spectrum — and therefore the bar's audio-visualizer widget —
+  // analyses: the explicitly configured target, or the default sink. The
+  // live-paper PCM tap follows this so the projectM visualizer reacts to
+  // exactly the audio the widget displays.
+  [[nodiscard]] std::uint32_t resolvedTargetNodeId() const noexcept;
+  [[nodiscard]] const AudioNode* resolvedTargetNode() const noexcept;
+
   [[nodiscard]] int pollTimeoutMs() const;
   void tick();
   void handleAudioStateChanged();
@@ -69,8 +76,6 @@ private:
 
   [[nodiscard]] bool hasListeners() const noexcept { return !m_listeners.empty(); }
   void rebuildStream();
-  [[nodiscard]] std::uint32_t resolvedTargetNodeId() const noexcept;
-  [[nodiscard]] const AudioNode* resolvedTargetNode() const noexcept;
   void clearValues(bool notify);
   void emitChanged(ListenerId id);
 

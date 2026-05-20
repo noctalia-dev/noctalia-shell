@@ -24,6 +24,11 @@ public:
   [[nodiscard]] EGLDisplay display() const noexcept { return m_display; }
   [[nodiscard]] EGLConfig config() const noexcept { return m_config; }
   [[nodiscard]] EGLContext rootContext() const noexcept { return m_rootContext; }
+  // 3 when a GLES3 root context was created, 2 when we fell back to GLES2.
+  // Components that need GLES3-only features (notably the live-paper
+  // libprojectM renderer, which depends on Vertex Array Objects) must check
+  // this and disable themselves on GLES2.
+  [[nodiscard]] int clientVersion() const noexcept { return m_clientVersion; }
 
   // Bind the root context surfacelessly. Handy when a GL resource has to be
   // created before any rendering surface exists.
@@ -33,4 +38,5 @@ private:
   EGLDisplay m_display = EGL_NO_DISPLAY;
   EGLConfig m_config = nullptr;
   EGLContext m_rootContext = EGL_NO_CONTEXT;
+  int m_clientVersion = 0;
 };

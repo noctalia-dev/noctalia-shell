@@ -4,20 +4,17 @@
   inputs = {
     nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz";
 
-    # Milkdrop presets pack used by the optional livepaper visualizer.
-    # Wrapped through nix/filter-presets.py at build time to drop overly
-    # bright / strobing presets.
-    presets-cream-of-the-crop = {
-      url = "github:projectM-visualizer/presets-cream-of-the-crop";
-      flake = false;
-    };
+    # Photosensitivity-filtered Milkdrop presets pack for the optional
+    # livepaper visualizer. Its default package output is a pre-built,
+    # brightness/strobe-filtered preset pack.
+    presets-photosensitive-filtered.url = "github:weissi1994/presets-photosensitive-filtered";
   };
 
   outputs =
     {
       self,
       nixpkgs,
-      presets-cream-of-the-crop,
+      presets-photosensitive-filtered,
     }:
     let
       inherit (nixpkgs) lib;
@@ -57,17 +54,6 @@
         { pkgs, ... }:
         {
           default = pkgs.callPackage ./nix/package.nix { inherit version shortRev; };
-
-          # Trimmed Milkdrop presets pack for the optional livepaper
-          # visualizer. nix/filter-presets.py rejects .milk files whose code
-          # paints overly bright frames or rapid strobes. Exposed as its own
-          # output so it can be built and staged independently of a full
-          # home-manager rollout (e.g. `nix build .#presets`).
-          presets = pkgs.runCommand "presets-filtered" { } ''
-            mkdir -p "$out"
-            cp -r --no-preserve=mode ${presets-cream-of-the-crop}/* "$out/"
-            ${pkgs.python3}/bin/python3 ${./nix/filter-presets.py} "$out"
-          '';
         }
       );
 
@@ -96,7 +82,8 @@
           imports = [ ./nix/home-module.nix ];
           programs.noctalia.package = lib.mkDefault self.packages.${pkgs.stdenv.hostPlatform.system}.default;
           programs.noctalia.wallpaper.live_paper.presetsSource =
-            lib.mkDefault self.packages.${pkgs.stdenv.hostPlatform.system}.presets;
+            lib.mkDefault
+              presets-photosensitive-filtered.packages.${pkgs.stdenv.hostPlatform.system}.default;
         };
     };
 }

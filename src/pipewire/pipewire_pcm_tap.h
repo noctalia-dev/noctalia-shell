@@ -7,6 +7,7 @@
 #include <vector>
 
 class PipeWireService;
+class PipeWireSpectrum;
 struct AudioNode;
 
 // Single-producer / single-consumer raw PCM capture from a PipeWire monitor
@@ -14,10 +15,12 @@ struct AudioNode;
 // visualizer at its own cadence.
 //
 // Lifecycle:
-//   - start("")    → opens a capture stream against the default sink monitor
+//   - start("")    → follows the bar's audio-visualizer widget: taps the sink
+//                    the spectrum analyses while it reports audio, and the
+//                    default source (mic) once the spectrum goes idle
 //   - start(name)  → opens a capture stream against a specific PipeWire node
 //   - stop()       → tears the stream down (so an idle session uses no CPU)
-//   - handleAudioStateChanged() → rebinds if the default sink changes
+//   - handleAudioStateChanged() → rebinds when the active monitor changes
 //
 // Threading:
 //   The PipeWire on_process callback runs on the RT thread; it writes into
@@ -25,7 +28,10 @@ struct AudioNode;
 //   reads through acquire loads. No locks are used on the hot path.
 class PipeWirePcmTap {
 public:
-  explicit PipeWirePcmTap(PipeWireService& service);
+  // `spectrum` supplies the same idle/source signal that drives the bar's
+  // audio-visualizer widget; the tap follows it in start("") mode. May be
+  // null (the tap then always falls back to the mic in follow mode).
+  PipeWirePcmTap(PipeWireService& service, PipeWireSpectrum* spectrum);
   ~PipeWirePcmTap();
 
   PipeWirePcmTap(const PipeWirePcmTap&) = delete;
@@ -53,6 +59,7 @@ private:
   friend class Stream;
 
   void rebuildStream();
+  void updateSpectrumSubscription();
   [[nodiscard]] const AudioNode* resolvedTargetNode() const noexcept;
   void resetRing(int channels, int sampleRate);
   void feedSamples(const float* interleaved, int frameCount, int channels);
@@ -62,10 +69,19 @@ private:
   static constexpr std::size_t kRingFrames = 1u << 15; // 32 768 frames
 
   PipeWireService& m_service;
+  PipeWireSpectrum* m_spectrum = nullptr; // shared idle/source signal with the visualizer widget
+  std::uint64_t m_spectrumListener = 0;   // PipeWireSpectrum::ListenerId; 0 = not subscribed
   std::unique_ptr<Stream> m_stream;
-  std::string m_explicitTarget; // "" → follow default sink
+  std::string m_explicitTarget; // "" → follow the spectrum / widget
   std::string m_boundTarget;
   std::uint32_t m_boundNodeId = 0;
+  bool m_started = false; // start() called and not since stop()ped
+
+  // Mic automatic gain control. m_micAgcActive is set on (re)bind (main
+  // thread, while no RT callback runs); m_agcEnvelope is RT-thread-only state
+  // advanced inside feedSamples(). Inactive — gain stays 1.0 — for sink taps.
+  bool m_micAgcActive = false;
+  float m_agcEnvelope = 0.0f;
 
   // m_ring holds kRingFrames * kMaxChannels floats. Real channel count is
   // m_channels and may be smaller — we still stride by kMaxChannels for

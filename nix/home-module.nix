@@ -115,9 +115,10 @@ in
         description = ''
           Directory of `.milk` / `.prjm` presets symlinked into
           `$XDG_DATA_HOME/waylivepaper/presets` when `defaultPresets` is
-          enabled. Defaults to the `presets-cream-of-the-crop` pack
-          bundled with this flake, filtered for excessive brightness /
-          strobing.
+          enabled. Defaults to the pre-built pack from the
+          `presets-photosensitive-filtered` flake input — the
+          `presets-cream-of-the-crop` pack with overly bright / strobing
+          presets dropped.
         '';
       };
     };

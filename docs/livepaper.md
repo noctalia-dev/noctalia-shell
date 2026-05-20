@@ -131,6 +131,81 @@ paint-dirty (`Wallpaper::onVisualizerTick`) and the lock surface must
 call `LockSurface::invalidateLivePaper()`; otherwise the surface freezes
 on the first frame.
 
+## Audio source
+
+The visualizer's audio comes from `PipeWirePcmTap`, a raw-PCM capture
+sibling of the bar's spectrum analyser. In its default *follow* mode
+(empty `audio_source`) it mirrors the bar's audio-visualizer widget:
+
+- While `PipeWireSpectrum` reports audio (the widget is visible) the tap
+  captures the very node the spectrum analyses — normally the default
+  sink's monitor — so the visualizer reacts to the same sound the widget
+  shows.
+- Once the spectrum goes idle (~1 s of silence, widget hidden) the tap
+  falls back to the **default source (microphone)**, so the visualizer
+  keeps reacting to ambient sound.
+
+The tap registers a `PipeWireSpectrum` listener while running, which
+keeps that silence detection alive even when no audio-visualizer widget
+is on the bar. The mic-fallback capture stream is intentionally *not*
+`PW_KEY_NODE_PASSIVE` (it must activate the source); sink-monitor taps
+stay passive so tapping never wakes an idle sink.
+
+Source (mic / line-in) captures additionally run through an automatic
+gain control — a peak envelope with fast attack and slow release feeding
+a capped makeup gain — so quiet ambient sound still drives libprojectM's
+beat/FFT analysis. Sink-monitor captures keep their native dynamics
+(they already arrive at program level). See the `kAgc*` constants in
+`pipewire_pcm_tap.cpp`.
+
+`audio_source` set to an explicit PipeWire node name bypasses all of the
+above and pins the tap to that node.
+
+A subtlety in the renderer: `projectm_pcm_add_float`'s `count` argument
+is **samples per channel** (the frame count), not the interleaved float
+count — feeding `frames * channels` makes libprojectM ingest a frame of
+stale ring data for every real one and the visualizer barely tracks the
+music.
+
+## Build-time gate
+
+The feature is **opt-in at compile time** via the meson `livepaper` feature
+option (default: `auto`). With `auto` the feature is enabled iff a
+GLES-enabled libprojectM 4 is found on the `pkg-config` path; otherwise the
+build silently drops the feature. To force-enable (and fail the configure
+when libprojectM is missing) use `-Dlivepaper=enabled`; to skip it entirely
+even if libprojectM is installed use `-Dlivepaper=disabled`.
+
+When the feature is compiled out, a stub TU (`livepaper_stub.cpp`) provides
+empty implementations of `ProjectMRenderer`, `VisualizerService`, and
+`PipeWirePcmTap` so the wallpaper / lock-screen integration code (which holds
+non-owning pointers and already null-checks) continues to link and degrade to
+the static-wallpaper-only behaviour.
+
+## Hardware fallback (GLES2)
+
+libprojectM 4.x relies on Vertex Array Objects, which are core in **GLES3**
+and only an extension in GLES2. `GlSharedContext` therefore requests
+`EGL_CONTEXT_CLIENT_VERSION = 3` and remembers which version it actually got
+(`clientVersion()`). On hardware where GLES3 context creation fails (older
+Adreno 3xx/4xx, older Mali-T, some legacy NVIDIA Wayland EGL) the shared
+context falls back to GLES2 and the visualizer simply refuses to initialize —
+the rest of the shell runs normally with the static wallpaper path. The
+visualizer is opt-in and off by default, so users on legacy GPUs do not need
+to do anything.
+
+## Session-lock safety
+
+While the session is locked the visualizer pins the currently-running preset
+(`VisualizerService::setSessionLocked(true)`, wired from
+`LockScreen::setSessionHooks`). The lock surface shares one libprojectM
+instance with the wallpaper; a hypothetical SIGSEGV inside libprojectM while
+loading a preset would terminate the shell, which terminates the
+`ext-session-lock-v1` client, which most compositors interpret as a forced
+unlock without authentication. Holding the preset constant for the duration
+of the lock keeps the failure surface to "the wallpaper-time preset" — by
+that point the user has already authenticated past it once.
+
 ## Runtime configuration
 
 Behaviour lives in the freeform `settings.wallpaper.live_paper` TOML
@@ -142,14 +217,14 @@ IPC handlers: `livepaper-next`, `livepaper-toggle`, `livepaper-enable`,
 
 ## Nix / home-manager
 
-The flake exposes a filtered presets pack as its own output:
+The filtered presets pack lives in a separate flake,
+`presets-photosensitive-filtered` (a `flake.nix` input). It drops `.milk`
+presets that paint excessively bright frames or rapid strobes, and exposes
+the result as its `default` package — build it directly with:
 
 ```
-nix build .#presets
+nix build <presets-photosensitive-filtered-flake>
 ```
-
-`nix/filter-presets.py` drops `.milk` presets that paint excessively
-bright frames or rapid strobes.
 
 home-manager options (`programs.noctalia.wallpaper.live_paper`):
 
@@ -158,7 +233,8 @@ home-manager options (`programs.noctalia.wallpaper.live_paper`):
   `settings.wallpaper.live_paper.enabled` is set**, so enabling the
   visualizer is a single switch. Set `false` to manage presets yourself.
 - **`presetsSource`** — directory to symlink instead of the bundled
-  pack. Defaults to the flake's filtered `presets-cream-of-the-crop`.
+  pack. Defaults to the filtered pack from the
+  `presets-photosensitive-filtered` flake input.
 
 So a consumer only needs:
 

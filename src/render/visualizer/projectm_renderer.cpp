@@ -32,6 +32,20 @@ namespace {
     return PROJECTM_MONO;
   }
 
+  // EGL extension function-pointer lookups. eglGetProcAddress is a string
+  // dispatch on every call (and on some drivers requires a current context),
+  // so cache once on first use. The pointers are valid for the lifetime of
+  // the EGL implementation, which here is the lifetime of the process.
+  PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR_p() {
+    static auto* fn = reinterpret_cast<PFNEGLCREATEIMAGEKHRPROC>(eglGetProcAddress("eglCreateImageKHR"));
+    return fn;
+  }
+
+  PFNEGLDESTROYIMAGEKHRPROC eglDestroyImageKHR_p() {
+    static auto* fn = reinterpret_cast<PFNEGLDESTROYIMAGEKHRPROC>(eglGetProcAddress("eglDestroyImageKHR"));
+    return fn;
+  }
+
 } // namespace
 
 struct ProjectMRenderer::GlState {
@@ -223,29 +237,42 @@ void ProjectMRenderer::pumpPcm() {
   // libprojectM accepts mono or interleaved stereo. Downmix anything wider
   // (5.1, 7.1) to stereo by averaging extra channels into L/R; for mono we
   // pass through as-is.
+  //
+  // projectm_pcm_add_float's `count` is the number of samples PER CHANNEL
+  // (the frame count) — NOT the interleaved float count. Passing
+  // frames * channels tells projectM the buffer is twice as long as it is, so
+  // it ingests a frame of stale ring data for every real frame and the
+  // visualizer barely tracks the music. Always pass `frames`.
   const projectm_channels target = toProjectmChannels(channels);
   if (channels == 1 || channels == 2) {
     projectm_pcm_add_float(static_cast<projectm_handle>(m_projectm), m_pcmScratch.data(),
-                           static_cast<unsigned int>(frames * channels), target);
+                           static_cast<unsigned int>(frames), target);
     return;
   }
   // Downmix to stereo in place. Safe because the target stride (2) is smaller
   // than the source stride (channels).
+  //
+  // Each extra channel (centre, surrounds, LFE on 5.1/7.1) is summed into BOTH
+  // L and R with weight 1/channels, so a fully-correlated full-scale source on
+  // every channel never exceeds [-1, +1] on either output. L and R themselves
+  // contribute their original sample, which preserves the stereo image — we
+  // are intentionally NOT a normalized matrix downmix, just guaranteed not to
+  // clip. libprojectM uses this for its FFT/beat analysis; the absolute scale
+  // matters less than non-saturation.
+  const float invChannels = 1.0f / static_cast<float>(channels);
   for (int i = 0; i < frames; ++i) {
     const float* src = m_pcmScratch.data() + static_cast<std::size_t>(i) * static_cast<std::size_t>(channels);
     float l = src[0];
     float r = src[1];
-    const float invExtra = 1.0f / static_cast<float>(channels - 1);
     for (int c = 2; c < channels; ++c) {
-      // Distribute centre/surround equally across L/R.
-      l += src[c] * invExtra * 0.5f;
-      r += src[c] * invExtra * 0.5f;
+      l += src[c] * invChannels;
+      r += src[c] * invChannels;
     }
     m_pcmScratch[static_cast<std::size_t>(i) * 2] = l;
     m_pcmScratch[static_cast<std::size_t>(i) * 2 + 1] = r;
   }
   projectm_pcm_add_float(static_cast<projectm_handle>(m_projectm), m_pcmScratch.data(),
-                         static_cast<unsigned int>(frames * 2), PROJECTM_STEREO);
+                         static_cast<unsigned int>(frames), PROJECTM_STEREO);
 }
 
 void ProjectMRenderer::makeCurrentSaved(GlState& saved) {
@@ -330,7 +357,7 @@ bool ProjectMRenderer::createFbo(std::uint32_t width, std::uint32_t height) {
   // sampleable in another context on Mesa; an EGLImage is the supported
   // cross-context primitive. Created against the root context that owns the
   // texture (current here via makeCurrentSaved()).
-  auto* createImg = reinterpret_cast<PFNEGLCREATEIMAGEKHRPROC>(eglGetProcAddress("eglCreateImageKHR"));
+  auto* createImg = eglCreateImageKHR_p();
   if (createImg != nullptr && m_shared != nullptr) {
     const EGLint imgAttrs[] = {EGL_GL_TEXTURE_LEVEL_KHR, 0, EGL_NONE};
     EGLImageKHR img =
@@ -355,8 +382,7 @@ bool ProjectMRenderer::createFbo(std::uint32_t width, std::uint32_t height) {
 
 void ProjectMRenderer::destroyFbo() {
   if (m_eglImage != nullptr && m_shared != nullptr) {
-    auto* destroyImg = reinterpret_cast<PFNEGLDESTROYIMAGEKHRPROC>(eglGetProcAddress("eglDestroyImageKHR"));
-    if (destroyImg != nullptr) {
+    if (auto* destroyImg = eglDestroyImageKHR_p()) {
       destroyImg(m_shared->display(), static_cast<EGLImageKHR>(m_eglImage));
     }
   }

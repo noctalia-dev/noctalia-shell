@@ -17,7 +17,6 @@
 #include <EGL/egl.h>
 
 #include <cstdint>
-#include <unordered_map>
 
 class GlesRenderBackend final : public RenderBackend {
 public:
@@ -84,8 +83,11 @@ private:
   EGLConfig m_config = nullptr;
   EGLContext m_context = EGL_NO_CONTEXT;
   int m_maxTextureSize = 0;
-  // EGLImageKHR -> GL texture name, imported into m_context for live paper.
-  std::unordered_map<void*, std::uint32_t> m_liveImageTextures;
+  // Single-slot cache for the live-paper EGLImage alias. Keyed by the
+  // EGLImageKHR pointer; replaced (with `glDeleteTextures` on the old entry)
+  // whenever the producer publishes a different image. See importLiveImage().
+  void* m_liveImageCacheKey = nullptr;
+  std::uint32_t m_liveImageCacheTex = 0;
   GlesTextureManager m_textureManager;
   RectProgram m_rectProgram;
   ImageProgram m_imageProgram;

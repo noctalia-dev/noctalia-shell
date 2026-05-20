@@ -361,12 +361,11 @@ void Wallpaper::reload() {
     inst->surface->requestRedraw();
   }
 
-  // Live-paper config (interval, fps, presets_dir, …) may have shifted; tell
-  // the service first so the renderer has the right mesh/fps before the next
-  // tick fires, then resync the tick cadence.
-  if (m_visualizerService != nullptr) {
-    m_visualizerService->onConfigChanged();
-  }
+  // Live-paper visualizer config (interval, fps, presets_dir, …) is owned by
+  // VisualizerService, which has its own ConfigService reload subscription
+  // (registered in Application::initUi). All we need to do here is resync our
+  // own tick cadence — the service has already applied any fps/mesh changes
+  // to the renderer by the time this runs.
   syncVisualizerTimer();
 }
 
