@@ -1,7 +1,7 @@
-#include "debug_indicator_widget.h"
 #ifndef NDEBUG
 
 #include "shell/bar/widgets/debug_indicator_widget.h"
+
 #include "ui/controls/chip.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
@@ -20,7 +20,6 @@ void DebugIndicatorWidget::create() {
   chip->label()->setBold(true);
   chip->setText("DEBUG");
   chip->clearBorder();
-  chip->setRadius(999.0f);
   chip->setPadding(2.0f, Style::spaceSm);
 
   m_chip = chip.get();
@@ -28,15 +27,10 @@ void DebugIndicatorWidget::create() {
 }
 
 void DebugIndicatorWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
-  if (m_chip == nullptr) {
-    return;
-  }
   const LayoutConstraints unconstrained{};
-  auto* node = root();
-  if (node != nullptr) {
-    const auto size = m_chip->measure(renderer, unconstrained);
-    node->setSize(size.width, size.height);
-  }
+  const auto size = m_chip->measure(renderer, unconstrained);
+  m_chip->setRadius(std::min(size.width, size.height) * 0.5f);
+  root()->setSize(size.width, size.height);
 }
 
 #endif
