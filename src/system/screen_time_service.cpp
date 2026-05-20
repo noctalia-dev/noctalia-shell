@@ -3,11 +3,14 @@
 #include "core/log.h"
 #include "system/app_identity.h"
 #include "system/desktop_entry.h"
+#include "system/internal_app_metadata.h"
 #include "util/file_utils.h"
+#include "util/string_utils.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_toplevels.h"
 
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
@@ -57,6 +60,105 @@ namespace {
       return std::string(appKey.substr(0, sep));
     }
     return std::string(appKey);
+  }
+
+  [[nodiscard]] std::string normalizedAppToken(std::string_view value) {
+    std::string token;
+    token.reserve(value.size());
+    for (const unsigned char ch : value) {
+      if (ch == '.' || ch == '-' || ch == '_' || std::isspace(ch) != 0) {
+        continue;
+      }
+      token.push_back(static_cast<char>(std::tolower(ch)));
+    }
+    return token;
+  }
+
+  [[nodiscard]] bool normalizedContains(std::string_view haystack, std::string_view needle) {
+    if (needle.empty()) {
+      return false;
+    }
+    const std::string hay = normalizedAppToken(haystack);
+    const std::string ned = normalizedAppToken(needle);
+    return !hay.empty() && hay.find(ned) != std::string::npos;
+  }
+
+  // Portals, polkit prompts, and other transient helpers should not receive focus credit.
+  [[nodiscard]] bool isScreenTimeExcludedAppKey(std::string_view appKey) {
+    if (appKey.empty() || appKey == "unknown") {
+      return true;
+    }
+    if (appKey.starts_with("title:")) {
+      return false;
+    }
+
+    const std::string baseKey = canonicalAppKey(appKey);
+    if (baseKey.empty()) {
+      return true;
+    }
+    if (internal_apps::appDefinitionForAppId(baseKey) != nullptr) {
+      return true;
+    }
+
+    const std::string lower = StringUtils::toLower(baseKey);
+    if (lower.starts_with("dev.noctalia.")) {
+      return true;
+    }
+
+    static constexpr std::string_view kExcludedSubstrings[] = {
+        "xdg-desktop-portal", "xdgdesktopportal", "org.freedesktop.portal", "org.freedesktop.policykit", "polkit",
+        "gcr-prompter",       "kwallet",          "org.gnome.zenity",
+    };
+    for (const std::string_view pattern : kExcludedSubstrings) {
+      if (lower.find(pattern) != std::string::npos || normalizedContains(lower, pattern)) {
+        return true;
+      }
+    }
+
+    static constexpr std::string_view kExcludedExact[] = {
+        "xdg-dbus-proxy",
+        "org.freedesktop.dbus",
+    };
+    for (const std::string_view exact : kExcludedExact) {
+      if (lower == exact || normalizedContains(lower, exact)) {
+        return true;
+      }
+    }
+
+    const auto entry = app_identity::findDesktopEntry(
+        baseKey, desktopEntries(),
+        app_identity::DesktopEntryLookupOptions{.includeHidden = true, .includeNoDisplay = true});
+    if (!entry.has_value()) {
+      return false;
+    }
+    if (entry->hidden) {
+      return true;
+    }
+    if (!entry->noDisplay) {
+      return false;
+    }
+    const auto& idLower = entry->idLower;
+    return entry->categoriesLower.find("utility") != std::string::npos || idLower.find("portal") != std::string::npos ||
+           idLower.find("polkit") != std::string::npos || idLower.find("auth") != std::string::npos ||
+           idLower.find("kwallet") != std::string::npos || idLower.find("gcr") != std::string::npos;
+  }
+
+  template <typename HourlyMap>
+  void pruneExcludedAppKeys(std::unordered_map<std::string, std::chrono::seconds>& apps, HourlyMap& appHourly) {
+    for (auto it = apps.begin(); it != apps.end();) {
+      if (isScreenTimeExcludedAppKey(it->first)) {
+        it = apps.erase(it);
+      } else {
+        ++it;
+      }
+    }
+    for (auto it = appHourly.begin(); it != appHourly.end();) {
+      if (isScreenTimeExcludedAppKey(it->first)) {
+        it = appHourly.erase(it);
+      } else {
+        ++it;
+      }
+    }
   }
 
   [[nodiscard]] std::string displayNameForAppKey(const std::string& appKey) {
@@ -227,8 +329,22 @@ void ScreenTimeService::onFocusChange() {
   if (!m_enabled) {
     return;
   }
+  const std::string candidate = appKeyForActive();
+  if (isScreenTimeExcludedAppKey(candidate)) {
+    // File pickers and portal dialogs briefly take focus; keep crediting the last real app.
+    return;
+  }
+  if (candidate.empty()) {
+    flushActiveSession(std::chrono::steady_clock::now());
+    m_activeAppKey.clear();
+    m_activeSince = {};
+    return;
+  }
+  if (candidate == m_activeAppKey) {
+    return;
+  }
   flushActiveSession(std::chrono::steady_clock::now());
-  m_activeAppKey = appKeyForActive();
+  m_activeAppKey = candidate;
   m_activeSince = std::chrono::steady_clock::now();
 }
 
@@ -312,7 +428,7 @@ ScreenTimeSnapshot ScreenTimeService::snapshot(int rangeDays) {
         snapshot.total += todayForCharts->hourly[hour];
       }
       for (const auto& [appKey, seconds] : todayForCharts->apps) {
-        if (seconds.count() > 0) {
+        if (seconds.count() > 0 && !isScreenTimeExcludedAppKey(appKey)) {
           mergedApps[canonicalAppKey(appKey)] += seconds;
         }
       }
@@ -328,7 +444,7 @@ ScreenTimeSnapshot ScreenTimeService::snapshot(int rangeDays) {
       }
       std::chrono::seconds dayTotal{0};
       for (const auto& [appKey, seconds] : day->apps) {
-        if (seconds.count() <= 0) {
+        if (seconds.count() <= 0 || isScreenTimeExcludedAppKey(appKey)) {
           continue;
         }
         dayTotal += seconds;
@@ -419,7 +535,8 @@ ScreenTimeSnapshot ScreenTimeService::snapshot(int rangeDays) {
 }
 
 void ScreenTimeService::flushActiveSession(std::chrono::steady_clock::time_point now) {
-  if (m_activeAppKey.empty() || m_activeSince == std::chrono::steady_clock::time_point{}) {
+  if (m_activeAppKey.empty() || m_activeSince == std::chrono::steady_clock::time_point{} ||
+      isScreenTimeExcludedAppKey(m_activeAppKey)) {
     return;
   }
 
@@ -487,6 +604,7 @@ void ScreenTimeService::load() {
     return;
   }
 
+  bool prunedStored = false;
   try {
     const auto json = nlohmann::json::parse(file);
     if (!json.is_object()) {
@@ -535,10 +653,23 @@ void ScreenTimeService::load() {
           record.appHourly.emplace(appKey, buckets);
         }
       }
+      const std::size_t appsBefore = record.apps.size();
+      const std::size_t hourlyBefore = record.appHourly.size();
+      pruneExcludedAppKeys(record.apps, record.appHourly);
+      if (record.apps.size() != appsBefore || record.appHourly.size() != hourlyBefore) {
+        prunedStored = true;
+      }
       m_days.emplace(dayKey, std::move(record));
     }
   } catch (const nlohmann::json::exception& e) {
     kLog.warn("failed to parse {}: {}", m_storagePath, e.what());
+  }
+  const std::size_t currentAppsBefore = m_currentDay.apps.size();
+  const std::size_t currentHourlyBefore = m_currentDay.appHourly.size();
+  pruneExcludedAppKeys(m_currentDay.apps, m_currentDay.appHourly);
+  if (prunedStored || m_currentDay.apps.size() != currentAppsBefore ||
+      m_currentDay.appHourly.size() != currentHourlyBefore) {
+    m_dirty = true;
   }
 }
 
