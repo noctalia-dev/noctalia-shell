@@ -82,6 +82,12 @@ void WorkspacesWidget::syncWidgetVisibility(bool showWidget) {
 
 void WorkspacesWidget::doUpdate(Renderer& renderer) {
   auto current = m_platform.workspaces(m_output);
+
+  if (!m_cachedState.empty() && !current.empty() &&
+      !std::any_of(current.begin(), current.end(), [](const Workspace& ws) { return ws.active; })) {
+    return;
+  }
+
   if (m_hideWhenEmpty) {
     filterEmptyWorkspaces(current);
   }
