@@ -257,6 +257,7 @@ namespace {
     struct DirEntry {
       std::string path;
       int size = 0;
+      int maxSize = 0;
       bool scalable = false;
     };
 
@@ -306,23 +307,22 @@ namespace {
           entry.scalable = (value == "Scalable" || value == "Threshold");
         } else if (key == "MaxSize") {
           // For threshold/scalable dirs, MaxSize gives a better sense of actual size
-          int maxSize = 0;
           try {
-            maxSize = std::stoi(std::string(value));
+            entry.maxSize = std::stoi(std::string(value));
           } catch (...) {
           }
-          if (maxSize > entry.size)
-            entry.size = maxSize;
         }
       }
     }
 
-    // Sort dirs: scalable first, then by size descending
+    // Sort dirs: scalable first, then by size descending (MaxSize first, then use Size as a tiebraker)
     std::stable_sort(dirNames.begin(), dirNames.end(), [&](const std::string& a, const std::string& b) {
       const auto& da = dirMap[a];
       const auto& db = dirMap[b];
       if (da.scalable != db.scalable)
         return da.scalable > db.scalable;
+      if (da.maxSize != db.maxSize)
+        return da.maxSize > db.maxSize;
       return da.size > db.size;
     });
 

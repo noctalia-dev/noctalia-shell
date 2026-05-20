@@ -347,7 +347,7 @@ std::unique_ptr<Flex> NetworkTab::create() {
   connRow->setDirection(FlexDirection::Horizontal);
   connRow->setAlign(FlexAlign::Center);
   connRow->setGap(Style::spaceSm * scale);
-  m_disconnectRow = connRow.get();
+  m_currentRow = connRow.get();
 
   auto title = std::make_unique<Label>();
   title->setBold(true);
@@ -514,7 +514,7 @@ void NetworkTab::onClose() {
   m_rescanButton = nullptr;
   m_wifiToggle = nullptr;
   m_scanSpinner = nullptr;
-  m_disconnectRow = nullptr;
+  m_currentRow = nullptr;
   m_disconnectButton = nullptr;
   m_vpnSection = nullptr;
   m_apRows = nullptr;
@@ -609,16 +609,16 @@ void NetworkTab::syncCurrentCard() {
   if (m_network == nullptr) {
     m_currentTitle->setText(i18n::tr("control-center.network.unavailable-title"));
     m_currentDetail->setText(i18n::tr("control-center.network.unavailable-detail"));
-    if (m_disconnectRow != nullptr) {
-      m_disconnectRow->setVisible(false);
+    if (m_currentRow != nullptr) {
+      m_currentRow->setVisible(false);
     }
     return;
   }
   const NetworkState& s = m_network->state();
   m_currentTitle->setText(currentTitle(s));
   m_currentDetail->setText(currentDetail(s));
-  if (m_disconnectRow != nullptr) {
-    m_disconnectRow->setVisible(s.connected);
+  if (m_disconnectButton != nullptr) {
+    m_disconnectButton->setVisible(s.connected);
   }
   if (m_wifiToggle != nullptr) {
     m_wifiToggle->setChecked(s.wirelessEnabled);
