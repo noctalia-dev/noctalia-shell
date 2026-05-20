@@ -11,11 +11,6 @@
 #include "notification/notification_manager.h"
 #include "pipewire/pipewire_spectrum.h"
 #include "shell/bar/widgets/active_window_widget.h"
-
-#ifndef NDEBUG
-#include "shell/bar/widgets/debug_indicator_widget.h"
-#endif
-
 #include "shell/bar/widgets/audio_visualizer_widget.h"
 #include "shell/bar/widgets/battery_widget.h"
 #include "shell/bar/widgets/bluetooth_widget.h"
@@ -24,6 +19,9 @@
 #include "shell/bar/widgets/clock_widget.h"
 #include "shell/bar/widgets/control_center_widget.h"
 #include "shell/bar/widgets/custom_button_widget.h"
+#ifndef NDEBUG
+#include "shell/bar/widgets/debug_indicator_widget.h"
+#endif
 #include "shell/bar/widgets/idle_inhibitor_widget.h"
 #include "shell/bar/widgets/keyboard_layout_widget.h"
 #include "shell/bar/widgets/launcher_widget.h"
