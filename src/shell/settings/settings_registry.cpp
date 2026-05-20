@@ -1347,7 +1347,7 @@ namespace settings {
       {
         auto e = makeEntry(section, "capsules", tr("settings.schema.bar.capsule-fill.label"),
                            tr("settings.schema.bar.capsule-fill.description"), path("capsule_fill"),
-                           colorSpecPicker(selectedBar->widgetCapsuleFill, true), "color pill", true);
+                           colorSpecPicker(selectedBar->widgetCapsuleFill), "color pill", true);
         e.visibleWhen = capsuleOn;
         entries.push_back(std::move(e));
       }
