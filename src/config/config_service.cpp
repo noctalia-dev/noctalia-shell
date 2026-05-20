@@ -1,5 +1,6 @@
 #include "config/config_service.h"
 
+#include "config/config_export.h"
 #include "core/build_info.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
@@ -11,6 +12,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
@@ -23,10 +25,18 @@
 #include <string_view>
 #include <sys/inotify.h>
 #include <unistd.h>
+#include <unordered_map>
 #include <vector>
-#include <xkbcommon/xkbcommon.h>
 
 namespace {
+
+  std::optional<double> finiteDouble(const toml::node_view<const toml::node>& node) {
+    auto v = node.value<double>();
+    if (v && !std::isfinite(*v)) {
+      return std::nullopt;
+    }
+    return v;
+  }
 
   std::string expandUserPathString(const std::string& path) {
     if (path.empty()) {
@@ -45,6 +55,178 @@ namespace {
       }
     }
     return result;
+  }
+
+  std::vector<std::string> readStringOrArray(const toml::node& node) {
+    if (auto* str = node.as_string()) {
+      return {str->get()};
+    }
+    return readStringArray(node);
+  }
+
+  std::vector<ThemeConfig::TemplateCompareColorConfig> readTemplateCompareColors(const toml::node& node) {
+    std::vector<ThemeConfig::TemplateCompareColorConfig> result;
+    const auto* arr = node.as_array();
+    if (arr == nullptr) {
+      return result;
+    }
+    result.reserve(arr->size());
+    for (const auto& item : *arr) {
+      const auto* tbl = item.as_table();
+      if (tbl == nullptr) {
+        continue;
+      }
+      auto name = tbl->get_as<std::string>("name");
+      auto color = tbl->get_as<std::string>("color");
+      if (name != nullptr && color != nullptr) {
+        result.push_back(ThemeConfig::TemplateCompareColorConfig{.name = name->get(), .color = color->get()});
+      }
+    }
+    return result;
+  }
+
+  std::optional<WidgetSettingValue> readWidgetSetting(const toml::node& node) {
+    if (const auto* stringValue = node.as_string()) {
+      return WidgetSettingValue{stringValue->get()};
+    }
+    if (const auto* intValue = node.as_integer()) {
+      return WidgetSettingValue{intValue->get()};
+    }
+    if (const auto* floatValue = node.as_floating_point()) {
+      return WidgetSettingValue{floatValue->get()};
+    }
+    if (const auto* boolValue = node.as_boolean()) {
+      return WidgetSettingValue{boolValue->get()};
+    }
+    if (const auto* arrayValue = node.as_array()) {
+      std::vector<std::string> strings;
+      for (const auto& item : *arrayValue) {
+        if (auto value = item.value<std::string>()) {
+          strings.push_back(*value);
+        }
+      }
+      return WidgetSettingValue{std::move(strings)};
+    }
+    return std::nullopt;
+  }
+
+  [[nodiscard]] bool isCommonWidgetColorSetting(std::string_view key) {
+    return key == "color" || key == "capsule_fill" || key == "capsule_border" || key == "capsule_foreground";
+  }
+
+  [[nodiscard]] bool isWidgetColorSetting(std::string_view type, std::string_view key) {
+    if (isCommonWidgetColorSetting(key)) {
+      return true;
+    }
+    if (type == "audio_visualizer") {
+      return key == "low_color" || key == "high_color";
+    }
+    if (type == "battery") {
+      return key == "warning_color";
+    }
+    if (type == "workspaces") {
+      return key == "focused_color" || key == "occupied_color" || key == "empty_color";
+    }
+    return false;
+  }
+
+  [[nodiscard]] bool isDesktopWidgetColorSetting(std::string_view type, std::string_view key) {
+    if (key == "background_color") {
+      return true;
+    }
+    if (type == "clock" || type == "weather" || type == "media_player") {
+      return key == "color";
+    }
+    if (type == "audio_visualizer") {
+      return key == "low_color" || key == "high_color";
+    }
+    if (type == "sysmon") {
+      return key == "color" || key == "color2";
+    }
+    return false;
+  }
+
+  [[nodiscard]] std::optional<std::string> colorStringValue(const toml::table& table, std::string_view key,
+                                                            const std::string& context) {
+    if (!table.contains(key)) {
+      return std::nullopt;
+    }
+    if (auto value = table[key].value<std::string>()) {
+      return *value;
+    }
+    throw std::runtime_error(context + ": expected string ColorSpec");
+  }
+
+  void validateWidgetColorSettingValue(const WidgetSettingValue& value, const std::string& context,
+                                       bool allowEmpty = false) {
+    const auto* raw = std::get_if<std::string>(&value);
+    if (raw == nullptr) {
+      throw std::runtime_error(context + ": expected string ColorSpec");
+    }
+    if (StringUtils::trim(*raw).empty()) {
+      if (allowEmpty) {
+        return;
+      }
+      throw std::runtime_error(context + ": empty color value is not valid here");
+    }
+    (void)colorSpecFromConfigString(*raw, context);
+  }
+
+  void validateWidgetColorSettings(std::string_view widgetName, const WidgetConfig& widget) {
+    for (const auto& [key, value] : widget.settings) {
+      if (!isWidgetColorSetting(widget.type, key)) {
+        continue;
+      }
+      const bool allowEmpty = key == "capsule_border";
+      validateWidgetColorSettingValue(value, "widget." + std::string(widgetName) + "." + key, allowEmpty);
+    }
+  }
+
+  void validateDesktopWidgetColorSettings(const DesktopWidgetState& widget) {
+    for (const auto& [key, value] : widget.settings) {
+      if (!isDesktopWidgetColorSetting(widget.type, key)) {
+        continue;
+      }
+      validateWidgetColorSettingValue(value, "desktop_widgets.widget." + widget.id + ".settings." + key);
+    }
+  }
+
+  DesktopWidgetState readDesktopWidgetState(std::string_view id, const toml::table& widgetTable) {
+    DesktopWidgetState widget;
+    widget.id = std::string(id);
+    if (auto explicitId = widgetTable["id"].value<std::string>()) {
+      widget.id = *explicitId;
+    }
+    if (auto type = widgetTable["type"].value<std::string>()) {
+      widget.type = *type;
+    }
+    if (auto output = widgetTable["output"].value<std::string>()) {
+      widget.outputName = *output;
+    }
+    if (auto cx = finiteDouble(widgetTable["cx"])) {
+      widget.cx = static_cast<float>(*cx);
+    }
+    if (auto cy = finiteDouble(widgetTable["cy"])) {
+      widget.cy = static_cast<float>(*cy);
+    }
+    if (auto scale = finiteDouble(widgetTable["scale"])) {
+      widget.scale = std::clamp(static_cast<float>(*scale), 0.2f, 8.0f);
+    }
+    if (auto rotation = finiteDouble(widgetTable["rotation"])) {
+      widget.rotationRad = static_cast<float>(*rotation);
+    }
+    if (auto enabled = widgetTable["enabled"].value<bool>()) {
+      widget.enabled = *enabled;
+    }
+    if (const auto* settingsTable = widgetTable["settings"].as_table()) {
+      for (const auto& [key, value] : *settingsTable) {
+        if (auto parsed = readWidgetSetting(value); parsed.has_value()) {
+          widget.settings.emplace(std::string(key.str()), std::move(*parsed));
+        }
+      }
+    }
+    validateDesktopWidgetColorSettings(widget);
+    return widget;
   }
 
   void setHookCommandsFromNode(const toml::node& node, std::vector<std::string>& out) {
@@ -81,27 +263,7 @@ namespace {
     return keybinds.validate;
   }
 
-  std::vector<KeyChord> defaultKeybindSet(KeybindAction action) {
-    switch (action) {
-    case KeybindAction::Validate:
-      return {{.sym = XKB_KEY_Return, .modifiers = 0}, {.sym = XKB_KEY_KP_Enter, .modifiers = 0}};
-    case KeybindAction::Cancel:
-      return {{.sym = XKB_KEY_Escape, .modifiers = 0}};
-    case KeybindAction::Left:
-      return {{.sym = XKB_KEY_Left, .modifiers = 0}};
-    case KeybindAction::Right:
-      return {{.sym = XKB_KEY_Right, .modifiers = 0}};
-    case KeybindAction::Up:
-      return {{.sym = XKB_KEY_Up, .modifiers = 0}};
-    case KeybindAction::Down:
-      return {{.sym = XKB_KEY_Down, .modifiers = 0}};
-    }
-    return {};
-  }
-
   constexpr Logger kLog("config");
-  constexpr const char* kInternalStateTable = "noctalia_state";
-  constexpr const char* kSetupWizardCompletedKey = "setup_wizard_completed";
 
   std::vector<std::filesystem::path> sortedConfigTomlFiles(std::string_view configDir) {
     std::vector<std::filesystem::path> files;
@@ -171,21 +333,11 @@ namespace {
     return path.filename().string();
   }
 
-  bool setupWizardCompletedFrom(const toml::table& table) {
-    const auto* state = table[kInternalStateTable].as_table();
-    if (state == nullptr) {
-      return false;
-    }
-    return (*state)[kSetupWizardCompletedKey].value<bool>().value_or(false);
-  }
-
-  void stripInternalState(toml::table& table) { table.erase(kInternalStateTable); }
-
-  std::optional<ColorSpec> optionalCapsuleBorder(const std::string& raw) {
+  std::optional<ColorSpec> optionalCapsuleBorder(const std::string& raw, std::string_view context) {
     if (StringUtils::trim(raw).empty()) {
       return std::nullopt;
     }
-    return colorSpecFromConfigString(raw);
+    return colorSpecFromConfigString(raw, context);
   }
 
 } // namespace
@@ -215,6 +367,7 @@ ConfigService::ConfigService() {
     std::error_code ec;
     std::filesystem::create_directories(dir, ec);
     m_overridesPath = dir + "/settings.toml";
+    m_setupMarkerPath = dir + "/.setup-complete";
   }
 
   loadOverridesFromFile();
@@ -263,7 +416,17 @@ void ConfigService::setNotificationManager(NotificationManager* manager) {
 }
 
 void ConfigService::forceReload() {
+  const auto oldDefault = m_defaultWallpaperPath;
+  const auto oldLast = m_lastWallpaperPath;
+  const auto oldMonitors = m_monitorWallpaperPaths;
+
   loadAll();
+
+  const bool wallpaperChanged = (oldDefault != m_defaultWallpaperPath || oldLast != m_lastWallpaperPath ||
+                                 oldMonitors != m_monitorWallpaperPaths);
+  if (wallpaperChanged && m_wallpaperChangeCallback) {
+    m_wallpaperChangeCallback();
+  }
   fireReloadCallbacks();
 }
 
@@ -274,7 +437,9 @@ void ConfigService::fireReloadCallbacks() {
 }
 
 bool ConfigService::shouldRunSetupWizard() const {
-  return !m_setupWizardCompleted && sortedConfigTomlFiles(m_configDir).empty() && m_overridesTable.empty();
+  // Single canonical signal: the marker file. If we have no state dir we cannot
+  // persist completion, so never show the wizard (it would loop forever).
+  return !m_setupMarkerPath.empty() && !std::filesystem::exists(m_setupMarkerPath);
 }
 
 std::string ConfigService::buildSupportReport() const {
@@ -337,7 +502,6 @@ std::string ConfigService::buildSupportReport() const {
     } else {
       try {
         auto table = toml::parse_file(m_overridesPath);
-        stripInternalState(table);
         deepMerge(merged, table);
       } catch (const toml::parse_error& e) {
         state.insert_or_assign("parse_error", e.what());
@@ -355,7 +519,7 @@ std::string ConfigService::buildSupportReport() const {
   return formatToml(root) + "\n";
 }
 
-std::string ConfigService::buildFlattenedConfig() const {
+std::string ConfigService::buildMergedUserConfig() const {
   toml::table merged;
 
   for (const auto& path : sortedConfigTomlFiles(m_configDir)) {
@@ -363,21 +527,24 @@ std::string ConfigService::buildFlattenedConfig() const {
       auto table = toml::parse_file(path.string());
       deepMerge(merged, table);
     } catch (const toml::parse_error& e) {
-      kLog.warn("skipping parse error in flattened config export {}: {}", path.filename().string(), e.description());
+      kLog.warn("skipping parse error in merged user config export {}: {}", path.filename().string(), e.description());
     }
   }
 
   if (!m_overridesPath.empty() && std::filesystem::exists(m_overridesPath)) {
     try {
       auto table = toml::parse_file(m_overridesPath);
-      stripInternalState(table);
       deepMerge(merged, table);
     } catch (const toml::parse_error& e) {
-      kLog.warn("skipping parse error in flattened config export {}: {}", m_overridesPath, e.description());
+      kLog.warn("skipping parse error in merged user config export {}: {}", m_overridesPath, e.description());
     }
   }
 
   return formatToml(merged) + "\n";
+}
+
+std::string ConfigService::buildEffectiveConfig() const {
+  return formatToml(config_export::configToToml(m_config)) + "\n";
 }
 
 void ConfigService::checkReload() {
@@ -433,20 +600,14 @@ void ConfigService::checkReload() {
     overridesChanged = false;
   }
 
+  const auto oldDefault = m_defaultWallpaperPath;
+  const auto oldLast = m_lastWallpaperPath;
+  const auto oldMonitors = m_monitorWallpaperPaths;
+
   if (overridesChanged) {
     kLog.info("reloading {}", m_overridesPath);
 
-    const auto oldDefault = m_defaultWallpaperPath;
-    const auto oldLast = m_lastWallpaperPath;
-    const auto oldMonitors = m_monitorWallpaperPaths;
-
     loadOverridesFromFile();
-
-    const bool wallpaperChanged = (oldDefault != m_defaultWallpaperPath || oldLast != m_lastWallpaperPath ||
-                                   oldMonitors != m_monitorWallpaperPaths);
-    if (wallpaperChanged && m_wallpaperChangeCallback) {
-      m_wallpaperChangeCallback();
-    }
     configChanged = true; // overrides affect Config — rebuild it
   }
 
@@ -456,6 +617,11 @@ void ConfigService::checkReload() {
 
   kLog.info("config changed, reloading");
   loadAll();
+  const bool wallpaperChanged = (oldDefault != m_defaultWallpaperPath || oldLast != m_lastWallpaperPath ||
+                                 oldMonitors != m_monitorWallpaperPaths);
+  if (wallpaperChanged && m_wallpaperChangeCallback) {
+    m_wallpaperChangeCallback();
+  }
   fireReloadCallbacks();
 }
 
@@ -479,6 +645,10 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.thickness = *ovr.thickness;
     if (ovr.backgroundOpacity)
       resolved.backgroundOpacity = *ovr.backgroundOpacity;
+    if (ovr.border)
+      resolved.border = *ovr.border;
+    if (ovr.borderWidth)
+      resolved.borderWidth = *ovr.borderWidth;
     if (ovr.radius) {
       resolved.radius = *ovr.radius;
       resolved.radiusTopLeft = *ovr.radius;
@@ -506,8 +676,6 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.shadow = *ovr.shadow;
     if (ovr.contactShadow)
       resolved.contactShadow = *ovr.contactShadow;
-    if (ovr.attachPanels)
-      resolved.attachPanels = *ovr.attachPanels;
     if (ovr.startWidgets)
       resolved.startWidgets = *ovr.startWidgets;
     if (ovr.centerWidgets)
@@ -624,7 +792,6 @@ void ConfigService::loadOverridesFromFile() {
   m_defaultWallpaperPath.clear();
   m_lastWallpaperPath.clear();
   m_monitorWallpaperPaths.clear();
-  m_setupWizardCompleted = false;
   m_overridesParseError.clear();
 
   if (m_overridesPath.empty() || !std::filesystem::exists(m_overridesPath)) {
@@ -644,8 +811,6 @@ void ConfigService::loadOverridesFromFile() {
     m_overridesTable = toml::table{};
     return;
   }
-  m_setupWizardCompleted = setupWizardCompletedFrom(m_overridesTable);
-  stripInternalState(m_overridesTable);
   extractWallpaperFromOverrides();
 }
 
@@ -757,8 +922,18 @@ void ConfigService::seedBuiltinWidgets(Config& config) {
 
 void ConfigService::loadAll() {
   m_effectiveOverrideCache.clear();
-  m_config = Config{};
-  seedBuiltinWidgets(m_config);
+  auto makeDefaultConfig = [] {
+    Config config;
+    ConfigService::seedBuiltinWidgets(config);
+    config.idle.behaviors = defaultIdleBehaviors();
+    config.bars.push_back(BarConfig{});
+    config.controlCenter.shortcuts = defaultControlCenterShortcuts();
+    config.shell.session.actions = defaultSessionPanelActions();
+    return config;
+  };
+
+  Config nextConfig;
+  seedBuiltinWidgets(nextConfig);
 
   const auto files = sortedConfigTomlFiles(m_configDir);
 
@@ -781,8 +956,8 @@ void ConfigService::loadAll() {
     }
   }
 
-  m_configFileBarNames.clear();
-  m_configFileMonitorOverrideNames.clear();
+  decltype(m_configFileBarNames) configFileBarNames;
+  decltype(m_configFileMonitorOverrideNames) configFileMonitorOverrideNames;
   if (auto* barTblMap = merged["bar"].as_table()) {
     for (const auto& [barName, barNode] : *barTblMap) {
       auto* barTbl = barNode.as_table();
@@ -790,9 +965,9 @@ void ConfigService::loadAll() {
         continue;
       }
       const std::string barNameStr(barName.str());
-      m_configFileBarNames.insert(barNameStr);
+      configFileBarNames.insert(barNameStr);
       if (auto* monTblMap = (*barTbl)["monitor"].as_table()) {
-        auto& monitorNames = m_configFileMonitorOverrideNames[barNameStr];
+        auto& monitorNames = configFileMonitorOverrideNames[barNameStr];
         for (const auto& [monName, monNode] : *monTblMap) {
           auto* monTbl = monNode.as_table();
           if (monTbl == nullptr) {
@@ -813,20 +988,36 @@ void ConfigService::loadAll() {
 
   if (files.empty() && m_overridesTable.empty()) {
     kLog.info("no config files found, using defaults");
-    m_config.idle.behaviors = defaultIdleBehaviors();
-    m_config.bars.push_back(BarConfig{});
-    m_config.controlCenter.shortcuts = defaultControlCenterShortcuts();
-    m_config.shell.session.actions = defaultSessionPanelActions();
+    m_config = makeDefaultConfig();
+    m_configFileBarNames.clear();
+    m_configFileMonitorOverrideNames.clear();
+    m_defaultWallpaperPath.clear();
+    m_lastWallpaperPath.clear();
+    m_monitorWallpaperPaths.clear();
     setConfigParseError(m_overridesParseError);
     return;
   }
 
   std::string semanticError;
   try {
-    parseTable(merged);
+    parseTableInto(merged, nextConfig, true);
   } catch (const std::exception& e) {
     semanticError = e.what();
     kLog.warn("config parse error: {}", semanticError);
+  }
+
+  if (semanticError.empty()) {
+    m_config = std::move(nextConfig);
+    m_configFileBarNames = std::move(configFileBarNames);
+    m_configFileMonitorOverrideNames = std::move(configFileMonitorOverrideNames);
+    extractWallpaperFromTable(merged);
+  } else if (m_config.bars.empty()) {
+    m_config = makeDefaultConfig();
+    m_configFileBarNames.clear();
+    m_configFileMonitorOverrideNames.clear();
+    m_defaultWallpaperPath.clear();
+    m_lastWallpaperPath.clear();
+    m_monitorWallpaperPaths.clear();
   }
 
   const std::string parseError = !firstError.empty()              ? firstError
@@ -834,8 +1025,6 @@ void ConfigService::loadAll() {
                                                                   : semanticError;
   setConfigParseError(parseError);
 }
-
-void ConfigService::parseTable(const toml::table& tbl) { parseTableInto(tbl, m_config, true); }
 
 void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool logSummary) const {
   // Parse [bar.*] named subtables
@@ -857,12 +1046,14 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
         bar.autoHide = *v;
       if (auto v = (*barTbl)["reserve_space"].value<bool>())
         bar.reserveSpace = *v;
-      if (auto v = (*barTbl)["attach_panels"].value<bool>())
-        bar.attachPanels = *v;
       if (auto v = (*barTbl)["thickness"].value<int64_t>())
         bar.thickness = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
-      if (auto v = (*barTbl)["background_opacity"].value<double>())
+      if (auto v = finiteDouble((*barTbl)["background_opacity"]))
         bar.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
+      if (auto borderStr = colorStringValue(*barTbl, "border", "bar." + bar.name + ".border"))
+        bar.border = colorSpecFromConfigString(*borderStr, "bar." + bar.name + ".border");
+      if (auto v = finiteDouble((*barTbl)["border_width"]))
+        bar.borderWidth = std::clamp(static_cast<float>(*v), 0.0f, 20.0f);
       if (auto v = (*barTbl)["radius"].value<int64_t>()) {
         const auto r = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
         bar.radius = r;
@@ -891,7 +1082,7 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
         bar.shadow = *v;
       if (auto v = (*barTbl)["contact_shadow"].value<bool>())
         bar.contactShadow = *v;
-      if (auto v = (*barTbl)["scale"].value<double>())
+      if (auto v = finiteDouble((*barTbl)["scale"]))
         bar.scale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
       if (auto* n = (*barTbl)["start"].as_array())
         bar.startWidgets = readStringArray(*n);
@@ -903,31 +1094,28 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
       if (auto v = (*barTbl)["capsule"].value<bool>()) {
         bar.widgetCapsuleDefault = *v;
       }
-      if (auto fillStr = (*barTbl)["capsule_fill"].value<std::string>()) {
-        bar.widgetCapsuleFill = colorSpecFromConfigString(*fillStr);
+      if (auto fillStr = colorStringValue(*barTbl, "capsule_fill", "bar." + bar.name + ".capsule_fill")) {
+        bar.widgetCapsuleFill = colorSpecFromConfigString(*fillStr, "bar." + bar.name + ".capsule_fill");
       }
-      if (auto fgStr = (*barTbl)["capsule_foreground"].value<std::string>()) {
-        bar.widgetCapsuleForeground = colorSpecFromConfigString(*fgStr);
+      if (auto fgStr = colorStringValue(*barTbl, "capsule_foreground", "bar." + bar.name + ".capsule_foreground")) {
+        bar.widgetCapsuleForeground = colorSpecFromConfigString(*fgStr, "bar." + bar.name + ".capsule_foreground");
       }
-      if (auto v = (*barTbl)["capsule_padding"].value<double>()) {
+      if (auto v = finiteDouble((*barTbl)["capsule_padding"])) {
         bar.widgetCapsulePadding = std::clamp(static_cast<float>(*v), 0.0f, 48.0f);
       }
-      if (auto v = (*barTbl)["capsule_radius"].value<double>()) {
+      if (auto v = finiteDouble((*barTbl)["capsule_radius"])) {
         bar.widgetCapsuleRadius = std::clamp(*v, 0.0, 80.0);
       }
-      if (auto v = (*barTbl)["capsule_opacity"].value<double>()) {
+      if (auto v = finiteDouble((*barTbl)["capsule_opacity"])) {
         bar.widgetCapsuleOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
       }
       if (barTbl->contains("capsule_border")) {
         bar.widgetCapsuleBorderSpecified = true;
-        std::string borderStr;
-        if (auto v = (*barTbl)["capsule_border"].value<std::string>()) {
-          borderStr = *v;
-        }
-        bar.widgetCapsuleBorder = optionalCapsuleBorder(borderStr);
+        const std::string context = "bar." + bar.name + ".capsule_border";
+        bar.widgetCapsuleBorder = optionalCapsuleBorder(*colorStringValue(*barTbl, "capsule_border", context), context);
       }
-      if (auto widgetColorStr = (*barTbl)["color"].value<std::string>()) {
-        bar.widgetColor = colorSpecFromConfigString(*widgetColorStr);
+      if (auto widgetColorStr = colorStringValue(*barTbl, "color", "bar." + bar.name + ".color")) {
+        bar.widgetColor = colorSpecFromConfigString(*widgetColorStr, "bar." + bar.name + ".color");
       }
       if (auto* n = (*barTbl)["capsule_groups"].as_array()) {
         bar.widgetCapsuleGroups = readStringArray(*n);
@@ -954,12 +1142,15 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
             ovr.autoHide = *v;
           if (auto v = (*monTbl)["reserve_space"].value<bool>())
             ovr.reserveSpace = *v;
-          if (auto v = (*monTbl)["attach_panels"].value<bool>())
-            ovr.attachPanels = *v;
           if (auto v = (*monTbl)["thickness"].value<int64_t>())
             ovr.thickness = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
-          if (auto v = (*monTbl)["background_opacity"].value<double>())
+          if (auto v = finiteDouble((*monTbl)["background_opacity"]))
             ovr.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
+          const std::string monitorContext = "bar." + bar.name + ".monitor." + std::string(monName.str());
+          if (auto borderStr = colorStringValue(*monTbl, "border", monitorContext + ".border"))
+            ovr.border = colorSpecFromConfigString(*borderStr, monitorContext + ".border");
+          if (auto v = finiteDouble((*monTbl)["border_width"]))
+            ovr.borderWidth = std::clamp(static_cast<float>(*v), 0.0f, 20.0f);
           if (auto v = (*monTbl)["radius"].value<int64_t>())
             ovr.radius = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
           if (auto v = (*monTbl)["radius_top_left"].value<int64_t>())
@@ -978,7 +1169,7 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
             ovr.padding = static_cast<std::int32_t>(*v);
           if (auto v = (*monTbl)["widget_spacing"].value<int64_t>())
             ovr.widgetSpacing = static_cast<std::int32_t>(*v);
-          if (auto v = (*monTbl)["scale"].value<double>())
+          if (auto v = finiteDouble((*monTbl)["scale"]))
             ovr.scale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
           if (auto v = (*monTbl)["shadow"].value<bool>())
             ovr.shadow = *v;
@@ -994,31 +1185,29 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
           if (auto v = (*monTbl)["capsule"].value<bool>()) {
             ovr.widgetCapsuleDefault = *v;
           }
-          if (auto fillStr = (*monTbl)["capsule_fill"].value<std::string>()) {
-            ovr.widgetCapsuleFill = colorSpecFromConfigString(*fillStr);
+          if (auto fillStr = colorStringValue(*monTbl, "capsule_fill", monitorContext + ".capsule_fill")) {
+            ovr.widgetCapsuleFill = colorSpecFromConfigString(*fillStr, monitorContext + ".capsule_fill");
           }
-          if (auto fgStr = (*monTbl)["capsule_foreground"].value<std::string>()) {
-            ovr.widgetCapsuleForeground = colorSpecFromConfigString(*fgStr);
+          if (auto fgStr = colorStringValue(*monTbl, "capsule_foreground", monitorContext + ".capsule_foreground")) {
+            ovr.widgetCapsuleForeground = colorSpecFromConfigString(*fgStr, monitorContext + ".capsule_foreground");
           }
-          if (auto v = (*monTbl)["capsule_padding"].value<double>()) {
+          if (auto v = finiteDouble((*monTbl)["capsule_padding"])) {
             ovr.widgetCapsulePadding = std::clamp(*v, 0.0, 48.0);
           }
-          if (auto v = (*monTbl)["capsule_radius"].value<double>()) {
+          if (auto v = finiteDouble((*monTbl)["capsule_radius"])) {
             ovr.widgetCapsuleRadius = std::clamp(*v, 0.0, 80.0);
           }
-          if (auto v = (*monTbl)["capsule_opacity"].value<double>()) {
+          if (auto v = finiteDouble((*monTbl)["capsule_opacity"])) {
             ovr.widgetCapsuleOpacity = std::clamp(*v, 0.0, 1.0);
           }
           if (monTbl->contains("capsule_border")) {
             ovr.widgetCapsuleBorderSpecified = true;
-            std::string borderStr;
-            if (auto v = (*monTbl)["capsule_border"].value<std::string>()) {
-              borderStr = *v;
-            }
-            ovr.widgetCapsuleBorder = optionalCapsuleBorder(borderStr);
+            ovr.widgetCapsuleBorder =
+                optionalCapsuleBorder(*colorStringValue(*monTbl, "capsule_border", monitorContext + ".capsule_border"),
+                                      monitorContext + ".capsule_border");
           }
-          if (auto cStr = (*monTbl)["color"].value<std::string>()) {
-            ovr.widgetColor = colorSpecFromConfigString(*cStr);
+          if (auto cStr = colorStringValue(*monTbl, "color", monitorContext + ".color")) {
+            ovr.widgetColor = colorSpecFromConfigString(*cStr, monitorContext + ".color");
           }
           if (auto* n = (*monTbl)["capsule_groups"].as_array()) {
             ovr.widgetCapsuleGroups = readStringArray(*n);
@@ -1100,6 +1289,7 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
         }
       }
 
+      validateWidgetColorSettings(widgetName, wc);
       config.widgets[widgetName] = std::move(wc);
     }
   }
@@ -1107,10 +1297,10 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
   // Parse [shell]
   if (auto* shellTbl = tbl["shell"].as_table()) {
     auto& shell = config.shell;
-    if (auto v = (*shellTbl)["ui_scale"].value<double>()) {
+    if (auto v = finiteDouble((*shellTbl)["ui_scale"])) {
       shell.uiScale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
     }
-    if (auto v = (*shellTbl)["corner_radius_scale"].value<double>()) {
+    if (auto v = finiteDouble((*shellTbl)["corner_radius_scale"])) {
       shell.cornerRadiusScale = std::clamp(static_cast<float>(*v), 0.0f, 2.0f);
     }
     if (auto v = (*shellTbl)["font_family"].value<std::string>()) {
@@ -1134,6 +1324,9 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
     if (auto v = (*shellTbl)["telemetry_enabled"].value<bool>()) {
       shell.telemetryEnabled = *v;
     }
+    if (auto v = (*shellTbl)["niri_overview_type_to_launch_enabled"].value<bool>()) {
+      shell.niriOverviewTypeToLaunchEnabled = *v;
+    }
     if (auto polkitAgent = (*shellTbl)["polkit_agent"].value<bool>()) {
       shell.polkitAgent = *polkitAgent;
     }
@@ -1146,7 +1339,7 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
       if (auto enabled = (*animationTbl)["enabled"].value<bool>()) {
         shell.animation.enabled = *enabled;
       }
-      if (auto v = (*animationTbl)["speed"].value<double>()) {
+      if (auto v = finiteDouble((*animationTbl)["speed"])) {
         shell.animation.speed = std::clamp(static_cast<float>(*v), 0.05f, 4.0f);
       }
     }
@@ -1160,7 +1353,7 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
       if (auto v = (*shadowTbl)["offset_y"].value<int64_t>()) {
         shell.shadow.offsetY = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
       }
-      if (auto v = (*shadowTbl)["alpha"].value<double>()) {
+      if (auto v = finiteDouble((*shadowTbl)["alpha"])) {
         shell.shadow.alpha = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
       }
     }
@@ -1168,17 +1361,50 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
       if (auto v = (*panelTbl)["background_blur"].value<bool>()) {
         shell.panel.backgroundBlur = *v;
       }
-      if (auto v = (*panelTbl)["attach_launcher"].value<bool>()) {
-        shell.panel.attachLauncher = *v;
+      if (auto v = (*panelTbl)["transparency_mode"].value<std::string>()) {
+        if (auto parsed = enumFromKey(kPanelTransparencyModes, StringUtils::trim(*v))) {
+          shell.panel.transparencyMode = *parsed;
+        }
       }
-      if (auto v = (*panelTbl)["attach_clipboard"].value<bool>()) {
-        shell.panel.attachClipboard = *v;
+      if (auto v = (*panelTbl)["launcher_placement"].value<std::string>()) {
+        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
+          shell.panel.launcherPlacement = *parsed;
+        }
       }
-      if (auto v = (*panelTbl)["attach_control_center"].value<bool>()) {
-        shell.panel.attachControlCenter = *v;
+      if (auto v = (*panelTbl)["clipboard_placement"].value<std::string>()) {
+        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
+          shell.panel.clipboardPlacement = *parsed;
+        }
       }
-      if (auto v = (*panelTbl)["attach_wallpaper"].value<bool>()) {
-        shell.panel.attachWallpaper = *v;
+      if (auto v = (*panelTbl)["control_center_placement"].value<std::string>()) {
+        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
+          shell.panel.controlCenterPlacement = *parsed;
+        }
+      }
+      if (auto v = (*panelTbl)["wallpaper_placement"].value<std::string>()) {
+        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
+          shell.panel.wallpaperPlacement = *parsed;
+        }
+      }
+      if (auto v = (*panelTbl)["session_placement"].value<std::string>()) {
+        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
+          shell.panel.sessionPlacement = *parsed;
+        }
+      }
+      if (auto v = (*panelTbl)["open_near_click_control_center"].value<bool>()) {
+        shell.panel.openNearClickControlCenter = *v;
+      }
+      if (auto v = (*panelTbl)["open_near_click_launcher"].value<bool>()) {
+        shell.panel.openNearClickLauncher = *v;
+      }
+      if (auto v = (*panelTbl)["open_near_click_clipboard"].value<bool>()) {
+        shell.panel.openNearClickClipboard = *v;
+      }
+      if (auto v = (*panelTbl)["open_near_click_wallpaper"].value<bool>()) {
+        shell.panel.openNearClickWallpaper = *v;
+      }
+      if (auto v = (*panelTbl)["open_near_click_session"].value<bool>()) {
+        shell.panel.openNearClickSession = *v;
       }
     }
     if (const auto* screenCornersTbl = (*shellTbl)["screen_corners"].as_table()) {
@@ -1205,6 +1431,9 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
     }
     if (auto v = (*shellTbl)["show_location"].value<bool>()) {
       shell.showLocation = *v;
+    }
+    if (auto v = (*shellTbl)["clipboard_enabled"].value<bool>()) {
+      shell.clipboardEnabled = *v;
     }
     if (auto v = (*shellTbl)["clipboard_auto_paste"].value<std::string>()) {
       if (auto parsed = enumFromKey(kClipboardAutoPasteModes, *v)) {
@@ -1299,10 +1528,6 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
         templates.enableBuiltinTemplates = *v;
       if (auto v = (*templatesTbl)["enable_community_templates"].value<bool>())
         templates.enableCommunityTemplates = *v;
-      if (auto v = (*templatesTbl)["enable_user_templates"].value<bool>())
-        templates.enableUserTemplates = *v;
-      if (auto v = (*templatesTbl)["user_config"].value<std::string>())
-        templates.userConfig = *v;
       if (const auto* builtinIds = (*templatesTbl)["builtin_ids"].as_array()) {
         templates.builtinIds.clear();
         templates.builtinIds.reserve(builtinIds->size());
@@ -1319,6 +1544,78 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
             templates.communityIds.push_back(id->get());
         }
       }
+      if (const auto* customColorsTbl = (*templatesTbl)["custom_colors"].as_table()) {
+        templates.customColors.clear();
+        templates.customColors.reserve(customColorsTbl->size());
+        for (const auto& [nameNode, valueNode] : *customColorsTbl) {
+          ThemeConfig::TemplateColorConfig color;
+          color.name = std::string(nameNode.str());
+          if (const auto* str = valueNode.as_string()) {
+            color.color = str->get();
+          } else if (const auto* colorTbl = valueNode.as_table()) {
+            if (auto value = colorTbl->get_as<std::string>("color")) {
+              color.color = value->get();
+            }
+            if (auto blend = colorTbl->get_as<bool>("blend")) {
+              color.blend = blend->get();
+            }
+          }
+          if (!StringUtils::trim(color.name).empty() && !StringUtils::trim(color.color).empty()) {
+            templates.customColors.push_back(std::move(color));
+          }
+        }
+      }
+      if (const auto* userTemplatesTbl = (*templatesTbl)["user"].as_table()) {
+        templates.userTemplates.clear();
+        templates.userTemplates.reserve(userTemplatesTbl->size());
+        for (const auto& [idNode, templateNode] : *userTemplatesTbl) {
+          const auto* templateTbl = templateNode.as_table();
+          if (templateTbl == nullptr) {
+            continue;
+          }
+
+          ThemeConfig::UserTemplateConfig entry;
+          entry.id = std::string(idNode.str());
+          if (auto enabled = templateTbl->get_as<bool>("enabled")) {
+            entry.enabled = enabled->get();
+          }
+          if (auto inputPath = templateTbl->get_as<std::string>("input_path")) {
+            entry.inputPath = inputPath->get();
+          }
+          if (const auto* inputPathModesTbl = (*templateTbl)["input_path_modes"].as_table()) {
+            auto dark = inputPathModesTbl->get_as<std::string>("dark");
+            auto light = inputPathModesTbl->get_as<std::string>("light");
+            if (dark != nullptr && light != nullptr) {
+              entry.inputPathModes =
+                  ThemeConfig::TemplateInputPathModesConfig{.dark = dark->get(), .light = light->get()};
+            }
+          }
+          if (const auto* outputPath = templateTbl->get("output_path")) {
+            entry.outputPaths = readStringOrArray(*outputPath);
+          }
+          if (auto outputPathDynamic = templateTbl->get_as<std::string>("output_path_dynamic")) {
+            entry.outputPathDynamic = outputPathDynamic->get();
+          }
+          if (auto compareTo = templateTbl->get_as<std::string>("compare_to")) {
+            entry.compareTo = compareTo->get();
+          }
+          if (const auto* colorsToCompare = templateTbl->get("colors_to_compare")) {
+            entry.colorsToCompare = readTemplateCompareColors(*colorsToCompare);
+          }
+          if (auto preHook = templateTbl->get_as<std::string>("pre_hook")) {
+            entry.preHook = preHook->get();
+          }
+          if (auto postHook = templateTbl->get_as<std::string>("post_hook")) {
+            entry.postHook = postHook->get();
+          }
+          if (auto index = templateTbl->get_as<int64_t>("index")) {
+            entry.index = static_cast<int>(index->get());
+          }
+          if (!StringUtils::trim(entry.id).empty()) {
+            templates.userTemplates.push_back(std::move(entry));
+          }
+        }
+      }
     }
   }
 
@@ -1332,11 +1629,11 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
         wp.fillMode = *mode;
       }
     }
-    if (auto v = (*wpTbl)["fill_color"].value<std::string>()) {
+    if (auto v = colorStringValue(*wpTbl, "fill_color", "wallpaper.fill_color")) {
       if (StringUtils::trim(*v).empty()) {
         wp.fillColor = std::nullopt;
       } else {
-        wp.fillColor = colorSpecFromConfigString(*v);
+        wp.fillColor = colorSpecFromConfigString(*v, "wallpaper.fill_color");
       }
     }
     if (auto* arr = (*wpTbl)["transition"].as_array()) {
@@ -1351,9 +1648,9 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
       if (wp.transitions.empty())
         wp.transitions.push_back(WallpaperTransition::Fade);
     }
-    if (auto v = (*wpTbl)["transition_duration"].value<double>())
+    if (auto v = finiteDouble((*wpTbl)["transition_duration"]))
       wp.transitionDurationMs = std::clamp(static_cast<float>(*v), 100.0f, 30000.0f);
-    if (auto v = (*wpTbl)["edge_smoothness"].value<double>())
+    if (auto v = finiteDouble((*wpTbl)["edge_smoothness"]))
       wp.edgeSmoothness = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
     if (auto v = (*wpTbl)["directory"].value<std::string>())
       wp.directory = expandUserPathString(*v);
@@ -1361,6 +1658,8 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
       wp.directoryLight = expandUserPathString(*v);
     if (auto v = (*wpTbl)["directory_dark"].value<std::string>())
       wp.directoryDark = expandUserPathString(*v);
+    if (auto v = (*wpTbl)["per_monitor_directories"].value<bool>())
+      wp.perMonitorDirectories = *v;
     if (auto* automationTbl = (*wpTbl)["automation"].as_table()) {
       if (auto v = (*automationTbl)["enabled"].value<bool>()) {
         wp.automation.enabled = *v;
@@ -1394,11 +1693,12 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
           ovr.match = std::string(monName.str());
         if (auto v = (*monTbl)["enabled"].value<bool>())
           ovr.enabled = *v;
-        if (auto v = (*monTbl)["fill_color"].value<std::string>()) {
+        const std::string monitorContext = "wallpaper.monitor." + std::string(monName.str());
+        if (auto v = colorStringValue(*monTbl, "fill_color", monitorContext + ".fill_color")) {
           if (StringUtils::trim(*v).empty()) {
             ovr.fillColor = std::nullopt;
           } else {
-            ovr.fillColor = colorSpecFromConfigString(*v);
+            ovr.fillColor = colorSpecFromConfigString(*v, monitorContext + ".fill_color");
           }
         }
         if (auto v = (*monTbl)["directory"].value<std::string>())
@@ -1417,9 +1717,9 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
     auto& ov = config.backdrop;
     if (auto v = (*ovTbl)["enabled"].value<bool>())
       ov.enabled = *v;
-    if (auto v = (*ovTbl)["blur_intensity"].value<double>())
+    if (auto v = finiteDouble((*ovTbl)["blur_intensity"]))
       ov.blurIntensity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
-    if (auto v = (*ovTbl)["tint_intensity"].value<double>())
+    if (auto v = finiteDouble((*ovTbl)["tint_intensity"]))
       ov.tintIntensity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
   }
 
@@ -1428,6 +1728,10 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
     auto& osd = config.osd;
     if (auto v = (*osdTbl)["position"].value<std::string>())
       osd.position = *v;
+    if (auto v = (*osdTbl)["orientation"].value<std::string>())
+      osd.orientation = *v;
+    if (auto v = (*osdTbl)["lock_keys"].value<bool>())
+      osd.lockKeys = *v;
   }
 
   auto parseNotificationTable = [&config](const toml::table& notifTable) {
@@ -1438,8 +1742,12 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
       notif.position = *v;
     if (auto v = notifTable["layer"].value<std::string>())
       notif.layer = *v;
-    if (auto v = notifTable["background_opacity"].value<double>())
+    if (auto v = finiteDouble(notifTable["background_opacity"]))
       notif.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
+    if (auto v = notifTable["offset_x"].value<int64_t>())
+      notif.offsetX = static_cast<int>(*v);
+    if (auto v = notifTable["offset_y"].value<int64_t>())
+      notif.offsetY = static_cast<int>(*v);
     if (const auto* v = notifTable.get("monitors")) {
       notif.monitors = readStringArray(*v);
     }
@@ -1468,10 +1776,24 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
       dock.padding = std::clamp(static_cast<std::int32_t>(*v), 0, 100);
     if (auto v = (*dockTbl)["item_spacing"].value<int64_t>())
       dock.itemSpacing = std::clamp(static_cast<std::int32_t>(*v), 0, 100);
-    if (auto v = (*dockTbl)["background_opacity"].value<double>())
+    if (auto v = finiteDouble((*dockTbl)["background_opacity"]))
       dock.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
-    if (auto v = (*dockTbl)["radius"].value<int64_t>())
-      dock.radius = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
+    if (auto v = (*dockTbl)["radius"].value<int64_t>()) {
+      const auto r = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
+      dock.radius = r;
+      dock.radiusTopLeft = r;
+      dock.radiusTopRight = r;
+      dock.radiusBottomLeft = r;
+      dock.radiusBottomRight = r;
+    }
+    if (auto v = (*dockTbl)["radius_top_left"].value<int64_t>())
+      dock.radiusTopLeft = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
+    if (auto v = (*dockTbl)["radius_top_right"].value<int64_t>())
+      dock.radiusTopRight = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
+    if (auto v = (*dockTbl)["radius_bottom_left"].value<int64_t>())
+      dock.radiusBottomLeft = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
+    if (auto v = (*dockTbl)["radius_bottom_right"].value<int64_t>())
+      dock.radiusBottomRight = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
     if (auto v = (*dockTbl)["margin_ends"].value<int64_t>())
       dock.marginEnds = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
     if (auto v = (*dockTbl)["margin_edge"].value<int64_t>())
@@ -1484,13 +1806,13 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
       dock.autoHide = *v;
     if (auto v = (*dockTbl)["reserve_space"].value<bool>())
       dock.reserveSpace = *v;
-    if (auto v = (*dockTbl)["active_scale"].value<double>())
+    if (auto v = finiteDouble((*dockTbl)["active_scale"]))
       dock.activeScale = std::clamp(static_cast<float>(*v), 0.1f, 1.75f);
-    if (auto v = (*dockTbl)["inactive_scale"].value<double>())
+    if (auto v = finiteDouble((*dockTbl)["inactive_scale"]))
       dock.inactiveScale = std::clamp(static_cast<float>(*v), 0.1f, 1.0f);
-    if (auto v = (*dockTbl)["active_opacity"].value<double>())
+    if (auto v = finiteDouble((*dockTbl)["active_opacity"]))
       dock.activeOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
-    if (auto v = (*dockTbl)["inactive_opacity"].value<double>())
+    if (auto v = finiteDouble((*dockTbl)["inactive_opacity"]))
       dock.inactiveOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
     if (auto v = (*dockTbl)["show_dots"].value<bool>())
       dock.showDots = *v;
@@ -1515,6 +1837,60 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
     if (auto v = (*desktopWidgetsTbl)["enabled"].value<bool>()) {
       desktopWidgets.enabled = *v;
     }
+    if (auto schemaVersion = (*desktopWidgetsTbl)["schema_version"].value<int64_t>()) {
+      desktopWidgets.schemaVersion = static_cast<std::int32_t>(*schemaVersion);
+    }
+    if (const auto* gridTable = (*desktopWidgetsTbl)["grid"].as_table()) {
+      if (auto visible = (*gridTable)["visible"].value<bool>()) {
+        desktopWidgets.grid.visible = *visible;
+      }
+      if (auto cellSize = (*gridTable)["cell_size"].value<int64_t>()) {
+        desktopWidgets.grid.cellSize = std::clamp(static_cast<std::int32_t>(*cellSize), 8, 256);
+      }
+      if (auto majorInterval = (*gridTable)["major_interval"].value<int64_t>()) {
+        desktopWidgets.grid.majorInterval = std::clamp(static_cast<std::int32_t>(*majorInterval), 1, 16);
+      }
+    }
+    if (const auto* widgetsTable = (*desktopWidgetsTbl)["widget"].as_table()) {
+      std::vector<DesktopWidgetState> parsedWidgets;
+      parsedWidgets.reserve(widgetsTable->size());
+      for (const auto& [idNode, widgetNode] : *widgetsTable) {
+        const auto* widgetTable = widgetNode.as_table();
+        if (widgetTable == nullptr) {
+          continue;
+        }
+        auto widget = readDesktopWidgetState(idNode.str(), *widgetTable);
+        if (!widget.id.empty() && !widget.type.empty()) {
+          parsedWidgets.push_back(std::move(widget));
+        }
+      }
+
+      std::vector<std::string> order;
+      bool orderSpecified = false;
+      if (const auto* orderNode = desktopWidgetsTbl->get("widget_order")) {
+        order = readStringArray(*orderNode);
+        orderSpecified = true;
+      }
+
+      desktopWidgets.widgets.clear();
+      std::vector<bool> used(parsedWidgets.size(), false);
+      for (const auto& orderedId : order) {
+        for (std::size_t i = 0; i < parsedWidgets.size(); ++i) {
+          if (!used[i] && parsedWidgets[i].id == orderedId) {
+            used[i] = true;
+            desktopWidgets.widgets.push_back(std::move(parsedWidgets[i]));
+            break;
+          }
+        }
+      }
+      if (!orderSpecified) {
+        for (std::size_t i = 0; i < parsedWidgets.size(); ++i) {
+          if (!used[i]) {
+            desktopWidgets.widgets.push_back(std::move(parsedWidgets[i]));
+          }
+        }
+      }
+    }
   }
 
   // Parse [weather]
@@ -1538,8 +1914,24 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
   if (auto* systemTbl = tbl["system"].as_table()) {
     auto& system = config.system;
     if (const auto* monitorTbl = (*systemTbl)["monitor"].as_table()) {
+      auto& monitor = system.monitor;
       if (auto v = (*monitorTbl)["enabled"].value<bool>()) {
-        system.monitor.enabled = *v;
+        monitor.enabled = *v;
+      }
+      if (auto v = finiteDouble((*monitorTbl)["cpu_poll_seconds"])) {
+        monitor.cpuPollSeconds = static_cast<float>(*v);
+      }
+      if (auto v = finiteDouble((*monitorTbl)["gpu_poll_seconds"])) {
+        monitor.gpuPollSeconds = static_cast<float>(*v);
+      }
+      if (auto v = finiteDouble((*monitorTbl)["memory_poll_seconds"])) {
+        monitor.memoryPollSeconds = static_cast<float>(*v);
+      }
+      if (auto v = finiteDouble((*monitorTbl)["network_poll_seconds"])) {
+        monitor.networkPollSeconds = static_cast<float>(*v);
+      }
+      if (auto v = finiteDouble((*monitorTbl)["disk_poll_seconds"])) {
+        monitor.diskPollSeconds = static_cast<float>(*v);
       }
     }
   }
@@ -1553,7 +1945,7 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
     if (auto v = (*audioTbl)["enable_sounds"].value<bool>()) {
       audio.enableSounds = *v;
     }
-    if (auto v = (*audioTbl)["sound_volume"].value<double>()) {
+    if (auto v = finiteDouble((*audioTbl)["sound_volume"])) {
       audio.soundVolume = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
     }
     if (auto v = (*audioTbl)["volume_change_sound"].value<std::string>()) {
@@ -1667,10 +2059,10 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
     if (auto v = (*nightlightTbl)["stop_time"].value<std::string>()) {
       nightlight.stopTime = *v;
     }
-    if (auto v = (*nightlightTbl)["latitude"].value<double>()) {
+    if (auto v = finiteDouble((*nightlightTbl)["latitude"])) {
       nightlight.latitude = *v;
     }
-    if (auto v = (*nightlightTbl)["longitude"].value<double>()) {
+    if (auto v = finiteDouble((*nightlightTbl)["longitude"])) {
       nightlight.longitude = *v;
     }
     if (auto v = (*nightlightTbl)["temperature_day"].value<int64_t>()) {
@@ -1714,6 +2106,9 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
   // Parse [[control_center.shortcuts]]
   bool controlCenterShortcutsConfigured = false;
   if (auto* ccTbl = tbl["control_center"].as_table()) {
+    if (auto v = (*ccTbl)["compact"].value<bool>()) {
+      config.controlCenter.compact = *v;
+    }
     if (auto* shortcutsArr = (*ccTbl)["shortcuts"].as_array()) {
       controlCenterShortcutsConfigured = true;
       config.controlCenter.shortcuts.clear();
@@ -1738,7 +2133,7 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
 
   // Parse [idle] and [idle.behavior.*]
   if (auto* idleTbl = tbl["idle"].as_table()) {
-    if (auto v = (*idleTbl)["pre_action_fade_seconds"].value<double>()) {
+    if (auto v = finiteDouble((*idleTbl)["pre_action_fade_seconds"])) {
       const double d = *v;
       config.idle.preActionFadeSeconds = static_cast<float>(std::clamp(d, 0.0, 120.0));
     }
@@ -1758,14 +2153,57 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
         if (auto v = (*entryTbl)["timeout"].value<int64_t>()) {
           behavior.timeoutSeconds = static_cast<std::int32_t>(*v);
         }
+        if (auto v = (*entryTbl)["action"].value<std::string>()) {
+          behavior.action = StringUtils::trim(*v);
+        }
         if (auto v = (*entryTbl)["command"].value<std::string>()) {
           behavior.command = *v;
         }
         if (auto v = (*entryTbl)["resume_command"].value<std::string>()) {
           behavior.resumeCommand = *v;
         }
+        if (auto v = (*entryTbl)["lock_before_suspend"].value<bool>()) {
+          behavior.lockBeforeSuspend = *v;
+        }
+
+        inferIdleBehaviorActionFromLegacyFields(behavior);
 
         config.idle.behaviors.push_back(std::move(behavior));
+      }
+    }
+    if (auto* orderArr = (*idleTbl)["behavior_order"].as_array();
+        orderArr != nullptr && !config.idle.behaviors.empty()) {
+      std::vector<std::string> orderedNames;
+      orderedNames.reserve(orderArr->size());
+      for (const auto& item : *orderArr) {
+        if (auto name = item.value<std::string>(); name.has_value() && !name->empty()) {
+          orderedNames.push_back(*name);
+        }
+      }
+
+      if (!orderedNames.empty()) {
+        std::unordered_map<std::string, IdleBehaviorConfig> byName;
+        byName.reserve(config.idle.behaviors.size());
+        for (auto& behavior : config.idle.behaviors) {
+          byName.insert_or_assign(behavior.name, std::move(behavior));
+        }
+
+        std::vector<IdleBehaviorConfig> ordered;
+        ordered.reserve(byName.size());
+        for (const auto& name : orderedNames) {
+          auto it = byName.find(name);
+          if (it == byName.end()) {
+            continue;
+          }
+          ordered.push_back(std::move(it->second));
+          byName.erase(it);
+        }
+        for (auto& [name, behavior] : byName) {
+          (void)name;
+          ordered.push_back(std::move(behavior));
+        }
+
+        config.idle.behaviors = std::move(ordered);
       }
     }
   }
@@ -1805,9 +2243,8 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
 bool ConfigService::matchesKeybind(KeybindAction action, std::uint32_t sym, std::uint32_t modifiers) const {
   const auto& configured = keybindSet(m_config.keybinds, action);
   const auto active = configured.empty() ? defaultKeybindSet(action) : configured;
-  return std::any_of(active.begin(), active.end(), [sym, modifiers](const KeyChord& chord) {
-    return chord.sym == sym && chord.modifiers == modifiers;
-  });
+  return std::any_of(active.begin(), active.end(),
+                     [sym, modifiers](const KeyChord& chord) { return keyChordMatches(chord, sym, modifiers); });
 }
 
 void ConfigService::registerIpc(IpcService& ipc) {

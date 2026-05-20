@@ -108,6 +108,21 @@ bool InputDispatcher::pointerButton(float x, float y, std::uint32_t button, bool
   }
 
   if (target != nullptr) {
+    if (pressed && m_capturedArea == nullptr) {
+      if (target != m_focusedArea && m_focusedArea != nullptr) {
+        setFocus(nullptr);
+        pruneDetachedAreas();
+        updateHover(x, y, m_lastSerial);
+        target = inputAreaAcceptingButton(m_hoveredArea, button);
+        if (target == nullptr) {
+          return false;
+        }
+      }
+      if (target->focusable()) {
+        setFocus(target);
+      }
+    }
+
     float localX = 0.0f;
     float localY = 0.0f;
     (void)Node::mapFromScene(target, x, y, localX, localY);
@@ -115,9 +130,6 @@ bool InputDispatcher::pointerButton(float x, float y, std::uint32_t button, bool
     if (pressed) {
       m_capturedArea = target;
       trackArea(target);
-      if (target->focusable()) {
-        setFocus(target);
-      }
     } else {
       m_capturedArea = nullptr;
       updateHover(x, y, m_lastSerial);

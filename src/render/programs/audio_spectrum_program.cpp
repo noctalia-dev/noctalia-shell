@@ -158,8 +158,16 @@ void AudioSpectrumProgram::draw(float surfaceWidth, float surfaceHeight, float p
     }
     const float crossSize = crossPixels / crossPixelScale;
 
-    const float mainStart = snapToPixel(startOffset + static_cast<float>(i) * stride, mainPixelScale);
-    const float mainEnd = mainStart + barThickness;
+    float mainStart = snapToPixel(startOffset + static_cast<float>(i) * stride, mainPixelScale);
+    float mainEnd = mainStart + barThickness;
+    if (mainStart < 0.0f) {
+      mainEnd -= mainStart;
+      mainStart = 0.0f;
+    }
+    if (mainEnd > mainAxisLen) {
+      mainStart = std::max(0.0f, mainStart - (mainEnd - mainAxisLen));
+      mainEnd = mainAxisLen;
+    }
     float crossStart =
         snapToPixel(style.centered ? (crossAxisLen - crossSize) * 0.5f : crossAxisLen - crossSize, crossPixelScale);
     float crossEnd = crossStart + crossSize;
@@ -193,11 +201,13 @@ void AudioSpectrumProgram::draw(float surfaceWidth, float surfaceHeight, float p
   glUniformMatrix3fv(m_transformLocation, 1, GL_FALSE, transform.m.data());
 
   constexpr GLsizei kStride = static_cast<GLsizei>(sizeof(GLfloat) * 6U);
-  glVertexAttribPointer(m_positionLocation, 2, GL_FLOAT, GL_FALSE, kStride, m_vertices.data());
-  glVertexAttribPointer(m_colorLocation, 4, GL_FLOAT, GL_FALSE, kStride, m_vertices.data() + 2);
-  glEnableVertexAttribArray(m_positionLocation);
-  glEnableVertexAttribArray(m_colorLocation);
+  const auto posAttr = static_cast<GLuint>(m_positionLocation);
+  const auto colorAttr = static_cast<GLuint>(m_colorLocation);
+  glVertexAttribPointer(posAttr, 2, GL_FLOAT, GL_FALSE, kStride, m_vertices.data());
+  glVertexAttribPointer(colorAttr, 4, GL_FLOAT, GL_FALSE, kStride, m_vertices.data() + 2);
+  glEnableVertexAttribArray(posAttr);
+  glEnableVertexAttribArray(colorAttr);
   glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(m_vertices.size() / 6U));
-  glDisableVertexAttribArray(m_colorLocation);
-  glDisableVertexAttribArray(m_positionLocation);
+  glDisableVertexAttribArray(colorAttr);
+  glDisableVertexAttribArray(posAttr);
 }

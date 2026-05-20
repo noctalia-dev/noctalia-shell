@@ -23,6 +23,8 @@ struct TrayItemInfo {
   std::string itemName;
   std::string processName;
   std::string title;
+  std::string statusNotifierTitle;
+  std::string statusNotifierDescription;
   std::string status;
   std::vector<std::uint8_t> iconArgb32;
   std::int32_t iconWidth = 0;
@@ -106,22 +108,23 @@ private:
   void onRegisterStatusNotifierItem(const std::string& serviceOrPath, const std::string& senderBusName);
   void onRegisterStatusNotifierHost(const std::string& host);
   void discoverExistingItems();
-  [[nodiscard]] bool tryRegisterItemForBusName(const std::string& busName);
+  void tryRegisterItemForBusName(const std::string& busName, std::function<void(bool)> callback = {});
   void scheduleBusOnlyRegistrationProbe(const std::string& busName, int retriesRemaining);
   void scheduleMetadataRefreshRetry(const std::string& itemId, int retriesRemaining);
   [[nodiscard]] bool isMetadataReady(const TrayItemInfo& item) const;
   void registerOrRefreshItem(const std::string& busName, const std::string& objectPath);
+  void attachItemProxySignals(const std::string& itemId, sdbus::IProxy& proxy);
+  void resolvePathOnlyItemProxy(const std::string& itemId);
+  void requestProcessNameForItem(const std::string& itemId, const std::string& busName);
   void refreshItemMetadata(const std::string& itemId);
   void ensureMenuCache(const std::string& itemId, const std::string& busName, const std::string& menuPath);
   void dropMenuCache(const std::string& itemId);
-  bool fetchMenuProperties(const std::string& itemId, const std::vector<std::int32_t>& entryIds,
-                           std::vector<TrayMenuEntry>& outEntries);
+  void fetchMenuProperties(const std::string& itemId, const std::vector<std::int32_t>& entryIds,
+                           std::function<void(bool)> callback);
   void requestMenuSubtree(const std::string& itemId, std::int32_t parentId, bool force = false);
   void requestMenuLayoutAfterAboutToShow(const std::string& itemId, std::int32_t parentId, std::uint64_t generation);
   void sendMenuEvent(const std::string& itemId, std::int32_t entryId, const std::string& eventName);
   [[nodiscard]] bool ensureItemProxy(const std::string& itemId);
-  [[nodiscard]] bool hasServiceOwner(const std::string& serviceName) const;
-  [[nodiscard]] std::string processNameForBusName(const std::string& busName) const;
   void removeItemsForBusName(const std::string& busName);
   void emitChanged();
 
@@ -134,6 +137,7 @@ private:
   std::unordered_map<std::string, TrayItemInfo> m_items;
   std::unordered_map<std::string, std::unique_ptr<sdbus::IProxy>> m_itemProxies;
   std::unordered_map<std::string, MenuCache> m_menuCache;
+  std::unordered_set<std::string> m_pathOnlyResolutionsInFlight;
   bool m_hostRegistered = true;
   bool m_started = false;
   ChangeCallback m_changeCallback;

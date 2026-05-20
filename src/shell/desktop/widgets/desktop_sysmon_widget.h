@@ -15,7 +15,7 @@ class GraphNode;
 class Label;
 class SystemMonitorService;
 
-enum class DesktopSysmonStat : std::uint8_t { CpuUsage, CpuTemp, GpuTemp, RamPct, SwapPct, NetRx, NetTx };
+enum class DesktopSysmonStat : std::uint8_t { CpuUsage, CpuTemp, GpuTemp, GpuVram, RamPct, SwapPct, NetRx, NetTx };
 
 class DesktopSysmonWidget : public DesktopWidget {
 public:
@@ -35,7 +35,7 @@ private:
   void syncLabel();
   void clearGraph();
   void updateGraph(Renderer& renderer);
-  [[nodiscard]] static float scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt);
+  [[nodiscard]] float scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt) const;
   [[nodiscard]] static double normalizedFromStats(DesktopSysmonStat stat, const SystemStats& stats, double& tempMin,
                                                   double& tempMax);
   [[nodiscard]] static const char* glyphName(DesktopSysmonStat stat);

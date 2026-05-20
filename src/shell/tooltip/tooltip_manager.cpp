@@ -152,7 +152,7 @@ void TooltipManager::dismissPopup() {
     m_state = State::Idle;
     break;
   case State::Showing:
-    if (m_sceneRoot == nullptr) {
+    if (m_sceneRoot == nullptr || m_surface == nullptr) {
       destroyPopup();
       return;
     }
@@ -173,7 +173,9 @@ void TooltipManager::dismissPopup() {
           destroyPopup();
         },
         this);
-    m_surface->requestRedraw();
+    if (m_surface != nullptr) {
+      m_surface->requestRedraw();
+    }
     break;
   case State::FadingOut:
   case State::Idle:

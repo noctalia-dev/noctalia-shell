@@ -26,7 +26,10 @@ namespace compositors {
     }
 
     [[nodiscard]] CompositorKind detectImpl() {
-      // Compositor-set socket env vars are the most reliable signal.
+      // Compositor-set env vars are the most reliable signal.
+      if (const char* v = std::getenv("LABWC_PID"); v != nullptr && v[0] != '\0') {
+        return CompositorKind::Labwc;
+      }
       if (const char* v = std::getenv("NIRI_SOCKET"); v != nullptr && v[0] != '\0') {
         return CompositorKind::Niri;
       }
@@ -51,6 +54,9 @@ namespace compositors {
       if (StringUtils::containsInsensitive(hint, "mango") || StringUtils::containsInsensitive(hint, "dwl")) {
         return CompositorKind::Mango;
       }
+      if (StringUtils::containsInsensitive(hint, "labwc")) {
+        return CompositorKind::Labwc;
+      }
       return CompositorKind::Unknown;
     }
 
@@ -71,6 +77,8 @@ namespace compositors {
       return "Sway";
     case CompositorKind::Mango:
       return "Mango";
+    case CompositorKind::Labwc:
+      return "Labwc";
     case CompositorKind::Unknown:
       return "Unknown";
     }

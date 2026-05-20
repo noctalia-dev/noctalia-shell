@@ -111,9 +111,18 @@ namespace {
   }
 
   void outputName(void* data, wl_output* wlOut, const char* name) {
-    auto* out = static_cast<WaylandConnection*>(data)->findOutputByWl(wlOut);
+    auto* self = static_cast<WaylandConnection*>(data);
+    auto* out = self->findOutputByWl(wlOut);
     if (out != nullptr && name != nullptr) {
-      out->connectorName = name;
+      const std::string nextName = name;
+      if (out->connectorName == nextName) {
+        return;
+      }
+      out->connectorName = nextName;
+
+      if (out->done) {
+        self->notifyOutputReady(wlOut);
+      }
     }
   }
 
@@ -267,6 +276,7 @@ void WaylandConnection::registerLayerSurface(wl_surface* surface, zwlr_layer_sur
 
 void WaylandConnection::unregisterSurface(wl_surface* surface) {
   if (surface != nullptr) {
+    m_seatHandler.forgetSurface(surface);
     m_surfaceOutputMap.erase(surface);
     m_layerSurfaceMap.erase(surface);
     if (m_lastPointerOutput != nullptr) {
@@ -302,6 +312,8 @@ std::string WaylandConnection::currentKeyboardLayoutName() const { return m_seat
 std::vector<std::string> WaylandConnection::keyboardLayoutNames() const { return m_seatHandler.layoutNames(); }
 WaylandSeat::LockKeysState WaylandConnection::keyboardLockKeysState() const { return m_seatHandler.lockKeysState(); }
 std::uint32_t WaylandConnection::lastInputSerial() const noexcept { return m_seatHandler.lastSerial(); }
+
+double WaylandConnection::userIdleSeconds() const noexcept { return m_seatHandler.userIdleSeconds(); }
 
 bool WaylandConnection::hasFreshPointerOutput(std::chrono::milliseconds maxAge) const noexcept {
   if (m_lastPointerOutput == nullptr || m_lastPointerOutputAt.time_since_epoch().count() == 0) {

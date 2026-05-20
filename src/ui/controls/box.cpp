@@ -134,8 +134,8 @@ void Box::setPanelStyle() {
   syncStyle();
 }
 
-void Box::setCardStyle(float scale) {
-  setFill(colorSpecFromRole(ColorRole::Surface));
+void Box::setCardStyle(float scale, float fillOpacity) {
+  setFill(colorSpecFromRole(ColorRole::SurfaceVariant, fillOpacity));
   setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), Style::borderWidth);
   setRadius(Style::scaledRadiusXl(scale));
 }

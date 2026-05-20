@@ -1,5 +1,6 @@
 #include "compositors/compositor_detect.h"
 #include "config/config_service.h"
+#include "core/process.h"
 #include "core/ui_phase.h"
 #include "dbus/upower/upower_service.h"
 #include "i18n/i18n.h"
@@ -34,6 +35,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -151,6 +153,65 @@ namespace {
     return options;
   }
 
+  std::vector<settings::SelectOption> discoverFontFamilyOptions() {
+    std::vector<settings::SelectOption> options;
+    if (!process::commandExists("fc-list")) {
+      return options;
+    }
+
+    const auto result = process::runSync({"fc-list", ":", "family"});
+    if (!result) {
+      return options;
+    }
+
+    std::unordered_set<std::string> seen;
+    seen.reserve(4096);
+
+    std::size_t lineStart = 0;
+    while (lineStart <= result.out.size()) {
+      const std::size_t lineEnd = result.out.find('\n', lineStart);
+      const std::string_view line = lineEnd == std::string::npos
+                                        ? std::string_view(result.out).substr(lineStart)
+                                        : std::string_view(result.out).substr(lineStart, lineEnd - lineStart);
+
+      std::size_t tokenStart = 0;
+      while (tokenStart <= line.size()) {
+        const std::size_t tokenEnd = line.find(',', tokenStart);
+        const std::string_view token =
+            tokenEnd == std::string::npos ? line.substr(tokenStart) : line.substr(tokenStart, tokenEnd - tokenStart);
+        const std::string family = StringUtils::trim(std::string(token));
+        if (!family.empty()) {
+          seen.insert(family);
+        }
+        if (tokenEnd == std::string::npos) {
+          break;
+        }
+        tokenStart = tokenEnd + 1;
+      }
+
+      if (lineEnd == std::string::npos) {
+        break;
+      }
+      lineStart = lineEnd + 1;
+    }
+
+    std::vector<std::string> sortedFamilies;
+    sortedFamilies.reserve(seen.size());
+    for (const auto& family : seen) {
+      sortedFamilies.push_back(family);
+    }
+    std::sort(sortedFamilies.begin(), sortedFamilies.end(), [](const std::string& a, const std::string& b) {
+      return StringUtils::toLower(a) < StringUtils::toLower(b);
+    });
+
+    options.reserve(sortedFamilies.size());
+    for (const auto& family : sortedFamilies) {
+      options.push_back(settings::SelectOption{family, family});
+    }
+
+    return options;
+  }
+
 } // namespace
 
 void SettingsWindow::applyPendingContentScrollTarget(float margin) {
@@ -207,6 +268,7 @@ void SettingsWindow::applyPendingContentScrollTarget(float margin) {
 settings::RegistryEnvironment SettingsWindow::buildRegistryEnvironment() const {
   settings::RegistryEnvironment env;
   env.niriBackdropSupported = (m_wayland != nullptr && compositors::isNiri());
+  env.niriOverviewTypeToLaunchSupported = (m_wayland != nullptr && compositors::isNiri());
   env.ddcutilAvailable = (m_dependencies != nullptr && m_dependencies->hasDdcutil());
   env.gammaControlAvailable = (m_wayland != nullptr && m_wayland->hasGammaControl());
   for (const auto& paletteInfo : noctalia::theme::availableCommunityPalettes()) {
@@ -218,6 +280,8 @@ settings::RegistryEnvironment SettingsWindow::buildRegistryEnvironment() const {
   for (const auto& t : noctalia::theme::CommunityTemplateService::availableTemplates()) {
     env.communityTemplates.push_back(settings::SelectOption{t.id, t.displayName});
   }
+  static const std::vector<settings::SelectOption> kFontFamilies = discoverFontFamilyOptions();
+  env.fontFamilies = kFontFamilies;
   if (m_wayland != nullptr) {
     for (const auto& output : m_wayland->outputs()) {
       if (output.output == nullptr || output.connectorName.empty()) {
@@ -279,12 +343,10 @@ settings::SettingsContentContext SettingsWindow::makeContentContext(const Config
       .showAdvanced = m_showAdvanced,
       .showOverriddenOnly = m_showOverriddenOnly,
       .batteryDeviceOptions = batteryDeviceOptions(),
-      .openWidgetPickerPath = m_openWidgetPickerPath,
       .editingWidgetName = m_editingWidgetName,
       .pendingDeleteWidgetName = m_pendingDeleteWidgetName,
       .pendingDeleteWidgetSettingPath = m_pendingDeleteWidgetSettingPath,
       .renamingWidgetName = m_renamingWidgetName,
-      .creatingWidgetType = m_creatingWidgetType,
       .requestRebuild = requestRebuild,
       .requestContentRebuild = requestContent,
       .resetContentScroll = [this]() { m_contentScrollState.offset = 0.0f; },
@@ -303,7 +365,14 @@ settings::SettingsContentContext SettingsWindow::makeContentContext(const Config
       .renameWidgetInstance = renameWidget,
       .openSessionActionEntryEditor = [this](std::size_t entryIndex) { openSessionActionEntryEditor(entryIndex); },
       .openIdleBehaviorEntryEditor = [this](std::size_t entryIndex) { openIdleBehaviorEntryEditor(entryIndex); },
+      .openIdleBehaviorCreateEditor = [this]() { openIdleBehaviorCreateEditor(); },
+      .registerIdleLiveStatusLabel =
+          [this](Label* label) {
+            m_idleLiveStatusLabel = label;
+            refreshIdleLiveStatusText();
+          },
       .afterSessionActionsCommit = {},
+      .afterIdleBehaviorApply = {},
       .closeHostedEditor = {},
   };
 }
@@ -315,6 +384,7 @@ void SettingsWindow::rebuildSettingsContent() {
   }
 
   m_pendingContentScrollTarget = nullptr;
+  m_idleLiveStatusLabel = nullptr;
   while (!m_contentContainer->children().empty()) {
     m_contentContainer->removeChild(m_contentContainer->children().back().get());
   }
@@ -646,6 +716,26 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   m_settingsRegistry =
       settings::buildSettingsRegistry(cfg, selectedBar, selectedMonitorOverride, buildRegistryEnvironment());
 
+  if (m_openWallpaperPanel) {
+    auto it = std::find_if(m_settingsRegistry.begin(), m_settingsRegistry.end(), [](const settings::SettingEntry& e) {
+      return e.section == "wallpaper" && e.group == "general" &&
+             e.path == std::vector<std::string>{"wallpaper", "fill_mode"};
+    });
+    settings::SettingEntry btn{
+        .section = "wallpaper",
+        .group = "general",
+        .title = i18n::tr("settings.schema.wallpaper.panel.label"),
+        .subtitle = i18n::tr("settings.schema.wallpaper.panel.description"),
+        .path = {},
+        .control = settings::ButtonSetting{.label = i18n::tr("settings.schema.wallpaper.panel.button"),
+                                           .action = m_openWallpaperPanel,
+                                           .glyph = "wallpaper-selector"},
+        .searchText = "wallpaper panel open selector browse",
+        .visibleWhen = std::nullopt,
+    };
+    m_settingsRegistry.insert(it, std::move(btn));
+  }
+
   if (m_openDesktopWidgetEditor) {
     auto it = std::find_if(m_settingsRegistry.begin(), m_settingsRegistry.end(), [](const settings::SettingEntry& e) {
       return e.section == "desktop" && e.group == "widgets";
@@ -659,8 +749,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         .title = i18n::tr("settings.schema.desktop.widgets-editor.label"),
         .subtitle = i18n::tr("settings.schema.desktop.widgets-editor.description"),
         .path = {},
-        .control = settings::ButtonSetting{i18n::tr("settings.schema.desktop.widgets-editor.button"),
-                                           m_openDesktopWidgetEditor},
+        .control = settings::ButtonSetting{.label = i18n::tr("settings.schema.desktop.widgets-editor.button"),
+                                           .action = m_openDesktopWidgetEditor,
+                                           .glyph = {}},
         .searchText = "desktop widgets editor edit",
         .visibleWhen = std::nullopt,
     };
@@ -704,6 +795,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   m_sceneRoot->setAnimationManager(&m_animations);
   if (m_surface != nullptr && m_renderContext != nullptr && m_wayland != nullptr) {
     m_selectPopup = std::make_unique<SelectDropdownPopup>(*m_wayland, *m_renderContext);
+    m_selectPopup->setShadowConfig(cfg.shell.shadow);
     m_selectPopup->setParent(m_surface->xdgSurface(), m_output);
     m_sceneRoot->setPopupContext(m_selectPopup.get());
   }

@@ -37,9 +37,7 @@ public:
 
   [[nodiscard]] float preferredWidth() const override { return scaled(980.0f); }
   [[nodiscard]] float preferredHeight() const override { return scaled(700.0f); }
-  [[nodiscard]] bool centeredHorizontally() const override { return true; }
-  [[nodiscard]] bool centeredVertically() const override { return true; }
-  [[nodiscard]] bool prefersAttachedToBar() const noexcept override;
+  [[nodiscard]] PanelPlacement panelPlacement() const noexcept override;
   [[nodiscard]] LayerShellLayer layer() const override { return LayerShellLayer::Overlay; }
   [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::Exclusive; }
   [[nodiscard]] InputArea* initialFocusArea() const override;
@@ -47,6 +45,7 @@ public:
 private:
   void doLayout(Renderer& renderer, float width, float height) override;
   void doUpdate(Renderer& renderer) override;
+  void onPanelCardOpacityChanged(float opacity) override;
   // "ALL" is represented by an empty connector string.
   struct MonitorChoice {
     std::string connector; // empty = ALL

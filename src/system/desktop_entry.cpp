@@ -220,6 +220,8 @@ namespace {
         entry.noDisplay = parseDesktopBool(value);
       } else if (key == "Hidden") {
         entry.hidden = parseDesktopBool(value);
+      } else if (key == "Path") {
+        entry.workingDir = std::string(value);
       } else if (key == "Terminal") {
         entry.terminal = parseDesktopBool(value);
       } else if (key == "Actions") {

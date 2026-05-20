@@ -3,6 +3,7 @@
 #include "render/animation/animation_manager.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
+#include "shell/settings/config_export_dialog_popup.h"
 #include "shell/settings/search_picker_popup.h"
 #include "shell/settings/session_actions_editor_popup.h"
 #include "shell/settings/settings_registry.h"
@@ -25,6 +26,7 @@ class Button;
 class ConfigService;
 class DependencyService;
 class Flex;
+class Label;
 class RenderContext;
 class UPowerService;
 class WaylandConnection;
@@ -61,6 +63,9 @@ public:
   void onFontChanged();
   void onExternalOptionsChanged();
   void setOpenDesktopWidgetEditor(std::function<void()> callback) { m_openDesktopWidgetEditor = std::move(callback); }
+  void setOpenWallpaperPanel(std::function<void()> callback) { m_openWallpaperPanel = std::move(callback); }
+
+  void onSecondTick();
 
 private:
   void destroyWindow();
@@ -85,14 +90,18 @@ private:
   void clearStatusMessage();
   void clearTransientSettingsState();
   void openActionsMenu();
+  void openConfigExportDialog();
   void openBarWidgetAddPopup(const std::vector<std::string>& lanePath);
   void openSearchPickerPopup(const std::string& title, const std::vector<settings::SelectOption>& options,
                              const std::string& selectedValue, const std::string& placeholder,
                              const std::string& emptyText, const std::vector<std::string>& settingPath);
   void openSessionActionEntryEditor(std::size_t index);
   void openIdleBehaviorEntryEditor(std::size_t index);
+  void openIdleBehaviorCreateEditor();
+  void refreshIdleLiveStatusText();
   void saveSupportReport();
-  void saveFlattenedConfig();
+  void saveConfigExport(settings::ConfigExportMode mode);
+  [[nodiscard]] bool headerDragRegionContains(float sceneX, float sceneY) const;
   void setSettingOverride(std::vector<std::string> path, ConfigOverrideValue value);
   void setSettingOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides);
   void clearSettingOverride(std::vector<std::string> path);
@@ -115,6 +124,7 @@ private:
   RenderContext* m_renderContext = nullptr;
   DependencyService* m_dependencies = nullptr;
   UPowerService* m_upower = nullptr;
+  Label* m_idleLiveStatusLabel = nullptr;
 
   std::unique_ptr<ToplevelSurface> m_surface;
   std::unique_ptr<Node> m_sceneRoot;
@@ -126,6 +136,7 @@ private:
   ScrollView* m_contentScrollView = nullptr;
   std::unique_ptr<ContextMenuPopup> m_actionsMenuPopup;
   std::unique_ptr<settings::WidgetAddPopup> m_widgetAddPopup;
+  std::unique_ptr<settings::ConfigExportDialogPopup> m_configExportDialogPopup;
   std::unique_ptr<settings::SearchPickerPopup> m_searchPickerPopup;
   std::unique_ptr<settings::SessionActionsEditorPopup> m_sessionActionsEditorPopup;
   InputDispatcher m_inputDispatcher;
@@ -145,12 +156,10 @@ private:
   bool m_scrollToPendingContentTarget = false;
   Node* m_pendingContentScrollTarget = nullptr;
   std::string m_searchQuery;
-  std::string m_openWidgetPickerPath;
   std::string m_editingWidgetName;
   std::string m_pendingDeleteWidgetName;
   std::string m_pendingDeleteWidgetSettingPath;
   std::string m_renamingWidgetName;
-  std::string m_creatingWidgetType;
   std::string m_creatingBarName;
   std::string m_renamingBarName;
   std::string m_pendingDeleteBarName;
@@ -169,4 +178,5 @@ private:
   bool m_showOverriddenOnly = false;
   bool m_statusIsError = false;
   std::function<void()> m_openDesktopWidgetEditor;
+  std::function<void()> m_openWallpaperPanel;
 };

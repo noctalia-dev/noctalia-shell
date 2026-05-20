@@ -2,13 +2,14 @@
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
-#include "i18n/i18n.h"
 #include "render/render_context.h"
 #include "render/scene/node.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/label.h"
+#include "ui/controls/select_dropdown_popup.h"
 #include "ui/palette.h"
+#include "ui/popup_chrome.h"
 #include "ui/style.h"
 #include "wayland/popup_surface.h"
 #include "wayland/wayland_connection.h"
@@ -83,7 +84,9 @@ namespace settings {
 
     if (!openPopupAsChild(cfg, parentXdgSurface, parentWlSurface, output)) {
       close();
+      return;
     }
+    m_parentOutput = output;
   }
 
   void SessionActionsEditorPopup::close() { destroyPopup(); }
@@ -91,14 +94,35 @@ namespace settings {
   bool SessionActionsEditorPopup::isOpen() const noexcept { return DialogPopupHost::isOpen(); }
 
   bool SessionActionsEditorPopup::onPointerEvent(const PointerEvent& event) {
+    if (m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen()) {
+      if (m_selectPopup->onPointerEvent(event)) {
+        return true;
+      }
+      if (event.type == PointerEvent::Type::Button && event.state == 1) {
+        m_selectPopup->closeSelectDropdown();
+        return true;
+      }
+    }
     return DialogPopupHost::onPointerEvent(event);
   }
 
   void SessionActionsEditorPopup::onKeyboardEvent(const KeyboardEvent& event) {
+    if (m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen()) {
+      m_selectPopup->onKeyboardEvent(event);
+      return;
+    }
     DialogPopupHost::onKeyboardEvent(event);
   }
 
   wl_surface* SessionActionsEditorPopup::wlSurface() const noexcept { return DialogPopupHost::wlSurface(); }
+
+  bool SessionActionsEditorPopup::ownsSelectDropdownSurface(wl_surface* surface) const noexcept {
+    return m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen() && m_selectPopup->wlSurface() == surface;
+  }
+
+  bool SessionActionsEditorPopup::isSelectDropdownOpen() const noexcept {
+    return m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen();
+  }
 
   void SessionActionsEditorPopup::populateContent(Node* contentParent, std::uint32_t /*width*/,
                                                   std::uint32_t /*height*/) {
@@ -168,6 +192,17 @@ namespace settings {
 
     root->addChild(std::move(body));
     contentParent->addChild(std::move(root));
+
+    if (wayland() != nullptr && renderContext() != nullptr && xdgSurface() != nullptr) {
+      if (m_selectPopup == nullptr) {
+        m_selectPopup = std::make_unique<SelectDropdownPopup>(*wayland(), *renderContext());
+      }
+      if (config() != nullptr) {
+        m_selectPopup->setShadowConfig(config()->config().shell.shadow);
+      }
+      m_selectPopup->setParent(xdgSurface(), m_parentOutput);
+      contentParent->setPopupContext(m_selectPopup.get());
+    }
   }
 
   void SessionActionsEditorPopup::layoutSheet(float contentWidth, float contentHeight) {
@@ -176,24 +211,33 @@ namespace settings {
     }
 
     Renderer& renderer = *renderContext();
+    const float pad = computePadding(uiScale());
+    const float panelW = kPopupWidth * m_scale;
 
-    const LayoutSize pref = m_root->measure(renderer, LayoutConstraints::available(contentWidth, 1.0e6f));
-    const float outerPadding = computePadding(uiScale()) * 2.0f;
-    const float desiredOuterHeight = std::ceil(pref.height + outerPadding);
+    float cw = std::max(1.0f, contentWidth);
+    float ch = std::max(1.0f, contentHeight);
+
+    LayoutSize pref = m_root->measure(renderer, LayoutConstraints::available(cw, 1.0e6f));
+    const float panelH = std::ceil(pref.height + pad * 2.0f);
+    const ShellConfig::ShadowConfig shadow =
+        config() != nullptr ? config()->config().shell.shadow : ShellConfig::ShadowConfig{};
+    const auto geo = popup_chrome::computeGeometry(panelW, panelH, shadow);
     const float maxOuterHeight =
         m_parentHeight > 0 ? std::max(1.0f, static_cast<float>(m_parentHeight) - (kParentMargin * m_scale)) : 1.0e6f;
     const std::uint32_t nextHeight =
-        static_cast<std::uint32_t>(std::max(1.0f, std::min(desiredOuterHeight, maxOuterHeight)));
-    const std::uint32_t nextWidth = static_cast<std::uint32_t>(std::max(1.0f, std::ceil(kPopupWidth * m_scale)));
+        static_cast<std::uint32_t>(std::max(1.0f, std::min(static_cast<float>(geo.surfaceHeight), maxOuterHeight)));
+    const std::uint32_t nextWidth = geo.surfaceWidth;
+
     if (m_surface->height() != nextHeight || m_surface->width() != nextWidth) {
       m_surface->resize(nextWidth, nextHeight);
-      return;
+      syncSceneGeometryFromSurface();
+      cw = std::max(1.0f, m_chrome.contentWidth - pad * 2.0f);
+      ch = std::max(1.0f, m_chrome.contentHeight - pad * 2.0f);
+      pref = m_root->measure(renderer, LayoutConstraints::available(cw, 1.0e6f));
     }
 
-    const float sheetH = std::max(1.0f, std::min(pref.height, contentHeight));
-
-    m_root->setSize(contentWidth, sheetH);
-    m_root->layout(renderer);
+    const float sheetH = std::max(1.0f, std::min(pref.height, ch));
+    m_root->arrange(renderer, LayoutRect{.x = 0.0f, .y = 0.0f, .width = cw, .height = sheetH});
   }
 
   void SessionActionsEditorPopup::cancelToFacade() {}
@@ -201,6 +245,10 @@ namespace settings {
   InputArea* SessionActionsEditorPopup::initialFocusArea() { return nullptr; }
 
   void SessionActionsEditorPopup::onSheetClose() {
+    if (m_selectPopup != nullptr) {
+      m_selectPopup->closeSelectDropdown();
+    }
+    m_parentOutput = nullptr;
     m_sheetTitle.clear();
     m_removeAction = nullptr;
     m_populateSheetBody = nullptr;

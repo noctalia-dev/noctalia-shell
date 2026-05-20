@@ -152,6 +152,7 @@ public:
   [[nodiscard]] std::vector<std::string> keyboardLayoutNames() const;
   [[nodiscard]] WaylandSeat::LockKeysState keyboardLockKeysState() const;
   [[nodiscard]] std::uint32_t lastInputSerial() const noexcept;
+  [[nodiscard]] double userIdleSeconds() const noexcept;
   [[nodiscard]] bool hasFreshPointerOutput(std::chrono::milliseconds maxAge) const noexcept;
   [[nodiscard]] wl_output* outputForSurface(wl_surface* surface) const noexcept;
 

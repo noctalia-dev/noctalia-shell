@@ -62,12 +62,12 @@ std::unique_ptr<Flex> WeatherTab::create() {
   m_leftColumn = leftColumn.get();
 
   auto currentCard = std::make_unique<Flex>();
-  applySectionCardStyle(*currentCard, scale);
+  applySectionCardStyle(*currentCard, scale, panelCardOpacity());
   m_currentCard = currentCard.get();
   currentCard->setDirection(FlexDirection::Horizontal);
-  currentCard->setAlign(FlexAlign::Center);
-  currentCard->setJustify(FlexJustify::Center);
-  currentCard->setGap((Style::spaceMd + Style::spaceXs) * scale);
+  currentCard->setAlign(FlexAlign::Stretch);
+  currentCard->setPadding(Style::spaceXs * scale, Style::spaceXs * scale);
+  currentCard->setGap(Style::spaceSm * scale);
   currentCard->setFlexGrow(1.0f);
   currentCard->setClipChildren(true);
 
@@ -78,17 +78,26 @@ std::unique_ptr<Flex> WeatherTab::create() {
   effectNode->setRadius(Style::scaledRadiusXl(scale));
   m_effectNode = static_cast<EffectNode*>(currentCard->addChild(std::move(effectNode)));
 
+  auto glyphColumn = std::make_unique<Flex>();
+  glyphColumn->setDirection(FlexDirection::Horizontal);
+  glyphColumn->setAlign(FlexAlign::Center);
+  glyphColumn->setJustify(FlexJustify::End);
+  glyphColumn->setFlexGrow(0.9f);
+  glyphColumn->setFillHeight(true);
+  m_glyphColumn = glyphColumn.get();
+
   auto currentGlyph = std::make_unique<Glyph>();
   currentGlyph->setGlyph("weather-cloud");
   currentGlyph->setGlyphSize(kCurrentGlyphSize * scale);
   currentGlyph->setColor(colorSpecFromRole(ColorRole::Primary));
   m_currentGlyph = currentGlyph.get();
-  currentCard->addChild(std::move(currentGlyph));
+  glyphColumn->addChild(std::move(currentGlyph));
+  currentCard->addChild(std::move(glyphColumn));
 
   auto currentText = std::make_unique<Flex>();
   currentText->setDirection(FlexDirection::Vertical);
   currentText->setAlign(FlexAlign::Stretch);
-  currentText->setJustify(FlexJustify::SpaceBetween);
+  currentText->setJustify(FlexJustify::Center);
   currentText->setGap(Style::spaceXs * scale);
   currentText->setFlexGrow(1.0f);
   currentText->setFillWidth(true);
@@ -104,6 +113,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   temp->setBold(true);
   temp->setFontSize(Style::fontSizeTitle * 2.35f * scale);
   temp->setColor(colorSpecFromRole(ColorRole::OnSurface));
+  temp->setMaxLines(1);
   m_currentTempLabel = temp.get();
   currentTop->addChild(std::move(temp));
 
@@ -111,6 +121,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   hilo->setText("--↑ --↓");
   hilo->setFontSize(Style::fontSizeBody * scale);
   hilo->setColor(colorSpecFromRole(ColorRole::Primary));
+  hilo->setMaxLines(1);
   m_currentHiLoLabel = hilo.get();
   currentTop->addChild(std::move(hilo));
 
@@ -123,7 +134,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   currentDesc->setText(i18n::tr("control-center.weather.waiting"));
   currentDesc->setFontSize(Style::fontSizeBody * scale);
   currentDesc->setColor(colorSpecFromRole(ColorRole::OnSurface));
-  currentDesc->setMaxLines(3);
+  currentDesc->setMaxLines(1);
   m_currentDescLabel = currentDesc.get();
   currentBottom->addChild(std::move(currentDesc));
 
@@ -132,6 +143,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   updated->setCaptionStyle();
   updated->setFontSize(Style::fontSizeCaption * scale);
   updated->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+  updated->setMaxLines(1);
   m_updatedLabel = updated.get();
   currentBottom->addChild(std::move(updated));
 
@@ -141,6 +153,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   status->setFontSize(Style::fontSizeCaption * scale);
   status->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   status->setVisible(false);
+  status->setMaxLines(1);
   m_statusLabel = status.get();
   currentBottom->addChild(std::move(status));
 
@@ -151,7 +164,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   leftColumn->addChild(std::move(currentCard));
 
   auto detailsCard = std::make_unique<Flex>();
-  applySectionCardStyle(*detailsCard, scale);
+  applySectionCardStyle(*detailsCard, scale, panelCardOpacity());
   m_detailsCard = detailsCard.get();
   detailsCard->setPadding(Style::spaceMd * scale, Style::spaceMd * scale, Style::spaceLg * scale,
                           Style::spaceMd * scale);
@@ -211,7 +224,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   tab->addChild(std::move(leftColumn));
 
   auto forecastColumn = std::make_unique<Flex>();
-  applySectionCardStyle(*forecastColumn, scale);
+  applySectionCardStyle(*forecastColumn, scale, panelCardOpacity());
   forecastColumn->setGap(0.0f);
   forecastColumn->setPadding(0.0f, Style::spaceMd * scale);
   forecastColumn->setFlexGrow(2.0f);
@@ -306,28 +319,6 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
       m_leftColumn != nullptr
           ? std::max(0.0f, m_leftColumn->width() - (m_leftColumn->paddingLeft() + m_leftColumn->paddingRight()))
           : contentWidth;
-  float currentTextWidth = m_currentText->width();
-  if (m_currentCard != nullptr && m_currentGlyph != nullptr) {
-    const float currentCardWidth = leftColumnWidth > 0.0f ? leftColumnWidth : m_currentCard->width();
-    const float cardInnerWidth =
-        std::max(0.0f, currentCardWidth - (m_currentCard->paddingLeft() + m_currentCard->paddingRight()));
-    const float availableTextWidth = std::max(1.0f, cardInnerWidth - m_currentGlyph->width() - m_currentCard->gap());
-    const float balancedTextWidth = std::max(Style::controlHeightLg * 4.4f * contentScale(), cardInnerWidth * 0.58f);
-    currentTextWidth = std::min(availableTextWidth, balancedTextWidth);
-    m_currentText->setMaxWidth(currentTextWidth);
-  }
-  if (m_currentTempLabel != nullptr) {
-    m_currentTempLabel->setMaxWidth(currentTextWidth);
-  }
-  if (m_currentDescLabel != nullptr) {
-    m_currentDescLabel->setMaxWidth(currentTextWidth);
-  }
-  if (m_currentHiLoLabel != nullptr) {
-    m_currentHiLoLabel->setMaxWidth(currentTextWidth);
-  }
-  if (m_updatedLabel != nullptr) {
-    m_updatedLabel->setMaxWidth(currentTextWidth);
-  }
   if (m_currentCard != nullptr) {
     m_currentCard->setMinWidth(leftColumnWidth);
   }
@@ -354,11 +345,11 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
     m_detailsCard->setFlexGrow(0.0f);
   }
 
-  if (m_currentGlyph != nullptr && m_currentText != nullptr && m_currentCard != nullptr) {
+  if (m_currentGlyph != nullptr && m_currentCard != nullptr) {
     const float cardInnerHeight =
         std::max(0.0f, m_currentCard->height() - (m_currentCard->paddingTop() + m_currentCard->paddingBottom()));
     const float desiredGlyph =
-        std::max(Style::controlHeightLg * 1.8f * scale, std::min(m_currentText->height(), cardInnerHeight));
+        std::max(Style::controlHeightLg * 1.8f * scale, std::min(kCurrentGlyphSize * scale, cardInnerHeight * 0.8f));
     m_currentGlyph->setGlyphSize(desiredGlyph);
   }
 
@@ -465,6 +456,7 @@ void WeatherTab::onClose() {
   m_rootLayout = nullptr;
   m_leftColumn = nullptr;
   m_currentCard = nullptr;
+  m_glyphColumn = nullptr;
   m_detailsCard = nullptr;
   m_currentText = nullptr;
   m_forecastColumn = nullptr;
@@ -667,14 +659,22 @@ void WeatherTab::sync(Renderer& renderer) {
   }
   auto unit = m_weather->displayTemperatureUnit();
   if (m_tempMaxLabel != nullptr) {
-    auto temp =
-        static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.forecastDays.front().temperatureMaxC)));
-    m_tempMaxLabel->setText(!snapshot.forecastDays.empty() ? std::format("{}{}", temp, unit) : std::string("--"));
+    if (!snapshot.forecastDays.empty()) {
+      const int temp =
+          static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.forecastDays.front().temperatureMaxC)));
+      m_tempMaxLabel->setText(std::format("{}{}", temp, unit));
+    } else {
+      m_tempMaxLabel->setText("--");
+    }
   }
   if (m_tempMinLabel != nullptr) {
-    auto temp =
-        static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.forecastDays.front().temperatureMinC)));
-    m_tempMinLabel->setText(!snapshot.forecastDays.empty() ? std::format("{}{}", temp, unit) : std::string("--"));
+    if (!snapshot.forecastDays.empty()) {
+      const int temp =
+          static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.forecastDays.front().temperatureMinC)));
+      m_tempMinLabel->setText(std::format("{}{}", temp, unit));
+    } else {
+      m_tempMinLabel->setText("--");
+    }
   }
   if (m_elevationLabel != nullptr) {
     const bool imperial = m_weather->useImperial();

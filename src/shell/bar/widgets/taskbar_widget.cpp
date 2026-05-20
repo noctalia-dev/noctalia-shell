@@ -34,10 +34,11 @@
 
 TaskbarWidget::TaskbarWidget(CompositorPlatform& platform, wl_output* output, bool groupByWorkspace,
                              bool showAllOutputs, bool onlyActiveWorkspace, bool showWorkspaceLabel,
-                             bool hideEmptyWorkspaces, std::string barPosition)
+                             bool hideEmptyWorkspaces, std::string barPosition, ShellConfig::ShadowConfig shadowConfig)
     : m_platform(platform), m_output(output), m_groupByWorkspace(groupByWorkspace), m_showAllOutputs(showAllOutputs),
       m_onlyActiveWorkspace(onlyActiveWorkspace), m_showWorkspaceLabel(showWorkspaceLabel),
-      m_hideEmptyWorkspaces(hideEmptyWorkspaces), m_barPosition(std::move(barPosition)) {
+      m_hideEmptyWorkspaces(hideEmptyWorkspaces), m_barPosition(std::move(barPosition)),
+      m_shadowConfig(std::move(shadowConfig)) {
   buildDesktopIconIndex();
 }
 
@@ -92,6 +93,11 @@ void TaskbarWidget::doLayout(Renderer& renderer, float containerWidth, float con
   const bool wasVertical = m_vertical;
   m_vertical = containerHeight > containerWidth;
   if (m_vertical != wasVertical) {
+    m_rebuildPending = true;
+  }
+  const std::uint64_t textMetricsGeneration = renderer.textMetricsGeneration();
+  if (m_textMetricsGeneration != textMetricsGeneration) {
+    m_textMetricsGeneration = textMetricsGeneration;
     m_rebuildPending = true;
   }
 
@@ -389,8 +395,8 @@ void TaskbarWidget::updateModels() {
   std::unordered_map<std::string, std::vector<std::string>> runningByWorkspace;
   std::vector<WorkspaceWindowAssignment> workspaceAssignments;
 
-  const bool workspaceAware = m_groupByWorkspace || m_onlyActiveWorkspace;
-  if (workspaceAware) {
+  {
+    // Always load compositor workspace layout so flat-strip tile order can track window moves.
     nextWorkspaces.reserve(32);
     std::unordered_map<wl_output*, int> monitorOrdinal;
     int nextOrdinal = 1;
@@ -521,7 +527,7 @@ void TaskbarWidget::updateModels() {
     return a.handleKey < b.handleKey;
   });
 
-  if (workspaceAware && !workspaceAssignments.empty()) {
+  if (!workspaceAssignments.empty()) {
     if (assignmentMode == TaskbarAssignmentMode::WorkspaceOccurrenceTitle) {
       std::vector<TaskbarWindowCandidate> candidates;
       candidates.reserve(nextTasks.size());
@@ -901,7 +907,7 @@ void TaskbarWidget::updateModels() {
     }
   }
 
-  if (workspaceAware && workspaceAssignments.empty() && !runningByWorkspace.empty()) {
+  if (workspaceAssignments.empty() && !runningByWorkspace.empty()) {
     std::unordered_map<std::uintptr_t, std::string> workspaceByHandle;
     std::unordered_map<std::string, std::size_t> appOccurrence;
     for (const auto& ws : nextWorkspaces) {
@@ -937,7 +943,7 @@ void TaskbarWidget::updateModels() {
     }
   }
 
-  if (workspaceAware && !nextWorkspaces.empty() && assignmentMode != TaskbarAssignmentMode::WorkspaceOccurrenceTitle) {
+  if (!nextWorkspaces.empty() && assignmentMode != TaskbarAssignmentMode::WorkspaceOccurrenceTitle) {
     wl_output* activeOut = m_platform.activeToplevelOutput();
     if (activeOut != nullptr) {
       for (auto& task : nextTasks) {
@@ -1062,6 +1068,15 @@ void TaskbarWidget::updateModels() {
 
   if (!m_groupByWorkspace) {
     nextWorkspaces.clear();
+    std::stable_sort(nextTasks.begin(), nextTasks.end(), [](const TaskModel& a, const TaskModel& b) {
+      if (a.workspaceOrder != b.workspaceOrder) {
+        return a.workspaceOrder < b.workspaceOrder;
+      }
+      if (a.order != b.order) {
+        return a.order < b.order;
+      }
+      return a.handleKey < b.handleKey;
+    });
   }
 
   if (modelsEqual(nextTasks, nextWorkspaces)) {
@@ -1164,6 +1179,7 @@ void TaskbarWidget::openTaskContextMenu(const TaskModel& task, InputArea& area) 
   if (m_contextMenuPopup == nullptr) {
     m_contextMenuPopup = std::make_unique<ContextMenuPopup>(m_platform.wayland(), *renderContext);
   }
+  m_contextMenuPopup->setShadowConfig(m_shadowConfig);
   m_contextMenuPopup->setOnActivate([this, entryActions](const ContextMenuControlEntry& entry) {
     if (entry.id >= 0) {
       const auto idx = static_cast<std::size_t>(entry.id);
@@ -1318,8 +1334,10 @@ std::string TaskbarWidget::resolveIconPath(const std::string& appId, const std::
     return {};
   }
 
+  const int iconTargetSize = static_cast<int>(std::round(48.0f * m_contentScale));
+
   if (!iconNameOrPath.empty()) {
-    return m_iconResolver.resolve(iconNameOrPath);
+    return m_iconResolver.resolve(iconNameOrPath, iconTargetSize);
   }
 
   if (const auto internal = internal_apps::metadataForAppId(appId); internal.has_value()) {
@@ -1329,9 +1347,9 @@ std::string TaskbarWidget::resolveIconPath(const std::string& appId, const std::
   const std::string appIdLower = toLower(appId);
   const auto it = m_appIconsByLower.find(appIdLower);
   if (it != m_appIconsByLower.end()) {
-    return m_iconResolver.resolve(it->second);
+    return m_iconResolver.resolve(it->second, iconTargetSize);
   }
-  return m_iconResolver.resolve(appId);
+  return m_iconResolver.resolve(appId, iconTargetSize);
 }
 
 bool TaskbarWidget::activeWorkspaceIndex(std::size_t& index) const {

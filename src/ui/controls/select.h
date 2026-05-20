@@ -50,6 +50,7 @@ private:
   void doArrange(Renderer& renderer, const LayoutRect& rect) override;
   void syncTriggerText();
   void applyVisualState();
+  void animateCaret(bool open);
   void handleKey(std::uint32_t sym, std::uint32_t utf32, bool pressed);
   void toggleOpen();
   void closeMenu();
@@ -66,6 +67,8 @@ private:
   std::string m_placeholder;
   bool m_enabled = true;
   bool m_open = false;
+  float m_caretProgress = 0.0f;
+  std::uint32_t m_caretAnimId = 0;
   float m_fixedWidth = 0.0f;
   float m_fontSize = Style::fontSizeBody;
   float m_controlHeight = Style::controlHeight;

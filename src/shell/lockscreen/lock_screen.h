@@ -41,6 +41,11 @@ public:
   void onPointerEvent(const PointerEvent& event);
   void onKeyboardEvent(const KeyboardEvent& event);
   [[nodiscard]] bool isActive() const noexcept;
+  [[nodiscard]] bool isSessionLocked() const noexcept;
+
+  /// Runs `fn` after the session reaches interactive lock (`m_locked`), or immediately if already locked.
+  /// Used so suspend runs after lock surfaces exist. Cleared if lock fails or the lock request is aborted.
+  void runAfterSessionLocked(std::function<void()> fn);
 
   void registerIpc(IpcService& ipc);
 
@@ -80,6 +85,7 @@ private:
   bool m_statusIsError = false;
   bool m_lockPending = false;
   bool m_locked = false;
+  std::function<void()> m_pendingAfterLocked;
   std::function<void()> m_onSessionLocked;
   std::function<void()> m_onSessionUnlocked;
 };

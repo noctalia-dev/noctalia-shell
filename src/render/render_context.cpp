@@ -19,14 +19,12 @@
 #include "render/scene/spinner_node.h"
 #include "render/scene/text_node.h"
 #include "render/scene/wallpaper_node.h"
-#include "ui/style.h"
 
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <format>
-#include <optional>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -147,6 +145,11 @@ void RenderContext::setTextFontFamily(std::string family) {
   ++m_textMetricsGeneration;
 }
 
+void RenderContext::notifyFontConfigChanged() {
+  m_textRenderer.notifyFontConfigChanged();
+  ++m_textMetricsGeneration;
+}
+
 void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
   UiPhaseScope renderPhase(UiPhase::Render);
   if (m_backend == nullptr) {
@@ -174,8 +177,8 @@ void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
 }
 
 TextMetrics RenderContext::measureText(std::string_view text, float fontSize, bool bold, float maxWidth, int maxLines,
-                                       TextAlign align) {
-  auto m = m_textRenderer.measure(text, fontSize, bold, maxWidth, maxLines, align);
+                                       TextAlign align, std::string_view fontFamily) {
+  auto m = m_textRenderer.measure(text, fontSize, bold, maxWidth, maxLines, align, fontFamily);
   return TextMetrics{.width = m.width,
                      .left = m.left,
                      .right = m.right,
@@ -260,17 +263,18 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
   case NodeType::Text: {
     const auto* text = static_cast<const TextNode*>(node);
     if (!text->text().empty()) {
+      const auto& font = text->fontFamily();
       if (text->hasShadow()) {
         auto shadowColor = text->shadowColor();
         shadowColor.a *= effectiveOpacity;
         const Mat3 shadowTransform = worldTransform * Mat3::translation(text->shadowOffsetX(), text->shadowOffsetY());
         m_textRenderer.draw(sw, sh, 0.0f, 0.0f, text->text(), text->fontSize(), shadowColor, shadowTransform,
-                            text->bold(), text->maxWidth(), text->maxLines(), text->textAlign());
+                            text->bold(), text->maxWidth(), text->maxLines(), text->textAlign(), font);
       }
       auto color = text->color();
       color.a *= effectiveOpacity;
       m_textRenderer.draw(sw, sh, 0.0f, 0.0f, text->text(), text->fontSize(), color, worldTransform, text->bold(),
-                          text->maxWidth(), text->maxLines(), text->textAlign());
+                          text->maxWidth(), text->maxLines(), text->textAlign(), font);
     }
     break;
   }

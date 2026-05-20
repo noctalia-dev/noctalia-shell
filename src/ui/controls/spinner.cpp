@@ -3,9 +3,7 @@
 #include "render/animation/animation_manager.h"
 #include "render/scene/spinner_node.h"
 #include "ui/palette.h"
-#include "ui/style.h"
 
-#include <cmath>
 #include <memory>
 
 namespace {

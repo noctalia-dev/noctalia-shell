@@ -10,6 +10,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 class IpcService;
@@ -44,7 +45,8 @@ public:
   [[nodiscard]] bool matchesKeybind(KeybindAction action, std::uint32_t sym, std::uint32_t modifiers) const;
   [[nodiscard]] int watchFd() const noexcept { return m_inotifyFd; }
   [[nodiscard]] std::string buildSupportReport() const;
-  [[nodiscard]] std::string buildFlattenedConfig() const;
+  [[nodiscard]] std::string buildMergedUserConfig() const;
+  [[nodiscard]] std::string buildEffectiveConfig() const;
   [[nodiscard]] bool shouldRunSetupWizard() const;
 
   void addReloadCallback(ReloadCallback callback);
@@ -65,8 +67,12 @@ public:
 
   // Persist a theme-mode override to settings.toml and trigger the reload pipeline.
   void setThemeMode(ThemeMode mode);
+  // Persist `[theme].wallpaper_scheme` (palette-from-wallpaper generation) and reload. Returns false if unknown.
+  [[nodiscard]] bool setThemeWallpaperScheme(std::string_view scheme);
   // Persist dock enabled override to settings.toml and trigger the reload pipeline.
   void setDockEnabled(bool enabled);
+  // Persist desktop widget layout/editor state to settings.toml and trigger the reload pipeline.
+  bool setDesktopWidgetsState(const DesktopWidgetsConfig& desktopWidgets);
   bool markSetupWizardCompleted();
   [[nodiscard]] bool hasOverride(const std::vector<std::string>& path) const;
   [[nodiscard]] bool hasEffectiveOverride(const std::vector<std::string>& path) const;
@@ -82,6 +88,7 @@ public:
   bool renameMonitorOverride(std::string_view barName, std::string_view oldMatch, std::string_view newMatch);
   bool deleteMonitorOverride(std::string_view barName, std::string_view match);
   bool setOverride(const std::vector<std::string>& path, ConfigOverrideValue value);
+  bool setOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides);
   bool clearOverride(const std::vector<std::string>& path);
   bool renameOverrideTable(const std::vector<std::string>& oldPath, const std::vector<std::string>& newPath);
 
@@ -91,7 +98,6 @@ private:
   static void seedBuiltinWidgets(Config& config);
   static void deepMerge(toml::table& base, const toml::table& overlay);
   void loadAll();
-  void parseTable(const toml::table& tbl);
   void parseTableInto(const toml::table& tbl, Config& config, bool logSummary) const;
   [[nodiscard]] std::optional<Config> configForOverrides(const toml::table& overrides) const;
   [[nodiscard]] bool overridePathEffectiveInTable(const std::vector<std::string>& path, const toml::table& overrides,
@@ -103,6 +109,7 @@ private:
   void setConfigParseError(std::string parseError);
   bool writeOverridesToFile();
   void extractWallpaperFromOverrides();
+  void extractWallpaperFromTable(const toml::table& table);
 
   Config m_config;
 
@@ -112,13 +119,15 @@ private:
   // App-writable settings file (state dir): lives outside config dir so it
   // can still be written when the config dir is read-only (e.g. NixOS).
   std::string m_overridesPath;
+  // Marker file (state dir): its existence means onboarding has been completed
+  // or dismissed. Single canonical signal for the setup wizard.
+  std::string m_setupMarkerPath;
   toml::table m_overridesTable;
   std::unordered_set<std::string> m_configFileBarNames;
   std::unordered_map<std::string, std::unordered_set<std::string>> m_configFileMonitorOverrideNames;
   std::string m_defaultWallpaperPath;
   std::string m_lastWallpaperPath;
   std::unordered_map<std::string, std::string> m_monitorWallpaperPaths;
-  bool m_setupWizardCompleted = false;
   mutable std::unordered_map<std::string, bool> m_effectiveOverrideCache;
 
   std::string m_overridesParseError;

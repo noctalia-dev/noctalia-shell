@@ -12,6 +12,7 @@
 #include "theme/image_loader.h"
 #include "theme/palette_generator.h"
 #include "theme/scheme.h"
+#include "util/string_utils.h"
 
 #include <cctype>
 #include <chrono>
@@ -306,6 +307,8 @@ namespace noctalia::theme {
 
   bool ThemeService::isLightMode() const noexcept { return m_isLightMode; }
 
+  std::string_view ThemeService::resolvedMode() const noexcept { return m_isLightMode ? "light" : "dark"; }
+
   void ThemeService::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
 
   void ThemeService::setResolvedCallback(ResolvedCallback callback) { m_resolvedCallback = std::move(callback); }
@@ -491,6 +494,40 @@ namespace noctalia::theme {
           return "ok\n";
         },
         "theme-mode-toggle", "Toggle theme mode between dark and light");
+    ipc.registerHandler(
+        "theme-mode-get",
+        [this](const std::string&) -> std::string {
+          std::string out(resolvedMode());
+          out.push_back('\n');
+          return out;
+        },
+        "theme-mode-get", "Print the current resolved theme mode");
+    ipc.registerHandler(
+        "theme-mode-set",
+        [this](const std::string& args) -> std::string {
+          const std::string token = StringUtils::trim(args);
+          const auto mode = enumFromKey(kThemeModes, token);
+          if (!mode.has_value()) {
+            return "error: expected dark, light, or auto\n";
+          }
+          m_config.setThemeMode(*mode);
+          return "ok\n";
+        },
+        "theme-mode-set <dark|light|auto>", "Set theme mode and persist to settings.toml");
+    ipc.registerHandler(
+        "theme-wallpaper-scheme-set",
+        [this](const std::string& args) -> std::string {
+          const std::string scheme = StringUtils::trim(args);
+          if (scheme.empty()) {
+            return "error: scheme name required\n";
+          }
+          if (!m_config.setThemeWallpaperScheme(scheme)) {
+            return "error: unknown scheme or settings not writable (see docs for valid names)\n";
+          }
+          return "ok\n";
+        },
+        "theme-wallpaper-scheme-set <scheme>",
+        "Set wallpaper palette generation scheme ([theme].wallpaper_scheme), e.g. m3-content or vibrant");
   }
 
 } // namespace noctalia::theme

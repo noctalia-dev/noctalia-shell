@@ -4,6 +4,8 @@
 #include "render/scene/input_area.h"
 #include "shell/desktop/desktop_widget_settings_registry.h"
 #include "shell/desktop/desktop_widgets_editor.h"
+#include "shell/settings/color_spec_picker.h"
+#include "shell/settings/widget_settings_registry.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
@@ -15,7 +17,6 @@
 #include "ui/controls/separator.h"
 #include "ui/controls/slider.h"
 #include "ui/controls/toggle.h"
-#include "ui/dialogs/color_picker_dialog.h"
 #include "ui/dialogs/file_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -67,15 +68,54 @@ namespace {
     return fallback;
   }
 
-  ColorSpec getColorSpec(const Settings& s, const std::string& key, const ColorSpec& fallback) {
+  static std::string settingValueAsString(const Settings& s, const std::string& key,
+                                          const std::vector<settings::WidgetSettingSpec>& allSpecs) {
     const auto it = s.find(key);
-    if (it == s.end()) {
-      return fallback;
+    if (it != s.end()) {
+      if (const auto* vb = std::get_if<bool>(&it->second)) {
+        return *vb ? "true" : "false";
+      }
+      if (const auto* vs = std::get_if<std::string>(&it->second)) {
+        return *vs;
+      }
     }
-    if (const auto* v = std::get_if<std::string>(&it->second)) {
-      return colorSpecFromConfigString(*v);
+    for (const auto& spec : allSpecs) {
+      if (spec.key == key) {
+        if (const auto* vb = std::get_if<bool>(&spec.defaultValue)) {
+          return *vb ? "true" : "false";
+        }
+        if (const auto* vs = std::get_if<std::string>(&spec.defaultValue)) {
+          return *vs;
+        }
+        break;
+      }
     }
-    return fallback;
+    return {};
+  }
+
+  static bool isSpecVisible(const settings::WidgetSettingSpec& spec, const Settings& s,
+                            const std::vector<settings::WidgetSettingSpec>& allSpecs) {
+    if (!spec.visibleWhen.has_value()) {
+      return true;
+    }
+    for (const auto& cond : spec.visibleWhen->any) {
+      const auto current = settingValueAsString(s, cond.key, allSpecs);
+      for (const auto& val : cond.values) {
+        if (val == current) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  bool hasVisibleSpecs(const std::vector<settings::WidgetSettingSpec>& specs, const Settings& s) {
+    for (const auto& spec : specs) {
+      if (isSpecVisible(spec, s, specs)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   std::unique_ptr<Flex> makeRow(std::string_view labelText, std::unique_ptr<Node> control) {
@@ -121,45 +161,21 @@ namespace {
     return makeRow(labelText, std::move(slider));
   }
 
-  std::unique_ptr<Flex> makeColorRoleSelect(std::string_view labelText, const std::string& key,
-                                            const ColorSpec& fallback, const Settings& s,
-                                            DesktopWidgetsEditor* editor) {
-    auto currentSpec = getColorSpec(s, key, fallback);
-
-    std::vector<std::string> options;
-    std::vector<ColorSpec> indicators;
-    options.reserve(kColorRoleTokens.size() + 1);
-    indicators.reserve(kColorRoleTokens.size() + 1);
-
-    std::size_t selectedIndex = kColorRoleTokens.size(); // default to Custom
-    for (std::size_t i = 0; i < kColorRoleTokens.size(); ++i) {
-      options.emplace_back(kColorRoleTokens[i].token);
-      indicators.push_back(colorSpecFromRole(kColorRoleTokens[i].role));
-      if (currentSpec.role.has_value() && *currentSpec.role == kColorRoleTokens[i].role) {
-        selectedIndex = i;
-      }
-    }
-
-    auto customLabel = currentSpec.role.has_value() ? i18n::tr("desktop-widgets.editor.settings.custom-color")
-                                                    : formatRgbHex(resolveColorSpec(currentSpec));
-    options.push_back(customLabel);
-    indicators.push_back(currentSpec.role.has_value() ? clearColorSpec()
-                                                      : fixedColorSpec(resolveColorSpec(currentSpec)));
-
-    auto select = std::make_unique<Select>();
-    select->setOptions(options);
-    select->setOptionIndicators(std::move(indicators));
-    select->setSelectedIndex(selectedIndex);
-    select->setControlHeight(Style::controlHeightSm);
-    select->setFlexGrow(1.0f);
-    select->setOnSelectionChanged([editor, key, currentSpec](std::size_t index, std::string_view) {
-      if (index < kColorRoleTokens.size()) {
-        editor->applySettingChange(key, std::string(kColorRoleTokens[index].token));
-      } else {
-        auto currentColor = resolveColorSpec(currentSpec);
-        editor->openColorPicker(key, currentColor);
-      }
-    });
+  std::unique_ptr<Flex> makeColorSpecRow(std::string_view labelText, const std::string& key, std::string fallbackValue,
+                                         const Settings& s, DesktopWidgetsEditor* editor) {
+    settings::ColorSpecSelectOptions options{
+        .roles = {},
+        .selectedValue = getStr(s, key, std::move(fallbackValue)),
+        .allowNone = false,
+        .allowCustomColor = true,
+        .noneLabel = {},
+        .controlHeight = Style::controlHeightSm,
+        .glyphSize = Style::fontSizeCaption,
+        .flexGrow = true,
+    };
+    auto select = settings::makeColorSpecSelect(
+        std::move(options), [editor, key](std::string value) { editor->applySettingChange(key, std::move(value)); },
+        []() {});
     return makeRow(labelText, std::move(select));
   }
 
@@ -252,6 +268,9 @@ namespace {
   void addSpecSettings(Flex& content, const std::vector<settings::WidgetSettingSpec>& specs, const Settings& s,
                        DesktopWidgetsEditor* editor) {
     for (const auto& spec : specs) {
+      if (!isSpecVisible(spec, s, specs)) {
+        continue;
+      }
       const auto label = i18n::tr(spec.labelKey);
 
       switch (spec.valueType) {
@@ -294,12 +313,9 @@ namespace {
         break;
       }
 
-      case settings::WidgetSettingValueType::ColorRole: {
+      case settings::WidgetSettingValueType::ColorSpec: {
         const auto* defVal = std::get_if<std::string>(&spec.defaultValue);
-        const std::string token = defVal != nullptr ? *defVal : std::string{};
-        const ColorSpec fallback =
-            token.empty() ? colorSpecFromRole(ColorRole::OnSurface) : colorSpecFromConfigString(token);
-        content.addChild(makeColorRoleSelect(label, spec.key, fallback, s, editor));
+        content.addChild(makeColorSpecRow(label, spec.key, defVal != nullptr ? *defVal : std::string{}, s, editor));
         break;
       }
 
@@ -309,33 +325,37 @@ namespace {
     }
   }
 
-  void addBackgroundSection(Flex& content, const Settings& s, DesktopWidgetsEditor* editor) {
-    auto sep = std::make_unique<Separator>();
-    sep->setOrientation(SeparatorOrientation::HorizontalRule);
-    content.addChild(std::move(sep));
+  void addSectionHeading(Flex& content, std::string_view labelKey, bool separator) {
+    if (separator) {
+      auto sep = std::make_unique<Separator>();
+      sep->setOrientation(SeparatorOrientation::HorizontalRule);
+      content.addChild(std::move(sep));
+    }
 
     auto heading = std::make_unique<Label>();
-    heading->setText(i18n::tr("desktop-widgets.editor.settings.background-section"));
+    heading->setText(i18n::tr(labelKey));
     heading->setBold(true);
     heading->setFontSize(Style::fontSizeCaption);
-    heading->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+    heading->setColor(colorSpecFromRole(ColorRole::Secondary));
     content.addChild(std::move(heading));
+  }
 
-    addSpecSettings(content, desktop_settings::commonDesktopWidgetSettingSpecs(), s, editor);
+  void addSettingsSection(Flex& content, const std::vector<settings::WidgetSettingSpec>& specs, const Settings& s,
+                          DesktopWidgetsEditor* editor, std::string_view labelKey, bool separator) {
+    if (!hasVisibleSpecs(specs, s)) {
+      return;
+    }
+
+    addSectionHeading(content, labelKey, separator);
+    addSpecSettings(content, specs, s, editor);
+  }
+
+  void addBackgroundSection(Flex& content, const Settings& s, DesktopWidgetsEditor* editor) {
+    const auto specs = desktop_settings::commonDesktopWidgetSettingSpecs();
+    addSettingsSection(content, specs, s, editor, "desktop-widgets.editor.settings.background-section", true);
   }
 
 } // namespace
-
-void DesktopWidgetsEditor::openColorPicker(const std::string& key, const Color& currentColor) {
-  ColorPickerDialogOptions options;
-  options.initialColor = currentColor;
-  options.title = key;
-  (void)ColorPickerDialog::open(std::move(options), [this, key](std::optional<Color> result) {
-    if (result) {
-      applySettingChange(key, formatRgbHex(*result));
-    }
-  });
-}
 
 void DesktopWidgetsEditor::applySettingChange(const std::string& key, WidgetSettingValue value) {
   deferEditorMutation([this, key, value = std::move(value)]() {
@@ -373,6 +393,9 @@ void DesktopWidgetsEditor::applySettingChange(const std::string& key, WidgetSett
     }
 
     newWidget->create();
+    if (state->type == "audio_visualizer") {
+      newWidget->setEditorPreview(true);
+    }
     newWidget->setAnimationManager(&surface->animations);
     auto* surfacePtr = surface;
     newWidget->setUpdateCallback([surfacePtr]() {
@@ -404,8 +427,14 @@ void DesktopWidgetsEditor::applySettingChange(const std::string& key, WidgetSett
     view.widget = std::move(newWidget);
 
     applyViewState(view, *state, false);
+    if (state->type == "audio_visualizer" && surface->surface != nullptr) {
+      surface->surface->requestFrameTick();
+    }
     updateSelectionVisuals(*surface);
     surface->surface->requestRedraw();
+    if (key == "background") {
+      requestLayout();
+    }
   });
 }
 
@@ -475,8 +504,9 @@ void DesktopWidgetsEditor::buildInspector(OverlaySurface& surface, Node& root,
   content->setGap(Style::spaceXs);
   content->setPadding(Style::spaceSm, Style::spaceMd);
 
-  addSpecSettings(*content, desktop_settings::desktopWidgetSettingSpecs(selectedState.type), selectedState.settings,
-                  this);
+  const auto typeSpecs = desktop_settings::desktopWidgetSettingSpecs(selectedState.type);
+  addSettingsSection(*content, typeSpecs, selectedState.settings, this,
+                     "desktop-widgets.editor.settings.widget-section", false);
   addBackgroundSection(*content, selectedState.settings, this);
 
   panel->addChild(std::move(scrollView));

@@ -123,5 +123,7 @@ constexpr Color lerpColor(const Color& a, const Color& b, float t) {
 
 [[nodiscard]] Color hsv(float h, float s, float v, float a = 1.0f);
 void rgbToHsv(const Color& rgb, float& h, float& s, float& v);
+[[nodiscard]] float relativeLuminance(const Color& color);
+[[nodiscard]] Color readableTextColorForBackground(const Color& background);
 [[nodiscard]] std::string formatRgbHex(const Color& color);
 [[nodiscard]] bool tryParseHexColor(std::string_view input, Color& out);

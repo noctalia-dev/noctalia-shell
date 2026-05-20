@@ -1,9 +1,11 @@
 #pragma once
 
+#include "config/config_types.h"
 #include "core/ui_phase.h"
 #include "render/scene/node.h"
 #include "wayland/layer_surface.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <memory>
 #include <string_view>
@@ -45,16 +47,14 @@ public:
 
   [[nodiscard]] virtual float preferredWidth() const = 0;
   [[nodiscard]] virtual float preferredHeight() const = 0;
-  [[nodiscard]] virtual bool centeredHorizontally() const { return true; }
-  [[nodiscard]] virtual bool centeredVertically() const { return true; }
   [[nodiscard]] virtual bool hasDecoration() const { return true; }
   [[nodiscard]] virtual LayerShellLayer layer() const { return LayerShellLayer::Top; }
   [[nodiscard]] virtual LayerShellKeyboard keyboardMode() const { return LayerShellKeyboard::OnDemand; }
   [[nodiscard]] virtual InputArea* initialFocusArea() const { return nullptr; }
-  // Opt-in: when true and a suitable bar exists, the panel renders as a wl_subsurface
-  // attached to the bar with concave-corner merging. Falls back to a layer surface if no
-  // matching bar is available.
-  [[nodiscard]] virtual bool prefersAttachedToBar() const noexcept { return false; }
+  // Panel placement policy. `Attached` merges with the bar when a suitable host
+  // exists, `Floating` opens detached near the bar, and `Centered` opens in the
+  // middle of the target output.
+  [[nodiscard]] virtual PanelPlacement panelPlacement() const noexcept { return PanelPlacement::Centered; }
   // For attached panels: which bar edge to attach to when more than one bar exists on
   // the target output. Returned value must outlive the call (use a string literal).
   [[nodiscard]] virtual std::string_view preferredAttachedBarPosition() const noexcept { return "top"; }
@@ -68,8 +68,17 @@ public:
 
   [[nodiscard]] Node* root() const noexcept { return m_root ? m_root.get() : m_rootPtr; }
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
+  [[nodiscard]] float panelCardOpacity() const noexcept { return m_panelCardOpacity; }
 
   void setContentScale(float scale) noexcept { m_contentScale = scale; }
+  void setPanelCardOpacity(float opacity) noexcept {
+    const float clamped = std::clamp(opacity, 0.0f, 1.0f);
+    if (m_panelCardOpacity == clamped) {
+      return;
+    }
+    m_panelCardOpacity = clamped;
+    onPanelCardOpacityChanged(clamped);
+  }
 
   std::unique_ptr<Node> releaseRoot() {
     m_rootPtr = m_root.get();
@@ -82,10 +91,12 @@ protected:
   [[nodiscard]] float scaled(float value) const noexcept { return value * m_contentScale; }
   void setRoot(std::unique_ptr<Node> root) { m_root = std::move(root); }
   void clearReleasedRoot() noexcept { m_rootPtr = nullptr; }
+  virtual void onPanelCardOpacityChanged(float opacity) { (void)opacity; }
   virtual void doLayout(Renderer& renderer, float width, float height) = 0;
   virtual void doUpdate(Renderer& renderer) { (void)renderer; }
 
   float m_contentScale = 1.0f;
+  float m_panelCardOpacity = 1.0f;
   AnimationManager* m_animations = nullptr;
 
 private:

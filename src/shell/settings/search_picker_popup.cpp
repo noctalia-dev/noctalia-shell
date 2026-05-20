@@ -147,8 +147,8 @@ namespace settings {
     picker->setRadius(0.0f);
     picker->setPadding(0.0f);
     picker->setFlexGrow(1.0f);
-    picker->setOptions(m_options);
     picker->setSelectedValue(m_selectedValue);
+    picker->setOptions(m_options);
     picker->setOnActivated([this](const SearchPickerOption& option) {
       if (option.value.empty()) {
         return;

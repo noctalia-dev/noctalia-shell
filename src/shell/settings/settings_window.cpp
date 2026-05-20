@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
+#include "core/keybind_matcher.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "i18n/i18n.h"
@@ -9,6 +10,7 @@
 #include "system/dependency_service.h"
 #include "ui/controls/box.h"
 #include "ui/controls/flex.h"
+#include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/select_dropdown_popup.h"
 #include "ui/style.h"
@@ -20,6 +22,7 @@
 #include <cstdint>
 #include <linux/input-event-codes.h>
 #include <optional>
+#include <string>
 #include <utility>
 
 namespace {
@@ -52,6 +55,26 @@ float SettingsWindow::uiScale() const {
   return std::max(0.1f, m_config->config().shell.uiScale);
 }
 
+bool SettingsWindow::headerDragRegionContains(float sceneX, float sceneY) const {
+  if (m_sceneRoot == nullptr || m_headerRow == nullptr) {
+    return false;
+  }
+
+  float left = 0.0f;
+  float top = 0.0f;
+  float right = 0.0f;
+  float bottom = 0.0f;
+  Node::transformedBounds(m_headerRow, left, top, right, bottom);
+
+  const float sceneWidth = m_sceneRoot->width();
+  const float sceneHeight = m_sceneRoot->height();
+  const float dragLeft = std::min(0.0f, left);
+  const float dragTop = std::min(0.0f, top);
+  const float dragRight = std::max(sceneWidth, right);
+  const float dragBottom = std::clamp(bottom, 0.0f, sceneHeight);
+  return sceneX >= dragLeft && sceneX < dragRight && sceneY >= dragTop && sceneY < dragBottom;
+}
+
 bool SettingsWindow::ownsKeyboardSurface(wl_surface* surface) const noexcept {
   if (!isOpen() || surface == nullptr || m_surface == nullptr) {
     return false;
@@ -62,10 +85,16 @@ bool SettingsWindow::ownsKeyboardSurface(wl_surface* surface) const noexcept {
   if (m_widgetAddPopup != nullptr && m_widgetAddPopup->wlSurface() == surface) {
     return true;
   }
+  if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->wlSurface() == surface) {
+    return true;
+  }
   if (m_searchPickerPopup != nullptr && m_searchPickerPopup->wlSurface() == surface) {
     return true;
   }
   if (m_sessionActionsEditorPopup != nullptr && m_sessionActionsEditorPopup->wlSurface() == surface) {
+    return true;
+  }
+  if (m_sessionActionsEditorPopup != nullptr && m_sessionActionsEditorPopup->ownsSelectDropdownSurface(surface)) {
     return true;
   }
   return m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen() && m_selectPopup->wlSurface() == surface;
@@ -102,11 +131,19 @@ std::optional<LayerPopupParentContext> SettingsWindow::popupParentContextForSurf
     return makeContext(m_widgetAddPopup->wlSurface(), m_widgetAddPopup->xdgSurface(), m_widgetAddPopup->width(),
                        m_widgetAddPopup->height());
   }
+  if (m_configExportDialogPopup != nullptr && surface == m_configExportDialogPopup->wlSurface()) {
+    return makeContext(m_configExportDialogPopup->wlSurface(), m_configExportDialogPopup->xdgSurface(),
+                       m_configExportDialogPopup->width(), m_configExportDialogPopup->height());
+  }
   if (m_searchPickerPopup != nullptr && surface == m_searchPickerPopup->wlSurface()) {
     return makeContext(m_searchPickerPopup->wlSurface(), m_searchPickerPopup->xdgSurface(),
                        m_searchPickerPopup->width(), m_searchPickerPopup->height());
   }
   if (m_sessionActionsEditorPopup != nullptr && surface == m_sessionActionsEditorPopup->wlSurface()) {
+    return makeContext(m_sessionActionsEditorPopup->wlSurface(), m_sessionActionsEditorPopup->xdgSurface(),
+                       m_sessionActionsEditorPopup->width(), m_sessionActionsEditorPopup->height());
+  }
+  if (m_sessionActionsEditorPopup != nullptr && m_sessionActionsEditorPopup->ownsSelectDropdownSurface(surface)) {
     return makeContext(m_sessionActionsEditorPopup->wlSurface(), m_sessionActionsEditorPopup->xdgSurface(),
                        m_sessionActionsEditorPopup->width(), m_sessionActionsEditorPopup->height());
   }
@@ -212,6 +249,7 @@ void SettingsWindow::destroyWindow() {
     m_inputDispatcher.setSceneRoot(nullptr);
     m_surface->setSceneRoot(nullptr);
   }
+  m_idleLiveStatusLabel = nullptr;
   m_mainContainer = nullptr;
   m_headerRow = nullptr;
   m_contentContainer = nullptr;
@@ -224,6 +262,10 @@ void SettingsWindow::destroyWindow() {
   if (m_widgetAddPopup != nullptr) {
     m_widgetAddPopup->close();
     m_widgetAddPopup.reset();
+  }
+  if (m_configExportDialogPopup != nullptr) {
+    m_configExportDialogPopup->close();
+    m_configExportDialogPopup.reset();
   }
   if (m_searchPickerPopup != nullptr) {
     m_searchPickerPopup->close();
@@ -257,6 +299,17 @@ void SettingsWindow::destroyWindow() {
   m_pendingDeleteMonitorOverrideBarName.clear();
   m_pendingDeleteMonitorOverrideMatch.clear();
   m_pendingResetPageScope.clear();
+  m_searchQuery.clear();
+  m_selectedSection.clear();
+  m_selectedBarName.clear();
+  m_selectedMonitorOverride.clear();
+  m_editingWidgetName.clear();
+  m_pendingDeleteWidgetName.clear();
+  m_pendingDeleteWidgetSettingPath.clear();
+  m_renamingWidgetName.clear();
+  m_showOverriddenOnly = false;
+  m_sidebarScrollState = {};
+  m_contentScrollState = {};
 }
 
 void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
@@ -342,13 +395,10 @@ void SettingsWindow::clearStatusMessage() {
 }
 
 void SettingsWindow::clearTransientSettingsState() {
-  m_openWidgetPickerPath.clear();
-
   m_editingWidgetName.clear();
   m_renamingWidgetName.clear();
   m_pendingDeleteWidgetName.clear();
   m_pendingDeleteWidgetSettingPath.clear();
-  m_creatingWidgetType.clear();
   m_creatingBarName.clear();
   m_renamingBarName.clear();
   m_pendingDeleteBarName.clear();
@@ -361,6 +411,9 @@ void SettingsWindow::clearTransientSettingsState() {
   m_pendingResetPageScope.clear();
   if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen()) {
     m_widgetAddPopup->close();
+  }
+  if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->isOpen()) {
+    m_configExportDialogPopup->close();
   }
   if (m_searchPickerPopup != nullptr && m_searchPickerPopup->isOpen()) {
     m_searchPickerPopup->close();
@@ -378,6 +431,14 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
   if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen() && event.type == PointerEvent::Type::Button &&
       event.state == 1) {
     m_widgetAddPopup->close();
+    return true;
+  }
+  if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->onPointerEvent(event)) {
+    return true;
+  }
+  if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->isOpen() &&
+      event.type == PointerEvent::Type::Button && event.state == 1) {
+    m_configExportDialogPopup->close();
     return true;
   }
   if (m_searchPickerPopup != nullptr && m_searchPickerPopup->onPointerEvent(event)) {
@@ -449,8 +510,8 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
         m_pointerInside = true;
       }
       m_inputDispatcher.pointerMotion(static_cast<float>(event.sx), static_cast<float>(event.sy), event.serial);
-      if (pressed && event.button == BTN_LEFT && m_inputDispatcher.hoveredArea() == nullptr && m_headerRow != nullptr &&
-          m_headerRow->containsScenePoint(static_cast<float>(event.sx), static_cast<float>(event.sy))) {
+      if (pressed && event.button == BTN_LEFT && m_inputDispatcher.hoveredArea() == nullptr &&
+          headerDragRegionContains(static_cast<float>(event.sx), static_cast<float>(event.sy))) {
         m_surface->beginMove(event.serial);
         consumed = true;
         break;
@@ -483,12 +544,12 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
 }
 
 void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
-  if (!isOpen() || m_config == nullptr) {
+  if (!isOpen()) {
     return;
   }
 
   if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen()) {
-    if (event.pressed && m_config->matchesKeybind(KeybindAction::Cancel, event.sym, event.modifiers)) {
+    if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
       m_widgetAddPopup->close();
       return;
     }
@@ -496,8 +557,17 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
+  if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->isOpen()) {
+    if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
+      m_configExportDialogPopup->close();
+      return;
+    }
+    m_configExportDialogPopup->onKeyboardEvent(event);
+    return;
+  }
+
   if (m_searchPickerPopup != nullptr && m_searchPickerPopup->isOpen()) {
-    if (event.pressed && m_config->matchesKeybind(KeybindAction::Cancel, event.sym, event.modifiers)) {
+    if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
       m_searchPickerPopup->close();
       return;
     }
@@ -506,7 +576,11 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
   }
 
   if (m_sessionActionsEditorPopup != nullptr && m_sessionActionsEditorPopup->isOpen()) {
-    if (event.pressed && m_config->matchesKeybind(KeybindAction::Cancel, event.sym, event.modifiers)) {
+    if (m_sessionActionsEditorPopup->isSelectDropdownOpen()) {
+      m_sessionActionsEditorPopup->onKeyboardEvent(event);
+      return;
+    }
+    if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
       m_sessionActionsEditorPopup->close();
       return;
     }
@@ -525,22 +599,19 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
       m_surface->requestLayout();
     }
   };
-  if (event.pressed && m_config->matchesKeybind(KeybindAction::Cancel, event.sym, event.modifiers)) {
+  if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
     if (m_actionsMenuPopup != nullptr && m_actionsMenuPopup->isOpen()) {
       m_actionsMenuPopup->close();
       return;
     }
-    if (!m_openWidgetPickerPath.empty() || !m_editingWidgetName.empty() || !m_creatingWidgetType.empty() ||
-        !m_renamingWidgetName.empty() || !m_pendingDeleteWidgetName.empty() ||
+    if (!m_editingWidgetName.empty() || !m_renamingWidgetName.empty() || !m_pendingDeleteWidgetName.empty() ||
         !m_pendingDeleteWidgetSettingPath.empty() || !m_creatingBarName.empty() || !m_renamingBarName.empty() ||
         !m_pendingDeleteBarName.empty() || !m_creatingMonitorOverrideBarName.empty() ||
         !m_renamingMonitorOverrideBarName.empty() || !m_pendingDeleteMonitorOverrideBarName.empty()) {
-      m_openWidgetPickerPath.clear();
       m_editingWidgetName.clear();
       m_renamingWidgetName.clear();
       m_pendingDeleteWidgetName.clear();
       m_pendingDeleteWidgetSettingPath.clear();
-      m_creatingWidgetType.clear();
       m_creatingBarName.clear();
       m_renamingBarName.clear();
       m_pendingDeleteBarName.clear();
@@ -569,6 +640,9 @@ void SettingsWindow::onThemeChanged() {
     if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen()) {
       m_widgetAddPopup->requestRedraw();
     }
+    if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->isOpen()) {
+      m_configExportDialogPopup->requestRedraw();
+    }
     if (m_sessionActionsEditorPopup != nullptr && m_sessionActionsEditorPopup->isOpen()) {
       m_sessionActionsEditorPopup->requestRedraw();
     }
@@ -581,6 +655,9 @@ void SettingsWindow::onFontChanged() {
     if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen()) {
       m_widgetAddPopup->requestLayout();
     }
+    if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->isOpen()) {
+      m_configExportDialogPopup->requestLayout();
+    }
     if (m_sessionActionsEditorPopup != nullptr && m_sessionActionsEditorPopup->isOpen()) {
       m_sessionActionsEditorPopup->requestLayout();
     }
@@ -589,3 +666,27 @@ void SettingsWindow::onFontChanged() {
 }
 
 void SettingsWindow::onExternalOptionsChanged() { requestSceneRebuild(); }
+
+void SettingsWindow::refreshIdleLiveStatusText() {
+  if (m_idleLiveStatusLabel == nullptr || m_wayland == nullptr) {
+    return;
+  }
+
+  const double idleSec = m_wayland->userIdleSeconds();
+  const auto sec = static_cast<std::int64_t>(std::floor(idleSec));
+
+  if (sec == 1) {
+    m_idleLiveStatusLabel->setText(i18n::tr("settings.idle.live-status.idle-for-one"));
+  } else {
+    m_idleLiveStatusLabel->setText(
+        i18n::tr("settings.idle.live-status.idle-for-seconds", "seconds", std::to_string(sec)));
+  }
+}
+
+void SettingsWindow::onSecondTick() {
+  if (m_idleLiveStatusLabel == nullptr || m_surface == nullptr) {
+    return;
+  }
+  refreshIdleLiveStatusText();
+  m_surface->requestRedraw();
+}

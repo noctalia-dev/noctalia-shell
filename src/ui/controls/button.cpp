@@ -308,11 +308,17 @@ void Button::setVariant(ButtonVariant variant) {
     return;
   }
   m_variant = variant;
+  m_customPalette.reset();
+  applyVariant();
+}
+
+void Button::setCustomPalette(ButtonPalette customPalette) {
+  m_customPalette = std::move(customPalette);
   applyVariant();
 }
 
 void Button::applyVariant() {
-  m_palette = paletteForVariant(m_variant);
+  m_palette = m_customPalette.value_or(paletteForVariant(m_variant));
   setBorder(m_palette.normal.border, m_palette.borderWidth);
 
   // Only seed targets before the first visual state application. Once the

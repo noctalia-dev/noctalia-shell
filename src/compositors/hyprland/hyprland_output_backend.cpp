@@ -2,7 +2,6 @@
 
 #include "compositors/hyprland/hyprland_runtime.h"
 #include "core/log.h"
-#include "core/process.h"
 #include "util/string_utils.h"
 
 #include <json.hpp>
@@ -60,6 +59,14 @@ std::optional<std::string> HyprlandOutputBackend::focusedOutputName() const {
 
 namespace compositors::hyprland {
 
-  bool setOutputPower(bool on) { return process::runAsync({"hyprctl", "dispatch", "dpms", on ? "on" : "off"}); }
+  bool setOutputPower(HyprlandRuntime& runtime, bool on) {
+    std::optional<std::string> response;
+    if (runtime.configIsLua()) {
+      response = runtime.request(std::format("dispatch hl.dsp.dpms({{ action = \"{}\"}})", on ? "enable" : "disable"));
+    } else {
+      response = runtime.request(std::format("dispatch dpms {}", on ? "on" : "off"));
+    }
+    return response != std::nullopt;
+  }
 
 } // namespace compositors::hyprland

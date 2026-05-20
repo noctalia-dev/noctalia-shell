@@ -15,7 +15,8 @@ class LockKeysService;
 class MprisService;
 class BluetoothService;
 class BrightnessService;
-class NetworkService;
+class ClipboardService;
+class INetworkService;
 class PipeWireService;
 class PipeWireSpectrum;
 class PowerProfilesService;
@@ -33,14 +34,16 @@ class WidgetFactory {
 public:
   WidgetFactory(CompositorPlatform& platform, const Config& config, NotificationManager* notifications,
                 TrayService* tray, PipeWireService* audio, UPowerService* upower, SystemMonitorService* sysmon,
-                PowerProfilesService* powerProfiles, NetworkService* network, IdleInhibitor* idleInhibitor,
+                PowerProfilesService* powerProfiles, INetworkService* network, IdleInhibitor* idleInhibitor,
                 MprisService* mpris, PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weather,
                 GammaService* nightLight, noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
-                BrightnessService* brightness, LockKeysService* lockKeys, FileWatcher* fileWatcher = nullptr);
+                BrightnessService* brightness, LockKeysService* lockKeys, ClipboardService* clipboard,
+                FileWatcher* fileWatcher = nullptr);
   ~WidgetFactory();
 
   [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output, float contentScale = 1.0f,
-                                               const std::string& barPosition = "top") const;
+                                               const std::string& barPosition = "top",
+                                               const std::string& barName = "default") const;
 
 private:
   CompositorPlatform& m_platform;
@@ -51,7 +54,7 @@ private:
   UPowerService* m_upower;
   SystemMonitorService* m_sysmon;
   PowerProfilesService* m_powerProfiles;
-  NetworkService* m_network;
+  INetworkService* m_network;
   IdleInhibitor* m_idleInhibitor;
   MprisService* m_mpris;
   PipeWireSpectrum* m_audioSpectrum;
@@ -62,5 +65,6 @@ private:
   BluetoothService* m_bluetooth;
   BrightnessService* m_brightness;
   LockKeysService* m_lockKeys;
+  ClipboardService* m_clipboard;
   FileWatcher* m_fileWatcher;
 };

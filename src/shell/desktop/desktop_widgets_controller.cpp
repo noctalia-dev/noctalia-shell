@@ -1,72 +1,41 @@
 #include "shell/desktop/desktop_widgets_controller.h"
 
-#include "core/log.h"
-#include "core/toml.h"
 #include "ipc/ipc_service.h"
 #include "pipewire/pipewire_spectrum.h"
 #include "shell/desktop/desktop_widget_layout.h"
 #include "shell/desktop/desktop_widgets_editor.h"
 #include "shell/desktop/desktop_widgets_host.h"
-#include "util/file_utils.h"
 #include "wayland/wayland_connection.h"
 
+#include <algorithm>
 #include <charconv>
-#include <filesystem>
-#include <fstream>
 #include <limits>
-#include <sys/inotify.h>
-#include <unistd.h>
 #include <unordered_set>
 
 namespace {
 
-  constexpr Logger kLog("desktop");
   constexpr std::string_view kDesktopWidgetIdPrefix = "desktop-widget-";
   constexpr float kDefaultDesktopAudioVisualizerAspectRatio = 240.0f / 96.0f;
 
-  void writeSetting(toml::table& table, const std::string& key, const WidgetSettingValue& value) {
-    std::visit(
-        [&](const auto& concrete) {
-          using T = std::decay_t<decltype(concrete)>;
-          if constexpr (std::is_same_v<T, std::vector<std::string>>) {
-            toml::array array;
-            for (const auto& item : concrete) {
-              array.push_back(item);
-            }
-            table.insert_or_assign(key, std::move(array));
-          } else {
-            table.insert_or_assign(key, concrete);
-          }
-        },
-        value);
-  }
-
-  std::optional<WidgetSettingValue> readSetting(const toml::node& node) {
-    if (const auto* stringValue = node.as_string()) {
-      return WidgetSettingValue{stringValue->get()};
+  void clampOpacitySetting(DesktopWidgetState& widget, const std::string& key, double fallback) {
+    const auto it = widget.settings.find(key);
+    if (it == widget.settings.end()) {
+      return;
     }
-    if (const auto* intValue = node.as_integer()) {
-      return WidgetSettingValue{intValue->get()};
+    if (const auto* doubleValue = std::get_if<double>(&it->second)) {
+      widget.settings.insert_or_assign(key, std::clamp(*doubleValue, 0.0, 1.0));
+      return;
     }
-    if (const auto* floatValue = node.as_floating_point()) {
-      return WidgetSettingValue{floatValue->get()};
+    if (const auto* intValue = std::get_if<std::int64_t>(&it->second)) {
+      widget.settings.insert_or_assign(key, std::clamp(static_cast<double>(*intValue), 0.0, 1.0));
+      return;
     }
-    if (const auto* boolValue = node.as_boolean()) {
-      return WidgetSettingValue{boolValue->get()};
-    }
-    if (const auto* arrayValue = node.as_array()) {
-      std::vector<std::string> strings;
-      for (const auto& item : *arrayValue) {
-        if (auto value = item.value<std::string>()) {
-          strings.push_back(*value);
-        }
-      }
-      return WidgetSettingValue{std::move(strings)};
-    }
-    return std::nullopt;
+    widget.settings.insert_or_assign(key, fallback);
   }
 
   void normalizeDesktopWidgetSettings(DesktopWidgetState& widget) {
+    clampOpacitySetting(widget, "background_opacity", 0.8);
+
     if (widget.type == "sticker") {
       const auto opacityIt = widget.settings.find("opacity");
       if (opacityIt == widget.settings.end()) {
@@ -130,14 +99,7 @@ namespace {
 
 DesktopWidgetsController::DesktopWidgetsController() = default;
 
-DesktopWidgetsController::~DesktopWidgetsController() {
-  if (m_inotifyFd >= 0) {
-    if (m_watchWd >= 0) {
-      inotify_rm_watch(m_inotifyFd, m_watchWd);
-    }
-    ::close(m_inotifyFd);
-  }
-}
+DesktopWidgetsController::~DesktopWidgetsController() = default;
 
 void DesktopWidgetsController::initialize(WaylandConnection& wayland, ConfigService* config,
                                           PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather,
@@ -151,13 +113,12 @@ void DesktopWidgetsController::initialize(WaylandConnection& wayland, ConfigServ
   m_editor = std::make_unique<DesktopWidgetsEditor>();
   m_editor->initialize(wayland, config, pipewireSpectrum, weather, renderContext, mpris, httpClient, sysmon);
   m_editor->setExitRequestedCallback([this]() { exitEdit(); });
-  loadState();
-  setupWatch();
+  loadSnapshotFromConfig();
   m_initialized = true;
   applyVisibility();
 
   if (m_config != nullptr) {
-    m_config->addReloadCallback([this]() { applyVisibility(); });
+    m_config->addReloadCallback([this]() { handleConfigReload(); });
   }
 }
 
@@ -239,8 +200,11 @@ void DesktopWidgetsController::enterEdit() {
   if (m_config != nullptr && !m_config->config().desktopWidgets.enabled) {
     return;
   }
-  m_host->hide();
+  // Open the editor before tearing down host widgets so the PipeWire spectrum
+  // listener hand-off does not briefly drop to zero listeners (which resets the
+  // stream and leaves a new editor instance with empty spectrum values).
   m_editor->open(m_snapshot);
+  m_host->hide();
 }
 
 void DesktopWidgetsController::exitEdit() {
@@ -248,9 +212,11 @@ void DesktopWidgetsController::exitEdit() {
     return;
   }
 
-  m_snapshot = m_editor->close();
+  m_snapshot = m_editor->snapshot();
   normalizeSnapshot();
-  saveState();
+  m_host->show(m_snapshot);
+  (void)m_editor->close();
+  saveSnapshotToConfig();
   applyVisibility();
 }
 
@@ -281,139 +247,20 @@ void DesktopWidgetsController::onKeyboardEvent(const KeyboardEvent& event) {
   m_editor->onKeyboardEvent(event);
 }
 
-void DesktopWidgetsController::loadState() {
-  m_snapshot = DesktopWidgetsSnapshot{};
-  const std::string path = stateFilePath();
-  if (path.empty() || !std::filesystem::exists(path)) {
+void DesktopWidgetsController::loadSnapshotFromConfig() {
+  if (m_config == nullptr) {
+    m_snapshot = DesktopWidgetsSnapshot{};
     return;
   }
-
-  try {
-    const toml::table table = toml::parse_file(path);
-    if (auto schemaVersion = table["schema_version"].value<int64_t>()) {
-      m_snapshot.schemaVersion = static_cast<std::int32_t>(*schemaVersion);
-    }
-
-    if (const auto* gridTable = table["grid"].as_table()) {
-      if (auto visible = (*gridTable)["visible"].value<bool>()) {
-        m_snapshot.grid.visible = *visible;
-      }
-      if (auto cellSize = (*gridTable)["cell_size"].value<int64_t>()) {
-        m_snapshot.grid.cellSize = std::clamp(static_cast<std::int32_t>(*cellSize), 8, 256);
-      }
-      if (auto majorInterval = (*gridTable)["major_interval"].value<int64_t>()) {
-        m_snapshot.grid.majorInterval = std::clamp(static_cast<std::int32_t>(*majorInterval), 1, 16);
-      }
-    }
-
-    if (const auto* widgets = table["widget"].as_array()) {
-      for (const auto& node : *widgets) {
-        const auto* widgetTable = node.as_table();
-        if (widgetTable == nullptr) {
-          continue;
-        }
-
-        DesktopWidgetState widget;
-        if (auto id = (*widgetTable)["id"].value<std::string>()) {
-          widget.id = *id;
-        }
-        if (auto type = (*widgetTable)["type"].value<std::string>()) {
-          widget.type = *type;
-        }
-        if (auto output = (*widgetTable)["output"].value<std::string>()) {
-          widget.outputName = *output;
-        }
-        if (auto cx = (*widgetTable)["cx"].value<double>()) {
-          widget.cx = static_cast<float>(*cx);
-        }
-        if (auto cy = (*widgetTable)["cy"].value<double>()) {
-          widget.cy = static_cast<float>(*cy);
-        }
-        if (auto scale = (*widgetTable)["scale"].value<double>()) {
-          widget.scale = static_cast<float>(*scale);
-        }
-        if (auto rotation = (*widgetTable)["rotation"].value<double>()) {
-          widget.rotationRad = static_cast<float>(*rotation);
-        }
-        if (auto enabled = (*widgetTable)["enabled"].value<bool>()) {
-          widget.enabled = *enabled;
-        }
-        if (const auto* settingsTable = (*widgetTable)["settings"].as_table()) {
-          for (const auto& [key, value] : *settingsTable) {
-            if (auto parsed = readSetting(value); parsed.has_value()) {
-              widget.settings.emplace(std::string(key.str()), std::move(*parsed));
-            }
-          }
-        }
-        if (!widget.id.empty() && !widget.type.empty()) {
-          m_snapshot.widgets.push_back(std::move(widget));
-        }
-      }
-    }
-  } catch (const std::exception& e) {
-    kLog.warn("desktop widgets: failed to load state {}: {}", path, e.what());
-    m_snapshot = DesktopWidgetsSnapshot{};
-  }
+  m_snapshot = m_config->config().desktopWidgets;
   normalizeSnapshot();
 }
 
-void DesktopWidgetsController::saveState() {
-  const std::string path = stateFilePath();
-  if (path.empty()) {
+void DesktopWidgetsController::saveSnapshotToConfig() {
+  if (m_config == nullptr) {
     return;
   }
-  m_ownWritePending = true;
-
-  std::error_code ec;
-  std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
-
-  toml::table root;
-  root.insert_or_assign("schema_version", m_snapshot.schemaVersion);
-
-  toml::table grid;
-  grid.insert_or_assign("visible", m_snapshot.grid.visible);
-  grid.insert_or_assign("cell_size", m_snapshot.grid.cellSize);
-  grid.insert_or_assign("major_interval", m_snapshot.grid.majorInterval);
-  root.insert_or_assign("grid", std::move(grid));
-
-  toml::array widgets;
-  for (const auto& widget : m_snapshot.widgets) {
-    toml::table widgetTable;
-    widgetTable.insert_or_assign("id", widget.id);
-    widgetTable.insert_or_assign("type", widget.type);
-    widgetTable.insert_or_assign("output", widget.outputName);
-    widgetTable.insert_or_assign("cx", widget.cx);
-    widgetTable.insert_or_assign("cy", widget.cy);
-    widgetTable.insert_or_assign("scale", widget.scale);
-    widgetTable.insert_or_assign("rotation", widget.rotationRad);
-    if (!widget.enabled) {
-      widgetTable.insert_or_assign("enabled", false);
-    }
-    if (!widget.settings.empty()) {
-      toml::table settingsTable;
-      for (const auto& [key, value] : widget.settings) {
-        writeSetting(settingsTable, key, value);
-      }
-      widgetTable.insert_or_assign("settings", std::move(settingsTable));
-    }
-    widgets.push_back(std::move(widgetTable));
-  }
-  root.insert_or_assign("widget", std::move(widgets));
-
-  const std::string tmpPath = path + ".tmp";
-  std::ofstream out(tmpPath, std::ios::trunc);
-  if (!out.is_open()) {
-    kLog.warn("desktop widgets: failed to open {} for writing", tmpPath);
-    return;
-  }
-  out << toml::toml_formatter{root, toml::toml_formatter::default_flags & ~toml::format_flags::allow_literal_strings};
-  out.close();
-
-  std::filesystem::rename(tmpPath, path, ec);
-  if (ec) {
-    std::filesystem::remove(tmpPath, ec);
-    kLog.warn("desktop widgets: failed to atomically write {}", path);
-  }
+  m_config->setDesktopWidgetsState(m_snapshot);
 }
 
 void DesktopWidgetsController::applyVisibility() {
@@ -425,7 +272,7 @@ void DesktopWidgetsController::applyVisibility() {
   if (!enabled) {
     if (isEditing() && m_editor != nullptr) {
       m_snapshot = m_editor->close();
-      saveState();
+      saveSnapshotToConfig();
     }
     m_host->hide();
     return;
@@ -434,6 +281,20 @@ void DesktopWidgetsController::applyVisibility() {
   if (!isEditing()) {
     m_host->show(m_snapshot);
   }
+}
+
+void DesktopWidgetsController::handleConfigReload() {
+  if (!m_initialized) {
+    return;
+  }
+
+  if (!isEditing()) {
+    loadSnapshotFromConfig();
+    if (m_host != nullptr) {
+      m_host->rebuild(m_snapshot);
+    }
+  }
+  applyVisibility();
 }
 
 void DesktopWidgetsController::normalizeSnapshot() {
@@ -477,83 +338,4 @@ void DesktopWidgetsController::normalizeSnapshot() {
     // prepareFrame). Both of those paths know the widget's actual intrinsic size; clamping here
     // with an estimate can push widgets that the editor had legitimately placed at the edge.
   }
-}
-
-void DesktopWidgetsController::setupWatch() {
-  const std::string path = stateFilePath();
-  if (path.empty()) {
-    return;
-  }
-
-  const std::string dir = std::filesystem::path(path).parent_path().string();
-  std::error_code ec;
-  std::filesystem::create_directories(dir, ec);
-
-  m_inotifyFd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
-  if (m_inotifyFd < 0) {
-    kLog.warn("desktop widgets: inotify_init1 failed");
-    return;
-  }
-
-  m_watchWd = inotify_add_watch(m_inotifyFd, dir.c_str(), IN_MODIFY | IN_CREATE | IN_MOVED_TO);
-  if (m_watchWd < 0) {
-    kLog.warn("desktop widgets: failed to watch {}", dir);
-    ::close(m_inotifyFd);
-    m_inotifyFd = -1;
-  }
-}
-
-void DesktopWidgetsController::checkReload() {
-  if (m_inotifyFd < 0) {
-    return;
-  }
-
-  alignas(inotify_event) char buf[4096];
-  bool changed = false;
-
-  while (true) {
-    const auto n = ::read(m_inotifyFd, buf, sizeof(buf));
-    if (n <= 0) {
-      break;
-    }
-
-    std::size_t offset = 0;
-    while (offset < static_cast<std::size_t>(n)) {
-      const auto* event = reinterpret_cast<const inotify_event*>(buf + offset);
-      if (event->len > 0 && event->wd == m_watchWd) {
-        const std::string_view name{event->name};
-        if (name == "desktop_widgets.toml") {
-          changed = true;
-        }
-      }
-      offset += sizeof(inotify_event) + event->len;
-    }
-  }
-
-  if (!changed) {
-    return;
-  }
-
-  if (m_ownWritePending) {
-    m_ownWritePending = false;
-    return;
-  }
-
-  if (isEditing()) {
-    return;
-  }
-
-  kLog.info("desktop widgets: state file changed, reloading");
-  loadState();
-  if (m_host != nullptr) {
-    m_host->rebuild(m_snapshot);
-  }
-}
-
-std::string DesktopWidgetsController::stateFilePath() const {
-  const std::string dir = FileUtils::stateDir();
-  if (dir.empty()) {
-    return {};
-  }
-  return dir + "/desktop_widgets.toml";
 }

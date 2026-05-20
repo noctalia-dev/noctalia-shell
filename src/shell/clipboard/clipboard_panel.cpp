@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
+#include "core/keybind_matcher.h"
 #include "core/log.h"
 #include "core/process.h"
 #include "core/ui_phase.h"
@@ -10,6 +11,7 @@
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "shell/control_center/tab.h"
+#include "shell/panel/panel_button_style.h"
 #include "shell/panel/panel_manager.h"
 #include "time/time_format.h"
 #include "ui/controls/box.h"
@@ -34,7 +36,6 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -402,8 +403,8 @@ ClipboardPanel::ClipboardPanel(ClipboardService* clipboard, ConfigService* confi
 
 ClipboardPanel::~ClipboardPanel() = default;
 
-bool ClipboardPanel::prefersAttachedToBar() const noexcept {
-  return m_config != nullptr && m_config->config().shell.panel.attachClipboard;
+PanelPlacement ClipboardPanel::panelPlacement() const noexcept {
+  return m_config != nullptr ? m_config->config().shell.panel.clipboardPlacement : PanelPlacement::Centered;
 }
 
 void ClipboardPanel::setActivateCallback(std::function<void(const ClipboardEntry&)> callback) {
@@ -540,9 +541,21 @@ void ClipboardPanel::create() {
   previewActions->setAlign(FlexAlign::Center);
   previewActions->setGap(Style::spaceXs * scale);
 
+  auto copyButton = std::make_unique<Button>();
+  copyButton->setGlyph("copy");
+  copyButton->setVariant(ButtonVariant::Default);
+  copyButton->setGlyphSize(Style::fontSizeBody * scale);
+  copyButton->setMinWidth(Style::controlHeightSm * scale);
+  copyButton->setMinHeight(Style::controlHeightSm * scale);
+  copyButton->setPadding(Style::spaceXs * scale);
+  copyButton->setRadius(Style::scaledRadiusMd(scale));
+  copyButton->setOnClick([this]() { activateSelected(); });
+  m_copyButton = copyButton.get();
+  previewActions->addChild(std::move(copyButton));
+
   auto imageActionButton = std::make_unique<Button>();
   imageActionButton->setGlyph("photo-edit");
-  imageActionButton->setVariant(ButtonVariant::Secondary);
+  imageActionButton->setVariant(ButtonVariant::Default);
   imageActionButton->setGlyphSize(Style::fontSizeBody * scale);
   imageActionButton->setMinWidth(Style::controlHeightSm * scale);
   imageActionButton->setMinHeight(Style::controlHeightSm * scale);
@@ -554,17 +567,17 @@ void ClipboardPanel::create() {
   m_imageActionButton = imageActionButton.get();
   previewActions->addChild(std::move(imageActionButton));
 
-  auto copyButton = std::make_unique<Button>();
-  copyButton->setGlyph("copy");
-  copyButton->setVariant(ButtonVariant::Secondary);
-  copyButton->setGlyphSize(Style::fontSizeBody * scale);
-  copyButton->setMinWidth(Style::controlHeightSm * scale);
-  copyButton->setMinHeight(Style::controlHeightSm * scale);
-  copyButton->setPadding(Style::spaceXs * scale);
-  copyButton->setRadius(Style::scaledRadiusMd(scale));
-  copyButton->setOnClick([this]() { activateSelected(); });
-  m_copyButton = copyButton.get();
-  previewActions->addChild(std::move(copyButton));
+  auto pinButton = std::make_unique<Button>();
+  pinButton->setGlyph("pin");
+  pinButton->setVariant(ButtonVariant::Default);
+  pinButton->setGlyphSize(Style::fontSizeBody * scale);
+  pinButton->setMinWidth(Style::controlHeightSm * scale);
+  pinButton->setMinHeight(Style::controlHeightSm * scale);
+  pinButton->setPadding(Style::spaceXs * scale);
+  pinButton->setRadius(Style::scaledRadiusMd(scale));
+  pinButton->setOnClick([this]() { togglePinSelected(); });
+  m_pinButton = pinButton.get();
+  previewActions->addChild(std::move(pinButton));
 
   auto deleteEntryButton = std::make_unique<Button>();
   deleteEntryButton->setGlyph("trash");
@@ -578,6 +591,13 @@ void ClipboardPanel::create() {
   m_deleteEntryButton = deleteEntryButton.get();
   previewActions->addChild(std::move(deleteEntryButton));
 
+  auto closeButton = std::make_unique<Button>();
+  closeButton->setGlyph("close");
+  panel_button_style::configureHeaderIconButton(*closeButton, scale, panelCardOpacity());
+  closeButton->setOnClick([]() { PanelManager::instance().close(); });
+  m_closeButton = closeButton.get();
+  previewActions->addChild(std::move(closeButton));
+
   previewHeader->addChild(std::move(previewActions));
   preview->addChild(std::move(previewHeader));
 
@@ -590,7 +610,7 @@ void ClipboardPanel::create() {
 
   auto previewScroll = std::make_unique<ScrollView>();
   previewScroll->setScrollbarVisible(true);
-  previewScroll->setCardStyle(scale);
+  previewScroll->setCardStyle(scale, panelCardOpacity());
   previewScroll->setFlexGrow(1.0f);
   m_previewScrollView = previewScroll.get();
   m_previewContent = previewScroll->content();
@@ -748,6 +768,7 @@ void ClipboardPanel::onClose() {
   m_sidebarHeaderRow = nullptr;
   m_sidebarTitle = nullptr;
   m_clearHistoryButton = nullptr;
+  m_closeButton = nullptr;
   m_filterInput = nullptr;
   m_listGrid = nullptr;
   m_listEmptyLabel = nullptr;
@@ -757,6 +778,7 @@ void ClipboardPanel::onClose() {
   m_previewTitle = nullptr;
   m_previewMeta = nullptr;
   m_imageActionButton = nullptr;
+  m_pinButton = nullptr;
   m_copyButton = nullptr;
   m_deleteEntryButton = nullptr;
   m_previewScrollView = nullptr;
@@ -782,6 +804,15 @@ void ClipboardPanel::onClose() {
 
 InputArea* ClipboardPanel::initialFocusArea() const {
   return m_filterInput != nullptr ? m_filterInput->inputArea() : m_focusArea;
+}
+
+void ClipboardPanel::onPanelCardOpacityChanged(float opacity) {
+  if (m_closeButton != nullptr) {
+    panel_button_style::applyHeaderButtonStyle(*m_closeButton, opacity);
+  }
+  if (m_previewScrollView != nullptr) {
+    m_previewScrollView->setCardStyle(contentScale(), opacity);
+  }
 }
 
 void ClipboardPanel::schedulePreviewPayloadRefresh(bool debounced) {
@@ -853,6 +884,31 @@ void ClipboardPanel::updatePreviewActions() {
   m_imageActionButton->setVisible(showImageAction);
   m_imageActionButton->setParticipatesInLayout(showImageAction);
   m_imageActionButton->setEnabled(showImageAction);
+
+  updatePinButton();
+}
+
+void ClipboardPanel::updatePinButton() {
+  if (m_pinButton == nullptr) {
+    return;
+  }
+
+  bool hasSelection = false;
+  bool pinned = false;
+  if (m_clipboard != nullptr) {
+    const std::size_t historyIndex = selectedHistoryIndex();
+    const auto& history = m_clipboard->history();
+    if (historyIndex != static_cast<std::size_t>(-1) && historyIndex < history.size()) {
+      hasSelection = true;
+      pinned = history[historyIndex].pinned;
+    }
+  }
+
+  m_pinButton->setVisible(hasSelection);
+  m_pinButton->setParticipatesInLayout(hasSelection);
+  m_pinButton->setEnabled(hasSelection);
+  m_pinButton->setGlyph(pinned ? "unpin" : "pin");
+  m_pinButton->setVariant(pinned ? ButtonVariant::Accent : ButtonVariant::Default);
 }
 
 void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float height) {
@@ -1085,6 +1141,51 @@ void ClipboardPanel::deleteSelectedEntry() {
   PanelManager::instance().refresh();
 }
 
+void ClipboardPanel::togglePinSelected() {
+  if (m_clipboard == nullptr) {
+    return;
+  }
+  const std::size_t historyIndex = selectedHistoryIndex();
+  if (historyIndex == static_cast<std::size_t>(-1)) {
+    return;
+  }
+  const auto& history = m_clipboard->history();
+  if (historyIndex >= history.size()) {
+    return;
+  }
+
+  const std::string storageId = history[historyIndex].storageId;
+  const bool nextPinned = !history[historyIndex].pinned;
+  if (!m_clipboard->setEntryPinned(historyIndex, nextPinned)) {
+    return;
+  }
+
+  applyFilter();
+
+  // The toggled entry moved within the deque; keep it selected by locating it
+  // again via its stable storage id.
+  std::size_t newSelected = 0;
+  const auto& updated = m_clipboard->history();
+  for (std::size_t pos = 0; pos < m_filteredIndices.size(); ++pos) {
+    const std::size_t idx = m_filteredIndices[pos];
+    if (idx < updated.size() && updated[idx].storageId == storageId) {
+      newSelected = pos;
+      break;
+    }
+  }
+  m_selectedIndex = m_filteredIndices.empty() ? 0 : newSelected;
+
+  updateListState();
+  if (m_listGrid != nullptr) {
+    m_listGrid->notifyDataChanged();
+    m_listGrid->setSelectedIndex(m_filteredIndices.empty() ? std::nullopt
+                                                           : std::optional<std::size_t>(m_selectedIndex));
+  }
+  schedulePreviewPayloadRefresh(false);
+  m_pendingScrollToSelected = true;
+  PanelManager::instance().refresh();
+}
+
 void ClipboardPanel::runImageAction() {
   if (m_clipboard == nullptr || m_config == nullptr) {
     return;
@@ -1129,22 +1230,27 @@ void ClipboardPanel::activateSelected() {
     return;
   }
   const ClipboardEntry entry = m_clipboard->history()[historyIndex];
-  const bool promoted = m_clipboard->promoteEntry(historyIndex);
+  // Pinned entries already sit at the top; don't reorder them or jump the
+  // selection back to the front when they are actioned — just copy.
+  const bool wasPinned = entry.pinned;
+  const bool promoted = wasPinned ? false : m_clipboard->promoteEntry(historyIndex);
   const bool copied = m_clipboard->copyEntry(entry);
   if (copied || promoted) {
     if (m_activateCallback) {
       m_activateCallback(entry);
       return;
     }
-    m_selectedIndex = 0;
-    applyFilter();
-    updateListState();
-    if (m_listGrid != nullptr) {
-      m_listGrid->notifyDataChanged();
-      m_listGrid->setSelectedIndex(m_filteredIndices.empty() ? std::nullopt
-                                                             : std::optional<std::size_t>(m_selectedIndex));
+    if (!wasPinned) {
+      m_selectedIndex = 0;
+      applyFilter();
+      updateListState();
+      if (m_listGrid != nullptr) {
+        m_listGrid->notifyDataChanged();
+        m_listGrid->setSelectedIndex(m_filteredIndices.empty() ? std::nullopt
+                                                               : std::optional<std::size_t>(m_selectedIndex));
+      }
+      schedulePreviewPayloadRefresh(false);
     }
-    schedulePreviewPayloadRefresh(false);
     PanelManager::instance().refresh();
   }
 }
@@ -1154,21 +1260,21 @@ bool ClipboardPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) 
     return false;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Up, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Up, sym, modifiers)) {
     if (m_selectedIndex > 0) {
       selectIndex(m_selectedIndex - 1);
     }
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Down, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Down, sym, modifiers)) {
     if (m_selectedIndex + 1 < m_filteredIndices.size()) {
       selectIndex(m_selectedIndex + 1);
     }
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Validate, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Validate, sym, modifiers)) {
     activateSelected();
     return true;
   }

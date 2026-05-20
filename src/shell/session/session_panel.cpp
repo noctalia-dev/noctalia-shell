@@ -1,8 +1,10 @@
 #include "shell/session/session_panel.h"
 
 #include "compositors/compositor_detect.h"
+#include "compositors/hyprland/hyprland_runtime.h"
 #include "compositors/niri/niri_runtime.h"
 #include "config/config_service.h"
+#include "core/keybind_matcher.h"
 #include "core/log.h"
 #include "core/process.h"
 #include "i18n/i18n.h"
@@ -14,10 +16,14 @@
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/grid_view.h"
+#include "ui/palette.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
 
 #include <algorithm>
+#include <cerrno>
+#include <chrono>
+#include <csignal>
 #include <cstdlib>
 #include <json.hpp>
 #include <memory>
@@ -25,11 +31,11 @@
 #include <string_view>
 #include <thread>
 #include <utility>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
   constexpr Logger kLog("session");
+  constexpr std::chrono::milliseconds kPowerCommandTimeout{5000};
 
   [[nodiscard]] const char* valueOrUnset(const char* value) {
     return value != nullptr && value[0] != '\0' ? value : "<unset>";
@@ -43,31 +49,156 @@ namespace {
     return compositor;
   }
 
-  bool doLogout() {
+  void logLabwcExitFailure(std::string_view command, const process::RunResult& result) {
+    if (!result.err.empty()) {
+      kLog.warn("logout: {} failed with code {}: {}", command, result.exitCode, result.err);
+    } else if (!result.out.empty()) {
+      kLog.warn("logout: {} failed with code {}: {}", command, result.exitCode, result.out);
+    } else {
+      kLog.warn("logout: {} failed with code {}", command, result.exitCode);
+    }
+  }
+
+  [[nodiscard]] std::string commandLabel(std::initializer_list<const char*> args) {
+    std::string label;
+    for (const char* arg : args) {
+      if (arg == nullptr) {
+        continue;
+      }
+      if (!label.empty()) {
+        label += ' ';
+      }
+      label += arg;
+    }
+    return label.empty() ? "<empty>" : label;
+  }
+
+  void logSessionCommandFailure(std::string_view action, std::string_view commandLabel,
+                                const process::RunResult& result) {
+    if (result.timedOut) {
+      kLog.warn("{}: {} timed out after {}ms", action, commandLabel, kPowerCommandTimeout.count());
+    } else if (!result.err.empty()) {
+      kLog.warn("{}: {} failed with code {}: {}", action, commandLabel, result.exitCode, result.err);
+    } else if (!result.out.empty()) {
+      kLog.warn("{}: {} failed with code {}: {}", action, commandLabel, result.exitCode, result.out);
+    } else {
+      kLog.warn("{}: {} failed with code {}", action, commandLabel, result.exitCode);
+    }
+  }
+
+  [[nodiscard]] bool runCheckedSessionCommand(std::string_view action,
+                                              std::initializer_list<std::initializer_list<const char*>> commands) {
+    bool attempted = false;
+    for (const auto& command : commands) {
+      if (command.size() == 0) {
+        continue;
+      }
+      const char* executable = *command.begin();
+      if (executable == nullptr || executable[0] == '\0') {
+        continue;
+      }
+      if (!process::commandExists(executable)) {
+        kLog.debug("{}: {} not found", action, executable);
+        continue;
+      }
+
+      attempted = true;
+      const std::string label = commandLabel(command);
+      const process::RunResult result = process::runSyncWithTimeout(command, kPowerCommandTimeout);
+      if (result) {
+        kLog.info("{}: {} accepted", action, label);
+        return true;
+      }
+      logSessionCommandFailure(action, label, result);
+    }
+
+    if (!attempted) {
+      kLog.warn("{}: no supported command found", action);
+    } else {
+      kLog.warn("{}: all command methods failed", action);
+    }
+    return false;
+  }
+
+  bool terminateLabwcPid() {
+    const char* pidEnv = std::getenv("LABWC_PID");
+    if (pidEnv == nullptr || pidEnv[0] == '\0') {
+      kLog.warn("logout: LABWC_PID is not set");
+      return false;
+    }
+
+    errno = 0;
+    char* end = nullptr;
+    const long pid = std::strtol(pidEnv, &end, 10);
+    if (errno != 0 || end == pidEnv || (end != nullptr && *end != '\0') || pid <= 1) {
+      kLog.warn("logout: LABWC_PID has invalid value \"{}\"", pidEnv);
+      return false;
+    }
+
+    if (::kill(static_cast<pid_t>(pid), SIGTERM) != 0) {
+      kLog.warn("logout: failed to terminate LABWC_PID={}", pidEnv);
+      return false;
+    }
+    return true;
+  }
+
+  bool doLabwcLogout() {
+    if (process::commandExists("labwc")) {
+      const process::RunResult longResult = process::runSync({"labwc", "--exit"});
+      if (longResult) {
+        return true;
+      }
+      logLabwcExitFailure("labwc --exit", longResult);
+
+      const process::RunResult shortResult = process::runSync({"labwc", "-e"});
+      if (shortResult) {
+        return true;
+      }
+      logLabwcExitFailure("labwc -e", shortResult);
+    } else {
+      kLog.warn("logout: labwc executable not found");
+    }
+
+    return terminateLabwcPid();
+  }
+
+  bool doLogout(compositors::niri::NiriRuntime* niriRuntime) {
     const compositors::CompositorKind compositor = logActionContext("logout");
 
     switch (compositor) {
-    case compositors::CompositorKind::Hyprland:
-      return process::launchFirstAvailable({{"hyprctl", "dispatch", "exit"}});
+    case compositors::CompositorKind::Hyprland: {
+      compositors::hyprland::HyprlandRuntime runtime;
+      if (runtime.configIsLua()) {
+        return (runtime.request("dispatch hl.dsp.exit()") != std::nullopt);
+      } else {
+        return (runtime.request("dispatch exit") != std::nullopt);
+      }
+    }
     case compositors::CompositorKind::Sway:
       return process::launchFirstAvailable({{"swaymsg", "exit"}, {"i3-msg", "exit"}});
     case compositors::CompositorKind::Niri: {
-      compositors::niri::NiriRuntime runtime;
+      compositors::niri::NiriRuntime scratch;
+      compositors::niri::NiriRuntime& runtime = niriRuntime != nullptr ? *niriRuntime : scratch;
       return runtime.requestAction(nlohmann::json{{"Quit", nlohmann::json{{"skip_confirmation", true}}}}, true);
     }
     case compositors::CompositorKind::Mango:
       return process::launchFirstAvailable({{"mmsg", "-q"}});
+    case compositors::CompositorKind::Labwc:
+      if (doLabwcLogout()) {
+        return true;
+      }
+      break;
     case compositors::CompositorKind::Unknown:
       break;
     }
 
-    if (process::launchFirstAvailable({{"systemctl", "--user", "stop", "graphical-session.target"}})) {
-      return true;
-    }
     if (const char* sessionId = std::getenv("XDG_SESSION_ID"); sessionId != nullptr && sessionId[0] != '\0') {
       if (process::launchFirstAvailable({{"loginctl", "terminate-session", sessionId}})) {
         return true;
       }
+    }
+    if (process::launchFirstAvailable({{"systemctl", "--user", "stop", "graphical-session.target"}})) {
+      return true;
     }
     if (const char* user = std::getenv("USER"); user != nullptr && user[0] != '\0') {
       if (process::launchFirstAvailable({{"loginctl", "terminate-user", user}})) {
@@ -79,20 +210,24 @@ namespace {
 
   bool doReboot() {
     logActionContext("reboot");
-    const bool launched = process::launchFirstAvailable({{"systemctl", "reboot"}, {"loginctl", "reboot"}});
-    if (!launched) {
-      kLog.warn("reboot: all reboot methods failed");
-    }
-    return launched;
+    return runCheckedSessionCommand("reboot", {
+                                                  {"systemctl", "reboot"},
+                                                  {"loginctl", "reboot"},
+                                                  {"reboot"},
+                                                  {"/sbin/reboot"},
+                                                  {"/usr/sbin/reboot"},
+                                              });
   }
 
   bool doShutdown() {
     logActionContext("shutdown");
-    const bool launched = process::launchFirstAvailable({{"systemctl", "poweroff"}, {"loginctl", "poweroff"}});
-    if (!launched) {
-      kLog.warn("shutdown: all shutdown methods failed");
-    }
-    return launched;
+    return runCheckedSessionCommand("shutdown", {
+                                                    {"systemctl", "poweroff"},
+                                                    {"loginctl", "poweroff"},
+                                                    {"poweroff"},
+                                                    {"/sbin/poweroff"},
+                                                    {"/usr/sbin/poweroff"},
+                                                });
   }
 
   bool doLock() {
@@ -110,8 +245,8 @@ namespace {
     return true;
   }
 
-  void runPowerAction(std::function<bool()> hook, bool (*action)(), std::string_view actionName) {
-    std::thread([hook = std::move(hook), action, actionName = std::string(actionName)]() mutable {
+  void runPowerAction(std::function<bool()> hook, std::function<bool()> action, std::string_view actionName) {
+    std::thread([hook = std::move(hook), action = std::move(action), actionName = std::string(actionName)]() mutable {
       if (hook && !hook()) {
         kLog.warn("{} cancelled because a configured hook failed", actionName);
         return;
@@ -180,6 +315,46 @@ namespace {
     return ButtonVariant::Default;
   }
 
+  [[nodiscard]] Button::ButtonPalette actionButtonPalette(const SessionPanelActionConfig& cfg, float fillOpacity) {
+    constexpr float kDisabledAlpha = 0.55f;
+    const float opacity = std::clamp(fillOpacity, 0.0f, 1.0f);
+    const bool destructive = variantFor(cfg) == ButtonVariant::Destructive;
+
+    return Button::ButtonPalette{
+        .borderWidth = Style::borderWidth,
+        .normal =
+            Button::ButtonStateColors{
+                .bg = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::SurfaceVariant, opacity),
+                .border = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::Outline, 0.5f),
+                .label = colorSpecFromRole(destructive ? ColorRole::OnError : ColorRole::OnSurface),
+            },
+        .hover =
+            Button::ButtonStateColors{
+                .bg = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::Hover, std::max(opacity, 0.78f)),
+                .border = clearColorSpec(),
+                .label = colorSpecFromRole(destructive ? ColorRole::OnError : ColorRole::OnHover),
+            },
+        .pressed =
+            Button::ButtonStateColors{
+                .bg = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::Primary),
+                .border = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::Primary),
+                .label = colorSpecFromRole(destructive ? ColorRole::OnError : ColorRole::OnPrimary),
+            },
+        .disabled =
+            Button::ButtonStateColors{
+                .bg = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::SurfaceVariant,
+                                        opacity * kDisabledAlpha),
+                .border = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::Outline, 0.5f * kDisabledAlpha),
+                .label = colorSpecFromRole(destructive ? ColorRole::OnError : ColorRole::OnSurface, kDisabledAlpha),
+            },
+    };
+  }
+
+  void applyActionButtonPalette(Button& button, const SessionPanelActionConfig& cfg, float fillOpacity) {
+    button.setVariant(variantFor(cfg));
+    button.setCustomPalette(actionButtonPalette(cfg, fillOpacity));
+  }
+
 } // namespace
 
 std::vector<SessionPanelActionConfig> SessionPanel::effectiveActions() const {
@@ -221,6 +396,10 @@ std::function<bool()> SessionPanel::hookFor(const std::string& action) const {
     return m_actionHooks.onShutdown;
   }
   return {};
+}
+
+PanelPlacement SessionPanel::panelPlacement() const noexcept {
+  return m_config != nullptr ? m_config->config().shell.panel.sessionPlacement : PanelPlacement::Attached;
 }
 
 float SessionPanel::preferredWidth() const {
@@ -309,7 +488,7 @@ Button* SessionPanel::createActionButton(const SessionPanelActionConfig& cfg, fl
       cfg.label.has_value() && !cfg.label->empty() ? *cfg.label : i18n::tr(labelKeyForAction(cfg.action));
   button->setText(labelText);
   button->setGlyph(cfg.glyph.has_value() && !cfg.glyph->empty() ? *cfg.glyph : defaultGlyphForAction(cfg.action));
-  button->setVariant(variantFor(cfg));
+  applyActionButtonPalette(*button, cfg, panelCardOpacity());
   button->setDirection(FlexDirection::Vertical);
   button->setAlign(FlexAlign::Center);
   button->setJustify(FlexJustify::Center);
@@ -332,6 +511,17 @@ Button* SessionPanel::createActionButton(const SessionPanelActionConfig& cfg, fl
   button->setHoverSuppressed(!m_mouseActive);
 
   return button.release();
+}
+
+void SessionPanel::onPanelCardOpacityChanged(float opacity) {
+  const std::size_t count = std::min(m_visibleButtons.size(), m_visibleEntries.size());
+  for (std::size_t i = 0; i < count; ++i) {
+    Button* button = m_visibleButtons[i];
+    if (button == nullptr) {
+      continue;
+    }
+    applyActionButtonPalette(*button, m_visibleEntries[i], opacity);
+  }
 }
 
 InputArea* SessionPanel::initialFocusArea() const { return m_focusArea; }
@@ -389,15 +579,16 @@ void SessionPanel::invokeEntry(const SessionPanelActionConfig& cfg) {
   }
 
   if (cfg.action == "logout") {
-    runPowerAction(m_actionHooks.onLogout, doLogout, "logout");
+    compositors::niri::NiriRuntime* niri = m_niriRuntime;
+    runPowerAction(m_actionHooks.onLogout, [niri]() { return doLogout(niri); }, "logout");
     return;
   }
   if (cfg.action == "reboot") {
-    runPowerAction(m_actionHooks.onReboot, doReboot, "reboot");
+    runPowerAction(m_actionHooks.onReboot, []() { return doReboot(); }, "reboot");
     return;
   }
   if (cfg.action == "shutdown") {
-    runPowerAction(m_actionHooks.onShutdown, doShutdown, "shutdown");
+    runPowerAction(m_actionHooks.onShutdown, []() { return doShutdown(); }, "shutdown");
     return;
   }
   if (cfg.action == "lock") {
@@ -414,7 +605,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
   }
   const std::size_t lastIndex = m_visibleButtons.size() - 1;
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Left, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Left, sym, modifiers)) {
     if (!m_selectedIndex.has_value()) {
       m_selectedIndex = lastIndex;
       updateSelectionVisuals();
@@ -433,7 +624,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Right, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Right, sym, modifiers)) {
     if (!m_selectedIndex.has_value()) {
       m_selectedIndex = 0;
       updateSelectionVisuals();
@@ -452,7 +643,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Up, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Up, sym, modifiers)) {
     const std::size_t columns = visibleColumnCount();
     if (!m_selectedIndex.has_value()) {
       m_selectedIndex = lastIndex;
@@ -467,7 +658,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Down, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Down, sym, modifiers)) {
     const std::size_t columns = visibleColumnCount();
     if (!m_selectedIndex.has_value()) {
       m_selectedIndex = 0;
@@ -482,8 +673,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
     return true;
   }
 
-  if ((m_config != nullptr && m_config->matchesKeybind(KeybindAction::Validate, sym, modifiers)) ||
-      sym == XKB_KEY_space) {
+  if (KeybindMatcher::matches(KeybindAction::Validate, sym, modifiers)) {
     activateSelected();
     return true;
   }

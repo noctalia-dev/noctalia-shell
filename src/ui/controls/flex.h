@@ -58,7 +58,7 @@ public:
   void setSoftness(float softness);
 
   // Default app card chrome: filled surface variant with a soft outline.
-  void setCardStyle(float scale = 1.0f);
+  void setCardStyle(float scale = 1.0f, float fillOpacity = 1.0f);
 
   void setMinWidth(float minWidth);
   void setMinHeight(float minHeight);

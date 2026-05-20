@@ -1,6 +1,8 @@
 #include "ui/controls/select_dropdown_popup.h"
 
 #include "core/deferred_call.h"
+#include "core/key_symbols.h"
+#include "core/keybind_matcher.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "cursor-shape-v1-client-protocol.h"
@@ -12,7 +14,9 @@
 #include "ui/controls/box.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
+#include "ui/controls/scrollbar.h"
 #include "ui/palette.h"
+#include "ui/popup_chrome.h"
 #include "ui/style.h"
 #include "wayland/popup_surface.h"
 #include "wayland/wayland_connection.h"
@@ -24,7 +28,6 @@
 #include <linux/input-event-codes.h>
 #include <utility>
 #include <wayland-client-protocol.h>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -52,7 +55,25 @@ void SelectDropdownPopup::setParent(xdg_surface* xdgSurface, wl_output* output) 
   m_parentOutput = output;
 }
 
+void SelectDropdownPopup::setShadowConfig(const ShellConfig::ShadowConfig& shadow) {
+  if (m_shadowConfig == shadow) {
+    return;
+  }
+  m_shadowConfig = shadow;
+  if (isSelectDropdownOpen()) {
+    closeSelectDropdown();
+  }
+}
+
 void SelectDropdownPopup::openSelectDropdown(const DropdownRequest& request, DropdownCallbacks callbacks) {
+  if (m_openInProgress) {
+    m_closeRequestedDuringOpen = true;
+    if (callbacks.onDismiss) {
+      callbacks.onDismiss();
+    }
+    return;
+  }
+
   closeSelectDropdown();
 
   if (m_parentLayerSurface == nullptr && m_parentXdgSurface == nullptr) {
@@ -60,6 +81,7 @@ void SelectDropdownPopup::openSelectDropdown(const DropdownRequest& request, Dro
     return;
   }
 
+  m_closeRequestedDuringOpen = false;
   m_callbacks = std::move(callbacks);
   m_options = request.options;
   m_selectedIndex = request.selectedIndex;
@@ -71,6 +93,7 @@ void SelectDropdownPopup::openSelectDropdown(const DropdownRequest& request, Dro
   m_viewportHeight = static_cast<float>(visibleCount) * m_optionHeight + kMenuPadding * 2.0f;
   m_totalHeight = static_cast<float>(m_options.size()) * m_optionHeight;
   m_scrollOffset = 0.0f;
+  const auto chrome = popup_chrome::computeGeometry(m_menuWidth, m_viewportHeight, m_shadowConfig);
 
   if (m_selectedIndex < m_options.size()) {
     const float selectedTop = static_cast<float>(m_selectedIndex) * m_optionHeight;
@@ -81,26 +104,26 @@ void SelectDropdownPopup::openSelectDropdown(const DropdownRequest& request, Dro
     clampScrollOffset();
   }
 
-  const auto popupW = static_cast<std::uint32_t>(std::max(1.0f, m_menuWidth));
-  const auto popupH = static_cast<std::uint32_t>(std::max(1.0f, m_viewportHeight));
-
   PopupSurfaceConfig popupCfg{
       .anchorX = request.anchorX,
       .anchorY = request.anchorY,
       .anchorWidth = std::max(1, request.anchorWidth),
       .anchorHeight = std::max(1, request.anchorHeight),
-      .width = popupW,
-      .height = popupH,
+      .width = chrome.surfaceWidth,
+      .height = chrome.surfaceHeight,
       .anchor = XDG_POSITIONER_ANCHOR_BOTTOM,
       .gravity = XDG_POSITIONER_GRAVITY_BOTTOM,
       .constraintAdjustment = XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X |
                               XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_Y |
                               XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_Y,
       .offsetX = 0,
-      .offsetY = static_cast<std::int32_t>(Style::spaceXs),
+      .offsetY = static_cast<std::int32_t>(std::lround(Style::spaceXs)),
       .serial = m_wayland.lastInputSerial(),
       .grab = true,
   };
+  popup_chrome::applyToConfig(popupCfg, chrome,
+                              popup_chrome::Attachment{.horizontal = popup_chrome::HorizontalAttachment::Center,
+                                                       .vertical = popup_chrome::VerticalAttachment::Top});
 
   m_surface = std::make_unique<PopupSurface>(m_wayland);
   m_surface->setRenderContext(&m_renderContext);
@@ -150,14 +173,22 @@ void SelectDropdownPopup::openSelectDropdown(const DropdownRequest& request, Dro
 
   m_surface->setDismissedCallback([self]() { DeferredCall::callLater([self]() { self->closeSelectDropdown(); }); });
 
+  m_openInProgress = true;
   const bool initialized = m_parentLayerSurface != nullptr
                                ? m_surface->initialize(m_parentLayerSurface, m_parentOutput, popupCfg)
                                : m_surface->initializeAsChild(m_parentXdgSurface, m_parentOutput, popupCfg);
+  m_openInProgress = false;
   if (!initialized) {
     kLog.warn("failed to create select dropdown popup");
-    m_surface.reset();
+    closeSelectDropdown();
     return;
   }
+  if (m_closeRequestedDuringOpen) {
+    closeSelectDropdown();
+    return;
+  }
+
+  popup_chrome::setContentInputRegion(*m_surface, chrome);
 
   m_wlSurface = m_surface->wlSurface();
 }
@@ -165,10 +196,19 @@ void SelectDropdownPopup::openSelectDropdown(const DropdownRequest& request, Dro
 void SelectDropdownPopup::closeSelectDropdown() {
   auto onDismiss = std::move(m_callbacks.onDismiss);
   m_optionViews.clear();
+  m_inputDispatcher.setSceneRoot(nullptr);
   m_sceneRoot.reset();
-  m_surface.reset();
+  if (m_openInProgress) {
+    m_closeRequestedDuringOpen = true;
+  } else {
+    m_surface.reset();
+    m_closeRequestedDuringOpen = false;
+  }
   m_wlSurface = nullptr;
   m_pointerInside = false;
+  m_pointerOnSurface = false;
+  m_contentNode = nullptr;
+  m_scrollbar = nullptr;
   m_options.clear();
   m_callbacks = {};
   m_sceneDirty = false;
@@ -182,25 +222,41 @@ bool SelectDropdownPopup::isSelectDropdownOpen() const { return m_surface != nul
 void SelectDropdownPopup::buildScene(const DropdownRequest& request) {
   m_sceneRoot = std::make_unique<Node>();
   m_optionViews.clear();
+  const auto chrome = popup_chrome::computeGeometry(m_menuWidth, m_viewportHeight, m_shadowConfig);
+  const float menuX = chrome.contentX();
+  const float menuY = chrome.contentY();
+  const float radius = Style::scaledRadiusMd();
+
+  (void)popup_chrome::addShadow(*m_sceneRoot, chrome, m_shadowConfig, radius);
 
   auto bg = std::make_unique<RectNode>();
   bg->setStyle(RoundedRectStyle{
       .fill = resolved(ColorRole::SurfaceVariant),
       .border = resolved(ColorRole::Outline),
       .fillMode = FillMode::Solid,
-      .radius = Style::scaledRadiusMd(),
+      .radius = radius,
       .softness = 1.0f,
       .borderWidth = Style::borderWidth,
   });
   auto* bgNode = static_cast<RectNode*>(m_sceneRoot->addChild(std::move(bg)));
-  bgNode->setPosition(0.0f, 0.0f);
+  bgNode->setPosition(menuX, menuY);
   bgNode->setFrameSize(m_menuWidth, m_viewportHeight);
+
+  const float contentViewport = m_viewportHeight - kMenuPadding * 2.0f;
+  const bool scrollable = m_totalHeight > contentViewport + 0.5f;
+  const float scrollbarGutter = scrollable ? Style::scrollbarWidth : 0.0f;
+  const float rowWidth = m_menuWidth - kMenuPadding * 2.0f - scrollbarGutter;
 
   auto viewport = std::make_unique<Node>();
   viewport->setClipChildren(true);
-  viewport->setPosition(0.0f, kMenuPadding);
-  viewport->setFrameSize(m_menuWidth, m_viewportHeight - kMenuPadding * 2.0f);
+  viewport->setPosition(menuX, menuY + kMenuPadding);
+  viewport->setFrameSize(m_menuWidth, contentViewport);
   auto* viewportNode = m_sceneRoot->addChild(std::move(viewport));
+
+  auto content = std::make_unique<Node>();
+  content->setPosition(kMenuPadding, -m_scrollOffset);
+  content->setFrameSize(rowWidth, m_totalHeight);
+  m_contentNode = viewportNode->addChild(std::move(content));
 
   const bool hasIndicators = !request.indicatorColors.empty();
   const float indicatorSize = hasIndicators ? std::round(request.fontSize) : 0.0f;
@@ -208,12 +264,12 @@ void SelectDropdownPopup::buildScene(const DropdownRequest& request) {
   const float indicatorInset = hasIndicators ? (indicatorSize + Style::spaceSm) : 0.0f;
 
   for (std::size_t i = 0; i < m_options.size(); ++i) {
-    const float rowY = static_cast<float>(i) * m_optionHeight - m_scrollOffset;
+    const float rowY = static_cast<float>(i) * m_optionHeight;
 
     auto rowBg = std::make_unique<RectNode>();
     rowBg->setPosition(0.0f, rowY);
-    rowBg->setFrameSize(m_menuWidth, m_optionHeight);
-    auto* rowBgPtr = static_cast<RectNode*>(viewportNode->addChild(std::move(rowBg)));
+    rowBg->setFrameSize(rowWidth, m_optionHeight);
+    auto* rowBgPtr = static_cast<RectNode*>(m_contentNode->addChild(std::move(rowBg)));
 
     if (hasIndicators && i < request.indicatorColors.size()) {
       auto indicator = std::make_unique<Box>();
@@ -222,7 +278,7 @@ void SelectDropdownPopup::buildScene(const DropdownRequest& request) {
       indicator->setFrameSize(indicatorSize, indicatorSize);
       indicator->setRadius(indicatorSize * 0.5f);
       indicator->setPosition(request.horizontalPadding, rowY + std::round((m_optionHeight - indicatorSize) * 0.5f));
-      viewportNode->addChild(std::move(indicator));
+      m_contentNode->addChild(std::move(indicator));
     }
 
     auto label = std::make_unique<Label>();
@@ -230,11 +286,11 @@ void SelectDropdownPopup::buildScene(const DropdownRequest& request) {
     label->setFontSize(request.fontSize);
     const float labelLeft = request.horizontalPadding + indicatorInset;
     label->setMaxWidth(
-        std::max(0.0f, m_menuWidth - labelLeft - request.horizontalPadding - request.glyphSize - Style::spaceXs));
+        std::max(0.0f, rowWidth - labelLeft - request.horizontalPadding - request.glyphSize - Style::spaceXs));
     label->measure(m_renderContext);
     float labelY = std::round((m_optionHeight - label->height()) * 0.5f);
     label->setPosition(labelLeft, rowY + labelY);
-    auto* labelPtr = static_cast<Label*>(viewportNode->addChild(std::move(label)));
+    auto* labelPtr = static_cast<Label*>(m_contentNode->addChild(std::move(label)));
 
     Glyph* checkPtr = nullptr;
     if (i == m_selectedIndex) {
@@ -243,8 +299,8 @@ void SelectDropdownPopup::buildScene(const DropdownRequest& request) {
       checkGlyph->setGlyphSize(request.glyphSize);
       checkGlyph->measure(m_renderContext);
       float glyphY = std::round((m_optionHeight - checkGlyph->height()) * 0.5f);
-      checkGlyph->setPosition(m_menuWidth - request.horizontalPadding - checkGlyph->width(), rowY + glyphY);
-      checkPtr = static_cast<Glyph*>(viewportNode->addChild(std::move(checkGlyph)));
+      checkGlyph->setPosition(rowWidth - request.horizontalPadding - checkGlyph->width(), rowY + glyphY);
+      checkPtr = static_cast<Glyph*>(m_contentNode->addChild(std::move(checkGlyph)));
     }
 
     m_optionViews.push_back(OptionView{.background = rowBgPtr, .label = labelPtr, .checkGlyph = checkPtr});
@@ -252,7 +308,7 @@ void SelectDropdownPopup::buildScene(const DropdownRequest& request) {
     auto area = std::make_unique<InputArea>();
     area->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
     area->setPosition(0.0f, rowY);
-    area->setFrameSize(m_menuWidth, m_optionHeight);
+    area->setFrameSize(rowWidth, m_optionHeight);
     area->setOnEnter([this, i](const InputArea::PointerData& /*data*/) {
       m_hoveredIndex = i;
       applyHoverVisuals();
@@ -273,8 +329,15 @@ void SelectDropdownPopup::buildScene(const DropdownRequest& request) {
       scrollBy(data.scrollDelta(m_optionHeight));
       return true;
     });
-    viewportNode->addChild(std::move(area));
+    m_contentNode->addChild(std::move(area));
   }
+
+  auto scrollbar = std::make_unique<Scrollbar>();
+  scrollbar->setOnScrollChanged([this](float offset) { setScrollOffset(offset); });
+  const float scrollbarX = menuX + m_menuWidth - Style::scrollbarWidth - Style::borderWidth;
+  scrollbar->setPosition(scrollbarX, menuY + kMenuPadding);
+  scrollbar->update(contentViewport, m_totalHeight, m_scrollOffset);
+  m_scrollbar = static_cast<Scrollbar*>(m_sceneRoot->addChild(std::move(scrollbar)));
 
   applyHoverVisuals();
 }
@@ -290,10 +353,26 @@ void SelectDropdownPopup::selectAndClose(std::size_t index) {
   });
 }
 
-void SelectDropdownPopup::scrollBy(float delta) {
-  m_scrollOffset += delta;
-  clampScrollOffset();
-  invalidateScene();
+void SelectDropdownPopup::scrollBy(float delta) { setScrollOffset(m_scrollOffset + delta); }
+
+void SelectDropdownPopup::setScrollOffset(float offset) {
+  const float contentViewport = m_viewportHeight - kMenuPadding * 2.0f;
+  const float maxScroll = std::max(0.0f, m_totalHeight - contentViewport);
+  m_scrollOffset = std::clamp(offset, 0.0f, maxScroll);
+  applyScrollOffset();
+  if (m_surface) {
+    m_surface->requestRedraw();
+  }
+}
+
+void SelectDropdownPopup::applyScrollOffset() {
+  if (m_contentNode != nullptr) {
+    m_contentNode->setPosition(kMenuPadding, -m_scrollOffset);
+  }
+  if (m_scrollbar != nullptr) {
+    const float contentViewport = m_viewportHeight - kMenuPadding * 2.0f;
+    m_scrollbar->update(contentViewport, m_totalHeight, m_scrollOffset);
+  }
 }
 
 void SelectDropdownPopup::invalidateScene() {
@@ -307,8 +386,8 @@ void SelectDropdownPopup::applyHoverVisuals() {
   for (std::size_t i = 0; i < m_optionViews.size(); ++i) {
     auto& view = m_optionViews[i];
     const bool isHovered = (i == m_hoveredIndex);
-    const Color bgColor = isHovered ? resolved(ColorRole::Primary) : clearColor();
-    const ColorSpec fg = isHovered ? colorSpecFromRole(ColorRole::OnPrimary) : colorSpecFromRole(ColorRole::OnSurface);
+    const Color bgColor = isHovered ? resolved(ColorRole::Hover) : clearColor();
+    const ColorSpec fg = isHovered ? colorSpecFromRole(ColorRole::OnHover) : colorSpecFromRole(ColorRole::OnSurface);
 
     if (view.background != nullptr) {
       view.background->setStyle(RoundedRectStyle{
@@ -341,42 +420,50 @@ bool SelectDropdownPopup::onPointerEvent(const PointerEvent& event) {
   }
 
   const bool onPopup = (event.surface != nullptr && event.surface == m_wlSurface);
+  const bool captured = m_inputDispatcher.pointerCaptured();
 
   switch (event.type) {
   case PointerEvent::Type::Enter:
     if (onPopup) {
       m_pointerInside = true;
+      m_pointerOnSurface = true;
       m_inputDispatcher.pointerEnter(static_cast<float>(event.sx), static_cast<float>(event.sy), event.serial);
+    } else if (captured) {
+      m_pointerOnSurface = false;
     }
     break;
   case PointerEvent::Type::Leave:
     if (onPopup) {
-      m_pointerInside = false;
-      m_inputDispatcher.pointerLeave();
+      if (captured) {
+        m_pointerOnSurface = false;
+      } else {
+        m_pointerInside = false;
+        m_pointerOnSurface = false;
+        m_inputDispatcher.pointerLeave();
+      }
     }
     break;
   case PointerEvent::Type::Motion:
-    if (onPopup || m_pointerInside) {
-      if (onPopup) {
-        m_pointerInside = true;
-      }
-      m_inputDispatcher.pointerMotion(static_cast<float>(event.sx), static_cast<float>(event.sy), 0);
+    if (m_pointerInside) {
+      auto [mx, my] = popupLocalCoords(event.sx, event.sy);
+      m_inputDispatcher.pointerMotion(mx, my, 0);
       return true;
     }
     break;
   case PointerEvent::Type::Button:
-    if (onPopup || m_pointerInside) {
-      if (onPopup) {
-        m_pointerInside = true;
-      }
+    if (m_pointerInside) {
+      auto [bx, by] = popupLocalCoords(event.sx, event.sy);
       const bool pressed = (event.state == 1);
-      m_inputDispatcher.pointerButton(static_cast<float>(event.sx), static_cast<float>(event.sy), event.button,
-                                      pressed);
+      m_inputDispatcher.pointerButton(bx, by, event.button, pressed);
+      if (!pressed && !m_pointerOnSurface) {
+        m_pointerInside = false;
+        m_inputDispatcher.pointerLeave();
+      }
       return true;
     }
     break;
   case PointerEvent::Type::Axis:
-    if (onPopup || m_pointerInside) {
+    if (m_pointerInside) {
       m_inputDispatcher.pointerAxis(static_cast<float>(event.sx), static_cast<float>(event.sy), event.axis,
                                     event.axisSource, event.axisValue, event.axisDiscrete, event.axisValue120,
                                     event.axisLines);
@@ -404,7 +491,7 @@ void SelectDropdownPopup::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, 
     return;
   }
 
-  if (sym == XKB_KEY_Escape) {
+  if (KeybindMatcher::matches(KeybindAction::Cancel, sym, 0)) {
     auto onDismiss = m_callbacks.onDismiss;
     DeferredCall::callLater([this, onDismiss]() {
       closeSelectDropdown();
@@ -412,7 +499,7 @@ void SelectDropdownPopup::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, 
         onDismiss();
       }
     });
-  } else if (sym == XKB_KEY_Down) {
+  } else if (KeybindMatcher::matches(KeybindAction::Down, sym, 0)) {
     if (!m_options.empty()) {
       m_hoveredIndex = (m_hoveredIndex + 1) % m_options.size();
       applyHoverVisuals();
@@ -420,7 +507,7 @@ void SelectDropdownPopup::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, 
         m_surface->requestRedraw();
       }
     }
-  } else if (sym == XKB_KEY_Up) {
+  } else if (KeybindMatcher::matches(KeybindAction::Up, sym, 0)) {
     if (!m_options.empty()) {
       m_hoveredIndex = (m_hoveredIndex + m_options.size() - 1) % m_options.size();
       applyHoverVisuals();
@@ -428,17 +515,17 @@ void SelectDropdownPopup::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, 
         m_surface->requestRedraw();
       }
     }
-  } else if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter || sym == XKB_KEY_space) {
+  } else if (KeybindMatcher::matches(KeybindAction::Validate, sym, 0)) {
     if (m_hoveredIndex < m_options.size()) {
       selectAndClose(m_hoveredIndex);
     }
-  } else if (sym == XKB_KEY_Home) {
+  } else if (KeySymbol::isHome(sym)) {
     m_hoveredIndex = 0;
     applyHoverVisuals();
     if (m_surface) {
       m_surface->requestRedraw();
     }
-  } else if (sym == XKB_KEY_End) {
+  } else if (KeySymbol::isEnd(sym)) {
     if (!m_options.empty()) {
       m_hoveredIndex = m_options.size() - 1;
       applyHoverVisuals();
@@ -447,6 +534,14 @@ void SelectDropdownPopup::handleKey(std::uint32_t sym, std::uint32_t /*utf32*/, 
       }
     }
   }
+}
+
+std::pair<float, float> SelectDropdownPopup::popupLocalCoords(double sx, double sy) const {
+  if (m_pointerOnSurface || m_surface == nullptr) {
+    return {static_cast<float>(sx), static_cast<float>(sy)};
+  }
+  return {static_cast<float>(sx) - static_cast<float>(m_surface->configuredX()),
+          static_cast<float>(sy) - static_cast<float>(m_surface->configuredY())};
 }
 
 wl_surface* SelectDropdownPopup::wlSurface() const noexcept { return m_wlSurface; }

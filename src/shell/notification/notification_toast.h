@@ -18,14 +18,18 @@
 class ConfigService;
 class Glyph;
 class HttpClient;
+class Input;
 class InputArea;
 class RenderContext;
 class WaylandConnection;
+struct KeyboardEvent;
 struct PointerEvent;
 struct WaylandOutput;
 
 class NotificationToast {
 public:
+  enum class RevealDirection { FromLeft, FromRight, FromTop, FromBottom };
+
   NotificationToast();
   ~NotificationToast();
 
@@ -34,10 +38,13 @@ public:
 
   void initialize(WaylandConnection& wayland, ConfigService* config, NotificationManager* notifications,
                   RenderContext* renderContext, HttpClient* httpClient = nullptr);
+  void onConfigReload();
+  void onOutputChange();
   void requestLayout();
   void requestRedraw();
 
   bool onPointerEvent(const PointerEvent& event);
+  bool onKeyboardEvent(const KeyboardEvent& event);
 
 private:
   // Per-notification visual state (shared across all instances)
@@ -60,6 +67,7 @@ private:
     int toastBodyLines = 0;
     bool exiting = false;
     bool hovered = false; // pointer is currently over the card on some instance
+    bool replyInputFocused = false;
   };
 
   // Per-output instance (each has its own surface, scene, animations)
@@ -88,10 +96,14 @@ private:
       Label* bodyLabel = nullptr;
       ProgressBar* progressBar = nullptr;
       Glyph* closeGlyph = nullptr;
+      Node* actionsRowNode = nullptr;
+      Node* inlineReplyRowNode = nullptr;
+      Input* inlineReplyInput = nullptr;
       AnimationManager::Id countdownAnimId = 0;
       AnimationManager::Id entryAnimId = 0;
       AnimationManager::Id slideAnimId = 0;
       AnimationManager::Id exitAnimId = 0;
+      bool replyMode = false;
     };
     std::vector<CardState> cards;
     float lastPointerX = 0.0f;
@@ -101,9 +113,17 @@ private:
   void onNotificationEvent(const Notification& n, NotificationEvent event);
   void addPopup(const Notification& n);
   void dismissPopup(std::size_t index);
+  void requestClose(uint32_t notificationId, CloseReason reason);
   void removePopup(uint32_t notificationId);
   void finishRemoval(uint32_t notificationId);
   void updateInputRegion(Instance& inst) const;
+  void enterInlineReplyMode(uint32_t notificationId);
+  void submitInlineReply(uint32_t notificationId, const std::string& replyText);
+  void syncKeyboardInteractivity(Instance& inst) const;
+  static void clearInlineReplyFocus(Instance& inst);
+  [[nodiscard]] static bool isInlineReplyInputArea(const Instance& inst, const InputArea* area);
+  [[nodiscard]] static bool pointerHitsInlineReplyInput(const Instance& inst, const Node* hit);
+  [[nodiscard]] static bool inputAreaBelongsToCard(const Instance::CardState& card, const InputArea* area);
 
   void ensureSurfaces();
   void destroySurfaces();
@@ -111,9 +131,10 @@ private:
   void buildScene(Instance& inst, uint32_t width, uint32_t height);
   InputArea* buildCard(const PopupEntry& entry, Node** outCardContent, Node** outCardForeground, Label** outAppName,
                        Label** outSummary, Label** outBody, Node** outBg, Node** outAppIcon, ProgressBar** outProgress,
-                       Glyph** outCloseGlyph);
-  void applyCardReveal(Instance::CardState& cs, float reveal, float y) const;
-  [[nodiscard]] float cardReveal(const Instance::CardState& cs) const;
+                       Glyph** outCloseGlyph, Node** outActionsRow, Node** outInlineReplyRow,
+                       Input** outInlineReplyInput);
+  void applyCardReveal(Instance::CardState& cs, float reveal, float y, float cardHeight) const;
+  [[nodiscard]] float cardReveal(const Instance::CardState& cs, float cardHeight) const;
   void addCardToInstance(Instance& inst, std::size_t entryIndex);
   void removeCardFromInstance(Instance& inst, std::size_t entryIndex);
   void syncEntryVisibility(std::size_t entryIndex);
@@ -135,10 +156,12 @@ private:
   [[nodiscard]] std::vector<std::string> notificationMonitors() const;
   [[nodiscard]] bool shouldRenderOnOutput(const WaylandOutput& output) const;
   [[nodiscard]] bool isBottomStacking() const;
-  [[nodiscard]] bool revealFromLeftEdge() const;
+  [[nodiscard]] RevealDirection revealDirection() const;
   void refreshEntryGeometry(PopupEntry& entry) const;
   [[nodiscard]] float layoutBottomForSurfaceHeight(float surfaceHeight) const;
   [[nodiscard]] float maxPlacementBottom() const;
+  [[nodiscard]] float entryOffsetFromPlacementBottom(const PopupEntry& entry) const;
+  [[nodiscard]] float entryYForSurface(const PopupEntry& entry, float surfaceHeight) const;
   void alignBottomStackToPlacementBottom();
   [[nodiscard]] std::optional<float> findPlacementY(float entryHeight,
                                                     std::optional<uint32_t> ignoreNotificationId = std::nullopt) const;

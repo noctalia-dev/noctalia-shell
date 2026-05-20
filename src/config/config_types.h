@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/key_chord.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -22,6 +23,8 @@ struct BarMonitorOverride {
   std::optional<bool> reserveSpace;
   std::optional<std::int32_t> thickness;
   std::optional<float> backgroundOpacity;
+  std::optional<ColorSpec> border;
+  std::optional<float> borderWidth;
   std::optional<std::int32_t> radius;
   std::optional<std::int32_t> radiusTopLeft;
   std::optional<std::int32_t> radiusTopRight;
@@ -33,7 +36,6 @@ struct BarMonitorOverride {
   std::optional<std::int32_t> widgetSpacing; // gap between widgets within a section
   std::optional<bool> shadow;                // use the global shell shadow on this bar
   std::optional<bool> contactShadow;         // dark gradient between attached panel and bar
-  std::optional<bool> attachPanels;          // allow panels to attach to this bar
   std::optional<float> scale;
   std::optional<std::vector<std::string>> startWidgets;
   std::optional<std::vector<std::string>> centerWidgets;
@@ -60,6 +62,9 @@ struct BarConfig {
   bool reserveSpace = true; // reserve compositor exclusive zone for this bar
   std::int32_t thickness = Style::barThicknessDefault;
   float backgroundOpacity = 1.0f;
+  // Inside outline for the bar background; attached panels inherit the resolved values.
+  ColorSpec border = colorSpecFromRole(ColorRole::Outline);
+  float borderWidth = 0.0f;
   std::int32_t radius = static_cast<std::int32_t>(Style::radiusXl);
   std::int32_t radiusTopLeft = static_cast<std::int32_t>(Style::radiusXl);
   std::int32_t radiusTopRight = static_cast<std::int32_t>(Style::radiusXl);
@@ -71,7 +76,6 @@ struct BarConfig {
   std::int32_t widgetSpacing = 6; // gap between widgets within a section
   bool shadow = true;             // use the global shell shadow
   bool contactShadow = false;     // dark gradient between attached panel and bar
-  bool attachPanels = true;       // allow panels to attach to this bar
   float scale = 1.0f;             // content scale multiplier for glyphs and text
   std::vector<std::string> startWidgets = {"launcher", "wallpaper", "workspaces"};
   std::vector<std::string> centerWidgets = {"clock"};
@@ -129,8 +133,14 @@ struct IdleBehaviorConfig {
   std::string name;
   bool enabled = true;
   std::int32_t timeoutSeconds = 0;
+  /// lock | screen_off | suspend | command (custom shell strings)
+  std::string action;
   std::string command;
   std::string resumeCommand;
+  /// When `action` is `suspend`, lock the session before running suspend so lock surfaces are ready (recommended).
+  bool lockBeforeSuspend = true;
+
+  bool operator==(const IdleBehaviorConfig&) const = default;
 };
 
 struct IdleConfig {
@@ -145,6 +155,33 @@ struct IdleConfig {
 [[nodiscard]] std::vector<SessionPanelActionConfig> defaultSessionPanelActions();
 [[nodiscard]] std::vector<IdleBehaviorConfig> defaultIdleBehaviors();
 
+enum class IdleActionKind : std::uint8_t {
+  None = 0,
+  Command,
+  Lock,
+  ScreenOff,
+  ScreenOn,
+  Suspend,
+};
+
+struct IdleActionRequest {
+  IdleActionKind kind = IdleActionKind::None;
+  std::string command;
+  bool lockBeforeSuspend = true;
+
+  bool operator==(const IdleActionRequest&) const = default;
+};
+
+struct ResolvedIdleBehavior {
+  IdleActionRequest idleAction;
+  IdleActionRequest resumeAction;
+
+  bool operator==(const ResolvedIdleBehavior&) const = default;
+};
+
+void inferIdleBehaviorActionFromLegacyFields(IdleBehaviorConfig& behavior);
+[[nodiscard]] ResolvedIdleBehavior resolveIdleBehaviorActions(const IdleBehaviorConfig& behavior);
+
 enum class KeybindAction : std::uint8_t {
   Validate = 0,
   Cancel = 1,
@@ -154,17 +191,7 @@ enum class KeybindAction : std::uint8_t {
   Down = 5,
 };
 
-struct KeyChord {
-  std::uint32_t sym = 0;       // XKB keysym
-  std::uint32_t modifiers = 0; // KeyMod bitmask
-
-  bool operator==(const KeyChord&) const = default;
-};
-
-// Throws std::runtime_error if spec contains a Super-family modifier.
-[[nodiscard]] std::optional<KeyChord> parseKeyChordSpec(std::string_view spec);
-[[nodiscard]] std::string keyChordToString(const KeyChord& chord);
-[[nodiscard]] std::string keyChordDisplayLabel(const KeyChord& chord);
+[[nodiscard]] std::vector<KeyChord> defaultKeybindSet(KeybindAction action);
 
 using WidgetSettingValue = std::variant<bool, std::int64_t, double, std::string, std::vector<std::string>>;
 using ConfigOverrideValue =
@@ -202,6 +229,10 @@ struct WidgetConfig {
   [[nodiscard]] std::int64_t getInt(const std::string& key, std::int64_t fallback = 0) const;
   [[nodiscard]] double getDouble(const std::string& key, double fallback = 0.0) const;
   [[nodiscard]] bool getBool(const std::string& key, bool fallback = false) const;
+  [[nodiscard]] ColorSpec getColorSpec(const std::string& key, const ColorSpec& fallback,
+                                       std::string_view context = {}) const;
+  [[nodiscard]] std::optional<ColorSpec> getOptionalColorSpec(const std::string& key,
+                                                              std::string_view context = {}) const;
   [[nodiscard]] bool hasSetting(const std::string& key) const;
 
   bool operator==(const WidgetConfig&) const = default;
@@ -211,8 +242,8 @@ struct WidgetConfig {
 // `radius` are populated even when `enabled` is false so widgets can reuse capsule styling internally.
 [[nodiscard]] WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const WidgetConfig* widget);
 
-// Color spec for `[widget.*] color` and other user color strings (same rules as `capsule_fill`).
-[[nodiscard]] ColorSpec colorSpecFromConfigString(const std::string& raw);
+// Color spec for user color strings: either a palette color role token or a hex color.
+[[nodiscard]] ColorSpec colorSpecFromConfigString(const std::string& raw, std::string_view context = {});
 
 // Shared output selector matching used by monitor-scoped config and IPC selectors.
 // Matches connector name exactly, or a word-boundary token within output description.
@@ -268,6 +299,7 @@ struct WallpaperConfig {
   std::string directory;
   std::string directoryLight;
   std::string directoryDark;
+  bool perMonitorDirectories = false;
   WallpaperAutomationConfig automation;
   std::vector<WallpaperMonitorOverride> monitorOverrides;
 };
@@ -287,6 +319,10 @@ struct DockConfig {
   std::int32_t itemSpacing = 6;    // gap between items
   float backgroundOpacity = 0.88f;
   std::int32_t radius = 16;               // dock background corner radius
+  std::int32_t radiusTopLeft = 16;        // dock background top-left corner radius
+  std::int32_t radiusTopRight = 16;       // dock background top-right corner radius
+  std::int32_t radiusBottomLeft = 16;     // dock background bottom-left corner radius
+  std::int32_t radiusBottomRight = 16;    // dock background bottom-right corner radius
   std::int32_t marginEnds = 0;            // inset from each end of the dock along its main axis
   std::int32_t marginEdge = 8;            // distance from the nearest screen edge (floats the dock when > 0)
   bool shadow = true;                     // use the global shell shadow
@@ -306,14 +342,41 @@ struct DockConfig {
   bool operator==(const DockConfig&) const = default;
 };
 
+struct DesktopWidgetsGridState {
+  bool visible = true;
+  std::int32_t cellSize = 16;
+  std::int32_t majorInterval = 4;
+
+  bool operator==(const DesktopWidgetsGridState&) const = default;
+};
+
+struct DesktopWidgetState {
+  std::string id;
+  std::string type = "clock";
+  std::string outputName;
+  float cx = 0.0f;
+  float cy = 0.0f;
+  float scale = 1.0f;
+  float rotationRad = 0.0f;
+  bool enabled = true;
+  std::unordered_map<std::string, WidgetSettingValue> settings;
+
+  bool operator==(const DesktopWidgetState&) const = default;
+};
+
 struct DesktopWidgetsConfig {
   bool enabled = true;
+  std::int32_t schemaVersion = 1;
+  DesktopWidgetsGridState grid;
+  std::vector<DesktopWidgetState> widgets;
 
   bool operator==(const DesktopWidgetsConfig&) const = default;
 };
 
 struct OsdConfig {
   std::string position = "top_right";
+  std::string orientation = "horizontal";
+  bool lockKeys = true;
 };
 
 struct NotificationConfig {
@@ -321,6 +384,8 @@ struct NotificationConfig {
   std::string position = "top_right";
   std::string layer = "top";       // top | overlay
   float backgroundOpacity = 0.97f; // toast card background alpha (0.0–1.0)
+  int offsetX = 20;                // absolute horizontal margin from the screen edge
+  int offsetY = 8;                 // absolute vertical margin from the screen edge
   std::vector<std::string> monitors;
 };
 
@@ -375,6 +440,34 @@ constexpr EnumOption<PasswordMaskStyle> kPasswordMaskStyles[] = {
     {PasswordMaskStyle::RandomIcons, "random", "settings.options.shell.password-style.random-icons"},
 };
 
+enum class PanelTransparencyMode : std::uint8_t {
+  Solid = 0,
+  Soft = 1,
+  Glass = 2,
+};
+
+constexpr EnumOption<PanelTransparencyMode> kPanelTransparencyModes[] = {
+    {PanelTransparencyMode::Solid, "solid", "settings.options.shell.panel-transparency.solid"},
+    {PanelTransparencyMode::Soft, "soft", "settings.options.shell.panel-transparency.soft"},
+    {PanelTransparencyMode::Glass, "glass", "settings.options.shell.panel-transparency.glass"},
+};
+
+[[nodiscard]] float panelCardOpacityForTransparencyMode(PanelTransparencyMode mode,
+                                                        float panelBackgroundOpacity) noexcept;
+[[nodiscard]] float detachedPanelBackgroundOpacityForTransparencyMode(PanelTransparencyMode mode) noexcept;
+
+enum class PanelPlacement : std::uint8_t {
+  Attached = 0,
+  Floating = 1,
+  Centered = 2,
+};
+
+constexpr EnumOption<PanelPlacement> kPanelPlacements[] = {
+    {PanelPlacement::Attached, "attached", "settings.options.shell.panel-placement.attached"},
+    {PanelPlacement::Floating, "floating", "settings.options.shell.panel-placement.floating"},
+    {PanelPlacement::Centered, "centered", "settings.options.shell.panel-placement.centered"},
+};
+
 constexpr EnumOption<WallpaperFillMode> kWallpaperFillModes[] = {
     {WallpaperFillMode::Center, "center", "settings.options.wallpaper.fill.center"},
     {WallpaperFillMode::Crop, "crop", "settings.options.wallpaper.fill.crop"},
@@ -414,10 +507,17 @@ struct ShellConfig {
 
   struct PanelConfig {
     bool backgroundBlur = true; // request compositor blur behind panels via ext-background-effect-v1
-    bool attachLauncher = false;
-    bool attachClipboard = false;
-    bool attachControlCenter = true;
-    bool attachWallpaper = true;
+    PanelTransparencyMode transparencyMode = PanelTransparencyMode::Solid;
+    PanelPlacement launcherPlacement = PanelPlacement::Centered;
+    PanelPlacement clipboardPlacement = PanelPlacement::Centered;
+    PanelPlacement controlCenterPlacement = PanelPlacement::Attached;
+    PanelPlacement wallpaperPlacement = PanelPlacement::Attached;
+    PanelPlacement sessionPlacement = PanelPlacement::Attached;
+    bool openNearClickControlCenter = false;
+    bool openNearClickLauncher = false;
+    bool openNearClickClipboard = false;
+    bool openNearClickWallpaper = false;
+    bool openNearClickSession = false;
 
     bool operator==(const PanelConfig&) const = default;
   };
@@ -443,6 +543,7 @@ struct ShellConfig {
   std::string dateFormat = "%A, %x";
   bool offlineMode = false;
   bool telemetryEnabled = false;
+  bool niriOverviewTypeToLaunchEnabled = false;
   bool polkitAgent = false;
   PasswordMaskStyle passwordMaskStyle = PasswordMaskStyle::CircleFilled;
   AnimationConfig animation;
@@ -450,6 +551,8 @@ struct ShellConfig {
   bool settingsShowAdvanced = false;
   bool middleClickOpensWidgetSettings = true;
   bool showLocation = true;
+  /// When false, disables Wayland clipboard integration (history panel, data-control binding, Input paste/copy hooks).
+  bool clipboardEnabled = true;
   ClipboardAutoPasteMode clipboardAutoPaste = ClipboardAutoPasteMode::Auto;
   std::string clipboardImageActionCommand;
   ShadowConfig shadow;
@@ -471,6 +574,11 @@ struct WeatherConfig {
 struct SystemConfig {
   struct MonitorConfig {
     bool enabled = true;
+    float cpuPollSeconds = 2.0f;
+    float gpuPollSeconds = 5.0f;
+    float memoryPollSeconds = 2.0f;
+    float networkPollSeconds = 3.0f;
+    float diskPollSeconds = 10.0f;
   };
 
   MonitorConfig monitor;
@@ -543,6 +651,7 @@ enum class HookKind : std::uint8_t {
   Started = 0,
   WallpaperChanged,
   ColorsChanged,
+  ThemeModeChanged,
   SessionLocked,
   SessionUnlocked,
   LoggingOut,
@@ -554,6 +663,7 @@ enum class HookKind : std::uint8_t {
   BluetoothDisabled,
   BatteryStateChanged,
   BatteryUnderThreshold,
+  PowerProfileChanged,
   Count
 };
 
@@ -561,6 +671,7 @@ constexpr EnumOption<HookKind> kHookKinds[] = {
     {HookKind::Started, "started", ""},
     {HookKind::WallpaperChanged, "wallpaper_changed", ""},
     {HookKind::ColorsChanged, "colors_changed", ""},
+    {HookKind::ThemeModeChanged, "theme_mode_changed", ""},
     {HookKind::SessionLocked, "session_locked", ""},
     {HookKind::SessionUnlocked, "session_unlocked", ""},
     {HookKind::LoggingOut, "logging_out", ""},
@@ -572,6 +683,7 @@ constexpr EnumOption<HookKind> kHookKinds[] = {
     {HookKind::BluetoothDisabled, "bluetooth_disabled", ""},
     {HookKind::BatteryStateChanged, "battery_state_changed", ""},
     {HookKind::BatteryUnderThreshold, "battery_under_threshold", ""},
+    {HookKind::PowerProfileChanged, "power_profile_changed", ""},
 };
 
 static_assert(sizeof(kHookKinds) / sizeof(kHookKinds[0]) == static_cast<std::size_t>(HookKind::Count));
@@ -615,13 +727,51 @@ constexpr EnumOption<ThemeMode> kThemeModes[] = {
 };
 
 struct ThemeConfig {
+  struct TemplateColorConfig {
+    std::string name;
+    std::string color;
+    bool blend = true;
+
+    bool operator==(const TemplateColorConfig&) const = default;
+  };
+
+  struct TemplateInputPathModesConfig {
+    std::string dark;
+    std::string light;
+
+    bool operator==(const TemplateInputPathModesConfig&) const = default;
+  };
+
+  struct TemplateCompareColorConfig {
+    std::string name;
+    std::string color;
+
+    bool operator==(const TemplateCompareColorConfig&) const = default;
+  };
+
+  struct UserTemplateConfig {
+    std::string id;
+    bool enabled = true;
+    std::string inputPath;
+    std::optional<TemplateInputPathModesConfig> inputPathModes;
+    std::vector<std::string> outputPaths;
+    std::string outputPathDynamic;
+    std::string compareTo;
+    std::vector<TemplateCompareColorConfig> colorsToCompare;
+    std::string preHook;
+    std::string postHook;
+    int index = 0;
+
+    bool operator==(const UserTemplateConfig&) const = default;
+  };
+
   struct TemplatesConfig {
     bool enableBuiltinTemplates = true;
     std::vector<std::string> builtinIds;
     bool enableCommunityTemplates = true;
     std::vector<std::string> communityIds;
-    bool enableUserTemplates = false;
-    std::string userConfig = "~/.config/noctalia/user-templates.toml";
+    std::vector<TemplateColorConfig> customColors;
+    std::vector<UserTemplateConfig> userTemplates;
 
     bool operator==(const TemplatesConfig&) const = default;
   };
@@ -637,6 +787,7 @@ struct ThemeConfig {
 
 struct ControlCenterConfig {
   std::vector<ShortcutConfig> shortcuts;
+  bool compact = true;
   bool operator==(const ControlCenterConfig&) const = default;
 };
 

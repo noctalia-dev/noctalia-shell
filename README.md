@@ -60,7 +60,19 @@ sudo moss it meson g++ just \
   extra-cmake-modules build-essential
 ```
 
-Vendored dependencies, with no system package needed: `Wuffs`, `nanosvg`, `tomlplusplus`, `tinyexpr`,
+### VoidLinux
+```sh
+sudo xbps-install meson ninja pkg-config git \
+  wayland-devel wayland-protocols libepoxy-devel \
+  MesaLib-devel libglvnd-devel cairo-devel \
+  pango-devel fontconfig-devel freetype-devel \
+  harfbuzz-devel libxkbcommon-devel pipewire-devel \
+  libcurl-devel pam-devel libwebp-devel \
+  basu-devel libcurl-devel sdbus-c++-devel \
+  polkit-devel  librsvg-devel
+```
+
+Vendored dependencies, with no system package needed: `Wuffs`, `tomlplusplus`, `tinyexpr`,
 `nlohmann/json`, `Luau`, `dr_wav`, `fzy`, `stb_image_resize2`, and Material Color Utilities.
 
 System packages required beyond the Wayland/GL stack: `libwebp` handles WebP decoding and thumbnail encoding. Wuffs
@@ -75,35 +87,29 @@ reduces memory fragmentation in long-running sessions. When detected at build ti
 
 Sanitizer runtime packages are only needed for ASan/UBSan builds configured with `just configure asan`.
 
-## Build
+## Building and install
 
 Requires [just](https://github.com/casey/just) and [meson](https://mesonbuild.com/).
 
+#### Release build
 ```sh
-# Debug build in build-debug/
-just configure
-just build
-just run
-
 # Optimized release build in build-release/
 just configure release
 just build release
-just run release
 
-# Clean rebuild
-just rebuild
-just rebuild release
-```
-
-## Installation
-
-After building, install with `just`:
-
-```sh
+# After building, install
 sudo just install release
 ```
 
-Use `sudo just install` instead if you configured the default debug build.
+#### Debug build
+```sh
+# Debug build in build-debug/ don't use debug unless you are debugging...
+just configure
+just build
+
+# Test your local debug build with
+just run
+```
 
 Meson installs the binary and shipped assets using the normal prefix layout:
 

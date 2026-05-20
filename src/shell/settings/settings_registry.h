@@ -56,10 +56,19 @@ namespace settings {
         linkedCommit;
   };
 
+  enum class TextSettingBrowseMode : std::uint8_t {
+    None = 0,
+    SelectFolder,
+    OpenFile,
+  };
+
   struct TextSetting {
     std::string value;
     std::string placeholder;
     float width = 0.0f; // 0 = use default
+    TextSettingBrowseMode browseMode = TextSettingBrowseMode::None;
+    /// When browseMode == OpenFile, optional filter (e.g. `{".wav", ".ogg"}`); empty allows any file.
+    std::vector<std::string> browseFileExtensions;
   };
 
   struct OptionalNumberSetting {
@@ -116,11 +125,6 @@ namespace settings {
     std::vector<IdleBehaviorConfig> items;
   };
 
-  struct ColorSetting {
-    std::string hex; // current resolved value as #RRGGBB; empty when unset
-    bool unset = true;
-  };
-
   struct MultiSelectSetting {
     std::vector<SelectOption> options;
     std::vector<std::string> selectedValues;
@@ -130,19 +134,21 @@ namespace settings {
   struct ButtonSetting {
     std::string label;
     std::function<void()> action;
+    std::string glyph;
   };
 
-  struct ColorRolePickerSetting {
+  struct ColorSpecPickerSetting {
     std::vector<ColorRole> roles;
     std::string selectedValue;
     bool allowNone = false;
+    bool allowCustomColor = true;
+    std::string noneLabel;
   };
 
-  using SettingControl =
-      std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting, OptionalNumberSetting,
-                   OptionalStepperSetting, StepperSetting, ListSetting, ShortcutListSetting, KeybindListSetting,
-                   SessionPanelActionsSetting, IdleBehaviorsSetting, ColorSetting, MultiSelectSetting, ButtonSetting,
-                   ColorRolePickerSetting, SearchPickerSetting>;
+  using SettingControl = std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting, OptionalNumberSetting,
+                                      OptionalStepperSetting, StepperSetting, ListSetting, ShortcutListSetting,
+                                      KeybindListSetting, SessionPanelActionsSetting, IdleBehaviorsSetting,
+                                      MultiSelectSetting, ButtonSetting, ColorSpecPickerSetting, SearchPickerSetting>;
 
   struct SettingVisibilityCondition {
     std::vector<std::string> path;
@@ -172,13 +178,15 @@ namespace settings {
 
   // Runtime conditions that gate optional sections (e.g. compositor-specific features).
   struct RegistryEnvironment {
-    bool niriBackdropSupported = false;         // hide the [backdrop] section when false
-    bool ddcutilAvailable = false;              // disable ddcutil toggle when ddcutil is not on PATH
-    bool gammaControlAvailable = false;         // hide night-light entries when gamma control is unavailable
-    std::vector<SelectOption> availableOutputs; // monitor selectors available on this machine
+    bool niriBackdropSupported = false;             // hide niri backdrop entries when false
+    bool niriOverviewTypeToLaunchSupported = false; // show niri-only type-to-launch integration
+    bool ddcutilAvailable = false;                  // disable ddcutil toggle when ddcutil is not on PATH
+    bool gammaControlAvailable = false;             // hide night-light entries when gamma control is unavailable
+    std::vector<SelectOption> availableOutputs;     // monitor selectors available on this machine
     std::vector<SelectOption> communityPalettes;
     std::vector<SelectOption> customPalettes;
     std::vector<SelectOption> communityTemplates;
+    std::vector<SelectOption> fontFamilies;
   };
 
   [[nodiscard]] const BarConfig* findBar(const Config& cfg, std::string_view name);

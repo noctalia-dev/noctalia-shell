@@ -1,7 +1,6 @@
 #include "render/animation/animation.h"
 
 #include <algorithm>
-#include <cmath>
 
 float applyEasing(Easing easing, float t) {
   t = std::clamp(t, 0.0f, 1.0f);

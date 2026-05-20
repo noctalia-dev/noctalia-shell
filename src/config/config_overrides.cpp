@@ -1,6 +1,8 @@
 #include "config/config_service.h"
 #include "core/log.h"
+#include "theme/scheme.h"
 #include "util/file_utils.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
 #include <cmath>
@@ -10,12 +12,11 @@
 #include <iterator>
 #include <optional>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace {
   constexpr Logger kLog("config");
-  constexpr const char* kInternalStateTable = "noctalia_state";
-  constexpr const char* kSetupWizardCompletedKey = "setup_wizard_completed";
   constexpr double kConfigFloatEpsilon = 1.0e-5;
 
   std::string overrideCacheKey(const std::vector<std::string>& path) {
@@ -108,15 +109,27 @@ namespace {
     return true;
   }
 
+  bool desktopWidgetEqual(const DesktopWidgetState& a, const DesktopWidgetState& b) {
+    return a.id == b.id && a.type == b.type && a.outputName == b.outputName && nearlyEqual(a.cx, b.cx) &&
+           nearlyEqual(a.cy, b.cy) && nearlyEqual(a.scale, b.scale) && nearlyEqual(a.rotationRad, b.rotationRad) &&
+           a.enabled == b.enabled && widgetSettingsEqual(a.settings, b.settings);
+  }
+
+  bool desktopWidgetsConfigEqual(const DesktopWidgetsConfig& a, const DesktopWidgetsConfig& b) {
+    return a.enabled == b.enabled && a.schemaVersion == b.schemaVersion && a.grid.visible == b.grid.visible &&
+           a.grid.cellSize == b.grid.cellSize && a.grid.majorInterval == b.grid.majorInterval &&
+           vectorEqual(a.widgets, b.widgets, desktopWidgetEqual);
+  }
+
   bool barBaseConfigEqual(const BarConfig& a, const BarConfig& b) {
     return a.name == b.name && a.position == b.position && a.enabled == b.enabled && a.autoHide == b.autoHide &&
            a.reserveSpace == b.reserveSpace && a.thickness == b.thickness &&
-           nearlyEqual(a.backgroundOpacity, b.backgroundOpacity) && a.radius == b.radius &&
-           a.radiusTopLeft == b.radiusTopLeft && a.radiusTopRight == b.radiusTopRight &&
-           a.radiusBottomLeft == b.radiusBottomLeft && a.radiusBottomRight == b.radiusBottomRight &&
-           a.marginEnds == b.marginEnds && a.marginEdge == b.marginEdge && a.padding == b.padding &&
-           a.widgetSpacing == b.widgetSpacing && a.shadow == b.shadow && a.contactShadow == b.contactShadow &&
-           a.attachPanels == b.attachPanels && nearlyEqual(a.scale, b.scale) && a.startWidgets == b.startWidgets &&
+           nearlyEqual(a.backgroundOpacity, b.backgroundOpacity) && colorSpecEqual(a.border, b.border) &&
+           nearlyEqual(a.borderWidth, b.borderWidth) && a.radius == b.radius && a.radiusTopLeft == b.radiusTopLeft &&
+           a.radiusTopRight == b.radiusTopRight && a.radiusBottomLeft == b.radiusBottomLeft &&
+           a.radiusBottomRight == b.radiusBottomRight && a.marginEnds == b.marginEnds && a.marginEdge == b.marginEdge &&
+           a.padding == b.padding && a.widgetSpacing == b.widgetSpacing && a.shadow == b.shadow &&
+           a.contactShadow == b.contactShadow && nearlyEqual(a.scale, b.scale) && a.startWidgets == b.startWidgets &&
            a.centerWidgets == b.centerWidgets && a.endWidgets == b.endWidgets &&
            a.widgetCapsuleDefault == b.widgetCapsuleDefault &&
            colorSpecEqual(a.widgetCapsuleFill, b.widgetCapsuleFill) &&
@@ -146,6 +159,12 @@ namespace {
     }
     if (ovr.backgroundOpacity) {
       resolved.backgroundOpacity = *ovr.backgroundOpacity;
+    }
+    if (ovr.border) {
+      resolved.border = *ovr.border;
+    }
+    if (ovr.borderWidth) {
+      resolved.borderWidth = *ovr.borderWidth;
     }
     if (ovr.radius) {
       resolved.radius = *ovr.radius;
@@ -183,9 +202,6 @@ namespace {
     }
     if (ovr.contactShadow) {
       resolved.contactShadow = *ovr.contactShadow;
-    }
-    if (ovr.attachPanels) {
-      resolved.attachPanels = *ovr.attachPanels;
     }
     if (ovr.startWidgets) {
       resolved.startWidgets = *ovr.startWidgets;
@@ -270,7 +286,7 @@ namespace {
            a.transitions == b.transitions && nearlyEqual(a.transitionDurationMs, b.transitionDurationMs) &&
            nearlyEqual(a.edgeSmoothness, b.edgeSmoothness) && a.directory == b.directory &&
            a.directoryLight == b.directoryLight && a.directoryDark == b.directoryDark &&
-           a.automation.enabled == b.automation.enabled &&
+           a.perMonitorDirectories == b.perMonitorDirectories && a.automation.enabled == b.automation.enabled &&
            a.automation.intervalMinutes == b.automation.intervalMinutes && a.automation.order == b.automation.order &&
            a.automation.recursive == b.automation.recursive &&
            vectorEqual(a.monitorOverrides, b.monitorOverrides, wallpaperMonitorOverrideEqual);
@@ -280,6 +296,8 @@ namespace {
     return a.enabled == b.enabled && a.position == b.position && a.activeMonitorOnly == b.activeMonitorOnly &&
            a.iconSize == b.iconSize && a.padding == b.padding && a.itemSpacing == b.itemSpacing &&
            nearlyEqual(a.backgroundOpacity, b.backgroundOpacity) && a.radius == b.radius &&
+           a.radiusTopLeft == b.radiusTopLeft && a.radiusTopRight == b.radiusTopRight &&
+           a.radiusBottomLeft == b.radiusBottomLeft && a.radiusBottomRight == b.radiusBottomRight &&
            a.marginEnds == b.marginEnds && a.marginEdge == b.marginEdge && a.shadow == b.shadow &&
            a.showRunning == b.showRunning && a.autoHide == b.autoHide && a.reserveSpace == b.reserveSpace &&
            nearlyEqual(a.activeScale, b.activeScale) && nearlyEqual(a.inactiveScale, b.inactiveScale) &&
@@ -292,24 +310,34 @@ namespace {
     return nearlyEqual(a.uiScale, b.uiScale) && nearlyEqual(a.cornerRadiusScale, b.cornerRadiusScale) &&
            a.fontFamily == b.fontFamily && a.lang == b.lang && a.timeFormat == b.timeFormat &&
            a.dateFormat == b.dateFormat && a.offlineMode == b.offlineMode && a.telemetryEnabled == b.telemetryEnabled &&
-           a.polkitAgent == b.polkitAgent && a.passwordMaskStyle == b.passwordMaskStyle &&
-           a.animation.enabled == b.animation.enabled && nearlyEqual(a.animation.speed, b.animation.speed) &&
-           a.avatarPath == b.avatarPath && a.settingsShowAdvanced == b.settingsShowAdvanced &&
+           a.niriOverviewTypeToLaunchEnabled == b.niriOverviewTypeToLaunchEnabled && a.polkitAgent == b.polkitAgent &&
+           a.passwordMaskStyle == b.passwordMaskStyle && a.animation.enabled == b.animation.enabled &&
+           nearlyEqual(a.animation.speed, b.animation.speed) && a.avatarPath == b.avatarPath &&
+           a.settingsShowAdvanced == b.settingsShowAdvanced &&
            a.middleClickOpensWidgetSettings == b.middleClickOpensWidgetSettings && a.showLocation == b.showLocation &&
-           a.clipboardAutoPaste == b.clipboardAutoPaste &&
+           a.clipboardEnabled == b.clipboardEnabled && a.clipboardAutoPaste == b.clipboardAutoPaste &&
            a.clipboardImageActionCommand == b.clipboardImageActionCommand && a.shadow.blur == b.shadow.blur &&
            a.shadow.offsetX == b.shadow.offsetX && a.shadow.offsetY == b.shadow.offsetY &&
            nearlyEqual(a.shadow.alpha, b.shadow.alpha) && a.panel.backgroundBlur == b.panel.backgroundBlur &&
-           a.panel.attachLauncher == b.panel.attachLauncher && a.panel.attachClipboard == b.panel.attachClipboard &&
-           a.panel.attachControlCenter == b.panel.attachControlCenter &&
-           a.panel.attachWallpaper == b.panel.attachWallpaper && a.screenCorners.enabled == b.screenCorners.enabled &&
-           a.screenCorners.size == b.screenCorners.size && a.mpris.blacklist == b.mpris.blacklist &&
-           a.session.actions == b.session.actions;
+           a.panel.transparencyMode == b.panel.transparencyMode &&
+           a.panel.launcherPlacement == b.panel.launcherPlacement &&
+           a.panel.clipboardPlacement == b.panel.clipboardPlacement &&
+           a.panel.controlCenterPlacement == b.panel.controlCenterPlacement &&
+           a.panel.wallpaperPlacement == b.panel.wallpaperPlacement &&
+           a.panel.sessionPlacement == b.panel.sessionPlacement &&
+           a.panel.openNearClickControlCenter == b.panel.openNearClickControlCenter &&
+           a.panel.openNearClickLauncher == b.panel.openNearClickLauncher &&
+           a.panel.openNearClickClipboard == b.panel.openNearClickClipboard &&
+           a.panel.openNearClickWallpaper == b.panel.openNearClickWallpaper &&
+           a.panel.openNearClickSession == b.panel.openNearClickSession &&
+           a.screenCorners.enabled == b.screenCorners.enabled && a.screenCorners.size == b.screenCorners.size &&
+           a.mpris.blacklist == b.mpris.blacklist && a.session.actions == b.session.actions;
   }
 
   bool notificationConfigEqual(const NotificationConfig& a, const NotificationConfig& b) {
     return a.enableDaemon == b.enableDaemon && a.position == b.position && a.layer == b.layer &&
-           nearlyEqual(a.backgroundOpacity, b.backgroundOpacity) && a.monitors == b.monitors;
+           nearlyEqual(a.backgroundOpacity, b.backgroundOpacity) && a.offsetX == b.offsetX && a.offsetY == b.offsetY &&
+           a.monitors == b.monitors;
   }
 
   bool audioConfigEqual(const AudioConfig& a, const AudioConfig& b) {
@@ -329,7 +357,7 @@ namespace {
     return nearlyEqual(a.preActionFadeSeconds, b.preActionFadeSeconds) &&
            vectorEqual(a.behaviors, b.behaviors, [](const IdleBehaviorConfig& lhs, const IdleBehaviorConfig& rhs) {
              return lhs.name == rhs.name && lhs.enabled == rhs.enabled && lhs.timeoutSeconds == rhs.timeoutSeconds &&
-                    lhs.command == rhs.command && lhs.resumeCommand == rhs.resumeCommand;
+                    lhs.action == rhs.action && lhs.command == rhs.command && lhs.resumeCommand == rhs.resumeCommand;
            });
   }
 
@@ -340,8 +368,8 @@ namespace {
            a.templates.builtinIds == b.templates.builtinIds &&
            a.templates.enableCommunityTemplates == b.templates.enableCommunityTemplates &&
            a.templates.communityIds == b.templates.communityIds &&
-           a.templates.enableUserTemplates == b.templates.enableUserTemplates &&
-           a.templates.userConfig == b.templates.userConfig;
+           a.templates.customColors == b.templates.customColors &&
+           a.templates.userTemplates == b.templates.userTemplates;
   }
 
   bool configEqual(const Config& a, const Config& b) {
@@ -349,12 +377,18 @@ namespace {
            wallpaperConfigEqual(a.wallpaper, b.wallpaper) && a.backdrop.enabled == b.backdrop.enabled &&
            nearlyEqual(a.backdrop.blurIntensity, b.backdrop.blurIntensity) &&
            nearlyEqual(a.backdrop.tintIntensity, b.backdrop.tintIntensity) && dockConfigEqual(a.dock, b.dock) &&
-           a.desktopWidgets == b.desktopWidgets && shellConfigEqual(a.shell, b.shell) &&
-           a.osd.position == b.osd.position && notificationConfigEqual(a.notification, b.notification) &&
+           desktopWidgetsConfigEqual(a.desktopWidgets, b.desktopWidgets) && shellConfigEqual(a.shell, b.shell) &&
+           a.osd.position == b.osd.position && a.osd.orientation == b.osd.orientation &&
+           a.osd.lockKeys == b.osd.lockKeys && notificationConfigEqual(a.notification, b.notification) &&
            a.weather.enabled == b.weather.enabled && a.weather.autoLocate == b.weather.autoLocate &&
            a.weather.effects == b.weather.effects && a.weather.address == b.weather.address &&
            a.weather.refreshMinutes == b.weather.refreshMinutes && a.weather.unit == b.weather.unit &&
-           a.system.monitor.enabled == b.system.monitor.enabled && audioConfigEqual(a.audio, b.audio) &&
+           a.system.monitor.enabled == b.system.monitor.enabled &&
+           a.system.monitor.cpuPollSeconds == b.system.monitor.cpuPollSeconds &&
+           a.system.monitor.gpuPollSeconds == b.system.monitor.gpuPollSeconds &&
+           a.system.monitor.memoryPollSeconds == b.system.monitor.memoryPollSeconds &&
+           a.system.monitor.networkPollSeconds == b.system.monitor.networkPollSeconds &&
+           a.system.monitor.diskPollSeconds == b.system.monitor.diskPollSeconds && audioConfigEqual(a.audio, b.audio) &&
            a.brightness == b.brightness && a.keybinds.validate == b.keybinds.validate &&
            a.keybinds.cancel == b.keybinds.cancel && a.keybinds.left == b.keybinds.left &&
            a.keybinds.right == b.keybinds.right && a.keybinds.up == b.keybinds.up &&
@@ -369,6 +403,44 @@ namespace {
     }
     auto [it, _] = parent.insert_or_assign(key, toml::table{});
     return it->second.as_table();
+  }
+
+  void insertWidgetSetting(toml::table& table, const std::string& key, const WidgetSettingValue& value) {
+    std::visit(
+        [&](const auto& concrete) {
+          using T = std::decay_t<decltype(concrete)>;
+          if constexpr (std::is_same_v<T, std::vector<std::string>>) {
+            toml::array array;
+            for (const auto& item : concrete) {
+              array.push_back(item);
+            }
+            table.insert_or_assign(key, std::move(array));
+          } else {
+            table.insert_or_assign(key, concrete);
+          }
+        },
+        value);
+  }
+
+  toml::table desktopWidgetTable(const DesktopWidgetState& widget) {
+    toml::table widgetTable;
+    widgetTable.insert_or_assign("type", widget.type);
+    widgetTable.insert_or_assign("output", widget.outputName);
+    widgetTable.insert_or_assign("cx", static_cast<double>(widget.cx));
+    widgetTable.insert_or_assign("cy", static_cast<double>(widget.cy));
+    widgetTable.insert_or_assign("scale", static_cast<double>(widget.scale));
+    widgetTable.insert_or_assign("rotation", static_cast<double>(widget.rotationRad));
+    if (!widget.enabled) {
+      widgetTable.insert_or_assign("enabled", false);
+    }
+    if (!widget.settings.empty()) {
+      toml::table settingsTable;
+      for (const auto& [key, value] : widget.settings) {
+        insertWidgetSetting(settingsTable, key, value);
+      }
+      widgetTable.insert_or_assign("settings", std::move(settingsTable));
+    }
+    return widgetTable;
   }
 
   void insertOverrideValue(toml::table& table, std::string_view key, const ConfigOverrideValue& value) {
@@ -418,6 +490,7 @@ namespace {
             table.insert_or_assign(key, std::move(array));
           } else if constexpr (std::is_same_v<T, std::vector<IdleBehaviorConfig>>) {
             toml::table behaviorTable;
+            toml::array behaviorOrder;
             for (const auto& item : concrete) {
               if (item.name.empty()) {
                 continue;
@@ -425,15 +498,27 @@ namespace {
               toml::table row;
               row.insert_or_assign("enabled", item.enabled);
               row.insert_or_assign("timeout", static_cast<std::int64_t>(item.timeoutSeconds));
+              if (!item.action.empty()) {
+                row.insert_or_assign("action", item.action);
+              }
               if (!item.command.empty()) {
                 row.insert_or_assign("command", item.command);
               }
               if (!item.resumeCommand.empty()) {
                 row.insert_or_assign("resume_command", item.resumeCommand);
               }
+              if (item.action == "suspend") {
+                row.insert_or_assign("lock_before_suspend", item.lockBeforeSuspend);
+              }
               behaviorTable.insert_or_assign(item.name, std::move(row));
+              behaviorOrder.push_back(item.name);
             }
             table.insert_or_assign(key, std::move(behaviorTable));
+            // Preserve user-defined behavior list order (table iteration order is not
+            // a reliable ordering source after round-trips).
+            if (key == "behavior") {
+              table.insert_or_assign("behavior_order", std::move(behaviorOrder));
+            }
           } else if constexpr (std::is_same_v<T, std::vector<KeyChord>>) {
             toml::array array;
             for (const auto& item : concrete) {
@@ -533,6 +618,14 @@ namespace {
     return true;
   }
 
+  bool overridePresenceIsSemantic(const std::vector<std::string>& path) {
+    if (path.size() != 5 || path[0] != "bar" || path[2] != "monitor") {
+      return false;
+    }
+    const auto& key = path[4];
+    return key == "start" || key == "center" || key == "end";
+  }
+
   std::vector<std::filesystem::path> sortedConfigTomlFiles(std::string_view configDir) {
     std::vector<std::filesystem::path> files;
     if (configDir.empty()) {
@@ -573,6 +666,30 @@ void ConfigService::setThemeMode(ThemeMode mode) {
   fireReloadCallbacks();
 }
 
+bool ConfigService::setThemeWallpaperScheme(std::string_view schemeRaw) {
+  if (m_overridesPath.empty()) {
+    return false;
+  }
+
+  const std::string scheme = StringUtils::trim(std::string(schemeRaw));
+  if (scheme.empty() || !noctalia::theme::schemeFromString(scheme)) {
+    return false;
+  }
+
+  auto* themeTbl = ensureTable(m_overridesTable, "theme");
+  themeTbl->insert_or_assign("wallpaper_scheme", scheme);
+
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return false;
+  }
+
+  m_ownOverridesWritePending = true;
+  loadAll();
+  fireReloadCallbacks();
+  return true;
+}
+
 void ConfigService::setDockEnabled(bool enabled) {
   if (m_overridesPath.empty()) {
     return;
@@ -597,19 +714,60 @@ void ConfigService::setDockEnabled(bool enabled) {
   fireReloadCallbacks();
 }
 
-bool ConfigService::markSetupWizardCompleted() {
-  if (m_setupWizardCompleted) {
-    return true;
+bool ConfigService::setDesktopWidgetsState(const DesktopWidgetsConfig& desktopWidgets) {
+  if (m_overridesPath.empty()) {
+    return false;
   }
 
-  m_setupWizardCompleted = true;
+  auto* desktopWidgetsTbl = ensureTable(m_overridesTable, "desktop_widgets");
+  if (desktopWidgetsTbl == nullptr) {
+    return false;
+  }
+
+  desktopWidgetsTbl->insert_or_assign("schema_version", static_cast<std::int64_t>(desktopWidgets.schemaVersion));
+
+  toml::table grid;
+  grid.insert_or_assign("visible", desktopWidgets.grid.visible);
+  grid.insert_or_assign("cell_size", static_cast<std::int64_t>(desktopWidgets.grid.cellSize));
+  grid.insert_or_assign("major_interval", static_cast<std::int64_t>(desktopWidgets.grid.majorInterval));
+  desktopWidgetsTbl->insert_or_assign("grid", std::move(grid));
+
+  toml::table widgets;
+  toml::array widgetOrder;
+  for (const auto& widget : desktopWidgets.widgets) {
+    if (widget.id.empty() || widget.type.empty()) {
+      continue;
+    }
+    widgets.insert_or_assign(widget.id, desktopWidgetTable(widget));
+    widgetOrder.push_back(widget.id);
+  }
+  desktopWidgetsTbl->insert_or_assign("widget", std::move(widgets));
+  desktopWidgetsTbl->insert_or_assign("widget_order", std::move(widgetOrder));
+
   if (!writeOverridesToFile()) {
-    m_setupWizardCompleted = false;
     kLog.warn("failed to write {}", m_overridesPath);
     return false;
   }
 
   m_ownOverridesWritePending = true;
+  loadAll();
+  fireReloadCallbacks();
+  return true;
+}
+
+bool ConfigService::markSetupWizardCompleted() {
+  if (m_setupMarkerPath.empty()) {
+    return false;
+  }
+  if (std::filesystem::exists(m_setupMarkerPath)) {
+    return true;
+  }
+
+  std::ofstream out(m_setupMarkerPath, std::ios::trunc);
+  if (!out.is_open()) {
+    kLog.warn("failed to write {}", m_setupMarkerPath);
+    return false;
+  }
   return true;
 }
 
@@ -637,6 +795,9 @@ bool ConfigService::hasEffectiveOverride(const std::vector<std::string>& path) c
 
 std::size_t ConfigService::overridePreserveDepthForPath(const std::vector<std::string>& path) const {
   if (path.size() > 4 && path[0] == "bar" && path[2] == "monitor" && isOverrideOnlyMonitorOverride(path[1], path[3])) {
+    return 4;
+  }
+  if (path.size() > 4 && path[0] == "wallpaper" && path[2] == "monitor" && path[3].size() > 0) {
     return 4;
   }
   if (path.size() > 2 && path[0] == "bar" && isOverrideOnlyBar(path[1])) {
@@ -935,24 +1096,47 @@ bool ConfigService::deleteMonitorOverride(std::string_view barName, std::string_
 }
 
 bool ConfigService::setOverride(const std::vector<std::string>& path, ConfigOverrideValue value) {
-  if (m_overridesPath.empty() || path.empty()) {
+  std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides;
+  overrides.emplace_back(path, std::move(value));
+  return setOverrides(std::move(overrides));
+}
+
+bool ConfigService::setOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides) {
+  if (m_overridesPath.empty() || overrides.empty()) {
     return false;
   }
 
-  toml::table* table = &m_overridesTable;
-  for (std::size_t i = 0; i + 1 < path.size(); ++i) {
-    table = ensureTable(*table, path[i]);
-    if (table == nullptr) {
+  toml::table next = m_overridesTable;
+  for (const auto& [path, value] : overrides) {
+    if (path.empty()) {
       return false;
+    }
+
+    toml::table* table = &next;
+    for (std::size_t i = 0; i + 1 < path.size(); ++i) {
+      table = ensureTable(*table, path[i]);
+      if (table == nullptr) {
+        return false;
+      }
+    }
+
+    insertOverrideValue(*table, path.back(), value);
+  }
+
+  for (const auto& [path, value] : overrides) {
+    (void)value;
+    if (!overridePresenceIsSemantic(path) && !overridePathEffectiveInTable(path, next)) {
+      eraseOverridePath(next, path, overridePreserveDepthForPath(path));
+      if (path.size() == 2 && path[0] == "idle" && path[1] == "behavior") {
+        eraseOverridePath(next, {"idle", "behavior_order"}, overridePreserveDepthForPath(path));
+      }
     }
   }
 
-  insertOverrideValue(*table, path.back(), value);
-  if (!overridePathEffectiveInTable(path, m_overridesTable)) {
-    eraseOverridePath(m_overridesTable, path, overridePreserveDepthForPath(path));
-  }
-
+  toml::table previous = std::move(m_overridesTable);
+  m_overridesTable = std::move(next);
   if (!writeOverridesToFile()) {
+    m_overridesTable = std::move(previous);
     kLog.warn("failed to write {}", m_overridesPath);
     return false;
   }
@@ -971,6 +1155,9 @@ bool ConfigService::clearOverride(const std::vector<std::string>& path) {
 
   if (!eraseOverridePath(m_overridesTable, path, overridePreserveDepthForPath(path))) {
     return false;
+  }
+  if (path.size() == 2 && path[0] == "idle" && path[1] == "behavior") {
+    eraseOverridePath(m_overridesTable, {"idle", "behavior_order"}, overridePreserveDepthForPath(path));
   }
 
   if (!writeOverridesToFile()) {
@@ -1133,22 +1320,24 @@ void ConfigService::setWallpaperPath(const std::optional<std::string>& connector
   }
 }
 
-void ConfigService::extractWallpaperFromOverrides() {
+void ConfigService::extractWallpaperFromOverrides() { extractWallpaperFromTable(m_overridesTable); }
+
+void ConfigService::extractWallpaperFromTable(const toml::table& table) {
   m_defaultWallpaperPath.clear();
   m_lastWallpaperPath.clear();
   m_monitorWallpaperPaths.clear();
 
-  if (auto* wpDefault = m_overridesTable["wallpaper"]["default"].as_table()) {
+  if (auto* wpDefault = table["wallpaper"]["default"].as_table()) {
     if (auto v = (*wpDefault)["path"].value<std::string>()) {
       m_defaultWallpaperPath = FileUtils::expandUserPath(*v).string();
     }
   }
-  if (auto* wpLast = m_overridesTable["wallpaper"]["last"].as_table()) {
+  if (auto* wpLast = table["wallpaper"]["last"].as_table()) {
     if (auto v = (*wpLast)["path"].value<std::string>()) {
       m_lastWallpaperPath = FileUtils::expandUserPath(*v).string();
     }
   }
-  if (auto* monitors = m_overridesTable["wallpaper"]["monitors"].as_table()) {
+  if (auto* monitors = table["wallpaper"]["monitors"].as_table()) {
     for (const auto& [key, value] : *monitors) {
       if (auto* monTbl = value.as_table()) {
         if (auto v = (*monTbl)["path"].value<std::string>()) {
@@ -1164,10 +1353,6 @@ bool ConfigService::writeOverridesToFile() {
     return false;
   }
   toml::table output = m_overridesTable;
-  if (m_setupWizardCompleted) {
-    auto* state = ensureTable(output, kInternalStateTable);
-    state->insert_or_assign(kSetupWizardCompletedKey, true);
-  }
 
   const std::string tmpPath = m_overridesPath + ".tmp";
   {

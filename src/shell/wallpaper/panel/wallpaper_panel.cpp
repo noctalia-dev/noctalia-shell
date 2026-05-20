@@ -1,12 +1,14 @@
 #include "shell/wallpaper/panel/wallpaper_panel.h"
 
 #include "config/config_service.h"
+#include "core/keybind_matcher.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/core/thumbnail_service.h"
 #include "render/scene/input_area.h"
+#include "shell/panel/panel_button_style.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/wallpaper/panel/wallpaper_tile.h"
 #include "ui/controls/button.h"
@@ -29,13 +31,13 @@
 #include <memory>
 #include <string_view>
 #include <utility>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
   constexpr Logger kLog("wp-panel");
   constexpr auto kFilterDebounceInterval = std::chrono::milliseconds(120);
   constexpr float kMinTileWidth = 180.0f;
+  constexpr float kMonitorSelectMinWidth = 136.0f;
   constexpr float kTileAspect = 0.78f; // height / width — leaves room for label under widescreen thumb
 
   bool parseColorWallpaperPath(std::string_view path, Color& out) {
@@ -119,8 +121,8 @@ WallpaperPanel::WallpaperPanel(WaylandConnection* wayland, ConfigService* config
 
 WallpaperPanel::~WallpaperPanel() = default;
 
-bool WallpaperPanel::prefersAttachedToBar() const noexcept {
-  return m_config == nullptr || m_config->config().shell.panel.attachWallpaper;
+PanelPlacement WallpaperPanel::panelPlacement() const noexcept {
+  return m_config == nullptr ? PanelPlacement::Attached : m_config->config().shell.panel.wallpaperPlacement;
 }
 
 void WallpaperPanel::create() {
@@ -141,8 +143,6 @@ void WallpaperPanel::create() {
   root->setAlign(FlexAlign::Stretch);
   root->setGap(Style::spaceSm * scale);
   root->setPadding(Style::spaceMd * scale);
-  root->setFill(colorSpecFromRole(ColorRole::Surface));
-  root->setRadius(Style::scaledRadiusXl(scale));
   m_rootLayout = root.get();
 
   auto header = std::make_unique<Flex>();
@@ -184,8 +184,7 @@ void WallpaperPanel::create() {
 
   auto closeButton = std::make_unique<Button>();
   closeButton->setGlyph("close");
-  closeButton->setVariant(ButtonVariant::Default);
-  configureIconButton(closeButton.get());
+  panel_button_style::configureHeaderIconButton(*closeButton, scale, panelCardOpacity());
   closeButton->setOnClick([]() { PanelManager::instance().close(); });
   m_closeButton = closeButton.get();
   headerRight->addChild(std::move(closeButton));
@@ -259,6 +258,7 @@ void WallpaperPanel::create() {
   auto monitorSelect = std::make_unique<Select>();
   monitorSelect->setFontSize(Style::fontSizeBody * scale);
   monitorSelect->setControlHeight(Style::controlHeight * scale);
+  monitorSelect->setMinWidth(kMonitorSelectMinWidth * scale);
   monitorSelect->setOnSelectionChanged([this](std::size_t idx, std::string_view) {
     m_selectedMonitorIndex = idx;
     m_navStack.clear();
@@ -274,14 +274,14 @@ void WallpaperPanel::create() {
 
   auto color = std::make_unique<Button>();
   color->setGlyph("color-picker");
-  color->setVariant(ButtonVariant::Secondary);
+  color->setVariant(ButtonVariant::Default);
   configureIconButton(color.get());
   color->setOnClick([this]() { applyColorWallpaper(); });
   m_colorButton = static_cast<Button*>(toolbar->addChild(std::move(color)));
 
   auto refresh = std::make_unique<Button>();
   refresh->setGlyph("refresh");
-  refresh->setVariant(ButtonVariant::Secondary);
+  refresh->setVariant(ButtonVariant::Default);
   configureIconButton(refresh.get());
   refresh->setOnClick([this]() {
     m_scanner.invalidate();
@@ -379,6 +379,12 @@ void WallpaperPanel::doUpdate(Renderer& renderer) {
       m_adapter->setRenderer(&renderer);
       m_adapter->refreshVisibleThumbnails(renderer);
     }
+  }
+}
+
+void WallpaperPanel::onPanelCardOpacityChanged(float opacity) {
+  if (m_closeButton != nullptr) {
+    panel_button_style::applyHeaderButtonStyle(*m_closeButton, opacity);
   }
 }
 
@@ -482,6 +488,9 @@ std::filesystem::path WallpaperPanel::rootDirectoryForSelection() const {
     return {};
   }
   const auto& wp = m_config->config().wallpaper;
+  if (!wp.perMonitorDirectories) {
+    return wp.directory;
+  }
   const auto& choice = m_monitorChoices[m_selectedMonitorIndex];
   if (choice.connector.empty()) {
     return wp.directory;
@@ -632,28 +641,28 @@ bool WallpaperPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) 
     }
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Left, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Left, sym, modifiers)) {
     if (m_selectedVisibleIndex > 0) {
       selectVisibleIndex(m_selectedVisibleIndex - 1);
     }
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Right, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Right, sym, modifiers)) {
     if (m_selectedVisibleIndex + 1 < m_visibleEntries.size()) {
       selectVisibleIndex(m_selectedVisibleIndex + 1);
     }
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Up, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Up, sym, modifiers)) {
     if (m_selectedVisibleIndex >= columns) {
       selectVisibleIndex(m_selectedVisibleIndex - columns);
     }
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Down, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Down, sym, modifiers)) {
     const std::size_t nextIndex = m_selectedVisibleIndex + columns;
     if (nextIndex < m_visibleEntries.size()) {
       selectVisibleIndex(nextIndex);
@@ -661,7 +670,7 @@ bool WallpaperPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) 
     return true;
   }
 
-  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Validate, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Validate, sym, modifiers)) {
     activateSelectedEntry();
     return true;
   }

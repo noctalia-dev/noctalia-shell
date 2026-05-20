@@ -1,6 +1,8 @@
 #include "shell/lockscreen/lock_screen.h"
 
 #include "config/config_service.h"
+#include "core/deferred_call.h"
+#include "core/keybind_matcher.h"
 #include "core/log.h"
 #include "ext-session-lock-v1-client-protocol.h"
 #include "i18n/i18n.h"
@@ -14,7 +16,6 @@
 #include <algorithm>
 #include <string>
 #include <wayland-client.h>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -107,6 +108,8 @@ void LockScreen::unlock() {
   if (!isActive()) {
     return;
   }
+
+  m_pendingAfterLocked = {};
 
   const bool wasLockedInteractive = m_locked;
   if (wasLockedInteractive && m_onSessionUnlocked) {
@@ -231,12 +234,12 @@ void LockScreen::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  if (event.sym == XKB_KEY_Return || event.sym == XKB_KEY_KP_Enter) {
+  if (KeybindMatcher::matches(KeybindAction::Validate, event.sym, event.modifiers)) {
     tryAuthenticate();
     return;
   }
 
-  if (event.sym == XKB_KEY_Escape) {
+  if (KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
     clearSensitiveString(m_password);
     m_status = i18n::tr("lockscreen.password-cleared");
     m_statusIsError = false;
@@ -268,6 +271,25 @@ void LockScreen::onKeyboardEvent(const KeyboardEvent& event) {
 
 bool LockScreen::isActive() const noexcept { return m_lockPending || m_locked; }
 
+bool LockScreen::isSessionLocked() const noexcept { return m_locked; }
+
+void LockScreen::runAfterSessionLocked(std::function<void()> fn) {
+  if (fn == nullptr) {
+    return;
+  }
+  if (m_locked) {
+    DeferredCall::callLater(std::move(fn));
+    return;
+  }
+  m_pendingAfterLocked = std::move(fn);
+  if (isActive()) {
+    return;
+  }
+  if (!lock()) {
+    m_pendingAfterLocked = {};
+  }
+}
+
 void LockScreen::handleLocked(void* data, ext_session_lock_v1* /*lock*/) {
   auto* self = static_cast<LockScreen*>(data);
   self->m_lockPending = false;
@@ -283,11 +305,17 @@ void LockScreen::handleLocked(void* data, ext_session_lock_v1* /*lock*/) {
   if (self->m_onSessionLocked) {
     self->m_onSessionLocked();
   }
+  if (self->m_pendingAfterLocked) {
+    auto pending = std::move(self->m_pendingAfterLocked);
+    self->m_pendingAfterLocked = {};
+    DeferredCall::callLater(std::move(pending));
+  }
 }
 
 void LockScreen::handleFinished(void* data, ext_session_lock_v1* /*lock*/) {
   auto* self = static_cast<LockScreen*>(data);
   kLog.info("session lock finished by compositor");
+  self->m_pendingAfterLocked = {};
 
   if (self->m_lock != nullptr) {
     if (self->m_locked) {
@@ -316,6 +344,9 @@ void LockScreen::syncInstances() {
   std::erase_if(m_instances, [&](Instance& instance) {
     const bool exists = std::any_of(outputs.begin(), outputs.end(),
                                     [&](const WaylandOutput& output) { return output.name == instance.outputName; });
+    if (!exists && instance.surface != nullptr && instance.surface->wlSurface() == m_pointerSurface) {
+      m_pointerSurface = nullptr;
+    }
     return !exists;
   });
 
@@ -355,6 +386,7 @@ void LockScreen::createInstance(const WaylandOutput& output) {
 }
 
 void LockScreen::resetLockState() {
+  m_pendingAfterLocked = {};
   if (m_lock == nullptr) {
     m_lockPending = false;
     m_locked = false;

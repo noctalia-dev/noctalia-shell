@@ -28,8 +28,6 @@ public:
 
   [[nodiscard]] float preferredWidth() const override { return scaled(1100.0f); }
   [[nodiscard]] float preferredHeight() const override { return scaled(720.0f); }
-  // [[nodiscard]] bool centeredHorizontally() const override { return true; }
-  // [[nodiscard]] bool centeredVertically() const override { return true; }
 
 private:
   void doLayout(Renderer& renderer, float width, float height) override;

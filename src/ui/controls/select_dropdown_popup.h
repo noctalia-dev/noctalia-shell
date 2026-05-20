@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config/config_types.h"
 #include "render/scene/input_dispatcher.h"
 #include "ui/controls/select_popup_context.h"
 
@@ -7,6 +8,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 class Glyph;
@@ -15,6 +17,7 @@ class Node;
 class PopupSurface;
 class RectNode;
 class RenderContext;
+class Scrollbar;
 class WaylandConnection;
 struct KeyboardEvent;
 struct PointerEvent;
@@ -30,6 +33,7 @@ public:
 
   void setParent(zwlr_layer_surface_v1* layerSurface, wl_output* output);
   void setParent(xdg_surface* xdgSurface, wl_output* output);
+  void setShadowConfig(const ShellConfig::ShadowConfig& shadow);
 
   void openSelectDropdown(const DropdownRequest& request, DropdownCallbacks callbacks) override;
   void closeSelectDropdown() override;
@@ -51,9 +55,12 @@ private:
   void handleKey(std::uint32_t sym, std::uint32_t utf32, bool pressed);
   void invalidateScene();
   void scrollBy(float delta);
+  void setScrollOffset(float offset);
+  void applyScrollOffset();
   void clampScrollOffset();
   void applyHoverVisuals();
   void selectAndClose(std::size_t index);
+  [[nodiscard]] std::pair<float, float> popupLocalCoords(double sx, double sy) const;
 
   WaylandConnection& m_wayland;
   RenderContext& m_renderContext;
@@ -66,6 +73,7 @@ private:
   InputDispatcher m_inputDispatcher;
   wl_surface* m_wlSurface = nullptr;
   bool m_pointerInside = false;
+  bool m_pointerOnSurface = false;
 
   DropdownCallbacks m_callbacks;
   std::vector<std::string> m_options;
@@ -77,5 +85,10 @@ private:
   float m_viewportHeight = 0.0f;
   float m_totalHeight = 0.0f;
   float m_menuWidth = 0.0f;
+  Node* m_contentNode = nullptr;
+  Scrollbar* m_scrollbar = nullptr;
+  ShellConfig::ShadowConfig m_shadowConfig;
   bool m_sceneDirty = false;
+  bool m_openInProgress = false;
+  bool m_closeRequestedDuringOpen = false;
 };

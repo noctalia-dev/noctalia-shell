@@ -5,6 +5,7 @@
 #include "ui/signal.h"
 
 #include <functional>
+#include <optional>
 #include <string_view>
 
 class AnimationManager;
@@ -57,6 +58,7 @@ public:
   void setSelected(bool selected);
   void setContentAlign(ButtonContentAlign align);
   void setVariant(ButtonVariant variant);
+  void setCustomPalette(ButtonPalette customPalette);
   void setOnClick(std::function<void()> callback);
   void setOnRightClick(std::function<void()> callback);
   void setOnPress(std::function<void(float localX, float localY, bool pressed)> callback);
@@ -102,6 +104,7 @@ private:
   std::function<void()> m_onLeave;
   ButtonVariant m_variant = ButtonVariant::Default;
   ButtonPalette m_palette;
+  std::optional<ButtonPalette> m_customPalette;
   // Animation: snapshot of colors at transition start
   Color m_fromBg{};
   Color m_fromBorder{};

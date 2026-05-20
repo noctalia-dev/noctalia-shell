@@ -24,7 +24,7 @@ void IdleGraceOverlay::initialize(WaylandConnection& wayland, RenderContext* ren
 }
 
 void IdleGraceOverlay::onOutputChange() {
-  if (!m_instances.empty() && m_instances.size() != m_wayland->outputs().size()) {
+  if (!m_instances.empty() && !surfacesMatchOutputs()) {
     destroySurfaces();
   }
 }
@@ -85,7 +85,7 @@ void IdleGraceOverlay::ensureSurfaces() {
     return;
   }
 
-  if (!m_instances.empty() && m_instances.size() != m_wayland->outputs().size()) {
+  if (!m_instances.empty() && !surfacesMatchOutputs()) {
     destroySurfaces();
   }
   if (!m_instances.empty()) {
@@ -129,6 +129,23 @@ void IdleGraceOverlay::ensureSurfaces() {
 
     m_instances.push_back(std::move(inst));
   }
+}
+
+bool IdleGraceOverlay::surfacesMatchOutputs() const {
+  if (m_wayland == nullptr) {
+    return m_instances.empty();
+  }
+  const auto& outputs = m_wayland->outputs();
+  if (m_instances.size() != outputs.size()) {
+    return false;
+  }
+  for (std::size_t i = 0; i < outputs.size(); ++i) {
+    const auto* instance = m_instances[i].get();
+    if (instance == nullptr || instance->output != outputs[i].output) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void IdleGraceOverlay::destroySurfaces() {

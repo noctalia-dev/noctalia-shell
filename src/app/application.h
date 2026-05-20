@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/deferred_call_poll_source.h"
 #include "app/main_loop.h"
 #include "app/timer_poll_source.h"
 #include "compositors/compositor_platform.h"
@@ -9,9 +10,10 @@
 #include "core/timer_manager.h"
 #include "dbus/bluetooth/bluetooth_agent.h"
 #include "dbus/bluetooth/bluetooth_service.h"
+#include "dbus/logind/logind_service.h"
 #include "dbus/mpris/mpris_service.h"
+#include "dbus/network/inetwork_service.h"
 #include "dbus/network/network_secret_agent.h"
-#include "dbus/network/network_service.h"
 #include "dbus/notification/notification_poll_source.h"
 #include "dbus/notification/notification_service.h"
 #include "dbus/polkit/polkit_agent.h"
@@ -46,7 +48,6 @@
 #include "shell/backdrop/backdrop.h"
 #include "shell/bar/bar.h"
 #include "shell/desktop/desktop_widgets_controller.h"
-#include "shell/desktop/desktop_widgets_poll_source.h"
 #include "shell/dock/dock.h"
 #include "shell/lockscreen/lock_screen.h"
 #include "shell/notification/notification_toast.h"
@@ -54,6 +55,7 @@
 #include "shell/osd/brightness_osd.h"
 #include "shell/osd/lock_keys_osd.h"
 #include "shell/osd/osd_overlay.h"
+#include "shell/overview/overview_launcher_capture.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/polkit/polkit_panel.h"
 #include "shell/screen_corners/screen_corners.h"
@@ -113,13 +115,15 @@ private:
   void startTrayService();
   void syncNotificationDaemon();
   void syncPolkitAgent();
+  void syncClipboardService();
   bool runUserCommand(const std::string& command);
   bool runUserCommandBlocking(const std::string& command);
-  bool runIdleCommand(const std::string& command);
+  bool runIdleAction(const IdleActionRequest& action);
   void onIconThemeChanged();
   void onUpowerStateChangedForHooks();
   void onNetworkStateChangedForEvents(const NetworkState& state, NetworkChangeOrigin origin);
   void onBluetoothStateChangedForEvents(const BluetoothState& state, BluetoothStateChangeOrigin origin);
+  void onPowerProfileChangedForEvents(const PowerProfilesState& state, PowerProfilesChangeOrigin origin);
   [[nodiscard]] std::vector<PollSource*> currentPollSources();
   [[nodiscard]] std::vector<PollSource*> buildPollSources();
 
@@ -138,6 +142,7 @@ private:
   NotificationManager m_notificationManager;
   std::unique_ptr<SessionBus> m_bus;
   std::unique_ptr<SystemBus> m_systemBus;
+  std::unique_ptr<LogindService> m_logindService;
   std::unique_ptr<SystemMonitorService> m_systemMonitor;
   std::unique_ptr<DebugService> m_debugService;
   IdleInhibitor m_idleInhibitor;
@@ -148,7 +153,7 @@ private:
   GammaService m_gammaService;
   std::unique_ptr<MprisService> m_mprisService;
   std::unique_ptr<PowerProfilesService> m_powerProfilesService;
-  std::unique_ptr<NetworkService> m_networkService;
+  std::unique_ptr<INetworkService> m_networkService;
   std::unique_ptr<NetworkSecretAgent> m_networkSecretAgent;
   std::unique_ptr<BluetoothService> m_bluetoothService;
   std::unique_ptr<BluetoothAgent> m_bluetoothAgent;
@@ -159,6 +164,7 @@ private:
   std::optional<UPowerState> m_prevUpowerForHooks;
   std::optional<bool> m_prevWirelessEnabledForEvents;
   std::optional<bool> m_prevBluetoothPoweredForEvents;
+  std::optional<std::string> m_prevPowerProfileActiveForEvents;
   SessionActionHooks m_sessionActionHooks;
   std::unique_ptr<BrightnessService> m_brightnessService;
   std::unique_ptr<TrayService> m_trayService;
@@ -179,6 +185,7 @@ private:
   DesktopWidgetsController m_desktopWidgetsController;
   LockScreen m_lockScreen;
   PanelManager m_panelManager;
+  OverviewLauncherCapture m_overviewLauncherCapture;
   NotificationToast m_notificationToast;
   AudioOsd m_audioOsd;
   BrightnessOsd m_brightnessOsd;
@@ -199,9 +206,9 @@ private:
   std::unique_ptr<SessionBusPollSource> m_busPollSource;
   std::unique_ptr<SystemBusPollSource> m_systemBusPollSource;
   NotificationPollSource m_notificationPollSource{m_notificationManager};
+  DeferredCallPollSource m_deferredCallPollSource;
   TimePollSource m_timePollSource{m_timeService};
   ConfigPollSource m_configPollSource{m_configService};
-  DesktopWidgetsPollSource m_desktopWidgetsPollSource{m_desktopWidgetsController};
   DesktopEntryPollSource m_desktopEntryPollSource;
   IconThemePollSource m_iconThemePollSource;
   ClipboardPollSource m_clipboardPollSource{m_clipboardService};

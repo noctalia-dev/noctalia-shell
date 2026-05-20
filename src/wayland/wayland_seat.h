@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/key_modifiers.h"
+
 #include <chrono>
 #include <cstdint>
 #include <functional>
@@ -38,13 +40,6 @@ struct PointerEvent {
   float axisLines = 0.0f;
 };
 
-namespace KeyMod {
-  inline constexpr std::uint32_t Shift = 1u << 0;
-  inline constexpr std::uint32_t Ctrl = 1u << 1;
-  inline constexpr std::uint32_t Alt = 1u << 2;
-  inline constexpr std::uint32_t Super = 1u << 3;
-} // namespace KeyMod
-
 struct KeyboardEvent {
   std::uint32_t sym = 0;       // XKB keysym
   std::uint32_t utf32 = 0;     // Unicode codepoint (0 for non-printable keys)
@@ -78,6 +73,7 @@ public:
   void setPointerEventCallback(PointerEventCallback callback);
   void setKeyboardEventCallback(KeyboardEventCallback callback);
   void setCursorShape(std::uint32_t serial, std::uint32_t shape);
+  void forgetSurface(wl_surface* surface) noexcept;
   void cleanup();
 
   [[nodiscard]] std::uint32_t lastSerial() const noexcept { return m_lastSerial; }
@@ -127,7 +123,13 @@ public:
   [[nodiscard]] LockKeysState lockKeysState() const;
   [[nodiscard]] InputSource lastInputSource() const noexcept { return m_lastInputSource; }
 
+  [[nodiscard]] double userIdleSeconds() const noexcept;
+
 private:
+  void bumpUserActivity() noexcept;
+
+  using SteadyClock = std::chrono::steady_clock;
+
   // Pointer
   wl_pointer* m_pointer = nullptr;
   wp_cursor_shape_manager_v1* m_cursorShapeManager = nullptr;
@@ -155,7 +157,7 @@ private:
   KeyboardEventCallback m_keyboardEventCallback;
 
   // Key repeat
-  using SteadyClock = std::chrono::steady_clock;
+  SteadyClock::time_point m_lastUserActivitySteady{};
   std::int32_t m_repeatRate = 0;    // chars/sec; 0 = no repeat
   std::int32_t m_repeatDelayMs = 0; // initial delay in ms
   KeyboardEvent m_repeatKey;

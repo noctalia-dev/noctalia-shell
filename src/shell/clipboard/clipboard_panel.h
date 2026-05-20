@@ -40,22 +40,23 @@ public:
 
   [[nodiscard]] float preferredWidth() const override { return scaled(920.0f); }
   [[nodiscard]] float preferredHeight() const override { return scaled(560.0f); }
-  [[nodiscard]] bool centeredHorizontally() const override { return true; }
-  [[nodiscard]] bool centeredVertically() const override { return true; }
   [[nodiscard]] LayerShellLayer layer() const override { return LayerShellLayer::Overlay; }
   [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::Exclusive; }
   [[nodiscard]] InputArea* initialFocusArea() const override;
-  [[nodiscard]] bool prefersAttachedToBar() const noexcept override;
+  [[nodiscard]] PanelPlacement panelPlacement() const noexcept override;
 
 private:
   void doLayout(Renderer& renderer, float width, float height) override;
   void doUpdate(Renderer& renderer) override;
+  void onPanelCardOpacityChanged(float opacity) override;
   void schedulePreviewPayloadRefresh(bool debounced);
   void updateListState();
   void updatePreviewActions();
   void rebuildPreview(Renderer& renderer, float width, float height);
   void selectIndex(std::size_t index);
   void activateSelected();
+  void togglePinSelected();
+  void updatePinButton();
   void runImageAction();
   bool handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers);
   void scrollToSelected();
@@ -76,6 +77,7 @@ private:
   Flex* m_sidebarHeaderRow = nullptr;
   Label* m_sidebarTitle = nullptr;
   Button* m_clearHistoryButton = nullptr;
+  Button* m_closeButton = nullptr;
   Input* m_filterInput = nullptr;
   VirtualGridView* m_listGrid = nullptr;
   Label* m_listEmptyLabel = nullptr;
@@ -88,6 +90,7 @@ private:
   Label* m_previewTitle = nullptr;
   Label* m_previewMeta = nullptr;
   Button* m_imageActionButton = nullptr;
+  Button* m_pinButton = nullptr;
   Button* m_copyButton = nullptr;
   Button* m_deleteEntryButton = nullptr;
   ScrollView* m_previewScrollView = nullptr;

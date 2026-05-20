@@ -1,5 +1,6 @@
 #include "shell/bar/widgets/network_widget.h"
 
+#include "dbus/network/network_glyphs.h"
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
@@ -25,7 +26,7 @@ namespace {
 
 } // namespace
 
-NetworkWidget::NetworkWidget(NetworkService* network, wl_output* output, bool showLabel)
+NetworkWidget::NetworkWidget(INetworkService* network, wl_output* output, bool showLabel)
     : m_network(network), m_output(output), m_showLabel(showLabel) {}
 
 void NetworkWidget::create() {
@@ -97,7 +98,7 @@ void NetworkWidget::syncState(Renderer& renderer) {
   m_haveLastState = true;
   m_lastVertical = m_isVertical;
 
-  m_glyph->setGlyph(NetworkService::glyphForState(s));
+  m_glyph->setGlyph(network_glyphs::glyphForState(s));
   m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   m_glyph->setColor(s.connected ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
                                 : colorSpecFromRole(ColorRole::OnSurfaceVariant));

@@ -2,9 +2,7 @@
 
 #include "wayland/wayland_connection.h"
 
-#include <algorithm>
 #include <chrono>
-#include <cstdint>
 #include <fstream>
 #include <optional>
 #include <string>
@@ -14,7 +12,7 @@ namespace {
 
   namespace fs = std::filesystem;
 
-  constexpr auto kRefreshInterval = std::chrono::milliseconds(500);
+  constexpr auto kRefreshInterval = std::chrono::milliseconds(200);
   constexpr int kSysfsFailureRescanThreshold = 3;
 
   bool readBrightness(const fs::path& path, bool& on) {

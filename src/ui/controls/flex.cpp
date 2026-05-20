@@ -256,8 +256,8 @@ void Flex::setSoftness(float softness) {
   m_background->setStyle(style);
 }
 
-void Flex::setCardStyle(float scale) {
-  setFill(colorSpecFromRole(ColorRole::Surface));
+void Flex::setCardStyle(float scale, float fillOpacity) {
+  setFill(colorSpecFromRole(ColorRole::SurfaceVariant, fillOpacity));
   setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), Style::borderWidth);
   setRadius(Style::scaledRadiusXl(scale));
   setPadding(Style::cardPadding * scale);

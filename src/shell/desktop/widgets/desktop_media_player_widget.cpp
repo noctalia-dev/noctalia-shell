@@ -247,7 +247,8 @@ void DesktopMediaPlayerWidget::sync(Renderer& renderer) {
   const bool artistChanged = artist != m_lastArtist;
   const bool artChanged = artUrl != m_lastArtUrl;
   const bool statusChanged = playbackStatus != m_lastPlaybackStatus;
-  if (!titleChanged && !artistChanged && !artChanged && !statusChanged)
+  const bool artAwaitingDecode = m_artwork != nullptr && !artUrl.empty() && !m_artwork->hasImage();
+  if (!titleChanged && !artistChanged && !artChanged && !statusChanged && !artAwaitingDecode)
     return;
 
   m_lastTitle = title;
@@ -273,8 +274,9 @@ void DesktopMediaPlayerWidget::sync(Renderer& renderer) {
         m_pendingArtDownloads.insert(m_lastArtUrl);
         m_httpClient->download(m_lastArtUrl, cached, [this, url = m_lastArtUrl](bool success) {
           m_pendingArtDownloads.erase(url);
-          if (success && url == m_lastArtUrl)
-            requestRedraw();
+          if (success) {
+            requestUpdate();
+          }
         });
       }
     }

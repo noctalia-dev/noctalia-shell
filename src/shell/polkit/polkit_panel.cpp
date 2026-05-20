@@ -2,6 +2,8 @@
 
 #include "config/config_service.h"
 #include "config/config_types.h"
+#include "core/key_modifiers.h"
+#include "core/keybind_matcher.h"
 #include "dbus/polkit/polkit_agent.h"
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
@@ -13,11 +15,9 @@
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
-#include "wayland/wayland_seat.h"
 
 #include <cctype>
 #include <memory>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -198,24 +198,18 @@ void PolkitPanel::submit() {
 }
 
 bool PolkitPanel::handleInputKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
-  if (m_config == nullptr) {
-    return false;
-  }
-  if (m_config->matchesKeybind(KeybindAction::Validate, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Validate, sym, modifiers)) {
     submit();
     return true;
   }
-  if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter) {
-    return true;
-  }
   const bool shift = (modifiers & KeyMod::Shift) != 0;
-  if (m_config->matchesKeybind(KeybindAction::Left, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Left, sym, modifiers)) {
     if (m_input != nullptr) {
       m_input->moveCaretLeft(shift);
     }
     return true;
   }
-  if (m_config->matchesKeybind(KeybindAction::Right, sym, modifiers)) {
+  if (KeybindMatcher::matches(KeybindAction::Right, sym, modifiers)) {
     if (m_input != nullptr) {
       m_input->moveCaretRight(shift);
     }

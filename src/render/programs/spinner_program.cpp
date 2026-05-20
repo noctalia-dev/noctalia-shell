@@ -124,8 +124,9 @@ void SpinnerProgram::draw(float surfaceWidth, float surfaceHeight, float width, 
   glUniform4f(m_colorLocation, style.color.r, style.color.g, style.color.b, style.color.a);
   glUniform1f(m_thicknessLocation, style.thickness);
   glUniformMatrix3fv(m_transformLocation, 1, GL_FALSE, quadTransform.m.data());
-  glVertexAttribPointer(m_positionLocation, 2, GL_FLOAT, GL_FALSE, 0, vertices.data());
-  glEnableVertexAttribArray(m_positionLocation);
+  const auto posAttr = static_cast<GLuint>(m_positionLocation);
+  glVertexAttribPointer(posAttr, 2, GL_FLOAT, GL_FALSE, 0, vertices.data());
+  glEnableVertexAttribArray(posAttr);
   glDrawArrays(GL_TRIANGLES, 0, 6);
-  glDisableVertexAttribArray(m_positionLocation);
+  glDisableVertexAttribArray(posAttr);
 }

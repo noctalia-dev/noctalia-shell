@@ -12,12 +12,9 @@
 #include <fcntl.h>
 #include <filesystem>
 #include <fstream>
-#include <iomanip>
 #include <json.hpp>
 #include <memory>
 #include <poll.h>
-#include <ranges>
-#include <sstream>
 #include <stdexcept>
 #include <string_view>
 #include <unistd.h>
@@ -42,6 +39,21 @@ namespace {
       std::string_view{"image/png"},
       std::string_view{"image/jpeg"},
   };
+
+  constexpr std::array kPasswordHintMimeTypes = {
+      std::string_view{"x-kde-passwordManagerHint"},
+  };
+
+  [[nodiscard]] bool selectionAdvertisesPasswordHint(const std::vector<std::string>& mimeTypes) {
+    for (const std::string& advertised : mimeTypes) {
+      for (const std::string_view hint : kPasswordHintMimeTypes) {
+        if (advertised == hint) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 
   constexpr Logger kLog("clipboard");
   std::uint64_t gStorageCounter = 0;
@@ -351,6 +363,33 @@ namespace {
 } // namespace
 
 ClipboardService::ClipboardService() { loadPersistedHistory(); }
+
+void ClipboardService::setHistoryRetentionEnabled(bool enabled) {
+  if (m_historyRetention == enabled) {
+    return;
+  }
+  m_historyRetention = enabled;
+
+  if (enabled) {
+    // Restore the persisted history that was set aside while retention was off.
+    loadPersistedHistory();
+  } else {
+    // Keep only the live selection (most recent unpinned entry) in memory so
+    // paste keeps working; drop pins and older/persisted history.
+    std::deque<ClipboardEntry> live;
+    for (auto& entry : m_history) {
+      if (!entry.pinned) {
+        live.push_back(std::move(entry));
+        break;
+      }
+    }
+    m_history = std::move(live);
+    m_historyBytes = m_history.empty() ? 0 : m_history.front().byteSize;
+  }
+
+  ++m_changeSerial;
+  notifyChanged();
+}
 ClipboardService::~ClipboardService() { cleanup(); }
 
 const DataControlOps* extDataControlOps() { return &kExtDataControlOps; }
@@ -505,9 +544,31 @@ void ClipboardService::evictAllPayloads() {
   }
 }
 
+std::optional<std::string> ClipboardService::clipboardText() {
+  for (auto& entry : m_history) {
+    // Pinned entries sit at the front but are not the newest capture; paste
+    // must reflect the most recent real clipboard content.
+    if (entry.pinned || entry.isImage()) {
+      continue;
+    }
+    if (!loadEntryPayload(entry) || entry.data.empty()) {
+      continue;
+    }
+    return std::string(entry.data.begin(), entry.data.end());
+  }
+  return std::nullopt;
+}
+
+void ClipboardService::setClipboardText(std::string text) { (void)copyText(std::move(text)); }
+
 bool ClipboardService::copyText(std::string text) {
   std::vector<std::uint8_t> data(text.begin(), text.end());
   return copyData({"text/plain;charset=utf-8", "text/plain"}, std::move(data));
+}
+
+bool ClipboardService::copyText(std::string text, std::string mimeType) {
+  std::vector<std::uint8_t> data(text.begin(), text.end());
+  return copyData({std::move(mimeType)}, std::move(data));
 }
 
 bool ClipboardService::copyEntry(const ClipboardEntry& entry) {
@@ -528,11 +589,28 @@ bool ClipboardService::copyEntry(const ClipboardEntry& entry) {
   return copyData(std::move(mimeTypes), entry.data);
 }
 
+std::size_t ClipboardService::pinnedCount() const noexcept {
+  std::size_t count = 0;
+  while (count < m_history.size() && m_history[count].pinned) {
+    ++count;
+  }
+  return count;
+}
+
 bool ClipboardService::promoteEntry(std::size_t index) {
   if (index >= m_history.size()) {
     return false;
   }
-  if (index == 0) {
+  // Pinned entries keep their position in the pinned block; copying one must
+  // not reorder the user's pins.
+  if (m_history[index].pinned) {
+    return true;
+  }
+
+  // Unpinned entries move to the top of the unpinned region (just below the
+  // contiguous pinned block at the front).
+  const std::size_t target = pinnedCount();
+  if (index == target) {
     return true;
   }
 
@@ -540,7 +618,35 @@ bool ClipboardService::promoteEntry(std::size_t index) {
   m_history.erase(m_history.begin() + static_cast<std::ptrdiff_t>(index));
   entry.capturedAt = std::chrono::system_clock::now();
   entry.timestamp = std::chrono::steady_clock::now();
-  m_history.push_front(std::move(entry));
+  m_history.insert(m_history.begin() + static_cast<std::ptrdiff_t>(target), std::move(entry));
+  ++m_changeSerial;
+  persistHistory();
+  notifyChanged();
+  return true;
+}
+
+bool ClipboardService::setEntryPinned(std::size_t index, bool pinned) {
+  if (index >= m_history.size()) {
+    return false;
+  }
+  if (m_history[index].pinned == pinned) {
+    return true;
+  }
+
+  ClipboardEntry entry = std::move(m_history[index]);
+  m_history.erase(m_history.begin() + static_cast<std::ptrdiff_t>(index));
+  entry.pinned = pinned;
+
+  if (pinned) {
+    // Most-recently-pinned first: new pins go to the very front.
+    m_history.push_front(std::move(entry));
+  } else {
+    // Unpinned entries return to the top of the unpinned region, just below
+    // the remaining pinned block.
+    const std::size_t target = pinnedCount();
+    m_history.insert(m_history.begin() + static_cast<std::ptrdiff_t>(target), std::move(entry));
+  }
+
   ++m_changeSerial;
   persistHistory();
   notifyChanged();
@@ -804,6 +910,11 @@ bool ClipboardService::startReceive(void* offer) {
     return false;
   }
 
+  if (selectionAdvertisesPasswordHint(state->mimeTypes)) {
+    kLog.debug("ignoring clipboard selection: password-hint MIME advertised");
+    return false;
+  }
+
   const std::string mimeType = chooseMimeType(*state);
   if (mimeType.empty()) {
     return false;
@@ -887,20 +998,52 @@ void ClipboardService::addToHistory(ClipboardEntry entry) {
     entry.textPreview = buildTextPreview(entry.data);
   }
 
-  if (!m_history.empty() && !entry.data.empty()) {
-    ClipboardEntry& current = m_history.front();
-    const bool currentWasLoaded = current.payloadLoaded;
-    bool samePayload = false;
-    if (current.byteSize == entry.byteSize) {
-      const bool currentLoaded = current.payloadLoaded || loadEntryPayload(current);
-      samePayload = currentLoaded && current.data == entry.data;
-      if (!currentWasLoaded) {
-        evictPayloadData(current);
+  if (!m_historyRetention) {
+    // History is disabled: retain only the live selection in memory (so paste
+    // still works) and never persist. Ignore the self-copy echo of unchanged
+    // content to avoid needless churn.
+    if (!m_history.empty() && !entry.data.empty() && m_history.front().byteSize == entry.byteSize &&
+        m_history.front().data == entry.data && m_history.front().dataMimeType == entry.dataMimeType) {
+      return;
+    }
+    m_history.clear();
+    m_historyBytes = entry.byteSize;
+    m_history.push_back(std::move(entry));
+    ++m_changeSerial;
+    notifyChanged();
+    return;
+  }
+
+  // Pinned entries form a contiguous block at the front; new captures join the
+  // top of the unpinned region just below it.
+  const std::size_t insertAt = pinnedCount();
+
+  // Dedup against the most recent capture (the first unpinned entry) and
+  // against every pinned entry. The latter matters because copying/actioning a
+  // pinned entry echoes its content back as a fresh selection, which would
+  // otherwise reappear as a duplicate unpinned entry at the top.
+  if (!entry.data.empty()) {
+    auto matchesExisting = [&](ClipboardEntry& current) {
+      const bool currentWasLoaded = current.payloadLoaded;
+      bool samePayload = false;
+      if (current.byteSize == entry.byteSize) {
+        const bool currentLoaded = current.payloadLoaded || loadEntryPayload(current);
+        samePayload = currentLoaded && current.data == entry.data;
+        if (!currentWasLoaded) {
+          evictPayloadData(current);
+        }
+      }
+      const bool sameMime = current.dataMimeType == entry.dataMimeType;
+      const bool equivalentText = isTextMimeType(current.dataMimeType) && isTextMimeType(entry.dataMimeType);
+      return samePayload && (sameMime || equivalentText);
+    };
+
+    for (std::size_t i = 0; i < insertAt && i < m_history.size(); ++i) {
+      if (matchesExisting(m_history[i])) {
+        return;
       }
     }
-    const bool sameMime = current.dataMimeType == entry.dataMimeType;
-    const bool equivalentText = isTextMimeType(current.dataMimeType) && isTextMimeType(entry.dataMimeType);
-    if (samePayload && (sameMime || equivalentText)) {
+    if (insertAt < m_history.size() && matchesExisting(m_history[insertAt])) {
       return;
     }
   }
@@ -910,15 +1053,15 @@ void ClipboardService::addToHistory(ClipboardEntry entry) {
     return;
   }
 
-  m_history.push_front(std::move(entry));
+  m_history.insert(m_history.begin() + static_cast<std::ptrdiff_t>(insertAt), std::move(entry));
   m_historyBytes += entryBytes;
   trimHistoryToBudget();
 
   ++m_changeSerial;
   if (persistHistory()) {
-    evictPayloadData(m_history.front());
+    evictPayloadData(m_history[insertAt]);
   }
-  const std::string latestMime = m_history.front().mimeTypes.empty() ? "" : m_history.front().mimeTypes.front();
+  const std::string latestMime = m_history[insertAt].mimeTypes.empty() ? "" : m_history[insertAt].mimeTypes.front();
   kLog.debug("clipboard history size={} entries={} latest_mime={}", m_historyBytes, m_history.size(), latestMime);
   notifyChanged();
 }
@@ -954,6 +1097,7 @@ void ClipboardService::loadPersistedHistory() {
       entry.dataMimeType = item.value("data_mime_type", "");
       entry.textPreview = item.value("text_preview", "");
       entry.byteSize = item.value("byte_size", static_cast<std::size_t>(0));
+      entry.pinned = item.value("pinned", false);
       entry.payloadLoaded = false;
 
       const auto capturedAtMs = item.value("captured_at_ms", std::int64_t{0});
@@ -967,6 +1111,10 @@ void ClipboardService::loadPersistedHistory() {
       m_historyBytes += m_history.back().byteSize;
     }
 
+    // Enforce the storage invariant: pinned block first (relative order
+    // preserved = most-recently-pinned first), then the unpinned region.
+    std::stable_partition(m_history.begin(), m_history.end(), [](const ClipboardEntry& entry) { return entry.pinned; });
+
     trimHistoryToBudget();
     kLog.info("loaded {} persisted clipboard entries", m_history.size());
   } catch (const std::exception& e) {
@@ -977,6 +1125,10 @@ void ClipboardService::loadPersistedHistory() {
 }
 
 bool ClipboardService::persistHistory() {
+  if (!m_historyRetention) {
+    return false;
+  }
+
   namespace fs = std::filesystem;
 
   try {
@@ -1018,6 +1170,7 @@ bool ClipboardService::persistHistory() {
           {"text_preview", entry.textPreview},
           {"byte_size", entry.byteSize},
           {"captured_at_ms", capturedAtMs},
+          {"pinned", entry.pinned},
       });
     }
 
@@ -1055,8 +1208,28 @@ bool ClipboardService::persistHistory() {
 }
 
 void ClipboardService::trimHistoryToBudget() {
-  while (m_history.size() > kMaxHistoryEntries || m_historyBytes > kMaxHistoryBytes) {
-    m_historyBytes -= m_history.back().byteSize;
+  // Pinned entries are exempt from the budget and do not count toward it.
+  // Only the unpinned tail is trimmed; since the pinned block is contiguous at
+  // the front, the back is always unpinned while any unpinned entry remains.
+  std::size_t unpinnedCount = 0;
+  std::size_t unpinnedBytes = 0;
+  for (const auto& entry : m_history) {
+    if (!entry.pinned) {
+      ++unpinnedCount;
+      unpinnedBytes += entry.byteSize;
+    }
+  }
+
+  while ((unpinnedCount > kMaxHistoryEntries || unpinnedBytes > kMaxHistoryBytes) && !m_history.empty() &&
+         !m_history.back().pinned) {
+    const std::size_t removedBytes = m_history.back().byteSize;
+    unpinnedBytes -= removedBytes;
+    --unpinnedCount;
+    if (m_historyBytes >= removedBytes) {
+      m_historyBytes -= removedBytes;
+    } else {
+      m_historyBytes = 0;
+    }
     m_history.pop_back();
   }
 }

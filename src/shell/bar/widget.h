@@ -25,7 +25,7 @@ public:
       std::function<void(std::string_view panelId, std::string_view context, std::optional<float> anchorSurfaceX,
                          std::optional<float> anchorSurfaceY)>;
 
-  virtual ~Widget() = default;
+  virtual ~Widget();
 
   virtual void create() = 0;
   void layout(Renderer& renderer, float containerWidth, float containerHeight) {
@@ -42,6 +42,7 @@ public:
     (void)event;
     return false;
   }
+  [[nodiscard]] virtual bool reservesMiddleClick() const noexcept { return false; }
 
   [[nodiscard]] Node* root() const noexcept { return m_root ? m_root.get() : m_rootPtr; }
   [[nodiscard]] float width() const noexcept;

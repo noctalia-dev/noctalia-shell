@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/toml.h"
 #include "theme/palette.h"
 
 #include <filesystem>
@@ -46,6 +47,7 @@ namespace noctalia::theme {
     RenderResult render(std::string_view templateText);
     RenderFileResult renderFile(const std::filesystem::path& inputPath, const std::filesystem::path& outputPath);
     bool processConfigFile(const std::filesystem::path& configPath);
+    bool processConfigTable(const toml::table& root, const std::filesystem::path& configPath);
 
   private:
     ThemeData m_themeData;

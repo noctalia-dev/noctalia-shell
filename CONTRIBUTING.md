@@ -29,7 +29,7 @@ For dependencies and normal build commands, start with [README.md](README.md).
 | Keyboard | `xkbcommon` |
 | Rendering | `EGL`, `OpenGL ES 2.0+`, `wayland-egl` |
 | Text | `cairo`, `pango`, `pangocairo`, `freetype`, `fontconfig` |
-| Images | `Wuffs` (vendored), `nanosvg` (vendored), `stb_image_resize2` (vendored), `libwebp` |
+| Images | `Wuffs` (vendored), `stb_image_resize2` (vendored), `libwebp`, `librsvg` |
 | IPC | `sdbus-c++` |
 | Audio | `libpipewire`, `dr_wav` (vendored) |
 | Authentication | `PAM`, `polkit-agent-1`, `polkit-gobject-1`, `glib-2.0`, `gobject-2.0` |
@@ -84,8 +84,9 @@ An asset root is only accepted if it contains the expected shipped files such as
 This project uses [clang-format](https://clang.llvm.org/docs/ClangFormat.html) for formatting. Run `just format`
 before committing.
 
-For editor integration, the repo includes a `.clangd` file. It points clangd at the Meson compilation database under
-`build-release`, so run `just configure release` at least once if your editor uses clangd.
+For editor integration, `just configure` creates a root `compile_commands.json` symlink to the selected Meson build
+directory. Run `just configure`, `just configure release`, or `just configure asan` for the build mode you want clangd
+to use.
 
 The repo also includes `lefthook.yml`. Run `lefthook install` to install the pre-commit hook; it runs `just format`
 before commits and refreshes the git index for tracked formatting changes.
@@ -153,7 +154,6 @@ src/
 third_party/
   tomlplusplus/   TOML parser (vendored)
   wuffs/          Raster image decoding (vendored)
-  nanosvg/        SVG rasterization (vendored)
   stb/            Image resizing (vendored)
   tinyexpr/       Math expression evaluator (vendored)
   nlohmann/       JSON parser (vendored, header-only)

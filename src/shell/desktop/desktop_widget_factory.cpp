@@ -77,7 +77,7 @@ namespace {
       return fallback;
     }
     if (const auto* value = std::get_if<std::string>(&it->second)) {
-      return colorSpecFromConfigString(*value);
+      return colorSpecFromConfigString(*value, key);
     }
     return fallback;
   }
@@ -87,8 +87,8 @@ namespace {
 
   void applyCommonSettings(DesktopWidget& widget, const std::unordered_map<std::string, WidgetSettingValue>& settings) {
     if (getBoolSetting(settings, "background", true)) {
-      const ColorSpec bgColor =
-          getColorSpecSetting(settings, "background_color", colorSpecFromRole(ColorRole::Surface, 0.8f));
+      ColorSpec bgColor = getColorSpecSetting(settings, "background_color", colorSpecFromRole(ColorRole::Surface));
+      bgColor.alpha *= std::clamp(getFloatSetting(settings, "background_opacity", 0.8f), 0.0f, 1.0f);
       const float radius = getFloatSetting(settings, "background_radius", kDefaultBgRadius);
       const float padding = getFloatSetting(settings, "background_padding", kDefaultBgPadding);
       widget.setBackgroundStyle(bgColor, radius, padding);
@@ -125,7 +125,8 @@ DesktopWidgetFactory::create(const std::string& type,
         m_pipewireSpectrum, getFloatSetting(settings, "aspect_ratio", kDefaultDesktopAudioVisualizerAspectRatio),
         getIntSetting(settings, "bands", 32), getBoolSetting(settings, "mirrored", true),
         getColorSpecSetting(settings, "low_color", colorSpecFromRole(ColorRole::Primary)),
-        getColorSpecSetting(settings, "high_color", colorSpecFromRole(ColorRole::Primary)));
+        getColorSpecSetting(settings, "high_color", colorSpecFromRole(ColorRole::Primary)),
+        getBoolSetting(settings, "centered", true), getBoolSetting(settings, "show_when_idle", true));
     applyCommonSettings(*widget, settings);
     widget->setContentScale(contentScale);
     return widget;
@@ -177,6 +178,8 @@ DesktopWidgetFactory::create(const std::string& type,
         return DesktopSysmonStat::CpuTemp;
       if (s == "gpu_temp")
         return DesktopSysmonStat::GpuTemp;
+      if (s == "gpu_vram")
+        return DesktopSysmonStat::GpuVram;
       if (s == "ram_pct")
         return DesktopSysmonStat::RamPct;
       if (s == "swap_pct")

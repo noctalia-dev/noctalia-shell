@@ -4,6 +4,7 @@
 #include "i18n/i18n.h"
 #include "render/core/color.h"
 #include "shell/settings/bar_widget_editor.h"
+#include "shell/settings/color_spec_picker.h"
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/checkbox.h"
@@ -19,7 +20,7 @@
 #include "ui/controls/slider.h"
 #include "ui/controls/stepper.h"
 #include "ui/controls/toggle.h"
-#include "ui/dialogs/color_picker_dialog.h"
+#include "ui/dialogs/file_dialog.h"
 #include "ui/dialogs/glyph_picker_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -29,6 +30,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <format>
 #include <functional>
 #include <limits>
@@ -186,6 +188,12 @@ namespace settings {
       if (key == "background_opacity") {
         return override->backgroundOpacity.has_value();
       }
+      if (key == "border") {
+        return override->border.has_value();
+      }
+      if (key == "border_width") {
+        return override->borderWidth.has_value();
+      }
       if (key == "shadow") {
         return override->shadow.has_value();
       }
@@ -331,7 +339,7 @@ namespace settings {
                                        std::optional<std::size_t> ignoreIndex = std::nullopt) {
       base = sanitizedIdleBehaviorName(base);
       if (base.empty()) {
-        base = "custom";
+        base = "idle-behavior";
       }
 
       std::unordered_set<std::string> names;
@@ -367,20 +375,26 @@ namespace settings {
     }
 
     std::string idleBehaviorRowSummary(const IdleBehaviorConfig& row) {
-      const auto displayName = [](const IdleBehaviorConfig& behavior) {
-        if (behavior.command == "noctalia:screen-lock" || behavior.name == "lock") {
+      IdleBehaviorConfig norm = row;
+      inferIdleBehaviorActionFromLegacyFields(norm);
+
+      const auto displayName = [&]() -> std::string {
+        if (norm.action == "lock") {
           return i18n::tr("settings.idle.behavior.presets.lock");
         }
-        if (behavior.command == "noctalia:dpms-off" || behavior.name == "screen-off") {
+        if (norm.action == "screen_off") {
           return i18n::tr("settings.idle.behavior.presets.monitor-off");
         }
-        if (behavior.name.empty()) {
+        if (norm.action == "suspend") {
+          return i18n::tr("settings.idle.behavior.presets.suspend");
+        }
+        if (row.name.empty()) {
           return i18n::tr("settings.idle.behavior.unnamed");
         }
-        return behavior.name;
+        return row.name;
       };
 
-      const std::string name = displayName(row);
+      const std::string name = displayName();
       if (name.empty()) {
         return i18n::tr("settings.idle.behavior.unnamed");
       }
@@ -618,10 +632,123 @@ namespace settings {
                                                  const std::function<void()>& closeHostedEditor) {
       const float scale = ctx.scale;
 
+      const std::vector<SelectOption> idleActionOptions = {
+          {"lock", i18n::tr("settings.idle.behavior.kind.lock"), {}},
+          {"screen_off", i18n::tr("settings.idle.behavior.kind.screen-off"), {}},
+          {"suspend", i18n::tr("settings.idle.behavior.kind.suspend"), {}},
+          {"command", i18n::tr("settings.idle.behavior.kind.custom"), {}},
+      };
+
+      IdleBehaviorConfig norm = row;
+      inferIdleBehaviorActionFromLegacyFields(norm);
+      const bool showCustomCommands = (norm.action == "command");
+      const bool showSuspendLock = (norm.action == "suspend");
+
       auto body = std::make_unique<Flex>();
       body->setDirection(FlexDirection::Vertical);
       body->setAlign(FlexAlign::Stretch);
       body->setGap(Style::spaceMd * scale);
+
+      auto customCommandsGrp = std::make_unique<Flex>();
+      customCommandsGrp->setDirection(FlexDirection::Vertical);
+      customCommandsGrp->setAlign(FlexAlign::Stretch);
+      customCommandsGrp->setGap(Style::spaceMd * scale);
+      customCommandsGrp->setVisible(showCustomCommands);
+      Flex* customCommandsRaw = customCommandsGrp.get();
+
+      auto suspendLockGrp = std::make_unique<Flex>();
+      suspendLockGrp->setDirection(FlexDirection::Horizontal);
+      suspendLockGrp->setAlign(FlexAlign::Center);
+      suspendLockGrp->setGap(Style::spaceSm * scale);
+      suspendLockGrp->setFillWidth(true);
+      suspendLockGrp->setVisible(showSuspendLock);
+      auto suspendLockLabel = makeLabel(i18n::tr("settings.idle.behavior.lock-before-suspend-label"),
+                                        Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), false);
+      suspendLockLabel->setFlexGrow(1.0f);
+      suspendLockGrp->addChild(std::move(suspendLockLabel));
+      auto suspendLockToggle = std::make_unique<Toggle>();
+      suspendLockToggle->setScale(scale);
+      suspendLockToggle->setChecked(row.lockBeforeSuspend);
+      suspendLockToggle->setOnChange([&row, persist](bool v) {
+        row.lockBeforeSuspend = v;
+        persist();
+      });
+      suspendLockGrp->addChild(std::move(suspendLockToggle));
+      Flex* suspendLockRaw = suspendLockGrp.get();
+
+      const auto addCommandInput = [&](Flex& parent, std::string label, std::string placeholder, std::string& target) {
+        auto block = std::make_unique<Flex>();
+        block->setDirection(FlexDirection::Vertical);
+        block->setAlign(FlexAlign::Stretch);
+        block->setGap(Style::spaceXs * scale);
+        block->addChild(
+            makeLabel(label, Style::fontSizeCaption * scale, colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
+        auto input = std::make_unique<Input>();
+        input->setValue(target);
+        input->setPlaceholder(placeholder);
+        input->setFontSize(Style::fontSizeBody * scale);
+        input->setControlHeight(Style::controlHeight * scale);
+        input->setHorizontalPadding(Style::spaceSm * scale);
+        auto* inputPtr = input.get();
+        auto* targetPtr = &target;
+        const auto commit = [targetPtr, persist, inputPtr]() {
+          *targetPtr = StringUtils::trim(inputPtr->value());
+          inputPtr->setInvalid(false);
+          inputPtr->setValue(*targetPtr);
+          persist();
+        };
+        input->setOnChange([inputPtr](const std::string& /*t*/) { inputPtr->setInvalid(false); });
+        input->setOnSubmit([commit](const std::string& /*text*/) { commit(); });
+        input->setOnFocusLoss(commit);
+        block->addChild(std::move(input));
+        parent.addChild(std::move(block));
+      };
+
+      addCommandInput(*customCommandsGrp, i18n::tr("settings.idle.behavior.command-label"),
+                      i18n::tr("settings.idle.behavior.command-placeholder"), row.command);
+
+      auto resumeCommandGrp = std::make_unique<Flex>();
+      resumeCommandGrp->setDirection(FlexDirection::Vertical);
+      resumeCommandGrp->setAlign(FlexAlign::Stretch);
+      resumeCommandGrp->setGap(Style::spaceMd * scale);
+      addCommandInput(*resumeCommandGrp, i18n::tr("settings.idle.behavior.resume-command-label"),
+                      i18n::tr("settings.idle.behavior.resume-command-placeholder"), row.resumeCommand);
+
+      auto kindBlock = std::make_unique<Flex>();
+      kindBlock->setDirection(FlexDirection::Vertical);
+      kindBlock->setAlign(FlexAlign::Stretch);
+      kindBlock->setGap(Style::spaceXs * scale);
+      kindBlock->addChild(makeLabel(i18n::tr("settings.idle.behavior.kind-section-label"),
+                                    Style::fontSizeCaption * scale, colorSpecFromRole(ColorRole::OnSurfaceVariant),
+                                    false));
+      auto kindSelect = std::make_unique<Select>();
+      kindSelect->setOptions(optionLabels(idleActionOptions));
+      if (const auto ki = optionIndex(idleActionOptions, norm.action)) {
+        kindSelect->setSelectedIndex(*ki);
+      } else {
+        kindSelect->clearSelection();
+      }
+      kindSelect->setFontSize(Style::fontSizeBody * scale);
+      kindSelect->setControlHeight(Style::controlHeight * scale);
+      kindSelect->setGlyphSize(Style::fontSizeBody * scale);
+      kindSelect->setFillWidth(true);
+      kindSelect->setOnSelectionChanged([&row, persist, idleActionOptions, customCommandsRaw,
+                                         suspendLockRaw](std::size_t index, std::string_view /*label*/) {
+        if (index < idleActionOptions.size()) {
+          row.action = idleActionOptions[index].value;
+          if (row.action != "command") {
+            row.command.clear();
+          }
+        }
+        IdleBehaviorConfig n = row;
+        inferIdleBehaviorActionFromLegacyFields(n);
+        customCommandsRaw->setVisible(n.action == "command");
+        suspendLockRaw->setVisible(n.action == "suspend");
+        persist();
+      });
+      kindBlock->addChild(std::move(kindSelect));
+      body->addChild(std::move(kindBlock));
+      body->addChild(std::move(suspendLockGrp));
 
       auto nameBlock = std::make_unique<Flex>();
       nameBlock->setDirection(FlexDirection::Vertical);
@@ -684,38 +811,8 @@ namespace settings {
       timeoutBlock->addChild(std::move(timeoutIn));
       body->addChild(std::move(timeoutBlock));
 
-      const auto addCommandInput = [&](std::string label, std::string placeholder, std::string& target) {
-        auto block = std::make_unique<Flex>();
-        block->setDirection(FlexDirection::Vertical);
-        block->setAlign(FlexAlign::Stretch);
-        block->setGap(Style::spaceXs * scale);
-        block->addChild(
-            makeLabel(label, Style::fontSizeCaption * scale, colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
-        auto input = std::make_unique<Input>();
-        input->setValue(target);
-        input->setPlaceholder(placeholder);
-        input->setFontSize(Style::fontSizeBody * scale);
-        input->setControlHeight(Style::controlHeight * scale);
-        input->setHorizontalPadding(Style::spaceSm * scale);
-        auto* inputPtr = input.get();
-        auto* targetPtr = &target;
-        const auto commit = [targetPtr, persist, inputPtr]() {
-          *targetPtr = StringUtils::trim(inputPtr->value());
-          inputPtr->setInvalid(false);
-          inputPtr->setValue(*targetPtr);
-          persist();
-        };
-        input->setOnChange([inputPtr](const std::string& /*t*/) { inputPtr->setInvalid(false); });
-        input->setOnSubmit([commit](const std::string& /*text*/) { commit(); });
-        input->setOnFocusLoss(commit);
-        block->addChild(std::move(input));
-        body->addChild(std::move(block));
-      };
-
-      addCommandInput(i18n::tr("settings.idle.behavior.command-label"),
-                      i18n::tr("settings.idle.behavior.command-placeholder"), row.command);
-      addCommandInput(i18n::tr("settings.idle.behavior.resume-command-label"),
-                      i18n::tr("settings.idle.behavior.resume-command-placeholder"), row.resumeCommand);
+      body->addChild(std::move(customCommandsGrp));
+      body->addChild(std::move(resumeCommandGrp));
 
       section.addChild(std::move(body));
 
@@ -735,15 +832,30 @@ namespace settings {
       applyBtn->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
       applyBtn->setRadius(Style::scaledRadiusMd(scale));
       applyBtn->setFlexGrow(1.0f);
-      applyBtn->setOnClick([commitName, commitTimeout, closeHostedEditor]() {
-        commitName();
-        commitTimeout();
-        if (closeHostedEditor) {
-          closeHostedEditor();
-        }
-      });
+      applyBtn->setOnClick(
+          [commitName, commitTimeout, applyHostedEditor = ctx.afterIdleBehaviorApply, closeHostedEditor]() {
+            commitName();
+            commitTimeout();
+            if (applyHostedEditor) {
+              applyHostedEditor();
+            }
+            if (closeHostedEditor) {
+              closeHostedEditor();
+            }
+          });
       actions->addChild(std::move(applyBtn));
       section.addChild(std::move(actions));
+    }
+
+    void addIdleLiveStatusPanel(Flex& section, SettingsContentContext& ctx, float scale) {
+      auto line = std::make_unique<Label>();
+      line->setFontSize(Style::fontSizeBody * scale);
+      line->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+      line->setText("");
+      if (ctx.registerIdleLiveStatusLabel) {
+        ctx.registerIdleLiveStatusLabel(line.get());
+      }
+      section.addChild(std::move(line));
     }
 
   } // namespace
@@ -800,11 +912,10 @@ namespace settings {
         groupHeader->setPadding(Style::spaceSm * scale, 0.0f, 0.0f, 0.0f);
         groupHeader->addChild(std::make_unique<Separator>());
         groupHeader->addChild(
-            makeLabel(title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurfaceVariant), true));
+            makeLabel(title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::Secondary), true));
         section.addChild(std::move(groupHeader));
       } else {
-        section.addChild(
-            makeLabel(title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurfaceVariant), true));
+        section.addChild(makeLabel(title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::Secondary), true));
       }
     };
 
@@ -1018,22 +1129,25 @@ namespace settings {
 
           slider->setOnDragEnd([commit, sliderPtr]() { commit(static_cast<double>(sliderPtr->value())); });
 
+          const auto commitInputText = [commit, sliderPtr, valueInputPtr, minValue, maxValue,
+                                        integerValue](const std::string& text) {
+            const auto parsed = parseFloatInput(text);
+            if (!parsed.has_value() || *parsed < minValue || *parsed > maxValue) {
+              valueInputPtr->setInvalid(true);
+              return;
+            }
+            const float v = *parsed;
+            valueInputPtr->setInvalid(false);
+            sliderPtr->setValue(v);
+            if (!integerValue) {
+              valueInputPtr->setValue(formatSliderValue(sliderPtr->value(), false));
+            }
+            commit(static_cast<double>(v));
+          };
+
           valueInput->setOnChange([valueInputPtr](const std::string& /*text*/) { valueInputPtr->setInvalid(false); });
-          valueInput->setOnSubmit(
-              [commit, sliderPtr, valueInputPtr, minValue, maxValue, integerValue](const std::string& text) {
-                const auto parsed = parseFloatInput(text);
-                if (!parsed.has_value() || *parsed < minValue || *parsed > maxValue) {
-                  valueInputPtr->setInvalid(true);
-                  return;
-                }
-                const float v = *parsed;
-                valueInputPtr->setInvalid(false);
-                sliderPtr->setValue(v);
-                if (!integerValue) {
-                  valueInputPtr->setValue(formatSliderValue(sliderPtr->value(), false));
-                }
-                commit(static_cast<double>(v));
-              });
+          valueInput->setOnSubmit([commitInputText](const std::string& text) { commitInputText(text); });
+          valueInput->setOnFocusLoss([commitInputText, valueInputPtr]() { commitInputText(valueInputPtr->value()); });
 
           // Slider first, numeric value field on the right (reset from makeRow stays left of this cluster).
           wrap->addChild(std::move(slider));
@@ -1056,6 +1170,80 @@ namespace settings {
       return input;
     };
 
+    const auto makeTextWithPathBrowse = [&](const TextSetting& setting, const std::vector<std::string>& path) {
+      auto wrap = std::make_unique<Flex>();
+      wrap->setDirection(FlexDirection::Horizontal);
+      wrap->setAlign(FlexAlign::Center);
+      wrap->setGap(Style::spaceSm * scale);
+
+      auto input = std::make_unique<Input>();
+      input->setValue(setting.value);
+      input->setPlaceholder(setting.placeholder.empty() ? i18n::tr("settings.controls.list.add-entry-placeholder")
+                                                        : setting.placeholder);
+      input->setFontSize(Style::fontSizeBody * scale);
+      input->setControlHeight(Style::controlHeight * scale);
+      input->setHorizontalPadding(Style::spaceSm * scale);
+      const float inputWidth = (setting.width > 0.0f ? setting.width : 280.0f) * scale;
+      input->setSize(inputWidth, Style::controlHeight * scale);
+      auto* inputPtr = input.get();
+      input->setOnSubmit([setOverride = ctx.setOverride, path](const std::string& v) { setOverride(path, v); });
+      wrap->addChild(std::move(input));
+
+      const bool selectFolder = setting.browseMode == TextSettingBrowseMode::SelectFolder;
+      auto browse = std::make_unique<Button>();
+      browse->setVariant(ButtonVariant::Outline);
+      browse->setGlyph(selectFolder ? "folder" : "file-text");
+      browse->setGlyphSize(Style::fontSizeBody * scale);
+      browse->setMinHeight(Style::controlHeight * scale);
+      browse->setMinWidth(Style::controlHeight * scale);
+      browse->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+      browse->setRadius(Style::scaledRadiusMd(scale));
+      browse->setOnClick(
+          [setOverride = ctx.setOverride, path, inputPtr, selectFolder, exts = setting.browseFileExtensions]() {
+            FileDialogOptions options;
+            options.mode = selectFolder ? FileDialogMode::SelectFolder : FileDialogMode::Open;
+            options.defaultViewMode = FileDialogViewMode::List;
+            options.title = selectFolder ? i18n::tr("settings.controls.path-browse.folder-title")
+                                         : i18n::tr("settings.controls.path-browse.file-title");
+            if (!selectFolder) {
+              options.extensions = exts;
+            }
+            const std::string cur = inputPtr->value();
+            if (!cur.empty()) {
+              std::filesystem::path p(cur);
+              std::error_code ec;
+              if (selectFolder) {
+                if (std::filesystem::exists(p, ec) && std::filesystem::is_directory(p, ec)) {
+                  options.startDirectory = p;
+                } else if (p.has_parent_path()) {
+                  const auto parent = p.parent_path();
+                  if (std::filesystem::exists(parent, ec)) {
+                    options.startDirectory = parent;
+                  }
+                }
+              } else {
+                if (std::filesystem::exists(p, ec) && std::filesystem::is_regular_file(p, ec)) {
+                  options.startDirectory = p.parent_path();
+                  options.defaultFilename = p.filename().string();
+                } else if (p.has_parent_path() && std::filesystem::exists(p.parent_path(), ec)) {
+                  options.startDirectory = p.parent_path();
+                }
+              }
+            }
+            (void)FileDialog::open(std::move(options),
+                                   [setOverride, path, inputPtr](std::optional<std::filesystem::path> picked) {
+                                     if (!picked.has_value()) {
+                                       return;
+                                     }
+                                     const std::string s = picked->string();
+                                     inputPtr->setValue(s);
+                                     setOverride(path, s);
+                                   });
+          });
+      wrap->addChild(std::move(browse));
+      return wrap;
+    };
+
     const auto makeGlyphText = [&](const TextSetting& setting, std::vector<std::string> path) -> std::unique_ptr<Node> {
       auto wrap = std::make_unique<Flex>();
       wrap->setDirection(FlexDirection::Horizontal);
@@ -1064,7 +1252,7 @@ namespace settings {
       wrap->addChild(makeText(setting.value, setting.placeholder, path, setting.width));
 
       auto pickerButton = std::make_unique<Button>();
-      pickerButton->setVariant(ButtonVariant::Secondary);
+      pickerButton->setVariant(ButtonVariant::Outline);
       pickerButton->setGlyph("apps");
       pickerButton->setGlyphSize(Style::fontSizeBody * scale);
       pickerButton->setMinHeight(Style::controlHeight * scale);
@@ -1181,81 +1369,29 @@ namespace settings {
       return wrap;
     };
 
-    const auto makeColor = [&](const ColorSetting& setting, std::vector<std::string> path) {
-      auto wrap = std::make_unique<Flex>();
-      wrap->setDirection(FlexDirection::Horizontal);
-      wrap->setAlign(FlexAlign::Center);
-      wrap->setGap(Style::spaceSm * scale);
-
-      const float swatchSize = Style::controlHeight * scale;
-      auto swatch = std::make_unique<Box>();
-      swatch->setSize(swatchSize, swatchSize);
-      swatch->setRadius(Style::scaledRadiusSm(scale));
-      swatch->setBorder(colorSpecFromRole(ColorRole::Outline), 1.0f);
-      Color initialColor;
-      const bool hasColor = !setting.unset && tryParseHexColor(setting.hex, initialColor);
-      if (hasColor) {
-        swatch->setFill(initialColor);
-      } else {
-        swatch->setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
-      }
-
-      auto button = std::make_unique<Button>();
-      button->setVariant(ButtonVariant::Outline);
-      button->setText(setting.unset ? i18n::tr("settings.options.theme-role.default") : setting.hex);
-      button->setFontSize(Style::fontSizeBody * scale);
-      button->setMinHeight(Style::controlHeight * scale);
-      button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-      button->setRadius(Style::scaledRadiusMd(scale));
-      const std::optional<Color> initialOpt = hasColor ? std::optional<Color>{initialColor} : std::nullopt;
-      const std::string title = i18n::tr("settings.dialogs.color-picker.title");
-      button->setOnClick([setOverride = ctx.setOverride, path, initialOpt, title]() {
-        ColorPickerDialogOptions options;
-        options.title = title;
-        if (initialOpt.has_value()) {
-          options.initialColor = *initialOpt;
-        } else if (const auto last = ColorPickerDialog::lastResult()) {
-          options.initialColor = *last;
-        }
-        (void)ColorPickerDialog::open(std::move(options), [setOverride, path](std::optional<Color> result) {
-          if (!result.has_value()) {
-            return;
-          }
-          Color rgb = *result;
-          rgb.a = 1.0f;
-          setOverride(path, formatRgbHex(rgb));
-        });
-      });
-
-      wrap->addChild(std::move(swatch));
-      wrap->addChild(std::move(button));
-      return wrap;
-    };
-
-    const auto makeColorRolePicker = [&](const ColorRolePickerSetting& setting,
+    const auto makeColorSpecPicker = [&](const ColorSpecPickerSetting& setting,
                                          std::vector<std::string> path) -> std::unique_ptr<Node> {
-      std::vector<SelectOption> opts;
-      opts.reserve(setting.roles.size() + (setting.allowNone ? 1 : 0));
-      std::vector<ColorSpec> indicators;
-      indicators.reserve(setting.roles.size() + (setting.allowNone ? 1 : 0));
-
-      if (setting.allowNone) {
-        opts.push_back(SelectOption{"", i18n::tr("settings.options.theme-role.default")});
-        indicators.push_back(clearColorSpec());
-      }
-      for (const auto role : setting.roles) {
-        opts.push_back(SelectOption{std::string(colorRoleToken(role)), std::string(colorRoleToken(role))});
-        indicators.push_back(colorSpecFromRole(role));
-      }
-
-      SelectSetting selectSetting{std::move(opts), setting.selectedValue, setting.allowNone};
-      auto select = makeSelect(selectSetting, std::move(path));
-
-      if (auto* sel = dynamic_cast<Select*>(select.get())) {
-        sel->setOptionIndicators(std::move(indicators));
-      }
-
-      return select;
+      ColorSpecSelectOptions options{
+          .roles = setting.roles,
+          .selectedValue = setting.selectedValue,
+          .allowNone = setting.allowNone,
+          .allowCustomColor = setting.allowCustomColor,
+          .noneLabel = setting.noneLabel,
+          .fontSize = Style::fontSizeBody * scale,
+          .controlHeight = Style::controlHeight * scale,
+          .glyphSize = Style::fontSizeBody * scale,
+          .width = 190.0f * scale,
+      };
+      return makeColorSpecSelect(
+          std::move(options), [setOverride = ctx.setOverride, path](std::string value) { setOverride(path, value); },
+          [configService = ctx.configService, clearOverride = ctx.clearOverride, requestRebuild = ctx.requestRebuild,
+           path]() {
+            if (configService != nullptr && configService->hasOverride(path)) {
+              clearOverride(path);
+            } else {
+              requestRebuild();
+            }
+          });
     };
 
     const auto makeSearchPickerButton = [&](const SettingEntry& entry,
@@ -1967,15 +2103,10 @@ namespace settings {
       addBtn->setMinHeight(Style::controlHeight * scale);
       addBtn->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
       addBtn->setRadius(Style::scaledRadiusMd(scale));
-      addBtn->setOnClick([state, commit]() {
-        state->push_back(IdleBehaviorConfig{
-            .name = uniqueIdleBehaviorName("custom", *state),
-            .enabled = true,
-            .timeoutSeconds = 300,
-            .command = "notify-send 'Idle' 'Going idle'",
-            .resumeCommand = "",
-        });
-        commit();
+      addBtn->setOnClick([openCreate = ctx.openIdleBehaviorCreateEditor]() {
+        if (openCreate) {
+          openCreate();
+        }
       });
       block->addChild(std::move(addBtn));
 
@@ -1997,6 +2128,9 @@ namespace settings {
               if (isDockLauncherIconPath(entry.path)) {
                 return makeGlyphText(control, entry.path);
               }
+              if (control.browseMode != TextSettingBrowseMode::None) {
+                return makeTextWithPathBrowse(control, entry.path);
+              }
               return makeText(control.value, control.placeholder, entry.path, control.width);
             } else if constexpr (std::is_same_v<T, OptionalNumberSetting>) {
               return makeOptionalNumber(control, entry.path);
@@ -2004,8 +2138,6 @@ namespace settings {
               return makeOptionalStepper(control, entry.path);
             } else if constexpr (std::is_same_v<T, StepperSetting>) {
               return makeStepper(control, entry.path);
-            } else if constexpr (std::is_same_v<T, ColorSetting>) {
-              return makeColor(control, entry.path);
             } else if constexpr (std::is_same_v<T, SearchPickerSetting>) {
               return nullptr;
             } else if constexpr (std::is_same_v<T, MultiSelectSetting>) {
@@ -2023,6 +2155,10 @@ namespace settings {
             } else if constexpr (std::is_same_v<T, ButtonSetting>) {
               auto button = std::make_unique<Button>();
               button->setVariant(ButtonVariant::Outline);
+              if (!control.glyph.empty()) {
+                button->setGlyph(control.glyph);
+                button->setGlyphSize(Style::fontSizeBody * scale);
+              }
               button->setText(control.label);
               button->setFontSize(Style::fontSizeBody * scale);
               button->setMinHeight(Style::controlHeight * scale);
@@ -2030,8 +2166,8 @@ namespace settings {
               button->setRadius(Style::scaledRadiusMd(scale));
               button->setOnClick(control.action);
               return button;
-            } else if constexpr (std::is_same_v<T, ColorRolePickerSetting>) {
-              return makeColorRolePicker(control, entry.path);
+            } else if constexpr (std::is_same_v<T, ColorSpecPickerSetting>) {
+              return makeColorSpecPicker(control, entry.path);
             }
           },
           entry.control);
@@ -2054,12 +2190,10 @@ namespace settings {
         .showAdvanced = ctx.showAdvanced,
         .showOverriddenOnly = ctx.showOverriddenOnly,
         .batteryDeviceOptions = ctx.batteryDeviceOptions,
-        .openWidgetPickerPath = ctx.openWidgetPickerPath,
         .editingWidgetName = ctx.editingWidgetName,
         .pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
         .pendingDeleteWidgetSettingPath = ctx.pendingDeleteWidgetSettingPath,
         .renamingWidgetName = ctx.renamingWidgetName,
-        .creatingWidgetType = ctx.creatingWidgetType,
         .requestRebuild = ctx.requestRebuild,
         .resetContentScroll = ctx.resetContentScroll,
         .setScrollTarget = ctx.setScrollTarget,
@@ -2089,8 +2223,8 @@ namespace settings {
                         std::vector<std::string> path) -> std::unique_ptr<Node> {
           return makeText(value, placeholder, std::move(path));
         }, // width not used in search
-        .makeColorRolePicker = [&](const ColorRolePickerSetting& setting, std::vector<std::string> path)
-            -> std::unique_ptr<Node> { return makeColorRolePicker(setting, std::move(path)); },
+        .makeColorSpecPicker = [&](const ColorSpecPickerSetting& setting, std::vector<std::string> path)
+            -> std::unique_ptr<Node> { return makeColorSpecPicker(setting, std::move(path)); },
         .makeListBlock = [&](Flex& section, const SettingEntry& entry,
                              const ListSetting& list) { makeListBlock(section, entry, list); },
     };
@@ -2160,6 +2294,9 @@ namespace settings {
           displayTitle = sectionLabel(entry.section);
         }
         activeSection = makeSection(displayTitle, entry.section);
+        if (entry.section == "idle") {
+          addIdleLiveStatusPanel(*activeSection, ctx, scale);
+        }
       }
       if (activeSection != nullptr) {
         if (entry.group != activeGroupKey) {

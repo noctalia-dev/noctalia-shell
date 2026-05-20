@@ -35,6 +35,7 @@ private:
   Button* m_nextButton = nullptr;
   Flex* m_grid = nullptr;
   int m_monthOffset = 0;
+  float m_scrollAccum = 0.0f;
   float m_lastInnerWidth = -1.0f;
   float m_lastInnerHeight = -1.0f;
   int m_lastDisplayYear = std::numeric_limits<int>::min();

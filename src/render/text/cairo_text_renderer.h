@@ -55,20 +55,23 @@ public:
   // HiDPI: raster at `scale × fontSize` pixels and shrink the quad by 1/scale.
   void setContentScale(float scale);
   void setFontFamily(std::string family);
+  void notifyFontConfigChanged();
 
   [[nodiscard]] TextMetrics measure(std::string_view text, float fontSize, bool bold = false, float maxWidth = 0.0f,
-                                    int maxLines = 0, TextAlign align = TextAlign::Start);
+                                    int maxLines = 0, TextAlign align = TextAlign::Start,
+                                    std::string_view fontFamily = {});
   [[nodiscard]] TextMetrics measureFont(float fontSize, bool bold = false) const;
   void measureCursorStops(std::string_view text, float fontSize, const std::vector<std::size_t>& byteOffsets,
                           std::vector<float>& outStops, bool bold = false);
 
   void draw(float surfaceWidth, float surfaceHeight, float x, float baselineY, std::string_view text, float fontSize,
             const Color& color, const Mat3& transform, bool bold = false, float maxWidth = 0.0f, int maxLines = 0,
-            TextAlign align = TextAlign::Start);
+            TextAlign align = TextAlign::Start, std::string_view fontFamily = {});
 
 private:
   struct CacheKey {
     std::string text;
+    std::string fontFamily;
     std::uint32_t sizeQ = 0;     // fontSize * 64 + 0.5
     std::uint32_t colorRgba = 0; // packed r<<24|g<<16|b<<8|a
     std::uint32_t maxWidthQ = 0; // maxWidth * 64 + 0.5, 0 = no limit
@@ -88,6 +91,7 @@ private:
   // a PangoLayout for each call was the top allocation hot-spot in heaptrack.
   struct MetricsKey {
     std::string text;
+    std::string fontFamily;
     std::uint32_t sizeQ = 0;
     std::uint32_t maxWidthQ = 0;
     std::uint16_t scaleQ = 0;
@@ -133,7 +137,7 @@ private:
 
   // Build a PangoLayout at the given scaled size. Caller owns the layout (g_object_unref).
   PangoLayout* buildLayout(std::string_view text, float fontSize, bool bold, float maxWidthPxScaled, int maxLines,
-                           TextAlign align) const;
+                           TextAlign align, std::string_view fontFamily = {}) const;
   // Render a layout into a new GL texture; fills out fields of `entry`.
   // When `tinted` is true, rasterizes as CAIRO_FORMAT_A8 and uploads alpha
   // coverage so the color is applied via u_tint at draw time. When false,
@@ -144,7 +148,7 @@ private:
   TextMetrics metricsFromLayout(PangoLayout* layout) const;
 
   CacheEntry* lookupOrRasterize(std::string_view text, float fontSize, bool bold, float maxWidth, int maxLines,
-                                TextAlign align, const Color& color);
+                                TextAlign align, const Color& color, std::string_view fontFamily = {});
   void touch(CacheMap::iterator it);
   void evict(CacheMap::iterator it);
   void evictIfNeeded();

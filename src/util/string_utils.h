@@ -82,6 +82,30 @@ namespace StringUtils {
     return std::string(path.substr(slash + 1));
   }
 
+  [[nodiscard]] inline std::string urlEncode(std::string_view text) {
+    constexpr char kHexDigits[] = "0123456789ABCDEF";
+
+    std::string encoded;
+    encoded.reserve(text.size() * 3);
+
+    auto isUnreserved = [](unsigned char ch) {
+      return std::isalnum(ch) != 0 || ch == '-' || ch == '_' || ch == '.' || ch == '~';
+    };
+
+    for (char rawCh : text) {
+      const auto ch = static_cast<unsigned char>(rawCh);
+      if (isUnreserved(ch)) {
+        encoded.push_back(rawCh);
+      } else {
+        encoded.push_back('%');
+        encoded.push_back(kHexDigits[static_cast<std::size_t>(ch >> 4U)]);
+        encoded.push_back(kHexDigits[static_cast<std::size_t>(ch & 0x0FU)]);
+      }
+    }
+
+    return encoded;
+  }
+
   inline void toLowerInPlace(std::string& s) {
     std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
   }
@@ -147,6 +171,18 @@ namespace StringUtils {
       ++index;
     }
     return std::string(text);
+  }
+
+  [[nodiscard]] inline std::string truncateUtf8(std::string_view text, std::size_t maxBytes) {
+    if (text.size() <= maxBytes) {
+      return std::string(text);
+    }
+
+    std::size_t end = maxBytes;
+    while (end > 0 && (static_cast<unsigned char>(text[end]) & 0xC0U) == 0x80U) {
+      --end;
+    }
+    return std::string(text.substr(0, end));
   }
 
   // Strip HTML/Pango tags and unescape XML entities.

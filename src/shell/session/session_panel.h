@@ -17,6 +17,10 @@ class InputArea;
 class Renderer;
 class ConfigService;
 
+namespace compositors::niri {
+  class NiriRuntime;
+}
+
 struct SessionActionHooks {
   std::function<bool()> onLogout;
   std::function<bool()> onReboot;
@@ -25,8 +29,9 @@ struct SessionActionHooks {
 
 class SessionPanel : public Panel {
 public:
-  explicit SessionPanel(ConfigService* config, SessionActionHooks actionHooks = {})
-      : m_config(config), m_actionHooks(std::move(actionHooks)) {}
+  explicit SessionPanel(ConfigService* config, SessionActionHooks actionHooks = {},
+                        compositors::niri::NiriRuntime* niriRuntime = nullptr)
+      : m_config(config), m_actionHooks(std::move(actionHooks)), m_niriRuntime(niriRuntime) {}
 
   void create() override;
   void onOpen(std::string_view context) override;
@@ -34,12 +39,11 @@ public:
 
   [[nodiscard]] float preferredWidth() const override;
   [[nodiscard]] float preferredHeight() const override;
-  [[nodiscard]] bool centeredHorizontally() const override { return true; }
-  [[nodiscard]] bool centeredVertically() const override { return true; }
   [[nodiscard]] bool hasDecoration() const override { return true; }
   [[nodiscard]] LayerShellLayer layer() const override { return LayerShellLayer::Overlay; }
   [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::Exclusive; }
   [[nodiscard]] InputArea* initialFocusArea() const override;
+  [[nodiscard]] PanelPlacement panelPlacement() const noexcept override;
 
 private:
   static constexpr float kActionButtonMinHeight = 112.0f;
@@ -49,6 +53,7 @@ private:
 
   void doLayout(Renderer& renderer, float width, float height) override;
   void doUpdate(Renderer& renderer) override;
+  void onPanelCardOpacityChanged(float opacity) override;
   void activateSelected();
   bool handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers);
   void updateSelectionVisuals();
@@ -69,4 +74,5 @@ private:
   bool m_mouseActive = false;
   ConfigService* m_config = nullptr;
   SessionActionHooks m_actionHooks;
+  compositors::niri::NiriRuntime* m_niriRuntime = nullptr;
 };

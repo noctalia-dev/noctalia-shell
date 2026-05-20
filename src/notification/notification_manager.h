@@ -30,6 +30,7 @@ public:
 
   using EventCallback = std::function<void(const Notification&, NotificationEvent)>;
   using ActionInvokeCallback = std::function<void(uint32_t, const std::string&)>;
+  using CloseCallback = std::function<void(uint32_t, CloseReason)>;
   using StateCallback = std::function<void()>;
 
   // Register a callback for notification events. Returns a token for removal.
@@ -37,22 +38,25 @@ public:
   void removeEventCallback(int token);
 
   // Adds a new notification or updates an existing one.
-  uint32_t addOrReplace(uint32_t replaces_id, std::string app_name, std::string summary, std::string body,
+  uint32_t addOrReplace(uint32_t replacesId, std::string appName, std::string summary, std::string body,
                         Urgency urgency, int32_t timeout, NotificationOrigin origin = NotificationOrigin::External,
                         std::vector<std::string> actions = {}, std::optional<std::string> icon = std::nullopt,
-                        std::optional<NotificationImageData> image_data = std::nullopt,
+                        std::optional<NotificationImageData> imageData = std::nullopt,
                         std::optional<std::string> category = std::nullopt,
-                        std::optional<std::string> desktop_entry = std::nullopt);
+                        std::optional<std::string> desktopEntry = std::nullopt);
 
   // Adds an internal notification to the same store as external notifications.
-  uint32_t addInternal(std::string app_name, std::string summary, std::string body, Urgency urgency = Urgency::Normal,
+  uint32_t addInternal(std::string appName, std::string summary, std::string body, Urgency urgency = Urgency::Normal,
                        int32_t timeout = kDefaultNotificationTimeout, std::optional<std::string> icon = std::nullopt,
-                       std::optional<NotificationImageData> image_data = std::nullopt,
+                       std::optional<NotificationImageData> imageData = std::nullopt,
                        std::optional<std::string> category = std::nullopt,
-                       std::optional<std::string> desktop_entry = std::nullopt);
+                       std::optional<std::string> desktopEntry = std::nullopt);
 
   void setActionInvokeCallback(ActionInvokeCallback callback);
+  void setCloseCallback(CloseCallback callback);
   [[nodiscard]] bool invokeAction(uint32_t id, const std::string& actionKey, bool closeAfterInvoke = true);
+  // Emits ActionInvoked with "inline-reply::<text>" (KDE quick-reply convention).
+  [[nodiscard]] bool invokeInlineReply(uint32_t id, const std::string& replyText, bool closeAfterInvoke = true);
 
   // Closes a notification by ID. Returns false if not found.
   bool close(uint32_t id, CloseReason reason = CloseReason::ClosedByCall);
@@ -110,6 +114,7 @@ private:
   std::unordered_map<uint32_t, size_t> m_historyIndex;
   std::vector<std::pair<int, EventCallback>> m_eventCallbacks;
   ActionInvokeCallback m_actionInvokeCallback;
+  CloseCallback m_closeCallback;
   StateCallback m_stateCallback;
   int m_nextCallbackToken{0};
   uint32_t m_nextId{1};

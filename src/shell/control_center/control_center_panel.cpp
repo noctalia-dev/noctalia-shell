@@ -2,37 +2,47 @@
 
 #include "compositors/compositor_platform.h"
 #include "config/config_service.h"
+#include "core/deferred_call.h"
+#include "dbus/mpris/mpris_service.h"
+#include "dbus/network/inetwork_service.h"
 #include "i18n/i18n.h"
 #include "notification/notification_manager.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
+#include "shell/panel/panel_button_style.h"
 #include "shell/panel/panel_manager.h"
 #include "system/dependency_service.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/label.h"
 
+#include <chrono>
 #include <memory>
 
 using namespace control_center;
 
+namespace {
+  constexpr auto kMprisRefreshMinInterval = std::chrono::milliseconds(750);
+}
+
 ControlCenterPanel::ControlCenterPanel(
     NotificationManager* notifications, PipeWireService* audio, MprisService* mpris, ConfigService* config,
     HttpClient* httpClient, WeatherService* weather, PipeWireSpectrum* spectrum, UPowerService* upower,
-    PowerProfilesService* powerProfiles, NetworkService* network, NetworkSecretAgent* networkSecrets,
+    PowerProfilesService* powerProfiles, INetworkService* network, NetworkSecretAgent* networkSecrets,
     BluetoothService* bluetooth, BluetoothAgent* bluetoothAgent, BrightnessService* brightness,
     SystemMonitorService* sysmon, GammaService* nightLight, noctalia::theme::ThemeService* theme,
     IdleInhibitor* idleInhibitor, DependencyService* dependencies, CompositorPlatform* platform, Wallpaper* wallpaper) {
   (void)upower;
   WaylandConnection* wayland = platform != nullptr ? &platform->wayland() : nullptr;
   m_config = config;
+  m_mpris = mpris;
   m_notificationManager = notifications;
   m_dependencies = dependencies;
   m_tabs[tabIndex(TabId::Home)] =
-      std::make_unique<HomeTab>(mpris, weather, audio, powerProfiles, config, network, bluetooth, nightLight, theme,
-                                notifications, idleInhibitor, dependencies, platform, wallpaper);
-  m_tabs[tabIndex(TabId::Media)] =
-      std::make_unique<MediaTab>(mpris, httpClient, spectrum, wayland, PanelManager::instance().renderContext());
+      std::make_unique<HomeTab>(mpris, httpClient, weather, audio, powerProfiles, config, network, bluetooth,
+                                nightLight, theme, notifications, idleInhibitor, dependencies, platform, wallpaper);
+  m_tabs[tabIndex(TabId::Media)] = std::make_unique<MediaTab>(mpris, httpClient, spectrum, config, wayland,
+                                                              PanelManager::instance().renderContext());
   m_tabs[tabIndex(TabId::Audio)] =
       std::make_unique<AudioTab>(audio, mpris, config, wayland, PanelManager::instance().renderContext());
   m_tabs[tabIndex(TabId::Weather)] = std::make_unique<WeatherTab>(weather, config);
@@ -47,8 +57,13 @@ ControlCenterPanel::ControlCenterPanel(
   m_tabHeaderActions.fill(nullptr);
 }
 
-bool ControlCenterPanel::prefersAttachedToBar() const noexcept {
-  return m_config == nullptr || m_config->config().shell.panel.attachControlCenter;
+float ControlCenterPanel::preferredWidth() const {
+  const bool compact = m_config != nullptr && m_config->config().controlCenter.compact;
+  return scaled(compact ? 660.0f : 780.0f);
+}
+
+PanelPlacement ControlCenterPanel::panelPlacement() const noexcept {
+  return m_config == nullptr ? PanelPlacement::Attached : m_config->config().shell.panel.controlCenterPlacement;
 }
 
 bool ControlCenterPanel::dismissTransientUi() {
@@ -58,9 +73,11 @@ bool ControlCenterPanel::dismissTransientUi() {
 
 void ControlCenterPanel::create() {
   const float scale = contentScale();
+  m_compact = m_config != nullptr && m_config->config().controlCenter.compact;
 
   for (auto& tab : m_tabs) {
     tab->setContentScale(scale);
+    tab->setPanelCardOpacity(panelCardOpacity());
   }
 
   auto rootLayout = std::make_unique<Flex>();
@@ -76,22 +93,31 @@ void ControlCenterPanel::create() {
   sidebar->setGap(Style::spaceXs * scale);
   sidebar->setPadding(Style::spaceSm * scale);
   sidebar->setFillHeight(true);
-  sidebar->setFill(colorSpecFromRole(ColorRole::Surface));
+  sidebar->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, panelCardOpacity()));
   sidebar->setRadius(Style::scaledRadiusXl(scale));
   m_sidebar = sidebar.get();
 
   for (const auto& tab : kTabs) {
     auto button = std::make_unique<Button>();
-    button->setText(i18n::tr(tab.titleKey));
+    if (!m_compact) {
+      button->setText(i18n::tr(tab.titleKey));
+    }
     button->setGlyph(tab.glyph);
     button->setGlyphSize(21.0f * scale);
     button->setGap(Style::spaceSm * scale);
-    button->label()->setBold(true);
-    button->label()->setFontSize(Style::fontSizeBody * scale);
+    if (button->label() != nullptr) {
+      button->label()->setBold(true);
+      button->label()->setFontSize(Style::fontSizeBody * scale);
+    }
     button->setVariant(ButtonVariant::Tab);
-    button->setContentAlign(ButtonContentAlign::Start);
+    button->setContentAlign(m_compact ? ButtonContentAlign::Center : ButtonContentAlign::Start);
     button->setMinHeight(Style::controlHeight * scale);
-    button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+    if (m_compact) {
+      button->setMinWidth(Style::controlHeight * scale);
+      button->setPadding(Style::spaceSm * scale);
+    } else {
+      button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+    }
     button->setRadius(Style::scaledRadiusLg(scale));
     button->setOnClick([this, id = tab.id]() {
       selectTab(id);
@@ -154,12 +180,7 @@ void ControlCenterPanel::create() {
 
   auto closeButton = std::make_unique<Button>();
   closeButton->setGlyph("close");
-  closeButton->setVariant(ButtonVariant::Default);
-  closeButton->setGlyphSize(Style::fontSizeBody * scale);
-  closeButton->setMinWidth(Style::controlHeightSm * scale);
-  closeButton->setMinHeight(Style::controlHeightSm * scale);
-  closeButton->setPadding(Style::spaceXs * scale);
-  closeButton->setRadius(Style::scaledRadiusMd(scale));
+  panel_button_style::configureHeaderIconButton(*closeButton, scale, panelCardOpacity());
   closeButton->setOnClick([]() { PanelManager::instance().close(); });
   m_closeButton = closeButton.get();
   m_contentHeaderActions->addChild(std::move(closeButton));
@@ -190,6 +211,20 @@ void ControlCenterPanel::create() {
   }
 
   selectTab(m_activeTab);
+}
+
+void ControlCenterPanel::onPanelCardOpacityChanged(float opacity) {
+  for (auto& tab : m_tabs) {
+    if (tab != nullptr) {
+      tab->setPanelCardOpacity(opacity);
+    }
+  }
+  if (m_sidebar != nullptr) {
+    m_sidebar->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, opacity));
+  }
+  if (m_closeButton != nullptr) {
+    panel_button_style::applyHeaderButtonStyle(*m_closeButton, opacity);
+  }
 }
 
 void ControlCenterPanel::doLayout(Renderer& renderer, float width, float height) {
@@ -259,6 +294,7 @@ bool ControlCenterPanel::isContextActive(std::string_view context) const {
 }
 
 void ControlCenterPanel::onClose() {
+  m_activeTab = TabId::Home;
   for (auto& tab : m_tabs) {
     tab->setActive(false);
     tab->onClose();
@@ -318,6 +354,31 @@ void ControlCenterPanel::selectTab(TabId tab) {
   if (m_contentHeaderActions != nullptr) {
     m_contentHeaderActions->setVisible(true);
   }
+
+  scheduleMprisRefreshFor(tab);
+}
+
+void ControlCenterPanel::scheduleMprisRefreshFor(TabId tab) {
+  if (m_mpris == nullptr || m_mprisRefreshScheduled || (tab != TabId::Home && tab != TabId::Media)) {
+    return;
+  }
+
+  const auto now = std::chrono::steady_clock::now();
+  if (m_lastMprisRefreshAt.time_since_epoch().count() != 0 && now - m_lastMprisRefreshAt < kMprisRefreshMinInterval) {
+    return;
+  }
+
+  m_lastMprisRefreshAt = now;
+  m_mprisRefreshScheduled = true;
+  DeferredCall::callLater([this]() {
+    m_mprisRefreshScheduled = false;
+    if (m_mpris == nullptr || !PanelManager::instance().isOpenPanel("control-center")) {
+      return;
+    }
+    m_mpris->refreshPlayers();
+    PanelManager::instance().requestUpdateOnly();
+    PanelManager::instance().requestRedraw();
+  });
 }
 
 ControlCenterPanel::TabId ControlCenterPanel::tabFromContext(std::string_view context) {

@@ -36,6 +36,7 @@ public:
   void clearForceOverride();
   void setChangeCallback(ChangeCallback callback);
   void onOutputsChanged();
+  void reevaluateSchedule();
 
   [[nodiscard]] bool enabled() const;
   [[nodiscard]] bool forceEnabled() const;

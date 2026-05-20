@@ -7,8 +7,8 @@
 
 namespace control_center {
 
-  void applySectionCardStyle(Flex& card, float scale) {
-    card.setCardStyle(scale);
+  void applySectionCardStyle(Flex& card, float scale, float fillOpacity) {
+    card.setCardStyle(scale, fillOpacity);
     card.setDirection(FlexDirection::Vertical);
     card.setAlign(FlexAlign::Stretch);
     card.setGap(Style::spaceSm * scale);

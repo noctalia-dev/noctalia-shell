@@ -7,18 +7,17 @@
 #include "render/core/renderer.h"
 #include "shell/panel/panel_manager.h"
 #include "theme/builtin_palettes.h"
-#include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/image.h"
 #include "ui/controls/label.h"
+#include "ui/controls/scroll_view.h"
 #include "ui/controls/select.h"
 #include "ui/controls/separator.h"
 #include "ui/controls/toggle.h"
 #include "ui/dialogs/file_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
-#include "wayland/wayland_connection.h"
 
 #include <cstdlib>
 #include <filesystem>
@@ -54,9 +53,6 @@ namespace {
       {"theme.scheme.dysfunctional", "dysfunctional"},
       {"theme.scheme.muted", "muted"},
   };
-
-  constexpr std::string_view kDefaultPaletteSource = "builtin";
-  constexpr std::string_view kDefaultBuiltinPalette = "Noctalia";
 
   std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ColorSpec& color, bool bold = false) {
     auto label = std::make_unique<Label>();
@@ -105,13 +101,13 @@ namespace {
     return 0;
   }
 
-  std::unique_ptr<Flex> makeCard(float scale) {
+  std::unique_ptr<Flex> makeCard(float scale, float fillOpacity) {
     auto card = std::make_unique<Flex>();
     card->setDirection(FlexDirection::Vertical);
     card->setAlign(FlexAlign::Stretch);
     card->setGap(Style::spaceMd * scale);
     card->setPadding(Style::spaceMd * scale, Style::spaceLg * scale);
-    card->setCardStyle(scale);
+    card->setCardStyle(scale, fillOpacity);
     return card;
   }
 
@@ -144,9 +140,23 @@ void SetupWizardPanel::create() {
   auto root = std::make_unique<Flex>();
   root->setDirection(FlexDirection::Vertical);
   root->setAlign(FlexAlign::Stretch);
+  root->setJustify(FlexJustify::SpaceBetween);
   root->setGap(Style::spaceLg * scale);
   root->setPadding(24.0f * scale, 28.0f * scale);
   m_root = root.get();
+
+  auto scroll = std::make_unique<ScrollView>();
+  scroll->setFlexGrow(1.0f);
+  scroll->setScrollbarVisible(true);
+  scroll->setViewportPaddingH(0.0f);
+  scroll->setViewportPaddingV(0.0f);
+  scroll->clearFill();
+  scroll->clearBorder();
+
+  auto* content = scroll->content();
+  content->setDirection(FlexDirection::Vertical);
+  content->setAlign(FlexAlign::Stretch);
+  content->setGap(Style::spaceLg * scale);
 
   // Header
   {
@@ -167,14 +177,14 @@ void SetupWizardPanel::create() {
     copy->addChild(makeLabel(i18n::tr("setup-wizard.subtitle"), Style::fontSizeBody * scale,
                              colorSpecFromRole(ColorRole::OnSurfaceVariant)));
     header->addChild(std::move(copy));
-    root->addChild(std::move(header));
+    content->addChild(std::move(header));
   }
 
-  root->addChild(std::make_unique<Separator>());
+  content->addChild(std::make_unique<Separator>());
 
   // Telemetry
   {
-    auto card = makeCard(scale);
+    auto card = makeCard(scale, panelCardOpacity());
 
     auto row = makeRow(scale);
     {
@@ -183,7 +193,7 @@ void SetupWizardPanel::create() {
                               colorSpecFromRole(ColorRole::OnSurface), true));
       auto description = makeLabel(i18n::tr("settings.schema.shell.telemetry.description"),
                                    Style::fontSizeCaption * scale, colorSpecFromRole(ColorRole::OnSurfaceVariant));
-      description->setMaxWidth(360.0f * scale);
+      description->setMaxLines(8);
       col->addChild(std::move(description));
       row->addChild(std::move(col));
     }
@@ -195,12 +205,12 @@ void SetupWizardPanel::create() {
       row->addChild(std::move(toggle));
     }
     card->addChild(std::move(row));
-    root->addChild(std::move(card));
+    content->addChild(std::move(card));
   }
 
   // Wallpaper
   {
-    auto card = makeCard(scale);
+    auto card = makeCard(scale, panelCardOpacity());
 
     auto row = makeRow(scale);
     {
@@ -259,12 +269,12 @@ void SetupWizardPanel::create() {
       row->addChild(std::move(button));
     }
     card->addChild(std::move(row));
-    root->addChild(std::move(card));
+    content->addChild(std::move(card));
   }
 
   // Theme
   {
-    auto card = makeCard(scale);
+    auto card = makeCard(scale, panelCardOpacity());
 
     // Mode row
     {
@@ -309,11 +319,15 @@ void SetupWizardPanel::create() {
 
       auto select = std::make_unique<Select>();
       select->setOptions(labelsFromOptions(kSetupPaletteSources));
-      m_paletteSource = PaletteSource::Builtin;
-      m_builtinPalette = std::string(kDefaultBuiltinPalette);
-      m_config->setOverride({"theme", "source"}, std::string(kDefaultPaletteSource));
-      m_config->setOverride({"theme", "builtin"}, m_builtinPalette);
-      select->setSelectedIndex(selectedOptionIndex(kSetupPaletteSources, kDefaultPaletteSource));
+      // Respect the user's existing palette: seed controls from current config
+      // and write no override until the user actually changes a control. The
+      // wizard only offers builtin/wallpaper, so community/custom sources are
+      // displayed as builtin but left untouched in config unless changed.
+      m_paletteSource =
+          cfg.theme.source == PaletteSource::Wallpaper ? PaletteSource::Wallpaper : PaletteSource::Builtin;
+      m_builtinPalette = cfg.theme.builtinPalette;
+      const std::string_view currentSource = m_paletteSource == PaletteSource::Wallpaper ? "wallpaper" : "builtin";
+      select->setSelectedIndex(selectedOptionIndex(kSetupPaletteSources, currentSource));
       select->setFontSize(Style::fontSizeBody * scale);
       select->setControlHeight(Style::controlHeight * scale);
       select->setHorizontalPadding(Style::spaceMd * scale);
@@ -351,15 +365,12 @@ void SetupWizardPanel::create() {
       configureThemeOptionSelect();
     }
 
-    root->addChild(std::move(card));
+    content->addChild(std::move(card));
   }
 
+  root->addChild(std::move(scroll));
+
   // Footer
-  {
-    auto spacer = std::make_unique<Flex>();
-    spacer->setFlexGrow(1.0f);
-    root->addChild(std::move(spacer));
-  }
   {
     auto footer = std::make_unique<Flex>();
     footer->setDirection(FlexDirection::Horizontal);
@@ -420,9 +431,11 @@ void SetupWizardPanel::configureThemeOptionSelect() {
     });
   } else {
     m_themeOptionLabel->setText(i18n::tr("setup-wizard.builtin-palette"));
-    m_builtinPalette = std::string(kDefaultBuiltinPalette);
+    if (m_builtinPalette.empty()) {
+      m_builtinPalette = cfg.theme.builtinPalette;
+    }
     m_themeOptionSelect->setOptions(builtinPaletteNames());
-    m_themeOptionSelect->setSelectedIndex(selectedBuiltinPaletteIndex(kDefaultBuiltinPalette));
+    m_themeOptionSelect->setSelectedIndex(selectedBuiltinPaletteIndex(m_builtinPalette));
     m_themeOptionSelect->setOnSelectionChanged([this](std::size_t /*index*/, std::string_view name) {
       if (m_configuringThemeOptionSelect) {
         return;
@@ -440,11 +453,8 @@ void SetupWizardPanel::commit() {
   if (m_telemetryToggle != nullptr) {
     m_config->setOverride({"shell", "telemetry_enabled"}, m_telemetryToggle->checked());
   }
-  if (m_paletteSource == PaletteSource::Builtin) {
-    m_config->setOverride({"theme", "source"}, std::string(kDefaultPaletteSource));
-    m_config->setOverride({"theme", "builtin"},
-                          m_builtinPalette.empty() ? std::string(kDefaultBuiltinPalette) : m_builtinPalette);
-  }
+  // Theme/palette overrides are written live by the select callbacks only when
+  // the user actually changes them, so commit must not force any defaults here.
   if (m_config != nullptr) {
     (void)m_config->markSetupWizardCompleted();
   }

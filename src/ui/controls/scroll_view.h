@@ -10,6 +10,7 @@
 class InputArea;
 class RectNode;
 class Renderer;
+class Scrollbar;
 
 struct ScrollViewState {
   float offset = 0.0f;
@@ -35,7 +36,7 @@ public:
   void clearBorder();
   void setRadius(float radius);
   void setSoftness(float softness);
-  void setCardStyle(float scale = 1.0f);
+  void setCardStyle(float scale = 1.0f, float fillOpacity = 1.0f);
   void bindState(ScrollViewState* state);
   void setOnScrollChanged(std::function<void(float)> callback);
 
@@ -52,23 +53,17 @@ private:
   void doArrange(Renderer& renderer, const LayoutRect& rect) override;
   void applyPalette();
   void applyScrollOffset();
-  void updateScrollbarGeometry(float viewportHeight, float contentHeight);
   [[nodiscard]] float clampOffset(float offset) const noexcept;
 
   RectNode* m_background = nullptr;
   InputArea* m_viewportArea = nullptr;
   Flex* m_content = nullptr;
-  RectNode* m_scrollbarTrack = nullptr;
-  RectNode* m_scrollbarThumb = nullptr;
-  InputArea* m_scrollbarTrackArea = nullptr;
-  InputArea* m_scrollbarThumbArea = nullptr;
+  Scrollbar* m_scrollbar = nullptr;
 
   ScrollViewState* m_boundState = nullptr;
   std::function<void(float)> m_onScrollChanged;
   ColorSpec m_backgroundFill = clearColorSpec();
   ColorSpec m_backgroundBorder = clearColorSpec();
-  ColorSpec m_scrollbarTrackColor = colorSpecFromRole(ColorRole::Outline, 0.5f);
-  ColorSpec m_scrollbarThumbColor = colorSpecFromRole(ColorRole::Primary);
   Signal<>::ScopedConnection m_paletteConn;
 
   float m_viewportPaddingH = Style::spaceXs;
@@ -78,7 +73,6 @@ private:
   float m_scrollWheelStep = Style::scrollWheelStep;
   float m_dragStartLocalY = 0.0f;
   float m_dragStartOffset = 0.0f;
-  float m_thumbTravel = 0.0f;
   float m_viewportHeight = 0.0f;
   float m_viewportWidth = 0.0f;
   float m_backgroundBorderWidth = 0.0f;

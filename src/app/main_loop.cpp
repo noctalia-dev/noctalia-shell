@@ -17,7 +17,6 @@
 #include <cxxabi.h>
 #include <format>
 #include <memory>
-#include <optional>
 #include <poll.h>
 #include <stdexcept>
 #include <string>
@@ -248,6 +247,29 @@ namespace {
                                         int operationErrno) {
     throw std::runtime_error(std::format("{}: {}", operation, wayland.describeDisplayError(operationErrno)));
   }
+
+  bool sourceHasReadyFd(const std::vector<pollfd>& fds, std::size_t startIdx, std::size_t count) {
+    const std::size_t endIdx = std::min(fds.size(), startIdx + count);
+    for (std::size_t fdIdx = startIdx; fdIdx < endIdx; ++fdIdx) {
+      if (fds[fdIdx].revents != 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool sourceTimeoutDue(int timeoutMs, int pollTimeoutMs, int pollResult, float elapsedSincePollStartMs) {
+    if (timeoutMs < 0) {
+      return false;
+    }
+    if (timeoutMs == 0) {
+      return true;
+    }
+    if (elapsedSincePollStartMs >= static_cast<float>(timeoutMs)) {
+      return true;
+    }
+    return pollResult == 0 && pollTimeoutMs >= 0 && timeoutMs <= pollTimeoutMs;
+  }
 } // namespace
 
 MainLoop::MainLoop(WaylandConnection& wayland, Bar& bar, PollSourcesProvider sourcesProvider)
@@ -267,13 +289,13 @@ void MainLoop::run() {
 
     // Process deferred callbacks from the previous iteration
     auto opStart = std::chrono::steady_clock::now();
-    auto& deferred = DeferredCall::queue();
-    if (!deferred.empty()) {
-      auto pending = std::move(deferred);
+    auto pending = DeferredCall::takePending();
+    if (!pending.empty()) {
       const std::size_t count = pending.size();
-      deferred.clear();
       for (auto& fn : pending) {
-        fn();
+        if (fn) {
+          fn();
+        }
       }
       const float ms = elapsedSince(opStart);
       if (idleProfileEnabled()) {
@@ -409,9 +431,10 @@ void MainLoop::run() {
     }
 #endif
 
-    opStart = std::chrono::steady_clock::now();
+    const auto pollStart = std::chrono::steady_clock::now();
+    opStart = pollStart;
     const int pollResult = ::poll(pollFds.data(), pollFds.size(), pollTimeout);
-    ms = elapsedSince(opStart);
+    ms = elapsedSince(pollStart);
     if (idleProfileEnabled()) {
       auto& profile = idleProfile();
       profile.pollWaitMs += ms;
@@ -512,12 +535,19 @@ void MainLoop::run() {
       logSlowMainLoopOperation(ms, "wl_display_dispatch_pending took {:.1f}ms after poll", ms);
     }
 
-    // Dispatch all sources. A source callback (notably config reload) can
-    // synchronously rebuild services and destroy optional poll sources (e.g.
-    // polkit) mid-iteration. Re-check liveness before each dispatch to avoid
-    // dereferencing a pointer that was valid when we built `sources` but was
-    // freed by an earlier source in this same pass.
+    // Dispatch only sources that actually woke: an fd reported revents, or the
+    // timeout the source advertised before poll has elapsed. A source callback
+    // (notably config reload) can synchronously rebuild services and destroy
+    // optional poll sources (e.g. polkit) mid-iteration. Re-check liveness
+    // before each dispatch to avoid dereferencing a pointer that was valid when
+    // we built `sources` but was freed by an earlier source in this same pass.
     for (std::size_t i = 0; i < sources.size(); ++i) {
+      const bool fdReady = sourceHasReadyFd(pollFds, sourceStartIndices[i], sourceFdCounts[i]);
+      const bool timeoutWake = sourceTimeoutDue(sourceTimeouts[i], pollTimeout, pollResult, elapsedSince(pollStart));
+      if (!fdReady && !timeoutWake) {
+        continue;
+      }
+
       auto* source = sources[i];
       const std::vector<PollSource*> latestSources =
           m_sourcesProvider ? m_sourcesProvider() : std::vector<PollSource*>{};
@@ -528,16 +558,6 @@ void MainLoop::run() {
       source->dispatch(pollFds, sourceStartIndices[i]);
       ms = elapsedSince(opStart);
       if (idleProfileEnabled()) {
-        bool fdReady = false;
-        const std::size_t startIdx = sourceStartIndices[i];
-        const std::size_t endIdx = std::min(pollFds.size(), startIdx + sourceFdCounts[i]);
-        for (std::size_t fdIdx = startIdx; fdIdx < endIdx; ++fdIdx) {
-          if (pollFds[fdIdx].revents != 0) {
-            fdReady = true;
-            break;
-          }
-        }
-        const bool timeoutWake = pollResult == 0 && sourceTimeouts[i] >= 0 && sourceTimeouts[i] == pollTimeout;
         auto& stats = sourceIdleProfile(idleProfile(), *source);
         ++stats.dispatchCalls;
         stats.dispatchMs += ms;

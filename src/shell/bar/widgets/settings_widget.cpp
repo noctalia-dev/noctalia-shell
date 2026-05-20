@@ -14,7 +14,7 @@ SettingsWidget::SettingsWidget(wl_output* output, std::string barGlyphId)
 
 void SettingsWidget::create() {
   auto area = std::make_unique<InputArea>();
-  area->setOnClick([this](const InputArea::PointerData& /*data*/) { PanelManager::instance().openSettingsWindow(); });
+  area->setOnClick([](const InputArea::PointerData& /*data*/) { PanelManager::instance().openSettingsWindow(); });
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph(m_barGlyphId.empty() ? "settings" : m_barGlyphId);

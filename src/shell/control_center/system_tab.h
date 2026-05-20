@@ -29,7 +29,6 @@ private:
   void syncLabels();
   void updateGpuVisibility();
   [[nodiscard]] static float scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt);
-  [[nodiscard]] static std::string formatBytesPerSec(double bytesPerSec);
 
   SystemMonitorService* m_monitor;
   bool m_active = false;
@@ -62,6 +61,8 @@ private:
   Label* m_cpuTempLabel = nullptr;
   Glyph* m_gpuTempIcon = nullptr;
   Label* m_gpuTempLabel = nullptr;
+  Glyph* m_gpuVramIcon = nullptr;
+  Label* m_gpuVramLabel = nullptr;
   Glyph* m_ramIcon = nullptr;
   Label* m_ramLabel = nullptr;
   Glyph* m_rxIcon = nullptr;

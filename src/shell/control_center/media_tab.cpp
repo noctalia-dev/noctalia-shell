@@ -1,5 +1,6 @@
 #include "shell/control_center/media_tab.h"
 
+#include "config/config_service.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "dbus/mpris/mpris_art.h"
@@ -49,8 +50,6 @@ namespace {
   constexpr float kMediaPlayPauseHeight = kMediaUnit + Style::spaceSm;
   constexpr float kMediaArtworkMinHeight = kMediaUnit * 4;
   constexpr auto kNoActivePlayerGrace = std::chrono::milliseconds(2000);
-  constexpr auto kRealtimeProgressUpdateInterval = std::chrono::milliseconds(1000);
-  constexpr auto kRealtimeMprisPollInterval = std::chrono::milliseconds(1000);
   constexpr auto kTransientPositionRegressionWindow = std::chrono::milliseconds(1500);
   constexpr std::int64_t kTransientPositionRegressionFloorUs = 5'000'000;
   constexpr std::int64_t kTransientPositionRegressionCeilingUs = 1'500'000;
@@ -67,9 +66,9 @@ namespace {
 
 } // namespace
 
-MediaTab::MediaTab(MprisService* mpris, HttpClient* httpClient, PipeWireSpectrum* spectrum, WaylandConnection* wayland,
-                   RenderContext* renderContext)
-    : m_mpris(mpris), m_httpClient(httpClient), m_spectrum(spectrum), m_wayland(wayland),
+MediaTab::MediaTab(MprisService* mpris, HttpClient* httpClient, PipeWireSpectrum* spectrum, ConfigService* config,
+                   WaylandConnection* wayland, RenderContext* renderContext)
+    : m_mpris(mpris), m_httpClient(httpClient), m_spectrum(spectrum), m_config(config), m_wayland(wayland),
       m_renderContext(renderContext) {}
 
 MediaTab::~MediaTab() { m_aliveGuard.reset(); }
@@ -121,6 +120,9 @@ void MediaTab::openPlayerMenu() {
   const float menuWidth = std::clamp(kMediaUnit * 6.0f * scale, kMediaUnit * 4.2f * scale,
                                      m_nowCard != nullptr ? std::max(1.0f, m_nowCard->width()) : 240.0f * scale);
 
+  if (m_config != nullptr) {
+    m_playerMenuPopup->setShadowConfig(m_config->config().shell.shadow);
+  }
   PanelManager::instance().beginAttachedPopup(parentCtx->surface);
   PanelManager::instance().setActivePopup(m_playerMenuPopup.get());
 
@@ -153,7 +155,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   m_mediaColumn = mediaColumn.get();
 
   auto nowCard = std::make_unique<Flex>();
-  applySectionCardStyle(*nowCard, scale);
+  applySectionCardStyle(*nowCard, scale, panelCardOpacity());
   nowCard->setGap(Style::spaceMd * scale);
   nowCard->setFlexGrow(1.0f);
   nowCard->setMinHeight(kMediaNowCardMinHeight * scale);
@@ -414,7 +416,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   visualizerColumn->setAlign(FlexAlign::Stretch);
   visualizerColumn->setGap(Style::spaceSm * scale);
   visualizerColumn->setFlexGrow(2.0f);
-  applySectionCardStyle(*visualizerColumn, scale);
+  applySectionCardStyle(*visualizerColumn, scale, panelCardOpacity());
   visualizerColumn->setClipChildren(true);
   m_visualizerColumn = visualizerColumn.get();
 
@@ -431,6 +433,8 @@ std::unique_ptr<Flex> MediaTab::create() {
   visualizerSpectrum->setOrientation(AudioSpectrumOrientation::Vertical);
   visualizerSpectrum->setMirrored(true);
   visualizerSpectrum->setCentered(true);
+  visualizerSpectrum->setValues(std::vector<float>(kVisualizerBandCount, 0.0f));
+  visualizerSpectrum->tick(0.0f);
   visualizerSpectrum->setFlexGrow(1.0f);
   m_visualizerSpectrum = visualizerSpectrum.get();
   visualizerBody->addChild(std::move(visualizerSpectrum));
@@ -626,19 +630,7 @@ void MediaTab::setActive(bool active) {
     m_lastRealtimeMprisPollAt = {};
   }
   if (becameActive && m_mpris != nullptr) {
-    // Pull a fresh snapshot (including Position) when the tab opens so the
-    // progress slider starts at the current playback position.
     m_positionSampleAt = {};
-    const std::weak_ptr<void> aliveGuard = m_aliveGuard;
-    DeferredCall::callLater([this, aliveGuard]() {
-      if (aliveGuard.expired() || m_mpris == nullptr) {
-        return;
-      }
-      m_mpris->refreshPlayers();
-      PanelManager::instance().requestUpdateOnly();
-      PanelManager::instance().requestRedraw();
-    });
-    m_lastMprisRefreshAttempt = std::chrono::steady_clock::now();
   }
 }
 
@@ -703,23 +695,6 @@ void MediaTab::refresh(Renderer& renderer) {
     active = m_mpris->activePlayer();
     kLog.debug("media tab refresh initial players={} active={} active_bus=\"{}\"", players.size(), active.has_value(),
                active.has_value() ? active->busName : std::string{});
-
-    const bool shouldRetryMpris =
-        (!active.has_value() || players.empty()) && (m_lastMprisRefreshAttempt.time_since_epoch().count() == 0 ||
-                                                     now - m_lastMprisRefreshAttempt >= std::chrono::milliseconds(750));
-    if (shouldRetryMpris) {
-      m_lastMprisRefreshAttempt = now;
-      kLog.debug("media tab retrying mpris discovery players={} active={}", players.size(), active.has_value());
-      const std::weak_ptr<void> aliveGuard = m_aliveGuard;
-      DeferredCall::callLater([this, aliveGuard]() {
-        if (aliveGuard.expired() || m_mpris == nullptr) {
-          return;
-        }
-        m_mpris->refreshPlayers();
-        PanelManager::instance().requestUpdateOnly();
-        PanelManager::instance().requestRedraw();
-      });
-    }
   }
 
   if (!active.has_value() && m_lastActiveSnapshot.has_value() && now - m_lastActiveSeenAt <= kNoActivePlayerGrace) {

@@ -22,6 +22,7 @@ namespace {
 
   constexpr float kTransitionDurationMs = 1500.0f;
   constexpr int kTransitionIntervalMs = 100;
+  constexpr auto kScheduleRecheckInterval = std::chrono::minutes(1);
 
   int timeToMinutes(std::string_view hhmm) {
     return (hhmm[0] - '0') * 600 + (hhmm[1] - '0') * 60 + (hhmm[3] - '0') * 10 + (hhmm[4] - '0');
@@ -114,6 +115,8 @@ void GammaService::onOutputsChanged() {
   apply();
 }
 
+void GammaService::reevaluateSchedule() { apply(); }
+
 bool GammaService::effectiveConfiguredEnabled() const {
   if (m_enabledOverride.has_value()) {
     return *m_enabledOverride;
@@ -192,10 +195,15 @@ std::chrono::milliseconds GammaService::msUntilNextManualBoundary() const {
 }
 
 void GammaService::scheduleManualTimer() {
-  const auto delay = msUntilNextManualBoundary();
-  kLog.debug("manual schedule: next phase boundary in {}s", delay.count() / 1000);
-  m_scheduleTimer.start(delay, [this]() {
-    kLog.info("manual schedule: phase boundary reached");
+  const auto boundaryDelay = msUntilNextManualBoundary();
+  const auto delay =
+      std::min(boundaryDelay, std::chrono::duration_cast<std::chrono::milliseconds>(kScheduleRecheckInterval));
+  kLog.debug("manual schedule: next phase boundary in {}s, recheck in {}s", boundaryDelay.count() / 1000,
+             delay.count() / 1000);
+  m_scheduleTimer.start(delay, [this, boundaryTimer = delay == boundaryDelay]() {
+    if (boundaryTimer) {
+      kLog.info("manual schedule: phase boundary reached");
+    }
     apply();
   });
 }
@@ -323,10 +331,15 @@ std::chrono::milliseconds GammaService::msUntilNextGeoBoundary() const {
 }
 
 void GammaService::scheduleGeoTimer() {
-  const auto delay = msUntilNextGeoBoundary();
-  kLog.debug("geo schedule: next phase boundary in {}s", delay.count() / 1000);
-  m_scheduleTimer.start(delay, [this]() {
-    kLog.info("geo schedule: phase boundary reached");
+  const auto boundaryDelay = msUntilNextGeoBoundary();
+  const auto delay =
+      std::min(boundaryDelay, std::chrono::duration_cast<std::chrono::milliseconds>(kScheduleRecheckInterval));
+  kLog.debug("geo schedule: next phase boundary in {}s, recheck in {}s", boundaryDelay.count() / 1000,
+             delay.count() / 1000);
+  m_scheduleTimer.start(delay, [this, boundaryTimer = delay == boundaryDelay]() {
+    if (boundaryTimer) {
+      kLog.info("geo schedule: phase boundary reached");
+    }
     apply();
   });
 }
@@ -509,6 +522,11 @@ void GammaService::startTransition(int fromKelvin, int toKelvin) {
     applyGammaToAll(fromKelvin);
   }
   if (fromKelvin == toKelvin) {
+    m_transitionTimer.stop();
+    m_currentKelvin = toKelvin;
+    m_targetKelvin = toKelvin;
+    m_transitionFromKelvin = toKelvin;
+    m_transitionProgress = 1.0f;
     if (m_restoreAfterTransition) {
       restoreAll();
       m_restoreAfterTransition = false;

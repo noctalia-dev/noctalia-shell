@@ -1,7 +1,6 @@
 #pragma once
 
 #include "render/animation/animation_manager.h"
-#include "render/core/color.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
 #include "shell/desktop/desktop_widget_factory.h"
@@ -44,6 +43,7 @@ public:
   void setExitRequestedCallback(std::function<void()> callback);
 
   void open(const DesktopWidgetsSnapshot& snapshot);
+  [[nodiscard]] const DesktopWidgetsSnapshot& snapshot() const noexcept { return m_snapshot; }
   [[nodiscard]] DesktopWidgetsSnapshot close();
   [[nodiscard]] bool isOpen() const noexcept;
 
@@ -55,7 +55,6 @@ public:
   void requestRedraw();
 
   void applySettingChange(const std::string& key, WidgetSettingValue value);
-  void openColorPicker(const std::string& key, const Color& currentColor);
 
 private:
   enum class ScaleCorner : std::uint8_t {
@@ -121,9 +120,6 @@ private:
     DesktopWidgetState initialState;
     float intrinsicWidth = 0.0f;
     float intrinsicHeight = 0.0f;
-    float sourceIntrinsicWidth = 0.0f;
-    float sourceIntrinsicHeight = 0.0f;
-    float sourceScale = 0.0f;
     ScaleCorner scaleCorner = ScaleCorner::BottomRight;
     std::string surfaceOutputName;
     float initialToolbarX = 0.0f;
@@ -180,6 +176,9 @@ private:
   bool m_shiftHeld = false;
   bool m_leftShiftHeld = false;
   bool m_rightShiftHeld = false;
+  bool m_altHeld = false;
+  bool m_leftAltHeld = false;
+  bool m_rightAltHeld = false;
   float m_currentEventSceneX = 0.0f;
   float m_currentEventSceneY = 0.0f;
   bool m_inspectorOpen = false;

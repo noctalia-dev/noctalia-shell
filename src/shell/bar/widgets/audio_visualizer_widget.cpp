@@ -1,6 +1,7 @@
 #include "shell/bar/widgets/audio_visualizer_widget.h"
 
 #include "pipewire/pipewire_spectrum.h"
+#include "render/animation/animation_manager.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "ui/controls/audio_spectrum.h"
@@ -11,11 +12,12 @@
 #include <memory>
 
 AudioVisualizerWidget::AudioVisualizerWidget(PipeWireSpectrum* spectrum, float width, int bands, bool mirrored,
-                                             ColorSpec lowColor, ColorSpec highColor, bool showWhenIdle)
-    : m_spectrum(spectrum), m_width(width), m_bands(std::max(1, bands)), m_mirrored(mirrored),
+                                             ColorSpec lowColor, ColorSpec highColor, bool centered, bool showWhenIdle)
+    : m_spectrum(spectrum), m_width(width), m_bands(std::max(1, bands)), m_mirrored(mirrored), m_centered(centered),
       m_showWhenIdle(showWhenIdle), m_lowColor(lowColor), m_highColor(highColor) {}
 
 AudioVisualizerWidget::~AudioVisualizerWidget() {
+  cancelVisibilityAnimation();
   if (m_spectrum != nullptr && m_listenerId != 0) {
     m_spectrum->removeChangeListener(m_listenerId);
   }
@@ -24,10 +26,11 @@ AudioVisualizerWidget::~AudioVisualizerWidget() {
 void AudioVisualizerWidget::create() {
   auto root = std::make_unique<InputArea>();
   root->setEnabled(false);
+  root->setClipChildren(true);
 
   auto visualizer = std::make_unique<AudioSpectrum>();
   visualizer->setOrientation(AudioSpectrumOrientation::Horizontal);
-  visualizer->setCentered(true);
+  visualizer->setCentered(m_centered);
   visualizer->setMirrored(m_mirrored);
   visualizer->setGradient(m_lowColor, m_highColor);
   m_visualizer = visualizer.get();
@@ -53,14 +56,17 @@ void AudioVisualizerWidget::doLayout(Renderer& renderer, float containerWidth, f
     return;
   }
 
-  m_isVertical = containerHeight > containerWidth;
+  // containerWidth/Height are the bar's logical cross/main extents (not the widget slot).
+  const bool barIsVertical = containerHeight > containerWidth;
+  const float crossLimit = std::max(1.0f, barIsVertical ? containerWidth : containerHeight);
   const auto refMetrics = renderer.measureFont(Style::fontSizeBody * m_contentScale);
   const float bodyExtent = std::round(refMetrics.bottom - refMetrics.top);
-  const float width = std::max(1.0f, m_isVertical ? bodyExtent : m_width * m_contentScale);
-  const float height = std::max(1.0f, m_isVertical ? m_width * m_contentScale : bodyExtent);
+  const float crossExtent = std::min(bodyExtent, crossLimit);
+  const float width = std::max(1.0f, barIsVertical ? crossExtent : m_width * m_contentScale);
+  const float height = std::max(1.0f, barIsVertical ? m_width * m_contentScale : crossExtent);
   if (m_visualizer != nullptr) {
-    m_visualizer->setOrientation(m_isVertical ? AudioSpectrumOrientation::Vertical
-                                              : AudioSpectrumOrientation::Horizontal);
+    m_visualizer->setOrientation(barIsVertical ? AudioSpectrumOrientation::Vertical
+                                               : AudioSpectrumOrientation::Horizontal);
     m_visualizer->setPosition(0.0f, 0.0f);
     m_visualizer->setSize(width, height);
   }
@@ -94,7 +100,8 @@ void AudioVisualizerWidget::onFrameTick(float deltaMs) {
 bool AudioVisualizerWidget::needsFrameTick() const {
   // Bar visualizers redraw the full bar surface. Let PipeWire/FFT updates set
   // the cadence instead of chasing smoothing at the output refresh rate.
-  return m_visualizer != nullptr && (m_pendingSpectrumUpdate || shouldBeVisible() != m_visible);
+  return m_visualizer != nullptr &&
+         (m_pendingSpectrumUpdate || shouldBeVisible() != m_visible || m_fadingOut || m_visibilityAnimId != 0);
 }
 
 void AudioVisualizerWidget::syncSpectrum() {
@@ -115,16 +122,98 @@ bool AudioVisualizerWidget::applyVisibility() {
     return false;
   }
   const bool nextVisible = shouldBeVisible();
-  if (nextVisible == m_visible) {
+  if (!m_visibilityInitialized) {
+    m_visibilityInitialized = true;
+    m_fadingOut = false;
+    m_visible = nextVisible;
+    setVisibilityCollapsed(!m_visible);
+    root()->setOpacity(m_visible ? 1.0f : 0.0f);
+    return !m_visible;
+  }
+
+  if (!nextVisible) {
+    if (!m_visible || m_fadingOut) {
+      return false;
+    }
+    m_fadingOut = true;
+    startOpacityAnimation(0.0f, true);
     return false;
   }
-  m_visible = nextVisible;
-  root()->setVisible(m_visible);
-  if (m_visualizer != nullptr) {
-    m_visualizer->setVisible(m_visible);
+
+  if (m_visible && !m_fadingOut) {
+    return false;
   }
-  if (!m_visible) {
+
+  const bool wasCollapsed = !m_visible;
+  cancelVisibilityAnimation();
+  m_fadingOut = false;
+  m_visible = true;
+  setVisibilityCollapsed(false);
+  startOpacityAnimation(1.0f, false);
+  return wasCollapsed;
+}
+
+void AudioVisualizerWidget::cancelVisibilityAnimation() {
+  if (m_visibilityAnimId != 0 && m_animations != nullptr) {
+    m_animations->cancel(m_visibilityAnimId);
+  }
+  m_visibilityAnimId = 0;
+}
+
+void AudioVisualizerWidget::setVisibilityCollapsed(bool collapsed) {
+  if (root() == nullptr) {
+    return;
+  }
+  root()->setVisible(!collapsed);
+  if (m_visualizer != nullptr) {
+    m_visualizer->setVisible(!collapsed);
+  }
+  if (collapsed) {
     root()->setSize(0.0f, 0.0f);
   }
-  return true;
+}
+
+void AudioVisualizerWidget::startOpacityAnimation(float targetOpacity, bool collapseOnComplete) {
+  if (root() == nullptr) {
+    return;
+  }
+  cancelVisibilityAnimation();
+
+  if (m_animations == nullptr) {
+    root()->setOpacity(targetOpacity);
+    if (collapseOnComplete) {
+      m_fadingOut = false;
+      m_visible = false;
+      setVisibilityCollapsed(true);
+    }
+    return;
+  }
+
+  m_visibilityAnimId = m_animations->animate(
+      root()->opacity(), targetOpacity, Style::animNormal, Easing::EaseOutCubic,
+      [this](float opacity) {
+        if (root() != nullptr) {
+          root()->setOpacity(opacity);
+        }
+      },
+      [this, collapseOnComplete]() {
+        m_visibilityAnimId = 0;
+        if (!collapseOnComplete) {
+          return;
+        }
+        if (shouldBeVisible()) {
+          m_fadingOut = false;
+          applyVisibility();
+          return;
+        }
+        m_fadingOut = false;
+        m_visible = false;
+        setVisibilityCollapsed(true);
+        if (root() != nullptr) {
+          root()->markLayoutDirty();
+        }
+        requestUpdate();
+      },
+      this);
+  requestRedraw();
 }

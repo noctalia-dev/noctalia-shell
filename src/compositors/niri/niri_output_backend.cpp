@@ -27,34 +27,23 @@ namespace {
     return std::nullopt;
   }
 
+  // niri IPC returns one JSON line per request: {"Ok": ...} or {"Err": ...}
   [[nodiscard]] std::optional<std::string> parseFocusedOutputName(const nlohmann::json& json) {
-    if (auto direct = trimOutputName(json); direct.has_value()) {
-      return direct;
+    if (!json.is_object()) {
+      return std::nullopt;
     }
-
-    if (json.is_object()) {
-      if (auto okIt = json.find("Ok"); okIt != json.end()) {
-        if (auto okName = parseFocusedOutputName(*okIt); okName.has_value()) {
-          return okName;
-        }
-      }
-      if (auto focusedIt = json.find("FocusedOutput"); focusedIt != json.end()) {
-        return trimOutputName(*focusedIt);
-      }
-      if (auto outputIt = json.find("output"); outputIt != json.end()) {
-        return trimOutputName(*outputIt);
-      }
+    if (json.contains("Err")) {
+      return std::nullopt;
     }
-
-    if (json.is_array()) {
-      for (const auto& item : json) {
-        if (auto name = trimOutputName(item); name.has_value()) {
-          return name;
-        }
-      }
+    const auto okIt = json.find("Ok");
+    if (okIt == json.end() || !okIt->is_object()) {
+      return std::nullopt;
     }
-
-    return std::nullopt;
+    const auto focusedIt = okIt->find("FocusedOutput");
+    if (focusedIt == okIt->end() || focusedIt->is_null()) {
+      return std::nullopt;
+    }
+    return trimOutputName(*focusedIt);
   }
 
 } // namespace

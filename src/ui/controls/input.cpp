@@ -1,5 +1,8 @@
 #include "ui/controls/input.h"
 
+#include "core/key_modifiers.h"
+#include "core/key_symbols.h"
+#include "core/text_clipboard.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "render/core/color.h"
 #include "render/core/render_styles.h"
@@ -11,7 +14,6 @@
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
-#include "wayland/clipboard_service.h"
 
 #include <algorithm>
 #include <array>
@@ -22,38 +24,16 @@
 #include <optional>
 #include <string>
 #include <wayland-client-protocol.h>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
-  ClipboardService* g_clipboard = nullptr;
+  TextClipboard* g_clipboard = nullptr;
   Input::PasswordMaskStyle g_passwordMaskStyle = Input::PasswordMaskStyle::CircleFilled;
   std::function<bool(std::uint32_t, std::uint32_t)> g_validateKeyMatcher;
 
   std::optional<std::string> readClipboardText() {
-    if (g_clipboard == nullptr) {
-      return std::nullopt;
-    }
-    const auto& hist = g_clipboard->history();
-    for (std::size_t i = 0; i < hist.size(); ++i) {
-      if (hist[i].isImage()) {
-        continue;
-      }
-      if (!g_clipboard->ensureEntryLoaded(i)) {
-        continue;
-      }
-      const auto& entry = g_clipboard->history()[i];
-      if (entry.data.empty()) {
-        continue;
-      }
-      return std::string(entry.data.begin(), entry.data.end());
-    }
-    return std::nullopt;
+    return g_clipboard != nullptr ? g_clipboard->clipboardText() : std::nullopt;
   }
-
-  // Modifier bitmask — must match KeyMod constants in wayland/wayland_seat.h
-  constexpr std::uint32_t kModShift = 1u << 0;
-  constexpr std::uint32_t kModCtrl = 1u << 1;
 
   constexpr float kMinWidth = 48.0f;
   constexpr float kCursorWidth = 1.25f;
@@ -70,6 +50,12 @@ namespace {
   constexpr float kPasswordGlyphScale = 0.82f;
   constexpr auto kDoubleClickThreshold = std::chrono::milliseconds(400);
   constexpr float kDoubleClickDistance = 6.0f;
+  constexpr std::size_t kUndoStackLimit = 100;
+  constexpr auto kTypingUndoCoalesceWindow = std::chrono::milliseconds(1000);
+
+  float chromeScaleForControlHeight(float controlHeight) noexcept {
+    return std::max(0.1f, controlHeight / Style::controlHeight);
+  }
 
   bool isWordCodepoint(const std::string& text, std::size_t bytePos) {
     if (bytePos >= text.size()) {
@@ -162,6 +148,7 @@ Input::Input() {
   });
   area->setOnPress([this](const InputArea::PointerData& data) {
     if (data.pressed) {
+      resetUndoCoalescing();
       const float textStartX = m_horizontalPadding + kTextInnerInset;
       const std::size_t offset = xToByteOffset(data.localX - textStartX + m_scrollOffset - m_contentLeadSlack);
       const auto now = std::chrono::steady_clock::now();
@@ -193,6 +180,7 @@ Input::Input() {
   });
   area->setOnMotion([this](const InputArea::PointerData& data) {
     if (m_inputArea != nullptr && m_inputArea->pressed()) {
+      resetUndoCoalescing();
       const float widthPx = width() > 0.0f ? width() : kMinWidth;
       const float edgePx = std::max(12.0f, m_horizontalPadding);
       const float scrollNudge = std::max(4.0f, textViewportWidth() * 0.02f);
@@ -225,6 +213,7 @@ Input::Input() {
     if (std::abs(delta) < 0.001f) {
       return false;
     }
+    resetUndoCoalescing();
     // Wheel should move caret through text, not pan viewport directly.
     constexpr int kWheelCaretStep = 1;
     if (delta > 0.0f) {
@@ -274,6 +263,7 @@ void Input::setValue(std::string_view value) {
   m_value = std::string(value);
   m_cursorPos = m_value.size();
   m_selectionAnchor = m_cursorPos;
+  clearEditHistory();
   updateDisplayText();
   markLayoutDirty();
 }
@@ -400,7 +390,7 @@ void Input::setEnabled(bool enabled) {
   applyVisualState();
 }
 
-void Input::setClipboardService(ClipboardService* clipboard) noexcept { g_clipboard = clipboard; }
+void Input::setTextClipboard(TextClipboard* clipboard) noexcept { g_clipboard = clipboard; }
 
 void Input::setValidateKeyMatcher(std::function<bool(std::uint32_t, std::uint32_t)> matcher) noexcept {
   g_validateKeyMatcher = std::move(matcher);
@@ -409,6 +399,7 @@ void Input::setValidateKeyMatcher(std::function<bool(std::uint32_t, std::uint32_
 void Input::setPasswordMaskStyle(PasswordMaskStyle style) noexcept { g_passwordMaskStyle = style; }
 
 void Input::selectAll() {
+  resetUndoCoalescing();
   m_selectionAnchor = 0;
   m_cursorPos = m_value.size();
   updateInteractiveGeometry();
@@ -416,6 +407,7 @@ void Input::selectAll() {
 }
 
 void Input::moveCaretLeft(bool shift) {
+  resetUndoCoalescing();
   if (!shift && hasSelection()) {
     m_cursorPos = selectionStart();
     m_selectionAnchor = m_cursorPos;
@@ -431,6 +423,7 @@ void Input::moveCaretLeft(bool shift) {
 }
 
 void Input::moveCaretRight(bool shift) {
+  resetUndoCoalescing();
   if (!shift && hasSelection()) {
     m_cursorPos = selectionEnd();
     m_selectionAnchor = m_cursorPos;
@@ -446,6 +439,7 @@ void Input::moveCaretRight(bool shift) {
 }
 
 void Input::clearSelection() {
+  resetUndoCoalescing();
   m_selectionAnchor = m_cursorPos;
   updateInteractiveGeometry();
   markPaintDirty();
@@ -581,19 +575,22 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
   }
 
   const bool validateMatch = g_validateKeyMatcher && g_validateKeyMatcher(sym, modifiers);
+  const bool shift = (modifiers & KeyMod::Shift) != 0;
+  const bool ctrl = (modifiers & KeyMod::Ctrl) != 0;
+  const bool undoShortcut = ctrl && !shift && (sym == 'z' || sym == 'Z');
+  const bool redoShortcut = (ctrl && (sym == 'y' || sym == 'Y')) || (ctrl && shift && (sym == 'z' || sym == 'Z'));
 
   // Ignore keys that produce no text and aren't action keys we handle below
   if (utf32 == 0 && !preedit) {
-    const bool navigationOrEdit = sym == XKB_KEY_BackSpace || sym == XKB_KEY_Delete || sym == XKB_KEY_Left ||
-                                  sym == XKB_KEY_Right || sym == XKB_KEY_Home || sym == XKB_KEY_End;
+    const bool navigationOrEdit = KeySymbol::isBackspace(sym) || KeySymbol::isDelete(sym) || KeySymbol::isLeft(sym) ||
+                                  KeySymbol::isRight(sym) || KeySymbol::isHome(sym) || KeySymbol::isEnd(sym) ||
+                                  KeySymbol::isInsert(sym) || undoShortcut || redoShortcut;
     if (!navigationOrEdit && !validateMatch) {
       return;
     }
   }
 
   bool changed = false;
-  const bool shift = (modifiers & kModShift) != 0;
-  const bool ctrl = (modifiers & kModCtrl) != 0;
 
   // Remove previous preedit text before processing
   if (m_preeditLen > 0) {
@@ -604,23 +601,60 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
     changed = true;
   }
 
+  const bool copyShortcut = ctrl && (KeySymbol::isInsert(sym) || sym == 'c' || sym == 'C');
+  const bool cutShortcut =
+      (ctrl && (sym == 'x' || sym == 'X')) || (!ctrl && shift && KeySymbol::isDelete(sym) && hasSelection());
+  const bool pasteShortcut = (ctrl && (sym == 'v' || sym == 'V')) || (!ctrl && shift && KeySymbol::isInsert(sym));
+
+  if (undoShortcut) {
+    if (undoEdit()) {
+      return;
+    }
+    if (changed) {
+      updateDisplayText();
+      markLayoutDirty();
+      revealCursor();
+      if (!preedit && m_onChange) {
+        m_onChange(m_value);
+      }
+    }
+    return;
+  }
+  if (redoShortcut) {
+    if (redoEdit()) {
+      return;
+    }
+    if (changed) {
+      updateDisplayText();
+      markLayoutDirty();
+      revealCursor();
+      if (!preedit && m_onChange) {
+        m_onChange(m_value);
+      }
+    }
+    return;
+  }
+
   if (ctrl && (sym == 'a' || sym == 'A')) {
     // Select all
+    resetUndoCoalescing();
     m_selectionAnchor = 0;
     m_cursorPos = m_value.size();
-  } else if (ctrl && (sym == 'c' || sym == 'C')) {
+  } else if (copyShortcut) {
     if (g_clipboard != nullptr && hasSelection()) {
-      g_clipboard->copyText(m_value.substr(selectionStart(), selectionEnd() - selectionStart()));
+      g_clipboard->setClipboardText(m_value.substr(selectionStart(), selectionEnd() - selectionStart()));
     }
-  } else if (ctrl && (sym == 'x' || sym == 'X')) {
+  } else if (cutShortcut) {
     if (g_clipboard != nullptr && hasSelection()) {
-      g_clipboard->copyText(m_value.substr(selectionStart(), selectionEnd() - selectionStart()));
+      pushUndoSnapshot(EditCoalesceKind::Discrete);
+      g_clipboard->setClipboardText(m_value.substr(selectionStart(), selectionEnd() - selectionStart()));
       deleteSelection();
       changed = true;
     }
-  } else if (ctrl && (sym == 'v' || sym == 'V')) {
+  } else if (pasteShortcut) {
     if (g_clipboard != nullptr) {
       if (auto text = readClipboardText(); text.has_value()) {
+        pushUndoSnapshot(EditCoalesceKind::Discrete);
         if (hasSelection()) {
           deleteSelection();
         }
@@ -630,54 +664,62 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
         changed = true;
       }
     }
-  } else if (sym == XKB_KEY_BackSpace) {
+  } else if (KeySymbol::isBackspace(sym)) {
     if (hasSelection()) {
+      pushUndoSnapshot(EditCoalesceKind::Discrete);
       deleteSelection();
       changed = true;
     } else if (m_cursorPos > 0) {
-      const std::size_t prev = prevCharPos(m_value, m_cursorPos);
+      pushUndoSnapshot(EditCoalesceKind::Discrete);
+      const std::size_t prev = ctrl ? previousWordStartForByteOffset(m_cursorPos) : prevCharPos(m_value, m_cursorPos);
       m_value.erase(prev, m_cursorPos - prev);
       m_cursorPos = prev;
       m_selectionAnchor = prev;
       changed = true;
     }
-  } else if (sym == XKB_KEY_Delete) {
+  } else if (KeySymbol::isDelete(sym)) {
     if (hasSelection()) {
+      pushUndoSnapshot(EditCoalesceKind::Discrete);
       deleteSelection();
       changed = true;
     } else if (m_cursorPos < m_value.size()) {
-      const std::size_t next = nextCharPos(m_value, m_cursorPos);
+      pushUndoSnapshot(EditCoalesceKind::Discrete);
+      const std::size_t next = ctrl ? nextWordEndForByteOffset(m_cursorPos) : nextCharPos(m_value, m_cursorPos);
       m_value.erase(m_cursorPos, next - m_cursorPos);
       changed = true;
     }
-  } else if (sym == XKB_KEY_Left) {
+  } else if (KeySymbol::isLeft(sym)) {
+    resetUndoCoalescing();
     if (!shift && hasSelection()) {
       // Collapse to start of selection
       m_cursorPos = selectionStart();
       m_selectionAnchor = m_cursorPos;
     } else {
-      m_cursorPos = prevCharPos(m_value, m_cursorPos);
+      m_cursorPos = ctrl ? previousWordStartForByteOffset(m_cursorPos) : prevCharPos(m_value, m_cursorPos);
       if (!shift) {
         m_selectionAnchor = m_cursorPos;
       }
     }
-  } else if (sym == XKB_KEY_Right) {
+  } else if (KeySymbol::isRight(sym)) {
+    resetUndoCoalescing();
     if (!shift && hasSelection()) {
       // Collapse to end of selection
       m_cursorPos = selectionEnd();
       m_selectionAnchor = m_cursorPos;
     } else {
-      m_cursorPos = nextCharPos(m_value, m_cursorPos);
+      m_cursorPos = ctrl ? nextWordStartForByteOffset(m_cursorPos) : nextCharPos(m_value, m_cursorPos);
       if (!shift) {
         m_selectionAnchor = m_cursorPos;
       }
     }
-  } else if (sym == XKB_KEY_Home) {
+  } else if (KeySymbol::isHome(sym)) {
+    resetUndoCoalescing();
     m_cursorPos = 0;
     if (!shift) {
       m_selectionAnchor = 0;
     }
-  } else if (sym == XKB_KEY_End) {
+  } else if (KeySymbol::isEnd(sym)) {
+    resetUndoCoalescing();
     m_cursorPos = m_value.size();
     if (!shift) {
       m_selectionAnchor = m_cursorPos;
@@ -688,6 +730,9 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
     }
   } else if (utf32 >= 0x20U && utf32 != 0x7FU) {
     // Printable character (skip DEL = 0x7F)
+    if (!preedit) {
+      pushUndoSnapshot(hasSelection() ? EditCoalesceKind::Discrete : EditCoalesceKind::Typing);
+    }
     if (hasSelection()) {
       deleteSelection();
       changed = true;
@@ -701,6 +746,9 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
     m_cursorPos += bytes.size();
     m_selectionAnchor = m_cursorPos;
     changed = true;
+    if (!preedit) {
+      noteTypingEditEnd();
+    }
   }
 
   updateDisplayText();
@@ -717,6 +765,7 @@ void Input::applyVisualState() {
   const bool clearButtonHovered = m_clearButtonArea != nullptr && m_clearButtonArea->hovered();
   const bool inputHovered = (m_inputArea != nullptr && m_inputArea->hovered()) || clearButtonHovered;
   const bool readOnly = isReadOnlyVisual();
+  const float chromeScale = chromeScaleForControlHeight(m_controlHeight);
 
   if (m_frameVisible) {
     m_background->setVisible(true);
@@ -730,7 +779,7 @@ void Input::applyVisualState() {
         .fill = fill,
         .border = border,
         .fillMode = FillMode::Solid,
-        .radius = Style::scaledRadiusMd(),
+        .radius = Style::scaledRadiusMd(chromeScale),
         .softness = 1.0f,
         .borderWidth = Style::borderWidth,
     });
@@ -819,6 +868,7 @@ void Input::clearFromButton() {
   if (m_value.empty()) {
     return;
   }
+  pushUndoSnapshot(EditCoalesceKind::Discrete);
   m_value.clear();
   m_cursorPos = 0;
   m_selectionAnchor = 0;
@@ -858,7 +908,8 @@ void Input::updateInteractiveGeometry() {
 
   const float controlHeight = height() > 0.0f ? height() : m_controlHeight;
   const float maxCursorHeight = std::max(0.0f, controlHeight - kCursorPadV * 2.0f);
-  const float cursorHeight = std::clamp(controlHeight * kCursorHeightRatio, kCursorMinHeight, maxCursorHeight);
+  const float cursorHeight =
+      std::clamp(controlHeight * kCursorHeightRatio, std::min(kCursorMinHeight, maxCursorHeight), maxCursorHeight);
   const float cursorY = std::round((controlHeight - cursorHeight) * 0.5f);
   const float cursorX = stopXForByte(m_cursorPos) - m_scrollOffset + m_contentLeadSlack;
   m_cursor->setPosition(cursorX, cursorY);
@@ -1008,6 +1059,61 @@ std::size_t Input::wordEndForByteOffset(std::size_t offset) const {
   return end;
 }
 
+std::size_t Input::previousWordStartForByteOffset(std::size_t offset) const {
+  if (m_value.empty()) {
+    return 0;
+  }
+
+  std::size_t pos = std::min(offset, m_value.size());
+  while (pos > 0) {
+    const std::size_t prev = prevCharPos(m_value, pos);
+    if (prev == pos || isWordCodepoint(m_value, prev)) {
+      break;
+    }
+    pos = prev;
+  }
+  while (pos > 0) {
+    const std::size_t prev = prevCharPos(m_value, pos);
+    if (prev == pos || !isWordCodepoint(m_value, prev)) {
+      break;
+    }
+    pos = prev;
+  }
+  return pos;
+}
+
+std::size_t Input::nextWordStartForByteOffset(std::size_t offset) const {
+  if (m_value.empty()) {
+    return 0;
+  }
+
+  std::size_t pos = std::min(offset, m_value.size());
+  if (pos < m_value.size() && isWordCodepoint(m_value, pos)) {
+    while (pos < m_value.size() && isWordCodepoint(m_value, pos)) {
+      pos = nextCharPos(m_value, pos);
+    }
+  }
+  while (pos < m_value.size() && !isWordCodepoint(m_value, pos)) {
+    pos = nextCharPos(m_value, pos);
+  }
+  return pos;
+}
+
+std::size_t Input::nextWordEndForByteOffset(std::size_t offset) const {
+  if (m_value.empty()) {
+    return 0;
+  }
+
+  std::size_t pos = std::min(offset, m_value.size());
+  while (pos < m_value.size() && !isWordCodepoint(m_value, pos)) {
+    pos = nextCharPos(m_value, pos);
+  }
+  while (pos < m_value.size() && isWordCodepoint(m_value, pos)) {
+    pos = nextCharPos(m_value, pos);
+  }
+  return pos;
+}
+
 void Input::syncPasswordGlyphNodes(std::size_t count) {
   if (m_textViewport == nullptr) {
     return;
@@ -1055,12 +1161,104 @@ std::size_t Input::selectionStart() const noexcept { return std::min(m_selection
 
 std::size_t Input::selectionEnd() const noexcept { return std::max(m_selectionAnchor, m_cursorPos); }
 
+Input::EditSnapshot Input::currentEditSnapshot() const {
+  return EditSnapshot{
+      .value = m_value,
+      .cursorPos = m_cursorPos,
+      .selectionAnchor = m_selectionAnchor,
+  };
+}
+
 void Input::deleteSelection() {
   const std::size_t start = selectionStart();
   const std::size_t end = selectionEnd();
   m_value.erase(start, end - start);
   m_cursorPos = start;
   m_selectionAnchor = start;
+}
+
+void Input::clearEditHistory() {
+  m_undoStack.clear();
+  m_redoStack.clear();
+  resetUndoCoalescing();
+}
+
+void Input::resetUndoCoalescing() {
+  m_lastEditCoalesceKind = EditCoalesceKind::None;
+  m_lastUndoRecordTime = {};
+  m_typingCoalesceCursorPos = m_cursorPos;
+}
+
+void Input::pushUndoSnapshot(EditCoalesceKind kind) {
+  if (kind == EditCoalesceKind::None) {
+    resetUndoCoalescing();
+    return;
+  }
+
+  const auto now = std::chrono::steady_clock::now();
+  if (kind == EditCoalesceKind::Typing && m_lastEditCoalesceKind == EditCoalesceKind::Typing &&
+      m_cursorPos == m_typingCoalesceCursorPos && !hasSelection() && !m_undoStack.empty() &&
+      now - m_lastUndoRecordTime <= kTypingUndoCoalesceWindow) {
+    m_redoStack.clear();
+    m_lastUndoRecordTime = now;
+    return;
+  }
+
+  const EditSnapshot snapshot = currentEditSnapshot();
+  if (m_undoStack.empty() || !(m_undoStack.back() == snapshot)) {
+    m_undoStack.push_back(snapshot);
+    if (m_undoStack.size() > kUndoStackLimit) {
+      m_undoStack.erase(m_undoStack.begin());
+    }
+  }
+  m_redoStack.clear();
+  m_lastEditCoalesceKind = kind;
+  m_lastUndoRecordTime = now;
+  m_typingCoalesceCursorPos = m_cursorPos;
+}
+
+void Input::noteTypingEditEnd() { m_typingCoalesceCursorPos = m_cursorPos; }
+
+bool Input::undoEdit() { return restoreFromHistory(m_undoStack, m_redoStack); }
+
+bool Input::redoEdit() { return restoreFromHistory(m_redoStack, m_undoStack); }
+
+bool Input::restoreFromHistory(std::vector<EditSnapshot>& source, std::vector<EditSnapshot>& target) {
+  if (source.empty()) {
+    resetUndoCoalescing();
+    return false;
+  }
+
+  const EditSnapshot current = currentEditSnapshot();
+  const EditSnapshot snapshot = source.back();
+  source.pop_back();
+  if (target.empty() || !(target.back() == current)) {
+    target.push_back(current);
+    if (target.size() > kUndoStackLimit) {
+      target.erase(target.begin());
+    }
+  }
+  restoreEditSnapshot(snapshot);
+  resetUndoCoalescing();
+  return true;
+}
+
+void Input::restoreEditSnapshot(const EditSnapshot& snapshot) {
+  const std::string previousValue = m_value;
+  m_value = snapshot.value;
+  m_cursorPos = std::min(snapshot.cursorPos, m_value.size());
+  m_selectionAnchor = std::min(snapshot.selectionAnchor, m_value.size());
+  m_preeditStart = 0;
+  m_preeditLen = 0;
+  updateDisplayText();
+  updateInteractiveGeometry();
+  revealCursor();
+  applyVisualState();
+  markLayoutDirty();
+  markPaintDirty();
+  if (m_value != previousValue && m_onChange) {
+    m_onChange(m_value);
+  }
 }
 
 std::size_t Input::xToByteOffset(float localX) const {

@@ -1,8 +1,8 @@
 #include "ui/controls/search_picker.h"
 
-#include "cursor-shape-v1-client-protocol.h"
+#include "core/keybind_matcher.h"
 #include "i18n/i18n.h"
-#include "render/scene/input_area.h"
+#include "ui/controls/glyph.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
@@ -12,15 +12,100 @@
 #include "util/string_utils.h"
 
 #include <algorithm>
-#include <linux/input-event-codes.h>
+#include <cstdint>
 #include <memory>
 #include <string>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
   constexpr float kDefaultWidth = 320.0f;
   constexpr float kDefaultHeight = 360.0f;
+
+  class SearchPickerRow : public Flex {
+  public:
+    SearchPickerRow() {
+      setDirection(FlexDirection::Horizontal);
+      setAlign(FlexAlign::Center);
+      setGap(Style::spaceSm);
+      setPadding(Style::spaceXs, Style::spaceSm);
+      setRadius(Style::scaledRadiusSm());
+      setFillWidth(true);
+
+      auto icon = std::make_unique<Glyph>();
+      icon->setGlyphSize(Style::barGlyphSize);
+      icon->setVisible(false);
+      icon->setParticipatesInLayout(false);
+      m_icon = static_cast<Glyph*>(addChild(std::move(icon)));
+
+      auto text = std::make_unique<Flex>();
+      text->setDirection(FlexDirection::Vertical);
+      text->setAlign(FlexAlign::Stretch);
+      text->setJustify(FlexJustify::Center);
+      text->setFlexGrow(1.0f);
+      m_text = static_cast<Flex*>(addChild(std::move(text)));
+
+      auto title = std::make_unique<Label>();
+      title->setFontSize(Style::fontSizeBody);
+      m_title = static_cast<Label*>(m_text->addChild(std::move(title)));
+
+      auto detail = std::make_unique<Label>();
+      detail->setFontSize(Style::fontSizeCaption);
+      detail->setVisible(false);
+      m_detail = static_cast<Label*>(m_text->addChild(std::move(detail)));
+    }
+
+    void bind(const SearchPickerOption& option, bool highlighted, bool selected, bool hovered) {
+      const bool hasDetail = !option.description.empty();
+      const bool hasIcon = !option.icon.empty();
+
+      if (highlighted) {
+        setFill(colorSpecFromRole(ColorRole::Primary));
+      } else if (hovered) {
+        setFill(colorSpecFromRole(ColorRole::Hover));
+      } else if (selected) {
+        setFill(colorSpecFromRole(ColorRole::Primary, 0.16f));
+      } else {
+        setFill(clearColorSpec());
+      }
+
+      ColorSpec foreground =
+          option.enabled ? colorSpecFromRole(ColorRole::OnSurface) : colorSpecFromRole(ColorRole::OnSurface, 0.55f);
+      ColorSpec detailForeground = colorSpecFromRole(ColorRole::OnSurfaceVariant, option.enabled ? 1.0f : 0.55f);
+      if (highlighted) {
+        foreground = colorSpecFromRole(ColorRole::OnPrimary);
+        detailForeground = colorSpecFromRole(ColorRole::OnPrimary, 0.78f);
+      } else if (hovered) {
+        foreground = colorSpecFromRole(ColorRole::OnHover);
+        detailForeground = colorSpecFromRole(ColorRole::OnHover, 0.78f);
+      }
+
+      if (m_icon != nullptr) {
+        if (hasIcon) {
+          m_icon->setGlyph(option.icon);
+          m_icon->setColor(foreground);
+        }
+        m_icon->setVisible(hasIcon);
+        m_icon->setParticipatesInLayout(hasIcon);
+      }
+      if (m_title != nullptr) {
+        m_title->setText(option.label);
+        m_title->setBold(hasDetail);
+        m_title->setColor(foreground);
+      }
+      if (m_detail != nullptr) {
+        m_detail->setVisible(hasDetail);
+        m_detail->setParticipatesInLayout(hasDetail);
+        m_detail->setText(option.description);
+        m_detail->setColor(detailForeground);
+      }
+    }
+
+  private:
+    Glyph* m_icon = nullptr;
+    Flex* m_text = nullptr;
+    Label* m_title = nullptr;
+    Label* m_detail = nullptr;
+  };
 
 } // namespace
 
@@ -43,20 +128,20 @@ SearchPicker::SearchPicker() {
     m_filter = value;
     applyFilter();
   });
-  input->setOnKeyEvent([this](std::uint32_t sym, std::uint32_t /*modifiers*/) {
-    if (sym == XKB_KEY_Down) {
+  input->setOnKeyEvent([this](std::uint32_t sym, std::uint32_t modifiers) {
+    if (KeybindMatcher::matches(KeybindAction::Down, sym, modifiers)) {
       moveHighlight(1);
       return true;
     }
-    if (sym == XKB_KEY_Up) {
+    if (KeybindMatcher::matches(KeybindAction::Up, sym, modifiers)) {
       moveHighlight(-1);
       return true;
     }
-    if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter) {
+    if (KeybindMatcher::matches(KeybindAction::Validate, sym, modifiers)) {
       activateHighlighted();
       return true;
     }
-    if (sym == XKB_KEY_Escape) {
+    if (KeybindMatcher::matches(KeybindAction::Cancel, sym, modifiers)) {
       if (m_onCancel) {
         m_onCancel();
       }
@@ -66,11 +151,19 @@ SearchPicker::SearchPicker() {
   });
   m_input = static_cast<Input*>(addChild(std::move(input)));
 
-  auto scroll = std::make_unique<ScrollView>();
-  scroll->setFlexGrow(1.0f);
-  scroll->setViewportPaddingH(0.0f);
-  scroll->setViewportPaddingV(0.0f);
-  m_scroll = static_cast<ScrollView*>(addChild(std::move(scroll)));
+  auto empty = std::make_unique<Label>();
+  empty->setText(m_emptyText);
+  empty->setFontSize(Style::fontSizeBody);
+  empty->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+  empty->setVisible(false);
+  m_emptyLabel = static_cast<Label*>(addChild(std::move(empty)));
+
+  auto list = std::make_unique<VirtualListView>();
+  list->setFlexGrow(1.0f);
+  list->setItemGap(Style::spaceXs);
+  list->setOverscanItems(4);
+  list->setAdapter(this);
+  m_list = static_cast<VirtualListView*>(addChild(std::move(list)));
 }
 
 void SearchPicker::setOptions(std::vector<SearchPickerOption> options) {
@@ -86,12 +179,18 @@ void SearchPicker::setPlaceholder(std::string_view placeholder) {
 
 void SearchPicker::setEmptyText(std::string_view text) {
   m_emptyText = std::string(text);
-  rebuildRows();
+  if (m_emptyLabel != nullptr) {
+    m_emptyLabel->setText(m_emptyText);
+  }
+  markLayoutDirty();
 }
 
 void SearchPicker::setSelectedValue(std::string_view value) {
   m_selectedValue = std::string(value);
-  applyRowStates();
+  ++m_revision;
+  if (m_list != nullptr) {
+    m_list->notifyDataChanged();
+  }
 }
 
 void SearchPicker::setOnActivated(std::function<void(const SearchPickerOption&)> callback) {
@@ -112,30 +211,89 @@ void SearchPicker::setEnabled(bool enabled) {
   if (m_input != nullptr) {
     m_input->setEnabled(enabled);
   }
-  for (auto& row : m_rows) {
-    if (row.area != nullptr) {
-      row.area->setEnabled(enabled);
-    }
+  ++m_revision;
+  if (m_list != nullptr) {
+    m_list->notifyDataChanged();
   }
   setOpacity(enabled ? 1.0f : 0.55f);
 }
 
-void SearchPicker::doLayout(Renderer& renderer) {
-  Flex::doLayout(renderer);
-  for (const auto& row : m_rows) {
-    if (row.row == nullptr || row.area == nullptr) {
-      continue;
-    }
-    row.area->setPosition(0.0f, 0.0f);
-    row.area->setFrameSize(row.row->width(), row.row->height());
-  }
-}
+void SearchPicker::doLayout(Renderer& renderer) { Flex::doLayout(renderer); }
 
 LayoutSize SearchPicker::doMeasure(Renderer& renderer, const LayoutConstraints& constraints) {
   return measureByLayout(renderer, constraints);
 }
 
 void SearchPicker::doArrange(Renderer& renderer, const LayoutRect& rect) { arrangeByLayout(renderer, rect); }
+
+std::size_t SearchPicker::itemCount() const { return m_visible.size(); }
+
+std::uint64_t SearchPicker::itemKey(std::size_t index) const {
+  if (index >= m_visible.size()) {
+    return 0;
+  }
+  return static_cast<std::uint64_t>(m_visible[index]);
+}
+
+std::uint64_t SearchPicker::itemRevision(std::size_t index) const {
+  std::uint64_t revision = m_revision;
+  if (index >= m_visible.size()) {
+    return revision;
+  }
+  const auto sourceIndex = m_visible[index];
+  if (sourceIndex < m_options.size() && m_options[sourceIndex].value == m_selectedValue) {
+    revision ^= (1ULL << 32);
+  }
+  if (index == m_highlightedVisibleIndex) {
+    revision ^= (1ULL << 33);
+  }
+  return revision;
+}
+
+bool SearchPicker::itemInteractive(std::size_t index) const {
+  if (!m_enabled || index >= m_visible.size()) {
+    return false;
+  }
+  const auto sourceIndex = m_visible[index];
+  return sourceIndex < m_options.size() && m_options[sourceIndex].enabled;
+}
+
+float SearchPicker::measureItem(Renderer& /*renderer*/, std::size_t index, float /*width*/) {
+  if (index >= m_visible.size()) {
+    return Style::controlHeight;
+  }
+  const auto sourceIndex = m_visible[index];
+  const bool hasDetail = sourceIndex < m_options.size() && !m_options[sourceIndex].description.empty();
+  return hasDetail ? Style::controlHeightLg : Style::controlHeight;
+}
+
+std::unique_ptr<Node> SearchPicker::createItem() { return std::make_unique<SearchPickerRow>(); }
+
+void SearchPicker::bindItem(Renderer& /*renderer*/, Node& item, std::size_t index, float /*width*/, bool hovered) {
+  auto* row = dynamic_cast<SearchPickerRow*>(&item);
+  if (row == nullptr || index >= m_visible.size()) {
+    return;
+  }
+  const auto sourceIndex = m_visible[index];
+  if (sourceIndex >= m_options.size()) {
+    return;
+  }
+
+  const auto& option = m_options[sourceIndex];
+  const bool highlighted = index == m_highlightedVisibleIndex;
+  const bool selected = option.value == m_selectedValue;
+  row->bind(option, highlighted, selected, hovered);
+}
+
+void SearchPicker::onActivate(std::size_t index) {
+  if (index >= m_visible.size()) {
+    return;
+  }
+  const auto sourceIndex = m_visible[index];
+  if (sourceIndex < m_options.size() && m_options[sourceIndex].enabled && m_onActivated) {
+    m_onActivated(m_options[sourceIndex]);
+  }
+}
 
 void SearchPicker::applyFilter() {
   struct ScoredOption {
@@ -169,87 +327,27 @@ void SearchPicker::applyFilter() {
   }
 
   m_highlightedVisibleIndex = 0;
-  if (m_scroll != nullptr) {
-    m_scroll->setScrollOffset(0.0f);
-  }
-  rebuildRows();
-}
-
-void SearchPicker::rebuildRows() {
-  if (m_scroll == nullptr || m_scroll->content() == nullptr) {
-    return;
-  }
-
-  auto* content = m_scroll->content();
-  while (!content->children().empty()) {
-    content->removeChild(content->children().back().get());
-  }
-  m_rows.clear();
-
-  content->setDirection(FlexDirection::Vertical);
-  content->setAlign(FlexAlign::Stretch);
-  content->setGap(Style::spaceXs);
-
-  if (m_visible.empty()) {
-    auto empty = std::make_unique<Label>();
-    empty->setText(m_emptyText);
-    empty->setFontSize(Style::fontSizeBody);
-    empty->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
-    content->addChild(std::move(empty));
-    markLayoutDirty();
-    return;
-  }
-
-  for (std::size_t visibleIndex = 0; visibleIndex < m_visible.size(); ++visibleIndex) {
-    const auto sourceIndex = m_visible[visibleIndex];
-    const auto& option = m_options[sourceIndex];
-
-    auto row = std::make_unique<Flex>();
-    row->setDirection(FlexDirection::Vertical);
-    row->setAlign(FlexAlign::Stretch);
-    const auto& detail = option.description;
-    row->setGap(detail.empty() ? 0.0f : 1.0f);
-    row->setPadding(Style::spaceXs, Style::spaceSm);
-    row->setRadius(Style::scaledRadiusSm());
-    row->setMinHeight(detail.empty() ? Style::controlHeight : Style::controlHeightLg);
-    row->setFillWidth(true);
-
-    auto title = std::make_unique<Label>();
-    title->setText(option.label);
-    title->setFontSize(Style::fontSizeBody);
-    title->setBold(!detail.empty());
-    auto* titlePtr = static_cast<Label*>(row->addChild(std::move(title)));
-
-    Label* detailPtr = nullptr;
-    if (!detail.empty()) {
-      auto detailLabel = std::make_unique<Label>();
-      detailLabel->setText(detail);
-      detailLabel->setFontSize(Style::fontSizeCaption);
-      detailPtr = static_cast<Label*>(row->addChild(std::move(detailLabel)));
+  if (query.empty() && !m_selectedValue.empty()) {
+    for (std::size_t i = 0; i < m_visible.size(); ++i) {
+      const auto sourceIndex = m_visible[i];
+      if (sourceIndex < m_options.size() && m_options[sourceIndex].value == m_selectedValue) {
+        m_highlightedVisibleIndex = i;
+        break;
+      }
     }
-
-    auto area = std::make_unique<InputArea>();
-    area->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
-    area->setEnabled(m_enabled && option.enabled);
-    area->setParticipatesInLayout(false);
-    area->setOnEnter(
-        [this, visibleIndex](const InputArea::PointerData& /*data*/) { setHighlightedVisibleIndex(visibleIndex); });
-    area->setOnClick([this, visibleIndex](const InputArea::PointerData& data) {
-      if (data.button != BTN_LEFT || visibleIndex >= m_visible.size()) {
-        return;
-      }
-      const auto activatedIndex = m_visible[visibleIndex];
-      if (activatedIndex < m_options.size() && m_options[activatedIndex].enabled && m_onActivated) {
-        m_onActivated(m_options[activatedIndex]);
-      }
-    });
-    auto* areaPtr = static_cast<InputArea*>(row->addChild(std::move(area)));
-
-    auto* rowPtr = static_cast<Flex*>(content->addChild(std::move(row)));
-    m_rows.push_back(RowView{.row = rowPtr, .title = titlePtr, .detail = detailPtr, .area = areaPtr});
   }
-
-  applyRowStates();
+  ++m_revision;
+  if (m_emptyLabel != nullptr) {
+    m_emptyLabel->setVisible(m_visible.empty());
+  }
+  if (m_list != nullptr) {
+    m_list->setVisible(!m_visible.empty());
+    m_list->scrollView().setScrollOffset(0.0f);
+    m_list->notifyDataChanged();
+    if (!m_visible.empty() && m_highlightedVisibleIndex > 0) {
+      m_list->scrollToIndex(m_highlightedVisibleIndex);
+    }
+  }
   markLayoutDirty();
 }
 
@@ -257,8 +355,9 @@ void SearchPicker::setHighlightedVisibleIndex(std::size_t index) {
   if (index >= m_visible.size()) {
     return;
   }
+  const std::size_t previous = m_highlightedVisibleIndex;
   m_highlightedVisibleIndex = index;
-  applyRowStates();
+  notifyHighlightedChanged(previous, m_highlightedVisibleIndex);
   ensureHighlightedVisible();
 }
 
@@ -282,50 +381,21 @@ void SearchPicker::activateHighlighted() {
 }
 
 void SearchPicker::ensureHighlightedVisible() {
-  if (m_scroll == nullptr || m_highlightedVisibleIndex >= m_rows.size()) {
+  if (m_list == nullptr || m_highlightedVisibleIndex >= m_visible.size()) {
     return;
   }
-
-  const auto& row = m_rows[m_highlightedVisibleIndex];
-  if (row.row == nullptr || row.row->height() <= 0.0f || m_scroll->height() <= 0.0f) {
-    return;
-  }
-
-  const float top = row.row->y();
-  const float bottom = top + row.row->height();
-  const float offset = m_scroll->scrollOffset();
-  const float viewportHeight = m_scroll->height();
-  if (top < offset) {
-    m_scroll->setScrollOffset(top);
-  } else if (bottom > offset + viewportHeight) {
-    m_scroll->setScrollOffset(bottom - viewportHeight);
-  }
+  m_list->scrollToIndex(m_highlightedVisibleIndex);
 }
 
-void SearchPicker::applyRowStates() {
-  for (std::size_t i = 0; i < m_rows.size(); ++i) {
-    auto& row = m_rows[i];
-    if (row.row == nullptr || row.title == nullptr || i >= m_visible.size()) {
-      continue;
-    }
-
-    const auto& option = m_options[m_visible[i]];
-    const bool highlighted = i == m_highlightedVisibleIndex;
-    const bool selected = option.value == m_selectedValue;
-    const bool enabled = option.enabled;
-
-    row.row->setFill(highlighted ? colorSpecFromRole(ColorRole::Primary)
-                                 : (selected ? colorSpecFromRole(ColorRole::Primary, 0.16f) : clearColorSpec()));
-    row.title->setColor(highlighted ? colorSpecFromRole(ColorRole::OnPrimary)
-                                    : (enabled ? colorSpecFromRole(ColorRole::OnSurface)
-                                               : colorSpecFromRole(ColorRole::OnSurface, 0.55f)));
-    if (row.detail != nullptr) {
-      row.detail->setColor(highlighted ? colorSpecFromRole(ColorRole::OnPrimary, 0.78f)
-                                       : colorSpecFromRole(ColorRole::OnSurfaceVariant, enabled ? 1.0f : 0.55f));
-    }
-    if (row.area != nullptr) {
-      row.area->setEnabled(enabled);
-    }
+void SearchPicker::notifyHighlightedChanged(std::size_t previous, std::size_t next) {
+  if (m_list == nullptr) {
+    return;
+  }
+  if (previous < m_visible.size()) {
+    m_list->notifyItemChanged(previous);
+  }
+  if (next < m_visible.size() && next != previous) {
+    m_list->notifyItemChanged(next);
   }
   markPaintDirty();
 }

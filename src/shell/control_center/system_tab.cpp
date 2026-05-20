@@ -4,6 +4,7 @@
 #include "render/scene/graph_node.h"
 #include "shell/panel/panel_manager.h"
 #include "system/distro_info.h"
+#include "system/format_units.h"
 #include "system/hardware_info.h"
 #include "system/system_monitor_service.h"
 #include "time/time_format.h"
@@ -12,7 +13,6 @@
 #include "ui/controls/label.h"
 
 #include <algorithm>
-#include <cmath>
 #include <format>
 #include <vector>
 
@@ -22,7 +22,7 @@ namespace {
 
   constexpr float kGraphLineWidth = 0.75f;
   constexpr float kGraphFillOpacity = 0.15f;
-  constexpr double kNetMinScaleBps = 10.0 * 1024.0;
+  constexpr double kNetMinScaleBps = 10000.0;
   const auto kSampleInterval = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::seconds(1));
 
   Flex* makeHeaderRow(Flex& parent, const std::string& title, float scale) {
@@ -85,15 +85,20 @@ namespace {
     if (stats.ramTotalMb == 0) {
       return memoryTotalLabel();
     }
-    const double usedGb = static_cast<double>(stats.ramUsedMb) / 1024.0;
-    const double totalGb = static_cast<double>(stats.ramTotalMb) / 1024.0;
-    return std::format("{:.1f} / {:.1f} GB", usedGb, totalGb);
+    return FormatUnits::formatBinaryMibUsageAsGib(stats.ramUsedMb, stats.ramTotalMb);
   }
 
-  Flex* makeInfoCard(Flex& parent, const std::string& title, float scale, Label** outLines, int lineCount,
-                     const char* const* glyphs) {
+  std::string formatGpuVramUsed(const SystemStats& stats) {
+    if (!stats.gpuVramUsedBytes.has_value()) {
+      return "--";
+    }
+    return FormatUnits::formatBinaryBytesAsGib(*stats.gpuVramUsedBytes);
+  }
+
+  Flex* makeInfoCard(Flex& parent, const std::string& title, float scale, float fillOpacity, Label** outLines,
+                     int lineCount, const char* const* glyphs) {
     auto card = std::make_unique<Flex>();
-    applySectionCardStyle(*card, scale);
+    applySectionCardStyle(*card, scale, fillOpacity);
     card->setFlexGrow(1.0f);
     card->setGap(Style::spaceXs * scale);
 
@@ -133,6 +138,7 @@ SystemTab::SystemTab(SystemMonitorService* monitor) : m_monitor(monitor) {
   if (m_monitor != nullptr) {
     m_monitor->retainCpuTemp();
     m_monitor->retainGpuTemp();
+    m_monitor->retainGpuVram();
   }
 }
 
@@ -140,6 +146,7 @@ SystemTab::~SystemTab() {
   if (m_monitor != nullptr) {
     m_monitor->releaseCpuTemp();
     m_monitor->releaseGpuTemp();
+    m_monitor->releaseGpuVram();
   }
 }
 
@@ -164,7 +171,7 @@ std::unique_ptr<Flex> SystemTab::create() {
     // CPU card
     {
       auto card = std::make_unique<Flex>();
-      applySectionCardStyle(*card, sc);
+      applySectionCardStyle(*card, sc, panelCardOpacity());
       card->setFlexGrow(1.0f);
       m_cpuCard = card.get();
 
@@ -181,7 +188,7 @@ std::unique_ptr<Flex> SystemTab::create() {
     // Memory card
     {
       auto card = std::make_unique<Flex>();
-      applySectionCardStyle(*card, sc);
+      applySectionCardStyle(*card, sc, panelCardOpacity());
       card->setFlexGrow(1.0f);
       m_ramCard = card.get();
 
@@ -207,12 +214,14 @@ std::unique_ptr<Flex> SystemTab::create() {
     // GPU card
     {
       auto card = std::make_unique<Flex>();
-      applySectionCardStyle(*card, sc);
+      applySectionCardStyle(*card, sc, panelCardOpacity());
       card->setFlexGrow(1.0f);
       card->setVisible(false);
       m_gpuCard = card.get();
 
       auto* header = makeHeaderRow(*card, i18n::tr("control-center.system.titles.gpu"), sc);
+      auto* gpuVramGroup = makeIconLabel(*header, "memory", sc, &m_gpuVramIcon);
+      m_gpuVramLabel = makeValueLabel(*gpuVramGroup, sc);
       auto* gpuTempGroup = makeIconLabel(*header, "temperature", sc, &m_gpuTempIcon);
       m_gpuTempLabel = makeValueLabel(*gpuTempGroup, sc);
       m_gpuGraph = addGraph(*card);
@@ -223,7 +232,7 @@ std::unique_ptr<Flex> SystemTab::create() {
     // Network card
     {
       auto card = std::make_unique<Flex>();
-      applySectionCardStyle(*card, sc);
+      applySectionCardStyle(*card, sc, panelCardOpacity());
       card->setFlexGrow(1.0f);
       m_netCard = card.get();
 
@@ -248,12 +257,13 @@ std::unique_ptr<Flex> SystemTab::create() {
     row->setGap(Style::spaceSm * sc);
     static constexpr const char* kSystemGlyphs[] = {"device-desktop", "layout-board", "cpu-usage",
                                                     "video",          "app-window",   "clock"};
-    makeInfoCard(*row, i18n::tr("control-center.system.titles.system"), sc, m_systemLines, kSystemLines, kSystemGlyphs)
+    makeInfoCard(*row, i18n::tr("control-center.system.titles.system"), sc, panelCardOpacity(), m_systemLines,
+                 kSystemLines, kSystemGlyphs)
         ->setFlexGrow(2.0f);
 
     static constexpr const char* kResourcesGlyphs[] = {"activity", "memory", "storage"};
-    makeInfoCard(*row, i18n::tr("control-center.system.titles.resources"), sc, m_resourcesLines, kResourcesLines,
-                 kResourcesGlyphs);
+    makeInfoCard(*row, i18n::tr("control-center.system.titles.resources"), sc, panelCardOpacity(), m_resourcesLines,
+                 kResourcesLines, kResourcesGlyphs);
 
     tab->addChild(std::move(row));
   }
@@ -279,6 +289,8 @@ void SystemTab::onClose() {
   m_cpuTempLabel = nullptr;
   m_gpuTempIcon = nullptr;
   m_gpuTempLabel = nullptr;
+  m_gpuVramIcon = nullptr;
+  m_gpuVramLabel = nullptr;
   m_ramIcon = nullptr;
   m_ramLabel = nullptr;
   m_rxIcon = nullptr;
@@ -323,6 +335,7 @@ void SystemTab::onFrameTick(float deltaMs) {
   }
   if (m_gpuGraph != nullptr) {
     m_gpuGraph->setScroll1(m_scrollProgress);
+    m_gpuGraph->setScroll2(m_scrollProgress);
   }
   if (m_netGraph != nullptr) {
     m_netGraph->setScroll1(m_scrollProgress);
@@ -399,7 +412,14 @@ void SystemTab::doUpdate(Renderer& renderer) {
   }
 
   if (m_gpuGraph != nullptr) {
-    m_gpuGraph->setLineColor1(colorForRole(ColorRole::Error));
+    m_gpuGraph->setLineColor1(colorForRole(ColorRole::Secondary));
+    m_gpuGraph->setLineColor2(colorForRole(ColorRole::Error));
+  }
+  if (m_gpuVramIcon != nullptr) {
+    m_gpuVramIcon->setColor(colorSpecFromRole(ColorRole::Secondary));
+  }
+  if (m_gpuVramLabel != nullptr) {
+    m_gpuVramLabel->setColor(colorSpecFromRole(ColorRole::Secondary));
   }
   if (m_gpuTempIcon != nullptr) {
     m_gpuTempIcon->setColor(colorSpecFromRole(ColorRole::Error));
@@ -439,6 +459,7 @@ void SystemTab::doUpdate(Renderer& renderer) {
     }
     if (m_gpuGraph != nullptr) {
       m_gpuGraph->setCount1(0.0f);
+      m_gpuGraph->setCount2(0.0f);
     }
     if (m_netGraph != nullptr) {
       m_netGraph->setCount1(0.0f);
@@ -467,17 +488,20 @@ void SystemTab::updateGraphs(Renderer& renderer) {
     return;
   }
 
-  const int n = static_cast<int>(hist.size());
-  const int texSize = n + 1;
-  const auto sz = static_cast<std::size_t>(texSize);
+  const auto n = hist.size();
+  const int texSize = static_cast<int>(n + 1U);
+  const auto sz = n + 1U;
+  const auto last = n;
+  const auto prev = n - 1U;
+  const auto prev2 = n - 2U;
 
   // CPU: usage (primary) + CPU temp (secondary)
   if (m_cpuGraph != nullptr) {
     std::vector<float> usage(sz);
     std::vector<float> cpuTemp(sz);
-    for (int i = 0; i < n; ++i) {
-      const auto& s = hist[static_cast<std::size_t>(i)];
-      usage[static_cast<std::size_t>(i)] = static_cast<float>(std::clamp(s.cpuUsagePercent / 100.0, 0.0, 1.0));
+    for (std::size_t i = 0; i < n; ++i) {
+      const auto& s = hist[i];
+      usage[i] = static_cast<float>(std::clamp(s.cpuUsagePercent / 100.0, 0.0, 1.0));
 
       if (s.cpuTempC.has_value()) {
         const double t = *s.cpuTempC;
@@ -486,12 +510,11 @@ void SystemTab::updateGraphs(Renderer& renderer) {
         if (t > m_cpuTempMax)
           m_cpuTempMax = t;
         const double range = m_cpuTempMax - m_cpuTempMin;
-        cpuTemp[static_cast<std::size_t>(i)] =
-            range > 0.0 ? static_cast<float>(std::clamp((t - m_cpuTempMin) / range, 0.0, 1.0)) : 0.5f;
+        cpuTemp[i] = range > 0.0 ? static_cast<float>(std::clamp((t - m_cpuTempMin) / range, 0.0, 1.0)) : 0.5f;
       }
     }
-    usage[n] = std::clamp(usage[n - 1] + (usage[n - 1] - usage[n - 2]) * 0.5f, 0.0f, 1.0f);
-    cpuTemp[n] = std::clamp(cpuTemp[n - 1] + (cpuTemp[n - 1] - cpuTemp[n - 2]) * 0.5f, 0.0f, 1.0f);
+    usage[last] = std::clamp(usage[prev] + (usage[prev] - usage[prev2]) * 0.5f, 0.0f, 1.0f);
+    cpuTemp[last] = std::clamp(cpuTemp[prev] + (cpuTemp[prev] - cpuTemp[prev2]) * 0.5f, 0.0f, 1.0f);
     m_cpuGraph->setData(renderer.textureManager(), usage.data(), texSize, cpuTemp.data(), texSize);
     m_cpuGraph->setCount1(static_cast<float>(n));
     m_cpuGraph->setCount2(static_cast<float>(n));
@@ -500,21 +523,27 @@ void SystemTab::updateGraphs(Renderer& renderer) {
   // Memory
   if (m_ramGraph != nullptr) {
     std::vector<float> ram(sz);
-    for (int i = 0; i < n; ++i) {
-      ram[static_cast<std::size_t>(i)] =
-          static_cast<float>(std::clamp(hist[static_cast<std::size_t>(i)].ramUsagePercent / 100.0, 0.0, 1.0));
+    for (std::size_t i = 0; i < n; ++i) {
+      ram[i] = static_cast<float>(std::clamp(hist[i].ramUsagePercent / 100.0, 0.0, 1.0));
     }
-    ram[n] = std::clamp(ram[n - 1] + (ram[n - 1] - ram[n - 2]) * 0.5f, 0.0f, 1.0f);
+    ram[last] = std::clamp(ram[prev] + (ram[prev] - ram[prev2]) * 0.5f, 0.0f, 1.0f);
     m_ramGraph->setData(renderer.textureManager(), ram.data(), texSize, nullptr, 0);
     m_ramGraph->setCount1(static_cast<float>(n));
   }
 
-  // GPU temp
+  // GPU: VRAM usage (primary) + temperature (secondary)
   if (m_gpuGraph != nullptr) {
     bool hasGpuTemp = false;
+    bool hasGpuVram = false;
+    std::vector<float> gpuVram(sz);
     std::vector<float> gpuTemp(sz);
-    for (int i = 0; i < n; ++i) {
-      const auto& s = hist[static_cast<std::size_t>(i)];
+    for (std::size_t i = 0; i < n; ++i) {
+      const auto& s = hist[i];
+      if (s.gpuVramUsedBytes.has_value() && s.gpuVramTotalBytes.has_value() && *s.gpuVramTotalBytes > 0) {
+        hasGpuVram = true;
+        gpuVram[i] = static_cast<float>(
+            std::clamp(static_cast<double>(*s.gpuVramUsedBytes) / static_cast<double>(*s.gpuVramTotalBytes), 0.0, 1.0));
+      }
       if (s.gpuTempC.has_value()) {
         hasGpuTemp = true;
         const double t = *s.gpuTempC;
@@ -523,19 +552,27 @@ void SystemTab::updateGraphs(Renderer& renderer) {
         if (t > m_gpuTempMax)
           m_gpuTempMax = t;
         const double range = m_gpuTempMax - m_gpuTempMin;
-        gpuTemp[static_cast<std::size_t>(i)] =
-            range > 0.0 ? static_cast<float>(std::clamp((t - m_gpuTempMin) / range, 0.0, 1.0)) : 0.5f;
+        gpuTemp[i] = range > 0.0 ? static_cast<float>(std::clamp((t - m_gpuTempMin) / range, 0.0, 1.0)) : 0.5f;
       }
     }
+    if (hasGpuVram) {
+      gpuVram[last] = std::clamp(gpuVram[prev] + (gpuVram[prev] - gpuVram[prev2]) * 0.5f, 0.0f, 1.0f);
+    }
     if (hasGpuTemp) {
-      gpuTemp[n] = std::clamp(gpuTemp[n - 1] + (gpuTemp[n - 1] - gpuTemp[n - 2]) * 0.5f, 0.0f, 1.0f);
-      m_gpuGraph->setData(renderer.textureManager(), gpuTemp.data(), texSize, nullptr, 0);
-      m_gpuGraph->setCount1(static_cast<float>(n));
+      gpuTemp[last] = std::clamp(gpuTemp[prev] + (gpuTemp[prev] - gpuTemp[prev2]) * 0.5f, 0.0f, 1.0f);
+    }
+    if (hasGpuVram || hasGpuTemp) {
+      m_gpuGraph->setData(renderer.textureManager(), hasGpuVram ? gpuVram.data() : nullptr, hasGpuVram ? texSize : 0,
+                          hasGpuTemp ? gpuTemp.data() : nullptr, hasGpuTemp ? texSize : 0);
+      m_gpuGraph->setCount1(hasGpuVram ? static_cast<float>(n) : 0.0f);
+      m_gpuGraph->setCount2(hasGpuTemp ? static_cast<float>(n) : 0.0f);
     } else {
       m_gpuGraph->setCount1(0.0f);
+      m_gpuGraph->setCount2(0.0f);
     }
-    if (hasGpuTemp != m_gpuVisible) {
-      m_gpuVisible = hasGpuTemp;
+    const bool hasGpuData = hasGpuVram || hasGpuTemp;
+    if (hasGpuData != m_gpuVisible) {
+      m_gpuVisible = hasGpuData;
       updateGpuVisibility();
     }
   }
@@ -543,21 +580,21 @@ void SystemTab::updateGraphs(Renderer& renderer) {
   // Network
   if (m_netGraph != nullptr) {
     double maxVal = kNetMinScaleBps;
-    for (int i = 0; i < n; ++i) {
-      const auto& s = hist[static_cast<std::size_t>(i)];
+    for (std::size_t i = 0; i < n; ++i) {
+      const auto& s = hist[i];
       maxVal = std::max({maxVal, s.netRxBytesPerSec, s.netTxBytesPerSec});
     }
     m_netPeak = maxVal;
 
     std::vector<float> rx(sz);
     std::vector<float> tx(sz);
-    for (int i = 0; i < n; ++i) {
-      const auto& s = hist[static_cast<std::size_t>(i)];
-      rx[static_cast<std::size_t>(i)] = static_cast<float>(std::clamp(s.netRxBytesPerSec / m_netPeak, 0.0, 1.0));
-      tx[static_cast<std::size_t>(i)] = static_cast<float>(std::clamp(s.netTxBytesPerSec / m_netPeak, 0.0, 1.0));
+    for (std::size_t i = 0; i < n; ++i) {
+      const auto& s = hist[i];
+      rx[i] = static_cast<float>(std::clamp(s.netRxBytesPerSec / m_netPeak, 0.0, 1.0));
+      tx[i] = static_cast<float>(std::clamp(s.netTxBytesPerSec / m_netPeak, 0.0, 1.0));
     }
-    rx[n] = std::clamp(rx[n - 1] + (rx[n - 1] - rx[n - 2]) * 0.5f, 0.0f, 1.0f);
-    tx[n] = std::clamp(tx[n - 1] + (tx[n - 1] - tx[n - 2]) * 0.5f, 0.0f, 1.0f);
+    rx[last] = std::clamp(rx[prev] + (rx[prev] - rx[prev2]) * 0.5f, 0.0f, 1.0f);
+    tx[last] = std::clamp(tx[prev] + (tx[prev] - tx[prev2]) * 0.5f, 0.0f, 1.0f);
     m_netGraph->setData(renderer.textureManager(), rx.data(), texSize, tx.data(), texSize);
     m_netGraph->setCount1(static_cast<float>(n));
     m_netGraph->setCount2(static_cast<float>(n));
@@ -576,6 +613,7 @@ void SystemTab::updateGraphs(Renderer& renderer) {
   }
   if (m_gpuGraph != nullptr) {
     m_gpuGraph->setScroll1(m_scrollProgress);
+    m_gpuGraph->setScroll2(m_scrollProgress);
   }
   if (m_netGraph != nullptr) {
     m_netGraph->setScroll1(m_scrollProgress);
@@ -605,6 +643,9 @@ void SystemTab::syncLabels() {
     }
     if (m_gpuTempLabel != nullptr) {
       m_gpuTempLabel->setText("--");
+    }
+    if (m_gpuVramLabel != nullptr) {
+      m_gpuVramLabel->setText("--");
     }
     if (m_ramLabel != nullptr) {
       m_ramLabel->setText("--");
@@ -637,15 +678,18 @@ void SystemTab::syncLabels() {
       m_gpuTempLabel->setText("--");
     }
   }
+  if (m_gpuVramLabel != nullptr) {
+    m_gpuVramLabel->setText(formatGpuVramUsed(stats));
+  }
   if (m_ramLabel != nullptr) {
-    const double usedGb = static_cast<double>(stats.ramUsedMb) / 1024.0;
-    m_ramLabel->setText(std::format("{:.1f} GB · {:.0f}%", usedGb, stats.ramUsagePercent));
+    m_ramLabel->setText(FormatUnits::formatBinaryMibAsGib(stats.ramUsedMb) +
+                        std::format(" · {:.0f}%", stats.ramUsagePercent));
   }
   if (m_rxLabel != nullptr) {
-    m_rxLabel->setText(formatBytesPerSec(stats.netRxBytesPerSec));
+    m_rxLabel->setText(FormatUnits::formatDecimalBytesPerSecond(stats.netRxBytesPerSec));
   }
   if (m_txLabel != nullptr) {
-    m_txLabel->setText(formatBytesPerSec(stats.netTxBytesPerSec));
+    m_txLabel->setText(FormatUnits::formatDecimalBytesPerSecond(stats.netTxBytesPerSec));
   }
 
   // System info
@@ -692,17 +736,4 @@ float SystemTab::scrollProgressForSample(std::chrono::steady_clock::time_point s
   const auto elapsed = std::chrono::steady_clock::now() - sampledAt;
   const auto clamped = std::clamp(elapsed, std::chrono::steady_clock::duration::zero(), kSampleInterval);
   return std::chrono::duration<float>(clamped).count() / std::chrono::duration<float>(kSampleInterval).count();
-}
-
-std::string SystemTab::formatBytesPerSec(double bytesPerSec) {
-  if (bytesPerSec >= 1024.0 * 1024.0 * 1024.0) {
-    return std::format("{:.1f} GB/s", bytesPerSec / (1024.0 * 1024.0 * 1024.0));
-  }
-  if (bytesPerSec >= 1024.0 * 1024.0) {
-    return std::format("{:.1f} MB/s", bytesPerSec / (1024.0 * 1024.0));
-  }
-  if (bytesPerSec >= 1024.0) {
-    return std::format("{:.1f} KB/s", bytesPerSec / 1024.0);
-  }
-  return std::format("{:.0f} B/s", bytesPerSec);
 }

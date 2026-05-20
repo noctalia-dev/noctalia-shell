@@ -3,6 +3,7 @@
 #include "render/core/renderer.h"
 #include "render/scene/graph_node.h"
 #include "render/scene/node.h"
+#include "system/format_units.h"
 #include "system/system_monitor_service.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
@@ -18,20 +19,9 @@ namespace {
   constexpr float kBaseWidth = 180.0f;
   constexpr float kBaseHeight = 80.0f;
   constexpr float kGraphLineWidth = 0.75f;
-  const auto kSampleInterval = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::seconds(1));
-
   bool needsCpuTemp(DesktopSysmonStat stat) { return stat == DesktopSysmonStat::CpuTemp; }
   bool needsGpuTemp(DesktopSysmonStat stat) { return stat == DesktopSysmonStat::GpuTemp; }
-
-  [[nodiscard]] std::string formatNetSpeed(double bytesPerSec) {
-    if (bytesPerSec < 1024.0)
-      return std::format("{:.0f}B", bytesPerSec);
-    if (bytesPerSec < 1024.0 * 1024.0)
-      return std::format("{:.0f}K", bytesPerSec / 1024.0);
-    if (bytesPerSec < 1024.0 * 1024.0 * 1024.0)
-      return std::format("{:.1f}M", bytesPerSec / (1024.0 * 1024.0));
-    return std::format("{:.1f}G", bytesPerSec / (1024.0 * 1024.0 * 1024.0));
-  }
+  bool needsGpuVram(DesktopSysmonStat stat) { return stat == DesktopSysmonStat::GpuVram; }
 
 } // namespace
 
@@ -45,10 +35,14 @@ DesktopSysmonWidget::DesktopSysmonWidget(SystemMonitorService* monitor, DesktopS
       m_monitor->retainCpuTemp();
     if (needsGpuTemp(m_stat))
       m_monitor->retainGpuTemp();
+    if (needsGpuVram(m_stat))
+      m_monitor->retainGpuVram();
     if (m_stat2.has_value() && needsCpuTemp(*m_stat2))
       m_monitor->retainCpuTemp();
     if (m_stat2.has_value() && needsGpuTemp(*m_stat2))
       m_monitor->retainGpuTemp();
+    if (m_stat2.has_value() && needsGpuVram(*m_stat2))
+      m_monitor->retainGpuVram();
   }
 }
 
@@ -58,10 +52,14 @@ DesktopSysmonWidget::~DesktopSysmonWidget() {
       m_monitor->releaseCpuTemp();
     if (needsGpuTemp(m_stat))
       m_monitor->releaseGpuTemp();
+    if (needsGpuVram(m_stat))
+      m_monitor->releaseGpuVram();
     if (m_stat2.has_value() && needsCpuTemp(*m_stat2))
       m_monitor->releaseCpuTemp();
     if (m_stat2.has_value() && needsGpuTemp(*m_stat2))
       m_monitor->releaseGpuTemp();
+    if (m_stat2.has_value() && needsGpuVram(*m_stat2))
+      m_monitor->releaseGpuVram();
   }
 }
 
@@ -230,6 +228,12 @@ double DesktopSysmonWidget::normalizedFromStats(DesktopSysmonStat stat, const Sy
     }
     return 0.0;
 
+  case DesktopSysmonStat::GpuVram:
+    if (stats.gpuVramUsedBytes.has_value() && stats.gpuVramTotalBytes.has_value() && *stats.gpuVramTotalBytes > 0) {
+      return static_cast<double>(*stats.gpuVramUsedBytes) / static_cast<double>(*stats.gpuVramTotalBytes);
+    }
+    return 0.0;
+
   case DesktopSysmonStat::RamPct:
     return stats.ramUsagePercent / 100.0;
 
@@ -276,6 +280,13 @@ std::string DesktopSysmonWidget::formatValueFor(DesktopSysmonStat stat) const {
     }
     return "--";
 
+  case DesktopSysmonStat::GpuVram:
+    if (stats.gpuVramUsedBytes.has_value() && stats.gpuVramTotalBytes.has_value() && *stats.gpuVramTotalBytes > 0) {
+      return std::format("{:.0f}%", 100.0 * static_cast<double>(*stats.gpuVramUsedBytes) /
+                                        static_cast<double>(*stats.gpuVramTotalBytes));
+    }
+    return "--";
+
   case DesktopSysmonStat::RamPct:
     return std::format("{:.0f}%", stats.ramUsagePercent);
 
@@ -287,10 +298,10 @@ std::string DesktopSysmonWidget::formatValueFor(DesktopSysmonStat stat) const {
     return "--";
 
   case DesktopSysmonStat::NetRx:
-    return formatNetSpeed(stats.netRxBytesPerSec);
+    return FormatUnits::formatDecimalBytesPerSecond(stats.netRxBytesPerSec);
 
   case DesktopSysmonStat::NetTx:
-    return formatNetSpeed(stats.netTxBytesPerSec);
+    return FormatUnits::formatDecimalBytesPerSecond(stats.netTxBytesPerSec);
   }
 
   return "--";
@@ -325,27 +336,29 @@ void DesktopSysmonWidget::updateGraph(Renderer& renderer) {
     return;
   }
 
-  const int n = static_cast<int>(hist.size());
-  const int texSize = n + 1;
+  const auto n = hist.size();
+  const int texSize = static_cast<int>(n + 1U);
+  const auto last = n;
+  const auto prev = n - 1U;
+  const auto prev2 = n - 2U;
 
-  std::vector<float> data1(static_cast<std::size_t>(texSize));
-  for (int i = 0; i < n; ++i) {
-    data1[static_cast<std::size_t>(i)] = static_cast<float>(
-        std::clamp(normalizedFromStats(m_stat, hist[static_cast<std::size_t>(i)], m_tempMin1, m_tempMax1), 0.0, 1.0));
+  std::vector<float> data1(n + 1U);
+  for (std::size_t i = 0; i < n; ++i) {
+    data1[i] = static_cast<float>(std::clamp(normalizedFromStats(m_stat, hist[i], m_tempMin1, m_tempMax1), 0.0, 1.0));
   }
-  const float last1 = data1[n - 1];
-  const float prev1 = data1[n - 2];
-  data1[n] = std::clamp(last1 + (last1 - prev1) * 0.5f, 0.0f, 1.0f);
+  const float last1 = data1[prev];
+  const float prev1 = data1[prev2];
+  data1[last] = std::clamp(last1 + (last1 - prev1) * 0.5f, 0.0f, 1.0f);
 
   if (m_stat2.has_value()) {
-    std::vector<float> data2(static_cast<std::size_t>(texSize));
-    for (int i = 0; i < n; ++i) {
-      data2[static_cast<std::size_t>(i)] = static_cast<float>(std::clamp(
-          normalizedFromStats(*m_stat2, hist[static_cast<std::size_t>(i)], m_tempMin2, m_tempMax2), 0.0, 1.0));
+    std::vector<float> data2(n + 1U);
+    for (std::size_t i = 0; i < n; ++i) {
+      data2[i] =
+          static_cast<float>(std::clamp(normalizedFromStats(*m_stat2, hist[i], m_tempMin2, m_tempMax2), 0.0, 1.0));
     }
-    const float last2 = data2[n - 1];
-    const float prev2 = data2[n - 2];
-    data2[n] = std::clamp(last2 + (last2 - prev2) * 0.5f, 0.0f, 1.0f);
+    const float last2 = data2[prev];
+    const float previous2 = data2[prev2];
+    data2[last] = std::clamp(last2 + (last2 - previous2) * 0.5f, 0.0f, 1.0f);
 
     m_graphNode->setData(renderer.textureManager(), data1.data(), texSize, data2.data(), texSize);
     m_graphNode->setCount2(static_cast<float>(n));
@@ -364,14 +377,20 @@ void DesktopSysmonWidget::updateGraph(Renderer& renderer) {
   requestRedraw();
 }
 
-float DesktopSysmonWidget::scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt) {
+float DesktopSysmonWidget::scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt) const {
   if (sampledAt == std::chrono::steady_clock::time_point{}) {
     return 1.0f;
   }
 
+  const auto sampleInterval = m_monitor != nullptr ? m_monitor->historySampleInterval()
+                                                   : std::chrono::steady_clock::duration{std::chrono::seconds(1)};
+  if (sampleInterval.count() <= 0) {
+    return 1.0f;
+  }
+
   const auto elapsed = std::chrono::steady_clock::now() - sampledAt;
-  const auto clamped = std::clamp(elapsed, std::chrono::steady_clock::duration::zero(), kSampleInterval);
-  return std::chrono::duration<float>(clamped).count() / std::chrono::duration<float>(kSampleInterval).count();
+  const auto clamped = std::clamp(elapsed, std::chrono::steady_clock::duration::zero(), sampleInterval);
+  return std::chrono::duration<float>(clamped).count() / std::chrono::duration<float>(sampleInterval).count();
 }
 
 const char* DesktopSysmonWidget::glyphName(DesktopSysmonStat stat) {
@@ -382,6 +401,8 @@ const char* DesktopSysmonWidget::glyphName(DesktopSysmonStat stat) {
     return "cpu-temperature";
   case DesktopSysmonStat::GpuTemp:
     return "temperature";
+  case DesktopSysmonStat::GpuVram:
+    return "memory";
   case DesktopSysmonStat::RamPct:
     return "memory";
   case DesktopSysmonStat::SwapPct:

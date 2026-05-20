@@ -4,6 +4,7 @@
 #include "render/scene/graph_node.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
+#include "system/format_units.h"
 #include "system/system_monitor_service.h"
 #include "ui/controls/box.h"
 #include "ui/controls/glyph.h"
@@ -27,13 +28,18 @@ namespace {
   }
 
   constexpr float kGraphLineWidth = 0.75f;
-  const auto kSampleInterval = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::seconds(1));
   constexpr auto kSamplePublishSlack = std::chrono::milliseconds(20);
   constexpr auto kSampleRetryDelay = std::chrono::milliseconds(25);
   constexpr auto kInitialSampleRetryDelay = std::chrono::milliseconds(250);
 
+  [[nodiscard]] std::chrono::steady_clock::duration historyInterval(const SystemMonitorService* monitor) {
+    return monitor != nullptr ? monitor->historySampleInterval()
+                              : std::chrono::steady_clock::duration{std::chrono::seconds(1)};
+  }
+
   bool needsCpuTemp(SysmonStat stat) { return stat == SysmonStat::CpuTemp; }
   bool needsGpuTemp(SysmonStat stat) { return stat == SysmonStat::GpuTemp; }
+  bool needsGpuVram(SysmonStat stat) { return stat == SysmonStat::GpuVram; }
 
   const char* statDisplayName(SysmonStat stat) {
     switch (stat) {
@@ -43,6 +49,8 @@ namespace {
       return "CPU Temp";
     case SysmonStat::GpuTemp:
       return "GPU Temp";
+    case SysmonStat::GpuVram:
+      return "GPU VRAM";
     case SysmonStat::RamUsed:
     case SysmonStat::RamPct:
       return "RAM";
@@ -58,16 +66,6 @@ namespace {
     return "System";
   }
 
-  [[nodiscard]] std::string formatNetSpeed(double bytesPerSec) {
-    if (bytesPerSec < 1024.0)
-      return std::format("{:.0f}B", bytesPerSec);
-    if (bytesPerSec < 1024.0 * 1024.0)
-      return std::format("{:.0f}K", bytesPerSec / 1024.0);
-    if (bytesPerSec < 1024.0 * 1024.0 * 1024.0)
-      return std::format("{:.1f}M", bytesPerSec / (1024.0 * 1024.0));
-    return std::format("{:.1f}G", bytesPerSec / (1024.0 * 1024.0 * 1024.0));
-  }
-
 } // namespace
 
 SysmonWidget::SysmonWidget(SystemMonitorService* monitor, wl_output* output, SysmonStat stat, std::string diskPath,
@@ -80,6 +78,9 @@ SysmonWidget::SysmonWidget(SystemMonitorService* monitor, wl_output* output, Sys
     }
     if (needsGpuTemp(m_stat)) {
       m_monitor->retainGpuTemp();
+    }
+    if (needsGpuVram(m_stat)) {
+      m_monitor->retainGpuVram();
     }
     if (m_stat == SysmonStat::DiskPct && !m_diskPath.empty()) {
       m_monitor->retainDiskPath(m_diskPath);
@@ -94,6 +95,9 @@ SysmonWidget::~SysmonWidget() {
     }
     if (needsGpuTemp(m_stat)) {
       m_monitor->releaseGpuTemp();
+    }
+    if (needsGpuVram(m_stat)) {
+      m_monitor->releaseGpuVram();
     }
     if (m_stat == SysmonStat::DiskPct && !m_diskPath.empty()) {
       m_monitor->releaseDiskPath(m_diskPath);
@@ -364,7 +368,7 @@ void SysmonWidget::scheduleNextUpdate(std::chrono::steady_clock::time_point late
   }
 
   const auto now = std::chrono::steady_clock::now();
-  const auto nextExpectedAt = latestSampleAt + kSampleInterval + kSamplePublishSlack;
+  const auto nextExpectedAt = latestSampleAt + historyInterval(m_monitor) + kSamplePublishSlack;
   const auto delay = now < nextExpectedAt ? std::chrono::duration_cast<std::chrono::milliseconds>(nextExpectedAt - now)
                                           : kSampleRetryDelay;
   m_updateTimer.start(delay, [this]() { requestUpdate(); });
@@ -428,14 +432,19 @@ void SysmonWidget::updateGraph(Renderer& renderer) {
   requestRedraw();
 }
 
-float SysmonWidget::scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt) {
+float SysmonWidget::scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt) const {
   if (sampledAt == std::chrono::steady_clock::time_point{}) {
     return 1.0f;
   }
 
+  const auto sampleInterval = historyInterval(m_monitor);
+  if (sampleInterval.count() <= 0) {
+    return 1.0f;
+  }
+
   const auto elapsed = std::chrono::steady_clock::now() - sampledAt;
-  const auto clamped = std::clamp(elapsed, std::chrono::steady_clock::duration::zero(), kSampleInterval);
-  return std::chrono::duration<float>(clamped).count() / std::chrono::duration<float>(kSampleInterval).count();
+  const auto clamped = std::clamp(elapsed, std::chrono::steady_clock::duration::zero(), sampleInterval);
+  return std::chrono::duration<float>(clamped).count() / std::chrono::duration<float>(sampleInterval).count();
 }
 
 double SysmonWidget::normalizedFromStats(SysmonStat stat, const SystemStats& stats, double& tempMin, double& tempMax) {
@@ -474,6 +483,12 @@ double SysmonWidget::normalizedFromStats(SysmonStat stat, const SystemStats& sta
         return 0.5;
       }
       return std::clamp((temp - tempMin) / range, 0.0, 1.0);
+    }
+    return 0.0;
+
+  case SysmonStat::GpuVram:
+    if (stats.gpuVramUsedBytes.has_value() && stats.gpuVramTotalBytes.has_value() && *stats.gpuVramTotalBytes > 0) {
+      return static_cast<double>(*stats.gpuVramUsedBytes) / static_cast<double>(*stats.gpuVramTotalBytes);
     }
     return 0.0;
 
@@ -549,11 +564,15 @@ std::string SysmonWidget::formatValue() const {
     }
     return "--";
 
-  case SysmonStat::RamUsed:
-    if (stats.ramUsedMb >= 1024) {
-      return std::format("{:.1f}G", static_cast<double>(stats.ramUsedMb) / 1024.0);
+  case SysmonStat::GpuVram:
+    if (stats.gpuVramUsedBytes.has_value() && stats.gpuVramTotalBytes.has_value() && *stats.gpuVramTotalBytes > 0) {
+      return std::format("{:.0f}%", 100.0 * static_cast<double>(*stats.gpuVramUsedBytes) /
+                                        static_cast<double>(*stats.gpuVramTotalBytes));
     }
-    return std::format("{}M", stats.ramUsedMb);
+    return "--";
+
+  case SysmonStat::RamUsed:
+    return FormatUnits::formatBinaryMib(stats.ramUsedMb);
 
   case SysmonStat::RamPct:
     return std::format("{:.0f}%", stats.ramUsagePercent);
@@ -566,10 +585,10 @@ std::string SysmonWidget::formatValue() const {
     return "--";
 
   case SysmonStat::NetRx:
-    return formatNetSpeed(stats.netRxBytesPerSec);
+    return FormatUnits::formatDecimalBytesPerSecond(stats.netRxBytesPerSec);
 
   case SysmonStat::NetTx:
-    return formatNetSpeed(stats.netTxBytesPerSec);
+    return FormatUnits::formatDecimalBytesPerSecond(stats.netTxBytesPerSec);
 
   case SysmonStat::DiskPct:
     break; // handled above
@@ -586,6 +605,8 @@ const char* SysmonWidget::glyphName(SysmonStat stat) {
     return "cpu-temperature";
   case SysmonStat::GpuTemp:
     return "temperature";
+  case SysmonStat::GpuVram:
+    return "memory";
   case SysmonStat::RamUsed:
   case SysmonStat::RamPct:
     return "memory";
