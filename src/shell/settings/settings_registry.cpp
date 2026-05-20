@@ -944,22 +944,22 @@ namespace settings {
     entries.push_back(makeEntry("services", "audio", tr("settings.schema.services.sound-volume.label"),
                                 tr("settings.schema.services.sound-volume.description"), {"audio", "sound_volume"},
                                 SliderSetting{cfg.audio.soundVolume, 0.0f, 1.0f, 0.01f, false}, "sound"));
-    entries.push_back(makeEntry(
-        "services", "audio", tr("settings.schema.services.volume-change-sound.label"),
-        tr("settings.schema.services.volume-change-sound.description"), {"audio", "volume_change_sound"},
-        TextSetting{.value = cfg.audio.volumeChangeSound,
-                    .placeholder = tr("settings.schema.services.volume-change-sound.placeholder"),
-                    .browseMode = TextSettingBrowseMode::OpenFile,
-                    .browseFileExtensions = {".wav", ".ogg", ".oga", ".mp3", ".flac", ".opus", ".m4a", ".aac"}},
-        "sound path file", true));
-    entries.push_back(makeEntry(
-        "services", "audio", tr("settings.schema.services.notification-sound.label"),
-        tr("settings.schema.services.notification-sound.description"), {"audio", "notification_sound"},
-        TextSetting{.value = cfg.audio.notificationSound,
-                    .placeholder = tr("settings.schema.services.notification-sound.placeholder"),
-                    .browseMode = TextSettingBrowseMode::OpenFile,
-                    .browseFileExtensions = {".wav", ".ogg", ".oga", ".mp3", ".flac", ".opus", ".m4a", ".aac"}},
-        "sound path file", true));
+    entries.push_back(
+        makeEntry("services", "audio", tr("settings.schema.services.volume-change-sound.label"),
+                  tr("settings.schema.services.volume-change-sound.description"), {"audio", "volume_change_sound"},
+                  TextSetting{.value = cfg.audio.volumeChangeSound,
+                              .placeholder = tr("settings.schema.services.volume-change-sound.placeholder"),
+                              .browseMode = TextSettingBrowseMode::OpenFile,
+                              .browseFileExtensions = {".wav"}},
+                  "sound path file", true));
+    entries.push_back(
+        makeEntry("services", "audio", tr("settings.schema.services.notification-sound.label"),
+                  tr("settings.schema.services.notification-sound.description"), {"audio", "notification_sound"},
+                  TextSetting{.value = cfg.audio.notificationSound,
+                              .placeholder = tr("settings.schema.services.notification-sound.placeholder"),
+                              .browseMode = TextSettingBrowseMode::OpenFile,
+                              .browseFileExtensions = {".wav"}},
+                  "sound path file", true));
     entries.push_back(makeEntry("services", "media", tr("settings.schema.services.mpris-blacklist.label"),
                                 tr("settings.schema.services.mpris-blacklist.description"),
                                 {"shell", "mpris", "blacklist"}, ListSetting{.items = cfg.shell.mpris.blacklist},

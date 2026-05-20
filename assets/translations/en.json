@@ -1940,12 +1940,12 @@
         "volume-change-sound": {
           "label": "Volume Change Sound",
           "description": "Sound file used for volume feedback",
-          "placeholder": "/path/to/sound.ogg"
+          "placeholder": "/path/to/sound.wav"
         },
         "notification-sound": {
           "label": "Notification Sound",
           "description": "Sound file used for notification feedback",
-          "placeholder": "/path/to/sound.ogg"
+          "placeholder": "/path/to/sound.wav"
         },
         "mpris-blacklist": {
           "label": "MPRIS player blacklist",
