@@ -1278,7 +1278,7 @@
         },
         "script": {
           "label": "Script",
-          "description": "Script path or command"
+          "description": "Path to the lua script"
         },
         "scope": {
           "label": "Runtime Scope",
