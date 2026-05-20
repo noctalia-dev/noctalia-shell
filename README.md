@@ -48,14 +48,16 @@ sudo apt install meson g++ just \
 
 ### AerynOS
 ```sh
-sudo moss it meson g++ just \
+sudo moss it meson build-essential \
   wayland-devel wayland-protocols-devel \
   mesa-libegl-devel mesa-libgl-devel \
   freetype-devel fontconfig-devel \
   cairo-devel pango-devel \
   libxkbcommon-devel glib2-devel \
   sdbus-cpp-devel pipewire-devel \
-  linux-pam-devel polkit-devel curl-devel libwebp-devel librsvg-devel extra-cmake-modules
+  linux-pam-devel polkit-devel \
+  curl-devel libwebp-devel librsvg-devel \
+  extra-cmake-modules 
 ```
 
 ### VoidLinux
