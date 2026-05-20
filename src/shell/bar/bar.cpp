@@ -343,6 +343,26 @@ namespace {
     };
   }
 
+  [[nodiscard]] InputRect barContentInputRegion(const BarConfig& cfg, const ShellConfig::ShadowConfig& shadow,
+                                                int surfW, int surfH) {
+    const auto barVisual = computeBarVisualGeometry(cfg, shadow, static_cast<float>(surfW), static_cast<float>(surfH));
+    return InputRect{static_cast<int>(barVisual.x), static_cast<int>(barVisual.y), static_cast<int>(barVisual.width),
+                     static_cast<int>(barVisual.height)};
+  }
+
+  [[nodiscard]] InputRect autoHideTriggerInputRegion(const BarConfig& cfg, int surfW, int surfH) {
+    const bool isVertical = (cfg.position == "left" || cfg.position == "right");
+    const bool isBottom = cfg.position == "bottom";
+    if (!isVertical) {
+      const int triggerY = isBottom ? std::max(0, surfH - kAutoHideTriggerRegionPx) : 0;
+      return InputRect{0, triggerY, surfW, kAutoHideTriggerRegionPx};
+    }
+    if (cfg.position == "left") {
+      return InputRect{std::max(0, surfW - kAutoHideTriggerRegionPx), 0, kAutoHideTriggerRegionPx, surfH};
+    }
+    return InputRect{0, 0, kAutoHideTriggerRegionPx, surfH};
+  }
+
   std::pair<float, float> computeAutoHideHiddenDelta(bool isVertical, bool isBottom, bool isRight, float w, float h,
                                                      float contentLeft, float contentTop, float contentRight,
                                                      float contentBottom) {
@@ -413,6 +433,7 @@ namespace {
       node->setSize(barAreaW, barAreaH);
     };
 
+    instance.shadow->setHitTestVisible(false);
     instance.shadow->setVisible(true);
     configureShadow(instance.shadow, shadowX, shadowY);
 
@@ -1512,19 +1533,9 @@ void Bar::startHideFadeOut(BarInstance& instance) {
         if (inst->surface == nullptr) {
           return;
         }
-        const bool isVertical = (inst->barConfig.position == "left" || inst->barConfig.position == "right");
-        const bool isBottom = inst->barConfig.position == "bottom";
         const int surfW = static_cast<int>(inst->surface->width());
         const int surfH = static_cast<int>(inst->surface->height());
-        if (!isVertical) {
-          const int triggerY = isBottom ? std::max(0, surfH - kAutoHideTriggerRegionPx) : 0;
-          inst->surface->setInputRegion({InputRect{0, triggerY, surfW, kAutoHideTriggerRegionPx}});
-        } else if (inst->barConfig.position == "left") {
-          inst->surface->setInputRegion(
-              {InputRect{std::max(0, surfW - kAutoHideTriggerRegionPx), 0, kAutoHideTriggerRegionPx, surfH}});
-        } else {
-          inst->surface->setInputRegion({InputRect{0, 0, kAutoHideTriggerRegionPx, surfH}});
-        }
+        inst->surface->setInputRegion({autoHideTriggerInputRegion(inst->barConfig, surfW, surfH)});
       });
   if (instance.surface != nullptr) {
     instance.surface->requestRedraw();
@@ -1580,6 +1591,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     // Shadow — bar shape copy rendered with large SDF softness to simulate a blurred drop shadow.
     if (shadowSize > 0.0f) {
       auto shadow = std::make_unique<Box>();
+      shadow->setHitTestVisible(false);
       instance.shadow = static_cast<Box*>(instance.slideRoot->addChild(std::move(shadow)));
 
       auto leftClip = std::make_unique<Node>();
@@ -1709,26 +1721,12 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   }
   syncBarSlideLayerTransform(instance);
 
-  const InputRect barRect{
-      static_cast<int>(barAreaX),
-      static_cast<int>(barAreaY),
-      static_cast<int>(barAreaW),
-      static_cast<int>(barAreaH),
-  };
+  const int surfW = static_cast<int>(w);
+  const int surfH = static_cast<int>(h);
   if (instance.barConfig.autoHide && instance.hideOpacity < 0.5f) {
-    const int surfW = static_cast<int>(w);
-    const int surfH = static_cast<int>(h);
-    if (!isVertical) {
-      const int triggerY = isBottom ? std::max(0, surfH - kAutoHideTriggerRegionPx) : 0;
-      instance.surface->setInputRegion({InputRect{0, triggerY, surfW, kAutoHideTriggerRegionPx}});
-    } else if (instance.barConfig.position == "left") {
-      instance.surface->setInputRegion(
-          {InputRect{std::max(0, surfW - kAutoHideTriggerRegionPx), 0, kAutoHideTriggerRegionPx, surfH}});
-    } else {
-      instance.surface->setInputRegion({InputRect{0, 0, kAutoHideTriggerRegionPx, surfH}});
-    }
+    instance.surface->setInputRegion({autoHideTriggerInputRegion(instance.barConfig, surfW, surfH)});
   } else {
-    instance.surface->setInputRegion({barRect});
+    instance.surface->setInputRegion({barContentInputRegion(instance.barConfig, shadowConfig, surfW, surfH)});
   }
   applyBarCompositorBlur(instance);
 }
@@ -1941,7 +1939,9 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
       if (m_hoveredInstance->surface != nullptr) {
         const int sw = static_cast<int>(m_hoveredInstance->surface->width());
         const int sh = static_cast<int>(m_hoveredInstance->surface->height());
-        m_hoveredInstance->surface->setInputRegion({InputRect{0, 0, sw, sh}});
+        const auto& shadowConfig = m_config->config().shell.shadow;
+        m_hoveredInstance->surface->setInputRegion(
+            {barContentInputRegion(m_hoveredInstance->barConfig, shadowConfig, sw, sh)});
       }
       m_hoveredInstance->surface->requestRedraw();
     }
