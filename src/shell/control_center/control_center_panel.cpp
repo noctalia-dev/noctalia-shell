@@ -9,9 +9,11 @@
 #include "notification/notification_manager.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
+#include "shell/control_center/screen_time_tab.h"
 #include "shell/panel/panel_button_style.h"
 #include "shell/panel/panel_manager.h"
 #include "system/dependency_service.h"
+#include "system/screen_time_service.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/label.h"
@@ -25,13 +27,16 @@ namespace {
   constexpr auto kMprisRefreshMinInterval = std::chrono::milliseconds(750);
 }
 
-ControlCenterPanel::ControlCenterPanel(
-    NotificationManager* notifications, PipeWireService* audio, MprisService* mpris, ConfigService* config,
-    HttpClient* httpClient, WeatherService* weather, PipeWireSpectrum* spectrum, UPowerService* upower,
-    PowerProfilesService* powerProfiles, INetworkService* network, NetworkSecretAgent* networkSecrets,
-    BluetoothService* bluetooth, BluetoothAgent* bluetoothAgent, BrightnessService* brightness,
-    SystemMonitorService* sysmon, GammaService* nightLight, noctalia::theme::ThemeService* theme,
-    IdleInhibitor* idleInhibitor, DependencyService* dependencies, CompositorPlatform* platform, Wallpaper* wallpaper) {
+ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeWireService* audio, MprisService* mpris,
+                                       ConfigService* config, HttpClient* httpClient, WeatherService* weather,
+                                       PipeWireSpectrum* spectrum, UPowerService* upower,
+                                       PowerProfilesService* powerProfiles, INetworkService* network,
+                                       NetworkSecretAgent* networkSecrets, BluetoothService* bluetooth,
+                                       BluetoothAgent* bluetoothAgent, BrightnessService* brightness,
+                                       SystemMonitorService* sysmon, ScreenTimeService* screenTime,
+                                       GammaService* nightLight, noctalia::theme::ThemeService* theme,
+                                       IdleInhibitor* idleInhibitor, DependencyService* dependencies,
+                                       CompositorPlatform* platform, Wallpaper* wallpaper) {
   (void)upower;
   WaylandConnection* wayland = platform != nullptr ? &platform->wayland() : nullptr;
   m_config = config;
@@ -52,6 +57,7 @@ ControlCenterPanel::ControlCenterPanel(
   m_tabs[tabIndex(TabId::Bluetooth)] = std::make_unique<BluetoothTab>(bluetooth, bluetoothAgent);
   m_tabs[tabIndex(TabId::Display)] = std::make_unique<DisplayTab>(brightness, config);
   m_tabs[tabIndex(TabId::System)] = std::make_unique<SystemTab>(sysmon);
+  m_tabs[tabIndex(TabId::ScreenTime)] = std::make_unique<ScreenTimeTab>(screenTime, config);
   m_tabButtons.fill(nullptr);
   m_tabContainers.fill(nullptr);
   m_tabHeaderActions.fill(nullptr);

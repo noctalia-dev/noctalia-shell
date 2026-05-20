@@ -795,6 +795,10 @@ namespace settings {
                                 tr("settings.schema.shell.clipboard-enabled.description"),
                                 {"shell", "clipboard_enabled"}, ToggleSetting{cfg.shell.clipboardEnabled},
                                 "clipboard history paste copy"));
+    entries.push_back(makeEntry("shell", "screen-time", tr("settings.schema.shell.screen-time-enabled.label"),
+                                tr("settings.schema.shell.screen-time-enabled.description"),
+                                {"shell", "screen_time_enabled"}, ToggleSetting{cfg.shell.screenTimeEnabled},
+                                "screen time usage tracking control center"));
     {
       auto e =
           makeEntry("shell", "clipboard", tr("settings.schema.shell.clipboard-auto-paste.label"),

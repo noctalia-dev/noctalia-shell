@@ -26,7 +26,7 @@
 
 namespace {
 
-  constexpr std::array<ShortcutRegistry::CatalogEntry, 16> kShortcutCatalog{{
+  constexpr std::array<ShortcutRegistry::CatalogEntry, 17> kShortcutCatalog{{
       {"wifi", "control-center.shortcuts.wifi"},
       {"bluetooth", "control-center.shortcuts.bluetooth"},
       {"nightlight", "control-center.shortcuts.nightlight"},
@@ -39,6 +39,7 @@ namespace {
       {"media", "control-center.shortcuts.media"},
       {"weather", "control-center.shortcuts.weather"},
       {"sysmon", "control-center.shortcuts.sysmon"},
+      {"screen_time", "control-center.shortcuts.screen-time"},
       {"keyboard_layout", "control-center.shortcuts.keyboard-layout"},
       {"wallpaper", "control-center.shortcuts.wallpaper"},
       {"session", "control-center.shortcuts.session"},
@@ -471,6 +472,16 @@ namespace {
     void onRightClick() override { openTab("system"); }
   };
 
+  class ScreenTimeShortcut final : public Shortcut {
+  public:
+    std::string_view id() const override { return "screen_time"; }
+    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.screen-time"); }
+    std::string_view iconOn() const override { return "hourglass"; }
+    std::string_view iconOff() const override { return "hourglass"; }
+    void onClick() override { openTab("screen-time"); }
+    void onRightClick() override { openTab("screen-time"); }
+  };
+
   class WallpaperShortcut final : public Shortcut {
   public:
     std::string_view id() const override { return "wallpaper"; }
@@ -527,6 +538,8 @@ std::unique_ptr<Shortcut> ShortcutRegistry::create(std::string_view type, const 
     return std::make_unique<WeatherShortcut>(s.weather);
   if (type == "sysmon")
     return std::make_unique<SysmonShortcut>();
+  if (type == "screen_time")
+    return std::make_unique<ScreenTimeShortcut>();
   if (type == "keyboard_layout")
     return std::make_unique<KeyboardLayoutShortcut>(s.platform, s.config);
   if (type == "wallpaper")

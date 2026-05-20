@@ -302,6 +302,10 @@ void Application::syncPolkitAgent() {
   m_polkitAgent->start();
 }
 
+void Application::syncScreenTimeService() {
+  m_screenTimeService.setEnabled(m_configService.config().shell.screenTimeEnabled);
+}
+
 void Application::syncClipboardService() {
   const bool enabled = m_configService.config().shell.clipboardEnabled;
   const auto shouldRefreshControlCenter = [this]() { return m_panelManager.isOpenPanel("control-center"); };
@@ -395,6 +399,7 @@ void Application::initServices() {
   m_configService.addReloadCallback(
       [this]() { m_httpClient.setOfflineMode(m_configService.config().shell.offlineMode); });
   m_configService.addReloadCallback([this]() { syncClipboardService(); });
+  m_configService.addReloadCallback([this]() { syncScreenTimeService(); });
   m_communityPaletteService.setReadyCallback([this]() { m_settingsWindow.onExternalOptionsChanged(); });
   m_communityPaletteService.sync();
   m_configService.addReloadCallback([this]() { m_communityPaletteService.sync(); });
@@ -452,6 +457,13 @@ void Application::initServices() {
     throw std::runtime_error("failed to connect to Wayland display");
   }
   m_compositorPlatform.initialize();
+  m_screenTimeService.initialize(&m_wayland);
+  syncScreenTimeService();
+  m_screenTimeService.setChangeCallback([this]() {
+    if (m_panelManager.isOpenPanel("control-center")) {
+      m_panelManager.refresh();
+    }
+  });
   m_glShared.initialize(m_wayland.display());
   m_sharedTextureCache.initialize(&m_glShared);
   m_asyncTextureCache.initialize(&m_glShared);
@@ -498,8 +510,12 @@ void Application::initServices() {
   m_compositorPlatform.setWorkspaceChangeCallback([this]() { m_bar.refresh(); });
   m_compositorPlatform.setKeyboardLayoutChangeCallback([this]() { m_bar.refresh(); });
   m_wayland.setToplevelChangeCallback([this]() {
+    m_screenTimeService.onFocusChange();
     m_bar.refresh();
     m_dock.refresh();
+    if (m_panelManager.isOpenPanel("control-center")) {
+      m_panelManager.refresh();
+    }
   });
   if constexpr (kLockKeysEnabled) {
     if (lockKeysConsumersEnabled(m_configService.config())) {
@@ -1043,14 +1059,14 @@ void Application::initUi() {
   m_panelManager.registerPanel("session", std::make_unique<SessionPanel>(&m_configService, m_sessionActionHooks,
                                                                          &m_compositorPlatform.niriRuntime()));
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
-  m_panelManager.registerPanel("control-center",
-                               std::make_unique<ControlCenterPanel>(
-                                   &m_notificationManager, m_pipewireService.get(), m_mprisService.get(),
-                                   &m_configService, &m_httpClient, &m_weatherService, m_pipewireSpectrum.get(),
-                                   m_upowerService.get(), m_powerProfilesService.get(), m_networkService.get(),
-                                   m_networkSecretAgent.get(), m_bluetoothService.get(), m_bluetoothAgent.get(),
-                                   m_brightnessService.get(), m_systemMonitor.get(), &m_gammaService, &m_themeService,
-                                   &m_idleInhibitor, &m_dependencyService, &m_compositorPlatform, &m_wallpaper));
+  m_panelManager.registerPanel(
+      "control-center",
+      std::make_unique<ControlCenterPanel>(
+          &m_notificationManager, m_pipewireService.get(), m_mprisService.get(), &m_configService, &m_httpClient,
+          &m_weatherService, m_pipewireSpectrum.get(), m_upowerService.get(), m_powerProfilesService.get(),
+          m_networkService.get(), m_networkSecretAgent.get(), m_bluetoothService.get(), m_bluetoothAgent.get(),
+          m_brightnessService.get(), m_systemMonitor.get(), &m_screenTimeService, &m_gammaService, &m_themeService,
+          &m_idleInhibitor, &m_dependencyService, &m_compositorPlatform, &m_wallpaper));
   {
     auto launcherPanel = std::make_unique<LauncherPanel>(&m_configService, &m_asyncTextureCache);
     launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));

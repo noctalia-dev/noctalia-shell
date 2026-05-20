@@ -39,6 +39,7 @@ class NotificationManager;
 class PipeWireService;
 class PipeWireSpectrum;
 class PowerProfilesService;
+class ScreenTimeService;
 class SystemMonitorService;
 class UPowerService;
 class Wallpaper;
@@ -57,9 +58,10 @@ public:
                      INetworkService* network = nullptr, NetworkSecretAgent* networkSecrets = nullptr,
                      BluetoothService* bluetooth = nullptr, BluetoothAgent* bluetoothAgent = nullptr,
                      BrightnessService* brightness = nullptr, SystemMonitorService* sysmon = nullptr,
-                     GammaService* nightLight = nullptr, noctalia::theme::ThemeService* theme = nullptr,
-                     IdleInhibitor* idleInhibitor = nullptr, DependencyService* dependencies = nullptr,
-                     CompositorPlatform* platform = nullptr, Wallpaper* wallpaper = nullptr);
+                     ScreenTimeService* screenTime = nullptr, GammaService* nightLight = nullptr,
+                     noctalia::theme::ThemeService* theme = nullptr, IdleInhibitor* idleInhibitor = nullptr,
+                     DependencyService* dependencies = nullptr, CompositorPlatform* platform = nullptr,
+                     Wallpaper* wallpaper = nullptr);
 
   void create() override;
   void onFrameTick(float deltaMs) override;
@@ -91,6 +93,7 @@ private:
     Weather,
     Calendar,
     Notifications,
+    ScreenTime,
     Count,
   };
 
@@ -113,6 +116,7 @@ private:
       {TabId::Weather, "weather", "control-center.tabs.weather", "weather-cloud-sun"},
       {TabId::Calendar, "calendar", "control-center.tabs.calendar", "calendar"},
       {TabId::Notifications, "notifications", "control-center.tabs.notifications", "bell"},
+      {TabId::ScreenTime, "screen-time", "control-center.tabs.screen-time", "hourglass"},
   }};
 
   void selectTab(TabId tab);

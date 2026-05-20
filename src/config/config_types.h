@@ -551,6 +551,8 @@ struct ShellConfig {
   bool showLocation = true;
   /// When false, disables Wayland clipboard integration (history panel, data-control binding, Input paste/copy hooks).
   bool clipboardEnabled = true;
+  /// Disables per-app tracking and Control Center usage UI.
+  bool screenTimeEnabled = false;
   ClipboardAutoPasteMode clipboardAutoPaste = ClipboardAutoPasteMode::Auto;
   std::string clipboardImageActionCommand;
   ShadowConfig shadow;

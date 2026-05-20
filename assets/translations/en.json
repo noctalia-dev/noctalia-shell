@@ -156,7 +156,23 @@
       "bluetooth": "Bluetooth",
       "weather": "Weather",
       "calendar": "Calendar",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "screen-time": "Screen Time"
+    },
+    "screen-time": {
+      "enabled": "Screen time tracking",
+      "disabled": "Screen time tracking is off. Enable it to record per-app usage.",
+      "most-used": "MOST USED",
+      "range": {
+        "today": "Today",
+        "3-days": "3 days",
+        "14-days": "14 days"
+      },
+      "hour-0": "12 AM",
+      "hour-6": "6 AM",
+      "hour-12": "12 PM",
+      "hour-18": "6 PM",
+      "empty": "No app usage recorded yet. Focus a window to start tracking."
     },
     "home": {
       "sections": {
@@ -226,6 +242,7 @@
       "keyboard-layout": "Layout",
       "media": "Media",
       "sysmon": "System",
+      "screen-time": "Screen Time",
       "wallpaper": "Wallpaper",
       "session": "Session",
       "clipboard": "Clipboard"
@@ -1509,6 +1526,10 @@
         "clipboard-enabled": {
           "label": "Clipboard",
           "description": "Enable clipboard history, the clipboard panel, and copy/paste integration"
+        },
+        "screen-time-enabled": {
+          "label": "Screen time",
+          "description": "Track per-app usage and show it in Control Center"
         },
         "clipboard-auto-paste": {
           "label": "Clipboard Auto-Paste",

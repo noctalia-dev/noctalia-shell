@@ -306,6 +306,7 @@ namespace config_export {
       table.insert_or_assign("middle_click_opens_widget_settings", shell.middleClickOpensWidgetSettings);
       table.insert_or_assign("show_location", shell.showLocation);
       table.insert_or_assign("clipboard_enabled", shell.clipboardEnabled);
+      table.insert_or_assign("screen_time_enabled", shell.screenTimeEnabled);
       table.insert_or_assign("clipboard_auto_paste",
                              std::string(enumToKey(kClipboardAutoPasteModes, shell.clipboardAutoPaste)));
       table.insert_or_assign("clipboard_image_action_command", shell.clipboardImageActionCommand);

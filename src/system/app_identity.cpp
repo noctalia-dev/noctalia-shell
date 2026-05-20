@@ -84,6 +84,53 @@ namespace app_identity {
                         entry.nameLower);
   }
 
+  std::optional<DesktopEntry> findDesktopEntry(std::string_view appKey, const std::vector<DesktopEntry>& allEntries,
+                                               DesktopEntryLookupOptions options) {
+    if (appKey.empty()) {
+      return std::nullopt;
+    }
+
+    const std::string appLower = StringUtils::toLower(std::string(appKey));
+    for (const auto& entry : allEntries) {
+      if (!options.includeHidden && entry.hidden) {
+        continue;
+      }
+      if (!options.includeNoDisplay && entry.noDisplay) {
+        continue;
+      }
+      if (desktopEntryMatchesLower(entry, appLower)) {
+        return entry;
+      }
+    }
+
+    if (!appKey.starts_with("steam_app_")) {
+      return std::nullopt;
+    }
+
+    const std::string_view steamId = appKey.substr(std::string_view("steam_app_").size());
+    if (steamId.empty()) {
+      return std::nullopt;
+    }
+    const std::string runGameToken = std::string("rungameid/") + std::string(steamId);
+
+    for (const auto& entry : allEntries) {
+      if (!options.includeHidden && entry.hidden) {
+        continue;
+      }
+      if (!options.includeNoDisplay && entry.noDisplay) {
+        continue;
+      }
+      if (StringUtils::toLower(entry.startupWmClass) == appLower) {
+        return entry;
+      }
+      if (entry.exec.find(runGameToken) != std::string::npos) {
+        return entry;
+      }
+    }
+
+    return std::nullopt;
+  }
+
   DesktopEntry resolveRunningDesktopEntry(std::string_view runningAppId, const std::vector<DesktopEntry>& allEntries) {
     return resolveRunningDesktopEntryWithStatus(runningAppId, allEntries).entry;
   }

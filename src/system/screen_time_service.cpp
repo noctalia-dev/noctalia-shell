@@ -1,0 +1,525 @@
+#include "system/screen_time_service.h"
+
+#include "core/log.h"
+#include "system/app_identity.h"
+#include "system/desktop_entry.h"
+#include "util/file_utils.h"
+#include "wayland/wayland_connection.h"
+#include "wayland/wayland_toplevels.h"
+
+#include <algorithm>
+#include <chrono>
+#include <cstdint>
+#include <cstdio>
+#include <ctime>
+#include <filesystem>
+#include <format>
+#include <fstream>
+#include <json.hpp>
+#include <utility>
+
+namespace {
+
+  constexpr Logger kLog("screen-time");
+  constexpr int kRetentionDays = 14;
+  constexpr auto kTickInterval = std::chrono::seconds(5);
+
+  [[nodiscard]] std::chrono::system_clock::time_point localNow() { return std::chrono::system_clock::now(); }
+
+  [[nodiscard]] std::tm localTm(std::chrono::system_clock::time_point tp) {
+    const std::time_t t = std::chrono::system_clock::to_time_t(tp);
+    std::tm out{};
+    localtime_r(&t, &out);
+    return out;
+  }
+
+  // Control center UI limits.
+  constexpr std::size_t kMaxListedApps = 12;
+  constexpr std::size_t kMaxChartSeries = 5;
+
+  [[nodiscard]] std::string canonicalAppKey(std::string_view appKey) {
+    if (const auto sep = appKey.find('\x1f'); sep != std::string::npos) {
+      return std::string(appKey.substr(0, sep));
+    }
+    return std::string(appKey);
+  }
+
+  [[nodiscard]] std::string displayNameForAppKey(const std::string& appKey) {
+    if (appKey.empty() || appKey == "unknown") {
+      return {};
+    }
+    if (appKey.starts_with("title:")) {
+      return appKey.substr(6);
+    }
+    if (const auto sep = appKey.find('\x1f'); sep != std::string::npos) {
+      const std::string embeddedTitle = appKey.substr(sep + 1);
+      if (!embeddedTitle.empty()) {
+        return embeddedTitle;
+      }
+    }
+
+    const std::string baseKey = canonicalAppKey(appKey);
+    const auto lookupOptions =
+        baseKey.starts_with("steam_app_")
+            ? app_identity::DesktopEntryLookupOptions{.includeHidden = true, .includeNoDisplay = true}
+            : app_identity::DesktopEntryLookupOptions{};
+    if (const auto entry = app_identity::findDesktopEntry(baseKey, desktopEntries(), lookupOptions);
+        entry.has_value()) {
+      if (!entry->name.empty()) {
+        return entry->name;
+      }
+      if (!entry->genericName.empty()) {
+        return entry->genericName;
+      }
+    }
+
+    const auto entry = app_identity::resolveRunningDesktopEntry(baseKey, desktopEntries());
+    if (!entry.name.empty()) {
+      return entry.name;
+    }
+    if (!entry.genericName.empty()) {
+      return entry.genericName;
+    }
+    return baseKey;
+  }
+
+} // namespace
+
+void ScreenTimeService::initialize(WaylandConnection* wayland) {
+  m_wayland = wayland;
+  const std::string dir = FileUtils::stateDir();
+  m_storagePath = dir.empty() ? "screen_time.json" : dir + "/screen_time.json";
+  load();
+  ensureCurrentDayLocked(localNow());
+}
+
+void ScreenTimeService::shutdown() {
+  m_tickTimer.stop();
+  flushActiveSession(std::chrono::steady_clock::now());
+  if (m_dirty) {
+    save();
+  }
+}
+
+void ScreenTimeService::setChangeCallback(std::function<void()> callback) { m_changeCallback = std::move(callback); }
+
+void ScreenTimeService::setEnabled(bool enabled) {
+  if (m_enabled == enabled) {
+    return;
+  }
+  m_enabled = enabled;
+  if (!m_enabled) {
+    flushActiveSession(std::chrono::steady_clock::now());
+    m_activeAppKey.clear();
+    m_activeSince = {};
+    if (m_dirty) {
+      save();
+    }
+    m_tickTimer.stop();
+  } else {
+    onFocusChange();
+    if (!m_tickTimer.active()) {
+      m_tickTimer.startRepeating(kTickInterval, [this]() { tick(); });
+    }
+  }
+  if (m_changeCallback) {
+    m_changeCallback();
+  }
+}
+
+void ScreenTimeService::onFocusChange() {
+  if (!m_enabled) {
+    return;
+  }
+  flushActiveSession(std::chrono::steady_clock::now());
+  m_activeAppKey = appKeyForActive();
+  m_activeSince = std::chrono::steady_clock::now();
+}
+
+void ScreenTimeService::tick() {
+  if (!m_enabled) {
+    return;
+  }
+  const bool wasDirty = m_dirty;
+  flushActiveSession(std::chrono::steady_clock::now());
+  if (wasDirty || m_dirty) {
+    save();
+  }
+}
+
+const ScreenTimeService::DayRecord* ScreenTimeService::dayRecordForKey(const std::string& dayKey) const {
+  if (dayKey == m_currentDayKey) {
+    return &m_currentDay;
+  }
+  const auto it = m_days.find(dayKey);
+  if (it != m_days.end()) {
+    return &it->second;
+  }
+  return nullptr;
+}
+
+std::vector<std::string> ScreenTimeService::dayKeysForRange(int rangeDays) const {
+  std::vector<std::string> keys;
+  keys.reserve(static_cast<std::size_t>(rangeDays));
+  const auto today = std::chrono::floor<std::chrono::days>(localNow());
+  for (int offset = 0; offset < rangeDays; ++offset) {
+    const auto day = today - std::chrono::days{offset};
+    keys.push_back(localDayKey(std::chrono::system_clock::time_point{day}));
+  }
+  return keys;
+}
+
+std::string ScreenTimeService::shortDayLabel(const std::string& dayKey) {
+  int year = 0;
+  int month = 0;
+  int day = 0;
+  if (std::sscanf(dayKey.c_str(), "%d-%d-%d", &year, &month, &day) != 3) {
+    return dayKey;
+  }
+  std::tm tm{};
+  tm.tm_year = year - 1900;
+  tm.tm_mon = month - 1;
+  tm.tm_mday = day;
+  tm.tm_isdst = -1;
+  if (std::mktime(&tm) == -1) {
+    return dayKey;
+  }
+  static constexpr const char* kWeekdays[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+  return kWeekdays[tm.tm_wday];
+}
+
+ScreenTimeSnapshot ScreenTimeService::snapshot(int rangeDays) {
+  if (!m_enabled) {
+    return {};
+  }
+  flushActiveSession(std::chrono::steady_clock::now());
+
+  rangeDays = std::clamp(rangeDays, 1, kRetentionDays);
+  ScreenTimeSnapshot snapshot;
+  snapshot.rangeDays = rangeDays;
+  snapshot.hourlyBuckets = rangeDays == 1;
+
+  const std::vector<std::string> dayKeys = dayKeysForRange(rangeDays);
+  std::unordered_map<std::string, std::chrono::seconds> mergedApps;
+
+  if (snapshot.hourlyBuckets) {
+    snapshot.buckets.resize(24);
+    const DayRecord* today = dayRecordForKey(dayKeys.front());
+    if (today != nullptr) {
+      for (std::size_t hour = 0; hour < today->hourly.size(); ++hour) {
+        snapshot.buckets[hour] = today->hourly[hour];
+        snapshot.total += today->hourly[hour];
+      }
+      for (const auto& [appKey, seconds] : today->apps) {
+        if (seconds.count() > 0) {
+          mergedApps[canonicalAppKey(appKey)] += seconds;
+        }
+      }
+    }
+  } else {
+    snapshot.buckets.resize(dayKeys.size());
+    snapshot.bucketLabels.reserve(dayKeys.size());
+    for (std::size_t dayIndex = 0; dayIndex < dayKeys.size(); ++dayIndex) {
+      snapshot.bucketLabels.push_back(shortDayLabel(dayKeys[dayIndex]));
+      const DayRecord* day = dayRecordForKey(dayKeys[dayIndex]);
+      if (day == nullptr) {
+        continue;
+      }
+      std::chrono::seconds dayTotal{0};
+      for (const auto& [appKey, seconds] : day->apps) {
+        if (seconds.count() <= 0) {
+          continue;
+        }
+        dayTotal += seconds;
+        mergedApps[canonicalAppKey(appKey)] += seconds;
+      }
+      snapshot.buckets[dayIndex] = dayTotal;
+      snapshot.total += dayTotal;
+    }
+  }
+
+  snapshot.apps.reserve(mergedApps.size());
+  for (const auto& [appKey, seconds] : mergedApps) {
+    std::string displayName = displayNameForAppKey(appKey);
+    if (displayName.empty()) {
+      displayName = appKey;
+    }
+    snapshot.apps.push_back(ScreenTimeAppUsage{
+        .appKey = appKey,
+        .displayName = std::move(displayName),
+        .total = seconds,
+    });
+  }
+
+  std::ranges::sort(snapshot.apps, [](const ScreenTimeAppUsage& a, const ScreenTimeAppUsage& b) {
+    if (a.total != b.total) {
+      return a.total > b.total;
+    }
+    return a.displayName < b.displayName;
+  });
+
+  std::vector<ScreenTimeAppUsage> rankedApps = std::move(snapshot.apps);
+  // Chart: top kMaxChartSeries. List: up to kMaxListedApps.
+  snapshot.apps.assign(rankedApps.begin(),
+                       rankedApps.begin() + static_cast<std::ptrdiff_t>(std::min(rankedApps.size(), kMaxListedApps)));
+
+  const auto fillSeriesBuckets = [&](ScreenTimeChartSeries& series, const std::string& appKey) {
+    if (snapshot.hourlyBuckets) {
+      const DayRecord* today = dayRecordForKey(dayKeys.front());
+      if (today == nullptr) {
+        return;
+      }
+      for (const auto& [storedKey, hourly] : today->appHourly) {
+        if (canonicalAppKey(storedKey) != appKey) {
+          continue;
+        }
+        for (std::size_t hour = 0; hour < hourly.size() && hour < series.buckets.size(); ++hour) {
+          series.buckets[hour] += hourly[hour];
+        }
+      }
+      return;
+    }
+    for (std::size_t dayIndex = 0; dayIndex < dayKeys.size(); ++dayIndex) {
+      const DayRecord* day = dayRecordForKey(dayKeys[dayIndex]);
+      if (day == nullptr) {
+        continue;
+      }
+      for (const auto& [storedKey, seconds] : day->apps) {
+        if (canonicalAppKey(storedKey) == appKey) {
+          series.buckets[dayIndex] += seconds;
+        }
+      }
+    }
+  };
+
+  const std::size_t chartCount = std::min(rankedApps.size(), kMaxChartSeries);
+  snapshot.chartSeries.reserve(chartCount);
+  for (std::size_t i = 0; i < chartCount; ++i) {
+    const auto& app = rankedApps[i];
+    ScreenTimeChartSeries series{
+        .appKey = app.appKey,
+        .displayName = app.displayName,
+        .buckets = std::vector<std::chrono::seconds>(snapshot.buckets.size()),
+        .total = app.total,
+        .chartColor = app.chartColor,
+    };
+    fillSeriesBuckets(series, app.appKey);
+    snapshot.chartSeries.push_back(std::move(series));
+  }
+
+  return snapshot;
+}
+
+void ScreenTimeService::flushActiveSession(std::chrono::steady_clock::time_point now) {
+  if (m_activeAppKey.empty() || m_activeSince == std::chrono::steady_clock::time_point{}) {
+    return;
+  }
+
+  const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - m_activeSince);
+  if (elapsed.count() <= 0) {
+    return;
+  }
+
+  ensureCurrentDayLocked(localNow());
+
+  m_currentDay.apps[m_activeAppKey] += elapsed;
+  const int hour = localHour(localNow());
+  if (hour >= 0 && hour < static_cast<int>(m_currentDay.hourly.size())) {
+    m_currentDay.hourly[static_cast<std::size_t>(hour)] += elapsed;
+    m_currentDay.appHourly[m_activeAppKey][static_cast<std::size_t>(hour)] += elapsed;
+  }
+
+  m_activeSince = now;
+  m_dirty = true;
+
+  if (m_changeCallback) {
+    m_changeCallback();
+  }
+}
+
+void ScreenTimeService::ensureCurrentDayLocked(std::chrono::system_clock::time_point now) {
+  const std::string dayKey = localDayKey(now);
+  if (!m_currentDayKey.empty() && dayKey == m_currentDayKey) {
+    return;
+  }
+
+  if (!m_currentDayKey.empty()) {
+    auto& stored = m_days[m_currentDayKey];
+    for (const auto& [key, seconds] : m_currentDay.apps) {
+      stored.apps[key] += seconds;
+    }
+    for (const auto& [key, buckets] : m_currentDay.appHourly) {
+      auto& storedBuckets = stored.appHourly[key];
+      for (std::size_t hour = 0; hour < buckets.size(); ++hour) {
+        storedBuckets[hour] += buckets[hour];
+      }
+    }
+    for (std::size_t hour = 0; hour < m_currentDay.hourly.size(); ++hour) {
+      stored.hourly[hour] += m_currentDay.hourly[hour];
+    }
+    m_currentDay = {};
+  }
+
+  m_currentDayKey = dayKey;
+  const auto it = m_days.find(dayKey);
+  if (it != m_days.end()) {
+    m_currentDay = it->second;
+    m_days.erase(it);
+  } else {
+    m_currentDay = {};
+  }
+
+  pruneOldDaysLocked();
+  m_dirty = true;
+}
+
+void ScreenTimeService::load() {
+  std::ifstream file(m_storagePath);
+  if (!file.is_open()) {
+    return;
+  }
+
+  try {
+    const auto json = nlohmann::json::parse(file);
+    if (!json.is_object()) {
+      return;
+    }
+    for (const auto& [dayKey, dayJson] : json.items()) {
+      if (!dayJson.is_object()) {
+        continue;
+      }
+      DayRecord record;
+      if (dayJson.contains("apps") && dayJson["apps"].is_object()) {
+        for (const auto& [appKey, seconds] : dayJson["apps"].items()) {
+          if (seconds.is_number_integer()) {
+            record.apps[appKey] = std::chrono::seconds(seconds.template get<std::int64_t>());
+          }
+        }
+      }
+      if (dayJson.contains("hourly") && dayJson["hourly"].is_array()) {
+        std::size_t hour = 0;
+        for (const auto& value : dayJson["hourly"]) {
+          if (hour >= record.hourly.size()) {
+            break;
+          }
+          if (value.is_number_integer()) {
+            record.hourly[hour] = std::chrono::seconds(value.template get<std::int64_t>());
+          }
+          ++hour;
+        }
+      }
+      if (dayJson.contains("app_hourly") && dayJson["app_hourly"].is_object()) {
+        for (const auto& [appKey, bucketsJson] : dayJson["app_hourly"].items()) {
+          if (!bucketsJson.is_array()) {
+            continue;
+          }
+          auto buckets = std::array<std::chrono::seconds, 24>{};
+          std::size_t hour = 0;
+          for (const auto& value : bucketsJson) {
+            if (hour >= buckets.size()) {
+              break;
+            }
+            if (value.is_number_integer()) {
+              buckets[hour] = std::chrono::seconds(value.template get<std::int64_t>());
+            }
+            ++hour;
+          }
+          record.appHourly.emplace(appKey, buckets);
+        }
+      }
+      m_days.emplace(dayKey, std::move(record));
+    }
+  } catch (const nlohmann::json::exception& e) {
+    kLog.warn("failed to parse {}: {}", m_storagePath, e.what());
+  }
+}
+
+void ScreenTimeService::save() {
+  std::error_code ec;
+  std::filesystem::create_directories(std::filesystem::path(m_storagePath).parent_path(), ec);
+
+  nlohmann::json root = nlohmann::json::object();
+  auto writeDay = [](const std::string& dayKey, const DayRecord& day) {
+    nlohmann::json dayJson;
+    nlohmann::json apps = nlohmann::json::object();
+    for (const auto& [appKey, seconds] : day.apps) {
+      apps[appKey] = seconds.count();
+    }
+    dayJson["apps"] = std::move(apps);
+    nlohmann::json hourly = nlohmann::json::array();
+    for (const auto& bucket : day.hourly) {
+      hourly.push_back(bucket.count());
+    }
+    dayJson["hourly"] = std::move(hourly);
+    nlohmann::json appHourly = nlohmann::json::object();
+    for (const auto& [appKey, buckets] : day.appHourly) {
+      nlohmann::json bucketJson = nlohmann::json::array();
+      for (const auto& bucket : buckets) {
+        bucketJson.push_back(bucket.count());
+      }
+      appHourly[appKey] = std::move(bucketJson);
+    }
+    dayJson["app_hourly"] = std::move(appHourly);
+    return std::pair{dayKey, std::move(dayJson)};
+  };
+
+  for (const auto& [dayKey, day] : m_days) {
+    auto [key, json] = writeDay(dayKey, day);
+    root[key] = std::move(json);
+  }
+  if (!m_currentDayKey.empty()) {
+    auto [key, json] = writeDay(m_currentDayKey, m_currentDay);
+    root[key] = std::move(json);
+  }
+
+  std::ofstream file(m_storagePath, std::ios::trunc);
+  if (!file.is_open()) {
+    kLog.warn("failed to write {}", m_storagePath);
+    return;
+  }
+  file << root.dump(2) << '\n';
+  m_dirty = false;
+}
+
+void ScreenTimeService::pruneOldDaysLocked() {
+  if (m_days.size() <= static_cast<std::size_t>(kRetentionDays)) {
+    return;
+  }
+
+  std::vector<std::string> keys;
+  keys.reserve(m_days.size());
+  for (const auto& [key, _] : m_days) {
+    if (key != m_currentDayKey) {
+      keys.push_back(key);
+    }
+  }
+  std::ranges::sort(keys);
+  while (m_days.size() > static_cast<std::size_t>(kRetentionDays) && !keys.empty()) {
+    m_days.erase(keys.front());
+    keys.erase(keys.begin());
+  }
+}
+
+std::string ScreenTimeService::appKeyForActive() const {
+  if (m_wayland == nullptr) {
+    return {};
+  }
+  const auto active = m_wayland->activeToplevel();
+  if (!active.has_value()) {
+    return {};
+  }
+  if (!active->appId.empty()) {
+    return active->appId;
+  }
+  if (!active->title.empty()) {
+    return "title:" + active->title;
+  }
+  return "unknown";
+}
+
+std::string ScreenTimeService::localDayKey(std::chrono::system_clock::time_point tp) {
+  const std::tm tm = localTm(tp);
+  return std::format("{:04d}-{:02d}-{:02d}", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+}
+
+int ScreenTimeService::localHour(std::chrono::system_clock::time_point tp) { return localTm(tp).tm_hour; }

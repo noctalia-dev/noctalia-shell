@@ -71,6 +71,7 @@
 #include "system/icon_theme_poll_source.h"
 #include "system/lock_keys_poll_source.h"
 #include "system/lock_keys_service.h"
+#include "system/screen_time_service.h"
 #include "system/system_monitor_service.h"
 #include "system/telemetry_service.h"
 #include "system/weather_poll_source.h"
@@ -116,6 +117,7 @@ private:
   void syncNotificationDaemon();
   void syncPolkitAgent();
   void syncClipboardService();
+  void syncScreenTimeService();
   bool runUserCommand(const std::string& command);
   bool runUserCommandBlocking(const std::string& command);
   bool runIdleAction(const IdleActionRequest& action);
@@ -174,6 +176,7 @@ private:
   std::unique_ptr<SoundPlayer> m_soundPlayer;
 
   TelemetryService m_telemetryService;
+  ScreenTimeService m_screenTimeService;
   FileWatcher m_fileWatcher;
 
   GlSharedContext m_glShared;
