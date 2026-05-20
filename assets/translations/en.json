@@ -576,9 +576,11 @@
   },
   "notifications": {
     "actions": {
-      "fallback": "Action"
+      "fallback": "Action",
+      "open": "Open"
     },
     "inline-reply": {
+      "button": "Reply",
       "placeholder": "Type a reply..."
     },
     "internal": {

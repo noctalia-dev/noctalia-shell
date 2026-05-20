@@ -54,6 +54,19 @@ namespace {
 
   constexpr float kNotificationActionButtonSize = Style::controlHeightSm;
 
+  std::string historyActionLabel(std::string_view actionKey, std::string_view actionLabel) {
+    if (!StringUtils::isBlank(actionLabel)) {
+      return std::string(actionLabel);
+    }
+    if (actionKey == "default") {
+      return i18n::tr("notifications.actions.open");
+    }
+    if (actionKey == "inline-reply") {
+      return i18n::tr("notifications.inline-reply.button");
+    }
+    return i18n::tr("notifications.actions.fallback");
+  }
+
   float measureHistoryActionsRowHeight(Renderer& renderer, const std::vector<std::string>& actions, float scale) {
     if (actions.empty()) {
       return 0.0f;
@@ -65,17 +78,13 @@ namespace {
     int actionCount = 0;
     for (std::size_t i = 0; i + 1 < actions.size() && actionCount < kHistoryMaxActionButtons; i += 2) {
       const std::string& actionKey = actions[i];
-      std::string actionLabel = actions[i + 1];
-      if (actionKey.empty() || actionKey == "default" || actionKey == "inline-reply") {
+      if (actionKey.empty()) {
         continue;
-      }
-      if (StringUtils::isBlank(actionLabel)) {
-        actionLabel = i18n::tr("notifications.actions.fallback");
       }
       auto actionButton = std::make_unique<Button>();
       actionButton->setVariant(ButtonVariant::Outline);
       actionButton->setFontSize(Style::fontSizeCaption * scale);
-      actionButton->setText(actionLabel);
+      actionButton->setText(historyActionLabel(actionKey, actions[i + 1]));
       row->addChild(std::move(actionButton));
       ++actionCount;
     }
@@ -205,7 +214,8 @@ namespace {
   };
 
   NotificationCardMetrics measureNotificationCard(Renderer& renderer, const NotificationHistoryEntry& entry,
-                                                  float scale, float width, bool expandedRequested) {
+                                                  float scale, float width, bool expandedRequested,
+                                                  bool showHistoryActions) {
     NotificationCardMetrics metrics;
     const float cardWidth = std::max(0.0f, width);
     const float cardHorizontalPadding = Style::spaceMd * scale * 2.0f;
@@ -250,7 +260,7 @@ namespace {
                                  metrics.cardTextWidth, metrics.expanded ? kExpandedMaxLines : kBodyMaxLines);
 
     const float actionsRowHeight =
-        entry.active ? measureHistoryActionsRowHeight(renderer, entry.notification.actions, scale) : 0.0f;
+        showHistoryActions ? measureHistoryActionsRowHeight(renderer, entry.notification.actions, scale) : 0.0f;
 
     const float paddingY = (Style::spaceSm + Style::spaceXs) * scale * 2.0f;
     int visibleSegments = 2;
@@ -357,10 +367,11 @@ namespace {
     }
 
     void bind(Renderer& renderer, const NotificationHistoryEntry& entry, float width, bool expanded,
-              IconResolver& iconResolver, std::function<void(uint32_t)> onToggleExpanded,
+              bool showHistoryActions, IconResolver& iconResolver, std::function<void(uint32_t)> onToggleExpanded,
               std::function<void(uint32_t, bool)> onRemove,
               const std::function<void(uint32_t, const std::string&)>& onAction) {
-      const NotificationCardMetrics metrics = measureNotificationCard(renderer, entry, m_scale, width, expanded);
+      const NotificationCardMetrics metrics =
+          measureNotificationCard(renderer, entry, m_scale, width, expanded, showHistoryActions);
       setMinWidth(width);
       setSize(width, metrics.height);
 
@@ -405,20 +416,16 @@ namespace {
         m_actionButtons[static_cast<std::size_t>(ai)]->setOnClick(nullptr);
       }
       m_actionsRow->setVisible(false);
-      if (entry.active) {
+      if (showHistoryActions) {
         int shownActions = 0;
         for (std::size_t i = 0; i + 1 < entry.notification.actions.size() && shownActions < kHistoryMaxActionButtons;
              i += 2) {
           const std::string& actionKey = entry.notification.actions[i];
-          std::string actionLabel = entry.notification.actions[i + 1];
-          if (actionKey.empty() || actionKey == "default" || actionKey == "inline-reply") {
+          if (actionKey.empty()) {
             continue;
           }
-          if (StringUtils::isBlank(actionLabel)) {
-            actionLabel = i18n::tr("notifications.actions.fallback");
-          }
           Button* btn = m_actionButtons[static_cast<std::size_t>(shownActions)];
-          btn->setText(actionLabel);
+          btn->setText(historyActionLabel(actionKey, entry.notification.actions[i + 1]));
           btn->setEnabled(true);
           btn->setOnClick(
               [onAction, id = entry.notification.id, key = std::string(actionKey)]() { onAction(id, key); });
@@ -564,7 +571,9 @@ public:
     }
     const auto& entry = *m_owner.m_filtered[index];
     const bool expanded = m_owner.m_expandedIds.contains(entry.notification.id);
-    return measureNotificationCard(renderer, entry, m_scale, width, expanded).height;
+    const bool showHistoryActions =
+        m_owner.m_notifications != nullptr && m_owner.m_notifications->hasPendingDBusClose(entry.notification.id);
+    return measureNotificationCard(renderer, entry, m_scale, width, expanded, showHistoryActions).height;
   }
 
   [[nodiscard]] std::unique_ptr<Node> createItem() override {
@@ -580,9 +589,11 @@ public:
       return;
     }
     const auto& entry = *m_owner.m_filtered[index];
+    const bool showHistoryActions =
+        m_owner.m_notifications != nullptr && m_owner.m_notifications->hasPendingDBusClose(entry.notification.id);
     row->bind(
-        renderer, entry, width, m_owner.m_expandedIds.contains(entry.notification.id), m_owner.m_iconResolver,
-        [this](uint32_t id) { m_owner.toggleNotificationExpanded(id); },
+        renderer, entry, width, m_owner.m_expandedIds.contains(entry.notification.id), showHistoryActions,
+        m_owner.m_iconResolver, [this](uint32_t id) { m_owner.toggleNotificationExpanded(id); },
         [this](uint32_t id, bool active) { m_owner.removeNotificationEntry(id, active); },
         [this](uint32_t id, const std::string& key) { m_owner.invokeNotificationAction(id, key); });
   }
@@ -774,12 +785,23 @@ void NotificationsTab::toggleNotificationExpanded(uint32_t id) {
 }
 
 void NotificationsTab::invokeNotificationAction(uint32_t id, const std::string& actionKey) {
-  if (m_notifications == nullptr || actionKey.empty()) {
+  if (m_notifications == nullptr || actionKey.empty() || !m_notifications->hasPendingDBusClose(id)) {
     return;
   }
   if (!m_notifications->invokeAction(id, actionKey, true)) {
     kLog.warn("notification history: failed to invoke action '{}' for #{}", actionKey, id);
+    return;
   }
+
+  m_lastSerial = 0;
+  if (m_list != nullptr) {
+    if (const auto index = filteredIndexForId(id); index.has_value()) {
+      m_list->notifyItemChanged(*index);
+    } else {
+      m_list->notifyDataChanged();
+    }
+  }
+  PanelManager::instance().refresh();
 }
 
 bool NotificationsTab::refreshDataSnapshot() {

@@ -7,6 +7,7 @@
 #include <functional>
 #include <optional>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 enum class NotificationEvent {
@@ -66,6 +67,7 @@ public:
 
   void setActionInvokeCallback(ActionInvokeCallback callback);
   void setCloseCallback(CloseCallback callback);
+  [[nodiscard]] bool hasPendingDBusClose(uint32_t id) const noexcept;
   [[nodiscard]] bool invokeAction(uint32_t id, const std::string& actionKey, bool closeAfterInvoke = true);
   // Emits ActionInvoked with "inline-reply::<text>" (KDE quick-reply convention).
   [[nodiscard]] bool invokeInlineReply(uint32_t id, const std::string& replyText, bool closeAfterInvoke = true);
@@ -94,7 +96,7 @@ public:
   // Recent notification history including closed notifications.
   [[nodiscard]] const std::deque<NotificationHistoryEntry>& history() const noexcept;
   [[nodiscard]] std::uint64_t changeSerial() const noexcept;
-  void removeHistoryEntry(uint32_t id);
+  void removeHistoryEntry(uint32_t id, std::optional<CloseReason> dbusCloseReason = std::nullopt);
   void clearHistory();
   void setDoNotDisturb(bool enabled);
   [[nodiscard]] bool doNotDisturb() const noexcept;
@@ -117,11 +119,14 @@ private:
   void rebuildHistoryIndex();
   void schedulePersistHistory();
   void persistHistoryToDisk();
+  void emitPendingDBusClose(uint32_t id, CloseReason reason);
 
   bool m_persistScheduled = false;
 
   std::deque<Notification> m_notifications;
   std::unordered_map<uint32_t, size_t> m_idToIndex;
+  /// Expired notifications with actions: NotificationClosed deferred until dismiss, action, or history removal.
+  std::unordered_set<uint32_t> m_pendingDBusClose;
   std::deque<NotificationHistoryEntry> m_history;
   std::unordered_map<uint32_t, size_t> m_historyIndex;
   std::vector<std::pair<int, EventCallback>> m_eventCallbacks;

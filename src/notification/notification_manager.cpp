@@ -79,6 +79,15 @@ namespace {
            entry.closeReason != CloseReason::Dismissed;
   }
 
+  bool notificationHasInvokableActions(const Notification& notification) {
+    for (std::size_t i = 0; i + 1 < notification.actions.size(); i += 2) {
+      if (!notification.actions[i].empty()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
 } // namespace
 
 void NotificationManager::rebuildHistoryIndex() {
@@ -103,6 +112,8 @@ void NotificationManager::upsertHistory(const Notification& notification, bool a
 
   constexpr std::size_t kMaxHistoryEntries = 100;
   while (m_history.size() > kMaxHistoryEntries) {
+    const NotificationHistoryEntry evicted = m_history.front();
+    emitPendingDBusClose(evicted.notification.id, evicted.closeReason.value_or(CloseReason::Expired));
     m_history.pop_front();
   }
 
@@ -242,23 +253,35 @@ void NotificationManager::setActionInvokeCallback(ActionInvokeCallback callback)
 
 void NotificationManager::setCloseCallback(CloseCallback callback) { m_closeCallback = std::move(callback); }
 
+bool NotificationManager::hasPendingDBusClose(uint32_t id) const noexcept { return m_pendingDBusClose.contains(id); }
+
 bool NotificationManager::invokeAction(uint32_t id, const std::string& actionKey, bool closeAfterInvoke) {
-  const auto it = m_idToIndex.find(id);
-  if (it == m_idToIndex.end() || actionKey.empty()) {
+  if (actionKey.empty()) {
     return false;
   }
 
-  const Notification& notification = m_notifications[it->second];
+  const Notification* notification = nullptr;
+  if (const auto it = m_idToIndex.find(id); it != m_idToIndex.end()) {
+    notification = &m_notifications[it->second];
+  } else if (const auto histIt = m_historyIndex.find(id); histIt != m_historyIndex.end()) {
+    if (!hasPendingDBusClose(id)) {
+      return false;
+    }
+    notification = &m_history[histIt->second].notification;
+  } else {
+    return false;
+  }
+
   if (actionKey == kInlineReplyAction) {
     // This server delivers reply text via invokeInlineReply() as "inline-reply::<text>".
     return false;
   }
   const bool inlineReplyWithPayload = actionKey.starts_with(std::string(kInlineReplyActionPrefix));
   if (inlineReplyWithPayload) {
-    if (!notificationHasAction(notification, kInlineReplyAction)) {
+    if (!notificationHasAction(*notification, kInlineReplyAction)) {
       return false;
     }
-  } else if (!notificationHasAction(notification, actionKey)) {
+  } else if (!notificationHasAction(*notification, actionKey)) {
     return false;
   }
 
@@ -267,7 +290,15 @@ bool NotificationManager::invokeAction(uint32_t id, const std::string& actionKey
   }
 
   if (closeAfterInvoke) {
-    (void)close(id, CloseReason::Dismissed);
+    if (m_idToIndex.contains(id)) {
+      (void)close(id, CloseReason::Dismissed);
+    } else if (const auto histIt = m_historyIndex.find(id); histIt != m_historyIndex.end()) {
+      emitPendingDBusClose(id, CloseReason::Dismissed);
+      m_history[histIt->second].notification.actions.clear();
+      m_history[histIt->second].active = false;
+      ++m_changeSerial;
+      schedulePersistHistory();
+    }
   }
   return true;
 }
@@ -284,9 +315,24 @@ bool NotificationManager::invokeInlineReply(uint32_t id, const std::string& repl
   return invokeAction(id, actionKey, closeAfterInvoke);
 }
 
+void NotificationManager::emitPendingDBusClose(uint32_t id, CloseReason reason) {
+  if (!m_pendingDBusClose.contains(id)) {
+    return;
+  }
+  m_pendingDBusClose.erase(id);
+  if (m_closeCallback) {
+    m_closeCallback(id, reason);
+  }
+}
+
 bool NotificationManager::close(uint32_t id, CloseReason reason) {
   const auto it = m_idToIndex.find(id);
   if (it == m_idToIndex.end()) {
+    if (m_pendingDBusClose.contains(id)) {
+      emitPendingDBusClose(id, reason);
+      removeHistoryEntry(id);
+      return true;
+    }
     return false;
   }
 
@@ -298,7 +344,7 @@ bool NotificationManager::close(uint32_t id, CloseReason reason) {
   kLog.debug("notification {} #{}", reasonStr, id);
   if (shouldTrackHistory(closed.origin, closed.urgency)) {
     if (reason == CloseReason::Dismissed) {
-      removeHistoryEntry(id);
+      removeHistoryEntry(id, reason);
     } else {
       upsertHistory(closed, false, reason);
     }
@@ -315,7 +361,10 @@ bool NotificationManager::close(uint32_t id, CloseReason reason) {
     cb(closed, NotificationEvent::Closed);
   }
 
-  if (m_closeCallback) {
+  const bool deferDBusClose = reason == CloseReason::Expired && notificationHasInvokableActions(closed);
+  if (deferDBusClose) {
+    m_pendingDBusClose.insert(id);
+  } else if (m_closeCallback) {
     m_closeCallback(id, reason);
   }
 
@@ -328,12 +377,15 @@ const std::deque<NotificationHistoryEntry>& NotificationManager::history() const
 
 std::uint64_t NotificationManager::changeSerial() const noexcept { return m_changeSerial; }
 
-void NotificationManager::removeHistoryEntry(uint32_t id) {
+void NotificationManager::removeHistoryEntry(uint32_t id, std::optional<CloseReason> dbusCloseReason) {
   const auto it = m_historyIndex.find(id);
   if (it == m_historyIndex.end()) {
     return;
   }
 
+  const CloseReason reason =
+      dbusCloseReason.value_or(m_history[it->second].closeReason.value_or(CloseReason::Dismissed));
+  emitPendingDBusClose(id, reason);
   m_history.erase(m_history.begin() + static_cast<std::ptrdiff_t>(it->second));
   ++m_changeSerial;
   rebuildHistoryIndex();
@@ -343,6 +395,10 @@ void NotificationManager::removeHistoryEntry(uint32_t id) {
 void NotificationManager::clearHistory() {
   if (m_history.empty()) {
     return;
+  }
+
+  for (const auto& entry : m_history) {
+    emitPendingDBusClose(entry.notification.id, entry.closeReason.value_or(CloseReason::Expired));
   }
 
   m_history.clear();
@@ -485,4 +541,10 @@ void NotificationManager::loadPersistedHistory() {
   rebuildHistoryIndex();
 }
 
-void NotificationManager::flushPersistedHistory() { persistHistoryToDisk(); }
+void NotificationManager::flushPersistedHistory() {
+  const std::vector<uint32_t> pending(m_pendingDBusClose.begin(), m_pendingDBusClose.end());
+  for (const uint32_t id : pending) {
+    emitPendingDBusClose(id, CloseReason::Expired);
+  }
+  persistHistoryToDisk();
+}
