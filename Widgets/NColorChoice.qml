@@ -118,7 +118,7 @@ RowLayout {
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        onEntered: TooltipService.show(parent, "Custom color")
+        onEntered: TooltipService.show(parent, I18n.tr("common.custom-color"))
         onExited: TooltipService.hide()
         onClicked: {
           customColorDialog.selectedColor = customSlot.isHex ? root.currentKey : Color.resolveColorKey(root.currentKey);
