@@ -75,7 +75,6 @@ private:
   void handleEvent(std::string_view event, std::string_view data);
   void handleFocusedMonitor(std::string_view monitorName, int workspaceId);
   void handleWorkspaceActivated(int workspaceId);
-  void pinActiveWorkspace(int workspaceId);
   void clearUrgentForWorkspace(int workspaceId);
   void moveToplevel(std::uint64_t address, int workspaceId);
 

@@ -546,38 +546,8 @@ void HyprlandWorkspaceBackend::handleFocusedMonitor(std::string_view monitorName
   notifyChanged();
 }
 
-void HyprlandWorkspaceBackend::pinActiveWorkspace(int workspaceId) {
-  if (workspaceId < 0) {
-    return;
-  }
-
-  auto* workspace = findWorkspaceById(workspaceId);
-  if (workspace == nullptr) {
-    refreshWorkspaces();
-    workspace = findWorkspaceById(workspaceId);
-  }
-  if (workspace == nullptr) {
-    return;
-  }
-
-  if (workspace->monitor.empty()) {
-    refreshWorkspaces();
-    workspace = findWorkspaceById(workspaceId);
-    if (workspace == nullptr || workspace->monitor.empty()) {
-      return;
-    }
-  }
-
-  m_activeWorkspaceByMonitor[workspace->monitor] = workspaceId;
-}
-
 void HyprlandWorkspaceBackend::handleWorkspaceActivated(int workspaceId) {
-  // workspacev2 carries the activated id; do not rely on j/monitors alone because it can
-  // lag one frame behind the event and leave every workspace inactive (hide-when-empty
-  // then drops the whole widget until the next IPC snapshot).
-  pinActiveWorkspace(workspaceId);
   refreshMonitors();
-  pinActiveWorkspace(workspaceId);
   clearUrgentForWorkspace(workspaceId);
   recomputeWorkspaceFlags();
   notifyChanged();
@@ -676,7 +646,6 @@ Workspace HyprlandWorkspaceBackend::toWorkspace(const WorkspaceState& state) {
       .id = std::to_string(state.id),
       .name = state.name,
       .coordinates = {coord},
-      .index = state.id >= 0 ? static_cast<std::uint32_t>(state.id) : 0U,
       .active = state.active,
       .urgent = state.urgent,
       .occupied = state.occupied,
