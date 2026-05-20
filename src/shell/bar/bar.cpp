@@ -1200,6 +1200,17 @@ void Bar::populateWidgets(BarInstance& instance) {
   createWidgets(instance.barConfig.startWidgets, instance.startWidgets);
   createWidgets(instance.barConfig.centerWidgets, instance.centerWidgets);
   createWidgets(instance.barConfig.endWidgets, instance.endWidgets);
+
+#ifndef NDEBUG
+  // Prepend a red "debug" pill to the end section if running a debug
+  auto debugWidget = m_widgetFactory->create("debug_indicator", instance.output, instance.barConfig.scale,
+                                             instance.barConfig.position, instance.barConfig.name);
+  if (debugWidget != nullptr) {
+    debugWidget->setConfigName("debug_indicator");
+    debugWidget->create();
+    instance.endWidgets.insert(instance.endWidgets.begin(), std::move(debugWidget));
+  }
+#endif
 }
 
 void Bar::attachWidgetsToSections(BarInstance& instance) {

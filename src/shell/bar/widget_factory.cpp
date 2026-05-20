@@ -19,6 +19,9 @@
 #include "shell/bar/widgets/clock_widget.h"
 #include "shell/bar/widgets/control_center_widget.h"
 #include "shell/bar/widgets/custom_button_widget.h"
+#ifndef NDEBUG
+#include "shell/bar/widgets/debug_indicator_widget.h"
+#endif
 #include "shell/bar/widgets/idle_inhibitor_widget.h"
 #include "shell/bar/widgets/keyboard_layout_widget.h"
 #include "shell/bar/widgets/launcher_widget.h"
@@ -52,6 +55,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <string>
 
 namespace {
@@ -466,6 +470,14 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     widget->setContentScale(contentScale);
     return widget;
   }
+
+#ifndef NDEBUG
+  if (type == "debug_indicator") {
+    auto widget = std::make_unique<DebugIndicatorWidget>();
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+#endif
 
   kLog.warn("widget factory: unknown widget \"{}\"", name);
   return nullptr;

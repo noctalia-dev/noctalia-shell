@@ -526,6 +526,7 @@ _noctalia_sources = files(
   'src/shell/bar/widgets/custom_button_widget.cpp',
   'src/shell/bar/widgets/clipboard_widget.cpp',
   'src/shell/bar/widgets/clock_widget.cpp',
+  'src/shell/bar/widgets/debug_indicator_widget.cpp',
   'src/shell/bar/widgets/idle_inhibitor_widget.cpp',
   'src/shell/bar/widgets/keyboard_layout_widget.cpp',
   'src/shell/bar/widgets/lock_keys_widget.cpp',
