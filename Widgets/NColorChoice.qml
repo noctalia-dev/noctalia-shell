@@ -36,7 +36,8 @@ RowLayout {
     id: colourRow
 
     opacity: enabled ? 1.0 : 0.6
-    Layout.minimumWidth: root.diameter * Color.colorKeyModel.length
+    Layout.minimumWidth: root.diameter * (Color.colorKeyModel.length + 1)
+    Layout.rightMargin: Style.marginS
 
     Repeater {
       model: Color.colorKeyModel
@@ -126,11 +127,21 @@ RowLayout {
         }
       }
 
+      // Contrast tick: white on dark hexes, black on light hexes (matches resolveOnColorKey behavior for palette circles)
+      function contrastFor(hex) {
+        if (!hex || hex.length < 7)
+          return "#ffffff";
+        var r = parseInt(hex.substr(1, 2), 16);
+        var g = parseInt(hex.substr(3, 2), 16);
+        var b = parseInt(hex.substr(5, 2), 16);
+        return (r * 299 + g * 587 + b * 114) / 1000 > 140 ? "#000000" : "#ffffff";
+      }
+
       NIcon {
         anchors.centerIn: parent
         icon: "check"
         pointSize: Math.max(Style.fontSizeXS, customSlot.width * 0.4)
-        color: Color.mOnSurface
+        color: customSlot.contrastFor(root.currentKey)
         font.weight: Style.fontWeightBold
         visible: customSlot.isHex
       }
