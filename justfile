@@ -28,8 +28,14 @@ _ensure-configured m=mode:
 run m=mode: (build m)
     ./build-{{m}}/noctalia
 
-install m=mode: (configure m)
-    meson install -C build-{{m}}
+install m=mode:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ ! -x "build-{{m}}/noctalia" ]]; then
+        echo "error: build-{{m}}/noctalia is missing; run 'just build {{m}}' before installing" >&2
+        exit 1
+    fi
+    meson install --no-rebuild -C build-{{m}}
 
 format:
     find src \( -name '*.cpp' -o -name '*.h' \) -print0 | xargs -0 clang-format -i

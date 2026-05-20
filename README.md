@@ -97,7 +97,7 @@ Requires [just](https://github.com/casey/just) and [meson](https://mesonbuild.co
 just configure release
 just build release
 
-# After building, install
+# After building, install. The install recipe does not build or reconfigure.
 sudo just install release
 ```
 
