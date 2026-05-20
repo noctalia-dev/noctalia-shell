@@ -55,7 +55,9 @@ sudo moss it meson g++ just \
   cairo-devel pango-devel \
   libxkbcommon-devel glib2-devel \
   sdbus-cpp-devel pipewire-devel \
-  linux-pam-devel polkit-devel curl-devel libwebp-devel librsvg-devel extra-cmake-modules
+  linux-pam-devel polkit-devel \
+  curl-devel libwebp-devel librsvg-devel \
+  extra-cmake-modules build-essential
 ```
 
 Vendored dependencies, with no system package needed: `Wuffs`, `nanosvg`, `tomlplusplus`, `tinyexpr`,
