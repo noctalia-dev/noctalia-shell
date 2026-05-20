@@ -1299,22 +1299,24 @@ void ConfigService::setWallpaperPath(const std::optional<std::string>& connector
   }
 }
 
-void ConfigService::extractWallpaperFromOverrides() {
+void ConfigService::extractWallpaperFromOverrides() { extractWallpaperFromTable(m_overridesTable); }
+
+void ConfigService::extractWallpaperFromTable(const toml::table& table) {
   m_defaultWallpaperPath.clear();
   m_lastWallpaperPath.clear();
   m_monitorWallpaperPaths.clear();
 
-  if (auto* wpDefault = m_overridesTable["wallpaper"]["default"].as_table()) {
+  if (auto* wpDefault = table["wallpaper"]["default"].as_table()) {
     if (auto v = (*wpDefault)["path"].value<std::string>()) {
       m_defaultWallpaperPath = FileUtils::expandUserPath(*v).string();
     }
   }
-  if (auto* wpLast = m_overridesTable["wallpaper"]["last"].as_table()) {
+  if (auto* wpLast = table["wallpaper"]["last"].as_table()) {
     if (auto v = (*wpLast)["path"].value<std::string>()) {
       m_lastWallpaperPath = FileUtils::expandUserPath(*v).string();
     }
   }
-  if (auto* monitors = m_overridesTable["wallpaper"]["monitors"].as_table()) {
+  if (auto* monitors = table["wallpaper"]["monitors"].as_table()) {
     for (const auto& [key, value] : *monitors) {
       if (auto* monTbl = value.as_table()) {
         if (auto v = (*monTbl)["path"].value<std::string>()) {

@@ -108,6 +108,7 @@ private:
   void setConfigParseError(std::string parseError);
   bool writeOverridesToFile();
   void extractWallpaperFromOverrides();
+  void extractWallpaperFromTable(const toml::table& table);
 
   Config m_config;
 

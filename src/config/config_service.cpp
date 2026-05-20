@@ -334,7 +334,17 @@ void ConfigService::setNotificationManager(NotificationManager* manager) {
 }
 
 void ConfigService::forceReload() {
+  const auto oldDefault = m_defaultWallpaperPath;
+  const auto oldLast = m_lastWallpaperPath;
+  const auto oldMonitors = m_monitorWallpaperPaths;
+
   loadAll();
+
+  const bool wallpaperChanged = (oldDefault != m_defaultWallpaperPath || oldLast != m_lastWallpaperPath ||
+                                 oldMonitors != m_monitorWallpaperPaths);
+  if (wallpaperChanged && m_wallpaperChangeCallback) {
+    m_wallpaperChangeCallback();
+  }
   fireReloadCallbacks();
 }
 
@@ -508,20 +518,14 @@ void ConfigService::checkReload() {
     overridesChanged = false;
   }
 
+  const auto oldDefault = m_defaultWallpaperPath;
+  const auto oldLast = m_lastWallpaperPath;
+  const auto oldMonitors = m_monitorWallpaperPaths;
+
   if (overridesChanged) {
     kLog.info("reloading {}", m_overridesPath);
 
-    const auto oldDefault = m_defaultWallpaperPath;
-    const auto oldLast = m_lastWallpaperPath;
-    const auto oldMonitors = m_monitorWallpaperPaths;
-
     loadOverridesFromFile();
-
-    const bool wallpaperChanged = (oldDefault != m_defaultWallpaperPath || oldLast != m_lastWallpaperPath ||
-                                   oldMonitors != m_monitorWallpaperPaths);
-    if (wallpaperChanged && m_wallpaperChangeCallback) {
-      m_wallpaperChangeCallback();
-    }
     configChanged = true; // overrides affect Config — rebuild it
   }
 
@@ -531,6 +535,11 @@ void ConfigService::checkReload() {
 
   kLog.info("config changed, reloading");
   loadAll();
+  const bool wallpaperChanged = (oldDefault != m_defaultWallpaperPath || oldLast != m_lastWallpaperPath ||
+                                 oldMonitors != m_monitorWallpaperPaths);
+  if (wallpaperChanged && m_wallpaperChangeCallback) {
+    m_wallpaperChangeCallback();
+  }
   fireReloadCallbacks();
 }
 
@@ -884,6 +893,7 @@ void ConfigService::loadAll() {
 
   // Apply the app-writable overrides overlay last — sidecar wins.
   deepMerge(merged, m_overridesTable);
+  extractWallpaperFromTable(merged);
 
   if (files.empty() && m_overridesTable.empty()) {
     kLog.info("no config files found, using defaults");

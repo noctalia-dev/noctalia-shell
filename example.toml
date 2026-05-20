@@ -64,6 +64,9 @@ directory           = "~/Pictures/Wallpapers"
 directory_light     = ""            # optional day-mode directory
 directory_dark      = ""            # optional night-mode directory
 
+[wallpaper.default]
+path = ""                            # optional initial/default wallpaper path
+
 [wallpaper.automation]
 enabled                    = false
 interval_minutes           = 0       # 0 = disabled
