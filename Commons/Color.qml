@@ -303,6 +303,8 @@ Singleton {
   }
 
   function resolveColorKey(key) {
+    if (key && key.length > 0 && key.charAt(0) === "#")
+      return key;
     switch (key) {
     case "primary":
       return root.mPrimary;
@@ -318,6 +320,8 @@ Singleton {
   }
 
   function resolveOnColorKey(key) {
+    if (key && key.length > 0 && key.charAt(0) === "#")
+      return key;
     switch (key) {
     case "primary":
       return root.mOnPrimary;
@@ -333,6 +337,8 @@ Singleton {
   }
 
   function resolveColorKeyOptional(key) {
+    if (key && key.length > 0 && key.charAt(0) === "#")
+      return key;
     switch (key) {
     case "primary":
       return root.mPrimary;
