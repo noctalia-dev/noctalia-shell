@@ -242,6 +242,7 @@ wayland_protos_dir = wayland_protos_dep.get_variable('pkgdatadir')
 # The c_target has an order-only dep on h_target so the header exists when
 # the generated .c is compiled (it does #include "foo-client-protocol.h").
 _protocol_sources = []
+_protocol_headers = []
 
 # Helper macro via foreach — each entry: [name, xml_input]
 # xml_input can be a string (path) or a custom_target.
@@ -305,6 +306,7 @@ foreach _p : [
     depends: _h,  # ensure .h exists before this .c is compiled (it #includes it)
   )
   _protocol_sources += _c
+  _protocol_headers += _h
 endforeach
 
 # wlr-layer-shell: 'namespace' is a C++ keyword; rename it in the generated
@@ -326,6 +328,7 @@ _wlr_ls_c = custom_target('wlr-layer-shell-unstable-v1-client-source',
   depends: _wlr_ls_h,
 )
 _protocol_sources += _wlr_ls_c
+_protocol_headers += _wlr_ls_h
 
 # ── Main sources ──────────────────────────────────────────────────────────────
 _noctalia_sources = files(
@@ -693,7 +696,7 @@ _noctalia_inc = [
 
 # ── Executable ────────────────────────────────────────────────────────────────
 executable('noctalia',
-  sources: _noctalia_sources + _protocol_sources + [_git_revision_h],
+  sources: _noctalia_sources + _protocol_sources + _protocol_headers + [_git_revision_h],
   dependencies: [
     sdbus_cpp_dep,
     wayland_client_dep,
@@ -841,7 +844,7 @@ wayland_toplevels_identity_test = executable('wayland_toplevels_identity_test',
     'tests/wayland_toplevels_identity_test.cpp',
     'src/system/app_identity.cpp',
     'src/wayland/wayland_toplevels.cpp',
-  ) + _protocol_sources,
+  ) + _protocol_sources + _protocol_headers,
   dependencies: [
     wayland_client_dep,
   ],
