@@ -102,7 +102,7 @@ namespace {
 
   void applyShortcutButtonStyle(Button& button, bool enabled, bool active, float fillOpacity) {
     if (enabled && active) {
-      button.setVariant(ButtonVariant::Accent);
+      button.setVariant(ButtonVariant::Primary);
     } else {
       button.setVariant(ButtonVariant::Outline);
       button.setCustomPalette(inactiveShortcutPalette(fillOpacity));

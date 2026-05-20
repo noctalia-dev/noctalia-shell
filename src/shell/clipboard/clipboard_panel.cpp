@@ -908,7 +908,7 @@ void ClipboardPanel::updatePinButton() {
   m_pinButton->setParticipatesInLayout(hasSelection);
   m_pinButton->setEnabled(hasSelection);
   m_pinButton->setGlyph(pinned ? "unpin" : "pin");
-  m_pinButton->setVariant(pinned ? ButtonVariant::Accent : ButtonVariant::Default);
+  m_pinButton->setVariant(pinned ? ButtonVariant::Primary : ButtonVariant::Default);
 }
 
 void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float height) {

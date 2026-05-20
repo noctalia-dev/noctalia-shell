@@ -22,11 +22,11 @@ enum class ButtonContentAlign : std::uint8_t {
 
 enum class ButtonVariant : std::uint8_t {
   Default,
+  Primary,
   Secondary,
   Destructive,
   Outline,
   Ghost,
-  Accent,
   Tab,
   TabActive,
 };

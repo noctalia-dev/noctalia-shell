@@ -61,7 +61,7 @@ namespace {
 
   std::string repeatGlyph(const std::string& loopStatus) { return loopStatus == "Track" ? "repeat-once" : "repeat"; }
 
-  ButtonVariant toggleVariant(bool active) { return active ? ButtonVariant::Accent : ButtonVariant::Ghost; }
+  ButtonVariant toggleVariant(bool active) { return active ? ButtonVariant::Primary : ButtonVariant::Ghost; }
   constexpr int kVisualizerBandCount = 32;
 
 } // namespace
@@ -346,7 +346,7 @@ std::unique_ptr<Flex> MediaTab::create() {
 
   auto playPause = std::make_unique<Button>();
   playPause->setGlyph("media-play");
-  playPause->setVariant(ButtonVariant::Accent);
+  playPause->setVariant(ButtonVariant::Primary);
   playPause->setMinWidth(kMediaPlayPauseHeight * scale);
   playPause->setMinHeight(kMediaPlayPauseHeight * scale);
   playPause->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
@@ -844,7 +844,7 @@ void MediaTab::refresh(Renderer& renderer) {
     m_syncingProgress = false;
 
     m_playPauseButton->setGlyph(playPauseGlyph(player.playbackStatus));
-    m_playPauseButton->setVariant(ButtonVariant::Accent);
+    m_playPauseButton->setVariant(ButtonVariant::Primary);
     if (m_prevButton != nullptr) {
       m_prevButton->setEnabled(player.canGoPrevious);
     }

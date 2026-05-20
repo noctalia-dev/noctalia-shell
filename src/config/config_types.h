@@ -110,6 +110,15 @@ struct ShortcutConfig {
   bool operator==(const ShortcutConfig&) const = default;
 };
 
+enum class SessionActionButtonVariant : std::uint8_t {
+  Default,
+  Primary,
+  Secondary,
+  Destructive,
+  Outline,
+  Ghost,
+};
+
 struct SessionPanelActionConfig {
   // "lock" | "logout" | "suspend" | "reboot" | "shutdown" | "command"
   std::string action;
@@ -118,7 +127,7 @@ struct SessionPanelActionConfig {
   std::optional<std::string> command;
   std::optional<std::string> label;
   std::optional<std::string> glyph;
-  bool destructive = false;
+  SessionActionButtonVariant variant = SessionActionButtonVariant::Default;
 
   bool operator==(const SessionPanelActionConfig&) const = default;
 };
@@ -413,6 +422,15 @@ template <typename T, std::size_t N> constexpr std::string_view enumToKey(const 
   }
   return {};
 }
+
+constexpr EnumOption<SessionActionButtonVariant> kSessionActionButtonVariants[] = {
+    {SessionActionButtonVariant::Default, "default", "settings.session-actions.variant.default"},
+    {SessionActionButtonVariant::Primary, "primary", "settings.session-actions.variant.primary"},
+    {SessionActionButtonVariant::Secondary, "secondary", "settings.session-actions.variant.secondary"},
+    {SessionActionButtonVariant::Destructive, "destructive", "settings.session-actions.variant.destructive"},
+    {SessionActionButtonVariant::Outline, "outline", "settings.session-actions.variant.outline"},
+    {SessionActionButtonVariant::Ghost, "ghost", "settings.session-actions.variant.ghost"},
+};
 
 enum class ClipboardAutoPasteMode : std::uint8_t {
   Off = 0,

@@ -320,12 +320,20 @@ namespace {
     return "terminal";
   }
 
-  [[nodiscard]] ButtonVariant variantFor(const SessionPanelActionConfig& cfg) {
-    if (cfg.destructive) {
+  [[nodiscard]] ButtonVariant buttonVariantFor(SessionActionButtonVariant variant) {
+    switch (variant) {
+    case SessionActionButtonVariant::Default:
+      return ButtonVariant::Default;
+    case SessionActionButtonVariant::Primary:
+      return ButtonVariant::Primary;
+    case SessionActionButtonVariant::Secondary:
+      return ButtonVariant::Secondary;
+    case SessionActionButtonVariant::Destructive:
       return ButtonVariant::Destructive;
-    }
-    if (cfg.action == "shutdown" && !cfg.command.has_value()) {
-      return ButtonVariant::Destructive;
+    case SessionActionButtonVariant::Outline:
+      return ButtonVariant::Outline;
+    case SessionActionButtonVariant::Ghost:
+      return ButtonVariant::Ghost;
     }
     return ButtonVariant::Default;
   }
@@ -333,53 +341,191 @@ namespace {
   [[nodiscard]] Button::ButtonPalette actionButtonPalette(const SessionPanelActionConfig& cfg, float fillOpacity) {
     constexpr float kDisabledAlpha = 0.55f;
     const float opacity = std::clamp(fillOpacity, 0.0f, 1.0f);
-    const bool destructive = variantFor(cfg) == ButtonVariant::Destructive;
+
+    switch (cfg.variant) {
+    case SessionActionButtonVariant::Primary:
+      return Button::ButtonPalette{
+          .borderWidth = 0.0f,
+          .normal =
+              Button::ButtonStateColors{
+                  .bg = colorSpecFromRole(ColorRole::Primary, opacity),
+                  .border = clearColorSpec(),
+                  .label = colorSpecFromRole(ColorRole::OnPrimary),
+              },
+          .hover =
+              Button::ButtonStateColors{
+                  .bg = colorSpecFromRole(ColorRole::Hover, std::max(opacity, 0.78f)),
+                  .border = clearColorSpec(),
+                  .label = colorSpecFromRole(ColorRole::OnHover),
+              },
+          .pressed =
+              Button::ButtonStateColors{
+                  .bg = colorSpecFromRole(ColorRole::Primary),
+                  .border = clearColorSpec(),
+                  .label = colorSpecFromRole(ColorRole::OnPrimary),
+              },
+          .disabled =
+              Button::ButtonStateColors{
+                  .bg = colorSpecFromRole(ColorRole::Primary, opacity * kDisabledAlpha),
+                  .border = clearColorSpec(),
+                  .label = colorSpecFromRole(ColorRole::OnPrimary, kDisabledAlpha),
+              },
+      };
+    case SessionActionButtonVariant::Secondary:
+      return Button::ButtonPalette{
+          .borderWidth = Style::borderWidth,
+          .normal =
+              Button::ButtonStateColors{
+                  .bg = colorSpecFromRole(ColorRole::Secondary, opacity),
+                  .border = colorSpecFromRole(ColorRole::Outline, 0.5f),
+                  .label = colorSpecFromRole(ColorRole::OnSecondary),
+              },
+          .hover =
+              Button::ButtonStateColors{
+                  .bg = colorSpecFromRole(ColorRole::Hover, std::max(opacity, 0.78f)),
+                  .border = clearColorSpec(),
+                  .label = colorSpecFromRole(ColorRole::OnHover),
+              },
+          .pressed =
+              Button::ButtonStateColors{
+                  .bg = colorSpecFromRole(ColorRole::Primary),
+                  .border = colorSpecFromRole(ColorRole::Primary),
+                  .label = colorSpecFromRole(ColorRole::OnPrimary),
+              },
+          .disabled =
+              Button::ButtonStateColors{
+                  .bg = colorSpecFromRole(ColorRole::Secondary, opacity * kDisabledAlpha),
+                  .border = colorSpecFromRole(ColorRole::Outline, 0.5f * kDisabledAlpha),
+                  .label = colorSpecFromRole(ColorRole::OnSecondary),
+              },
+      };
+    case SessionActionButtonVariant::Destructive:
+      return Button::ButtonPalette{
+          .borderWidth = Style::borderWidth,
+          .normal =
+              Button::ButtonStateColors{
+                  .bg = colorSpecFromRole(ColorRole::Error, opacity),
+                  .border = colorSpecFromRole(ColorRole::Error, 0.5f),
+                  .label = colorSpecFromRole(ColorRole::OnError),
+              },
+          .hover =
+              Button::ButtonStateColors{
+                  .bg = colorSpecFromRole(ColorRole::Error, std::max(opacity, 0.78f)),
+                  .border = clearColorSpec(),
+                  .label = colorSpecFromRole(ColorRole::OnError),
+              },
+          .pressed =
+              Button::ButtonStateColors{
+                  .bg = colorSpecFromRole(ColorRole::Error),
+                  .border = colorSpecFromRole(ColorRole::Error),
+                  .label = colorSpecFromRole(ColorRole::OnError),
+              },
+          .disabled =
+              Button::ButtonStateColors{
+                  .bg = colorSpecFromRole(ColorRole::Error, opacity * kDisabledAlpha),
+                  .border = colorSpecFromRole(ColorRole::Error, 0.5f * kDisabledAlpha),
+                  .label = colorSpecFromRole(ColorRole::OnError, kDisabledAlpha),
+              },
+      };
+    case SessionActionButtonVariant::Outline:
+      return Button::ButtonPalette{
+          .borderWidth = Style::borderWidth,
+          .normal =
+              Button::ButtonStateColors{
+                  .bg = colorSpecFromRole(ColorRole::Surface, opacity),
+                  .border = colorSpecFromRole(ColorRole::Outline, 0.5f),
+                  .label = colorSpecFromRole(ColorRole::OnSurface),
+              },
+          .hover =
+              Button::ButtonStateColors{
+                  .bg = colorSpecFromRole(ColorRole::Hover, std::max(opacity, 0.78f)),
+                  .border = clearColorSpec(),
+                  .label = colorSpecFromRole(ColorRole::OnHover),
+              },
+          .pressed =
+              Button::ButtonStateColors{
+                  .bg = colorSpecFromRole(ColorRole::Primary),
+                  .border = colorSpecFromRole(ColorRole::Primary),
+                  .label = colorSpecFromRole(ColorRole::OnPrimary),
+              },
+          .disabled =
+              Button::ButtonStateColors{
+                  .bg = colorSpecFromRole(ColorRole::Surface, opacity * kDisabledAlpha),
+                  .border = colorSpecFromRole(ColorRole::Outline, 0.5f * kDisabledAlpha),
+                  .label = colorSpecFromRole(ColorRole::OnSurface, kDisabledAlpha),
+              },
+      };
+    case SessionActionButtonVariant::Ghost:
+      return Button::ButtonPalette{
+          .borderWidth = 0.0f,
+          .normal =
+              Button::ButtonStateColors{
+                  .bg = clearColorSpec(),
+                  .border = clearColorSpec(),
+                  .label = colorSpecFromRole(ColorRole::OnSurface),
+              },
+          .hover =
+              Button::ButtonStateColors{
+                  .bg = colorSpecFromRole(ColorRole::Hover, std::max(opacity, 0.78f)),
+                  .border = clearColorSpec(),
+                  .label = colorSpecFromRole(ColorRole::OnHover),
+              },
+          .pressed =
+              Button::ButtonStateColors{
+                  .bg = colorSpecFromRole(ColorRole::SurfaceVariant, opacity),
+                  .border = clearColorSpec(),
+                  .label = colorSpecFromRole(ColorRole::OnSurface),
+              },
+          .disabled =
+              Button::ButtonStateColors{
+                  .bg = clearColorSpec(),
+                  .border = clearColorSpec(),
+                  .label = colorSpecFromRole(ColorRole::OnSurface, kDisabledAlpha),
+              },
+      };
+    case SessionActionButtonVariant::Default:
+      break;
+    }
 
     return Button::ButtonPalette{
         .borderWidth = Style::borderWidth,
         .normal =
             Button::ButtonStateColors{
-                .bg = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::SurfaceVariant, opacity),
-                .border = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::Outline, 0.5f),
-                .label = colorSpecFromRole(destructive ? ColorRole::OnError : ColorRole::OnSurface),
+                .bg = colorSpecFromRole(ColorRole::SurfaceVariant, opacity),
+                .border = colorSpecFromRole(ColorRole::Outline, 0.5f),
+                .label = colorSpecFromRole(ColorRole::OnSurface),
             },
         .hover =
             Button::ButtonStateColors{
-                .bg = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::Hover, std::max(opacity, 0.78f)),
+                .bg = colorSpecFromRole(ColorRole::Hover, std::max(opacity, 0.78f)),
                 .border = clearColorSpec(),
-                .label = colorSpecFromRole(destructive ? ColorRole::OnError : ColorRole::OnHover),
+                .label = colorSpecFromRole(ColorRole::OnHover),
             },
         .pressed =
             Button::ButtonStateColors{
-                .bg = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::Primary),
-                .border = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::Primary),
-                .label = colorSpecFromRole(destructive ? ColorRole::OnError : ColorRole::OnPrimary),
+                .bg = colorSpecFromRole(ColorRole::Primary),
+                .border = colorSpecFromRole(ColorRole::Primary),
+                .label = colorSpecFromRole(ColorRole::OnPrimary),
             },
         .disabled =
             Button::ButtonStateColors{
-                .bg = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::SurfaceVariant,
-                                        opacity * kDisabledAlpha),
-                .border = colorSpecFromRole(destructive ? ColorRole::Error : ColorRole::Outline, 0.5f * kDisabledAlpha),
-                .label = colorSpecFromRole(destructive ? ColorRole::OnError : ColorRole::OnSurface, kDisabledAlpha),
+                .bg = colorSpecFromRole(ColorRole::SurfaceVariant, opacity * kDisabledAlpha),
+                .border = colorSpecFromRole(ColorRole::Outline, 0.5f * kDisabledAlpha),
+                .label = colorSpecFromRole(ColorRole::OnSurface, kDisabledAlpha),
             },
     };
   }
 
   void applyActionButtonPalette(Button& button, const SessionPanelActionConfig& cfg, float fillOpacity) {
-    button.setVariant(variantFor(cfg));
+    button.setVariant(buttonVariantFor(cfg.variant));
     button.setCustomPalette(actionButtonPalette(cfg, fillOpacity));
   }
 
 } // namespace
 
 std::vector<SessionPanelActionConfig> SessionPanel::effectiveActions() const {
-  std::vector<SessionPanelActionConfig> src;
-  if (m_config != nullptr) {
-    src = m_config->config().shell.session.actions;
-  }
-  if (src.empty()) {
-    src = defaultSessionPanelActions();
-  }
+  std::vector<SessionPanelActionConfig> src =
+      m_config != nullptr ? m_config->config().shell.session.actions : defaultSessionPanelActions();
 
   std::vector<SessionPanelActionConfig> out;
   out.reserve(src.size());

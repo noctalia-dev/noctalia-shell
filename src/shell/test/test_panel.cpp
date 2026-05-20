@@ -145,7 +145,7 @@ void TestPanel::create() {
       ButtonVariant variant;
     };
     const std::vector<VariantSpec> variants = {
-        {"Default", ButtonVariant::Default},     {"Accent", ButtonVariant::Accent},
+        {"Default", ButtonVariant::Default},     {"Primary", ButtonVariant::Primary},
         {"Secondary", ButtonVariant::Secondary}, {"Destructive", ButtonVariant::Destructive},
         {"Outline", ButtonVariant::Outline},     {"Ghost", ButtonVariant::Ghost},
     };
@@ -679,7 +679,7 @@ void TestPanel::create() {
     demoButton->setGlyph("cpu-temperature");
     demoButton->setFontSize(Style::fontSizeBody * scale);
     demoButton->setGlyphSize(Style::fontSizeBody * scale);
-    demoButton->setVariant(ButtonVariant::Accent);
+    demoButton->setVariant(ButtonVariant::Primary);
     demoButton->setPadding(Style::spaceSm * scale, Style::spaceLg * scale);
     demoButton->setRadius(Style::scaledRadiusMd(scale));
     demoButton->setOnClick([this]() {
@@ -822,7 +822,7 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
 
     auto applyBtn = std::make_unique<Button>();
     applyBtn->setText("Apply");
-    applyBtn->setVariant(ButtonVariant::Accent);
+    applyBtn->setVariant(ButtonVariant::Primary);
     applyBtn->setFontSize(Style::fontSizeBody * scale);
     applyBtn->setMinHeight(Style::controlHeight * scale);
     applyBtn->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);

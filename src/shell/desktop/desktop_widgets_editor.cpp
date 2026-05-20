@@ -777,7 +777,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
 
   auto addButton = std::make_unique<Button>();
   addButton->setGlyph("plus");
-  addButton->setVariant(ButtonVariant::Accent);
+  addButton->setVariant(ButtonVariant::Primary);
   addButton->setOnClick([this, outputName = surface.outputName]() {
     deferEditorMutation([this, outputName]() { addWidget(outputName, m_addWidgetType); });
   });

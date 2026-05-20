@@ -229,7 +229,7 @@ GlyphPicker::GlyphPicker(float chromeScale) : m_chromeScale(std::max(0.1f, chrom
 
   auto apply = std::make_unique<Button>();
   apply->setText(i18n::tr("common.actions.apply"));
-  apply->setVariant(ButtonVariant::Accent);
+  apply->setVariant(ButtonVariant::Primary);
   configureDialogActionButton(*apply, m_chromeScale);
   apply->setOnClick([this]() {
     if (!m_onApply) {

@@ -431,7 +431,7 @@ void CalendarTab::rebuild() {
     } else {
       dayButton->setText(std::to_string(day));
       if (state.isCurrentMonth && day == state.today) {
-        dayButton->setVariant(ButtonVariant::Accent);
+        dayButton->setVariant(ButtonVariant::Primary);
       } else {
         dayButton->label()->setColor(colorSpecFromRole(ColorRole::OnSurface));
       }

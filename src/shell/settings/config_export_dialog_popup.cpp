@@ -233,7 +233,7 @@ namespace settings {
 
     auto exportBtn = std::make_unique<Button>();
     exportBtn->setText(i18n::tr("settings.export-config.export"));
-    exportBtn->setVariant(ButtonVariant::Accent);
+    exportBtn->setVariant(ButtonVariant::Primary);
     exportBtn->setFontSize(Style::fontSizeBody * m_scale);
     exportBtn->setMinHeight(Style::controlHeight * m_scale);
     exportBtn->setPadding(Style::spaceXs * m_scale, Style::spaceMd * m_scale);

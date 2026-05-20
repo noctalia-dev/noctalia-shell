@@ -80,7 +80,7 @@ void DesktopMediaPlayerWidget::create() {
 
   auto playPause = std::make_unique<Button>();
   playPause->setGlyph("media-play");
-  playPause->setVariant(ButtonVariant::Accent);
+  playPause->setVariant(ButtonVariant::Primary);
   playPause->setOnClick([this]() {
     if (m_mpris != nullptr) {
       m_mpris->playPauseActive();

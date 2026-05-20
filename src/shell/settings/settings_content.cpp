@@ -83,6 +83,14 @@ namespace settings {
       return labels;
     }
 
+    std::vector<SelectOption> sessionActionVariantOptions() {
+      std::vector<SelectOption> options;
+      for (const auto& variant : kSessionActionButtonVariants) {
+        options.push_back(SelectOption{std::string(variant.key), i18n::tr(variant.labelKey), {}});
+      }
+      return options;
+    }
+
     const char* sessionActionDefaultGlyphName(std::string_view action) {
       if (action == "lock") {
         return "lock";
@@ -583,22 +591,38 @@ namespace settings {
       cmdBlock->addChild(std::move(cmdIn));
       fields->addChild(std::move(cmdBlock));
 
-      auto destGrp = std::make_unique<Flex>();
-      destGrp->setDirection(FlexDirection::Horizontal);
-      destGrp->setAlign(FlexAlign::Center);
-      destGrp->setGap(Style::spaceXs * scale);
-      destGrp->addChild(makeLabel(i18n::tr("settings.session-actions.destructive-label"),
-                                  Style::fontSizeCaption * scale, colorSpecFromRole(ColorRole::OnSurfaceVariant),
-                                  false));
-      auto destToggle = std::make_unique<Toggle>();
-      destToggle->setScale(scale);
-      destToggle->setChecked(row.destructive);
-      destToggle->setOnChange([&row, persist](bool v) {
-        row.destructive = v;
-        persist();
-      });
-      destGrp->addChild(std::move(destToggle));
-      fields->addChild(std::move(destGrp));
+      auto variantBlock = std::make_unique<Flex>();
+      variantBlock->setDirection(FlexDirection::Vertical);
+      variantBlock->setAlign(FlexAlign::Stretch);
+      variantBlock->setGap(Style::spaceXs * scale);
+      variantBlock->setFlexGrow(1.0f);
+      variantBlock->addChild(makeLabel(i18n::tr("settings.session-actions.variant-label"),
+                                       Style::fontSizeCaption * scale, colorSpecFromRole(ColorRole::OnSurfaceVariant),
+                                       false));
+      auto variantSelect = std::make_unique<Select>();
+      const std::vector<SelectOption> variantOptions = sessionActionVariantOptions();
+      variantSelect->setOptions(optionLabels(variantOptions));
+      const std::string selectedVariant(enumToKey(kSessionActionButtonVariants, row.variant));
+      if (const auto vi = optionIndex(variantOptions, selectedVariant)) {
+        variantSelect->setSelectedIndex(*vi);
+      } else {
+        variantSelect->clearSelection();
+      }
+      variantSelect->setFontSize(Style::fontSizeBody * scale);
+      variantSelect->setControlHeight(Style::controlHeight * scale);
+      variantSelect->setGlyphSize(Style::fontSizeBody * scale);
+      variantSelect->setFillWidth(true);
+      variantSelect->setOnSelectionChanged(
+          [&row, variantOptions, persist](std::size_t index, std::string_view /*label*/) {
+            if (index < variantOptions.size()) {
+              if (auto parsed = enumFromKey(kSessionActionButtonVariants, variantOptions[index].value)) {
+                row.variant = *parsed;
+                persist();
+              }
+            }
+          });
+      variantBlock->addChild(std::move(variantSelect));
+      fields->addChild(std::move(variantBlock));
 
       body->addChild(std::move(fields));
       section.addChild(std::move(body));
@@ -1973,7 +1997,7 @@ namespace settings {
       addBtn->setRadius(Style::scaledRadiusMd(scale));
       addBtn->setOnClick([state, commit]() {
         state->push_back(SessionPanelActionConfig{"command", true, "notify-send 'Noctalia' 'Custom session entry'",
-                                                  std::nullopt, std::nullopt, false});
+                                                  std::nullopt, std::nullopt, SessionActionButtonVariant::Default});
         commit();
       });
       block->addChild(std::move(addBtn));

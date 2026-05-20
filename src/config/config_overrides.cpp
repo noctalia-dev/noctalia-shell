@@ -499,9 +499,7 @@ namespace {
               if (item.glyph.has_value() && !item.glyph->empty()) {
                 row.insert_or_assign("glyph", *item.glyph);
               }
-              if (item.destructive) {
-                row.insert_or_assign("destructive", true);
-              }
+              row.insert_or_assign("variant", std::string(enumToKey(kSessionActionButtonVariants, item.variant)));
               array.push_back(std::move(row));
             }
             table.insert_or_assign(key, std::move(array));

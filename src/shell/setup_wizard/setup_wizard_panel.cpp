@@ -383,7 +383,7 @@ void SetupWizardPanel::create() {
     auto button = std::make_unique<Button>();
     button->setText(i18n::tr("setup-wizard.get-started"));
     button->setGlyph("chevron-right");
-    button->setVariant(ButtonVariant::Accent);
+    button->setVariant(ButtonVariant::Primary);
     button->setFontSize(Style::fontSizeBody * scale);
     button->setGlyphSize(Style::fontSizeBody * scale);
     button->setMinHeight(Style::controlHeight * scale);

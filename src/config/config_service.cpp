@@ -1488,8 +1488,13 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
                 row.glyph = std::nullopt;
               }
             }
-            if (auto v = (*entryTbl)["destructive"].value<bool>()) {
-              row.destructive = *v;
+            if (auto v = (*entryTbl)["variant"].value<std::string>()) {
+              const std::string key = StringUtils::trim(*v);
+              if (auto parsed = enumFromKey(kSessionActionButtonVariants, key)) {
+                row.variant = *parsed;
+              } else {
+                kLog.warn("unknown shell.session.actions variant \"{}\"", key);
+              }
             }
             shell.session.actions.push_back(std::move(row));
           }

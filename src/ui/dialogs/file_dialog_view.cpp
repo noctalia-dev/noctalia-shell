@@ -367,7 +367,7 @@ void FileDialogView::create() {
   m_cancelButton = static_cast<Button*>(footer->addChild(std::move(cancelButton)));
 
   auto okButton = std::make_unique<Button>();
-  okButton->setVariant(ButtonVariant::Accent);
+  okButton->setVariant(ButtonVariant::Primary);
   configureDialogActionButton(*okButton, scale);
   okButton->setOnClick([this]() { DeferredCall::callLater([this]() { submitDialog(); }); });
   m_okButton = static_cast<Button*>(footer->addChild(std::move(okButton)));

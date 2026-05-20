@@ -688,10 +688,18 @@
       "label-placeholder": "Optional button text",
       "glyph-field": "Glyph",
       "glyph-placeholder": "Optional icon id",
-      "destructive-label": "Warn style",
+      "variant-label": "Button style",
       "move-up": "Up",
       "move-down": "Down",
       "add": "Add action",
+      "variant": {
+        "default": "Default",
+        "primary": "Primary",
+        "secondary": "Secondary",
+        "destructive": "Destructive",
+        "outline": "Outline",
+        "ghost": "Ghost"
+      },
       "kind": {
         "lock": "Lock",
         "logout": "Log out",

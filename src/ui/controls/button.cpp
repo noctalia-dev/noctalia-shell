@@ -36,6 +36,18 @@ namespace {
                                 colorSpecFromRole(ColorRole::Outline, kDisabledAlpha),
                                 colorSpecFromRole(ColorRole::OnSurface, kDisabledAlpha)),
       };
+    case ButtonVariant::Primary:
+      return Button::ButtonPalette{
+          .borderWidth = 0.0f,
+          .normal = makeState(colorSpecFromRole(ColorRole::Primary), clearColorSpec(),
+                              colorSpecFromRole(ColorRole::OnPrimary)),
+          .hover =
+              makeState(colorSpecFromRole(ColorRole::Hover), clearColorSpec(), colorSpecFromRole(ColorRole::OnHover)),
+          .pressed = makeState(colorSpecFromRole(ColorRole::Primary), clearColorSpec(),
+                               colorSpecFromRole(ColorRole::OnPrimary)),
+          .disabled = makeState(colorSpecFromRole(ColorRole::Primary, kDisabledAlpha), clearColorSpec(),
+                                colorSpecFromRole(ColorRole::OnPrimary)),
+      };
     case ButtonVariant::Secondary:
       return Button::ButtonPalette{
           .borderWidth = Style::borderWidth,
@@ -87,18 +99,6 @@ namespace {
                                colorSpecFromRole(ColorRole::OnSurface)),
           .disabled =
               makeState(clearColorSpec(), clearColorSpec(), colorSpecFromRole(ColorRole::OnSurface, kDisabledAlpha)),
-      };
-    case ButtonVariant::Accent:
-      return Button::ButtonPalette{
-          .borderWidth = 0.0f,
-          .normal = makeState(colorSpecFromRole(ColorRole::Primary), clearColorSpec(),
-                              colorSpecFromRole(ColorRole::OnPrimary)),
-          .hover =
-              makeState(colorSpecFromRole(ColorRole::Hover), clearColorSpec(), colorSpecFromRole(ColorRole::OnHover)),
-          .pressed = makeState(colorSpecFromRole(ColorRole::Primary), clearColorSpec(),
-                               colorSpecFromRole(ColorRole::OnPrimary)),
-          .disabled = makeState(colorSpecFromRole(ColorRole::Primary, kDisabledAlpha), clearColorSpec(),
-                                colorSpecFromRole(ColorRole::OnPrimary)),
       };
     case ButtonVariant::Tab:
       return Button::ButtonPalette{

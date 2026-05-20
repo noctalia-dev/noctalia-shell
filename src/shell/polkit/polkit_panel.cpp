@@ -124,7 +124,7 @@ void PolkitPanel::create() {
 
   auto submitButton = std::make_unique<Button>();
   submitButton->setText(i18n::tr("auth.polkit.authenticate"));
-  submitButton->setVariant(ButtonVariant::Accent);
+  submitButton->setVariant(ButtonVariant::Primary);
   submitButton->setOnClick([this]() { submit(); });
   m_submitButton = submitButton.get();
   actions->addChild(std::move(submitButton));

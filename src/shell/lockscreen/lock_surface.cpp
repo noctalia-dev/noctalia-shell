@@ -81,7 +81,7 @@ LockSurface::LockSurface(WaylandConnection& connection, ConfigService* config) :
   loginButton->setText("");
   loginButton->setGlyph("check");
   loginButton->setGlyphSize(16.0f);
-  loginButton->setVariant(ButtonVariant::Accent);
+  loginButton->setVariant(ButtonVariant::Primary);
   loginButton->setOnClick([this]() {
     if (m_onLogin) {
       m_onLogin();

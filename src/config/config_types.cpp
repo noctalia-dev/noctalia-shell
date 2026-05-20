@@ -54,11 +54,16 @@ std::vector<ShortcutConfig> defaultControlCenterShortcuts() {
 
 std::vector<SessionPanelActionConfig> defaultSessionPanelActions() {
   return {
-      SessionPanelActionConfig{"lock", true, std::nullopt, std::nullopt, std::nullopt, false},
-      SessionPanelActionConfig{"logout", true, std::nullopt, std::nullopt, std::nullopt, false},
-      SessionPanelActionConfig{"suspend", true, std::nullopt, std::nullopt, std::nullopt, false},
-      SessionPanelActionConfig{"reboot", true, std::nullopt, std::nullopt, std::nullopt, false},
-      SessionPanelActionConfig{"shutdown", true, std::nullopt, std::nullopt, std::nullopt, true},
+      SessionPanelActionConfig{"lock", true, std::nullopt, std::nullopt, std::nullopt,
+                               SessionActionButtonVariant::Default},
+      SessionPanelActionConfig{"logout", true, std::nullopt, std::nullopt, std::nullopt,
+                               SessionActionButtonVariant::Default},
+      SessionPanelActionConfig{"suspend", true, std::nullopt, std::nullopt, std::nullopt,
+                               SessionActionButtonVariant::Default},
+      SessionPanelActionConfig{"reboot", true, std::nullopt, std::nullopt, std::nullopt,
+                               SessionActionButtonVariant::Default},
+      SessionPanelActionConfig{"shutdown", true, std::nullopt, std::nullopt, std::nullopt,
+                               SessionActionButtonVariant::Destructive},
   };
 }
 
