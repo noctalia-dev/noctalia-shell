@@ -416,8 +416,7 @@ namespace settings {
     }
 
     void buildSessionActionEntryDetailContentImpl(Flex& section, SettingsContentContext& ctx,
-                                                  SessionPanelActionConfig& row, const std::function<void()>& persist,
-                                                  const std::function<void()>& closeHostedEditor) {
+                                                  SessionPanelActionConfig& row, const std::function<void()>& persist) {
       const float scale = ctx.scale;
       const std::vector<SelectOption> kindOptions = {
           {"lock", i18n::tr("settings.session-actions.kind.lock"), {}},
@@ -626,33 +625,6 @@ namespace settings {
 
       body->addChild(std::move(fields));
       section.addChild(std::move(body));
-
-      auto actions = std::make_unique<Flex>();
-      actions->setDirection(FlexDirection::Horizontal);
-      actions->setAlign(FlexAlign::Center);
-      actions->setGap(Style::spaceSm * scale);
-      actions->setFillWidth(true);
-
-      auto applyBtn = std::make_unique<Button>();
-      applyBtn->setGlyph("check");
-      applyBtn->setText(i18n::tr("common.actions.apply"));
-      applyBtn->setVariant(ButtonVariant::Default);
-      applyBtn->setFontSize(Style::fontSizeBody * scale);
-      applyBtn->setGlyphSize(Style::fontSizeBody * scale);
-      applyBtn->setMinHeight(Style::controlHeight * scale);
-      applyBtn->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-      applyBtn->setRadius(Style::scaledRadiusMd(scale));
-      applyBtn->setFlexGrow(1.0f);
-      applyBtn->setOnClick([commitLabel, commitCommand, closeHostedEditor]() {
-        commitLabel();
-        commitCommand();
-        if (closeHostedEditor) {
-          closeHostedEditor();
-        }
-      });
-      actions->addChild(std::move(applyBtn));
-
-      section.addChild(std::move(actions));
     }
 
     void buildIdleBehaviorEntryDetailContentImpl(Flex& section, SettingsContentContext& ctx, IdleBehaviorConfig& row,
@@ -2438,7 +2410,7 @@ namespace settings {
 
   void buildSessionActionEntryDetailContent(Flex& parent, SettingsContentContext& ctx, SessionPanelActionConfig& row,
                                             const std::function<void()>& persist) {
-    buildSessionActionEntryDetailContentImpl(parent, ctx, row, persist, ctx.closeHostedEditor);
+    buildSessionActionEntryDetailContentImpl(parent, ctx, row, persist);
   }
 
   void buildIdleBehaviorEntryDetailContent(Flex& parent, SettingsContentContext& ctx, IdleBehaviorConfig& row,
