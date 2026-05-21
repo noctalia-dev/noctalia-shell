@@ -594,9 +594,9 @@ namespace settings {
         add(std::move(maxLabelChars));
       }
       {
-        auto pillSize = doubleSpec("pill_size", 1.0, 0.1, 1.0, 0.1);
-        pillSize.descriptionKey = "settings.widgets.settings.pill_size.workspaces-description";
-        add(std::move(pillSize));
+        auto pillScale = doubleSpec("pill_scale", 1.0, 0.1, 1.0, 0.1);
+        pillScale.descriptionKey = "settings.widgets.settings.pill_scale.workspaces-description";
+        add(std::move(pillScale));
       }
       {
         auto focusedColor = colorSpec("focused_color", "primary");
