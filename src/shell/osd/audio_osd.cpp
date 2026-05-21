@@ -70,7 +70,7 @@ void AudioOsd::suppressFor(std::chrono::milliseconds duration) {
   m_suppressUntil = std::chrono::steady_clock::now() + duration;
 }
 
-void AudioOsd::showOutput(std::uint32_t sinkId, float volume, bool muted) {
+void AudioOsd::showOutput(std::uint32_t sinkId, float volume, bool muted, bool playFeedback) {
   const auto now = std::chrono::steady_clock::now();
   if (now < m_suppressUntil) {
     return;
@@ -79,7 +79,7 @@ void AudioOsd::showOutput(std::uint32_t sinkId, float volume, bool muted) {
   if (m_overlay != nullptr) {
     m_overlay->show(makeOutputContent(volume, muted));
   }
-  if (m_soundPlayer != nullptr && now - m_lastSoundAt >= kVolumeSoundCooldown) {
+  if (playFeedback && m_soundPlayer != nullptr && now - m_lastSoundAt >= kVolumeSoundCooldown) {
     m_soundPlayer->play("volume-change");
     m_lastSoundAt = now;
   }
@@ -89,7 +89,7 @@ void AudioOsd::showOutput(std::uint32_t sinkId, float volume, bool muted) {
   m_lastSinkMuted = muted;
 }
 
-void AudioOsd::showInput(std::uint32_t sourceId, float volume, bool muted) {
+void AudioOsd::showInput(std::uint32_t sourceId, float volume, bool muted, bool playFeedback) {
   const auto now = std::chrono::steady_clock::now();
   if (now < m_suppressUntil) {
     return;
@@ -97,7 +97,7 @@ void AudioOsd::showInput(std::uint32_t sourceId, float volume, bool muted) {
   if (m_overlay != nullptr) {
     m_overlay->show(makeInputContent(volume, muted));
   }
-  if (m_soundPlayer != nullptr && now - m_lastSoundAt >= kVolumeSoundCooldown) {
+  if (playFeedback && m_soundPlayer != nullptr && now - m_lastSoundAt >= kVolumeSoundCooldown) {
     m_soundPlayer->play("volume-change");
     m_lastSoundAt = now;
   }
@@ -134,13 +134,15 @@ void AudioOsd::onAudioStateChanged(const PipeWireService& service) {
     return;
   }
 
-  const bool sinkChanged = sink != nullptr && (sinkId != m_lastSinkId || volumeChanged(sinkVolume, m_lastSinkVolume) ||
-                                               sinkMuted != m_lastSinkMuted);
+  const bool sinkVolumeChanged = sink != nullptr && volumeChanged(sinkVolume, m_lastSinkVolume);
+  const bool sinkMuteChanged = sink != nullptr && sinkMuted != m_lastSinkMuted;
+  const bool sinkChanged = sink != nullptr && (sinkId != m_lastSinkId || sinkVolumeChanged || sinkMuteChanged);
   const bool sinkRouteChanged = sink != nullptr && sinkId != m_lastSinkId;
   const bool sinkDisappeared = sink == nullptr && m_lastSinkId != 0;
+  const bool sourceVolumeChanged = source != nullptr && volumeChanged(sourceVolume, m_lastSourceVolume);
+  const bool sourceMuteChanged = source != nullptr && sourceMuted != m_lastSourceMuted;
   const bool sourceChanged =
-      source != nullptr && (sourceId != m_lastSourceId || volumeChanged(sourceVolume, m_lastSourceVolume) ||
-                            sourceMuted != m_lastSourceMuted);
+      source != nullptr && (sourceId != m_lastSourceId || sourceVolumeChanged || sourceMuteChanged);
 
   if (sinkRouteChanged || sinkDisappeared) {
     m_suppressAutoInputOsdUntil = now + std::chrono::milliseconds(400);
@@ -148,9 +150,10 @@ void AudioOsd::onAudioStateChanged(const PipeWireService& service) {
 
   if (m_overlay != nullptr) {
     if (sinkChanged) {
-      showOutput(sink->id, sink->volume, sinkMuted);
+      // Passive PipeWire updates: click only on real volume changes while unmuted.
+      showOutput(sink->id, sink->volume, sinkMuted, sinkVolumeChanged && !sinkMuted);
     } else if (sourceChanged && now >= m_suppressAutoInputOsdUntil) {
-      showInput(source->id, source->volume, sourceMuted);
+      showInput(source->id, source->volume, sourceMuted, sourceVolumeChanged && !sourceMuted);
     }
   }
 

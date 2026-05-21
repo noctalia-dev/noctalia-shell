@@ -362,7 +362,7 @@ namespace {
   }
 
   // Device ParamRoute updates are per-direction; applying every route's volume to all nodes on the same
-  // device.id merges playback and capture on combo hardware (see deviceRouteIndicatesMuted).
+  // device.id merges playback and capture on combo hardware (see activeRouteForDirection).
   [[nodiscard]] bool routeVolumeDirectionMatchesNode(std::string_view mediaClass, std::uint32_t routeDirection) {
     if (mediaClass == "Audio/Sink") {
       return routeDirection == SPA_DIRECTION_OUTPUT;
@@ -371,6 +371,58 @@ namespace {
       return routeDirection == SPA_DIRECTION_INPUT;
     }
     return true;
+  }
+
+  [[nodiscard]] bool routeIsSelectable(const PipeWireService::DeviceRouteData& route, std::uint32_t wantDir) {
+    return route.index >= 0 && route.direction == wantDir && route.available != SPA_PARAM_AVAILABILITY_no;
+  }
+
+  [[nodiscard]] bool routeIsBetterCandidate(const PipeWireService::DeviceRouteData& candidate,
+                                            const PipeWireService::DeviceRouteData& current) {
+    const bool candidateAvailable = candidate.available == SPA_PARAM_AVAILABILITY_yes;
+    const bool currentAvailable = current.available == SPA_PARAM_AVAILABILITY_yes;
+    if (candidateAvailable != currentAvailable) {
+      return candidateAvailable;
+    }
+    return candidate.priority > current.priority;
+  }
+
+  [[nodiscard]] const PipeWireService::DeviceRouteData*
+  activeRouteForDirection(const std::vector<PipeWireService::DeviceRouteData>& routes, std::uint32_t wantDir) {
+    const PipeWireService::DeviceRouteData* best = nullptr;
+    for (const auto& route : routes) {
+      if (!routeIsSelectable(route, wantDir)) {
+        continue;
+      }
+      if (best == nullptr || routeIsBetterCandidate(route, *best)) {
+        best = &route;
+      }
+    }
+    return best;
+  }
+
+  void upsertRoute(std::vector<PipeWireService::DeviceRouteData>& routes, PipeWireService::DeviceRouteData route) {
+    const std::int32_t lookupIndex = route.index >= 0 ? route.index : -1;
+    if (lookupIndex < 0) {
+      return;
+    }
+    const auto existing = std::find_if(routes.begin(), routes.end(),
+                                       [lookupIndex](const auto& entry) { return entry.index == lookupIndex; });
+    if (existing == routes.end()) {
+      routes.push_back(route);
+      return;
+    }
+    *existing = route;
+  }
+
+  [[nodiscard]] std::uint32_t routeDirectionForMediaClass(std::string_view mediaClass) {
+    if (mediaClass == "Audio/Source") {
+      return SPA_DIRECTION_INPUT;
+    }
+    if (mediaClass == "Audio/Sink") {
+      return SPA_DIRECTION_OUTPUT;
+    }
+    return 0;
   }
 
   constexpr Logger kLog("pipewire");
@@ -877,22 +929,24 @@ void PipeWireService::onNodeParam(std::uint32_t id, std::uint32_t paramId, std::
     std::int32_t routeIndex = -1;
     std::int32_t routeDevice = -1;
     std::uint32_t routeDirection = nd.routeDirection;
+    std::int32_t routePriority = 0;
     const spa_pod* routeProps = nullptr;
     if (spa_pod_parse_object(param, SPA_TYPE_OBJECT_ParamRoute, nullptr, SPA_PARAM_ROUTE_index,
                              SPA_POD_Int(&routeIndex), SPA_PARAM_ROUTE_direction, SPA_POD_Id(&routeDirection),
-                             SPA_PARAM_ROUTE_device, SPA_POD_Int(&routeDevice), SPA_PARAM_ROUTE_props,
-                             SPA_POD_Pod(&routeProps)) >= 0) {
+                             SPA_PARAM_ROUTE_device, SPA_POD_Int(&routeDevice), SPA_PARAM_ROUTE_priority,
+                             SPA_POD_Int(&routePriority), SPA_PARAM_ROUTE_props, SPA_POD_Pod(&routeProps)) >= 0) {
       const spa_pod_prop* availProp = spa_pod_find_prop(param, nullptr, SPA_PARAM_ROUTE_available);
       std::uint32_t routeAvailable = SPA_PARAM_AVAILABILITY_unknown;
       if (availProp != nullptr) {
         spa_pod_get_id(&availProp->value, &routeAvailable);
       }
-      if (routeIndex >= 0) {
-        nd.routeIndex = routeIndex;
-        nd.routeDevice = routeDevice;
-        nd.routeDirection = routeDirection;
-        nd.hasRoute = true;
-      }
+
+      DeviceRouteData route;
+      route.index = routeIndex >= 0 ? routeIndex : -1;
+      route.device = routeDevice;
+      route.direction = routeDirection;
+      route.priority = routePriority;
+      route.available = routeAvailable;
       if (routeProps != nullptr) {
         spa_pod_prop* prop = nullptr;
         auto* propsObj = reinterpret_cast<spa_pod_object*>(const_cast<spa_pod*>(routeProps));
@@ -900,11 +954,13 @@ void PipeWireService::onNodeParam(std::uint32_t id, std::uint32_t paramId, std::
           if (prop->key == SPA_PROP_mute) {
             bool routeMuted = false;
             if (spa_pod_get_bool(&prop->value, &routeMuted) == 0) {
-              nd.nodeRouteMute = routeMuted;
+              route.muted = routeMuted;
             }
           }
         }
       }
+      upsertRoute(nd.routes, route);
+
       if (routeAvailable != SPA_PARAM_AVAILABILITY_no && routeProps != nullptr &&
           routeVolumeDirectionMatchesNode(nd.mediaClass, routeDirection)) {
         ParsedPropsVolumes basis{};
@@ -1016,10 +1072,12 @@ void PipeWireService::onDeviceParam(std::uint32_t id, std::uint32_t paramId, std
   std::int32_t routeIndex = -1;
   std::int32_t routeDevice = -1;
   std::uint32_t routeDirection = 0;
+  std::int32_t routePriority = 0;
   const spa_pod* routeProps = nullptr;
   if (spa_pod_parse_object(param, SPA_TYPE_OBJECT_ParamRoute, nullptr, SPA_PARAM_ROUTE_index, SPA_POD_Int(&routeIndex),
                            SPA_PARAM_ROUTE_direction, SPA_POD_Id(&routeDirection), SPA_PARAM_ROUTE_device,
-                           SPA_POD_Int(&routeDevice), SPA_PARAM_ROUTE_props, SPA_POD_Pod(&routeProps)) < 0) {
+                           SPA_POD_Int(&routeDevice), SPA_PARAM_ROUTE_priority, SPA_POD_Int(&routePriority),
+                           SPA_PARAM_ROUTE_props, SPA_POD_Pod(&routeProps)) < 0) {
     return;
   }
 
@@ -1055,21 +1113,14 @@ void PipeWireService::onDeviceParam(std::uint32_t id, std::uint32_t paramId, std
     }
   }
 
-  auto& routes = it->second.routes;
-  auto existing =
-      std::find_if(routes.begin(), routes.end(), [routeIndex](const auto& route) { return route.index == routeIndex; });
-  if (existing == routes.end()) {
-    DeviceRouteData route;
-    route.index = routeIndex >= 0 ? routeIndex : static_cast<std::int32_t>(index);
-    route.device = routeDevice;
-    route.direction = routeDirection;
-    route.muted = muted;
-    routes.push_back(route);
-  } else {
-    existing->device = routeDevice;
-    existing->direction = routeDirection;
-    existing->muted = muted;
-  }
+  DeviceRouteData route;
+  route.index = routeIndex >= 0 ? routeIndex : static_cast<std::int32_t>(index);
+  route.device = routeDevice;
+  route.direction = routeDirection;
+  route.priority = routePriority;
+  route.available = routeAvailable;
+  route.muted = muted;
+  upsertRoute(it->second.routes, route);
 
   if (parsedRouteVolume) {
     for (auto& [nid, node] : m_nodes) {
@@ -1180,32 +1231,34 @@ void PipeWireService::rebuildState() {
   emitChanged();
 }
 
-bool PipeWireService::deviceRouteIndicatesMuted(const NodeData& nd) const {
-  if (nd.deviceId == 0) {
-    return false;
-  }
-  const auto it = m_devices.find(nd.deviceId);
-  if (it == m_devices.end()) {
-    return false;
-  }
-  std::uint32_t wantDir = 0;
-  if (nd.mediaClass == "Audio/Source") {
-    wantDir = SPA_DIRECTION_INPUT;
-  } else if (nd.mediaClass == "Audio/Sink") {
-    wantDir = SPA_DIRECTION_OUTPUT;
-  } else {
-    return false;
-  }
-  for (const auto& r : it->second.routes) {
-    if (r.direction == wantDir && r.index >= 0 && r.muted) {
-      return true;
+void PipeWireService::recomputeEffectiveMute(NodeData& nd) {
+  const std::uint32_t wantDir = routeDirectionForMediaClass(nd.mediaClass);
+  const DeviceRouteData* nodeRoute = wantDir != 0 ? activeRouteForDirection(nd.routes, wantDir) : nullptr;
+  const DeviceRouteData* deviceRoute = nullptr;
+  if (nd.deviceId != 0 && wantDir != 0) {
+    const auto it = m_devices.find(nd.deviceId);
+    if (it != m_devices.end()) {
+      deviceRoute = activeRouteForDirection(it->second.routes, wantDir);
     }
   }
-  return false;
-}
 
-void PipeWireService::recomputeEffectiveMute(NodeData& nd) {
-  nd.muted = nd.swMute || nd.nodeRouteMute || deviceRouteIndicatesMuted(nd);
+  bool routeMuted = false;
+  if (nodeRoute != nullptr) {
+    nd.hasRoute = true;
+    nd.routeIndex = nodeRoute->index;
+    nd.routeDevice = nodeRoute->device;
+    nd.routeDirection = nodeRoute->direction;
+    nd.nodeRouteMute = nodeRoute->muted;
+    routeMuted = nodeRoute->muted;
+  } else {
+    nd.hasRoute = false;
+    nd.routeIndex = -1;
+    nd.routeDevice = -1;
+    nd.nodeRouteMute = false;
+  }
+
+  const bool deviceRouteMuted = deviceRoute != nullptr && deviceRoute->muted;
+  nd.muted = nd.swMute || routeMuted || deviceRouteMuted;
 }
 
 void PipeWireService::applyVolumePropsFromDict(NodeData& nd, const spa_dict* props, bool applyMixerFieldsFromDict) {
