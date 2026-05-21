@@ -766,9 +766,9 @@ void CairoTextRenderer::draw(float surfaceWidth, float surfaceHeight, float x, f
   // Only snap when the transform is axis-aligned (no rotation/skew). During
   // a rotation animation, snapping causes the translation to jump by whole
   // buffer pixels between frames, which looks jittery on 1x outputs.
-  if (isAxisAligned(baseWorld)) {
-    baseWorld.m[6] = std::round(baseWorld.m[6] * m_contentScale) / m_contentScale;
-    baseWorld.m[7] = std::round(baseWorld.m[7] * m_contentScale) / m_contentScale;
+  if (m_contentScale == 1.0f && isAxisAligned(baseWorld)) {
+    baseWorld.m[6] = std::round(baseWorld.m[6]);
+    baseWorld.m[7] = std::round(baseWorld.m[7]);
   }
 
   // Emit one quad per tile. Tiles share the same X/width and abut on exact

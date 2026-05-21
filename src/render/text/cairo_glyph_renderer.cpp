@@ -322,11 +322,9 @@ void CairoGlyphRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, floa
   // samples land on texel centers without the 1px texture pad biasing icon alignment.
   // Skip when the transform has rotation/skew — snapping then introduces
   // whole-pixel jumps per frame and makes animations look jittery on 1x.
-  if (isAxisAligned(world)) {
-    const float inkOffsetX = entry->inkOffsetXPx * invScale;
-    const float inkOffsetY = entry->inkOffsetYPx * invScale;
-    world.m[6] = std::round((world.m[6] + inkOffsetX) * m_contentScale) / m_contentScale - inkOffsetX;
-    world.m[7] = std::round((world.m[7] + inkOffsetY) * m_contentScale) / m_contentScale - inkOffsetY;
+  if (m_contentScale == 1.0f && isAxisAligned(world)) {
+    world.m[6] = std::round(world.m[6]);
+    world.m[7] = std::round(world.m[7]);
   }
 
   m_backend->drawGlyph(RenderGlyphDraw{

@@ -435,10 +435,10 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
     float height = 0.0f;
     if (m_baselineMode == LabelBaselineMode::Stable) {
       height = std::round(actualHeight);
-      m_baselineOffset = -metrics.top + (height - actualHeight) * 0.5f;
+      m_baselineOffset = std::round(-metrics.top + (height - actualHeight) * 0.5f);
     } else {
       height = std::round(std::max(actualHeight, inkHeight));
-      m_baselineOffset = -metrics.inkTop + (height - inkHeight) * 0.5f;
+      m_baselineOffset = std::round(-metrics.inkTop + (height - inkHeight) * 0.5f);
     }
     float finalWidth = 0.0f;
     if (m_autoScroll) {

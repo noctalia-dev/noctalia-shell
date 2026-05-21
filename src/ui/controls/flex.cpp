@@ -9,6 +9,7 @@
 #include "ui/style.h"
 
 #include <algorithm>
+#include <cmath>
 #include <deque>
 #include <memory>
 #include <vector>
@@ -518,7 +519,7 @@ LayoutSize Flex::runLayout(Renderer& renderer, const LayoutConstraints& constrai
 
     float cursor = mainPaddingStart(*this, horizontal);
     if (m_justify == FlexJustify::Center) {
-      cursor += std::max(0.0f, (innerMain - arrangedContentMain) * 0.5f);
+      cursor += std::floor(std::max(0.0f, (innerMain - arrangedContentMain) * 0.5f));
     } else if (m_justify == FlexJustify::End) {
       cursor += std::max(0.0f, innerMain - arrangedContentMain);
     }
@@ -537,13 +538,14 @@ LayoutSize Flex::runLayout(Renderer& renderer, const LayoutConstraints& constrai
       } else {
         const float extraCross = finalInnerCross - childCross;
         if (m_align == FlexAlign::Center) {
-          crossPos += extraCross * 0.5f;
+          crossPos += std::floor(extraCross * 0.5f);
         } else if (m_align == FlexAlign::End) {
           crossPos += extraCross;
         }
       }
 
-      item.node->arrange(renderer, rectFromAxes(horizontal, cursor, crossPos, item.main, childCross));
+      item.node->arrange(renderer,
+                         rectFromAxes(horizontal, std::round(cursor), std::round(crossPos), item.main, childCross));
       cursor += item.main;
     }
   }
