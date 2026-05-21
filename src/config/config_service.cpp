@@ -645,6 +645,8 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.thickness = *ovr.thickness;
     if (ovr.backgroundOpacity)
       resolved.backgroundOpacity = *ovr.backgroundOpacity;
+    if (ovr.panelBackgroundOpacity)
+      resolved.panelBackgroundOpacity = *ovr.panelBackgroundOpacity;
     if (ovr.border)
       resolved.border = *ovr.border;
     if (ovr.borderWidth)
@@ -1050,6 +1052,8 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
         bar.thickness = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
       if (auto v = finiteDouble((*barTbl)["background_opacity"]))
         bar.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
+      if (auto v = finiteDouble((*barTbl)["panel_background_opacity"]))
+        bar.panelBackgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
       if (auto borderStr = colorStringValue(*barTbl, "border", "bar." + bar.name + ".border"))
         bar.border = colorSpecFromConfigString(*borderStr, "bar." + bar.name + ".border");
       if (auto v = finiteDouble((*barTbl)["border_width"]))
@@ -1146,6 +1150,8 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
             ovr.thickness = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
           if (auto v = finiteDouble((*monTbl)["background_opacity"]))
             ovr.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
+          if (auto v = finiteDouble((*monTbl)["panel_background_opacity"]))
+            ovr.panelBackgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
           const std::string monitorContext = "bar." + bar.name + ".monitor." + std::string(monName.str());
           if (auto borderStr = colorStringValue(*monTbl, "border", monitorContext + ".border"))
             ovr.border = colorSpecFromConfigString(*borderStr, monitorContext + ".border");

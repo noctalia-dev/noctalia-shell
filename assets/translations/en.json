@@ -1429,6 +1429,9 @@
         "background-opacity": {
           "label": "Background Opacity"
         },
+        "panel-background-opacity": {
+          "label": "Panel Background Opacity"
+        },
         "shadow": {
           "label": "Shadow"
         },
@@ -2233,6 +2236,9 @@
         },
         "background-opacity": {
           "description": "Background opacity of the bar"
+        },
+        "panel-background-opacity": {
+          "description": "Opacity for panels attached to this bar"
         },
         "border": {
           "label": "Border",
