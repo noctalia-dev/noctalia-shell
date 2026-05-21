@@ -7,8 +7,6 @@
 #include "ui/palette.h"
 #include "ui/style.h"
 
-#include <memory>
-
 DebugIndicatorWidget::DebugIndicatorWidget() = default;
 
 void DebugIndicatorWidget::create() {

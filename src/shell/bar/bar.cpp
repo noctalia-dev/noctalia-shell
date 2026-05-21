@@ -1202,7 +1202,7 @@ void Bar::populateWidgets(BarInstance& instance) {
   createWidgets(instance.barConfig.endWidgets, instance.endWidgets);
 
 #ifndef NDEBUG
-  // Prepend a red "debug" pill to the end section if running a debug
+  // Prepend a red "debug" pill to the end section if running a debug build
   auto debugWidget = m_widgetFactory->create("debug_indicator", instance.output, instance.barConfig.scale,
                                              instance.barConfig.position, instance.barConfig.name);
   if (debugWidget != nullptr) {
