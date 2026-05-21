@@ -23,17 +23,20 @@ namespace {
       return 0.0;
     }
 
-    const double nameScore = FuzzyMatch::score(pattern, entry.nameLower) * 3.0;
+    double nameScore = FuzzyMatch::score(pattern, entry.nameLower) * 5.0;
+    if (FuzzyMatch::isMatch(nameScore) && entry.nameLower.starts_with(pattern)) {
+      nameScore += 500.0;
+    }
     const double genericScore = FuzzyMatch::score(pattern, entry.genericNameLower) * 2.0;
 
-    auto scoreList = [&](std::string_view list) {
+    auto scoreList = [&](std::string_view list, double weight) {
       double best = FuzzyMatch::noMatchScore;
       std::size_t start = 0;
       while (start < list.size()) {
         auto semi = list.find(';', start);
         auto word = (semi == std::string_view::npos) ? list.substr(start) : list.substr(start, semi - start);
         if (!word.empty()) {
-          best = std::max(best, FuzzyMatch::score(pattern, word));
+          best = std::max(best, FuzzyMatch::score(pattern, word) * weight);
         }
         if (semi == std::string_view::npos)
           break;
@@ -42,8 +45,8 @@ namespace {
       return best;
     };
 
-    const double keywordScore = scoreList(entry.keywordsLower);
-    const double catScore = scoreList(entry.categoriesLower);
+    const double keywordScore = scoreList(entry.keywordsLower, 0.8);
+    const double catScore = scoreList(entry.categoriesLower, 0.3);
     const double idScore = FuzzyMatch::score(pattern, entry.idLower) * 1.5;
     const double execScore = FuzzyMatch::score(pattern, entry.execLower);
 
