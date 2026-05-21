@@ -2,7 +2,7 @@
 set -euo pipefail
 
 palette_file="$HOME/.cache/noctalia/starship-palette.toml"
-config_file="$HOME/.config/starship.toml"
+config_file="${STARSHIP_CONFIG:-$HOME/.config/starship.toml}"
 marker_begin="# >>> NOCTALIA STARSHIP PALETTE >>>"
 marker_end="# <<< NOCTALIA STARSHIP PALETTE <<<"
 
