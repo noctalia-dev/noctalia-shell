@@ -23,7 +23,8 @@ public:
   };
 
   WorkspacesWidget(CompositorPlatform& platform, wl_output* output, DisplayMode displayMode, ColorSpec focusedColor,
-                   ColorSpec occupiedColor, ColorSpec emptyColor, std::size_t maxLabelChars, bool hideWhenEmpty, float pillScale);
+                   ColorSpec occupiedColor, ColorSpec emptyColor, std::size_t maxLabelChars, bool hideWhenEmpty,
+                   float pillScale);
   ~WorkspacesWidget() override;
 
   void create() override;
