@@ -1303,6 +1303,12 @@ namespace settings {
       entries.push_back(makeEntry(section, "shape", tr("settings.schema.shared.background-opacity.label"),
                                   tr("settings.schema.bar.background-opacity.description"), path("background_opacity"),
                                   SliderSetting{selectedBar->backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "alpha"));
+      entries.push_back(
+          makeEntry(section, "shape", tr("settings.schema.shared.panel-background-opacity.label"),
+                    tr("settings.schema.bar.panel-background-opacity.description"), path("panel_background_opacity"),
+                    SliderSetting{selectedBar->panelBackgroundOpacity.value_or(selectedBar->backgroundOpacity), 0.0f,
+                                  1.0f, 0.01f, false},
+                    "alpha panel attached"));
       entries.push_back(makeEntry(section, "shape", tr("settings.schema.bar.border.label"),
                                   tr("settings.schema.bar.border.description"), path("border"),
                                   colorSpecPicker(selectedBar->border), "outline color", true));
@@ -1468,6 +1474,13 @@ namespace settings {
           section, "shape", tr("settings.schema.shared.background-opacity.label"),
           tr("settings.schema.bar.background-opacity.description"), mpath("background_opacity"),
           SliderSetting{ovr.backgroundOpacity.value_or(bar.backgroundOpacity), 0.0f, 1.0f, 0.01f, false}, "alpha"));
+      entries.push_back(makeEntry(section, "shape", tr("settings.schema.shared.panel-background-opacity.label"),
+                                  tr("settings.schema.bar.panel-background-opacity.description"),
+                                  mpath("panel_background_opacity"),
+                                  SliderSetting{ovr.panelBackgroundOpacity.value_or(bar.panelBackgroundOpacity.value_or(
+                                                    ovr.backgroundOpacity.value_or(bar.backgroundOpacity))),
+                                                0.0f, 1.0f, 0.01f, false},
+                                  "alpha panel attached"));
       entries.push_back(makeEntry(
           section, "shape", tr("settings.schema.bar.border.label"), tr("settings.schema.bar.border.description"),
           mpath("border"), colorSpecPicker(ovr.border, true, tr("common.states.inherit")), "outline color", true));

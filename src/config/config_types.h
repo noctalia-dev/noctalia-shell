@@ -23,6 +23,7 @@ struct BarMonitorOverride {
   std::optional<bool> reserveSpace;
   std::optional<std::int32_t> thickness;
   std::optional<float> backgroundOpacity;
+  std::optional<float> panelBackgroundOpacity;
   std::optional<ColorSpec> border;
   std::optional<float> borderWidth;
   std::optional<std::int32_t> radius;
@@ -62,6 +63,9 @@ struct BarConfig {
   bool reserveSpace = true; // reserve compositor exclusive zone for this bar
   std::int32_t thickness = Style::barThicknessDefault;
   float backgroundOpacity = 1.0f;
+  // When set, attached panels rooted on this bar use this opacity for their background instead of inheriting
+  // `backgroundOpacity`. Lets users keep panel chrome legible while running a fully transparent bar.
+  std::optional<float> panelBackgroundOpacity;
   // Inside outline for the bar background; attached panels inherit the resolved values.
   ColorSpec border = colorSpecFromRole(ColorRole::Outline);
   float borderWidth = 0.0f;

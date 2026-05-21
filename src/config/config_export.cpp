@@ -152,6 +152,9 @@ namespace config_export {
       table.insert_or_assign("reserve_space", bar.reserveSpace);
       table.insert_or_assign("thickness", static_cast<std::int64_t>(bar.thickness));
       table.insert_or_assign("background_opacity", static_cast<double>(bar.backgroundOpacity));
+      if (bar.panelBackgroundOpacity.has_value()) {
+        table.insert_or_assign("panel_background_opacity", static_cast<double>(*bar.panelBackgroundOpacity));
+      }
       table.insert_or_assign("border", colorSpecToConfigString(bar.border));
       table.insert_or_assign("border_width", static_cast<double>(bar.borderWidth));
       table.insert_or_assign("radius", static_cast<std::int64_t>(bar.radius));
@@ -202,6 +205,8 @@ namespace config_export {
         resolved.thickness = *ovr.thickness;
       if (ovr.backgroundOpacity)
         resolved.backgroundOpacity = *ovr.backgroundOpacity;
+      if (ovr.panelBackgroundOpacity)
+        resolved.panelBackgroundOpacity = *ovr.panelBackgroundOpacity;
       if (ovr.border)
         resolved.border = *ovr.border;
       if (ovr.borderWidth)

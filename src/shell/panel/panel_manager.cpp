@@ -540,7 +540,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_panelVisualWidth = panelWidth;
     m_panelVisualHeight = panelHeight;
     m_attachedBackgroundOpacity = m_activePanel->inheritsBarBackgroundOpacity()
-                                      ? barConfig.backgroundOpacity
+                                      ? barConfig.panelBackgroundOpacity.value_or(barConfig.backgroundOpacity)
                                       : m_activePanel->attachedBackgroundOpacityOverride();
     m_attachedContactShadow = barConfig.contactShadow;
     m_attachedRevealProgress = 0.0f;
@@ -1526,7 +1526,7 @@ void PanelManager::onConfigReloaded() {
   const auto barConfig = resolvePanelBarConfig(m_config, m_platform, m_output, m_sourceBarName);
   bool changed = false;
   if (m_activePanel->inheritsBarBackgroundOpacity()) {
-    const float newOpacity = barConfig.backgroundOpacity;
+    const float newOpacity = barConfig.panelBackgroundOpacity.value_or(barConfig.backgroundOpacity);
     if (std::abs(newOpacity - m_attachedBackgroundOpacity) >= 0.001f) {
       m_attachedBackgroundOpacity = newOpacity;
       m_activePanel->setPanelCardOpacity(resolvePanelCardOpacity(m_config, m_attachedBackgroundOpacity));

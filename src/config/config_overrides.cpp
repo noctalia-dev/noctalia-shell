@@ -48,6 +48,13 @@ namespace {
     return !a.has_value() || nearlyEqual(*a, *b);
   }
 
+  bool optionalFloatEqual(const std::optional<float>& a, const std::optional<float>& b) noexcept {
+    if (a.has_value() != b.has_value()) {
+      return false;
+    }
+    return !a.has_value() || nearlyEqual(*a, *b);
+  }
+
   bool optionalColorSpecEqual(const std::optional<ColorSpec>& a, const std::optional<ColorSpec>& b) noexcept {
     if (a.has_value() != b.has_value()) {
       return false;
@@ -125,14 +132,15 @@ namespace {
   bool barBaseConfigEqual(const BarConfig& a, const BarConfig& b) {
     return a.name == b.name && a.position == b.position && a.enabled == b.enabled && a.autoHide == b.autoHide &&
            a.reserveSpace == b.reserveSpace && a.thickness == b.thickness &&
-           nearlyEqual(a.backgroundOpacity, b.backgroundOpacity) && colorSpecEqual(a.border, b.border) &&
-           nearlyEqual(a.borderWidth, b.borderWidth) && a.radius == b.radius && a.radiusTopLeft == b.radiusTopLeft &&
-           a.radiusTopRight == b.radiusTopRight && a.radiusBottomLeft == b.radiusBottomLeft &&
-           a.radiusBottomRight == b.radiusBottomRight && a.marginEnds == b.marginEnds && a.marginEdge == b.marginEdge &&
-           a.padding == b.padding && a.widgetSpacing == b.widgetSpacing && a.shadow == b.shadow &&
-           a.contactShadow == b.contactShadow && nearlyEqual(a.scale, b.scale) && a.startWidgets == b.startWidgets &&
-           a.centerWidgets == b.centerWidgets && a.endWidgets == b.endWidgets &&
-           a.widgetCapsuleDefault == b.widgetCapsuleDefault &&
+           nearlyEqual(a.backgroundOpacity, b.backgroundOpacity) &&
+           optionalFloatEqual(a.panelBackgroundOpacity, b.panelBackgroundOpacity) &&
+           colorSpecEqual(a.border, b.border) && nearlyEqual(a.borderWidth, b.borderWidth) && a.radius == b.radius &&
+           a.radiusTopLeft == b.radiusTopLeft && a.radiusTopRight == b.radiusTopRight &&
+           a.radiusBottomLeft == b.radiusBottomLeft && a.radiusBottomRight == b.radiusBottomRight &&
+           a.marginEnds == b.marginEnds && a.marginEdge == b.marginEdge && a.padding == b.padding &&
+           a.widgetSpacing == b.widgetSpacing && a.shadow == b.shadow && a.contactShadow == b.contactShadow &&
+           nearlyEqual(a.scale, b.scale) && a.startWidgets == b.startWidgets && a.centerWidgets == b.centerWidgets &&
+           a.endWidgets == b.endWidgets && a.widgetCapsuleDefault == b.widgetCapsuleDefault &&
            colorSpecEqual(a.widgetCapsuleFill, b.widgetCapsuleFill) &&
            optionalColorSpecEqual(a.widgetCapsuleForeground, b.widgetCapsuleForeground) &&
            optionalColorSpecEqual(a.widgetColor, b.widgetColor) && a.widgetCapsuleGroups == b.widgetCapsuleGroups &&
@@ -160,6 +168,9 @@ namespace {
     }
     if (ovr.backgroundOpacity) {
       resolved.backgroundOpacity = *ovr.backgroundOpacity;
+    }
+    if (ovr.panelBackgroundOpacity) {
+      resolved.panelBackgroundOpacity = *ovr.panelBackgroundOpacity;
     }
     if (ovr.border) {
       resolved.border = *ovr.border;
