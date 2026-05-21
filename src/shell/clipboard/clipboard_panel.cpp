@@ -1215,7 +1215,9 @@ void ClipboardPanel::runImageAction() {
   const std::string command = buildImageActionCommand(configuredCommand, *exportedPath);
   if (!process::runAsync(command)) {
     kLog.warn("clipboard image action failed to launch: {}", configuredCommand);
+    return;
   }
+  PanelManager::instance().close();
 }
 
 void ClipboardPanel::activateSelected() {
