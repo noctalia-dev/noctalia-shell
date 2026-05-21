@@ -419,6 +419,11 @@ namespace settings {
         {"name", "settings.widgets.options.name"},
         {"none", "settings.widgets.options.none"},
     };
+    const std::vector<WidgetSettingSelectOption> workspaceLabelPlacement = {
+        {"corner", "settings.widgets.options.workspace-label-corner"},
+        {"centered", "settings.widgets.options.workspace-label-centered"},
+        {"inside", "settings.widgets.options.workspace-label-inside"},
+    };
     const std::vector<WidgetSettingSelectOption> mediaTitleScroll = {
         {"none", "settings.widgets.options.none"},
         {"always", "settings.widgets.options.always"},
@@ -541,6 +546,12 @@ namespace settings {
         showWsLabel.visibleWhen =
             WidgetSettingVisibility{WidgetSettingVisibilityCondition{"group_by_workspace", {"true"}}};
         add(std::move(showWsLabel));
+      }
+      {
+        auto labelPlacement = selectSpec("workspace_label_placement", "corner", workspaceLabelPlacement);
+        labelPlacement.visibleWhen =
+            WidgetSettingVisibility{WidgetSettingVisibilityCondition{"group_by_workspace", {"true"}}};
+        add(std::move(labelPlacement));
       }
       {
         auto hideEmpty = boolSpec("hide_empty_workspaces", false);

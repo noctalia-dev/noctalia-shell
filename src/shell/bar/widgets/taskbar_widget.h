@@ -18,11 +18,17 @@ struct wl_output;
 struct zwlr_foreign_toplevel_handle_v1;
 struct PointerEvent;
 
+enum class WorkspaceLabelPlacement {
+  Corner,
+  Centered,
+  Inside,
+};
+
 class TaskbarWidget : public Widget {
 public:
   TaskbarWidget(CompositorPlatform& platform, wl_output* output, bool groupByWorkspace, bool showAllOutputs,
-                bool onlyActiveWorkspace, bool showWorkspaceLabel, bool hideEmptyWorkspaces, std::string barPosition,
-                ShellConfig::ShadowConfig shadowConfig);
+                bool onlyActiveWorkspace, bool showWorkspaceLabel, WorkspaceLabelPlacement workspaceLabelPlacement,
+                bool hideEmptyWorkspaces, std::string barPosition, ShellConfig::ShadowConfig shadowConfig);
   ~TaskbarWidget() override;
 
   void create() override;
@@ -85,6 +91,7 @@ private:
   bool m_showAllOutputs = false;
   bool m_onlyActiveWorkspace = false;
   bool m_showWorkspaceLabel = true;
+  WorkspaceLabelPlacement m_workspaceLabelPlacement = WorkspaceLabelPlacement::Corner;
   bool m_hideEmptyWorkspaces = false;
   std::string m_barPosition;
   ShellConfig::ShadowConfig m_shadowConfig;

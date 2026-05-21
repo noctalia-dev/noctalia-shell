@@ -1098,6 +1098,9 @@
         "ram-used": "RAM Used",
         "short": "Short",
         "shared": "Shared",
+        "workspace-label-corner": "Corner",
+        "workspace-label-centered": "Centered",
+        "workspace-label-inside": "Inside pill",
         "swap-percent": "Swap Percent",
         "text": "Text"
       },
@@ -1207,15 +1210,19 @@
         },
         "show_all_outputs": {
           "label": "Show All Monitors",
-          "description": "List windows from every display on this taskbar. Grouped capsules add a short monitor index (tag·1, tag·2, …) when multiple outputs are present."
+          "description": "Include windows from every display on this widget."
         },
         "only_active_workspace": {
           "label": "Only Active Workspace",
-          "description": "Hide windows that are not on a currently active workspace (per monitor). Requires compositor workspace-to-window data; windows without a resolved workspace stay visible."
+          "description": "Hide windows on inactive workspaces."
         },
         "show_workspace_label": {
           "label": "Workspace Capsule Label",
           "description": "Show the small workspace tag on grouped taskbar capsules. Turn off for icon-only groups."
+        },
+        "workspace_label_placement": {
+          "label": "Workspace Label Placement",
+          "description": "Corner, centered on the edge, or inside the pill."
         },
         "hide_empty_workspaces": {
           "label": "Hide Empty Workspaces",
