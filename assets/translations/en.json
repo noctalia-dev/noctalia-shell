@@ -1615,7 +1615,7 @@
         },
         "monitors": {
           "label": "Displays",
-          "description": "Choose which displays show the dock; leave empty to show on all displays"
+          "description": "Choose which displays show the dock; leave empty for all. Active-monitor filtering applies within these displays."
         },
         "icon-size": {
           "label": "Icon Size",
