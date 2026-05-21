@@ -87,7 +87,7 @@ private:
   bool m_showWorkspaceLabel = true;
   bool m_hideEmptyWorkspaces = false;
   bool m_showWindowTitle = false;
-  float m_windowTitleLength = 40.0;
+  float m_windowTitleLength = 100.0;
   std::string m_barPosition;
   ShellConfig::ShadowConfig m_shadowConfig;
   bool m_rebuildPending = true;
