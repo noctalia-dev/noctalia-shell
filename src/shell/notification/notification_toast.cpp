@@ -905,13 +905,14 @@ void NotificationToast::addCardToInstance(Instance& inst, std::size_t entryIndex
   Glyph* closeGlyphPtr = cs.closeGlyph;
   ProgressBar* progressBarPtr = cs.progressBar;
   InputArea* cardInput = card;
+  const bool hasDefaultAction = !entry.actions.empty() && entry.actions.size() >= 2 && entry.actions[0] == "default";
 
-  card->setOnEnter([this, closeGlyphPtr, closeColorNormal, closeColorHover, notificationId, progressBarPtr,
-                    cardInput](const InputArea::PointerData& data) {
+  card->setOnEnter([this, closeGlyphPtr, closeColorNormal, closeColorHover, notificationId, progressBarPtr, cardInput,
+                    hasDefaultAction](const InputArea::PointerData& data) {
     const bool closeHovered = isCloseButtonHit(data.localX, data.localY);
     closeGlyphPtr->setColor(closeHovered ? closeColorHover : closeColorNormal);
-    cardInput->setCursorShape(closeHovered ? WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER
-                                           : WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
+    cardInput->setCursorShape((closeHovered || hasDefaultAction) ? WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER
+                                                                 : WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
     if (auto* popup = findEntry(notificationId); popup != nullptr) {
       popup->hovered = true;
       popup->remainingProgress = std::clamp(progressBarPtr->progress(), 0.0f, 1.0f);
@@ -925,11 +926,12 @@ void NotificationToast::addCardToInstance(Instance& inst, std::size_t entryIndex
     }
   });
 
-  card->setOnMotion([closeGlyphPtr, closeColorNormal, closeColorHover, cardInput](const InputArea::PointerData& data) {
+  card->setOnMotion([closeGlyphPtr, closeColorNormal, closeColorHover, cardInput,
+                     hasDefaultAction](const InputArea::PointerData& data) {
     const bool closeHovered = isCloseButtonHit(data.localX, data.localY);
     closeGlyphPtr->setColor(closeHovered ? closeColorHover : closeColorNormal);
-    cardInput->setCursorShape(closeHovered ? WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER
-                                           : WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
+    cardInput->setCursorShape((closeHovered || hasDefaultAction) ? WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER
+                                                                 : WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
   });
 
   card->setOnLeave([this, notificationId, totalDuration, closeGlyphPtr, closeColorNormal, progressBarPtr, cardInput]() {
