@@ -235,7 +235,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       label->setPosition(std::round(tileHeight + tilePadding), 0);
       area->addChild(std::move(label));
     }
-    
+
     if (task.active) {
       const float d = std::max(4.0f, std::round(Style::barGlyphSize * 0.32f * m_contentScale));
       const float bottomInset = 0.25f * m_contentScale;
