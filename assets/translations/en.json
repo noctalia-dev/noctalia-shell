@@ -1271,6 +1271,11 @@
           "description": "Maximum number of characters to show for workspace names",
           "workspaces-description": "Maximum characters for workspace name labels"
         },
+        "pill_scale": {
+          "label": "Pill Scale",
+          "description": "Adjust the scale of workspace pills",
+          "workspaces-description": "Adjust the scale of workspace pills"
+        },
         "hot_reload": {
           "label": "Hot Reload",
           "description": "Reload the scripted widget when its source changes"

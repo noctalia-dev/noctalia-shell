@@ -27,15 +27,15 @@ namespace {
   }
 
   constexpr float kWorkspaceGap = Style::spaceXs;
-  constexpr float kWorkspacePillHeight = Style::barGlyphSize;
+  constexpr float kWorkspacePillDefaultHeight = Style::barGlyphSize;
   constexpr float kWorkspaceAnimDurationMs = static_cast<float>(Style::animNormal);
 } // namespace
 
 WorkspacesWidget::WorkspacesWidget(CompositorPlatform& platform, wl_output* output, DisplayMode displayMode,
                                    ColorSpec focusedColor, ColorSpec occupiedColor, ColorSpec emptyColor,
-                                   std::size_t maxLabelChars, bool hideWhenEmpty)
+                                   std::size_t maxLabelChars, bool hideWhenEmpty, float pillScale)
     : m_platform(platform), m_output(output), m_displayMode(displayMode), m_maxLabelChars(maxLabelChars),
-      m_hideWhenEmpty(hideWhenEmpty), m_focusedColor(std::move(focusedColor)),
+      m_hideWhenEmpty(hideWhenEmpty), m_pillScale(pillScale), m_focusedColor(std::move(focusedColor)),
       m_occupiedColor(std::move(occupiedColor)), m_emptyColor(std::move(emptyColor)) {}
 
 void WorkspacesWidget::create() {
@@ -162,7 +162,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
   const auto& workspaces = m_cachedState;
   const float gap = kWorkspaceGap * m_contentScale;
   const float labelFontSize = Style::fontSizeMini * m_contentScale;
-  const float indicatorHeight = std::round(kWorkspacePillHeight * m_contentScale);
+  const float indicatorHeight = std::round(kWorkspacePillDefaultHeight * m_contentScale * m_pillScale);
 
   std::vector<std::string> labels;
   labels.reserve(workspaces.size());

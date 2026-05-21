@@ -465,8 +465,9 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
       maxLabelChars = static_cast<std::size_t>(wc->getInt("max_label_chars", 1));
     }
     const bool hideWhenEmpty = wc != nullptr ? wc->getBool("hide_when_empty", false) : false;
+    const double pillScale = wc != nullptr ? wc->getDouble("pill_scale", 1.0) : 1.0;
     auto widget = std::make_unique<WorkspacesWidget>(m_platform, output, displayMode, focusedColor, occupiedColor,
-                                                     emptyColor, maxLabelChars, hideWhenEmpty);
+                                                     emptyColor, maxLabelChars, hideWhenEmpty, pillScale);
     widget->setContentScale(contentScale);
     return widget;
   }
