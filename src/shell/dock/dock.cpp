@@ -154,22 +154,6 @@ namespace {
     return (cfg.launcherPosition == "start" || cfg.launcherPosition == "end") ? 1U : 0U;
   }
 
-  bool outputHasAnyDockItems(const DockConfig& cfg, const CompositorPlatform& platform, const WaylandOutput& output) {
-    if (!cfg.pinned.empty()) {
-      return true;
-    }
-    if (dockLauncherButtonCount(cfg) > 0) {
-      return true;
-    }
-    if (cfg.showRunning) {
-      wl_output* const filter = cfg.activeMonitorOnly ? output.output : nullptr;
-      if (!platform.runningAppIds(filter).empty()) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   std::string_view dockLauncherIconGlyph(const DockConfig& cfg) {
     return cfg.launcherIcon.empty() ? "grid-dots" : std::string_view{cfg.launcherIcon};
   }
@@ -553,16 +537,27 @@ void Dock::syncInstances() {
   const auto& outputs = m_platform->outputs();
   const auto& cfg = m_config->config().dock;
   const auto& selectedMonitors = cfg.monitors;
+  const bool hasStaticContent = !cfg.pinned.empty() || dockLauncherButtonCount(cfg) > 0;
+  // When activeMonitorOnly is off, the running-apps check is identical for every output, so hoist it.
+  const bool anyRunningGlobal = (!hasStaticContent && cfg.showRunning && !cfg.activeMonitorOnly)
+                                    ? !m_platform->runningAppIds(nullptr).empty()
+                                    : false;
   const auto outputAllowed = [&](const WaylandOutput& output) {
     if (!selectedMonitors.empty() &&
         std::none_of(selectedMonitors.begin(), selectedMonitors.end(),
                      [&output](const std::string& m) { return outputMatchesSelector(m, output); })) {
       return false;
     }
-    if (!outputHasAnyDockItems(cfg, *m_platform, output)) {
+    if (hasStaticContent) {
+      return true;
+    }
+    if (!cfg.showRunning) {
       return false;
     }
-    return true;
+    if (cfg.activeMonitorOnly) {
+      return !m_platform->runningAppIds(output.output).empty();
+    }
+    return anyRunningGlobal;
   };
 
   // Remove instances for dead outputs or outputs no longer selected.
