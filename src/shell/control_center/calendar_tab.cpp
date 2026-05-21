@@ -358,10 +358,11 @@ void CalendarTab::rebuild() {
     m_monthSubLabel->setMaxWidth(monthWidth);
   }
 
+  const int firstDayOfWeek = localeFirstDayOfWeek();
   std::array<std::string, 7> weekdays;
   for (int i = 0; i < 7; ++i) {
     std::tm tm{};
-    tm.tm_wday = (i + 1) % 7; // Mon=1..Sat=6, Sun=0
+    tm.tm_wday = (firstDayOfWeek + i) % 7;
     tm.tm_mday = 1;
     char buf[32];
     std::strftime(buf, sizeof(buf), "%a", &tm);
@@ -382,14 +383,16 @@ void CalendarTab::rebuild() {
     dayLabel->setText(weekdays[i]);
     dayLabel->setFontSize((Style::fontSizeCaption + 1.0f) * scale);
     dayLabel->setBold(true);
-    dayLabel->setColor(colorSpecFromRole(i >= 5 ? ColorRole::Secondary : ColorRole::OnSurfaceVariant));
+    const int columnWeekday = (firstDayOfWeek + static_cast<int>(i)) % 7;
+    const bool weekend = columnWeekday == 0 || columnWeekday == 6;
+    dayLabel->setColor(colorSpecFromRole(weekend ? ColorRole::Secondary : ColorRole::OnSurfaceVariant));
     dayCell->addChild(std::move(dayLabel));
 
     weekdayRow->addChild(std::move(dayCell));
   }
   m_grid->addChild(std::move(weekdayRow));
 
-  const int firstWeekdayMonBased = (state.displayWeekday == 0) ? 6 : (state.displayWeekday - 1);
+  const int firstWeekdayOffset = (state.displayWeekday - firstDayOfWeek + 7) % 7;
   const int previousMonth = month == 0 ? 11 : month - 1;
   const int previousMonthYear = month == 0 ? year - 1 : year;
   const int previousMonthDays = daysInMonth(previousMonthYear, previousMonth);
@@ -420,8 +423,8 @@ void CalendarTab::rebuild() {
     dayButton->setFontSize(Style::fontSizeBody * scale);
     dayButton->setText("");
 
-    if (index < firstWeekdayMonBased) {
-      const int leadingDay = previousMonthDays - firstWeekdayMonBased + index + 1;
+    if (index < firstWeekdayOffset) {
+      const int leadingDay = previousMonthDays - firstWeekdayOffset + index + 1;
       dayButton->setText(std::to_string(leadingDay));
       dayButton->label()->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.75f));
     } else if (day > monthDays) {

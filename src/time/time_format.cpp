@@ -197,6 +197,26 @@ std::string formatIsoTime(std::string_view isoTime, const char* fmt) {
   }
 }
 
+int localeFirstDayOfWeek() {
+#if defined(_NL_TIME_WEEK_1STDAY)
+  constexpr nl_item kWeekFirstDayItem = _NL_TIME_WEEK_1STDAY;
+#elif defined(_NL_WEEK_1STDAY)
+  constexpr nl_item kWeekFirstDayItem = _NL_WEEK_1STDAY;
+#else
+  constexpr nl_item kWeekFirstDayItem = static_cast<nl_item>(-1);
+#endif
+  if constexpr (kWeekFirstDayItem != static_cast<nl_item>(-1)) {
+    const char* info = nl_langinfo(kWeekFirstDayItem);
+    if (info != nullptr && *info != '\0') {
+      const unsigned char ch = static_cast<unsigned char>(*info);
+      if (ch >= '0' && ch <= '6') {
+        return static_cast<int>(ch - '0');
+      }
+    }
+  }
+  return 1; // ISO-style Monday when the platform does not expose locale week data.
+}
+
 std::string formatCurrentDate() {
   std::string fmt = "%A, ";
   fmt += nl_langinfo(D_FMT);
