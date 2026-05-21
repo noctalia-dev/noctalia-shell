@@ -835,8 +835,23 @@ void Bar::requestLayout() {
   }
 }
 
-void Bar::setAutoHideSuppressionCallback(std::function<bool()> callback) {
+void Bar::setAutoHideSuppressionCallback(std::function<bool(const BarInstance&)> callback) {
   m_autoHideSuppressionCallback = std::move(callback);
+}
+
+void Bar::reevaluateAutoHide() {
+  for (const auto& instance : m_instances) {
+    if (instance == nullptr || !instance->barConfig.autoHide || instance->pointerInside ||
+        instance->attachedPopupCount > 0) {
+      continue;
+    }
+    const bool suppressAutoHide =
+        (m_autoHideSuppressionCallback != nullptr) ? m_autoHideSuppressionCallback(*instance) : false;
+    if (suppressAutoHide || instance->hideOpacity <= 0.001f) {
+      continue;
+    }
+    startHideFadeOut(*instance);
+  }
 }
 
 void Bar::setOpenWidgetSettingsCallback(std::function<void(std::string, std::string)> callback) {
@@ -964,8 +979,9 @@ std::vector<wl_surface*> Bar::allBarSurfaces() const {
   return surfaces;
 }
 
-void Bar::setAttachedPanelGeometry(wl_output* output, std::optional<AttachedPanelGeometry> geometry) {
-  BarInstance* instance = instanceForOutput(output);
+void Bar::setAttachedPanelGeometry(wl_output* output, std::string_view barName,
+                                   std::optional<AttachedPanelGeometry> geometry) {
+  BarInstance* instance = instanceForBar(output, barName);
   if (instance == nullptr) {
     return;
   }
@@ -1005,7 +1021,8 @@ void Bar::endAttachedPopup(wl_surface* surface) {
   if (instance->attachedPopupCount > 0 || !instance->barConfig.autoHide || instance->pointerInside) {
     return;
   }
-  const bool suppressAutoHide = (m_autoHideSuppressionCallback != nullptr) ? m_autoHideSuppressionCallback() : false;
+  const bool suppressAutoHide =
+      (m_autoHideSuppressionCallback != nullptr) ? m_autoHideSuppressionCallback(*instance) : false;
   if (!suppressAutoHide) {
     startHideFadeOut(*instance);
   }
@@ -1963,7 +1980,7 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
       m_hoveredInstance->pointerInside = false;
       m_hoveredInstance->inputDispatcher.pointerLeave();
       const bool suppressAutoHide =
-          (m_autoHideSuppressionCallback != nullptr) ? m_autoHideSuppressionCallback() : false;
+          (m_autoHideSuppressionCallback != nullptr) ? m_autoHideSuppressionCallback(*m_hoveredInstance) : false;
       if (m_hoveredInstance->barConfig.autoHide && !suppressAutoHide) {
         startHideFadeOut(*m_hoveredInstance);
       }
@@ -2055,13 +2072,18 @@ BarInstance* Bar::instanceForSurface(wl_surface* surface) const noexcept {
   return it != m_surfaceMap.end() ? it->second : nullptr;
 }
 
-BarInstance* Bar::instanceForOutput(wl_output* output) const noexcept {
+BarInstance* Bar::instanceForOutput(wl_output* output) const noexcept { return instanceForBar(output, {}); }
+
+BarInstance* Bar::instanceForBar(wl_output* output, std::string_view barName) const noexcept {
   if (output == nullptr) {
     return nullptr;
   }
 
   for (const auto& instance : m_instances) {
-    if (instance != nullptr && instance->output == output && instance->surface != nullptr) {
+    if (instance == nullptr || instance->output != output || instance->surface == nullptr) {
+      continue;
+    }
+    if (barName.empty() || instance->barConfig.name == barName) {
       return instance.get();
     }
   }

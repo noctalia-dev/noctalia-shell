@@ -63,7 +63,9 @@ public:
   void onSecondTick();
   void refresh();
   void requestLayout();
-  void setAutoHideSuppressionCallback(std::function<bool()> callback);
+  void setAutoHideSuppressionCallback(std::function<bool(const BarInstance&)> callback);
+  // Re-run auto-hide after a panel closes so unrelated bars are not left visible.
+  void reevaluateAutoHide();
   void setOpenWidgetSettingsCallback(std::function<void(std::string, std::string)> callback);
   // Requests a redraw on every bar surface without re-running widget update/layout.
   // Intended for reactive restyling (palette changes) where the scene graph has
@@ -80,7 +82,8 @@ public:
   // Returns every bar wl_surface across all outputs. Used as the focus-grab
   // whitelist on Hyprland so bar widgets keep receiving clicks.
   [[nodiscard]] std::vector<wl_surface*> allBarSurfaces() const;
-  void setAttachedPanelGeometry(wl_output* output, std::optional<AttachedPanelGeometry> geometry);
+  void setAttachedPanelGeometry(wl_output* output, std::string_view barName,
+                                std::optional<AttachedPanelGeometry> geometry);
   void beginAttachedPopup(wl_surface* surface);
   void endAttachedPopup(wl_surface* surface);
 
@@ -106,6 +109,7 @@ private:
   [[nodiscard]] std::string dispatchScriptedWidgetIpc(std::string_view args);
   [[nodiscard]] BarInstance* instanceForSurface(wl_surface* surface) const noexcept;
   [[nodiscard]] BarInstance* instanceForOutput(wl_output* output) const noexcept;
+  [[nodiscard]] BarInstance* instanceForBar(wl_output* output, std::string_view barName) const noexcept;
 
   bool m_forceHidden = false;
   CompositorPlatform* m_platform = nullptr;
@@ -142,6 +146,6 @@ private:
   // Surface → BarInstance mapping for pointer event routing
   std::unordered_map<wl_surface*, BarInstance*> m_surfaceMap;
   BarInstance* m_hoveredInstance = nullptr;
-  std::function<bool()> m_autoHideSuppressionCallback;
+  std::function<bool(const BarInstance&)> m_autoHideSuppressionCallback;
   std::function<void(std::string, std::string)> m_openWidgetSettingsCallback;
 };

@@ -1087,7 +1087,10 @@ void Application::initUi() {
             "launcher", PanelOpenRequest{.output = output, .context = initialQuery, .sourceBarName = sourceBarName});
       });
   m_compositorPlatform.setOverviewChangeCallback([this]() { m_overviewLauncherCapture.sync(); });
-  m_panelManager.setPanelClosedCallback([this]() { m_overviewLauncherCapture.sync(); });
+  m_panelManager.setPanelClosedCallback([this]() {
+    m_overviewLauncherCapture.sync();
+    m_bar.reevaluateAutoHide();
+  });
   m_configService.addReloadCallback([this]() {
     m_overviewLauncherCapture.setEnabled(m_configService.config().shell.niriOverviewTypeToLaunchEnabled);
   });
@@ -1167,13 +1170,18 @@ void Application::initUi() {
     m_settingsWindow.openToBarWidget(std::move(barName), std::move(widgetName));
   });
   m_panelManager.setAttachedPanelGeometryCallback(
-      [this](wl_output* output, std::optional<AttachedPanelGeometry> geometry) {
-        m_bar.setAttachedPanelGeometry(output, geometry);
+      [this](wl_output* output, std::string_view barName, std::optional<AttachedPanelGeometry> geometry) {
+        m_bar.setAttachedPanelGeometry(output, barName, geometry);
       });
   m_panelManager.setClickShieldExcludeRectsProvider(
       [this](wl_output* output) { return m_bar.surfaceRectsForOutput(output); });
   m_panelManager.setFocusGrabBarSurfacesProvider([this]() { return m_bar.allBarSurfaces(); });
-  m_bar.setAutoHideSuppressionCallback([this]() { return m_trayMenu.isOpen() || m_panelManager.isAttachedOpen(); });
+  m_bar.setAutoHideSuppressionCallback([this](const BarInstance& instance) {
+    if (m_trayMenu.isOpen()) {
+      return true;
+    }
+    return m_panelManager.isAttachedOpen() && m_panelManager.attachedSourceBarName() == instance.barConfig.name;
+  });
   // When config reloads, refresh any open panel: bar-driven attached decoration restyle and
   // shell-driven compositor blur.
   m_configService.addReloadCallback([this]() { m_panelManager.onConfigReloaded(); });

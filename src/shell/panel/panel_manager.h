@@ -63,7 +63,8 @@ public:
   void setToggleSettingsWindowCallback(std::function<void()> callback);
   void openSettingsWindow();
   void toggleSettingsWindow();
-  void setAttachedPanelGeometryCallback(std::function<void(wl_output*, std::optional<AttachedPanelGeometry>)> callback);
+  void setAttachedPanelGeometryCallback(
+      std::function<void(wl_output*, std::string_view, std::optional<AttachedPanelGeometry>)> callback);
   // Callback to query the bar surface rects on a given output, in output-local
   // coordinates. The click shield's input region excludes these rects so
   // clicks on bar widgets keep flowing to the bar while a panel is open.
@@ -88,6 +89,8 @@ public:
   [[nodiscard]] bool isOpenPanel(std::string_view panelId) const noexcept;
   [[nodiscard]] bool isPanelTransitionActive() const noexcept;
   [[nodiscard]] bool isAttachedOpen() const noexcept;
+  // Bar that opened the active panel; empty when none was recorded.
+  [[nodiscard]] std::string_view attachedSourceBarName() const noexcept;
   [[nodiscard]] const std::string& activePanelId() const noexcept;
   // True when a panel is open and it reports the given context as active (e.g. control-center tab).
   [[nodiscard]] bool isActivePanelContext(std::string_view context) const noexcept;
@@ -156,7 +159,8 @@ private:
   RenderContext* m_renderContext = nullptr;
   std::function<void()> m_openSettingsWindow;
   std::function<void()> m_toggleSettingsWindow;
-  std::function<void(wl_output*, std::optional<AttachedPanelGeometry>)> m_attachedPanelGeometryCallback;
+  std::function<void(wl_output*, std::string_view, std::optional<AttachedPanelGeometry>)>
+      m_attachedPanelGeometryCallback;
   std::function<std::vector<InputRect>(wl_output*)> m_clickShieldExcludeRectsProvider;
   std::function<std::vector<wl_surface*>()> m_focusGrabBarSurfacesProvider;
   std::function<void()> m_panelClosedCallback;

@@ -237,7 +237,7 @@ void PanelManager::toggleSettingsWindow() {
 }
 
 void PanelManager::setAttachedPanelGeometryCallback(
-    std::function<void(wl_output*, std::optional<AttachedPanelGeometry>)> callback) {
+    std::function<void(wl_output*, std::string_view, std::optional<AttachedPanelGeometry>)> callback) {
   m_attachedPanelGeometryCallback = std::move(callback);
 }
 
@@ -646,7 +646,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     }
 
     if (m_attachedPanelGeometryCallback) {
-      m_attachedPanelGeometryCallback(request.output, std::nullopt);
+      m_attachedPanelGeometryCallback(request.output, m_sourceBarName, std::nullopt);
     }
     m_surface.reset();
     m_layerSurface = nullptr;
@@ -818,7 +818,7 @@ void PanelManager::closePanel() {
 
 void PanelManager::destroyPanel() {
   if (m_attachedToBar && m_attachedPanelGeometryCallback && m_output != nullptr) {
-    m_attachedPanelGeometryCallback(m_output, std::nullopt);
+    m_attachedPanelGeometryCallback(m_output, m_sourceBarName, std::nullopt);
   }
   // Defensive: closePanel deactivates first, but destroyPanel can also be
   // reached directly when openPanel preempts an open panel.
@@ -1028,6 +1028,8 @@ bool PanelManager::isPanelTransitionActive() const noexcept {
 }
 
 bool PanelManager::isAttachedOpen() const noexcept { return isOpen() && m_attachedToBar; }
+
+std::string_view PanelManager::attachedSourceBarName() const noexcept { return m_sourceBarName; }
 
 const std::string& PanelManager::activePanelId() const noexcept { return m_activePanelId; }
 
@@ -1291,7 +1293,7 @@ void PanelManager::publishAttachedPanelGeometry(float revealProgress) {
 
   const float progress = std::clamp(revealProgress, 0.0f, 1.0f);
   if (progress <= 0.001f) {
-    m_attachedPanelGeometryCallback(m_output, std::nullopt);
+    m_attachedPanelGeometryCallback(m_output, m_sourceBarName, std::nullopt);
     return;
   }
 
@@ -1354,7 +1356,7 @@ void PanelManager::publishAttachedPanelGeometry(float revealProgress) {
   }
   }
 
-  m_attachedPanelGeometryCallback(m_output, geometry);
+  m_attachedPanelGeometryCallback(m_output, m_sourceBarName, geometry);
 }
 
 void PanelManager::applyPanelCompositorBlur() {
