@@ -20,6 +20,7 @@
 #include "util/string_utils.h"
 #include "wayland/wayland_seat.h"
 #include "wayland/wayland_toplevels.h"
+#include "xdg-shell-client-protocol.h"
 
 #include <algorithm>
 #include <cctype>
@@ -1384,28 +1385,51 @@ void TaskbarWidget::openTaskContextMenu(const TaskModel& task, InputArea& area) 
 
   constexpr float kTaskMenuWidth = 240.0f;
   const float menuWidth = kTaskMenuWidth * m_contentScale;
-  const float gap = std::round(std::max(2.0f, Style::spaceMd * m_contentScale));
+  const std::int32_t gap = std::max(2, static_cast<std::int32_t>(std::lround(Style::spaceMd * m_contentScale)));
 
-  // Match tray-style placement intent (open away from bar side) while using the
-  // shared ContextMenuPopup default positioner behavior.
+  const ContextMenuPopupPlacement* placement = nullptr;
+  ContextMenuPopupPlacement bottomPlacement;
   if (m_barPosition == "top") {
-    anchorY = absY + area.height() + gap;
+    anchorY = absY + area.height() + static_cast<float>(gap);
     anchorH = 1.0f;
   } else if (m_barPosition == "bottom") {
-    anchorY = absY - gap;
-    anchorH = 1.0f;
+    const std::int32_t tileW = static_cast<std::int32_t>(std::lround(area.width()));
+    const std::int32_t tileH = std::max(1, static_cast<std::int32_t>(std::lround(area.height())));
+    const std::int32_t halfTileH = tileH / 2;
+    if (m_platform.wayland().hasPointerPosition()) {
+      const std::int32_t ptrX = static_cast<std::int32_t>(std::lround(m_platform.lastPointerX()));
+      const std::int32_t ptrY = static_cast<std::int32_t>(std::lround(m_platform.lastPointerY()));
+      anchorX = static_cast<float>(ptrX - tileW / 2);
+      anchorY = static_cast<float>(ptrY - halfTileH);
+      anchorW = static_cast<float>(tileW);
+      anchorH = static_cast<float>(tileH);
+    } else {
+      anchorX = absX;
+      anchorY = absY;
+      anchorW = area.width();
+      anchorH = area.height();
+    }
+    bottomPlacement = ContextMenuPopupPlacement{
+        .anchor = XDG_POSITIONER_ANCHOR_TOP,
+        .gravity = XDG_POSITIONER_GRAVITY_TOP,
+        .offsetX = 0,
+        .offsetY = -gap,
+        .chromeAttachment = popup_chrome::Attachment{.horizontal = popup_chrome::HorizontalAttachment::Center,
+                                                     .vertical = popup_chrome::VerticalAttachment::Bottom},
+    };
+    placement = &bottomPlacement;
   } else if (m_barPosition == "left") {
-    anchorX = absX + area.width() + (menuWidth * 0.5f) + gap;
+    anchorX = absX + area.width() + (menuWidth * 0.5f) + static_cast<float>(gap);
     anchorW = 1.0f;
   } else if (m_barPosition == "right") {
-    anchorX = absX - (menuWidth * 0.5f) - gap;
+    anchorX = absX - (menuWidth * 0.5f) - static_cast<float>(gap);
     anchorW = 1.0f;
   }
 
   m_contextMenuPopup->open(std::move(entries), menuWidth, 12, static_cast<std::int32_t>(std::round(anchorX)),
                            static_cast<std::int32_t>(std::round(anchorY)),
                            static_cast<std::int32_t>(std::round(anchorW)),
-                           static_cast<std::int32_t>(std::round(anchorH)), layerSurface, m_output);
+                           static_cast<std::int32_t>(std::round(anchorH)), layerSurface, m_output, placement);
 }
 
 std::string TaskbarWidget::toLower(std::string value) { return StringUtils::toLower(std::move(value)); }

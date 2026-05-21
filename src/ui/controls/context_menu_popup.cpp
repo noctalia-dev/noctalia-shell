@@ -29,27 +29,39 @@ ContextMenuPopup::~ContextMenuPopup() { close(); }
 
 void ContextMenuPopup::open(std::vector<ContextMenuControlEntry> entries, float menuWidth, std::size_t maxVisible,
                             std::int32_t anchorX, std::int32_t anchorY, std::int32_t anchorW, std::int32_t anchorH,
-                            zwlr_layer_surface_v1* parentLayerSurface, wl_output* output) {
+                            zwlr_layer_surface_v1* parentLayerSurface, wl_output* output,
+                            const ContextMenuPopupPlacement* placement) {
   openCommon(std::move(entries), menuWidth, maxVisible, anchorX, anchorY, anchorW, anchorH, parentLayerSurface, nullptr,
-             output);
+             output, placement);
 }
 
 void ContextMenuPopup::openAsChild(std::vector<ContextMenuControlEntry> entries, float menuWidth,
                                    std::size_t maxVisible, std::int32_t anchorX, std::int32_t anchorY,
                                    std::int32_t anchorW, std::int32_t anchorH, xdg_surface* parentXdgSurface,
-                                   wl_output* output) {
+                                   wl_output* output, const ContextMenuPopupPlacement* placement) {
   openCommon(std::move(entries), menuWidth, maxVisible, anchorX, anchorY, anchorW, anchorH, nullptr, parentXdgSurface,
-             output);
+             output, placement);
 }
 
 void ContextMenuPopup::openCommon(std::vector<ContextMenuControlEntry> entries, float menuWidth, std::size_t maxVisible,
                                   std::int32_t anchorX, std::int32_t anchorY, std::int32_t anchorW,
                                   std::int32_t anchorH, zwlr_layer_surface_v1* parentLayerSurface,
-                                  xdg_surface* parentXdgSurface, wl_output* output) {
+                                  xdg_surface* parentXdgSurface, wl_output* output,
+                                  const ContextMenuPopupPlacement* placement) {
   close();
 
   const float menuHeight = ContextMenuControl::preferredHeight(entries, maxVisible);
   const auto chrome = popup_chrome::computeGeometry(menuWidth, menuHeight, m_shadowConfig);
+
+  const ContextMenuPopupPlacement defaultPlacement{
+      .anchor = XDG_POSITIONER_ANCHOR_BOTTOM,
+      .gravity = XDG_POSITIONER_GRAVITY_BOTTOM,
+      .offsetX = 0,
+      .offsetY = static_cast<std::int32_t>(Style::spaceXs),
+      .chromeAttachment = popup_chrome::Attachment{.horizontal = popup_chrome::HorizontalAttachment::Center,
+                                                   .vertical = popup_chrome::VerticalAttachment::Top},
+  };
+  const ContextMenuPopupPlacement& resolvedPlacement = placement != nullptr ? *placement : defaultPlacement;
 
   PopupSurfaceConfig popupCfg{
       .anchorX = anchorX,
@@ -58,19 +70,17 @@ void ContextMenuPopup::openCommon(std::vector<ContextMenuControlEntry> entries, 
       .anchorHeight = std::max(1, anchorH),
       .width = chrome.surfaceWidth,
       .height = chrome.surfaceHeight,
-      .anchor = XDG_POSITIONER_ANCHOR_BOTTOM,
-      .gravity = XDG_POSITIONER_GRAVITY_BOTTOM,
+      .anchor = resolvedPlacement.anchor,
+      .gravity = resolvedPlacement.gravity,
       .constraintAdjustment = XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X |
                               XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_Y |
                               XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_X | XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_Y,
-      .offsetX = 0,
-      .offsetY = static_cast<std::int32_t>(Style::spaceXs),
+      .offsetX = resolvedPlacement.offsetX,
+      .offsetY = resolvedPlacement.offsetY,
       .serial = m_wayland.lastInputSerial(),
       .grab = true,
   };
-  popup_chrome::applyToConfig(popupCfg, chrome,
-                              popup_chrome::Attachment{.horizontal = popup_chrome::HorizontalAttachment::Center,
-                                                       .vertical = popup_chrome::VerticalAttachment::Top});
+  popup_chrome::applyToConfig(popupCfg, chrome, resolvedPlacement.chromeAttachment);
 
   m_surface = std::make_unique<PopupSurface>(m_wayland);
   m_surface->setRenderContext(&m_renderContext);
