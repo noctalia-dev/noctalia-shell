@@ -331,8 +331,8 @@ namespace {
            nearlyEqual(a.animation.speed, b.animation.speed) && a.avatarPath == b.avatarPath &&
            a.settingsShowAdvanced == b.settingsShowAdvanced &&
            a.middleClickOpensWidgetSettings == b.middleClickOpensWidgetSettings && a.showLocation == b.showLocation &&
-           a.clipboardEnabled == b.clipboardEnabled && a.screenTimeEnabled == b.screenTimeEnabled &&
-           a.clipboardAutoPaste == b.clipboardAutoPaste &&
+           a.clipboardEnabled == b.clipboardEnabled && a.clipboardHistoryMaxEntries == b.clipboardHistoryMaxEntries &&
+           a.screenTimeEnabled == b.screenTimeEnabled && a.clipboardAutoPaste == b.clipboardAutoPaste &&
            a.clipboardImageActionCommand == b.clipboardImageActionCommand && a.shadow.blur == b.shadow.blur &&
            a.shadow.offsetX == b.shadow.offsetX && a.shadow.offsetY == b.shadow.offsetY &&
            nearlyEqual(a.shadow.alpha, b.shadow.alpha) && a.panel.backgroundBlur == b.panel.backgroundBlur &&

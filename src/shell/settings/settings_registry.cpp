@@ -765,6 +765,18 @@ namespace settings {
                                 {"shell", "clipboard_enabled"}, ToggleSetting{cfg.shell.clipboardEnabled},
                                 "clipboard history paste copy"));
     {
+      auto e = makeEntry("shell", "clipboard", tr("settings.schema.shell.clipboard-history-max-entries.label"),
+                         tr("settings.schema.shell.clipboard-history-max-entries.description"),
+                         {"shell", "clipboard_history_max_entries"},
+                         StepperSetting{.value = std::clamp(cfg.shell.clipboardHistoryMaxEntries, 10, 200),
+                                        .minValue = 10,
+                                        .maxValue = 200,
+                                        .step = 5},
+                         "clipboard history limit entries");
+      e.visibleWhen = clipboardOn;
+      entries.push_back(std::move(e));
+    }
+    {
       auto e =
           makeEntry("shell", "clipboard", tr("settings.schema.shell.clipboard-auto-paste.label"),
                     tr("settings.schema.shell.clipboard-auto-paste.description"), {"shell", "clipboard_auto_paste"},

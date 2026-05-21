@@ -24,7 +24,9 @@
 
 namespace {
 
-  constexpr std::size_t kMaxHistoryEntries = 50;
+  constexpr std::size_t kDefaultMaxHistoryEntries = 50;
+  constexpr std::size_t kMinHistoryMaxEntries = 10;
+  constexpr std::size_t kMaxHistoryMaxEntries = 200;
   constexpr std::size_t kMaxHistoryBytes = 64u * 1024u * 1024u;
   constexpr std::size_t kMaxEntryBytes = 10u * 1024u * 1024u;
   constexpr std::size_t kPreviewBytes = 200;
@@ -390,6 +392,21 @@ void ClipboardService::setHistoryRetentionEnabled(bool enabled) {
   ++m_changeSerial;
   notifyChanged();
 }
+
+void ClipboardService::setMaxHistoryEntries(std::size_t maxEntries) {
+  maxEntries = std::clamp(maxEntries, kMinHistoryMaxEntries, kMaxHistoryMaxEntries);
+  if (m_maxHistoryEntries == maxEntries) {
+    return;
+  }
+  m_maxHistoryEntries = maxEntries;
+  if (!m_historyRetention) {
+    return;
+  }
+  trimHistoryToBudget();
+  ++m_changeSerial;
+  notifyChanged();
+}
+
 ClipboardService::~ClipboardService() { cleanup(); }
 
 const DataControlOps* extDataControlOps() { return &kExtDataControlOps; }
@@ -1220,7 +1237,7 @@ void ClipboardService::trimHistoryToBudget() {
     }
   }
 
-  while ((unpinnedCount > kMaxHistoryEntries || unpinnedBytes > kMaxHistoryBytes) && !m_history.empty() &&
+  while ((unpinnedCount > m_maxHistoryEntries || unpinnedBytes > kMaxHistoryBytes) && !m_history.empty() &&
          !m_history.back().pinned) {
     const std::size_t removedBytes = m_history.back().byteSize;
     unpinnedBytes -= removedBytes;

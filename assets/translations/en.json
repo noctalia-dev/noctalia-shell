@@ -1593,6 +1593,10 @@
           "label": "Screen time",
           "description": "Track per-app usage and show it in Control Center"
         },
+        "clipboard-history-max-entries": {
+          "label": "History Size",
+          "description": "Maximum unpinned entries kept in clipboard history."
+        },
         "clipboard-auto-paste": {
           "label": "Clipboard Auto-Paste",
           "description": "Automatically paste clipboard selections"

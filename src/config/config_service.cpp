@@ -1435,6 +1435,9 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
     if (auto v = (*shellTbl)["clipboard_enabled"].value<bool>()) {
       shell.clipboardEnabled = *v;
     }
+    if (auto v = (*shellTbl)["clipboard_history_max_entries"].value<int64_t>()) {
+      shell.clipboardHistoryMaxEntries = static_cast<int>(std::clamp<int64_t>(*v, 10, 200));
+    }
     if (auto v = (*shellTbl)["screen_time_enabled"].value<bool>()) {
       shell.screenTimeEnabled = *v;
     }

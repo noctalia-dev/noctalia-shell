@@ -571,6 +571,8 @@ struct ShellConfig {
   bool showLocation = true;
   /// When false, disables Wayland clipboard integration (history panel, data-control binding, Input paste/copy hooks).
   bool clipboardEnabled = true;
+  /// Maximum unpinned clipboard history entries retained (pinned entries are exempt).
+  int clipboardHistoryMaxEntries = 50;
   /// Disables per-app tracking and Control Center usage UI.
   bool screenTimeEnabled = false;
   ClipboardAutoPasteMode clipboardAutoPaste = ClipboardAutoPasteMode::Auto;
