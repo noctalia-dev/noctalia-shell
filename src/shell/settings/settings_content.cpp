@@ -985,8 +985,12 @@ namespace settings {
       titleRow->setDirection(FlexDirection::Horizontal);
       titleRow->setAlign(FlexAlign::Center);
       titleRow->setGap(Style::spaceSm * scale);
-      titleRow->addChild(
-          makeLabel(entry.title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), true));
+      titleRow->setFillWidth(true);
+      {
+        auto tl = makeLabel(entry.title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), true);
+        tl->setFlexGrow(1.0f);
+        titleRow->addChild(std::move(tl));
+      }
 
       const auto makeBadge = [&](std::string_view label, const ColorSpec& fill, const ColorSpec& color) {
         auto badge = std::make_unique<Flex>();
@@ -1467,8 +1471,12 @@ namespace settings {
       titleRow->setDirection(FlexDirection::Horizontal);
       titleRow->setAlign(FlexAlign::Center);
       titleRow->setGap(Style::spaceSm * scale);
-      titleRow->addChild(
-          makeLabel(entry.title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), true));
+      titleRow->setFillWidth(true);
+      {
+        auto tl = makeLabel(entry.title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), true);
+        tl->setFlexGrow(1.0f);
+        titleRow->addChild(std::move(tl));
+      }
       if (overridden) {
         auto badge = std::make_unique<Flex>();
         badge->setAlign(FlexAlign::Center);
@@ -1559,8 +1567,12 @@ namespace settings {
       titleRow->setDirection(FlexDirection::Horizontal);
       titleRow->setAlign(FlexAlign::Center);
       titleRow->setGap(Style::spaceSm * scale);
-      titleRow->addChild(
-          makeLabel(entry.title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), true));
+      titleRow->setFillWidth(true);
+      {
+        auto tl = makeLabel(entry.title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), true);
+        tl->setFlexGrow(1.0f);
+        titleRow->addChild(std::move(tl));
+      }
       if (overridden) {
         auto badge = std::make_unique<Flex>();
         badge->setAlign(FlexAlign::Center);
@@ -1643,11 +1655,13 @@ namespace settings {
       titleRow->setDirection(FlexDirection::Horizontal);
       titleRow->setAlign(FlexAlign::Center);
       titleRow->setGap(Style::spaceSm * scale);
+      titleRow->setFillWidth(true);
       // Reserve the Reset button's height so columns line up even when only some are overridden.
       titleRow->setMinHeight(Style::controlHeightSm * scale);
       auto titleLabel =
           makeLabel(entry.title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), true);
       titleLabel->setMaxLines(2);
+      titleLabel->setFlexGrow(1.0f);
       titleRow->addChild(std::move(titleLabel));
       if (overridden) {
         auto badge = std::make_unique<Flex>();
@@ -1779,8 +1793,12 @@ namespace settings {
       titleRow->setDirection(FlexDirection::Horizontal);
       titleRow->setAlign(FlexAlign::Center);
       titleRow->setGap(Style::spaceSm * scale);
-      titleRow->addChild(
-          makeLabel(entry.title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), true));
+      titleRow->setFillWidth(true);
+      {
+        auto tl = makeLabel(entry.title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), true);
+        tl->setFlexGrow(1.0f);
+        titleRow->addChild(std::move(tl));
+      }
       if (overridden) {
         auto badge = std::make_unique<Flex>();
         badge->setAlign(FlexAlign::Center);
@@ -1863,8 +1881,12 @@ namespace settings {
       titleRow->setDirection(FlexDirection::Horizontal);
       titleRow->setAlign(FlexAlign::Center);
       titleRow->setGap(Style::spaceSm * scale);
-      titleRow->addChild(
-          makeLabel(entry.title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), true));
+      titleRow->setFillWidth(true);
+      {
+        auto tl = makeLabel(entry.title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), true);
+        tl->setFlexGrow(1.0f);
+        titleRow->addChild(std::move(tl));
+      }
       if (overridden) {
         auto badge = std::make_unique<Flex>();
         badge->setAlign(FlexAlign::Center);
@@ -2019,8 +2041,12 @@ namespace settings {
       titleRow->setDirection(FlexDirection::Horizontal);
       titleRow->setAlign(FlexAlign::Center);
       titleRow->setGap(Style::spaceSm * scale);
-      titleRow->addChild(
-          makeLabel(entry.title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), true));
+      titleRow->setFillWidth(true);
+      {
+        auto tl = makeLabel(entry.title, Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::OnSurface), true);
+        tl->setFlexGrow(1.0f);
+        titleRow->addChild(std::move(tl));
+      }
       if (overridden) {
         auto badge = std::make_unique<Flex>();
         badge->setAlign(FlexAlign::Center);

@@ -33,7 +33,7 @@ namespace {
 
   constexpr float kWindowWidth = 1080.0f;
   constexpr float kWindowHeight = 600.0f;
-  constexpr float kWindowMinWidth = 800.0f;
+  constexpr float kWindowMinWidth = 900.0f;
   constexpr float kWindowMinHeight = 500.0f;
 
 } // namespace
@@ -345,6 +345,11 @@ void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
     m_lastSceneHeight = height;
     m_rebuildRequested = false;
     m_contentRebuildRequested = false;
+    const float scale = uiScale();
+    const auto newMinW = static_cast<std::uint32_t>(std::round(kWindowMinWidth * scale));
+    const auto newMinH = static_cast<std::uint32_t>(std::round(kWindowMinHeight * scale));
+    m_surface->setMinSize(newMinW, newMinH);
+    m_surface->clampToMinSize(newMinW, newMinH);
   } else if ((m_contentRebuildRequested || sizeChanged || needsLayout) && m_sceneRoot != nullptr) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
     const float w = static_cast<float>(width);
