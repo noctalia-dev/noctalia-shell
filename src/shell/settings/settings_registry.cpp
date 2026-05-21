@@ -520,6 +520,10 @@ namespace settings {
     entries.push_back(makeEntry("dock", "general", tr("settings.schema.dock.active-monitor-only.label"),
                                 tr("settings.schema.dock.active-monitor-only.description"),
                                 {"dock", "active_monitor_only"}, ToggleSetting{cfg.dock.activeMonitorOnly}, "monitor"));
+    entries.push_back(makeEntry("dock", "general", tr("settings.schema.dock.monitors.label"),
+                                tr("settings.schema.dock.monitors.description"), {"dock", "monitors"},
+                                ListSetting{.items = cfg.dock.monitors, .suggestedOptions = env.availableOutputs},
+                                "monitor output display screen"));
     entries.push_back(makeEntry("dock", "behavior", tr("settings.schema.shared.auto-hide.label"),
                                 tr("settings.schema.dock.auto-hide.description"), {"dock", "auto_hide"},
                                 ToggleSetting{cfg.dock.autoHide}, "autohide"));

@@ -1611,7 +1611,11 @@
       "dock": {
         "active-monitor-only": {
           "label": "Active Monitor Only",
-          "description": "Only show the dock on the active monitor"
+          "description": "Only show applications running on the active monitor"
+        },
+        "monitors": {
+          "label": "Displays",
+          "description": "Choose which displays show the dock; leave empty for all. Active-monitor filtering applies within these displays."
         },
         "icon-size": {
           "label": "Icon Size",

@@ -221,9 +221,7 @@ void Dock::reload() {
 
   refreshPinnedAppsIfNeeded();
 
-  m_instances.clear();
-  m_surfaceMap.clear();
-  m_hoveredInstance = nullptr;
+  closeAllInstances();
 
   if (wl_display_roundtrip(m_platform->display()) < 0) {
     const int roundtripErrno = errno;
@@ -252,7 +250,24 @@ void Dock::closeAllInstances() {
   m_itemMenu.reset();
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;
+  m_popupOwnerInstance = nullptr;
   m_instances.clear();
+}
+
+void Dock::detachInstanceState(DockInstance& inst) {
+  if (inst.surface != nullptr) {
+    if (wl_surface* const wls = inst.surface->wlSurface()) {
+      m_surfaceMap.erase(wls);
+    }
+  }
+  if (m_hoveredInstance == &inst) {
+    m_hoveredInstance = nullptr;
+  }
+  if (m_popupOwnerInstance == &inst) {
+    m_windowMenu.reset();
+    m_itemMenu.reset();
+    m_popupOwnerInstance = nullptr;
+  }
 }
 
 void Dock::onOutputChange() {
@@ -263,11 +278,17 @@ void Dock::onOutputChange() {
 }
 
 void Dock::refresh() {
-  if (m_instances.empty()) {
+  if (m_config == nullptr || m_platform == nullptr || !m_config->config().dock.enabled) {
     return;
   }
 
   refreshPinnedAppsIfNeeded();
+
+  syncInstances();
+
+  if (m_instances.empty()) {
+    return;
+  }
 
   for (auto& inst : m_instances) {
     if (inst->surface == nullptr) {
@@ -514,14 +535,46 @@ bool Dock::refreshPinnedAppsIfNeeded() {
 
 void Dock::syncInstances() {
   const auto& outputs = m_platform->outputs();
+  const auto& cfg = m_config->config().dock;
+  const auto& selectedMonitors = cfg.monitors;
+  const bool hasStaticContent = !cfg.pinned.empty() || dockLauncherButtonCount(cfg) > 0;
+  // When activeMonitorOnly is off, the running-apps check is identical for every output, so hoist it.
+  const bool anyRunningGlobal = (!hasStaticContent && cfg.showRunning && !cfg.activeMonitorOnly)
+                                    ? !m_platform->runningAppIds(nullptr).empty()
+                                    : false;
+  const auto outputAllowed = [&](const WaylandOutput& output) {
+    if (!selectedMonitors.empty() &&
+        std::none_of(selectedMonitors.begin(), selectedMonitors.end(),
+                     [&output](const std::string& m) { return outputMatchesSelector(m, output); })) {
+      return false;
+    }
+    if (hasStaticContent) {
+      return true;
+    }
+    if (!cfg.showRunning) {
+      return false;
+    }
+    if (cfg.activeMonitorOnly) {
+      return !m_platform->runningAppIds(output.output).empty();
+    }
+    return anyRunningGlobal;
+  };
 
-  // Remove instances for dead outputs.
-  std::erase_if(m_instances, [&outputs](const auto& inst) {
-    return !std::any_of(outputs.begin(), outputs.end(), [&inst](const auto& o) { return o.name == inst->outputName; });
+  // Remove instances for dead outputs or outputs no longer selected.
+  std::erase_if(m_instances, [this, &outputs, &outputAllowed](const auto& inst) {
+    const auto it =
+        std::find_if(outputs.begin(), outputs.end(), [&inst](const auto& o) { return o.name == inst->outputName; });
+    const bool drop = (it == outputs.end()) || !outputAllowed(*it);
+    if (drop) {
+      detachInstanceState(*inst);
+    }
+    return drop;
   });
 
   for (const auto& output : outputs) {
     if (!output.done)
+      continue;
+    if (!outputAllowed(output))
       continue;
     const bool exists = std::any_of(m_instances.begin(), m_instances.end(),
                                     [&output](const auto& inst) { return inst->outputName == output.name; });

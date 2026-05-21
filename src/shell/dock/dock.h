@@ -106,6 +106,9 @@ private:
   void syncInstances();
   void createInstance(const WaylandOutput& output);
   void destroyInstance(std::uint32_t outputName);
+  // Drop any references the dock keeps to an instance (surface map, hovered, popup owner)
+  // before the instance is destroyed. Safe to call multiple times.
+  void detachInstanceState(DockInstance& inst);
   void prepareFrame(DockInstance& instance, bool needsUpdate, bool needsLayout);
   bool syncInstanceModel(DockInstance& instance);
   void applyDockCompositorBlur(DockInstance& instance);
