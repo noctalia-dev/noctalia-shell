@@ -386,9 +386,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     const bool onlyActiveWorkspace = wc != nullptr ? wc->getBool("only_active_workspace", false) : false;
     const bool showWorkspaceLabel = wc != nullptr ? wc->getBool("show_workspace_label", true) : true;
     const bool hideEmptyWorkspaces = wc != nullptr ? wc->getBool("hide_empty_workspaces", false) : false;
-    auto widget =
-        std::make_unique<TaskbarWidget>(m_platform, output, groupByWorkspace, showAllOutputs, onlyActiveWorkspace,
-                                        showWorkspaceLabel, hideEmptyWorkspaces, barPosition, m_config.shell.shadow);
+    const bool showWindowTitle = wc != nullptr ? wc->getBool("show_window_title", false) : false;
+    const float windowTitleLength =
+        static_cast<float>(wc != nullptr ? wc->getDouble("window_title_length", 100.0) : 100.0);
+    auto widget = std::make_unique<TaskbarWidget>(
+        m_platform, output, groupByWorkspace, showAllOutputs, onlyActiveWorkspace, showWorkspaceLabel,
+        hideEmptyWorkspaces, showWindowTitle, windowTitleLength, barPosition, m_config.shell.shadow);
     widget->setContentScale(contentScale);
     return widget;
   }

@@ -548,6 +548,16 @@ namespace settings {
             WidgetSettingVisibility{WidgetSettingVisibilityCondition{"group_by_workspace", {"true"}}};
         add(std::move(hideEmpty));
       }
+      {
+        auto showWindowTitle = boolSpec("show_window_title", false);
+        add(std::move(showWindowTitle));
+      }
+      {
+        auto windowTitleLength = doubleSpec("window_title_length", 100.0, 10.0, 200.0, 1.0);
+        windowTitleLength.visibleWhen =
+            WidgetSettingVisibility{WidgetSettingVisibilityCondition{"show_window_title", {"true"}}};
+        add(std::move(windowTitleLength));
+      }
       for (auto& spec : specs) {
         if (spec.key == "capsule_radius") {
           spec.descriptionKey = "settings.widgets.settings.capsule_radius.taskbar-description";

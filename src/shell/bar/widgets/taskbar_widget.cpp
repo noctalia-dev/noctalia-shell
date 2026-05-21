@@ -34,10 +34,12 @@
 
 TaskbarWidget::TaskbarWidget(CompositorPlatform& platform, wl_output* output, bool groupByWorkspace,
                              bool showAllOutputs, bool onlyActiveWorkspace, bool showWorkspaceLabel,
-                             bool hideEmptyWorkspaces, std::string barPosition, ShellConfig::ShadowConfig shadowConfig)
+                             bool hideEmptyWorkspaces, bool showWindowTitle, float windowTitleLength,
+                             std::string barPosition, ShellConfig::ShadowConfig shadowConfig)
     : m_platform(platform), m_output(output), m_groupByWorkspace(groupByWorkspace), m_showAllOutputs(showAllOutputs),
       m_onlyActiveWorkspace(onlyActiveWorkspace), m_showWorkspaceLabel(showWorkspaceLabel),
-      m_hideEmptyWorkspaces(hideEmptyWorkspaces), m_barPosition(std::move(barPosition)),
+      m_hideEmptyWorkspaces(hideEmptyWorkspaces), m_showWindowTitle(showWindowTitle),
+      m_windowTitleLength(windowTitleLength), m_barPosition(std::move(barPosition)),
       m_shadowConfig(std::move(shadowConfig)) {
   buildDesktopIconIndex();
 }
@@ -144,7 +146,8 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
   }
   const float iconSize = Style::barGlyphSize * m_contentScale;
   const float tilePadding = Style::spaceXs * 0.35f * m_contentScale;
-  const float tileSize = iconSize + tilePadding * 2.0f;
+  const float tileHeight = iconSize + tilePadding * 2.0f;
+  const float tileWidth = tileHeight + (m_showWindowTitle ? m_windowTitleLength * m_contentScale + tilePadding : 0.0f);
   const auto workspaceAxisHandler = [this](const InputArea::PointerData& data) -> bool {
     if (!m_groupByWorkspace) {
       return false;
@@ -169,7 +172,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
   };
   auto createTaskTile = [&](const TaskModel& task) {
     auto area = std::make_unique<InputArea>();
-    area->setFrameSize(tileSize, tileSize);
+    area->setFrameSize(tileWidth, tileHeight);
     area->setAcceptedButtons(InputArea::buttonMask({BTN_LEFT, BTN_RIGHT}));
     area->setOnAxisHandler(workspaceAxisHandler);
 
@@ -213,15 +216,24 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       auto image = std::make_unique<Image>();
       image->setFit(ImageFit::Contain);
       image->setSize(iconSize, iconSize);
-      image->setPosition(std::round((tileSize - iconSize) * 0.5f), std::round((tileSize - iconSize) * 0.5f));
+      image->setPosition(std::round((tileHeight - iconSize) * 0.5f), std::round((tileHeight - iconSize) * 0.5f));
       image->setSourceFile(renderer, task.iconPath, static_cast<int>(std::round(48.0f * m_contentScale)), true);
       area->addChild(std::move(image));
     } else {
       auto glyph = std::make_unique<Glyph>();
       glyph->setGlyph("apps");
       glyph->setGlyphSize(iconSize);
-      glyph->setPosition(std::round((tileSize - iconSize) * 0.5f), std::round((tileSize - iconSize) * 0.5f));
+      glyph->setPosition(std::round((tileHeight - iconSize) * 0.5f), std::round((tileHeight - iconSize) * 0.5f));
       area->addChild(std::move(glyph));
+    }
+
+    if (m_showWindowTitle) {
+      auto label = std::make_unique<Label>();
+      label->setText(task.title);
+      label->setFontSize(Style::fontSizeCaption * m_contentScale);
+      label->setMaxWidth(m_windowTitleLength * m_contentScale);
+      label->setPosition(std::round(tileHeight + tilePadding), 0);
+      area->addChild(std::move(label));
     }
 
     if (task.active) {
@@ -229,9 +241,16 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       const float bottomInset = 0.25f * m_contentScale;
       auto indicator = std::make_unique<Box>();
       indicator->setFill(colorSpecFromRole(ColorRole::Primary));
-      indicator->setRadius(d * 0.5f);
-      indicator->setFrameSize(d, d);
-      indicator->setPosition(std::round((tileSize - d) * 0.5f), std::round(tileSize - d - bottomInset));
+      if (m_showWindowTitle) {
+        const float lineThickness = d * 0.5f;
+        indicator->setRadius(lineThickness * 0.5f);
+        indicator->setSize(tileWidth - tilePadding * 2, lineThickness);
+        indicator->setPosition(tilePadding, std::round(tileHeight));
+      } else {
+        indicator->setRadius(d * 0.5f);
+        indicator->setFrameSize(d, d);
+        indicator->setPosition(std::round((tileHeight - d) * 0.5f), std::round(tileHeight - d - bottomInset));
+      }
       area->addChild(std::move(indicator));
     }
     return area;
@@ -289,11 +308,11 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       }
       const float taskCount = std::max(1.0f, static_cast<float>(tasks.size()));
       const float gapCount = tasks.empty() ? 0.0f : (taskCount - 1.0f);
-      const float runLength = (tileSize * taskCount) + (groupGap * gapCount);
-      const float groupWidth = m_vertical ? std::round(tileSize + (groupPadCross * 2.0f))
+      const float runLength = (tileWidth * taskCount) + (groupGap * gapCount);
+      const float groupWidth = m_vertical ? std::round(tileWidth + (groupPadCross * 2.0f))
                                           : std::round(groupPadStart + groupPadEnd + runLength);
       const float groupHeight = m_vertical ? std::round(groupPadStart + groupPadEnd + runLength)
-                                           : std::round(tileSize + (groupPadCross * 2.0f));
+                                           : std::round(tileHeight + (groupPadCross * 2.0f));
 
       auto group = std::make_unique<Box>();
       group->setFrameSize(groupWidth, groupHeight);
@@ -319,7 +338,7 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
       }
 
       for (std::size_t i = 0; i < tasks.size(); ++i) {
-        const float tileOffset = (tileSize + groupGap) * static_cast<float>(i);
+        const float tileOffset = (tileWidth + groupGap) * static_cast<float>(i);
         auto tile = createTaskTile(*tasks[i]);
         if (m_vertical) {
           tile->setPosition(std::round(groupPadCross), std::round(groupPadStart + tileOffset));

@@ -1221,6 +1221,14 @@
           "label": "Hide Empty Workspaces",
           "description": "When grouping by workspace, omit capsules that have no running windows in the taskbar list."
         },
+        "show_window_title": {
+          "label": "Show Window Title",
+          "description": "Show the window title next to its icon"
+        },
+        "window_title_length": {
+          "label": "Window Title Length",
+          "description": "Maximum length in pixels for window titles"
+        },
         "height": {
           "label": "Height",
           "description": "Widget height in pixels"
