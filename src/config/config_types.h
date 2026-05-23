@@ -308,7 +308,12 @@ struct LivePaperConfig {
   std::int32_t meshH = 18;
   float darken = 0.7f; // 0.0 = no overlay, 1.0 = fully black
   std::string presetsDir;
-  std::string audioSource; // PipeWire node target; "" = default monitor
+  std::string audioSource; // PipeWire node target; "" = follow active sink, fall back to mic if allowMicFallback
+  // Privacy gate. When audioSource is empty and the active sink's monitor
+  // stops producing audio, the tap can fall back to the default source
+  // (microphone) so the visualizer keeps reacting to ambient sound. This
+  // opens the user's mic — defaults to OFF; opt in explicitly.
+  bool allowMicFallback = false;
 };
 
 struct WallpaperConfig {

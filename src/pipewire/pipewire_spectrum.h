@@ -48,6 +48,12 @@ public:
   // analyses: the explicitly configured target, or the default sink. The
   // live-paper PCM tap follows this so the projectM visualizer reacts to
   // exactly the audio the widget displays.
+  //
+  // LIFETIME: the returned AudioNode* aliases an entry in
+  // PipeWireService::state().sinks / .sources. That vector is replaced on
+  // every audio-state publish (`m_state = std::move(next)`), so the pointer
+  // is valid ONLY until the next pw_loop pump. Callers must extract any id
+  // or string fields synchronously before yielding back to the loop.
   [[nodiscard]] std::uint32_t resolvedTargetNodeId() const noexcept;
   [[nodiscard]] const AudioNode* resolvedTargetNode() const noexcept;
 

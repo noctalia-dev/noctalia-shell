@@ -68,5 +68,6 @@ PipeWirePcmTap::~PipeWirePcmTap() = default;
 void PipeWirePcmTap::start(std::string /*targetNodeName*/) {}
 void PipeWirePcmTap::stop() {}
 void PipeWirePcmTap::handleAudioStateChanged() {}
+void PipeWirePcmTap::setMicFallbackAllowed(bool /*allowed*/) {}
 int PipeWirePcmTap::consume(float* /*out*/, int /*maxFrames*/) { return 0; }
 bool PipeWirePcmTap::isRunning() const noexcept { return false; }

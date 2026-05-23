@@ -142,14 +142,26 @@ sibling of the bar's spectrum analyser. In its default *follow* mode
   sink's monitor — so the visualizer reacts to the same sound the widget
   shows.
 - Once the spectrum goes idle (~1 s of silence, widget hidden) the tap
-  falls back to the **default source (microphone)**, so the visualizer
-  keeps reacting to ambient sound.
+  has nothing to tap. **By default it stays unbound and the visualizer
+  runs silent** until playback resumes.
+
+### Mic fallback (privacy-relevant; opt-in)
+
+Set `allow_mic_fallback = true` under `[wallpaper.live_paper]` to extend
+follow mode with the prototype's original behaviour: when no audio is
+playing, the tap falls back to the **default source (microphone)** so
+the visualizer keeps reacting to ambient sound. The opt-in shape exists
+because the fallback stream is intentionally **not**
+`PW_KEY_NODE_PASSIVE` — it activates the microphone whenever follow mode
+goes idle, which on a system without an xdg-desktop-portal mic gate is
+not otherwise obvious to the user. The stream is visible in
+`pavucontrol` / `wpctl status` as **"Noctalia LivePaper"**.
+
+Sink-monitor taps stay passive so they never wake an idle sink.
 
 The tap registers a `PipeWireSpectrum` listener while running, which
-keeps that silence detection alive even when no audio-visualizer widget
-is on the bar. The mic-fallback capture stream is intentionally *not*
-`PW_KEY_NODE_PASSIVE` (it must activate the source); sink-monitor taps
-stay passive so tapping never wakes an idle sink.
+keeps the silence detection alive even when no audio-visualizer widget
+is on the bar.
 
 Source (mic / line-in) captures additionally run through an automatic
 gain control — a peak envelope with fast attack and slow release feeding
@@ -158,8 +170,8 @@ beat/FFT analysis. Sink-monitor captures keep their native dynamics
 (they already arrive at program level). See the `kAgc*` constants in
 `pipewire_pcm_tap.cpp`.
 
-`audio_source` set to an explicit PipeWire node name bypasses all of the
-above and pins the tap to that node.
+`audio_source` set to an explicit PipeWire node name bypasses follow
+mode and the mic-fallback gate entirely (the user named the node).
 
 A subtlety in the renderer: `projectm_pcm_add_float`'s `count` argument
 is **samples per channel** (the frame count), not the interleaved float

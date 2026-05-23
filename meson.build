@@ -765,7 +765,6 @@ executable('noctalia',
     stb_dep,
     libwebp_dep,
     luau_dep,
-    projectm_dep,
   ] + (jemalloc_dep.found() ? [jemalloc_dep] : []) + (dl_dep.found() ? [dl_dep] : [])
     + (have_livepaper ? [projectm_dep] : []),
   include_directories: _noctalia_inc,

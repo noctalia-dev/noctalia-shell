@@ -1009,6 +1009,9 @@ void Application::initUi() {
     kLog.info("live_paper visualizer disabled: shared GL context is GLES2");
   }
   if (m_pipewirePcmTap != nullptr && m_projectMRenderer != nullptr) {
+    // Apply the privacy gate BEFORE start() so the initial bind already
+    // honours it. setMicFallbackAllowed is idempotent / cheap regardless.
+    m_pipewirePcmTap->setMicFallbackAllowed(m_configService.config().wallpaper.livePaper.allowMicFallback);
     m_pipewirePcmTap->start(m_configService.config().wallpaper.livePaper.audioSource);
     m_projectMRenderer->setPcmTap(m_pipewirePcmTap.get());
   }
@@ -1034,16 +1037,26 @@ void Application::initUi() {
     // that case). audio_source is the only knob we additionally have to
     // re-apply on the PCM tap, since the renderer's pcm pointer is set once
     // at init.
-    m_configService.addReloadCallback([this, lastAudioSource = m_configService.config().wallpaper.livePaper.audioSource]() mutable {
-      if (m_visualizerService != nullptr) {
-        m_visualizerService->onConfigChanged();
-      }
-      const auto& current = m_configService.config().wallpaper.livePaper.audioSource;
-      if (m_pipewirePcmTap != nullptr && current != lastAudioSource) {
-        m_pipewirePcmTap->start(current);
-        lastAudioSource = current;
-      }
-    });
+    m_configService.addReloadCallback(
+        [this,
+         lastAudioSource = m_configService.config().wallpaper.livePaper.audioSource,
+         lastMicFallback = m_configService.config().wallpaper.livePaper.allowMicFallback]() mutable {
+          if (m_visualizerService != nullptr) {
+            m_visualizerService->onConfigChanged();
+          }
+          if (m_pipewirePcmTap == nullptr) {
+            return;
+          }
+          const auto& lp = m_configService.config().wallpaper.livePaper;
+          if (lp.allowMicFallback != lastMicFallback) {
+            m_pipewirePcmTap->setMicFallbackAllowed(lp.allowMicFallback);
+            lastMicFallback = lp.allowMicFallback;
+          }
+          if (lp.audioSource != lastAudioSource) {
+            m_pipewirePcmTap->start(lp.audioSource);
+            lastAudioSource = lp.audioSource;
+          }
+        });
   }
   m_backdrop.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
   m_settingsWindow.initialize(m_wayland, &m_configService, &m_renderContext, &m_dependencyService,

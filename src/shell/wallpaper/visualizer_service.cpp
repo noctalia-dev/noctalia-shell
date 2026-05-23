@@ -204,7 +204,13 @@ void VisualizerService::rescanPresets() {
       kLog.warn("recursive scan error at {}: {}", it->path().string(), ec.message());
       continue;
     }
-    if (!it->is_regular_file(ec)) {
+    // Use symlink_status() — i.e. DON'T follow file symlinks either. We
+    // already skip directory symlinks via directory_options, but a
+    // malicious preset pack could include `.milk` symlinks pointing at
+    // arbitrary readable paths. is_regular_file() on the entry would
+    // follow them; checking the link's own status keeps the scanner
+    // strictly inside the presets dir.
+    if (!std::filesystem::is_regular_file(it->symlink_status(ec)) || ec) {
       continue;
     }
     if (hasPresetExtension(it->path())) {

@@ -279,15 +279,33 @@ void PipeWirePcmTap::stop() {
   resetRing(0, 0);
 }
 
+void PipeWirePcmTap::setMicFallbackAllowed(bool allowed) {
+  if (m_micFallbackAllowed == allowed) {
+    return;
+  }
+  m_micFallbackAllowed = allowed;
+  // Only react if we're currently in follow mode with no active sink to
+  // tap; flipping the knob there is exactly the case where rebind picks up
+  // (or drops) the mic. Anything else (no start, explicit target,
+  // currently bound to a sink) is unaffected by the privacy gate.
+  if (m_started && m_explicitTarget.empty()) {
+    handleAudioStateChanged();
+  }
+}
+
 void PipeWirePcmTap::updateSpectrumSubscription() {
   // Follow mode keys off PipeWireSpectrum::idle() — the same signal that shows
   // or hides the bar's audio-visualizer widget. Holding a listener keeps the
   // spectrum analysing the default sink even when no widget is on the bar, and
   // delivers the idle/active transitions that drive our rebind. An explicit
   // target needs no spectrum.
+  //
+  // bandCount=1 because we never call values() — only the change-callback
+  // signal matters here. Asking for the smallest meaningful number keeps the
+  // spectrum from allocating an 8-band FFT output it'll never read.
   const bool wantSubscription = m_started && m_explicitTarget.empty() && m_spectrum != nullptr;
   if (wantSubscription && m_spectrumListener == 0) {
-    m_spectrumListener = m_spectrum->addChangeListener(8, [this]() { handleAudioStateChanged(); });
+    m_spectrumListener = m_spectrum->addChangeListener(1, [this]() { handleAudioStateChanged(); });
   } else if (!wantSubscription && m_spectrumListener != 0) {
     m_spectrum->removeChangeListener(m_spectrumListener);
     m_spectrumListener = 0;
@@ -330,15 +348,20 @@ const AudioNode* PipeWirePcmTap::resolvedTargetNode() const noexcept {
   // widget. While the spectrum reports audio — i.e. the widget is visible —
   // tap exactly the node it analyses, so the projectM visualizer reacts to the
   // same sound the widget shows. Once the spectrum goes idle (~1 s of silence,
-  // widget hidden) fall back to the default source (mic) so the visualizer
-  // keeps reacting to ambient sound. The spectrum's idle hysteresis also
-  // debounces brief between-track gaps for free.
+  // widget hidden) we OPTIONALLY fall back to the default source (mic) so the
+  // visualizer keeps reacting to ambient sound — gated on
+  // m_micFallbackAllowed because opening the user's mic is a privacy
+  // decision they must opt into.
+  //
+  // NOTE: the returned AudioNode* is borrowed from PipeWireService::state(),
+  // which is reassigned on every state publish. Caller must extract any
+  // string/id fields synchronously before the next pw_loop pump.
   if (m_spectrum != nullptr && !m_spectrum->idle()) {
     if (const AudioNode* node = m_spectrum->resolvedTargetNode(); node != nullptr) {
       return node;
     }
   }
-  if (state.defaultSourceId != 0) {
+  if (m_micFallbackAllowed && state.defaultSourceId != 0) {
     auto source = std::ranges::find_if(
         state.sources, [id = state.defaultSourceId](const AudioNode& n) { return n.id == id; });
     if (source != state.sources.end()) {
@@ -361,9 +384,11 @@ void PipeWirePcmTap::rebuildStream() {
   }
   const bool targetIsSink = node->mediaClass == "Audio/Sink";
   // AGC runs on source (mic/line-in) captures only; sink monitors keep their
-  // native dynamics. Set between the old stream's teardown and the new one's
-  // creation, so the RT feedSamples() never races this write. Seed the
-  // envelope fresh for the new source.
+  // native dynamics. We're on the (single) pw_loop thread, m_stream.reset()
+  // above drained any in-flight on_process, and the new Stream below has not
+  // started yet — so feedSamples cannot be running concurrently with this
+  // write. Seed the envelope fresh for the new source. (See the threading
+  // note in the header for the wider picture.)
   m_micAgcActive = !targetIsSink;
   m_agcEnvelope = kAgcInitialEnvelope;
   m_stream = std::make_unique<Stream>(*this, node->id, node->name, targetIsSink);

@@ -300,7 +300,7 @@ namespace {
   bool livePaperConfigEqual(const LivePaperConfig& a, const LivePaperConfig& b) {
     return a.enabled == b.enabled && a.intervalSeconds == b.intervalSeconds && a.fps == b.fps && a.meshW == b.meshW &&
            a.meshH == b.meshH && nearlyEqual(a.darken, b.darken) && a.presetsDir == b.presetsDir &&
-           a.audioSource == b.audioSource;
+           a.audioSource == b.audioSource && a.allowMicFallback == b.allowMicFallback;
   }
 
   bool wallpaperConfigEqual(const WallpaperConfig& a, const WallpaperConfig& b) {

@@ -16,16 +16,22 @@ struct AudioNode;
 //
 // Lifecycle:
 //   - start("")    → follows the bar's audio-visualizer widget: taps the sink
-//                    the spectrum analyses while it reports audio, and the
-//                    default source (mic) once the spectrum goes idle
+//                    the spectrum analyses while it reports audio, then the
+//                    default source (mic) once the spectrum goes idle —
+//                    BUT only when setMicFallbackAllowed(true) (off by default;
+//                    opening the user's mic is a privacy-relevant decision)
 //   - start(name)  → opens a capture stream against a specific PipeWire node
+//                    regardless of allow-mic-fallback (the user named it)
 //   - stop()       → tears the stream down (so an idle session uses no CPU)
 //   - handleAudioStateChanged() → rebinds when the active monitor changes
 //
 // Threading:
-//   The PipeWire on_process callback runs on the RT thread; it writes into
-//   m_ring through release stores. The renderer thread calls consume() and
-//   reads through acquire loads. No locks are used on the hot path.
+//   PipeWireService uses a non-threaded pw_loop, so on_process, the spectrum
+//   listener, rebuildStream(), and consume() (called from the main loop's
+//   visualizer tick) all dispatch on the SAME thread via pw_loop_iterate. The
+//   atomics on m_ring and the no-locks-on-hot-path discipline are kept for
+//   forward-compatibility with a future pw_thread_loop split; they are
+//   trivially correct under the current single-threaded model.
 class PipeWirePcmTap {
 public:
   // `spectrum` supplies the same idle/source signal that drives the bar's
@@ -40,6 +46,13 @@ public:
   void start(std::string targetNodeName);
   void stop();
   void handleAudioStateChanged();
+
+  // Toggle the privacy-relevant mic fallback. When false (the default),
+  // follow mode (`start("")`) refuses to fall back to the default source
+  // and instead leaves the tap unbound while no sink is producing audio —
+  // the visualizer runs silent until playback resumes. Re-applies on the
+  // next state change; call before/around start() in practice.
+  void setMicFallbackAllowed(bool allowed);
 
   // Pop up to maxFrames interleaved float frames into out. The number of
   // floats actually written is `frames * channels()`. Returns frames.
@@ -76,6 +89,7 @@ private:
   std::string m_boundTarget;
   std::uint32_t m_boundNodeId = 0;
   bool m_started = false; // start() called and not since stop()ped
+  bool m_micFallbackAllowed = false; // privacy gate; see setMicFallbackAllowed
 
   // Mic automatic gain control. m_micAgcActive is set on (re)bind (main
   // thread, while no RT callback runs); m_agcEnvelope is RT-thread-only state
