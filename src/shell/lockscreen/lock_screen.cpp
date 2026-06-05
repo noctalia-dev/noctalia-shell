@@ -256,7 +256,7 @@ void LockScreen::onGpuResourcesInvalidated() {
 }
 
 void LockScreen::onConfigChanged() {
-  if (!isActive()) {
+  if (!isActive() || m_configService == nullptr) {
     return;
   }
   for (auto& instance : m_instances) {
@@ -264,22 +264,18 @@ void LockScreen::onConfigChanged() {
       applyLockscreenStyle(*instance.surface);
     }
   }
+  applyWallpaperStyleToSurfaces();
 }
 
 void LockScreen::onWallpaperChanged() {
   if (!isActive() || m_configService == nullptr) {
     return;
   }
-  for (auto& instance : m_instances) {
-    if (instance.surface == nullptr || instance.surface->hasDesktopCapture()) {
-      continue;
-    }
-    const auto* output = m_wayland != nullptr ? m_wayland->findOutputByWl(instance.output) : nullptr;
-    const std::string connectorName = output != nullptr ? output->connectorName : std::string{};
-    instance.surface->setWallpaperPath(m_configService->getWallpaperPath(connectorName));
-    instance.surface->setWallpaperFillMode(m_configService->config().wallpaper.fillMode);
-    instance.surface->setWallpaperFillColor(resolveWallpaperFillColor(m_configService->config().wallpaper));
+  if (!m_configService->config().lockscreen.wallpaper.empty()) {
+    return;
   }
+  applyWallpaperStyleToSurfaces();
+  requestLayout();
 }
 
 void LockScreen::onPointerEvent(const PointerEvent& event) {
@@ -504,6 +500,34 @@ void LockScreen::applyLockscreenStyle(LockSurface& surface) const {
   surface.setBackgroundStyle(lockscreen.blurIntensity, lockscreen.tintIntensity);
 }
 
+std::string LockScreen::wallpaperPathForOutput(const std::string& connectorName) const {
+  if (m_configService == nullptr) {
+    return {};
+  }
+  const std::string& customWallpaper = m_configService->config().lockscreen.wallpaper;
+  if (!customWallpaper.empty()) {
+    return customWallpaper;
+  }
+  return m_configService->getWallpaperPath(connectorName);
+}
+
+void LockScreen::applyWallpaperStyleToSurfaces() {
+  if (!isActive() || m_configService == nullptr) {
+    return;
+  }
+  const auto& wallpaperConfig = m_configService->config().wallpaper;
+  const WallpaperFillMode fillMode = wallpaperConfig.fillMode;
+  const Color fillColor = resolveWallpaperFillColor(wallpaperConfig);
+  for (auto& instance : m_instances) {
+    if (instance.surface == nullptr || instance.surface->hasDesktopCapture()) {
+      continue;
+    }
+    instance.surface->setWallpaperPath(wallpaperPathForOutput(instance.connectorName));
+    instance.surface->setWallpaperFillMode(fillMode);
+    instance.surface->setWallpaperFillColor(fillColor);
+  }
+}
+
 void LockScreen::createInstance(const WaylandOutput& output) {
   auto surface = std::make_unique<LockSurface>(*m_wayland, m_configService);
   surface->setRenderContext(m_renderContext);
@@ -512,7 +536,7 @@ void LockScreen::createInstance(const WaylandOutput& output) {
   applyLockscreenStyle(*surface);
   surface->setOutputKey(desktop_widgets::outputKey(output));
   if (m_configService != nullptr) {
-    surface->setWallpaperPath(m_configService->getWallpaperPath(output.connectorName));
+    surface->setWallpaperPath(wallpaperPathForOutput(output.connectorName));
     surface->setWallpaperFillMode(m_configService->config().wallpaper.fillMode);
     surface->setWallpaperFillColor(resolveWallpaperFillColor(m_configService->config().wallpaper));
   }
@@ -536,6 +560,7 @@ void LockScreen::createInstance(const WaylandOutput& output) {
       Instance{
           .outputName = output.name,
           .output = output.output,
+          .connectorName = output.connectorName,
           .surface = std::move(surface),
       }
   );

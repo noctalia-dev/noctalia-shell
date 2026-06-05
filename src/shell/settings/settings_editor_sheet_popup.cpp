@@ -124,6 +124,12 @@ namespace settings {
 
   bool SettingsEditorSheetPopup::isOpen() const noexcept { return DialogPopupHost::isOpen(); }
 
+  void SettingsEditorSheetPopup::dismissOpenSelectDropdown() {
+    if (m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen()) {
+      m_selectPopup->closeSelectDropdown();
+    }
+  }
+
   bool SettingsEditorSheetPopup::onPointerEvent(const PointerEvent& event) {
     if (m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen()) {
       if (m_selectPopup->onPointerEvent(event)) {
@@ -228,10 +234,12 @@ namespace settings {
         .viewportPaddingH = 0.0f,
         .viewportPaddingV = 0.0f,
         .flexGrow = 1.0f,
-        .configure = [](ScrollView& sv) {
-          sv.clearFill();
-          sv.clearBorder();
-        },
+        .onScrollChanged = [this](float /*offset*/) { dismissOpenSelectDropdown(); },
+        .configure =
+            [](ScrollView& sv) {
+              sv.clearFill();
+              sv.clearBorder();
+            },
     });
     m_scrollView = scrollPtr;
 

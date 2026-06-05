@@ -94,6 +94,46 @@ namespace {
     return "external";
   }
 
+  OsdContent powerProfileOsdContent(std::string_view profile) {
+    return OsdContent{
+        .icon = std::string(profileGlyphName(profile)),
+        .value = profileLabel(profile),
+        .showProgress = false,
+    };
+  }
+
+  OsdContent caffeineOsdContent(bool enabled) {
+    return OsdContent{
+        .icon = enabled ? "caffeine-on" : "caffeine-off",
+        .value = i18n::tr(enabled ? "osd.caffeine.on" : "osd.caffeine.off"),
+        .showProgress = false,
+    };
+  }
+
+  OsdContent dndOsdContent(bool enabled) {
+    return OsdContent{
+        .icon = enabled ? "bell-off" : "bell",
+        .value = i18n::tr(enabled ? "osd.dnd.on" : "osd.dnd.off"),
+        .showProgress = false,
+    };
+  }
+
+  OsdContent wifiOsdContent(bool enabled) {
+    return OsdContent{
+        .icon = enabled ? "wifi" : "wifi-off",
+        .value = i18n::tr(enabled ? "osd.wifi.on" : "osd.wifi.off"),
+        .showProgress = false,
+    };
+  }
+
+  OsdContent bluetoothOsdContent(bool enabled) {
+    return OsdContent{
+        .icon = enabled ? "bluetooth" : "bluetooth-off",
+        .value = i18n::tr(enabled ? "osd.bluetooth.on" : "osd.bluetooth.off"),
+        .showProgress = false,
+    };
+  }
+
   bool barMayRender(const BarConfig& bar) {
     if (bar.enabled) {
       return true;
@@ -303,22 +343,16 @@ void Application::syncPolkitAgent() {
     if (m_polkitAgent == nullptr) {
       return;
     }
-    const bool hasPending = m_polkitAgent->hasPendingRequest();
-    const bool needsInput = m_polkitAgent->isResponseRequired();
-    if (!hasPending) {
+    if (!m_polkitAgent->hasPendingRequest()) {
       if (m_panelManager.isOpenPanel("polkit")) {
         m_panelManager.close();
       }
       return;
     }
-    if (needsInput) {
-      if (!m_panelManager.isOpenPanel("polkit")) {
-        wl_output* output = m_compositorPlatform.preferredInteractiveOutput(std::chrono::milliseconds(1200));
-        m_panelManager.openPanel("polkit", PanelOpenRequest{.output = output});
-      } else {
-        m_panelManager.refresh();
-      }
-    } else if (m_panelManager.isOpenPanel("polkit")) {
+    if (!m_panelManager.isOpenPanel("polkit")) {
+      wl_output* output = m_compositorPlatform.preferredInteractiveOutput(std::chrono::milliseconds(1200));
+      m_panelManager.openPanel("polkit", PanelOpenRequest{.output = output});
+    } else {
       m_panelManager.refresh();
     }
   });
@@ -732,31 +766,20 @@ void Application::initServices() {
 
     try {
       m_powerProfilesService = std::make_unique<PowerProfilesService>(*m_systemBus);
-      m_powerProfilesService->setChangeCallback([this, shouldRefreshControlCenter](
-                                                    const PowerProfilesState& state, PowerProfilesChangeOrigin origin
-                                                ) {
-        m_bar.refresh();
-        if (shouldRefreshControlCenter()) {
-          m_panelManager.refresh();
-        }
+      m_powerProfilesService->setChangeCallback(
+          [this, shouldRefreshControlCenter](const PowerProfilesState& state, PowerProfilesChangeOrigin origin) {
+            m_bar.refresh();
+            if (shouldRefreshControlCenter()) {
+              m_panelManager.refresh();
+            }
 
-        const std::string& active = state.activeProfile;
-        if (active.empty()) {
-          return;
-        }
-        if (m_prevPowerProfileActiveForEvents.has_value()
-            && *m_prevPowerProfileActiveForEvents != active
-            && origin != PowerProfilesChangeOrigin::Noctalia) {
-          std::string glyphIconSpec("noctalia-glyph:");
-          glyphIconSpec.append(profileGlyphName(active));
-          m_notificationManager.addInternal(
-              i18n::tr("notifications.internal.power-profiles"), i18n::tr("notifications.internal.power-profile-title"),
-              i18n::tr("notifications.internal.power-profile-body", "profile", profileLabel(active)), Urgency::Normal,
-              kDefaultNotificationTimeout, std::move(glyphIconSpec)
-          );
-        }
-        onPowerProfileChangedForEvents(state, origin);
-      });
+            const std::string& active = state.activeProfile;
+            if (active.empty()) {
+              return;
+            }
+            onPowerProfileChangedForEvents(state, origin);
+          }
+      );
       if (!m_powerProfilesService->activeProfile().empty()) {
         m_prevPowerProfileActiveForEvents = m_powerProfilesService->activeProfile();
         kLog.info("power profiles active profile: {}", m_powerProfilesService->activeProfile());
@@ -1692,17 +1715,8 @@ void Application::initIpc() {
         if (currentState == *nextState) {
           return "ok\n";
         }
-        if (*nextState) {
-          notify::info(
-              "Noctalia", i18n::tr("notifications.internal.dnd"), i18n::tr("notifications.internal.dnd-enabled")
-          );
-        }
         applyNotificationDnd(*nextState);
-        if (!*nextState) {
-          notify::info(
-              "Noctalia", i18n::tr("notifications.internal.dnd"), i18n::tr("notifications.internal.dnd-disabled")
-          );
-        }
+        m_osdOverlay.show(dndOsdContent(*nextState));
         return "ok\n";
       },
       "notification-dnd-set <on|off|true|false|1|0>", "Set notification Do Not Disturb state"
@@ -1712,17 +1726,8 @@ void Application::initIpc() {
       "notification-dnd-toggle",
       [this, applyNotificationDnd](const std::string&) -> std::string {
         const bool nextState = !m_notificationManager.doNotDisturb();
-        if (nextState) {
-          notify::info(
-              "Noctalia", i18n::tr("notifications.internal.dnd"), i18n::tr("notifications.internal.dnd-enabled")
-          );
-        }
         applyNotificationDnd(nextState);
-        if (!nextState) {
-          notify::info(
-              "Noctalia", i18n::tr("notifications.internal.dnd"), i18n::tr("notifications.internal.dnd-disabled")
-          );
-        }
+        m_osdOverlay.show(dndOsdContent(nextState));
         return "ok\n";
       },
       "notification-dnd-toggle", "Toggle notification Do Not Disturb state"
@@ -1790,7 +1795,17 @@ void Application::initIpc() {
   registerSessionIpc(m_ipcService, m_sessionActionRunner, m_lockScreen);
 
   if (m_powerProfilesService != nullptr) {
-    m_powerProfilesService->registerIpc(m_ipcService);
+    m_powerProfilesService->registerIpc(m_ipcService, [this](std::string_view profile) {
+      m_osdOverlay.show(powerProfileOsdContent(profile));
+    });
+  }
+  if (m_networkService != nullptr) {
+    m_networkService->registerIpc(m_ipcService, [this](bool enabled) { m_osdOverlay.show(wifiOsdContent(enabled)); });
+  }
+  if (m_bluetoothService != nullptr) {
+    m_bluetoothService->registerIpc(m_ipcService, [this](bool enabled) {
+      m_osdOverlay.show(bluetoothOsdContent(enabled));
+    });
   }
 
   if (m_brightnessService != nullptr) {
@@ -1819,7 +1834,7 @@ void Application::initIpc() {
   m_desktopWidgetsController.registerIpc(m_ipcService);
   m_lockscreenWidgetsController.registerIpc(m_ipcService);
   m_panelManager.registerIpc(m_ipcService);
-  m_idleInhibitor.registerIpc(m_ipcService);
+  m_idleInhibitor.registerIpc(m_ipcService, [this](bool enabled) { m_osdOverlay.show(caffeineOsdContent(enabled)); });
   m_gammaService.registerIpc(m_ipcService);
   m_themeService.registerIpc(m_ipcService);
   m_templateApplyService.registerIpc(m_ipcService);
@@ -1949,15 +1964,7 @@ void Application::onNetworkStateChangedForEvents(const NetworkState& state, Netw
   const bool prev = *m_prevWirelessEnabledForEvents;
   if (prev != state.wirelessEnabled) {
     if (origin != NetworkChangeOrigin::Noctalia) {
-      if (state.wirelessEnabled) {
-        m_notificationManager.addInternal(
-            i18n::tr("notifications.internal.network"), i18n::tr("notifications.internal.wifi-enabled"), ""
-        );
-      } else {
-        m_notificationManager.addInternal(
-            i18n::tr("notifications.internal.network"), i18n::tr("notifications.internal.wifi-disabled"), ""
-        );
-      }
+      m_osdOverlay.show(wifiOsdContent(state.wirelessEnabled));
     }
     if (state.wirelessEnabled) {
       m_hookManager.fire(HookKind::WifiEnabled);
@@ -1976,15 +1983,7 @@ void Application::onBluetoothStateChangedForEvents(const BluetoothState& state, 
   const bool prev = *m_prevBluetoothPoweredForEvents;
   if (prev != state.powered) {
     if (origin != BluetoothStateChangeOrigin::Noctalia) {
-      if (state.powered) {
-        m_notificationManager.addInternal(
-            i18n::tr("notifications.internal.bluetooth"), i18n::tr("notifications.internal.bluetooth-enabled"), ""
-        );
-      } else {
-        m_notificationManager.addInternal(
-            i18n::tr("notifications.internal.bluetooth"), i18n::tr("notifications.internal.bluetooth-disabled"), ""
-        );
-      }
+      m_osdOverlay.show(bluetoothOsdContent(state.powered));
     }
     if (state.powered) {
       m_hookManager.fire(HookKind::BluetoothEnabled);
@@ -2005,6 +2004,9 @@ void Application::onPowerProfileChangedForEvents(const PowerProfilesState& state
   }
   const std::string prev = *m_prevPowerProfileActiveForEvents;
   if (prev != state.activeProfile) {
+    if (origin != PowerProfilesChangeOrigin::Noctalia) {
+      m_osdOverlay.show(powerProfileOsdContent(state.activeProfile));
+    }
     m_hookManager.fire(
         HookKind::PowerProfileChanged,
         {{"NOCTALIA_POWER_PROFILE", state.activeProfile},

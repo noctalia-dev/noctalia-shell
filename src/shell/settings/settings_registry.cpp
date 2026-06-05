@@ -10,6 +10,7 @@
 #include "shell/control_center/shortcut_registry.h"
 #include "shell/settings/color_spec_picker.h"
 #include "shell/settings/font_weight_catalog.h"
+#include "shell/wallpaper/wallpaper_paths.h"
 #include "theme/builtin_palettes.h"
 #include "theme/builtin_templates.h"
 #include "ui/app_icon_colorization.h"
@@ -652,10 +653,14 @@ namespace settings {
     entries.push_back(makeEntry(
         "wallpaper", "automation", tr("settings.schema.wallpaper.automation-interval.label"),
         tr("settings.schema.wallpaper.automation-interval.description"),
-        {"wallpaper", "automation", "interval_minutes"},
-        sliderFor(
-            cfg.wallpaper.automation.intervalMinutes, noctalia::config::schema::kWallpaperAutomationIntervalRange, true
-        ),
+        {"wallpaper", "automation", "interval_seconds"},
+        StepperSetting{
+            .value = cfg.wallpaper.automation.intervalSeconds,
+            .minValue = static_cast<int>(noctalia::config::schema::kWallpaperAutomationIntervalRange.min.value()),
+            .maxValue = static_cast<int>(noctalia::config::schema::kWallpaperAutomationIntervalRange.max.value()),
+            .step = static_cast<int>(noctalia::config::schema::kWallpaperAutomationIntervalRange.step.value()),
+            .valueSuffix = "s",
+        },
         "rotate slideshow"
     ));
     entries.push_back(makeEntry(
@@ -779,8 +784,14 @@ namespace settings {
         {"dock", "icon_size"}, sliderFor(cfg.dock.iconSize, noctalia::config::schema::kDockIconSizeRange, true), "apps"
     ));
     entries.push_back(makeEntry(
-        "dock", "layout", tr("settings.schema.shared.padding.label"), tr("settings.schema.dock.padding.description"),
-        {"dock", "padding"}, sliderFor(cfg.dock.padding, noctalia::config::schema::kDockPaddingRange, true), "inset"
+        "dock", "layout", tr("settings.schema.shared.main-axis-padding.label"),
+        tr("settings.schema.dock.main-axis-padding.description"), {"dock", "main_axis_padding"},
+        sliderFor(cfg.dock.mainAxisPadding, noctalia::config::schema::kDockPaddingRange, true), "inset"
+    ));
+    entries.push_back(makeEntry(
+        "dock", "layout", tr("settings.schema.shared.cross-axis-padding.label"),
+        tr("settings.schema.dock.cross-axis-padding.description"), {"dock", "cross_axis_padding"},
+        sliderFor(cfg.dock.crossAxisPadding, noctalia::config::schema::kDockPaddingRange, true), "inset"
     ));
     entries.push_back(makeEntry(
         "dock", "layout", tr("settings.schema.dock.item-spacing.label"),
@@ -840,6 +851,17 @@ namespace settings {
         "dock", "focus-styling", tr("settings.schema.dock.inactive-icon-scale.label"),
         tr("settings.schema.dock.inactive-icon-scale.description"), {"dock", "inactive_scale"},
         sliderFor(cfg.dock.inactiveScale, noctalia::config::schema::kDockInactiveScaleRange, false), "unfocused", true
+    ));
+    entries.push_back(makeEntry(
+        "dock", "behavior", tr("settings.schema.dock.magnification.label"),
+        tr("settings.schema.dock.magnification.description"), {"dock", "magnification"},
+        ToggleSetting{cfg.dock.magnification}, "magnify zoom mac"
+    ));
+    entries.push_back(makeEntry(
+        "dock", "focus-styling", tr("settings.schema.dock.magnification-scale.label"),
+        tr("settings.schema.dock.magnification-scale.description"), {"dock", "magnification_scale"},
+        sliderFor(cfg.dock.magnificationScale, noctalia::config::schema::kDockMagnificationScaleRange, false),
+        "magnify zoom"
     ));
     entries.push_back(makeEntry(
         "dock", "focus-styling", tr("settings.schema.dock.active-icon-opacity.label"),
@@ -1064,6 +1086,23 @@ namespace settings {
         tr("settings.schema.lockscreen.tint-intensity.description"), {"lockscreen", "tint_intensity"},
         sliderFor(cfg.lockscreen.tintIntensity, noctalia::config::schema::kUnitRange, false), "lock screen tint"
     ));
+    {
+      const SettingVisibility lockscreenWallpaperOn{{"lockscreen", "blurred_desktop"}, {"false"}};
+      auto e = makeEntry(
+          "security", "lock-screen", tr("settings.schema.lockscreen.wallpaper.label"),
+          tr("settings.schema.lockscreen.wallpaper.description"), {"lockscreen", "wallpaper"},
+          TextSetting{
+              .value = cfg.lockscreen.wallpaper,
+              .placeholder = tr("settings.schema.lockscreen.wallpaper.placeholder"),
+              .browseMode = TextSettingBrowseMode::OpenFile,
+              .browseFileExtensions = {".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp", ".gif"},
+              .browseFallbackDirectory = wallpaper::resolveGlobalWallpaperDirectory(cfg.wallpaper, cfg.theme.mode),
+          },
+          "lock screen background image custom"
+      );
+      e.visibleWhen = lockscreenWallpaperOn;
+      entries.push_back(std::move(e));
+    }
     entries.push_back(makeEntry(
         "security", "lock-screen", tr("settings.schema.lockscreen.widgets.label"),
         tr("settings.schema.lockscreen.widgets.description"), {"lockscreen_widgets", "enabled"},

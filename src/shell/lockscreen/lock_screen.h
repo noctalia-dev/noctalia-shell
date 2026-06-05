@@ -76,6 +76,7 @@ private:
   struct Instance {
     std::uint32_t outputName = 0;
     wl_output* output = nullptr;
+    std::string connectorName;
     std::unique_ptr<LockSurface> surface;
   };
 
@@ -83,6 +84,8 @@ private:
   void captureDesktopSnapshots();
   [[nodiscard]] bool shouldUseBlurredDesktop() const;
   void applyLockscreenStyle(LockSurface& surface) const;
+  void applyWallpaperStyleToSurfaces();
+  [[nodiscard]] std::string wallpaperPathForOutput(const std::string& connectorName) const;
   void createInstance(const WaylandOutput& output);
   void resetLockState();
   void clearInstances();

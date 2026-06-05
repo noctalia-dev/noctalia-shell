@@ -15,6 +15,7 @@ class InputArea;
 class Input;
 class Label;
 class Renderer;
+class Select;
 class VirtualGridView;
 
 struct GlyphPickerResult {
@@ -22,8 +23,8 @@ struct GlyphPickerResult {
   char32_t codepoint = 0;
 };
 
-// Title + search input + virtualized grid of every Tabler glyph + Cancel/Apply
-// row. Reusable chrome for dialogs or embedded UIs.
+// Title + search/category filters + virtualized grid of every Tabler glyph +
+// Cancel/Apply row. Reusable chrome for dialogs or embedded UIs.
 class GlyphPicker : public Flex {
 public:
   explicit GlyphPicker(float chromeScale);
@@ -57,10 +58,12 @@ private:
   float m_chromeScale = 1.0f;
   Label* m_title = nullptr;
   Input* m_searchInput = nullptr;
+  Select* m_categorySelect = nullptr;
   VirtualGridView* m_grid = nullptr;
   Button* m_applyButton = nullptr;
 
   std::unique_ptr<GlyphGridAdapter> m_adapter;
+  std::vector<std::string> m_categoryOptions;
   std::function<void()> m_onCancel;
   std::function<void(const GlyphPickerResult&)> m_onApply;
 

@@ -242,8 +242,8 @@ namespace settings {
           .paddingV = Style::spaceXs * scale,
           .paddingH = Style::spaceSm * scale,
           .radius = Style::scaledRadiusMd(scale),
-          .onClick = [setOverride = ctx.setOverride, path, inputPtr, selectFolder,
-                      exts = setting.browseFileExtensions]() {
+          .onClick = [setOverride = ctx.setOverride, path, inputPtr, selectFolder, exts = setting.browseFileExtensions,
+                      fallbackDir = setting.browseFallbackDirectory]() {
             FileDialogOptions options;
             options.mode = selectFolder ? FileDialogMode::SelectFolder : FileDialogMode::Open;
             options.defaultViewMode = FileDialogViewMode::List;
@@ -272,6 +272,12 @@ namespace settings {
                 } else if (p.has_parent_path() && std::filesystem::exists(p.parent_path(), ec)) {
                   options.startDirectory = p.parent_path();
                 }
+              }
+            } else if (!fallbackDir.empty()) {
+              std::error_code ec;
+              const std::filesystem::path fallback(fallbackDir);
+              if (std::filesystem::exists(fallback, ec) && std::filesystem::is_directory(fallback, ec)) {
+                options.startDirectory = fallback;
               }
             }
             (void)FileDialog::open(

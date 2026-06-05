@@ -13,12 +13,14 @@
 #include "shell/dock/dock_instance.h"
 #include "shell/dock/dock_items.h"
 #include "shell/dock/dock_model.h"
+#include "shell/dock/pinned_apps.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/surface/shadow.h"
 #include "shell/tooltip/tooltip_manager.h"
 #include "system/app_identity.h"
 #include "system/desktop_entry.h"
 #include "system/desktop_entry_launch.h"
+#include "system/internal_app_metadata.h"
 #include "ui/app_icon_colorization.h"
 #include "ui/builders.h"
 #include "ui/palette.h"
@@ -215,6 +217,9 @@ void Dock::reload() {
 }
 
 void Dock::show() {
+  if (m_overlayDisplaySuppressed) {
+    return;
+  }
   if (m_config == nullptr || !m_config->config().dock.enabled) {
     return;
   }
@@ -363,6 +368,7 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
     m_hoveredInstance->inputDispatcher.pointerEnter(
         static_cast<float>(event.sx), static_cast<float>(event.sy), event.serial
     );
+    updateHoverZoomPointer(*m_hoveredInstance, static_cast<float>(event.sx), static_cast<float>(event.sy));
     // Auto-hide: show the dock when the pointer enters.
     if (m_config->config().dock.autoHide && m_hoveredInstance->sceneRoot != nullptr) {
       if (m_hoveredInstance->hideAnimId != 0) {
@@ -393,21 +399,9 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
   }
   case PointerEvent::Type::Leave: {
     if (m_hoveredInstance != nullptr) {
+      clearHoverZoomPointer(*m_hoveredInstance);
       m_hoveredInstance->pointerInside = false;
       m_hoveredInstance->inputDispatcher.pointerLeave();
-
-      // Clear item hover state.
-      for (auto& item : m_hoveredInstance->items) {
-        if (item.hovered) {
-          item.hovered = false;
-          if (item.background != nullptr) {
-            item.background->setFill(clearColorSpec());
-          }
-          if (m_hoveredInstance->sceneRoot) {
-            m_hoveredInstance->sceneRoot->markPaintDirty();
-          }
-        }
-      }
 
       if (m_config->config().dock.autoHide && m_popupOwnerInstance == nullptr) {
         shell::dock::startHideFadeOut(*m_hoveredInstance, *m_config);
@@ -420,6 +414,7 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
     if (m_hoveredInstance == nullptr)
       break;
     m_hoveredInstance->inputDispatcher.pointerMotion(static_cast<float>(event.sx), static_cast<float>(event.sy), 0);
+    updateHoverZoomPointer(*m_hoveredInstance, static_cast<float>(event.sx), static_cast<float>(event.sy));
     break;
   }
   case PointerEvent::Type::Button: {
@@ -428,6 +423,7 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
       shell::dock::DockInstance* targetInstance = it->second;
       if (m_hoveredInstance != targetInstance) {
         if (m_hoveredInstance != nullptr) {
+          clearHoverZoomPointer(*m_hoveredInstance);
           m_hoveredInstance->pointerInside = false;
           m_hoveredInstance->inputDispatcher.pointerLeave();
         }
@@ -441,6 +437,7 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
             static_cast<float>(event.sx), static_cast<float>(event.sy), event.serial
         );
       }
+      updateHoverZoomPointer(*m_hoveredInstance, static_cast<float>(event.sx), static_cast<float>(event.sy));
     }
 
     if (m_hoveredInstance == nullptr)
@@ -477,6 +474,9 @@ bool Dock::refreshPinnedAppsIfNeeded() {
 }
 
 void Dock::syncInstances() {
+  if (m_overlayDisplaySuppressed) {
+    return;
+  }
   const auto& outputs = m_platform->outputs();
   const auto& cfg = m_config->config().dock;
   const auto& selectedMonitors = cfg.monitors;
@@ -567,6 +567,20 @@ void Dock::createInstance(const WaylandOutput& output) {
         },
         needsUpdate, needsLayout
     );
+  });
+  instance->surface->setFrameTickCallback([this, inst](float deltaMs) {
+    if (m_config == nullptr || m_renderContext == nullptr || !m_config->config().dock.magnification) {
+      return;
+    }
+    const shell::dock::DockItemSceneDependencies deps{
+        .model = {.config = *m_config},
+        .renderContext = *m_renderContext,
+        .iconResolver = m_iconResolver,
+    };
+    if (shell::dock::updateHoverZoom(*inst, deps, inst->snapshot, deltaMs) && inst->surface != nullptr) {
+      inst->surface->requestFrameTick();
+      inst->surface->requestRedraw();
+    }
   });
   instance->surface->setAnimationManager(&instance->animations);
 
@@ -665,6 +679,44 @@ void Dock::updateVisuals(shell::dock::DockInstance& instance) {
   );
 }
 
+void Dock::updateHoverZoomPointer(shell::dock::DockInstance& instance, float sceneX, float sceneY) {
+  assertDockInitialized(m_platform, m_config, m_renderContext);
+  if (!m_config->config().dock.magnification || instance.row == nullptr) {
+    return;
+  }
+
+  const shell::dock::DockItemSceneDependencies deps{
+      .model = {.config = *m_config},
+      .renderContext = *m_renderContext,
+      .iconResolver = m_iconResolver,
+  };
+
+  if (!shell::dock::syncHoverPointerFromScene(instance, m_config->config().dock, sceneX, sceneY)) {
+    shell::dock::clearHoverZoom(instance, deps, instance.snapshot);
+    return;
+  }
+
+  if (instance.surface == nullptr) {
+    return;
+  }
+  instance.surface->requestFrameTick();
+  instance.surface->requestRedraw();
+}
+
+void Dock::clearHoverZoomPointer(shell::dock::DockInstance& instance) {
+  if (m_config == nullptr || m_renderContext == nullptr || !m_config->config().dock.magnification) {
+    instance.hoverPointerValid = false;
+    return;
+  }
+
+  const shell::dock::DockItemSceneDependencies deps{
+      .model = {.config = *m_config},
+      .renderContext = *m_renderContext,
+      .iconResolver = m_iconResolver,
+  };
+  shell::dock::clearHoverZoom(instance, deps, instance.snapshot);
+}
+
 // ── Private: item context menu (right-click) ──────────────────────────────────
 
 void Dock::closeItemMenu() {
@@ -693,6 +745,11 @@ void Dock::activateOrLaunchItem(shell::dock::DockInstance& instance, const shell
   );
 
   if (windows.empty()) {
+    if (const auto* internalApp = internal_apps::definitionForDesktopEntry(action.entry);
+        internalApp != nullptr && internalApp->appId == "dev.noctalia.Noctalia.Settings") {
+      PanelManager::instance().toggleSettingsWindow();
+      return;
+    }
     wl_surface* const activationSurface = instance.surface != nullptr ? instance.surface->wlSurface() : nullptr;
     (void)desktop_entry_launch::launchEntry(action.entry, dockLaunchOptions(*m_platform, *m_config, activationSurface));
     return;
@@ -735,6 +792,7 @@ void Dock::openItemMenu(shell::dock::DockInstance& instance, const shell::dock::
   const std::string entryId = action.entry.id;
   const std::string entryWorkingDir = action.entry.workingDir;
   const bool entryTerminal = action.entry.terminal;
+  const DesktopEntry entryForPin = action.entry;
 
   shell::dock::DockMenuCallbacks callbacks{
       .activateWindow = [this](zwlr_foreign_toplevel_handle_v1* handle) { m_platform->activateToplevel(handle); },
@@ -745,6 +803,22 @@ void Dock::openItemMenu(shell::dock::DockInstance& instance, const shell::dock::
                 desktopAction, entryId, entryWorkingDir, entryTerminal,
                 dockLaunchOptions(*m_platform, *m_config, nullptr)
             );
+          },
+      .setEntryPinned =
+          [this, entryForPin](bool pinned) {
+            if (m_config == nullptr) {
+              return;
+            }
+            std::vector<std::string> pinnedList = m_config->config().dock.pinned;
+            if (pinned) {
+              if (shell::dock::pinned_apps::containsEntry(pinnedList, entryForPin)) {
+                return;
+              }
+              pinnedList.push_back(entryForPin.id);
+            } else {
+              shell::dock::pinned_apps::removeEntry(pinnedList, entryForPin);
+            }
+            (void)m_config->setOverride({"dock", "pinned"}, std::move(pinnedList));
           },
       .closeMenu = [this]() { closeItemMenu(); },
   };

@@ -519,6 +519,7 @@
         "change-image": "Change…",
         "opacity": "Opacity",
         "layout": "Layout",
+        "hide-when-no-media": "Hide When No Media",
         "horizontal": "Horizontal",
         "vertical": "Vertical",
         "stat": "Stat",
@@ -598,9 +599,26 @@
     "actions": {
       "close": "Close",
       "close-all": "Close All"
-    }
+    },
+    "launcher": "Launcher"
   },
   "osd": {
+    "dnd": {
+      "on": "DND On",
+      "off": "DND Off"
+    },
+    "caffeine": {
+      "on": "Caffeine On",
+      "off": "Caffeine Off"
+    },
+    "wifi": {
+      "on": "Wi-Fi On",
+      "off": "Wi-Fi Off"
+    },
+    "bluetooth": {
+      "on": "Bluetooth On",
+      "off": "Bluetooth Off"
+    },
     "lock-keys": {
       "caps-on": "Caps Lock On",
       "caps-off": "Caps Lock Off",
@@ -628,22 +646,10 @@
     },
     "internal": {
       "dbus-disabled": "DBus notifications disabled",
-      "dnd": "Do Not Disturb",
-      "dnd-enabled": "Do Not Disturb enabled",
-      "dnd-disabled": "Do Not Disturb disabled",
       "battery": "Battery",
       "battery-device": "Battery device",
       "battery-low-title": "Battery low",
       "battery-low-body": "{device}: {percent}% remaining",
-      "network": "Network",
-      "wifi-enabled": "Wi-Fi is on",
-      "wifi-disabled": "Wi-Fi is off",
-      "caffeine": "Caffeine",
-      "caffeine-enabled": "Caffeine enabled",
-      "caffeine-disabled": "Caffeine disabled",
-      "bluetooth": "Bluetooth",
-      "bluetooth-enabled": "Bluetooth is on",
-      "bluetooth-disabled": "Bluetooth is off",
       "session-bus-unavailable": "Session bus unavailable",
       "mpris-disabled": "MPRIS disabled",
       "keybind-app": "Noctalia",
@@ -651,9 +657,6 @@
       "keybind-invalid-super": "The Super/Windows key cannot be used in shell keybinds.",
       "keybind-invalid-printable": "Printable keys (letters, numbers, symbols) require a modifier such as Ctrl or Alt.",
       "keybind-invalid-modifier": "This shortcut accepts a single key without modifiers.",
-      "power-profiles": "Power profiles",
-      "power-profile-title": "Power mode",
-      "power-profile-body": "Switched to: {profile}",
       "desktop-widgets-editor": "Widget editor",
       "desktop-widgets-editor-enabled": "Desktop widget editor is on. Switch to an empty workspace to see the editor overlay.",
       "lockscreen-widgets-editor": "Lockscreen widget editor",
@@ -745,9 +748,9 @@
       }
     },
     "session-actions": {
-      "icon-label": "Icon",
+      "glyph-label": "Glyph",
       "kind-section-label": "Behavior",
-      "glyph-picker-title": "Action icon",
+      "glyph-picker-title": "Action glyph",
       "clear-glyph": "Clear",
       "command-label": "Shell command",
       "command-placeholder": "Optional bash command, leave empty for built-in behavior",
@@ -1478,6 +1481,10 @@
           "label": "Hide When Single Layout",
           "description": "Hide the keyboard layout widget unless more than one layout is configured"
         },
+        "gauge_color": {
+          "label": "Gauge Color",
+          "description": "Color role for the fill bar in gauge display mode; fixed hex colors are also supported"
+        },
         "high_color": {
           "label": "High Color",
           "description": "Color used for high visualizer values"
@@ -1637,6 +1644,12 @@
         },
         "padding": {
           "label": "Padding"
+        },
+        "main-axis-padding": {
+          "label": "Main Axis Padding"
+        },
+        "cross-axis-padding": {
+          "label": "Cross Axis Padding"
         },
         "ends-margin": {
           "label": "Ends Margin"
@@ -1965,6 +1978,14 @@
           "label": "Inactive Icon Scale",
           "description": "Scale of unfocused dock icons"
         },
+        "magnification": {
+          "label": "Magnification",
+          "description": "Magnify dock icons near the pointer, macOS-style"
+        },
+        "magnification-scale": {
+          "label": "Magnification Scale",
+          "description": "Maximum icon scale multiplier at the pointer center (1.0 disables magnification)"
+        },
         "active-icon-opacity": {
           "label": "Active Icon Opacity",
           "description": "Opacity of the focused dock icon"
@@ -1983,8 +2004,11 @@
         "position": {
           "description": "Which screen edge the dock sits on"
         },
-        "padding": {
-          "description": "Inner padding of the dock"
+        "main-axis-padding": {
+          "description": "Inner padding along the dock's main axis (between icons and the short ends of the capsule)"
+        },
+        "cross-axis-padding": {
+          "description": "Inner padding along the dock's cross axis (between icons and the screen edge)"
         },
         "ends-margin": {
           "description": "Inset from each end of the dock along its main axis"
@@ -2163,6 +2187,11 @@
           "label": "Tint Intensity",
           "description": "Surface-color tint over the lock screen background"
         },
+        "wallpaper": {
+          "label": "Wallpaper",
+          "description": "Custom image for the lock screen background. Leave empty to use the desktop wallpaper.",
+          "placeholder": "Use desktop wallpaper"
+        },
         "widgets": {
           "label": "Lockscreen Widgets",
           "description": "Show configurable widgets on the lock screen"
@@ -2242,7 +2271,7 @@
         },
         "automation-interval": {
           "label": "Rotation Interval",
-          "description": "Minutes between wallpaper changes (0 disables)"
+          "description": "Seconds between wallpaper changes"
         },
         "automation-order": {
           "label": "Order",
@@ -2695,8 +2724,9 @@
         "title": "Color"
       },
       "glyph-picker": {
-        "title": "Pick an Icon",
-        "search-placeholder": "Search icons…"
+        "title": "Pick a Glyph",
+        "search-placeholder": "Search glyphs…",
+        "all-categories": "All"
       }
     },
     "controls": {

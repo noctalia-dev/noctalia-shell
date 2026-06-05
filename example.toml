@@ -163,6 +163,7 @@ keyboard_layout = true            # show an OSD popup when the input keyboard la
 blurred_desktop         = false       # use a desktop snapshot as the lock screen background (requires wlr-screencopy)
 blur_intensity          = 0.5         # lock screen background blur (0.0 = none, 1.0 = maximum)
 tint_intensity          = 0.3         # surface-color tint over the lock screen background
+# wallpaper             = ""          # optional image path for the lock screen; empty uses the desktop wallpaper
 
 # ── System Monitor ────────────────────────────────────────────────────────────
 
@@ -289,7 +290,8 @@ end    = ["media", "tray", "notifications", "clipboard", "network", "bluetooth",
 enabled             = false         # set true to activate
 position            = "bottom"      # top | bottom | left | right
 icon_size           = 48
-padding             = 8
+main_axis_padding   = 16
+cross_axis_padding  = 8
 item_spacing        = 6
 background_opacity  = 0.88
 radius              = 16
@@ -305,6 +307,8 @@ auto_hide           = false
 reserve_space       = false
 active_scale        = 1.0
 inactive_scale      = 0.85
+magnification       = true
+magnification_scale = 1.35
 active_opacity      = 1.0
 inactive_opacity    = 0.85
 show_dots           = false
@@ -324,7 +328,9 @@ enabled = false
 # [desktop_widgets.grid]
 # visible        = true
 # cell_size      = 16
-# major_interval = 4
+# major_interval        = 4
+# center_guides_visible = false
+# snap_to_center        = true
 
 # [desktop_widgets.widget.clock_main]
 # type     = "clock"

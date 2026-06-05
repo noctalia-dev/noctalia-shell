@@ -175,6 +175,7 @@ namespace desktop_settings {
       ));
       add(colorSpec("color", "on_surface"));
       add(boolSpec("shadow", true));
+      add(boolSpec("hide_when_no_media", false));
     } else if (type == "label") {
       add(stringSpec("title", "Title"));
       add(stringSpec("description"));

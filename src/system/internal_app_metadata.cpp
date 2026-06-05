@@ -2,6 +2,7 @@
 
 #include "core/resource_paths.h"
 #include "i18n/i18n.h"
+#include "util/string_utils.h"
 
 namespace internal_apps {
 
@@ -36,17 +37,54 @@ namespace internal_apps {
     return nullptr;
   }
 
+  const InternalAppDefinition* definitionForDesktopEntry(const DesktopEntry& entry) {
+    if (const auto* app = appDefinitionForAppId(entry.id)) {
+      return app;
+    }
+    if (!entry.startupWmClass.empty()) {
+      if (const auto* app = appDefinitionForAppId(entry.startupWmClass)) {
+        return app;
+      }
+    }
+    return appDefinitionForWindowTitle(entry.name);
+  }
+
+  [[nodiscard]] AppMetadata metadataFromDefinition(const InternalAppDefinition& app) {
+    return AppMetadata{
+        .displayName = app.appId == std::string_view("dev.noctalia.Noctalia.Settings")
+            ? i18n::tr("internal-apps.settings.display-name")
+            : std::string(app.displayName),
+        .iconPath = paths::assetPath(app.iconAssetPath).string(),
+    };
+  }
+
   std::optional<AppMetadata> metadataForAppId(std::string_view appId) {
     const auto* app = appDefinitionForAppId(appId);
     if (app == nullptr) {
       return std::nullopt;
     }
-    return AppMetadata{
-        .displayName = app->appId == std::string_view("dev.noctalia.Noctalia.Settings")
-            ? i18n::tr("internal-apps.settings.display-name")
-            : std::string(app->displayName),
-        .iconPath = paths::assetPath(app->iconAssetPath).string(),
-    };
+    return metadataFromDefinition(*app);
+  }
+
+  std::optional<AppMetadata> metadataForDesktopEntry(const DesktopEntry& entry) {
+    if (const auto* app = definitionForDesktopEntry(entry)) {
+      return metadataForAppId(app->appId);
+    }
+    return std::nullopt;
+  }
+
+  void applyMetadataToDesktopEntry(DesktopEntry& entry) {
+    const auto meta = metadataForDesktopEntry(entry);
+    if (!meta.has_value()) {
+      return;
+    }
+    if (entry.icon.empty()) {
+      entry.icon = meta->iconPath;
+    }
+    if (entry.name == entry.id) {
+      entry.name = meta->displayName;
+      entry.nameLower = StringUtils::toLower(meta->displayName);
+    }
   }
 
 } // namespace internal_apps

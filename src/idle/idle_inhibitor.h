@@ -13,6 +13,7 @@ struct zwp_idle_inhibitor_v1;
 class IdleInhibitor {
 public:
   using ChangeCallback = std::function<void()>;
+  using StateFeedbackCallback = std::function<void(bool enabled)>;
 
   IdleInhibitor();
   ~IdleInhibitor();
@@ -27,7 +28,7 @@ public:
   [[nodiscard]] bool available() const noexcept { return m_manager != nullptr; }
   void setChangeCallback(ChangeCallback callback);
 
-  void registerIpc(IpcService& ipc);
+  void registerIpc(IpcService& ipc, StateFeedbackCallback stateFeedback = {});
   /// Recreate the 1x1 layer-shell anchor when outputs change (hotplug). Keeps this service instance stable.
   void onOutputChange();
 

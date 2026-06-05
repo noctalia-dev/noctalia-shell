@@ -326,6 +326,17 @@ namespace {
     const WaylandOutput* output = nullptr;
   };
 
+  struct RegionIntersectTarget {
+    wl_output* output = nullptr;
+    LogicalRect localRegion{};
+  };
+
+  struct GlobalRegionPiece {
+    const WaylandOutput* output = nullptr;
+    LogicalRect localRegion{};
+    ScreencopyImage image;
+  };
+
   void blitOpaqueRgba(ScreencopyImage& canvas, int destX, int destY, const ScreencopyImage& source) {
     if (destX < 0 || destY < 0 || source.width <= 0 || source.height <= 0) {
       return;
@@ -345,6 +356,91 @@ namespace {
               * 4U;
       std::memcpy(dstRow, srcRow, static_cast<std::size_t>(copyWidth) * 4U);
     }
+  }
+
+  [[nodiscard]] std::vector<RegionIntersectTarget>
+  intersectGlobalRegion(const WaylandConnection& wayland, LogicalRect globalRegion) {
+    const int globalX0 = globalRegion.x;
+    const int globalY0 = globalRegion.y;
+    const int globalX1 = globalRegion.x + globalRegion.width;
+    const int globalY1 = globalRegion.y + globalRegion.height;
+
+    std::vector<RegionIntersectTarget> targets;
+    for (const auto& out : wayland.outputs()) {
+      if (out.output == nullptr || out.logicalWidth <= 0 || out.logicalHeight <= 0) {
+        continue;
+      }
+      const int ix0 = std::max(globalX0, out.logicalX);
+      const int iy0 = std::max(globalY0, out.logicalY);
+      const int ix1 = std::min(globalX1, out.logicalX + out.logicalWidth);
+      const int iy1 = std::min(globalY1, out.logicalY + out.logicalHeight);
+      if (ix1 <= ix0 || iy1 <= iy0) {
+        continue;
+      }
+      targets.push_back(
+          RegionIntersectTarget{
+              .output = out.output,
+              .localRegion = {
+                  .x = ix0 - out.logicalX,
+                  .y = iy0 - out.logicalY,
+                  .width = ix1 - ix0,
+                  .height = iy1 - iy0,
+              },
+          }
+      );
+    }
+    return targets;
+  }
+
+  [[nodiscard]] std::optional<ScreencopyImage>
+  composeGlobalRegion(LogicalRect globalRegion, std::vector<GlobalRegionPiece> pieces) {
+    if (globalRegion.width <= 0 || globalRegion.height <= 0 || pieces.empty()) {
+      return std::nullopt;
+    }
+
+    if (pieces.size() == 1) {
+      return std::move(pieces.front().image);
+    }
+
+    double canvasScale = 1.0;
+    for (const auto& piece : pieces) {
+      if (piece.output == nullptr || piece.localRegion.width <= 0 || piece.localRegion.height <= 0) {
+        return std::nullopt;
+      }
+      canvasScale = std::max({
+          canvasScale,
+          static_cast<double>(piece.image.width) / static_cast<double>(piece.localRegion.width),
+          static_cast<double>(piece.image.height) / static_cast<double>(piece.localRegion.height),
+      });
+    }
+
+    const auto scaled = [canvasScale](int logical) { return static_cast<int>(std::lround(logical * canvasScale)); };
+
+    const int canvasWidth = scaled(globalRegion.width);
+    const int canvasHeight = scaled(globalRegion.height);
+    if (canvasWidth <= 0 || canvasHeight <= 0) {
+      return std::nullopt;
+    }
+
+    ScreencopyImage canvas;
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+    canvas.rgba.assign(static_cast<std::size_t>(canvasWidth) * static_cast<std::size_t>(canvasHeight) * 4U, 0);
+
+    for (auto& piece : pieces) {
+      const int globalPieceX = piece.output->logicalX + piece.localRegion.x;
+      const int globalPieceY = piece.output->logicalY + piece.localRegion.y;
+      const int destX = scaled(globalPieceX - globalRegion.x);
+      const int destY = scaled(globalPieceY - globalRegion.y);
+      const int targetWidth = scaled(piece.localRegion.width);
+      const int targetHeight = scaled(piece.localRegion.height);
+      if (!resampleRgbaImage(piece.image, targetWidth, targetHeight)) {
+        return std::nullopt;
+      }
+      blitOpaqueRgba(canvas, destX, destY, piece.image);
+    }
+
+    return canvas;
   }
 
   [[nodiscard]] std::optional<ScreencopyImage> stitchOutputFrames(std::vector<CapturedOutputFrame> frames) {
@@ -636,21 +732,26 @@ void ScreenshotService::ensureRegionOverlay() {
   }
   m_regionOverlay->initialize(m_wayland, m_regionRenderContext);
   m_regionOverlay->setCompleteCallback([this](std::optional<LogicalRect> region, wl_output* output) {
-    if (!region.has_value() || output == nullptr) {
+    if (!region.has_value()) {
       m_frozenScreenshots.clear();
       m_regionFullscreenPick = false;
       return;
     }
     if (m_regionFullscreenPick) {
+      if (output == nullptr) {
+        m_frozenScreenshots.clear();
+        m_regionFullscreenPick = false;
+        return;
+      }
       completeFullscreenSelection(output, m_regionOutputOptions);
       m_regionFullscreenPick = false;
       return;
     }
     if (m_regionOutputOptions.freezeScreen && !m_frozenScreenshots.empty()) {
-      deliverFrozenRegion(*region, output, m_regionOutputOptions);
+      deliverFrozenGlobalRegion(*region, m_regionOutputOptions);
       return;
     }
-    captureOutput(output, region, "region", m_regionOutputOptions);
+    captureGlobalRegion(*region, m_regionOutputOptions);
   });
 }
 
@@ -766,6 +867,189 @@ void ScreenshotService::cancelRegionCapture() {
   }
 }
 
+void ScreenshotService::deliverFrozenGlobalRegion(LogicalRect globalRegion, const OutputOptions& options) {
+  const auto targets = intersectGlobalRegion(m_wayland, globalRegion);
+  if (targets.empty()) {
+    notifyError("Failed to crop frozen screenshot");
+    m_frozenScreenshots.clear();
+    return;
+  }
+
+  std::vector<GlobalRegionPiece> pieces;
+  pieces.reserve(targets.size());
+  for (const auto& target : targets) {
+    auto* frozen = findFrozenScreenshot(m_frozenScreenshots, target.output);
+    const auto* out = findOutput(m_wayland, target.output);
+    if (frozen == nullptr || out == nullptr) {
+      notifyError("Failed to crop frozen screenshot");
+      m_frozenScreenshots.clear();
+      return;
+    }
+    auto cropped = cropFrozenRegion(frozen->image, out->logicalWidth, out->logicalHeight, target.localRegion);
+    if (!cropped.has_value()) {
+      notifyError("Failed to crop frozen screenshot");
+      m_frozenScreenshots.clear();
+      return;
+    }
+    pieces.push_back(
+        GlobalRegionPiece{
+            .output = out,
+            .localRegion = target.localRegion,
+            .image = std::move(*cropped),
+        }
+    );
+  }
+
+  m_frozenScreenshots.clear();
+  auto composed = composeGlobalRegion(globalRegion, std::move(pieces));
+  if (!composed.has_value()) {
+    notifyError("Failed to crop frozen screenshot");
+    return;
+  }
+
+  const std::optional<std::filesystem::path> destPath =
+      options.saveToFile ? std::optional(makeScreenshotPath(options, "region")) : std::nullopt;
+  deliverCaptureResult(std::move(*composed), options, std::move(destPath));
+}
+
+void ScreenshotService::captureGlobalRegion(LogicalRect globalRegion, const OutputOptions& options) {
+  cancelAllOutputsBatch();
+  cancelGlobalRegionBatch();
+  m_captureQueue.clear();
+  if (m_capture.busy()) {
+    m_capture.cancelInFlight();
+  }
+
+  const auto targets = intersectGlobalRegion(m_wayland, globalRegion);
+  if (targets.empty()) {
+    notifyError("No outputs available");
+    return;
+  }
+  if (targets.size() == 1) {
+    captureOutput(targets.front().output, targets.front().localRegion, "region", options);
+    return;
+  }
+
+  std::vector<GlobalRegionCaptureTarget> batchTargets;
+  batchTargets.reserve(targets.size());
+  for (const auto& target : targets) {
+    batchTargets.push_back(
+        GlobalRegionCaptureTarget{
+            .output = target.output,
+            .localRegion = target.localRegion,
+        }
+    );
+  }
+
+  m_globalRegionBatch = GlobalRegionBatch{
+      .options = options,
+      .globalRegion = globalRegion,
+      .targets = std::move(batchTargets),
+      .pieces = {},
+      .next = 0,
+  };
+  startNextGlobalRegionCapture();
+}
+
+void ScreenshotService::startNextGlobalRegionCapture() {
+  if (!m_globalRegionBatch.has_value()) {
+    return;
+  }
+
+  auto& batch = *m_globalRegionBatch;
+  while (batch.next < batch.targets.size() && batch.targets[batch.next].output == nullptr) {
+    ++batch.next;
+  }
+  if (batch.next >= batch.targets.size()) {
+    finishGlobalRegionBatch();
+    return;
+  }
+
+  const GlobalRegionCaptureTarget target = batch.targets[batch.next];
+  ++batch.next;
+  if (m_capture.busy()) {
+    m_capture.cancelInFlight();
+  }
+
+  m_capture.capture(
+      target.output, target.localRegion, false,
+      [this, output = target.output,
+       localRegion = target.localRegion](std::optional<ScreencopyImage> image, const std::string& error) {
+        onGlobalRegionFrameCaptured(output, localRegion, std::move(image), error);
+      }
+  );
+}
+
+void ScreenshotService::onGlobalRegionFrameCaptured(
+    wl_output* output, LogicalRect localRegion, std::optional<ScreencopyImage> image, const std::string& error
+) {
+  if (!m_globalRegionBatch.has_value()) {
+    return;
+  }
+  if (!error.empty() || !image.has_value()) {
+    kLog.warn("region screenshot failed: {}", error.empty() ? "empty frame" : error);
+    notifyError(error.empty() ? "Screenshot failed" : error);
+    cancelGlobalRegionBatch();
+    return;
+  }
+  if (!screencopy::orientCaptureNative(*image, m_wayland, output)) {
+    notifyError("Failed to scale screenshot");
+    cancelGlobalRegionBatch();
+    return;
+  }
+
+  m_globalRegionBatch->pieces.push_back(
+      GlobalRegionBatch::Piece{
+          .output = output,
+          .localRegion = localRegion,
+          .image = std::move(*image),
+      }
+  );
+  DeferredCall::callLater([this]() { startNextGlobalRegionCapture(); });
+}
+
+void ScreenshotService::finishGlobalRegionBatch() {
+  if (!m_globalRegionBatch.has_value()) {
+    return;
+  }
+
+  GlobalRegionBatch batch = std::move(*m_globalRegionBatch);
+  m_globalRegionBatch.reset();
+  if (batch.pieces.empty()) {
+    notifyError("Screenshot failed");
+    return;
+  }
+
+  std::vector<GlobalRegionPiece> pieces;
+  pieces.reserve(batch.pieces.size());
+  for (auto& piece : batch.pieces) {
+    const auto* out = findOutput(m_wayland, piece.output);
+    if (out == nullptr) {
+      notifyError("Failed to combine screenshots");
+      return;
+    }
+    pieces.push_back(
+        GlobalRegionPiece{
+            .output = out,
+            .localRegion = piece.localRegion,
+            .image = std::move(piece.image),
+        }
+    );
+  }
+
+  auto composed = composeGlobalRegion(batch.globalRegion, std::move(pieces));
+  if (!composed.has_value()) {
+    notifyError("Failed to combine screenshots");
+    return;
+  }
+
+  const std::optional<std::filesystem::path> destPath =
+      batch.options.saveToFile ? std::optional(makeScreenshotPath(batch.options, "region")) : std::nullopt;
+  deliverCaptureResult(std::move(*composed), batch.options, destPath);
+}
+
+void ScreenshotService::cancelGlobalRegionBatch() { m_globalRegionBatch.reset(); }
+
 void ScreenshotService::deliverFrozenRegion(LogicalRect region, wl_output* output, const OutputOptions& options) {
   auto* frozen = findFrozenScreenshot(m_frozenScreenshots, output);
   const auto* out = findOutput(m_wayland, output);
@@ -865,6 +1149,7 @@ void ScreenshotService::startNextQueuedCapture() {
 
 void ScreenshotService::captureAllOutputs(const OutputOptions& options) {
   cancelAllOutputsBatch();
+  cancelGlobalRegionBatch();
   m_captureQueue.clear();
   if (m_capture.busy()) {
     m_capture.cancelInFlight();
@@ -986,7 +1271,10 @@ void ScreenshotService::finishAllOutputsBatch() {
   deliverCaptureResult(std::move(*stitched), batch.options, destPath);
 }
 
-void ScreenshotService::cancelAllOutputsBatch() { m_allOutputsBatch.reset(); }
+void ScreenshotService::cancelAllOutputsBatch() {
+  m_allOutputsBatch.reset();
+  cancelGlobalRegionBatch();
+}
 
 void ScreenshotService::deliverCaptureResult(
     ScreencopyImage image, const OutputOptions& options, std::optional<std::filesystem::path> destPath

@@ -249,7 +249,7 @@ namespace {
     c.wallpaper.edgeSmoothness = 0.5f;
     c.wallpaper.directory = "/srv/wallpapers"; // absolute: expandUserPath leaves it unchanged
     c.wallpaper.automation.enabled = true;
-    c.wallpaper.automation.intervalMinutes = 30;
+    c.wallpaper.automation.intervalSeconds = 30;
     c.wallpaper.automation.order = WallpaperAutomationConfig::Order::Alphabetical;
     c.wallpaper.monitorOverrides = {
         {"DP-1", true, colorSpecFromConfigString("#00ff00"), std::string("/srv/wp1"), std::nullopt, std::nullopt},

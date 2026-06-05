@@ -345,7 +345,7 @@ struct WallpaperAutomationConfig {
   };
 
   bool enabled = false;
-  std::int32_t intervalMinutes = 0; // 0 = disabled
+  std::int32_t intervalSeconds = 1800;
   Order order = Order::Random;
   bool recursive = true;
 
@@ -407,6 +407,7 @@ struct LockscreenConfig {
   bool blurredDesktop = false;
   float blurIntensity = 0.5f;
   float tintIntensity = 0.3f;
+  std::string wallpaper;
 
   bool operator==(const LockscreenConfig&) const = default;
 };
@@ -465,10 +466,11 @@ constexpr EnumOption<DockLauncherPosition> kDockLauncherPositions[] = {
 struct DockConfig {
   bool enabled = false; // opt-in; dock is hidden by default
   DockEdge position = DockEdge::Bottom;
-  bool activeMonitorOnly = false; // render only on preferred active output
-  std::int32_t iconSize = 48;     // icon size in pixels (before ui_scale)
-  std::int32_t padding = 8;       // inner padding around the icon row
-  std::int32_t itemSpacing = 6;   // gap between items
+  bool activeMonitorOnly = false;    // render only on preferred active output
+  std::int32_t iconSize = 48;        // icon size in pixels (before ui_scale)
+  std::int32_t mainAxisPadding = 16; // inner padding along the icon row (main axis)
+  std::int32_t crossAxisPadding = 8; // inner padding perpendicular to the icon row
+  std::int32_t itemSpacing = 6;      // gap between items
   float backgroundOpacity = 0.88f;
   std::int32_t radius = 16;            // dock background corner radius
   std::int32_t radiusTopLeft = 16;     // dock background top-left corner radius
@@ -483,6 +485,8 @@ struct DockConfig {
   bool reserveSpace = false;           // keep compositor exclusive zone even while auto-hidden
   float activeScale = 1.0f;            // focused app icon scale
   float inactiveScale = 0.85f;         // non-focused app icon scale
+  bool magnification = true;           // magnify icons near the pointer (macOS-style)
+  float magnificationScale = 1.35f;    // max icon scale multiplier at the pointer center
   float activeOpacity = 1.0f;          // focused app icon opacity
   float inactiveOpacity = 0.85f;       // non-focused app icon opacity
   bool showDots = false;               // show optional running window dots beside app icons

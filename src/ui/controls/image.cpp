@@ -743,6 +743,44 @@ void Image::reloadColorizedSource() {
   }
 }
 
+void Image::reloadUncolorizedSource() {
+  if (m_renderer == nullptr || m_appIconColorizeTint.has_value()) {
+    return;
+  }
+
+  if (!m_colorizationSource.empty() && m_colorizationSourceWidth > 0 && m_colorizationSourceHeight > 0) {
+    (void)commitColorizedRgba(
+        *m_renderer, m_colorizationSource.data(), m_colorizationSourceWidth, m_colorizationSourceHeight, m_sourceMipmap
+    );
+    updateLayout();
+    markPaintDirty();
+    return;
+  }
+
+  if (!m_sourcePath.empty()) {
+    (void)reloadSourceFile(
+        *m_renderer, m_sourcePath, m_sourceRequestedTargetSize, m_sourceMipmap, m_sourceCenterSquareCrop
+    );
+    return;
+  }
+
+  if (!m_ownedSourceRgba.empty() && m_ownedSourceRgbaWidth > 0 && m_ownedSourceRgbaHeight > 0) {
+    (void)commitColorizedRgba(
+        *m_renderer, m_ownedSourceRgba.data(), m_ownedSourceRgbaWidth, m_ownedSourceRgbaHeight, m_sourceMipmap
+    );
+    updateLayout();
+    markPaintDirty();
+    return;
+  }
+
+  if (m_asyncTextureCache != nullptr && !m_asyncSourcePath.empty()) {
+    const TextureHandle handle = m_asyncTextureCache->peek(m_asyncSourcePath, m_asyncTargetSize, m_asyncMipmap);
+    if (handle.id != 0) {
+      presentAsyncTexture(handle);
+    }
+  }
+}
+
 void Image::applyPalette() {
   const Color border = resolveColorSpec(m_border);
   if (m_image == nullptr) {
@@ -750,6 +788,9 @@ void Image::applyPalette() {
   }
 
   m_image->setBorder(border, m_borderWidth);
+  if (!m_appIconColorizeTint.has_value() && !m_colorizationSource.empty()) {
+    reloadUncolorizedSource();
+  }
   if (m_appIconColorizeTint.has_value()) {
     m_image->setTint(rgba(1.0f, 1.0f, 1.0f, 1.0f));
     m_image->setMonochromeTint(false);

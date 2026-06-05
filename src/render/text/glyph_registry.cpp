@@ -160,8 +160,8 @@ const std::unordered_map<std::string, std::string_view> kAliases = {
     return static_cast<char32_t>(codepoint);
   }
 
-  [[nodiscard]] std::unordered_map<std::string, char32_t> loadTablerIcons() {
-    std::unordered_map<std::string, char32_t> icons;
+  [[nodiscard]] std::unordered_map<std::string, GlyphRegistry::TablerGlyphMetadata> loadTablerMetadata() {
+    std::unordered_map<std::string, GlyphRegistry::TablerGlyphMetadata> icons;
     const std::filesystem::path path = paths::assetPath("fonts/tabler.json");
     std::ifstream file(path);
     if (!file.is_open()) {
@@ -178,12 +178,26 @@ const std::unordered_map<std::string, std::string_view> kAliases = {
 
       icons.reserve(root.size());
       for (const auto& [name, value] : root.items()) {
-        if (!value.is_string()) {
+        if (!value.is_object()) {
           continue;
         }
-        const std::string codepoint = value.get<std::string>();
+        const auto codepointIt = value.find("codepoint");
+        const auto categoryIt = value.find("category");
+        if (codepointIt == value.end()
+            || categoryIt == value.end()
+            || !codepointIt->is_string()
+            || !categoryIt->is_string()) {
+          continue;
+        }
+        const std::string codepoint = codepointIt->get<std::string>();
         if (auto parsed = parseCodepointLiteral(codepoint)) {
-          icons.emplace(name, *parsed);
+          icons.emplace(
+              name,
+              GlyphRegistry::TablerGlyphMetadata{
+                  .codepoint = *parsed,
+                  .category = categoryIt->get<std::string>(),
+              }
+          );
         }
       }
       kLog.debug("loaded {} Tabler glyph names from {}", icons.size(), path.string());
@@ -193,8 +207,21 @@ const std::unordered_map<std::string, std::string_view> kAliases = {
     return icons;
   }
 
+  [[nodiscard]] const std::unordered_map<std::string, GlyphRegistry::TablerGlyphMetadata>& tablerMetadata() {
+    static const std::unordered_map<std::string, GlyphRegistry::TablerGlyphMetadata> icons = loadTablerMetadata();
+    return icons;
+  }
+
   [[nodiscard]] const std::unordered_map<std::string, char32_t>& tablerIcons() {
-    static const std::unordered_map<std::string, char32_t> icons = loadTablerIcons();
+    static const std::unordered_map<std::string, char32_t> icons = [] {
+      std::unordered_map<std::string, char32_t> flat;
+      const auto& metadata = tablerMetadata();
+      flat.reserve(metadata.size());
+      for (const auto& [name, entry] : metadata) {
+        flat.emplace(name, entry.codepoint);
+      }
+      return flat;
+    }();
     return icons;
   }
 
@@ -239,6 +266,26 @@ char32_t GlyphRegistry::lookup(std::string_view name) {
   return kMissingGlyph;
 }
 
+const std::unordered_map<std::string, GlyphRegistry::TablerGlyphMetadata>& GlyphRegistry::tablerGlyphMetadata() {
+  return ::tablerMetadata();
+}
+
 const std::unordered_map<std::string, char32_t>& GlyphRegistry::tablerIcons() { return ::tablerIcons(); }
+
+std::optional<std::string_view> GlyphRegistry::categoryFor(std::string_view name) {
+  const auto& metadata = tablerGlyphMetadata();
+  const std::string key{name};
+  if (const auto alias = kAliases.find(key); alias != kAliases.end()) {
+    if (const auto it = metadata.find(std::string(alias->second)); it != metadata.end()) {
+      return it->second.category;
+    }
+    return std::nullopt;
+  }
+
+  if (const auto it = metadata.find(key); it != metadata.end()) {
+    return it->second.category;
+  }
+  return std::nullopt;
+}
 
 const std::unordered_map<std::string, std::string_view>& GlyphRegistry::aliases() { return kAliases; }

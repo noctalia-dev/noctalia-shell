@@ -139,15 +139,20 @@ namespace shell::dock {
         instance.shadow = static_cast<Box*>(instance.slideRoot->addChild(ui::box()));
       }
 
-      // Panel background
+      // Panel background (icons render as a sibling so magnification can extend past the capsule).
       instance.panel = static_cast<Box*>(instance.slideRoot->addChild(
           ui::box({
-              .configure = [radii](Box& box) { box.setRadii(radii); },
+              .configure = [radii](Box& box) {
+                box.setRadii(radii);
+                box.setClipChildren(false);
+              },
           })
       ));
+      instance.panel->setZIndex(0);
 
-      // Item row
-      instance.row = static_cast<Flex*>(instance.panel->addChild(makeDockItemRow(cfg, vert)));
+      // Item row sits above the panel background without being clipped by it.
+      instance.row = static_cast<Flex*>(instance.slideRoot->addChild(makeDockItemRow(cfg, vert)));
+      instance.row->setZIndex(1);
 
       // Wire up InputDispatcher.
       instance.inputDispatcher.setSceneRoot(instance.sceneRoot.get());
@@ -205,10 +210,11 @@ namespace shell::dock {
     instance.panel->setPosition(panelGeometry.panelX, panelGeometry.panelY);
     instance.panel->setSize(panelGeometry.panelW, panelGeometry.panelH);
 
-    // Row fills panel (padding already applied via Flex::setPadding).
-    instance.row->setPosition(0.0f, 0.0f);
+    // Row matches the pill; hover spread is clamped to stay inside the background.
+    instance.row->setPosition(panelGeometry.panelX, panelGeometry.panelY);
     instance.row->setSize(panelGeometry.panelW, panelGeometry.panelH);
     instance.row->layout(deps.renderContext);
+    shell::dock::syncDockItemRestPositions(instance, cfg);
 
     if (cfg.autoHide) {
       const auto hiddenDelta = shell::dock::computeHiddenSlideDelta(cfg, shadowConfig, w, h, panelGeometry);

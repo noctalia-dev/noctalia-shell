@@ -4,6 +4,7 @@
 #include "dbus/mpris/mpris_service.h"
 #include "i18n/i18n.h"
 #include "net/http_client.h"
+#include "render/animation/animation_manager.h"
 #include "render/core/renderer.h"
 #include "render/scene/node.h"
 #include "ui/builders.h"
@@ -31,9 +32,12 @@ namespace {
 } // namespace
 
 DesktopMediaPlayerWidget::DesktopMediaPlayerWidget(
-    MprisService* mpris, HttpClient* httpClient, bool vertical, ColorSpec color, bool shadow
+    MprisService* mpris, HttpClient* httpClient, bool vertical, ColorSpec color, bool shadow, bool hideWhenNoMedia
 )
-    : m_mpris(mpris), m_httpClient(httpClient), m_vertical(vertical), m_color(std::move(color)), m_shadow(shadow) {}
+    : m_mpris(mpris), m_httpClient(httpClient), m_vertical(vertical), m_color(std::move(color)), m_shadow(shadow),
+      m_hideWhenNoMedia(hideWhenNoMedia) {}
+
+DesktopMediaPlayerWidget::~DesktopMediaPlayerWidget() { cancelVisibilityAnimation(); }
 
 void DesktopMediaPlayerWidget::create() {
   auto rootNode = std::make_unique<Node>();
@@ -131,13 +135,45 @@ bool DesktopMediaPlayerWidget::applySetting(
     }
     return false;
   }
+  if (key == "hide_when_no_media") {
+    if (const auto* v = std::get_if<bool>(&value)) {
+      m_hideWhenNoMedia = *v;
+      if (applyVisibility()) {
+        requestLayout();
+      }
+      return true;
+    }
+    return false;
+  }
   return DesktopWidget::applySetting(key, value, allSettings, renderer);
 }
+
+void DesktopMediaPlayerWidget::setEditorPreview(bool enabled) noexcept {
+  if (m_editorPreview == enabled) {
+    return;
+  }
+  m_editorPreview = enabled;
+  if (root() == nullptr) {
+    return;
+  }
+  if (applyVisibility()) {
+    requestLayout();
+  } else if (enabled && m_visible) {
+    requestRedraw();
+  }
+}
+
+bool DesktopMediaPlayerWidget::needsFrameTick() const {
+  return m_visibilityAnimId != 0 || m_fadingOut || shouldBeVisible() != m_visible;
+}
+
+void DesktopMediaPlayerWidget::onFrameTick(float /*deltaMs*/, Renderer& /*renderer*/) { applyVisibility(); }
 
 void DesktopMediaPlayerWidget::doLayout(Renderer& renderer) {
   if (root() == nullptr || m_artwork == nullptr || m_title == nullptr || m_artist == nullptr || m_controls == nullptr)
     return;
 
+  applyVisibility();
   sync(renderer);
   applyShadow();
 
@@ -250,7 +286,12 @@ void DesktopMediaPlayerWidget::layoutButtons(Renderer& renderer, float scale) {
   m_next->updateInputArea();
 }
 
-void DesktopMediaPlayerWidget::doUpdate(Renderer& renderer) { sync(renderer); }
+void DesktopMediaPlayerWidget::doUpdate(Renderer& renderer) {
+  if (applyVisibility()) {
+    requestLayout();
+  }
+  sync(renderer);
+}
 
 void DesktopMediaPlayerWidget::sync(Renderer& renderer) {
   if (m_title == nullptr || m_artist == nullptr || m_playPause == nullptr)
@@ -323,4 +364,108 @@ void DesktopMediaPlayerWidget::applyShadow() {
     m_title->clearShadow();
     m_artist->clearShadow();
   }
+}
+
+bool DesktopMediaPlayerWidget::hasActiveMedia() const {
+  return m_mpris != nullptr && m_mpris->activePlayer().has_value();
+}
+
+bool DesktopMediaPlayerWidget::shouldBeVisible() const {
+  return m_editorPreview || !m_hideWhenNoMedia || hasActiveMedia();
+}
+
+bool DesktopMediaPlayerWidget::applyVisibility() {
+  if (presentationRoot() == nullptr) {
+    return false;
+  }
+  const bool nextVisible = shouldBeVisible();
+  if (!m_visibilityInitialized) {
+    m_visibilityInitialized = true;
+    m_fadingOut = false;
+    m_visible = nextVisible;
+    setVisibilityCollapsed(!m_visible);
+    presentationRoot()->setOpacity(m_visible ? 1.0f : 0.0f);
+    return !m_visible;
+  }
+
+  if (!nextVisible) {
+    if (!m_visible || m_fadingOut) {
+      return false;
+    }
+    m_fadingOut = true;
+    startOpacityAnimation(0.0f, true);
+    return false;
+  }
+
+  if (m_visible && !m_fadingOut) {
+    return false;
+  }
+
+  const bool wasCollapsed = !m_visible;
+  cancelVisibilityAnimation();
+  m_fadingOut = false;
+  m_visible = true;
+  setVisibilityCollapsed(false);
+  startOpacityAnimation(1.0f, false);
+  return wasCollapsed;
+}
+
+void DesktopMediaPlayerWidget::cancelVisibilityAnimation() {
+  if (m_visibilityAnimId != 0 && m_animations != nullptr) {
+    m_animations->cancel(m_visibilityAnimId);
+  }
+  m_visibilityAnimId = 0;
+}
+
+void DesktopMediaPlayerWidget::setVisibilityCollapsed(bool collapsed) {
+  if (Node* node = presentationRoot(); node != nullptr) {
+    node->setVisible(!collapsed);
+  }
+}
+
+void DesktopMediaPlayerWidget::startOpacityAnimation(float targetOpacity, bool collapseOnComplete) {
+  Node* node = presentationRoot();
+  if (node == nullptr) {
+    return;
+  }
+  cancelVisibilityAnimation();
+
+  if (m_animations == nullptr) {
+    node->setOpacity(targetOpacity);
+    if (collapseOnComplete) {
+      m_fadingOut = false;
+      m_visible = false;
+      setVisibilityCollapsed(true);
+    }
+    return;
+  }
+
+  m_visibilityAnimId = m_animations->animate(
+      node->opacity(), targetOpacity, Style::animNormal, Easing::EaseOutCubic,
+      [this](float opacity) {
+        if (Node* presentation = presentationRoot(); presentation != nullptr) {
+          presentation->setOpacity(opacity);
+        }
+      },
+      [this, collapseOnComplete]() {
+        m_visibilityAnimId = 0;
+        if (!collapseOnComplete) {
+          return;
+        }
+        if (shouldBeVisible()) {
+          m_fadingOut = false;
+          applyVisibility();
+          return;
+        }
+        m_fadingOut = false;
+        m_visible = false;
+        setVisibilityCollapsed(true);
+        if (presentationRoot() != nullptr) {
+          presentationRoot()->markLayoutDirty();
+        }
+        requestLayout();
+      },
+      this
+  );
+  requestFrameTick();
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "system/desktop_entry.h"
+
 #include <optional>
 #include <string>
 #include <string_view>
@@ -20,6 +22,9 @@ namespace internal_apps {
 
   [[nodiscard]] const InternalAppDefinition* appDefinitionForAppId(std::string_view appId);
   [[nodiscard]] const InternalAppDefinition* appDefinitionForWindowTitle(std::string_view windowTitle);
+  [[nodiscard]] const InternalAppDefinition* definitionForDesktopEntry(const DesktopEntry& entry);
   [[nodiscard]] std::optional<AppMetadata> metadataForAppId(std::string_view appId);
+  [[nodiscard]] std::optional<AppMetadata> metadataForDesktopEntry(const DesktopEntry& entry);
+  void applyMetadataToDesktopEntry(DesktopEntry& entry);
 
 } // namespace internal_apps

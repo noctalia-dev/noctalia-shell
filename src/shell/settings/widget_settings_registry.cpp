@@ -718,6 +718,11 @@ namespace settings {
         add(std::move(path));
       }
       add(segmentedSpec("display", "gauge", sysmonDisplay));
+      {
+        auto gaugeColor = colorSpec("gauge_color", "primary");
+        gaugeColor.visibleWhen = WidgetSettingVisibility{"display", {"gauge"}};
+        add(std::move(gaugeColor));
+      }
       add(boolSpec("show_label", true));
       {
         auto minW = intSpec("label_min_width", 0, 0.0, 200.0, 1.0);

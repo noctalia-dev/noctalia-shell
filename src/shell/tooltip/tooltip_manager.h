@@ -22,6 +22,7 @@ public:
   void initialize(WaylandConnection& wayland, RenderContext* renderContext);
 
   void onHoverChange(InputArea* area, zwlr_layer_surface_v1* parentLayerSurface, wl_output* output);
+  void syncAnchor(InputArea* area);
 
 private:
   TooltipManager() = default;

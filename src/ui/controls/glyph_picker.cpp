@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <set>
 #include <unordered_set>
 
 class GlyphGridAdapter : public VirtualGridAdapter {
@@ -17,11 +18,13 @@ public:
   struct Entry {
     std::string name;
     char32_t codepoint = 0;
+    std::string category;
   };
 
   GlyphGridAdapter(float chromeScale) : m_chromeScale(chromeScale) {
-    const auto& tabler = GlyphRegistry::tablerIcons();
+    const auto& tabler = GlyphRegistry::tablerGlyphMetadata();
     const auto& aliases = GlyphRegistry::aliases();
+    std::set<std::string> categories;
 
     std::unordered_set<std::string> seen;
     seen.reserve(tabler.size() + aliases.size());
@@ -30,19 +33,22 @@ public:
     for (const auto& [name, target] : aliases) {
       if (seen.insert(name).second) {
         if (const auto it = tabler.find(std::string(target)); it != tabler.end()) {
-          m_master.push_back({name, it->second});
+          m_master.push_back({name, it->second.codepoint, it->second.category});
+          categories.insert(it->second.category);
         }
       }
     }
-    for (const auto& [name, codepoint] : tabler) {
+    for (const auto& [name, metadata] : tabler) {
       if (seen.insert(name).second) {
-        m_master.push_back({name, codepoint});
+        m_master.push_back({name, metadata.codepoint, metadata.category});
+        categories.insert(metadata.category);
       }
     }
     std::sort(m_master.begin(), m_master.end(), [](const Entry& a, const Entry& b) { return a.name < b.name; });
+    m_categories.assign(categories.begin(), categories.end());
 
     m_visible.reserve(m_master.size());
-    rebuildVisible({});
+    rebuildVisible({}, {});
   }
 
   [[nodiscard]] std::size_t itemCount() const override { return m_visible.size(); }
@@ -99,23 +105,22 @@ public:
     }
   }
 
-  void rebuildVisible(std::string_view filter) {
+  void rebuildVisible(std::string_view filter, std::string_view category) {
     m_visible.clear();
-    if (filter.empty()) {
-      m_visible.reserve(m_master.size());
-      for (std::size_t i = 0; i < m_master.size(); ++i) {
-        m_visible.push_back(i);
-      }
-      return;
-    }
     const std::string needle = StringUtils::toLower(filter);
+    const bool filterByName = !needle.empty();
+    const bool filterByCategory = !category.empty();
     for (std::size_t i = 0; i < m_master.size(); ++i) {
-      // Names in the registry are already lowercase; no need to lower each entry.
-      if (m_master[i].name.find(needle) != std::string::npos) {
+      if (filterByCategory && m_master[i].category != category) {
+        continue;
+      }
+      if (!filterByName || m_master[i].name.find(needle) != std::string::npos) {
         m_visible.push_back(i);
       }
     }
   }
+
+  [[nodiscard]] const std::vector<std::string>& categories() const noexcept { return m_categories; }
 
   [[nodiscard]] std::optional<std::size_t> indexOfName(std::string_view name) const {
     for (std::size_t i = 0; i < m_visible.size(); ++i) {
@@ -132,6 +137,7 @@ private:
   float m_chromeScale = 1.0f;
   std::vector<Entry> m_master;
   std::vector<std::size_t> m_visible;
+  std::vector<std::string> m_categories;
 };
 
 GlyphPicker::GlyphPicker(float chromeScale) : m_chromeScale(std::max(0.1f, chromeScale)) {
@@ -171,19 +177,45 @@ GlyphPicker::GlyphPicker(float chromeScale) : m_chromeScale(std::max(0.1f, chrom
       )
   );
 
-  addChild(
-      ui::input({
-          .out = &m_searchInput,
-          .placeholder = i18n::tr("ui.dialogs.glyph-picker.search-placeholder"),
-          .fontSize = Style::fontSizeBody * m_chromeScale,
-          .controlHeight = Style::controlHeight * m_chromeScale,
-          .horizontalPadding = Style::spaceMd * m_chromeScale,
-          .clearButtonEnabled = true,
-          .onChange = [this](const std::string& value) { applyFilter(value); },
-      })
-  );
-
   m_adapter = std::make_unique<GlyphGridAdapter>(m_chromeScale);
+  m_categoryOptions.reserve(m_adapter->categories().size() + 1);
+  m_categoryOptions.push_back(i18n::tr("ui.dialogs.glyph-picker.all-categories"));
+  for (const auto& category : m_adapter->categories()) {
+    m_categoryOptions.push_back(category);
+  }
+
+  addChild(
+      ui::row(
+          {
+              .align = FlexAlign::Center,
+              .gap = Style::spaceSm * m_chromeScale,
+          },
+          ui::input({
+              .out = &m_searchInput,
+              .placeholder = i18n::tr("ui.dialogs.glyph-picker.search-placeholder"),
+              .fontSize = Style::fontSizeBody * m_chromeScale,
+              .controlHeight = Style::controlHeight * m_chromeScale,
+              .horizontalPadding = Style::spaceMd * m_chromeScale,
+              .clearButtonEnabled = true,
+              .flexGrow = 1.0f,
+              .onChange = [this](const std::string& value) { applyFilter(value); },
+          }),
+          ui::select({
+              .out = &m_categorySelect,
+              .options = m_categoryOptions,
+              .selectedIndex = 0,
+              .fontSize = Style::fontSizeBody * m_chromeScale,
+              .controlHeight = Style::controlHeight * m_chromeScale,
+              .horizontalPadding = Style::spaceMd * m_chromeScale,
+              .glyphSize = Style::fontSizeBody * m_chromeScale,
+              .width = 180.0f * m_chromeScale,
+              .onSelectionChanged = [this](std::size_t, std::string_view) {
+                const std::string filter = m_searchInput != nullptr ? m_searchInput->value() : std::string{};
+                applyFilter(filter);
+              },
+          })
+      )
+  );
 
   addChild(
       ui::virtualGridView({
@@ -278,6 +310,9 @@ void GlyphPicker::setEnabled(bool enabled) {
   if (m_searchInput != nullptr) {
     m_searchInput->setEnabled(enabled);
   }
+  if (m_categorySelect != nullptr) {
+    m_categorySelect->setEnabled(enabled);
+  }
   if (m_applyButton != nullptr) {
     m_applyButton->setEnabled(enabled);
   }
@@ -318,8 +353,11 @@ void GlyphPicker::applyFilter(const std::string& filter) {
   if (m_adapter == nullptr || m_grid == nullptr) {
     return;
   }
+  const std::string category = m_categorySelect != nullptr && m_categorySelect->selectedIndex() > 0
+      ? m_categoryOptions[m_categorySelect->selectedIndex()]
+      : std::string{};
   const auto previousResult = currentResult();
-  m_adapter->rebuildVisible(filter);
+  m_adapter->rebuildVisible(filter, category);
   // Drop selection if the previously selected name is no longer visible.
   if (previousResult.has_value()) {
     if (const auto idx = m_adapter->indexOfName(previousResult->name); idx.has_value()) {

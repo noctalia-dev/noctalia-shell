@@ -49,7 +49,7 @@ int main() {
   expectKnown({"system", "monitor", "cpu_poll_seconds"});
   expectKnown({"theme", "mode"});
   expectKnown({"theme", "templates", "enable_builtin_templates"});
-  expectKnown({"wallpaper", "automation", "interval_minutes"});
+  expectKnown({"wallpaper", "automation", "interval_seconds"});
   expectKnown({"wallpaper", "fill_color"});
   expectKnown({"dock", "icon_size"});
   expectKnown({"dock", "radius_top_left"});

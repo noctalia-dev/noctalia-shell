@@ -41,6 +41,7 @@ namespace shell::dock {
     std::function<void(zwlr_foreign_toplevel_handle_v1*)> activateWindow;
     std::function<void(zwlr_foreign_toplevel_handle_v1*)> closeWindow;
     std::function<void(const DesktopAction&)> launchAction;
+    std::function<void(bool pinned)> setEntryPinned;
     std::function<void()> closeMenu;
   };
 

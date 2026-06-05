@@ -740,55 +740,14 @@ namespace capture {
       return;
     }
 
-    const double centerX = (m_startGlobalX + m_currentGlobalX) * 0.5;
-    const double centerY = (m_startGlobalY + m_currentGlobalY) * 0.5;
-    wl_output* chosenOutput = nullptr;
-    for (const auto& out : m_wayland->outputs()) {
-      if (out.output == nullptr) {
-        continue;
-      }
-      if (centerX >= out.logicalX
-          && centerX < out.logicalX + out.logicalWidth
-          && centerY >= out.logicalY
-          && centerY < out.logicalY + out.logicalHeight) {
-        chosenOutput = out.output;
-        break;
-      }
-    }
-    if (chosenOutput == nullptr) {
-      if (m_onComplete) {
-        m_onComplete(std::nullopt, nullptr);
-      }
-      return;
-    }
-
-    const auto* out = findOutput(*m_wayland, chosenOutput);
-    if (out == nullptr) {
-      if (m_onComplete) {
-        m_onComplete(std::nullopt, nullptr);
-      }
-      return;
-    }
-
-    const int ix0 = std::max(globalX0, out->logicalX);
-    const int iy0 = std::max(globalY0, out->logicalY);
-    const int ix1 = std::min(globalX1, out->logicalX + out->logicalWidth);
-    const int iy1 = std::min(globalY1, out->logicalY + out->logicalHeight);
-    if (ix1 <= ix0 || iy1 <= iy0) {
-      if (m_onComplete) {
-        m_onComplete(std::nullopt, nullptr);
-      }
-      return;
-    }
-
     LogicalRect region{
-        .x = ix0 - out->logicalX,
-        .y = iy0 - out->logicalY,
-        .width = ix1 - ix0,
-        .height = iy1 - iy0,
+        .x = globalX0,
+        .y = globalY0,
+        .width = width,
+        .height = height,
     };
     if (m_onComplete) {
-      m_onComplete(region, chosenOutput);
+      m_onComplete(region, nullptr);
     }
   }
 

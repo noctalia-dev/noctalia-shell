@@ -80,6 +80,91 @@ namespace {
     return widths;
   }
 
+  PopupSurfaceConfig buildTooltipAnchorConfig(const InputArea* area) {
+    float absX = 0.0f;
+    float absY = 0.0f;
+    Node::absolutePosition(area, absX, absY);
+
+    TooltipAnchorInsets inset{};
+    if (area->hasTooltipAnchorInsets()) {
+      inset = area->tooltipAnchorInsets();
+    }
+    const float iconX = absX + inset.left;
+    const float iconY = absY + inset.top;
+    const float iconW = std::max(1.0f, area->width() - inset.left - inset.right);
+    const float iconH = std::max(1.0f, area->height() - inset.top - inset.bottom);
+
+    const std::int32_t gap = static_cast<std::int32_t>(std::lround(Style::spaceSm));
+
+    float anchorX = absX;
+    float anchorY = absY;
+    float anchorW = area->width();
+    float anchorH = area->height();
+    std::uint32_t anchor = XDG_POSITIONER_ANCHOR_BOTTOM;
+    std::uint32_t gravity = XDG_POSITIONER_GRAVITY_BOTTOM;
+    std::int32_t offsetX = 0;
+    std::int32_t offsetY = static_cast<std::int32_t>(Style::spaceXs);
+    std::uint32_t constraintAdjustment =
+        XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_Y | XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X;
+
+    switch (area->tooltipPlacement()) {
+    case TooltipPlacement::Above:
+      anchorX = iconX;
+      anchorY = iconY;
+      anchorW = iconW;
+      anchorH = 1.0f;
+      anchor = XDG_POSITIONER_ANCHOR_TOP;
+      gravity = XDG_POSITIONER_GRAVITY_TOP;
+      offsetY = -gap;
+      constraintAdjustment = XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X;
+      break;
+    case TooltipPlacement::Below:
+      anchorX = iconX;
+      anchorY = iconY + iconH;
+      anchorW = iconW;
+      anchorH = 1.0f;
+      anchor = XDG_POSITIONER_ANCHOR_BOTTOM;
+      gravity = XDG_POSITIONER_GRAVITY_BOTTOM;
+      offsetY = gap;
+      constraintAdjustment = XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X;
+      break;
+    case TooltipPlacement::Left:
+      anchorX = iconX;
+      anchorY = iconY;
+      anchorW = 1.0f;
+      anchorH = iconH;
+      anchor = XDG_POSITIONER_ANCHOR_LEFT;
+      gravity = XDG_POSITIONER_GRAVITY_LEFT;
+      offsetX = -gap;
+      constraintAdjustment = XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_Y;
+      break;
+    case TooltipPlacement::Right:
+      anchorX = iconX + iconW;
+      anchorY = iconY;
+      anchorW = 1.0f;
+      anchorH = iconH;
+      anchor = XDG_POSITIONER_ANCHOR_RIGHT;
+      gravity = XDG_POSITIONER_GRAVITY_RIGHT;
+      offsetX = gap;
+      constraintAdjustment = XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_Y;
+      break;
+    case TooltipPlacement::Default:
+      break;
+    }
+
+    PopupSurfaceConfig config{};
+    config.anchorX = static_cast<std::int32_t>(std::round(anchorX));
+    config.anchorY = static_cast<std::int32_t>(std::round(anchorY));
+    config.anchorWidth = std::max(1, static_cast<std::int32_t>(std::round(anchorW)));
+    config.anchorHeight = std::max(1, static_cast<std::int32_t>(std::round(anchorH)));
+    config.anchor = anchor;
+    config.gravity = gravity;
+    config.constraintAdjustment = constraintAdjustment;
+    config.offsetX = offsetX;
+    config.offsetY = offsetY;
+    return config;
+  }
+
 } // namespace
 
 TooltipManager& TooltipManager::instance() {
@@ -120,6 +205,17 @@ void TooltipManager::onHoverChange(InputArea* area, zwlr_layer_surface_v1* paren
   dismissPopup();
 }
 
+void TooltipManager::syncAnchor(InputArea* area) {
+  if (m_state != State::Showing || m_surface == nullptr || m_pendingArea != area) {
+    return;
+  }
+
+  auto anchorConfig = buildTooltipAnchorConfig(area);
+  anchorConfig.width = m_surface->width();
+  anchorConfig.height = m_surface->height();
+  m_surface->repositionAnchor(anchorConfig);
+}
+
 void TooltipManager::showPopup() {
   if (m_wayland == nullptr
       || m_renderContext == nullptr
@@ -136,25 +232,10 @@ void TooltipManager::showPopup() {
     return;
   }
 
-  float absX = 0.0f;
-  float absY = 0.0f;
-  Node::absolutePosition(m_pendingArea, absX, absY);
-
-  auto config = PopupSurfaceConfig{
-      .anchorX = static_cast<std::int32_t>(std::round(absX)),
-      .anchorY = static_cast<std::int32_t>(std::round(absY)),
-      .anchorWidth = std::max(1, static_cast<std::int32_t>(std::round(m_pendingArea->width()))),
-      .anchorHeight = std::max(1, static_cast<std::int32_t>(std::round(m_pendingArea->height()))),
-      .width = contentW,
-      .height = contentH,
-      .anchor = XDG_POSITIONER_ANCHOR_BOTTOM,
-      .gravity = XDG_POSITIONER_GRAVITY_BOTTOM,
-      .constraintAdjustment =
-          XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_Y | XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X,
-      .offsetX = 0,
-      .offsetY = static_cast<std::int32_t>(Style::spaceXs),
-      .grab = false,
-  };
+  auto config = buildTooltipAnchorConfig(m_pendingArea);
+  config.width = contentW;
+  config.height = contentH;
+  config.grab = false;
 
   m_surface = std::make_unique<PopupSurface>(*m_wayland);
   m_surface->setRenderContext(m_renderContext);

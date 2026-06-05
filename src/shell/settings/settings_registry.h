@@ -85,6 +85,8 @@ namespace settings {
     TextSettingBrowseMode browseMode = TextSettingBrowseMode::None;
     /// When browseMode == OpenFile, optional filter (e.g. `{".wav", ".ogg"}`); empty allows any file.
     std::vector<std::string> browseFileExtensions;
+    /// When the current value is empty, open the file picker here if the path exists.
+    std::string browseFallbackDirectory = {};
   };
 
   struct OptionalNumberSetting {

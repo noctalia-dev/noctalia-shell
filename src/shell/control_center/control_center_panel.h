@@ -1,5 +1,6 @@
 #pragma once
 
+#include "render/animation/animation_manager.h"
 #include "shell/control_center/audio_tab.h"
 #include "shell/control_center/bluetooth_tab.h"
 #include "shell/control_center/calendar_tab.h"
@@ -123,8 +124,16 @@ private:
       {TabId::ScreenTime, "screen-time", "control-center.tabs.screen-time", "hourglass"},
   }};
 
-  void selectTab(TabId tab);
+  void selectTab(TabId tab, bool animated = false);
   void scheduleMprisRefreshFor(TabId tab);
+  void updateTabChrome(TabId tab);
+  void applyTabContainerVisibility(TabId activeTab);
+  void layoutTabContainers(float bodyWidth, float bodyHeight);
+  void resetTabContainerTransforms();
+  void startTabTransition(TabId from, TabId to);
+  void finishTabTransition();
+  void applyTabTransitionLayout();
+  [[nodiscard]] int visibleTabOrdinal(TabId tab) const;
   void syncTabVisibility();
   [[nodiscard]] bool isTabVisible(TabId tab) const;
   [[nodiscard]] TabId firstVisibleTab() const;
@@ -158,4 +167,9 @@ private:
   bool m_showSidebar = true;
   bool m_mprisRefreshScheduled = false;
   std::chrono::steady_clock::time_point m_lastMprisRefreshAt{};
+  AnimationManager::Id m_tabTransitionAnimId = 0;
+  TabId m_tabTransitionOutgoing = TabId::Home;
+  float m_tabTransitionProgress = 1.0f;
+  int m_tabTransitionDirection = 1;
+  bool m_tabTransitionActive = false;
 };
