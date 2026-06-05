@@ -27,6 +27,10 @@ namespace FileUtils {
     return std::filesystem::path(path);
   }
 
+  [[nodiscard]] inline std::string expandUserPathString(const std::string& path) {
+    return expandUserPath(path).string();
+  }
+
   [[nodiscard]] inline std::string configDir() {
     const char* noctalia = std::getenv("NOCTALIA_CONFIG_HOME");
     if (noctalia != nullptr && noctalia[0] != '\0') {

@@ -1209,11 +1209,11 @@ void ConfigService::parseConfigTable(const toml::table& tbl, Config& config, boo
     if (auto v = finiteDouble((*wpTbl)["edge_smoothness"]))
       wp.edgeSmoothness = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
     if (auto v = (*wpTbl)["directory"].value<std::string>())
-      wp.directory = expandUserPathString(*v);
+      wp.directory = FileUtils::expandUserPathString(*v);
     if (auto v = (*wpTbl)["directory_light"].value<std::string>())
-      wp.directoryLight = expandUserPathString(*v);
+      wp.directoryLight = FileUtils::expandUserPathString(*v);
     if (auto v = (*wpTbl)["directory_dark"].value<std::string>())
-      wp.directoryDark = expandUserPathString(*v);
+      wp.directoryDark = FileUtils::expandUserPathString(*v);
     if (auto v = (*wpTbl)["per_monitor_directories"].value<bool>())
       wp.perMonitorDirectories = *v;
     if (auto* automationTbl = (*wpTbl)["automation"].as_table()) {
@@ -1259,7 +1259,7 @@ void ConfigService::parseConfigTable(const toml::table& tbl, Config& config, boo
         lp.darken = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
       }
       if (auto v = (*lpTbl)["presets_dir"].value<std::string>()) {
-        lp.presetsDir = expandUserPathString(*v);
+        lp.presetsDir = FileUtils::expandUserPathString(*v);
       }
       if (auto v = (*lpTbl)["audio_source"].value<std::string>()) {
         lp.audioSource = *v;
@@ -1291,11 +1291,11 @@ void ConfigService::parseConfigTable(const toml::table& tbl, Config& config, boo
           }
         }
         if (auto v = (*monTbl)["directory"].value<std::string>())
-          ovr.directory = expandUserPathString(*v);
+          ovr.directory = FileUtils::expandUserPathString(*v);
         if (auto v = (*monTbl)["directory_light"].value<std::string>())
-          ovr.directoryLight = expandUserPathString(*v);
+          ovr.directoryLight = FileUtils::expandUserPathString(*v);
         if (auto v = (*monTbl)["directory_dark"].value<std::string>())
-          ovr.directoryDark = expandUserPathString(*v);
+          ovr.directoryDark = FileUtils::expandUserPathString(*v);
         wp.monitorOverrides.push_back(std::move(ovr));
       }
     }
