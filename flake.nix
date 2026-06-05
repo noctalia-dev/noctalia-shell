@@ -60,11 +60,7 @@
           # paints overly bright frames or rapid strobes. Exposed as its own
           # output so it can be built and staged independently of a full
           # home-manager rollout (e.g. `nix build .#presets`).
-          presets = pkgs.runCommand "presets-filtered" { } ''
-            mkdir -p "$out"
-            cp -r --no-preserve=mode ${presets-cream-of-the-crop}/* "$out/"
-            ${pkgs.python3}/bin/python3 ${./nix/filter-presets.py} "$out"
-          '';
+          presets = presets-photosensitive-filtered.packages.${pkgs.stdenv.hostPlatform.system}.default;
         }
       );
 

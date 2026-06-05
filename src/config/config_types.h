@@ -364,29 +364,14 @@ struct LivePaperConfig {
   std::int32_t meshH = 18;
   float darken = 0.7f; // 0.0 = no overlay, 1.0 = fully black
   std::string presetsDir;
-  std::string audioSource; // PipeWire node target; "" = default monitor
-
-  bool operator==(const LivePaperConfig&) const = default;
-};
-
-// Live (projectM/Milkdrop) visualizer wallpaper. When enabled, replaces the
-// static image source on every wallpaper instance (and the lock surface).
-// presetsDir defaults to "" → resolved at runtime to
-// $XDG_DATA_HOME/waylivepaper/presets (staged by the home-module).
-struct LivePaperConfig {
-  bool enabled = false;
-  std::int32_t intervalSeconds = 120; // preset rotation; 0 = no rotation
-  std::int32_t fps = 30;
-  std::int32_t meshW = 24;
-  std::int32_t meshH = 18;
-  float darken = 0.7f; // 0.0 = no overlay, 1.0 = fully black
-  std::string presetsDir;
   std::string audioSource; // PipeWire node target; "" = follow active sink, fall back to mic if allowMicFallback
   // Privacy gate. When audioSource is empty and the active sink's monitor
   // stops producing audio, the tap can fall back to the default source
   // (microphone) so the visualizer keeps reacting to ambient sound. This
   // opens the user's mic — defaults to OFF; opt in explicitly.
   bool allowMicFallback = false;
+
+  bool operator==(const LivePaperConfig&) const = default;
 };
 
 struct WallpaperConfig {
