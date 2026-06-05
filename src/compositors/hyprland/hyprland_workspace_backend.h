@@ -39,9 +39,12 @@ public:
   [[nodiscard]] std::unordered_map<std::string, std::vector<std::string>>
   appIdsByWorkspace(wl_output* output) const override;
   [[nodiscard]] std::vector<WorkspaceWindow> workspaceWindows(wl_output* output) const override;
+  [[nodiscard]] std::optional<std::string> focusedWindowId() const;
+  void focusWindow(const std::string& windowId) override;
   void cleanup() override;
-  void notifyCleanup();
-  void notifyChanged();
+  void notifyCleanup() override;
+  void notifyChanged() override;
+  void syncFromCompositor();
 
   [[nodiscard]] int pollFd() const noexcept override;
   void dispatchPoll(short revents) override;
@@ -71,8 +74,9 @@ private:
   void refreshMonitors();
   void refreshClients();
   void recomputeWorkspaceFlags();
+  void ensureSnapshotFresh() const;
 
-  void handleEvent(std::string_view event, std::string_view data);
+  void handleEvent(std::string_view event, std::string_view data) override;
   void handleFocusedMonitor(std::string_view monitorName, int workspaceId);
   void handleWorkspaceActivated(int workspaceId);
   void clearUrgentForWorkspace(int workspaceId);
@@ -83,12 +87,15 @@ private:
   [[nodiscard]] static std::optional<std::uint64_t> parseHexAddress(std::string_view value);
   [[nodiscard]] static std::optional<int> parseInt(std::string_view value);
   [[nodiscard]] static std::vector<std::string_view> parseEventArgs(std::string_view data, std::size_t count);
+  [[nodiscard]] static bool isSpecial(const WorkspaceState& state);
+  [[nodiscard]] static bool workspaceOrderLess(const WorkspaceState* a, const WorkspaceState* b);
   [[nodiscard]] static Workspace toWorkspace(const WorkspaceState& state);
 
   OutputNameResolver m_outputNameResolver;
   std::vector<WorkspaceState> m_workspaces;
   std::unordered_map<std::uint64_t, ToplevelState> m_toplevels;
   std::unordered_map<std::string, int> m_activeWorkspaceByMonitor;
+  std::string m_focusedWindowId;
   std::size_t m_nextOrdinal = 0;
   ChangeCallback m_changeCallback;
 };

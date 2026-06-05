@@ -53,8 +53,8 @@ int LockKeysService::pollTimeoutMs() const {
 }
 
 void LockKeysService::dispatchPoll() {
-  if (m_nextRefreshAt != std::chrono::steady_clock::time_point{} &&
-      std::chrono::steady_clock::now() < m_nextRefreshAt) {
+  if (m_nextRefreshAt != std::chrono::steady_clock::time_point{}
+      && std::chrono::steady_clock::now() < m_nextRefreshAt) {
     return;
   }
 

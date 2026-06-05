@@ -1,12 +1,13 @@
 #include "launcher/wallpaper_provider.h"
 
 #include "config/config_service.h"
+#include "i18n/i18n.h"
+#include "shell/wallpaper/wallpaper_paths.h"
 #include "util/fuzzy_match.h"
 #include "util/string_utils.h"
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
-#include <cctype>
 #include <filesystem>
 #include <system_error>
 #include <vector>
@@ -22,20 +23,8 @@ namespace {
   };
 
   bool hasImageExtension(const std::filesystem::path& path) {
-    auto ext = path.extension().string();
-    std::transform(ext.begin(), ext.end(), ext.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    const auto ext = StringUtils::toLower(path.extension().string());
     return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".webp" || ext == ".bmp" || ext == ".gif";
-  }
-
-  std::filesystem::path wallpaperDirectory(const WallpaperConfig& wallpaper, ThemeMode mode) {
-    if (mode == ThemeMode::Light && !wallpaper.directoryLight.empty()) {
-      return wallpaper.directoryLight;
-    }
-    if (mode == ThemeMode::Dark && !wallpaper.directoryDark.empty()) {
-      return wallpaper.directoryDark;
-    }
-    return wallpaper.directory;
   }
 
   std::vector<WallpaperCandidate> collectWallpapers(const std::filesystem::path& directory) {
@@ -50,7 +39,8 @@ namespace {
     }
 
     for (auto it = std::filesystem::recursive_directory_iterator(
-             directory, std::filesystem::directory_options::skip_permission_denied, ec);
+             directory, std::filesystem::directory_options::skip_permission_denied, ec
+         );
          !ec && it != std::filesystem::end(it); it.increment(ec)) {
       if (ec) {
         break;
@@ -68,8 +58,9 @@ namespace {
       candidates.push_back(std::move(candidate));
     }
 
-    std::sort(candidates.begin(), candidates.end(),
-              [](const auto& a, const auto& b) { return StringUtils::toLower(a.name) < StringUtils::toLower(b.name); });
+    std::sort(candidates.begin(), candidates.end(), [](const auto& a, const auto& b) {
+      return StringUtils::toLower(a.name) < StringUtils::toLower(b.name);
+    });
     return candidates;
   }
 
@@ -78,13 +69,17 @@ namespace {
 WallpaperProvider::WallpaperProvider(ConfigService* config, WaylandConnection* wayland)
     : m_config(config), m_wayland(wayland) {}
 
+std::string WallpaperProvider::displayName() const { return i18n::tr("launcher.providers.wallpaper.title"); }
+
 std::vector<LauncherResult> WallpaperProvider::query(std::string_view text) const {
   if (m_config == nullptr) {
     return {};
   }
 
   const std::string query = StringUtils::toLower(StringUtils::trim(text));
-  auto candidates = collectWallpapers(wallpaperDirectory(m_config->config().wallpaper, m_config->config().theme.mode));
+  auto candidates = collectWallpapers(
+      wallpaper::resolveGlobalWallpaperDirectory(m_config->config().wallpaper, m_config->config().theme.mode)
+  );
   if (candidates.empty()) {
     return {};
   }
@@ -99,8 +94,10 @@ std::vector<LauncherResult> WallpaperProvider::query(std::string_view text) cons
   }
 
   const auto limit = std::min(scored.size(), kMaxResults);
-  std::partial_sort(scored.begin(), scored.begin() + static_cast<std::ptrdiff_t>(limit), scored.end(),
-                    [](const auto& a, const auto& b) { return a.first > b.first; });
+  std::partial_sort(
+      scored.begin(), scored.begin() + static_cast<std::ptrdiff_t>(limit), scored.end(),
+      [](const auto& a, const auto& b) { return a.first > b.first; }
+  );
 
   std::vector<LauncherResult> results;
   results.reserve(limit);
@@ -122,7 +119,7 @@ bool WallpaperProvider::activate(const LauncherResult& result) {
   if (m_config == nullptr || result.id.empty()) {
     return false;
   }
-  if (!result.providerName.empty() && result.providerName != name()) {
+  if (!result.providerId.empty() && result.providerId != id()) {
     return false;
   }
 

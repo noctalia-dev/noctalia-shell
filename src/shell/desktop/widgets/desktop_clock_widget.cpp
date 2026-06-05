@@ -3,7 +3,7 @@
 #include "render/core/renderer.h"
 #include "render/scene/node.h"
 #include "time/time_format.h"
-#include "ui/controls/label.h"
+#include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -12,8 +12,9 @@
 namespace {
 
   bool formatShowsSeconds(const std::string& format) {
-    return format.find("%S") != std::string::npos || format.find("%T") != std::string::npos ||
-           format.find("%X") != std::string::npos;
+    return format.find("%S") != std::string::npos
+        || format.find("%T") != std::string::npos
+        || format.find("%X") != std::string::npos;
   }
 
   float clockFontSize(float contentScale) { return Style::fontSizeBody * 4.0f * contentScale; }
@@ -34,13 +35,13 @@ DesktopClockWidget::DesktopClockWidget(std::string format, ColorSpec color, bool
 void DesktopClockWidget::create() {
   auto rootNode = std::make_unique<Node>();
 
-  auto label = std::make_unique<Label>();
-  label->setBold(true);
-  label->setTextAlign(TextAlign::Center);
-  label->setColor(m_color);
-  label->setFontSize(clockFontSize(contentScale()));
-  m_label = label.get();
-
+  auto label = ui::label({
+      .out = &m_label,
+      .fontSize = clockFontSize(contentScale()),
+      .color = m_color,
+      .fontWeight = FontWeight::Bold,
+      .textAlign = TextAlign::Center,
+  });
   rootNode->addChild(std::move(label));
   setRoot(std::move(rootNode));
   applyShadow();
@@ -49,6 +50,29 @@ void DesktopClockWidget::create() {
 bool DesktopClockWidget::wantsSecondTicks() const { return m_showsSeconds; }
 
 std::string DesktopClockWidget::formatText() const { return formatLocalTime(m_format.c_str()); }
+
+bool DesktopClockWidget::applySetting(
+    const std::string& key, const WidgetSettingValue& value,
+    const std::unordered_map<std::string, WidgetSettingValue>& allSettings, Renderer& renderer
+) {
+  if (key == "color") {
+    if (const auto* v = std::get_if<std::string>(&value); v != nullptr && m_label != nullptr) {
+      m_color = colorSpecFromConfigString(*v, key);
+      m_label->setColor(m_color);
+      return true;
+    }
+    return false;
+  }
+  if (key == "shadow") {
+    if (const auto* v = std::get_if<bool>(&value)) {
+      m_shadow = *v;
+      applyShadow();
+      return true;
+    }
+    return false;
+  }
+  return DesktopWidget::applySetting(key, value, allSettings, renderer);
+}
 
 void DesktopClockWidget::doLayout(Renderer& renderer) {
   if (m_label == nullptr || root() == nullptr) {

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-config_file="$HOME/.config/btop/btop.conf"
+config_file="${XDG_CONFIG_HOME:-$HOME/.config}/btop/btop.conf"
 
 if [ ! -f "$config_file" ]; then
     echo "Warning: btop config file not found at $config_file" >&2

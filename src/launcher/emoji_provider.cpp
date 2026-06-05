@@ -1,13 +1,25 @@
 #include "launcher/emoji_provider.h"
 
 #include "core/resource_paths.h"
+#include "i18n/i18n.h"
 #include "util/string_utils.h"
 #include "wayland/clipboard_service.h"
 
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <json.hpp>
+#include <string>
 #include <string_view>
+
+namespace {
+  constexpr std::size_t kMaxResults = 100;
+
+  // Resolve an emoji category id (as stored in emoji.json) to its localized label.
+  std::string emojiCategoryLabel(std::string_view id) {
+    return i18n::tr("launcher.categories.emoji." + std::string(id));
+  }
+} // namespace
 
 void EmojiProvider::initialize() {
   const std::filesystem::path path = paths::assetPath("emoji.json");
@@ -47,17 +59,34 @@ void EmojiProvider::initialize() {
   }
 }
 
+std::string EmojiProvider::displayName() const { return i18n::tr("launcher.providers.emoji.title"); }
+
+std::vector<LauncherCategory> EmojiProvider::categories() const {
+  return {
+      {emojiCategoryLabel("people"), "mood-smile"},
+      {emojiCategoryLabel("animals"), "paw"},
+      {emojiCategoryLabel("food"), "apple"},
+      {emojiCategoryLabel("travel"), "map"},
+      {emojiCategoryLabel("activity"), "ball-football"},
+      {emojiCategoryLabel("objects"), "device-floppy"},
+      {emojiCategoryLabel("symbols"), "at"},
+      {emojiCategoryLabel("flags"), "flag"},
+      {emojiCategoryLabel("nature"), "leaf"},
+  };
+}
+
 std::vector<LauncherResult> EmojiProvider::query(std::string_view text) const {
   std::string query = StringUtils::toLower(text);
   if (query.empty()) {
-    // Show first batch when no query
     std::vector<LauncherResult> results;
-    for (std::size_t i = 0; i < m_entries.size() && i < 50; ++i) {
+    results.reserve(m_entries.size());
+    for (std::size_t i = 0; i < m_entries.size(); ++i) {
       const auto& e = m_entries[i];
       LauncherResult r;
       r.id = "emoji-" + e.emoji;
       r.title = e.name;
-      r.subtitle = e.category;
+      r.subtitle = emojiCategoryLabel(e.category);
+      r.category = r.subtitle;
       r.actionText = e.emoji;
       r.score = static_cast<int>(m_entries.size() - i);
       results.push_back(std::move(r));
@@ -109,12 +138,13 @@ std::vector<LauncherResult> EmojiProvider::query(std::string_view text) const {
   std::sort(scored.begin(), scored.end(), [](const ScoredEntry& a, const ScoredEntry& b) { return a.score > b.score; });
 
   std::vector<LauncherResult> results;
-  for (std::size_t i = 0; i < scored.size() && i < 50; ++i) {
+  for (std::size_t i = 0; i < scored.size() && i < kMaxResults; ++i) {
     const auto& e = m_entries[scored[i].index];
     LauncherResult r;
     r.id = "emoji-" + e.emoji;
     r.title = e.name;
-    r.subtitle = e.category;
+    r.subtitle = emojiCategoryLabel(e.category);
+    r.category = r.subtitle;
     r.actionText = e.emoji;
     r.score = scored[i].score;
     results.push_back(std::move(r));

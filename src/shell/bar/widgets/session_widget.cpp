@@ -2,25 +2,26 @@
 
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
-#include "ui/controls/glyph.h"
+#include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
 #include <memory>
 
-SessionWidget::SessionWidget(wl_output* output, std::string barGlyphId)
-    : m_output(output), m_barGlyphId(std::move(barGlyphId)) {}
+SessionWidget::SessionWidget(wl_output* /*output*/, std::string barGlyphId) : m_barGlyphId(std::move(barGlyphId)) {}
 
 void SessionWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) { requestPanelToggle("session"); });
 
-  auto glyph = std::make_unique<Glyph>();
-  glyph->setGlyph(m_barGlyphId.empty() ? "shutdown" : m_barGlyphId);
-  glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
-  glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
-  m_glyph = glyph.get();
-  area->addChild(std::move(glyph));
+  area->addChild(
+      ui::glyph({
+          .out = &m_glyph,
+          .glyph = m_barGlyphId.empty() ? "shutdown" : m_barGlyphId,
+          .glyphSize = Style::barGlyphSize * m_contentScale,
+          .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
+      })
+  );
 
   setRoot(std::move(area));
 }

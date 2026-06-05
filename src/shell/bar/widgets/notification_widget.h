@@ -19,7 +19,6 @@ private:
   void refreshIndicatorState();
 
   NotificationManager* m_manager = nullptr;
-  wl_output* m_output = nullptr;
   Glyph* m_glyph = nullptr;
   Node* m_dot = nullptr;
   bool m_hideWhenNoUnread = false;

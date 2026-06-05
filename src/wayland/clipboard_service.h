@@ -87,13 +87,16 @@ public:
   // When disabled, the live clipboard transport stays active (so basic
   // copy/paste keeps working) but history is neither accumulated nor persisted.
   void setHistoryRetentionEnabled(bool enabled);
+  void setMaxHistoryEntries(std::size_t maxEntries);
 
   bool copyText(std::string text);
   bool copyText(std::string text, std::string mimeType);
+  bool copyImagePng(std::vector<std::uint8_t> png);
   bool copyEntry(const ClipboardEntry& entry);
   bool promoteEntry(std::size_t index);
   bool setEntryPinned(std::size_t index, bool pinned);
   bool removeHistoryEntry(std::size_t index);
+  void clearUnpinnedHistory();
   void clearHistory();
   void setChangeCallback(ChangeCallback callback);
   void dispatchReadEvents(short revents);
@@ -181,5 +184,6 @@ private:
   std::size_t m_historyBytes = 0;
   std::uint64_t m_changeSerial = 0;
   bool m_historyRetention = true;
+  std::size_t m_maxHistoryEntries = 50;
   ChangeCallback m_changeCallback;
 };

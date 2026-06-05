@@ -220,6 +220,8 @@ namespace {
         entry.noDisplay = parseDesktopBool(value);
       } else if (key == "Hidden") {
         entry.hidden = parseDesktopBool(value);
+      } else if (key == "Path") {
+        entry.workingDir = std::string(value);
       } else if (key == "Terminal") {
         entry.terminal = parseDesktopBool(value);
       } else if (key == "Actions") {
@@ -269,11 +271,13 @@ namespace {
     for (const auto& id : actionOrder) {
       auto it = actionMap.find(id);
       if (it != actionMap.end()) {
-        entry.actions.push_back(DesktopAction{
-            .id = it->first,
-            .name = it->second.name,
-            .exec = it->second.exec,
-        });
+        entry.actions.push_back(
+            DesktopAction{
+                .id = it->first,
+                .name = it->second.name,
+                .exec = it->second.exec,
+            }
+        );
       }
     }
 
@@ -445,8 +449,14 @@ namespace {
         return;
       }
 
-      constexpr std::uint32_t kMask = IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO | IN_CLOSE_WRITE |
-                                      IN_DELETE_SELF | IN_MOVE_SELF | IN_ATTRIB;
+      constexpr std::uint32_t kMask = IN_CREATE
+          | IN_DELETE
+          | IN_MOVED_FROM
+          | IN_MOVED_TO
+          | IN_CLOSE_WRITE
+          | IN_DELETE_SELF
+          | IN_MOVE_SELF
+          | IN_ATTRIB;
       const int wd = inotify_add_watch(m_inotifyFd, key.c_str(), kMask);
       if (wd < 0) {
         return;
@@ -502,8 +512,9 @@ std::vector<DesktopEntry> scanDesktopEntries() {
   }
 
   // Sort by name for consistent ordering
-  std::sort(entries.begin(), entries.end(),
-            [](const DesktopEntry& a, const DesktopEntry& b) { return a.nameLower < b.nameLower; });
+  std::sort(entries.begin(), entries.end(), [](const DesktopEntry& a, const DesktopEntry& b) {
+    return a.nameLower < b.nameLower;
+  });
 
   return entries;
 }

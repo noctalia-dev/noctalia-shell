@@ -7,7 +7,10 @@
 #include "luacode.h"
 #include "lualib.h"
 #include "notification/notifications.h"
+#include "scripting/script_api_context.h"
 #include "scripting/scripted_widget_bindings.h"
+#include "scripting/scripted_widget_manifest.h"
+#include "system/terminal_launch.h"
 
 #include <algorithm>
 #include <atomic>
@@ -52,19 +55,24 @@ namespace {
     return count;
   }
 
-  bool startDetachedCommandAsync(std::string command) {
-    if (command.empty()) {
-      return false;
-    }
-
+  bool acquireDetachedCommandSlot() {
     auto& globalInFlight = inFlightDetachedCommands();
     int current = globalInFlight.load(std::memory_order_relaxed);
     while (current < kMaxGlobalDetachedCommands) {
       if (globalInFlight.compare_exchange_weak(current, current + 1, std::memory_order_relaxed)) {
-        break;
+        return true;
       }
     }
-    if (current >= kMaxGlobalDetachedCommands) {
+    return false;
+  }
+
+  void releaseDetachedCommandSlot() { inFlightDetachedCommands().fetch_sub(1, std::memory_order_relaxed); }
+
+  bool startDetachedCommandAsync(std::string command) {
+    if (command.empty()) {
+      return false;
+    }
+    if (!acquireDetachedCommandSlot()) {
       return false;
     }
 
@@ -74,24 +82,54 @@ namespace {
           (void)process::runAsync(command);
         } catch (...) {
         }
-        inFlightDetachedCommands().fetch_sub(1, std::memory_order_relaxed);
+        releaseDetachedCommandSlot();
       }).detach();
     } catch (...) {
-      globalInFlight.fetch_sub(1, std::memory_order_relaxed);
+      releaseDetachedCommandSlot();
       return false;
     }
 
     return true;
   }
 
+  bool startDetachedProcessAsync(std::vector<std::string> args) {
+    if (args.empty() || args.front().empty()) {
+      return false;
+    }
+    if (!acquireDetachedCommandSlot()) {
+      return false;
+    }
+
+    try {
+      std::thread([args = std::move(args)]() mutable {
+        try {
+          (void)process::runAsync(args);
+        } catch (...) {
+        }
+        releaseDetachedCommandSlot();
+      }).detach();
+    } catch (...) {
+      releaseDetachedCommandSlot();
+      return false;
+    }
+
+    return true;
+  }
+
+  bool startDetachedCommandInTerminalAsync(std::string command) {
+    auto prepared = terminal_launch::prepareCommand(command);
+    return prepared.has_value() && startDetachedProcessAsync(std::move(*prepared));
+  }
+
   std::chrono::milliseconds commandTimeoutFromLua(lua_State* L) {
     const double rawTimeout = luaL_optnumber(
-        L, 3,
-        static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(kDefaultCommandTimeout).count()));
+        L, 3, static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(kDefaultCommandTimeout).count())
+    );
     const double timeoutMs =
         std::isfinite(rawTimeout) ? rawTimeout : static_cast<double>(kDefaultCommandTimeout.count());
-    const double bounded = std::clamp(timeoutMs, static_cast<double>(kMinCommandTimeout.count()),
-                                      static_cast<double>(kMaxCommandTimeout.count()));
+    const double bounded = std::clamp(
+        timeoutMs, static_cast<double>(kMinCommandTimeout.count()), static_cast<double>(kMaxCommandTimeout.count())
+    );
     return std::chrono::milliseconds(static_cast<int>(bounded));
   }
 
@@ -163,6 +201,14 @@ namespace {
     return 1;
   }
 
+  int luau_runInTerminal(lua_State* L) {
+    size_t len = 0;
+    const char* cmd = luaL_checklstring(L, 1, &len);
+    bool ok = startDetachedCommandInTerminalAsync(std::string(cmd, len));
+    lua_pushboolean(L, ok ? 1 : 0);
+    return 1;
+  }
+
   int luau_commandExists(lua_State* L) {
     const char* name = luaL_checkstring(L, 1);
     lua_pushboolean(L, process::commandExists(name) ? 1 : 0);
@@ -206,6 +252,12 @@ namespace {
     }
 
     lua_pushlstring(L, info->connectorName.data(), info->connectorName.size());
+    return 1;
+  }
+
+  int luau_isDarkMode(lua_State* L) {
+    auto* host = hostForState(L);
+    lua_pushboolean(L, host != nullptr && host->api().isDarkMode() ? 1 : 0);
     return 1;
   }
 
@@ -287,18 +339,29 @@ namespace {
     return 1;
   }
 
+  int luau_expandPath(lua_State* L) {
+    size_t len = 0;
+    const char* path = luaL_checklstring(L, 1, &len);
+    const std::string expanded = scripting::expandUserPath(std::string_view(path, len));
+    lua_pushlstring(L, expanded.data(), expanded.size());
+    return 1;
+  }
+
   const luaL_Reg kNoctaliaBaseLib[] = {
       {"log", luau_log},
       {"runAsync", luau_runAsync},
+      {"runInTerminal", luau_runInTerminal},
       {"commandExists", luau_commandExists},
       {"processMatches", luau_processMatches},
       {"flatpakAppInstalled", luau_flatpakAppInstalled},
       {"portalAvailable", luau_portalAvailable},
       {"focusedOutputName", luau_focusedOutputName},
+      {"isDarkMode", luau_isDarkMode},
       {"notify", luau_notify},
       {"notifyError", luau_notifyError},
       {"copyToClipboard", luau_copyToClipboard},
       {"getenv", luau_getenv},
+      {"expandPath", luau_expandPath},
       {nullptr, nullptr},
   };
 
@@ -308,7 +371,7 @@ namespace {
   }
 } // namespace
 
-LuauHost::LuauHost(CompositorPlatform* platform) : m_platform(platform) {
+LuauHost::LuauHost(scripting::ScriptApiContext& api, CompositorPlatform* platform) : m_api(api), m_platform(platform) {
   m_hostId = nextHostId()++;
 
   m_L = luaL_newstate();
@@ -376,7 +439,7 @@ bool LuauHost::startAsyncCommand(std::string command, int callbackRef, std::chro
     std::thread([hostId = m_hostId, callbackRef, command = std::move(command), timeout,
                  handler = std::move(handler)]() mutable {
       auto result =
-          process::runSyncWithTimeoutAndOutputLimit({"/bin/sh", "-lc", command}, timeout, kMaxAsyncCommandOutputBytes);
+          process::runSyncWithTimeoutAndOutputLimit({"/bin/sh", "-c", command}, timeout, kMaxAsyncCommandOutputBytes);
       inFlightAsyncCommands().fetch_sub(1, std::memory_order_relaxed);
       handler(hostId, callbackRef, std::move(result));
     }).detach();
@@ -390,8 +453,9 @@ bool LuauHost::startAsyncCommand(std::string command, int callbackRef, std::chro
 }
 
 bool LuauHost::startAsyncProcessMatch(std::vector<std::string> needles, int callbackRef) {
-  if (needles.empty() || callbackRef <= LUA_REFNIL ||
-      m_asyncProcessMatchCallbackRefs.size() >= kMaxAsyncProcessMatchesPerHost) {
+  if (needles.empty()
+      || callbackRef <= LUA_REFNIL
+      || m_asyncProcessMatchCallbackRefs.size() >= kMaxAsyncProcessMatchesPerHost) {
     return false;
   }
 
@@ -445,8 +509,9 @@ bool LuauHost::hasAsyncProcessMatchCallback(int callbackRef) const {
   return m_asyncProcessMatchCallbackRefs.find(callbackRef) != m_asyncProcessMatchCallbackRefs.end();
 }
 
-bool LuauHost::callAsyncCommandCallback(int callbackRef, const process::RunResult& result,
-                                        std::chrono::milliseconds budget) {
+bool LuauHost::callAsyncCommandCallback(
+    int callbackRef, const process::RunResult& result, std::chrono::milliseconds budget
+) {
   if (m_T == nullptr) {
     return false;
   }
@@ -509,7 +574,8 @@ void LuauHost::interruptIfBudgetExceeded(lua_State* L) {
 void LuauHost::scriptLog(std::string message) {
   if (m_scriptContext != nullptr) {
     m_scriptContext->sideEffects.push_back(
-        {.kind = scripting::ScriptWidgetSideEffectKind::Log, .title = std::move(message), .body = {}});
+        {.kind = scripting::ScriptWidgetSideEffectKind::Log, .title = std::move(message), .body = {}}
+    );
     return;
   }
   kLog.info("{}", message);
@@ -517,9 +583,9 @@ void LuauHost::scriptLog(std::string message) {
 
 void LuauHost::scriptNotifyInfo(std::string title, std::string body) {
   if (m_scriptContext != nullptr) {
-    m_scriptContext->sideEffects.push_back({.kind = scripting::ScriptWidgetSideEffectKind::NotifyInfo,
-                                            .title = std::move(title),
-                                            .body = std::move(body)});
+    m_scriptContext->sideEffects.push_back(
+        {.kind = scripting::ScriptWidgetSideEffectKind::NotifyInfo, .title = std::move(title), .body = std::move(body)}
+    );
     return;
   }
   notify::info("Noctalia", title, body);
@@ -527,9 +593,9 @@ void LuauHost::scriptNotifyInfo(std::string title, std::string body) {
 
 void LuauHost::scriptNotifyError(std::string title, std::string body) {
   if (m_scriptContext != nullptr) {
-    m_scriptContext->sideEffects.push_back({.kind = scripting::ScriptWidgetSideEffectKind::NotifyError,
-                                            .title = std::move(title),
-                                            .body = std::move(body)});
+    m_scriptContext->sideEffects.push_back(
+        {.kind = scripting::ScriptWidgetSideEffectKind::NotifyError, .title = std::move(title), .body = std::move(body)}
+    );
     return;
   }
   notify::error("Noctalia", title, body);
@@ -539,9 +605,11 @@ bool LuauHost::scriptCopyToClipboard(std::string text, std::string mimeType) {
   if (m_scriptContext == nullptr || text.empty() || mimeType.empty()) {
     return false;
   }
-  m_scriptContext->sideEffects.push_back({.kind = scripting::ScriptWidgetSideEffectKind::CopyToClipboard,
-                                          .title = std::move(text),
-                                          .body = std::move(mimeType)});
+  m_scriptContext->sideEffects.push_back(
+      {.kind = scripting::ScriptWidgetSideEffectKind::CopyToClipboard,
+       .title = std::move(text),
+       .body = std::move(mimeType)}
+  );
   return true;
 }
 
@@ -567,7 +635,9 @@ bool LuauHost::callWithBudget(const char* name, int args, int results, std::chro
   endBudget();
   if (rc != 0) {
     const char* err = lua_tostring(m_T, -1);
-    kLog.error("call to '{}' failed: {}", name ? name : "(unknown)", err ? err : "(no error)");
+    if (!m_muteErrors) {
+      kLog.error("call to '{}' failed: {}", name ? name : "(unknown)", err ? err : "(no error)");
+    }
     lua_pop(m_T, 1);
     return false;
   }
@@ -635,8 +705,9 @@ bool LuauHost::callGlobalWithStrings(const char* name, std::string_view first, s
   return callGlobalWithStringsAndBudget(name, first, second, std::chrono::milliseconds(25));
 }
 
-bool LuauHost::callGlobalWithStringsAndBudget(const char* name, std::string_view first, std::string_view second,
-                                              std::chrono::milliseconds budget) {
+bool LuauHost::callGlobalWithStringsAndBudget(
+    const char* name, std::string_view first, std::string_view second, std::chrono::milliseconds budget
+) {
   lua_getglobal(m_T, name);
   if (!lua_isfunction(m_T, -1)) {
     lua_pop(m_T, 1);

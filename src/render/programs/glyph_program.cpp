@@ -73,9 +73,15 @@ void GlyphProgram::ensureInitialized() {
   m_tintLocation = glGetUniformLocation(m_program.id(), "u_tint");
   m_tintModeLocation = glGetUniformLocation(m_program.id(), "u_tint_mode");
 
-  if (m_positionLocation < 0 || m_texCoordLocation < 0 || m_surfaceSizeLocation < 0 || m_rectLocation < 0 ||
-      m_opacityLocation < 0 || m_samplerLocation < 0 || m_transformLocation < 0 || m_tintLocation < 0 ||
-      m_tintModeLocation < 0) {
+  if (m_positionLocation < 0
+      || m_texCoordLocation < 0
+      || m_surfaceSizeLocation < 0
+      || m_rectLocation < 0
+      || m_opacityLocation < 0
+      || m_samplerLocation < 0
+      || m_transformLocation < 0
+      || m_tintLocation < 0
+      || m_tintModeLocation < 0) {
     throw std::runtime_error("failed to query color glyph shader locations");
   }
 }
@@ -93,8 +99,10 @@ void GlyphProgram::destroy() {
   m_tintModeLocation = -1;
 }
 
-void GlyphProgram::bindCommon(TextureId texture, float surfaceWidth, float surfaceHeight, float width, float height,
-                              float u0, float v0, float u1, float v1, float opacity, const Mat3& transform) const {
+void GlyphProgram::bindCommon(
+    TextureId texture, float surfaceWidth, float surfaceHeight, float width, float height, float u0, float v0, float u1,
+    float v1, float opacity, const Mat3& transform
+) const {
   const std::array<GLfloat, 12> positions = {
       0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
   };
@@ -121,8 +129,10 @@ void GlyphProgram::bindCommon(TextureId texture, float surfaceWidth, float surfa
   glDisableVertexAttribArray(texAttr);
 }
 
-void GlyphProgram::draw(TextureId texture, float surfaceWidth, float surfaceHeight, float width, float height, float u0,
-                        float v0, float u1, float v1, float opacity, const Mat3& transform) const {
+void GlyphProgram::draw(
+    TextureId texture, float surfaceWidth, float surfaceHeight, float width, float height, float u0, float v0, float u1,
+    float v1, float opacity, const Mat3& transform
+) const {
   if (!m_program.isValid() || texture == 0 || width <= 0.0f || height <= 0.0f) {
     return;
   }
@@ -132,9 +142,10 @@ void GlyphProgram::draw(TextureId texture, float surfaceWidth, float surfaceHeig
   bindCommon(texture, surfaceWidth, surfaceHeight, width, height, u0, v0, u1, v1, opacity, transform);
 }
 
-void GlyphProgram::drawTinted(TextureId texture, float surfaceWidth, float surfaceHeight, float width, float height,
-                              float u0, float v0, float u1, float v1, float opacity, const Color& tint,
-                              const Mat3& transform) const {
+void GlyphProgram::drawTinted(
+    TextureId texture, float surfaceWidth, float surfaceHeight, float width, float height, float u0, float v0, float u1,
+    float v1, float opacity, const Color& tint, const Mat3& transform
+) const {
   if (!m_program.isValid() || texture == 0 || width <= 0.0f || height <= 0.0f) {
     return;
   }

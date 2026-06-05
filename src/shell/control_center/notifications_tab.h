@@ -28,6 +28,7 @@ public:
   void onClose() override;
 
 private:
+  void onPanelCardOpacityChanged(float opacity) override;
   friend class NotificationHistoryAdapter;
 
   void doLayout(Renderer& renderer, float contentWidth, float bodyHeight) override;

@@ -11,7 +11,7 @@ pkgs.mkShell {
     lefthook
 
     # Formatting (required by justfile)
-    clang-tools
+    llvmPackages_22.clang-tools
     gnugrep
     gnused
     findutils

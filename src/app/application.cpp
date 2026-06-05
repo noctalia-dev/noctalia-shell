@@ -16,13 +16,19 @@
 #include "launcher/app_provider.h"
 #include "launcher/emoji_provider.h"
 #include "launcher/math_provider.h"
+#include "launcher/session_provider.h"
 #include "launcher/wallpaper_provider.h"
+#include "launcher/window_provider.h"
 #include "notification/notifications.h"
 #include "render/animation/motion_service.h"
+#include "render/core/texture_manager.h"
+#include "render/text/font_weight_catalog.h"
 #include "shell/clipboard/clipboard_panel.h"
 #include "shell/clipboard/clipboard_paste.h"
 #include "shell/control_center/control_center_panel.h"
+#include "shell/greeter/greeter_appearance_sync.h"
 #include "shell/launcher/launcher_panel.h"
+#include "shell/session/session_ipc.h"
 #include "shell/session/session_panel.h"
 #include "shell/setup_wizard/setup_wizard_panel.h"
 #include "shell/test/test_panel.h"
@@ -31,6 +37,7 @@
 #include "shell/wallpaper/panel/wallpaper_panel.h"
 #include "system/distro_info.h"
 #include "time/time_format.h"
+#include "ui/app_icon_colorization.h"
 #include "ui/controls/input.h"
 #include "ui/dialogs/color_picker_dialog.h"
 #include "ui/dialogs/file_dialog.h"
@@ -63,10 +70,6 @@ namespace {
     return std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - start).count();
   }
 
-  bool weatherLocationConfiguredForNightLight(const WeatherConfig& weather) {
-    return weather.enabled && (weather.autoLocate || !weather.address.empty());
-  }
-
   bool widgetIsLockKeys(std::string_view widgetName, const Config& config) {
     auto it = config.widgets.find(std::string(widgetName));
     if (it == config.widgets.end()) {
@@ -76,8 +79,9 @@ namespace {
   }
 
   bool widgetListHasLockKeys(const std::vector<std::string>& widgets, const Config& config) {
-    return std::any_of(widgets.begin(), widgets.end(),
-                       [&config](const std::string& name) { return widgetIsLockKeys(name, config); });
+    return std::any_of(widgets.begin(), widgets.end(), [&config](const std::string& name) {
+      return widgetIsLockKeys(name, config);
+    });
   }
 
   std::string_view powerProfileOriginName(PowerProfilesChangeOrigin origin) {
@@ -94,15 +98,17 @@ namespace {
     if (bar.enabled) {
       return true;
     }
-    return std::any_of(bar.monitorOverrides.begin(), bar.monitorOverrides.end(),
-                       [](const BarMonitorOverride& ovr) { return ovr.enabled.value_or(false); });
+    return std::any_of(bar.monitorOverrides.begin(), bar.monitorOverrides.end(), [](const BarMonitorOverride& ovr) {
+      return ovr.enabled.value_or(false);
+    });
   }
 
   bool configHasLockKeysWidget(const Config& config) {
     return std::any_of(config.bars.begin(), config.bars.end(), [&config](const BarConfig& bar) {
-      return barMayRender(bar) &&
-             (widgetListHasLockKeys(bar.startWidgets, config) || widgetListHasLockKeys(bar.centerWidgets, config) ||
-              widgetListHasLockKeys(bar.endWidgets, config));
+      return barMayRender(bar)
+          && (widgetListHasLockKeys(bar.startWidgets, config)
+              || widgetListHasLockKeys(bar.centerWidgets, config)
+              || widgetListHasLockKeys(bar.endWidgets, config));
     });
   }
 
@@ -137,34 +143,34 @@ namespace {
 } // namespace
 
 Application::Application()
-    : m_lockKeysService(m_wayland), m_gammaService(m_wayland), m_weatherService(m_configService, m_httpClient) {
+    : m_lockKeysService(m_wayland), m_gammaService(m_wayland), m_locationService(m_configService, m_httpClient),
+      m_weatherService(m_configService, m_httpClient), m_calendarService(m_configService, m_httpClient) {
   m_notificationManager.loadPersistedHistory();
   notify::setInstance(&m_notificationManager);
-  LockScreen::setInstance(&m_lockScreen);
 
   auto shouldRefreshControlCenter = [this]() { return m_panelManager.isOpenPanel("control-center"); };
 
-  m_notificationManager.addEventCallback(
-      [this, shouldRefreshControlCenter](const Notification& n, NotificationEvent event) {
-        const char* kind = "updated";
-        if (event == NotificationEvent::Added) {
-          kind = "added";
-        } else if (event == NotificationEvent::Closed) {
-          kind = "closed";
-        }
-        const char* origin = (n.origin == NotificationOrigin::Internal) ? "internal" : "external";
-        kLog.debug("notification {} id={} origin={}", kind, n.id, origin);
+  m_notificationManager.addEventCallback([this,
+                                          shouldRefreshControlCenter](const Notification& n, NotificationEvent event) {
+    const char* kind = "updated";
+    if (event == NotificationEvent::Added) {
+      kind = "added";
+    } else if (event == NotificationEvent::Closed) {
+      kind = "closed";
+    }
+    const char* origin = (n.origin == NotificationOrigin::Internal) ? "internal" : "external";
+    kLog.debug("notification {} id={} origin={}", kind, n.id, origin);
 
-        if (event == NotificationEvent::Added && m_panelManager.isActivePanelContext("notifications")) {
-          m_notificationManager.markNotificationHistorySeen();
-        }
+    if (event == NotificationEvent::Added && m_panelManager.isActivePanelContext("notifications")) {
+      m_notificationManager.markNotificationHistorySeen();
+    }
 
-        // Keep bar widgets in sync with notification state changes.
-        m_bar.refresh();
-        if (shouldRefreshControlCenter()) {
-          m_panelManager.refresh();
-        }
-      });
+    // Keep bar widgets in sync with notification state changes.
+    m_bar.refresh();
+    if (shouldRefreshControlCenter()) {
+      m_panelManager.refresh();
+    }
+  });
 
   m_notificationManager.setStateCallback([this, shouldRefreshControlCenter]() {
     m_bar.refresh();
@@ -177,8 +183,8 @@ Application::Application()
 Application::~Application() {
   m_notificationManager.flushPersistedHistory();
   m_wayland.setClipboardService(nullptr);
+  m_wayland.setTextInputService(nullptr);
   m_wayland.setVirtualKeyboardService(nullptr);
-  LockScreen::setInstance(nullptr);
   notify::setInstance(nullptr);
 }
 
@@ -224,8 +230,9 @@ void Application::syncNotificationDaemon() {
     m_notificationDbus.reset();
     m_notificationPollSource.setDbusService(nullptr);
     m_notificationDaemonInitFailed = true;
-    m_notificationManager.addInternal("Noctalia", i18n::tr("notifications.internal.dbus-disabled"), e.what(),
-                                      Urgency::Low);
+    m_notificationManager.addInternal(
+        "Noctalia", i18n::tr("notifications.internal.dbus-disabled"), e.what(), Urgency::Low
+    );
   }
 }
 
@@ -302,6 +309,10 @@ void Application::syncPolkitAgent() {
   m_polkitAgent->start();
 }
 
+void Application::syncScreenTimeService() {
+  m_screenTimeService.setEnabled(m_configService.config().shell.screenTimeEnabled);
+}
+
 void Application::syncClipboardService() {
   const bool enabled = m_configService.config().shell.clipboardEnabled;
   const auto shouldRefreshControlCenter = [this]() { return m_panelManager.isOpenPanel("control-center"); };
@@ -313,6 +324,8 @@ void Application::syncClipboardService() {
   m_wayland.setClipboardService(&m_clipboardService);
   Input::setTextClipboard(&m_clipboardService);
   m_clipboardService.setHistoryRetentionEnabled(enabled);
+  const int maxEntries = m_configService.config().shell.clipboardHistoryMaxEntries;
+  m_clipboardService.setMaxHistoryEntries(static_cast<std::size_t>(std::clamp(maxEntries, 10, 200)));
 
   if (!enabled) {
     if (m_panelManager.isOpenPanel("clipboard")) {
@@ -339,8 +352,9 @@ void Application::run(std::function<void()> startupReadyCallback) {
     m_hookManager.reload(m_configService.config().hooks);
     m_hookManager.fire(HookKind::Started);
   });
-  runStartupPhase("telemetry enqueue",
-                  [this]() { m_telemetryService.maybeSend(m_configService, m_httpClient, m_wayland); });
+  runStartupPhase("telemetry enqueue", [this]() {
+    m_telemetryService.maybeSend(m_configService, m_httpClient, m_wayland);
+  });
 
 #ifdef __GLIBC__
   runStartupPhase("malloc_trim", []() { malloc_trim(0); });
@@ -381,8 +395,8 @@ void Application::initServices() {
   };
   auto applyPasswordMaskStyle = [this]() {
     const auto style = m_configService.config().shell.passwordMaskStyle == PasswordMaskStyle::RandomIcons
-                           ? Input::PasswordMaskStyle::RandomIcons
-                           : Input::PasswordMaskStyle::CircleFilled;
+        ? Input::PasswordMaskStyle::RandomIcons
+        : Input::PasswordMaskStyle::CircleFilled;
     Input::setPasswordMaskStyle(style);
   };
   applyMotionConfig();
@@ -392,12 +406,26 @@ void Application::initServices() {
   m_configService.addReloadCallback(applyMotionConfig);
   m_configService.addReloadCallback(applyStyleConfig);
   m_configService.addReloadCallback(applyPasswordMaskStyle);
-  m_configService.addReloadCallback(
-      [this]() { m_httpClient.setOfflineMode(m_configService.config().shell.offlineMode); });
+  m_configService.addReloadCallback([this]() {
+    m_httpClient.setOfflineMode(m_configService.config().shell.offlineMode);
+  });
   m_configService.addReloadCallback([this]() { syncClipboardService(); });
-  m_communityPaletteService.setReadyCallback([this]() { m_settingsWindow.onExternalOptionsChanged(); });
+  m_configService.addReloadCallback([this]() { syncScreenTimeService(); });
+  m_communityPaletteService.setReadyCallback([this]() {
+    // A refreshed catalog may carry a new md5 for the selected palette; re-resolve
+    // so a stale cached palette gets re-downloaded and faded in.
+    m_themeService.onConfigReload();
+    m_settingsWindow.onExternalOptionsChanged();
+  });
   m_communityPaletteService.sync();
-  m_configService.addReloadCallback([this]() { m_communityPaletteService.sync(); });
+  m_configService.addReloadCallback(
+      [this]() {
+        if (m_configService.lastChange().theme) {
+          m_communityPaletteService.sync();
+        }
+      },
+      "community-palette-sync"
+  );
   m_communityTemplateService.setReadyCallback([this]() {
     if (m_configService.config().theme.templates.enableCommunityTemplates) {
       m_themeService.onConfigReload();
@@ -406,55 +434,77 @@ void Application::initServices() {
   });
   m_communityTemplateService.sync(m_configService.config().theme.templates);
   m_configService.addReloadCallback(
-      [this]() { m_communityTemplateService.sync(m_configService.config().theme.templates); });
+      [this]() {
+        if (m_configService.lastChange().theme) {
+          m_communityTemplateService.sync(m_configService.config().theme.templates);
+        }
+      },
+      "community-template-sync"
+  );
 
   // i18n has no dependencies on other services and must be ready before any
   // UI construction reads a translated string.
   i18n::Service::instance().init(m_configService.config().shell.lang);
-  m_configService.addReloadCallback(
-      [this]() { i18n::Service::instance().setLanguage(m_configService.config().shell.lang); });
+  m_configService.addReloadCallback([this]() {
+    i18n::Service::instance().setLanguage(m_configService.config().shell.lang);
+  });
 
   // Apply theme before any UI constructs palette-dependent scene nodes.
-  m_themeService.setResolvedCallback(
-      [this, lastResolvedThemeMode = std::optional<std::string>{}](const noctalia::theme::GeneratedPalette& generated,
-                                                                   std::string_view mode) mutable {
-        const std::string resolvedMode(mode);
-        const std::string configuredMode(enumToKey(kThemeModes, m_themeService.configuredMode()));
-        m_templateApplyService.apply(generated, mode);
-        m_hookManager.fire(HookKind::ColorsChanged);
-        if (lastResolvedThemeMode.has_value() && *lastResolvedThemeMode != resolvedMode) {
-          m_hookManager.fire(HookKind::ThemeModeChanged, {{"NOCTALIA_THEME_MODE", resolvedMode},
-                                                          {"NOCTALIA_THEME_MODE_PREVIOUS", *lastResolvedThemeMode},
-                                                          {"NOCTALIA_THEME_MODE_CONFIGURED", configuredMode}});
-        }
-        lastResolvedThemeMode = resolvedMode;
-      });
+  m_themeService.setResolvedCallback([this, lastResolvedThemeMode = std::optional<std::string>{}](
+                                         const noctalia::theme::GeneratedPalette& generated, std::string_view mode
+                                     ) mutable {
+    const std::string resolvedMode(mode);
+    const std::string configuredMode(enumToKey(kThemeModes, m_themeService.configuredMode()));
+    m_scriptApi.setDarkMode(resolvedMode != "light");
+    m_templateApplyService.apply(generated, mode);
+    m_hookManager.fire(HookKind::ColorsChanged);
+    if (lastResolvedThemeMode.has_value() && *lastResolvedThemeMode != resolvedMode) {
+      m_hookManager.fire(
+          HookKind::ThemeModeChanged,
+          {{"NOCTALIA_THEME_MODE", resolvedMode},
+           {"NOCTALIA_THEME_MODE_PREVIOUS", *lastResolvedThemeMode},
+           {"NOCTALIA_THEME_MODE_CONFIGURED", configuredMode}}
+      );
+    }
+    lastResolvedThemeMode = resolvedMode;
+  });
   m_themeService.apply();
-  m_configService.addReloadCallback([this]() { m_themeService.onConfigReload(); });
-
-  // Watch the dconf user database so Auto mode reacts immediately to system
-  // color-scheme changes (org.gnome.desktop.interface color-scheme).
+  m_configService.addReloadCallback([this]() { m_themeService.onConfigReload(); }, "theme");
   {
-    const char* xdg = std::getenv("XDG_CONFIG_HOME");
-    const char* home = std::getenv("HOME");
-    std::filesystem::path dconfDb;
-    if (xdg != nullptr && xdg[0] != '\0') {
-      dconfDb = std::filesystem::path(xdg) / "dconf" / "user";
-    } else if (home != nullptr && home[0] != '\0') {
-      dconfDb = std::filesystem::path(home) / ".config" / "dconf" / "user";
-    }
-    if (!dconfDb.empty()) {
-      m_fileWatcher.watch(dconfDb, [this]() { m_themeService.onAutoSchemeChanged(); });
-    }
+    static ShellAppIconColorizationSettings lastAppIconColorization =
+        shellAppIconColorizationSettings(m_configService.config().shell);
+    m_configService.addReloadCallback(
+        [this]() {
+          const auto current = shellAppIconColorizationSettings(m_configService.config().shell);
+          if (current == lastAppIconColorization) {
+            return;
+          }
+          lastAppIconColorization = current;
+          notifyShellAppIconColorizationChanged();
+        },
+        "app-icon-colorization"
+    );
   }
 
   if (!m_wayland.connect()) {
     throw std::runtime_error("failed to connect to Wayland display");
   }
   m_compositorPlatform.initialize();
-  m_glShared.initialize(m_wayland.display());
-  m_sharedTextureCache.initialize(&m_glShared);
-  m_asyncTextureCache.initialize(&m_glShared);
+  m_screenTimeService.initialize(&m_wayland);
+  syncScreenTimeService();
+  m_screenTimeService.setChangeCallback([this]() {
+    if (m_panelManager.isOpenPanel("control-center")) {
+      m_panelManager.refresh();
+    }
+  });
+  if (m_configService.config().shell.disableMipmaps) {
+    TextureManager::setGlobalMipmapsEnabled(false);
+  }
+  m_glShared.initialize(m_wayland.display(), m_configService.config().shell.sharedGlContext);
+  auto* sharedGlPtr = m_glShared.hasSharedContext() ? &m_glShared : nullptr;
+  m_sharedTextureCache.initialize(sharedGlPtr);
+  m_asyncTextureCache.initialize(sharedGlPtr);
+  m_wayland.setTextInputService(&m_textInputService);
   m_wayland.setVirtualKeyboardService(&m_virtualKeyboardService);
 
   auto bindKeybind = [this](KeybindAction action) {
@@ -483,12 +533,15 @@ void Application::initServices() {
     m_bar.onOutputChange();
     m_dock.onOutputChange();
     m_desktopWidgetsController.onOutputChange();
+    m_lockscreenWidgetsController.onOutputChange();
     m_screenCorners.onOutputChange();
     m_lockScreen.onOutputChange();
     m_idleGraceOverlay.onOutputChange();
     m_idleInhibitor.onOutputChange();
     m_overviewLauncherCapture.onOutputChange();
+    m_screenshotService.onOutputChange();
     m_notificationToast.onOutputChange();
+    m_osdOverlay.onOutputChange();
   });
   m_clipboardService.setChangeCallback([this]() {
     if (m_panelManager.isOpenPanel("clipboard")) {
@@ -496,10 +549,19 @@ void Application::initServices() {
     }
   });
   m_compositorPlatform.setWorkspaceChangeCallback([this]() { m_bar.refresh(); });
-  m_compositorPlatform.setKeyboardLayoutChangeCallback([this]() { m_bar.refresh(); });
-  m_wayland.setToplevelChangeCallback([this]() {
+  m_compositorPlatform.setKeyboardLayoutChangeCallback([this]() {
+    m_bar.refresh();
+    if (m_configService.config().osd.keyboardLayout) {
+      m_keyboardLayoutOsd.onLayoutChanged(m_compositorPlatform);
+    }
+  });
+  m_compositorPlatform.setToplevelChangeCallback([this]() {
+    m_screenTimeService.onFocusChange();
     m_bar.refresh();
     m_dock.refresh();
+    if (m_panelManager.isOpenPanel("control-center")) {
+      m_panelManager.refresh();
+    }
   });
   if constexpr (kLockKeysEnabled) {
     if (lockKeysConsumersEnabled(m_configService.config())) {
@@ -514,7 +576,8 @@ void Application::initServices() {
           if (configHasLockKeysWidget(config)) {
             m_bar.refresh();
           }
-        });
+        }
+    );
   }
   m_idleInhibitor.initialize(m_wayland, &m_renderContext);
   m_idleInhibitor.setChangeCallback([this, shouldRefreshControlCenter]() {
@@ -524,25 +587,28 @@ void Application::initServices() {
     }
   });
   m_hookManager.setCommandRunner([this](const std::string& command) { return runUserCommand(command); });
-  m_hookManager.setBlockingCommandRunner(
-      [this](const std::string& command) { return runUserCommandBlocking(command); });
+  m_hookManager.setBlockingCommandRunner([this](const std::string& command) {
+    return runUserCommandBlocking(command);
+  });
   m_hookManager.reload(m_configService.config().hooks);
-  m_configService.addReloadCallback([this]() { m_hookManager.reload(m_configService.config().hooks); });
-  auto syncNightLightWeatherConfig = [this]() {
-    m_gammaService.setWeatherLocationConfigured(
-        weatherLocationConfiguredForNightLight(m_configService.config().weather));
-  };
-  syncNightLightWeatherConfig();
-  m_gammaService.reload(m_configService.config().nightlight);
+  m_configService.addReloadCallback(
+      [this]() {
+        if (m_configService.lastChange().hooks) {
+          m_hookManager.reload(m_configService.config().hooks);
+        }
+      },
+      "hooks"
+  );
+  m_gammaService.setLocationResolving(m_locationService.resolving());
+  m_gammaService.reload(m_configService.config().nightlight, m_configService.config().location);
   m_gammaService.setChangeCallback([this, shouldRefreshControlCenter]() {
     m_bar.refresh();
     if (shouldRefreshControlCenter()) {
       m_panelManager.refresh();
     }
   });
-  m_configService.addReloadCallback([this, syncNightLightWeatherConfig]() {
-    syncNightLightWeatherConfig();
-    m_gammaService.reload(m_configService.config().nightlight);
+  m_configService.addReloadCallback([this]() {
+    m_gammaService.reload(m_configService.config().nightlight, m_configService.config().location);
   });
 
   // Register all wallpaper consumers in the single-callback slot.
@@ -558,24 +624,16 @@ void Application::initServices() {
   });
 
   m_themeService.setChangeCallback([this]() {
-    m_bar.requestRedraw();
-    m_dock.requestRedraw();
-    m_desktopWidgetsController.requestRedraw();
-    m_panelManager.requestRedraw();
-    m_notificationToast.requestRedraw();
+    requestAllSurfacesRedraw();
     m_lockScreen.onThemeChanged();
-    m_osdOverlay.requestRedraw();
     m_trayMenu.onThemeChanged();
     m_backdrop.onThemeChanged();
     m_settingsWindow.onThemeChanged();
-    m_colorPickerDialogPopup.requestRedraw();
-    m_glyphPickerDialogPopup.requestRedraw();
-    m_fileDialogPopup.requestRedraw();
   });
 
   if (const auto distro = DistroDetector::detect(); distro.has_value()) {
     const auto& label = !distro->prettyName.empty() ? distro->prettyName
-                        : !distro->name.empty()     ? distro->name
+        : !distro->name.empty()                     ? distro->name
                                                     : distro->id;
     kLog.info("distro: {}", label);
   } else {
@@ -625,25 +683,41 @@ void Application::initServices() {
   }
 
   if (m_systemBus != nullptr) {
-    try {
-      m_logindService = std::make_unique<LogindService>(*m_systemBus);
-      m_logindService->setPrepareForSleepCallback([this](bool sleeping) {
-        if (sleeping) {
-          return;
-        }
-        kLog.info("system resumed; rechecking night light schedule");
-        m_gammaService.reevaluateSchedule();
-      });
-      kLog.info("logind sleep monitor active");
-    } catch (const std::exception& e) {
-      kLog.warn("logind sleep monitor disabled: {}", e.what());
-      m_logindService.reset();
+    if (m_systemBus->nameHasOwner("org.freedesktop.login1")) {
+      try {
+        m_logindService = std::make_unique<LogindService>(*m_systemBus);
+        m_logindService->setPrepareForSleepCallback([this](bool sleeping) {
+          if (sleeping) {
+            return;
+          }
+          kLog.info("system resumed; rechecking night light schedule");
+          m_gammaService.reevaluateSchedule();
+          // BlueZ property-change signals can be missed across the suspend window, leaving our
+          // cached adapter state stale. Re-sync now and again shortly after, since BlueZ may take a
+          // moment to restore the adapter on resume.
+          if (m_bluetoothService != nullptr) {
+            m_bluetoothService->refresh();
+            m_bluetoothResumeTimer.start(std::chrono::seconds(2), [this]() {
+              if (m_bluetoothService != nullptr) {
+                m_bluetoothService->refresh();
+              }
+            });
+          }
+        });
+        kLog.info("logind sleep monitor active");
+      } catch (const std::exception& e) {
+        kLog.warn("logind sleep monitor disabled: {}", e.what());
+        m_logindService.reset();
+      }
+    } else {
+      kLog.info("logind not available on system bus; sleep monitor disabled");
     }
 
     try {
       m_powerProfilesService = std::make_unique<PowerProfilesService>(*m_systemBus);
-      m_powerProfilesService->setChangeCallback([this, shouldRefreshControlCenter](const PowerProfilesState& state,
-                                                                                   PowerProfilesChangeOrigin origin) {
+      m_powerProfilesService->setChangeCallback([this, shouldRefreshControlCenter](
+                                                    const PowerProfilesState& state, PowerProfilesChangeOrigin origin
+                                                ) {
         m_bar.refresh();
         if (shouldRefreshControlCenter()) {
           m_panelManager.refresh();
@@ -653,14 +727,16 @@ void Application::initServices() {
         if (active.empty()) {
           return;
         }
-        if (m_prevPowerProfileActiveForEvents.has_value() && *m_prevPowerProfileActiveForEvents != active &&
-            origin != PowerProfilesChangeOrigin::Noctalia) {
+        if (m_prevPowerProfileActiveForEvents.has_value()
+            && *m_prevPowerProfileActiveForEvents != active
+            && origin != PowerProfilesChangeOrigin::Noctalia) {
           std::string glyphIconSpec("noctalia-glyph:");
           glyphIconSpec.append(profileGlyphName(active));
           m_notificationManager.addInternal(
               i18n::tr("notifications.internal.power-profiles"), i18n::tr("notifications.internal.power-profile-title"),
               i18n::tr("notifications.internal.power-profile-body", "profile", profileLabel(active)), Urgency::Normal,
-              kDefaultNotificationTimeout, std::move(glyphIconSpec));
+              kDefaultNotificationTimeout, std::move(glyphIconSpec)
+          );
         }
         onPowerProfileChangedForEvents(state, origin);
       });
@@ -677,12 +753,23 @@ void Application::initServices() {
 
     try {
       m_upowerService = std::make_unique<UPowerService>(*m_systemBus);
-      m_prevUpowerForHooks = m_upowerService->state();
+      m_batteryHookState.reset(m_upowerService->state());
+      m_batteryWarningMonitor.reset(m_configService.config().battery, *m_upowerService);
       m_upowerService->setChangeCallback([this]() {
         onUpowerStateChangedForHooks();
+        m_batteryWarningMonitor.update(m_configService.config().battery, *m_upowerService, m_notificationManager);
         m_bar.refresh();
         m_settingsWindow.onExternalOptionsChanged();
       });
+      m_configService.addReloadCallback(
+          [this]() {
+            if (m_configService.lastChange().battery && m_upowerService != nullptr) {
+              m_batteryWarningMonitor.reset(m_configService.config().battery, *m_upowerService);
+              m_bar.refresh();
+            }
+          },
+          "battery"
+      );
     } catch (const std::exception& e) {
       kLog.warn("upower disabled: {}", e.what());
       m_upowerService.reset();
@@ -697,7 +784,8 @@ void Application::initServices() {
             if (shouldRefreshControlCenter()) {
               m_panelManager.refresh();
             }
-          });
+          }
+      );
       if (m_networkService->hasStateSnapshot()) {
         m_prevWirelessEnabledForEvents = m_networkService->state().wirelessEnabled;
       }
@@ -713,7 +801,8 @@ void Application::initServices() {
               if (shouldRefreshControlCenter()) {
                 m_panelManager.refresh();
               }
-            });
+            }
+        );
         if (m_networkService->hasStateSnapshot()) {
           m_prevWirelessEnabledForEvents = m_networkService->state().wirelessEnabled;
         }
@@ -745,9 +834,11 @@ void Application::initServices() {
           [this, refreshBluetoothUi](const BluetoothState& state, BluetoothStateChangeOrigin origin) {
             onBluetoothStateChangedForEvents(state, origin);
             refreshBluetoothUi();
-          });
-      m_bluetoothService->setDevicesCallback(
-          [refreshBluetoothUi](const std::vector<BluetoothDeviceInfo>& /*devices*/) { refreshBluetoothUi(); });
+          }
+      );
+      m_bluetoothService->setDevicesCallback([refreshBluetoothUi](const std::vector<BluetoothDeviceInfo>& /*devices*/) {
+        refreshBluetoothUi();
+      });
       if (m_bluetoothService->hasStateSnapshot()) {
         m_prevBluetoothPoweredForEvents = m_bluetoothService->state().powered;
       }
@@ -760,12 +851,12 @@ void Application::initServices() {
     if (m_bluetoothService != nullptr) {
       try {
         m_bluetoothAgent = std::make_unique<BluetoothAgent>(*m_systemBus);
-        m_bluetoothAgent->setRequestCallback(
-            [this, shouldRefreshControlCenter](const BluetoothPairingRequest& /*request*/) {
-              if (shouldRefreshControlCenter()) {
-                m_panelManager.refresh();
-              }
-            });
+        m_bluetoothAgent->setRequestCallback([this,
+                                              shouldRefreshControlCenter](const BluetoothPairingRequest& /*request*/) {
+          if (shouldRefreshControlCenter()) {
+            m_panelManager.refresh();
+          }
+        });
       } catch (const std::exception& e) {
         kLog.warn("bluetooth agent disabled: {}", e.what());
         m_bluetoothAgent.reset();
@@ -776,8 +867,9 @@ void Application::initServices() {
   }
 
   try {
-    m_brightnessService = std::make_unique<BrightnessService>(m_systemBus.get(), m_compositorPlatform,
-                                                              m_configService.config().brightness);
+    m_brightnessService = std::make_unique<BrightnessService>(
+        m_systemBus.get(), m_compositorPlatform, m_configService.config().brightness
+    );
     m_brightnessService->setChangeCallback([this, shouldRefreshControlCenter]() {
       m_brightnessOsd.onBrightnessChanged(*m_brightnessService);
       m_bar.refresh();
@@ -843,8 +935,9 @@ void Application::initServices() {
     kLog.info("connected to session bus");
   } catch (const std::exception& e) {
     kLog.warn("dbus disabled: {}", e.what());
-    m_notificationManager.addInternal("Noctalia", i18n::tr("notifications.internal.session-bus-unavailable"), e.what(),
-                                      Urgency::Low);
+    m_notificationManager.addInternal(
+        "Noctalia", i18n::tr("notifications.internal.session-bus-unavailable"), e.what(), Urgency::Low
+    );
   }
 
   if (m_bus != nullptr) {
@@ -882,8 +975,9 @@ void Application::initServices() {
     } catch (const std::exception& e) {
       kLog.warn("mpris disabled: {}", e.what());
       m_mprisService.reset();
-      m_notificationManager.addInternal("Noctalia", i18n::tr("notifications.internal.mpris-disabled"), e.what(),
-                                        Urgency::Low);
+      m_notificationManager.addInternal(
+          "Noctalia", i18n::tr("notifications.internal.mpris-disabled"), e.what(), Urgency::Low
+      );
     }
 
     syncNotificationDaemon();
@@ -894,28 +988,44 @@ void Application::initServices() {
       m_bar.refresh();
       m_trayMenu.onTrayChanged();
     });
-    m_trayService->setMenuToggleCallback([this](const std::string& itemId) { m_trayMenu.toggleForItem(itemId); });
+    m_trayService->setMenuToggleCallback([this](const std::string& itemId, float contentScale) {
+      m_trayMenu.toggleForItem(itemId, contentScale);
+    });
   }
 
+  m_locationService.initialize();
   m_weatherService.initialize();
-  auto syncNightLightWeatherCoordinates = [this]() {
-    m_gammaService.setWeatherLocationConfigured(m_weatherService.enabled() && m_weatherService.locationConfigured());
-    const auto coords = m_weatherService.resolvedCoordinates();
-    if (coords.has_value()) {
-      m_gammaService.setWeatherCoordinates(coords->latitude, coords->longitude);
+  m_calendarService.initialize();
+
+  // LocationService is the single source of "where am I": push its resolved coordinates to the
+  // weather service, night light, and theme auto mode. Manual latitude/longitude and fixed
+  // sunrise/sunset live in [location] and reach night light/theme through their config reloads.
+  auto pushLocation = [this]() {
+    m_gammaService.setLocationResolving(m_locationService.resolving());
+    const auto location = m_locationService.resolvedLocation();
+    if (location.has_value()) {
+      m_weatherService.setLocation(
+          WeatherCoordinates{.latitude = location->latitude, .longitude = location->longitude}, location->name,
+          location->sourceLabel
+      );
+      m_gammaService.setResolvedCoordinates(location->latitude, location->longitude);
+      m_themeService.setAutoCoordinates(location->latitude, location->longitude);
     } else {
-      m_gammaService.setWeatherCoordinates(std::nullopt, std::nullopt);
+      m_weatherService.setLocation(std::nullopt, {}, {});
+      m_gammaService.setResolvedCoordinates(std::nullopt, std::nullopt);
+      m_themeService.setAutoCoordinates(std::nullopt, std::nullopt);
     }
   };
-  syncNightLightWeatherCoordinates();
-  m_weatherService.addChangeCallback([this, shouldRefreshControlCenter]() {
-    m_gammaService.setWeatherLocationConfigured(m_weatherService.enabled() && m_weatherService.locationConfigured());
-    const auto coords = m_weatherService.resolvedCoordinates();
-    if (coords.has_value()) {
-      m_gammaService.setWeatherCoordinates(coords->latitude, coords->longitude);
-    } else {
-      m_gammaService.setWeatherCoordinates(std::nullopt, std::nullopt);
+  pushLocation();
+  m_locationService.addChangeCallback([this, pushLocation, shouldRefreshControlCenter]() {
+    pushLocation();
+    m_bar.refresh();
+    m_desktopWidgetsController.requestLayout();
+    if (shouldRefreshControlCenter()) {
+      m_panelManager.refresh();
     }
+  });
+  m_weatherService.addChangeCallback([this, shouldRefreshControlCenter]() {
     m_bar.refresh();
     m_desktopWidgetsController.requestLayout();
     if (shouldRefreshControlCenter()) {
@@ -940,6 +1050,10 @@ void Application::initUi() {
   auto shouldRefreshControlCenter = [this]() { return m_panelManager.isOpenPanel("control-center"); };
 
   m_renderContext.initialize(m_glShared);
+  m_renderContext.setGraphicsResetCallback([this](RenderGraphicsResetStatus status) { onGraphicsReset(status); });
+  if (!m_glShared.hasSharedContext()) {
+    m_asyncTextureCache.setMakeCurrentCallback([this]() { m_renderContext.backend().makeCurrentNoSurface(); });
+  }
   m_renderContext.setTextFontFamily(m_configService.config().shell.fontFamily);
 
   // Optional live-paper plumbing. ProjectMRenderer renders libprojectM into a
@@ -966,26 +1080,93 @@ void Application::initUi() {
     m_wallpaper.setVisualizer(m_projectMRenderer.get(), m_visualizerService.get());
   }
   m_backdrop.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
-  m_settingsWindow.initialize(m_wayland, &m_configService, &m_renderContext, &m_dependencyService,
-                              m_upowerService.get());
-  m_settingsWindow.setOpenDesktopWidgetEditor([this]() { m_desktopWidgetsController.toggleEdit(); });
+  m_settingsWindow.initialize(
+      m_wayland, &m_configService, &m_renderContext, &m_dependencyService, m_upowerService.get(), &m_idleManager
+  );
+  m_settingsWindow.setOpenDesktopWidgetEditor([this]() {
+    if (m_lockscreenWidgetsController.isEditing()) {
+      m_lockscreenWidgetsController.exitEdit();
+    }
+    const bool wasEditing = m_desktopWidgetsController.isEditing();
+    m_desktopWidgetsController.toggleEdit();
+    if (!wasEditing && m_desktopWidgetsController.isEditing()) {
+      notify::info(
+          "Noctalia", i18n::tr("notifications.internal.desktop-widgets-editor"),
+          i18n::tr("notifications.internal.desktop-widgets-editor-enabled")
+      );
+    }
+  });
+  m_settingsWindow.setOpenLockscreenWidgetEditor([this]() {
+    if (m_lockScreen.isActive()) {
+      notify::info(
+          "Noctalia", i18n::tr("notifications.internal.lockscreen-widgets-editor"),
+          i18n::tr("notifications.internal.lockscreen-widgets-editor-blocked-locked")
+      );
+      return;
+    }
+    if (m_desktopWidgetsController.isEditing()) {
+      m_desktopWidgetsController.exitEdit();
+    }
+    const bool wasEditing = m_lockscreenWidgetsController.isEditing();
+    m_lockscreenWidgetsController.toggleEdit();
+    if (!wasEditing && m_lockscreenWidgetsController.isEditing()) {
+      if (m_settingsWindow.isOpen()) {
+        m_settingsWindow.close();
+      }
+      notify::info(
+          "Noctalia", i18n::tr("notifications.internal.lockscreen-widgets-editor"),
+          i18n::tr("notifications.internal.lockscreen-widgets-editor-enabled")
+      );
+    }
+  });
+  m_settingsWindow.setSyncGreeterAppearance([this]() {
+    (void)greeter::syncAppearanceToGreeterAsync(m_configService, m_themeService.resolvedMode(), [this](bool success) {
+      DeferredCall::callLater([this, success]() {
+        if (success) {
+          notify::info(
+              "Noctalia", i18n::tr("notifications.internal.greeter-sync"),
+              i18n::tr("notifications.internal.greeter-sync-success")
+          );
+          return;
+        }
+        m_settingsWindow.markSettingsWriteError(i18n::tr("settings.errors.sync-greeter"));
+      });
+    });
+  });
   m_lockScreen.initialize(m_wayland, &m_renderContext, &m_configService, &m_sharedTextureCache);
-  m_lockScreen.setSessionHooks([this]() { m_hookManager.fire(HookKind::SessionLocked); },
-                               [this]() { m_hookManager.fire(HookKind::SessionUnlocked); });
+  m_configService.addReloadCallback([this]() { m_lockScreen.onConfigChanged(); });
+  m_lockScreen.setSessionHooks(
+      [this]() {
+        m_lockscreenWidgetsController.onLockStateChanged();
+        m_hookManager.fire(HookKind::SessionLocked);
+      },
+      [this]() {
+        m_lockscreenWidgetsController.onLockStateChanged();
+        m_hookManager.fire(HookKind::SessionUnlocked);
+      }
+  );
   if (m_projectMRenderer != nullptr) {
     m_lockScreen.setVisualizer(m_projectMRenderer.get());
   }
 
-  m_sessionActionHooks.onLogout = [this]() { return m_hookManager.fireBlocking(HookKind::LoggingOut); };
-  m_sessionActionHooks.onReboot = [this]() { return m_hookManager.fireBlocking(HookKind::Rebooting); };
-  m_sessionActionHooks.onShutdown = [this]() { return m_hookManager.fireBlocking(HookKind::ShuttingDown); };
+  SessionActionHooks sessionActionHooks;
+  sessionActionHooks.onLogout = [this]() { return m_hookManager.fireBlocking(HookKind::LoggingOut); };
+  sessionActionHooks.onReboot = [this]() { return m_hookManager.fireBlocking(HookKind::Rebooting); };
+  sessionActionHooks.onShutdown = [this]() { return m_hookManager.fireBlocking(HookKind::ShuttingDown); };
+  m_sessionActionRunner.setHooks(std::move(sessionActionHooks));
 
   m_wayland.setPointerEventCallback([this](const PointerEvent& event) {
     if (m_lockScreen.isActive()) {
       m_lockScreen.onPointerEvent(event);
       return;
     }
+    if (m_lockscreenWidgetsController.onPointerEvent(event)) {
+      return;
+    }
     if (m_desktopWidgetsController.onPointerEvent(event)) {
+      return;
+    }
+    if (m_screenshotService.onPointerEvent(event)) {
       return;
     }
     if (m_trayMenu.onPointerEvent(event))
@@ -1012,8 +1193,8 @@ void Application::initUi() {
       m_lockScreen.onKeyboardEvent(event);
       return;
     }
-    if (m_desktopWidgetsController.isEditing()) {
-      m_desktopWidgetsController.onKeyboardEvent(event);
+    if (m_lockscreenWidgetsController.isEditing()) {
+      m_lockscreenWidgetsController.onKeyboardEvent(event);
       return;
     }
     if (m_colorPickerDialogPopup.isOpen()) {
@@ -1028,8 +1209,15 @@ void Application::initUi() {
       m_fileDialogPopup.onKeyboardEvent(event);
       return;
     }
+    if (m_desktopWidgetsController.isEditing()) {
+      m_desktopWidgetsController.onKeyboardEvent(event);
+      return;
+    }
     if (m_settingsWindow.ownsKeyboardSurface(m_wayland.lastKeyboardSurface())) {
       m_settingsWindow.onKeyboardEvent(event);
+      return;
+    }
+    if (m_screenshotService.onKeyboardEvent(event)) {
       return;
     }
     if (m_overviewLauncherCapture.handleKeyboardEvent(event)) {
@@ -1055,8 +1243,12 @@ void Application::initUi() {
     wl_output* output = m_compositorPlatform.preferredInteractiveOutput(std::chrono::milliseconds(1200));
     m_panelManager.openPanel("wallpaper", PanelOpenRequest{.output = output});
   });
-  auto clipboardPanel = std::make_unique<ClipboardPanel>(&m_clipboardService, &m_configService, &m_thumbnailService,
-                                                         &m_asyncTextureCache);
+  m_settingsWindow.setConnectCalendarAccount([this](std::string accountId) {
+    m_calendarService.connectGoogleAccount(accountId);
+  });
+  auto clipboardPanel = std::make_unique<ClipboardPanel>(
+      &m_clipboardService, &m_configService, &m_thumbnailService, &m_asyncTextureCache
+  );
   clipboardPanel->setActivateCallback([this](const ClipboardEntry& entry) {
     m_panelManager.close();
     const ClipboardAutoPasteMode mode = m_configService.config().shell.clipboardAutoPaste;
@@ -1074,22 +1266,25 @@ void Application::initUi() {
   });
   m_panelManager.registerPanel("clipboard", std::move(clipboardPanel));
   syncClipboardService();
-  m_panelManager.registerPanel("session", std::make_unique<SessionPanel>(&m_configService, m_sessionActionHooks,
-                                                                         &m_compositorPlatform.niriRuntime()));
+  m_panelManager.registerPanel("session", std::make_unique<SessionPanel>(&m_configService, m_sessionActionRunner));
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
-  m_panelManager.registerPanel("control-center",
-                               std::make_unique<ControlCenterPanel>(
-                                   &m_notificationManager, m_pipewireService.get(), m_mprisService.get(),
-                                   &m_configService, &m_httpClient, &m_weatherService, m_pipewireSpectrum.get(),
-                                   m_upowerService.get(), m_powerProfilesService.get(), m_networkService.get(),
-                                   m_networkSecretAgent.get(), m_bluetoothService.get(), m_bluetoothAgent.get(),
-                                   m_brightnessService.get(), m_systemMonitor.get(), &m_gammaService, &m_themeService,
-                                   &m_idleInhibitor, &m_dependencyService, &m_compositorPlatform, &m_wallpaper));
+  m_panelManager.registerPanel(
+      "control-center",
+      std::make_unique<ControlCenterPanel>(
+          &m_notificationManager, m_pipewireService.get(), m_mprisService.get(), &m_configService, &m_httpClient,
+          &m_weatherService, m_pipewireSpectrum.get(), m_upowerService.get(), m_powerProfilesService.get(),
+          m_networkService.get(), m_networkSecretAgent.get(), m_bluetoothService.get(), m_bluetoothAgent.get(),
+          m_brightnessService.get(), m_systemMonitor.get(), &m_screenTimeService, &m_gammaService, &m_themeService,
+          &m_idleInhibitor, &m_dependencyService, &m_compositorPlatform, &m_ipcService, &m_wallpaper, &m_calendarService
+      )
+  );
   {
     auto launcherPanel = std::make_unique<LauncherPanel>(&m_configService, &m_asyncTextureCache);
-    launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));
+    launcherPanel->addProvider(std::make_unique<AppProvider>(&m_configService, &m_compositorPlatform));
     launcherPanel->addProvider(std::make_unique<WallpaperProvider>(&m_configService, &m_wayland));
-    launcherPanel->addProvider(std::make_unique<MathProvider>(&m_clipboardService));
+    launcherPanel->addProvider(std::make_unique<WindowProvider>(&m_compositorPlatform));
+    launcherPanel->addProvider(std::make_unique<SessionProvider>(&m_configService, &m_sessionActionRunner));
+    launcherPanel->addProvider(std::make_unique<MathProvider>(&m_clipboardService, &m_configService, &m_httpClient));
     launcherPanel->addProvider(std::make_unique<EmojiProvider>(&m_clipboardService));
     m_panelManager.registerPanel("launcher", std::move(launcherPanel));
   }
@@ -1097,26 +1292,45 @@ void Application::initUi() {
   m_overviewLauncherCapture.setEnabled(m_configService.config().shell.niriOverviewTypeToLaunchEnabled);
   m_overviewLauncherCapture.setOpenLauncherCallback(
       [this](std::string_view initialQuery, wl_output* output, std::string_view sourceBarName) {
+        if (m_panelManager.isOpenPanel("launcher")) {
+          return;
+        }
         m_panelManager.openPanel(
-            "launcher", PanelOpenRequest{.output = output, .context = initialQuery, .sourceBarName = sourceBarName});
-      });
+            "launcher", PanelOpenRequest{.output = output, .context = initialQuery, .sourceBarName = sourceBarName}
+        );
+      }
+  );
   m_compositorPlatform.setOverviewChangeCallback([this]() { m_overviewLauncherCapture.sync(); });
-  m_panelManager.setPanelClosedCallback([this]() { m_overviewLauncherCapture.sync(); });
+  m_panelManager.setPanelOpenedCallback([this]() {
+    m_overviewLauncherCapture.sync();
+    if (m_panelManager.isAttachedOpen()) {
+      m_bar.revealAutoHideForAttachedPanel(
+          m_panelManager.attachedPanelOutput(), m_panelManager.attachedSourceBarName()
+      );
+    }
+  });
+  m_panelManager.setPanelClosedCallback([this]() {
+    m_overviewLauncherCapture.sync();
+    m_bar.reevaluateAutoHide();
+  });
   m_configService.addReloadCallback([this]() {
     m_overviewLauncherCapture.setEnabled(m_configService.config().shell.niriOverviewTypeToLaunchEnabled);
   });
   m_overviewLauncherCapture.sync();
-  m_panelManager.registerPanel("wallpaper",
-                               std::make_unique<WallpaperPanel>(&m_wayland, &m_configService, &m_thumbnailService));
+  m_panelManager.registerPanel(
+      "wallpaper", std::make_unique<WallpaperPanel>(&m_wayland, &m_configService, &m_thumbnailService)
+  );
   std::size_t trayDrawerColumns = 3;
   if (const auto it = m_configService.config().widgets.find("tray"); it != m_configService.config().widgets.end()) {
     trayDrawerColumns =
         static_cast<std::size_t>(std::clamp<std::int64_t>(it->second.getInt("drawer_columns", 3), 1, 5));
   }
   m_panelManager.registerPanel(
-      "tray-drawer", std::make_unique<TrayDrawerPanel>(m_trayService.get(), &m_configService, trayDrawerColumns));
-  m_panelManager.registerPanel(
-      "polkit", std::make_unique<PolkitPanel>(&m_configService, [this]() { return m_polkitAgent.get(); }));
+      "tray-drawer", std::make_unique<TrayDrawerPanel>(m_trayService.get(), &m_configService, trayDrawerColumns)
+  );
+  m_panelManager.registerPanel("polkit", std::make_unique<PolkitPanel>(&m_configService, [this]() {
+                                 return m_polkitAgent.get();
+                               }));
   m_panelManager.registerPanel("setup-wizard", std::make_unique<SetupWizardPanel>(&m_configService, &m_wayland));
 
   if (SetupWizardPanel::isFirstRun(m_configService)) {
@@ -1125,12 +1339,22 @@ void Application::initUi() {
 
   m_notificationToast.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext, &m_httpClient);
   m_configService.addReloadCallback([this]() { m_notificationToast.onConfigReload(); });
+  auto applyNotificationFilterConfig = [this]() {
+    const auto& notification = m_configService.config().notification;
+    m_notificationManager.setBlacklist(notification.blacklist);
+    m_notificationManager.setBlacklistAllowCritical(notification.blacklistAllowCritical);
+    m_notificationManager.setAllowedUrgencies(notification.allowedUrgencies);
+  };
+  applyNotificationFilterConfig();
+  m_configService.addReloadCallback(applyNotificationFilterConfig);
   m_configService.setNotificationManager(&m_notificationManager);
   m_notificationManager.setSoundPlayer(m_soundPlayer.get());
 
   TooltipManager::instance().initialize(m_wayland, &m_renderContext);
   m_osdOverlay.initialize(m_wayland, &m_configService, &m_renderContext);
+  m_configService.addReloadCallback([this]() { m_osdOverlay.onConfigReload(); });
   m_idleGraceOverlay.initialize(m_wayland, &m_renderContext);
+  m_wayland.setIdleCapabilitiesReadyCallback([this]() { m_idleManager.reload(m_configService.config().idle); });
   m_idleManager.initialize(
       m_wayland,
       [this](const std::string& behaviorName, std::chrono::milliseconds fadeIn, std::function<void()> onFadeComplete) {
@@ -1142,11 +1366,25 @@ void Application::initUi() {
       [this](bool userCancelled) {
         (void)userCancelled;
         DeferredCall::callLater([this]() { m_idleGraceOverlay.hide(); });
-      });
-  m_idleManager.setActionRunner([this](const IdleBehaviorConfig& /*behavior*/,
-                                       const IdleActionRequest& action) -> bool { return runIdleAction(action); });
+      }
+  );
+  m_idleManager.setActionRunner(
+      [this](const IdleBehaviorConfig& /*behavior*/, const IdleActionRequest& action) -> bool {
+        return runIdleAction(action);
+      }
+  );
+  m_idleManager.setLiveIdleChangeCallback([this]() {
+    DeferredCall::callLater([this]() { m_settingsWindow.onIdleLiveStatusChanged(); });
+  });
   m_idleManager.reload(m_configService.config().idle);
-  m_configService.addReloadCallback([this]() { m_idleManager.reload(m_configService.config().idle); });
+  m_configService.addReloadCallback(
+      [this]() {
+        if (m_configService.lastChange().idle) {
+          m_idleManager.reload(m_configService.config().idle);
+        }
+      },
+      "idle"
+  );
   m_audioOsd.bindOverlay(m_osdOverlay);
   m_audioOsd.setSoundPlayer(m_soundPlayer.get());
   if (m_pipewireService != nullptr) {
@@ -1160,17 +1398,21 @@ void Application::initUi() {
     m_lockKeysOsd.bindOverlay(m_osdOverlay);
     m_lockKeysOsd.primeFromService(m_lockKeysService);
   }
+  m_keyboardLayoutOsd.bindOverlay(m_osdOverlay);
+  m_keyboardLayoutOsd.prime(m_compositorPlatform);
   m_screenCorners.initialize(m_wayland, &m_configService, &m_renderContext);
   m_screenCorners.onConfigReload();
 
   m_trayMenu.initialize(m_wayland, &m_configService, m_trayService.get(), &m_renderContext);
 
-  m_bar.initialize(m_compositorPlatform, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get(),
-                   m_pipewireService.get(), m_upowerService.get(), m_systemMonitor.get(), m_powerProfilesService.get(),
-                   m_networkService.get(), &m_idleInhibitor, m_mprisService.get(), m_pipewireSpectrum.get(),
-                   &m_httpClient, &m_weatherService, &m_renderContext, &m_gammaService, &m_themeService,
-                   m_bluetoothService.get(), m_brightnessService.get(), kLockKeysEnabled ? &m_lockKeysService : nullptr,
-                   &m_clipboardService, &m_fileWatcher);
+  m_bar.initialize(
+      m_compositorPlatform, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get(),
+      m_pipewireService.get(), m_upowerService.get(), m_systemMonitor.get(), m_powerProfilesService.get(),
+      m_networkService.get(), &m_idleInhibitor, m_mprisService.get(), m_pipewireSpectrum.get(), &m_httpClient,
+      &m_weatherService, &m_renderContext, &m_gammaService, &m_themeService, m_bluetoothService.get(),
+      m_brightnessService.get(), kLockKeysEnabled ? &m_lockKeysService : nullptr, &m_clipboardService, &m_fileWatcher,
+      &m_screenshotService, &m_scriptApi
+  );
   m_bar.setOpenWidgetSettingsCallback([this](std::string barName, std::string widgetName) {
     if (m_panelManager.isOpen()) {
       m_panelManager.closePanel();
@@ -1178,13 +1420,20 @@ void Application::initUi() {
     m_settingsWindow.openToBarWidget(std::move(barName), std::move(widgetName));
   });
   m_panelManager.setAttachedPanelGeometryCallback(
-      [this](wl_output* output, std::optional<AttachedPanelGeometry> geometry) {
-        m_bar.setAttachedPanelGeometry(output, geometry);
-      });
-  m_panelManager.setClickShieldExcludeRectsProvider(
-      [this](wl_output* output) { return m_bar.surfaceRectsForOutput(output); });
+      [this](wl_output* output, std::string_view barName, std::optional<AttachedPanelGeometry> geometry) {
+        m_bar.setAttachedPanelGeometry(output, barName, geometry);
+      }
+  );
+  m_panelManager.setClickShieldExcludeRectsProvider([this](wl_output* output) {
+    return m_bar.surfaceRectsForOutput(output);
+  });
   m_panelManager.setFocusGrabBarSurfacesProvider([this]() { return m_bar.allBarSurfaces(); });
-  m_bar.setAutoHideSuppressionCallback([this]() { return m_trayMenu.isOpen() || m_panelManager.isAttachedOpen(); });
+  m_bar.setAutoHideSuppressionCallback([this](const BarInstance& instance) {
+    if (m_trayMenu.isOpen()) {
+      return true;
+    }
+    return m_panelManager.isAttachedOpen() && m_panelManager.attachedSourceBarName() == instance.barConfig.name;
+  });
   // When config reloads, refresh any open panel: bar-driven attached decoration restyle and
   // shell-driven compositor blur.
   m_configService.addReloadCallback([this]() { m_panelManager.onConfigReloaded(); });
@@ -1194,17 +1443,22 @@ void Application::initUi() {
       [this](wl_surface* surface) { return m_panelManager.popupParentContextForSurface(surface); },
       [this](wl_surface* surface) { m_panelManager.beginAttachedPopup(surface); },
       [this](wl_surface* surface) { m_panelManager.endAttachedPopup(surface); },
-      [this]() { return m_panelManager.fallbackPopupParentContext(); });
+      [this]() { return m_panelManager.fallbackPopupParentContext(); }
+  );
   m_layerPopupHosts.registerHost(
       [this](wl_surface* surface) { return m_bar.popupParentContextForSurface(surface); },
       [this](wl_surface* surface) { m_bar.beginAttachedPopup(surface); },
       [this](wl_surface* surface) { m_bar.endAttachedPopup(surface); },
       [this]() {
         return m_bar.preferredPopupParentContext(
-            m_compositorPlatform.preferredInteractiveOutput(std::chrono::milliseconds(1200)));
-      });
+            m_compositorPlatform.preferredInteractiveOutput(std::chrono::milliseconds(1200))
+        );
+      }
+  );
   m_layerPopupHosts.registerHost(
-      [this](wl_surface* surface) { return m_settingsWindow.popupParentContextForSurface(surface); });
+      [this](wl_surface* surface) { return m_settingsWindow.popupParentContextForSurface(surface); }, {}, {},
+      [this]() { return m_settingsWindow.fallbackPopupParentContext(); }
+  );
 
   m_colorPickerDialogPopup.initialize(m_wayland, m_configService, m_renderContext, m_layerPopupHosts);
   ColorPickerDialog::setPresenter(&m_colorPickerDialogPopup);
@@ -1216,45 +1470,62 @@ void Application::initUi() {
   FileDialog::setPresenter(&m_fileDialogPopup);
 
   m_dock.initialize(m_compositorPlatform, &m_configService, &m_renderContext);
-  m_desktopWidgetsController.initialize(m_wayland, &m_configService, m_pipewireSpectrum.get(), &m_weatherService,
-                                        &m_renderContext, m_mprisService.get(), &m_httpClient, m_systemMonitor.get());
+  m_lockscreenWidgetsController.initialize(
+      m_wayland, &m_configService, m_lockScreen, m_bar, m_dock, &m_desktopWidgetsController, m_pipewireSpectrum.get(),
+      &m_weatherService, &m_renderContext, m_mprisService.get(), &m_httpClient, m_systemMonitor.get()
+  );
+  m_desktopWidgetsController.initialize(
+      m_wayland, &m_configService, m_pipewireSpectrum.get(), &m_weatherService, &m_renderContext, m_mprisService.get(),
+      &m_httpClient, m_systemMonitor.get(), &m_lockscreenWidgetsController
+  );
   m_iconThemePollSource.setChangeCallback([this]() { onIconThemeChanged(); });
 
   std::string lastShellFontFamily = m_configService.config().shell.fontFamily;
-  m_configService.addReloadCallback([this, lastShellFontFamily]() mutable {
-    const std::string& newShellFontFamily = m_configService.config().shell.fontFamily;
-    if (newShellFontFamily == lastShellFontFamily) {
-      return;
-    }
+  m_configService.addReloadCallback(
+      [this, lastShellFontFamily]() mutable {
+        const std::string& newShellFontFamily = m_configService.config().shell.fontFamily;
+        if (newShellFontFamily == lastShellFontFamily) {
+          return;
+        }
 
-    lastShellFontFamily = newShellFontFamily;
-    m_renderContext.setTextFontFamily(newShellFontFamily);
-    m_bar.requestLayout();
-    m_dock.requestLayout();
-    m_desktopWidgetsController.requestLayout();
-    m_panelManager.requestLayout();
-    m_notificationToast.requestLayout();
-    m_lockScreen.onFontChanged();
-    m_osdOverlay.requestLayout();
-    m_trayMenu.onFontChanged();
-    m_backdrop.onFontChanged();
-    m_settingsWindow.onFontChanged();
-    m_colorPickerDialogPopup.requestLayout();
-    m_glyphPickerDialogPopup.requestLayout();
-    m_fileDialogPopup.requestLayout();
-  });
+        lastShellFontFamily = newShellFontFamily;
+        text::invalidateFontWeightCatalogCache();
+        m_renderContext.setTextFontFamily(newShellFontFamily);
+        m_bar.requestLayout();
+        m_dock.requestLayout();
+        m_desktopWidgetsController.requestLayout();
+        m_lockscreenWidgetsController.requestLayout();
+        m_panelManager.requestLayout();
+        m_notificationToast.requestLayout();
+        m_lockScreen.onFontChanged();
+        m_osdOverlay.requestLayout();
+        m_trayMenu.onFontChanged();
+        m_backdrop.onFontChanged();
+        m_settingsWindow.onFontChanged();
+        m_colorPickerDialogPopup.requestLayout();
+        m_glyphPickerDialogPopup.requestLayout();
+        m_fileDialogPopup.requestLayout();
+      },
+      "shell-font-family"
+  );
 
   m_timeService.setTickSecondCallback([this]() {
     m_wallpaper.onSecondTick();
     if (m_lockScreen.isActive()) {
+      m_lockscreenWidgetsController.onSecondTick();
       if (formatLocalTime("{:%S}") == "00") {
         m_lockScreen.onSecondTick();
       }
     } else {
       m_bar.onSecondTick();
       m_desktopWidgetsController.onSecondTick();
+      m_lockscreenWidgetsController.onSecondTick();
       m_settingsWindow.onSecondTick();
+      if (m_configService.config().osd.keyboardLayout) {
+        m_keyboardLayoutOsd.onLayoutChanged(m_compositorPlatform);
+      }
     }
+    m_idleManager.onSecondTick();
   });
 
   if (m_pipewireService != nullptr) {
@@ -1302,7 +1573,8 @@ void Application::initIpc() {
         json += "\n}\n";
         return json;
       },
-      "status", "Print current state as JSON");
+      "status", "Print current state as JSON"
+  );
 
   auto applyNotificationDnd = [this](bool enabled) {
     m_notificationManager.setDoNotDisturb(enabled);
@@ -1314,36 +1586,66 @@ void Application::initIpc() {
 
   m_ipcService.registerHandler(
       "notification-dnd-set",
-      [applyNotificationDnd](const std::string& args) -> std::string {
+      [this, applyNotificationDnd](const std::string& args) -> std::string {
         const auto parts = noctalia::ipc::splitWords(args);
         if (parts.size() != 1) {
           return "error: notification-dnd-set requires <on|off|true|false|1|0>\n";
         }
         const std::string value = parts[0];
+        std::optional<bool> nextState;
         if (value == "on" || value == "true" || value == "1") {
-          applyNotificationDnd(true);
+          nextState = true;
+        } else if (value == "off" || value == "false" || value == "0") {
+          nextState = false;
+        } else {
+          return "error: invalid value (use on/off, true/false, 1/0)\n";
+        }
+
+        const bool currentState = m_notificationManager.doNotDisturb();
+        if (currentState == *nextState) {
           return "ok\n";
         }
-        if (value == "off" || value == "false" || value == "0") {
-          applyNotificationDnd(false);
-          return "ok\n";
+        if (*nextState) {
+          notify::info(
+              "Noctalia", i18n::tr("notifications.internal.dnd"), i18n::tr("notifications.internal.dnd-enabled")
+          );
         }
-        return "error: invalid value (use on/off, true/false, 1/0)\n";
+        applyNotificationDnd(*nextState);
+        if (!*nextState) {
+          notify::info(
+              "Noctalia", i18n::tr("notifications.internal.dnd"), i18n::tr("notifications.internal.dnd-disabled")
+          );
+        }
+        return "ok\n";
       },
-      "notification-dnd-set <on|off|true|false|1|0>", "Set notification Do Not Disturb state");
+      "notification-dnd-set <on|off|true|false|1|0>", "Set notification Do Not Disturb state"
+  );
 
   m_ipcService.registerHandler(
       "notification-dnd-toggle",
       [this, applyNotificationDnd](const std::string&) -> std::string {
-        applyNotificationDnd(!m_notificationManager.doNotDisturb());
+        const bool nextState = !m_notificationManager.doNotDisturb();
+        if (nextState) {
+          notify::info(
+              "Noctalia", i18n::tr("notifications.internal.dnd"), i18n::tr("notifications.internal.dnd-enabled")
+          );
+        }
+        applyNotificationDnd(nextState);
+        if (!nextState) {
+          notify::info(
+              "Noctalia", i18n::tr("notifications.internal.dnd"), i18n::tr("notifications.internal.dnd-disabled")
+          );
+        }
         return "ok\n";
       },
-      "notification-dnd-toggle", "Toggle notification Do Not Disturb state");
+      "notification-dnd-toggle", "Toggle notification Do Not Disturb state"
+  );
 
   m_ipcService.registerHandler(
       "notification-dnd-status",
       [this](const std::string&) -> std::string { return m_notificationManager.doNotDisturb() ? "on\n" : "off\n"; },
-      "notification-dnd-status", "Print notification Do Not Disturb state");
+      "notification-dnd-status", "Print notification Do Not Disturb state"
+  );
 
   m_ipcService.registerHandler(
       "notification-clear-active",
@@ -1361,7 +1663,8 @@ void Application::initIpc() {
         }
         return "ok\n";
       },
-      "notification-clear-active", "Dismiss all currently active notifications");
+      "notification-clear-active", "Dismiss all currently active notifications"
+  );
 
   m_ipcService.registerHandler(
       "notification-clear-history",
@@ -1372,7 +1675,8 @@ void Application::initIpc() {
         }
         return "ok\n";
       },
-      "notification-clear-history", "Clear notification history");
+      "notification-clear-history", "Clear notification history"
+  );
 
   m_ipcService.registerHandler(
       "dpms-on",
@@ -1382,7 +1686,8 @@ void Application::initIpc() {
         }
         return "ok\n";
       },
-      "dpms-on", "Turn monitors on");
+      "dpms-on", "Turn monitors on"
+  );
 
   m_ipcService.registerHandler(
       "dpms-off",
@@ -1392,42 +1697,55 @@ void Application::initIpc() {
         }
         return "ok\n";
       },
-      "dpms-off", "Turn monitors off");
+      "dpms-off", "Turn monitors off"
+  );
 
-  m_ipcService.registerHandler(
-      "suspend",
-      [](const std::string&) -> std::string {
-        if (!process::launchFirstAvailable({{"systemctl", "suspend"}, {"loginctl", "suspend"}})) {
-          return "error: failed to suspend\n";
-        }
-        return "ok\n";
-      },
-      "suspend", "Suspend the system");
+  registerSessionIpc(m_ipcService, m_sessionActionRunner, m_lockScreen);
 
   if (m_powerProfilesService != nullptr) {
     m_powerProfilesService->registerIpc(m_ipcService);
   }
 
   if (m_brightnessService != nullptr) {
-    m_brightnessService->registerIpc(m_ipcService,
-                                     [this]() { m_brightnessOsd.suppressFor(std::chrono::milliseconds(250)); });
+    m_brightnessService->registerIpc(m_ipcService, [this]() {
+      m_brightnessOsd.suppressFor(std::chrono::milliseconds(250));
+    });
   }
+  m_ipcService.registerHandler(
+      "brightness-osd",
+      [this](const std::string& args) -> std::string {
+        const auto parts = noctalia::ipc::splitWords(args);
+        if (parts.size() != 1) {
+          return "error: brightness-osd requires <value>\n";
+        }
+        const auto value = noctalia::ipc::parseNormalizedOrPercent(parts[0]);
+        if (!value.has_value()) {
+          return "error: invalid brightness value (use percent like 65 or 65%, or normalized like 0.65)\n";
+        }
+        m_brightnessOsd.showValue(*value);
+        return "ok\n";
+      },
+      "brightness-osd <value>", "Show brightness OSD without changing brightness"
+  );
   m_configService.registerIpc(m_ipcService);
   m_bar.registerIpc(m_ipcService);
   m_desktopWidgetsController.registerIpc(m_ipcService);
-  m_lockScreen.registerIpc(m_ipcService);
+  m_lockscreenWidgetsController.registerIpc(m_ipcService);
   m_panelManager.registerIpc(m_ipcService);
   m_idleInhibitor.registerIpc(m_ipcService);
   m_gammaService.registerIpc(m_ipcService);
   m_themeService.registerIpc(m_ipcService);
+  m_templateApplyService.registerIpc(m_ipcService);
   m_dock.registerIpc(m_ipcService);
   m_wallpaper.registerIpc(m_ipcService);
+  greeter::registerIpc(m_ipcService, m_configService, [this]() { return m_themeService.resolvedMode(); });
   if (m_mprisService) {
     m_mprisService->registerIpc(m_ipcService);
   }
   if (m_pipewireService) {
     m_pipewireService->registerIpc(m_ipcService, m_configService);
   }
+  m_screenshotService.registerIpc(m_ipcService, m_configService);
 }
 
 bool Application::runUserCommand(const std::string& command) {
@@ -1476,17 +1794,15 @@ bool Application::runIdleAction(const IdleActionRequest& action) {
   case IdleActionKind::Command:
     return runUserCommand(action.command);
   case IdleActionKind::Lock:
-    return runUserCommand("noctalia:screen-lock");
+    return m_sessionActionRunner.lock();
   case IdleActionKind::ScreenOff:
-    return runUserCommand("noctalia:dpms-off");
+    return m_compositorPlatform.setOutputPower(false);
   case IdleActionKind::ScreenOn:
-    return runUserCommand("noctalia:dpms-on");
+    return m_compositorPlatform.setOutputPower(true);
   case IdleActionKind::Suspend:
-    if (action.lockBeforeSuspend) {
-      m_lockScreen.runAfterSessionLocked([this]() { (void)runUserCommand("noctalia:suspend"); });
-      return true;
-    }
-    return runUserCommand("noctalia:suspend");
+    return m_sessionActionRunner.requestSuspendDetached();
+  case IdleActionKind::LockAndSuspend:
+    return m_sessionActionRunner.lockThenSuspendDetached();
   }
   return false;
 }
@@ -1499,29 +1815,43 @@ void Application::onIconThemeChanged() {
   m_notificationToast.requestLayout();
 }
 
+void Application::onGraphicsReset(RenderGraphicsResetStatus status) {
+  (void)status;
+  m_sharedTextureCache.reloadResidentTextures();
+  m_asyncTextureCache.reloadResidentTextures();
+  m_thumbnailService.invalidateGpuResources(m_renderContext.backend().textureManager());
+  m_wallpaper.onGpuResourcesInvalidated();
+  m_backdrop.onGpuResourcesInvalidated();
+  m_lockScreen.onGpuResourcesInvalidated();
+  m_trayMenu.requestLayout();
+  m_settingsWindow.requestRedraw();
+  m_screenCorners.requestRedraw();
+  requestAllSurfacesRedraw();
+}
+
+void Application::requestAllSurfacesRedraw() {
+  m_bar.requestRedraw();
+  m_dock.requestRedraw();
+  m_desktopWidgetsController.requestRedraw();
+  m_panelManager.requestRedraw();
+  m_notificationToast.requestRedraw();
+  m_osdOverlay.requestRedraw();
+  m_colorPickerDialogPopup.requestRedraw();
+  m_glyphPickerDialogPopup.requestRedraw();
+  m_fileDialogPopup.requestRedraw();
+}
+
 void Application::onUpowerStateChangedForHooks() {
   if (m_upowerService == nullptr) {
     return;
   }
-  const UPowerState next = m_upowerService->state();
-  if (!m_prevUpowerForHooks.has_value()) {
-    m_prevUpowerForHooks = next;
-    return;
-  }
-  const UPowerState prev = *m_prevUpowerForHooks;
-  if (prev.state != next.state) {
-    m_hookManager.fire(HookKind::BatteryStateChanged, {{"NOCTALIA_BATTERY_STATE", batteryStateLabel(next.state)}});
-  }
-  const std::int32_t thr = m_configService.config().hooks.batteryLowPercentThreshold;
-  if (thr > 0 && next.isPresent) {
-    const bool wasAbove = !prev.isPresent || prev.percentage > static_cast<double>(thr);
-    const bool isAtOrBelow = next.percentage <= static_cast<double>(thr);
-    if (wasAbove && isAtOrBelow) {
-      m_hookManager.fire(HookKind::BatteryUnderThreshold,
-                         {{"NOCTALIA_BATTERY_PERCENT", std::to_string(static_cast<int>(next.percentage))}});
+  for (const auto& event : m_batteryHookState.update(m_upowerService->state())) {
+    if (event.env.empty()) {
+      m_hookManager.fire(event.kind);
+    } else {
+      m_hookManager.fire(event.kind, event.env);
     }
   }
-  m_prevUpowerForHooks = next;
 }
 
 void Application::onNetworkStateChangedForEvents(const NetworkState& state, NetworkChangeOrigin origin) {
@@ -1533,11 +1863,13 @@ void Application::onNetworkStateChangedForEvents(const NetworkState& state, Netw
   if (prev != state.wirelessEnabled) {
     if (origin != NetworkChangeOrigin::Noctalia) {
       if (state.wirelessEnabled) {
-        m_notificationManager.addInternal(i18n::tr("notifications.internal.network"),
-                                          i18n::tr("notifications.internal.wifi-enabled"), "");
+        m_notificationManager.addInternal(
+            i18n::tr("notifications.internal.network"), i18n::tr("notifications.internal.wifi-enabled"), ""
+        );
       } else {
-        m_notificationManager.addInternal(i18n::tr("notifications.internal.network"),
-                                          i18n::tr("notifications.internal.wifi-disabled"), "");
+        m_notificationManager.addInternal(
+            i18n::tr("notifications.internal.network"), i18n::tr("notifications.internal.wifi-disabled"), ""
+        );
       }
     }
     if (state.wirelessEnabled) {
@@ -1558,11 +1890,13 @@ void Application::onBluetoothStateChangedForEvents(const BluetoothState& state, 
   if (prev != state.powered) {
     if (origin != BluetoothStateChangeOrigin::Noctalia) {
       if (state.powered) {
-        m_notificationManager.addInternal(i18n::tr("notifications.internal.bluetooth"),
-                                          i18n::tr("notifications.internal.bluetooth-enabled"), "");
+        m_notificationManager.addInternal(
+            i18n::tr("notifications.internal.bluetooth"), i18n::tr("notifications.internal.bluetooth-enabled"), ""
+        );
       } else {
-        m_notificationManager.addInternal(i18n::tr("notifications.internal.bluetooth"),
-                                          i18n::tr("notifications.internal.bluetooth-disabled"), "");
+        m_notificationManager.addInternal(
+            i18n::tr("notifications.internal.bluetooth"), i18n::tr("notifications.internal.bluetooth-disabled"), ""
+        );
       }
     }
     if (state.powered) {
@@ -1584,10 +1918,12 @@ void Application::onPowerProfileChangedForEvents(const PowerProfilesState& state
   }
   const std::string prev = *m_prevPowerProfileActiveForEvents;
   if (prev != state.activeProfile) {
-    m_hookManager.fire(HookKind::PowerProfileChanged,
-                       {{"NOCTALIA_POWER_PROFILE", state.activeProfile},
-                        {"NOCTALIA_POWER_PROFILE_PREVIOUS", prev},
-                        {"NOCTALIA_POWER_PROFILE_ORIGIN", std::string(powerProfileOriginName(origin))}});
+    m_hookManager.fire(
+        HookKind::PowerProfileChanged,
+        {{"NOCTALIA_POWER_PROFILE", state.activeProfile},
+         {"NOCTALIA_POWER_PROFILE_PREVIOUS", prev},
+         {"NOCTALIA_POWER_PROFILE_ORIGIN", std::string(powerProfileOriginName(origin))}}
+    );
   }
   m_prevPowerProfileActiveForEvents = state.activeProfile;
 }
@@ -1631,7 +1967,9 @@ std::vector<PollSource*> Application::currentPollSources() {
   sources.push_back(&m_fileWatchPollSource);
   sources.push_back(&m_ipcPollSource);
   sources.push_back(&m_httpClientPollSource);
+  sources.push_back(&m_locationPollSource);
   sources.push_back(&m_weatherPollSource);
+  sources.push_back(&m_calendarPollSource);
   sources.push_back(&m_thumbnailService);
   sources.push_back(&m_asyncTextureCache);
   return sources;

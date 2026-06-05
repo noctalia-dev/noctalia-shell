@@ -24,7 +24,8 @@
 
 namespace {
 
-  constexpr std::size_t kMaxHistoryEntries = 50;
+  constexpr std::size_t kMinHistoryMaxEntries = 10;
+  constexpr std::size_t kMaxHistoryMaxEntries = 200;
   constexpr std::size_t kMaxHistoryBytes = 64u * 1024u * 1024u;
   constexpr std::size_t kMaxEntryBytes = 10u * 1024u * 1024u;
   constexpr std::size_t kPreviewBytes = 200;
@@ -120,9 +121,10 @@ namespace {
   }
 
   int addExtDeviceListener(void* device, const void* listener, void* data) {
-    return ext_data_control_device_v1_add_listener(static_cast<ext_data_control_device_v1*>(device),
-                                                   static_cast<const ext_data_control_device_v1_listener*>(listener),
-                                                   data);
+    return ext_data_control_device_v1_add_listener(
+        static_cast<ext_data_control_device_v1*>(device),
+        static_cast<const ext_data_control_device_v1_listener*>(listener), data
+    );
   }
 
   void* createExtDataSource(void* manager) {
@@ -134,9 +136,10 @@ namespace {
   }
 
   int addExtSourceListener(void* source, const void* listener, void* data) {
-    return ext_data_control_source_v1_add_listener(static_cast<ext_data_control_source_v1*>(source),
-                                                   static_cast<const ext_data_control_source_v1_listener*>(listener),
-                                                   data);
+    return ext_data_control_source_v1_add_listener(
+        static_cast<ext_data_control_source_v1*>(source),
+        static_cast<const ext_data_control_source_v1_listener*>(listener), data
+    );
   }
 
   void extSourceOffer(void* source, const char* mimeType) {
@@ -144,8 +147,9 @@ namespace {
   }
 
   void extDeviceSetSelection(void* device, void* source) {
-    ext_data_control_device_v1_set_selection(static_cast<ext_data_control_device_v1*>(device),
-                                             static_cast<ext_data_control_source_v1*>(source));
+    ext_data_control_device_v1_set_selection(
+        static_cast<ext_data_control_device_v1*>(device), static_cast<ext_data_control_source_v1*>(source)
+    );
   }
 
   void destroyExtOffer(void* offer) {
@@ -153,9 +157,10 @@ namespace {
   }
 
   int addExtOfferListener(void* offer, const void* listener, void* data) {
-    return ext_data_control_offer_v1_add_listener(static_cast<ext_data_control_offer_v1*>(offer),
-                                                  static_cast<const ext_data_control_offer_v1_listener*>(listener),
-                                                  data);
+    return ext_data_control_offer_v1_add_listener(
+        static_cast<ext_data_control_offer_v1*>(offer),
+        static_cast<const ext_data_control_offer_v1_listener*>(listener), data
+    );
   }
 
   void extOfferReceive(void* offer, const char* mimeType, int fd) {
@@ -180,9 +185,10 @@ namespace {
   }
 
   int addWlrDeviceListener(void* device, const void* listener, void* data) {
-    return zwlr_data_control_device_v1_add_listener(static_cast<zwlr_data_control_device_v1*>(device),
-                                                    static_cast<const zwlr_data_control_device_v1_listener*>(listener),
-                                                    data);
+    return zwlr_data_control_device_v1_add_listener(
+        static_cast<zwlr_data_control_device_v1*>(device),
+        static_cast<const zwlr_data_control_device_v1_listener*>(listener), data
+    );
   }
 
   void* createWlrDataSource(void* manager) {
@@ -194,9 +200,10 @@ namespace {
   }
 
   int addWlrSourceListener(void* source, const void* listener, void* data) {
-    return zwlr_data_control_source_v1_add_listener(static_cast<zwlr_data_control_source_v1*>(source),
-                                                    static_cast<const zwlr_data_control_source_v1_listener*>(listener),
-                                                    data);
+    return zwlr_data_control_source_v1_add_listener(
+        static_cast<zwlr_data_control_source_v1*>(source),
+        static_cast<const zwlr_data_control_source_v1_listener*>(listener), data
+    );
   }
 
   void wlrSourceOffer(void* source, const char* mimeType) {
@@ -204,8 +211,9 @@ namespace {
   }
 
   void wlrDeviceSetSelection(void* device, void* source) {
-    zwlr_data_control_device_v1_set_selection(static_cast<zwlr_data_control_device_v1*>(device),
-                                              static_cast<zwlr_data_control_source_v1*>(source));
+    zwlr_data_control_device_v1_set_selection(
+        static_cast<zwlr_data_control_device_v1*>(device), static_cast<zwlr_data_control_source_v1*>(source)
+    );
   }
 
   void destroyWlrOffer(void* offer) {
@@ -213,9 +221,10 @@ namespace {
   }
 
   int addWlrOfferListener(void* offer, const void* listener, void* data) {
-    return zwlr_data_control_offer_v1_add_listener(static_cast<zwlr_data_control_offer_v1*>(offer),
-                                                   static_cast<const zwlr_data_control_offer_v1_listener*>(listener),
-                                                   data);
+    return zwlr_data_control_offer_v1_add_listener(
+        static_cast<zwlr_data_control_offer_v1*>(offer),
+        static_cast<const zwlr_data_control_offer_v1_listener*>(listener), data
+    );
   }
 
   void wlrOfferReceive(void* offer, const char* mimeType, int fd) {
@@ -312,8 +321,8 @@ namespace {
     static_cast<ClipboardService*>(data)->handleDeviceFinished();
   }
 
-  void handleWlrPrimarySelection(void* data, zwlr_data_control_device_v1* /*device*/,
-                                 zwlr_data_control_offer_v1* offer) {
+  void
+  handleWlrPrimarySelection(void* data, zwlr_data_control_device_v1* /*device*/, zwlr_data_control_offer_v1* offer) {
     static_cast<ClipboardService*>(data)->handlePrimarySelection(offer);
   }
 
@@ -390,6 +399,21 @@ void ClipboardService::setHistoryRetentionEnabled(bool enabled) {
   ++m_changeSerial;
   notifyChanged();
 }
+
+void ClipboardService::setMaxHistoryEntries(std::size_t maxEntries) {
+  maxEntries = std::clamp(maxEntries, kMinHistoryMaxEntries, kMaxHistoryMaxEntries);
+  if (m_maxHistoryEntries == maxEntries) {
+    return;
+  }
+  m_maxHistoryEntries = maxEntries;
+  if (!m_historyRetention) {
+    return;
+  }
+  trimHistoryToBudget();
+  ++m_changeSerial;
+  notifyChanged();
+}
+
 ClipboardService::~ClipboardService() { cleanup(); }
 
 const DataControlOps* extDataControlOps() { return &kExtDataControlOps; }
@@ -571,6 +595,13 @@ bool ClipboardService::copyText(std::string text, std::string mimeType) {
   return copyData({std::move(mimeType)}, std::move(data));
 }
 
+bool ClipboardService::copyImagePng(std::vector<std::uint8_t> png) {
+  if (png.empty()) {
+    return false;
+  }
+  return copyData({"image/png"}, std::move(png));
+}
+
 bool ClipboardService::copyEntry(const ClipboardEntry& entry) {
   if (entry.data.empty() || entry.dataMimeType.empty()) {
     return false;
@@ -670,6 +701,27 @@ bool ClipboardService::removeHistoryEntry(std::size_t index) {
   return true;
 }
 
+void ClipboardService::clearUnpinnedHistory() {
+  const std::size_t firstUnpinned = pinnedCount();
+  if (firstUnpinned >= m_history.size()) {
+    return;
+  }
+
+  std::size_t removedBytes = 0;
+  for (std::size_t i = firstUnpinned; i < m_history.size(); ++i) {
+    removedBytes += m_history[i].byteSize;
+  }
+  m_history.erase(m_history.begin() + static_cast<std::ptrdiff_t>(firstUnpinned), m_history.end());
+  if (m_historyBytes >= removedBytes) {
+    m_historyBytes -= removedBytes;
+  } else {
+    m_historyBytes = 0;
+  }
+  ++m_changeSerial;
+  persistHistory();
+  notifyChanged();
+}
+
 void ClipboardService::clearHistory() {
   if (m_history.empty()) {
     return;
@@ -703,11 +755,13 @@ bool ClipboardService::copyData(std::vector<std::string> mimeTypes, std::vector<
     m_ops->sourceOffer(source, mimeType.c_str());
   }
   auto payload = std::make_shared<std::vector<std::uint8_t>>(std::move(data));
-  m_outgoingSources.push_back(OutgoingSource{
-      .source = source,
-      .mimeTypes = std::move(mimeTypes),
-      .data = std::move(payload),
-  });
+  m_outgoingSources.push_back(
+      OutgoingSource{
+          .source = source,
+          .mimeTypes = std::move(mimeTypes),
+          .data = std::move(payload),
+      }
+  );
   m_ops->deviceSetSelection(m_device, source);
   return true;
 }
@@ -783,10 +837,12 @@ void ClipboardService::handleDataOffer(void* offer) {
     return;
   }
 
-  m_offers.push_back(OfferState{
-      .offer = offer,
-      .mimeTypes = {},
-  });
+  m_offers.push_back(
+      OfferState{
+          .offer = offer,
+          .mimeTypes = {},
+      }
+  );
   if (m_ops->addOfferListener(offer, offerListenerFor(*m_ops), this) != 0) {
     kLog.warn("failed to attach clipboard offer listener");
   }
@@ -1002,8 +1058,11 @@ void ClipboardService::addToHistory(ClipboardEntry entry) {
     // History is disabled: retain only the live selection in memory (so paste
     // still works) and never persist. Ignore the self-copy echo of unchanged
     // content to avoid needless churn.
-    if (!m_history.empty() && !entry.data.empty() && m_history.front().byteSize == entry.byteSize &&
-        m_history.front().data == entry.data && m_history.front().dataMimeType == entry.dataMimeType) {
+    if (!m_history.empty()
+        && !entry.data.empty()
+        && m_history.front().byteSize == entry.byteSize
+        && m_history.front().data == entry.data
+        && m_history.front().dataMimeType == entry.dataMimeType) {
       return;
     }
     m_history.clear();
@@ -1152,8 +1211,9 @@ bool ClipboardService::persistHistory() {
         if (!payload.is_open()) {
           throw std::runtime_error("failed to open clipboard payload for writing");
         }
-        payload.write(reinterpret_cast<const char*>(entry.data.data()),
-                      static_cast<std::streamsize>(entry.data.size()));
+        payload.write(
+            reinterpret_cast<const char*>(entry.data.data()), static_cast<std::streamsize>(entry.data.size())
+        );
         payload.flush();
         if (!payload.good()) {
           throw std::runtime_error("failed to write clipboard payload");
@@ -1220,8 +1280,9 @@ void ClipboardService::trimHistoryToBudget() {
     }
   }
 
-  while ((unpinnedCount > kMaxHistoryEntries || unpinnedBytes > kMaxHistoryBytes) && !m_history.empty() &&
-         !m_history.back().pinned) {
+  while ((unpinnedCount > m_maxHistoryEntries || unpinnedBytes > kMaxHistoryBytes)
+         && !m_history.empty()
+         && !m_history.back().pinned) {
     const std::size_t removedBytes = m_history.back().byteSize;
     unpinnedBytes -= removedBytes;
     --unpinnedCount;
@@ -1349,12 +1410,14 @@ bool ClipboardService::queueOutgoingWrite(void* source, int fd, std::shared_ptr<
     return false;
   }
 
-  m_activeWrites.push_back(ActiveWrite{
-      .fd = fd,
-      .source = source,
-      .data = std::move(data),
-      .offset = 0,
-  });
+  m_activeWrites.push_back(
+      ActiveWrite{
+          .fd = fd,
+          .source = source,
+          .data = std::move(data),
+          .offset = 0,
+      }
+  );
   drainOutgoingWrite(m_activeWrites.size() - 1);
   return true;
 }

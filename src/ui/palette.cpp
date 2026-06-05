@@ -1,11 +1,13 @@
 #include "ui/palette.h"
 
+#include "render/core/color.h"
 #include "theme/builtin_palettes.h"
 #include "util/string_utils.h"
 
 #include <string>
 
 Palette palette = noctalia::theme::findBuiltinPalette("Noctalia")->dark.palette;
+bool g_resolvedThemeLight = false;
 
 namespace {
 
@@ -94,6 +96,12 @@ Color resolveColorSpec(const ColorSpec& color) noexcept {
   resolved.a *= color.alpha;
   return resolved;
 }
+
+bool isLightPalette() noexcept { return relativeLuminance(palette.surface) > 0.179f; }
+
+bool isResolvedLightTheme() noexcept { return g_resolvedThemeLight; }
+
+void setResolvedThemeLight(bool light) noexcept { g_resolvedThemeLight = light; }
 
 Signal<>& paletteChanged() {
   static Signal<> signal;

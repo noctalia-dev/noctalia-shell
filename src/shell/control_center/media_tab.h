@@ -21,14 +21,16 @@ class MprisService;
 class PipeWireSpectrum;
 class RenderContext;
 class Slider;
-class AudioSpectrum;
+class AudioVisualizer;
 class ConfigService;
 class WaylandConnection;
 
 class MediaTab : public Tab {
 public:
-  MediaTab(MprisService* mpris, HttpClient* httpClient, PipeWireSpectrum* spectrum, ConfigService* config,
-           WaylandConnection* wayland, RenderContext* renderContext);
+  MediaTab(
+      MprisService* mpris, HttpClient* httpClient, PipeWireSpectrum* spectrum, ConfigService* config,
+      WaylandConnection* wayland, RenderContext* renderContext
+  );
   ~MediaTab() override;
 
   std::unique_ptr<Flex> create() override;
@@ -41,6 +43,7 @@ private:
   void doUpdate(Renderer& renderer) override;
   void refresh(Renderer& renderer);
   void clearArt(Renderer& renderer);
+  void commitPendingSeek(double valueSeconds);
 
   void openPlayerMenu();
 
@@ -62,7 +65,7 @@ private:
   Flex* m_mediaColumn = nullptr;
   Flex* m_visualizerColumn = nullptr;
   Flex* m_visualizerBody = nullptr;
-  AudioSpectrum* m_visualizerSpectrum = nullptr;
+  AudioVisualizer* m_visualizerSpectrum = nullptr;
   Image* m_artwork = nullptr;
   Flex* m_artworkRow = nullptr;
   Flex* m_nowCard = nullptr;
@@ -88,7 +91,7 @@ private:
   std::int64_t m_pendingSeekUs = -1;
   std::string m_pendingSeekBusName;
   std::chrono::steady_clock::time_point m_pendingSeekUntil{};
-  bool m_syncingPlayerSelect = false;
+  std::chrono::steady_clock::time_point m_progressSettleUntil{};
   bool m_playerMenuOpen = false;
   std::vector<std::string> m_playerBusNames;
   std::unordered_set<std::string> m_pendingArtDownloads;
@@ -96,6 +99,7 @@ private:
   std::string m_positionTrackId;
   std::string m_positionTrackSignature;
   std::int64_t m_positionUs = 0;
+  std::int64_t m_lastTrackLengthUs = 0;
   std::chrono::steady_clock::time_point m_positionSampleAt{};
   std::optional<MprisPlayerInfo> m_lastActiveSnapshot;
   std::chrono::steady_clock::time_point m_lastActiveSeenAt{};

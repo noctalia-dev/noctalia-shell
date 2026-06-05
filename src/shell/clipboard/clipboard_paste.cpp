@@ -33,9 +33,9 @@ namespace clipboard_paste {
       case ClipboardAutoPasteMode::Off:
         return {};
       case ClipboardAutoPasteMode::Auto:
-        return isImage ? std::vector<std::string>{"wtype", "-M", "ctrl", "-k", "v", "-m", "ctrl"}
-                       : std::vector<std::string>{"wtype", "-M", "ctrl",  "-M", "shift", "-k",
-                                                  "v",     "-m", "shift", "-m", "ctrl"};
+        return isImage
+            ? std::vector<std::string>{"wtype", "-M", "ctrl", "-k", "v", "-m", "ctrl"}
+            : std::vector<std::string>{"wtype", "-M", "ctrl", "-M", "shift", "-k", "v", "-m", "shift", "-m", "ctrl"};
       case ClipboardAutoPasteMode::CtrlV:
         return {"wtype", "-M", "ctrl", "-k", "v", "-m", "ctrl"};
       case ClipboardAutoPasteMode::CtrlShiftV:

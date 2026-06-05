@@ -2,8 +2,10 @@
 
 #include <chrono>
 #include <cstdint>
+#include <ctime>
 #include <filesystem>
 #include <string>
+#include <string_view>
 
 std::string formatTimeAgo(std::chrono::system_clock::time_point tp);
 
@@ -19,6 +21,9 @@ std::string formatTimeAgo(std::chrono::system_clock::time_point tp);
 // Formats the current local date using the locale's preferred format.
 [[nodiscard]] std::string formatCurrentDate();
 
+// First day of the week from the active LC_TIME locale (struct tm::tm_wday encoding: Sun=0 .. Sat=6).
+[[nodiscard]] int localeFirstDayOfWeek();
+
 // Formats current local time with a C++20 chrono format string (e.g. "{:%H:%M}").
 // Bare chrono specs such as "%H:%M" are accepted, as are strftime-style no-pad
 // numeric specifiers such as "%-I".
@@ -26,6 +31,12 @@ std::string formatTimeAgo(std::chrono::system_clock::time_point tp);
 
 // Formats an ISO 8601 time string (e.g. "2026-05-09T06:23") using the given format.
 [[nodiscard]] std::string formatIsoTime(std::string_view isoTime, const char* fmt);
+
+// Formats a std::tm with strftime semantics using a dynamically sized buffer.
+[[nodiscard]] std::string formatStrftime(std::string_view fmt, const std::tm& tm);
+
+// Formats a time_point as UTC (gmtime) with strftime semantics, e.g. "%Y-%m-%dT%H:%M:%SZ".
+[[nodiscard]] std::string formatUtcTime(std::chrono::system_clock::time_point tp, std::string_view fmt);
 
 // Formats a filesystem modification time as "YYYY-MM-DD HH:MM".
 [[nodiscard]] std::string formatFileTime(const std::filesystem::file_time_type& time);

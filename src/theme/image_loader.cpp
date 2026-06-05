@@ -289,8 +289,8 @@ namespace noctalia::theme {
 
     // Force-resize to 112×112 (aspect ratio ignored).
     std::vector<uint8_t> resizedRgba = isMaterialScheme(scheme)
-                                           ? triangleResize(decoded->pixels.data(), srcW, srcH, kTarget, kTarget)
-                                           : boxResize(decoded->pixels.data(), srcW, srcH, kTarget, kTarget);
+        ? triangleResize(decoded->pixels.data(), srcW, srcH, kTarget, kTarget)
+        : boxResize(decoded->pixels.data(), srcW, srcH, kTarget, kTarget);
 
     LoadedImage out;
     out.rgb.resize(kTarget * kTarget * 3);

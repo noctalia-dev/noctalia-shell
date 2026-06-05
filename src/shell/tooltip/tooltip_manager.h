@@ -7,10 +7,7 @@
 
 #include <memory>
 
-class Box;
-class Flex;
 class InputArea;
-class Label;
 class Node;
 class PopupSurface;
 class RenderContext;

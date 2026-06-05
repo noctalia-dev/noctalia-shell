@@ -1,13 +1,18 @@
 #pragma once
 
 #include "config/config_service.h"
+#include "ui/controls/color_swatch_preview.h"
 #include "ui/palette.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <functional>
+#include <numeric>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <type_traits>
+#include <unordered_map>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -23,13 +28,16 @@ namespace settings {
     std::string value;
     std::string label;
     std::string description = {};
+    ColorSwatchPreview preview = {};
   };
 
   struct SelectSetting {
     std::vector<SelectOption> options;
     std::string selectedValue;
     bool clearOnEmpty = false;
-    bool segmented = false; // render as Segmented pill group instead of dropdown Select
+    bool segmented = false;      // render as Segmented pill group instead of dropdown Select
+    bool integerValue = false;   // option values are numeric strings; write as int64_t to config
+    float preferredWidth = 0.0f; // 0 = default settings dropdown width
   };
 
   struct SearchPickerSetting {
@@ -42,13 +50,21 @@ namespace settings {
 
   struct SliderSetting {
     SliderSetting() = default;
-    SliderSetting(float valueIn, float minValueIn, float maxValueIn, float stepIn, bool integerValueIn)
-        : value(valueIn), minValue(minValueIn), maxValue(maxValueIn), step(stepIn), integerValue(integerValueIn) {}
+    template <
+        typename Value, typename MinValue, typename MaxValue, typename Step,
+        typename = std::enable_if_t<
+            std::is_arithmetic_v<Value>
+            && std::is_arithmetic_v<MinValue>
+            && std::is_arithmetic_v<MaxValue>
+            && std::is_arithmetic_v<Step>>>
+    SliderSetting(Value valueIn, MinValue minValueIn, MaxValue maxValueIn, Step stepIn, bool integerValueIn)
+        : value(static_cast<double>(valueIn)), minValue(static_cast<double>(minValueIn)),
+          maxValue(static_cast<double>(maxValueIn)), step(static_cast<double>(stepIn)), integerValue(integerValueIn) {}
 
-    float value = 0.0f;
-    float minValue = 0.0f;
-    float maxValue = 1.0f;
-    float step = 0.01f;
+    double value = 0.0;
+    double minValue = 0.0;
+    double maxValue = 1.0;
+    double step = 0.01;
     bool integerValue = false;
     // Optional: when set, called with the user's just-committed value and returns extra overrides
     // to commit atomically alongside it. Use for cross-field constraints (e.g. linked sliders).
@@ -125,15 +141,16 @@ namespace settings {
     std::vector<IdleBehaviorConfig> items;
   };
 
-  struct ColorSetting {
-    std::string hex; // current resolved value as #RRGGBB; empty when unset
-    bool unset = true;
-  };
-
   struct MultiSelectSetting {
     std::vector<SelectOption> options;
     std::vector<std::string> selectedValues;
     bool requireAtLeastOne = false; // disable removing the last selected entry
+  };
+
+  struct TemplateGridSetting {
+    std::vector<SelectOption> options;
+    std::vector<std::string> selectedValues;
+    std::string emptyText;
   };
 
   struct ButtonSetting {
@@ -142,18 +159,19 @@ namespace settings {
     std::string glyph;
   };
 
-  struct ColorRolePickerSetting {
+  struct ColorSpecPickerSetting {
     std::vector<ColorRole> roles;
     std::string selectedValue;
     bool allowNone = false;
-    bool allowCustomColor = false;
+    bool allowCustomColor = true;
+    std::string noneLabel;
   };
 
-  using SettingControl =
-      std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting, OptionalNumberSetting,
-                   OptionalStepperSetting, StepperSetting, ListSetting, ShortcutListSetting, KeybindListSetting,
-                   SessionPanelActionsSetting, IdleBehaviorsSetting, ColorSetting, MultiSelectSetting, ButtonSetting,
-                   ColorRolePickerSetting, SearchPickerSetting>;
+  using SettingControl = std::variant<
+      ToggleSetting, SelectSetting, SliderSetting, TextSetting, OptionalNumberSetting, OptionalStepperSetting,
+      StepperSetting, ListSetting, ShortcutListSetting, KeybindListSetting, SessionPanelActionsSetting,
+      IdleBehaviorsSetting, MultiSelectSetting, TemplateGridSetting, ButtonSetting, ColorSpecPickerSetting,
+      SearchPickerSetting>;
 
   struct SettingVisibilityCondition {
     std::vector<std::string> path;
@@ -185,9 +203,15 @@ namespace settings {
   struct RegistryEnvironment {
     bool niriBackdropSupported = false;             // hide niri backdrop entries when false
     bool niriOverviewTypeToLaunchSupported = false; // show niri-only type-to-launch integration
+    bool screencopySupported = false;               // lockscreen blurred desktop + screenshot features
     bool ddcutilAvailable = false;                  // disable ddcutil toggle when ddcutil is not on PATH
     bool gammaControlAvailable = false;             // hide night-light entries when gamma control is unavailable
+    bool greeterSyncAvailable = false;              // hide greeter appearance sync when greeter is not installed
     std::vector<SelectOption> availableOutputs;     // monitor selectors available on this machine
+    bool batteryAvailable = false;
+    bool systemBatteryAvailable = false;
+    std::vector<SelectOption> batteryDeviceOptions;
+    std::unordered_map<std::string, int> batteryWarningThresholds;
     std::vector<SelectOption> communityPalettes;
     std::vector<SelectOption> customPalettes;
     std::vector<SelectOption> communityTemplates;
@@ -197,13 +221,43 @@ namespace settings {
   [[nodiscard]] const BarConfig* findBar(const Config& cfg, std::string_view name);
   [[nodiscard]] const BarMonitorOverride* findMonitorOverride(const BarConfig& bar, std::string_view match);
   [[nodiscard]] std::vector<std::string> barNames(const Config& cfg);
-  [[nodiscard]] std::vector<SettingEntry>
-  buildSettingsRegistry(const Config& cfg, const BarConfig* selectedBar,
-                        const BarMonitorOverride* selectedMonitorOverride = nullptr,
-                        const RegistryEnvironment& env = {});
+  [[nodiscard]] std::vector<SettingEntry> buildSettingsRegistry(
+      const Config& cfg, const BarConfig* selectedBar, const BarMonitorOverride* selectedMonitorOverride = nullptr,
+      const RegistryEnvironment& env = {}
+  );
   [[nodiscard]] std::string normalizedSettingQuery(std::string_view query);
   [[nodiscard]] bool matchesNormalizedSettingQuery(const SettingEntry& entry, std::string_view normalizedQuery);
   [[nodiscard]] bool matchesSettingQuery(const SettingEntry& entry, std::string_view query);
+  [[nodiscard]] bool isBarMonitorOverrideSettingPath(const std::vector<std::string>& path);
+  [[nodiscard]] bool settingEntryMatchesBarNavigation(
+      const SettingEntry& entry, std::string_view selectedBarName, std::string_view selectedMonitorOverride
+  );
+  [[nodiscard]] std::string barSettingContentSectionKey(const SettingEntry& entry);
   [[nodiscard]] std::string_view sectionGlyph(std::string_view section);
+
+  // Returns a permutation of [0, count) that coalesces items sharing a group key so a group renders
+  // exactly once, regardless of the order items were declared in. The first-appearance order of group
+  // keys and the original order of items within a group are preserved. `keyFn(i)` yields item i's key.
+  //
+  // Both settings render passes emit a group header whenever an item's group differs from the previous
+  // item's, so a stranded same-group item would otherwise produce a duplicate header. Route iteration
+  // through this permutation to make group placement independent of declaration order.
+  template <typename KeyFn>
+  [[nodiscard]] std::vector<std::size_t> coalesceByGroupKey(std::size_t count, KeyFn&& keyFn) {
+    std::unordered_map<std::string, std::size_t> rankByKey;
+    std::vector<std::size_t> rankOf(count);
+    std::size_t nextRank = 0;
+    for (std::size_t i = 0; i < count; ++i) {
+      auto [it, inserted] = rankByKey.try_emplace(keyFn(i), nextRank);
+      if (inserted) {
+        ++nextRank;
+      }
+      rankOf[i] = it->second;
+    }
+    std::vector<std::size_t> order(count);
+    std::iota(order.begin(), order.end(), std::size_t{0});
+    std::stable_sort(order.begin(), order.end(), [&](std::size_t a, std::size_t b) { return rankOf[a] < rankOf[b]; });
+    return order;
+  }
 
 } // namespace settings

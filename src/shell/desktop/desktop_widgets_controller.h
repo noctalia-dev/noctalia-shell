@@ -4,9 +4,10 @@
 
 #include <memory>
 
-class DesktopWidgetsEditor;
+class BackgroundWidgetsEditor;
 class DesktopWidgetsHost;
 class HttpClient;
+class LockscreenWidgetsController;
 class IpcService;
 class MprisService;
 class PipeWireSpectrum;
@@ -27,9 +28,11 @@ public:
   DesktopWidgetsController(const DesktopWidgetsController&) = delete;
   DesktopWidgetsController& operator=(const DesktopWidgetsController&) = delete;
 
-  void initialize(WaylandConnection& wayland, ConfigService* config, PipeWireSpectrum* pipewireSpectrum,
-                  const WeatherService* weather, RenderContext* renderContext, MprisService* mpris,
-                  HttpClient* httpClient, SystemMonitorService* sysmon);
+  void initialize(
+      WaylandConnection& wayland, ConfigService* config, PipeWireSpectrum* pipewireSpectrum,
+      const WeatherService* weather, RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient,
+      SystemMonitorService* sysmon, LockscreenWidgetsController* lockscreenWidgets
+  );
 
   void registerIpc(IpcService& ipc);
   void onOutputChange();
@@ -40,6 +43,10 @@ public:
   void enterEdit();
   void exitEdit();
   void toggleEdit();
+
+  /// Hides on-screen desktop widgets while another overlay editor (e.g. lockscreen layout) is active.
+  void suppressDisplay();
+  void unsuppressDisplay();
 
   [[nodiscard]] bool isEditing() const noexcept;
   bool onPointerEvent(const PointerEvent& event);
@@ -54,10 +61,12 @@ private:
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
+  LockscreenWidgetsController* m_lockscreenWidgets = nullptr;
   RenderContext* m_renderContext = nullptr;
 
   DesktopWidgetsSnapshot m_snapshot;
   bool m_initialized = false;
+  bool m_displaySuppressed = false;
   std::unique_ptr<DesktopWidgetsHost> m_host;
-  std::unique_ptr<DesktopWidgetsEditor> m_editor;
+  std::unique_ptr<BackgroundWidgetsEditor> m_editor;
 };

@@ -5,8 +5,7 @@
 #include "render/scene/node.h"
 #include "system/format_units.h"
 #include "system/system_monitor_service.h"
-#include "ui/controls/glyph.h"
-#include "ui/controls/label.h"
+#include "ui/builders.h"
 #include "ui/style.h"
 
 #include <algorithm>
@@ -21,13 +20,15 @@ namespace {
   constexpr float kGraphLineWidth = 0.75f;
   bool needsCpuTemp(DesktopSysmonStat stat) { return stat == DesktopSysmonStat::CpuTemp; }
   bool needsGpuTemp(DesktopSysmonStat stat) { return stat == DesktopSysmonStat::GpuTemp; }
+  bool needsGpuUsage(DesktopSysmonStat stat) { return stat == DesktopSysmonStat::GpuUsage; }
   bool needsGpuVram(DesktopSysmonStat stat) { return stat == DesktopSysmonStat::GpuVram; }
 
 } // namespace
 
-DesktopSysmonWidget::DesktopSysmonWidget(SystemMonitorService* monitor, DesktopSysmonStat stat,
-                                         std::optional<DesktopSysmonStat> stat2, ColorSpec lineColor,
-                                         ColorSpec lineColor2, bool showLabel, bool shadow)
+DesktopSysmonWidget::DesktopSysmonWidget(
+    SystemMonitorService* monitor, DesktopSysmonStat stat, std::optional<DesktopSysmonStat> stat2, ColorSpec lineColor,
+    ColorSpec lineColor2, bool showLabel, bool shadow
+)
     : m_monitor(monitor), m_stat(stat), m_stat2(stat2), m_lineColor(lineColor), m_lineColor2(lineColor2),
       m_showLabel(showLabel), m_shadow(shadow) {
   if (m_monitor != nullptr) {
@@ -35,12 +36,16 @@ DesktopSysmonWidget::DesktopSysmonWidget(SystemMonitorService* monitor, DesktopS
       m_monitor->retainCpuTemp();
     if (needsGpuTemp(m_stat))
       m_monitor->retainGpuTemp();
+    if (needsGpuUsage(m_stat))
+      m_monitor->retainGpuUsage();
     if (needsGpuVram(m_stat))
       m_monitor->retainGpuVram();
     if (m_stat2.has_value() && needsCpuTemp(*m_stat2))
       m_monitor->retainCpuTemp();
     if (m_stat2.has_value() && needsGpuTemp(*m_stat2))
       m_monitor->retainGpuTemp();
+    if (m_stat2.has_value() && needsGpuUsage(*m_stat2))
+      m_monitor->retainGpuUsage();
     if (m_stat2.has_value() && needsGpuVram(*m_stat2))
       m_monitor->retainGpuVram();
   }
@@ -52,12 +57,16 @@ DesktopSysmonWidget::~DesktopSysmonWidget() {
       m_monitor->releaseCpuTemp();
     if (needsGpuTemp(m_stat))
       m_monitor->releaseGpuTemp();
+    if (needsGpuUsage(m_stat))
+      m_monitor->releaseGpuUsage();
     if (needsGpuVram(m_stat))
       m_monitor->releaseGpuVram();
     if (m_stat2.has_value() && needsCpuTemp(*m_stat2))
       m_monitor->releaseCpuTemp();
     if (m_stat2.has_value() && needsGpuTemp(*m_stat2))
       m_monitor->releaseGpuTemp();
+    if (m_stat2.has_value() && needsGpuUsage(*m_stat2))
+      m_monitor->releaseGpuUsage();
     if (m_stat2.has_value() && needsGpuVram(*m_stat2))
       m_monitor->releaseGpuVram();
   }
@@ -66,9 +75,10 @@ DesktopSysmonWidget::~DesktopSysmonWidget() {
 void DesktopSysmonWidget::create() {
   auto rootNode = std::make_unique<Node>();
 
-  auto glyph = std::make_unique<Glyph>();
-  glyph->setGlyph(glyphName(m_stat));
-  m_glyph = glyph.get();
+  auto glyph = ui::glyph({
+      .out = &m_glyph,
+      .glyph = glyphName(m_stat),
+  });
   rootNode->addChild(std::move(glyph));
 
   auto graph = std::make_unique<GraphNode>();
@@ -77,12 +87,13 @@ void DesktopSysmonWidget::create() {
   m_graphNode = static_cast<GraphNode*>(rootNode->addChild(std::move(graph)));
 
   if (m_showLabel) {
-    auto label = std::make_unique<Label>();
-    label->setBold(true);
+    auto label = ui::label({
+        .out = &m_label,
+        .fontWeight = FontWeight::Bold,
+    });
     if (m_shadow) {
       label->setShadow(Color{0.0f, 0.0f, 0.0f, 0.5f}, 0.0f, 1.0f);
     }
-    m_label = label.get();
     rootNode->addChild(std::move(label));
   }
 
@@ -112,6 +123,49 @@ void DesktopSysmonWidget::onFrameTick(float deltaMs, Renderer& renderer) {
     }
   }
   requestRedraw();
+}
+
+bool DesktopSysmonWidget::applySetting(
+    const std::string& key, const WidgetSettingValue& value,
+    const std::unordered_map<std::string, WidgetSettingValue>& allSettings, Renderer& renderer
+) {
+  if (key == "color") {
+    if (const auto* v = std::get_if<std::string>(&value)) {
+      m_lineColor = colorSpecFromConfigString(*v, key);
+      layout(renderer);
+      return true;
+    }
+    return false;
+  }
+  if (key == "color2") {
+    if (const auto* v = std::get_if<std::string>(&value)) {
+      m_lineColor2 = colorSpecFromConfigString(*v, key);
+      layout(renderer);
+      return true;
+    }
+    return false;
+  }
+  if (key == "shadow") {
+    if (const auto* v = std::get_if<bool>(&value)) {
+      m_shadow = *v;
+      const Color shadow{0.0f, 0.0f, 0.0f, 0.5f};
+      if (m_glyph != nullptr) {
+        if (m_shadow)
+          m_glyph->setShadow(shadow, 0.0f, 1.0f);
+        else
+          m_glyph->clearShadow();
+      }
+      if (m_label != nullptr) {
+        if (m_shadow)
+          m_label->setShadow(shadow, 0.0f, 1.0f);
+        else
+          m_label->clearShadow();
+      }
+      return true;
+    }
+    return false;
+  }
+  return DesktopWidget::applySetting(key, value, allSettings, renderer);
 }
 
 void DesktopSysmonWidget::doLayout(Renderer& renderer) {
@@ -194,8 +248,9 @@ void DesktopSysmonWidget::syncLabel() {
   }
 }
 
-double DesktopSysmonWidget::normalizedFromStats(DesktopSysmonStat stat, const SystemStats& stats, double& tempMin,
-                                                double& tempMax) {
+double DesktopSysmonWidget::normalizedFromStats(
+    DesktopSysmonStat stat, const SystemStats& stats, double& tempMin, double& tempMax
+) {
   switch (stat) {
   case DesktopSysmonStat::CpuUsage:
     return stats.cpuUsagePercent / 100.0;
@@ -225,6 +280,12 @@ double DesktopSysmonWidget::normalizedFromStats(DesktopSysmonStat stat, const Sy
       if (range <= 0.0)
         return 0.5;
       return std::clamp((temp - tempMin) / range, 0.0, 1.0);
+    }
+    return 0.0;
+
+  case DesktopSysmonStat::GpuUsage:
+    if (stats.gpuUsagePercent.has_value()) {
+      return *stats.gpuUsagePercent / 100.0;
     }
     return 0.0;
 
@@ -280,10 +341,18 @@ std::string DesktopSysmonWidget::formatValueFor(DesktopSysmonStat stat) const {
     }
     return "--";
 
+  case DesktopSysmonStat::GpuUsage:
+    if (stats.gpuUsagePercent.has_value()) {
+      return std::format("{:.0f}%", *stats.gpuUsagePercent);
+    }
+    return "--";
+
   case DesktopSysmonStat::GpuVram:
     if (stats.gpuVramUsedBytes.has_value() && stats.gpuVramTotalBytes.has_value() && *stats.gpuVramTotalBytes > 0) {
-      return std::format("{:.0f}%", 100.0 * static_cast<double>(*stats.gpuVramUsedBytes) /
-                                        static_cast<double>(*stats.gpuVramTotalBytes));
+      return std::format(
+          "{:.0f}%",
+          100.0 * static_cast<double>(*stats.gpuVramUsedBytes) / static_cast<double>(*stats.gpuVramTotalBytes)
+      );
     }
     return "--";
 
@@ -292,8 +361,9 @@ std::string DesktopSysmonWidget::formatValueFor(DesktopSysmonStat stat) const {
 
   case DesktopSysmonStat::SwapPct:
     if (stats.swapTotalMb > 0) {
-      return std::format("{:.0f}%",
-                         100.0 * static_cast<double>(stats.swapUsedMb) / static_cast<double>(stats.swapTotalMb));
+      return std::format(
+          "{:.0f}%", 100.0 * static_cast<double>(stats.swapUsedMb) / static_cast<double>(stats.swapTotalMb)
+      );
     }
     return "--";
 
@@ -401,6 +471,8 @@ const char* DesktopSysmonWidget::glyphName(DesktopSysmonStat stat) {
     return "cpu-temperature";
   case DesktopSysmonStat::GpuTemp:
     return "temperature";
+  case DesktopSysmonStat::GpuUsage:
+    return "gpu-usage";
   case DesktopSysmonStat::GpuVram:
     return "memory";
   case DesktopSysmonStat::RamPct:

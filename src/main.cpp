@@ -1,9 +1,9 @@
 #include "app/application.h"
+#include "app/single_instance_lock.h"
 #include "config/cli.h"
 #include "core/build_info.h"
 #include "core/log.h"
 #include "ipc/cli.h"
-#include "ipc/ipc_client.h"
 #include "theme/cli.h"
 
 #include <array>
@@ -18,9 +18,8 @@
 #include <unistd.h>
 
 #ifdef __GLIBC__
-#if __has_include(<jemalloc/jemalloc.h>)
+#ifdef NOCTALIA_USE_JEMALLOC
 #include <jemalloc/jemalloc.h>
-#define HAS_JEMALLOC 1
 #else
 #include <malloc.h>
 #endif
@@ -128,23 +127,25 @@ namespace {
       return 0;
     }
     if (std::strcmp(flag, "--help") == 0 || std::strcmp(flag, "-h") == 0) {
-      std::puts("Usage: noctalia [OPTIONS]\n"
-                "\n"
-                "Options:\n"
-                "  -h, --help       Show this help message\n"
-                "  -v, --version    Show version information\n"
-                "  -d, --daemon     Run in background\n"
-                "\n"
-                "Subcommands:\n"
-                "  msg <command>    Send a command to the running instance\n"
-                "                   Run 'noctalia msg --help' for available commands\n"
-                "  theme <image>    Generate a color palette from an image\n"
-                "                   Run 'noctalia theme --help' for options\n"
-                "  config <command> Config support and replay helpers\n"
-                "                   Run 'noctalia config --help' for options\n"
-                "\n"
-                "For more information and documentation, visit:\n"
-                "  https://noctalia.dev");
+      std::puts(
+          "Usage: noctalia [OPTIONS]\n"
+          "\n"
+          "Options:\n"
+          "  -h, --help       Show this help message\n"
+          "  -v, --version    Show version information\n"
+          "  -d, --daemon     Run in background\n"
+          "\n"
+          "Subcommands:\n"
+          "  msg <command>    Send a command to the running instance\n"
+          "                   Run 'noctalia msg --help' for available commands\n"
+          "  theme <image>    Generate a color palette from an image\n"
+          "                   Run 'noctalia theme --help' for options\n"
+          "  config <command> Validate config and support/replay helpers\n"
+          "                   Run 'noctalia config --help' for options\n"
+          "\n"
+          "For more information and documentation, visit:\n"
+          "  https://noctalia.dev"
+      );
       return 0;
     }
     return -1;
@@ -223,7 +224,10 @@ namespace {
   }
 
   int runShell() {
-    if (IpcClient::isRunning()) {
+    // Claim the single-instance lock before any shell/Wayland init so the answer
+    // is settled before bars or surfaces are created. Held for the process lifetime.
+    SingleInstanceLock instanceLock;
+    if (!instanceLock.tryAcquire()) {
       std::fputs("error: noctalia is already running\n", stderr);
       completeDaemonStartup(1);
       return 1;
@@ -241,24 +245,26 @@ namespace {
 
 } // namespace
 
-#ifdef HAS_JEMALLOC
-const char* malloc_conf = "narenas:2,dirty_decay_ms:1000,muzzy_decay_ms:5000,tcache_max:4096";
+#ifdef NOCTALIA_USE_JEMALLOC
+const char* malloc_conf = "narenas:2,dirty_decay_ms:1000,muzzy_decay_ms:5000,lg_tcache_max:12";
 #endif
 
 int main(int argc, char* argv[]) {
 
-#if defined(__GLIBC__) && !defined(HAS_JEMALLOC)
+#if defined(__GLIBC__) && !defined(NOCTALIA_USE_JEMALLOC)
   mallopt(M_ARENA_MAX, 2);
 #endif
 
   std::setlocale(LC_ALL, "");
+  std::setlocale(LC_NUMERIC, "C");
 
   const bool isDaemonChild = takeDaemonPipeFromEnv();
   bool shouldDaemonize = false;
 
   for (int i = 1; i < argc; ++i) {
-    if (std::strcmp(argv[i], "--daemon") == 0 || std::strcmp(argv[i], "--daemonize") == 0 ||
-        std::strcmp(argv[i], "-d") == 0) {
+    if (std::strcmp(argv[i], "--daemon") == 0
+        || std::strcmp(argv[i], "--daemonize") == 0
+        || std::strcmp(argv[i], "-d") == 0) {
       shouldDaemonize = true;
       for (int j = i; j < argc - 1; ++j) {
         argv[j] = argv[j + 1];
@@ -286,6 +292,13 @@ int main(int argc, char* argv[]) {
 
       std::fprintf(stderr, "error: unknown option: %s\n", argv[i]);
       return 1;
+    }
+  }
+
+  {
+    const char* home = std::getenv("HOME");
+    if (home != nullptr && home[0] != '\0' && ::chdir(home) != 0) {
+      std::fprintf(stderr, "warning: failed to chdir to HOME (%s): %s\n", home, std::strerror(errno));
     }
   }
 

@@ -122,7 +122,7 @@ private:
   Button* m_homeButton = nullptr;
   Button* m_backButton = nullptr;
   Input* m_searchInput = nullptr;
-  Label* m_sortLabel = nullptr;
+
   Button* m_hiddenToggle = nullptr;
   Button* m_viewToggle = nullptr;
   Flex* m_listContainer = nullptr;

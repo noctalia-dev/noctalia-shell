@@ -20,6 +20,7 @@ enum class NodeType : std::uint8_t {
   Spinner,
   ScreenCorner,
   AudioSpectrum,
+  FancyAudioVisualizer,
   Effect,
   Graph,
   Wallpaper,
@@ -118,10 +119,10 @@ public:
   void setHitTestOutset(const HitTestOutset& outset);
   void setZIndex(std::int32_t zIndex);
 
-  Node* addChild(std::unique_ptr<Node> child);
+  virtual Node* addChild(std::unique_ptr<Node> child);
   // Insert at a specific vector position to control Flex layout order (not rendering order — use zIndex for that).
-  Node* insertChildAt(std::size_t index, std::unique_ptr<Node> child);
-  std::unique_ptr<Node> removeChild(Node* child);
+  virtual Node* insertChildAt(std::size_t index, std::unique_ptr<Node> child);
+  virtual std::unique_ptr<Node> removeChild(Node* child);
 
   void setAnimationManager(AnimationManager* mgr);
   [[nodiscard]] AnimationManager* animationManager() const noexcept { return m_animationManager; }
@@ -131,6 +132,8 @@ public:
   void layout(Renderer& renderer);
   [[nodiscard]] LayoutSize measure(Renderer& renderer, const LayoutConstraints& constraints);
   void arrange(Renderer& renderer, const LayoutRect& rect);
+  void invalidateGpuResources(Renderer& renderer, std::uint64_t generation);
+  [[nodiscard]] std::uint64_t gpuResourceGeneration() const noexcept { return m_gpuResourceGeneration; }
   [[nodiscard]] bool containsScenePoint(float sceneX, float sceneY) const;
 
   void setUserData(void* data) noexcept { m_userData = data; }
@@ -140,8 +143,9 @@ public:
   static void absolutePosition(const Node* node, float& outX, float& outY);
   static bool mapFromScene(const Node* node, float sceneX, float sceneY, float& outLocalX, float& outLocalY);
   static void transformedBounds(const Node* node, float& outLeft, float& outTop, float& outRight, float& outBottom);
-  static void transformedBounds(const Node* node, const Mat3& world, float& outLeft, float& outTop, float& outRight,
-                                float& outBottom);
+  static void transformedBounds(
+      const Node* node, const Mat3& world, float& outLeft, float& outTop, float& outRight, float& outBottom
+  );
 
   void markPaintDirty();
   void markLayoutDirty();
@@ -151,8 +155,12 @@ protected:
   virtual void doLayout(Renderer& renderer);
   virtual LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints);
   virtual void doArrange(Renderer& renderer, const LayoutRect& rect);
+  virtual void doInvalidateGpuResources(Renderer& renderer);
+  [[nodiscard]] virtual bool containsLocalPoint(float localX, float localY, bool includeHitOutset) const;
 
 private:
+  static bool
+  pointInsideNode(const Node* node, float sceneX, float sceneY, float& localX, float& localY, bool includeHitOutset);
   static Node* hitTestImpl(Node* node, float px, float py);
   NodeType m_type;
   float m_x = 0.0f;
@@ -172,6 +180,7 @@ private:
   HitTestOutset m_hitTestOutset{};
   bool m_sizeAssignedByLayout = false;
   bool m_arranging = false;
+  std::uint64_t m_gpuResourceGeneration = 0;
   std::int32_t m_zIndex = 0;
   void* m_userData = nullptr;
   AnimationManager* m_animationManager = nullptr;

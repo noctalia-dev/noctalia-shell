@@ -10,6 +10,7 @@
 
 class AnimationManager;
 
+class Flex;
 class Glyph;
 class InputArea;
 class Label;
@@ -22,11 +23,11 @@ enum class ButtonContentAlign : std::uint8_t {
 
 enum class ButtonVariant : std::uint8_t {
   Default,
+  Primary,
   Secondary,
   Destructive,
   Outline,
   Ghost,
-  Accent,
   Tab,
   TabActive,
 };
@@ -45,6 +46,7 @@ public:
     ButtonStateColors hover;
     ButtonStateColors pressed;
     ButtonStateColors disabled;
+    std::optional<ButtonStateColors> selected;
   };
 
   Button();
@@ -59,6 +61,7 @@ public:
   void setContentAlign(ButtonContentAlign align);
   void setVariant(ButtonVariant variant);
   void setCustomPalette(ButtonPalette customPalette);
+  void setSurfaceOpacity(float opacity);
   void setOnClick(std::function<void()> callback);
   void setOnRightClick(std::function<void()> callback);
   void setOnPress(std::function<void(float localX, float localY, bool pressed)> callback);
@@ -67,13 +70,18 @@ public:
   void setOnEnter(std::function<void()> callback);
   void setOnLeave(std::function<void()> callback);
   void setHoverSuppressed(bool suppressed);
+  void setHoveredVisual(bool hovered);
   void setCursorShape(std::uint32_t shape);
+  void setBadge(std::string_view text);
+  void setBadgeFontSize(float size);
+  void setTooltip(std::string_view text);
 
   // Call after layout() to sync InputArea bounds
   void updateInputArea();
 
   [[nodiscard]] Label* label() const noexcept { return m_label; }
   [[nodiscard]] Glyph* glyph() const noexcept { return m_glyph; }
+  [[nodiscard]] InputArea* inputArea() const noexcept { return m_inputArea; }
   [[nodiscard]] bool hovered() const noexcept;
   [[nodiscard]] bool pressed() const noexcept;
   [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
@@ -91,8 +99,12 @@ private:
 
   void applyColors(const Color& bg, const Color& border, const Color& label);
 
+  void ensureBadge();
+
   Glyph* m_glyph = nullptr;
   Label* m_label = nullptr;
+  Flex* m_badge = nullptr;
+  Label* m_badgeLabel = nullptr;
   InputArea* m_inputArea = nullptr;
   std::uint32_t m_animId = 0;
   std::function<void()> m_onClick;
@@ -113,9 +125,11 @@ private:
   Color m_targetBorder{};
   Color m_targetLabel{};
   ButtonContentAlign m_contentAlign = ButtonContentAlign::Center;
+  float m_surfaceOpacity = 1.0f;
   bool m_enabled = true;
   bool m_selected = false;
   bool m_hoverSuppressed = false;
+  bool m_hoveredVisual = false;
   bool m_visualStateInitialized = false;
   Signal<>::ScopedConnection m_paletteConn;
 };

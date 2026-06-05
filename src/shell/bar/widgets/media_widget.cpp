@@ -7,15 +7,12 @@
 #include "net/http_client.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
-#include "ui/controls/glyph.h"
-#include "ui/controls/image.h"
-#include "ui/controls/label.h"
+#include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
 #include <algorithm>
 #include <cmath>
-#include <filesystem>
 #include <linux/input-event-codes.h>
 
 using namespace mpris;
@@ -26,10 +23,12 @@ namespace {
 
 } // namespace
 
-MediaWidget::MediaWidget(MprisService* mpris, HttpClient* httpClient, wl_output* output, float maxWidth, float minWidth,
-                         float artSize, MediaTitleScrollMode titleScrollMode)
-    : m_mpris(mpris), m_httpClient(httpClient), m_output(output), m_maxWidth(maxWidth), m_minWidth(minWidth),
-      m_artSize(artSize), m_titleScrollMode(titleScrollMode) {}
+MediaWidget::MediaWidget(
+    MprisService* mpris, HttpClient* httpClient, wl_output* /*output*/, float maxWidth, float minWidth, float artSize,
+    MediaTitleScrollMode titleScrollMode, bool hideWhenNoMedia
+)
+    : m_mpris(mpris), m_httpClient(httpClient), m_maxWidth(maxWidth), m_minWidth(minWidth), m_artSize(artSize),
+      m_titleScrollMode(titleScrollMode), m_hideWhenNoMedia(hideWhenNoMedia) {}
 
 void MediaWidget::create() {
   auto area = std::make_unique<InputArea>();
@@ -53,30 +52,37 @@ void MediaWidget::create() {
   });
   m_area = area.get();
 
-  auto art = std::make_unique<Image>();
-  art->setRadius((m_artSize * m_contentScale) * 0.5f);
-  art->setFit(ImageFit::Cover);
-  art->setSize(m_artSize * m_contentScale, m_artSize * m_contentScale);
-  m_art = art.get();
-  area->addChild(std::move(art));
+  area->addChild(
+      ui::image({
+          .out = &m_art,
+          .fit = ImageFit::Cover,
+          .radius = (m_artSize * m_contentScale) * 0.5f,
+          .width = m_artSize * m_contentScale,
+          .height = m_artSize * m_contentScale,
+      })
+  );
 
-  auto label = std::make_unique<Label>();
-  label->setBold(true);
-  label->setFontSize(Style::fontSizeBody * m_contentScale);
-  label->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
-  label->setMaxWidth(m_maxWidth * m_contentScale);
-  label->setMaxLines(1);
-  label->setAutoScroll(false);
-  m_label = label.get();
-  area->addChild(std::move(label));
+  area->addChild(
+      ui::label({
+          .out = &m_label,
+          .fontSize = Style::fontSizeBody * m_contentScale,
+          .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
+          .maxWidth = m_maxWidth * m_contentScale,
+          .maxLines = 1,
+          .fontWeight = labelFontWeight(),
+          .autoScroll = false,
+      })
+  );
 
-  auto emptyGlyph = std::make_unique<Glyph>();
-  emptyGlyph->setGlyph("music-off");
-  emptyGlyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
-  emptyGlyph->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
-  emptyGlyph->setVisible(false);
-  m_emptyGlyph = emptyGlyph.get();
-  area->addChild(std::move(emptyGlyph));
+  area->addChild(
+      ui::glyph({
+          .out = &m_emptyGlyph,
+          .glyph = "music-off",
+          .glyphSize = Style::barGlyphSize * m_contentScale,
+          .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+          .visible = false,
+      })
+  );
 
   setRoot(std::move(area));
 }
@@ -92,8 +98,10 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
   const float maxLength = std::max(0.0f, m_maxWidth * m_contentScale);
   const float minLength = std::clamp(m_minWidth * m_contentScale, 0.0f, maxLength);
 
-  m_label->setColor(m_lastPlaybackStatus == "Playing" ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
-                                                      : colorSpecFromRole(ColorRole::OnSurfaceVariant));
+  m_label->setColor(
+      m_lastPlaybackStatus == "Playing" ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
+                                        : colorSpecFromRole(ColorRole::OnSurfaceVariant)
+  );
   m_emptyGlyph->setGlyph(m_lastPlaybackStatus.empty() ? "disc-filled" : "music-off");
   m_emptyGlyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   m_emptyGlyph->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
@@ -167,11 +175,22 @@ void MediaWidget::applyTitleScrollMode(bool titleVisible) {
     return;
   }
 
-  const bool shouldScroll =
-      titleVisible && (m_titleScrollMode == MediaTitleScrollMode::Always ||
-                       (m_titleScrollMode == MediaTitleScrollMode::OnHover && m_area != nullptr && m_area->hovered()));
+  const bool shouldScroll = titleVisible
+      && (m_titleScrollMode == MediaTitleScrollMode::Always
+          || (m_titleScrollMode == MediaTitleScrollMode::OnHover && m_area != nullptr && m_area->hovered()));
   m_label->setAutoScroll(shouldScroll);
   m_label->setAutoScrollOnlyWhenHovered(false);
+}
+
+void MediaWidget::syncWidgetVisibility(bool hasMedia) {
+  const bool showWidget = !m_hideWhenNoMedia || hasMedia;
+  if (Node* rootNode = root(); rootNode != nullptr) {
+    if (rootNode->visible() != showWidget || rootNode->participatesInLayout() != showWidget) {
+      rootNode->setVisible(showWidget);
+      rootNode->setParticipatesInLayout(showWidget);
+      requestUpdate();
+    }
+  }
 }
 
 void MediaWidget::syncState(Renderer& renderer) {
@@ -180,6 +199,10 @@ void MediaWidget::syncState(Renderer& renderer) {
   }
 
   const auto active = m_mpris != nullptr ? m_mpris->activePlayer() : std::nullopt;
+  syncWidgetVisibility(active.has_value());
+  if (m_hideWhenNoMedia && !active.has_value()) {
+    return;
+  }
 
   std::string playbackStatus;
   std::string displayText = i18n::tr("bar.widgets.media.nothing-playing");
@@ -205,32 +228,19 @@ void MediaWidget::syncState(Renderer& renderer) {
 
   m_label->setMaxWidth(m_maxWidth * m_contentScale);
   m_label->setText(m_lastText);
-  m_label->setColor(m_lastPlaybackStatus == "Playing" ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
-                                                      : colorSpecFromRole(ColorRole::OnSurfaceVariant));
+  m_label->setColor(
+      m_lastPlaybackStatus == "Playing" ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
+                                        : colorSpecFromRole(ColorRole::OnSurfaceVariant)
+  );
   applyTitleScrollMode(m_label->visible());
   m_label->measure(renderer);
 
+  const int artDecodePx = static_cast<int>(std::round(64.0f * m_contentScale));
   if (artChanged) {
-    std::string artPath = resolveArtworkPath();
-    if (artPath.empty() && isRemoteArtUrl(m_lastArtUrl)) {
-      const auto cached = artCachePath(m_lastArtUrl);
-      std::error_code ec;
-      if (std::filesystem::exists(cached, ec) && std::filesystem::file_size(cached, ec) > 0) {
-        artPath = cached.string();
-      } else if (m_httpClient != nullptr && m_pendingArtDownloads.find(m_lastArtUrl) == m_pendingArtDownloads.end()) {
-        std::filesystem::create_directories(cached.parent_path(), ec);
-        m_pendingArtDownloads.insert(m_lastArtUrl);
-        m_httpClient->download(m_lastArtUrl, cached, [this, url = m_lastArtUrl](bool success) {
-          m_pendingArtDownloads.erase(url);
-          if (success) {
-            requestUpdate();
-          }
-        });
-      }
-    }
-
+    const std::string artPath =
+        resolveArtworkSource(m_httpClient, m_pendingArtDownloads, m_lastArtUrl, [this] { requestUpdate(); });
     if (!artPath.empty()) {
-      if (!m_art->setSourceFile(renderer, artPath, static_cast<int>(std::round(64.0f * m_contentScale)), true)) {
+      if (!m_art->setSourceFile(renderer, artPath, artDecodePx, true, true)) {
         kLog.warn("artwork load failed url=\"{}\" path=\"{}\"", m_lastArtUrl, artPath);
         m_art->clear(renderer);
       } else {
@@ -243,16 +253,9 @@ void MediaWidget::syncState(Renderer& renderer) {
       m_art->clear(renderer);
     }
   } else if (!m_lastArtUrl.empty() && !m_art->hasImage()) {
-    std::string artPath = resolveArtworkPath();
-    if (artPath.empty() && isRemoteArtUrl(m_lastArtUrl)) {
-      const auto cached = artCachePath(m_lastArtUrl);
-      std::error_code ec;
-      if (std::filesystem::exists(cached, ec) && std::filesystem::file_size(cached, ec) > 0) {
-        artPath = cached.string();
-      }
-    }
+    const std::string artPath = cachedArtworkPath(m_lastArtUrl);
     if (!artPath.empty()) {
-      if (m_art->setSourceFile(renderer, artPath, static_cast<int>(std::round(64.0f * m_contentScale)))) {
+      if (m_art->setSourceFile(renderer, artPath, artDecodePx, false, true)) {
         requestRedraw();
       }
     }
@@ -283,5 +286,3 @@ std::string MediaWidget::buildDisplayText(const MprisPlayerInfo& player) {
   }
   return i18n::tr("bar.widgets.media.nothing-playing");
 }
-
-std::string MediaWidget::resolveArtworkPath() const { return normalizeArtPath(m_lastArtUrl); }

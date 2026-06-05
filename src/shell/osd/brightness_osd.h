@@ -13,6 +13,7 @@ public:
   void primeFromService(const BrightnessService& service);
   void suppressFor(std::chrono::milliseconds duration);
   void onBrightnessChanged(const BrightnessService& service);
+  void showValue(float brightness);
 
 private:
   struct DisplaySnapshot {

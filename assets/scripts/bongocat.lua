@@ -22,6 +22,27 @@
 --   bc=idle, dc=left slap, ba=right slap, da=both slap
 --   ef=sleep, gh=blink
 
+-- Self-describing manifest: lets Noctalia list this widget in the Add-widget
+-- picker and render its settings in the GUI. Must be the first statement, ahead
+-- of the keyboard-reader spawn below, so manifest extraction stays side-effect free.
+barWidget.define({
+  label = "Bongo Cat",
+  version = "1.0.0",
+  icon = "cat",
+  description = "A cat that slaps your bar when you type or to the beat",
+  settings = {
+    { key = "input_device", type = "file", label = "Keyboard device",
+      description = "/dev/input/eventN — requires evtest and membership in the input group" },
+    { key = "audio_spectrum", type = "bool", label = "React to audio", default = false },
+    { key = "tappy_mode", type = "bool", label = "Tap to the beat", default = false,
+      visible_when = { key = "audio_spectrum", values = { "true" } } },
+    { key = "rave_mode", type = "bool", label = "Rave colors on beat", default = false,
+      visible_when = { key = "audio_spectrum", values = { "true" } } },
+    { key = "use_mpris_filter", type = "bool", label = "Only react while media plays", default = false,
+      visible_when = { key = "audio_spectrum", values = { "true" } } },
+  },
+})
+
 barWidget.setFont("fonts/bongocat.otf")
 barWidget.setText("bc")
 barWidget.setUpdateInterval(50)

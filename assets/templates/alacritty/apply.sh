@@ -1,23 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-config_file="$HOME/.config/alacritty/alacritty.toml"
-theme_path='~/.config/alacritty/themes/noctalia.toml'
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}"
+config_file="$config_dir/alacritty/alacritty.toml"
+theme_path="$config_dir/alacritty/themes/noctalia.toml"
 
 mkdir -p "$(dirname "$config_file")"
 
 if [ ! -f "$config_file" ]; then
-    cat >"$config_file" <<'EOF'
+    cat >"$config_file" <<EOF
 [general]
 import = [
-    "~/.config/alacritty/themes/noctalia.toml"
+    "$theme_path"
 ]
 EOF
     exit 0
 fi
 
 if grep -q 'noctalia\.toml' "$config_file"; then
-    sed -i 's|"themes/noctalia.toml"|"~/.config/alacritty/themes/noctalia.toml"|g' "$config_file"
+    sed -i 's|"themes/noctalia.toml"|"'"$theme_path"'"|g' "$config_file"
 elif grep -q '^\[general\]' "$config_file"; then
     if grep -q '^import\s*=' "$config_file"; then
         sed -i '/^import\s*=\s*\[/,/\]/{/\]/s|]|    "'"$theme_path"'",\n]|}' "$config_file"

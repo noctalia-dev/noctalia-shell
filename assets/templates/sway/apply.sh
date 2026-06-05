@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-config_file="${XDG_CONFIG_HOME:-$HOME/.config}/sway/config"
-include_line='include ~/.config/sway/noctalia'
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}"
+config_file="$config_dir/sway/config"
+include_line="include $config_dir/sway/noctalia"
 
 mkdir -p "$(dirname "$config_file")"
 

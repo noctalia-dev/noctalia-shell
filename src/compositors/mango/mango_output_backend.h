@@ -3,7 +3,7 @@
 class WaylandConnection;
 
 namespace compositors::mango {
-
-  [[nodiscard]] bool setOutputPower(WaylandConnection& wayland, bool on);
+  class MangoRuntime;
+  [[nodiscard]] bool setOutputPower(MangoRuntime& runtime, WaylandConnection& wayland, bool on);
 
 } // namespace compositors::mango

@@ -8,7 +8,11 @@
 
 class RectNode;
 
-enum class ProgressBarOrientation { Horizontal, Vertical };
+enum class ProgressBarOrientation {
+  Horizontal,
+  HorizontalCentered,
+  Vertical,
+};
 
 class ProgressBar : public Node {
 public:

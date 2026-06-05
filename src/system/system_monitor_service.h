@@ -25,6 +25,7 @@ struct SystemStats {
   std::uint64_t swapTotalMb{0};
   std::optional<double> cpuTempC;
   std::optional<double> gpuTempC;
+  std::optional<double> gpuUsagePercent;
   std::optional<std::uint64_t> gpuVramUsedBytes;
   std::optional<std::uint64_t> gpuVramTotalBytes;
   double netRxBytesPerSec{0.0};
@@ -55,6 +56,8 @@ public:
   void releaseCpuTemp();
   void retainGpuTemp();
   void releaseGpuTemp();
+  void retainGpuUsage();
+  void releaseGpuUsage();
   void retainGpuVram();
   void releaseGpuVram();
   void retainDiskPath(const std::string& path);
@@ -82,6 +85,19 @@ private:
     std::string source;
   };
 
+  enum class NvidiaDisplayDeviceState { None, InactiveOnly, Active };
+
+  struct GpuTempData {
+    std::optional<double> tempC;
+    std::string source;
+    std::string detail;
+  };
+
+  struct GpuUsageData {
+    std::optional<double> percent;
+    std::string source;
+  };
+
   void start();
   void stop();
   void samplingLoop();
@@ -96,7 +112,13 @@ private:
   };
   [[nodiscard]] static std::optional<MemData> readMemoryKb();
   [[nodiscard]] static std::optional<double> readCpuTempCelsius();
+  [[nodiscard]] static NvidiaDisplayDeviceState detectNvidiaPciDisplayDeviceState();
+  [[nodiscard]] NvidiaNvmlReader& ensureNvmlReader();
+  [[nodiscard]] GpuTempData readGpuTempData(NvidiaDisplayDeviceState nvidiaDisplayState);
+  [[nodiscard]] GpuUsageData readGpuUsageData(NvidiaDisplayDeviceState nvidiaDisplayState);
+  [[nodiscard]] std::optional<GpuVramData> readGpuVramData(NvidiaDisplayDeviceState nvidiaDisplayState);
   [[nodiscard]] std::optional<double> readGpuTempCelsius();
+  [[nodiscard]] std::optional<double> readGpuUsagePercent();
   [[nodiscard]] std::optional<GpuVramData> readGpuVram();
   [[nodiscard]] static float readDiskUsagePercent(const std::string& path);
 
@@ -112,6 +134,7 @@ private:
   std::atomic<bool> m_running{false};
   std::atomic<int> m_cpuTempRefs{0};
   std::atomic<int> m_gpuTempRefs{0};
+  std::atomic<int> m_gpuUsageRefs{0};
   std::atomic<int> m_gpuVramRefs{0};
   std::thread m_thread;
   std::mutex m_wakeMutex;

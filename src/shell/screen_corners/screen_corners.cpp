@@ -70,6 +70,16 @@ void ScreenCorners::onOutputChange() {
   ensureSurfaces();
 }
 
+void ScreenCorners::requestRedraw() {
+  for (auto& inst : m_instances) {
+    for (auto& corner : inst->corners) {
+      if (corner.surface != nullptr) {
+        corner.surface->requestRedraw();
+      }
+    }
+  }
+}
+
 void ScreenCorners::ensureSurfaces() {
   if (m_wayland == nullptr || m_renderContext == nullptr || m_config == nullptr) {
     return;
@@ -107,8 +117,9 @@ void ScreenCorners::ensureSurfaces() {
       auto* cornerPtr = &corner;
       const int cornerIndex = i;
 
-      corner.surface->setConfigureCallback(
-          [cornerPtr](std::uint32_t, std::uint32_t) { cornerPtr->surface->requestLayout(); });
+      corner.surface->setConfigureCallback([cornerPtr](std::uint32_t, std::uint32_t) {
+        cornerPtr->surface->requestLayout();
+      });
       corner.surface->setPrepareFrameCallback([this, cornerPtr, size, cornerIndex](bool, bool) {
         auto& target = cornerPtr->surface->renderTarget();
         const auto width = target.logicalWidth() == 0 ? size : target.logicalWidth();

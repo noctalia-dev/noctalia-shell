@@ -28,8 +28,9 @@ namespace popup_chrome {
     };
   }
 
-  Geometry computeGeometry(float contentWidth, float contentHeight, const ShellConfig::ShadowConfig& shadow,
-                           bool componentShadow) noexcept {
+  Geometry computeGeometry(
+      float contentWidth, float contentHeight, const ShellConfig::ShadowConfig& shadow, bool componentShadow
+  ) noexcept {
     Geometry geometry{
         .contentWidth = std::max(1.0f, contentWidth),
         .contentHeight = std::max(1.0f, contentHeight),
@@ -50,30 +51,32 @@ namespace popup_chrome {
     return geometry;
   }
 
-  std::int32_t adjustedOffsetX(std::int32_t baseOffset, const Geometry& geometry,
-                               HorizontalAttachment attachment) noexcept {
+  std::int32_t
+  adjustedOffsetX(std::int32_t baseOffset, const Geometry& geometry, HorizontalAttachment attachment) noexcept {
     switch (attachment) {
     case HorizontalAttachment::Left:
       return baseOffset - geometry.bleed.left;
     case HorizontalAttachment::Right:
       return baseOffset + geometry.bleed.right;
     case HorizontalAttachment::Center:
-      return baseOffset + static_cast<std::int32_t>(
-                              std::lround(static_cast<float>(geometry.bleed.right - geometry.bleed.left) * 0.5f));
+      return baseOffset
+          + static_cast<std::int32_t>(
+                 std::lround(static_cast<float>(geometry.bleed.right - geometry.bleed.left) * 0.5f)
+          );
     }
     return baseOffset;
   }
 
-  std::int32_t adjustedOffsetY(std::int32_t baseOffset, const Geometry& geometry,
-                               VerticalAttachment attachment) noexcept {
+  std::int32_t
+  adjustedOffsetY(std::int32_t baseOffset, const Geometry& geometry, VerticalAttachment attachment) noexcept {
     switch (attachment) {
     case VerticalAttachment::Top:
       return baseOffset - geometry.bleed.up;
     case VerticalAttachment::Bottom:
       return baseOffset + geometry.bleed.down;
     case VerticalAttachment::Center:
-      return baseOffset +
-             static_cast<std::int32_t>(std::lround(static_cast<float>(geometry.bleed.down - geometry.bleed.up) * 0.5f));
+      return baseOffset
+          + static_cast<std::int32_t>(std::lround(static_cast<float>(geometry.bleed.down - geometry.bleed.up) * 0.5f));
     }
     return baseOffset;
   }
@@ -89,17 +92,24 @@ namespace popup_chrome {
     surface.setInputRegion({geometry.inputRect()});
   }
 
-  RectNode* addShadow(Node& parent, const Geometry& geometry, const ShellConfig::ShadowConfig& shadow, float radius,
-                      float backgroundOpacity) {
+  RectNode* addShadow(
+      Node& parent, const Geometry& geometry, const ShellConfig::ShadowConfig& shadow, float radius,
+      float backgroundOpacity
+  ) {
     if (!shell::surface_shadow::enabled(true, shadow)) {
       return nullptr;
     }
 
     auto shadowNode = std::make_unique<RectNode>();
-    shadowNode->setStyle(shell::surface_shadow::style(
-        shadow, backgroundOpacity, shell::surface_shadow::Shape{.radius = Radii{radius, radius, radius, radius}}));
-    shadowNode->setPosition(geometry.contentX() + static_cast<float>(shadow.offsetX),
-                            geometry.contentY() + static_cast<float>(shadow.offsetY));
+    shadowNode->setStyle(
+        shell::surface_shadow::style(
+            shadow, backgroundOpacity, shell::surface_shadow::Shape{.radius = Radii{radius, radius, radius, radius}}
+        )
+    );
+    const auto offset = shadowDirectionOffset(shadow.direction);
+    shadowNode->setPosition(
+        geometry.contentX() + static_cast<float>(offset.x), geometry.contentY() + static_cast<float>(offset.y)
+    );
     shadowNode->setFrameSize(geometry.contentWidth, geometry.contentHeight);
     shadowNode->setZIndex(-1);
     return static_cast<RectNode*>(parent.addChild(std::move(shadowNode)));

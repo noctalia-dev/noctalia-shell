@@ -31,8 +31,8 @@ public:
   SelectDropdownPopup(WaylandConnection& wayland, RenderContext& renderContext);
   ~SelectDropdownPopup() override;
 
-  void setParent(zwlr_layer_surface_v1* layerSurface, wl_output* output);
-  void setParent(xdg_surface* xdgSurface, wl_output* output);
+  void setParent(zwlr_layer_surface_v1* layerSurface, wl_surface* parentWlSurface, wl_output* output);
+  void setParent(xdg_surface* xdgSurface, wl_surface* parentWlSurface, wl_output* output);
   void setShadowConfig(const ShellConfig::ShadowConfig& shadow);
 
   void openSelectDropdown(const DropdownRequest& request, DropdownCallbacks callbacks) override;
@@ -43,6 +43,9 @@ public:
   void onKeyboardEvent(const KeyboardEvent& event);
 
   [[nodiscard]] wl_surface* wlSurface() const noexcept;
+  [[nodiscard]] xdg_surface* xdgSurface() const noexcept;
+  [[nodiscard]] std::uint32_t popupWidth() const noexcept;
+  [[nodiscard]] std::uint32_t popupHeight() const noexcept;
 
 private:
   struct OptionView {
@@ -60,12 +63,17 @@ private:
   void clampScrollOffset();
   void applyHoverVisuals();
   void selectAndClose(std::size_t index);
-  [[nodiscard]] std::pair<float, float> popupLocalCoords(double sx, double sy) const;
+  [[nodiscard]] bool mapPointerEvent(const PointerEvent& event, float& localX, float& localY) const noexcept;
+  [[nodiscard]] wl_surface* resolveEventSurface(const PointerEvent& event) const noexcept;
+  void syncPointerStateFromCurrentPosition();
+  [[nodiscard]] bool ownsSurface(wl_surface* surface) const noexcept;
+  [[nodiscard]] bool containsPopupContent(float localX, float localY) const noexcept;
 
   WaylandConnection& m_wayland;
   RenderContext& m_renderContext;
   zwlr_layer_surface_v1* m_parentLayerSurface = nullptr;
   xdg_surface* m_parentXdgSurface = nullptr;
+  wl_surface* m_parentWlSurface = nullptr;
   wl_output* m_parentOutput = nullptr;
 
   std::unique_ptr<PopupSurface> m_surface;

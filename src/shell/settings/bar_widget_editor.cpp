@@ -3,25 +3,23 @@
 #include "cursor-shape-v1-client-protocol.h"
 #include "i18n/i18n.h"
 #include "render/scene/node.h"
+#include "scripting/scripted_widget_manifest.h"
+#include "shell/settings/color_spec_picker.h"
+#include "shell/settings/font_weight_catalog.h"
+#include "shell/settings/settings_content.h"
 #include "shell/settings/widget_settings_registry.h"
-#include "ui/controls/box.h"
-#include "ui/controls/button.h"
-#include "ui/controls/flex.h"
-#include "ui/controls/glyph.h"
-#include "ui/controls/input.h"
-#include "ui/controls/label.h"
-#include "ui/controls/separator.h"
+#include "ui/builders.h"
 #include "ui/dialogs/file_dialog.h"
 #include "ui/dialogs/glyph_picker_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
-#include "util/string_utils.h"
 
 #include <algorithm>
 #include <cctype>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <filesystem>
 #include <format>
 #include <memory>
@@ -34,6 +32,11 @@
 #include <vector>
 
 namespace settings {
+
+  // Defined in settings_content_common.cpp (header not included here to avoid a makeLabel overload clash).
+  [[nodiscard]] std::string formatSliderValue(double value, bool integerValue);
+  [[nodiscard]] std::optional<double> parseDoubleInput(std::string_view text);
+
   namespace {
 
     constexpr float kDragStartThresholdPx = 6.0f;
@@ -45,54 +48,155 @@ namespace settings {
       float startLocalY = 0.0f;
       float lastLocalX = 0.0f;
       float lastLocalY = 0.0f;
-      std::optional<std::size_t> targetLaneIndex;
+      std::optional<std::size_t> targetZoneIndex;
       std::optional<std::size_t> targetInsertionIndex;
+      // Set when hovering over the middle of another loose widget: dropping forms a new group with it.
+      std::optional<std::size_t> combineZoneIndex;
+      std::optional<std::size_t> combineItemIndex;
+      // The card currently highlighted as a combine target (so it can be reset).
+      std::optional<std::size_t> highlightZoneIndex;
+      std::optional<std::size_t> highlightItemIndex;
     };
 
-    struct LaneDropTarget {
-      std::vector<std::string> path;
-      std::vector<std::string> items;
-      Flex* lane = nullptr;
+    // A drop zone is either a bar lane (entries = widget refs / group tokens) or a group's member list.
+    // Both lanes and group containers register as zones so widgets can be dragged into and out of groups.
+    struct DropZone {
+      bool isGroup = false;
+      std::vector<std::string> lanePath; // when !isGroup
+      std::string groupId;               // when isGroup
+      std::vector<std::string> items;    // lane entries or group members (snapshot)
+      Flex* container = nullptr;
       Box* indicator = nullptr;
       std::shared_ptr<std::vector<Flex*>> itemNodes;
     };
 
-    std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ColorSpec& color, bool bold = false) {
-      auto label = std::make_unique<Label>();
-      label->setText(text);
-      label->setFontSize(fontSize);
-      label->setColor(color);
-      label->setBold(bold);
-      return label;
+    std::unique_ptr<Label> makeLabel(
+        std::string_view text, float fontSize, const ColorSpec& color, FontWeight fontWeight = FontWeight::Normal
+    ) {
+      return ui::label({
+          .text = std::string(text),
+          .fontSize = fontSize,
+          .color = color,
+          .fontWeight = fontWeight,
+      });
     }
 
     std::unique_ptr<Glyph> makeGlyph(std::string_view name, float glyphSize, const ColorSpec& color) {
-      auto glyph = std::make_unique<Glyph>();
-      glyph->setGlyph(name);
-      glyph->setGlyphSize(glyphSize);
-      glyph->setColor(color);
-      return glyph;
+      return ui::glyph({
+          .glyph = std::string(name),
+          .glyphSize = glyphSize,
+          .color = color,
+      });
     }
 
-    std::unique_ptr<Node> makeMiniSectionHeader(std::string_view title, float scale) {
-      auto wrap = std::make_unique<Flex>();
-      wrap->setDirection(FlexDirection::Vertical);
-      wrap->setAlign(FlexAlign::Stretch);
-      wrap->setGap(Style::spaceXs * scale);
-      wrap->setPadding(Style::spaceSm * scale, 0.0f, 0.0f, 0.0f);
-      wrap->addChild(std::make_unique<Separator>());
-      wrap->addChild(makeLabel(title, Style::fontSizeCaption * scale, colorSpecFromRole(ColorRole::Secondary), true));
-      return wrap;
+    std::unique_ptr<Node> makeMiniSectionHeader(std::string_view title, float scale, bool withSeparator = true) {
+      auto header = ui::column({
+          .align = FlexAlign::Stretch,
+          .gap = Style::spaceXs * scale,
+          .configure = [scale](Flex& flex) { flex.setPadding(Style::spaceSm * scale, 0.0f, 0.0f, 0.0f); },
+      });
+      if (withSeparator) {
+        header->addChild(ui::separator());
+      }
+      header->addChild(
+          makeLabel(title, Style::fontSizeCaption * scale, colorSpecFromRole(ColorRole::Secondary), FontWeight::Bold)
+      );
+      return header;
     }
 
-    void closeInspector(std::string& editingWidgetName, std::string& renamingWidgetName,
-                        std::string& pendingDeleteWidgetName, std::string& pendingDeleteWidgetSettingPath,
-                        const std::function<void()>& requestRebuild) {
-      editingWidgetName.clear();
-      renamingWidgetName.clear();
-      pendingDeleteWidgetName.clear();
-      pendingDeleteWidgetSettingPath.clear();
-      requestRebuild();
+    std::string_view widgetSettingGroupKey(const WidgetSettingSpec& spec) {
+      switch (spec.group) {
+      case WidgetSettingGroup::Runtime:
+        return "runtime";
+      case WidgetSettingGroup::Presentation:
+        return "presentation";
+      case WidgetSettingGroup::Grouping:
+        return "grouping";
+      case WidgetSettingGroup::Widget:
+        return "widget";
+      }
+      return "widget";
+    }
+
+    std::string widgetSettingGroupTitle(std::string_view groupKey) {
+      return i18n::tr("settings.entities.widget.settings.groups." + std::string(groupKey));
+    }
+
+    enum class PathBrowseKind : std::uint8_t {
+      File,
+      Folder,
+    };
+
+    void applyPathDialogStartValue(FileDialogOptions& options, const std::string& currentValue, PathBrowseKind kind) {
+      if (currentValue.empty()) {
+        return;
+      }
+
+      const std::filesystem::path current(currentValue);
+      std::error_code ec;
+      if (kind == PathBrowseKind::Folder
+          && std::filesystem::exists(current, ec)
+          && std::filesystem::is_directory(current, ec)) {
+        options.startDirectory = current;
+        return;
+      }
+      if (kind == PathBrowseKind::File
+          && std::filesystem::exists(current, ec)
+          && std::filesystem::is_regular_file(current, ec)) {
+        options.startDirectory = current.parent_path();
+        options.defaultFilename = current.filename().string();
+        return;
+      }
+      if (current.has_parent_path()
+          && std::filesystem::exists(current.parent_path(), ec)
+          && std::filesystem::is_directory(current.parent_path(), ec)) {
+        options.startDirectory = current.parent_path();
+      }
+    }
+
+    std::unique_ptr<Node> makePathBrowseControl(
+        const BarWidgetEditorContext& ctx, std::vector<std::string> path, std::string currentValue, std::string glyph,
+        FileDialogOptions options, PathBrowseKind kind, std::string dialogStartValue = {}
+    ) {
+      if (dialogStartValue.empty()) {
+        dialogStartValue = currentValue;
+      }
+
+      auto textNode = ctx.makeText(currentValue, {}, path);
+      return ui::row(
+          {
+              .align = FlexAlign::Center,
+              .gap = Style::spaceSm * ctx.scale,
+          },
+          std::move(textNode),
+          ui::button({
+              .glyph = std::move(glyph),
+              .glyphSize = Style::fontSizeBody * ctx.scale,
+              .variant = ButtonVariant::Outline,
+              .minWidth = Style::controlHeight * ctx.scale,
+              .minHeight = Style::controlHeight * ctx.scale,
+              .paddingV = Style::spaceXs * ctx.scale,
+              .paddingH = Style::spaceSm * ctx.scale,
+              .radius = Style::scaledRadiusMd(ctx.scale),
+              .onClick = [setOverride = ctx.setOverride, requestRebuild = ctx.requestRebuild, path = std::move(path),
+                          options = std::move(options), kind, dialogStartValue = std::move(dialogStartValue)]() {
+                FileDialogOptions dialogOptions = options;
+                applyPathDialogStartValue(dialogOptions, dialogStartValue, kind);
+                (void)FileDialog::open(
+                    std::move(dialogOptions),
+                    [setOverride, requestRebuild, path](std::optional<std::filesystem::path> picked) {
+                      if (!picked.has_value()) {
+                        return;
+                      }
+                      setOverride(path, picked->string());
+                      if (requestRebuild) {
+                        requestRebuild();
+                      }
+                    }
+                );
+              },
+          })
+      );
     }
 
     std::string pathKey(const std::vector<std::string>& path) {
@@ -195,27 +299,32 @@ namespace settings {
       return true;
     }
 
-    ColorSpec widgetBadgeColor(WidgetReferenceKind kind) {
+    // Compact kind indicator used on lane cards in place of the text badge.
+    std::string_view widgetBadgeGlyph(WidgetReferenceKind kind) {
       switch (kind) {
       case WidgetReferenceKind::BuiltIn:
-        return colorSpecFromRole(ColorRole::Primary, 0.16f);
+        return "puzzle";
       case WidgetReferenceKind::Named:
-        return colorSpecFromRole(ColorRole::Secondary, 0.18f);
+        return "tag";
+      case WidgetReferenceKind::Preset:
+        return "script";
       case WidgetReferenceKind::Unknown:
-        return colorSpecFromRole(ColorRole::Error, 0.16f);
+        return "help-circle";
       }
-      return colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.12f);
+      return "help-circle";
     }
 
-    SelectSetting widgetTypeSelect(std::string_view selectedType) {
-      std::vector<SelectOption> options;
-      for (const auto& spec : widgetTypeSpecs()) {
-        if (!spec.visibleInPicker) {
-          continue;
-        }
-        options.push_back(SelectOption{std::string(spec.type), i18n::tr(spec.labelKey)});
+    ColorSpec widgetBadgeGlyphColor(WidgetReferenceKind kind) {
+      switch (kind) {
+      case WidgetReferenceKind::BuiltIn:
+        return colorSpecFromRole(ColorRole::Primary);
+      case WidgetReferenceKind::Named:
+      case WidgetReferenceKind::Preset:
+        return colorSpecFromRole(ColorRole::Secondary);
+      case WidgetReferenceKind::Unknown:
+        return colorSpecFromRole(ColorRole::Error);
       }
-      return SelectSetting{std::move(options), std::string(selectedType)};
+      return colorSpecFromRole(ColorRole::OnSurfaceVariant);
     }
 
     void collectWidgetReferenceNames(const std::vector<std::string>& widgets, std::unordered_set<std::string>& seen) {
@@ -257,9 +366,10 @@ namespace settings {
       return items.size() != oldSize;
     }
 
-    void appendReferenceRemoval(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>& overrides,
-                                std::vector<std::string> path, std::vector<std::string> items,
-                                std::string_view widgetName) {
+    void appendReferenceRemoval(
+        std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>& overrides, std::vector<std::string> path,
+        std::vector<std::string> items, std::string_view widgetName
+    ) {
       if (removeWidgetReference(items, widgetName)) {
         overrides.push_back({std::move(path), std::move(items)});
       }
@@ -276,16 +386,19 @@ namespace settings {
         for (const auto& ovr : bar.monitorOverrides) {
           const std::vector<std::string> prefix = {"bar", bar.name, "monitor", ovr.match};
           if (ovr.startWidgets.has_value()) {
-            appendReferenceRemoval(overrides, {prefix[0], prefix[1], prefix[2], prefix[3], "start"}, *ovr.startWidgets,
-                                   widgetName);
+            appendReferenceRemoval(
+                overrides, {prefix[0], prefix[1], prefix[2], prefix[3], "start"}, *ovr.startWidgets, widgetName
+            );
           }
           if (ovr.centerWidgets.has_value()) {
-            appendReferenceRemoval(overrides, {prefix[0], prefix[1], prefix[2], prefix[3], "center"},
-                                   *ovr.centerWidgets, widgetName);
+            appendReferenceRemoval(
+                overrides, {prefix[0], prefix[1], prefix[2], prefix[3], "center"}, *ovr.centerWidgets, widgetName
+            );
           }
           if (ovr.endWidgets.has_value()) {
-            appendReferenceRemoval(overrides, {prefix[0], prefix[1], prefix[2], prefix[3], "end"}, *ovr.endWidgets,
-                                   widgetName);
+            appendReferenceRemoval(
+                overrides, {prefix[0], prefix[1], prefix[2], prefix[3], "end"}, *ovr.endWidgets, widgetName
+            );
           }
         }
       }
@@ -334,8 +447,9 @@ namespace settings {
     }
 
     bool isGuiManagedNamedWidgetInstance(const BarWidgetEditorContext& ctx, std::string_view widgetName) {
-      return isNamedWidgetInstance(ctx.config, widgetName) && ctx.configService != nullptr &&
-             ctx.configService->hasOverride({"widget", std::string(widgetName)});
+      return isNamedWidgetInstance(ctx.config, widgetName)
+          && ctx.configService != nullptr
+          && ctx.configService->hasOverride({"widget", std::string(widgetName)});
     }
 
     bool isValidWidgetInstanceId(std::string_view id) {
@@ -355,17 +469,35 @@ namespace settings {
       return isValidWidgetInstanceId(newName) && oldName != newName && !widgetReferenceNameExists(cfg, newName);
     }
 
-    std::string widgetCapsuleGroupName(const Config& cfg, std::string_view widgetName) {
-      const auto it = cfg.widgets.find(std::string(widgetName));
-      if (it == cfg.widgets.end()) {
-        return {};
+    // Smallest unused `g<N>` id within the bar's existing groups.
+    std::string nextCapsuleGroupId(const BarConfig& bar) {
+      int n = 1;
+      const auto exists = [&](const std::string& id) {
+        return std::any_of(bar.widgetCapsuleGroups.begin(), bar.widgetCapsuleGroups.end(), [&](const auto& g) {
+          return g.id == id;
+        });
+      };
+      std::string candidate = "g" + std::to_string(n);
+      while (exists(candidate)) {
+        candidate = "g" + std::to_string(++n);
       }
+      return candidate;
+    }
 
-      if (!it->second.hasSetting("capsule_group")) {
-        return {};
+    // New group style seeded from the bar's capsule defaults.
+    BarCapsuleGroupStyle seedCapsuleGroupStyle(const BarConfig& bar, std::string id) {
+      BarCapsuleGroupStyle group;
+      group.id = std::move(id);
+      group.fill = bar.widgetCapsuleFill;
+      group.borderSpecified = bar.widgetCapsuleBorderSpecified;
+      group.border = bar.widgetCapsuleBorder;
+      group.foreground = bar.widgetCapsuleForeground;
+      group.padding = bar.widgetCapsulePadding;
+      if (bar.widgetCapsuleRadius.has_value()) {
+        group.radius = static_cast<float>(*bar.widgetCapsuleRadius);
       }
-
-      return StringUtils::trim(it->second.getString("capsule_group", ""));
+      group.opacity = bar.widgetCapsuleOpacity;
+      return group;
     }
 
     std::size_t insertionIndexForSceneY(float sceneY, const std::vector<Flex*>& itemNodes) {
@@ -384,38 +516,269 @@ namespace settings {
       return itemNodes.size();
     }
 
-    bool insertionWouldNotMove(std::size_t sourceLaneIndex, std::size_t targetLaneIndex, std::size_t fromIndex,
-                               std::size_t insertionIndex) {
-      return sourceLaneIndex == targetLaneIndex && (insertionIndex == fromIndex || insertionIndex == fromIndex + 1);
+    bool insertionWouldNotMove(
+        std::size_t sourceZoneIndex, std::size_t targetZoneIndex, std::size_t fromIndex, std::size_t insertionIndex
+    ) {
+      return sourceZoneIndex == targetZoneIndex && (insertionIndex == fromIndex || insertionIndex == fromIndex + 1);
     }
 
-    std::optional<std::size_t> laneIndexAtScenePoint(const std::vector<LaneDropTarget>& lanes, float sceneX,
-                                                     float sceneY) {
-      for (std::size_t i = 0; i < lanes.size(); ++i) {
-        const auto* lane = lanes[i].lane;
-        if (lane == nullptr) {
+    // Innermost zone containing the point. Group zones win over the lane that encloses them.
+    std::optional<std::size_t> zoneAtScenePoint(const std::vector<DropZone>& zones, float sceneX, float sceneY) {
+      std::optional<std::size_t> laneHit;
+      for (std::size_t i = 0; i < zones.size(); ++i) {
+        const auto* container = zones[i].container;
+        if (container == nullptr) {
           continue;
         }
-        float laneX = 0.0f;
-        float laneY = 0.0f;
-        Node::absolutePosition(lane, laneX, laneY);
-        if (sceneX >= laneX && sceneX < laneX + lane->width() && sceneY >= laneY && sceneY < laneY + lane->height()) {
+        float zoneX = 0.0f;
+        float zoneY = 0.0f;
+        Node::absolutePosition(container, zoneX, zoneY);
+        const bool inside = sceneX >= zoneX
+            && sceneX < zoneX + container->width()
+            && sceneY >= zoneY
+            && sceneY < zoneY + container->height();
+        if (!inside) {
+          continue;
+        }
+        if (zones[i].isGroup) {
           return i;
+        }
+        laneHit = i;
+      }
+      return laneHit;
+    }
+
+    void hideDropIndicators(const std::vector<DropZone>& zones) {
+      for (const auto& zone : zones) {
+        if (zone.indicator != nullptr) {
+          zone.indicator->setVisible(false);
+        }
+      }
+    }
+
+    // Applies a drag move from (srcZone, srcIdx) to (dstZone, insertionIndex) by writing the affected lane
+    // vectors and/or the bar's capsule-group vector. Group member edits funnel through one group-vector write.
+    void performZoneMove(
+        const Config& cfg, const std::string& barName, const std::vector<DropZone>& zones, std::size_t srcZone,
+        std::size_t srcIdx, std::size_t dstZone, std::size_t insertionIndex,
+        const std::function<void(std::vector<std::string>, ConfigOverrideValue)>& setOverride,
+        const std::function<void(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>)>& setOverrides
+    ) {
+      if (srcZone >= zones.size() || dstZone >= zones.size()) {
+        return;
+      }
+      std::vector<std::string> srcItems = zones[srcZone].items;
+      if (srcIdx >= srcItems.size()) {
+        return;
+      }
+      const std::string moving = srcItems[srcIdx];
+      const bool sameZone = srcZone == dstZone;
+      // No nesting: a group token cannot be dropped inside a group.
+      if (zones[dstZone].isGroup && isCapsuleGroupToken(moving)) {
+        return;
+      }
+      if (sameZone && insertionWouldNotMove(srcZone, dstZone, srcIdx, insertionIndex)) {
+        return;
+      }
+
+      srcItems.erase(srcItems.begin() + static_cast<std::ptrdiff_t>(srcIdx));
+      std::vector<std::string> dstItems = sameZone ? srcItems : zones[dstZone].items;
+      std::size_t insert = insertionIndex;
+      if (sameZone && insertionIndex > srcIdx) {
+        --insert;
+      }
+      insert = std::min(insert, dstItems.size());
+      dstItems.insert(dstItems.begin() + static_cast<std::ptrdiff_t>(insert), moving);
+
+      const BarConfig* bar = findBar(cfg, barName);
+      std::vector<BarCapsuleGroupStyle> groups =
+          bar != nullptr ? bar->widgetCapsuleGroups : std::vector<BarCapsuleGroupStyle>{};
+      bool groupsTouched = false;
+      // Lane edits keyed by zone index, so a later empty-group cleanup can also drop a token from a lane.
+      std::vector<std::pair<std::size_t, std::vector<std::string>>> laneEdits;
+      const auto setLane = [&](std::size_t zoneIndex, std::vector<std::string> items) {
+        for (auto& edit : laneEdits) {
+          if (edit.first == zoneIndex) {
+            edit.second = std::move(items);
+            return;
+          }
+        }
+        laneEdits.push_back({zoneIndex, std::move(items)});
+      };
+      const auto laneItemsFor = [&](std::size_t zoneIndex) {
+        for (const auto& edit : laneEdits) {
+          if (edit.first == zoneIndex) {
+            return edit.second;
+          }
+        }
+        return zones[zoneIndex].items;
+      };
+      const auto applyZone = [&](std::size_t zoneIndex, const std::vector<std::string>& items) {
+        const DropZone& zone = zones[zoneIndex];
+        if (zone.isGroup) {
+          for (auto& g : groups) {
+            if (g.id == zone.groupId) {
+              g.members = items;
+              break;
+            }
+          }
+          groupsTouched = true;
+        } else {
+          setLane(zoneIndex, items);
+        }
+      };
+      if (sameZone) {
+        applyZone(srcZone, dstItems);
+      } else {
+        applyZone(srcZone, srcItems);
+        applyZone(dstZone, dstItems);
+      }
+
+      // Dragging the last member out empties a group: drop it and its lane token.
+      if (groupsTouched) {
+        for (const auto& g : groups) {
+          if (!g.members.empty()) {
+            continue;
+          }
+          const std::string token = makeCapsuleGroupToken(g.id);
+          for (std::size_t zi = 0; zi < zones.size(); ++zi) {
+            if (zones[zi].isGroup) {
+              continue;
+            }
+            std::vector<std::string> items = laneItemsFor(zi);
+            const auto it = std::find(items.begin(), items.end(), token);
+            if (it != items.end()) {
+              items.erase(it);
+              setLane(zi, std::move(items));
+            }
+          }
+        }
+        std::vector<BarCapsuleGroupStyle> kept;
+        for (auto& g : groups) {
+          if (!g.members.empty()) {
+            kept.push_back(std::move(g));
+          }
+        }
+        groups.swap(kept);
+      }
+
+      std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> batch;
+      for (const auto& edit : laneEdits) {
+        batch.push_back({zones[edit.first].lanePath, edit.second});
+      }
+      if (groupsTouched) {
+        batch.push_back({{"bar", barName, "capsule_group"}, groups});
+      }
+      if (batch.size() == 1) {
+        setOverride(batch[0].first, batch[0].second);
+      } else if (!batch.empty()) {
+        setOverrides(batch);
+      }
+    }
+
+    // Index of the item under sceneY, plus whether the pointer is in its middle band (a "combine" gesture
+    // rather than an insertion between items).
+    std::optional<std::pair<std::size_t, bool>> hoveredItemBand(float sceneY, const std::vector<Flex*>& itemNodes) {
+      for (std::size_t i = 0; i < itemNodes.size(); ++i) {
+        const auto* node = itemNodes[i];
+        if (node == nullptr) {
+          continue;
+        }
+        float nodeX = 0.0f;
+        float nodeY = 0.0f;
+        Node::absolutePosition(node, nodeX, nodeY);
+        const float h = node->height();
+        if (h > 0.0f && sceneY >= nodeY && sceneY < nodeY + h) {
+          const float rel = (sceneY - nodeY) / h;
+          return std::make_pair(i, rel > 0.3f && rel < 0.7f);
         }
       }
       return std::nullopt;
     }
 
-    void hideDropIndicators(const std::vector<LaneDropTarget>& lanes) {
-      for (const auto& lane : lanes) {
-        if (lane.indicator != nullptr) {
-          lane.indicator->setVisible(false);
-        }
+    // Toggles the combine-target outline on a loose widget card (reset matches makeWidgetCard's default border).
+    void
+    setCardCombineHighlight(const std::vector<DropZone>& zones, std::size_t zoneIndex, std::size_t itemIndex, bool on) {
+      if (zoneIndex >= zones.size()
+          || zones[zoneIndex].itemNodes == nullptr
+          || itemIndex >= zones[zoneIndex].itemNodes->size()) {
+        return;
+      }
+      Flex* card = (*zones[zoneIndex].itemNodes)[itemIndex];
+      if (card == nullptr) {
+        return;
+      }
+      if (on) {
+        card->setBorder(colorSpecFromRole(ColorRole::Primary), Style::borderWidth * 2.0f);
+      } else {
+        card->setBorder(colorSpecFromRole(ColorRole::Outline, 0.22f), Style::borderWidth);
       }
     }
 
-    void updateDropIndicator(Box& indicator, const Flex& lane, const std::vector<Flex*>& itemNodes,
-                             std::size_t insertionIndex, float scale) {
+    // Creates a new group from two loose widgets (the dragged one dropped onto the target). The target keeps
+    // its lane position (now a group token); the dragged widget is pulled from its source lane.
+    void createGroupByCombine(
+        const Config& cfg, const std::string& barName, const std::vector<DropZone>& zones, std::size_t draggedZone,
+        std::size_t draggedIdx, std::size_t targetZone, std::size_t targetIdx,
+        const std::function<void(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>)>& setOverrides
+    ) {
+      if (draggedZone >= zones.size()
+          || targetZone >= zones.size()
+          || zones[draggedZone].isGroup
+          || zones[targetZone].isGroup) {
+        return;
+      }
+      const DropZone& dz = zones[draggedZone];
+      const DropZone& tz = zones[targetZone];
+      if (draggedIdx >= dz.items.size() || targetIdx >= tz.items.size()) {
+        return;
+      }
+      const std::string draggedName = dz.items[draggedIdx];
+      const std::string targetName = tz.items[targetIdx];
+      if (isCapsuleGroupToken(draggedName) || isCapsuleGroupToken(targetName)) {
+        return;
+      }
+      const BarConfig* bar = findBar(cfg, barName);
+      if (bar == nullptr) {
+        return;
+      }
+      const std::string newId = nextCapsuleGroupId(*bar);
+      BarCapsuleGroupStyle newGroup = seedCapsuleGroupStyle(*bar, newId);
+      newGroup.members = {targetName, draggedName};
+      std::vector<BarCapsuleGroupStyle> groups = bar->widgetCapsuleGroups;
+      groups.push_back(std::move(newGroup));
+      const std::string token = makeCapsuleGroupToken(newId);
+
+      std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> batch;
+      if (draggedZone == targetZone) {
+        std::vector<std::string> lane;
+        lane.reserve(dz.items.size());
+        for (std::size_t k = 0; k < dz.items.size(); ++k) {
+          if (k == draggedIdx) {
+            continue;
+          }
+          if (k == targetIdx) {
+            lane.push_back(token);
+            continue;
+          }
+          lane.push_back(dz.items[k]);
+        }
+        batch.push_back({dz.lanePath, lane});
+      } else {
+        std::vector<std::string> draggedLane = dz.items;
+        draggedLane.erase(draggedLane.begin() + static_cast<std::ptrdiff_t>(draggedIdx));
+        std::vector<std::string> targetLane = tz.items;
+        targetLane[targetIdx] = token;
+        batch.push_back({dz.lanePath, draggedLane});
+        batch.push_back({tz.lanePath, targetLane});
+      }
+      batch.push_back({{"bar", barName, "capsule_group"}, groups});
+      setOverrides(batch);
+    }
+
+    void updateDropIndicator(
+        Box& indicator, const Flex& lane, const std::vector<Flex*>& itemNodes, std::size_t insertionIndex, float scale
+    ) {
       if (insertionIndex > itemNodes.size()) {
         indicator.setVisible(false);
         return;
@@ -440,44 +803,31 @@ namespace settings {
       indicator.setVisible(true);
     }
 
-    std::vector<std::string> movedWithinLane(std::vector<std::string> items, std::size_t fromIndex,
-                                             std::size_t insertionIndex) {
-      if (fromIndex >= items.size() || insertionIndex > items.size()) {
-        return items;
-      }
-      if (insertionIndex == fromIndex || insertionIndex == fromIndex + 1) {
-        return items;
-      }
-
-      auto item = std::move(items[fromIndex]);
-      items.erase(items.begin() + static_cast<std::ptrdiff_t>(fromIndex));
-      if (insertionIndex > fromIndex) {
-        --insertionIndex;
-      }
-      items.insert(items.begin() + static_cast<std::ptrdiff_t>(insertionIndex), std::move(item));
-      return items;
-    }
-
     std::vector<std::string> widgetSettingPath(std::string widgetName, std::string settingKey) {
       return {"widget", std::move(widgetName), std::move(settingKey)};
     }
 
-    WidgetSettingValue widgetSettingValue(const Config& cfg, std::string_view widgetName,
-                                          const WidgetSettingSpec& spec) {
+    WidgetSettingValue
+    widgetSettingValue(const Config& cfg, std::string_view widgetName, const WidgetSettingSpec& spec) {
       if (const auto it = cfg.widgets.find(std::string(widgetName)); it != cfg.widgets.end()) {
-        if (const auto settingIt = it->second.settings.find(spec.key); settingIt != it->second.settings.end()) {
+        if (const auto settingIt = it->second.settings.find(spec.schema.key); settingIt != it->second.settings.end()) {
           return settingIt->second;
         }
       }
-      return spec.defaultValue;
+      return spec.schema.defaultValue;
     }
 
-    std::string settingCurrentString(const Config& cfg, std::string_view widgetName, const std::string& key,
-                                     const std::vector<WidgetSettingSpec>& allSpecs) {
+    std::string settingCurrentString(
+        const Config& cfg, std::string_view widgetName, const std::string& key,
+        const std::vector<WidgetSettingSpec>& allSpecs
+    ) {
       if (const auto it = cfg.widgets.find(std::string(widgetName)); it != cfg.widgets.end()) {
         if (const auto settingIt = it->second.settings.find(key); settingIt != it->second.settings.end()) {
           if (const auto* s = std::get_if<std::string>(&settingIt->second)) {
             return *s;
+          }
+          if (const auto* i = std::get_if<std::int64_t>(&settingIt->second)) {
+            return std::to_string(*i);
           }
           if (const auto* b = std::get_if<bool>(&settingIt->second)) {
             return *b ? "true" : "false";
@@ -485,11 +835,14 @@ namespace settings {
         }
       }
       for (const auto& s : allSpecs) {
-        if (s.key == key) {
-          if (const auto* str = std::get_if<std::string>(&s.defaultValue)) {
+        if (s.schema.key == key) {
+          if (const auto* str = std::get_if<std::string>(&s.schema.defaultValue)) {
             return *str;
           }
-          if (const auto* b = std::get_if<bool>(&s.defaultValue)) {
+          if (const auto* i = std::get_if<std::int64_t>(&s.schema.defaultValue)) {
+            return std::to_string(*i);
+          }
+          if (const auto* b = std::get_if<bool>(&s.schema.defaultValue)) {
             return *b ? "true" : "false";
           }
           break;
@@ -498,8 +851,10 @@ namespace settings {
       return {};
     }
 
-    bool isSettingVisible(const Config& cfg, std::string_view widgetName, const WidgetSettingSpec& spec,
-                          const std::vector<WidgetSettingSpec>& allSpecs) {
+    bool isSettingVisible(
+        const Config& cfg, std::string_view widgetName, const WidgetSettingSpec& spec,
+        const std::vector<WidgetSettingSpec>& allSpecs
+    ) {
       if (!spec.visibleWhen.has_value()) {
         return true;
       }
@@ -547,8 +902,8 @@ namespace settings {
       return 0.0;
     }
 
-    std::optional<double> widgetSettingOptionalDouble(const Config& cfg, std::string_view widgetName,
-                                                      const std::string& key) {
+    std::optional<double>
+    widgetSettingOptionalDouble(const Config& cfg, std::string_view widgetName, const std::string& key) {
       if (const auto it = cfg.widgets.find(std::string(widgetName)); it != cfg.widgets.end()) {
         if (const auto settingIt = it->second.settings.find(key); settingIt != it->second.settings.end()) {
           if (const auto* v = std::get_if<double>(&settingIt->second)) {
@@ -562,8 +917,8 @@ namespace settings {
       return std::nullopt;
     }
 
-    std::optional<int> widgetSettingOptionalStepperValue(const Config& cfg, std::string_view widgetName,
-                                                         const std::string& key) {
+    std::optional<int>
+    widgetSettingOptionalStepperValue(const Config& cfg, std::string_view widgetName, const std::string& key) {
       const auto value = widgetSettingOptionalDouble(cfg, widgetName, key);
       if (!value.has_value()) {
         return std::nullopt;
@@ -595,7 +950,22 @@ namespace settings {
       if (const auto* v = std::get_if<std::string>(&value)) {
         return *v;
       }
+      if (const auto* v = std::get_if<std::int64_t>(&value)) {
+        return std::to_string(*v);
+      }
       return {};
+    }
+
+    std::string widgetLabelFontWeightSelectedValue(const Config& cfg, std::string_view widgetName) {
+      const auto widgetIt = cfg.widgets.find(std::string(widgetName));
+      if (widgetIt == cfg.widgets.end()) {
+        return {};
+      }
+      const auto settingIt = widgetIt->second.settings.find("font_weight");
+      if (settingIt == widgetIt->second.settings.end()) {
+        return {};
+      }
+      return settingValueAsString(settingIt->second);
     }
 
     std::vector<std::string> settingValueAsStringList(const WidgetSettingValue& value) {
@@ -629,37 +999,65 @@ namespace settings {
               return out;
             }
           },
-          value);
+          value
+      );
     }
 
-    std::vector<SelectOption> managedCapsuleGroupOptions(const Config& cfg, const std::vector<std::string>& lanePath) {
-      std::vector<SelectOption> options;
-      if (lanePath.size() < 2 || lanePath[0] != "bar") {
-        return options;
-      }
-
-      const auto* bar = findBar(cfg, lanePath[1]);
-      if (bar == nullptr) {
-        return options;
-      }
-
-      const std::vector<std::string>* groups = &bar->widgetCapsuleGroups;
-      if (lanePath.size() >= 4 && lanePath[2] == "monitor") {
-        if (const auto* ovr = findMonitorOverride(*bar, lanePath[3]); ovr != nullptr && ovr->widgetCapsuleGroups) {
-          groups = &*ovr->widgetCapsuleGroups;
+    [[nodiscard]] bool workspacesMinimalEnabled(
+        const Config& cfg, std::string_view widgetName, const std::vector<WidgetSettingSpec>& allSpecs
+    ) {
+      for (const auto& spec : allSpecs) {
+        if (spec.schema.key == "minimal") {
+          return settingValueAsBool(widgetSettingValue(cfg, widgetName, spec));
         }
       }
+      return false;
+    }
 
-      options.reserve(groups->size() + 1);
-      options.push_back(SelectOption{.value = "", .label = i18n::tr("settings.widgets.options.none")});
-      for (const auto& group : *groups) {
-        if (group.empty()) {
+    SelectSetting workspacesDisplaySelectSetting(
+        const BarWidgetEditorContext& ctx, std::string_view widgetName, const WidgetSettingSpec& displaySpec,
+        const std::vector<WidgetSettingSpec>& allSpecs, std::string selectedValue
+    ) {
+      const bool minimal = workspacesMinimalEnabled(ctx.config, widgetName, allSpecs);
+      if (minimal && selectedValue == "none") {
+        selectedValue = "id";
+      }
+
+      std::vector<SelectOption> options;
+      options.reserve(displaySpec.options.size());
+      for (const auto& option : displaySpec.options) {
+        if (minimal && option.value == "none") {
           continue;
         }
-        options.push_back(SelectOption{.value = group, .label = group});
+        options.push_back(
+            SelectOption{option.value, displaySpec.literalLabels ? option.labelKey : i18n::tr(option.labelKey)}
+        );
+      }
+      SelectSetting selectSetting{std::move(options), std::move(selectedValue)};
+      selectSetting.segmented = displaySpec.segmented;
+      return selectSetting;
+    }
+
+    SelectSetting labelFontWeightSelectSetting(
+        const BarWidgetEditorContext& ctx, const WidgetSettingSpec& spec, std::string selectedValue
+    ) {
+      std::optional<int> preserveWeight;
+      if (!selectedValue.empty()) {
+        preserveWeight = static_cast<int>(std::strtol(selectedValue.c_str(), nullptr, 10));
       }
 
-      return options;
+      std::vector<SelectOption> options;
+      const auto catalogOptions = buildLabelFontWeightSelectOptions(
+          ctx.config.shell.fontFamily, FontWeightSelectKind::WidgetInheritDefault, preserveWeight
+      );
+      options.reserve(catalogOptions.size());
+      for (const auto& option : catalogOptions) {
+        options.push_back(SelectOption{option.value, i18n::tr(option.labelKey)});
+      }
+
+      SelectSetting selectSetting{std::move(options), std::move(selectedValue)};
+      selectSetting.integerValue = spec.integerValue;
+      return selectSetting;
     }
 
     SelectSetting batteryDeviceSelectSetting(const BarWidgetEditorContext& ctx, std::string selectedValue) {
@@ -676,17 +1074,21 @@ namespace settings {
         return opt.value == selectedValue;
       });
       if (!selectedValue.empty() && !hasSelected) {
-        options.push_back(SelectOption{
-            .value = selectedValue,
-            .label = i18n::tr("settings.controls.select.unknown-value", "value", selectedValue),
-        });
+        options.push_back(
+            SelectOption{
+                .value = selectedValue,
+                .label = i18n::tr("settings.controls.select.unknown-value", "value", selectedValue),
+            }
+        );
       }
 
       return SelectSetting{std::move(options), std::move(selectedValue)};
     }
 
-    void addRawWidgetSettings(Flex& panel, std::string_view widgetName, const std::vector<WidgetSettingSpec>& specs,
-                              std::size_t& visibleSpecs, const BarWidgetEditorContext& ctx) {
+    void addRawWidgetSettings(
+        Flex& panel, std::string_view widgetName, const std::vector<WidgetSettingSpec>& specs,
+        std::size_t& visibleSpecs, const BarWidgetEditorContext& ctx
+    ) {
       if (!ctx.showAdvanced) {
         return;
       }
@@ -699,7 +1101,12 @@ namespace settings {
       std::unordered_set<std::string> knownKeys;
       knownKeys.reserve(specs.size());
       for (const auto& spec : specs) {
-        knownKeys.insert(spec.key);
+        knownKeys.insert(spec.schema.key);
+      }
+      // `script` is the identity of a scripted widget, not a raw/deletable extra — when a Lua
+      // manifest drives the settings it isn't among the specs, so guard it explicitly.
+      if (widgetIt->second.type == "scripted") {
+        knownKeys.insert("script");
       }
 
       std::vector<std::string> rawKeys;
@@ -720,17 +1127,21 @@ namespace settings {
       }
       std::sort(rawKeys.begin(), rawKeys.end());
 
-      auto header = std::make_unique<Flex>();
-      header->setDirection(FlexDirection::Vertical);
-      header->setAlign(FlexAlign::Stretch);
-      header->setGap(1.0f * ctx.scale);
-      header->setPadding(Style::spaceXs * ctx.scale, 0.0f);
-      header->addChild(makeLabel(i18n::tr("settings.entities.widget.raw.title"), Style::fontSizeCaption * ctx.scale,
-                                 colorSpecFromRole(ColorRole::OnSurface), true));
-      header->addChild(makeLabel(i18n::tr("settings.entities.widget.raw.description"),
-                                 Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurfaceVariant),
-                                 false));
-      panel.addChild(std::move(header));
+      panel.addChild(
+          ui::column(
+              {
+                  .align = FlexAlign::Stretch,
+                  .gap = 1.0f * ctx.scale,
+                  .paddingV = Style::spaceXs * ctx.scale,
+                  .paddingH = 0,
+              },
+              makeLabel(
+                  i18n::tr("settings.entities.widget.raw.title"), Style::fontSizeCaption * ctx.scale,
+                  colorSpecFromRole(ColorRole::OnSurface), FontWeight::Bold
+              ),
+              makeSettingSubtitleLabel(i18n::tr("settings.entities.widget.raw.description"), ctx.scale)
+          )
+      );
 
       for (const auto& key : rawKeys) {
         const auto valueIt = widgetIt->second.settings.find(key);
@@ -742,48 +1153,50 @@ namespace settings {
         const bool overridden = ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(path);
         const bool pendingDelete = ctx.pendingDeleteWidgetSettingPath == deleteKey;
 
-        auto row = std::make_unique<Flex>();
-        row->setDirection(FlexDirection::Horizontal);
-        row->setAlign(FlexAlign::Center);
-        row->setGap(Style::spaceSm * ctx.scale);
-        row->setPadding(Style::spaceXs * ctx.scale, 0.0f);
-        row->setMinHeight(Style::controlHeightSm * ctx.scale);
-
-        row->addChild(
-            makeLabel(key, Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurface), true));
-
-        auto spacer = std::make_unique<Flex>();
-        spacer->setFlexGrow(1.0f);
-        row->addChild(std::move(spacer));
-
-        row->addChild(makeLabel(settingValueAsDisplayString(valueIt->second), Style::fontSizeCaption * ctx.scale,
-                                colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
+        auto row = ui::row(
+            {
+                .align = FlexAlign::Center,
+                .gap = Style::spaceSm * ctx.scale,
+                .paddingV = Style::spaceXs * ctx.scale,
+                .paddingH = 0,
+                .minHeight = Style::controlHeightSm * ctx.scale,
+            },
+            makeLabel(
+                key, Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurface), FontWeight::Bold
+            ),
+            ui::spacer(),
+            makeLabel(
+                settingValueAsDisplayString(valueIt->second), Style::fontSizeCaption * ctx.scale,
+                colorSpecFromRole(ColorRole::OnSurfaceVariant), FontWeight::Normal
+            )
+        );
 
         if (overridden) {
-          auto deleteBtn = std::make_unique<Button>();
-          deleteBtn->setGlyph("trash");
-          deleteBtn->setVariant(pendingDelete ? ButtonVariant::Default : ButtonVariant::Ghost);
-          if (pendingDelete) {
-            deleteBtn->setText(i18n::tr("settings.entities.widget.raw.delete"));
-            deleteBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
-          }
-          deleteBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
-          deleteBtn->setMinWidth(Style::controlHeightSm * ctx.scale);
-          deleteBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
-          deleteBtn->setPadding(Style::spaceXs * ctx.scale);
-          deleteBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
-          deleteBtn->setOnClick([&pendingDeleteWidgetSettingPath = ctx.pendingDeleteWidgetSettingPath, deleteKey, path,
-                                 clearOverride = ctx.clearOverride, requestRebuild = ctx.requestRebuild]() {
-            if (pendingDeleteWidgetSettingPath != deleteKey) {
-              pendingDeleteWidgetSettingPath = deleteKey;
-              requestRebuild();
-              return;
-            }
+          row->addChild(
+              ui::button({
+                  .text = pendingDelete ? std::optional<std::string>(i18n::tr("settings.entities.widget.raw.delete"))
+                                        : std::nullopt,
+                  .glyph = "trash",
+                  .fontSize = Style::fontSizeCaption * ctx.scale,
+                  .glyphSize = Style::fontSizeCaption * ctx.scale,
+                  .variant = pendingDelete ? ButtonVariant::Default : ButtonVariant::Ghost,
+                  .minWidth = Style::controlHeightSm * ctx.scale,
+                  .minHeight = Style::controlHeightSm * ctx.scale,
+                  .padding = Style::spaceXs * ctx.scale,
+                  .radius = Style::scaledRadiusSm(ctx.scale),
+                  .onClick = [&pendingDeleteWidgetSettingPath = ctx.pendingDeleteWidgetSettingPath, deleteKey, path,
+                              clearOverride = ctx.clearOverride, requestRebuild = ctx.requestRebuild]() {
+                    if (pendingDeleteWidgetSettingPath != deleteKey) {
+                      pendingDeleteWidgetSettingPath = deleteKey;
+                      requestRebuild();
+                      return;
+                    }
 
-            pendingDeleteWidgetSettingPath.clear();
-            clearOverride(path);
-          });
-          row->addChild(std::move(deleteBtn));
+                    pendingDeleteWidgetSettingPath.clear();
+                    clearOverride(path);
+                  },
+              })
+          );
         }
 
         panel.addChild(std::move(row));
@@ -791,107 +1204,61 @@ namespace settings {
       }
     }
 
-    void addWidgetTypeSettingRow(Flex& panel, std::string_view widgetName, std::string_view widgetType,
-                                 std::size_t& visibleSpecs, const BarWidgetEditorContext& ctx) {
-      if (!isNamedWidgetInstance(ctx.config, widgetName)) {
-        return;
-      }
-
-      auto path = widgetSettingPath(std::string(widgetName), "type");
-      const bool overridden = ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(path);
-      if (ctx.showOverriddenOnly && !overridden) {
-        return;
-      }
-
-      auto row = std::make_unique<Flex>();
-      row->setDirection(FlexDirection::Horizontal);
-      row->setAlign(FlexAlign::Center);
-      row->setJustify(FlexJustify::SpaceBetween);
-      row->setGap(Style::spaceXs * ctx.scale);
-      row->setPadding(2.0f * ctx.scale, 0.0f);
-      row->setMinHeight(Style::controlHeight * ctx.scale);
-
-      auto copy = std::make_unique<Flex>();
-      copy->setDirection(FlexDirection::Vertical);
-      copy->setAlign(FlexAlign::Start);
-      copy->setGap(Style::spaceXs * ctx.scale);
-      copy->setFlexGrow(1.0f);
-      copy->addChild(makeLabel(i18n::tr("settings.widgets.settings.type.label"), Style::fontSizeBody * ctx.scale,
-                               colorSpecFromRole(ColorRole::OnSurface), false));
-      auto detail =
-          makeLabel(i18n::tr("settings.widgets.settings.type.description"), Style::fontSizeCaption * ctx.scale,
-                    colorSpecFromRole(ColorRole::OnSurfaceVariant), false);
-      copy->addChild(std::move(detail));
-      row->addChild(std::move(copy));
-
-      row->addChild(ctx.makeSelect(widgetTypeSelect(widgetType), path));
-      panel.addChild(std::move(row));
-      ++visibleSpecs;
-    }
-
-    void addWidgetSettingsPanel(Flex& item, std::string widgetName, const std::vector<std::string>& lanePath,
-                                const std::vector<SelectOption>& managedCapsuleGroups,
-                                const BarWidgetEditorContext& ctx) {
+    void addWidgetSettingsPanel(
+        Flex& item, std::string widgetName, const std::vector<std::string>& lanePath, const BarWidgetEditorContext& ctx
+    ) {
       const auto widgetType = widgetTypeForReference(ctx.config, widgetName);
       if (widgetType.empty()) {
         return;
       }
 
-      auto specs = widgetSettingSpecs(widgetType);
+      const auto widgetIt = ctx.config.widgets.find(widgetName);
+      const WidgetConfig* widgetConfig = widgetIt != ctx.config.widgets.end() ? &widgetIt->second : nullptr;
+      auto specs = widgetSettingSpecs(widgetType, widgetConfig, ctx.config.shell.fontFamily);
       if (specs.empty()) {
         return;
       }
 
-      auto panel = std::make_unique<Flex>();
-      panel->setDirection(FlexDirection::Vertical);
-      panel->setAlign(FlexAlign::Stretch);
-      panel->setGap(Style::spaceXs * ctx.scale);
-      panel->setPadding(Style::spaceSm * ctx.scale);
-      panel->setRadius(Style::scaledRadiusSm(ctx.scale));
-      panel->setFill(colorSpecFromRole(ColorRole::Surface));
-      panel->setBorder(colorSpecFromRole(ColorRole::Outline, 0.22f), Style::borderWidth);
-
-      auto panelHeader = std::make_unique<Flex>();
-      panelHeader->setDirection(FlexDirection::Horizontal);
-      panelHeader->setAlign(FlexAlign::Center);
-      panelHeader->setGap(Style::spaceXs * ctx.scale);
-      panelHeader->addChild(makeLabel(i18n::tr("settings.entities.widget.settings.title"),
-                                      Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurface),
-                                      true));
-      panelHeader->addChild(makeLabel(widgetType, Style::fontSizeCaption * ctx.scale,
-                                      colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
-      panel->addChild(std::move(panelHeader));
+      auto panel = ui::column({
+          .align = FlexAlign::Stretch,
+          .gap = Style::spaceXs * ctx.scale,
+      });
 
       std::size_t visibleSpecs = 0;
-      addWidgetTypeSettingRow(*panel, widgetName, widgetType, visibleSpecs, ctx);
-      bool groupingHeaderAdded = false;
-      for (const auto& spec : specs) {
-        if (spec.key == "capsule_group" && managedCapsuleGroups.empty()) {
-          continue;
-        }
+      std::string activeGroupKey;
+      // Coalesce specs by group so each group header renders once regardless of spec declaration order.
+      const auto specOrder =
+          coalesceByGroupKey(specs.size(), [&](std::size_t i) { return std::string(widgetSettingGroupKey(specs[i])); });
+      for (const std::size_t specIndex : specOrder) {
+        const auto& spec = specs[specIndex];
         if (!isSettingVisible(ctx.config, widgetName, spec, specs)) {
           continue;
         }
         if (spec.advanced && !ctx.showAdvanced) {
           continue;
         }
-        const auto path = widgetSettingPath(widgetName, spec.key);
+        const auto path = widgetSettingPath(widgetName, spec.schema.key);
         const bool overridden = ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(path);
         if (ctx.showOverriddenOnly && !overridden) {
           continue;
         }
 
-        if (spec.key == "capsule_group" && !groupingHeaderAdded) {
-          panel->addChild(makeMiniSectionHeader(i18n::tr("settings.navigation.groups.grouping"), ctx.scale));
-          groupingHeaderAdded = true;
+        const std::string_view groupKey = widgetSettingGroupKey(spec);
+        if (groupKey != activeGroupKey) {
+          panel->addChild(makeMiniSectionHeader(widgetSettingGroupTitle(groupKey), ctx.scale, visibleSpecs > 0));
+          activeGroupKey = groupKey;
         }
 
         const auto value = widgetSettingValue(ctx.config, widgetName, spec);
         SettingEntry entry{
             .section = "bar",
             .group = "widget-settings",
-            .title = i18n::tr(spec.labelKey),
-            .subtitle = i18n::tr(spec.descriptionKey),
+            .title = !spec.literalLabel.empty() ? spec.literalLabel
+                : spec.labelKey.empty()         ? std::string{}
+                                                : i18n::tr(spec.labelKey),
+            .subtitle = !spec.literalDescription.empty() ? spec.literalDescription
+                : spec.descriptionKey.empty()            ? std::string{}
+                                                         : i18n::tr(spec.descriptionKey),
             .path = path,
             .control = TextSetting{},
             .advanced = spec.advanced,
@@ -899,166 +1266,242 @@ namespace settings {
             .visibleWhen = std::nullopt,
         };
 
-        switch (spec.valueType) {
-        case WidgetSettingValueType::Bool:
-          ctx.makeRow(*panel, entry, ctx.makeToggle(settingValueAsBool(value), path));
-          break;
-        case WidgetSettingValueType::Int: {
-          const auto minValue = static_cast<float>(spec.minValue.value_or(0.0));
-          const auto maxValue = static_cast<float>(spec.maxValue.value_or(100.0));
-          ctx.makeRow(*panel, entry,
-                      ctx.makeSlider(static_cast<float>(settingValueAsInt(value)), minValue, maxValue,
-                                     static_cast<float>(spec.step), path, true));
-          break;
-        }
-        case WidgetSettingValueType::Double: {
-          const auto minValue = static_cast<float>(spec.minValue.value_or(0.0));
-          const auto maxValue = static_cast<float>(spec.maxValue.value_or(1.0));
-          ctx.makeRow(*panel, entry,
-                      ctx.makeSlider(static_cast<float>(settingValueAsDouble(value)), minValue, maxValue,
-                                     static_cast<float>(spec.step), path, false));
-          break;
-        }
-        case WidgetSettingValueType::OptionalDouble: {
-          ctx.makeRow(
-              *panel, entry,
-              ctx.makeOptionalStepper(
-                  OptionalStepperSetting{.value = widgetSettingOptionalStepperValue(ctx.config, widgetName, spec.key),
-                                         .minValue = static_cast<int>(std::lround(spec.minValue.value_or(0.0))),
-                                         .maxValue = static_cast<int>(std::lround(spec.maxValue.value_or(80.0))),
-                                         .step = static_cast<int>(std::max(1.0, spec.step)),
-                                         .fallbackValue = inheritedCapsuleRadiusForLane(ctx.config, lanePath),
-                                         .unsetLabel = i18n::tr("common.states.inherit"),
-                                         .customLabel = i18n::tr("common.states.custom")},
-                  path));
-          break;
-        }
-        case WidgetSettingValueType::String: {
-          auto textNode = ctx.makeText(settingValueAsString(value), {}, path);
-          if (spec.key == "glyph") {
-            auto wrap = std::make_unique<Flex>();
-            wrap->setDirection(FlexDirection::Horizontal);
-            wrap->setAlign(FlexAlign::Center);
-            wrap->setGap(Style::spaceSm * ctx.scale);
-            wrap->addChild(std::move(textNode));
-
-            auto pickerButton = std::make_unique<Button>();
-            pickerButton->setVariant(ButtonVariant::Outline);
-            pickerButton->setGlyph("apps");
-            pickerButton->setGlyphSize(Style::fontSizeBody * ctx.scale);
-            pickerButton->setMinHeight(Style::controlHeight * ctx.scale);
-            pickerButton->setMinWidth(Style::controlHeight * ctx.scale);
-            pickerButton->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-            pickerButton->setRadius(Style::scaledRadiusMd(ctx.scale));
-            pickerButton->setOnClick([setOverride = ctx.setOverride, requestRebuild = ctx.requestRebuild, path,
-                                      currentValue = settingValueAsString(value)]() {
-              GlyphPickerDialogOptions options;
-              if (!currentValue.empty()) {
-                options.initialGlyph = currentValue;
-              }
-              (void)GlyphPickerDialog::open(
-                  std::move(options), [setOverride, requestRebuild, path](std::optional<GlyphPickerResult> result) {
-                    if (!result.has_value()) {
-                      return;
+        const auto makeGlyphTextControl = [&ctx, path](std::string currentValue) -> std::unique_ptr<Node> {
+          auto textNode = ctx.makeText(currentValue, {}, path);
+          return ui::row(
+              {
+                  .align = FlexAlign::Center,
+                  .gap = Style::spaceSm * ctx.scale,
+              },
+              std::move(textNode),
+              ui::button({
+                  .glyph = "apps",
+                  .glyphSize = Style::fontSizeBody * ctx.scale,
+                  .variant = ButtonVariant::Outline,
+                  .minWidth = Style::controlHeight * ctx.scale,
+                  .minHeight = Style::controlHeight * ctx.scale,
+                  .paddingV = Style::spaceXs * ctx.scale,
+                  .paddingH = Style::spaceSm * ctx.scale,
+                  .radius = Style::scaledRadiusMd(ctx.scale),
+                  .onClick = [setOverride = ctx.setOverride, requestRebuild = ctx.requestRebuild, path,
+                              currentValue = std::move(currentValue)]() {
+                    GlyphPickerDialogOptions options;
+                    if (!currentValue.empty()) {
+                      options.initialGlyph = currentValue;
                     }
-                    setOverride(path, result->name);
-                    if (requestRebuild) {
-                      requestRebuild();
-                    }
-                  });
-            });
-            wrap->addChild(std::move(pickerButton));
+                    (void)GlyphPickerDialog::open(
+                        std::move(options),
+                        [setOverride, requestRebuild, path](std::optional<GlyphPickerResult> result) {
+                          if (!result.has_value()) {
+                            return;
+                          }
+                          setOverride(path, result->name);
+                          if (requestRebuild) {
+                            requestRebuild();
+                          }
+                        }
+                    );
+                  },
+              })
+          );
+        };
 
-            ctx.makeRow(*panel, entry, std::move(wrap));
-          } else if (spec.key == "capsule_group" && !managedCapsuleGroups.empty()) {
-            SelectSetting selectSetting{
-                .options = managedCapsuleGroups, .selectedValue = settingValueAsString(value), .clearOnEmpty = true};
-            ctx.makeRow(*panel, entry, ctx.makeSelect(selectSetting, path));
-          } else if (spec.key == "custom_image") {
-            auto wrap = std::make_unique<Flex>();
-            wrap->setDirection(FlexDirection::Horizontal);
-            wrap->setAlign(FlexAlign::Center);
-            wrap->setGap(Style::spaceSm * ctx.scale);
-            wrap->addChild(std::move(textNode));
-
-            auto pickerButton = std::make_unique<Button>();
-            pickerButton->setVariant(ButtonVariant::Outline);
-            pickerButton->setGlyph("photo");
-            pickerButton->setGlyphSize(Style::fontSizeBody * ctx.scale);
-            pickerButton->setMinHeight(Style::controlHeight * ctx.scale);
-            pickerButton->setMinWidth(Style::controlHeight * ctx.scale);
-            pickerButton->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-            pickerButton->setRadius(Style::scaledRadiusMd(ctx.scale));
-            pickerButton->setOnClick([setOverride = ctx.setOverride, requestRebuild = ctx.requestRebuild, path,
-                                      currentValue = settingValueAsString(value)]() {
-              FileDialogOptions options;
-              options.mode = FileDialogMode::Open;
-              options.defaultViewMode = FileDialogViewMode::Grid;
-              options.title = i18n::tr("settings.widgets.settings.custom_image.dialog-title");
-              options.extensions = {".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp", ".gif"};
-              if (!currentValue.empty()) {
-                std::filesystem::path current(currentValue);
-                std::error_code ec;
-                if (current.has_parent_path() && std::filesystem::exists(current.parent_path(), ec)) {
-                  options.startDirectory = current.parent_path();
-                }
-              }
-              (void)FileDialog::open(std::move(options),
-                                     [setOverride, requestRebuild, path](std::optional<std::filesystem::path> picked) {
-                                       if (!picked.has_value()) {
-                                         return;
-                                       }
-                                       setOverride(path, picked->string());
-                                       if (requestRebuild) {
-                                         requestRebuild();
-                                       }
-                                     });
-            });
-            wrap->addChild(std::move(pickerButton));
-
-            ctx.makeRow(*panel, entry, std::move(wrap));
+        switch (spec.control) {
+        case WidgetControlKind::Bool: {
+          std::optional<bool> clearWhenValue;
+          if (const auto* defaultBool = std::get_if<bool>(&spec.schema.defaultValue)) {
+            clearWhenValue = *defaultBool;
+          }
+          if (widgetType == "workspaces" && spec.schema.key == "minimal") {
+            ctx.makeRow(
+                *panel, entry,
+                ui::toggle({
+                    .checked = settingValueAsBool(value),
+                    .scale = ctx.scale,
+                    .onChange = [configService = ctx.configService, setOverride = ctx.setOverride,
+                                 requestRebuild = ctx.requestRebuild, widgetName = std::string(widgetName), path,
+                                 displayPath = widgetSettingPath(std::string(widgetName), "display"),
+                                 specs](bool enabled) {
+                      setOverride(path, enabled);
+                      if (enabled
+                          && configService != nullptr
+                          && settingCurrentString(configService->config(), widgetName, "display", specs) == "none") {
+                        setOverride(displayPath, std::string("id"));
+                      }
+                      if (requestRebuild) {
+                        requestRebuild();
+                      }
+                    },
+                })
+            );
           } else {
-            ctx.makeRow(*panel, entry, std::move(textNode));
+            ctx.makeRow(*panel, entry, ctx.makeToggle(settingValueAsBool(value), path, clearWhenValue));
           }
           break;
         }
-        case WidgetSettingValueType::StringList:
+        case WidgetControlKind::Int: {
+          const double minValue = spec.schema.minValue.value_or(0.0);
+          const double maxValue = spec.schema.maxValue.value_or(100.0);
+          if (spec.stepper) {
+            const int minStep = static_cast<int>(std::lround(minValue));
+            const int maxStep = static_cast<int>(std::lround(maxValue));
+            const int stepValue = static_cast<int>(std::clamp(
+                settingValueAsInt(value), static_cast<std::int64_t>(minStep), static_cast<std::int64_t>(maxStep)
+            ));
+            ctx.makeRow(
+                *panel, entry,
+                ctx.makeStepper(
+                    StepperSetting{
+                        .value = stepValue,
+                        .minValue = minStep,
+                        .maxValue = maxStep,
+                        .step = static_cast<int>(std::max(1.0, spec.schema.step.value_or(1.0))),
+                        .valueSuffix = spec.valueSuffix,
+                    },
+                    path
+                )
+            );
+          } else {
+            ctx.makeRow(
+                *panel, entry,
+                ctx.makeSlider(
+                    static_cast<double>(settingValueAsInt(value)), minValue, maxValue, spec.schema.step.value_or(1.0),
+                    path, true
+                )
+            );
+          }
+          break;
+        }
+        case WidgetControlKind::Double: {
+          const double minValue = spec.schema.minValue.value_or(0.0);
+          const double maxValue = spec.schema.maxValue.value_or(1.0);
+          ctx.makeRow(
+              *panel, entry,
+              ctx.makeSlider(
+                  settingValueAsDouble(value), minValue, maxValue, spec.schema.step.value_or(1.0), path, false
+              )
+          );
+          break;
+        }
+        case WidgetControlKind::OptionalDouble: {
+          ctx.makeRow(
+              *panel, entry,
+              ctx.makeOptionalStepper(
+                  OptionalStepperSetting{
+                      .value = widgetSettingOptionalStepperValue(ctx.config, widgetName, spec.schema.key),
+                      .minValue = static_cast<int>(std::lround(spec.schema.minValue.value_or(0.0))),
+                      .maxValue = static_cast<int>(std::lround(spec.schema.maxValue.value_or(80.0))),
+                      .step = static_cast<int>(std::max(1.0, spec.schema.step.value_or(1.0))),
+                      .fallbackValue = inheritedCapsuleRadiusForLane(ctx.config, lanePath),
+                      .unsetLabel = i18n::tr("common.states.inherit"),
+                      .customLabel = i18n::tr("common.states.custom")
+                  },
+                  path
+              )
+          );
+          break;
+        }
+        case WidgetControlKind::String: {
+          if (spec.schema.key == "custom_image") {
+            FileDialogOptions options;
+            options.mode = FileDialogMode::Open;
+            options.defaultViewMode = FileDialogViewMode::Grid;
+            options.title = i18n::tr("settings.widgets.settings.custom_image.dialog-title");
+            options.extensions = {".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp", ".gif"};
+            ctx.makeRow(
+                *panel, entry,
+                makePathBrowseControl(
+                    ctx, path, settingValueAsString(value), "photo", std::move(options), PathBrowseKind::File
+                )
+            );
+          } else if (widgetType == "scripted" && spec.schema.key == "script") {
+            FileDialogOptions options;
+            options.mode = FileDialogMode::Open;
+            options.defaultViewMode = FileDialogViewMode::List;
+            options.title = i18n::tr("settings.controls.path-browse.file-title");
+            options.extensions = {".lua", ".luau"};
+            const std::string currentValue = settingValueAsString(value);
+            const std::string startValue =
+                currentValue.empty() ? std::string{} : scripting::resolveScriptPath(currentValue).string();
+            ctx.makeRow(
+                *panel, entry,
+                makePathBrowseControl(
+                    ctx, path, currentValue, "file-text", std::move(options), PathBrowseKind::File, startValue
+                )
+            );
+          } else {
+            ctx.makeRow(*panel, entry, ctx.makeText(settingValueAsString(value), {}, path));
+          }
+          break;
+        }
+        case WidgetControlKind::File: {
+          FileDialogOptions options;
+          options.mode = FileDialogMode::Open;
+          options.defaultViewMode = FileDialogViewMode::List;
+          options.title = i18n::tr("settings.controls.path-browse.file-title");
+          options.extensions = spec.extensions;
+          ctx.makeRow(
+              *panel, entry,
+              makePathBrowseControl(
+                  ctx, path, settingValueAsString(value), "file-text", std::move(options), PathBrowseKind::File
+              )
+          );
+          break;
+        }
+        case WidgetControlKind::Folder: {
+          FileDialogOptions options;
+          options.mode = FileDialogMode::SelectFolder;
+          options.defaultViewMode = FileDialogViewMode::List;
+          options.title = i18n::tr("settings.controls.path-browse.folder-title");
+          ctx.makeRow(
+              *panel, entry,
+              makePathBrowseControl(
+                  ctx, path, settingValueAsString(value), "folder", std::move(options), PathBrowseKind::Folder
+              )
+          );
+          break;
+        }
+        case WidgetControlKind::Glyph:
+          ctx.makeRow(*panel, entry, makeGlyphTextControl(settingValueAsString(value)));
+          break;
+        case WidgetControlKind::StringList:
           ctx.makeListBlock(*panel, entry, ListSetting{.items = settingValueAsStringList(value)});
           break;
-        case WidgetSettingValueType::Select: {
+        case WidgetControlKind::Select: {
           SelectSetting selectSetting;
           const std::string selectedValue = settingValueAsString(value);
-          if (widgetType == "battery" && spec.key == "device") {
+          if (widgetType == "battery" && spec.schema.key == "device") {
             selectSetting = batteryDeviceSelectSetting(ctx, selectedValue);
+          } else if (spec.schema.key == "font_weight") {
+            selectSetting =
+                labelFontWeightSelectSetting(ctx, spec, widgetLabelFontWeightSelectedValue(ctx.config, widgetName));
+          } else if (widgetType == "workspaces" && spec.schema.key == "display") {
+            selectSetting = workspacesDisplaySelectSetting(ctx, widgetName, spec, specs, selectedValue);
           } else {
             std::vector<SelectOption> options;
             options.reserve(spec.options.size());
             for (const auto& option : spec.options) {
-              options.push_back(SelectOption{std::string(option.value), i18n::tr(option.labelKey)});
+              options.push_back(
+                  SelectOption{option.value, spec.literalLabels ? option.labelKey : i18n::tr(option.labelKey)}
+              );
             }
             selectSetting = SelectSetting{std::move(options), selectedValue};
           }
           selectSetting.segmented = spec.segmented;
+          selectSetting.integerValue = spec.integerValue;
+          if (const auto* defaultString = std::get_if<std::string>(&spec.schema.defaultValue);
+              defaultString != nullptr) {
+            selectSetting.clearOnEmpty = defaultString->empty();
+          }
           ctx.makeRow(*panel, entry, ctx.makeSelect(std::move(selectSetting), path));
           break;
         }
-        case WidgetSettingValueType::ColorRole: {
-          ColorRolePickerSetting pickerSetting;
+        case WidgetControlKind::ColorSpec: {
+          ColorSpecPickerSetting pickerSetting;
           pickerSetting.selectedValue = settingValueAsString(value);
           pickerSetting.allowNone = spec.advanced;
           pickerSetting.allowCustomColor = spec.allowCustomColor;
-          if (!spec.options.empty()) {
-            for (const auto& option : spec.options) {
-              if (const auto role = colorRoleFromToken(option.value); role.has_value()) {
-                pickerSetting.roles.push_back(*role);
-              }
-            }
-          } else {
-            for (const auto& token : kColorRoleTokens) {
-              pickerSetting.roles.push_back(token.role);
-            }
-          }
-          ctx.makeRow(*panel, entry, ctx.makeColorRolePicker(std::move(pickerSetting), path));
+          ctx.makeRow(*panel, entry, ctx.makeColorSpecPicker(std::move(pickerSetting), path));
           break;
         }
         }
@@ -1068,37 +1511,24 @@ namespace settings {
       addRawWidgetSettings(*panel, widgetName, specs, visibleSpecs, ctx);
 
       if (visibleSpecs == 0) {
-        panel->addChild(makeLabel(i18n::tr("settings.entities.widget.settings.empty"),
-                                  Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurfaceVariant),
-                                  false));
+        panel->addChild(makeLabel(
+            i18n::tr("settings.entities.widget.settings.empty"), Style::fontSizeCaption * ctx.scale,
+            colorSpecFromRole(ColorRole::OnSurfaceVariant), FontWeight::Normal
+        ));
       }
 
       item.addChild(std::move(panel));
     }
 
-    void addInspectorPane(Flex& block, const SettingEntry& entry, const BarWidgetEditorContext& ctx) {
+    void addInspectorPane(Flex& body, const std::vector<std::string>& laneListPath, const BarWidgetEditorContext& ctx) {
       static constexpr std::string_view kLaneKeys[] = {"start", "center", "end"};
 
       if (ctx.editingWidgetName.empty()) {
         return;
       }
 
-      auto inspector = std::make_unique<Flex>();
-      if (ctx.setScrollTarget) {
-        ctx.setScrollTarget(inspector.get());
-      }
-      inspector->setDirection(FlexDirection::Vertical);
-      inspector->setAlign(FlexAlign::Stretch);
-      inspector->setGap(Style::spaceSm * ctx.scale);
-      inspector->setPadding(Style::spaceMd * ctx.scale);
-      inspector->setRadius(Style::scaledRadiusMd(ctx.scale));
-      inspector->setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
-      inspector->setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), Style::borderWidth);
-
       {
         const std::string widgetName = ctx.editingWidgetName;
-        const auto info = widgetReferenceInfo(ctx.config, widgetName);
-        const std::string capsuleGroup = widgetCapsuleGroupName(ctx.config, widgetName);
         const bool guiManaged = isGuiManagedNamedWidgetInstance(ctx, widgetName);
 
         std::string currentLaneKey;
@@ -1106,173 +1536,164 @@ namespace settings {
         std::vector<std::string> currentLaneItems;
         bool currentLaneInherited = false;
         for (const auto laneKey : kLaneKeys) {
-          auto p = pathWithLastSegment(entry.path, std::string(laneKey));
+          auto p = pathWithLastSegment(laneListPath, std::string(laneKey));
           auto items = barWidgetItemsForPath(ctx.config, p);
           if (std::find(items.begin(), items.end(), widgetName) != items.end()) {
             currentLaneKey = std::string(laneKey);
             currentLanePath = std::move(p);
             currentLaneItems = std::move(items);
-            currentLaneInherited = isMonitorWidgetListPath(currentLanePath) &&
-                                   !monitorWidgetListHasExplicitValue(ctx.config, currentLanePath);
+            currentLaneInherited = isMonitorWidgetListPath(currentLanePath)
+                && !monitorWidgetListHasExplicitValue(ctx.config, currentLanePath);
             break;
           }
         }
 
-        auto headerRow = std::make_unique<Flex>();
-        headerRow->setDirection(FlexDirection::Horizontal);
-        headerRow->setAlign(FlexAlign::Center);
-        headerRow->setGap(Style::spaceSm * ctx.scale);
-        headerRow->addChild(makeLabel(i18n::tr("settings.entities.widget.inspector.edit-title"),
-                                      Style::fontSizeCaption * ctx.scale,
-                                      colorSpecFromRole(ColorRole::OnSurfaceVariant), true));
-        {
-          auto titleLabel =
-              makeLabel(info.title, Style::fontSizeBody * ctx.scale, colorSpecFromRole(ColorRole::OnSurface), true);
-          titleLabel->setMaxLines(1);
-          titleLabel->setFlexGrow(1.0f);
-          headerRow->addChild(std::move(titleLabel));
+        const BarConfig* inspectorBar = laneListPath.size() >= 2 ? findBar(ctx.config, laneListPath[1]) : nullptr;
+        std::string capsuleGroup;
+        if (inspectorBar != nullptr) {
+          for (const auto& g : inspectorBar->widgetCapsuleGroups) {
+            if (std::find(g.members.begin(), g.members.end(), widgetName) != g.members.end()) {
+              capsuleGroup = g.id;
+              break;
+            }
+          }
         }
-
-        auto kindBadge = std::make_unique<Flex>();
-        kindBadge->setAlign(FlexAlign::Center);
-        kindBadge->setPadding(0, Style::spaceXs * ctx.scale);
-        kindBadge->setRadius(Style::scaledRadiusSm(ctx.scale));
-        kindBadge->setFill(widgetBadgeColor(info.kind));
-        kindBadge->addChild(
-            makeLabel(info.badge, Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurface), true));
-        headerRow->addChild(std::move(kindBadge));
-
-        auto headerSpacer = std::make_unique<Flex>();
-        headerSpacer->setFlexGrow(1.0f);
-        headerRow->addChild(std::move(headerSpacer));
-
-        auto closeBtn = std::make_unique<Button>();
-        closeBtn->setGlyph("close");
-        closeBtn->setVariant(ButtonVariant::Ghost);
-        closeBtn->setGlyphSize(Style::fontSizeBody * ctx.scale);
-        closeBtn->setMinWidth(Style::controlHeightSm * ctx.scale);
-        closeBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
-        closeBtn->setPadding(Style::spaceXs * ctx.scale);
-        closeBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
-        closeBtn->setOnClick([&editingWidgetName = ctx.editingWidgetName, &renamingWidgetName = ctx.renamingWidgetName,
-                              &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
-                              &pendingDeleteWidgetSettingPath = ctx.pendingDeleteWidgetSettingPath,
-                              requestRebuild = ctx.requestRebuild]() {
-          closeInspector(editingWidgetName, renamingWidgetName, pendingDeleteWidgetName, pendingDeleteWidgetSettingPath,
-                         requestRebuild);
-        });
-        headerRow->addChild(std::move(closeBtn));
-        inspector->addChild(std::move(headerRow));
-
         if (!capsuleGroup.empty()) {
-          auto groupRow = std::make_unique<Flex>();
-          groupRow->setDirection(FlexDirection::Horizontal);
-          groupRow->setAlign(FlexAlign::Center);
-          groupRow->setGap(Style::spaceXs * ctx.scale);
-          groupRow->addChild(makeGlyph("stack-back", Style::fontSizeCaption * ctx.scale,
-                                       colorSpecFromRole(ColorRole::OnSurfaceVariant)));
-          groupRow->addChild(makeLabel(capsuleGroup, Style::fontSizeCaption * ctx.scale,
-                                       colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
-          inspector->addChild(std::move(groupRow));
+          auto groupRow = ui::row({.align = FlexAlign::Center, .gap = Style::spaceXs * ctx.scale, .fillWidth = true});
+          groupRow->addChild(
+              makeGlyph("stack-2", Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::Primary))
+          );
+          auto hint = makeLabel(
+              i18n::tr("settings.entities.widget.group.hint"), Style::fontSizeCaption * ctx.scale,
+              colorSpecFromRole(ColorRole::OnSurfaceVariant), FontWeight::Normal
+          );
+          hint->setFlexGrow(1.0f);
+          groupRow->addChild(std::move(hint));
+          const std::string editGroupId = capsuleGroup;
+          groupRow->addChild(
+              ui::button({
+                  .text = i18n::tr("settings.entities.widget.group.edit"),
+                  .fontSize = Style::fontSizeCaption * ctx.scale,
+                  .variant = ButtonVariant::Ghost,
+                  .minHeight = Style::controlHeightSm * ctx.scale,
+                  .paddingV = Style::spaceXs * ctx.scale,
+                  .paddingH = Style::spaceSm * ctx.scale,
+                  .radius = Style::scaledRadiusSm(ctx.scale),
+                  .onClick = [openCapsuleGroupInspector = ctx.openCapsuleGroupInspector, laneListPath, editGroupId]() {
+                    if (openCapsuleGroupInspector) {
+                      openCapsuleGroupInspector(laneListPath, editGroupId);
+                    }
+                  },
+              })
+          );
+          body.addChild(std::move(groupRow));
         }
 
-        const bool pendingDelete = guiManaged && ctx.pendingDeleteWidgetName == widgetName;
-        const bool renaming = guiManaged && ctx.renamingWidgetName == widgetName;
+        const bool pendingDelete = ctx.pendingDeleteWidgetName == widgetName;
+        const bool renaming = ctx.renamingWidgetName == widgetName;
 
-        if (!pendingDelete && !renaming && !currentLaneInherited && !currentLaneKey.empty()) {
-          auto actionRow = std::make_unique<Flex>();
-          actionRow->setDirection(FlexDirection::Horizontal);
-          actionRow->setAlign(FlexAlign::Center);
-          actionRow->setGap(Style::spaceXs * ctx.scale);
+        if (!currentLaneInherited && !currentLaneKey.empty()) {
+          auto actionRow = ui::row({
+              .align = FlexAlign::Center,
+              .gap = Style::spaceXs * ctx.scale,
+          });
 
-          auto actionSpacer = std::make_unique<Flex>();
-          actionSpacer->setFlexGrow(1.0f);
-          actionRow->addChild(std::move(actionSpacer));
+          actionRow->addChild(ui::spacer());
 
           for (const auto targetLane : kLaneKeys) {
             if (targetLane == currentLaneKey) {
               continue;
             }
-            auto moveBtn = std::make_unique<Button>();
-            moveBtn->setText(
-                i18n::tr("settings.entities.widget.inspector.move-to-lane", "lane", laneLabel(targetLane)));
-            moveBtn->setVariant(ButtonVariant::Ghost);
-            moveBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
-            moveBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
-            moveBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-            moveBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
             auto sourceItems = currentLaneItems;
             auto sourcePath = currentLanePath;
-            auto targetPath = pathWithLastSegment(entry.path, std::string(targetLane));
+            auto targetPath = pathWithLastSegment(laneListPath, std::string(targetLane));
             auto targetItems = barWidgetItemsForPath(ctx.config, targetPath);
-            moveBtn->setOnClick([setOverrides = ctx.setOverrides, sourceItems, sourcePath, targetItems, targetPath,
-                                 widgetName]() mutable {
-              auto it = std::find(sourceItems.begin(), sourceItems.end(), widgetName);
-              if (it == sourceItems.end()) {
-                return;
-              }
-              sourceItems.erase(it);
-              targetItems.push_back(widgetName);
-              setOverrides({{sourcePath, sourceItems}, {targetPath, targetItems}});
-            });
-            actionRow->addChild(std::move(moveBtn));
+            actionRow->addChild(
+                ui::button({
+                    .text = i18n::tr("settings.entities.widget.inspector.move-to-lane", "lane", laneLabel(targetLane)),
+                    .fontSize = Style::fontSizeCaption * ctx.scale,
+                    .variant = ButtonVariant::Ghost,
+                    .minHeight = Style::controlHeightSm * ctx.scale,
+                    .paddingV = Style::spaceXs * ctx.scale,
+                    .paddingH = Style::spaceSm * ctx.scale,
+                    .radius = Style::scaledRadiusSm(ctx.scale),
+                    .onClick = [setOverrides = ctx.setOverrides, sourceItems, sourcePath, targetItems, targetPath,
+                                widgetName]() mutable {
+                      auto it = std::find(sourceItems.begin(), sourceItems.end(), widgetName);
+                      if (it == sourceItems.end()) {
+                        return;
+                      }
+                      sourceItems.erase(it);
+                      targetItems.push_back(widgetName);
+                      setOverrides({{sourcePath, sourceItems}, {targetPath, targetItems}});
+                    },
+                })
+            );
           }
 
           if (guiManaged) {
-            auto renameBtn = std::make_unique<Button>();
-            renameBtn->setText(i18n::tr("settings.entities.widget.instance.rename"));
-            renameBtn->setVariant(ButtonVariant::Ghost);
-            renameBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
-            renameBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
-            renameBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-            renameBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
-            renameBtn->setOnClick(
-                [&renamingWidgetName = ctx.renamingWidgetName, widgetName, requestRebuild = ctx.requestRebuild]() {
-                  renamingWidgetName = widgetName;
-                  requestRebuild();
-                });
-            actionRow->addChild(std::move(renameBtn));
+            actionRow->addChild(
+                ui::button({
+                    .text = i18n::tr("settings.entities.widget.instance.rename"),
+                    .fontSize = Style::fontSizeCaption * ctx.scale,
+                    .variant = ButtonVariant::Ghost,
+                    .minHeight = Style::controlHeightSm * ctx.scale,
+                    .paddingV = Style::spaceXs * ctx.scale,
+                    .paddingH = Style::spaceSm * ctx.scale,
+                    .radius = Style::scaledRadiusSm(ctx.scale),
+                    .onClick = [&renamingWidgetName = ctx.renamingWidgetName,
+                                &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, widgetName,
+                                requestRebuild = ctx.requestRebuild]() {
+                      renamingWidgetName = widgetName;
+                      pendingDeleteWidgetName.clear();
+                      requestRebuild();
+                    },
+                })
+            );
 
-            auto deleteBtn = std::make_unique<Button>();
-            deleteBtn->setGlyph("trash");
-            deleteBtn->setText(i18n::tr("settings.entities.widget.instance.delete"));
-            deleteBtn->setVariant(ButtonVariant::Ghost);
-            deleteBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
-            deleteBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
-            deleteBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
-            deleteBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-            deleteBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
-            deleteBtn->setOnClick([&pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
-                                   &renamingWidgetName = ctx.renamingWidgetName, widgetName,
-                                   requestRebuild = ctx.requestRebuild]() {
-              pendingDeleteWidgetName = widgetName;
-              renamingWidgetName.clear();
-              requestRebuild();
-            });
-            actionRow->addChild(std::move(deleteBtn));
+            actionRow->addChild(
+                ui::button({
+                    .text = i18n::tr("settings.entities.widget.instance.delete"),
+                    .glyph = "trash",
+                    .fontSize = Style::fontSizeCaption * ctx.scale,
+                    .glyphSize = Style::fontSizeCaption * ctx.scale,
+                    .variant = ButtonVariant::Ghost,
+                    .minHeight = Style::controlHeightSm * ctx.scale,
+                    .paddingV = Style::spaceXs * ctx.scale,
+                    .paddingH = Style::spaceSm * ctx.scale,
+                    .radius = Style::scaledRadiusSm(ctx.scale),
+                    .onClick = [&pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
+                                &renamingWidgetName = ctx.renamingWidgetName, widgetName,
+                                requestRebuild = ctx.requestRebuild]() {
+                      pendingDeleteWidgetName = widgetName;
+                      renamingWidgetName.clear();
+                      requestRebuild();
+                    },
+                })
+            );
           }
 
-          inspector->addChild(std::move(actionRow));
+          body.addChild(std::move(actionRow));
         }
 
-        addWidgetSettingsPanel(*inspector, widgetName, currentLanePath,
-                               managedCapsuleGroupOptions(ctx.config, currentLanePath), ctx);
-
         if (renaming) {
-          auto renameRow = std::make_unique<Flex>();
-          renameRow->setDirection(FlexDirection::Horizontal);
-          renameRow->setAlign(FlexAlign::Center);
-          renameRow->setGap(Style::spaceXs * ctx.scale);
+          auto renameRow = ui::row({
+              .align = FlexAlign::Center,
+              .gap = Style::spaceXs * ctx.scale,
+          });
 
-          auto input = std::make_unique<Input>();
-          input->setValue(widgetName);
-          input->setPlaceholder(i18n::tr("settings.entities.widget.instance.id-placeholder"));
-          input->setFontSize(Style::fontSizeCaption * ctx.scale);
-          input->setControlHeight(Style::controlHeightSm * ctx.scale);
-          input->setHorizontalPadding(Style::spaceXs * ctx.scale);
-          input->setSize(140.0f * ctx.scale, Style::controlHeightSm * ctx.scale);
-          input->setFlexGrow(1.0f);
-          auto* inputPtr = input.get();
+          Input* inputPtr = nullptr;
+          auto input = ui::input({
+              .out = &inputPtr,
+              .value = widgetName,
+              .placeholder = i18n::tr("settings.entities.widget.instance.id-placeholder"),
+              .fontSize = Style::fontSizeCaption * ctx.scale,
+              .controlHeight = Style::controlHeightSm * ctx.scale,
+              .horizontalPadding = Style::spaceXs * ctx.scale,
+              .width = 140.0f * ctx.scale,
+              .height = Style::controlHeightSm * ctx.scale,
+              .flexGrow = 1.0f,
+          });
 
           auto doRename = [&editingWidgetName = ctx.editingWidgetName, &renamingWidgetName = ctx.renamingWidgetName,
                            config = ctx.config, renameWidgetInstance = ctx.renameWidgetInstance, widgetName,
@@ -1293,103 +1714,521 @@ namespace settings {
           input->setOnChange([inputPtr](const std::string& /*text*/) { inputPtr->setInvalid(false); });
           input->setOnSubmit([doRename](const std::string& text) mutable { doRename(text); });
 
-          auto saveBtn = std::make_unique<Button>();
-          saveBtn->setText(i18n::tr("settings.entities.widget.instance.rename-save"));
-          saveBtn->setVariant(ButtonVariant::Default);
-          saveBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
-          saveBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
-          saveBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          saveBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
-          saveBtn->setOnClick([doRename, inputPtr]() mutable { doRename(inputPtr->value()); });
-
-          auto cancelBtn = std::make_unique<Button>();
-          cancelBtn->setText(i18n::tr("common.actions.cancel"));
-          cancelBtn->setVariant(ButtonVariant::Ghost);
-          cancelBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
-          cancelBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
-          cancelBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          cancelBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
-          cancelBtn->setOnClick([&renamingWidgetName = ctx.renamingWidgetName, requestRebuild = ctx.requestRebuild]() {
-            renamingWidgetName.clear();
-            requestRebuild();
-          });
-
           renameRow->addChild(std::move(input));
-          renameRow->addChild(std::move(saveBtn));
-          renameRow->addChild(std::move(cancelBtn));
-          inspector->addChild(std::move(renameRow));
+          renameRow->addChild(
+              ui::button({
+                  .text = i18n::tr("settings.entities.widget.instance.rename-save"),
+                  .fontSize = Style::fontSizeCaption * ctx.scale,
+                  .variant = ButtonVariant::Default,
+                  .minHeight = Style::controlHeightSm * ctx.scale,
+                  .paddingV = Style::spaceXs * ctx.scale,
+                  .paddingH = Style::spaceSm * ctx.scale,
+                  .radius = Style::scaledRadiusSm(ctx.scale),
+                  .onClick = [doRename, inputPtr]() mutable { doRename(inputPtr->value()); },
+              })
+          );
+          renameRow->addChild(
+              ui::button({
+                  .text = i18n::tr("common.actions.cancel"),
+                  .fontSize = Style::fontSizeCaption * ctx.scale,
+                  .variant = ButtonVariant::Ghost,
+                  .minHeight = Style::controlHeightSm * ctx.scale,
+                  .paddingV = Style::spaceXs * ctx.scale,
+                  .paddingH = Style::spaceSm * ctx.scale,
+                  .radius = Style::scaledRadiusSm(ctx.scale),
+                  .onClick = [&renamingWidgetName = ctx.renamingWidgetName, requestRebuild = ctx.requestRebuild]() {
+                    renamingWidgetName.clear();
+                    requestRebuild();
+                  },
+              })
+          );
+          body.addChild(std::move(renameRow));
         }
 
         if (pendingDelete) {
-          auto confirmPanel = std::make_unique<Flex>();
-          confirmPanel->setDirection(FlexDirection::Vertical);
-          confirmPanel->setAlign(FlexAlign::Stretch);
-          confirmPanel->setGap(Style::spaceXs * ctx.scale);
-          confirmPanel->setPadding(Style::spaceSm * ctx.scale);
-          confirmPanel->setRadius(Style::scaledRadiusSm(ctx.scale));
-          confirmPanel->setFill(colorSpecFromRole(ColorRole::Error, 0.10f));
-          confirmPanel->setBorder(colorSpecFromRole(ColorRole::Error, 0.5f), Style::borderWidth);
+          auto confirmPanel = ui::column(
+              {
+                  .align = FlexAlign::Stretch,
+                  .gap = Style::spaceXs * ctx.scale,
+                  .padding = Style::spaceSm * ctx.scale,
+                  .fill = colorSpecFromRole(ColorRole::Error, 0.10f),
+                  .radius = Style::scaledRadiusSm(ctx.scale),
+                  .border = colorSpecFromRole(ColorRole::Error, 0.5f),
+              },
+              makeLabel(
+                  i18n::tr("settings.entities.widget.instance.delete-confirm-title", "name", widgetName),
+                  Style::fontSizeBody * ctx.scale, colorSpecFromRole(ColorRole::Error), FontWeight::Bold
+              ),
+              makeLabel(
+                  i18n::tr("settings.entities.widget.instance.delete-confirm-desc"), Style::fontSizeCaption * ctx.scale,
+                  colorSpecFromRole(ColorRole::OnSurfaceVariant), FontWeight::Normal
+              ),
+              ui::row(
+                  {
+                      .align = FlexAlign::Center,
+                      .gap = Style::spaceSm * ctx.scale,
+                  },
+                  ui::spacer(),
+                  ui::button({
+                      .text = i18n::tr("common.actions.cancel"),
+                      .fontSize = Style::fontSizeCaption * ctx.scale,
+                      .variant = ButtonVariant::Ghost,
+                      .minHeight = Style::controlHeightSm * ctx.scale,
+                      .paddingV = Style::spaceXs * ctx.scale,
+                      .paddingH = Style::spaceSm * ctx.scale,
+                      .radius = Style::scaledRadiusSm(ctx.scale),
+                      .onClick =
+                          [&pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
+                           requestRebuild = ctx.requestRebuild]() {
+                            pendingDeleteWidgetName.clear();
+                            requestRebuild();
+                          },
+                  }),
+                  ui::button({
+                      .text = i18n::tr("settings.entities.widget.instance.delete"),
+                      .glyph = "trash",
+                      .fontSize = Style::fontSizeCaption * ctx.scale,
+                      .glyphSize = Style::fontSizeCaption * ctx.scale,
+                      .variant = ButtonVariant::Destructive,
+                      .minHeight = Style::controlHeightSm * ctx.scale,
+                      .paddingV = Style::spaceXs * ctx.scale,
+                      .paddingH = Style::spaceSm * ctx.scale,
+                      .radius = Style::scaledRadiusSm(ctx.scale),
+                      .onClick = [&pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, config = ctx.config,
+                                  widgetName, clearOverride = ctx.clearOverride, setOverrides = ctx.setOverrides,
+                                  closeHostedEditor = ctx.closeHostedEditor]() {
+                        pendingDeleteWidgetName.clear();
+                        auto referenceRemovals = widgetReferenceRemovalOverrides(config, widgetName);
+                        if (!referenceRemovals.empty()) {
+                          setOverrides(std::move(referenceRemovals));
+                        }
+                        clearOverride({"widget", widgetName});
+                        if (closeHostedEditor) {
+                          closeHostedEditor();
+                        }
+                      },
+                  })
+              )
+          );
+          body.addChild(std::move(confirmPanel));
+        }
 
-          confirmPanel->addChild(
-              makeLabel(i18n::tr("settings.entities.widget.instance.delete-confirm-title", "name", widgetName),
-                        Style::fontSizeBody * ctx.scale, colorSpecFromRole(ColorRole::Error), true));
-          confirmPanel->addChild(makeLabel(i18n::tr("settings.entities.widget.instance.delete-confirm-desc"),
-                                           Style::fontSizeCaption * ctx.scale,
-                                           colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
+        addWidgetSettingsPanel(body, widgetName, currentLanePath, ctx);
+      }
+    }
 
-          auto confirmRow = std::make_unique<Flex>();
-          confirmRow->setDirection(FlexDirection::Horizontal);
-          confirmRow->setAlign(FlexAlign::Center);
-          confirmRow->setGap(Style::spaceSm * ctx.scale);
+    // Color picker control (no label) — placed into a standard settings row via ctx.makeRow.
+    std::unique_ptr<Node> makeGroupColorControl(
+        const BarWidgetEditorContext& ctx, std::string selectedValue, bool allowNone,
+        std::function<void(std::optional<ColorSpec>)> onChange
+    ) {
+      ColorSpecSelectOptions opts;
+      opts.selectedValue = std::move(selectedValue);
+      opts.allowNone = allowNone;
+      opts.allowCustomColor = true;
+      opts.fontSize = Style::fontSizeBody * ctx.scale;
+      opts.controlHeight = Style::controlHeight * ctx.scale;
+      opts.glyphSize = Style::fontSizeBody * ctx.scale;
+      opts.width = 190.0f * ctx.scale;
+      return makeColorSpecSelect(
+          std::move(opts),
+          [onChange](std::string value) { onChange(colorSpecFromConfigString(value, "bar.capsule_group.color")); },
+          [onChange]() { onChange(std::nullopt); }
+      );
+    }
 
-          auto confirmSpacer = std::make_unique<Flex>();
-          confirmSpacer->setFlexGrow(1.0f);
-          confirmRow->addChild(std::move(confirmSpacer));
+    // Slider + editable numeric value field (no label), matching the shell's standard slider control.
+    std::unique_ptr<Node> makeGroupSliderControl(
+        const BarWidgetEditorContext& ctx, double value, double minV, double maxV, double step, bool integerValue,
+        std::function<void(double)> onCommit
+    ) {
+      Input* valueInputPtr = nullptr;
+      auto valueInput = ui::input({
+          .out = &valueInputPtr,
+          .value = formatSliderValue(value, integerValue),
+          .fontSize = Style::fontSizeCaption * ctx.scale,
+          .controlHeight = Style::controlHeightSm * ctx.scale,
+          .horizontalPadding = Style::spaceXs * ctx.scale,
+          .width = 50.0f * ctx.scale,
+          .height = Style::controlHeightSm * ctx.scale,
+      });
 
-          auto cancelBtn = std::make_unique<Button>();
-          cancelBtn->setText(i18n::tr("common.actions.cancel"));
-          cancelBtn->setVariant(ButtonVariant::Ghost);
-          cancelBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
-          cancelBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
-          cancelBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          cancelBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
-          cancelBtn->setOnClick(
-              [&pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, requestRebuild = ctx.requestRebuild]() {
-                pendingDeleteWidgetName.clear();
-                requestRebuild();
-              });
-          confirmRow->addChild(std::move(cancelBtn));
+      Slider* sliderPtr = nullptr;
+      auto slider = ui::slider({
+          .out = &sliderPtr,
+          .minValue = minV,
+          .maxValue = maxV,
+          .step = step,
+          .value = value,
+          .trackHeight = Style::sliderTrackHeight * ctx.scale,
+          .thumbSize = Style::sliderThumbSize * ctx.scale,
+          .controlHeight = Style::controlHeight * ctx.scale,
+          .width = Style::sliderDefaultWidth * ctx.scale,
+          .height = Style::controlHeight * ctx.scale,
+          .onValueChanged = [valueInputPtr, integerValue](double next) {
+            valueInputPtr->setInvalid(false);
+            valueInputPtr->setValue(formatSliderValue(next, integerValue));
+          },
+      });
+      slider->setOnDragEnd([sliderPtr, onCommit]() { onCommit(static_cast<double>(sliderPtr->value())); });
 
-          auto confirmBtn = std::make_unique<Button>();
-          confirmBtn->setText(i18n::tr("settings.entities.widget.instance.delete"));
-          confirmBtn->setGlyph("trash");
-          confirmBtn->setVariant(ButtonVariant::Destructive);
-          confirmBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
-          confirmBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
-          confirmBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
-          confirmBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          confirmBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
-          confirmBtn->setOnClick([&editingWidgetName = ctx.editingWidgetName,
-                                  &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, config = ctx.config,
-                                  widgetName, clearOverride = ctx.clearOverride, setOverrides = ctx.setOverrides]() {
-            pendingDeleteWidgetName.clear();
-            if (editingWidgetName == widgetName) {
-              editingWidgetName.clear();
-            }
-            auto referenceRemovals = widgetReferenceRemovalOverrides(config, widgetName);
-            if (!referenceRemovals.empty()) {
-              setOverrides(std::move(referenceRemovals));
-            }
-            clearOverride({"widget", widgetName});
-          });
-          confirmRow->addChild(std::move(confirmBtn));
+      const auto commitInputText = [sliderPtr, valueInputPtr, minV, maxV, integerValue,
+                                    onCommit](const std::string& text) {
+        const auto parsed = parseDoubleInput(text);
+        if (!parsed.has_value() || *parsed < minV || *parsed > maxV) {
+          valueInputPtr->setInvalid(true);
+          return;
+        }
+        valueInputPtr->setInvalid(false);
+        sliderPtr->setValue(*parsed);
+        valueInputPtr->setValue(formatSliderValue(sliderPtr->value(), integerValue));
+        onCommit(static_cast<double>(sliderPtr->value()));
+      };
+      valueInput->setOnChange([valueInputPtr](const std::string& /*text*/) { valueInputPtr->setInvalid(false); });
+      valueInput->setOnSubmit([commitInputText](const std::string& text) { commitInputText(text); });
+      valueInput->setOnFocusLoss([commitInputText, valueInputPtr]() { commitInputText(valueInputPtr->value()); });
 
-          confirmPanel->addChild(std::move(confirmRow));
-          inspector->addChild(std::move(confirmPanel));
+      auto wrap = ui::row({.align = FlexAlign::Center, .gap = Style::spaceSm * ctx.scale});
+      wrap->addChild(std::move(slider));
+      wrap->addChild(std::move(valueInput));
+      return wrap;
+    }
+
+    // Radius Auto | Custom segmented control + stepper (no label).
+    std::unique_ptr<Node> makeGroupRadiusControl(
+        const BarWidgetEditorContext& ctx, std::optional<float> radius,
+        std::function<void(std::optional<float>)> onChange
+    ) {
+      const int radiusValue = static_cast<int>(std::lround(std::clamp(radius.value_or(12.0f), 0.0f, 80.0f)));
+      auto wrap = ui::row({.align = FlexAlign::Center, .gap = Style::spaceSm * ctx.scale});
+      wrap->addChild(
+          ui::segmented({
+              .options =
+                  std::vector<ui::SegmentedOption>{
+                      {.label = i18n::tr("common.states.auto")},
+                      {.label = i18n::tr("common.states.custom")},
+                  },
+              .selectedIndex = static_cast<std::size_t>(radius.has_value() ? 1 : 0),
+              .scale = ctx.scale,
+              .onChange = [onChange, radiusValue](std::size_t index) {
+                onChange(index == 0 ? std::optional<float>{} : std::optional<float>{static_cast<float>(radiusValue)});
+              },
+          })
+      );
+      wrap->addChild(
+          ui::stepper({
+              .minValue = 0,
+              .maxValue = 80,
+              .step = 1,
+              .value = radiusValue,
+              .enabled = radius.has_value(),
+              .scale = ctx.scale,
+              .onValueCommitted = [onChange](int v) { onChange(std::optional<float>{static_cast<float>(v)}); },
+          })
+      );
+      return wrap;
+    }
+
+    void addCapsuleGroupInspector(
+        Flex& body, const std::vector<std::string>& laneListPath, const BarWidgetEditorContext& ctx
+    ) {
+      if (ctx.editingCapsuleGroupId.empty() || laneListPath.size() < 2 || laneListPath[0] != "bar") {
+        return;
+      }
+      const std::string barName = laneListPath[1];
+      const std::string groupId = ctx.editingCapsuleGroupId;
+      const BarConfig* bar = findBar(ctx.config, barName);
+      const BarCapsuleGroupStyle* stylePtr = bar != nullptr ? findBarCapsuleGroupStyle(*bar, groupId) : nullptr;
+      if (stylePtr == nullptr) {
+        if (ctx.closeHostedEditor) {
+          ctx.closeHostedEditor();
+        }
+        return;
+      }
+      const BarCapsuleGroupStyle style = *stylePtr;
+      const std::vector<BarCapsuleGroupStyle> groups = bar->widgetCapsuleGroups;
+      const std::size_t memberCount = stylePtr->members.size();
+      const std::vector<std::string> groupPath{"bar", barName, "capsule_group"};
+
+      body.addChild(makeSettingSubtitleLabel(
+          i18n::tr("settings.entities.widget.group.members", "count", std::to_string(memberCount)), ctx.scale
+      ));
+
+      // Commits a mutated copy of the group style vector.
+      const auto mutateGroup = [setOverride = ctx.setOverride, groups, groupPath,
+                                groupId](const std::function<void(BarCapsuleGroupStyle&)>& fn) {
+        std::vector<BarCapsuleGroupStyle> updated = groups;
+        for (auto& g : updated) {
+          if (g.id == groupId) {
+            fn(g);
+            break;
+          }
+        }
+        setOverride(groupPath, updated);
+      };
+
+      // Controls use the standard settings row (ctx.makeRow), matching the per-widget settings editor.
+      auto panel = ui::column({
+          .align = FlexAlign::Stretch,
+          .gap = Style::spaceXs * ctx.scale,
+      });
+      Flex* panelPtr = panel.get();
+
+      const auto groupEntry = [&](std::string_view field) {
+        const std::string base = std::string("settings.entities.widget.group.") + std::string(field);
+        return SettingEntry{
+            .section = "bar",
+            .group = "capsule-group",
+            .title = i18n::tr(base),
+            .subtitle = i18n::tr(base + "-description"),
+            .path = {"bar", barName, "capsule_group", groupId, std::string(field)},
+            .control = {},
+            .searchText = {},
+            .visibleWhen = std::nullopt,
+        };
+      };
+
+      panel->addChild(makeMiniSectionHeader(i18n::tr("settings.entities.widget.group.style"), ctx.scale, false));
+
+      ctx.makeRow(
+          *panelPtr, groupEntry("fill"),
+          makeGroupColorControl(
+              ctx, colorSpecConfigValue(style.fill), false, [mutateGroup](std::optional<ColorSpec> c) {
+                if (c.has_value()) {
+                  mutateGroup([&](BarCapsuleGroupStyle& g) { g.fill = *c; });
+                }
+              }
+          )
+      );
+      ctx.makeRow(
+          *panelPtr, groupEntry("border"),
+          makeGroupColorControl(
+              ctx, optionalColorSpecConfigValue(style.border), true, [mutateGroup](std::optional<ColorSpec> c) {
+                mutateGroup([&](BarCapsuleGroupStyle& g) {
+                  g.borderSpecified = true;
+                  g.border = c;
+                });
+              }
+          )
+      );
+      ctx.makeRow(
+          *panelPtr, groupEntry("foreground"),
+          makeGroupColorControl(
+              ctx, optionalColorSpecConfigValue(style.foreground), true, [mutateGroup](std::optional<ColorSpec> c) {
+                mutateGroup([&](BarCapsuleGroupStyle& g) { g.foreground = c; });
+              }
+          )
+      );
+      ctx.makeRow(
+          *panelPtr, groupEntry("padding"),
+          makeGroupSliderControl(
+              ctx, static_cast<double>(style.padding), 0.0, 48.0, 1.0, true, [mutateGroup](double v) {
+                mutateGroup([&](BarCapsuleGroupStyle& g) { g.padding = static_cast<float>(v); });
+              }
+          )
+      );
+      ctx.makeRow(
+          *panelPtr, groupEntry("opacity"),
+          makeGroupSliderControl(
+              ctx, static_cast<double>(style.opacity), 0.0, 1.0, 0.05, false, [mutateGroup](double v) {
+                mutateGroup([&](BarCapsuleGroupStyle& g) { g.opacity = static_cast<float>(v); });
+              }
+          )
+      );
+      ctx.makeRow(
+          *panelPtr, groupEntry("radius"),
+          makeGroupRadiusControl(ctx, style.radius, [mutateGroup](std::optional<float> r) {
+            mutateGroup([&](BarCapsuleGroupStyle& g) { g.radius = r; });
+          })
+      );
+
+      body.addChild(std::move(panel));
+      body.addChild(
+          ui::button({
+              .text = i18n::tr("settings.entities.widget.group.ungroup"),
+              .glyph = "stack-pop",
+              .fontSize = Style::fontSizeCaption * ctx.scale,
+              .glyphSize = Style::fontSizeCaption * ctx.scale,
+              .variant = ButtonVariant::Outline,
+              .minHeight = Style::controlHeightSm * ctx.scale,
+              .paddingV = Style::spaceXs * ctx.scale,
+              .paddingH = Style::spaceSm * ctx.scale,
+              .radius = Style::scaledRadiusSm(ctx.scale),
+              .onClick = [setOverrides = ctx.setOverrides, groups, groupPath, groupId, barName, config = &ctx.config,
+                          closeHostedEditor = ctx.closeHostedEditor]() {
+                const BarConfig* targetBar = findBar(*config, barName);
+                const BarCapsuleGroupStyle* g =
+                    targetBar != nullptr ? findBarCapsuleGroupStyle(*targetBar, groupId) : nullptr;
+                if (g == nullptr) {
+                  if (closeHostedEditor) {
+                    closeHostedEditor();
+                  }
+                  return;
+                }
+                std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> batch;
+                // Replace the group token with its members in whichever lane holds it.
+                const std::string token = makeCapsuleGroupToken(groupId);
+                for (const auto laneKey : {"start", "center", "end"}) {
+                  std::vector<std::string> lanePath{"bar", barName, laneKey};
+                  std::vector<std::string> lane = barWidgetItemsForPath(*config, lanePath);
+                  const auto it = std::find(lane.begin(), lane.end(), token);
+                  if (it == lane.end()) {
+                    continue;
+                  }
+                  const std::size_t pos = static_cast<std::size_t>(it - lane.begin());
+                  lane.erase(lane.begin() + static_cast<std::ptrdiff_t>(pos));
+                  lane.insert(lane.begin() + static_cast<std::ptrdiff_t>(pos), g->members.begin(), g->members.end());
+                  batch.push_back({lanePath, lane});
+                }
+                std::vector<BarCapsuleGroupStyle> remaining;
+                for (const auto& gx : groups) {
+                  if (gx.id != groupId) {
+                    remaining.push_back(gx);
+                  }
+                }
+                batch.push_back({groupPath, remaining});
+                setOverrides(std::move(batch));
+                if (closeHostedEditor) {
+                  closeHostedEditor();
+                }
+              },
+          })
+      );
+    }
+
+    struct LaneGroupPlan {
+      bool groupable = false;
+      std::string laneKey;
+      std::size_t firstIndex = 0;
+      std::vector<std::string> members; // contiguous selection in lane order
+    };
+
+    // Selection tokens are "<laneKey>#<index>". Grouping needs ≥2 selected widgets in one lane that are
+    // adjacent and none of which is already a group token.
+    LaneGroupPlan computeLaneGroupPlan(const SettingEntry& entry, const BarWidgetEditorContext& ctx) {
+      LaneGroupPlan plan;
+      const auto& selection = ctx.selectedLaneWidgets;
+      if (selection.size() < 2) {
+        return plan;
+      }
+      std::string laneKey;
+      std::vector<std::size_t> indices;
+      for (const auto& token : selection) {
+        const auto hash = token.find('#');
+        if (hash == std::string::npos) {
+          return plan;
+        }
+        const std::string key = token.substr(0, hash);
+        if (laneKey.empty()) {
+          laneKey = key;
+        } else if (laneKey != key) {
+          return plan; // selection spans multiple lanes
+        }
+        indices.push_back(static_cast<std::size_t>(std::strtoul(token.c_str() + hash + 1, nullptr, 10)));
+      }
+      std::sort(indices.begin(), indices.end());
+      for (std::size_t k = 1; k < indices.size(); ++k) {
+        if (indices[k] != indices[k - 1] + 1) {
+          return plan; // not contiguous
         }
       }
 
-      block.addChild(std::move(inspector));
+      const std::vector<std::string> items = barWidgetItemsForPath(ctx.config, {"bar", entry.path[1], laneKey});
+      for (const auto idx : indices) {
+        if (idx >= items.size() || isCapsuleGroupToken(items[idx])) {
+          return plan;
+        }
+        plan.members.push_back(items[idx]);
+      }
+      plan.groupable = true;
+      plan.laneKey = laneKey;
+      plan.firstIndex = indices.front();
+      return plan;
+    }
+
+    void addLaneSelectionToolbar(Flex& block, const SettingEntry& entry, const BarWidgetEditorContext& ctx) {
+      const LaneGroupPlan plan = computeLaneGroupPlan(entry, ctx);
+      const std::string barName = entry.path.size() >= 2 ? entry.path[1] : std::string{};
+
+      auto toolbar = ui::row({
+          .align = FlexAlign::Center,
+          .gap = Style::spaceSm * ctx.scale,
+          .paddingV = Style::spaceXs * ctx.scale,
+          .paddingH = Style::spaceSm * ctx.scale,
+          .fill = colorSpecFromRole(ColorRole::Primary, 0.12f),
+          .radius = Style::scaledRadiusSm(ctx.scale),
+          .fillWidth = true,
+      });
+      auto label = makeLabel(
+          i18n::tr("settings.entities.widget.group.selected", "count", std::to_string(ctx.selectedLaneWidgets.size())),
+          Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurface), FontWeight::Bold
+      );
+      label->setFlexGrow(1.0f);
+      toolbar->addChild(std::move(label));
+
+      if (plan.groupable) {
+        toolbar->addChild(
+            ui::button({
+                .text = i18n::tr("settings.entities.widget.group.action"),
+                .glyph = "stack-2",
+                .fontSize = Style::fontSizeCaption * ctx.scale,
+                .glyphSize = Style::fontSizeCaption * ctx.scale,
+                .variant = ButtonVariant::Primary,
+                .minHeight = Style::controlHeightSm * ctx.scale,
+                .paddingV = Style::spaceXs * ctx.scale,
+                .paddingH = Style::spaceSm * ctx.scale,
+                .radius = Style::scaledRadiusSm(ctx.scale),
+                .onClick = [setOverrides = ctx.setOverrides, config = &ctx.config, barName, laneKey = plan.laneKey,
+                            firstIndex = plan.firstIndex, members = plan.members,
+                            &selectedLaneWidgets = ctx.selectedLaneWidgets,
+                            openCapsuleGroupInspector = ctx.openCapsuleGroupInspector, laneListPath = entry.path]() {
+                  const BarConfig* bar = findBar(*config, barName);
+                  if (bar == nullptr) {
+                    return;
+                  }
+                  const std::string newId = nextCapsuleGroupId(*bar);
+                  std::vector<BarCapsuleGroupStyle> groups = bar->widgetCapsuleGroups;
+                  BarCapsuleGroupStyle newGroup = seedCapsuleGroupStyle(*bar, newId);
+                  newGroup.members = members;
+                  groups.push_back(std::move(newGroup));
+
+                  // Replace the contiguous selected run with a single group token.
+                  std::vector<std::string> lanePath{"bar", barName, laneKey};
+                  std::vector<std::string> lane = barWidgetItemsForPath(*config, lanePath);
+                  const std::size_t count = std::min(members.size(), lane.size() - std::min(firstIndex, lane.size()));
+                  if (firstIndex <= lane.size()) {
+                    lane.erase(
+                        lane.begin() + static_cast<std::ptrdiff_t>(firstIndex),
+                        lane.begin() + static_cast<std::ptrdiff_t>(firstIndex + count)
+                    );
+                    lane.insert(lane.begin() + static_cast<std::ptrdiff_t>(firstIndex), makeCapsuleGroupToken(newId));
+                  }
+
+                  selectedLaneWidgets.clear();
+                  setOverrides({{lanePath, lane}, {{"bar", barName, "capsule_group"}, groups}});
+                  if (openCapsuleGroupInspector) {
+                    openCapsuleGroupInspector(laneListPath, newId);
+                  }
+                },
+            })
+        );
+      }
+      toolbar->addChild(
+          ui::button({
+              .text = i18n::tr("settings.entities.widget.group.clear"),
+              .fontSize = Style::fontSizeCaption * ctx.scale,
+              .variant = ButtonVariant::Ghost,
+              .minHeight = Style::controlHeightSm * ctx.scale,
+              .paddingV = Style::spaceXs * ctx.scale,
+              .paddingH = Style::spaceSm * ctx.scale,
+              .radius = Style::scaledRadiusSm(ctx.scale),
+              .onClick = [&selectedLaneWidgets = ctx.selectedLaneWidgets, requestRebuild = ctx.requestRebuild]() {
+                selectedLaneWidgets.clear();
+                requestRebuild();
+              },
+          })
+      );
+      block.addChild(std::move(toolbar));
     }
 
   } // namespace
@@ -1406,46 +2245,310 @@ namespace settings {
     return isBarWidgetListPath(path) && path.back() == "start";
   }
 
+  void buildWidgetInspectorBody(
+      Flex& body, const std::vector<std::string>& laneListPath, const BarWidgetEditorContext& ctx
+  ) {
+    addInspectorPane(body, laneListPath, ctx);
+  }
+
+  void
+  buildCapsuleGroupBody(Flex& body, const std::vector<std::string>& laneListPath, const BarWidgetEditorContext& ctx) {
+    addCapsuleGroupInspector(body, laneListPath, ctx);
+  }
+
   void addBarWidgetLaneEditor(Flex& section, const SettingEntry& entry, const BarWidgetEditorContext& ctx) {
     if (!isFirstBarWidgetListPath(entry.path)) {
       return;
     }
 
-    auto block = std::make_unique<Flex>();
-    block->setDirection(FlexDirection::Vertical);
-    block->setAlign(FlexAlign::Stretch);
-    block->setGap(Style::spaceSm * ctx.scale);
-    block->setPadding(2.0f * ctx.scale, 0.0f);
+    auto block = ui::column(
+        {
+            .align = FlexAlign::Stretch,
+            .gap = Style::spaceSm * ctx.scale,
+            .paddingV = 2.0f * ctx.scale,
+            .paddingH = 0,
+        },
+        ui::row(
+            {
+                .align = FlexAlign::Center,
+                .gap = Style::spaceSm * ctx.scale,
+            },
+            makeLabel(
+                i18n::tr("settings.entities.widget.editor.title"), Style::fontSizeBody * ctx.scale,
+                colorSpecFromRole(ColorRole::OnSurface), FontWeight::Normal
+            )
+        )
+    );
 
-    auto titleRow = std::make_unique<Flex>();
-    titleRow->setDirection(FlexDirection::Horizontal);
-    titleRow->setAlign(FlexAlign::Center);
-    titleRow->setGap(Style::spaceSm * ctx.scale);
-    titleRow->addChild(makeLabel(i18n::tr("settings.entities.widget.editor.title"), Style::fontSizeBody * ctx.scale,
-                                 colorSpecFromRole(ColorRole::OnSurface), false));
-    block->addChild(std::move(titleRow));
-
-    block->addChild(makeLabel(i18n::tr("settings.entities.widget.editor.description"),
-                              Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurfaceVariant),
-                              false));
-
-    const bool inspectorActive = !ctx.editingWidgetName.empty();
-    if (inspectorActive) {
-      addInspectorPane(*block, entry, ctx);
-      section.addChild(std::move(block));
-      return;
-    }
-
-    auto lanes = std::make_unique<Flex>();
-    lanes->setDirection(FlexDirection::Horizontal);
-    lanes->setAlign(FlexAlign::Stretch);
-    lanes->setGap(Style::spaceSm * ctx.scale);
-    lanes->setFillWidth(true);
+    block->addChild(makeSettingSubtitleLabel(i18n::tr("settings.entities.widget.editor.description"), ctx.scale));
 
     static constexpr std::string_view kLaneKeys[] = {"start", "center", "end"};
-    static constexpr std::size_t kLaneCount = sizeof(kLaneKeys) / sizeof(kLaneKeys[0]);
-    auto laneTargets = std::make_shared<std::vector<LaneDropTarget>>();
-    laneTargets->reserve(kLaneCount);
+
+    // Selection toolbar: Group adjacent selected widgets, or clear the current selection.
+    if (!ctx.selectedLaneWidgets.empty()) {
+      addLaneSelectionToolbar(*block, entry, ctx);
+    }
+
+    auto lanes = ui::row({
+        .align = FlexAlign::Stretch,
+        .gap = Style::spaceSm * ctx.scale,
+        .fillWidth = true,
+    });
+
+    const std::string barName = entry.path.size() >= 2 ? entry.path[1] : std::string{};
+    auto zones = std::make_shared<std::vector<DropZone>>();
+
+    // Shared compact icon-button footprint for lane cards and group headers.
+    const float iconSize = Style::controlHeightSm * 0.84f * ctx.scale;
+    const float iconPad = 2.0f * ctx.scale;
+    const float rowGap = 2.0f * ctx.scale;
+
+    // Wires a drag handle so its card can be dragged between any registered zone (lane or group).
+    auto wireDrag =
+        [&ctx, zones,
+         barName](Button& handle, Button* handlePtr, Flex* cardPtr, std::size_t homeZoneIndex, std::size_t itemIndex) {
+          auto dragState = std::make_shared<LaneWidgetDragState>();
+          handle.setOnPress([dragState, cardPtr, zones, config = &ctx.config, barName, setOverride = ctx.setOverride,
+                             setOverrides = ctx.setOverrides, homeZoneIndex,
+                             itemIndex](float localX, float localY, bool pressed) {
+            const auto clearHighlight = [&]() {
+              if (dragState->highlightZoneIndex.has_value() && dragState->highlightItemIndex.has_value()) {
+                setCardCombineHighlight(*zones, *dragState->highlightZoneIndex, *dragState->highlightItemIndex, false);
+              }
+              dragState->highlightZoneIndex = std::nullopt;
+              dragState->highlightItemIndex = std::nullopt;
+            };
+            if (pressed) {
+              dragState->active = true;
+              dragState->moved = false;
+              dragState->startLocalX = localX;
+              dragState->startLocalY = localY;
+              dragState->lastLocalX = localX;
+              dragState->lastLocalY = localY;
+              dragState->targetZoneIndex = std::nullopt;
+              dragState->targetInsertionIndex = std::nullopt;
+              dragState->combineZoneIndex = std::nullopt;
+              dragState->combineItemIndex = std::nullopt;
+              clearHighlight();
+              cardPtr->setOpacity(0.72f);
+              hideDropIndicators(*zones);
+              return;
+            }
+            if (!dragState->active) {
+              return;
+            }
+            dragState->active = false;
+            cardPtr->setOpacity(1.0f);
+            clearHighlight();
+            hideDropIndicators(*zones);
+            if (!dragState->moved) {
+              return;
+            }
+            if (dragState->combineZoneIndex.has_value() && dragState->combineItemIndex.has_value()) {
+              createGroupByCombine(
+                  *config, barName, *zones, homeZoneIndex, itemIndex, *dragState->combineZoneIndex,
+                  *dragState->combineItemIndex, setOverrides
+              );
+              return;
+            }
+            if (!dragState->targetZoneIndex.has_value() || !dragState->targetInsertionIndex.has_value()) {
+              return;
+            }
+            performZoneMove(
+                *config, barName, *zones, homeZoneIndex, itemIndex, *dragState->targetZoneIndex,
+                *dragState->targetInsertionIndex, setOverride, setOverrides
+            );
+          });
+          handle.setOnPointerMotion([dragState, handlePtr, zones, homeZoneIndex, itemIndex,
+                                     scale = ctx.scale](float localX, float localY) {
+            if (!dragState->active) {
+              return;
+            }
+            dragState->lastLocalX = localX;
+            dragState->lastLocalY = localY;
+            if (std::hypot(localX - dragState->startLocalX, localY - dragState->startLocalY)
+                >= kDragStartThresholdPx * scale) {
+              dragState->moved = true;
+            }
+            if (!dragState->moved) {
+              return;
+            }
+            const auto clearHighlight = [&]() {
+              if (dragState->highlightZoneIndex.has_value() && dragState->highlightItemIndex.has_value()) {
+                setCardCombineHighlight(*zones, *dragState->highlightZoneIndex, *dragState->highlightItemIndex, false);
+              }
+              dragState->highlightZoneIndex = std::nullopt;
+              dragState->highlightItemIndex = std::nullopt;
+            };
+            const auto clear = [&]() {
+              dragState->targetZoneIndex = std::nullopt;
+              dragState->targetInsertionIndex = std::nullopt;
+              dragState->combineZoneIndex = std::nullopt;
+              dragState->combineItemIndex = std::nullopt;
+              clearHighlight();
+              hideDropIndicators(*zones);
+            };
+            float absX = 0.0f;
+            float absY = 0.0f;
+            Node::absolutePosition(handlePtr, absX, absY);
+            const float sceneX = absX + localX;
+            const float sceneY = absY + localY;
+            const auto targetZone = zoneAtScenePoint(*zones, sceneX, sceneY);
+            if (!targetZone.has_value() || *targetZone >= zones->size()) {
+              clear();
+              return;
+            }
+            const DropZone& zone = (*zones)[*targetZone];
+            if (zone.itemNodes == nullptr || zone.container == nullptr || zone.indicator == nullptr) {
+              clear();
+              return;
+            }
+
+            // Combine: a loose widget dropped onto the middle of another loose widget forms a new group.
+            const bool draggedIsLooseWidget = homeZoneIndex < zones->size()
+                && !(*zones)[homeZoneIndex].isGroup
+                && itemIndex < (*zones)[homeZoneIndex].items.size()
+                && !isCapsuleGroupToken((*zones)[homeZoneIndex].items[itemIndex]);
+            if (!zone.isGroup && draggedIsLooseWidget) {
+              if (const auto hovered = hoveredItemBand(sceneY, *zone.itemNodes); hovered.has_value()) {
+                const std::size_t hoveredIdx = hovered->first;
+                const bool onMiddle = hovered->second;
+                const bool sameItem = *targetZone == homeZoneIndex && hoveredIdx == itemIndex;
+                const bool hoveredIsWidget =
+                    hoveredIdx < zone.items.size() && !isCapsuleGroupToken(zone.items[hoveredIdx]);
+                if (onMiddle && hoveredIsWidget && !sameItem) {
+                  if (dragState->highlightZoneIndex != *targetZone || dragState->highlightItemIndex != hoveredIdx) {
+                    clearHighlight();
+                    setCardCombineHighlight(*zones, *targetZone, hoveredIdx, true);
+                    dragState->highlightZoneIndex = *targetZone;
+                    dragState->highlightItemIndex = hoveredIdx;
+                  }
+                  dragState->combineZoneIndex = *targetZone;
+                  dragState->combineItemIndex = hoveredIdx;
+                  dragState->targetZoneIndex = std::nullopt;
+                  dragState->targetInsertionIndex = std::nullopt;
+                  hideDropIndicators(*zones);
+                  return;
+                }
+              }
+            }
+
+            // Insertion (between items / into a group).
+            clearHighlight();
+            dragState->combineZoneIndex = std::nullopt;
+            dragState->combineItemIndex = std::nullopt;
+            const std::size_t insertion = insertionIndexForSceneY(sceneY, *zone.itemNodes);
+            if (insertionWouldNotMove(homeZoneIndex, *targetZone, itemIndex, insertion)) {
+              dragState->targetZoneIndex = std::nullopt;
+              dragState->targetInsertionIndex = std::nullopt;
+              hideDropIndicators(*zones);
+              return;
+            }
+            dragState->targetZoneIndex = *targetZone;
+            dragState->targetInsertionIndex = insertion;
+            hideDropIndicators(*zones);
+            updateDropIndicator(*zone.indicator, *zone.container, *zone.itemNodes, insertion, scale);
+          });
+        };
+
+    // Builds a draggable widget card (used for both loose lane widgets and group members).
+    auto makeWidgetCard = [&ctx, &wireDrag, &entry, iconSize, iconPad, rowGap](
+                              const std::string& name, std::size_t homeZoneIndex, std::size_t itemIndex, bool inherited,
+                              std::string_view removeGlyph, std::function<void()> removeAction, bool selectable,
+                              bool isSelected, std::function<void()> toggleSelect
+                          ) -> std::unique_ptr<Flex> {
+      const auto info = widgetReferenceInfo(ctx.config, name, false);
+      auto card = ui::column({
+          .align = FlexAlign::Stretch,
+          .paddingV = 3.0f * ctx.scale,
+          .paddingH = Style::spaceXs * ctx.scale,
+          .fill = colorSpecFromRole(ColorRole::Surface, 0.72f),
+          .radius = Style::scaledRadiusSm(ctx.scale),
+          .border = isSelected ? colorSpecFromRole(ColorRole::Primary) : colorSpecFromRole(ColorRole::Outline, 0.22f),
+          .borderWidth = isSelected ? Style::borderWidth * 1.5f : Style::borderWidth,
+      });
+      auto* cardPtr = card.get();
+
+      // Single compact row: [checkbox] [drag] title… [kind glyph] [settings] [remove].
+      auto row = ui::row({.align = FlexAlign::Center, .gap = rowGap});
+      if (selectable) {
+        row->addChild(
+            ui::button({
+                .glyph = isSelected ? "checkbox" : "square",
+                .glyphSize = Style::fontSizeCaption * ctx.scale,
+                .variant = isSelected ? ButtonVariant::Default : ButtonVariant::Ghost,
+                .minWidth = iconSize,
+                .minHeight = iconSize,
+                .padding = iconPad,
+                .radius = Style::scaledRadiusSm(ctx.scale),
+                .onClick = std::move(toggleSelect),
+            })
+        );
+      }
+      if (!inherited) {
+        Button* dragBtnPtr = nullptr;
+        auto dragBtn = ui::button({
+            .out = &dragBtnPtr,
+            .glyph = "menu-2",
+            .glyphSize = Style::fontSizeCaption * ctx.scale,
+            .variant = ButtonVariant::Ghost,
+            .minWidth = iconSize,
+            .minHeight = iconSize,
+            .padding = iconPad,
+            .radius = Style::scaledRadiusSm(ctx.scale),
+            .configure = [](Button& button) { button.setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_MOVE); },
+        });
+        wireDrag(*dragBtn, dragBtnPtr, cardPtr, homeZoneIndex, itemIndex);
+        row->addChild(std::move(dragBtn));
+      }
+      {
+        auto titleLabel = makeLabel(
+            info.title, Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurface),
+            FontWeight::SemiBold
+        );
+        titleLabel->setMaxLines(1);
+        titleLabel->setFlexGrow(1.0f);
+        row->addChild(std::move(titleLabel));
+      }
+      row->addChild(
+          makeGlyph(widgetBadgeGlyph(info.kind), Style::fontSizeCaption * ctx.scale, widgetBadgeGlyphColor(info.kind))
+      );
+      if (!widgetTypeForReference(ctx.config, name).empty()) {
+        row->addChild(
+            ui::button({
+                .glyph = "settings",
+                .glyphSize = Style::fontSizeCaption * ctx.scale,
+                .variant = ButtonVariant::Ghost,
+                .minWidth = iconSize,
+                .minHeight = iconSize,
+                .padding = iconPad,
+                .radius = Style::scaledRadiusSm(ctx.scale),
+                .onClick = [openWidgetInspector = ctx.openWidgetInspector, laneListPath = entry.path, name]() {
+                  if (openWidgetInspector) {
+                    openWidgetInspector(laneListPath, name);
+                  }
+                },
+            })
+        );
+      }
+      if (!inherited && removeAction) {
+        row->addChild(
+            ui::button({
+                .glyph = std::string(removeGlyph),
+                .glyphSize = Style::fontSizeCaption * ctx.scale,
+                .variant = ButtonVariant::Ghost,
+                .minWidth = iconSize,
+                .minHeight = iconSize,
+                .padding = iconPad,
+                .radius = Style::scaledRadiusSm(ctx.scale),
+                .onClick = std::move(removeAction),
+            })
+        );
+      }
+      card->addChild(std::move(row));
+      return card;
+    };
+
     for (const auto laneKey : kLaneKeys) {
       auto lanePath = pathWithLastSegment(entry.path, std::string(laneKey));
       const auto laneItems = barWidgetItemsForPath(ctx.config, lanePath);
@@ -1454,354 +2557,438 @@ namespace settings {
       const bool monitorLaneExplicit = monitorWidgetListHasExplicitValue(ctx.config, lanePath);
       const bool inherited = isMonitorWidgetListPath(lanePath) && !monitorLaneExplicit;
 
-      auto lane = std::make_unique<Flex>();
-      lane->setDirection(FlexDirection::Vertical);
-      lane->setAlign(FlexAlign::Stretch);
-      lane->setGap(Style::spaceXs * ctx.scale);
-      lane->setPadding(Style::spaceSm * ctx.scale);
-      lane->setRadius(Style::scaledRadiusMd(ctx.scale));
-      lane->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, 0.45f));
-      lane->setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), Style::borderWidth);
-      lane->setFlexGrow(1.0f);
-      lane->setMinWidth(160.0f * ctx.scale);
+      auto lane = ui::column({
+          .align = FlexAlign::Stretch,
+          .gap = Style::spaceXs * ctx.scale,
+          .padding = Style::spaceSm * ctx.scale,
+          .fill = colorSpecFromRole(ColorRole::SurfaceVariant, 0.45f),
+          .radius = Style::scaledRadiusMd(ctx.scale),
+          .border = colorSpecFromRole(ColorRole::Outline, 0.5f),
+          .minWidth = 160.0f * ctx.scale,
+          .flexGrow = 1.0f,
+      });
       auto* lanePtr = lane.get();
 
-      auto dropIndicator = std::make_unique<Box>();
-      dropIndicator->setFill(colorSpecFromRole(ColorRole::Primary));
-      dropIndicator->setRadius(std::max(1.0f, 1.5f * ctx.scale));
-      dropIndicator->setVisible(false);
-      dropIndicator->setParticipatesInLayout(false);
-      dropIndicator->setZIndex(10);
+      auto dropIndicator = ui::box({
+          .fill = colorSpecFromRole(ColorRole::Primary),
+          .radius = std::max(1.0f, 1.5f * ctx.scale),
+          .visible = false,
+          .participatesInLayout = false,
+          .configure = [](Box& box) { box.setZIndex(10); },
+      });
       auto* dropIndicatorPtr = dropIndicator.get();
       lane->addChild(std::move(dropIndicator));
 
-      auto itemNodes = std::make_shared<std::vector<Flex*>>();
-      itemNodes->reserve(laneItems.size());
-      const std::size_t laneTargetIndex = laneTargets->size();
-      laneTargets->push_back(LaneDropTarget{.path = lanePath,
-                                            .items = laneItems,
-                                            .lane = lanePtr,
-                                            .indicator = dropIndicatorPtr,
-                                            .itemNodes = itemNodes});
+      auto laneItemNodes = std::make_shared<std::vector<Flex*>>();
+      laneItemNodes->reserve(laneItems.size());
+      const std::size_t laneZoneIndex = zones->size();
+      zones->push_back(
+          DropZone{
+              .isGroup = false,
+              .lanePath = lanePath,
+              .groupId = {},
+              .items = laneItems,
+              .container = lanePtr,
+              .indicator = dropIndicatorPtr,
+              .itemNodes = laneItemNodes,
+          }
+      );
 
-      auto laneHeader = std::make_unique<Flex>();
-      laneHeader->setDirection(FlexDirection::Horizontal);
-      laneHeader->setAlign(FlexAlign::Center);
-      laneHeader->setGap(Style::spaceXs * ctx.scale);
-      laneHeader->addChild(makeLabel(laneLabel(laneKey), Style::fontSizeBody * ctx.scale,
-                                     colorSpecFromRole(ColorRole::OnSurface), true));
+      auto laneHeader = ui::row(
+          {
+              .align = FlexAlign::Center,
+              .gap = Style::spaceXs * ctx.scale,
+              // Fixed height so lanes with an Override badge / Reset button line up with plain ones.
+              .minHeight = Style::controlHeightSm * ctx.scale,
+          },
+          makeLabel(
+              laneLabel(laneKey), Style::fontSizeBody * ctx.scale, colorSpecFromRole(ColorRole::OnSurface),
+              FontWeight::Bold
+          )
+      );
       if (overridden) {
-        auto badge = std::make_unique<Flex>();
-        badge->setAlign(FlexAlign::Center);
-        badge->setPadding(0, Style::spaceXs * ctx.scale);
-        badge->setRadius(Style::scaledRadiusSm(ctx.scale));
-        badge->setFill(colorSpecFromRole(ColorRole::Primary, 0.15f));
-        badge->addChild(makeLabel(i18n::tr("settings.badges.override"), Style::fontSizeCaption * ctx.scale,
-                                  colorSpecFromRole(ColorRole::Primary), true));
-        laneHeader->addChild(std::move(badge));
+        laneHeader->addChild(
+            ui::row(
+                {
+                    .align = FlexAlign::Center,
+                    .paddingV = 0,
+                    .paddingH = Style::spaceXs * ctx.scale,
+                    .fill = colorSpecFromRole(ColorRole::Primary, 0.15f),
+                    .radius = Style::scaledRadiusSm(ctx.scale),
+                },
+                makeLabel(
+                    i18n::tr("settings.badges.override"), Style::fontSizeCaption * ctx.scale,
+                    colorSpecFromRole(ColorRole::Primary), FontWeight::Bold
+                )
+            )
+        );
       }
       if (inherited) {
-        auto badge = std::make_unique<Flex>();
-        badge->setAlign(FlexAlign::Center);
-        badge->setPadding(0, Style::spaceXs * ctx.scale);
-        badge->setRadius(Style::scaledRadiusSm(ctx.scale));
-        badge->setFill(colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.14f));
-        badge->addChild(makeLabel(i18n::tr("settings.badges.inherited"), Style::fontSizeCaption * ctx.scale,
-                                  colorSpecFromRole(ColorRole::OnSurfaceVariant), true));
-        laneHeader->addChild(std::move(badge));
+        laneHeader->addChild(
+            ui::row(
+                {
+                    .align = FlexAlign::Center,
+                    .paddingV = 0,
+                    .paddingH = Style::spaceXs * ctx.scale,
+                    .fill = colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.14f),
+                    .radius = Style::scaledRadiusSm(ctx.scale),
+                },
+                makeLabel(
+                    i18n::tr("settings.badges.inherited"), Style::fontSizeCaption * ctx.scale,
+                    colorSpecFromRole(ColorRole::OnSurfaceVariant), FontWeight::Bold
+                )
+            )
+        );
       }
-      auto laneSpacer = std::make_unique<Flex>();
-      laneSpacer->setFlexGrow(1.0f);
-      laneHeader->addChild(std::move(laneSpacer));
+      laneHeader->addChild(ui::spacer());
       if (inherited) {
-        auto customizeBtn = std::make_unique<Button>();
-        customizeBtn->setText(i18n::tr("settings.entities.widget.lanes.customize"));
-        customizeBtn->setVariant(ButtonVariant::Ghost);
-        customizeBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
-        customizeBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
-        customizeBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-        customizeBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
         auto items = laneItems;
         auto path = lanePath;
-        customizeBtn->setOnClick([setOverride = ctx.setOverride, items, path]() { setOverride(path, items); });
-        laneHeader->addChild(std::move(customizeBtn));
+        laneHeader->addChild(
+            ui::button({
+                .text = i18n::tr("settings.entities.widget.lanes.customize"),
+                .fontSize = Style::fontSizeCaption * ctx.scale,
+                .variant = ButtonVariant::Ghost,
+                .minHeight = Style::controlHeightSm * ctx.scale,
+                .paddingV = Style::spaceXs * ctx.scale,
+                .paddingH = Style::spaceSm * ctx.scale,
+                .radius = Style::scaledRadiusSm(ctx.scale),
+                .onClick = [setOverride = ctx.setOverride, items, path]() { setOverride(path, items); },
+            })
+        );
       }
       if (overridden || (monitorLaneExplicit && hasGuiOverride)) {
         laneHeader->addChild(ctx.makeResetButton(lanePath));
       }
       lane->addChild(std::move(laneHeader));
 
+      const BarConfig* laneBar = !barName.empty() ? findBar(ctx.config, barName) : nullptr;
       for (std::size_t i = 0; i < laneItems.size(); ++i) {
-        const auto info = widgetReferenceInfo(ctx.config, laneItems[i]);
-        const std::string capsuleGroup = widgetCapsuleGroupName(ctx.config, laneItems[i]);
-        auto item = std::make_unique<Flex>();
-        item->setDirection(FlexDirection::Vertical);
-        item->setAlign(FlexAlign::Stretch);
-        item->setGap(Style::spaceXs * ctx.scale);
-        item->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-        item->setRadius(Style::scaledRadiusSm(ctx.scale));
-        item->setFill(colorSpecFromRole(ColorRole::Surface, 0.72f));
-        item->setBorder(colorSpecFromRole(ColorRole::Outline, 0.22f), Style::borderWidth);
-        auto* itemPtr = item.get();
-        itemNodes->push_back(itemPtr);
+        const std::string& entryName = laneItems[i];
 
-        auto itemTop = std::make_unique<Flex>();
-        itemTop->setDirection(FlexDirection::Horizontal);
-        itemTop->setAlign(FlexAlign::Center);
-        itemTop->setGap(Style::spaceXs * ctx.scale);
-        {
-          auto titleLabel =
-              makeLabel(info.title, Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurface), true);
-          titleLabel->setMaxLines(1);
-          titleLabel->setFlexGrow(1.0f);
-          itemTop->addChild(std::move(titleLabel));
-        }
-        auto kindBadge = std::make_unique<Flex>();
-        kindBadge->setAlign(FlexAlign::Center);
-        kindBadge->setPadding(0, Style::spaceXs * ctx.scale);
-        kindBadge->setRadius(Style::scaledRadiusSm(ctx.scale));
-        kindBadge->setFill(widgetBadgeColor(info.kind));
-        kindBadge->addChild(
-            makeLabel(info.badge, Style::fontSizeCaption * ctx.scale, colorSpecFromRole(ColorRole::OnSurface), true));
-        itemTop->addChild(std::move(kindBadge));
-        if (!capsuleGroup.empty()) {
-          itemTop->addChild(makeGlyph("stack-back", Style::fontSizeCaption * ctx.scale,
-                                      colorSpecFromRole(ColorRole::OnSurfaceVariant)));
-        }
-        item->addChild(std::move(itemTop));
-
-        if (info.kind != WidgetReferenceKind::BuiltIn && !info.detail.empty()) {
-          item->addChild(makeLabel(info.detail, Style::fontSizeCaption * ctx.scale,
-                                   colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
-        }
-        if (!capsuleGroup.empty()) {
-          auto groupRow = std::make_unique<Flex>();
-          groupRow->setDirection(FlexDirection::Horizontal);
-          groupRow->setAlign(FlexAlign::Center);
-          groupRow->setGap(Style::spaceXs * ctx.scale);
-          groupRow->addChild(makeGlyph("stack-back", Style::fontSizeCaption * ctx.scale,
-                                       colorSpecFromRole(ColorRole::OnSurfaceVariant)));
-          groupRow->addChild(makeLabel(capsuleGroup, Style::fontSizeCaption * ctx.scale,
-                                       colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
-          item->addChild(std::move(groupRow));
-        }
-
-        auto actions = std::make_unique<Flex>();
-        actions->setDirection(FlexDirection::Horizontal);
-        actions->setAlign(FlexAlign::Center);
-        actions->setGap(Style::spaceXs * ctx.scale);
-
-        const auto widgetName = laneItems[i];
-        const bool editableWidget = !widgetTypeForReference(ctx.config, widgetName).empty();
-        if (!inherited) {
-          auto dragBtn = std::make_unique<Button>();
-          dragBtn->setGlyph("menu-2");
-          dragBtn->setVariant(ButtonVariant::Ghost);
-          dragBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
-          dragBtn->setMinWidth(Style::controlHeightSm * ctx.scale);
-          dragBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
-          dragBtn->setPadding(Style::spaceXs * ctx.scale);
-          dragBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
-          dragBtn->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_MOVE);
-          auto* dragBtnPtr = dragBtn.get();
-
-          auto dragState = std::make_shared<LaneWidgetDragState>();
-          auto items = laneItems;
-          auto path = lanePath;
-          dragBtn->setOnPress([dragState, itemPtr, laneTargets, setOverride = ctx.setOverride,
-                               setOverrides = ctx.setOverrides, items, path, i,
-                               laneTargetIndex](float localX, float localY, bool pressed) mutable {
-            if (pressed) {
-              dragState->active = true;
-              dragState->moved = false;
-              dragState->startLocalX = localX;
-              dragState->startLocalY = localY;
-              dragState->lastLocalX = localX;
-              dragState->lastLocalY = localY;
-              dragState->targetLaneIndex = std::nullopt;
-              dragState->targetInsertionIndex = std::nullopt;
-              itemPtr->setOpacity(0.72f);
-              hideDropIndicators(*laneTargets);
-              return;
+        // Group token → render a container holding its members; members are dragged in/out of it.
+        if (isCapsuleGroupToken(entryName)) {
+          const std::string gid = capsuleGroupTokenId(entryName);
+          const BarCapsuleGroupStyle* group = laneBar != nullptr ? findBarCapsuleGroupStyle(*laneBar, gid) : nullptr;
+          if (group == nullptr) {
+            auto orphan = ui::column({
+                .align = FlexAlign::Center,
+                .gap = Style::spaceXs * ctx.scale,
+                .paddingV = Style::spaceXs * ctx.scale,
+                .paddingH = Style::spaceSm * ctx.scale,
+                .radius = Style::scaledRadiusSm(ctx.scale),
+                .border = colorSpecFromRole(ColorRole::Error, 0.5f),
+            });
+            orphan->addChild(makeLabel(
+                i18n::tr("settings.entities.widget.group.orphan"), Style::fontSizeCaption * ctx.scale,
+                colorSpecFromRole(ColorRole::OnSurfaceVariant), FontWeight::Normal
+            ));
+            if (!inherited) {
+              orphan->addChild(
+                  ui::button({
+                      .glyph = "close",
+                      .glyphSize = Style::fontSizeCaption * ctx.scale,
+                      .variant = ButtonVariant::Ghost,
+                      .minHeight = Style::controlHeightSm * ctx.scale,
+                      .padding = Style::spaceXs * ctx.scale,
+                      .radius = Style::scaledRadiusSm(ctx.scale),
+                      .onClick = [setOverride = ctx.setOverride, items = laneItems, lanePath, i]() mutable {
+                        items.erase(items.begin() + static_cast<std::ptrdiff_t>(i));
+                        setOverride(lanePath, items);
+                      },
+                  })
+              );
             }
+            laneItemNodes->push_back(orphan.get());
+            lane->addChild(std::move(orphan));
+            continue;
+          }
 
-            if (!dragState->active) {
-              return;
-            }
-            dragState->active = false;
-            itemPtr->setOpacity(1.0f);
-            hideDropIndicators(*laneTargets);
-            if (!dragState->moved || !dragState->targetLaneIndex.has_value() ||
-                !dragState->targetInsertionIndex.has_value() || laneTargetIndex >= laneTargets->size() ||
-                *dragState->targetLaneIndex >= laneTargets->size()) {
-              return;
-            }
-
-            const std::size_t targetLaneIndex = *dragState->targetLaneIndex;
-            std::size_t insertionIndex = *dragState->targetInsertionIndex;
-            if (insertionWouldNotMove(laneTargetIndex, targetLaneIndex, i, insertionIndex)) {
-              return;
-            }
-
-            if (targetLaneIndex == laneTargetIndex) {
-              setOverride(path, movedWithinLane(std::move(items), i, insertionIndex));
-              return;
-            }
-
-            auto sourceItems = items;
-            if (i >= sourceItems.size()) {
-              return;
-            }
-            auto movedItem = std::move(sourceItems[i]);
-            sourceItems.erase(sourceItems.begin() + static_cast<std::ptrdiff_t>(i));
-
-            const auto& target = (*laneTargets)[targetLaneIndex];
-            auto targetItems = target.items;
-            insertionIndex = std::min(insertionIndex, targetItems.size());
-            targetItems.insert(targetItems.begin() + static_cast<std::ptrdiff_t>(insertionIndex), std::move(movedItem));
-            setOverrides({{path, sourceItems}, {target.path, targetItems}});
+          // Tint the container by the group's own fill so groups with different colors are distinguishable.
+          // A color meant to blend into surfaces (e.g. surface_variant) can't separate the box from the lane,
+          // so fall back to a neutral border + slight surface lift when the fill is too close to the lane.
+          const Color groupFillColor = resolveColorSpec(group->fill);
+          const Color laneBgColor = colorForRole(ColorRole::SurfaceVariant);
+          const float dr = groupFillColor.r - laneBgColor.r;
+          const float dg = groupFillColor.g - laneBgColor.g;
+          const float db = groupFillColor.b - laneBgColor.b;
+          const bool fillDistinct = std::sqrt(dr * dr + dg * dg + db * db) >= 0.15f;
+          ColorSpec groupFillTint;
+          ColorSpec groupBorder;
+          if (fillDistinct) {
+            groupFillTint = group->fill;
+            groupFillTint.alpha *= 0.15f;
+            groupBorder = group->fill; // full opacity
+          } else {
+            groupFillTint = colorSpecFromRole(ColorRole::OnSurface, 0.06f); // slight neutral lift
+            groupBorder = colorSpecFromRole(ColorRole::Outline);            // full opacity
+          }
+          auto container = ui::column({
+              .align = FlexAlign::Stretch,
+              .gap = Style::spaceXs * ctx.scale,
+              .padding = Style::spaceXs * ctx.scale,
+              .fill = groupFillTint,
+              .radius = Style::scaledRadiusSm(ctx.scale),
+              .border = groupBorder,
           });
-          dragBtn->setOnPointerMotion(
-              [dragState, dragBtnPtr, laneTargets, laneTargetIndex, i, scale = ctx.scale](float localX, float localY) {
-                if (!dragState->active) {
-                  return;
-                }
-                dragState->lastLocalX = localX;
-                dragState->lastLocalY = localY;
-                if (std::hypot(dragState->lastLocalX - dragState->startLocalX,
-                               dragState->lastLocalY - dragState->startLocalY) >= kDragStartThresholdPx * scale) {
-                  dragState->moved = true;
-                }
-                if (!dragState->moved) {
-                  return;
-                }
+          auto* containerPtr = container.get();
 
-                float dragAbsX = 0.0f;
-                float dragAbsY = 0.0f;
-                Node::absolutePosition(dragBtnPtr, dragAbsX, dragAbsY);
-                const float sceneX = dragAbsX + localX;
-                const float sceneY = dragAbsY + localY;
-                const auto targetLaneIndex = laneIndexAtScenePoint(*laneTargets, sceneX, sceneY);
-                if (!targetLaneIndex.has_value() || *targetLaneIndex >= laneTargets->size()) {
-                  dragState->targetLaneIndex = std::nullopt;
-                  dragState->targetInsertionIndex = std::nullopt;
-                  hideDropIndicators(*laneTargets);
-                  return;
-                }
-
-                const auto& target = (*laneTargets)[*targetLaneIndex];
-                if (target.itemNodes == nullptr || target.lane == nullptr || target.indicator == nullptr) {
-                  dragState->targetLaneIndex = std::nullopt;
-                  dragState->targetInsertionIndex = std::nullopt;
-                  hideDropIndicators(*laneTargets);
-                  return;
-                }
-
-                const std::size_t insertionIndex = insertionIndexForSceneY(sceneY, *target.itemNodes);
-                if (insertionWouldNotMove(laneTargetIndex, *targetLaneIndex, i, insertionIndex)) {
-                  dragState->targetLaneIndex = std::nullopt;
-                  dragState->targetInsertionIndex = std::nullopt;
-                  hideDropIndicators(*laneTargets);
-                  return;
-                }
-
-                dragState->targetLaneIndex = *targetLaneIndex;
-                dragState->targetInsertionIndex = insertionIndex;
-                hideDropIndicators(*laneTargets);
-                updateDropIndicator(*target.indicator, *target.lane, *target.itemNodes, insertionIndex, scale);
-              });
-          actions->addChild(std::move(dragBtn));
-        }
-        if (editableWidget) {
-          auto editBtn = std::make_unique<Button>();
-          editBtn->setGlyph("settings");
-          editBtn->setVariant(ctx.editingWidgetName == widgetName ? ButtonVariant::Default : ButtonVariant::Ghost);
-          editBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
-          editBtn->setMinWidth(Style::controlHeightSm * ctx.scale);
-          editBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
-          editBtn->setPadding(Style::spaceXs * ctx.scale);
-          editBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
-          editBtn->setOnClick([&editingWidgetName = ctx.editingWidgetName, widgetName,
-                               &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
-                               &renamingWidgetName = ctx.renamingWidgetName,
-                               &pendingDeleteWidgetSettingPath = ctx.pendingDeleteWidgetSettingPath,
-                               requestRebuild = ctx.requestRebuild]() {
-            editingWidgetName = editingWidgetName == widgetName ? std::string{} : widgetName;
-            pendingDeleteWidgetName.clear();
-            pendingDeleteWidgetSettingPath.clear();
-            renamingWidgetName.clear();
-            requestRebuild();
+          auto groupIndicator = ui::box({
+              .fill = colorSpecFromRole(ColorRole::Primary),
+              .radius = std::max(1.0f, 1.5f * ctx.scale),
+              .visible = false,
+              .participatesInLayout = false,
+              .configure = [](Box& box) { box.setZIndex(10); },
           });
-          actions->addChild(std::move(editBtn));
+          auto* groupIndicatorPtr = groupIndicator.get();
+          container->addChild(std::move(groupIndicator));
+
+          auto groupHeader = ui::row({.align = FlexAlign::Center, .gap = rowGap});
+          groupHeader->addChild(
+              ui::box({
+                  .fill = group->fill,
+                  .radius = std::max(1.0f, 2.0f * ctx.scale),
+                  .width = Style::fontSizeCaption * ctx.scale,
+                  .height = Style::fontSizeCaption * ctx.scale,
+                  .configure = [](Box& box) {
+                    box.setBorder(colorSpecFromRole(ColorRole::Outline, 0.6f), Style::borderWidth);
+                  },
+              })
+          );
+          {
+            auto groupLabel = makeLabel(
+                i18n::tr("settings.entities.widget.group.title"), Style::fontSizeCaption * ctx.scale,
+                colorSpecFromRole(ColorRole::OnSurface), FontWeight::SemiBold
+            );
+            groupLabel->setFlexGrow(1.0f);
+            groupHeader->addChild(std::move(groupLabel));
+          }
+          groupHeader->addChild(
+              ui::button({
+                  .glyph = "settings",
+                  .glyphSize = Style::fontSizeCaption * ctx.scale,
+                  .variant = ButtonVariant::Ghost,
+                  .minWidth = iconSize,
+                  .minHeight = iconSize,
+                  .padding = iconPad,
+                  .radius = Style::scaledRadiusSm(ctx.scale),
+                  .onClick = [openCapsuleGroupInspector = ctx.openCapsuleGroupInspector, laneListPath = entry.path,
+                              gid]() {
+                    if (openCapsuleGroupInspector) {
+                      openCapsuleGroupInspector(laneListPath, gid);
+                    }
+                  },
+              })
+          );
+          if (!inherited) {
+            groupHeader->addChild(
+                ui::button({
+                    .glyph = "stack-pop",
+                    .glyphSize = Style::fontSizeCaption * ctx.scale,
+                    .variant = ButtonVariant::Ghost,
+                    .minWidth = iconSize,
+                    .minHeight = iconSize,
+                    .padding = iconPad,
+                    .radius = Style::scaledRadiusSm(ctx.scale),
+                    .onClick = [config = &ctx.config, barName, lanePath, gid, setOverrides = ctx.setOverrides]() {
+                      const BarConfig* bar = findBar(*config, barName);
+                      const BarCapsuleGroupStyle* g = bar != nullptr ? findBarCapsuleGroupStyle(*bar, gid) : nullptr;
+                      if (g == nullptr) {
+                        return;
+                      }
+                      std::vector<std::string> laneEntries = barWidgetItemsForPath(*config, lanePath);
+                      const std::string token = makeCapsuleGroupToken(gid);
+                      const auto it = std::find(laneEntries.begin(), laneEntries.end(), token);
+                      if (it != laneEntries.end()) {
+                        const std::size_t pos = static_cast<std::size_t>(it - laneEntries.begin());
+                        laneEntries.erase(laneEntries.begin() + static_cast<std::ptrdiff_t>(pos));
+                        laneEntries.insert(
+                            laneEntries.begin() + static_cast<std::ptrdiff_t>(pos), g->members.begin(), g->members.end()
+                        );
+                      }
+                      std::vector<BarCapsuleGroupStyle> groups;
+                      for (const auto& x : bar->widgetCapsuleGroups) {
+                        if (x.id != gid) {
+                          groups.push_back(x);
+                        }
+                      }
+                      setOverrides({{lanePath, laneEntries}, {{"bar", barName, "capsule_group"}, groups}});
+                    },
+                })
+            );
+            Button* groupDragPtr = nullptr;
+            auto groupDrag = ui::button({
+                .out = &groupDragPtr,
+                .glyph = "menu-2",
+                .glyphSize = Style::fontSizeCaption * ctx.scale,
+                .variant = ButtonVariant::Ghost,
+                .minWidth = iconSize,
+                .minHeight = iconSize,
+                .padding = iconPad,
+                .radius = Style::scaledRadiusSm(ctx.scale),
+                .configure = [](Button& button) { button.setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_MOVE); },
+            });
+            wireDrag(*groupDrag, groupDragPtr, containerPtr, laneZoneIndex, i);
+            groupHeader->addChild(std::move(groupDrag));
+          }
+          container->addChild(std::move(groupHeader));
+
+          auto groupItemNodes = std::make_shared<std::vector<Flex*>>();
+          const std::size_t groupZoneIndex = zones->size();
+          zones->push_back(
+              DropZone{
+                  .isGroup = true,
+                  .lanePath = {},
+                  .groupId = gid,
+                  .items = group->members,
+                  .container = containerPtr,
+                  .indicator = groupIndicatorPtr,
+                  .itemNodes = groupItemNodes,
+              }
+          );
+
+          for (std::size_t m = 0; m < group->members.size(); ++m) {
+            std::function<void()> eject;
+            if (!inherited) {
+              eject = [config = &ctx.config, barName, lanePath, gid, m, setOverrides = ctx.setOverrides]() {
+                const BarConfig* bar = findBar(*config, barName);
+                if (bar == nullptr) {
+                  return;
+                }
+                std::vector<BarCapsuleGroupStyle> groups = bar->widgetCapsuleGroups;
+                std::string ejected;
+                bool emptyNow = false;
+                for (auto& g : groups) {
+                  if (g.id == gid) {
+                    if (m < g.members.size()) {
+                      ejected = g.members[m];
+                      g.members.erase(g.members.begin() + static_cast<std::ptrdiff_t>(m));
+                    }
+                    emptyNow = g.members.empty();
+                    break;
+                  }
+                }
+                if (ejected.empty()) {
+                  return;
+                }
+                std::vector<std::string> laneEntries = barWidgetItemsForPath(*config, lanePath);
+                const std::string token = makeCapsuleGroupToken(gid);
+                const auto it = std::find(laneEntries.begin(), laneEntries.end(), token);
+                std::size_t insertAt = it != laneEntries.end() ? static_cast<std::size_t>(it - laneEntries.begin()) + 1
+                                                               : laneEntries.size();
+                if (emptyNow && it != laneEntries.end()) {
+                  const std::size_t pos = static_cast<std::size_t>(it - laneEntries.begin());
+                  laneEntries.erase(laneEntries.begin() + static_cast<std::ptrdiff_t>(pos));
+                  insertAt = pos;
+                  std::vector<BarCapsuleGroupStyle> kept;
+                  for (const auto& x : groups) {
+                    if (x.id != gid) {
+                      kept.push_back(x);
+                    }
+                  }
+                  groups.swap(kept);
+                }
+                insertAt = std::min(insertAt, laneEntries.size());
+                laneEntries.insert(laneEntries.begin() + static_cast<std::ptrdiff_t>(insertAt), ejected);
+                setOverrides({{lanePath, laneEntries}, {{"bar", barName, "capsule_group"}, groups}});
+              };
+            }
+            auto memberCard = makeWidgetCard(
+                group->members[m], groupZoneIndex, m, inherited, "stack-pop", std::move(eject), false, false,
+                std::function<void()>{}
+            );
+            groupItemNodes->push_back(memberCard.get());
+            container->addChild(std::move(memberCard));
+          }
+
+          laneItemNodes->push_back(containerPtr);
+          lane->addChild(std::move(container));
+          continue;
         }
 
+        // Loose widget card.
+        const std::string selectionToken = std::string(laneKey) + "#" + std::to_string(i);
+        const bool isSelected =
+            std::find(ctx.selectedLaneWidgets.begin(), ctx.selectedLaneWidgets.end(), selectionToken)
+            != ctx.selectedLaneWidgets.end();
+        std::function<void()> removeClose;
         if (!inherited) {
-          auto actionsSpacer = std::make_unique<Flex>();
-          actionsSpacer->setFlexGrow(1.0f);
-          actions->addChild(std::move(actionsSpacer));
-
-          auto removeBtn = std::make_unique<Button>();
-          removeBtn->setGlyph("close");
-          removeBtn->setVariant(ButtonVariant::Ghost);
-          removeBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
-          removeBtn->setMinWidth(Style::controlHeightSm * ctx.scale);
-          removeBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
-          removeBtn->setPadding(Style::spaceXs * ctx.scale);
-          removeBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
-          auto items = laneItems;
-          auto path = lanePath;
-          removeBtn->setOnClick([setOverride = ctx.setOverride, items, path, i]() mutable {
+          removeClose = [setOverride = ctx.setOverride, items = laneItems, lanePath, i]() mutable {
             items.erase(items.begin() + static_cast<std::ptrdiff_t>(i));
-            setOverride(path, items);
-          });
-          actions->addChild(std::move(removeBtn));
+            setOverride(lanePath, items);
+          };
         }
-
-        item->addChild(std::move(actions));
-        lane->addChild(std::move(item));
+        std::function<void()> toggleSelect;
+        if (!inherited) {
+          toggleSelect = [&selectedLaneWidgets = ctx.selectedLaneWidgets, selectionToken,
+                          requestRebuild = ctx.requestRebuild]() {
+            const auto it = std::find(selectedLaneWidgets.begin(), selectedLaneWidgets.end(), selectionToken);
+            if (it != selectedLaneWidgets.end()) {
+              selectedLaneWidgets.erase(it);
+            } else {
+              selectedLaneWidgets.push_back(selectionToken);
+            }
+            requestRebuild();
+          };
+        }
+        auto card = makeWidgetCard(
+            entryName, laneZoneIndex, i, inherited, "close", std::move(removeClose), !inherited, isSelected,
+            std::move(toggleSelect)
+        );
+        laneItemNodes->push_back(card.get());
+        lane->addChild(std::move(card));
       }
 
       if (laneItems.empty() && !inherited) {
-        auto emptyState = std::make_unique<Flex>();
-        emptyState->setDirection(FlexDirection::Vertical);
-        emptyState->setAlign(FlexAlign::Center);
-        emptyState->setGap(2.0f * ctx.scale);
-        emptyState->setPadding(Style::spaceMd * ctx.scale, Style::spaceSm * ctx.scale);
-        emptyState->setRadius(Style::scaledRadiusSm(ctx.scale));
-        emptyState->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, 0.25f));
-        emptyState->setBorder(colorSpecFromRole(ColorRole::Outline, 0.18f), Style::borderWidth);
-        emptyState->addChild(makeLabel(i18n::tr("settings.entities.widget.lanes.empty"),
-                                       Style::fontSizeCaption * ctx.scale,
-                                       colorSpecFromRole(ColorRole::OnSurfaceVariant), true));
-        emptyState->addChild(makeLabel(i18n::tr("settings.entities.widget.lanes.empty-hint"),
-                                       Style::fontSizeCaption * ctx.scale,
-                                       colorSpecFromRole(ColorRole::OnSurfaceVariant), false));
-        lane->addChild(std::move(emptyState));
+        lane->addChild(
+            ui::column(
+                {
+                    .align = FlexAlign::Center,
+                    .gap = 2.0f * ctx.scale,
+                    .paddingV = Style::spaceMd * ctx.scale,
+                    .paddingH = Style::spaceSm * ctx.scale,
+                    .fill = colorSpecFromRole(ColorRole::SurfaceVariant, 0.25f),
+                    .radius = Style::scaledRadiusSm(ctx.scale),
+                    .border = colorSpecFromRole(ColorRole::Outline, 0.18f),
+                },
+                makeLabel(
+                    i18n::tr("settings.entities.widget.lanes.empty"), Style::fontSizeCaption * ctx.scale,
+                    colorSpecFromRole(ColorRole::OnSurfaceVariant), FontWeight::Bold
+                ),
+                makeLabel(
+                    i18n::tr("settings.entities.widget.lanes.empty-hint"), Style::fontSizeCaption * ctx.scale,
+                    colorSpecFromRole(ColorRole::OnSurfaceVariant), FontWeight::Normal
+                )
+            )
+        );
       }
 
       if (!inherited) {
-        auto addBtn = std::make_unique<Button>();
-        addBtn->setText(i18n::tr("settings.entities.widget.add"));
-        addBtn->setGlyph("add");
-        addBtn->setVariant(ButtonVariant::Ghost);
-        addBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
-        addBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
-        addBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
-        addBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-        addBtn->setRadius(Style::scaledRadiusSm(ctx.scale));
-        addBtn->setOnClick([&editingWidgetName = ctx.editingWidgetName, &renamingWidgetName = ctx.renamingWidgetName,
+        lane->addChild(
+            ui::button({
+                .text = i18n::tr("settings.entities.widget.add"),
+                .glyph = "add",
+                .fontSize = Style::fontSizeCaption * ctx.scale,
+                .glyphSize = Style::fontSizeCaption * ctx.scale,
+                .variant = ButtonVariant::Ghost,
+                .minHeight = Style::controlHeightSm * ctx.scale,
+                .paddingV = Style::spaceXs * ctx.scale,
+                .paddingH = Style::spaceSm * ctx.scale,
+                .radius = Style::scaledRadiusSm(ctx.scale),
+                .onClick = [&editingWidgetName = ctx.editingWidgetName, &renamingWidgetName = ctx.renamingWidgetName,
                             &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
                             &pendingDeleteWidgetSettingPath = ctx.pendingDeleteWidgetSettingPath,
                             openWidgetAddPopup = ctx.openWidgetAddPopup, lanePath]() {
-          editingWidgetName.clear();
-          renamingWidgetName.clear();
-          pendingDeleteWidgetName.clear();
-          pendingDeleteWidgetSettingPath.clear();
-          if (openWidgetAddPopup) {
-            openWidgetAddPopup(lanePath);
-          }
-        });
-        lane->addChild(std::move(addBtn));
+                  editingWidgetName.clear();
+                  renamingWidgetName.clear();
+                  pendingDeleteWidgetName.clear();
+                  pendingDeleteWidgetSettingPath.clear();
+                  if (openWidgetAddPopup) {
+                    openWidgetAddPopup(lanePath);
+                  }
+                },
+            })
+        );
       }
 
       lanes->addChild(std::move(lane));

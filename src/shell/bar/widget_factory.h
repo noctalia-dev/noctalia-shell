@@ -6,6 +6,7 @@
 #include <string>
 
 struct Config;
+class ConfigService;
 class FileWatcher;
 class CompositorPlatform;
 class NotificationManager;
@@ -16,6 +17,8 @@ class MprisService;
 class BluetoothService;
 class BrightnessService;
 class ClipboardService;
+class RenderContext;
+class ScreenshotService;
 class INetworkService;
 class PipeWireService;
 class PipeWireSpectrum;
@@ -29,24 +32,32 @@ class GammaService;
 namespace noctalia::theme {
   class ThemeService;
 }
+namespace scripting {
+  class ScriptApiContext;
+}
 
 class WidgetFactory {
 public:
-  WidgetFactory(CompositorPlatform& platform, const Config& config, NotificationManager* notifications,
-                TrayService* tray, PipeWireService* audio, UPowerService* upower, SystemMonitorService* sysmon,
-                PowerProfilesService* powerProfiles, INetworkService* network, IdleInhibitor* idleInhibitor,
-                MprisService* mpris, PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weather,
-                GammaService* nightLight, noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
-                BrightnessService* brightness, LockKeysService* lockKeys, ClipboardService* clipboard,
-                FileWatcher* fileWatcher = nullptr);
+  WidgetFactory(
+      CompositorPlatform& platform, ConfigService& config, NotificationManager* notifications, TrayService* tray,
+      PipeWireService* audio, UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
+      INetworkService* network, IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
+      HttpClient* httpClient, WeatherService* weather, GammaService* nightLight,
+      noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth, BrightnessService* brightness,
+      LockKeysService* lockKeys, ClipboardService* clipboard, FileWatcher* fileWatcher = nullptr,
+      ScreenshotService* screenshots = nullptr, RenderContext* renderContext = nullptr,
+      scripting::ScriptApiContext* scriptApi = nullptr
+  );
   ~WidgetFactory();
 
-  [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output, float contentScale = 1.0f,
-                                               const std::string& barPosition = "top",
-                                               const std::string& barName = "default") const;
+  [[nodiscard]] std::unique_ptr<Widget> create(
+      const std::string& name, wl_output* output, float contentScale = 1.0f, const std::string& barPosition = "top",
+      const std::string& barName = "default", float widgetSpacing = 6.0f
+  ) const;
 
 private:
   CompositorPlatform& m_platform;
+  ConfigService& m_configService;
   const Config& m_config;
   NotificationManager* m_notifications;
   TrayService* m_tray;
@@ -67,4 +78,7 @@ private:
   LockKeysService* m_lockKeys;
   ClipboardService* m_clipboard;
   FileWatcher* m_fileWatcher;
+  ScreenshotService* m_screenshots;
+  RenderContext* m_renderContext = nullptr;
+  scripting::ScriptApiContext* m_scriptApi = nullptr;
 };

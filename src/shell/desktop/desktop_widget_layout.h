@@ -35,8 +35,8 @@ namespace desktop_widgets {
     return nullptr;
   }
 
-  inline const WaylandOutput* resolveEffectiveOutput(const WaylandConnection& wayland,
-                                                     const std::string& requestedOutput) {
+  inline const WaylandOutput*
+  resolveEffectiveOutput(const WaylandConnection& wayland, const std::string& requestedOutput) {
     const auto& outputs = wayland.outputs();
     const WaylandOutput* primary = nullptr;
     for (const auto& output : outputs) {
@@ -50,7 +50,17 @@ namespace desktop_widgets {
         return &output;
       }
     }
+    if (!requestedOutput.empty()) {
+      return nullptr;
+    }
     return primary;
+  }
+
+  inline const WaylandOutput* resolveStateOutput(const WaylandConnection& wayland, const DesktopWidgetState& state) {
+    if (state.outputName.empty()) {
+      return resolveEffectiveOutput(wayland, state.outputName);
+    }
+    return findOutputByKey(wayland, state.outputName);
   }
 
   inline float outputLogicalWidth(const WaylandOutput& output) {
@@ -73,15 +83,17 @@ namespace desktop_widgets {
   // kDesktopWidgetMinVisibleFraction of the widget's rotated AABB remains on screen. The caller
   // passes the widget's current content-scaled intrinsic size, so state.scale is already reflected
   // in intrinsicWidth/intrinsicHeight and must not be applied again as a transform multiplier here.
-  inline const WaylandOutput* clampStateToOutput(const WaylandConnection& wayland, DesktopWidgetState& state,
-                                                 float intrinsicWidth, float intrinsicHeight) {
-    const WaylandOutput* output = resolveEffectiveOutput(wayland, state.outputName);
+  inline const WaylandOutput* clampStateToOutput(
+      const WaylandConnection& wayland, DesktopWidgetState& state, float intrinsicWidth, float intrinsicHeight
+  ) {
+    const WaylandOutput* output = resolveStateOutput(wayland, state);
     if (output == nullptr) {
       return nullptr;
     }
     const WidgetTransformClampResult clamped = clampWidgetCenterToOutput(
         state.cx, state.cy, intrinsicWidth, intrinsicHeight, 1.0f, state.rotationRad, outputLogicalWidth(*output),
-        outputLogicalHeight(*output), kDesktopWidgetMinVisibleFraction);
+        outputLogicalHeight(*output), kDesktopWidgetMinVisibleFraction
+    );
     state.cx = clamped.cx;
     state.cy = clamped.cy;
     return output;

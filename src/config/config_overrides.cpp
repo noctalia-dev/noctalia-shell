@@ -1,22 +1,28 @@
+#include "config/atomic_file.h"
 #include "config/config_service.h"
+#include "config/widget_config.h"
+#include "core/key_chord.h"
 #include "core/log.h"
+#include "shell/settings/widget_settings_registry.h"
+#include "theme/builtin_palettes.h"
+#include "theme/custom_palettes.h"
 #include "theme/scheme.h"
 #include "util/file_utils.h"
 #include "util/string_utils.h"
 
 #include <algorithm>
-#include <cmath>
 #include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <optional>
+#include <sstream>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace {
   constexpr Logger kLog("config");
-  constexpr double kConfigFloatEpsilon = 1.0e-5;
 
   std::string overrideCacheKey(const std::vector<std::string>& path) {
     std::string key;
@@ -27,30 +33,6 @@ namespace {
       key += part;
     }
     return key;
-  }
-
-  bool nearlyEqual(double a, double b) noexcept { return std::abs(a - b) <= kConfigFloatEpsilon; }
-
-  bool colorEqual(const Color& a, const Color& b) noexcept {
-    return nearlyEqual(a.r, b.r) && nearlyEqual(a.g, b.g) && nearlyEqual(a.b, b.b) && nearlyEqual(a.a, b.a);
-  }
-
-  bool colorSpecEqual(const ColorSpec& a, const ColorSpec& b) noexcept {
-    return a.role == b.role && colorEqual(a.fixed, b.fixed) && nearlyEqual(a.alpha, b.alpha);
-  }
-
-  bool optionalDoubleEqual(const std::optional<double>& a, const std::optional<double>& b) noexcept {
-    if (a.has_value() != b.has_value()) {
-      return false;
-    }
-    return !a.has_value() || nearlyEqual(*a, *b);
-  }
-
-  bool optionalColorSpecEqual(const std::optional<ColorSpec>& a, const std::optional<ColorSpec>& b) noexcept {
-    if (a.has_value() != b.has_value()) {
-      return false;
-    }
-    return !a.has_value() || colorSpecEqual(*a, *b);
   }
 
   template <typename T, typename Equal>
@@ -80,7 +62,7 @@ namespace {
     const auto aNum = numericWidgetSetting(a);
     const auto bNum = numericWidgetSetting(b);
     if (aNum.has_value() || bNum.has_value()) {
-      return aNum.has_value() && bNum.has_value() && nearlyEqual(*aNum, *bNum);
+      return aNum.has_value() && bNum.has_value() && *aNum == *bNum;
     }
     if (a.index() != b.index()) {
       return false;
@@ -91,11 +73,14 @@ namespace {
           const auto* bv = std::get_if<T>(&b);
           return bv != nullptr && av == *bv;
         },
-        a);
+        a
+    );
   }
 
-  bool widgetSettingsEqual(const std::unordered_map<std::string, WidgetSettingValue>& a,
-                           const std::unordered_map<std::string, WidgetSettingValue>& b) {
+  bool widgetSettingsEqual(
+      const std::unordered_map<std::string, WidgetSettingValue>& a,
+      const std::unordered_map<std::string, WidgetSettingValue>& b
+  ) {
     if (a.size() != b.size()) {
       return false;
     }
@@ -108,42 +93,51 @@ namespace {
     return true;
   }
 
+  // Like DesktopWidgetState's defaulted operator==, but compares the settings map with int/double coercion
+  // (widgetSettingsEqual) instead of exact variant equality.
   bool desktopWidgetEqual(const DesktopWidgetState& a, const DesktopWidgetState& b) {
-    return a.id == b.id && a.type == b.type && a.outputName == b.outputName && nearlyEqual(a.cx, b.cx) &&
-           nearlyEqual(a.cy, b.cy) && nearlyEqual(a.scale, b.scale) && nearlyEqual(a.rotationRad, b.rotationRad) &&
-           a.enabled == b.enabled && widgetSettingsEqual(a.settings, b.settings);
+    return a.id == b.id
+        && a.type == b.type
+        && a.outputName == b.outputName
+        && a.cx == b.cx
+        && a.cy == b.cy
+        && a.scale == b.scale
+        && a.rotationRad == b.rotationRad
+        && a.enabled == b.enabled
+        && widgetSettingsEqual(a.settings, b.settings);
   }
 
   bool desktopWidgetsConfigEqual(const DesktopWidgetsConfig& a, const DesktopWidgetsConfig& b) {
-    return a.enabled == b.enabled && a.schemaVersion == b.schemaVersion && a.grid.visible == b.grid.visible &&
-           a.grid.cellSize == b.grid.cellSize && a.grid.majorInterval == b.grid.majorInterval &&
-           vectorEqual(a.widgets, b.widgets, desktopWidgetEqual);
+    return a.enabled == b.enabled
+        && a.schemaVersion == b.schemaVersion
+        && a.grid == b.grid
+        && vectorEqual(a.widgets, b.widgets, desktopWidgetEqual);
   }
 
+  bool lockscreenWidgetsConfigEqual(const LockscreenWidgetsConfig& a, const LockscreenWidgetsConfig& b) {
+    return a.enabled == b.enabled
+        && a.schemaVersion == b.schemaVersion
+        && a.grid == b.grid
+        && vectorEqual(a.widgets, b.widgets, desktopWidgetEqual);
+  }
+
+  // Compares two bars ignoring their monitor-override lists (those are resolved + compared separately by
+  // barConfigEqual). BarConfig's defaulted operator== covers every field, so new bar fields participate
+  // automatically — no list to keep in sync here.
   bool barBaseConfigEqual(const BarConfig& a, const BarConfig& b) {
-    return a.name == b.name && a.position == b.position && a.enabled == b.enabled && a.autoHide == b.autoHide &&
-           a.reserveSpace == b.reserveSpace && a.thickness == b.thickness &&
-           nearlyEqual(a.backgroundOpacity, b.backgroundOpacity) && colorSpecEqual(a.border, b.border) &&
-           nearlyEqual(a.borderWidth, b.borderWidth) && a.radius == b.radius && a.radiusTopLeft == b.radiusTopLeft &&
-           a.radiusTopRight == b.radiusTopRight && a.radiusBottomLeft == b.radiusBottomLeft &&
-           a.radiusBottomRight == b.radiusBottomRight && a.marginEnds == b.marginEnds && a.marginEdge == b.marginEdge &&
-           a.padding == b.padding && a.widgetSpacing == b.widgetSpacing && a.shadow == b.shadow &&
-           a.contactShadow == b.contactShadow && a.attachPanels == b.attachPanels && nearlyEqual(a.scale, b.scale) &&
-           a.startWidgets == b.startWidgets && a.centerWidgets == b.centerWidgets && a.endWidgets == b.endWidgets &&
-           a.widgetCapsuleDefault == b.widgetCapsuleDefault &&
-           colorSpecEqual(a.widgetCapsuleFill, b.widgetCapsuleFill) &&
-           optionalColorSpecEqual(a.widgetCapsuleForeground, b.widgetCapsuleForeground) &&
-           optionalColorSpecEqual(a.widgetColor, b.widgetColor) && a.widgetCapsuleGroups == b.widgetCapsuleGroups &&
-           nearlyEqual(a.widgetCapsulePadding, b.widgetCapsulePadding) &&
-           optionalDoubleEqual(a.widgetCapsuleRadius, b.widgetCapsuleRadius) &&
-           nearlyEqual(a.widgetCapsuleOpacity, b.widgetCapsuleOpacity) &&
-           a.widgetCapsuleBorderSpecified == b.widgetCapsuleBorderSpecified &&
-           optionalColorSpecEqual(a.widgetCapsuleBorder, b.widgetCapsuleBorder);
+    BarConfig aa = a;
+    BarConfig bb = b;
+    aa.monitorOverrides.clear();
+    bb.monitorOverrides.clear();
+    return aa == bb;
   }
 
   BarConfig applyMonitorOverrideForComparison(const BarConfig& base, const BarMonitorOverride& ovr) {
     BarConfig resolved = base;
     resolved.monitorOverrides.clear();
+    if (ovr.position) {
+      resolved.position = *ovr.position;
+    }
     if (ovr.enabled) {
       resolved.enabled = *ovr.enabled;
     }
@@ -202,8 +196,8 @@ namespace {
     if (ovr.contactShadow) {
       resolved.contactShadow = *ovr.contactShadow;
     }
-    if (ovr.attachPanels) {
-      resolved.attachPanels = *ovr.attachPanels;
+    if (ovr.panelOverlap) {
+      resolved.panelOverlap = *ovr.panelOverlap;
     }
     if (ovr.startWidgets) {
       resolved.startWidgets = *ovr.startWidgets;
@@ -239,7 +233,7 @@ namespace {
     if (ovr.widgetCapsulePadding) {
       resolved.widgetCapsulePadding = std::clamp(static_cast<float>(*ovr.widgetCapsulePadding), 0.0f, 48.0f);
     }
-    if (ovr.widgetCapsuleRadius) {
+    if (ovr.widgetCapsuleRadius.has_value()) {
       resolved.widgetCapsuleRadius = std::clamp(*ovr.widgetCapsuleRadius, 0.0, 80.0);
     }
     if (ovr.widgetCapsuleOpacity) {
@@ -249,23 +243,27 @@ namespace {
   }
 
   bool barMonitorOverrideEqual(const BarConfig& base, const BarMonitorOverride& a, const BarMonitorOverride& b) {
-    return a.match == b.match &&
-           barBaseConfigEqual(applyMonitorOverrideForComparison(base, a), applyMonitorOverrideForComparison(base, b));
+    return a.match == b.match
+        && barBaseConfigEqual(applyMonitorOverrideForComparison(base, a), applyMonitorOverrideForComparison(base, b));
   }
 
   bool barConfigEqual(const BarConfig& a, const BarConfig& b) {
-    return barBaseConfigEqual(a, b) && vectorEqual(a.monitorOverrides, b.monitorOverrides,
-                                                   [&a](const BarMonitorOverride& lhs, const BarMonitorOverride& rhs) {
-                                                     return barMonitorOverrideEqual(a, lhs, rhs);
-                                                   });
+    return barBaseConfigEqual(a, b)
+        && vectorEqual(
+               a.monitorOverrides, b.monitorOverrides,
+               [&a](const BarMonitorOverride& lhs, const BarMonitorOverride& rhs) {
+                 return barMonitorOverrideEqual(a, lhs, rhs);
+               }
+        );
   }
 
   bool widgetConfigEqual(const WidgetConfig& a, const WidgetConfig& b) {
     return a.type == b.type && widgetSettingsEqual(a.settings, b.settings);
   }
 
-  bool widgetMapEqual(const std::unordered_map<std::string, WidgetConfig>& a,
-                      const std::unordered_map<std::string, WidgetConfig>& b) {
+  bool widgetMapEqual(
+      const std::unordered_map<std::string, WidgetConfig>& a, const std::unordered_map<std::string, WidgetConfig>& b
+  ) {
     if (a.size() != b.size()) {
       return false;
     }
@@ -278,135 +276,40 @@ namespace {
     return true;
   }
 
-  bool wallpaperMonitorOverrideEqual(const WallpaperMonitorOverride& a, const WallpaperMonitorOverride& b) {
-    return a.match == b.match && a.enabled == b.enabled && optionalColorSpecEqual(a.fillColor, b.fillColor) &&
-           a.directory == b.directory && a.directoryLight == b.directoryLight && a.directoryDark == b.directoryDark;
+  bool isWidgetSettingOverridePath(const std::vector<std::string>& path) {
+    return path.size() == 3 && path[0] == "widget";
   }
 
-  bool livePaperConfigEqual(const LivePaperConfig& a, const LivePaperConfig& b) {
-    return a.enabled == b.enabled && a.intervalSeconds == b.intervalSeconds && a.fps == b.fps && a.meshW == b.meshW &&
-           a.meshH == b.meshH && nearlyEqual(a.darken, b.darken) && a.presetsDir == b.presetsDir &&
-           a.audioSource == b.audioSource;
-  }
-
-  bool wallpaperConfigEqual(const WallpaperConfig& a, const WallpaperConfig& b) {
-    return a.enabled == b.enabled && a.fillMode == b.fillMode && optionalColorSpecEqual(a.fillColor, b.fillColor) &&
-           a.transitions == b.transitions && nearlyEqual(a.transitionDurationMs, b.transitionDurationMs) &&
-           nearlyEqual(a.edgeSmoothness, b.edgeSmoothness) && a.directory == b.directory &&
-           a.directoryLight == b.directoryLight && a.directoryDark == b.directoryDark &&
-           a.perMonitorDirectories == b.perMonitorDirectories && a.automation.enabled == b.automation.enabled &&
-           a.automation.intervalMinutes == b.automation.intervalMinutes && a.automation.order == b.automation.order &&
-           a.automation.recursive == b.automation.recursive &&
-           vectorEqual(a.monitorOverrides, b.monitorOverrides, wallpaperMonitorOverrideEqual) &&
-           livePaperConfigEqual(a.livePaper, b.livePaper);
-  }
-
-  bool dockConfigEqual(const DockConfig& a, const DockConfig& b) {
-    return a.enabled == b.enabled && a.position == b.position && a.activeMonitorOnly == b.activeMonitorOnly &&
-           a.iconSize == b.iconSize && a.padding == b.padding && a.itemSpacing == b.itemSpacing &&
-           nearlyEqual(a.backgroundOpacity, b.backgroundOpacity) && a.radius == b.radius &&
-           a.radiusTopLeft == b.radiusTopLeft && a.radiusTopRight == b.radiusTopRight &&
-           a.radiusBottomLeft == b.radiusBottomLeft && a.radiusBottomRight == b.radiusBottomRight &&
-           a.marginEnds == b.marginEnds && a.marginEdge == b.marginEdge && a.shadow == b.shadow &&
-           a.showRunning == b.showRunning && a.autoHide == b.autoHide && a.reserveSpace == b.reserveSpace &&
-           nearlyEqual(a.activeScale, b.activeScale) && nearlyEqual(a.inactiveScale, b.inactiveScale) &&
-           nearlyEqual(a.activeOpacity, b.activeOpacity) && nearlyEqual(a.inactiveOpacity, b.inactiveOpacity) &&
-           a.showDots == b.showDots && a.showInstanceCount == b.showInstanceCount &&
-           a.launcherPosition == b.launcherPosition && a.launcherIcon == b.launcherIcon && a.pinned == b.pinned;
-  }
-
-  bool shellConfigEqual(const ShellConfig& a, const ShellConfig& b) {
-    return nearlyEqual(a.uiScale, b.uiScale) && nearlyEqual(a.cornerRadiusScale, b.cornerRadiusScale) &&
-           a.fontFamily == b.fontFamily && a.lang == b.lang && a.timeFormat == b.timeFormat &&
-           a.dateFormat == b.dateFormat && a.offlineMode == b.offlineMode && a.telemetryEnabled == b.telemetryEnabled &&
-           a.niriOverviewTypeToLaunchEnabled == b.niriOverviewTypeToLaunchEnabled && a.polkitAgent == b.polkitAgent &&
-           a.passwordMaskStyle == b.passwordMaskStyle && a.animation.enabled == b.animation.enabled &&
-           nearlyEqual(a.animation.speed, b.animation.speed) && a.avatarPath == b.avatarPath &&
-           a.settingsShowAdvanced == b.settingsShowAdvanced &&
-           a.middleClickOpensWidgetSettings == b.middleClickOpensWidgetSettings && a.showLocation == b.showLocation &&
-           a.clipboardEnabled == b.clipboardEnabled && a.clipboardAutoPaste == b.clipboardAutoPaste &&
-           a.clipboardImageActionCommand == b.clipboardImageActionCommand && a.shadow.blur == b.shadow.blur &&
-           a.shadow.offsetX == b.shadow.offsetX && a.shadow.offsetY == b.shadow.offsetY &&
-           nearlyEqual(a.shadow.alpha, b.shadow.alpha) && a.panel.backgroundBlur == b.panel.backgroundBlur &&
-           a.panel.transparencyMode == b.panel.transparencyMode &&
-           a.panel.launcherPlacement == b.panel.launcherPlacement &&
-           a.panel.clipboardPlacement == b.panel.clipboardPlacement &&
-           a.panel.controlCenterPlacement == b.panel.controlCenterPlacement &&
-           a.panel.wallpaperPlacement == b.panel.wallpaperPlacement &&
-           a.panel.sessionPlacement == b.panel.sessionPlacement &&
-           a.panel.openNearClickControlCenter == b.panel.openNearClickControlCenter &&
-           a.panel.openNearClickLauncher == b.panel.openNearClickLauncher &&
-           a.panel.openNearClickClipboard == b.panel.openNearClickClipboard &&
-           a.panel.openNearClickWallpaper == b.panel.openNearClickWallpaper &&
-           a.panel.openNearClickSession == b.panel.openNearClickSession &&
-           a.screenCorners.enabled == b.screenCorners.enabled && a.screenCorners.size == b.screenCorners.size &&
-           a.mpris.blacklist == b.mpris.blacklist && a.session.actions == b.session.actions;
-  }
-
-  bool notificationConfigEqual(const NotificationConfig& a, const NotificationConfig& b) {
-    return a.enableDaemon == b.enableDaemon && a.position == b.position && a.layer == b.layer &&
-           nearlyEqual(a.backgroundOpacity, b.backgroundOpacity) && a.offsetX == b.offsetX && a.offsetY == b.offsetY &&
-           a.monitors == b.monitors;
-  }
-
-  bool audioConfigEqual(const AudioConfig& a, const AudioConfig& b) {
-    return a.enableOverdrive == b.enableOverdrive && a.enableSounds == b.enableSounds &&
-           nearlyEqual(a.soundVolume, b.soundVolume) && a.volumeChangeSound == b.volumeChangeSound &&
-           a.notificationSound == b.notificationSound;
-  }
-
-  bool nightLightConfigEqual(const NightLightConfig& a, const NightLightConfig& b) {
-    return a.enabled == b.enabled && a.force == b.force && a.useWeatherLocation == b.useWeatherLocation &&
-           a.startTime == b.startTime && a.stopTime == b.stopTime && optionalDoubleEqual(a.latitude, b.latitude) &&
-           optionalDoubleEqual(a.longitude, b.longitude) && a.dayTemperature == b.dayTemperature &&
-           a.nightTemperature == b.nightTemperature;
-  }
-
-  bool idleConfigEqual(const IdleConfig& a, const IdleConfig& b) {
-    return nearlyEqual(a.preActionFadeSeconds, b.preActionFadeSeconds) &&
-           vectorEqual(a.behaviors, b.behaviors, [](const IdleBehaviorConfig& lhs, const IdleBehaviorConfig& rhs) {
-             return lhs.name == rhs.name && lhs.enabled == rhs.enabled && lhs.timeoutSeconds == rhs.timeoutSeconds &&
-                    lhs.action == rhs.action && lhs.command == rhs.command && lhs.resumeCommand == rhs.resumeCommand;
-           });
-  }
-
-  bool themeConfigEqual(const ThemeConfig& a, const ThemeConfig& b) {
-    return a.source == b.source && a.builtinPalette == b.builtinPalette && a.communityPalette == b.communityPalette &&
-           a.customPalette == b.customPalette && a.wallpaperScheme == b.wallpaperScheme && a.mode == b.mode &&
-           a.templates.enableBuiltinTemplates == b.templates.enableBuiltinTemplates &&
-           a.templates.builtinIds == b.templates.builtinIds &&
-           a.templates.enableCommunityTemplates == b.templates.enableCommunityTemplates &&
-           a.templates.communityIds == b.templates.communityIds &&
-           a.templates.customColors == b.templates.customColors &&
-           a.templates.userTemplates == b.templates.userTemplates;
-  }
-
+  // Override-effectiveness equality. Every config section uses its compiler-generated operator== (exact
+  // member-wise compare) so that adding a field cannot silently break override persistence — the only
+  // exceptions are the sections whose comparison carries semantics operator== can't express:
+  //   - bars: monitor overrides are resolved + clamped before comparing (barConfigEqual)
+  //   - widgets / desktop widgets: settings compared with int/double coercion (widgetMapEqual / desktopWidgetEqual)
   bool configEqual(const Config& a, const Config& b) {
-    return vectorEqual(a.bars, b.bars, barConfigEqual) && widgetMapEqual(a.widgets, b.widgets) &&
-           wallpaperConfigEqual(a.wallpaper, b.wallpaper) && a.backdrop.enabled == b.backdrop.enabled &&
-           nearlyEqual(a.backdrop.blurIntensity, b.backdrop.blurIntensity) &&
-           nearlyEqual(a.backdrop.tintIntensity, b.backdrop.tintIntensity) && dockConfigEqual(a.dock, b.dock) &&
-           desktopWidgetsConfigEqual(a.desktopWidgets, b.desktopWidgets) && shellConfigEqual(a.shell, b.shell) &&
-           a.osd.position == b.osd.position && a.osd.orientation == b.osd.orientation &&
-           a.osd.lockKeys == b.osd.lockKeys && notificationConfigEqual(a.notification, b.notification) &&
-           a.weather.enabled == b.weather.enabled && a.weather.autoLocate == b.weather.autoLocate &&
-           a.weather.effects == b.weather.effects && a.weather.address == b.weather.address &&
-           a.weather.refreshMinutes == b.weather.refreshMinutes && a.weather.unit == b.weather.unit &&
-           a.system.monitor.enabled == b.system.monitor.enabled &&
-           a.system.monitor.cpuPollSeconds == b.system.monitor.cpuPollSeconds &&
-           a.system.monitor.gpuTempPollSeconds == b.system.monitor.gpuTempPollSeconds &&
-           a.system.monitor.gpuVramPollSeconds == b.system.monitor.gpuVramPollSeconds &&
-           a.system.monitor.memoryPollSeconds == b.system.monitor.memoryPollSeconds &&
-           a.system.monitor.swapPollSeconds == b.system.monitor.swapPollSeconds &&
-           a.system.monitor.networkPollSeconds == b.system.monitor.networkPollSeconds &&
-           a.system.monitor.diskPollSeconds == b.system.monitor.diskPollSeconds &&
-           a.system.monitor.historyPollSeconds == b.system.monitor.historyPollSeconds &&
-           audioConfigEqual(a.audio, b.audio) && a.brightness == b.brightness &&
-           a.keybinds.validate == b.keybinds.validate && a.keybinds.cancel == b.keybinds.cancel &&
-           a.keybinds.left == b.keybinds.left && a.keybinds.right == b.keybinds.right &&
-           a.keybinds.up == b.keybinds.up && a.keybinds.down == b.keybinds.down &&
-           nightLightConfigEqual(a.nightlight, b.nightlight) && idleConfigEqual(a.idle, b.idle) && a.hooks == b.hooks &&
-           themeConfigEqual(a.theme, b.theme) && a.controlCenter == b.controlCenter;
+    return vectorEqual(a.bars, b.bars, barConfigEqual)
+        && widgetMapEqual(a.widgets, b.widgets)
+        && desktopWidgetsConfigEqual(a.desktopWidgets, b.desktopWidgets)
+        && lockscreenWidgetsConfigEqual(a.lockscreenWidgets, b.lockscreenWidgets)
+        && a.wallpaper == b.wallpaper
+        && a.backdrop == b.backdrop
+        && a.lockscreen == b.lockscreen
+        && a.dock == b.dock
+        && a.shell == b.shell
+        && a.osd == b.osd
+        && a.notification == b.notification
+        && a.weather == b.weather
+        && a.calendar == b.calendar
+        && a.system == b.system
+        && a.audio == b.audio
+        && a.brightness == b.brightness
+        && a.battery == b.battery
+        && a.keybinds == b.keybinds
+        && a.nightlight == b.nightlight
+        && a.location == b.location
+        && a.idle == b.idle
+        && a.hooks == b.hooks
+        && a.theme == b.theme
+        && a.controlCenter == b.controlCenter;
   }
 
   toml::table* ensureTable(toml::table& parent, std::string_view key) {
@@ -431,7 +334,8 @@ namespace {
             table.insert_or_assign(key, concrete);
           }
         },
-        value);
+        value
+    );
   }
 
   toml::table desktopWidgetTable(const DesktopWidgetState& widget) {
@@ -485,7 +389,7 @@ namespace {
               toml::table row;
               row.insert_or_assign("action", item.action);
               row.insert_or_assign("enabled", item.enabled);
-              if (item.command.has_value() && !item.command->empty()) {
+              if (item.action != "lock_and_suspend" && item.command.has_value() && !item.command->empty()) {
                 row.insert_or_assign("command", *item.command);
               }
               if (item.label.has_value() && !item.label->empty()) {
@@ -494,9 +398,40 @@ namespace {
               if (item.glyph.has_value() && !item.glyph->empty()) {
                 row.insert_or_assign("glyph", *item.glyph);
               }
-              if (item.destructive) {
-                row.insert_or_assign("destructive", true);
+              row.insert_or_assign("variant", std::string(enumToKey(kSessionActionButtonVariants, item.variant)));
+              if (item.shortcut.has_value()) {
+                row.insert_or_assign("shortcut", keyChordToString(*item.shortcut));
               }
+              array.push_back(std::move(row));
+            }
+            table.insert_or_assign(key, std::move(array));
+          } else if constexpr (std::is_same_v<T, std::vector<BarCapsuleGroupStyle>>) {
+            toml::array array;
+            for (const auto& item : concrete) {
+              if (item.id.empty()) {
+                continue;
+              }
+              toml::table row;
+              row.insert_or_assign("id", item.id);
+              toml::array members;
+              for (const auto& member : item.members) {
+                members.push_back(member);
+              }
+              row.insert_or_assign("members", std::move(members));
+              row.insert_or_assign("fill", colorSpecToConfigString(item.fill));
+              if (item.borderSpecified) {
+                row.insert_or_assign(
+                    "border", item.border.has_value() ? colorSpecToConfigString(*item.border) : std::string{}
+                );
+              }
+              if (item.foreground.has_value()) {
+                row.insert_or_assign("foreground", colorSpecToConfigString(*item.foreground));
+              }
+              row.insert_or_assign("padding", static_cast<double>(item.padding));
+              if (item.radius.has_value()) {
+                row.insert_or_assign("radius", static_cast<double>(*item.radius));
+              }
+              row.insert_or_assign("opacity", static_cast<double>(item.opacity));
               array.push_back(std::move(row));
             }
             table.insert_or_assign(key, std::move(array));
@@ -519,8 +454,8 @@ namespace {
               if (!item.resumeCommand.empty()) {
                 row.insert_or_assign("resume_command", item.resumeCommand);
               }
-              if (item.action == "suspend") {
-                row.insert_or_assign("lock_before_suspend", item.lockBeforeSuspend);
+              if (item.action == "suspend" && !item.lockBeforeSuspend) {
+                row.insert_or_assign("lock_before_suspend", false);
               }
               behaviorTable.insert_or_assign(item.name, std::move(row));
               behaviorOrder.push_back(item.name);
@@ -545,7 +480,8 @@ namespace {
             table.insert_or_assign(key, concrete);
           }
         },
-        value);
+        value
+    );
   }
 
   std::vector<std::string> barOrderNames(const std::vector<BarConfig>& bars) {
@@ -581,8 +517,9 @@ namespace {
     return nullptr;
   }
 
-  void pruneEmptyOverrideTables(toml::table& root, const std::vector<std::string>& changedPath,
-                                std::size_t preserveDepth = 0) {
+  void pruneEmptyOverrideTables(
+      toml::table& root, const std::vector<std::string>& changedPath, std::size_t preserveDepth = 0
+  ) {
     if (changedPath.size() < 2) {
       return;
     }
@@ -631,6 +568,9 @@ namespace {
   }
 
   bool overridePresenceIsSemantic(const std::vector<std::string>& path) {
+    if (path.size() == 3 && path[0] == "widget" && path[2] == "type") {
+      return true;
+    }
     if (path.size() != 5 || path[0] != "bar" || path[2] != "monitor") {
       return false;
     }
@@ -658,6 +598,35 @@ namespace {
   }
 } // namespace
 
+ConfigChangeSet computeConfigChangeSet(const Config& prev, const Config& next) {
+  return ConfigChangeSet{
+      .bars = !vectorEqual(prev.bars, next.bars, barConfigEqual),
+      .widgets = !widgetMapEqual(prev.widgets, next.widgets),
+      .desktopWidgets = !desktopWidgetsConfigEqual(prev.desktopWidgets, next.desktopWidgets),
+      .lockscreenWidgets = !lockscreenWidgetsConfigEqual(prev.lockscreenWidgets, next.lockscreenWidgets),
+      .wallpaper = !(prev.wallpaper == next.wallpaper),
+      .backdrop = !(prev.backdrop == next.backdrop),
+      .lockscreen = !(prev.lockscreen == next.lockscreen),
+      .dock = !(prev.dock == next.dock),
+      .shell = !(prev.shell == next.shell),
+      .osd = !(prev.osd == next.osd),
+      .notification = !(prev.notification == next.notification),
+      .weather = !(prev.weather == next.weather),
+      .calendar = !(prev.calendar == next.calendar),
+      .system = !(prev.system == next.system),
+      .audio = !(prev.audio == next.audio),
+      .brightness = !(prev.brightness == next.brightness),
+      .battery = !(prev.battery == next.battery),
+      .keybinds = !(prev.keybinds == next.keybinds),
+      .nightlight = !(prev.nightlight == next.nightlight),
+      .location = !(prev.location == next.location),
+      .idle = !(prev.idle == next.idle),
+      .hooks = !(prev.hooks == next.hooks),
+      .theme = !(prev.theme == next.theme),
+      .controlCenter = !(prev.controlCenter == next.controlCenter),
+  };
+}
+
 void ConfigService::setThemeMode(ThemeMode mode) {
   if (m_overridesPath.empty()) {
     return;
@@ -678,18 +647,53 @@ void ConfigService::setThemeMode(ThemeMode mode) {
   fireReloadCallbacks();
 }
 
-bool ConfigService::setThemeWallpaperScheme(std::string_view schemeRaw) {
+bool ConfigService::setThemeColorScheme(PaletteSource source, std::string_view valueRaw) {
   if (m_overridesPath.empty()) {
     return false;
   }
 
-  const std::string scheme = StringUtils::trim(std::string(schemeRaw));
-  if (scheme.empty() || !noctalia::theme::schemeFromString(scheme)) {
+  const std::string value = StringUtils::trim(std::string(valueRaw));
+  if (value.empty()) {
     return false;
   }
 
+  switch (source) {
+  case PaletteSource::Builtin:
+    if (noctalia::theme::findBuiltinPalette(value) == nullptr) {
+      return false;
+    }
+    break;
+  case PaletteSource::Wallpaper:
+    if (!noctalia::theme::schemeFromString(value)) {
+      return false;
+    }
+    break;
+  case PaletteSource::Community:
+    break;
+  case PaletteSource::Custom:
+    if (!std::filesystem::exists(noctalia::theme::customPalettePath(value))) {
+      return false;
+    }
+    break;
+  }
+
   auto* themeTbl = ensureTable(m_overridesTable, "theme");
-  themeTbl->insert_or_assign("wallpaper_scheme", scheme);
+  themeTbl->insert_or_assign("source", std::string(enumToKey(kPaletteSources, source)));
+
+  switch (source) {
+  case PaletteSource::Builtin:
+    themeTbl->insert_or_assign("builtin", value);
+    break;
+  case PaletteSource::Wallpaper:
+    themeTbl->insert_or_assign("wallpaper_scheme", value);
+    break;
+  case PaletteSource::Community:
+    themeTbl->insert_or_assign("community_palette", value);
+    break;
+  case PaletteSource::Custom:
+    themeTbl->insert_or_assign("custom_palette", value);
+    break;
+  }
 
   if (!writeOverridesToFile()) {
     kLog.warn("failed to write {}", m_overridesPath);
@@ -726,6 +730,32 @@ void ConfigService::setDockEnabled(bool enabled) {
   fireReloadCallbacks();
 }
 
+namespace {
+
+  void writeWidgetsPlacementToTable(
+      toml::table& sectionTbl, const DesktopWidgetsGridState& grid, const std::vector<DesktopWidgetState>& widgets
+  ) {
+    toml::table gridTable;
+    gridTable.insert_or_assign("visible", grid.visible);
+    gridTable.insert_or_assign("cell_size", static_cast<std::int64_t>(grid.cellSize));
+    gridTable.insert_or_assign("major_interval", static_cast<std::int64_t>(grid.majorInterval));
+    sectionTbl.insert_or_assign("grid", std::move(gridTable));
+
+    toml::table widgetTable;
+    toml::array widgetOrder;
+    for (const auto& widget : widgets) {
+      if (widget.id.empty() || widget.type.empty()) {
+        continue;
+      }
+      widgetTable.insert_or_assign(widget.id, desktopWidgetTable(widget));
+      widgetOrder.push_back(widget.id);
+    }
+    sectionTbl.insert_or_assign("widget", std::move(widgetTable));
+    sectionTbl.insert_or_assign("widget_order", std::move(widgetOrder));
+  }
+
+} // namespace
+
 bool ConfigService::setDesktopWidgetsState(const DesktopWidgetsConfig& desktopWidgets) {
   if (m_overridesPath.empty()) {
     return false;
@@ -737,24 +767,32 @@ bool ConfigService::setDesktopWidgetsState(const DesktopWidgetsConfig& desktopWi
   }
 
   desktopWidgetsTbl->insert_or_assign("schema_version", static_cast<std::int64_t>(desktopWidgets.schemaVersion));
+  writeWidgetsPlacementToTable(*desktopWidgetsTbl, desktopWidgets.grid, desktopWidgets.widgets);
 
-  toml::table grid;
-  grid.insert_or_assign("visible", desktopWidgets.grid.visible);
-  grid.insert_or_assign("cell_size", static_cast<std::int64_t>(desktopWidgets.grid.cellSize));
-  grid.insert_or_assign("major_interval", static_cast<std::int64_t>(desktopWidgets.grid.majorInterval));
-  desktopWidgetsTbl->insert_or_assign("grid", std::move(grid));
-
-  toml::table widgets;
-  toml::array widgetOrder;
-  for (const auto& widget : desktopWidgets.widgets) {
-    if (widget.id.empty() || widget.type.empty()) {
-      continue;
-    }
-    widgets.insert_or_assign(widget.id, desktopWidgetTable(widget));
-    widgetOrder.push_back(widget.id);
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return false;
   }
-  desktopWidgetsTbl->insert_or_assign("widget", std::move(widgets));
-  desktopWidgetsTbl->insert_or_assign("widget_order", std::move(widgetOrder));
+
+  m_ownOverridesWritePending = true;
+  loadAll();
+  fireReloadCallbacks();
+  return true;
+}
+
+bool ConfigService::setLockscreenWidgetsState(const LockscreenWidgetsConfig& lockscreenWidgets) {
+  if (m_overridesPath.empty()) {
+    return false;
+  }
+
+  auto* sectionTbl = ensureTable(m_overridesTable, "lockscreen_widgets");
+  if (sectionTbl == nullptr) {
+    return false;
+  }
+
+  sectionTbl->insert_or_assign("enabled", lockscreenWidgets.enabled);
+  sectionTbl->insert_or_assign("schema_version", static_cast<std::int64_t>(lockscreenWidgets.schemaVersion));
+  writeWidgetsPlacementToTable(*sectionTbl, lockscreenWidgets.grid, lockscreenWidgets.widgets);
 
   if (!writeOverridesToFile()) {
     kLog.warn("failed to write {}", m_overridesPath);
@@ -820,7 +858,7 @@ std::size_t ConfigService::overridePreserveDepthForPath(const std::vector<std::s
 
 std::optional<Config> ConfigService::configForOverrides(const toml::table& overrides) const {
   Config parsed;
-  seedBuiltinWidgets(parsed);
+  noctalia::config::seedBuiltinWidgets(parsed);
 
   const auto files = sortedConfigTomlFiles(m_configDir);
   toml::table merged;
@@ -829,8 +867,9 @@ std::optional<Config> ConfigService::configForOverrides(const toml::table& overr
       auto tbl = toml::parse_file(path.string());
       deepMerge(merged, tbl);
     } catch (const toml::parse_error& e) {
-      kLog.warn("skipping parse error in effective override comparison {}: {}", path.filename().string(),
-                e.description());
+      kLog.warn(
+          "skipping parse error in effective override comparison {}: {}", path.filename().string(), e.description()
+      );
     }
   }
 
@@ -844,7 +883,7 @@ std::optional<Config> ConfigService::configForOverrides(const toml::table& overr
   }
 
   try {
-    parseTableInto(merged, parsed, false);
+    parseConfigTable(merged, parsed, false);
   } catch (const std::exception& e) {
     kLog.warn("effective override comparison parse failed: {}", e.what());
     return std::nullopt;
@@ -852,8 +891,9 @@ std::optional<Config> ConfigService::configForOverrides(const toml::table& overr
   return parsed;
 }
 
-bool ConfigService::overridePathEffectiveInTable(const std::vector<std::string>& path, const toml::table& overrides,
-                                                 const Config* parsedWith) const {
+bool ConfigService::overridePathEffectiveInTable(
+    const std::vector<std::string>& path, const toml::table& overrides, const Config* parsedWith
+) const {
   if (path.empty() || findOverrideNode(overrides, path) == nullptr) {
     return false;
   }
@@ -874,6 +914,10 @@ bool ConfigService::overridePathEffectiveInTable(const std::vector<std::string>&
     return true;
   }
 
+  if (isWidgetSettingOverridePath(path)) {
+    return settings::widgetSettingOverrideIsEffective(path[1], path[2], *parsedWith, *withoutOverride);
+  }
+
   return !configEqual(*parsedWith, *withoutOverride);
 }
 
@@ -889,8 +933,9 @@ bool ConfigService::canMoveBarOverride(std::string_view name, int direction) con
     return false;
   }
 
-  const auto barIt = std::find_if(m_config.bars.begin(), m_config.bars.end(),
-                                  [name](const BarConfig& bar) { return bar.name == name; });
+  const auto barIt = std::find_if(m_config.bars.begin(), m_config.bars.end(), [name](const BarConfig& bar) {
+    return bar.name == name;
+  });
   if (barIt == m_config.bars.end()) {
     return false;
   }
@@ -934,8 +979,10 @@ bool ConfigService::createBarOverride(std::string_view name) {
     return false;
   }
 
-  if (m_configFileBarNames.empty() && barRoot->empty() && m_config.bars.size() == 1 &&
-      m_config.bars.front().name == "default") {
+  if (m_configFileBarNames.empty()
+      && barRoot->empty()
+      && m_config.bars.size() == 1
+      && m_config.bars.front().name == "default") {
     auto* defaultBar = ensureTable(*barRoot, "default");
     if (defaultBar == nullptr) {
       return false;
@@ -1040,13 +1087,16 @@ bool ConfigService::createMonitorOverride(std::string_view barName, std::string_
     return false;
   }
 
-  const auto barIt = std::find_if(m_config.bars.begin(), m_config.bars.end(),
-                                  [barName](const BarConfig& bar) { return bar.name == barName; });
+  const auto barIt = std::find_if(m_config.bars.begin(), m_config.bars.end(), [barName](const BarConfig& bar) {
+    return bar.name == barName;
+  });
   if (barIt == m_config.bars.end()) {
     return false;
   }
-  const auto monitorIt = std::find_if(barIt->monitorOverrides.begin(), barIt->monitorOverrides.end(),
-                                      [match](const BarMonitorOverride& ovr) { return ovr.match == match; });
+  const auto monitorIt = std::find_if(
+      barIt->monitorOverrides.begin(), barIt->monitorOverrides.end(),
+      [match](const BarMonitorOverride& ovr) { return ovr.match == match; }
+  );
   if (monitorIt != barIt->monitorOverrides.end()) {
     return false;
   }
@@ -1078,26 +1128,35 @@ bool ConfigService::createMonitorOverride(std::string_view barName, std::string_
   return true;
 }
 
-bool ConfigService::renameMonitorOverride(std::string_view barName, std::string_view oldMatch,
-                                          std::string_view newMatch) {
-  if (barName.empty() || oldMatch.empty() || newMatch.empty() || oldMatch == newMatch ||
-      !isOverrideOnlyMonitorOverride(barName, oldMatch)) {
+bool ConfigService::renameMonitorOverride(
+    std::string_view barName, std::string_view oldMatch, std::string_view newMatch
+) {
+  if (barName.empty()
+      || oldMatch.empty()
+      || newMatch.empty()
+      || oldMatch == newMatch
+      || !isOverrideOnlyMonitorOverride(barName, oldMatch)) {
     return false;
   }
 
-  const auto barIt = std::find_if(m_config.bars.begin(), m_config.bars.end(),
-                                  [barName](const BarConfig& bar) { return bar.name == barName; });
+  const auto barIt = std::find_if(m_config.bars.begin(), m_config.bars.end(), [barName](const BarConfig& bar) {
+    return bar.name == barName;
+  });
   if (barIt == m_config.bars.end()) {
     return false;
   }
-  const auto monitorIt = std::find_if(barIt->monitorOverrides.begin(), barIt->monitorOverrides.end(),
-                                      [newMatch](const BarMonitorOverride& ovr) { return ovr.match == newMatch; });
+  const auto monitorIt = std::find_if(
+      barIt->monitorOverrides.begin(), barIt->monitorOverrides.end(),
+      [newMatch](const BarMonitorOverride& ovr) { return ovr.match == newMatch; }
+  );
   if (monitorIt != barIt->monitorOverrides.end()) {
     return false;
   }
 
-  return renameOverrideTable({"bar", std::string(barName), "monitor", std::string(oldMatch)},
-                             {"bar", std::string(barName), "monitor", std::string(newMatch)});
+  return renameOverrideTable(
+      {"bar", std::string(barName), "monitor", std::string(oldMatch)},
+      {"bar", std::string(barName), "monitor", std::string(newMatch)}
+  );
 }
 
 bool ConfigService::deleteMonitorOverride(std::string_view barName, std::string_view match) {
@@ -1108,27 +1167,50 @@ bool ConfigService::deleteMonitorOverride(std::string_view barName, std::string_
 }
 
 bool ConfigService::setOverride(const std::vector<std::string>& path, ConfigOverrideValue value) {
-  if (m_overridesPath.empty() || path.empty()) {
+  std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides;
+  overrides.emplace_back(path, std::move(value));
+  return setOverrides(std::move(overrides));
+}
+
+bool ConfigService::setOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides) {
+  if (m_overridesPath.empty() || overrides.empty()) {
     return false;
   }
 
-  toml::table* table = &m_overridesTable;
-  for (std::size_t i = 0; i + 1 < path.size(); ++i) {
-    table = ensureTable(*table, path[i]);
-    if (table == nullptr) {
+  toml::table next = m_overridesTable;
+  for (const auto& [path, value] : overrides) {
+    if (path.empty()) {
       return false;
     }
+
+    toml::table* table = &next;
+    for (std::size_t i = 0; i + 1 < path.size(); ++i) {
+      table = ensureTable(*table, path[i]);
+      if (table == nullptr) {
+        return false;
+      }
+    }
+
+    insertOverrideValue(*table, path.back(), value);
   }
 
-  insertOverrideValue(*table, path.back(), value);
-  if (!overridePresenceIsSemantic(path) && !overridePathEffectiveInTable(path, m_overridesTable)) {
-    eraseOverridePath(m_overridesTable, path, overridePreserveDepthForPath(path));
-    if (path.size() == 2 && path[0] == "idle" && path[1] == "behavior") {
-      eraseOverridePath(m_overridesTable, {"idle", "behavior_order"}, overridePreserveDepthForPath(path));
+  for (const auto& [path, value] : overrides) {
+    if (!overridePresenceIsSemantic(path)) {
+      bool shouldErase = false;
+      shouldErase = !overridePathEffectiveInTable(path, next);
+      if (shouldErase) {
+        eraseOverridePath(next, path, overridePreserveDepthForPath(path));
+        if (path.size() == 2 && path[0] == "idle" && path[1] == "behavior") {
+          eraseOverridePath(next, {"idle", "behavior_order"}, overridePreserveDepthForPath(path));
+        }
+      }
     }
   }
 
+  toml::table previous = std::move(m_overridesTable);
+  m_overridesTable = std::move(next);
   if (!writeOverridesToFile()) {
+    m_overridesTable = std::move(previous);
     kLog.warn("failed to write {}", m_overridesPath);
     return false;
   }
@@ -1164,8 +1246,9 @@ bool ConfigService::clearOverride(const std::vector<std::string>& path) {
   return true;
 }
 
-bool ConfigService::renameOverrideTable(const std::vector<std::string>& oldPath,
-                                        const std::vector<std::string>& newPath) {
+bool ConfigService::renameOverrideTable(
+    const std::vector<std::string>& oldPath, const std::vector<std::string>& newPath
+) {
   if (m_overridesPath.empty() || oldPath.empty() || newPath.empty() || oldPath == newPath) {
     return false;
   }
@@ -1312,22 +1395,25 @@ void ConfigService::setWallpaperPath(const std::optional<std::string>& connector
   }
 }
 
-void ConfigService::extractWallpaperFromOverrides() {
+void ConfigService::extractWallpaperFromOverrides() { extractWallpaperFromTable(m_overridesTable); }
+
+void ConfigService::extractWallpaperFromTable(const toml::table& table) {
   m_defaultWallpaperPath.clear();
   m_lastWallpaperPath.clear();
   m_monitorWallpaperPaths.clear();
+  m_wallpaperFavorites.clear();
 
-  if (auto* wpDefault = m_overridesTable["wallpaper"]["default"].as_table()) {
+  if (auto* wpDefault = table["wallpaper"]["default"].as_table()) {
     if (auto v = (*wpDefault)["path"].value<std::string>()) {
       m_defaultWallpaperPath = FileUtils::expandUserPath(*v).string();
     }
   }
-  if (auto* wpLast = m_overridesTable["wallpaper"]["last"].as_table()) {
+  if (auto* wpLast = table["wallpaper"]["last"].as_table()) {
     if (auto v = (*wpLast)["path"].value<std::string>()) {
       m_lastWallpaperPath = FileUtils::expandUserPath(*v).string();
     }
   }
-  if (auto* monitors = m_overridesTable["wallpaper"]["monitors"].as_table()) {
+  if (auto* monitors = table["wallpaper"]["monitors"].as_table()) {
     for (const auto& [key, value] : *monitors) {
       if (auto* monTbl = value.as_table()) {
         if (auto v = (*monTbl)["path"].value<std::string>()) {
@@ -1335,6 +1421,401 @@ void ConfigService::extractWallpaperFromOverrides() {
         }
       }
     }
+  }
+  if (auto* favorites = table["wallpaper"]["favorite"].as_array()) {
+    for (const auto& node : *favorites) {
+      const auto* favTbl = node.as_table();
+      if (favTbl == nullptr) {
+        continue;
+      }
+      WallpaperFavorite favorite;
+      if (auto path = (*favTbl)["path"].value<std::string>()) {
+        favorite.path = FileUtils::normalizeWallpaperPath(*path);
+      }
+      if (favorite.path.empty()) {
+        continue;
+      }
+      if (auto modeKey = (*favTbl)["theme_mode"].value<std::string>()) {
+        if (auto parsed = enumFromKey(kThemeModes, *modeKey)) {
+          favorite.themeMode = *parsed;
+        }
+      }
+      if (auto sourceKey = (*favTbl)["palette_source"].value<std::string>()) {
+        if (auto parsed = enumFromKey(kPaletteSources, *sourceKey)) {
+          favorite.paletteSource = *parsed;
+        }
+      }
+      if (auto v = (*favTbl)["builtin_palette"].value<std::string>()) {
+        favorite.builtinPalette = *v;
+      }
+      if (auto v = (*favTbl)["community_palette"].value<std::string>()) {
+        favorite.communityPalette = *v;
+      }
+      if (auto v = (*favTbl)["custom_palette"].value<std::string>()) {
+        favorite.customPalette = *v;
+      }
+      if (auto v = (*favTbl)["wallpaper_scheme"].value<std::string>()) {
+        favorite.wallpaperScheme = *v;
+      }
+      m_wallpaperFavorites.push_back(std::move(favorite));
+    }
+  }
+}
+
+void ConfigService::syncWallpaperFavoritesToOverridesTable() {
+  auto* wallpaperTbl = ensureTable(m_overridesTable, "wallpaper");
+  if (m_wallpaperFavorites.empty()) {
+    wallpaperTbl->erase("favorite");
+    return;
+  }
+
+  toml::array favoritesArray;
+  favoritesArray.reserve(m_wallpaperFavorites.size());
+  for (const auto& favorite : m_wallpaperFavorites) {
+    toml::table entry;
+    entry.insert("path", favorite.path);
+    entry.insert("theme_mode", std::string(enumToKey(kThemeModes, favorite.themeMode)));
+    if (favorite.paletteSource.has_value()) {
+      entry.insert("palette_source", std::string(enumToKey(kPaletteSources, *favorite.paletteSource)));
+      switch (*favorite.paletteSource) {
+      case PaletteSource::Builtin:
+        if (!favorite.builtinPalette.empty()) {
+          entry.insert("builtin_palette", favorite.builtinPalette);
+        }
+        break;
+      case PaletteSource::Wallpaper:
+        if (!favorite.wallpaperScheme.empty()) {
+          entry.insert("wallpaper_scheme", favorite.wallpaperScheme);
+        }
+        break;
+      case PaletteSource::Community:
+        if (!favorite.communityPalette.empty()) {
+          entry.insert("community_palette", favorite.communityPalette);
+        }
+        break;
+      case PaletteSource::Custom:
+        if (!favorite.customPalette.empty()) {
+          entry.insert("custom_palette", favorite.customPalette);
+        }
+        break;
+      }
+    }
+    favoritesArray.push_back(std::move(entry));
+  }
+  wallpaperTbl->insert_or_assign("favorite", std::move(favoritesArray));
+}
+
+const std::vector<WallpaperFavorite>& ConfigService::wallpaperFavorites() const noexcept {
+  return m_wallpaperFavorites;
+}
+
+bool ConfigService::isWallpaperFavorite(std::string_view path) const {
+  const std::string normalized = FileUtils::normalizeWallpaperPath(path);
+  for (const auto& favorite : m_wallpaperFavorites) {
+    if (favorite.path == normalized) {
+      return true;
+    }
+  }
+  return false;
+}
+
+const WallpaperFavorite* ConfigService::wallpaperFavorite(std::string_view path) const {
+  const std::string normalized = FileUtils::normalizeWallpaperPath(path);
+  for (const auto& favorite : m_wallpaperFavorites) {
+    if (favorite.path == normalized) {
+      return &favorite;
+    }
+  }
+  return nullptr;
+}
+
+void ConfigService::addWallpaperFavorite(std::string path, std::optional<WallpaperFavorite> preset) {
+  if (m_overridesPath.empty()) {
+    return;
+  }
+
+  path = FileUtils::normalizeWallpaperPath(path);
+  if (path.empty()) {
+    return;
+  }
+
+  std::erase_if(m_wallpaperFavorites, [&](const WallpaperFavorite& favorite) { return favorite.path == path; });
+  WallpaperFavorite favorite = preset.value_or(WallpaperFavorite{});
+  favorite.path = std::move(path);
+  m_wallpaperFavorites.push_back(std::move(favorite));
+
+  syncWallpaperFavoritesToOverridesTable();
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return;
+  }
+  m_ownOverridesWritePending = true;
+}
+
+void ConfigService::removeWallpaperFavorite(std::string_view path) {
+  if (m_overridesPath.empty()) {
+    return;
+  }
+
+  const std::string normalized = FileUtils::normalizeWallpaperPath(path);
+  const auto before = m_wallpaperFavorites.size();
+  std::erase_if(m_wallpaperFavorites, [&](const WallpaperFavorite& favorite) { return favorite.path == normalized; });
+  if (m_wallpaperFavorites.size() == before) {
+    return;
+  }
+
+  syncWallpaperFavoritesToOverridesTable();
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return;
+  }
+  m_ownOverridesWritePending = true;
+}
+
+void ConfigService::setWallpaperFavoriteThemeMode(std::string_view path, ThemeMode themeMode) {
+  if (m_overridesPath.empty()) {
+    return;
+  }
+
+  const std::string normalized = FileUtils::normalizeWallpaperPath(path);
+  bool changed = false;
+  for (auto& favorite : m_wallpaperFavorites) {
+    if (favorite.path != normalized) {
+      continue;
+    }
+    if (favorite.themeMode != themeMode) {
+      favorite.themeMode = themeMode;
+      changed = true;
+    }
+    break;
+  }
+  if (!changed) {
+    return;
+  }
+
+  syncWallpaperFavoritesToOverridesTable();
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return;
+  }
+  m_ownOverridesWritePending = true;
+}
+
+void ConfigService::setWallpaperFavoritePaletteSource(std::string_view path, std::optional<PaletteSource> source) {
+  if (m_overridesPath.empty()) {
+    return;
+  }
+
+  const std::string normalized = FileUtils::normalizeWallpaperPath(path);
+  bool changed = false;
+  for (auto& favorite : m_wallpaperFavorites) {
+    if (favorite.path != normalized) {
+      continue;
+    }
+    if (favorite.paletteSource != source) {
+      favorite.paletteSource = source;
+      changed = true;
+    }
+    if (source.has_value()) {
+      switch (*source) {
+      case PaletteSource::Builtin:
+        if (favorite.builtinPalette.empty()) {
+          favorite.builtinPalette = m_config.theme.builtinPalette;
+          changed = true;
+        }
+        break;
+      case PaletteSource::Wallpaper:
+        if (favorite.wallpaperScheme.empty()) {
+          favorite.wallpaperScheme = m_config.theme.wallpaperScheme;
+          changed = true;
+        }
+        break;
+      case PaletteSource::Community:
+        if (favorite.communityPalette.empty()) {
+          favorite.communityPalette = m_config.theme.communityPalette;
+          changed = true;
+        }
+        break;
+      case PaletteSource::Custom:
+        if (favorite.customPalette.empty()) {
+          favorite.customPalette = m_config.theme.customPalette;
+          changed = true;
+        }
+        break;
+      }
+    }
+    break;
+  }
+  if (!changed) {
+    return;
+  }
+
+  syncWallpaperFavoritesToOverridesTable();
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return;
+  }
+  m_ownOverridesWritePending = true;
+}
+
+void ConfigService::setWallpaperFavoritePaletteSelection(std::string_view path, std::string_view value) {
+  if (m_overridesPath.empty()) {
+    return;
+  }
+
+  const std::string normalized = FileUtils::normalizeWallpaperPath(path);
+  const std::string selection(value);
+  bool changed = false;
+  for (auto& favorite : m_wallpaperFavorites) {
+    if (favorite.path != normalized || !favorite.paletteSource.has_value()) {
+      continue;
+    }
+    switch (*favorite.paletteSource) {
+    case PaletteSource::Builtin:
+      if (favorite.builtinPalette != selection) {
+        favorite.builtinPalette = selection;
+        changed = true;
+      }
+      break;
+    case PaletteSource::Wallpaper:
+      if (favorite.wallpaperScheme != selection) {
+        favorite.wallpaperScheme = selection;
+        changed = true;
+      }
+      break;
+    case PaletteSource::Community:
+      if (favorite.communityPalette != selection) {
+        favorite.communityPalette = selection;
+        changed = true;
+      }
+      break;
+    case PaletteSource::Custom:
+      if (favorite.customPalette != selection) {
+        favorite.customPalette = selection;
+        changed = true;
+      }
+      break;
+    }
+    break;
+  }
+  if (!changed) {
+    return;
+  }
+
+  syncWallpaperFavoritesToOverridesTable();
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return;
+  }
+  m_ownOverridesWritePending = true;
+}
+
+void ConfigService::applyWallpaperSelection(
+    const std::optional<std::string>& connectorName, const std::string& path, const WallpaperFavorite* applyTheme,
+    const std::vector<std::string>& allConnectors
+) {
+  if (m_overridesPath.empty()) {
+    return;
+  }
+
+  bool changed = false;
+
+  if (applyTheme != nullptr) {
+    auto* themeTbl = ensureTable(m_overridesTable, "theme");
+    if (m_config.theme.mode != applyTheme->themeMode) {
+      themeTbl->insert_or_assign("mode", std::string(enumToKey(kThemeModes, applyTheme->themeMode)));
+      changed = true;
+    }
+
+    if (applyTheme->paletteSource.has_value()) {
+      const PaletteSource source = *applyTheme->paletteSource;
+      if (m_config.theme.source != source) {
+        themeTbl->insert_or_assign("source", std::string(enumToKey(kPaletteSources, source)));
+        changed = true;
+      }
+      switch (source) {
+      case PaletteSource::Builtin:
+        if (!applyTheme->builtinPalette.empty() && m_config.theme.builtinPalette != applyTheme->builtinPalette) {
+          themeTbl->insert_or_assign("builtin", applyTheme->builtinPalette);
+          changed = true;
+        }
+        break;
+      case PaletteSource::Wallpaper:
+        if (!applyTheme->wallpaperScheme.empty() && m_config.theme.wallpaperScheme != applyTheme->wallpaperScheme) {
+          themeTbl->insert_or_assign("wallpaper_scheme", applyTheme->wallpaperScheme);
+          changed = true;
+        }
+        break;
+      case PaletteSource::Community:
+        if (!applyTheme->communityPalette.empty() && m_config.theme.communityPalette != applyTheme->communityPalette) {
+          themeTbl->insert_or_assign("community_palette", applyTheme->communityPalette);
+          changed = true;
+        }
+        break;
+      case PaletteSource::Custom:
+        if (!applyTheme->customPalette.empty() && m_config.theme.customPalette != applyTheme->customPalette) {
+          themeTbl->insert_or_assign("custom_palette", applyTheme->customPalette);
+          changed = true;
+        }
+        break;
+      }
+    }
+  }
+
+  auto* wallpaperTbl = ensureTable(m_overridesTable, "wallpaper");
+
+  if (connectorName.has_value() && !connectorName->empty()) {
+    auto it = m_monitorWallpaperPaths.find(*connectorName);
+    if (it == m_monitorWallpaperPaths.end() || it->second != path) {
+      m_monitorWallpaperPaths[*connectorName] = path;
+      changed = true;
+    }
+    auto* monitorsTbl = ensureTable(*wallpaperTbl, "monitors");
+    auto* monTbl = ensureTable(*monitorsTbl, *connectorName);
+    monTbl->insert_or_assign("path", path);
+  } else {
+    for (const auto& connector : allConnectors) {
+      if (connector.empty()) {
+        continue;
+      }
+      auto it = m_monitorWallpaperPaths.find(connector);
+      if (it == m_monitorWallpaperPaths.end() || it->second != path) {
+        m_monitorWallpaperPaths[connector] = path;
+        changed = true;
+      }
+      auto* monitorsTbl = ensureTable(*wallpaperTbl, "monitors");
+      auto* monTbl = ensureTable(*monitorsTbl, connector);
+      monTbl->insert_or_assign("path", path);
+    }
+    if (m_defaultWallpaperPath != path) {
+      m_defaultWallpaperPath = path;
+      changed = true;
+    }
+    auto* defaultTbl = ensureTable(*wallpaperTbl, "default");
+    defaultTbl->insert_or_assign("path", path);
+  }
+
+  if (m_lastWallpaperPath != path) {
+    m_lastWallpaperPath = path;
+    changed = true;
+    auto* lastTbl = ensureTable(*wallpaperTbl, "last");
+    lastTbl->insert_or_assign("path", path);
+  }
+
+  if (!changed) {
+    return;
+  }
+
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return;
+  }
+
+  m_ownOverridesWritePending = true;
+  loadAll();
+  fireReloadCallbacks();
+  if (m_wallpaperChangeCallback) {
+    m_wallpaperChangeCallback();
   }
 }
 
@@ -1344,23 +1825,10 @@ bool ConfigService::writeOverridesToFile() {
   }
   toml::table output = m_overridesTable;
 
-  const std::string tmpPath = m_overridesPath + ".tmp";
-  {
-    std::ofstream out(tmpPath, std::ios::trunc);
-    if (!out.is_open()) {
-      return false;
-    }
-    out << toml::toml_formatter{output,
-                                toml::toml_formatter::default_flags & ~toml::format_flags::allow_literal_strings};
-    if (!out.good()) {
-      return false;
-    }
-  }
-  std::error_code ec;
-  std::filesystem::rename(tmpPath, m_overridesPath, ec);
-  if (ec) {
-    std::filesystem::remove(tmpPath, ec);
+  std::ostringstream out;
+  out << toml::toml_formatter{output, toml::toml_formatter::default_flags & ~toml::format_flags::allow_literal_strings};
+  if (!out.good()) {
     return false;
   }
-  return true;
+  return writeTextFileAtomic(m_overridesPath, out.str());
 }

@@ -12,8 +12,11 @@ namespace {
   Mat3 localTransform(const Node* node) {
     const float cx = node->width() * 0.5f;
     const float cy = node->height() * 0.5f;
-    return Mat3::translation(node->x(), node->y()) * Mat3::translation(cx, cy) * Mat3::rotation(node->rotation()) *
-           Mat3::scale(node->scale(), node->scale()) * Mat3::translation(-cx, -cy);
+    return Mat3::translation(node->x(), node->y())
+        * Mat3::translation(cx, cy)
+        * Mat3::rotation(node->rotation())
+        * Mat3::scale(node->scale(), node->scale())
+        * Mat3::translation(-cx, -cy);
   }
 
   Mat3 computeWorldTransform(const Node* node) {
@@ -22,24 +25,6 @@ namespace {
       world = localTransform(current) * world;
     }
     return world;
-  }
-
-  bool pointInsideNode(const Node* node, float sceneX, float sceneY, float& localX, float& localY,
-                       bool includeHitOutset) {
-    if (node == nullptr) {
-      return false;
-    }
-
-    const Mat3 inverse = computeWorldTransform(node).inverse();
-    const Vec2 local = inverse.transformPoint(sceneX, sceneY);
-    localX = local.x;
-    localY = local.y;
-    if (!includeHitOutset) {
-      return localX >= 0.0f && localX < node->width() && localY >= 0.0f && localY < node->height();
-    }
-    const HitTestOutset outset = node->hitTestOutset();
-    return localX >= -outset.left && localX < node->width() + outset.right && localY >= -outset.top &&
-           localY < node->height() + outset.bottom;
   }
 
 } // namespace
@@ -133,6 +118,17 @@ void Node::arrange(Renderer& renderer, const LayoutRect& rect) {
   m_sizeAssignedByLayout = true;
 }
 
+void Node::invalidateGpuResources(Renderer& renderer, std::uint64_t generation) {
+  uiAssertNotRendering("Node::invalidateGpuResources");
+  if (m_gpuResourceGeneration != generation) {
+    doInvalidateGpuResources(renderer);
+    m_gpuResourceGeneration = generation;
+  }
+  for (auto& child : m_children) {
+    child->invalidateGpuResources(renderer, generation);
+  }
+}
+
 bool Node::containsScenePoint(float sceneX, float sceneY) const {
   float localX = 0.0f;
   float localY = 0.0f;
@@ -156,6 +152,33 @@ void Node::doArrange(Renderer& renderer, const LayoutRect& rect) {
   setPosition(rect.x, rect.y);
   setSize(rect.width, rect.height);
   doLayout(renderer);
+}
+
+void Node::doInvalidateGpuResources(Renderer& renderer) { (void)renderer; }
+
+bool Node::containsLocalPoint(float localX, float localY, bool includeHitOutset) const {
+  if (!includeHitOutset) {
+    return localX >= 0.0f && localX < width() && localY >= 0.0f && localY < height();
+  }
+  const HitTestOutset outset = hitTestOutset();
+  return localX >= -outset.left
+      && localX < width() + outset.right
+      && localY >= -outset.top
+      && localY < height() + outset.bottom;
+}
+
+bool Node::pointInsideNode(
+    const Node* node, float sceneX, float sceneY, float& localX, float& localY, bool includeHitOutset
+) {
+  if (node == nullptr) {
+    return false;
+  }
+
+  const Mat3 inverse = computeWorldTransform(node).inverse();
+  const Vec2 local = inverse.transformPoint(sceneX, sceneY);
+  localX = local.x;
+  localY = local.y;
+  return node->containsLocalPoint(localX, localY, includeHitOutset);
 }
 
 void Node::setPosition(float x, float y) {
@@ -257,8 +280,10 @@ void Node::setHitTestOutset(const HitTestOutset& outset) {
       .right = std::max(0.0f, outset.right),
       .bottom = std::max(0.0f, outset.bottom),
   };
-  if (m_hitTestOutset.left == clamped.left && m_hitTestOutset.top == clamped.top &&
-      m_hitTestOutset.right == clamped.right && m_hitTestOutset.bottom == clamped.bottom) {
+  if (m_hitTestOutset.left == clamped.left
+      && m_hitTestOutset.top == clamped.top
+      && m_hitTestOutset.right == clamped.right
+      && m_hitTestOutset.bottom == clamped.bottom) {
     return;
   }
   m_hitTestOutset = clamped;
@@ -429,8 +454,9 @@ Node* Node::hitTestImpl(Node* node, float px, float py) {
     for (auto& child : children) {
       orderedChildren.push_back(child.get());
     }
-    std::stable_sort(orderedChildren.begin(), orderedChildren.end(),
-                     [](const Node* a, const Node* b) { return a->zIndex() < b->zIndex(); });
+    std::stable_sort(orderedChildren.begin(), orderedChildren.end(), [](const Node* a, const Node* b) {
+      return a->zIndex() < b->zIndex();
+    });
     for (auto it = orderedChildren.rbegin(); it != orderedChildren.rend(); ++it) {
       auto* hit = hitTestImpl(*it, px, py);
       if (hit != nullptr) {
@@ -458,8 +484,9 @@ bool Node::mapFromScene(const Node* node, float sceneX, float sceneY, float& out
   return pointInsideNode(node, sceneX, sceneY, outLocalX, outLocalY, false);
 }
 
-void Node::transformedBounds(const Node* node, const Mat3& world, float& outLeft, float& outTop, float& outRight,
-                             float& outBottom) {
+void Node::transformedBounds(
+    const Node* node, const Mat3& world, float& outLeft, float& outTop, float& outRight, float& outBottom
+) {
   const Vec2 corners[] = {
       world.transformPoint(0.0f, 0.0f),
       world.transformPoint(node->width(), 0.0f),

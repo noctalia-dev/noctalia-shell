@@ -3,10 +3,7 @@
 #include "render/core/color.h"
 #include "render/core/renderer.h"
 #include "render/core/thumbnail_service.h"
-#include "ui/controls/box.h"
-#include "ui/controls/glyph.h"
-#include "ui/controls/image.h"
-#include "ui/controls/label.h"
+#include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -44,28 +41,33 @@ FileEntryTile::FileEntryTile(float scale, ThumbnailService* thumbnails) : m_scal
     }
   });
 
-  auto background = std::make_unique<Box>();
-  background->setRadius(Style::scaledRadiusLg(scale));
+  auto background = ui::box({
+      .radius = Style::scaledRadiusLg(scale),
+  });
   m_background = static_cast<Box*>(addChild(std::move(background)));
 
-  auto preview = std::make_unique<Box>();
-  preview->setCardStyle(scale);
-  preview->setRadius(Style::scaledRadiusMd(scale));
+  auto preview = ui::box({
+      .radius = Style::scaledRadiusMd(scale),
+      .cardStyleScale = scale,
+  });
   m_preview = static_cast<Box*>(addChild(std::move(preview)));
 
-  auto image = std::make_unique<Image>();
-  image->setFit(ImageFit::Contain);
-  image->setVisible(false);
+  auto image = ui::image({
+      .fit = ImageFit::Contain,
+      .visible = false,
+  });
   m_image = static_cast<Image*>(addChild(std::move(image)));
 
-  auto glyph = std::make_unique<Glyph>();
-  glyph->setGlyphSize(36.0f * scale);
+  auto glyph = ui::glyph({
+      .glyphSize = 36.0f * scale,
+  });
   m_glyph = static_cast<Glyph*>(addChild(std::move(glyph)));
 
-  auto label = std::make_unique<Label>();
-  label->setFontSize(Style::fontSizeCaption * scale);
-  label->setMaxLines(1);
-  label->setTextAlign(TextAlign::Center);
+  auto label = ui::label({
+      .fontSize = Style::fontSizeCaption * scale,
+      .maxLines = 1,
+      .textAlign = TextAlign::Center,
+  });
   m_label = static_cast<Label*>(addChild(std::move(label)));
 
   setVisible(false);
@@ -73,16 +75,19 @@ FileEntryTile::FileEntryTile(float scale, ThumbnailService* thumbnails) : m_scal
 
 FileEntryTile::~FileEntryTile() { releaseThumbnail(); }
 
-void FileEntryTile::setCallbacks(IndexCallback onClick, IndexCallback onMotion, IndexCallback onEnter,
-                                 IndexCallback onLeave) {
+void FileEntryTile::setCallbacks(
+    IndexCallback onClick, IndexCallback onMotion, IndexCallback onEnter, IndexCallback onLeave
+) {
   m_onClick = std::move(onClick);
   m_onMotion = std::move(onMotion);
   m_onEnter = std::move(onEnter);
   m_onLeave = std::move(onLeave);
 }
 
-void FileEntryTile::bind(Renderer& renderer, const FileEntry& entry, std::size_t index, float width, float height,
-                         bool selected, bool hovered, bool disabled) {
+void FileEntryTile::bind(
+    Renderer& renderer, const FileEntry& entry, std::size_t index, float width, float height, bool selected,
+    bool hovered, bool disabled
+) {
   m_boundIndex = index;
   m_selected = selected;
   m_hovered = hovered;
@@ -170,8 +175,10 @@ void FileEntryTile::doLayout(Renderer& renderer) {
 
   if (m_glyph->visible()) {
     m_glyph->measure(renderer);
-    m_glyph->setPosition(std::round(previewX + (previewWidth - m_glyph->width()) * 0.5f),
-                         std::round(previewY + (previewHeight - m_glyph->height()) * 0.5f));
+    m_glyph->setPosition(
+        std::round(previewX + (previewWidth - m_glyph->width()) * 0.5f),
+        std::round(previewY + (previewHeight - m_glyph->height()) * 0.5f)
+    );
   }
 
   m_label->measure(renderer);
@@ -182,11 +189,13 @@ void FileEntryTile::doLayout(Renderer& renderer) {
 }
 
 void FileEntryTile::applyVisualState() {
-  const Color bg = m_selected  ? colorForRole(ColorRole::Primary)
-                   : m_hovered ? colorForRole(ColorRole::SurfaceVariant, 0.65f)
-                               : clearColor();
+  const Color bg = m_selected ? colorForRole(ColorRole::Primary)
+      : m_hovered             ? colorForRole(ColorRole::Hover)
+                              : clearColor();
   const Color glyphFg = colorForRole(ColorRole::OnSurface); // glyph sits on the preview's Surface bg
-  const Color labelFg = m_selected ? colorForRole(ColorRole::OnPrimary) : colorForRole(ColorRole::OnSurface);
+  const Color labelFg = m_selected ? colorForRole(ColorRole::OnPrimary)
+      : m_hovered                  ? colorForRole(ColorRole::OnHover)
+                                   : colorForRole(ColorRole::OnSurface);
   const float alpha = m_disabled ? 0.55f : 1.0f;
 
   m_background->setFill(bg);

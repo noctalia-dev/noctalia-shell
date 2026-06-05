@@ -44,13 +44,17 @@ public:
   [[nodiscard]] std::unordered_map<std::uintptr_t, WorkspaceWindow>
   assignTaskbarWindows(const std::vector<TaskbarWindowCandidate>& windows, wl_output* output) const;
   [[nodiscard]] std::vector<WorkspaceWindow> workspaceWindows(wl_output* output) const;
+  void focusWindow(const std::string& windowId) const;
 
   [[nodiscard]] std::vector<Workspace> all() const;
   [[nodiscard]] std::vector<Workspace> forOutput(wl_output* output) const;
 
+  [[nodiscard]] wl_output* mangoIpcSelectedOutput() const;
+  [[nodiscard]] std::optional<std::pair<std::string, std::string>>
+  mangoIpcFocusedClientOnOutput(wl_output* output) const;
   [[nodiscard]] wl_output* dwlIpcSelectedOutput() const;
-
   [[nodiscard]] std::optional<std::pair<std::string, std::string>> dwlIpcFocusedClientOnOutput(wl_output* output) const;
+  [[nodiscard]] std::optional<std::string> focusedWindowId() const;
 
 private:
   void setActiveBackend(WorkspaceBackend* backend);
@@ -62,11 +66,15 @@ private:
   ExtWorkspaceProtocolBinder* m_extWorkspaceBinder = nullptr;
   DwlIpcWorkspaceProtocolBinder* m_dwlIpcWorkspaceBinder = nullptr;
   WorkspaceBackend* m_extBackend = nullptr;
+  WorkspaceBackend* m_mangoIpcBackend = nullptr;
+  WorkspaceSocketConnector* m_mangoIpcConnector = nullptr;
   WorkspaceBackend* m_dwlIpcBackend = nullptr;
   WorkspaceBackend* m_hyprlandBackend = nullptr;
   WorkspaceBackend* m_swayBackend = nullptr;
+  WorkspaceBackend* m_triadBackend = nullptr;
   WorkspaceSocketConnector* m_hyprlandConnector = nullptr;
   WorkspaceSocketConnector* m_swayConnector = nullptr;
+  WorkspaceSocketConnector* m_triadConnector = nullptr;
   WorkspaceBackend* m_activeBackend = nullptr;
   ChangeCallback m_changeCallback;
 };

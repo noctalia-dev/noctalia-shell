@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-config_file="$HOME/.config/foot/foot.ini"
-include_line='include=~/.config/foot/themes/noctalia'
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}"
+config_file="$config_dir/foot/foot.ini"
+include_line="include=$config_dir/foot/themes/noctalia"
 
 mkdir -p "$(dirname "$config_file")"
 

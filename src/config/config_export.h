@@ -5,6 +5,6 @@
 
 namespace config_export {
 
-  [[nodiscard]] toml::table configToToml(const Config& config);
+  [[nodiscard]] toml::table serialize(const Config& config);
 
 } // namespace config_export

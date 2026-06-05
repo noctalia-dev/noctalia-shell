@@ -52,13 +52,15 @@ public:
   AsyncTextureCache& operator=(const AsyncTextureCache&) = delete;
 
   void initialize(GlSharedContext* sharedGl);
-  [[nodiscard]] ReadySubscription subscribeReady(const std::string& path, int targetSize, bool mipmap,
-                                                 TextureReadyCallback callback);
+  void setMakeCurrentCallback(std::function<void()> callback) { m_makeCurrentCallback = std::move(callback); }
+  [[nodiscard]] ReadySubscription
+  subscribeReady(const std::string& path, int targetSize, bool mipmap, TextureReadyCallback callback);
 
   [[nodiscard]] TextureHandle acquire(const std::string& path, int targetSize = 0, bool mipmap = false);
   [[nodiscard]] TextureHandle peek(const std::string& path, int targetSize = 0, bool mipmap = false) const;
   void release(const std::string& path, int targetSize = 0, bool mipmap = false);
   void trimUnused(std::size_t maxUnusedEntries = 0);
+  void reloadResidentTextures();
 
   [[nodiscard]] int pollTimeoutMs() const override { return -1; }
   void dispatch(const std::vector<pollfd>& fds, std::size_t startIdx) override;
@@ -113,6 +115,7 @@ private:
   [[nodiscard]] static RequestKey makeKey(const std::string& path, int targetSize, bool mipmap);
 
   GlSharedContext* m_sharedGl = nullptr;
+  std::function<void()> m_makeCurrentCallback;
   std::unique_ptr<TextureManager> m_textureManager;
   int m_eventFd = -1;
   std::vector<std::thread> m_workers;

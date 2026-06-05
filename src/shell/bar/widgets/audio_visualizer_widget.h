@@ -5,14 +5,16 @@
 
 #include <cstdint>
 
-class AudioSpectrum;
+class AudioVisualizer;
 class PipeWireSpectrum;
 class Renderer;
 
 class AudioVisualizerWidget : public Widget {
 public:
-  AudioVisualizerWidget(PipeWireSpectrum* spectrum, float width, int bands, bool mirrored, ColorSpec lowColor,
-                        ColorSpec highColor, bool centered, bool showWhenIdle);
+  AudioVisualizerWidget(
+      PipeWireSpectrum* spectrum, float width, int bands, bool mirrored, ColorSpec lowColor, ColorSpec highColor,
+      bool centered, bool showWhenIdle
+  );
   ~AudioVisualizerWidget() override;
 
   void create() override;
@@ -38,7 +40,7 @@ private:
   ColorSpec m_lowColor = colorSpecFromRole(ColorRole::Primary);
   ColorSpec m_highColor = colorSpecFromRole(ColorRole::Primary);
   std::uint64_t m_listenerId = 0;
-  AudioSpectrum* m_visualizer = nullptr;
+  AudioVisualizer* m_visualizer = nullptr;
   bool m_pendingSpectrumUpdate = false;
   bool m_visible = true;
   bool m_visibilityInitialized = false;

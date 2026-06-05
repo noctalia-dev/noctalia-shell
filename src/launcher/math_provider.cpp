@@ -1,98 +1,131 @@
 #include "launcher/math_provider.h"
 
-#include "tinyexpr.h"
+#include "config/config_service.h"
+#include "i18n/i18n.h"
+#include "net/http_client.h"
 #include "wayland/clipboard_service.h"
 
 #include <cctype>
-#include <cmath>
-#include <sstream>
+#include <filesystem>
+#include <libqalculate/qalculate.h>
+#include <memory>
 #include <string>
 
 namespace {
 
+  // Cheap pre-filter: the provider runs on every keystroke with an empty prefix,
+  // so reject anything without a digit to avoid evaluating plain search text
+  // (e.g. "firefox"). Letters/spaces are kept so unit and currency conversions
+  // like "10 cm to in" or "5 USD to EUR" still reach libqalculate.
   bool looksLikeMath(std::string_view text) {
-    if (text.empty()) {
-      return false;
-    }
-
-    bool hasOperator = false;
-    bool hasDigit = false;
-
     for (char c : text) {
       if (c >= '0' && c <= '9') {
-        hasDigit = true;
-      } else if (c == '+' || c == '*' || c == '/' || c == '^' || c == '%') {
-        hasOperator = true;
-      } else if (c == '-') {
-        // Could be unary minus or subtraction
-        hasOperator = true;
-      } else if (c == '(' || c == ')' || c == '.' || c == ' ' || c == ',') {
-        // Allowed in math expressions
-      } else if (std::isalpha(static_cast<unsigned char>(c))) {
-        // Allow function names like sin, cos, sqrt, pi, e
-      } else {
-        return false;
+        return true;
       }
     }
-
-    return hasDigit && hasOperator;
+    return false;
   }
 
-  std::string formatResult(double value) {
-    if (std::isnan(value) || std::isinf(value)) {
-      return {};
+  std::string trimmed(std::string_view text) {
+    std::size_t begin = 0;
+    std::size_t end = text.size();
+    while (begin < end && std::isspace(static_cast<unsigned char>(text[begin]))) {
+      ++begin;
     }
-
-    // If it's an integer, show without decimals
-    if (value == std::floor(value) && std::abs(value) < 1e15) {
-      std::ostringstream oss;
-      oss.precision(0);
-      oss << std::fixed << value;
-      return oss.str();
+    while (end > begin && std::isspace(static_cast<unsigned char>(text[end - 1]))) {
+      --end;
     }
-
-    // Otherwise show with reasonable precision
-    std::ostringstream oss;
-    oss.precision(10);
-    oss << value;
-    std::string s = oss.str();
-
-    // Trim trailing zeros after decimal point
-    if (s.find('.') != std::string::npos) {
-      while (s.back() == '0') {
-        s.pop_back();
-      }
-      if (s.back() == '.') {
-        s.pop_back();
-      }
-    }
-
-    return s;
+    return std::string(text.substr(begin, end - begin));
   }
+
+  bool shouldRefreshExchangeRateSource(std::string_view url) { return url.find("nbrb.by") == std::string_view::npos; }
 
 } // namespace
 
+MathProvider::MathProvider(ClipboardService* clipboard, ConfigService* config, HttpClient* httpClient)
+    : m_clipboard(clipboard), m_config(config), m_httpClient(httpClient) {}
+
+MathProvider::~MathProvider() = default;
+
+std::string MathProvider::displayName() const { return i18n::tr("launcher.providers.calculator.title"); }
+
+void MathProvider::initialize() {
+  m_calc = std::make_unique<Calculator>();
+  // Load any cached rates before definitions so currency units pick them up.
+  m_calc->loadExchangeRates();
+  m_calc->loadGlobalDefinitions();
+  refreshExchangeRates();
+}
+
+void MathProvider::refreshExchangeRates() {
+  if (m_httpClient == nullptr || m_config == nullptr || !m_calc) {
+    return;
+  }
+  if (m_config->config().shell.offlineMode || !m_calc->canFetch()) {
+    return;
+  }
+
+  std::vector<std::pair<std::string, std::filesystem::path>> sources;
+  for (int i = 1;; ++i) {
+    std::string url = m_calc->getExchangeRatesUrl(i);
+    std::string file = m_calc->getExchangeRatesFileName(i);
+    if (url.empty() || file.empty()) {
+      break;
+    }
+    if (!shouldRefreshExchangeRateSource(url)) {
+      continue;
+    }
+    sources.emplace_back(std::move(url), std::filesystem::path(std::move(file)));
+  }
+  if (sources.empty()) {
+    return;
+  }
+
+  auto remaining = std::make_shared<int>(static_cast<int>(sources.size()));
+  for (auto& [url, path] : sources) {
+    std::error_code ec;
+    std::filesystem::create_directories(path.parent_path(), ec);
+    m_httpClient->download(url, path, [this, remaining](bool) {
+      if (--(*remaining) == 0) {
+        // All sources settled; reload whatever landed on disc.
+        m_calc->loadExchangeRates();
+      }
+    });
+  }
+}
+
 std::vector<LauncherResult> MathProvider::query(std::string_view text) const {
-  if (!looksLikeMath(text)) {
+  if (!m_calc || !looksLikeMath(text)) {
     return {};
   }
 
-  std::string expr(text);
-  int err = 0;
-  double result = te_interp(expr.c_str(), &err);
+  // Drop any messages left over from a previous evaluation.
+  m_calc->clearMessages();
 
-  if (err != 0) {
-    return {};
+  EvaluationOptions eo = default_user_evaluation_options;
+  PrintOptions po = default_print_options;
+  po.use_unicode_signs = false;
+  // Collapse interval arithmetic to a single rounded value instead of "interval(a, b)".
+  po.interval_display = INTERVAL_DISPLAY_SIGNIFICANT_DIGITS;
+
+  std::string input = trimmed(text);
+  std::string output = m_calc->calculateAndPrint(input, /*msecs=*/200, eo, po);
+
+  bool hadError = false;
+  for (CalculatorMessage* m = m_calc->message(); m != nullptr; m = m_calc->nextMessage()) {
+    if (m->type() == MESSAGE_ERROR) {
+      hadError = true;
+    }
   }
 
-  std::string formatted = formatResult(result);
-  if (formatted.empty()) {
+  // Reject errors and no-ops (e.g. the user just typed a bare number).
+  if (hadError || output.empty() || output == input) {
     return {};
   }
 
   LauncherResult r;
   r.id = "math";
-  r.title = "= " + formatted;
+  r.title = "= " + output;
   r.subtitle = std::string(text);
   r.glyphName = "calculator";
   r.score = 10000;

@@ -83,8 +83,9 @@ void FileWatcher::dispatch() {
       if (event->len > 0) {
         std::string_view name(event->name);
         for (auto& [id, entry] : m_watches) {
-          if (entry.dirWd == event->wd && entry.filename == name &&
-              std::find(triggered.begin(), triggered.end(), id) == triggered.end())
+          if (entry.dirWd == event->wd
+              && entry.filename == name
+              && std::find(triggered.begin(), triggered.end(), id) == triggered.end())
             triggered.push_back(id);
         }
       }

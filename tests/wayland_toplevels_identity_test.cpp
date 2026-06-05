@@ -35,6 +35,8 @@ int main() {
   assert(windows.size() == 1);
   assert(windows[0].handle == handle);
   assert(windows[0].appId == "Sample.ChatDesktop");
+  assert(toplevels.containsWlrHandle(handle));
+  assert(!toplevels.containsWlrHandle(reinterpret_cast<zwlr_foreign_toplevel_handle_v1*>(0x2)));
 
   return 0;
 }

@@ -1,13 +1,12 @@
 #include "shell/tooltip/tooltip_manager.h"
 
+#include "core/deferred_call.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
-#include "ui/controls/box.h"
-#include "ui/controls/flex.h"
-#include "ui/controls/label.h"
+#include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "wayland/popup_surface.h"
@@ -24,11 +23,62 @@ namespace {
 
   constexpr auto kShowDelay = std::chrono::milliseconds(500);
   constexpr float kMaxContentWidth = 280.0f;
+  constexpr int kMaxTextLines = 3;
+  constexpr float kTableMinPeerColumnWidth = 80.0f;
   constexpr float kPadH = Style::spaceMd;
   constexpr float kPadV = Style::spaceSm;
   constexpr float kTableGap = Style::spaceXs;
   constexpr float kTableColumnGap = Style::spaceMd;
   constexpr float kBorder = Style::borderWidth;
+
+  struct TableColumnWidths {
+    float key = 0.0f;
+    float value = 0.0f;
+  };
+
+  TableColumnWidths fitTableColumns(float naturalKeyW, float naturalValueW) {
+    const float availableW = std::max(0.0f, kMaxContentWidth - kTableColumnGap);
+    if (availableW <= 0.0f) {
+      return {};
+    }
+
+    const float halfW = availableW * 0.5f;
+    const float peerReserveW = std::min(kTableMinPeerColumnWidth, halfW);
+    const float columnMaxW = std::max(0.0f, availableW - peerReserveW);
+
+    TableColumnWidths widths{
+        .key = std::min(naturalKeyW, halfW),
+        .value = std::min(naturalValueW, halfW),
+    };
+
+    float remainingW = std::max(0.0f, availableW - widths.key - widths.value);
+    if (remainingW <= 0.0f) {
+      return widths;
+    }
+
+    float keyNeed = std::max(0.0f, std::min(naturalKeyW, columnMaxW) - widths.key);
+    float valueNeed = std::max(0.0f, std::min(naturalValueW, columnMaxW) - widths.value);
+    const float totalNeed = keyNeed + valueNeed;
+    if (totalNeed <= 0.0f) {
+      return widths;
+    }
+
+    const float keyDelta = std::min(keyNeed, remainingW * (keyNeed / totalNeed));
+    widths.key += keyDelta;
+    remainingW -= keyDelta;
+    keyNeed -= keyDelta;
+
+    const float valueDelta = std::min(valueNeed, remainingW);
+    widths.value += valueDelta;
+    remainingW -= valueDelta;
+    valueNeed -= valueDelta;
+
+    if (remainingW > 0.0f && keyNeed > 0.0f) {
+      widths.key += std::min(keyNeed, remainingW);
+    }
+
+    return widths;
+  }
 
 } // namespace
 
@@ -71,8 +121,11 @@ void TooltipManager::onHoverChange(InputArea* area, zwlr_layer_surface_v1* paren
 }
 
 void TooltipManager::showPopup() {
-  if (m_wayland == nullptr || m_renderContext == nullptr || m_pendingParent == nullptr || m_pendingOutput == nullptr ||
-      m_pendingArea == nullptr) {
+  if (m_wayland == nullptr
+      || m_renderContext == nullptr
+      || m_pendingParent == nullptr
+      || m_pendingOutput == nullptr
+      || m_pendingArea == nullptr) {
     m_state = State::Idle;
     return;
   }
@@ -170,9 +223,10 @@ void TooltipManager::dismissPopup() {
         },
         [this] {
           m_fadeAnimId = 0;
-          destroyPopup();
+          DeferredCall::callLater([this] { destroyPopup(); });
         },
-        this);
+        this
+    );
     if (m_surface != nullptr) {
       m_surface->requestRedraw();
     }
@@ -198,7 +252,9 @@ TooltipManager::Size TooltipManager::measureContent(const TooltipContent& conten
   }
 
   if (const auto* text = std::get_if<std::string>(&content)) {
-    auto metrics = m_renderContext->measureText(*text, Style::fontSizeCaption, false, kMaxContentWidth);
+    auto metrics = m_renderContext->measureText(
+        *text, Style::fontSizeCaption, FontWeight::Normal, kMaxContentWidth, kMaxTextLines
+    );
     auto w = static_cast<std::uint32_t>(std::ceil(metrics.width + kPadH * 2.0f + kBorder * 2.0f));
     auto h = static_cast<std::uint32_t>(std::ceil((metrics.bottom - metrics.top) + kPadV * 2.0f + kBorder * 2.0f));
     return {std::max(w, 1u), std::max(h, 1u)};
@@ -218,11 +274,8 @@ TooltipManager::Size TooltipManager::measureContent(const TooltipContent& conten
       maxValW = std::max(maxValW, vm.width);
       rowH = std::max(rowH, std::max(km.bottom - km.top, vm.bottom - vm.top));
     }
-    float naturalW = maxKeyW + kTableColumnGap + maxValW;
-    float contentW = std::min(naturalW, kMaxContentWidth);
-    if (naturalW > kMaxContentWidth) {
-      maxValW = kMaxContentWidth - maxKeyW - kTableColumnGap;
-    }
+    const TableColumnWidths columns = fitTableColumns(maxKeyW, maxValW);
+    float contentW = columns.key + kTableColumnGap + columns.value;
     float contentH = static_cast<float>(rows->size()) * rowH + static_cast<float>(rows->size() - 1) * kTableGap;
     auto w = static_cast<std::uint32_t>(std::ceil(contentW + kPadH * 2.0f + kBorder * 2.0f));
     auto h = static_cast<std::uint32_t>(std::ceil(contentH + kPadV * 2.0f + kBorder * 2.0f));
@@ -244,19 +297,24 @@ void TooltipManager::buildScene(const TooltipContent& content, float w, float h)
   m_sceneRoot->setHitTestVisible(false);
   m_surface->setSceneRoot(m_sceneRoot.get());
 
-  auto bg = std::make_unique<Box>();
-  bg->setFill(colorSpecFromRole(ColorRole::Surface));
-  bg->setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), kBorder);
-  bg->setRadius(Style::scaledRadiusMd());
-  bg->setSize(w, h);
-  m_sceneRoot->addChild(std::move(bg));
+  m_sceneRoot->addChild(
+      ui::box({
+          .fill = colorSpecFromRole(ColorRole::Surface),
+          .radius = Style::scaledRadiusMd(),
+          .width = w,
+          .height = h,
+          .configure = [](Box& box) { box.setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), kBorder); },
+      })
+  );
 
   if (const auto* text = std::get_if<std::string>(&content)) {
-    auto label = std::make_unique<Label>();
-    label->setFontSize(Style::fontSizeCaption);
-    label->setColor(colorSpecFromRole(ColorRole::OnSurface));
-    label->setMaxWidth(kMaxContentWidth);
-    label->setText(*text);
+    auto label = ui::label({
+        .text = *text,
+        .fontSize = Style::fontSizeCaption,
+        .color = colorSpecFromRole(ColorRole::OnSurface),
+        .maxWidth = kMaxContentWidth,
+        .maxLines = kMaxTextLines,
+    });
     label->measure(*m_renderContext);
     label->setPosition(kPadH + kBorder, kPadV + kBorder);
     m_sceneRoot->addChild(std::move(label));
@@ -267,45 +325,56 @@ void TooltipManager::buildScene(const TooltipContent& content, float w, float h)
     const float containerW = w - (kPadH + kBorder) * 2.0f;
 
     float maxKeyW = 0.0f;
+    float maxValW = 0.0f;
     for (const auto& row : *rows) {
       auto km = m_renderContext->measureText(row.key, Style::fontSizeCaption);
+      const auto vm = m_renderContext->measureText(row.value, Style::fontSizeCaption);
       maxKeyW = std::max(maxKeyW, km.width);
+      maxValW = std::max(maxValW, vm.width);
     }
-    const float valMaxW = std::max(0.0f, containerW - maxKeyW - kTableColumnGap);
+    const TableColumnWidths columns = fitTableColumns(maxKeyW, maxValW);
 
-    auto container = std::make_unique<Flex>();
-    container->setDirection(FlexDirection::Vertical);
-    container->setGap(kTableGap);
-    container->setPosition(kPadH + kBorder, kPadV + kBorder);
-    container->setSize(containerW, h - (kPadV + kBorder) * 2.0f);
+    auto container = ui::column({
+        .gap = kTableGap,
+        .width = containerW,
+        .height = h - (kPadV + kBorder) * 2.0f,
+        .configure = [](Flex& flex) { flex.setPosition(kPadH + kBorder, kPadV + kBorder); },
+    });
 
     for (const auto& row : *rows) {
-      auto rowFlex = std::make_unique<Flex>();
-      rowFlex->setDirection(FlexDirection::Horizontal);
-      rowFlex->setJustify(FlexJustify::SpaceBetween);
-      rowFlex->setGap(kTableColumnGap);
-      rowFlex->setWidthPolicy(FlexSizePolicy::Fill);
-
-      auto keyLabel = std::make_unique<Label>();
-      keyLabel->setFontSize(Style::fontSizeCaption);
-      keyLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
-      keyLabel->setText(row.key);
-      keyLabel->measure(*m_renderContext);
-      rowFlex->addChild(std::move(keyLabel));
-
-      auto valLabel = std::make_unique<Label>();
-      valLabel->setFontSize(Style::fontSizeCaption);
-      valLabel->setColor(colorSpecFromRole(ColorRole::OnSurface));
-      valLabel->setTextAlign(TextAlign::End);
-      const auto vm = m_renderContext->measureText(row.value, Style::fontSizeCaption);
-      if (vm.width > valMaxW + 0.5f) {
-        valLabel->setMaxWidth(valMaxW);
+      auto keyLabel = ui::label({
+          .text = row.key,
+          .fontSize = Style::fontSizeCaption,
+          .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+      });
+      const auto km = m_renderContext->measureText(row.key, Style::fontSizeCaption);
+      if (km.width > columns.key + 0.5f) {
+        keyLabel->setMaxWidth(columns.key);
       }
-      valLabel->setText(row.value);
-      valLabel->measure(*m_renderContext);
-      rowFlex->addChild(std::move(valLabel));
+      keyLabel->measure(*m_renderContext);
 
-      container->addChild(std::move(rowFlex));
+      auto valLabel = ui::label({
+          .text = row.value,
+          .fontSize = Style::fontSizeCaption,
+          .color = colorSpecFromRole(ColorRole::OnSurface),
+          .textAlign = TextAlign::End,
+      });
+      const auto vm = m_renderContext->measureText(row.value, Style::fontSizeCaption);
+      if (vm.width > columns.value + 0.5f) {
+        valLabel->setMaxWidth(columns.value);
+      }
+      valLabel->measure(*m_renderContext);
+
+      container->addChild(
+          ui::row(
+              {
+                  .justify = FlexJustify::SpaceBetween,
+                  .gap = kTableColumnGap,
+                  .widthPolicy = FlexSizePolicy::Fill,
+              },
+              std::move(keyLabel), std::move(valLabel)
+          )
+      );
     }
 
     container->layout(*m_renderContext);
@@ -344,6 +413,7 @@ void TooltipManager::prepareFrame(bool /*needsUpdate*/, bool /*needsLayout*/) {
             m_sceneRoot->markPaintDirty();
           }
         },
-        [this] { m_fadeAnimId = 0; }, this);
+        [this] { m_fadeAnimId = 0; }, this
+    );
   }
 }

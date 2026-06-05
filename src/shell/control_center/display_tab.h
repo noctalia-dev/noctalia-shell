@@ -20,6 +20,7 @@ public:
   DisplayTab(BrightnessService* brightness, ConfigService* config);
 
   std::unique_ptr<Flex> create() override;
+  void setActive(bool active) override;
   void onClose() override;
   [[nodiscard]] bool dragging() const noexcept;
 
@@ -31,7 +32,6 @@ private:
   void flushPendingBrightness(bool force = false);
 
   BrightnessService* m_brightness = nullptr;
-  ConfigService* m_config = nullptr;
 
   struct DisplayCard {
     std::string displayId;

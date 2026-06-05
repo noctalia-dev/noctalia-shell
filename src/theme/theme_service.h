@@ -32,6 +32,7 @@ namespace noctalia::theme {
     void onConfigReload();
     void onWallpaperChange();
     void onAutoSchemeChanged();
+    void setAutoCoordinates(std::optional<double> latitude, std::optional<double> longitude);
     void toggleLightDark();
     void cycleMode();
     [[nodiscard]] ThemeMode configuredMode() const noexcept;
@@ -45,16 +46,28 @@ namespace noctalia::theme {
 
   private:
     void resolveAndSet(bool animate);
+    // Decodes + generates the wallpaper palette, memoized on (path, mtime, scheme)
+    // so repeated resolves for an unchanged wallpaper skip the ~100ms image decode.
+    std::optional<GeneratedPalette> resolveWallpaperGenerated(const ThemeConfig& cfg, const std::string& wallpaperPath);
     void queueResolvedCallback(const GeneratedPalette& generated, std::string_view mode);
     void flushResolvedCallback(bool defer);
     void startTransition(const Palette& target);
     void finishTransition(bool deferResolvedCallback);
     void tickTransition();
     void startCommunityDownload(const std::string& name);
+    void rescheduleAutoTimer();
 
     ConfigService& m_config;
     HttpClient& m_httpClient;
     std::string m_inflightCommunityName;
+
+    // Memoized wallpaper palette (see resolveWallpaperGenerated). Keyed on the
+    // wallpaper path, its mtime, and the active scheme; any mismatch re-decodes.
+    std::optional<GeneratedPalette> m_wallpaperCacheGenerated;
+    std::string m_wallpaperCachePath;
+    std::string m_wallpaperCacheScheme;
+    std::int64_t m_wallpaperCacheMtimeNs = 0;
+
     ChangeCallback m_changeCallback;
     ResolvedCallback m_resolvedCallback;
     // External template/hooks callbacks are delayed until the shell palette is
@@ -70,6 +83,9 @@ namespace noctalia::theme {
     AnimationManager::Id m_transitionAnimId = 0;
     bool m_transitionResolvedCallbackFlushed = false;
     bool m_isLightMode = false;
+    std::optional<double> m_autoLatitude;
+    std::optional<double> m_autoLongitude;
+    Timer m_autoTimer;
   };
 
 } // namespace noctalia::theme

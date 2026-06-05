@@ -9,6 +9,7 @@
 #include "ui/style.h"
 
 #include <algorithm>
+#include <cmath>
 #include <deque>
 #include <memory>
 #include <vector>
@@ -77,6 +78,7 @@ struct Flex::ChildLayout {
   LayoutSize measured{};
   float main = 0.0f;
   float cross = 0.0f;
+  bool gapExcluded = false;
 };
 
 namespace {
@@ -256,9 +258,13 @@ void Flex::setSoftness(float softness) {
   m_background->setStyle(style);
 }
 
-void Flex::setCardStyle(float scale, float fillOpacity) {
+void Flex::setCardStyle(float scale, float fillOpacity, bool showBorder) {
   setFill(colorSpecFromRole(ColorRole::SurfaceVariant, fillOpacity));
-  setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), Style::borderWidth);
+  if (showBorder) {
+    setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), Style::borderWidth);
+  } else {
+    clearBorder();
+  }
   setRadius(Style::scaledRadiusXl(scale));
   setPadding(Style::cardPadding * scale);
 }
@@ -322,21 +328,50 @@ void Flex::setRowLayout() {
   setJustify(FlexJustify::Start);
 }
 
+void Flex::setChildGapExcluded(Node* child, bool excluded) {
+  if (excluded) {
+    m_gapExcludedChildren.insert(child);
+  } else {
+    m_gapExcludedChildren.erase(child);
+  }
+  markLayoutDirty();
+}
+
+Node* Flex::addChild(std::unique_ptr<Node> child) {
+  Node* raw = Node::addChild(std::move(child));
+  m_gapExcludedChildren.erase(raw);
+  return raw;
+}
+
+Node* Flex::insertChildAt(std::size_t index, std::unique_ptr<Node> child) {
+  Node* raw = Node::insertChildAt(index, std::move(child));
+  m_gapExcludedChildren.erase(raw);
+  return raw;
+}
+
+std::unique_ptr<Node> Flex::removeChild(Node* child) {
+  m_gapExcludedChildren.erase(child);
+  return Node::removeChild(child);
+}
+
 void Flex::ensureBackground() {
   if (m_background != nullptr) {
     return;
   }
   auto rect = std::make_unique<RectNode>();
-  rect->setStyle(RoundedRectStyle{
-      .fill = rgba(0, 0, 0, 0),
-      .border = rgba(0, 0, 0, 0),
-      .fillMode = FillMode::Solid,
-      .radius = 0.0f,
-      .softness = 0.0f,
-      .borderWidth = 0.0f,
-  });
+  rect->setStyle(
+      RoundedRectStyle{
+          .fill = rgba(0, 0, 0, 0),
+          .border = rgba(0, 0, 0, 0),
+          .fillMode = FillMode::Solid,
+          .radius = 0.0f,
+          .softness = 0.0f,
+          .borderWidth = 0.0f,
+      }
+  );
   m_background = static_cast<RectNode*>(addChild(std::move(rect)));
   m_background->setZIndex(-1);
+  m_background->setParticipatesInLayout(false);
   m_background->setFrameSize(width(), height());
   applyPalette();
 }
@@ -411,10 +446,9 @@ LayoutSize Flex::runLayout(Renderer& renderer, const LayoutConstraints& constrai
   const bool crossKnown = horizontal ? heightKnown : widthKnown;
   const float containerMain = horizontal ? targetWidth : targetHeight;
   const float containerCross = horizontal ? targetHeight : targetWidth;
-  const float innerCross =
-      crossKnown
-          ? std::max(0.0f, containerCross - crossPaddingStart(*this, horizontal) - crossPaddingEnd(*this, horizontal))
-          : 0.0f;
+  const float innerCross = crossKnown
+      ? std::max(0.0f, containerCross - crossPaddingStart(*this, horizontal) - crossPaddingEnd(*this, horizontal))
+      : 0.0f;
 
   FlexScratchGuard scratch;
   auto& items = scratch.items();
@@ -426,6 +460,7 @@ LayoutSize Flex::runLayout(Renderer& renderer, const LayoutConstraints& constrai
     }
     auto& item = items.emplace_back();
     item.node = child.get();
+    item.gapExcluded = m_gapExcludedChildren.count(child.get()) > 0;
     if (child->flexGrow() > 0.0f) {
       totalGrow += child->flexGrow();
     }
@@ -457,7 +492,17 @@ LayoutSize Flex::runLayout(Renderer& renderer, const LayoutConstraints& constrai
     measureItem(item, false, 0.0f);
   }
 
-  const float totalGap = items.size() > 1 ? m_gap * static_cast<float>(items.size() - 1) : 0.0f;
+  int numGaps = 0;
+  {
+    bool prevExcluded = items.empty() || items[0].gapExcluded;
+    for (size_t i = 1; i < items.size(); ++i) {
+      if (!prevExcluded && !items[i].gapExcluded) {
+        numGaps++;
+      }
+      prevExcluded = items[i].gapExcluded;
+    }
+  }
+  const float totalGap = m_gap * static_cast<float>(numGaps);
 
   if (mainKnown && totalGrow > 0.0f) {
     float fixedMain = mainPaddingStart(*this, horizontal) + mainPaddingEnd(*this, horizontal) + totalGap;
@@ -510,23 +555,26 @@ LayoutSize Flex::runLayout(Renderer& renderer, const LayoutConstraints& constrai
     }
 
     float effectiveGap = m_gap;
-    if (m_justify == FlexJustify::SpaceBetween && items.size() > 1) {
-      effectiveGap = std::max(m_gap, (innerMain - arrangedChildrenMain) / static_cast<float>(items.size() - 1));
+    if (m_justify == FlexJustify::SpaceBetween && items.size() > 1 && numGaps > 0) {
+      effectiveGap = std::max(m_gap, (innerMain - arrangedChildrenMain) / static_cast<float>(numGaps));
     }
-    const float arrangedContentMain =
-        arrangedChildrenMain + (items.size() > 1 ? effectiveGap * static_cast<float>(items.size() - 1) : 0.0f);
+    const float arrangedContentMain = arrangedChildrenMain + effectiveGap * static_cast<float>(numGaps);
 
     float cursor = mainPaddingStart(*this, horizontal);
     if (m_justify == FlexJustify::Center) {
-      cursor += std::max(0.0f, (innerMain - arrangedContentMain) * 0.5f);
+      cursor += std::floor(std::max(0.0f, (innerMain - arrangedContentMain) * 0.5f));
     } else if (m_justify == FlexJustify::End) {
       cursor += std::max(0.0f, innerMain - arrangedContentMain);
     }
 
     bool first = true;
+    bool prevExcluded = items.empty() || items.front().gapExcluded;
     for (auto& item : items) {
       if (!first) {
-        cursor += effectiveGap;
+        if (!prevExcluded && !item.gapExcluded) {
+          cursor += effectiveGap;
+        }
+        prevExcluded = item.gapExcluded;
       }
       first = false;
 
@@ -537,13 +585,15 @@ LayoutSize Flex::runLayout(Renderer& renderer, const LayoutConstraints& constrai
       } else {
         const float extraCross = finalInnerCross - childCross;
         if (m_align == FlexAlign::Center) {
-          crossPos += extraCross * 0.5f;
+          crossPos += std::floor(extraCross * 0.5f);
         } else if (m_align == FlexAlign::End) {
           crossPos += extraCross;
         }
       }
 
-      item.node->arrange(renderer, rectFromAxes(horizontal, cursor, crossPos, item.main, childCross));
+      item.node->arrange(
+          renderer, rectFromAxes(horizontal, std::round(cursor), std::round(crossPos), item.main, childCross)
+      );
       cursor += item.main;
     }
   }

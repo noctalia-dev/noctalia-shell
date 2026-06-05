@@ -8,13 +8,12 @@
 #include "render/core/renderer.h"
 #include "render/core/thumbnail_service.h"
 #include "render/scene/input_area.h"
+#include "ui/builders.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
-#include "ui/controls/separator.h"
-#include "ui/controls/spacer.h"
 #include "ui/controls/virtual_grid_view.h"
 #include "ui/dialogs/file_entry_row.h"
 #include "ui/dialogs/file_entry_tile.h"
@@ -33,13 +32,6 @@ namespace {
   constexpr std::size_t kListRowOverscan = 3;
   constexpr std::size_t kGridRowOverscan = 1;
   constexpr float kGridMinCellWidth = 140.0f;
-
-  void configureDialogActionButton(Button& button, float scale) {
-    button.setMinHeight(Style::controlHeight * scale);
-    button.setMinWidth(92.0f * scale);
-    button.setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-    button.setRadius(Style::scaledRadiusMd(scale));
-  }
 
 } // namespace
 
@@ -103,8 +95,9 @@ public:
     // FileEntryTile::bind detects same-thumbnailPath rebinds and skips acquire/release,
     // so per-frame rebinds that VirtualGridView's row-modulo recycling already filters
     // out remain free of thumbnail churn.
-    file->bind(*m_renderer, (*m_entries)[index], index, file->width(), file->height(), selected, hovered && !selected,
-               disabled);
+    file->bind(
+        *m_renderer, (*m_entries)[index], index, file->width(), file->height(), selected, hovered && !selected, disabled
+    );
   }
 
   void onActivate(std::size_t index) override {
@@ -131,24 +124,12 @@ void FileDialogView::create() {
   m_listRowHeight = std::ceil(32.0f * scale);
   m_gridCellSize = kGridMinCellWidth * scale;
 
-  const auto configureIconButton = [scale](Button* button) {
-    if (button == nullptr) {
-      return;
-    }
-    button->setVariant(ButtonVariant::Default);
-    button->setGlyphSize(Style::fontSizeBody * scale);
-    button->setMinWidth(Style::controlHeightSm * scale);
-    button->setMinHeight(Style::controlHeightSm * scale);
-    button->setPadding(Style::spaceXs * scale);
-    button->setRadius(Style::scaledRadiusMd(scale));
-  };
-
-  auto root = std::make_unique<Flex>();
-  root->setDirection(FlexDirection::Vertical);
-  root->setAlign(FlexAlign::Stretch);
-  root->setGap(Style::spaceSm * scale);
-  root->setPadding(Style::spaceMd * scale);
-  m_rootLayout = root.get();
+  auto root = ui::column({
+      .out = &m_rootLayout,
+      .align = FlexAlign::Stretch,
+      .gap = Style::spaceSm * scale,
+      .padding = Style::spaceMd * scale,
+  });
 
   auto listFocus = std::make_unique<InputArea>();
   listFocus->setFocusable(true);
@@ -156,223 +137,277 @@ void FileDialogView::create() {
   listFocus->setParticipatesInLayout(false);
   m_listFocusArea = static_cast<InputArea*>(root->addChild(std::move(listFocus)));
 
-  auto header = std::make_unique<Flex>();
-  header->setDirection(FlexDirection::Horizontal);
-  header->setAlign(FlexAlign::Center);
-  header->setGap(Style::spaceSm * scale);
+  root->addChild(
+      ui::row(
+          {
+              .align = FlexAlign::Center,
+              .gap = Style::spaceSm * scale,
+          },
+          ui::label({
+              .out = &m_titleLabel,
+              .fontSize = Style::fontSizeTitle * scale,
+              .color = colorSpecFromRole(ColorRole::Primary),
+              .fontWeight = FontWeight::Bold,
+          }),
+          ui::spacer(),
+          ui::button({
+              .glyph = "close",
+              .glyphSize = Style::fontSizeBody * scale,
+              .variant = ButtonVariant::Default,
+              .minWidth = Style::controlHeightSm * scale,
+              .minHeight = Style::controlHeightSm * scale,
+              .padding = Style::spaceXs * scale,
+              .radius = Style::scaledRadiusMd(scale),
+              .onClick = [this]() { DeferredCall::callLater([this]() { cancelDialog(); }); },
+          })
+      )
+  );
 
-  auto title = std::make_unique<Label>();
-  title->setFontSize(Style::fontSizeTitle * scale);
-  title->setBold(true);
-  title->setColor(colorSpecFromRole(ColorRole::Primary));
-  m_titleLabel = static_cast<Label*>(header->addChild(std::move(title)));
+  root->addChild(
+      ui::row({
+          .out = &m_breadcrumbRow,
+          .align = FlexAlign::Center,
+          .gap = Style::spaceXs * scale,
+          .minHeight = Style::controlHeightSm * scale,
+          .fillWidth = true,
+          .clipChildren = true,
+      })
+  );
 
-  header->addChild(std::make_unique<Spacer>());
+  root->addChild(
+      ui::row(
+          {
+              .align = FlexAlign::Center,
+              .gap = Style::spaceSm * scale,
+          },
+          ui::input({
+              .out = &m_searchInput,
+              .placeholder = i18n::tr("ui.dialogs.file.filter-placeholder"),
+              .fontSize = Style::fontSizeBody * scale,
+              .controlHeight = Style::controlHeight * scale,
+              .horizontalPadding = Style::spaceMd * scale,
+              .width = 320.0f * scale,
+              .flexGrow = 1.0f,
+              .onChange =
+                  [this](const std::string& text) {
+                    m_filterQuery = text;
+                    applyFilter(true);
+                  },
+              .onSubmit = [this](const std::string&) { activateSelection(); },
+          }),
+          ui::spacer(),
+          ui::button({
+              .out = &m_hiddenToggle,
+              .glyph = "eye",
+              .glyphSize = Style::fontSizeBody * scale,
+              .variant = ButtonVariant::Default,
+              .minWidth = Style::controlHeightSm * scale,
+              .minHeight = Style::controlHeightSm * scale,
+              .padding = Style::spaceXs * scale,
+              .radius = Style::scaledRadiusMd(scale),
+              .onClick = [this]() { DeferredCall::callLater([this]() { setShowHiddenFiles(!m_showHiddenFiles); }); },
+          }),
+          ui::button({
+              .out = &m_viewToggle,
+              .glyphSize = Style::fontSizeBody * scale,
+              .variant = ButtonVariant::Default,
+              .minWidth = Style::controlHeightSm * scale,
+              .minHeight = Style::controlHeightSm * scale,
+              .padding = Style::spaceXs * scale,
+              .radius = Style::scaledRadiusMd(scale),
+              .onClick = [this]() {
+                DeferredCall::callLater([this]() {
+                  setViewMode(m_viewMode == ViewMode::List ? ViewMode::Grid : ViewMode::List);
+                });
+              },
+          })
+      )
+  );
 
-  auto closeButton = std::make_unique<Button>();
-  closeButton->setGlyph("close");
-  configureIconButton(closeButton.get());
-  closeButton->setOnClick([this]() { DeferredCall::callLater([this]() { cancelDialog(); }); });
-  header->addChild(std::move(closeButton));
-  root->addChild(std::move(header));
-
-  auto breadcrumb = std::make_unique<Flex>();
-  breadcrumb->setDirection(FlexDirection::Horizontal);
-  breadcrumb->setAlign(FlexAlign::Center);
-  breadcrumb->setGap(Style::spaceXs * scale);
-  breadcrumb->setClipChildren(true);
-  breadcrumb->setFillWidth(true);
-  breadcrumb->setMinHeight(Style::controlHeightSm * scale);
-  m_breadcrumbRow = breadcrumb.get();
-  root->addChild(std::move(breadcrumb));
-
-  auto toolbar = std::make_unique<Flex>();
-  toolbar->setDirection(FlexDirection::Horizontal);
-  toolbar->setAlign(FlexAlign::Center);
-  toolbar->setGap(Style::spaceSm * scale);
-
-  auto searchInput = std::make_unique<Input>();
-  searchInput->setPlaceholder(i18n::tr("ui.dialogs.file.filter-placeholder"));
-  searchInput->setFontSize(Style::fontSizeBody * scale);
-  searchInput->setControlHeight(Style::controlHeight * scale);
-  searchInput->setHorizontalPadding(Style::spaceMd * scale);
-  searchInput->setSize(320.0f * scale, 0.0f);
-  searchInput->setFlexGrow(1.0f);
-  searchInput->setOnChange([this](const std::string& text) {
-    m_filterQuery = text;
-    applyFilter(true);
+  auto listContainer = ui::column({
+      .out = &m_listContainer,
+      .align = FlexAlign::Stretch,
+      .gap = Style::spaceSm * scale,
+      .flexGrow = 1.0f,
   });
-  searchInput->setOnSubmit([this](const std::string&) { activateSelection(); });
-  m_searchInput = static_cast<Input*>(toolbar->addChild(std::move(searchInput)));
 
-  auto backButton = std::make_unique<Button>();
-  backButton->setGlyph("arrow-big-up");
-  configureIconButton(backButton.get());
-  backButton->setOnClick([this]() { DeferredCall::callLater([this]() { navigateUp(); }); });
-  m_backButton = static_cast<Button*>(toolbar->addChild(std::move(backButton)));
-
-  toolbar->addChild(std::make_unique<Spacer>());
-
-  auto sortLabel = std::make_unique<Label>();
-  sortLabel->setFontSize(Style::fontSizeCaption * scale);
-  m_sortLabel = static_cast<Label*>(toolbar->addChild(std::move(sortLabel)));
-
-  auto hiddenToggle = std::make_unique<Button>();
-  hiddenToggle->setGlyph("eye");
-  hiddenToggle->setVariant(ButtonVariant::Tab);
-  configureIconButton(hiddenToggle.get());
-  hiddenToggle->setOnClick([this]() { DeferredCall::callLater([this]() { setShowHiddenFiles(!m_showHiddenFiles); }); });
-  m_hiddenToggle = static_cast<Button*>(toolbar->addChild(std::move(hiddenToggle)));
-
-  auto viewToggle = std::make_unique<Button>();
-  viewToggle->setVariant(ButtonVariant::Default);
-  configureIconButton(viewToggle.get());
-  viewToggle->setOnClick([this]() {
-    DeferredCall::callLater([this]() { setViewMode(m_viewMode == ViewMode::List ? ViewMode::Grid : ViewMode::List); });
+  auto listCard = ui::column({
+      .align = FlexAlign::Stretch,
+      .gap = Style::spaceXs * scale,
+      .flexGrow = 1.0f,
+      .configure = [scale](Flex& card) {
+        card.setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
+        card.setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), Style::borderWidth);
+        card.setRadius(Style::scaledRadiusXl(scale));
+        card.setPadding(Style::cardPadding * scale);
+        card.setClipChildren(true);
+      },
   });
-  m_viewToggle = static_cast<Button*>(toolbar->addChild(std::move(viewToggle)));
 
-  root->addChild(std::move(toolbar));
+  listCard->addChild(
+      ui::row(
+          {
+              .align = FlexAlign::Center,
+              .gap = Style::spaceSm * scale,
+          },
+          ui::button({
+              .out = &m_nameSortButton,
+              .text = i18n::tr("ui.dialogs.file.sort.name"),
+              .contentAlign = ButtonContentAlign::Start,
+              .variant = ButtonVariant::Ghost,
+              .minHeight = Style::controlHeightSm * scale,
+              .paddingV = Style::spaceXs * scale,
+              .paddingH = Style::spaceSm * scale,
+              .flexGrow = 1.0f,
+              .onClick = [this]() { DeferredCall::callLater([this]() { setSort(FileDialogSortField::Name); }); },
+          }),
+          ui::button({
+              .out = &m_sizeSortButton,
+              .text = i18n::tr("ui.dialogs.file.sort.size"),
+              .contentAlign = ButtonContentAlign::End,
+              .variant = ButtonVariant::Ghost,
+              .minWidth = 96.0f * scale,
+              .minHeight = Style::controlHeightSm * scale,
+              .paddingV = Style::spaceXs * scale,
+              .paddingH = Style::spaceSm * scale,
+              .onClick = [this]() { DeferredCall::callLater([this]() { setSort(FileDialogSortField::Size); }); },
+          }),
+          ui::button({
+              .out = &m_dateSortButton,
+              .text = i18n::tr("ui.dialogs.file.sort.date"),
+              .contentAlign = ButtonContentAlign::End,
+              .variant = ButtonVariant::Ghost,
+              .minWidth = 152.0f * scale,
+              .minHeight = Style::controlHeightSm * scale,
+              .paddingV = Style::spaceXs * scale,
+              .paddingH = Style::spaceSm * scale,
+              .onClick = [this]() { DeferredCall::callLater([this]() { setSort(FileDialogSortField::Modified); }); },
+          })
+      )
+  );
 
-  auto listContainer = std::make_unique<Flex>();
-  listContainer->setDirection(FlexDirection::Vertical);
-  listContainer->setAlign(FlexAlign::Stretch);
-  listContainer->setGap(Style::spaceSm * scale);
-  listContainer->setFlexGrow(1.0f);
-  m_listContainer = listContainer.get();
-
-  auto listHeader = std::make_unique<Flex>();
-  listHeader->setDirection(FlexDirection::Horizontal);
-  listHeader->setAlign(FlexAlign::Center);
-  listHeader->setGap(Style::spaceSm * scale);
-
-  const auto configureHeaderButton = [scale](Button* button) {
-    button->setVariant(ButtonVariant::Ghost);
-    button->setMinHeight(Style::controlHeightSm * scale);
-    button->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
-  };
-
-  auto nameSort = std::make_unique<Button>();
-  nameSort->setText(i18n::tr("ui.dialogs.file.sort.name"));
-  configureHeaderButton(nameSort.get());
-  nameSort->setContentAlign(ButtonContentAlign::Start);
-  nameSort->setFlexGrow(1.0f);
-  nameSort->setOnClick([this]() { DeferredCall::callLater([this]() { setSort(FileDialogSortField::Name); }); });
-  m_nameSortButton = static_cast<Button*>(listHeader->addChild(std::move(nameSort)));
-
-  auto sizeSort = std::make_unique<Button>();
-  sizeSort->setText(i18n::tr("ui.dialogs.file.sort.size"));
-  configureHeaderButton(sizeSort.get());
-  sizeSort->setMinWidth(96.0f * scale);
-  sizeSort->setContentAlign(ButtonContentAlign::End);
-  sizeSort->setOnClick([this]() { DeferredCall::callLater([this]() { setSort(FileDialogSortField::Size); }); });
-  m_sizeSortButton = static_cast<Button*>(listHeader->addChild(std::move(sizeSort)));
-
-  auto dateSort = std::make_unique<Button>();
-  dateSort->setText(i18n::tr("ui.dialogs.file.sort.date"));
-  configureHeaderButton(dateSort.get());
-  dateSort->setMinWidth(152.0f * scale);
-  dateSort->setContentAlign(ButtonContentAlign::End);
-  dateSort->setOnClick([this]() { DeferredCall::callLater([this]() { setSort(FileDialogSortField::Modified); }); });
-  m_dateSortButton = static_cast<Button*>(listHeader->addChild(std::move(dateSort)));
-
-  listContainer->addChild(std::move(listHeader));
-  listContainer->addChild(std::make_unique<Separator>());
+  listCard->addChild(ui::separator({.gradientEdges = false}));
 
   m_listAdapter = std::make_unique<FileListAdapter>(scale);
   m_listAdapter->setEntries(&m_visibleEntries);
   m_listAdapter->setSelectableFn([this](std::size_t idx) { return isSelectableIndex(idx); });
-  m_listAdapter->setOnActivate(
-      [this](std::size_t idx) { DeferredCall::callLater([this, idx]() { handleEntryClick(idx); }); });
+  m_listAdapter->setOnActivate([this](std::size_t idx) {
+    DeferredCall::callLater([this, idx]() { handleEntryClick(idx); });
+  });
 
-  auto listGrid = std::make_unique<VirtualGridView>();
-  listGrid->setColumns(1);
-  listGrid->setSquareCells(false);
-  listGrid->setCellHeight(m_listRowHeight);
-  listGrid->setRowGap(0.0f);
-  listGrid->setColumnGap(0.0f);
-  listGrid->setOverscanRows(kListRowOverscan);
-  listGrid->setFlexGrow(1.0f);
-  listGrid->scrollView().setScrollbarVisible(true);
-  listGrid->scrollView().setCardStyle(scale);
-  listGrid->setAdapter(m_listAdapter.get());
-  listGrid->setOnSelectionChanged([this](std::optional<std::size_t>) { syncGridSelection(); });
-  m_listGrid = static_cast<VirtualGridView*>(listContainer->addChild(std::move(listGrid)));
+  listCard->addChild(
+      ui::virtualGridView({
+          .out = &m_listGrid,
+          .columns = 1,
+          .cellHeight = m_listRowHeight,
+          .squareCells = false,
+          .columnGap = 0.0f,
+          .rowGap = 0.0f,
+          .overscanRows = kListRowOverscan,
+          .scrollbarVisible = true,
+          .adapter = m_listAdapter.get(),
+          .flexGrow = 1.0f,
+          .onSelectionChanged = [this](std::optional<std::size_t>) { syncGridSelection(); },
+      })
+  );
 
-  auto listEmpty = std::make_unique<Label>();
-  listEmpty->setCaptionStyle();
-  listEmpty->setVisible(false);
-  listEmpty->setParticipatesInLayout(false);
-  m_listEmptyLabel = static_cast<Label*>(listContainer->addChild(std::move(listEmpty)));
+  listContainer->addChild(std::move(listCard));
+
+  listContainer->addChild(
+      ui::label({
+          .out = &m_listEmptyLabel,
+          .visible = false,
+          .participatesInLayout = false,
+          .configure = [](Label& label) { label.setCaptionStyle(); },
+      })
+  );
 
   root->addChild(std::move(listContainer));
 
-  auto gridContainer = std::make_unique<Flex>();
-  gridContainer->setDirection(FlexDirection::Vertical);
-  gridContainer->setAlign(FlexAlign::Stretch);
-  gridContainer->setFlexGrow(1.0f);
-  gridContainer->setVisible(false);
-  m_gridContainer = gridContainer.get();
+  auto gridContainer = ui::column({
+      .out = &m_gridContainer,
+      .align = FlexAlign::Stretch,
+      .flexGrow = 1.0f,
+      .visible = false,
+  });
 
   m_gridAdapter = std::make_unique<FileGridAdapter>(scale, m_thumbnails);
   m_gridAdapter->setEntries(&m_visibleEntries);
   m_gridAdapter->setSelectableFn([this](std::size_t idx) { return isSelectableIndex(idx); });
-  m_gridAdapter->setOnActivate(
-      [this](std::size_t idx) { DeferredCall::callLater([this, idx]() { handleEntryClick(idx); }); });
+  m_gridAdapter->setOnActivate([this](std::size_t idx) {
+    DeferredCall::callLater([this, idx]() { handleEntryClick(idx); });
+  });
 
-  auto gridGrid = std::make_unique<VirtualGridView>();
-  gridGrid->setColumns(0);
-  gridGrid->setMinCellWidth(m_gridCellSize);
-  gridGrid->setSquareCells(true);
-  gridGrid->setRowGap(Style::spaceSm * scale);
-  gridGrid->setColumnGap(Style::spaceSm * scale);
-  gridGrid->setOverscanRows(kGridRowOverscan);
-  gridGrid->setFlexGrow(1.0f);
-  gridGrid->scrollView().setScrollbarVisible(true);
-  gridGrid->scrollView().setCardStyle(scale);
-  gridGrid->setAdapter(m_gridAdapter.get());
-  gridGrid->setOnSelectionChanged([this](std::optional<std::size_t>) { syncGridSelection(); });
-  m_gridGrid = static_cast<VirtualGridView*>(gridContainer->addChild(std::move(gridGrid)));
+  gridContainer->addChild(
+      ui::virtualGridView({
+          .out = &m_gridGrid,
+          .columns = 0,
+          .minCellWidth = m_gridCellSize,
+          .squareCells = true,
+          .columnGap = Style::spaceSm * scale,
+          .rowGap = Style::spaceSm * scale,
+          .overscanRows = kGridRowOverscan,
+          .scrollbarVisible = true,
+          .scrollCardStyleScale = scale,
+          .adapter = m_gridAdapter.get(),
+          .flexGrow = 1.0f,
+          .onSelectionChanged = [this](std::optional<std::size_t>) { syncGridSelection(); },
+      })
+  );
 
-  auto gridEmpty = std::make_unique<Label>();
-  gridEmpty->setCaptionStyle();
-  gridEmpty->setVisible(false);
-  gridEmpty->setParticipatesInLayout(false);
-  m_gridEmptyLabel = static_cast<Label*>(gridContainer->addChild(std::move(gridEmpty)));
+  gridContainer->addChild(
+      ui::label({
+          .out = &m_gridEmptyLabel,
+          .visible = false,
+          .participatesInLayout = false,
+          .configure = [](Label& label) { label.setCaptionStyle(); },
+      })
+  );
 
   root->addChild(std::move(gridContainer));
 
-  auto footer = std::make_unique<Flex>();
-  footer->setDirection(FlexDirection::Horizontal);
-  footer->setAlign(FlexAlign::Center);
-  footer->setGap(Style::spaceSm * scale);
-
-  auto filenameInput = std::make_unique<Input>();
-  filenameInput->setPlaceholder(i18n::tr("ui.dialogs.file.filename-placeholder"));
-  filenameInput->setFontSize(Style::fontSizeBody * scale);
-  filenameInput->setControlHeight(Style::controlHeight * scale);
-  filenameInput->setHorizontalPadding(Style::spaceMd * scale);
-  filenameInput->setFlexGrow(1.0f);
-  filenameInput->setOnChange([this](const std::string&) { updateControls(); });
-  filenameInput->setOnSubmit([this](const std::string&) { submitDialog(); });
-  m_filenameInput = static_cast<Input*>(footer->addChild(std::move(filenameInput)));
-
-  footer->addChild(std::make_unique<Spacer>());
-
-  auto cancelButton = std::make_unique<Button>();
-  cancelButton->setText(i18n::tr("common.actions.cancel"));
-  cancelButton->setVariant(ButtonVariant::Secondary);
-  configureDialogActionButton(*cancelButton, scale);
-  cancelButton->setOnClick([this]() { DeferredCall::callLater([this]() { cancelDialog(); }); });
-  m_cancelButton = static_cast<Button*>(footer->addChild(std::move(cancelButton)));
-
-  auto okButton = std::make_unique<Button>();
-  okButton->setVariant(ButtonVariant::Accent);
-  configureDialogActionButton(*okButton, scale);
-  okButton->setOnClick([this]() { DeferredCall::callLater([this]() { submitDialog(); }); });
-  m_okButton = static_cast<Button*>(footer->addChild(std::move(okButton)));
-
-  root->addChild(std::move(footer));
+  root->addChild(
+      ui::row(
+          {
+              .align = FlexAlign::Center,
+              .gap = Style::spaceSm * scale,
+          },
+          ui::input({
+              .out = &m_filenameInput,
+              .placeholder = i18n::tr("ui.dialogs.file.filename-placeholder"),
+              .fontSize = Style::fontSizeBody * scale,
+              .controlHeight = Style::controlHeight * scale,
+              .horizontalPadding = Style::spaceMd * scale,
+              .flexGrow = 1.0f,
+              .onChange = [this](const std::string&) { updateControls(); },
+              .onSubmit = [this](const std::string&) { submitDialog(); },
+          }),
+          ui::spacer(),
+          ui::button({
+              .out = &m_cancelButton,
+              .text = i18n::tr("common.actions.cancel"),
+              .variant = ButtonVariant::Secondary,
+              // Dialog footer action style.
+              .minWidth = 92.0f * scale,
+              .minHeight = Style::controlHeight * scale,
+              .paddingV = Style::spaceSm * scale,
+              .paddingH = Style::spaceMd * scale,
+              .radius = Style::scaledRadiusMd(scale),
+              .onClick = [this]() { DeferredCall::callLater([this]() { cancelDialog(); }); },
+          }),
+          ui::button({
+              .out = &m_okButton,
+              .variant = ButtonVariant::Primary,
+              // Dialog footer action style.
+              .minWidth = 92.0f * scale,
+              .minHeight = Style::controlHeight * scale,
+              .paddingV = Style::spaceSm * scale,
+              .paddingH = Style::spaceMd * scale,
+              .radius = Style::scaledRadiusMd(scale),
+              .onClick = [this]() { DeferredCall::callLater([this]() { submitDialog(); }); },
+          })
+      )
+  );
   setRoot(std::move(root));
 
   if (m_animations != nullptr && this->root() != nullptr) {
@@ -435,7 +470,7 @@ void FileDialogView::onClose() {
   m_homeButton = nullptr;
   m_backButton = nullptr;
   m_searchInput = nullptr;
-  m_sortLabel = nullptr;
+
   m_hiddenToggle = nullptr;
   m_viewToggle = nullptr;
   m_listContainer = nullptr;
@@ -665,29 +700,53 @@ void FileDialogView::rebuildBreadcrumb() {
 
   const float scale = contentScale();
 
-  auto home = std::make_unique<Button>();
-  home->setGlyph("home");
-  home->setVariant(ButtonVariant::Ghost);
-  home->setPadding(Style::spaceXs * scale);
-  home->setMinHeight(Style::controlHeightSm * scale);
-  home->setOnClick([this]() { DeferredCall::callLater([this]() { navigateHome(); }); });
-  m_homeButton = static_cast<Button*>(m_breadcrumbRow->addChild(std::move(home)));
+  m_breadcrumbRow->addChild(
+      ui::button({
+          .out = &m_backButton,
+          .glyph = "arrow-big-up",
+          .glyphSize = Style::fontSizeBody * scale,
+          .variant = ButtonVariant::Default,
+          .minWidth = Style::controlHeightSm * scale,
+          .minHeight = Style::controlHeightSm * scale,
+          .padding = Style::spaceXs * scale,
+          .radius = Style::scaledRadiusMd(scale),
+          .onClick = [this]() { DeferredCall::callLater([this]() { navigateUp(); }); },
+      })
+  );
+
+  m_breadcrumbRow->addChild(
+      ui::button({
+          .out = &m_homeButton,
+          .glyph = "home",
+          .glyphSize = Style::fontSizeBody * scale,
+          .variant = ButtonVariant::Default,
+          .minWidth = Style::controlHeightSm * scale,
+          .minHeight = Style::controlHeightSm * scale,
+          .padding = Style::spaceXs * scale,
+          .radius = Style::scaledRadiusMd(scale),
+          .onClick = [this]() { DeferredCall::callLater([this]() { navigateHome(); }); },
+      })
+  );
 
   std::filesystem::path partial("/");
   for (const auto& component : m_currentDirectory.relative_path()) {
-    auto sep = std::make_unique<Label>();
-    sep->setText("/");
-    sep->setFontSize(Style::fontSizeCaption * scale);
-    m_breadcrumbRow->addChild(std::move(sep));
+    m_breadcrumbRow->addChild(
+        ui::label({
+            .text = "/",
+            .fontSize = Style::fontSizeCaption * scale,
+        })
+    );
 
     partial /= component;
-    auto segment = std::make_unique<Button>();
-    segment->setText(component.string());
-    segment->setVariant(ButtonVariant::Ghost);
-    segment->setPadding(Style::spaceXs * scale);
     const auto target = partial;
-    segment->setOnClick([this, target]() { DeferredCall::callLater([this, target]() { navigateInto(target); }); });
-    m_breadcrumbRow->addChild(std::move(segment));
+    m_breadcrumbRow->addChild(
+        ui::button({
+            .text = component.string(),
+            .variant = ButtonVariant::Ghost,
+            .padding = Style::spaceXs * scale,
+            .onClick = [this, target]() { DeferredCall::callLater([this, target]() { navigateInto(target); }); },
+        })
+    );
   }
 }
 
@@ -744,8 +803,9 @@ void FileDialogView::updateControls() {
   }
 
   if (m_backButton != nullptr) {
-    m_backButton->setEnabled(m_currentDirectory.has_parent_path() &&
-                             m_currentDirectory != m_currentDirectory.root_path());
+    m_backButton->setEnabled(
+        m_currentDirectory.has_parent_path() && m_currentDirectory != m_currentDirectory.root_path()
+    );
   }
   if (m_hiddenToggle != nullptr) {
     m_hiddenToggle->setSelected(m_showHiddenFiles);
@@ -754,23 +814,23 @@ void FileDialogView::updateControls() {
     m_viewToggle->setGlyph(m_viewMode == ViewMode::List ? "layout-grid" : "list");
   }
 
-  if (m_sortLabel != nullptr) {
-    std::string field = i18n::tr("ui.dialogs.file.sort.name");
-    switch (m_sortField) {
-    case FileDialogSortField::Name:
-      field = i18n::tr("ui.dialogs.file.sort.name");
-      break;
-    case FileDialogSortField::Size:
-      field = i18n::tr("ui.dialogs.file.sort.size");
-      break;
-    case FileDialogSortField::Modified:
-      field = i18n::tr("ui.dialogs.file.sort.date");
-      break;
-    }
-    m_sortLabel->setText(i18n::tr("ui.dialogs.file.sort.summary", "field", field, "direction",
-                                  m_sortOrder == FileDialogSortOrder::Ascending
-                                      ? i18n::tr("ui.dialogs.file.sort.ascending")
-                                      : i18n::tr("ui.dialogs.file.sort.descending")));
+  const std::string arrow = m_sortOrder == FileDialogSortOrder::Ascending
+      ? " " + i18n::tr("ui.dialogs.file.sort.ascending")
+      : " " + i18n::tr("ui.dialogs.file.sort.descending");
+  if (m_nameSortButton != nullptr) {
+    m_nameSortButton->setText(
+        i18n::tr("ui.dialogs.file.sort.name") + (m_sortField == FileDialogSortField::Name ? arrow : "")
+    );
+  }
+  if (m_sizeSortButton != nullptr) {
+    m_sizeSortButton->setText(
+        i18n::tr("ui.dialogs.file.sort.size") + (m_sortField == FileDialogSortField::Size ? arrow : "")
+    );
+  }
+  if (m_dateSortButton != nullptr) {
+    m_dateSortButton->setText(
+        i18n::tr("ui.dialogs.file.sort.date") + (m_sortField == FileDialogSortField::Modified ? arrow : "")
+    );
   }
 
   if (m_listContainer != nullptr) {
@@ -1093,8 +1153,11 @@ std::filesystem::path FileDialogView::homeDirectory() const {
 
 std::filesystem::path FileDialogView::resolveStartDirectory(const std::filesystem::path& preferred) const {
   std::error_code ec;
-  if (!preferred.empty() && std::filesystem::exists(preferred, ec) && !ec &&
-      std::filesystem::is_directory(preferred, ec) && !ec) {
+  if (!preferred.empty()
+      && std::filesystem::exists(preferred, ec)
+      && !ec
+      && std::filesystem::is_directory(preferred, ec)
+      && !ec) {
     return preferred;
   }
 

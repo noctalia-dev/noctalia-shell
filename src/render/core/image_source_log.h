@@ -18,8 +18,11 @@ namespace ImageSourceLog {
         return false;
       }
 
-      return (source[0] == 'd' || source[0] == 'D') && (source[1] == 'a' || source[1] == 'A') &&
-             (source[2] == 't' || source[2] == 'T') && (source[3] == 'a' || source[3] == 'A') && source[4] == ':';
+      return (source[0] == 'd' || source[0] == 'D')
+          && (source[1] == 'a' || source[1] == 'A')
+          && (source[2] == 't' || source[2] == 'T')
+          && (source[3] == 'a' || source[3] == 'A')
+          && source[4] == ':';
     }
 
     [[nodiscard]] inline std::string truncatedWithSize(std::string_view value, std::size_t maxBytes) {
@@ -27,8 +30,10 @@ namespace ImageSourceLog {
         return std::string(value);
       }
 
-      return StringUtils::truncateUtf8(value, maxBytes) + " ... [truncated, original=" + std::to_string(value.size()) +
-             " bytes]";
+      return StringUtils::truncateUtf8(value, maxBytes)
+          + " ... [truncated, original="
+          + std::to_string(value.size())
+          + " bytes]";
     }
 
   } // namespace detail

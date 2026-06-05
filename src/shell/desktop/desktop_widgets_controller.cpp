@@ -3,8 +3,10 @@
 #include "ipc/ipc_service.h"
 #include "pipewire/pipewire_spectrum.h"
 #include "shell/desktop/desktop_widget_layout.h"
-#include "shell/desktop/desktop_widgets_editor.h"
 #include "shell/desktop/desktop_widgets_host.h"
+#include "shell/lockscreen/lockscreen_widgets_controller.h"
+#include "shell/widgets_editor/background_widgets_editor.h"
+#include "shell/widgets_editor/background_widgets_editor_config.h"
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
@@ -101,16 +103,18 @@ DesktopWidgetsController::DesktopWidgetsController() = default;
 
 DesktopWidgetsController::~DesktopWidgetsController() = default;
 
-void DesktopWidgetsController::initialize(WaylandConnection& wayland, ConfigService* config,
-                                          PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather,
-                                          RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient,
-                                          SystemMonitorService* sysmon) {
+void DesktopWidgetsController::initialize(
+    WaylandConnection& wayland, ConfigService* config, PipeWireSpectrum* pipewireSpectrum,
+    const WeatherService* weather, RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient,
+    SystemMonitorService* sysmon, LockscreenWidgetsController* lockscreenWidgets
+) {
   m_wayland = &wayland;
   m_config = config;
+  m_lockscreenWidgets = lockscreenWidgets;
   m_renderContext = renderContext;
   m_host = std::make_unique<DesktopWidgetsHost>();
   m_host->initialize(wayland, config, pipewireSpectrum, weather, renderContext, mpris, httpClient, sysmon);
-  m_editor = std::make_unique<DesktopWidgetsEditor>();
+  m_editor = std::make_unique<BackgroundWidgetsEditor>(BackgroundWidgetsEditorProfile::desktop());
   m_editor->initialize(wayland, config, pipewireSpectrum, weather, renderContext, mpris, httpClient, sysmon);
   m_editor->setExitRequestedCallback([this]() { exitEdit(); });
   loadSnapshotFromConfig();
@@ -118,7 +122,7 @@ void DesktopWidgetsController::initialize(WaylandConnection& wayland, ConfigServ
   applyVisibility();
 
   if (m_config != nullptr) {
-    m_config->addReloadCallback([this]() { handleConfigReload(); });
+    m_config->addReloadCallback([this]() { handleConfigReload(); }, "desktop-widgets");
   }
 }
 
@@ -129,7 +133,8 @@ void DesktopWidgetsController::registerIpc(IpcService& ipc) {
         enterEdit();
         return "ok\n";
       },
-      "desktop-widgets-edit", "Open the desktop widgets editor");
+      "desktop-widgets-edit", "Open the desktop widgets editor"
+  );
 
   ipc.registerHandler(
       "desktop-widgets-exit",
@@ -137,7 +142,8 @@ void DesktopWidgetsController::registerIpc(IpcService& ipc) {
         exitEdit();
         return "ok\n";
       },
-      "desktop-widgets-exit", "Close the desktop widgets editor");
+      "desktop-widgets-exit", "Close the desktop widgets editor"
+  );
 
   ipc.registerHandler(
       "desktop-widgets-toggle-edit",
@@ -145,7 +151,8 @@ void DesktopWidgetsController::registerIpc(IpcService& ipc) {
         toggleEdit();
         return "ok\n";
       },
-      "desktop-widgets-toggle-edit", "Toggle desktop widgets edit mode");
+      "desktop-widgets-toggle-edit", "Toggle desktop widgets edit mode"
+  );
 }
 
 void DesktopWidgetsController::onOutputChange() {
@@ -197,11 +204,17 @@ void DesktopWidgetsController::enterEdit() {
   if (!m_initialized || m_editor == nullptr || m_host == nullptr || isEditing()) {
     return;
   }
+  if (m_lockscreenWidgets != nullptr && m_lockscreenWidgets->isEditing()) {
+    m_lockscreenWidgets->exitEdit();
+  }
   if (m_config != nullptr && !m_config->config().desktopWidgets.enabled) {
     return;
   }
-  m_host->hide();
+  // Open the editor before tearing down host widgets so the PipeWire spectrum
+  // listener hand-off does not briefly drop to zero listeners (which resets the
+  // stream and leaves a new editor instance with empty spectrum values).
   m_editor->open(m_snapshot);
+  m_host->hide();
 }
 
 void DesktopWidgetsController::exitEdit() {
@@ -209,8 +222,10 @@ void DesktopWidgetsController::exitEdit() {
     return;
   }
 
-  m_snapshot = m_editor->close();
+  m_snapshot = m_editor->snapshot();
   normalizeSnapshot();
+  m_host->show(m_snapshot);
+  (void)m_editor->close();
   saveSnapshotToConfig();
   applyVisibility();
 }
@@ -221,6 +236,20 @@ void DesktopWidgetsController::toggleEdit() {
   } else {
     enterEdit();
   }
+}
+
+void DesktopWidgetsController::suppressDisplay() {
+  m_displaySuppressed = true;
+  if (isEditing()) {
+    exitEdit();
+  } else if (m_host != nullptr) {
+    m_host->hide();
+  }
+}
+
+void DesktopWidgetsController::unsuppressDisplay() {
+  m_displaySuppressed = false;
+  applyVisibility();
 }
 
 bool DesktopWidgetsController::isEditing() const noexcept { return m_editor != nullptr && m_editor->isOpen(); }
@@ -273,9 +302,12 @@ void DesktopWidgetsController::applyVisibility() {
     return;
   }
 
-  if (!isEditing()) {
-    m_host->show(m_snapshot);
+  if (m_displaySuppressed || isEditing()) {
+    m_host->hide();
+    return;
   }
+
+  m_host->show(m_snapshot);
 }
 
 void DesktopWidgetsController::handleConfigReload() {

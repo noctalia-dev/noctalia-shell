@@ -72,8 +72,15 @@ namespace {
     }
 
     const auto ticks = mtime.time_since_epoch().count();
-    const std::string key = sourcePath + '\n' + std::to_string(size) + '\n' + std::to_string(ticks) + '\n' +
-                            std::to_string(kThumbnailTargetPx) + '\n' + std::string(kThumbnailCacheVersion);
+    const std::string key = sourcePath
+        + '\n'
+        + std::to_string(size)
+        + '\n'
+        + std::to_string(ticks)
+        + '\n'
+        + std::to_string(kThumbnailTargetPx)
+        + '\n'
+        + std::string(kThumbnailCacheVersion);
     return thumbnailCacheDir() / (hex64(fnv1a64(key)) + ".webp");
   }
 
@@ -372,6 +379,27 @@ bool ThumbnailService::uploadPending(TextureManager& textures) {
     notifyReady(job.path, handle);
   }
   return changed;
+}
+
+void ThumbnailService::invalidateGpuResources(TextureManager& textures) {
+  m_textureManager = &textures;
+
+  std::vector<std::string> livePaths;
+  livePaths.reserve(m_entries.size());
+  for (auto& [path, entry] : m_entries) {
+    if (entry.handle.id != 0) {
+      m_textureManager->unload(entry.handle);
+    }
+    entry.handle = {};
+    entry.failed = false;
+    if (entry.refCount > 0) {
+      livePaths.push_back(path);
+    }
+  }
+
+  for (const std::string& path : livePaths) {
+    enqueueDecodeIfNeeded(path);
+  }
 }
 
 void ThumbnailService::doAddPollFds(std::vector<pollfd>& fds) {

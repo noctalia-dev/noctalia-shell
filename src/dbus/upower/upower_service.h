@@ -13,6 +13,18 @@ namespace sdbus {
   class IProxy;
 } // namespace sdbus
 
+enum class UPowerDeviceType : std::uint32_t {
+  Unknown = 0,
+  LinePower = 1,
+  Battery = 2,
+  Ups = 3,
+  Monitor = 4,
+  Mouse = 5,
+  Keyboard = 6,
+  Pda = 7,
+  Phone = 8,
+};
+
 enum class BatteryState : std::uint8_t {
   Unknown = 0,
   Charging = 1,
@@ -27,9 +39,11 @@ enum class BatteryState : std::uint8_t {
 
 struct UPowerState {
   double percentage = 0.0;
+  double energyRate = 0.0; // watts
   BatteryState state = BatteryState::Unknown;
   std::int64_t timeToEmpty = 0; // seconds
   std::int64_t timeToFull = 0;  // seconds
+  double energy = 0.0;          // Wh
   bool isPresent = false;
   bool onBattery = false;
 
@@ -42,13 +56,19 @@ struct UPowerDeviceInfo {
   std::string vendor;
   std::string model;
   std::string serial;
-  std::uint32_t type = 0;
+  double energyFull = 0.0;       // Wh
+  double energyFullDesign = 0.0; // Wh
+  UPowerDeviceType type = UPowerDeviceType::Unknown;
   bool powerSupply = false;
   bool isPresent = false;
   UPowerState state;
 
   bool operator==(const UPowerDeviceInfo&) const = default;
+
+  [[nodiscard]] bool isLaptopBattery() const { return type == UPowerDeviceType::Battery && powerSupply; }
 };
+
+[[nodiscard]] bool upowerDeviceMatchesSelector(const UPowerDeviceInfo& info, std::string_view selector);
 
 class UPowerService {
 public:
@@ -62,6 +82,8 @@ public:
   [[nodiscard]] const UPowerState& state() const noexcept { return m_state; }
   [[nodiscard]] UPowerState stateForDevice(std::string_view selector) const;
   [[nodiscard]] std::vector<UPowerDeviceInfo> batteryDevices() const;
+  [[nodiscard]] const UPowerDeviceInfo* defaultSystemBattery() const noexcept;
+  [[nodiscard]] const UPowerDeviceInfo* deviceForSelector(std::string_view selector) const;
 
 private:
   struct TrackedDevice {
@@ -72,8 +94,6 @@ private:
   [[nodiscard]] UPowerState readDefaultState() const;
   [[nodiscard]] UPowerState readDeviceState(sdbus::IProxy& proxy) const;
   [[nodiscard]] UPowerDeviceInfo readDeviceInfo(std::string path, sdbus::IProxy& proxy) const;
-  [[nodiscard]] const UPowerDeviceInfo* defaultSystemBattery() const noexcept;
-  [[nodiscard]] const UPowerDeviceInfo* findDevice(std::string_view selector) const;
   void refreshDisplayDeviceProxy();
   void emitChangedIfNeeded(bool devicesChanged);
   void rescanDevices();

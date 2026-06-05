@@ -8,13 +8,16 @@ Will use jeepney for the D-Bus signal if available, otherwise runs dbus-send.
 """
 
 import configparser
+import os
 import sys
 from pathlib import Path
 
-kglobals = Path('~/.config/kdeglobals').expanduser()
-scheme = (
-    Path('~/.local/share/color-schemes') / sys.argv[1]
-).with_suffix('.colors').expanduser()
+# XDG Base Directory spec: use the env var if set, else the spec default.
+config_home = Path(os.environ.get('XDG_CONFIG_HOME') or '~/.config').expanduser()
+data_home = Path(os.environ.get('XDG_DATA_HOME') or '~/.local/share').expanduser()
+
+kglobals = config_home / 'kdeglobals'
+scheme = (data_home / 'color-schemes' / sys.argv[1]).with_suffix('.colors')
 
 kcfg = configparser.RawConfigParser()
 kcfg.optionxform = lambda option: option

@@ -19,6 +19,10 @@ public:
 
   void create() override;
   [[nodiscard]] bool wantsSecondTicks() const override { return true; }
+  bool applySetting(
+      const std::string& key, const WidgetSettingValue& value,
+      const std::unordered_map<std::string, WidgetSettingValue>& allSettings, Renderer& renderer
+  ) override;
 
 private:
   void doLayout(Renderer& renderer) override;
@@ -27,7 +31,6 @@ private:
   void layoutVertical(Renderer& renderer, float scale);
   void layoutButtons(Renderer& renderer, float scale);
   void sync(Renderer& renderer);
-  [[nodiscard]] std::string resolveArtworkPath() const;
   void applyShadow();
 
   MprisService* m_mpris;

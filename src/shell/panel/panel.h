@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <string_view>
 
 class AnimationManager;
@@ -69,8 +70,18 @@ public:
   [[nodiscard]] Node* root() const noexcept { return m_root ? m_root.get() : m_rootPtr; }
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
   [[nodiscard]] float panelCardOpacity() const noexcept { return m_panelCardOpacity; }
+  [[nodiscard]] bool panelBordersEnabled() const noexcept { return m_panelBordersEnabled; }
 
   void setContentScale(float scale) noexcept { m_contentScale = scale; }
+  void setPendingOpenContext(std::string_view context) { m_pendingOpenContext = std::string(context); }
+  [[nodiscard]] std::string_view pendingOpenContext() const noexcept { return m_pendingOpenContext; }
+  void setPanelBordersEnabled(bool enabled) noexcept {
+    if (m_panelBordersEnabled == enabled) {
+      return;
+    }
+    m_panelBordersEnabled = enabled;
+    onPanelBordersChanged(enabled);
+  }
   void setPanelCardOpacity(float opacity) noexcept {
     const float clamped = std::clamp(opacity, 0.0f, 1.0f);
     if (m_panelCardOpacity == clamped) {
@@ -92,11 +103,14 @@ protected:
   void setRoot(std::unique_ptr<Node> root) { m_root = std::move(root); }
   void clearReleasedRoot() noexcept { m_rootPtr = nullptr; }
   virtual void onPanelCardOpacityChanged(float opacity) { (void)opacity; }
+  virtual void onPanelBordersChanged(bool enabled) { (void)enabled; }
   virtual void doLayout(Renderer& renderer, float width, float height) = 0;
   virtual void doUpdate(Renderer& renderer) { (void)renderer; }
 
   float m_contentScale = 1.0f;
   float m_panelCardOpacity = 1.0f;
+  bool m_panelBordersEnabled = true;
+  std::string m_pendingOpenContext;
   AnimationManager* m_animations = nullptr;
 
 private:

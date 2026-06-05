@@ -31,6 +31,23 @@ namespace {
       .done = &Surface::handleFrameDone,
   };
 
+  void surfaceEnter(void* data, wl_surface* surface, wl_output* output) {
+    auto* self = static_cast<Surface*>(data);
+    self->onSurfaceOutputEnter(surface, output);
+  }
+
+  void surfaceLeave(void* data, wl_surface* surface, wl_output* output) {
+    auto* self = static_cast<Surface*>(data);
+    self->onSurfaceOutputLeave(surface, output);
+  }
+
+  const wl_surface_listener kSurfaceListener = {
+      .enter = surfaceEnter,
+      .leave = surfaceLeave,
+      .preferred_buffer_scale = nullptr,
+      .preferred_buffer_transform = nullptr,
+  };
+
   void preferredFractionalScale(void* data, wp_fractional_scale_v1* /*fractionalScale*/, std::uint32_t scale) {
     auto* self = static_cast<Surface*>(data);
     self->onPreferredFractionalScale(scale);
@@ -60,8 +77,10 @@ namespace {
   bool idleProfileEnabled() {
     static const bool enabled = [] {
       const char* value = std::getenv("NOCTALIA_IDLE_PROFILE");
-      return value != nullptr && value[0] != '\0' && std::string_view(value) != "0" &&
-             std::string_view(value) != "false";
+      return value != nullptr
+          && value[0] != '\0'
+          && std::string_view(value) != "0"
+          && std::string_view(value) != "false";
     }();
     return enabled;
   }
@@ -151,8 +170,10 @@ namespace {
 
     auto& entry = state.surfaces[&surface];
     if (entry.label.empty()) {
-      entry.label = std::format("{}@{:x} {}x{}", typeid(surface).name(), reinterpret_cast<std::uintptr_t>(&surface),
-                                surface.width(), surface.height());
+      entry.label = std::format(
+          "{}@{:x} {}x{}", typeid(surface).name(), reinterpret_cast<std::uintptr_t>(&surface), surface.width(),
+          surface.height()
+      );
     }
     addSurfaceProfileEvent(entry, event, ms);
   }
@@ -169,6 +190,18 @@ namespace {
     } else if (ms >= kSlowSurfaceOperationDebugMs) {
       kLog.debug(fmt, std::forward<Args>(args)...);
     }
+  }
+
+  std::string outputLabelForSurface(const WaylandConnection& connection, wl_surface* surface) {
+    wl_output* wlOutput = connection.outputForSurface(surface);
+    const WaylandOutput* output = connection.findOutputByWl(wlOutput);
+    if (output == nullptr) {
+      return "unknown";
+    }
+    if (!output->connectorName.empty()) {
+      return output->connectorName;
+    }
+    return std::format("#{}", output->name);
   }
 
   class ScopedBoolFlag {
@@ -235,11 +268,42 @@ void Surface::handleFrameDone(void* data, wl_callback* callback, std::uint32_t c
   self->queueFrameWork(true, deltaMs);
 }
 
+void Surface::onSurfaceOutputEnter(wl_surface* surface, wl_output* output) {
+  if (surface != m_surface || output == nullptr) {
+    return;
+  }
+
+  m_connection.notifySurfaceOutputEnter(surface, output);
+
+  const WaylandOutput* outputInfo = m_connection.findOutputByWl(output);
+  if (outputInfo == nullptr) {
+    return;
+  }
+
+  const std::int32_t nextScale = std::max(1, outputInfo->scale);
+  if (nextScale == m_bufferScale) {
+    return;
+  }
+
+  m_bufferScale = nextScale;
+  if ((m_fractionalScale == nullptr || m_viewport == nullptr || m_fractionalScaleNumerator == 0) && m_configured) {
+    onScaleChanged();
+  }
+}
+
+void Surface::onSurfaceOutputLeave(wl_surface* surface, wl_output* output) {
+  if (surface != m_surface || output == nullptr) {
+    return;
+  }
+  m_connection.notifySurfaceOutputLeave(surface, output);
+}
+
 bool Surface::createWlSurface() {
   m_surface = wl_compositor_create_surface(m_connection.compositor());
   if (m_surface == nullptr) {
     return false;
   }
+  wl_surface_add_listener(m_surface, &kSurfaceListener, this);
 
   initializeSurfaceScaleProtocol();
 
@@ -261,13 +325,17 @@ void Surface::onConfigure(std::uint32_t width, std::uint32_t height) {
       m_renderContext->syncContentScale(m_renderTarget);
     }
   });
-  logSlowSurfaceOperation(resizeMs, "surface configure resize took {:.1f}ms ({}, {}x{} logical)", resizeMs,
-                          static_cast<const void*>(this), m_width, m_height);
+  logSlowSurfaceOperation(
+      resizeMs, "surface configure resize took {:.1f}ms ({}, {}x{} logical)", resizeMs, static_cast<const void*>(this),
+      m_width, m_height
+  );
 
   if (m_configureCallback) {
     const float callbackMs = elapsedMs([this] { m_configureCallback(m_width, m_height); });
-    logSlowSurfaceOperation(callbackMs, "surface configure callback took {:.1f}ms ({}, {}x{} logical)", callbackMs,
-                            static_cast<const void*>(this), m_width, m_height);
+    logSlowSurfaceOperation(
+        callbackMs, "surface configure callback took {:.1f}ms ({}, {}x{} logical)", callbackMs,
+        static_cast<const void*>(this), m_width, m_height
+    );
   }
   m_redrawRequested = true;
   queueFrameWork();
@@ -373,8 +441,9 @@ void Surface::resizeRenderTarget() {
   const auto bufferHeight = bufferHeightFor(m_height);
 
   m_renderTarget.setLogicalSize(m_width, m_height);
-  if (m_renderTarget.bufferWidth() == bufferWidth && m_renderTarget.bufferHeight() == bufferHeight &&
-      m_renderTarget.isReady()) {
+  if (m_renderTarget.bufferWidth() == bufferWidth
+      && m_renderTarget.bufferHeight() == bufferHeight
+      && m_renderTarget.isReady()) {
     return;
   }
   m_renderTarget.resize(bufferWidth, bufferHeight);
@@ -386,6 +455,12 @@ void Surface::onPreferredFractionalScale(std::uint32_t numerator) {
   }
 
   m_fractionalScaleNumerator = numerator;
+  const float preferredScale = std::max(1.0f, static_cast<float>(numerator) / 120.0f);
+  kLog.debug(
+      "fractional scale preferred output={} surface={} scale={:.3f} raw={}/120 logical={}x{} buffer={}x{}",
+      outputLabelForSurface(m_connection, m_surface), static_cast<const void*>(m_surface), preferredScale, numerator,
+      m_width, m_height, bufferWidthFor(m_width), bufferHeightFor(m_height)
+  );
   if (!m_configured) {
     return;
   }
@@ -453,8 +528,9 @@ void Surface::setBlurRegion(const std::vector<InputRect>& rects) {
   }
 }
 
-std::vector<InputRect> Surface::tessellateRoundedRect(int x, int y, int w, int h, float tlRadius, float trRadius,
-                                                      float brRadius, float blRadius, int stripPx) {
+std::vector<InputRect> Surface::tessellateRoundedRect(
+    int x, int y, int w, int h, float tlRadius, float trRadius, float brRadius, float blRadius, int stripPx
+) {
   std::vector<InputRect> out;
   if (w <= 0 || h <= 0) {
     return out;
@@ -531,8 +607,10 @@ std::vector<InputRect> Surface::tessellateRoundedRect(int x, int y, int w, int h
   return out;
 }
 
-std::vector<InputRect> Surface::tessellateShape(int x, int y, int w, int h, const CornerShapes& corners,
-                                                const RectInsets& logicalInset, const Radii& radii, int stripPx) {
+std::vector<InputRect> Surface::tessellateShape(
+    int x, int y, int w, int h, const CornerShapes& corners, const RectInsets& logicalInset, const Radii& radii,
+    int stripPx
+) {
   std::vector<InputRect> out;
   if (w <= 0 || h <= 0) {
     return out;
@@ -734,7 +812,7 @@ void Surface::requestRedraw() {
 }
 
 void Surface::requestFrameTick() {
-  if (!m_running || !m_configured || m_frameCallback != nullptr || m_inFrameHandler || m_inPrepareFrame) {
+  if (!m_running || !m_configured) {
     return;
   }
 
@@ -743,6 +821,15 @@ void Surface::requestFrameTick() {
   if (m_lastFrameAt.has_value()) {
     deltaMs = std::chrono::duration<float, std::milli>(now - *m_lastFrameAt).count();
   }
+
+  if (m_frameCallback != nullptr || m_inFrameHandler || m_inPrepareFrame) {
+    // Defer to handleFrameDone / the next drain, but keep the tick intent so
+    // coalesced spectrum callbacks are not lost while a frame is in flight.
+    m_frameTickPending = true;
+    m_pendingFrameDeltaMs = deltaMs;
+    return;
+  }
+
   m_lastFrameAt = now;
   queueFrameWork(true, deltaMs);
 }
@@ -764,8 +851,10 @@ void Surface::render() {
   requestFrame();
   const float renderMs = elapsedMs([this] { m_renderContext->renderScene(m_renderTarget, m_sceneRoot); });
   recordSurfaceProfileEvent(*this, SurfaceProfileEvent::Render, renderMs);
-  logSlowSurfaceOperation(renderMs, "surface render took {:.1f}ms ({}x{} logical, {}x{} buffer)", renderMs, m_width,
-                          m_height, m_renderTarget.bufferWidth(), m_renderTarget.bufferHeight());
+  logSlowSurfaceOperation(
+      renderMs, "surface render took {:.1f}ms ({}x{} logical, {}x{} buffer)", renderMs, m_width, m_height,
+      m_renderTarget.bufferWidth(), m_renderTarget.bufferHeight()
+  );
 
   if (m_sceneRoot != nullptr) {
     m_sceneRoot->clearDirty();
@@ -836,13 +925,19 @@ void Surface::preparePendingFrame() {
   const float callbackMs =
       elapsedMs([this, needsUpdate, needsLayout] { m_prepareFrameCallback(needsUpdate, needsLayout); });
   recordSurfaceProfileEvent(*this, SurfaceProfileEvent::PrepareCallback, callbackMs);
-  logSlowSurfaceOperation(callbackMs, "surface prepareFrame callback took {:.1f}ms ({}, {}x{} logical)", callbackMs,
-                          static_cast<const void*>(this), m_width, m_height);
+  logSlowSurfaceOperation(
+      callbackMs, "surface prepareFrame callback took {:.1f}ms ({}, {}x{} logical)", callbackMs,
+      static_cast<const void*>(this), m_width, m_height
+  );
 }
 
 void Surface::kickFrameLoop() {
-  if (!m_running || !m_configured || m_frameCallback != nullptr || m_inFrameHandler || m_inPrepareFrame ||
-      m_frameWorkQueued) {
+  if (!m_running
+      || !m_configured
+      || m_frameCallback != nullptr
+      || m_inFrameHandler
+      || m_inPrepareFrame
+      || m_frameWorkQueued) {
     return;
   }
 
@@ -904,22 +999,28 @@ void Surface::processQueuedFrameWork() {
     if (m_animationManager != nullptr) {
       const float tickMs = elapsedMs([this, deltaMs] { m_animationManager->tick(deltaMs); });
       recordSurfaceProfileEvent(*this, SurfaceProfileEvent::AnimationTick, tickMs);
-      logSlowSurfaceOperation(tickMs, "surface animation tick took {:.1f}ms ({}, {}x{} logical)", tickMs,
-                              static_cast<const void*>(this), m_width, m_height);
+      logSlowSurfaceOperation(
+          tickMs, "surface animation tick took {:.1f}ms ({}, {}x{} logical)", tickMs, static_cast<const void*>(this),
+          m_width, m_height
+      );
     }
 
     if (m_frameTickCallback) {
       const float callbackMs = elapsedMs([this, deltaMs] { m_frameTickCallback(deltaMs); });
       recordSurfaceProfileEvent(*this, SurfaceProfileEvent::FrameTick, callbackMs);
-      logSlowSurfaceOperation(callbackMs, "surface frame tick callback took {:.1f}ms ({}, {}x{} logical)", callbackMs,
-                              static_cast<const void*>(this), m_width, m_height);
+      logSlowSurfaceOperation(
+          callbackMs, "surface frame tick callback took {:.1f}ms ({}, {}x{} logical)", callbackMs,
+          static_cast<const void*>(this), m_width, m_height
+      );
     }
 
     if (m_updateCallback) {
       const float updateMs = elapsedMs([this] { m_updateCallback(); });
       recordSurfaceProfileEvent(*this, SurfaceProfileEvent::UpdateCallback, updateMs);
-      logSlowSurfaceOperation(updateMs, "surface update callback took {:.1f}ms ({}, {}x{} logical)", updateMs,
-                              static_cast<const void*>(this), m_width, m_height);
+      logSlowSurfaceOperation(
+          updateMs, "surface update callback took {:.1f}ms ({}, {}x{} logical)", updateMs,
+          static_cast<const void*>(this), m_width, m_height
+      );
     }
   }
 

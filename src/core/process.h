@@ -2,7 +2,9 @@
 
 #include <chrono>
 #include <cstddef>
+#include <functional>
 #include <initializer_list>
+#include <limits>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -21,25 +23,48 @@ namespace process {
     operator bool() const { return exitCode == 0 && !timedOut; }
   };
 
+  using OutputCallback = std::function<void(std::string_view chunk)>;
+  using ExitCallback = std::function<void(RunResult result)>;
+
+  struct RunCallbacks {
+    OutputCallback stdOut;
+    OutputCallback stdErr;
+    ExitCallback onExit;
+  };
+
+  struct RunOptions {
+    std::optional<std::chrono::milliseconds> timeout;
+    std::size_t maxOutputBytes = std::numeric_limits<std::size_t>::max();
+  };
+
   [[nodiscard]] bool commandExists(const char* name);
 
-  // Shell string or argv — runs fully detached (double-fork + setsid) so the child is not a
-  // direct subprocess of noctalia (hooks, idle commands, launcher parity).
+  // Shell string — runs fully detached (double-fork + setsid) so the child is not a direct
+  // subprocess of noctalia (hooks, idle commands, launcher parity).
   [[nodiscard]] bool runAsync(const std::string& command);
+  // Shell string — runs on a worker thread, captures stdout/stderr, and invokes callbacks from
+  // that worker. Output chunk views are valid only for the callback call.
+  [[nodiscard]] bool runAsync(const std::string& command, RunCallbacks callbacks, RunOptions options = {});
   [[nodiscard]] RunResult runSync(const std::string& command);
 
   // Arg vector — direct execvp; same detach semantics as runAsync(string). When activationToken is
   // non-empty, the grandchild sets XDG_ACTIVATION_TOKEN and DESKTOP_STARTUP_ID (launcher).
-  [[nodiscard]] bool runAsync(const std::vector<std::string>& args, const std::string& activationToken = {});
+  [[nodiscard]] bool runAsync(
+      const std::vector<std::string>& args, const std::string& activationToken = {}, const std::string& workingDir = {}
+  );
+  // Arg vector — runs on a worker thread, captures stdout/stderr, and invokes callbacks from that
+  // worker. Output chunk views are valid only for the callback call.
+  [[nodiscard]] bool runAsync(const std::vector<std::string>& args, RunCallbacks callbacks, RunOptions options = {});
   [[nodiscard]] bool runAsync(std::initializer_list<const char*> args);
+  [[nodiscard]] bool runAsync(std::initializer_list<const char*> args, RunCallbacks callbacks, RunOptions options = {});
   [[nodiscard]] RunResult runSync(const std::vector<std::string>& args);
   [[nodiscard]] RunResult runSync(std::initializer_list<const char*> args);
   [[nodiscard]] RunResult runSyncWithTimeout(const std::vector<std::string>& args, std::chrono::milliseconds timeout);
-  [[nodiscard]] RunResult runSyncWithTimeout(std::initializer_list<const char*> args,
-                                             std::chrono::milliseconds timeout);
-  [[nodiscard]] RunResult runSyncWithTimeoutAndOutputLimit(const std::vector<std::string>& args,
-                                                           std::chrono::milliseconds timeout,
-                                                           std::size_t maxOutputBytes);
+  [[nodiscard]] RunResult
+  runSyncWithTimeout(std::initializer_list<const char*> args, std::chrono::milliseconds timeout);
+  [[nodiscard]] RunResult runSyncWithTimeoutAndOutputLimit(
+      const std::vector<std::string>& args, std::chrono::milliseconds timeout, std::size_t maxOutputBytes
+  );
   [[nodiscard]] bool commandLineMatchesAll(const std::vector<std::string>& needles);
   [[nodiscard]] bool desktopPortalAvailable();
   [[nodiscard]] bool flatpakAppInstalled(std::string_view appId);
@@ -51,4 +76,10 @@ namespace process {
 
   [[nodiscard]] bool launchFirstAvailable(std::initializer_list<std::initializer_list<const char*>> commandVariants);
 
+  bool systemdAvailable();
+  // Run an app as a systemd service
+  void runAsyncAsSystemdService(
+      const std::vector<std::string>& args, const std::string& appName, const std::string& activationToken = {},
+      const std::string& workingDir = {}
+  );
 } // namespace process

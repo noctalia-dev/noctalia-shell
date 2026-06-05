@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace FileUtils {
@@ -74,6 +75,19 @@ namespace FileUtils {
       return {};
     }
     return data;
+  }
+
+  [[nodiscard]] inline std::string normalizeWallpaperPath(std::string_view path) {
+    if (path.empty() || path.starts_with("color:")) {
+      return std::string(path);
+    }
+
+    std::error_code ec;
+    auto absolute = std::filesystem::absolute(std::filesystem::path(path), ec);
+    if (ec) {
+      absolute = std::filesystem::path(path);
+    }
+    return expandUserPath(absolute.lexically_normal().string()).string();
   }
 
 } // namespace FileUtils

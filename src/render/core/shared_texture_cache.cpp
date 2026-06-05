@@ -17,11 +17,13 @@ SharedTextureCache::~SharedTextureCache() {
 
 void SharedTextureCache::initialize(GlSharedContext* sharedGl) {
   m_sharedGl = sharedGl;
-  m_textureManager = createDefaultTextureManager();
+  if (m_sharedGl != nullptr) {
+    m_textureManager = createDefaultTextureManager();
+  }
 }
 
 TextureHandle SharedTextureCache::acquire(const std::string& path) {
-  if (path.empty()) {
+  if (path.empty() || m_textureManager == nullptr) {
     return {};
   }
 
@@ -29,6 +31,13 @@ TextureHandle SharedTextureCache::acquire(const std::string& path) {
   if (it != m_entries.end()) {
     ++it->second.refCount;
     kLog.info("hit {} (refCount={})", path, it->second.refCount);
+    if (it->second.handle.id == 0) {
+      makeCurrent();
+      it->second.handle = m_textureManager->loadFromFile(path, 0, true);
+      if (it->second.handle.id == 0) {
+        return {};
+      }
+    }
     return it->second.handle;
   }
 
@@ -43,8 +52,13 @@ TextureHandle SharedTextureCache::acquire(const std::string& path) {
   return handle;
 }
 
+TextureHandle SharedTextureCache::peek(const std::string& path) const {
+  const auto it = m_entries.find(path);
+  return it != m_entries.end() ? it->second.handle : TextureHandle{};
+}
+
 void SharedTextureCache::release(TextureHandle& handle, const std::string& path) {
-  if (handle.id == 0 || path.empty()) {
+  if (handle.id == 0 || path.empty() || m_textureManager == nullptr) {
     handle = {};
     return;
   }
@@ -66,8 +80,35 @@ void SharedTextureCache::release(TextureHandle& handle, const std::string& path)
   handle = {};
 }
 
-void SharedTextureCache::makeCurrent() {
-  if (m_sharedGl != nullptr) {
-    m_sharedGl->makeCurrentSurfaceless();
+void SharedTextureCache::reloadResidentTextures() {
+  if (m_textureManager == nullptr || m_entries.empty()) {
+    return;
   }
+
+  makeCurrent();
+
+  for (auto& [path, entry] : m_entries) {
+    if (entry.handle.id != 0) {
+      m_textureManager->unload(entry.handle);
+    }
+    entry.handle = m_textureManager->loadFromFile(path, 0, true);
+    if (entry.handle.id != 0) {
+      kLog.info("reuploaded {}", path);
+    } else {
+      kLog.warn("failed to reupload {}", path);
+    }
+  }
+}
+
+void SharedTextureCache::makeCurrent() {
+  if (m_sharedGl == nullptr) {
+    return;
+  }
+  // Backend contexts share the root context's share-list, so uploads/deletes work on whichever context is bound. If
+  // a backend already owns the thread's context (mid-frame), switching away would drop its draw surface and break its
+  // trailing eglSwapBuffers.
+  if (eglGetCurrentContext() != EGL_NO_CONTEXT) {
+    return;
+  }
+  m_sharedGl->makeCurrentSurfaceless();
 }

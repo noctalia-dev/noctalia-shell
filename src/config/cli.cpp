@@ -1,15 +1,19 @@
 #include "config/cli.h"
 
+#include "config/config_validate.h"
 #include "core/toml.h" // IWYU pragma: keep
+#include "util/file_utils.h"
 #include "util/string_utils.h"
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unistd.h>
 
 namespace noctalia::config {
   namespace {
@@ -22,7 +26,21 @@ namespace noctalia::config {
         "      Reconstruct config-home/noctalia and state-home/noctalia from a support report.\n"
         "\n"
         "  replay-report <report.toml> --target <dir> --flattened [--force]\n"
-        "      Reconstruct a single config-home/noctalia/config.toml from the report's merged config.\n";
+        "      Reconstruct a single config-home/noctalia/config.toml from the report's merged config.\n"
+        "\n"
+        "  validate [dir]\n"
+        "      Check config validity: TOML syntax, unknown/misspelled settings, and bad\n"
+        "      values. Defaults to the active config dir + state settings.toml. Exit 1 on error.\n";
+
+    constexpr const char* kValidateHelpText =
+        "Usage: noctalia config validate [dir]\n"
+        "\n"
+        "Validates the merged configuration the way the shell loads it:\n"
+        "  - every *.toml in [dir] (default: the active config dir), then\n"
+        "  - the state-dir settings.toml overrides (only when [dir] is omitted).\n"
+        "\n"
+        "Reports TOML syntax errors, unknown sections/settings, and bad values\n"
+        "(wrong type, out-of-range, invalid enum/color). Exits 1 if any error is found.\n";
 
     constexpr const char* kReplayHelpText =
         "Usage: noctalia config replay-report <report.toml> --target <dir> [--flattened] [--force]\n"
@@ -238,15 +256,97 @@ namespace noctalia::config {
             return 1;
           }
         }
+
+        const auto* appState = report["app_state"].as_table();
+        bool appStateExists = appState != nullptr;
+        if (appState != nullptr) {
+          if (auto exists = (*appState)["exists"].value<bool>()) {
+            appStateExists = *exists;
+          }
+        }
+        if (appStateExists && appState != nullptr) {
+          const auto content = (*appState)["content"].value<std::string>().value_or("");
+          if (!writeTextFile(stateDir / "state.toml", content, error)) {
+            std::fprintf(stderr, "error: %s\n", error.c_str());
+            return 1;
+          }
+        }
       }
 
       std::printf("Replayed support report into %s\n\n", target.string().c_str());
       std::printf("Config home: %s\n", configHome.string().c_str());
       std::printf("State home:  %s\n\n", stateHome.string().c_str());
       std::printf("Run with:\n");
-      std::printf("  NOCTALIA_CONFIG_HOME=%s NOCTALIA_STATE_HOME=%s %s\n",
-                  StringUtils::shellQuote(configHome.string()).c_str(),
-                  StringUtils::shellQuote(stateHome.string()).c_str(), StringUtils::shellQuote(argv0).c_str());
+      std::printf(
+          "  NOCTALIA_CONFIG_HOME=%s NOCTALIA_STATE_HOME=%s %s\n", StringUtils::shellQuote(configHome.string()).c_str(),
+          StringUtils::shellQuote(stateHome.string()).c_str(), StringUtils::shellQuote(argv0).c_str()
+      );
+      return 0;
+    }
+
+    // ANSI color only when the stream is a terminal and NO_COLOR is unset, so
+    // piped/redirected output stays clean.
+    bool useColor(std::FILE* stream) {
+      static const bool noColor = std::getenv("NO_COLOR") != nullptr;
+      return !noColor && isatty(fileno(stream)) != 0;
+    }
+
+    int runValidate(int argc, char* argv[]) {
+      std::string dirArg;
+      for (int i = 3; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--help") == 0) {
+          std::puts(kValidateHelpText);
+          return 0;
+        }
+        if (dirArg.empty()) {
+          dirArg = argv[i];
+          continue;
+        }
+        std::fprintf(stderr, "error: unexpected argument: %s\n", argv[i]);
+        std::fputs("Run 'noctalia config validate --help' for usage.\n", stderr);
+        return 1;
+      }
+
+      // With an explicit dir, validate just that dir; otherwise the live config
+      // dir plus the state-dir settings.toml overrides (matching how the shell loads).
+      std::string configDir = dirArg.empty() ? FileUtils::configDir() : dirArg;
+      std::string settingsPath;
+      if (dirArg.empty()) {
+        if (const std::string stateDir = FileUtils::stateDir(); !stateDir.empty()) {
+          settingsPath = stateDir + "/settings.toml";
+        }
+      }
+
+      const auto diagnostics = validateConfigSources(configDir, settingsPath);
+
+      const bool colorErr = useColor(stderr);
+      const bool colorOut = useColor(stdout);
+
+      std::size_t errors = 0;
+      std::size_t warnings = 0;
+      for (const auto& entry : diagnostics.entries) {
+        const bool isError = entry.severity == schema::Diagnostics::Severity::Error;
+        (isError ? errors : warnings)++;
+        std::FILE* out = isError ? stderr : stdout;
+        const char* tag = isError ? "ERROR" : "WARN "; // padded to align the path column
+        const char* color = (isError ? colorErr : colorOut) ? (isError ? "\033[31m" : "\033[33m") : "";
+        const char* reset = *color != '\0' ? "\033[0m" : "";
+        std::fprintf(out, "%s%s%s %s: %s\n", color, tag, reset, entry.path.c_str(), entry.message.c_str());
+      }
+
+      if (errors > 0) {
+        const char* c = colorErr ? "\033[31m" : "";
+        const char* r = colorErr ? "\033[0m" : "";
+        std::fprintf(stderr, "\n%s✗ Config is invalid%s (%zu error(s), %zu warning(s))\n", c, r, errors, warnings);
+        return 1;
+      }
+      const char* c = colorOut ? "\033[32m" : "";
+      const char* r = colorOut ? "\033[0m" : "";
+      if (warnings > 0) {
+        std::printf("\n%s✓ Config is valid%s (%zu warning(s))\n", c, r, warnings);
+      } else {
+        std::printf("%s✓ Config is valid%s\n", c, r);
+      }
       return 0;
     }
 
@@ -270,6 +370,10 @@ namespace noctalia::config {
         return 0;
       }
       return replayReport(*options, argv[0]);
+    }
+
+    if (std::strcmp(argv[2], "validate") == 0) {
+      return runValidate(argc, argv);
     }
 
     std::fprintf(stderr, "error: unknown config command: %s\n", argv[2]);

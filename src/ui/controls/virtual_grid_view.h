@@ -41,6 +41,21 @@ public:
   // updates its own selection state and fires onSelectionChanged.
   virtual void onActivate(std::size_t /*index*/) {}
 
+  // Return true when an overlay consumed the press.
+  virtual bool onPointerPress(
+      std::size_t /*index*/, float /*cellLocalX*/, float /*cellLocalY*/, float /*cellWidth*/, float /*cellHeight*/
+  ) {
+    return false;
+  }
+
+  [[nodiscard]] virtual bool overlayHitTest(
+      std::size_t /*index*/, float /*cellLocalX*/, float /*cellLocalY*/, float /*cellWidth*/, float /*cellHeight*/
+  ) const {
+    return false;
+  }
+
+  virtual void applyOverlayHover(Node& /*tile*/, bool /*hovered*/) {}
+
   // Optional: secondary button press (e.g. context menu). Anchor coordinates are in the panel scene graph
   // (surface-local).
   virtual void onSecondaryActivate(std::size_t /*index*/, float /*anchorX*/, float /*anchorY*/) {}
@@ -69,6 +84,8 @@ public:
   void scrollToIndex(std::size_t index);
   void setSelectedIndex(std::optional<std::size_t> index);
   [[nodiscard]] std::optional<std::size_t> selectedIndex() const noexcept { return m_selectedIndex; }
+  // Items to move for a Page Up/Down step (one viewport of rows, at least one item).
+  [[nodiscard]] std::size_t pageItemStride() const noexcept;
 
   void setOnSelectionChanged(std::function<void(std::optional<std::size_t>)> callback);
 
@@ -89,6 +106,8 @@ private:
   void onPointerPress(float localX, float localY);
   void onSecondaryPointerPress(float localX, float localY);
   [[nodiscard]] std::optional<std::size_t> indexAt(float localX, float localY) const noexcept;
+  void cellLocalAt(float localX, float localY, std::size_t index, float& cellLocalX, float& cellLocalY) const noexcept;
+  void setOverlayHoveredForIndex(std::size_t index, bool hovered);
 
   ScrollView* m_scroll = nullptr;
   Canvas* m_canvas = nullptr;
@@ -99,6 +118,7 @@ private:
   std::vector<std::optional<std::size_t>> m_slotBoundIndex;
   std::vector<bool> m_slotBoundSelected;
   std::vector<bool> m_slotBoundHovered;
+  std::vector<bool> m_slotBoundOverlayHovered;
 
   std::size_t m_columns = 0;
   float m_minCellWidth = 96.0f;
@@ -110,6 +130,7 @@ private:
 
   std::optional<std::size_t> m_selectedIndex;
   std::optional<std::size_t> m_hoveredIndex;
+  std::optional<std::size_t> m_hoveredOverlayIndex;
   std::function<void(std::optional<std::size_t>)> m_onSelectionChanged;
 
   // Most recent layout snapshot — used by hit-testing and scrollToIndex

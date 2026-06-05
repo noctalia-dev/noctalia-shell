@@ -1,5 +1,6 @@
 #pragma once
 
+#include "scripting/scripted_widget_manifest.h"
 #include "scripting/scripted_widget_types.h"
 
 #include <vector>
@@ -15,6 +16,13 @@ namespace scripting {
     ScriptWidgetSnapshot snapshot;
     ScriptWidgetPatch patch;
     std::vector<ScriptWidgetSideEffect> sideEffects;
+
+    // Manifest extraction: when `manifestExtractionMode` is set, `barWidget.define`
+    // captures its table into `manifestOut`, flips `defineCalled`, then aborts the
+    // chunk so no later top-level side effects run.
+    bool manifestExtractionMode = false;
+    bool defineCalled = false;
+    ScriptWidgetManifest* manifestOut = nullptr;
 
     void beginCall(ScriptWidgetSnapshot nextSnapshot) {
       snapshot = std::move(nextSnapshot);

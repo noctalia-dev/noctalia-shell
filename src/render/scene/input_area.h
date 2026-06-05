@@ -8,8 +8,15 @@
 #include <initializer_list>
 #include <linux/input-event-codes.h>
 
+class TextInputClient;
+
 class InputArea : public Node {
 public:
+  enum class HitShape : std::uint8_t {
+    Rect,
+    Circle,
+  };
+
   struct PointerData {
     float localX = 0.0f;
     float localY = 0.0f;
@@ -71,6 +78,8 @@ public:
   void setOnKeyUp(KeyCallback callback);
   void setOnFocusGain(VoidCallback callback);
   void setOnFocusLoss(VoidCallback callback);
+  void setTextInputClient(TextInputClient* client);
+  [[nodiscard]] TextInputClient* textInputClient() const noexcept { return m_textInputClient; }
 
   // Configuration
   void setCursorShape(std::uint32_t shape);
@@ -85,6 +94,8 @@ public:
 
   void setEnabled(bool enabled);
   [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
+  void setHitShape(HitShape shape);
+  [[nodiscard]] HitShape hitShape() const noexcept { return m_hitShape; }
 
   // Tooltip
   void setTooltip(std::string text);
@@ -105,14 +116,17 @@ public:
   void dispatchLeave();
   void dispatchMotion(float localX, float localY);
   void dispatchPress(float localX, float localY, std::uint32_t button, bool isPressed);
-  [[nodiscard]] bool dispatchAxis(float localX, float localY, std::uint32_t axis, std::uint32_t axisSource,
-                                  double axisValue, std::int32_t axisDiscrete, std::int32_t axisValue120,
-                                  float axisLines);
+  [[nodiscard]] bool dispatchAxis(
+      float localX, float localY, std::uint32_t axis, std::uint32_t axisSource, double axisValue,
+      std::int32_t axisDiscrete, std::int32_t axisValue120, float axisLines
+  );
   void dispatchKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed, bool preedit = false);
   void dispatchFocusGain();
   void dispatchFocusLoss();
 
 protected:
+  [[nodiscard]] bool containsLocalPoint(float localX, float localY, bool includeHitOutset) const override;
+
 private:
   DestroyCallback m_destroyCallback;
   PointerCallback m_onEnter;
@@ -130,11 +144,13 @@ private:
   std::uint32_t m_acceptedButtons = buttonMask(BTN_LEFT);
   bool m_propagateEvents = false;
   bool m_enabled = true;
+  HitShape m_hitShape = HitShape::Rect;
   bool m_hovered = false;
   bool m_pressed = false;
   std::uint32_t m_pressedButton = 0;
   bool m_focusable = false;
   bool m_focused = false;
+  TextInputClient* m_textInputClient = nullptr;
 
   TooltipContent m_tooltipContent;
 };

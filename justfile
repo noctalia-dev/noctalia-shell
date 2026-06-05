@@ -2,31 +2,50 @@ set positional-arguments
 
 mode := "debug"
 build-dir := "build-" + mode
+prefix := "/usr/local"
 
 default:
     @just --list
 
-configure m=mode:
+configure m=mode install_prefix=prefix:
     #!/usr/bin/env bash
     set -euo pipefail
     args=(--buildtype={{ if m == "release" { "release" } else { "debug" } }})
     [[ "{{m}}" == "release" ]] && args+=(-Db_lto=true)
     [[ "{{m}}" == "asan"    ]] && args+=(-Db_sanitize=address,undefined)
     if [[ -d "build-{{m}}" ]]; then
-        meson setup "build-{{m}}" "${args[@]}" --reconfigure
+        meson setup "build-{{m}}" "${args[@]}" --prefix "{{install_prefix}}" --reconfigure
     else
-        meson setup "build-{{m}}" "${args[@]}"
+        meson setup "build-{{m}}" "${args[@]}" --prefix "{{install_prefix}}"
     fi
     ln -sfn "build-{{m}}/compile_commands.json" compile_commands.json
 
-build m=mode:
+build m=mode: (_ensure-configured m)
     meson compile -C build-{{m}}
 
-run m=mode:
+_ensure-configured m=mode:
+    @if [ ! -d "build-{{m}}" ]; then just configure {{m}}; fi
+
+run m=mode: (build m)
     ./build-{{m}}/noctalia
 
-install m=mode:
-    meson install -C build-{{m}}
+install m:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ ! -x "build-{{m}}/noctalia" ]]; then
+        echo "error: build-{{m}}/noctalia is missing; run 'just build {{m}}' before installing" >&2
+        exit 1
+    fi
+    meson install --no-rebuild -C build-{{m}}
+
+uninstall m:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ ! -f "build-{{m}}/build.ninja" ]]; then
+        echo "error: build-{{m}} is missing or was not configured with the Ninja backend; nothing to uninstall" >&2
+        exit 1
+    fi
+    ninja -C build-{{m}} uninstall
 
 format:
     find src \( -name '*.cpp' -o -name '*.h' \) -print0 | xargs -0 clang-format -i
@@ -40,7 +59,4 @@ clean m=mode:
     fi
     rm -rf build-{{m}}
 
-rebuild m=mode:
-    just clean {{m}}
-    just configure {{m}}
-    just build {{m}}
+rebuild m=mode: (clean m) (build m)

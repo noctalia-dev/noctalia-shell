@@ -112,10 +112,12 @@ void IdleGraceOverlay::ensureSurfaces() {
 
     inst->surface = std::make_unique<LayerSurface>(*m_wayland, std::move(surfaceConfig));
     auto* instPtr = inst.get();
-    inst->surface->setConfigureCallback(
-        [instPtr](std::uint32_t /*width*/, std::uint32_t /*height*/) { instPtr->surface->requestLayout(); });
-    inst->surface->setPrepareFrameCallback(
-        [this, instPtr](bool needsUpdate, bool needsLayout) { prepareFrame(*instPtr, needsUpdate, needsLayout); });
+    inst->surface->setConfigureCallback([instPtr](std::uint32_t /*width*/, std::uint32_t /*height*/) {
+      instPtr->surface->requestLayout();
+    });
+    inst->surface->setPrepareFrameCallback([this, instPtr](bool needsUpdate, bool needsLayout) {
+      prepareFrame(*instPtr, needsUpdate, needsLayout);
+    });
     inst->surface->setAnimationManager(&inst->animations);
     inst->surface->setRenderContext(m_renderContext);
 
@@ -171,9 +173,9 @@ void IdleGraceOverlay::prepareFrame(Instance& inst, bool needsUpdate, bool needs
 
   m_renderContext->makeCurrent(inst.surface->renderTarget());
 
-  const bool needsSceneBuild = inst.sceneRoot == nullptr ||
-                               static_cast<std::uint32_t>(std::round(inst.sceneRoot->width())) != width ||
-                               static_cast<std::uint32_t>(std::round(inst.sceneRoot->height())) != height;
+  const bool needsSceneBuild = inst.sceneRoot == nullptr
+      || static_cast<std::uint32_t>(std::round(inst.sceneRoot->width())) != width
+      || static_cast<std::uint32_t>(std::round(inst.sceneRoot->height())) != height;
   if (needsSceneBuild) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
     buildScene(inst, width, height);
@@ -236,7 +238,8 @@ void IdleGraceOverlay::startFadeIn(Instance& inst, std::chrono::milliseconds fad
         instPtr->fadeAnimId = 0;
         onFadeInstanceComplete();
       },
-      dimPtr);
+      dimPtr
+  );
 }
 
 void IdleGraceOverlay::onFadeInstanceComplete() {

@@ -30,6 +30,12 @@ namespace compositors {
       if (const char* v = std::getenv("LABWC_PID"); v != nullptr && v[0] != '\0') {
         return CompositorKind::Labwc;
       }
+      if (const char* v = std::getenv("TRIAD_SOCKET"); v != nullptr && v[0] != '\0') {
+        return CompositorKind::Triad;
+      }
+      if (const char* v = std::getenv("RIVER_WM"); v != nullptr && StringUtils::containsInsensitive(v, "triad")) {
+        return CompositorKind::Triad;
+      }
       if (const char* v = std::getenv("NIRI_SOCKET"); v != nullptr && v[0] != '\0') {
         return CompositorKind::Niri;
       }
@@ -39,9 +45,15 @@ namespace compositors {
       if (const char* v = std::getenv("SWAYSOCK"); v != nullptr && v[0] != '\0') {
         return CompositorKind::Sway;
       }
+      if (const char* v = std::getenv("MANGO_INSTANCE_SIGNATURE"); v != nullptr && v[0] != '\0') {
+        return CompositorKind::Mango;
+      }
 
       // Fall back to the desktop env hint (covers dwl-style compositors that don't expose a socket var).
       const std::string hint = buildEnvHint();
+      if (StringUtils::containsInsensitive(hint, "triad")) {
+        return CompositorKind::Triad;
+      }
       if (StringUtils::containsInsensitive(hint, "niri")) {
         return CompositorKind::Niri;
       }
@@ -51,8 +63,11 @@ namespace compositors {
       if (StringUtils::containsInsensitive(hint, "sway")) {
         return CompositorKind::Sway;
       }
-      if (StringUtils::containsInsensitive(hint, "mango") || StringUtils::containsInsensitive(hint, "dwl")) {
+      if (StringUtils::containsInsensitive(hint, "mango")) {
         return CompositorKind::Mango;
+      }
+      if (StringUtils::containsInsensitive(hint, "dwl")) {
+        return CompositorKind::Dwl;
       }
       if (StringUtils::containsInsensitive(hint, "labwc")) {
         return CompositorKind::Labwc;
@@ -69,6 +84,8 @@ namespace compositors {
 
   std::string_view name(CompositorKind kind) {
     switch (kind) {
+    case CompositorKind::Triad:
+      return "Triad";
     case CompositorKind::Niri:
       return "Niri";
     case CompositorKind::Hyprland:
@@ -77,6 +94,8 @@ namespace compositors {
       return "Sway";
     case CompositorKind::Mango:
       return "Mango";
+    case CompositorKind::Dwl:
+      return "dwl";
     case CompositorKind::Labwc:
       return "Labwc";
     case CompositorKind::Unknown:

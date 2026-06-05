@@ -63,7 +63,9 @@ public:
   void setToggleSettingsWindowCallback(std::function<void()> callback);
   void openSettingsWindow();
   void toggleSettingsWindow();
-  void setAttachedPanelGeometryCallback(std::function<void(wl_output*, std::optional<AttachedPanelGeometry>)> callback);
+  void setAttachedPanelGeometryCallback(
+      std::function<void(wl_output*, std::string_view, std::optional<AttachedPanelGeometry>)> callback
+  );
   // Callback to query the bar surface rects on a given output, in output-local
   // coordinates. The click shield's input region excludes these rects so
   // clicks on bar widgets keep flowing to the bar while a panel is open.
@@ -72,11 +74,12 @@ public:
   // grab whitelist so bar widgets keep receiving clicks while a panel is open.
   void setFocusGrabBarSurfacesProvider(std::function<std::vector<wl_surface*>()> provider);
   void setPanelClosedCallback(std::function<void()> callback);
+  void setPanelOpenedCallback(std::function<void()> callback);
 
   void registerPanel(const std::string& id, std::unique_ptr<Panel> content);
 
   void openPanel(const std::string& panelId, PanelOpenRequest request = {});
-  void closePanel();
+  void closePanel(bool animateClose = true);
   void togglePanel(const std::string& panelId, PanelOpenRequest request);
   // IPC-friendly overload: asks CompositorPlatform for preferred interactive output.
   void togglePanel(const std::string& panelId);
@@ -88,6 +91,10 @@ public:
   [[nodiscard]] bool isOpenPanel(std::string_view panelId) const noexcept;
   [[nodiscard]] bool isPanelTransitionActive() const noexcept;
   [[nodiscard]] bool isAttachedOpen() const noexcept;
+  // Output the active panel is on; null when none is open.
+  [[nodiscard]] wl_output* attachedPanelOutput() const noexcept;
+  // Bar that opened the active panel; empty when none was recorded.
+  [[nodiscard]] std::string_view attachedSourceBarName() const noexcept;
   [[nodiscard]] const std::string& activePanelId() const noexcept;
   // True when a panel is open and it reports the given context as active (e.g. control-center tab).
   [[nodiscard]] bool isActivePanelContext(std::string_view context) const noexcept;
@@ -102,9 +109,8 @@ public:
 
   void refresh();
   // Reacts to a ConfigService reload while a panel is open: re-pulls the host bar's
-  // per-panel-relevant config (attached background opacity) and
-  // re-applies the compositor blur region (which depends on shell.panel.background_blur,
-  // affects both attached and layer-shell panels). No-op when no panel is open.
+  // per-panel-relevant config (attached background opacity), styling, and compositor
+  // blur region. No-op when no panel is open.
   void onConfigReloaded();
   void onIconThemeChanged();
   void requestUpdateOnly();
@@ -133,7 +139,7 @@ private:
   void destroyPanel();
   // Called BEFORE the panel surface commits so shields sit below the panel
   // within the layer-shell layer. No-op when the focus-grab path is in use.
-  void activateClickShield();
+  void activateClickShield(LayerShellLayer layer);
   // Called AFTER the panel surface is mapped so the panel wl_surface is
   // available for the whitelist. No-op when focus-grab is unavailable.
   void activateFocusGrab();
@@ -147,8 +153,8 @@ private:
   // Safe to call any time after buildScene has run.
   void applyAttachedDecorationStyle();
   // Submit a wl_region matching the visible panel body to the compositor for blur.
-  // Honors shell.panel.background_blur; clips by m_attachedRevealProgress so the blur
-  // grows in lock-step with the open/close animation.
+  // Clips by m_attachedRevealProgress so the blur grows in lock-step with the
+  // open/close animation.
   void applyPanelCompositorBlur();
 
   CompositorPlatform* m_platform = nullptr;
@@ -156,10 +162,12 @@ private:
   RenderContext* m_renderContext = nullptr;
   std::function<void()> m_openSettingsWindow;
   std::function<void()> m_toggleSettingsWindow;
-  std::function<void(wl_output*, std::optional<AttachedPanelGeometry>)> m_attachedPanelGeometryCallback;
+  std::function<void(wl_output*, std::string_view, std::optional<AttachedPanelGeometry>)>
+      m_attachedPanelGeometryCallback;
   std::function<std::vector<InputRect>(wl_output*)> m_clickShieldExcludeRectsProvider;
   std::function<std::vector<wl_surface*>()> m_focusGrabBarSurfacesProvider;
   std::function<void()> m_panelClosedCallback;
+  std::function<void()> m_panelOpenedCallback;
   PanelClickShield m_clickShield;
   std::unique_ptr<FocusGrab> m_focusGrab;
 

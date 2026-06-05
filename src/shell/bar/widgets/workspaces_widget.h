@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 class Box;
@@ -22,8 +23,11 @@ public:
     Name,
   };
 
-  WorkspacesWidget(CompositorPlatform& platform, wl_output* output, DisplayMode displayMode, ColorSpec focusedColor,
-                   ColorSpec occupiedColor, ColorSpec emptyColor, std::size_t maxLabelChars, bool hideWhenEmpty);
+  WorkspacesWidget(
+      CompositorPlatform& platform, wl_output* output, DisplayMode displayMode, ColorSpec focusedColor,
+      ColorSpec occupiedColor, ColorSpec emptyColor, std::size_t maxLabelChars, bool labelsOnlyWhenOccupied,
+      bool hideWhenEmpty, float pillScale, bool minimal
+  );
   ~WorkspacesWidget() override;
 
   void create() override;
@@ -44,6 +48,8 @@ private:
 
   [[nodiscard]] static std::optional<std::size_t> numericWorkspaceId(const Workspace& workspace);
   [[nodiscard]] std::string workspaceLabel(const Workspace& workspace, std::size_t displayIndex) const;
+  [[nodiscard]] bool shouldShowWorkspaceLabel(const Workspace& workspace, std::string_view label) const noexcept;
+  [[nodiscard]] DisplayMode effectiveDisplayMode() const noexcept;
   void syncWidgetVisibility(bool showWidget);
 
   struct Item {
@@ -55,6 +61,8 @@ private:
     bool active = false;
     float inactiveWidth = 0.0f;
     float activeWidth = 0.0f;
+    float inkCenterOffset = 0.0f;
+    float inkVCenterOffset = 0.0f;
     float fromX = 0.0f;
     float fromWidth = 0.0f;
     float targetX = 0.0f;
@@ -72,7 +80,10 @@ private:
   wl_output* m_output = nullptr;
   DisplayMode m_displayMode = DisplayMode::None;
   std::size_t m_maxLabelChars = 1;
+  bool m_labelsOnlyWhenOccupied = false;
   bool m_hideWhenEmpty = false;
+  float m_pillScale = 1.0f;
+  bool m_minimal = false;
   Node* m_container = nullptr;
   std::vector<Workspace> m_cachedState;
   std::vector<Item> m_items;

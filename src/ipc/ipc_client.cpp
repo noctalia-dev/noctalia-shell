@@ -24,24 +24,6 @@ namespace {
 
 } // namespace
 
-bool IpcClient::isRunning() {
-  const std::string path = resolveSocketPath();
-  const int fd = ::socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
-  if (fd < 0) {
-    return false;
-  }
-  sockaddr_un addr{};
-  addr.sun_family = AF_UNIX;
-  if (path.size() >= sizeof(addr.sun_path)) {
-    ::close(fd);
-    return false;
-  }
-  std::memcpy(addr.sun_path, path.c_str(), path.size() + 1);
-  const bool alive = ::connect(fd, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr)) == 0;
-  ::close(fd);
-  return alive;
-}
-
 int IpcClient::send(const std::string& command) {
   const std::string path = resolveSocketPath();
 

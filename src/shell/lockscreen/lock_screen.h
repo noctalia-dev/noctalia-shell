@@ -2,12 +2,17 @@
 
 #include "auth/pam_authenticator.h"
 #include "core/timer_manager.h"
+#include "capture/screencopy_capture.h"
 
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
+
+struct ScreencopyImage;
 
 struct KeyboardEvent;
 struct PointerEvent;
@@ -16,7 +21,6 @@ struct ext_session_lock_v1;
 struct wl_surface;
 struct wl_output;
 class ConfigService;
-class IpcService;
 
 class LockSurface;
 class ProjectMRenderer;
@@ -29,8 +33,10 @@ public:
   LockScreen();
   ~LockScreen();
 
-  bool initialize(WaylandConnection& wayland, RenderContext* renderContext, ConfigService* configService,
-                  SharedTextureCache* textureCache);
+  bool initialize(
+      WaylandConnection& wayland, RenderContext* renderContext, ConfigService* configService,
+      SharedTextureCache* textureCache
+  );
   // Optional live-paper plumbing. Non-owning; pass null to disable.
   void setVisualizer(ProjectMRenderer* renderer);
 
@@ -41,24 +47,29 @@ public:
   void onSecondTick();
   void onFontChanged();
   void onThemeChanged();
+  void onGpuResourcesInvalidated();
   void onWallpaperChanged();
+  void onConfigChanged();
   void requestLayout();
   void onPointerEvent(const PointerEvent& event);
   void onKeyboardEvent(const KeyboardEvent& event);
   [[nodiscard]] bool isActive() const noexcept;
   [[nodiscard]] bool isSessionLocked() const noexcept;
 
+  template <typename Fn> void forEachSurface(Fn&& fn) {
+    for (auto& instance : m_instances) {
+      if (instance.surface != nullptr) {
+        fn(*instance.surface);
+      }
+    }
+  }
+
   /// Runs `fn` after the session reaches interactive lock (`m_locked`), or immediately if already locked.
   /// Used so suspend runs after lock surfaces exist. Cleared if lock fails or the lock request is aborted.
   void runAfterSessionLocked(std::function<void()> fn);
 
-  void registerIpc(IpcService& ipc);
-
   static void handleLocked(void* data, ext_session_lock_v1* lock);
   static void handleFinished(void* data, ext_session_lock_v1* lock);
-
-  static void setInstance(LockScreen* instance);
-  static LockScreen* instance();
 
 private:
   struct Instance {
@@ -68,6 +79,9 @@ private:
   };
 
   void syncInstances();
+  void captureDesktopSnapshots();
+  [[nodiscard]] bool shouldUseBlurredDesktop() const;
+  void applyLockscreenStyle(LockSurface& surface) const;
   void createInstance(const WaylandOutput& output);
   void resetLockState();
   void clearInstances();
@@ -92,6 +106,7 @@ private:
   int m_visualizerTickFps = 0;
   ext_session_lock_v1* m_lock = nullptr;
   std::vector<Instance> m_instances;
+  std::unordered_map<wl_output*, ScreencopyImage> m_desktopCaptures;
   PamAuthenticator m_authenticator;
   std::string m_user;
   std::string m_password;

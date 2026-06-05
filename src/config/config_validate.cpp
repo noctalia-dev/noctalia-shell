@@ -1,0 +1,491 @@
+#include "config/config_validate.h"
+
+#include "config/config_service.h"
+#include "config/config_types.h"
+#include "config/schema/config_schema.h"
+#include "config/schema/engine.h"
+#include "config/widget_config.h"
+#include "core/toml.h"
+#include "shell/desktop/desktop_widget_settings_registry.h"
+#include "shell/lockscreen/lockscreen_login_box.h"
+#include "shell/settings/widget_settings_registry.h"
+
+#include <algorithm>
+#include <cmath>
+#include <filesystem>
+#include <optional>
+#include <string>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+
+namespace noctalia::config {
+  namespace {
+
+    std::string formatBound(double value) {
+      if (value == std::floor(value) && std::abs(value) < 1.0e15) {
+        return std::to_string(static_cast<std::int64_t>(value));
+      }
+      return std::to_string(value);
+    }
+
+    std::vector<std::filesystem::path> sortedTomlFiles(std::string_view dir) {
+      std::vector<std::filesystem::path> files;
+      std::error_code ec;
+      if (dir.empty() || !std::filesystem::is_directory(dir, ec) || ec) {
+        return files;
+      }
+      for (const auto& entry : std::filesystem::directory_iterator(dir, ec)) {
+        if (entry.is_regular_file() && entry.path().extension() == ".toml") {
+          files.push_back(entry.path());
+        }
+      }
+      std::sort(files.begin(), files.end());
+      return files;
+    }
+
+    std::string formatParseError(const std::filesystem::path& file, const toml::parse_error& e) {
+      const auto& pos = e.source().begin;
+      return file.string()
+          + ":"
+          + std::to_string(pos.line)
+          + ":"
+          + std::to_string(pos.column)
+          + ": "
+          + std::string(e.description());
+    }
+
+    // Merge config-dir *.toml then the state-dir settings.toml, mirroring loadAll's
+    // order. Syntax errors are recorded and merging continues with what parsed.
+    toml::table mergeSources(std::string_view configDir, std::string_view settingsTomlPath, schema::Diagnostics& diag) {
+      toml::table merged;
+      for (const auto& file : sortedTomlFiles(configDir)) {
+        try {
+          toml::table parsed = toml::parse_file(file.string());
+          ConfigService::deepMerge(merged, parsed);
+        } catch (const toml::parse_error& e) {
+          diag.error("syntax", formatParseError(file, e));
+        }
+      }
+      if (!settingsTomlPath.empty() && std::filesystem::exists(settingsTomlPath)) {
+        try {
+          toml::table parsed = toml::parse_file(std::string(settingsTomlPath));
+          ConfigService::deepMerge(merged, parsed);
+        } catch (const toml::parse_error& e) {
+          diag.error("syntax", formatParseError(settingsTomlPath, e));
+        }
+      }
+      return merged;
+    }
+
+    // collectUnknownKeys + a defaulted readInto: the former flags misspelled keys,
+    // the latter surfaces enum/range warnings (and throws → error on bad values).
+    template <typename T>
+    void checkSection(
+        const toml::table& root, std::string_view name, const schema::Schema<T>& sch, schema::Diagnostics& diag,
+        const std::unordered_set<std::string>& allowUnknownPaths = {}
+    ) {
+      const auto* tbl = root[name].as_table();
+      if (tbl == nullptr) {
+        return;
+      }
+      std::vector<std::string> unknown;
+      schema::collectUnknownKeys(*tbl, sch, name, unknown);
+      for (const auto& path : unknown) {
+        if (!allowUnknownPaths.contains(path)) {
+          diag.warn(path, "unknown setting");
+        }
+      }
+      T tmp{};
+      try {
+        schema::readInto(*tbl, tmp, sch, name, diag);
+      } catch (const std::exception& e) {
+        diag.error(std::string(name), e.what());
+      }
+    }
+
+    void
+    rangeCheck(double value, const schema::WidgetSettingField& f, const std::string& path, schema::Diagnostics& d) {
+      if (f.minValue && value < *f.minValue) {
+        d.warn(path, "below minimum " + formatBound(*f.minValue));
+      }
+      if (f.maxValue && value > *f.maxValue) {
+        d.warn(path, "above maximum " + formatBound(*f.maxValue));
+      }
+    }
+
+    // Validate one widget setting value against its schema field. Type/color
+    // problems are errors; out-of-range and bad-enum are advisory warnings
+    // (matching the parser's clamp-and-continue behavior for known sections).
+    void validateWidgetValue(
+        const toml::node& node, const schema::WidgetSettingField& f, const std::string& path, schema::Diagnostics& diag
+    ) {
+      using schema::WidgetSettingType;
+      switch (f.type) {
+      case WidgetSettingType::Bool:
+        if (!node.is_boolean()) {
+          diag.error(path, "expected a boolean");
+        }
+        break;
+      case WidgetSettingType::Int:
+        if (auto v = node.value<std::int64_t>()) {
+          rangeCheck(static_cast<double>(*v), f, path, diag);
+        } else {
+          diag.error(path, "expected an integer");
+        }
+        break;
+      case WidgetSettingType::Double:
+      case WidgetSettingType::OptionalDouble:
+        if (auto v = node.value<double>()) {
+          rangeCheck(*v, f, path, diag);
+        } else {
+          diag.error(path, "expected a number");
+        }
+        break;
+      case WidgetSettingType::String:
+        if (!node.is_string()) {
+          diag.error(path, "expected a string");
+        }
+        break;
+      case WidgetSettingType::StringList:
+        if (const auto* arr = node.as_array()) {
+          for (const auto& item : *arr) {
+            if (!item.is_string()) {
+              diag.error(path, "expected a list of strings");
+              break;
+            }
+          }
+        } else {
+          diag.error(path, "expected a list of strings");
+        }
+        break;
+      case WidgetSettingType::Enum: {
+        // Most selects store a string, but integer-valued ones (e.g. font_weight)
+        // store an int — accept either and compare by string form.
+        std::optional<std::string> value;
+        if (auto v = node.value<std::string>()) {
+          value = *v;
+        } else if (auto i = node.value<std::int64_t>()) {
+          value = std::to_string(*i);
+        }
+        if (!value) {
+          diag.error(path, "expected a string or integer");
+        } else if (std::find(f.enumValues.begin(), f.enumValues.end(), *value) == f.enumValues.end()) {
+          diag.warn(path, "\"" + *value + "\" is not one of the allowed values");
+        }
+        break;
+      }
+      case WidgetSettingType::Color:
+        if (auto v = node.value<std::string>()) {
+          try {
+            (void)colorSpecFromConfigString(*v); // empty context: diag already carries the path
+          } catch (const std::exception& e) {
+            diag.error(path, e.what());
+          }
+        } else {
+          diag.error(path, "expected a string color");
+        }
+        break;
+      }
+    }
+
+    // Validate a free-form setting map (bar/desktop widget settings) against a
+    // per-type schema. Unknown keys are errors only for `flagUnknown` types
+    // (built-in, non-scripted); scripted widgets carry user-defined settings.
+    void validateSettingsMap(
+        const toml::table& settings, const schema::WidgetSettingSchema& fields, const std::string& base,
+        bool flagUnknown, schema::Diagnostics& diag, const std::unordered_set<std::string>& ignoreKeys = {}
+    ) {
+      for (const auto& [key, node] : settings) {
+        const std::string keyStr(key.str());
+        if (ignoreKeys.contains(keyStr)) {
+          continue;
+        }
+        const auto field = std::find_if(fields.begin(), fields.end(), [&](const auto& f) { return f.key == keyStr; });
+        if (field == fields.end()) {
+          if (flagUnknown) {
+            diag.warn(base + "." + keyStr, "unknown setting");
+          }
+          continue;
+        }
+        validateWidgetValue(node, *field, base + "." + keyStr, diag);
+      }
+    }
+
+    void validateBarWidgets(const toml::table& root, schema::Diagnostics& diag) {
+      const auto* widgets = root["widget"].as_table();
+      if (widgets == nullptr) {
+        return;
+      }
+      Config resolvedConfig;
+      seedBuiltinWidgets(resolvedConfig);
+      for (const auto& [name, node] : *widgets) {
+        const auto* tbl = node.as_table();
+        if (tbl == nullptr) {
+          continue;
+        }
+        const std::string nameStr(name.str());
+        const std::string base = "widget." + nameStr;
+        WidgetConfig wc = readBarWidgetConfig(nameStr, *tbl, resolvedConfig);
+        const std::string type = wc.type;
+        if (!settings::isBuiltInWidgetType(type)) {
+          diag.warn(base, "unrecognized widget type \"" + type + "\"");
+          resolvedConfig.widgets[nameStr] = std::move(wc);
+          continue;
+        }
+        const auto fields = settings::widgetSettingSchema(type, &wc);
+        // Scripted widgets resolve settings from a Lua manifest that may be absent
+        // here, so don't flag unknown keys for them.
+        validateSettingsMap(*tbl, fields, base, /*flagUnknown=*/type != "scripted", diag, /*ignoreKeys=*/{"type"});
+        resolvedConfig.widgets[nameStr] = std::move(wc);
+      }
+    }
+
+    void validateDesktopWidgets(const toml::table& root, schema::Diagnostics& diag) {
+      const auto* dw = root["desktop_widgets"].as_table();
+      if (dw == nullptr) {
+        return;
+      }
+      static const std::unordered_set<std::string> kTopLevel = {
+          "enabled", "schema_version", "grid", "widget", "widget_order"
+      };
+      for (const auto& [key, node] : *dw) {
+        (void)node;
+        if (!kTopLevel.contains(std::string(key.str()))) {
+          diag.warn("desktop_widgets." + std::string(key.str()), "unknown setting");
+        }
+      }
+      if (const auto* grid = (*dw)["grid"].as_table()) {
+        static const std::unordered_set<std::string> kGrid = {"visible", "cell_size", "major_interval"};
+        for (const auto& [key, node] : *grid) {
+          (void)node;
+          if (!kGrid.contains(std::string(key.str()))) {
+            diag.warn("desktop_widgets.grid." + std::string(key.str()), "unknown setting");
+          }
+        }
+      }
+      const auto* widgets = (*dw)["widget"].as_table();
+      if (widgets == nullptr) {
+        return;
+      }
+      static const std::unordered_set<std::string> kWidgetKeys = {"id",    "type",     "output",  "cx",      "cy",
+                                                                  "scale", "rotation", "enabled", "settings"};
+      for (const auto& [id, node] : *widgets) {
+        const auto* tbl = node.as_table();
+        if (tbl == nullptr) {
+          continue;
+        }
+        const std::string idStr(id.str());
+        const std::string base = "desktop_widgets.widget." + idStr;
+        for (const auto& [key, value] : *tbl) {
+          (void)value;
+          if (!kWidgetKeys.contains(std::string(key.str()))) {
+            diag.warn(base + "." + std::string(key.str()), "unknown setting");
+          }
+        }
+        const std::string type = (*tbl)["type"].value<std::string>().value_or("");
+        // A known type contributes at least one type-specific spec; unknown ones
+        // only get the shared background settings, so detect via the type-only list.
+        if (desktop_settings::desktopWidgetSettingSpecs(type).empty()) {
+          diag.warn(base, "unrecognized desktop widget type \"" + type + "\"");
+          continue;
+        }
+        const auto* settingsTbl = (*tbl)["settings"].as_table();
+        if (settingsTbl == nullptr) {
+          continue;
+        }
+        validateSettingsMap(
+            *settingsTbl, desktop_settings::desktopWidgetSettingSchema(type), base + ".settings",
+            /*flagUnknown=*/true, diag
+        );
+      }
+    }
+
+    void validateLockscreenWidgets(const toml::table& root, schema::Diagnostics& diag) {
+      const auto* section = root["lockscreen_widgets"].as_table();
+      if (section == nullptr) {
+        return;
+      }
+      static const std::unordered_set<std::string> kTopLevel = {
+          "enabled", "schema_version", "grid", "widget", "widget_order"
+      };
+      for (const auto& [key, node] : *section) {
+        (void)node;
+        if (!kTopLevel.contains(std::string(key.str()))) {
+          diag.warn("lockscreen_widgets." + std::string(key.str()), "unknown setting");
+        }
+      }
+      if (const auto* grid = (*section)["grid"].as_table()) {
+        static const std::unordered_set<std::string> kGrid = {"visible", "cell_size", "major_interval"};
+        for (const auto& [key, node] : *grid) {
+          (void)node;
+          if (!kGrid.contains(std::string(key.str()))) {
+            diag.warn("lockscreen_widgets.grid." + std::string(key.str()), "unknown setting");
+          }
+        }
+      }
+      const auto* widgets = (*section)["widget"].as_table();
+      if (widgets == nullptr) {
+        return;
+      }
+      static const std::unordered_set<std::string> kWidgetKeys = {"id",    "type",     "output",  "cx",      "cy",
+                                                                  "scale", "rotation", "enabled", "settings"};
+      for (const auto& [id, node] : *widgets) {
+        const auto* tbl = node.as_table();
+        if (tbl == nullptr) {
+          continue;
+        }
+        const std::string idStr(id.str());
+        const std::string base = "lockscreen_widgets.widget." + idStr;
+        for (const auto& [key, value] : *tbl) {
+          (void)value;
+          if (!kWidgetKeys.contains(std::string(key.str()))) {
+            diag.warn(base + "." + std::string(key.str()), "unknown setting");
+          }
+        }
+        const std::string type = (*tbl)["type"].value<std::string>().value_or("");
+        if (type != lockscreen_login_box::kWidgetType && desktop_settings::desktopWidgetSettingSpecs(type).empty()) {
+          diag.warn(base, "unrecognized lockscreen widget type \"" + type + "\"");
+          continue;
+        }
+        if (type == lockscreen_login_box::kWidgetType) {
+          continue;
+        }
+        const auto* settingsTbl = (*tbl)["settings"].as_table();
+        if (settingsTbl == nullptr) {
+          continue;
+        }
+        validateSettingsMap(
+            *settingsTbl, desktop_settings::desktopWidgetSettingSchema(type), base + ".settings",
+            /*flagUnknown=*/true, diag
+        );
+      }
+    }
+
+    void validateBars(const toml::table& root, schema::Diagnostics& diag) {
+      const auto* bars = root["bar"].as_table();
+      if (bars == nullptr) {
+        return;
+      }
+      for (const auto& [name, node] : *bars) {
+        if (name.str() == std::string_view("order")) {
+          continue;
+        }
+        const auto* barTbl = node.as_table();
+        if (barTbl == nullptr) {
+          continue;
+        }
+        const std::string base = "bar." + std::string(name.str());
+        std::vector<std::string> unknown;
+        schema::collectUnknownKeys(*barTbl, schema::barFieldsSchema(), base, unknown);
+        for (const auto& path : unknown) {
+          // position + the monitor override map are handled outside barFieldsSchema.
+          if (path == base + ".position" || path == base + ".monitor") {
+            continue;
+          }
+          diag.warn(path, "unknown setting");
+        }
+        BarConfig tmpBar{};
+        try {
+          schema::readInto(*barTbl, tmpBar, schema::barFieldsSchema(), base, diag);
+        } catch (const std::exception& e) {
+          diag.error(base, e.what());
+        }
+        if (const auto* monitors = (*barTbl)["monitor"].as_table()) {
+          for (const auto& [match, monNode] : *monitors) {
+            const auto* monTbl = monNode.as_table();
+            if (monTbl == nullptr) {
+              continue;
+            }
+            const std::string monBase = base + ".monitor." + std::string(match.str());
+            std::vector<std::string> monUnknown;
+            schema::collectUnknownKeys(*monTbl, schema::barMonitorOverrideSchema(), monBase, monUnknown);
+            for (const auto& path : monUnknown) {
+              diag.warn(path, "unknown setting");
+            }
+            BarMonitorOverride tmpOvr{};
+            try {
+              schema::readInto(*monTbl, tmpOvr, schema::barMonitorOverrideSchema(), monBase, diag);
+            } catch (const std::exception& e) {
+              diag.error(monBase, e.what());
+            }
+          }
+        }
+      }
+    }
+
+  } // namespace
+
+  schema::Diagnostics validateConfigSources(std::string_view configDir, std::string_view settingsTomlPath) {
+    schema::Diagnostics diag;
+    const toml::table merged = mergeSources(configDir, settingsTomlPath, diag);
+
+    checkSection(merged, "shell", schema::shellSchema(), diag);
+    checkSection(
+        merged, "wallpaper", schema::wallpaperSchema(), diag,
+        {"wallpaper.default", "wallpaper.last", "wallpaper.monitors", "wallpaper.favorite"}
+    );
+    checkSection(merged, "theme", schema::themeSchema(), diag);
+    checkSection(merged, "backdrop", schema::backdropSchema(), diag);
+    checkSection(merged, "lockscreen", schema::lockscreenSchema(), diag);
+    checkSection(merged, "notification", schema::notificationSchema(), diag);
+    checkSection(merged, "notifications", schema::notificationSchema(), diag); // compatibility alias
+    checkSection(merged, "osd", schema::osdSchema(), diag);
+    checkSection(merged, "system", schema::systemSchema(), diag);
+    checkSection(merged, "weather", schema::weatherSchema(), diag);
+    checkSection(merged, "calendar", schema::calendarSchema(), diag);
+    checkSection(merged, "audio", schema::audioSchema(), diag);
+    checkSection(merged, "brightness", schema::brightnessSchema(), diag);
+    checkSection(merged, "battery", schema::batterySchema(), diag);
+    checkSection(merged, "nightlight", schema::nightlightSchema(), diag);
+    checkSection(merged, "location", schema::locationSchema(), diag);
+    checkSection(merged, "idle", schema::idleSchema(), diag);
+    checkSection(merged, "keybinds", schema::keybindsSchema(), diag);
+    checkSection(merged, "dock", schema::dockSchema(), diag);
+    checkSection(merged, "control_center", schema::controlCenterSchema(), diag);
+    checkSection(merged, "hooks", schema::hooksSchema(), diag);
+
+    validateBars(merged, diag);
+    validateBarWidgets(merged, diag);
+    validateDesktopWidgets(merged, diag);
+    validateLockscreenWidgets(merged, diag);
+
+    // Unknown top-level sections.
+    static const std::unordered_set<std::string> kKnownSections = {
+        "shell",
+        "wallpaper",
+        "theme",
+        "backdrop",
+        "lockscreen",
+        "notification",
+        "notifications",
+        "osd",
+        "system",
+        "weather",
+        "calendar",
+        "audio",
+        "brightness",
+        "battery",
+        "nightlight",
+        "location",
+        "idle",
+        "keybinds",
+        "bar",
+        "dock",
+        "desktop_widgets",
+        "lockscreen_widgets",
+        "widget",
+        "control_center",
+        "hooks",
+    };
+    for (const auto& [key, node] : merged) {
+      (void)node;
+      if (!kKnownSections.contains(std::string(key.str()))) {
+        diag.warn(std::string(key.str()), "unknown section");
+      }
+    }
+
+    return diag;
+  }
+
+} // namespace noctalia::config

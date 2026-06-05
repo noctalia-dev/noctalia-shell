@@ -1,127 +1,141 @@
 #include "compositors/mango/mango_workspace_backend.h"
 
+#include "compositors/mango/mango_runtime.h"
 #include "core/log.h"
-#include "dwl-ipc-unstable-v2-client-protocol.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
+#include <cerrno>
 #include <charconv>
+#include <cstring>
+#include <fcntl.h>
+#include <json.hpp>
 #include <optional>
 #include <string>
-#include <utility>
+#include <string_view>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
 
 namespace {
 
   constexpr Logger kLog("workspace_mango");
 
-  void managerTags(void* data, zdwl_ipc_manager_v2* /*manager*/, uint32_t amount) {
-    static_cast<MangoWorkspaceBackend*>(data)->onTagCount(amount);
+  [[nodiscard]] std::string jsonString(const nlohmann::json& json, const char* key) {
+    const auto it = json.find(key);
+    return it != json.end() && it->is_string() ? it->get<std::string>() : std::string{};
   }
 
-  void managerLayout(void* data, zdwl_ipc_manager_v2* /*manager*/, const char* name) {
-    static_cast<MangoWorkspaceBackend*>(data)->onLayoutAnnounced(name);
+  [[nodiscard]] std::int32_t jsonInt(const nlohmann::json& json, const char* key) {
+    const auto it = json.find(key);
+    if (it == json.end()) {
+      return 0;
+    }
+    if (it->is_number_integer()) {
+      return it->get<std::int32_t>();
+    }
+    if (it->is_number_unsigned()) {
+      return static_cast<std::int32_t>(it->get<std::uint32_t>());
+    }
+    return 0;
   }
 
-  const zdwl_ipc_manager_v2_listener kManagerListener = {
-      .tags = managerTags,
-      .layout = managerLayout,
-  };
-
-  void outputToggleVisibility(void* /*data*/, zdwl_ipc_output_v2* /*output*/) {}
-
-  void outputActive(void* data, zdwl_ipc_output_v2* output, uint32_t active) {
-    static_cast<MangoWorkspaceBackend*>(data)->onOutputActive(output, active);
+  [[nodiscard]] bool jsonBool(const nlohmann::json& json, const char* key) {
+    const auto it = json.find(key);
+    return it != json.end() && it->is_boolean() && it->get<bool>();
   }
 
-  void outputTag(void* data, zdwl_ipc_output_v2* output, uint32_t tag, uint32_t state, uint32_t clients,
-                 uint32_t focused) {
-    static_cast<MangoWorkspaceBackend*>(data)->onOutputTag(output, tag, state, clients, focused);
+  [[nodiscard]] std::string jsonIdString(const nlohmann::json& json, const char* key) {
+    const auto it = json.find(key);
+    if (it == json.end() || it->is_null()) {
+      return {};
+    }
+    if (it->is_string()) {
+      return it->get<std::string>();
+    }
+    if (it->is_number_unsigned()) {
+      return std::to_string(it->get<std::uint64_t>());
+    }
+    if (it->is_number_integer()) {
+      return std::to_string(it->get<std::int64_t>());
+    }
+    return {};
   }
 
-  void outputLayout(void* /*data*/, zdwl_ipc_output_v2* /*output*/, uint32_t /*layout*/) {}
-
-  void outputTitle(void* data, zdwl_ipc_output_v2* output, const char* title) {
-    static_cast<MangoWorkspaceBackend*>(data)->onOutputTitle(output, title);
+  [[nodiscard]] std::vector<std::uint32_t> jsonTagArray(const nlohmann::json& json, const char* key) {
+    std::vector<std::uint32_t> result;
+    const auto it = json.find(key);
+    if (it == json.end() || !it->is_array()) {
+      return result;
+    }
+    result.reserve(it->size());
+    for (const auto& item : *it) {
+      if (item.is_number_unsigned()) {
+        result.push_back(item.get<std::uint32_t>());
+      } else if (item.is_number_integer()) {
+        const auto value = item.get<std::int32_t>();
+        if (value > 0) {
+          result.push_back(static_cast<std::uint32_t>(value));
+        }
+      }
+    }
+    return result;
   }
 
-  void outputAppId(void* data, zdwl_ipc_output_v2* output, const char* appId) {
-    static_cast<MangoWorkspaceBackend*>(data)->onOutputAppId(output, appId);
+  [[nodiscard]] bool sendAll(int fd, std::string_view payload) {
+    std::size_t offset = 0;
+    while (offset < payload.size()) {
+      const ssize_t written = ::send(fd, payload.data() + offset, payload.size() - offset, MSG_NOSIGNAL);
+      if (written <= 0) {
+        if (written < 0 && errno == EINTR) {
+          continue;
+        }
+        return false;
+      }
+      offset += static_cast<std::size_t>(written);
+    }
+    return true;
   }
-
-  void outputLayoutSymbol(void* /*data*/, zdwl_ipc_output_v2* /*output*/, const char* /*layout*/) {}
-
-  void outputFrame(void* data, zdwl_ipc_output_v2* output) {
-    static_cast<MangoWorkspaceBackend*>(data)->onOutputFrame(output);
-  }
-
-  void outputFullscreen(void* /*data*/, zdwl_ipc_output_v2* /*output*/, uint32_t /*state*/) {}
-  void outputFloating(void* /*data*/, zdwl_ipc_output_v2* /*output*/, uint32_t /*state*/) {}
-  void outputX(void* /*data*/, zdwl_ipc_output_v2* /*output*/, int32_t /*x*/) {}
-  void outputY(void* /*data*/, zdwl_ipc_output_v2* /*output*/, int32_t /*y*/) {}
-  void outputWidth(void* /*data*/, zdwl_ipc_output_v2* /*output*/, int32_t /*width*/) {}
-  void outputHeight(void* /*data*/, zdwl_ipc_output_v2* /*output*/, int32_t /*height*/) {}
-  void outputLastLayer(void* /*data*/, zdwl_ipc_output_v2* /*output*/, const char* /*layer*/) {}
-  void outputKbLayout(void* /*data*/, zdwl_ipc_output_v2* /*output*/, const char* /*layout*/) {}
-  void outputKeymode(void* /*data*/, zdwl_ipc_output_v2* /*output*/, const char* /*keymode*/) {}
-  void outputScaleFactor(void* /*data*/, zdwl_ipc_output_v2* /*output*/, uint32_t /*scale*/) {}
-
-  const zdwl_ipc_output_v2_listener kOutputListener = {
-      .toggle_visibility = outputToggleVisibility,
-      .active = outputActive,
-      .tag = outputTag,
-      .layout = outputLayout,
-      .title = outputTitle,
-      .appid = outputAppId,
-      .layout_symbol = outputLayoutSymbol,
-      .frame = outputFrame,
-      .fullscreen = outputFullscreen,
-      .floating = outputFloating,
-      .x = outputX,
-      .y = outputY,
-      .width = outputWidth,
-      .height = outputHeight,
-      .last_layer = outputLastLayer,
-      .kb_layout = outputKbLayout,
-      .keymode = outputKeymode,
-      .scalefactor = outputScaleFactor,
-  };
 
 } // namespace
 
-void MangoWorkspaceBackend::bindDwlIpcWorkspace(zdwl_ipc_manager_v2* manager) {
-  m_manager = manager;
-  zdwl_ipc_manager_v2_add_listener(m_manager, &kManagerListener, this);
-  for (const auto& [output, _] : m_outputs) {
-    ensureOutputBound(output);
-  }
-}
+MangoWorkspaceBackend::MangoWorkspaceBackend(compositors::mango::MangoRuntime& runtime) : m_runtime(runtime) {}
+
+bool MangoWorkspaceBackend::isAvailable() const noexcept { return m_watchFd >= 0; }
 
 void MangoWorkspaceBackend::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
 
+void MangoWorkspaceBackend::setOutputNameResolver(WorkspaceOutputNameResolver::Resolver resolver) {
+  m_outputNameResolver = std::move(resolver);
+}
+
+bool MangoWorkspaceBackend::connectSocket() {
+  if (m_watchFd >= 0) {
+    return true;
+  }
+  if (!openWatchSocket()) {
+    return false;
+  }
+  refreshClients();
+  syncFocusedClientTags();
+  return true;
+}
+
 void MangoWorkspaceBackend::activate(const std::string& id) {
-  auto* state = activeOutputState();
-  if (state == nullptr) {
-    state = const_cast<OutputState*>(preferredOutputState());
+  if (const auto* active = activeOutputState(); active != nullptr && !active->name.empty()) {
+    (void)m_runtime.dispatch("viewcrossmon," + id + "," + active->name);
+    return;
   }
-  if (state != nullptr) {
-    activateForOutput(state->output, id);
-  }
+  (void)m_runtime.dispatch("view," + id);
 }
 
 void MangoWorkspaceBackend::activateForOutput(wl_output* output, const std::string& id) {
-  auto it = m_outputs.find(output);
-  if (it == m_outputs.end()) {
+  const std::string name = outputName(output);
+  if (!name.empty()) {
+    (void)m_runtime.dispatch("viewcrossmon," + id + "," + name);
     return;
   }
-
-  const auto displayIndex = parseTagIndex(id);
-  if (!displayIndex.has_value() || *displayIndex >= it->second.tags.size() || it->second.handle == nullptr) {
-    return;
-  }
-
-  const std::size_t protocolIndex = protocolIndexForDisplay(*displayIndex);
-  zdwl_ipc_output_v2_set_tags(it->second.handle, 1u << protocolIndex, 0);
-  kLog.debug("activate request display_tag={} protocol_tag={} output={} snapshot={}", *displayIndex + 1,
-             protocolIndex + 1, static_cast<const void*>(output), summarizeTags(it->second));
+  activate(id);
 }
 
 void MangoWorkspaceBackend::activateForOutput(wl_output* output, const Workspace& workspace) {
@@ -133,204 +147,355 @@ void MangoWorkspaceBackend::activateForOutput(wl_output* output, const Workspace
 }
 
 std::vector<Workspace> MangoWorkspaceBackend::all() const {
-  const auto* state = preferredOutputState();
-  return state != nullptr ? forOutput(state->output) : std::vector<Workspace>{};
+  const auto* state = activeOutputState();
+  return state != nullptr ? forOutput(nullptr) : std::vector<Workspace>{};
 }
 
 std::vector<Workspace> MangoWorkspaceBackend::forOutput(wl_output* output) const {
-  const auto it = m_outputs.find(output);
-  if (it == m_outputs.end()) {
+  const auto* state = output != nullptr ? outputStateFor(output) : activeOutputState();
+  if (state == nullptr) {
     return {};
   }
 
+  const auto shellActive = shellActiveTagIndex(state->tags);
   std::vector<Workspace> result;
-  result.reserve(it->second.tags.size());
-  for (std::size_t displayIndex = 0; displayIndex < it->second.tags.size(); ++displayIndex) {
-    const std::size_t protocolIndex = protocolIndexForDisplay(displayIndex);
-    result.push_back(makeWorkspace(displayIndex, it->second.tags[protocolIndex]));
+  result.reserve(state->tags.size());
+  for (std::size_t i = 0; i < state->tags.size(); ++i) {
+    result.push_back(makeWorkspace(state->tags[i], shellActive.has_value() && i == *shellActive));
   }
   return result;
 }
 
-void MangoWorkspaceBackend::cleanup() {
-  for (auto& [handle, _] : m_outputByHandle) {
-    if (handle != nullptr) {
-      zdwl_ipc_output_v2_release(handle);
+std::unordered_map<std::string, std::vector<std::string>>
+MangoWorkspaceBackend::appIdsByWorkspace(wl_output* output) const {
+  std::unordered_map<std::string, std::vector<std::string>> result;
+  const auto* state = output != nullptr ? outputStateFor(output) : nullptr;
+  const std::string outputFilter = state != nullptr ? state->name : std::string{};
+  for (const auto& client : m_clients) {
+    if (!outputFilter.empty() && client.monitorName != outputFilter) {
+      continue;
+    }
+    if (client.appId.empty()) {
+      continue;
+    }
+    for (const std::uint32_t tag : client.tags) {
+      if (tag == 0) {
+        continue;
+      }
+      auto& apps = result[std::to_string(tag)];
+      if (std::find(apps.begin(), apps.end(), client.appId) == apps.end()) {
+        apps.push_back(client.appId);
+      }
     }
   }
-  m_outputByHandle.clear();
-  for (auto& [_, state] : m_outputs) {
-    state.handle = nullptr;
+  return result;
+}
+
+std::vector<WorkspaceWindow> MangoWorkspaceBackend::workspaceWindows(wl_output* output) const {
+  std::vector<WorkspaceWindow> result;
+  const auto* state = output != nullptr ? outputStateFor(output) : nullptr;
+  const std::string outputFilter = state != nullptr ? state->name : std::string{};
+  for (const auto& client : m_clients) {
+    if (!outputFilter.empty() && client.monitorName != outputFilter) {
+      continue;
+    }
+    for (const std::uint32_t tag : client.tags) {
+      if (tag == 0) {
+        continue;
+      }
+      result.push_back(
+          WorkspaceWindow{
+              .windowId = client.id,
+              .workspaceKey = std::to_string(tag),
+              .appId = client.appId,
+              .title = client.title,
+              .x = client.x,
+              .y = client.y,
+          }
+      );
+    }
   }
-  if (m_manager != nullptr) {
-    zdwl_ipc_manager_v2_release(m_manager);
-    m_manager = nullptr;
+  return result;
+}
+
+void MangoWorkspaceBackend::focusWindow(const std::string& windowId) {
+  if (!windowId.empty()) {
+    (void)m_runtime.dispatch("focusid client," + windowId);
   }
+}
+
+void MangoWorkspaceBackend::cleanup() {
+  closeWatchSocket();
+  m_knownOutputs.clear();
+  m_outputsByName.clear();
+  m_clients.clear();
 }
 
 void MangoWorkspaceBackend::onOutputAdded(wl_output* output) {
-  OutputState state;
-  state.output = output;
-  m_outputs.try_emplace(output, std::move(state));
-  ensureOutputBound(output);
+  if (output == nullptr || std::find(m_knownOutputs.begin(), m_knownOutputs.end(), output) != m_knownOutputs.end()) {
+    return;
+  }
+  m_knownOutputs.push_back(output);
 }
 
 void MangoWorkspaceBackend::onOutputRemoved(wl_output* output) {
-  const auto it = m_outputs.find(output);
-  if (it == m_outputs.end()) {
-    return;
-  }
-
-  if (it->second.handle != nullptr) {
-    m_outputByHandle.erase(it->second.handle);
-    zdwl_ipc_output_v2_release(it->second.handle);
-  }
-  m_outputs.erase(it);
+  m_knownOutputs.erase(std::remove(m_knownOutputs.begin(), m_knownOutputs.end(), output), m_knownOutputs.end());
 }
 
-void MangoWorkspaceBackend::onTagCount(std::uint32_t amount) {
-  m_tagCount = std::max(m_tagCount, amount);
-  for (auto& [_, state] : m_outputs) {
-    state.tags.resize(m_tagCount);
-  }
-}
+int MangoWorkspaceBackend::pollFd() const noexcept { return m_watchFd; }
 
-void MangoWorkspaceBackend::onLayoutAnnounced(const char* name) { m_layouts.push_back(name != nullptr ? name : ""); }
+int MangoWorkspaceBackend::pollTimeoutMs() const noexcept { return m_watchFd >= 0 ? -1 : 2000; }
 
-void MangoWorkspaceBackend::onOutputActive(zdwl_ipc_output_v2* handle, std::uint32_t active) {
-  const auto it = m_outputByHandle.find(handle);
-  if (it == m_outputByHandle.end()) {
+void MangoWorkspaceBackend::dispatchPoll(short revents) {
+  if (m_watchFd < 0) {
+    (void)connectSocket();
     return;
   }
-  auto state = m_outputs.find(it->second);
-  if (state != m_outputs.end()) {
-    state->second.hasPendingIpcActive = true;
-    state->second.pendingIpcActive = active != 0;
+  if ((revents & (POLLHUP | POLLERR | POLLNVAL)) != 0) {
+    closeWatchSocket();
+    notifyChanged();
+    return;
+  }
+  if ((revents & POLLIN) != 0) {
+    readWatchSocket();
   }
 }
 
-void MangoWorkspaceBackend::onOutputTitle(zdwl_ipc_output_v2* handle, const char* title) {
-  const auto it = m_outputByHandle.find(handle);
-  if (it == m_outputByHandle.end()) {
-    return;
+wl_output* MangoWorkspaceBackend::ipcSelectedOutput() const {
+  for (const auto& [name, state] : m_outputsByName) {
+    if (!state.active) {
+      continue;
+    }
+    for (wl_output* output : m_knownOutputs) {
+      if (outputName(output) == name) {
+        return output;
+      }
+    }
   }
-  auto state = m_outputs.find(it->second);
-  if (state != m_outputs.end()) {
-    state->second.hasPendingTitle = true;
-    state->second.pendingTitle = title != nullptr ? title : "";
+  return nullptr;
+}
+
+std::optional<std::pair<std::string, std::string>>
+MangoWorkspaceBackend::ipcFocusedClientForOutput(wl_output* output) const {
+  const auto* state = outputStateFor(output);
+  if (state == nullptr) {
+    state = activeOutputState();
+  }
+  if (state == nullptr) {
+    return std::nullopt;
+  }
+  return std::pair<std::string, std::string>{state->activeClientTitle, state->activeClientAppId};
+}
+
+bool MangoWorkspaceBackend::openWatchSocket() {
+  const auto& socketPath = m_runtime.socketPath();
+  if (socketPath.empty()) {
+    return false;
+  }
+
+  const int fd = ::socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
+  if (fd < 0) {
+    return false;
+  }
+
+  sockaddr_un addr{};
+  addr.sun_family = AF_UNIX;
+  if (socketPath.size() >= sizeof(addr.sun_path)) {
+    ::close(fd);
+    return false;
+  }
+  std::memcpy(addr.sun_path, socketPath.c_str(), socketPath.size() + 1);
+
+  if (::connect(fd, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr)) < 0) {
+    ::close(fd);
+    return false;
+  }
+
+  if (!sendAll(fd, "watch all-monitors\n")) {
+    ::close(fd);
+    return false;
+  }
+
+  const int flags = ::fcntl(fd, F_GETFL, 0);
+  if (flags >= 0) {
+    (void)::fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+  }
+
+  m_watchFd = fd;
+  kLog.info("connected Mango IPC workspace socket={}", socketPath);
+  return true;
+}
+
+void MangoWorkspaceBackend::closeWatchSocket() {
+  if (m_watchFd >= 0) {
+    ::close(m_watchFd);
+    m_watchFd = -1;
+  }
+  m_readBuffer.clear();
+}
+
+void MangoWorkspaceBackend::readWatchSocket() {
+  char buffer[8192];
+  bool changed = false;
+  while (true) {
+    const ssize_t count = ::recv(m_watchFd, buffer, sizeof(buffer), MSG_DONTWAIT);
+    if (count > 0) {
+      m_readBuffer.append(buffer, static_cast<std::size_t>(count));
+      std::size_t newline = std::string::npos;
+      while ((newline = m_readBuffer.find('\n')) != std::string::npos) {
+        std::string line = m_readBuffer.substr(0, newline);
+        m_readBuffer.erase(0, newline + 1);
+        changed = handleMessage(line) || changed;
+      }
+      continue;
+    }
+    if (count == 0) {
+      closeWatchSocket();
+      changed = true;
+      break;
+    }
+    if (errno == EINTR) {
+      continue;
+    }
+    if (errno != EAGAIN && errno != EWOULDBLOCK) {
+      closeWatchSocket();
+      changed = true;
+    }
+    break;
+  }
+  if (changed) {
+    notifyChanged();
   }
 }
 
-void MangoWorkspaceBackend::onOutputAppId(zdwl_ipc_output_v2* handle, const char* appId) {
-  const auto it = m_outputByHandle.find(handle);
-  if (it == m_outputByHandle.end()) {
-    return;
-  }
-  auto state = m_outputs.find(it->second);
-  if (state != m_outputs.end()) {
-    state->second.hasPendingAppId = true;
-    state->second.pendingAppId = appId != nullptr ? appId : "";
-  }
-}
-
-void MangoWorkspaceBackend::onOutputTag(zdwl_ipc_output_v2* handle, std::uint32_t tag, std::uint32_t stateValue,
-                                        std::uint32_t clients, std::uint32_t /*focused*/) {
-  const auto it = m_outputByHandle.find(handle);
-  if (it == m_outputByHandle.end()) {
-    return;
+bool MangoWorkspaceBackend::handleMessage(std::string_view line) {
+  if (line.empty()) {
+    return false;
   }
 
-  auto output = m_outputs.find(it->second);
-  if (output == m_outputs.end()) {
-    return;
+  nlohmann::json parsed;
+  try {
+    parsed = nlohmann::json::parse(line);
+  } catch (const nlohmann::json::exception&) {
+    return false;
   }
 
-  // Some compositors may not reliably emit manager.tags before output.tag frames.
-  // Learn tag count from output events so display/protocol index mapping stays valid.
-  const std::uint32_t inferredCount = tag + 1;
-  if (inferredCount > m_tagCount) {
-    m_tagCount = inferredCount;
-    for (auto& [_, otherState] : m_outputs) {
-      otherState.tags.resize(m_tagCount);
+  const auto monitorsIt = parsed.find("monitors");
+  if (monitorsIt == parsed.end() || !monitorsIt->is_array()) {
+    return false;
+  }
+
+  std::unordered_map<std::string, OutputState> nextOutputs;
+  for (const auto& monitorJson : *monitorsIt) {
+    auto monitor = parseMonitor(monitorJson);
+    if (monitor.has_value() && !monitor->name.empty()) {
+      nextOutputs.emplace(monitor->name, std::move(*monitor));
     }
   }
 
-  if (tag >= output->second.tags.size()) {
-    output->second.tags.resize(tag + 1);
-  }
-
-  auto& tagInfo = output->second.tags[tag];
-  tagInfo.active = (stateValue & ZDWL_IPC_OUTPUT_V2_TAG_STATE_ACTIVE) != 0;
-  tagInfo.urgent = (stateValue & ZDWL_IPC_OUTPUT_V2_TAG_STATE_URGENT) != 0;
-  tagInfo.occupied = clients > 0;
+  m_outputsByName = std::move(nextOutputs);
+  refreshClients();
+  syncFocusedClientTags();
+  return true;
 }
 
-void MangoWorkspaceBackend::onOutputFrame(zdwl_ipc_output_v2* handle) {
-  const auto it = m_outputByHandle.find(handle);
-  if (it != m_outputByHandle.end()) {
-    const auto stateIt = m_outputs.find(it->second);
-    if (stateIt != m_outputs.end()) {
-      auto& st = stateIt->second;
-      if (st.hasPendingIpcActive) {
-        if (st.pendingIpcActive) {
-          for (auto& [_, other] : m_outputs) {
-            other.active = false;
-          }
-          st.active = true;
-        } else {
-          st.active = false;
+void MangoWorkspaceBackend::refreshClients() {
+  const auto response = m_runtime.request("get all-clients");
+  if (!response.has_value() || !response->is_object()) {
+    return;
+  }
+
+  const auto clientsIt = response->find("clients");
+  if (clientsIt == response->end() || !clientsIt->is_array()) {
+    return;
+  }
+
+  std::vector<ClientState> nextClients;
+  nextClients.reserve(clientsIt->size());
+  for (const auto& clientJson : *clientsIt) {
+    auto client = parseClient(clientJson);
+    if (client.has_value()) {
+      nextClients.push_back(std::move(*client));
+    }
+  }
+  m_clients = std::move(nextClients);
+}
+
+void MangoWorkspaceBackend::syncFocusedClientTags() {
+  for (auto& [monitorName, state] : m_outputsByName) {
+    for (auto& tag : state.tags) {
+      tag.hasFocusedClient = false;
+    }
+
+    const ClientState* focusedClient = nullptr;
+    if (!state.activeClientId.empty()) {
+      for (const auto& client : m_clients) {
+        if (client.id == state.activeClientId && client.monitorName == monitorName) {
+          focusedClient = &client;
+          break;
         }
-        st.hasPendingIpcActive = false;
       }
-      if (st.hasPendingTitle) {
-        st.dwlTitle = std::move(st.pendingTitle);
-        st.hasPendingTitle = false;
+    }
+    if (focusedClient == nullptr) {
+      for (const auto& client : m_clients) {
+        if (client.focused && client.monitorName == monitorName) {
+          focusedClient = &client;
+          break;
+        }
       }
-      if (st.hasPendingAppId) {
-        st.dwlAppId = std::move(st.pendingAppId);
-        st.hasPendingAppId = false;
+    }
+    if (focusedClient == nullptr) {
+      continue;
+    }
+
+    for (const std::uint32_t tagIndex : focusedClient->tags) {
+      if (tagIndex == 0) {
+        continue;
+      }
+      for (auto& tag : state.tags) {
+        if (tag.index == tagIndex) {
+          tag.hasFocusedClient = true;
+        }
       }
     }
   }
-  notifyChanged();
 }
 
-void MangoWorkspaceBackend::ensureOutputBound(wl_output* output) {
-  auto it = m_outputs.find(output);
-  if (m_manager == nullptr || it == m_outputs.end() || it->second.handle != nullptr) {
-    return;
+void MangoWorkspaceBackend::notifyChanged() {
+  if (m_changeCallback) {
+    m_changeCallback();
   }
+}
 
-  auto* handle = zdwl_ipc_manager_v2_get_output(m_manager, output);
-  if (handle == nullptr) {
-    return;
-  }
-
-  it->second.handle = handle;
-  it->second.tags.resize(m_tagCount);
-  m_outputByHandle.emplace(handle, output);
-  zdwl_ipc_output_v2_add_listener(handle, &kOutputListener, this);
+std::string MangoWorkspaceBackend::outputName(wl_output* output) const {
+  return m_outputNameResolver && output != nullptr ? m_outputNameResolver(output) : std::string{};
 }
 
 MangoWorkspaceBackend::OutputState* MangoWorkspaceBackend::activeOutputState() {
-  for (auto& [_, state] : m_outputs) {
+  for (auto& [_, state] : m_outputsByName) {
     if (state.active) {
       return &state;
     }
   }
-  return nullptr;
+  return !m_outputsByName.empty() ? &m_outputsByName.begin()->second : nullptr;
 }
 
-const MangoWorkspaceBackend::OutputState* MangoWorkspaceBackend::preferredOutputState() const {
-  for (const auto& [_, state] : m_outputs) {
+const MangoWorkspaceBackend::OutputState* MangoWorkspaceBackend::activeOutputState() const {
+  for (const auto& [_, state] : m_outputsByName) {
     if (state.active) {
       return &state;
     }
   }
-  if (!m_outputs.empty()) {
-    return &m_outputs.begin()->second;
+  return !m_outputsByName.empty() ? &m_outputsByName.begin()->second : nullptr;
+}
+
+const MangoWorkspaceBackend::OutputState* MangoWorkspaceBackend::outputStateFor(wl_output* output) const {
+  const std::string name = outputName(output);
+  if (name.empty()) {
+    return nullptr;
   }
-  return nullptr;
+  const auto it = m_outputsByName.find(name);
+  return it != m_outputsByName.end() ? &it->second : nullptr;
 }
 
 std::optional<std::size_t> MangoWorkspaceBackend::parseTagIndex(const Workspace& workspace) {
@@ -355,65 +520,110 @@ std::optional<std::size_t> MangoWorkspaceBackend::parseTagIndex(const std::strin
   return value - 1;
 }
 
-std::size_t MangoWorkspaceBackend::protocolIndexForDisplay(std::size_t displayIndex) const { return displayIndex; }
+std::optional<std::size_t> MangoWorkspaceBackend::shellActiveTagIndex(const std::vector<TagInfo>& tags) const {
+  std::vector<std::size_t> activeTags;
+  activeTags.reserve(tags.size());
+  for (std::size_t i = 0; i < tags.size(); ++i) {
+    if (tags[i].active) {
+      activeTags.push_back(i);
+    }
+  }
+  if (activeTags.empty()) {
+    return std::nullopt;
+  }
+  if (activeTags.size() == 1) {
+    return activeTags.front();
+  }
+  for (const std::size_t i : activeTags) {
+    if (tags[i].hasFocusedClient) {
+      return i;
+    }
+  }
+  return activeTags.front();
+}
 
-Workspace MangoWorkspaceBackend::makeWorkspace(std::size_t index, const TagInfo& tag) {
+Workspace MangoWorkspaceBackend::makeWorkspace(const TagInfo& tag, bool shellActive) {
   return Workspace{
-      .id = std::to_string(index + 1),
-      .name = std::to_string(index + 1),
-      .coordinates = {static_cast<std::uint32_t>(index)},
-      .active = tag.active,
+      .id = std::to_string(tag.index),
+      .name = std::to_string(tag.index),
+      .coordinates = {tag.index > 0 ? tag.index - 1 : 0},
+      .index = tag.index,
+      .active = shellActive,
       .urgent = tag.urgent,
       .occupied = tag.occupied,
   };
 }
 
-std::string MangoWorkspaceBackend::summarizeTags(const OutputState& state) const {
-  if (state.tags.empty()) {
-    return "[]";
-  }
-
-  std::string out;
-  out.reserve(state.tags.size() * 10);
-  out += "[";
-  for (std::size_t displayIndex = 0; displayIndex < state.tags.size(); ++displayIndex) {
-    const std::size_t protocolIndex = protocolIndexForDisplay(displayIndex);
-    const auto& tag = state.tags[protocolIndex];
-    if (displayIndex > 0) {
-      out += ' ';
-    }
-    out += std::to_string(displayIndex + 1);
-    out += "->";
-    out += std::to_string(protocolIndex + 1);
-    out += tag.active ? "*" : ".";
-  }
-  out += "]";
-  return out;
-}
-
-void MangoWorkspaceBackend::notifyChanged() {
-  if (m_changeCallback) {
-    m_changeCallback();
-  }
-}
-
-wl_output* MangoWorkspaceBackend::ipcSelectedOutput() const {
-  for (const auto& [_, state] : m_outputs) {
-    if (state.active) {
-      return state.output;
-    }
-  }
-  return nullptr;
-}
-
-std::optional<std::pair<std::string, std::string>>
-MangoWorkspaceBackend::ipcFocusedClientForOutput(wl_output* output) const {
-  if (output == nullptr) {
+std::optional<MangoWorkspaceBackend::OutputState> MangoWorkspaceBackend::parseMonitor(const nlohmann::json& json) {
+  if (!json.is_object()) {
     return std::nullopt;
   }
-  const auto it = m_outputs.find(output);
-  if (it == m_outputs.end()) {
+
+  OutputState state{};
+  state.name = jsonString(json, "name");
+  state.active = jsonBool(json, "active");
+  state.x = jsonInt(json, "x");
+  state.y = jsonInt(json, "y");
+  state.width = jsonInt(json, "width");
+  state.height = jsonInt(json, "height");
+
+  const auto activeClientIt = json.find("active_client");
+  if (activeClientIt != json.end() && activeClientIt->is_object()) {
+    state.activeClientId = jsonIdString(*activeClientIt, "id");
+    state.activeClientTitle = StringUtils::windowTitleSingleLine(jsonString(*activeClientIt, "title"));
+    state.activeClientAppId = jsonString(*activeClientIt, "appid");
+  }
+
+  const auto tagsIt = json.find("tags");
+  if (tagsIt != json.end() && tagsIt->is_array()) {
+    state.tags.reserve(tagsIt->size());
+    for (const auto& tagJson : *tagsIt) {
+      if (!tagJson.is_object()) {
+        continue;
+      }
+      TagInfo tag{};
+      tag.index = static_cast<std::uint32_t>(jsonInt(tagJson, "index"));
+      tag.active = jsonBool(tagJson, "is_active");
+      tag.urgent = jsonBool(tagJson, "is_urgent");
+      tag.occupied = jsonInt(tagJson, "client_count") > 0;
+      state.tags.push_back(tag);
+    }
+  }
+
+  const auto activeTags = jsonTagArray(json, "active_tags");
+  if (!activeTags.empty() && !(activeTags.size() == 1 && activeTags.front() == 0)) {
+    for (auto& tag : state.tags) {
+      tag.active = std::find(activeTags.begin(), activeTags.end(), tag.index) != activeTags.end();
+    }
+  }
+
+  for (auto& tag : state.tags) {
+    tag.hasFocusedClient = false;
+  }
+
+  return state;
+}
+
+std::optional<MangoWorkspaceBackend::ClientState> MangoWorkspaceBackend::parseClient(const nlohmann::json& json) {
+  if (!json.is_object()) {
     return std::nullopt;
   }
-  return std::pair<std::string, std::string>{it->second.dwlTitle, it->second.dwlAppId};
+
+  ClientState client{};
+  const auto idIt = json.find("id");
+  if (idIt != json.end()) {
+    if (idIt->is_number_unsigned()) {
+      client.id = std::to_string(idIt->get<std::uint64_t>());
+    } else if (idIt->is_number_integer()) {
+      client.id = std::to_string(idIt->get<std::int64_t>());
+    }
+  }
+  client.title = StringUtils::windowTitleSingleLine(jsonString(json, "title"));
+  client.appId = jsonString(json, "appid");
+  client.monitorName = jsonString(json, "monitor");
+  client.tags = jsonTagArray(json, "tags");
+  client.focused = jsonBool(json, "is_focused");
+  client.x = jsonInt(json, "x");
+  client.y = jsonInt(json, "y");
+  return client;
 }

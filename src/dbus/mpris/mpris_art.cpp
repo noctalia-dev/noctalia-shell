@@ -1,12 +1,15 @@
 #include "dbus/mpris/mpris_art.h"
 
 #include "dbus/mpris/mpris_service.h"
+#include "net/http_client.h"
 #include "net/uri.h"
 
 #include <format>
 #include <string_view>
 
 namespace {
+
+  constexpr std::string_view kGoogleArtSizeSuffix = "=w544-h544-l90-rj";
 
   std::string extractQueryParam(std::string_view url, std::string_view key) {
     const auto queryPos = url.find('?');
@@ -26,11 +29,12 @@ namespace {
     return {};
   }
 
-  std::string deriveYouTubeThumbnailUrl(std::string_view sourceUrl) {
+  std::string deriveYouTubeThumbnailUrl(std::string_view sourceUrl, std::string_view quality) {
     if (sourceUrl.empty())
       return {};
     std::string videoId;
-    if (sourceUrl.find("youtube.com/watch") != std::string_view::npos) {
+    if (sourceUrl.find("youtube.com/watch") != std::string_view::npos
+        || sourceUrl.find("music.youtube.com/watch") != std::string_view::npos) {
       videoId = extractQueryParam(sourceUrl, "v");
     } else if (sourceUrl.find("youtu.be/") != std::string_view::npos) {
       const auto marker = sourceUrl.find("youtu.be/");
@@ -47,7 +51,27 @@ namespace {
     }
     if (videoId.empty())
       return {};
-    return std::format("https://i.ytimg.com/vi/{}/hqdefault.jpg", videoId);
+    return std::format("https://i.ytimg.com/vi/{}/{}.jpg", videoId, quality);
+  }
+
+  [[nodiscard]] std::string upgradeGoogleArtUrl(std::string_view url) {
+    if (url.find("googleusercontent.com") == std::string_view::npos
+        && url.find("ggpht.com") == std::string_view::npos) {
+      return std::string(url);
+    }
+
+    const auto paramStart = url.rfind('=');
+    if (paramStart == std::string_view::npos) {
+      return std::string(url);
+    }
+
+    std::string upgraded(url.substr(0, paramStart));
+    upgraded.append(kGoogleArtSizeSuffix);
+    return upgraded;
+  }
+
+  [[nodiscard]] bool isYouTubeMusicSourceUrl(std::string_view sourceUrl) {
+    return sourceUrl.find("music.youtube.com") != std::string_view::npos;
   }
 
 } // namespace
@@ -57,9 +81,76 @@ namespace mpris {
   bool isRemoteArtUrl(std::string_view url) { return uri::isRemoteUrl(url); }
 
   std::string effectiveArtUrl(const MprisPlayerInfo& player) {
-    if (!player.artUrl.empty())
+    // YouTube Music advertises a tiny Google-CDN album-art URL; bumping its size
+    // suffix only upscales a small source. The per-video i.ytimg thumbnail is the
+    // same album cover at far higher resolution, so prefer it when derivable.
+    if (isYouTubeMusicSourceUrl(player.sourceUrl)) {
+      std::string derived = deriveYouTubeThumbnailUrl(player.sourceUrl, "maxresdefault");
+      if (!derived.empty())
+        return derived;
+    }
+    if (!player.artUrl.empty()) {
+      if (isRemoteArtUrl(player.artUrl)) {
+        return upgradeGoogleArtUrl(player.artUrl);
+      }
       return player.artUrl;
-    return deriveYouTubeThumbnailUrl(player.sourceUrl);
+    }
+    return deriveYouTubeThumbnailUrl(player.sourceUrl, "hqdefault");
+  }
+
+  std::vector<std::string> artFetchCandidates(std::string_view primaryUrl) {
+    std::vector<std::string> candidates;
+    if (primaryUrl.empty())
+      return candidates;
+    candidates.emplace_back(primaryUrl);
+    // maxresdefault is not generated for every video; hqdefault always exists.
+    constexpr std::string_view kMaxres = "/maxresdefault.jpg";
+    if (primaryUrl.find("i.ytimg.com/vi/") != std::string_view::npos
+        && primaryUrl.size() >= kMaxres.size()
+        && primaryUrl.substr(primaryUrl.size() - kMaxres.size()) == kMaxres) {
+      std::string hq(primaryUrl.substr(0, primaryUrl.size() - kMaxres.size()));
+      hq += "/hqdefault.jpg";
+      candidates.push_back(std::move(hq));
+    }
+    return candidates;
+  }
+
+  std::string cachedArtworkPath(std::string_view artUrl) {
+    if (artUrl.empty())
+      return {};
+    std::string local = normalizeArtPath(artUrl);
+    if (!local.empty())
+      return local;
+    if (!isRemoteArtUrl(artUrl))
+      return {};
+    const auto cached = artCachePath(artUrl);
+    std::error_code ec;
+    if (std::filesystem::exists(cached, ec) && std::filesystem::file_size(cached, ec) > 0)
+      return cached.string();
+    return {};
+  }
+
+  std::string resolveArtworkSource(
+      HttpClient* httpClient, std::unordered_set<std::string>& pending, std::string_view artUrl,
+      std::function<void()> onReady
+  ) {
+    std::string path = cachedArtworkPath(artUrl);
+    if (!path.empty() || !isRemoteArtUrl(artUrl) || httpClient == nullptr)
+      return path;
+    const std::string key(artUrl);
+    if (!pending.insert(key).second)
+      return {};
+    const auto cached = artCachePath(artUrl);
+    std::error_code ec;
+    std::filesystem::create_directories(cached.parent_path(), ec);
+    httpClient->download(
+        artFetchCandidates(artUrl), cached, [&pending, key, onReady = std::move(onReady)](bool success) {
+          pending.erase(key);
+          if (success && onReady)
+            onReady();
+        }
+    );
+    return {};
   }
 
   std::string normalizeArtPath(std::string_view artUrl) { return uri::normalizeFileUrl(artUrl); }

@@ -83,8 +83,14 @@ void SpinnerProgram::ensureInitialized() {
   m_thicknessLocation = glGetUniformLocation(m_program.id(), "u_thickness");
   m_transformLocation = glGetUniformLocation(m_program.id(), "u_transform");
 
-  if (m_positionLocation < 0 || m_surfaceSizeLocation < 0 || m_quadSizeLocation < 0 || m_rectOriginLocation < 0 ||
-      m_rectSizeLocation < 0 || m_colorLocation < 0 || m_thicknessLocation < 0 || m_transformLocation < 0) {
+  if (m_positionLocation < 0
+      || m_surfaceSizeLocation < 0
+      || m_quadSizeLocation < 0
+      || m_rectOriginLocation < 0
+      || m_rectSizeLocation < 0
+      || m_colorLocation < 0
+      || m_thicknessLocation < 0
+      || m_transformLocation < 0) {
     throw std::runtime_error("failed to query spinner shader locations");
   }
 }
@@ -101,8 +107,9 @@ void SpinnerProgram::destroy() {
   m_transformLocation = -1;
 }
 
-void SpinnerProgram::draw(float surfaceWidth, float surfaceHeight, float width, float height, const SpinnerStyle& style,
-                          const Mat3& transform) const {
+void SpinnerProgram::draw(
+    float surfaceWidth, float surfaceHeight, float width, float height, const SpinnerStyle& style, const Mat3& transform
+) const {
   if (!m_program.isValid() || width <= 0.0f || height <= 0.0f) {
     return;
   }

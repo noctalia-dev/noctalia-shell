@@ -1,18 +1,22 @@
 #include "shell/settings/settings_window.h"
 
 #include "config/config_service.h"
+#include "config/config_types.h"
 #include "core/deferred_call.h"
 #include "core/keybind_matcher.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "i18n/i18n.h"
+#include "idle/idle_manager.h"
 #include "render/render_context.h"
+#include "render/text/font_weight_catalog.h"
 #include "system/dependency_service.h"
 #include "ui/controls/box.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/select_dropdown_popup.h"
+#include "ui/palette.h"
 #include "ui/style.h"
 #include "wayland/toplevel_surface.h"
 #include "wayland/wayland_connection.h"
@@ -29,18 +33,47 @@ namespace {
 
   constexpr Logger kLog("settings");
 
-  constexpr float kWindowWidth = 1080.0f;
+  constexpr float kWindowWidth = 1280.0f;
   constexpr float kWindowHeight = 600.0f;
-  constexpr float kWindowMinWidth = 800.0f;
+  constexpr float kWindowMinWidth = 900.0f;
   constexpr float kWindowMinHeight = 500.0f;
+
+  // How many frames to wait for the settings window to gain keyboard focus before opening a pending
+  // widget-inspector sheet anyway (bounded so a never-focused window can't spin redraws forever).
+  constexpr int kPendingWidgetInspectorFrameBudget = 240;
+
+  // Build the {"bar", name, <lane>} path the widget inspector expects, resolving which lane the widget
+  // currently lives in (the inspector keys off the bar name at index 1 and the lane at the tail).
+  std::vector<std::string>
+  barWidgetLanePath(const Config& cfg, const std::string& barName, const std::string& widgetName) {
+    std::string_view lane = "center";
+    for (const auto& bar : cfg.bars) {
+      if (bar.name != barName) {
+        continue;
+      }
+      const auto inLane = [&](const std::vector<std::string>& widgets) {
+        return std::find(widgets.begin(), widgets.end(), widgetName) != widgets.end();
+      };
+      if (inLane(bar.startWidgets)) {
+        lane = "start";
+      } else if (inLane(bar.endWidgets)) {
+        lane = "end";
+      }
+      break;
+    }
+    return {"bar", barName, std::string(lane)};
+  }
 
 } // namespace
 
-SettingsWindow::~SettingsWindow() = default;
+SettingsWindow::~SettingsWindow() { destroyWindow(); }
 
-void SettingsWindow::initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext,
-                                DependencyService* dependencies, UPowerService* upower) {
+void SettingsWindow::initialize(
+    WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext, DependencyService* dependencies,
+    UPowerService* upower, IdleManager* idleManager
+) {
   m_wayland = &wayland;
+  m_idleManager = idleManager;
   m_config = config;
   m_renderContext = renderContext;
   m_dependencies = dependencies;
@@ -91,13 +124,86 @@ bool SettingsWindow::ownsKeyboardSurface(wl_surface* surface) const noexcept {
   if (m_searchPickerPopup != nullptr && m_searchPickerPopup->wlSurface() == surface) {
     return true;
   }
-  if (m_sessionActionsEditorPopup != nullptr && m_sessionActionsEditorPopup->wlSurface() == surface) {
+  if (m_editorSheetPopup != nullptr && m_editorSheetPopup->wlSurface() == surface) {
     return true;
   }
-  if (m_sessionActionsEditorPopup != nullptr && m_sessionActionsEditorPopup->ownsSelectDropdownSurface(surface)) {
+  if (m_editorSheetPopup != nullptr && m_editorSheetPopup->ownsSelectDropdownSurface(surface)) {
     return true;
   }
   return m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen() && m_selectPopup->wlSurface() == surface;
+}
+
+std::optional<LayerPopupParentContext> SettingsWindow::topmostPopupParentContext() const {
+  if (!isOpen() || m_surface == nullptr) {
+    return std::nullopt;
+  }
+
+  const auto makeContext = [this](
+                               wl_surface* wlSurface, xdg_surface* xdgSurface, std::uint32_t width, std::uint32_t height
+                           ) -> std::optional<LayerPopupParentContext> {
+    if (wlSurface == nullptr || xdgSurface == nullptr || width == 0 || height == 0) {
+      return std::nullopt;
+    }
+    wl_output* output = m_wayland != nullptr ? m_wayland->outputForSurface(wlSurface) : nullptr;
+    if (output == nullptr) {
+      output = m_output;
+    }
+    return LayerPopupParentContext{
+        .surface = wlSurface,
+        .layerSurface = nullptr,
+        .xdgSurface = xdgSurface,
+        .output = output,
+        .width = width,
+        .height = height,
+    };
+  };
+
+  const auto selectContext = [this, &makeContext]() -> std::optional<LayerPopupParentContext> {
+    if (m_selectPopup == nullptr || !m_selectPopup->isSelectDropdownOpen()) {
+      return std::nullopt;
+    }
+    return makeContext(
+        m_selectPopup->wlSurface(), m_selectPopup->xdgSurface(), m_selectPopup->popupWidth(),
+        m_selectPopup->popupHeight()
+    );
+  };
+
+  if (auto context = selectContext(); context.has_value()) {
+    return context;
+  }
+  if (m_searchPickerPopup != nullptr && m_searchPickerPopup->isOpen()) {
+    return makeContext(
+        m_searchPickerPopup->wlSurface(), m_searchPickerPopup->xdgSurface(), m_searchPickerPopup->width(),
+        m_searchPickerPopup->height()
+    );
+  }
+  if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->isOpen()) {
+    return makeContext(
+        m_configExportDialogPopup->wlSurface(), m_configExportDialogPopup->xdgSurface(),
+        m_configExportDialogPopup->width(), m_configExportDialogPopup->height()
+    );
+  }
+  if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen()) {
+    return makeContext(
+        m_widgetAddPopup->wlSurface(), m_widgetAddPopup->xdgSurface(), m_widgetAddPopup->width(),
+        m_widgetAddPopup->height()
+    );
+  }
+  if (m_editorSheetPopup != nullptr && m_editorSheetPopup->isOpen()) {
+    return makeContext(
+        m_editorSheetPopup->wlSurface(), m_editorSheetPopup->xdgSurface(), m_editorSheetPopup->width(),
+        m_editorSheetPopup->height()
+    );
+  }
+  return makeContext(m_surface->wlSurface(), m_surface->xdgSurface(), m_surface->width(), m_surface->height());
+}
+
+std::optional<LayerPopupParentContext> SettingsWindow::fallbackPopupParentContext() const {
+  auto context = topmostPopupParentContext();
+  if (context.has_value()) {
+    context->usedFallback = true;
+  }
+  return context;
 }
 
 std::optional<LayerPopupParentContext> SettingsWindow::popupParentContextForSurface(wl_surface* surface) const {
@@ -105,8 +211,9 @@ std::optional<LayerPopupParentContext> SettingsWindow::popupParentContextForSurf
     return std::nullopt;
   }
 
-  const auto makeContext = [this](wl_surface* wlSurface, xdg_surface* xdgSurface, std::uint32_t width,
-                                  std::uint32_t height) -> std::optional<LayerPopupParentContext> {
+  const auto makeContext = [this](
+                               wl_surface* wlSurface, xdg_surface* xdgSurface, std::uint32_t width, std::uint32_t height
+                           ) -> std::optional<LayerPopupParentContext> {
     if (wlSurface == nullptr || xdgSurface == nullptr) {
       return std::nullopt;
     }
@@ -125,27 +232,37 @@ std::optional<LayerPopupParentContext> SettingsWindow::popupParentContextForSurf
   };
 
   if (surface == m_surface->wlSurface()) {
-    return makeContext(m_surface->wlSurface(), m_surface->xdgSurface(), m_surface->width(), m_surface->height());
+    return topmostPopupParentContext();
   }
   if (m_widgetAddPopup != nullptr && surface == m_widgetAddPopup->wlSurface()) {
-    return makeContext(m_widgetAddPopup->wlSurface(), m_widgetAddPopup->xdgSurface(), m_widgetAddPopup->width(),
-                       m_widgetAddPopup->height());
+    return makeContext(
+        m_widgetAddPopup->wlSurface(), m_widgetAddPopup->xdgSurface(), m_widgetAddPopup->width(),
+        m_widgetAddPopup->height()
+    );
   }
   if (m_configExportDialogPopup != nullptr && surface == m_configExportDialogPopup->wlSurface()) {
-    return makeContext(m_configExportDialogPopup->wlSurface(), m_configExportDialogPopup->xdgSurface(),
-                       m_configExportDialogPopup->width(), m_configExportDialogPopup->height());
+    return makeContext(
+        m_configExportDialogPopup->wlSurface(), m_configExportDialogPopup->xdgSurface(),
+        m_configExportDialogPopup->width(), m_configExportDialogPopup->height()
+    );
   }
   if (m_searchPickerPopup != nullptr && surface == m_searchPickerPopup->wlSurface()) {
-    return makeContext(m_searchPickerPopup->wlSurface(), m_searchPickerPopup->xdgSurface(),
-                       m_searchPickerPopup->width(), m_searchPickerPopup->height());
+    return makeContext(
+        m_searchPickerPopup->wlSurface(), m_searchPickerPopup->xdgSurface(), m_searchPickerPopup->width(),
+        m_searchPickerPopup->height()
+    );
   }
-  if (m_sessionActionsEditorPopup != nullptr && surface == m_sessionActionsEditorPopup->wlSurface()) {
-    return makeContext(m_sessionActionsEditorPopup->wlSurface(), m_sessionActionsEditorPopup->xdgSurface(),
-                       m_sessionActionsEditorPopup->width(), m_sessionActionsEditorPopup->height());
+  if (m_editorSheetPopup != nullptr && surface == m_editorSheetPopup->wlSurface()) {
+    return makeContext(
+        m_editorSheetPopup->wlSurface(), m_editorSheetPopup->xdgSurface(), m_editorSheetPopup->width(),
+        m_editorSheetPopup->height()
+    );
   }
-  if (m_sessionActionsEditorPopup != nullptr && m_sessionActionsEditorPopup->ownsSelectDropdownSurface(surface)) {
-    return makeContext(m_sessionActionsEditorPopup->wlSurface(), m_sessionActionsEditorPopup->xdgSurface(),
-                       m_sessionActionsEditorPopup->width(), m_sessionActionsEditorPopup->height());
+  if (m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen() && surface == m_selectPopup->wlSurface()) {
+    return makeContext(
+        m_selectPopup->wlSurface(), m_selectPopup->xdgSurface(), m_selectPopup->popupWidth(),
+        m_selectPopup->popupHeight()
+    );
   }
   return std::nullopt;
 }
@@ -187,8 +304,9 @@ void SettingsWindow::open() {
     }
   });
 
-  m_surface->setPrepareFrameCallback(
-      [this](bool needsUpdate, bool needsLayout) { prepareFrame(needsUpdate, needsLayout); });
+  m_surface->setPrepareFrameCallback([this](bool needsUpdate, bool needsLayout) {
+    prepareFrame(needsUpdate, needsLayout);
+  });
 
   m_surface->setUpdateCallback([]() {});
 
@@ -224,10 +342,9 @@ void SettingsWindow::openToBarWidget(std::string barName, std::string widgetName
   m_selectedSection = "bar";
   m_selectedBarName = std::move(barName);
   m_selectedMonitorOverride.clear();
-  m_editingWidgetName = std::move(widgetName);
+  m_pendingOpenWidgetInspectorName = std::move(widgetName);
+  m_pendingOpenWidgetInspectorFrames = kPendingWidgetInspectorFrameBudget;
   m_contentScrollState.offset = 0.0f;
-  m_scrollToPendingContentTarget = true;
-  m_pendingContentScrollTarget = nullptr;
   m_sidebarScrollState.offset = 0.0f;
 
   const bool wasOpen = isOpen();
@@ -271,9 +388,12 @@ void SettingsWindow::destroyWindow() {
     m_searchPickerPopup->close();
     m_searchPickerPopup.reset();
   }
-  if (m_sessionActionsEditorPopup != nullptr) {
-    m_sessionActionsEditorPopup->close();
-    m_sessionActionsEditorPopup.reset();
+  if (m_editorSheetPopup != nullptr) {
+    m_editorSheetPopup->close();
+    m_editorSheetPopup.reset();
+  }
+  if (m_selectPopup != nullptr) {
+    m_selectPopup->closeSelectDropdown();
   }
   m_sceneRoot.reset();
   m_surface.reset();
@@ -303,7 +423,10 @@ void SettingsWindow::destroyWindow() {
   m_selectedSection.clear();
   m_selectedBarName.clear();
   m_selectedMonitorOverride.clear();
+  m_pendingOpenWidgetInspectorName.clear();
   m_editingWidgetName.clear();
+  m_editingCapsuleGroupId.clear();
+  m_selectedLaneWidgets.clear();
   m_pendingDeleteWidgetName.clear();
   m_pendingDeleteWidgetSettingPath.clear();
   m_renamingWidgetName.clear();
@@ -342,6 +465,11 @@ void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
     m_lastSceneHeight = height;
     m_rebuildRequested = false;
     m_contentRebuildRequested = false;
+    const float scale = uiScale();
+    const auto newMinW = static_cast<std::uint32_t>(std::round(kWindowMinWidth * scale));
+    const auto newMinH = static_cast<std::uint32_t>(std::round(kWindowMinHeight * scale));
+    m_surface->setMinSize(newMinW, newMinH);
+    m_surface->clampToMinSize(newMinW, newMinH);
   } else if ((m_contentRebuildRequested || sizeChanged || needsLayout) && m_sceneRoot != nullptr) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
     const float w = static_cast<float>(width);
@@ -362,6 +490,34 @@ void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
     m_lastSceneWidth = width;
     m_lastSceneHeight = height;
   }
+
+  maybeOpenPendingWidgetInspector();
+}
+
+void SettingsWindow::maybeOpenPendingWidgetInspector() {
+  if (m_pendingOpenWidgetInspectorName.empty() || m_surface == nullptr || m_wayland == nullptr || m_config == nullptr) {
+    return;
+  }
+  // A grab popup needs an input serial this window owns. Right after a bar middle-click the latest
+  // serial still belongs to the bar surface; wait until this window holds keyboard focus (whose enter
+  // refreshes the serial) so the compositor accepts the sheet's grab instead of dismissing it.
+  const bool focused = m_wayland->lastKeyboardSurface() == m_surface->wlSurface();
+  if (!focused && m_pendingOpenWidgetInspectorFrames > 0) {
+    --m_pendingOpenWidgetInspectorFrames;
+    m_surface->requestRedraw();
+    return;
+  }
+  std::string widgetName = std::move(m_pendingOpenWidgetInspectorName);
+  m_pendingOpenWidgetInspectorName.clear();
+  // A bar middle-click gives us no press serial the settings surface owns, so the compositor rejects
+  // an xdg_popup grab. Open the sheet without a grab — the window holds keyboard focus and routes
+  // input to it, and an outside click still dismisses it (handled in onPointerEvent).
+  m_pendingEditorSheetNoGrab = true;
+  // The inspector takes a per-lane path {"bar", name, <lane>} (same shape the lane-card gear passes);
+  // resolve which lane this widget lives in so it isn't a 2-element path that mislocates the bar name.
+  openWidgetInspectorEditor(
+      barWidgetLanePath(m_config->config(), m_selectedBarName, widgetName), std::move(widgetName)
+  );
 }
 
 void SettingsWindow::requestSceneRebuild() {
@@ -372,6 +528,11 @@ void SettingsWindow::requestSceneRebuild() {
     m_rebuildRequested = true;
     m_contentRebuildRequested = false;
     m_surface->requestLayout();
+    // The editor sheet edits the same config: rebuild its body so override/reset controls track
+    // value changes in place, the way the inline inspector did when the whole scene rebuilt.
+    if (m_editorSheetPopup != nullptr && m_editorSheetPopup->isOpen()) {
+      m_editorSheetPopup->rebuildBody();
+    }
   });
 }
 
@@ -395,7 +556,10 @@ void SettingsWindow::clearStatusMessage() {
 }
 
 void SettingsWindow::clearTransientSettingsState() {
+  m_pendingOpenWidgetInspectorName.clear();
   m_editingWidgetName.clear();
+  m_editingCapsuleGroupId.clear();
+  m_selectedLaneWidgets.clear();
   m_renamingWidgetName.clear();
   m_pendingDeleteWidgetName.clear();
   m_pendingDeleteWidgetSettingPath.clear();
@@ -428,33 +592,45 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
   if (m_widgetAddPopup != nullptr && m_widgetAddPopup->onPointerEvent(event)) {
     return true;
   }
-  if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen() && event.type == PointerEvent::Type::Button &&
-      event.state == 1) {
+  if (m_widgetAddPopup != nullptr
+      && m_widgetAddPopup->isOpen()
+      && !m_widgetAddPopup->isInitializing()
+      && event.type == PointerEvent::Type::Button
+      && event.state == 1) {
     m_widgetAddPopup->close();
     return true;
   }
   if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->onPointerEvent(event)) {
     return true;
   }
-  if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->isOpen() &&
-      event.type == PointerEvent::Type::Button && event.state == 1) {
+  if (m_configExportDialogPopup != nullptr
+      && m_configExportDialogPopup->isOpen()
+      && !m_configExportDialogPopup->isInitializing()
+      && event.type == PointerEvent::Type::Button
+      && event.state == 1) {
     m_configExportDialogPopup->close();
     return true;
   }
   if (m_searchPickerPopup != nullptr && m_searchPickerPopup->onPointerEvent(event)) {
     return true;
   }
-  if (m_searchPickerPopup != nullptr && m_searchPickerPopup->isOpen() && event.type == PointerEvent::Type::Button &&
-      event.state == 1) {
+  if (m_searchPickerPopup != nullptr
+      && m_searchPickerPopup->isOpen()
+      && !m_searchPickerPopup->isInitializing()
+      && event.type == PointerEvent::Type::Button
+      && event.state == 1) {
     m_searchPickerPopup->close();
     return true;
   }
-  if (m_sessionActionsEditorPopup != nullptr && m_sessionActionsEditorPopup->onPointerEvent(event)) {
+  if (m_editorSheetPopup != nullptr && m_editorSheetPopup->onPointerEvent(event)) {
     return true;
   }
-  if (m_sessionActionsEditorPopup != nullptr && m_sessionActionsEditorPopup->isOpen() &&
-      event.type == PointerEvent::Type::Button && event.state == 1) {
-    m_sessionActionsEditorPopup->close();
+  if (m_editorSheetPopup != nullptr
+      && m_editorSheetPopup->isOpen()
+      && !m_editorSheetPopup->isInitializing()
+      && event.type == PointerEvent::Type::Button
+      && event.state == 1) {
+    m_editorSheetPopup->close();
     return true;
   }
 
@@ -471,8 +647,10 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
   if (m_actionsMenuPopup != nullptr && m_actionsMenuPopup->onPointerEvent(event)) {
     return true;
   }
-  if (m_actionsMenuPopup != nullptr && m_actionsMenuPopup->isOpen() && event.type == PointerEvent::Type::Button &&
-      event.state == 1) {
+  if (m_actionsMenuPopup != nullptr
+      && m_actionsMenuPopup->isOpen()
+      && event.type == PointerEvent::Type::Button
+      && event.state == 1) {
     m_actionsMenuPopup->close();
     return true;
   }
@@ -510,23 +688,27 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
         m_pointerInside = true;
       }
       m_inputDispatcher.pointerMotion(static_cast<float>(event.sx), static_cast<float>(event.sy), event.serial);
-      if (pressed && event.button == BTN_LEFT && m_inputDispatcher.hoveredArea() == nullptr &&
-          headerDragRegionContains(static_cast<float>(event.sx), static_cast<float>(event.sy))) {
+      if (pressed
+          && event.button == BTN_LEFT
+          && m_inputDispatcher.hoveredArea() == nullptr
+          && headerDragRegionContains(static_cast<float>(event.sx), static_cast<float>(event.sy))) {
         m_surface->beginMove(event.serial);
         consumed = true;
         break;
       }
-      m_inputDispatcher.pointerButton(static_cast<float>(event.sx), static_cast<float>(event.sy), event.button,
-                                      pressed);
+      m_inputDispatcher.pointerButton(
+          static_cast<float>(event.sx), static_cast<float>(event.sy), event.button, pressed
+      );
       consumed = m_pointerInside;
     }
     break;
   }
   case PointerEvent::Type::Axis:
     if (m_pointerInside) {
-      m_inputDispatcher.pointerAxis(static_cast<float>(event.sx), static_cast<float>(event.sy), event.axis,
-                                    event.axisSource, event.axisValue, event.axisDiscrete, event.axisValue120,
-                                    event.axisLines);
+      m_inputDispatcher.pointerAxis(
+          static_cast<float>(event.sx), static_cast<float>(event.sy), event.axis, event.axisSource, event.axisValue,
+          event.axisDiscrete, event.axisValue120, event.axisLines
+      );
       consumed = true;
     }
     break;
@@ -548,7 +730,7 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen()) {
+  if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen() && !m_widgetAddPopup->isInitializing()) {
     if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
       m_widgetAddPopup->close();
       return;
@@ -557,7 +739,9 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->isOpen()) {
+  if (m_configExportDialogPopup != nullptr
+      && m_configExportDialogPopup->isOpen()
+      && !m_configExportDialogPopup->isInitializing()) {
     if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
       m_configExportDialogPopup->close();
       return;
@@ -566,7 +750,7 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  if (m_searchPickerPopup != nullptr && m_searchPickerPopup->isOpen()) {
+  if (m_searchPickerPopup != nullptr && m_searchPickerPopup->isOpen() && !m_searchPickerPopup->isInitializing()) {
     if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
       m_searchPickerPopup->close();
       return;
@@ -575,16 +759,16 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  if (m_sessionActionsEditorPopup != nullptr && m_sessionActionsEditorPopup->isOpen()) {
-    if (m_sessionActionsEditorPopup->isSelectDropdownOpen()) {
-      m_sessionActionsEditorPopup->onKeyboardEvent(event);
+  if (m_editorSheetPopup != nullptr && m_editorSheetPopup->isOpen() && !m_editorSheetPopup->isInitializing()) {
+    if (m_editorSheetPopup->isSelectDropdownOpen()) {
+      m_editorSheetPopup->onKeyboardEvent(event);
       return;
     }
     if (event.pressed && KeybindMatcher::matches(KeybindAction::Cancel, event.sym, event.modifiers)) {
-      m_sessionActionsEditorPopup->close();
+      m_editorSheetPopup->close();
       return;
     }
-    m_sessionActionsEditorPopup->onKeyboardEvent(event);
+    m_editorSheetPopup->onKeyboardEvent(event);
     return;
   }
 
@@ -604,11 +788,21 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
       m_actionsMenuPopup->close();
       return;
     }
-    if (!m_editingWidgetName.empty() || !m_renamingWidgetName.empty() || !m_pendingDeleteWidgetName.empty() ||
-        !m_pendingDeleteWidgetSettingPath.empty() || !m_creatingBarName.empty() || !m_renamingBarName.empty() ||
-        !m_pendingDeleteBarName.empty() || !m_creatingMonitorOverrideBarName.empty() ||
-        !m_renamingMonitorOverrideBarName.empty() || !m_pendingDeleteMonitorOverrideBarName.empty()) {
+    if (!m_editingWidgetName.empty()
+        || !m_editingCapsuleGroupId.empty()
+        || !m_selectedLaneWidgets.empty()
+        || !m_renamingWidgetName.empty()
+        || !m_pendingDeleteWidgetName.empty()
+        || !m_pendingDeleteWidgetSettingPath.empty()
+        || !m_creatingBarName.empty()
+        || !m_renamingBarName.empty()
+        || !m_pendingDeleteBarName.empty()
+        || !m_creatingMonitorOverrideBarName.empty()
+        || !m_renamingMonitorOverrideBarName.empty()
+        || !m_pendingDeleteMonitorOverrideBarName.empty()) {
       m_editingWidgetName.clear();
+      m_editingCapsuleGroupId.clear();
+      m_selectedLaneWidgets.clear();
       m_renamingWidgetName.clear();
       m_pendingDeleteWidgetName.clear();
       m_pendingDeleteWidgetSettingPath.clear();
@@ -635,7 +829,9 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
   }
 }
 
-void SettingsWindow::onThemeChanged() {
+void SettingsWindow::onThemeChanged() { requestRedraw(); }
+
+void SettingsWindow::requestRedraw() {
   if (isOpen()) {
     if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen()) {
       m_widgetAddPopup->requestRedraw();
@@ -643,14 +839,15 @@ void SettingsWindow::onThemeChanged() {
     if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->isOpen()) {
       m_configExportDialogPopup->requestRedraw();
     }
-    if (m_sessionActionsEditorPopup != nullptr && m_sessionActionsEditorPopup->isOpen()) {
-      m_sessionActionsEditorPopup->requestRedraw();
+    if (m_editorSheetPopup != nullptr && m_editorSheetPopup->isOpen()) {
+      m_editorSheetPopup->requestRedraw();
     }
     m_surface->requestRedraw();
   }
 }
 
 void SettingsWindow::onFontChanged() {
+  text::invalidateFontWeightCatalogCache();
   if (isOpen()) {
     if (m_widgetAddPopup != nullptr && m_widgetAddPopup->isOpen()) {
       m_widgetAddPopup->requestLayout();
@@ -658,35 +855,43 @@ void SettingsWindow::onFontChanged() {
     if (m_configExportDialogPopup != nullptr && m_configExportDialogPopup->isOpen()) {
       m_configExportDialogPopup->requestLayout();
     }
-    if (m_sessionActionsEditorPopup != nullptr && m_sessionActionsEditorPopup->isOpen()) {
-      m_sessionActionsEditorPopup->requestLayout();
+    if (m_editorSheetPopup != nullptr && m_editorSheetPopup->isOpen()) {
+      m_editorSheetPopup->requestLayout();
     }
-    m_surface->requestLayout();
+    requestSceneRebuild();
   }
 }
 
 void SettingsWindow::onExternalOptionsChanged() { requestSceneRebuild(); }
 
 void SettingsWindow::refreshIdleLiveStatusText() {
-  if (m_idleLiveStatusLabel == nullptr || m_wayland == nullptr) {
+  if (m_idleLiveStatusLabel == nullptr) {
     return;
   }
 
-  const double idleSec = m_wayland->userIdleSeconds();
-  const auto sec = static_cast<std::int64_t>(std::floor(idleSec));
+  const std::int64_t sec = m_idleManager != nullptr ? m_idleManager->liveIdleSeconds() : 0;
+  if (sec <= 0) {
+    m_idleLiveStatusLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
+    m_idleLiveStatusLabel->setText(i18n::tr("settings.idle.live-status.active"));
+    return;
+  }
 
+  m_idleLiveStatusLabel->setColor(colorSpecFromRole(ColorRole::Primary));
   if (sec == 1) {
     m_idleLiveStatusLabel->setText(i18n::tr("settings.idle.live-status.idle-for-one"));
   } else {
     m_idleLiveStatusLabel->setText(
-        i18n::tr("settings.idle.live-status.idle-for-seconds", "seconds", std::to_string(sec)));
+        i18n::tr("settings.idle.live-status.idle-for-seconds", "seconds", std::to_string(sec))
+    );
   }
 }
 
-void SettingsWindow::onSecondTick() {
+void SettingsWindow::onIdleLiveStatusChanged() {
   if (m_idleLiveStatusLabel == nullptr || m_surface == nullptr) {
     return;
   }
   refreshIdleLiveStatusText();
   m_surface->requestRedraw();
 }
+
+void SettingsWindow::onSecondTick() { onIdleLiveStatusChanged(); }

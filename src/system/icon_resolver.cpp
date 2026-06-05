@@ -29,8 +29,8 @@ namespace {
     if (dir.path.empty()) {
       return;
     }
-    if (std::find_if(dirs.begin(), dirs.end(), [&](const IconSearchDir& d) { return d.path == dir.path; }) ==
-        dirs.end()) {
+    if (std::find_if(dirs.begin(), dirs.end(), [&](const IconSearchDir& d) { return d.path == dir.path; })
+        == dirs.end()) {
       dirs.push_back(std::move(dir));
     }
   }
@@ -257,6 +257,7 @@ namespace {
     struct DirEntry {
       std::string path;
       int size = 0;
+      int maxSize = 0;
       bool scalable = false;
     };
 
@@ -306,23 +307,22 @@ namespace {
           entry.scalable = (value == "Scalable" || value == "Threshold");
         } else if (key == "MaxSize") {
           // For threshold/scalable dirs, MaxSize gives a better sense of actual size
-          int maxSize = 0;
           try {
-            maxSize = std::stoi(std::string(value));
+            entry.maxSize = std::stoi(std::string(value));
           } catch (...) {
           }
-          if (maxSize > entry.size)
-            entry.size = maxSize;
         }
       }
     }
 
-    // Sort dirs: scalable first, then by size descending
+    // Sort dirs: scalable first, then by size descending (MaxSize first, then use Size as a tiebreaker)
     std::stable_sort(dirNames.begin(), dirNames.end(), [&](const std::string& a, const std::string& b) {
       const auto& da = dirMap[a];
       const auto& db = dirMap[b];
       if (da.scalable != db.scalable)
         return da.scalable > db.scalable;
+      if (da.maxSize != db.maxSize)
+        return da.maxSize > db.maxSize;
       return da.size > db.size;
     });
 
@@ -336,8 +336,10 @@ namespace {
     return {sortedPaths, inherits};
   }
 
-  void buildThemeSearchPaths(const std::string& themeName, const std::vector<std::string>& baseDirs,
-                             std::set<std::string>& visited, std::vector<IconSearchDir>& searchDirs) {
+  void buildThemeSearchPaths(
+      const std::string& themeName, const std::vector<std::string>& baseDirs, std::set<std::string>& visited,
+      std::vector<IconSearchDir>& searchDirs
+  ) {
     if (visited.count(themeName)) {
       return;
     }
@@ -356,15 +358,21 @@ namespace {
         for (const char* path :
              {"/scalable/apps/", "/256x256/apps/", "/128x128/apps/", "/64x64/apps/", "/48x48/apps/", "/32x32/apps/"}) {
           const std::string_view name(path);
-          pushUniqueDir(searchDirs, IconSearchDir{.path = themeRoot + path,
-                                                  .size = sizeFromDirName(name),
-                                                  .scalable = name.find("scalable") != std::string_view::npos});
+          pushUniqueDir(
+              searchDirs,
+              IconSearchDir{
+                  .path = themeRoot + path,
+                  .size = sizeFromDirName(name),
+                  .scalable = name.find("scalable") != std::string_view::npos
+              }
+          );
         }
       } else {
         for (const auto& dir : dirs) {
           pushUniqueDir(
               searchDirs,
-              IconSearchDir{.path = themeRoot + "/" + dir.path + "/", .size = dir.size, .scalable = dir.scalable});
+              IconSearchDir{.path = themeRoot + "/" + dir.path + "/", .size = dir.size, .scalable = dir.scalable}
+          );
         }
       }
 

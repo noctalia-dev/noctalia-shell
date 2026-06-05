@@ -35,6 +35,30 @@ namespace uri {
     return decoded;
   }
 
+  std::string encodeComponent(std::string_view text) {
+    static constexpr char kHex[] = "0123456789ABCDEF";
+    std::string encoded;
+    encoded.reserve(text.size() * 3);
+    for (const char rawc : text) {
+      const auto c = static_cast<unsigned char>(rawc);
+      const bool unreserved = (c >= 'A' && c <= 'Z')
+          || (c >= 'a' && c <= 'z')
+          || (c >= '0' && c <= '9')
+          || c == '-'
+          || c == '_'
+          || c == '.'
+          || c == '~';
+      if (unreserved) {
+        encoded.push_back(static_cast<char>(c));
+      } else {
+        encoded.push_back('%');
+        encoded.push_back(kHex[c >> 4]);
+        encoded.push_back(kHex[c & 0x0F]);
+      }
+    }
+    return encoded;
+  }
+
   bool isRemoteUrl(std::string_view url) { return url.starts_with("https://") || url.starts_with("http://"); }
 
   std::string normalizeFileUrl(std::string_view url) {

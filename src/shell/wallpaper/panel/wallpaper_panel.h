@@ -11,6 +11,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 class Button;
@@ -19,6 +20,7 @@ class Flex;
 class Input;
 class InputArea;
 class Label;
+class Segmented;
 class Select;
 class Toggle;
 class VirtualGridView;
@@ -27,6 +29,13 @@ class WaylandConnection;
 
 class WallpaperPanel : public Panel {
 public:
+  enum class SortMode : std::uint8_t {
+    NameAsc,
+    NameDesc,
+    DateAsc,
+    DateDesc,
+  };
+
   WallpaperPanel(WaylandConnection* wayland, ConfigService* config, ThumbnailService* thumbnails);
   ~WallpaperPanel() override;
 
@@ -53,22 +62,46 @@ private:
   };
 
   void populateMonitorChoices();
+  void refreshVisibleEntries();
   void refreshScan();
   void applyFilter();
+  void syncBrowseChrome();
   void rebuildBreadcrumb();
   void navigateInto(const std::filesystem::path& dir);
   void navigateUp();
   void applyWallpaperFromEntry(const WallpaperEntry& entry);
+  void applyWallpaperPath(const std::string& path, const WallpaperFavorite* applyTheme);
+  [[nodiscard]] const WallpaperFavorite* favoriteThemeToApply(std::string_view path) const;
+  [[nodiscard]] WallpaperFavorite themeFromControls() const;
+  void applyLiveThemePreview(const std::string& path);
+  void toggleFavoriteForPath(const std::string& path);
+  void syncThemeControls();
+  void rebuildFavoritePaletteDetailSelect(const WallpaperFavorite* favorite);
+  [[nodiscard]] std::string selectedWallpaperPath() const;
+  void appendFilteredFavoriteEntries(
+      std::vector<WallpaperEntry>& out, std::unordered_set<std::string>& favoritePaths,
+      const std::filesystem::path& activeDir, const std::filesystem::path& rootDir
+  ) const;
+  void sortVisibleEntries();
+  void syncSortButtonGlyph();
+  void cycleSortMode();
+  void setSortMode(SortMode mode);
+  [[nodiscard]] static SortMode sortModeFromState(std::string_view value);
+  [[nodiscard]] static std::string_view sortModeStateValue(SortMode mode);
+  [[nodiscard]] static std::string_view sortModeGlyph(SortMode mode);
+  [[nodiscard]] static const char* sortModeTooltipKey(SortMode mode);
   void applyColorWallpaper();
   void rebindGrid(bool resetScroll = false);
   void resetSelection();
   void selectVisibleIndex(std::size_t index);
   void activateSelectedEntry();
-  [[nodiscard]] bool lightTheme() const;
   [[nodiscard]] bool handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers);
   [[nodiscard]] std::filesystem::path activeDirectoryForSelection() const;
   [[nodiscard]] std::filesystem::path rootDirectoryForSelection() const;
+  [[nodiscard]] std::string currentWallpaperPathForSelection() const;
+  [[nodiscard]] std::vector<std::string> allMonitorConnectors() const;
   [[nodiscard]] std::optional<Color> selectedFillColor() const;
+  [[nodiscard]] static std::string displayNameForWallpaperPath(std::string_view path);
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
@@ -80,13 +113,20 @@ private:
   Flex* m_rootLayout = nullptr;
   Flex* m_header = nullptr;
   Flex* m_toolbar = nullptr;
+  Flex* m_favoritesOptionsColumn = nullptr;
   Label* m_title = nullptr;
   Button* m_backButton = nullptr;
   Label* m_breadcrumb = nullptr;
+  Segmented* m_favoriteThemeSegmented = nullptr;
+  Label* m_favoriteThemeLabel = nullptr;
+  Segmented* m_favoritePaletteSourceSegmented = nullptr;
+  Select* m_favoritePaletteDetailSelect = nullptr;
+  Label* m_favoritePaletteLabel = nullptr;
   Select* m_monitorSelect = nullptr;
   Input* m_filterInput = nullptr;
   Toggle* m_flattenToggle = nullptr;
   Label* m_flattenLabel = nullptr;
+  Button* m_sortButton = nullptr;
   Button* m_refreshButton = nullptr;
   Button* m_colorButton = nullptr;
   Button* m_closeButton = nullptr;
@@ -109,6 +149,10 @@ private:
   Timer m_filterDebounceTimer;
 
   bool m_flatten = false;
+  SortMode m_sortMode = SortMode::NameAsc;
+  std::size_t m_pinnedFavoriteCount = 0;
+  bool m_syncingFavoriteControls = false;
+  std::vector<std::string> m_favoritePaletteDetailValues;
   std::size_t m_selectedVisibleIndex = 0;
   float m_lastWidth = 0.0f;
   float m_lastHeight = 0.0f;

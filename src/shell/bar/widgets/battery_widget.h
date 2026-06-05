@@ -1,24 +1,26 @@
 #pragma once
 
-#include "core/timer_manager.h"
 #include "dbus/upower/upower_service.h"
 #include "render/animation/animation_manager.h"
 #include "shell/bar/widget.h"
 #include "ui/palette.h"
 
+#include <chrono>
 #include <string>
 
 class Box;
 class Glyph;
 class Label;
 
-enum class BatteryDisplayMode : std::uint8_t { Graphic, Icon };
+enum class BatteryDisplayMode : std::uint8_t { Graphic, Glyph };
 
 class BatteryWidget : public Widget {
 public:
-  BatteryWidget(UPowerService* upower, std::string deviceSelector = "auto", int warningThreshold = 0,
-                ColorSpec warningColor = {}, BatteryDisplayMode displayMode = BatteryDisplayMode::Icon,
-                bool showLabel = true);
+  BatteryWidget(
+      UPowerService* upower, std::string deviceSelector = "auto", int warningThreshold = 0, ColorSpec warningColor = {},
+      BatteryDisplayMode displayMode = BatteryDisplayMode::Glyph, bool showLabel = true, bool hideWhenPlugged = false,
+      bool hideWhenFull = false
+  );
 
   void create() override;
 
@@ -31,18 +33,20 @@ private:
   void updateFillGeometry();
 
   void createGraphicMode();
-  void createIconMode();
+  void createGlyphMode();
   void layoutGraphicMode(Renderer& renderer);
-  void layoutIconMode(Renderer& renderer, float containerWidth, float containerHeight);
+  void layoutGlyphMode(Renderer& renderer, float containerWidth, float containerHeight);
 
   UPowerService* m_upower = nullptr;
   std::string m_deviceSelector = "auto";
   int m_warningThreshold = 0;
   ColorSpec m_warningColor;
-  BatteryDisplayMode m_displayMode = BatteryDisplayMode::Icon;
+  BatteryDisplayMode m_displayMode = BatteryDisplayMode::Glyph;
   bool m_showLabel = true;
+  bool m_hideWhenPlugged = false;
+  bool m_hideWhenFull = false;
 
-  // Icon mode nodes
+  // Glyph mode nodes
   Glyph* m_glyph = nullptr;
   Label* m_label = nullptr;
 
@@ -57,13 +61,13 @@ private:
   float m_animatedPct = 0.0f;
   AnimationManager::Id m_fillAnim = 0;
 
-  // Charging icon/text alternation
-  Timer m_alternateTimer;
-  bool m_showStateIcon = false;
-
   double m_lastPct = -1.0;
   BatteryState m_lastState = BatteryState::Unknown;
   bool m_lastPresent = false;
   bool m_isVertical = false;
   bool m_lastVertical = false;
+
+  double m_lastEnergyRate = -1.0;
+  std::int64_t m_lastTimeToEmpty = -1;
+  std::chrono::steady_clock::time_point m_lastTooltipRefreshTime;
 };

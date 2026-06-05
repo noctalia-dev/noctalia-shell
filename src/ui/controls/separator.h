@@ -23,6 +23,7 @@ public:
   void setColor(const ColorSpec& color);
   void setThickness(float thickness);
   void setOrientation(SeparatorOrientation orientation);
+  void setGradientEdges(bool enabled);
 
 protected:
   LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints) override;
@@ -37,5 +38,6 @@ private:
   ColorSpec m_color = colorSpecFromRole(ColorRole::Outline);
   float m_thickness = 1.0f;
   SeparatorOrientation m_orientation = SeparatorOrientation::Auto;
+  bool m_gradientEdges = true;
   Signal<>::ScopedConnection m_paletteConn;
 };

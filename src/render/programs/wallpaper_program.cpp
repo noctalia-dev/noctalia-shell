@@ -381,18 +381,23 @@ void WallpaperProgram::initProgram(std::size_t index, const char* fragSource) {
   pd.maxBlockSizeLoc = glGetUniformLocation(id, "u_maxBlockSize");
   pd.cellSizeLoc = glGetUniformLocation(id, "u_cellSize");
 
-  if (pd.positionLoc < 0 || pd.surfaceSizeLoc < 0 || pd.quadSizeLoc < 0 || pd.transformLoc < 0 || pd.source1Loc < 0 ||
-      pd.progressLoc < 0) {
+  if (pd.positionLoc < 0
+      || pd.surfaceSizeLoc < 0
+      || pd.quadSizeLoc < 0
+      || pd.transformLoc < 0
+      || pd.source1Loc < 0
+      || pd.progressLoc < 0) {
     throw std::runtime_error("failed to query wallpaper shader locations");
   }
 }
 
-void WallpaperProgram::draw(WallpaperTransition type, WallpaperSourceKind sourceKind1, TextureId texture1,
-                            const Color& sourceColor1, WallpaperSourceKind sourceKind2, TextureId texture2,
-                            const Color& sourceColor2, float surfaceWidth, float surfaceHeight, float quadWidth,
-                            float quadHeight, float imageWidth1, float imageHeight1, float imageWidth2,
-                            float imageHeight2, float progress, float fillMode, const TransitionParams& params,
-                            const Color& fillColor, const Mat3& transform) const {
+void WallpaperProgram::draw(
+    WallpaperTransition type, WallpaperSourceKind sourceKind1, TextureId texture1, const Color& sourceColor1,
+    WallpaperSourceKind sourceKind2, TextureId texture2, const Color& sourceColor2, float surfaceWidth,
+    float surfaceHeight, float quadWidth, float quadHeight, float imageWidth1, float imageHeight1, float imageWidth2,
+    float imageHeight2, float progress, float fillMode, const TransitionParams& params, const Color& fillColor,
+    const Mat3& transform
+) const {
   auto idx = static_cast<std::size_t>(type);
   if (idx >= kTransitionCount || !m_programs[idx].program.isValid() || quadWidth <= 0.0f || quadHeight <= 0.0f) {
     return;

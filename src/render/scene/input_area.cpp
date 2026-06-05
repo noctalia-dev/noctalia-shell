@@ -2,6 +2,9 @@
 
 #include "cursor-shape-v1-client-protocol.h"
 
+#include <algorithm>
+#include <cmath>
+
 namespace {
 
   constexpr std::uint32_t kMouseButtonBase = BTN_MOUSE;
@@ -63,6 +66,22 @@ bool InputArea::acceptsButton(std::uint32_t button) const noexcept {
 }
 void InputArea::setPropagateEvents(bool propagate) { m_propagateEvents = propagate; }
 void InputArea::setEnabled(bool enabled) { m_enabled = enabled; }
+void InputArea::setHitShape(HitShape shape) { m_hitShape = shape; }
+
+bool InputArea::containsLocalPoint(float localX, float localY, bool includeHitOutset) const {
+  if (m_hitShape == HitShape::Rect) {
+    return Node::containsLocalPoint(localX, localY, includeHitOutset);
+  }
+
+  const HitTestOutset outset = includeHitOutset ? hitTestOutset() : HitTestOutset{};
+  const float centerX = width() * 0.5f;
+  const float centerY = height() * 0.5f;
+  const float baseRadius = std::min(width(), height()) * 0.5f;
+  const float radius = baseRadius + std::max({outset.left, outset.top, outset.right, outset.bottom});
+  const float dx = localX - centerX;
+  const float dy = localY - centerY;
+  return dx * dx + dy * dy <= radius * radius;
+}
 
 void InputArea::setTooltip(std::string text) { m_tooltipContent = std::move(text); }
 void InputArea::setTooltip(std::vector<TooltipRow> rows) { m_tooltipContent = std::move(rows); }
@@ -73,6 +92,7 @@ void InputArea::setOnKeyDown(KeyCallback callback) { m_onKeyDown = std::move(cal
 void InputArea::setOnKeyUp(KeyCallback callback) { m_onKeyUp = std::move(callback); }
 void InputArea::setOnFocusGain(VoidCallback callback) { m_onFocusGain = std::move(callback); }
 void InputArea::setOnFocusLoss(VoidCallback callback) { m_onFocusLoss = std::move(callback); }
+void InputArea::setTextInputClient(TextInputClient* client) { m_textInputClient = client; }
 
 void InputArea::dispatchEnter(float localX, float localY) {
   m_hovered = true;
@@ -119,24 +139,29 @@ void InputArea::dispatchPress(float localX, float localY, std::uint32_t button, 
   }
 }
 
-bool InputArea::dispatchAxis(float localX, float localY, std::uint32_t axis, std::uint32_t axisSource, double axisValue,
-                             std::int32_t axisDiscrete, std::int32_t axisValue120, float axisLines) {
+bool InputArea::dispatchAxis(
+    float localX, float localY, std::uint32_t axis, std::uint32_t axisSource, double axisValue,
+    std::int32_t axisDiscrete, std::int32_t axisValue120, float axisLines
+) {
   if (m_onAxis) {
-    return m_onAxis({.localX = localX,
-                     .localY = localY,
-                     .axis = axis,
-                     .axisSource = axisSource,
-                     .pressed = false,
-                     .axisValue = axisValue,
-                     .axisDiscrete = axisDiscrete,
-                     .axisValue120 = axisValue120,
-                     .axisLines = axisLines});
+    return m_onAxis(
+        {.localX = localX,
+         .localY = localY,
+         .axis = axis,
+         .axisSource = axisSource,
+         .pressed = false,
+         .axisValue = axisValue,
+         .axisDiscrete = axisDiscrete,
+         .axisValue120 = axisValue120,
+         .axisLines = axisLines}
+    );
   }
   return false;
 }
 
-void InputArea::dispatchKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed,
-                            bool preedit) {
+void InputArea::dispatchKey(
+    std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed, bool preedit
+) {
   const KeyData data{.sym = sym, .utf32 = utf32, .modifiers = modifiers, .pressed = pressed, .preedit = preedit};
   if (pressed) {
     if (m_onKeyDown) {

@@ -9,10 +9,7 @@
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "shell/panel/panel_manager.h"
-#include "ui/controls/button.h"
-#include "ui/controls/flex.h"
-#include "ui/controls/input.h"
-#include "ui/controls/label.h"
+#include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -43,93 +40,80 @@ namespace {
 
 } // namespace
 
-PolkitPanel::PolkitPanel(ConfigService* config, std::function<PolkitAgent*()> agentProvider)
-    : m_config(config), m_agentProvider(std::move(agentProvider)) {}
+PolkitPanel::PolkitPanel(ConfigService* /*config*/, std::function<PolkitAgent*()> agentProvider)
+    : m_agentProvider(std::move(agentProvider)) {}
 
 void PolkitPanel::create() {
   const float scale = contentScale();
-  auto root = std::make_unique<Flex>();
-  root->setDirection(FlexDirection::Vertical);
-  root->setAlign(FlexAlign::Stretch);
-  root->setJustify(FlexJustify::SpaceBetween);
-  root->setPadding(Style::spaceLg * scale);
-  m_rootLayout = root.get();
+  auto root = ui::column({
+      .out = &m_rootLayout,
+      .align = FlexAlign::Stretch,
+      .justify = FlexJustify::SpaceBetween,
+      .padding = Style::spaceLg * scale,
+  });
 
   auto focusArea = std::make_unique<InputArea>();
   focusArea->setFocusable(true);
   focusArea->setVisible(false);
   m_focusArea = static_cast<InputArea*>(root->addChild(std::move(focusArea)));
 
-  auto topContent = std::make_unique<Flex>();
-  topContent->setDirection(FlexDirection::Vertical);
-  topContent->setAlign(FlexAlign::Stretch);
-  topContent->setGap(Style::spaceSm * scale);
-
-  auto title = std::make_unique<Label>();
-  title->setText(i18n::tr("auth.polkit.title"));
-  title->setBold(true);
-  title->setFontSize(Style::fontSizeTitle * scale);
-  title->setColor(colorSpecFromRole(ColorRole::Primary));
-  m_titleLabel = title.get();
-  topContent->addChild(std::move(title));
-
-  auto message = std::make_unique<Label>();
-  message->setFontSize(Style::fontSizeBody * scale);
-  message->setColor(colorSpecFromRole(ColorRole::OnSurface));
-  message->setMaxLines(6);
-  m_messageLabel = message.get();
-  topContent->addChild(std::move(message));
+  auto topContent = ui::column(
+      {.align = FlexAlign::Stretch, .gap = Style::spaceSm * scale},
+      ui::label({
+          .out = &m_titleLabel,
+          .text = i18n::tr("auth.polkit.title"),
+          .fontSize = Style::fontSizeTitle * scale,
+          .color = colorSpecFromRole(ColorRole::Primary),
+          .fontWeight = FontWeight::Bold,
+      }),
+      ui::label({
+          .out = &m_messageLabel,
+          .fontSize = Style::fontSizeBody * scale,
+          .color = colorSpecFromRole(ColorRole::OnSurface),
+          .maxLines = 6,
+      })
+  );
   root->addChild(std::move(topContent));
 
-  auto bottomContent = std::make_unique<Flex>();
-  bottomContent->setDirection(FlexDirection::Vertical);
-  bottomContent->setAlign(FlexAlign::Stretch);
-  bottomContent->setGap(Style::spaceSm * scale);
-
-  auto prompt = std::make_unique<Label>();
-  prompt->setFontSize(Style::fontSizeBody * scale);
-  prompt->setColor(colorSpecFromRole(ColorRole::OnSurface));
-  prompt->setMaxLines(3);
-  m_promptLabel = prompt.get();
-  bottomContent->addChild(std::move(prompt));
-
-  auto input = std::make_unique<Input>();
-  input->setPlaceholder(i18n::tr("auth.polkit.password-placeholder"));
-  input->setPasswordMode(true);
-  input->setOnSubmit([this](const std::string&) { submit(); });
-  input->setOnKeyEvent(
-      [this](std::uint32_t sym, std::uint32_t modifiers) { return handleInputKeyEvent(sym, modifiers); });
-  m_input = input.get();
-  bottomContent->addChild(std::move(input));
-
-  auto supplementary = std::make_unique<Label>();
-  supplementary->setFontSize(Style::fontSizeCaption * scale);
-  supplementary->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
-  supplementary->setMaxLines(4);
-  m_supplementaryLabel = supplementary.get();
-  bottomContent->addChild(std::move(supplementary));
-
-  auto actions = std::make_unique<Flex>();
-  actions->setDirection(FlexDirection::Horizontal);
-  actions->setAlign(FlexAlign::Center);
-  actions->setJustify(FlexJustify::End);
-  actions->setGap(Style::spaceSm * scale);
-
-  auto cancel = std::make_unique<Button>();
-  cancel->setText(i18n::tr("common.actions.cancel"));
-  cancel->setVariant(ButtonVariant::Outline);
-  cancel->setOnClick([]() { PanelManager::instance().close(); });
-  m_cancelButton = cancel.get();
-  actions->addChild(std::move(cancel));
-
-  auto submitButton = std::make_unique<Button>();
-  submitButton->setText(i18n::tr("auth.polkit.authenticate"));
-  submitButton->setVariant(ButtonVariant::Accent);
-  submitButton->setOnClick([this]() { submit(); });
-  m_submitButton = submitButton.get();
-  actions->addChild(std::move(submitButton));
-
-  bottomContent->addChild(std::move(actions));
+  auto bottomContent = ui::column(
+      {.align = FlexAlign::Stretch, .gap = Style::spaceSm * scale},
+      ui::label({
+          .out = &m_promptLabel,
+          .fontSize = Style::fontSizeBody * scale,
+          .color = colorSpecFromRole(ColorRole::OnSurface),
+          .maxLines = 3,
+      }),
+      ui::input({
+          .out = &m_input,
+          .placeholder = i18n::tr("auth.polkit.password-placeholder"),
+          .passwordMode = true,
+          .surfaceOpacity = panelCardOpacity(),
+          .onSubmit = [this](const std::string&) { submit(); },
+          .onKeyEvent =
+              [this](std::uint32_t sym, std::uint32_t modifiers) { return handleInputKeyEvent(sym, modifiers); },
+      }),
+      ui::label({
+          .out = &m_supplementaryLabel,
+          .fontSize = Style::fontSizeCaption * scale,
+          .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+          .maxLines = 4,
+      }),
+      ui::row(
+          {.align = FlexAlign::Center, .justify = FlexJustify::End, .gap = Style::spaceSm * scale},
+          ui::button({
+              .out = &m_cancelButton,
+              .text = i18n::tr("common.actions.cancel"),
+              .variant = ButtonVariant::Outline,
+              .onClick = []() { PanelManager::instance().close(); },
+          }),
+          ui::button({
+              .out = &m_submitButton,
+              .text = i18n::tr("auth.polkit.authenticate"),
+              .variant = ButtonVariant::Primary,
+              .onClick = [this]() { submit(); },
+          })
+      )
+  );
   root->addChild(std::move(bottomContent));
   setRoot(std::move(root));
 }
@@ -162,8 +146,12 @@ void PolkitPanel::doLayout(Renderer& renderer, float width, float height) {
 
 void PolkitPanel::doUpdate(Renderer& /*renderer*/) {
   PolkitAgent* agent = m_agentProvider != nullptr ? m_agentProvider() : nullptr;
-  if (agent == nullptr || m_messageLabel == nullptr || m_promptLabel == nullptr || m_supplementaryLabel == nullptr ||
-      m_submitButton == nullptr || m_input == nullptr) {
+  if (agent == nullptr
+      || m_messageLabel == nullptr
+      || m_promptLabel == nullptr
+      || m_supplementaryLabel == nullptr
+      || m_submitButton == nullptr
+      || m_input == nullptr) {
     return;
   }
   const PolkitRequest request = agent->pendingRequest();
@@ -172,15 +160,16 @@ void PolkitPanel::doUpdate(Renderer& /*renderer*/) {
   const bool isInvalidPassword = supplementaryError && supplementaryRaw == i18n::tr("auth.polkit.invalid-password");
   std::string promptText = wrapLongRuns(agent->inputPrompt());
   std::string supplementaryText = wrapLongRuns(supplementaryRaw);
-  if (!supplementaryText.empty() &&
-      (supplementaryError || supplementaryText == i18n::tr("auth.polkit.authenticating"))) {
+  if (!supplementaryText.empty()
+      && (supplementaryError || supplementaryText == i18n::tr("auth.polkit.authenticating"))) {
     promptText = supplementaryText;
     supplementaryText.clear();
   }
   m_messageLabel->setText(wrapLongRuns(request.message.empty() ? request.actionId : request.message));
   m_promptLabel->setText(promptText);
-  m_promptLabel->setColor(isInvalidPassword ? colorSpecFromRole(ColorRole::Error)
-                                            : colorSpecFromRole(ColorRole::OnSurface));
+  m_promptLabel->setColor(
+      isInvalidPassword ? colorSpecFromRole(ColorRole::Error) : colorSpecFromRole(ColorRole::OnSurface)
+  );
   m_promptLabel->setVisible(!promptText.empty());
   m_supplementaryLabel->setText(supplementaryText);
   m_supplementaryLabel->setVisible(!supplementaryText.empty());
@@ -216,4 +205,10 @@ bool PolkitPanel::handleInputKeyEvent(std::uint32_t sym, std::uint32_t modifiers
     return true;
   }
   return false;
+}
+
+void PolkitPanel::onPanelCardOpacityChanged(float opacity) {
+  if (m_input != nullptr) {
+    m_input->setSurfaceOpacity(opacity);
+  }
 }

@@ -1,11 +1,14 @@
 #pragma once
 
+#include "config/config_types.h"
 #include "core/ui_phase.h"
 #include "render/scene/node.h"
 #include "ui/palette.h"
 
 #include <functional>
 #include <memory>
+#include <string>
+#include <unordered_map>
 
 class AnimationManager;
 class Box;
@@ -51,7 +54,14 @@ public:
   }
   void setContentScale(float scale) noexcept { m_contentScale = scale; }
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
+  // Desktop widget editor keeps widgets visible for layout even when runtime idle-hide applies.
+  virtual void setEditorPreview(bool enabled) noexcept { (void)enabled; }
   void setBackgroundStyle(const ColorSpec& color, float radius, float padding);
+
+  virtual bool applySetting(
+      const std::string& key, const WidgetSettingValue& value,
+      const std::unordered_map<std::string, WidgetSettingValue>& allSettings, Renderer& renderer
+  );
 
 protected:
   void setRoot(std::unique_ptr<Node> root);

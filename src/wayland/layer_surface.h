@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 struct wl_output;
 struct zwlr_layer_surface_v1;
@@ -20,6 +21,8 @@ enum class LayerShellKeyboard : std::uint32_t {
   Exclusive = 1,
   OnDemand = 2,
 };
+
+[[nodiscard]] LayerShellLayer layerShellLayerFromConfig(std::string_view layer);
 
 namespace LayerShellAnchor {
   inline constexpr std::uint32_t Top = 1;
@@ -57,6 +60,7 @@ public:
   // respond with a configure event, which triggers the configure callback.
   void requestSize(std::uint32_t width, std::uint32_t height);
   void setMargins(std::int32_t top, std::int32_t right, std::int32_t bottom, std::int32_t left);
+  void setExclusiveZone(std::int32_t exclusiveZone);
   void setClickThrough(bool clickThrough);
   void setKeyboardInteractivity(LayerShellKeyboard mode);
   [[nodiscard]] LayerShellKeyboard keyboardInteractivity() const noexcept { return m_config.keyboard; }
@@ -66,8 +70,9 @@ public:
   [[nodiscard]] std::int32_t marginBottom() const noexcept { return m_config.marginBottom; }
   [[nodiscard]] std::int32_t marginLeft() const noexcept { return m_config.marginLeft; }
 
-  static void handleConfigure(void* data, zwlr_layer_surface_v1* layerSurface, std::uint32_t serial,
-                              std::uint32_t width, std::uint32_t height);
+  static void handleConfigure(
+      void* data, zwlr_layer_surface_v1* layerSurface, std::uint32_t serial, std::uint32_t width, std::uint32_t height
+  );
   static void handleClosed(void* data, zwlr_layer_surface_v1* layerSurface);
 
 private:

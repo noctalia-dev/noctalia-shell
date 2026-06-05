@@ -1,26 +1,46 @@
-barWidget.setGlyph("pin")
-barWidget.setText("Pin")
-barWidget.setColor("secondary")
+barWidget.define({
+  label = "Scripted Button Test",
+  icon = "terminal",
+  description = "Test scripted button clicks plus glyph and color settings",
+  pickable = false,
+  settings = {
+    { key = "label", type = "string", label = "Label", default = "Btop" },
+    { key = "glyph", type = "glyph", label = "Glyph", default = "terminal" },
+    { key = "normal_color", type = "color", label = "Color", default = "primary" },
+    { key = "hover_color", type = "color", label = "Hover color", default = "hover" },
+    { key = "terminal_command", type = "string", label = "Terminal command", default = "btop" },
+  },
+})
 
-local pinned = false
+local hovering = false
+
+local function cfg(key, default)
+  return barWidget.getConfig(key, default)
+end
+
+local function currentColor()
+  if hovering then
+    return cfg("hover_color", "hover")
+  end
+  return cfg("normal_color", "primary")
+end
+
+local function applyDisplay()
+  local color = currentColor()
+  barWidget.setGlyph(cfg("glyph", "terminal"))
+  barWidget.setText(cfg("label", "Btop"))
+  barWidget.setColor(color, "script")
+  barWidget.setGlyphColor(color, "script")
+end
+
+applyDisplay()
 
 function update()
-  -- periodic tick, nothing to poll here
+  applyDisplay()
 end
 
 function onClick()
-  pinned = not pinned
-  if pinned then
-    barWidget.setGlyph("unpin")
-    barWidget.setText("Pinned")
-    barWidget.setColor("error")
-    barWidget.setGlyphColor("error")
-  else
-    barWidget.setGlyph("pin")
-    barWidget.setText("Pin")
-    barWidget.setColor("on_surface")
-    barWidget.setGlyphColor("on_surface")
-  end
+  noctalia.runInTerminal(cfg("terminal_command", "btop"))
 end
 
 function onRightClick()
@@ -28,23 +48,10 @@ function onRightClick()
 end
 
 function onMiddleClick()
-  barWidget.setGlyph("settings")
-  barWidget.setText("Middle!")
-  barWidget.setColor("tertiary")
-  barWidget.setGlyphColor("tertiary")
+  noctalia.notify("Scripted Button Test", "glyph=" .. cfg("glyph", "terminal") .. ", color=" .. currentColor())
 end
 
 function onHover(entered)
-  if entered then
-    barWidget.setColor("primary")
-    barWidget.setGlyphColor("primary")
-  else
-    if muted then
-      barWidget.setColor("error")
-      barWidget.setGlyphColor("error")
-    else
-      barWidget.setColor("on_surface")
-      barWidget.setGlyphColor("on_surface")
-    end
-  end
+  hovering = entered == true
+  applyDisplay()
 end

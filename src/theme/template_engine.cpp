@@ -25,6 +25,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
+#include <unordered_map>
 #include <unordered_set>
 #include <variant>
 #include <vector>
@@ -157,8 +158,73 @@ namespace noctalia::theme {
       std::vector<CompareColorEntry> colorsToCompare;
       std::string preHook;
       std::string postHook;
+      // When set, skip outputs if this path does not exist (explicit install check).
+      std::string requiresPath;
+      // When true, skip each output whose inferred client config root is missing.
+      bool gateOutputsByClientRoot = false;
       int index = 0;
     };
+
+    std::optional<std::filesystem::path> inferClientConfigRoot(const std::filesystem::path& outputPath) {
+      std::vector<std::filesystem::path> parts;
+      parts.reserve(16);
+      for (const auto& part : outputPath) {
+        if (!part.empty() && part != std::filesystem::path("."))
+          parts.push_back(part);
+      }
+
+      for (std::size_t i = 0; i + 3 < parts.size(); ++i) {
+        if (parts[i] == ".var" && parts[i + 1] == "app" && parts[i + 3] == "config") {
+          std::filesystem::path root;
+          for (std::size_t j = 0; j <= i + 3; ++j)
+            root /= parts[j];
+          return root;
+        }
+      }
+
+      std::filesystem::path current = outputPath.parent_path();
+      while (!current.empty() && current != current.root_path()) {
+        if (current.filename() == "themes") {
+          std::filesystem::path parent = current.parent_path();
+          const auto grandparent = parent.parent_path();
+          if (parent.filename() == "extensions" || grandparent.filename() == "extensions") {
+            std::filesystem::path walk = current;
+            while (!walk.empty() && walk.filename() != "extensions")
+              walk = walk.parent_path();
+            if (walk.filename() == "extensions")
+              return walk.parent_path();
+          }
+          return parent;
+        }
+        current = current.parent_path();
+      }
+      return std::nullopt;
+    }
+
+    bool pathExists(const std::filesystem::path& path) {
+      std::error_code ec;
+      return std::filesystem::exists(path, ec);
+    }
+
+    void markMultiClientGatedEntries(std::vector<ParsedTemplateEntry>& entries) {
+      std::unordered_map<std::string, std::unordered_set<std::string>> rootsByInputKey;
+      for (const ParsedTemplateEntry& entry : entries) {
+        if (entry.inputPath.empty())
+          continue;
+        for (const std::string& output : entry.outputPaths) {
+          if (auto root = inferClientConfigRoot(std::filesystem::path(output)))
+            rootsByInputKey[entry.inputPath].insert(root->string());
+        }
+      }
+
+      for (ParsedTemplateEntry& entry : entries) {
+        if (entry.inputPath.empty())
+          continue;
+        const auto it = rootsByInputKey.find(entry.inputPath);
+        if (it != rootsByInputKey.end() && it->second.size() > 1)
+          entry.gateOutputsByClientRoot = true;
+      }
+    }
 
     const std::regex kBlockRegex(R"(<\*([\s\S]*?)\*>)");
     const std::regex kExprRegex(R"(\{\{([^}\n]+?)\}\})");
@@ -256,25 +322,51 @@ namespace noctalia::theme {
         return out;
       }
       if (formatType == "rgb") {
-        return "rgb(" + std::to_string(color.color.r) + ", " + std::to_string(color.color.g) + ", " +
-               std::to_string(color.color.b) + ")";
+        return "rgb("
+            + std::to_string(color.color.r)
+            + ", "
+            + std::to_string(color.color.g)
+            + ", "
+            + std::to_string(color.color.b)
+            + ")";
       }
       if (formatType == "rgb_csv") {
-        return std::to_string(color.color.r) + "," + std::to_string(color.color.g) + "," +
-               std::to_string(color.color.b);
+        return std::to_string(color.color.r)
+            + ","
+            + std::to_string(color.color.g)
+            + ","
+            + std::to_string(color.color.b);
       }
       if (formatType == "rgba") {
-        return "rgba(" + std::to_string(color.color.r) + ", " + std::to_string(color.color.g) + ", " +
-               std::to_string(color.color.b) + ", " + StringUtils::formatDotDecimal(color.alpha) + ")";
+        return "rgba("
+            + std::to_string(color.color.r)
+            + ", "
+            + std::to_string(color.color.g)
+            + ", "
+            + std::to_string(color.color.b)
+            + ", "
+            + StringUtils::formatDotDecimal(color.alpha)
+            + ")";
       }
       auto [h, s, l] = color.color.toHsl();
       if (formatType == "hsl")
-        return "hsl(" + std::to_string(static_cast<int>(h)) + ", " + std::to_string(static_cast<int>(s * 100.0)) +
-               "%, " + std::to_string(static_cast<int>(l * 100.0)) + "%)";
+        return "hsl("
+            + std::to_string(static_cast<int>(h))
+            + ", "
+            + std::to_string(static_cast<int>(s * 100.0))
+            + "%, "
+            + std::to_string(static_cast<int>(l * 100.0))
+            + "%)";
       if (formatType == "hsla") {
-        return "hsla(" + std::to_string(static_cast<int>(h)) + ", " + std::to_string(static_cast<int>(s * 100.0)) +
-               "%, " + std::to_string(static_cast<int>(l * 100.0)) + "%, " +
-               StringUtils::formatDotDecimal(color.alpha) + ")";
+        return "hsla("
+            + std::to_string(static_cast<int>(h))
+            + ", "
+            + std::to_string(static_cast<int>(s * 100.0))
+            + "%, "
+            + std::to_string(static_cast<int>(l * 100.0))
+            + "%, "
+            + StringUtils::formatDotDecimal(color.alpha)
+            + ")";
       }
       if (formatType == "hue")
         return std::to_string(static_cast<int>(h));
@@ -525,8 +617,10 @@ namespace noctalia::theme {
         result.errorCount = rendered.errorCount;
         if (rendered.errorCount > 0) {
           if (m_options.verbose) {
-            kLog.warn("failed to render template {} -> {}: {} template error(s); output not written",
-                      inputPath.string(), outputPath.string(), rendered.errorCount);
+            kLog.warn(
+                "failed to render template {} -> {}: {} template error(s); output not written", inputPath.string(),
+                outputPath.string(), rendered.errorCount
+            );
           }
           return result;
         }
@@ -598,8 +692,8 @@ namespace noctalia::theme {
         return tokens;
       }
 
-      std::vector<Node> parseNodes(const std::vector<Token>& tokens, size_t& pos,
-                                   const std::unordered_set<std::string>& stopKeywords) {
+      std::vector<Node>
+      parseNodes(const std::vector<Token>& tokens, size_t& pos, const std::unordered_set<std::string>& stopKeywords) {
         std::vector<Node> nodes;
         while (pos < tokens.size()) {
           if (const auto* text = std::get_if<std::string>(&tokens[pos])) {
@@ -784,8 +878,9 @@ namespace noctalia::theme {
           resolved = ScopeValue(m_options.configDir);
         } else if (base == "config_file") {
           resolved = ScopeValue(m_options.configFile);
-        } else if (auto fromScope = resolveFromScope(base, scope);
-                   !std::holds_alternative<std::monostate>(fromScope.value)) {
+        } else if (
+            auto fromScope = resolveFromScope(base, scope); !std::holds_alternative<std::monostate>(fromScope.value)
+        ) {
           resolved = std::move(fromScope);
         } else if (base.starts_with("colors.")) {
           resolved = ScopeValue(processColorExpression(base, filters));
@@ -1024,15 +1119,15 @@ namespace noctalia::theme {
     return EngineImpl(m_themeData, m_options).render(templateText);
   }
 
-  RenderFileResult TemplateEngine::renderFile(const std::filesystem::path& inputPath,
-                                              const std::filesystem::path& outputPath) {
+  RenderFileResult
+  TemplateEngine::renderFile(const std::filesystem::path& inputPath, const std::filesystem::path& outputPath) {
     return EngineImpl(m_themeData, m_options).renderFile(inputPath, outputPath);
   }
 
   namespace {
 
-    material_color_utilities::DynamicScheme makeCustomColorScheme(std::string_view schemeType,
-                                                                  material_color_utilities::Hct source) {
+    material_color_utilities::DynamicScheme
+    makeCustomColorScheme(std::string_view schemeType, material_color_utilities::Hct source) {
       if (schemeType == "tonal-spot")
         return material_color_utilities::SchemeTonalSpot(source, false);
       if (schemeType == "fruit-salad")
@@ -1057,8 +1152,9 @@ namespace noctalia::theme {
       double rotation = std::min(std::fabs(diff) * 0.5, 15.0);
       if (diff < 0.0)
         rotation = -rotation;
-      material_color_utilities::Hct result(std::fmod(srcHct.get_hue() + rotation + 360.0, 360.0), srcHct.get_chroma(),
-                                           srcHct.get_tone());
+      material_color_utilities::Hct result(
+          std::fmod(srcHct.get_hue() + rotation + 360.0, 360.0), srcHct.get_chroma(), srcHct.get_tone()
+      );
       return Color::fromArgb(result.ToInt()).toHex();
     }
 
@@ -1109,8 +1205,45 @@ namespace noctalia::theme {
       return out;
     }
 
+    // Expand a leading XDG base-directory token (e.g. "$XDG_CONFIG_HOME") to its
+    // value per the XDG Base Directory spec: the env var if set, else the
+    // spec-defined default under $HOME. Naming the spec variable directly keeps
+    // output paths spec-correct instead of baking in a "~/.config" fallback that
+    // ignores a relocated config/data/cache home. If the base can't be resolved
+    // (no env var and no $HOME), the token is left intact so the bad path
+    // surfaces rather than silently landing somewhere wrong.
+    std::string expandXdgBaseDir(const std::string& path) {
+      struct XdgBase {
+        std::string_view token;
+        std::string_view envVar;
+        std::string_view homeDefault; // relative to $HOME
+      };
+      static constexpr std::array<XdgBase, 4> kBases = {{
+          {"$XDG_CONFIG_HOME", "XDG_CONFIG_HOME", ".config"},
+          {"$XDG_DATA_HOME", "XDG_DATA_HOME", ".local/share"},
+          {"$XDG_STATE_HOME", "XDG_STATE_HOME", ".local/state"},
+          {"$XDG_CACHE_HOME", "XDG_CACHE_HOME", ".cache"},
+      }};
+      for (const XdgBase& b : kBases) {
+        if (path.rfind(b.token, 0) != 0)
+          continue;
+        if (path.size() != b.token.size() && path[b.token.size()] != '/')
+          continue;
+        std::string base;
+        if (const char* env = std::getenv(std::string(b.envVar).c_str()); env != nullptr && env[0] != '\0') {
+          base = env;
+        } else if (const char* home = std::getenv("HOME"); home != nullptr && home[0] != '\0') {
+          base = std::string(home) + "/" + std::string(b.homeDefault);
+        } else {
+          return path;
+        }
+        return base + path.substr(b.token.size());
+      }
+      return path;
+    }
+
     std::filesystem::path resolveConfigPath(const std::filesystem::path& configPath, const std::string& path) {
-      const std::filesystem::path expanded = FileUtils::expandUserPath(path);
+      const std::filesystem::path expanded = FileUtils::expandUserPath(expandXdgBaseDir(path));
       if (expanded.is_absolute())
         return expanded;
       const std::filesystem::path base =
@@ -1118,8 +1251,9 @@ namespace noctalia::theme {
       return base / expanded;
     }
 
-    void appendPathsFromDynamicStdout(const std::filesystem::path& configPath, std::vector<std::string>& outputs,
-                                      const std::string& stdoutText) {
+    void appendPathsFromDynamicStdout(
+        const std::filesystem::path& configPath, std::vector<std::string>& outputs, const std::string& stdoutText
+    ) {
       std::string_view remaining(stdoutText);
       while (!remaining.empty()) {
         const std::size_t nl = remaining.find('\n');
@@ -1133,9 +1267,10 @@ namespace noctalia::theme {
       }
     }
 
-    std::optional<ParsedTemplateEntry> parseTemplateEntry(const std::filesystem::path& configPath,
-                                                          std::string_view name, const toml::table& tpl,
-                                                          std::string_view defaultMode) {
+    std::optional<ParsedTemplateEntry> parseTemplateEntry(
+        const std::filesystem::path& configPath, std::string_view name, const toml::table& tpl,
+        std::string_view defaultMode
+    ) {
       std::string inputPath;
       if (const auto modes = parseInputPathModes(tpl)) {
         inputPath = defaultMode == "light" ? modes->light : modes->dark;
@@ -1170,9 +1305,25 @@ namespace noctalia::theme {
         entry.postHook = postHook->get();
       if (const auto opd = tpl.get_as<std::string>("output_path_dynamic"))
         entry.outputPathDynamic = opd->get();
+      if (const auto requiresPath = tpl.get_as<std::string>("requires_path"))
+        entry.requiresPath = resolveConfigPath(configPath, requiresPath->get()).string();
       if (const auto index = tpl.get_as<int64_t>("index"))
         entry.index = static_cast<int>(index->get());
       return entry;
+    }
+
+    bool shouldSkipTemplateOutput(const ParsedTemplateEntry& entry, const std::string& outputPath) {
+      if (!entry.requiresPath.empty()) {
+        return !pathExists(entry.requiresPath);
+      }
+      if (!entry.gateOutputsByClientRoot) {
+        return false;
+      }
+      const auto root = inferClientConfigRoot(std::filesystem::path(outputPath));
+      if (!root) {
+        return false;
+      }
+      return !pathExists(*root);
     }
 
   } // namespace
@@ -1229,8 +1380,9 @@ namespace noctalia::theme {
             continue;
 
           const std::string paletteHex = (blend && !sourceHex.empty()) ? harmonizeHex(colorHex, sourceHex) : colorHex;
-          const auto scheme = makeCustomColorScheme(m_options.schemeType,
-                                                    material_color_utilities::Hct(Color::fromHex(paletteHex).toArgb()));
+          const auto scheme = makeCustomColorScheme(
+              m_options.schemeType, material_color_utilities::Hct(Color::fromHex(paletteHex).toArgb())
+          );
           const auto& palette = scheme.primary_palette;
 
           for (std::string_view mode : kTemplateModes) {
@@ -1260,8 +1412,8 @@ namespace noctalia::theme {
     std::vector<ParsedTemplateEntry> entries;
     entries.reserve(templates->size());
     for (const auto& [templateName, templateNode] : *templates) {
-      if (!m_options.enabledTemplates.empty() &&
-          !m_options.enabledTemplates.contains(std::string(templateName.str()))) {
+      if (!m_options.enabledTemplates.empty()
+          && !m_options.enabledTemplates.contains(std::string(templateName.str()))) {
         continue;
       }
       const toml::table* tpl = templateNode.as_table();
@@ -1272,7 +1424,9 @@ namespace noctalia::theme {
     }
     std::stable_sort(
         entries.begin(), entries.end(),
-        [](const ParsedTemplateEntry& lhs, const ParsedTemplateEntry& rhs) { return lhs.index < rhs.index; });
+        [](const ParsedTemplateEntry& lhs, const ParsedTemplateEntry& rhs) { return lhs.index < rhs.index; }
+    );
+    markMultiClientGatedEntries(entries);
 
     bool ok = true;
     for (const ParsedTemplateEntry& entry : entries) {
@@ -1334,14 +1488,20 @@ namespace noctalia::theme {
       if (hasOutputs)
         runHook(entry.preHook);
 
-      bool wroteAny = false;
+      bool outputsOk = true;
       for (const std::string& outputPath : effectiveOutputs) {
         if (cancelRequested()) {
           return ok;
         }
 
+        if (shouldSkipTemplateOutput(entry, outputPath)) {
+          kLog.debug("skipping template {} -> {} (client not installed)", entry.name, outputPath);
+          continue;
+        }
+
         if (effectiveInput.empty()) {
           kLog.warn("failed to resolve input path for template {} -> {}; skipping", entry.name, outputPath);
+          outputsOk = false;
           ok = false;
           continue;
         }
@@ -1349,17 +1509,17 @@ namespace noctalia::theme {
         const auto fileResult =
             EngineImpl(m_themeData, renderOptions).renderFile(effectiveInput, std::filesystem::path(outputPath));
         if (!fileResult.success) {
+          outputsOk = false;
           ok = false;
           continue;
         }
-        wroteAny = wroteAny || fileResult.wrote;
       }
 
       if (cancelRequested()) {
         return ok;
       }
 
-      if ((hasOutputs && wroteAny) || (!hasOutputs && !entry.postHook.empty()))
+      if ((hasOutputs && outputsOk) || (!hasOutputs && !entry.postHook.empty()))
         runHook(entry.postHook);
     }
 

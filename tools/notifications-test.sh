@@ -2,6 +2,9 @@
 
 echo "Sending test notifications..."
 
+notify-send "Notification #0 (#💻-development very long summary)" "I’m excited to mess around with this bad boy"
+sleep 0.5
+
 notify-send "Notification #1" "A 'low' urgency notification" -u low
 sleep 0.5
 
@@ -49,3 +52,16 @@ gdbus call --session \
           "['default', 'OK', 'cancel', 'Cancel', 'maybe', 'Maybe', 'undecided', 'Undecided']" \
           "{}" \
           5000
+
+gdbus call --session \
+          --dest org.freedesktop.Notifications \
+          --object-path /org/freedesktop/Notifications \
+          --method org.freedesktop.Notifications.Notify \
+          "System Notifications" \
+          0 \
+          "" \
+          "KDE Connect Background Service Crash" \
+          "Please send a bug report to help improve this program." \
+          "['report', 'Report a bug please please report it', 'restart', 'Restart program quick before it is too late']" \
+          "{}" \
+          30000

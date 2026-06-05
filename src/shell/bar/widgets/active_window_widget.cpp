@@ -1,12 +1,14 @@
 #include "shell/bar/widgets/active_window_widget.h"
 
+#include "config/config_service.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
+#include "system/app_identity.h"
 #include "system/desktop_entry.h"
 #include "system/internal_app_metadata.h"
-#include "ui/controls/image.h"
-#include "ui/controls/label.h"
+#include "ui/app_icon_colorization.h"
+#include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
@@ -15,10 +17,12 @@
 #include <cmath>
 #include <string_view>
 
-ActiveWindowWidget::ActiveWindowWidget(CompositorPlatform& platform, float maxWidth, float minWidth, float iconSize,
-                                       ActiveWindowTitleScrollMode titleScrollMode)
-    : m_platform(platform), m_maxWidth(maxWidth), m_minWidth(minWidth), m_iconSize(iconSize),
-      m_titleScrollMode(titleScrollMode) {
+ActiveWindowWidget::ActiveWindowWidget(
+    ConfigService& config, CompositorPlatform& platform, float maxWidth, float minWidth, float iconSize,
+    ActiveWindowTitleScrollMode titleScrollMode, ActiveWindowDisplayMode displayMode
+)
+    : m_config(config), m_platform(platform), m_maxWidth(maxWidth), m_minWidth(minWidth), m_iconSize(iconSize),
+      m_titleScrollMode(titleScrollMode), m_displayMode(displayMode) {
   buildDesktopIconIndex();
 }
 
@@ -34,20 +38,32 @@ void ActiveWindowWidget::create() {
   });
   m_area = rootNode.get();
 
-  auto icon = std::make_unique<Image>();
-  icon->setRadius(Style::radiusSm);
-  icon->setFit(ImageFit::Contain);
-  icon->setSize(m_iconSize * m_contentScale, m_iconSize * m_contentScale);
-  m_icon = static_cast<Image*>(rootNode->addChild(std::move(icon)));
+  rootNode->addChild(
+      ui::image({
+          .out = &m_icon,
+          .fit = ImageFit::Contain,
+          .radius = Style::radiusSm,
+          .width = m_iconSize * m_contentScale,
+          .height = m_iconSize * m_contentScale,
+      })
+  );
 
-  auto title = std::make_unique<Label>();
-  title->setBold(true);
-  title->setFontSize(Style::fontSizeBody * m_contentScale);
-  title->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
-  title->setMaxWidth(m_maxWidth * m_contentScale);
-  title->setMaxLines(1);
-  title->setAutoScroll(false);
-  m_title = static_cast<Label*>(rootNode->addChild(std::move(title)));
+  rootNode->addChild(
+      ui::label({
+          .out = &m_title,
+          .fontSize = Style::fontSizeBody * m_contentScale,
+          .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
+          .maxWidth = m_maxWidth * m_contentScale,
+          .maxLines = 1,
+          .fontWeight = labelFontWeight(),
+          .autoScroll = false,
+      })
+  );
+
+  m_appIconColorizeConn = shellAppIconColorizationChanged().connect([this]() {
+    m_iconColorizeRefreshPending = true;
+    requestUpdate();
+  });
 
   setRoot(std::move(rootNode));
 }
@@ -60,8 +76,8 @@ void ActiveWindowWidget::doLayout(Renderer& renderer, float containerWidth, floa
   syncState(renderer);
 
   rootNode->setVisible(!m_lastEmptyState);
+  rootNode->setParticipatesInLayout(!m_lastEmptyState);
   if (m_lastEmptyState) {
-    rootNode->setSize(0.0f, 0.0f);
     return;
   }
 
@@ -70,32 +86,37 @@ void ActiveWindowWidget::doLayout(Renderer& renderer, float containerWidth, floa
   const float maxLength = std::max(0.0f, m_maxWidth * m_contentScale);
   const float minLength = std::clamp(m_minWidth * m_contentScale, 0.0f, maxLength);
   m_icon->setSize(iconSize, iconSize);
-  m_icon->setVisible(true);
 
   m_title->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
 
   if (isVertical) {
     m_title->setVisible(false);
     applyTitleScrollMode(false);
+    m_icon->setVisible(true);
     m_icon->setPosition(0.0f, 0.0f);
     rootNode->setSize(m_icon->width(), m_icon->height());
   } else {
-    m_title->setVisible(!m_lastTitle.empty());
-    const bool showTitle = m_title->visible();
+    const bool showIcon = m_displayMode != ActiveWindowDisplayMode::TextOnly;
+    const bool showTitle = m_displayMode != ActiveWindowDisplayMode::IconOnly && !m_lastTitle.empty();
+    m_icon->setVisible(showIcon);
+    m_title->setVisible(showTitle);
     applyTitleScrollMode(showTitle);
-    const float spacing = showTitle ? Style::spaceXs : 0.0f;
-    const float labelMaxWidth = showTitle ? std::max(0.0f, maxLength - m_icon->width() - spacing) : 0.0f;
+    const float spacing = showIcon && showTitle ? Style::spaceXs : 0.0f;
+    const float iconWidth = showIcon ? m_icon->width() : 0.0f;
+    const float labelMaxWidth = showTitle ? std::max(0.0f, maxLength - iconWidth - spacing) : 0.0f;
     m_title->setMaxWidth(labelMaxWidth);
     m_title->measure(renderer);
 
-    const float contentHeight = std::max(m_icon->height(), m_title->height());
-    const float iconY = std::round((contentHeight - m_icon->height()) * 0.5f);
+    const float iconHeight = showIcon ? m_icon->height() : 0.0f;
+    const float titleHeight = showTitle ? m_title->height() : 0.0f;
+    const float contentHeight = std::max(iconHeight, titleHeight);
+    const float iconY = showIcon ? std::round((contentHeight - m_icon->height()) * 0.5f) : 0.0f;
     const float labelY = std::round((contentHeight - m_title->height()) * 0.5f);
 
     m_icon->setPosition(0.0f, iconY);
-    m_title->setPosition(m_icon->width() + spacing, labelY);
+    m_title->setPosition(showIcon ? m_icon->width() + spacing : 0.0f, labelY);
 
-    const float contentWidth = showTitle ? m_title->x() + m_title->width() : m_icon->width();
+    const float contentWidth = showTitle ? m_title->x() + m_title->width() : iconWidth;
     rootNode->setSize(std::clamp(contentWidth, minLength, maxLength), contentHeight);
   }
 }
@@ -107,10 +128,9 @@ void ActiveWindowWidget::applyTitleScrollMode(bool titleVisible) {
     return;
   }
 
-  const bool shouldScroll =
-      titleVisible &&
-      (m_titleScrollMode == ActiveWindowTitleScrollMode::Always ||
-       (m_titleScrollMode == ActiveWindowTitleScrollMode::OnHover && m_area != nullptr && m_area->hovered()));
+  const bool shouldScroll = titleVisible
+      && (m_titleScrollMode == ActiveWindowTitleScrollMode::Always
+          || (m_titleScrollMode == ActiveWindowTitleScrollMode::OnHover && m_area != nullptr && m_area->hovered()));
   m_title->setAutoScroll(shouldScroll);
   m_title->setAutoScrollOnlyWhenHovered(false);
 }
@@ -140,17 +160,22 @@ void ActiveWindowWidget::syncState(Renderer& renderer) {
     emptyState = true;
   } else {
     identifier = current->identifier;
-    title = current->title;
+    title = StringUtils::windowTitleSingleLine(current->title);
     appId = current->appId;
     if (title.empty()) {
       title = appId;
     }
   }
 
-  if (!desktopEntriesChanged && identifier == m_lastIdentifier && title == m_lastTitle && appId == m_lastAppId &&
-      emptyState == m_lastEmptyState) {
+  if (!m_iconColorizeRefreshPending
+      && !desktopEntriesChanged
+      && identifier == m_lastIdentifier
+      && title == m_lastTitle
+      && appId == m_lastAppId
+      && emptyState == m_lastEmptyState) {
     return;
   }
+  m_iconColorizeRefreshPending = false;
 
   m_lastIdentifier = std::move(identifier);
   m_lastTitle = title;
@@ -165,6 +190,7 @@ void ActiveWindowWidget::syncState(Renderer& renderer) {
   applyTitleScrollMode(m_title->visible());
   m_title->measure(renderer);
 
+  m_icon->setAppIconColorization(effectiveShellAppIconColorizationTint(m_config.config().shell));
   if (iconPath != m_lastIconPath) {
     m_lastIconPath = iconPath;
     if (!m_lastIconPath.empty()) {
@@ -184,6 +210,18 @@ std::string ActiveWindowWidget::resolveIconPath(const std::string& appId) {
 
   if (const auto internal = internal_apps::metadataForAppId(appId); internal.has_value()) {
     return internal->iconPath;
+  }
+
+  const app_identity::DesktopEntryLookupOptions lookupOptions = appId.starts_with("steam_app_")
+      ? app_identity::DesktopEntryLookupOptions{.includeHidden = true, .includeNoDisplay = true}
+      : app_identity::DesktopEntryLookupOptions{};
+  if (const auto entry = app_identity::findDesktopEntry(appId, desktopEntries(), lookupOptions);
+      entry.has_value() && !entry->icon.empty()) {
+    const int iconTargetSize = static_cast<int>(std::round(48.0f * m_contentScale));
+    const std::string& resolved = m_iconResolver.resolve(entry->icon, iconTargetSize);
+    if (!resolved.empty()) {
+      return resolved;
+    }
   }
 
   const int iconTargetSize = static_cast<int>(std::round(48.0f * m_contentScale));

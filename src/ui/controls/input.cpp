@@ -11,15 +11,18 @@
 #include "render/scene/input_area.h"
 #include "render/scene/rect_node.h"
 #include "render/text/glyph_registry.h"
+#include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "wayland/text_input_service.h"
 
 #include <algorithm>
 #include <array>
 #include <cctype>
 #include <cmath>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -51,6 +54,9 @@ namespace {
   constexpr auto kDoubleClickThreshold = std::chrono::milliseconds(400);
   constexpr float kDoubleClickDistance = 6.0f;
   constexpr std::size_t kUndoStackLimit = 100;
+  constexpr std::size_t kIncrementalTextMetricsMaxBytes = 64;
+  // Keep in sync with cairo_text_renderer single-texture width clip (GL_MAX_TEXTURE_SIZE).
+  constexpr float kMaxLabelRasterWidth = 8192.0f - 64.0f;
   constexpr auto kTypingUndoCoalesceWindow = std::chrono::milliseconds(1000);
 
   float chromeScaleForControlHeight(float controlHeight) noexcept {
@@ -84,6 +90,30 @@ namespace {
 
   Color resolved(ColorRole role, float alpha = 1.0f) { return colorForRole(role, alpha); }
 
+  bool isUtf8ContinuationByte(unsigned char value) noexcept { return (value & 0xC0U) == 0x80U; }
+
+  std::size_t clampToUtf8Start(const std::string& text, std::size_t pos) {
+    pos = std::min(pos, text.size());
+    while (pos > 0 && pos < text.size() && isUtf8ContinuationByte(static_cast<unsigned char>(text[pos]))) {
+      --pos;
+    }
+    return pos;
+  }
+
+  std::size_t clampToUtf8End(const std::string& text, std::size_t pos) {
+    pos = std::min(pos, text.size());
+    while (pos < text.size() && isUtf8ContinuationByte(static_cast<unsigned char>(text[pos]))) {
+      ++pos;
+    }
+    return pos;
+  }
+
+  std::int32_t byteOffsetToProtocolInt(std::size_t value) {
+    return static_cast<std::int32_t>(
+        std::min<std::size_t>(value, static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max()))
+    );
+  }
+
 } // namespace
 
 Input::Input() {
@@ -100,11 +130,13 @@ Input::Input() {
   // Text-layer children:
   // 0: selection highlight (rendered behind text)
   auto sel = std::make_unique<RectNode>();
-  sel->setStyle(RoundedRectStyle{
-      .fill = resolved(ColorRole::Primary),
-      .fillMode = FillMode::Solid,
-      .radius = 2.0f,
-  });
+  sel->setStyle(
+      RoundedRectStyle{
+          .fill = resolved(ColorRole::Primary),
+          .fillMode = FillMode::Solid,
+          .radius = 2.0f,
+      }
+  );
   sel->setOpacity(0.3f);
   sel->setVisible(false);
   m_selectionRect = static_cast<RectNode*>(m_textViewport->addChild(std::move(sel)));
@@ -118,17 +150,20 @@ Input::Input() {
 
   // 2: cursor
   auto cursor = std::make_unique<RectNode>();
-  cursor->setStyle(RoundedRectStyle{
-      .fill = resolved(ColorRole::Primary),
-      .fillMode = FillMode::Solid,
-      .radius = 1.0f,
-  });
+  cursor->setStyle(
+      RoundedRectStyle{
+          .fill = resolved(ColorRole::Primary),
+          .fillMode = FillMode::Solid,
+          .radius = 1.0f,
+      }
+  );
   cursor->setVisible(false);
   m_cursor = static_cast<RectNode*>(m_textViewport->addChild(std::move(cursor)));
 
   // Full-field input area.
   auto area = std::make_unique<InputArea>();
   area->setFocusable(true);
+  area->setTextInputClient(this);
   area->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_TEXT);
   area->setOnEnter([this](const InputArea::PointerData& /*data*/) { applyVisualState(); });
   area->setOnLeave([this]() { applyVisualState(); });
@@ -137,11 +172,22 @@ Input::Input() {
     revealCursor();
     startCursorBlink();
     applyVisualState();
+    markPaintDirty();
   });
   area->setOnFocusLoss([this]() {
+    const bool removedPreedit = removePreeditText();
     stopCursorBlink();
     updateCursorVisibility();
     applyVisualState();
+    markPaintDirty();
+    if (removedPreedit) {
+      updateDisplayText();
+      markTextContentChanged(TextMetricsEdit::full());
+      markPaintDirty();
+    }
+    if (m_submitOnFocusLoss && m_onSubmit) {
+      m_onSubmit(m_value);
+    }
     if (m_onFocusLoss) {
       m_onFocusLoss();
     }
@@ -152,10 +198,11 @@ Input::Input() {
       const float textStartX = m_horizontalPadding + kTextInnerInset;
       const std::size_t offset = xToByteOffset(data.localX - textStartX + m_scrollOffset - m_contentLeadSlack);
       const auto now = std::chrono::steady_clock::now();
-      const bool isDoubleClick = data.button == BTN_LEFT && m_hasLastPrimaryPress &&
-                                 now - m_lastPrimaryPressTime <= kDoubleClickThreshold &&
-                                 std::abs(data.localX - m_lastPrimaryPressX) <= kDoubleClickDistance &&
-                                 std::abs(data.localY - m_lastPrimaryPressY) <= kDoubleClickDistance;
+      const bool isDoubleClick = data.button == BTN_LEFT
+          && m_hasLastPrimaryPress
+          && now - m_lastPrimaryPressTime <= kDoubleClickThreshold
+          && std::abs(data.localX - m_lastPrimaryPressX) <= kDoubleClickDistance
+          && std::abs(data.localY - m_lastPrimaryPressY) <= kDoubleClickDistance;
 
       if (data.button == BTN_LEFT) {
         m_lastPrimaryPressTime = now;
@@ -172,10 +219,9 @@ Input::Input() {
         m_cursorPos = offset;
         m_selectionAnchor = offset;
       }
-      updateInteractiveGeometry();
+      requestCaretUpdate();
       revealCursor();
-      markLayoutDirty();
-      markPaintDirty();
+      notifyTextInputStateChanged(TextInputChangeCause::Other);
     }
   });
   area->setOnMotion([this](const InputArea::PointerData& data) {
@@ -199,10 +245,9 @@ Input::Input() {
         const float textStartX = m_horizontalPadding + kTextInnerInset;
         m_cursorPos = xToByteOffset(data.localX - textStartX + m_scrollOffset - m_contentLeadSlack);
       }
-      updateInteractiveGeometry();
+      requestCaretUpdate();
       revealCursor();
-      markLayoutDirty();
-      markPaintDirty();
+      notifyTextInputStateChanged(TextInputChangeCause::Other);
     }
   });
   area->setOnAxisHandler([this](const InputArea::PointerData& data) {
@@ -226,10 +271,9 @@ Input::Input() {
       }
     }
     m_selectionAnchor = m_cursorPos;
-    updateInteractiveGeometry();
+    requestCaretUpdate();
     revealCursor();
-    markLayoutDirty();
-    markPaintDirty();
+    notifyTextInputStateChanged(TextInputChangeCause::Other);
     return true;
   });
   area->setOnKeyDown([this](const InputArea::KeyData& k) { handleKey(k.sym, k.utf32, k.modifiers, k.preedit); });
@@ -259,13 +303,22 @@ Input::Input() {
   });
 }
 
+Input::~Input() {
+  if (m_textInputService != nullptr) {
+    m_textInputService->clearFocusedClient(this);
+  }
+}
+
 void Input::setValue(std::string_view value) {
   m_value = std::string(value);
   m_cursorPos = m_value.size();
   m_selectionAnchor = m_cursorPos;
+  m_preeditStart = 0;
+  m_preeditLen = 0;
   clearEditHistory();
   updateDisplayText();
-  markLayoutDirty();
+  notifyTextInputStateChanged(TextInputChangeCause::Other);
+  markTextContentChanged(TextMetricsEdit::full());
 }
 
 void Input::setPlaceholder(std::string_view placeholder) {
@@ -281,7 +334,7 @@ void Input::setFontSize(float size) {
   if (m_label != nullptr) {
     m_label->setFontSize(m_fontSize);
   }
-  markLayoutDirty();
+  markTextContentChanged(TextMetricsEdit::full());
 }
 
 void Input::setControlHeight(float height) {
@@ -311,7 +364,8 @@ void Input::setPasswordMode(bool enabled) {
     syncPasswordGlyphNodes(0);
   }
   updateDisplayText();
-  markLayoutDirty();
+  notifyTextInputStateChanged(TextInputChangeCause::Other);
+  markTextContentChanged(TextMetricsEdit::full());
 }
 
 void Input::setInvalid(bool invalid) {
@@ -341,11 +395,11 @@ void Input::setEmbeddedOnSolidPrimary(bool embedded) {
   markPaintDirty();
 }
 
-void Input::setBold(bool bold) {
+void Input::setFontWeight(FontWeight fontWeight) {
   if (m_label != nullptr) {
-    m_label->setBold(bold);
+    m_label->setFontWeight(fontWeight);
   }
-  markLayoutDirty();
+  markTextContentChanged(TextMetricsEdit::full());
 }
 
 void Input::setMinLayoutWidth(float width) {
@@ -375,6 +429,17 @@ void Input::setOnKeyEvent(std::function<bool(std::uint32_t, std::uint32_t)> call
 
 void Input::setOnFocusLoss(std::function<void()> callback) { m_onFocusLoss = std::move(callback); }
 
+void Input::setSubmitOnFocusLoss(bool enabled) { m_submitOnFocusLoss = enabled; }
+
+void Input::setSurfaceOpacity(float opacity) {
+  const float clamped = std::clamp(opacity, 0.0f, 1.0f);
+  if (m_surfaceOpacity == clamped) {
+    return;
+  }
+  m_surfaceOpacity = clamped;
+  applyVisualState();
+}
+
 void Input::setEnabled(bool enabled) {
   if (m_enabled == enabled) {
     return;
@@ -403,6 +468,7 @@ void Input::selectAll() {
   m_selectionAnchor = 0;
   m_cursorPos = m_value.size();
   updateInteractiveGeometry();
+  notifyTextInputStateChanged(TextInputChangeCause::Other);
   markPaintDirty();
 }
 
@@ -417,9 +483,9 @@ void Input::moveCaretLeft(bool shift) {
       m_selectionAnchor = m_cursorPos;
     }
   }
-  updateDisplayText();
-  markLayoutDirty();
+  requestCaretUpdate();
   revealCursor();
+  notifyTextInputStateChanged(TextInputChangeCause::Other);
 }
 
 void Input::moveCaretRight(bool shift) {
@@ -433,16 +499,423 @@ void Input::moveCaretRight(bool shift) {
       m_selectionAnchor = m_cursorPos;
     }
   }
-  updateDisplayText();
-  markLayoutDirty();
+  requestCaretUpdate();
   revealCursor();
+  notifyTextInputStateChanged(TextInputChangeCause::Other);
 }
 
 void Input::clearSelection() {
   resetUndoCoalescing();
   m_selectionAnchor = m_cursorPos;
   updateInteractiveGeometry();
+  notifyTextInputStateChanged(TextInputChangeCause::Other);
   markPaintDirty();
+}
+
+TextInputState Input::textInputState() const {
+  std::string surrounding = m_value;
+  std::size_t cursor = clampToUtf8End(m_value, m_cursorPos);
+  std::size_t anchor = clampToUtf8End(m_value, m_selectionAnchor);
+  if (m_preeditLen > 0 && m_preeditStart <= surrounding.size()) {
+    const std::size_t preeditStart = clampToUtf8End(surrounding, m_preeditStart);
+    const std::size_t preeditLen = std::min(m_preeditLen, surrounding.size() - preeditStart);
+    const std::size_t preeditEnd = preeditStart + preeditLen;
+    surrounding.erase(preeditStart, preeditLen);
+    const auto adjustOffset = [preeditStart, preeditEnd](std::size_t pos) {
+      if (pos <= preeditStart) {
+        return pos;
+      }
+      if (pos <= preeditEnd) {
+        return preeditStart;
+      }
+      return pos - (preeditEnd - preeditStart);
+    };
+    cursor = adjustOffset(cursor);
+    anchor = adjustOffset(anchor);
+  }
+
+  float cursorSceneX = 0.0f;
+  float cursorSceneY = 0.0f;
+  if (m_textViewport != nullptr) {
+    Node::absolutePosition(m_textViewport, cursorSceneX, cursorSceneY);
+  }
+  if (m_cursor != nullptr) {
+    cursorSceneX += m_cursor->x();
+    cursorSceneY += m_cursor->y();
+  }
+
+  const bool password = m_passwordMode;
+  const float cursorWidth = m_cursor != nullptr ? m_cursor->width() : 1.0f;
+  const float cursorHeight = m_cursor != nullptr ? m_cursor->height() : m_controlHeight;
+  return TextInputState{
+      .surroundingText = password ? std::string{} : std::move(surrounding),
+      .cursor = byteOffsetToProtocolInt(cursor),
+      .anchor = byteOffsetToProtocolInt(anchor),
+      .cursorRectX = static_cast<std::int32_t>(std::round(cursorSceneX)),
+      .cursorRectY = static_cast<std::int32_t>(std::round(cursorSceneY)),
+      .cursorRectWidth = static_cast<std::int32_t>(std::max(1.0f, std::round(cursorWidth))),
+      .cursorRectHeight = static_cast<std::int32_t>(std::max(1.0f, std::round(cursorHeight))),
+      .purpose = password ? TextInputPurpose::Password : TextInputPurpose::Normal,
+      .sendSurroundingText = !password,
+      .sensitiveData = password,
+      .hiddenText = password,
+      .preeditVisible = !password,
+  };
+}
+
+void Input::textInputApplyEdit(const TextInputEdit& edit) {
+  clampEditState();
+
+  const bool permanentEdit = edit.hasDelete || edit.hasCommitText;
+  if (permanentEdit) {
+    pushUndoSnapshot(EditCoalesceKind::Discrete);
+  }
+
+  bool displayChanged = removePreeditText();
+  bool permanentChanged = false;
+  std::optional<std::string> permanentValue;
+
+  if (edit.hasDelete) {
+    permanentChanged = deleteSurroundingText(edit.deleteBeforeLength, edit.deleteAfterLength) || permanentChanged;
+    displayChanged = displayChanged || permanentChanged;
+  }
+
+  if (edit.hasCommitText) {
+    if (hasSelection()) {
+      deleteSelection();
+      permanentChanged = true;
+      displayChanged = true;
+    }
+    if (!edit.commitText.empty()) {
+      m_value.insert(m_cursorPos, edit.commitText);
+      m_cursorPos += edit.commitText.size();
+      m_selectionAnchor = m_cursorPos;
+      permanentChanged = true;
+      displayChanged = true;
+    }
+  }
+
+  if (permanentChanged) {
+    noteTypingEditEnd();
+    permanentValue = m_value;
+  }
+
+  if (edit.hasPreedit) {
+    if (hasSelection()) {
+      deleteSelection();
+      displayChanged = true;
+    }
+    if (!edit.preeditText.empty()) {
+      m_preeditStart = m_cursorPos;
+      m_preeditLen = edit.preeditText.size();
+      m_value.insert(m_cursorPos, edit.preeditText);
+      const std::size_t preeditEnd = m_preeditStart + m_preeditLen;
+      auto cursorOffset =
+          edit.preeditCursorBegin < 0 ? m_preeditLen : static_cast<std::size_t>(edit.preeditCursorBegin);
+      auto anchorOffset = edit.preeditCursorEnd < 0 ? cursorOffset : static_cast<std::size_t>(edit.preeditCursorEnd);
+      cursorOffset = clampToUtf8End(edit.preeditText, std::min(cursorOffset, m_preeditLen));
+      anchorOffset = clampToUtf8End(edit.preeditText, std::min(anchorOffset, m_preeditLen));
+      m_cursorPos = std::min(preeditEnd, m_preeditStart + cursorOffset);
+      m_selectionAnchor = std::min(preeditEnd, m_preeditStart + anchorOffset);
+      displayChanged = true;
+    } else {
+      m_preeditStart = 0;
+      m_preeditLen = 0;
+    }
+  }
+
+  if (displayChanged || edit.submit) {
+    updateDisplayText();
+    TextMetricsEdit metricsEdit = TextMetricsEdit::full();
+    if (permanentChanged && edit.hasCommitText && !edit.commitText.empty() && !edit.hasDelete) {
+      const std::size_t insertAt = m_cursorPos - edit.commitText.size();
+      metricsEdit = TextMetricsEdit::insert(insertAt, edit.commitText);
+    }
+    markTextContentChanged(std::move(metricsEdit));
+    updateInteractiveGeometry();
+    revealCursor();
+    markPaintDirty();
+  }
+
+  const std::optional<std::string> submitValue = edit.submit ? std::optional<std::string>{m_value} : std::nullopt;
+  const auto onChange = m_onChange;
+  const auto onSubmit = m_onSubmit;
+  if (permanentValue.has_value() && onChange) {
+    onChange(*permanentValue);
+  }
+  if (submitValue.has_value() && onSubmit) {
+    onSubmit(*submitValue);
+  }
+}
+
+void Input::textInputResetPreedit() {
+  if (!removePreeditText()) {
+    return;
+  }
+  updateDisplayText();
+  markTextContentChanged(TextMetricsEdit::full());
+  updateInteractiveGeometry();
+  revealCursor();
+  markPaintDirty();
+}
+
+void Input::textInputActivated(TextInputService& service) { m_textInputService = &service; }
+
+void Input::textInputDeactivated(TextInputService& service) {
+  if (m_textInputService == &service) {
+    m_textInputService = nullptr;
+  }
+}
+
+void Input::markTextContentChanged(TextMetricsEdit edit) {
+  if (edit.kind != TextMetricsEdit::Kind::Full && edit.fragment.size() > kIncrementalTextMetricsMaxBytes) {
+    edit.kind = TextMetricsEdit::Kind::Full;
+    edit.fragment.clear();
+  }
+  m_pendingMetricsEdit = std::move(edit);
+  m_textMetricsDirty = true;
+  markLayoutDirty();
+}
+
+float Input::measureTextWidth(Renderer& renderer, std::string_view text) const {
+  if (text.empty()) {
+    return 0.0f;
+  }
+  return renderer.measureText(text, m_fontSize, m_label->fontWeight()).width;
+}
+
+std::size_t Input::stopIndexForByte(std::size_t bytePos) const {
+  std::size_t best = 0;
+  for (std::size_t i = 0; i < m_stopByte.size(); ++i) {
+    if (m_stopByte[i] == bytePos) {
+      return i;
+    }
+    if (m_stopByte[i] < bytePos) {
+      best = i;
+    } else {
+      break;
+    }
+  }
+  return best;
+}
+
+void Input::rebuildCursorStopsFull(Renderer& renderer) {
+  const bool showPasswordGlyphs = m_passwordMode && !m_value.empty();
+
+  m_stopByte.clear();
+  m_stopX.clear();
+  m_stopByte.push_back(0);
+  m_stopX.push_back(0.0f);
+
+  if (m_value.empty()) {
+    return;
+  }
+
+  const float passwordCellSize = showPasswordGlyphs ? std::round(m_fontSize * kPasswordGlyphScale) : 0.0f;
+  std::size_t pos = 0;
+  float maskX = 0.0f;
+  while (pos < m_value.size()) {
+    pos = nextCharPos(m_value, pos);
+    m_stopByte.push_back(pos);
+    if (showPasswordGlyphs) {
+      maskX += passwordCellSize;
+      m_stopX.push_back(maskX);
+    }
+  }
+  if (!showPasswordGlyphs) {
+    renderer.measureTextCursorStops(m_value, m_fontSize, m_stopByte, m_stopX);
+    if (m_stopX.size() != m_stopByte.size()) {
+      m_stopX.assign(m_stopByte.size(), 0.0f);
+    }
+  }
+}
+
+bool Input::tryApplyIncrementalCursorStops(Renderer& renderer, const TextMetricsEdit& edit) {
+  if (edit.kind == TextMetricsEdit::Kind::Full) {
+    return false;
+  }
+  if (m_passwordMode) {
+    return false;
+  }
+  if (m_stopByte.size() != m_stopX.size() || m_stopByte.empty()) {
+    return false;
+  }
+
+  if (edit.kind == TextMetricsEdit::Kind::Insert) {
+    if (edit.fragment.empty()) {
+      return true;
+    }
+    const std::size_t startByte = edit.startByte;
+    const std::size_t stopIdx = stopIndexForByte(startByte);
+    if (stopIdx >= m_stopByte.size() || m_stopByte[stopIdx] != startByte) {
+      return false;
+    }
+
+    const float baseX = m_stopX[stopIdx];
+    const std::size_t insertLen = edit.fragment.size();
+    for (std::size_t j = stopIdx + 1; j < m_stopByte.size(); ++j) {
+      m_stopByte[j] += insertLen;
+    }
+
+    std::size_t pos = startByte;
+    std::size_t insertIdx = stopIdx + 1;
+    while (pos < startByte + insertLen) {
+      pos = nextCharPos(m_value, pos);
+      const float segmentWidth = measureTextWidth(renderer, m_value.substr(startByte, pos - startByte));
+      m_stopByte.insert(m_stopByte.begin() + static_cast<std::ptrdiff_t>(insertIdx), pos);
+      m_stopX.insert(m_stopX.begin() + static_cast<std::ptrdiff_t>(insertIdx), baseX + segmentWidth);
+      ++insertIdx;
+    }
+
+    const float totalDelta = measureTextWidth(renderer, edit.fragment);
+    for (std::size_t j = insertIdx; j < m_stopX.size(); ++j) {
+      m_stopX[j] += totalDelta;
+    }
+    return true;
+  }
+
+  if (edit.kind == TextMetricsEdit::Kind::Delete) {
+    if (edit.fragment.empty()) {
+      return true;
+    }
+    const std::size_t startByte = edit.startByte;
+    const std::size_t delLen = edit.fragment.size();
+    const std::size_t endByte = startByte + delLen;
+    const std::size_t startIdx = stopIndexForByte(startByte);
+    if (startIdx >= m_stopByte.size() || m_stopByte[startIdx] != startByte) {
+      return false;
+    }
+
+    const float deletedWidth = measureTextWidth(renderer, edit.fragment);
+    const std::size_t eraseBegin = startIdx + 1;
+    std::size_t eraseEnd = eraseBegin;
+    while (eraseEnd < m_stopByte.size() && m_stopByte[eraseEnd] <= endByte) {
+      ++eraseEnd;
+    }
+    if (eraseBegin >= eraseEnd) {
+      return false;
+    }
+
+    m_stopByte.erase(
+        m_stopByte.begin() + static_cast<std::ptrdiff_t>(eraseBegin),
+        m_stopByte.begin() + static_cast<std::ptrdiff_t>(eraseEnd)
+    );
+    m_stopX.erase(
+        m_stopX.begin() + static_cast<std::ptrdiff_t>(eraseBegin),
+        m_stopX.begin() + static_cast<std::ptrdiff_t>(eraseEnd)
+    );
+
+    for (std::size_t j = startIdx + 1; j < m_stopByte.size(); ++j) {
+      m_stopByte[j] -= delLen;
+      m_stopX[j] -= deletedWidth;
+    }
+    return true;
+  }
+
+  return false;
+}
+
+void Input::rebuildCursorStops(Renderer& renderer) {
+  if (!m_textMetricsDirty) {
+    return;
+  }
+  if (!tryApplyIncrementalCursorStops(renderer, m_pendingMetricsEdit)) {
+    rebuildCursorStopsFull(renderer);
+  }
+  m_pendingMetricsEdit = {};
+  m_textMetricsDirty = false;
+}
+
+void Input::recomputeContentLeadSlack(Renderer& renderer, float width, bool showClearButton) {
+  m_contentLeadSlack = 0.0f;
+  const bool showPasswordGlyphs = m_passwordMode && !m_value.empty();
+  if (showPasswordGlyphs || m_textAlign != TextAlign::Center) {
+    return;
+  }
+
+  const float textInset = m_horizontalPadding + kTextInnerInset;
+  const float rightInset = showClearButton ? clearButtonTextReserveWidth() : textInset;
+  const float viewportWidth = std::max(0.0f, width - textInset - rightInset);
+  float textExtent = 0.0f;
+  if (!m_value.empty() && m_stopX.size() > 1U) {
+    textExtent = m_stopX.back();
+  } else if (m_value.empty() && !m_placeholder.empty()) {
+    textExtent = renderer.measureText(m_placeholder, m_fontSize, m_label->fontWeight()).width;
+  }
+  if (viewportWidth > 0.0f && textExtent > 0.0f && textExtent + 0.5f < viewportWidth) {
+    m_contentLeadSlack = std::round((viewportWidth - textExtent) * 0.5f);
+  }
+}
+
+std::size_t Input::visibleLabelStartByte() const {
+  if (m_stopX.empty()) {
+    return 0;
+  }
+  const float viewStart = m_scrollOffset;
+  std::size_t startByte = 0;
+  for (std::size_t i = 0; i < m_stopByte.size(); ++i) {
+    if (m_stopX[i] <= viewStart + 0.5f) {
+      startByte = m_stopByte[i];
+    } else {
+      break;
+    }
+  }
+  return startByte;
+}
+
+std::size_t Input::visibleLabelEndByte(float contentWidth, std::size_t startByte) const {
+  if (m_stopX.empty()) {
+    return m_value.size();
+  }
+  const float originX = stopXForByte(startByte);
+  const float endX = originX + contentWidth;
+  for (std::size_t i = 1; i < m_stopByte.size(); ++i) {
+    if (m_stopX[i] >= endX - 0.5f) {
+      return m_stopByte[i];
+    }
+  }
+  return m_value.size();
+}
+
+void Input::updateLabelVisibleSlice(Renderer& renderer) {
+  if (m_label == nullptr || m_value.empty() || (m_passwordMode && !m_value.empty())) {
+    return;
+  }
+
+  const float viewportW = textViewportWidth();
+  const float pad = std::max(viewportW, m_fontSize * 4.0f);
+  const float sliceContentW = std::min(kMaxLabelRasterWidth, viewportW + pad * 2.0f);
+
+  std::size_t sliceStart = visibleLabelStartByte();
+  if (sliceStart > 0) {
+    sliceStart = prevCharPos(m_value, sliceStart + 1);
+  }
+  const std::size_t sliceEnd = visibleLabelEndByte(sliceContentW, sliceStart);
+  if (sliceEnd <= sliceStart) {
+    return;
+  }
+
+  const std::string slice = m_value.substr(sliceStart, sliceEnd - sliceStart);
+  m_labelSliceOriginX = stopXForByte(sliceStart);
+  m_labelVisibleStartByte = sliceStart;
+  if (slice != m_labelVisibleSlice) {
+    m_labelVisibleSlice = slice;
+    m_label->setText(m_labelVisibleSlice);
+    m_label->measure(renderer);
+    const float h = m_controlHeight;
+    m_cachedLabelY = std::round((h - m_label->height()) * 0.5f);
+  }
+}
+
+void Input::syncLabelScrollPosition() {
+  if (m_label == nullptr || (m_passwordMode && !m_value.empty())) {
+    return;
+  }
+  if (m_value.empty()) {
+    m_label->setPosition(-m_scrollOffset + m_contentLeadSlack, m_cachedLabelY);
+    return;
+  }
+  m_label->setPosition(m_labelSliceOriginX - m_scrollOffset + m_contentLeadSlack, m_cachedLabelY);
 }
 
 void Input::doLayout(Renderer& renderer) {
@@ -455,59 +928,18 @@ void Input::doLayout(Renderer& renderer) {
 
   const bool showPasswordGlyphs = m_passwordMode && !m_value.empty();
   m_label->setVisible(!showPasswordGlyphs);
+
+  rebuildCursorStops(renderer);
+
   if (!showPasswordGlyphs) {
-    m_label->measure(renderer);
-  }
-
-  m_stopByte.clear();
-  m_stopX.clear();
-  m_stopByte.push_back(0);
-  m_stopX.push_back(0.0f);
-  std::size_t charCount = 0;
-  float maskGlyphY = 0.0f;
-  float passwordGlyphSize = 0.0f;
-  if (showPasswordGlyphs) {
-    passwordGlyphSize = m_fontSize * kPasswordGlyphScale;
-    const auto metrics = renderer.measureGlyph(passwordMaskCodepointForIndex(0), passwordGlyphSize);
-    const float glyphInkCenter = (metrics.top + metrics.bottom) * 0.5f;
-    maskGlyphY = std::round(h * 0.5f - glyphInkCenter);
-  }
-  if (!m_value.empty()) {
-    std::size_t pos = 0;
-    float maskX = 0.0f;
-    while (pos < m_value.size()) {
-      pos = nextCharPos(m_value, pos);
-      ++charCount;
-      m_stopByte.push_back(pos);
-      if (showPasswordGlyphs) {
-        const auto metrics = renderer.measureGlyph(passwordMaskCodepointForIndex(charCount - 1), passwordGlyphSize);
-        maskX += metrics.width;
-        m_stopX.push_back(maskX);
-      }
-    }
-    if (!showPasswordGlyphs) {
-      renderer.measureTextCursorStops(m_value, m_fontSize, m_stopByte, m_stopX);
-      if (m_stopX.size() != m_stopByte.size()) {
-        m_stopX.assign(m_stopByte.size(), 0.0f);
-      }
+    if (m_value.empty() && !m_placeholder.empty()) {
+      m_label->measure(renderer);
+      m_cachedLabelY = std::round((h - m_label->height()) * 0.5f);
+    } else if (!m_value.empty()) {
+      updateLabelVisibleSlice(renderer);
     }
   }
-
-  m_contentLeadSlack = 0.0f;
-  if (!showPasswordGlyphs && m_textAlign == TextAlign::Center) {
-    const float textInset = m_horizontalPadding + kTextInnerInset;
-    const float rightInset = showClearButton ? clearButtonTextReserveWidth() : textInset;
-    const float vw = std::max(0.0f, w - textInset - rightInset);
-    float textExtent = 0.0f;
-    if (!m_value.empty() && m_stopX.size() > 1U) {
-      textExtent = m_stopX.back();
-    } else if (m_value.empty() && !m_placeholder.empty()) {
-      textExtent = renderer.measureText(m_placeholder, m_fontSize, m_label->bold()).width;
-    }
-    if (vw > 0.0f && textExtent > 0.0f && textExtent + 0.5f < vw) {
-      m_contentLeadSlack = std::round((vw - textExtent) * 0.5f);
-    }
-  }
+  recomputeContentLeadSlack(renderer, w, showClearButton);
 
   if (m_inputArea != nullptr && m_inputArea->focused()) {
     ensureCursorVisible();
@@ -516,24 +948,34 @@ void Input::doLayout(Renderer& renderer) {
     m_scrollOffset = 0.0f;
   }
 
+  std::size_t charCount = 0;
+  if (showPasswordGlyphs) {
+    charCount = m_stopByte.size() > 0 ? m_stopByte.size() - 1 : 0;
+  }
+  float passwordGlyphSize = 0.0f;
+  const float passwordCellSize = showPasswordGlyphs ? std::round(m_fontSize * kPasswordGlyphScale) : 0.0f;
+  if (showPasswordGlyphs) {
+    passwordGlyphSize = m_fontSize * kPasswordGlyphScale;
+  }
+
   if (showPasswordGlyphs) {
     syncPasswordGlyphNodes(charCount);
     float gx = m_contentLeadSlack - m_scrollOffset;
     for (std::size_t i = 0; i < m_passwordGlyphs.size(); ++i) {
       auto* glyph = m_passwordGlyphs[i];
       const char32_t codepoint = passwordMaskCodepointForIndex(i);
-      const auto metrics = renderer.measureGlyph(codepoint, passwordGlyphSize);
       glyph->setCodepoint(codepoint);
-      glyph->setFontSize(passwordGlyphSize);
+      glyph->setGlyphSize(passwordGlyphSize);
       glyph->setColor(colorForRole(ColorRole::OnSurface));
-      glyph->setPosition(gx, maskGlyphY);
+      glyph->measure(renderer);
+      const float glyphY = std::round((h - glyph->height()) * 0.5f);
+      glyph->setPosition(gx, glyphY);
       glyph->setVisible(true);
-      gx += metrics.width;
+      gx += passwordCellSize;
     }
   } else {
     syncPasswordGlyphNodes(0);
-    const float labelY = std::round((h - m_label->height()) * 0.5f);
-    m_label->setPosition(-m_scrollOffset + m_contentLeadSlack, labelY);
+    syncLabelScrollPosition();
   }
 
   m_background->setPosition(0.0f, 0.0f);
@@ -570,6 +1012,8 @@ void Input::doLayout(Renderer& renderer) {
 }
 
 void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool preedit) {
+  clampEditState();
+
   if (m_onKeyEvent && m_onKeyEvent(sym, modifiers)) {
     return;
   }
@@ -579,27 +1023,30 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
   const bool ctrl = (modifiers & KeyMod::Ctrl) != 0;
   const bool undoShortcut = ctrl && !shift && (sym == 'z' || sym == 'Z');
   const bool redoShortcut = (ctrl && (sym == 'y' || sym == 'Y')) || (ctrl && shift && (sym == 'z' || sym == 'Z'));
+  const bool clearShortcut = ctrl && !shift && (sym == 'u' || sym == 'U');
 
   // Ignore keys that produce no text and aren't action keys we handle below
   if (utf32 == 0 && !preedit) {
-    const bool navigationOrEdit = KeySymbol::isBackspace(sym) || KeySymbol::isDelete(sym) || KeySymbol::isLeft(sym) ||
-                                  KeySymbol::isRight(sym) || KeySymbol::isHome(sym) || KeySymbol::isEnd(sym) ||
-                                  KeySymbol::isInsert(sym) || undoShortcut || redoShortcut;
+    const bool navigationOrEdit = KeySymbol::isBackspace(sym)
+        || KeySymbol::isDelete(sym)
+        || KeySymbol::isLeft(sym)
+        || KeySymbol::isRight(sym)
+        || KeySymbol::isHome(sym)
+        || KeySymbol::isEnd(sym)
+        || KeySymbol::isInsert(sym)
+        || undoShortcut
+        || redoShortcut
+        || clearShortcut;
     if (!navigationOrEdit && !validateMatch) {
       return;
     }
   }
 
   bool changed = false;
+  TextMetricsEdit metricsEdit = TextMetricsEdit::full();
 
   // Remove previous preedit text before processing
-  if (m_preeditLen > 0) {
-    m_value.erase(m_preeditStart, m_preeditLen);
-    m_cursorPos = m_preeditStart;
-    m_selectionAnchor = m_cursorPos;
-    m_preeditLen = 0;
-    changed = true;
-  }
+  changed = removePreeditText();
 
   const bool copyShortcut = ctrl && (KeySymbol::isInsert(sym) || sym == 'c' || sym == 'C');
   const bool cutShortcut =
@@ -612,8 +1059,9 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
     }
     if (changed) {
       updateDisplayText();
-      markLayoutDirty();
+      markTextContentChanged(TextMetricsEdit::full());
       revealCursor();
+      notifyTextInputStateChanged(TextInputChangeCause::Other);
       if (!preedit && m_onChange) {
         m_onChange(m_value);
       }
@@ -626,16 +1074,25 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
     }
     if (changed) {
       updateDisplayText();
-      markLayoutDirty();
+      markTextContentChanged(TextMetricsEdit::full());
       revealCursor();
+      notifyTextInputStateChanged(TextInputChangeCause::Other);
       if (!preedit && m_onChange) {
         m_onChange(m_value);
       }
     }
     return;
   }
-
-  if (ctrl && (sym == 'a' || sym == 'A')) {
+  if (clearShortcut) {
+    resetUndoCoalescing();
+    if (!m_value.empty() || hasSelection()) {
+      pushUndoSnapshot(EditCoalesceKind::Discrete);
+      m_value.clear();
+      m_cursorPos = 0;
+      m_selectionAnchor = 0;
+      changed = true;
+    }
+  } else if (ctrl && (sym == 'a' || sym == 'A')) {
     // Select all
     resetUndoCoalescing();
     m_selectionAnchor = 0;
@@ -658,6 +1115,7 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
         if (hasSelection()) {
           deleteSelection();
         }
+        metricsEdit = TextMetricsEdit::full();
         m_value.insert(m_cursorPos, *text);
         m_cursorPos += text->size();
         m_selectionAnchor = m_cursorPos;
@@ -672,6 +1130,9 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
     } else if (m_cursorPos > 0) {
       pushUndoSnapshot(EditCoalesceKind::Discrete);
       const std::size_t prev = ctrl ? previousWordStartForByteOffset(m_cursorPos) : prevCharPos(m_value, m_cursorPos);
+      if (!ctrl) {
+        metricsEdit = TextMetricsEdit::deleteRange(prev, m_value.substr(prev, m_cursorPos - prev));
+      }
       m_value.erase(prev, m_cursorPos - prev);
       m_cursorPos = prev;
       m_selectionAnchor = prev;
@@ -685,6 +1146,9 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
     } else if (m_cursorPos < m_value.size()) {
       pushUndoSnapshot(EditCoalesceKind::Discrete);
       const std::size_t next = ctrl ? nextWordEndForByteOffset(m_cursorPos) : nextCharPos(m_value, m_cursorPos);
+      if (!ctrl) {
+        metricsEdit = TextMetricsEdit::deleteRange(m_cursorPos, m_value.substr(m_cursorPos, next - m_cursorPos));
+      }
       m_value.erase(m_cursorPos, next - m_cursorPos);
       changed = true;
     }
@@ -738,10 +1202,12 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
       changed = true;
     }
     const auto bytes = utf32ToUtf8(utf32);
+    metricsEdit = TextMetricsEdit::insert(m_cursorPos, bytes);
     m_value.insert(m_cursorPos, bytes);
     if (preedit) {
       m_preeditStart = m_cursorPos;
       m_preeditLen = bytes.size();
+      metricsEdit = TextMetricsEdit::full();
     }
     m_cursorPos += bytes.size();
     m_selectionAnchor = m_cursorPos;
@@ -752,12 +1218,84 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
   }
 
   updateDisplayText();
-  markLayoutDirty();
-  revealCursor();
-
-  if (changed && !preedit && m_onChange) {
-    m_onChange(m_value);
+  if (changed) {
+    markTextContentChanged(std::move(metricsEdit));
+    revealCursor();
+    notifyTextInputStateChanged(TextInputChangeCause::Other);
+    if (!preedit && m_onChange) {
+      m_onChange(m_value);
+    }
+  } else {
+    requestCaretUpdate();
+    revealCursor();
+    notifyTextInputStateChanged(TextInputChangeCause::Other);
   }
+}
+
+void Input::notifyTextInputStateChanged(TextInputChangeCause cause) {
+  if (m_textInputService == nullptr) {
+    return;
+  }
+  m_textInputService->notifyClientStateChanged(this, cause);
+}
+
+bool Input::removePreeditText() {
+  if (m_preeditLen == 0) {
+    m_preeditStart = 0;
+    m_preeditLen = 0;
+    return false;
+  }
+
+  if (m_preeditStart > m_value.size()) {
+    m_preeditStart = 0;
+    m_preeditLen = 0;
+    clampEditState();
+    return false;
+  }
+
+  m_preeditStart = clampToUtf8End(m_value, m_preeditStart);
+  const std::size_t len = std::min(m_preeditLen, m_value.size() - m_preeditStart);
+  if (len == 0) {
+    m_preeditStart = 0;
+    m_preeditLen = 0;
+    clampEditState();
+    return false;
+  }
+
+  m_value.erase(m_preeditStart, len);
+  m_cursorPos = m_preeditStart;
+  m_selectionAnchor = m_cursorPos;
+  m_preeditStart = 0;
+  m_preeditLen = 0;
+  return true;
+}
+
+bool Input::deleteSurroundingText(std::uint32_t beforeLength, std::uint32_t afterLength) {
+  clampEditState();
+
+  const bool hadSelection = hasSelection();
+  const std::size_t baseStart = selectionStart();
+  const std::size_t baseEnd = selectionEnd();
+  const std::size_t selectionLength = baseEnd - baseStart;
+  const std::size_t rawStart = beforeLength > baseStart ? 0 : baseStart - beforeLength;
+  const std::size_t start = clampToUtf8Start(m_value, rawStart);
+  const std::size_t beforeEnd = clampToUtf8Start(m_value, baseStart);
+  const std::size_t afterStart = clampToUtf8End(m_value, baseEnd);
+  const std::size_t rawEnd = std::min(m_value.size(), baseEnd + static_cast<std::size_t>(afterLength));
+  const std::size_t end = clampToUtf8End(m_value, rawEnd);
+  if (start >= beforeEnd && afterStart >= end) {
+    return false;
+  }
+  if (afterStart < end) {
+    m_value.erase(afterStart, end - afterStart);
+  }
+  if (start < beforeEnd) {
+    m_value.erase(start, beforeEnd - start);
+  }
+  m_cursorPos = start;
+  m_selectionAnchor = hadSelection ? m_cursorPos + selectionLength : start;
+  m_selectionAnchor = std::min(m_selectionAnchor, m_value.size());
+  return true;
 }
 
 void Input::applyVisualState() {
@@ -769,20 +1307,23 @@ void Input::applyVisualState() {
 
   if (m_frameVisible) {
     m_background->setVisible(true);
-    const Color fill = focused ? resolved(ColorRole::Surface) : resolved(ColorRole::SurfaceVariant);
+    const Color fill = focused ? resolved(ColorRole::Surface, m_surfaceOpacity)
+                               : resolved(ColorRole::SurfaceVariant, m_surfaceOpacity);
     const Color border = m_invalid
-                             ? resolved(ColorRole::Error)
-                             : (focused ? resolved(ColorRole::Primary)
-                                        : (inputHovered ? resolved(ColorRole::Hover) : resolved(ColorRole::Outline)));
+        ? resolved(ColorRole::Error)
+        : (focused ? resolved(ColorRole::Primary)
+                   : (inputHovered ? resolved(ColorRole::Hover) : resolved(ColorRole::Outline)));
 
-    m_background->setStyle(RoundedRectStyle{
-        .fill = fill,
-        .border = border,
-        .fillMode = FillMode::Solid,
-        .radius = Style::scaledRadiusMd(chromeScale),
-        .softness = 1.0f,
-        .borderWidth = Style::borderWidth,
-    });
+    m_background->setStyle(
+        RoundedRectStyle{
+            .fill = fill,
+            .border = border,
+            .fillMode = FillMode::Solid,
+            .radius = Style::scaledRadiusMd(chromeScale),
+            .softness = 1.0f,
+            .borderWidth = Style::borderWidth,
+        }
+    );
   } else if (m_background != nullptr) {
     m_background->setVisible(false);
   }
@@ -810,11 +1351,10 @@ void Input::applyVisualState() {
     } else {
       m_label->setColor(colorSpecFromRole(ColorRole::OnPrimary));
     }
-    const Color passwordGlyphEmb =
-        m_invalid ? resolved(ColorRole::Error)
-                  : (showingPlaceholder
-                         ? resolved(ColorRole::OnPrimary, kPrimaryPlaceholderAlpha)
-                         : (readOnly ? resolved(ColorRole::OnPrimary, 0.65f) : resolved(ColorRole::OnPrimary)));
+    const Color passwordGlyphEmb = m_invalid
+        ? resolved(ColorRole::Error)
+        : (showingPlaceholder ? resolved(ColorRole::OnPrimary, kPrimaryPlaceholderAlpha)
+                              : (readOnly ? resolved(ColorRole::OnPrimary, 0.65f) : resolved(ColorRole::OnPrimary)));
     for (auto* glyph : m_passwordGlyphs) {
       glyph->setColor(passwordGlyphEmb);
     }
@@ -837,11 +1377,11 @@ void Input::applyVisualState() {
   m_cursor->setStyle(cursorStyle);
 
   const bool showingPlaceholder = m_value.empty() && !m_placeholder.empty();
-  const ColorSpec textColor =
-      m_invalid ? colorSpecFromRole(ColorRole::Error)
-                : (showingPlaceholder ? colorSpecFromRole(ColorRole::OnSurfaceVariant, kPlaceholderAlpha)
-                                      : (readOnly ? colorSpecFromRole(ColorRole::OnSurfaceVariant)
-                                                  : colorSpecFromRole(ColorRole::OnSurface)));
+  const ColorSpec textColor = m_invalid
+      ? colorSpecFromRole(ColorRole::Error)
+      : (showingPlaceholder
+             ? colorSpecFromRole(ColorRole::OnSurfaceVariant, kPlaceholderAlpha)
+             : (readOnly ? colorSpecFromRole(ColorRole::OnSurfaceVariant) : colorSpecFromRole(ColorRole::OnSurface)));
   m_label->setColor(textColor);
   const Color passwordGlyphColor = resolveColorSpec(textColor);
   for (auto* glyph : m_passwordGlyphs) {
@@ -854,10 +1394,20 @@ void Input::applyVisualState() {
 
 void Input::updateDisplayText() {
   if (m_value.empty() && !m_placeholder.empty()) {
+    m_labelVisibleSlice.clear();
     m_label->setText(m_placeholder);
+  } else if (m_passwordMode) {
+    m_labelVisibleSlice.clear();
+    m_label->setText(std::string{});
   } else {
-    m_label->setText(m_passwordMode ? std::string{} : m_value);
+    m_labelVisibleSlice.clear();
   }
+}
+
+void Input::requestCaretUpdate() {
+  updateInteractiveGeometry();
+  updateCursorVisibility();
+  markPaintDirty();
 }
 
 bool Input::isReadOnlyVisual() const noexcept {
@@ -882,8 +1432,9 @@ void Input::clearFromButton() {
   updateInteractiveGeometry();
   revealCursor();
   applyVisualState();
-  markLayoutDirty();
+  markTextContentChanged(TextMetricsEdit::full());
   markPaintDirty();
+  notifyTextInputStateChanged(TextInputChangeCause::Other);
   if (m_onChange) {
     m_onChange(m_value);
   }
@@ -903,7 +1454,16 @@ void Input::updateInteractiveGeometry() {
     m_scrollOffset = 0.0f;
   }
   if (std::abs(m_scrollOffset - previousScrollOffset) > 0.001f) {
-    markLayoutDirty();
+    std::size_t sliceStart = visibleLabelStartByte();
+    if (sliceStart > 0) {
+      sliceStart = prevCharPos(m_value, sliceStart + 1);
+    }
+    if (!m_value.empty() && sliceStart != m_labelVisibleStartByte) {
+      markLayoutDirty();
+    } else {
+      syncLabelScrollPosition();
+      markPaintDirty();
+    }
   }
 
   const float controlHeight = height() > 0.0f ? height() : m_controlHeight;
@@ -963,15 +1523,40 @@ void Input::clampScrollOffset() {
   m_scrollOffset = std::clamp(m_scrollOffset, 0.0f, maxOffset);
 }
 
+void Input::clampEditState() {
+  m_cursorPos = clampToUtf8End(m_value, m_cursorPos);
+  m_selectionAnchor = clampToUtf8End(m_value, m_selectionAnchor);
+
+  if (m_preeditLen == 0) {
+    m_preeditStart = 0;
+    return;
+  }
+
+  if (m_preeditStart > m_value.size()) {
+    m_preeditStart = 0;
+    m_preeditLen = 0;
+    return;
+  }
+
+  m_preeditStart = clampToUtf8End(m_value, m_preeditStart);
+  m_preeditLen = std::min(m_preeditLen, m_value.size() - m_preeditStart);
+  if (m_preeditLen == 0) {
+    m_preeditStart = 0;
+  }
+}
+
 LayoutSize Input::doMeasure(Renderer& renderer, const LayoutConstraints& constraints) {
   const float minFromHint = m_minLayoutWidth > 0.0f ? m_minLayoutWidth : 0.0f;
+  float assignW = width() > 0.0f ? width() : (minFromHint > 0.0f ? minFromHint : kMinWidth);
   if (constraints.hasExactWidth()) {
-    const float assignW = std::max(constraints.maxWidth, minFromHint);
-    setSize(assignW, m_controlHeight);
+    assignW = std::max(constraints.maxWidth, minFromHint);
   }
-  doLayout(renderer);
+  setSize(assignW, m_controlHeight);
+  if (m_textMetricsDirty || m_stopByte.empty()) {
+    rebuildCursorStops(renderer);
+  }
   const float w = std::max(width(), minFromHint);
-  return constraints.constrain(LayoutSize{.width = w, .height = height()});
+  return constraints.constrain(LayoutSize{.width = w, .height = m_controlHeight});
 }
 
 void Input::updateCursorVisibility() {
@@ -1124,8 +1709,8 @@ void Input::syncPasswordGlyphNodes(std::size_t count) {
     m_passwordGlyphs.pop_back();
   }
   while (m_passwordGlyphs.size() < count) {
-    auto glyph = std::make_unique<GlyphNode>();
-    auto* glyphPtr = static_cast<GlyphNode*>(m_textViewport->insertChildAt(2, std::move(glyph)));
+    auto glyph = std::make_unique<Glyph>();
+    auto* glyphPtr = static_cast<Glyph*>(m_textViewport->insertChildAt(2, std::move(glyph)));
     m_passwordGlyphs.push_back(glyphPtr);
   }
 }
@@ -1155,21 +1740,27 @@ float Input::clearButtonTextReserveWidth() const noexcept {
   return clearButtonHitWidth() * 0.5f + clearGlyphSize * 0.5f + kTextInnerInset;
 }
 
-bool Input::hasSelection() const noexcept { return m_selectionAnchor != m_cursorPos; }
+bool Input::hasSelection() const noexcept { return selectionStart() != selectionEnd(); }
 
-std::size_t Input::selectionStart() const noexcept { return std::min(m_selectionAnchor, m_cursorPos); }
+std::size_t Input::selectionStart() const noexcept {
+  return std::min(std::min(m_selectionAnchor, m_cursorPos), m_value.size());
+}
 
-std::size_t Input::selectionEnd() const noexcept { return std::max(m_selectionAnchor, m_cursorPos); }
+std::size_t Input::selectionEnd() const noexcept {
+  return std::min(std::max(m_selectionAnchor, m_cursorPos), m_value.size());
+}
 
 Input::EditSnapshot Input::currentEditSnapshot() const {
   return EditSnapshot{
       .value = m_value,
-      .cursorPos = m_cursorPos,
-      .selectionAnchor = m_selectionAnchor,
+      .cursorPos = clampToUtf8End(m_value, m_cursorPos),
+      .selectionAnchor = clampToUtf8End(m_value, m_selectionAnchor),
   };
 }
 
 void Input::deleteSelection() {
+  clampEditState();
+
   const std::size_t start = selectionStart();
   const std::size_t end = selectionEnd();
   m_value.erase(start, end - start);
@@ -1196,9 +1787,12 @@ void Input::pushUndoSnapshot(EditCoalesceKind kind) {
   }
 
   const auto now = std::chrono::steady_clock::now();
-  if (kind == EditCoalesceKind::Typing && m_lastEditCoalesceKind == EditCoalesceKind::Typing &&
-      m_cursorPos == m_typingCoalesceCursorPos && !hasSelection() && !m_undoStack.empty() &&
-      now - m_lastUndoRecordTime <= kTypingUndoCoalesceWindow) {
+  if (kind == EditCoalesceKind::Typing
+      && m_lastEditCoalesceKind == EditCoalesceKind::Typing
+      && m_cursorPos == m_typingCoalesceCursorPos
+      && !hasSelection()
+      && !m_undoStack.empty()
+      && now - m_lastUndoRecordTime <= kTypingUndoCoalesceWindow) {
     m_redoStack.clear();
     m_lastUndoRecordTime = now;
     return;
@@ -1254,8 +1848,9 @@ void Input::restoreEditSnapshot(const EditSnapshot& snapshot) {
   updateInteractiveGeometry();
   revealCursor();
   applyVisualState();
-  markLayoutDirty();
+  markTextContentChanged(TextMetricsEdit::full());
   markPaintDirty();
+  notifyTextInputStateChanged(TextInputChangeCause::Other);
   if (m_value != previousValue && m_onChange) {
     m_onChange(m_value);
   }
@@ -1288,7 +1883,7 @@ float Input::stopXForByte(std::size_t bytePos) const {
 
 std::size_t Input::nextCharPos(const std::string& s, std::size_t pos) {
   if (pos >= s.size()) {
-    return pos;
+    return s.size();
   }
   ++pos;
   while (pos < s.size() && (static_cast<unsigned char>(s[pos]) & 0xC0U) == 0x80U) {
@@ -1298,6 +1893,7 @@ std::size_t Input::nextCharPos(const std::string& s, std::size_t pos) {
 }
 
 std::size_t Input::prevCharPos(const std::string& s, std::size_t pos) {
+  pos = std::min(pos, s.size());
   if (pos == 0) {
     return 0;
   }

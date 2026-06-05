@@ -1,5 +1,6 @@
 #include "shell/bar/widgets/tray_widget.h"
 
+#include "config/config_service.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "dbus/tray/tray_service.h"
@@ -11,9 +12,8 @@
 #include "render/text/glyph_registry.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/tray/tray_identifier.h"
-#include "ui/controls/flex.h"
-#include "ui/controls/glyph.h"
-#include "ui/controls/image.h"
+#include "ui/app_icon_colorization.h"
+#include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
@@ -23,6 +23,7 @@
 #include <filesystem>
 #include <linux/input-event-codes.h>
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace {
@@ -85,8 +86,8 @@ namespace {
 
   bool isSvgPath(std::string_view path) { return path.ends_with(".svg") || path.ends_with(".SVG"); }
 
-  std::optional<LoadedImageFile> loadSymbolicTrayIcon(const std::string& path, int targetSize,
-                                                      const Color& symbolicColor) {
+  std::optional<LoadedImageFile>
+  loadSymbolicTrayIcon(const std::string& path, int targetSize, const Color& symbolicColor) {
     std::string loadError;
     auto loaded = loadImageFile(path, targetSize, &loadError);
     if (!loaded) {
@@ -122,12 +123,15 @@ namespace {
 
 } // namespace
 
-TrayWidget::TrayWidget(TrayService* tray, std::vector<std::string> hiddenItems, std::vector<std::string> pinnedItems,
-                       bool drawerMode, std::function<void()> itemActivated, std::string barPosition,
-                       bool panelGridMode, std::size_t panelGridColumns)
-    : m_tray(tray), m_hiddenItems(std::move(hiddenItems)), m_pinnedItems(std::move(pinnedItems)),
+TrayWidget::TrayWidget(
+    ConfigService& config, TrayService* tray, std::vector<std::string> hiddenItems,
+    std::vector<std::string> pinnedItems, bool drawerMode, std::function<void()> itemActivated, std::string barPosition,
+    bool panelGridMode, std::size_t panelGridColumns, float inlineEntryGap, bool matchAdjacentSpacing
+)
+    : m_config(config), m_tray(tray), m_hiddenItems(std::move(hiddenItems)), m_pinnedItems(std::move(pinnedItems)),
       m_drawerMode(drawerMode), m_itemActivated(std::move(itemActivated)), m_barPosition(std::move(barPosition)),
-      m_panelGridMode(panelGridMode), m_panelGridColumns(std::clamp<std::size_t>(panelGridColumns, 1U, 5U)) {
+      m_panelGridMode(panelGridMode), m_panelGridColumns(std::clamp<std::size_t>(panelGridColumns, 1U, 5U)),
+      m_inlineEntryGap(std::max(0.0f, inlineEntryGap)), m_matchAdjacentSpacing(matchAdjacentSpacing) {
   auto normalizeTokens = [](std::vector<std::string>& tokens) {
     std::vector<std::string> normalized;
     normalized.reserve(tokens.size());
@@ -188,17 +192,48 @@ std::string TrayWidget::resolveFromTrayThemePath(std::string_view themePath, std
   return {};
 }
 
-void TrayWidget::create() {
-  auto container = std::make_unique<Flex>();
-  if (m_panelGridMode) {
-    container->setDirection(FlexDirection::Vertical);
-    container->setAlign(FlexAlign::Start);
-  } else {
-    container->setRowLayout();
-    container->setAlign(FlexAlign::Center);
+float TrayWidget::resolvedInlineEntryGap() const {
+  if (!m_matchAdjacentSpacing) {
+    return m_inlineEntryGap;
   }
-  container->setGap(Style::spaceXs * m_contentScale);
-  m_container = container.get();
+  const auto& cap = barCapsuleSpec();
+  const float pad = cap.enabled ? cap.padding * m_contentScale : 0.0f;
+  return m_inlineEntryGap + 2.0f * pad;
+}
+
+std::optional<ColorSpec> TrayWidget::currentAppIconColorizeTint() const {
+  return effectiveShellAppIconColorizationTint(m_config.config().shell);
+}
+
+void TrayWidget::refreshAppIconColorization(Renderer& renderer) {
+  (void)renderer;
+  const auto tint = currentAppIconColorizeTint();
+  for (Image* image : m_colorizedAppIcons) {
+    if (image != nullptr) {
+      image->setAppIconColorization(tint);
+    }
+  }
+}
+
+void TrayWidget::create() {
+  m_paletteConn = paletteChanged().connect([this]() {
+    m_appIconColorizeDirty = true;
+    requestUpdate();
+  });
+  m_appIconColorizeConn = shellAppIconColorizationChanged().connect([this]() {
+    m_rebuildPending = true;
+    requestUpdate();
+  });
+
+  auto container = ui::flex(
+      m_panelGridMode ? FlexDirection::Vertical : FlexDirection::Horizontal,
+      {
+          .out = &m_container,
+          .align = m_panelGridMode ? FlexAlign::Start : FlexAlign::Center,
+          .justify = m_panelGridMode ? std::optional<FlexJustify>{} : std::optional<FlexJustify>{FlexJustify::Start},
+          .gap = m_panelGridMode ? Style::spaceXs * m_contentScale : resolvedInlineEntryGap(),
+      }
+  );
 
   setRoot(std::move(container));
 }
@@ -215,8 +250,10 @@ void TrayWidget::doLayout(Renderer& renderer, float containerWidth, float contai
       m_drawerChevron->setGlyph(glyphName);
       m_drawerChevron->setGlyphSize(m_drawerTrigger->width());
       m_drawerChevron->measure(renderer);
-      m_drawerChevron->setPosition(std::round((m_drawerTrigger->width() - m_drawerChevron->width()) * 0.5f),
-                                   std::round((m_drawerTrigger->height() - m_drawerChevron->height()) * 0.5f));
+      m_drawerChevron->setPosition(
+          std::round((m_drawerTrigger->width() - m_drawerChevron->width()) * 0.5f),
+          std::round((m_drawerTrigger->height() - m_drawerChevron->height()) * 0.5f)
+      );
       requestRedraw();
     }
   }
@@ -243,8 +280,14 @@ void TrayWidget::doLayout(Renderer& renderer, float containerWidth, float contai
     rebuild(renderer);
     m_rebuildPending = false;
   }
+  if (m_appIconColorizeDirty) {
+    refreshAppIconColorization(renderer);
+    m_appIconColorizeDirty = false;
+  }
 
-  m_container->setGap(Style::spaceXs * m_contentScale);
+  if (!m_panelGridMode) {
+    m_container->setGap(resolvedInlineEntryGap());
+  }
   m_container->layout(renderer);
 }
 
@@ -253,6 +296,10 @@ void TrayWidget::doUpdate(Renderer& renderer) {
   if (m_rebuildPending) {
     rebuild(renderer);
     m_rebuildPending = false;
+  }
+  if (m_appIconColorizeDirty) {
+    refreshAppIconColorization(renderer);
+    m_appIconColorizeDirty = false;
   }
 }
 
@@ -303,18 +350,21 @@ void TrayWidget::syncState(Renderer& renderer) {
 
     // Resolved icon path cache is keyed by item id. Invalidate when icon-relevant
     // metadata changes, or we can keep showing stale paths after icon switches.
-    if (prev.iconName != item.iconName || prev.overlayIconName != item.overlayIconName ||
-        prev.attentionIconName != item.attentionIconName || prev.iconThemePath != item.iconThemePath ||
-        prev.needsAttention != item.needsAttention || prev.status != item.status ||
-        prev.overlayWidth != item.overlayWidth || prev.overlayHeight != item.overlayHeight ||
-        prev.overlayArgb32 != item.overlayArgb32 || prev.iconWidth != item.iconWidth ||
-        prev.iconHeight != item.iconHeight || prev.iconArgb32 != item.iconArgb32 ||
-        prev.attentionWidth != item.attentionWidth || prev.attentionHeight != item.attentionHeight ||
-        prev.attentionArgb32 != item.attentionArgb32) {
-      kLog.debug("tray widget invalidate icon cache id={} icon='{}'->'{}' overlay='{}'->'{}' attention='{}'->'{}' "
-                 "status={}=>{}",
-                 item.id, prev.iconName, item.iconName, prev.overlayIconName, item.overlayIconName,
-                 prev.attentionIconName, item.attentionIconName, prev.status, item.status);
+    if (prev.iconName != item.iconName
+        || prev.overlayIconName != item.overlayIconName
+        || prev.attentionIconName != item.attentionIconName
+        || prev.iconThemePath != item.iconThemePath
+        || prev.needsAttention != item.needsAttention
+        || prev.status != item.status
+        || prev.overlayWidth != item.overlayWidth
+        || prev.overlayHeight != item.overlayHeight
+        || prev.overlayArgb32 != item.overlayArgb32
+        || prev.iconWidth != item.iconWidth
+        || prev.iconHeight != item.iconHeight
+        || prev.iconArgb32 != item.iconArgb32
+        || prev.attentionWidth != item.attentionWidth
+        || prev.attentionHeight != item.attentionHeight
+        || prev.attentionArgb32 != item.attentionArgb32) {
       m_preferredIconPaths.erase(item.id);
     }
   }
@@ -360,6 +410,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
     }
   }
   m_loadedImages.clear();
+  m_colorizedAppIcons.clear();
 
   while (!m_container->children().empty()) {
     m_container->removeChild(m_container->children().back().get());
@@ -405,15 +456,17 @@ void TrayWidget::rebuild(Renderer& renderer) {
           requestPanelToggle("tray-drawer", {}, anchorX, anchorY);
         }
       });
-      auto glyph = std::make_unique<Glyph>();
       const bool panelOpen = PanelManager::instance().isOpenPanel("tray-drawer");
       m_drawerChevronGlyph = drawerChevronGlyph(panelOpen);
-      glyph->setGlyph(m_drawerChevronGlyph);
-      glyph->setGlyphSize(itemSize);
-      glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
+      auto glyph = ui::glyph({
+          .glyph = m_drawerChevronGlyph,
+          .glyphSize = itemSize,
+          .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
+      });
       glyph->measure(renderer);
-      glyph->setPosition(std::round((itemSize - glyph->width()) * 0.5f),
-                         std::round((itemSize - glyph->height()) * 0.5f));
+      glyph->setPosition(
+          std::round((itemSize - glyph->width()) * 0.5f), std::round((itemSize - glyph->height()) * 0.5f)
+      );
       m_drawerChevron = glyph.get();
       triggerArea->addChild(std::move(glyph));
       m_container->addChild(std::move(triggerArea));
@@ -442,16 +495,24 @@ void TrayWidget::rebuild(Renderer& renderer) {
     float iconH = iconSize;
 
     if (!iconPath.empty()) {
-      auto image = std::make_unique<Image>();
-      image->setFit(ImageFit::Contain);
-      image->setSize(iconSize, iconSize);
-      bool loadedFromFile = false;
+      auto image = ui::image({
+          .fit = ImageFit::Contain,
+          .width = iconSize,
+          .height = iconSize,
+      });
       const bool symbolicPath = isSymbolicIconPath(iconPath);
+      const auto appIconTint = currentAppIconColorizeTint();
+      if (!symbolicPath && appIconTint.has_value()) {
+        image->setAppIconColorization(appIconTint);
+      }
+      bool loadedFromFile = false;
       const Color symbolicColor = resolveColorSpec(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
       if (symbolicPath && isSvgPath(iconPath)) {
         if (auto symbolic = loadSymbolicTrayIcon(iconPath, iconRequestSize, symbolicColor)) {
-          loadedFromFile = image->setSourceRaw(renderer, symbolic->rgba.data(), symbolic->rgba.size(), symbolic->width,
-                                               symbolic->height, 0, PixmapFormat::RGBA, true);
+          loadedFromFile = image->setSourceRaw(
+              renderer, symbolic->rgba.data(), symbolic->rgba.size(), symbolic->width, symbolic->height, 0,
+              PixmapFormat::RGBA, true
+          );
         }
       }
       if (!loadedFromFile) {
@@ -465,6 +526,9 @@ void TrayWidget::rebuild(Renderer& renderer) {
         iconW = iconSize;
         iconH = iconSize;
         m_loadedImages.push_back(image.get());
+        if (appIconTint.has_value() && !symbolicPath) {
+          m_colorizedAppIcons.push_back(image.get());
+        }
         iconNode = std::move(image);
       } else {
         kLog.debug("tray widget icon id={} source=file path={} failed-to-load", item.id, iconPath);
@@ -480,14 +544,24 @@ void TrayWidget::rebuild(Renderer& renderer) {
           item.needsAttention && !item.attentionArgb32.empty() ? item.attentionHeight : item.iconHeight;
 
       if (!pixmap.empty() && pixmapW > 0 && pixmapH > 0) {
-        auto image = std::make_unique<Image>();
-        image->setFit(ImageFit::Contain);
-        image->setSize(iconSize, iconSize);
-        if (image->setSourceRaw(renderer, pixmap.data(), pixmap.size(), pixmapW, pixmapH, 0, PixmapFormat::ARGB,
-                                true)) {
+        auto image = ui::image({
+            .fit = ImageFit::Contain,
+            .width = iconSize,
+            .height = iconSize,
+        });
+        const auto pixmapTint = currentAppIconColorizeTint();
+        if (pixmapTint.has_value()) {
+          image->setAppIconColorization(pixmapTint);
+        }
+        if (image->setSourceRaw(
+                renderer, pixmap.data(), pixmap.size(), pixmapW, pixmapH, 0, PixmapFormat::ARGB, true
+            )) {
           iconW = iconSize;
           iconH = iconSize;
           m_loadedImages.push_back(image.get());
+          if (pixmapTint.has_value()) {
+            m_colorizedAppIcons.push_back(image.get());
+          }
           iconNode = std::move(image);
         } else {
           kLog.debug("tray widget icon id={} source=pixmap size={}x{} failed-to-load", item.id, pixmapW, pixmapH);
@@ -521,9 +595,11 @@ void TrayWidget::rebuild(Renderer& renderer) {
 
       const std::string overlayPath = resolveOverlayPath(item.overlayIconName);
       if (!overlayPath.empty()) {
-        auto overlayImage = std::make_unique<Image>();
-        overlayImage->setFit(ImageFit::Contain);
-        overlayImage->setSize(iconSize, iconSize);
+        auto overlayImage = ui::image({
+            .fit = ImageFit::Contain,
+            .width = iconSize,
+            .height = iconSize,
+        });
         if (overlayImage->setSourceFile(renderer, overlayPath, iconRequestSize, true)) {
           overlayW = iconSize;
           overlayH = iconSize;
@@ -533,11 +609,15 @@ void TrayWidget::rebuild(Renderer& renderer) {
       }
 
       if (overlayNode == nullptr && !item.overlayArgb32.empty() && item.overlayWidth > 0 && item.overlayHeight > 0) {
-        auto overlayImage = std::make_unique<Image>();
-        overlayImage->setFit(ImageFit::Contain);
-        overlayImage->setSize(iconSize, iconSize);
-        if (overlayImage->setSourceRaw(renderer, item.overlayArgb32.data(), item.overlayArgb32.size(),
-                                       item.overlayWidth, item.overlayHeight, 0, PixmapFormat::ARGB, true)) {
+        auto overlayImage = ui::image({
+            .fit = ImageFit::Contain,
+            .width = iconSize,
+            .height = iconSize,
+        });
+        if (overlayImage->setSourceRaw(
+                renderer, item.overlayArgb32.data(), item.overlayArgb32.size(), item.overlayWidth, item.overlayHeight,
+                0, PixmapFormat::ARGB, true
+            )) {
           overlayW = iconSize;
           overlayH = iconSize;
           m_loadedImages.push_back(overlayImage.get());
@@ -547,12 +627,13 @@ void TrayWidget::rebuild(Renderer& renderer) {
     }
 
     if (iconNode == nullptr) {
-      auto glyph = std::make_unique<Glyph>();
       const std::string fallback = iconForItem(item);
-      glyph->setGlyph(fallback);
-      glyph->setGlyphSize(iconSize);
-      glyph->setColor(item.needsAttention ? colorSpecFromRole(ColorRole::Error)
-                                          : widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
+      auto glyph = ui::glyph({
+          .glyph = fallback,
+          .glyphSize = iconSize,
+          .color = item.needsAttention ? colorSpecFromRole(ColorRole::Error)
+                                       : widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
+      });
       glyph->measure(renderer);
       iconW = glyph->width();
       iconH = glyph->height();
@@ -587,7 +668,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
           m_itemActivated();
         }
       } else if (data.button == BTN_RIGHT) {
-        m_tray->requestMenuToggle(itemId);
+        m_tray->requestMenuToggle(itemId, m_contentScale);
       }
     });
     area->addChild(std::move(iconNode));
@@ -598,11 +679,12 @@ void TrayWidget::rebuild(Renderer& renderer) {
 
     if (m_panelGridMode) {
       if (gridRow == nullptr || gridCol >= m_panelGridColumns) {
-        auto row = std::make_unique<Flex>();
-        row->setDirection(FlexDirection::Horizontal);
-        row->setAlign(FlexAlign::Center);
-        row->setGap(Style::spaceXs * m_contentScale);
-        gridRow = static_cast<Flex*>(m_container->addChild(std::move(row)));
+        gridRow = static_cast<Flex*>(m_container->addChild(
+            ui::row({
+                .align = FlexAlign::Center,
+                .gap = Style::spaceXs * m_contentScale,
+            })
+        ));
         gridCol = 0;
       }
       gridRow->addChild(std::move(area));
@@ -611,6 +693,8 @@ void TrayWidget::rebuild(Renderer& renderer) {
       m_container->addChild(std::move(area));
     }
   }
+
+  m_container->setVisible(!m_container->children().empty());
 }
 
 std::string TrayWidget::drawerChevronGlyph(bool panelOpen) const {
@@ -773,8 +857,8 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
 
   const std::string stableBusName = isUniqueBusName(item.busName) ? std::string{} : item.busName;
   const std::string stableItemId = (!item.id.empty() && !isUniqueBusName(item.id))
-                                       ? item.id
-                                       : (isUniqueBusName(item.busName) ? item.objectPath : item.id);
+      ? item.id
+      : (isUniqueBusName(item.busName) ? item.objectPath : item.id);
 
   std::vector<std::pair<const char*, const std::string*>> candidates;
   candidates.reserve(12);
@@ -820,10 +904,6 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
     }
   }
 
-  kLog.debug("tray widget resolve id={} fallback={} preferred='{}' itemName='{}' title='{}' bus='{}' objectPath='{}' "
-             "stableBus='{}' stableId='{}'",
-             item.id, symbolicFallback, preferred, item.itemName, item.title, item.busName, item.objectPath,
-             stableBusName, stableItemId);
   return symbolicFallback;
 }
 

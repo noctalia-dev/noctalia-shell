@@ -32,14 +32,19 @@ namespace {
     return std::abs(transform.m[1]) <= kAxisAlignedEpsilon && std::abs(transform.m[3]) <= kAxisAlignedEpsilon;
   }
 
+  float snapToBufferPixel(float value, float scale) {
+    const float safeScale = std::max(1.0f, scale);
+    return std::round(value * safeScale) / safeScale;
+  }
+
   void hashCombine(std::size_t& seed, std::size_t v) { seed ^= v + 0x9E3779B97F4A7C15ULL + (seed << 12) + (seed >> 4); }
 
   // Hinting is disabled for icons: tabler glyphs are monoline strokes with
   // fractional widths by design. Autohinter snaps each stroke to the nearest
   // integer pixel, which visibly thins the icons. Grayscale AA without
   // hinting preserves the intended stroke thickness.
-  cairo_scaled_font_t* create_scaled_font(cairo_font_face_t* face, cairo_font_options_t* fontOptions,
-                                          float rasterSize) {
+  cairo_scaled_font_t*
+  create_scaled_font(cairo_font_face_t* face, cairo_font_options_t* fontOptions, float rasterSize) {
     cairo_matrix_t fontMatrix;
     cairo_matrix_init_scale(&fontMatrix, rasterSize, rasterSize);
     cairo_matrix_t ctm;
@@ -98,6 +103,17 @@ void CairoGlyphRenderer::initialize(const std::string& fontPath, RenderBackend* 
 
   m_cache.max_load_factor(1.0f);
   m_cache.reserve(kMaxCacheEntries + 16);
+}
+
+void CairoGlyphRenderer::invalidateGlyphTextures() {
+  for (auto& [key, entry] : m_cache) {
+    if (m_textureManager != nullptr) {
+      m_textureManager->unload(entry.texture);
+    }
+  }
+  m_cache.clear();
+  m_lru.clear();
+  m_cacheBytes = 0;
 }
 
 void CairoGlyphRenderer::cleanup() {
@@ -269,8 +285,10 @@ CairoGlyphRenderer::CacheEntry* CairoGlyphRenderer::lookupOrRasterize(char32_t c
   std::vector<unsigned char> tight(static_cast<std::size_t>(pxWidth) * static_cast<std::size_t>(pxHeight));
   for (int y = 0; y < pxHeight; ++y) {
     const auto row = static_cast<std::size_t>(y);
-    std::memcpy(tight.data() + row * static_cast<std::size_t>(pxWidth), data + row * static_cast<std::size_t>(stride),
-                static_cast<std::size_t>(pxWidth));
+    std::memcpy(
+        tight.data() + row * static_cast<std::size_t>(pxWidth), data + row * static_cast<std::size_t>(stride),
+        static_cast<std::size_t>(pxWidth)
+    );
   }
   cairo_surface_destroy(surface);
   cairo_scaled_font_destroy(scaledFont);
@@ -279,8 +297,9 @@ CairoGlyphRenderer::CacheEntry* CairoGlyphRenderer::lookupOrRasterize(char32_t c
     return nullptr;
   }
 
-  entry.texture = m_textureManager->loadFromPixels(tight.data(), pxWidth, pxHeight, TextureDataFormat::Alpha,
-                                                   TextureFilter::Linear);
+  entry.texture = m_textureManager->loadFromPixels(
+      tight.data(), pxWidth, pxHeight, TextureDataFormat::Alpha, TextureFilter::Linear
+  );
   if (entry.texture.id == 0) {
     return nullptr;
   }
@@ -298,8 +317,10 @@ CairoGlyphRenderer::CacheEntry* CairoGlyphRenderer::lookupOrRasterize(char32_t c
   return &ins->second;
 }
 
-void CairoGlyphRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, float x, float baselineY,
-                                   char32_t codepoint, float fontSize, const Color& color, const Mat3& transform) {
+void CairoGlyphRenderer::drawGlyph(
+    float surfaceWidth, float surfaceHeight, float x, float baselineY, char32_t codepoint, float fontSize,
+    const Color& color, const Mat3& transform
+) {
   if (m_face == nullptr || m_backend == nullptr || codepoint == 0) {
     return;
   }
@@ -321,23 +342,23 @@ void CairoGlyphRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, floa
   // Snap the visible ink origin to the nearest buffer pixel so linear filtering
   // samples land on texel centers without the 1px texture pad biasing icon alignment.
   // Skip when the transform has rotation/skew — snapping then introduces
-  // whole-pixel jumps per frame and makes animations look jittery on 1x.
+  // whole-pixel jumps per frame and makes animations look jittery.
   if (isAxisAligned(world)) {
-    const float inkOffsetX = entry->inkOffsetXPx * invScale;
-    const float inkOffsetY = entry->inkOffsetYPx * invScale;
-    world.m[6] = std::round((world.m[6] + inkOffsetX) * m_contentScale) / m_contentScale - inkOffsetX;
-    world.m[7] = std::round((world.m[7] + inkOffsetY) * m_contentScale) / m_contentScale - inkOffsetY;
+    world.m[6] = snapToBufferPixel(world.m[6], m_contentScale);
+    world.m[7] = snapToBufferPixel(world.m[7], m_contentScale);
   }
 
-  m_backend->drawGlyph(RenderGlyphDraw{
-      .texture = entry->texture.id,
-      .surfaceWidth = surfaceWidth,
-      .surfaceHeight = surfaceHeight,
-      .width = quadW,
-      .height = quadH,
-      .opacity = 1.0f,
-      .tint = color,
-      .tinted = true,
-      .transform = world,
-  });
+  m_backend->drawGlyph(
+      RenderGlyphDraw{
+          .texture = entry->texture.id,
+          .surfaceWidth = surfaceWidth,
+          .surfaceHeight = surfaceHeight,
+          .width = quadW,
+          .height = quadH,
+          .opacity = 1.0f,
+          .tint = color,
+          .tinted = true,
+          .transform = world,
+      }
+  );
 }

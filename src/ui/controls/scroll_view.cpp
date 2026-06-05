@@ -25,14 +25,16 @@ ScrollView::ScrollView() {
 
   auto background = std::make_unique<RectNode>();
   m_background = static_cast<RectNode*>(addChild(std::move(background)));
-  m_background->setStyle(RoundedRectStyle{
-      .fill = clearColor(),
-      .border = clearColor(),
-      .fillMode = FillMode::Solid,
-      .radius = Style::scaledRadiusMd(),
-      .softness = 1.0f,
-      .borderWidth = 0,
-  });
+  m_background->setStyle(
+      RoundedRectStyle{
+          .fill = clearColor(),
+          .border = clearColor(),
+          .fillMode = FillMode::Solid,
+          .radius = Style::scaledRadiusMd(),
+          .softness = 1.0f,
+          .borderWidth = 0,
+      }
+  );
 
   auto viewportArea = std::make_unique<InputArea>();
   viewportArea->setOnPress([this](const InputArea::PointerData& data) {
@@ -136,9 +138,13 @@ void ScrollView::setSoftness(float softness) {
   applyPalette();
 }
 
-void ScrollView::setCardStyle(float scale, float fillOpacity) {
+void ScrollView::setCardStyle(float scale, float fillOpacity, bool showBorder) {
   setFill(colorSpecFromRole(ColorRole::SurfaceVariant, fillOpacity));
-  setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), Style::borderWidth);
+  if (showBorder) {
+    setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), Style::borderWidth);
+  } else {
+    clearBorder();
+  }
   setRadius(Style::scaledRadiusXl(scale));
   setViewportPaddingH(Style::cardPadding * scale);
   setViewportPaddingV(Style::cardPadding * scale);
@@ -169,16 +175,22 @@ float ScrollView::contentViewportWidth() const noexcept {
   return std::max(0.0f, width() - m_viewportPaddingH * 2.0f - gutter);
 }
 
+float ScrollView::contentViewportHeight() const noexcept {
+  return std::max(0.0f, height() - m_viewportPaddingV * 2.0f);
+}
+
 void ScrollView::applyPalette() {
   if (m_background != nullptr) {
-    m_background->setStyle(RoundedRectStyle{
-        .fill = resolveColorSpec(m_backgroundFill),
-        .border = resolveColorSpec(m_backgroundBorder),
-        .fillMode = FillMode::Solid,
-        .radius = m_backgroundRadius,
-        .softness = m_backgroundSoftness,
-        .borderWidth = m_backgroundBorderWidth,
-    });
+    m_background->setStyle(
+        RoundedRectStyle{
+            .fill = resolveColorSpec(m_backgroundFill),
+            .border = resolveColorSpec(m_backgroundBorder),
+            .fillMode = FillMode::Solid,
+            .radius = m_backgroundRadius,
+            .softness = m_backgroundSoftness,
+            .borderWidth = m_backgroundBorderWidth,
+        }
+    );
   }
 }
 

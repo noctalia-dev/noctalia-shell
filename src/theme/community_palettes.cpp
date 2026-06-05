@@ -6,6 +6,7 @@
 #include "util/string_utils.h"
 
 #include <algorithm>
+#include <array>
 #include <cstdlib>
 #include <exception>
 #include <filesystem>
@@ -45,6 +46,34 @@ namespace noctalia::theme {
       return stringField(item, "name");
     }
 
+    AvailablePalette::PreviewMode palettePreviewFromJson(const nlohmann::json& item, std::string_view mode) {
+      if (!item.is_object()) {
+        return {};
+      }
+      auto modeIt = item.find(std::string(mode));
+      if (modeIt == item.end() || !modeIt->is_object()) {
+        return {};
+      }
+
+      static constexpr auto kPreviewFields = std::to_array<std::string_view>({
+          "primary",
+          "secondary",
+          "tertiary",
+          "error",
+      });
+
+      AvailablePalette::PreviewMode preview;
+      preview.accents.reserve(kPreviewFields.size());
+      preview.surface = stringField(*modeIt, "surface");
+      for (const auto field : kPreviewFields) {
+        std::string color = stringField(*modeIt, field);
+        if (!color.empty()) {
+          preview.accents.push_back(std::move(color));
+        }
+      }
+      return preview;
+    }
+
     std::vector<AvailablePalette> parseCatalogFile(const std::filesystem::path& path) {
       std::ifstream in(path);
       if (!in) {
@@ -70,15 +99,23 @@ namespace noctalia::theme {
         for (const auto& item : *entries) {
           AvailablePalette palette;
           palette.name = paletteNameFromJson(item);
+          palette.md5 = item.is_object() ? stringField(item, "md5") : std::string{};
+          palette.preview.dark = palettePreviewFromJson(item, "dark");
+          palette.preview.light = palettePreviewFromJson(item, "light");
           if (!palette.name.empty()) {
             out.push_back(std::move(palette));
           }
         }
-        std::sort(out.begin(), out.end(),
-                  [](const AvailablePalette& a, const AvailablePalette& b) { return a.name < b.name; });
-        out.erase(std::unique(out.begin(), out.end(),
-                              [](const AvailablePalette& a, const AvailablePalette& b) { return a.name == b.name; }),
-                  out.end());
+        std::sort(out.begin(), out.end(), [](const AvailablePalette& a, const AvailablePalette& b) {
+          return a.name < b.name;
+        });
+        out.erase(
+            std::unique(
+                out.begin(), out.end(),
+                [](const AvailablePalette& a, const AvailablePalette& b) { return a.name == b.name; }
+            ),
+            out.end()
+        );
         return out;
       } catch (const std::exception& e) {
         kLog.warn("failed to parse community palette catalog {}: {}", path.string(), e.what());
@@ -116,6 +153,17 @@ namespace noctalia::theme {
   }
 
   std::vector<AvailablePalette> availableCommunityPalettes() { return parseCatalogFile(catalogCachePath()); }
+
+  std::string communityPaletteCatalogMd5(std::string_view name) {
+    const auto catalog = parseCatalogFile(catalogCachePath());
+    auto it = std::find_if(catalog.begin(), catalog.end(), [name](const AvailablePalette& palette) {
+      return palette.name == name;
+    });
+    if (it == catalog.end()) {
+      return {};
+    }
+    return it->md5;
+  }
 
   std::filesystem::path communityPaletteCacheDir() {
     if (const char* xdg = std::getenv("XDG_CACHE_HOME"); xdg != nullptr && xdg[0] != '\0') {

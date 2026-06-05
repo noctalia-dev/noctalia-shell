@@ -66,6 +66,15 @@ void Checkbox::setScale(float scale) {
   markLayoutDirty();
 }
 
+void Checkbox::setCheckedColors(
+    std::optional<ColorSpec> fill, std::optional<ColorSpec> border, std::optional<ColorSpec> glyph
+) {
+  m_checkedFill = std::move(fill);
+  m_checkedBorder = std::move(border);
+  m_checkedGlyph = std::move(glyph);
+  applyState();
+}
+
 bool Checkbox::hovered() const noexcept { return m_inputArea != nullptr && m_inputArea->hovered(); }
 
 bool Checkbox::pressed() const noexcept { return m_inputArea != nullptr && m_inputArea->pressed(); }
@@ -86,8 +95,10 @@ void Checkbox::doLayout(Renderer& renderer) {
   if (m_checkGlyph != nullptr) {
     m_checkGlyph->setGlyphSize((Style::fontSizeBody + Style::spaceXs * 0.5f) * m_scale);
     m_checkGlyph->measure(renderer);
-    m_checkGlyph->setPosition(std::round(boxInset + (boxSize - m_checkGlyph->width()) * 0.5f),
-                              std::round(boxInset + (boxSize - m_checkGlyph->height()) * 0.5f));
+    m_checkGlyph->setPosition(
+        std::round(boxInset + (boxSize - m_checkGlyph->width()) * 0.5f),
+        std::round(boxInset + (boxSize - m_checkGlyph->height()) * 0.5f)
+    );
   }
 
   if (m_inputArea != nullptr) {
@@ -103,9 +114,11 @@ void Checkbox::applyState() {
 
   ColorSpec fill = colorSpecFromRole(ColorRole::Surface);
   ColorSpec border = colorSpecFromRole(ColorRole::Outline);
+  ColorSpec glyph = colorSpecFromRole(ColorRole::OnPrimary);
   if (m_checked) {
-    fill = colorSpecFromRole(ColorRole::Primary);
-    border = colorSpecFromRole(ColorRole::Primary);
+    fill = m_checkedFill.value_or(colorSpecFromRole(ColorRole::Primary));
+    border = m_checkedBorder.value_or(colorSpecFromRole(ColorRole::Primary));
+    glyph = m_checkedGlyph.value_or(colorSpecFromRole(ColorRole::OnPrimary));
   } else if (hovered()) {
     border = colorSpecFromRole(ColorRole::Hover);
   }
@@ -113,7 +126,7 @@ void Checkbox::applyState() {
   m_box->setFill(fill);
   m_box->setBorder(border, Style::borderWidth * m_scale);
 
-  m_checkGlyph->setColor(colorSpecFromRole(ColorRole::OnPrimary));
+  m_checkGlyph->setColor(glyph);
   m_checkGlyph->setVisible(m_checked);
 
   setOpacity(m_enabled ? 1.0f : 0.55f);

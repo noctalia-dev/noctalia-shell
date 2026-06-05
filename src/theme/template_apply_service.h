@@ -12,6 +12,7 @@
 #include <thread>
 
 class ConfigService;
+class IpcService;
 
 namespace noctalia::theme {
 
@@ -23,7 +24,8 @@ namespace noctalia::theme {
     TemplateApplyService(const TemplateApplyService&) = delete;
     TemplateApplyService& operator=(const TemplateApplyService&) = delete;
 
-    void apply(const GeneratedPalette& palette, std::string_view defaultMode) const;
+    void apply(const GeneratedPalette& palette, std::string_view defaultMode, bool force = false) const;
+    void registerIpc(IpcService& ipc);
 
   private:
     struct ApplyRequest {
@@ -35,7 +37,9 @@ namespace noctalia::theme {
       std::uint64_t generation = 0;
     };
 
+    [[nodiscard]] bool reapplyLast() const;
     [[nodiscard]] ApplyRequest makeRequest(const GeneratedPalette& palette, std::string_view defaultMode) const;
+    [[nodiscard]] static bool sameInputs(const ApplyRequest& a, const ApplyRequest& b);
     void applyRequest(const ApplyRequest& request) const;
     void workerLoop();
     [[nodiscard]] bool requestSuperseded(std::uint64_t generation) const;
@@ -44,6 +48,7 @@ namespace noctalia::theme {
     mutable std::mutex m_mutex;
     mutable std::condition_variable m_cv;
     mutable std::optional<ApplyRequest> m_pendingRequest;
+    mutable std::optional<ApplyRequest> m_lastAppliedRequest;
     mutable std::thread m_worker;
     mutable std::uint64_t m_nextGeneration = 0;
     mutable bool m_shutdown = false;

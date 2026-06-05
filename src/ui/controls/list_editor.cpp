@@ -1,9 +1,6 @@
 #include "ui/controls/list_editor.h"
 
-#include "ui/controls/button.h"
-#include "ui/controls/input.h"
-#include "ui/controls/label.h"
-#include "ui/controls/select.h"
+#include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -20,11 +17,11 @@ namespace {
   constexpr float kVerticalGap = 2.0f;
 
   std::unique_ptr<Label> makeListLabel(std::string_view text, float scale) {
-    auto label = std::make_unique<Label>();
-    label->setText(text);
-    label->setFontSize(Style::fontSizeCaption * scale);
-    label->setColor(colorSpecFromRole(ColorRole::OnSurface));
-    return label;
+    return ui::label({
+        .text = std::string(text),
+        .fontSize = Style::fontSizeCaption * scale,
+        .color = colorSpecFromRole(ColorRole::OnSurface),
+    });
   }
 
 } // namespace
@@ -103,11 +100,12 @@ void ListEditor::rebuildRows() {
   const float suggestedAddHeight = kSuggestedAddHeight * m_scale;
 
   std::unique_ptr<Flex> addRow;
-  if (m_maxItems == 0 || m_items.size() < m_maxItems) {
-    addRow = std::make_unique<Flex>();
-    addRow->setDirection(FlexDirection::Horizontal);
-    addRow->setAlign(FlexAlign::Center);
-    addRow->setGap(Style::spaceSm * m_scale);
+  const bool atCapacity = m_maxItems > 0 && m_items.size() >= m_maxItems;
+  if (!atCapacity || !m_suggestedOptions.empty()) {
+    addRow = ui::row({
+        .align = FlexAlign::Center,
+        .gap = Style::spaceSm * m_scale,
+    });
 
     if (!m_suggestedOptions.empty()) {
       const auto remaining = remainingOptions();
@@ -118,28 +116,34 @@ void ListEditor::rebuildRows() {
           remainingLabels.push_back(opt.label);
         }
 
-        auto select = std::make_unique<Select>();
-        select->setOptions(std::move(remainingLabels));
-        select->setPlaceholder(m_addPlaceholder);
-        select->setFontSize(Style::fontSizeCaption * m_scale);
-        select->setControlHeight(suggestedAddHeight);
-        select->setGlyphSize(Style::fontSizeCaption * m_scale);
-        select->setSize(labelCellWidth, suggestedAddHeight);
-        auto* selectPtr = select.get();
+        Select* selectPtr = nullptr;
+        auto select = ui::select({
+            .out = &selectPtr,
+            .options = std::move(remainingLabels),
+            .placeholder = m_addPlaceholder,
+            .fontSize = Style::fontSizeCaption * m_scale,
+            .controlHeight = suggestedAddHeight,
+            .glyphSize = Style::fontSizeCaption * m_scale,
+            .enabled = !atCapacity,
+            .width = labelCellWidth,
+            .height = suggestedAddHeight,
+        });
 
-        auto addBtn = std::make_unique<Button>();
-        addBtn->setGlyph("add");
-        addBtn->setVariant(ButtonVariant::Ghost);
-        addBtn->setGlyphSize(Style::fontSizeCaption * m_scale);
-        addBtn->setMinWidth(suggestedAddHeight);
-        addBtn->setMinHeight(suggestedAddHeight);
-        addBtn->setPadding(Style::spaceXs * m_scale);
-        addBtn->setRadius(Style::scaledRadiusSm(m_scale));
-        addBtn->setOnClick([this, selectPtr, remaining] {
-          const std::size_t index = selectPtr->selectedIndex();
-          if (index < remaining.size() && m_onAddRequested) {
-            m_onAddRequested(remaining[index].value);
-          }
+        auto addBtn = ui::button({
+            .glyph = "add",
+            .glyphSize = Style::fontSizeCaption * m_scale,
+            .enabled = !atCapacity,
+            .variant = ButtonVariant::Ghost,
+            .minWidth = suggestedAddHeight,
+            .minHeight = suggestedAddHeight,
+            .padding = Style::spaceXs * m_scale,
+            .radius = Style::scaledRadiusSm(m_scale),
+            .onClick = [this, selectPtr, remaining] {
+              const std::size_t index = selectPtr->selectedIndex();
+              if (index < remaining.size() && m_onAddRequested) {
+                m_onAddRequested(remaining[index].value);
+              }
+            },
         });
 
         addRow->addChild(std::move(select));
@@ -147,38 +151,56 @@ void ListEditor::rebuildRows() {
       } else {
         addRow.reset();
       }
-    } else {
-      auto addInput = std::make_unique<Input>();
-      addInput->setPlaceholder(m_addPlaceholder);
-      addInput->setFontSize(Style::fontSizeBody * m_scale);
-      addInput->setControlHeight(Style::controlHeight * m_scale);
-      addInput->setHorizontalPadding(Style::spaceSm * m_scale);
-      addInput->setSize(kFreeformInputWidth * m_scale, Style::controlHeight * m_scale);
-      auto* addInputPtr = addInput.get();
-
-      auto addBtn = std::make_unique<Button>();
-      addBtn->setGlyph("add");
-      addBtn->setVariant(ButtonVariant::Ghost);
-      addBtn->setGlyphSize(Style::fontSizeBody * m_scale);
-      addBtn->setMinWidth(Style::controlHeight * m_scale);
-      addBtn->setMinHeight(Style::controlHeight * m_scale);
-      addBtn->setPadding(Style::spaceSm * m_scale);
-      addBtn->setRadius(Style::scaledRadiusMd(m_scale));
-      addBtn->setOnClick([this, addInputPtr] {
-        const auto& text = addInputPtr->value();
-        if (!text.empty() && m_onAddRequested) {
-          m_onAddRequested(text);
-        }
+    } else if (!atCapacity) {
+      Input* addInputPtr = nullptr;
+      auto addInput = ui::input({
+          .out = &addInputPtr,
+          .placeholder = m_addPlaceholder,
+          .fontSize = Style::fontSizeBody * m_scale,
+          .controlHeight = Style::controlHeight * m_scale,
+          .horizontalPadding = Style::spaceSm * m_scale,
+          .width = kFreeformInputWidth * m_scale,
+          .height = Style::controlHeight * m_scale,
+          .onSubmit = [this](const std::string& text) {
+            if (!text.empty() && m_onAddRequested) {
+              m_onAddRequested(text);
+            }
+          },
       });
 
-      addInput->setOnSubmit([this](const std::string& text) {
-        if (!text.empty() && m_onAddRequested) {
-          m_onAddRequested(text);
-        }
+      auto addBtn = ui::button({
+          .glyph = "add",
+          .glyphSize = Style::fontSizeBody * m_scale,
+          .variant = ButtonVariant::Ghost,
+          .minWidth = Style::controlHeight * m_scale,
+          .minHeight = Style::controlHeight * m_scale,
+          .padding = Style::spaceSm * m_scale,
+          .radius = Style::scaledRadiusMd(m_scale),
+          .onClick = [this, addInputPtr] {
+            const auto& text = addInputPtr->value();
+            if (!text.empty() && m_onAddRequested) {
+              m_onAddRequested(text);
+            }
+          },
       });
 
       addRow->addChild(std::move(addInput));
       addRow->addChild(std::move(addBtn));
+    }
+  }
+
+  if (m_maxItems > 0) {
+    auto capacityLabel = ui::label({
+        .text = std::to_string(m_items.size()) + "/" + std::to_string(m_maxItems),
+        .fontSize = Style::fontSizeCaption * m_scale,
+        .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+    });
+    if (addRow) {
+      addRow->addChild(std::move(capacityLabel));
+    } else {
+      auto wrapper = ui::row({.align = FlexAlign::Center});
+      wrapper->addChild(std::move(capacityLabel));
+      addRow = std::move(wrapper);
     }
   }
 
@@ -187,17 +209,19 @@ void ListEditor::rebuildRows() {
   }
 
   for (std::size_t i = 0; i < m_items.size(); ++i) {
-    auto itemRow = std::make_unique<Flex>();
-    itemRow->setDirection(FlexDirection::Horizontal);
-    itemRow->setAlign(FlexAlign::Center);
-    itemRow->setGap(Style::spaceXs * m_scale);
-    itemRow->setMinHeight(itemRowHeight);
+    auto itemRow = ui::row({
+        .align = FlexAlign::Center,
+        .gap = Style::spaceXs * m_scale,
+        .minHeight = itemRowHeight,
+    });
 
-    auto labelCell = std::make_unique<Flex>();
-    labelCell->setDirection(FlexDirection::Horizontal);
-    labelCell->setAlign(FlexAlign::Center);
-    labelCell->setMinWidth(labelCellWidth);
-    labelCell->addChild(makeListLabel(labelForValue(m_items[i]), m_scale));
+    auto labelCell = ui::row(
+        {
+            .align = FlexAlign::Center,
+            .minWidth = labelCellWidth,
+        },
+        makeListLabel(labelForValue(m_items[i]), m_scale)
+    );
     itemRow->addChild(std::move(labelCell));
 
     addGhostIconButton(*itemRow, "close", Style::fontSizeCaption * m_scale, [this, i] {
@@ -228,14 +252,16 @@ void ListEditor::rebuildRows() {
 }
 
 void ListEditor::addGhostIconButton(Flex& row, std::string_view glyph, float size, std::function<void()> callback) {
-  auto button = std::make_unique<Button>();
-  button->setGlyph(glyph);
-  button->setVariant(ButtonVariant::Ghost);
-  button->setGlyphSize(size);
-  button->setMinWidth(kItemRowHeight * m_scale);
-  button->setMinHeight(kItemRowHeight * m_scale);
-  button->setPadding(Style::spaceXs * m_scale);
-  button->setRadius(Style::scaledRadiusSm(m_scale));
-  button->setOnClick(std::move(callback));
-  row.addChild(std::move(button));
+  row.addChild(
+      ui::button({
+          .glyph = std::string(glyph),
+          .glyphSize = size,
+          .variant = ButtonVariant::Ghost,
+          .minWidth = kItemRowHeight * m_scale,
+          .minHeight = kItemRowHeight * m_scale,
+          .padding = Style::spaceXs * m_scale,
+          .radius = Style::scaledRadiusSm(m_scale),
+          .onClick = std::move(callback),
+      })
+  );
 }

@@ -7,7 +7,7 @@ theme_exists() {
     local name="$1"
     local -a paths=(
         "$HOME/.themes"
-        "$HOME/.local/share/themes"
+        "${XDG_DATA_HOME:-$HOME/.local/share}/themes"
         /usr/share/themes
         /usr/local/share/themes
     )

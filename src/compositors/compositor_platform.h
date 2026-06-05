@@ -18,7 +18,14 @@ struct wl_output;
 struct wl_surface;
 struct ext_workspace_manager_v1;
 struct zdwl_ipc_manager_v2;
+struct hyprland_toplevel_mapping_manager_v1;
+struct zwlr_foreign_toplevel_handle_v1;
+struct ext_foreign_toplevel_handle_v1;
 class WaylandWorkspaces;
+
+namespace compositors::hyprland {
+  class HyprlandToplevelMapping;
+}
 
 namespace compositors {
   class CompositorRuntimeRegistry;
@@ -55,6 +62,8 @@ public:
   [[nodiscard]] const WaylandConnection& wayland() const noexcept { return m_wayland; }
   [[nodiscard]] wl_display* display() const noexcept;
   [[nodiscard]] bool hasXdgShell() const noexcept;
+  [[nodiscard]] bool hasXdgActivation() const noexcept;
+  [[nodiscard]] std::string requestActivationToken(wl_surface* surface) const;
   [[nodiscard]] bool hasGammaControl() const noexcept;
   [[nodiscard]] const std::vector<WaylandOutput>& outputs() const noexcept;
   [[nodiscard]] const WaylandOutput* findOutputByWl(wl_output* output) const;
@@ -75,10 +84,22 @@ public:
   [[nodiscard]] std::optional<ActiveToplevel> activeToplevel() const;
   [[nodiscard]] wl_output* activeToplevelOutput() const;
   [[nodiscard]] std::vector<std::string> runningAppIds(wl_output* outputFilter = nullptr) const;
-  [[nodiscard]] std::vector<ToplevelInfo> windowsForApp(const std::string& idLower, const std::string& wmClassLower,
-                                                        wl_output* outputFilter = nullptr) const;
+  [[nodiscard]] std::vector<ToplevelInfo>
+  windowsForApp(const std::string& idLower, const std::string& wmClassLower, wl_output* outputFilter = nullptr) const;
+  [[nodiscard]] bool containsWlrToplevelHandle(zwlr_foreign_toplevel_handle_v1* handle) const;
   void activateToplevel(zwlr_foreign_toplevel_handle_v1* handle);
   void closeToplevel(zwlr_foreign_toplevel_handle_v1* handle);
+  void focusCompositorWindow(const std::string& windowId) const;
+
+  void setToplevelChangeCallback(ChangeCallback callback);
+  void bindHyprlandToplevelMappingManager(hyprland_toplevel_mapping_manager_v1* manager);
+  void syncHyprlandToplevelMappings();
+  [[nodiscard]] std::optional<std::string> compositorWindowIdForToplevel(zwlr_foreign_toplevel_handle_v1* handle) const;
+  [[nodiscard]] std::optional<std::string>
+  compositorWindowIdForExtToplevel(ext_foreign_toplevel_handle_v1* handle) const;
+  [[nodiscard]] zwlr_foreign_toplevel_handle_v1* toplevelHandleForCompositorWindowId(std::string_view windowId) const;
+  [[nodiscard]] bool isCompositorWindowIdKnown(std::string_view windowId) const;
+  [[nodiscard]] std::optional<std::string> focusedCompositorWindowId() const;
 
   void setWorkspaceChangeCallback(ChangeCallback callback);
   void setOverviewChangeCallback(ChangeCallback callback);
@@ -110,6 +131,7 @@ public:
   void addKeyboardLayoutPollFds(std::vector<pollfd>& fds) const;
   void dispatchKeyboardLayoutPoll(const std::vector<pollfd>& fds, std::size_t startIdx);
 
+  [[nodiscard]] bool requestSessionExit() const;
   [[nodiscard]] bool setOutputPower(bool on) const;
 
   [[nodiscard]] bool tracksOverviewState() const noexcept;
@@ -128,13 +150,15 @@ private:
 
   void bindExtWorkspace(ext_workspace_manager_v1* manager);
   void bindDwlIpcWorkspace(zdwl_ipc_manager_v2* manager);
+  void notifyToplevelsChanged();
   void onOutputAdded(wl_output* output);
   void onOutputRemoved(wl_output* output);
   [[nodiscard]] wl_output* resolveOutputName(const std::string& outputName) const;
   [[nodiscard]] std::string connectorNameForOutput(wl_output* output) const;
   [[nodiscard]] std::vector<WorkspaceModelSnapshot> workspaceModelSnapshot() const;
-  [[nodiscard]] static bool sameWorkspaceModelSnapshot(const std::vector<WorkspaceModelSnapshot>& lhs,
-                                                       const std::vector<WorkspaceModelSnapshot>& rhs);
+  [[nodiscard]] static bool sameWorkspaceModelSnapshot(
+      const std::vector<WorkspaceModelSnapshot>& lhs, const std::vector<WorkspaceModelSnapshot>& rhs
+  );
 
   WaylandConnection& m_wayland;
   std::unique_ptr<compositors::CompositorRuntimeRegistry> m_runtimeRegistry;
@@ -147,6 +171,8 @@ private:
   ChangeCallback m_workspaceChangeCallback;
   ChangeCallback m_overviewChangeCallback;
   ChangeCallback m_keyboardLayoutChangeCallback;
+  ChangeCallback m_toplevelChangeCallback;
+  std::unique_ptr<compositors::hyprland::HyprlandToplevelMapping> m_hyprlandToplevelMapping;
   std::vector<WorkspaceModelSnapshot> m_lastWorkspaceModelSnapshot;
   bool m_initialized = false;
 };

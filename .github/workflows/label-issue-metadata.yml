@@ -31,39 +31,39 @@ jobs:
             const distributionValue = extractValue("Distribution");
 
             const compositorLabelMap = {
-              "Niri": "compositor:niri",
-              "Hyprland": "compositor:hyprland",
-              "Sway": "compositor:sway",
-              "Scroll": "compositor:scroll",
-              "Labwc": "compositor:labwc",
-              "Mango": "compositor:mango",
-              "MangoWC": "compositor:mango",
+              "Niri": "niri",
+              "Hyprland": "hyprland",
+              "Sway": "sway",
+              "Scroll": "scroll",
+              "Labwc": "labwc",
+              "Mango": "mango",
+              "MangoWC": "mango",
               "Other": "compositor:other"
             };
 
             const distributionLabelMap = {
-              "Arch-based": "distro:arch-based",
-              "Fedora-based": "distro:fedora-based",
-              "Debian-based": "distro:debian-based",
-              "NixOS": "distro:nixos",
-              "openSUSE-based": "distro:opensuse",
-              "Gentoo-based": "distro:gentoo",
-              "Void": "distro:void",
-              "Void-based": "distro:void",
+              "Arch-based": "arch-based",
+              "Fedora-based": "fedora-based",
+              "Debian-based": "debian-based",
+              "NixOS": "nixos",
+              "openSUSE-based": "opensuse",
+              "Gentoo-based": "gentoo",
+              "Void": "void",
+              "Void-based": "void",
               "Other": "distro:other"
             };
 
             const mappings = [
               {
                 kind: "compositor",
-                prefix: "compositor:",
+                prefix: "",
                 selectedValue: compositorValue,
                 labelMap: compositorLabelMap,
                 description: "Issue reported for this compositor stack"
               },
               {
                 kind: "distribution",
-                prefix: "distro:",
+                prefix: "",
                 selectedValue: distributionValue,
                 labelMap: distributionLabelMap,
                 description: "Issue reported for this Linux distribution family"

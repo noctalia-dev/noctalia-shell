@@ -1,11 +1,13 @@
 #pragma once
 
+#include "core/timer_manager.h"
 #include "render/animation/animation_manager.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
 #include "shell/settings/config_export_dialog_popup.h"
 #include "shell/settings/search_picker_popup.h"
-#include "shell/settings/session_actions_editor_popup.h"
+#include "shell/settings/settings_control_factory.h"
+#include "shell/settings/settings_editor_sheet_popup.h"
 #include "shell/settings/settings_registry.h"
 #include "shell/settings/widget_add_popup.h"
 #include "ui/controls/context_menu_popup.h"
@@ -26,6 +28,7 @@ class Button;
 class ConfigService;
 class DependencyService;
 class Flex;
+class IdleManager;
 class Label;
 class RenderContext;
 class UPowerService;
@@ -37,6 +40,7 @@ struct wl_surface;
 
 namespace settings {
   struct SettingsContentContext;
+  class SettingsControlFactory;
 } // namespace settings
 
 // Standalone xdg-toplevel settings UI (same binary as the shell; shares RenderContext).
@@ -44,8 +48,10 @@ class SettingsWindow {
 public:
   ~SettingsWindow();
 
-  void initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext,
-                  DependencyService* dependencies, UPowerService* upower);
+  void initialize(
+      WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext, DependencyService* dependencies,
+      UPowerService* upower, IdleManager* idleManager
+  );
 
   void open();
   void openToBarWidget(std::string barName, std::string widgetName);
@@ -56,16 +62,29 @@ public:
   }
   [[nodiscard]] bool ownsKeyboardSurface(wl_surface* surface) const noexcept;
   [[nodiscard]] std::optional<LayerPopupParentContext> popupParentContextForSurface(wl_surface* surface) const;
+  [[nodiscard]] std::optional<LayerPopupParentContext> fallbackPopupParentContext() const;
 
   [[nodiscard]] bool onPointerEvent(const PointerEvent& event);
   void onKeyboardEvent(const KeyboardEvent& event);
   void onThemeChanged();
   void onFontChanged();
+  void requestRedraw();
   void onExternalOptionsChanged();
   void setOpenDesktopWidgetEditor(std::function<void()> callback) { m_openDesktopWidgetEditor = std::move(callback); }
+  void setOpenLockscreenWidgetEditor(std::function<void()> callback) {
+    m_openLockscreenWidgetEditor = std::move(callback);
+  }
   void setOpenWallpaperPanel(std::function<void()> callback) { m_openWallpaperPanel = std::move(callback); }
+  void setSyncGreeterAppearance(std::function<void()> callback) { m_syncGreeterAppearance = std::move(callback); }
+  void setConnectCalendarAccount(std::function<void(std::string)> callback) {
+    m_connectCalendarAccount = std::move(callback);
+  }
 
   void onSecondTick();
+  void onIdleLiveStatusChanged();
+  void markSettingsWriteSuccess(bool requestRebuild = true);
+  void markSettingsWriteError(std::string message);
+  void showTransientStatus(std::string message, bool isError = false);
 
 private:
   void destroyWindow();
@@ -75,29 +94,38 @@ private:
   [[nodiscard]] settings::RegistryEnvironment buildRegistryEnvironment() const;
   void syncSelectedBarState(const Config& cfg, const std::vector<std::string>& availableBars);
   [[nodiscard]] std::unique_ptr<Flex> buildHeaderRow(float scale);
-  [[nodiscard]] std::unique_ptr<Flex> buildFilterRow(float scale, const std::string& resetPageScope,
-                                                     std::vector<std::vector<std::string>> resetPagePaths);
+  [[nodiscard]] std::unique_ptr<Flex>
+  buildFilterRow(float scale, const std::string& resetPageScope, std::vector<std::vector<std::string>> resetPagePaths);
   [[nodiscard]] std::unique_ptr<Flex> buildStatusRow(float scale);
-  [[nodiscard]] std::unique_ptr<Flex> buildBody(float scale, const Config& cfg,
-                                                const std::vector<std::string>& sections,
-                                                const std::vector<std::string>& availableBars);
+  [[nodiscard]] std::unique_ptr<Flex> buildBody(
+      float scale, const Config& cfg, const std::vector<std::string>& sections,
+      const std::vector<std::string>& availableBars
+  );
   [[nodiscard]] std::vector<settings::SelectOption> batteryDeviceOptions() const;
-  [[nodiscard]] settings::SettingsContentContext makeContentContext(const Config& cfg, const BarConfig* selectedBar,
-                                                                    const BarMonitorOverride* selectedMonitorOverride);
+  [[nodiscard]] settings::SettingsContentContext makeContentContext(
+      const Config& cfg, const BarConfig* selectedBar, const BarMonitorOverride* selectedMonitorOverride
+  );
   void requestSceneRebuild();
   void requestContentRebuild();
+  void maybeOpenPendingWidgetInspector();
   void applyPendingContentScrollTarget(float margin);
   void clearStatusMessage();
   void clearTransientSettingsState();
   void openActionsMenu();
   void openConfigExportDialog();
   void openBarWidgetAddPopup(const std::vector<std::string>& lanePath);
-  void openSearchPickerPopup(const std::string& title, const std::vector<settings::SelectOption>& options,
-                             const std::string& selectedValue, const std::string& placeholder,
-                             const std::string& emptyText, const std::vector<std::string>& settingPath);
+  void openSearchPickerPopup(
+      const std::string& title, const std::vector<settings::SelectOption>& options, const std::string& selectedValue,
+      const std::string& placeholder, const std::string& emptyText, const std::vector<std::string>& settingPath
+  );
   void openSessionActionEntryEditor(std::size_t index);
+  void syncSessionActionInlineSummary(std::size_t index, const SessionPanelActionConfig& row);
   void openIdleBehaviorEntryEditor(std::size_t index);
   void openIdleBehaviorCreateEditor();
+  void openWidgetInspectorEditor(std::vector<std::string> laneListPath, std::string widgetName);
+  void openCapsuleGroupEditor(std::vector<std::string> laneListPath, std::string groupId);
+  void openBarWidgetEditorSheet(std::string title, std::function<void(Flex&)> populate);
+  void closeWidgetInspectorPopup();
   void refreshIdleLiveStatusText();
   void saveSupportReport();
   void saveConfigExport(settings::ConfigExportMode mode);
@@ -106,10 +134,10 @@ private:
   void setSettingOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides);
   void clearSettingOverride(std::vector<std::string> path);
   void clearSettingOverrides(std::vector<std::vector<std::string>> paths);
-  void markSettingsWriteSuccess(bool requestRebuild = true);
-  void markSettingsWriteError(std::string message);
-  void renameWidgetInstance(std::string oldName, std::string newName,
-                            std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> referenceOverrides);
+  void renameWidgetInstance(
+      std::string oldName, std::string newName,
+      std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> referenceOverrides
+  );
   void createBar(std::string name);
   void renameBar(std::string oldName, std::string newName);
   void deleteBar(std::string name);
@@ -119,13 +147,20 @@ private:
   void deleteMonitorOverride(std::string barName, std::string match);
   [[nodiscard]] float uiScale() const;
 
+  [[nodiscard]] std::optional<LayerPopupParentContext> topmostPopupParentContext() const;
+
   WaylandConnection* m_wayland = nullptr;
+  IdleManager* m_idleManager = nullptr;
   ConfigService* m_config = nullptr;
   RenderContext* m_renderContext = nullptr;
   DependencyService* m_dependencies = nullptr;
   UPowerService* m_upower = nullptr;
   Label* m_idleLiveStatusLabel = nullptr;
+  std::vector<Label*> m_sessionActionSummaryLabels;
+  std::shared_ptr<std::vector<SessionPanelActionConfig>> m_sessionActionsEditState;
 
+  // m_sceneRoot must be destroyed before m_animations — ~Node() calls cancelForOwner().
+  AnimationManager m_animations;
   std::unique_ptr<ToplevelSurface> m_surface;
   std::unique_ptr<Node> m_sceneRoot;
   Flex* m_mainContainer = nullptr; // Outer Flex inside m_sceneRoot, sized to the window
@@ -138,9 +173,10 @@ private:
   std::unique_ptr<settings::WidgetAddPopup> m_widgetAddPopup;
   std::unique_ptr<settings::ConfigExportDialogPopup> m_configExportDialogPopup;
   std::unique_ptr<settings::SearchPickerPopup> m_searchPickerPopup;
-  std::unique_ptr<settings::SessionActionsEditorPopup> m_sessionActionsEditorPopup;
+  std::unique_ptr<settings::SettingsEditorSheetPopup> m_editorSheetPopup;
+  std::unique_ptr<settings::SettingsControlFactory> m_editorSheetFactory;
+  std::vector<std::string> m_editorSheetListPath;
   InputDispatcher m_inputDispatcher;
-  AnimationManager m_animations;
   std::unique_ptr<SelectDropdownPopup> m_selectPopup;
   bool m_pointerInside = false;
   wl_output* m_output = nullptr;
@@ -156,7 +192,17 @@ private:
   bool m_scrollToPendingContentTarget = false;
   Node* m_pendingContentScrollTarget = nullptr;
   std::string m_searchQuery;
+  Timer m_searchDebounceTimer;
+  // Set by openToBarWidget (e.g. middle-click on a bar widget); consumed once the window holds
+  // keyboard focus so the sheet's grab popup gets a serial the compositor accepts.
+  std::string m_pendingOpenWidgetInspectorName;
+  int m_pendingOpenWidgetInspectorFrames = 0;
+  // When the editor sheet is opened programmatically (bar middle-click) there is no grab-valid serial,
+  // so open it without an xdg_popup grab. Consumed by openBarWidgetEditorSheet.
+  bool m_pendingEditorSheetNoGrab = false;
   std::string m_editingWidgetName;
+  std::string m_editingCapsuleGroupId;
+  std::vector<std::string> m_selectedLaneWidgets;
   std::string m_pendingDeleteWidgetName;
   std::string m_pendingDeleteWidgetSettingPath;
   std::string m_renamingWidgetName;
@@ -178,5 +224,8 @@ private:
   bool m_showOverriddenOnly = false;
   bool m_statusIsError = false;
   std::function<void()> m_openDesktopWidgetEditor;
+  std::function<void()> m_openLockscreenWidgetEditor;
   std::function<void()> m_openWallpaperPanel;
+  std::function<void()> m_syncGreeterAppearance;
+  std::function<void(std::string)> m_connectCalendarAccount;
 };

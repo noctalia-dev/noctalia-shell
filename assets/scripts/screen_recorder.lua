@@ -6,6 +6,61 @@
 --   Right click  — toggle replay buffer (if enabled), or save replay (if active)
 --   Middle click — save replay buffer
 
+-- Self-describing manifest: lets Noctalia list this widget in the Add-widget
+-- picker and render its settings in the GUI. Must be the first statement.
+barWidget.define({
+    label = "Screen Recorder",
+    version = "1.0.0",
+    icon = "video",
+    description = "Record the screen with gpu-screen-recorder",
+    settings = {
+        { key = "video_source", type = "string", label = "Video source", default = "portal",
+          description = "\"portal\", \"focused-monitor\", or a monitor/output name" },
+        { key = "directory", type = "folder", label = "Output directory",
+          description = "Defaults to ~/Videos when empty" },
+        { key = "filename_pattern", type = "string", label = "Filename pattern",
+          default = "recording_%Y%m%d_%H%M%S",
+          description = "os.date/strftime pattern without extension; use %s for unix epoch" },
+        { key = "frame_rate", type = "int", label = "Frame rate", default = 60, min = 1, max = 240 },
+        { key = "video_codec", type = "select", label = "Video codec", default = "h264",
+          options = {
+              { value = "h264", label = "H.264" }, { value = "hevc", label = "HEVC" },
+              { value = "av1", label = "AV1" }, { value = "vp8", label = "VP8" }, { value = "vp9", label = "VP9" },
+          } },
+        { key = "quality", type = "select", label = "Quality", default = "very_high",
+          options = {
+              { value = "medium", label = "Medium" }, { value = "high", label = "High" },
+              { value = "very_high", label = "Very high" }, { value = "ultra", label = "Ultra" },
+          } },
+        { key = "resolution", type = "string", label = "Resolution", default = "original",
+          description = "\"original\" or WIDTHxHEIGHT, e.g. 1920x1080" },
+        { key = "audio_source", type = "select", label = "Audio source", default = "default_output",
+          options = {
+              { value = "default_output", label = "System output" },
+              { value = "default_input", label = "Microphone" },
+              { value = "both", label = "Output + microphone" },
+              { value = "none", label = "No audio" },
+          } },
+        { key = "audio_codec", type = "select", label = "Audio codec", default = "opus",
+          options = {
+              { value = "opus", label = "Opus" }, { value = "aac", label = "AAC" }, { value = "flac", label = "FLAC" },
+          } },
+        { key = "show_cursor", type = "bool", label = "Show cursor", default = true },
+        { key = "color_range", type = "select", label = "Color range", default = "limited",
+          options = { { value = "limited", label = "Limited" }, { value = "full", label = "Full" } } },
+        { key = "copy_to_clipboard", type = "bool", label = "Copy path to clipboard", default = false },
+        { key = "hide_inactive", type = "bool", label = "Hide widget when idle", default = false },
+        { key = "replay_enabled", type = "bool", label = "Enable replay buffer", default = false },
+        { key = "replay_duration", type = "int", label = "Replay seconds", default = 30, min = 5, max = 3600,
+          visible_when = { key = "replay_enabled", values = { "true" } } },
+        { key = "replay_storage", type = "select", label = "Replay storage", default = "ram",
+          options = { { value = "ram", label = "RAM" }, { value = "disk", label = "Disk" } },
+          visible_when = { key = "replay_enabled", values = { "true" } } },
+        { key = "restore_portal", type = "bool", label = "Restore portal session", default = false,
+          advanced = true },
+    },
+})
+
 local CHECK_TICKS = 8 -- 8 * 250ms = 2s between process checks
 local PENDING_TICKS = 8
 
@@ -93,6 +148,26 @@ local function copyToClipboard(path)
     noctalia.copyToClipboard(uri, "text/uri-list")
 end
 
+local function shellQuote(value)
+    return "'" .. value:gsub("'", [["'"']]) .. "'"
+end
+
+local function notifyRecordingSavedIfPresent()
+    local savedPath = outputPath
+    if savedPath == "" then return end
+
+    noctalia.runAsync("sleep 0.5; test -s " .. shellQuote(savedPath), function(result)
+        if result.exitCode ~= 0 then
+            return
+        end
+
+        noctalia.notify("Recording saved", savedPath)
+        if cfg("copy_to_clipboard", false) then
+            copyToClipboard(savedPath)
+        end
+    end)
+end
+
 -- ── Command builders ─────────────────────────────────────────────────────
 
 local function buildAudioFlags()
@@ -108,8 +183,6 @@ end
 local function buildResolutionFlag()
     local res = cfg("resolution", "original")
     if res ~= "original" then return "-s " .. res end
-    local codec = cfg("video_codec", "h264")
-    if codec == "h264" then return "-s 4096x4096" end
     return ""
 end
 
@@ -127,6 +200,19 @@ _gpuscreenrecorder_flatpak_installed() {
 }
 if command -v gpu-screen-recorder >/dev/null 2>&1; then
   gpu-screen-recorder]]
+end
+
+local function outputDirectory()
+    local dir = cfg("directory", "")
+    if dir == "" then
+        dir = (noctalia.getenv("HOME") or "/tmp") .. "/Videos"
+    else
+        dir = noctalia.expandPath(dir)
+    end
+    if dir:sub(-1) ~= "/" then
+        dir = dir .. "/"
+    end
+    return dir
 end
 
 local function buildGsrSuffix()
@@ -148,9 +234,7 @@ local function buildRecordCommand()
         source = mon
     end
 
-    local dir = cfg("directory", "")
-    if dir == "" then dir = (noctalia.getenv("HOME") or "/tmp") .. "/Videos" end
-    if dir:sub(-1) ~= "/" then dir = dir .. "/" end
+    local dir = outputDirectory()
 
     local pattern = cfg("filename_pattern", "recording_%Y%m%d_%H%M%S")
     local filename = os.date(pattern) .. ".mp4"
@@ -185,9 +269,7 @@ local function buildReplayCommand()
         source = mon
     end
 
-    local dir = cfg("directory", "")
-    if dir == "" then dir = (noctalia.getenv("HOME") or "/tmp") .. "/Videos" end
-    if dir:sub(-1) ~= "/" then dir = dir .. "/" end
+    local dir = outputDirectory()
 
     local duration = cfg("replay_duration", 30)
     local storage = cfg("replay_storage", "ram")
@@ -288,10 +370,7 @@ local function stopRecording()
     noctalia.runAsync("(sleep 3 && pkill -9 -f '^(/nix/store/.*-)?gpu-screen-recorder' 2>/dev/null || true) &")
 
     if state == "recording" then
-        noctalia.notify("Recording saved", outputPath)
-        if cfg("copy_to_clipboard", false) and outputPath ~= "" then
-            copyToClipboard(outputPath)
-        end
+        notifyRecordingSavedIfPresent()
     end
 
     setState("idle")
@@ -373,10 +452,7 @@ local function checkProcessState(processState)
     elseif state == "recording" then
         if processState ~= "recording" then
             setState("idle")
-            noctalia.notify("Recording saved", outputPath)
-            if cfg("copy_to_clipboard", false) and outputPath ~= "" then
-                copyToClipboard(outputPath)
-            end
+            notifyRecordingSavedIfPresent()
         end
     elseif state == "replaying" then
         if processState ~= "replaying" then

@@ -15,15 +15,15 @@ namespace {
 
   constexpr Logger kLog("bluetooth");
 
-  const sdbus::ServiceName k_bluezBusName{"org.bluez"};
-  const sdbus::ObjectPath k_bluezRoot{"/org/bluez"};
-  const sdbus::ObjectPath k_agentObjectPath{"/org/noctalia/BluetoothAgent"};
-  constexpr auto k_agentInterface = "org.bluez.Agent1";
-  constexpr auto k_agentManagerInterface = "org.bluez.AgentManager1";
-  constexpr auto k_capability = "KeyboardDisplay";
+  const sdbus::ServiceName kBluezBusName{"org.bluez"};
+  const sdbus::ObjectPath kBluezRoot{"/org/bluez"};
+  const sdbus::ObjectPath kAgentObjectPath{"/org/noctalia/BluetoothAgent"};
+  constexpr auto kAgentInterface = "org.bluez.Agent1";
+  constexpr auto kAgentManagerInterface = "org.bluez.AgentManager1";
+  constexpr auto kCapability = "KeyboardDisplay";
 
-  const sdbus::Error::Name k_errRejected{"org.bluez.Error.Rejected"};
-  const sdbus::Error::Name k_errCanceled{"org.bluez.Error.Canceled"};
+  const sdbus::Error::Name kErrRejected{"org.bluez.Error.Rejected"};
+  const sdbus::Error::Name kErrCanceled{"org.bluez.Error.Canceled"};
 
 } // namespace
 
@@ -45,7 +45,7 @@ struct BluetoothAgent::Impl {
 
   void rejectIfBusy(auto& result, const char* what) {
     kLog.debug("{} while another request pending -> rejected", what);
-    result.returnError(sdbus::Error{k_errRejected, "another pairing request is already pending"});
+    result.returnError(sdbus::Error{kErrRejected, "another pairing request is already pending"});
   }
 
   void clearPending() {
@@ -66,13 +66,13 @@ struct BluetoothAgent::Impl {
 
   void cancelPending() {
     if (pendingString) {
-      pendingString->returnError(sdbus::Error{k_errCanceled, "user canceled"});
+      pendingString->returnError(sdbus::Error{kErrCanceled, "user canceled"});
     }
     if (pendingUint) {
-      pendingUint->returnError(sdbus::Error{k_errCanceled, "user canceled"});
+      pendingUint->returnError(sdbus::Error{kErrCanceled, "user canceled"});
     }
     if (pendingVoid) {
-      pendingVoid->returnError(sdbus::Error{k_errRejected, "user canceled"});
+      pendingVoid->returnError(sdbus::Error{kErrRejected, "user canceled"});
     }
     clearPending();
   }
@@ -179,59 +179,59 @@ struct BluetoothAgent::Impl {
 };
 
 BluetoothAgent::BluetoothAgent(SystemBus& bus) : m_impl(std::make_unique<Impl>(bus)) {
-  m_impl->object = sdbus::createObject(bus.connection(), k_agentObjectPath);
+  m_impl->object = sdbus::createObject(bus.connection(), kAgentObjectPath);
 
   m_impl->object
-      ->addVTable(sdbus::registerMethod("Release").implementedAs([]() {}),
-                  sdbus::registerMethod("RequestPinCode")
-                      .withInputParamNames("device")
-                      .withOutputParamNames("pincode")
-                      .implementedAs([this](sdbus::Result<std::string>&& result, sdbus::ObjectPath device) {
-                        m_impl->onRequestPinCode(std::move(result), std::move(device));
-                      }),
-                  sdbus::registerMethod("DisplayPinCode")
-                      .withInputParamNames("device", "pincode")
-                      .implementedAs([this](sdbus::Result<>&& result, sdbus::ObjectPath device, std::string pincode) {
-                        m_impl->onDisplayPinCode(std::move(result), std::move(device), std::move(pincode));
-                      }),
-                  sdbus::registerMethod("RequestPasskey")
-                      .withInputParamNames("device")
-                      .withOutputParamNames("passkey")
-                      .implementedAs([this](sdbus::Result<std::uint32_t>&& result, sdbus::ObjectPath device) {
-                        m_impl->onRequestPasskey(std::move(result), std::move(device));
-                      }),
-                  sdbus::registerMethod("DisplayPasskey")
-                      .withInputParamNames("device", "passkey", "entered")
-                      .implementedAs([this](sdbus::ObjectPath device, std::uint32_t passkey, std::uint16_t entered) {
-                        m_impl->onDisplayPasskey(std::move(device), passkey, entered);
-                      }),
-                  sdbus::registerMethod("RequestConfirmation")
-                      .withInputParamNames("device", "passkey")
-                      .implementedAs([this](sdbus::Result<>&& result, sdbus::ObjectPath device, std::uint32_t passkey) {
-                        m_impl->onRequestConfirmation(std::move(result), std::move(device), passkey);
-                      }),
-                  sdbus::registerMethod("RequestAuthorization")
-                      .withInputParamNames("device")
-                      .implementedAs([this](sdbus::Result<>&& result, sdbus::ObjectPath device) {
-                        m_impl->onRequestAuthorization(std::move(result), std::move(device));
-                      }),
-                  sdbus::registerMethod("AuthorizeService")
-                      .withInputParamNames("device", "uuid")
-                      .implementedAs([this](sdbus::Result<>&& result, sdbus::ObjectPath device, std::string uuid) {
-                        m_impl->onAuthorizeService(std::move(result), std::move(device), std::move(uuid));
-                      }),
-                  sdbus::registerMethod("Cancel").implementedAs([this]() { m_impl->onCancel(); }))
-      .forInterface(k_agentInterface);
+      ->addVTable(
+          sdbus::registerMethod("Release").implementedAs([]() {}),
+          sdbus::registerMethod("RequestPinCode")
+              .withInputParamNames("device")
+              .withOutputParamNames("pincode")
+              .implementedAs([this](sdbus::Result<std::string>&& result, sdbus::ObjectPath device) {
+                m_impl->onRequestPinCode(std::move(result), std::move(device));
+              }),
+          sdbus::registerMethod("DisplayPinCode")
+              .withInputParamNames("device", "pincode")
+              .implementedAs([this](sdbus::Result<>&& result, sdbus::ObjectPath device, std::string pincode) {
+                m_impl->onDisplayPinCode(std::move(result), std::move(device), std::move(pincode));
+              }),
+          sdbus::registerMethod("RequestPasskey")
+              .withInputParamNames("device")
+              .withOutputParamNames("passkey")
+              .implementedAs([this](sdbus::Result<std::uint32_t>&& result, sdbus::ObjectPath device) {
+                m_impl->onRequestPasskey(std::move(result), std::move(device));
+              }),
+          sdbus::registerMethod("DisplayPasskey")
+              .withInputParamNames("device", "passkey", "entered")
+              .implementedAs([this](sdbus::ObjectPath device, std::uint32_t passkey, std::uint16_t entered) {
+                m_impl->onDisplayPasskey(std::move(device), passkey, entered);
+              }),
+          sdbus::registerMethod("RequestConfirmation")
+              .withInputParamNames("device", "passkey")
+              .implementedAs([this](sdbus::Result<>&& result, sdbus::ObjectPath device, std::uint32_t passkey) {
+                m_impl->onRequestConfirmation(std::move(result), std::move(device), passkey);
+              }),
+          sdbus::registerMethod("RequestAuthorization")
+              .withInputParamNames("device")
+              .implementedAs([this](sdbus::Result<>&& result, sdbus::ObjectPath device) {
+                m_impl->onRequestAuthorization(std::move(result), std::move(device));
+              }),
+          sdbus::registerMethod("AuthorizeService")
+              .withInputParamNames("device", "uuid")
+              .implementedAs([this](sdbus::Result<>&& result, sdbus::ObjectPath device, std::string uuid) {
+                m_impl->onAuthorizeService(std::move(result), std::move(device), std::move(uuid));
+              }),
+          sdbus::registerMethod("Cancel").implementedAs([this]() { m_impl->onCancel(); })
+      )
+      .forInterface(kAgentInterface);
 
   try {
-    auto agentManager = sdbus::createProxy(bus.connection(), k_bluezBusName, k_bluezRoot);
+    auto agentManager = sdbus::createProxy(bus.connection(), kBluezBusName, kBluezRoot);
     agentManager->callMethod("RegisterAgent")
-        .onInterface(k_agentManagerInterface)
-        .withArguments(k_agentObjectPath, std::string(k_capability));
-    agentManager->callMethod("RequestDefaultAgent")
-        .onInterface(k_agentManagerInterface)
-        .withArguments(k_agentObjectPath);
-    kLog.info("registered BlueZ agent at {}", std::string(k_agentObjectPath));
+        .onInterface(kAgentManagerInterface)
+        .withArguments(kAgentObjectPath, std::string(kCapability));
+    agentManager->callMethod("RequestDefaultAgent").onInterface(kAgentManagerInterface).withArguments(kAgentObjectPath);
+    kLog.info("registered BlueZ agent at {}", std::string(kAgentObjectPath));
   } catch (const sdbus::Error& e) {
     kLog.warn("BlueZ agent registration failed: {}", e.what());
   }
@@ -243,8 +243,8 @@ BluetoothAgent::~BluetoothAgent() {
   }
   m_impl->cancelPending();
   try {
-    auto agentManager = sdbus::createProxy(m_impl->bus.connection(), k_bluezBusName, k_bluezRoot);
-    agentManager->callMethod("UnregisterAgent").onInterface(k_agentManagerInterface).withArguments(k_agentObjectPath);
+    auto agentManager = sdbus::createProxy(m_impl->bus.connection(), kBluezBusName, kBluezRoot);
+    agentManager->callMethod("UnregisterAgent").onInterface(kAgentManagerInterface).withArguments(kAgentObjectPath);
   } catch (const sdbus::Error& e) {
     kLog.debug("BlueZ agent unregister failed: {}", e.what());
   }

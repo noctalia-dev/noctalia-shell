@@ -4,9 +4,9 @@
 #include "render/animation/animation_manager.h"
 #include "render/core/renderer.h"
 #include "render/scene/node.h"
-#include "ui/controls/audio_spectrum.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "ui/visuals/audio_visualizer.h"
 
 #include <algorithm>
 #include <cmath>
@@ -28,9 +28,10 @@ namespace {
 
 } // namespace
 
-DesktopAudioVisualizerWidget::DesktopAudioVisualizerWidget(PipeWireSpectrum* spectrum, float aspectRatio, int bands,
-                                                           bool mirrored, ColorSpec lowColor, ColorSpec highColor,
-                                                           bool centered, bool showWhenIdle)
+DesktopAudioVisualizerWidget::DesktopAudioVisualizerWidget(
+    PipeWireSpectrum* spectrum, float aspectRatio, int bands, bool mirrored, ColorSpec lowColor, ColorSpec highColor,
+    bool centered, bool showWhenIdle
+)
     : m_spectrum(spectrum), m_aspectRatio(clampAspectRatio(aspectRatio)), m_bands(std::max(1, bands)),
       m_mirrored(mirrored), m_centered(centered), m_showWhenIdle(showWhenIdle), m_lowColor(lowColor),
       m_highColor(highColor) {}
@@ -46,7 +47,7 @@ void DesktopAudioVisualizerWidget::create() {
   auto rootNode = std::make_unique<Node>();
   rootNode->setClipChildren(true);
 
-  auto visualizer = std::make_unique<AudioSpectrum>();
+  auto visualizer = std::make_unique<AudioVisualizer>();
   visualizer->setOrientation(AudioSpectrumOrientation::Horizontal);
   visualizer->setCentered(m_centered);
   visualizer->setMirrored(m_mirrored);
@@ -64,9 +65,78 @@ void DesktopAudioVisualizerWidget::create() {
   setRoot(std::move(rootNode));
 }
 
+bool DesktopAudioVisualizerWidget::applySetting(
+    const std::string& key, const WidgetSettingValue& value,
+    const std::unordered_map<std::string, WidgetSettingValue>& allSettings, Renderer& renderer
+) {
+  if (m_visualizer == nullptr) {
+    return false;
+  }
+  if (key == "low_color" || key == "high_color") {
+    if (const auto* v = std::get_if<std::string>(&value)) {
+      if (key == "low_color") {
+        m_lowColor = colorSpecFromConfigString(*v, key);
+      } else {
+        m_highColor = colorSpecFromConfigString(*v, key);
+      }
+      m_visualizer->setGradient(m_lowColor, m_highColor);
+      return true;
+    }
+    return false;
+  }
+  if (key == "mirrored") {
+    if (const auto* v = std::get_if<bool>(&value)) {
+      m_mirrored = *v;
+      m_visualizer->setMirrored(m_mirrored);
+      return true;
+    }
+    return false;
+  }
+  if (key == "centered") {
+    if (const auto* v = std::get_if<bool>(&value)) {
+      m_centered = *v;
+      m_visualizer->setCentered(m_centered);
+      return true;
+    }
+    return false;
+  }
+  if (key == "show_when_idle") {
+    if (const auto* v = std::get_if<bool>(&value)) {
+      m_showWhenIdle = *v;
+      return true;
+    }
+    return false;
+  }
+  return DesktopWidget::applySetting(key, value, allSettings, renderer);
+}
+
+void DesktopAudioVisualizerWidget::setEditorPreview(bool enabled) noexcept {
+  if (m_editorPreview == enabled) {
+    return;
+  }
+  m_editorPreview = enabled;
+  if (root() == nullptr) {
+    return;
+  }
+  if (enabled) {
+    pullSpectrumValues();
+  }
+  if (applyVisibility()) {
+    requestLayout();
+  } else if (enabled && m_visible) {
+    requestFrameTick();
+    requestRedraw();
+  }
+}
+
 bool DesktopAudioVisualizerWidget::needsFrameTick() const {
-  return m_visualizer != nullptr && (m_pendingSpectrumUpdate || (m_visible && !m_visualizer->converged()) ||
-                                     shouldBeVisible() != m_visible || m_fadingOut || m_visibilityAnimId != 0);
+  return m_visualizer != nullptr
+      && (m_pendingSpectrumUpdate
+          || (m_editorPreview && m_visible)
+          || (m_visible && !m_visualizer->converged())
+          || shouldBeVisible() != m_visible
+          || m_fadingOut
+          || m_visibilityAnimId != 0);
 }
 
 void DesktopAudioVisualizerWidget::onFrameTick(float deltaMs, Renderer& renderer) {
@@ -113,17 +183,36 @@ void DesktopAudioVisualizerWidget::doUpdate(Renderer& renderer) {
   syncSpectrum(&renderer);
 }
 
-void DesktopAudioVisualizerWidget::syncSpectrum(Renderer* /*renderer*/) {
-  if (!m_pendingSpectrumUpdate || m_visualizer == nullptr || m_spectrum == nullptr || m_listenerId == 0) {
+void DesktopAudioVisualizerWidget::pullSpectrumValues() {
+  if (m_visualizer == nullptr || m_spectrum == nullptr || m_listenerId == 0) {
     return;
   }
 
-  m_visualizer->setValues(m_spectrum->values(m_listenerId));
+  const auto& spectrumValues = m_spectrum->values(m_listenerId);
+  if (spectrumValues.empty()) {
+    return;
+  }
+
+  m_visualizer->setValues(spectrumValues);
   m_pendingSpectrumUpdate = false;
 }
 
+void DesktopAudioVisualizerWidget::syncSpectrum(Renderer* /*renderer*/) {
+  if (m_visualizer == nullptr || m_spectrum == nullptr || m_listenerId == 0) {
+    return;
+  }
+  if (!m_pendingSpectrumUpdate && !m_editorPreview) {
+    return;
+  }
+
+  pullSpectrumValues();
+}
+
 bool DesktopAudioVisualizerWidget::shouldBeVisible() const {
-  return m_spectrum != nullptr && (m_showWhenIdle || !m_spectrum->idle());
+  if (m_spectrum == nullptr) {
+    return false;
+  }
+  return m_editorPreview || m_showWhenIdle || !m_spectrum->idle();
 }
 
 bool DesktopAudioVisualizerWidget::applyVisibility() {
@@ -219,6 +308,7 @@ void DesktopAudioVisualizerWidget::startOpacityAnimation(float targetOpacity, bo
         }
         requestLayout();
       },
-      this);
+      this
+  );
   requestFrameTick();
 }

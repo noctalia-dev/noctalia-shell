@@ -39,12 +39,13 @@ jobs:
           pacman -Syu --noconfirm --needed \
             base-devel git meson ninja pkgconf \
             wayland wayland-protocols \
-            libglvnd freetype2 harfbuzz fontconfig \
-            cairo pango \
-            libxkbcommon \
-            sdbus-cpp libpipewire \
-            pam curl libwebp \
-            librsvg polkit
+            libglvnd freetype2 fontconfig \
+            cairo pango harfbuzz \
+            libxkbcommon glib2 \
+            sdbus-cpp libpipewire polkit \
+            pam curl libwebp librsvg \
+            libqalculate libxml2 \
+            jemalloc
 
       - uses: actions/checkout@v4
 

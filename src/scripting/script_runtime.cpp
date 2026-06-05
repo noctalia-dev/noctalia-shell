@@ -4,6 +4,7 @@
 #include "core/log.h"
 #include "notification/notifications.h"
 #include "scripting/luau_host.h"
+#include "scripting/script_api_context.h"
 #include "scripting/script_worker_pool.h"
 #include "scripting/scripted_widget_bindings.h"
 #include "wayland/clipboard_service.h"
@@ -28,6 +29,12 @@ namespace scripting {
       }
       if (src.glyph.has_value()) {
         dest.glyph = src.glyph;
+      }
+      if (src.image.has_value()) {
+        dest.image = src.image;
+      }
+      if (src.tooltip.has_value()) {
+        dest.tooltip = src.tooltip;
       }
       if (src.fontFamily.has_value()) {
         dest.fontFamily = src.fontFamily;
@@ -84,12 +91,16 @@ namespace scripting {
   } // namespace
 
   struct ScriptRuntime::State : public std::enable_shared_from_this<ScriptRuntime::State> {
-    explicit State(std::string name, ScriptWidgetSettings widgetSettings, ClipboardService* clipboardService)
-        : runtimeName(std::move(name)), settings(std::move(widgetSettings)), clipboard(clipboardService) {}
+    explicit State(
+        std::string name, ScriptWidgetSettings widgetSettings, ScriptApiContext& api, ClipboardService* clipboardService
+    )
+        : runtimeName(std::move(name)), settings(std::move(widgetSettings)), scriptApi(api),
+          clipboard(clipboardService) {}
 
     mutable std::mutex mutex;
     std::string runtimeName;
     ScriptWidgetSettings settings;
+    ScriptApiContext& scriptApi;
     std::deque<ScriptWidgetEvent> queue;
     std::unordered_map<SubscriberId, ScriptWidgetResultCallback> subscribers;
     std::unique_ptr<LuauHost> host;
@@ -138,9 +149,28 @@ namespace scripting {
         if (stopped) {
           return false;
         }
-        if (unhealthy && event.kind != ScriptWidgetEventKind::Reload && event.kind != ScriptWidgetEventKind::Load &&
-            event.kind != ScriptWidgetEventKind::Stop) {
+        if (unhealthy
+            && event.kind != ScriptWidgetEventKind::Reload
+            && event.kind != ScriptWidgetEventKind::Load
+            && event.kind != ScriptWidgetEventKind::Stop) {
           return false;
+        }
+
+        // Supersede an already-queued coalescing CallStrings for the same
+        // callback with the newer payload instead of appending. Bounds the queue
+        // to a single pending event per callback (e.g. onAudioSpectrum at 60Hz),
+        // so a slow script can never accumulate stale spectrum frames.
+        if (event.kind == ScriptWidgetEventKind::CallStrings && event.coalesce) {
+          const auto existing = std::find_if(queue.begin(), queue.end(), [&event](const auto& queued) {
+            return queued.kind == ScriptWidgetEventKind::CallStrings
+                && queued.coalesce
+                && queued.functionName == event.functionName;
+          });
+          if (existing != queue.end()) {
+            event.generation = generation;
+            *existing = std::move(event);
+            return true;
+          }
         }
 
         if (event.kind == ScriptWidgetEventKind::Update) {
@@ -148,9 +178,9 @@ namespace scripting {
           if (updateQueued || updateRunning) {
             return true;
           }
-          if (lastUpdateAccepted.time_since_epoch().count() != 0 &&
-              now - lastUpdateAccepted <
-                  std::max(updateInterval - std::chrono::milliseconds(5), std::chrono::milliseconds(1))) {
+          if (lastUpdateAccepted.time_since_epoch().count() != 0
+              && now - lastUpdateAccepted
+                  < std::max(updateInterval - std::chrono::milliseconds(5), std::chrono::milliseconds(1))) {
             return true;
           }
           updateQueued = true;
@@ -318,7 +348,7 @@ namespace scripting {
     }
 
     ScriptWidgetResult processLoad(const ScriptWidgetEvent& event) {
-      host = std::make_unique<LuauHost>();
+      host = std::make_unique<LuauHost>(scriptApi);
       bindingContext.settings = &settings;
       bindingContext.host = host.get();
       host->setScriptContext(&bindingContext);
@@ -437,8 +467,10 @@ namespace scripting {
     }
   };
 
-  ScriptRuntime::ScriptRuntime(std::string runtimeName, ScriptWidgetSettings settings, ClipboardService* clipboard)
-      : m_state(std::make_shared<State>(std::move(runtimeName), std::move(settings), clipboard)) {}
+  ScriptRuntime::ScriptRuntime(
+      std::string runtimeName, ScriptWidgetSettings settings, ScriptApiContext& api, ClipboardService* clipboard
+  )
+      : m_state(std::make_shared<State>(std::move(runtimeName), std::move(settings), api, clipboard)) {}
 
   ScriptRuntime::~ScriptRuntime() { stop(); }
 
@@ -503,8 +535,9 @@ namespace scripting {
     return m_state != nullptr && m_state->enqueue(std::move(event));
   }
 
-  bool ScriptRuntime::enqueueCallStrings(std::string functionName, std::string first, std::string second,
-                                         ScriptWidgetSnapshot snapshot) {
+  bool ScriptRuntime::enqueueCallStrings(
+      std::string functionName, std::string first, std::string second, ScriptWidgetSnapshot snapshot, bool coalesce
+  ) {
     ScriptWidgetEvent event;
     event.kind = ScriptWidgetEventKind::CallStrings;
     event.functionName = std::move(functionName);
@@ -512,6 +545,7 @@ namespace scripting {
     event.second = std::move(second);
     event.snapshot = std::move(snapshot);
     event.budget = kCallbackBudget;
+    event.coalesce = coalesce;
     return m_state != nullptr && m_state->enqueue(std::move(event));
   }
 
@@ -539,9 +573,9 @@ namespace scripting {
     return m_state->unhealthy;
   }
 
-  SharedScriptRuntimeAcquireResult SharedScriptRuntimeRegistry::acquire(const std::string& key,
-                                                                        ScriptWidgetSettings settings,
-                                                                        ClipboardService* clipboard) {
+  SharedScriptRuntimeAcquireResult SharedScriptRuntimeRegistry::acquire(
+      const std::string& key, ScriptWidgetSettings settings, ScriptApiContext& api, ClipboardService* clipboard
+  ) {
     static std::mutex mutex;
     static std::unordered_map<std::string, std::weak_ptr<ScriptRuntime>> runtimes;
 
@@ -552,7 +586,7 @@ namespace scripting {
       }
     }
 
-    auto runtime = std::make_shared<ScriptRuntime>(key, std::move(settings), clipboard);
+    auto runtime = std::make_shared<ScriptRuntime>(key, std::move(settings), api, clipboard);
     runtimes[key] = runtime;
     return {.runtime = std::move(runtime), .created = true};
   }

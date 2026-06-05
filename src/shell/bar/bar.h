@@ -24,6 +24,7 @@ class MprisService;
 class BluetoothService;
 class BrightnessService;
 class ClipboardService;
+class ScreenshotService;
 class INetworkService;
 class NotificationManager;
 class PipeWireService;
@@ -39,6 +40,9 @@ class WeatherService;
 namespace noctalia::theme {
   class ThemeService;
 }
+namespace scripting {
+  class ScriptApiContext;
+}
 struct PointerEvent;
 struct wl_surface;
 
@@ -46,24 +50,32 @@ class Bar {
 public:
   Bar();
 
-  bool initialize(CompositorPlatform& platform, ConfigService* config, TimeService* timeService,
-                  NotificationManager* notifications, TrayService* tray, PipeWireService* audio, UPowerService* upower,
-                  SystemMonitorService* sysmon, PowerProfilesService* powerProfiles, INetworkService* network,
-                  IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
-                  HttpClient* httpClient, WeatherService* weatherService, RenderContext* renderContext,
-                  GammaService* nightLight, noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
-                  BrightnessService* brightness, LockKeysService* lockKeys, ClipboardService* clipboard,
-                  FileWatcher* fileWatcher = nullptr);
+  bool initialize(
+      CompositorPlatform& platform, ConfigService* config, TimeService* timeService, NotificationManager* notifications,
+      TrayService* tray, PipeWireService* audio, UPowerService* upower, SystemMonitorService* sysmon,
+      PowerProfilesService* powerProfiles, INetworkService* network, IdleInhibitor* idleInhibitor, MprisService* mpris,
+      PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weatherService,
+      RenderContext* renderContext, GammaService* nightLight, noctalia::theme::ThemeService* themeService,
+      BluetoothService* bluetooth, BrightnessService* brightness, LockKeysService* lockKeys,
+      ClipboardService* clipboard, FileWatcher* fileWatcher = nullptr, ScreenshotService* screenshots = nullptr,
+      scripting::ScriptApiContext* scriptApi = nullptr
+  );
   void reload();
   void closeAllInstances();
   void show();
   void hide();
-  [[nodiscard]] bool isVisible() const noexcept { return !m_forceHidden; }
+  void toggle();
+  /// Hides bars while a full-screen overlay editor (e.g. lockscreen widget layout) is active.
+  void suppressDisplay();
+  void unsuppressDisplay();
+  [[nodiscard]] bool isVisible() const noexcept;
   void onOutputChange();
   void onSecondTick();
   void refresh();
   void requestLayout();
-  void setAutoHideSuppressionCallback(std::function<bool()> callback);
+  void setAutoHideSuppressionCallback(std::function<bool(const BarInstance&)> callback);
+  // Re-run auto-hide after a panel closes so unrelated bars are not left visible.
+  void reevaluateAutoHide();
   void setOpenWidgetSettingsCallback(std::function<void(std::string, std::string)> callback);
   // Requests a redraw on every bar surface without re-running widget update/layout.
   // Intended for reactive restyling (palette changes) where the scene graph has
@@ -80,13 +92,18 @@ public:
   // Returns every bar wl_surface across all outputs. Used as the focus-grab
   // whitelist on Hyprland so bar widgets keep receiving clicks.
   [[nodiscard]] std::vector<wl_surface*> allBarSurfaces() const;
-  void setAttachedPanelGeometry(wl_output* output, std::optional<AttachedPanelGeometry> geometry);
+  void
+  setAttachedPanelGeometry(wl_output* output, std::string_view barName, std::optional<AttachedPanelGeometry> geometry);
+  void revealAutoHideForAttachedPanel(wl_output* output, std::string_view barName);
   void beginAttachedPopup(wl_surface* surface);
   void endAttachedPopup(wl_surface* surface);
 
   void registerIpc(IpcService& ipc);
 
 private:
+  void applyIpcVisibility(bool visible);
+  void setInstanceIpcVisible(BarInstance& instance, bool visible);
+  [[nodiscard]] bool instanceEffectivelyVisible(const BarInstance& instance) const noexcept;
   static void tickWidgets(std::vector<std::unique_ptr<Widget>>& widgets, float deltaMs);
   [[nodiscard]] static bool widgetsNeedFrameTick(const std::vector<std::unique_ptr<Widget>>& widgets);
   [[nodiscard]] static bool instanceNeedsFrameTick(const BarInstance& instance);
@@ -101,13 +118,29 @@ private:
   void updateWidgets(BarInstance& instance);
   void applyBarCompositorBlur(BarInstance& instance) const;
   void syncBarSlideLayerTransform(BarInstance& instance) const;
+  void syncBarAutoHideInputRegion(BarInstance& instance) const;
+  void syncBarExclusiveZone(BarInstance& instance);
+  void syncBarSurfaceChrome(BarInstance& instance);
+  void clearInstancePointerState(BarInstance& instance);
+  [[nodiscard]] bool instanceAcceptsPointerInput(const BarInstance& instance) const noexcept;
+  [[nodiscard]] bool shouldReserveExclusiveZone(const BarInstance& instance) const noexcept;
+  [[nodiscard]] bool barContentVisuallyShown(const BarInstance& instance) const noexcept;
+  void revealAutoHideBar(BarInstance& instance);
   void startHideFadeOut(BarInstance& instance);
   static void applyBackgroundPalette(BarInstance& instance);
   [[nodiscard]] std::string dispatchScriptedWidgetIpc(std::string_view args);
+  [[nodiscard]] std::string showBarIpc(std::string_view args);
+  [[nodiscard]] std::string hideBarIpc(std::string_view args);
+  [[nodiscard]] std::string toggleBarIpc(std::string_view args);
+  [[nodiscard]] std::string setBarAutoHideIpc(std::string_view args);
+  [[nodiscard]] std::optional<std::string> collectBarIpcInstances(
+      std::optional<std::string_view> barName, std::optional<std::string_view> monitorSelector,
+      std::vector<BarInstance*>& instancesOut
+  );
   [[nodiscard]] BarInstance* instanceForSurface(wl_surface* surface) const noexcept;
   [[nodiscard]] BarInstance* instanceForOutput(wl_output* output) const noexcept;
+  [[nodiscard]] BarInstance* instanceForBar(wl_output* output, std::string_view barName) const noexcept;
 
-  bool m_forceHidden = false;
   CompositorPlatform* m_platform = nullptr;
   ConfigService* m_config = nullptr;
   NotificationManager* m_notifications = nullptr;
@@ -129,7 +162,9 @@ private:
   BrightnessService* m_brightness = nullptr;
   LockKeysService* m_lockKeys = nullptr;
   ClipboardService* m_clipboard = nullptr;
+  ScreenshotService* m_screenshots = nullptr;
   FileWatcher* m_fileWatcher = nullptr;
+  scripting::ScriptApiContext* m_scriptApi = nullptr;
   std::unique_ptr<WidgetFactory> m_widgetFactory;
   std::vector<std::unique_ptr<BarInstance>> m_instances;
 
@@ -142,6 +177,8 @@ private:
   // Surface → BarInstance mapping for pointer event routing
   std::unordered_map<wl_surface*, BarInstance*> m_surfaceMap;
   BarInstance* m_hoveredInstance = nullptr;
-  std::function<bool()> m_autoHideSuppressionCallback;
+  std::function<bool(const BarInstance&)> m_autoHideSuppressionCallback;
   std::function<void(std::string, std::string)> m_openWidgetSettingsCallback;
+  bool m_overlayDisplaySuppressed = false;
+  bool m_wasVisibleBeforeOverlaySuppress = false;
 };

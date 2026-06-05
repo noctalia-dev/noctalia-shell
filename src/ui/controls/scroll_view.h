@@ -36,7 +36,7 @@ public:
   void clearBorder();
   void setRadius(float radius);
   void setSoftness(float softness);
-  void setCardStyle(float scale = 1.0f, float fillOpacity = 1.0f);
+  void setCardStyle(float scale = 1.0f, float fillOpacity = 1.0f, bool showBorder = true);
   void bindState(ScrollViewState* state);
   void setOnScrollChanged(std::function<void(float)> callback);
 
@@ -44,6 +44,7 @@ public:
   [[nodiscard]] float maxScrollOffset() const noexcept { return m_maxScrollOffset; }
   [[nodiscard]] bool scrollable() const noexcept { return m_maxScrollOffset > 0.0f; }
   [[nodiscard]] float contentViewportWidth() const noexcept;
+  [[nodiscard]] float contentViewportHeight() const noexcept;
   [[nodiscard]] float viewportPaddingH() const noexcept { return m_viewportPaddingH; }
   [[nodiscard]] float viewportPaddingV() const noexcept { return m_viewportPaddingV; }
 

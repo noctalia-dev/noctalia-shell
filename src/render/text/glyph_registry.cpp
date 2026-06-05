@@ -67,6 +67,7 @@ const std::unordered_map<std::string, std::string_view> kAliases = {
     {"cpu-intensive", "alert-octagon"},
     {"cpu-usage", "brand-speedtest"},
     {"cpu-temperature", "flame"},
+    {"gpu-usage", "device-desktop"},
     {"memory", "cpu"},
     {"storage", "database"},
     {"busy", "hourglass-empty"},

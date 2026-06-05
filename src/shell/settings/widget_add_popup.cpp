@@ -7,18 +7,14 @@
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "shell/settings/widget_settings_registry.h"
-#include "ui/controls/button.h"
-#include "ui/controls/flex.h"
-#include "ui/controls/input.h"
-#include "ui/controls/label.h"
-#include "ui/controls/toggle.h"
-#include "ui/palette.h"
+#include "ui/builders.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
 #include "wayland/wayland_connection.h"
 #include "xdg-shell-client-protocol.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <string>
 #include <string_view>
@@ -39,15 +35,6 @@ namespace settings {
         return i18n::tr("settings.entities.widget.lanes.end");
       }
       return std::string(lane);
-    }
-
-    std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ColorSpec& color, bool bold = false) {
-      auto label = std::make_unique<Label>();
-      label->setText(text);
-      label->setFontSize(fontSize);
-      label->setColor(color);
-      label->setBold(bold);
-      return label;
     }
 
     void sortSearchOptions(std::vector<SearchPickerOption>& options) {
@@ -137,8 +124,10 @@ namespace settings {
       return base + "_custom";
     }
 
-    PopupSurfaceConfig centeredPopupConfig(std::uint32_t parentWidth, std::uint32_t parentHeight, std::uint32_t width,
-                                           std::uint32_t height, std::uint32_t serial) {
+    PopupSurfaceConfig centeredPopupConfig(
+        std::uint32_t parentWidth, std::uint32_t parentHeight, std::uint32_t width, std::uint32_t height,
+        std::uint32_t serial
+    ) {
       return PopupSurfaceConfig{
           .anchorX = static_cast<std::int32_t>(parentWidth / 2),
           .anchorY = static_cast<std::int32_t>(parentHeight / 2),
@@ -169,9 +158,11 @@ namespace settings {
 
   void WidgetAddPopup::setOnDismissed(std::function<void()> callback) { m_onDismissed = std::move(callback); }
 
-  void WidgetAddPopup::open(xdg_surface* parentXdgSurface, wl_output* output, std::uint32_t serial,
-                            wl_surface* parentWlSurface, std::uint32_t parentWidth, std::uint32_t parentHeight,
-                            const std::vector<std::string>& lanePath, const Config& config, float scale) {
+  void WidgetAddPopup::open(
+      xdg_surface* parentXdgSurface, wl_output* output, std::uint32_t serial, wl_surface* parentWlSurface,
+      std::uint32_t parentWidth, std::uint32_t parentHeight, const std::vector<std::string>& lanePath,
+      const Config& config, float scale
+  ) {
     if (parentXdgSurface == nullptr || parentWlSurface == nullptr) {
       return;
     }
@@ -179,17 +170,24 @@ namespace settings {
     const auto pickerEntries = widgetPickerEntries(config);
     std::vector<SearchPickerOption> normalOptions;
     std::vector<SearchPickerOption> instanceOptions;
+    std::unordered_map<std::string, std::string> presetScripts;
     normalOptions.reserve(pickerEntries.size());
     instanceOptions.reserve(pickerEntries.size());
 
     for (const auto& entry : pickerEntries) {
-      normalOptions.push_back(SearchPickerOption{
-          .value = entry.value,
-          .label = entry.label,
-          .description = entry.description,
-          .enabled = true,
-          .icon = entry.icon,
-      });
+      normalOptions.push_back(
+          SearchPickerOption{
+              .value = entry.value,
+              .label = entry.label,
+              .description = entry.description,
+              .enabled = true,
+              .icon = entry.icon,
+          }
+      );
+
+      if (entry.kind == WidgetReferenceKind::Preset && !entry.script.empty()) {
+        presetScripts[entry.value] = entry.script;
+      }
 
       if (entry.kind != WidgetReferenceKind::BuiltIn) {
         continue;
@@ -198,13 +196,15 @@ namespace settings {
         if (spec.type != entry.value || !spec.supportsMultipleInstances) {
           continue;
         }
-        instanceOptions.push_back(SearchPickerOption{
-            .value = entry.value,
-            .label = entry.label,
-            .description = i18n::tr("settings.entities.widget.picker.instance-description", "type", entry.value),
-            .enabled = true,
-            .icon = entry.icon,
-        });
+        instanceOptions.push_back(
+            SearchPickerOption{
+                .value = entry.value,
+                .label = entry.label,
+                .description = i18n::tr("settings.entities.widget.picker.instance-description", "type", entry.value),
+                .enabled = true,
+                .icon = entry.icon,
+            }
+        );
         break;
       }
     }
@@ -224,12 +224,12 @@ namespace settings {
     m_config = &config;
     m_normalOptions = std::move(normalOptions);
     m_instanceOptions = std::move(instanceOptions);
+    m_presetScripts = std::move(presetScripts);
     m_lanePath = lanePath;
     m_root = nullptr;
-    m_headerRow = nullptr;
     m_createActions = nullptr;
     m_searchPicker = nullptr;
-    m_createTitle = nullptr;
+    m_instanceDescription = nullptr;
     m_instanceInput = nullptr;
     m_instanceModeEnabled = false;
     m_createFormVisible = false;
@@ -267,7 +267,7 @@ namespace settings {
     m_searchPicker->setOptions(m_instanceModeEnabled ? m_instanceOptions : m_normalOptions);
   }
 
-  void WidgetAddPopup::refreshBodyState() {
+  void WidgetAddPopup::refreshBodyState(bool adjustFocus) {
     if (m_searchPicker != nullptr) {
       m_searchPicker->setVisible(!m_createFormVisible);
       m_searchPicker->setParticipatesInLayout(!m_createFormVisible);
@@ -275,9 +275,9 @@ namespace settings {
         refreshPickerOptions();
       }
     }
-    if (m_createTitle != nullptr) {
-      m_createTitle->setVisible(m_createFormVisible);
-      m_createTitle->setParticipatesInLayout(m_createFormVisible);
+    if (m_instanceDescription != nullptr) {
+      m_instanceDescription->setVisible(m_createFormVisible);
+      m_instanceDescription->setParticipatesInLayout(m_createFormVisible);
     }
     if (m_instanceInput != nullptr) {
       m_instanceInput->setVisible(m_createFormVisible);
@@ -286,6 +286,10 @@ namespace settings {
     if (m_createActions != nullptr) {
       m_createActions->setVisible(m_createFormVisible);
       m_createActions->setParticipatesInLayout(m_createFormVisible);
+    }
+
+    if (!adjustFocus) {
+      return;
     }
 
     if (!m_createFormVisible && m_searchPicker != nullptr) {
@@ -316,13 +320,6 @@ namespace settings {
     m_createType = option.value;
     m_createLabel = option.label;
     m_createFormVisible = true;
-    if (m_createTitle != nullptr) {
-      m_createTitle->setText(i18n::tr("settings.entities.widget.instance.create-title", "type", m_createType));
-    }
-    if (m_instanceInput != nullptr) {
-      m_instanceInput->setValue(suggestedInstanceId(m_createType));
-      m_instanceInput->setInvalid(false);
-    }
     reopenForCurrentMode();
   }
 
@@ -337,7 +334,7 @@ namespace settings {
     }
     m_instanceInput->setInvalid(false);
     if (m_onSelect) {
-      m_onSelect(m_lanePath, id, m_createType, id);
+      m_onSelect(m_lanePath, id, m_createType, id, {});
     }
     DeferredCall::callLater([this]() { close(); });
   }
@@ -345,154 +342,200 @@ namespace settings {
   void WidgetAddPopup::populateContent(Node* contentParent, std::uint32_t /*width*/, std::uint32_t /*height*/) {
     const float panelPadding = Style::spaceSm * m_scale;
     const float panelGap = Style::spaceSm * m_scale;
-
-    auto root = std::make_unique<Flex>();
-    root->setDirection(FlexDirection::Vertical);
-    root->setAlign(FlexAlign::Stretch);
-    root->setGap(panelGap);
-    root->setPadding(panelPadding);
-    m_root = root.get();
-
-    auto header = std::make_unique<Flex>();
-    header->setDirection(FlexDirection::Horizontal);
-    header->setAlign(FlexAlign::Center);
-    header->setGap(Style::spaceSm * m_scale);
-    m_headerRow = header.get();
-
     const std::string lane = laneLabel(m_lanePath.empty() ? "" : m_lanePath.back());
-    const std::string title =
-        m_createFormVisible
-            ? i18n::tr("settings.entities.widget.inspector.add-instance-title", "widget", m_createLabel, "lane", lane)
-            : i18n::tr("settings.entities.widget.inspector.add-title", "lane", lane);
-    header->addChild(makeLabel(title, Style::fontSizeBody * m_scale, colorSpecFromRole(ColorRole::OnSurface), true));
+    const std::string title = m_createFormVisible
+        ? instanceFormTitle()
+        : i18n::tr("settings.entities.widget.inspector.add-title", "lane", lane);
 
-    auto spacer = std::make_unique<Flex>();
-    spacer->setFlexGrow(1.0f);
-    header->addChild(std::move(spacer));
+    auto root = ui::column({
+        .out = &m_root,
+        .align = FlexAlign::Stretch,
+        .gap = panelGap,
+        .padding = panelPadding,
+    });
+
+    auto header = ui::row({
+        .align = FlexAlign::Center,
+        .gap = Style::spaceSm * m_scale,
+    });
+
+    auto titleLabel = ui::label({
+        .text = title,
+        .fontSize = Style::fontSizeBody * m_scale,
+        .color = colorSpecFromRole(ColorRole::OnSurface),
+        .fontWeight = FontWeight::Bold,
+    });
+    if (m_createFormVisible) {
+      titleLabel->setMaxLines(2);
+    }
+    header->addChild(std::move(titleLabel));
+    header->addChild(ui::spacer());
 
     if (!m_createFormVisible) {
-      header->addChild(makeLabel(i18n::tr("settings.entities.widget.picker.instance-toggle"),
-                                 Style::fontSizeCaption * m_scale, colorSpecFromRole(ColorRole::OnSurfaceVariant),
-                                 false));
+      header->addChild(
+          ui::label({
+              .text = i18n::tr("settings.entities.widget.picker.instance-toggle"),
+              .fontSize = Style::fontSizeCaption * m_scale,
+              .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+          })
+      );
 
-      auto instanceToggle = std::make_unique<Toggle>();
-      instanceToggle->setScale(m_scale);
-      instanceToggle->setChecked(m_instanceModeEnabled);
-      instanceToggle->setOnChange([this](bool value) {
-        m_instanceModeEnabled = value;
-        m_createFormVisible = false;
-        m_createType.clear();
-        m_createLabel.clear();
-        if (m_instanceInput != nullptr) {
-          m_instanceInput->setInvalid(false);
-        }
-        refreshBodyState();
-        requestLayout();
-      });
-      header->addChild(std::move(instanceToggle));
+      header->addChild(
+          ui::toggle({
+              .checked = m_instanceModeEnabled,
+              .scale = m_scale,
+              .onChange = [this](bool value) {
+                m_instanceModeEnabled = value;
+                m_createFormVisible = false;
+                m_createType.clear();
+                m_createLabel.clear();
+                if (m_instanceInput != nullptr) {
+                  m_instanceInput->setInvalid(false);
+                }
+                refreshBodyState();
+                requestLayout();
+              },
+          })
+      );
     }
 
-    auto closeBtn = std::make_unique<Button>();
-    closeBtn->setGlyph("close");
-    closeBtn->setVariant(ButtonVariant::Default);
-    closeBtn->setGlyphSize(Style::fontSizeBody * m_scale);
-    closeBtn->setMinWidth(Style::controlHeightSm * m_scale);
-    closeBtn->setMinHeight(Style::controlHeightSm * m_scale);
-    closeBtn->setPadding(Style::spaceXs * m_scale);
-    closeBtn->setRadius(Style::scaledRadiusMd(m_scale));
-    closeBtn->setOnClick([this]() { DeferredCall::callLater([this]() { close(); }); });
-    header->addChild(std::move(closeBtn));
+    header->addChild(
+        ui::button({
+            .glyph = "close",
+            .glyphSize = Style::fontSizeBody * m_scale,
+            .variant = ButtonVariant::Default,
+            .minWidth = Style::controlHeightSm * m_scale,
+            .minHeight = Style::controlHeightSm * m_scale,
+            .padding = Style::spaceXs * m_scale,
+            .radius = Style::scaledRadiusMd(m_scale),
+            .onClick = [this]() { DeferredCall::callLater([this]() { close(); }); },
+        })
+    );
     root->addChild(std::move(header));
 
-    auto picker = std::make_unique<SearchPicker>();
-    picker->setPlaceholder(i18n::tr("settings.entities.widget.picker.placeholder"));
-    picker->setEmptyText(i18n::tr("settings.entities.widget.picker.empty"));
-    picker->clearFill();
-    picker->clearBorder();
-    picker->setRadius(0.0f);
-    picker->setPadding(0.0f);
-    picker->setFlexGrow(1.0f);
-    picker->setOptions(m_normalOptions);
-    picker->setOnActivated([this](const SearchPickerOption& option) {
-      if (option.value.empty()) {
-        return;
-      }
-      if (m_instanceModeEnabled || widgetTypeRequiresNamedConfig(option.value)) {
-        beginCreateFlow(option);
-        return;
-      }
-      if (m_onSelect) {
-        m_onSelect(m_lanePath, option.value, {}, {});
-      }
-      DeferredCall::callLater([this]() { close(); });
-    });
-    picker->setOnCancel([this]() { DeferredCall::callLater([this]() { close(); }); });
-    m_searchPicker = picker.get();
-    root->addChild(std::move(picker));
+    root->addChild(
+        ui::searchPicker({
+            .out = &m_searchPicker,
+            .placeholder = i18n::tr("settings.entities.widget.picker.placeholder"),
+            .emptyText = i18n::tr("settings.entities.widget.picker.empty"),
+            .options = m_normalOptions,
+            .flexGrow = 1.0f,
+            .onActivated =
+                [this](const SearchPickerOption& option) {
+                  if (option.value.empty()) {
+                    return;
+                  }
+                  // Bundled scripted widget (manifest preset): one-click add, no naming form.
+                  if (const auto it = m_presetScripts.find(option.value); it != m_presetScripts.end()) {
+                    const std::string instanceId =
+                        m_config != nullptr && !widgetReferenceNameExists(*m_config, option.value)
+                        ? option.value
+                        : suggestedInstanceId(option.value);
+                    if (m_onSelect) {
+                      m_onSelect(m_lanePath, option.value, "scripted", instanceId, {{"script", it->second}});
+                    }
+                    DeferredCall::callLater([this]() { close(); });
+                    return;
+                  }
+                  if (m_instanceModeEnabled || widgetTypeRequiresNamedConfig(option.value)) {
+                    beginCreateFlow(option);
+                    return;
+                  }
+                  if (m_onSelect) {
+                    m_onSelect(m_lanePath, option.value, {}, {}, {});
+                  }
+                  DeferredCall::callLater([this]() { close(); });
+                },
+            .onCancel = [this]() { DeferredCall::callLater([this]() { close(); }); },
+            .configure =
+                [](SearchPicker& picker) {
+                  picker.clearFill();
+                  picker.clearBorder();
+                  picker.setRadius(0.0f);
+                  picker.setPadding(0.0f);
+                },
+        })
+    );
 
-    auto createTitle = makeLabel("", Style::fontSizeCaption * m_scale, colorSpecFromRole(ColorRole::OnSurfaceVariant));
-    createTitle->setVisible(false);
-    createTitle->setParticipatesInLayout(false);
-    m_createTitle = createTitle.get();
-    root->addChild(std::move(createTitle));
+    root->addChild(
+        ui::label({
+            .out = &m_instanceDescription,
+            .text = i18n::tr("settings.entities.widget.instance.id-description"),
+            .fontSize = Style::fontSizeCaption * m_scale,
+            .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+            .maxLines = 2,
+            .visible = false,
+            .participatesInLayout = false,
+        })
+    );
 
-    auto instanceInput = std::make_unique<Input>();
-    instanceInput->setPlaceholder(i18n::tr("settings.entities.widget.instance.id-placeholder"));
-    instanceInput->setFontSize(Style::fontSizeBody * m_scale);
-    instanceInput->setControlHeight(Style::controlHeight * m_scale);
-    instanceInput->setHorizontalPadding(Style::spaceSm * m_scale);
-    instanceInput->setSize(260.0f * m_scale, Style::controlHeight * m_scale);
-    instanceInput->setVisible(false);
-    instanceInput->setParticipatesInLayout(false);
-    instanceInput->setOnChange([this](const std::string& /*value*/) {
-      if (m_instanceInput != nullptr) {
-        m_instanceInput->setInvalid(false);
-      }
-    });
-    instanceInput->setOnSubmit([this](const std::string& /*value*/) { finishCreateFlow(); });
-    m_instanceInput = instanceInput.get();
-    root->addChild(std::move(instanceInput));
+    root->addChild(
+        ui::input({
+            .out = &m_instanceInput,
+            .value = m_createFormVisible && !m_createType.empty()
+                ? std::make_optional(suggestedInstanceId(m_createType))
+                : std::nullopt,
+            .placeholder = i18n::tr("settings.entities.widget.instance.id-placeholder"),
+            .fontSize = Style::fontSizeBody * m_scale,
+            .controlHeight = Style::controlHeight * m_scale,
+            .horizontalPadding = Style::spaceSm * m_scale,
+            .visible = false,
+            .participatesInLayout = false,
+            .onChange =
+                [this](const std::string& /*value*/) {
+                  if (m_instanceInput != nullptr) {
+                    m_instanceInput->setInvalid(false);
+                  }
+                },
+            .onSubmit = [this](const std::string& /*value*/) { finishCreateFlow(); },
+        })
+    );
 
-    auto actionRow = std::make_unique<Flex>();
-    actionRow->setDirection(FlexDirection::Horizontal);
-    actionRow->setAlign(FlexAlign::Center);
-    actionRow->setGap(Style::spaceSm * m_scale);
-    actionRow->setVisible(false);
-    actionRow->setParticipatesInLayout(false);
-    m_createActions = actionRow.get();
-
-    auto backBtn = std::make_unique<Button>();
-    backBtn->setText(i18n::tr("common.actions.cancel"));
-    backBtn->setVariant(ButtonVariant::Ghost);
-    backBtn->setFontSize(Style::fontSizeCaption * m_scale);
-    backBtn->setMinHeight(Style::controlHeightSm * m_scale);
-    backBtn->setPadding(Style::spaceXs * m_scale, Style::spaceSm * m_scale);
-    backBtn->setRadius(Style::scaledRadiusSm(m_scale));
-    backBtn->setOnClick([this]() {
-      m_createFormVisible = false;
-      m_createType.clear();
-      m_createLabel.clear();
-      if (m_instanceInput != nullptr) {
-        m_instanceInput->setInvalid(false);
-      }
-      reopenForCurrentMode();
-    });
-    actionRow->addChild(std::move(backBtn));
-
-    auto createBtn = std::make_unique<Button>();
-    createBtn->setText(i18n::tr("settings.entities.widget.instance.create-save"));
-    createBtn->setVariant(ButtonVariant::Default);
-    createBtn->setFontSize(Style::fontSizeCaption * m_scale);
-    createBtn->setMinHeight(Style::controlHeightSm * m_scale);
-    createBtn->setPadding(Style::spaceXs * m_scale, Style::spaceSm * m_scale);
-    createBtn->setRadius(Style::scaledRadiusSm(m_scale));
-    createBtn->setOnClick([this]() { finishCreateFlow(); });
-    actionRow->addChild(std::move(createBtn));
-    root->addChild(std::move(actionRow));
+    root->addChild(
+        ui::row(
+            {
+                .out = &m_createActions,
+                .align = FlexAlign::Center,
+                .gap = Style::spaceSm * m_scale,
+                .visible = false,
+                .participatesInLayout = false,
+            },
+            ui::button({
+                .text = i18n::tr("common.actions.cancel"),
+                .fontSize = Style::fontSizeCaption * m_scale,
+                .variant = ButtonVariant::Ghost,
+                .minHeight = Style::controlHeightSm * m_scale,
+                .paddingV = Style::spaceXs * m_scale,
+                .paddingH = Style::spaceSm * m_scale,
+                .radius = Style::scaledRadiusSm(m_scale),
+                .onClick =
+                    [this]() {
+                      m_createFormVisible = false;
+                      m_createType.clear();
+                      m_createLabel.clear();
+                      if (m_instanceInput != nullptr) {
+                        m_instanceInput->setInvalid(false);
+                      }
+                      reopenForCurrentMode();
+                    },
+            }),
+            ui::button({
+                .text = i18n::tr("settings.entities.widget.instance.create-save"),
+                .fontSize = Style::fontSizeCaption * m_scale,
+                .variant = ButtonVariant::Default,
+                .minHeight = Style::controlHeightSm * m_scale,
+                .paddingV = Style::spaceXs * m_scale,
+                .paddingH = Style::spaceSm * m_scale,
+                .radius = Style::scaledRadiusSm(m_scale),
+                .onClick = [this]() { finishCreateFlow(); },
+            })
+        )
+    );
 
     contentParent->addChild(std::move(root));
 
-    refreshBodyState();
+    // buildScene wires text-input context and sets focus after populateContent returns.
+    refreshBodyState(false);
   }
 
   void WidgetAddPopup::layoutSheet(float contentWidth, float contentHeight) {
@@ -504,11 +547,45 @@ namespace settings {
     m_root->layout(*renderContext());
   }
 
+  std::string WidgetAddPopup::instanceFormTitle() const {
+    const std::string lane = laneLabel(m_lanePath.empty() ? "" : m_lanePath.back());
+    return i18n::tr("settings.entities.widget.inspector.add-instance-title", "widget", m_createLabel, "lane", lane);
+  }
+
   std::pair<float, float> WidgetAddPopup::popupSize() const {
-    if (m_createFormVisible) {
-      return {360.0f * m_scale, 165.0f * m_scale};
+    constexpr float kPickerWidth = 520.0f;
+    constexpr float kPickerHeight = 420.0f;
+    constexpr float kCreateMinWidth = 360.0f;
+    constexpr float kCreateHeight = 190.0f;
+    constexpr float kCreateMaxWidth = 640.0f;
+    constexpr float kParentMargin = 48.0f;
+
+    if (!m_createFormVisible) {
+      return {kPickerWidth * m_scale, kPickerHeight * m_scale};
     }
-    return {520.0f * m_scale, 420.0f * m_scale};
+
+    float contentWidth = kCreateMinWidth * m_scale;
+    if (m_renderContext != nullptr && !m_createLabel.empty()) {
+      const float fontSize = Style::fontSizeBody * m_scale;
+      const TextMetrics titleMetrics = m_renderContext->measureText(instanceFormTitle(), fontSize, FontWeight::Bold);
+      const float closeBtn = Style::controlHeightSm * m_scale;
+      const float headerGap = Style::spaceSm * m_scale;
+      const float rootPadding = Style::spaceSm * m_scale * 2.0f;
+      const float sheetPadding = computePadding(m_scale) * 2.0f;
+
+      const float measured = titleMetrics.width + headerGap + closeBtn + rootPadding + sheetPadding;
+
+      float maxWidth = kCreateMaxWidth * m_scale;
+      if (m_parentWidth > 0) {
+        maxWidth = std::min(
+            maxWidth,
+            std::max(kCreateMinWidth * m_scale, static_cast<float>(m_parentWidth) * m_scale - kParentMargin * m_scale)
+        );
+      }
+      contentWidth = std::clamp(measured, kCreateMinWidth * m_scale, maxWidth);
+    }
+
+    return {contentWidth, kCreateHeight * m_scale};
   }
 
   void WidgetAddPopup::reopenForCurrentMode() {
@@ -517,9 +594,10 @@ namespace settings {
     }
 
     const auto [panelWidth, panelHeight] = popupSize();
-    const auto cfg =
-        centeredPopupConfig(m_parentWidth, m_parentHeight, static_cast<std::uint32_t>(std::max(1.0f, panelWidth)),
-                            static_cast<std::uint32_t>(std::max(1.0f, panelHeight)), m_serial);
+    const auto cfg = centeredPopupConfig(
+        m_parentWidth, m_parentHeight, static_cast<std::uint32_t>(std::max(1.0f, panelWidth)),
+        static_cast<std::uint32_t>(std::max(1.0f, panelHeight)), m_serial
+    );
 
     m_internalReopen = true;
     const bool opened = openPopupAsChild(cfg, m_parentXdgSurface, m_parentWlSurface, m_output);
@@ -544,6 +622,7 @@ namespace settings {
     }
     m_normalOptions.clear();
     m_instanceOptions.clear();
+    m_presetScripts.clear();
     m_config = nullptr;
     m_parentXdgSurface = nullptr;
     m_parentWlSurface = nullptr;
@@ -553,10 +632,9 @@ namespace settings {
     m_parentHeight = 0;
     m_lanePath.clear();
     m_root = nullptr;
-    m_headerRow = nullptr;
     m_createActions = nullptr;
     m_searchPicker = nullptr;
-    m_createTitle = nullptr;
+    m_instanceDescription = nullptr;
     m_instanceInput = nullptr;
     m_instanceModeEnabled = false;
     m_createFormVisible = false;

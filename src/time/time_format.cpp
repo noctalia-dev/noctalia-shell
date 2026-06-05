@@ -15,8 +15,8 @@
 
 namespace {
 
-  std::string formatAgeSeconds(std::int64_t secs,
-                               std::optional<std::chrono::system_clock::time_point> calendarAfterSixDays) {
+  std::string
+  formatAgeSeconds(std::int64_t secs, std::optional<std::chrono::system_clock::time_point> calendarAfterSixDays) {
     using namespace std::chrono;
     if (secs < 0) {
       secs = 0;
@@ -40,9 +40,9 @@ namespace {
       const std::time_t rawTime = std::chrono::system_clock::to_time_t(*calendarAfterSixDays);
       std::tm localTime{};
       localtime_r(&rawTime, &localTime);
-      char buffer[32];
-      std::strftime(buffer, sizeof(buffer), "%b %e", &localTime);
-      return buffer;
+      if (const std::string date = formatStrftime("%b %e", localTime); !date.empty()) {
+        return date;
+      }
     }
     const long days = static_cast<long>(secs / 86400);
     return i18n::trp("time.relative.days-ago", days);
@@ -67,25 +67,9 @@ namespace {
   }
 
   bool shouldUseStrftimeCompat(std::string_view fmt) {
-    return fmt.find("%-") != std::string_view::npos ||
-           (fmt.find('%') != std::string_view::npos &&
-            (fmt.find('{') == std::string_view::npos || fmt.find("{:") != std::string_view::npos));
-  }
-
-  std::string strftimeSpec(std::string_view spec, const std::tm& local) {
-    std::string fmt(spec);
-    std::size_t size = std::max<std::size_t>(64, fmt.size() * 4 + 16);
-    for (int attempt = 0; attempt < 4; ++attempt) {
-      std::string buffer(size, '\0');
-      std::tm copy = local;
-      const std::size_t written = std::strftime(buffer.data(), buffer.size(), fmt.c_str(), &copy);
-      if (written > 0 || fmt.empty()) {
-        buffer.resize(written);
-        return buffer;
-      }
-      size *= 2;
-    }
-    return {};
+    return fmt.find("%-") != std::string_view::npos
+        || (fmt.find('%') != std::string_view::npos
+            && (fmt.find('{') == std::string_view::npos || fmt.find("{:") != std::string_view::npos));
   }
 
   std::optional<std::string> formatStrftimeCompat(std::string_view fmt, const std::tm& local) {
@@ -93,7 +77,7 @@ namespace {
       return std::nullopt;
     }
     if (fmt.find('{') == std::string_view::npos) {
-      return strftimeSpec(fmt, local);
+      return formatStrftime(fmt, local);
     }
 
     std::string out;
@@ -130,7 +114,7 @@ namespace {
         return std::nullopt;
       }
       spec.remove_prefix(firstPercent);
-      out += strftimeSpec(spec, local);
+      out += formatStrftime(spec, local);
       formattedField = true;
       i = end + 1;
     }
@@ -186,15 +170,70 @@ std::string formatIsoTime(std::string_view isoTime, const char* fmt) {
   }
 
   using namespace std::chrono;
-  const auto tp = sys_days{std::chrono::year{year} / std::chrono::month{static_cast<unsigned>(month)} /
-                           std::chrono::day{static_cast<unsigned>(day)}} +
-                  hours{hour} + minutes{minute};
+  const auto tp =
+      sys_days{
+          std::chrono::year{year}
+          / std::chrono::month{static_cast<unsigned>(month)}
+          / std::chrono::day{static_cast<unsigned>(day)}
+      }
+      + hours{hour}
+      + minutes{minute};
   const auto local = local_seconds{tp.time_since_epoch()};
   try {
     return std::vformat(std::locale(""), normalizedFmt, std::make_format_args(local));
   } catch (...) {
     return normalizedFmt;
   }
+}
+
+std::string formatStrftime(std::string_view fmt, const std::tm& tm) {
+  std::string spec(fmt);
+  std::size_t size = std::max<std::size_t>(64, spec.size() * 4 + 16);
+  for (int attempt = 0; attempt < 6; ++attempt) {
+    std::string buffer(size, '\0');
+    std::tm copy = tm;
+    const std::size_t written = std::strftime(buffer.data(), buffer.size(), spec.c_str(), &copy);
+    if (written > 0 || spec.empty()) {
+      buffer.resize(written);
+      return buffer;
+    }
+    size *= 2;
+  }
+  return {};
+}
+
+std::string formatUtcTime(std::chrono::system_clock::time_point tp, std::string_view fmt) {
+  const std::time_t raw = std::chrono::system_clock::to_time_t(tp);
+  std::tm tm{};
+  gmtime_r(&raw, &tm);
+  return formatStrftime(fmt, tm);
+}
+
+int localeFirstDayOfWeek() {
+  // The _NL_TIME_* week items are glibc-only; elsewhere we keep the Monday fallback.
+#if defined(__GLIBC__)
+  // WEEK_1STDAY is a YYYYMMDD anchor packed into the low 32 bits of the returned
+  // pointer; FIRST_WEEKDAY is a 1-based offset from that anchor in the first byte.
+  const char* firstWeekdayInfo = nl_langinfo(_NL_TIME_FIRST_WEEKDAY);
+  const auto week1stday =
+      static_cast<std::uint32_t>(reinterpret_cast<std::uintptr_t>(nl_langinfo(_NL_TIME_WEEK_1STDAY)));
+  if (firstWeekdayInfo != nullptr && week1stday > 0) {
+    const int firstWeekday = static_cast<unsigned char>(*firstWeekdayInfo);
+    const int year = static_cast<int>(week1stday / 10000);
+    const int month = static_cast<int>((week1stday / 100) % 100);
+    const int day = static_cast<int>(week1stday % 100);
+    const std::chrono::year_month_day anchor{
+        std::chrono::year{year}
+        / std::chrono::month{static_cast<unsigned>(month)}
+        / std::chrono::day{static_cast<unsigned>(day)}
+    };
+    if (firstWeekday >= 1 && anchor.ok()) {
+      const int anchorWeekday = static_cast<int>(std::chrono::weekday{std::chrono::sys_days{anchor}}.c_encoding());
+      return (anchorWeekday + firstWeekday - 1) % 7;
+    }
+  }
+#endif
+  return 1; // ISO-style Monday when the platform does not expose locale week data.
 }
 
 std::string formatCurrentDate() {
@@ -205,10 +244,9 @@ std::string formatCurrentDate() {
     pos += 2;
   }
   const std::time_t now = std::time(nullptr);
-  const std::tm local = *std::localtime(&now);
-  char buf[64]{};
-  std::strftime(buf, sizeof(buf), fmt.c_str(), &local);
-  return std::string(buf);
+  std::tm local{};
+  localtime_r(&now, &local);
+  return formatStrftime(fmt, local);
 }
 
 std::string formatClockTime(std::int64_t seconds) {
@@ -235,11 +273,11 @@ std::string formatFileTime(const std::filesystem::file_time_type& time) {
   const std::time_t value = std::chrono::system_clock::to_time_t(systemTime);
   std::tm tm{};
   localtime_r(&value, &tm);
-  char buf[32];
-  if (std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M", &tm) == 0) {
+  const std::string formatted = formatStrftime("%Y-%m-%d %H:%M", tm);
+  if (formatted.empty()) {
     return i18n::tr("time.file.unknown");
   }
-  return buf;
+  return formatted;
 }
 
 std::string formatTimeAgo(std::chrono::system_clock::time_point tp) {

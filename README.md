@@ -3,22 +3,44 @@ Noctalia
 
 A lightweight Wayland shell and bar built directly on Wayland + OpenGL ES, with no Qt or GTK dependency.
 
-Noctalia is in early development. Expect breaking configuration and behavior changes while the project is still taking shape.
+> [!IMPORTANT]
+> Noctalia v5 is in early/alpha development. Expect breaking configuration and behavior changes while the project is still taking shape.
+
+<p><br/></p>
+
+<p align="center">
+  <img src="https://assets.noctalia.dev/noctalia-logo.svg?v=2" alt="Noctalia Logo" style="width: 192px" />
+</p>
+
+<p align="center">
+  <a href="https://docs.noctalia.dev/v5/getting-started/installation">
+    <img
+      src="https://img.shields.io/badge/🌙_Install_Noctalia-A8AEFF?style=for-the-badge&labelColor=0C0D11"
+      alt="Install Noctalia"
+      style="height: 50px"
+    />
+  </a>
+</p>
+
+<p><br/></p>
+
+<p align="center">
+  <a href="https://github.com/noctalia-dev/noctalia-shell/commits">
+    <img src="https://img.shields.io/github/last-commit/noctalia-dev/noctalia-shell?style=for-the-badge&labelColor=0C0D11&color=A8AEFF&logo=git&logoColor=FFFFFF&label=commit" alt="Last commit" />
+  </a>
+  <a href="https://github.com/noctalia-dev/noctalia-shell/stargazers">
+    <img src="https://img.shields.io/github/stars/noctalia-dev/noctalia-shell?style=for-the-badge&labelColor=0C0D11&color=A8AEFF&logo=github&logoColor=FFFFFF" alt="GitHub stars" />
+  </a>
+  <a href="https://docs.noctalia.dev">
+    <img src="https://img.shields.io/badge/docs-A8AEFF?style=for-the-badge&logo=gitbook&logoColor=FFFFFF&labelColor=0C0D11" alt="Documentation" />
+  </a>
+  <a href="https://discord.noctalia.dev">
+    <img src="https://img.shields.io/badge/discord-A8AEFF?style=for-the-badge&labelColor=0C0D11&logo=discord&logoColor=FFFFFF" alt="Discord" />
+  </a>
+</p>
+
 
 ## Dependencies
-
-### Fedora
-
-```sh
-sudo dnf install meson gcc-c++ just \
-  wayland-devel wayland-protocols-devel \
-  libEGL-devel mesa-libGLES-devel \
-  freetype-devel fontconfig-devel \
-  cairo-devel pango-devel \
-  libxkbcommon-devel glib2-devel \
-  sdbus-cpp-devel pipewire-devel \
-  pam-devel polkit-devel libcurl-devel libwebp-devel librsvg2-devel
-```
 
 ### Arch
 
@@ -26,36 +48,56 @@ sudo dnf install meson gcc-c++ just \
 sudo pacman -S meson gcc just \
   wayland wayland-protocols \
   libglvnd freetype2 fontconfig \
-  cairo pango \
+  cairo pango harfbuzz \
   libxkbcommon glib2 \
   sdbus-cpp libpipewire polkit \
-  pam curl libwebp librsvg
+  pam curl libwebp librsvg \
+  libqalculate libxml2 \
+  jemalloc
+```
+
+### Fedora
+```sh
+sudo dnf install meson gcc-c++ just \
+  wayland-devel wayland-protocols-devel \
+  libEGL-devel mesa-libGLES-devel \
+  freetype-devel fontconfig-devel \
+  cairo-devel pango-devel harfbuzz-devel \
+  libxkbcommon-devel glib2-devel \
+  sdbus-cpp-devel pipewire-devel \
+  pam-devel polkit-devel libcurl-devel libwebp-devel librsvg2-devel \
+  libqalculate-devel libxml2-devel \
+  jemalloc-devel
 ```
 
 ### Debian / Ubuntu
-
 ```sh
 sudo apt install meson g++ just \
   libwayland-dev wayland-protocols \
   libegl-dev libgles-dev \
   libfreetype-dev libfontconfig-dev \
-  libcairo2-dev libpango1.0-dev \
+  libcairo2-dev libpango1.0-dev libharfbuzz-dev \
   libxkbcommon-dev libglib2.0-dev \
   libsdbus-c++-dev libpipewire-0.3-dev \
   libpam0g-dev libpolkit-agent-1-dev libpolkit-gobject-1-dev \
-  libcurl4-openssl-dev libwebp-dev librsvg2-dev
+  libcurl4-openssl-dev libwebp-dev librsvg2-dev \
+  libqalculate-dev libxml2-dev \
+  libjemalloc-dev
 ```
 
 ### AerynOS
 ```sh
-sudo moss it meson g++ just \
+sudo moss it meson build-essential \
   wayland-devel wayland-protocols-devel \
   mesa-libegl-devel mesa-libgl-devel \
   freetype-devel fontconfig-devel \
-  cairo-devel pango-devel \
+  cairo-devel pango-devel harfbuzz-devel \
   libxkbcommon-devel glib2-devel \
   sdbus-cpp-devel pipewire-devel \
-  linux-pam-devel polkit-devel curl-devel libwebp-devel librsvg-devel extra-cmake-modules
+  linux-pam-devel polkit-devel \
+  curl-devel libwebp-devel librsvg-devel \
+  libqalculate-devel libxml2-devel \
+  extra-cmake-modules jemalloc-devel
 ```
 
 ### VoidLinux
@@ -67,25 +109,27 @@ sudo xbps-install meson ninja pkg-config git \
   harfbuzz-devel libxkbcommon-devel pipewire-devel \
   libcurl-devel pam-devel libwebp-devel \
   basu-devel libcurl-devel sdbus-c++-devel \
-  polkit-devel  librsvg-devel
+  polkit-devel librsvg-devel libqalculate-devel libxml2-devel jemalloc-devel
 ```
 
-Vendored dependencies, with no system package needed: `Wuffs`, `tomlplusplus`, `tinyexpr`,
+Vendored dependencies, with no system package needed: `Wuffs`, `tomlplusplus`,
 `nlohmann/json`, `Luau`, `dr_wav`, `fzy`, `stb_image_resize2`, and Material Color Utilities.
 
 System packages required beyond the Wayland/GL stack: `libwebp` handles WebP decoding and thumbnail encoding. Wuffs
-handles the other supported raster image formats.
+handles the other supported raster image formats. `libqalculate` powers the launcher calculator (arithmetic, unit and
+currency conversion).
 
 Polkit agent support requires development files that provide the `polkit-agent-1` and `polkit-gobject-1` pkg-config
 modules. Some distros ship these in the runtime `polkit` package, while split-package distros use names such as
 `polkit-devel`, `polkit-dev`, or `libpolkit-agent-1-dev` / `libpolkit-gobject-1-dev`.
 
-**Optional:** installing `jemalloc` (Fedora: `jemalloc-devel`, Arch: `jemalloc`, Debian/Ubuntu: `libjemalloc-dev`, Void: `jemalloc`)
-reduces memory fragmentation in long-running sessions. When detected at build time it is used automatically.
+`jemalloc` is recommended but optional. It reduces memory fragmentation in long-running sessions, and on glibc systems
+it is used automatically when detected. Use Meson's `-Djemalloc=enabled` or `-Djemalloc=disabled` option to require or
+disable it explicitly.
 
 Sanitizer runtime packages are only needed for ASan/UBSan builds configured with `just configure asan`.
 
-## Building and install
+## Building and installing
 
 Requires [just](https://github.com/casey/just) and [meson](https://mesonbuild.com/).
 
@@ -95,13 +139,24 @@ Requires [just](https://github.com/casey/just) and [meson](https://mesonbuild.co
 just configure release
 just build release
 
-# After building, install
+# Install the selected build mode. This does not build or reconfigure.
 sudo just install release
 ```
 
+Pass a prefix to `configure` to install somewhere other than `/usr/local`:
+
+```sh
+just configure release "$HOME/.local"
+just build release
+just install release
+```
+
+To remove files installed from a build directory, run `just uninstall release`. The `install` and `uninstall` recipes
+require an explicit build mode so debug builds are not installed by accident.
+
 #### Debug build
 ```sh
-# Debug build in build-debug/ don't use debug unless you are debugging...
+# Debug build in build-debug/ for local development and troubleshooting.
 just configure
 just build
 
@@ -148,18 +203,23 @@ Noctalia has two configuration layers:
   Noctalia itself for settings changed through the UI, IPC-backed controls, setup flows, and other runtime actions
   that need persistence.
 
+Noctalia also keeps internal UI/runtime state in `$NOCTALIA_STATE_HOME/noctalia/state.toml`,
+`$XDG_STATE_HOME/noctalia/state.toml`, or `~/.local/state/noctalia/state.toml`. This is app-owned state, not a
+configuration layer, and it is not merged into the active config.
+
 `NOCTALIA_CONFIG_HOME` and `NOCTALIA_STATE_HOME` are Noctalia-specific overrides with the same "home root" semantics
 as the XDG variables. For example, `NOCTALIA_CONFIG_HOME=/tmp/profile` loads config from
 `/tmp/profile/noctalia/`. Prefer these variables over overriding `XDG_CONFIG_HOME` when launching Noctalia from a
 session, because applications started through Noctalia's launcher inherit the shell environment.
 
 Load order is built-in defaults first, then declarative config files, then `settings.toml`.
-Because the state file is applied last, GUI overrides win over matching values in `config.toml`.
+Because the override file is applied last, GUI overrides win over matching values in `config.toml`.
 
 Use the declarative config directory for hand-authored, dotfile-managed configuration. Treat `settings.toml` as an
 app-managed override layer: inspect or delete it when you want to understand or clear GUI changes, but do not rely on
-it as the primary place for curated config. Keeping the override file outside `~/.config` also allows the GUI to save
-changes when the config directory is read-only, such as on NixOS.
+it as the primary place for curated config. Treat `state.toml` as disposable app state: inspect it when debugging UI
+state, or delete it to reset remembered UI state. Keeping these app-managed files outside `~/.config` also allows the
+GUI to save changes when the config directory is read-only, such as on NixOS.
 
 Both layers are watched for changes and hot-reloaded. If neither declarative config nor state overrides exist,
 Noctalia falls back to built-in defaults in code.

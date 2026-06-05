@@ -78,8 +78,8 @@ namespace {
         return PAM_CONV_ERR;
       }
 
-      if ((msg[i]->msg_style == PAM_PROMPT_ECHO_OFF || msg[i]->msg_style == PAM_PROMPT_ECHO_ON) &&
-          replies[i].resp == nullptr) {
+      if ((msg[i]->msg_style == PAM_PROMPT_ECHO_OFF || msg[i]->msg_style == PAM_PROMPT_ECHO_ON)
+          && replies[i].resp == nullptr) {
         for (int j = 0; j <= i; ++j) {
           if (replies[j].resp != nullptr) {
             std::free(replies[j].resp);

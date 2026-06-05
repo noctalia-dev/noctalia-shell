@@ -35,8 +35,9 @@ namespace {
       return nullptr;
     }
 
-    xdg_positioner_set_size(positioner, static_cast<std::int32_t>(config.width),
-                            static_cast<std::int32_t>(config.height));
+    xdg_positioner_set_size(
+        positioner, static_cast<std::int32_t>(config.width), static_cast<std::int32_t>(config.height)
+    );
     xdg_positioner_set_anchor_rect(positioner, config.anchorX, config.anchorY, config.anchorWidth, config.anchorHeight);
     xdg_positioner_set_anchor(positioner, config.anchor);
     xdg_positioner_set_gravity(positioner, config.gravity);
@@ -164,8 +165,10 @@ bool PopupSurface::resize(std::uint32_t width, std::uint32_t height) {
 
   width = std::max(width, 1u);
   height = std::max(height, 1u);
-  if (m_config.width == width && m_config.height == height && Surface::width() == width &&
-      Surface::height() == height) {
+  if (m_config.width == width
+      && m_config.height == height
+      && Surface::width() == width
+      && Surface::height() == height) {
     return true;
   }
 
@@ -201,8 +204,9 @@ void PopupSurface::handleXdgSurfaceConfigure(void* data, xdg_surface* surface, s
   self->Surface::onConfigure(std::max(1u, width), std::max(1u, height));
 }
 
-void PopupSurface::handlePopupConfigure(void* data, xdg_popup* /*popup*/, std::int32_t x, std::int32_t y,
-                                        std::int32_t width, std::int32_t height) {
+void PopupSurface::handlePopupConfigure(
+    void* data, xdg_popup* /*popup*/, std::int32_t x, std::int32_t y, std::int32_t width, std::int32_t height
+) {
   auto* self = static_cast<PopupSurface*>(data);
   self->m_configuredX = x;
   self->m_configuredY = y;

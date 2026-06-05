@@ -4,15 +4,17 @@
 #include "render/animation/animation_manager.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
-#include "ui/controls/audio_spectrum.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "ui/visuals/audio_visualizer.h"
 
 #include <algorithm>
 #include <memory>
 
-AudioVisualizerWidget::AudioVisualizerWidget(PipeWireSpectrum* spectrum, float width, int bands, bool mirrored,
-                                             ColorSpec lowColor, ColorSpec highColor, bool centered, bool showWhenIdle)
+AudioVisualizerWidget::AudioVisualizerWidget(
+    PipeWireSpectrum* spectrum, float width, int bands, bool mirrored, ColorSpec lowColor, ColorSpec highColor,
+    bool centered, bool showWhenIdle
+)
     : m_spectrum(spectrum), m_width(width), m_bands(std::max(1, bands)), m_mirrored(mirrored), m_centered(centered),
       m_showWhenIdle(showWhenIdle), m_lowColor(lowColor), m_highColor(highColor) {}
 
@@ -28,7 +30,7 @@ void AudioVisualizerWidget::create() {
   root->setEnabled(false);
   root->setClipChildren(true);
 
-  auto visualizer = std::make_unique<AudioSpectrum>();
+  auto visualizer = std::make_unique<AudioVisualizer>();
   visualizer->setOrientation(AudioSpectrumOrientation::Horizontal);
   visualizer->setCentered(m_centered);
   visualizer->setMirrored(m_mirrored);
@@ -52,21 +54,21 @@ void AudioVisualizerWidget::doLayout(Renderer& renderer, float containerWidth, f
   }
   applyVisibility();
   if (!m_visible) {
-    root()->setSize(0.0f, 0.0f);
+    root()->setParticipatesInLayout(false);
     return;
   }
 
   // containerWidth/Height are the bar's logical cross/main extents (not the widget slot).
   const bool barIsVertical = containerHeight > containerWidth;
   const float crossLimit = std::max(1.0f, barIsVertical ? containerWidth : containerHeight);
-  const auto refMetrics = renderer.measureFont(Style::fontSizeBody * m_contentScale);
-  const float bodyExtent = std::round(refMetrics.bottom - refMetrics.top);
+  const float bodyExtent = renderer.fontRowExtent(Style::fontSizeBody * m_contentScale);
   const float crossExtent = std::min(bodyExtent, crossLimit);
   const float width = std::max(1.0f, barIsVertical ? crossExtent : m_width * m_contentScale);
   const float height = std::max(1.0f, barIsVertical ? m_width * m_contentScale : crossExtent);
   if (m_visualizer != nullptr) {
-    m_visualizer->setOrientation(barIsVertical ? AudioSpectrumOrientation::Vertical
-                                               : AudioSpectrumOrientation::Horizontal);
+    m_visualizer->setOrientation(
+        barIsVertical ? AudioSpectrumOrientation::Vertical : AudioSpectrumOrientation::Horizontal
+    );
     m_visualizer->setPosition(0.0f, 0.0f);
     m_visualizer->setSize(width, height);
   }
@@ -95,17 +97,34 @@ void AudioVisualizerWidget::onFrameTick(float deltaMs) {
   }
   syncSpectrum();
   m_visualizer->tick(deltaMs);
+  if (m_visible && (!m_visualizer->converged() || (m_spectrum != nullptr && !m_spectrum->idle()))) {
+    requestRedraw();
+  }
 }
 
 bool AudioVisualizerWidget::needsFrameTick() const {
-  // Bar visualizers redraw the full bar surface. Let PipeWire/FFT updates set
-  // the cadence instead of chasing smoothing at the output refresh rate.
-  return m_visualizer != nullptr &&
-         (m_pendingSpectrumUpdate || shouldBeVisible() != m_visible || m_fadingOut || m_visibilityAnimId != 0);
+  if (m_visualizer == nullptr) {
+    return false;
+  }
+  if (m_pendingSpectrumUpdate || shouldBeVisible() != m_visible || m_fadingOut || m_visibilityAnimId != 0) {
+    return true;
+  }
+  if (!m_visible) {
+    return false;
+  }
+  if (!m_visualizer->converged()) {
+    return true;
+  }
+  // Keep ticking while audio is active so every visualizer reads fresh band data.
+  return m_spectrum != nullptr && !m_spectrum->idle();
 }
 
 void AudioVisualizerWidget::syncSpectrum() {
-  if (!m_pendingSpectrumUpdate || m_visualizer == nullptr || m_spectrum == nullptr || m_listenerId == 0) {
+  if (m_visualizer == nullptr || m_spectrum == nullptr || m_listenerId == 0) {
+    return;
+  }
+  const bool shouldPull = m_pendingSpectrumUpdate || (m_visible && !m_spectrum->idle());
+  if (!shouldPull) {
     return;
   }
 
@@ -165,11 +184,9 @@ void AudioVisualizerWidget::setVisibilityCollapsed(bool collapsed) {
     return;
   }
   root()->setVisible(!collapsed);
+  root()->setParticipatesInLayout(!collapsed);
   if (m_visualizer != nullptr) {
     m_visualizer->setVisible(!collapsed);
-  }
-  if (collapsed) {
-    root()->setSize(0.0f, 0.0f);
   }
 }
 
@@ -214,6 +231,7 @@ void AudioVisualizerWidget::startOpacityAnimation(float targetOpacity, bool coll
         }
         requestUpdate();
       },
-      this);
+      this
+  );
   requestRedraw();
 }

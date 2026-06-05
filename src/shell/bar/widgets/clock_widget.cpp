@@ -4,7 +4,7 @@
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "time/time_format.h"
-#include "ui/controls/label.h"
+#include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -26,8 +26,11 @@ namespace {
   }
 } // namespace
 
-ClockWidget::ClockWidget(wl_output* output, std::string format, std::string verticalFormat)
-    : m_output(output), m_format(std::move(format)), m_verticalFormat(std::move(verticalFormat)) {}
+ClockWidget::ClockWidget(
+    wl_output* /*output*/, std::string format, std::string verticalFormat, std::string tooltipFormat
+)
+    : m_format(std::move(format)), m_verticalFormat(std::move(verticalFormat)),
+      m_tooltipFormat(std::move(tooltipFormat)) {}
 
 std::string ClockWidget::formatTimeText() const {
   if (!m_isVertical) {
@@ -64,28 +67,38 @@ std::string ClockWidget::formatTimeText() const {
   return out;
 }
 
+std::string ClockWidget::formatTooltipText() const {
+  if (m_tooltipFormat.empty()) {
+    return {};
+  }
+
+  return formatLocalTime(m_tooltipFormat.c_str());
+}
+
 void ClockWidget::create() {
   auto area = std::make_unique<InputArea>();
-  area->setOnClick(
-      [this](const InputArea::PointerData& /*data*/) { requestPanelToggle("control-center", "calendar"); });
+  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
+    requestPanelToggle("control-center", "calendar");
+  });
 
-  auto label = std::make_unique<Label>();
-  label->setBold(true);
-  label->setTextAlign(TextAlign::Center);
-  label->setFontSize(Style::fontSizeBody * m_contentScale);
-  // Clock text changes every minute and month names switch between descender
-  // and descender-less forms (e.g. "Mar" ↔ "Apr"), so anchor the baseline to
-  // a stable ink envelope instead of the current text's ink.
-  m_label = label.get();
-  area->addChild(std::move(label));
+  area->addChild(
+      ui::label({
+          .out = &m_label,
+          .fontSize = Style::fontSizeBody * m_contentScale,
+          .fontWeight = labelFontWeight(),
+          .textAlign = TextAlign::Center,
+      })
+  );
 
-  auto secondaryLabel = std::make_unique<Label>();
-  secondaryLabel->setBold(false);
-  secondaryLabel->setTextAlign(TextAlign::Center);
-  secondaryLabel->setFontSize(Style::fontSizeBody * m_contentScale * kStackedSecondaryScale);
-  secondaryLabel->setVisible(false);
-  m_secondaryLabel = secondaryLabel.get();
-  area->addChild(std::move(secondaryLabel));
+  area->addChild(
+      ui::label({
+          .out = &m_secondaryLabel,
+          .fontSize = Style::fontSizeBody * m_contentScale * kStackedSecondaryScale,
+          .fontWeight = labelFontWeight(),
+          .textAlign = TextAlign::Center,
+          .visible = false,
+      })
+  );
 
   setRoot(std::move(area));
 }
@@ -107,12 +120,13 @@ void ClockWidget::doLayout(Renderer& renderer, float containerWidth, float conta
   const float stackedSecondaryScale = noCapsule ? kStackedSecondaryScaleNoCapsule : kStackedSecondaryScale;
   float primaryFontSize = Style::fontSizeBody * m_contentScale * (showSecondary ? stackedPrimaryScale : 1.0f);
   float secondaryFontSize = Style::fontSizeBody * m_contentScale * stackedSecondaryScale;
+  const FontWeight fontWeight = labelFontWeight();
 
   // Horizontal clocks use single-line metrics unless the configured format
   // explicitly contains line breaks.
   m_label->setFontSize(primaryFontSize);
-  m_label->setBold(true);
-  m_secondaryLabel->setBold(true);
+  m_label->setFontWeight(fontWeight);
+  m_secondaryLabel->setFontWeight(fontWeight);
   m_secondaryLabel->setFontSize(secondaryFontSize);
   m_label->setMaxLines(m_isVertical ? 0 : 1);
   m_label->setMinWidth(0.0f);
@@ -143,9 +157,9 @@ void ClockWidget::doLayout(Renderer& renderer, float containerWidth, float conta
 
   if (showSecondary) {
     const auto primaryMetrics =
-        renderer.measureText(m_lastPrimaryText, primaryFontSize, true, 0.0f, 1, TextAlign::Start);
+        renderer.measureText(m_lastPrimaryText, primaryFontSize, fontWeight, 0.0f, 1, TextAlign::Start);
     const auto secondaryMetrics =
-        renderer.measureText(m_lastSecondaryText, secondaryFontSize, false, 0.0f, 1, TextAlign::Start);
+        renderer.measureText(m_lastSecondaryText, secondaryFontSize, fontWeight, 0.0f, 1, TextAlign::Start);
     const float primaryInkWidth = std::max(0.0f, primaryMetrics.inkRight - primaryMetrics.inkLeft);
     const float secondaryInkWidth = std::max(0.0f, secondaryMetrics.inkRight - secondaryMetrics.inkLeft);
     width = std::max({width, primaryInkWidth, secondaryInkWidth});
@@ -187,5 +201,17 @@ void ClockWidget::doUpdate(Renderer& renderer) {
     m_lastSecondaryText = std::move(secondaryText);
     m_secondaryLabel->setText(m_lastSecondaryText);
     m_secondaryLabel->measure(renderer);
+  }
+
+  if (auto* area = static_cast<InputArea*>(root()); area != nullptr) {
+    std::string tooltipText = formatTooltipText();
+
+    if (tooltipText.empty()) {
+      m_lastTooltipText.clear();
+      area->clearTooltip();
+    } else if (tooltipText != m_lastTooltipText) {
+      m_lastTooltipText = std::move(tooltipText);
+      area->setTooltip(m_lastTooltipText);
+    }
   }
 }

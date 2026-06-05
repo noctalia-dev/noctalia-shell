@@ -85,9 +85,15 @@ void ScreenCornerProgram::ensureInitialized() {
   m_softnessLocation = glGetUniformLocation(m_program.id(), "u_softness");
   m_transformLocation = glGetUniformLocation(m_program.id(), "u_transform");
 
-  if (m_positionLocation < 0 || m_surfaceSizeLocation < 0 || m_sizeLocation < 0 || m_pixelScaleLocation < 0 ||
-      m_colorLocation < 0 || m_cornerLocation < 0 || m_exponentLocation < 0 || m_softnessLocation < 0 ||
-      m_transformLocation < 0) {
+  if (m_positionLocation < 0
+      || m_surfaceSizeLocation < 0
+      || m_sizeLocation < 0
+      || m_pixelScaleLocation < 0
+      || m_colorLocation < 0
+      || m_cornerLocation < 0
+      || m_exponentLocation < 0
+      || m_softnessLocation < 0
+      || m_transformLocation < 0) {
     throw std::runtime_error("failed to query screen-corner shader locations");
   }
 }
@@ -105,8 +111,10 @@ void ScreenCornerProgram::destroy() {
   m_transformLocation = -1;
 }
 
-void ScreenCornerProgram::draw(float surfaceWidth, float surfaceHeight, float pixelScaleX, float pixelScaleY,
-                               float width, float height, const ScreenCornerStyle& style, const Mat3& transform) const {
+void ScreenCornerProgram::draw(
+    float surfaceWidth, float surfaceHeight, float pixelScaleX, float pixelScaleY, float width, float height,
+    const ScreenCornerStyle& style, const Mat3& transform
+) const {
   if (!m_program.isValid() || width <= 0.0f || height <= 0.0f || style.color.a <= 0.0f) {
     return;
   }

@@ -3,6 +3,7 @@
 #include "compositors/compositor_detect.h"
 #include "config/config_service.h"
 #include "core/log.h"
+#include "render/backend/render_backend.h"
 #include "render/core/shared_texture_cache.h"
 #include "shell/backdrop/backdrop_surface.h"
 #include "ui/palette.h"
@@ -35,15 +36,16 @@ void Backdrop::destroyInstances() {
   m_instances.clear();
 }
 
-bool Backdrop::initialize(WaylandConnection& wayland, ConfigService* config, SharedTextureCache* textureCache,
-                          GlSharedContext* sharedGl) {
+bool Backdrop::initialize(
+    WaylandConnection& wayland, ConfigService* config, SharedTextureCache* textureCache, GlSharedContext* sharedGl
+) {
   m_wayland = &wayland;
   m_config = config;
   m_textureCache = textureCache;
   m_sharedGl = sharedGl;
 
   // Register reload callback unconditionally so toggling enabled in config works.
-  m_config->addReloadCallback([this]() { reload(); });
+  m_config->addReloadCallback([this]() { reload(); }, "backdrop");
 
   if (!m_config->config().backdrop.enabled) {
     kLog.info("disabled in config");
@@ -53,26 +55,66 @@ bool Backdrop::initialize(WaylandConnection& wayland, ConfigService* config, Sha
   if (shouldHaveInstances()) {
     syncInstances();
   }
+  cacheReloadBaseline();
   return true;
 }
 
+void Backdrop::cacheReloadBaseline() {
+  if (m_config == nullptr) {
+    return;
+  }
+  const auto& cfg = m_config->config();
+  m_lastBackdropConfig = cfg.backdrop;
+  m_lastShouldHaveInstances = shouldHaveInstances();
+  m_lastWallpaperEnabled = cfg.wallpaper.enabled;
+  m_lastWallpaperFillMode = cfg.wallpaper.fillMode;
+}
+
 void Backdrop::reload() {
-  kLog.info("reloading config");
-
-  // Always tear down existing instances. This is necessary because a
-  // wallpaper enable/disable cycle resets the wallpaper share context, and any
-  // backdrop instances created against the old context cannot access the new
-  // textures. Full teardown + recreate is safe since backdrop surfaces are
-  // hidden by the compositor outside of overview mode (no visible flash).
-  destroyInstances();
-
-  if (!m_config->config().backdrop.enabled) {
+  if (m_config == nullptr) {
     return;
   }
 
-  if (shouldHaveInstances()) {
-    syncInstances();
+  const auto& cfg = m_config->config();
+  const bool shouldInstances = shouldHaveInstances();
+  const bool recreateNeeded = cfg.backdrop != m_lastBackdropConfig
+      || shouldInstances != m_lastShouldHaveInstances
+      || cfg.wallpaper.enabled != m_lastWallpaperEnabled;
+
+  if (!recreateNeeded
+      && cfg.backdrop.enabled
+      && shouldInstances
+      && !m_instances.empty()
+      && cfg.wallpaper.fillMode == m_lastWallpaperFillMode) {
+    return;
   }
+
+  cacheReloadBaseline();
+
+  if (!cfg.backdrop.enabled || !shouldInstances) {
+    if (!m_instances.empty()) {
+      kLog.info("reloading config");
+      destroyInstances();
+    }
+    return;
+  }
+
+  if (!recreateNeeded) {
+    for (auto& inst : m_instances) {
+      updateRendererState(*inst);
+      if (inst->surface != nullptr) {
+        inst->surface->requestRedraw();
+      }
+    }
+    return;
+  }
+
+  kLog.info("reloading config");
+
+  // Full teardown is required when backdrop or wallpaper enablement changes because
+  // a wallpaper enable/disable cycle resets the shared texture context.
+  destroyInstances();
+  syncInstances();
 }
 
 void Backdrop::onOutputChange() {
@@ -102,6 +144,32 @@ void Backdrop::onThemeChanged() {
     return;
   }
   for (auto& inst : m_instances) {
+    updateRendererState(*inst);
+    if (inst->surface != nullptr) {
+      inst->surface->requestRedraw();
+    }
+  }
+}
+
+void Backdrop::onGpuResourcesInvalidated() {
+  for (auto& inst : m_instances) {
+    if (inst->surface != nullptr) {
+      inst->surface->onGpuResourcesInvalidated();
+    }
+    if (!inst->currentPath.empty()) {
+      if (m_textureCache != nullptr && m_textureCache->shared()) {
+        inst->currentTexture = m_textureCache->peek(inst->currentPath);
+      } else if (inst->surface != nullptr) {
+        auto* renderer = inst->surface->wallpaperRenderer();
+        if (renderer != nullptr && renderer->backend() != nullptr) {
+          renderer->backend()->makeCurrentNoSurface();
+          if (inst->currentTexture.id != 0) {
+            renderer->backend()->textureManager().unload(inst->currentTexture);
+          }
+          inst->currentTexture = renderer->backend()->textureManager().loadFromFile(inst->currentPath, 0, true);
+        }
+      }
+    }
     updateRendererState(*inst);
     if (inst->surface != nullptr) {
       inst->surface->requestRedraw();
@@ -139,8 +207,9 @@ void Backdrop::syncInstances() {
       continue;
     }
 
-    bool exists = std::any_of(m_instances.begin(), m_instances.end(),
-                              [&output](const auto& inst) { return inst->outputName == output.name; });
+    bool exists = std::any_of(m_instances.begin(), m_instances.end(), [&output](const auto& inst) {
+      return inst->outputName == output.name;
+    });
     if (!exists) {
       createInstance(output);
     }
@@ -199,6 +268,13 @@ void Backdrop::createInstance(const WaylandOutput& output) {
 
 void Backdrop::loadWallpaper(BackdropInstance& inst, const std::string& path) {
   auto tex = m_textureCache->acquire(path);
+  if (tex.id == 0 && !m_textureCache->shared() && inst.surface != nullptr) {
+    auto* renderer = inst.surface->wallpaperRenderer();
+    if (renderer != nullptr && renderer->backend() != nullptr) {
+      renderer->backend()->makeCurrentNoSurface();
+      tex = renderer->backend()->textureManager().loadFromFile(path, 0, true);
+    }
+  }
   if (tex.id == 0) {
     kLog.warn("failed to load {}", path);
     return;
@@ -226,9 +302,10 @@ void Backdrop::updateRendererState(BackdropInstance& inst) {
   inst.surface->setTintColor(surface.r, surface.g, surface.b);
 
   if (inst.currentTexture.id != 0) {
-    inst.surface->setWallpaperState(inst.currentTexture.id, static_cast<float>(inst.currentTexture.width),
-                                    static_cast<float>(inst.currentTexture.height),
-                                    m_config->config().wallpaper.fillMode);
+    inst.surface->setWallpaperState(
+        inst.currentTexture.id, static_cast<float>(inst.currentTexture.width),
+        static_cast<float>(inst.currentTexture.height), m_config->config().wallpaper.fillMode
+    );
   } else {
     inst.surface->setWallpaperState({}, 0.0f, 0.0f, m_config->config().wallpaper.fillMode);
   }
@@ -236,7 +313,15 @@ void Backdrop::updateRendererState(BackdropInstance& inst) {
 
 void Backdrop::releaseInstanceTexture(BackdropInstance& inst, bool clearPath) {
   if (inst.currentTexture.id != 0) {
-    m_textureCache->release(inst.currentTexture, inst.currentPath);
+    if (m_textureCache->shared()) {
+      m_textureCache->release(inst.currentTexture, inst.currentPath);
+    } else if (inst.surface != nullptr) {
+      auto* renderer = inst.surface->wallpaperRenderer();
+      if (renderer != nullptr && renderer->backend() != nullptr) {
+        renderer->backend()->makeCurrentNoSurface();
+        renderer->backend()->textureManager().unload(inst.currentTexture);
+      }
+    }
     inst.currentTexture = {};
   }
   if (clearPath) {

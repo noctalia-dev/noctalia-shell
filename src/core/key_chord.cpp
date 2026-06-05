@@ -102,10 +102,6 @@ std::optional<KeyChord> parseKeyChordSpec(std::string_view rawSpec) {
     return std::nullopt;
   }
 
-  if (modifiers == 0 && isPrintableKey(static_cast<std::uint32_t>(sym))) {
-    throw std::runtime_error("printable keys require a modifier (e.g. \"Ctrl+a\")");
-  }
-
   return KeyChord{.sym = static_cast<std::uint32_t>(sym), .modifiers = modifiers};
 }
 

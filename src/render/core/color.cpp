@@ -91,8 +91,9 @@ void rgbToHsv(const Color& rgb, float& h, float& s, float& v) {
 }
 
 float relativeLuminance(const Color& color) {
-  return 0.2126f * linearizedColorChannel(color.r) + 0.7152f * linearizedColorChannel(color.g) +
-         0.0722f * linearizedColorChannel(color.b);
+  return 0.2126f * linearizedColorChannel(color.r)
+      + 0.7152f * linearizedColorChannel(color.g)
+      + 0.0722f * linearizedColorChannel(color.b);
 }
 
 Color readableTextColorForBackground(const Color& background) {

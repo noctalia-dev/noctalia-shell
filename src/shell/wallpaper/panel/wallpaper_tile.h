@@ -1,11 +1,15 @@
 #pragma once
 
+#include "config/config_types.h"
 #include "render/scene/input_area.h"
 #include "shell/wallpaper/panel/wallpaper_scanner.h"
 
 #include <functional>
+#include <optional>
 #include <string>
 
+class Box;
+class Button;
 class Flex;
 class Glyph;
 class Image;
@@ -44,26 +48,39 @@ public:
   void refreshThumbnail(Renderer& renderer);
 
   void setSelected(bool selected);
+  void setCurrent(bool current);
   void setHoveredVisual(bool hovered);
+  void setFavoriteState(bool favorited, std::optional<ThemeMode> themeModeBadge);
+  void setStarHovered(bool hovered);
+  void setOnStarClick(std::function<void(const WallpaperEntry&)> callback);
   void setOnTileClick(ClickCallback callback);
   void setOnTileMotion(HoverCallback callback);
   void setOnTileEnter(HoverCallback callback);
   void setOnTileLeave(HoverCallback callback);
 
+  [[nodiscard]] static bool
+  hitTestStarRegion(float cellWidth, float cellHeight, float contentScale, float localX, float localY) noexcept;
+
   [[nodiscard]] const WallpaperEntry* entry() const noexcept { return m_hasEntry ? &m_entry : nullptr; }
 
 private:
   void applyVisualState();
+  void applyStarVisualState();
+  void layoutThumbOverlays();
   void doLayout(Renderer& renderer) override;
   void releaseThumbnail();
 
   float m_cellWidth;
   float m_cellHeight;
   float m_contentScale;
+  float m_thumbFrameWidth = 0.0f;
+  float m_thumbFrameHeight = 0.0f;
 
   Flex* m_layout = nullptr;
-  Flex* m_thumbBox = nullptr;
+  Box* m_thumbHost = nullptr;
   Image* m_thumb = nullptr;
+  Glyph* m_starGlyph = nullptr;
+  Button* m_modeBadge = nullptr;
   Glyph* m_folderGlyph = nullptr;
   Glyph* m_loadingGlyph = nullptr;
   Label* m_label = nullptr;
@@ -71,10 +88,16 @@ private:
   WallpaperEntry m_entry;
   bool m_hasEntry = false;
   bool m_selected = false;
+  bool m_current = false;
   bool m_hoveredVisual = false;
+  bool m_favorited = false;
+  bool m_starHoveredVisual = false;
+  std::optional<ThemeMode> m_themeModeBadge;
+  bool m_missingFile = false;
   bool m_loadingThumbnail = false;
   std::string m_thumbPath;
   ClickCallback m_onClick;
+  std::function<void(const WallpaperEntry&)> m_onStarClick;
   HoverCallback m_onMotion;
   HoverCallback m_onEnter;
   HoverCallback m_onLeave;

@@ -4,6 +4,7 @@
 #include "core/log.h"
 #include "core/toml.h" // IWYU pragma: keep
 #include "net/http_client.h"
+#include "util/checksum.h"
 #include "util/string_utils.h"
 
 #include <algorithm>
@@ -12,6 +13,7 @@
 #include <filesystem>
 #include <fstream>
 #include <json.hpp>
+#include <map>
 #include <memory>
 #include <optional>
 #include <sstream>
@@ -26,10 +28,12 @@ namespace noctalia::theme {
 
     constexpr Logger kLog("community_templates");
     constexpr std::string_view kCatalogUrl = "https://api.noctalia.dev/templates";
+    constexpr std::string_view kCacheMetadataFilename = ".noctalia-cache.json";
 
     struct CommunityTemplateFile {
       std::string name;
       std::string md5;
+      std::optional<std::filesystem::perms> mode;
     };
 
     struct CommunityTemplateEntry {
@@ -49,7 +53,15 @@ namespace noctalia::theme {
       std::vector<CommunityTemplateEntry> entries;
     };
 
+    struct CacheMetadata {
+      std::map<std::string, std::string> fileMd5s;
+    };
+
     std::filesystem::path catalogCachePath() { return communityTemplatesCacheDir() / "catalog.json"; }
+
+    std::filesystem::path cacheMetadataPath(const std::filesystem::path& dir) {
+      return dir / std::string(kCacheMetadataFilename);
+    }
 
     std::string stringField(const nlohmann::json& obj, std::string_view snake, std::string_view camel = {}) {
       auto read = [&](std::string_view key) -> std::string {
@@ -183,7 +195,22 @@ namespace noctalia::theme {
       return out;
     }
 
-    std::vector<CommunityTemplateFile> parseFiles(const nlohmann::json& obj) {
+    std::optional<std::filesystem::perms> parseFileMode(std::string_view mode) {
+      if (mode.size() != 4)
+        return std::nullopt;
+
+      unsigned int value = 0;
+      for (char ch : mode) {
+        if (ch < '0' || ch > '7')
+          return std::nullopt;
+        value = (value << 3U) | static_cast<unsigned int>(ch - '0');
+      }
+      if ((value & 07000U) != 0)
+        return std::nullopt;
+      return static_cast<std::filesystem::perms>(value);
+    }
+
+    std::vector<CommunityTemplateFile> parseFiles(std::string_view templateId, const nlohmann::json& obj) {
       std::vector<CommunityTemplateFile> out;
       auto it = obj.find("files");
       if (it == obj.end() || !it->is_array())
@@ -194,8 +221,18 @@ namespace noctalia::theme {
         CommunityTemplateFile file;
         file.name = stringField(item, "name");
         file.md5 = stringField(item, "md5");
-        if (!file.name.empty())
-          out.push_back(std::move(file));
+        if (file.name.empty())
+          continue;
+
+        const std::string mode = stringField(item, "mode");
+        if (mode.empty()) {
+          kLog.warn("community template '{}' file '{}' is missing mode metadata", templateId, file.name);
+        } else if (auto parsed = parseFileMode(mode)) {
+          file.mode = *parsed;
+        } else {
+          kLog.warn("community template '{}' file '{}' has invalid mode metadata '{}'", templateId, file.name, mode);
+        }
+        out.push_back(std::move(file));
       }
       return out;
     }
@@ -211,7 +248,7 @@ namespace noctalia::theme {
       if (info.displayName.empty())
         info.displayName = info.id;
       info.category = stringField(obj, "category");
-      info.files = parseFiles(obj);
+      info.files = parseFiles(info.id, obj);
       info.entries = parseEntries(obj);
       return info;
     }
@@ -245,10 +282,11 @@ namespace noctalia::theme {
       }
     }
 
-    std::optional<CommunityTemplateInfo> findInfo(const std::vector<CommunityTemplateInfo>& catalog,
-                                                  std::string_view id) {
-      auto it = std::find_if(catalog.begin(), catalog.end(),
-                             [id](const CommunityTemplateInfo& info) { return info.id == id; });
+    std::optional<CommunityTemplateInfo>
+    findInfo(const std::vector<CommunityTemplateInfo>& catalog, std::string_view id) {
+      auto it = std::find_if(catalog.begin(), catalog.end(), [id](const CommunityTemplateInfo& info) {
+        return info.id == id;
+      });
       if (it == catalog.end())
         return std::nullopt;
       return *it;
@@ -272,27 +310,202 @@ namespace noctalia::theme {
       return path.parent_path() / (path.filename().string() + ".md5");
     }
 
-    std::string readSmallFile(const std::filesystem::path& path) {
-      std::ifstream in(path);
+    std::optional<std::string> readTextFile(const std::filesystem::path& path) {
+      std::ifstream in(path, std::ios::binary);
       if (!in)
-        return {};
+        return std::nullopt;
+      std::stringstream buf;
+      buf << in.rdbuf();
+      return buf.str();
+    }
+
+    bool writeTextFile(const std::filesystem::path& path, std::string_view text) {
+      std::error_code ec;
+      std::filesystem::create_directories(path.parent_path(), ec);
+      std::ofstream out(path, std::ios::binary);
+      if (!out)
+        return false;
+      out << text;
+      return static_cast<bool>(out);
+    }
+
+    std::optional<std::string> readLegacyMd5Sidecar(const std::filesystem::path& path) {
+      std::ifstream in(sidecarPath(path));
+      if (!in)
+        return std::nullopt;
       std::string value;
       std::getline(in, value);
+      value = StringUtils::toLower(StringUtils::trim(value));
+      if (value.empty())
+        return std::nullopt;
       return value;
     }
 
-    void writeSmallFile(const std::filesystem::path& path, std::string_view value) {
-      std::ofstream out(path);
-      if (out)
-        out << value << '\n';
+    void removeLegacyMd5Sidecar(const std::filesystem::path& path) {
+      std::error_code ec;
+      std::filesystem::remove(sidecarPath(path), ec);
     }
 
-    bool cacheMatches(const CommunityTemplateFile& file, const std::filesystem::path& dest) {
-      if (!std::filesystem::exists(dest))
-        return false;
-      if (file.md5.empty())
+    CacheMetadata readCacheMetadata(const std::filesystem::path& dir) {
+      CacheMetadata metadata;
+      const std::filesystem::path path = cacheMetadataPath(dir);
+      std::ifstream in(path);
+      if (!in)
+        return metadata;
+
+      try {
+        std::stringstream buf;
+        buf << in.rdbuf();
+        const auto root = nlohmann::json::parse(buf.str());
+        const auto files = root.find("files");
+        if (files == root.end() || !files->is_object())
+          return metadata;
+
+        for (const auto& [name, value] : files->items()) {
+          std::string md5;
+          if (value.is_string()) {
+            md5 = value.get<std::string>();
+          } else if (value.is_object()) {
+            md5 = stringField(value, "md5");
+          }
+          md5 = StringUtils::toLower(StringUtils::trim(md5));
+          if (!name.empty() && !md5.empty()) {
+            metadata.fileMd5s[name] = std::move(md5);
+          }
+        }
+      } catch (const std::exception& e) {
+        kLog.warn("failed to parse community template cache metadata {}: {}", path.string(), e.what());
+      }
+      return metadata;
+    }
+
+    void writeCacheMetadata(const std::filesystem::path& dir, const CacheMetadata& metadata) {
+      std::error_code ec;
+      std::filesystem::create_directories(dir, ec);
+
+      nlohmann::json root;
+      root["version"] = 1;
+      root["files"] = nlohmann::json::object();
+      for (const auto& [name, md5] : metadata.fileMd5s) {
+        root["files"][name] = md5;
+      }
+
+      const std::filesystem::path path = cacheMetadataPath(dir);
+      std::ofstream out(path);
+      if (!out) {
+        kLog.warn("failed to write community template cache metadata {}", path.string());
+        return;
+      }
+      out << root.dump(2) << '\n';
+    }
+
+    void recordCachedFile(CacheMetadata& metadata, std::string_view name, const std::filesystem::path& path) {
+      const std::string md5 = util::fileMd5Hex(path);
+      if (!md5.empty()) {
+        metadata.fileMd5s[std::string(name)] = md5;
+      }
+    }
+
+    std::filesystem::perms fileModeMask() {
+      using P = std::filesystem::perms;
+      return P::owner_read
+          | P::owner_write
+          | P::owner_exec
+          | P::group_read
+          | P::group_write
+          | P::group_exec
+          | P::others_read
+          | P::others_write
+          | P::others_exec
+          | P::set_uid
+          | P::set_gid
+          | P::sticky_bit;
+    }
+
+    void syncCachedFileMode(
+        std::string_view templateId, const CommunityTemplateFile& file, const std::filesystem::path& dest
+    ) {
+      if (!file.mode.has_value())
+        return;
+
+      std::error_code ec;
+      const std::filesystem::file_status status = std::filesystem::symlink_status(dest, ec);
+      if (ec || !std::filesystem::exists(status))
+        return;
+      if (std::filesystem::is_symlink(status)) {
+        kLog.warn("skipping permission sync for symlinked community template file {}", dest.string());
+        return;
+      }
+      if (!std::filesystem::is_regular_file(status)) {
+        kLog.warn("skipping permission sync for non-regular community template file {}", dest.string());
+        return;
+      }
+
+      const std::filesystem::perms currentMode = status.permissions() & fileModeMask();
+      if (currentMode == *file.mode)
+        return;
+
+      std::filesystem::permissions(dest, *file.mode, std::filesystem::perm_options::replace, ec);
+      if (ec) {
+        kLog.warn("failed to set mode for community template '{}' file '{}': {}", templateId, file.name, ec.message());
+      }
+    }
+
+    bool cacheFileNeedsDownload(
+        std::string_view templateId, const CommunityTemplateFile& file, const std::filesystem::path& dest,
+        CacheMetadata& metadata
+    ) {
+      if (!std::filesystem::exists(dest)) {
+        removeLegacyMd5Sidecar(dest);
         return true;
-      return readSmallFile(sidecarPath(dest)) == file.md5;
+      }
+
+      const std::string currentMd5 = util::fileMd5Hex(dest);
+      if (currentMd5.empty()) {
+        kLog.warn("failed to checksum cached community template file {}; preserving it", dest.string());
+        return false;
+      }
+
+      const std::string catalogMd5 = StringUtils::toLower(file.md5);
+      std::optional<std::string> recordedMd5;
+      if (auto it = metadata.fileMd5s.find(file.name); it != metadata.fileMd5s.end()) {
+        recordedMd5 = it->second;
+      } else if (auto legacyMd5 = readLegacyMd5Sidecar(dest)) {
+        if (*legacyMd5 == currentMd5) {
+          metadata.fileMd5s[file.name] = currentMd5;
+          recordedMd5 = currentMd5;
+        } else {
+          removeLegacyMd5Sidecar(dest);
+          kLog.warn(
+              "community template '{}' file '{}' has local edits; skipping upstream update", templateId, file.name
+          );
+          return false;
+        }
+      }
+      removeLegacyMd5Sidecar(dest);
+
+      if (!recordedMd5.has_value()) {
+        if (!catalogMd5.empty() && currentMd5 == catalogMd5) {
+          metadata.fileMd5s[file.name] = currentMd5;
+        } else if (!catalogMd5.empty()) {
+          kLog.warn(
+              "community template '{}' file '{}' is untracked in the cache; skipping upstream update", templateId,
+              file.name
+          );
+        }
+        return false;
+      }
+
+      if (currentMd5 != *recordedMd5) {
+        if (!catalogMd5.empty() && currentMd5 == catalogMd5) {
+          metadata.fileMd5s[file.name] = currentMd5;
+          return false;
+        }
+        kLog.warn("community template '{}' file '{}' has local edits; skipping upstream update", templateId, file.name);
+        return false;
+      }
+
+      return !catalogMd5.empty() && currentMd5 != catalogMd5;
     }
 
     std::string urlEncodePath(std::string_view path) {
@@ -311,18 +524,8 @@ namespace noctalia::theme {
       return out;
     }
 
-    void writeGeneratedTemplateToml(const CommunityTemplateInfo& info) {
-      if (info.entries.empty())
-        return;
-
-      const std::filesystem::path path = communityTemplateConfigPath(info.id);
-      std::error_code ec;
-      std::filesystem::create_directories(path.parent_path(), ec);
-      std::ofstream out(path);
-      if (!out) {
-        kLog.warn("failed to write community template metadata {}", path.string());
-        return;
-      }
+    std::string renderGeneratedTemplateToml(const CommunityTemplateInfo& info) {
+      std::ostringstream out;
 
       out << "[catalog." << tomlKey(info.id) << "]\n";
       writeTomlString(out, "name", info.displayName);
@@ -340,19 +543,69 @@ namespace noctalia::theme {
         if (entry.index.has_value())
           out << "index = " << *entry.index << "\n";
       }
+      return out.str();
     }
 
-    std::optional<AvailableTemplate> readTemplateTomlInfo(const std::filesystem::path& path) {
+    void syncGeneratedTemplateToml(const CommunityTemplateInfo& info, CacheMetadata& metadata) {
+      if (info.entries.empty())
+        return;
+
+      constexpr std::string_view kTemplateToml = "template.toml";
+      const std::filesystem::path path = communityTemplateConfigPath(info.id);
+      const std::string desired = renderGeneratedTemplateToml(info);
+      const bool exists = std::filesystem::exists(path);
+      if (exists) {
+        const std::string currentMd5 = util::fileMd5Hex(path);
+        if (auto it = metadata.fileMd5s.find(std::string(kTemplateToml)); it != metadata.fileMd5s.end()) {
+          if (currentMd5 != it->second) {
+            const auto current = readTextFile(path);
+            if (current.has_value() && *current == desired) {
+              recordCachedFile(metadata, kTemplateToml, path);
+              return;
+            }
+            kLog.warn("community template '{}' metadata has local edits; skipping catalog update", info.id);
+            return;
+          }
+        } else {
+          const auto current = readTextFile(path);
+          if (!current.has_value() || *current != desired) {
+            kLog.warn("community template '{}' metadata is untracked in the cache; skipping catalog update", info.id);
+            return;
+          }
+        }
+      }
+
+      if (!writeTextFile(path, desired)) {
+        kLog.warn("failed to write community template metadata {}", path.string());
+        return;
+      }
+      recordCachedFile(metadata, kTemplateToml, path);
+    }
+
+    std::optional<AvailableTemplate> readTemplateTomlInfo(const std::filesystem::path& path, std::string_view cacheId) {
+      if (!isSafeCommunityTemplateId(cacheId))
+        return std::nullopt;
+
       try {
         toml::table root = toml::parse_file(path.string());
         const toml::table* catalog = root["catalog"].as_table();
         if (catalog == nullptr || catalog->empty())
           return std::nullopt;
-        const auto it = catalog->begin();
+
         AvailableTemplate out;
-        out.id = std::string(it->first.str());
+        out.id = std::string(cacheId);
         out.displayName = out.id;
-        if (const toml::table* info = it->second.as_table()) {
+
+        const toml::table* info = catalog->get_as<toml::table>(cacheId);
+        if (info == nullptr) {
+          kLog.warn(
+              "cached community template metadata {} does not contain catalog entry '{}'; using cache directory name",
+              path.string(), cacheId
+          );
+          return out;
+        }
+
+        {
           if (const auto name = info->get_as<std::string>("name"))
             out.displayName = name->get();
           if (const auto category = info->get_as<std::string>("category"))
@@ -377,7 +630,8 @@ namespace noctalia::theme {
     }
 
     std::error_code ec;
-    std::filesystem::create_directories(communityTemplatesCacheDir(), ec);
+    const std::filesystem::path cacheDir = communityTemplatesCacheDir();
+    std::filesystem::create_directories(cacheDir, ec);
     if (!templates.communityIds.empty()) {
       syncSelectedFromCatalog(templates.communityIds, generation, false);
     }
@@ -396,11 +650,13 @@ namespace noctalia::theme {
             return;
           }
           syncSelectedFromCatalog(ids, generation, success);
-        });
+        }
+    );
   }
 
-  void CommunityTemplateService::syncSelectedFromCatalog(const std::vector<std::string>& selectedIds,
-                                                         std::uint64_t generation, bool notifyWhenReady) {
+  void CommunityTemplateService::syncSelectedFromCatalog(
+      const std::vector<std::string>& selectedIds, std::uint64_t generation, bool notifyWhenReady
+  ) {
     if (selectedIds.empty())
       return;
 
@@ -432,8 +688,9 @@ namespace noctalia::theme {
       const std::filesystem::path dir = communityTemplateDir(id);
       std::error_code ec;
       std::filesystem::create_directories(dir, ec);
+      auto metadata = std::make_shared<CacheMetadata>(readCacheMetadata(dir));
       if (!info->entries.empty()) {
-        writeGeneratedTemplateToml(*info);
+        syncGeneratedTemplateToml(*info, *metadata);
       }
 
       for (const auto& file : info->files) {
@@ -442,27 +699,45 @@ namespace noctalia::theme {
           continue;
         }
         const std::filesystem::path dest = dir / std::filesystem::path(file.name);
-        if (cacheMatches(file, dest))
+        std::error_code existsEc;
+        if (std::filesystem::exists(dest, existsEc)) {
+          syncCachedFileMode(id, file, dest);
+        }
+        if (!cacheFileNeedsDownload(id, file, dest, *metadata))
           continue;
         if (dest.has_parent_path())
           std::filesystem::create_directories(dest.parent_path(), ec);
         ++(*pending);
         const std::string url =
             std::string(kCatalogUrl) + "/" + StringUtils::urlEncode(id) + "/" + urlEncodePath(file.name);
-        m_httpClient.download(url, dest,
-                              [this, file, dest, generation, pending, completed, notifyIfReady](bool success) {
-                                ++(*completed);
-                                if (generation != m_generation)
-                                  return;
-                                if (success) {
-                                  if (!file.md5.empty())
-                                    writeSmallFile(sidecarPath(dest), file.md5);
-                                } else {
-                                  kLog.warn("failed to download community template file {}", dest.string());
-                                }
-                                notifyIfReady();
-                              });
+        m_httpClient.download(
+            url, dest,
+            [this, file, dest, dir, metadata, generation, pending, completed, notifyIfReady,
+             templateId = std::string(id)](bool success) {
+              ++(*completed);
+              if (generation != m_generation)
+                return;
+              if (success) {
+                removeLegacyMd5Sidecar(dest);
+                const std::string actualMd5 = util::fileMd5Hex(dest);
+                if (!file.md5.empty() && actualMd5 != StringUtils::toLower(file.md5)) {
+                  std::error_code removeEc;
+                  std::filesystem::remove(dest, removeEc);
+                  metadata->fileMd5s.erase(file.name);
+                  kLog.warn("downloaded community template file {} failed md5 validation", dest.string());
+                } else if (!actualMd5.empty()) {
+                  metadata->fileMd5s[file.name] = actualMd5;
+                  syncCachedFileMode(templateId, file, dest);
+                }
+                writeCacheMetadata(dir, *metadata);
+              } else {
+                kLog.warn("failed to download community template file {}", dest.string());
+              }
+              notifyIfReady();
+            }
+        );
       }
+      writeCacheMetadata(dir, *metadata);
     }
 
     if (*pending == 0 && notifyWhenReady && m_readyCallback) {
@@ -490,13 +765,16 @@ namespace noctalia::theme {
     for (const auto& entry : std::filesystem::directory_iterator(cacheDir, ec)) {
       if (!entry.is_directory())
         continue;
+      const std::string cacheId = entry.path().filename().string();
+      const bool exists =
+          std::any_of(out.begin(), out.end(), [&](const AvailableTemplate& t) { return t.id == cacheId; });
+      if (exists)
+        continue;
       const auto toml = entry.path() / "template.toml";
       if (!std::filesystem::exists(toml))
         continue;
-      if (auto info = readTemplateTomlInfo(toml)) {
-        auto exists = std::any_of(out.begin(), out.end(), [&](const AvailableTemplate& t) { return t.id == info->id; });
-        if (!exists)
-          out.push_back(std::move(*info));
+      if (auto info = readTemplateTomlInfo(toml, cacheId)) {
+        out.push_back(std::move(*info));
       }
     }
 

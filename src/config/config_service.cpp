@@ -1,11 +1,19 @@
 #include "config/config_service.h"
 
+#include "config/atomic_file.h"
 #include "config/config_export.h"
+#include "config/schema/config_schema.h"
+#include "config/schema/engine.h"
+#include "config/widget_config.h"
 #include "core/build_info.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
+#include "core/scoped_timer.h"
 #include "ipc/ipc_service.h"
 #include "notification/notification_manager.h"
+#include "render/core/renderer.h"
+#include "shell/desktop/desktop_widget_settings_registry.h"
+#include "shell/settings/widget_settings_registry.h"
 #include "util/file_utils.h"
 #include "util/string_utils.h"
 #include "wayland/wayland_connection.h"
@@ -28,21 +36,21 @@
 #include <unordered_map>
 #include <vector>
 
+namespace schema = noctalia::config::schema;
+
 namespace {
 
   std::optional<double> finiteDouble(const toml::node_view<const toml::node>& node) {
-    auto v = node.value<double>();
-    if (v && !std::isfinite(*v)) {
-      return std::nullopt;
+    if (auto v = node.value<double>()) {
+      if (!std::isfinite(*v)) {
+        return std::nullopt;
+      }
+      return *v;
     }
-    return v;
-  }
-
-  std::string expandUserPathString(const std::string& path) {
-    if (path.empty()) {
-      return path;
+    if (auto v = node.value<int64_t>()) {
+      return static_cast<double>(*v);
     }
-    return FileUtils::expandUserPath(path).string();
+    return std::nullopt;
   }
 
   std::vector<std::string> readStringArray(const toml::node& node) {
@@ -57,60 +65,81 @@ namespace {
     return result;
   }
 
-  std::vector<std::string> readStringOrArray(const toml::node& node) {
-    if (auto* str = node.as_string()) {
-      return {str->get()};
+  // Returns true if `key` is a color-typed setting for `widget`, per the widget
+  // setting schema (the single source — not a hand-maintained key list).
+  [[nodiscard]] const schema::WidgetSettingField*
+  findColorField(const schema::WidgetSettingSchema& fields, std::string_view key) {
+    const auto it = std::find_if(fields.begin(), fields.end(), [&](const auto& f) { return f.key == key; });
+    if (it == fields.end() || it->type != schema::WidgetSettingType::Color) {
+      return nullptr;
     }
-    return readStringArray(node);
+    return &*it;
   }
 
-  std::vector<ThemeConfig::TemplateCompareColorConfig> readTemplateCompareColors(const toml::node& node) {
-    std::vector<ThemeConfig::TemplateCompareColorConfig> result;
-    const auto* arr = node.as_array();
-    if (arr == nullptr) {
-      return result;
+  void validateWidgetColorSettingValue(
+      const WidgetSettingValue& value, const std::string& context, bool allowEmpty = false
+  ) {
+    const auto* raw = std::get_if<std::string>(&value);
+    if (raw == nullptr) {
+      throw std::runtime_error(context + ": expected string ColorSpec");
     }
-    result.reserve(arr->size());
-    for (const auto& item : *arr) {
-      const auto* tbl = item.as_table();
-      if (tbl == nullptr) {
+    if (StringUtils::trim(*raw).empty()) {
+      if (allowEmpty) {
+        return;
+      }
+      throw std::runtime_error(context + ": empty color value is not valid here");
+    }
+    (void)colorSpecFromConfigString(*raw, context);
+  }
+
+  void validateWidgetColorSettings(std::string_view widgetName, const WidgetConfig& widget) {
+    const auto fields = settings::widgetSettingSchema(widget.type);
+    for (const auto& [key, value] : widget.settings) {
+      if (findColorField(fields, key) == nullptr) {
         continue;
       }
-      auto name = tbl->get_as<std::string>("name");
-      auto color = tbl->get_as<std::string>("color");
-      if (name != nullptr && color != nullptr) {
-        result.push_back(ThemeConfig::TemplateCompareColorConfig{.name = name->get(), .color = color->get()});
-      }
+      const bool allowEmpty = key == "capsule_border";
+      validateWidgetColorSettingValue(value, "widget." + std::string(widgetName) + "." + key, allowEmpty);
     }
-    return result;
   }
 
-  std::optional<WidgetSettingValue> readWidgetSetting(const toml::node& node) {
-    if (const auto* stringValue = node.as_string()) {
-      return WidgetSettingValue{stringValue->get()};
+  void validateWidgetScaleSetting(std::string_view widgetName, const WidgetConfig& widget) {
+    if (!widget.hasSetting("scale")) {
+      return;
     }
-    if (const auto* intValue = node.as_integer()) {
-      return WidgetSettingValue{intValue->get()};
-    }
-    if (const auto* floatValue = node.as_floating_point()) {
-      return WidgetSettingValue{floatValue->get()};
-    }
-    if (const auto* boolValue = node.as_boolean()) {
-      return WidgetSettingValue{boolValue->get()};
-    }
-    if (const auto* arrayValue = node.as_array()) {
-      std::vector<std::string> strings;
-      for (const auto& item : *arrayValue) {
-        if (auto value = item.value<std::string>()) {
-          strings.push_back(*value);
-        }
-      }
-      return WidgetSettingValue{std::move(strings)};
-    }
-    return std::nullopt;
+    (void)resolveWidgetContentScale(1.0f, &widget, "widget." + std::string(widgetName) + ".scale");
   }
 
-  DesktopWidgetState readDesktopWidgetState(std::string_view id, const toml::table& widgetTable) {
+  void validateKeyboardLayoutWidgetSettings(std::string_view widgetName, const WidgetConfig& widget) {
+    if (widget.type != "keyboard_layout") {
+      return;
+    }
+
+    const bool showIcon = widget.getBool("show_icon", true);
+    const bool showLabel = widget.getBool("show_label", true);
+    if (!showIcon && !showLabel) {
+      throw std::runtime_error("widget." + std::string(widgetName) + ": show_icon and show_label cannot both be false");
+    }
+  }
+
+  void validateWidgetSettings(std::string_view widgetName, const WidgetConfig& widget) {
+    validateWidgetColorSettings(widgetName, widget);
+    validateWidgetScaleSetting(widgetName, widget);
+    validateKeyboardLayoutWidgetSettings(widgetName, widget);
+  }
+
+  void validateDesktopWidgetColorSettings(const DesktopWidgetState& widget, std::string_view section) {
+    const auto fields = desktop_settings::desktopWidgetSettingSchema(widget.type);
+    for (const auto& [key, value] : widget.settings) {
+      if (findColorField(fields, key) == nullptr) {
+        continue;
+      }
+      validateWidgetColorSettingValue(value, std::string(section) + ".widget." + widget.id + ".settings." + key);
+    }
+  }
+
+  DesktopWidgetState
+  readDesktopWidgetState(std::string_view id, const toml::table& widgetTable, std::string_view colorSection) {
     DesktopWidgetState widget;
     widget.id = std::string(id);
     if (auto explicitId = widgetTable["id"].value<std::string>()) {
@@ -139,26 +168,68 @@ namespace {
     }
     if (const auto* settingsTable = widgetTable["settings"].as_table()) {
       for (const auto& [key, value] : *settingsTable) {
-        if (auto parsed = readWidgetSetting(value); parsed.has_value()) {
+        if (auto parsed = noctalia::config::readWidgetSettingValue(value); parsed.has_value()) {
           widget.settings.emplace(std::string(key.str()), std::move(*parsed));
         }
       }
     }
+    validateDesktopWidgetColorSettings(widget, colorSection);
     return widget;
   }
 
-  void setHookCommandsFromNode(const toml::node& node, std::vector<std::string>& out) {
-    out.clear();
-    if (auto* s = node.as_string()) {
-      const auto& val = s->get();
-      if (!val.empty()) {
-        out.push_back(val);
+  void parseWidgetsPlacementSection(
+      const toml::table& sectionTbl, DesktopWidgetsGridState& grid, std::vector<DesktopWidgetState>& widgets,
+      std::string_view colorSection
+  ) {
+    if (const auto* gridTable = sectionTbl["grid"].as_table()) {
+      if (auto visible = (*gridTable)["visible"].value<bool>()) {
+        grid.visible = *visible;
       }
-      return;
+      if (auto cellSize = (*gridTable)["cell_size"].value<int64_t>()) {
+        grid.cellSize = std::clamp(static_cast<std::int32_t>(*cellSize), 8, 256);
+      }
+      if (auto majorInterval = (*gridTable)["major_interval"].value<int64_t>()) {
+        grid.majorInterval = std::clamp(static_cast<std::int32_t>(*majorInterval), 1, 16);
+      }
     }
-    for (const auto& line : readStringArray(node)) {
-      if (!line.empty()) {
-        out.push_back(line);
+    if (const auto* widgetsTable = sectionTbl["widget"].as_table()) {
+      std::vector<DesktopWidgetState> parsedWidgets;
+      parsedWidgets.reserve(widgetsTable->size());
+      for (const auto& [idNode, widgetNode] : *widgetsTable) {
+        const auto* widgetTable = widgetNode.as_table();
+        if (widgetTable == nullptr) {
+          continue;
+        }
+        auto widget = readDesktopWidgetState(idNode.str(), *widgetTable, colorSection);
+        if (!widget.id.empty() && !widget.type.empty()) {
+          parsedWidgets.push_back(std::move(widget));
+        }
+      }
+
+      std::vector<std::string> order;
+      bool orderSpecified = false;
+      if (const auto* orderNode = sectionTbl.get("widget_order")) {
+        order = readStringArray(*orderNode);
+        orderSpecified = true;
+      }
+
+      widgets.clear();
+      std::vector<bool> used(parsedWidgets.size(), false);
+      for (const auto& orderedId : order) {
+        for (std::size_t i = 0; i < parsedWidgets.size(); ++i) {
+          if (!used[i] && parsedWidgets[i].id == orderedId) {
+            used[i] = true;
+            widgets.push_back(std::move(parsedWidgets[i]));
+            break;
+          }
+        }
+      }
+      if (!orderSpecified) {
+        for (std::size_t i = 0; i < parsedWidgets.size(); ++i) {
+          if (!used[i]) {
+            widgets.push_back(std::move(parsedWidgets[i]));
+          }
+        }
       }
     }
   }
@@ -227,8 +298,9 @@ namespace {
 
   std::string formatToml(const toml::table& table) {
     std::ostringstream out;
-    out << toml::toml_formatter{table,
-                                toml::toml_formatter::default_flags & ~toml::format_flags::allow_literal_strings};
+    out << toml::toml_formatter{
+        table, toml::toml_formatter::default_flags & ~toml::format_flags::allow_literal_strings
+    };
     return out.str();
   }
 
@@ -249,13 +321,6 @@ namespace {
       return relative.string();
     }
     return path.filename().string();
-  }
-
-  std::optional<ColorSpec> optionalCapsuleBorder(const std::string& raw) {
-    if (StringUtils::trim(raw).empty()) {
-      return std::nullopt;
-    }
-    return colorSpecFromConfigString(raw);
   }
 
 } // namespace
@@ -285,10 +350,12 @@ ConfigService::ConfigService() {
     std::error_code ec;
     std::filesystem::create_directories(dir, ec);
     m_overridesPath = dir + "/settings.toml";
+    m_stateStore.setPath(dir + "/state.toml");
     m_setupMarkerPath = dir + "/.setup-complete";
   }
 
   loadOverridesFromFile();
+  m_stateStore.load();
   loadAll();
   setupWatch();
 }
@@ -312,7 +379,9 @@ ConfigService::~ConfigService() {
 
 // ── Public interface ─────────────────────────────────────────────────────────
 
-void ConfigService::addReloadCallback(ReloadCallback callback) { m_reloadCallbacks.push_back(std::move(callback)); }
+void ConfigService::addReloadCallback(ReloadCallback callback, std::string_view label) {
+  m_reloadCallbacks.push_back({std::move(callback), std::string(label)});
+}
 
 void ConfigService::setNotificationManager(NotificationManager* manager) {
   m_notificationManager = manager;
@@ -334,20 +403,100 @@ void ConfigService::setNotificationManager(NotificationManager* manager) {
 }
 
 void ConfigService::forceReload() {
+  const auto oldDefault = m_defaultWallpaperPath;
+  const auto oldLast = m_lastWallpaperPath;
+  const auto oldMonitors = m_monitorWallpaperPaths;
+
   loadAll();
+
+  const bool wallpaperChanged =
+      (oldDefault != m_defaultWallpaperPath
+       || oldLast != m_lastWallpaperPath
+       || oldMonitors != m_monitorWallpaperPaths);
+  if (wallpaperChanged && m_wallpaperChangeCallback) {
+    m_wallpaperChangeCallback();
+  }
   fireReloadCallbacks();
 }
 
 void ConfigService::fireReloadCallbacks() {
-  for (const auto& cb : m_reloadCallbacks) {
-    cb();
+  if (!noctalia::profiling::enabled()) {
+    for (const auto& sub : m_reloadCallbacks) {
+      sub.callback();
+    }
+    return;
   }
+
+  {
+    std::string changed;
+    const auto add = [&](bool on, const char* name) {
+      if (on) {
+        changed += changed.empty() ? name : std::string(", ") + name;
+      }
+    };
+    add(m_lastChange.bars, "bars");
+    add(m_lastChange.widgets, "widgets");
+    add(m_lastChange.desktopWidgets, "desktopWidgets");
+    add(m_lastChange.lockscreenWidgets, "lockscreenWidgets");
+    add(m_lastChange.wallpaper, "wallpaper");
+    add(m_lastChange.backdrop, "backdrop");
+    add(m_lastChange.lockscreen, "lockscreen");
+    add(m_lastChange.dock, "dock");
+    add(m_lastChange.shell, "shell");
+    add(m_lastChange.osd, "osd");
+    add(m_lastChange.notification, "notification");
+    add(m_lastChange.weather, "weather");
+    add(m_lastChange.calendar, "calendar");
+    add(m_lastChange.system, "system");
+    add(m_lastChange.audio, "audio");
+    add(m_lastChange.brightness, "brightness");
+    add(m_lastChange.battery, "battery");
+    add(m_lastChange.keybinds, "keybinds");
+    add(m_lastChange.nightlight, "nightlight");
+    add(m_lastChange.location, "location");
+    add(m_lastChange.idle, "idle");
+    add(m_lastChange.hooks, "hooks");
+    add(m_lastChange.theme, "theme");
+    add(m_lastChange.controlCenter, "controlCenter");
+    kLog.info("reload: changed sections = [{}]", changed.empty() ? "none" : changed);
+  }
+
+  noctalia::profiling::StopWatch total;
+  for (std::size_t i = 0; i < m_reloadCallbacks.size(); ++i) {
+    const auto& sub = m_reloadCallbacks[i];
+    noctalia::profiling::StopWatch one;
+    sub.callback();
+    const double ms = one.elapsedMs();
+    if (ms >= 0.5) {
+      kLog.info("reload[{}]: {:.1f} ms", sub.label.empty() ? std::format("#{}", i) : sub.label, ms);
+    }
+  }
+  kLog.info("reload: all subscribers {:.1f} ms", total.elapsedMs());
 }
 
 bool ConfigService::shouldRunSetupWizard() const {
+  if (!m_config.shell.setupWizardEnabled) {
+    return false;
+  }
   // Single canonical signal: the marker file. If we have no state dir we cannot
   // persist completion, so never show the wizard (it would loop forever).
   return !m_setupMarkerPath.empty() && !std::filesystem::exists(m_setupMarkerPath);
+}
+
+std::optional<bool> ConfigService::stateBool(std::string_view owner, std::string_view key) const {
+  return m_stateStore.boolValue(owner, key);
+}
+
+bool ConfigService::setStateBool(std::string_view owner, std::string_view key, bool value) {
+  return m_stateStore.setBool(owner, key, value);
+}
+
+std::optional<std::string> ConfigService::stateString(std::string_view owner, std::string_view key) const {
+  return m_stateStore.stringValue(owner, key);
+}
+
+bool ConfigService::setStateString(std::string_view owner, std::string_view key, std::string_view value) {
+  return m_stateStore.setString(owner, key, value);
 }
 
 std::string ConfigService::buildSupportReport() const {
@@ -364,6 +513,7 @@ std::string ConfigService::buildSupportReport() const {
   toml::table paths;
   paths.insert_or_assign("config_dir", m_configDir);
   paths.insert_or_assign("settings_path", m_overridesPath);
+  paths.insert_or_assign("state_path", m_stateStore.path().string());
   root.insert_or_assign("paths", std::move(paths));
 
   toml::table merged;
@@ -420,6 +570,26 @@ std::string ConfigService::buildSupportReport() const {
   }
   root.insert_or_assign("state_settings", std::move(state));
 
+  toml::table appState;
+  appState.insert_or_assign("kind", "app_state");
+  appState.insert_or_assign("relative_path", "state.toml");
+  appState.insert_or_assign("path", m_stateStore.path().string());
+
+  const bool appStateExists = !m_stateStore.path().empty() && std::filesystem::exists(m_stateStore.path());
+  appState.insert_or_assign("exists", appStateExists);
+  if (appStateExists) {
+    std::string readError;
+    appState.insert_or_assign("content", readTextFile(m_stateStore.path(), &readError));
+    if (!readError.empty()) {
+      appState.insert_or_assign("read_error", readError);
+    } else if (!m_stateStore.parseError().empty()) {
+      appState.insert_or_assign("parse_error", m_stateStore.parseError());
+    }
+  } else {
+    appState.insert_or_assign("content", "");
+  }
+  root.insert_or_assign("app_state", std::move(appState));
+
   toml::table mergedConfig;
   mergedConfig.insert_or_assign("content", formatToml(merged));
   root.insert_or_assign("merged_config", std::move(mergedConfig));
@@ -452,7 +622,7 @@ std::string ConfigService::buildMergedUserConfig() const {
 }
 
 std::string ConfigService::buildEffectiveConfig() const {
-  return formatToml(config_export::configToToml(m_config)) + "\n";
+  return formatToml(config_export::serialize(m_config)) + "\n";
 }
 
 void ConfigService::checkReload() {
@@ -480,20 +650,25 @@ void ConfigService::checkReload() {
           if (name.size() >= 5 && name.substr(name.size() - 5) == ".toml") {
             configChanged = true;
           }
-        } else if (event->wd == m_overridesWatchWd) {
+        }
+        if (event->wd == m_overridesWatchWd) {
           const auto overridesFilename = std::filesystem::path(m_overridesPath).filename().string();
           if (name == overridesFilename) {
             overridesChanged = true;
           }
-        } else {
-          // Check whether this event comes from a symlink-target directory.
-          const auto symIt = m_symlinkDirWds.find(event->wd);
-          if (symIt != m_symlinkDirWds.end()) {
-            for (const auto& watched : symIt->second) {
-              if (name == watched) {
-                configChanged = true;
-                break;
-              }
+        }
+
+        // Check whether this event comes from a symlink-target directory.
+        const auto symIt = m_symlinkDirWds.find(event->wd);
+        if (symIt != m_symlinkDirWds.end()) {
+          for (const auto& watched : symIt->second) {
+            if (name != watched.filename) {
+              continue;
+            }
+            if (watched.overrides) {
+              overridesChanged = true;
+            } else {
+              configChanged = true;
             }
           }
         }
@@ -508,20 +683,14 @@ void ConfigService::checkReload() {
     overridesChanged = false;
   }
 
+  const auto oldDefault = m_defaultWallpaperPath;
+  const auto oldLast = m_lastWallpaperPath;
+  const auto oldMonitors = m_monitorWallpaperPaths;
+
   if (overridesChanged) {
     kLog.info("reloading {}", m_overridesPath);
 
-    const auto oldDefault = m_defaultWallpaperPath;
-    const auto oldLast = m_lastWallpaperPath;
-    const auto oldMonitors = m_monitorWallpaperPaths;
-
     loadOverridesFromFile();
-
-    const bool wallpaperChanged = (oldDefault != m_defaultWallpaperPath || oldLast != m_lastWallpaperPath ||
-                                   oldMonitors != m_monitorWallpaperPaths);
-    if (wallpaperChanged && m_wallpaperChangeCallback) {
-      m_wallpaperChangeCallback();
-    }
     configChanged = true; // overrides affect Config — rebuild it
   }
 
@@ -531,6 +700,13 @@ void ConfigService::checkReload() {
 
   kLog.info("config changed, reloading");
   loadAll();
+  const bool wallpaperChanged =
+      (oldDefault != m_defaultWallpaperPath
+       || oldLast != m_lastWallpaperPath
+       || oldMonitors != m_monitorWallpaperPaths);
+  if (wallpaperChanged && m_wallpaperChangeCallback) {
+    m_wallpaperChangeCallback();
+  }
   fireReloadCallbacks();
 }
 
@@ -544,12 +720,16 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
 
     kLog.debug("monitor override \"{}\" matched output {} ({})", ovr.match, output.connectorName, output.description);
 
+    if (ovr.position)
+      resolved.position = *ovr.position;
     if (ovr.enabled)
       resolved.enabled = *ovr.enabled;
     if (ovr.autoHide)
       resolved.autoHide = *ovr.autoHide;
     if (ovr.reserveSpace)
       resolved.reserveSpace = *ovr.reserveSpace;
+    if (ovr.layer)
+      resolved.layer = *ovr.layer;
     if (ovr.thickness)
       resolved.thickness = *ovr.thickness;
     if (ovr.backgroundOpacity)
@@ -585,8 +765,8 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.shadow = *ovr.shadow;
     if (ovr.contactShadow)
       resolved.contactShadow = *ovr.contactShadow;
-    if (ovr.attachPanels)
-      resolved.attachPanels = *ovr.attachPanels;
+    if (ovr.panelOverlap)
+      resolved.panelOverlap = *ovr.panelOverlap;
     if (ovr.startWidgets)
       resolved.startWidgets = *ovr.startWidgets;
     if (ovr.centerWidgets)
@@ -615,7 +795,7 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
     if (ovr.widgetCapsulePadding) {
       resolved.widgetCapsulePadding = std::clamp(static_cast<float>(*ovr.widgetCapsulePadding), 0.0f, 48.0f);
     }
-    if (ovr.widgetCapsuleRadius) {
+    if (ovr.widgetCapsuleRadius.has_value()) {
       resolved.widgetCapsuleRadius = std::clamp(*ovr.widgetCapsuleRadius, 0.0, 80.0);
     }
     if (ovr.widgetCapsuleOpacity) {
@@ -679,7 +859,7 @@ void ConfigService::setupWatch() {
       const int wd =
           inotify_add_watch(m_inotifyFd, realDir.c_str(), IN_MODIFY | IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE);
       if (wd >= 0) {
-        m_symlinkDirWds[wd].push_back(realName);
+        m_symlinkDirWds[wd].push_back(SymlinkTargetWatch{.filename = realName, .overrides = false});
         kLog.debug("watching symlink target {} in {}", realName, realDir);
       }
     }
@@ -694,6 +874,18 @@ void ConfigService::setupWatch() {
       kLog.warn("inotify_add_watch failed for {}, overrides reload disabled", overridesDir);
     } else {
       kLog.debug("watching {} for changes", overridesDir);
+    }
+
+    const auto target = resolveAtomicWriteTarget(m_overridesPath);
+    if (target.has_value() && target->throughSymlink) {
+      const auto realDir = target->path.parent_path().string();
+      const auto realName = target->path.filename().string();
+      const int wd =
+          inotify_add_watch(m_inotifyFd, realDir.c_str(), IN_MODIFY | IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE);
+      if (wd >= 0) {
+        m_symlinkDirWds[wd].push_back(SymlinkTargetWatch{.filename = realName, .overrides = true});
+        kLog.debug("watching settings symlink target {} in {}", realName, realDir);
+      }
     }
   }
 }
@@ -714,11 +906,14 @@ void ConfigService::loadOverridesFromFile() {
     m_overridesTable = toml::parse_file(m_overridesPath);
   } catch (const toml::parse_error& e) {
     const auto& src = e.source();
-    kLog.warn("parse error in {} at line {}, column {}: {}", m_overridesPath, src.begin.line, src.begin.column,
-              e.description());
-    m_overridesParseError =
-        std::format("{} line {}, column {}: {}", std::filesystem::path(m_overridesPath).filename().string(),
-                    src.begin.line, src.begin.column, e.description());
+    kLog.warn(
+        "parse error in {} at line {}, column {}: {}", m_overridesPath, src.begin.line, src.begin.column,
+        e.description()
+    );
+    m_overridesParseError = std::format(
+        "{} line {}, column {}: {}", std::filesystem::path(m_overridesPath).filename().string(), src.begin.line,
+        src.begin.column, e.description()
+    );
     m_overridesTable = toml::table{};
     return;
   }
@@ -762,79 +957,21 @@ void ConfigService::deepMerge(toml::table& base, const toml::table& overlay) {
   }
 }
 
-void ConfigService::seedBuiltinWidgets(Config& config) {
-  // Built-in named widget instances — act as defaults that [widget.*] entries override.
-  auto seed = [&](const char* name, WidgetConfig wc) { config.widgets.emplace(name, std::move(wc)); };
-
-  WidgetConfig cpu;
-  cpu.type = "sysmon";
-  cpu.settings["stat"] = std::string("cpu_usage");
-  seed("cpu", std::move(cpu));
-
-  WidgetConfig temp;
-  temp.type = "sysmon";
-  temp.settings["stat"] = std::string("cpu_temp");
-  seed("temp", std::move(temp));
-
-  WidgetConfig ram;
-  ram.type = "sysmon";
-  ram.settings["stat"] = std::string("ram_used");
-  seed("ram", std::move(ram));
-
-  WidgetConfig outputVolume;
-  outputVolume.type = "volume";
-  outputVolume.settings["device"] = std::string("output");
-  seed("output_volume", std::move(outputVolume));
-
-  WidgetConfig inputVolume;
-  inputVolume.type = "volume";
-  inputVolume.settings["device"] = std::string("input");
-  seed("input_volume", std::move(inputVolume));
-
-  WidgetConfig date;
-  date.type = "clock";
-  date.settings["format"] = std::string("{:%a %d %b}");
-  seed("date", std::move(date));
-
-  WidgetConfig activeWindow;
-  activeWindow.type = "active_window";
-  activeWindow.settings["max_length"] = 260.0;
-  activeWindow.settings["min_length"] = 80.0;
-  activeWindow.settings["icon_size"] = static_cast<double>(Style::fontSizeBody);
-  activeWindow.settings["title_scroll"] = std::string("none");
-  seed("active_window", std::move(activeWindow));
-
-  WidgetConfig media;
-  media.type = "media";
-  media.settings["max_length"] = 220.0;
-  media.settings["min_length"] = 80.0;
-  media.settings["art_size"] = 16.0;
-  media.settings["title_scroll"] = std::string("none");
-  seed("media", std::move(media));
-
-  WidgetConfig keyboardLayout;
-  keyboardLayout.type = "keyboard_layout";
-  keyboardLayout.settings["cycle_command"] = std::string("");
-  seed("keyboard_layout", std::move(keyboardLayout));
-
-  WidgetConfig lockKeys;
-  lockKeys.type = "lock_keys";
-  lockKeys.settings["show_caps_lock"] = true;
-  lockKeys.settings["show_num_lock"] = true;
-  lockKeys.settings["show_scroll_lock"] = false;
-  lockKeys.settings["hide_when_off"] = false;
-  lockKeys.settings["display"] = std::string("short");
-  seed("lock_keys", std::move(lockKeys));
-
-  WidgetConfig spacer;
-  spacer.type = "spacer";
-  seed("spacer", std::move(spacer));
-}
-
 void ConfigService::loadAll() {
+  noctalia::profiling::ScopedTimer parseTimer(kLog, "reload: parse (loadAll)");
   m_effectiveOverrideCache.clear();
-  m_config = Config{};
-  seedBuiltinWidgets(m_config);
+  auto makeDefaultConfig = [] {
+    Config config;
+    noctalia::config::seedBuiltinWidgets(config);
+    config.idle.behaviors = defaultIdleBehaviors();
+    config.bars.push_back(BarConfig{});
+    config.controlCenter.shortcuts = defaultControlCenterShortcuts();
+    config.shell.session.actions = defaultSessionPanelActions();
+    return config;
+  };
+
+  Config nextConfig;
+  noctalia::config::seedBuiltinWidgets(nextConfig);
 
   const auto files = sortedConfigTomlFiles(m_configDir);
 
@@ -848,17 +985,20 @@ void ConfigService::loadAll() {
       kLog.info("loaded {}", path.string());
     } catch (const toml::parse_error& e) {
       const auto& src = e.source();
-      kLog.warn("parse error in {} at line {}, column {}: {}", path.filename().string(), src.begin.line,
-                src.begin.column, e.description());
+      kLog.warn(
+          "parse error in {} at line {}, column {}: {}", path.filename().string(), src.begin.line, src.begin.column,
+          e.description()
+      );
       if (firstError.empty()) {
-        firstError = std::format("{} line {}, column {}: {}", path.filename().string(), src.begin.line,
-                                 src.begin.column, e.description());
+        firstError = std::format(
+            "{} line {}, column {}: {}", path.filename().string(), src.begin.line, src.begin.column, e.description()
+        );
       }
     }
   }
 
-  m_configFileBarNames.clear();
-  m_configFileMonitorOverrideNames.clear();
+  decltype(m_configFileBarNames) configFileBarNames;
+  decltype(m_configFileMonitorOverrideNames) configFileMonitorOverrideNames;
   if (auto* barTblMap = merged["bar"].as_table()) {
     for (const auto& [barName, barNode] : *barTblMap) {
       auto* barTbl = barNode.as_table();
@@ -866,9 +1006,9 @@ void ConfigService::loadAll() {
         continue;
       }
       const std::string barNameStr(barName.str());
-      m_configFileBarNames.insert(barNameStr);
+      configFileBarNames.insert(barNameStr);
       if (auto* monTblMap = (*barTbl)["monitor"].as_table()) {
-        auto& monitorNames = m_configFileMonitorOverrideNames[barNameStr];
+        auto& monitorNames = configFileMonitorOverrideNames[barNameStr];
         for (const auto& [monName, monNode] : *monTblMap) {
           auto* monTbl = monNode.as_table();
           if (monTbl == nullptr) {
@@ -889,31 +1029,55 @@ void ConfigService::loadAll() {
 
   if (files.empty() && m_overridesTable.empty()) {
     kLog.info("no config files found, using defaults");
-    m_config.idle.behaviors = defaultIdleBehaviors();
-    m_config.bars.push_back(BarConfig{});
-    m_config.controlCenter.shortcuts = defaultControlCenterShortcuts();
-    m_config.shell.session.actions = defaultSessionPanelActions();
+    m_lastChange = ConfigChangeSet{};
+    m_config = makeDefaultConfig();
+    m_configFileBarNames.clear();
+    m_configFileMonitorOverrideNames.clear();
+    m_defaultWallpaperPath.clear();
+    m_lastWallpaperPath.clear();
+    m_monitorWallpaperPaths.clear();
     setConfigParseError(m_overridesParseError);
     return;
   }
 
   std::string semanticError;
   try {
-    parseTable(merged);
+    parseConfigTable(merged, nextConfig, true);
   } catch (const std::exception& e) {
     semanticError = e.what();
     kLog.warn("config parse error: {}", semanticError);
   }
 
-  const std::string parseError = !firstError.empty()              ? firstError
-                                 : !m_overridesParseError.empty() ? m_overridesParseError
-                                                                  : semanticError;
+  if (semanticError.empty()) {
+    m_lastChange = computeConfigChangeSet(m_config, nextConfig);
+    m_config = std::move(nextConfig);
+    m_configFileBarNames = std::move(configFileBarNames);
+    m_configFileMonitorOverrideNames = std::move(configFileMonitorOverrideNames);
+    extractWallpaperFromTable(merged);
+  } else if (m_config.bars.empty()) {
+    m_lastChange = ConfigChangeSet{};
+    m_config = makeDefaultConfig();
+    m_configFileBarNames.clear();
+    m_configFileMonitorOverrideNames.clear();
+    m_defaultWallpaperPath.clear();
+    m_lastWallpaperPath.clear();
+    m_monitorWallpaperPaths.clear();
+  } else {
+    // Parse error with a usable previous config retained — fan out conservatively.
+    m_lastChange = ConfigChangeSet{};
+  }
+
+  const std::string parseError = !firstError.empty() ? firstError
+      : !m_overridesParseError.empty()               ? m_overridesParseError
+                                                     : semanticError;
   setConfigParseError(parseError);
 }
 
-void ConfigService::parseTable(const toml::table& tbl) { parseTableInto(tbl, m_config, true); }
+void ConfigService::parseConfigTable(const toml::table& tbl, Config& config, bool logSummary) const {
+  // Diagnostics raised by schema-driven sections (e.g. unknown enum values).
+  // Flushed to the log below, preserving the legacy warn-and-continue behavior.
+  schema::Diagnostics schemaDiag;
 
-void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool logSummary) const {
   // Parse [bar.*] named subtables
   if (auto* barTblMap = tbl["bar"].as_table()) {
     std::vector<BarConfig> parsedBars;
@@ -925,189 +1089,26 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
 
       BarConfig bar;
       bar.name = std::string(barName.str());
-      if (auto v = (*barTbl)["position"].value<std::string>())
+      // position is read explicitly (the base bar always emits it; monitor
+      // overrides emit it conditionally), the rest via the shared schema.
+      if (auto v = (*barTbl)["position"].value<std::string>()) {
         bar.position = *v;
-      if (auto v = (*barTbl)["enabled"].value<bool>())
-        bar.enabled = *v;
-      if (auto v = (*barTbl)["auto_hide"].value<bool>())
-        bar.autoHide = *v;
-      if (auto v = (*barTbl)["reserve_space"].value<bool>())
-        bar.reserveSpace = *v;
-      if (auto v = (*barTbl)["attach_panels"].value<bool>())
-        bar.attachPanels = *v;
-      if (auto v = (*barTbl)["thickness"].value<int64_t>())
-        bar.thickness = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
-      if (auto v = finiteDouble((*barTbl)["background_opacity"]))
-        bar.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
-      if (auto borderStr = (*barTbl)["border"].value<std::string>())
-        bar.border = colorSpecFromConfigString(*borderStr);
-      if (auto v = finiteDouble((*barTbl)["border_width"]))
-        bar.borderWidth = std::clamp(static_cast<float>(*v), 0.0f, 20.0f);
-      if (auto v = (*barTbl)["radius"].value<int64_t>()) {
-        const auto r = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
-        bar.radius = r;
-        bar.radiusTopLeft = r;
-        bar.radiusTopRight = r;
-        bar.radiusBottomLeft = r;
-        bar.radiusBottomRight = r;
       }
-      if (auto v = (*barTbl)["radius_top_left"].value<int64_t>())
-        bar.radiusTopLeft = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
-      if (auto v = (*barTbl)["radius_top_right"].value<int64_t>())
-        bar.radiusTopRight = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
-      if (auto v = (*barTbl)["radius_bottom_left"].value<int64_t>())
-        bar.radiusBottomLeft = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
-      if (auto v = (*barTbl)["radius_bottom_right"].value<int64_t>())
-        bar.radiusBottomRight = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
-      if (auto v = (*barTbl)["margin_ends"].value<int64_t>())
-        bar.marginEnds = static_cast<std::int32_t>(*v);
-      if (auto v = (*barTbl)["margin_edge"].value<int64_t>())
-        bar.marginEdge = static_cast<std::int32_t>(*v);
-      if (auto v = (*barTbl)["padding"].value<int64_t>())
-        bar.padding = static_cast<std::int32_t>(*v);
-      if (auto v = (*barTbl)["widget_spacing"].value<int64_t>())
-        bar.widgetSpacing = static_cast<std::int32_t>(*v);
-      if (auto v = (*barTbl)["shadow"].value<bool>())
-        bar.shadow = *v;
-      if (auto v = (*barTbl)["contact_shadow"].value<bool>())
-        bar.contactShadow = *v;
-      if (auto v = finiteDouble((*barTbl)["scale"]))
-        bar.scale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
-      if (auto* n = (*barTbl)["start"].as_array())
-        bar.startWidgets = readStringArray(*n);
-      if (auto* n = (*barTbl)["center"].as_array())
-        bar.centerWidgets = readStringArray(*n);
-      if (auto* n = (*barTbl)["end"].as_array())
-        bar.endWidgets = readStringArray(*n);
+      schema::readInto(*barTbl, bar, schema::barFieldsSchema(), "bar." + bar.name, schemaDiag);
 
-      if (auto v = (*barTbl)["capsule"].value<bool>()) {
-        bar.widgetCapsuleDefault = *v;
-      }
-      if (auto fillStr = (*barTbl)["capsule_fill"].value<std::string>()) {
-        bar.widgetCapsuleFill = colorSpecFromConfigString(*fillStr);
-      }
-      if (auto fgStr = (*barTbl)["capsule_foreground"].value<std::string>()) {
-        bar.widgetCapsuleForeground = colorSpecFromConfigString(*fgStr);
-      }
-      if (auto v = finiteDouble((*barTbl)["capsule_padding"])) {
-        bar.widgetCapsulePadding = std::clamp(static_cast<float>(*v), 0.0f, 48.0f);
-      }
-      if (auto v = finiteDouble((*barTbl)["capsule_radius"])) {
-        bar.widgetCapsuleRadius = std::clamp(*v, 0.0, 80.0);
-      }
-      if (auto v = finiteDouble((*barTbl)["capsule_opacity"])) {
-        bar.widgetCapsuleOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
-      }
-      if (barTbl->contains("capsule_border")) {
-        bar.widgetCapsuleBorderSpecified = true;
-        std::string borderStr;
-        if (auto v = (*barTbl)["capsule_border"].value<std::string>()) {
-          borderStr = *v;
-        }
-        bar.widgetCapsuleBorder = optionalCapsuleBorder(borderStr);
-      }
-      if (auto widgetColorStr = (*barTbl)["color"].value<std::string>()) {
-        bar.widgetColor = colorSpecFromConfigString(*widgetColorStr);
-      }
-      if (auto* n = (*barTbl)["capsule_groups"].as_array()) {
-        bar.widgetCapsuleGroups = readStringArray(*n);
-      }
-
-      // Parse [bar.<name>.monitor.*] overrides — insertion order preserved by toml++
+      // Parse [bar.<name>.monitor.*] overrides — insertion order preserved by toml++.
       if (auto* monTblMap = (*barTbl)["monitor"].as_table()) {
         for (const auto& [monName, monNode] : *monTblMap) {
           auto* monTbl = monNode.as_table();
           if (monTbl == nullptr) {
             continue;
           }
-
           BarMonitorOverride ovr;
-          if (auto v = (*monTbl)["match"].value<std::string>()) {
-            ovr.match = *v;
-          } else {
-            ovr.match = std::string(monName.str()); // key is the match if not explicit
-          }
-
-          if (auto v = (*monTbl)["enabled"].value<bool>())
-            ovr.enabled = *v;
-          if (auto v = (*monTbl)["auto_hide"].value<bool>())
-            ovr.autoHide = *v;
-          if (auto v = (*monTbl)["reserve_space"].value<bool>())
-            ovr.reserveSpace = *v;
-          if (auto v = (*monTbl)["attach_panels"].value<bool>())
-            ovr.attachPanels = *v;
-          if (auto v = (*monTbl)["thickness"].value<int64_t>())
-            ovr.thickness = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
-          if (auto v = finiteDouble((*monTbl)["background_opacity"]))
-            ovr.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
-          if (auto borderStr = (*monTbl)["border"].value<std::string>())
-            ovr.border = colorSpecFromConfigString(*borderStr);
-          if (auto v = finiteDouble((*monTbl)["border_width"]))
-            ovr.borderWidth = std::clamp(static_cast<float>(*v), 0.0f, 20.0f);
-          if (auto v = (*monTbl)["radius"].value<int64_t>())
-            ovr.radius = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
-          if (auto v = (*monTbl)["radius_top_left"].value<int64_t>())
-            ovr.radiusTopLeft = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
-          if (auto v = (*monTbl)["radius_top_right"].value<int64_t>())
-            ovr.radiusTopRight = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
-          if (auto v = (*monTbl)["radius_bottom_left"].value<int64_t>())
-            ovr.radiusBottomLeft = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
-          if (auto v = (*monTbl)["radius_bottom_right"].value<int64_t>())
-            ovr.radiusBottomRight = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
-          if (auto v = (*monTbl)["margin_ends"].value<int64_t>())
-            ovr.marginEnds = static_cast<std::int32_t>(*v);
-          if (auto v = (*monTbl)["margin_edge"].value<int64_t>())
-            ovr.marginEdge = static_cast<std::int32_t>(*v);
-          if (auto v = (*monTbl)["padding"].value<int64_t>())
-            ovr.padding = static_cast<std::int32_t>(*v);
-          if (auto v = (*monTbl)["widget_spacing"].value<int64_t>())
-            ovr.widgetSpacing = static_cast<std::int32_t>(*v);
-          if (auto v = finiteDouble((*monTbl)["scale"]))
-            ovr.scale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
-          if (auto v = (*monTbl)["shadow"].value<bool>())
-            ovr.shadow = *v;
-          if (auto v = (*monTbl)["contact_shadow"].value<bool>())
-            ovr.contactShadow = *v;
-          if (auto* n = (*monTbl)["start"].as_array())
-            ovr.startWidgets = readStringArray(*n);
-          if (auto* n = (*monTbl)["center"].as_array())
-            ovr.centerWidgets = readStringArray(*n);
-          if (auto* n = (*monTbl)["end"].as_array())
-            ovr.endWidgets = readStringArray(*n);
-
-          if (auto v = (*monTbl)["capsule"].value<bool>()) {
-            ovr.widgetCapsuleDefault = *v;
-          }
-          if (auto fillStr = (*monTbl)["capsule_fill"].value<std::string>()) {
-            ovr.widgetCapsuleFill = colorSpecFromConfigString(*fillStr);
-          }
-          if (auto fgStr = (*monTbl)["capsule_foreground"].value<std::string>()) {
-            ovr.widgetCapsuleForeground = colorSpecFromConfigString(*fgStr);
-          }
-          if (auto v = finiteDouble((*monTbl)["capsule_padding"])) {
-            ovr.widgetCapsulePadding = std::clamp(*v, 0.0, 48.0);
-          }
-          if (auto v = finiteDouble((*monTbl)["capsule_radius"])) {
-            ovr.widgetCapsuleRadius = std::clamp(*v, 0.0, 80.0);
-          }
-          if (auto v = finiteDouble((*monTbl)["capsule_opacity"])) {
-            ovr.widgetCapsuleOpacity = std::clamp(*v, 0.0, 1.0);
-          }
-          if (monTbl->contains("capsule_border")) {
-            ovr.widgetCapsuleBorderSpecified = true;
-            std::string borderStr;
-            if (auto v = (*monTbl)["capsule_border"].value<std::string>()) {
-              borderStr = *v;
-            }
-            ovr.widgetCapsuleBorder = optionalCapsuleBorder(borderStr);
-          }
-          if (auto cStr = (*monTbl)["color"].value<std::string>()) {
-            ovr.widgetColor = colorSpecFromConfigString(*cStr);
-          }
-          if (auto* n = (*monTbl)["capsule_groups"].as_array()) {
-            ovr.widgetCapsuleGroups = readStringArray(*n);
-          }
-
+          ovr.match = std::string(monName.str()); // key is the match unless an explicit `match` overrides it
+          schema::readInto(
+              *monTbl, ovr, schema::barMonitorOverrideSchema(),
+              "bar." + bar.name + ".monitor." + std::string(monName.str()), schemaDiag
+          );
           bar.monitorOverrides.push_back(std::move(ovr));
         }
       }
@@ -1146,374 +1147,35 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
         continue;
       }
 
-      std::string widgetName(name.str());
-      WidgetConfig wc;
+      const std::string widgetName(name.str());
+      WidgetConfig wc = noctalia::config::readBarWidgetConfig(widgetName, *entryTbl, config);
 
-      if (auto v = (*entryTbl)["type"].value<std::string>()) {
-        wc.type = *v;
-        if (auto it = config.widgets.find(widgetName); it != config.widgets.end() && it->second.type == wc.type) {
-          wc.settings = it->second.settings;
-        }
-      } else if (auto it = config.widgets.find(widgetName); it != config.widgets.end()) {
-        wc = it->second;
-      } else {
-        wc.type = widgetName;
-      }
-
-      for (const auto& [key, val] : *entryTbl) {
-        if (key == "type") {
-          continue;
-        }
-        if (auto* s = val.as_string()) {
-          wc.settings[std::string(key.str())] = s->get();
-        } else if (auto* i = val.as_integer()) {
-          wc.settings[std::string(key.str())] = i->get();
-        } else if (auto* f = val.as_floating_point()) {
-          wc.settings[std::string(key.str())] = f->get();
-        } else if (auto* b = val.as_boolean()) {
-          wc.settings[std::string(key.str())] = b->get();
-        } else if (auto* arr = val.as_array()) {
-          std::vector<std::string> list;
-          list.reserve(arr->size());
-          for (const auto& item : *arr) {
-            if (auto v = item.value<std::string>()) {
-              list.push_back(*v);
-            }
-          }
-          wc.settings[std::string(key.str())] = std::move(list);
-        }
-      }
-
+      validateWidgetSettings(widgetName, wc);
       config.widgets[widgetName] = std::move(wc);
     }
   }
 
   // Parse [shell]
   if (auto* shellTbl = tbl["shell"].as_table()) {
-    auto& shell = config.shell;
-    if (auto v = finiteDouble((*shellTbl)["ui_scale"])) {
-      shell.uiScale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
-    }
-    if (auto v = finiteDouble((*shellTbl)["corner_radius_scale"])) {
-      shell.cornerRadiusScale = std::clamp(static_cast<float>(*v), 0.0f, 2.0f);
-    }
-    if (auto v = (*shellTbl)["font_family"].value<std::string>()) {
-      shell.fontFamily = StringUtils::trim(*v);
-      if (shell.fontFamily.empty()) {
-        shell.fontFamily = "sans-serif";
-      }
-    }
-    if (auto v = (*shellTbl)["lang"].value<std::string>()) {
-      shell.lang = *v;
-    }
-    if (auto v = (*shellTbl)["time_format"].value<std::string>()) {
-      shell.timeFormat = *v;
-    }
-    if (auto v = (*shellTbl)["date_format"].value<std::string>()) {
-      shell.dateFormat = *v;
-    }
-    if (auto v = (*shellTbl)["offline_mode"].value<bool>()) {
-      shell.offlineMode = *v;
-    }
-    if (auto v = (*shellTbl)["telemetry_enabled"].value<bool>()) {
-      shell.telemetryEnabled = *v;
-    }
-    if (auto v = (*shellTbl)["niri_overview_type_to_launch_enabled"].value<bool>()) {
-      shell.niriOverviewTypeToLaunchEnabled = *v;
-    }
-    if (auto polkitAgent = (*shellTbl)["polkit_agent"].value<bool>()) {
-      shell.polkitAgent = *polkitAgent;
-    }
-    if (auto v = (*shellTbl)["password_style"].value<std::string>()) {
-      if (auto parsed = enumFromKey(kPasswordMaskStyles, *v)) {
-        shell.passwordMaskStyle = *parsed;
-      }
-    }
-    if (const auto* animationTbl = (*shellTbl)["animation"].as_table()) {
-      if (auto enabled = (*animationTbl)["enabled"].value<bool>()) {
-        shell.animation.enabled = *enabled;
-      }
-      if (auto v = finiteDouble((*animationTbl)["speed"])) {
-        shell.animation.speed = std::clamp(static_cast<float>(*v), 0.05f, 4.0f);
-      }
-    }
-    if (const auto* shadowTbl = (*shellTbl)["shadow"].as_table()) {
-      if (auto v = (*shadowTbl)["blur"].value<int64_t>()) {
-        shell.shadow.blur = std::clamp(static_cast<std::int32_t>(*v), 0, 100);
-      }
-      if (auto v = (*shadowTbl)["offset_x"].value<int64_t>()) {
-        shell.shadow.offsetX = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
-      }
-      if (auto v = (*shadowTbl)["offset_y"].value<int64_t>()) {
-        shell.shadow.offsetY = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
-      }
-      if (auto v = finiteDouble((*shadowTbl)["alpha"])) {
-        shell.shadow.alpha = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
-      }
-    }
-    if (const auto* panelTbl = (*shellTbl)["panel"].as_table()) {
-      if (auto v = (*panelTbl)["background_blur"].value<bool>()) {
-        shell.panel.backgroundBlur = *v;
-      }
-      if (auto v = (*panelTbl)["transparency_mode"].value<std::string>()) {
-        if (auto parsed = enumFromKey(kPanelTransparencyModes, StringUtils::trim(*v))) {
-          shell.panel.transparencyMode = *parsed;
-        }
-      }
-      if (auto v = (*panelTbl)["launcher_placement"].value<std::string>()) {
-        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
-          shell.panel.launcherPlacement = *parsed;
-        }
-      }
-      if (auto v = (*panelTbl)["clipboard_placement"].value<std::string>()) {
-        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
-          shell.panel.clipboardPlacement = *parsed;
-        }
-      }
-      if (auto v = (*panelTbl)["control_center_placement"].value<std::string>()) {
-        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
-          shell.panel.controlCenterPlacement = *parsed;
-        }
-      }
-      if (auto v = (*panelTbl)["wallpaper_placement"].value<std::string>()) {
-        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
-          shell.panel.wallpaperPlacement = *parsed;
-        }
-      }
-      if (auto v = (*panelTbl)["session_placement"].value<std::string>()) {
-        if (auto parsed = enumFromKey(kPanelPlacements, StringUtils::trim(*v))) {
-          shell.panel.sessionPlacement = *parsed;
-        }
-      }
-      if (auto v = (*panelTbl)["open_near_click_control_center"].value<bool>()) {
-        shell.panel.openNearClickControlCenter = *v;
-      }
-      if (auto v = (*panelTbl)["open_near_click_launcher"].value<bool>()) {
-        shell.panel.openNearClickLauncher = *v;
-      }
-      if (auto v = (*panelTbl)["open_near_click_clipboard"].value<bool>()) {
-        shell.panel.openNearClickClipboard = *v;
-      }
-      if (auto v = (*panelTbl)["open_near_click_wallpaper"].value<bool>()) {
-        shell.panel.openNearClickWallpaper = *v;
-      }
-      if (auto v = (*panelTbl)["open_near_click_session"].value<bool>()) {
-        shell.panel.openNearClickSession = *v;
-      }
-    }
-    if (const auto* screenCornersTbl = (*shellTbl)["screen_corners"].as_table()) {
-      if (auto v = (*screenCornersTbl)["enabled"].value<bool>()) {
-        shell.screenCorners.enabled = *v;
-      }
-      if (auto v = (*screenCornersTbl)["size"].value<std::int64_t>()) {
-        shell.screenCorners.size = std::clamp(static_cast<std::int32_t>(*v), 1, 100);
-      }
-    }
-    if (const auto* mprisTbl = (*shellTbl)["mpris"].as_table()) {
-      if (const auto* blacklistNode = mprisTbl->get("blacklist")) {
-        shell.mpris.blacklist = readStringArray(*blacklistNode);
-      }
-    }
-    if (auto v = (*shellTbl)["avatar_path"].value<std::string>()) {
-      shell.avatarPath = *v;
-    }
-    if (auto v = (*shellTbl)["settings_show_advanced"].value<bool>()) {
-      shell.settingsShowAdvanced = *v;
-    }
-    if (auto v = (*shellTbl)["middle_click_opens_widget_settings"].value<bool>()) {
-      shell.middleClickOpensWidgetSettings = *v;
-    }
-    if (auto v = (*shellTbl)["show_location"].value<bool>()) {
-      shell.showLocation = *v;
-    }
-    if (auto v = (*shellTbl)["clipboard_enabled"].value<bool>()) {
-      shell.clipboardEnabled = *v;
-    }
-    if (auto v = (*shellTbl)["clipboard_auto_paste"].value<std::string>()) {
-      if (auto parsed = enumFromKey(kClipboardAutoPasteModes, *v)) {
-        shell.clipboardAutoPaste = *parsed;
-      }
-    }
-    if (auto v = (*shellTbl)["clipboard_image_action_command"].value<std::string>()) {
-      shell.clipboardImageActionCommand = *v;
-    }
-
-    bool sessionActionsKeyPresent = false;
-    if (const auto* sessionTbl = (*shellTbl)["session"].as_table()) {
-      if (sessionTbl->contains("actions")) {
-        sessionActionsKeyPresent = true;
-        shell.session.actions.clear();
-        if (const auto* actionsArr = (*sessionTbl)["actions"].as_array()) {
-          for (const auto& entry : *actionsArr) {
-            auto* entryTbl = entry.as_table();
-            if (entryTbl == nullptr) {
-              continue;
-            }
-            SessionPanelActionConfig row{};
-            if (auto v = (*entryTbl)["action"].value<std::string>()) {
-              row.action = StringUtils::toLower(StringUtils::trim(*v));
-            }
-            if (row.action.empty()) {
-              continue;
-            }
-            if (auto v = (*entryTbl)["enabled"].value<bool>()) {
-              row.enabled = *v;
-            }
-            if (const auto* cmdNode = entryTbl->get("command")) {
-              if (auto s = cmdNode->value<std::string>()) {
-                row.command = StringUtils::trim(*s);
-                if (row.command->empty()) {
-                  row.command = std::nullopt;
-                }
-              }
-            }
-            if (auto v = (*entryTbl)["label"].value<std::string>()) {
-              row.label = StringUtils::trim(*v);
-              if (row.label->empty()) {
-                row.label = std::nullopt;
-              }
-            }
-            if (auto v = (*entryTbl)["glyph"].value<std::string>()) {
-              row.glyph = StringUtils::trim(*v);
-              if (row.glyph->empty()) {
-                row.glyph = std::nullopt;
-              }
-            }
-            if (auto v = (*entryTbl)["destructive"].value<bool>()) {
-              row.destructive = *v;
-            }
-            shell.session.actions.push_back(std::move(row));
-          }
-        }
-      }
-    }
-    if (!sessionActionsKeyPresent && shell.session.actions.empty()) {
-      shell.session.actions = defaultSessionPanelActions();
+    // session.actions default-seeding stays here: it must fire when [shell.session]
+    // or its actions array is absent, which the schema read can't observe.
+    const bool sessionActionsKeyPresent = [&] {
+      const auto* sessionTbl = (*shellTbl)["session"].as_table();
+      return sessionTbl != nullptr && (*sessionTbl)["actions"].as_array() != nullptr;
+    }();
+    schema::readInto(*shellTbl, config.shell, schema::shellSchema(), "shell", schemaDiag);
+    if (!sessionActionsKeyPresent && config.shell.session.actions.empty()) {
+      config.shell.session.actions = defaultSessionPanelActions();
     }
   }
 
   // Parse [theme]
   if (auto* themeTbl = tbl["theme"].as_table()) {
-    auto& theme = config.theme;
-    if (auto v = (*themeTbl)["source"].value<std::string>()) {
-      if (auto parsed = enumFromKey(kPaletteSources, *v)) {
-        theme.source = *parsed;
-      }
-    }
-    if (auto builtin = (*themeTbl)["builtin"].value<std::string>()) {
-      theme.builtinPalette = *builtin;
-    }
-    if (auto v = (*themeTbl)["community_palette"].value<std::string>()) {
-      theme.communityPalette = *v;
-    }
-    if (auto v = (*themeTbl)["custom_palette"].value<std::string>()) {
-      theme.customPalette = *v;
-    }
-    if (auto v = (*themeTbl)["wallpaper_scheme"].value<std::string>())
-      theme.wallpaperScheme = *v;
-    if (auto v = (*themeTbl)["mode"].value<std::string>()) {
-      if (auto parsed = enumFromKey(kThemeModes, *v)) {
-        theme.mode = *parsed;
-      }
-    }
-    if (const auto* templatesTbl = (*themeTbl)["templates"].as_table()) {
-      auto& templates = theme.templates;
-      if (auto v = (*templatesTbl)["enable_builtin_templates"].value<bool>())
-        templates.enableBuiltinTemplates = *v;
-      if (auto v = (*templatesTbl)["enable_community_templates"].value<bool>())
-        templates.enableCommunityTemplates = *v;
-      if (const auto* builtinIds = (*templatesTbl)["builtin_ids"].as_array()) {
-        templates.builtinIds.clear();
-        templates.builtinIds.reserve(builtinIds->size());
-        for (const auto& item : *builtinIds) {
-          if (const auto* id = item.as_string())
-            templates.builtinIds.push_back(id->get());
-        }
-      }
-      if (const auto* communityIds = (*templatesTbl)["community_ids"].as_array()) {
-        templates.communityIds.clear();
-        templates.communityIds.reserve(communityIds->size());
-        for (const auto& item : *communityIds) {
-          if (const auto* id = item.as_string())
-            templates.communityIds.push_back(id->get());
-        }
-      }
-      if (const auto* customColorsTbl = (*templatesTbl)["custom_colors"].as_table()) {
-        templates.customColors.clear();
-        templates.customColors.reserve(customColorsTbl->size());
-        for (const auto& [nameNode, valueNode] : *customColorsTbl) {
-          ThemeConfig::TemplateColorConfig color;
-          color.name = std::string(nameNode.str());
-          if (const auto* str = valueNode.as_string()) {
-            color.color = str->get();
-          } else if (const auto* colorTbl = valueNode.as_table()) {
-            if (auto value = colorTbl->get_as<std::string>("color")) {
-              color.color = value->get();
-            }
-            if (auto blend = colorTbl->get_as<bool>("blend")) {
-              color.blend = blend->get();
-            }
-          }
-          if (!StringUtils::trim(color.name).empty() && !StringUtils::trim(color.color).empty()) {
-            templates.customColors.push_back(std::move(color));
-          }
-        }
-      }
-      if (const auto* userTemplatesTbl = (*templatesTbl)["user"].as_table()) {
-        templates.userTemplates.clear();
-        templates.userTemplates.reserve(userTemplatesTbl->size());
-        for (const auto& [idNode, templateNode] : *userTemplatesTbl) {
-          const auto* templateTbl = templateNode.as_table();
-          if (templateTbl == nullptr) {
-            continue;
-          }
-
-          ThemeConfig::UserTemplateConfig entry;
-          entry.id = std::string(idNode.str());
-          if (auto enabled = templateTbl->get_as<bool>("enabled")) {
-            entry.enabled = enabled->get();
-          }
-          if (auto inputPath = templateTbl->get_as<std::string>("input_path")) {
-            entry.inputPath = inputPath->get();
-          }
-          if (const auto* inputPathModesTbl = (*templateTbl)["input_path_modes"].as_table()) {
-            auto dark = inputPathModesTbl->get_as<std::string>("dark");
-            auto light = inputPathModesTbl->get_as<std::string>("light");
-            if (dark != nullptr && light != nullptr) {
-              entry.inputPathModes =
-                  ThemeConfig::TemplateInputPathModesConfig{.dark = dark->get(), .light = light->get()};
-            }
-          }
-          if (const auto* outputPath = templateTbl->get("output_path")) {
-            entry.outputPaths = readStringOrArray(*outputPath);
-          }
-          if (auto outputPathDynamic = templateTbl->get_as<std::string>("output_path_dynamic")) {
-            entry.outputPathDynamic = outputPathDynamic->get();
-          }
-          if (auto compareTo = templateTbl->get_as<std::string>("compare_to")) {
-            entry.compareTo = compareTo->get();
-          }
-          if (const auto* colorsToCompare = templateTbl->get("colors_to_compare")) {
-            entry.colorsToCompare = readTemplateCompareColors(*colorsToCompare);
-          }
-          if (auto preHook = templateTbl->get_as<std::string>("pre_hook")) {
-            entry.preHook = preHook->get();
-          }
-          if (auto postHook = templateTbl->get_as<std::string>("post_hook")) {
-            entry.postHook = postHook->get();
-          }
-          if (auto index = templateTbl->get_as<int64_t>("index")) {
-            entry.index = static_cast<int>(index->get());
-          }
-          if (!StringUtils::trim(entry.id).empty()) {
-            templates.userTemplates.push_back(std::move(entry));
-          }
-        }
-      }
-    }
+    schema::readInto(*themeTbl, config.theme, schema::themeSchema(), "theme", schemaDiag);
   }
 
-  // Parse [wallpaper]
+  // Parse [wallpaper] (config keys only; app-managed state keys default/last/
+  // monitors/favorite are handled separately by extractWallpaperFromTable).
   if (auto* wpTbl = tbl["wallpaper"].as_table()) {
     auto& wp = config.wallpaper;
     if (auto v = (*wpTbl)["enabled"].value<bool>())
@@ -1637,121 +1299,30 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
 
   // Parse [backdrop]
   if (auto* ovTbl = tbl["backdrop"].as_table()) {
-    auto& ov = config.backdrop;
-    if (auto v = (*ovTbl)["enabled"].value<bool>())
-      ov.enabled = *v;
-    if (auto v = finiteDouble((*ovTbl)["blur_intensity"]))
-      ov.blurIntensity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
-    if (auto v = finiteDouble((*ovTbl)["tint_intensity"]))
-      ov.tintIntensity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
+    schema::readInto(*ovTbl, config.backdrop, schema::backdropSchema(), "backdrop", schemaDiag);
+  }
+
+  // Parse [lockscreen]
+  if (auto* lockTbl = tbl["lockscreen"].as_table()) {
+    schema::readInto(*lockTbl, config.lockscreen, schema::lockscreenSchema(), "lockscreen", schemaDiag);
   }
 
   // Parse [osd]
   if (auto* osdTbl = tbl["osd"].as_table()) {
-    auto& osd = config.osd;
-    if (auto v = (*osdTbl)["position"].value<std::string>())
-      osd.position = *v;
-    if (auto v = (*osdTbl)["orientation"].value<std::string>())
-      osd.orientation = *v;
-    if (auto v = (*osdTbl)["lock_keys"].value<bool>())
-      osd.lockKeys = *v;
+    schema::readInto(*osdTbl, config.osd, schema::osdSchema(), "osd", schemaDiag);
   }
 
-  auto parseNotificationTable = [&config](const toml::table& notifTable) {
-    auto& notif = config.notification;
-    if (auto v = notifTable["enable_daemon"].value<bool>())
-      notif.enableDaemon = *v;
-    if (auto v = notifTable["position"].value<std::string>())
-      notif.position = *v;
-    if (auto v = notifTable["layer"].value<std::string>())
-      notif.layer = *v;
-    if (auto v = finiteDouble(notifTable["background_opacity"]))
-      notif.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
-    if (auto v = notifTable["offset_x"].value<int64_t>())
-      notif.offsetX = static_cast<int>(*v);
-    if (auto v = notifTable["offset_y"].value<int64_t>())
-      notif.offsetY = static_cast<int>(*v);
-    if (const auto* v = notifTable.get("monitors")) {
-      notif.monitors = readStringArray(*v);
-    }
-  };
-
   if (auto* notifTbl = tbl["notification"].as_table()) {
-    parseNotificationTable(*notifTbl);
+    schema::readInto(*notifTbl, config.notification, schema::notificationSchema(), "notification", schemaDiag);
   }
   // Compatibility alias: accept [notifications] as well.
   if (auto* notifTbl = tbl["notifications"].as_table()) {
-    parseNotificationTable(*notifTbl);
+    schema::readInto(*notifTbl, config.notification, schema::notificationSchema(), "notifications", schemaDiag);
   }
 
   // Parse [dock]
   if (auto* dockTbl = tbl["dock"].as_table()) {
-    auto& dock = config.dock;
-    if (auto v = (*dockTbl)["enabled"].value<bool>())
-      dock.enabled = *v;
-    if (auto v = (*dockTbl)["active_monitor_only"].value<bool>())
-      dock.activeMonitorOnly = *v;
-    if (auto v = (*dockTbl)["position"].value<std::string>())
-      dock.position = *v;
-    if (auto v = (*dockTbl)["icon_size"].value<int64_t>())
-      dock.iconSize = std::clamp(static_cast<std::int32_t>(*v), 16, 256);
-    if (auto v = (*dockTbl)["padding"].value<int64_t>())
-      dock.padding = std::clamp(static_cast<std::int32_t>(*v), 0, 100);
-    if (auto v = (*dockTbl)["item_spacing"].value<int64_t>())
-      dock.itemSpacing = std::clamp(static_cast<std::int32_t>(*v), 0, 100);
-    if (auto v = finiteDouble((*dockTbl)["background_opacity"]))
-      dock.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
-    if (auto v = (*dockTbl)["radius"].value<int64_t>()) {
-      const auto r = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
-      dock.radius = r;
-      dock.radiusTopLeft = r;
-      dock.radiusTopRight = r;
-      dock.radiusBottomLeft = r;
-      dock.radiusBottomRight = r;
-    }
-    if (auto v = (*dockTbl)["radius_top_left"].value<int64_t>())
-      dock.radiusTopLeft = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
-    if (auto v = (*dockTbl)["radius_top_right"].value<int64_t>())
-      dock.radiusTopRight = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
-    if (auto v = (*dockTbl)["radius_bottom_left"].value<int64_t>())
-      dock.radiusBottomLeft = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
-    if (auto v = (*dockTbl)["radius_bottom_right"].value<int64_t>())
-      dock.radiusBottomRight = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
-    if (auto v = (*dockTbl)["margin_ends"].value<int64_t>())
-      dock.marginEnds = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
-    if (auto v = (*dockTbl)["margin_edge"].value<int64_t>())
-      dock.marginEdge = std::clamp(static_cast<std::int32_t>(*v), 0, 100);
-    if (auto v = (*dockTbl)["shadow"].value<bool>())
-      dock.shadow = *v;
-    if (auto v = (*dockTbl)["show_running"].value<bool>())
-      dock.showRunning = *v;
-    if (auto v = (*dockTbl)["auto_hide"].value<bool>())
-      dock.autoHide = *v;
-    if (auto v = (*dockTbl)["reserve_space"].value<bool>())
-      dock.reserveSpace = *v;
-    if (auto v = finiteDouble((*dockTbl)["active_scale"]))
-      dock.activeScale = std::clamp(static_cast<float>(*v), 0.1f, 1.75f);
-    if (auto v = finiteDouble((*dockTbl)["inactive_scale"]))
-      dock.inactiveScale = std::clamp(static_cast<float>(*v), 0.1f, 1.0f);
-    if (auto v = finiteDouble((*dockTbl)["active_opacity"]))
-      dock.activeOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
-    if (auto v = finiteDouble((*dockTbl)["inactive_opacity"]))
-      dock.inactiveOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
-    if (auto v = (*dockTbl)["show_dots"].value<bool>())
-      dock.showDots = *v;
-    if (auto v = (*dockTbl)["show_instance_count"].value<bool>())
-      dock.showInstanceCount = *v;
-    if (auto v = (*dockTbl)["launcher_position"].value<std::string>()) {
-      if (*v == "none" || *v == "start" || *v == "end") {
-        dock.launcherPosition = *v;
-      } else {
-        kLog.warn("invalid dock.launcher_position '{}'; expected none, start, or end", *v);
-      }
-    }
-    if (auto v = (*dockTbl)["launcher_icon"].value<std::string>())
-      dock.launcherIcon = *v;
-    if (auto* arr = (*dockTbl)["pinned"].as_array())
-      dock.pinned = readStringArray(*arr);
+    schema::readInto(*dockTbl, config.dock, schema::dockSchema(), "dock", schemaDiag);
   }
 
   // Parse [desktop_widgets]
@@ -1763,381 +1334,88 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
     if (auto schemaVersion = (*desktopWidgetsTbl)["schema_version"].value<int64_t>()) {
       desktopWidgets.schemaVersion = static_cast<std::int32_t>(*schemaVersion);
     }
-    if (const auto* gridTable = (*desktopWidgetsTbl)["grid"].as_table()) {
-      if (auto visible = (*gridTable)["visible"].value<bool>()) {
-        desktopWidgets.grid.visible = *visible;
-      }
-      if (auto cellSize = (*gridTable)["cell_size"].value<int64_t>()) {
-        desktopWidgets.grid.cellSize = std::clamp(static_cast<std::int32_t>(*cellSize), 8, 256);
-      }
-      if (auto majorInterval = (*gridTable)["major_interval"].value<int64_t>()) {
-        desktopWidgets.grid.majorInterval = std::clamp(static_cast<std::int32_t>(*majorInterval), 1, 16);
-      }
-    }
-    if (const auto* widgetsTable = (*desktopWidgetsTbl)["widget"].as_table()) {
-      std::vector<DesktopWidgetState> parsedWidgets;
-      parsedWidgets.reserve(widgetsTable->size());
-      for (const auto& [idNode, widgetNode] : *widgetsTable) {
-        const auto* widgetTable = widgetNode.as_table();
-        if (widgetTable == nullptr) {
-          continue;
-        }
-        auto widget = readDesktopWidgetState(idNode.str(), *widgetTable);
-        if (!widget.id.empty() && !widget.type.empty()) {
-          parsedWidgets.push_back(std::move(widget));
-        }
-      }
+    parseWidgetsPlacementSection(*desktopWidgetsTbl, desktopWidgets.grid, desktopWidgets.widgets, "desktop_widgets");
+  }
 
-      std::vector<std::string> order;
-      bool orderSpecified = false;
-      if (const auto* orderNode = desktopWidgetsTbl->get("widget_order")) {
-        order = readStringArray(*orderNode);
-        orderSpecified = true;
-      }
-
-      desktopWidgets.widgets.clear();
-      std::vector<bool> used(parsedWidgets.size(), false);
-      for (const auto& orderedId : order) {
-        for (std::size_t i = 0; i < parsedWidgets.size(); ++i) {
-          if (!used[i] && parsedWidgets[i].id == orderedId) {
-            used[i] = true;
-            desktopWidgets.widgets.push_back(std::move(parsedWidgets[i]));
-            break;
-          }
-        }
-      }
-      if (!orderSpecified) {
-        for (std::size_t i = 0; i < parsedWidgets.size(); ++i) {
-          if (!used[i]) {
-            desktopWidgets.widgets.push_back(std::move(parsedWidgets[i]));
-          }
-        }
-      }
+  // Parse [lockscreen_widgets]
+  if (auto* lockscreenWidgetsTbl = tbl["lockscreen_widgets"].as_table()) {
+    auto& lockscreenWidgets = config.lockscreenWidgets;
+    if (auto v = (*lockscreenWidgetsTbl)["enabled"].value<bool>()) {
+      lockscreenWidgets.enabled = *v;
     }
+    if (auto schemaVersion = (*lockscreenWidgetsTbl)["schema_version"].value<int64_t>()) {
+      lockscreenWidgets.schemaVersion = static_cast<std::int32_t>(*schemaVersion);
+    }
+    parseWidgetsPlacementSection(
+        *lockscreenWidgetsTbl, lockscreenWidgets.grid, lockscreenWidgets.widgets, "lockscreen_widgets"
+    );
   }
 
   // Parse [weather]
   if (auto* weatherTbl = tbl["weather"].as_table()) {
-    auto& weather = config.weather;
-    if (auto v = (*weatherTbl)["enabled"].value<bool>())
-      weather.enabled = *v;
-    if (auto v = (*weatherTbl)["auto_locate"].value<bool>())
-      weather.autoLocate = *v;
-    if (auto v = (*weatherTbl)["effects"].value<bool>())
-      weather.effects = *v;
-    if (auto v = (*weatherTbl)["address"].value<std::string>())
-      weather.address = *v;
-    if (auto v = (*weatherTbl)["refresh_minutes"].value<int64_t>())
-      weather.refreshMinutes = static_cast<std::int32_t>(*v);
-    if (auto v = (*weatherTbl)["unit"].value<std::string>())
-      weather.unit = *v;
+    schema::readInto(*weatherTbl, config.weather, schema::weatherSchema(), "weather", schemaDiag);
+  }
+
+  // Parse [calendar]
+  if (auto* calendarTbl = tbl["calendar"].as_table()) {
+    schema::readInto(*calendarTbl, config.calendar, schema::calendarSchema(), "calendar", schemaDiag);
   }
 
   // Parse [system]
   if (auto* systemTbl = tbl["system"].as_table()) {
-    auto& system = config.system;
-    if (const auto* monitorTbl = (*systemTbl)["monitor"].as_table()) {
-      auto& monitor = system.monitor;
-      if (auto v = (*monitorTbl)["enabled"].value<bool>()) {
-        monitor.enabled = *v;
-      }
-      if (auto v = finiteDouble((*monitorTbl)["cpu_poll_seconds"])) {
-        monitor.cpuPollSeconds = static_cast<float>(*v);
-      }
-      if (auto v = finiteDouble((*monitorTbl)["gpu_temp_poll_seconds"])) {
-        monitor.gpuTempPollSeconds = static_cast<float>(*v);
-      }
-      if (auto v = finiteDouble((*monitorTbl)["gpu_vram_poll_seconds"])) {
-        monitor.gpuVramPollSeconds = static_cast<float>(*v);
-      }
-      if (auto v = finiteDouble((*monitorTbl)["memory_poll_seconds"])) {
-        monitor.memoryPollSeconds = static_cast<float>(*v);
-      }
-      if (auto v = finiteDouble((*monitorTbl)["swap_poll_seconds"])) {
-        monitor.swapPollSeconds = static_cast<float>(*v);
-      }
-      if (auto v = finiteDouble((*monitorTbl)["network_poll_seconds"])) {
-        monitor.networkPollSeconds = static_cast<float>(*v);
-      }
-      if (auto v = finiteDouble((*monitorTbl)["disk_poll_seconds"])) {
-        monitor.diskPollSeconds = static_cast<float>(*v);
-      }
-      if (auto v = finiteDouble((*monitorTbl)["history_poll_seconds"])) {
-        monitor.historyPollSeconds = static_cast<float>(*v);
-      }
-    }
+    schema::readInto(*systemTbl, config.system, schema::systemSchema(), "system", schemaDiag);
   }
 
   // Parse [audio]
   if (auto* audioTbl = tbl["audio"].as_table()) {
-    auto& audio = config.audio;
-    if (auto v = (*audioTbl)["enable_overdrive"].value<bool>()) {
-      audio.enableOverdrive = *v;
-    }
-    if (auto v = (*audioTbl)["enable_sounds"].value<bool>()) {
-      audio.enableSounds = *v;
-    }
-    if (auto v = finiteDouble((*audioTbl)["sound_volume"])) {
-      audio.soundVolume = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
-    }
-    if (auto v = (*audioTbl)["volume_change_sound"].value<std::string>()) {
-      audio.volumeChangeSound = *v;
-    }
-    if (auto v = (*audioTbl)["notification_sound"].value<std::string>()) {
-      audio.notificationSound = *v;
-    }
+    schema::readInto(*audioTbl, config.audio, schema::audioSchema(), "audio", schemaDiag);
   }
 
   // Parse [brightness]
   if (auto* brightnessTbl = tbl["brightness"].as_table()) {
-    auto& brightness = config.brightness;
-    if (auto v = (*brightnessTbl)["enable_ddcutil"].value<bool>()) {
-      brightness.enableDdcutil = *v;
-    }
-    if (auto* mmidArr = (*brightnessTbl)["ignore_mmids"].as_array()) {
-      for (const auto& item : *mmidArr) {
-        if (auto s = item.value<std::string>()) {
-          brightness.ddcutilIgnoreMmids.push_back(*s);
-        }
-      }
-    }
-    if (auto* monitorTblMap = (*brightnessTbl)["monitor"].as_table()) {
-      for (const auto& [name, node] : *monitorTblMap) {
-        auto* entryTbl = node.as_table();
-        if (entryTbl == nullptr) {
-          continue;
-        }
+    schema::readInto(*brightnessTbl, config.brightness, schema::brightnessSchema(), "brightness", schemaDiag);
+  }
 
-        BrightnessMonitorOverride override;
-        override.match = std::string(name.str());
-
-        if (auto v = (*entryTbl)["match"].value<std::string>()) {
-          override.match = *v;
-        }
-        if (auto v = (*entryTbl)["backend"].value<std::string>()) {
-          if (const auto parsed = enumFromKey(kBrightnessBackendPreferences, StringUtils::trim(*v));
-              parsed.has_value()) {
-            override.backend = *parsed;
-          } else {
-            kLog.warn("invalid brightness backend '{}' for monitor override '{}'", *v, override.match);
-          }
-        }
-
-        brightness.monitorOverrides.push_back(std::move(override));
-      }
-    }
+  // Parse [battery]
+  if (auto* batteryTbl = tbl["battery"].as_table()) {
+    schema::readInto(*batteryTbl, config.battery, schema::batterySchema(), "battery", schemaDiag);
   }
 
   // Parse [keybinds]
   if (auto* keybindsTbl = tbl["keybinds"].as_table()) {
-    auto& keybinds = config.keybinds;
-
-    auto parseAction = [&](std::string_view key, std::vector<KeyChord>& out) {
-      out.clear();
-      if (const auto* node = keybindsTbl->get(key)) {
-        if (const auto v = node->value<std::string>()) {
-          try {
-            if (const auto chord = parseKeyChordSpec(*v); chord.has_value()) {
-              out.push_back(*chord);
-            } else {
-              kLog.warn("invalid keybind chord for [{}] {} = \"{}\"", "keybinds", key, *v);
-            }
-          } catch (const std::exception& e) {
-            throw std::runtime_error(std::format("keybinds.{}: {}", key, e.what()));
-          }
-          return;
-        }
-        if (const auto* arr = node->as_array()) {
-          for (const auto& item : *arr) {
-            if (const auto v = item.value<std::string>()) {
-              try {
-                if (const auto chord = parseKeyChordSpec(*v); chord.has_value()) {
-                  out.push_back(*chord);
-                } else {
-                  kLog.warn("invalid keybind chord for [{}] {} item = \"{}\"", "keybinds", key, *v);
-                }
-              } catch (const std::exception& e) {
-                throw std::runtime_error(std::format("keybinds.{}: {}", key, e.what()));
-              }
-            }
-          }
-        }
-      }
-    };
-
-    parseAction("validate", keybinds.validate);
-    parseAction("cancel", keybinds.cancel);
-    parseAction("left", keybinds.left);
-    parseAction("right", keybinds.right);
-    parseAction("up", keybinds.up);
-    parseAction("down", keybinds.down);
+    schema::readInto(*keybindsTbl, config.keybinds, schema::keybindsSchema(), "keybinds", schemaDiag);
   }
 
   // Parse [nightlight]
   if (auto* nightlightTbl = tbl["nightlight"].as_table()) {
-    auto& nightlight = config.nightlight;
-    if (auto v = (*nightlightTbl)["enabled"].value<bool>()) {
-      nightlight.enabled = *v;
-    }
-    if (auto v = (*nightlightTbl)["force"].value<bool>()) {
-      nightlight.force = *v;
-    }
-    if (auto v = (*nightlightTbl)["use_weather_location"].value<bool>()) {
-      nightlight.useWeatherLocation = *v;
-    }
-    if (auto v = (*nightlightTbl)["start_time"].value<std::string>()) {
-      nightlight.startTime = *v;
-    }
-    if (auto v = (*nightlightTbl)["stop_time"].value<std::string>()) {
-      nightlight.stopTime = *v;
-    }
-    if (auto v = finiteDouble((*nightlightTbl)["latitude"])) {
-      nightlight.latitude = *v;
-    }
-    if (auto v = finiteDouble((*nightlightTbl)["longitude"])) {
-      nightlight.longitude = *v;
-    }
-    if (auto v = (*nightlightTbl)["temperature_day"].value<int64_t>()) {
-      nightlight.dayTemperature = std::clamp(static_cast<std::int32_t>(*v), 1000, 25000);
-    }
-    if (auto v = (*nightlightTbl)["temperature_night"].value<int64_t>()) {
-      nightlight.nightTemperature = std::clamp(static_cast<std::int32_t>(*v), 1000, 25000);
-    }
-    if (nightlight.dayTemperature - nightlight.nightTemperature < NightLightConfig::kTemperatureGap) {
-      const std::int32_t origDay = nightlight.dayTemperature;
-      const std::int32_t origNight = nightlight.nightTemperature;
-      // Prefer to preserve day and pull night down; if day is too low to leave room for the gap, bump day up.
-      nightlight.nightTemperature = origDay - NightLightConfig::kTemperatureGap;
-      if (nightlight.nightTemperature < NightLightConfig::kTemperatureMin) {
-        nightlight.nightTemperature = NightLightConfig::kTemperatureMin;
-        nightlight.dayTemperature = NightLightConfig::kTemperatureMin + NightLightConfig::kTemperatureGap;
-      }
-      kLog.warn("nightlight temperatures must satisfy day > night (day={}K night={}K); adjusted to day={}K night={}K",
-                origDay, origNight, nightlight.dayTemperature, nightlight.nightTemperature);
-    }
+    schema::readInto(*nightlightTbl, config.nightlight, schema::nightlightSchema(), "nightlight", schemaDiag);
+  }
+
+  // Parse [location]
+  if (auto* locationTbl = tbl["location"].as_table()) {
+    schema::readInto(*locationTbl, config.location, schema::locationSchema(), "location", schemaDiag);
   }
 
   // Parse [hooks]
   if (auto* hooksTbl = tbl["hooks"].as_table()) {
-    auto& hooks = config.hooks;
-    for (const auto& [name, node] : *hooksTbl) {
-      const std::string_view keyView{name.str()};
-      if (keyView == "battery_low_percent_threshold") {
-        if (auto v = node.value<int64_t>()) {
-          hooks.batteryLowPercentThreshold =
-              static_cast<std::int32_t>(std::clamp(*v, static_cast<std::int64_t>(0), static_cast<std::int64_t>(100)));
-        }
-        continue;
-      }
-      if (const auto kind = hookKindFromKey(keyView)) {
-        setHookCommandsFromNode(node, hooks.commands[static_cast<std::size_t>(*kind)]);
-      }
-    }
+    schema::readInto(*hooksTbl, config.hooks, schema::hooksSchema(), "hooks", schemaDiag);
   }
 
-  // Parse [[control_center.shortcuts]]
+  // Parse [control_center]. The default-shortcuts seeding stays here because it
+  // must apply even when [control_center] (or its shortcuts array) is absent.
   bool controlCenterShortcutsConfigured = false;
   if (auto* ccTbl = tbl["control_center"].as_table()) {
-    if (auto v = (*ccTbl)["compact"].value<bool>()) {
-      config.controlCenter.compact = *v;
-    }
-    if (auto* shortcutsArr = (*ccTbl)["shortcuts"].as_array()) {
-      controlCenterShortcutsConfigured = true;
-      config.controlCenter.shortcuts.clear();
-      for (const auto& entry : *shortcutsArr) {
-        auto* entryTbl = entry.as_table();
-        if (entryTbl == nullptr) {
-          continue;
-        }
-        ShortcutConfig sc;
-        if (auto v = (*entryTbl)["type"].value<std::string>()) {
-          sc.type = *v;
-        }
-        if (!sc.type.empty()) {
-          config.controlCenter.shortcuts.push_back(std::move(sc));
-        }
-      }
-    }
+    controlCenterShortcutsConfigured = (*ccTbl)["shortcuts"].as_array() != nullptr;
+    schema::readInto(*ccTbl, config.controlCenter, schema::controlCenterSchema(), "control_center", schemaDiag);
   }
   if (!controlCenterShortcutsConfigured && config.controlCenter.shortcuts.empty()) {
     config.controlCenter.shortcuts = defaultControlCenterShortcuts();
   }
 
-  // Parse [idle] and [idle.behavior.*]
+  // Parse [idle] and [idle.behavior.*]. Default-seeding stays here because it
+  // must apply even when [idle] is absent.
   if (auto* idleTbl = tbl["idle"].as_table()) {
-    if (auto v = finiteDouble((*idleTbl)["pre_action_fade_seconds"])) {
-      const double d = *v;
-      config.idle.preActionFadeSeconds = static_cast<float>(std::clamp(d, 0.0, 120.0));
-    }
-    if (auto* behaviorTbl = (*idleTbl)["behavior"].as_table()) {
-      for (const auto& [name, node] : *behaviorTbl) {
-        auto* entryTbl = node.as_table();
-        if (entryTbl == nullptr) {
-          continue;
-        }
-
-        IdleBehaviorConfig behavior;
-        behavior.name = std::string(name.str());
-
-        if (auto v = (*entryTbl)["enabled"].value<bool>()) {
-          behavior.enabled = *v;
-        }
-        if (auto v = (*entryTbl)["timeout"].value<int64_t>()) {
-          behavior.timeoutSeconds = static_cast<std::int32_t>(*v);
-        }
-        if (auto v = (*entryTbl)["action"].value<std::string>()) {
-          behavior.action = StringUtils::trim(*v);
-        }
-        if (auto v = (*entryTbl)["command"].value<std::string>()) {
-          behavior.command = *v;
-        }
-        if (auto v = (*entryTbl)["resume_command"].value<std::string>()) {
-          behavior.resumeCommand = *v;
-        }
-        if (auto v = (*entryTbl)["lock_before_suspend"].value<bool>()) {
-          behavior.lockBeforeSuspend = *v;
-        }
-
-        inferIdleBehaviorActionFromLegacyFields(behavior);
-
-        config.idle.behaviors.push_back(std::move(behavior));
-      }
-    }
-    if (auto* orderArr = (*idleTbl)["behavior_order"].as_array();
-        orderArr != nullptr && !config.idle.behaviors.empty()) {
-      std::vector<std::string> orderedNames;
-      orderedNames.reserve(orderArr->size());
-      for (const auto& item : *orderArr) {
-        if (auto name = item.value<std::string>(); name.has_value() && !name->empty()) {
-          orderedNames.push_back(*name);
-        }
-      }
-
-      if (!orderedNames.empty()) {
-        std::unordered_map<std::string, IdleBehaviorConfig> byName;
-        byName.reserve(config.idle.behaviors.size());
-        for (auto& behavior : config.idle.behaviors) {
-          byName.insert_or_assign(behavior.name, std::move(behavior));
-        }
-
-        std::vector<IdleBehaviorConfig> ordered;
-        ordered.reserve(byName.size());
-        for (const auto& name : orderedNames) {
-          auto it = byName.find(name);
-          if (it == byName.end()) {
-            continue;
-          }
-          ordered.push_back(std::move(it->second));
-          byName.erase(it);
-        }
-        for (auto& [name, behavior] : byName) {
-          (void)name;
-          ordered.push_back(std::move(behavior));
-        }
-
-        config.idle.behaviors = std::move(ordered);
-      }
-    }
+    schema::readInto(*idleTbl, config.idle, schema::idleSchema(), "idle", schemaDiag);
   }
   if (config.idle.behaviors.empty()) {
     config.idle.behaviors = defaultIdleBehaviors();
@@ -2167,16 +1445,20 @@ void ConfigService::parseTableInto(const toml::table& tbl, Config& config, bool 
         ++hookKindsUsed;
       }
     }
-    kLog.info("hooks kinds with commands={} battery_low_threshold={}%", hookKindsUsed,
-              config.hooks.batteryLowPercentThreshold);
+    kLog.info("hooks kinds with commands={}", hookKindsUsed);
+  }
+
+  for (const auto& entry : schemaDiag.entries) {
+    kLog.warn("{}: {}", entry.path, entry.message);
   }
 }
 
 bool ConfigService::matchesKeybind(KeybindAction action, std::uint32_t sym, std::uint32_t modifiers) const {
   const auto& configured = keybindSet(m_config.keybinds, action);
   const auto active = configured.empty() ? defaultKeybindSet(action) : configured;
-  return std::any_of(active.begin(), active.end(),
-                     [sym, modifiers](const KeyChord& chord) { return keyChordMatches(chord, sym, modifiers); });
+  return std::any_of(active.begin(), active.end(), [sym, modifiers](const KeyChord& chord) {
+    return keyChordMatches(chord, sym, modifiers);
+  });
 }
 
 void ConfigService::registerIpc(IpcService& ipc) {
@@ -2186,5 +1468,6 @@ void ConfigService::registerIpc(IpcService& ipc) {
         forceReload();
         return "ok\n";
       },
-      "config-reload", "Reload the config file");
+      "config-reload", "Reload the config file"
+  );
 }

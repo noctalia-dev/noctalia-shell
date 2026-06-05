@@ -57,16 +57,27 @@ public:
   void setFontFamily(std::string family);
   void notifyFontConfigChanged();
 
-  [[nodiscard]] TextMetrics measure(std::string_view text, float fontSize, bool bold = false, float maxWidth = 0.0f,
-                                    int maxLines = 0, TextAlign align = TextAlign::Start,
-                                    std::string_view fontFamily = {});
-  [[nodiscard]] TextMetrics measureFont(float fontSize, bool bold = false) const;
-  void measureCursorStops(std::string_view text, float fontSize, const std::vector<std::size_t>& byteOffsets,
-                          std::vector<float>& outStops, bool bold = false);
+  // Drops the uploaded glyph textures (keeping CPU-side metrics) so they are
+  // re-rasterized on the next draw. Used to recover from GPU memory loss across
+  // suspend/resume on drivers that do not preserve VRAM. Requires the render
+  // context to be current.
+  void invalidateGlyphTextures();
 
-  void draw(float surfaceWidth, float surfaceHeight, float x, float baselineY, std::string_view text, float fontSize,
-            const Color& color, const Mat3& transform, bool bold = false, float maxWidth = 0.0f, int maxLines = 0,
-            TextAlign align = TextAlign::Start, std::string_view fontFamily = {});
+  [[nodiscard]] TextMetrics measure(
+      std::string_view text, float fontSize, FontWeight fontWeight = FontWeight::Normal, float maxWidth = 0.0f,
+      int maxLines = 0, TextAlign align = TextAlign::Start, std::string_view fontFamily = {}
+  );
+  [[nodiscard]] TextMetrics measureFont(float fontSize, FontWeight fontWeight) const;
+  void measureCursorStops(
+      std::string_view text, float fontSize, const std::vector<std::size_t>& byteOffsets, std::vector<float>& outStops,
+      FontWeight fontWeight = FontWeight::Normal
+  );
+
+  void draw(
+      float surfaceWidth, float surfaceHeight, float x, float baselineY, std::string_view text, float fontSize,
+      const Color& color, const Mat3& transform, FontWeight fontWeight = FontWeight::Normal, float maxWidth = 0.0f,
+      int maxLines = 0, TextAlign align = TextAlign::Start, std::string_view fontFamily = {}
+  );
 
 private:
   struct CacheKey {
@@ -78,7 +89,7 @@ private:
     std::uint16_t scaleQ = 0;    // contentScale * 64 + 0.5
     std::uint16_t maxLines = 0;  // 0 = no explicit limit (use '\n'-count fallback)
     TextAlign align = TextAlign::Start;
-    bool bold = false;
+    FontWeight fontWeight = FontWeight::Normal;
 
     bool operator==(const CacheKey& other) const noexcept;
   };
@@ -97,12 +108,29 @@ private:
     std::uint16_t scaleQ = 0;
     std::uint16_t maxLines = 0;
     TextAlign align = TextAlign::Start;
-    bool bold = false;
+    FontWeight fontWeight = FontWeight::Normal;
 
     bool operator==(const MetricsKey& other) const noexcept;
   };
   struct MetricsKeyHash {
     std::size_t operator()(const MetricsKey& k) const noexcept;
+  };
+
+  // Color- and text-independent key for measureFont(), which derives font
+  // metrics from the active family at a given size/weight/scale. measureFont()
+  // runs every frame from bar layout; each underlying pango_context_get_metrics
+  // call makes Pango accumulate internal cache structures that are never
+  // reclaimed during the run (heaptrack: top leak, ~24MB over a 30m session).
+  // Memoizing collapses ~15k calls/run down to the handful of distinct fonts.
+  struct FontMetricsKey {
+    std::uint32_t sizeQ = 0;
+    std::uint16_t scaleQ = 0;
+    FontWeight fontWeight = FontWeight::Normal;
+
+    bool operator==(const FontMetricsKey& other) const noexcept;
+  };
+  struct FontMetricsKeyHash {
+    std::size_t operator()(const FontMetricsKey& k) const noexcept;
   };
 
   // LruList is a list of pointers into map keys — we break the otherwise
@@ -126,6 +154,7 @@ private:
     int pixelWidth = 0;   // total raster surface pixel width
     int pixelHeight = 0;  // total raster surface pixel height (sum of tiles)
     float baselinePx = 0; // baseline from top of full layout, in raster pixels
+    float inkOffsetX = 0; // raster px from surface left to logical text origin
     TextMetrics metrics;  // logical metrics in logical (unscaled) pixels
     std::size_t bytes = 0;
     bool tinted = false; // true: alpha coverage, tint in shader; false: premul RGBA
@@ -134,10 +163,13 @@ private:
 
   using CacheMap = std::unordered_map<CacheKey, CacheEntry, CacheKeyHash>;
   using MetricsMap = std::unordered_map<MetricsKey, TextMetrics, MetricsKeyHash>;
+  using FontMetricsMap = std::unordered_map<FontMetricsKey, TextMetrics, FontMetricsKeyHash>;
 
   // Build a PangoLayout at the given scaled size. Caller owns the layout (g_object_unref).
-  PangoLayout* buildLayout(std::string_view text, float fontSize, bool bold, float maxWidthPxScaled, int maxLines,
-                           TextAlign align, std::string_view fontFamily = {}) const;
+  PangoLayout* buildLayout(
+      std::string_view text, float fontSize, FontWeight fontWeight, float maxWidthPxScaled, int maxLines,
+      TextAlign align, std::string_view fontFamily = {}
+  ) const;
   // Render a layout into a new GL texture; fills out fields of `entry`.
   // When `tinted` is true, rasterizes as CAIRO_FORMAT_A8 and uploads alpha
   // coverage so the color is applied via u_tint at draw time. When false,
@@ -147,8 +179,10 @@ private:
   // Extract logical metrics from a laid-out PangoLayout, dividing by PANGO_SCALE and by scale.
   TextMetrics metricsFromLayout(PangoLayout* layout) const;
 
-  CacheEntry* lookupOrRasterize(std::string_view text, float fontSize, bool bold, float maxWidth, int maxLines,
-                                TextAlign align, const Color& color, std::string_view fontFamily = {});
+  CacheEntry* lookupOrRasterize(
+      std::string_view text, float fontSize, FontWeight fontWeight, float maxWidth, int maxLines, TextAlign align,
+      const Color& color, std::string_view fontFamily = {}
+  );
   void touch(CacheMap::iterator it);
   void evict(CacheMap::iterator it);
   void evictIfNeeded();
@@ -169,8 +203,10 @@ private:
   int m_glMaxTextureSize = 0; // lazy-queried on first rasterize
 
   MetricsMap m_metricsCache;
+  mutable FontMetricsMap m_fontMetricsCache;
 
   static constexpr std::size_t kMaxCacheEntries = 512;
   static constexpr std::size_t kMaxCacheBytes = 32 * 1024 * 1024;
   static constexpr std::size_t kMaxMetricsEntries = 1024;
+  static constexpr std::size_t kMaxFontMetricsEntries = 64;
 };

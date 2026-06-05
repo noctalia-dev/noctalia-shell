@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <spa/param/param.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -100,6 +101,14 @@ public:
   [[nodiscard]] std::uint64_t changeSerial() const noexcept { return m_changeSerial; }
 
   // Called from C callbacks in the .cpp - must be public
+  struct DeviceRouteData {
+    std::int32_t index = -1;
+    std::int32_t device = -1;
+    std::uint32_t direction = 0;
+    std::int32_t priority = 0;
+    std::uint32_t available = SPA_PARAM_AVAILABILITY_unknown;
+    bool muted = false;
+  };
   struct NodeData {
     PipeWireService* service = nullptr;
     std::uint32_t id = 0;
@@ -112,6 +121,10 @@ public:
     std::string streamTitle;
     std::string iconName;
     std::string mediaClass;
+    std::string linkGroup;
+    std::string targetObject;
+    bool nodePassive = false;
+    bool streamClassificationReady = false;
     float volume = 1.0f;
     // Software / node-route mute from PipeWire props (SPA_PARAM_Props, node routes).
     bool swMute = false;
@@ -124,6 +137,7 @@ public:
     std::int32_t routeIndex = -1;
     std::int32_t routeDevice = -1;
     std::uint32_t routeDirection = 0;
+    std::vector<DeviceRouteData> routes;
     struct pw_node* proxy = nullptr;
     spa_hook* listener = nullptr;
   };
@@ -137,12 +151,6 @@ public:
     struct pw_client* proxy = nullptr;
     spa_hook* listener = nullptr;
   };
-  struct DeviceRouteData {
-    std::int32_t index = -1;
-    std::int32_t device = -1;
-    std::uint32_t direction = 0;
-    bool muted = false;
-  };
   struct DeviceData {
     PipeWireService* service = nullptr;
     std::uint32_t id = 0;
@@ -154,11 +162,13 @@ public:
   void onRegistryGlobalRemove(std::uint32_t id);
   void onClientInfo(std::uint32_t id, const struct pw_client_info* info);
   void onDeviceInfo(std::uint32_t id, const struct pw_device_info* info);
-  void onDeviceParam(std::uint32_t id, std::uint32_t paramId, std::uint32_t index, std::uint32_t next,
-                     const struct spa_pod* param);
+  void onDeviceParam(
+      std::uint32_t id, std::uint32_t paramId, std::uint32_t index, std::uint32_t next, const struct spa_pod* param
+  );
   void onNodeInfo(std::uint32_t id, const struct pw_node_info* info);
-  void onNodeParam(std::uint32_t id, std::uint32_t paramId, std::uint32_t index, std::uint32_t next,
-                   const struct spa_pod* param);
+  void onNodeParam(
+      std::uint32_t id, std::uint32_t paramId, std::uint32_t index, std::uint32_t next, const struct spa_pod* param
+  );
   void parseDefaultNodes(const struct spa_dict* props);
 
 private:
@@ -169,7 +179,6 @@ private:
   void refreshNodeIdentity(NodeData& nd);
   void applyVolumePropsFromDict(NodeData& nd, const spa_dict* props, bool applyMixerFieldsFromDict = true);
   void recomputeEffectiveMute(NodeData& nd);
-  [[nodiscard]] bool deviceRouteIndicatesMuted(const NodeData& nd) const;
   void setNodeVolume(std::uint32_t id, float volume);
   void setNodeMuted(std::uint32_t id, bool muted);
   void setDefaultNode(std::uint32_t id, const char* key);

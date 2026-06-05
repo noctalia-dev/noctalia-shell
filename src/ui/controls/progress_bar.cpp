@@ -94,7 +94,12 @@ void ProgressBar::updateGeometry() {
     const float fillH = height() * m_progress;
     m_fill->setPosition(0.0f, height() - fillH);
     m_fill->setFrameSize(width(), fillH);
+  } else if (m_orientation == ProgressBarOrientation::HorizontalCentered) {
+    const float fillW = width() * m_progress;
+    m_fill->setPosition((width() - fillW) * 0.5f, 0.0f);
+    m_fill->setFrameSize(fillW, height());
   } else {
+    m_fill->setPosition(0.0f, 0.0f);
     m_fill->setFrameSize(width() * m_progress, height());
   }
 }

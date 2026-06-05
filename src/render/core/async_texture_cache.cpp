@@ -22,8 +22,9 @@ namespace {
 
 } // namespace
 
-AsyncTextureCache::ReadySubscription::ReadySubscription(AsyncTextureCache* cache, std::weak_ptr<void> lifetimeToken,
-                                                        std::uint64_t id)
+AsyncTextureCache::ReadySubscription::ReadySubscription(
+    AsyncTextureCache* cache, std::weak_ptr<void> lifetimeToken, std::uint64_t id
+)
     : m_cache(cache), m_lifetimeToken(std::move(lifetimeToken)), m_id(id) {}
 
 AsyncTextureCache::ReadySubscription::~ReadySubscription() { disconnect(); }
@@ -111,8 +112,8 @@ AsyncTextureCache::~AsyncTextureCache() {
 
 void AsyncTextureCache::initialize(GlSharedContext* sharedGl) { m_sharedGl = sharedGl; }
 
-AsyncTextureCache::ReadySubscription AsyncTextureCache::subscribeReady(const std::string& path, int targetSize,
-                                                                       bool mipmap, TextureReadyCallback callback) {
+AsyncTextureCache::ReadySubscription
+AsyncTextureCache::subscribeReady(const std::string& path, int targetSize, bool mipmap, TextureReadyCallback callback) {
   auto key = makeKey(path, targetSize, mipmap);
   if (key.path.empty() || !callback) {
     return {};
@@ -279,6 +280,54 @@ void AsyncTextureCache::dispatch(const std::vector<pollfd>& fds, std::size_t sta
 
 void AsyncTextureCache::trimUnused(std::size_t maxUnusedEntries) { pruneUnusedEntries(maxUnusedEntries); }
 
+void AsyncTextureCache::reloadResidentTextures() {
+  if (m_textureManager == nullptr || m_entries.empty()) {
+    return;
+  }
+
+  makeCurrent();
+
+  std::vector<RequestKey> resident;
+  resident.reserve(m_entries.size());
+  for (const auto& [key, entry] : m_entries) {
+    if (entry.handle.id != 0 || entry.refCount > 0) {
+      resident.push_back(key);
+    }
+  }
+
+  for (const RequestKey& key : resident) {
+    auto entryIt = m_entries.find(key);
+    if (entryIt == m_entries.end()) {
+      continue;
+    }
+
+    Entry& entry = entryIt->second;
+    if (entry.handle.id != 0) {
+      m_textureManager->unload(entry.handle);
+    }
+    entry.handle = {};
+    entry.failed = false;
+
+    std::string errorMessage;
+    auto loaded = loadImageFile(key.path, key.targetSize, &errorMessage);
+    if (!loaded.has_value()) {
+      entry.failed = true;
+      if (!errorMessage.empty()) {
+        kLog.warn("failed to reload image after GPU reset: {} ({})", ImageSourceLog::describe(key.path), errorMessage);
+      }
+      continue;
+    }
+
+    entry.handle = m_textureManager->loadFromRgba(loaded->rgba.data(), loaded->width, loaded->height, key.mipmap);
+    if (entry.handle.id == 0) {
+      entry.failed = true;
+      continue;
+    }
+    touchEntry(entry);
+    notifyReady(key, entry.handle);
+  }
+}
+
 std::size_t AsyncTextureCache::RequestKeyHash::operator()(const RequestKey& key) const noexcept {
   std::size_t seed = std::hash<std::string>{}(key.path);
   seed ^= std::hash<int>{}(key.targetSize) + 0x9e3779b9U + (seed << 6U) + (seed >> 2U);
@@ -338,7 +387,16 @@ void AsyncTextureCache::pushResult(DecodedJob job) {
 
 void AsyncTextureCache::makeCurrent() {
   if (m_sharedGl != nullptr) {
+    // Uploads are valid on any context in the share group, so if a backend already owns the thread's context
+    // (mid-frame), don't switch away — that would drop its draw surface and break its trailing eglSwapBuffers.
+    if (eglGetCurrentContext() != EGL_NO_CONTEXT) {
+      return;
+    }
     m_sharedGl->makeCurrentSurfaceless();
+  } else if (m_makeCurrentCallback) {
+    // Non-shared mode: no share group, so uploads must bind RenderContext's own context even if another isolated
+    // context is currently bound on the thread.
+    m_makeCurrentCallback();
   }
 }
 
@@ -376,8 +434,9 @@ void AsyncTextureCache::pruneUnusedEntries(std::size_t maxUnusedEntries) {
     return;
   }
 
-  std::sort(unused.begin(), unused.end(),
-            [](const It& a, const It& b) { return a->second.lastTouch < b->second.lastTouch; });
+  std::sort(unused.begin(), unused.end(), [](const It& a, const It& b) {
+    return a->second.lastTouch < b->second.lastTouch;
+  });
 
   const std::size_t toEvict = unused.size() - maxUnusedEntries;
   bool madeCurrent = false;

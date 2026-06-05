@@ -5,6 +5,9 @@
 #include <cctype>
 #include <charconv>
 #include <cmath>
+#include <cstdint>
+#include <cstdio>
+#include <format>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -29,6 +32,29 @@ namespace StringUtils {
   }
 
   [[nodiscard]] inline std::string trim(std::string_view s) { return std::string(trimRightView(trimLeftView(s))); }
+
+  // Window titles may contain embedded newlines, collapse to a single display/match line.
+  [[nodiscard]] inline std::string windowTitleSingleLine(std::string_view text) {
+    if (text.empty()) {
+      return {};
+    }
+
+    std::string out;
+    out.reserve(text.size());
+    bool pendingSpace = false;
+    for (unsigned char ch : text) {
+      if (ch == '\n' || ch == '\r' || ch == '\t' || ch == '\v' || ch == '\f' || ch == ' ' || std::isspace(ch) != 0) {
+        pendingSpace = !out.empty();
+        continue;
+      }
+      if (pendingSpace) {
+        out.push_back(' ');
+        pendingSpace = false;
+      }
+      out.push_back(static_cast<char>(ch));
+    }
+    return out;
+  }
 
   template <typename T> [[nodiscard]] inline std::optional<T> parseDotDecimal(std::string_view text) {
     static_assert(std::is_floating_point_v<T>);
@@ -69,8 +95,9 @@ namespace StringUtils {
 
   [[nodiscard]] inline std::string toLower(std::string_view s) {
     std::string out(s);
-    std::transform(out.begin(), out.end(), out.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    std::transform(out.begin(), out.end(), out.begin(), [](unsigned char c) {
+      return static_cast<char>(std::tolower(c));
+    });
     return out;
   }
 
@@ -171,6 +198,27 @@ namespace StringUtils {
       ++index;
     }
     return std::string(text);
+  }
+
+  [[nodiscard]] inline std::string truncateUtf8CodePoints(std::string_view text, std::size_t maxCodePoints) {
+    std::size_t codePoints = 0;
+    std::size_t bytePos = 0;
+    while (bytePos < text.size() && codePoints < maxCodePoints) {
+      auto lead = static_cast<unsigned char>(text[bytePos]);
+      if (lead < 0x80)
+        bytePos += 1;
+      else if ((lead & 0xE0) == 0xC0)
+        bytePos += 2;
+      else if ((lead & 0xF0) == 0xE0)
+        bytePos += 3;
+      else
+        bytePos += 4;
+      ++codePoints;
+    }
+    if (bytePos >= text.size()) {
+      return std::string(text);
+    }
+    return std::string(text.substr(0, bytePos));
   }
 
   [[nodiscard]] inline std::string truncateUtf8(std::string_view text, std::size_t maxBytes) {
@@ -300,8 +348,8 @@ namespace StringUtils {
   }
 
   [[nodiscard]] inline bool isBlank(std::string_view text) {
-    return text.empty() ||
-           std::all_of(text.begin(), text.end(), [](unsigned char ch) { return std::isspace(ch) != 0; });
+    return text.empty()
+        || std::all_of(text.begin(), text.end(), [](unsigned char ch) { return std::isspace(ch) != 0; });
   }
 
   [[nodiscard]] inline std::string shellQuote(std::string_view text) {
@@ -359,4 +407,24 @@ namespace StringUtils {
     return result;
   }
 
+  [[nodiscard]] inline std::string generateUuid() {
+    std::uint8_t bytes[16]{};
+    FILE* urandom = std::fopen("/dev/urandom", "rb");
+    if (urandom == nullptr) {
+      return {};
+    }
+    const std::size_t read = std::fread(bytes, 1, sizeof(bytes), urandom);
+    std::fclose(urandom);
+    if (read != sizeof(bytes)) {
+      return {};
+    }
+    bytes[6] = (bytes[6] & 0x0Fu) | 0x40u;
+    bytes[8] = (bytes[8] & 0x3Fu) | 0x80u;
+    return std::format(
+        "{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-"
+        "{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
+        bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7], bytes[8], bytes[9], bytes[10],
+        bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]
+    );
+  }
 } // namespace StringUtils

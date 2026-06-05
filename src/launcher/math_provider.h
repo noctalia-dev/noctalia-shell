@@ -2,19 +2,35 @@
 
 #include "launcher/launcher_provider.h"
 
+#include <memory>
+
 class ClipboardService;
+class ConfigService;
+class HttpClient;
+class Calculator;
 
 class MathProvider : public LauncherProvider {
 public:
-  explicit MathProvider(ClipboardService* clipboard) : m_clipboard(clipboard) {}
+  MathProvider(ClipboardService* clipboard, ConfigService* config, HttpClient* httpClient);
+  ~MathProvider() override;
 
   [[nodiscard]] std::string_view prefix() const override { return ""; }
-  [[nodiscard]] std::string_view name() const override { return "Calculator"; }
+  [[nodiscard]] std::string_view id() const override { return "Calculator"; }
+  [[nodiscard]] std::string displayName() const override;
+  [[nodiscard]] std::string_view defaultGlyphName() const override { return "calculator"; }
+
+  void initialize() override;
 
   [[nodiscard]] std::vector<LauncherResult> query(std::string_view text) const override;
 
   bool activate(const LauncherResult& result) override;
 
 private:
+  // Download fresh exchange rates over the async HTTP client, gated on offline mode.
+  void refreshExchangeRates();
+
   ClipboardService* m_clipboard = nullptr;
+  ConfigService* m_config = nullptr;
+  HttpClient* m_httpClient = nullptr;
+  std::unique_ptr<Calculator> m_calc;
 };

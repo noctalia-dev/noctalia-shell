@@ -29,6 +29,7 @@ class DependencyService;
 class Flex;
 class HttpClient;
 class IdleInhibitor;
+class IpcService;
 class InputArea;
 class Label;
 class MprisService;
@@ -39,7 +40,9 @@ class NotificationManager;
 class PipeWireService;
 class PipeWireSpectrum;
 class PowerProfilesService;
+class ScreenTimeService;
 class SystemMonitorService;
+class CalendarService;
 class UPowerService;
 class Wallpaper;
 class WeatherService;
@@ -50,16 +53,18 @@ namespace noctalia::theme {
 
 class ControlCenterPanel : public Panel {
 public:
-  ControlCenterPanel(NotificationManager* notifications, PipeWireService* audio, MprisService* mpris,
-                     ConfigService* config = nullptr, HttpClient* httpClient = nullptr,
-                     WeatherService* weather = nullptr, PipeWireSpectrum* spectrum = nullptr,
-                     UPowerService* upower = nullptr, PowerProfilesService* powerProfiles = nullptr,
-                     INetworkService* network = nullptr, NetworkSecretAgent* networkSecrets = nullptr,
-                     BluetoothService* bluetooth = nullptr, BluetoothAgent* bluetoothAgent = nullptr,
-                     BrightnessService* brightness = nullptr, SystemMonitorService* sysmon = nullptr,
-                     GammaService* nightLight = nullptr, noctalia::theme::ThemeService* theme = nullptr,
-                     IdleInhibitor* idleInhibitor = nullptr, DependencyService* dependencies = nullptr,
-                     CompositorPlatform* platform = nullptr, Wallpaper* wallpaper = nullptr);
+  ControlCenterPanel(
+      NotificationManager* notifications, PipeWireService* audio, MprisService* mpris, ConfigService* config = nullptr,
+      HttpClient* httpClient = nullptr, WeatherService* weather = nullptr, PipeWireSpectrum* spectrum = nullptr,
+      UPowerService* upower = nullptr, PowerProfilesService* powerProfiles = nullptr,
+      INetworkService* network = nullptr, NetworkSecretAgent* networkSecrets = nullptr,
+      BluetoothService* bluetooth = nullptr, BluetoothAgent* bluetoothAgent = nullptr,
+      BrightnessService* brightness = nullptr, SystemMonitorService* sysmon = nullptr,
+      ScreenTimeService* screenTime = nullptr, GammaService* nightLight = nullptr,
+      noctalia::theme::ThemeService* theme = nullptr, IdleInhibitor* idleInhibitor = nullptr,
+      DependencyService* dependencies = nullptr, CompositorPlatform* platform = nullptr, IpcService* ipc = nullptr,
+      Wallpaper* wallpaper = nullptr, CalendarService* calendar = nullptr
+  );
 
   void create() override;
   void onFrameTick(float deltaMs) override;
@@ -76,6 +81,7 @@ public:
   [[nodiscard]] PanelPlacement panelPlacement() const noexcept override;
 
 private:
+  void onPanelBordersChanged(bool enabled) override;
   void onPanelCardOpacityChanged(float opacity) override;
   void doLayout(Renderer& renderer, float width, float height) override;
   void doUpdate(Renderer& renderer) override;
@@ -91,6 +97,7 @@ private:
     Weather,
     Calendar,
     Notifications,
+    ScreenTime,
     Count,
   };
 
@@ -106,18 +113,24 @@ private:
       {TabId::Home, "home", "control-center.tabs.home", "home"},
       {TabId::Media, "media", "control-center.tabs.media", "disc-filled"},
       {TabId::Audio, "audio", "control-center.tabs.audio", "volume"},
-      {TabId::Display, "display", "control-center.tabs.display", "device-desktop"},
+      {TabId::Display, "monitor", "control-center.tabs.display", "device-desktop"},
       {TabId::System, "system", "control-center.tabs.system", "activity-heartbeat"},
       {TabId::Network, "network", "control-center.tabs.network", "wifi"},
       {TabId::Bluetooth, "bluetooth", "control-center.tabs.bluetooth", "bluetooth"},
       {TabId::Weather, "weather", "control-center.tabs.weather", "weather-cloud-sun"},
       {TabId::Calendar, "calendar", "control-center.tabs.calendar", "calendar"},
       {TabId::Notifications, "notifications", "control-center.tabs.notifications", "bell"},
+      {TabId::ScreenTime, "screen-time", "control-center.tabs.screen-time", "hourglass"},
   }};
 
   void selectTab(TabId tab);
   void scheduleMprisRefreshFor(TabId tab);
-  [[nodiscard]] static TabId tabFromContext(std::string_view context);
+  void syncTabVisibility();
+  [[nodiscard]] bool isTabVisible(TabId tab) const;
+  [[nodiscard]] TabId firstVisibleTab() const;
+  [[nodiscard]] TabId tabFromContext(std::string_view context) const;
+  [[nodiscard]] bool isDirectSectionOpenContext(std::string_view context) const;
+  [[nodiscard]] ControlCenterSidebarMode sidebarModeForOpen(std::string_view context) const;
   [[nodiscard]] static std::size_t tabIndex(TabId id);
 
   // Tab instances (long-lived, survive panel open/close cycles)
@@ -142,6 +155,7 @@ private:
   NotificationManager* m_notificationManager = nullptr;
   DependencyService* m_dependencies = nullptr;
   bool m_compact = false;
+  bool m_showSidebar = true;
   bool m_mprisRefreshScheduled = false;
   std::chrono::steady_clock::time_point m_lastMprisRefreshAt{};
 };

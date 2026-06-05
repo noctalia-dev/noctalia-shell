@@ -41,6 +41,7 @@ public:
   [[nodiscard]] bool available() const noexcept;
 
   void setBrightness(const std::string& displayId, float value);
+  void requestDdcRefresh();
   void reload(const BrightnessConfig& config);
   void onOutputsChanged();
   void registerIpc(IpcService& ipc, std::function<void()> onBatchChange = {});

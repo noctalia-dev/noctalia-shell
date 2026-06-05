@@ -6,15 +6,11 @@
 #include "net/http_client.h"
 #include "render/core/renderer.h"
 #include "render/scene/node.h"
-#include "ui/controls/button.h"
-#include "ui/controls/flex.h"
-#include "ui/controls/image.h"
-#include "ui/controls/label.h"
+#include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
 #include <cmath>
-#include <filesystem>
 
 using namespace mpris;
 
@@ -34,77 +30,108 @@ namespace {
 
 } // namespace
 
-DesktopMediaPlayerWidget::DesktopMediaPlayerWidget(MprisService* mpris, HttpClient* httpClient, bool vertical,
-                                                   ColorSpec color, bool shadow)
+DesktopMediaPlayerWidget::DesktopMediaPlayerWidget(
+    MprisService* mpris, HttpClient* httpClient, bool vertical, ColorSpec color, bool shadow
+)
     : m_mpris(mpris), m_httpClient(httpClient), m_vertical(vertical), m_color(std::move(color)), m_shadow(shadow) {}
 
 void DesktopMediaPlayerWidget::create() {
   auto rootNode = std::make_unique<Node>();
 
-  auto artwork = std::make_unique<Image>();
-  artwork->setFit(ImageFit::Cover);
-  artwork->setRadius(Style::scaledRadiusMd(contentScale()));
-  m_artwork = artwork.get();
+  auto artwork = ui::image({
+      .out = &m_artwork,
+      .fit = ImageFit::Cover,
+      .radius = Style::scaledRadiusMd(contentScale()),
+  });
   rootNode->addChild(std::move(artwork));
 
-  auto title = std::make_unique<Label>();
-  title->setBold(true);
-  title->setMaxLines(1);
-  title->setColor(m_color);
-  m_title = title.get();
+  auto title = ui::label({
+      .out = &m_title,
+      .color = m_color,
+      .maxLines = 1,
+      .fontWeight = FontWeight::Bold,
+  });
   rootNode->addChild(std::move(title));
 
-  auto artist = std::make_unique<Label>();
-  artist->setMaxLines(1);
-  artist->setColor(m_color);
-  m_artist = artist.get();
+  auto artist = ui::label({
+      .out = &m_artist,
+      .color = m_color,
+      .maxLines = 1,
+  });
   rootNode->addChild(std::move(artist));
 
-  auto controls = std::make_unique<Flex>();
-  controls->setDirection(FlexDirection::Horizontal);
-  controls->setAlign(FlexAlign::Center);
-  controls->setJustify(FlexJustify::Center);
-  m_controls = controls.get();
-
-  auto prev = std::make_unique<Button>();
-  prev->setGlyph("media-prev");
-  prev->setVariant(ButtonVariant::Ghost);
-  prev->setOnClick([this]() {
-    if (m_mpris != nullptr) {
-      m_mpris->previousActive();
-      requestRedraw();
-    }
-  });
-  m_prev = prev.get();
-  controls->addChild(std::move(prev));
-
-  auto playPause = std::make_unique<Button>();
-  playPause->setGlyph("media-play");
-  playPause->setVariant(ButtonVariant::Accent);
-  playPause->setOnClick([this]() {
-    if (m_mpris != nullptr) {
-      m_mpris->playPauseActive();
-      requestRedraw();
-    }
-  });
-  m_playPause = playPause.get();
-  controls->addChild(std::move(playPause));
-
-  auto next = std::make_unique<Button>();
-  next->setGlyph("media-next");
-  next->setVariant(ButtonVariant::Ghost);
-  next->setOnClick([this]() {
-    if (m_mpris != nullptr) {
-      m_mpris->nextActive();
-      requestRedraw();
-    }
-  });
-  m_next = next.get();
-  controls->addChild(std::move(next));
+  auto controls = ui::row(
+      {
+          .out = &m_controls,
+          .align = FlexAlign::Center,
+          .justify = FlexJustify::Center,
+      },
+      ui::button({
+          .out = &m_prev,
+          .glyph = "media-prev",
+          .variant = ButtonVariant::Ghost,
+          .onClick =
+              [this]() {
+                if (m_mpris != nullptr) {
+                  m_mpris->previousActive();
+                  requestRedraw();
+                }
+              },
+      }),
+      ui::button({
+          .out = &m_playPause,
+          .glyph = "media-play",
+          .variant = ButtonVariant::Primary,
+          .onClick =
+              [this]() {
+                if (m_mpris != nullptr) {
+                  m_mpris->playPauseActive();
+                  requestRedraw();
+                }
+              },
+      }),
+      ui::button({
+          .out = &m_next,
+          .glyph = "media-next",
+          .variant = ButtonVariant::Ghost,
+          .onClick = [this]() {
+            if (m_mpris != nullptr) {
+              m_mpris->nextActive();
+              requestRedraw();
+            }
+          },
+      })
+  );
 
   rootNode->addChild(std::move(controls));
   setRoot(std::move(rootNode));
   applyShadow();
+}
+
+bool DesktopMediaPlayerWidget::applySetting(
+    const std::string& key, const WidgetSettingValue& value,
+    const std::unordered_map<std::string, WidgetSettingValue>& allSettings, Renderer& renderer
+) {
+  if (key == "color") {
+    if (const auto* v = std::get_if<std::string>(&value)) {
+      m_color = colorSpecFromConfigString(*v, key);
+      if (m_title != nullptr)
+        m_title->setColor(m_color);
+      if (m_artist != nullptr)
+        m_artist->setColor(m_color);
+      return true;
+    }
+    return false;
+  }
+  if (key == "shadow") {
+    if (const auto* v = std::get_if<bool>(&value)) {
+      m_shadow = *v;
+      applyShadow();
+      return true;
+    }
+    return false;
+  }
+  return DesktopWidget::applySetting(key, value, allSettings, renderer);
 }
 
 void DesktopMediaPlayerWidget::doLayout(Renderer& renderer) {
@@ -262,51 +289,26 @@ void DesktopMediaPlayerWidget::sync(Renderer& renderer) {
 
   m_playPause->setGlyph(m_lastPlaybackStatus == "Playing" ? "media-pause" : "media-play");
 
-  if (artChanged && m_artwork != nullptr) {
-    std::string artPath = resolveArtworkPath();
-    if (artPath.empty() && isRemoteArtUrl(m_lastArtUrl)) {
-      const auto cached = artCachePath(m_lastArtUrl);
-      std::error_code ec;
-      if (std::filesystem::exists(cached, ec) && std::filesystem::file_size(cached, ec) > 0) {
-        artPath = cached.string();
-      } else if (m_httpClient != nullptr && !m_pendingArtDownloads.contains(m_lastArtUrl)) {
-        std::filesystem::create_directories(cached.parent_path(), ec);
-        m_pendingArtDownloads.insert(m_lastArtUrl);
-        m_httpClient->download(m_lastArtUrl, cached, [this, url = m_lastArtUrl](bool success) {
-          m_pendingArtDownloads.erase(url);
-          if (success) {
-            requestUpdate();
-          }
-        });
-      }
-    }
-
-    if (!artPath.empty()) {
-      const int targetPx = static_cast<int>(std::round(kArtSize * contentScale()));
-      if (!m_artwork->setSourceFile(renderer, artPath, targetPx, true))
+  if (m_artwork != nullptr) {
+    const int targetPx = static_cast<int>(std::round(kArtSize * contentScale()));
+    if (artChanged) {
+      const std::string artPath =
+          resolveArtworkSource(m_httpClient, m_pendingArtDownloads, m_lastArtUrl, [this] { requestUpdate(); });
+      if (!artPath.empty()) {
+        if (!m_artwork->setSourceFile(renderer, artPath, targetPx, true, true))
+          m_artwork->clear(renderer);
+      } else {
         m_artwork->clear(renderer);
-    } else {
-      m_artwork->clear(renderer);
-    }
-  } else if (!m_lastArtUrl.empty() && m_artwork != nullptr && !m_artwork->hasImage()) {
-    std::string artPath = resolveArtworkPath();
-    if (artPath.empty() && isRemoteArtUrl(m_lastArtUrl)) {
-      const auto cached = artCachePath(m_lastArtUrl);
-      std::error_code ec;
-      if (std::filesystem::exists(cached, ec) && std::filesystem::file_size(cached, ec) > 0)
-        artPath = cached.string();
-    }
-    if (!artPath.empty()) {
-      const int targetPx = static_cast<int>(std::round(kArtSize * contentScale()));
-      if (m_artwork->setSourceFile(renderer, artPath, targetPx, true))
+      }
+    } else if (!m_lastArtUrl.empty() && !m_artwork->hasImage()) {
+      const std::string artPath = cachedArtworkPath(m_lastArtUrl);
+      if (!artPath.empty() && m_artwork->setSourceFile(renderer, artPath, targetPx, true, true))
         requestRedraw();
     }
   }
 
   requestRedraw();
 }
-
-std::string DesktopMediaPlayerWidget::resolveArtworkPath() const { return normalizeArtPath(m_lastArtUrl); }
 
 void DesktopMediaPlayerWidget::applyShadow() {
   if (m_title == nullptr || m_artist == nullptr) {

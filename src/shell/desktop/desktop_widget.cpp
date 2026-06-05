@@ -3,8 +3,10 @@
 #include "core/ui_phase.h"
 #include "ui/controls/box.h"
 
+#include <algorithm>
 #include <cmath>
 #include <memory>
+#include <string>
 
 void DesktopWidget::layout(Renderer& renderer) {
   UiPhaseScope layoutPhase(UiPhase::Layout);
@@ -69,6 +71,47 @@ void DesktopWidget::setBackgroundStyle(const ColorSpec& color, float radius, flo
   m_bgColor = color;
   m_bgRadius = radius;
   m_bgPadding = padding;
+}
+
+bool DesktopWidget::applySetting(
+    const std::string& key, const WidgetSettingValue& /*value*/,
+    const std::unordered_map<std::string, WidgetSettingValue>& allSettings, Renderer& renderer
+) {
+  if (key != "background_color"
+      && key != "background_opacity"
+      && key != "background_radius"
+      && key != "background_padding") {
+    return false;
+  }
+  if (!m_bgEnabled || m_bgBox == nullptr) {
+    return false;
+  }
+
+  auto getFloat = [&](const std::string& k, float fb) -> float {
+    auto it = allSettings.find(k);
+    if (it == allSettings.end())
+      return fb;
+    if (const auto* v = std::get_if<double>(&it->second))
+      return static_cast<float>(*v);
+    return fb;
+  };
+  auto getColorSpec = [&](const std::string& k, const ColorSpec& fb) -> ColorSpec {
+    auto it = allSettings.find(k);
+    if (it == allSettings.end())
+      return fb;
+    if (const auto* v = std::get_if<std::string>(&it->second))
+      return colorSpecFromConfigString(*v, k);
+    return fb;
+  };
+
+  ColorSpec bgColor = getColorSpec("background_color", colorSpecFromRole(ColorRole::Surface));
+  bgColor.alpha *= std::clamp(getFloat("background_opacity", 0.8f), 0.0f, 1.0f);
+  m_bgColor = bgColor;
+  m_bgRadius = getFloat("background_radius", 12.0f);
+  m_bgPadding = getFloat("background_padding", 10.0f);
+
+  layout(renderer);
+  return true;
 }
 
 void DesktopWidget::applyBackground() {

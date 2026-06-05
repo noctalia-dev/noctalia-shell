@@ -15,23 +15,32 @@ namespace {
 
   constexpr Logger kLog("idle");
 
+  constexpr std::uint32_t kHeartbeatTimeoutMs = 1000;
+
   const ext_idle_notification_v1_listener kIdleNotificationListener = {
       .idled = &IdleManager::handleIdled,
       .resumed = &IdleManager::handleResumed,
+  };
+
+  const ext_idle_notification_v1_listener kHeartbeatListener = {
+      .idled = &IdleManager::handleHeartbeatIdled,
+      .resumed = &IdleManager::handleHeartbeatResumed,
   };
 
 } // namespace
 
 IdleManager::IdleManager() = default;
 
-IdleManager::~IdleManager() { clearBehaviors(); }
+IdleManager::~IdleManager() {
+  clearBehaviors();
+  destroyHeartbeat();
+}
 
 bool IdleManager::initialize(WaylandConnection& wayland, GraceBeginCallback onBegin, GraceEndCallback onEnd) {
   m_wayland = &wayland;
   m_onGraceBegin = std::move(onBegin);
   m_onGraceEnd = std::move(onEnd);
-  m_notifier = m_wayland->idleNotifier();
-  if (m_notifier == nullptr) {
+  if (!m_wayland->hasIdleNotifier()) {
     kLog.info("idle notify protocol unavailable");
   }
   return true;
@@ -39,21 +48,72 @@ bool IdleManager::initialize(WaylandConnection& wayland, GraceBeginCallback onBe
 
 void IdleManager::setActionRunner(ActionRunner runner) { m_actionRunner = std::move(runner); }
 
+void IdleManager::setLiveIdleChangeCallback(std::function<void()> callback) {
+  m_onLiveIdleChange = std::move(callback);
+}
+
+void IdleManager::notifyLiveIdleChanged() {
+  if (m_onLiveIdleChange) {
+    m_onLiveIdleChange();
+  }
+}
+
 void IdleManager::reload(const IdleConfig& config) {
   clearBehaviors();
   m_idleConfig = config;
 
-  if (m_notifier == nullptr) {
+  if (m_wayland == nullptr) {
+    destroyHeartbeat();
     return;
   }
-  if (m_wayland == nullptr || m_wayland->seat() == nullptr) {
+  if (!m_wayland->hasIdleNotifier()) {
+    kLog.info("idle notify protocol unavailable; idle behaviors not registered");
+    destroyHeartbeat();
+    return;
+  }
+  if (m_wayland->seat() == nullptr) {
     kLog.warn("cannot register idle behaviors without a Wayland seat");
+    destroyHeartbeat();
     return;
   }
 
   for (const auto& behavior : config.behaviors) {
     createBehavior(behavior);
   }
+  syncHeartbeat();
+}
+
+void IdleManager::onSecondTick() {
+  if (m_heartbeatCompositorIdle) {
+    ++m_liveIdleSeconds;
+  }
+}
+
+void IdleManager::syncHeartbeat() {
+  destroyHeartbeat();
+  if (m_wayland == nullptr || !m_wayland->hasIdleNotifier() || m_wayland->seat() == nullptr) {
+    m_heartbeatCompositorIdle = false;
+    m_liveIdleSeconds = 0;
+    return;
+  }
+
+  m_heartbeatNotification = m_wayland->createIdleNotification(kHeartbeatTimeoutMs);
+  if (m_heartbeatNotification == nullptr) {
+    kLog.warn("failed to register idle heartbeat for live status");
+    return;
+  }
+
+  ext_idle_notification_v1_add_listener(m_heartbeatNotification, &kHeartbeatListener, this);
+  kLog.debug("registered idle heartbeat ({}ms)", kHeartbeatTimeoutMs);
+}
+
+void IdleManager::destroyHeartbeat() {
+  if (m_heartbeatNotification != nullptr) {
+    ext_idle_notification_v1_destroy(m_heartbeatNotification);
+    m_heartbeatNotification = nullptr;
+  }
+  m_heartbeatCompositorIdle = false;
+  m_liveIdleSeconds = 0;
 }
 
 void IdleManager::clearBehaviors() {
@@ -89,7 +149,7 @@ void IdleManager::createBehavior(const IdleBehaviorConfig& config) {
   behavior->owner = this;
   behavior->config = config;
   const auto timeoutMs = static_cast<std::uint32_t>(config.timeoutSeconds) * 1000u;
-  behavior->notification = ext_idle_notifier_v1_get_idle_notification(m_notifier, timeoutMs, m_wayland->seat());
+  behavior->notification = m_wayland->createIdleNotification(timeoutMs);
   if (behavior->notification == nullptr) {
     kLog.warn("failed to register idle behavior '{}'", config.name);
     return;
@@ -241,4 +301,24 @@ void IdleManager::handleResumed(void* data, ext_idle_notification_v1* /*notifica
   behavior->phase = BehaviorPhase::Waiting;
   kLog.info("idle behavior '{}' resumed", behavior->config.name);
   self.runResumeBehavior(*behavior);
+}
+
+void IdleManager::handleHeartbeatIdled(void* data, ext_idle_notification_v1* /*notification*/) {
+  auto* self = static_cast<IdleManager*>(data);
+  if (self == nullptr) {
+    return;
+  }
+  self->m_heartbeatCompositorIdle = true;
+  self->m_liveIdleSeconds = 1;
+  self->notifyLiveIdleChanged();
+}
+
+void IdleManager::handleHeartbeatResumed(void* data, ext_idle_notification_v1* /*notification*/) {
+  auto* self = static_cast<IdleManager*>(data);
+  if (self == nullptr) {
+    return;
+  }
+  self->m_heartbeatCompositorIdle = false;
+  self->m_liveIdleSeconds = 0;
+  self->notifyLiveIdleChanged();
 }

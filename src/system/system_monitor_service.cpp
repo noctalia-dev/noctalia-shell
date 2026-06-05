@@ -116,17 +116,40 @@ namespace {
     return reading.totalBytes > 0 && reading.usedBytes <= reading.totalBytes;
   }
 
-  [[nodiscard]] float clampPollSeconds(float seconds) noexcept { return std::clamp(seconds, 0.1f, 120.0f); }
+  // 0 disables a metric; any other value is clamped to the supported poll range.
+  [[nodiscard]] float clampPollSeconds(float seconds) noexcept {
+    if (seconds <= 0.0f) {
+      return SystemConfig::MonitorConfig::kDisabledPollSeconds;
+    }
+    return std::clamp(
+        seconds, SystemConfig::MonitorConfig::kMinPollSeconds, SystemConfig::MonitorConfig::kMaxPollSeconds
+    );
+  }
+
+  // Graph history snapshots and scroll timing follow the fastest enabled metric poll so users
+  // only configure how often each stat is read, not a separate graph-only cadence. Disabled
+  // metrics (0) are ignored; if every metric is disabled the history is disabled too.
+  [[nodiscard]] float effectiveHistoryPollSeconds(const SystemConfig::MonitorConfig& config) noexcept {
+    float fastest = SystemConfig::MonitorConfig::kDisabledPollSeconds;
+    for (const float seconds :
+         {config.cpuPollSeconds, config.gpuPollSeconds, config.memoryPollSeconds, config.networkPollSeconds,
+          config.diskPollSeconds}) {
+      if (seconds <= 0.0f) {
+        continue;
+      }
+      if (fastest <= 0.0f || seconds < fastest) {
+        fastest = seconds;
+      }
+    }
+    return fastest;
+  }
 
   [[nodiscard]] SystemConfig::MonitorConfig sanitizeMonitorConfig(SystemConfig::MonitorConfig config) {
     config.cpuPollSeconds = clampPollSeconds(config.cpuPollSeconds);
-    config.gpuTempPollSeconds = clampPollSeconds(config.gpuTempPollSeconds);
-    config.gpuVramPollSeconds = clampPollSeconds(config.gpuVramPollSeconds);
+    config.gpuPollSeconds = clampPollSeconds(config.gpuPollSeconds);
     config.memoryPollSeconds = clampPollSeconds(config.memoryPollSeconds);
-    config.swapPollSeconds = clampPollSeconds(config.swapPollSeconds);
     config.networkPollSeconds = clampPollSeconds(config.networkPollSeconds);
     config.diskPollSeconds = clampPollSeconds(config.diskPollSeconds);
-    config.historyPollSeconds = clampPollSeconds(config.historyPollSeconds);
     return config;
   }
 
@@ -148,8 +171,9 @@ namespace {
     target.isNvidia = target.isNvidia || source.isNvidia;
   }
 
-  std::string formatHwmonTempSource(const std::string& hwmonName, const std::string& label,
-                                    const std::filesystem::path& inputPath) {
+  std::string formatHwmonTempSource(
+      const std::string& hwmonName, const std::string& label, const std::filesystem::path& inputPath
+  ) {
     const std::string name = hwmonName.empty() ? "unknown" : hwmonName;
     if (label.empty()) {
       return std::format("hwmon:{} {}", name, inputPath.string());
@@ -167,8 +191,10 @@ namespace {
     const std::string name = StringUtils::toLower(hwmonName);
     const std::string lbl = StringUtils::toLower(label);
 
-    if (name.find("coretemp") != std::string::npos || name.find("k10temp") != std::string::npos ||
-        name.find("zenpower") != std::string::npos || name.find("cpu") != std::string::npos) {
+    if (name.find("coretemp") != std::string::npos
+        || name.find("k10temp") != std::string::npos
+        || name.find("zenpower") != std::string::npos
+        || name.find("cpu") != std::string::npos) {
       score += 20;
     }
 
@@ -195,8 +221,10 @@ namespace {
 
   bool isCpuThermalZoneType(const std::string& type) {
     const std::string t = StringUtils::toLower(type);
-    return t.find("x86_pkg_temp") != std::string::npos || t.find("cpu") != std::string::npos ||
-           t.find("soc") != std::string::npos || t.find("package") != std::string::npos;
+    return t.find("x86_pkg_temp") != std::string::npos
+        || t.find("cpu") != std::string::npos
+        || t.find("soc") != std::string::npos
+        || t.find("package") != std::string::npos;
   }
 
   int scoreGpuHwmonSensor(const std::string& hwmonName, const std::string& label) {
@@ -253,6 +281,57 @@ namespace {
     return std::all_of(name.begin() + 4, name.end(), [](char ch) { return ch >= '0' && ch <= '9'; });
   }
 
+  struct SysfsGpuUsageReading {
+    double percent = 0.0;
+    std::string source;
+  };
+
+  std::optional<SysfsGpuUsageReading> readSysfsGpuUsage() {
+    namespace fs = std::filesystem;
+
+    const fs::path drmRoot{"/sys/class/drm"};
+    if (!fs::exists(drmRoot) || !fs::is_directory(drmRoot)) {
+      return std::nullopt;
+    }
+
+    double totalUsage = 0.0;
+    int deviceCount = 0;
+    std::string firstSource;
+
+    for (const auto& entry : fs::directory_iterator{drmRoot}) {
+      if (!entry.is_directory() || !isDrmCardName(entry.path().filename().string())) {
+        continue;
+      }
+
+      const fs::path devicePath = entry.path() / "device";
+      if (!fs::exists(devicePath) || !isDevicePathAwake(devicePath)) {
+        continue;
+      }
+
+      const fs::path busyPath = devicePath / "gpu_busy_percent";
+      const auto value = readUint64File(busyPath);
+      if (!value.has_value() || *value > 100) {
+        continue;
+      }
+
+      totalUsage += static_cast<double>(*value);
+      ++deviceCount;
+      if (firstSource.empty()) {
+        firstSource = busyPath.string();
+      }
+    }
+
+    if (deviceCount <= 0) {
+      return std::nullopt;
+    }
+
+    return SysfsGpuUsageReading{
+        .percent = totalUsage / static_cast<double>(deviceCount),
+        .source =
+            deviceCount == 1 ? std::format("sysfs:{}", firstSource) : std::format("sysfs ({} devices)", deviceCount),
+    };
+  }
+
   std::optional<GpuVramReading> readAmdGpuVram() {
     namespace fs = std::filesystem;
 
@@ -287,8 +366,9 @@ namespace {
       if (firstSource.empty()) {
         firstSource = usedPath.string();
       }
-      mergeGpuVram(total,
-                   GpuVramReading{.usedBytes = *used, .totalBytes = *available, .source = {}, .isNvidia = false});
+      mergeGpuVram(
+          total, GpuVramReading{.usedBytes = *used, .totalBytes = *available, .source = {}, .isNvidia = false}
+      );
     }
 
     if (deviceCount <= 0 || !hasUsableVram(total)) {
@@ -338,11 +418,13 @@ namespace {
         if (score <= 0) {
           continue;
         }
-        if (isBetterHwmonSensor(score, *tempC, bestScore,
-                                best.has_value() ? std::optional<double>{best->tempC} : std::nullopt)) {
+        if (isBetterHwmonSensor(
+                score, *tempC, bestScore, best.has_value() ? std::optional<double>{best->tempC} : std::nullopt
+            )) {
           bestScore = score;
           best = TempSensorReading{
-              .tempC = *tempC, .score = score, .source = formatHwmonTempSource(hwmonName, label, fileEntry.path())};
+              .tempC = *tempC, .score = score, .source = formatHwmonTempSource(hwmonName, label, fileEntry.path())
+          };
         }
       }
     }
@@ -445,14 +527,17 @@ namespace {
         if (isNvidia) {
           probe.foundNvidia = true;
         }
-        if (isBetterHwmonSensor(score, *tempC, bestScore,
-                                probe.reading.has_value() ? std::optional<double>{probe.reading->tempC}
-                                                          : std::nullopt)) {
+        if (isBetterHwmonSensor(
+                score, *tempC, bestScore,
+                probe.reading.has_value() ? std::optional<double>{probe.reading->tempC} : std::nullopt
+            )) {
           bestScore = score;
-          probe.reading = TempSensorReading{.tempC = *tempC,
-                                            .score = score,
-                                            .source = formatHwmonTempSource(hwmonName, label, fileEntry.path()),
-                                            .isNvidia = isNvidia};
+          probe.reading = TempSensorReading{
+              .tempC = *tempC,
+              .score = score,
+              .source = formatHwmonTempSource(hwmonName, label, fileEntry.path()),
+              .isNvidia = isNvidia
+          };
         }
       }
     }
@@ -465,38 +550,6 @@ namespace {
     return normalized == "suspended" || normalized == "suspending";
   }
 
-  bool hasInactiveNvidiaPciDisplayDevice() {
-    namespace fs = std::filesystem;
-
-    const fs::path pciRoot{"/sys/bus/pci/devices"};
-    if (!fs::exists(pciRoot) || !fs::is_directory(pciRoot)) {
-      return false;
-    }
-
-    for (const auto& entry : fs::directory_iterator{pciRoot}) {
-      if (!entry.is_directory()) {
-        continue;
-      }
-
-      const std::string vendor = StringUtils::toLower(readSmallTextFile(entry.path() / "vendor").value_or(""));
-      if (vendor != "0x10de") {
-        continue;
-      }
-
-      const std::string deviceClass = StringUtils::toLower(readSmallTextFile(entry.path() / "class").value_or(""));
-      if (!deviceClass.starts_with("0x03")) {
-        continue;
-      }
-
-      const auto runtimeStatus = readSmallTextFile(entry.path() / "power" / "runtime_status");
-      if (runtimeStatus.has_value() && isInactiveRuntimeStatus(*runtimeStatus)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
   constexpr int kNvmlSuccess = 0;
   constexpr unsigned int kNvmlTemperatureGpu = 0;
 
@@ -507,6 +560,11 @@ namespace {
   using NvmlDeviceGetCountFn = NvmlReturn (*)(unsigned int*);
   using NvmlDeviceGetHandleByIndexFn = NvmlReturn (*)(unsigned int, NvmlDevice*);
   using NvmlDeviceGetTemperatureFn = NvmlReturn (*)(NvmlDevice, unsigned int, unsigned int*);
+  struct NvmlUsage {
+    unsigned int gpu = 0;
+    unsigned int memory = 0;
+  };
+  using NvmlDeviceGetUsageRatesFn = NvmlReturn (*)(NvmlDevice, NvmlUsage*);
 
   struct NvmlMemory {
     unsigned long long total = 0;
@@ -561,14 +619,38 @@ struct SystemMonitorService::NvidiaNvmlReader {
     return TempSensorReading{.tempC = *bestTemp, .score = 0, .source = source, .isNvidia = true};
   }
 
+  [[nodiscard]] std::optional<double> readGpuUsagePercent() {
+    if (!ensureReady() || m_devices.empty()) {
+      return std::nullopt;
+    }
+
+    double totalUsage = 0.0;
+    std::size_t sampledDevices = 0;
+    for (const auto& device : m_devices) {
+      NvmlUsage usage{};
+      if (m_getUsageRates == nullptr || m_getUsageRates(device.handle, &usage) != kNvmlSuccess || usage.gpu > 100U) {
+        continue;
+      }
+      totalUsage += static_cast<double>(usage.gpu);
+      ++sampledDevices;
+    }
+
+    if (sampledDevices == 0) {
+      return std::nullopt;
+    }
+
+    return totalUsage / static_cast<double>(sampledDevices);
+  }
+
   [[nodiscard]] std::optional<GpuVramReading> readGpuVram() {
     if (!ensureReady() || m_devices.empty()) {
       return std::nullopt;
     }
 
-    GpuVramReading total{.source = m_devices.size() == 1 ? std::string{"nvml"}
-                                                         : std::format("nvml ({} devices)", m_devices.size()),
-                         .isNvidia = true};
+    GpuVramReading total{
+        .source = m_devices.size() == 1 ? std::string{"nvml"} : std::format("nvml ({} devices)", m_devices.size()),
+        .isNvidia = true
+    };
     for (const auto& device : m_devices) {
       NvmlMemory memory{};
       if (m_getMemoryInfo(device.handle, &memory) != kNvmlSuccess || memory.total == 0 || memory.used > memory.total) {
@@ -603,12 +685,13 @@ private:
       return false;
     }
 
-    if (!loadDlsymFunction(m_library, "nvmlInit_v2", "nvmlInit", m_init) ||
-        !loadDlsymFunction(m_library, "nvmlShutdown", m_shutdown) ||
-        !loadDlsymFunction(m_library, "nvmlDeviceGetCount_v2", "nvmlDeviceGetCount", m_getCount) ||
-        !loadDlsymFunction(m_library, "nvmlDeviceGetHandleByIndex_v2", "nvmlDeviceGetHandleByIndex", m_getHandle) ||
-        !loadDlsymFunction(m_library, "nvmlDeviceGetTemperature", m_getTemperature) ||
-        !loadDlsymFunction(m_library, "nvmlDeviceGetMemoryInfo", m_getMemoryInfo)) {
+    if (!loadDlsymFunction(m_library, "nvmlInit_v2", "nvmlInit", m_init)
+        || !loadDlsymFunction(m_library, "nvmlShutdown", m_shutdown)
+        || !loadDlsymFunction(m_library, "nvmlDeviceGetCount_v2", "nvmlDeviceGetCount", m_getCount)
+        || !loadDlsymFunction(m_library, "nvmlDeviceGetHandleByIndex_v2", "nvmlDeviceGetHandleByIndex", m_getHandle)
+        || !loadDlsymFunction(m_library, "nvmlDeviceGetTemperature", m_getTemperature)
+        || !loadDlsymFunction(m_library, "nvmlDeviceGetUtilizationRates", m_getUsageRates)
+        || !loadDlsymFunction(m_library, "nvmlDeviceGetMemoryInfo", m_getMemoryInfo)) {
       close();
       m_state = State::Unavailable;
       return false;
@@ -663,6 +746,7 @@ private:
   NvmlDeviceGetCountFn m_getCount = nullptr;
   NvmlDeviceGetHandleByIndexFn m_getHandle = nullptr;
   NvmlDeviceGetTemperatureFn m_getTemperature = nullptr;
+  NvmlDeviceGetUsageRatesFn m_getUsageRates = nullptr;
   NvmlDeviceGetMemoryInfoFn m_getMemoryInfo = nullptr;
 };
 
@@ -691,7 +775,7 @@ void SystemMonitorService::applyConfig(const SystemConfig::MonitorConfig& config
   {
     std::lock_guard lock{m_configMutex};
     m_pollConfig = sanitized;
-    m_historyInterval = pollDuration(sanitized.historyPollSeconds);
+    m_historyInterval = pollDuration(effectiveHistoryPollSeconds(sanitized));
   }
   m_wakeCv.notify_all();
   setEnabled(sanitized.enabled);
@@ -724,6 +808,10 @@ void SystemMonitorService::releaseCpuTemp() { m_cpuTempRefs.fetch_sub(1, std::me
 void SystemMonitorService::retainGpuTemp() { m_gpuTempRefs.fetch_add(1, std::memory_order_relaxed); }
 
 void SystemMonitorService::releaseGpuTemp() { m_gpuTempRefs.fetch_sub(1, std::memory_order_relaxed); }
+
+void SystemMonitorService::retainGpuUsage() { m_gpuUsageRefs.fetch_add(1, std::memory_order_relaxed); }
+
+void SystemMonitorService::releaseGpuUsage() { m_gpuUsageRefs.fetch_sub(1, std::memory_order_relaxed); }
 
 void SystemMonitorService::retainGpuVram() { m_gpuVramRefs.fetch_add(1, std::memory_order_relaxed); }
 
@@ -792,15 +880,18 @@ void SystemMonitorService::stop() {
 }
 
 void SystemMonitorService::logDetectedSources() {
+  const NvidiaDisplayDeviceState nvidiaDisplayState = detectNvidiaPciDisplayDeviceState();
   const auto cpu = readCpuTotals();
   const auto mem = readMemoryKb();
   const auto net = readNetBytes();
   const auto load = readLoadAvg();
 
-  kLog.info("detected stats sources: cpu={} memory={} network={} load={} disk=statvfs",
-            cpu.has_value() ? "/proc/stat" : "unavailable", mem.has_value() ? "/proc/meminfo" : "unavailable",
-            net.has_value() ? std::format("/proc/net/dev ({} active)", net->size()) : std::string{"unavailable"},
-            load.has_value() ? "/proc/loadavg" : "unavailable");
+  kLog.info(
+      "detected stats sources: cpu={} memory={} network={} load={} disk=statvfs",
+      cpu.has_value() ? "/proc/stat" : "unavailable", mem.has_value() ? "/proc/meminfo" : "unavailable",
+      net.has_value() ? std::format("/proc/net/dev ({} active)", net->size()) : std::string{"unavailable"},
+      load.has_value() ? "/proc/loadavg" : "unavailable"
+  );
 
   if (const auto cpuTemp = readCpuTempSensor(); cpuTemp.has_value()) {
     kLog.info("detected CPU temperature source: {} ({:.0f}C)", cpuTemp->source, cpuTemp->tempC);
@@ -808,39 +899,26 @@ void SystemMonitorService::logDetectedSources() {
     kLog.info("detected CPU temperature source: unavailable");
   }
 
-  const GpuHwmonProbe gpuHwmon = readGpuHwmonTempSensor();
-  std::optional<TempSensorReading> gpuTemp = gpuHwmon.reading;
-  std::string gpuDetail;
-
-  if (gpuHwmon.foundNvidia) {
-    gpuDetail = "NVIDIA hwmon present; NVML fallback not needed";
-  } else if (hasInactiveNvidiaPciDisplayDevice()) {
-    gpuDetail = "NVML skipped; NVIDIA display device is runtime-suspended";
+  const auto gpuTemp = readGpuTempData(nvidiaDisplayState);
+  if (gpuTemp.tempC.has_value()) {
+    kLog.info("detected GPU temperature source: {} ({:.0f}C); {}", gpuTemp.source, *gpuTemp.tempC, gpuTemp.detail);
   } else {
-    if (m_nvidiaNvmlReader == nullptr) {
-      m_nvidiaNvmlReader = std::make_unique<NvidiaNvmlReader>();
-    }
-    const auto nvml = m_nvidiaNvmlReader->readGpuTempSensor();
-    if (nvml.has_value()) {
-      gpuDetail = "NVML fallback available";
-      if (!gpuTemp.has_value() || nvml->tempC > gpuTemp->tempC) {
-        gpuTemp = nvml;
-      }
-    } else {
-      gpuDetail = "NVML fallback unavailable";
-    }
+    kLog.info("detected GPU temperature source: unavailable; {}", gpuTemp.detail);
   }
 
-  if (gpuTemp.has_value()) {
-    kLog.info("detected GPU temperature source: {} ({:.0f}C); {}", gpuTemp->source, gpuTemp->tempC, gpuDetail);
+  const auto gpuUsage = readGpuUsageData(nvidiaDisplayState);
+  if (gpuUsage.percent.has_value()) {
+    kLog.info("detected GPU usage source: {} ({:.0f}%)", gpuUsage.source, *gpuUsage.percent);
   } else {
-    kLog.info("detected GPU temperature source: unavailable; {}", gpuDetail);
+    kLog.info("detected GPU usage source: unavailable");
   }
 
-  if (const auto gpuVram = readGpuVram(); gpuVram.has_value()) {
-    kLog.info("detected GPU VRAM source: {} ({} / {})", gpuVram->source,
-              FormatUnits::formatBinaryBytesAsGib(gpuVram->usedBytes),
-              FormatUnits::formatBinaryBytesAsGib(gpuVram->totalBytes));
+  if (const auto gpuVram = readGpuVramData(nvidiaDisplayState); gpuVram.has_value()) {
+    kLog.info(
+        "detected GPU VRAM source: {} ({} / {})", gpuVram->source,
+        FormatUnits::formatBinaryBytesAsGib(gpuVram->usedBytes),
+        FormatUnits::formatBinaryBytesAsGib(gpuVram->totalBytes)
+    );
   } else {
     kLog.info("detected GPU VRAM source: unavailable");
   }
@@ -851,29 +929,35 @@ void SystemMonitorService::samplingLoop() {
 
   auto prevCpu = readCpuTotals();
   auto nextCpu = Clock::now();
-  auto nextGpuTemp = Clock::now();
-  auto nextGpuVram = Clock::now();
+  auto nextGpu = Clock::now();
   auto nextMemory = Clock::now();
-  auto nextSwap = Clock::now();
   auto nextNetwork = Clock::now();
   auto nextDisk = Clock::now();
   auto nextHistory = Clock::now();
 
   while (m_running.load()) {
     const SystemConfig::MonitorConfig pollCfg = pollConfig();
+    const float historyPollSeconds = effectiveHistoryPollSeconds(pollCfg);
+
+    // A poll value of 0 disables that metric: it is never sampled and never schedules a wakeup.
+    const bool cpuEnabled = pollCfg.cpuPollSeconds > 0.0f;
+    const bool gpuEnabled = pollCfg.gpuPollSeconds > 0.0f;
+    const bool memoryEnabled = pollCfg.memoryPollSeconds > 0.0f;
+    const bool networkEnabled = pollCfg.networkPollSeconds > 0.0f;
+    const bool diskEnabled = pollCfg.diskPollSeconds > 0.0f;
+    const bool historyEnabled = historyPollSeconds > 0.0f;
+
     const auto cpuInterval = pollDuration(pollCfg.cpuPollSeconds);
-    const auto gpuTempInterval = pollDuration(pollCfg.gpuTempPollSeconds);
-    const auto gpuVramInterval = pollDuration(pollCfg.gpuVramPollSeconds);
+    const auto gpuInterval = pollDuration(pollCfg.gpuPollSeconds);
     const auto memoryInterval = pollDuration(pollCfg.memoryPollSeconds);
-    const auto swapInterval = pollDuration(pollCfg.swapPollSeconds);
     const auto networkInterval = pollDuration(pollCfg.networkPollSeconds);
     const auto diskInterval = pollDuration(pollCfg.diskPollSeconds);
-    const auto historyInterval = pollDuration(pollCfg.historyPollSeconds);
+    const auto historyInterval = pollDuration(historyPollSeconds);
 
     const auto now = Clock::now();
     bool statsTouched = false;
 
-    if (now >= nextCpu) {
+    if (cpuEnabled && now >= nextCpu) {
       const auto currentCpu = readCpuTotals();
       if (prevCpu.has_value() && currentCpu.has_value()) {
         const std::uint64_t totalDelta = currentCpu->total - prevCpu->total;
@@ -908,7 +992,7 @@ void SystemMonitorService::samplingLoop() {
       statsTouched = true;
     }
 
-    if (now >= nextMemory) {
+    if (memoryEnabled && now >= nextMemory) {
       if (const auto memKb = readMemoryKb(); memKb.has_value()) {
         std::lock_guard lock{m_statsMutex};
         m_latest.ramTotalMb = memKb->totalKb / 1024;
@@ -921,17 +1005,7 @@ void SystemMonitorService::samplingLoop() {
       statsTouched = true;
     }
 
-    if (now >= nextSwap) {
-      if (const auto memKb = readMemoryKb(); memKb.has_value()) {
-        std::lock_guard lock{m_statsMutex};
-        m_latest.swapTotalMb = memKb->swapTotalKb / 1024;
-        m_latest.swapUsedMb = memKb->swapUsedKb / 1024;
-      }
-      nextSwap = now + swapInterval;
-      statsTouched = true;
-    }
-
-    if (now >= nextNetwork) {
+    if (networkEnabled && now >= nextNetwork) {
       if (const auto currentNetBytes = readNetBytes(); currentNetBytes.has_value()) {
         const double intervalSeconds = std::chrono::duration<double>(networkInterval).count();
         const double scale = intervalSeconds > 0.0 ? 1.0 / intervalSeconds : 1.0;
@@ -957,31 +1031,46 @@ void SystemMonitorService::samplingLoop() {
       statsTouched = true;
     }
 
-    if (now >= nextGpuTemp) {
-      if (m_gpuTempRefs.load(std::memory_order_relaxed) > 0) {
-        const auto gpuTemp = readGpuTempCelsius();
-        std::lock_guard lock{m_statsMutex};
-        if (gpuTemp.has_value()) {
-          m_latest.gpuTempC = gpuTemp;
-        }
-      }
-      nextGpuTemp = now + gpuTempInterval;
-      statsTouched = true;
-    }
+    if (gpuEnabled && now >= nextGpu) {
+      const bool pollGpuTemp = m_gpuTempRefs.load(std::memory_order_relaxed) > 0;
+      const bool pollGpuUsage = m_gpuUsageRefs.load(std::memory_order_relaxed) > 0;
+      const bool pollGpuVram = m_gpuVramRefs.load(std::memory_order_relaxed) > 0;
 
-    if (now >= nextGpuVram) {
-      if (m_gpuVramRefs.load(std::memory_order_relaxed) > 0) {
-        if (const auto gpuVram = readGpuVram(); gpuVram.has_value()) {
+      if (pollGpuTemp || pollGpuUsage || pollGpuVram) {
+        const NvidiaDisplayDeviceState nvidiaDisplayState = detectNvidiaPciDisplayDeviceState();
+
+        if (pollGpuTemp) {
+          const auto gpuTemp = readGpuTempData(nvidiaDisplayState).tempC;
           std::lock_guard lock{m_statsMutex};
-          m_latest.gpuVramUsedBytes = gpuVram->usedBytes;
-          m_latest.gpuVramTotalBytes = gpuVram->totalBytes;
+          if (gpuTemp.has_value()) {
+            m_latest.gpuTempC = gpuTemp;
+          }
+        }
+        if (pollGpuUsage) {
+          const auto gpuUsage = readGpuUsageData(nvidiaDisplayState).percent;
+          std::lock_guard lock{m_statsMutex};
+          if (gpuUsage.has_value()) {
+            m_latest.gpuUsagePercent = gpuUsage;
+          }
+        }
+        if (pollGpuVram) {
+          if (const auto gpuVram = readGpuVramData(nvidiaDisplayState); gpuVram.has_value()) {
+            std::lock_guard lock{m_statsMutex};
+            m_latest.gpuVramUsedBytes = gpuVram->usedBytes;
+            m_latest.gpuVramTotalBytes = gpuVram->totalBytes;
+          }
         }
       }
-      nextGpuVram = now + gpuVramInterval;
+      nextGpu = now + gpuInterval;
       statsTouched = true;
     }
 
-    if (now >= nextDisk) {
+    if (diskEnabled && now >= nextDisk) {
+      if (const auto memKb = readMemoryKb(); memKb.has_value()) {
+        std::lock_guard lock{m_statsMutex};
+        m_latest.swapTotalMb = memKb->swapTotalKb / 1024;
+        m_latest.swapUsedMb = memKb->swapUsedKb / 1024;
+      }
       std::vector<std::string> diskPaths;
       {
         std::lock_guard lock{m_statsMutex};
@@ -1008,7 +1097,7 @@ void SystemMonitorService::samplingLoop() {
       m_latest.sampledAt = now;
     }
 
-    if (now >= nextHistory) {
+    if (historyEnabled && now >= nextHistory) {
       std::lock_guard lock{m_statsMutex};
       const auto writeIndex = static_cast<std::size_t>(m_historyHead);
       m_history[writeIndex] = m_latest;
@@ -1023,8 +1112,21 @@ void SystemMonitorService::samplingLoop() {
       nextHistory = now + historyInterval;
     }
 
-    const auto nextWake =
-        std::min({nextCpu, nextGpuTemp, nextGpuVram, nextMemory, nextSwap, nextNetwork, nextDisk, nextHistory});
+    // Only enabled metrics schedule a wakeup; if all are disabled we sleep until stopped or
+    // until a config change re-enables one (applyConfig notifies the wake cv).
+    auto nextWake = Clock::time_point::max();
+    const auto considerWake = [&](bool enabled, Clock::time_point at) {
+      if (enabled) {
+        nextWake = std::min(nextWake, at);
+      }
+    };
+    considerWake(cpuEnabled, nextCpu);
+    considerWake(gpuEnabled, nextGpu);
+    considerWake(memoryEnabled, nextMemory);
+    considerWake(networkEnabled, nextNetwork);
+    considerWake(diskEnabled, nextDisk);
+    considerWake(historyEnabled, nextHistory);
+
     std::unique_lock wakeLock{m_wakeMutex};
     m_wakeCv.wait_until(wakeLock, nextWake, [this]() { return !m_running.load(); });
   }
@@ -1112,40 +1214,153 @@ std::optional<double> SystemMonitorService::readCpuTempCelsius() {
   return reading.has_value() ? std::optional<double>{reading->tempC} : std::nullopt;
 }
 
-std::optional<double> SystemMonitorService::readGpuTempCelsius() {
+SystemMonitorService::NvidiaDisplayDeviceState SystemMonitorService::detectNvidiaPciDisplayDeviceState() {
+  namespace fs = std::filesystem;
+
+  const fs::path pciRoot{"/sys/bus/pci/devices"};
+  if (!fs::exists(pciRoot) || !fs::is_directory(pciRoot)) {
+    return NvidiaDisplayDeviceState::None;
+  }
+
+  bool foundInactiveNvidiaDisplay = false;
+  for (const auto& entry : fs::directory_iterator{pciRoot}) {
+    if (!entry.is_directory()) {
+      continue;
+    }
+
+    const std::string vendor = StringUtils::toLower(readSmallTextFile(entry.path() / "vendor").value_or(""));
+    if (vendor != "0x10de") {
+      continue;
+    }
+
+    const std::string deviceClass = StringUtils::toLower(readSmallTextFile(entry.path() / "class").value_or(""));
+    if (!deviceClass.starts_with("0x03")) {
+      continue;
+    }
+
+    const auto runtimeStatus = readSmallTextFile(entry.path() / "power" / "runtime_status");
+    if (runtimeStatus.has_value() && isInactiveRuntimeStatus(*runtimeStatus)) {
+      foundInactiveNvidiaDisplay = true;
+      continue;
+    }
+    return NvidiaDisplayDeviceState::Active;
+  }
+
+  return foundInactiveNvidiaDisplay ? NvidiaDisplayDeviceState::InactiveOnly : NvidiaDisplayDeviceState::None;
+}
+
+SystemMonitorService::NvidiaNvmlReader& SystemMonitorService::ensureNvmlReader() {
+  if (m_nvidiaNvmlReader == nullptr) {
+    m_nvidiaNvmlReader = std::make_unique<NvidiaNvmlReader>();
+  }
+  return *m_nvidiaNvmlReader;
+}
+
+SystemMonitorService::GpuTempData SystemMonitorService::readGpuTempData(NvidiaDisplayDeviceState nvidiaDisplayState) {
+  switch (nvidiaDisplayState) {
+  case NvidiaDisplayDeviceState::Active: {
+    const auto nvml = ensureNvmlReader().readGpuTempSensor();
+    return GpuTempData{
+        .tempC = nvml.has_value() ? std::optional<double>{nvml->tempC} : std::nullopt,
+        .source = nvml.has_value() ? nvml->source : std::string{},
+        .detail = nvml.has_value() ? "NVML-only mode active" : "NVML-only mode active; NVML unavailable"
+    };
+  }
+  case NvidiaDisplayDeviceState::InactiveOnly: {
+    const GpuHwmonProbe hwmon = readGpuHwmonTempSensor();
+    return GpuTempData{
+        .tempC = hwmon.reading.has_value() ? std::optional<double>{hwmon.reading->tempC} : std::nullopt,
+        .source = hwmon.reading.has_value() ? hwmon.reading->source : std::string{},
+        .detail = "NVML skipped; NVIDIA display device is runtime-suspended"
+    };
+  }
+  case NvidiaDisplayDeviceState::None:
+    break;
+  }
+
   const GpuHwmonProbe hwmon = readGpuHwmonTempSensor();
-  if (hwmon.reading.has_value() && hwmon.foundNvidia) {
-    return hwmon.reading->tempC;
+  if (hwmon.foundNvidia) {
+    return GpuTempData{
+        .tempC = hwmon.reading.has_value() ? std::optional<double>{hwmon.reading->tempC} : std::nullopt,
+        .source = hwmon.reading.has_value() ? hwmon.reading->source : std::string{},
+        .detail = "NVIDIA hwmon present; NVML fallback not needed"
+    };
   }
 
   std::optional<TempSensorReading> best = hwmon.reading;
-  if (!hasInactiveNvidiaPciDisplayDevice() && !hwmon.foundNvidia) {
-    if (m_nvidiaNvmlReader == nullptr) {
-      m_nvidiaNvmlReader = std::make_unique<NvidiaNvmlReader>();
-    }
-    const auto nvml = m_nvidiaNvmlReader->readGpuTempSensor();
+  if (!hwmon.foundNvidia) {
+    const auto nvml = ensureNvmlReader().readGpuTempSensor();
     if (nvml.has_value() && (!best.has_value() || nvml->tempC > best->tempC)) {
       best = nvml;
     }
+    return GpuTempData{
+        .tempC = best.has_value() ? std::optional<double>{best->tempC} : std::nullopt,
+        .source = best.has_value() ? best->source : std::string{},
+        .detail = nvml.has_value() ? "NVML fallback available" : "NVML fallback unavailable"
+    };
   }
 
-  return best.has_value() ? std::optional<double>{best->tempC} : std::nullopt;
+  return GpuTempData{};
 }
 
-std::optional<SystemMonitorService::GpuVramData> SystemMonitorService::readGpuVram() {
+SystemMonitorService::GpuUsageData SystemMonitorService::readGpuUsageData(NvidiaDisplayDeviceState nvidiaDisplayState) {
+  switch (nvidiaDisplayState) {
+  case NvidiaDisplayDeviceState::Active:
+    if (const auto gpuUsage = ensureNvmlReader().readGpuUsagePercent(); gpuUsage.has_value()) {
+      return GpuUsageData{.percent = gpuUsage, .source = "nvml"};
+    }
+    return GpuUsageData{};
+  case NvidiaDisplayDeviceState::InactiveOnly:
+    if (const auto sysfs = readSysfsGpuUsage(); sysfs.has_value()) {
+      return GpuUsageData{.percent = sysfs->percent, .source = sysfs->source};
+    }
+    return GpuUsageData{};
+  case NvidiaDisplayDeviceState::None:
+    break;
+  }
+
+  if (const auto sysfs = readSysfsGpuUsage(); sysfs.has_value()) {
+    return GpuUsageData{.percent = sysfs->percent, .source = sysfs->source};
+  }
+
+  if (const auto gpuUsage = ensureNvmlReader().readGpuUsagePercent(); gpuUsage.has_value()) {
+    return GpuUsageData{.percent = gpuUsage, .source = "nvml"};
+  }
+
+  return GpuUsageData{};
+}
+
+std::optional<SystemMonitorService::GpuVramData>
+SystemMonitorService::readGpuVramData(NvidiaDisplayDeviceState nvidiaDisplayState) {
+  switch (nvidiaDisplayState) {
+  case NvidiaDisplayDeviceState::Active: {
+    const auto nvml = ensureNvmlReader().readGpuVram();
+    if (!nvml.has_value() || !hasUsableVram(*nvml)) {
+      return std::nullopt;
+    }
+    return GpuVramData{.usedBytes = nvml->usedBytes, .totalBytes = nvml->totalBytes, .source = nvml->source};
+  }
+  case NvidiaDisplayDeviceState::InactiveOnly: {
+    std::optional<GpuVramReading> combined = readAmdGpuVram();
+    if (!combined.has_value() || !hasUsableVram(*combined)) {
+      return std::nullopt;
+    }
+    return GpuVramData{
+        .usedBytes = combined->usedBytes, .totalBytes = combined->totalBytes, .source = combined->source
+    };
+  }
+  case NvidiaDisplayDeviceState::None:
+    break;
+  }
+
   std::optional<GpuVramReading> combined = readAmdGpuVram();
 
-  if (!hasInactiveNvidiaPciDisplayDevice()) {
-    if (m_nvidiaNvmlReader == nullptr) {
-      m_nvidiaNvmlReader = std::make_unique<NvidiaNvmlReader>();
-    }
-    const auto nvml = m_nvidiaNvmlReader->readGpuVram();
-    if (nvml.has_value()) {
-      if (combined.has_value()) {
-        mergeGpuVram(*combined, *nvml);
-      } else {
-        combined = nvml;
-      }
+  const auto nvml = ensureNvmlReader().readGpuVram();
+  if (nvml.has_value()) {
+    if (combined.has_value()) {
+      mergeGpuVram(*combined, *nvml);
+    } else {
+      combined = nvml;
     }
   }
 
@@ -1153,6 +1368,18 @@ std::optional<SystemMonitorService::GpuVramData> SystemMonitorService::readGpuVr
     return std::nullopt;
   }
   return GpuVramData{.usedBytes = combined->usedBytes, .totalBytes = combined->totalBytes, .source = combined->source};
+}
+
+std::optional<double> SystemMonitorService::readGpuTempCelsius() {
+  return readGpuTempData(detectNvidiaPciDisplayDeviceState()).tempC;
+}
+
+std::optional<double> SystemMonitorService::readGpuUsagePercent() {
+  return readGpuUsageData(detectNvidiaPciDisplayDeviceState()).percent;
+}
+
+std::optional<SystemMonitorService::GpuVramData> SystemMonitorService::readGpuVram() {
+  return readGpuVramData(detectNvidiaPciDisplayDeviceState());
 }
 
 float SystemMonitorService::readDiskUsagePercent(const std::string& path) {

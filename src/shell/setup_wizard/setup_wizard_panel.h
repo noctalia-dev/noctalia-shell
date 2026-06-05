@@ -18,7 +18,7 @@ enum class PaletteSource : std::uint8_t;
 
 class SetupWizardPanel : public Panel {
 public:
-  SetupWizardPanel(ConfigService* config, WaylandConnection* wayland) : m_config(config), m_wayland(wayland) {}
+  SetupWizardPanel(ConfigService* config, WaylandConnection* /*wayland*/) : m_config(config) {}
 
   void create() override;
   void onClose() override;
@@ -37,7 +37,6 @@ private:
   void commit();
 
   ConfigService* m_config = nullptr;
-  WaylandConnection* m_wayland = nullptr;
   Flex* m_root = nullptr;
   Image* m_logo = nullptr;
   Toggle* m_telemetryToggle = nullptr;

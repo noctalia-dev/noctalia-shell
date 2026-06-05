@@ -44,6 +44,7 @@ struct NotificationImageData {
 struct Notification {
   uint32_t id;
   NotificationOrigin origin;
+  bool transient = false;
   std::string appName;
   std::string summary;
   std::string body;

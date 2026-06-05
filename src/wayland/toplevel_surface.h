@@ -30,16 +30,19 @@ public:
   bool initialize(wl_output* output, ToplevelSurfaceConfig config);
 
   void setClosedCallback(std::function<void()> callback);
+  void setMinSize(std::uint32_t minWidth, std::uint32_t minHeight);
+  void clampToMinSize(std::uint32_t minWidth, std::uint32_t minHeight);
   void beginMove(std::uint32_t serial);
 
   [[nodiscard]] xdg_surface* xdgSurface() const noexcept { return m_xdgSurface; }
 
   static void handleXdgSurfaceConfigure(void* data, xdg_surface* surface, std::uint32_t serial);
-  static void handleToplevelConfigure(void* data, xdg_toplevel* toplevel, std::int32_t width, std::int32_t height,
-                                      wl_array* states);
+  static void handleToplevelConfigure(
+      void* data, xdg_toplevel* toplevel, std::int32_t width, std::int32_t height, wl_array* states
+  );
   static void handleToplevelClose(void* data, xdg_toplevel* toplevel);
-  static void handleToplevelConfigureBounds(void* data, xdg_toplevel* toplevel, std::int32_t width,
-                                            std::int32_t height);
+  static void
+  handleToplevelConfigureBounds(void* data, xdg_toplevel* toplevel, std::int32_t width, std::int32_t height);
   static void handleToplevelWmCapabilities(void* data, xdg_toplevel* toplevel, wl_array* capabilities);
 
 private:

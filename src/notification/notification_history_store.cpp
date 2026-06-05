@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "notification/notification_manager.h"
 #include "render/core/image_decoder.h"
+#include "util/base64.h"
 #include "util/file_utils.h"
 
 #include <algorithm>
@@ -105,53 +106,6 @@ namespace {
     return kCloseByCall;
   }
 
-  static const char kBase64Chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-  std::string base64Encode(const std::vector<std::uint8_t>& data) {
-    std::string out;
-    out.reserve(((data.size() + 2) / 3) * 4);
-    for (std::size_t i = 0; i < data.size(); i += 3) {
-      const std::size_t n = std::min<std::size_t>(3, data.size() - i);
-      std::uint32_t chunk = 0;
-      for (std::size_t j = 0; j < n; ++j) {
-        chunk |= static_cast<std::uint32_t>(data[i + j]) << static_cast<unsigned>((16 - static_cast<int>(j * 8)));
-      }
-      out.push_back(kBase64Chars[(chunk >> 18) & 63]);
-      out.push_back(kBase64Chars[(chunk >> 12) & 63]);
-      out.push_back(n > 1 ? kBase64Chars[(chunk >> 6) & 63] : '=');
-      out.push_back(n > 2 ? kBase64Chars[chunk & 63] : '=');
-    }
-    return out;
-  }
-
-  std::vector<std::uint8_t> base64Decode(std::string_view in) {
-    std::vector<int> decodeTable(256, -1);
-    for (int b = 0; b < 64; ++b) {
-      decodeTable[static_cast<unsigned char>(kBase64Chars[b])] = b;
-    }
-    std::vector<std::uint8_t> out;
-    out.reserve(in.size() * 3 / 4);
-    int val = 0;
-    int valb = -8;
-    for (char rawc : in) {
-      const auto c = static_cast<unsigned char>(rawc);
-      if (c == '=') {
-        break;
-      }
-      const int d = decodeTable[c];
-      if (d < 0) {
-        continue;
-      }
-      val = (val << 6) + d;
-      valb += 6;
-      if (valb >= 0) {
-        out.push_back(static_cast<std::uint8_t>((val >> valb) & 0xFF));
-        valb -= 8;
-      }
-    }
-    return out;
-  }
-
   constexpr std::string_view kAssetsDirName = "notification_history_assets";
 
   /// History list only needs small previews; keeps WebP sidecars tiny.
@@ -175,8 +129,9 @@ namespace {
     h0 ^= n;
     h1 ^= n * 0x9e3779b97f4a7c15ULL;
     char buf[33];
-    std::snprintf(buf, sizeof(buf), "%016llx%016llx", static_cast<unsigned long long>(h0),
-                  static_cast<unsigned long long>(h1));
+    std::snprintf(
+        buf, sizeof(buf), "%016llx%016llx", static_cast<unsigned long long>(h0), static_cast<unsigned long long>(h1)
+    );
     return std::string(buf);
   }
 
@@ -188,8 +143,9 @@ namespace {
     return std::string("i_") + hashBytesToHex32(bytes, byteCount) + ".rgba";
   }
 
-  bool writeRawRgbaBlob(const std::filesystem::path& assetsDir, const std::string& baseFileName,
-                        const std::vector<std::uint8_t>& bytes) {
+  bool writeRawRgbaBlob(
+      const std::filesystem::path& assetsDir, const std::string& baseFileName, const std::vector<std::uint8_t>& bytes
+  ) {
     std::error_code ec;
     std::filesystem::create_directories(assetsDir, ec);
     const auto path = assetsDir / baseFileName;
@@ -305,8 +261,9 @@ namespace {
     if (w <= maxSide && h <= maxSide) {
       return;
     }
-    const float scale = std::min(static_cast<float>(maxSide) / static_cast<float>(w),
-                                 static_cast<float>(maxSide) / static_cast<float>(h));
+    const float scale = std::min(
+        static_cast<float>(maxSide) / static_cast<float>(w), static_cast<float>(maxSide) / static_cast<float>(h)
+    );
     const int nw = std::max(1, static_cast<int>(std::lround(static_cast<float>(w) * scale)));
     const int nh = std::max(1, static_cast<int>(std::lround(static_cast<float>(h) * scale)));
     std::vector<std::uint8_t> dst(static_cast<std::size_t>(nw) * static_cast<std::size_t>(nh) * 4);
@@ -314,9 +271,8 @@ namespace {
       const int sy = y * h / nh;
       for (int x = 0; x < nw; ++x) {
         const int sx = x * w / nw;
-        const std::uint8_t* srcPx =
-            rgba.data() +
-            (static_cast<std::size_t>(sy) * static_cast<std::size_t>(w) + static_cast<std::size_t>(sx)) * 4;
+        const std::uint8_t* srcPx = rgba.data()
+            + (static_cast<std::size_t>(sy) * static_cast<std::size_t>(w) + static_cast<std::size_t>(sx)) * 4;
         std::uint8_t* dstPx =
             dst.data() + (static_cast<std::size_t>(y) * static_cast<std::size_t>(nw) + static_cast<std::size_t>(x)) * 4;
         std::memcpy(dstPx, srcPx, 4);
@@ -327,8 +283,8 @@ namespace {
     h = nh;
   }
 
-  std::optional<NotificationImageData> imageFromJson(const nlohmann::json& j,
-                                                     const std::filesystem::path& jsonFilePath) {
+  std::optional<NotificationImageData>
+  imageFromJson(const nlohmann::json& j, const std::filesystem::path& jsonFilePath) {
     if (!j.is_object()) {
       return std::nullopt;
     }
@@ -358,8 +314,9 @@ namespace {
         }
         // Legacy sidecar: raw RGBA bytes (not a supported container format).
         if (img.width > 0 && img.height > 0 && img.channels >= 3) {
-          const std::size_t expected = static_cast<std::size_t>(img.width) * static_cast<std::size_t>(img.height) *
-                                       static_cast<std::size_t>(img.channels);
+          const std::size_t expected = static_cast<std::size_t>(img.width)
+              * static_cast<std::size_t>(img.height)
+              * static_cast<std::size_t>(img.channels);
           if (img.data.size() >= expected) {
             return img;
           }
@@ -373,15 +330,15 @@ namespace {
 
     const auto b64 = j.value("data_b64", std::string());
     if (!b64.empty()) {
-      img.data = base64Decode(b64);
+      img.data = Base64::decode(b64);
       return img;
     }
 
     return img;
   }
 
-  nlohmann::json imageToJson(const NotificationImageData& img, const std::filesystem::path& jsonFilePath,
-                             uint32_t notificationId) {
+  nlohmann::json
+  imageToJson(const NotificationImageData& img, const std::filesystem::path& jsonFilePath, uint32_t notificationId) {
     nlohmann::json j;
     j["has_alpha"] = img.hasAlpha;
     j["bits_per_sample"] = img.bitsPerSample;
@@ -402,7 +359,7 @@ namespace {
       j["width"] = img.width;
       j["height"] = img.height;
       j["row_stride"] = img.rowStride;
-      j["data_b64"] = base64Encode(img.data);
+      j["data_b64"] = Base64::encode(img.data);
       return j;
     }
 
@@ -468,7 +425,7 @@ namespace {
     j["width"] = img.width;
     j["height"] = img.height;
     j["row_stride"] = img.rowStride;
-    j["data_b64"] = base64Encode(img.data);
+    j["data_b64"] = Base64::encode(img.data);
     return j;
   }
 
@@ -569,8 +526,8 @@ namespace {
     }
   }
 
-  void pruneOrphanImageBlobs(const std::filesystem::path& jsonFilePath,
-                             const std::unordered_set<std::string>& keepFiles) {
+  void
+  pruneOrphanImageBlobs(const std::filesystem::path& jsonFilePath, const std::unordered_set<std::string>& keepFiles) {
     const auto assetsDir = assetsDirectoryForJson(jsonFilePath);
     std::error_code ec;
     if (!std::filesystem::is_directory(assetsDir, ec)) {
@@ -602,8 +559,10 @@ namespace {
 
 } // namespace
 
-bool loadNotificationHistoryFromFile(const std::filesystem::path& path, std::deque<NotificationHistoryEntry>& out,
-                                     std::uint32_t& outNextId, std::uint64_t& outChangeSerial) {
+bool loadNotificationHistoryFromFile(
+    const std::filesystem::path& path, std::deque<NotificationHistoryEntry>& out, std::uint32_t& outNextId,
+    std::uint64_t& outChangeSerial
+) {
   out.clear();
   outNextId = 1;
   outChangeSerial = 0;
@@ -650,6 +609,7 @@ bool loadNotificationHistoryFromFile(const std::filesystem::path& path, std::deq
     NotificationHistoryEntry he;
     he.notification = notificationFromJson(item.at("notification"), path);
     he.active = item.value("active", false);
+    he.seen = item.value("seen", true);
     if (item.contains("close_reason") && !item["close_reason"].is_null()) {
       const auto crs = item["close_reason"].get<std::string>();
       he.closeReason = closeReasonFrom(crs);
@@ -673,9 +633,10 @@ bool loadNotificationHistoryFromFile(const std::filesystem::path& path, std::deq
   return true;
 }
 
-bool saveNotificationHistoryToFile(const std::filesystem::path& path,
-                                   const std::deque<NotificationHistoryEntry>& entries, std::uint32_t nextId,
-                                   std::uint64_t changeSerial) {
+bool saveNotificationHistoryToFile(
+    const std::filesystem::path& path, const std::deque<NotificationHistoryEntry>& entries, std::uint32_t nextId,
+    std::uint64_t changeSerial
+) {
   nlohmann::json root;
   root["version"] = 2;
   root["next_id"] = nextId;
@@ -686,6 +647,7 @@ bool saveNotificationHistoryToFile(const std::filesystem::path& path,
     nlohmann::json je;
     je["notification"] = notificationToJson(he.notification, path);
     je["active"] = he.active;
+    je["seen"] = he.seen;
     if (he.closeReason.has_value()) {
       je["close_reason"] = std::string(closeReasonStr(*he.closeReason));
     } else {

@@ -24,7 +24,6 @@ private:
   void sync(Renderer& renderer);
 
   WeatherService* m_weather = nullptr;
-  wl_output* m_output = nullptr;
   float m_maxWidth = 160.0f;
   bool m_showCondition = true;
   InputArea* m_area = nullptr;

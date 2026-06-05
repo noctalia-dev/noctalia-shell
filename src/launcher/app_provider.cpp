@@ -1,17 +1,16 @@
 #include "launcher/app_provider.h"
 
-#include "core/process.h"
-#include "util/file_utils.h"
+#include "compositors/compositor_platform.h"
+#include "config/config_service.h"
+#include "i18n/i18n.h"
+#include "system/desktop_entry_launch.h"
 #include "util/fuzzy_match.h"
 #include "util/string_utils.h"
-#include "wayland/wayland_connection.h"
 
 #include <algorithm>
 #include <array>
-#include <cstdlib>
-#include <cstring>
+#include <string>
 #include <string_view>
-#include <unistd.h>
 
 namespace {
 
@@ -23,17 +22,20 @@ namespace {
       return 0.0;
     }
 
-    const double nameScore = FuzzyMatch::score(pattern, entry.nameLower) * 3.0;
+    double nameScore = FuzzyMatch::score(pattern, entry.nameLower) * 5.0;
+    if (FuzzyMatch::isMatch(nameScore) && entry.nameLower.starts_with(pattern)) {
+      nameScore += 500.0;
+    }
     const double genericScore = FuzzyMatch::score(pattern, entry.genericNameLower) * 2.0;
 
-    auto scoreList = [&](std::string_view list) {
+    auto scoreList = [&](std::string_view list, double weight) {
       double best = FuzzyMatch::noMatchScore;
       std::size_t start = 0;
       while (start < list.size()) {
         auto semi = list.find(';', start);
         auto word = (semi == std::string_view::npos) ? list.substr(start) : list.substr(start, semi - start);
         if (!word.empty()) {
-          best = std::max(best, FuzzyMatch::score(pattern, word));
+          best = std::max(best, FuzzyMatch::score(pattern, word) * weight);
         }
         if (semi == std::string_view::npos)
           break;
@@ -42,179 +44,95 @@ namespace {
       return best;
     };
 
-    const double keywordScore = scoreList(entry.keywordsLower);
-    const double catScore = scoreList(entry.categoriesLower);
+    const double keywordScore = scoreList(entry.keywordsLower, 0.8);
+    const double catScore = scoreList(entry.categoriesLower, 0.3);
     const double idScore = FuzzyMatch::score(pattern, entry.idLower) * 1.5;
     const double execScore = FuzzyMatch::score(pattern, entry.execLower);
 
     return std::max({nameScore, genericScore, keywordScore, catScore, idScore, execScore});
   }
 
-  std::string stripFieldCodes(const std::string& exec) {
-    std::string result;
-    result.reserve(exec.size());
-    for (std::size_t i = 0; i < exec.size(); ++i) {
-      if (exec[i] == '%' && i + 1 < exec.size()) {
-        char next = exec[i + 1];
-        if (next == 'f' || next == 'F' || next == 'u' || next == 'U' || next == 'd' || next == 'D' || next == 'n' ||
-            next == 'N' || next == 'i' || next == 'c' || next == 'k') {
-          ++i; // Skip the field code
-          // Also skip trailing space
-          if (i + 1 < exec.size() && exec[i + 1] == ' ') {
-            ++i;
-          }
-          continue;
-        }
-        if (next == '%') {
-          result += '%';
-          ++i;
-          continue;
-        }
-      }
-      result += exec[i];
-    }
+  struct AppCategoryDef {
+    std::string_view id;
+    std::string_view glyph;
+  };
 
-    // Trim trailing whitespace
-    while (!result.empty() && result.back() == ' ') {
-      result.pop_back();
-    }
-    return result;
+  // Stable category ids (used for matching) paired with their chip glyph. Display
+  // labels are resolved from i18n via appCategoryLabel(), keyed on the id.
+  constexpr std::array<AppCategoryDef, 9> kAppCategories = {{
+      {"internet", "world"},
+      {"multimedia", "player-play"},
+      {"development", "code"},
+      {"games", "device-gamepad-2"},
+      {"graphics", "photo"},
+      {"office", "briefcase"},
+      {"education", "school"},
+      {"system", "settings"},
+      {"utilities", "tool"},
+  }};
+
+  std::string appCategoryLabel(std::string_view id) {
+    return i18n::tr("launcher.categories.applications." + std::string(id));
   }
 
-  std::vector<std::string> tokenize(const std::string& cmd) {
-    std::vector<std::string> args;
-    std::string current;
-    bool inSingle = false;
-    bool inDouble = false;
-
-    for (std::size_t i = 0; i < cmd.size(); ++i) {
-      char c = cmd[i];
-
-      if (c == '\'' && !inDouble) {
-        inSingle = !inSingle;
-        continue;
-      }
-      if (c == '"' && !inSingle) {
-        inDouble = !inDouble;
-        continue;
-      }
-      if (c == ' ' && !inSingle && !inDouble) {
-        if (!current.empty()) {
-          args.push_back(std::move(current));
-          current.clear();
-        }
-        continue;
-      }
-      current += c;
-    }
-    if (!current.empty()) {
-      args.push_back(std::move(current));
-    }
-    return args;
-  }
-
-  std::string expandExecutablePath(std::string_view binary) {
-    if (binary.empty() || binary[0] != '~') {
-      return std::string(binary);
-    }
-    return FileUtils::expandUserPath(std::string(binary)).string();
-  }
-
-  bool isExecutableOnPath(std::string_view binary) {
-    if (binary.empty()) {
-      return false;
-    }
-    if (binary.find('/') != std::string_view::npos) {
-      const std::string expanded = expandExecutablePath(binary);
-      return access(expanded.c_str(), X_OK) == 0;
-    }
-
-    const char* pathEnv = std::getenv("PATH");
-    if (pathEnv == nullptr || pathEnv[0] == '\0') {
-      return false;
-    }
-
-    std::string_view path(pathEnv);
+  // Maps a desktop-entry category list to one of kAppCategories' stable ids.
+  std::string_view primaryCategory(std::string_view categories) {
     std::size_t start = 0;
-    while (start <= path.size()) {
-      const auto sep = path.find(':', start);
-      const auto segment = sep == std::string_view::npos ? path.substr(start) : path.substr(start, sep - start);
-      if (!segment.empty()) {
-        std::string candidate(segment);
-        candidate.push_back('/');
-        candidate.append(binary);
-        if (access(candidate.c_str(), X_OK) == 0) {
-          return true;
-        }
+    while (start < categories.size()) {
+      auto semi = categories.find(';', start);
+      auto token = (semi == std::string_view::npos) ? categories.substr(start) : categories.substr(start, semi - start);
+      if (token == "AudioVideo" || token == "Audio" || token == "Video") {
+        return "multimedia";
       }
-      if (sep == std::string_view::npos) {
+      if (token == "Development") {
+        return "development";
+      }
+      if (token == "Game") {
+        return "games";
+      }
+      if (token == "Graphics") {
+        return "graphics";
+      }
+      if (token == "Network") {
+        return "internet";
+      }
+      if (token == "Office") {
+        return "office";
+      }
+      if (token == "System") {
+        return "system";
+      }
+      if (token == "Utility" || token == "Settings") {
+        return "utilities";
+      }
+      if (token == "Education" || token == "Science") {
+        return "education";
+      }
+      if (semi == std::string_view::npos) {
         break;
       }
-      start = sep + 1;
+      start = semi + 1;
     }
-    return false;
-  }
-
-  std::vector<std::string> terminalLaunchArgs(const std::string& command) {
-    std::vector<std::string> terminal;
-    if (const char* envTerminal = std::getenv("TERMINAL"); envTerminal != nullptr && envTerminal[0] != '\0') {
-      terminal = tokenize(envTerminal);
-      if (!terminal.empty() && !isExecutableOnPath(terminal.front())) {
-        terminal.clear();
-      }
-    }
-
-    if (terminal.empty()) {
-      static constexpr std::array<std::string_view, 9> kTerminalCandidates = {
-          "x-terminal-emulator", "ghostty", "kitty", "alacritty", "wezterm", "foot", "konsole",
-          "gnome-terminal",      "xterm"};
-      for (const auto candidate : kTerminalCandidates) {
-        if (isExecutableOnPath(candidate)) {
-          terminal.emplace_back(candidate);
-          break;
-        }
-      }
-    }
-
-    if (terminal.empty()) {
-      return {};
-    }
-
-    const std::string& termBin = terminal.front();
-    if (termBin == "gnome-terminal" || termBin == "kgx" || termBin == "ptyxis") {
-      terminal.emplace_back("--");
-      terminal.emplace_back("sh");
-      terminal.emplace_back("-lc");
-      terminal.emplace_back(command);
-    } else {
-      terminal.emplace_back("-e");
-      terminal.emplace_back("sh");
-      terminal.emplace_back("-lc");
-      terminal.emplace_back(command);
-    }
-    return terminal;
-  }
-
-  void launchCommand(const std::string& exec, bool terminal, const std::string& activationToken) {
-    std::string cleanExec = stripFieldCodes(exec);
-    std::vector<std::string> args = terminal ? terminalLaunchArgs(cleanExec) : tokenize(cleanExec);
-
-    if (!args.empty() && args.front().find('/') != std::string::npos) {
-      args.front() = expandExecutablePath(args.front());
-    }
-
-    if (args.empty()) {
-      return;
-    }
-
-    (void)process::runAsync(args, activationToken);
+    return {};
   }
 
 } // namespace
 
-AppProvider::AppProvider(WaylandConnection* wayland) : m_wayland(wayland) {}
+AppProvider::AppProvider(ConfigService* config, CompositorPlatform* platform)
+    : m_config(config), m_platform(platform) {}
 
 void AppProvider::initialize() { refreshEntriesIfNeeded(); }
+
+std::string AppProvider::displayName() const { return i18n::tr("launcher.providers.applications.title"); }
+
+std::vector<LauncherCategory> AppProvider::categories() const {
+  std::vector<LauncherCategory> result;
+  result.reserve(kAppCategories.size());
+  for (const auto& def : kAppCategories) {
+    result.push_back({appCategoryLabel(def.id), std::string(def.glyph)});
+  }
+  return result;
+}
 
 void AppProvider::refreshEntriesIfNeeded() const {
   const auto version = desktopEntriesVersion();
@@ -238,6 +156,8 @@ std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
     result.subtitle = entry.genericName.empty() ? entry.comment : entry.genericName;
     result.iconName = entry.icon.empty() ? std::string(kDefaultAppIcon) : entry.icon;
     result.glyphName = "app-window";
+    const std::string_view categoryId = primaryCategory(entry.categories);
+    result.category = categoryId.empty() ? std::string() : appCategoryLabel(categoryId);
     result.score = s;
     return result;
   };
@@ -280,9 +200,8 @@ bool AppProvider::activate(const LauncherResult& result) {
       continue;
     }
 
-    std::string execLine = entry.exec;
+    const DesktopAction* chosen = nullptr;
     if (!result.desktopActionId.empty()) {
-      const DesktopAction* chosen = nullptr;
       for (const auto& action : entry.actions) {
         if (action.id == result.desktopActionId) {
           chosen = &action;
@@ -292,15 +211,21 @@ bool AppProvider::activate(const LauncherResult& result) {
       if (chosen == nullptr || chosen->exec.empty()) {
         return false;
       }
-      execLine = chosen->exec;
     }
 
     std::string token;
-    if (m_wayland != nullptr && m_wayland->hasXdgActivation()) {
-      token = m_wayland->requestActivationToken(nullptr);
+    if (m_platform != nullptr && m_platform->hasXdgActivation()) {
+      token = m_platform->requestActivationToken(nullptr);
     }
-    launchCommand(execLine, entry.terminal, token);
-    return true;
+    desktop_entry_launch::LaunchOptions launchOptions{
+        .activationToken = std::move(token),
+        .runAsSystemdService = m_config->config().shell.launchAppsAsSystemdServices,
+    };
+
+    if (chosen != nullptr) {
+      return desktop_entry_launch::launchAction(*chosen, entry.id, entry.workingDir, entry.terminal, launchOptions);
+    }
+    return desktop_entry_launch::launchEntry(entry, launchOptions);
   }
   return false;
 }

@@ -24,8 +24,11 @@ namespace noctalia::theme {
 
   // True for the Material Design 3 schemes.
   constexpr bool isMaterialScheme(Scheme s) {
-    return s == Scheme::TonalSpot || s == Scheme::Content || s == Scheme::FruitSalad || s == Scheme::Rainbow ||
-           s == Scheme::Monochrome;
+    return s == Scheme::TonalSpot
+        || s == Scheme::Content
+        || s == Scheme::FruitSalad
+        || s == Scheme::Rainbow
+        || s == Scheme::Monochrome;
   }
 
   // Parse a scheme from its CLI string (e.g. "m3-tonal-spot", "vibrant").

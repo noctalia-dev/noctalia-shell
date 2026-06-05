@@ -4,8 +4,7 @@
 #include "core/process.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
-#include "ui/controls/glyph.h"
-#include "ui/controls/label.h"
+#include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
@@ -41,8 +40,8 @@ namespace {
 
     std::size_t pos = haystack.find(needle);
     while (pos != std::string_view::npos) {
-      if (isWordBoundary(haystack, pos == 0 ? haystack.size() : pos - 1) &&
-          isWordBoundary(haystack, pos + needle.size())) {
+      if (isWordBoundary(haystack, pos == 0 ? haystack.size() : pos - 1)
+          && isWordBoundary(haystack, pos + needle.size())) {
         return true;
       }
       pos = haystack.find(needle, pos + 1);
@@ -58,8 +57,11 @@ namespace {
     if (count < 2 || count > 3) {
       return false;
     }
-    if (count < text.size() && text[count] != '+' && !std::isspace(static_cast<unsigned char>(text[count])) &&
-        text[count] != '_' && text[count] != '-') {
+    if (count < text.size()
+        && text[count] != '+'
+        && !std::isspace(static_cast<unsigned char>(text[count]))
+        && text[count] != '_'
+        && text[count] != '-') {
       return false;
     }
     out.assign(text.substr(0, count));
@@ -288,10 +290,12 @@ namespace {
 
 } // namespace
 
-KeyboardLayoutWidget::KeyboardLayoutWidget(CompositorPlatform& platform, std::string cycleCommand,
-                                           DisplayMode displayMode, bool hideLabel)
-    : m_platform(platform), m_cycleCommand(std::move(cycleCommand)), m_displayMode(displayMode),
-      m_hideLabel(hideLabel) {}
+KeyboardLayoutWidget::KeyboardLayoutWidget(
+    CompositorPlatform& platform, std::string cycleCommand, DisplayMode displayMode, bool showIcon, bool showLabel,
+    bool hideWhenSingleLayout
+)
+    : m_platform(platform), m_cycleCommand(std::move(cycleCommand)), m_displayMode(displayMode), m_showIcon(showIcon),
+      m_showLabel(showLabel), m_hideWhenSingleLayout(hideWhenSingleLayout) {}
 
 void KeyboardLayoutWidget::create() {
   auto area = std::make_unique<InputArea>();
@@ -310,19 +314,23 @@ void KeyboardLayoutWidget::create() {
     cycleLayout();
   });
 
-  auto glyph = std::make_unique<Glyph>();
-  glyph->setGlyph("keyboard");
-  glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
-  glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
-  m_glyph = glyph.get();
-  area->addChild(std::move(glyph));
+  area->addChild(
+      ui::glyph({
+          .out = &m_glyph,
+          .glyph = "keyboard",
+          .glyphSize = Style::barGlyphSize * m_contentScale,
+          .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
+      })
+  );
 
-  auto label = std::make_unique<Label>();
-  label->setBold(true);
-  label->setFontSize(Style::fontSizeBody * m_contentScale);
-  label->setText("--");
-  m_label = label.get();
-  area->addChild(std::move(label));
+  area->addChild(
+      ui::label({
+          .out = &m_label,
+          .text = "--",
+          .fontSize = Style::fontSizeBody * m_contentScale,
+          .fontWeight = labelFontWeight(),
+      })
+  );
 
   setRoot(std::move(area));
 
@@ -337,8 +345,16 @@ void KeyboardLayoutWidget::doLayout(Renderer& renderer, float containerWidth, fl
 
   m_isVertical = containerHeight > containerWidth;
   sync(renderer);
+  if (!root()->visible()) {
+    root()->setSize(0.0f, 0.0f);
+    return;
+  }
 
+  const bool showIcon = m_showIcon && m_glyph != nullptr;
   if (m_glyph != nullptr) {
+    m_glyph->setVisible(m_showIcon);
+  }
+  if (showIcon) {
     m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
     m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
     m_glyph->measure(renderer);
@@ -350,40 +366,51 @@ void KeyboardLayoutWidget::doLayout(Renderer& renderer, float containerWidth, fl
   }
 
   m_label->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
-  m_label->setVisible(!m_hideLabel);
+  m_label->setVisible(m_showLabel);
   m_label->setTextAlign(m_isVertical ? TextAlign::Center : TextAlign::Start);
-  if (!m_hideLabel) {
+  if (m_showLabel) {
     const float stableLabelWidth =
-        std::round(renderer.measureText(kVerticalStableLabel, m_label->fontSize(), true).width);
+        std::round(renderer.measureText(kVerticalStableLabel, m_label->fontSize(), labelFontWeight()).width);
     m_label->setMinWidth(m_isVertical ? std::min(containerWidth, stableLabelWidth) : 0.0f);
     m_label->measure(renderer);
   }
 
-  if (m_isVertical && m_glyph != nullptr) {
-    const float w = m_hideLabel ? m_glyph->width() : std::max(m_glyph->width(), m_label->width());
-    m_glyph->setPosition(std::round((w - m_glyph->width()) * 0.5f), 0.0f);
-    if (m_hideLabel) {
-      root()->setSize(w, m_glyph->height());
-    } else {
-      m_label->setPosition(std::round((w - m_label->width()) * 0.5f), m_glyph->height());
-      root()->setSize(w, m_glyph->height() + m_label->height());
+  if (m_isVertical) {
+    const float iconW = showIcon ? m_glyph->width() : 0.0f;
+    const float iconH = showIcon ? m_glyph->height() : 0.0f;
+    const float labelW = m_showLabel ? m_label->width() : 0.0f;
+    const float labelH = m_showLabel ? m_label->height() : 0.0f;
+    const float w = std::max(iconW, labelW);
+    float y = 0.0f;
+    if (showIcon) {
+      m_glyph->setPosition(std::round((w - iconW) * 0.5f), y);
+      y += iconH;
     }
+    if (m_showLabel) {
+      m_label->setPosition(std::round((w - labelW) * 0.5f), y);
+      y += labelH;
+    }
+    root()->setSize(w, y);
   } else {
     const float spacing = Style::spaceXs;
     float x = 0.0f;
-    float h = m_hideLabel ? 0.0f : m_label->height();
-    if (m_glyph != nullptr) {
-      h = std::max(h, m_glyph->height());
+    const float iconH = showIcon ? m_glyph->height() : 0.0f;
+    const float labelH = m_showLabel ? m_label->height() : 0.0f;
+    const float h = std::max(iconH, labelH);
+    if (showIcon) {
       const float glyphY = std::round((h - m_glyph->height()) * 0.5f);
       m_glyph->setPosition(0.0f, glyphY);
-      x = m_hideLabel ? m_glyph->width() : (m_glyph->width() + spacing);
+      x += m_glyph->width();
+      if (m_showLabel) {
+        x += spacing;
+      }
     }
-    if (m_hideLabel) {
-      root()->setSize(x, h);
-    } else {
+    if (m_showLabel) {
       const float labelY = std::round((h - m_label->height()) * 0.5f);
       m_label->setPosition(x, labelY);
       root()->setSize(m_label->x() + m_label->width(), h);
+    } else {
+      root()->setSize(x, h);
     }
   }
 }
@@ -416,6 +443,17 @@ void KeyboardLayoutWidget::sync(Renderer& renderer) {
     return;
   }
 
+  if (auto* node = root(); node != nullptr) {
+    const auto layoutNames = m_platform.keyboardLayoutNames();
+    const bool shouldHide = m_hideWhenSingleLayout && !layoutNames.empty() && layoutNames.size() <= 1;
+    node->setVisible(!shouldHide);
+    if (shouldHide) {
+      node->setSize(0.0f, 0.0f);
+      requestRedraw();
+      return;
+    }
+  }
+
   std::string layoutName = resolvedLayoutName();
   if (!m_pendingLayoutName.empty() && layoutName == m_pendingLayoutName) {
     m_pendingLayoutName.clear();
@@ -435,12 +473,24 @@ void KeyboardLayoutWidget::sync(Renderer& renderer) {
   m_lastLabel = layoutLabel;
   m_lastVertical = m_isVertical;
 
-  m_label->setVisible(!m_hideLabel);
-  if (!m_hideLabel) {
+  if (m_glyph != nullptr) {
+    m_glyph->setVisible(m_showIcon);
+  }
+  m_label->setVisible(m_showLabel);
+  if (m_showLabel) {
     m_label->setFontSize((m_isVertical ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
     m_label->setText(layoutLabel);
     m_label->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
     m_label->measure(renderer);
+  }
+
+  if (auto* area = static_cast<InputArea*>(root()); area != nullptr) {
+    if (m_showLabel) {
+      area->clearTooltip();
+    } else {
+      const std::string tooltipText = layoutName.empty() ? layoutLabel : layoutName;
+      area->setTooltip(tooltipText);
+    }
   }
 
   if (auto* node = root(); node != nullptr) {
@@ -470,8 +520,10 @@ void KeyboardLayoutWidget::cycleLayout() {
     return;
   }
 
-  if (stateBefore.has_value() && stateBefore->currentIndex >= 0 &&
-      stateBefore->currentIndex < static_cast<int>(stateBefore->names.size()) && stateBefore->names.size() > 1) {
+  if (stateBefore.has_value()
+      && stateBefore->currentIndex >= 0
+      && stateBefore->currentIndex < static_cast<int>(stateBefore->names.size())
+      && stateBefore->names.size() > 1) {
     std::size_t nextIndex = static_cast<std::size_t>(stateBefore->currentIndex + 1);
     if (nextIndex >= stateBefore->names.size()) {
       nextIndex = 0;

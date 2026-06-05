@@ -22,7 +22,7 @@ std::size_t Segmented::addOption(std::string_view label) { return addOption(labe
 
 std::size_t Segmented::addOption(std::string_view label, std::string_view glyph) {
   const std::size_t index = m_buttons.size();
-  if (index > 0) {
+  if (index > 0 && !m_compact) {
     auto sep = makeSegmentSeparator();
     m_separators.push_back(sep.get());
     addChild(std::move(sep));
@@ -63,8 +63,7 @@ void Segmented::setScale(float scale) {
   const float fs = effectiveFontSize();
   for (Button* btn : m_buttons) {
     if (btn != nullptr) {
-      btn->setMinHeight(Style::controlHeight * m_scale);
-      btn->setPadding(Style::spaceXs * m_scale, Style::spaceMd * m_scale);
+      applyButtonMetrics(*btn);
       btn->setFontSize(fs);
       btn->setGlyphSize(fs);
     }
@@ -79,7 +78,67 @@ void Segmented::setScale(float scale) {
   markLayoutDirty();
 }
 
+void Segmented::setCompact(bool compact) {
+  if (m_compact == compact) {
+    return;
+  }
+  m_compact = compact;
+  for (Button* btn : m_buttons) {
+    if (btn != nullptr) {
+      applyButtonMetrics(*btn);
+    }
+  }
+  markLayoutDirty();
+}
+
+void Segmented::setPadding(float padding) {
+  m_outerPadding = padding;
+  Flex::setPadding(padding);
+}
+
+void Segmented::setPadding(float vertical, float horizontal) {
+  m_outerPadding = vertical;
+  Flex::setPadding(vertical, horizontal);
+}
+
+void Segmented::setPadding(float top, float right, float bottom, float left) {
+  m_outerPadding = top;
+  Flex::setPadding(top, right, bottom, left);
+}
+
+void Segmented::setOptionTooltip(std::size_t index, std::string_view text) {
+  if (index < m_buttons.size() && m_buttons[index] != nullptr) {
+    m_buttons[index]->setTooltip(text);
+  }
+}
+
+void Segmented::clearOptions() {
+  for (Button* btn : m_buttons) {
+    if (btn != nullptr) {
+      (void)removeChild(btn);
+    }
+  }
+  for (Separator* sep : m_separators) {
+    if (sep != nullptr) {
+      (void)removeChild(sep);
+    }
+  }
+  m_buttons.clear();
+  m_separators.clear();
+  m_selected = 0;
+  markLayoutDirty();
+}
+
 void Segmented::setOnChange(std::function<void(std::size_t)> callback) { m_onChange = std::move(callback); }
+
+void Segmented::setSurfaceOpacity(float opacity) {
+  const float clamped = std::clamp(opacity, 0.0f, 1.0f);
+  if (m_surfaceOpacity == clamped) {
+    return;
+  }
+  m_surfaceOpacity = clamped;
+  applyOuterStyle();
+}
 
 void Segmented::setEnabled(bool enabled) {
   if (m_enabled == enabled) {
@@ -103,22 +162,34 @@ std::unique_ptr<Separator> Segmented::makeSegmentSeparator() {
   return sep;
 }
 
-std::unique_ptr<Button> Segmented::makeSegmentButton(std::string_view label, std::string_view glyph,
-                                                     std::size_t index) {
+std::unique_ptr<Button>
+Segmented::makeSegmentButton(std::string_view label, std::string_view glyph, std::size_t index) {
   auto btn = std::make_unique<Button>();
   if (!glyph.empty()) {
     btn->setGlyph(glyph);
     btn->setGlyphSize(effectiveFontSize());
   }
-  btn->setText(label);
-  btn->setFontSize(effectiveFontSize());
-  btn->setMinHeight(Style::controlHeight * m_scale);
-  btn->setPadding(Style::spaceXs * m_scale, Style::spaceMd * m_scale);
+  if (!label.empty()) {
+    btn->setText(label);
+    btn->setFontSize(effectiveFontSize());
+  }
+  applyButtonMetrics(*btn);
   btn->setOnClick([this, index]() { setSelectedIndex(index); });
   btn->setFlexGrow(m_equalSegmentWidths ? 1.0f : 0.0f);
   btn->setContentAlign(ButtonContentAlign::Center);
   btn->setEnabled(m_enabled);
   return btn;
+}
+
+void Segmented::applyButtonMetrics(Button& button) const {
+  if (m_compact) {
+    button.setMinHeight(Style::controlHeightSm * m_scale);
+    button.setPadding(Style::spaceXs * m_scale, Style::spaceSm * m_scale);
+    return;
+  }
+
+  button.setMinHeight(Style::controlHeight * m_scale);
+  button.setPadding(Style::spaceXs * m_scale, Style::spaceMd * m_scale);
 }
 
 void Segmented::setEqualSegmentWidths(bool equalWidths) {
@@ -157,8 +228,8 @@ void Segmented::refreshVariants() {
 }
 
 void Segmented::applyOuterStyle() {
-  setPadding(0.0f);
-  setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
+  Flex::setPadding(m_outerPadding);
+  setFill(colorSpecFromRole(ColorRole::SurfaceVariant, m_surfaceOpacity));
   clearBorder();
   setRadius(Style::scaledRadiusMd(m_scale));
 }

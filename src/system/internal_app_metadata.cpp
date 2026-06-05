@@ -43,8 +43,8 @@ namespace internal_apps {
     }
     return AppMetadata{
         .displayName = app->appId == std::string_view("dev.noctalia.Noctalia.Settings")
-                           ? i18n::tr("internal-apps.settings.display-name")
-                           : std::string(app->displayName),
+            ? i18n::tr("internal-apps.settings.display-name")
+            : std::string(app->displayName),
         .iconPath = paths::assetPath(app->iconAssetPath).string(),
     };
   }

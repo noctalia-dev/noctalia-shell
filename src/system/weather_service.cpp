@@ -4,7 +4,7 @@
 #include "i18n/i18n.h"
 #include "json.hpp"
 #include "net/http_client.h"
-#include "util/string_utils.h"
+#include "time/time_format.h"
 
 #include <algorithm>
 #include <cctype>
@@ -25,15 +25,6 @@ namespace {
 
   using Clock = std::chrono::system_clock;
 
-  bool weatherConfigEqual(const WeatherConfig& lhs, const WeatherConfig& rhs) {
-    return lhs.enabled == rhs.enabled && lhs.autoLocate == rhs.autoLocate && lhs.effects == rhs.effects &&
-           lhs.address == rhs.address && lhs.refreshMinutes == rhs.refreshMinutes && lhs.unit == rhs.unit;
-  }
-
-  bool weatherLocationConfigEqual(const WeatherConfig& lhs, const WeatherConfig& rhs) {
-    return lhs.enabled == rhs.enabled && lhs.autoLocate == rhs.autoLocate && lhs.address == rhs.address;
-  }
-
   std::chrono::system_clock::time_point fromUnixSeconds(std::int64_t value) {
     return Clock::time_point{std::chrono::seconds{value}};
   }
@@ -43,14 +34,17 @@ namespace {
   }
 
   bool isIsoDate(std::string_view text) {
-    return text.size() == 10 && std::isdigit(static_cast<unsigned char>(text[0])) != 0 &&
-           std::isdigit(static_cast<unsigned char>(text[1])) != 0 &&
-           std::isdigit(static_cast<unsigned char>(text[2])) != 0 &&
-           std::isdigit(static_cast<unsigned char>(text[3])) != 0 && text[4] == '-' &&
-           std::isdigit(static_cast<unsigned char>(text[5])) != 0 &&
-           std::isdigit(static_cast<unsigned char>(text[6])) != 0 && text[7] == '-' &&
-           std::isdigit(static_cast<unsigned char>(text[8])) != 0 &&
-           std::isdigit(static_cast<unsigned char>(text[9])) != 0;
+    return text.size() == 10
+        && std::isdigit(static_cast<unsigned char>(text[0])) != 0
+        && std::isdigit(static_cast<unsigned char>(text[1])) != 0
+        && std::isdigit(static_cast<unsigned char>(text[2])) != 0
+        && std::isdigit(static_cast<unsigned char>(text[3])) != 0
+        && text[4] == '-'
+        && std::isdigit(static_cast<unsigned char>(text[5])) != 0
+        && std::isdigit(static_cast<unsigned char>(text[6])) != 0
+        && text[7] == '-'
+        && std::isdigit(static_cast<unsigned char>(text[8])) != 0
+        && std::isdigit(static_cast<unsigned char>(text[9])) != 0;
   }
 
   std::string todayIsoForOffset(std::int32_t utcOffsetSeconds) {
@@ -59,11 +53,7 @@ namespace {
     std::tm tm{};
     gmtime_r(&time, &tm);
 
-    char buffer[11]{};
-    if (std::strftime(buffer, sizeof(buffer), "%Y-%m-%d", &tm) == 0) {
-      return {};
-    }
-    return buffer;
+    return formatStrftime("%Y-%m-%d", tm);
   }
 
   bool dropPastForecastDays(WeatherSnapshot& snapshot) {
@@ -77,11 +67,13 @@ namespace {
     }
 
     const auto oldSize = snapshot.forecastDays.size();
-    snapshot.forecastDays.erase(std::remove_if(snapshot.forecastDays.begin(), snapshot.forecastDays.end(),
-                                               [&todayIso](const WeatherForecastDay& day) {
-                                                 return isIsoDate(day.dateIso) && day.dateIso < todayIso;
-                                               }),
-                                snapshot.forecastDays.end());
+    snapshot.forecastDays.erase(
+        std::remove_if(
+            snapshot.forecastDays.begin(), snapshot.forecastDays.end(),
+            [&todayIso](const WeatherForecastDay& day) { return isIsoDate(day.dateIso) && day.dateIso < todayIso; }
+        ),
+        snapshot.forecastDays.end()
+    );
     return snapshot.forecastDays.size() != oldSize;
   }
 
@@ -194,10 +186,40 @@ void WeatherService::initialize() {
   m_activeConfig = m_configService.config().weather;
   m_configService.addReloadCallback([this]() { onConfigReload(); });
   loadCache();
-  requestRefresh(!m_snapshot.valid);
+  requestRefresh();
 }
 
 void WeatherService::addChangeCallback(ChangeCallback callback) { m_callbacks.push_back(std::move(callback)); }
+
+void WeatherService::setLocation(
+    std::optional<WeatherCoordinates> coordinates, std::string name, std::string sourceLabel
+) {
+  m_locationName = std::move(name);
+  m_locationSource = std::move(sourceLabel);
+
+  if (!coordinates.has_value()) {
+    if (m_hasLocation || m_snapshot.valid || !m_error.empty()) {
+      m_hasLocation = false;
+      clearState();
+      notifyChanged();
+    }
+    return;
+  }
+
+  constexpr double kEpsilon = 1e-6;
+  const bool coordinatesChanged = !m_hasLocation
+      || std::abs(m_resolvedLatitude - coordinates->latitude) > kEpsilon
+      || std::abs(m_resolvedLongitude - coordinates->longitude) > kEpsilon;
+
+  m_resolvedLatitude = coordinates->latitude;
+  m_resolvedLongitude = coordinates->longitude;
+  m_hasLocation = true;
+
+  if (coordinatesChanged) {
+    requestRefresh();
+  }
+  notifyChanged();
+}
 
 int WeatherService::pollTimeoutMs() const {
   if (!m_activeConfig.enabled || m_requestKind != RequestKind::None) {
@@ -206,7 +228,7 @@ int WeatherService::pollTimeoutMs() const {
   if (m_refreshQueued) {
     return 0;
   }
-  if (!locationConfigured()) {
+  if (!m_hasLocation) {
     return -1;
   }
 
@@ -224,7 +246,7 @@ void WeatherService::tick() {
   if (!m_activeConfig.enabled) {
     return;
   }
-  if (!locationConfigured()) {
+  if (!m_hasLocation) {
     m_refreshQueued = false;
     if (m_snapshot.valid || !m_error.empty()) {
       clearState();
@@ -239,43 +261,17 @@ void WeatherService::tick() {
   }
   m_refreshQueued = false;
 
-  if (m_activeConfig.autoLocate) {
-    startGeolocate();
-    return;
-  }
-
-  if (!m_locationResolved || m_resolvedAddress != m_activeConfig.address) {
-    startAddressGeocode();
-    return;
-  }
-
   startWeatherFetch();
 }
 
-void WeatherService::requestRefresh(bool resetLocation) {
-  if (resetLocation) {
-    m_locationResolved = false;
-    m_resolvedAddress.clear();
-    m_resolvedLocationName.clear();
-    m_resolvedLatitude = 0.0;
-    m_resolvedLongitude = 0.0;
-  }
+void WeatherService::requestRefresh() {
   m_refreshQueued = true;
   m_nextRefreshAt = Clock::time_point{};
 }
 
 bool WeatherService::enabled() const noexcept { return m_activeConfig.enabled; }
 
-bool WeatherService::locationConfigured() const noexcept {
-  return m_activeConfig.autoLocate || !m_activeConfig.address.empty();
-}
-
-std::optional<WeatherCoordinates> WeatherService::resolvedCoordinates() const noexcept {
-  if (!hasResolvedLocation()) {
-    return std::nullopt;
-  }
-  return WeatherCoordinates{.latitude = m_resolvedLatitude, .longitude = m_resolvedLongitude};
-}
+bool WeatherService::locationConfigured() const noexcept { return m_hasLocation; }
 
 bool WeatherService::useImperial() const noexcept { return m_activeConfig.unit == "imperial"; }
 
@@ -384,32 +380,27 @@ std::string WeatherService::descriptionForCode(std::int32_t code) {
 void WeatherService::onConfigReload() {
   const WeatherConfig previousConfig = m_activeConfig;
   const WeatherConfig nextConfig = m_configService.config().weather;
-  if (weatherConfigEqual(previousConfig, nextConfig)) {
+  if (previousConfig == nextConfig) {
     return;
   }
 
   m_activeConfig = nextConfig;
   m_error.clear();
-  if (!m_activeConfig.enabled || !locationConfigured()) {
+  if (!m_activeConfig.enabled) {
     clearState();
     notifyChanged();
     return;
   }
 
-  if (weatherLocationConfigEqual(previousConfig, m_activeConfig)) {
-    if (m_snapshot.valid) {
-      m_nextRefreshAt = m_snapshot.fetchedAt + std::chrono::minutes(std::max(5, m_activeConfig.refreshMinutes));
-    } else {
-      requestRefresh(false);
-    }
-    if (previousConfig.unit != m_activeConfig.unit || previousConfig.effects != m_activeConfig.effects) {
-      notifyChanged();
-    }
-    return;
+  if (!previousConfig.enabled) {
+    // Re-enabled: reload cache and refresh for the current location.
+    loadCache();
+    requestRefresh();
+  } else if (m_snapshot.valid) {
+    m_nextRefreshAt = m_snapshot.fetchedAt + std::chrono::minutes(std::max(5, m_activeConfig.refreshMinutes));
+  } else {
+    requestRefresh();
   }
-
-  loadCache();
-  requestRefresh(!m_snapshot.valid);
   notifyChanged();
 }
 
@@ -428,104 +419,25 @@ void WeatherService::notifyChanged() {
   }
 }
 
-void WeatherService::startGeolocate() {
-  std::error_code ec;
-  std::filesystem::create_directories(transportCacheDir(), ec);
-  const auto path = transportCacheDir() / "geolocate.json";
-  const std::uint64_t serial = ++m_requestSerial;
-  m_loading = true;
-  m_error.clear();
-  m_requestKind = RequestKind::Geolocate;
-  notifyChanged();
-  m_httpClient.download("https://api.noctalia.dev/geolocate", path,
-                        [this, path, serial](bool success) { handleLocationResponse(path, true, success, serial); });
-}
-
-void WeatherService::startAddressGeocode() {
-  std::error_code ec;
-  std::filesystem::create_directories(transportCacheDir(), ec);
-  const auto path = transportCacheDir() / "geocode.json";
-  const std::string url = "https://api.noctalia.dev/geocode?city=" + StringUtils::urlEncode(m_activeConfig.address);
-  const std::uint64_t serial = ++m_requestSerial;
-  m_loading = true;
-  m_error.clear();
-  m_requestKind = RequestKind::GeocodeAddress;
-  notifyChanged();
-  m_httpClient.download(url, path,
-                        [this, path, serial](bool success) { handleLocationResponse(path, false, success, serial); });
-}
-
 void WeatherService::startWeatherFetch() {
   std::error_code ec;
   std::filesystem::create_directories(transportCacheDir(), ec);
   const auto path = transportCacheDir() / "forecast.json";
-  const std::string url =
-      std::format("https://api.open-meteo.com/v1/forecast?latitude={}&longitude={}"
-                  "&current_weather=true"
-                  "&daily=temperature_2m_max,temperature_2m_min,weathercode,sunrise,sunset"
-                  "&forecast_days={}&timezone=auto",
-                  formatCoordinate(m_resolvedLatitude), formatCoordinate(m_resolvedLongitude), kForecastDays);
+  const std::string url = std::format(
+      "https://api.open-meteo.com/v1/forecast?latitude={}&longitude={}"
+      "&current_weather=true"
+      "&daily=temperature_2m_max,temperature_2m_min,weathercode,sunrise,sunset"
+      "&forecast_days={}&timezone=auto",
+      formatCoordinate(m_resolvedLatitude), formatCoordinate(m_resolvedLongitude), kForecastDays
+  );
   const std::uint64_t serial = ++m_requestSerial;
   m_loading = true;
   m_error.clear();
   m_requestKind = RequestKind::FetchWeather;
   notifyChanged();
-  m_httpClient.download(url, path,
-                        [this, path, serial](bool success) { handleWeatherResponse(path, success, serial); });
-}
-
-void WeatherService::handleLocationResponse(const std::filesystem::path& path, bool autoLocated, bool success,
-                                            std::uint64_t serial) {
-  if (serial != m_requestSerial || !m_activeConfig.enabled) {
-    return;
-  }
-  m_requestKind = RequestKind::None;
-  if (!success) {
-    m_error = autoLocated ? i18n::tr("weather.errors.ip-geolocation-failed")
-                          : i18n::tr("weather.errors.address-lookup-failed");
-    if (canFetchWeatherAfterLocationFailure(autoLocated)) {
-      kLog.warn("{}; fetching weather using last resolved weather location", m_error);
-      startWeatherFetch();
-      return;
-    }
-    m_loading = false;
-    scheduleRetryAfterFailure();
-    dropPastForecastDays(m_snapshot);
-    notifyChanged();
-    return;
-  }
-
-  try {
-    std::ifstream file(path);
-    const auto json = nlohmann::json::parse(file);
-    const double latitude = readNumber(json, "lat");
-    const double longitude = readNumber(json, "lng");
-    const std::string name = autoLocated ? readString(json, "city") : readString(json, "name");
-    const std::string country = readString(json, "country");
-
-    m_resolvedLatitude = latitude;
-    m_resolvedLongitude = longitude;
-    m_locationResolved = true;
-    m_resolvedAddress = m_activeConfig.address;
-    m_resolvedLocationName = compactLocationLabel(name, country);
-    if (m_resolvedLocationName.empty()) {
-      m_resolvedLocationName = autoLocated ? i18n::tr("weather.locations.current") : m_activeConfig.address;
-    }
-
-    kLog.info("weather location resolved");
-    startWeatherFetch();
-  } catch (const std::exception& e) {
-    m_loading = false;
-    m_error = autoLocated ? i18n::tr("weather.errors.parse-ip-geolocation") : i18n::tr("weather.errors.parse-geocode");
-    if (canFetchWeatherAfterLocationFailure(autoLocated)) {
-      kLog.warn("{}: {}; fetching weather using last resolved weather location", m_error, e.what());
-      startWeatherFetch();
-      return;
-    }
-    scheduleRetryAfterFailure();
-    kLog.warn("{}: {}", m_error, e.what());
-    notifyChanged();
-  }
+  m_httpClient.download(url, path, [this, path, serial](bool success) {
+    handleWeatherResponse(path, success, serial);
+  });
 }
 
 void WeatherService::handleWeatherResponse(const std::filesystem::path& path, bool success, std::uint64_t serial) {
@@ -556,8 +468,8 @@ void WeatherService::handleWeatherResponse(const std::filesystem::path& path, bo
 
     WeatherSnapshot next;
     next.valid = true;
-    next.locationName = m_resolvedLocationName;
-    next.sourceLabel = m_activeConfig.autoLocate ? i18n::tr("weather.source.auto") : i18n::tr("weather.source.address");
+    next.locationName = m_locationName;
+    next.sourceLabel = m_locationSource;
     next.latitude = m_resolvedLatitude;
     next.longitude = m_resolvedLongitude;
     next.generationTimeMs = readOptionalNumber(json, "generationtime_ms");
@@ -592,20 +504,23 @@ void WeatherService::handleWeatherResponse(const std::filesystem::path& path, bo
     next.fetchedAt = Clock::now();
 
     const std::size_t count = std::min(
-        {dates.size(), tempsMax.size(), tempsMin.size(), codes.size(), sunrises.size(), sunsets.size(), kForecastDays});
+        {dates.size(), tempsMax.size(), tempsMin.size(), codes.size(), sunrises.size(), sunsets.size(), kForecastDays}
+    );
     next.forecastDays.reserve(count);
     for (std::size_t i = 0; i < count; ++i) {
       if (!dates[i].is_string() || !tempsMax[i].is_number() || !tempsMin[i].is_number() || !codes[i].is_number()) {
         continue;
       }
-      next.forecastDays.push_back(WeatherForecastDay{
-          .dateIso = dates[i].get<std::string>(),
-          .weatherCode = codes[i].get<std::int32_t>(),
-          .temperatureMaxC = tempsMax[i].get<double>(),
-          .temperatureMinC = tempsMin[i].get<double>(),
-          .sunriseIso = sunrises[i].is_string() ? sunrises[i].get<std::string>() : std::string{},
-          .sunsetIso = sunsets[i].is_string() ? sunsets[i].get<std::string>() : std::string{},
-      });
+      next.forecastDays.push_back(
+          WeatherForecastDay{
+              .dateIso = dates[i].get<std::string>(),
+              .weatherCode = codes[i].get<std::int32_t>(),
+              .temperatureMaxC = tempsMax[i].get<double>(),
+              .temperatureMinC = tempsMin[i].get<double>(),
+              .sunriseIso = sunrises[i].is_string() ? sunrises[i].get<std::string>() : std::string{},
+              .sunsetIso = sunsets[i].is_string() ? sunsets[i].get<std::string>() : std::string{},
+          }
+      );
     }
     dropPastForecastDays(next);
 
@@ -627,20 +542,13 @@ void WeatherService::scheduleRetryAfterFailure() {
   m_nextRefreshAt = Clock::now() + std::chrono::minutes(std::max(5, m_activeConfig.refreshMinutes));
 }
 
-bool WeatherService::hasResolvedLocation() const noexcept {
-  return m_locationResolved && std::isfinite(m_resolvedLatitude) && std::isfinite(m_resolvedLongitude) &&
-         m_resolvedLatitude >= -90.0 && m_resolvedLatitude <= 90.0 && m_resolvedLongitude >= -180.0 &&
-         m_resolvedLongitude <= 180.0;
-}
-
-bool WeatherService::canFetchWeatherAfterLocationFailure(bool autoLocated) const noexcept {
-  if (!hasResolvedLocation()) {
-    return false;
-  }
-  if (autoLocated) {
-    return true;
-  }
-  return m_resolvedAddress == m_activeConfig.address;
+bool WeatherService::coordinatesValid() const noexcept {
+  return std::isfinite(m_resolvedLatitude)
+      && std::isfinite(m_resolvedLongitude)
+      && m_resolvedLatitude >= -90.0
+      && m_resolvedLatitude <= 90.0
+      && m_resolvedLongitude >= -180.0
+      && m_resolvedLongitude <= 180.0;
 }
 
 std::filesystem::path WeatherService::transportCacheDir() { return std::filesystem::path("/tmp") / "noctalia-weather"; }
@@ -657,16 +565,6 @@ std::filesystem::path WeatherService::stateCacheFilePath() {
 
 std::string WeatherService::formatCoordinate(double value) { return std::format("{:.4f}", value); }
 
-std::string WeatherService::compactLocationLabel(const std::string& name, const std::string& country) {
-  if (!name.empty() && !country.empty()) {
-    return std::format("{}, {}", name, country);
-  }
-  if (!name.empty()) {
-    return name;
-  }
-  return country;
-}
-
 void WeatherService::loadCache() {
   clearState();
   const auto path = stateCacheFilePath();
@@ -678,14 +576,6 @@ void WeatherService::loadCache() {
   try {
     std::ifstream file(path);
     const auto json = nlohmann::json::parse(file);
-    const bool cachedAutoLocate = readBool(json, "auto_locate");
-    const std::string cachedAddress = readString(json, "address");
-    if (cachedAutoLocate != m_activeConfig.autoLocate) {
-      return;
-    }
-    if (!cachedAutoLocate && cachedAddress != m_activeConfig.address) {
-      return;
-    }
 
     const auto& snapshot = json.at("snapshot");
     if (!readBool(snapshot, "valid")) {
@@ -723,14 +613,16 @@ void WeatherService::loadCache() {
         if (!item.is_object()) {
           continue;
         }
-        m_snapshot.forecastDays.push_back(WeatherForecastDay{
-            .dateIso = readString(item, "date_iso"),
-            .weatherCode = readOptionalInt(item, "weather_code"),
-            .temperatureMaxC = readOptionalNumber(item, "temperature_max_c"),
-            .temperatureMinC = readOptionalNumber(item, "temperature_min_c"),
-            .sunriseIso = readString(item, "sunrise_iso"),
-            .sunsetIso = readString(item, "sunset_iso"),
-        });
+        m_snapshot.forecastDays.push_back(
+            WeatherForecastDay{
+                .dateIso = readString(item, "date_iso"),
+                .weatherCode = readOptionalInt(item, "weather_code"),
+                .temperatureMaxC = readOptionalNumber(item, "temperature_max_c"),
+                .temperatureMinC = readOptionalNumber(item, "temperature_min_c"),
+                .sunriseIso = readString(item, "sunrise_iso"),
+                .sunsetIso = readString(item, "sunset_iso"),
+            }
+        );
       }
     }
     m_snapshot.fetchedAt = fromUnixSeconds(readOptionalInt(snapshot, "fetched_at"));
@@ -738,9 +630,9 @@ void WeatherService::loadCache() {
 
     m_resolvedLatitude = m_snapshot.latitude;
     m_resolvedLongitude = m_snapshot.longitude;
-    m_resolvedLocationName = m_snapshot.locationName;
-    m_resolvedAddress = cachedAddress;
-    m_locationResolved = true;
+    m_locationName = m_snapshot.locationName;
+    m_locationSource = m_snapshot.sourceLabel;
+    m_hasLocation = coordinatesValid();
     m_nextRefreshAt = m_snapshot.fetchedAt + std::chrono::minutes(std::max(5, m_activeConfig.refreshMinutes));
 
     kLog.info("loaded cached weather data");
@@ -758,35 +650,35 @@ void WeatherService::saveCache() const {
   std::error_code ec;
   std::filesystem::create_directories(path.parent_path(), ec);
 
-  nlohmann::json json{{"auto_locate", m_activeConfig.autoLocate},
-                      {"address", m_activeConfig.address},
-                      {"snapshot",
-                       {
-                           {"valid", true},
-                           {"location_name", m_snapshot.locationName},
-                           {"source_label", m_snapshot.sourceLabel},
-                           {"latitude", m_snapshot.latitude},
-                           {"longitude", m_snapshot.longitude},
-                           {"generation_time_ms", m_snapshot.generationTimeMs},
-                           {"utc_offset_seconds", m_snapshot.utcOffsetSeconds},
-                           {"timezone", m_snapshot.timezone},
-                           {"timezone_abbreviation", m_snapshot.timezoneAbbreviation},
-                           {"elevation_m", m_snapshot.elevationM},
-                           {"current_units", currentUnitsToJson(m_snapshot.currentUnits)},
-                           {"daily_units", dailyUnitsToJson(m_snapshot.dailyUnits)},
-                           {"current",
-                            {
-                                {"time_iso", m_snapshot.current.timeIso},
-                                {"interval_seconds", m_snapshot.current.intervalSeconds},
-                                {"temperature_c", m_snapshot.current.temperatureC},
-                                {"wind_speed_kmh", m_snapshot.current.windSpeedKmh},
-                                {"wind_direction_deg", m_snapshot.current.windDirectionDeg},
-                                {"is_day", m_snapshot.current.isDay},
-                                {"weather_code", m_snapshot.current.weatherCode},
-                            }},
-                           {"forecast_days", nlohmann::json::array()},
-                           {"fetched_at", toUnixSeconds(m_snapshot.fetchedAt)},
-                       }}};
+  nlohmann::json json{
+      {"snapshot",
+       {
+           {"valid", true},
+           {"location_name", m_snapshot.locationName},
+           {"source_label", m_snapshot.sourceLabel},
+           {"latitude", m_snapshot.latitude},
+           {"longitude", m_snapshot.longitude},
+           {"generation_time_ms", m_snapshot.generationTimeMs},
+           {"utc_offset_seconds", m_snapshot.utcOffsetSeconds},
+           {"timezone", m_snapshot.timezone},
+           {"timezone_abbreviation", m_snapshot.timezoneAbbreviation},
+           {"elevation_m", m_snapshot.elevationM},
+           {"current_units", currentUnitsToJson(m_snapshot.currentUnits)},
+           {"daily_units", dailyUnitsToJson(m_snapshot.dailyUnits)},
+           {"current",
+            {
+                {"time_iso", m_snapshot.current.timeIso},
+                {"interval_seconds", m_snapshot.current.intervalSeconds},
+                {"temperature_c", m_snapshot.current.temperatureC},
+                {"wind_speed_kmh", m_snapshot.current.windSpeedKmh},
+                {"wind_direction_deg", m_snapshot.current.windDirectionDeg},
+                {"is_day", m_snapshot.current.isDay},
+                {"weather_code", m_snapshot.current.weatherCode},
+            }},
+           {"forecast_days", nlohmann::json::array()},
+           {"fetched_at", toUnixSeconds(m_snapshot.fetchedAt)},
+       }}
+  };
 
   for (const auto& day : m_snapshot.forecastDays) {
     json["snapshot"]["forecast_days"].push_back({

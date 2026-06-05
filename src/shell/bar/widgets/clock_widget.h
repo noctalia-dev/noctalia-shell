@@ -10,21 +10,26 @@ struct wl_output;
 
 class ClockWidget : public Widget {
 public:
-  ClockWidget(wl_output* output, std::string format = "{:%H:%M}", std::string verticalFormat = "");
+  ClockWidget(
+      wl_output* output, std::string format = "{:%H:%M}", std::string verticalFormat = "",
+      std::string tooltipFormat = ""
+  );
 
   void create() override;
 
 private:
   [[nodiscard]] std::string formatTimeText() const;
+  [[nodiscard]] std::string formatTooltipText() const;
   void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
   void doUpdate(Renderer& renderer) override;
-  wl_output* m_output = nullptr;
   std::string m_format;
   std::string m_verticalFormat;
+  std::string m_tooltipFormat;
   bool m_isVertical = false;
   Label* m_label = nullptr;
   Label* m_secondaryLabel = nullptr;
   std::string m_lastText;
   std::string m_lastPrimaryText;
   std::string m_lastSecondaryText;
+  std::string m_lastTooltipText;
 };

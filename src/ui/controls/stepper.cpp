@@ -61,7 +61,7 @@ Stepper::Stepper() {
   setGap(0.0f);
   setPadding(0.0f);
   setMinWidth(kDefaultMinWidth);
-  setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
+  setFill(colorSpecFromRole(ColorRole::SurfaceVariant, m_surfaceOpacity));
   clearBorder();
   setRadius(Style::scaledRadiusMd());
 
@@ -182,6 +182,15 @@ void Stepper::setValue(int value) {
   markLayoutDirty();
 }
 
+void Stepper::setSurfaceOpacity(float opacity) {
+  const float clamped = std::clamp(opacity, 0.0f, 1.0f);
+  if (m_surfaceOpacity == clamped) {
+    return;
+  }
+  m_surfaceOpacity = clamped;
+  refreshSegmentStyle();
+}
+
 void Stepper::setEnabled(bool enabled) {
   if (m_enabled == enabled) {
     return;
@@ -246,8 +255,8 @@ void Stepper::syncValueFieldMinWidth(Renderer& renderer) {
   const float fs = Style::fontSizeBody * m_scale;
   const std::string minText = std::to_string(m_min) + m_valueSuffix;
   const std::string maxText = std::to_string(m_max) + m_valueSuffix;
-  const float wMin = renderer.measureText(minText, fs, false).width;
-  const float wMax = renderer.measureText(maxText, fs, false).width;
+  const float wMin = renderer.measureText(minText, fs, FontWeight::Normal).width;
+  const float wMax = renderer.measureText(maxText, fs, FontWeight::Normal).width;
   const float textInset = valueInputHorizontalPadding(m_scale) + kInputTextInnerInset;
   m_valueInput->setMinLayoutWidth(std::max(wMin, wMax) + textInset * 2.0f);
 }
@@ -344,8 +353,9 @@ void Stepper::commitValueField() {
     syncValueField();
     return;
   }
-  while (!m_valueSuffix.empty() && t.size() >= m_valueSuffix.size() &&
-         t.compare(t.size() - m_valueSuffix.size(), m_valueSuffix.size(), m_valueSuffix) == 0) {
+  while (!m_valueSuffix.empty()
+         && t.size() >= m_valueSuffix.size()
+         && t.compare(t.size() - m_valueSuffix.size(), m_valueSuffix.size(), m_valueSuffix) == 0) {
     t.resize(t.size() - m_valueSuffix.size());
     t = trimAscii(t);
   }
@@ -411,7 +421,7 @@ void Stepper::refreshButtons() {
 
 void Stepper::refreshSegmentStyle() {
   const float r = Style::scaledRadiusMd(m_scale);
-  setFill(colorSpecFromRole(ColorRole::SurfaceVariant));
+  setFill(colorSpecFromRole(ColorRole::SurfaceVariant, m_surfaceOpacity));
   clearBorder();
   setRadius(r);
   if (m_decrement != nullptr) {

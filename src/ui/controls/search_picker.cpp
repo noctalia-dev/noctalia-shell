@@ -2,10 +2,8 @@
 
 #include "core/keybind_matcher.h"
 #include "i18n/i18n.h"
-#include "ui/controls/glyph.h"
-#include "ui/controls/input.h"
-#include "ui/controls/label.h"
-#include "ui/controls/scroll_view.h"
+#include "ui/builders.h"
+#include "ui/controls/color_swatch_preview.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "util/fuzzy_match.h"
@@ -20,6 +18,7 @@ namespace {
 
   constexpr float kDefaultWidth = 320.0f;
   constexpr float kDefaultHeight = 360.0f;
+  constexpr auto kFilterDebounceInterval = std::chrono::milliseconds(120);
 
   class SearchPickerRow : public Flex {
   public:
@@ -31,32 +30,46 @@ namespace {
       setRadius(Style::scaledRadiusSm());
       setFillWidth(true);
 
-      auto icon = std::make_unique<Glyph>();
-      icon->setGlyphSize(Style::barGlyphSize);
-      icon->setVisible(false);
-      icon->setParticipatesInLayout(false);
-      m_icon = static_cast<Glyph*>(addChild(std::move(icon)));
+      auto preview = std::make_unique<ColorSwatchPreviewStrip>();
+      preview->setVisible(false);
+      preview->setParticipatesInLayout(false);
+      m_preview = static_cast<ColorSwatchPreviewStrip*>(addChild(std::move(preview)));
 
-      auto text = std::make_unique<Flex>();
-      text->setDirection(FlexDirection::Vertical);
-      text->setAlign(FlexAlign::Stretch);
-      text->setJustify(FlexJustify::Center);
-      text->setFlexGrow(1.0f);
-      m_text = static_cast<Flex*>(addChild(std::move(text)));
+      addChild(
+          ui::glyph({
+              .out = &m_icon,
+              .glyphSize = Style::barGlyphSize,
+              .visible = false,
+              .participatesInLayout = false,
+          })
+      );
 
-      auto title = std::make_unique<Label>();
-      title->setFontSize(Style::fontSizeBody);
-      m_title = static_cast<Label*>(m_text->addChild(std::move(title)));
-
-      auto detail = std::make_unique<Label>();
-      detail->setFontSize(Style::fontSizeCaption);
-      detail->setVisible(false);
-      m_detail = static_cast<Label*>(m_text->addChild(std::move(detail)));
+      auto text = ui::column({
+          .out = &m_text,
+          .align = FlexAlign::Stretch,
+          .justify = FlexJustify::Center,
+          .flexGrow = 1.0f,
+      });
+      text->addChild(
+          ui::label({
+              .out = &m_title,
+              .fontSize = Style::fontSizeBody,
+          })
+      );
+      text->addChild(
+          ui::label({
+              .out = &m_detail,
+              .fontSize = Style::fontSizeCaption,
+              .visible = false,
+          })
+      );
+      addChild(std::move(text));
     }
 
     void bind(const SearchPickerOption& option, bool highlighted, bool selected, bool hovered) {
       const bool hasDetail = !option.description.empty();
       const bool hasIcon = !option.icon.empty();
+      const bool hasPreview = !option.preview.empty();
 
       if (highlighted) {
         setFill(colorSpecFromRole(ColorRole::Primary));
@@ -73,23 +86,29 @@ namespace {
       ColorSpec detailForeground = colorSpecFromRole(ColorRole::OnSurfaceVariant, option.enabled ? 1.0f : 0.55f);
       if (highlighted) {
         foreground = colorSpecFromRole(ColorRole::OnPrimary);
-        detailForeground = colorSpecFromRole(ColorRole::OnPrimary, 0.78f);
+        detailForeground = colorSpecFromRole(ColorRole::OnPrimary);
       } else if (hovered) {
         foreground = colorSpecFromRole(ColorRole::OnHover);
-        detailForeground = colorSpecFromRole(ColorRole::OnHover, 0.78f);
+        detailForeground = colorSpecFromRole(ColorRole::OnHover);
       }
 
+      if (m_preview != nullptr) {
+        m_preview->setMetricsFromFontSize(Style::fontSizeBody);
+        m_preview->setPreview(option.preview);
+        m_preview->setVisible(hasPreview);
+        m_preview->setParticipatesInLayout(hasPreview);
+      }
       if (m_icon != nullptr) {
-        if (hasIcon) {
+        if (hasIcon && !hasPreview) {
           m_icon->setGlyph(option.icon);
           m_icon->setColor(foreground);
         }
-        m_icon->setVisible(hasIcon);
-        m_icon->setParticipatesInLayout(hasIcon);
+        m_icon->setVisible(hasIcon && !hasPreview);
+        m_icon->setParticipatesInLayout(hasIcon && !hasPreview);
       }
       if (m_title != nullptr) {
         m_title->setText(option.label);
-        m_title->setBold(hasDetail);
+        m_title->setFontWeight(hasDetail ? FontWeight::Bold : FontWeight::Normal);
         m_title->setColor(foreground);
       }
       if (m_detail != nullptr) {
@@ -101,6 +120,7 @@ namespace {
     }
 
   private:
+    ColorSwatchPreviewStrip* m_preview = nullptr;
     Glyph* m_icon = nullptr;
     Flex* m_text = nullptr;
     Label* m_title = nullptr;
@@ -121,49 +141,63 @@ SearchPicker::SearchPicker() {
   setRadius(Style::scaledRadiusMd());
   setSize(kDefaultWidth, kDefaultHeight);
 
-  auto input = std::make_unique<Input>();
-  input->setPlaceholder(i18n::tr("ui.controls.search-picker.placeholder"));
-  input->setControlHeight(Style::controlHeight);
-  input->setOnChange([this](const std::string& value) {
-    m_filter = value;
-    applyFilter();
-  });
-  input->setOnKeyEvent([this](std::uint32_t sym, std::uint32_t modifiers) {
-    if (KeybindMatcher::matches(KeybindAction::Down, sym, modifiers)) {
-      moveHighlight(1);
-      return true;
-    }
-    if (KeybindMatcher::matches(KeybindAction::Up, sym, modifiers)) {
-      moveHighlight(-1);
-      return true;
-    }
-    if (KeybindMatcher::matches(KeybindAction::Validate, sym, modifiers)) {
-      activateHighlighted();
-      return true;
-    }
-    if (KeybindMatcher::matches(KeybindAction::Cancel, sym, modifiers)) {
-      if (m_onCancel) {
-        m_onCancel();
-      }
-      return true;
-    }
-    return false;
-  });
-  m_input = static_cast<Input*>(addChild(std::move(input)));
+  addChild(
+      ui::input({
+          .out = &m_input,
+          .placeholder = i18n::tr("ui.controls.search-picker.placeholder"),
+          .controlHeight = Style::controlHeight,
+          .onChange =
+              [this](const std::string& value) {
+                if (value == m_filter) {
+                  return;
+                }
+                m_filter = value;
+                m_filterDebounceTimer.start(kFilterDebounceInterval, [this]() { applyFilter(); });
+              },
+          .onKeyEvent =
+              [this](std::uint32_t sym, std::uint32_t modifiers) {
+                if (KeybindMatcher::matches(KeybindAction::Down, sym, modifiers)) {
+                  moveHighlight(1);
+                  return true;
+                }
+                if (KeybindMatcher::matches(KeybindAction::Up, sym, modifiers)) {
+                  moveHighlight(-1);
+                  return true;
+                }
+                if (KeybindMatcher::matches(KeybindAction::Validate, sym, modifiers)) {
+                  activateHighlighted();
+                  return true;
+                }
+                if (KeybindMatcher::matches(KeybindAction::Cancel, sym, modifiers)) {
+                  if (m_onCancel) {
+                    m_onCancel();
+                  }
+                  return true;
+                }
+                return false;
+              },
+      })
+  );
 
-  auto empty = std::make_unique<Label>();
-  empty->setText(m_emptyText);
-  empty->setFontSize(Style::fontSizeBody);
-  empty->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
-  empty->setVisible(false);
-  m_emptyLabel = static_cast<Label*>(addChild(std::move(empty)));
+  addChild(
+      ui::label({
+          .out = &m_emptyLabel,
+          .text = m_emptyText,
+          .fontSize = Style::fontSizeBody,
+          .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+          .visible = false,
+      })
+  );
 
-  auto list = std::make_unique<VirtualListView>();
-  list->setFlexGrow(1.0f);
-  list->setItemGap(Style::spaceXs);
-  list->setOverscanItems(4);
-  list->setAdapter(this);
-  m_list = static_cast<VirtualListView*>(addChild(std::move(list)));
+  addChild(
+      ui::virtualListView({
+          .out = &m_list,
+          .itemGap = Style::spaceXs,
+          .overscanItems = 4,
+          .adapter = this,
+          .flexGrow = 1.0f,
+      })
+  );
 }
 
 void SearchPicker::setOptions(std::vector<SearchPickerOption> options) {
@@ -318,8 +352,9 @@ void SearchPicker::applyFilter() {
   }
 
   if (!query.empty()) {
-    std::stable_sort(scored.begin(), scored.end(),
-                     [](const ScoredOption& lhs, const ScoredOption& rhs) { return lhs.score > rhs.score; });
+    std::stable_sort(scored.begin(), scored.end(), [](const ScoredOption& lhs, const ScoredOption& rhs) {
+      return lhs.score > rhs.score;
+    });
     m_visible.reserve(scored.size());
     for (const auto& item : scored) {
       m_visible.push_back(item.index);

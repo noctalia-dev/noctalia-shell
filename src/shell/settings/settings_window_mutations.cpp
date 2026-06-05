@@ -1,6 +1,7 @@
 #include "config/config_service.h"
 #include "core/deferred_call.h"
 #include "i18n/i18n.h"
+#include "render/text/font_weight_catalog.h"
 #include "shell/settings/settings_window.h"
 
 #include <string>
@@ -22,7 +23,16 @@ void SettingsWindow::markSettingsWriteError(std::string message) {
   requestSceneRebuild();
 }
 
+void SettingsWindow::showTransientStatus(std::string message, bool isError) {
+  m_statusMessage = std::move(message);
+  m_statusIsError = isError;
+  requestSceneRebuild();
+}
+
 void SettingsWindow::setSettingOverride(std::vector<std::string> path, ConfigOverrideValue value) {
+  if (path.size() == 2 && path[0] == "shell" && path[1] == "font_family") {
+    text::invalidateFontWeightCatalogCache();
+  }
   DeferredCall::callLater([this, path = std::move(path), value = std::move(value)]() mutable {
     if (m_config == nullptr) {
       return;
@@ -36,26 +46,21 @@ void SettingsWindow::setSettingOverride(std::vector<std::string> path, ConfigOve
 }
 
 void SettingsWindow::setSettingOverrides(
-    std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides) {
+    std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides
+) {
   DeferredCall::callLater([this, overrides = std::move(overrides)]() mutable {
     if (m_config == nullptr) {
       return;
     }
-    bool changed = false;
-    bool failed = false;
-    for (auto& [path, value] : overrides) {
-      if (m_config->setOverride(path, std::move(value))) {
-        changed = true;
-      } else {
-        failed = true;
-      }
-    }
-    if (failed) {
-      markSettingsWriteError(i18n::tr("settings.errors.batch-write"));
+    if (overrides.empty()) {
+      markSettingsWriteSuccess(!m_statusMessage.empty());
       return;
     }
-    const bool hadStatus = !m_statusMessage.empty();
-    markSettingsWriteSuccess(changed || hadStatus);
+    if (m_config->setOverrides(std::move(overrides))) {
+      markSettingsWriteSuccess(true);
+      return;
+    }
+    markSettingsWriteError(i18n::tr("settings.errors.batch-write"));
   });
 }
 
@@ -64,11 +69,9 @@ void SettingsWindow::clearSettingOverride(std::vector<std::string> path) {
     if (m_config == nullptr) {
       return;
     }
-    if (m_config->clearOverride(path)) {
-      markSettingsWriteSuccess();
-      return;
-    }
-    markSettingsWriteError(i18n::tr("settings.errors.clear"));
+    (void)m_config->clearOverride(path);
+    // Rebuild even when there was nothing to clear so inherit/default controls refresh.
+    markSettingsWriteSuccess();
   });
 }
 
@@ -100,7 +103,8 @@ void SettingsWindow::clearSettingOverrides(std::vector<std::vector<std::string>>
 
 void SettingsWindow::renameWidgetInstance(
     std::string oldName, std::string newName,
-    std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> referenceOverrides) {
+    std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> referenceOverrides
+) {
   DeferredCall::callLater([this, oldName = std::move(oldName), newName = std::move(newName),
                            referenceOverrides = std::move(referenceOverrides)]() mutable {
     if (m_config == nullptr) {
@@ -243,25 +247,25 @@ void SettingsWindow::createMonitorOverride(std::string barName, std::string matc
 }
 
 void SettingsWindow::renameMonitorOverride(std::string barName, std::string oldMatch, std::string newMatch) {
-  DeferredCall::callLater(
-      [this, barName = std::move(barName), oldMatch = std::move(oldMatch), newMatch = std::move(newMatch)]() {
-        if (m_config == nullptr) {
-          return;
-        }
-        if (m_config->renameMonitorOverride(barName, oldMatch, newMatch)) {
-          if (m_selectedBarName == barName && m_selectedMonitorOverride == oldMatch) {
-            m_selectedMonitorOverride = newMatch;
-          }
-          m_renamingMonitorOverrideBarName.clear();
-          m_renamingMonitorOverrideMatch.clear();
-          m_pendingDeleteMonitorOverrideBarName.clear();
-          m_pendingDeleteMonitorOverrideMatch.clear();
-          m_contentScrollState.offset = 0.0f;
-          markSettingsWriteSuccess();
-          return;
-        }
-        markSettingsWriteError(i18n::tr("settings.errors.monitor-override.rename"));
-      });
+  DeferredCall::callLater([this, barName = std::move(barName), oldMatch = std::move(oldMatch),
+                           newMatch = std::move(newMatch)]() {
+    if (m_config == nullptr) {
+      return;
+    }
+    if (m_config->renameMonitorOverride(barName, oldMatch, newMatch)) {
+      if (m_selectedBarName == barName && m_selectedMonitorOverride == oldMatch) {
+        m_selectedMonitorOverride = newMatch;
+      }
+      m_renamingMonitorOverrideBarName.clear();
+      m_renamingMonitorOverrideMatch.clear();
+      m_pendingDeleteMonitorOverrideBarName.clear();
+      m_pendingDeleteMonitorOverrideMatch.clear();
+      m_contentScrollState.offset = 0.0f;
+      markSettingsWriteSuccess();
+      return;
+    }
+    markSettingsWriteError(i18n::tr("settings.errors.monitor-override.rename"));
+  });
 }
 
 void SettingsWindow::deleteMonitorOverride(std::string barName, std::string match) {

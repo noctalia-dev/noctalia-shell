@@ -14,8 +14,9 @@ void TimeService::setTickSecondCallback(TickCallback callback) { m_secondCallbac
 int TimeService::pollTimeoutMs() const {
   using namespace std::chrono;
   const auto now = system_clock::now();
-  const auto ms = duration_cast<milliseconds>(now.time_since_epoch()).count() % 1000;
-  return static_cast<int>(1000 - ms);
+  const auto nextSecond = floor<seconds>(now) + seconds{1};
+  const auto remaining = duration_cast<milliseconds>(nextSecond - now).count();
+  return static_cast<int>(std::max<std::int64_t>(1, remaining));
 }
 
 void TimeService::tick() {

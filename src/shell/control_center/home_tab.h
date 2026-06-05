@@ -15,11 +15,13 @@ class Button;
 class Box;
 class CompositorPlatform;
 class HttpClient;
+class IpcService;
 class ConfigService;
 class DependencyService;
 class Glyph;
 class GridView;
 class Image;
+class InputArea;
 class Label;
 class Shortcut;
 class Wallpaper;
@@ -33,11 +35,13 @@ struct ShortcutPad {
 
 class HomeTab : public Tab {
 public:
-  HomeTab(MprisService* mpris, HttpClient* httpClient, WeatherService* weather, PipeWireService* audio,
-          PowerProfilesService* powerProfiles, ConfigService* config, INetworkService* network,
-          BluetoothService* bluetooth, GammaService* nightLight, noctalia::theme::ThemeService* theme,
-          NotificationManager* notifications, IdleInhibitor* idleInhibitor, DependencyService* dependencies,
-          CompositorPlatform* platform, Wallpaper* wallpaper = nullptr);
+  HomeTab(
+      MprisService* mpris, HttpClient* httpClient, WeatherService* weather, PipeWireService* audio,
+      PowerProfilesService* powerProfiles, ConfigService* config, INetworkService* network, BluetoothService* bluetooth,
+      GammaService* nightLight, noctalia::theme::ThemeService* theme, NotificationManager* notifications,
+      IdleInhibitor* idleInhibitor, DependencyService* dependencies, CompositorPlatform* platform, IpcService* ipc,
+      Wallpaper* wallpaper = nullptr
+  );
   ~HomeTab() override;
 
   std::unique_ptr<Flex> create() override;
@@ -73,6 +77,7 @@ private:
   Flex* m_mediaText = nullptr;
   Flex* m_userCard = nullptr;
   Flex* m_userMain = nullptr;
+  InputArea* m_userAvatarArea = nullptr;
   Image* m_userAvatar = nullptr;
 
   Label* m_timeLabel = nullptr;

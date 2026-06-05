@@ -12,8 +12,10 @@ GraphNode::~GraphNode() {
   }
 }
 
-void GraphNode::setData(TextureManager& textures, const float* primary, int primaryCount, const float* secondary,
-                        int secondaryCount, const float* tertiary, int tertiaryCount) {
+void GraphNode::setData(
+    TextureManager& textures, const float* primary, int primaryCount, const float* secondary, int secondaryCount,
+    const float* tertiary, int tertiaryCount
+) {
   if (m_textureManager != nullptr && m_textureManager != &textures) {
     m_textureManager->unload(m_texture);
     m_texCapacity = 0;
@@ -33,6 +35,7 @@ void GraphNode::setData(TextureManager& textures, const float* primary, int prim
     pixels[base + 2] = static_cast<std::uint8_t>(std::clamp(b, 0.0f, 1.0f) * 255.0f);
     pixels[base + 3] = 255;
   }
+  m_pixels = pixels;
 
   if (m_texture.id == 0 || newWidth > m_texCapacity) {
     if (!textures.replace(m_texture, pixels.data(), newWidth, 1, TextureDataFormat::Rgba, TextureFilter::Nearest)) {
@@ -44,5 +47,32 @@ void GraphNode::setData(TextureManager& textures, const float* primary, int prim
   }
 
   m_texWidth = newWidth;
+  markPaintDirty();
+}
+
+void GraphNode::doInvalidateGpuResources(Renderer& renderer) {
+  (void)renderer;
+  if (m_textureManager == nullptr) {
+    m_texture = {};
+    m_texCapacity = 0;
+    return;
+  }
+
+  if (m_texture.id != 0) {
+    m_textureManager->unload(m_texture);
+  }
+  m_texture = {};
+  m_texCapacity = 0;
+
+  if (m_pixels.empty() || m_texWidth <= 0) {
+    markPaintDirty();
+    return;
+  }
+
+  if (m_textureManager->replace(
+          m_texture, m_pixels.data(), m_texWidth, 1, TextureDataFormat::Rgba, TextureFilter::Nearest
+      )) {
+    m_texCapacity = m_texWidth;
+  }
   markPaintDirty();
 }

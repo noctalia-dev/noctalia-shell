@@ -73,6 +73,7 @@ public:
   // Uploads decoded pixmaps to textures. Must run on the main thread with the
   // owning render context current.
   [[nodiscard]] bool uploadPending(TextureManager& textures);
+  void invalidateGpuResources(TextureManager& textures);
 
   [[nodiscard]] int pollTimeoutMs() const override { return -1; }
   void dispatch(const std::vector<pollfd>& fds, std::size_t startIdx) override;

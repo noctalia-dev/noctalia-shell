@@ -10,6 +10,7 @@
 
 struct zwlr_foreign_toplevel_handle_v1;
 struct zwlr_foreign_toplevel_manager_v1;
+struct ext_foreign_toplevel_handle_v1;
 struct wl_array;
 struct wl_output;
 struct wl_seat;
@@ -26,6 +27,7 @@ struct ToplevelInfo {
   std::string appId;
   std::uint64_t order = 0;
   zwlr_foreign_toplevel_handle_v1* handle = nullptr;
+  ext_foreign_toplevel_handle_v1* extHandle = nullptr;
 };
 
 class WaylandToplevels {
@@ -38,11 +40,12 @@ public:
 
   [[nodiscard]] std::optional<ActiveToplevel> current() const;
   [[nodiscard]] wl_output* currentOutput() const;
-  [[nodiscard]] std::optional<ActiveToplevel> matchByTitleAndAppId(std::string_view title, std::string_view appId,
-                                                                   wl_output* preferredOutput) const;
+  [[nodiscard]] std::optional<ActiveToplevel>
+  matchByTitleAndAppId(std::string_view title, std::string_view appId, wl_output* preferredOutput) const;
   [[nodiscard]] std::vector<std::string> allAppIds(wl_output* outputFilter = nullptr) const;
-  [[nodiscard]] std::vector<ToplevelInfo> windowsForApp(const std::string& idLower, const std::string& wmClassLower,
-                                                        wl_output* outputFilter = nullptr) const;
+  [[nodiscard]] std::vector<ToplevelInfo>
+  windowsForApp(const std::string& idLower, const std::string& wmClassLower, wl_output* outputFilter = nullptr) const;
+  [[nodiscard]] bool containsWlrHandle(zwlr_foreign_toplevel_handle_v1* handle) const;
   void activateHandle(zwlr_foreign_toplevel_handle_v1* handle, wl_seat* seat);
   void closeHandle(zwlr_foreign_toplevel_handle_v1* handle);
 
@@ -56,6 +59,14 @@ public:
   void onHandleState(zwlr_foreign_toplevel_handle_v1* handle, wl_array* state);
   void onHandleOutputEnter(zwlr_foreign_toplevel_handle_v1* handle, wl_output* output);
   void onHandleOutputLeave(zwlr_foreign_toplevel_handle_v1* handle, wl_output* output);
+
+  template <typename Fn> void visitWlrHandles(Fn&& fn) const {
+    for (const auto& [handle, _] : m_handles) {
+      if (handle != nullptr) {
+        fn(handle);
+      }
+    }
+  }
 
 private:
   struct ToplevelState {

@@ -85,11 +85,15 @@ void Glyph::measure(Renderer& renderer) {
 
 LayoutSize Glyph::measureWithConstraints(Renderer& renderer, const LayoutConstraints& constraints) {
   const float renderScale = renderer.renderScale();
-  if (m_measureCached && m_cachedCodepoint == m_glyphNode->codepoint() && m_cachedFontSize == m_glyphNode->fontSize() &&
-      m_cachedLogicalFontSize == m_logicalFontSize && m_cachedConstraintMaxWidth == constraints.maxWidth &&
-      m_cachedConstraintMaxHeight == constraints.maxHeight && m_cachedRenderScale == renderScale &&
-      m_cachedHasConstraintMaxWidth == constraints.hasMaxWidth &&
-      m_cachedHasConstraintMaxHeight == constraints.hasMaxHeight) {
+  if (m_measureCached
+      && m_cachedCodepoint == m_glyphNode->codepoint()
+      && m_cachedFontSize == m_glyphNode->fontSize()
+      && m_cachedLogicalFontSize == m_logicalFontSize
+      && m_cachedConstraintMaxWidth == constraints.maxWidth
+      && m_cachedConstraintMaxHeight == constraints.maxHeight
+      && m_cachedRenderScale == renderScale
+      && m_cachedHasConstraintMaxWidth == constraints.hasMaxWidth
+      && m_cachedHasConstraintMaxHeight == constraints.hasMaxHeight) {
     return LayoutSize{.width = width(), .height = height()};
   }
   auto metrics = renderer.measureGlyph(m_glyphNode->codepoint(), m_glyphNode->fontSize());

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/timer_manager.h"
+#include "config/config_types.h"
 #include "shell/wallpaper/wallpaper_instance.h"
 #include "ui/signal.h"
 
@@ -23,8 +24,9 @@ public:
   Wallpaper();
   ~Wallpaper();
 
-  bool initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext,
-                  SharedTextureCache* textureCache);
+  bool initialize(
+      WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext, SharedTextureCache* textureCache
+  );
 
   // Optional live-paper plumbing. Both pointers are non-owning. Pass nulls
   // to keep the static-image-only behaviour.
@@ -33,6 +35,7 @@ public:
   void onOutputChange();
   void onStateChange();
   void onSecondTick();
+  void onGpuResourcesInvalidated();
   void registerIpc(IpcService& ipc);
 
   [[nodiscard]] TextureHandle currentTexture() const;
@@ -44,6 +47,8 @@ private:
   void runAutomation(std::int64_t minuteStamp);
   [[nodiscard]] bool switchToRandomWallpaper(std::optional<std::string_view> connector = std::nullopt);
   void createInstance(const WaylandOutput& output);
+  [[nodiscard]] TextureHandle acquireTexture(const std::string& path);
+  void releaseTexture(TextureHandle& handle, const std::string& path);
   void loadWallpaper(WallpaperInstance& instance, const std::string& path);
   void startTransition(WallpaperInstance& instance);
   void updateRendererState(WallpaperInstance& instance);
@@ -63,6 +68,7 @@ private:
   ProjectMRenderer* m_visualizer = nullptr;
   VisualizerService* m_visualizerService = nullptr;
   bool m_wallpaperEnabled = false;
+  WallpaperConfig m_lastWallpaperConfig{};
   std::int64_t m_lastAutomationMinuteStamp = -1;
   std::int64_t m_lastAutomationSwitchMinute = -1;
   Signal<>::ScopedConnection m_paletteConn;

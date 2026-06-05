@@ -15,6 +15,7 @@ struct Workspace {
   std::string id;
   std::string name;
   std::vector<std::uint32_t> coordinates;
+  std::uint32_t index = 0;
   bool active = false;
   bool urgent = false;
   bool occupied = false;
@@ -66,6 +67,7 @@ public:
     return {};
   }
   [[nodiscard]] virtual std::vector<WorkspaceWindow> workspaceWindows(wl_output* /*output*/) const { return {}; }
+  virtual void focusWindow(const std::string& /*windowId*/) {}
   virtual void cleanup() = 0;
 
   [[nodiscard]] virtual int pollFd() const noexcept { return -1; }
@@ -124,6 +126,11 @@ namespace compositors {
     [[nodiscard]] virtual std::vector<WorkspaceWindow> workspaceWindows(const std::string& /*outputName*/ = {}) const {
       return {};
     }
+    // Focus a window by its compositor-specific id. Returns true if the backend
+    // handled the request (so the caller can skip other focus paths). Named
+    // distinctly from WorkspaceBackend::focusWindow so backends that implement
+    // both interfaces don't hit a conflicting-return-type override.
+    virtual bool focusWindowById(const std::string& /*windowId*/) { return false; }
     [[nodiscard]] virtual bool canTrackOverviewState() const noexcept { return false; }
     [[nodiscard]] virtual bool hasOverviewState() const noexcept { return false; }
     [[nodiscard]] virtual bool isOverviewOpen() const noexcept { return true; }

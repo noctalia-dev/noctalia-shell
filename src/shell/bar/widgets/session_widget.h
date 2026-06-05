@@ -16,7 +16,6 @@ public:
 
 private:
   void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
-  wl_output* m_output = nullptr;
   std::string m_barGlyphId;
   Glyph* m_glyph = nullptr;
 };

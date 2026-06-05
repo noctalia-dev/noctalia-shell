@@ -14,8 +14,22 @@
 #include <cstdint>
 #include <format>
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 #include <wayland-egl.h>
+
+#ifndef GL_GUILTY_CONTEXT_RESET
+#define GL_GUILTY_CONTEXT_RESET 0x8253
+#endif
+#ifndef GL_INNOCENT_CONTEXT_RESET
+#define GL_INNOCENT_CONTEXT_RESET 0x8254
+#endif
+#ifndef GL_UNKNOWN_CONTEXT_RESET
+#define GL_UNKNOWN_CONTEXT_RESET 0x8255
+#endif
+#ifndef GL_PURGED_CONTEXT_RESET_NV
+#define GL_PURGED_CONTEXT_RESET_NV 0x92BB
+#endif
 
 namespace {
 
@@ -23,12 +37,6 @@ namespace {
   constexpr float kSlowRenderOperationDebugMs = 50.0f;
   constexpr float kSlowRenderOperationWarnMs = 1000.0f;
   bool g_backendInfoLogged = false;
-
-  constexpr EGLint kContextAttributes[] = {
-      EGL_CONTEXT_CLIENT_VERSION,
-      2,
-      EGL_NONE,
-  };
 
   constexpr char kFullscreenVertexShader[] = R"(
 precision highp float;
@@ -69,6 +77,31 @@ void main() {
 
   const char* safeCString(const char* value) { return value != nullptr ? value : "unknown"; }
 
+  bool hasGlExtension(std::string_view name) {
+    const char* extensions = reinterpret_cast<const char*>(glGetString(GL_EXTENSIONS));
+    if (extensions == nullptr || name.empty()) {
+      return false;
+    }
+
+    const std::string_view list(extensions);
+    std::size_t pos = 0;
+    while (pos < list.size()) {
+      while (pos < list.size() && list[pos] == ' ') {
+        ++pos;
+      }
+      const std::size_t end = list.find(' ', pos);
+      const std::string_view token = list.substr(pos, end == std::string_view::npos ? list.size() - pos : end - pos);
+      if (token == name) {
+        return true;
+      }
+      if (end == std::string_view::npos) {
+        break;
+      }
+      pos = end + 1;
+    }
+    return false;
+  }
+
   bool isCurrentEglSurface(EGLDisplay display, EGLSurface surface) {
     if (display == EGL_NO_DISPLAY || surface == EGL_NO_SURFACE || eglGetCurrentDisplay() != display) {
       return false;
@@ -86,8 +119,11 @@ void main() {
     GlesSurfaceTarget& operator=(const GlesSurfaceTarget&) = delete;
 
     void resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight) override {
-      if (bufferWidth == 0 || bufferHeight == 0 || m_wlSurface == nullptr || m_display == EGL_NO_DISPLAY ||
-          m_config == nullptr) {
+      if (bufferWidth == 0
+          || bufferHeight == 0
+          || m_wlSurface == nullptr
+          || m_display == EGL_NO_DISPLAY
+          || m_config == nullptr) {
         return;
       }
 
@@ -105,8 +141,10 @@ void main() {
             eglCreateWindowSurface(m_display, m_config, reinterpret_cast<EGLNativeWindowType>(m_window), nullptr);
         if (m_surface == EGL_NO_SURFACE && !m_createFailureLogged) {
           const EGLint error = eglGetError();
-          kLog.warn("eglCreateWindowSurface failed (EGL error 0x{:04x}); will retry before rendering",
-                    static_cast<unsigned>(error));
+          kLog.warn(
+              "eglCreateWindowSurface failed (EGL error 0x{:04x}); will retry before rendering",
+              static_cast<unsigned>(error)
+          );
           m_createFailureLogged = true;
         } else if (m_surface != EGL_NO_SURFACE) {
           m_createFailureLogged = false;
@@ -118,15 +156,19 @@ void main() {
       if (m_surface != EGL_NO_SURFACE) {
         if (isCurrentEglSurface(m_display, m_surface)) {
           const EGLContext currentContext = eglGetCurrentContext();
-          if (currentContext != EGL_NO_CONTEXT &&
-              eglMakeCurrent(m_display, EGL_NO_SURFACE, EGL_NO_SURFACE, currentContext) != EGL_TRUE) {
+          if (currentContext != EGL_NO_CONTEXT
+              && eglMakeCurrent(m_display, EGL_NO_SURFACE, EGL_NO_SURFACE, currentContext) != EGL_TRUE) {
             const EGLint error = eglGetError();
-            kLog.warn("eglMakeCurrent(EGL_NO_SURFACE) before surface destroy failed (EGL error 0x{:04x})",
-                      static_cast<unsigned>(error));
+            kLog.warn(
+                "eglMakeCurrent(EGL_NO_SURFACE) before surface destroy failed (EGL error 0x{:04x})",
+                static_cast<unsigned>(error)
+            );
             if (eglMakeCurrent(m_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT) != EGL_TRUE) {
               const EGLint releaseError = eglGetError();
-              kLog.warn("eglMakeCurrent(EGL_NO_CONTEXT) before surface destroy failed (EGL error 0x{:04x})",
-                        static_cast<unsigned>(releaseError));
+              kLog.warn(
+                  "eglMakeCurrent(EGL_NO_CONTEXT) before surface destroy failed (EGL error 0x{:04x})",
+                  static_cast<unsigned>(releaseError)
+              );
             }
           }
         }
@@ -182,24 +224,31 @@ void GlesRenderBackend::initialize(GlSharedContext& shared) {
   m_display = shared.display();
   m_config = shared.config();
 
-  m_context = eglCreateContext(m_display, m_config, shared.rootContext(), kContextAttributes);
+  m_context = shared.createContext(shared.rootContext(), "render");
   if (m_context == EGL_NO_CONTEXT) {
-    throw std::runtime_error("eglCreateContext failed");
+    throw std::runtime_error(
+        std::format("eglCreateContext failed (EGL error 0x{:04x})", static_cast<unsigned>(eglGetError()))
+    );
   }
 
   // Make context current (surfaceless) so GL resources can be created eagerly.
   makeCurrentNoSurface();
 
   if (!g_backendInfoLogged) {
-    kLog.info("EGL vendor=\"{}\" version=\"{}\" APIs=\"{}\"", safeCString(eglQueryString(m_display, EGL_VENDOR)),
-              safeCString(eglQueryString(m_display, EGL_VERSION)),
-              safeCString(eglQueryString(m_display, EGL_CLIENT_APIS)));
-    kLog.info("OpenGL ES vendor=\"{}\" renderer=\"{}\" version=\"{}\"",
-              safeCString(reinterpret_cast<const char*>(glGetString(GL_VENDOR))),
-              safeCString(reinterpret_cast<const char*>(glGetString(GL_RENDERER))),
-              safeCString(reinterpret_cast<const char*>(glGetString(GL_VERSION))));
+    kLog.info(
+        "EGL vendor=\"{}\" version=\"{}\" APIs=\"{}\"", safeCString(eglQueryString(m_display, EGL_VENDOR)),
+        safeCString(eglQueryString(m_display, EGL_VERSION)), safeCString(eglQueryString(m_display, EGL_CLIENT_APIS))
+    );
+    kLog.info(
+        "OpenGL ES vendor=\"{}\" renderer=\"{}\" version=\"{}\"",
+        safeCString(reinterpret_cast<const char*>(glGetString(GL_VENDOR))),
+        safeCString(reinterpret_cast<const char*>(glGetString(GL_RENDERER))),
+        safeCString(reinterpret_cast<const char*>(glGetString(GL_VERSION)))
+    );
     g_backendInfoLogged = true;
   }
+
+  resolveGraphicsResetStatusProc();
 }
 
 void GlesRenderBackend::makeCurrentNoSurface() {
@@ -208,7 +257,9 @@ void GlesRenderBackend::makeCurrentNoSurface() {
   }
 
   if (eglMakeCurrent(m_display, EGL_NO_SURFACE, EGL_NO_SURFACE, m_context) != EGL_TRUE) {
-    throw std::runtime_error("eglMakeCurrent(EGL_NO_SURFACE) failed");
+    throw std::runtime_error(
+        std::format("eglMakeCurrent(EGL_NO_SURFACE) failed (EGL error 0x{:04x})", static_cast<unsigned>(eglGetError()))
+    );
   }
 }
 
@@ -216,7 +267,9 @@ void GlesRenderBackend::makeCurrent(RenderTarget& target) {
   auto& surface = glesSurfaceTarget(target);
   const auto start = std::chrono::steady_clock::now();
   if (eglMakeCurrent(m_display, surface.eglSurface(), surface.eglSurface(), m_context) != EGL_TRUE) {
-    throw std::runtime_error("eglMakeCurrent failed");
+    throw std::runtime_error(
+        std::format("eglMakeCurrent failed (EGL error 0x{:04x})", static_cast<unsigned>(eglGetError()))
+    );
   }
   float ms = elapsedSince(start);
   logSlowRenderOperation(ms, "eglMakeCurrent took {:.1f}ms", ms);
@@ -243,11 +296,52 @@ void GlesRenderBackend::endFrame(RenderTarget& target) {
   auto& surface = glesSurfaceTarget(target);
   const auto swapStart = std::chrono::steady_clock::now();
   if (eglSwapBuffers(m_display, surface.eglSurface()) != EGL_TRUE) {
-    throw std::runtime_error("eglSwapBuffers failed");
+    throw std::runtime_error(
+        std::format("eglSwapBuffers failed (EGL error 0x{:04x})", static_cast<unsigned>(eglGetError()))
+    );
   }
   const float ms = elapsedSince(swapStart);
-  logSlowRenderOperation(ms, "eglSwapBuffers took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, target.logicalWidth(),
-                         target.logicalHeight(), target.bufferWidth(), target.bufferHeight());
+  logSlowRenderOperation(
+      ms, "eglSwapBuffers took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, target.logicalWidth(),
+      target.logicalHeight(), target.bufferWidth(), target.bufferHeight()
+  );
+}
+
+RenderGraphicsResetStatus GlesRenderBackend::graphicsResetStatus() {
+  if (m_graphicsResetStatus == nullptr) {
+    return RenderGraphicsResetStatus::NoError;
+  }
+
+  const GLenum status = m_graphicsResetStatus();
+  switch (status) {
+  case GL_NO_ERROR:
+    return RenderGraphicsResetStatus::NoError;
+  case GL_GUILTY_CONTEXT_RESET:
+    return RenderGraphicsResetStatus::Guilty;
+  case GL_INNOCENT_CONTEXT_RESET:
+    return RenderGraphicsResetStatus::Innocent;
+  case GL_UNKNOWN_CONTEXT_RESET:
+    return RenderGraphicsResetStatus::Unknown;
+  case GL_PURGED_CONTEXT_RESET_NV:
+    return RenderGraphicsResetStatus::Purged;
+  default:
+    return RenderGraphicsResetStatus::Other;
+  }
+}
+
+void GlesRenderBackend::invalidateGpuResources() {
+  if (m_display == EGL_NO_DISPLAY || m_context == EGL_NO_CONTEXT) {
+    return;
+  }
+  if (eglGetCurrentDisplay() != m_display || eglGetCurrentContext() != m_context) {
+    try {
+      makeCurrentNoSurface();
+    } catch (const std::exception& e) {
+      kLog.warn("skipping GPU resource invalidation: {}", e.what());
+      return;
+    }
+  }
+  destroyGpuObjects();
 }
 
 std::unique_ptr<RenderSurfaceTarget> GlesRenderBackend::createSurfaceTarget(wl_surface* surface) {
@@ -363,23 +457,29 @@ void GlesRenderBackend::drawFullscreenQuad(const ShaderProgram& program) {
 
 void GlesRenderBackend::setScissor(RenderScissor scissor) {
   glEnable(GL_SCISSOR_TEST);
-  glScissor(static_cast<GLint>(scissor.x), static_cast<GLint>(scissor.y), static_cast<GLsizei>(scissor.width),
-            static_cast<GLsizei>(scissor.height));
+  glScissor(
+      static_cast<GLint>(scissor.x), static_cast<GLint>(scissor.y), static_cast<GLsizei>(scissor.width),
+      static_cast<GLsizei>(scissor.height)
+  );
 }
 
 void GlesRenderBackend::disableScissor() { glDisable(GL_SCISSOR_TEST); }
 
-void GlesRenderBackend::drawRect(float surfaceWidth, float surfaceHeight, float width, float height,
-                                 const RoundedRectStyle& style, const Mat3& transform) {
+void GlesRenderBackend::drawRect(
+    float surfaceWidth, float surfaceHeight, float width, float height, const RoundedRectStyle& style,
+    const Mat3& transform
+) {
   m_rectProgram.ensureInitialized();
   m_rectProgram.draw(surfaceWidth, surfaceHeight, width, height, style, transform);
 }
 
 void GlesRenderBackend::drawImage(const RenderImageDraw& draw) {
   m_imageProgram.ensureInitialized();
-  m_imageProgram.draw(draw.texture, draw.surfaceWidth, draw.surfaceHeight, draw.width, draw.height, draw.tint,
-                      draw.opacity, draw.radius, draw.borderColor, draw.borderWidth, static_cast<int>(draw.fitMode),
-                      draw.textureWidth, draw.textureHeight, draw.transform);
+  m_imageProgram.draw(
+      draw.texture, draw.surfaceWidth, draw.surfaceHeight, draw.width, draw.height, draw.tint, draw.monochromeTint,
+      draw.alphaMaskTint, draw.opacity, draw.radius, draw.borderColor, draw.borderWidth, static_cast<int>(draw.fitMode),
+      draw.textureWidth, draw.textureHeight, draw.transform
+  );
 }
 
 void GlesRenderBackend::drawGlyph(const RenderGlyphDraw& draw) {
@@ -389,59 +489,81 @@ void GlesRenderBackend::drawGlyph(const RenderGlyphDraw& draw) {
 
   m_glyphProgram.ensureInitialized();
   if (draw.tinted) {
-    m_glyphProgram.drawTinted(draw.texture, draw.surfaceWidth, draw.surfaceHeight, draw.width, draw.height, draw.u0,
-                              draw.v0, draw.u1, draw.v1, draw.opacity, draw.tint, draw.transform);
+    m_glyphProgram.drawTinted(
+        draw.texture, draw.surfaceWidth, draw.surfaceHeight, draw.width, draw.height, draw.u0, draw.v0, draw.u1,
+        draw.v1, draw.opacity, draw.tint, draw.transform
+    );
     return;
   }
 
-  m_glyphProgram.draw(draw.texture, draw.surfaceWidth, draw.surfaceHeight, draw.width, draw.height, draw.u0, draw.v0,
-                      draw.u1, draw.v1, draw.opacity, draw.transform);
+  m_glyphProgram.draw(
+      draw.texture, draw.surfaceWidth, draw.surfaceHeight, draw.width, draw.height, draw.u0, draw.v0, draw.u1, draw.v1,
+      draw.opacity, draw.transform
+  );
 }
 
-void GlesRenderBackend::drawSpinner(float surfaceWidth, float surfaceHeight, float width, float height,
-                                    const SpinnerStyle& style, const Mat3& transform) {
+void GlesRenderBackend::drawSpinner(
+    float surfaceWidth, float surfaceHeight, float width, float height, const SpinnerStyle& style, const Mat3& transform
+) {
   m_spinnerProgram.ensureInitialized();
   m_spinnerProgram.draw(surfaceWidth, surfaceHeight, width, height, style, transform);
 }
 
-void GlesRenderBackend::drawScreenCorner(float surfaceWidth, float surfaceHeight, float pixelScaleX, float pixelScaleY,
-                                         float width, float height, const ScreenCornerStyle& style,
-                                         const Mat3& transform) {
+void GlesRenderBackend::drawScreenCorner(
+    float surfaceWidth, float surfaceHeight, float pixelScaleX, float pixelScaleY, float width, float height,
+    const ScreenCornerStyle& style, const Mat3& transform
+) {
   m_screenCornerProgram.ensureInitialized();
   m_screenCornerProgram.draw(surfaceWidth, surfaceHeight, pixelScaleX, pixelScaleY, width, height, style, transform);
 }
 
-void GlesRenderBackend::drawAudioSpectrum(float surfaceWidth, float surfaceHeight, float pixelScaleX, float pixelScaleY,
-                                          float width, float height, const AudioSpectrumStyle& style,
-                                          std::span<const float> values, const Mat3& transform) {
+void GlesRenderBackend::drawAudioSpectrum(
+    float surfaceWidth, float surfaceHeight, float pixelScaleX, float pixelScaleY, float width, float height,
+    const AudioSpectrumStyle& style, std::span<const float> values, const Mat3& transform
+) {
   m_audioSpectrumProgram.ensureInitialized();
-  m_audioSpectrumProgram.draw(surfaceWidth, surfaceHeight, pixelScaleX, pixelScaleY, width, height, style, values,
-                              transform);
+  m_audioSpectrumProgram.draw(
+      surfaceWidth, surfaceHeight, pixelScaleX, pixelScaleY, width, height, style, values, transform
+  );
 }
 
-void GlesRenderBackend::drawEffect(float surfaceWidth, float surfaceHeight, float width, float height,
-                                   const EffectStyle& style, const Mat3& transform) {
+void GlesRenderBackend::drawFancyAudioVisualizer(
+    TextureId audioTexture, int textureWidth, float surfaceWidth, float surfaceHeight, float width, float height,
+    const FancyAudioVisualizerStyle& style, const Mat3& transform
+) {
+  (void)textureWidth;
+  m_fancyAudioVisualizerProgram.ensureInitialized();
+  m_fancyAudioVisualizerProgram.draw(audioTexture, surfaceWidth, surfaceHeight, width, height, style, transform);
+}
+
+void GlesRenderBackend::drawEffect(
+    float surfaceWidth, float surfaceHeight, float width, float height, const EffectStyle& style, const Mat3& transform
+) {
   m_effectProgram.ensureInitialized();
   m_effectProgram.draw(surfaceWidth, surfaceHeight, width, height, style, transform);
 }
 
-void GlesRenderBackend::drawGraph(TextureId dataTexture, int textureWidth, float surfaceWidth, float surfaceHeight,
-                                  float width, float height, const GraphStyle& style, const Mat3& transform) {
+void GlesRenderBackend::drawGraph(
+    TextureId dataTexture, int textureWidth, float surfaceWidth, float surfaceHeight, float width, float height,
+    const GraphStyle& style, const Mat3& transform
+) {
   m_graphProgram.ensureInitialized();
   m_graphProgram.draw(dataTexture, textureWidth, surfaceWidth, surfaceHeight, width, height, style, transform);
 }
 
-void GlesRenderBackend::drawWallpaper(WallpaperTransition transition, WallpaperSourceKind sourceKind1,
-                                      TextureId texture1, const Color& sourceColor1, WallpaperSourceKind sourceKind2,
-                                      TextureId texture2, const Color& sourceColor2, float surfaceWidth,
-                                      float surfaceHeight, float width, float height, float imageWidth1,
-                                      float imageHeight1, float imageWidth2, float imageHeight2, float progress,
-                                      float fillMode, const TransitionParams& params, const Color& fillColor,
-                                      const Mat3& transform) {
+void GlesRenderBackend::drawWallpaper(
+    WallpaperTransition transition, WallpaperSourceKind sourceKind1, TextureId texture1, const Color& sourceColor1,
+    WallpaperSourceKind sourceKind2, TextureId texture2, const Color& sourceColor2, float surfaceWidth,
+    float surfaceHeight, float width, float height, float imageWidth1, float imageHeight1, float imageWidth2,
+    float imageHeight2, float progress, float fillMode, const TransitionParams& params, const Color& fillColor,
+    const Mat3& transform
+) {
   m_wallpaperProgram.ensureInitialized();
-  m_wallpaperProgram.draw(transition, sourceKind1, texture1, sourceColor1, sourceKind2, texture2, sourceColor2,
-                          surfaceWidth, surfaceHeight, width, height, imageWidth1, imageHeight1, imageWidth2,
-                          imageHeight2, progress, fillMode, params, fillColor, transform);
+  m_wallpaperProgram.draw(
+      transition, sourceKind1, texture1, sourceColor1, sourceKind2, texture2, sourceColor2, surfaceWidth, surfaceHeight,
+      width, height, imageWidth1, imageHeight1, imageWidth2, imageHeight2, progress, fillMode, params, fillColor,
+      transform
+  );
 }
 
 void GlesRenderBackend::drawFullscreenTexture(TextureId texture, bool flipY) {
@@ -469,8 +591,9 @@ void GlesRenderBackend::drawFullscreenTint(Color color) {
   drawFullscreenQuad(m_fullscreenTintProgram);
 }
 
-void GlesRenderBackend::drawFramebufferBlur(TextureId sourceTexture, std::uint32_t width, std::uint32_t height,
-                                            float directionX, float directionY, float radius) {
+void GlesRenderBackend::drawFramebufferBlur(
+    TextureId sourceTexture, std::uint32_t width, std::uint32_t height, float directionX, float directionY, float radius
+) {
   if (sourceTexture == 0) {
     return;
   }
@@ -491,17 +614,34 @@ void GlesRenderBackend::ensureFullscreenTintProgram() {
   }
 }
 
-void GlesRenderBackend::cleanup() {
-  if (m_display != EGL_NO_DISPLAY && m_context != EGL_NO_CONTEXT) {
-    eglMakeCurrent(m_display, EGL_NO_SURFACE, EGL_NO_SURFACE, m_context);
+void GlesRenderBackend::resolveGraphicsResetStatusProc() {
+  m_graphicsResetStatus = reinterpret_cast<GraphicsResetStatusProc>(eglGetProcAddress("glGetGraphicsResetStatus"));
+  if (m_graphicsResetStatus == nullptr) {
+    m_graphicsResetStatus = reinterpret_cast<GraphicsResetStatusProc>(eglGetProcAddress("glGetGraphicsResetStatusKHR"));
+  }
+  if (m_graphicsResetStatus == nullptr) {
+    m_graphicsResetStatus = reinterpret_cast<GraphicsResetStatusProc>(eglGetProcAddress("glGetGraphicsResetStatusEXT"));
   }
 
+  if (!m_resetStatusLogged) {
+    if (m_graphicsResetStatus != nullptr) {
+      const bool purge = hasGlExtension("GL_NV_robustness_video_memory_purge");
+      kLog.info("graphics reset status polling enabled{}", purge ? " with NVIDIA video-memory purge status" : "");
+    } else {
+      kLog.info("graphics reset status polling unavailable");
+    }
+    m_resetStatusLogged = true;
+  }
+}
+
+void GlesRenderBackend::destroyGpuObjects() {
   m_rectProgram.destroy();
   m_imageProgram.destroy();
   m_glyphProgram.destroy();
   m_spinnerProgram.destroy();
   m_screenCornerProgram.destroy();
   m_audioSpectrumProgram.destroy();
+  m_fancyAudioVisualizerProgram.destroy();
   m_effectProgram.destroy();
   m_graphProgram.destroy();
   m_wallpaperProgram.destroy();
@@ -514,6 +654,14 @@ void GlesRenderBackend::cleanup() {
   }
   m_liveImageTextures.clear();
   m_textureManager.cleanup();
+}
+
+void GlesRenderBackend::cleanup() {
+  if (m_display != EGL_NO_DISPLAY && m_context != EGL_NO_CONTEXT) {
+    eglMakeCurrent(m_display, EGL_NO_SURFACE, EGL_NO_SURFACE, m_context);
+  }
+
+  destroyGpuObjects();
 
   if (m_display != EGL_NO_DISPLAY) {
     eglMakeCurrent(m_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
@@ -526,5 +674,7 @@ void GlesRenderBackend::cleanup() {
   m_display = EGL_NO_DISPLAY;
   m_config = nullptr;
   m_context = EGL_NO_CONTEXT;
+  m_graphicsResetStatus = nullptr;
+  m_resetStatusLogged = false;
   m_maxTextureSize = 0;
 }

@@ -4,6 +4,7 @@
 #include "launcher/usage_tracker.h"
 #include "shell/panel/panel.h"
 #include "system/icon_resolver.h"
+#include "ui/signal.h"
 
 #include <cstddef>
 #include <memory>
@@ -20,6 +21,7 @@ class Label;
 class LauncherResultAdapter;
 class Node;
 class Renderer;
+class Segmented;
 class VirtualGridView;
 class ConfigService;
 class AsyncTextureCache;
@@ -37,14 +39,17 @@ public:
   void onIconThemeChanged() override;
 
   [[nodiscard]] float preferredWidth() const override { return scaled(560.0f); }
-  [[nodiscard]] float preferredHeight() const override { return scaled(460.0f); }
+  [[nodiscard]] float preferredHeight() const override { return scaled(500.0f); }
   [[nodiscard]] LayerShellLayer layer() const override { return LayerShellLayer::Overlay; }
   [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::Exclusive; }
   [[nodiscard]] InputArea* initialFocusArea() const override;
+  [[nodiscard]] bool handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers, bool pressed, bool preedit) override;
   [[nodiscard]] PanelPlacement panelPlacement() const noexcept override;
-  [[nodiscard]] bool wantsCloseAnimation() const noexcept override { return false; }
 
 private:
+  enum ActiveCategoryType { All, RecentlyUsed, Category };
+
+  void onPanelCardOpacityChanged(float opacity) override;
   void doLayout(Renderer& renderer, float width, float height) override;
   void onInputChanged(const std::string& text);
   void refreshResults();
@@ -52,23 +57,41 @@ private:
   void activateSelected();
   bool handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers);
   void applyEmptyState();
+  [[nodiscard]] std::vector<LauncherResult> providerOverviewResults(std::string_view text) const;
   void openAppActionsMenu(std::size_t index, float anchorX, float anchorY);
+  void rebuildCategoryFilter(const std::vector<LauncherCategory>& categories);
+  void setCategoryFilterVisible(bool visible);
+  void applyActiveCategory();
+  void syncLauncherListStyle();
+  void refreshLauncherAppIconColorization();
+  void updateLauncherGridMetrics(Renderer& renderer);
 
   std::vector<std::unique_ptr<LauncherProvider>> m_providers;
   std::vector<LauncherResult> m_results;
+  std::vector<LauncherResult> m_allResults;
   UsageTracker m_usageTracker;
   IconResolver m_iconResolver;
 
   Flex* m_container = nullptr;
   Input* m_input = nullptr;
+  Segmented* m_categoryFilter = nullptr;
   Flex* m_body = nullptr;
   VirtualGridView* m_grid = nullptr;
   Label* m_emptyLabel = nullptr;
   std::unique_ptr<LauncherResultAdapter> m_adapter;
 
   std::string m_query;
+  ActiveCategoryType m_activeCategoryType = All;
+  std::string m_activeCategory;
+  std::vector<LauncherCategory> m_currentCategories;
+  bool m_hasRecentlyUsed = false;
   std::size_t m_selectedIndex = 0;
+  bool m_categoryFilterVisible = true;
+  bool m_launcherShowIcons = true;
+  bool m_launcherCompact = false;
+  float m_launcherRowHeight = 0.0f;
   ConfigService* m_config = nullptr;
   AsyncTextureCache* m_asyncTextures = nullptr;
   std::unique_ptr<ContextMenuPopup> m_actionsMenu;
+  Signal<>::ScopedConnection m_appIconColorizeConn;
 };

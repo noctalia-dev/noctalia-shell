@@ -15,6 +15,5 @@ public:
 
 private:
   void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
-  wl_output* m_output;
   Glyph* m_glyph = nullptr;
 };

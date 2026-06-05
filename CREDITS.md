@@ -23,6 +23,7 @@ Linked dynamically at runtime:
 - **[Mesa / EGL / GLES2](https://www.mesa3d.org/)** (or **[libepoxy](https://github.com/anholt/libepoxy)** as fallback) — OpenGL ES context and dispatch
 - **[Cairo](https://www.cairographics.org/)** — 2D graphics surface used for text and SVG rasterization
 - **[Pango](https://pango.gnome.org/)** / **PangoCairo** — Text layout and shaping
+- **[HarfBuzz](https://harfbuzz.github.io/)** — OpenType font metrics used for stable text alignment
 - **[FreeType](https://freetype.org/)** — Font rasterization
 - **[Fontconfig](https://www.fontconfig.org/)** — Font discovery
 - **[librsvg](https://wiki.gnome.org/Projects/LibRsvg)** — SVG rendering (filters, clipPaths, masks)
@@ -32,6 +33,8 @@ Linked dynamically at runtime:
 - **[PipeWire](https://pipewire.org/)** — Audio capture and playback
 - **[libcurl](https://curl.se/libcurl/)** — HTTP client
 - **[libwebp](https://developers.google.com/speed/webp)** — WebP decoding
+- **[libqalculate](https://qalculate.github.io/)** — Calculator engine for the launcher (arithmetic, unit and currency conversion) (GPL-2.0-or-later)
+- **[libxml2](https://gitlab.gnome.org/GNOME/libxml2)** — XML parser used to read CalDAV responses (MIT)
 - **[polkit](https://gitlab.freedesktop.org/polkit/polkit)** (`polkit-agent`, `polkit-gobject`) — Authentication agent
 - **[Linux-PAM](https://github.com/linux-pam/linux-pam)** — Lockscreen authentication
 
@@ -45,7 +48,6 @@ Bundled in `third_party/` and built from source:
 - **[Material Color Utilities](https://github.com/material-foundation/material-color-utilities)** — Material 3 palette generation (Apache-2.0)
 - **[nlohmann/json](https://github.com/nlohmann/json)** — JSON for Modern C++ (MIT)
 - **[stb](https://github.com/nothings/stb)** — Single-file utilities, primarily image I/O (MIT / public domain)
-- **[tinyexpr](https://github.com/codeplea/tinyexpr)** — Math expression parser (zlib)
 - **[toml++](https://github.com/marzer/tomlplusplus)** — TOML parser (MIT)
 - **[Wuffs](https://github.com/google/wuffs)** — Memory-safe image decoders (Apache-2.0)
 

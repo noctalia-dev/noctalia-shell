@@ -3,6 +3,7 @@
 #include "compositors/niri/niri_runtime.h"
 
 #include <json.hpp>
+#include <utility>
 
 namespace {
 
@@ -23,8 +24,10 @@ namespace {
 
     const auto namesIt = layoutsIt->find("names");
     const auto currentIt = layoutsIt->find("current_idx");
-    if (namesIt == layoutsIt->end() || !namesIt->is_array() || currentIt == layoutsIt->end() ||
-        !currentIt->is_number_integer()) {
+    if (namesIt == layoutsIt->end()
+        || !namesIt->is_array()
+        || currentIt == layoutsIt->end()
+        || !currentIt->is_number_integer()) {
       return std::nullopt;
     }
 
@@ -46,7 +49,8 @@ namespace {
 
 } // namespace
 
-NiriKeyboardBackend::NiriKeyboardBackend(compositors::niri::NiriRuntime& runtime) : m_runtime(runtime) {}
+NiriKeyboardBackend::NiriKeyboardBackend(compositors::niri::NiriRuntime& runtime)
+    : compositors::niri::NiriEventHandler(runtime) {}
 
 bool NiriKeyboardBackend::isAvailable() const noexcept { return m_runtime.available(); }
 
@@ -54,9 +58,11 @@ bool NiriKeyboardBackend::cycleLayout() const {
   if (!isAvailable()) {
     return false;
   }
-  return m_runtime.requestAction(nlohmann::json{
-      {"SwitchLayout", nlohmann::json{{"layout", "Next"}}},
-  });
+  return m_runtime.requestAction(
+      nlohmann::json{
+          {"SwitchLayout", nlohmann::json{{"layout", "Next"}}},
+      }
+  );
 }
 
 std::optional<KeyboardLayoutState> NiriKeyboardBackend::layoutState() const {
@@ -77,4 +83,15 @@ std::optional<std::string> NiriKeyboardBackend::currentLayoutName() const {
     return std::nullopt;
   }
   return state->names[static_cast<std::size_t>(state->currentIndex)];
+}
+
+void NiriKeyboardBackend::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
+
+void NiriKeyboardBackend::handleEvent(std::string_view key, const nlohmann::json& /*value*/) {
+  if (key != "KeyboardLayoutSwitched" && key != "KeyboardLayoutsChanged") {
+    return;
+  }
+  if (m_changeCallback) {
+    m_changeCallback();
+  }
 }

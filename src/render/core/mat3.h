@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cmath>
+#include <cstddef>
 
 struct Vec2 {
   float x = 0.0f;
@@ -43,10 +44,11 @@ struct Mat3 {
 
   [[nodiscard]] Mat3 operator*(const Mat3& other) const {
     Mat3 out;
-    for (int col = 0; col < 3; ++col) {
-      for (int row = 0; row < 3; ++row) {
-        out.m[col * 3 + row] = m[0 * 3 + row] * other.m[col * 3 + 0] + m[1 * 3 + row] * other.m[col * 3 + 1] +
-                               m[2 * 3 + row] * other.m[col * 3 + 2];
+    for (std::size_t col = 0; col < 3; ++col) {
+      for (std::size_t row = 0; row < 3; ++row) {
+        out.m[col * 3 + row] = m[0 * 3 + row] * other.m[col * 3 + 0]
+            + m[1 * 3 + row] * other.m[col * 3 + 1]
+            + m[2 * 3 + row] * other.m[col * 3 + 2];
       }
     }
     return out;

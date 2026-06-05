@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-config_files=("$HOME/.config/ghostty/config" "$HOME/.config/ghostty/config.ghostty")
+config_files=("${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/config" "${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/config.ghostty")
 found=false
 
 for config_file in "${config_files[@]}"; do

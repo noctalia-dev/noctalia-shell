@@ -13,20 +13,20 @@ class Slider : public Flex {
 public:
   Slider();
 
-  void setRange(float minValue, float maxValue);
-  void setStep(float step);
-  void setValue(float value);
+  void setRange(double minValue, double maxValue);
+  void setStep(double step);
+  void setValue(double value);
   void setEnabled(bool enabled);
   void setTrackHeight(float height);
   void setThumbSize(float size);
   void setControlHeight(float height);
   void setWheelAdjustEnabled(bool enabled);
-  void setOnValueChanged(std::function<void(float)> callback);
+  void setOnValueChanged(std::function<void(double)> callback);
   void setOnDragEnd(std::function<void()> callback);
 
-  [[nodiscard]] float value() const noexcept { return m_value; }
-  [[nodiscard]] float minValue() const noexcept { return m_min; }
-  [[nodiscard]] float maxValue() const noexcept { return m_max; }
+  [[nodiscard]] double value() const noexcept { return m_value; }
+  [[nodiscard]] double minValue() const noexcept { return m_min; }
+  [[nodiscard]] double maxValue() const noexcept { return m_max; }
   [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
   [[nodiscard]] bool wheelAdjustEnabled() const noexcept { return m_wheelAdjustEnabled; }
   [[nodiscard]] bool dragging() const noexcept;
@@ -39,20 +39,20 @@ private:
   void updateGeometry();
   void applyVisualState();
   [[nodiscard]] float normalizedValue() const noexcept;
-  [[nodiscard]] float snapped(float value) const noexcept;
+  [[nodiscard]] double snapped(double value) const noexcept;
 
   RectNode* m_track = nullptr;
   RectNode* m_fill = nullptr;
   RectNode* m_thumb = nullptr;
   InputArea* m_inputArea = nullptr;
 
-  std::function<void(float)> m_onValueChanged;
+  std::function<void(double)> m_onValueChanged;
   std::function<void()> m_onDragEnd;
 
-  float m_min = 0.0f;
-  float m_max = 100.0f;
-  float m_step = 1.0f;
-  float m_value = 50.0f;
+  double m_min = 0.0;
+  double m_max = 100.0;
+  double m_step = 1.0;
+  double m_value = 50.0;
   bool m_enabled = true;
   bool m_wheelAdjustEnabled = false;
   float m_trackHeight = Style::sliderTrackHeight;

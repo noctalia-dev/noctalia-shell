@@ -4,8 +4,7 @@
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "system/brightness_service.h"
-#include "ui/controls/glyph.h"
-#include "ui/controls/label.h"
+#include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -22,16 +21,17 @@ namespace {
     return "brightness-high";
   }
 
-  constexpr float kScrollStep = 0.05f;
-
 } // namespace
 
-BrightnessWidget::BrightnessWidget(BrightnessService* brightness, wl_output* output, bool showLabel)
-    : m_brightness(brightness), m_output(output), m_showLabel(showLabel) {}
+BrightnessWidget::BrightnessWidget(
+    BrightnessService* brightness, wl_output* output, bool showLabel, int scrollStepPercent
+)
+    : m_brightness(brightness), m_output(output), m_showLabel(showLabel),
+      m_scrollStep(static_cast<float>(scrollStepPercent) / 100.0f) {}
 
 void BrightnessWidget::create() {
   auto area = std::make_unique<InputArea>();
-  area->setOnClick([this](const InputArea::PointerData& /*data*/) { requestPanelToggle("control-center", "display"); });
+  area->setOnClick([this](const InputArea::PointerData& /*data*/) { requestPanelToggle("control-center", "monitor"); });
   area->setOnAxis([this](const InputArea::PointerData& data) {
     if (m_brightness == nullptr) {
       return;
@@ -40,24 +40,28 @@ void BrightnessWidget::create() {
     if (display == nullptr) {
       return;
     }
-    const float delta = data.scrollDelta(1.0f) > 0 ? -kScrollStep : kScrollStep;
+    const float delta = data.scrollDelta(1.0f) > 0 ? -m_scrollStep : m_scrollStep;
     const float newValue = std::clamp(display->brightness + delta, 0.0f, 1.0f);
     m_brightness->setBrightness(display->id, newValue);
   });
 
-  auto glyph = std::make_unique<Glyph>();
-  glyph->setGlyph("brightness-high");
-  glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
-  glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
-  m_glyph = glyph.get();
-  area->addChild(std::move(glyph));
+  area->addChild(
+      ui::glyph({
+          .out = &m_glyph,
+          .glyph = "brightness-high",
+          .glyphSize = Style::barGlyphSize * m_contentScale,
+          .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
+      })
+  );
 
-  auto label = std::make_unique<Label>();
-  label->setBold(true);
-  label->setFontSize(Style::fontSizeBody * m_contentScale);
-  label->setVisible(m_showLabel);
-  m_label = label.get();
-  area->addChild(std::move(label));
+  area->addChild(
+      ui::label({
+          .out = &m_label,
+          .fontSize = Style::fontSizeBody * m_contentScale,
+          .fontWeight = labelFontWeight(),
+          .visible = m_showLabel,
+      })
+  );
 
   setRoot(std::move(area));
 }
@@ -70,7 +74,7 @@ void BrightnessWidget::doLayout(Renderer& renderer, float containerWidth, float 
   m_isVertical = containerHeight > containerWidth;
   syncState(renderer);
   if (!rootNode->visible()) {
-    rootNode->setSize(0.0f, 0.0f);
+    rootNode->setParticipatesInLayout(false);
     return;
   }
 
@@ -111,13 +115,14 @@ void BrightnessWidget::syncState(Renderer& renderer) {
     m_lastBrightness = -1.0f;
     if (rootNode != nullptr) {
       rootNode->setVisible(false);
-      rootNode->setSize(0.0f, 0.0f);
+      rootNode->setParticipatesInLayout(false);
     }
     return;
   }
 
   if (rootNode != nullptr) {
     rootNode->setVisible(true);
+    rootNode->setParticipatesInLayout(true);
   }
 
   const float brightness = display->brightness;

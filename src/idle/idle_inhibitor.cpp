@@ -1,8 +1,10 @@
 #include "idle/idle_inhibitor.h"
 
 #include "core/log.h"
+#include "i18n/i18n.h"
 #include "idle-inhibit-unstable-v1-client-protocol.h"
 #include "ipc/ipc_service.h"
+#include "notification/notifications.h"
 #include "wayland/layer_surface.h"
 #include "wayland/wayland_connection.h"
 
@@ -140,33 +142,53 @@ void IdleInhibitor::onOutputChange() {
 }
 
 void IdleInhibitor::registerIpc(IpcService& ipc) {
+  auto notifyCaffeineState = [](bool enabled) {
+    notify::info(
+        "Noctalia", i18n::tr("notifications.internal.caffeine"),
+        i18n::tr(enabled ? "notifications.internal.caffeine-enabled" : "notifications.internal.caffeine-disabled")
+    );
+  };
+
   ipc.registerHandler(
       "caffeine-enable",
-      [this](const std::string&) -> std::string {
+      [this, notifyCaffeineState](const std::string&) -> std::string {
         if (!available())
           return "error: caffeine protocol unavailable\n";
+        if (m_enabled) {
+          return "ok\n";
+        }
         setEnabled(true);
+        notifyCaffeineState(true);
         return "ok\n";
       },
-      "caffeine-enable", "Enable caffeine (idle inhibitor)");
+      "caffeine-enable", "Enable caffeine (idle inhibitor)"
+  );
 
   ipc.registerHandler(
       "caffeine-disable",
-      [this](const std::string&) -> std::string {
+      [this, notifyCaffeineState](const std::string&) -> std::string {
         if (!available())
           return "error: caffeine protocol unavailable\n";
+        if (!m_enabled) {
+          return "ok\n";
+        }
         setEnabled(false);
+        notifyCaffeineState(false);
         return "ok\n";
       },
-      "caffeine-disable", "Disable caffeine (idle inhibitor)");
+      "caffeine-disable", "Disable caffeine (idle inhibitor)"
+  );
 
   ipc.registerHandler(
       "caffeine-toggle",
-      [this](const std::string&) -> std::string {
+      [this, notifyCaffeineState](const std::string&) -> std::string {
         if (!available())
           return "error: caffeine protocol unavailable\n";
-        toggle();
+        const bool nextState = !m_enabled;
+        setEnabled(nextState);
+        notifyCaffeineState(nextState);
         return "ok\n";
       },
-      "caffeine-toggle", "Toggle caffeine (idle inhibitor)");
+      "caffeine-toggle", "Toggle caffeine (idle inhibitor)"
+  );
 }

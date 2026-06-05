@@ -2,24 +2,32 @@
 """
 Static i18n checks for noctalia.
 
-  1) Catalog: every i18n::tr / i18n::trp string literal key must exist in
-     assets/translations/en.json (flattened dotted paths, same as runtime).
+  1) Missing keys (always on): every i18n::tr / i18n::trp string literal key must exist
+     in assets/translations/en.json. Exit 1 when any are missing.
 
-  2) Raw UI strings (default): under src/ui/ and src/shell/, flag likely user-facing
-     text that is not wired through i18n:
-       (a) string literals passed to common UI setters (setText, setPlaceholder, …);
-       (b) other multi-word "…" literals in real code (line comments stripped so // text
-           is not scanned). Noisy; use --no-wide for setter-only, or check-i18n:ignore-line.
+  2) --unused: catalog entries not referenced anywhere in source. Includes indirect
+     usages (.labelKey = "...", titleKey = "...") — any string literal that exactly
+     matches a catalog key counts as a reference. Keys reachable only through dynamic
+     string construction (e.g. prefix + variable) are reported separately as "possibly
+     dynamic". Use --fail-on-unused to exit 1.
+
+  3) --raw: flag likely user-visible string literals in src/ui/ and src/shell/ that are
+     not wrapped in i18n::tr. Two tiers:
+       (a) setter calls: setText, setPlaceholder, setTitle, … (always included)
+       (b) any multi-word "…" literal in real code (add --setters-only to skip this tier)
+     Suppress a line with: // check-i18n:ignore-line
+     Use --fail-on-raw to exit 1.
+
+  4) --all: enable --unused and --raw together.
 
 Usage:
-  python3 tools/check-i18n.py
-  python3 tools/check-i18n.py --no-raw          # keys only
-  python3 tools/check-i18n.py --no-wide         # setter literals only (less noise)
-  python3 tools/check-i18n.py --fail-on-raw       # exit 1 if any raw hit
-  python3 tools/check-i18n.py --exclude src/shell/test/test_panel.cpp
-
-Exit code 1 when missing keys are found, or when --fail-on-raw / --fail-on-heuristic
-and raw hits exist. --heuristic is a legacy no-op (raw scan is always on unless --no-raw).
+  python3 tools/i18n-check.py                              # missing keys only (fast)
+  python3 tools/i18n-check.py --unused                     # + unused catalog keys
+  python3 tools/i18n-check.py --raw                        # + untranslated UI strings
+  python3 tools/i18n-check.py --raw --setters-only         # raw, setter calls only
+  python3 tools/i18n-check.py --all                        # everything
+  python3 tools/i18n-check.py --all --fail-on-raw --fail-on-unused  # strict CI
+  python3 tools/i18n-check.py --exclude src/shell/test/test_panel.cpp
 """
 
 from __future__ import annotations
@@ -40,6 +48,9 @@ DEFAULT_RAW_ROOTS = ("src/ui", "src/shell")
 TR_RE = re.compile(r'i18n::tr\s*\(\s*"([^"]+)"')
 # i18n::trp("a.b.c", count, ...) → also requires "a.b.c-plural" when plural branch exists
 TRP_RE = re.compile(r'i18n::trp\s*\(\s*"([^"]+)"')
+
+# Any string literal that looks like a dotted i18n key (for indirect-usage scan)
+KEY_LITERAL_RE = re.compile(r'"([a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+(?:-plural)?)"')
 
 # UI setters: first argument is a normal "..." string literal (same-line only).
 _UI_METHODS = (
@@ -304,6 +315,50 @@ def scan_raw_ui_file(path: Path, text: str, *, wide_strings: bool) -> list[tuple
     return hits
 
 
+def collect_key_literals(text: str) -> tuple[set[str], set[str]]:
+    """
+    Returns (exact_keys, key_prefixes).
+
+    exact_keys: string literals that look like complete dotted i18n keys.
+    key_prefixes: string literals that look like key prefixes ending with '.'
+                  (signals possible dynamic construction, e.g. "foo.bar." + variable).
+    """
+    exact: set[str] = set()
+    prefixes: set[str] = set()
+    for m in KEY_LITERAL_RE.finditer(text):
+        exact.add(m.group(1))
+    # Also capture prefix-style literals like "foo.bar." (ends with dot)
+    for m in re.finditer(r'"([a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+\.)"', text):
+        prefixes.add(m.group(1))
+    return exact, prefixes
+
+
+def find_unused_keys(
+    catalog: dict[str, str],
+    directly_used: set[str],
+    source_literals: set[str],
+    source_prefixes: set[str],
+) -> tuple[list[str], list[str]]:
+    """
+    Returns (unused, possibly_dynamic).
+
+    unused: catalog keys with no evidence of use anywhere in source.
+    possibly_dynamic: catalog keys not seen as exact literals but whose key prefix
+                      appears as a literal string (dynamic construction likely).
+    """
+    unused: list[str] = []
+    possibly_dynamic: list[str] = []
+    for key in sorted(catalog):
+        if key in directly_used or key in source_literals:
+            continue
+        # Check if any known prefix covers this key
+        if any(key.startswith(p) for p in source_prefixes):
+            possibly_dynamic.append(key)
+        else:
+            unused.append(key)
+    return unused, possibly_dynamic
+
+
 def iter_raw_scan_files(roots: tuple[str, ...], extensions: tuple[str, ...], excludes: set[Path]) -> Iterable[Path]:
     seen: set[Path] = set()
     for rel in roots:
@@ -324,7 +379,7 @@ def main() -> int:
         "--translations",
         type=Path,
         default=DEFAULT_TRANSLATIONS,
-        help="Path to flattened-source JSON (default: en.json)",
+        help="Path to translations JSON (default: en.json)",
     )
     ap.add_argument("--src", type=Path, default=DEFAULT_SRC, help="Root for i18n key scan (default: src/)")
     ap.add_argument(
@@ -341,30 +396,25 @@ def main() -> int:
         metavar="PATH",
         help="File path relative to repo root to skip (repeatable)",
     )
-    ap.add_argument("--no-raw", action="store_true", help="Skip raw UI literal scan (catalog keys only)")
+    ap.add_argument("--unused", action="store_true", help="Report catalog keys not referenced in source")
+    ap.add_argument("--raw", action="store_true", help="Report untranslated UI string literals")
     ap.add_argument(
-        "--no-wide",
+        "--setters-only",
         action="store_true",
-        help="In raw scan, only flag UI setter literals (skip generic multi-word string literals)",
+        help="With --raw: flag only UI setter calls (setText, setTitle, …), not all multi-word literals",
     )
-    ap.add_argument(
-        "--heuristic",
-        action="store_true",
-        help="Legacy no-op: raw scan is on by default; kept for scripts that passed --heuristic",
-    )
-    ap.add_argument(
-        "--fail-on-raw",
-        action="store_true",
-        help="Exit 1 when raw UI literal hits are found",
-    )
-    ap.add_argument(
-        "--fail-on-heuristic",
-        action="store_true",
-        help="Same as --fail-on-raw (legacy name)",
-    )
+    ap.add_argument("--all", action="store_true", help="Enable --unused and --raw")
+    ap.add_argument("--fail-on-unused", action="store_true", help="Exit 1 when unused catalog keys are found")
+    ap.add_argument("--fail-on-raw", action="store_true", help="Exit 1 when raw UI literal hits are found")
     args = ap.parse_args()
-    if args.fail_on_heuristic:
-        args.fail_on_raw = True
+
+    if args.all:
+        args.unused = True
+        args.raw = True
+    if args.fail_on_unused:
+        args.unused = True
+    if args.fail_on_raw:
+        args.raw = True
 
     excludes: set[Path] = set()
     for p in list(DEFAULT_EXCLUDE_GLOBS) + list(args.exclude):
@@ -380,6 +430,8 @@ def main() -> int:
 
     all_tr: set[str] = set()
     all_trp: set[str] = set()
+    all_key_literals: set[str] = set()
+    all_key_prefixes: set[str] = set()
     raw_hits: list[tuple[Path, int, str, str]] = []
 
     for path in iter_source_files(args.src, (".cpp", ".h"), excludes):
@@ -391,8 +443,12 @@ def main() -> int:
         tr_keys, trp_bases = collect_tr_keys(text)
         all_tr |= tr_keys
         all_trp |= trp_bases
+        if args.unused:
+            lits, prefixes = collect_key_literals(text)
+            all_key_literals |= lits
+            all_key_prefixes |= prefixes
 
-    if not args.no_raw:
+    if args.raw:
         raw_roots = tuple(args.raw_roots) if args.raw_roots else DEFAULT_RAW_ROOTS
         for path in iter_raw_scan_files(raw_roots, (".cpp", ".h"), excludes):
             try:
@@ -400,9 +456,8 @@ def main() -> int:
             except OSError as e:
                 print(f"warn: skip {path}: {e}", file=sys.stderr)
                 continue
-            for line_no, where, lit in scan_raw_ui_file(path, text, wide_strings=not args.no_wide):
+            for line_no, where, lit in scan_raw_ui_file(path, text, wide_strings=not args.setters_only):
                 raw_hits.append((path, line_no, where, lit))
-
         raw_hits.sort(key=lambda h: (str(h[0]), h[1], h[2], h[3]))
 
     missing_tr = check_catalog(all_tr, catalog)
@@ -420,7 +475,26 @@ def main() -> int:
         for k in missing:
             print(f"  - {k}")
 
-    if not args.no_raw and raw_hits:
+    if args.unused:
+        directly_used = all_tr | all_trp | {f"{b}-plural" for b in all_trp}
+        unused, possibly_dynamic = find_unused_keys(catalog, directly_used, all_key_literals, all_key_prefixes)
+        if possibly_dynamic:
+            print(
+                f"\nPossibly dynamic ({len(possibly_dynamic)} key(s)) — prefix literal found in source,"
+                " full key not resolvable statically:"
+            )
+            for k in possibly_dynamic:
+                print(f"  ? {k}")
+        if unused:
+            if args.fail_on_unused:
+                exit_code = 1
+            print(f"\nUnused catalog key(s): {len(unused)} — not referenced anywhere in source:")
+            for k in unused:
+                print(f"  - {k}")
+        else:
+            print(f"\nUnused keys: none (catalog={len(catalog)}, possibly-dynamic={len(possibly_dynamic)}).")
+
+    if args.raw and raw_hits:
         print(f"\nRaw UI string literals ({len(raw_hits)} hit(s)) — prefer i18n::tr / i18n::trp:")
         for path, line_no, where, lit in raw_hits[:400]:
             rel = path.relative_to(ROOT) if path.is_relative_to(ROOT) else path
@@ -433,20 +507,17 @@ def main() -> int:
             print(f"  ... and {len(raw_hits) - 400} more")
         if args.fail_on_raw:
             exit_code = 1
+    elif args.raw:
+        print("\nRaw UI scan: clean.")
 
     if not missing:
-        base = (
-            f"OK: {len(all_tr)} tr keys, {len(all_trp)} trp base keys — all present in catalog ({len(catalog)} entries)"
+        suffix = ""
+        if args.raw and raw_hits:
+            suffix = f"; raw UI literals: {len(raw_hits)} hit(s) (see above)"
+        print(
+            f"OK: {len(all_tr)} tr keys, {len(all_trp)} trp base keys"
+            f" — all present in catalog ({len(catalog)} entries){suffix}."
         )
-        if args.no_raw:
-            print(f"{base} (raw UI scan skipped).")
-        elif raw_hits:
-            print(
-                f"{base}. Raw UI literals: {len(raw_hits)} hit(s) (see above); "
-                f"use --fail-on-raw to exit 1 on these.",
-            )
-        else:
-            print(f"{base}; raw UI scan clean.")
 
     return exit_code
 

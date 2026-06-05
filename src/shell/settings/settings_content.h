@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <functional>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -17,6 +18,11 @@ class Label;
 class Node;
 
 namespace settings {
+
+  // Pango line budget for setting descriptions: wrap up to this many lines, then ellipsize.
+  inline constexpr int kSettingDescriptionMaxLines = 5;
+
+  [[nodiscard]] std::unique_ptr<Label> makeSettingSubtitleLabel(std::string_view text, float scale);
 
   struct SettingsContentContext {
     const Config& config;
@@ -31,6 +37,8 @@ namespace settings {
     std::vector<SelectOption> batteryDeviceOptions;
 
     std::string& editingWidgetName;
+    std::string& editingCapsuleGroupId;
+    std::vector<std::string>& selectedLaneWidgets;
     std::string& pendingDeleteWidgetName;
     std::string& pendingDeleteWidgetSettingPath;
     std::string& renamingWidgetName;
@@ -41,9 +49,10 @@ namespace settings {
     std::function<void(Node*)> setScrollTarget;
     std::function<void(InputArea*)> focusArea;
     std::function<void(const std::vector<std::string>&)> openBarWidgetAddPopup;
-    std::function<void(const std::string& title, const std::vector<SelectOption>& options,
-                       const std::string& selectedValue, const std::string& placeholder, const std::string& emptyText,
-                       const std::vector<std::string>& settingPath)>
+    std::function<void(
+        const std::string& title, const std::vector<SelectOption>& options, const std::string& selectedValue,
+        const std::string& placeholder, const std::string& emptyText, const std::vector<std::string>& settingPath
+    )>
         openSearchPickerPopup;
     std::function<void(std::vector<std::string>, ConfigOverrideValue)> setOverride;
     std::function<void(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>)> setOverrides;
@@ -54,8 +63,12 @@ namespace settings {
     std::function<void(std::size_t)> openSessionActionEntryEditor;
     std::function<void(std::size_t)> openIdleBehaviorEntryEditor;
     std::function<void()> openIdleBehaviorCreateEditor;
+    std::function<void(std::vector<std::string> laneListPath, std::string widgetName)> openWidgetInspectorEditor;
+    std::function<void(std::vector<std::string> laneListPath, std::string groupId)> openCapsuleGroupEditor;
 
     std::function<void(Label*)> registerIdleLiveStatusLabel;
+    std::function<void(std::size_t, Label*)> registerSessionActionSummaryLabel;
+    std::function<void(std::shared_ptr<std::vector<SessionPanelActionConfig>>)> bindSessionActionsEditState;
 
     // When set (session action entry popup), called after commits instead of requestRebuild.
     std::function<void()> afterSessionActionsCommit;
@@ -63,12 +76,14 @@ namespace settings {
     std::function<void()> closeHostedEditor;
   };
 
-  std::size_t addSettingsContentSections(Flex& content, const std::vector<SettingEntry>& registry,
-                                         SettingsContentContext ctx);
+  std::size_t
+  addSettingsContentSections(Flex& content, const std::vector<SettingEntry>& registry, SettingsContentContext ctx);
 
-  void buildSessionActionEntryDetailContent(Flex& parent, SettingsContentContext& ctx, SessionPanelActionConfig& row,
-                                            const std::function<void()>& persist);
-  void buildIdleBehaviorEntryDetailContent(Flex& parent, SettingsContentContext& ctx, IdleBehaviorConfig& row,
-                                           const std::function<void()>& persist);
+  void buildSessionActionEntryDetailContent(
+      Flex& parent, SettingsContentContext& ctx, SessionPanelActionConfig& row, const std::function<void()>& persist
+  );
+  void buildIdleBehaviorEntryDetailContent(
+      Flex& parent, SettingsContentContext& ctx, IdleBehaviorConfig& row, const std::function<void()>& persist
+  );
 
 } // namespace settings

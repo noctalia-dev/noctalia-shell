@@ -22,6 +22,7 @@ public:
   void initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext);
   void onOutputChange();
   void onConfigReload();
+  void requestRedraw();
 
 private:
   struct Corner {

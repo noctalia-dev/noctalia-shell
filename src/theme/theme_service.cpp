@@ -3,8 +3,10 @@
 #include "config/config_service.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
+#include "core/scoped_timer.h"
 #include "ipc/ipc_service.h"
 #include "net/http_client.h"
+#include "system/day_night_schedule.h"
 #include "theme/builtin_palettes.h"
 #include "theme/community_palettes.h"
 #include "theme/custom_palettes.h"
@@ -12,14 +14,16 @@
 #include "theme/image_loader.h"
 #include "theme/palette_generator.h"
 #include "theme/scheme.h"
+#include "ui/app_icon_colorization.h"
+#include "util/checksum.h"
 #include "util/string_utils.h"
 
 #include <cctype>
 #include <chrono>
+#include <cmath>
 #include <exception>
 #include <filesystem>
 #include <fstream>
-#include <gio/gio.h>
 #include <json.hpp>
 #include <sstream>
 #include <string>
@@ -41,79 +45,28 @@ namespace noctalia::theme {
       std::string mode;
     };
 
-    // Returns "light" or "dark" from org.gnome.desktop.interface color-scheme.
-    std::string_view readSystemColorScheme() {
-      static GSettings* settings = []() -> GSettings* {
-        GSettingsSchemaSource* source = g_settings_schema_source_get_default();
-        if (source == nullptr)
-          return nullptr;
-        GSettingsSchema* schema = g_settings_schema_source_lookup(source, "org.gnome.desktop.interface", TRUE);
-        if (schema == nullptr)
-          return nullptr;
-        const bool hasKey = g_settings_schema_has_key(schema, "color-scheme") != FALSE;
-        g_settings_schema_unref(schema);
-        if (!hasKey)
-          return nullptr;
-        return g_settings_new("org.gnome.desktop.interface");
-      }();
-
-      if (settings == nullptr)
-        return "dark";
-      gchar* raw = g_settings_get_string(settings, "color-scheme");
-      if (raw == nullptr)
-        return "dark";
-      const bool isLight = (std::string_view(raw) == "prefer-light");
-      g_free(raw);
-      return isLight ? "light" : "dark";
-    }
-
-    std::string resolvedModeName(const ThemeConfig& cfg) {
-      if (cfg.mode == ThemeMode::Auto)
-        return std::string(readSystemColorScheme());
+    std::string resolvedModeName(
+        const ThemeConfig& cfg, const LocationConfig& location, std::optional<double> latitude,
+        std::optional<double> longitude
+    ) {
+      if (cfg.mode == ThemeMode::Auto) {
+        const auto eval = day_night_schedule::evaluate(location, latitude, longitude);
+        return eval.night ? "dark" : "light";
+      }
       return cfg.mode == ThemeMode::Light ? "light" : "dark";
     }
 
-    ResolvedTheme resolveBuiltin(const ThemeConfig& cfg) {
+    ResolvedTheme resolveBuiltin(const ThemeConfig& cfg, std::string_view mode) {
       const auto* palette = findBuiltinPalette(cfg.builtinPalette);
       if (palette == nullptr) {
         kLog.warn("unknown builtin palette '{}', falling back to Noctalia", cfg.builtinPalette);
         palette = findBuiltinPalette("Noctalia");
       }
-      const std::string mode = resolvedModeName(cfg);
       const GeneratedPalette generated = expandBuiltinPalette(*palette);
       return {
           .generated = generated,
           .palette = mapGeneratedPaletteMode(mode == "light" ? generated.light : generated.dark),
-          .mode = mode,
-      };
-    }
-
-    std::optional<ResolvedTheme> resolveWallpaper(const ThemeConfig& cfg, const std::string& wallpaperPath) {
-      if (wallpaperPath.empty()) {
-        kLog.warn("wallpaper theme requested but no wallpaper path set");
-        return std::nullopt;
-      }
-      auto scheme = schemeFromString(cfg.wallpaperScheme);
-      if (!scheme.has_value()) {
-        kLog.warn("unknown wallpaper scheme '{}', falling back to m3-content", cfg.wallpaperScheme);
-        scheme = Scheme::Content;
-      }
-      std::string err;
-      auto image = loadAndResize(wallpaperPath, *scheme, &err);
-      if (!image.has_value()) {
-        kLog.warn("failed to load wallpaper '{}': {}", wallpaperPath, err);
-        return std::nullopt;
-      }
-      auto generated = generate(image->rgb, *scheme, &err);
-      if (generated.dark.empty()) {
-        kLog.warn("failed to generate palette from wallpaper: {}", err);
-        return std::nullopt;
-      }
-      const std::string mode = resolvedModeName(cfg);
-      return ResolvedTheme{
-          .generated = generated,
-          .palette = mapGeneratedPaletteMode(mode == "light" ? generated.light : generated.dark),
-          .mode = mode,
+          .mode = std::string(mode),
       };
     }
 
@@ -243,19 +196,73 @@ namespace noctalia::theme {
       }
     }
 
-    ResolvedTheme makeResolvedFromParsed(const ParsedCommunityPalette& parsed, const ThemeConfig& cfg) {
+    ResolvedTheme makeResolvedFromParsed(const ParsedCommunityPalette& parsed, std::string_view mode) {
       BuiltinPalette bp{
           .name = "community",
           .dark = parsed.dark,
           .light = parsed.light,
       };
-      const std::string mode = resolvedModeName(cfg);
       const GeneratedPalette generated = expandBuiltinPalette(bp);
       return {
           .generated = generated,
           .palette = mapGeneratedPaletteMode(mode == "light" ? generated.light : generated.dark),
-          .mode = mode,
+          .mode = std::string(mode),
       };
+    }
+
+    std::string colorSchemeValue(const ThemeConfig& theme) {
+      switch (theme.source) {
+      case PaletteSource::Builtin:
+        return theme.builtinPalette;
+      case PaletteSource::Wallpaper:
+        return theme.wallpaperScheme;
+      case PaletteSource::Community:
+        return theme.communityPalette;
+      case PaletteSource::Custom:
+        return theme.customPalette;
+      }
+      return theme.builtinPalette;
+    }
+
+    std::string formatColorSchemeLine(const ThemeConfig& theme) {
+      std::string out(enumToKey(kPaletteSources, theme.source));
+      out.push_back(' ');
+      out += colorSchemeValue(theme);
+      out.push_back('\n');
+      return out;
+    }
+
+    bool parseColorSchemeSetArgs(
+        std::string_view args, PaletteSource& sourceOut, std::string& valueOut, std::string& errorOut
+    ) {
+      const auto tokens = StringUtils::splitWhitespace(args);
+      if (tokens.size() < 2) {
+        errorOut = "error: expected <builtin|wallpaper|community|custom> <name-or-scheme>\n";
+        return false;
+      }
+
+      const auto source = enumFromKey(kPaletteSources, tokens.front());
+      if (!source.has_value()) {
+        errorOut = "error: unknown palette source (expected builtin, wallpaper, community, or custom)\n";
+        return false;
+      }
+
+      std::string value;
+      for (std::size_t i = 1; i < tokens.size(); ++i) {
+        if (i > 1) {
+          value.push_back(' ');
+        }
+        value += tokens[i];
+      }
+      value = StringUtils::trim(value);
+      if (value.empty()) {
+        errorOut = "error: palette or scheme name required\n";
+        return false;
+      }
+
+      sourceOut = *source;
+      valueOut = std::move(value);
+      return true;
     }
 
   } // namespace
@@ -274,6 +281,23 @@ namespace noctalia::theme {
   }
 
   void ThemeService::onAutoSchemeChanged() {
+    if (m_config.config().theme.mode == ThemeMode::Auto) {
+      resolveAndSet(/*animate=*/true);
+    }
+  }
+
+  void ThemeService::setAutoCoordinates(std::optional<double> latitude, std::optional<double> longitude) {
+    if (latitude.has_value() && !std::isfinite(*latitude)) {
+      latitude.reset();
+    }
+    if (longitude.has_value() && !std::isfinite(*longitude)) {
+      longitude.reset();
+    }
+    if (m_autoLatitude == latitude && m_autoLongitude == longitude) {
+      return;
+    }
+    m_autoLatitude = latitude;
+    m_autoLongitude = longitude;
     if (m_config.config().theme.mode == ThemeMode::Auto) {
       resolveAndSet(/*animate=*/true);
     }
@@ -374,43 +398,117 @@ namespace noctalia::theme {
     });
   }
 
+  std::optional<GeneratedPalette>
+  ThemeService::resolveWallpaperGenerated(const ThemeConfig& cfg, const std::string& wallpaperPath) {
+    if (wallpaperPath.empty()) {
+      kLog.warn("wallpaper theme requested but no wallpaper path set");
+      return std::nullopt;
+    }
+    auto scheme = schemeFromString(cfg.wallpaperScheme);
+    if (!scheme.has_value()) {
+      kLog.warn("unknown wallpaper scheme '{}', falling back to m3-content", cfg.wallpaperScheme);
+      scheme = Scheme::Content;
+    }
+
+    // mtime drives cache invalidation: an edited wallpaper at the same path
+    // re-decodes. A failed stat (mtime 0) disables the cache rather than risk a
+    // stale palette.
+    std::error_code ec;
+    const auto writeTime = std::filesystem::last_write_time(wallpaperPath, ec);
+    const std::int64_t mtimeNs = ec ? 0 : writeTime.time_since_epoch().count();
+
+    if (mtimeNs != 0
+        && m_wallpaperCacheGenerated.has_value()
+        && m_wallpaperCachePath == wallpaperPath
+        && m_wallpaperCacheScheme == cfg.wallpaperScheme
+        && m_wallpaperCacheMtimeNs == mtimeNs) {
+      return m_wallpaperCacheGenerated;
+    }
+
+    std::string err;
+    profiling::StopWatch loadWatch;
+    auto image = loadAndResize(wallpaperPath, *scheme, &err);
+    if (profiling::enabled()) {
+      kLog.info("theme: wallpaper load+resize: {:.1f} ms", loadWatch.elapsedMs());
+    }
+    if (!image.has_value()) {
+      kLog.warn("failed to load wallpaper '{}': {}", wallpaperPath, err);
+      return std::nullopt;
+    }
+    profiling::StopWatch genWatch;
+    auto generated = generate(image->rgb, *scheme, &err);
+    if (profiling::enabled()) {
+      kLog.info("theme: wallpaper palette generate: {:.1f} ms", genWatch.elapsedMs());
+    }
+    if (generated.dark.empty()) {
+      kLog.warn("failed to generate palette from wallpaper: {}", err);
+      return std::nullopt;
+    }
+
+    if (mtimeNs != 0) {
+      m_wallpaperCacheGenerated = generated;
+      m_wallpaperCachePath = wallpaperPath;
+      m_wallpaperCacheScheme = cfg.wallpaperScheme;
+      m_wallpaperCacheMtimeNs = mtimeNs;
+    }
+    return generated;
+  }
+
   void ThemeService::resolveAndSet(bool animate) {
+    profiling::ScopedTimer t(kLog, "theme: resolveAndSet");
     const auto& cfg = m_config.config().theme;
+    const std::string mode = resolvedModeName(cfg, m_config.config().location, m_autoLatitude, m_autoLongitude);
     std::optional<ResolvedTheme> resolved;
     if (cfg.source == PaletteSource::Custom && !cfg.customPalette.empty()) {
       const auto path = customPalettePath(cfg.customPalette);
       if (std::filesystem::exists(path)) {
         if (auto parsed = parseCommunityPaletteJson(path)) {
-          resolved = makeResolvedFromParsed(*parsed, cfg);
+          resolved = makeResolvedFromParsed(*parsed, mode);
         }
       }
       if (!resolved.has_value()) {
         kLog.warn("custom palette '{}' not found or invalid; falling back to builtin", cfg.customPalette);
       }
     } else if (cfg.source == PaletteSource::Wallpaper) {
-      resolved = resolveWallpaper(cfg, m_config.getPaletteWallpaperPath());
+      if (auto generated = resolveWallpaperGenerated(cfg, m_config.getPaletteWallpaperPath())) {
+        resolved = ResolvedTheme{
+            .generated = *generated,
+            .palette = mapGeneratedPaletteMode(mode == "light" ? generated->light : generated->dark),
+            .mode = mode,
+        };
+      }
     } else if (cfg.source == PaletteSource::Community && !cfg.communityPalette.empty()) {
       const auto cachePath = communityPaletteCachePath(cfg.communityPalette);
+      bool stale = true;
       if (std::filesystem::exists(cachePath)) {
         if (auto parsed = parseCommunityPaletteJson(cachePath)) {
-          resolved = makeResolvedFromParsed(*parsed, cfg);
+          resolved = makeResolvedFromParsed(*parsed, mode);
+          // Re-fetch when the catalog advertises a different checksum than the
+          // cached copy. An empty catalog md5 means "freshness unknown" — keep
+          // the cached palette rather than re-downloading on every resolve.
+          const std::string expectedMd5 = communityPaletteCatalogMd5(cfg.communityPalette);
+          stale = !expectedMd5.empty() && util::fileMd5Hex(cachePath) != StringUtils::toLower(expectedMd5);
         } else {
           std::error_code rmEc;
           std::filesystem::remove(cachePath, rmEc);
         }
       }
-      if (!resolved.has_value()) {
+      // A stale-but-valid cache still resolves above, so the fresh copy fades in
+      // via the download callback instead of flashing the builtin palette.
+      if (stale) {
         startCommunityDownload(cfg.communityPalette);
       }
     }
     if (!resolved.has_value()) {
-      resolved = resolveBuiltin(cfg);
+      resolved = resolveBuiltin(cfg, mode);
     }
 
     queueResolvedCallback(resolved->generated, resolved->mode);
     m_isLightMode = resolved->mode == "light";
 
     if (animate) {
+      setResolvedThemeLight(m_isLightMode);
+      notifyShellAppIconColorizationChanged();
       startTransition(resolved->palette);
     } else {
       if (m_transitionAnimId == 0 && palette == resolved->palette) {
@@ -422,12 +520,28 @@ namespace noctalia::theme {
         m_transitionAnimId = 0;
       }
       m_transitionTimer.stop();
+      setResolvedThemeLight(m_isLightMode);
+      notifyShellAppIconColorizationChanged();
       setPalette(resolved->palette);
       if (m_changeCallback) {
         m_changeCallback();
       }
       flushResolvedCallback(/*defer=*/false);
     }
+    rescheduleAutoTimer();
+  }
+
+  void ThemeService::rescheduleAutoTimer() {
+    m_autoTimer.stop();
+    if (m_config.config().theme.mode != ThemeMode::Auto) {
+      return;
+    }
+    constexpr auto kAutoRecheckInterval = std::chrono::minutes(1);
+    const auto nextBoundary =
+        day_night_schedule::evaluate(m_config.config().location, m_autoLatitude, m_autoLongitude).untilBoundary;
+    const auto delay =
+        std::min(nextBoundary, std::chrono::duration_cast<std::chrono::milliseconds>(kAutoRecheckInterval));
+    m_autoTimer.start(delay, [this]() { onAutoSchemeChanged(); });
   }
 
   void ThemeService::startTransition(const Palette& target) {
@@ -460,7 +574,8 @@ namespace noctalia::theme {
             flushResolvedCallback(/*defer=*/true);
           }
         },
-        [this]() { finishTransition(/*deferResolvedCallback=*/false); });
+        [this]() { finishTransition(/*deferResolvedCallback=*/false); }
+    );
     if (m_transitionAnimId == 0) {
       m_transitionTimer.stop();
       return;
@@ -493,7 +608,8 @@ namespace noctalia::theme {
           toggleLightDark();
           return "ok\n";
         },
-        "theme-mode-toggle", "Toggle theme mode between dark and light");
+        "theme-mode-toggle", "Toggle theme mode between dark and light"
+    );
     ipc.registerHandler(
         "theme-mode-get",
         [this](const std::string&) -> std::string {
@@ -501,7 +617,8 @@ namespace noctalia::theme {
           out.push_back('\n');
           return out;
         },
-        "theme-mode-get", "Print the current resolved theme mode");
+        "theme-mode-get", "Print the current resolved theme mode"
+    );
     ipc.registerHandler(
         "theme-mode-set",
         [this](const std::string& args) -> std::string {
@@ -513,21 +630,32 @@ namespace noctalia::theme {
           m_config.setThemeMode(*mode);
           return "ok\n";
         },
-        "theme-mode-set <dark|light|auto>", "Set theme mode and persist to settings.toml");
+        "theme-mode-set <dark|light|auto>", "Set theme mode and persist to settings.toml"
+    );
     ipc.registerHandler(
-        "theme-wallpaper-scheme-set",
+        "color-scheme-get",
+        [this](const std::string&) -> std::string { return formatColorSchemeLine(m_config.config().theme); },
+        "color-scheme-get",
+        "Print active color scheme: <source> <name> (source is builtin, wallpaper, community, or custom)"
+    );
+    ipc.registerHandler(
+        "color-scheme-set",
         [this](const std::string& args) -> std::string {
-          const std::string scheme = StringUtils::trim(args);
-          if (scheme.empty()) {
-            return "error: scheme name required\n";
+          PaletteSource source = PaletteSource::Builtin;
+          std::string value;
+          std::string error;
+          if (!parseColorSchemeSetArgs(args, source, value, error)) {
+            return error;
           }
-          if (!m_config.setThemeWallpaperScheme(scheme)) {
-            return "error: unknown scheme or settings not writable (see docs for valid names)\n";
+          if (!m_config.setThemeColorScheme(source, value)) {
+            return "error: unknown scheme/palette or settings not writable\n";
           }
           return "ok\n";
         },
-        "theme-wallpaper-scheme-set <scheme>",
-        "Set wallpaper palette generation scheme ([theme].wallpaper_scheme), e.g. m3-content or vibrant");
+        "color-scheme-set <source> <name>",
+        "Set palette source and selection in settings.toml (builtin name, wallpaper generator scheme, community id, or "
+        "custom scheme folder name)"
+    );
   }
 
 } // namespace noctalia::theme

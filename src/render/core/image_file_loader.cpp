@@ -45,15 +45,19 @@ namespace {
     }
   }
 
-  std::optional<LoadedImageFile> rasterizeSvg(const std::vector<std::uint8_t>& fileData, int targetSize,
-                                              std::string* errorMessage);
+  std::optional<LoadedImageFile> rasterizeSvg(
+      const std::vector<std::uint8_t>& fileData, int targetSize, std::string* errorMessage, bool centerSquareCrop
+  );
 
   [[nodiscard]] bool asciiStartsWithDataScheme(std::string_view source) {
     if (source.size() < 5) {
       return false;
     }
-    return (source[0] == 'd' || source[0] == 'D') && (source[1] == 'a' || source[1] == 'A') &&
-           (source[2] == 't' || source[2] == 'T') && (source[3] == 'a' || source[3] == 'A') && source[4] == ':';
+    return (source[0] == 'd' || source[0] == 'D')
+        && (source[1] == 'a' || source[1] == 'A')
+        && (source[2] == 't' || source[2] == 'T')
+        && (source[3] == 'a' || source[3] == 'A')
+        && source[4] == ':';
   }
 
   [[nodiscard]] char asciiLower(char ch) { return ch >= 'A' && ch <= 'Z' ? static_cast<char>(ch - 'A' + 'a') : ch; }
@@ -97,8 +101,8 @@ namespace {
     return -1;
   }
 
-  [[nodiscard]] std::optional<std::vector<std::uint8_t>> percentDecode(std::string_view value,
-                                                                       std::string* errorMessage) {
+  [[nodiscard]] std::optional<std::vector<std::uint8_t>>
+  percentDecode(std::string_view value, std::string* errorMessage) {
     std::vector<std::uint8_t> out;
     out.reserve(value.size());
 
@@ -151,8 +155,8 @@ namespace {
     return -1;
   }
 
-  [[nodiscard]] std::optional<std::vector<std::uint8_t>> base64Decode(std::string_view value,
-                                                                      std::string* errorMessage) {
+  [[nodiscard]] std::optional<std::vector<std::uint8_t>>
+  base64Decode(std::string_view value, std::string* errorMessage) {
     std::vector<std::uint8_t> out;
     out.reserve((value.size() * 3U) / 4U);
 
@@ -264,8 +268,9 @@ namespace {
     bool firstToken = true;
     while (tokenStart <= header.size()) {
       const std::size_t tokenEnd = header.find(';', tokenStart);
-      const std::string_view token = trimAscii(header.substr(
-          tokenStart, tokenEnd == std::string_view::npos ? std::string_view::npos : tokenEnd - tokenStart));
+      const std::string_view token = trimAscii(
+          header.substr(tokenStart, tokenEnd == std::string_view::npos ? std::string_view::npos : tokenEnd - tokenStart)
+      );
       if (firstToken && asciiEqualInsensitive(token, "image/svg+xml")) {
         declaredSvg = true;
       } else if (asciiEqualInsensitive(token, "base64")) {
@@ -313,16 +318,43 @@ namespace {
 
     const std::size_t scanEnd = std::min(data.size(), pos + 256U);
     for (; pos < scanEnd; ++pos) {
-      if (pos + 4 <= data.size() && data[pos] == '<' && asciiLower(static_cast<char>(data[pos + 1])) == 's' &&
-          asciiLower(static_cast<char>(data[pos + 2])) == 'v' && asciiLower(static_cast<char>(data[pos + 3])) == 'g') {
+      if (pos + 4 <= data.size()
+          && data[pos] == '<'
+          && asciiLower(static_cast<char>(data[pos + 1])) == 's'
+          && asciiLower(static_cast<char>(data[pos + 2])) == 'v'
+          && asciiLower(static_cast<char>(data[pos + 3])) == 'g') {
         return true;
       }
     }
     return false;
   }
 
-  std::optional<LoadedImageFile> loadImageBytes(std::vector<std::uint8_t> fileData, bool preferSvg, int targetSize,
-                                                std::string* errorMessage) {
+  [[nodiscard]] LoadedImageFile cropCenterSquare(LoadedImageFile image) {
+    const int side = std::min(image.width, image.height);
+    if (side <= 0 || (image.width == side && image.height == side)) {
+      return image;
+    }
+
+    const int offsetX = (image.width - side) / 2;
+    const int offsetY = (image.height - side) / 2;
+    std::vector<std::uint8_t> cropped(static_cast<std::size_t>(side) * static_cast<std::size_t>(side) * 4U);
+    for (int row = 0; row < side; ++row) {
+      const auto srcRow = static_cast<std::size_t>(offsetY + row) * static_cast<std::size_t>(image.width) * 4U
+          + static_cast<std::size_t>(offsetX) * 4U;
+      const auto dstRow = static_cast<std::size_t>(row) * static_cast<std::size_t>(side) * 4U;
+      std::copy_n(image.rgba.data() + srcRow, static_cast<std::size_t>(side) * 4U, cropped.data() + dstRow);
+    }
+
+    image.rgba = std::move(cropped);
+    image.width = side;
+    image.height = side;
+    return image;
+  }
+
+  std::optional<LoadedImageFile> loadImageBytes(
+      std::vector<std::uint8_t> fileData, bool preferSvg, int targetSize, std::string* errorMessage,
+      bool centerSquareCrop
+  ) {
     if (fileData.empty()) {
       if (errorMessage != nullptr) {
         *errorMessage = "empty image data";
@@ -332,7 +364,7 @@ namespace {
 
     const bool svgLike = looksLikeSvg(fileData);
     if (preferSvg || svgLike) {
-      if (auto loaded = rasterizeSvg(fileData, targetSize, errorMessage)) {
+      if (auto loaded = rasterizeSvg(fileData, targetSize, errorMessage, centerSquareCrop)) {
         return loaded;
       }
       if (svgLike) {
@@ -341,37 +373,43 @@ namespace {
     }
 
     if (auto decoded = decodeRasterImage(fileData.data(), fileData.size(), errorMessage)) {
-      int width = decoded->width;
-      int height = decoded->height;
-      auto pixels = std::move(decoded->pixels);
+      LoadedImageFile loaded{.rgba = std::move(decoded->pixels), .width = decoded->width, .height = decoded->height};
 
-      const int maxDim = std::max(width, height);
-      if (targetSize > 0 && maxDim > targetSize && width > 0 && height > 0) {
+      // Crop before resizing so the kept square fills targetSize at full detail,
+      // instead of resizing the whole frame and discarding most of it afterwards.
+      if (centerSquareCrop) {
+        loaded = cropCenterSquare(std::move(loaded));
+      }
+
+      const int maxDim = std::max(loaded.width, loaded.height);
+      if (targetSize > 0 && maxDim > targetSize && loaded.width > 0 && loaded.height > 0) {
         const float scale = static_cast<float>(targetSize) / static_cast<float>(maxDim);
-        const int resizedW = std::max(1, static_cast<int>(std::lround(static_cast<float>(width) * scale)));
-        const int resizedH = std::max(1, static_cast<int>(std::lround(static_cast<float>(height) * scale)));
+        const int resizedW = std::max(1, static_cast<int>(std::lround(static_cast<float>(loaded.width) * scale)));
+        const int resizedH = std::max(1, static_cast<int>(std::lround(static_cast<float>(loaded.height) * scale)));
 
         std::vector<std::uint8_t> resized(static_cast<std::size_t>(resizedW) * static_cast<std::size_t>(resizedH) * 4U);
         // Use the sRGB resize: image bytes are sRGB-encoded, so averaging them
         // directly (the _linear variant) darkens and muddies downscaled icons.
         // STBIR_RGBA handles the non-premultiplied alpha correctly.
-        unsigned char* result =
-            stbir_resize_uint8_srgb(pixels.data(), width, height, 0, resized.data(), resizedW, resizedH, 0, STBIR_RGBA);
+        unsigned char* result = stbir_resize_uint8_srgb(
+            loaded.rgba.data(), loaded.width, loaded.height, 0, resized.data(), resizedW, resizedH, 0, STBIR_RGBA
+        );
         if (result != nullptr) {
-          pixels = std::move(resized);
-          width = resizedW;
-          height = resizedH;
+          loaded.rgba = std::move(resized);
+          loaded.width = resizedW;
+          loaded.height = resizedH;
         }
       }
 
-      return LoadedImageFile{.rgba = std::move(pixels), .width = width, .height = height};
+      return loaded;
     }
 
     return std::nullopt;
   }
 
-  std::optional<LoadedImageFile> rasterizeSvg(const std::vector<std::uint8_t>& fileData, int targetSize,
-                                              std::string* errorMessage) {
+  std::optional<LoadedImageFile> rasterizeSvg(
+      const std::vector<std::uint8_t>& fileData, int targetSize, std::string* errorMessage, bool centerSquareCrop
+  ) {
     GError* gerror = nullptr;
     RsvgHandle* handle = rsvg_handle_new_from_data(fileData.data(), fileData.size(), &gerror);
     if (handle == nullptr) {
@@ -462,17 +500,23 @@ namespace {
         .width = width,
         .height = height,
     };
-    argb32ToRgba(cairo_image_surface_get_data(surface), cairo_image_surface_get_stride(surface), loaded.rgba.data(),
-                 width, height);
+    argb32ToRgba(
+        cairo_image_surface_get_data(surface), cairo_image_surface_get_stride(surface), loaded.rgba.data(), width,
+        height
+    );
 
     cairo_surface_destroy(surface);
     g_object_unref(handle);
+    if (centerSquareCrop) {
+      loaded = cropCenterSquare(std::move(loaded));
+    }
     return loaded;
   }
 
 } // namespace
 
-std::optional<LoadedImageFile> loadImageFile(const std::string& path, int targetSize, std::string* errorMessage) {
+std::optional<LoadedImageFile>
+loadImageFile(const std::string& path, int targetSize, std::string* errorMessage, bool centerSquareCrop) {
   if (path.empty()) {
     if (errorMessage != nullptr) {
       *errorMessage = "empty image path";
@@ -485,7 +529,7 @@ std::optional<LoadedImageFile> loadImageFile(const std::string& path, int target
     if (!dataUri.has_value()) {
       return std::nullopt;
     }
-    return loadImageBytes(std::move(dataUri->bytes), dataUri->declaredSvg, targetSize, errorMessage);
+    return loadImageBytes(std::move(dataUri->bytes), dataUri->declaredSvg, targetSize, errorMessage, centerSquareCrop);
   }
 
   auto fileData = FileUtils::readBinaryFile(path);
@@ -496,6 +540,7 @@ std::optional<LoadedImageFile> loadImageFile(const std::string& path, int target
     return std::nullopt;
   }
 
-  return loadImageBytes(std::move(fileData), path.ends_with(".svg") || path.ends_with(".SVG"), targetSize,
-                        errorMessage);
+  return loadImageBytes(
+      std::move(fileData), path.ends_with(".svg") || path.ends_with(".SVG"), targetSize, errorMessage, centerSquareCrop
+  );
 }

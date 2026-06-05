@@ -117,10 +117,15 @@ void Box::setFlatStyle() {
   syncStyle();
 }
 
-void Box::setPanelStyle() {
+void Box::setPanelStyle(bool showBorder) {
   m_fill = colorSpecFromRole(ColorRole::Surface);
-  m_border = colorSpecFromRole(ColorRole::Outline);
-  m_borderWidth = Style::borderWidth;
+  if (showBorder) {
+    m_border = colorSpecFromRole(ColorRole::Outline);
+    m_borderWidth = Style::borderWidth;
+  } else {
+    m_border = clearColorSpec();
+    m_borderWidth = 0.0f;
+  }
   m_resolveFill = true;
   m_resolveBorder = true;
   m_style.fill = resolveColorSpec(m_fill);
@@ -134,9 +139,13 @@ void Box::setPanelStyle() {
   syncStyle();
 }
 
-void Box::setCardStyle(float scale, float fillOpacity) {
+void Box::setCardStyle(float scale, float fillOpacity, bool showBorder) {
   setFill(colorSpecFromRole(ColorRole::SurfaceVariant, fillOpacity));
-  setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), Style::borderWidth);
+  if (showBorder) {
+    setBorder(colorSpecFromRole(ColorRole::Outline, 0.5f), Style::borderWidth);
+  } else {
+    clearBorder();
+  }
   setRadius(Style::scaledRadiusXl(scale));
 }
 

@@ -160,8 +160,9 @@ void ExtWorkspaceBackend::activateForOutput(wl_output* output, const Workspace& 
   }
 
   auto matchesExact = [&](const Workspace& candidate) {
-    return candidate.id == workspace.id && candidate.name == workspace.name &&
-           normalizeCoordinates(candidate.coordinates) == normalizeCoordinates(workspace.coordinates);
+    return candidate.id == workspace.id
+        && candidate.name == workspace.name
+        && normalizeCoordinates(candidate.coordinates) == normalizeCoordinates(workspace.coordinates);
   };
   auto matchesId = [&](const Workspace& candidate) { return !workspace.id.empty() && candidate.id == workspace.id; };
   auto matchesCoordinatesPrimary = [&](const Workspace& candidate) {
@@ -322,8 +323,9 @@ void ExtWorkspaceBackend::onGroupOutputLeave(ext_workspace_group_handle_v1* grou
   }
 }
 
-void ExtWorkspaceBackend::onGroupWorkspaceEnter(ext_workspace_group_handle_v1* group,
-                                                ext_workspace_handle_v1* workspace) {
+void ExtWorkspaceBackend::onGroupWorkspaceEnter(
+    ext_workspace_group_handle_v1* group, ext_workspace_handle_v1* workspace
+) {
   for (auto& g : m_groups) {
     if (g.handle == group) {
       g.workspaces.push_back(workspace);
@@ -332,8 +334,9 @@ void ExtWorkspaceBackend::onGroupWorkspaceEnter(ext_workspace_group_handle_v1* g
   }
 }
 
-void ExtWorkspaceBackend::onGroupWorkspaceLeave(ext_workspace_group_handle_v1* group,
-                                                ext_workspace_handle_v1* workspace) {
+void ExtWorkspaceBackend::onGroupWorkspaceLeave(
+    ext_workspace_group_handle_v1* group, ext_workspace_handle_v1* workspace
+) {
   for (auto& g : m_groups) {
     if (g.handle == group) {
       std::erase(g.workspaces, workspace);

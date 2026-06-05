@@ -43,19 +43,31 @@ public:
     markPaintDirty();
   }
 
-  void setTextures(TextureId texture1, TextureId texture2, float imageWidth1, float imageHeight1, float imageWidth2,
-                   float imageHeight2) {
-    setSources(WallpaperSourceKind::Image, texture1, rgba(0.0f, 0.0f, 0.0f, 1.0f), WallpaperSourceKind::Image, texture2,
-               rgba(0.0f, 0.0f, 0.0f, 1.0f), imageWidth1, imageHeight1, imageWidth2, imageHeight2);
+  void setTextures(
+      TextureId texture1, TextureId texture2, float imageWidth1, float imageHeight1, float imageWidth2,
+      float imageHeight2
+  ) {
+    setSources(
+        WallpaperSourceKind::Image, texture1, rgba(0.0f, 0.0f, 0.0f, 1.0f), WallpaperSourceKind::Image, texture2,
+        rgba(0.0f, 0.0f, 0.0f, 1.0f), imageWidth1, imageHeight1, imageWidth2, imageHeight2
+    );
   }
 
-  void setSources(WallpaperSourceKind sourceKind1, TextureId texture1, const Color& sourceColor1,
-                  WallpaperSourceKind sourceKind2, TextureId texture2, const Color& sourceColor2, float imageWidth1,
-                  float imageHeight1, float imageWidth2, float imageHeight2) {
-    if (m_texture1 == texture1 && m_texture2 == texture2 && m_imageWidth1 == imageWidth1 &&
-        m_imageHeight1 == imageHeight1 && m_imageWidth2 == imageWidth2 && m_imageHeight2 == imageHeight2 &&
-        m_sourceKind1 == sourceKind1 && m_sourceKind2 == sourceKind2 && m_sourceColor1 == sourceColor1 &&
-        m_sourceColor2 == sourceColor2) {
+  void setSources(
+      WallpaperSourceKind sourceKind1, TextureId texture1, const Color& sourceColor1, WallpaperSourceKind sourceKind2,
+      TextureId texture2, const Color& sourceColor2, float imageWidth1, float imageHeight1, float imageWidth2,
+      float imageHeight2
+  ) {
+    if (m_texture1 == texture1
+        && m_texture2 == texture2
+        && m_imageWidth1 == imageWidth1
+        && m_imageHeight1 == imageHeight1
+        && m_imageWidth2 == imageWidth2
+        && m_imageHeight2 == imageHeight2
+        && m_sourceKind1 == sourceKind1
+        && m_sourceKind2 == sourceKind2
+        && m_sourceColor1 == sourceColor1
+        && m_sourceColor2 == sourceColor2) {
       return;
     }
     m_sourceKind1 = sourceKind1;
@@ -72,11 +84,17 @@ public:
   }
 
   void setTransition(WallpaperTransition transition, float progress, const TransitionParams& params) {
-    if (m_transition == transition && m_progress == progress && m_params.direction == params.direction &&
-        m_params.centerX == params.centerX && m_params.centerY == params.centerY &&
-        m_params.stripeCount == params.stripeCount && m_params.angle == params.angle &&
-        m_params.maxBlockSize == params.maxBlockSize && m_params.cellSize == params.cellSize &&
-        m_params.smoothness == params.smoothness && m_params.aspectRatio == params.aspectRatio) {
+    if (m_transition == transition
+        && m_progress == progress
+        && m_params.direction == params.direction
+        && m_params.centerX == params.centerX
+        && m_params.centerY == params.centerY
+        && m_params.stripeCount == params.stripeCount
+        && m_params.angle == params.angle
+        && m_params.maxBlockSize == params.maxBlockSize
+        && m_params.cellSize == params.cellSize
+        && m_params.smoothness == params.smoothness
+        && m_params.aspectRatio == params.aspectRatio) {
       return;
     }
     m_transition = transition;

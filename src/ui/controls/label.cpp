@@ -94,11 +94,11 @@ void Label::setMaxLines(int maxLines) {
   m_measureCached = false;
 }
 
-void Label::setBold(bool bold) {
-  if (m_textNode->bold() == bold) {
+void Label::setFontWeight(FontWeight fontWeight) {
+  if (m_textNode->fontWeight() == fontWeight) {
     return;
   }
-  m_textNode->setBold(bold);
+  m_textNode->setFontWeight(fontWeight);
   m_measureCached = false;
 }
 
@@ -110,7 +110,7 @@ const Color& Label::color() const noexcept { return m_textNode->color(); }
 
 float Label::maxWidth() const noexcept { return m_userMaxWidth; }
 
-bool Label::bold() const noexcept { return m_textNode->bold(); }
+FontWeight Label::fontWeight() const noexcept { return m_textNode->fontWeight(); }
 
 TextAlign Label::textAlign() const noexcept { return m_textNode->textAlign(); }
 
@@ -250,7 +250,8 @@ void Label::startSnapToZero() {
         applyScrollPosition();
         markPaintDirty();
       },
-      this);
+      this
+  );
 }
 
 void Label::startMarqueeLoop() {
@@ -288,7 +289,8 @@ void Label::startMarqueeLoop() {
         markPaintDirty();
         DeferredCall::callLater([this]() { startMarqueeLoop(); });
       },
-      this);
+      this
+  );
 }
 
 void Label::restartScrollIfNeeded() {
@@ -300,10 +302,14 @@ void Label::restartScrollIfNeeded() {
   // every cache-missed measure, but cache misses are common (different parent
   // constraints across measure/arrange phases) and we must not snap the scroll
   // offset back to 0 unless the geometry or mode actually changed.
-  if (m_marqueeStateValid && m_marqueeStateAutoScroll == m_autoScroll &&
-      m_marqueeStateHoverOnly == m_autoScrollHoverOnly && m_marqueeStateHovered == hovered() &&
-      m_marqueeStateWidth == width() && m_marqueeStateFullTextWidth == m_fullTextWidth &&
-      m_marqueeStateLoopPeriod == m_marqueeLoopPeriod && m_marqueeStateSpeed == m_scrollSpeedPxPerSec) {
+  if (m_marqueeStateValid
+      && m_marqueeStateAutoScroll == m_autoScroll
+      && m_marqueeStateHoverOnly == m_autoScrollHoverOnly
+      && m_marqueeStateHovered == hovered()
+      && m_marqueeStateWidth == width()
+      && m_marqueeStateFullTextWidth == m_fullTextWidth
+      && m_marqueeStateLoopPeriod == m_marqueeLoopPeriod
+      && m_marqueeStateSpeed == m_scrollSpeedPxPerSec) {
     if (runMarquee && m_marqueeAnimId == 0 && m_snapAnimId == 0) {
       // Edge case: animation manager wasn't ready when we last tried.
       startMarqueeLoop();
@@ -390,18 +396,28 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
     measureMaxWidth = 0.0f;
   }
   const int effectiveMaxLines = m_autoScroll ? 1 : m_userMaxLines;
-  const bool singleLine =
-      m_autoScroll || (effectiveMaxLines == 1) ||
-      (effectiveMaxLines == 0 && configuredMaxWidth <= 0.0f && m_plainText.find('\n') == std::string::npos);
+  const bool singleLine = m_autoScroll
+      || (effectiveMaxLines == 1)
+      || (effectiveMaxLines == 0 && configuredMaxWidth <= 0.0f && m_plainText.find('\n') == std::string::npos);
   const TextAlign align = m_textNode->textAlign();
+  const FontWeight fontWeight = m_textNode->fontWeight();
   const float renderScale = renderer.renderScale();
   const std::uint64_t textMetricsGeneration = renderer.textMetricsGeneration();
-  if (m_measureCached && m_cachedText == m_plainText && m_cachedFontSize == m_textNode->fontSize() &&
-      m_cachedBold == m_textNode->bold() && m_cachedMaxWidth == m_userMaxWidth && m_cachedMaxLines == m_userMaxLines &&
-      m_cachedMinWidth == m_minWidth && m_cachedConstraintMinWidth == constraints.minWidth &&
-      m_cachedConstraintMaxWidth == constraints.maxWidth && m_cachedHasConstraintMaxWidth == constraints.hasMaxWidth &&
-      m_cachedRenderScale == renderScale && m_cachedTextMetricsGeneration == textMetricsGeneration &&
-      m_cachedTextAlign == align && m_cachedBaselineMode == m_baselineMode && m_cachedAutoScroll == m_autoScroll) {
+  if (m_measureCached
+      && m_cachedText == m_plainText
+      && m_cachedFontSize == m_textNode->fontSize()
+      && m_cachedFontWeight == fontWeight
+      && m_cachedMaxWidth == m_userMaxWidth
+      && m_cachedMaxLines == m_userMaxLines
+      && m_cachedMinWidth == m_minWidth
+      && m_cachedConstraintMinWidth == constraints.minWidth
+      && m_cachedConstraintMaxWidth == constraints.maxWidth
+      && m_cachedHasConstraintMaxWidth == constraints.hasMaxWidth
+      && m_cachedRenderScale == renderScale
+      && m_cachedTextMetricsGeneration == textMetricsGeneration
+      && m_cachedTextAlign == align
+      && m_cachedBaselineMode == m_baselineMode
+      && m_cachedAutoScroll == m_autoScroll) {
     return LayoutSize{.width = width(), .height = height()};
   }
 
@@ -422,8 +438,10 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
     }
   }
 
-  auto metrics = renderer.measureText(m_plainText, m_textNode->fontSize(), m_textNode->bold(), measureMaxWidth,
-                                      effectiveMaxLines, align, m_textNode->fontFamily());
+  auto metrics = renderer.measureText(
+      m_plainText, m_textNode->fontSize(), fontWeight, measureMaxWidth, effectiveMaxLines, align,
+      m_textNode->fontFamily()
+  );
   const float measuredWidth = measureMaxWidth > 0.0f ? std::min(metrics.width, measureMaxWidth) : metrics.width;
   m_fullTextWidth = m_autoScroll ? measuredWidth : 0.0f;
   const bool hasAssignedWidth = constraints.hasExactWidth();
@@ -433,12 +451,12 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
   const float inkHeight = std::max(0.0f, metrics.inkBottom - metrics.inkTop);
   if (singleLine && inkHeight > 0.0f) {
     float height = 0.0f;
-    if (m_baselineMode == LabelBaselineMode::Stable) {
-      height = std::round(actualHeight);
-      m_baselineOffset = -metrics.top + (height - actualHeight) * 0.5f;
-    } else {
+    if (m_baselineMode == LabelBaselineMode::InkCentered) {
       height = std::round(std::max(actualHeight, inkHeight));
-      m_baselineOffset = -metrics.inkTop + (height - inkHeight) * 0.5f;
+      m_baselineOffset = std::round(-metrics.inkTop + (height - inkHeight) * 0.5f);
+    } else {
+      height = std::round(actualHeight);
+      m_baselineOffset = std::round(-metrics.top + (height - actualHeight) * 0.5f);
     }
     float finalWidth = 0.0f;
     if (m_autoScroll) {
@@ -500,7 +518,8 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
   }
 
   if (overflow && m_autoScroll) {
-    auto gapMetrics = renderer.measureText(kMarqueeGap, m_textNode->fontSize(), m_textNode->bold(), 0.0f, 1, align);
+    auto gapMetrics =
+        renderer.measureText(kMarqueeGap, m_textNode->fontSize(), fontWeight, 0.0f, 1, align, m_textNode->fontFamily());
     m_marqueeLoopPeriod = m_fullTextWidth + gapMetrics.width;
     m_textNode->setText(m_plainText + kMarqueeGap + m_plainText);
   } else {
@@ -512,7 +531,7 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
 
   m_cachedText = m_plainText;
   m_cachedFontSize = m_textNode->fontSize();
-  m_cachedBold = m_textNode->bold();
+  m_cachedFontWeight = fontWeight;
   m_cachedMaxWidth = m_userMaxWidth;
   m_cachedMaxLines = m_userMaxLines;
   m_cachedMinWidth = m_minWidth;

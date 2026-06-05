@@ -21,7 +21,6 @@ private:
   void syncState(Renderer& renderer);
 
   INetworkService* m_network = nullptr;
-  wl_output* m_output = nullptr;
   bool m_showLabel = true;
   Glyph* m_glyph = nullptr;
   Label* m_label = nullptr;

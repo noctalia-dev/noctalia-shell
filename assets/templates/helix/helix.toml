@@ -11,15 +11,15 @@
 "constant.character" = "secondaryContainer"
 "constant.character.escape" = "tertiaryContainer"
 
-"string" = { fg = "tertiary", bg = "surfaceContainerHigh" }
-"string.regexp" = { fg = "tertiaryContainer", bg = "surfaceContainerHigh" }
-"string.special" = { fg = "tertiary", bg = "surfaceContainerHigh" }
-"string.special.symbol" = { fg = "tertiary", bg = "surfaceContainerHigh" }
+"string" = { fg = "tertiary"}
+"string.regexp" = { fg = "tertiaryContainer" }
+"string.special" = { fg = "tertiary" }
+"string.special.symbol" = { fg = "tertiary" }
 "string.special.path" = { fg = "secondary", underline = { color = "secondary", style = "line" } }
 
 "path" = { fg = "secondary", underline = { color = "secondary", style = "line" } }
 
-"comment" = { fg = "outline", bg = "surfaceContainerHigh", modifiers = ["italic"] }
+"comment" = { fg = "outline", modifiers = ["italic"] }
 
 "variable" = "onSurface"
 "variable.builtin" = "secondary"
@@ -96,7 +96,7 @@
 "ui.menu" = { fg = "onSurface", bg = "surfaceContainer" }
 "ui.menu.selected" = { fg = "onPrimary", bg = "primary", modifiers = ["bold"] }
 
-"ui.selection" = { bg = "surfaceContainerHigh" }
+"ui.selection" = { bg = "primary", fg = "onPrimary" }
 
 "ui.highlight" = { bg = "primaryContainer", modifiers = ["bold"] }
 

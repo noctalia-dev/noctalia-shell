@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-config_file="${XDG_CONFIG_HOME:-$HOME/.config}/scroll/config"
-include_line='include ~/.config/scroll/noctalia'
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}"
+config_file="$config_dir/scroll/config"
+include_line="include $config_dir/scroll/noctalia"
 
 mkdir -p "$(dirname "$config_file")"
 

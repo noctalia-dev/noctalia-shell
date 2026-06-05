@@ -3,9 +3,11 @@
 #include "config/config_service.h"
 #include "core/log.h"
 #include "core/resource_paths.h"
+#include "ipc/ipc_service.h"
 #include "theme/community_templates.h"
 #include "theme/template_engine.h"
 #include "util/file_utils.h"
+#include "util/string_utils.h"
 
 #include <filesystem>
 #include <string>
@@ -138,18 +140,66 @@ namespace noctalia::theme {
     }
   }
 
-  void TemplateApplyService::apply(const GeneratedPalette& palette, std::string_view defaultMode) const {
+  void TemplateApplyService::apply(const GeneratedPalette& palette, std::string_view defaultMode, bool force) const {
     ApplyRequest request = makeRequest(palette, defaultMode);
     {
       std::lock_guard lock(m_mutex);
+      // Config reloads fire on every settings change, not just theme changes.
+      // Skip redundant reprocessing (and its synchronous template hooks) when
+      // nothing the templates depend on has changed. Explicit re-application
+      // (startup, IPC, template activation) passes force or carries new inputs.
+      if (!force && m_lastAppliedRequest.has_value() && sameInputs(request, *m_lastAppliedRequest)) {
+        return;
+      }
       request.generation = ++m_nextGeneration;
+      m_lastAppliedRequest = request;
       m_pendingRequest = std::move(request);
     }
     m_cv.notify_one();
   }
 
-  TemplateApplyService::ApplyRequest TemplateApplyService::makeRequest(const GeneratedPalette& palette,
-                                                                       std::string_view defaultMode) const {
+  bool TemplateApplyService::reapplyLast() const {
+    GeneratedPalette palette;
+    std::string defaultMode;
+    {
+      std::lock_guard lock(m_mutex);
+      if (!m_lastAppliedRequest.has_value()) {
+        return false;
+      }
+      palette = m_lastAppliedRequest->palette;
+      defaultMode = m_lastAppliedRequest->defaultMode;
+    }
+
+    apply(palette, defaultMode, /*force=*/true);
+    return true;
+  }
+
+  bool TemplateApplyService::sameInputs(const ApplyRequest& a, const ApplyRequest& b) {
+    return a.palette == b.palette
+        && a.templates == b.templates
+        && a.defaultMode == b.defaultMode
+        && a.imagePath == b.imagePath
+        && a.schemeType == b.schemeType;
+  }
+
+  void TemplateApplyService::registerIpc(IpcService& ipc) {
+    ipc.registerHandler(
+        "templates-apply",
+        [this](const std::string& args) -> std::string {
+          if (!StringUtils::trim(args).empty()) {
+            return "error: usage: templates-apply\n";
+          }
+          if (!reapplyLast()) {
+            return "error: theme palette has not been resolved yet\n";
+          }
+          return "ok\n";
+        },
+        "templates-apply", "Apply configured theme templates for the current palette"
+    );
+  }
+
+  TemplateApplyService::ApplyRequest
+  TemplateApplyService::makeRequest(const GeneratedPalette& palette, std::string_view defaultMode) const {
     const ThemeConfig& theme = m_config.config().theme;
     return ApplyRequest{
         .palette = palette,
@@ -170,8 +220,9 @@ namespace noctalia::theme {
 
     TemplateEngine engine(TemplateEngine::makeThemeData(request.palette), options);
 
-    if (request.templates.enableBuiltinTemplates && !request.templates.builtinIds.empty() &&
-        !requestSuperseded(request.generation)) {
+    if (request.templates.enableBuiltinTemplates
+        && !request.templates.builtinIds.empty()
+        && !requestSuperseded(request.generation)) {
       TemplateEngine::Options builtinOptions = options;
       builtinOptions.enabledTemplates.insert(request.templates.builtinIds.begin(), request.templates.builtinIds.end());
       TemplateEngine builtinEngine(TemplateEngine::makeThemeData(request.palette), std::move(builtinOptions));
@@ -181,8 +232,9 @@ namespace noctalia::theme {
       }
     }
 
-    if (request.templates.enableCommunityTemplates && !request.templates.communityIds.empty() &&
-        !requestSuperseded(request.generation)) {
+    if (request.templates.enableCommunityTemplates
+        && !request.templates.communityIds.empty()
+        && !requestSuperseded(request.generation)) {
       for (const auto& id : request.templates.communityIds) {
         if (requestSuperseded(request.generation))
           return;

@@ -29,6 +29,8 @@ public:
   virtual bool activateAccessPoint(const AccessPointInfo& ap, const std::string& psk) = 0;
   virtual bool activateVpnConnection(const VpnConnectionInfo& vpn) = 0;
   virtual bool deactivateVpnConnection(const VpnConnectionInfo& vpn) = 0;
+  [[nodiscard]] virtual bool canActivateWiredConnection() const noexcept { return false; }
+  virtual bool activateWiredConnection() { return false; }
   virtual void setWirelessEnabled(bool enabled) = 0;
   virtual void disconnect() = 0;
   virtual void forgetSsid(const std::string& ssid) = 0;

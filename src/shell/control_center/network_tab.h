@@ -29,6 +29,7 @@ public:
 private:
   void doLayout(Renderer& renderer, float contentWidth, float bodyHeight) override;
   void doUpdate(Renderer& renderer) override;
+  void onPanelCardOpacityChanged(float opacity) override;
 
   void syncCurrentCard();
   void rebuildApList(Renderer& renderer);
@@ -38,8 +39,8 @@ private:
   void submitPasswordPrompt(const std::string& value);
   void cancelPasswordPrompt();
   void clearPasswordPrompt();
-  [[nodiscard]] std::string structureKey(const std::vector<AccessPointInfo>& aps,
-                                         const std::vector<VpnConnectionInfo>& vpns) const;
+  [[nodiscard]] std::string
+  structureKey(const std::vector<AccessPointInfo>& aps, const std::vector<VpnConnectionInfo>& vpns) const;
   [[nodiscard]] std::string apRowsKey(const std::vector<AccessPointInfo>& aps) const;
 
   INetworkService* m_network = nullptr;
@@ -60,7 +61,7 @@ private:
 
   Button* m_rescanButton = nullptr;
   Toggle* m_wifiToggle = nullptr;
-  Flex* m_disconnectRow = nullptr;
+  Flex* m_currentRow = nullptr;
   Button* m_disconnectButton = nullptr;
   Spinner* m_scanSpinner = nullptr;
   bool m_vpnVisible = true;

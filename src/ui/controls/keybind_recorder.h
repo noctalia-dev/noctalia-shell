@@ -14,6 +14,12 @@ class InputArea;
 class Label;
 class Renderer;
 
+enum class ModifierPolicy : std::uint8_t {
+  Required,  // A modifier (Ctrl/Alt/Shift) must accompany printable keys.
+  Optional,  // Bare printable keys and modifier combos are both accepted.
+  Forbidden, // Modifiers are rejected; only bare keys are accepted.
+};
+
 // Records a KeyChord from live keyboard input. Rejects any chord involving Super.
 class KeybindRecorder : public Flex {
 public:
@@ -27,6 +33,7 @@ public:
   void setUnsetPlaceholder(std::string_view text);
   void setRecordingPlaceholder(std::string_view text);
   void setOnCommit(std::function<void(KeyChord)> callback);
+  void setModifierPolicy(ModifierPolicy policy);
 
   [[nodiscard]] bool isRecording() const noexcept { return m_recording; }
 
@@ -56,5 +63,6 @@ private:
   float m_scale = 1.0f;
   bool m_recording = false;
   bool m_enabled = true;
+  ModifierPolicy m_modifierPolicy = ModifierPolicy::Required;
   VisualState m_visualState = VisualState::Idle;
 };

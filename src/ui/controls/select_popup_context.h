@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ui/controls/color_swatch_preview.h"
 #include "ui/palette.h"
 
 #include <cstddef>
@@ -24,6 +25,7 @@ public:
     float horizontalPadding = 0.0f;
     std::vector<std::string> options;
     std::vector<ColorSpec> indicatorColors;
+    std::vector<ColorSwatchPreview> optionSwatchPreviews;
     std::size_t selectedIndex = static_cast<std::size_t>(-1);
     std::size_t maxVisibleOptions = 6;
   };

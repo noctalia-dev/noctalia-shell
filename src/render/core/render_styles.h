@@ -97,19 +97,29 @@ struct RoundedRectStyle {
 };
 
 constexpr bool operator==(const RoundedRectStyle& lhs, const RoundedRectStyle& rhs) noexcept {
-  return lhs.fill == rhs.fill && lhs.border == rhs.border && lhs.fillMode == rhs.fillMode &&
-         lhs.gradientDirection == rhs.gradientDirection && lhs.corners == rhs.corners &&
-         lhs.gradientStops == rhs.gradientStops && lhs.logicalInset == rhs.logicalInset && lhs.radius == rhs.radius &&
-         lhs.softness == rhs.softness && lhs.noAa == rhs.noAa && lhs.invertFill == rhs.invertFill &&
-         lhs.borderWidth == rhs.borderWidth && lhs.outerShadow == rhs.outerShadow &&
-         lhs.shadowCutoutOffsetX == rhs.shadowCutoutOffsetX && lhs.shadowCutoutOffsetY == rhs.shadowCutoutOffsetY &&
-         lhs.shadowExclusion == rhs.shadowExclusion && lhs.shadowExclusionOffsetX == rhs.shadowExclusionOffsetX &&
-         lhs.shadowExclusionOffsetY == rhs.shadowExclusionOffsetY &&
-         lhs.shadowExclusionWidth == rhs.shadowExclusionWidth &&
-         lhs.shadowExclusionHeight == rhs.shadowExclusionHeight &&
-         lhs.shadowExclusionCorners == rhs.shadowExclusionCorners &&
-         lhs.shadowExclusionLogicalInset == rhs.shadowExclusionLogicalInset &&
-         lhs.shadowExclusionRadius == rhs.shadowExclusionRadius;
+  return lhs.fill == rhs.fill
+      && lhs.border == rhs.border
+      && lhs.fillMode == rhs.fillMode
+      && lhs.gradientDirection == rhs.gradientDirection
+      && lhs.corners == rhs.corners
+      && lhs.gradientStops == rhs.gradientStops
+      && lhs.logicalInset == rhs.logicalInset
+      && lhs.radius == rhs.radius
+      && lhs.softness == rhs.softness
+      && lhs.noAa == rhs.noAa
+      && lhs.invertFill == rhs.invertFill
+      && lhs.borderWidth == rhs.borderWidth
+      && lhs.outerShadow == rhs.outerShadow
+      && lhs.shadowCutoutOffsetX == rhs.shadowCutoutOffsetX
+      && lhs.shadowCutoutOffsetY == rhs.shadowCutoutOffsetY
+      && lhs.shadowExclusion == rhs.shadowExclusion
+      && lhs.shadowExclusionOffsetX == rhs.shadowExclusionOffsetX
+      && lhs.shadowExclusionOffsetY == rhs.shadowExclusionOffsetY
+      && lhs.shadowExclusionWidth == rhs.shadowExclusionWidth
+      && lhs.shadowExclusionHeight == rhs.shadowExclusionHeight
+      && lhs.shadowExclusionCorners == rhs.shadowExclusionCorners
+      && lhs.shadowExclusionLogicalInset == rhs.shadowExclusionLogicalInset
+      && lhs.shadowExclusionRadius == rhs.shadowExclusionRadius;
 }
 
 struct SpinnerStyle {
@@ -132,8 +142,10 @@ struct ScreenCornerStyle {
 };
 
 constexpr bool operator==(const ScreenCornerStyle& lhs, const ScreenCornerStyle& rhs) noexcept {
-  return lhs.color == rhs.color && lhs.position == rhs.position && lhs.exponent == rhs.exponent &&
-         lhs.softness == rhs.softness;
+  return lhs.color == rhs.color
+      && lhs.position == rhs.position
+      && lhs.exponent == rhs.exponent
+      && lhs.softness == rhs.softness;
 }
 
 enum class AudioSpectrumOrientation : std::uint8_t {
@@ -150,8 +162,50 @@ struct AudioSpectrumStyle {
 };
 
 constexpr bool operator==(const AudioSpectrumStyle& lhs, const AudioSpectrumStyle& rhs) noexcept {
-  return lhs.lowColor == rhs.lowColor && lhs.highColor == rhs.highColor && lhs.orientation == rhs.orientation &&
-         lhs.mirrored == rhs.mirrored && lhs.centered == rhs.centered;
+  return lhs.lowColor == rhs.lowColor
+      && lhs.highColor == rhs.highColor
+      && lhs.orientation == rhs.orientation
+      && lhs.mirrored == rhs.mirrored
+      && lhs.centered == rhs.centered;
+}
+
+enum class FancyAudioVisualizerMode : std::uint8_t {
+  Bars,
+  Wave,
+  Rings,
+  BarsRings,
+  WaveRings,
+  All,
+};
+
+struct FancyAudioVisualizerStyle {
+  Color primaryColor = rgba(0.0f, 0.0f, 0.0f, 1.0f);
+  Color secondaryColor = rgba(0.0f, 0.0f, 0.0f, 1.0f);
+  FancyAudioVisualizerMode mode = FancyAudioVisualizerMode::BarsRings;
+  float time = 0.0f;
+  float sensitivity = 1.5f;
+  float rotationSpeed = 0.5f;
+  float barWidth = 0.6f;
+  float ringOpacity = 0.8f;
+  float bloomIntensity = 0.5f;
+  float waveThickness = 1.0f;
+  float innerDiameter = 0.7f;
+  float cornerRadius = 12.0f;
+};
+
+constexpr bool operator==(const FancyAudioVisualizerStyle& lhs, const FancyAudioVisualizerStyle& rhs) noexcept {
+  return lhs.primaryColor == rhs.primaryColor
+      && lhs.secondaryColor == rhs.secondaryColor
+      && lhs.mode == rhs.mode
+      && lhs.time == rhs.time
+      && lhs.sensitivity == rhs.sensitivity
+      && lhs.rotationSpeed == rhs.rotationSpeed
+      && lhs.barWidth == rhs.barWidth
+      && lhs.ringOpacity == rhs.ringOpacity
+      && lhs.bloomIntensity == rhs.bloomIntensity
+      && lhs.waveThickness == rhs.waveThickness
+      && lhs.innerDiameter == rhs.innerDiameter
+      && lhs.cornerRadius == rhs.cornerRadius;
 }
 
 enum class EffectType : std::uint8_t { None, Sun, Snow, Rain, Cloud, Fog, Stars };

@@ -31,6 +31,14 @@ void Separator::setOrientation(SeparatorOrientation orientation) {
   markLayoutDirty();
 }
 
+void Separator::setGradientEdges(bool enabled) {
+  if (m_gradientEdges == enabled) {
+    return;
+  }
+  m_gradientEdges = enabled;
+  applyPalette();
+}
+
 bool Separator::ruleIsHorizontal() const {
   if (m_orientation == SeparatorOrientation::HorizontalRule) {
     return true;
@@ -95,31 +103,37 @@ void Separator::applyPalette() {
   const bool horiz = ruleIsHorizontal();
 
   const Color opaque = resolveColorSpec(m_color);
-  Color transparent = opaque;
-  transparent.a = 0.0f;
+  const Color startEdge = m_gradientEdges ? Color{opaque.r, opaque.g, opaque.b, 0.0f} : opaque;
+  const Color endEdge = startEdge;
   const GradientDirection dir = horiz ? GradientDirection::Horizontal : GradientDirection::Vertical;
 
-  m_rectStart->setStyle(RoundedRectStyle{
-      .fill = transparent,
-      .border = clearColor(),
-      .fillMode = FillMode::LinearGradient,
-      .gradientDirection = dir,
-      .gradientStops = {GradientStop{0.0f, transparent}, GradientStop{0.0f, transparent}, GradientStop{1.0f, opaque},
-                        GradientStop{1.0f, opaque}},
-      .radius = 0.0f,
-      .softness = 0.0f,
-      .borderWidth = 0.0f,
-  });
+  m_rectStart->setStyle(
+      RoundedRectStyle{
+          .fill = startEdge,
+          .border = clearColor(),
+          .fillMode = FillMode::LinearGradient,
+          .gradientDirection = dir,
+          .gradientStops =
+              {GradientStop{0.0f, startEdge}, GradientStop{0.0f, startEdge}, GradientStop{1.0f, opaque},
+               GradientStop{1.0f, opaque}},
+          .radius = 0.0f,
+          .softness = 0.0f,
+          .borderWidth = 0.0f,
+      }
+  );
 
-  m_rectEnd->setStyle(RoundedRectStyle{
-      .fill = opaque,
-      .border = clearColor(),
-      .fillMode = FillMode::LinearGradient,
-      .gradientDirection = dir,
-      .gradientStops = {GradientStop{0.0f, opaque}, GradientStop{0.0f, opaque}, GradientStop{1.0f, transparent},
-                        GradientStop{1.0f, transparent}},
-      .radius = 0.0f,
-      .softness = 0.0f,
-      .borderWidth = 0.0f,
-  });
+  m_rectEnd->setStyle(
+      RoundedRectStyle{
+          .fill = opaque,
+          .border = clearColor(),
+          .fillMode = FillMode::LinearGradient,
+          .gradientDirection = dir,
+          .gradientStops =
+              {GradientStop{0.0f, opaque}, GradientStop{0.0f, opaque}, GradientStop{1.0f, endEdge},
+               GradientStop{1.0f, endEdge}},
+          .radius = 0.0f,
+          .softness = 0.0f,
+          .borderWidth = 0.0f,
+      }
+  );
 }

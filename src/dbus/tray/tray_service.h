@@ -59,7 +59,7 @@ struct TrayMenuEntry {
 class TrayService {
 public:
   using ChangeCallback = std::function<void()>;
-  using MenuToggleCallback = std::function<void(const std::string&)>;
+  using MenuToggleCallback = std::function<void(const std::string&, float)>;
 
   explicit TrayService(SessionBus& bus);
   ~TrayService();
@@ -69,7 +69,7 @@ public:
   void start();
   void setChangeCallback(ChangeCallback callback);
   void setMenuToggleCallback(MenuToggleCallback callback);
-  void requestMenuToggle(const std::string& itemId) const;
+  void requestMenuToggle(const std::string& itemId, float contentScale = 1.0f) const;
   [[nodiscard]] std::size_t itemCount() const noexcept;
   [[nodiscard]] std::vector<TrayItemInfo> items() const;
   [[nodiscard]] std::vector<TrayMenuEntry> menuEntries(const std::string& itemId);
@@ -119,8 +119,9 @@ private:
   void refreshItemMetadata(const std::string& itemId);
   void ensureMenuCache(const std::string& itemId, const std::string& busName, const std::string& menuPath);
   void dropMenuCache(const std::string& itemId);
-  void fetchMenuProperties(const std::string& itemId, const std::vector<std::int32_t>& entryIds,
-                           std::function<void(bool)> callback);
+  void fetchMenuProperties(
+      const std::string& itemId, const std::vector<std::int32_t>& entryIds, std::function<void(bool)> callback
+  );
   void requestMenuSubtree(const std::string& itemId, std::int32_t parentId, bool force = false);
   void requestMenuLayoutAfterAboutToShow(const std::string& itemId, std::int32_t parentId, std::uint64_t generation);
   void sendMenuEvent(const std::string& itemId, std::int32_t entryId, const std::string& eventName);

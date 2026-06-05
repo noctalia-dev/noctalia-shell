@@ -4,41 +4,44 @@
 #include "compositors/workspace_backend.h"
 
 #include <cstddef>
+#include <json.hpp>
 #include <optional>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
-struct zdwl_ipc_output_v2;
+namespace compositors::mango {
+  class MangoRuntime;
+}
 
 class MangoWorkspaceBackend final : public WorkspaceBackend,
                                     public OutputLifecycleObserver,
-                                    public DwlIpcWorkspaceProtocolBinder {
+                                    public WorkspaceOutputNameResolver,
+                                    public WorkspaceSocketConnector {
 public:
-  void bindDwlIpcWorkspace(zdwl_ipc_manager_v2* manager) override;
+  explicit MangoWorkspaceBackend(compositors::mango::MangoRuntime& runtime);
 
-  [[nodiscard]] const char* backendName() const override { return "dwl-ipc"; }
-  [[nodiscard]] bool isAvailable() const noexcept override { return m_manager != nullptr; }
+  [[nodiscard]] const char* backendName() const override { return "mango-ipc"; }
+  [[nodiscard]] bool isAvailable() const noexcept override;
   void setChangeCallback(ChangeCallback callback) override;
+  void setOutputNameResolver(WorkspaceOutputNameResolver::Resolver resolver) override;
+  bool connectSocket() override;
   void activate(const std::string& id) override;
   void activateForOutput(wl_output* output, const std::string& id) override;
   void activateForOutput(wl_output* output, const Workspace& workspace) override;
   [[nodiscard]] std::vector<Workspace> all() const override;
   [[nodiscard]] std::vector<Workspace> forOutput(wl_output* output) const override;
+  [[nodiscard]] std::unordered_map<std::string, std::vector<std::string>>
+  appIdsByWorkspace(wl_output* output) const override;
+  [[nodiscard]] std::vector<WorkspaceWindow> workspaceWindows(wl_output* output) const override;
+  void focusWindow(const std::string& windowId) override;
   void cleanup() override;
-
   void onOutputAdded(wl_output* output) override;
   void onOutputRemoved(wl_output* output) override;
-
-  void onTagCount(std::uint32_t amount);
-  void onLayoutAnnounced(const char* name);
-  void onOutputActive(zdwl_ipc_output_v2* handle, std::uint32_t active);
-  void onOutputTitle(zdwl_ipc_output_v2* handle, const char* title);
-  void onOutputAppId(zdwl_ipc_output_v2* handle, const char* appId);
-  void onOutputTag(zdwl_ipc_output_v2* handle, std::uint32_t tag, std::uint32_t state, std::uint32_t clients,
-                   std::uint32_t focused);
-  void onOutputFrame(zdwl_ipc_output_v2* handle);
+  [[nodiscard]] int pollFd() const noexcept override;
+  [[nodiscard]] int pollTimeoutMs() const noexcept override;
+  void dispatchPoll(short revents) override;
 
   [[nodiscard]] wl_output* ipcSelectedOutput() const;
 
@@ -46,40 +49,61 @@ public:
 
 private:
   struct TagInfo {
+    std::uint32_t index = 0;
     bool active = false;
     bool urgent = false;
     bool occupied = false;
+    bool hasFocusedClient = false;
   };
 
   struct OutputState {
-    wl_output* output = nullptr;
-    zdwl_ipc_output_v2* handle = nullptr;
+    std::string name;
     bool active = false;
-    bool pendingIpcActive = false;
-    bool hasPendingIpcActive = false;
-    std::string dwlTitle;
-    std::string dwlAppId;
-    bool hasPendingTitle = false;
-    std::string pendingTitle;
-    bool hasPendingAppId = false;
-    std::string pendingAppId;
+    std::int32_t x = 0;
+    std::int32_t y = 0;
+    std::int32_t width = 0;
+    std::int32_t height = 0;
+    std::string activeClientId;
+    std::string activeClientTitle;
+    std::string activeClientAppId;
     std::vector<TagInfo> tags;
   };
 
-  void ensureOutputBound(wl_output* output);
+  struct ClientState {
+    std::string id;
+    std::string title;
+    std::string appId;
+    std::string monitorName;
+    std::vector<std::uint32_t> tags;
+    bool focused = false;
+    std::int32_t x = 0;
+    std::int32_t y = 0;
+  };
+
+  [[nodiscard]] bool openWatchSocket();
+  void closeWatchSocket();
+  void readWatchSocket();
+  bool handleMessage(std::string_view line);
+  void refreshClients();
+  void syncFocusedClientTags();
+  void notifyChanged();
+  [[nodiscard]] std::string outputName(wl_output* output) const;
   [[nodiscard]] OutputState* activeOutputState();
-  [[nodiscard]] const OutputState* preferredOutputState() const;
+  [[nodiscard]] const OutputState* activeOutputState() const;
+  [[nodiscard]] const OutputState* outputStateFor(wl_output* output) const;
   [[nodiscard]] static std::optional<std::size_t> parseTagIndex(const Workspace& workspace);
   [[nodiscard]] static std::optional<std::size_t> parseTagIndex(const std::string& id);
-  [[nodiscard]] std::size_t protocolIndexForDisplay(std::size_t displayIndex) const;
-  [[nodiscard]] static Workspace makeWorkspace(std::size_t index, const TagInfo& tag);
-  [[nodiscard]] std::string summarizeTags(const OutputState& state) const;
-  void notifyChanged();
+  [[nodiscard]] std::optional<std::size_t> shellActiveTagIndex(const std::vector<TagInfo>& tags) const;
+  [[nodiscard]] static Workspace makeWorkspace(const TagInfo& tag, bool shellActive);
+  [[nodiscard]] static std::optional<OutputState> parseMonitor(const nlohmann::json& json);
+  [[nodiscard]] static std::optional<ClientState> parseClient(const nlohmann::json& json);
 
-  zdwl_ipc_manager_v2* m_manager = nullptr;
-  std::uint32_t m_tagCount = 0;
-  std::vector<std::string> m_layouts;
-  std::unordered_map<wl_output*, OutputState> m_outputs;
-  std::unordered_map<zdwl_ipc_output_v2*, wl_output*> m_outputByHandle;
+  compositors::mango::MangoRuntime& m_runtime;
+  WorkspaceOutputNameResolver::Resolver m_outputNameResolver;
+  int m_watchFd = -1;
+  std::string m_readBuffer;
+  std::vector<wl_output*> m_knownOutputs;
+  std::unordered_map<std::string, OutputState> m_outputsByName;
+  std::vector<ClientState> m_clients;
   ChangeCallback m_changeCallback;
 };

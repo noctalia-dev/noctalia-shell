@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "core/ui_phase.h"
+#include "render/core/renderer.h"
 #include "render/scene/node.h"
 
 #include <functional>
@@ -21,11 +22,12 @@ public:
   using UpdateCallback = std::function<void()>;
   using RedrawCallback = std::function<void()>;
   using FrameTickRequestCallback = std::function<void()>;
-  using PanelToggleCallback =
-      std::function<void(std::string_view panelId, std::string_view context, std::optional<float> anchorSurfaceX,
-                         std::optional<float> anchorSurfaceY)>;
+  using PanelToggleCallback = std::function<void(
+      std::string_view panelId, std::string_view context, std::optional<float> anchorSurfaceX,
+      std::optional<float> anchorSurfaceY
+  )>;
 
-  virtual ~Widget() = default;
+  virtual ~Widget();
 
   virtual void create() = 0;
   void layout(Renderer& renderer, float containerWidth, float containerHeight) {
@@ -42,6 +44,9 @@ public:
     (void)event;
     return false;
   }
+  [[nodiscard]] virtual bool reservesMiddleClick() const noexcept { return false; }
+
+  [[nodiscard]] virtual bool noGapAroundMe() const noexcept { return false; }
 
   [[nodiscard]] Node* root() const noexcept { return m_root ? m_root.get() : m_rootPtr; }
   [[nodiscard]] float width() const noexcept;
@@ -56,6 +61,8 @@ public:
   void setPanelToggleCallback(PanelToggleCallback callback);
   void setContentScale(float scale) noexcept { m_contentScale = scale; }
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
+  void setLabelFontWeight(FontWeight fontWeight) noexcept { m_labelFontWeight = fontWeight; }
+  [[nodiscard]] FontWeight labelFontWeight() const noexcept { return m_labelFontWeight; }
   void setConfigName(std::string name) { m_configName = std::move(name); }
   [[nodiscard]] std::string_view configName() const noexcept { return m_configName; }
   void setAnchor(bool anchor) noexcept { m_anchor = anchor; }
@@ -82,15 +89,17 @@ protected:
   void requestUpdate();
   void requestRedraw();
   void requestFrameTick();
-  void requestPanelToggle(std::string_view panelId, std::string_view context = {},
-                          std::optional<float> anchorSurfaceX = std::nullopt,
-                          std::optional<float> anchorSurfaceY = std::nullopt);
+  void requestPanelToggle(
+      std::string_view panelId, std::string_view context = {}, std::optional<float> anchorSurfaceX = std::nullopt,
+      std::optional<float> anchorSurfaceY = std::nullopt
+  );
   void setRoot(std::unique_ptr<Node> root) { m_root = std::move(root); }
   void clearReleasedRoot() noexcept { m_rootPtr = nullptr; }
   virtual void doLayout(Renderer& renderer, float containerWidth, float containerHeight) = 0;
   virtual void doUpdate(Renderer& renderer) { (void)renderer; }
 
   float m_contentScale = 1.0f;
+  FontWeight m_labelFontWeight = FontWeight::Medium;
   std::string m_configName;
   bool m_anchor = false;
   AnimationManager* m_animations = nullptr;

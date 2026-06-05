@@ -207,15 +207,15 @@ namespace noctalia::theme {
     const auto [tertiaryH, tertiaryS, _tertiaryL] = tertiary.toHsl();
     const auto [errorH, errorS, _errorL] = error.toHsl();
 
-    const Color onPrimaryContainer =
-        isDark ? ensureContrast(Color::fromHsl(primaryH, primaryS, 0.90), primaryContainer, 4.5)
-               : ensureContrast(Color::fromHsl(primaryH, primaryS, 0.15), primaryContainer, 4.5);
-    const Color onSecondaryContainer =
-        isDark ? ensureContrast(Color::fromHsl(secondaryH, secondaryS, 0.90), secondaryContainer, 4.5)
-               : ensureContrast(Color::fromHsl(secondaryH, secondaryS, 0.15), secondaryContainer, 4.5);
-    const Color onTertiaryContainer =
-        isDark ? ensureContrast(Color::fromHsl(tertiaryH, tertiaryS, 0.90), tertiaryContainer, 4.5)
-               : ensureContrast(Color::fromHsl(tertiaryH, tertiaryS, 0.15), tertiaryContainer, 4.5);
+    const Color onPrimaryContainer = isDark
+        ? ensureContrast(Color::fromHsl(primaryH, primaryS, 0.90), primaryContainer, 4.5)
+        : ensureContrast(Color::fromHsl(primaryH, primaryS, 0.15), primaryContainer, 4.5);
+    const Color onSecondaryContainer = isDark
+        ? ensureContrast(Color::fromHsl(secondaryH, secondaryS, 0.90), secondaryContainer, 4.5)
+        : ensureContrast(Color::fromHsl(secondaryH, secondaryS, 0.15), secondaryContainer, 4.5);
+    const Color onTertiaryContainer = isDark
+        ? ensureContrast(Color::fromHsl(tertiaryH, tertiaryS, 0.90), tertiaryContainer, 4.5)
+        : ensureContrast(Color::fromHsl(tertiaryH, tertiaryS, 0.15), tertiaryContainer, 4.5);
     const Color onErrorContainer = isDark ? ensureContrast(Color::fromHsl(errorH, errorS, 0.90), errorContainer, 4.5)
                                           : ensureContrast(Color::fromHsl(errorH, errorS, 0.15), errorContainer, 4.5);
 
@@ -225,37 +225,37 @@ namespace noctalia::theme {
 
     const Color onPrimaryFixed = isDark ? ensureContrast(Color::fromHsl(primaryH, 0.15, 0.15), primaryFixed, 4.5)
                                         : ensureContrast(Color::fromHsl(primaryH, 0.15, 0.90), primaryFixed, 4.5);
-    const Color onPrimaryFixedVariant =
-        isDark ? ensureContrast(Color::fromHsl(primaryH, 0.15, 0.20), primaryFixedDim, 4.5)
-               : ensureContrast(Color::fromHsl(primaryH, 0.15, 0.85), primaryFixedDim, 4.5);
+    const Color onPrimaryFixedVariant = isDark
+        ? ensureContrast(Color::fromHsl(primaryH, 0.15, 0.20), primaryFixedDim, 4.5)
+        : ensureContrast(Color::fromHsl(primaryH, 0.15, 0.85), primaryFixedDim, 4.5);
     const Color onSecondaryFixed = isDark ? ensureContrast(Color::fromHsl(secondaryH, 0.15, 0.15), secondaryFixed, 4.5)
                                           : ensureContrast(Color::fromHsl(secondaryH, 0.15, 0.90), secondaryFixed, 4.5);
-    const Color onSecondaryFixedVariant =
-        isDark ? ensureContrast(Color::fromHsl(secondaryH, 0.15, 0.20), secondaryFixedDim, 4.5)
-               : ensureContrast(Color::fromHsl(secondaryH, 0.15, 0.85), secondaryFixedDim, 4.5);
+    const Color onSecondaryFixedVariant = isDark
+        ? ensureContrast(Color::fromHsl(secondaryH, 0.15, 0.20), secondaryFixedDim, 4.5)
+        : ensureContrast(Color::fromHsl(secondaryH, 0.15, 0.85), secondaryFixedDim, 4.5);
     const Color onTertiaryFixed = isDark ? ensureContrast(Color::fromHsl(tertiaryH, 0.15, 0.15), tertiaryFixed, 4.5)
                                          : ensureContrast(Color::fromHsl(tertiaryH, 0.15, 0.90), tertiaryFixed, 4.5);
-    const Color onTertiaryFixedVariant =
-        isDark ? ensureContrast(Color::fromHsl(tertiaryH, 0.15, 0.20), tertiaryFixedDim, 4.5)
-               : ensureContrast(Color::fromHsl(tertiaryH, 0.15, 0.85), tertiaryFixedDim, 4.5);
+    const Color onTertiaryFixedVariant = isDark
+        ? ensureContrast(Color::fromHsl(tertiaryH, 0.15, 0.20), tertiaryFixedDim, 4.5)
+        : ensureContrast(Color::fromHsl(tertiaryH, 0.15, 0.85), tertiaryFixedDim, 4.5);
 
     const auto [surfaceH, surfaceS, surfaceL] = surface.toHsl();
     const auto [surfaceVariantH, surfaceVariantS, surfaceVariantL] = surfaceVariant.toHsl();
     const Color surfaceContainer = surfaceVariant;
     const Color surfaceContainerLowest = interpolateColor(surface, surfaceVariant, 0.2);
     const Color surfaceContainerLow = interpolateColor(surface, surfaceVariant, 0.5);
-    const Color surfaceContainerHigh =
-        isDark ? Color::fromHsl(surfaceVariantH, surfaceVariantS, std::min(surfaceVariantL + 0.04, 0.40))
-               : Color::fromHsl(surfaceVariantH, surfaceVariantS, std::max(surfaceVariantL - 0.04, 0.60));
-    const Color surfaceContainerHighest =
-        isDark ? Color::fromHsl(surfaceVariantH, surfaceVariantS, std::min(surfaceVariantL + 0.08, 0.45))
-               : Color::fromHsl(surfaceVariantH, surfaceVariantS, std::max(surfaceVariantL - 0.08, 0.55));
-    const Color surfaceDim =
-        isDark ? Color::fromHsl(surfaceH, surfaceS, std::max(surfaceL - 0.04, 0.02))
-               : Color::fromHsl(surfaceVariantH, surfaceVariantS, std::max(surfaceVariantL - 0.12, 0.50));
-    const Color surfaceBright =
-        isDark ? Color::fromHsl(surfaceVariantH, surfaceVariantS, std::min(surfaceVariantL + 0.12, 0.50))
-               : Color::fromHsl(surfaceH, surfaceS, std::min(surfaceL + 0.03, 0.98));
+    const Color surfaceContainerHigh = isDark
+        ? Color::fromHsl(surfaceVariantH, surfaceVariantS, std::min(surfaceVariantL + 0.04, 0.40))
+        : Color::fromHsl(surfaceVariantH, surfaceVariantS, std::max(surfaceVariantL - 0.04, 0.60));
+    const Color surfaceContainerHighest = isDark
+        ? Color::fromHsl(surfaceVariantH, surfaceVariantS, std::min(surfaceVariantL + 0.08, 0.45))
+        : Color::fromHsl(surfaceVariantH, surfaceVariantS, std::max(surfaceVariantL - 0.08, 0.55));
+    const Color surfaceDim = isDark
+        ? Color::fromHsl(surfaceH, surfaceS, std::max(surfaceL - 0.04, 0.02))
+        : Color::fromHsl(surfaceVariantH, surfaceVariantS, std::max(surfaceVariantL - 0.12, 0.50));
+    const Color surfaceBright = isDark
+        ? Color::fromHsl(surfaceVariantH, surfaceVariantS, std::min(surfaceVariantL + 0.12, 0.50))
+        : Color::fromHsl(surfaceH, surfaceS, std::min(surfaceL + 0.03, 0.98));
 
     const Color outline = ensureContrast(outlineRaw, surface, 3.0);
     const auto [outlineH, outlineS, outlineL] = outline.toHsl();

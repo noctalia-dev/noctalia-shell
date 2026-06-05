@@ -43,6 +43,12 @@ bool HookManager::fireWithRunner(HookKind kind, const CommandRunner& runner) con
 }
 
 void HookManager::fire(HookKind kind, std::initializer_list<EnvVar> env) const {
+  fireWithEnv(kind, std::span<const EnvVar>(env.begin(), env.size()));
+}
+
+void HookManager::fire(HookKind kind, const std::vector<EnvVar>& env) const { fireWithEnv(kind, env); }
+
+void HookManager::fireWithEnv(HookKind kind, std::span<const EnvVar> env) const {
   for (const auto& [key, value] : env) {
     ::setenv(key, value.c_str(), 1);
   }

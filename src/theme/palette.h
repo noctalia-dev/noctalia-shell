@@ -12,6 +12,8 @@ namespace noctalia::theme {
   struct GeneratedPalette {
     std::unordered_map<std::string, uint32_t> dark;
     std::unordered_map<std::string, uint32_t> light;
+
+    bool operator==(const GeneratedPalette&) const = default;
   };
 
 } // namespace noctalia::theme

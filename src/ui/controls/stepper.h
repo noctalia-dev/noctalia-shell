@@ -21,6 +21,7 @@ public:
   void setStep(int step);
   void setValue(int value);
   void setEnabled(bool enabled);
+  void setSurfaceOpacity(float opacity);
   void setOnValueChanged(std::function<void(int)> callback);
   void setOnValueCommitted(std::function<void(int)> callback);
   void setScale(float scale);
@@ -66,6 +67,7 @@ private:
   int m_max = 100;
   int m_step = 1;
   int m_value = 0;
+  float m_surfaceOpacity = 1.0f;
   bool m_enabled = true;
   float m_scale = 1.0f;
   int m_repeatDirection = 0;

@@ -15,7 +15,7 @@ public:
   [[nodiscard]] const Color& color() const noexcept { return m_color; }
   [[nodiscard]] float maxWidth() const noexcept { return m_maxWidth; }
   [[nodiscard]] int maxLines() const noexcept { return m_maxLines; }
-  [[nodiscard]] bool bold() const noexcept { return m_bold; }
+  [[nodiscard]] FontWeight fontWeight() const noexcept { return static_cast<FontWeight>(m_fontWeight); }
   [[nodiscard]] const std::string& fontFamily() const noexcept { return m_fontFamily; }
 
   void setText(std::string text) {
@@ -58,11 +58,12 @@ public:
     markLayoutDirty();
   }
 
-  void setBold(bool bold) {
-    if (m_bold == bold) {
+  void setFontWeight(FontWeight fontWeight) {
+    const int value = static_cast<int>(fontWeight);
+    if (m_fontWeight == value) {
       return;
     }
-    m_bold = bold;
+    m_fontWeight = value;
     markLayoutDirty();
   }
 
@@ -113,7 +114,7 @@ private:
   int m_maxLines = 0;
   Color m_color;
   TextAlign m_textAlign = TextAlign::Start;
-  bool m_bold = false;
+  int m_fontWeight = static_cast<int>(FontWeight::Normal);
   bool m_hasShadow = false;
   Color m_shadowColor;
   float m_shadowOffsetX = 0.0f;

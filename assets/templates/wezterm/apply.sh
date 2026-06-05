@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-config_file="$HOME/.config/wezterm/wezterm.lua"
+config_file="${XDG_CONFIG_HOME:-$HOME/.config}/wezterm/wezterm.lua"
 scheme_line='config.color_scheme = "Noctalia"'
 
 if [ ! -f "$config_file" ]; then

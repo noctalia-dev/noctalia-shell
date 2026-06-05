@@ -3,6 +3,7 @@
 #include "compositors/compositor_platform.h"
 #include "shell/bar/widget.h"
 #include "system/icon_resolver.h"
+#include "ui/signal.h"
 
 #include <cstdint>
 #include <string>
@@ -19,10 +20,21 @@ enum class ActiveWindowTitleScrollMode : std::uint8_t {
   OnHover,
 };
 
+enum class ActiveWindowDisplayMode : std::uint8_t {
+  IconAndText,
+  IconOnly,
+  TextOnly,
+};
+
+class ConfigService;
+
 class ActiveWindowWidget : public Widget {
 public:
-  ActiveWindowWidget(CompositorPlatform& platform, float maxWidth, float minWidth, float iconSize,
-                     ActiveWindowTitleScrollMode titleScrollMode);
+  ActiveWindowWidget(
+      ConfigService& config, CompositorPlatform& platform, float maxWidth, float minWidth, float iconSize,
+      ActiveWindowTitleScrollMode titleScrollMode,
+      ActiveWindowDisplayMode displayMode = ActiveWindowDisplayMode::IconAndText
+  );
 
   void create() override;
 
@@ -34,11 +46,13 @@ private:
   [[nodiscard]] std::string resolveIconPath(const std::string& appId);
   void buildDesktopIconIndex();
 
+  ConfigService& m_config;
   CompositorPlatform& m_platform;
   float m_maxWidth = 260.0f;
   float m_minWidth = 80.0f;
   float m_iconSize = 16.0f;
   ActiveWindowTitleScrollMode m_titleScrollMode = ActiveWindowTitleScrollMode::None;
+  ActiveWindowDisplayMode m_displayMode = ActiveWindowDisplayMode::IconAndText;
   InputArea* m_area = nullptr;
   Image* m_icon = nullptr;
   Label* m_title = nullptr;
@@ -52,4 +66,6 @@ private:
   std::string m_lastAppId;
   std::string m_lastIconPath;
   bool m_lastEmptyState = false;
+  bool m_iconColorizeRefreshPending = false;
+  Signal<>::ScopedConnection m_appIconColorizeConn;
 };

@@ -82,16 +82,19 @@ public:
   void initialize();
   void addChangeCallback(ChangeCallback callback);
 
+  // Coordinates published by LocationService (IP geolocation or geocoded address) plus a
+  // display name and source label. Passing std::nullopt means no location is available.
+  void setLocation(std::optional<WeatherCoordinates> coordinates, std::string name, std::string sourceLabel);
+
   [[nodiscard]] int pollTimeoutMs() const;
   void tick();
-  void requestRefresh(bool resetLocation = false);
+  void requestRefresh();
 
   [[nodiscard]] bool enabled() const noexcept;
   [[nodiscard]] bool effectsEnabled() const noexcept { return m_activeConfig.effects; }
   [[nodiscard]] bool locationConfigured() const noexcept;
   [[nodiscard]] bool loading() const noexcept { return m_loading; }
   [[nodiscard]] bool hasData() const noexcept { return m_snapshot.valid; }
-  [[nodiscard]] std::optional<WeatherCoordinates> resolvedCoordinates() const noexcept;
   [[nodiscard]] const std::string& error() const noexcept { return m_error; }
   [[nodiscard]] const WeatherSnapshot& snapshot() const noexcept { return m_snapshot; }
   [[nodiscard]] bool useImperial() const noexcept;
@@ -105,29 +108,22 @@ public:
 private:
   enum class RequestKind : std::uint8_t {
     None = 0,
-    Geolocate = 1,
-    GeocodeAddress = 2,
-    FetchWeather = 3,
+    FetchWeather = 1,
   };
 
   void onConfigReload();
   void clearState();
   void notifyChanged();
-  void startGeolocate();
-  void startAddressGeocode();
   void startWeatherFetch();
-  void handleLocationResponse(const std::filesystem::path& path, bool autoLocated, bool success, std::uint64_t serial);
   void handleWeatherResponse(const std::filesystem::path& path, bool success, std::uint64_t serial);
   void scheduleRetryAfterFailure();
   void loadCache();
   void saveCache() const;
-  [[nodiscard]] bool hasResolvedLocation() const noexcept;
-  [[nodiscard]] bool canFetchWeatherAfterLocationFailure(bool autoLocated) const noexcept;
+  [[nodiscard]] bool coordinatesValid() const noexcept;
 
   [[nodiscard]] static std::filesystem::path transportCacheDir();
   [[nodiscard]] static std::filesystem::path stateCacheFilePath();
   [[nodiscard]] static std::string formatCoordinate(double value);
-  [[nodiscard]] static std::string compactLocationLabel(const std::string& name, const std::string& country);
 
   ConfigService& m_configService;
   HttpClient& m_httpClient;
@@ -137,10 +133,10 @@ private:
   std::chrono::system_clock::time_point m_nextRefreshAt{};
   bool m_loading = false;
   bool m_refreshQueued = false;
-  bool m_locationResolved = false;
+  bool m_hasLocation = false;
   std::string m_error;
-  std::string m_resolvedAddress;
-  std::string m_resolvedLocationName;
+  std::string m_locationName;
+  std::string m_locationSource;
   double m_resolvedLatitude = 0.0;
   double m_resolvedLongitude = 0.0;
   RequestKind m_requestKind = RequestKind::None;

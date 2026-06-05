@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-config_file="$HOME/.config/cava/config"
+config_file="${XDG_CONFIG_HOME:-$HOME/.config}/cava/config"
 
 if [ ! -f "$config_file" ]; then
     echo "Error: cava config file not found at $config_file" >&2

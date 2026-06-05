@@ -15,6 +15,7 @@
   fontconfig,
   cairo,
   pango,
+  harfbuzz,
   libxkbcommon,
   sdbus-cpp_2,
   systemd,
@@ -26,6 +27,8 @@
   polkit,
   librsvg,
   libprojectm,
+  libqalculate,
+  libxml2,
   jemalloc,
 }:
 
@@ -83,6 +86,7 @@ stdenv.mkDerivation {
     fontconfig
     cairo
     pango
+    harfbuzz
     libxkbcommon
     sdbus-cpp_2
     systemd
@@ -94,6 +98,8 @@ stdenv.mkDerivation {
     polkit
     librsvg
     libprojectm-gles
+    libqalculate
+    libxml2
   ];
 
   mesonBuildType = "release";

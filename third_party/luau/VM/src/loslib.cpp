@@ -7,7 +7,7 @@
 #include <string.h>
 #include <time.h>
 
-#define LUA_STRFTIMEOPTIONS "aAbBcdHIjmMpSUwWxXyYzZ%"
+#define LUA_STRFTIMEOPTIONS "aAbBcdHIjmMpSUwWxXyYzZs%"
 
 #if defined(_WIN32)
 static tm* gmtime_r(const time_t* timep, tm* result)

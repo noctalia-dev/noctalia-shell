@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-palette_file="$HOME/.cache/noctalia/starship-palette.toml"
-config_file="$HOME/.config/starship.toml"
+palette_file="${XDG_CACHE_HOME:-$HOME/.cache}/noctalia/starship-palette.toml"
+config_file="${STARSHIP_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml}"
 marker_begin="# >>> NOCTALIA STARSHIP PALETTE >>>"
 marker_end="# <<< NOCTALIA STARSHIP PALETTE <<<"
 

@@ -1,5 +1,6 @@
 #include "shell/bar/widget.h"
 
+#include "render/animation/animation_manager.h"
 #include "render/scene/node.h"
 #include "ui/controls/box.h"
 #include "ui/palette.h"
@@ -11,6 +12,12 @@ namespace {
   constexpr float kCapsuleInkEpsilon = 0.5f;
 
 } // namespace
+
+Widget::~Widget() {
+  if (m_animations != nullptr) {
+    m_animations->cancelForOwner(this);
+  }
+}
 
 ColorSpec Widget::widgetForegroundOr(const ColorSpec& fallback) const noexcept {
   // Per-widget `color` must win over bar/widget `capsule_foreground`, otherwise a bar-level
@@ -95,8 +102,10 @@ void Widget::requestFrameTick() {
   }
 }
 
-void Widget::requestPanelToggle(std::string_view panelId, std::string_view context, std::optional<float> anchorSurfaceX,
-                                std::optional<float> anchorSurfaceY) {
+void Widget::requestPanelToggle(
+    std::string_view panelId, std::string_view context, std::optional<float> anchorSurfaceX,
+    std::optional<float> anchorSurfaceY
+) {
   if (m_panelToggleCallback) {
     m_panelToggleCallback(panelId, context, anchorSurfaceX, anchorSurfaceY);
   }

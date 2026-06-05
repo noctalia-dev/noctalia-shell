@@ -74,8 +74,9 @@ bool ToplevelSurface::initialize(wl_output* output, ToplevelSurfaceConfig config
   xdg_toplevel_set_title(m_toplevel, config.title.empty() ? "Noctalia" : config.title.c_str());
   xdg_toplevel_set_app_id(m_toplevel, config.appId != nullptr ? config.appId : "dev.noctalia.Noctalia");
   if (config.minWidth > 0 || config.minHeight > 0) {
-    xdg_toplevel_set_min_size(m_toplevel, static_cast<std::int32_t>(config.minWidth),
-                              static_cast<std::int32_t>(config.minHeight));
+    xdg_toplevel_set_min_size(
+        m_toplevel, static_cast<std::int32_t>(config.minWidth), static_cast<std::int32_t>(config.minHeight)
+    );
   }
 
   wl_surface_commit(m_surface);
@@ -92,6 +93,20 @@ bool ToplevelSurface::initialize(wl_output* output, ToplevelSurfaceConfig config
 }
 
 void ToplevelSurface::setClosedCallback(std::function<void()> callback) { m_closedCallback = std::move(callback); }
+
+void ToplevelSurface::setMinSize(std::uint32_t minWidth, std::uint32_t minHeight) {
+  if (m_toplevel != nullptr) {
+    xdg_toplevel_set_min_size(m_toplevel, static_cast<std::int32_t>(minWidth), static_cast<std::int32_t>(minHeight));
+  }
+}
+
+void ToplevelSurface::clampToMinSize(std::uint32_t minWidth, std::uint32_t minHeight) {
+  const auto w = std::max(width(), minWidth);
+  const auto h = std::max(height(), minHeight);
+  if (w != width() || h != height()) {
+    onConfigure(w, h);
+  }
+}
 
 void ToplevelSurface::beginMove(std::uint32_t serial) {
   if (m_toplevel != nullptr) {
@@ -116,8 +131,9 @@ void ToplevelSurface::handleXdgSurfaceConfigure(void* data, xdg_surface* surface
   self->Surface::onConfigure(width, height);
 }
 
-void ToplevelSurface::handleToplevelConfigure(void* data, xdg_toplevel* /*toplevel*/, std::int32_t width,
-                                              std::int32_t height, wl_array* /*states*/) {
+void ToplevelSurface::handleToplevelConfigure(
+    void* data, xdg_toplevel* /*toplevel*/, std::int32_t width, std::int32_t height, wl_array* /*states*/
+) {
   auto* self = static_cast<ToplevelSurface*>(data);
   self->m_lastToplevelWidth = width;
   self->m_lastToplevelHeight = height;
@@ -137,11 +153,12 @@ void ToplevelSurface::handleToplevelClose(void* data, xdg_toplevel* /*toplevel*/
   }
 }
 
-void ToplevelSurface::handleToplevelConfigureBounds(void* /*data*/, xdg_toplevel* /*toplevel*/, std::int32_t /*width*/,
-                                                    std::int32_t /*height*/) {}
+void ToplevelSurface::handleToplevelConfigureBounds(
+    void* /*data*/, xdg_toplevel* /*toplevel*/, std::int32_t /*width*/, std::int32_t /*height*/
+) {}
 
-void ToplevelSurface::handleToplevelWmCapabilities(void* /*data*/, xdg_toplevel* /*toplevel*/,
-                                                   wl_array* /*capabilities*/) {}
+void ToplevelSurface::
+    handleToplevelWmCapabilities(void* /*data*/, xdg_toplevel* /*toplevel*/, wl_array* /*capabilities*/) {}
 
 void ToplevelSurface::destroyRoleObjects() {
   if (m_toplevel != nullptr) {

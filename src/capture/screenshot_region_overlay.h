@@ -1,0 +1,66 @@
+#pragma once
+
+#include "capture/screencopy_capture.h"
+
+#include <functional>
+#include <memory>
+#include <vector>
+
+class RenderContext;
+class WaylandConnection;
+struct KeyboardEvent;
+struct PointerEvent;
+
+namespace capture {
+
+  struct FrozenScreenshot {
+    wl_output* output = nullptr;
+    ScreencopyImage image;
+  };
+
+  class ScreenshotRegionOverlay {
+  public:
+    using CompleteCallback = std::function<void(std::optional<LogicalRect>, wl_output* output)>;
+
+    ScreenshotRegionOverlay();
+    ~ScreenshotRegionOverlay();
+
+    void initialize(WaylandConnection& wayland, RenderContext* renderContext);
+    void setCompleteCallback(CompleteCallback callback);
+    void setFrozenScreenshots(std::vector<FrozenScreenshot> screenshots);
+    void begin(bool freezeScreen, bool fullscreenPick = false);
+    void cancel();
+    void cancelSelection();
+    void onOutputChange();
+
+    [[nodiscard]] bool isActive() const noexcept { return m_active; }
+    [[nodiscard]] bool onPointerEvent(const PointerEvent& event);
+    [[nodiscard]] bool onKeyboardEvent(const KeyboardEvent& event);
+
+  private:
+    struct Instance;
+
+    void ensureSurfaces();
+    void destroySurfaces();
+    [[nodiscard]] bool surfacesMatchOutputs() const;
+    void prepareFrame(Instance& instance, bool needsUpdate, bool needsLayout);
+    void updateSelectionVisuals();
+    void completeSelection();
+    void completeFullscreenPick(wl_output* output);
+
+    WaylandConnection* m_wayland = nullptr;
+    RenderContext* m_renderContext = nullptr;
+    CompleteCallback m_onComplete;
+    std::vector<std::unique_ptr<Instance>> m_instances;
+    std::vector<FrozenScreenshot> m_frozenScreenshots;
+    bool m_active = false;
+    bool m_freezeScreen = false;
+    bool m_fullscreenPick = false;
+    bool m_dragging = false;
+    double m_startGlobalX = 0.0;
+    double m_startGlobalY = 0.0;
+    double m_currentGlobalX = 0.0;
+    double m_currentGlobalY = 0.0;
+  };
+
+} // namespace capture

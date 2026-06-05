@@ -1,0 +1,1 @@
+option('jemalloc', type: 'feature', value: 'auto', description: 'Use jemalloc on glibc builds')

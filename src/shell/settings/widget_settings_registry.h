@@ -1,6 +1,8 @@
 #pragma once
 
 #include "config/config_service.h"
+#include "config/schema/widget_schema.h"
+#include "scripting/scripted_widget_manifest.h"
 
 #include <cstdint>
 #include <initializer_list>
@@ -16,6 +18,7 @@ namespace settings {
     BuiltIn,
     Named,
     Unknown,
+    Preset, // a bundled scripted widget discovered via its Lua manifest
   };
 
   struct WidgetTypeSpec {
@@ -29,7 +32,6 @@ namespace settings {
   struct WidgetReferenceInfo {
     std::string title;
     std::string detail;
-    std::string badge;
     WidgetReferenceKind kind = WidgetReferenceKind::Unknown;
   };
 
@@ -38,23 +40,37 @@ namespace settings {
     std::string label;
     std::string description;
     std::string icon;
+    std::string script = {}; // asset-relative script path for Preset entries; empty otherwise
     WidgetReferenceKind kind = WidgetReferenceKind::Unknown;
   };
 
-  enum class WidgetSettingValueType : std::uint8_t {
+  // How a setting is rendered in the settings UI. Distinct from the schema's
+  // WidgetSettingType (the value/validation type): File/Folder/Glyph all carry a
+  // String value, Select carries an Enum value, ColorSpec carries a Color value.
+  enum class WidgetControlKind : std::uint8_t {
     Bool,
     Int,
     Double,
     OptionalDouble,
     String,
+    File,
+    Folder,
+    Glyph,
     StringList,
     Select,
-    ColorRole,
+    ColorSpec,
+  };
+
+  enum class WidgetSettingGroup : std::uint8_t {
+    Widget,
+    Presentation,
+    Runtime,
+    Grouping,
   };
 
   struct WidgetSettingSelectOption {
-    std::string_view value;
-    std::string_view labelKey;
+    std::string value;
+    std::string labelKey; // i18n key, unless the owning spec sets `literalLabels` (then a literal label)
   };
 
   struct WidgetSettingVisibilityCondition {
@@ -71,30 +87,70 @@ namespace settings {
     WidgetSettingVisibility(std::initializer_list<WidgetSettingVisibilityCondition> alternatives) : any(alternatives) {}
   };
 
+  // Presentation overlay for one widget setting. The validity half (key, value
+  // type, default, range, allowed enum values) lives in `schema` — the single
+  // source the config layer validates against; everything else here is UI only.
   struct WidgetSettingSpec {
-    std::string key;
+    noctalia::config::schema::WidgetSettingField schema; // validity: key/type/default/range/enumValues
+    WidgetControlKind control = WidgetControlKind::String;
     std::string labelKey;
     std::string descriptionKey;
-    WidgetSettingValueType valueType = WidgetSettingValueType::String;
-    WidgetSettingValue defaultValue = std::string{};
-    std::optional<double> minValue;
-    std::optional<double> maxValue;
-    double step = 1.0;
-    std::vector<WidgetSettingSelectOption> options;
+    std::string literalLabel;       // when non-empty, used verbatim instead of tr(labelKey)
+    std::string literalDescription; // when non-empty, used verbatim instead of tr(descriptionKey)
+    bool literalLabels = false;     // when true, option.labelKey holds a literal label (not an i18n key)
+    WidgetSettingGroup group = WidgetSettingGroup::Widget;
+    std::vector<WidgetSettingSelectOption> options; // value+label; values mirror schema.enumValues
     bool advanced = false;
-    bool segmented = false;        // applies when valueType == Select
-    bool allowCustomColor = false; // applies when valueType == ColorRole
+    bool segmented = false;              // applies when control == Select
+    bool integerValue = false;           // applies when control == Select
+    bool stepper = false;                // applies when control == Int
+    std::string valueSuffix;             // applies when control == Int && stepper
+    bool allowCustomColor = true;        // applies when control == ColorSpec
+    std::vector<std::string> extensions; // applies when control == File
     std::optional<WidgetSettingVisibility> visibleWhen;
   };
+
+  // The schema (validation) value type behind a UI control kind.
+  [[nodiscard]] noctalia::config::schema::WidgetSettingType schemaTypeForControl(WidgetControlKind control);
 
   [[nodiscard]] const std::vector<WidgetTypeSpec>& widgetTypeSpecs();
   [[nodiscard]] bool isBuiltInWidgetType(std::string_view type);
   [[nodiscard]] bool widgetTypeRequiresNamedConfig(std::string_view type);
   [[nodiscard]] std::string widgetTypeForReference(const Config& cfg, std::string_view name);
   [[nodiscard]] std::string titleFromWidgetKey(std::string_view key);
-  [[nodiscard]] WidgetReferenceInfo widgetReferenceInfo(const Config& cfg, std::string_view name);
+  [[nodiscard]] WidgetReferenceInfo
+  widgetReferenceInfo(const Config& cfg, std::string_view name, bool includeManifestVersion = true);
   [[nodiscard]] std::vector<WidgetPickerEntry> widgetPickerEntries(const Config& cfg);
-  [[nodiscard]] std::vector<WidgetSettingSpec> commonWidgetSettingSpecs();
-  [[nodiscard]] std::vector<WidgetSettingSpec> widgetSettingSpecs(std::string_view type);
+  [[nodiscard]] std::vector<WidgetSettingSpec> commonWidgetSettingSpecs(std::string_view shellFontFamily);
+  [[nodiscard]] std::vector<WidgetSettingSpec>
+  widgetSettingSpecs(std::string_view type, std::string_view shellFontFamily);
+  // Config-aware variant: for scripted widgets whose `script` declares a Lua manifest,
+  // returns the manifest-driven settings. Falls back to the type-only specs otherwise.
+  [[nodiscard]] std::vector<WidgetSettingSpec>
+  widgetSettingSpecs(std::string_view type, const WidgetConfig* config, std::string_view shellFontFamily);
+  // Build settings specs from a scripted widget's Lua manifest.
+  [[nodiscard]] std::vector<WidgetSettingSpec> manifestSettingSpecs(const scripting::ScriptWidgetManifest& manifest);
+
+  // Schema projection (the validity half of the specs), consumed by the config
+  // layer (e.g. `config validate`). For scripted widgets pass the config so the
+  // Lua manifest's settings are included.
+  [[nodiscard]] noctalia::config::schema::WidgetSettingSchema widgetSettingSchema(std::string_view type);
+  [[nodiscard]] noctalia::config::schema::WidgetSettingSchema
+  widgetSettingSchema(std::string_view type, const WidgetConfig* config);
+  [[nodiscard]] std::optional<noctalia::config::schema::WidgetSettingField>
+  findWidgetSettingField(std::string_view widgetType, std::string_view settingKey);
+
+  [[nodiscard]] std::optional<WidgetSettingSpec>
+  findWidgetSettingSpec(std::string_view widgetType, std::string_view settingKey);
+  [[nodiscard]] bool configOverrideValueMatchesWidgetSetting(
+      const ConfigOverrideValue& overrideValue, const WidgetSettingValue& settingValue
+  );
+  [[nodiscard]] bool widgetOverrideValueMatchesRegistryDefault(
+      std::string_view widgetType, std::string_view settingKey, const ConfigOverrideValue& overrideValue
+  );
+  [[nodiscard]] bool widgetSettingOverrideIsEffective(
+      std::string_view widgetName, std::string_view settingKey, const Config& withOverride,
+      const Config& withoutOverride
+  );
 
 } // namespace settings

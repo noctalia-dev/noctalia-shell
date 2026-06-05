@@ -32,9 +32,21 @@ namespace KeySymbol {
 
   [[nodiscard]] inline bool isDown(std::uint32_t sym) noexcept { return sym == XKB_KEY_Down; }
 
+  [[nodiscard]] inline bool isPageUp(std::uint32_t sym) noexcept {
+    return sym == XKB_KEY_Page_Up || sym == XKB_KEY_KP_Page_Up;
+  }
+
+  [[nodiscard]] inline bool isPageDown(std::uint32_t sym) noexcept {
+    return sym == XKB_KEY_Page_Down || sym == XKB_KEY_KP_Page_Down;
+  }
+
   [[nodiscard]] inline bool isHome(std::uint32_t sym) noexcept { return sym == XKB_KEY_Home; }
 
   [[nodiscard]] inline bool isEnd(std::uint32_t sym) noexcept { return sym == XKB_KEY_End; }
+
+  [[nodiscard]] inline bool isTab(std::uint32_t sym) noexcept {
+    return sym == XKB_KEY_Tab || sym == XKB_KEY_ISO_Left_Tab;
+  }
 
   [[nodiscard]] inline bool isModifier(std::uint32_t sym) noexcept {
     switch (sym) {
@@ -63,7 +75,11 @@ namespace KeySymbol {
   }
 
   [[nodiscard]] inline bool isSuperModifier(std::uint32_t sym) noexcept {
-    return sym == XKB_KEY_Super_L || sym == XKB_KEY_Super_R || sym == XKB_KEY_Hyper_L || sym == XKB_KEY_Hyper_R ||
-           sym == XKB_KEY_Meta_L || sym == XKB_KEY_Meta_R;
+    return sym == XKB_KEY_Super_L
+        || sym == XKB_KEY_Super_R
+        || sym == XKB_KEY_Hyper_L
+        || sym == XKB_KEY_Hyper_R
+        || sym == XKB_KEY_Meta_L
+        || sym == XKB_KEY_Meta_R;
   }
 } // namespace KeySymbol

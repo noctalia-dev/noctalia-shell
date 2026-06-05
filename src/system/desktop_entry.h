@@ -21,6 +21,7 @@ struct DesktopEntry {
   std::string categories;
   std::string keywords;
   std::string startupWmClass;
+  std::string workingDir;
   bool noDisplay = false;
   bool hidden = false;
   bool terminal = false;

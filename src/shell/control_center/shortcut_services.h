@@ -8,6 +8,7 @@ class IdleInhibitor;
 class INetworkService;
 class MprisService;
 class GammaService;
+class IpcService;
 class NotificationManager;
 class PipeWireService;
 class PowerProfilesService;
@@ -31,4 +32,5 @@ struct ShortcutServices {
   ConfigService* config = nullptr;
   DependencyService* dependencies = nullptr;
   CompositorPlatform* platform = nullptr;
+  IpcService* ipc = nullptr;
 };

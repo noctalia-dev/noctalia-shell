@@ -85,3 +85,10 @@ void BrightnessOsd::onBrightnessChanged(const BrightnessService& service) {
     m_overlay->show(makeBrightnessContent(changed->brightness));
   }
 }
+
+void BrightnessOsd::showValue(float brightness) {
+  if (m_overlay == nullptr) {
+    return;
+  }
+  m_overlay->show(makeBrightnessContent(brightness));
+}

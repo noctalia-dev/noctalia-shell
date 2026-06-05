@@ -12,6 +12,7 @@
 #include <string>
 #include <tuple>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace sdbus {
@@ -63,9 +64,11 @@ public:
   void registerIpc(IpcService& ipc);
 
   bool playPause(const std::string& busName);
+  bool stop(const std::string& busName);
   bool next(const std::string& busName);
   bool previous(const std::string& busName);
   bool playPauseActive();
+  bool stopActive();
   bool nextActive();
   bool previousActive();
   bool seek(const std::string& busName, int64_t offsetUs);
@@ -108,34 +111,42 @@ private:
   void scheduleStartupRediscovery();
   void scheduleRecoveryDiscovery();
   void addOrRefreshPlayer(const std::string& busName);
-  void applyPlayerSnapshot(const std::string& busName, const MprisPlayerInfo& info, bool hadPositionSignal,
-                           bool hadFullRefreshFailure);
+  void applyPlayerSnapshot(
+      const std::string& busName, const MprisPlayerInfo& info, bool hadPositionSignal, bool hadFullRefreshFailure
+  );
   [[nodiscard]] bool shouldRetryPropertiesRefresh(const std::string& busName) const;
-  [[nodiscard]] std::chrono::milliseconds propertiesRefreshRetryInterval(const std::string& busName,
-                                                                         std::chrono::milliseconds fallback,
-                                                                         bool usePropertiesBackoff) const;
-  void schedulePositionRefreshRetry(const std::string& busName, std::chrono::milliseconds fallback,
-                                    bool usePropertiesBackoff);
+  [[nodiscard]] std::chrono::milliseconds propertiesRefreshRetryInterval(
+      const std::string& busName, std::chrono::milliseconds fallback, bool usePropertiesBackoff
+  ) const;
+  void schedulePositionRefreshRetry(
+      const std::string& busName, std::chrono::milliseconds fallback, bool usePropertiesBackoff
+  );
   void refreshPlayerPosition(const std::string& busName, bool notifyChange);
   void applyPositionSample(const std::string& busName, int64_t rawPositionUs, bool notifyChange);
+  void clearPlayerState(const std::string& busName);
   void removePlayer(const std::string& busName);
-  [[nodiscard]] MprisPlayerInfo
-  readPlayerInfoFromProperties(const std::string& busName, const std::map<std::string, sdbus::Variant>& rootProps,
-                               const std::map<std::string, sdbus::Variant>& playerProps) const;
+  void removePlayerCacheEntry(const std::string& busName);
+  [[nodiscard]] MprisPlayerInfo readPlayerInfoFromProperties(
+      const std::string& busName, const std::map<std::string, sdbus::Variant>& rootProps,
+      const std::map<std::string, sdbus::Variant>& playerProps
+  ) const;
   [[nodiscard]] MprisPlayerInfo projectedPlayerInfo(const MprisPlayerInfo& player) const;
   [[nodiscard]] std::int64_t projectedPositionUs(const MprisPlayerInfo& player) const;
   [[nodiscard]] std::optional<std::string> chooseActivePlayer() const;
   [[nodiscard]] bool isBlacklisted(const MprisPlayerInfo& player) const;
   std::function<void(std::optional<sdbus::Error>)> makeAsyncReplyHandler(std::string op, std::string busName);
-  std::function<void(std::optional<sdbus::Error>)> makeAsyncReplyHandler(std::string op, std::string busName,
-                                                                         std::string_view method);
+  std::function<void(std::optional<sdbus::Error>)>
+  makeAsyncReplyHandler(std::string op, std::string busName, std::string_view method);
   [[nodiscard]] bool callPlayerMethod(const std::string& busName, const char* methodName);
   [[nodiscard]] bool canInvoke(const MprisPlayerInfo& player, const char* methodName) const;
+  void dismissPlayer(const std::string& busName);
 
   bool onPlayPausePlayer(const std::string& busName);
+  bool onStopPlayer(const std::string& busName);
   bool onNextPlayer(const std::string& busName);
   bool onPreviousPlayer(const std::string& busName);
   bool onPlayPauseActive();
+  bool onStopActive();
   bool onNextActive();
   bool onPreviousActive();
   bool onSeekPlayer(const std::string& busName, int64_t offsetUs);
@@ -186,6 +197,7 @@ private:
   std::unordered_map<std::string, int> m_playerPropertiesFailures;
   std::unordered_map<std::string, std::chrono::milliseconds> m_playerPropertiesRefreshBackoffMs;
   std::deque<std::string> m_pendingDiscoveryBusNames;
+  std::unordered_set<std::string> m_stoppedPlayers;
   std::string m_lastActivePlayer;
   std::string m_lastEmittedActivePlayer;
   std::optional<std::string> m_pinnedPlayerPreference;

@@ -2,11 +2,7 @@
 
 #include "i18n/i18n.h"
 #include "shell/settings/settings_registry.h"
-#include "ui/controls/button.h"
-#include "ui/controls/flex.h"
-#include "ui/controls/input.h"
-#include "ui/controls/label.h"
-#include "ui/controls/scroll_view.h"
+#include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
@@ -14,6 +10,7 @@
 #include <algorithm>
 #include <cctype>
 #include <format>
+#include <functional>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -21,7 +18,7 @@
 namespace settings {
   namespace {
 
-    constexpr float kSidebarWidth = 180.0f;
+    constexpr float kSidebarWidth = 200.0f;
 
     std::string normalizedConfigId(std::string_view text) { return StringUtils::trim(text); }
 
@@ -30,13 +27,15 @@ namespace settings {
       if (trimmed.empty()) {
         return false;
       }
-      return std::all_of(trimmed.begin(), trimmed.end(),
-                         [](unsigned char c) { return std::isalnum(c) != 0 || c == '_' || c == '-'; });
+      return std::all_of(trimmed.begin(), trimmed.end(), [](unsigned char c) {
+        return std::isalnum(c) != 0 || c == '_' || c == '-';
+      });
     }
 
     bool barNameExists(const std::vector<std::string>& barNames, std::string_view name) {
-      return std::any_of(barNames.begin(), barNames.end(),
-                         [name](const std::string& barName) { return barName == name; });
+      return std::any_of(barNames.begin(), barNames.end(), [name](const std::string& barName) {
+        return barName == name;
+      });
     }
 
     std::string nextAvailableBarName(const std::vector<std::string>& barNames) {
@@ -48,29 +47,79 @@ namespace settings {
       }
     }
 
-    void applyPrimaryNavStyle(Button& button, float scale, bool selected) {
-      button.setVariant(selected ? ButtonVariant::TabActive : ButtonVariant::Tab);
-      button.setContentAlign(ButtonContentAlign::Start);
-      button.setFontSize(Style::fontSizeBody * scale);
-      button.setGlyphSize(21.0f * scale);
-      button.setMinHeight(Style::controlHeight * scale);
-      button.setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-      button.setGap(Style::spaceSm * scale);
-      button.setRadius(Style::scaledRadiusLg(scale));
+    void makeButtonLabelBold(Button& button) {
       if (button.label() != nullptr) {
-        button.label()->setBold(true);
+        button.label()->setFontWeight(FontWeight::Bold);
       }
     }
 
-    void applySecondaryNavStyle(Button& button, float scale, bool selected) {
-      button.setVariant(selected ? ButtonVariant::TabActive : ButtonVariant::Tab);
-      button.setContentAlign(ButtonContentAlign::Start);
-      button.setFontSize(Style::fontSizeCaption * scale);
-      button.setGlyphSize(Style::fontSizeCaption * scale);
-      button.setMinHeight(Style::controlHeightSm * scale);
-      button.setPadding(Style::spaceXs * scale, Style::spaceMd * scale, Style::spaceXs * scale, Style::spaceLg * scale);
-      button.setGap(Style::spaceXs * scale);
-      button.setRadius(Style::scaledRadiusMd(scale));
+    // Primary sidebar nav style: top-level section rows with a bolder label.
+    std::unique_ptr<Button> makePrimaryNavButton(
+        std::string_view glyph, std::string text, float scale, bool selected, std::function<void()> onClick
+    ) {
+      return ui::button({
+          .text = std::move(text),
+          .glyph = std::string(glyph),
+          .fontSize = Style::fontSizeBody * scale,
+          .glyphSize = 21.0f * scale,
+          .contentAlign = ButtonContentAlign::Start,
+          .variant = selected ? ButtonVariant::TabActive : ButtonVariant::Tab,
+          .minHeight = Style::controlHeight * scale,
+          .paddingV = Style::spaceSm * scale,
+          .paddingH = Style::spaceMd * scale,
+          .gap = Style::spaceSm * scale,
+          .radius = Style::scaledRadiusLg(scale),
+          .onClick = std::move(onClick),
+          .configure = [](Button& button) { makeButtonLabelBold(button); },
+      });
+    }
+
+    // Secondary sidebar nav style: indented compact rows for bars and monitors.
+    std::unique_ptr<Button> makeSecondaryNavButton(
+        std::string_view glyph, std::string text, float scale, bool selected, std::function<void()> onClick
+    ) {
+      return ui::button({
+          .text = std::move(text),
+          .glyph = std::string(glyph),
+          .fontSize = Style::fontSizeCaption * scale,
+          .glyphSize = Style::fontSizeCaption * scale,
+          .contentAlign = ButtonContentAlign::Start,
+          .variant = selected ? ButtonVariant::TabActive : ButtonVariant::Tab,
+          .minHeight = Style::controlHeightSm * scale,
+          .paddingTop = Style::spaceXs * scale,
+          .paddingRight = Style::spaceMd * scale,
+          .paddingBottom = Style::spaceXs * scale,
+          .paddingLeft = Style::spaceLg * scale,
+          .gap = Style::spaceXs * scale,
+          .radius = Style::scaledRadiusMd(scale),
+          .onClick = std::move(onClick),
+      });
+    }
+
+    std::unique_ptr<Button> makeCreateButton(std::string text, float scale, std::function<void()> onClick) {
+      return ui::button({
+          .text = std::move(text),
+          .fontSize = Style::fontSizeCaption * scale,
+          .variant = ButtonVariant::Default,
+          .minHeight = Style::controlHeightSm * scale,
+          .paddingV = Style::spaceXs * scale,
+          .paddingH = Style::spaceSm * scale,
+          .radius = Style::scaledRadiusSm(scale),
+          .onClick = std::move(onClick),
+      });
+    }
+
+    std::unique_ptr<Button> makeCreateCancelButton(float scale, std::function<void()> onClick) {
+      return ui::button({
+          .glyph = "close",
+          .glyphSize = Style::fontSizeCaption * scale,
+          .variant = ButtonVariant::Ghost,
+          .minWidth = Style::controlHeightSm * scale,
+          .minHeight = Style::controlHeightSm * scale,
+          .padding = Style::spaceXs * scale,
+          .radius = Style::scaledRadiusSm(scale),
+          .onClick = std::move(onClick),
+      });
     }
 
   } // namespace
@@ -100,17 +149,19 @@ namespace settings {
     const bool searchActive = ctx.globalSearchActive;
     const bool showActiveTab = !searchActive;
 
-    auto sidebarScroll = std::make_unique<ScrollView>();
-    sidebarScroll->bindState(&ctx.sidebarScrollState);
-    sidebarScroll->setScrollbarVisible(true);
-    sidebarScroll->setViewportPaddingH(0.0f);
-    sidebarScroll->setViewportPaddingV(0.0f);
-    sidebarScroll->setFill(colorSpecFromRole(ColorRole::Surface));
-    sidebarScroll->setRadius(Style::scaledRadiusXl(scale));
-    sidebarScroll->clearBorder();
-    sidebarScroll->setFillHeight(true);
-    sidebarScroll->setSize(kSidebarWidth * scale, 0.0f);
-    sidebarScroll->setMinWidth(kSidebarWidth * scale);
+    auto sidebarScroll = ui::scrollView({
+        .state = &ctx.sidebarScrollState,
+        .scrollbarVisible = true,
+        .viewportPaddingH = 0.0f,
+        .viewportPaddingV = 0.0f,
+        .fill = colorSpecFromRole(ColorRole::Surface),
+        .radius = Style::scaledRadiusXl(scale),
+        .minWidth = kSidebarWidth * scale,
+        .fillHeight = true,
+        .width = kSidebarWidth * scale,
+        .height = 0.0f,
+        .configure = [](ScrollView& scrollView) { scrollView.clearBorder(); },
+    });
 
     auto* sidebar = sidebarScroll->content();
     sidebar->setDirection(FlexDirection::Vertical);
@@ -120,11 +171,8 @@ namespace settings {
 
     for (const auto& section : ctx.sections) {
       const bool selected = showActiveTab && section == *selectedSection;
-      auto navItem = std::make_unique<Button>();
-      navItem->setGlyph(sectionGlyph(section));
-      navItem->setText(sectionLabel(section));
-      applyPrimaryNavStyle(*navItem, scale, selected);
-      navItem->setOnClick(
+      sidebar->addChild(makePrimaryNavButton(
+          sectionGlyph(section), sectionLabel(section), scale, selected,
           [selectedSection, scroll, section, searchActive, clearTransientState, clearSearchQuery, requestRebuild]() {
             if (searchActive || *selectedSection != section) {
               scroll->offset = 0.0f;
@@ -133,31 +181,31 @@ namespace settings {
             clearSearchQuery();
             clearTransientState();
             requestRebuild();
-          });
-      sidebar->addChild(std::move(navItem));
+          }
+      ));
     }
 
     for (const auto& barName : ctx.availableBars) {
       const bool barSelected =
           showActiveTab && *selectedSection == "bar" && *selectedBarName == barName && selectedMonitorOverride->empty();
-      auto navItem = std::make_unique<Button>();
-      navItem->setGlyph(sectionGlyph("bar"));
-      navItem->setText(i18n::tr("settings.entities.bar.label", "name", barName));
-      applyPrimaryNavStyle(*navItem, scale, barSelected);
-      navItem->setOnClick([selectedSection, selectedBarName, selectedMonitorOverride, scroll, barName, searchActive,
-                           clearTransientState, clearSearchQuery, requestRebuild]() {
-        if (searchActive || *selectedSection != "bar" || *selectedBarName != barName ||
-            !selectedMonitorOverride->empty()) {
-          scroll->offset = 0.0f;
-        }
-        *selectedSection = "bar";
-        *selectedBarName = barName;
-        selectedMonitorOverride->clear();
-        clearSearchQuery();
-        clearTransientState();
-        requestRebuild();
-      });
-      sidebar->addChild(std::move(navItem));
+      sidebar->addChild(makePrimaryNavButton(
+          sectionGlyph("bar"), i18n::tr("settings.entities.bar.label", "name", barName), scale, barSelected,
+          [selectedSection, selectedBarName, selectedMonitorOverride, scroll, barName, searchActive,
+           clearTransientState, clearSearchQuery, requestRebuild]() {
+            if (searchActive
+                || *selectedSection != "bar"
+                || *selectedBarName != barName
+                || !selectedMonitorOverride->empty()) {
+              scroll->offset = 0.0f;
+            }
+            *selectedSection = "bar";
+            *selectedBarName = barName;
+            selectedMonitorOverride->clear();
+            clearSearchQuery();
+            clearTransientState();
+            requestRebuild();
+          }
+      ));
 
       const auto* bar = settings::findBar(cfg, barName);
       if (bar == nullptr) {
@@ -165,72 +213,85 @@ namespace settings {
       }
 
       for (const auto& ovr : bar->monitorOverrides) {
-        const bool ovrSelected = showActiveTab && *selectedSection == "bar" && *selectedBarName == barName &&
-                                 *selectedMonitorOverride == ovr.match;
-        auto ovrItem = std::make_unique<Button>();
-        ovrItem->setGlyph("device-desktop");
-        ovrItem->setText(i18n::tr("settings.entities.monitor-override.label", "name", ovr.match));
-        applySecondaryNavStyle(*ovrItem, scale, ovrSelected);
+        const bool ovrSelected = showActiveTab
+            && *selectedSection == "bar"
+            && *selectedBarName == barName
+            && *selectedMonitorOverride == ovr.match;
         auto match = ovr.match;
-        ovrItem->setOnClick([selectedSection, selectedBarName, selectedMonitorOverride, scroll, barName, match,
-                             searchActive, clearTransientState, clearSearchQuery, requestRebuild]() {
-          if (searchActive || *selectedSection != "bar" || *selectedBarName != barName ||
-              *selectedMonitorOverride != match) {
-            scroll->offset = 0.0f;
-          }
-          *selectedSection = "bar";
-          *selectedBarName = barName;
-          *selectedMonitorOverride = match;
-          clearSearchQuery();
-          clearTransientState();
-          requestRebuild();
-        });
-        sidebar->addChild(std::move(ovrItem));
+        sidebar->addChild(makeSecondaryNavButton(
+            "device-desktop", i18n::tr("settings.entities.monitor-override.label", "name", ovr.match), scale,
+            ovrSelected,
+            [selectedSection, selectedBarName, selectedMonitorOverride, scroll, barName, match, searchActive,
+             clearTransientState, clearSearchQuery, requestRebuild]() {
+              if (searchActive
+                  || *selectedSection != "bar"
+                  || *selectedBarName != barName
+                  || *selectedMonitorOverride != match) {
+                scroll->offset = 0.0f;
+              }
+              *selectedSection = "bar";
+              *selectedBarName = barName;
+              *selectedMonitorOverride = match;
+              clearSearchQuery();
+              clearTransientState();
+              requestRebuild();
+            }
+        ));
       }
 
       if (*selectedSection != "bar" || *selectedBarName != barName) {
         continue;
       }
 
-      auto newMonitorBtn = std::make_unique<Button>();
-      newMonitorBtn->setText(i18n::tr("settings.entities.monitor-override.new"));
-      newMonitorBtn->setGlyph("add");
-      newMonitorBtn->setVariant(ButtonVariant::Ghost);
-      newMonitorBtn->setContentAlign(ButtonContentAlign::Start);
-      newMonitorBtn->setFontSize(Style::fontSizeCaption * scale);
-      newMonitorBtn->setGlyphSize(Style::fontSizeCaption * scale);
-      newMonitorBtn->setMinHeight(Style::controlHeightSm * scale);
-      newMonitorBtn->setPadding(Style::spaceXs * scale, Style::spaceMd * scale, Style::spaceXs * scale,
-                                Style::spaceLg * scale);
-      newMonitorBtn->setGap(Style::spaceXs * scale);
-      newMonitorBtn->setRadius(Style::scaledRadiusMd(scale));
-      newMonitorBtn->setOnClick([creatingMonitorOverrideBarName, creatingMonitorOverrideMatch, barName,
-                                 clearTransientState, requestRebuild]() {
-        clearTransientState();
-        *creatingMonitorOverrideBarName = barName;
-        creatingMonitorOverrideMatch->clear();
-        requestRebuild();
-      });
-      sidebar->addChild(std::move(newMonitorBtn));
+      // Secondary sidebar action style: same compact indentation as monitor rows.
+      sidebar->addChild(
+          ui::button({
+              .text = i18n::tr("settings.entities.monitor-override.new"),
+              .glyph = "add",
+              .fontSize = Style::fontSizeCaption * scale,
+              .glyphSize = Style::fontSizeCaption * scale,
+              .contentAlign = ButtonContentAlign::Start,
+              .variant = ButtonVariant::Ghost,
+              .minHeight = Style::controlHeightSm * scale,
+              .paddingTop = Style::spaceXs * scale,
+              .paddingRight = Style::spaceMd * scale,
+              .paddingBottom = Style::spaceXs * scale,
+              .paddingLeft = Style::spaceLg * scale,
+              .gap = Style::spaceXs * scale,
+              .radius = Style::scaledRadiusMd(scale),
+              .onClick = [creatingMonitorOverrideBarName, creatingMonitorOverrideMatch, barName, clearTransientState,
+                          requestRebuild]() {
+                clearTransientState();
+                *creatingMonitorOverrideBarName = barName;
+                creatingMonitorOverrideMatch->clear();
+                requestRebuild();
+              },
+          })
+      );
 
       if (*creatingMonitorOverrideBarName != barName) {
         continue;
       }
 
-      auto createPanel = std::make_unique<Flex>();
-      createPanel->setDirection(FlexDirection::Vertical);
-      createPanel->setAlign(FlexAlign::Stretch);
-      createPanel->setGap(Style::spaceXs * scale);
-      createPanel->setPadding(0.0f, Style::spaceXs * scale, 0.0f, Style::spaceLg * scale);
+      auto createPanel = ui::column({
+          .align = FlexAlign::Stretch,
+          .gap = Style::spaceXs * scale,
+          .configure = [scale](Flex& panel) {
+            panel.setPadding(0.0f, Style::spaceXs * scale, 0.0f, Style::spaceLg * scale);
+          },
+      });
 
-      auto input = std::make_unique<Input>();
-      input->setValue(*creatingMonitorOverrideMatch);
-      input->setPlaceholder(i18n::tr("settings.entities.monitor-override.match-placeholder"));
-      input->setFontSize(Style::fontSizeCaption * scale);
-      input->setControlHeight(Style::controlHeightSm * scale);
-      input->setHorizontalPadding(Style::spaceXs * scale);
-      input->setSize(112.0f * scale, Style::controlHeightSm * scale);
-      auto* inputPtr = input.get();
+      Input* inputPtr = nullptr;
+      auto input = ui::input({
+          .out = &inputPtr,
+          .value = *creatingMonitorOverrideMatch,
+          .placeholder = i18n::tr("settings.entities.monitor-override.match-placeholder"),
+          .fontSize = Style::fontSizeCaption * scale,
+          .controlHeight = Style::controlHeightSm * scale,
+          .horizontalPadding = Style::spaceXs * scale,
+          .width = 112.0f * scale,
+          .height = Style::controlHeightSm * scale,
+      });
 
       std::vector<std::string> existingMatches;
       existingMatches.reserve(bar->monitorOverrides.size());
@@ -241,8 +302,8 @@ namespace settings {
       auto doCreate = [barName, createMonitorOverride, inputPtr,
                        existingMatches = std::move(existingMatches)](std::string rawMatch) {
         const std::string match = normalizedConfigId(rawMatch);
-        if (match.empty() ||
-            std::find(existingMatches.begin(), existingMatches.end(), match) != existingMatches.end()) {
+        if (match.empty()
+            || std::find(existingMatches.begin(), existingMatches.end(), match) != existingMatches.end()) {
           inputPtr->setInvalid(true);
           return;
         }
@@ -250,83 +311,77 @@ namespace settings {
         createMonitorOverride(barName, match);
       };
 
-      input->setOnChange([creatingMonitorOverrideMatch, inputPtr](const std::string& value) {
+      inputPtr->setOnChange([creatingMonitorOverrideMatch, inputPtr](const std::string& value) {
         *creatingMonitorOverrideMatch = value;
         inputPtr->setInvalid(false);
       });
-      input->setOnSubmit([doCreate](const std::string& text) mutable { doCreate(text); });
-
-      auto actions = std::make_unique<Flex>();
-      actions->setDirection(FlexDirection::Horizontal);
-      actions->setAlign(FlexAlign::Center);
-      actions->setGap(Style::spaceXs * scale);
-
-      auto saveBtn = std::make_unique<Button>();
-      saveBtn->setText(i18n::tr("settings.entities.monitor-override.create"));
-      saveBtn->setVariant(ButtonVariant::Default);
-      saveBtn->setFontSize(Style::fontSizeCaption * scale);
-      saveBtn->setMinHeight(Style::controlHeightSm * scale);
-      saveBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
-      saveBtn->setRadius(Style::scaledRadiusSm(scale));
-      saveBtn->setOnClick([doCreate, inputPtr]() mutable { doCreate(inputPtr->value()); });
-      actions->addChild(std::move(saveBtn));
-
-      auto cancelBtn = std::make_unique<Button>();
-      cancelBtn->setGlyph("close");
-      cancelBtn->setVariant(ButtonVariant::Ghost);
-      cancelBtn->setGlyphSize(Style::fontSizeCaption * scale);
-      cancelBtn->setMinWidth(Style::controlHeightSm * scale);
-      cancelBtn->setMinHeight(Style::controlHeightSm * scale);
-      cancelBtn->setPadding(Style::spaceXs * scale);
-      cancelBtn->setRadius(Style::scaledRadiusSm(scale));
-      cancelBtn->setOnClick([creatingMonitorOverrideBarName, creatingMonitorOverrideMatch, requestRebuild]() {
-        creatingMonitorOverrideBarName->clear();
-        creatingMonitorOverrideMatch->clear();
-        requestRebuild();
-      });
-      actions->addChild(std::move(cancelBtn));
+      inputPtr->setOnSubmit([doCreate](const std::string& text) mutable { doCreate(text); });
 
       createPanel->addChild(std::move(input));
-      createPanel->addChild(std::move(actions));
+      createPanel->addChild(
+          ui::row(
+              {
+                  .align = FlexAlign::Center,
+                  .gap = Style::spaceXs * scale,
+              },
+              makeCreateButton(
+                  i18n::tr("settings.entities.monitor-override.create"), scale,
+                  [doCreate, inputPtr]() mutable { doCreate(inputPtr->value()); }
+              ),
+              makeCreateCancelButton(
+                  scale, [creatingMonitorOverrideBarName, creatingMonitorOverrideMatch, requestRebuild]() {
+                    creatingMonitorOverrideBarName->clear();
+                    creatingMonitorOverrideMatch->clear();
+                    requestRebuild();
+                  }
+              )
+          )
+      );
       sidebar->addChild(std::move(createPanel));
     }
 
-    auto newBarBtn = std::make_unique<Button>();
-    newBarBtn->setText(i18n::tr("settings.entities.bar.new"));
-    newBarBtn->setGlyph("add");
-    newBarBtn->setVariant(ButtonVariant::Ghost);
-    newBarBtn->setContentAlign(ButtonContentAlign::Start);
-    newBarBtn->setFontSize(Style::fontSizeBody * scale);
-    newBarBtn->setGlyphSize(21.0f * scale);
-    newBarBtn->setMinHeight(Style::controlHeight * scale);
-    newBarBtn->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-    newBarBtn->setGap(Style::spaceSm * scale);
-    newBarBtn->setRadius(Style::scaledRadiusLg(scale));
-    if (newBarBtn->label() != nullptr) {
-      newBarBtn->label()->setBold(true);
-    }
-    newBarBtn->setOnClick([creatingBarName, nextBarName, clearTransientState, requestRebuild]() {
-      clearTransientState();
-      *creatingBarName = nextBarName;
-      requestRebuild();
-    });
-    sidebar->addChild(std::move(newBarBtn));
+    // Primary sidebar action style: same scale as top-level section rows.
+    sidebar->addChild(
+        ui::button({
+            .text = i18n::tr("settings.entities.bar.new"),
+            .glyph = "add",
+            .fontSize = Style::fontSizeBody * scale,
+            .glyphSize = 21.0f * scale,
+            .contentAlign = ButtonContentAlign::Start,
+            .variant = ButtonVariant::Ghost,
+            .minHeight = Style::controlHeight * scale,
+            .paddingV = Style::spaceSm * scale,
+            .paddingH = Style::spaceMd * scale,
+            .gap = Style::spaceSm * scale,
+            .radius = Style::scaledRadiusLg(scale),
+            .onClick =
+                [creatingBarName, nextBarName, clearTransientState, requestRebuild]() {
+                  clearTransientState();
+                  *creatingBarName = nextBarName;
+                  requestRebuild();
+                },
+            .configure = [](Button& button) { makeButtonLabelBold(button); },
+        })
+    );
 
     if (!creatingBarName->empty()) {
-      auto createPanel = std::make_unique<Flex>();
-      createPanel->setDirection(FlexDirection::Vertical);
-      createPanel->setAlign(FlexAlign::Stretch);
-      createPanel->setGap(Style::spaceXs * scale);
-      createPanel->setPadding(0.0f, Style::spaceXs * scale);
+      auto createPanel = ui::column({
+          .align = FlexAlign::Stretch,
+          .gap = Style::spaceXs * scale,
+          .configure = [scale](Flex& panel) { panel.setPadding(0.0f, Style::spaceXs * scale); },
+      });
 
-      auto input = std::make_unique<Input>();
-      input->setValue(*creatingBarName);
-      input->setPlaceholder(i18n::tr("settings.entities.bar.id-placeholder"));
-      input->setFontSize(Style::fontSizeCaption * scale);
-      input->setControlHeight(Style::controlHeightSm * scale);
-      input->setHorizontalPadding(Style::spaceXs * scale);
-      input->setSize(120.0f * scale, Style::controlHeightSm * scale);
-      auto* inputPtr = input.get();
+      Input* inputPtr = nullptr;
+      auto input = ui::input({
+          .out = &inputPtr,
+          .value = *creatingBarName,
+          .placeholder = i18n::tr("settings.entities.bar.id-placeholder"),
+          .fontSize = Style::fontSizeCaption * scale,
+          .controlHeight = Style::controlHeightSm * scale,
+          .horizontalPadding = Style::spaceXs * scale,
+          .width = 120.0f * scale,
+          .height = Style::controlHeightSm * scale,
+      });
 
       auto doCreate = [existingBarNames, createBar, inputPtr](std::string rawName) {
         const std::string name = normalizedConfigId(rawName);
@@ -338,43 +393,29 @@ namespace settings {
         createBar(name);
       };
 
-      input->setOnChange([creatingBarName, inputPtr](const std::string& value) {
+      inputPtr->setOnChange([creatingBarName, inputPtr](const std::string& value) {
         *creatingBarName = value;
         inputPtr->setInvalid(false);
       });
-      input->setOnSubmit([doCreate](const std::string& text) mutable { doCreate(text); });
-
-      auto actions = std::make_unique<Flex>();
-      actions->setDirection(FlexDirection::Horizontal);
-      actions->setAlign(FlexAlign::Center);
-      actions->setGap(Style::spaceXs * scale);
-
-      auto saveBtn = std::make_unique<Button>();
-      saveBtn->setText(i18n::tr("settings.entities.bar.create"));
-      saveBtn->setVariant(ButtonVariant::Default);
-      saveBtn->setFontSize(Style::fontSizeCaption * scale);
-      saveBtn->setMinHeight(Style::controlHeightSm * scale);
-      saveBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
-      saveBtn->setRadius(Style::scaledRadiusSm(scale));
-      saveBtn->setOnClick([doCreate, inputPtr]() mutable { doCreate(inputPtr->value()); });
-      actions->addChild(std::move(saveBtn));
-
-      auto cancelBtn = std::make_unique<Button>();
-      cancelBtn->setGlyph("close");
-      cancelBtn->setVariant(ButtonVariant::Ghost);
-      cancelBtn->setGlyphSize(Style::fontSizeCaption * scale);
-      cancelBtn->setMinWidth(Style::controlHeightSm * scale);
-      cancelBtn->setMinHeight(Style::controlHeightSm * scale);
-      cancelBtn->setPadding(Style::spaceXs * scale);
-      cancelBtn->setRadius(Style::scaledRadiusSm(scale));
-      cancelBtn->setOnClick([creatingBarName, requestRebuild]() {
-        creatingBarName->clear();
-        requestRebuild();
-      });
-      actions->addChild(std::move(cancelBtn));
+      inputPtr->setOnSubmit([doCreate](const std::string& text) mutable { doCreate(text); });
 
       createPanel->addChild(std::move(input));
-      createPanel->addChild(std::move(actions));
+      createPanel->addChild(
+          ui::row(
+              {
+                  .align = FlexAlign::Center,
+                  .gap = Style::spaceXs * scale,
+              },
+              makeCreateButton(
+                  i18n::tr("settings.entities.bar.create"), scale,
+                  [doCreate, inputPtr]() mutable { doCreate(inputPtr->value()); }
+              ),
+              makeCreateCancelButton(scale, [creatingBarName, requestRebuild]() {
+                creatingBarName->clear();
+                requestRebuild();
+              })
+          )
+      );
       sidebar->addChild(std::move(createPanel));
     }
 

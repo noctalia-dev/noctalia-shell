@@ -2,6 +2,7 @@
 
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
+#include "wayland/text_input_service.h"
 
 namespace {
 
@@ -39,10 +40,12 @@ void InputDispatcher::setSceneRoot(Node* root) {
       if (m_hoverChangeCallback) {
         m_hoverChangeCallback(old, nullptr);
       }
+      updateCursor(m_lastSerial);
     }
   }
   if (root == nullptr) {
     if (m_focusedArea != nullptr) {
+      clearTextInputFocus(m_focusedArea);
       m_focusedArea->dispatchFocusLoss();
       m_focusedArea = nullptr;
     }
@@ -59,6 +62,18 @@ void InputDispatcher::setHoverChangeCallback(HoverChangeCallback callback) {
 
 void InputDispatcher::setCursorShapeCallback(CursorShapeCallback callback) {
   m_cursorShapeCallback = std::move(callback);
+}
+
+void InputDispatcher::setTextInputContext(
+    wl_surface* surface, TextInputService* service, bool keyboardFocusActivation
+) {
+  if ((m_textInputSurface != surface || m_textInputService != service) && m_focusedArea != nullptr) {
+    clearTextInputFocus(m_focusedArea);
+  }
+  m_textInputSurface = surface;
+  m_textInputService = service;
+  m_textInputKeyboardFocusActivation = keyboardFocusActivation;
+  syncTextInputFocus();
 }
 
 void InputDispatcher::pointerEnter(float x, float y, std::uint32_t serial) {
@@ -80,6 +95,9 @@ void InputDispatcher::pointerLeave() {
       m_hoverChangeCallback(old, nullptr);
     }
   }
+  // Restore the default cursor while the enter serial is still valid.
+  // Some compositors such as Hyprland keep the last wp_cursor_shape until the client clears it.
+  updateCursor(m_lastSerial);
 }
 
 void InputDispatcher::pointerMotion(float x, float y, std::uint32_t serial) {
@@ -99,21 +117,35 @@ bool InputDispatcher::pointerButton(float x, float y, std::uint32_t button, bool
 
   pruneDetachedAreas();
 
-  InputArea* target = m_capturedArea != nullptr ? m_capturedArea : inputAreaAcceptingButton(m_hoveredArea, button);
+  InputArea* target = m_capturedArea;
+  if (target == nullptr) {
+    if (pressed) {
+      target = inputAreaAcceptingButton(findInputAreaAt(x, y), button);
+    }
+    if (target == nullptr) {
+      target = inputAreaAcceptingButton(m_hoveredArea, button);
+    }
+  }
 
-  // Press with no hover target: subtree may have been rebuilt (same global coords, new InputArea*).
+  // Press with no target: subtree may have been rebuilt (same global coords, new InputArea*).
   if (target == nullptr && m_capturedArea == nullptr && pressed && m_hasPointerPosition) {
     updateHover(x, y, m_lastSerial);
-    target = inputAreaAcceptingButton(m_hoveredArea, button);
+    target = inputAreaAcceptingButton(findInputAreaAt(x, y), button);
+    if (target == nullptr) {
+      target = inputAreaAcceptingButton(m_hoveredArea, button);
+    }
   }
 
   if (target != nullptr) {
     if (pressed && m_capturedArea == nullptr) {
-      if (target != m_focusedArea && m_focusedArea != nullptr) {
+      if (target != m_focusedArea && m_focusedArea != nullptr && target->focusable()) {
         setFocus(nullptr);
         pruneDetachedAreas();
         updateHover(x, y, m_lastSerial);
-        target = inputAreaAcceptingButton(m_hoveredArea, button);
+        target = inputAreaAcceptingButton(findInputAreaAt(x, y), button);
+        if (target == nullptr) {
+          target = inputAreaAcceptingButton(m_hoveredArea, button);
+        }
         if (target == nullptr) {
           return false;
         }
@@ -155,8 +187,10 @@ void InputDispatcher::syncPointerHover() {
   updateHover(m_lastPointerX, m_lastPointerY, m_lastSerial);
 }
 
-bool InputDispatcher::pointerAxis(float x, float y, std::uint32_t axis, std::uint32_t axisSource, double value,
-                                  std::int32_t discrete, std::int32_t value120, float lines) {
+bool InputDispatcher::pointerAxis(
+    float x, float y, std::uint32_t axis, std::uint32_t axisSource, double value, std::int32_t discrete,
+    std::int32_t value120, float lines
+) {
   pruneDetachedAreas();
   InputArea* target = m_capturedArea != nullptr ? m_capturedArea : findInputAreaAt(x, y);
   if (target == nullptr) {
@@ -187,8 +221,9 @@ bool InputDispatcher::pointerAxis(float x, float y, std::uint32_t axis, std::uin
   return consumedAny;
 }
 
-void InputDispatcher::keyEvent(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed,
-                               bool preedit) {
+void InputDispatcher::keyEvent(
+    std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed, bool preedit
+) {
   pruneDetachedAreas();
   if (m_focusedArea != nullptr) {
     m_focusedArea->dispatchKey(sym, utf32, modifiers, pressed, preedit);
@@ -200,14 +235,18 @@ void InputDispatcher::setFocus(InputArea* area) {
     return;
   }
   if (m_focusedArea != nullptr) {
+    clearTextInputFocus(m_focusedArea);
     m_focusedArea->dispatchFocusLoss();
   }
   m_focusedArea = area;
   if (m_focusedArea != nullptr) {
     trackArea(m_focusedArea);
     m_focusedArea->dispatchFocusGain();
+    syncTextInputFocus();
   }
 }
+
+InputArea* InputDispatcher::inputAreaAt(float x, float y) { return findInputAreaAt(x, y); }
 
 InputArea* InputDispatcher::findInputAreaAt(float x, float y) {
   if (m_sceneRoot == nullptr) {
@@ -281,6 +320,7 @@ void InputDispatcher::pruneDetachedAreas() {
       if (m_hoverChangeCallback) {
         m_hoverChangeCallback(old, nullptr);
       }
+      updateCursor(m_lastSerial);
     }
   }
   if (!isAttachedToScene(m_capturedArea)) {
@@ -288,6 +328,7 @@ void InputDispatcher::pruneDetachedAreas() {
   }
   if (!isAttachedToScene(m_focusedArea)) {
     if (m_focusedArea != nullptr) {
+      clearTextInputFocus(m_focusedArea);
       m_focusedArea->dispatchFocusLoss();
     }
     m_focusedArea = nullptr;
@@ -298,14 +339,37 @@ void InputDispatcher::trackArea(InputArea* area) {
   area->setDestroyCallback([this](InputArea* a) {
     if (m_hoveredArea == a) {
       m_hoveredArea = nullptr;
+      if (m_hoverChangeCallback) {
+        m_hoverChangeCallback(a, nullptr);
+      }
+      updateCursor(m_lastSerial);
     }
     if (m_focusedArea == a) {
+      clearTextInputFocus(a);
       m_focusedArea = nullptr;
     }
     if (m_capturedArea == a) {
       m_capturedArea = nullptr;
     }
   });
+}
+
+void InputDispatcher::clearTextInputFocus(InputArea* area) {
+  if (m_textInputService == nullptr || area == nullptr) {
+    return;
+  }
+  if (auto* client = area->textInputClient(); client != nullptr) {
+    m_textInputService->clearFocusedClient(client);
+  }
+}
+
+void InputDispatcher::syncTextInputFocus() {
+  if (m_textInputService == nullptr || m_textInputSurface == nullptr || m_focusedArea == nullptr) {
+    return;
+  }
+  if (auto* client = m_focusedArea->textInputClient(); client != nullptr) {
+    m_textInputService->setFocusedClient(m_textInputSurface, client, m_textInputKeyboardFocusActivation);
+  }
 }
 
 void InputDispatcher::updateCursor(std::uint32_t serial) {
