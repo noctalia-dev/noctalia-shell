@@ -89,7 +89,11 @@ mesh_w           = 24               # projectM warp mesh width
 mesh_h           = 18               # projectM warp mesh height
 darken           = 0.7              # 0.0 = no overlay, 1.0 = fully black
 presets_dir      = ""               # "" = default XDG location
-audio_source     = ""               # PipeWire node target; "" = default monitor
+audio_source     = ""               # PipeWire node target; "" = follow active sink (see allow_mic_fallback)
+# Privacy: when audio_source is empty and no audio is playing, the tap can
+# fall back to the default microphone so the visualizer keeps reacting to
+# ambient sound. This OPENS YOUR MICROPHONE. Off by default; opt in here.
+allow_mic_fallback = false
 
 # ── Theme ─────────────────────────────────────────────────────────────────────
 

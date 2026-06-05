@@ -32,6 +32,7 @@ public:
   // to keep the static-image-only behaviour.
   void setVisualizer(ProjectMRenderer* renderer, VisualizerService* service);
 
+
   void onOutputChange();
   void onStateChange();
   void onSecondTick();

@@ -42,16 +42,32 @@ namespace {
       EGL_NONE,
   };
 
-  // Request a GLES3 context. libprojectM 4.x renders through Vertex Array
-  // Objects, which are core in GLES3 but only an extension in GLES2; asking
-  // for 3 explicitly is the portable, correct thing for the libprojectM
-  // visualizer in this share group. GLES3 is a strict superset of GLES2 so the
-  // ES2-targeted surface backends are unaffected.
+  // Prefer GLES3. libprojectM 4.x renders through Vertex Array Objects, which
+  // are core in GLES3 but only an extension in GLES2; asking for 3 explicitly
+  // is the portable, correct thing for the libprojectM visualizer in this
+  // share group. GLES3 is a strict superset of GLES2 so the ES2-targeted
+  // surface backends are unaffected.
+  //
+  // Older Adreno 3xx/4xx, older Mali-T, and legacy NVIDIA Wayland drivers
+  // refuse a CLIENT_VERSION=3 context. We MUST NOT make those users' shells
+  // fail to start over an opt-in (and OFF-by-default) feature, so on failure
+  // we fall back to CLIENT_VERSION=2 — the visualizer will then fail to
+  // initialize and the shell continues with static wallpapers only.
   //
   // NOTE: on Mesa this is effectively defensive — Mesa hands back a 3.2
   // context with working VAOs even for an ES2 request. It is NOT what fixed
   // the projectM first-frame crash; that was a context-ownership bug in
   // ProjectMRenderer::loadPreset (see the comment there).
+  constexpr EGLint kContextAttributesGles3[] = {
+      EGL_CONTEXT_CLIENT_VERSION,
+      3,
+      EGL_NONE,
+  };
+  constexpr EGLint kContextAttributesGles2[] = {
+      EGL_CONTEXT_CLIENT_VERSION,
+      2,
+      EGL_NONE,
+  };
   constexpr EGLint kPlainContextAttributes[] = {
       EGL_CONTEXT_CLIENT_VERSION,
       3,
@@ -114,8 +130,21 @@ void GlSharedContext::initialize(wl_display* display, bool createSharedContext) 
   buildContextAttributes();
 
   if (createSharedContext) {
-    m_rootContext = createContext(EGL_NO_CONTEXT, "root");
-    kLog.info("initialized EGL {}.{} with shared root context", major, minor);
+    m_rootContext = eglCreateContext(m_display, m_config, EGL_NO_CONTEXT, kContextAttributesGles3);
+    if (m_rootContext != EGL_NO_CONTEXT) {
+      m_clientVersion = 3;
+    } else {
+      const auto firstError = static_cast<unsigned>(eglGetError());
+      m_rootContext = eglCreateContext(m_display, m_config, EGL_NO_CONTEXT, kContextAttributesGles2);
+      if (m_rootContext == EGL_NO_CONTEXT) {
+        throw std::runtime_error("eglCreateContext (root, GLES2 fallback) failed");
+      }
+      m_clientVersion = 2;
+      kLog.info("EGL GLES3 context unavailable (error 0x{:x}); falling back to GLES2 — live_paper "
+                "visualizer will be disabled on this hardware",
+                firstError);
+    }
+    kLog.info("initialized EGL {}.{} with shared root context (GLES{})", major, minor, m_clientVersion);
   } else {
     kLog.info("initialized EGL {}.{} without shared context (isolated GPU contexts)", major, minor);
   }
@@ -128,7 +157,7 @@ void GlSharedContext::buildContextAttributes() {
 
   m_contextAttributes.clear();
   m_contextAttributes.push_back(EGL_CONTEXT_CLIENT_VERSION);
-  m_contextAttributes.push_back(2);
+  m_contextAttributes.push_back(3);
   if (hasRobustness) {
     m_contextAttributes.push_back(EGL_CONTEXT_OPENGL_RESET_NOTIFICATION_STRATEGY_EXT);
     m_contextAttributes.push_back(EGL_LOSE_CONTEXT_ON_RESET_EXT);

@@ -40,6 +40,7 @@ public:
   // Optional live-paper plumbing. Non-owning; pass null to disable.
   void setVisualizer(ProjectMRenderer* renderer);
 
+
   void setSessionHooks(std::function<void()> onLocked, std::function<void()> onUnlocked);
   bool lock();
   void unlock();

@@ -2,9 +2,11 @@
 
 #include "core/log.h"
 #include "pipewire/pipewire_service.h"
+#include "pipewire/pipewire_spectrum.h"
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstring>
 #include <pipewire/core.h>
 #include <pipewire/keys.h>
@@ -19,6 +21,19 @@
 namespace {
 
   constexpr Logger kLog{"pipewire_pcm_tap"};
+
+  // Microphone automatic gain control — ported from the livepaper-v5 prototype.
+  // Sink-monitor capture already arrives at program level, but a mic tapping
+  // ambient room sound peaks far below full scale; without makeup gain
+  // libprojectM's beat/FFT analysis barely moves. A peak envelope tracks the
+  // input with a fast attack and slow release, and makeup gain aims it at a
+  // target peak. Applied to source (mic/line-in) captures only.
+  constexpr float kAgcTargetPeak = 0.6f;       // makeup gain aims the envelope here
+  constexpr float kAgcMaxGain = 40.0f;         // ceiling — keeps a near-silent room from blowing up
+  constexpr float kAgcAttack = 0.5f;           // per-chunk: envelope rises fast toward a louder peak
+  constexpr float kAgcRelease = 0.002f;        // per-chunk: envelope decays slowly so gain does not pump
+  constexpr float kAgcFloor = 0.001f;          // envelope lower bound — caps the computed gain
+  constexpr float kAgcInitialEnvelope = 0.01f; // envelope seed on each (re)bind
 
   class BufferRequeueGuard {
   public:
@@ -38,8 +53,8 @@ namespace {
 
 class PipeWirePcmTap::Stream {
 public:
-  Stream(PipeWirePcmTap& tap, std::uint32_t nodeId, std::string targetObject)
-      : m_tap(tap), m_nodeId(nodeId), m_targetObject(std::move(targetObject)) {}
+  Stream(PipeWirePcmTap& tap, std::uint32_t nodeId, std::string targetObject, bool targetIsSink)
+      : m_tap(tap), m_nodeId(nodeId), m_targetObject(std::move(targetObject)), m_targetIsSink(targetIsSink) {}
   ~Stream() { destroy(); }
 
   Stream(const Stream&) = delete;
@@ -62,6 +77,7 @@ private:
   PipeWirePcmTap& m_tap;
   std::uint32_t m_nodeId = 0;
   std::string m_targetObject;
+  bool m_targetIsSink = true;
   pw_stream* m_stream = nullptr;
   spa_hook m_listener{};
   spa_audio_info_raw m_format = SPA_AUDIO_INFO_RAW_INIT(.format = SPA_AUDIO_FORMAT_UNKNOWN);
@@ -84,10 +100,23 @@ bool PipeWirePcmTap::Stream::start() {
     return false;
   }
 
-  auto* props = pw_properties_new(PW_KEY_MEDIA_TYPE, "Audio", PW_KEY_MEDIA_CATEGORY, "Monitor", PW_KEY_MEDIA_NAME,
-                                  "Noctalia LivePaper", PW_KEY_APP_NAME, "Noctalia LivePaper", PW_KEY_STREAM_MONITOR,
-                                  "true", PW_KEY_STREAM_CAPTURE_SINK, "true", PW_KEY_TARGET_OBJECT,
-                                  m_targetObject.c_str(), PW_KEY_NODE_PASSIVE, "true", nullptr);
+  // For Audio/Sink targets we capture the sink's monitor side (the
+  // PW_KEY_STREAM_CAPTURE_SINK hint + Monitor category) and stay passive, so
+  // tapping a sink never wakes it from idle. For Audio/Source targets (the mic
+  // fallback) those monitor hints would point PipeWire at a non-existent
+  // monitor port — use a plain Capture category — and the stream is
+  // deliberately NOT passive: it must activate the source, otherwise the tap
+  // would only ever see silence and the fallback would be pointless.
+  auto* props = m_targetIsSink
+                    ? pw_properties_new(PW_KEY_MEDIA_TYPE, "Audio", PW_KEY_MEDIA_CATEGORY, "Monitor",
+                                        PW_KEY_MEDIA_NAME, "Noctalia LivePaper", PW_KEY_APP_NAME,
+                                        "Noctalia LivePaper", PW_KEY_STREAM_MONITOR, "true",
+                                        PW_KEY_STREAM_CAPTURE_SINK, "true", PW_KEY_TARGET_OBJECT,
+                                        m_targetObject.c_str(), PW_KEY_NODE_PASSIVE, "true", nullptr)
+                    : pw_properties_new(PW_KEY_MEDIA_TYPE, "Audio", PW_KEY_MEDIA_CATEGORY, "Capture",
+                                        PW_KEY_MEDIA_ROLE, "DSP", PW_KEY_MEDIA_NAME, "Noctalia LivePaper",
+                                        PW_KEY_APP_NAME, "Noctalia LivePaper", PW_KEY_TARGET_OBJECT,
+                                        m_targetObject.c_str(), nullptr);
   if (props == nullptr) {
     kLog.warn("failed to create pcm-tap stream properties");
     return false;
@@ -213,21 +242,36 @@ void PipeWirePcmTap::Stream::handleProcess() {
 
 // ───────────────────────────────────────────────────────────────────────────
 
-PipeWirePcmTap::PipeWirePcmTap(PipeWireService& service) : m_service(service) {
+PipeWirePcmTap::PipeWirePcmTap(PipeWireService& service, PipeWireSpectrum* spectrum)
+    : m_service(service), m_spectrum(spectrum) {
   m_ring.assign(kRingFrames * kMaxChannels, 0.0f);
 }
 
-PipeWirePcmTap::~PipeWirePcmTap() = default;
+PipeWirePcmTap::~PipeWirePcmTap() {
+  // Drop the spectrum listener before our members go — its callback captures
+  // `this`. Application destroys the tap before the spectrum (declaration
+  // order), so the spectrum is still alive here.
+  if (m_spectrum != nullptr && m_spectrumListener != 0) {
+    m_spectrum->removeChangeListener(m_spectrumListener);
+  }
+}
 
 bool PipeWirePcmTap::isRunning() const noexcept { return m_streamRunning.load(std::memory_order_acquire); }
 
 void PipeWirePcmTap::start(std::string targetNodeName) {
   m_explicitTarget = std::move(targetNodeName);
+  m_started = true;
+  // Bind first, then subscribe: subscribing can re-enter handleAudioStateChanged()
+  // via the spectrum's initial notification, and binding first means that
+  // re-entry resolves to the same node and skips a redundant rebuild.
   rebuildStream();
+  updateSpectrumSubscription();
 }
 
 void PipeWirePcmTap::stop() {
+  m_started = false;
   m_explicitTarget.clear();
+  updateSpectrumSubscription();
   m_stream.reset();
   m_boundNodeId = 0;
   m_boundTarget.clear();
@@ -235,11 +279,46 @@ void PipeWirePcmTap::stop() {
   resetRing(0, 0);
 }
 
+void PipeWirePcmTap::setMicFallbackAllowed(bool allowed) {
+  if (m_micFallbackAllowed == allowed) {
+    return;
+  }
+  m_micFallbackAllowed = allowed;
+  // Only react if we're currently in follow mode with no active sink to
+  // tap; flipping the knob there is exactly the case where rebind picks up
+  // (or drops) the mic. Anything else (no start, explicit target,
+  // currently bound to a sink) is unaffected by the privacy gate.
+  if (m_started && m_explicitTarget.empty()) {
+    handleAudioStateChanged();
+  }
+}
+
+void PipeWirePcmTap::updateSpectrumSubscription() {
+  // Follow mode keys off PipeWireSpectrum::idle() — the same signal that shows
+  // or hides the bar's audio-visualizer widget. Holding a listener keeps the
+  // spectrum analysing the default sink even when no widget is on the bar, and
+  // delivers the idle/active transitions that drive our rebind. An explicit
+  // target needs no spectrum.
+  //
+  // bandCount=1 because we never call values() — only the change-callback
+  // signal matters here. Asking for the smallest meaningful number keeps the
+  // spectrum from allocating an 8-band FFT output it'll never read.
+  const bool wantSubscription = m_started && m_explicitTarget.empty() && m_spectrum != nullptr;
+  if (wantSubscription && m_spectrumListener == 0) {
+    m_spectrumListener = m_spectrum->addChangeListener(1, [this]() { handleAudioStateChanged(); });
+  } else if (!wantSubscription && m_spectrumListener != 0) {
+    m_spectrum->removeChangeListener(m_spectrumListener);
+    m_spectrumListener = 0;
+  }
+}
+
 void PipeWirePcmTap::handleAudioStateChanged() {
-  // Only rebind if we're following the default sink (explicitTarget empty)
-  // and the resolved default sink has changed.
-  if (m_stream == nullptr && m_explicitTarget.empty() && m_boundNodeId == 0) {
-    // Stream was never started — nothing to rebind.
+  // Rebind whenever the resolved target changes. m_started — not the bound
+  // state — is the gate: a tap that was start()ed while no audio device
+  // existed yet has {m_stream==null, m_boundNodeId==0}, which is otherwise
+  // indistinguishable from "never started" and would never pick up a sink or
+  // mic that appears later.
+  if (!m_started) {
     return;
   }
   const auto* node = resolvedTargetNode();
@@ -265,13 +344,31 @@ const AudioNode* PipeWirePcmTap::resolvedTargetNode() const noexcept {
     }
     return nullptr;
   }
-  // Follow default sink.
-  const std::uint32_t id = state.defaultSinkId;
-  if (id == 0) {
-    return nullptr;
+  // Follow mode (no explicit target): mirror the bar's audio-visualizer
+  // widget. While the spectrum reports audio — i.e. the widget is visible —
+  // tap exactly the node it analyses, so the projectM visualizer reacts to the
+  // same sound the widget shows. Once the spectrum goes idle (~1 s of silence,
+  // widget hidden) we OPTIONALLY fall back to the default source (mic) so the
+  // visualizer keeps reacting to ambient sound — gated on
+  // m_micFallbackAllowed because opening the user's mic is a privacy
+  // decision they must opt into.
+  //
+  // NOTE: the returned AudioNode* is borrowed from PipeWireService::state(),
+  // which is reassigned on every state publish. Caller must extract any
+  // string/id fields synchronously before the next pw_loop pump.
+  if (m_spectrum != nullptr && !m_spectrum->idle()) {
+    if (const AudioNode* node = m_spectrum->resolvedTargetNode(); node != nullptr) {
+      return node;
+    }
   }
-  auto sink = std::ranges::find_if(state.sinks, [id](const AudioNode& n) { return n.id == id; });
-  return sink != state.sinks.end() ? &*sink : nullptr;
+  if (m_micFallbackAllowed && state.defaultSourceId != 0) {
+    auto source = std::ranges::find_if(
+        state.sources, [id = state.defaultSourceId](const AudioNode& n) { return n.id == id; });
+    if (source != state.sources.end()) {
+      return &*source;
+    }
+  }
+  return nullptr;
 }
 
 void PipeWirePcmTap::rebuildStream() {
@@ -285,7 +382,16 @@ void PipeWirePcmTap::rebuildStream() {
     resetRing(0, 0);
     return;
   }
-  m_stream = std::make_unique<Stream>(*this, node->id, node->name);
+  const bool targetIsSink = node->mediaClass == "Audio/Sink";
+  // AGC runs on source (mic/line-in) captures only; sink monitors keep their
+  // native dynamics. We're on the (single) pw_loop thread, m_stream.reset()
+  // above drained any in-flight on_process, and the new Stream below has not
+  // started yet — so feedSamples cannot be running concurrently with this
+  // write. Seed the envelope fresh for the new source. (See the threading
+  // note in the header for the wider picture.)
+  m_micAgcActive = !targetIsSink;
+  m_agcEnvelope = kAgcInitialEnvelope;
+  m_stream = std::make_unique<Stream>(*this, node->id, node->name, targetIsSink);
   if (!m_stream->start()) {
     m_stream.reset();
     resetRing(0, 0);
@@ -296,12 +402,25 @@ void PipeWirePcmTap::rebuildStream() {
 }
 
 void PipeWirePcmTap::resetRing(int channels, int sampleRate) {
-  // Invalidate before publishing new format — any consumer observing
-  // channels()==0 will skip its read until the new format is published.
+  // Channel count is the publication gate: consume() acquires it FIRST, then
+  // reads the indices. So we MUST land the new indices before re-publishing a
+  // non-zero channel count, otherwise a consumer can observe (channels > 0,
+  // writeFrames == 0, readFrames stale) and compute available = 0 - stale, get
+  // a size_t wrap, snap to kRingFrames, and serve kRingFrames worth of
+  // zero/garbage data.
+  //
+  // Order:
+  //   1. Drop channels to 0 (release) → any concurrent consume() that next
+  //      loads channels with acquire sees 0 and bails.
+  //   2. Reset indices with relaxed stores (no consumer is going to read past
+  //      step 1 until we re-publish channels).
+  //   3. Publish sampleRate (informational; not on the consume() path).
+  //   4. Re-publish channels (release) — pairs with consume()'s acquire and
+  //      is the single linearization point for "the new format is live".
   m_channels.store(0, std::memory_order_release);
-  m_writeFrames.store(0, std::memory_order_release);
-  m_readFrames.store(0, std::memory_order_release);
-  m_sampleRate.store(sampleRate, std::memory_order_release);
+  m_writeFrames.store(0, std::memory_order_relaxed);
+  m_readFrames.store(0, std::memory_order_relaxed);
+  m_sampleRate.store(sampleRate, std::memory_order_relaxed);
   m_channels.store(std::min(channels, kMaxChannels), std::memory_order_release);
 }
 
@@ -309,15 +428,33 @@ void PipeWirePcmTap::feedSamples(const float* interleaved, int frameCount, int c
   if (frameCount <= 0 || channels <= 0 || channels > kMaxChannels) {
     return;
   }
+
+  // Mic AGC: scan this chunk's peak, advance the envelope (fast attack / slow
+  // release) and derive a capped makeup gain. m_agcEnvelope is touched only
+  // here on the RT thread. Sink monitors leave gain at 1.0 → pass-through.
+  float gain = 1.0f;
+  if (m_micAgcActive) {
+    const int sampleCount = frameCount * channels;
+    float peak = 0.0f;
+    for (int i = 0; i < sampleCount; ++i) {
+      peak = std::max(peak, std::fabs(interleaved[i]));
+    }
+    const float coeff = peak > m_agcEnvelope ? kAgcAttack : kAgcRelease;
+    m_agcEnvelope += (peak - m_agcEnvelope) * coeff;
+    m_agcEnvelope = std::max(m_agcEnvelope, kAgcFloor);
+    gain = std::min(kAgcTargetPeak / m_agcEnvelope, kAgcMaxGain);
+  }
+
   const auto write = m_writeFrames.load(std::memory_order_relaxed);
   const std::size_t channelStride = static_cast<std::size_t>(kMaxChannels);
   for (int i = 0; i < frameCount; ++i) {
     const std::size_t slot = (write + static_cast<std::size_t>(i)) % kRingFrames;
     float* dst = m_ring.data() + slot * channelStride;
-    // Copy real channels; remaining slots in the stride are left untouched
-    // (consumer only reads up to current channels()).
+    // Copy real channels (gained and clamped to the [-1, 1] libprojectM
+    // expects); remaining slots in the stride are left untouched (consumer
+    // only reads up to current channels()).
     for (int c = 0; c < channels; ++c) {
-      dst[c] = interleaved[i * channels + c];
+      dst[c] = std::clamp(interleaved[i * channels + c] * gain, -1.0f, 1.0f);
     }
   }
   m_writeFrames.store(write + static_cast<std::size_t>(frameCount), std::memory_order_release);

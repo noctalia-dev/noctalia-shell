@@ -21,6 +21,8 @@
 #include <cstdint>
 #include <unordered_map>
 
+#include <cstdint>
+
 class GlesRenderBackend final : public RenderBackend {
 public:
   GlesRenderBackend() = default;
@@ -112,8 +114,11 @@ private:
   GraphicsResetStatusProc m_graphicsResetStatus = nullptr;
   bool m_resetStatusLogged = false;
   int m_maxTextureSize = 0;
-  // EGLImageKHR -> GL texture name, imported into m_context for live paper.
-  std::unordered_map<void*, std::uint32_t> m_liveImageTextures;
+  // Single-slot cache for the live-paper EGLImage alias. Keyed by the
+  // EGLImageKHR pointer; replaced (with `glDeleteTextures` on the old entry)
+  // whenever the producer publishes a different image. See importLiveImage().
+  void* m_liveImageCacheKey = nullptr;
+  std::uint32_t m_liveImageCacheTex = 0;
   GlesTextureManager m_textureManager;
   RectProgram m_rectProgram;
   ImageProgram m_imageProgram;

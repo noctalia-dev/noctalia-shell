@@ -1,1 +1,15 @@
+# Optional features. Each is exposed as a meson `feature` (auto|enabled|disabled).
+#
+# auto      → enable iff the dependency is found on the system; build still
+#             succeeds if it is missing.
+# enabled   → hard-require the dependency; meson setup fails if it is missing.
+# disabled  → skip the feature regardless.
+
+option(
+  'livepaper',
+  type: 'feature',
+  value: 'auto',
+  description: 'projectM/Milkdrop audio-visualizer wallpaper. Requires a GLES-enabled libprojectM 4 on the pkg-config path. The feature is also OFF by default at runtime; this controls whether the C++ code and the libprojectM dependency are compiled in at all.',
+)
+
 option('jemalloc', type: 'feature', value: 'auto', description: 'Use jemalloc on glibc builds')

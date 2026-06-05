@@ -577,6 +577,17 @@ void LockScreen::handlePasswordEdited(const std::string& value) {
 }
 
 void LockScreen::tryAuthenticate() {
+  // Belt-and-suspenders: never hand an empty string to PAM. Stacks that include
+  // `nullok` (some default workstation configs) would otherwise treat empty as
+  // a valid password, so bare Enter would unlock the session.
+  if (m_password.empty()) {
+    m_status = i18n::tr("lockscreen.password-required");
+    m_statusIsError = true;
+    updatePromptOnSurfaces();
+    return;
+  }
+
+
   m_status = i18n::tr("lockscreen.authenticating");
   m_statusIsError = false;
   updatePromptOnSurfaces();

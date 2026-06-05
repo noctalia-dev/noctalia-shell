@@ -59,6 +59,8 @@ void VisualizerService::shutdown() {
   m_currentPreset.clear();
   m_lastScannedDir.clear();
   m_lastSeenTrackId.clear();
+  m_seenFirstTrack = false;
+  m_sessionLocked = false;
 }
 
 bool VisualizerService::enabled() const noexcept {
@@ -109,18 +111,37 @@ void VisualizerService::onMprisChanged() {
     return; // metadata refresh, not an actual new track
   }
   m_lastSeenTrackId = active->trackId;
-  // First observation after startup: just record the id, don't advance.
-  // Without this every initial MPRIS discovery would punt the preset.
-  static thread_local bool seenAny = false;
-  if (!seenAny) {
-    seenAny = true;
+  // First observation after init is initial discovery, not a user-initiated
+  // track change — record the id without bumping the preset. Instance-scoped
+  // so shutdown() / initialize() correctly re-arms it.
+  if (!m_seenFirstTrack) {
+    m_seenFirstTrack = true;
     return;
   }
   advancePreset();
 }
 
+void VisualizerService::setSessionLocked(bool locked) {
+  if (m_sessionLocked == locked) {
+    return;
+  }
+  m_sessionLocked = locked;
+  // While locked we pin the running preset (see header). Cancel any scheduled
+  // rotation; when the session is unlocked, scheduleRotation() reinstates the
+  // timer if interval_seconds > 0.
+  if (m_sessionLocked) {
+    cancelRotation();
+  } else {
+    scheduleRotation();
+  }
+}
+
 void VisualizerService::advancePreset() {
   if (m_renderer == nullptr || m_presets.empty()) {
+    return;
+  }
+  // Pin the running preset while the session is locked — see setSessionLocked.
+  if (m_sessionLocked) {
     return;
   }
   const auto now = std::chrono::steady_clock::now();
@@ -172,14 +193,24 @@ void VisualizerService::rescanPresets() {
     kLog.warn("presets directory {} is not a directory ({})", dir, ec.message());
     return;
   }
+  // Do NOT follow symlinks: presets_dir is user-controlled (via TOML or
+  // XDG_DATA_HOME), and a self-referencing symlink would either loop forever
+  // here or silently duplicate presets in the rotation. We still skip files
+  // that aren't readable rather than aborting the whole scan.
   for (auto it = std::filesystem::recursive_directory_iterator(
-           root, std::filesystem::directory_options::follow_directory_symlink, ec);
+           root, std::filesystem::directory_options::skip_permission_denied, ec);
        it != std::filesystem::recursive_directory_iterator(); it.increment(ec)) {
     if (ec) {
       kLog.warn("recursive scan error at {}: {}", it->path().string(), ec.message());
       continue;
     }
-    if (!it->is_regular_file(ec)) {
+    // Use symlink_status() — i.e. DON'T follow file symlinks either. We
+    // already skip directory symlinks via directory_options, but a
+    // malicious preset pack could include `.milk` symlinks pointing at
+    // arbitrary readable paths. is_regular_file() on the entry would
+    // follow them; checking the link's own status keeps the scanner
+    // strictly inside the presets dir.
+    if (!std::filesystem::is_regular_file(it->symlink_status(ec)) || ec) {
       continue;
     }
     if (hasPresetExtension(it->path())) {

@@ -484,12 +484,11 @@ void RenderContext::renderNode(
       const float imageWidth2 = hasSource2 ? wallpaper->imageWidth2() : wallpaper->imageWidth1();
       const float imageHeight2 = hasSource2 ? wallpaper->imageHeight2() : wallpaper->imageHeight1();
       const float progress = live ? 0.0f : (hasSource2 ? wallpaper->progress() : 0.0f);
-      m_backend->drawWallpaper(
-          wallpaper->transition(), wallpaper->sourceKind1(), tex1, wallpaper->sourceColor1(),
-          sourceKind2, texture2, sourceColor2, sw, sh, node->width(), node->height(), wallpaper->imageWidth1(),
-          wallpaper->imageHeight1(), imageWidth2, imageHeight2, progress, static_cast<float>(wallpaper->fillMode()),
-          wallpaper->transitionParams(), wallpaper->fillColor(), worldTransform
-      );
+      m_backend->drawWallpaper(wallpaper->transition(), wallpaper->sourceKind1(), tex1, wallpaper->sourceColor1(),
+                               sourceKind2, texture2, sourceColor2, sw, sh, node->width(), node->height(),
+                               wallpaper->imageWidth1(), wallpaper->imageHeight1(), imageWidth2, imageHeight2,
+                               progress, static_cast<float>(wallpaper->fillMode()), wallpaper->transitionParams(),
+                               wallpaper->fillColor(), worldTransform);
     }
     break;
   }

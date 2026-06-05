@@ -720,8 +720,6 @@ void LockSurface::applyBlurredDesktopTexture() {
   m_captureDirty = false;
   m_wallpaperDirty = false;
 }
-
-
 void LockSurface::updateClockText() { m_clock->setText(formatLocalTime(shellTimeFormat(m_config))); }
 
 void LockSurface::onGpuResourcesInvalidated() {

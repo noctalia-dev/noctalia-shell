@@ -181,6 +181,23 @@ Application::Application()
 }
 
 Application::~Application() {
+#ifdef NOCTALIA_HAVE_LIVEPAPER
+  // Tear down the live-paper plumbing before the implicit member destruction
+  // begins. The unique_ptr<ProjectMRenderer> is declared above m_glShared
+  // (members destroy in reverse declaration order), so without this explicit
+  // reset() the renderer's destructor would run AFTER the GlSharedContext is
+  // already gone and dereference dangling EGL state from
+  // ProjectMRenderer::shutdown(). Service first because it holds a non-owning
+  // pointer to the renderer.
+  m_visualizerService.reset();
+  m_projectMRenderer.reset();
+  // PCM tap also depends on m_pipewireService which is declared earlier; this
+  // is correct via the implicit teardown, but resetting alongside the rest of
+  // the live-paper plumbing keeps the shutdown sequence symmetric with
+  // initUi().
+  m_pipewirePcmTap.reset();
+#endif
+
   m_notificationManager.flushPersistedHistory();
   m_wayland.setClipboardService(nullptr);
   m_wayland.setTextInputService(nullptr);
@@ -895,7 +912,9 @@ void Application::initServices() {
   try {
     m_pipewireService = std::make_unique<PipeWireService>();
     m_pipewireSpectrum = std::make_unique<PipeWireSpectrum>(*m_pipewireService);
-    m_pipewirePcmTap = std::make_unique<PipeWirePcmTap>(*m_pipewireService);
+#ifdef NOCTALIA_HAVE_LIVEPAPER
+    m_pipewirePcmTap = std::make_unique<PipeWirePcmTap>(*m_pipewireService, m_pipewireSpectrum.get());
+#endif
     m_soundPlayer = std::make_unique<SoundPlayer>(m_pipewireService->loop());
 
     auto applySoundConfig = [this]() {
@@ -925,7 +944,9 @@ void Application::initServices() {
   } catch (const std::exception& e) {
     kLog.warn("pipewire disabled: {}", e.what());
     m_soundPlayer.reset();
+#ifdef NOCTALIA_HAVE_LIVEPAPER
     m_pipewirePcmTap.reset();
+#endif
     m_pipewireSpectrum.reset();
     m_pipewireService.reset();
   }
@@ -968,9 +989,11 @@ void Application::initServices() {
           m_visualizerService->onMprisChanged();
         }
       });
-      if (m_visualizerService != nullptr) {
-        m_visualizerService->setMpris(m_mprisService.get());
-      }
+      // NOTE: m_visualizerService is created later, in initUi(); we cannot
+      // wire it up here. The lambda above captures `this` and re-checks at
+      // call time, which is the path that fires once both services exist.
+      // initUi() also calls m_visualizerService->initialize(..., m_mprisService.get())
+      // so the service can read the current player on construction.
       kLog.info("mpris discovery active");
     } catch (const std::exception& e) {
       kLog.warn("mpris disabled: {}", e.what());
@@ -1062,27 +1085,74 @@ void Application::initUi() {
   // wallpaper's fill_mode handles scaling. The texture is created up front so
   // any output that turns on live_paper later can pick it up without
   // renegotiating GL.
-  m_projectMRenderer = std::make_unique<ProjectMRenderer>();
-  if (!m_projectMRenderer->initialize(m_glShared, m_wayland.compositor(), 1280, 720)) {
-    kLog.warn("live_paper visualizer unavailable: ProjectMRenderer::initialize failed");
-    m_projectMRenderer.reset();
+  //
+  // Requires GLES3 (libprojectM 4.x uses VAOs which are core in GLES3 and only
+  // an extension in GLES2). On hardware where the GlSharedContext fell back to
+  // GLES2 we silently skip the visualizer — the shell still runs, just without
+  // live_paper.
+#ifdef NOCTALIA_HAVE_LIVEPAPER
+  if (m_glShared.clientVersion() >= 3) {
+    m_projectMRenderer = std::make_unique<ProjectMRenderer>();
+    if (!m_projectMRenderer->initialize(m_glShared, m_wayland.compositor(), 1280, 720)) {
+      kLog.warn("live_paper visualizer unavailable: ProjectMRenderer::initialize failed");
+      m_projectMRenderer.reset();
+    }
+  } else {
+    kLog.info("live_paper visualizer disabled: shared GL context is GLES2");
   }
   if (m_pipewirePcmTap != nullptr && m_projectMRenderer != nullptr) {
+    // Apply the privacy gate BEFORE start() so the initial bind already
+    // honours it. setMicFallbackAllowed is idempotent / cheap regardless.
+    m_pipewirePcmTap->setMicFallbackAllowed(m_configService.config().wallpaper.livePaper.allowMicFallback);
     m_pipewirePcmTap->start(m_configService.config().wallpaper.livePaper.audioSource);
     m_projectMRenderer->setPcmTap(m_pipewirePcmTap.get());
   }
   if (m_projectMRenderer != nullptr) {
     m_visualizerService = std::make_unique<VisualizerService>();
   }
+#else
+  kLog.info("live_paper visualizer not compiled in");
+#endif
   m_wallpaper.initialize(m_wayland, &m_configService, &m_renderContext, &m_sharedTextureCache);
   if (m_visualizerService != nullptr) {
-    m_visualizerService->initialize(m_projectMRenderer.get(), &m_configService, /*mpris=*/nullptr);
+    // Pass the MPRIS service up front so onMprisChanged() can advance presets
+    // on track changes. Previously the wire-up was attempted in initServices()
+    // but at that point m_visualizerService was still null (it is created
+    // here, after initServices() has already run), so the MPRIS-driven preset
+    // advance was effectively dead code.
+    m_visualizerService->initialize(m_projectMRenderer.get(), &m_configService, m_mprisService.get());
     m_wallpaper.setVisualizer(m_projectMRenderer.get(), m_visualizerService.get());
+    // Visualizer config (interval, fps, mesh, presets dir, …) is independent
+    // of the static-wallpaper config. Subscribe directly to config reloads
+    // here so the visualizer keeps its fields in sync even when the static
+    // wallpaper subsystem is disabled (Wallpaper::reload() short-circuits in
+    // that case). audio_source is the only knob we additionally have to
+    // re-apply on the PCM tap, since the renderer's pcm pointer is set once
+    // at init.
+    m_configService.addReloadCallback(
+        [this,
+         lastAudioSource = m_configService.config().wallpaper.livePaper.audioSource,
+         lastMicFallback = m_configService.config().wallpaper.livePaper.allowMicFallback]() mutable {
+          if (m_visualizerService != nullptr) {
+            m_visualizerService->onConfigChanged();
+          }
+          if (m_pipewirePcmTap == nullptr) {
+            return;
+          }
+          const auto& lp = m_configService.config().wallpaper.livePaper;
+          if (lp.allowMicFallback != lastMicFallback) {
+            m_pipewirePcmTap->setMicFallbackAllowed(lp.allowMicFallback);
+            lastMicFallback = lp.allowMicFallback;
+          }
+          if (lp.audioSource != lastAudioSource) {
+            m_pipewirePcmTap->start(lp.audioSource);
+            lastAudioSource = lp.audioSource;
+          }
+        });
   }
   m_backdrop.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
-  m_settingsWindow.initialize(
-      m_wayland, &m_configService, &m_renderContext, &m_dependencyService, m_upowerService.get(), &m_idleManager
-  );
+  m_settingsWindow.initialize(m_wayland, &m_configService, &m_renderContext, &m_dependencyService,
+                              m_upowerService.get(), &m_idleManager);
   m_settingsWindow.setOpenDesktopWidgetEditor([this]() {
     if (m_lockscreenWidgetsController.isEditing()) {
       m_lockscreenWidgetsController.exitEdit();
@@ -1139,15 +1209,29 @@ void Application::initUi() {
       [this]() {
         m_lockscreenWidgetsController.onLockStateChanged();
         m_hookManager.fire(HookKind::SessionLocked);
+#ifdef NOCTALIA_HAVE_LIVEPAPER
+        // Pin the preset for the duration of the lock — a libprojectM crash
+        // mid-rotation would otherwise terminate the shell and dismiss the
+        // ext-session-lock-v1 client.
+        if (m_visualizerService != nullptr) {
+          m_visualizerService->setSessionLocked(true);
+        }
+#endif
       },
       [this]() {
         m_lockscreenWidgetsController.onLockStateChanged();
         m_hookManager.fire(HookKind::SessionUnlocked);
-      }
-  );
+#ifdef NOCTALIA_HAVE_LIVEPAPER
+        if (m_visualizerService != nullptr) {
+          m_visualizerService->setSessionLocked(false);
+        }
+#endif
+      });
+#ifdef NOCTALIA_HAVE_LIVEPAPER
   if (m_projectMRenderer != nullptr) {
     m_lockScreen.setVisualizer(m_projectMRenderer.get());
   }
+#endif
 
   SessionActionHooks sessionActionHooks;
   sessionActionHooks.onLogout = [this]() { return m_hookManager.fireBlocking(HookKind::LoggingOut); };
@@ -1533,6 +1617,9 @@ void Application::initUi() {
     m_pipewireService->setChangeCallback([this, shouldRefreshControlCenter]() {
       if (m_pipewireSpectrum != nullptr) {
         m_pipewireSpectrum->handleAudioStateChanged();
+      }
+      if (m_pipewirePcmTap != nullptr) {
+        m_pipewirePcmTap->handleAudioStateChanged();
       }
       m_bar.refresh();
       if (shouldRefreshControlCenter()) {

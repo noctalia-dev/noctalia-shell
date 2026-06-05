@@ -13,6 +13,19 @@
         "url": "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz"
       }
     },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1778869304,
+        "narHash": "sha256-VdRy3A14M5vIE882DJcaaR+5wrss9Qsg4YNVbr7uj3k=",
+        "rev": "d233902339c02a9c334e7e593de68855ad26c4cb",
+        "type": "tarball",
+        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.05pre998534.d233902339c0/nixexprs.tar.xz"
+      },
+      "original": {
+        "type": "tarball",
+        "url": "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz"
+      }
+    },
     "presets-cream-of-the-crop": {
       "flake": false,
       "locked": {
@@ -29,10 +42,29 @@
         "type": "github"
       }
     },
+    "presets-photosensitive-filtered": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_2",
+        "presets-cream-of-the-crop": "presets-cream-of-the-crop"
+      },
+      "locked": {
+        "lastModified": 1779535713,
+        "narHash": "sha256-en7aBmrPmqHt9BaoAszLXvod8Bu6NWiR33lSliMMk20=",
+        "owner": "weissi1994",
+        "repo": "presets-photosensitive-filtered",
+        "rev": "67ce39dc73618aff84484271c7d3cb66b4bd2e2a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "weissi1994",
+        "repo": "presets-photosensitive-filtered",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "nixpkgs": "nixpkgs",
-        "presets-cream-of-the-crop": "presets-cream-of-the-crop"
+        "presets-photosensitive-filtered": "presets-photosensitive-filtered"
       }
     }
   },

@@ -59,6 +59,15 @@ public:
   void setEnabled(bool enabled);
   void toggleEnabled();
 
+  // Session lock state: while locked we suppress automatic preset rotation.
+  // The lock-screen background runs the same libprojectM instance as the
+  // wallpaper, and a hypothetical bad preset (or a libprojectM bug while
+  // loading one) crashes the entire shell — which would dismiss the
+  // ext-session-lock-v1 client and unlock the session without auth. Pinning
+  // the preset that was already running at lock time avoids that whole class
+  // of issue for the duration of the lock.
+  void setSessionLocked(bool locked);
+
   [[nodiscard]] bool enabled() const noexcept;
   [[nodiscard]] const std::string& currentPreset() const noexcept { return m_currentPreset; }
 
@@ -79,6 +88,13 @@ private:
   std::string m_lastScannedDir;
   std::string m_lastSeenTrackId;
   std::chrono::steady_clock::time_point m_lastAdvanceAt{};
+  // First MPRIS observation after init is treated as a discovery (not a
+  // user-initiated track change), so we record the id without bumping the
+  // preset. Instance-scoped so a shutdown()/initialize() cycle resets the
+  // state — a previous implementation used a static-local which leaked
+  // across re-init.
+  bool m_seenFirstTrack = false;
+  bool m_sessionLocked = false;
 
   Timer m_rotationTimer;
 };

@@ -405,12 +405,18 @@ TextureId GlesRenderBackend::importLiveImage(void* eglImage) {
   if (eglImage == nullptr) {
     return TextureId{};
   }
-  // Reuse the alias texture: it points at the EGLImage's storage, so the
-  // producer's per-frame renders show up without re-importing. Only the
-  // visualizer's image handle changes (on resize), which arrives as a new
-  // pointer and gets its own alias here.
-  if (auto it = m_liveImageTextures.find(eglImage); it != m_liveImageTextures.end()) {
-    return TextureId{it->second};
+  // ProjectMRenderer publishes ONE EGLImage at a time. Cache a single alias
+  // texture; when the producer replaces the image (e.g. on resize) the
+  // pointer changes and we drop the stale alias before importing the new
+  // one. A multi-slot cache would leak any alias whose owning EGLImage was
+  // destroyed by the producer before backend::cleanup() runs.
+  if (m_liveImageCacheKey == eglImage && m_liveImageCacheTex != 0) {
+    return TextureId{m_liveImageCacheTex};
+  }
+  if (m_liveImageCacheTex != 0) {
+    glDeleteTextures(1, &m_liveImageCacheTex);
+    m_liveImageCacheTex = 0;
+    m_liveImageCacheKey = nullptr;
   }
   static auto* targetTex2D =
       reinterpret_cast<PFNGLEGLIMAGETARGETTEXTURE2DOESPROC>(eglGetProcAddress("glEGLImageTargetTexture2DOES"));
@@ -436,9 +442,11 @@ TextureId GlesRenderBackend::importLiveImage(void* eglImage) {
     glDeleteTextures(1, &tex);
     return TextureId{};
   }
-  m_liveImageTextures.emplace(eglImage, tex);
+  m_liveImageCacheKey = eglImage;
+  m_liveImageCacheTex = tex;
   return TextureId{tex};
 }
+
 
 void GlesRenderBackend::drawFullscreenQuad(const ShaderProgram& program) {
   const GLint posAttr = glGetAttribLocation(program.id(), "a_position");
@@ -648,11 +656,11 @@ void GlesRenderBackend::destroyGpuObjects() {
   m_blurProgram.destroy();
   m_fullscreenTextureProgram.destroy();
   m_fullscreenTintProgram.destroy();
-  for (const auto& [image, tex] : m_liveImageTextures) {
-    GLuint t = tex;
-    glDeleteTextures(1, &t);
+  if (m_liveImageCacheTex != 0) {
+    glDeleteTextures(1, &m_liveImageCacheTex);
+    m_liveImageCacheTex = 0;
   }
-  m_liveImageTextures.clear();
+  m_liveImageCacheKey = nullptr;
   m_textureManager.cleanup();
 }
 

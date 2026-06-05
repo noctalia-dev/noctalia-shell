@@ -58,10 +58,18 @@ libqalculate_dep    = dependency('libqalculate')
 libxml2_dep         = dependency('libxml-2.0')
 pam_dep             = cc.find_library('pam')
 dl_dep              = cpp.find_library('dl', required: false)
-# libprojectM 4 drives the [wallpaper.live_paper] Milkdrop visualizer. Nix
-# users get this from the libprojectm-gles overlay declared in nix/package.nix;
-# other distros need a GLES-enabled libprojectM build on the pkg-config path.
-projectm_dep        = dependency('projectM-4')
+# libprojectM 4 drives the [wallpaper.live_paper] Milkdrop visualizer. The
+# feature is opt-in at compile time (`meson configure -Dlivepaper=enabled` to
+# hard-require it, `-Dlivepaper=disabled` to skip it). Nix users get this from
+# the libprojectm-gles overlay declared in nix/package.nix; other distros need
+# a GLES-enabled libprojectM build on the pkg-config path.
+projectm_dep        = dependency('projectM-4', required: get_option('livepaper'))
+have_livepaper      = projectm_dep.found()
+if have_livepaper
+  message('live_paper visualizer: enabled (libprojectM found)')
+else
+  message('live_paper visualizer: disabled (libprojectM not found or feature off)')
+endif
 
 jemalloc_option = get_option('jemalloc')
 is_glibc = cpp.get_define('__GLIBC__', prefix: '#include <features.h>') != ''
@@ -758,6 +766,24 @@ if sanitize
   _noctalia_sources += files('src/pipewire/pipewire_lsan.cpp')
 endif
 
+# Optional live-paper sources. The real implementations dispatch into
+# libprojectM and depend on a PipeWire raw PCM tap that only serves the
+# visualizer, so we compile them in only when the libprojectM dependency was
+# found. When the feature is OFF we still need the class symbols to satisfy
+# call sites in wallpaper.cpp / lock_screen.cpp (which already null-check the
+# live pointers and degrade quietly), so a stub TU provides empty bodies.
+if have_livepaper
+  _noctalia_sources += files(
+    'src/pipewire/pipewire_pcm_tap.cpp',
+    'src/render/visualizer/projectm_renderer.cpp',
+    'src/shell/wallpaper/visualizer_service.cpp',
+  )
+else
+  _noctalia_sources += files(
+    'src/render/visualizer/livepaper_stub.cpp',
+  )
+endif
+
 git_program = find_program('git', required: false)
 if git_program.found()
   _git_revision_h = vcs_tag(
@@ -823,8 +849,8 @@ executable('noctalia',
     stb_dep,
     libwebp_dep,
     luau_dep,
-    projectm_dep,
-  ] + jemalloc_deps + (dl_dep.found() ? [dl_dep] : []),
+  ] + jemalloc_deps + (dl_dep.found() ? [dl_dep] : [])
+    + (have_livepaper ? [projectm_dep] : []),
   include_directories: _noctalia_inc,
   cpp_args: [
     '-Wall', '-Wextra', '-Wpedantic', '-Wconversion', '-Wshadow',
@@ -832,7 +858,7 @@ executable('noctalia',
     '-DNOCTALIA_INSTALL_PREFIX="' + get_option('prefix') + '"',
     '-DNOCTALIA_INSTALL_DATADIR="' + get_option('datadir') + '"',
     '-DNOCTALIA_VERSION="' + meson.project_version() + '"',
-  ] + jemalloc_cpp_args,
+  ] + jemalloc_cpp_args + (have_livepaper ? ['-DNOCTALIA_HAVE_LIVEPAPER=1'] : []),
   install: true,
 )
 

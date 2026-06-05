@@ -1264,7 +1264,11 @@ void ConfigService::parseConfigTable(const toml::table& tbl, Config& config, boo
       if (auto v = (*lpTbl)["audio_source"].value<std::string>()) {
         lp.audioSource = *v;
       }
+      if (auto v = (*lpTbl)["allow_mic_fallback"].value<bool>()) {
+        lp.allowMicFallback = *v;
+      }
     }
+
 
     if (auto* monTblMap = (*wpTbl)["monitor"].as_table()) {
       for (const auto& [monName, monNode] : *monTblMap) {

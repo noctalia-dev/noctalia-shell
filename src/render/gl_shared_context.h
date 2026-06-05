@@ -31,6 +31,11 @@ public:
   [[nodiscard]] bool videoMemoryPurgeNotificationEnabled() const noexcept {
     return m_videoMemoryPurgeNotificationEnabled;
   }
+  // 3 when a GLES3 root context was created, 2 when we fell back to GLES2.
+  // Components that need GLES3-only features (notably the live-paper
+  // libprojectM renderer, which depends on Vertex Array Objects) must check
+  // this and disable themselves on GLES2.
+  [[nodiscard]] int clientVersion() const noexcept { return m_clientVersion; }
 
   [[nodiscard]] EGLContext createContext(EGLContext shareContext, std::string_view label);
 
@@ -49,4 +54,5 @@ private:
   bool m_contextAttributesRobust = false;
   bool m_resetNotificationEnabled = false;
   bool m_videoMemoryPurgeNotificationEnabled = false;
+  int m_clientVersion = 0;
 };

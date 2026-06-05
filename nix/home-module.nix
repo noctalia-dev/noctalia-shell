@@ -111,15 +111,25 @@ in
       };
 
       presetsSource = lib.mkOption {
-        type = lib.types.path;
+        type = lib.types.nullOr lib.types.path;
+        default = null;
         description = ''
           Directory of `.milk` / `.prjm` presets symlinked into
           `$XDG_DATA_HOME/waylivepaper/presets` when `defaultPresets` is
-          enabled. Defaults to the `presets-cream-of-the-crop` pack
-          bundled with this flake, filtered for excessive brightness /
-          strobing.
+          enabled. The flake's `homeModules.default` wires this to the
+          pre-built pack from the `presets-photosensitive-filtered`
+          flake input — the `presets-cream-of-the-crop` pack with overly
+          bright / strobing presets dropped. Consumers who import this
+          module file directly without going through `homeModules.default`
+          must set this themselves; leaving it `null` (the bare default)
+          disables preset staging even when `defaultPresets = true`.
         '';
       };
+
+      # Privacy: the visualizer's PCM tap falls back to the default
+      # microphone when audio playback is idle. Off-by-default for a
+      # privacy-first stance in upstream — see allowMicFallback below
+      # and `audio_source` in `settings.wallpaper.live_paper`.
     };
   };
 
@@ -161,8 +171,11 @@ in
       ];
 
       # Stage the presets pack so the visualizer renderer discovers it at
-      # the well-known XDG location without any extra configuration.
-      dataFile."waylivepaper/presets" = lib.mkIf cfgLp.defaultPresets {
+      # the well-known XDG location without any extra configuration. Skip
+      # when presetsSource is null — consumers who import the module
+      # directly (i.e. not via `homeModules.default`) must set it
+      # themselves before this activates.
+      dataFile."waylivepaper/presets" = lib.mkIf (cfgLp.defaultPresets && cfgLp.presetsSource != null) {
         source = cfgLp.presetsSource;
       };
     };
