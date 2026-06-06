@@ -130,19 +130,31 @@ void GlSharedContext::initialize(wl_display* display, bool createSharedContext) 
   buildContextAttributes();
 
   if (createSharedContext) {
-    m_rootContext = eglCreateContext(m_display, m_config, EGL_NO_CONTEXT, kContextAttributesGles3);
-    if (m_rootContext != EGL_NO_CONTEXT) {
+    // Use the same attribute path as child contexts so the share group is
+    // uniform — mixing robust/non-robust contexts causes EGL_BAD_MATCH on
+    // strict EGL implementations. createContext() handles the robust→plain
+    // fallback internally when shareContext is EGL_NO_CONTEXT.
+    try {
+      m_rootContext = createContext(EGL_NO_CONTEXT, "root");
       m_clientVersion = 3;
-    } else {
-      const auto firstError = static_cast<unsigned>(eglGetError());
-      m_rootContext = eglCreateContext(m_display, m_config, EGL_NO_CONTEXT, kContextAttributesGles2);
+    } catch (const std::exception& e) {
+      // GLES3 unavailable; rebuild attributes for GLES2 so that subsequent
+      // child context creation stays consistent with the root.
+      m_contextAttributes.assign(kContextAttributesGles2,
+                                 kContextAttributesGles2 + sizeof(kContextAttributesGles2) / sizeof(EGLint));
+      m_contextAttributesRobust = false;
+      m_resetNotificationEnabled = false;
+      m_videoMemoryPurgeNotificationEnabled = false;
+      m_rootContext = createContextWithCurrentAttributes(EGL_NO_CONTEXT);
       if (m_rootContext == EGL_NO_CONTEXT) {
-        throw std::runtime_error("eglCreateContext (root, GLES2 fallback) failed");
+        throw std::runtime_error(
+            std::format("eglCreateContext (root, GLES2 fallback) failed (EGL error 0x{:04x})",
+                        static_cast<unsigned>(eglGetError()))
+        );
       }
       m_clientVersion = 2;
-      kLog.info("EGL GLES3 context unavailable (error 0x{:x}); falling back to GLES2 — live_paper "
-                "visualizer will be disabled on this hardware",
-                firstError);
+      kLog.info("EGL GLES3 unavailable ({}); falling back to GLES2 — live_paper visualizer will be disabled",
+                e.what());
     }
     kLog.info("initialized EGL {}.{} with shared root context (GLES{})", major, minor, m_clientVersion);
   } else {
