@@ -928,6 +928,13 @@ bool ConfigService::isOverrideOnlyBar(std::string_view name) const {
   return !m_configFileBarNames.contains(std::string(name));
 }
 
+bool ConfigService::isOverrideOnlyCalendarAccount(std::string_view id) const {
+  if (id.empty() || !hasOverride({"calendar", "account", std::string(id)})) {
+    return false;
+  }
+  return !m_configFileCalendarAccountNames.contains(std::string(id));
+}
+
 bool ConfigService::canMoveBarOverride(std::string_view name, int direction) const {
   if (direction == 0 || name.empty()) {
     return false;
@@ -1164,6 +1171,13 @@ bool ConfigService::deleteMonitorOverride(std::string_view barName, std::string_
     return false;
   }
   return clearOverride({"bar", std::string(barName), "monitor", std::string(match)});
+}
+
+bool ConfigService::deleteCalendarAccountOverride(std::string_view id) {
+  if (!isOverrideOnlyCalendarAccount(id)) {
+    return false;
+  }
+  return clearOverride({"calendar", "account", std::string(id)});
 }
 
 bool ConfigService::setOverride(const std::vector<std::string>& path, ConfigOverrideValue value) {

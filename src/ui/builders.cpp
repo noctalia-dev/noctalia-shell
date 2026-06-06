@@ -464,6 +464,9 @@ namespace ui {
     if (props.colorSwatchPreviews.has_value()) {
       control->setColorSwatchPreviews(std::move(*props.colorSwatchPreviews));
     }
+    if (props.notifyOnReselect.has_value()) {
+      control->setNotifyOnReselect(*props.notifyOnReselect);
+    }
     if (props.enabled.has_value()) {
       control->setEnabled(*props.enabled);
     }

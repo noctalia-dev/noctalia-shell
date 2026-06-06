@@ -159,7 +159,7 @@ namespace shell::dock {
     const float zoomPad = static_cast<float>(dockHoverZoomCrossPad(cfg));
 
     if (!vertical) {
-      float y = isBottom ? bleedU + zoomPad : std::min(mEdge, bleedU);
+      float y = isBottom ? std::max(bleedU, zoomPad) : std::min(mEdge, bleedU);
       if (const int gutter = dockAutoHideEdgeGutter(cfg); gutter > 0) {
         if (isBottom) {
           y = surfaceH - static_cast<float>(gutter) - panelThickness;
@@ -175,7 +175,7 @@ namespace shell::dock {
       };
     }
 
-    float x = isRight ? bleedL + zoomPad : std::min(mEdge, bleedL);
+    float x = isRight ? std::max(bleedL, zoomPad) : std::min(mEdge, bleedL);
     if (const int gutter = dockAutoHideEdgeGutter(cfg); gutter > 0) {
       if (isRight) {
         x = surfaceW - static_cast<float>(gutter) - panelThickness;

@@ -446,8 +446,14 @@ std::unique_ptr<Widget> WidgetFactory::create(
     const ColorSpec gaugeColor = wc != nullptr
         ? wc->getColorSpec("gauge_color", colorSpecFromRole(ColorRole::Primary), "widget." + name + ".gauge_color")
         : colorSpecFromRole(ColorRole::Primary);
+    const ColorSpec highlightColor = wc != nullptr
+        ? wc->getColorSpec(
+              "highlight_color", colorSpecFromRole(ColorRole::Error), "widget." + name + ".highlight_color"
+          )
+        : colorSpecFromRole(ColorRole::Error);
     auto widget = std::make_unique<SysmonWidget>(
-        m_sysmon, output, stat, std::move(path), displayMode, gaugeColor, showLabel, labelMinWidth
+        m_sysmon, output, stat, std::move(path), displayMode, gaugeColor, highlightColor, m_configService, showLabel,
+        labelMinWidth
     );
     widget->setContentScale(contentScale);
     return widget;

@@ -17,6 +17,10 @@ struct HttpRequest {
   std::string url;
   std::vector<std::string> headers; // e.g. "Authorization: Bearer …", "Depth: 1"
   std::string body;                 // sent as the request body when non-empty
+  bool followRedirects = false;
+  bool allowRedirectAuth = false; // continue auth across redirect hosts; use only for trusted provider redirects
+  std::string basicUsername;
+  std::string basicPassword;
 };
 
 struct HttpResponse {
@@ -90,6 +94,8 @@ private:
     curl_slist* headers = nullptr;
     ResponseCallback callback;
     std::string url;
+    std::string basicUsername;
+    std::string basicPassword;
     std::string response;
     std::array<char, CURL_ERROR_SIZE> errorBuffer{};
   };

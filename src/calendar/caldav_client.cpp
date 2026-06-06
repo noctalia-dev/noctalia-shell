@@ -4,7 +4,6 @@
 #include "core/log.h"
 #include "net/http_client.h"
 #include "time/time_format.h"
-#include "util/base64.h"
 
 #include <cstring>
 #include <libxml/parser.h>
@@ -13,7 +12,7 @@
 namespace calendar {
 
   namespace {
-    constexpr Logger kLog("calendar.caldav");
+    constexpr Logger kLog("calendar-caldav");
 
     std::string
     buildReportBody(std::chrono::system_clock::time_point start, std::chrono::system_clock::time_point end) {
@@ -62,8 +61,10 @@ namespace calendar {
     req.method = "REPORT";
     req.url = account.url;
     req.body = buildReportBody(start, end);
+    req.followRedirects = true;
+    req.basicUsername = account.username;
+    req.basicPassword = account.password;
     req.headers = {
-        "Authorization: Basic " + Base64::encode(account.username + ":" + account.password),
         "Depth: 1",
         "Content-Type: application/xml; charset=utf-8",
     };

@@ -13,7 +13,7 @@
 namespace calendar {
 
   namespace {
-    constexpr Logger kLog("calendar.google");
+    constexpr Logger kLog("calendar-google");
 
     int toInt(std::string_view text) {
       int value = 0;
@@ -155,6 +155,7 @@ namespace calendar {
     HttpRequest listReq;
     listReq.method = "GET";
     listReq.url = "https://www.googleapis.com/calendar/v3/users/me/calendarList";
+    listReq.followRedirects = true;
     listReq.headers = {bearer};
 
     m_http.request(std::move(listReq), [this, bearer, start, end, cb = std::move(cb)](HttpResponse resp) mutable {
@@ -205,6 +206,7 @@ namespace calendar {
       for (const CalendarMeta& meta : calendars) {
         HttpRequest req;
         req.method = "GET";
+        req.followRedirects = true;
         req.url = "https://www.googleapis.com/calendar/v3/calendars/"
             + uri::encodeComponent(meta.id)
             + "/events?singleEvents=true&orderBy=startTime&maxResults=2500&timeMin="

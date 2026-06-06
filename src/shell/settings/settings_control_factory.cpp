@@ -252,7 +252,8 @@ namespace settings {
 
   std::unique_ptr<Flex> SettingsControlFactory::makeSlider(
       double value, double minValue, double maxValue, double step, std::vector<std::string> path, bool integerValue,
-      std::function<std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>(double)> linkedCommit
+      std::function<std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>(double)> linkedCommit,
+      std::string valueSuffix
   ) {
     auto& ctx = m_ctx;
     const float scale = m_scale;
@@ -334,6 +335,15 @@ namespace settings {
     // Slider first, numeric value field on the right (reset from makeRow stays left of this cluster).
     wrap->addChild(std::move(slider));
     wrap->addChild(std::move(valueInput));
+    if (!valueSuffix.empty()) {
+      wrap->addChild(
+          ui::label({
+              .text = std::move(valueSuffix),
+              .fontSize = Style::fontSizeCaption * scale,
+              .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+          })
+      );
+    }
     return wrap;
   }
 

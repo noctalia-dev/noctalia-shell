@@ -111,6 +111,8 @@ namespace scripting {
     std::chrono::milliseconds updateInterval{250};
     std::chrono::steady_clock::time_point lastUpdateAccepted{};
     std::vector<std::chrono::steady_clock::time_point> timeoutHistory;
+    ScriptWidgetResult replayState;
+    bool replayStateReady = false;
     bool scheduled = false;
     bool stopped = false;
     bool updateQueued = false;
@@ -124,9 +126,43 @@ namespace scripting {
       if (!callback) {
         return 0;
       }
-      std::lock_guard lock(mutex);
-      const auto id = nextSubscriberId++;
-      subscribers[id] = std::move(callback);
+      SubscriberId id = 0;
+      ScriptWidgetResult replay;
+      bool hasReplay = false;
+      {
+        std::lock_guard lock(mutex);
+        id = nextSubscriberId++;
+        subscribers[id] = std::move(callback);
+        if (replayStateReady) {
+          replay = replayState;
+          hasReplay = true;
+        }
+      }
+
+      if (!hasReplay) {
+        return id;
+      }
+
+      auto self = shared_from_this();
+      DeferredCall::callLater([self, id, replay = std::move(replay)]() mutable {
+        ScriptWidgetResultCallback subscriber;
+        {
+          std::lock_guard replayLock(self->mutex);
+          if (self->stopped || replay.generation != self->generation) {
+            return;
+          }
+          auto it = self->subscribers.find(id);
+          if (it == self->subscribers.end()) {
+            return;
+          }
+          subscriber = it->second;
+        }
+
+        if (subscriber) {
+          subscriber(std::move(replay));
+        }
+      });
+
       return id;
     }
 
@@ -215,6 +251,8 @@ namespace scripting {
           updateQueued = false;
           updateRunning = false;
           lastUpdateAccepted = {};
+          replayState = {};
+          replayStateReady = false;
           unhealthy = false;
           consecutiveTimeouts = 0;
           timeoutHistory.clear();
@@ -449,6 +487,25 @@ namespace scripting {
         if (result.generation != generation || stopped) {
           return;
         }
+
+        if (replayState.generation != generation) {
+          replayState = {};
+          replayState.generation = generation;
+        }
+
+        mergePatch(replayState.patch, result.patch);
+        replayState.hasOnIpcKnown = result.hasOnIpcKnown || replayState.hasOnIpcKnown;
+        if (result.hasOnIpcKnown) {
+          replayState.hasOnIpc = result.hasOnIpc;
+        }
+        replayState.unhealthy = result.unhealthy;
+        replayState.ok = replayState.ok && result.ok;
+        replayState.timedOut = replayState.timedOut || result.timedOut;
+        replayState.error = result.error;
+        replayState.callbackName = result.callbackName;
+        replayState.sideEffects.clear();
+        replayStateReady = !replayState.patch.empty() || replayState.hasOnIpcKnown;
+
         callbacks.reserve(subscribers.size());
         for (const auto& [id, callback] : subscribers) {
           (void)id;

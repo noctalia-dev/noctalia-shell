@@ -123,6 +123,9 @@ namespace {
     if (!event.colorHex.empty() && tryParseHexColor(event.colorHex, color)) {
       return fixedColorSpec(color);
     }
+    if (const auto role = colorRoleFromToken(event.colorHex); role.has_value()) {
+      return colorSpecFromRole(*role);
+    }
     return colorSpecFromRole(ColorRole::Primary);
   }
 

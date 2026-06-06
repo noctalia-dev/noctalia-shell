@@ -78,6 +78,26 @@ namespace noctalia::config::schema {
           field(&SystemConfig::MonitorConfig::memoryPollSeconds, "memory_poll_seconds"),
           field(&SystemConfig::MonitorConfig::networkPollSeconds, "network_poll_seconds"),
           field(&SystemConfig::MonitorConfig::diskPollSeconds, "disk_poll_seconds"),
+          field(&SystemConfig::MonitorConfig::cpuUsageActivityThreshold, "cpu_usage_activity_threshold"),
+          field(&SystemConfig::MonitorConfig::cpuUsageCriticalThreshold, "cpu_usage_critical_threshold"),
+          field(&SystemConfig::MonitorConfig::cpuTempActivityThreshold, "cpu_temp_activity_threshold"),
+          field(&SystemConfig::MonitorConfig::cpuTempCriticalThreshold, "cpu_temp_critical_threshold"),
+          field(&SystemConfig::MonitorConfig::gpuTempActivityThreshold, "gpu_temp_activity_threshold"),
+          field(&SystemConfig::MonitorConfig::gpuTempCriticalThreshold, "gpu_temp_critical_threshold"),
+          field(&SystemConfig::MonitorConfig::gpuUsageActivityThreshold, "gpu_usage_activity_threshold"),
+          field(&SystemConfig::MonitorConfig::gpuUsageCriticalThreshold, "gpu_usage_critical_threshold"),
+          field(&SystemConfig::MonitorConfig::gpuVramActivityThreshold, "gpu_vram_activity_threshold"),
+          field(&SystemConfig::MonitorConfig::gpuVramCriticalThreshold, "gpu_vram_critical_threshold"),
+          field(&SystemConfig::MonitorConfig::ramPctActivityThreshold, "ram_pct_activity_threshold"),
+          field(&SystemConfig::MonitorConfig::ramPctCriticalThreshold, "ram_pct_critical_threshold"),
+          field(&SystemConfig::MonitorConfig::swapPctActivityThreshold, "swap_pct_activity_threshold"),
+          field(&SystemConfig::MonitorConfig::swapPctCriticalThreshold, "swap_pct_critical_threshold"),
+          field(&SystemConfig::MonitorConfig::diskPctActivityThreshold, "disk_pct_activity_threshold"),
+          field(&SystemConfig::MonitorConfig::diskPctCriticalThreshold, "disk_pct_critical_threshold"),
+          field(&SystemConfig::MonitorConfig::netRxActivityThreshold, "net_rx_activity_threshold"),
+          field(&SystemConfig::MonitorConfig::netRxCriticalThreshold, "net_rx_critical_threshold"),
+          field(&SystemConfig::MonitorConfig::netTxActivityThreshold, "net_tx_activity_threshold"),
+          field(&SystemConfig::MonitorConfig::netTxCriticalThreshold, "net_tx_critical_threshold"),
       };
       return s;
     }
@@ -299,12 +319,38 @@ namespace noctalia::config::schema {
     // TOML key is "name" but the field is displayName.
     const Schema<CalendarConfig::Account>& calendarAccountSchema() {
       static const Schema<CalendarConfig::Account> s = {
-          field(&CalendarConfig::Account::id, "id"),
           field(&CalendarConfig::Account::type, "type"),
           field(&CalendarConfig::Account::displayName, "name"),
           field(&CalendarConfig::Account::color, "color"),
-          field(&CalendarConfig::Account::url, "url"),
+          field(&CalendarConfig::Account::provider, "provider"),
+          field(&CalendarConfig::Account::serverUrl, "server_url"),
           field(&CalendarConfig::Account::username, "username"),
+          field(&CalendarConfig::Account::calendars, "calendars"),
+          finalize<CalendarConfig::Account>([](CalendarConfig::Account& out, std::string_view parentPath,
+                                               Diagnostics& diag) {
+            if (out.type != "caldav") {
+              return;
+            }
+            if (out.provider.empty()) {
+              diag.error(
+                  joinPath(parentPath, "provider"), "caldav accounts require provider = \"icloud\" or \"custom\""
+              );
+              return;
+            }
+            if (out.provider == "icloud") {
+              if (!out.serverUrl.empty()) {
+                diag.error(joinPath(parentPath, "server_url"), "icloud accounts use the built-in CalDAV server URL");
+              }
+              return;
+            }
+            if (out.provider == "custom") {
+              if (out.serverUrl.empty()) {
+                diag.error(joinPath(parentPath, "server_url"), "custom caldav accounts require server_url");
+              }
+              return;
+            }
+            diag.error(joinPath(parentPath, "provider"), "unknown caldav provider \"" + out.provider + "\"");
+          }),
       };
       return s;
     }
@@ -1107,9 +1153,10 @@ namespace noctalia::config::schema {
     static const Schema<CalendarConfig> s = {
         field(&CalendarConfig::enabled, "enabled"),
         field(&CalendarConfig::refreshMinutes, "refresh_minutes", kRefreshMinutesRange),
-        arrayOf<CalendarConfig, CalendarConfig::Account>(
-            &CalendarConfig::accounts, "accounts", calendarAccountSchema(),
-            [](const CalendarConfig::Account& a) { return !a.id.empty() && !a.type.empty(); }
+        namedMap<CalendarConfig, CalendarConfig::Account>(
+            &CalendarConfig::accounts, "account", calendarAccountSchema(),
+            [](CalendarConfig::Account& a, std::string_view id) { a.id = std::string(id); },
+            [](const CalendarConfig::Account& a) { return a.id; }, true
         ),
     };
     return s;

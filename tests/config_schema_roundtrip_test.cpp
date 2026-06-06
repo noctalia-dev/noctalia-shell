@@ -224,8 +224,8 @@ namespace {
     c.calendar.enabled = true;
     c.calendar.refreshMinutes = 30;
     c.calendar.accounts = {
-        {"acc1", "google", "Work", "#ff0000", "", "me@example.com"},
-        {"acc2", "caldav", "Home", "", "https://dav.example.com/cal", "user"},
+        {"acc1", "google", "Work", "#ff0000", "", "", "", {}},
+        {"acc2", "caldav", "Home", "", "custom", "https://dav.example.com/remote.php/dav/", "user", {"personal"}},
     };
     // Explicit chords so write→read round-trips (empty would emit defaults instead).
     c.keybinds.validate = {*parseKeyChordSpec("Return")};

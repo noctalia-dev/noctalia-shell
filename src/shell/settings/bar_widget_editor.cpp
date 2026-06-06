@@ -1406,7 +1406,7 @@ namespace settings {
             FileDialogOptions options;
             options.mode = FileDialogMode::Open;
             options.defaultViewMode = FileDialogViewMode::Grid;
-            options.title = i18n::tr("settings.widgets.settings.custom_image.dialog-title");
+            options.title = i18n::tr("settings.widgets.settings.custom-image.dialog-title");
             options.extensions = {".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp", ".gif"};
             ctx.makeRow(
                 *panel, entry,

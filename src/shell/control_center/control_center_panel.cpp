@@ -210,9 +210,7 @@ void ControlCenterPanel::create() {
           .out = &m_closeButton,
           .glyph = "close",
           .onClick = []() { PanelManager::instance().close(); },
-          .configure = [scale, opacity = panelCardOpacity()](
-                           Button& button
-                       ) { panel_button_style::configureHeaderIconButton(button, scale, opacity); },
+          .configure = [scale](Button& button) { panel_button_style::configureHeaderIconButton(button, scale); },
       })
   );
   header->addChild(std::move(headerActions));
@@ -264,9 +262,6 @@ void ControlCenterPanel::onPanelCardOpacityChanged(float opacity) {
   }
   if (m_sidebar != nullptr) {
     m_sidebar->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, opacity));
-  }
-  if (m_closeButton != nullptr) {
-    m_closeButton->setSurfaceOpacity(opacity);
   }
 }
 

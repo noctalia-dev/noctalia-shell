@@ -1,8 +1,6 @@
 {
   lib,
   stdenv,
-  shortRev,
-  version,
   meson,
   ninja,
   pkg-config,
@@ -30,6 +28,9 @@
   libqalculate,
   libxml2,
   jemalloc,
+  source ? lib.cleanSource ./..,
+  shortRev,
+  version,
 }:
 
 let
@@ -60,7 +61,7 @@ stdenv.mkDerivation {
   pname = "noctalia";
   inherit version;
 
-  src = lib.cleanSource ../.;
+  src = source;
 
   postPatch = ''
     # Remove -march=native and -mtune=native for reproducible builds

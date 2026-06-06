@@ -142,6 +142,8 @@ namespace settings {
 
   [[nodiscard]] std::optional<WidgetSettingSpec>
   findWidgetSettingSpec(std::string_view widgetType, std::string_view settingKey);
+  [[nodiscard]] std::optional<WidgetSettingSpec>
+  findWidgetSettingSpec(std::string_view widgetType, std::string_view settingKey, const WidgetConfig* config);
   [[nodiscard]] bool configOverrideValueMatchesWidgetSetting(
       const ConfigOverrideValue& overrideValue, const WidgetSettingValue& settingValue
   );

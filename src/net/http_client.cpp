@@ -268,6 +268,8 @@ void HttpClient::request(HttpRequest req, ResponseCallback cb) {
   transfer.callback = std::move(cb);
   transfer.url = req.url;
   transfer.body = std::move(req.body);
+  transfer.basicUsername = std::move(req.basicUsername);
+  transfer.basicPassword = std::move(req.basicPassword);
   for (const auto& header : req.headers) {
     transfer.headers = curl_slist_append(transfer.headers, header.c_str());
   }
@@ -278,12 +280,21 @@ void HttpClient::request(HttpRequest req, ResponseCallback cb) {
   curl_easy_setopt(easy, CURLOPT_URL, stored.url.c_str());
   curl_easy_setopt(easy, CURLOPT_NOSIGNAL, 1L);
   curl_easy_setopt(easy, CURLOPT_TIMEOUT, 30L);
-  // No CURLOPT_FAILONERROR: callers need the status and body for non-2xx responses.
-  if (req.method == "GET") {
+  if (req.followRedirects) {
     curl_easy_setopt(easy, CURLOPT_FOLLOWLOCATION, 1L);
-  } else if (req.method == "POST") {
+    if (req.allowRedirectAuth) {
+      curl_easy_setopt(easy, CURLOPT_UNRESTRICTED_AUTH, 1L);
+    }
+  }
+  if (!stored.basicUsername.empty() || !stored.basicPassword.empty()) {
+    curl_easy_setopt(easy, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+    curl_easy_setopt(easy, CURLOPT_USERNAME, stored.basicUsername.c_str());
+    curl_easy_setopt(easy, CURLOPT_PASSWORD, stored.basicPassword.c_str());
+  }
+  // No CURLOPT_FAILONERROR: callers need the status and body for non-2xx responses.
+  if (req.method == "POST") {
     curl_easy_setopt(easy, CURLOPT_POST, 1L);
-  } else {
+  } else if (req.method != "GET") {
     curl_easy_setopt(easy, CURLOPT_CUSTOMREQUEST, req.method.c_str());
   }
   if (stored.headers != nullptr) {

@@ -31,11 +31,11 @@ std::string batteryStateLabel(BatteryState state) {
   case BatteryState::Discharging:
     return i18n::tr("power.battery.states.discharging");
   case BatteryState::FullyCharged:
-    return i18n::tr("power.battery.states.charged");
+    return i18n::tr("power.battery.states.plugged-in");
   case BatteryState::Empty:
     return i18n::tr("power.battery.states.empty");
   case BatteryState::PendingCharge:
-    return i18n::tr("power.battery.states.pending-charge");
+    return i18n::tr("power.battery.states.plugged-in");
   case BatteryState::PendingDischarge:
     return i18n::tr("power.battery.states.pending-discharge");
   case BatteryState::Unknown:

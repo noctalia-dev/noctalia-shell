@@ -199,13 +199,14 @@ namespace settings {
 
     const auto makeSlider =
         [&](double value, double minValue, double maxValue, double step, std::vector<std::string> path,
-            bool integerValue = false,
+            bool integerValue = false, std::string valueSuffix = {},
             std::function<std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>(double)> linkedCommit =
-                {}) {
-          return factory.makeSlider(
-              value, minValue, maxValue, step, std::move(path), integerValue, std::move(linkedCommit)
-          );
-        };
+                {}) -> std::unique_ptr<Node> {
+      return factory.makeSlider(
+          value, minValue, maxValue, step, std::move(path), integerValue, std::move(linkedCommit),
+          std::move(valueSuffix)
+      );
+    };
 
     const auto makeText = [&](const std::string& value, const std::string& placeholder, std::vector<std::string> path,
                               float width = 0.0f) {
@@ -1078,7 +1079,7 @@ namespace settings {
             } else if constexpr (std::is_same_v<T, SliderSetting>) {
               return makeSlider(
                   control.value, control.minValue, control.maxValue, control.step, entry.path, control.integerValue,
-                  control.linkedCommit
+                  control.valueSuffix, control.linkedCommit
               );
             } else if constexpr (std::is_same_v<T, TextSetting>) {
               if (isDockLauncherIconPath(entry.path)) {

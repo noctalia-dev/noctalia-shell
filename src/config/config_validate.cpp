@@ -212,6 +212,30 @@ namespace noctalia::config {
       }
     }
 
+    void validateCalendarSyntax(const toml::table& root, schema::Diagnostics& diag) {
+      const auto* calendar = root["calendar"].as_table();
+      if (calendar == nullptr) {
+        return;
+      }
+      if ((*calendar)["accounts"].as_array() != nullptr) {
+        diag.error("calendar.accounts", "calendar accounts now use [calendar.account.<id>] named tables");
+      }
+      const auto* accounts = (*calendar)["account"].as_table();
+      if (accounts == nullptr) {
+        return;
+      }
+      for (const auto& [id, node] : *accounts) {
+        const auto* account = node.as_table();
+        if (account == nullptr || !account->contains("url")) {
+          continue;
+        }
+        diag.error(
+            "calendar.account." + std::string(id.str()) + ".url",
+            "CalDAV collection url was removed; use provider/server_url discovery syntax instead"
+        );
+      }
+    }
+
     void validateBarWidgets(const toml::table& root, schema::Diagnostics& diag) {
       const auto* widgets = root["widget"].as_table();
       if (widgets == nullptr) {
@@ -442,6 +466,7 @@ namespace noctalia::config {
     checkSection(merged, "system", schema::systemSchema(), diag);
     checkSection(merged, "weather", schema::weatherSchema(), diag);
     checkSection(merged, "calendar", schema::calendarSchema(), diag);
+    validateCalendarSyntax(merged, diag);
     checkSection(merged, "audio", schema::audioSchema(), diag);
     checkSection(merged, "brightness", schema::brightnessSchema(), diag);
     checkSection(merged, "battery", schema::batterySchema(), diag);

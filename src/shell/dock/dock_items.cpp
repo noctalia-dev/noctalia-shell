@@ -40,7 +40,10 @@ namespace {
   constexpr float kLauncherGlyphSizeRatio = 0.8f;
   constexpr float kHoverZoomLerp = 0.28f;
   constexpr float kHoverZoomReferenceFrameMs = 1000.0f / 60.0f;
+  // Pointer hit padding (in item pitches) — keep generous so edge icons still magnify.
   constexpr float kHoverZoomInfluence = 2.25f;
+  // Scale falloff radius — tighter than hit padding so neighbors stay closer to rest size.
+  constexpr float kHoverZoomFalloffInfluence = 1.5f;
   constexpr std::int32_t kHoverZoomZScale = 100;
 
   void applyHoverIconVisual(Node* iconNode, DockEdge edge, float baseX, float baseY, float iconSize, float scale) {
@@ -48,7 +51,7 @@ namespace {
       return;
     }
     iconNode->setScale(scale);
-    const float shift = iconSize * (1.0f - scale) * 0.5f;
+    const float shift = scale > 1.0f ? iconSize * (1.0f - scale) * 0.5f : 0.0f;
     float x = baseX;
     float y = baseY;
     switch (edge) {
@@ -75,7 +78,7 @@ namespace {
       return;
     }
     badge->setScale(iconScale);
-    const float shift = iconSize * (1.0f - iconScale) * 0.5f;
+    const float shift = iconScale > 1.0f ? iconSize * (1.0f - iconScale) * 0.5f : 0.0f;
     float iconX = iconBaseX;
     float iconY = iconBaseY;
     switch (edge) {
@@ -256,19 +259,22 @@ namespace {
     TooltipManager::instance().syncAnchor(area);
   }
 
-  [[nodiscard]] float
-  computeHoverMultiplier(float pointerMain, float itemCenterMain, float itemPitch, float maxMultiplier) {
+  [[nodiscard]] float computeHoverMultiplier(
+      float pointerMain, float itemCenterMain, float itemPitch, float maxMultiplier, float falloffInfluence
+  ) {
     if (maxMultiplier <= 1.0f) {
       return 1.0f;
     }
     const float distance = std::abs(pointerMain - itemCenterMain);
-    const float influence = itemPitch * kHoverZoomInfluence;
+    const float influence = itemPitch * falloffInfluence;
     if (distance >= influence) {
       return 1.0f;
     }
     const float t = distance / influence;
     const float cosine = std::cos(t * static_cast<float>(M_PI) * 0.5f);
-    return 1.0f + (maxMultiplier - 1.0f) * cosine;
+    // Squared cosine keeps the center pop but drops neighbors toward rest scale faster.
+    const float falloff = cosine * cosine;
+    return 1.0f + (maxMultiplier - 1.0f) * falloff;
   }
 
   [[nodiscard]] TooltipPlacement dockTooltipPlacement(DockEdge edge) {
@@ -633,8 +639,9 @@ namespace shell::dock {
             item.iconImage != nullptr ? static_cast<Node*>(item.iconImage) : static_cast<Node*>(item.iconGlyph);
         if (iconNode != nullptr) {
           item.visualScale = iconScale;
-          iconNode->setScale(iconScale);
           item.hoverMainOffset = 0.0f;
+          const float badgeSize = std::max(kBadgeMinSize, iSize * kBadgeSizeRatio);
+          applyHoverItemVisual(iconNode, item.badge, edge, kCellPad, kCellPad, iSize, badgeSize, iconScale);
         }
       }
     }
@@ -643,7 +650,22 @@ namespace shell::dock {
       instance.row->addChild(createLauncherButton(instance, cfg, clickContext));
     }
 
+    if (cfg.magnification && instance.launcherIconNode != nullptr) {
+      const float glyphSize = iSize * kLauncherGlyphSizeRatio;
+      const float launcherIconBaseY = kCellPad + (iSize - glyphSize) * 0.5f;
+      const float launcherScale = cfg.inactiveScale;
+      instance.launcherVisualScale = launcherScale;
+      applyHoverItemVisual(
+          instance.launcherIconNode, nullptr, edge, kCellPad, launcherIconBaseY, iSize, 0.0f, launcherScale
+      );
+    }
+
     shell::dock::resizeSurface(instance, cfg, deps.model.config.config().shell.shadow);
+
+    if (cfg.magnification && instance.surface != nullptr) {
+      instance.surface->requestFrameTick();
+      instance.surface->requestRedraw();
+    }
   }
 
   void updateVisuals(DockInstance& instance, DockItemSceneDependencies deps, const DockSnapshot& snapshot) {
@@ -921,9 +943,11 @@ namespace shell::dock {
     std::vector<float> slotScales;
     slotScales.reserve(slots.size());
     for (HoverSlot& slot : slots) {
-      const float hoverMultiplier = pointerActive
-          ? computeHoverMultiplier(instance.hoverPointerMain, slot.restCenterMain, itemPitch, cfg.magnificationScale)
-          : 1.0f;
+      const float hoverMultiplier = pointerActive ? computeHoverMultiplier(
+                                                        instance.hoverPointerMain, slot.restCenterMain, itemPitch,
+                                                        cfg.magnificationScale, kHoverZoomFalloffInfluence
+                                                    )
+                                                  : 1.0f;
       slot.targetScale = slot.baseScale * hoverMultiplier;
       slotScales.push_back(slot.targetScale);
     }

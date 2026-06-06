@@ -116,8 +116,8 @@ namespace noctalia::config::schema {
     };
   }
 
-  // Array-of-tables read into a vector<Elem> (e.g. calendar.accounts,
-  // control_center.shortcuts). On read the vector is cleared then filled with
+  // Array-of-tables read into a vector<Elem> (e.g. control_center.shortcuts).
+  // On read the vector is cleared then filled with
   // elements that pass `keep`; on write only `keep` elements are emitted. The
   // array key is always written (possibly empty), matching the legacy emitters.
   template <typename Parent, typename Elem>

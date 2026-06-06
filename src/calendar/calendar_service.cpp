@@ -1,20 +1,27 @@
 #include "calendar/calendar_service.h"
 
 #include "calendar/caldav_client.h"
+#include "calendar/caldav_discovery.h"
 #include "config/config_service.h"
 #include "core/log.h"
+#include "i18n/i18n.h"
 #include "json.hpp"
 #include "net/http_client.h"
 #include "net/url_open.h"
+#include "notification/notification_manager.h"
 
 #include <algorithm>
 #include <charconv>
 #include <cstdlib>
 #include <fstream>
+#include <iterator>
+#include <memory>
+#include <unordered_set>
 
 namespace {
   constexpr Logger kLog("calendar");
   constexpr const char* kCredentialOwner = "calendar_credentials";
+  constexpr const char* kICloudCalDavServerUrl = "https://caldav.icloud.com/";
   constexpr auto kConnectPollInterval = std::chrono::seconds{2};
   constexpr auto kWindowBefore = std::chrono::hours{24 * 31};
   constexpr auto kWindowAfter = std::chrono::hours{24 * 90};
@@ -26,10 +33,23 @@ namespace {
   std::chrono::system_clock::time_point fromUnix(std::int64_t seconds) {
     return std::chrono::system_clock::time_point{std::chrono::seconds{seconds}};
   }
+
+  std::string caldavServerUrl(const CalendarConfig::Account& account) {
+    if (account.provider == "icloud") {
+      return kICloudCalDavServerUrl;
+    }
+    if (account.provider == "custom") {
+      return account.serverUrl;
+    }
+    return {};
+  }
 } // namespace
 
-CalendarService::CalendarService(ConfigService& configService, HttpClient& httpClient)
-    : m_configService(configService), m_httpClient(httpClient), m_oauth(httpClient), m_google(httpClient) {}
+CalendarService::CalendarService(
+    ConfigService& configService, HttpClient& httpClient, NotificationManager* notifications
+)
+    : m_configService(configService), m_httpClient(httpClient), m_notifications(notifications), m_oauth(httpClient),
+      m_google(httpClient) {}
 
 void CalendarService::initialize() {
   m_activeConfig = m_configService.config().calendar;
@@ -52,6 +72,18 @@ void CalendarService::notifyChanged() {
       callback();
     }
   }
+}
+
+void CalendarService::notifyGoogleConnectFailure(const std::string& body) const {
+  if (m_notifications == nullptr) {
+    kLog.warn("google connect failure notification dropped: notification manager unavailable");
+    return;
+  }
+  m_notifications->addInternal(
+      i18n::tr("notifications.internal.calendar"),
+      i18n::tr("notifications.internal.calendar-google-connect-failed-title"), body, Urgency::Critical,
+      kDefaultNotificationTimeout * 2, std::string("noctalia-glyph:calendar-x")
+  );
 }
 
 void CalendarService::onConfigReload() {
@@ -96,6 +128,7 @@ void CalendarService::tick() {
   if (m_connect.state == ConnectState::Pending && !m_connect.inFlight && now >= m_connect.nextPollAt) {
     if (now >= m_connect.deadline) {
       kLog.warn("google connect timed out for account {}", m_connect.accountId);
+      notifyGoogleConnectFailure(i18n::tr("notifications.internal.calendar-google-connect-timeout"));
       m_connect.state = ConnectState::Failed;
       notifyChanged();
     } else {
@@ -170,24 +203,86 @@ void CalendarService::rebuildSnapshot() {
 }
 
 void CalendarService::fetchCalDav(const CalendarConfig::Account& account) {
-  calendar::CalDavAccount caldav;
-  caldav.url = account.url;
-  caldav.username = account.username;
-  caldav.password = credential(account.id, "password");
-  caldav.calendarName = account.displayName;
-  caldav.color = account.color;
-
-  if (caldav.url.empty() || caldav.username.empty() || caldav.password.empty()) {
-    kLog.warn("caldav account {} is missing url/username/password", account.id);
+  const std::string serverUrl = caldavServerUrl(account);
+  const std::string username = account.username;
+  const std::string password = credential(account.id, "password");
+  if (serverUrl.empty() || username.empty() || password.empty()) {
+    kLog.warn("caldav account {} is missing server_url/username/password", account.id);
     accountDone(account.id, false, {});
     return;
   }
 
   const auto now = std::chrono::system_clock::now();
-  const std::string id = account.id;
-  calendar::fetchCalDavEvents(
-      m_httpClient, caldav, now - kWindowBefore, now + kWindowAfter,
-      [this, id](bool ok, std::vector<CalendarEvent> events) { accountDone(id, ok, std::move(events)); }
+  const std::string accountId = account.id;
+  const std::string accountColor = account.color;
+  const std::vector<std::string> selectedCalendars = account.calendars;
+  const bool allowRedirectAuth = account.provider == "icloud";
+
+  calendar::discoverCalDavCollections(
+      m_httpClient, serverUrl, username, password, allowRedirectAuth,
+      [this, accountId, username, password, accountColor, selectedCalendars,
+       now](bool discovered, std::vector<calendar::CalDavCollection> collections) {
+        if (!discovered) {
+          accountDone(accountId, false, {});
+          return;
+        }
+
+        if (!selectedCalendars.empty()) {
+          const std::unordered_set<std::string> selected(selectedCalendars.begin(), selectedCalendars.end());
+          collections.erase(
+              std::remove_if(
+                  collections.begin(), collections.end(),
+                  [&](const calendar::CalDavCollection& collection) { return !selected.contains(collection.id); }
+              ),
+              collections.end()
+          );
+        }
+
+        if (collections.empty()) {
+          kLog.warn("caldav account {} has no selected calendars after discovery", accountId);
+          accountDone(accountId, false, {});
+          return;
+        }
+
+        struct FetchContext {
+          CalendarService* service = nullptr;
+          std::string accountId;
+          std::size_t pending = 0;
+          bool anyOk = false;
+          std::vector<CalendarEvent> events;
+        };
+        auto ctx = std::make_shared<FetchContext>();
+        ctx->service = this;
+        ctx->accountId = accountId;
+        ctx->pending = collections.size();
+
+        for (const calendar::CalDavCollection& collection : collections) {
+          calendar::CalDavAccount caldav;
+          caldav.url = collection.url;
+          caldav.username = username;
+          caldav.password = password;
+          caldav.calendarName = collection.name;
+          caldav.color = accountColor.empty() ? collection.color : accountColor;
+
+          calendar::fetchCalDavEvents(
+              m_httpClient, caldav, now - kWindowBefore, now + kWindowAfter,
+              [ctx](bool ok, std::vector<CalendarEvent> events) {
+                if (ok) {
+                  ctx->anyOk = true;
+                  ctx->events.insert(
+                      ctx->events.end(), std::make_move_iterator(events.begin()), std::make_move_iterator(events.end())
+                  );
+                }
+                if (ctx->pending > 0) {
+                  --ctx->pending;
+                }
+                if (ctx->pending == 0) {
+                  ctx->service->accountDone(ctx->accountId, ctx->anyOk, std::move(ctx->events));
+                }
+              }
+          );
+        }
+      }
   );
 }
 
@@ -268,13 +363,16 @@ void CalendarService::fetchGoogle(const CalendarConfig::Account& account) {
   }
 }
 
-void CalendarService::connectGoogleAccount(const std::string& accountId) {
+void CalendarService::connectGoogleAccount(const std::string& accountId, const std::string& activationToken) {
   const auto it = std::find_if(
       m_activeConfig.accounts.begin(), m_activeConfig.accounts.end(),
       [&](const CalendarConfig::Account& a) { return a.id == accountId && a.type == "google"; }
   );
   if (it == m_activeConfig.accounts.end()) {
     kLog.warn("connectGoogleAccount: no google account with id {}", accountId);
+    notifyGoogleConnectFailure(
+        i18n::tr("notifications.internal.calendar-google-connect-missing-account", "account", accountId)
+    );
     return;
   }
 
@@ -284,9 +382,19 @@ void CalendarService::connectGoogleAccount(const std::string& accountId) {
   m_connect.pollToken.clear();
   notifyChanged();
 
-  m_oauth.start([this](bool ok, calendar::GoogleOAuthBroker::StartResult result) {
+  m_oauth.start([this, accountId, activationToken](bool ok, calendar::GoogleOAuthBroker::StartResult result) {
     m_connect.inFlight = false;
     if (!ok) {
+      kLog.warn("google oauth start failed for account {}", accountId);
+      if (result.httpStatus == 429) {
+        notifyGoogleConnectFailure(i18n::tr("notifications.internal.calendar-google-connect-rate-limited"));
+      } else if (result.httpStatus > 0) {
+        notifyGoogleConnectFailure(
+            i18n::tr("notifications.internal.calendar-google-connect-start-http", "status", result.httpStatus)
+        );
+      } else {
+        notifyGoogleConnectFailure(i18n::tr("notifications.internal.calendar-google-connect-start-failed"));
+      }
       m_connect.state = ConnectState::Failed;
       notifyChanged();
       return;
@@ -295,9 +403,10 @@ void CalendarService::connectGoogleAccount(const std::string& accountId) {
     const int expiresIn = result.expiresIn > 0 ? result.expiresIn : 600;
     m_connect.deadline = std::chrono::steady_clock::now() + std::chrono::seconds{expiresIn};
     m_connect.nextPollAt = std::chrono::steady_clock::now() + kConnectPollInterval;
-    if (!net::openInBrowser(result.authUrl)) {
+    if (!net::openInBrowser(result.authUrl, activationToken)) {
       kLog.warn("failed to open browser for google consent; url logged at debug");
       kLog.debug("google consent url: {}", result.authUrl);
+      notifyGoogleConnectFailure(i18n::tr("notifications.internal.calendar-google-connect-browser-failed"));
     }
     notifyChanged();
   });
@@ -325,7 +434,12 @@ void CalendarService::pollConnect() {
           notifyChanged();
           break;
         case PollStatus::Expired:
+          notifyGoogleConnectFailure(i18n::tr("notifications.internal.calendar-google-connect-expired"));
+          m_connect.state = ConnectState::Failed;
+          notifyChanged();
+          break;
         case PollStatus::Error:
+          notifyGoogleConnectFailure(i18n::tr("notifications.internal.calendar-google-connect-result-failed"));
           m_connect.state = ConnectState::Failed;
           notifyChanged();
           break;

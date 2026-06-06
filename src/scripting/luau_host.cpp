@@ -568,6 +568,7 @@ void LuauHost::interruptIfBudgetExceeded(lua_State* L) {
     return;
   }
   m_lastCallTimedOut = true;
+  m_budgetActive = false;
   luaL_error(L, "script callback '%s' timed out", m_currentCallName.empty() ? "(unknown)" : m_currentCallName.c_str());
 }
 

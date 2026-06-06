@@ -12,7 +12,7 @@ class HttpClient;
 namespace calendar {
 
   struct CalDavAccount {
-    std::string url;      // calendar collection URL
+    std::string url;      // discovered calendar collection URL
     std::string username; // login
     std::string password; // app password
     std::string calendarName;

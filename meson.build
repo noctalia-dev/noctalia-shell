@@ -365,6 +365,7 @@ _noctalia_sources = files(
   'src/app/single_instance_lock.cpp',
   'src/auth/pam_authenticator.cpp',
   'src/calendar/caldav_client.cpp',
+  'src/calendar/caldav_discovery.cpp',
   'src/calendar/calendar_service.cpp',
   'src/calendar/google_client.cpp',
   'src/calendar/google_oauth.cpp',
