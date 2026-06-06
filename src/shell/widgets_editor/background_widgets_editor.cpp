@@ -53,6 +53,7 @@ namespace {
   constexpr float kSnapGuideThresholdMin = 6.0f;
   constexpr float kSnapGuideThresholdMax = 18.0f;
   constexpr float kScaleHeightIntentRatio = 1.75f;
+  constexpr float kCenterGuideThickness = 3.0f;
   constexpr std::size_t kScaleCornerCount = 4;
 
   struct CornerSigns {
@@ -494,6 +495,28 @@ void BackgroundWidgetsEditor::rebuildScene(OverlaySurface& surface) {
       root->addChild(std::move(line));
     }
   }
+
+  const float width = root->width();
+  const float height = root->height();
+  const float centerX = width * 0.5f;
+  const float centerY = height * 0.5f;
+  const float centerGuideOffset = kCenterGuideThickness * 0.5f;
+
+  auto verticalGuide = ui::box({
+      .fill = colorSpecFromRole(ColorRole::Primary, 0.35f),
+  });
+  verticalGuide->setPosition(centerX - centerGuideOffset, 0.0f);
+  verticalGuide->setFrameSize(kCenterGuideThickness, height);
+  verticalGuide->setZIndex(3);
+  root->addChild(std::move(verticalGuide));
+
+  auto horizontalGuide = ui::box({
+      .fill = colorSpecFromRole(ColorRole::Primary, 0.35f),
+  });
+  horizontalGuide->setPosition(0.0f, centerY - centerGuideOffset);
+  horizontalGuide->setFrameSize(width, kCenterGuideThickness);
+  horizontalGuide->setZIndex(3);
+  root->addChild(std::move(horizontalGuide));
 
   for (const auto& widgetState : m_snapshot.widgets) {
     if (effectiveOutputName(widgetState) != surface.outputName || m_factory == nullptr) {
@@ -1417,6 +1440,13 @@ void BackgroundWidgetsEditor::updateDrag() {
       state->cy = snapBoundsAxisToTargets(
           state->cy, bounds.aabbHeight, m_snapshot.grid.cellSize, gridOriginY, snapLinesY, guideThreshold
       );
+    }
+
+    if (std::abs(state->cx - gridOriginX) <= guideThreshold) {
+      state->cx = gridOriginX;
+    }
+    if (std::abs(state->cy - gridOriginY) <= guideThreshold) {
+      state->cy = gridOriginY;
     }
   } else if (m_drag.mode == DragMode::Rotate) {
     const float startAngle =

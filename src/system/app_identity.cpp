@@ -69,11 +69,7 @@ namespace app_identity {
       fallback.id = std::string(runningAppId);
       fallback.name = std::string(runningAppId);
       fallback.nameLower = runningLower;
-      if (const auto internal = internal_apps::metadataForAppId(std::string(runningAppId)); internal.has_value()) {
-        fallback.name = internal->displayName;
-        fallback.nameLower = StringUtils::toLower(fallback.name);
-        fallback.icon = internal->iconPath;
-      }
+      internal_apps::applyMetadataToDesktopEntry(fallback);
 
       return DesktopEntryResolution{
           .entry = fallback,

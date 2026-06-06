@@ -53,19 +53,22 @@ jobs:
               "Other": "distro:other"
             };
 
+            const compositorLabels = new Set(Object.values(compositorLabelMap));
+            const distributionLabels = new Set(Object.values(distributionLabelMap));
+
             const mappings = [
               {
                 kind: "compositor",
-                prefix: "",
                 selectedValue: compositorValue,
                 labelMap: compositorLabelMap,
+                managedLabels: compositorLabels,
                 description: "Issue reported for this compositor stack"
               },
               {
                 kind: "distribution",
-                prefix: "",
                 selectedValue: distributionValue,
                 labelMap: distributionLabelMap,
+                managedLabels: distributionLabels,
                 description: "Issue reported for this Linux distribution family"
               }
             ];
@@ -102,7 +105,7 @@ jobs:
 
               await ensureLabelExists(targetLabel, mapping.description);
 
-              const currentKindLabels = existingLabels.filter((name) => name.startsWith(mapping.prefix));
+              const currentKindLabels = existingLabels.filter((name) => mapping.managedLabels.has(name));
               for (const label of currentKindLabels) {
                 if (label === targetLabel) continue;
                 try {

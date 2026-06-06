@@ -137,7 +137,7 @@ void ControlCenterPanel::create() {
               .radius = Style::scaledRadiusLg(scale),
               .onClick =
                   [this, id = tab.id]() {
-                    selectTab(id);
+                    selectTab(id, true);
                     PanelManager::instance().refresh();
                   },
               .configure =
@@ -223,12 +223,15 @@ void ControlCenterPanel::create() {
       .out = &m_tabBodies,
       .align = FlexAlign::Stretch,
       .gap = 0.0f,
+      .clipChildren = true,
       .flexGrow = 1.0f,
   });
 
   for (std::size_t i = 0; i < kTabCount; ++i) {
     auto container = m_tabs[i]->create();
     container->setFlexGrow(1.0f);
+    container->setParticipatesInLayout(false);
+    container->setVisible(false);
     m_tabContainers[i] = container.get();
     m_tabBodies->addChild(std::move(container));
   }
@@ -302,10 +305,20 @@ void ControlCenterPanel::doLayout(Renderer& renderer, float width, float height)
     }
   }
 
-  const std::size_t activeIdx = tabIndex(m_activeTab);
-  if (m_tabs[activeIdx] != nullptr) {
-    m_tabs[activeIdx]->layout(renderer, bodyWidth, bodyHeight);
+  layoutTabContainers(bodyWidth, bodyHeight);
+
+  const auto layoutTab = [this, bodyWidth, bodyHeight, &renderer](TabId tabId) {
+    const std::size_t idx = tabIndex(tabId);
+    if (m_tabs[idx] == nullptr || m_tabContainers[idx] == nullptr || !m_tabContainers[idx]->visible()) {
+      return;
+    }
+    m_tabs[idx]->layout(renderer, bodyWidth, bodyHeight);
+  };
+
+  if (m_tabTransitionActive) {
+    layoutTab(m_tabTransitionOutgoing);
   }
+  layoutTab(m_activeTab);
 }
 
 void ControlCenterPanel::doUpdate(Renderer& renderer) {
@@ -339,6 +352,11 @@ bool ControlCenterPanel::isContextActive(std::string_view context) const {
 }
 
 void ControlCenterPanel::onClose() {
+  if (m_tabTransitionAnimId != 0 && m_animations != nullptr) {
+    m_animations->cancel(m_tabTransitionAnimId);
+    m_tabTransitionAnimId = 0;
+  }
+  m_tabTransitionActive = false;
   m_activeTab = TabId::Home;
   for (auto& tab : m_tabs) {
     tab->setActive(false);
@@ -418,20 +436,10 @@ void ControlCenterPanel::syncTabVisibility() {
   }
 }
 
-void ControlCenterPanel::selectTab(TabId tab) {
-  if (!isTabVisible(tab)) {
-    tab = firstVisibleTab();
-  }
-  m_activeTab = tab;
-  if (tab == TabId::Notifications && m_notificationManager != nullptr) {
-    m_notificationManager->markNotificationHistorySeen();
-  }
+void ControlCenterPanel::updateTabChrome(TabId tab) {
   for (const auto& meta : kTabs) {
     const std::size_t idx = tabIndex(meta.id);
     const bool tabEnabled = isTabVisible(meta.id);
-    if (m_tabContainers[idx] != nullptr) {
-      m_tabContainers[idx]->setVisible(tabEnabled && meta.id == tab);
-    }
     if (m_tabs[idx] != nullptr) {
       m_tabs[idx]->setActive(tabEnabled && meta.id == tab);
     }
@@ -452,6 +460,164 @@ void ControlCenterPanel::selectTab(TabId tab) {
   }
   if (m_contentHeaderActions != nullptr) {
     m_contentHeaderActions->setVisible(true);
+  }
+}
+
+void ControlCenterPanel::applyTabContainerVisibility(TabId activeTab) {
+  for (const auto& meta : kTabs) {
+    const std::size_t idx = tabIndex(meta.id);
+    const bool tabEnabled = isTabVisible(meta.id);
+    if (m_tabContainers[idx] != nullptr) {
+      m_tabContainers[idx]->setVisible(tabEnabled && meta.id == activeTab);
+    }
+  }
+}
+
+void ControlCenterPanel::layoutTabContainers(float bodyWidth, float bodyHeight) {
+  const float travel = bodyHeight > 0.0f ? bodyHeight : 0.0f;
+  for (std::size_t i = 0; i < kTabCount; ++i) {
+    auto* container = m_tabContainers[i];
+    if (container == nullptr || !container->visible()) {
+      continue;
+    }
+
+    container->setSize(bodyWidth, bodyHeight);
+
+    float offsetY = 0.0f;
+    float opacity = 1.0f;
+    const TabId tabId = static_cast<TabId>(i);
+    if (m_tabTransitionActive && travel > 0.0f) {
+      const float direction = static_cast<float>(m_tabTransitionDirection);
+      if (tabId == m_tabTransitionOutgoing) {
+        offsetY = -direction * travel * m_tabTransitionProgress;
+        opacity = 1.0f - 0.3f * m_tabTransitionProgress;
+      } else if (tabId == m_activeTab) {
+        offsetY = direction * travel * (1.0f - m_tabTransitionProgress);
+        opacity = 0.7f + 0.3f * m_tabTransitionProgress;
+      }
+    }
+
+    container->setPosition(0.0f, offsetY);
+    container->setOpacity(opacity);
+    if (m_tabTransitionActive) {
+      container->setZIndex(tabId == m_activeTab ? 1 : 0);
+    } else {
+      container->setZIndex(0);
+    }
+  }
+}
+
+void ControlCenterPanel::resetTabContainerTransforms() {
+  for (auto* container : m_tabContainers) {
+    if (container == nullptr) {
+      continue;
+    }
+    container->setPosition(0.0f, 0.0f);
+    container->setOpacity(1.0f);
+    container->setZIndex(0);
+  }
+}
+
+int ControlCenterPanel::visibleTabOrdinal(TabId tab) const {
+  int ordinal = 0;
+  for (const auto& meta : kTabs) {
+    if (!isTabVisible(meta.id)) {
+      continue;
+    }
+    if (meta.id == tab) {
+      return ordinal;
+    }
+    ++ordinal;
+  }
+  return 0;
+}
+
+void ControlCenterPanel::applyTabTransitionLayout() {
+  if (m_tabBodies == nullptr) {
+    return;
+  }
+  layoutTabContainers(m_tabBodies->width(), m_tabBodies->height());
+}
+
+void ControlCenterPanel::startTabTransition(TabId from, TabId to) {
+  if (m_animations == nullptr || m_tabBodies == nullptr) {
+    applyTabContainerVisibility(to);
+    resetTabContainerTransforms();
+    return;
+  }
+
+  m_tabTransitionActive = true;
+  m_tabTransitionOutgoing = from;
+  m_tabTransitionProgress = 0.0f;
+
+  const int fromOrdinal = visibleTabOrdinal(from);
+  const int toOrdinal = visibleTabOrdinal(to);
+  m_tabTransitionDirection = toOrdinal >= fromOrdinal ? 1 : -1;
+
+  for (const auto& meta : kTabs) {
+    const std::size_t idx = tabIndex(meta.id);
+    if (m_tabContainers[idx] == nullptr || !isTabVisible(meta.id)) {
+      continue;
+    }
+    const bool show = meta.id == from || meta.id == to;
+    m_tabContainers[idx]->setVisible(show);
+  }
+
+  applyTabTransitionLayout();
+  PanelManager::instance().requestLayout();
+  PanelManager::instance().requestRedraw();
+  PanelManager::instance().requestFrameTick();
+
+  m_tabTransitionAnimId = m_animations->animate(
+      0.0f, 1.0f, static_cast<float>(Style::animNormal), Easing::EaseOutCubic,
+      [this](float progress) {
+        m_tabTransitionProgress = progress;
+        applyTabTransitionLayout();
+        PanelManager::instance().requestRedraw();
+      },
+      [this]() {
+        m_tabTransitionAnimId = 0;
+        finishTabTransition();
+        PanelManager::instance().requestLayout();
+        PanelManager::instance().requestRedraw();
+      },
+      m_tabBodies
+  );
+}
+
+void ControlCenterPanel::finishTabTransition() {
+  m_tabTransitionActive = false;
+  resetTabContainerTransforms();
+  applyTabContainerVisibility(m_activeTab);
+}
+
+void ControlCenterPanel::selectTab(TabId tab, bool animated) {
+  if (!isTabVisible(tab)) {
+    tab = firstVisibleTab();
+  }
+
+  const TabId previousTab = m_activeTab;
+  const bool tabChanged = tab != previousTab;
+
+  if (m_tabTransitionAnimId != 0 && m_animations != nullptr) {
+    m_animations->cancel(m_tabTransitionAnimId);
+    m_tabTransitionAnimId = 0;
+    finishTabTransition();
+  }
+
+  m_activeTab = tab;
+  if (tab == TabId::Notifications && m_notificationManager != nullptr) {
+    m_notificationManager->markNotificationHistorySeen();
+  }
+
+  updateTabChrome(tab);
+
+  if (tabChanged && animated && m_animations != nullptr && m_tabBodies != nullptr) {
+    startTabTransition(previousTab, tab);
+  } else {
+    m_tabTransitionActive = false;
+    applyTabContainerVisibility(tab);
+    resetTabContainerTransforms();
   }
 
   scheduleMprisRefreshFor(tab);

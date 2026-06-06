@@ -10,9 +10,12 @@
 // Abstract interface shared by NetworkManagerService (NetworkManager backend) and
 // WpaSupplicantService (wpa_supplicant backend).  UI code should use this type
 // so it works with either backend.
+class IpcService;
+
 class INetworkService {
 public:
   using ChangeCallback = std::function<void(const NetworkState&, NetworkChangeOrigin)>;
+  using WirelessFeedbackCallback = std::function<void(bool enabled)>;
 
   virtual ~INetworkService() = default;
 
@@ -36,4 +39,5 @@ public:
   virtual void forgetSsid(const std::string& ssid) = 0;
   [[nodiscard]] virtual bool hasSavedConnection(const std::string& ssid) const = 0;
   [[nodiscard]] virtual bool supportsSecretAgent() const noexcept { return false; }
+  void registerIpc(IpcService& ipc, WirelessFeedbackCallback wirelessFeedback = {});
 };

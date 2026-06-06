@@ -21,7 +21,7 @@ namespace noctalia::config::schema {
   // Battery / wallpaper.
   inline constexpr Range<std::int64_t> kBatteryWarningThresholdRange{0, 100, 1};
   inline constexpr Range<float> kWallpaperTransitionDurationRange{100.0f, 30000.0f, 100.0f};
-  inline constexpr Range<std::int64_t> kWallpaperAutomationIntervalRange{0, 1440, 1};
+  inline constexpr Range<std::int64_t> kWallpaperAutomationIntervalRange{1, 86400, 1};
 
   // Dock.
   inline constexpr Range<std::int64_t> kDockIconSizeRange{16, 128, 1};
@@ -32,5 +32,6 @@ namespace noctalia::config::schema {
   inline constexpr Range<std::int64_t> kDockRadiusRange{0, 80, 1}; // radius + each corner
   inline constexpr Range<float> kDockActiveScaleRange{0.1f, 1.75f, 0.05f};
   inline constexpr Range<float> kDockInactiveScaleRange{0.1f, 1.0f, 0.05f};
+  inline constexpr Range<float> kDockMagnificationScaleRange{1.0f, 2.0f, 0.05f};
 
 } // namespace noctalia::config::schema

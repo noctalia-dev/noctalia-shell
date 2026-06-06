@@ -93,6 +93,9 @@ protected:
   virtual void doLayout(Renderer& renderer) = 0;
   virtual void doUpdate(Renderer& renderer) { (void)renderer; }
 
+  // Outer node released to the host: background wrapper when enabled, otherwise content.
+  [[nodiscard]] Node* presentationRoot() const noexcept;
+
   float m_contentScale = 1.0f;
   AnimationManager* m_animations = nullptr;
 

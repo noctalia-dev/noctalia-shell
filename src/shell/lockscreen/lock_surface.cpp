@@ -137,13 +137,8 @@ LockSurface::LockSurface(WaylandConnection& connection, ConfigService* config) :
 
 LockSurface::~LockSurface() {
   releaseCaptureTextures();
-  if (m_wallpaperTexture.id != 0 && m_textureCache != nullptr) {
-    if (m_textureCache->shared()) {
-      m_textureCache->release(m_wallpaperTexture, m_wallpaperPath);
-    } else if (renderContext() != nullptr) {
-      renderContext()->backend().makeCurrentNoSurface();
-      renderContext()->textureManager().unload(m_wallpaperTexture);
-    }
+  if (m_wallpaperTexture.id != 0) {
+    releaseWallpaperTextureRef(m_textureWallpaperPath);
   }
   m_connection.unregisterSurface(m_surface);
   if (m_lockSurface != nullptr) {
@@ -222,21 +217,15 @@ void LockSurface::setWallpaperPath(std::string wallpaperPath) {
   if (m_wallpaperPath == wallpaperPath) {
     return;
   }
+
   if (m_blurredWallpaperTexture.id != 0 && renderContext() != nullptr) {
     renderContext()->backend().makeCurrentNoSurface();
     renderContext()->textureManager().unload(m_blurredWallpaperTexture);
     m_blurredWallpaperTexture = {};
   }
-  if (m_wallpaperTexture.id != 0 && m_textureCache != nullptr) {
-    if (m_textureCache->shared()) {
-      m_textureCache->release(m_wallpaperTexture, m_wallpaperPath);
-    } else if (renderContext() != nullptr) {
-      renderContext()->backend().makeCurrentNoSurface();
-      renderContext()->textureManager().unload(m_wallpaperTexture);
-    }
-  }
+
+  // Keep the current wallpaper visible until applyWallpaperTexture() loads the new path.
   m_wallpaperPath = std::move(wallpaperPath);
-  m_wallpaperTexture = {};
   m_wallpaperDirty = true;
   requestLayout();
 }
@@ -544,6 +533,26 @@ void LockSurface::invalidateLivePaper() {
   requestRedraw();
 }
 
+void LockSurface::releaseWallpaperTextureRef(const std::string& path) {
+  if (m_wallpaperTexture.id == 0) {
+    return;
+  }
+  const std::string& releasePath = !path.empty() ? path : m_textureWallpaperPath;
+  if (m_textureCache != nullptr && m_textureCache->shared()) {
+    if (releasePath.empty()) {
+      m_wallpaperTexture = {};
+      return;
+    }
+    m_textureCache->release(m_wallpaperTexture, releasePath);
+  } else if (renderContext() != nullptr) {
+    renderContext()->backend().makeCurrentNoSurface();
+    renderContext()->textureManager().unload(m_wallpaperTexture);
+    m_wallpaperTexture = {};
+  }
+  if (m_textureWallpaperPath == releasePath || path.empty()) {
+    m_textureWallpaperPath.clear();
+  }
+}
 void LockSurface::applyWallpaperTexture() {
   if (m_desktopCapture.has_value() && !m_desktopCapture->rgba.empty()) {
     applyBlurredDesktopTexture();
@@ -556,10 +565,7 @@ void LockSurface::applyWallpaperTexture() {
     return;
   }
 
-  // Live-paper short-circuits the image path: feed the visualizer texture
-  // straight into the wallpaper node. The texture id is stable; only its
-  // pixel contents change between frames, so we just leave the binding in
-  // place across redraws.
+  bool loaded = true;
   if (m_livePaperTexture.valid()) {
     m_wallpaperTexture = {};
     m_wallpaper->setLiveImage(m_livePaperImage);
@@ -572,12 +578,14 @@ void LockSurface::applyWallpaperTexture() {
     m_wallpaper->setLiveImage(nullptr);
     Color color = rgba(0.0f, 0.0f, 0.0f, 1.0f);
     if (parseColorWallpaperPath(m_wallpaperPath, color)) {
+      if (m_wallpaperTexture.id != 0) {
+        releaseWallpaperTextureRef(m_textureWallpaperPath);
+      }
       if (m_blurredWallpaperTexture.id != 0 && renderContext() != nullptr) {
         renderContext()->backend().makeCurrentNoSurface();
         renderContext()->textureManager().unload(m_blurredWallpaperTexture);
         m_blurredWallpaperTexture = {};
       }
-      m_wallpaperTexture = {};
       m_wallpaper->setSources(
           WallpaperSourceKind::Color, {}, color, WallpaperSourceKind::Image, {}, rgba(0.0f, 0.0f, 0.0f, 1.0f), 0.0f,
           0.0f, 0.0f, 0.0f
@@ -586,46 +594,63 @@ void LockSurface::applyWallpaperTexture() {
       m_wallpaper->setFillMode(m_wallpaperFillMode);
       m_wallpaper->setFillColor(m_wallpaperFillColor);
     } else if (m_textureCache != nullptr && !m_wallpaperPath.empty()) {
-      if (m_wallpaperTexture.id == 0) {
-        m_wallpaperTexture = m_textureCache->acquire(m_wallpaperPath);
-      }
-      if (m_wallpaperTexture.id == 0 && !m_textureCache->shared() && renderContext() != nullptr) {
-        renderContext()->backend().makeCurrentNoSurface();
-        m_wallpaperTexture = renderContext()->textureManager().loadFromFile(m_wallpaperPath, 0, true);
-      }
-      TextureHandle textureToDisplay = m_wallpaperTexture;
-      if (m_blurredWallpaperTexture.id != 0 && renderContext() != nullptr) {
-        renderContext()->backend().makeCurrentNoSurface();
-        renderContext()->textureManager().unload(m_blurredWallpaperTexture);
-        m_blurredWallpaperTexture = {};
-      }
-      if (m_wallpaperTexture.id != 0 && m_blurIntensity > 0.0f && renderContext() != nullptr) {
-        auto* renderer = renderContext();
-        renderer->makeCurrent(renderTarget());
-        static constexpr int kBlurRounds = 3;
-        const float blurRadius = m_blurIntensity * 40.0f;
-        m_blurredWallpaperTexture = m_wallpaperBlurCache.get(
-            renderer->backend(), m_wallpaperTexture, static_cast<std::uint32_t>(m_wallpaperTexture.width),
-            static_cast<std::uint32_t>(m_wallpaperTexture.height), blurRadius, kBlurRounds
-        );
-        if (m_blurredWallpaperTexture.id != 0) {
-          textureToDisplay = m_blurredWallpaperTexture;
+      const bool needsReload = m_wallpaperTexture.id == 0 || m_textureWallpaperPath != m_wallpaperPath;
+      TextureHandle newTexture = m_wallpaperTexture;
+      if (needsReload) {
+        newTexture = m_textureCache->acquire(m_wallpaperPath);
+        if (newTexture.id == 0 && !m_textureCache->shared() && renderContext() != nullptr) {
+          renderContext()->backend().makeCurrentNoSurface();
+          newTexture = renderContext()->textureManager().loadFromFile(m_wallpaperPath, 0, true);
         }
       }
-      m_wallpaper->setTextures(
-          textureToDisplay.id, {}, static_cast<float>(textureToDisplay.width),
-          static_cast<float>(textureToDisplay.height), 0.0f, 0.0f
-      );
-      m_wallpaper->setTransition(WallpaperTransition::Fade, 0.0f, TransitionParams{});
-      m_wallpaper->setFillMode(m_wallpaperFillMode);
-      m_wallpaper->setFillColor(m_wallpaperFillColor);
-    } else {
-      m_wallpaperTexture = {};
+
+      if (newTexture.id == 0) {
+        loaded = false;
+      } else {
+        if (needsReload && m_wallpaperTexture.id != 0 && m_textureWallpaperPath != m_wallpaperPath) {
+          releaseWallpaperTextureRef(m_textureWallpaperPath);
+        }
+        m_wallpaperTexture = newTexture;
+        m_textureWallpaperPath = m_wallpaperPath;
+
+        TextureHandle textureToDisplay = m_wallpaperTexture;
+        if (m_blurredWallpaperTexture.id != 0 && renderContext() != nullptr) {
+          renderContext()->backend().makeCurrentNoSurface();
+          renderContext()->textureManager().unload(m_blurredWallpaperTexture);
+          m_blurredWallpaperTexture = {};
+        }
+        if (m_blurIntensity > 0.0f && renderContext() != nullptr) {
+          auto* renderer = renderContext();
+          renderer->makeCurrent(renderTarget());
+          static constexpr int kBlurRounds = 3;
+          const float blurRadius = m_blurIntensity * 40.0f;
+          m_blurredWallpaperTexture = m_wallpaperBlurCache.get(
+              renderer->backend(), m_wallpaperTexture, static_cast<std::uint32_t>(m_wallpaperTexture.width),
+              static_cast<std::uint32_t>(m_wallpaperTexture.height), blurRadius, kBlurRounds
+          );
+          if (m_blurredWallpaperTexture.id != 0) {
+            textureToDisplay = m_blurredWallpaperTexture;
+          }
+        }
+        m_wallpaper->setTextures(
+            textureToDisplay.id, {}, static_cast<float>(textureToDisplay.width),
+            static_cast<float>(textureToDisplay.height), 0.0f, 0.0f
+        );
+        m_wallpaper->setTransition(WallpaperTransition::Fade, 0.0f, TransitionParams{});
+        m_wallpaper->setFillMode(m_wallpaperFillMode);
+        m_wallpaper->setFillColor(m_wallpaperFillColor);
+      }
+    } else if (m_wallpaperPath.empty()) {
+      if (m_wallpaperTexture.id != 0) {
+        releaseWallpaperTextureRef(m_textureWallpaperPath);
+      }
       m_wallpaper->setTextures({}, {}, 0.0f, 0.0f, 0.0f, 0.0f);
+    } else {
+      loaded = false;
     }
   }
 
-  m_wallpaperDirty = false;
+  m_wallpaperDirty = !loaded;
 }
 
 void LockSurface::setLivePaperTexture(TextureHandle tex, void* eglImage) {

@@ -392,6 +392,7 @@ _noctalia_sources = files(
   'src/dbus/logind/logind_service.cpp',
   'src/dbus/mpris/mpris_art.cpp',
   'src/dbus/mpris/mpris_service.cpp',
+  'src/dbus/network/inetwork_service.cpp',
   'src/dbus/network/network_glyphs.cpp',
   'src/dbus/network/network_manager_service.cpp',
   'src/dbus/network/network_secret_agent.cpp',

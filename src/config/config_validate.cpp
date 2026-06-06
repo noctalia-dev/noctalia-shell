@@ -256,7 +256,11 @@ namespace noctalia::config {
         }
       }
       if (const auto* grid = (*dw)["grid"].as_table()) {
-        static const std::unordered_set<std::string> kGrid = {"visible", "cell_size", "major_interval"};
+        static const std::unordered_set<std::string> kGrid = {
+            "visible",
+            "cell_size",
+            "major_interval",
+        };
         for (const auto& [key, node] : *grid) {
           (void)node;
           if (!kGrid.contains(std::string(key.str()))) {
@@ -316,7 +320,11 @@ namespace noctalia::config {
         }
       }
       if (const auto* grid = (*section)["grid"].as_table()) {
-        static const std::unordered_set<std::string> kGrid = {"visible", "cell_size", "major_interval"};
+        static const std::unordered_set<std::string> kGrid = {
+            "visible",
+            "cell_size",
+            "major_interval",
+        };
         for (const auto& [key, node] : *grid) {
           (void)node;
           if (!kGrid.contains(std::string(key.str()))) {

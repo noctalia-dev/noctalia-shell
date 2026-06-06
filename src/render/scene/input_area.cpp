@@ -86,6 +86,12 @@ bool InputArea::containsLocalPoint(float localX, float localY, bool includeHitOu
 void InputArea::setTooltip(std::string text) { m_tooltipContent = std::move(text); }
 void InputArea::setTooltip(std::vector<TooltipRow> rows) { m_tooltipContent = std::move(rows); }
 void InputArea::clearTooltip() { m_tooltipContent = std::monostate{}; }
+void InputArea::setTooltipPlacement(TooltipPlacement placement) { m_tooltipPlacement = placement; }
+void InputArea::setTooltipAnchorInsets(TooltipAnchorInsets insets) {
+  m_tooltipAnchorInsets = insets;
+  m_hasTooltipAnchorInsets = true;
+}
+void InputArea::clearTooltipAnchorInsets() { m_hasTooltipAnchorInsets = false; }
 bool InputArea::hasTooltip() const noexcept { return !std::holds_alternative<std::monostate>(m_tooltipContent); }
 void InputArea::setFocusable(bool focusable) { m_focusable = focusable; }
 void InputArea::setOnKeyDown(KeyCallback callback) { m_onKeyDown = std::move(callback); }

@@ -71,10 +71,10 @@ namespace {
 
 SysmonWidget::SysmonWidget(
     SystemMonitorService* monitor, wl_output* /*output*/, SysmonStat stat, std::string diskPath,
-    SysmonDisplayMode displayMode, bool showLabel, float labelMinWidth
+    SysmonDisplayMode displayMode, ColorSpec gaugeColor, bool showLabel, float labelMinWidth
 )
-    : m_monitor(monitor), m_stat(stat), m_displayMode(displayMode), m_showLabel(showLabel),
-      m_labelMinWidth(labelMinWidth), m_diskPath(std::move(diskPath)) {
+    : m_monitor(monitor), m_stat(stat), m_displayMode(displayMode), m_gaugeColor(std::move(gaugeColor)),
+      m_showLabel(showLabel), m_labelMinWidth(labelMinWidth), m_diskPath(std::move(diskPath)) {
   if (m_monitor != nullptr) {
     if (needsCpuTemp(m_stat)) {
       m_monitor->retainCpuTemp();
@@ -141,7 +141,7 @@ void SysmonWidget::create() {
   if (m_displayMode == SysmonDisplayMode::Gauge) {
     m_gauge = static_cast<ProgressBar*>(container->addChild(
         ui::progressBar({
-            .fill = colorSpecFromRole(ColorRole::Primary),
+            .fill = m_gaugeColor,
             .track = colorSpecFromRole(ColorRole::OnSurface, 0.25f),
             .progress = 0.0f,
         })
@@ -179,6 +179,9 @@ void SysmonWidget::syncVisualPalette() {
   }
   if (m_graphNode != nullptr) {
     m_graphNode->setLineColor1(colorForRole(ColorRole::Primary));
+  }
+  if (m_gauge != nullptr) {
+    m_gauge->setFill(m_gaugeColor);
   }
 }
 

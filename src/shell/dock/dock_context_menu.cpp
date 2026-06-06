@@ -9,6 +9,7 @@
 #include "render/render_context.h"
 #include "render/scene/node.h"
 #include "shell/dock/dock_geometry.h"
+#include "shell/dock/pinned_apps.h"
 #include "shell/surface/shadow.h"
 #include "system/desktop_entry.h"
 #include "ui/controls/context_menu.h"
@@ -30,6 +31,7 @@ namespace shell::dock {
     constexpr std::int32_t kMenuCloseId = -1;
     constexpr std::int32_t kMenuCloseAllId = -2;
     constexpr std::int32_t kMenuSeparatorId = -3;
+    constexpr std::int32_t kMenuPinToggleId = -4;
     constexpr std::int32_t kMenuWindowBaseId = -1000;
 
     popup_chrome::Attachment popupAttachmentForDockPosition(bool isBottom, bool isTop, bool isRight) {
@@ -132,11 +134,25 @@ namespace shell::dock {
 
     // IDs 0..N-1 -> desktop actions; negative constants -> windows / close commands.
     std::vector<ContextMenuControlEntry> entries;
-    entries.reserve(windows.size() + entry.actions.size() + 4);
+    entries.reserve(windows.size() + entry.actions.size() + 5);
+
+    const bool isPinned = pinned_apps::containsEntry(dockConfig.pinned, entry);
+    entries.push_back(
+        ContextMenuControlEntry{
+            .id = kMenuPinToggleId,
+            .label = i18n::tr(isPinned ? "tray.menu.unpin" : "tray.menu.pin"),
+            .enabled = callbacks.setEntryPinned != nullptr,
+            .separator = false,
+            .hasSubmenu = false,
+        }
+    );
+
+    std::vector<ContextMenuControlEntry> bodyEntries;
+    bodyEntries.reserve(windows.size() + entry.actions.size() + 4);
 
     for (std::size_t i = 0; i < windows.size(); ++i) {
       const auto& title = windows[i].title.empty() ? entry.name : windows[i].title;
-      entries.push_back(
+      bodyEntries.push_back(
           ContextMenuControlEntry{
               .id = kMenuWindowBaseId - static_cast<std::int32_t>(i),
               .label = title,
@@ -151,7 +167,7 @@ namespace shell::dock {
     const bool hasActionEntries = !entry.actions.empty();
     const bool hasCloseEntries = !menu->handles.empty();
     if (hasWindowEntries && (hasActionEntries || hasCloseEntries)) {
-      entries.push_back(
+      bodyEntries.push_back(
           ContextMenuControlEntry{
               .id = kMenuSeparatorId, .label = {}, .enabled = false, .separator = true, .hasSubmenu = false
           }
@@ -159,7 +175,7 @@ namespace shell::dock {
     }
 
     for (std::int32_t i = 0; i < static_cast<std::int32_t>(entry.actions.size()); ++i) {
-      entries.push_back(
+      bodyEntries.push_back(
           ContextMenuControlEntry{
               .id = i,
               .label = entry.actions[static_cast<std::size_t>(i)].name,
@@ -173,15 +189,14 @@ namespace shell::dock {
     const std::size_t runCount = menu->handles.size();
     if (runCount > 0) {
       if (hasActionEntries) {
-        // Separator between app actions and window-management entries.
-        entries.push_back(
+        bodyEntries.push_back(
             ContextMenuControlEntry{
                 .id = kMenuSeparatorId, .label = {}, .enabled = false, .separator = true, .hasSubmenu = false
             }
         );
       }
       if (runCount == 1) {
-        entries.push_back(
+        bodyEntries.push_back(
             ContextMenuControlEntry{
                 .id = kMenuCloseId,
                 .label = i18n::tr("dock.actions.close"),
@@ -191,7 +206,7 @@ namespace shell::dock {
             }
         );
       } else {
-        entries.push_back(
+        bodyEntries.push_back(
             ContextMenuControlEntry{
                 .id = kMenuCloseAllId,
                 .label = i18n::tr("dock.actions.close-all"),
@@ -201,6 +216,15 @@ namespace shell::dock {
             }
         );
       }
+    }
+
+    if (!bodyEntries.empty()) {
+      entries.push_back(
+          ContextMenuControlEntry{
+              .id = kMenuSeparatorId, .label = {}, .enabled = false, .separator = true, .hasSubmenu = false
+          }
+      );
+      entries.insert(entries.end(), bodyEntries.begin(), bodyEntries.end());
     }
 
     if (entries.empty()) {
@@ -308,7 +332,7 @@ namespace shell::dock {
       menuPtr->surface->requestLayout();
     });
     menu->surface->setPrepareFrameCallback([&platform, &config, &renderContext, menuPtr, entries, entryActions,
-                                            callbacks](bool /*needsUpdate*/, bool needsLayout) {
+                                            callbacks, isPinned](bool /*needsUpdate*/, bool needsLayout) {
       if (menuPtr->surface == nullptr) {
         return;
       }
@@ -347,13 +371,17 @@ namespace shell::dock {
         if (menuPtr->surface)
           menuPtr->surface->requestRedraw();
       });
-      ctrl->setOnActivate([menuPtr, entryActions, callbacks](const ContextMenuControlEntry& e) {
+      ctrl->setOnActivate([menuPtr, entryActions, callbacks, isPinned](const ContextMenuControlEntry& e) {
         const std::int32_t id = e.id;
         auto menuHandles = menuPtr->handles;
         auto closingHandles = menuPtr->handles;
-        DeferredCall::callLater([id, entryActions, callbacks, menuHandles = std::move(menuHandles),
+        DeferredCall::callLater([id, entryActions, callbacks, isPinned, menuHandles = std::move(menuHandles),
                                  closingHandles = std::move(closingHandles)]() mutable {
-          if (id <= kMenuWindowBaseId) {
+          if (id == kMenuPinToggleId) {
+            if (callbacks.setEntryPinned) {
+              callbacks.setEntryPinned(!isPinned);
+            }
+          } else if (id <= kMenuWindowBaseId) {
             const auto idx = static_cast<std::size_t>(kMenuWindowBaseId - id);
             if (idx < menuHandles.size() && menuHandles[idx] != nullptr && callbacks.activateWindow) {
               callbacks.activateWindow(menuHandles[idx]);

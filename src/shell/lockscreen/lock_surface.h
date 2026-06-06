@@ -80,6 +80,7 @@ private:
   void prepareFrame(bool needsUpdate, bool needsLayout);
   void applyWallpaperTexture();
   void applyBlurredDesktopTexture();
+  void releaseWallpaperTextureRef(const std::string& path);
   void releaseCaptureTextures();
   void updateClockText();
   void layoutScene(std::uint32_t width, std::uint32_t height);
@@ -112,6 +113,7 @@ private:
   float m_tintIntensity = 0.3f;
   bool m_captureDirty = true;
   std::string m_wallpaperPath;
+  std::string m_textureWallpaperPath;
   WallpaperFillMode m_wallpaperFillMode = WallpaperFillMode::Crop;
   Color m_wallpaperFillColor = rgba(0.0f, 0.0f, 0.0f, 0.0f);
   bool m_wallpaperDirty = false;

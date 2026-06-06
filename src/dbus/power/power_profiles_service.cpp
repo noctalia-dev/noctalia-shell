@@ -193,10 +193,10 @@ void PowerProfilesService::emitChangedIfNeeded(const PowerProfilesState& next) {
   }
 }
 
-void PowerProfilesService::registerIpc(IpcService& ipc) {
+void PowerProfilesService::registerIpc(IpcService& ipc, StateFeedbackCallback stateFeedback) {
   ipc.registerHandler(
       "power-set",
-      [this](const std::string& args) -> std::string {
+      [this, stateFeedback](const std::string& args) -> std::string {
         const std::string profile = StringUtils::trim(args);
         if (profile.empty()) {
           return "error: profile required (power-set <profile>); typical values: performance, balanced, "
@@ -214,8 +214,12 @@ void PowerProfilesService::registerIpc(IpcService& ipc) {
             return "error: unknown profile \"" + profile + "\"" + suffix;
           }
         }
+        const std::string previous = activeProfile();
         if (!setActiveProfile(profile)) {
           return "error: failed to set power profile\n";
+        }
+        if (stateFeedback && previous != activeProfile() && !activeProfile().empty()) {
+          stateFeedback(activeProfile());
         }
         return "ok\n";
       },
@@ -223,12 +227,16 @@ void PowerProfilesService::registerIpc(IpcService& ipc) {
   );
   ipc.registerHandler(
       "power-cycle",
-      [this](const std::string& args) -> std::string {
+      [this, stateFeedback](const std::string& args) -> std::string {
         if (!StringUtils::trim(args).empty()) {
           return "error: power-cycle takes no arguments\n";
         }
+        const std::string previous = activeProfile();
         if (!cycleActiveProfile()) {
           return "error: could not cycle power profile (no profiles from UPower or set failed)\n";
+        }
+        if (stateFeedback && previous != activeProfile() && !activeProfile().empty()) {
+          stateFeedback(activeProfile());
         }
         return "ok\n";
       },

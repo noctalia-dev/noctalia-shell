@@ -3,7 +3,9 @@
 #include "core/log.h"
 #include "dbus/system_bus.h"
 #include "i18n/i18n.h"
+#include "ipc/ipc_service.h"
 #include "system/rfkill_helper.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
 #include <map>
@@ -30,6 +32,13 @@ namespace {
   using InterfaceProps = std::map<std::string, sdbus::Variant>;
   using ObjectInterfaces = std::map<std::string, InterfaceProps>;
   using ManagedObjects = std::map<sdbus::ObjectPath, ObjectInterfaces>;
+
+  std::optional<std::string> rejectArgs(std::string_view command, const std::string& args) {
+    if (StringUtils::trim(args).empty()) {
+      return std::nullopt;
+    }
+    return "error: " + std::string(command) + " takes no arguments\n";
+  }
 
   template <typename T> std::optional<T> variantGet(const sdbus::Variant& value) {
     try {
@@ -454,6 +463,78 @@ BluetoothService::~BluetoothService() = default;
 
 void BluetoothService::setStateCallback(StateCallback callback) { m_stateCallback = std::move(callback); }
 void BluetoothService::setDevicesCallback(DevicesCallback callback) { m_devicesCallback = std::move(callback); }
+
+void BluetoothService::registerIpc(IpcService& ipc, StateFeedbackCallback stateFeedback) {
+  auto setBluetooth = [this, stateFeedback](bool enabled) -> std::string {
+    if (!hasStateSnapshot()) {
+      return "error: bluetooth state unavailable\n";
+    }
+    if (!state().adapterPresent) {
+      return "error: bluetooth adapter unavailable\n";
+    }
+    if (enabled && state().rfkillHardBlocked) {
+      return "error: bluetooth adapter is rfkill hard-blocked\n";
+    }
+    if (state().powered == enabled) {
+      return "ok\n";
+    }
+    setPowered(enabled);
+    if (stateFeedback) {
+      stateFeedback(enabled);
+    }
+    return "ok\n";
+  };
+
+  ipc.registerHandler(
+      "bluetooth-enable",
+      [setBluetooth](const std::string& args) -> std::string {
+        if (auto err = rejectArgs("bluetooth-enable", args); err.has_value()) {
+          return *err;
+        }
+        return setBluetooth(true);
+      },
+      "bluetooth-enable", "Enable Bluetooth"
+  );
+
+  ipc.registerHandler(
+      "bluetooth-disable",
+      [setBluetooth](const std::string& args) -> std::string {
+        if (auto err = rejectArgs("bluetooth-disable", args); err.has_value()) {
+          return *err;
+        }
+        return setBluetooth(false);
+      },
+      "bluetooth-disable", "Disable Bluetooth"
+  );
+
+  ipc.registerHandler(
+      "bluetooth-toggle",
+      [this, setBluetooth](const std::string& args) -> std::string {
+        if (auto err = rejectArgs("bluetooth-toggle", args); err.has_value()) {
+          return *err;
+        }
+        if (!hasStateSnapshot()) {
+          return "error: bluetooth state unavailable\n";
+        }
+        return setBluetooth(!state().powered);
+      },
+      "bluetooth-toggle", "Toggle Bluetooth"
+  );
+
+  ipc.registerHandler(
+      "bluetooth-status",
+      [this](const std::string& args) -> std::string {
+        if (auto err = rejectArgs("bluetooth-status", args); err.has_value()) {
+          return *err;
+        }
+        if (!hasStateSnapshot()) {
+          return "error: bluetooth state unavailable\n";
+        }
+        return state().powered ? "on\n" : "off\n";
+      },
+      "bluetooth-status", "Print Bluetooth state"
+  );
+}
 
 void BluetoothService::refresh() {
   if (m_impl == nullptr || m_impl->root == nullptr) {

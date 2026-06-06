@@ -36,6 +36,7 @@ public:
   bool initialize(zwlr_layer_surface_v1* parentLayerSurface, wl_output* output, PopupSurfaceConfig config);
   bool initializeAsChild(xdg_surface* parentXdgSurface, wl_output* output, PopupSurfaceConfig config);
   bool resize(std::uint32_t width, std::uint32_t height);
+  bool repositionAnchor(const PopupSurfaceConfig& anchorConfig);
 
   void setDismissedCallback(std::function<void()> callback);
 

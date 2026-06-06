@@ -92,6 +92,7 @@ private:
   bool commitColorizedRgba(Renderer& renderer, const std::uint8_t* rgba, int width, int height, bool mipmap);
   void rebakeColorizedTexture();
   void reloadColorizedSource();
+  void reloadUncolorizedSource();
 
   ImageNode* m_image = nullptr;
   TextureHandle m_texture{};

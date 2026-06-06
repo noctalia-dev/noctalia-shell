@@ -4,6 +4,8 @@
 #include "render/render_context.h"
 #include "render/scene/node.h"
 #include "ui/controls/glyph_picker.h"
+#include "ui/controls/select_dropdown_popup.h"
+#include "wayland/wayland_seat.h"
 
 #include <memory>
 
@@ -24,6 +26,31 @@ bool GlyphPickerDialogPopup::openGlyphPicker() {
 
 void GlyphPickerDialogPopup::closeGlyphPickerWithoutResult() { destroyPopup(); }
 
+bool GlyphPickerDialogPopup::onPointerEvent(const PointerEvent& event) {
+  if (m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen()) {
+    if (m_selectPopup->onPointerEvent(event)) {
+      return true;
+    }
+    if (event.type == PointerEvent::Type::Button && event.state == 1) {
+      m_selectPopup->closeSelectDropdown();
+      return true;
+    }
+  }
+  return DialogPopupHost::onPointerEvent(event);
+}
+
+void GlyphPickerDialogPopup::onKeyboardEvent(const KeyboardEvent& event) {
+  if (m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen()) {
+    m_selectPopup->onKeyboardEvent(event);
+    return;
+  }
+  DialogPopupHost::onKeyboardEvent(event);
+}
+
+bool GlyphPickerDialogPopup::ownsSelectDropdownSurface(wl_surface* surface) const noexcept {
+  return m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen() && m_selectPopup->wlSurface() == surface;
+}
+
 void GlyphPickerDialogPopup::populateContent(Node* contentParent, std::uint32_t /*width*/, std::uint32_t /*height*/) {
   auto sheet = std::make_unique<GlyphPicker>(uiScale());
   sheet->setTitle(GlyphPickerDialog::currentOptions().title);
@@ -34,6 +61,17 @@ void GlyphPickerDialogPopup::populateContent(Node* contentParent, std::uint32_t 
   });
   m_sheet = sheet.get();
   contentParent->addChild(std::move(sheet));
+
+  if (wayland() != nullptr && renderContext() != nullptr && xdgSurface() != nullptr) {
+    if (m_selectPopup == nullptr) {
+      m_selectPopup = std::make_unique<SelectDropdownPopup>(*wayland(), *renderContext());
+    }
+    if (config() != nullptr) {
+      m_selectPopup->setShadowConfig(config()->config().shell.shadow);
+    }
+    m_selectPopup->setParent(xdgSurface(), wlSurface(), nullptr);
+    contentParent->setPopupContext(m_selectPopup.get());
+  }
 }
 
 void GlyphPickerDialogPopup::layoutSheet(float contentWidth, float contentHeight) {
@@ -48,6 +86,12 @@ void GlyphPickerDialogPopup::cancelToFacade() { GlyphPickerDialog::cancelIfPendi
 
 InputArea* GlyphPickerDialogPopup::initialFocusArea() {
   return m_sheet != nullptr ? m_sheet->initialFocusArea() : nullptr;
+}
+
+void GlyphPickerDialogPopup::onSheetClose() {
+  if (m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen()) {
+    m_selectPopup->closeSelectDropdown();
+  }
 }
 
 void GlyphPickerDialogPopup::accept(const GlyphPickerResult& result) {

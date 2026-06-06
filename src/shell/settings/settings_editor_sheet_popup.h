@@ -56,6 +56,8 @@ namespace settings {
     void onSheetClose() override;
 
   private:
+    void dismissOpenSelectDropdown();
+
     float m_scale = 1.0f;
     std::string m_sheetTitle;
     class Label* m_sheetTitleLabel = nullptr;

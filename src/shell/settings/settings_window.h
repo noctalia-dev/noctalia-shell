@@ -148,6 +148,7 @@ private:
   [[nodiscard]] float uiScale() const;
 
   [[nodiscard]] std::optional<LayerPopupParentContext> topmostPopupParentContext() const;
+  void dismissOpenSelectDropdown();
 
   WaylandConnection* m_wayland = nullptr;
   IdleManager* m_idleManager = nullptr;

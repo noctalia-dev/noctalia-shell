@@ -75,6 +75,24 @@ private:
     std::size_t next = 0;
   };
 
+  struct GlobalRegionCaptureTarget {
+    wl_output* output = nullptr;
+    LogicalRect localRegion{};
+  };
+
+  struct GlobalRegionBatch {
+    OutputOptions options{};
+    LogicalRect globalRegion{};
+    std::vector<GlobalRegionCaptureTarget> targets;
+    struct Piece {
+      wl_output* output = nullptr;
+      LogicalRect localRegion{};
+      ScreencopyImage image;
+    };
+    std::vector<Piece> pieces;
+    std::size_t next = 0;
+  };
+
   void captureOutput(
       wl_output* output, std::optional<LogicalRect> region, const std::string& labelBase, const OutputOptions& options,
       int pathSuffix = 0
@@ -87,7 +105,15 @@ private:
   void abortFreezeCapture(const std::string& message);
   void cancelRegionCapture();
   void deliverFrozenRegion(LogicalRect region, wl_output* output, const OutputOptions& options);
+  void deliverFrozenGlobalRegion(LogicalRect globalRegion, const OutputOptions& options);
+  void captureGlobalRegion(LogicalRect globalRegion, const OutputOptions& options);
   void completeFullscreenSelection(wl_output* output, const OutputOptions& options);
+  void startNextGlobalRegionCapture();
+  void onGlobalRegionFrameCaptured(
+      wl_output* output, LogicalRect localRegion, std::optional<ScreencopyImage> image, const std::string& error
+  );
+  void finishGlobalRegionBatch();
+  void cancelGlobalRegionBatch();
   void startNextQueuedCapture();
   void captureAllOutputs(const OutputOptions& options);
   void startNextAllOutputsCapture();
@@ -119,6 +145,7 @@ private:
   std::unique_ptr<capture::ScreenshotRegionOverlay> m_regionOverlay;
   std::vector<PendingCapture> m_captureQueue;
   std::optional<AllOutputsBatch> m_allOutputsBatch;
+  std::optional<GlobalRegionBatch> m_globalRegionBatch;
   OutputOptions m_regionOutputOptions{};
   RenderContext* m_regionRenderContext = nullptr;
   bool m_regionFullscreenPick = false;

@@ -195,6 +195,34 @@ bool PopupSurface::resize(std::uint32_t width, std::uint32_t height) {
   return true;
 }
 
+bool PopupSurface::repositionAnchor(const PopupSurfaceConfig& anchorConfig) {
+  if (m_popup == nullptr) {
+    return false;
+  }
+
+  m_config.anchorX = anchorConfig.anchorX;
+  m_config.anchorY = anchorConfig.anchorY;
+  m_config.anchorWidth = std::max(anchorConfig.anchorWidth, 1);
+  m_config.anchorHeight = std::max(anchorConfig.anchorHeight, 1);
+  m_config.anchor = anchorConfig.anchor;
+  m_config.gravity = anchorConfig.gravity;
+  m_config.constraintAdjustment = anchorConfig.constraintAdjustment;
+  m_config.offsetX = anchorConfig.offsetX;
+  m_config.offsetY = anchorConfig.offsetY;
+
+  if (xdg_popup_get_version(m_popup) >= XDG_POPUP_REPOSITION_SINCE_VERSION) {
+    xdg_positioner* positioner = createPositioner(m_connection.xdgWmBase(), m_config);
+    if (positioner != nullptr) {
+      xdg_popup_reposition(m_popup, positioner, ++m_repositionToken);
+      xdg_positioner_destroy(positioner);
+    }
+  }
+
+  wl_surface_commit(m_surface);
+  wl_display_flush(m_connection.display());
+  return true;
+}
+
 void PopupSurface::handleXdgSurfaceConfigure(void* data, xdg_surface* surface, std::uint32_t serial) {
   auto* self = static_cast<PopupSurface*>(data);
   xdg_surface_ack_configure(surface, serial);

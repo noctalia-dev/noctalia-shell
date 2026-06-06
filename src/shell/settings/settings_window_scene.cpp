@@ -807,10 +807,12 @@ std::unique_ptr<Flex> SettingsWindow::buildBody(
       .viewportPaddingH = 0.0f,
       .viewportPaddingV = Style::spaceSm * scale,
       .flexGrow = 1.0f,
-      .configure = [](ScrollView& scrollView) {
-        scrollView.clearFill();
-        scrollView.clearBorder();
-      },
+      .onScrollChanged = [this](float /*offset*/) { dismissOpenSelectDropdown(); },
+      .configure =
+          [](ScrollView& scrollView) {
+            scrollView.clearFill();
+            scrollView.clearBorder();
+          },
   });
 
   auto* content = m_contentScrollView->content();

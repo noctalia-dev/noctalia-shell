@@ -9,6 +9,7 @@
 #include <vector>
 
 class SystemBus;
+class IpcService;
 
 namespace sdbus {
   class IProxy;
@@ -70,6 +71,7 @@ class BluetoothService {
 public:
   using StateCallback = std::function<void(const BluetoothState&, BluetoothStateChangeOrigin)>;
   using DevicesCallback = std::function<void(const std::vector<BluetoothDeviceInfo>&)>;
+  using StateFeedbackCallback = std::function<void(bool enabled)>;
 
   explicit BluetoothService(SystemBus& bus);
   ~BluetoothService();
@@ -80,6 +82,7 @@ public:
   void setStateCallback(StateCallback callback);
   void setDevicesCallback(DevicesCallback callback);
   void refresh();
+  void registerIpc(IpcService& ipc, StateFeedbackCallback stateFeedback = {});
 
   [[nodiscard]] const BluetoothState& state() const noexcept { return m_state; }
   [[nodiscard]] bool hasStateSnapshot() const noexcept { return m_hasStateSnapshot; }

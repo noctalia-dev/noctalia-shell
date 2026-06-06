@@ -361,6 +361,12 @@ void SettingsWindow::close() {
   destroyWindow();
 }
 
+void SettingsWindow::dismissOpenSelectDropdown() {
+  if (m_selectPopup != nullptr && m_selectPopup->isSelectDropdownOpen()) {
+    m_selectPopup->closeSelectDropdown();
+  }
+}
+
 void SettingsWindow::destroyWindow() {
   if (m_surface != nullptr) {
     m_inputDispatcher.setSceneRoot(nullptr);

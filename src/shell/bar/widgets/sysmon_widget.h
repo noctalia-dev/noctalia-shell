@@ -2,6 +2,7 @@
 
 #include "core/timer_manager.h"
 #include "shell/bar/widget.h"
+#include "ui/palette.h"
 #include "ui/signal.h"
 
 #include <chrono>
@@ -35,7 +36,7 @@ class SysmonWidget : public Widget {
 public:
   SysmonWidget(
       SystemMonitorService* monitor, wl_output* output, SysmonStat stat, std::string diskPath,
-      SysmonDisplayMode displayMode, bool showLabel = true, float labelMinWidth = 0.0f
+      SysmonDisplayMode displayMode, ColorSpec gaugeColor, bool showLabel = true, float labelMinWidth = 0.0f
   );
   ~SysmonWidget() override;
 
@@ -62,6 +63,7 @@ private:
   SystemMonitorService* m_monitor;
   SysmonStat m_stat;
   SysmonDisplayMode m_displayMode;
+  ColorSpec m_gaugeColor = colorSpecFromRole(ColorRole::Primary);
   bool m_showLabel;
   float m_labelMinWidth = 0.0f;
   std::string m_diskPath;

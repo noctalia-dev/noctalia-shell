@@ -19,6 +19,19 @@ void DesktopWidget::update(Renderer& renderer) {
   doUpdate(renderer);
 }
 
+Node* DesktopWidget::presentationRoot() const noexcept {
+  if (m_outerRootPtr != nullptr) {
+    return m_outerRootPtr;
+  }
+  if (m_outerRoot != nullptr) {
+    return m_outerRoot.get();
+  }
+  if (m_contentOwned != nullptr) {
+    return m_contentOwned.get();
+  }
+  return m_contentRoot;
+}
+
 float DesktopWidget::intrinsicWidth() const noexcept {
   if (m_contentRoot == nullptr) {
     return 0.0f;

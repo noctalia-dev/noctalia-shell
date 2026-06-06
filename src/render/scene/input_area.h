@@ -101,6 +101,12 @@ public:
   void setTooltip(std::string text);
   void setTooltip(std::vector<TooltipRow> rows);
   void clearTooltip();
+  void setTooltipPlacement(TooltipPlacement placement);
+  void setTooltipAnchorInsets(TooltipAnchorInsets insets);
+  void clearTooltipAnchorInsets();
+  [[nodiscard]] TooltipPlacement tooltipPlacement() const noexcept { return m_tooltipPlacement; }
+  [[nodiscard]] bool hasTooltipAnchorInsets() const noexcept { return m_hasTooltipAnchorInsets; }
+  [[nodiscard]] TooltipAnchorInsets tooltipAnchorInsets() const noexcept { return m_tooltipAnchorInsets; }
   [[nodiscard]] bool hasTooltip() const noexcept;
   [[nodiscard]] const TooltipContent& tooltipContent() const noexcept { return m_tooltipContent; }
 
@@ -153,4 +159,7 @@ private:
   TextInputClient* m_textInputClient = nullptr;
 
   TooltipContent m_tooltipContent;
+  TooltipPlacement m_tooltipPlacement = TooltipPlacement::Default;
+  TooltipAnchorInsets m_tooltipAnchorInsets{};
+  bool m_hasTooltipAnchorInsets = false;
 };

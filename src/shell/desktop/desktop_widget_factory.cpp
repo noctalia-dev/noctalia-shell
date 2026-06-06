@@ -231,7 +231,7 @@ std::unique_ptr<DesktopWidget> DesktopWidgetFactory::create(
     auto widget = std::make_unique<DesktopMediaPlayerWidget>(
         m_mpris, m_httpClient, vertical,
         getColorSpecSetting(settings, "color", colorSpecFromRole(ColorRole::OnSurface)),
-        getBoolSetting(settings, "shadow", true)
+        getBoolSetting(settings, "shadow", true), getBoolSetting(settings, "hide_when_no_media", false)
     );
     applyCommonSettings(*widget, settings);
     widget->setContentScale(contentScale);

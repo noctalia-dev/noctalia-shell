@@ -2,6 +2,7 @@
 
 #include "core/log.h"
 #include "system/app_identity.h"
+#include "system/internal_app_metadata.h"
 #include "util/string_utils.h"
 
 #include <algorithm>
@@ -64,12 +65,12 @@ namespace shell::dock::pinned_apps {
         return !entry.hidden && !entry.noDisplay && matchesEntryLower(entry, pinnedLower);
       });
 
-      if (match != entries.end()) {
-        resolved.push_back(*match);
-      } else {
+      DesktopEntry entry = match != entries.end() ? *match : [&]() {
         kLog.debug("pinned app not found: {}", pinnedId);
-        resolved.push_back(placeholderEntry(pinnedId, pinnedLower));
-      }
+        return placeholderEntry(pinnedId, pinnedLower);
+      }();
+      internal_apps::applyMetadataToDesktopEntry(entry);
+      resolved.push_back(std::move(entry));
     }
 
     return resolved;

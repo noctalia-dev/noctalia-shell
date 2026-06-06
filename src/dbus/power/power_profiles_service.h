@@ -34,6 +34,7 @@ enum class PowerProfilesChangeOrigin : std::uint8_t {
 class PowerProfilesService {
 public:
   using ChangeCallback = std::function<void(const PowerProfilesState&, PowerProfilesChangeOrigin)>;
+  using StateFeedbackCallback = std::function<void(std::string_view profile)>;
 
   explicit PowerProfilesService(SystemBus& bus);
 
@@ -48,7 +49,7 @@ public:
   /// Advance to the next profile in the service's ordered list (wraps). Fails if no profiles are known.
   [[nodiscard]] bool cycleActiveProfile();
 
-  void registerIpc(IpcService& ipc);
+  void registerIpc(IpcService& ipc, StateFeedbackCallback stateFeedback = {});
 
 private:
   [[nodiscard]] PowerProfilesState readState() const;

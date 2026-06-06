@@ -19,6 +19,8 @@ namespace internal_apps {
 
   std::optional<AppMetadata> metadataForAppId(std::string_view /*appId*/) { return std::nullopt; }
 
+  void applyMetadataToDesktopEntry(DesktopEntry& /*entry*/) {}
+
 } // namespace internal_apps
 
 int main() {

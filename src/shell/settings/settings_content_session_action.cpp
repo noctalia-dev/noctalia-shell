@@ -78,7 +78,7 @@ namespace settings {
             .gap = Style::spaceSm * scale,
         },
         makeLabel(
-            i18n::tr("settings.session-actions.icon-label"), Style::fontSizeCaption * scale,
+            i18n::tr("settings.session-actions.glyph-label"), Style::fontSizeCaption * scale,
             colorSpecFromRole(ColorRole::OnSurfaceVariant), FontWeight::Normal
         )
     );

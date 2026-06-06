@@ -133,7 +133,13 @@ void PolkitPanel::onClose() {
   clearReleasedRoot();
 }
 
-InputArea* PolkitPanel::initialFocusArea() const { return m_input != nullptr ? m_input->inputArea() : m_focusArea; }
+InputArea* PolkitPanel::initialFocusArea() const {
+  PolkitAgent* agent = m_agentProvider != nullptr ? m_agentProvider() : nullptr;
+  if (agent != nullptr && !agent->isResponseRequired()) {
+    return m_focusArea;
+  }
+  return m_input != nullptr ? m_input->inputArea() : m_focusArea;
+}
 
 void PolkitPanel::doLayout(Renderer& renderer, float width, float height) {
   if (m_rootLayout == nullptr) {
@@ -155,13 +161,18 @@ void PolkitPanel::doUpdate(Renderer& /*renderer*/) {
     return;
   }
   const PolkitRequest request = agent->pendingRequest();
+  const bool needsInput = agent->isResponseRequired();
   const std::string supplementaryRaw = agent->supplementaryMessage();
   const bool supplementaryError = agent->supplementaryIsError();
   const bool isInvalidPassword = supplementaryError && supplementaryRaw == i18n::tr("auth.polkit.invalid-password");
   std::string promptText = wrapLongRuns(agent->inputPrompt());
   std::string supplementaryText = wrapLongRuns(supplementaryRaw);
-  if (!supplementaryText.empty()
-      && (supplementaryError || supplementaryText == i18n::tr("auth.polkit.authenticating"))) {
+  if (!needsInput && !supplementaryText.empty() && !supplementaryError) {
+    promptText = supplementaryText;
+    supplementaryText.clear();
+  } else if (
+      !supplementaryText.empty() && (supplementaryError || supplementaryText == i18n::tr("auth.polkit.authenticating"))
+  ) {
     promptText = supplementaryText;
     supplementaryText.clear();
   }
@@ -174,7 +185,8 @@ void PolkitPanel::doUpdate(Renderer& /*renderer*/) {
   m_supplementaryLabel->setText(supplementaryText);
   m_supplementaryLabel->setVisible(!supplementaryText.empty());
   m_supplementaryLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
-  m_submitButton->setEnabled(agent->isResponseRequired());
+  m_input->setVisible(needsInput);
+  m_submitButton->setEnabled(needsInput);
 }
 
 void PolkitPanel::submit() {

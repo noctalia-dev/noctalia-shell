@@ -27,13 +27,14 @@ namespace shell::dock {
 
   struct DockItemView {
     InputArea* area = nullptr;
-    Box* background = nullptr;
     std::array<Box*, 3> dotIndicators{};
     Box* badge = nullptr;
     Label* badgeLabel = nullptr;
     Image* iconImage = nullptr;
     Glyph* iconGlyph = nullptr;
-    bool hovered = false;
+    float restMainPos = 0.0f;
+    float restCrossPos = 0.0f;
+    float hoverMainOffset = 0.0f;
     float visualScale = -1.0f;
     float visualOpacity = -1.0f;
     AnimationManager::Id scaleAnimId = 0;
@@ -69,5 +70,11 @@ namespace shell::dock {
       const DockItemCallbacks& callbacks
   );
   void updateVisuals(DockInstance& instance, DockItemSceneDependencies deps, const DockSnapshot& snapshot);
+  [[nodiscard]] bool
+  updateHoverZoom(DockInstance& instance, DockItemSceneDependencies deps, const DockSnapshot& snapshot, float deltaMs);
+  [[nodiscard]] bool
+  syncHoverPointerFromScene(DockInstance& instance, const DockConfig& cfg, float sceneX, float sceneY);
+  void clearHoverZoom(DockInstance& instance, DockItemSceneDependencies deps, const DockSnapshot& snapshot);
+  void syncDockItemRestPositions(DockInstance& instance, const DockConfig& cfg);
 
 } // namespace shell::dock

@@ -40,6 +40,15 @@ namespace shell::dock {
     std::vector<shell::dock::DockItemView> items;
     DockSnapshot snapshot;
     bool pointerInside = false;
+    float hoverPointerMain = 0.0f;
+    bool hoverPointerValid = false;
+    InputArea* launcherArea = nullptr;
+    Node* launcherIconNode = nullptr;
+    float launcherRestMainPos = 0.0f;
+    float launcherRestCrossPos = 0.0f;
+    float launcherHoverMainOffset = 0.0f;
+    float launcherVisualScale = -1.0f;
+    AnimationManager::Id launcherScaleAnimId = 0;
     // Auto-hide: tracks visibility [0,1] driven by hover.
     float hideOpacity = 1.0f;
     AnimationManager::Id hideAnimId = 0;
