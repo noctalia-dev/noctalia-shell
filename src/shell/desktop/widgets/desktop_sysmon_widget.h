@@ -46,6 +46,7 @@ public:
 private:
   void doLayout(Renderer& renderer) override;
   void doUpdate(Renderer& renderer) override;
+  void onFontFamilyChanged(const std::string& family, Renderer& renderer) override;
 
   [[nodiscard]] std::string formatValueFor(DesktopSysmonStat stat) const;
   void syncLabel();

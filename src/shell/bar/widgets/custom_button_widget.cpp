@@ -93,7 +93,7 @@ void CustomButtonWidget::create() {
       ui::glyph({
           .out = &m_glyph,
           .glyph = m_glyphName,
-          .glyphSize = Style::barGlyphSize * m_contentScale,
+          .glyphSize = Style::baseGlyphSize * m_contentScale,
           .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
           .visible = !m_glyphName.empty(),
       })
@@ -131,7 +131,7 @@ void CustomButtonWidget::doLayout(Renderer& renderer, float containerWidth, floa
   m_label->setVisible(showLabel);
 
   if (showGlyph) {
-    m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
+    m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
     m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
     m_glyph->measure(renderer);
   }

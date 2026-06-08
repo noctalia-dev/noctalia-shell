@@ -18,7 +18,7 @@ void TestWidget::create() {
       ui::glyph({
           .out = &m_glyph,
           .glyph = "flask",
-          .glyphSize = Style::barGlyphSize * m_contentScale,
+          .glyphSize = Style::baseGlyphSize * m_contentScale,
           .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
       })
   );
@@ -30,7 +30,7 @@ void TestWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*
   if (m_glyph == nullptr) {
     return;
   }
-  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
+  m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
   m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
   auto* node = root();

@@ -21,9 +21,30 @@
 #include <cmath>
 #include <cstdint>
 #include <format>
+#include <unordered_set>
 #include <utility>
 
 namespace settings {
+
+  namespace {
+    // Fixed-width slot so unit suffixes (%, °C, MB/s, s) left-align into one column across rows,
+    // keeping every slider's value box at the same right edge.
+    constexpr float kSuffixSlotWidth = 36.0f;
+
+    std::unique_ptr<Node> makeSuffixSlot(std::string suffix, float scale) {
+      if (suffix.empty()) {
+        return nullptr;
+      }
+      return ui::row(
+          {.align = FlexAlign::Center, .justify = FlexJustify::Start, .width = kSuffixSlotWidth * scale},
+          ui::label({
+              .text = std::move(suffix),
+              .fontSize = Style::fontSizeCaption * scale,
+              .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+          })
+      );
+    }
+  } // namespace
 
   SettingsControlFactory::SettingsControlFactory(SettingsContentContext ctx)
       : m_ctx(std::move(ctx)), m_scale(m_ctx.scale) {}
@@ -45,6 +66,25 @@ namespace settings {
         .paddingH = Style::spaceSm * scale,
         .radius = Style::scaledRadiusMd(scale),
         .onClick = [clearOverride = ctx.clearOverride, path]() { clearOverride(path); },
+    });
+  }
+
+  std::unique_ptr<Button> SettingsControlFactory::makeResetButton(std::vector<std::vector<std::string>> paths) {
+    auto& ctx = m_ctx;
+    const float scale = m_scale;
+    return ui::button({
+        .text = i18n::tr("settings.actions.reset"),
+        .fontSize = Style::fontSizeCaption * scale,
+        .variant = ButtonVariant::Ghost,
+        .minHeight = Style::controlHeightSm * scale,
+        .paddingV = Style::spaceXs * scale,
+        .paddingH = Style::spaceSm * scale,
+        .radius = Style::scaledRadiusMd(scale),
+        .onClick = [clearOverride = ctx.clearOverride, paths = std::move(paths)]() {
+          for (const auto& path : paths) {
+            clearOverride(path);
+          }
+        },
     });
   }
 
@@ -88,7 +128,12 @@ namespace settings {
     auto& ctx = m_ctx;
     const float scale = m_scale;
     const Config& cfg = m_ctx.config;
-    const bool overridden = (ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(entry.path));
+    // Range sliders own a second config path (high/critical); both reset and report "override" together.
+    const auto* rangeSlider = std::get_if<RangeSliderSetting>(&entry.control);
+    const auto isOverridden = [&](const std::vector<std::string>& p) {
+      return ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(p);
+    };
+    const bool overridden = isOverridden(entry.path) || (rangeSlider != nullptr && isOverridden(rangeSlider->highPath));
     const bool redundantGuiOverride =
         ctx.configService != nullptr && ctx.configService->hasOverride(entry.path) && !overridden;
     const bool monitorSetting = isMonitorOverrideSettingPath(entry.path);
@@ -133,7 +178,11 @@ namespace settings {
     auto actions = ui::row({.align = FlexAlign::Center, .gap = Style::spaceSm * scale});
     if (overridden) {
       actions->addChild(makeOverrideBadge());
-      actions->addChild(makeResetButton(entry.path));
+      if (rangeSlider != nullptr) {
+        actions->addChild(makeResetButton(std::vector<std::vector<std::string>>{entry.path, rangeSlider->highPath}));
+      } else {
+        actions->addChild(makeResetButton(entry.path));
+      }
     }
     actions->addChild(std::move(control));
 
@@ -310,7 +359,7 @@ namespace settings {
       setOverride(path, std::move(primary));
     };
 
-    slider->setOnDragEnd([commit, sliderPtr]() { commit(static_cast<double>(sliderPtr->value())); });
+    slider->setOnDragEnd([commit, sliderPtr]() { commit(sliderPtr->value()); });
 
     const auto commitInputText = [commit, sliderPtr, valueInputPtr, minValue, maxValue,
                                   integerValue](const std::string& text) {
@@ -335,14 +384,119 @@ namespace settings {
     // Slider first, numeric value field on the right (reset from makeRow stays left of this cluster).
     wrap->addChild(std::move(slider));
     wrap->addChild(std::move(valueInput));
-    if (!valueSuffix.empty()) {
-      wrap->addChild(
-          ui::label({
-              .text = std::move(valueSuffix),
-              .fontSize = Style::fontSizeCaption * scale,
-              .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
-          })
-      );
+    if (auto suffix = makeSuffixSlot(std::move(valueSuffix), scale)) {
+      wrap->addChild(std::move(suffix));
+    }
+    return wrap;
+  }
+
+  std::unique_ptr<Flex>
+  SettingsControlFactory::makeRangeSlider(const RangeSliderSetting& setting, const std::vector<std::string>& lowPath) {
+    auto& ctx = m_ctx;
+    const float scale = m_scale;
+    const bool integerValue = setting.integerValue;
+    const std::vector<std::string> highPath = setting.highPath;
+    auto wrap = ui::row({.align = FlexAlign::Center, .gap = Style::spaceSm * scale});
+
+    auto makeValueInput = [&](double value, Input** out) {
+      return ui::input({
+          .out = out,
+          .value = formatSliderValue(value, integerValue),
+          .fontSize = Style::fontSizeCaption * scale,
+          .controlHeight = Style::controlHeightSm * scale,
+          .horizontalPadding = Style::spaceXs * scale,
+          .width = 50.0f * scale,
+          .height = Style::controlHeightSm * scale,
+      });
+    };
+
+    Input* lowInputPtr = nullptr;
+    Input* highInputPtr = nullptr;
+    auto lowInput = makeValueInput(setting.lowValue, &lowInputPtr);
+    auto highInput = makeValueInput(setting.highValue, &highInputPtr);
+
+    RangeSlider* sliderPtr = nullptr;
+    auto slider = ui::rangeSlider({
+        .out = &sliderPtr,
+        .minValue = setting.minValue,
+        .maxValue = setting.maxValue,
+        .step = setting.step,
+        .lowValue = setting.lowValue,
+        .highValue = setting.highValue,
+        .trackHeight = Style::sliderTrackHeight * scale,
+        .thumbSize = Style::sliderThumbSize * scale,
+        .controlHeight = Style::controlHeight * scale,
+        .width = Style::sliderDefaultWidth * scale,
+        .height = Style::controlHeight * scale,
+        .onLowChanged =
+            [lowInputPtr, integerValue](double next) {
+              lowInputPtr->setInvalid(false);
+              lowInputPtr->setValue(formatSliderValue(next, integerValue));
+            },
+        .onHighChanged =
+            [highInputPtr, integerValue](double next) {
+              highInputPtr->setInvalid(false);
+              highInputPtr->setValue(formatSliderValue(next, integerValue));
+            },
+    });
+
+    const auto commitTo = [setOverride = ctx.setOverride,
+                           integerValue](const std::vector<std::string>& path, double v) {
+      ConfigOverrideValue value =
+          integerValue ? ConfigOverrideValue{static_cast<std::int64_t>(std::lround(v))} : ConfigOverrideValue{v};
+      setOverride(path, std::move(value));
+    };
+
+    // Drag commits both ends together — they are one linked pair (reset clears both).
+    slider->setOnDragEnd([commitTo, sliderPtr, lowPath, highPath]() {
+      commitTo(lowPath, sliderPtr->lowValue());
+      commitTo(highPath, sliderPtr->highValue());
+    });
+
+    const auto commitInput = [commitTo, sliderPtr, integerValue](
+                                 Input* input, const std::vector<std::string>& path, double minValue, double maxValue,
+                                 bool isLow
+                             ) {
+      const auto parsed = parseDoubleInput(input->value());
+      if (!parsed.has_value() || *parsed < minValue || *parsed > maxValue) {
+        input->setInvalid(true);
+        return;
+      }
+      input->setInvalid(false);
+      if (isLow) {
+        sliderPtr->setLowValue(*parsed);
+        input->setValue(formatSliderValue(sliderPtr->lowValue(), integerValue));
+        commitTo(path, sliderPtr->lowValue());
+      } else {
+        sliderPtr->setHighValue(*parsed);
+        input->setValue(formatSliderValue(sliderPtr->highValue(), integerValue));
+        commitTo(path, sliderPtr->highValue());
+      }
+    };
+
+    const double minValue = setting.minValue;
+    const double maxValue = setting.maxValue;
+    lowInput->setOnChange([lowInputPtr](const std::string& /*text*/) { lowInputPtr->setInvalid(false); });
+    lowInput->setOnSubmit([commitInput, lowInputPtr, lowPath, minValue, maxValue](const std::string& /*text*/) {
+      commitInput(lowInputPtr, lowPath, minValue, maxValue, true);
+    });
+    lowInput->setOnFocusLoss([commitInput, lowInputPtr, lowPath, minValue, maxValue]() {
+      commitInput(lowInputPtr, lowPath, minValue, maxValue, true);
+    });
+    highInput->setOnChange([highInputPtr](const std::string& /*text*/) { highInputPtr->setInvalid(false); });
+    highInput->setOnSubmit([commitInput, highInputPtr, highPath, minValue, maxValue](const std::string& /*text*/) {
+      commitInput(highInputPtr, highPath, minValue, maxValue, false);
+    });
+    highInput->setOnFocusLoss([commitInput, highInputPtr, highPath, minValue, maxValue]() {
+      commitInput(highInputPtr, highPath, minValue, maxValue, false);
+    });
+
+    wrap->addChild(std::move(slider));
+    wrap->addChild(std::move(lowInput));
+    wrap->addChild(makeLabel("–", Style::fontSizeCaption * scale, colorSpecFromRole(ColorRole::OnSurfaceVariant)));
+    wrap->addChild(std::move(highInput));
+    if (auto suffix = makeSuffixSlot(setting.valueSuffix, scale)) {
+      wrap->addChild(std::move(suffix));
     }
     return wrap;
   }
@@ -589,6 +743,223 @@ namespace settings {
       setOverride(path, items);
     });
     block->addChild(std::move(listEditor));
+
+    section.addChild(std::move(block));
+  }
+
+  void
+  SettingsControlFactory::makeStringMapBlock(Flex& section, const SettingEntry& entry, const StringMapSetting& map) {
+    auto& ctx = m_ctx;
+    const float scale = m_scale;
+    const bool overridden = (ctx.configService != nullptr && ctx.configService->hasEffectiveOverride(entry.path));
+
+    auto block = makeCollectionBlock(entry, overridden);
+
+    const auto setAndCommit = [setOverride = ctx.setOverride, clearOverride = ctx.clearOverride,
+                               requestRebuild = ctx.requestRebuild,
+                               path = entry.path](const std::string& key, const std::string& value) {
+      auto entryPath = path;
+      entryPath.push_back(key);
+      if (value.empty()) {
+        clearOverride(entryPath);
+      } else {
+        setOverride(entryPath, value);
+      }
+      if (requestRebuild) {
+        requestRebuild();
+      }
+    };
+
+    const auto removeAndCommit = [clearOverride = ctx.clearOverride, requestRebuild = ctx.requestRebuild,
+                                  path = entry.path](const std::string& key) {
+      auto entryPath = path;
+      entryPath.push_back(key);
+      clearOverride(entryPath);
+      if (requestRebuild) {
+        requestRebuild();
+      }
+    };
+
+    std::unordered_set<std::string> suggestedSet(map.suggestedKeys.begin(), map.suggestedKeys.end());
+    std::vector<std::string> suggested = map.suggestedKeys;
+    std::sort(suggested.begin(), suggested.end());
+
+    std::vector<std::string> customKeys;
+    for (const auto& [key, value] : map.entries) {
+      (void)value;
+      if (!suggestedSet.contains(key)) {
+        customKeys.push_back(key);
+      }
+    }
+    std::sort(customKeys.begin(), customKeys.end());
+
+    const auto addSuggestedRow = [&](const std::string& key) {
+      const auto valueIt = map.entries.find(key);
+      const std::string value = valueIt != map.entries.end() ? valueIt->second : std::string{};
+      auto row = ui::row({.align = FlexAlign::Center, .gap = Style::spaceSm * scale, .fillWidth = true});
+      row->addChild(
+          ui::label({
+              .text = key,
+              .fontSize = Style::fontSizeBody * scale,
+              .color = colorSpecFromRole(ColorRole::OnSurface),
+              .flexGrow = 1.0f,
+          })
+      );
+      row->addChild(
+          ui::label({
+              .text = "->",
+              .fontSize = Style::fontSizeBody * scale,
+              .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+          })
+      );
+      row->addChild(
+          ui::input({
+              .value = value,
+              .placeholder = map.valuePlaceholder,
+              .fontSize = Style::fontSizeBody * scale,
+              .controlHeight = Style::controlHeight * scale,
+              .horizontalPadding = Style::spaceSm * scale,
+              .height = Style::controlHeight * scale,
+              .flexGrow = 1.0f,
+              .onSubmit = [setAndCommit, key](const std::string& newValue) { setAndCommit(key, newValue); },
+              .submitOnFocusLoss = true,
+          })
+      );
+      row->addChild(
+          ui::button({
+              .glyph = value.empty() ? std::string{} : std::string{"close"},
+              .fontSize = Style::fontSizeCaption * scale,
+              .glyphSize = Style::fontSizeCaption * scale,
+              .variant = ButtonVariant::Ghost,
+              .minWidth = Style::controlHeight * scale,
+              .minHeight = Style::controlHeight * scale,
+              .onClick = [removeAndCommit, key, value]() {
+                if (!value.empty()) {
+                  removeAndCommit(key);
+                }
+              },
+          })
+      );
+      block->addChild(std::move(row));
+    };
+
+    const auto addCustomRow = [&](const std::string& key) {
+      const std::string value = map.entries.at(key);
+      auto row = ui::row({.align = FlexAlign::Center, .gap = Style::spaceSm * scale, .fillWidth = true});
+      row->addChild(
+          ui::input({
+              .value = key,
+              .placeholder = map.keyPlaceholder,
+              .fontSize = Style::fontSizeBody * scale,
+              .controlHeight = Style::controlHeight * scale,
+              .horizontalPadding = Style::spaceSm * scale,
+              .height = Style::controlHeight * scale,
+              .flexGrow = 1.0f,
+              .onSubmit =
+                  [removeAndCommit, setAndCommit, value, oldKey = key](const std::string& newKey) {
+                    if (newKey.empty() || newKey == oldKey) {
+                      return;
+                    }
+                    removeAndCommit(oldKey);
+                    setAndCommit(newKey, value);
+                  },
+              .submitOnFocusLoss = true,
+          })
+      );
+      row->addChild(
+          ui::label({
+              .text = "->",
+              .fontSize = Style::fontSizeBody * scale,
+              .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+          })
+      );
+      row->addChild(
+          ui::input({
+              .value = value,
+              .placeholder = map.valuePlaceholder,
+              .fontSize = Style::fontSizeBody * scale,
+              .controlHeight = Style::controlHeight * scale,
+              .horizontalPadding = Style::spaceSm * scale,
+              .height = Style::controlHeight * scale,
+              .flexGrow = 1.0f,
+              .onSubmit = [setAndCommit, key](const std::string& newValue) { setAndCommit(key, newValue); },
+              .submitOnFocusLoss = true,
+          })
+      );
+      row->addChild(
+          ui::button({
+              .glyph = "close",
+              .fontSize = Style::fontSizeCaption * scale,
+              .glyphSize = Style::fontSizeCaption * scale,
+              .variant = ButtonVariant::Ghost,
+              .minWidth = Style::controlHeight * scale,
+              .minHeight = Style::controlHeight * scale,
+              .onClick = [removeAndCommit, key]() { removeAndCommit(key); },
+          })
+      );
+      block->addChild(std::move(row));
+    };
+
+    for (const auto& key : suggested) {
+      addSuggestedRow(key);
+    }
+    for (const auto& key : customKeys) {
+      addCustomRow(key);
+    }
+
+    auto addRow = ui::row({.align = FlexAlign::Center, .gap = Style::spaceSm * scale, .fillWidth = true});
+    Input* keyInput = nullptr;
+    Input* valueInput = nullptr;
+    addRow->addChild(
+        ui::input({
+            .out = &keyInput,
+            .placeholder = map.keyPlaceholder,
+            .fontSize = Style::fontSizeBody * scale,
+            .controlHeight = Style::controlHeight * scale,
+            .horizontalPadding = Style::spaceSm * scale,
+            .height = Style::controlHeight * scale,
+            .flexGrow = 1.0f,
+        })
+    );
+    addRow->addChild(
+        ui::label({
+            .text = "->",
+            .fontSize = Style::fontSizeBody * scale,
+            .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+        })
+    );
+    addRow->addChild(
+        ui::input({
+            .out = &valueInput,
+            .placeholder = map.valuePlaceholder,
+            .fontSize = Style::fontSizeBody * scale,
+            .controlHeight = Style::controlHeight * scale,
+            .horizontalPadding = Style::spaceSm * scale,
+            .height = Style::controlHeight * scale,
+            .flexGrow = 1.0f,
+        })
+    );
+    addRow->addChild(
+        ui::button({
+            .glyph = "add",
+            .fontSize = Style::fontSizeCaption * scale,
+            .glyphSize = Style::fontSizeCaption * scale,
+            .variant = ButtonVariant::Ghost,
+            .minWidth = Style::controlHeight * scale,
+            .minHeight = Style::controlHeight * scale,
+            .onClick = [keyInput, valueInput, setAndCommit]() {
+              if (keyInput == nullptr || valueInput == nullptr) {
+                return;
+              }
+              const std::string key = keyInput->value();
+              const std::string value = valueInput->value();
+              if (!key.empty()) {
+                setAndCommit(key, value);
+              }
+            },
+        })
+    );
+    block->addChild(std::move(addRow));
 
     section.addChild(std::move(block));
   }

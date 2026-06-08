@@ -74,11 +74,28 @@ namespace {
         "proton", "protontricks", "steam-runtime",    "pressure-vessel",
     };
     for (const auto token : kRuntimeTokens) {
-      if (normalized == token || normalized.find(token) != std::string::npos) {
+      if (normalized == token || normalized.contains(token)) {
         return true;
       }
     }
     return false;
+  }
+
+  bool looksLikeWaydroidRuntime(std::string_view value) {
+    const std::string normalized = StringUtils::toLower(value);
+    return normalized == "waydroid"
+        || normalized == "waydroid-container"
+        || normalized == "org.waydroid.waydroid"
+        || normalized.starts_with("waydroid.")
+        || normalized.starts_with("org.waydroid.");
+  }
+
+  bool isWaydroidProgramStream(const AudioNode& node) {
+    return looksLikeWaydroidRuntime(node.applicationBinary)
+        || looksLikeWaydroidRuntime(node.applicationId)
+        || looksLikeWaydroidRuntime(node.iconName)
+        || looksLikeWaydroidRuntime(node.applicationName)
+        || looksLikeWaydroidRuntime(node.name);
   }
 
   bool isLikelyFallbackStreamLabel(std::string_view value) {
@@ -88,12 +105,12 @@ namespace {
         ch = '-';
       }
     }
-    while (normalized.find("--") != std::string::npos) {
+    while (normalized.contains("--")) {
       normalized.erase(normalized.find("--"), 1);
     }
     return normalized.starts_with("audio-stream-")
         || normalized.starts_with("stream-")
-        || normalized.find("audio-stream-#") != std::string::npos;
+        || normalized.contains("audio-stream-#");
   }
 
   bool isLowConfidenceProgramAppName(const AudioNode& node) {
@@ -168,8 +185,8 @@ namespace {
     const std::string canonicalBinary = canonical(appBinary);
     const bool binaryMatchesName = !canonicalBinary.empty()
         && (canonicalName == canonicalBinary
-            || canonicalName.find(canonicalBinary) != std::string::npos
-            || canonicalBinary.find(canonicalName) != std::string::npos);
+            || canonicalName.contains(canonicalBinary)
+            || canonicalBinary.contains(canonicalName));
     // If we have no application.id and the binary disagrees with appName, appName is usually a runtime wrapper label.
     if (appId.empty() && !appBinary.empty() && !binaryMatchesName) {
       return true;
@@ -177,13 +194,9 @@ namespace {
 
     // Some stream clients expose a runtime/container name in application.name.
     // If application.id is more specific and does not match, prefer the id label.
-    const bool idLooksSpecific = appId.find('.') != std::string::npos
-        || appId.find('-') != std::string::npos
-        || appId.find('_') != std::string::npos;
-    const bool nameLooksSimple = appName.find('.') == std::string::npos
-        && appName.find('-') == std::string::npos
-        && appName.find('_') == std::string::npos
-        && appName.find(' ') == std::string::npos;
+    const bool idLooksSpecific = appId.contains('.') || appId.contains('-') || appId.contains('_');
+    const bool nameLooksSimple =
+        !appName.contains('.') && !appName.contains('-') && !appName.contains('_') && !appName.contains(' ');
     return !appId.empty() && appName != appId && idLooksSpecific && nameLooksSimple;
   }
 
@@ -427,6 +440,7 @@ namespace {
 
   DesktopEntryMatch lookupDesktopEntryForProgramStream(const AudioNode& node, std::string_view resolvedBeforeDesktop) {
     DesktopEntryMatch out;
+    const bool waydroidStream = isWaydroidProgramStream(node);
     const std::string binary = lowerIdentifier(StringUtils::trim(node.applicationBinary));
     // Wine/Proton streams report wine64-preloader etc.; matching desktop entries by that binary (or
     // the shared Icon=wine) incorrectly picks unrelated apps (e.g. Protontricks) before app/node name.
@@ -448,7 +462,7 @@ namespace {
       }
     }
     const std::string appName = lowerIdentifier(StringUtils::trim(node.applicationName));
-    if (!appName.empty() && !isGenericAudioLabel(appName) && !looksLikeRuntimeLauncher(appName)) {
+    if (!waydroidStream && !appName.empty() && !isGenericAudioLabel(appName) && !looksLikeRuntimeLauncher(appName)) {
       if (const DesktopEntry* entry = findDesktopEntryByTerm(appName)) {
         out.entry = entry;
         out.matchedVia = "application_name";
@@ -457,7 +471,7 @@ namespace {
       }
     }
     const std::string resolved = lowerIdentifier(StringUtils::trim(resolvedBeforeDesktop));
-    if (!resolved.empty() && !isGenericAudioLabel(resolved) && !looksLikeRuntimeLauncher(resolved)) {
+    if (!waydroidStream && !resolved.empty() && !isGenericAudioLabel(resolved) && !looksLikeRuntimeLauncher(resolved)) {
       if (const DesktopEntry* entry = findDesktopEntryByTerm(resolved)) {
         out.entry = entry;
         out.matchedVia = "resolved_intermediate";
@@ -466,7 +480,7 @@ namespace {
       }
     }
     const std::string nodeName = lowerIdentifier(StringUtils::trim(node.name));
-    if (!nodeName.empty()) {
+    if (!waydroidStream && !nodeName.empty()) {
       if (const DesktopEntry* entry = findDesktopEntryByTerm(nodeName)) {
         out.entry = entry;
         out.matchedVia = "node_name";
@@ -838,7 +852,7 @@ namespace {
           m_onCommitVolume(std::move(onCommitVolume)) {
       setDirection(FlexDirection::Vertical);
       setAlign(FlexAlign::Stretch);
-      setPadding(Style::spaceXs * scale, Style::spaceMd * scale);
+      setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
       setMinHeight((Style::controlHeightLg + Style::spaceXs) * scale);
       setRadius(Style::scaledRadiusMd(scale));
       setFill(colorSpecFromRole(ColorRole::Surface));
@@ -888,7 +902,6 @@ namespace {
               .fontSize = Style::fontSizeCaption * scale,
               .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
               .visible = false,
-              .configure = [](Label& label) { label.setCaptionStyle(); },
           })
       );
 
@@ -1232,7 +1245,6 @@ namespace {
                 .text = body,
                 .fontSize = Style::fontSizeCaption * scale,
                 .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
-                .configure = [](Label& label) { label.setCaptionStyle(); },
             })
         )
     );
@@ -1427,7 +1439,6 @@ std::unique_ptr<Flex> AudioTab::create() {
           .text = i18n::tr("control-center.audio.no-output-selected"),
           .fontSize = Style::fontSizeCaption * scale,
           .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
-          .configure = [](Label& label) { label.setCaptionStyle(); },
       })
   );
 
@@ -1513,7 +1524,6 @@ std::unique_ptr<Flex> AudioTab::create() {
           .text = i18n::tr("control-center.audio.no-input-selected"),
           .fontSize = Style::fontSizeCaption * scale,
           .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
-          .configure = [](Label& label) { label.setCaptionStyle(); },
       })
   );
 

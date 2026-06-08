@@ -44,6 +44,10 @@ namespace noctalia::theme {
 
     void registerIpc(IpcService& ipc);
 
+    // Writes the current wallpaper-generated palette to ~/.config/noctalia/palettes/
+    // and switches palette source to custom.
+    [[nodiscard]] bool saveWallpaperPaletteAsCustom(std::string* paletteNameOut, std::string* errorOut = nullptr);
+
   private:
     void resolveAndSet(bool animate);
     // Decodes + generates the wallpaper palette, memoized on (path, mtime, scheme)

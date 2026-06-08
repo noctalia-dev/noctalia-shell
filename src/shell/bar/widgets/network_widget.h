@@ -2,16 +2,19 @@
 
 #include "dbus/network/inetwork_service.h"
 #include "shell/bar/widget.h"
+#include "shell/tooltip/tooltip_content.h"
 
 #include <string>
+#include <vector>
 
 class Glyph;
 class Label;
+class SystemMonitorService;
 struct wl_output;
 
 class NetworkWidget : public Widget {
 public:
-  NetworkWidget(INetworkService* network, wl_output* output, bool showLabel);
+  NetworkWidget(INetworkService* network, SystemMonitorService* monitor, wl_output* output, bool showLabel);
 
   void create() override;
 
@@ -19,8 +22,10 @@ private:
   void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
   void doUpdate(Renderer& renderer) override;
   void syncState(Renderer& renderer);
+  [[nodiscard]] std::vector<TooltipRow> buildTooltipRows() const;
 
   INetworkService* m_network = nullptr;
+  SystemMonitorService* m_monitor = nullptr;
   bool m_showLabel = true;
   Glyph* m_glyph = nullptr;
   Label* m_label = nullptr;

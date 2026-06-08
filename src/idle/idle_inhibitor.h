@@ -34,6 +34,7 @@ public:
 
 private:
   void ensureSurface();
+  void onSurfaceConfigured();
   void syncInhibitor(bool logTransitions = true);
   void destroyInhibitor(bool logDisable = true);
   void notifyChanged();
@@ -45,4 +46,5 @@ private:
   std::unique_ptr<LayerSurface> m_surface;
   ChangeCallback m_changeCallback;
   bool m_enabled = false;
+  bool m_surfaceMapped = false;
 };

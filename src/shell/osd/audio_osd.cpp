@@ -28,6 +28,7 @@ namespace {
   OsdContent makeOutputContent(float volume, bool muted) {
     const int percent = static_cast<int>(std::round(std::max(0.0f, volume) * 100.0f));
     return OsdContent{
+        .kind = OsdKind::Volume,
         .icon = volumeIconName(volume, muted),
         .value = std::to_string(percent) + "%",
         .progress = std::clamp(volume, 0.0f, 1.0f),
@@ -38,6 +39,7 @@ namespace {
   OsdContent makeInputContent(float volume, bool muted) {
     const int percent = static_cast<int>(std::round(std::max(0.0f, volume) * 100.0f));
     return OsdContent{
+        .kind = OsdKind::Microphone,
         .icon = muted ? "microphone-mute" : "microphone",
         .value = std::to_string(percent) + "%",
         .progress = std::clamp(volume, 0.0f, 1.0f),

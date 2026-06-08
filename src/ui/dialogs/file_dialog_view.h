@@ -69,7 +69,7 @@ private:
   };
 
   [[nodiscard]] float scaled(float value) const noexcept { return value * m_contentScale; }
-  void setRoot(std::unique_ptr<Node> root) { m_root = std::move(root); }
+  void setRoot(std::unique_ptr<Node> root);
   void clearReleasedRoot() noexcept { m_rootPtr = nullptr; }
 
   void doLayout(Renderer& renderer, float width, float height);

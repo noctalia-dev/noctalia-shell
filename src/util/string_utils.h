@@ -200,6 +200,44 @@ namespace StringUtils {
     return std::string(text);
   }
 
+  // True when `text` is exactly one codepoint in a Unicode Private Use Area —
+  // i.e. a Nerd Font / icon glyph rather than text. Such glyphs ignore cap/x
+  // height, so callers center them by ink instead of the typographic cap band.
+  [[nodiscard]] inline bool isSinglePrivateUseGlyph(std::string_view text) {
+    if (text.empty()) {
+      return false;
+    }
+    const auto lead = static_cast<unsigned char>(text[0]);
+    std::size_t len = 0;
+    char32_t cp = 0;
+    if (lead < 0x80) {
+      len = 1;
+      cp = lead;
+    } else if ((lead & 0xE0) == 0xC0) {
+      len = 2;
+      cp = lead & 0x1Fu;
+    } else if ((lead & 0xF0) == 0xE0) {
+      len = 3;
+      cp = lead & 0x0Fu;
+    } else if ((lead & 0xF8) == 0xF0) {
+      len = 4;
+      cp = lead & 0x07u;
+    } else {
+      return false;
+    }
+    if (text.size() != len) {
+      return false; // more than one codepoint, or a truncated sequence
+    }
+    for (std::size_t i = 1; i < len; ++i) {
+      const auto byte = static_cast<unsigned char>(text[i]);
+      if ((byte & 0xC0) != 0x80) {
+        return false;
+      }
+      cp = (cp << 6) | (byte & 0x3Fu);
+    }
+    return (cp >= 0xE000 && cp <= 0xF8FF) || (cp >= 0xF0000 && cp <= 0xFFFFD) || (cp >= 0x100000 && cp <= 0x10FFFD);
+  }
+
   [[nodiscard]] inline std::string truncateUtf8CodePoints(std::string_view text, std::size_t maxCodePoints) {
     std::size_t codePoints = 0;
     std::size_t bytePos = 0;

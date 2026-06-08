@@ -142,7 +142,7 @@
       },
       "unavailable": "Bluetooth service unavailable",
       "unknown-device": "Unknown device",
-      "visible": "Visible"
+      "visible": "Discoverable by nearby devices"
     },
     "calendar": {
       "all-day": "All day",
@@ -251,7 +251,7 @@
       "screen-recorder": "Recorder",
       "screen-time": "Screen Time",
       "session": "Session",
-      "sysmon": "System",
+      "system": "System",
       "wallpaper": "Wallpaper",
       "weather": "Weather",
       "wifi": "Wi-Fi"
@@ -326,11 +326,17 @@
         "bloom-intensity": "Bloom",
         "centered": "Centered",
         "change-image": "Change…",
+        "circle": "Circle",
+        "clock-style": "Clock Style",
+        "clock-style-analog": "Analog",
+        "clock-style-digital": "Digital",
         "color": "Color",
         "color2": "Color 2",
         "custom-color": "Custom…",
         "description": "Description",
         "fade-when-idle": "Fade When Idle",
+        "font-family": "Font",
+        "font-family-default": "System default",
         "format": "Format",
         "hide-when-no-media": "Hide When No Media",
         "high-color": "High Color",
@@ -410,6 +416,11 @@
     "settings": {
       "display-name": "Settings"
     }
+  },
+  "window-switcher": {
+    "empty": "No open windows",
+    "hint": "Tab · Shift+Tab · Arrow keys · Release Alt to switch · Esc to cancel",
+    "title": "Windows"
   },
   "launcher": {
     "categories": {
@@ -524,6 +535,8 @@
       "desktop-widgets-editor-enabled": "Desktop widget editor is on. Switch to an empty workspace to see the editor overlay.",
       "greeter-sync": "Noctalia Greeter",
       "greeter-sync-success": "Appearance synced. Changes apply on the next login screen.",
+      "wallpaper-palette-export": "Custom Palette",
+      "wallpaper-palette-export-success": "Saved \"{name}\" and switched palette source to custom.",
       "keybind-app": "Noctalia",
       "keybind-invalid-modifier": "This shortcut accepts a single key without modifiers.",
       "keybind-invalid-printable": "Printable keys (letters, numbers, symbols) require a modifier such as Ctrl or Alt.",
@@ -590,7 +603,7 @@
     "actions": {
       "custom": "Custom",
       "lock": "Lock",
-      "lock-and-suspend": "Lock & suspend",
+      "lock-and-suspend": "Lock & Suspend",
       "logout": "Log Out",
       "reboot": "Reboot",
       "shutdown": "Shut Down",
@@ -781,6 +794,7 @@
       "reset-page": "Failed to reset some settings.",
       "support-report": "Failed to save support report.",
       "sync-greeter": "Could not sync appearance to Noctalia Greeter.",
+      "export-wallpaper-palette": "Could not save the wallpaper palette as a custom palette.",
       "widget": {
         "rename": "Could not rename named widget."
       },
@@ -802,21 +816,15 @@
         "command-label": "Idle command",
         "command-placeholder": "notify-send \"Idle\"",
         "kind": {
-          "custom": "Custom commands",
-          "lock": "Lock session",
-          "lock-and-suspend": "Lock & suspend",
-          "screen-off": "Turn off displays",
-          "suspend": "Suspend system"
+          "custom": "Custom",
+          "lock": "Lock",
+          "lock-and-suspend": "Lock & Suspend",
+          "screen-off": "Screen Off",
+          "suspend": "Suspend"
         },
         "kind-section-label": "Action",
         "name-label": "Name",
         "name-placeholder": "idle-behavior",
-        "presets": {
-          "lock": "Lock",
-          "lock-and-suspend": "Lock & Suspend",
-          "monitor-off": "Monitor off",
-          "suspend": "Suspend"
-        },
         "resume-command-label": "Resume command",
         "resume-command-placeholder": "noctalia:dpms-on",
         "summary": "{name} · {seconds}s",
@@ -855,6 +863,7 @@
         "home": "Home",
         "interface": "Interface",
         "keybinds": "Keybinds",
+        "kinds": "Kinds",
         "launcher": "Launcher",
         "layout": "Layout",
         "lifecycle": "Lifecycle",
@@ -862,6 +871,8 @@
         "lock-screen": "Lock Screen",
         "media": "Media",
         "monitor": "System Monitor",
+        "monitor-polling": "Poll Intervals",
+        "monitor-thresholds": "Highlight Thresholds",
         "monitors": "Monitors",
         "motion": "Motion",
         "network": "Network",
@@ -892,6 +903,7 @@
       "sections": {
         "appearance": "Appearance",
         "backdrop": "Backdrop",
+        "bar": "Bar",
         "desktop": "Desktop",
         "dock": "Dock",
         "hooks": "Hooks",
@@ -899,6 +911,7 @@
         "location": "Location",
         "niri": "Niri",
         "notifications": "Notifications",
+        "osd": "OSD",
         "panels": "Panels",
         "popups": "Popups",
         "security": "Security",
@@ -923,11 +936,6 @@
           "full": "Full",
           "none": "None"
         }
-      },
-      "dock-icon-colorization": {
-        "muted": "Muted",
-        "primary": "Primary",
-        "secondary": "Secondary"
       },
       "dock-launcher-position": {
         "end": "End",
@@ -1114,6 +1122,11 @@
         "wallpaper-generation-scheme": {
           "description": "Choose how wallpaper colors are converted into a palette",
           "label": "Wallpaper Generation Scheme"
+        },
+        "export-wallpaper-palette": {
+          "description": "Save the current wallpaper-generated palette as a reusable custom palette file",
+          "label": "Export Wallpaper Palette",
+          "button": "Save as Custom Palette"
         }
       },
       "backdrop": {
@@ -1227,7 +1240,7 @@
           "description": "Which screen edge the bar sits on"
         },
         "reserve-space": {
-          "description": "Push windows away from the bar edge (only when auto-hide is off; auto-hide always overlays)"
+          "description": "Push windows away from the bar edge"
         },
         "shadow": {
           "description": "Cast the global surface shadow from the bar"
@@ -1398,6 +1411,10 @@
             "description": "Command to run when the battery percentage changes",
             "label": "On Battery Percentage Changed"
           },
+          "battery-plugged": {
+            "description": "Command to run when the battery becomes fully charged or pending charge",
+            "label": "On Battery Plugged"
+          },
           "bluetooth-disabled": {
             "description": "Command to run when Bluetooth is disabled",
             "label": "On Bluetooth Disabled"
@@ -1499,7 +1516,7 @@
         },
         "blurred-desktop": {
           "description": "Use a snapshot of the desktop as the lock screen background",
-          "label": "Desktop capture"
+          "label": "Desktop Capture"
         },
         "tint-intensity": {
           "description": "Surface-color tint over the lock screen background",
@@ -1673,10 +1690,6 @@
           "description": "Add iCloud, CalDAV, or Google accounts",
           "label": "Calendar Accounts"
         },
-        "calendar-connect": {
-          "button": "Connect",
-          "description": "Authorize a Google account in your browser"
-        },
         "calendar-edit": {
           "button": "Edit",
           "description": "Update this calendar account"
@@ -1724,14 +1737,6 @@
           "label": "Night Light",
           "requires-gamma-control": "Compositor does not support gamma control"
         },
-        "night-light-start-time": {
-          "description": "Manual night light start time in HH:MM when weather location is off",
-          "label": "Start Time"
-        },
-        "night-light-stop-time": {
-          "description": "Manual night light stop time in HH:MM when weather location is off",
-          "label": "Stop Time"
-        },
         "night-temperature": {
           "description": "Color temperature at night (Kelvin)",
           "label": "Night Temperature"
@@ -1758,17 +1763,9 @@
           "label": "Sunset"
         },
         "system-monitor": {
-          "activity-threshold": {
-            "description": "Value that shows significant activity",
-            "label": "{stat} Activity Threshold"
-          },
           "cpu-poll": {
             "description": "Seconds between CPU usage, CPU temperature, and load-average samples (0 disables)",
             "label": "CPU Poll Interval"
-          },
-          "critical-threshold": {
-            "description": "Value close to maximum capacity",
-            "label": "{stat} Critical Threshold"
           },
           "description": "Sample CPU, memory, network, load, temperature, and disk statistics",
           "disk-poll": {
@@ -1799,6 +1796,10 @@
             "network-tx": "Upload",
             "ram-usage": "RAM Usage",
             "swap-usage": "Swap Usage"
+          },
+          "threshold": {
+            "description": "Activity threshold (left) and critical threshold (right)",
+            "label": "{stat}"
           }
         },
         "volume-change-sound": {
@@ -1862,9 +1863,6 @@
         },
         "main-axis-padding": {
           "label": "Main Axis Padding"
-        },
-        "padding": {
-          "label": "Padding"
         },
         "position": {
           "label": "Position"
@@ -1933,13 +1931,49 @@
           "description": "Background opacity of OSD popups",
           "label": "Background Opacity"
         },
-        "osd-keyboard-layout": {
+        "osd-kinds-bluetooth": {
+          "description": "Show an OSD popup when Bluetooth is toggled",
+          "label": "Bluetooth"
+        },
+        "osd-kinds-brightness": {
+          "description": "Show an OSD popup when display brightness changes",
+          "label": "Brightness"
+        },
+        "osd-kinds-caffeine": {
+          "description": "Show an OSD popup when the caffeine (idle inhibitor) state changes",
+          "label": "Caffeine"
+        },
+        "osd-kinds-dnd": {
+          "description": "Show an OSD popup when Do Not Disturb is toggled",
+          "label": "Do Not Disturb"
+        },
+        "osd-kinds-keyboard-layout": {
           "description": "Show an OSD popup when the input keyboard layout changes",
           "label": "Keyboard Layout"
         },
-        "osd-lock-keys": {
+        "osd-kinds-lock-keys": {
           "description": "Show OSD popups for Caps Lock, Num Lock, and Scroll Lock changes",
           "label": "Lock Keys"
+        },
+        "osd-kinds-power-profile": {
+          "description": "Show an OSD popup when the power profile changes",
+          "label": "Power Profile"
+        },
+        "osd-kinds-volume": {
+          "description": "Show OSD popups when volume changes; use advanced settings to control output and input separately",
+          "label": "Volume"
+        },
+        "osd-kinds-volume-input": {
+          "description": "Show an OSD popup when input (microphone) volume changes",
+          "label": "Input Volume"
+        },
+        "osd-kinds-volume-output": {
+          "description": "Show an OSD popup when output (speaker) volume changes",
+          "label": "Output Volume"
+        },
+        "osd-kinds-wifi": {
+          "description": "Show an OSD popup when Wi-Fi is toggled",
+          "label": "Wi-Fi"
         },
         "osd-monitors": {
           "description": "Choose which monitors show OSD popups; leave empty to show on all monitors",
@@ -2142,15 +2176,6 @@
       "command-placeholder": "Optional bash command, leave empty for built-in behavior",
       "glyph-label": "Glyph",
       "glyph-picker-title": "Action glyph",
-      "kind": {
-        "command": "Custom command",
-        "lock": "Lock",
-        "lock-and-suspend": "Lock & Suspend",
-        "logout": "Log out",
-        "reboot": "Reboot",
-        "shutdown": "Shut down",
-        "suspend": "Suspend"
-      },
       "kind-section-label": "Behavior",
       "label-field": "Label",
       "label-placeholder": "Optional button text",
@@ -2189,7 +2214,6 @@
         "gpu-vram": "GPU VRAM",
         "graph": "Graph",
         "graphic": "Graphic",
-        "icon": "Icon",
         "icon-and-text": "Icon and Text",
         "icon-only": "Icon Only",
         "id": "ID",
@@ -2282,6 +2306,10 @@
           "description": "Tint the custom image with the widget Color setting",
           "label": "Colorize custom image"
         },
+        "custom-labels": {
+          "description": "Map keyboard layout names to custom labels",
+          "label": "Custom Labels"
+        },
         "cycle-command": {
           "description": "Command run when cycling keyboard layouts",
           "label": "Cycle Command"
@@ -2322,10 +2350,6 @@
         "format": {
           "description": "Time format string",
           "label": "Format"
-        },
-        "gauge-color": {
-          "description": "Color role for the fill bar in gauge display mode; fixed hex colors are also supported",
-          "label": "Gauge Color"
         },
         "glyph": {
           "description": "Icon glyph name",
@@ -2555,6 +2579,10 @@
         "stat": {
           "description": "System statistic to display",
           "label": "Stat"
+        },
+        "taskbar-max-width": {
+          "description": "Total width budget in pixels; window titles shrink to fit and hide when too narrow",
+          "label": "Taskbar Max Width"
         },
         "title-scroll": {
           "description": "When the widget title should scroll",

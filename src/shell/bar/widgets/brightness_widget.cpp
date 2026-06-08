@@ -49,7 +49,7 @@ void BrightnessWidget::create() {
       ui::glyph({
           .out = &m_glyph,
           .glyph = "brightness-high",
-          .glyphSize = Style::barGlyphSize * m_contentScale,
+          .glyphSize = Style::baseGlyphSize * m_contentScale,
           .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
       })
   );
@@ -136,7 +136,7 @@ void BrightnessWidget::syncState(Renderer& renderer) {
   m_lastVertical = m_isVertical;
 
   m_glyph->setGlyph(brightnessGlyphName(brightness));
-  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
+  m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
   m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
 

@@ -33,16 +33,15 @@ namespace {
     if (sourceUrl.empty())
       return {};
     std::string videoId;
-    if (sourceUrl.find("youtube.com/watch") != std::string_view::npos
-        || sourceUrl.find("music.youtube.com/watch") != std::string_view::npos) {
+    if (sourceUrl.contains("youtube.com/watch") || sourceUrl.contains("music.youtube.com/watch")) {
       videoId = extractQueryParam(sourceUrl, "v");
-    } else if (sourceUrl.find("youtu.be/") != std::string_view::npos) {
+    } else if (sourceUrl.contains("youtu.be/")) {
       const auto marker = sourceUrl.find("youtu.be/");
       const auto start = marker + std::string_view("youtu.be/").size();
       const auto end = sourceUrl.find_first_of("?#&/", start);
       videoId =
           std::string(sourceUrl.substr(start, end == std::string_view::npos ? sourceUrl.size() - start : end - start));
-    } else if (sourceUrl.find("youtube.com/shorts/") != std::string_view::npos) {
+    } else if (sourceUrl.contains("youtube.com/shorts/")) {
       const auto marker = sourceUrl.find("youtube.com/shorts/");
       const auto start = marker + std::string_view("youtube.com/shorts/").size();
       const auto end = sourceUrl.find_first_of("?#&/", start);
@@ -55,8 +54,7 @@ namespace {
   }
 
   [[nodiscard]] std::string upgradeGoogleArtUrl(std::string_view url) {
-    if (url.find("googleusercontent.com") == std::string_view::npos
-        && url.find("ggpht.com") == std::string_view::npos) {
+    if (!url.contains("googleusercontent.com") && !url.contains("ggpht.com")) {
       return std::string(url);
     }
 
@@ -71,7 +69,7 @@ namespace {
   }
 
   [[nodiscard]] bool isYouTubeMusicSourceUrl(std::string_view sourceUrl) {
-    return sourceUrl.find("music.youtube.com") != std::string_view::npos;
+    return sourceUrl.contains("music.youtube.com");
   }
 
 } // namespace
@@ -105,7 +103,7 @@ namespace mpris {
     candidates.emplace_back(primaryUrl);
     // maxresdefault is not generated for every video; hqdefault always exists.
     constexpr std::string_view kMaxres = "/maxresdefault.jpg";
-    if (primaryUrl.find("i.ytimg.com/vi/") != std::string_view::npos
+    if (primaryUrl.contains("i.ytimg.com/vi/")
         && primaryUrl.size() >= kMaxres.size()
         && primaryUrl.substr(primaryUrl.size() - kMaxres.size()) == kMaxres) {
       std::string hq(primaryUrl.substr(0, primaryUrl.size() - kMaxres.size()));

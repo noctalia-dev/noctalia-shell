@@ -389,8 +389,7 @@ namespace {
       }
     }
 
-    spec.exclusiveZone =
-        (!barConfig.autoHide && barConfig.reserveSpace) ? reservedBarExclusiveZone(barConfig, shadowConfig) : 0;
+    spec.exclusiveZone = barConfig.reserveSpace ? reservedBarExclusiveZone(barConfig, shadowConfig) : 0;
     return spec;
   }
 
@@ -1128,10 +1127,6 @@ bool Bar::barContentVisuallyShown(const BarInstance& instance) const noexcept {
 }
 
 bool Bar::shouldReserveExclusiveZone(const BarInstance& instance) const noexcept {
-  // v4 parity: auto-hide never reserves compositor space (overlay slide only).
-  if (instance.barConfig.autoHide) {
-    return false;
-  }
   if (instance.ipcLayoutReleased) {
     return false;
   }
@@ -1267,6 +1262,14 @@ std::vector<wl_surface*> Bar::allBarSurfaces() const {
     }
   }
   return surfaces;
+}
+
+bool Bar::canAttachPanelToBar(wl_output* output, std::string_view barName) const noexcept {
+  const BarInstance* instance = instanceForBar(output, barName);
+  if (instance == nullptr || instance->surface == nullptr || !instance->barConfig.enabled) {
+    return false;
+  }
+  return instance->barConfig.autoHide || instanceEffectivelyVisible(*instance);
 }
 
 void Bar::revealAutoHideForAttachedPanel(wl_output* output, std::string_view barName) {
@@ -1594,9 +1597,6 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
         scripted->setUpdateDeferralCallback([]() {
           auto* panel = PanelManager::current();
           return panel != nullptr && panel->isPanelTransitionActive();
-        });
-        scripted->setTooltipRefreshCallback([inst = &instance](InputArea* area) {
-          TooltipManager::instance().onHoverChange(area, inst->surface->layerSurface(), inst->output);
         });
       }
       widget->setPanelToggleCallback([this, inst = &instance](
@@ -2759,7 +2759,7 @@ namespace {
     }
     barName = std::nullopt;
     monitorSelector = std::nullopt;
-    if (parts.size() >= 1) {
+    if (!parts.empty()) {
       barName = parts[0];
     }
     if (parts.size() >= 2) {

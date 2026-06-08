@@ -1,11 +1,11 @@
 #include "compositors/compositor_detect.h"
 #include "config/config_service.h"
-#include "core/process.h"
 #include "core/ui_phase.h"
 #include "dbus/upower/upower_service.h"
 #include "i18n/i18n.h"
 #include "render/render_context.h"
 #include "shell/greeter/greeter_appearance_sync.h"
+#include "shell/settings/font_family_catalog.h"
 #include "shell/settings/settings_bar_management.h"
 #include "shell/settings/settings_content.h"
 #include "shell/settings/settings_content_common.h"
@@ -31,7 +31,6 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -89,14 +88,20 @@ namespace {
     );
   }
 
-  std::vector<std::string> sectionKeys(const std::vector<settings::SettingEntry>& entries) {
-    std::vector<std::string> sections;
-    for (const auto& entry : entries) {
-      if (entry.section == "bar") {
+  std::vector<settings::SettingsSection> sectionKeys(const std::vector<settings::SettingEntry>& entries) {
+    std::vector<settings::SettingsSection> sections;
+    for (const auto& descriptor : settings::settingsSectionDescriptors()) {
+      if (!descriptor.sidebar) {
         continue;
       }
-      if (std::find(sections.begin(), sections.end(), entry.section) == sections.end()) {
-        sections.push_back(entry.section);
+      const bool present =
+          std::find_if(
+              entries.begin(), entries.end(),
+              [section = descriptor.section](const settings::SettingEntry& entry) { return entry.section == section; }
+          )
+          != entries.end();
+      if (present) {
+        sections.push_back(descriptor.section);
       }
     }
     return sections;
@@ -111,10 +116,14 @@ namespace {
       std::string_view selectedMonitorOverride
   ) {
     if (selectedSection != "bar") {
-      return entry.section == selectedSection;
+      const auto section = settings::settingsSectionFromId(selectedSection);
+      return section.has_value() && entry.section == *section;
     }
 
-    if (entry.section != "bar" || entry.path.size() < 2 || entry.path[0] != "bar" || entry.path[1] != selectedBarName) {
+    if (entry.section != settings::SettingsSection::Bar
+        || entry.path.size() < 2
+        || entry.path[0] != "bar"
+        || entry.path[1] != selectedBarName) {
       return false;
     }
 
@@ -185,61 +194,12 @@ namespace {
   }
 
   std::vector<settings::SelectOption> discoverFontFamilyOptions() {
+    const std::vector<std::string>& families = settings::discoverFontFamilies();
     std::vector<settings::SelectOption> options;
-    if (!process::commandExists("fc-list")) {
-      return options;
-    }
-
-    const auto result = process::runSync({"fc-list", ":", "family"});
-    if (!result) {
-      return options;
-    }
-
-    std::unordered_set<std::string> seen;
-    seen.reserve(4096);
-
-    std::size_t lineStart = 0;
-    while (lineStart <= result.out.size()) {
-      const std::size_t lineEnd = result.out.find('\n', lineStart);
-      const std::string_view line = lineEnd == std::string::npos
-          ? std::string_view(result.out).substr(lineStart)
-          : std::string_view(result.out).substr(lineStart, lineEnd - lineStart);
-
-      std::size_t tokenStart = 0;
-      while (tokenStart <= line.size()) {
-        const std::size_t tokenEnd = line.find(',', tokenStart);
-        const std::string_view token =
-            tokenEnd == std::string::npos ? line.substr(tokenStart) : line.substr(tokenStart, tokenEnd - tokenStart);
-        const std::string family = StringUtils::trim(std::string(token));
-        if (!family.empty()) {
-          seen.insert(family);
-        }
-        if (tokenEnd == std::string::npos) {
-          break;
-        }
-        tokenStart = tokenEnd + 1;
-      }
-
-      if (lineEnd == std::string::npos) {
-        break;
-      }
-      lineStart = lineEnd + 1;
-    }
-
-    std::vector<std::string> sortedFamilies;
-    sortedFamilies.reserve(seen.size());
-    for (const auto& family : seen) {
-      sortedFamilies.push_back(family);
-    }
-    std::sort(sortedFamilies.begin(), sortedFamilies.end(), [](const std::string& a, const std::string& b) {
-      return StringUtils::toLower(a) < StringUtils::toLower(b);
-    });
-
-    options.reserve(sortedFamilies.size());
-    for (const auto& family : sortedFamilies) {
+    options.reserve(families.size());
+    for (const std::string& family : families) {
       options.push_back(settings::SelectOption{family, family});
     }
-
     return options;
   }
 
@@ -414,6 +374,7 @@ settings::SettingsContentContext SettingsWindow::makeContentContext(
       .showAdvanced = m_showAdvanced,
       .showOverriddenOnly = m_showOverriddenOnly,
       .batteryDeviceOptions = batteryDeviceOptions(),
+      .keyboardLayoutNames = m_wayland != nullptr ? m_wayland->keyboardLayoutNames() : std::vector<std::string>{},
       .editingWidgetName = m_editingWidgetName,
       .editingCapsuleGroupId = m_editingCapsuleGroupId,
       .selectedLaneWidgets = m_selectedLaneWidgets,
@@ -758,7 +719,7 @@ std::unique_ptr<Flex> SettingsWindow::buildStatusRow(float scale) {
 }
 
 std::unique_ptr<Flex> SettingsWindow::buildBody(
-    float scale, const Config& cfg, const std::vector<std::string>& sections,
+    float scale, const Config& cfg, const std::vector<settings::SettingsSection>& sections,
     const std::vector<std::string>& availableBars
 ) {
   const auto requestRebuild = [this]() { requestSceneRebuild(); };
@@ -850,7 +811,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
 
   if (m_syncGreeterAppearance && env.greeterSyncAvailable) {
     auto it = std::find_if(m_settingsRegistry.begin(), m_settingsRegistry.end(), [](const settings::SettingEntry& e) {
-      return e.section == "shell"
+      return e.section == settings::SettingsSection::Shell
           && e.group == "privacy-security"
           && e.path == std::vector<std::string>{"shell", "password_style"};
     });
@@ -858,7 +819,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       ++it;
     }
     settings::SettingEntry btn{
-        .section = "security",
+        .section = settings::SettingsSection::Security,
         .group = "privacy-security",
         .title = i18n::tr("settings.schema.shell.sync-greeter.label"),
         .subtitle = i18n::tr("settings.schema.shell.sync-greeter.description"),
@@ -875,14 +836,41 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     m_settingsRegistry.insert(it, std::move(btn));
   }
 
+  if (m_saveWallpaperPaletteAsCustom && cfg.theme.source == PaletteSource::Wallpaper) {
+    auto it = std::find_if(m_settingsRegistry.begin(), m_settingsRegistry.end(), [](const settings::SettingEntry& e) {
+      return e.section == settings::SettingsSection::Appearance
+          && e.group == "theme"
+          && e.path == std::vector<std::string>{"theme", "wallpaper_scheme"};
+    });
+    if (it != m_settingsRegistry.end()) {
+      ++it;
+    }
+    settings::SettingEntry btn{
+        .section = settings::SettingsSection::Appearance,
+        .group = "theme",
+        .title = i18n::tr("settings.schema.appearance.export-wallpaper-palette.label"),
+        .subtitle = i18n::tr("settings.schema.appearance.export-wallpaper-palette.description"),
+        .path = {},
+        .control =
+            settings::ButtonSetting{
+                .label = i18n::tr("settings.schema.appearance.export-wallpaper-palette.button"),
+                .action = m_saveWallpaperPaletteAsCustom,
+                .glyph = {},
+            },
+        .searchText = "wallpaper palette export custom save colors theme",
+        .visibleWhen = std::nullopt,
+    };
+    m_settingsRegistry.insert(it, std::move(btn));
+  }
+
   if (m_openWallpaperPanel) {
     auto it = std::find_if(m_settingsRegistry.begin(), m_settingsRegistry.end(), [](const settings::SettingEntry& e) {
-      return e.section == "wallpaper"
+      return e.section == settings::SettingsSection::Wallpaper
           && e.group == "general"
           && e.path == std::vector<std::string>{"wallpaper", "fill_mode"};
     });
     settings::SettingEntry btn{
-        .section = "wallpaper",
+        .section = settings::SettingsSection::Wallpaper,
         .group = "general",
         .title = i18n::tr("settings.schema.wallpaper.panel.label"),
         .subtitle = i18n::tr("settings.schema.wallpaper.panel.description"),
@@ -901,13 +889,13 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
 
   if (m_openDesktopWidgetEditor) {
     auto it = std::find_if(m_settingsRegistry.begin(), m_settingsRegistry.end(), [](const settings::SettingEntry& e) {
-      return e.section == "desktop" && e.group == "widgets";
+      return e.section == settings::SettingsSection::Desktop && e.group == "widgets";
     });
     if (it != m_settingsRegistry.end()) {
       ++it;
     }
     settings::SettingEntry btn{
-        .section = "desktop",
+        .section = settings::SettingsSection::Desktop,
         .group = "widgets",
         .title = i18n::tr("settings.schema.desktop.widgets-editor.label"),
         .subtitle = i18n::tr("settings.schema.desktop.widgets-editor.description"),
@@ -926,7 +914,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
 
   if (m_openLockscreenWidgetEditor) {
     auto it = std::find_if(m_settingsRegistry.begin(), m_settingsRegistry.end(), [](const settings::SettingEntry& e) {
-      return e.section == "security"
+      return e.section == settings::SettingsSection::Security
           && e.group == "lock-screen"
           && e.path == std::vector<std::string>{"lockscreen_widgets", "enabled"};
     });
@@ -934,7 +922,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       ++it;
     }
     settings::SettingEntry btn{
-        .section = "security",
+        .section = settings::SettingsSection::Security,
         .group = "lock-screen",
         .title = i18n::tr("settings.schema.lockscreen.widgets-editor.label"),
         .subtitle = i18n::tr("settings.schema.lockscreen.widgets-editor.description"),
@@ -953,7 +941,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
 
   if (m_config != nullptr) {
     auto it = std::find_if(m_settingsRegistry.begin(), m_settingsRegistry.end(), [](const settings::SettingEntry& e) {
-      return e.section == "services"
+      return e.section == settings::SettingsSection::Services
           && e.group == "calendar"
           && e.path == std::vector<std::string>{"calendar", "refresh_minutes"};
     });
@@ -962,7 +950,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     }
     const settings::SettingVisibility calendarOn{{"calendar", "enabled"}, {"true"}};
     settings::SettingEntry addBtn{
-        .section = "services",
+        .section = settings::SettingsSection::Services,
         .group = "calendar",
         .title = i18n::tr("settings.schema.services.calendar-add.label"),
         .subtitle = i18n::tr("settings.schema.services.calendar-add.description"),
@@ -984,7 +972,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         continue;
       }
       settings::SettingEntry btn{
-          .section = "services",
+          .section = settings::SettingsSection::Services,
           .group = "calendar",
           .title = account.displayName.empty() ? account.id : account.displayName,
           .subtitle = i18n::tr("settings.schema.services.calendar-edit.description"),
@@ -1004,19 +992,21 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   }
 
   const auto sections = sectionKeys(m_settingsRegistry);
+  const auto containsSection = [&sections](settings::SettingsSection section) {
+    return std::find(sections.begin(), sections.end(), section) != sections.end();
+  };
   if (m_selectedSection == "bar" && selectedBar == nullptr) {
     m_selectedSection.clear();
-  } else if (
-      m_selectedSection != "bar"
-      && !m_selectedSection.empty()
-      && std::find(sections.begin(), sections.end(), m_selectedSection) == sections.end()
-  ) {
-    m_selectedSection.clear();
+  } else if (m_selectedSection != "bar" && !m_selectedSection.empty()) {
+    const auto selectedSection = settings::settingsSectionFromId(m_selectedSection);
+    if (!selectedSection.has_value() || !containsSection(*selectedSection)) {
+      m_selectedSection.clear();
+    }
   }
   if (m_selectedSection.empty()) {
-    m_selectedSection = std::find(sections.begin(), sections.end(), "appearance") != sections.end()
-        ? std::string("appearance")
-        : (!sections.empty() ? sections.front() : std::string{});
+    m_selectedSection = containsSection(settings::SettingsSection::Appearance)
+        ? std::string(settings::settingsSectionId(settings::SettingsSection::Appearance))
+        : (!sections.empty() ? std::string(settings::settingsSectionId(sections.front())) : std::string{});
   }
 
   const std::string resetPageScope = pageScopeKey(m_selectedSection, m_selectedBarName, m_selectedMonitorOverride);

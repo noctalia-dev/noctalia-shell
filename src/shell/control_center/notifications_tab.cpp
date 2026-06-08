@@ -232,7 +232,7 @@ namespace {
     bool bodyLineTruncated = false;
     const std::string collapsedBodyText = StringUtils::truncateByLines(bodyText, kBodyMaxLines, &bodyLineTruncated);
     const bool bodyExpandable = bodyLineTruncated
-        || canExpandText(renderer, bodyText, Style::fontSizeCaption * scale, FontWeight::Normal, metrics.cardTextWidth,
+        || canExpandText(renderer, bodyText, Style::fontSizeBody * scale, FontWeight::Normal, metrics.cardTextWidth,
                          kBodyMaxLines);
     metrics.canExpand = summaryExpandable || bodyExpandable;
     metrics.expanded = metrics.canExpand && expandedRequested;
@@ -260,7 +260,7 @@ namespace {
     const float bodyHeight = metrics.bodyText.empty()
         ? 0.0f
         : measuredTextHeight(
-              renderer, metrics.bodyText, Style::fontSizeCaption * scale, FontWeight::Normal, metrics.cardTextWidth,
+              renderer, metrics.bodyText, Style::fontSizeBody * scale, FontWeight::Normal, metrics.cardTextWidth,
               metrics.expanded ? kExpandedMaxLines : kBodyMaxLines
           );
 
@@ -341,7 +341,6 @@ namespace {
           ui::label({
               .fontSize = Style::fontSizeCaption * scale,
               .flexGrow = 1.0f,
-              .configure = [](Label& label) { label.setCaptionStyle(); },
           })
       ));
 
@@ -364,7 +363,7 @@ namespace {
 
       m_body = static_cast<Label*>(addChild(
           ui::label({
-              .fontSize = Style::fontSizeCaption * scale,
+              .fontSize = Style::fontSizeBody * scale,
               .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
               .visible = false,
           })
@@ -657,7 +656,7 @@ std::unique_ptr<Flex> NotificationsTab::create() {
                   {.label = i18n::tr("control-center.notifications.filter.older")},
               },
           .selectedIndex = m_filterIndex,
-          .fontSize = Style::fontSizeCaption * scale,
+          .fontSize = Style::fontSizeBody * scale,
           .scale = scale,
           .surfaceOpacity = panelCardOpacity(),
           .equalSegmentWidths = true,
@@ -709,9 +708,8 @@ std::unique_ptr<Flex> NotificationsTab::create() {
           }),
           ui::label({
               .out = &m_emptyBody,
-              .fontSize = Style::fontSizeCaption * scale,
+              .fontSize = Style::fontSizeBody * scale,
               .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
-              .configure = [](Label& label) { label.setCaptionStyle(); },
           })
       )
   );

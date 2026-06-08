@@ -59,7 +59,6 @@ public:
   void luaSetVisible(bool visible);
   void luaSetUpdateInterval(float ms);
   void setUpdateDeferralCallback(std::function<bool()> callback);
-  void setTooltipRefreshCallback(std::function<void(InputArea*)> callback);
   [[nodiscard]] IpcDispatchResult dispatchIpcEvent(std::string_view event, std::string_view payload);
   [[nodiscard]] bool isVertical() const { return m_isVertical; }
 
@@ -128,7 +127,6 @@ private:
   Timer m_deferredUpdateTimer;
   Timer m_imageReloadRetryTimer;
   std::function<bool()> m_updateDeferralCallback;
-  std::function<void(InputArea*)> m_tooltipRefreshCallback;
   InputArea* m_area = nullptr;
   Flex* m_flex = nullptr;
   Glyph* m_glyph = nullptr;

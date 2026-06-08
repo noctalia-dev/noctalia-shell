@@ -46,7 +46,7 @@ namespace {
     if (widget.type == "sticker") {
       const auto opacityIt = widget.settings.find("opacity");
       if (opacityIt == widget.settings.end()) {
-        widget.settings.insert_or_assign("opacity", static_cast<double>(1.0));
+        widget.settings.insert_or_assign("opacity", 1.0);
         return;
       }
       if (const auto* doubleValue = std::get_if<double>(&opacityIt->second)) {
@@ -58,7 +58,7 @@ namespace {
         widget.settings.insert_or_assign("opacity", clamped);
         return;
       }
-      widget.settings.insert_or_assign("opacity", static_cast<double>(1.0));
+      widget.settings.insert_or_assign("opacity", 1.0);
       return;
     }
 
@@ -113,7 +113,8 @@ LockscreenWidgetsController::~LockscreenWidgetsController() = default;
 void LockscreenWidgetsController::initialize(
     WaylandConnection& wayland, ConfigService* config, LockScreen& lockScreen, Bar& bar, Dock& dock,
     DesktopWidgetsController* desktopWidgets, PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather,
-    RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient, SystemMonitorService* sysmon
+    RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient, SystemMonitorService* sysmon,
+    SharedTextureCache* textureCache
 ) {
   m_wayland = &wayland;
   m_config = config;
@@ -125,7 +126,9 @@ void LockscreenWidgetsController::initialize(
   m_host = std::make_unique<LockscreenWidgetsHost>();
   m_host->initialize(wayland, config, pipewireSpectrum, weather, renderContext, mpris, httpClient, sysmon);
   m_editor = std::make_unique<BackgroundWidgetsEditor>(BackgroundWidgetsEditorProfile::lockscreen());
-  m_editor->initialize(wayland, config, pipewireSpectrum, weather, renderContext, mpris, httpClient, sysmon);
+  m_editor->initialize(
+      wayland, config, pipewireSpectrum, weather, renderContext, mpris, httpClient, sysmon, textureCache
+  );
   m_editor->setExitRequestedCallback([this]() { exitEdit(); });
   loadSnapshotFromConfig();
   m_initialized = true;
@@ -346,6 +349,8 @@ void LockscreenWidgetsController::handleConfigReload() {
       m_host->rebuild(m_snapshot, *m_lockScreen);
       m_lockScreen->requestLayout();
     }
+  } else if (m_editor != nullptr) {
+    m_editor->requestLayout();
   }
   applyVisibility();
 }

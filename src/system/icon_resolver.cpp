@@ -37,7 +37,7 @@ namespace {
 
   // Nominal size encoded in a well-known subdir name like "48x48" or "scalable".
   int sizeFromDirName(std::string_view dirName) {
-    if (dirName.find("scalable") != std::string_view::npos) {
+    if (dirName.contains("scalable")) {
       return 0;
     }
     int size = 0;
@@ -296,7 +296,7 @@ namespace {
             inherits.emplace_back(std::move(name));
           }
         }
-      } else if (!currentSection.empty() && dirMap.count(currentSection)) {
+      } else if (!currentSection.empty() && dirMap.contains(currentSection)) {
         auto& entry = dirMap[currentSection];
         if (key == "Size") {
           try {
@@ -340,7 +340,7 @@ namespace {
       const std::string& themeName, const std::vector<std::string>& baseDirs, std::set<std::string>& visited,
       std::vector<IconSearchDir>& searchDirs
   ) {
-    if (visited.count(themeName)) {
+    if (visited.contains(themeName)) {
       return;
     }
     visited.insert(themeName);
@@ -361,9 +361,7 @@ namespace {
           pushUniqueDir(
               searchDirs,
               IconSearchDir{
-                  .path = themeRoot + path,
-                  .size = sizeFromDirName(name),
-                  .scalable = name.find("scalable") != std::string_view::npos
+                  .path = themeRoot + path, .size = sizeFromDirName(name), .scalable = name.contains("scalable")
               }
           );
         }

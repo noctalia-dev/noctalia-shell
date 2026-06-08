@@ -38,7 +38,7 @@ namespace {
       addChild(
           ui::glyph({
               .out = &m_icon,
-              .glyphSize = Style::barGlyphSize,
+              .glyphSize = Style::baseGlyphSize,
               .visible = false,
               .participatesInLayout = false,
           })

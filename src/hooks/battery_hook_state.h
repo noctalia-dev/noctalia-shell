@@ -19,6 +19,6 @@ public:
 
 private:
   bool m_initialized = false;
-  std::optional<BatteryState> m_lastDirection;
+  std::optional<HookKind> m_lastStateHook;
   std::optional<int> m_lastPercent;
 };

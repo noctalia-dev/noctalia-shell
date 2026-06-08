@@ -168,6 +168,7 @@ void DesktopWidgetsHost::createInstance(const DesktopWidgetState& state, const W
   }
 
   widget->create();
+  widget->setBox(state.boxWidth, state.boxHeight);
   widget->update(*m_renderContext);
   widget->layout(*m_renderContext);
 
@@ -294,6 +295,7 @@ void DesktopWidgetsHost::prepareFrame(DesktopWidgetInstance& instance, bool need
 
   const float baseUiScale = m_config != nullptr ? m_config->config().shell.uiScale : 1.0f;
   instance.widget->setContentScale(desktop_widgets::widgetContentScale(baseUiScale, instance.state));
+  instance.widget->setBox(instance.state.boxWidth, instance.state.boxHeight);
 
   if (needsUpdate) {
     instance.widget->update(*m_renderContext);

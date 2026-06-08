@@ -182,7 +182,9 @@ void TooltipManager::onHoverChange(InputArea* area, zwlr_layer_surface_v1* paren
     m_pendingContent = area->tooltipContent();
     m_pendingParent = parentLayerSurface;
     m_pendingOutput = output;
+    const bool sameArea = area == m_pendingArea;
     m_pendingArea = area;
+    area->setTooltipChangedCallback([this](InputArea* changedArea) { refreshFromArea(changedArea); });
 
     switch (m_state) {
     case State::Idle:
@@ -194,6 +196,13 @@ void TooltipManager::onHoverChange(InputArea* area, zwlr_layer_surface_v1* paren
       m_showTimer.start(kShowDelay, [this] { showPopup(); });
       break;
     case State::Showing:
+      if (sameArea) {
+        refreshFromArea(area);
+        break;
+      }
+      destroyPopup();
+      showPopup();
+      break;
     case State::FadingOut:
       destroyPopup();
       showPopup();
@@ -226,6 +235,7 @@ void TooltipManager::showPopup() {
     return;
   }
 
+  m_pendingContent = m_pendingArea->tooltipContent();
   const auto [contentW, contentH] = measureContent(m_pendingContent);
   if (contentW == 0 || contentH == 0) {
     m_state = State::Idle;
@@ -276,10 +286,12 @@ void TooltipManager::showPopup() {
   });
 
   m_state = State::Showing;
+  scheduleProviderRefresh();
   m_surface->requestUpdate();
 }
 
 void TooltipManager::dismissPopup() {
+  m_refreshTimer.stop();
   switch (m_state) {
   case State::Pending:
     m_showTimer.stop();
@@ -319,12 +331,82 @@ void TooltipManager::dismissPopup() {
 }
 
 void TooltipManager::destroyPopup() {
+  m_refreshTimer.stop();
   m_animations.cancelAll();
   m_fadeAnimId = 0;
   m_paletteConn = {};
   m_sceneRoot.reset();
   m_surface.reset();
   m_state = State::Idle;
+}
+
+void TooltipManager::refreshFromArea(InputArea* area) {
+  if (area == nullptr || area != m_pendingArea || !area->hovered()) {
+    return;
+  }
+
+  if (!area->hasTooltip()) {
+    dismissPopup();
+    return;
+  }
+
+  m_pendingContent = area->tooltipContent();
+  switch (m_state) {
+  case State::Pending:
+    break;
+  case State::Showing:
+    refreshPopupContent();
+    scheduleProviderRefresh();
+    break;
+  case State::Idle:
+    if (measureContent(m_pendingContent).w > 0) {
+      showPopup();
+    }
+    break;
+  case State::FadingOut:
+    break;
+  }
+}
+
+void TooltipManager::refreshPopupContent() {
+  if (m_surface == nullptr || m_renderContext == nullptr || m_pendingArea == nullptr) {
+    return;
+  }
+
+  const auto [contentW, contentH] = measureContent(m_pendingContent);
+  if (contentW == 0 || contentH == 0) {
+    dismissPopup();
+    return;
+  }
+
+  auto anchorConfig = buildTooltipAnchorConfig(m_pendingArea);
+  anchorConfig.width = contentW;
+  anchorConfig.height = contentH;
+  m_surface->resize(contentW, contentH);
+  m_surface->repositionAnchor(anchorConfig);
+
+  m_renderContext->makeCurrent(m_surface->renderTarget());
+  m_sceneRoot.reset();
+  {
+    UiPhaseScope layoutPhase(UiPhase::Layout);
+    buildScene(m_pendingContent, static_cast<float>(contentW), static_cast<float>(contentH), 1.0f);
+  }
+  m_surface->requestRedraw();
+}
+
+void TooltipManager::scheduleProviderRefresh() {
+  m_refreshTimer.stop();
+  if (m_state != State::Showing || m_pendingArea == nullptr) {
+    return;
+  }
+
+  const auto interval = m_pendingArea->tooltipRefreshInterval();
+  if (interval.count() <= 0) {
+    return;
+  }
+
+  InputArea* area = m_pendingArea;
+  m_refreshTimer.start(interval, [this, area]() { refreshFromArea(area); });
 }
 
 TooltipManager::Size TooltipManager::measureContent(const TooltipContent& content) {
@@ -366,7 +448,7 @@ TooltipManager::Size TooltipManager::measureContent(const TooltipContent& conten
   return {};
 }
 
-void TooltipManager::buildScene(const TooltipContent& content, float w, float h) {
+void TooltipManager::buildScene(const TooltipContent& content, float w, float h, float opacity) {
   uiAssertNotRendering("TooltipManager::buildScene");
   if (m_renderContext == nullptr) {
     return;
@@ -374,7 +456,7 @@ void TooltipManager::buildScene(const TooltipContent& content, float w, float h)
 
   m_sceneRoot = std::make_unique<Node>();
   m_sceneRoot->setSize(w, h);
-  m_sceneRoot->setOpacity(0.0f);
+  m_sceneRoot->setOpacity(opacity);
   m_sceneRoot->setHitTestVisible(false);
   m_surface->setSceneRoot(m_sceneRoot.get());
 

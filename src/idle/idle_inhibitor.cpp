@@ -71,7 +71,7 @@ void IdleInhibitor::ensureSurface() {
 
   auto surface = std::make_unique<LayerSurface>(*m_wayland, std::move(config));
   surface->setRenderContext(m_renderContext);
-  surface->setConfigureCallback([](std::uint32_t /*width*/, std::uint32_t /*height*/) {});
+  surface->setConfigureCallback([this](std::uint32_t /*width*/, std::uint32_t /*height*/) { onSurfaceConfigured(); });
 
   if (!surface->initialize(output.output)) {
     kLog.warn("failed to initialize idle inhibitor surface");
@@ -87,6 +87,21 @@ void IdleInhibitor::ensureSurface() {
   m_surface = std::move(surface);
 }
 
+void IdleInhibitor::onSurfaceConfigured() {
+  // Force a frame so the layer surface attaches a buffer and becomes mapped.
+  // Hyprland only honors an idle inhibitor whose surface is aliveAndVisible()
+  // and never rechecks on layer-surface map, so the inhibitor must be created
+  // after the surface is mapped — otherwise it is silently ignored until an
+  // unrelated focus/window event triggers a recheck.
+  if (m_surface != nullptr) {
+    m_surface->renderNow();
+  }
+  m_surfaceMapped = true;
+
+  // Create the inhibitor now that the buffer commit precedes it on the wire.
+  syncInhibitor(false);
+}
+
 void IdleInhibitor::syncInhibitor(bool logTransitions) {
   if (m_manager == nullptr) {
     return;
@@ -98,7 +113,7 @@ void IdleInhibitor::syncInhibitor(bool logTransitions) {
   }
 
   ensureSurface();
-  if (m_surface == nullptr || m_surface->wlSurface() == nullptr || m_inhibitor != nullptr) {
+  if (m_surface == nullptr || m_surface->wlSurface() == nullptr || !m_surfaceMapped || m_inhibitor != nullptr) {
     return;
   }
 
@@ -132,6 +147,7 @@ void IdleInhibitor::onOutputChange() {
   destroyInhibitor(false);
   if (m_surface != nullptr) {
     m_surface.reset();
+    m_surfaceMapped = false;
   }
 
   if (m_enabled) {

@@ -6,9 +6,11 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <numeric>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -18,6 +20,33 @@
 #include <vector>
 
 namespace settings {
+
+  enum class SettingsSection : std::uint8_t {
+    Appearance,
+    Wallpaper,
+    Templates,
+    Desktop,
+    Dock,
+    Panels,
+    Notifications,
+    Osd,
+    Shell,
+    Security,
+    System,
+    Services,
+    Location,
+    Idle,
+    Hooks,
+    Niri,
+    Bar,
+  };
+
+  struct SettingsSectionDescriptor {
+    SettingsSection section;
+    std::string_view id;
+    std::string_view glyph;
+    bool sidebar = true;
+  };
 
   struct ToggleSetting {
     bool checked = false;
@@ -73,6 +102,19 @@ namespace settings {
         linkedCommit;
   };
 
+  /// Dual-thumb slider for a low/high pair on one axis. `entry.path` is the low (e.g. activity)
+  /// value; `highPath` is the high (e.g. critical) value. Both participate in override/reset together.
+  struct RangeSliderSetting {
+    double lowValue = 0.0;
+    double highValue = 1.0;
+    double minValue = 0.0;
+    double maxValue = 1.0;
+    double step = 0.01;
+    bool integerValue = false;
+    std::string valueSuffix = {};
+    std::vector<std::string> highPath;
+  };
+
   enum class TextSettingBrowseMode : std::uint8_t {
     None = 0,
     SelectFolder,
@@ -125,6 +167,13 @@ namespace settings {
     std::vector<SelectOption> suggestedOptions = {};
   };
 
+  struct StringMapSetting {
+    std::unordered_map<std::string, std::string> entries;
+    std::vector<std::string> suggestedKeys;
+    std::string keyPlaceholder;
+    std::string valuePlaceholder;
+  };
+
   struct ShortcutListSetting {
     std::vector<ShortcutConfig> items;
     std::vector<SelectOption> suggestedOptions = {};
@@ -171,10 +220,10 @@ namespace settings {
   };
 
   using SettingControl = std::variant<
-      ToggleSetting, SelectSetting, SliderSetting, TextSetting, OptionalNumberSetting, OptionalStepperSetting,
-      StepperSetting, ListSetting, ShortcutListSetting, KeybindListSetting, SessionPanelActionsSetting,
-      IdleBehaviorsSetting, MultiSelectSetting, TemplateGridSetting, ButtonSetting, ColorSpecPickerSetting,
-      SearchPickerSetting>;
+      ToggleSetting, SelectSetting, SliderSetting, RangeSliderSetting, TextSetting, OptionalNumberSetting,
+      OptionalStepperSetting, StepperSetting, ListSetting, ShortcutListSetting, KeybindListSetting,
+      SessionPanelActionsSetting, IdleBehaviorsSetting, MultiSelectSetting, TemplateGridSetting, ButtonSetting,
+      ColorSpecPickerSetting, SearchPickerSetting>;
 
   struct SettingVisibilityCondition {
     std::vector<std::string> path;
@@ -191,7 +240,7 @@ namespace settings {
   };
 
   struct SettingEntry {
-    std::string section;
+    SettingsSection section = SettingsSection::Appearance;
     std::string group;
     std::string title;
     std::string subtitle;
@@ -236,7 +285,11 @@ namespace settings {
       const SettingEntry& entry, std::string_view selectedBarName, std::string_view selectedMonitorOverride
   );
   [[nodiscard]] std::string barSettingContentSectionKey(const SettingEntry& entry);
-  [[nodiscard]] std::string_view sectionGlyph(std::string_view section);
+  [[nodiscard]] std::span<const SettingsSectionDescriptor> settingsSectionDescriptors();
+  [[nodiscard]] std::string_view settingsSectionId(SettingsSection section);
+  [[nodiscard]] std::string settingsSectionLabelKey(SettingsSection section);
+  [[nodiscard]] std::string_view sectionGlyph(SettingsSection section);
+  [[nodiscard]] std::optional<SettingsSection> settingsSectionFromId(std::string_view id);
 
   // Returns a permutation of [0, count) that coalesces items sharing a group key so a group renders
   // exactly once, regardless of the order items were declared in. The first-appearance order of group

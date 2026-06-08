@@ -3,19 +3,22 @@ name: cachix
 on:
   push:
     branches:
-      - v5
+      - main
   workflow_run:
     workflows: ["update flake"]
     types:
       - completed
     branches:
-      - v5
+      - main
   workflow_dispatch:
 
 jobs:
   cache:
-    runs-on: ubuntu-latest
-    if: ${{ github.repository == 'noctalia-dev/noctalia-shell' }}
+    strategy:
+      matrix:
+        runner: [ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    if: ${{ github.repository == 'noctalia-dev/noctalia' }}
     steps:
       - uses: actions/checkout@v6
       - uses: cachix/install-nix-action@v31

@@ -70,10 +70,10 @@ namespace {
   }
 
   [[nodiscard]] bool looksLikeTechnicalId(std::string_view name) {
-    if (name.empty() || name.find(' ') != std::string_view::npos) {
+    if (name.empty() || name.contains(' ')) {
       return false;
     }
-    if (name.find('.') != std::string_view::npos) {
+    if (name.contains('.')) {
       return true;
     }
     bool hasUpper = false;
@@ -89,7 +89,7 @@ namespace {
     if (!hasUpper && hasLower) {
       return true;
     }
-    return name.find('-') != std::string_view::npos || name.find('_') != std::string_view::npos;
+    return name.contains('-') || name.contains('_');
   }
 
   std::string resolveFromKeys(std::string_view primary, const std::optional<std::string>& desktopEntry) {

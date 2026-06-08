@@ -250,7 +250,8 @@ TextMetrics RenderContext::measureFont(float fontSize, FontWeight fontWeight) {
       .inkTop = m.inkTop,
       .inkBottom = m.inkBottom,
       .inkLeft = m.inkLeft,
-      .inkRight = m.inkRight
+      .inkRight = m.inkRight,
+      .capHeight = m.capHeight
   };
 }
 

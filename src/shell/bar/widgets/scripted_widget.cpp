@@ -197,7 +197,7 @@ void ScriptedWidget::create() {
   flex->addChild(
       ui::glyph({
           .out = &m_glyph,
-          .glyphSize = Style::barGlyphSize * m_contentScale,
+          .glyphSize = Style::baseGlyphSize * m_contentScale,
           .visible = false,
       })
   );
@@ -236,8 +236,9 @@ void ScriptedWidget::create() {
 
   bool createdRuntime = true;
   if (m_sharedScope) {
-    auto acquired =
-        scripting::SharedScriptRuntimeRegistry::acquire(m_widgetConfigName, m_settings, m_scriptApi, m_clipboard);
+    auto acquired = scripting::SharedScriptRuntimeRegistry::acquire(
+        m_widgetConfigName, m_resolvedPath.string(), m_settings, m_scriptApi, m_clipboard
+    );
     m_runtime = std::move(acquired.runtime);
     createdRuntime = acquired.created;
   } else {
@@ -381,9 +382,6 @@ void ScriptedWidget::luaSetTooltip(const scripting::ScriptWidgetTooltipPatch& to
 
   if (tooltip.clear || (!tooltip.hasRows() && tooltip.text.empty())) {
     m_area->clearTooltip();
-    if (m_area->hovered() && m_tooltipRefreshCallback) {
-      m_tooltipRefreshCallback(m_area);
-    }
     return;
   }
 
@@ -394,16 +392,10 @@ void ScriptedWidget::luaSetTooltip(const scripting::ScriptWidgetTooltipPatch& to
       rows.push_back({.key = row.key, .value = row.value});
     }
     m_area->setTooltip(std::move(rows));
-    if (m_area->hovered() && m_tooltipRefreshCallback) {
-      m_tooltipRefreshCallback(m_area);
-    }
     return;
   }
 
   m_area->setTooltip(tooltip.text);
-  if (m_area->hovered() && m_tooltipRefreshCallback) {
-    m_tooltipRefreshCallback(m_area);
-  }
 }
 
 void ScriptedWidget::luaSetFont(std::string_view familyOrPath) {
@@ -456,10 +448,6 @@ void ScriptedWidget::luaSetUpdateInterval(float ms) {
 
 void ScriptedWidget::setUpdateDeferralCallback(std::function<bool()> callback) {
   m_updateDeferralCallback = std::move(callback);
-}
-
-void ScriptedWidget::setTooltipRefreshCallback(std::function<void(InputArea*)> callback) {
-  m_tooltipRefreshCallback = std::move(callback);
 }
 
 void ScriptedWidget::luaSetVisible(bool visible) {
@@ -674,7 +662,7 @@ void ScriptedWidget::syncImage(Renderer& renderer) {
     return;
   }
 
-  const float logicalWidth = m_imageWidth > 0.0f ? m_imageWidth : Style::barIconSize;
+  const float logicalWidth = m_imageWidth > 0.0f ? m_imageWidth : Style::baseGlyphSize;
   const float logicalHeight = m_imageHeight > 0.0f ? m_imageHeight : logicalWidth;
   const float imageWidth = logicalWidth * m_contentScale;
   const float imageHeight = logicalHeight * m_contentScale;

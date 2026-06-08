@@ -14,6 +14,7 @@
 #include "ui/controls/label.h"
 #include "ui/controls/progress_bar.h"
 #include "ui/controls/radio_button.h"
+#include "ui/controls/range_slider.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/search_picker.h"
 #include "ui/controls/segmented.h"
@@ -233,6 +234,7 @@ namespace ui {
     Separator** out = nullptr;
     std::optional<ColorSpec> color = std::nullopt;
     std::optional<float> thickness = std::nullopt;
+    std::optional<float> spacing = std::nullopt;
     std::optional<SeparatorOrientation> orientation = std::nullopt;
     std::optional<bool> gradientEdges = std::nullopt;
     std::optional<float> width = std::nullopt;
@@ -289,6 +291,29 @@ namespace ui {
     std::function<void(double)> onValueChanged = nullptr;
     std::function<void()> onDragEnd = nullptr;
     std::function<void(Slider&)> configure = nullptr;
+  };
+
+  struct RangeSliderProps {
+    RangeSlider** out = nullptr;
+    std::optional<double> minValue = std::nullopt;
+    std::optional<double> maxValue = std::nullopt;
+    std::optional<double> step = std::nullopt;
+    std::optional<double> lowValue = std::nullopt;
+    std::optional<double> highValue = std::nullopt;
+    std::optional<bool> enabled = std::nullopt;
+    std::optional<float> trackHeight = std::nullopt;
+    std::optional<float> thumbSize = std::nullopt;
+    std::optional<float> controlHeight = std::nullopt;
+    std::optional<float> width = std::nullopt;
+    std::optional<float> height = std::nullopt;
+    std::optional<float> flexGrow = std::nullopt;
+    std::optional<float> opacity = std::nullopt;
+    std::optional<bool> visible = std::nullopt;
+    std::optional<bool> participatesInLayout = std::nullopt;
+    std::function<void(double)> onLowChanged = nullptr;
+    std::function<void(double)> onHighChanged = nullptr;
+    std::function<void()> onDragEnd = nullptr;
+    std::function<void(RangeSlider&)> configure = nullptr;
   };
 
   struct SegmentedOption {
@@ -526,6 +551,7 @@ namespace ui {
   [[nodiscard]] std::unique_ptr<Separator> separator(SeparatorProps props = {});
   [[nodiscard]] std::unique_ptr<Select> select(SelectProps props);
   [[nodiscard]] std::unique_ptr<Slider> slider(SliderProps props);
+  [[nodiscard]] std::unique_ptr<RangeSlider> rangeSlider(RangeSliderProps props);
   [[nodiscard]] std::unique_ptr<Segmented> segmented(SegmentedProps props);
   [[nodiscard]] std::unique_ptr<ScrollView> scrollView(ScrollViewProps props = {});
   [[nodiscard]] std::unique_ptr<VirtualGridView> virtualGridView(VirtualGridViewProps props);

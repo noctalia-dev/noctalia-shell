@@ -54,10 +54,17 @@ int main() {
   assert(envValue(events[0], "NOCTALIA_BATTERY_PERCENT") == "51");
 
   events = hooks.update(batteryState(BatteryState::FullyCharged, 100.0));
-  expectSingleHook(events, HookKind::BatteryPercentageChanged);
-  assert(envValue(events[0], "NOCTALIA_BATTERY_STATE") == "fully_charged");
-  assert(envValue(events[0], "NOCTALIA_BATTERY_PERCENT") == "100");
-  assert(hooks.update(batteryState(BatteryState::Charging, 100.0)).empty());
+  assert(events.size() == 2);
+  assert(events[0].kind == HookKind::BatteryPlugged);
+  assert(events[0].env.empty());
+  assert(events[1].kind == HookKind::BatteryPercentageChanged);
+  assert(envValue(events[1], "NOCTALIA_BATTERY_STATE") == "fully_charged");
+  assert(envValue(events[1], "NOCTALIA_BATTERY_PERCENT") == "100");
+  assert(hooks.update(batteryState(BatteryState::PendingCharge, 100.0)).empty());
+
+  events = hooks.update(batteryState(BatteryState::Charging, 100.0));
+  expectSingleHook(events, HookKind::BatteryCharging);
+  assert(events[0].env.empty());
 
   assert(hooks.update(batteryState(BatteryState::Unknown, 0.0, false)).empty());
   events = hooks.update(batteryState(BatteryState::Discharging, 40.0));

@@ -77,6 +77,7 @@ namespace settings {
         .showAdvanced = ctx.showAdvanced,
         .showOverriddenOnly = ctx.showOverriddenOnly,
         .batteryDeviceOptions = ctx.batteryDeviceOptions,
+        .keyboardLayoutNames = ctx.keyboardLayoutNames,
         .editingWidgetName = ctx.editingWidgetName,
         .editingCapsuleGroupId = ctx.editingCapsuleGroupId,
         .selectedLaneWidgets = ctx.selectedLaneWidgets,
@@ -123,6 +124,9 @@ namespace settings {
         .makeListBlock = [&factory](
                              Flex& section, const SettingEntry& entry, const ListSetting& list
                          ) { factory.makeListBlock(section, entry, list); },
+        .makeStringMapBlock = [&factory](
+                                  Flex& section, const SettingEntry& entry, const StringMapSetting& map
+                              ) { factory.makeStringMapBlock(section, entry, map); },
     };
   }
 
@@ -130,15 +134,13 @@ namespace settings {
   addSettingsContentSections(Flex& content, const std::vector<SettingEntry>& registry, SettingsContentContext ctx) {
     const float scale = ctx.scale;
 
-    const auto sectionLabel = [](std::string_view section) {
-      return i18n::tr("settings.navigation.sections." + std::string(section));
-    };
+    const auto sectionLabel = [](SettingsSection section) { return i18n::tr(settingsSectionLabelKey(section)); };
 
     const auto groupLabel = [](std::string_view group) -> std::string {
       return i18n::tr("settings.navigation.groups." + std::string(group));
     };
 
-    const auto makeSection = [&](std::string_view title, std::string_view sectionKey) -> Flex* {
+    const auto makeSection = [&](std::string_view title, SettingsSection sectionKey) -> Flex* {
       auto section = ui::column(
           {
               .align = FlexAlign::Stretch,
@@ -206,6 +208,11 @@ namespace settings {
           value, minValue, maxValue, step, std::move(path), integerValue, std::move(linkedCommit),
           std::move(valueSuffix)
       );
+    };
+
+    const auto makeRangeSlider = [&](const RangeSliderSetting& setting,
+                                     const std::vector<std::string>& lowPath) -> std::unique_ptr<Node> {
+      return factory.makeRangeSlider(setting, lowPath);
     };
 
     const auto makeText = [&](const std::string& value, const std::string& placeholder, std::vector<std::string> path,
@@ -282,13 +289,11 @@ namespace settings {
               }
             }
             (void)FileDialog::open(
-                std::move(options), [setOverride, path, inputPtr](std::optional<std::filesystem::path> picked) {
+                std::move(options), [setOverride, path](std::optional<std::filesystem::path> picked) {
                   if (!picked.has_value()) {
                     return;
                   }
-                  const std::string s = picked->string();
-                  inputPtr->setValue(s);
-                  setOverride(path, s);
+                  setOverride(path, picked->string());
                 }
             );
           },
@@ -593,7 +598,6 @@ namespace settings {
                       checked ? ColorRole::OnPrimary : ColorRole::OnSurfaceVariant, checked ? 0.75f : 1.0f
                   ),
                   .maxLines = 1,
-                  .configure = [](Label& label) { label.setCaptionStyle(); },
               })
           );
         }
@@ -751,6 +755,8 @@ namespace settings {
         list->addChild(std::move(addRow));
       }
 
+      // Push the recorder to the bottom of the block so inputs line up across the stretched row.
+      block->addChild(ui::spacer());
       block->addChild(std::move(list));
 
       section.addChild(std::move(block));
@@ -1081,6 +1087,8 @@ namespace settings {
                   control.value, control.minValue, control.maxValue, control.step, entry.path, control.integerValue,
                   control.valueSuffix, control.linkedCommit
               );
+            } else if constexpr (std::is_same_v<T, RangeSliderSetting>) {
+              return makeRangeSlider(control, entry.path);
             } else if constexpr (std::is_same_v<T, TextSetting>) {
               if (isDockLauncherIconPath(entry.path)) {
                 return makeGlyphText(control, entry.path);
@@ -1193,6 +1201,8 @@ namespace settings {
     const std::string_view selectedMonitorMatch = ctx.selectedMonitorOverride != nullptr
         ? std::string_view{ctx.selectedMonitorOverride->match}
         : std::string_view{};
+    const std::optional<SettingsSection> selectedSettingsSection =
+        ctx.selectedSection != "bar" ? settingsSectionFromId(ctx.selectedSection) : std::nullopt;
 
     // Coalesce entries by (content section, group) so each group renders once even if its entries were
     // declared non-contiguously in the registry. See coalesceByGroupKey().
@@ -1202,7 +1212,10 @@ namespace settings {
 
     for (const std::size_t entryIndex : entryOrder) {
       const auto& entry = registry[entryIndex];
-      if (ctx.searchQuery.empty() && !ctx.selectedSection.empty() && entry.section != ctx.selectedSection) {
+      if (ctx.searchQuery.empty()
+          && !ctx.selectedSection.empty()
+          && ctx.selectedSection != "bar"
+          && (!selectedSettingsSection.has_value() || entry.section != *selectedSettingsSection)) {
         continue;
       }
       if (ctx.searchQuery.empty()
@@ -1232,7 +1245,7 @@ namespace settings {
         activeKeybindRow = nullptr;
         activeKeybindRowCount = 0;
         std::string displayTitle;
-        if (entry.section == "bar" && entry.path.size() >= 2) {
+        if (entry.section == SettingsSection::Bar && entry.path.size() >= 2) {
           displayTitle = i18n::tr("settings.entities.bar.label", "name", entry.path[1]);
           if (isBarMonitorOverrideSettingPath(entry.path)) {
             displayTitle += " / " + entry.path[3];
@@ -1241,7 +1254,7 @@ namespace settings {
           displayTitle = sectionLabel(entry.section);
         }
         activeSection = makeSection(displayTitle, entry.section);
-        if (entry.section == "idle") {
+        if (entry.section == SettingsSection::Idle) {
           addIdleLiveStatusPanel(*activeSection, ctx, scale);
         }
       }
@@ -1268,8 +1281,10 @@ namespace settings {
           makeShortcutListBlock(*activeSection, entry, *shortcuts);
         } else if (const auto* keybindList = std::get_if<KeybindListSetting>(&entry.control)) {
           if (activeKeybindRow == nullptr || activeKeybindRowCount >= kKeybindsPerRow) {
+            // Stretch so every block in the row shares the tallest block's height; each block then
+            // bottom-anchors its recorder, keeping inputs aligned regardless of description length.
             auto row = ui::row({
-                .align = FlexAlign::Start,
+                .align = FlexAlign::Stretch,
                 .gap = Style::spaceMd * scale,
                 .fillWidth = true,
             });

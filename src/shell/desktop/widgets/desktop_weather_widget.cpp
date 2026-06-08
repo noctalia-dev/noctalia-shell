@@ -35,7 +35,7 @@ namespace {
 } // namespace
 
 DesktopWeatherWidget::DesktopWeatherWidget(const WeatherService* weather, ColorSpec color, bool shadow)
-    : m_weather(weather), m_color(std::move(color)), m_shadow(shadow) {}
+    : m_weather(weather), m_color(color), m_shadow(shadow) {}
 
 void DesktopWeatherWidget::create() {
   auto rootNode = std::make_unique<Node>();
@@ -98,6 +98,15 @@ bool DesktopWeatherWidget::applySetting(
     return false;
   }
   return DesktopWidget::applySetting(key, value, allSettings, renderer);
+}
+
+void DesktopWeatherWidget::onFontFamilyChanged(const std::string& family, Renderer& /*renderer*/) {
+  if (m_temperature != nullptr) {
+    m_temperature->setFontFamily(family);
+  }
+  if (m_condition != nullptr) {
+    m_condition->setFontFamily(family);
+  }
 }
 
 void DesktopWeatherWidget::doLayout(Renderer& renderer) {

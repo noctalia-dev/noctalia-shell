@@ -31,6 +31,8 @@ namespace settings {
     [[nodiscard]] float scale() const noexcept { return m_scale; }
 
     [[nodiscard]] std::unique_ptr<Button> makeResetButton(const std::vector<std::string>& path);
+    // Resets several config paths at once (e.g. a range slider's low + high paths).
+    [[nodiscard]] std::unique_ptr<Button> makeResetButton(std::vector<std::vector<std::string>> paths);
 
     void makeRow(Flex& section, const SettingEntry& entry, std::unique_ptr<Node> control);
 
@@ -46,6 +48,9 @@ namespace settings {
         std::function<std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>(double)> linkedCommit = {},
         std::string valueSuffix = {}
     );
+
+    [[nodiscard]] std::unique_ptr<Flex>
+    makeRangeSlider(const RangeSliderSetting& setting, const std::vector<std::string>& lowPath);
 
     [[nodiscard]] std::unique_ptr<Input> makeText(
         const std::string& value, const std::string& placeholder, std::vector<std::string> path, float width = 0.0f
@@ -68,6 +73,7 @@ namespace settings {
     );
 
     void makeListBlock(Flex& section, const SettingEntry& entry, const ListSetting& list);
+    void makeStringMapBlock(Flex& section, const SettingEntry& entry, const StringMapSetting& map);
 
   private:
     [[nodiscard]] std::unique_ptr<Flex>

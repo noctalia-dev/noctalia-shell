@@ -4,6 +4,7 @@
 
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -122,6 +123,7 @@ namespace noctalia::config {
       wc.type = *type;
       if (auto it = baseConfig.widgets.find(name); it != baseConfig.widgets.end() && it->second.type == wc.type) {
         wc.settings = it->second.settings;
+        wc.tables = it->second.tables;
       }
     } else if (auto it = baseConfig.widgets.find(name); it != baseConfig.widgets.end()) {
       wc = it->second;
@@ -133,7 +135,15 @@ namespace noctalia::config {
       if (key == "type") {
         continue;
       }
-      if (auto parsed = readWidgetSettingValue(value); parsed.has_value()) {
+      if (const auto* tableValue = value.as_table()) {
+        std::unordered_map<std::string, std::string> table;
+        for (const auto& [tableKey, tableNode] : *tableValue) {
+          if (auto parsed = tableNode.value<std::string>()) {
+            table.emplace(std::string(tableKey.str()), *parsed);
+          }
+        }
+        wc.tables[std::string(key.str())] = std::move(table);
+      } else if (auto parsed = readWidgetSettingValue(value); parsed.has_value()) {
         wc.settings[std::string(key.str())] = std::move(*parsed);
       }
     }

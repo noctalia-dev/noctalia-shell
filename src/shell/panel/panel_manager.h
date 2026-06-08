@@ -75,6 +75,7 @@ public:
   void setFocusGrabBarSurfacesProvider(std::function<std::vector<wl_surface*>()> provider);
   void setPanelClosedCallback(std::function<void()> callback);
   void setPanelOpenedCallback(std::function<void()> callback);
+  void setAttachedPanelAvailabilityCallback(std::function<bool(wl_output*, std::string_view)> callback);
 
   void registerPanel(const std::string& id, std::unique_ptr<Panel> content);
 
@@ -168,6 +169,7 @@ private:
   std::function<std::vector<wl_surface*>()> m_focusGrabBarSurfacesProvider;
   std::function<void()> m_panelClosedCallback;
   std::function<void()> m_panelOpenedCallback;
+  std::function<bool(wl_output*, std::string_view)> m_attachedPanelAvailabilityCallback;
   PanelClickShield m_clickShield;
   std::unique_ptr<FocusGrab> m_focusGrab;
 

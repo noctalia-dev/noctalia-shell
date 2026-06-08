@@ -46,6 +46,12 @@ namespace {
 
   void hashCombine(std::size_t& seed, std::size_t v) { seed ^= v + 0x9E3779B97F4A7C15ULL + (seed << 12) + (seed >> 4); }
 
+  // Fixed salt seeded into the text cache key hash. Most keys share identical
+  // text/family and differ only in the small integral fields (size, scale,
+  // maxLines), whose std::hash is near-identity and clusters adjacent buckets;
+  // seeding from a non-trivial constant decorrelates the low bits.
+  constexpr std::size_t kTextHashSalt = 0x7E4B2A9C5D3F8161ULL;
+
   // Pack rgb into the top 24 bits; alpha is always forced to 0xFF so that
   // opacity animations on a mixed-content string (the RGBA emoji path) reuse
   // the same cache entry — the caller's alpha is applied at draw time via
@@ -191,7 +197,8 @@ bool CairoTextRenderer::CacheKey::operator==(const CacheKey& other) const noexce
 }
 
 std::size_t CairoTextRenderer::CacheKeyHash::operator()(const CacheKey& k) const noexcept {
-  std::size_t seed = std::hash<std::string>{}(k.text);
+  std::size_t seed = kTextHashSalt;
+  hashCombine(seed, std::hash<std::string>{}(k.text));
   hashCombine(seed, std::hash<std::string>{}(k.fontFamily));
   hashCombine(seed, std::hash<std::uint32_t>{}(k.sizeQ));
   hashCombine(seed, std::hash<std::uint32_t>{}(k.maxWidthQ));
@@ -414,6 +421,12 @@ PangoLayout* CairoTextRenderer::buildLayout(
     pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
   } else {
     pango_layout_set_width(layout, -1);
+    if (maxLines > 0) {
+      constexpr int kHardMaxLines = 500;
+      const int lineBudget = std::min(maxLines, kHardMaxLines);
+      pango_layout_set_height(layout, -lineBudget);
+      pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
+    }
   }
 
   PangoAlignment pangoAlign = PANGO_ALIGN_LEFT;
@@ -539,6 +552,18 @@ CairoTextRenderer::TextMetrics CairoTextRenderer::measureFont(float fontSize, Fo
     }
     g_object_unref(font);
   }
+
+  // Cap height = measured ink of a flat-topped capital, not the font's declared
+  // OS/2 value (which is unreliable across fonts).
+  PangoLayout* capLayout = pango_layout_new(m_pangoContext);
+  pango_layout_set_font_description(capLayout, desc);
+  pango_layout_set_text(capLayout, "H", 1);
+  PangoRectangle capInk;
+  pango_layout_get_extents(capLayout, &capInk, nullptr);
+  const int capBaseline = pango_layout_get_baseline(capLayout);
+  const float capHeight = static_cast<float>(capBaseline - capInk.y) * pscale * invScale;
+  out.capHeight = std::isfinite(capHeight) && capHeight > 0.0f ? capHeight : 0.0f;
+  g_object_unref(capLayout);
 
   pango_font_description_free(desc);
 

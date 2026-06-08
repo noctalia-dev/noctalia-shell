@@ -31,7 +31,7 @@ void LauncherWidget::create() {
         ui::glyph({
             .out = &m_glyph,
             .glyph = m_barGlyphId.empty() ? "video" : m_barGlyphId,
-            .glyphSize = Style::barGlyphSize * m_contentScale,
+            .glyphSize = Style::baseGlyphSize * m_contentScale,
             .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
         })
     );
@@ -59,12 +59,12 @@ void LauncherWidget::doLayout(Renderer& renderer, float /*containerWidth*/, floa
 
   if (m_image != nullptr) {
     refreshCustomImageTint();
-    m_image->setSize(Style::barIconSize * m_contentScale, Style::barIconSize * m_contentScale);
+    m_image->setSize(Style::baseGlyphSize * m_contentScale, Style::baseGlyphSize * m_contentScale);
     const int logoTargetSize = std::max(1, static_cast<int>(48.0f * m_contentScale));
     m_image->setSourceFile(renderer, m_logoPath, logoTargetSize, true);
     node->setSize(m_image->width(), m_image->height());
   } else if (m_glyph != nullptr) {
-    m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
+    m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
     m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
     m_glyph->measure(renderer);
     node->setSize(m_glyph->width(), m_glyph->height());

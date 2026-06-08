@@ -196,13 +196,13 @@ namespace settings {
 
   std::vector<SelectOption> sessionActionKindOptions() {
     return {
-        {"lock", i18n::tr("settings.session-actions.kind.lock"), {}},
-        {"logout", i18n::tr("settings.session-actions.kind.logout"), {}},
-        {"suspend", i18n::tr("settings.session-actions.kind.suspend"), {}},
-        {"lock_and_suspend", i18n::tr("settings.session-actions.kind.lock-and-suspend"), {}},
-        {"reboot", i18n::tr("settings.session-actions.kind.reboot"), {}},
-        {"shutdown", i18n::tr("settings.session-actions.kind.shutdown"), {}},
-        {"command", i18n::tr("settings.session-actions.kind.command"), {}},
+        {"lock", i18n::tr("session.actions.lock"), {}},
+        {"logout", i18n::tr("session.actions.logout"), {}},
+        {"suspend", i18n::tr("session.actions.suspend"), {}},
+        {"lock_and_suspend", i18n::tr("session.actions.lock-and-suspend"), {}},
+        {"reboot", i18n::tr("session.actions.reboot"), {}},
+        {"shutdown", i18n::tr("session.actions.shutdown"), {}},
+        {"command", i18n::tr("session.actions.custom"), {}},
     };
   }
 
@@ -274,16 +274,16 @@ namespace settings {
 
     const auto displayName = [&]() -> std::string {
       if (norm.action == "lock") {
-        return i18n::tr("settings.idle.behavior.presets.lock");
+        return i18n::tr("settings.idle.behavior.kind.lock");
       }
       if (norm.action == "screen_off") {
-        return i18n::tr("settings.idle.behavior.presets.monitor-off");
+        return i18n::tr("settings.idle.behavior.kind.screen-off");
       }
       if (norm.action == "suspend") {
-        return i18n::tr("settings.idle.behavior.presets.suspend");
+        return i18n::tr("settings.idle.behavior.kind.suspend");
       }
       if (norm.action == "lock_and_suspend") {
-        return i18n::tr("settings.idle.behavior.presets.lock-and-suspend");
+        return i18n::tr("settings.idle.behavior.kind.lock-and-suspend");
       }
       if (row.name.empty()) {
         return i18n::tr("settings.idle.behavior.unnamed");

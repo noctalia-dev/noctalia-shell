@@ -10,6 +10,7 @@ namespace FormatUnits {
   [[nodiscard]] std::string formatBinaryMibUsageAsGib(std::uint64_t usedMib, std::uint64_t totalMib);
   [[nodiscard]] std::string formatBinaryBytesAsGib(std::uint64_t bytes);
   [[nodiscard]] std::string formatDecimalBytesUsageAsGb(double usedBytes, double totalBytes);
+  [[nodiscard]] std::string formatDecimalBytesAsGb(double bytes);
   [[nodiscard]] std::string formatDecimalBytesPerSecond(double bytesPerSec);
 
 } // namespace FormatUnits

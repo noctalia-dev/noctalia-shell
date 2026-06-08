@@ -708,10 +708,14 @@ void Wallpaper::resetAutomationState() {
   m_lastAutomationSwitchSecond = -1;
 }
 
+void Wallpaper::setAutomationGate(std::function<bool()> gate) { m_automationGate = std::move(gate); }
+
+bool Wallpaper::automationAllowed() const noexcept { return !m_automationGate || m_automationGate(); }
+
 void Wallpaper::applyStartupAutomation(std::int64_t secondStamp) {
   const auto& wallpaper = m_config->config().wallpaper;
   const auto& automation = wallpaper.automation;
-  if (!automation.enabled || m_wayland == nullptr) {
+  if (!automation.enabled || m_wayland == nullptr || !automationAllowed()) {
     return;
   }
 
@@ -783,7 +787,7 @@ void Wallpaper::applyStartupAutomation(std::int64_t secondStamp) {
 void Wallpaper::runAutomation(std::int64_t secondStamp) {
   const auto& wallpaper = m_config->config().wallpaper;
   const auto& automation = wallpaper.automation;
-  if (!automation.enabled || m_instances.empty()) {
+  if (!automation.enabled || m_instances.empty() || !automationAllowed()) {
     return;
   }
 

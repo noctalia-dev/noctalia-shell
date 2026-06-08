@@ -280,6 +280,10 @@ void PanelManager::setPanelOpenedCallback(std::function<void()> callback) {
   m_panelOpenedCallback = std::move(callback);
 }
 
+void PanelManager::setAttachedPanelAvailabilityCallback(std::function<bool(wl_output*, std::string_view)> callback) {
+  m_attachedPanelAvailabilityCallback = std::move(callback);
+}
+
 void PanelManager::registerPanel(const std::string& id, std::unique_ptr<Panel> content) {
   m_panels[id] = std::move(content);
 }
@@ -447,6 +451,8 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
 
   const bool useAttachedPlacement = activePlacement == PanelPlacement::Attached
       && !multipleBarsOnEdge
+      && (m_attachedPanelAvailabilityCallback == nullptr
+          || m_attachedPanelAvailabilityCallback(request.output, m_sourceBarName))
       && barConfig.thickness > 0
       && outputWidth > 0
       && outputHeight > 0;
@@ -660,7 +666,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     // Layer-shell surface anchored top-left of the output for absolute positioning.
     // exclusive_zone = -1 so the bar reservation does not shift our marginTop.
     auto attachedConfig = LayerSurfaceConfig{
-        .nameSpace = "noctalia-panel",
+        .nameSpace = "noctalia-attached-panel",
         .layer = panelLayer,
         .anchor = LayerShellAnchor::Top | LayerShellAnchor::Left,
         .width = surfaceWidth,

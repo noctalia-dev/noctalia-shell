@@ -50,7 +50,11 @@ private:
   [[nodiscard]] std::string workspaceLabel(const Workspace& workspace, std::size_t displayIndex) const;
   [[nodiscard]] bool shouldShowWorkspaceLabel(const Workspace& workspace, std::string_view label) const noexcept;
   [[nodiscard]] DisplayMode effectiveDisplayMode() const noexcept;
+  [[nodiscard]] bool isWorkspaceHidden(const Workspace& workspace) const noexcept;
   void syncWidgetVisibility(bool showWidget);
+  void recalculateItemMetrics(Renderer& renderer, std::size_t index);
+  void updateAllItemMetrics(Renderer& renderer);
+  void ensureItemLabel(Renderer& renderer, std::size_t index);
 
   struct Item {
     InputArea* area = nullptr;
@@ -61,8 +65,6 @@ private:
     bool active = false;
     float inactiveWidth = 0.0f;
     float activeWidth = 0.0f;
-    float inkCenterOffset = 0.0f;
-    float inkVCenterOffset = 0.0f;
     float fromX = 0.0f;
     float fromWidth = 0.0f;
     float targetX = 0.0f;

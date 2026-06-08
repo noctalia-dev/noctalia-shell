@@ -51,6 +51,12 @@ public:
   [[nodiscard]] std::string buildSupportReport() const;
   [[nodiscard]] std::string buildMergedUserConfig() const;
   [[nodiscard]] std::string buildEffectiveConfig() const;
+  [[nodiscard]] static std::string buildMergedUserConfigFromSources(
+      std::string_view configDir, std::string_view settingsPath, std::string* error = nullptr
+  );
+  [[nodiscard]] static std::string buildEffectiveConfigFromSources(
+      std::string_view configDir, std::string_view settingsPath, std::string* error = nullptr
+  );
   [[nodiscard]] bool shouldRunSetupWizard() const;
   [[nodiscard]] std::optional<bool> stateBool(std::string_view owner, std::string_view key) const;
   [[nodiscard]] std::optional<std::string> stateString(std::string_view owner, std::string_view key) const;
@@ -127,7 +133,8 @@ public:
 
 private:
   void loadAll();
-  void parseConfigTable(const toml::table& tbl, Config& config, bool logSummary) const;
+  [[nodiscard]] static Config makeDefaultConfig();
+  static void parseConfigTable(const toml::table& tbl, Config& config, bool logSummary);
   [[nodiscard]] std::optional<Config> configForOverrides(const toml::table& overrides) const;
   [[nodiscard]] bool overridePathEffectiveInTable(
       const std::vector<std::string>& path, const toml::table& overrides, const Config* parsedWith = nullptr

@@ -94,6 +94,7 @@ public:
   [[nodiscard]] std::vector<wl_surface*> allBarSurfaces() const;
   void
   setAttachedPanelGeometry(wl_output* output, std::string_view barName, std::optional<AttachedPanelGeometry> geometry);
+  [[nodiscard]] bool canAttachPanelToBar(wl_output* output, std::string_view barName) const noexcept;
   void revealAutoHideForAttachedPanel(wl_output* output, std::string_view barName);
   void beginAttachedPopup(wl_surface* surface);
   void endAttachedPopup(wl_surface* surface);

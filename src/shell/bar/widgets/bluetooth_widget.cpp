@@ -59,7 +59,7 @@ void BluetoothWidget::create() {
       ui::glyph({
           .out = &m_glyph,
           .glyph = "bluetooth",
-          .glyphSize = Style::barGlyphSize * m_contentScale,
+          .glyphSize = Style::baseGlyphSize * m_contentScale,
           .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
       })
   );
@@ -150,7 +150,7 @@ void BluetoothWidget::syncState(Renderer& renderer) {
   }
 
   m_glyph->setGlyph(glyphForState(s, numConnected));
-  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
+  m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
   m_glyph->setColor(
       s.powered ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
                 : colorSpecFromRole(ColorRole::OnSurfaceVariant)

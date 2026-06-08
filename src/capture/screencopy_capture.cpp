@@ -81,6 +81,82 @@ namespace {
     return 0;
   }
 
+  [[nodiscard]] bool isPacked2101010(std::uint32_t format) {
+    switch (format) {
+    case WL_SHM_FORMAT_XRGB2101010:
+    case WL_SHM_FORMAT_ARGB2101010:
+    case WL_SHM_FORMAT_XBGR2101010:
+    case WL_SHM_FORMAT_ABGR2101010:
+    case WL_SHM_FORMAT_RGBX1010102:
+    case WL_SHM_FORMAT_RGBA1010102:
+    case WL_SHM_FORMAT_BGRX1010102:
+    case WL_SHM_FORMAT_BGRA1010102:
+      return true;
+    default:
+      return false;
+    }
+  }
+
+  // Decode a single little-endian 32-bit 10:10:10:2 / 2:10:10:10 packed pixel into 8-bit RGBA.
+  void decodePacked2101010(const std::uint8_t* px, std::uint32_t format, std::uint8_t* dst) {
+    const std::uint32_t v = static_cast<std::uint32_t>(px[0])
+        | (static_cast<std::uint32_t>(px[1]) << 8)
+        | (static_cast<std::uint32_t>(px[2]) << 16)
+        | (static_cast<std::uint32_t>(px[3]) << 24);
+
+    std::uint32_t r10 = 0;
+    std::uint32_t g10 = 0;
+    std::uint32_t b10 = 0;
+    std::uint32_t a2 = 3;
+    bool hasAlpha = false;
+
+    switch (format) {
+    case WL_SHM_FORMAT_ARGB2101010:
+      hasAlpha = true;
+      [[fallthrough]];
+    case WL_SHM_FORMAT_XRGB2101010:
+      a2 = (v >> 30) & 0x3U;
+      r10 = (v >> 20) & 0x3FFU;
+      g10 = (v >> 10) & 0x3FFU;
+      b10 = v & 0x3FFU;
+      break;
+    case WL_SHM_FORMAT_ABGR2101010:
+      hasAlpha = true;
+      [[fallthrough]];
+    case WL_SHM_FORMAT_XBGR2101010:
+      a2 = (v >> 30) & 0x3U;
+      b10 = (v >> 20) & 0x3FFU;
+      g10 = (v >> 10) & 0x3FFU;
+      r10 = v & 0x3FFU;
+      break;
+    case WL_SHM_FORMAT_RGBA1010102:
+      hasAlpha = true;
+      [[fallthrough]];
+    case WL_SHM_FORMAT_RGBX1010102:
+      r10 = (v >> 22) & 0x3FFU;
+      g10 = (v >> 12) & 0x3FFU;
+      b10 = (v >> 2) & 0x3FFU;
+      a2 = v & 0x3U;
+      break;
+    case WL_SHM_FORMAT_BGRA1010102:
+      hasAlpha = true;
+      [[fallthrough]];
+    case WL_SHM_FORMAT_BGRX1010102:
+      b10 = (v >> 22) & 0x3FFU;
+      g10 = (v >> 12) & 0x3FFU;
+      r10 = (v >> 2) & 0x3FFU;
+      a2 = v & 0x3U;
+      break;
+    default:
+      break;
+    }
+
+    dst[0] = static_cast<std::uint8_t>(r10 >> 2);
+    dst[1] = static_cast<std::uint8_t>(g10 >> 2);
+    dst[2] = static_cast<std::uint8_t>(b10 >> 2);
+    dst[3] = hasAlpha ? static_cast<std::uint8_t>(a2 * 0x55U) : 255;
+  }
+
   [[nodiscard]] bool convertToRgba(
       const std::uint8_t* src, int width, int height, int stride, std::uint32_t format, bool yInvert,
       std::vector<std::uint8_t>& out
@@ -89,6 +165,7 @@ namespace {
     if (bytesPerPixel == 0) {
       return false;
     }
+    const bool packed = bytesPerPixel == 4 && isPacked2101010(format);
 
     out.resize(static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 4U);
     for (int y = 0; y < height; ++y) {
@@ -103,6 +180,8 @@ namespace {
           dst[1] = px[1];
           dst[2] = px[2];
           dst[3] = 255;
+        } else if (packed) {
+          decodePacked2101010(row + static_cast<std::size_t>(x) * 4U, format, dst);
         } else {
           const auto* px = row + static_cast<std::size_t>(x) * 4U;
           if (format == WL_SHM_FORMAT_ARGB8888 || format == WL_SHM_FORMAT_XRGB8888) {
@@ -241,6 +320,9 @@ namespace {
           [](void* data, zwlr_screencopy_frame_v1* frame) {
             auto* pending = static_cast<ScreencopyCapturePending*>(data);
             zwlr_screencopy_frame_v1_destroy(frame);
+            if (pending != nullptr) {
+              pending->frame = nullptr;
+            }
             if (pending != nullptr && pending->owner != nullptr) {
               pending->owner->fail("screencopy frame failed");
             }

@@ -5,13 +5,18 @@
 #include "system/format_units.h"
 #include "util/string_utils.h"
 
+#include <algorithm>
+#include <cctype>
 #include <cstdlib>
 #include <filesystem>
 #include <format>
 #include <fstream>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <sys/statvfs.h>
+#include <unordered_map>
+#include <vector>
 
 namespace {
 
@@ -34,13 +39,13 @@ namespace {
   }
 
   std::string shortVendorPrefix(const std::string& vendorName) {
-    if (vendorName.find("AMD") != std::string::npos || vendorName.find("ATI") != std::string::npos) {
+    if (vendorName.contains("AMD") || vendorName.contains("ATI")) {
       return "AMD";
     }
-    if (vendorName.find("NVIDIA") != std::string::npos) {
+    if (vendorName.contains("NVIDIA")) {
       return "NVIDIA";
     }
-    if (vendorName.find("Intel") != std::string::npos) {
+    if (vendorName.contains("Intel")) {
       return "Intel";
     }
     return {};
@@ -61,15 +66,15 @@ namespace {
       std::string before = StringUtils::trim(rawName.substr(0, bracketOpen));
       std::string inside = rawName.substr(bracketOpen + 1, bracketClose - bracketOpen - 1);
 
-      const bool beforeIsModel = before.find("RX") != std::string::npos
-          || before.find("GTX") != std::string::npos
-          || before.find("RTX") != std::string::npos
-          || before.find("Arc") != std::string::npos
-          || before.find("HD ") != std::string::npos;
+      const bool beforeIsModel = before.contains("RX")
+          || before.contains("GTX")
+          || before.contains("RTX")
+          || before.contains("Arc")
+          || before.contains("HD ");
       name = beforeIsModel ? before : inside;
     }
 
-    if (!prefix.empty() && name.find(prefix) == std::string::npos) {
+    if (!prefix.empty() && !name.contains(prefix)) {
       return prefix + " " + name;
     }
     return name;
@@ -174,7 +179,7 @@ namespace {
 
     for (const auto& entry : fs::directory_iterator{drmRoot}) {
       const auto name = entry.path().filename().string();
-      if (!name.starts_with("card") || name.find('-') != std::string::npos) {
+      if (!name.starts_with("card") || name.contains('-')) {
         continue;
       }
 
@@ -286,16 +291,24 @@ namespace {
     return i18n::tr("system.hardware.unknown");
   }
 
-  std::string detectDiskRootUsage() {
-    struct statvfs sv{};
-    if (::statvfs("/", &sv) != 0 || sv.f_blocks == 0 || sv.f_frsize == 0) {
-      return i18n::tr("system.hardware.unknown");
+  // /proc/mounts escapes space, tab, newline and backslash as octal \NNN sequences.
+  std::string unescapeMountField(const std::string& field) {
+    std::string out;
+    out.reserve(field.size());
+    for (std::size_t i = 0; i < field.size(); ++i) {
+      if (field[i] == '\\'
+          && i + 3 < field.size()
+          && std::isdigit(static_cast<unsigned char>(field[i + 1])) != 0
+          && std::isdigit(static_cast<unsigned char>(field[i + 2])) != 0
+          && std::isdigit(static_cast<unsigned char>(field[i + 3])) != 0) {
+        const int value = (field[i + 1] - '0') * 64 + (field[i + 2] - '0') * 8 + (field[i + 3] - '0');
+        out.push_back(static_cast<char>(value));
+        i += 3;
+      } else {
+        out.push_back(field[i]);
+      }
     }
-    const double total = static_cast<double>(sv.f_blocks) * static_cast<double>(sv.f_frsize);
-    const double avail = static_cast<double>(sv.f_bavail) * static_cast<double>(sv.f_frsize);
-    const double used = std::max(0.0, total - avail);
-    const double percent = total > 0.0 ? (used / total) * 100.0 : 0.0;
-    return std::format("{} ({:.0f}%)", FormatUnits::formatDecimalBytesUsageAsGb(used, total), percent);
+    return out;
   }
 
   std::string detectCompositor() {
@@ -345,6 +358,56 @@ std::string memoryTotalLabel() {
   return cached;
 }
 
-std::string diskRootUsageLabel() { return detectDiskRootUsage(); }
+std::vector<std::string> physicalDiskMountPoints() {
+  std::ifstream file{"/proc/mounts"};
+  if (!file.is_open()) {
+    return {};
+  }
+
+  // Collapse btrfs subvolumes and bind mounts (same backing device, multiple mount points) to a single
+  // entry, preferring the shortest mount point so the root of the device wins.
+  std::unordered_map<std::string, std::string> byDevice;
+  std::string line;
+  while (std::getline(file, line)) {
+    std::istringstream iss{line};
+    std::string device;
+    std::string mount;
+    std::string fstype;
+    if (!(iss >> device >> mount >> fstype)) {
+      continue;
+    }
+    if (device.rfind("/dev/", 0) != 0 || device.rfind("/dev/loop", 0) == 0 || fstype == "squashfs") {
+      continue;
+    }
+    mount = unescapeMountField(mount);
+    if (mount == "/boot" || mount.rfind("/boot/", 0) == 0) {
+      continue;
+    }
+    const auto it = byDevice.find(device);
+    if (it == byDevice.end() || mount.size() < it->second.size()) {
+      byDevice[device] = mount;
+    }
+  }
+
+  std::vector<std::string> mounts;
+  mounts.reserve(byDevice.size());
+  for (auto& [device, mount] : byDevice) {
+    mounts.push_back(mount);
+  }
+  std::sort(mounts.begin(), mounts.end());
+  return mounts;
+}
+
+std::string diskUsageLabel(const std::string& mountPoint) {
+  struct statvfs sv{};
+  if (::statvfs(mountPoint.c_str(), &sv) != 0 || sv.f_blocks == 0 || sv.f_frsize == 0) {
+    return i18n::tr("system.hardware.unknown");
+  }
+  const double total = static_cast<double>(sv.f_blocks) * static_cast<double>(sv.f_frsize);
+  const double avail = static_cast<double>(sv.f_bavail) * static_cast<double>(sv.f_frsize);
+  const double used = std::max(0.0, total - avail);
+  const double percent = total > 0.0 ? (used / total) * 100.0 : 0.0;
+  return std::format("{} ({:.0f}%)", FormatUnits::formatDecimalBytesAsGb(total), percent);
+}
 
 std::string compositorLabel() { return detectCompositor(); }

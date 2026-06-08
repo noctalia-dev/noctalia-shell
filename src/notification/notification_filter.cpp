@@ -21,7 +21,7 @@ std::vector<std::string> normalizeNotificationBlacklist(std::vector<std::string>
       continue;
     }
     if (seen.insert(token).second) {
-      normalized.push_back(std::move(token));
+      normalized.push_back(token);
     }
   }
 
@@ -44,7 +44,7 @@ bool notificationMatchesBlacklist(const std::vector<std::string>& blacklist, con
         || (!desktopEntry.empty() && token == desktopEntry)) {
       return true;
     }
-    if (!token.empty() && !appName.empty() && appName.find(token) != std::string::npos) {
+    if (!token.empty() && !appName.empty() && appName.contains(token)) {
       return true;
     }
   }

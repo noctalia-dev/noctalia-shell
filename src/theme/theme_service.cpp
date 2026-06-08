@@ -601,6 +601,44 @@ namespace noctalia::theme {
     m_animations.tick(static_cast<float>(kTransitionTick.count()));
   }
 
+  bool ThemeService::saveWallpaperPaletteAsCustom(std::string* paletteNameOut, std::string* errorOut) {
+    auto fail = [errorOut](std::string message) {
+      if (errorOut != nullptr) {
+        *errorOut = std::move(message);
+      }
+      return false;
+    };
+
+    const auto& cfg = m_config.config().theme;
+    if (cfg.source != PaletteSource::Wallpaper) {
+      return fail("palette source is not wallpaper");
+    }
+
+    const std::string wallpaperPath = m_config.getPaletteWallpaperPath();
+    const auto generated = resolveWallpaperGenerated(cfg, wallpaperPath);
+    if (!generated.has_value()) {
+      return fail("failed to generate palette from wallpaper");
+    }
+
+    const std::string name = allocateCustomPaletteName(wallpaperPath, cfg.wallpaperScheme);
+    if (name.empty()) {
+      return fail("failed to allocate custom palette name");
+    }
+
+    if (!saveCustomPaletteFromGenerated(name, *generated, errorOut)) {
+      return false;
+    }
+
+    if (!m_config.setThemeColorScheme(PaletteSource::Custom, name)) {
+      return fail("failed to switch palette source to custom");
+    }
+
+    if (paletteNameOut != nullptr) {
+      *paletteNameOut = name;
+    }
+    return true;
+  }
+
   void ThemeService::registerIpc(IpcService& ipc) {
     ipc.registerHandler(
         "theme-mode-toggle",

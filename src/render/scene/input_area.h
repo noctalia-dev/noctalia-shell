@@ -3,6 +3,7 @@
 #include "render/scene/node.h"
 #include "shell/tooltip/tooltip_content.h"
 
+#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <initializer_list>
@@ -50,6 +51,8 @@ public:
   using KeyCallback = std::function<void(const KeyData&)>;
   using VoidCallback = std::function<void()>;
   using DestroyCallback = std::function<void(InputArea*)>;
+  using TooltipProvider = std::function<TooltipContent()>;
+  using TooltipChangedCallback = std::function<void(InputArea*)>;
 
   InputArea();
   ~InputArea() override;
@@ -100,7 +103,10 @@ public:
   // Tooltip
   void setTooltip(std::string text);
   void setTooltip(std::vector<TooltipRow> rows);
+  void setTooltipProvider(TooltipProvider provider, std::chrono::milliseconds refreshInterval = {});
   void clearTooltip();
+  void requestTooltipRefresh();
+  void setTooltipChangedCallback(TooltipChangedCallback callback);
   void setTooltipPlacement(TooltipPlacement placement);
   void setTooltipAnchorInsets(TooltipAnchorInsets insets);
   void clearTooltipAnchorInsets();
@@ -108,7 +114,8 @@ public:
   [[nodiscard]] bool hasTooltipAnchorInsets() const noexcept { return m_hasTooltipAnchorInsets; }
   [[nodiscard]] TooltipAnchorInsets tooltipAnchorInsets() const noexcept { return m_tooltipAnchorInsets; }
   [[nodiscard]] bool hasTooltip() const noexcept;
-  [[nodiscard]] const TooltipContent& tooltipContent() const noexcept { return m_tooltipContent; }
+  [[nodiscard]] TooltipContent tooltipContent() const;
+  [[nodiscard]] std::chrono::milliseconds tooltipRefreshInterval() const noexcept { return m_tooltipRefreshInterval; }
 
   // Auto-tracked state (read-only)
   [[nodiscard]] bool hovered() const noexcept { return m_hovered; }
@@ -134,6 +141,8 @@ protected:
   [[nodiscard]] bool containsLocalPoint(float localX, float localY, bool includeHitOutset) const override;
 
 private:
+  void notifyTooltipChanged();
+
   DestroyCallback m_destroyCallback;
   PointerCallback m_onEnter;
   VoidCallback m_onLeave;
@@ -159,6 +168,9 @@ private:
   TextInputClient* m_textInputClient = nullptr;
 
   TooltipContent m_tooltipContent;
+  TooltipProvider m_tooltipProvider;
+  TooltipChangedCallback m_tooltipChangedCallback;
+  std::chrono::milliseconds m_tooltipRefreshInterval{};
   TooltipPlacement m_tooltipPlacement = TooltipPlacement::Default;
   TooltipAnchorInsets m_tooltipAnchorInsets{};
   bool m_hasTooltipAnchorInsets = false;

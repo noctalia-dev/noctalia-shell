@@ -47,7 +47,7 @@ void LockKeysWidget::create() {
       ui::glyph({
           .out = &m_glyph,
           .glyph = "lock",
-          .glyphSize = Style::barGlyphSize * m_contentScale,
+          .glyphSize = Style::baseGlyphSize * m_contentScale,
           .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
       })
   );
@@ -94,7 +94,7 @@ void LockKeysWidget::doLayout(Renderer& renderer, float containerWidth, float co
   float w = 0.0f;
 
   if (m_glyph != nullptr) {
-    m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
+    m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
     m_glyph->measure(renderer);
     if (m_isVertical) {
       y += m_glyph->height() + spacing;
@@ -202,7 +202,7 @@ void LockKeysWidget::sync(Renderer& renderer) {
   }
 
   if (m_glyph != nullptr) {
-    m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
+    m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
     m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   }
 

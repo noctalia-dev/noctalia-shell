@@ -116,6 +116,8 @@ void LockScreen::setSessionHooks(std::function<void()> onLocked, std::function<v
   m_onSessionUnlocked = std::move(onUnlocked);
 }
 
+void LockScreen::setLockEngagedCallback(std::function<void()> callback) { m_onLockEngaged = std::move(callback); }
+
 bool LockScreen::lock() {
   if (m_wayland == nullptr || m_renderContext == nullptr) {
     return false;
@@ -158,6 +160,9 @@ bool LockScreen::lock() {
   }
   wl_display_flush(m_wayland->display());
   kLog.info("session lock requested");
+  if (m_onLockEngaged) {
+    m_onLockEngaged();
+  }
   return true;
 }
 
@@ -217,17 +222,6 @@ void LockScreen::onOutputChange() {
     return;
   }
   syncInstances();
-}
-
-void LockScreen::onSecondTick() {
-  if (!isActive()) {
-    return;
-  }
-  for (auto& instance : m_instances) {
-    if (instance.surface != nullptr) {
-      instance.surface->onSecondTick();
-    }
-  }
 }
 
 void LockScreen::onThemeChanged() {
@@ -634,7 +628,7 @@ void LockScreen::tryAuthenticate() {
 }
 
 void LockScreen::clearSensitiveString(std::string& value) {
-  volatile char* ptr = value.empty() ? nullptr : &value[0];
+  volatile char* ptr = value.empty() ? nullptr : value.data();
   for (std::size_t i = 0; i < value.size(); ++i) {
     ptr[i] = '\0';
   }

@@ -25,6 +25,7 @@ namespace noctalia::config::schema {
     OptionalDouble,
     String,
     StringList,
+    StringMap,
     Enum,
     Color,
   };

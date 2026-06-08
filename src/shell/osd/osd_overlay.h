@@ -4,6 +4,7 @@
 #include "ui/controls/progress_bar.h"
 #include "wayland/layer_surface.h"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -19,7 +20,21 @@ class WaylandConnection;
 struct WaylandOutput;
 struct wl_surface;
 
+enum class OsdKind : std::uint8_t {
+  Volume,
+  Microphone,
+  Brightness,
+  Wifi,
+  Bluetooth,
+  PowerProfile,
+  Caffeine,
+  Dnd,
+  LockKeys,
+  KeyboardLayout,
+};
+
 struct OsdContent {
+  OsdKind kind = OsdKind::Volume;
   std::string icon;
   std::string value;
   float progress = 0.0f;

@@ -72,6 +72,7 @@
 #include "shell/session/session_action_runner.h"
 #include "shell/session/session_panel.h"
 #include "shell/settings/settings_window.h"
+#include "shell/switcher/window_switcher.h"
 #include "shell/tray/tray_menu.h"
 #include "shell/wallpaper/wallpaper.h"
 #include "system/battery_warning_monitor.h"
@@ -215,6 +216,7 @@ private:
   LockscreenWidgetsController m_lockscreenWidgetsController;
   SessionActionRunner m_sessionActionRunner{m_compositorPlatform, m_lockScreen};
   PanelManager m_panelManager;
+  WindowSwitcher m_windowSwitcher;
   OverviewLauncherCapture m_overviewLauncherCapture;
   NotificationToast m_notificationToast;
   AudioOsd m_audioOsd;

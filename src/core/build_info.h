@@ -1,28 +1,14 @@
 #pragma once
 
-#include "noctalia_git_revision.h"
-
 #include <string>
 #include <string_view>
 
 namespace noctalia::build_info {
 
-  inline constexpr std::string_view version() noexcept { return NOCTALIA_VERSION; }
+  [[nodiscard]] std::string_view version() noexcept;
 
-  inline constexpr std::string_view revision() noexcept { return NOCTALIA_GIT_REVISION; }
+  [[nodiscard]] std::string_view revision() noexcept;
 
-  inline std::string displayVersion() {
-    std::string label = "v";
-    label += version();
-
-    constexpr std::string_view unknownRevision = "unknown";
-    const std::string_view rev = revision();
-    if (!rev.empty() && rev != unknownRevision) {
-      label += " (";
-      label += rev;
-      label += ')';
-    }
-    return label;
-  }
+  [[nodiscard]] std::string displayVersion();
 
 } // namespace noctalia::build_info

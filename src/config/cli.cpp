@@ -1,5 +1,6 @@
 #include "config/cli.h"
 
+#include "config/config_service.h"
 #include "config/config_validate.h"
 #include "core/toml.h" // IWYU pragma: keep
 #include "util/file_utils.h"
@@ -22,15 +23,18 @@ namespace noctalia::config {
         "Usage: noctalia config <command> [options]\n"
         "\n"
         "Commands:\n"
+        "  validate [dir]\n"
+        "      Check config validity: TOML syntax, unknown/misspelled settings, and bad\n"
+        "      values. Defaults to the active config dir + state settings.toml. Exit 1 on error.\n"
+        "\n"
+        "  export [merged|full]\n"
+        "      Print the active config as TOML. Defaults to merged user config.\n"
+        "\n"
         "  replay-report <report.toml> --target <dir> [--force]\n"
         "      Reconstruct config-home/noctalia and state-home/noctalia from a support report.\n"
         "\n"
         "  replay-report <report.toml> --target <dir> --flattened [--force]\n"
-        "      Reconstruct a single config-home/noctalia/config.toml from the report's merged config.\n"
-        "\n"
-        "  validate [dir]\n"
-        "      Check config validity: TOML syntax, unknown/misspelled settings, and bad\n"
-        "      values. Defaults to the active config dir + state settings.toml. Exit 1 on error.\n";
+        "      Reconstruct a single config-home/noctalia/config.toml from the report's merged config.\n";
 
     constexpr const char* kValidateHelpText =
         "Usage: noctalia config validate [dir]\n"
@@ -49,6 +53,16 @@ namespace noctalia::config {
         "  --target <dir>  Directory where replay files are written\n"
         "  --flattened     Write only merged_config.content as config.toml\n"
         "  --force         Remove an existing target directory before writing\n";
+
+    constexpr const char* kExportHelpText = "Usage: noctalia config export [merged|full]\n"
+                                            "\n"
+                                            "Prints TOML to stdout from the same config stack used by the shell:\n"
+                                            "  - every *.toml in the active config dir, then\n"
+                                            "  - the state-dir settings.toml overrides.\n"
+                                            "\n"
+                                            "Modes:\n"
+                                            "  merged  Export merged user config only (default)\n"
+                                            "  full    Export full effective config, including built-in defaults\n";
 
     struct ReplayOptions {
       std::filesystem::path reportPath;
@@ -350,12 +364,64 @@ namespace noctalia::config {
       return 0;
     }
 
+    int runExport(int argc, char* argv[]) {
+      std::string mode = "merged";
+      bool modeSet = false;
+      for (int i = 3; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--help") == 0) {
+          std::puts(kExportHelpText);
+          return 0;
+        }
+        if (!modeSet) {
+          mode = argv[i];
+          modeSet = true;
+          continue;
+        }
+        std::fprintf(stderr, "error: unexpected argument: %s\n", argv[i]);
+        std::fputs("Run 'noctalia config export --help' for usage.\n", stderr);
+        return 1;
+      }
+
+      const std::string configDir = FileUtils::configDir();
+      std::string settingsPath;
+      if (const std::string stateDir = FileUtils::stateDir(); !stateDir.empty()) {
+        settingsPath = stateDir + "/settings.toml";
+      }
+
+      std::string error;
+      std::string content;
+      if (mode == "merged") {
+        content = ConfigService::buildMergedUserConfigFromSources(configDir, settingsPath, &error);
+      } else if (mode == "full") {
+        content = ConfigService::buildEffectiveConfigFromSources(configDir, settingsPath, &error);
+      } else {
+        std::fputs("error: expected merged or full\n", stderr);
+        return 1;
+      }
+
+      if (!error.empty()) {
+        std::fprintf(stderr, "error: %s\n", error.c_str());
+        return 1;
+      }
+
+      std::fputs(content.c_str(), stdout);
+      return 0;
+    }
+
   } // namespace
 
   int runCli(int argc, char* argv[]) {
     if (argc < 3 || std::strcmp(argv[2], "--help") == 0) {
       std::puts(kHelpText);
       return argc < 3 ? 1 : 0;
+    }
+
+    if (std::strcmp(argv[2], "validate") == 0) {
+      return runValidate(argc, argv);
+    }
+
+    if (std::strcmp(argv[2], "export") == 0) {
+      return runExport(argc, argv);
     }
 
     if (std::strcmp(argv[2], "replay-report") == 0) {
@@ -370,10 +436,6 @@ namespace noctalia::config {
         return 0;
       }
       return replayReport(*options, argv[0]);
-    }
-
-    if (std::strcmp(argv[2], "validate") == 0) {
-      return runValidate(argc, argv);
     }
 
     std::fprintf(stderr, "error: unknown config command: %s\n", argv[2]);

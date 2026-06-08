@@ -35,6 +35,8 @@ namespace settings {
       return schema::WidgetSettingType::String;
     case WidgetControlKind::StringList:
       return schema::WidgetSettingType::StringList;
+    case WidgetControlKind::StringMap:
+      return schema::WidgetSettingType::StringMap;
     case WidgetControlKind::Select:
       return schema::WidgetSettingType::Enum;
     case WidgetControlKind::ColorSpec:
@@ -258,6 +260,10 @@ namespace settings {
     WidgetSettingSpec
     stringListSpec(std::string_view key, std::vector<std::string> defaultValue = {}, bool advanced = false) {
       return baseSpec(key, WidgetControlKind::StringList, std::move(defaultValue), advanced);
+    }
+
+    WidgetSettingSpec stringMapSpec(std::string_view key, bool advanced = false) {
+      return baseSpec(key, WidgetControlKind::StringMap, std::string{}, advanced);
     }
 
     WidgetSettingSpec selectSpec(
@@ -667,6 +673,11 @@ namespace settings {
         display.visibleWhen = WidgetSettingVisibility{"show_label", {"true"}};
         add(std::move(display));
       }
+      {
+        auto labels = stringMapSpec("custom_labels");
+        labels.visibleWhen = WidgetSettingVisibility{"show_label", {"true"}};
+        add(std::move(labels));
+      }
     } else if (type == "launcher") {
       add(glyphSpec("glyph", "search"));
       add(stringSpec("custom_image", ""));
@@ -718,11 +729,6 @@ namespace settings {
         add(std::move(path));
       }
       add(segmentedSpec("display", "gauge", sysmonDisplay));
-      {
-        auto gaugeColor = colorSpec("gauge_color", "primary");
-        gaugeColor.visibleWhen = WidgetSettingVisibility{"display", {"gauge"}};
-        add(std::move(gaugeColor));
-      }
       add(colorSpec("highlight_color", "error"));
       add(boolSpec("show_label", true));
       {
@@ -799,11 +805,20 @@ namespace settings {
             WidgetSettingVisibility{WidgetSettingVisibilityCondition{"group_by_workspace", {"false"}}};
         add(std::move(showWindowTitle));
       }
+      const WidgetSettingVisibility windowTitleSettings = [] {
+        WidgetSettingVisibility v;
+        v.all = {{"group_by_workspace", {"false"}}, {"show_window_title", {"true"}}};
+        return v;
+      }();
       {
         auto windowTitleMaxWidth = doubleSpec("window_title_max_width", 100.0, 10.0, 200.0, 1.0);
-        windowTitleMaxWidth.visibleWhen =
-            WidgetSettingVisibility{WidgetSettingVisibilityCondition{"group_by_workspace", {"false"}}};
+        windowTitleMaxWidth.visibleWhen = windowTitleSettings;
         add(std::move(windowTitleMaxWidth));
+      }
+      {
+        auto taskbarMaxWidth = doubleSpec("taskbar_max_width", 8192.0, 10.0, 8192.0, 1.0);
+        taskbarMaxWidth.visibleWhen = windowTitleSettings;
+        add(std::move(taskbarMaxWidth));
       }
     } else if (type == "tray") {
       add(stringListSpec("hidden"));
@@ -1146,6 +1161,19 @@ namespace settings {
       }
       return settingIt->second;
     };
+    const auto tableInConfig = [&](
+                                   const Config& cfg, std::string_view name, std::string_view key
+                               ) -> std::optional<std::unordered_map<std::string, std::string>> {
+      const auto* widget = widgetInConfig(cfg, name);
+      if (widget == nullptr) {
+        return std::nullopt;
+      }
+      const auto tableIt = widget->tables.find(std::string(key));
+      if (tableIt == widget->tables.end()) {
+        return std::nullopt;
+      }
+      return tableIt->second;
+    };
 
     std::string widgetType(widgetName);
     if (const auto* withWidget = widgetInConfig(withOverride, widgetName); withWidget != nullptr) {
@@ -1160,6 +1188,15 @@ namespace settings {
     }
 
     const auto spec = findWidgetSettingSpec(widgetType, settingKey, defaultConfig);
+    if (spec.has_value() && spec->schema.type == schema::WidgetSettingType::StringMap) {
+      const auto withTable = tableInConfig(withOverride, widgetName, settingKey);
+      const auto withoutTable = tableInConfig(withoutOverride, widgetName, settingKey);
+      if (!withTable.has_value() && !withoutTable.has_value()) {
+        return false;
+      }
+      return withTable.value_or(std::unordered_map<std::string, std::string>{})
+          != withoutTable.value_or(std::unordered_map<std::string, std::string>{});
+    }
     const auto withValue = valueInConfig(withOverride, widgetName, settingKey);
     const auto withoutValue = valueInConfig(withoutOverride, widgetName, settingKey);
     if (!withValue.has_value() && !withoutValue.has_value()) {

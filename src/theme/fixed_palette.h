@@ -93,5 +93,6 @@ namespace noctalia::theme {
   void applyTerminalPalette(TokenMap& tokens, const TerminalPalette& terminal);
   void synthesizeTerminalPaletteTokens(TokenMap& tokens);
   void synthesizeTerminalPaletteTokens(GeneratedPalette& palette);
+  [[nodiscard]] TerminalPalette terminalPaletteFromTokens(const TokenMap& tokens);
 
 } // namespace noctalia::theme

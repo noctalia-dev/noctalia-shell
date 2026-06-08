@@ -80,7 +80,7 @@ namespace {
     }
     const std::string hay = normalizedAppToken(haystack);
     const std::string ned = normalizedAppToken(needle);
-    return !hay.empty() && hay.find(ned) != std::string::npos;
+    return !hay.empty() && hay.contains(ned);
   }
 
   // Portals, polkit prompts, and other transient helpers should not receive focus credit.
@@ -110,7 +110,7 @@ namespace {
         "gcr-prompter",       "kwallet",          "org.gnome.zenity",
     };
     for (const std::string_view pattern : kExcludedSubstrings) {
-      if (lower.find(pattern) != std::string::npos || normalizedContains(lower, pattern)) {
+      if (lower.contains(pattern) || normalizedContains(lower, pattern)) {
         return true;
       }
     }
@@ -139,12 +139,12 @@ namespace {
       return false;
     }
     const auto& idLower = entry->idLower;
-    return entry->categoriesLower.find("utility") != std::string::npos
-        || idLower.find("portal") != std::string::npos
-        || idLower.find("polkit") != std::string::npos
-        || idLower.find("auth") != std::string::npos
-        || idLower.find("kwallet") != std::string::npos
-        || idLower.find("gcr") != std::string::npos;
+    return entry->categoriesLower.contains("utility")
+        || idLower.contains("portal")
+        || idLower.contains("polkit")
+        || idLower.contains("auth")
+        || idLower.contains("kwallet")
+        || idLower.contains("gcr");
   }
 
   template <typename HourlyMap>

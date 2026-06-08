@@ -473,7 +473,7 @@ std::unique_ptr<Flex> HomeTab::create() {
         .minHeight = 0.0f,
         .padding = Style::spaceSm * scale,
         .gap = Style::spaceXs * scale,
-        .radius = Style::scaledRadiusLg(scale),
+        .radius = Style::scaledRadiusXl(scale),
         .onClick =
             [this, padIdx]() {
               if (padIdx < m_shortcutPads.size()) {

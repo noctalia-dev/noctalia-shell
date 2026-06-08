@@ -53,7 +53,6 @@ private:
   void createInstance(const DesktopWidgetState& state, LockSurface& surface, const WaylandOutput& output);
   void attachToSurface(WidgetInstance& instance);
   void detachFromSurface(WidgetInstance& instance);
-  void updateBuiltinClockVisibility(LockScreen& lockScreen);
   [[nodiscard]] WidgetInstance* findInstance(const std::string& id);
   [[nodiscard]] LockSurface* findSurfaceForOutput(LockScreen& lockScreen, const std::string& outputKey) const;
 

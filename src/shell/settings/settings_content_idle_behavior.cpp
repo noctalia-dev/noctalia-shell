@@ -100,6 +100,18 @@ namespace settings {
         i18n::tr("settings.idle.behavior.resume-command-placeholder"), row.resumeCommand
     );
 
+    Flex* nameBlockRaw = nullptr;
+    auto nameBlock = ui::column(
+        {.out = &nameBlockRaw,
+         .align = FlexAlign::Stretch,
+         .gap = Style::spaceXs * scale,
+         .visible = showCustomCommands},
+        makeLabel(
+            i18n::tr("settings.idle.behavior.name-label"), Style::fontSizeCaption * scale,
+            colorSpecFromRole(ColorRole::OnSurfaceVariant), FontWeight::Normal
+        )
+    );
+
     auto kindBlock = ui::column(
         {.align = FlexAlign::Stretch, .gap = Style::spaceXs * scale},
         makeLabel(
@@ -116,16 +128,21 @@ namespace settings {
         .controlHeight = Style::controlHeight * scale,
         .glyphSize = Style::fontSizeBody * scale,
         .onSelectionChanged =
-            [&row, persist, idleActionOptions, customCommandsRaw](std::size_t index, std::string_view /*label*/) {
+            [&row, persist, idleActionOptions, customCommandsRaw,
+             nameBlockRaw](std::size_t index, std::string_view /*label*/) {
               if (index < idleActionOptions.size()) {
                 row.action = idleActionOptions[index].value;
                 if (row.action != "command") {
                   row.command.clear();
                 }
+                // "suspend" and "lock_and_suspend" are distinct choices; pin lockBeforeSuspend so the
+                // explicit selection wins over normalizeIdleBehaviorAction's suspend -> lock_and_suspend fold.
+                row.lockBeforeSuspend = (row.action == "lock_and_suspend");
               }
               IdleBehaviorConfig n = row;
               normalizeIdleBehaviorAction(n);
               customCommandsRaw->setVisible(n.action == "command");
+              nameBlockRaw->setVisible(n.action == "command");
               persist();
             },
         .configure = [](Select& select) { select.setFillWidth(true); },
@@ -133,13 +150,6 @@ namespace settings {
     kindBlock->addChild(std::move(kindSelect));
     body->addChild(std::move(kindBlock));
 
-    auto nameBlock = ui::column(
-        {.align = FlexAlign::Stretch, .gap = Style::spaceXs * scale},
-        makeLabel(
-            i18n::tr("settings.idle.behavior.name-label"), Style::fontSizeCaption * scale,
-            colorSpecFromRole(ColorRole::OnSurfaceVariant), FontWeight::Normal
-        )
-    );
     Input* namePtr = nullptr;
     auto nameIn = ui::input({
         .out = &namePtr,

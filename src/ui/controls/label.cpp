@@ -6,6 +6,7 @@
 #include "render/core/renderer.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
 #include <cmath>
@@ -17,7 +18,7 @@ namespace {
 
 } // namespace
 
-Label::Label() : InputArea() {
+Label::Label() {
   auto textNode = std::make_unique<TextNode>();
   m_textNode = static_cast<TextNode*>(addChild(std::move(textNode)));
   m_textNode->setFontSize(Style::fontSizeBody);
@@ -375,11 +376,6 @@ void Label::doArrange(Renderer& renderer, const LayoutRect& rect) {
   setSize(rect.width, rect.height > 0.0f ? rect.height : measured.height);
 }
 
-void Label::setCaptionStyle() {
-  setFontSize(Style::fontSizeCaption);
-  setColor(colorSpecFromRole(ColorRole::OnSurface));
-}
-
 void Label::measure(Renderer& renderer) {
   LayoutConstraints constraints;
   measureWithConstraints(renderer, constraints);
@@ -398,7 +394,7 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
   const int effectiveMaxLines = m_autoScroll ? 1 : m_userMaxLines;
   const bool singleLine = m_autoScroll
       || (effectiveMaxLines == 1)
-      || (effectiveMaxLines == 0 && configuredMaxWidth <= 0.0f && m_plainText.find('\n') == std::string::npos);
+      || (effectiveMaxLines == 0 && configuredMaxWidth <= 0.0f && !m_plainText.contains('\n'));
   const TextAlign align = m_textNode->textAlign();
   const FontWeight fontWeight = m_textNode->fontWeight();
   const float renderScale = renderer.renderScale();
@@ -449,14 +445,28 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
 
   const float actualHeight = metrics.bottom - metrics.top;
   const float inkHeight = std::max(0.0f, metrics.inkBottom - metrics.inkTop);
+  // An icon glyph (Nerd Font / PUA) ignores the cap/x metrics text centering
+  // relies on, and its ink can be far wider/taller than the advance. Make the
+  // box BE the ink so a container that box-centers the label centers the icon on
+  // both axes.
+  const bool isIconGlyph = singleLine && inkHeight > 0.0f && StringUtils::isSinglePrivateUseGlyph(m_plainText);
+  const float inkWidth = std::max(0.0f, metrics.inkRight - metrics.inkLeft);
   if (singleLine && inkHeight > 0.0f) {
     float height = 0.0f;
-    if (m_baselineMode == LabelBaselineMode::InkCentered) {
+    if (m_baselineMode == LabelBaselineMode::InkCentered || isIconGlyph) {
+      // Explicit ink mode, or an icon glyph: center the glyph's own ink.
+      // Unrounded — the renderer snaps the glyph quad to the pixel grid.
       height = std::round(std::max(actualHeight, inkHeight));
-      m_baselineOffset = std::round(-metrics.inkTop + (height - inkHeight) * 0.5f);
+      m_baselineOffset = -metrics.inkTop + (height - inkHeight) * 0.5f;
     } else {
       height = std::round(actualHeight);
-      m_baselineOffset = std::round(-metrics.top + (height - actualHeight) * 0.5f);
+      // Center the cap band (baseline → cap-top) in the box, so a container that
+      // box-centers this label sits caps/digits dead-centre. capHeight is the
+      // measured cap of 'H', a stable per-font property. Unrounded: the renderer
+      // snaps the glyph quad to the pixel grid, so rounding here double-rounds.
+      const float capHeight = renderer.measureFont(m_textNode->fontSize(), fontWeight).capHeight;
+      m_baselineOffset =
+          capHeight > 0.0f ? height * 0.5f + capHeight * 0.5f : -metrics.top + (height - actualHeight) * 0.5f;
     }
     float finalWidth = 0.0f;
     if (m_autoScroll) {
@@ -472,6 +482,9 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
         }
       }
       finalWidth = std::max(boxW, m_minWidth);
+    } else if (isIconGlyph) {
+      // Size to the ink so box-centering can center an icon wider than its advance.
+      finalWidth = std::max({inkWidth, measuredWidth, m_minWidth});
     } else {
       finalWidth = hasAssignedWidth ? std::max(assignedWidth, m_minWidth) : std::max(measuredWidth, m_minWidth);
     }
@@ -505,7 +518,10 @@ LayoutSize Label::measureWithConstraints(Renderer& renderer, const LayoutConstra
   const bool overflow = m_autoScroll && m_fullTextWidth > layoutWidth + 0.5f;
   const float alignWidth = m_autoScroll ? m_fullTextWidth : measuredWidth;
   float textX = 0.0f;
-  if (!overflow) {
+  if (isIconGlyph) {
+    // Center the icon's ink (not its advance) within the box.
+    textX = (layoutWidth - inkWidth) * 0.5f - metrics.inkLeft;
+  } else if (!overflow) {
     if (align == TextAlign::Center) {
       textX = (layoutWidth - alignWidth) * 0.5f;
     } else if (align == TextAlign::End) {

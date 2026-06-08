@@ -37,8 +37,8 @@ private:
   Flex* m_previousSlot = nullptr;
   Flex* m_nextSlot = nullptr;
   Flex* m_monthWrap = nullptr;
+  Label* m_todayLabel = nullptr;
   Label* m_monthLabel = nullptr;
-  Label* m_monthSubLabel = nullptr;
   Button* m_previousButton = nullptr;
   Button* m_nextButton = nullptr;
   Flex* m_grid = nullptr;

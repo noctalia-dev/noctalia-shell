@@ -1,15 +1,27 @@
 #include "shell/osd/keyboard_layout_osd.h"
 
 #include "compositors/compositor_platform.h"
+#include "config/config_types.h"
 #include "shell/bar/widgets/keyboard_layout_widget.h"
 #include "shell/osd/osd_overlay.h"
 
+#include <unordered_map>
+
 namespace {
 
-  OsdContent makeKeyboardLayoutContent(const std::string& layoutName) {
+  OsdContent makeKeyboardLayoutContent(const std::string& layoutName, const Config& config) {
+    std::string display = "short";
+    std::unordered_map<std::string, std::string> customLabels;
+    if (const auto widgetIt = config.widgets.find("keyboard_layout"); widgetIt != config.widgets.end()) {
+      display = widgetIt->second.getString("display", display);
+      customLabels = widgetIt->second.getStringMap("custom_labels");
+    }
     return OsdContent{
+        .kind = OsdKind::KeyboardLayout,
         .icon = "keyboard",
-        .value = KeyboardLayoutWidget::formatLayoutLabel(layoutName, KeyboardLayoutWidget::DisplayMode::Short),
+        .value = KeyboardLayoutWidget::resolveLayoutLabel(
+            layoutName, KeyboardLayoutWidget::parseDisplayMode(display), customLabels
+        ),
         .showProgress = false,
     };
   }
@@ -23,7 +35,7 @@ void KeyboardLayoutOsd::prime(const CompositorPlatform& platform) {
   m_hasLayout = true;
 }
 
-void KeyboardLayoutOsd::onLayoutChanged(const CompositorPlatform& platform) {
+void KeyboardLayoutOsd::onLayoutChanged(const CompositorPlatform& platform, const Config& config) {
   const std::string layoutName = platform.currentKeyboardLayoutName();
   if (layoutName.empty()) {
     return;
@@ -44,5 +56,5 @@ void KeyboardLayoutOsd::onLayoutChanged(const CompositorPlatform& platform) {
     return;
   }
 
-  m_overlay->show(makeKeyboardLayoutContent(layoutName));
+  m_overlay->show(makeKeyboardLayoutContent(layoutName, config));
 }

@@ -140,7 +140,7 @@ namespace app_identity {
       if (StringUtils::toLower(entry.startupWmClass) == appLower) {
         return entry;
       }
-      if (entry.exec.find(runGameToken) != std::string::npos) {
+      if (entry.exec.contains(runGameToken)) {
         return entry;
       }
     }

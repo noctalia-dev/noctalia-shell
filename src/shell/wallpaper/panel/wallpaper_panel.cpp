@@ -464,6 +464,7 @@ void WallpaperPanel::create() {
                   applyFilter();
                   resetSelection();
                   rebindGrid();
+                  syncBrowseChrome();
                   m_dirty = true;
                   PanelManager::instance().refresh();
                 });
@@ -507,9 +508,9 @@ void WallpaperPanel::create() {
               (void)m_config->setStateBool("wallpaper_panel", "flatten", checked);
             }
             refreshVisibleEntries();
-            syncBrowseChrome();
             resetSelection();
             rebindGrid();
+            syncBrowseChrome();
             m_dirty = true;
             PanelManager::instance().refresh();
           },
@@ -527,10 +528,10 @@ void WallpaperPanel::create() {
                 m_selectedMonitorIndex = idx;
                 m_navStack.clear();
                 refreshVisibleEntries();
-                syncBrowseChrome();
                 resetSelection();
                 rebindGrid();
                 rebuildBreadcrumb();
+                syncBrowseChrome();
                 m_dirty = true;
                 PanelManager::instance().refresh();
               },
@@ -579,9 +580,9 @@ void WallpaperPanel::create() {
           .onClick = [this]() {
             m_scanner.invalidate();
             refreshVisibleEntries();
-            syncBrowseChrome();
             resetSelection();
             rebindGrid();
+            syncBrowseChrome();
             m_dirty = true;
             PanelManager::instance().refresh();
           },
@@ -598,7 +599,7 @@ void WallpaperPanel::create() {
       .align = FlexAlign::Center,
       .gap = kFavoritesMetaRowGap * scale,
       .fillWidth = true,
-      .visible = true,
+      .visible = false,
   });
 
   favoritesOptions->addChild(
@@ -639,8 +640,24 @@ void WallpaperPanel::create() {
             if (m_config->isWallpaperFavorite(path)) {
               m_config->setWallpaperFavoritePaletteSource(path, source);
             }
+
+            // Rebuild the palette picker for the new source before previewing.
+            WallpaperFavorite themeSettings;
+            if (const WallpaperFavorite* favorite = m_config->wallpaperFavorite(path); favorite != nullptr) {
+              themeSettings = *favorite;
+            } else {
+              themeSettings = wallpaperFavoriteFromTheme(m_config->config().theme);
+              themeSettings.paletteSource = source;
+            }
+            if (m_favoriteThemeSegmented != nullptr) {
+              themeSettings.themeMode = themeModeFromSegmentIndex(m_favoriteThemeSegmented->selectedIndex());
+            }
+
+            m_syncingFavoriteControls = true;
+            rebuildFavoritePaletteDetailSelect(&themeSettings);
+            m_syncingFavoriteControls = false;
+
             applyLiveThemePreview(path);
-            syncThemeControls();
             m_dirty = true;
             PanelManager::instance().refresh();
           },
@@ -762,6 +779,8 @@ void WallpaperPanel::create() {
               [this](std::optional<std::size_t> idx) {
                 if (idx.has_value() && *idx < m_visibleEntries.size()) {
                   m_selectedVisibleIndex = *idx;
+                } else {
+                  m_selectedVisibleIndex = kNoVisibleSelection;
                 }
                 syncThemeControls();
               },
@@ -859,9 +878,9 @@ void WallpaperPanel::onOpen(std::string_view /*context*/) {
   populateMonitorChoices();
   syncSortButtonGlyph();
   refreshVisibleEntries();
-  syncBrowseChrome();
   resetSelection();
   rebindGrid();
+  syncBrowseChrome();
   rebuildBreadcrumb();
   m_dirty = true;
 }
@@ -1070,7 +1089,7 @@ void WallpaperPanel::appendFilteredFavoriteEntries(
     }
 
     const std::string displayName = displayNameForWallpaperPath(favorite.path);
-    if (!filterNeedle.empty() && StringUtils::toLower(displayName).find(filterNeedle) == std::string::npos) {
+    if (!filterNeedle.empty() && !StringUtils::toLower(displayName).contains(filterNeedle)) {
       continue;
     }
 
@@ -1235,7 +1254,7 @@ void WallpaperPanel::applyFilter() {
           continue;
         }
       }
-      if (filterActive && StringUtils::toLower(entry.name).find(needle) == std::string::npos) {
+      if (filterActive && !StringUtils::toLower(entry.name).contains(needle)) {
         continue;
       }
       m_visibleEntries.push_back(entry);
@@ -1259,14 +1278,16 @@ void WallpaperPanel::rebindGrid(bool resetScroll) {
   if (resetScroll || m_visibleEntries.empty()) {
     m_grid->scrollView().setScrollOffset(0.0f);
   }
-  if (m_visibleEntries.empty()) {
+  if (m_visibleEntries.empty() || !hasVisibleSelection()) {
     m_grid->setSelectedIndex(std::nullopt);
   } else {
     m_grid->setSelectedIndex(m_selectedVisibleIndex);
   }
 }
 
-void WallpaperPanel::resetSelection() { m_selectedVisibleIndex = 0; }
+void WallpaperPanel::resetSelection() { m_selectedVisibleIndex = kNoVisibleSelection; }
+
+bool WallpaperPanel::hasVisibleSelection() const { return m_selectedVisibleIndex < m_visibleEntries.size(); }
 
 void WallpaperPanel::toggleFavoriteForPath(const std::string& path) {
   if (m_config == nullptr || path.empty()) {
@@ -1286,8 +1307,8 @@ void WallpaperPanel::toggleFavoriteForPath(const std::string& path) {
   }
 
   refreshVisibleEntries();
-  syncBrowseChrome();
   rebindGrid();
+  syncBrowseChrome();
   m_dirty = true;
   PanelManager::instance().refresh();
 }
@@ -1367,7 +1388,7 @@ void WallpaperPanel::selectVisibleIndex(std::size_t index) {
 }
 
 void WallpaperPanel::activateSelectedEntry() {
-  if (m_selectedVisibleIndex >= m_visibleEntries.size()) {
+  if (!hasVisibleSelection()) {
     return;
   }
 
@@ -1397,6 +1418,9 @@ bool WallpaperPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) 
   }
 
   if (KeybindMatcher::matches(KeybindAction::Left, sym, modifiers)) {
+    if (!hasVisibleSelection()) {
+      return true;
+    }
     if (m_selectedVisibleIndex > 0) {
       selectVisibleIndex(m_selectedVisibleIndex - 1);
     }
@@ -1404,23 +1428,31 @@ bool WallpaperPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) 
   }
 
   if (KeybindMatcher::matches(KeybindAction::Right, sym, modifiers)) {
-    if (m_selectedVisibleIndex + 1 < m_visibleEntries.size()) {
+    if (!hasVisibleSelection()) {
+      selectVisibleIndex(0);
+    } else if (m_selectedVisibleIndex + 1 < m_visibleEntries.size()) {
       selectVisibleIndex(m_selectedVisibleIndex + 1);
     }
     return true;
   }
 
   if (KeybindMatcher::matches(KeybindAction::Up, sym, modifiers)) {
-    if (m_selectedVisibleIndex >= columns) {
+    if (!hasVisibleSelection()) {
+      selectVisibleIndex(0);
+    } else if (m_selectedVisibleIndex >= columns) {
       selectVisibleIndex(m_selectedVisibleIndex - columns);
     }
     return true;
   }
 
   if (KeybindMatcher::matches(KeybindAction::Down, sym, modifiers)) {
-    const std::size_t nextIndex = m_selectedVisibleIndex + columns;
-    if (nextIndex < m_visibleEntries.size()) {
-      selectVisibleIndex(nextIndex);
+    if (!hasVisibleSelection()) {
+      selectVisibleIndex(0);
+    } else {
+      const std::size_t nextIndex = m_selectedVisibleIndex + columns;
+      if (nextIndex < m_visibleEntries.size()) {
+        selectVisibleIndex(nextIndex);
+      }
     }
     return true;
   }
@@ -1467,10 +1499,10 @@ void WallpaperPanel::rebuildBreadcrumb() {
 void WallpaperPanel::navigateInto(const std::filesystem::path& dir) {
   m_navStack.push_back(dir);
   refreshVisibleEntries();
-  syncBrowseChrome();
   resetSelection();
   rebindGrid(true);
   rebuildBreadcrumb();
+  syncBrowseChrome();
   m_dirty = true;
   PanelManager::instance().refresh();
 }
@@ -1481,10 +1513,10 @@ void WallpaperPanel::navigateUp() {
   }
   m_navStack.pop_back();
   refreshVisibleEntries();
-  syncBrowseChrome();
   resetSelection();
   rebindGrid(true);
   rebuildBreadcrumb();
+  syncBrowseChrome();
   m_dirty = true;
   PanelManager::instance().refresh();
 }

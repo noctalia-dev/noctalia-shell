@@ -11,7 +11,6 @@
 #include "render/scene/wallpaper_node.h"
 #include "shell/lockscreen/lockscreen_login_box.h"
 #include "shell/lockscreen/lockscreen_widgets_host.h"
-#include "time/time_format.h"
 #include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -36,10 +35,6 @@ namespace {
       return false;
     }
     return tryParseHexColor(path.substr(kPrefix.size()), out);
-  }
-
-  const char* shellTimeFormat(const ConfigService* config) {
-    return config != nullptr ? config->config().shell.timeFormat.c_str() : "{:%H:%M}";
   }
 
 } // namespace
@@ -67,19 +62,6 @@ LockSurface::LockSurface(WaylandConnection& connection, ConfigService* config) :
       ui::box({
           .out = &m_backdrop,
           .configure = [](Box& box) { box.setZIndex(-1); },
-      })
-  );
-
-  m_root.addChild(
-      ui::label({
-          .out = &m_clockShadow,
-      })
-  );
-
-  m_root.addChild(
-      ui::label({
-          .out = &m_clock,
-          .color = colorSpecFromRole(ColorRole::Primary),
       })
   );
 
@@ -349,13 +331,6 @@ void LockSurface::onPointerEvent(const PointerEvent& event) {
   }
 }
 
-void LockSurface::onSecondTick() {
-  const auto text = formatLocalTime(shellTimeFormat(m_config));
-  if (m_clock != nullptr && m_clock->text() != text) {
-    requestUpdate();
-  }
-}
-
 void LockSurface::onThemeChanged() {
   m_captureDirty = true;
   requestLayout();
@@ -385,13 +360,6 @@ void LockSurface::handleConfigure(
   auto* self = static_cast<LockSurface*>(data);
   ext_session_lock_surface_v1_ack_configure(lockSurface, serial);
   self->Surface::onConfigure(width, height);
-}
-
-void LockSurface::setBuiltinClockVisible(bool visible) {
-  m_builtinClockVisible = visible;
-  if (m_surface != nullptr) {
-    requestLayout();
-  }
 }
 
 void LockSurface::prepareFrame(bool needsUpdate, bool needsLayout) {
@@ -471,23 +439,6 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
     }
   }
 
-  constexpr float kClockFontSize = 64.0f;
-  m_clock->setFontSize(kClockFontSize);
-  m_clock->setFontWeight(FontWeight::Bold);
-  m_clock->measure(*renderer);
-  const float clockX = sw - 48.0f - m_clock->width();
-  const float clockY = 86.0f;
-
-  m_clockShadow->setVisible(m_builtinClockVisible && m_clockShadowEnabled);
-  m_clock->setVisible(m_builtinClockVisible);
-  m_clockShadow->setFontSize(kClockFontSize);
-  m_clockShadow->setFontWeight(FontWeight::Bold);
-  m_clockShadow->setColor(colorSpecFromRole(ColorRole::Shadow, 0.55f));
-  m_clockShadow->setText(m_clock->text());
-  m_clockShadow->measure(*renderer);
-  m_clockShadow->setPosition(clockX + 3.0f, clockY + 4.0f);
-  m_clock->setPosition(clockX, clockY);
-
   m_loginPanel->setPosition(panelX, panelY);
   m_loginPanel->setSize(panelWidth, panelHeight);
   m_loginPanel->setStyle(
@@ -518,10 +469,7 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
   m_loginButton->layout(*renderer);
 }
 
-void LockSurface::updateCopy() {
-  m_passwordField->setValue(m_password);
-  updateClockText();
-}
+void LockSurface::updateCopy() { m_passwordField->setValue(m_password); }
 
 void LockSurface::invalidateLivePaper() {
   if (m_wallpaper == nullptr || !m_livePaperTexture.valid()) {
@@ -745,7 +693,7 @@ void LockSurface::applyBlurredDesktopTexture() {
   m_captureDirty = false;
   m_wallpaperDirty = false;
 }
-void LockSurface::updateClockText() { m_clock->setText(formatLocalTime(shellTimeFormat(m_config))); }
+
 
 void LockSurface::onGpuResourcesInvalidated() {
   releaseCaptureTextures();

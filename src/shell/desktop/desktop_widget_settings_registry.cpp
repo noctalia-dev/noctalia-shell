@@ -1,5 +1,6 @@
 #include "shell/desktop/desktop_widget_settings_registry.h"
 
+#include "shell/settings/font_family_catalog.h"
 #include "util/string_utils.h"
 
 namespace desktop_settings {
@@ -69,6 +70,17 @@ namespace desktop_settings {
       return spec;
     }
 
+    // Font picker rendered as a dropdown of installed families, but validated as a free string:
+    // a font configured on another machine but absent here must still load (no silent reset).
+    // Empty value = inherit the shell font.
+    WidgetSettingSpec fontFamilySpec() {
+      auto spec = baseSpec("font_family", WidgetControlKind::Select, std::string{});
+      spec.schema.type = noctalia::config::schema::WidgetSettingType::String;
+      spec.options = settings::buildFontFamilySelectOptions();
+      spec.literalLabels = true;
+      return spec;
+    }
+
   } // namespace
 
   const std::vector<DesktopWidgetTypeSpec>& desktopWidgetTypeSpecs() { return kDesktopWidgetTypeSpecs; }
@@ -120,9 +132,22 @@ namespace desktop_settings {
     auto add = [&](WidgetSettingSpec spec) { specs.push_back(std::move(spec)); };
 
     if (type == "clock") {
-      add(stringSpec("format", "{:%H:%M}"));
+      const WidgetSettingVisibility digitalOnly{{"clock_style", {"digital"}}};
+      const WidgetSettingVisibility analogOnly{{"clock_style", {"analog"}}};
+      add(segmentedSpec(
+          "clock_style", "digital",
+          {{"digital", "desktop-widgets.editor.settings.clock-style-digital"},
+           {"analog", "desktop-widgets.editor.settings.clock-style-analog"}}
+      ));
+      auto format = stringSpec("format", "{:%H:%M}");
+      format.visibleWhen = digitalOnly;
+      add(std::move(format));
       add(colorSpec("color", "on_surface"));
+      add(fontFamilySpec());
       add(boolSpec("shadow", true));
+      auto circle = boolSpec("circle", true);
+      circle.visibleWhen = analogOnly;
+      add(std::move(circle));
     } else if (type == "audio_visualizer") {
       add(doubleSpec("aspect_ratio", 2.5, 0.5, 6.0, 0.1));
       add(doubleSpec("bands", 32.0, 4.0, 128.0, 4.0));
@@ -166,6 +191,7 @@ namespace desktop_settings {
       add(doubleSpec("opacity", 1.0, 0.0, 1.0, 0.01));
     } else if (type == "weather") {
       add(colorSpec("color", "on_surface"));
+      add(fontFamilySpec());
       add(boolSpec("shadow", true));
     } else if (type == "media_player") {
       add(segmentedSpec(
@@ -174,18 +200,21 @@ namespace desktop_settings {
            {"vertical", "desktop-widgets.editor.settings.vertical"}}
       ));
       add(colorSpec("color", "on_surface"));
+      add(fontFamilySpec());
       add(boolSpec("shadow", true));
       add(boolSpec("hide_when_no_media", false));
     } else if (type == "label") {
       add(stringSpec("title", "Title"));
       add(stringSpec("description"));
       add(colorSpec("color", "on_surface"));
+      add(fontFamilySpec());
       add(boolSpec("shadow", true));
     } else if (type == "sysmon") {
       add(selectSpec("stat", "cpu_usage", sysmonStats));
       add(selectSpec("stat2", "", sysmonStatsWithNone));
       add(colorSpec("color", "primary"));
       add(colorSpec("color2", "secondary"));
+      add(fontFamilySpec());
       add(boolSpec("show_label", true));
       add(boolSpec("shadow", true));
     }

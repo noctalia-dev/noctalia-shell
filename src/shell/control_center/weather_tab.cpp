@@ -141,7 +141,6 @@ std::unique_ptr<Flex> WeatherTab::create() {
               .fontSize = Style::fontSizeCaption * scale,
               .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
               .maxLines = 1,
-              .configure = [](Label& label) { label.setCaptionStyle(); },
           }),
           ui::label({
               .out = &m_statusLabel,
@@ -150,7 +149,6 @@ std::unique_ptr<Flex> WeatherTab::create() {
               .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
               .maxLines = 1,
               .visible = false,
-              .configure = [](Label& label) { label.setCaptionStyle(); },
           })
       )
   );

@@ -109,6 +109,9 @@ void LayerSurface::handleConfigure(
 void LayerSurface::handleClosed(void* data, zwlr_layer_surface_v1* /*layerSurface*/) {
   auto* self = static_cast<LayerSurface*>(data);
   self->setRunning(false);
+  if (self->m_closedCallback) {
+    self->m_closedCallback();
+  }
 }
 
 void LayerSurface::requestSize(std::uint32_t width, std::uint32_t height) {
@@ -174,6 +177,8 @@ void LayerSurface::setExclusiveZone(std::int32_t exclusiveZone) {
   zwlr_layer_surface_v1_set_exclusive_zone(m_layerSurface, exclusiveZone);
   wl_surface_commit(m_surface);
 }
+
+void LayerSurface::setClosedCallback(std::function<void()> callback) { m_closedCallback = std::move(callback); }
 
 void LayerSurface::setKeyboardInteractivity(LayerShellKeyboard mode) {
   if (m_config.keyboard == mode) {

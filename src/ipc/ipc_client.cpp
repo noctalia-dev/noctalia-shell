@@ -1,5 +1,6 @@
 #include "ipc/ipc_client.h"
 
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

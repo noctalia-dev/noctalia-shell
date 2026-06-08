@@ -68,7 +68,8 @@ namespace lockscreen_login_box {
       if (!isLoginBoxWidget(widget)) {
         continue;
       }
-      widget.scale = 1.0f;
+      widget.boxWidth = 0.0f;
+      widget.boxHeight = 0.0f;
       widget.rotationRad = 0.0f;
       widget.enabled = true;
       widget.type = std::string(kWidgetType);
@@ -88,7 +89,6 @@ namespace lockscreen_login_box {
       widget.id = widgetIdForOutput(outputKey);
       widget.type = std::string(kWidgetType);
       widget.outputName = outputKey;
-      widget.scale = 1.0f;
       widget.rotationRad = 0.0f;
       widget.enabled = true;
       defaultPanelCenter(

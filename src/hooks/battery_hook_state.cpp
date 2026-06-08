@@ -8,15 +8,17 @@
 
 namespace {
 
-  std::optional<BatteryState> batteryDirectionForHook(BatteryState state) {
+  std::optional<HookKind> batteryStateHook(BatteryState state) {
     switch (state) {
     case BatteryState::Charging:
+      return HookKind::BatteryCharging;
     case BatteryState::Discharging:
-      return state;
-    case BatteryState::Unknown:
-    case BatteryState::Empty:
+      return HookKind::BatteryDischarging;
     case BatteryState::FullyCharged:
     case BatteryState::PendingCharge:
+      return HookKind::BatteryPlugged;
+    case BatteryState::Unknown:
+    case BatteryState::Empty:
     case BatteryState::PendingDischarge:
       return std::nullopt;
     }
@@ -54,7 +56,7 @@ namespace {
 
 void BatteryHookState::reset(const UPowerState& state) {
   m_initialized = true;
-  m_lastDirection = batteryDirectionForHook(state.state);
+  m_lastStateHook = batteryStateHook(state.state);
   if (state.isPresent) {
     m_lastPercent = normalizedBatteryPercent(state.percentage);
   } else {
@@ -70,18 +72,16 @@ std::vector<BatteryHookState::Event> BatteryHookState::update(const UPowerState&
   }
 
   if (!state.isPresent) {
-    m_lastDirection.reset();
+    m_lastStateHook.reset();
     m_lastPercent.reset();
     return events;
   }
 
-  if (const auto direction = batteryDirectionForHook(state.state)) {
-    if (!m_lastDirection.has_value() || *m_lastDirection != *direction) {
-      events.push_back(
-          {*direction == BatteryState::Charging ? HookKind::BatteryCharging : HookKind::BatteryDischarging, {}}
-      );
+  if (const auto stateHook = batteryStateHook(state.state)) {
+    if (!m_lastStateHook.has_value() || *m_lastStateHook != *stateHook) {
+      events.push_back({*stateHook, {}});
     }
-    m_lastDirection = *direction;
+    m_lastStateHook = *stateHook;
   }
 
   const int percent = normalizedBatteryPercent(state.percentage);

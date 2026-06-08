@@ -19,7 +19,7 @@ void SettingsWidget::create() {
       ui::glyph({
           .out = &m_glyph,
           .glyph = m_barGlyphId.empty() ? "settings" : m_barGlyphId,
-          .glyphSize = Style::barGlyphSize * m_contentScale,
+          .glyphSize = Style::baseGlyphSize * m_contentScale,
           .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
       })
   );
@@ -31,7 +31,7 @@ void SettingsWidget::doLayout(Renderer& renderer, float /*containerWidth*/, floa
   if (m_glyph == nullptr) {
     return;
   }
-  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
+  m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
   m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
   auto* node = root();

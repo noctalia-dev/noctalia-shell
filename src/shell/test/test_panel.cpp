@@ -245,7 +245,6 @@ void TestPanel::create() {
     auto valueLabel = ui::label({
         .out = &m_inputValueLabel,
         .fontSize = Style::fontSizeCaption * scale,
-        .configure = [](Label& label) { label.setCaptionStyle(); },
     });
 
     auto section = makeSection("Input");
@@ -281,7 +280,6 @@ void TestPanel::create() {
         .out = &m_sliderValueLabel,
         .text = "50%",
         .fontSize = Style::fontSizeCaption * scale,
-        .configure = [](Label& label) { label.setCaptionStyle(); },
     });
 
     auto section = makeSection("Slider");
@@ -310,7 +308,6 @@ void TestPanel::create() {
         .out = &m_toggleValueLabel,
         .text = "false",
         .fontSize = Style::fontSizeCaption * scale,
-        .configure = [](Label& label) { label.setCaptionStyle(); },
     });
 
     auto section = makeSection("Toggle");
@@ -326,7 +323,6 @@ void TestPanel::create() {
         .out = &m_segmentedValueLabel,
         .text = "System",
         .fontSize = Style::fontSizeCaption * scale,
-        .configure = [](Label& label) { label.setCaptionStyle(); },
     });
 
     static const char* const kLabels[] = {"Light", "Dark", "System"};
@@ -367,7 +363,6 @@ void TestPanel::create() {
         .out = &m_checkboxValueLabel,
         .text = "true",
         .fontSize = Style::fontSizeCaption * scale,
-        .configure = [](Label& label) { label.setCaptionStyle(); },
     });
 
     auto section = makeSection("Checkbox");
@@ -468,7 +463,6 @@ void TestPanel::create() {
         .out = &m_stepperValueLabel,
         .text = "onChange: 42",
         .fontSize = Style::fontSizeCaption * scale,
-        .configure = [](Label& label) { label.setCaptionStyle(); },
     });
 
     auto section = makeSection("Stepper");
@@ -485,7 +479,6 @@ void TestPanel::create() {
         .fontSize = Style::fontSizeCaption * scale,
         .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
         .maxWidth = 280.0f * scale,
-        .configure = [](Label& label) { label.setCaptionStyle(); },
     });
 
     auto openFileDialog = ui::button({
@@ -586,7 +579,6 @@ void TestPanel::create() {
         .fontSize = Style::fontSizeCaption * scale,
         .color = resultColor,
         .maxWidth = 280.0f * scale,
-        .configure = [](Label& label) { label.setCaptionStyle(); },
     });
 
     auto openPicker = ui::button({
@@ -676,10 +668,10 @@ void TestPanel::create() {
                 }
               },
           .configure =
-              [](Button& button) {
+              [scale](Button& button) {
                 button.setDirection(FlexDirection::Vertical);
                 if (button.label() != nullptr) {
-                  button.label()->setCaptionStyle();
+                  button.label()->setFontSize(Style::fontSizeCaption * scale);
                   button.label()->setMaxLines(1);
                   button.label()->setTextAlign(TextAlign::Center);
                 }
@@ -696,7 +688,6 @@ void TestPanel::create() {
         .text = "No grid item selected",
         .fontSize = Style::fontSizeCaption * scale,
         .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
-        .configure = [](Label& label) { label.setCaptionStyle(); },
     });
 
     auto section = makeSection("Grid view");
@@ -972,7 +963,6 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
             .text = "Live font swap rebuilds Pango cache.",
             .fontSize = Style::fontSizeCaption * scale,
             .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
-            .configure = [](Label& label) { label.setCaptionStyle(); },
         })
     );
 
@@ -1141,7 +1131,6 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
         ui::label({
             .text = "first label ink centered:",
             .fontSize = Style::fontSizeCaption * scale,
-            .configure = [](Label& label) { label.setCaptionStyle(); },
         })
     );
 
@@ -1372,7 +1361,7 @@ std::unique_ptr<Flex> TestPanel::buildTextLabSection(float scale) {
           },
           ui::glyph({
               .glyph = c.glyph,
-              .glyphSize = Style::barGlyphSize * scale,
+              .glyphSize = Style::baseGlyphSize * scale,
               .color = colorSpecFromRole(ColorRole::Primary),
           }),
           ui::label({

@@ -128,9 +128,6 @@ namespace settings {
     const Config& cfg = ctx.config;
     std::vector<std::string> existingBarNames = ctx.availableBars;
     const std::string nextBarName = nextAvailableBarName(existingBarNames);
-    const auto sectionLabel = [](std::string_view section) {
-      return i18n::tr("settings.navigation.sections." + std::string(section));
-    };
 
     auto* scroll = &ctx.contentScrollState;
     auto* selectedSection = &ctx.selectedSection;
@@ -170,14 +167,15 @@ namespace settings {
     sidebar->setPadding(Style::spaceSm * scale);
 
     for (const auto& section : ctx.sections) {
-      const bool selected = showActiveTab && section == *selectedSection;
+      const std::string sectionId(settingsSectionId(section));
+      const bool selected = showActiveTab && sectionId == *selectedSection;
       sidebar->addChild(makePrimaryNavButton(
-          sectionGlyph(section), sectionLabel(section), scale, selected,
-          [selectedSection, scroll, section, searchActive, clearTransientState, clearSearchQuery, requestRebuild]() {
-            if (searchActive || *selectedSection != section) {
+          sectionGlyph(section), i18n::tr(settingsSectionLabelKey(section)), scale, selected,
+          [selectedSection, scroll, sectionId, searchActive, clearTransientState, clearSearchQuery, requestRebuild]() {
+            if (searchActive || *selectedSection != sectionId) {
               scroll->offset = 0.0f;
             }
-            *selectedSection = section;
+            *selectedSection = sectionId;
             clearSearchQuery();
             clearTransientState();
             requestRebuild();
@@ -189,7 +187,8 @@ namespace settings {
       const bool barSelected =
           showActiveTab && *selectedSection == "bar" && *selectedBarName == barName && selectedMonitorOverride->empty();
       sidebar->addChild(makePrimaryNavButton(
-          sectionGlyph("bar"), i18n::tr("settings.entities.bar.label", "name", barName), scale, barSelected,
+          sectionGlyph(SettingsSection::Bar), i18n::tr("settings.entities.bar.label", "name", barName), scale,
+          barSelected,
           [selectedSection, selectedBarName, selectedMonitorOverride, scroll, barName, searchActive,
            clearTransientState, clearSearchQuery, requestRebuild]() {
             if (searchActive

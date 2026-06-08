@@ -312,7 +312,16 @@ std::optional<ColorSpec> WidgetConfig::getOptionalColorSpec(const std::string& k
   return std::nullopt;
 }
 
-bool WidgetConfig::hasSetting(const std::string& key) const { return settings.find(key) != settings.end(); }
+std::unordered_map<std::string, std::string>
+WidgetConfig::getStringMap(const std::string& key, const std::unordered_map<std::string, std::string>& fallback) const {
+  const auto it = tables.find(key);
+  if (it == tables.end()) {
+    return fallback;
+  }
+  return it->second;
+}
+
+bool WidgetConfig::hasSetting(const std::string& key) const { return settings.contains(key); }
 
 WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const WidgetConfig* widget) {
   WidgetBarCapsuleSpec spec{};

@@ -243,6 +243,7 @@ void ControlCenterPanel::create() {
   }
 
   syncTabVisibility();
+  m_firstOpenAfterCreate = true;
   selectTab(m_activeTab);
 }
 
@@ -339,7 +340,9 @@ void ControlCenterPanel::onOpen(std::string_view context) {
   if (m_dependencies != nullptr) {
     m_dependencies->rescan();
   }
-  selectTab(tabFromContext(context));
+  const bool animateTabSwitch = !m_firstOpenAfterCreate;
+  m_firstOpenAfterCreate = false;
+  selectTab(tabFromContext(context), animateTabSwitch);
 }
 
 bool ControlCenterPanel::isContextActive(std::string_view context) const {

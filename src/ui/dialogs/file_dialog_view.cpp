@@ -119,6 +119,8 @@ FileDialogView::FileDialogView(ThumbnailService* thumbnails) : m_thumbnails(thum
 
 FileDialogView::~FileDialogView() = default;
 
+void FileDialogView::setRoot(std::unique_ptr<Node> root) { m_root = std::move(root); }
+
 void FileDialogView::create() {
   const float scale = contentScale();
   m_listRowHeight = std::ceil(32.0f * scale);
@@ -316,9 +318,9 @@ void FileDialogView::create() {
   listContainer->addChild(
       ui::label({
           .out = &m_listEmptyLabel,
+          .fontSize = Style::fontSizeCaption * scale,
           .visible = false,
           .participatesInLayout = false,
-          .configure = [](Label& label) { label.setCaptionStyle(); },
       })
   );
 
@@ -358,9 +360,9 @@ void FileDialogView::create() {
   gridContainer->addChild(
       ui::label({
           .out = &m_gridEmptyLabel,
+          .fontSize = Style::fontSizeCaption * scale,
           .visible = false,
           .participatesInLayout = false,
-          .configure = [](Label& label) { label.setCaptionStyle(); },
       })
   );
 
@@ -645,7 +647,7 @@ void FileDialogView::applyFilter(bool resetScroll) {
 
   m_visibleEntries.clear();
   for (const auto& entry : m_entries) {
-    if (!query.empty() && StringUtils::toLower(entry.name).find(query) == std::string::npos) {
+    if (!query.empty() && !StringUtils::toLower(entry.name).contains(query)) {
       continue;
     }
     m_visibleEntries.push_back(entry);

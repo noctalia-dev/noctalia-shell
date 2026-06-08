@@ -130,11 +130,9 @@ namespace settings {
       *customInitialColor = colorForRole(*selectedRole);
     }
 
-    const auto indicatorState = std::make_shared<std::vector<ColorSpec>>(indicators);
     const auto selectedIndex = choiceIndex(choices, selectedValue);
     const bool selectedUnknown = !selectedIndex.has_value() && !selectedValue.empty();
 
-    auto selectRef = std::make_shared<Select*>(nullptr);
     auto select = ui::select({
         .options = labelsForChoices(choices),
         .selectedIndex = selectedIndex,
@@ -153,7 +151,7 @@ namespace settings {
             : std::nullopt,
         .flexGrow = options.flexGrow ? std::optional<float>(1.0f) : std::nullopt,
         .onSelectionChanged = [choices = std::move(choices), setValue = std::move(setValue),
-                               clearValue = std::move(clearValue), customInitialColor, indicatorState, selectRef](
+                               clearValue = std::move(clearValue), customInitialColor](
                                   std::size_t index, std::string_view /*label*/
                               ) mutable {
           if (index >= choices.size()) {
@@ -168,20 +166,13 @@ namespace settings {
               dialogOptions.initialColor = *last;
             }
             (void)ColorPickerDialog::open(
-                std::move(dialogOptions),
-                [setValue, customInitialColor, indicatorState, selectRef, index](std::optional<Color> result) {
+                std::move(dialogOptions), [setValue, customInitialColor](std::optional<Color> result) {
                   if (!result.has_value()) {
                     return;
                   }
                   Color rgb = *result;
                   rgb.a = 1.0f;
                   *customInitialColor = rgb;
-                  if (index < indicatorState->size()) {
-                    (*indicatorState)[index] = fixedColorSpec(rgb);
-                    if (*selectRef != nullptr) {
-                      (*selectRef)->setOptionIndicators(*indicatorState);
-                    }
-                  }
                   setValue(formatFixedColorConfigValue(rgb));
                 }
             );
@@ -194,7 +185,6 @@ namespace settings {
           setValue(choices[index].value);
         },
     });
-    *selectRef = select.get();
 
     return select;
   }

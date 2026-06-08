@@ -154,7 +154,7 @@ void ScreenshotWidget::create() {
       ui::glyph({
           .out = &m_glyph,
           .glyph = m_barGlyphId.empty() ? "screenshot" : m_barGlyphId,
-          .glyphSize = Style::barGlyphSize * m_contentScale,
+          .glyphSize = Style::baseGlyphSize * m_contentScale,
           .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
       })
   );
@@ -166,7 +166,7 @@ void ScreenshotWidget::doLayout(Renderer& renderer, float /*containerWidth*/, fl
   if (m_glyph == nullptr) {
     return;
   }
-  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
+  m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
   m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
   if (auto* node = root(); node != nullptr) {

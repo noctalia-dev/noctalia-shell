@@ -5,13 +5,20 @@
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
+#include "system/format_units.h"
+#include "system/system_monitor_service.h"
 #include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
+#include <chrono>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace {
+
+  constexpr auto kTooltipRefreshInterval = std::chrono::seconds(1);
 
   std::string labelForState(const NetworkState& s) {
     if (s.kind == NetworkConnectivity::Wireless && s.connected && !s.ssid.empty()) {
@@ -23,20 +30,40 @@ namespace {
     return {};
   }
 
+  std::string onOffText(bool enabled) { return enabled ? "On" : "Off"; }
+
+  std::string yesNoText(bool enabled) { return enabled ? "Yes" : "No"; }
+
+  std::string networkCountText(std::size_t count) {
+    return std::to_string(count) + (count == 1 ? " network" : " networks");
+  }
+
 } // namespace
 
-NetworkWidget::NetworkWidget(INetworkService* network, wl_output* /*output*/, bool showLabel)
-    : m_network(network), m_showLabel(showLabel) {}
+NetworkWidget::NetworkWidget(
+    INetworkService* network, SystemMonitorService* monitor, wl_output* /*output*/, bool showLabel
+)
+    : m_network(network), m_monitor(monitor), m_showLabel(showLabel) {}
 
 void NetworkWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) { requestPanelToggle("control-center", "network"); });
+  area->setTooltipProvider(
+      [this]() -> TooltipContent {
+        std::vector<TooltipRow> rows = buildTooltipRows();
+        if (rows.empty()) {
+          return std::monostate{};
+        }
+        return TooltipContent{std::move(rows)};
+      },
+      kTooltipRefreshInterval
+  );
 
   area->addChild(
       ui::glyph({
           .out = &m_glyph,
           .glyph = "wifi-off",
-          .glyphSize = Style::barGlyphSize * m_contentScale,
+          .glyphSize = Style::baseGlyphSize * m_contentScale,
           .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
       })
   );
@@ -102,7 +129,7 @@ void NetworkWidget::syncState(Renderer& renderer) {
   m_lastVertical = m_isVertical;
 
   m_glyph->setGlyph(network_glyphs::glyphForState(s));
-  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
+  m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
   m_glyph->setColor(
       s.connected ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
                   : colorSpecFromRole(ColorRole::OnSurfaceVariant)
@@ -129,27 +156,75 @@ void NetworkWidget::syncState(Renderer& renderer) {
 
   if (auto* rootNode = root(); rootNode != nullptr) {
     rootNode->setOpacity(s.connected ? 1.0f : 0.55f);
-
-    auto* area = static_cast<InputArea*>(rootNode);
-    if (s.connected) {
-      std::vector<TooltipRow> rows;
-      if (s.kind == NetworkConnectivity::Wireless && !s.ssid.empty()) {
-        rows.push_back({"Network", s.ssid});
-        rows.push_back({"Signal", std::to_string(s.signalStrength) + "%"});
-      } else if (s.kind == NetworkConnectivity::Wired) {
-        rows.push_back({"Network", s.interfaceName.empty() ? "Wired" : s.interfaceName});
-      }
-      if (!s.ipv4.empty()) {
-        rows.push_back({"IP", s.ipv4});
-      }
-      if (s.vpnActive) {
-        rows.push_back({"VPN", "Active"});
-      }
-      area->setTooltip(std::move(rows));
-    } else {
-      area->clearTooltip();
-    }
+    static_cast<InputArea*>(rootNode)->requestTooltipRefresh();
   }
 
   requestRedraw();
+}
+
+std::vector<TooltipRow> NetworkWidget::buildTooltipRows() const {
+  std::vector<TooltipRow> rows;
+  if (m_network == nullptr) {
+    return rows;
+  }
+
+  const NetworkState& s = m_network->state();
+  if (s.connected) {
+    if (s.kind == NetworkConnectivity::Wireless && !s.ssid.empty()) {
+      rows.push_back({"Network", s.ssid});
+      rows.push_back({"Signal", std::to_string(s.signalStrength) + "%"});
+      if (!s.interfaceName.empty()) {
+        rows.push_back({"Interface", s.interfaceName});
+      }
+    } else if (s.kind == NetworkConnectivity::Wired) {
+      rows.push_back({"Network", "Wired"});
+      if (!s.interfaceName.empty()) {
+        rows.push_back({"Interface", s.interfaceName});
+      }
+    } else {
+      rows.push_back({"Network", "Connected"});
+    }
+
+    if (!s.ipv4.empty()) {
+      rows.push_back({"IP", s.ipv4});
+    }
+
+    if (m_monitor != nullptr && m_monitor->isRunning()) {
+      const SystemStats stats = m_monitor->latest();
+      rows.push_back({"Download", FormatUnits::formatDecimalBytesPerSecond(stats.netRxBytesPerSec)});
+      rows.push_back({"Upload", FormatUnits::formatDecimalBytesPerSecond(stats.netTxBytesPerSec)});
+    }
+
+    if (s.vpnActive) {
+      std::string vpnLabel;
+      for (const auto& vpn : m_network->vpnConnections()) {
+        if (!vpn.active || vpn.name.empty()) {
+          continue;
+        }
+        if (!vpnLabel.empty()) {
+          vpnLabel += ", ";
+        }
+        vpnLabel += vpn.name;
+      }
+      rows.push_back({"VPN", vpnLabel.empty() ? "Active" : vpnLabel});
+    }
+
+    if (s.kind == NetworkConnectivity::Wireless) {
+      rows.push_back({"Networks", networkCountText(m_network->accessPoints().size())});
+    }
+    return rows;
+  }
+
+  rows.push_back({"Network", "Not connected"});
+  rows.push_back({"Wi-Fi", onOffText(s.wirelessEnabled)});
+  if (s.scanning) {
+    rows.push_back({"Scanning", yesNoText(s.scanning)});
+  }
+  if (s.wirelessEnabled) {
+    rows.push_back({"Networks", networkCountText(m_network->accessPoints().size())});
+  }
+  if (s.vpnActive) {
+    rows.push_back({"VPN", "Active"});
+  }
+  return rows;
 }

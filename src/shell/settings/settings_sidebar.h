@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config/config_service.h"
+#include "shell/settings/settings_registry.h"
 #include "ui/controls/scroll_view.h"
 
 #include <functional>
@@ -14,7 +15,7 @@ namespace settings {
 
   struct SettingsSidebarContext {
     const Config& config;
-    const std::vector<std::string>& sections;
+    const std::vector<SettingsSection>& sections;
     const std::vector<std::string>& availableBars;
     float scale = 1.0f;
     bool globalSearchActive = false;

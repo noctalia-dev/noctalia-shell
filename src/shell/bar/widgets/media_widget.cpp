@@ -78,7 +78,7 @@ void MediaWidget::create() {
       ui::glyph({
           .out = &m_emptyGlyph,
           .glyph = "music-off",
-          .glyphSize = Style::barGlyphSize * m_contentScale,
+          .glyphSize = Style::baseGlyphSize * m_contentScale,
           .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
           .visible = false,
       })
@@ -103,7 +103,7 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
                                         : colorSpecFromRole(ColorRole::OnSurfaceVariant)
   );
   m_emptyGlyph->setGlyph(m_lastPlaybackStatus.empty() ? "disc-filled" : "music-off");
-  m_emptyGlyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
+  m_emptyGlyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
   m_emptyGlyph->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   m_emptyGlyph->measure(renderer);
 

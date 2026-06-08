@@ -22,6 +22,7 @@ public:
 private:
   void doLayout(Renderer& renderer) override;
   void doUpdate(Renderer& renderer) override;
+  void onFontFamilyChanged(const std::string& family, Renderer& renderer) override;
   bool sync();
   void applyShadow();
 

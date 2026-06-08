@@ -88,12 +88,12 @@ namespace {
   }
 
   Flex* makeInfoCard(
-      Flex& parent, const std::string& title, float scale, float fillOpacity, bool showBorder, Label** outLines,
-      int lineCount, const char* const* glyphs
+      Flex& parent, const std::string& title, float scale, float grow, float fillOpacity, bool showBorder,
+      Label** outLines, int lineCount, const char* const* glyphs
   ) {
     auto card = ui::column({
         .gap = Style::spaceXs * scale,
-        .flexGrow = 1.0f,
+        .flexGrow = grow,
         .configure = [scale, fillOpacity, showBorder](Flex& section) {
           applySectionCardStyle(section, scale, fillOpacity, showBorder);
         },
@@ -271,16 +271,60 @@ std::unique_ptr<Flex> SystemTab::create() {
     static constexpr const char* kSystemGlyphs[] = {"device-desktop", "layout-board", "cpu-usage",
                                                     "video",          "app-window",   "clock"};
     makeInfoCard(
-        *row, i18n::tr("control-center.system.titles.system"), sc, panelCardOpacity(), panelBordersEnabled(),
+        *row, i18n::tr("control-center.system.titles.system"), sc, 3.0f, panelCardOpacity(), panelBordersEnabled(),
         m_systemLines, kSystemLines, kSystemGlyphs
-    )
-        ->setFlexGrow(2.0f);
+    );
 
-    static constexpr const char* kResourcesGlyphs[] = {"activity", "memory", "storage"};
-    makeInfoCard(
-        *row, i18n::tr("control-center.system.titles.resources"), sc, panelCardOpacity(), panelBordersEnabled(),
+    static constexpr const char* kResourcesGlyphs[] = {"activity", "memory"};
+    auto* resourcesCard = makeInfoCard(
+        *row, i18n::tr("control-center.system.titles.resources"), sc, 2.0f, panelCardOpacity(), panelBordersEnabled(),
         m_resourcesLines, kResourcesLines, kResourcesGlyphs
     );
+
+    // Swap, right after RAM. Hidden in doUpdate when the system has no swap configured.
+    m_swapRow = static_cast<Flex*>(resourcesCard->addChild(
+        ui::row(
+            {.align = FlexAlign::Center, .gap = Style::spaceXs * sc},
+            ui::glyph({
+                .glyph = "arrows-exchange",
+                .glyphSize = Style::fontSizeMini * sc,
+                .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+            }),
+            ui::label({
+                .out = &m_swapLabel,
+                .fontSize = Style::fontSizeMini * sc,
+                .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+                .maxLines = 1,
+                .flexGrow = 1.0f,
+            })
+        )
+    ));
+
+    // One line per physical disk, discovered automatically (root first). Usage refreshes in doUpdate.
+    m_diskMountPoints = physicalDiskMountPoints();
+    m_diskLabels.clear();
+    m_diskLabels.reserve(m_diskMountPoints.size());
+    for (std::size_t i = 0; i < m_diskMountPoints.size(); ++i) {
+      Label* lineLabel = nullptr;
+      resourcesCard->addChild(
+          ui::row(
+              {.align = FlexAlign::Center, .gap = Style::spaceXs * sc},
+              ui::glyph({
+                  .glyph = "storage",
+                  .glyphSize = Style::fontSizeMini * sc,
+                  .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+              }),
+              ui::label({
+                  .out = &lineLabel,
+                  .fontSize = Style::fontSizeMini * sc,
+                  .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+                  .maxLines = 1,
+                  .flexGrow = 1.0f,
+              })
+          )
+      );
+      m_diskLabels.push_back(lineLabel);
+    }
 
     tab->addChild(std::move(row));
   }
@@ -323,6 +367,10 @@ void SystemTab::onClose() {
     l = nullptr;
   for (auto& l : m_resourcesLines)
     l = nullptr;
+  m_swapRow = nullptr;
+  m_swapLabel = nullptr;
+  m_diskLabels.clear();
+  m_diskMountPoints.clear();
   m_graphInitialized = false;
   m_gpuVisible = false;
   m_lastSampleAt = {};
@@ -536,10 +584,8 @@ void SystemTab::updateGraphs(Renderer& renderer) {
 
       if (s.cpuTempC.has_value()) {
         const double t = *s.cpuTempC;
-        if (t < m_cpuTempMin)
-          m_cpuTempMin = t;
-        if (t > m_cpuTempMax)
-          m_cpuTempMax = t;
+        m_cpuTempMin = std::min(m_cpuTempMin, t);
+        m_cpuTempMax = std::max(m_cpuTempMax, t);
         const double range = m_cpuTempMax - m_cpuTempMin;
         cpuTemp[i] = range > 0.0 ? static_cast<float>(std::clamp((t - m_cpuTempMin) / range, 0.0, 1.0)) : 0.5f;
       }
@@ -585,10 +631,8 @@ void SystemTab::updateGraphs(Renderer& renderer) {
       if (s.gpuTempC.has_value()) {
         hasGpuTemp = true;
         const double t = *s.gpuTempC;
-        if (t < m_gpuTempMin)
-          m_gpuTempMin = t;
-        if (t > m_gpuTempMax)
-          m_gpuTempMax = t;
+        m_gpuTempMin = std::min(m_gpuTempMin, t);
+        m_gpuTempMax = std::max(m_gpuTempMax, t);
         const double range = m_gpuTempMax - m_gpuTempMin;
         gpuTemp[i] = range > 0.0 ? static_cast<float>(std::clamp((t - m_gpuTempMin) / range, 0.0, 1.0)) : 0.5f;
       }
@@ -788,8 +832,17 @@ void SystemTab::syncLabels() {
   if (m_resourcesLines[1] != nullptr) {
     m_resourcesLines[1]->setText(formatMemoryUsedTotal(stats));
   }
-  if (m_resourcesLines[2] != nullptr) {
-    m_resourcesLines[2]->setText(diskRootUsageLabel());
+  if (m_swapRow != nullptr) {
+    const bool hasSwap = stats.swapTotalMb > 0;
+    m_swapRow->setVisible(hasSwap);
+    if (hasSwap && m_swapLabel != nullptr) {
+      m_swapLabel->setText(FormatUnits::formatBinaryMibUsageAsGib(stats.swapUsedMb, stats.swapTotalMb));
+    }
+  }
+  for (std::size_t i = 0; i < m_diskLabels.size(); ++i) {
+    if (m_diskLabels[i] != nullptr) {
+      m_diskLabels[i]->setText(std::format("{}  {}", m_diskMountPoints[i], diskUsageLabel(m_diskMountPoints[i])));
+    }
   }
 }
 

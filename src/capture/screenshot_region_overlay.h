@@ -28,6 +28,7 @@ namespace capture {
     void initialize(WaylandConnection& wayland, RenderContext* renderContext);
     void setCompleteCallback(CompleteCallback callback);
     void setFrozenScreenshots(std::vector<FrozenScreenshot> screenshots);
+    [[nodiscard]] std::vector<FrozenScreenshot> takeFrozenScreenshots();
     void begin(bool freezeScreen, bool fullscreenPick = false);
     void cancel();
     void cancelSelection();

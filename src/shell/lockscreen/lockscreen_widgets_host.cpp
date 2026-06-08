@@ -190,8 +190,6 @@ void LockscreenWidgetsHost::syncSurfaces(LockScreen& lockScreen) {
     }
   }
 
-  updateBuiltinClockVisibility(lockScreen);
-
   lockScreen.forEachSurface([&](LockSurface& surface) { surface.setWidgetsHost(this); });
 }
 
@@ -209,6 +207,7 @@ void LockscreenWidgetsHost::createInstance(
   }
 
   widget->create();
+  widget->setBox(state.boxWidth, state.boxHeight);
   widget->update(*m_renderContext);
   widget->layout(*m_renderContext);
 
@@ -307,29 +306,6 @@ void LockscreenWidgetsHost::detachFromSurface(WidgetInstance& instance) {
   }
 }
 
-void LockscreenWidgetsHost::updateBuiltinClockVisibility(LockScreen& lockScreen) {
-  lockScreen.forEachSurface([&](LockSurface& surface) {
-    bool hideBuiltin = false;
-    if (m_wayland != nullptr) {
-      const WaylandOutput* output = m_wayland->findOutputByWl(surface.output());
-      if (output != nullptr) {
-        const std::string outputKey = desktop_widgets::outputKey(*output);
-        for (const auto& widget : m_snapshot.widgets) {
-          if (!widget.enabled || widget.type != "clock") {
-            continue;
-          }
-          if (desktop_widgets::outputKey(*desktop_widgets::resolveStateOutput(*m_wayland, widget)) != outputKey) {
-            continue;
-          }
-          hideBuiltin = true;
-          break;
-        }
-      }
-    }
-    surface.setBuiltinClockVisible(!hideBuiltin);
-  });
-}
-
 void LockscreenWidgetsHost::prepareFrame(LockSurface& surface, bool needsUpdate, bool needsLayout) {
   if (!m_visible || m_renderContext == nullptr) {
     return;
@@ -353,6 +329,7 @@ void LockscreenWidgetsHost::prepareFrame(LockSurface& surface, bool needsUpdate,
     }
 
     instance->widget->setContentScale(desktop_widgets::widgetContentScale(baseUiScale, instance->state));
+    instance->widget->setBox(instance->state.boxWidth, instance->state.boxHeight);
 
     if (needsUpdate) {
       instance->widget->update(*m_renderContext);

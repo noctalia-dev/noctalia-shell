@@ -41,6 +41,7 @@ public:
     float inkBottom = 0.0f; // positive — visible ink below baseline
     float inkLeft = 0.0f;   // visible ink left edge relative to layout origin
     float inkRight = 0.0f;  // visible ink right edge relative to layout origin
+    float capHeight = 0.0f; // measured baseline-to-cap-top of 'H' (0 if unavailable)
   };
 
   CairoTextRenderer();

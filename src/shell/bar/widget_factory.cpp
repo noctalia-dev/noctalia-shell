@@ -62,6 +62,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 namespace {
   constexpr Logger kLog("shell");
@@ -269,9 +270,11 @@ std::unique_ptr<Widget> WidgetFactory::create(
     const bool showIcon = wc != nullptr ? wc->getBool("show_icon", true) : true;
     const bool showLabel = wc != nullptr ? wc->getBool("show_label", true) : true;
     const bool hideWhenSingleLayout = wc != nullptr ? wc->getBool("hide_when_single_layout", false) : false;
+    auto customLabels =
+        wc != nullptr ? wc->getStringMap("custom_labels") : std::unordered_map<std::string, std::string>{};
     auto widget = std::make_unique<KeyboardLayoutWidget>(
         m_platform, cycleCommand, KeyboardLayoutWidget::parseDisplayMode(display), showIcon, showLabel,
-        hideWhenSingleLayout
+        hideWhenSingleLayout, std::move(customLabels)
     );
     widget->setContentScale(contentScale);
     return widget;
@@ -325,7 +328,7 @@ std::unique_ptr<Widget> WidgetFactory::create(
 
   if (type == "network") {
     const bool showLabel = wc != nullptr ? wc->getBool("show_label", true) : true;
-    auto widget = std::make_unique<NetworkWidget>(m_network, output, showLabel);
+    auto widget = std::make_unique<NetworkWidget>(m_network, m_sysmon, output, showLabel);
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -443,17 +446,13 @@ std::unique_ptr<Widget> WidgetFactory::create(
       displayMode = SysmonDisplayMode::Graph;
     const bool showLabel = wc != nullptr ? wc->getBool("show_label", true) : true;
     const auto labelMinWidth = static_cast<float>(wc != nullptr ? wc->getDouble("label_min_width", 0.0) : 0.0);
-    const ColorSpec gaugeColor = wc != nullptr
-        ? wc->getColorSpec("gauge_color", colorSpecFromRole(ColorRole::Primary), "widget." + name + ".gauge_color")
-        : colorSpecFromRole(ColorRole::Primary);
     const ColorSpec highlightColor = wc != nullptr
         ? wc->getColorSpec(
               "highlight_color", colorSpecFromRole(ColorRole::Error), "widget." + name + ".highlight_color"
           )
         : colorSpecFromRole(ColorRole::Error);
     auto widget = std::make_unique<SysmonWidget>(
-        m_sysmon, output, stat, std::move(path), displayMode, gaugeColor, highlightColor, m_configService, showLabel,
-        labelMinWidth
+        m_sysmon, output, stat, std::move(path), displayMode, highlightColor, m_configService, showLabel, labelMinWidth
     );
     widget->setContentScale(contentScale);
     return widget;
@@ -499,11 +498,13 @@ std::unique_ptr<Widget> WidgetFactory::create(
     const bool showWindowTitle = wc != nullptr ? wc->getBool("show_window_title", false) : false;
     const float windowTitleMaxWidth =
         static_cast<float>(wc != nullptr ? wc->getDouble("window_title_max_width", 100.0) : 100.0);
+    const float taskbarMaxWidth =
+        static_cast<float>(wc != nullptr ? wc->getDouble("taskbar_max_width", 8192.0) : 8192.0);
     auto widget = std::make_unique<TaskbarWidget>(
         m_platform, m_configService, output, groupByWorkspace, showAllOutputs, onlyActiveWorkspace, showWorkspaceLabel,
         workspaceLabelPlacement, hideEmptyWorkspaces, workspaceGroupCapsule, groupSingleIconPerApp, showActiveIndicator,
         activeOpacity, inactiveOpacity, focusedColor, occupiedColor, emptyColor, showWindowTitle, windowTitleMaxWidth,
-        barPosition, m_config.shell.shadow
+        taskbarMaxWidth, barPosition, m_config.shell.shadow
     );
     widget->setContentScale(contentScale);
     return widget;

@@ -40,7 +40,7 @@ namespace {
       {"power_profile", "control-center.shortcuts.power-profile"},
       {"media", "control-center.shortcuts.media"},
       {"weather", "control-center.shortcuts.weather"},
-      {"sysmon", "control-center.shortcuts.sysmon"},
+      {"system", "control-center.shortcuts.system"},
       {"screen_time", "control-center.shortcuts.screen-time"},
       {"keyboard_layout", "control-center.shortcuts.keyboard-layout"},
       {"screen_recorder", "control-center.shortcuts.screen-recorder"},
@@ -482,10 +482,10 @@ namespace {
     MprisService* m_svc;
   };
 
-  class SysmonShortcut final : public Shortcut {
+  class SystemShortcut final : public Shortcut {
   public:
-    std::string_view id() const override { return "sysmon"; }
-    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.sysmon"); }
+    std::string_view id() const override { return "system"; }
+    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.system"); }
     std::string_view iconOn() const override { return "activity"; }
     std::string_view iconOff() const override { return "activity"; }
     void onClick() override { openTab("system"); }
@@ -588,11 +588,11 @@ std::unique_ptr<Shortcut> ShortcutRegistry::create(std::string_view type, const 
     }
     return std::make_unique<WeatherShortcut>(s.weather);
   }
-  if (type == "sysmon") {
+  if (type == "system") {
     if (s.config != nullptr && !s.config->config().system.monitor.enabled) {
       return nullptr;
     }
-    return std::make_unique<SysmonShortcut>();
+    return std::make_unique<SystemShortcut>();
   }
   if (type == "screen_time") {
     if (s.config != nullptr && !s.config->config().shell.screenTimeEnabled) {

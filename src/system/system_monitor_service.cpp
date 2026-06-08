@@ -191,24 +191,20 @@ namespace {
     const std::string name = StringUtils::toLower(hwmonName);
     const std::string lbl = StringUtils::toLower(label);
 
-    if (name.find("coretemp") != std::string::npos
-        || name.find("k10temp") != std::string::npos
-        || name.find("zenpower") != std::string::npos
-        || name.find("cpu") != std::string::npos) {
+    if (name.contains("coretemp") || name.contains("k10temp") || name.contains("zenpower") || name.contains("cpu")) {
       score += 20;
     }
 
-    // AMD k10temp exposes Tctl first, but Tctl is a fan-control value. Prefer
-    // physical die/CCD readings when the kernel provides them.
-    if (lbl.find("tdie") != std::string::npos) {
+    // Package/Tdie/SoC labels are global CPU temps. On AMD k10temp systems
+    // without those labels, prefer physical CCD readings over the Tctl control
+    // temperature.
+    if (lbl.contains("package") || lbl.contains("tdie") || lbl.contains("soc temperature")) {
+      score += 90;
+    } else if (lbl.contains("tccd") || lbl.contains("core")) {
       score += 80;
-    } else if (lbl.find("tccd") != std::string::npos) {
-      score += 70;
-    } else if (lbl.find("package") != std::string::npos) {
+    } else if (lbl.contains("cpu")) {
       score += 60;
-    } else if (lbl.find("cpu") != std::string::npos) {
-      score += 50;
-    } else if (lbl.find("tctl") != std::string::npos) {
+    } else if (lbl.contains("tctl")) {
       score += 40;
     }
 
@@ -221,10 +217,7 @@ namespace {
 
   bool isCpuThermalZoneType(const std::string& type) {
     const std::string t = StringUtils::toLower(type);
-    return t.find("x86_pkg_temp") != std::string::npos
-        || t.find("cpu") != std::string::npos
-        || t.find("soc") != std::string::npos
-        || t.find("package") != std::string::npos;
+    return t.contains("x86_pkg_temp") || t.contains("cpu") || t.contains("soc") || t.contains("package");
   }
 
   int scoreGpuHwmonSensor(const std::string& hwmonName, const std::string& label) {
@@ -234,7 +227,7 @@ namespace {
     int score = 0;
     if (name == "amdgpu") {
       score += 20;
-    } else if (name == "nvidia" || name.find("nvidia") != std::string::npos) {
+    } else if (name == "nvidia" || name.contains("nvidia")) {
       score += 20;
     } else if (name == "i915" || name == "xe") {
       score += 20;
@@ -244,9 +237,9 @@ namespace {
       return -1;
     }
 
-    if (lbl.find("junction") != std::string::npos || lbl.find("edge") != std::string::npos) {
+    if (lbl.contains("junction") || lbl.contains("edge")) {
       score += 30;
-    } else if (lbl.find("gpu") != std::string::npos || lbl.find("mem") != std::string::npos) {
+    } else if (lbl.contains("gpu") || lbl.contains("mem")) {
       score += 25;
     }
 
@@ -500,7 +493,7 @@ namespace {
       }
 
       const std::string normalizedName = StringUtils::toLower(hwmonName);
-      const bool isNvidia = normalizedName == "nvidia" || normalizedName.find("nvidia") != std::string::npos;
+      const bool isNvidia = normalizedName == "nvidia" || normalizedName.contains("nvidia");
 
       if (!isGpuHwmonAwake(hwmonEntry.path())) {
         continue;

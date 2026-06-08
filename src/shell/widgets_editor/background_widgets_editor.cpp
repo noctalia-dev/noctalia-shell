@@ -8,9 +8,13 @@
 #include "cursor-shape-v1-client-protocol.h"
 #include "i18n/i18n.h"
 #include "pipewire/pipewire_spectrum.h"
+#include "render/core/color.h"
+#include "render/core/shared_texture_cache.h"
+#include "render/core/wallpaper_types.h"
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
+#include "render/scene/wallpaper_node.h"
 #include "shell/desktop/desktop_widget_layout.h"
 #include "shell/desktop/desktop_widget_settings_registry.h"
 #include "shell/desktop/widgets/desktop_login_box_widget.h"
@@ -46,13 +50,10 @@ namespace {
   const Color kShadowColor = rgba(0.0f, 0.0f, 0.0f, 0.45f);
   constexpr float kRotatePadding = 14.0f;
   constexpr float kHandleSize = 14.0f;
-  constexpr float kMinScale = 0.2f;
-  constexpr float kMaxScale = 8.0f;
   constexpr float kDisabledWidgetOpacity = 0.25f;
   constexpr float kRotationSnap = static_cast<float>(M_PI) / 12.0f;
   constexpr float kSnapGuideThresholdMin = 6.0f;
   constexpr float kSnapGuideThresholdMax = 18.0f;
-  constexpr float kScaleHeightIntentRatio = 1.75f;
   constexpr float kCenterGuideThickness = 3.0f;
   constexpr std::size_t kScaleCornerCount = 4;
 
@@ -163,6 +164,34 @@ namespace {
     return {cx + halfWidth * cosTheta - halfHeight * sinTheta, cy + halfWidth * sinTheta + halfHeight * cosTheta};
   }
 
+  Color lockscreenWallpaperFillColor(const WallpaperConfig& config) {
+    if (!config.fillColor) {
+      return rgba(0.0f, 0.0f, 0.0f, 1.0f);
+    }
+    return resolveColorSpec(*config.fillColor);
+  }
+
+  bool parseColorWallpaperPath(std::string_view path, Color& out) {
+    constexpr std::string_view kPrefix = "color:";
+    if (!path.starts_with(kPrefix)) {
+      return false;
+    }
+    return tryParseHexColor(path.substr(kPrefix.size()), out);
+  }
+
+  bool lockscreenWallpaperDiffersFromDesktop(
+      const BackgroundWidgetsEditorProfile& profile, ConfigService* config, std::string_view connectorName
+  ) {
+    if (!profile.showLockscreenLoginPreview || config == nullptr) {
+      return false;
+    }
+    const std::string& custom = config->config().lockscreen.wallpaper;
+    if (custom.empty()) {
+      return false;
+    }
+    return custom != config->getWallpaperPath(std::string(connectorName));
+  }
+
 } // namespace
 
 BackgroundWidgetsEditor::BackgroundWidgetsEditor(BackgroundWidgetsEditorProfile profile) : m_profile(profile) {}
@@ -184,11 +213,12 @@ std::string BackgroundWidgetsEditor::nextWidgetId() const {
 void BackgroundWidgetsEditor::initialize(
     WaylandConnection& wayland, ConfigService* config, PipeWireSpectrum* pipewireSpectrum,
     const WeatherService* weather, RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient,
-    SystemMonitorService* sysmon
+    SystemMonitorService* sysmon, SharedTextureCache* textureCache
 ) {
   m_wayland = &wayland;
   m_config = config;
   m_renderContext = renderContext;
+  m_textureCache = textureCache;
   m_factory = std::make_unique<DesktopWidgetFactory>(pipewireSpectrum, weather, mpris, httpClient, sysmon);
 }
 
@@ -218,6 +248,9 @@ void BackgroundWidgetsEditor::open(const WidgetsEditorSnapshot& snapshot) {
 WidgetsEditorSnapshot BackgroundWidgetsEditor::close() {
   if (m_drag.mode != DragMode::None) {
     finishDrag();
+  }
+  for (auto& surface : m_surfaces) {
+    releaseWallpaperPreview(*surface);
   }
   m_surfaces.clear();
   m_drag = {};
@@ -413,6 +446,10 @@ void BackgroundWidgetsEditor::prepareFrame(OverlaySurface& surface, bool needsUp
   if (needsLayout && surface.sceneRoot != nullptr) {
     surface.sceneRoot->layout(*m_renderContext);
   }
+
+  if (surface.wallpaperPreviewActive) {
+    updateWallpaperPreview(surface);
+  }
 }
 
 void BackgroundWidgetsEditor::rebuildScene(OverlaySurface& surface) {
@@ -437,6 +474,26 @@ void BackgroundWidgetsEditor::rebuildScene(OverlaySurface& surface) {
     root->setPopupContext(surface.selectPopup.get());
   }
   root->setFrameSize(static_cast<float>(surface.surface->width()), static_cast<float>(surface.surface->height()));
+
+  releaseWallpaperPreview(surface);
+  surface.wallpaperPreview = nullptr;
+  surface.wallpaperPreviewActive = false;
+  surface.wallpaperPreviewPath.clear();
+
+  if (lockscreenWallpaperDiffersFromDesktop(m_profile, m_config, surface.outputName)) {
+    surface.wallpaperPreviewActive = true;
+    surface.wallpaperPreviewPath = m_config->config().lockscreen.wallpaper;
+
+    auto wallpaper = std::make_unique<WallpaperNode>();
+    surface.wallpaperPreview = wallpaper.get();
+    wallpaper->setZIndex(-1);
+    const auto& wpConfig = m_config->config().wallpaper;
+    wallpaper->setFillMode(wpConfig.fillMode);
+    wallpaper->setFillColor(lockscreenWallpaperFillColor(wpConfig));
+    wallpaper->setPosition(0.0f, 0.0f);
+    wallpaper->setFrameSize(root->width(), root->height());
+    root->addChild(std::move(wallpaper));
+  }
 
   auto dim = ui::box({
       .fill = colorSpecFromRole(ColorRole::SurfaceVariant, 0.14f),
@@ -560,6 +617,7 @@ void BackgroundWidgetsEditor::rebuildScene(OverlaySurface& surface) {
         surfacePtr->surface->requestFrameTick();
       }
     });
+    widget->setBox(widgetState.boxWidth, widgetState.boxHeight);
     widget->update(*m_renderContext);
     widget->layout(*m_renderContext);
     if ((widgetState.type == "audio_visualizer" || widgetState.type == "fancy_audio_visualizer")
@@ -570,6 +628,20 @@ void BackgroundWidgetsEditor::rebuildScene(OverlaySurface& surface) {
     EditorWidgetView view;
     view.intrinsicWidth = std::max(1.0f, widget->intrinsicWidth());
     view.intrinsicHeight = std::max(1.0f, widget->intrinsicHeight());
+
+    // schema v1 migration: now that the natural size is measured (with the legacy scale already
+    // applied), bake it into an explicit box so it persists in the new schema and no longer
+    // depends on `scale`. The login box stays unsized (it spans the screen).
+    if (!lockscreen_login_box::isLoginBoxWidget(widgetState)
+        && widgetState.boxWidth <= 0.0f
+        && widgetState.boxHeight <= 0.0f
+        && std::abs(widgetState.legacyScale - 1.0f) > 0.001f) {
+      if (DesktopWidgetState* mutableState = findWidgetState(widgetState.id); mutableState != nullptr) {
+        mutableState->boxWidth = view.intrinsicWidth;
+        mutableState->boxHeight = view.intrinsicHeight;
+        mutableState->legacyScale = 1.0f;
+      }
+    }
 
     auto bodyArea = std::make_unique<InputArea>();
     view.bodyArea = bodyArea.get();
@@ -1042,6 +1114,7 @@ void BackgroundWidgetsEditor::applyViewState(
       }
     }
     view.widget->setContentScale(widgetContentScale(state));
+    view.widget->setBox(state.boxWidth, state.boxHeight);
     view.widget->update(*m_renderContext);
     view.widget->layout(*m_renderContext);
     view.intrinsicWidth = std::max(1.0f, view.widget->intrinsicWidth());
@@ -1091,7 +1164,9 @@ void BackgroundWidgetsEditor::addWidget(const std::string& outputName, const std
   widget.outputName = outputName;
   widget.cx = centerX;
   widget.cy = centerY;
-  widget.scale = 1.0f;
+  // box 0 = auto-fit content's natural size; the user resizes from there.
+  widget.boxWidth = 0.0f;
+  widget.boxHeight = 0.0f;
   widget.rotationRad = 0.0f;
   if (widget.type == "audio_visualizer") {
     widget.settings.emplace("aspect_ratio", static_cast<double>(kDefaultDesktopAudioVisualizerAspectRatio));
@@ -1103,7 +1178,7 @@ void BackgroundWidgetsEditor::addWidget(const std::string& outputName, const std
   }
 
   if (widget.type == "sticker") {
-    widget.settings.emplace("opacity", static_cast<double>(1.0));
+    widget.settings.emplace("opacity", 1.0);
     auto widgetId = widget.id;
     m_snapshot.widgets.push_back(std::move(widget));
 
@@ -1399,34 +1474,6 @@ void BackgroundWidgetsEditor::updateDrag() {
   }
   const float guideThreshold = snapGuideThreshold(m_snapshot.grid.cellSize);
 
-  CornerSigns scaleSigns;
-  float scaleHalfWidth = 1.0f;
-  float scaleHalfHeight = 1.0f;
-  float scaleInitialAabbWidth = 1.0f;
-  float scaleInitialAabbHeight = 1.0f;
-  bool hasScaleDragGeometry = false;
-  bool snapScaleByWidth = true;
-
-  const auto applyScaleDragState = [&]() {
-    if (!hasScaleDragGeometry) {
-      return;
-    }
-
-    if (!m_altHeld) {
-      const float scaleRatio = state->scale / std::max(0.001f, m_drag.initialState.scale);
-      const float factor = 1.0f - scaleRatio;
-      const float anchorLocalX = -scaleSigns.x * scaleHalfWidth;
-      const float anchorLocalY = -scaleSigns.y * scaleHalfHeight;
-      const float cosR = std::cos(m_drag.initialState.rotationRad);
-      const float sinR = std::sin(m_drag.initialState.rotationRad);
-      state->cx = m_drag.initialState.cx + (cosR * anchorLocalX - sinR * anchorLocalY) * factor;
-      state->cy = m_drag.initialState.cy + (sinR * anchorLocalX + cosR * anchorLocalY) * factor;
-    } else {
-      state->cx = m_drag.initialState.cx;
-      state->cy = m_drag.initialState.cy;
-    }
-  };
-
   if (m_drag.mode == DragMode::Move) {
     state->cx = m_drag.initialState.cx + (m_currentEventSceneX - m_drag.startSceneX);
     state->cy = m_drag.initialState.cy + (m_currentEventSceneY - m_drag.startSceneY);
@@ -1459,99 +1506,68 @@ void BackgroundWidgetsEditor::updateDrag() {
     }
     state->rotationRad = rotation;
   } else if (m_drag.mode == DragMode::Scale) {
-    scaleSigns = cornerSigns(static_cast<std::size_t>(m_drag.scaleCorner));
-    const float cornerX = m_currentEventSceneX;
-    const float cornerY = m_currentEventSceneY;
-    const float dx = cornerX - m_drag.initialState.cx;
-    const float dy = cornerY - m_drag.initialState.cy;
-    const float cosTheta = std::cos(-m_drag.initialState.rotationRad);
-    const float sinTheta = std::sin(-m_drag.initialState.rotationRad);
-    const float localX = (dx * cosTheta - dy * sinTheta) * scaleSigns.x;
-    const float localY = (dx * sinTheta + dy * cosTheta) * scaleSigns.y;
-    scaleHalfWidth = std::max(1.0f, m_drag.intrinsicWidth * 0.5f);
-    scaleHalfHeight = std::max(1.0f, m_drag.intrinsicHeight * 0.5f);
-    const WidgetTransformBounds initialBounds = computeWidgetTransformBounds(
-        m_drag.initialState.cx, m_drag.initialState.cy, m_drag.intrinsicWidth, m_drag.intrinsicHeight, 1.0f,
-        m_drag.initialState.rotationRad
-    );
-    scaleInitialAabbWidth = std::max(1.0f, initialBounds.aabbWidth);
-    scaleInitialAabbHeight = std::max(1.0f, initialBounds.aabbHeight);
-    hasScaleDragGeometry = true;
-    const float widthChange = std::abs(localX - scaleHalfWidth);
-    const float heightChange = std::abs(localY - scaleHalfHeight);
-    snapScaleByWidth = heightChange <= widthChange * kScaleHeightIntentRatio;
-    const float denominator = scaleHalfWidth * scaleHalfWidth + scaleHalfHeight * scaleHalfHeight;
-    const float relativeScale = (localX * scaleHalfWidth + localY * scaleHalfHeight) / std::max(1.0f, denominator);
-    const float newScale = std::clamp(m_drag.initialState.scale * relativeScale, kMinScale, kMaxScale);
-    state->scale = newScale;
-    applyScaleDragState();
+    // Resize the widget's box tile. The opposite corner stays fixed (Alt anchors the center).
+    // Snapping quantizes the box width/height to whole grid cells; content re-fits the box.
+    const CornerSigns signs = cornerSigns(static_cast<std::size_t>(m_drag.scaleCorner));
+    const float rot = m_drag.initialState.rotationRad;
+    const float cosR = std::cos(rot);
+    const float sinR = std::sin(rot);
+    const float halfW0 = std::max(0.5f, m_drag.intrinsicWidth * 0.5f);
+    const float halfH0 = std::max(0.5f, m_drag.intrinsicHeight * 0.5f);
+
+    float anchorX = m_drag.initialState.cx;
+    float anchorY = m_drag.initialState.cy;
+    if (!m_altHeld) {
+      const float anchorLocalX = -signs.x * halfW0;
+      const float anchorLocalY = -signs.y * halfH0;
+      anchorX = m_drag.initialState.cx + cosR * anchorLocalX - sinR * anchorLocalY;
+      anchorY = m_drag.initialState.cy + sinR * anchorLocalX + cosR * anchorLocalY;
+    }
+
+    // Dragged corner relative to the anchor, projected into the widget's un-rotated frame.
+    const float wx = m_currentEventSceneX - anchorX;
+    const float wy = m_currentEventSceneY - anchorY;
+    const float localX = wx * std::cos(-rot) - wy * std::sin(-rot);
+    const float localY = wx * std::sin(-rot) + wy * std::cos(-rot);
+
+    float boxW = m_altHeld ? std::abs(localX) * 2.0f : std::abs(localX);
+    float boxH = m_altHeld ? std::abs(localY) * 2.0f : std::abs(localY);
+
+    const float cell = static_cast<float>(std::max(1, m_snapshot.grid.cellSize));
+    boxW = std::max(cell, boxW);
+    boxH = std::max(cell, boxH);
+    if (shouldSnap()) {
+      boxW = std::max(cell, std::round(boxW / cell) * cell);
+      boxH = std::max(cell, std::round(boxH / cell) * cell);
+    }
+
+    if (!m_altHeld) {
+      const float centerLocalX = signs.x * boxW * 0.5f;
+      const float centerLocalY = signs.y * boxH * 0.5f;
+      state->cx = anchorX + cosR * centerLocalX - sinR * centerLocalY;
+      state->cy = anchorY + sinR * centerLocalX + cosR * centerLocalY;
+    }
+    state->boxWidth = boxW;
+    state->boxHeight = boxH;
   }
 
   float clampWidth = m_drag.intrinsicWidth;
   float clampHeight = m_drag.intrinsicHeight;
-  float dragVisualScale = 1.0f;
-  if (m_drag.mode == DragMode::Scale && hasScaleDragGeometry) {
-    dragVisualScale = state->scale / std::max(0.001f, m_drag.initialState.scale);
-    clampWidth = m_drag.intrinsicWidth * dragVisualScale;
-    clampHeight = m_drag.intrinsicHeight * dragVisualScale;
-
-    if (shouldSnap()) {
-      const bool axisX = snapScaleByWidth;
-      const float initialExtent = axisX ? scaleInitialAabbWidth : scaleInitialAabbHeight;
-      if (initialExtent > 0.0f) {
-        const float sign = axisX ? scaleSigns.x : scaleSigns.y;
-        const float initialCenter = axisX ? m_drag.initialState.cx : m_drag.initialState.cy;
-        const float currentExtent = initialExtent * (state->scale / std::max(0.001f, m_drag.initialState.scale));
-        float targetExtent = currentExtent;
-
-        if (m_altHeld) {
-          const float draggedLine = initialCenter + sign * currentExtent * 0.5f;
-          const float snappedLine = snapLineToTargets(
-              draggedLine, m_snapshot.grid.cellSize, axisX ? gridOriginX : gridOriginY, axisX ? snapLinesX : snapLinesY,
-              guideThreshold
-          );
-          targetExtent = std::abs(snappedLine - initialCenter) * 2.0f;
-        } else {
-          const float anchorLine = initialCenter - sign * initialExtent * 0.5f;
-          const float draggedLine = anchorLine + sign * currentExtent;
-          const float snappedLine = snapLineToTargets(
-              draggedLine, m_snapshot.grid.cellSize, axisX ? gridOriginX : gridOriginY, axisX ? snapLinesX : snapLinesY,
-              guideThreshold
-          );
-          targetExtent = std::abs(snappedLine - anchorLine);
-        }
-
-        if (targetExtent > 0.0f) {
-          const float snappedScale =
-              std::clamp(m_drag.initialState.scale * (targetExtent / initialExtent), kMinScale, kMaxScale);
-          if (std::abs(snappedScale - state->scale) > 0.0001f) {
-            state->scale = snappedScale;
-            applyScaleDragState();
-          }
-        }
-      }
-    }
-
-    if (EditorWidgetView* view = findView(m_drag.widgetId); view != nullptr) {
-      view->intrinsicWidth = clampWidth;
-      view->intrinsicHeight = clampHeight;
-    }
+  if (m_drag.mode == DragMode::Scale) {
+    clampWidth = std::max(1.0f, state->boxWidth);
+    clampHeight = std::max(1.0f, state->boxHeight);
   }
 
   if (m_wayland != nullptr) {
     desktop_widgets::clampStateToOutput(*m_wayland, *state, clampWidth, clampHeight);
   }
 
-  updateViewTransforms();
-
-  if (m_drag.mode == DragMode::Scale && hasScaleDragGeometry) {
-    if (EditorWidgetView* view = findView(m_drag.widgetId); view != nullptr && view->transformNode != nullptr) {
-      view->transformNode->setScale(dragVisualScale);
-      view->transformNode->setFrameSize(m_drag.intrinsicWidth, m_drag.intrinsicHeight);
-      view->transformNode->setPosition(
-          state->cx - m_drag.intrinsicWidth * 0.5f, state->cy - m_drag.intrinsicHeight * 0.5f
-      );
-    }
+  // For a resize, re-layout the dragged widget so its content re-fits the new box; otherwise
+  // just reposition the views.
+  if (m_drag.mode == DragMode::Scale) {
+    updateViewTransforms(&m_drag.widgetId);
+  } else {
+    updateViewTransforms();
   }
 
   if (OverlaySurface* redrawSurface = findSurfaceForWidget(m_drag.widgetId);
@@ -1769,6 +1785,87 @@ void BackgroundWidgetsEditor::onSecondTick() {
       surface->surface->requestUpdate();
     }
   }
+}
+
+void BackgroundWidgetsEditor::releaseWallpaperPreview(OverlaySurface& surface) {
+  if (surface.wallpaperPreviewTexture.id == 0) {
+    surface.wallpaperPreviewLoadedPath.clear();
+    return;
+  }
+
+  const std::string& releasePath = surface.wallpaperPreviewLoadedPath;
+  if (m_textureCache != nullptr && m_textureCache->shared()) {
+    if (!releasePath.empty()) {
+      m_textureCache->release(surface.wallpaperPreviewTexture, releasePath);
+    }
+  } else if (m_renderContext != nullptr) {
+    m_renderContext->backend().makeCurrentNoSurface();
+    m_renderContext->textureManager().unload(surface.wallpaperPreviewTexture);
+  }
+  surface.wallpaperPreviewTexture = {};
+  surface.wallpaperPreviewLoadedPath.clear();
+}
+
+void BackgroundWidgetsEditor::updateWallpaperPreview(OverlaySurface& surface) {
+  if (!surface.wallpaperPreviewActive
+      || surface.wallpaperPreview == nullptr
+      || m_config == nullptr
+      || m_renderContext == nullptr
+      || surface.surface == nullptr) {
+    return;
+  }
+
+  const float width = static_cast<float>(surface.surface->width());
+  const float height = static_cast<float>(surface.surface->height());
+  surface.wallpaperPreview->setPosition(0.0f, 0.0f);
+  surface.wallpaperPreview->setSize(width, height);
+
+  const std::string& path = surface.wallpaperPreviewPath;
+  if (path.empty()) {
+    return;
+  }
+
+  Color color = rgba(0.0f, 0.0f, 0.0f, 1.0f);
+  if (parseColorWallpaperPath(path, color)) {
+    if (surface.wallpaperPreviewTexture.id != 0) {
+      releaseWallpaperPreview(surface);
+    }
+    surface.wallpaperPreview->setSources(
+        WallpaperSourceKind::Color, {}, color, WallpaperSourceKind::Image, {}, rgba(0.0f, 0.0f, 0.0f, 1.0f), 0.0f, 0.0f,
+        0.0f, 0.0f
+    );
+    surface.wallpaperPreview->setTransition(WallpaperTransition::Fade, 0.0f, TransitionParams{});
+    return;
+  }
+
+  const bool needsReload = surface.wallpaperPreviewTexture.id == 0 || surface.wallpaperPreviewLoadedPath != path;
+  TextureHandle texture = surface.wallpaperPreviewTexture;
+  if (needsReload) {
+    if (m_textureCache != nullptr) {
+      texture = m_textureCache->acquire(path);
+      if (texture.id == 0 && !m_textureCache->shared()) {
+        m_renderContext->backend().makeCurrentNoSurface();
+        texture = m_renderContext->textureManager().loadFromFile(path, 0, true);
+      }
+    } else {
+      m_renderContext->backend().makeCurrentNoSurface();
+      texture = m_renderContext->textureManager().loadFromFile(path, 0, true);
+    }
+  }
+
+  if (texture.id == 0) {
+    return;
+  }
+
+  if (needsReload && surface.wallpaperPreviewTexture.id != 0 && surface.wallpaperPreviewLoadedPath != path) {
+    releaseWallpaperPreview(surface);
+  }
+  surface.wallpaperPreviewTexture = texture;
+  surface.wallpaperPreviewLoadedPath = path;
+  surface.wallpaperPreview->setTextures(
+      texture.id, {}, static_cast<float>(texture.width), static_cast<float>(texture.height), 0.0f, 0.0f
+  );
+  surface.wallpaperPreview->setTransition(WallpaperTransition::Fade, 0.0f, TransitionParams{});
 }
 
 void BackgroundWidgetsEditor::requestLayout() {

@@ -114,7 +114,7 @@ namespace desktop_entry_launch {
       args = tokenize(cleanExec);
     }
 
-    if (!args.empty() && args.front().find('/') != std::string::npos) {
+    if (!args.empty() && args.front().contains('/')) {
       args.front() = expandExecutablePath(args.front());
     }
 

@@ -101,7 +101,8 @@ namespace {
         && a.outputName == b.outputName
         && a.cx == b.cx
         && a.cy == b.cy
-        && a.scale == b.scale
+        && a.boxWidth == b.boxWidth
+        && a.boxHeight == b.boxHeight
         && a.rotationRad == b.rotationRad
         && a.enabled == b.enabled
         && widgetSettingsEqual(a.settings, b.settings);
@@ -258,7 +259,7 @@ namespace {
   }
 
   bool widgetConfigEqual(const WidgetConfig& a, const WidgetConfig& b) {
-    return a.type == b.type && widgetSettingsEqual(a.settings, b.settings);
+    return a.type == b.type && widgetSettingsEqual(a.settings, b.settings) && a.tables == b.tables;
   }
 
   bool widgetMapEqual(
@@ -344,7 +345,8 @@ namespace {
     widgetTable.insert_or_assign("output", widget.outputName);
     widgetTable.insert_or_assign("cx", static_cast<double>(widget.cx));
     widgetTable.insert_or_assign("cy", static_cast<double>(widget.cy));
-    widgetTable.insert_or_assign("scale", static_cast<double>(widget.scale));
+    widgetTable.insert_or_assign("box_width", static_cast<double>(widget.boxWidth));
+    widgetTable.insert_or_assign("box_height", static_cast<double>(widget.boxHeight));
     widgetTable.insert_or_assign("rotation", static_cast<double>(widget.rotationRad));
     if (!widget.enabled) {
       widgetTable.insert_or_assign("enabled", false);
@@ -847,7 +849,7 @@ std::size_t ConfigService::overridePreserveDepthForPath(const std::vector<std::s
   if (path.size() > 4 && path[0] == "bar" && path[2] == "monitor" && isOverrideOnlyMonitorOverride(path[1], path[3])) {
     return 4;
   }
-  if (path.size() > 4 && path[0] == "wallpaper" && path[2] == "monitor" && path[3].size() > 0) {
+  if (path.size() > 4 && path[0] == "wallpaper" && path[2] == "monitor" && !path[3].empty()) {
     return 4;
   }
   if (path.size() > 2 && path[0] == "bar" && isOverrideOnlyBar(path[1])) {

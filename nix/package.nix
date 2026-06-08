@@ -1,5 +1,6 @@
 {
   lib,
+  config,
   stdenv,
   meson,
   ninja,
@@ -28,12 +29,14 @@
   libqalculate,
   libxml2,
   jemalloc,
-  source ? lib.cleanSource ./..,
-  shortRev,
-  version,
+  autoAddDriverRunpath,
+  cudaSupport ? config.cudaSupport,
 }:
 
 let
+  inherit (builtins) head match readFile;
+  version = head (match ".*version: '([^']+)'.*" (readFile ../meson.build));
+
   # libprojectm 4.x links against desktop GL by default, but noctalia uses an
   # EGL/GLESv2 share group. Toggle the upstream CMake ENABLE_GLES option so the
   # library's GL paths match the contexts we hand it. Also patch the installed
@@ -61,13 +64,11 @@ stdenv.mkDerivation {
   pname = "noctalia";
   inherit version;
 
-  src = source;
+  src = lib.cleanSource ./..;
 
   postPatch = ''
     # Remove -march=native and -mtune=native for reproducible builds
     sed -i "s/'-march=native', '-mtune=native',//" meson.build
-
-    sed -i "s|@VCS_TAG@|${shortRev}|g" src/core/git_revision.h.in
   '';
 
   nativeBuildInputs = [
@@ -76,7 +77,8 @@ stdenv.mkDerivation {
     pkg-config
     wayland-scanner
     jemalloc
-  ];
+  ]
+  ++ lib.optional cudaSupport autoAddDriverRunpath;
 
   buildInputs = [
     wayland

@@ -38,8 +38,8 @@ class SysmonWidget : public Widget {
 public:
   SysmonWidget(
       SystemMonitorService* monitor, wl_output* output, SysmonStat stat, std::string diskPath,
-      SysmonDisplayMode displayMode, ColorSpec gaugeColor, ColorSpec highlightColor, ConfigService& configService,
-      bool showLabel = true, float labelMinWidth = 0.0f
+      SysmonDisplayMode displayMode, ColorSpec highlightColor, ConfigService& configService, bool showLabel = true,
+      float labelMinWidth = 0.0f
   );
   ~SysmonWidget() override;
 
@@ -70,7 +70,6 @@ private:
   SystemMonitorService* m_monitor;
   SysmonStat m_stat;
   SysmonDisplayMode m_displayMode;
-  ColorSpec m_gaugeColor = colorSpecFromRole(ColorRole::Primary);
   ColorSpec m_highlightColor = colorSpecFromRole(ColorRole::Error);
   ConfigService& m_configService;
   bool m_showLabel;

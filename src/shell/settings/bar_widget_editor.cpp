@@ -27,6 +27,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <unordered_map>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -867,6 +868,14 @@ namespace settings {
         }
         return false;
       };
+      for (const auto& condition : spec.visibleWhen->all) {
+        if (!matches(condition.key, condition.values)) {
+          return false;
+        }
+      }
+      if (spec.visibleWhen->any.empty()) {
+        return true;
+      }
       for (const auto& condition : spec.visibleWhen->any) {
         if (matches(condition.key, condition.values)) {
           return true;
@@ -1251,7 +1260,7 @@ namespace settings {
 
         const auto value = widgetSettingValue(ctx.config, widgetName, spec);
         SettingEntry entry{
-            .section = "bar",
+            .section = SettingsSection::Bar,
             .group = "widget-settings",
             .title = !spec.literalLabel.empty() ? spec.literalLabel
                 : spec.labelKey.empty()         ? std::string{}
@@ -1467,6 +1476,18 @@ namespace settings {
         case WidgetControlKind::StringList:
           ctx.makeListBlock(*panel, entry, ListSetting{.items = settingValueAsStringList(value)});
           break;
+        case WidgetControlKind::StringMap:
+          ctx.makeStringMapBlock(
+              *panel, entry,
+              StringMapSetting{
+                  .entries = widgetConfig != nullptr ? widgetConfig->getStringMap(spec.schema.key)
+                                                     : std::unordered_map<std::string, std::string>{},
+                  .suggestedKeys = ctx.keyboardLayoutNames,
+                  .keyPlaceholder = "Layout name",
+                  .valuePlaceholder = "Label",
+              }
+          );
+          break;
         case WidgetControlKind::Select: {
           SelectSetting selectSetting;
           const std::string selectedValue = settingValueAsString(value);
@@ -1493,7 +1514,7 @@ namespace settings {
               defaultString != nullptr) {
             selectSetting.clearOnEmpty = defaultString->empty();
           }
-          ctx.makeRow(*panel, entry, ctx.makeSelect(std::move(selectSetting), path));
+          ctx.makeRow(*panel, entry, ctx.makeSelect(selectSetting, path));
           break;
         }
         case WidgetControlKind::ColorSpec: {
@@ -1501,7 +1522,7 @@ namespace settings {
           pickerSetting.selectedValue = settingValueAsString(value);
           pickerSetting.allowNone = spec.advanced;
           pickerSetting.allowCustomColor = spec.allowCustomColor;
-          ctx.makeRow(*panel, entry, ctx.makeColorSpecPicker(std::move(pickerSetting), path));
+          ctx.makeRow(*panel, entry, ctx.makeColorSpecPicker(pickerSetting, path));
           break;
         }
         }
@@ -1870,7 +1891,7 @@ namespace settings {
             valueInputPtr->setValue(formatSliderValue(next, integerValue));
           },
       });
-      slider->setOnDragEnd([sliderPtr, onCommit]() { onCommit(static_cast<double>(sliderPtr->value())); });
+      slider->setOnDragEnd([sliderPtr, onCommit]() { onCommit(sliderPtr->value()); });
 
       const auto commitInputText = [sliderPtr, valueInputPtr, minV, maxV, integerValue,
                                     onCommit](const std::string& text) {
@@ -1882,7 +1903,7 @@ namespace settings {
         valueInputPtr->setInvalid(false);
         sliderPtr->setValue(*parsed);
         valueInputPtr->setValue(formatSliderValue(sliderPtr->value(), integerValue));
-        onCommit(static_cast<double>(sliderPtr->value()));
+        onCommit(sliderPtr->value());
       };
       valueInput->setOnChange([valueInputPtr](const std::string& /*text*/) { valueInputPtr->setInvalid(false); });
       valueInput->setOnSubmit([commitInputText](const std::string& text) { commitInputText(text); });
@@ -1977,7 +1998,7 @@ namespace settings {
       const auto groupEntry = [&](std::string_view field) {
         const std::string base = std::string("settings.entities.widget.group.") + std::string(field);
         return SettingEntry{
-            .section = "bar",
+            .section = SettingsSection::Bar,
             .group = "capsule-group",
             .title = i18n::tr(base),
             .subtitle = i18n::tr(base + "-description"),

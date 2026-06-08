@@ -154,8 +154,19 @@ background_opacity = 0.97           # background opacity of OSD popups
 offset_x = 20                       # absolute horizontal margin from the screen edge
 offset_y = 8                        # absolute vertical margin from the screen edge
 # monitors = ["DP-1"]               # connector names; omit or leave empty for all monitors
-lock_keys = true                    # show Caps/Num/Scroll Lock OSD popups; disable to stop polling when no widget uses them
-keyboard_layout = true            # show an OSD popup when the input keyboard layout changes
+
+[osd.kinds]
+volume = true                       # master volume OSD toggle
+volume_output = true                # output (speaker) volume; requires volume = true
+volume_input = true                 # input (microphone) volume; requires volume = true
+brightness = true                   # display brightness changes
+wifi = true                         # Wi-Fi toggle
+bluetooth = true                    # Bluetooth toggle
+power_profile = true                # power profile changes
+caffeine = true                     # idle inhibitor (caffeine) toggle
+dnd = true                          # Do Not Disturb toggle
+lock_keys = true                    # Caps/Num/Scroll Lock changes; disable to stop polling when no widget uses them
+keyboard_layout = true              # input keyboard layout changes
 
 # ── Lock Screen ───────────────────────────────────────────────────────────────
 
@@ -410,11 +421,21 @@ battery_low_percent_threshold = 0   # set to e.g. 15 to enable battery_under_thr
 # [widget.notifications]
 # hide_when_no_unread = true
 
+# [widget.keyboard_layout]
+# display                 = "short"    # "short" (e.g. "DE") or "full" (full layout name)
+# show_icon               = true
+# show_label              = true
+# hide_when_single_layout = false      # hide the widget when only one layout is configured
+# cycle_command           = ""         # custom command to cycle layouts (empty = compositor backend)
+# [widget.keyboard_layout.custom_labels]  # override display labels by exact layout name
+# "German (Neo 2)"        = "Neo2"
+# "English (US)"          = "EN"
+
 # [widget.lock_button]
 # type                = "custom_button"
 # glyph               = "lock"
 # tooltip             = "Lock screen"
-# command             = "loginctl lock-session"
+# command             = "noctalia:session lock"
 # right_command       = ""
 # middle_command      = ""
 # scroll_up_command   = ""

@@ -57,6 +57,7 @@ namespace settings {
     Folder,
     Glyph,
     StringList,
+    StringMap,
     Select,
     ColorSpec,
   };
@@ -79,7 +80,8 @@ namespace settings {
   };
 
   struct WidgetSettingVisibility {
-    std::vector<WidgetSettingVisibilityCondition> any;
+    std::vector<WidgetSettingVisibilityCondition> any; // visible if any alternative matches (empty = unconstrained)
+    std::vector<WidgetSettingVisibilityCondition> all; // additionally requires every condition to match
 
     WidgetSettingVisibility() = default;
     WidgetSettingVisibility(std::string key, std::vector<std::string> values)

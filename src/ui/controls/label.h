@@ -58,8 +58,6 @@ public:
 
   void measure(Renderer& renderer);
 
-  void setCaptionStyle();
-
 private:
   void doLayout(Renderer& renderer) override;
   LayoutSize doMeasure(Renderer& renderer, const LayoutConstraints& constraints) override;

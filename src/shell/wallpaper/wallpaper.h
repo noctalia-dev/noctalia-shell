@@ -6,6 +6,7 @@
 #include "ui/signal.h"
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -38,6 +39,7 @@ public:
   void onSecondTick();
   void onGpuResourcesInvalidated();
   void registerIpc(IpcService& ipc);
+  void setAutomationGate(std::function<bool()> gate);
 
   [[nodiscard]] TextureHandle currentTexture() const;
 
@@ -47,6 +49,7 @@ private:
   void applyStartupAutomation(std::int64_t secondStamp);
   void resetAutomationState();
   void runAutomation(std::int64_t secondStamp);
+  [[nodiscard]] bool automationAllowed() const noexcept;
   [[nodiscard]] bool switchToRandomWallpaper(std::optional<std::string_view> connector = std::nullopt);
   void createInstance(const WaylandOutput& output);
   [[nodiscard]] TextureHandle acquireTexture(const std::string& path);
@@ -73,6 +76,7 @@ private:
   WallpaperConfig m_lastWallpaperConfig{};
   std::int64_t m_lastAutomationSecondStamp = -1;
   std::int64_t m_lastAutomationSwitchSecond = -1;
+  std::function<bool()> m_automationGate;
   Signal<>::ScopedConnection m_paletteConn;
   std::vector<std::unique_ptr<WallpaperInstance>> m_instances;
 

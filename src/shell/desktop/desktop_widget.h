@@ -52,8 +52,21 @@ public:
   void setFrameTickRequestCallback(FrameTickRequestCallback callback) {
     m_frameTickRequestCallback = std::move(callback);
   }
-  void setContentScale(float scale) noexcept { m_contentScale = scale; }
+  void setContentScale(float scale) noexcept {
+    m_baseScale = scale;
+    m_contentScale = scale;
+  }
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
+  // Target box size (logical px) of the widget's grid tile. 0 means auto-fit the content's
+  // natural size. When set, layout() scales the content to fill the box (aspect-preserved,
+  // centered) and the background/surface take the box dimensions.
+  void setBox(float width, float height) noexcept {
+    m_boxWidth = width;
+    m_boxHeight = height;
+  }
+  // Font family for the widget's text (empty = inherit the shell font). Stored here and applied to
+  // labels during layout() so it survives widget rebuilds, not just live setting changes.
+  void setFontFamily(const std::string& family) { m_fontFamily = family; }
   // Desktop widget editor keeps widgets visible for layout even when runtime idle-hide applies.
   virtual void setEditorPreview(bool enabled) noexcept { (void)enabled; }
   void setBackgroundStyle(const ColorSpec& color, float radius, float padding);
@@ -93,17 +106,35 @@ protected:
   virtual void doLayout(Renderer& renderer) = 0;
   virtual void doUpdate(Renderer& renderer) { (void)renderer; }
 
+  // Push the widget's configured font family onto every text node it owns. Empty family means
+  // inherit the shell font. The base handles the `font_family` setting and the relayout; text
+  // widgets override this to apply it to their labels.
+  virtual void onFontFamilyChanged(const std::string& family, Renderer& renderer) {
+    (void)family;
+    (void)renderer;
+  }
+
   // Outer node released to the host: background wrapper when enabled, otherwise content.
   [[nodiscard]] Node* presentationRoot() const noexcept;
 
   float m_contentScale = 1.0f;
+  float m_baseScale = 1.0f;
+  float m_boxWidth = 0.0f;
+  float m_boxHeight = 0.0f;
+  std::string m_fontFamily; // empty = inherit the shell font
+  // High-water marks of the natural content size (measured at base scale), so the box-fit factor
+  // tracks the widest content ever seen rather than the live content. This keeps the font size
+  // stable for dynamic text (e.g. a seconds clock in a proportional font) instead of breathing
+  // every update. Reset when the base scale changes.
+  float m_maxNaturalWidth = 0.0f;
+  float m_maxNaturalHeight = 0.0f;
+  float m_fitRefScale = -1.0f;
   AnimationManager* m_animations = nullptr;
 
 private:
   void applyBackground();
 
   std::unique_ptr<Node> m_outerRoot;
-  std::unique_ptr<Node> m_contentOwned;
   Node* m_contentRoot = nullptr;
   Node* m_outerRootPtr = nullptr;
   Box* m_bgBox = nullptr;

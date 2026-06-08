@@ -77,12 +77,10 @@ namespace {
   }
 
   bool isSymbolicIconName(std::string_view name) {
-    return name.find("symbolic") != std::string_view::npos || name.ends_with("-panel") || name.ends_with("_panel");
+    return name.contains("symbolic") || name.ends_with("-panel") || name.ends_with("_panel");
   }
 
-  bool isSymbolicIconPath(std::string_view path) {
-    return path.find("symbolic") != std::string_view::npos || path.find("/status/") != std::string_view::npos;
-  }
+  bool isSymbolicIconPath(std::string_view path) { return path.contains("symbolic") || path.contains("/status/"); }
 
   bool isSvgPath(std::string_view path) { return path.ends_with(".svg") || path.ends_with(".SVG"); }
 
@@ -103,6 +101,36 @@ namespace {
     const std::uint8_t gg = toByte(symbolicColor.g);
     const std::uint8_t bb = toByte(symbolicColor.b);
 
+    // Symbolic assets come in two broad forms:
+    // 1) Proper alpha-mask icons (transparent background), where source alpha
+    //    already defines the shape and luminance should be ignored.
+    // 2) Opaque monochrome bitmaps/SVG rasterizations, where luminance polarity
+    //    (light-on-dark vs dark-on-light) must be converted into alpha.
+    std::size_t transparentPixels = 0;
+    float lumSum = 0.0f;
+    float alphaWeight = 0.0f;
+    const std::size_t pixelCount = loaded->rgba.size() / 4U;
+    for (std::size_t i = 0; i + 3 < loaded->rgba.size(); i += 4) {
+      const std::uint8_t a = loaded->rgba[i + 3];
+      if (a <= 8) {
+        ++transparentPixels;
+        continue;
+      }
+      const float lum = (static_cast<float>(loaded->rgba[i]) * 0.299f
+                         + static_cast<float>(loaded->rgba[i + 1]) * 0.587f
+                         + static_cast<float>(loaded->rgba[i + 2]) * 0.114f)
+          / 255.0f;
+      const float w = static_cast<float>(a) / 255.0f;
+      lumSum += lum * w;
+      alphaWeight += w;
+    }
+
+    const float transparentRatio =
+        pixelCount == 0 ? 0.0f : static_cast<float>(transparentPixels) / static_cast<float>(pixelCount);
+    const bool useSourceAlphaMask = transparentRatio > 0.10f;
+    const float avgLum = alphaWeight > 0.0f ? lumSum / alphaWeight : 0.0f;
+    const bool invertLumaMask = avgLum > 0.5f;
+
     for (std::size_t i = 0; i + 3 < loaded->rgba.size(); i += 4) {
       const std::uint8_t a = loaded->rgba[i + 3];
       if (a == 0) {
@@ -110,10 +138,11 @@ namespace {
       }
       const float lum =
           (loaded->rgba[i] * 0.299f + loaded->rgba[i + 1] * 0.587f + loaded->rgba[i + 2] * 0.114f) / 255.0f;
+      const float mask = useSourceAlphaMask ? 1.0f : (invertLumaMask ? (1.0f - lum) : lum);
       loaded->rgba[i + 0] = rr;
       loaded->rgba[i + 1] = gg;
       loaded->rgba[i + 2] = bb;
-      loaded->rgba[i + 3] = static_cast<std::uint8_t>(std::lround(a * lum));
+      loaded->rgba[i + 3] = static_cast<std::uint8_t>(std::lround(a * std::clamp(mask, 0.0f, 1.0f)));
     }
 
     return loaded;
@@ -429,7 +458,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
       break;
     }
     if (hasDrawerItems) {
-      const float itemSize = Style::barGlyphSize * m_contentScale;
+      const float itemSize = Style::baseGlyphSize * m_contentScale;
       auto triggerArea = std::make_unique<InputArea>();
       auto* triggerPtr = triggerArea.get();
       m_drawerTrigger = triggerPtr;
@@ -486,7 +515,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
       continue;
     }
     const std::string iconPath = resolveIconPath(item);
-    const float itemSize = Style::barGlyphSize * m_contentScale;
+    const float itemSize = Style::baseGlyphSize * m_contentScale;
     const float iconSize = itemSize;
     const int iconRequestSize = std::max(32, static_cast<int>(std::round(iconSize * 2.0f)));
 
@@ -808,7 +837,7 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
   }
 
   // Match the on-screen request size used when the icon is loaded (see rebuild).
-  const int iconTargetSize = std::max(32, static_cast<int>(std::round(Style::barGlyphSize * m_contentScale * 2.0f)));
+  const int iconTargetSize = std::max(32, static_cast<int>(std::round(Style::baseGlyphSize * m_contentScale * 2.0f)));
 
   auto resolveMapped = [this, iconTargetSize](const std::string& name) -> std::string {
     if (name.empty()) {

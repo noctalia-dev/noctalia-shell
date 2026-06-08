@@ -8,6 +8,7 @@
 #include "shell/panel/panel_manager.h"
 #include "ui/builders.h"
 #include "ui/palette.h"
+#include "ui/style.h"
 
 #include <algorithm>
 #include <memory>
@@ -67,7 +68,7 @@ namespace {
       addChild(
           ui::glyph({
               .glyph = network_glyphs::wifiGlyphForSignal(m_ap.strength),
-              .glyphSize = Style::fontSizeBody * scale,
+              .glyphSize = Style::baseGlyphSize * scale,
               .color = colorSpecFromRole(ColorRole::OnSurface),
           })
       );
@@ -87,7 +88,7 @@ namespace {
         addChild(
             ui::glyph({
                 .glyph = "lock",
-                .glyphSize = Style::fontSizeCaption * scale,
+                .glyphSize = Style::baseGlyphSize * scale,
                 .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
             })
         );
@@ -98,14 +99,13 @@ namespace {
               .text = std::to_string(static_cast<int>(m_ap.strength)) + "%",
               .fontSize = Style::fontSizeCaption * scale,
               .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
-              .configure = [](Label& label) { label.setCaptionStyle(); },
           })
       );
 
       const float actionOpacity = (m_ap.active || saved) ? 1.0f : 0.0f;
       auto action = ui::button({
           .out = &m_actionButton,
-          .glyphSize = Style::fontSizeBody * scale,
+          .glyphSize = Style::baseGlyphSize * scale,
           .variant = ButtonVariant::Ghost,
           .padding = Style::spaceXs * scale,
           .radius = Style::scaledRadiusSm(scale),
@@ -224,7 +224,7 @@ namespace {
           ui::button({
               .out = &m_checkButton,
               .glyph = "check",
-              .glyphSize = Style::fontSizeBody * scale,
+              .glyphSize = Style::baseGlyphSize * scale,
               .variant = ButtonVariant::Ghost,
               .padding = Style::spaceXs * scale,
               .radius = Style::scaledRadiusSm(scale),
@@ -236,7 +236,7 @@ namespace {
           ui::button({
               .out = &m_actionButton,
               .glyph = m_vpn.active ? "plug-off" : "plug",
-              .glyphSize = Style::fontSizeBody * scale,
+              .glyphSize = Style::baseGlyphSize * scale,
               .variant = m_vpn.active ? ButtonVariant::Destructive : ButtonVariant::Default,
               .padding = Style::spaceXs * scale,
               .radius = Style::scaledRadiusSm(scale),
@@ -371,12 +371,11 @@ std::unique_ptr<Flex> NetworkTab::create() {
           .fontSize = Style::fontSizeCaption * scale,
           .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
           .flexGrow = 1.0f,
-          .configure = [](Label& label) { label.setCaptionStyle(); },
       }),
       ui::button({
           .out = &m_disconnectButton,
           .glyph = "plug-off",
-          .glyphSize = Style::fontSizeBody * scale,
+          .glyphSize = Style::baseGlyphSize * scale,
           .variant = ButtonVariant::Destructive,
           .padding = Style::spaceXs * scale,
           .radius = Style::scaledRadiusSm(scale),
@@ -427,7 +426,7 @@ std::unique_ptr<Flex> NetworkTab::create() {
       ui::button({
           .out = &m_passwordRevealButton,
           .glyph = "eye",
-          .glyphSize = Style::fontSizeBody * scale,
+          .glyphSize = Style::baseGlyphSize * scale,
           .variant = ButtonVariant::Ghost,
           .minWidth = Style::controlHeightSm * scale,
           .minHeight = Style::controlHeightSm * scale,
@@ -738,9 +737,8 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
       container->addChild(
           ui::label({
               .text = i18n::tr("control-center.network.no-networks"),
-              .fontSize = Style::fontSizeCaption * scale,
+              .fontSize = Style::fontSizeBody * scale,
               .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
-              .configure = [](Label& label) { label.setCaptionStyle(); },
           })
       );
     } else {
@@ -804,9 +802,8 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
     m_list->addChild(
         ui::label({
             .text = i18n::tr("control-center.network.unavailable-title"),
-            .fontSize = Style::fontSizeCaption * scale,
+            .fontSize = Style::fontSizeBody * scale,
             .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
-            .configure = [](Label& label) { label.setCaptionStyle(); },
         })
     );
   } else {
@@ -820,14 +817,13 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
           {.align = FlexAlign::Center, .gap = Style::spaceSm * scale, .minHeight = Style::controlHeightSm * scale},
           ui::label({
               .text = i18n::tr("control-center.network.vpns"),
-              .fontSize = Style::fontSizeCaption * scale,
+              .fontSize = Style::fontSizeBody * scale,
               .color = colorSpecFromRole(ColorRole::Secondary),
               .flexGrow = 1.0f,
-              .configure = [](Label& label) { label.setCaptionStyle(); },
           }),
           ui::toggle({
               .checkedImmediate = m_vpnVisible,
-              .toggleSize = ToggleSize::Small,
+              .toggleSize = ToggleSize::Medium,
               .scale = scale,
               .onChange = [this](bool checked) {
                 m_vpnVisible = checked;
@@ -860,7 +856,7 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
 
       m_vpnSection = vpnSection.get();
       m_list->addChild(std::move(vpnSection));
-      m_list->addChild(ui::separator());
+      m_list->addChild(ui::separator({.spacing = Style::spaceMd * scale}));
     }
 
     {
@@ -871,10 +867,9 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
            .maxHeight = Style::controlHeightSm * scale},
           ui::label({
               .text = i18n::tr("control-center.network.wireless"),
-              .fontSize = Style::fontSizeCaption * scale,
+              .fontSize = Style::fontSizeBody * scale,
               .color = colorSpecFromRole(ColorRole::Secondary),
               .flexGrow = 1.0f,
-              .configure = [](Label& label) { label.setCaptionStyle(); },
           })
       );
 
@@ -882,7 +877,7 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
           ui::spinner({
               .out = &m_scanSpinner,
               .color = colorSpecFromRole(ColorRole::Primary),
-              .spinnerSize = Style::fontSizeCaption * scale,
+              .spinnerSize = Style::baseGlyphSize * scale,
           })
       );
 
@@ -890,7 +885,7 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
           ui::button({
               .out = &m_rescanButton,
               .glyph = "refresh",
-              .glyphSize = Style::fontSizeCaption * scale,
+              .glyphSize = Style::baseGlyphSize * scale,
               .variant = ButtonVariant::Ghost,
               .padding = Style::spaceXs * scale,
               .radius = Style::scaledRadiusSm(scale),
@@ -905,7 +900,7 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
       wifiHeader->addChild(
           ui::toggle({
               .out = &m_wifiToggle,
-              .toggleSize = ToggleSize::Small,
+              .toggleSize = ToggleSize::Medium,
               .scale = scale,
               .onChange = [this](bool checked) {
                 if (m_network != nullptr) {

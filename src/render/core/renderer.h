@@ -35,6 +35,10 @@ struct TextMetrics {
   float inkBottom = 0.0f;
   float inkLeft = 0.0f;
   float inkRight = 0.0f;
+  // Measured baseline-to-cap-top of 'H' for this font/size (0 if unavailable).
+  // A stable font property (not per-string ink), used to optically center text
+  // by its cap band so caps/digits sit dead-centre. measureFont() populates it.
+  float capHeight = 0.0f;
 };
 
 class Renderer {

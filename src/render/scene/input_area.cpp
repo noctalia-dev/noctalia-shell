@@ -83,16 +83,62 @@ bool InputArea::containsLocalPoint(float localX, float localY, bool includeHitOu
   return dx * dx + dy * dy <= radius * radius;
 }
 
-void InputArea::setTooltip(std::string text) { m_tooltipContent = std::move(text); }
-void InputArea::setTooltip(std::vector<TooltipRow> rows) { m_tooltipContent = std::move(rows); }
-void InputArea::clearTooltip() { m_tooltipContent = std::monostate{}; }
+void InputArea::setTooltip(std::string text) {
+  m_tooltipProvider = {};
+  m_tooltipRefreshInterval = {};
+  m_tooltipContent = std::move(text);
+  notifyTooltipChanged();
+}
+
+void InputArea::setTooltip(std::vector<TooltipRow> rows) {
+  m_tooltipProvider = {};
+  m_tooltipRefreshInterval = {};
+  m_tooltipContent = std::move(rows);
+  notifyTooltipChanged();
+}
+
+void InputArea::setTooltipProvider(TooltipProvider provider, std::chrono::milliseconds refreshInterval) {
+  m_tooltipContent = std::monostate{};
+  m_tooltipProvider = std::move(provider);
+  m_tooltipRefreshInterval = refreshInterval;
+  notifyTooltipChanged();
+}
+
+void InputArea::clearTooltip() {
+  m_tooltipContent = std::monostate{};
+  m_tooltipProvider = {};
+  m_tooltipRefreshInterval = {};
+  notifyTooltipChanged();
+}
+
+void InputArea::requestTooltipRefresh() { notifyTooltipChanged(); }
+
+void InputArea::setTooltipChangedCallback(TooltipChangedCallback callback) {
+  m_tooltipChangedCallback = std::move(callback);
+}
+
 void InputArea::setTooltipPlacement(TooltipPlacement placement) { m_tooltipPlacement = placement; }
 void InputArea::setTooltipAnchorInsets(TooltipAnchorInsets insets) {
   m_tooltipAnchorInsets = insets;
   m_hasTooltipAnchorInsets = true;
 }
 void InputArea::clearTooltipAnchorInsets() { m_hasTooltipAnchorInsets = false; }
-bool InputArea::hasTooltip() const noexcept { return !std::holds_alternative<std::monostate>(m_tooltipContent); }
+bool InputArea::hasTooltip() const noexcept {
+  return m_tooltipProvider != nullptr || !std::holds_alternative<std::monostate>(m_tooltipContent);
+}
+
+TooltipContent InputArea::tooltipContent() const {
+  if (m_tooltipProvider) {
+    return m_tooltipProvider();
+  }
+  return m_tooltipContent;
+}
+
+void InputArea::notifyTooltipChanged() {
+  if (m_hovered && m_tooltipChangedCallback) {
+    m_tooltipChangedCallback(this);
+  }
+}
 void InputArea::setFocusable(bool focusable) { m_focusable = focusable; }
 void InputArea::setOnKeyDown(KeyCallback callback) { m_onKeyDown = std::move(callback); }
 void InputArea::setOnKeyUp(KeyCallback callback) { m_onKeyUp = std::move(callback); }

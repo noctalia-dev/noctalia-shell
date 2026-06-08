@@ -158,10 +158,16 @@ bool InputDispatcher::pointerButton(float x, float y, std::uint32_t button, bool
     float localX = 0.0f;
     float localY = 0.0f;
     (void)Node::mapFromScene(target, x, y, localX, localY);
-    target->dispatchPress(localX, localY, button, pressed);
+    // Register capture before dispatchPress.
     if (pressed) {
       m_capturedArea = target;
       trackArea(target);
+    }
+    target->dispatchPress(localX, localY, button, pressed);
+    if (pressed) {
+      if (m_capturedArea == nullptr) {
+        updateHover(x, y, m_lastSerial);
+      }
     } else {
       m_capturedArea = nullptr;
       updateHover(x, y, m_lastSerial);

@@ -9,8 +9,13 @@
 
 namespace desktop_widgets {
 
+  // Base content scale for a widget: the UI scale, times any legacy (schema v1) scale while the
+  // tile is still unsized. Once the tile has an explicit box, the content-fit derived from it in
+  // DesktopWidget::layout() takes over and the legacy scale no longer applies.
   inline float widgetContentScale(float baseUiScale, const DesktopWidgetState& state) {
-    return std::max(0.01f, baseUiScale) * std::max(0.01f, state.scale);
+    const bool boxed = state.boxWidth > 0.0f && state.boxHeight > 0.0f;
+    const float legacy = boxed ? 1.0f : std::max(0.01f, state.legacyScale);
+    return std::max(0.01f, baseUiScale) * legacy;
   }
 
   inline std::string outputKey(const WaylandOutput& output) {
@@ -81,8 +86,8 @@ namespace desktop_widgets {
   // snapshot normalization all route through here so the visibility rule stays identical. Resolves
   // the widget's effective output, then constrains state.cx/cy so that at least
   // kDesktopWidgetMinVisibleFraction of the widget's rotated AABB remains on screen. The caller
-  // passes the widget's current content-scaled intrinsic size, so state.scale is already reflected
-  // in intrinsicWidth/intrinsicHeight and must not be applied again as a transform multiplier here.
+  // passes the widget's current box size as intrinsicWidth/intrinsicHeight, so no extra scale
+  // multiplier is applied here.
   inline const WaylandOutput* clampStateToOutput(
       const WaylandConnection& wayland, DesktopWidgetState& state, float intrinsicWidth, float intrinsicHeight
   ) {

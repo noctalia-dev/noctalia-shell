@@ -3,6 +3,7 @@
 #include "wayland/surface.h"
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <string_view>
 
@@ -63,6 +64,7 @@ public:
   void setExclusiveZone(std::int32_t exclusiveZone);
   void setClickThrough(bool clickThrough);
   void setKeyboardInteractivity(LayerShellKeyboard mode);
+  void setClosedCallback(std::function<void()> callback);
   [[nodiscard]] LayerShellKeyboard keyboardInteractivity() const noexcept { return m_config.keyboard; }
   [[nodiscard]] std::uint32_t anchor() const noexcept { return m_config.anchor; }
   [[nodiscard]] std::int32_t marginTop() const noexcept { return m_config.marginTop; }
@@ -80,5 +82,6 @@ private:
 
   LayerSurfaceConfig m_config;
   zwlr_layer_surface_v1* m_layerSurface = nullptr;
+  std::function<void()> m_closedCallback;
   bool m_clickThrough = false;
 };

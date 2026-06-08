@@ -23,6 +23,14 @@ void Separator::setThickness(float thickness) {
   markLayoutDirty();
 }
 
+void Separator::setSpacing(float spacing) {
+  if (m_spacing == spacing) {
+    return;
+  }
+  m_spacing = spacing;
+  markLayoutDirty();
+}
+
 void Separator::setOrientation(SeparatorOrientation orientation) {
   if (m_orientation == orientation) {
     return;
@@ -57,14 +65,14 @@ LayoutSize Separator::doMeasure(Renderer& renderer, const LayoutConstraints& con
   float w = 0.0f;
   float h = 0.0f;
   if (horiz) {
-    h = m_thickness;
+    h = m_thickness + 2.0f * m_spacing;
     if (constraints.hasExactWidth()) {
       w = constraints.maxWidth;
     } else {
       w = width() > 0.0f ? width() : m_thickness;
     }
   } else {
-    w = m_thickness;
+    w = m_thickness + 2.0f * m_spacing;
     if (constraints.hasExactHeight()) {
       h = constraints.maxHeight;
     } else {
@@ -80,19 +88,19 @@ void Separator::doLayout(Renderer& /*renderer*/) {
   const bool horiz = ruleIsHorizontal();
   if (horiz) {
     const float w = width() > 0.0f ? width() : (parent() != nullptr ? parent()->width() : 0.0f);
-    setSize(w, m_thickness);
+    setSize(w, m_thickness + 2.0f * m_spacing);
     const float halfW = w * 0.5f;
-    m_rectStart->setPosition(0.0f, 0.0f);
+    m_rectStart->setPosition(0.0f, m_spacing);
     m_rectStart->setFrameSize(halfW, m_thickness);
-    m_rectEnd->setPosition(halfW, 0.0f);
+    m_rectEnd->setPosition(halfW, m_spacing);
     m_rectEnd->setFrameSize(w - halfW, m_thickness);
   } else {
     const float lineH = height() > 0.0f ? height() : (parent() != nullptr ? parent()->height() : 0.0f);
-    setSize(m_thickness, lineH);
+    setSize(m_thickness + 2.0f * m_spacing, lineH);
     const float halfH = lineH * 0.5f;
-    m_rectStart->setPosition(0.0f, 0.0f);
+    m_rectStart->setPosition(m_spacing, 0.0f);
     m_rectStart->setFrameSize(m_thickness, halfH);
-    m_rectEnd->setPosition(0.0f, halfH);
+    m_rectEnd->setPosition(m_spacing, halfH);
     m_rectEnd->setFrameSize(m_thickness, lineH - halfH);
   }
 

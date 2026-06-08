@@ -39,7 +39,7 @@ void NotificationWidget::create() {
       ui::glyph({
           .out = &m_glyph,
           .glyph = "bell",
-          .glyphSize = Style::barGlyphSize * m_contentScale,
+          .glyphSize = Style::baseGlyphSize * m_contentScale,
           .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
       })
   );
@@ -67,7 +67,7 @@ void NotificationWidget::doLayout(Renderer& renderer, float /*containerWidth*/, 
 
   refreshIndicatorState();
 
-  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
+  m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
   m_glyph->setGlyph(m_dndEnabled ? "bell-off" : "bell");
   m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph->measure(renderer);

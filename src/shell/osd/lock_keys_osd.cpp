@@ -16,18 +16,21 @@ namespace {
     switch (kind) {
     case LockKeyKind::Caps:
       return OsdContent{
+          .kind = OsdKind::LockKeys,
           .icon = "capslock",
           .value = i18n::tr(on ? "osd.lock-keys.caps-on" : "osd.lock-keys.caps-off"),
           .showProgress = false,
       };
     case LockKeyKind::Num:
       return OsdContent{
+          .kind = OsdKind::LockKeys,
           .icon = "numlock",
           .value = i18n::tr(on ? "osd.lock-keys.num-on" : "osd.lock-keys.num-off"),
           .showProgress = false,
       };
     case LockKeyKind::Scroll:
       return OsdContent{
+          .kind = OsdKind::LockKeys,
           .icon = "scrolllock",
           .value = i18n::tr(on ? "osd.lock-keys.scroll-on" : "osd.lock-keys.scroll-off"),
           .showProgress = false,

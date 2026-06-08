@@ -8,10 +8,10 @@ namespace Style {
   inline constexpr int animNormal = 200;
   inline constexpr int animSlow = 400;
 
-  inline constexpr float radiusSm = 4.0f;
-  inline constexpr float radiusMd = 8.0f;
-  inline constexpr float radiusLg = 12.0f;
-  inline constexpr float radiusXl = 16.0f;
+  inline constexpr float radiusSm = 3.0f;
+  inline constexpr float radiusMd = 6.0f;
+  inline constexpr float radiusLg = 9.0f;
+  inline constexpr float radiusXl = 12.0f;
 
   inline constexpr float borderWidth = 1.0f;
 
@@ -25,8 +25,7 @@ namespace Style {
 
   // Default inner inset for bar widget capsules (logical px, before bar content scale).
   inline constexpr float barCapsulePadding = 6.0f;
-  inline constexpr float barGlyphSize = 16.0f;
-  inline constexpr float barIconSize = 16.0f;
+  inline constexpr float baseGlyphSize = 16.0f;
 
   inline constexpr float fontSizeMini = 11.0f;
   inline constexpr float fontSizeCaption = 13.0f;

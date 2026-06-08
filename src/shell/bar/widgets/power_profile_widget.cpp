@@ -21,7 +21,7 @@ void PowerProfileWidget::create() {
       ui::glyph({
           .out = &m_glyph,
           .glyph = "balanced",
-          .glyphSize = Style::barGlyphSize * m_contentScale,
+          .glyphSize = Style::baseGlyphSize * m_contentScale,
           .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
       })
   );
@@ -36,7 +36,7 @@ void PowerProfileWidget::doLayout(Renderer& renderer, float /*containerWidth*/, 
   }
   syncState(renderer);
 
-  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
+  m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
   m_glyph->setColor(
       m_available ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
                   : colorSpecFromRole(ColorRole::OnSurfaceVariant)

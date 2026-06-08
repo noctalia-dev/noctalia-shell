@@ -360,33 +360,37 @@ void WaylandSeat::handlePointerAxisValue120(
 
 void WaylandSeat::handlePointerFrame(void* data, wl_pointer* /*pointer*/) {
   auto* self = static_cast<WaylandSeat*>(data);
-  if (self->m_pointerEventCallback) {
-    for (auto& event : self->m_pendingPointerEvents) {
-      if (event.type == PointerEvent::Type::Axis
-          && event.axisLines == 0.0f
-          && (event.axisSource == WL_POINTER_AXIS_SOURCE_WHEEL || event.axisSource == WL_POINTER_AXIS_SOURCE_WHEEL_TILT)
-          && event.axisValue != 0.0) {
-        // Some compositors send wheel-source axis events without discrete/value120.
-        // Normalize those legacy wheel deltas into logical wheel steps centrally.
-        event.axisLines = static_cast<float>(event.axisValue / kLegacyWheelAxisUnitsPerStep);
-      }
-
-      switch (event.type) {
-      case PointerEvent::Type::Enter:
-      case PointerEvent::Type::Motion:
-      case PointerEvent::Type::Button:
-      case PointerEvent::Type::Axis:
-        self->bumpUserActivity();
-        break;
-      case PointerEvent::Type::Leave:
-        break;
-      }
-
-      self->m_pointerEventCallback(event);
-    }
-  }
+  std::vector<PointerEvent> events = std::move(self->m_pendingPointerEvents);
   self->m_pendingPointerEvents.clear();
   self->m_pendingAxisSource = 0;
+
+  if (!self->m_pointerEventCallback) {
+    return;
+  }
+
+  for (auto& event : events) {
+    if (event.type == PointerEvent::Type::Axis
+        && event.axisLines == 0.0f
+        && (event.axisSource == WL_POINTER_AXIS_SOURCE_WHEEL || event.axisSource == WL_POINTER_AXIS_SOURCE_WHEEL_TILT)
+        && event.axisValue != 0.0) {
+      // Some compositors send wheel-source axis events without discrete/value120.
+      // Normalize those legacy wheel deltas into logical wheel steps centrally.
+      event.axisLines = static_cast<float>(event.axisValue / kLegacyWheelAxisUnitsPerStep);
+    }
+
+    switch (event.type) {
+    case PointerEvent::Type::Enter:
+    case PointerEvent::Type::Motion:
+    case PointerEvent::Type::Button:
+    case PointerEvent::Type::Axis:
+      self->bumpUserActivity();
+      break;
+    case PointerEvent::Type::Leave:
+      break;
+    }
+
+    self->m_pointerEventCallback(event);
+  }
 }
 
 void WaylandSeat::handleTouchDown(
@@ -485,22 +489,27 @@ void WaylandSeat::handleTouchMotion(
 
 void WaylandSeat::handleTouchFrame(void* data, wl_touch* /*touch*/) {
   auto* self = static_cast<WaylandSeat*>(data);
-  if (self->m_pointerEventCallback) {
-    for (const auto& event : self->m_pendingTouchEvents) {
-      switch (event.type) {
-      case PointerEvent::Type::Enter:
-      case PointerEvent::Type::Motion:
-      case PointerEvent::Type::Button:
-      case PointerEvent::Type::Axis:
-        self->bumpUserActivity();
-        break;
-      case PointerEvent::Type::Leave:
-        break;
-      }
-      self->m_pointerEventCallback(event);
-    }
-  }
+  std::vector<PointerEvent> events = std::move(self->m_pendingTouchEvents);
   self->m_pendingTouchEvents.clear();
+
+  if (!self->m_pointerEventCallback) {
+    return;
+  }
+
+  for (const auto& event : events) {
+    switch (event.type) {
+    case PointerEvent::Type::Enter:
+    case PointerEvent::Type::Motion:
+    case PointerEvent::Type::Button:
+    case PointerEvent::Type::Axis:
+      self->bumpUserActivity();
+      break;
+    case PointerEvent::Type::Leave:
+      break;
+    }
+
+    self->m_pointerEventCallback(event);
+  }
 }
 
 void WaylandSeat::handleTouchCancel(void* data, wl_touch* /*touch*/) {

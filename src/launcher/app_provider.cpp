@@ -126,10 +126,28 @@ void AppProvider::initialize() { refreshEntriesIfNeeded(); }
 std::string AppProvider::displayName() const { return i18n::tr("launcher.providers.applications.title"); }
 
 std::vector<LauncherCategory> AppProvider::categories() const {
+  refreshEntriesIfNeeded();
+
+  std::array<bool, kAppCategories.size()> populated{};
+  for (const auto& entry : m_entries) {
+    const std::string_view categoryId = primaryCategory(entry.categories);
+    if (categoryId.empty()) {
+      continue;
+    }
+    for (std::size_t i = 0; i < kAppCategories.size(); ++i) {
+      if (kAppCategories[i].id == categoryId) {
+        populated[i] = true;
+        break;
+      }
+    }
+  }
+
   std::vector<LauncherCategory> result;
-  result.reserve(kAppCategories.size());
-  for (const auto& def : kAppCategories) {
-    result.push_back({appCategoryLabel(def.id), std::string(def.glyph)});
+  for (std::size_t i = 0; i < kAppCategories.size(); ++i) {
+    if (!populated[i]) {
+      continue;
+    }
+    result.push_back({appCategoryLabel(kAppCategories[i].id), std::string(kAppCategories[i].glyph)});
   }
   return result;
 }

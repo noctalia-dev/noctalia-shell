@@ -4,6 +4,7 @@
 
 #include <chrono>
 #include <string>
+#include <vector>
 
 class Flex;
 class Glyph;
@@ -79,7 +80,11 @@ private:
   static constexpr int kSystemLines = 6;
   Label* m_systemLines[kSystemLines] = {};
 
-  // Resources card: load, memory, disk
-  static constexpr int kResourcesLines = 3;
+  // Resources card: load, memory, swap (hidden when no swap), then one line per discovered physical disk.
+  static constexpr int kResourcesLines = 2;
   Label* m_resourcesLines[kResourcesLines] = {};
+  Flex* m_swapRow = nullptr;
+  Label* m_swapLabel = nullptr;
+  std::vector<std::string> m_diskMountPoints;
+  std::vector<Label*> m_diskLabels;
 };

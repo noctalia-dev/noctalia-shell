@@ -114,7 +114,7 @@ public:
       if (filterByCategory && m_master[i].category != category) {
         continue;
       }
-      if (!filterByName || m_master[i].name.find(needle) != std::string::npos) {
+      if (!filterByName || m_master[i].name.contains(needle)) {
         m_visible.push_back(i);
       }
     }

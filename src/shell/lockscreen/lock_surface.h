@@ -22,7 +22,6 @@ struct wl_output;
 class Button;
 class Box;
 class Input;
-class Label;
 class SharedTextureCache;
 class WallpaperNode;
 struct KeyboardEvent;
@@ -59,7 +58,6 @@ public:
   void setOnPasswordChanged(std::function<void(const std::string&)> onPasswordChanged);
   void selectAllPassword();
   void clearPasswordSelection();
-  void onSecondTick();
   void onThemeChanged();
   void onGpuResourcesInvalidated();
   void onPointerEvent(const PointerEvent& event);
@@ -67,7 +65,6 @@ public:
   [[nodiscard]] wl_output* output() const noexcept { return m_output; }
   [[nodiscard]] bool hasDesktopCapture() const noexcept;
   [[nodiscard]] Node* widgetLayer() noexcept { return m_widgetLayer; }
-  void setBuiltinClockVisible(bool visible);
   void setOutputKey(std::string outputKey) { m_outputKey = std::move(outputKey); }
   void setWidgetsHost(LockscreenWidgetsHost* host) noexcept { m_widgetsHost = host; }
 
@@ -82,7 +79,6 @@ private:
   void applyBlurredDesktopTexture();
   void releaseWallpaperTextureRef(const std::string& path);
   void releaseCaptureTextures();
-  void updateClockText();
   void layoutScene(std::uint32_t width, std::uint32_t height);
   void updateCopy();
   [[nodiscard]] bool passwordFieldContainsPoint(float sceneX, float sceneY) const;
@@ -96,8 +92,6 @@ private:
   WallpaperNode* m_wallpaper = nullptr;
   Box* m_tintOverlay = nullptr;
   Box* m_backdrop = nullptr;
-  Label* m_clockShadow = nullptr;
-  Label* m_clock = nullptr;
   Box* m_loginPanel = nullptr;
   Input* m_passwordField = nullptr;
   Button* m_loginButton = nullptr;
@@ -127,8 +121,6 @@ private:
   std::string m_password;
   std::string m_status;
   bool m_error = false;
-  bool m_clockShadowEnabled = true;
-  bool m_builtinClockVisible = true;
   std::string m_outputKey;
   LockscreenWidgetsHost* m_widgetsHost = nullptr;
 };

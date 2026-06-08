@@ -8,6 +8,7 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -93,6 +94,7 @@ private:
   void applyColorWallpaper();
   void rebindGrid(bool resetScroll = false);
   void resetSelection();
+  [[nodiscard]] bool hasVisibleSelection() const;
   void selectVisibleIndex(std::size_t index);
   void activateSelectedEntry();
   [[nodiscard]] bool handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers);
@@ -153,7 +155,8 @@ private:
   std::size_t m_pinnedFavoriteCount = 0;
   bool m_syncingFavoriteControls = false;
   std::vector<std::string> m_favoritePaletteDetailValues;
-  std::size_t m_selectedVisibleIndex = 0;
+  static constexpr std::size_t kNoVisibleSelection = std::numeric_limits<std::size_t>::max();
+  std::size_t m_selectedVisibleIndex = kNoVisibleSelection;
   float m_lastWidth = 0.0f;
   float m_lastHeight = 0.0f;
   bool m_dirty = false;

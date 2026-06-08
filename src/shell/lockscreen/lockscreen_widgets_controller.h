@@ -16,6 +16,7 @@ class LockscreenWidgetsHost;
 class MprisService;
 class PipeWireSpectrum;
 class RenderContext;
+class SharedTextureCache;
 class SystemMonitorService;
 class WaylandConnection;
 class WeatherService;
@@ -35,7 +36,8 @@ public:
   void initialize(
       WaylandConnection& wayland, ConfigService* config, LockScreen& lockScreen, Bar& bar, Dock& dock,
       DesktopWidgetsController* desktopWidgets, PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather,
-      RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient, SystemMonitorService* sysmon
+      RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient, SystemMonitorService* sysmon,
+      SharedTextureCache* textureCache
   );
 
   void registerIpc(IpcService& ipc);

@@ -112,13 +112,16 @@ namespace {
     IdleBehaviorConfig norm = row;
     inferIdleBehaviorActionFromLegacyFields(norm);
     if (norm.action == "lock") {
-      return i18n::tr("settings.idle.behavior.presets.lock");
+      return i18n::tr("settings.idle.behavior.kind.lock");
     }
     if (norm.action == "screen_off") {
-      return i18n::tr("settings.idle.behavior.presets.monitor-off");
+      return i18n::tr("settings.idle.behavior.kind.screen-off");
     }
     if (norm.action == "suspend") {
-      return i18n::tr("settings.idle.behavior.presets.suspend");
+      return i18n::tr("settings.idle.behavior.kind.suspend");
+    }
+    if (norm.action == "lock_and_suspend") {
+      return i18n::tr("settings.idle.behavior.kind.lock-and-suspend");
     }
     if (!StringUtils::trim(row.name).empty()) {
       return row.name;

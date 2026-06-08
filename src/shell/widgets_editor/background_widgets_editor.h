@@ -1,6 +1,7 @@
 #pragma once
 
 #include "render/animation/animation_manager.h"
+#include "render/core/texture_handle.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
 #include "shell/desktop/desktop_widget_factory.h"
@@ -19,6 +20,8 @@ class Box;
 class Button;
 class ConfigService;
 class HttpClient;
+class SharedTextureCache;
+class WallpaperNode;
 class InputArea;
 class MprisService;
 class PipeWireSpectrum;
@@ -40,7 +43,7 @@ public:
   void initialize(
       WaylandConnection& wayland, ConfigService* config, PipeWireSpectrum* pipewireSpectrum,
       const WeatherService* weather, RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient,
-      SystemMonitorService* sysmon
+      SystemMonitorService* sysmon, SharedTextureCache* textureCache = nullptr
   );
   void setExitRequestedCallback(std::function<void()> callback);
 
@@ -112,6 +115,11 @@ private:
     bool inspectorPositionInitialized = false;
     std::unique_ptr<SelectDropdownPopup> selectPopup;
     bool pointerInside = false;
+    bool wallpaperPreviewActive = false;
+    std::string wallpaperPreviewPath;
+    std::string wallpaperPreviewLoadedPath;
+    TextureHandle wallpaperPreviewTexture;
+    WallpaperNode* wallpaperPreview = nullptr;
   };
 
   struct DragState {
@@ -135,6 +143,8 @@ private:
   void createSurface(const WaylandOutput& output);
   void rebuildScene(OverlaySurface& surface);
   void prepareFrame(OverlaySurface& surface, bool needsUpdate, bool needsLayout);
+  void releaseWallpaperPreview(OverlaySurface& surface);
+  void updateWallpaperPreview(OverlaySurface& surface);
   void applyViewState(EditorWidgetView& view, const DesktopWidgetState& state, bool refreshContent);
   void updateViewTransforms(const std::string* relayoutWidgetId = nullptr);
   void updateSelectionVisuals(OverlaySurface& surface);
@@ -171,6 +181,7 @@ private:
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
   RenderContext* m_renderContext = nullptr;
+  SharedTextureCache* m_textureCache = nullptr;
   std::unique_ptr<DesktopWidgetFactory> m_factory;
   std::string m_addWidgetType = "clock";
   std::function<void()> m_exitRequestedCallback;

@@ -15,7 +15,7 @@ TrayDrawerPanel::TrayDrawerPanel(TrayService* tray, ConfigService* config, std::
 TrayDrawerPanel::~TrayDrawerPanel() = default;
 
 float TrayDrawerPanel::preferredWidth() const {
-  const float itemSize = scaled(Style::barGlyphSize);
+  const float itemSize = scaled(Style::baseGlyphSize);
   const float gap = scaled(Style::spaceXs);
   const std::size_t drawerColumns = currentDrawerColumns();
   const std::size_t cols = std::min<std::size_t>(drawerColumns, std::max<std::size_t>(1, visibleItemCount()));
@@ -25,7 +25,7 @@ float TrayDrawerPanel::preferredWidth() const {
 }
 
 float TrayDrawerPanel::preferredHeight() const {
-  const float itemSize = scaled(Style::barGlyphSize);
+  const float itemSize = scaled(Style::baseGlyphSize);
   const float gap = scaled(Style::spaceXs);
   const std::size_t count = std::max<std::size_t>(1, visibleItemCount());
   const std::size_t drawerColumns = currentDrawerColumns();

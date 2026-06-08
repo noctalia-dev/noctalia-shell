@@ -52,7 +52,7 @@ namespace {
     if (binary.empty()) {
       return false;
     }
-    if (binary.find('/') != std::string_view::npos) {
+    if (binary.contains('/')) {
       const std::string expanded = expandExecutablePath(binary);
       return access(expanded.c_str(), X_OK) == 0;
     }
@@ -134,7 +134,7 @@ namespace terminal_launch {
       return std::nullopt;
     }
 
-    if (terminal.front().find('/') != std::string::npos) {
+    if (terminal.front().contains('/')) {
       terminal.front() = expandExecutablePath(terminal.front());
     }
 

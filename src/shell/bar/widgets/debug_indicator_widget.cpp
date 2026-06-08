@@ -20,7 +20,7 @@ void DebugIndicatorWidget::create() {
       ui::glyph({
           .out = &m_glyph,
           .glyph = "bug",
-          .glyphSize = Style::barGlyphSize * m_contentScale,
+          .glyphSize = Style::baseGlyphSize * m_contentScale,
           .color = colorSpecFromRole(ColorRole::Error),
       }),
       ui::label({
@@ -42,7 +42,7 @@ void DebugIndicatorWidget::doLayout(Renderer& renderer, float containerWidth, fl
 
   const bool isVertical = containerHeight > containerWidth;
   m_container->setGap(Style::spaceXs * m_contentScale);
-  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
+  m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
   m_glyph->setColor(colorSpecFromRole(ColorRole::Error));
   m_label->setVisible(!isVertical);
   m_label->setFontSize(Style::fontSizeCaption * m_contentScale);

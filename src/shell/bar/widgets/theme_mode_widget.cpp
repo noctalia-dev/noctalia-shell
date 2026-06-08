@@ -40,7 +40,7 @@ void ThemeModeWidget::create() {
       ui::glyph({
           .out = &m_glyph,
           .glyph = "theme-mode",
-          .glyphSize = Style::barGlyphSize * m_contentScale,
+          .glyphSize = Style::baseGlyphSize * m_contentScale,
           .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
       })
   );
@@ -54,7 +54,7 @@ void ThemeModeWidget::doLayout(Renderer& renderer, float /*containerWidth*/, flo
   }
 
   syncState(renderer);
-  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
+  m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
   m_glyph->setColor(
       m_lastIsLight ? colorSpecFromRole(ColorRole::Primary)
                     : widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
@@ -83,7 +83,7 @@ void ThemeModeWidget::syncState(Renderer& renderer) {
   m_glyph->setColor(
       isLight ? colorSpecFromRole(ColorRole::Primary) : widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
   );
-  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
+  m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
   m_glyph->measure(renderer);
 
   if (auto* node = root(); node != nullptr) {

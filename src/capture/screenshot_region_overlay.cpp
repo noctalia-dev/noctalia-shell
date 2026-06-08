@@ -154,6 +154,12 @@ namespace capture {
     m_frozenScreenshots = std::move(screenshots);
   }
 
+  std::vector<FrozenScreenshot> ScreenshotRegionOverlay::takeFrozenScreenshots() {
+    std::vector<FrozenScreenshot> screenshots = std::move(m_frozenScreenshots);
+    m_frozenScreenshots.clear();
+    return screenshots;
+  }
+
   void ScreenshotRegionOverlay::begin(bool freezeScreen, bool fullscreenPick) {
     if (m_wayland == nullptr || m_renderContext == nullptr) {
       return;

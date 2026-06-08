@@ -37,8 +37,11 @@ private:
   void showPopup();
   void dismissPopup();
   void destroyPopup();
+  void refreshFromArea(InputArea* area);
+  void refreshPopupContent();
+  void scheduleProviderRefresh();
   Size measureContent(const TooltipContent& content);
-  void buildScene(const TooltipContent& content, float w, float h);
+  void buildScene(const TooltipContent& content, float w, float h, float opacity = 0.0f);
   void prepareFrame(bool needsUpdate, bool needsLayout);
 
   WaylandConnection* m_wayland = nullptr;
@@ -46,6 +49,7 @@ private:
 
   State m_state = State::Idle;
   Timer m_showTimer;
+  Timer m_refreshTimer;
 
   TooltipContent m_pendingContent;
   zwlr_layer_surface_v1* m_pendingParent = nullptr;

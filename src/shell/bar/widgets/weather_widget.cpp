@@ -25,7 +25,7 @@ void WeatherWidget::create() {
       ui::glyph({
           .out = &m_glyph,
           .glyph = "weather-cloud",
-          .glyphSize = Style::barGlyphSize * m_contentScale,
+          .glyphSize = Style::baseGlyphSize * m_contentScale,
           .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
       })
   );
@@ -49,7 +49,7 @@ void WeatherWidget::doLayout(Renderer& renderer, float containerWidth, float con
   m_isVertical = containerHeight > containerWidth;
   sync(renderer);
 
-  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
+  m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
   m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
   m_label->setTextAlign(m_isVertical ? TextAlign::Center : TextAlign::Start);

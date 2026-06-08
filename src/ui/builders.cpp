@@ -208,7 +208,7 @@ namespace ui {
       control->setVariant(*props.variant);
     }
     if (props.customPalette.has_value()) {
-      control->setCustomPalette(std::move(*props.customPalette));
+      control->setCustomPalette(*props.customPalette);
     }
     if (props.surfaceOpacity.has_value()) {
       control->setSurfaceOpacity(*props.surfaceOpacity);
@@ -416,6 +416,9 @@ namespace ui {
     if (props.thickness.has_value()) {
       control->setThickness(*props.thickness);
     }
+    if (props.spacing.has_value()) {
+      control->setSpacing(*props.spacing);
+    }
     if (props.orientation.has_value()) {
       control->setOrientation(*props.orientation);
     }
@@ -514,6 +517,48 @@ namespace ui {
     }
     if (props.onValueChanged) {
       control->setOnValueChanged(std::move(props.onValueChanged));
+    }
+    if (props.onDragEnd) {
+      control->setOnDragEnd(std::move(props.onDragEnd));
+    }
+    applyNodeProps(*control, props);
+    if (props.configure) {
+      props.configure(*control);
+    }
+    if (props.out != nullptr) {
+      *props.out = control.get();
+    }
+    return control;
+  }
+
+  std::unique_ptr<RangeSlider> rangeSlider(RangeSliderProps props) {
+    auto control = std::make_unique<RangeSlider>();
+    if (props.minValue.has_value() || props.maxValue.has_value()) {
+      control->setRange(props.minValue.value_or(control->minValue()), props.maxValue.value_or(control->maxValue()));
+    }
+    if (props.step.has_value()) {
+      control->setStep(*props.step);
+    }
+    if (props.lowValue.has_value() || props.highValue.has_value()) {
+      control->setValues(props.lowValue.value_or(control->lowValue()), props.highValue.value_or(control->highValue()));
+    }
+    if (props.enabled.has_value()) {
+      control->setEnabled(*props.enabled);
+    }
+    if (props.trackHeight.has_value()) {
+      control->setTrackHeight(*props.trackHeight);
+    }
+    if (props.thumbSize.has_value()) {
+      control->setThumbSize(*props.thumbSize);
+    }
+    if (props.controlHeight.has_value()) {
+      control->setControlHeight(*props.controlHeight);
+    }
+    if (props.onLowChanged) {
+      control->setOnLowChanged(std::move(props.onLowChanged));
+    }
+    if (props.onHighChanged) {
+      control->setOnHighChanged(std::move(props.onHighChanged));
     }
     if (props.onDragEnd) {
       control->setOnDragEnd(std::move(props.onDragEnd));
@@ -762,9 +807,7 @@ namespace ui {
       control->setScale(*props.scale);
     }
     if (props.checkedFill.has_value() || props.checkedBorder.has_value() || props.checkedGlyph.has_value()) {
-      control->setCheckedColors(
-          std::move(props.checkedFill), std::move(props.checkedBorder), std::move(props.checkedGlyph)
-      );
+      control->setCheckedColors(props.checkedFill, props.checkedBorder, props.checkedGlyph);
     }
     if (props.onChange) {
       control->setOnChange(std::move(props.onChange));

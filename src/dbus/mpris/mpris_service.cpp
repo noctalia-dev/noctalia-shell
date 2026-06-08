@@ -35,18 +35,18 @@ std::string joinedArtists(const std::vector<std::string>& artists) {
 
 namespace {
 
-  static constexpr auto kDbusInterface = "org.freedesktop.DBus";
-  static constexpr auto kPropertiesInterface = "org.freedesktop.DBus.Properties";
-  static constexpr auto kMprisRootInterface = "org.mpris.MediaPlayer2";
-  static constexpr auto kMprisPlayerInterface = "org.mpris.MediaPlayer2.Player";
-  static constexpr auto kNoctaliaMprisInterface = "dev.noctalia.Mpris";
-  static constexpr auto kPropertiesDebounceWindow = std::chrono::milliseconds{120};
-  static constexpr auto kMetadataStabilizeWindow = std::chrono::milliseconds{900};
-  static const sdbus::ServiceName kDbusName{"org.freedesktop.DBus"};
-  static const sdbus::ObjectPath kDbusPath{"/org/freedesktop/DBus"};
-  static const sdbus::ObjectPath kMprisPath{"/org/mpris/MediaPlayer2"};
-  static const sdbus::ServiceName kNoctaliaMprisBusName{"dev.noctalia.Mpris"};
-  static const sdbus::ObjectPath kNoctaliaMprisObjectPath{"/dev/noctalia/Mpris"};
+  constexpr auto kDbusInterface = "org.freedesktop.DBus";
+  constexpr auto kPropertiesInterface = "org.freedesktop.DBus.Properties";
+  constexpr auto kMprisRootInterface = "org.mpris.MediaPlayer2";
+  constexpr auto kMprisPlayerInterface = "org.mpris.MediaPlayer2.Player";
+  constexpr auto kNoctaliaMprisInterface = "dev.noctalia.Mpris";
+  constexpr auto kPropertiesDebounceWindow = std::chrono::milliseconds{120};
+  constexpr auto kMetadataStabilizeWindow = std::chrono::milliseconds{900};
+  const sdbus::ServiceName kDbusName{"org.freedesktop.DBus"};
+  const sdbus::ObjectPath kDbusPath{"/org/freedesktop/DBus"};
+  const sdbus::ObjectPath kMprisPath{"/org/mpris/MediaPlayer2"};
+  const sdbus::ServiceName kNoctaliaMprisBusName{"dev.noctalia.Mpris"};
+  const sdbus::ObjectPath kNoctaliaMprisObjectPath{"/dev/noctalia/Mpris"};
 
   bool is_mpris_bus_name(std::string_view name) { return name.starts_with("org.mpris.MediaPlayer2."); }
 
@@ -887,7 +887,7 @@ bool MprisService::setPosition(const std::string& busName, int64_t positionUs) {
   // Use projected position to reduce stale-cache drift for relative-seek fallback.
   // Capture values by value, not iterator references.
   const int64_t currentPositionUs = projectedPositionUs(it->second);
-  const bool preferRelativeSeek = it->second.trackId.empty() || busName.find("spotify") != std::string::npos;
+  const bool preferRelativeSeek = it->second.trackId.empty() || busName.contains("spotify");
 
   auto fallback_seek = [this, busName, currentPositionUs, positionUs]() {
     const int64_t offsetUs = positionUs - currentPositionUs;
@@ -1008,9 +1008,7 @@ bool MprisService::setLoopStatus(const std::string& busName, std::string loopSta
   try {
     proxyIt->second->callMethodAsync("Set")
         .onInterface(kPropertiesInterface)
-        .withArguments(
-            std::string{kMprisPlayerInterface}, std::string{"LoopStatus"}, sdbus::Variant{std::move(loopStatus)}
-        )
+        .withArguments(std::string{kMprisPlayerInterface}, std::string{"LoopStatus"}, sdbus::Variant{loopStatus})
         .uponReplyInvoke(makeAsyncReplyHandler("set-loop-status", busName));
     return true;
   } catch (const sdbus::Error& e) {
@@ -2138,7 +2136,7 @@ bool MprisService::isBlacklisted(const MprisPlayerInfo& player) const {
     if (token == busName || token == identity || token == desktopEntry) {
       return true;
     }
-    if (!token.empty() && busName.find(token) != std::string::npos) {
+    if (!token.empty() && busName.contains(token)) {
       return true;
     }
   }

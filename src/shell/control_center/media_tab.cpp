@@ -255,7 +255,6 @@ std::unique_ptr<Flex> MediaTab::create() {
               .fontSize = Style::fontSizeCaption * scale,
               .color = colorSpecFromRole(ColorRole::Secondary),
               .visible = false,
-              .configure = [](Label& label) { label.setCaptionStyle(); },
           })
       )
   );

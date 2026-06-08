@@ -17,8 +17,7 @@
       presets-photosensitive-filtered,
     }:
     let
-      inherit (builtins) substring;
-      inherit (nixpkgs.lib) concatStringsSep genAttrs getExe;
+      inherit (nixpkgs.lib) genAttrs getExe;
 
       systems = [
         "x86_64-linux"
@@ -34,29 +33,16 @@
           in
           perSystem { inherit pkgs system; }
         );
-
-      mkDate =
-        longDate:
-        concatStringsSep "-" [
-          (substring 0 4 longDate)
-          (substring 4 2 longDate)
-          (substring 6 2 longDate)
-        ];
-
-      shortRev = self.shortRev or "dirty";
-      version = mkDate (self.lastModifiedDate or "19700101") + "_" + shortRev;
     in
     {
       overlays.default = final: prev: {
-        noctalia = final.callPackage ./nix/package.nix {
-          inherit version shortRev;
-        };
+        noctalia = final.callPackage ./nix/package.nix { };
       };
 
       packages = forEachSystem (
         { pkgs, ... }:
         {
-          default = pkgs.callPackage ./nix/package.nix { inherit version shortRev; };
+          default = pkgs.callPackage ./nix/package.nix { };
 
           # Trimmed Milkdrop presets pack for the optional livepaper
           # visualizer. nix/filter-presets.py rejects .milk files whose code
@@ -94,7 +80,6 @@
           programs.noctalia.wallpaper.live_paper.presetsSource =
             lib.mkDefault
               presets-photosensitive-filtered.packages.${pkgs.stdenv.hostPlatform.system}.default;
-          _class = "homeManager";
         };
 
       hjemModules.default =
@@ -102,7 +87,6 @@
         {
           imports = [ ./nix/hjem-module.nix ];
           programs.noctalia.package = lib.mkDefault self.packages.${pkgs.stdenv.hostPlatform.system}.default;
-          _class = "hjem";
         };
     };
 }

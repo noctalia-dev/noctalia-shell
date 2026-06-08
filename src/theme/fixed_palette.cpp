@@ -39,9 +39,7 @@ namespace noctalia::theme {
       dst[std::string(key)] = colorToArgb(color);
     }
 
-    bool hasToken(const TokenMap& tokens, std::string_view key) {
-      return tokens.find(std::string(key)) != tokens.end();
-    }
+    bool hasToken(const TokenMap& tokens, std::string_view key) { return tokens.contains(std::string(key)); }
 
     std::uint32_t tokenOr(const TokenMap& tokens, std::string_view key, std::uint32_t fallback) {
       auto it = tokens.find(std::string(key));
@@ -90,12 +88,51 @@ namespace noctalia::theme {
       return key == kTerminalBrightJsonKey ? terminal.bright : terminal.normal;
     }
 
+    ::Color& directColorSlot(TerminalPalette& terminal, std::string_view key) {
+      if (key == kTerminalForegroundJsonKey) {
+        return terminal.foreground;
+      }
+      if (key == kTerminalBackgroundJsonKey) {
+        return terminal.background;
+      }
+      if (key == kTerminalCursorJsonKey) {
+        return terminal.cursor;
+      }
+      if (key == kTerminalCursorTextJsonKey) {
+        return terminal.cursorText;
+      }
+      if (key == kTerminalSelectionFgJsonKey) {
+        return terminal.selectionFg;
+      }
+      return terminal.selectionBg;
+    }
+
     void applyAnsiColors(TokenMap& tokens, std::string_view prefix, const TerminalAnsiColors& colors) {
       for (const auto key : kTerminalAnsiColorJsonKeys) {
         std::string tokenKey(prefix);
         tokenKey += "_";
         tokenKey += key;
         setToken(tokens, tokenKey, ansiColorForKey(colors, key));
+      }
+    }
+
+    void setAnsiColor(TerminalAnsiColors& colors, std::string_view jsonKey, const ::Color& color) {
+      if (jsonKey == kTerminalBlackJsonKey) {
+        colors.black = color;
+      } else if (jsonKey == kTerminalRedJsonKey) {
+        colors.red = color;
+      } else if (jsonKey == kTerminalGreenJsonKey) {
+        colors.green = color;
+      } else if (jsonKey == kTerminalYellowJsonKey) {
+        colors.yellow = color;
+      } else if (jsonKey == kTerminalBlueJsonKey) {
+        colors.blue = color;
+      } else if (jsonKey == kTerminalMagentaJsonKey) {
+        colors.magenta = color;
+      } else if (jsonKey == kTerminalCyanJsonKey) {
+        colors.cyan = color;
+      } else {
+        colors.white = color;
       }
     }
 
@@ -349,6 +386,23 @@ namespace noctalia::theme {
         .hover = tokenToColor(t, "tertiary"),
         .onHover = tokenToColor(t, "on_tertiary"),
     };
+  }
+
+  TerminalPalette terminalPaletteFromTokens(const TokenMap& tokens) {
+    TerminalPalette terminal{};
+    for (const auto& group : kTerminalAnsiGroupTokenKeys) {
+      TerminalAnsiColors& colors = group.jsonKey == kTerminalBrightJsonKey ? terminal.bright : terminal.normal;
+      for (const auto key : kTerminalAnsiColorJsonKeys) {
+        std::string tokenKey(group.tokenPrefix);
+        tokenKey.push_back('_');
+        tokenKey.append(key);
+        setAnsiColor(colors, key, tokenToColor(tokens, tokenKey));
+      }
+    }
+    for (const auto& key : kTerminalDirectColorTokenKeys) {
+      directColorSlot(terminal, key.jsonKey) = tokenToColor(tokens, key.tokenKey);
+    }
+    return terminal;
   }
 
 } // namespace noctalia::theme

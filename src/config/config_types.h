@@ -88,7 +88,7 @@ struct BarConfig {
   std::string position = "top";
   bool enabled = true;
   bool autoHide = false;     // slide out when the pointer leaves; reveal on edge approach
-  bool reserveSpace = true;  // reserve compositor exclusive zone when auto_hide is false
+  bool reserveSpace = true;  // reserve compositor exclusive zone; applies with or without auto_hide
   std::string layer = "top"; // top | overlay — attached panels use the same layer
   std::int32_t thickness = Style::barThicknessDefault;
   float backgroundOpacity = 1.0f;
@@ -273,6 +273,7 @@ struct WidgetBarCapsuleSpec {
 struct WidgetConfig {
   std::string type; // widget type (e.g. "clock", "spacer"); defaults to the entry name
   std::unordered_map<std::string, WidgetSettingValue> settings;
+  std::unordered_map<std::string, std::unordered_map<std::string, std::string>> tables;
 
   [[nodiscard]] std::string getString(const std::string& key, const std::string& fallback = {}) const;
   [[nodiscard]] std::vector<std::string>
@@ -284,6 +285,8 @@ struct WidgetConfig {
   getColorSpec(const std::string& key, const ColorSpec& fallback, std::string_view context = {}) const;
   [[nodiscard]] std::optional<ColorSpec>
   getOptionalColorSpec(const std::string& key, std::string_view context = {}) const;
+  [[nodiscard]] std::unordered_map<std::string, std::string>
+  getStringMap(const std::string& key, const std::unordered_map<std::string, std::string>& fallback = {}) const;
   [[nodiscard]] bool hasSetting(const std::string& key) const;
 
   bool operator==(const WidgetConfig&) const = default;
@@ -513,7 +516,13 @@ struct DesktopWidgetState {
   std::string outputName;
   float cx = 0.0f;
   float cy = 0.0f;
-  float scale = 1.0f;
+  // Box size of the widget's grid tile, in logical px. 0 means "unsized": the tile
+  // auto-fits the content's natural size. Resizing in the editor sets explicit values.
+  float boxWidth = 0.0f;
+  float boxHeight = 0.0f;
+  // Migration-only (schema v1 `scale`): applied to an unsized tile so legacy widgets keep
+  // their size until the editor bakes it into an explicit box. Never written back out.
+  float legacyScale = 1.0f;
   float rotationRad = 0.0f;
   bool enabled = true;
   std::unordered_map<std::string, WidgetSettingValue> settings;
@@ -523,7 +532,7 @@ struct DesktopWidgetState {
 
 struct DesktopWidgetsConfig {
   bool enabled = true;
-  std::int32_t schemaVersion = 1;
+  std::int32_t schemaVersion = 2;
   DesktopWidgetsGridState grid;
   std::vector<DesktopWidgetState> widgets;
 
@@ -532,11 +541,27 @@ struct DesktopWidgetsConfig {
 
 struct LockscreenWidgetsConfig {
   bool enabled = false;
-  std::int32_t schemaVersion = 1;
+  std::int32_t schemaVersion = 2;
   DesktopWidgetsGridState grid;
   std::vector<DesktopWidgetState> widgets;
 
   bool operator==(const LockscreenWidgetsConfig&) const = default;
+};
+
+struct OsdKindsConfig {
+  bool volume = true;
+  bool volumeOutput = true;
+  bool volumeInput = true;
+  bool brightness = true;
+  bool wifi = true;
+  bool bluetooth = true;
+  bool powerProfile = true;
+  bool caffeine = true;
+  bool dnd = true;
+  bool lockKeys = true;
+  bool keyboardLayout = true;
+
+  bool operator==(const OsdKindsConfig&) const = default;
 };
 
 struct OsdConfig {
@@ -547,8 +572,7 @@ struct OsdConfig {
   int offsetX = 20;
   int offsetY = 8;
   std::vector<std::string> monitors;
-  bool lockKeys = true;
-  bool keyboardLayout = true;
+  OsdKindsConfig kinds;
 
   bool operator==(const OsdConfig&) const = default;
 };
@@ -1014,6 +1038,7 @@ enum class HookKind : std::uint8_t {
   BluetoothDisabled,
   BatteryCharging,
   BatteryDischarging,
+  BatteryPlugged,
   BatteryPercentageChanged,
   PowerProfileChanged,
   Count
@@ -1035,6 +1060,7 @@ constexpr EnumOption<HookKind> kHookKinds[] = {
     {HookKind::BluetoothDisabled, "bluetooth_disabled", ""},
     {HookKind::BatteryCharging, "battery_charging", ""},
     {HookKind::BatteryDischarging, "battery_discharging", ""},
+    {HookKind::BatteryPlugged, "battery_plugged", ""},
     {HookKind::BatteryPercentageChanged, "battery_percentage_changed", ""},
     {HookKind::PowerProfileChanged, "power_profile_changed", ""},
 };

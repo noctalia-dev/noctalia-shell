@@ -36,7 +36,6 @@
 #include "shell/tray/tray_drawer_panel.h"
 #include "shell/wallpaper/panel/wallpaper_panel.h"
 #include "system/distro_info.h"
-#include "time/time_format.h"
 #include "ui/app_icon_colorization.h"
 #include "ui/controls/input.h"
 #include "ui/dialogs/color_picker_dialog.h"
@@ -96,6 +95,7 @@ namespace {
 
   OsdContent powerProfileOsdContent(std::string_view profile) {
     return OsdContent{
+        .kind = OsdKind::PowerProfile,
         .icon = std::string(profileGlyphName(profile)),
         .value = profileLabel(profile),
         .showProgress = false,
@@ -104,6 +104,7 @@ namespace {
 
   OsdContent caffeineOsdContent(bool enabled) {
     return OsdContent{
+        .kind = OsdKind::Caffeine,
         .icon = enabled ? "caffeine-on" : "caffeine-off",
         .value = i18n::tr(enabled ? "osd.caffeine.on" : "osd.caffeine.off"),
         .showProgress = false,
@@ -112,6 +113,7 @@ namespace {
 
   OsdContent dndOsdContent(bool enabled) {
     return OsdContent{
+        .kind = OsdKind::Dnd,
         .icon = enabled ? "bell-off" : "bell",
         .value = i18n::tr(enabled ? "osd.dnd.on" : "osd.dnd.off"),
         .showProgress = false,
@@ -120,6 +122,7 @@ namespace {
 
   OsdContent wifiOsdContent(bool enabled) {
     return OsdContent{
+        .kind = OsdKind::Wifi,
         .icon = enabled ? "wifi" : "wifi-off",
         .value = i18n::tr(enabled ? "osd.wifi.on" : "osd.wifi.off"),
         .showProgress = false,
@@ -128,6 +131,7 @@ namespace {
 
   OsdContent bluetoothOsdContent(bool enabled) {
     return OsdContent{
+        .kind = OsdKind::Bluetooth,
         .icon = enabled ? "bluetooth" : "bluetooth-off",
         .value = i18n::tr(enabled ? "osd.bluetooth.on" : "osd.bluetooth.off"),
         .showProgress = false,
@@ -152,7 +156,9 @@ namespace {
     });
   }
 
-  bool lockKeysConsumersEnabled(const Config& config) { return config.osd.lockKeys || configHasLockKeysWidget(config); }
+  bool lockKeysConsumersEnabled(const Config& config) {
+    return config.osd.kinds.lockKeys || configHasLockKeysWidget(config);
+  }
 
   template <typename Fn> void runStartupPhase(std::string_view label, Fn&& fn) {
     constexpr float kSlowStartupPhaseDebugMs = 50.0f;
@@ -594,23 +600,28 @@ void Application::initServices() {
     m_screenshotService.onOutputChange();
     m_notificationToast.onOutputChange();
     m_osdOverlay.onOutputChange();
+    m_windowSwitcher.onOutputChange();
   });
   m_clipboardService.setChangeCallback([this]() {
     if (m_panelManager.isOpenPanel("clipboard")) {
       m_panelManager.refresh();
     }
   });
-  m_compositorPlatform.setWorkspaceChangeCallback([this]() { m_bar.refresh(); });
+  m_compositorPlatform.setWorkspaceChangeCallback([this]() {
+    m_bar.refresh();
+    m_windowSwitcher.onToplevelChange();
+  });
   m_compositorPlatform.setKeyboardLayoutChangeCallback([this]() {
     m_bar.refresh();
-    if (m_configService.config().osd.keyboardLayout) {
-      m_keyboardLayoutOsd.onLayoutChanged(m_compositorPlatform);
+    if (m_configService.config().osd.kinds.keyboardLayout) {
+      m_keyboardLayoutOsd.onLayoutChanged(m_compositorPlatform, m_configService.config());
     }
   });
   m_compositorPlatform.setToplevelChangeCallback([this]() {
     m_screenTimeService.onFocusChange();
     m_bar.refresh();
     m_dock.refresh();
+    m_windowSwitcher.onToplevelChange();
     if (m_panelManager.isOpenPanel("control-center")) {
       m_panelManager.refresh();
     }
@@ -622,7 +633,7 @@ void Application::initServices() {
     m_lockKeysService.setChangeCallback(
         [this](const WaylandSeat::LockKeysState& previous, const WaylandSeat::LockKeysState& current) {
           const Config& config = m_configService.config();
-          if (config.osd.lockKeys) {
+          if (config.osd.kinds.lockKeys) {
             m_lockKeysOsd.onLockKeysChanged(previous, current);
           }
           if (configHasLockKeysWidget(config)) {
@@ -1254,7 +1265,24 @@ void Application::initUi() {
       });
     });
   });
+  m_settingsWindow.setSaveWallpaperPaletteAsCustom([this]() {
+    std::string paletteName;
+    std::string error;
+    if (!m_themeService.saveWallpaperPaletteAsCustom(&paletteName, &error)) {
+      m_settingsWindow.markSettingsWriteError(
+          error.empty() ? i18n::tr("settings.errors.export-wallpaper-palette") : std::move(error)
+      );
+      return;
+    }
+    m_settingsWindow.onExternalOptionsChanged();
+    m_settingsWindow.markSettingsWriteSuccess(true);
+    notify::info(
+        "Noctalia", i18n::tr("notifications.internal.wallpaper-palette-export"),
+        i18n::tr("notifications.internal.wallpaper-palette-export-success", "name", paletteName)
+    );
+  });
   m_lockScreen.initialize(m_wayland, &m_renderContext, &m_configService, &m_sharedTextureCache);
+  m_wallpaper.setAutomationGate([this]() { return !m_lockScreen.isActive(); });
   m_configService.addReloadCallback([this]() { m_lockScreen.onConfigChanged(); });
   m_lockScreen.setSessionHooks(
       [this]() {
@@ -1272,6 +1300,9 @@ void Application::initUi() {
       [this]() {
         m_lockscreenWidgetsController.onLockStateChanged();
         m_hookManager.fire(HookKind::SessionUnlocked);
+        if (m_logindService != nullptr) {
+          m_logindService->syncSessionUnlocked();
+        }
 #ifdef NOCTALIA_HAVE_LIVEPAPER
         if (m_visualizerService != nullptr) {
           m_visualizerService->setSessionLocked(false);
@@ -1283,6 +1314,19 @@ void Application::initUi() {
     m_lockScreen.setVisualizer(m_projectMRenderer.get());
   }
 #endif
+  if (m_logindService != nullptr) {
+    m_logindService->setLockCallback([this]() {
+      if (!m_lockScreen.isActive()) {
+        (void)m_lockScreen.lock();
+      }
+    });
+    m_logindService->setUnlockCallback([this]() {
+      if (m_lockScreen.isActive()) {
+        m_lockScreen.unlock();
+      }
+    });
+    m_lockScreen.setLockEngagedCallback([this]() { m_logindService->syncSessionLocked(); });
+  }
 
   SessionActionHooks sessionActionHooks;
   sessionActionHooks.onLogout = [this]() { return m_hookManager.fireBlocking(HookKind::LoggingOut); };
@@ -1317,6 +1361,8 @@ void Application::initUi() {
     if (m_bar.onPointerEvent(event))
       return;
     if (m_dock.onPointerEvent(event))
+      return;
+    if (m_windowSwitcher.onPointerEvent(event))
       return;
     if (m_panelManager.onPointerEvent(event))
       return;
@@ -1359,6 +1405,9 @@ void Application::initUi() {
       return;
     }
     if (m_notificationToast.onKeyboardEvent(event)) {
+      return;
+    }
+    if (m_windowSwitcher.onKeyboardEvent(event)) {
       return;
     }
     m_panelManager.onKeyboardEvent(event);
@@ -1487,6 +1536,9 @@ void Application::initUi() {
 
   TooltipManager::instance().initialize(m_wayland, &m_renderContext);
   m_osdOverlay.initialize(m_wayland, &m_configService, &m_renderContext);
+  m_windowSwitcher.initialize(
+      m_wayland, &m_renderContext, m_compositorPlatform, &m_configService, &m_asyncTextureCache
+  );
   m_configService.addReloadCallback([this]() { m_osdOverlay.onConfigReload(); });
   m_idleGraceOverlay.initialize(m_wayland, &m_renderContext);
   m_wayland.setIdleCapabilitiesReadyCallback([this]() { m_idleManager.reload(m_configService.config().idle); });
@@ -1563,6 +1615,9 @@ void Application::initUi() {
     return m_bar.surfaceRectsForOutput(output);
   });
   m_panelManager.setFocusGrabBarSurfacesProvider([this]() { return m_bar.allBarSurfaces(); });
+  m_panelManager.setAttachedPanelAvailabilityCallback([this](wl_output* output, std::string_view barName) {
+    return m_bar.canAttachPanelToBar(output, barName);
+  });
   m_bar.setAutoHideSuppressionCallback([this](const BarInstance& instance) {
     if (m_trayMenu.isOpen()) {
       return true;
@@ -1607,7 +1662,8 @@ void Application::initUi() {
   m_dock.initialize(m_compositorPlatform, &m_configService, &m_renderContext);
   m_lockscreenWidgetsController.initialize(
       m_wayland, &m_configService, m_lockScreen, m_bar, m_dock, &m_desktopWidgetsController, m_pipewireSpectrum.get(),
-      &m_weatherService, &m_renderContext, m_mprisService.get(), &m_httpClient, m_systemMonitor.get()
+      &m_weatherService, &m_renderContext, m_mprisService.get(), &m_httpClient, m_systemMonitor.get(),
+      &m_sharedTextureCache
   );
   m_desktopWidgetsController.initialize(
       m_wayland, &m_configService, m_pipewireSpectrum.get(), &m_weatherService, &m_renderContext, m_mprisService.get(),
@@ -1648,16 +1704,13 @@ void Application::initUi() {
     m_wallpaper.onSecondTick();
     if (m_lockScreen.isActive()) {
       m_lockscreenWidgetsController.onSecondTick();
-      if (formatLocalTime("{:%S}") == "00") {
-        m_lockScreen.onSecondTick();
-      }
     } else {
       m_bar.onSecondTick();
       m_desktopWidgetsController.onSecondTick();
       m_lockscreenWidgetsController.onSecondTick();
       m_settingsWindow.onSecondTick();
-      if (m_configService.config().osd.keyboardLayout) {
-        m_keyboardLayoutOsd.onLayoutChanged(m_compositorPlatform);
+      if (m_configService.config().osd.kinds.keyboardLayout) {
+        m_keyboardLayoutOsd.onLayoutChanged(m_compositorPlatform, m_configService.config());
       }
     }
     m_idleManager.onSecondTick();
@@ -1876,6 +1929,7 @@ void Application::initIpc() {
     m_pipewireService->registerIpc(m_ipcService, m_configService);
   }
   m_screenshotService.registerIpc(m_ipcService, m_configService);
+  m_windowSwitcher.registerIpc(m_ipcService);
 }
 
 bool Application::runUserCommand(const std::string& command) {

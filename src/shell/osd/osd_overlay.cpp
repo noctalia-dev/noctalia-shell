@@ -43,6 +43,32 @@ namespace {
     return std::max(0.1f, shell.uiScale * osd.scale);
   }
 
+  [[nodiscard]] bool isOsdKindEnabled(const OsdKindsConfig& kinds, OsdKind kind) {
+    switch (kind) {
+    case OsdKind::Volume:
+      return kinds.volume && kinds.volumeOutput;
+    case OsdKind::Microphone:
+      return kinds.volume && kinds.volumeInput;
+    case OsdKind::Brightness:
+      return kinds.brightness;
+    case OsdKind::Wifi:
+      return kinds.wifi;
+    case OsdKind::Bluetooth:
+      return kinds.bluetooth;
+    case OsdKind::PowerProfile:
+      return kinds.powerProfile;
+    case OsdKind::Caffeine:
+      return kinds.caffeine;
+    case OsdKind::Dnd:
+      return kinds.dnd;
+    case OsdKind::LockKeys:
+      return kinds.lockKeys;
+    case OsdKind::KeyboardLayout:
+      return kinds.keyboardLayout;
+    }
+    return true;
+  }
+
   [[nodiscard]] float osdBackgroundOpacity(const ConfigService* config) {
     if (config == nullptr) {
       return 0.97f;
@@ -183,6 +209,9 @@ void OsdOverlay::requestLayout() {
 
 void OsdOverlay::show(const OsdContent& content) {
   if (m_wayland == nullptr || m_renderContext == nullptr) {
+    return;
+  }
+  if (m_config != nullptr && !isOsdKindEnabled(m_config->config().osd.kinds, content.kind)) {
     return;
   }
 

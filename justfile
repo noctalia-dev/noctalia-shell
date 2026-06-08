@@ -3,6 +3,7 @@ set positional-arguments
 mode := "debug"
 build-dir := "build-" + mode
 prefix := "/usr/local"
+cpp-std := "c++23"
 
 default:
     @just --list
@@ -10,7 +11,7 @@ default:
 configure m=mode install_prefix=prefix:
     #!/usr/bin/env bash
     set -euo pipefail
-    args=(--buildtype={{ if m == "release" { "release" } else { "debug" } }})
+    args=(--buildtype={{ if m == "release" { "release" } else { "debug" } }} -Dcpp_std={{cpp-std}})
     [[ "{{m}}" == "release" ]] && args+=(-Db_lto=true)
     [[ "{{m}}" == "asan"    ]] && args+=(-Db_sanitize=address,undefined)
     if [[ -d "build-{{m}}" ]]; then
@@ -24,7 +25,16 @@ build m=mode: (_ensure-configured m)
     meson compile -C build-{{m}}
 
 _ensure-configured m=mode:
-    @if [ ! -d "build-{{m}}" ]; then just configure {{m}}; fi
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ ! -f "build-{{m}}/build.ninja" ]]; then
+        just configure {{m}}
+        exit 0
+    fi
+    current_cpp_std="$(meson configure "build-{{m}}" | awk '$1 == "cpp_std" { print $2; exit }')"
+    if [[ "$current_cpp_std" != "{{cpp-std}}" ]]; then
+        meson configure "build-{{m}}" -Dcpp_std={{cpp-std}}
+    fi
 
 run m=mode: (build m)
     ./build-{{m}}/noctalia
@@ -50,6 +60,19 @@ uninstall m:
 format:
     find src \( -name '*.cpp' -o -name '*.h' \) -print0 | xargs -0 clang-format -i
     find src \( -name '*.cpp' -o -name '*.h' \) -print0 | xargs -0 grep -ZlP '\s+$' | xargs -0 -r sed -i 's/[[:space:]]*$//'
+
+_clang_tidy m=mode *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    src_root="$(realpath src)"
+    run-clang-tidy -quiet -p build-{{m}} -j "$(nproc)" -header-filter="^${src_root}/.*" {{args}} "^${src_root}/.*"
+
+lint m=mode: (configure m)
+    just _clang_tidy {{m}}
+
+fix m=mode: (configure m)
+    just _clang_tidy {{m}} -fix
+    just format
 
 clean m=mode:
     #!/usr/bin/env bash

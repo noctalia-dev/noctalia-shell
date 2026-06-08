@@ -187,4 +187,6 @@ in
       }
     ];
   };
+
+  _class = "homeManager";
 }

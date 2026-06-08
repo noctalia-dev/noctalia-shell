@@ -114,7 +114,7 @@ std::vector<LauncherResult> EmojiProvider::query(std::string_view text) const {
       bestScore = 500;
     }
     // Name contains
-    else if (e.nameLower.find(query) != std::string::npos) {
+    else if (e.nameLower.contains(query)) {
       bestScore = 200;
     }
     // Keyword match
@@ -124,7 +124,7 @@ std::vector<LauncherResult> EmojiProvider::query(std::string_view text) const {
           bestScore = std::max(bestScore, 150);
         } else if (kw.size() >= query.size() && kw.compare(0, query.size(), query) == 0) {
           bestScore = std::max(bestScore, 100);
-        } else if (kw.find(query) != std::string::npos) {
+        } else if (kw.contains(query)) {
           bestScore = std::max(bestScore, 50);
         }
       }

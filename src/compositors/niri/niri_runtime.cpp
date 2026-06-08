@@ -131,7 +131,7 @@ namespace compositors::niri {
       const ssize_t count = ::read(fd, buffer, sizeof(buffer));
       if (count > 0) {
         response.append(buffer, static_cast<std::size_t>(count));
-        if (response.find('\n') != std::string::npos) {
+        if (response.contains('\n')) {
           break;
         }
         continue;

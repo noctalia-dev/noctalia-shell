@@ -378,6 +378,7 @@ namespace {
       int summaryLines, int bodyLines, float scale
   ) {
     const float cardW = cardWidth(scale);
+    const float maxCardHeight = maxToastCardHeight(scale);
     const bool showActions = shouldShowNotificationActions(config);
     const float iconSize = notificationIconSize(scale, showActions);
     const float textMaxWidth = notificationTextMaxWidth(scale, showActions);
@@ -385,7 +386,7 @@ namespace {
     const bool showAppName = shouldShowNotificationAppName(config, appName);
 
     auto card = ui::column(
-        {.width = cardW},
+        {.maxHeight = maxCardHeight, .clipChildren = true, .width = cardW},
         ui::progressBar({
             .fill = toastProgressFillColor(urgency),
             .track = clearColorSpec(),
@@ -472,7 +473,7 @@ namespace {
     content->addChild(std::move(textColumn));
     card->addChild(std::move(content));
     card->layout(rc);
-    return std::ceil(card->height());
+    return std::ceil(std::min(maxCardHeight, card->height()));
   }
 
   bool isRemoteIconUrl(std::string_view url) { return uri::isRemoteUrl(url); }
@@ -1349,7 +1350,7 @@ void NotificationToast::resumeCountdowns(uint32_t notificationId) {
 
     state->progressBar->setOpacity(1.0f);
     state->progressBar->setProgress(remaining);
-    const bool isDriver = (m_instances.size() > 0 && m_instances[0].get() == inst.get());
+    const bool isDriver = (!m_instances.empty() && m_instances[0].get() == inst.get());
     state->countdownAnimId = inst->animations.animateTimer(
         remaining, 0.0f, static_cast<float>(entry->displayDurationMs) * remaining, Easing::Linear,
         [this, progressBar = state->progressBar, notificationId](float v) {
@@ -2114,6 +2115,7 @@ InputArea* NotificationToast::buildCard(
   const float iconSize = notificationIconSize(scale, showActions);
   const float iconGlyphSize = notificationIconGlyphSize(scale, showActions);
   const float cardW = cardWidth(scale);
+  const float maxCardHeight = maxToastCardHeight(scale);
   const float textMaxWidth = notificationTextMaxWidth(scale, showActions);
   const float topTextMaxWidth = std::max(0.0f, textMaxWidth - closeButtonSize(scale) - Style::spaceSm * scale);
   const bool showAppName = shouldShowNotificationAppName(m_config, entry.appName);
@@ -2139,6 +2141,7 @@ InputArea* NotificationToast::buildCard(
   auto cardRoot = ui::node({.out = outCardContent});
 
   auto foreground = ui::column({
+      .maxHeight = maxCardHeight,
       .clipChildren = true,
       .width = cardW,
   });
@@ -2475,7 +2478,7 @@ InputArea* NotificationToast::buildCard(
   foreground->addChild(std::move(contentRow));
   foreground->layout(*m_renderContext);
 
-  const float cardHeight = foreground->height();
+  const float cardHeight = std::min(maxCardHeight, foreground->height());
   cardRoot->setSize(cardW, cardHeight);
   viewport->setSize(cardW, cardHeight);
   viewport->setClipChildren(true);
@@ -2782,7 +2785,7 @@ std::string NotificationToast::resolveNotificationIconPath(const PopupEntry& ent
       m_remoteIconCache.erase(it);
     }
 
-    if (m_failedRemoteIconDownloads.find(iconValue) != m_failedRemoteIconDownloads.end()) {
+    if (m_failedRemoteIconDownloads.contains(iconValue)) {
       kLog.warn("notification toast: #{} remote icon URL marked failed url='{}'", entry.notificationId, iconValue);
       return {};
     }
@@ -2795,7 +2798,7 @@ std::string NotificationToast::resolveNotificationIconPath(const PopupEntry& ent
       return cachedPath;
     }
 
-    if (m_httpClient != nullptr && m_pendingRemoteIconDownloads.find(iconValue) == m_pendingRemoteIconDownloads.end()) {
+    if (m_httpClient != nullptr && !m_pendingRemoteIconDownloads.contains(iconValue)) {
       std::filesystem::create_directories(cached.parent_path(), ec);
       if (ec) {
         kLog.warn(

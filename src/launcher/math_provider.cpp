@@ -38,7 +38,7 @@ namespace {
     return std::string(text.substr(begin, end - begin));
   }
 
-  bool shouldRefreshExchangeRateSource(std::string_view url) { return url.find("nbrb.by") == std::string_view::npos; }
+  bool shouldRefreshExchangeRateSource(std::string_view url) { return !url.contains("nbrb.by"); }
 
 } // namespace
 

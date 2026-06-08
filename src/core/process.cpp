@@ -98,10 +98,10 @@ namespace {
   }
 
   [[nodiscard]] bool isSafeFlatpakAppId(std::string_view appId) {
-    if (appId.empty() || appId.find('/') != std::string_view::npos || appId.find('\\') != std::string_view::npos) {
+    if (appId.empty() || appId.contains('/') || appId.contains('\\')) {
       return false;
     }
-    return appId.find("..") == std::string_view::npos;
+    return !appId.contains("..");
   }
 
   void appendFlatpakDataRoots(std::vector<std::filesystem::path>& roots) {
@@ -184,7 +184,7 @@ namespace {
   }
 
   struct ProcessCommandLineCache {
-    std::chrono::steady_clock::time_point capturedAt{};
+    std::chrono::steady_clock::time_point capturedAt;
     std::vector<std::string> commandLines;
   };
 
@@ -912,7 +912,7 @@ namespace process {
       return;
     }
     if (systemdAvailable()) {
-      (void)startSystemdService(args, activationToken, workingDir, appName);
+      startSystemdService(args, activationToken, workingDir, appName);
       return;
     }
 #endif
