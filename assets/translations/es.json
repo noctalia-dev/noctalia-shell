@@ -1,0 +1,785 @@
+{
+  "auth": {
+    "pam": {
+      "authentication-failed": "Autenticación fallida",
+      "start-failed": "Inicio de PAM fallido",
+      "user-unavailable": "No se pudo resolver el usuario actual"
+    },
+    "polkit": {
+      "authenticate": "Autenticar",
+      "authenticating": "Autenticando...",
+      "default-message": "Autorización requerida",
+      "invalid-password": "Contraseña incorrecta",
+      "password-placeholder": "Contraseña",
+      "title": "Autorización requerida"
+    }
+  },
+  "bar": {
+    "screenshot": {
+      "choose-display": "Elige pantalla",
+      "fullscreen": "Pantalla completa",
+      "region": "Seleccione región"
+    },
+    "widgets": {
+      "lock-keys": {
+        "caps": "Mayús",
+        "caps-short": "M",
+        "num": "Num",
+        "num-short": "N",
+        "scroll": "Despl",
+        "scroll-short": "D"
+      },
+      "media": {
+        "nothing-playing": "No se está reproduciendo nada",
+        "playing": "Reproduciendo"
+      },
+      "network": {
+        "wired": "Cableado"
+      },
+      "scripted": {
+        "reload-failed": "Recarga del script fallida",
+        "reloaded": "Script recargado"
+      },
+      "weather": {
+        "default": "Pronóstico",
+        "error": "Error de Pronóstico",
+        "loading": "Pronóstico...",
+        "no-location": "Sin ubicación",
+        "off": "Pronóstico apagado",
+        "vertical-error": "ERR",
+        "vertical-loading": "..."
+      }
+    }
+  },
+  "clipboard": {
+    "actions": {
+      "clear-all": "Borrar todo",
+      "delete-item": "Borrar elemento",
+      "keep-pinned": "Mantener elementos fijados"
+    },
+    "confirm": {
+      "clear-desc": "Elegir si los elementos fijados deben mantenerse.",
+      "clear-desc-all-pinned": "Todas las entradas estan fijadas. Use Borrar todo para eliminar todas.",
+      "clear-desc-no-pinned": "Esto elimina todas las entradas del portapapeles.",
+      "clear-title": "¿Borrar el historial del portapepeles?",
+      "delete-desc": "Esto elimina el elemento seleccionado del historial del portapapeles.",
+      "delete-title": "¿Eliminar elemento del portapapeles?"
+    },
+    "empty": {
+      "history-message": "No hay entradas en el historial del portapapeles.",
+      "history-title": "El historial del portapapeles está vacío",
+      "no-matches-message": "No hay resultados que coincidan con el filtro actual.",
+      "no-matches-title": "No se han encontrado resultados"
+    },
+    "entry": {
+      "image": "Imagen",
+      "title": "Entrada del portapapeles"
+    },
+    "filter-placeholder": "Filtrar el portapapeles...",
+    "preview": {
+      "empty-text-payload": "Contenido sin texto",
+      "image-title": "Entrada de Imagen en el portapapeles",
+      "loading": "Cargando vista previa...",
+      "text-title": "Entrada de Texto en el Portapapeles",
+      "truncated": "... truncado"
+    },
+    "title": "Portapapeles"
+  },
+  "common": {
+    "actions": {
+      "apply": "Aplicar",
+      "cancel": "Cancelar"
+    },
+    "states": {
+      "auto": "Automático",
+      "custom": "Personalizado",
+      "inherit": "Heredar",
+      "off": "Apagado"
+    }
+  },
+  "control-center": {
+    "audio": {
+      "application-volumes": "Volumen de aplicaciones",
+      "input-volume": "Volumen de entrada",
+      "no-application-audio": "Sin aplicacion de audio",
+      "no-input-devices": "No hay dispositivos de entrada",
+      "no-input-selected": "No se ha seleccionado ningún dispositivo de entrada",
+      "no-output-devices": "No hay dispositivos de salida",
+      "no-output-selected": "No se ha seleccionado ningún dispositivo de salida",
+      "output-volume": "Volumen de salida",
+      "unavailable-body": "PipeWire no está activado.",
+      "unavailable-title": "Sonido no está disponible"
+    },
+    "bluetooth": {
+      "accept": "Aceptar",
+      "auto-reconnect": "Reconectar automáticamente",
+      "bluetooth": "Bluetooth",
+      "enter-code": "Ingrese el código",
+      "off": "Bluetooth apagado",
+      "pair-title": "Emparejar con {device}",
+      "pairing-detail": {
+        "authorize": "Aceptar la solicitud de emparejamiento entrante?",
+        "authorize-service": "Permitir acceso a servicio {uuid}?",
+        "confirm": "Verifica que este código coincida con el que aparece en el dispositivo:",
+        "display-passkey": "Ingresa este código en el dispositivo:",
+        "display-pin": "Ingresa este PIN en el dispositivo:",
+        "passkey": "Introduce la clave de acceso que aparece en el dispositivo:",
+        "pin-code": "Introduce el PIN que aparece en el dispositivo:"
+      },
+      "reject": "Rechazar",
+      "rfkill-blocked": "El sistema ha bloqueado el Bluetooth. Actívalo para desactivar el bloqueo.",
+      "sections": {
+        "available": "Disponible",
+        "connected": "Conectado",
+        "paired": "Emparejado"
+      },
+      "unavailable": "El servicio de Bluetooth no está disponible",
+      "unknown-device": "Dispositivo desconocido",
+      "visible": "Visible para los dispositivos cercanos"
+    },
+    "calendar": {
+      "all-day": "Todo el día",
+      "events": "Eventos",
+      "no-events": "No hay eventos."
+    },
+    "display": {
+      "disabled": "Desabilitado",
+      "no-displays": "No hay monitores disponibles",
+      "unknown-resolution": "Resolución desconocida"
+    },
+    "home": {
+      "media": {
+        "idle": "Inactivo",
+        "no-active-player": "No hay ningún reproductor activo",
+        "nothing-playing": "No hay nada reproduciéndose"
+      },
+      "weather": {
+        "disabled": "Pronóstico desabilitado en la configuracion."
+      }
+    },
+    "shortcuts": {
+      "clipboard": "Portapapeles",
+      "dark-mode": {
+        "dark": "Modo oscuro",
+        "light": "Modo claro"
+      },
+      "session": "Sesión",
+      "system": "Sistema",
+      "wallpaper": "Fondo de Pantalla",
+      "weather": "Pronóstico"
+    },
+    "system": {
+      "titles": {
+        "gpu": "GPU",
+        "memory": "Memoria"
+      }
+    },
+    "tabs": {
+      "weather": "Pronóstico"
+    },
+    "weather": {
+      "details": {
+        "elevation": "Elevacion",
+        "sunrise": "Amanecer",
+        "sunset": "Atardecer",
+        "temp-max": "Temperatura Maxima",
+        "temp-min": "Temperatura Minima",
+        "timezone": "Zona Horaria",
+        "wind": "Viento"
+      },
+      "forecast-placeholder": {
+        "day": "Domingo",
+        "description": "Pronóstico",
+        "temperature": "10 / 4C"
+      },
+      "location-unavailable": "Ubicación no disponible",
+      "waiting": "Esperando por la información del pronóstico"
+    }
+  },
+  "desktop-widgets": {
+    "editor": {
+      "settings": {
+        "background": "Fondo",
+        "background-color": "Color",
+        "background-opacity": "Opacidad",
+        "background-padding": "Relleno",
+        "background-radius": "Radio",
+        "background-section": "Fondo",
+        "bloom-intensity": "Bloom",
+        "centered": "Centrado",
+        "change-image": "Cambiar...",
+        "circle": "Circulo",
+        "clock-style": "Estilo del reloj",
+        "clock-style-analog": "Análogo",
+        "clock-style-digital": "Digital",
+        "color": "Color",
+        "color2": "Color 2",
+        "custom-color": "Personalizado",
+        "description": "Descripción",
+        "font-family": "Fuente",
+        "format": "Formato",
+        "horizontal": "Horizontal",
+        "image-path": "Imagen",
+        "opacity": "Opacidad",
+        "primary-color": "Color Primario",
+        "rotation-speed": "Velocidad de rotación",
+        "secondary-color": "Color Secundario",
+        "sensitivity": "Sensibilidad",
+        "shadow": "Sombra",
+        "show-label": "Mostrar Etiqueta",
+        "show-when-idle": "Mostrar cuándo inactivo",
+        "stat": "Estadistica",
+        "stat-cpu-temp": "Temperatura CPU",
+        "stat-cpu-usage": "Utilización de CPU",
+        "stat-gpu-temp": "Temperatura GPU",
+        "stat-gpu-usage": "Utilización de GPU",
+        "stat-gpu-vram": "GPU VRAM",
+        "stat-none": "Ninguno",
+        "stat-ram-pct": "RAM %",
+        "stat2": "Estadística 2",
+        "title": "Título",
+        "vertical": "Vertical",
+        "visualization-mode": "Modo",
+        "visualization-mode-all": "Todo",
+        "visualization-mode-bars": "Barras",
+        "visualization-mode-bars-rings": "Barras + Anillos",
+        "visualization-mode-rings": "Anillos",
+        "visualization-mode-wave": "Ola",
+        "visualization-mode-wave-rings": "Ola + Anillos",
+        "wave-thickness": "Grosor de la Ola",
+        "widget-section": "Widget"
+      },
+      "types": {
+        "weather": "Pronóstico"
+      }
+    },
+    "weather": {
+      "error": "Error",
+      "loading": "Cargando",
+      "off": "Pronóstico apagado"
+    }
+  },
+  "dock": {
+    "actions": {
+      "close": "Cerrar",
+      "close-all": "Cerrar todo"
+    },
+    "launcher": "Launcher"
+  },
+  "internal-apps": {
+    "settings": {
+      "display-name": "Ajustes"
+    }
+  },
+  "launcher": {
+    "categories": {
+      "all": "Todo",
+      "applications": {
+        "development": "Desarrollo",
+        "education": "Educación",
+        "games": "Juegos",
+        "graphics": "Gráficos",
+        "internet": "Internet",
+        "multimedia": "Multimedia",
+        "office": "Oficina",
+        "system": "Sistema",
+        "utilities": "Utilidades"
+      },
+      "recently-used": "Recientes"
+    },
+    "context-menu": {
+      "open": "Abrir",
+      "pin-to-dock": "Fijar al dock",
+      "unpin-from-dock": "Desfijar del dock"
+    },
+    "empty": {
+      "no-results": "No se han encontrado resultados."
+    },
+    "providers": {
+      "applications": {
+        "title": "Aplicaciones"
+      },
+      "calculator": {
+        "title": "Calculadora"
+      },
+      "emoji": {
+        "title": "Emoji"
+      },
+      "session": {
+        "title": "Sesión"
+      },
+      "wallpaper": {
+        "title": "Fondo de Pantalla"
+      },
+      "window": {
+        "title": "Ventanas"
+      }
+    },
+    "search-placeholder": "Buscar aplicaciones..."
+  },
+  "lockscreen": {
+    "authenticating": "Autenticando...",
+    "authentication-failed": "Autenticación fallida",
+    "ready": "Ingrese su contraseña y presione Enter.",
+    "unlocked": "Desbloqueado"
+  },
+  "notifications": {
+    "internal": {
+      "calendar-google-connect-start-failed": "No se pudo empezar la autorización con Google. Revise su conexión al internet",
+      "wallpaper-palette-export": "Paleta Personalizada"
+    }
+  },
+  "osd": {
+    "bluetooth": {
+      "off": "Bluetooth Apagado",
+      "on": "Bluetooth Encendido"
+    },
+    "caffeine": {
+      "off": "Cafeína Apagada",
+      "on": "Cafeína Encendida"
+    },
+    "dnd": {
+      "off": "No Molestar Apagado",
+      "on": "No Molestar Encencido"
+    },
+    "lock-keys": {
+      "caps-off": "Bloqueo de Mayúsculas Encendido",
+      "caps-on": "Bloqueo de Mayúsculas Apagado",
+      "num-off": "Bloqueo Numérico Apagado",
+      "num-on": "Bloqueo Numérico Encendido"
+    },
+    "wifi": {
+      "off": "Wi-Fi Apagado",
+      "on": "Wi-Fi Encendido"
+    }
+  },
+  "power": {
+    "battery": {
+      "states": {
+        "battery": "Bateria",
+        "charging": "Cargando",
+        "discharging": "Descargando",
+        "empty": "Vacia",
+        "pending-discharge": "Descarga pendiente",
+        "plugged-in": "Enchufado"
+      },
+      "tooltip": {
+        "health": "Salud",
+        "status": "Estado",
+        "time-left": "Tiempo restante",
+        "time-to-full": "Tiempo para llenarse"
+      }
+    },
+    "profiles": {
+      "balanced": "Balanceado",
+      "performance": "Rendimiento",
+      "power-saver": "Ahorro de energía"
+    }
+  },
+  "session": {
+    "actions": {
+      "lock-and-suspend": "Bloquear y Suspender",
+      "reboot": "Reiniciar",
+      "shutdown": "Apagar",
+      "suspend": "Suspender"
+    }
+  },
+  "settings": {
+    "actions": {
+      "reset": "Resetear"
+    },
+    "badges": {
+      "advanced": "Avanzado",
+      "inherited": "Heredado",
+      "monitor": "Monitor",
+      "override": "Sobrescrito"
+    },
+    "calendar-accounts": {
+      "add-title": "Agregar Cuenta de Calendario",
+      "color-label": "Color",
+      "delete-error": "No se pudo eliminar la cuenta de calendario.",
+      "edit-title": "Modificar Cuenta de Calendario",
+      "id-label": "ID de la Cuenta",
+      "name-placeholder": "Calendario Personal",
+      "password-keep-placeholder": "Deje vacío para mantener la contraseña actual",
+      "password-save-error": "No se pudo guardar la contraseña de la cuenta de calendario.",
+      "provider": {
+        "custom": "CalDAV",
+        "google": "Google",
+        "icloud": "iCloud"
+      },
+      "provider-label": "Proveedor",
+      "save": "Guardar",
+      "save-connect": "Guardar y Conectar",
+      "save-error": "No se pudo guardar la cuenta de calendario.",
+      "server-url-label": "URL del Servidor",
+      "username-label": "Nombre de Usuario",
+      "username-placeholder": "nombre@ejemplo.com"
+    },
+    "controls": {
+      "keybind": {
+        "recording-placeholder": "Presione una combinación de teclas."
+      },
+      "list": {
+        "add-entry-placeholder": "Agregar entrada..."
+      },
+      "path-browse": {
+        "file-title": "Seleccione archivo",
+        "folder-title": "Seleccione carpeta"
+      },
+      "select": {
+        "unknown-value": "{} desconocido "
+      }
+    },
+    "dialogs": {
+      "color-picker": {
+        "title": "Seleccione un Color"
+      }
+    },
+    "entities": {
+      "bar": {
+        "create": "Crear",
+        "delete": "Eliminar",
+        "delete-confirm-desc": "Esta barra creada por la interfaz sera eliminada de settings.toml.",
+        "delete-confirm-title": "Eliminar \"{name}\"?",
+        "id-placeholder": "ID de Barra",
+        "label": "Barra: {name}",
+        "management": "Barra",
+        "move-down": "Mover Abajo",
+        "move-up": "Mover Arriba",
+        "new": "Crear Barra",
+        "rename": "Renombrar",
+        "rename-save": "Guardar"
+      },
+      "monitor-override": {
+        "create": "Crear",
+        "delete": "Eliminar",
+        "delete-confirm-desc": "Esta sobrescripción de monitor sera elimina de settings.toml.",
+        "delete-confirm-title": "Eliminar \"{name}\"?",
+        "label": "Monitor: {name}",
+        "management": "Sobrescribir Monitor",
+        "new": "Sobrescribir Monitor",
+        "rename": "Renombrar",
+        "rename-save": "Guardar"
+      },
+      "widget": {
+        "add": "Agregar Widget",
+        "detail": {
+          "custom": "Widget Personalizado"
+        },
+        "group": {
+          "action": "Grupo",
+          "border": "Borde",
+          "edit": "Eliminar estilo",
+          "fill": "Fondo",
+          "opacity": "Opacidad"
+        }
+      }
+    },
+    "errors": {
+      "bar": {
+        "create": "No se pudo crear la barra.",
+        "delete": "No se pudo eliminar la barra.",
+        "move": "No se pudo mover la barra.",
+        "rename": "No se pudo renombar la barra."
+      }
+    },
+    "navigation": {
+      "groups": {
+        "clipboard": "Portapapeles",
+        "launcher": "Launcher",
+        "osd": "Visualizacion en pantalla",
+        "session-panel": "Sesión",
+        "wallpaper": "Fondo de Pantalla",
+        "weather": "Pronóstico"
+      },
+      "sections": {
+        "bar": "Barra",
+        "dock": "Dock",
+        "osd": "Visualizacion en pantalla",
+        "wallpaper": "Fondo de Pantalla"
+      }
+    },
+    "options": {
+      "clipboard": {
+        "auto-paste": {
+          "ctrl-shift-v": "Ctrl+Shift+V",
+          "ctrl-v": "Ctrl+V",
+          "shift-insert": "Shift+Insert"
+        }
+      },
+      "control-center": {
+        "sidebar": {
+          "compact": "Compacto",
+          "full": "Completo",
+          "none": "Ninguno"
+        }
+      },
+      "dock-launcher-position": {
+        "end": "Fin",
+        "none": "Ninguno",
+        "start": "Inicio"
+      },
+      "theme": {
+        "source": {
+          "wallpaper": "Fondo de Pantalla"
+        }
+      },
+      "wallpaper": {
+        "fill": {
+          "center": "Centro",
+          "fit": "Ajustar"
+        },
+        "order": {
+          "alphabetical": "Alfabético",
+          "random": "Aleatorio"
+        },
+        "transition": {
+          "honeycomb": "Panal"
+        }
+      },
+      "weather": {
+        "unit": {
+          "imperial": "Imperial",
+          "metric": "Métrico"
+        }
+      }
+    },
+    "schema": {
+      "appearance": {
+        "app-icon-colorize": {
+          "label": "Colorear iconos de apps"
+        }
+      },
+      "lockscreen": {
+        "wallpaper": {
+          "label": "Fondo de Pantalla"
+        }
+      },
+      "notifications": {
+        "monitors": {
+          "label": "Monitores"
+        },
+        "offset-x": {
+          "label": "Margen Horizontal"
+        },
+        "offset-y": {
+          "label": "Margen Vertical"
+        }
+      },
+      "services": {
+        "location-address": {
+          "placeholder": "Ciudad, País"
+        },
+        "weather": {
+          "description": "Habilitar el servicio de pronóstico",
+          "label": "Pronóstico"
+        },
+        "weather-effects": {
+          "description": "Mostrar efectos visuales del pronóstico",
+          "label": "Efectos del pronóstico"
+        },
+        "weather-refresh-interval": {
+          "label": ""
+        },
+        "weather-unit": {
+          "description": "Sistema de unidades utilizado en el pronóstico",
+          "label": "Unidades"
+        }
+      },
+      "shell": {
+        "clipboard-confirm-clear-history": {
+          "label": "Confirmar borrado del historial"
+        },
+        "clipboard-enabled": {
+          "description": "Habilitar el historial del portapapeles, el panel del portapapeles y la integración de copiar/pegar",
+          "label": "Portapapeles"
+        },
+        "clipboard-history-max-entries": {
+          "description": "Número máximo de entradas no fijadas que se guardan en el historial del portapapeles",
+          "label": "Tamaño del historial"
+        },
+        "clipboard-image-action": {
+          "placeholder": "gimp {path} o satty -f -"
+        },
+        "osd-kinds-bluetooth": {
+          "label": "Bluetooth"
+        },
+        "osd-kinds-brightness": {
+          "label": "Brillo"
+        },
+        "osd-kinds-caffeine": {
+          "label": "Cafeína"
+        },
+        "osd-kinds-dnd": {
+          "label": "No Molestar"
+        },
+        "osd-kinds-volume": {
+          "label": "Volumen"
+        },
+        "osd-kinds-volume-input": {
+          "label": "Volumen de entrada"
+        },
+        "osd-kinds-volume-output": {
+          "label": "Volumen de salida"
+        },
+        "osd-kinds-wifi": {
+          "label": "Wi-Fi"
+        },
+        "osd-monitors": {
+          "label": "Monitores"
+        },
+        "osd-offset-x": {
+          "label": "Margen Horizontal"
+        },
+        "osd-offset-y": {
+          "label": "Margen Vertical"
+        },
+        "osd-orientation": {
+          "label": "Orientación"
+        },
+        "osd-position": {
+          "label": "Posición en pantalla"
+        },
+        "osd-scale": {
+          "label": "Escala"
+        },
+        "screenshot-copy-to-clipboard": {
+          "label": "Copiar al portapapeles"
+        },
+        "show-location": {
+          "description": "Mostrar el nombre de la ubicacion en el widget del pronóstico"
+        }
+      },
+      "wallpaper": {
+        "automation-order": {
+          "label": "Orden"
+        },
+        "directory-dark": {
+          "description": "Directorio de fondos de pantalla utilizado en el modo de tema oscuro",
+          "label": "Directorio del modo oscuro"
+        },
+        "directory-light": {
+          "label": "Directorio del modo claro"
+        },
+        "monitor-directory-dark": {
+          "label": "Directorio del modo oscuro"
+        },
+        "monitor-directory-light": {
+          "label": "Directorio del modo claro"
+        }
+      }
+    },
+    "widgets": {
+      "types": {
+        "battery": "Batería",
+        "bluetooth": "Bluetooth",
+        "brightness": "Brillo",
+        "caffeine": "Caffeina",
+        "clipboard": "Portapapeles",
+        "clock": "Reloj",
+        "notifications": "Notificaciones",
+        "screenshot": "Captura de pantalla",
+        "session": "Sesión",
+        "settings": "Ajustes",
+        "taskbar": "Barra de tareas",
+        "volume": "Volumen",
+        "wallpaper": "Fondo de pantalla",
+        "weather": "Pronóstico",
+        "workspaces": "Espacios de trabajo"
+      }
+    },
+    "window": {
+      "export-config": "Exportar configuración...",
+      "export-config-saved": "Exportación de configuración guardada.",
+      "filter-modified": "Modificado",
+      "native-title": "Ajustes de Noctalia",
+      "no-results": "Ajustes no encontrados.",
+      "title": "Ajustes"
+    }
+  },
+  "setup-wizard": {
+    "title": "Bienvenido a Noctalia",
+    "wallpaper": "Fondo de pantalla"
+  },
+  "system": {
+    "hardware": {
+      "unknown": "Desconocido",
+      "unknown-cpu": "CPU desconocido",
+      "unknown-distro": "Distribucion desconocida",
+      "unknown-gpu": "GPU desconocida"
+    }
+  },
+  "tray": {
+    "menu": {
+      "pin": "Fijar",
+      "unpin": "Desfijar"
+    }
+  },
+  "ui": {
+    "controls": {
+      "search-picker": {
+        "empty": "Sin resultados",
+        "placeholder": "Buscar..."
+      },
+      "select": {
+        "placeholder": "Selecciona una opción"
+      }
+    },
+    "dialogs": {
+      "color-picker": {
+        "title": "Color"
+      },
+      "file": {
+        "actions": {
+          "open": "Abrir",
+          "save": "Guardar",
+          "select-folder": "Selecciona carpeta"
+        },
+        "entry": {
+          "folder": "Carpeta"
+        },
+        "filename-placeholder": "Nombre de archivo",
+        "filter-placeholder": "Filtrar...",
+        "sort": {
+          "ascending": "↑",
+          "date": "Fecha",
+          "descending": "↓",
+          "name": "Nombre",
+          "size": "Tamaño"
+        },
+        "title": {
+          "open": "Abrir archivo",
+          "save": "Guardar archivo",
+          "select-folder": "Seleccionar Carpeta"
+        }
+      }
+    }
+  },
+  "weather": {
+    "conditions": {
+      "full": {
+        "clear-sky": "Cielo despejado",
+        "drizzle": "Llovizna",
+        "fog": "Niebla",
+        "overcast": "Cubierto",
+        "thunderstorm": "Tormenta eléctrica",
+        "unknown": "Desconocido"
+      },
+      "short": {
+        "clear": "Despejado",
+        "cloudy": "Nublado",
+        "drizzle": "Llovizna",
+        "fog": "Niebla",
+        "overcast": "Cubierto",
+        "storm": "Tormenta",
+        "weather": "Pronóstico"
+      }
+    }
+  },
+  "window-switcher": {
+    "empty": "No hay ventanas abiertas",
+    "hint": "Tab · Shift+Tab · Flechas de direcciones · Suelte Alt para cambiar · Esc para cancelar",
+    "title": "Ventanas"
+  }
+}

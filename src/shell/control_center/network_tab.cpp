@@ -460,15 +460,6 @@ std::unique_ptr<Flex> NetworkTab::create() {
   passwordCard->addChild(std::move(inputRow));
   tab->addChild(std::move(passwordCard));
 
-  auto listCard = ui::column({
-      .out = &m_listCard,
-      .flexGrow = 1.0f,
-      .configure = [scale, opacity = panelCardOpacity(), borders = panelBordersEnabled()](Flex& card) {
-        applySectionCardStyle(card, scale, opacity, borders);
-      },
-  });
-  addTitle(*listCard, i18n::tr("control-center.network.available-networks"), scale);
-
   auto listScroll = ui::scrollView({
       .out = &m_listScroll,
       .scrollbarVisible = true,
@@ -483,10 +474,9 @@ std::unique_ptr<Flex> NetworkTab::create() {
   m_list = listScroll->content();
   m_list->setDirection(FlexDirection::Vertical);
   m_list->setAlign(FlexAlign::Stretch);
-  m_list->setGap(Style::spaceXs * scale);
-  listCard->addChild(std::move(listScroll));
+  m_list->setGap(Style::spaceMd * scale);
 
-  tab->addChild(std::move(listCard));
+  tab->addChild(std::move(listScroll));
   return tab;
 }
 
@@ -530,7 +520,6 @@ void NetworkTab::onClose() {
   m_passwordInput = nullptr;
   m_passwordRevealButton = nullptr;
   m_passwordRevealed = false;
-  m_listCard = nullptr;
   m_listScroll = nullptr;
   m_list = nullptr;
   m_rescanButton = nullptr;
@@ -538,10 +527,7 @@ void NetworkTab::onClose() {
   m_scanSpinner = nullptr;
   m_currentRow = nullptr;
   m_disconnectButton = nullptr;
-  m_vpnSection = nullptr;
-  m_apRows = nullptr;
   m_lastStructureKey.clear();
-  m_lastApRowsKey.clear();
   m_lastListWidth = -1.0f;
   m_pendingAccessPoint.reset();
   m_active = false;
@@ -670,6 +656,8 @@ NetworkTab::structureKey(const std::vector<AccessPointInfo>& aps, const std::vec
     key += ap.active ? '1' : '0';
     key.push_back(':');
     key += (m_network != nullptr && m_network->hasSavedConnection(ap.ssid)) ? '1' : '0';
+    key.push_back(':');
+    key += std::to_string(ap.strength);
     key.push_back('\n');
   }
   key += "---\n";
@@ -692,17 +680,6 @@ NetworkTab::structureKey(const std::vector<AccessPointInfo>& aps, const std::vec
   return key;
 }
 
-std::string NetworkTab::apRowsKey(const std::vector<AccessPointInfo>& aps) const {
-  std::string key;
-  for (const auto& ap : aps) {
-    key += ap.ssid;
-    key.push_back(':');
-    key += std::to_string(ap.strength);
-    key.push_back('\n');
-  }
-  return key;
-}
-
 void NetworkTab::rebuildApList(Renderer& renderer) {
   uiAssertNotRendering("NetworkTab::rebuildApList");
   if (m_list == nullptr || m_listScroll == nullptr) {
@@ -716,16 +693,11 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
   const auto& aps = m_network != nullptr ? m_network->accessPoints() : std::vector<AccessPointInfo>{};
   const auto& vpns = m_network != nullptr ? m_network->vpnConnections() : std::vector<VpnConnectionInfo>{};
   const std::string nextStructure = structureKey(aps, vpns);
-  const std::string nextApRows = apRowsKey(aps);
-  const bool structureChanged = listWidth != m_lastListWidth || nextStructure != m_lastStructureKey;
-  const bool apRowsChanged = nextApRows != m_lastApRowsKey;
-
-  if (!structureChanged && !apRowsChanged) {
+  if (listWidth == m_lastListWidth && nextStructure == m_lastStructureKey) {
     return;
   }
   m_lastListWidth = listWidth;
   m_lastStructureKey = nextStructure;
-  m_lastApRowsKey = nextApRows;
   const float scale = contentScale();
 
   auto buildApRows = [&]() {
@@ -770,29 +742,9 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
     return container;
   };
 
-  if (!structureChanged) {
-    if (m_apRows != nullptr) {
-      const auto& siblings = m_list->children();
-      std::size_t idx = 0;
-      for (; idx < siblings.size(); ++idx) {
-        if (siblings[idx].get() == m_apRows) {
-          break;
-        }
-      }
-      m_list->removeChild(m_apRows);
-      auto newRows = buildApRows();
-      m_apRows = newRows.get();
-      m_list->insertChildAt(idx, std::move(newRows));
-    }
-    m_list->layout(renderer);
-    return;
-  }
-
   m_wifiToggle = nullptr;
   m_scanSpinner = nullptr;
   m_rescanButton = nullptr;
-  m_vpnSection = nullptr;
-  m_apRows = nullptr;
 
   while (!m_list->children().empty()) {
     m_list->removeChild(m_list->children().front().get());
@@ -807,20 +759,16 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
         })
     );
   } else {
+    const float opacity = panelCardOpacity();
+    const bool borders = panelBordersEnabled();
+
     if (!vpns.empty()) {
-      auto vpnSection = ui::column({
-          .align = FlexAlign::Stretch,
-          .gap = Style::spaceXs * scale,
+      auto vpnCard = ui::column({
+          .configure = [scale, opacity, borders](Flex& card) { applySectionCardStyle(card, scale, opacity, borders); },
       });
 
-      auto vpnHeader = ui::row(
-          {.align = FlexAlign::Center, .gap = Style::spaceSm * scale, .minHeight = Style::controlHeightSm * scale},
-          ui::label({
-              .text = i18n::tr("control-center.network.vpns"),
-              .fontSize = Style::fontSizeBody * scale,
-              .color = colorSpecFromRole(ColorRole::Secondary),
-              .flexGrow = 1.0f,
-          }),
+      auto vpnHeader = makeCardHeaderRow(i18n::tr("control-center.network.vpns"), scale);
+      vpnHeader->addChild(
           ui::toggle({
               .checkedImmediate = m_vpnVisible,
               .toggleSize = ToggleSize::Medium,
@@ -831,7 +779,7 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
               },
           })
       );
-      vpnSection->addChild(std::move(vpnHeader));
+      vpnCard->addChild(std::move(vpnHeader));
 
       if (m_vpnVisible) {
         for (const auto& vpn : vpns) {
@@ -850,34 +798,25 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
                 PanelManager::instance().refresh();
               }
           );
-          vpnSection->addChild(std::move(row));
+          vpnCard->addChild(std::move(row));
         }
       }
 
-      m_vpnSection = vpnSection.get();
-      m_list->addChild(std::move(vpnSection));
-      m_list->addChild(ui::separator({.spacing = Style::spaceMd * scale}));
+      m_list->addChild(std::move(vpnCard));
     }
 
     {
-      auto wifiHeader = ui::row(
-          {.align = FlexAlign::Center,
-           .gap = Style::spaceSm * scale,
-           .minHeight = Style::controlHeightSm * scale,
-           .maxHeight = Style::controlHeightSm * scale},
-          ui::label({
-              .text = i18n::tr("control-center.network.wireless"),
-              .fontSize = Style::fontSizeBody * scale,
-              .color = colorSpecFromRole(ColorRole::Secondary),
-              .flexGrow = 1.0f,
-          })
-      );
+      auto wifiCard = ui::column({
+          .configure = [scale, opacity, borders](Flex& card) { applySectionCardStyle(card, scale, opacity, borders); },
+      });
 
+      auto wifiHeader = makeCardHeaderRow(i18n::tr("control-center.network.wifi"), scale);
       wifiHeader->addChild(
           ui::spinner({
               .out = &m_scanSpinner,
               .color = colorSpecFromRole(ColorRole::Primary),
               .spinnerSize = Style::baseGlyphSize * scale,
+              .visible = false,
           })
       );
 
@@ -900,6 +839,7 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
       wifiHeader->addChild(
           ui::toggle({
               .out = &m_wifiToggle,
+              .checkedImmediate = m_network->state().wirelessEnabled,
               .toggleSize = ToggleSize::Medium,
               .scale = scale,
               .onChange = [this](bool checked) {
@@ -909,19 +849,16 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
               },
           })
       );
-      m_list->addChild(std::move(wifiHeader));
+      wifiCard->addChild(std::move(wifiHeader));
 
-      const auto& s = m_network->state();
-      m_wifiToggle->setCheckedImmediate(s.wirelessEnabled);
-      m_scanSpinner->setVisible(s.scanning);
-      if (s.scanning) {
-        m_scanSpinner->start();
-      }
+      wifiCard->addChild(buildApRows());
+
+      m_list->addChild(std::move(wifiCard));
+
+      // Live state (spinner visibility/animation, toggle checked) is owned by
+      // syncCurrentCard(), which runs every frame after the card is attached.
+      // rebuildApList() builds structure only and must not drive animations.
     }
-
-    auto apRows = buildApRows();
-    m_apRows = apRows.get();
-    m_list->addChild(std::move(apRows));
   }
   m_list->layout(renderer);
 }

@@ -93,6 +93,21 @@ namespace {
     return true;
   }
 
+  // PluginsConfig equality that compares the open-ended pluginSettings map with int/double coercion
+  // (widgetSettingsEqual) instead of the defaulted operator== — same reason as widgets.
+  bool pluginsConfigEqual(const PluginsConfig& a, const PluginsConfig& b) {
+    if (a.sources != b.sources || a.enabled != b.enabled || a.pluginSettings.size() != b.pluginSettings.size()) {
+      return false;
+    }
+    for (const auto& [id, aMap] : a.pluginSettings) {
+      const auto it = b.pluginSettings.find(id);
+      if (it == b.pluginSettings.end() || !widgetSettingsEqual(aMap, it->second)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   // Like DesktopWidgetState's defaulted operator==, but compares the settings map with int/double coercion
   // (widgetSettingsEqual) instead of exact variant equality.
   bool desktopWidgetEqual(const DesktopWidgetState& a, const DesktopWidgetState& b) {
@@ -281,6 +296,11 @@ namespace {
     return path.size() == 3 && path[0] == "widget";
   }
 
+  bool isPluginSettingOverridePath(const std::vector<std::string>& path) {
+    // {"plugin_settings", pluginId, key}; pluginId is "author/plugin".
+    return path.size() == 3 && path[0] == "plugin_settings";
+  }
+
   // Override-effectiveness equality. Every config section uses its compiler-generated operator== (exact
   // member-wise compare) so that adding a field cannot silently break override persistence — the only
   // exceptions are the sections whose comparison carries semantics operator== can't express:
@@ -310,7 +330,8 @@ namespace {
         && a.idle == b.idle
         && a.hooks == b.hooks
         && a.theme == b.theme
-        && a.controlCenter == b.controlCenter;
+        && a.controlCenter == b.controlCenter
+        && pluginsConfigEqual(a.plugins, b.plugins);
   }
 
   toml::table* ensureTable(toml::table& parent, std::string_view key) {
@@ -391,7 +412,7 @@ namespace {
               toml::table row;
               row.insert_or_assign("action", item.action);
               row.insert_or_assign("enabled", item.enabled);
-              if (item.action != "lock_and_suspend" && item.command.has_value() && !item.command->empty()) {
+              if (item.command.has_value() && !item.command->empty()) {
                 row.insert_or_assign("command", *item.command);
               }
               if (item.label.has_value() && !item.label->empty()) {
@@ -626,7 +647,122 @@ ConfigChangeSet computeConfigChangeSet(const Config& prev, const Config& next) {
       .hooks = !(prev.hooks == next.hooks),
       .theme = !(prev.theme == next.theme),
       .controlCenter = !(prev.controlCenter == next.controlCenter),
+      .plugins = !pluginsConfigEqual(prev.plugins, next.plugins),
   };
+}
+
+void ConfigService::setPluginEnabled(std::string_view pluginId, bool enabled) {
+  if (m_overridesPath.empty()) {
+    return;
+  }
+
+  auto* pluginsTbl = ensureTable(m_overridesTable, "plugins");
+  auto* arr = pluginsTbl->get_as<toml::array>("enabled");
+  if (arr == nullptr) {
+    auto [it, _] = pluginsTbl->insert_or_assign("enabled", toml::array{});
+    arr = it->second.as_array();
+  }
+
+  const std::string id(pluginId);
+  auto pos = std::find_if(arr->begin(), arr->end(), [&id](const toml::node& node) {
+    const auto value = node.value<std::string>();
+    return value && *value == id;
+  });
+
+  if (enabled) {
+    if (pos != arr->end()) {
+      return; // already enabled
+    }
+    arr->push_back(id);
+  } else {
+    if (pos == arr->end()) {
+      return; // already disabled
+    }
+    arr->erase(pos);
+  }
+
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return;
+  }
+
+  m_ownOverridesWritePending = true;
+  loadAll();
+  fireReloadCallbacks();
+}
+
+void ConfigService::addPluginSource(const PluginSourceConfig& source) {
+  if (m_overridesPath.empty() || source.name.empty()) {
+    return;
+  }
+
+  auto* pluginsTbl = ensureTable(m_overridesTable, "plugins");
+  auto* arr = pluginsTbl->get_as<toml::array>("source");
+  if (arr == nullptr) {
+    auto [it, _] = pluginsTbl->insert_or_assign("source", toml::array{});
+    arr = it->second.as_array();
+  }
+
+  // A source name is an identity, not a duplicate key — replace any existing entry.
+  for (auto it = arr->begin(); it != arr->end();) {
+    const auto* tbl = it->as_table();
+    const auto name = tbl != nullptr ? (*tbl)["name"].value<std::string>() : std::nullopt;
+    it = (name && *name == source.name) ? arr->erase(it) : it + 1;
+  }
+
+  toml::table entry;
+  entry.insert_or_assign("name", source.name);
+  entry.insert_or_assign("kind", std::string(enumToKey(kPluginSourceKinds, source.kind)));
+  entry.insert_or_assign("location", source.location);
+  if (source.autoUpdate) {
+    entry.insert_or_assign("auto_update", true);
+  }
+  arr->push_back(std::move(entry));
+
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return;
+  }
+  m_ownOverridesWritePending = true;
+  loadAll();
+  fireReloadCallbacks();
+}
+
+void ConfigService::removePluginSource(std::string_view name) {
+  if (m_overridesPath.empty()) {
+    return;
+  }
+  auto* pluginsTbl = m_overridesTable.get_as<toml::table>("plugins");
+  if (pluginsTbl == nullptr) {
+    return;
+  }
+  auto* arr = pluginsTbl->get_as<toml::array>("source");
+  if (arr == nullptr) {
+    return;
+  }
+
+  bool removed = false;
+  for (auto it = arr->begin(); it != arr->end();) {
+    const auto* tbl = it->as_table();
+    const auto entryName = tbl != nullptr ? (*tbl)["name"].value<std::string>() : std::nullopt;
+    if (entryName && *entryName == name) {
+      it = arr->erase(it);
+      removed = true;
+    } else {
+      ++it;
+    }
+  }
+  if (!removed) {
+    return;
+  }
+
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return;
+  }
+  m_ownOverridesWritePending = true;
+  loadAll();
+  fireReloadCallbacks();
 }
 
 void ConfigService::setThemeMode(ThemeMode mode) {
@@ -918,6 +1054,30 @@ bool ConfigService::overridePathEffectiveInTable(
 
   if (isWidgetSettingOverridePath(path)) {
     return settings::widgetSettingOverrideIsEffective(path[1], path[2], *parsedWith, *withoutOverride);
+  }
+
+  if (isPluginSettingOverridePath(path)) {
+    const auto pluginSettingValue = [](const Config& cfg, const std::string& pluginId,
+                                       const std::string& key) -> std::optional<WidgetSettingValue> {
+      const auto it = cfg.plugins.pluginSettings.find(pluginId);
+      if (it == cfg.plugins.pluginSettings.end()) {
+        return std::nullopt;
+      }
+      const auto kIt = it->second.find(key);
+      if (kIt == it->second.end()) {
+        return std::nullopt;
+      }
+      return kIt->second;
+    };
+    const auto withVal = pluginSettingValue(*parsedWith, path[1], path[2]);
+    const auto withoutVal = pluginSettingValue(*withoutOverride, path[1], path[2]);
+    if (!withVal.has_value() && !withoutVal.has_value()) {
+      return false;
+    }
+    if (!withVal.has_value() || !withoutVal.has_value()) {
+      return true;
+    }
+    return !widgetSettingEqual(*withVal, *withoutVal);
   }
 
   return !configEqual(*parsedWith, *withoutOverride);
@@ -1344,6 +1504,26 @@ std::string ConfigService::getPaletteWallpaperPath() const {
     return m_lastWallpaperPath;
   }
   return m_defaultWallpaperPath;
+}
+
+std::string ConfigService::getGreeterSyncWallpaperPath() const {
+  const std::string palettePath = getPaletteWallpaperPath();
+  if (!palettePath.empty()) {
+    return palettePath;
+  }
+
+  std::vector<std::string> connectors;
+  connectors.reserve(m_monitorWallpaperPaths.size());
+  for (const auto& [connector, path] : m_monitorWallpaperPaths) {
+    if (!path.empty()) {
+      connectors.push_back(connector);
+    }
+  }
+  std::sort(connectors.begin(), connectors.end());
+  for (const std::string& connector : connectors) {
+    return m_monitorWallpaperPaths.at(connector);
+  }
+  return {};
 }
 
 void ConfigService::setWallpaperChangeCallback(ChangeCallback callback) {

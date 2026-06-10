@@ -6,6 +6,8 @@
 #include "config/schema/engine.h"
 #include "config/widget_config.h"
 #include "core/toml.h"
+#include "scripting/plugin_manager.h"
+#include "scripting/plugin_registry.h"
 #include "shell/desktop/desktop_widget_settings_registry.h"
 #include "shell/lockscreen/lockscreen_login_box.h"
 #include "shell/settings/widget_settings_registry.h"
@@ -247,6 +249,31 @@ namespace noctalia::config {
       }
     }
 
+    void validatePluginSettings(const toml::table& root, schema::Diagnostics& diag) {
+      const auto* pluginSettings = root["plugin_settings"].as_table();
+      if (pluginSettings == nullptr) {
+        return;
+      }
+      for (const auto& [pluginId, node] : *pluginSettings) {
+        const auto* perPlugin = node.as_table();
+        if (perPlugin == nullptr) {
+          continue;
+        }
+        const std::string idStr(pluginId.str());
+        const std::string base = "plugin_settings." + idStr;
+        const scripting::PluginManifest* manifest = scripting::PluginRegistry::instance().findManifest(idStr);
+        if (manifest == nullptr) {
+          diag.warn(base, "no loaded plugin with this id");
+          continue;
+        }
+        schema::WidgetSettingSchema fields;
+        for (const auto& spec : settings::manifestSettingSpecs(manifest->settings)) {
+          fields.push_back(spec.schema);
+        }
+        validateSettingsMap(*perPlugin, fields, base, /*flagUnknown=*/true, diag);
+      }
+    }
+
     void validateBarWidgets(const toml::table& root, schema::Diagnostics& diag) {
       const auto* widgets = root["widget"].as_table();
       if (widgets == nullptr) {
@@ -263,15 +290,15 @@ namespace noctalia::config {
         const std::string base = "widget." + nameStr;
         WidgetConfig wc = readBarWidgetConfig(nameStr, *tbl, resolvedConfig);
         const std::string type = wc.type;
-        if (!settings::isBuiltInWidgetType(type)) {
+        if (!settings::isBuiltInWidgetType(type) && !settings::isPluginWidgetType(type)) {
           diag.warn(base, "unrecognized widget type \"" + type + "\"");
           resolvedConfig.widgets[nameStr] = std::move(wc);
           continue;
         }
         const auto fields = settings::widgetSettingSchema(type, &wc);
-        // Scripted widgets resolve settings from a Lua manifest that may be absent
-        // here, so don't flag unknown keys for them.
-        validateSettingsMap(*tbl, fields, base, /*flagUnknown=*/type != "scripted", diag, /*ignoreKeys=*/{"type"});
+        // Plugin widgets resolve their settings from a static plugin.toml manifest, so
+        // unknown keys are flagged like any other widget.
+        validateSettingsMap(*tbl, fields, base, /*flagUnknown=*/true, diag, /*ignoreKeys=*/{"type"});
         resolvedConfig.widgets[nameStr] = std::move(wc);
       }
     }
@@ -489,10 +516,29 @@ namespace noctalia::config {
     checkSection(merged, "keybinds", schema::keybindsSchema(), diag);
     checkSection(merged, "dock", schema::dockSchema(), diag);
     checkSection(merged, "control_center", schema::controlCenterSchema(), diag);
+    checkSection(merged, "plugins", schema::pluginsSchema(), diag);
     checkSection(merged, "hooks", schema::hooksSchema(), diag);
+
+    // Resolve [plugins] into the registry so plugin widget types validate the same
+    // way the running app sees them. Disk-only — no materialization/network here.
+    {
+      PluginsConfig pc;
+      schema::Diagnostics sink; // schema issues are already reported by checkSection above
+      if (const auto* pluginsTbl = merged["plugins"].as_table()) {
+        const bool sourcesConfigured = (*pluginsTbl)["source"].as_array() != nullptr;
+        schema::readInto(*pluginsTbl, pc, schema::pluginsSchema(), "plugins", sink);
+        if (!sourcesConfigured && pc.sources.empty()) {
+          pc.sources = defaultPluginSources();
+        }
+      } else {
+        pc.sources = defaultPluginSources();
+      }
+      scripting::applyPluginSourcesToRegistry(scripting::PluginRegistry::instance(), pc);
+    }
 
     validateBars(merged, diag);
     validateBarWidgets(merged, diag);
+    validatePluginSettings(merged, diag);
     validateDesktopWidgets(merged, diag);
     validateLockscreenWidgets(merged, diag);
 
@@ -522,6 +568,8 @@ namespace noctalia::config {
         "lockscreen_widgets",
         "widget",
         "control_center",
+        "plugins",
+        "plugin_settings",
         "hooks",
     };
     for (const auto& [key, node] : merged) {

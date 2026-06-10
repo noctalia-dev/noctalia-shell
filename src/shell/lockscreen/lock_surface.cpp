@@ -40,15 +40,28 @@ namespace {
 } // namespace
 
 LockSurface::LockSurface(WaylandConnection& connection, ConfigService* config) : Surface(connection), m_config(config) {
+  {
+    auto backgroundLayer = std::make_unique<Node>();
+    backgroundLayer->setZIndex(0);
+    m_backgroundLayer = m_root.addChild(std::move(backgroundLayer));
+  }
+
   auto wallpaper = std::make_unique<WallpaperNode>();
-  m_wallpaper = static_cast<WallpaperNode*>(m_root.addChild(std::move(wallpaper)));
+  m_wallpaper = static_cast<WallpaperNode*>(m_backgroundLayer->addChild(std::move(wallpaper)));
   m_wallpaper->setZIndex(0);
 
-  m_root.addChild(
+  m_backgroundLayer->addChild(
       ui::box({
           .out = &m_tintOverlay,
           .visible = false,
           .configure = [](Box& box) { box.setZIndex(1); },
+      })
+  );
+
+  m_backgroundLayer->addChild(
+      ui::box({
+          .out = &m_backdrop,
+          .configure = [](Box& box) { box.setZIndex(-1); },
       })
   );
 
@@ -60,14 +73,8 @@ LockSurface::LockSurface(WaylandConnection& connection, ConfigService* config) :
 
   m_root.addChild(
       ui::box({
-          .out = &m_backdrop,
-          .configure = [](Box& box) { box.setZIndex(-1); },
-      })
-  );
-
-  m_root.addChild(
-      ui::box({
           .out = &m_loginPanel,
+          .configure = [](Box& box) { box.setZIndex(2); },
       })
   );
 
@@ -88,6 +95,7 @@ LockSurface::LockSurface(WaylandConnection& connection, ConfigService* config) :
                   m_onLogin();
                 }
               },
+          .configure = [](Input& input) { input.setZIndex(2); },
       })
   );
 
@@ -98,11 +106,13 @@ LockSurface::LockSurface(WaylandConnection& connection, ConfigService* config) :
           .glyph = "check",
           .glyphSize = 16.0f,
           .variant = ButtonVariant::Primary,
-          .onClick = [this]() {
-            if (m_onLogin) {
-              m_onLogin();
-            }
-          },
+          .onClick =
+              [this]() {
+                if (m_onLogin) {
+                  m_onLogin();
+                }
+              },
+          .configure = [](Button& button) { button.setZIndex(2); },
       })
   );
 
@@ -178,7 +188,7 @@ bool LockSurface::passwordFieldContainsPoint(float sceneX, float sceneY) const {
 }
 
 void LockSurface::focusPasswordField() {
-  if (!m_locked || m_passwordField == nullptr) {
+  if (!m_locked || m_blackout || m_passwordField == nullptr) {
     return;
   }
   m_inputDispatcher.setFocus(m_passwordField->inputArea());
@@ -267,6 +277,17 @@ void LockSurface::setBackgroundStyle(float blurIntensity, float tintIntensity) {
   requestLayout();
 }
 
+void LockSurface::setBlackout(bool blackout) {
+  if (m_blackout == blackout) {
+    return;
+  }
+  m_blackout = blackout;
+  if (m_blackout) {
+    m_inputDispatcher.setFocus(nullptr);
+  }
+  requestLayout();
+}
+
 void LockSurface::setOnLogin(std::function<void()> onLogin) { m_onLogin = std::move(onLogin); }
 
 void LockSurface::setOnPasswordChanged(std::function<void(const std::string&)> onPasswordChanged) {
@@ -290,6 +311,10 @@ void LockSurface::clearPasswordSelection() {
 }
 
 void LockSurface::onPointerEvent(const PointerEvent& event) {
+  if (m_blackout) {
+    return;
+  }
+
   switch (event.type) {
   case PointerEvent::Type::Enter:
     m_inputDispatcher.pointerEnter(static_cast<float>(event.sx), static_cast<float>(event.sy), event.serial);
@@ -337,6 +362,10 @@ void LockSurface::onThemeChanged() {
 }
 
 void LockSurface::onKeyboardEvent(const KeyboardEvent& event) {
+  if (m_blackout) {
+    return;
+  }
+
   if (m_locked
       && event.pressed
       && m_passwordField != nullptr
@@ -390,10 +419,39 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
   if (renderer == nullptr) {
     return;
   }
-  applyWallpaperTexture();
 
   const float sw = static_cast<float>(width);
   const float sh = static_cast<float>(height);
+
+  if (m_blackout) {
+    m_root.setSize(sw, sh);
+    m_backgroundLayer->setPosition(0.0f, 0.0f);
+    m_backgroundLayer->setSize(sw, sh);
+    m_wallpaper->setVisible(false);
+    m_tintOverlay->setVisible(false);
+    m_backdrop->setPosition(0.0f, 0.0f);
+    m_backdrop->setSize(sw, sh);
+    m_backdrop->setVisible(true);
+    m_backdrop->setStyle(
+        RoundedRectStyle{
+            .fill = rgba(0.0f, 0.0f, 0.0f, 1.0f),
+            .fillMode = FillMode::Solid,
+        }
+    );
+    m_widgetLayer->setVisible(false);
+    m_loginPanel->setVisible(false);
+    m_passwordField->setVisible(false);
+    m_loginButton->setVisible(false);
+    return;
+  }
+
+  applyWallpaperTexture();
+
+  m_wallpaper->setVisible(true);
+  m_widgetLayer->setVisible(true);
+  m_loginPanel->setVisible(true);
+  m_passwordField->setVisible(true);
+  m_loginButton->setVisible(true);
   const float panelHeight = lockscreen_login_box::panelHeight();
   float panelWidth = lockscreen_login_box::panelWidth(sw);
   float panelX = std::round((sw - panelWidth) * 0.5f);
@@ -407,6 +465,9 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
   }
 
   m_root.setSize(sw, sh);
+
+  m_backgroundLayer->setPosition(0.0f, 0.0f);
+  m_backgroundLayer->setSize(sw, sh);
 
   m_wallpaper->setPosition(0.0f, 0.0f);
   m_wallpaper->setSize(sw, sh);

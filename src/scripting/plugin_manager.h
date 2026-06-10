@@ -1,0 +1,102 @@
+#pragma once
+
+#include "config/config_types.h"
+
+#include <filesystem>
+#include <functional>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <unordered_set>
+#include <vector>
+
+class ConfigService;
+
+namespace scripting {
+
+  class PluginRegistry;
+
+  // Resolve the [plugins] config into registry source roots + an enabled gate and
+  // (re)scan. Pure disk work — never materializes (no network). Shared by
+  // PluginManager::refresh and the config-validate CLI so both resolve plugin
+  // widget types against the same active set.
+  void applyPluginSourcesToRegistry(PluginRegistry& registry, const PluginsConfig& plugins);
+
+  struct EnableResult {
+    bool ok = false;
+    std::string error;
+  };
+
+  struct PluginStatus {
+    std::string id;
+    std::string version;
+    std::string source; // source name ("local" for the implicit dev source)
+    bool compatible = true;
+    bool enabled = false;
+  };
+
+  // Owns the plugin distribution lifecycle: resolves the configured sources into
+  // registry source roots + an enabled gate, and drives enable/disable. The
+  // implicit local dev source (the user data dir) is always active; managed git /
+  // path sources are gated by [plugins].enabled. Construct one as an Application
+  // member and subscribe refresh() as an early config-reload callback so the
+  // registry updates before bar / control-center rebuilds.
+  class PluginManager {
+  public:
+    explicit PluginManager(ConfigService& config) : m_config(config) {}
+
+    // Called after an out-of-band registry change that isn't a config reload — i.e. a
+    // git `update()` that advanced a source. Lets Application rebuild the bar and
+    // reconcile services for the new revision. Enable/disable already propagate via the
+    // config-reload path, so they don't use this.
+    void setOnChanged(std::function<void()> onChanged) { m_onChanged = std::move(onChanged); }
+
+    // Resolve source roots + enabled filter from config and (re)scan the registry.
+    // No-op when the plugins config is unchanged since the last applied refresh.
+    void refresh();
+
+    // Enable a managed-source plugin by id ("author/plugin"): clone + sparse-checkout
+    // from its git source if needed, enforce min_noctalia, then persist. Persisting
+    // fans out a reload (which re-refreshes the registry). Hard error on an unknown
+    // id, a failed fetch, or an incompatible min_noctalia.
+    [[nodiscard]] EnableResult enable(std::string_view pluginId);
+
+    // Disable a plugin by id and persist. Code stays on disk; settings are retained.
+    void disable(std::string_view pluginId);
+
+    // Every plugin offered by the local dev source + each configured source, with
+    // its compatibility and active state. For the management CLI / settings browser.
+    [[nodiscard]] std::vector<PluginStatus> list() const;
+
+    // Add (or replace) a source and refresh.
+    void addSource(const PluginSourceConfig& source);
+
+    // Fetch a git source off-thread, check the new catalog's min_noctalia for every
+    // enabled plugin, and fast-forward only if all are compatible — otherwise the
+    // update is skipped (nothing is applied). Re-scans on the main thread. No-op for
+    // path / unknown sources.
+    void update(std::string sourceName);
+
+    // Remove a source: delete its git clone, disable its plugins, drop it from
+    // config. Path sources keep their externally-owned directory.
+    void removeSource(std::string sourceName);
+
+  private:
+    [[nodiscard]] std::filesystem::path sourceRoot(const PluginSourceConfig& source) const;
+    [[nodiscard]] std::optional<PluginSourceConfig> findSourceOffering(std::string_view pluginId) const;
+    [[nodiscard]] std::optional<PluginSourceConfig> findSource(std::string_view name) const;
+    // Plugin ids offered by the implicit local dev source.
+    [[nodiscard]] std::unordered_set<std::string> localPluginIds() const;
+    // Re-derive any enabled git-source plugin missing from disk — re-clones a wiped
+    // source and checks out enabled plugins it ships. Heals a deleted clone or a
+    // restored config. Returns whether anything was materialized. No network when
+    // nothing is missing.
+    bool ensureEnabledMaterialized(const PluginsConfig& plugins) const;
+
+    ConfigService& m_config;
+    std::function<void()> m_onChanged;
+    PluginsConfig m_lastApplied;
+    bool m_applied = false;
+  };
+
+} // namespace scripting

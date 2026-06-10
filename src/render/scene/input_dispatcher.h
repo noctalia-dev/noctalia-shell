@@ -18,7 +18,10 @@ public:
   void setSceneRoot(Node* root);
   void setCursorShapeCallback(CursorShapeCallback callback);
   void setHoverChangeCallback(HoverChangeCallback callback);
-  void setTextInputContext(wl_surface* surface, TextInputService* service, bool keyboardFocusActivation = false);
+  void setTextInputContext(
+      wl_surface* surface, TextInputService* service, bool keyboardFocusActivation = false,
+      wl_surface* keyboardFocusParentSurface = nullptr
+  );
 
   // Dispatch Wayland pointer events into the scene graph
   void pointerEnter(float x, float y, std::uint32_t serial);
@@ -58,6 +61,7 @@ private:
   wl_surface* m_textInputSurface = nullptr;
   TextInputService* m_textInputService = nullptr;
   bool m_textInputKeyboardFocusActivation = false;
+  wl_surface* m_textInputKeyboardFocusParentSurface = nullptr;
   InputArea* m_hoveredArea = nullptr;
   InputArea* m_focusedArea = nullptr;
   InputArea* m_capturedArea = nullptr; // held while any button is pressed

@@ -57,6 +57,13 @@ namespace scripting {
     std::optional<bool> visible;
     std::optional<int> updateIntervalMs;
 
+    // Control-center shortcut fields (the `shortcut.*` namespace).
+    std::optional<std::string> label;
+    std::optional<std::string> iconOn;
+    std::optional<std::string> iconOff;
+    std::optional<bool> active;
+    std::optional<bool> enabled;
+
     [[nodiscard]] bool empty() const {
       return !text.has_value()
           && !glyph.has_value()
@@ -66,7 +73,12 @@ namespace scripting {
           && !textColor.has_value()
           && !glyphColor.has_value()
           && !visible.has_value()
-          && !updateIntervalMs.has_value();
+          && !updateIntervalMs.has_value()
+          && !label.has_value()
+          && !iconOn.has_value()
+          && !iconOff.has_value()
+          && !active.has_value()
+          && !enabled.has_value();
     }
   };
 
@@ -99,6 +111,9 @@ namespace scripting {
     CallStrings,
     AsyncCommandResult,
     AsyncProcessMatchResult,
+    AsyncHttpResult,
+    StateWatchResult,
+    StreamLine,
     Stop,
   };
 
@@ -120,6 +135,13 @@ namespace scripting {
     bool coalesce = false;
     int callbackRef = 0;
     process::RunResult commandResult;
+    // AsyncHttpResult payload.
+    bool httpOk = false;
+    bool httpIsDownload = false;
+    int httpStatus = 0;
+    std::string httpBody;
+    // StateWatchResult payload (the changed value as JSON).
+    std::string stateJson;
     ScriptWidgetSnapshot snapshot;
     std::chrono::milliseconds budget{12};
   };

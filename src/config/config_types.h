@@ -412,6 +412,7 @@ struct LockscreenConfig {
   float blurIntensity = 0.5f;
   float tintIntensity = 0.3f;
   std::string wallpaper;
+  std::vector<std::string> monitors;
 
   bool operator==(const LockscreenConfig&) const = default;
 };
@@ -1194,6 +1195,44 @@ struct ControlCenterConfig {
   bool operator==(const ControlCenterConfig&) const = default;
 };
 
+// A plugin source: where plugin code comes from. `Git` is a repo URL the host
+// clones/pulls/sparse-checks-out; `Path` is an immutable local directory (e.g. a
+// Nix store path) the host treats read-only (update/auto-update/remove are no-ops).
+enum class PluginSourceKind : std::uint8_t {
+  Git = 0,
+  Path = 1,
+};
+
+constexpr EnumOption<PluginSourceKind> kPluginSourceKinds[] = {
+    {PluginSourceKind::Git, "git", "settings.options.plugins.source.git"},
+    {PluginSourceKind::Path, "path", "settings.options.plugins.source.path"},
+};
+
+struct PluginSourceConfig {
+  PluginSourceKind kind = PluginSourceKind::Git;
+  std::string name;        // stable handle (also the clone subdir for git sources)
+  std::string location;    // git URL or local path
+  bool autoUpdate = false; // git-only, opt-in
+  bool operator==(const PluginSourceConfig&) const = default;
+};
+
+// Distribution config: where plugins come from and which are turned on. User
+// intent → config (declarative-friendly); clones live under the state dir.
+struct PluginsConfig {
+  std::vector<PluginSourceConfig> sources;
+  std::vector<std::string> enabled; // active plugin ids ("author/plugin"); opt-in for every source
+  // Plugin-level setting overrides, keyed by plugin id then setting key. Seeded
+  // into every entry runtime of the plugin (widget/shortcut/service). Open-ended
+  // (validated against the manifest schema), so compared via configEqual rather
+  // than the defaulted operator== (which lacks int/double coercion).
+  std::unordered_map<std::string, std::unordered_map<std::string, WidgetSettingValue>> pluginSettings;
+  bool operator==(const PluginsConfig&) const = default;
+};
+
+// Default sources seeded when [plugins] declares no [[plugins.source]]: the
+// official + community plugin repos (auto-update off).
+[[nodiscard]] std::vector<PluginSourceConfig> defaultPluginSources();
+
 struct Config {
   std::vector<BarConfig> bars;
   std::unordered_map<std::string, WidgetConfig> widgets;
@@ -1219,6 +1258,7 @@ struct Config {
   HooksConfig hooks;
   ThemeConfig theme;
   ControlCenterConfig controlCenter;
+  PluginsConfig plugins;
 };
 
 // Which top-level config sections changed across a reload. Default-constructed
@@ -1249,6 +1289,7 @@ struct ConfigChangeSet {
   bool hooks = true;
   bool theme = true;
   bool controlCenter = true;
+  bool plugins = true;
 
   [[nodiscard]] bool any() const noexcept {
     return bars
@@ -1274,7 +1315,8 @@ struct ConfigChangeSet {
         || idle
         || hooks
         || theme
-        || controlCenter;
+        || controlCenter
+        || plugins;
   }
 };
 

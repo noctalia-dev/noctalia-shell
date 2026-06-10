@@ -65,7 +65,7 @@ void InputDispatcher::setCursorShapeCallback(CursorShapeCallback callback) {
 }
 
 void InputDispatcher::setTextInputContext(
-    wl_surface* surface, TextInputService* service, bool keyboardFocusActivation
+    wl_surface* surface, TextInputService* service, bool keyboardFocusActivation, wl_surface* keyboardFocusParentSurface
 ) {
   if ((m_textInputSurface != surface || m_textInputService != service) && m_focusedArea != nullptr) {
     clearTextInputFocus(m_focusedArea);
@@ -73,6 +73,7 @@ void InputDispatcher::setTextInputContext(
   m_textInputSurface = surface;
   m_textInputService = service;
   m_textInputKeyboardFocusActivation = keyboardFocusActivation;
+  m_textInputKeyboardFocusParentSurface = keyboardFocusParentSurface;
   syncTextInputFocus();
 }
 
@@ -374,7 +375,9 @@ void InputDispatcher::syncTextInputFocus() {
     return;
   }
   if (auto* client = m_focusedArea->textInputClient(); client != nullptr) {
-    m_textInputService->setFocusedClient(m_textInputSurface, client, m_textInputKeyboardFocusActivation);
+    m_textInputService->setFocusedClient(
+        m_textInputSurface, client, m_textInputKeyboardFocusActivation, m_textInputKeyboardFocusParentSurface
+    );
   }
 }
 

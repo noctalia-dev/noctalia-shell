@@ -37,6 +37,19 @@ namespace control_center {
     );
   }
 
+  std::unique_ptr<Flex> makeCardHeaderRow(const std::string& title, float scale) {
+    return ui::row(
+        {.align = FlexAlign::Center, .gap = Style::spaceSm * scale, .minHeight = Style::controlHeightSm * scale},
+        ui::label({
+            .text = title,
+            .fontSize = Style::fontSizeBody * scale,
+            .color = colorSpecFromRole(ColorRole::OnSurface),
+            .fontWeight = FontWeight::Bold,
+            .flexGrow = 1.0f,
+        })
+    );
+  }
+
 } // namespace control_center
 
 std::unique_ptr<Flex> Tab::createHeaderActions() { return nullptr; }

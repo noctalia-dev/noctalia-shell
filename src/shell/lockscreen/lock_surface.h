@@ -54,6 +54,8 @@ public:
   void invalidateLivePaper();
   void setDesktopCapture(std::optional<ScreencopyImage> capture);
   void setBackgroundStyle(float blurIntensity, float tintIntensity);
+  void setBlackout(bool blackout);
+  [[nodiscard]] bool isBlackout() const noexcept { return m_blackout; }
   void setOnLogin(std::function<void()> onLogin);
   void setOnPasswordChanged(std::function<void(const std::string&)> onPasswordChanged);
   void selectAllPassword();
@@ -88,6 +90,7 @@ private:
   wl_output* m_output = nullptr;
   ConfigService* m_config = nullptr;
   Node m_root;
+  Node* m_backgroundLayer = nullptr;
   Node* m_widgetLayer = nullptr;
   WallpaperNode* m_wallpaper = nullptr;
   Box* m_tintOverlay = nullptr;
@@ -105,6 +108,7 @@ private:
   std::optional<ScreencopyImage> m_desktopCapture;
   float m_blurIntensity = 0.5f;
   float m_tintIntensity = 0.3f;
+  bool m_blackout = false;
   bool m_captureDirty = true;
   std::string m_wallpaperPath;
   std::string m_textureWallpaperPath;

@@ -3,6 +3,7 @@
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "net/http_client.h"
+#include "util/file_utils.h"
 #include "util/string_utils.h"
 
 #include <algorithm>
@@ -165,12 +166,12 @@ namespace noctalia::theme {
     return it->md5;
   }
 
+  // Stored under the state dir (not XDG cache): app-managed, re-fetchable data that
+  // should persist between sessions and not be auto-reclaimed by cache cleaners.
   std::filesystem::path communityPaletteCacheDir() {
-    if (const char* xdg = std::getenv("XDG_CACHE_HOME"); xdg != nullptr && xdg[0] != '\0') {
-      return std::filesystem::path(xdg) / "noctalia" / "community-palettes";
-    }
-    if (const char* home = std::getenv("HOME"); home != nullptr && home[0] != '\0') {
-      return std::filesystem::path(home) / ".cache" / "noctalia" / "community-palettes";
+    const std::string state = FileUtils::stateDir();
+    if (!state.empty()) {
+      return std::filesystem::path(state) / "community-palettes";
     }
     return std::filesystem::path("/tmp") / "noctalia" / "community-palettes";
   }

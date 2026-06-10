@@ -1,0 +1,136 @@
+{
+  "auth": {
+    "pam": {
+      "authentication-failed": "Authenticatie mislukt",
+      "start-failed": "PAM-start mislukt",
+      "user-unavailable": "Huidige gebruiker kan niet worden vastgesteld"
+    },
+    "polkit": {
+      "authenticate": "Authenticeer",
+      "authenticating": "Authenticeren",
+      "default-message": "Authenticatie vereist",
+      "invalid-password": "Ongeldig wachtwoord",
+      "password-placeholder": "Wachtwoord",
+      "title": "Authenticatie vereist"
+    }
+  },
+  "bar": {
+    "screenshot": {
+      "choose-display": "Kies display",
+      "fullscreen": "Volledig scherm",
+      "region": "Kies regio"
+    },
+    "widgets": {
+      "lock-keys": {
+        "caps": "Caps",
+        "caps-short": "C",
+        "num": "Num",
+        "num-short": "N",
+        "scroll": "Scroll",
+        "scroll-short": "S"
+      },
+      "media": {
+        "nothing-playing": "Niets aan het afspelen",
+        "playing": "Afspelen"
+      },
+      "network": {
+        "wired": "Bedraad"
+      },
+      "scripted": {
+        "reload-failed": "Script herladen mislukt",
+        "reloaded": "Script herladen"
+      },
+      "weather": {
+        "default": "Weer",
+        "error": "Weer fout",
+        "loading": "Weer...",
+        "no-location": "Geen locatie",
+        "off": "Weer uit",
+        "vertical-default": "WX",
+        "vertical-error": "FOUT",
+        "vertical-loading": "...",
+        "vertical-no-location": "GELOC",
+        "vertical-off": "UIT"
+      }
+    }
+  },
+  "clipboard": {
+    "actions": {
+      "clear-all": "Wis alles",
+      "delete-item": "Verwijder item"
+    },
+    "confirm": {
+      "clear-desc-no-pinned": "Dit wist alles uit de klembordgeschiedenis.",
+      "delete-title": "Verwijder klembord item"
+    },
+    "empty": {
+      "history-message": "Geen items in de klembordgeschiedenis.",
+      "history-title": "Klembordgeschiedenis is leeg.",
+      "no-matches-message": "Geen resultaten die aan de huidige filtercriteria voldoen.",
+      "no-matches-title": "Geen resultaten"
+    },
+    "entry": {
+      "image": "Foto"
+    },
+    "filter-placeholder": "Filter klembord...",
+    "preview": {
+      "empty-text-payload": "(lege tekstinhoud)"
+    }
+  },
+  "control-center": {
+    "bluetooth": {
+      "pairing-detail": {
+        "authorize": "Accepteer inkomend koppelingsverzoek?",
+        "authorize-service": "Sta toegang tot service {uuid} toe?"
+      }
+    },
+    "home": {
+      "weather": {
+        "configure-location": "Voeg [weather].address toe of zet auto_locate aan."
+      }
+    },
+    "weather": {
+      "configure-location": "Voeg [weather].address toe of zet auto_locate aan."
+    }
+  },
+  "internal-apps": {
+    "settings": {
+      "display-name": "Instellingen"
+    }
+  },
+  "lockscreen": {
+    "authenticating": "Authenticeren...",
+    "authentication-failed": "Authenticatie mislukt"
+  },
+  "settings": {
+    "widgets": {
+      "settings": {
+        "drawer": {
+          "description": "Toon systeemvak-knop in de balk en open items in een ladevenster"
+        },
+        "drawer-columns": {
+          "description": "Aantal pictogrammen per rij in het ladevenster"
+        },
+        "hidden": {
+          "description": "ID’s van te verbergen items in het systeemvak"
+        },
+        "match-adjacent-spacing": {
+          "description": "De afstand tussen de pictogrammen in het inline-systeemvak vergroten, zodat deze overeenkomt met de visuele afstand tussen aangrenzende balkwidgets (inclusief opvulling van de pictogrammen)"
+        },
+        "pinned": {
+          "description": "ID’s van items in het systeemvak die zichtbaar blijven in de balk wanneer het ladevenster is geopend"
+        }
+      },
+      "types": {
+        "tray": "Systeemvak"
+      }
+    }
+  },
+  "tray": {
+    "menu": {
+      "empty": "Geen menu items...",
+      "pin": "Vastzetten",
+      "unpin": "Losmaken"
+    }
+  }
+}

@@ -14,6 +14,18 @@ TrayDrawerPanel::TrayDrawerPanel(TrayService* tray, ConfigService* config, std::
 
 TrayDrawerPanel::~TrayDrawerPanel() = default;
 
+PanelPlacement TrayDrawerPanel::panelPlacement() const noexcept {
+  if (m_config == nullptr) {
+    return PanelPlacement::Attached;
+  }
+  if (const auto it = m_config->config().widgets.find("tray"); it != m_config->config().widgets.end()) {
+    if (it->second.getBool("detached_panel", false)) {
+      return PanelPlacement::Floating;
+    }
+  }
+  return PanelPlacement::Attached;
+}
+
 float TrayDrawerPanel::preferredWidth() const {
   const float itemSize = scaled(Style::baseGlyphSize);
   const float gap = scaled(Style::spaceXs);

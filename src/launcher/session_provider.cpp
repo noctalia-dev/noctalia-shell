@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "i18n/i18n.h"
+#include "shell/session/session_action_meta.h"
 #include "shell/session/session_action_runner.h"
 #include "util/fuzzy_match.h"
 #include "util/string_utils.h"
@@ -27,60 +28,6 @@ namespace {
     std::string subtitle;
     std::string searchable;
   };
-
-  [[nodiscard]] bool isKnownAction(std::string_view action) {
-    return action == "lock"
-        || action == "logout"
-        || action == "suspend"
-        || action == "lock_and_suspend"
-        || action == "reboot"
-        || action == "shutdown"
-        || action == "command";
-  }
-
-  [[nodiscard]] const char* labelKeyForAction(std::string_view action) {
-    if (action == "lock") {
-      return "session.actions.lock";
-    }
-    if (action == "logout") {
-      return "session.actions.logout";
-    }
-    if (action == "suspend") {
-      return "session.actions.suspend";
-    }
-    if (action == "lock_and_suspend") {
-      return "session.actions.lock-and-suspend";
-    }
-    if (action == "reboot") {
-      return "session.actions.reboot";
-    }
-    if (action == "shutdown") {
-      return "session.actions.shutdown";
-    }
-    return "session.actions.custom";
-  }
-
-  [[nodiscard]] const char* defaultGlyphForAction(std::string_view action) {
-    if (action == "lock") {
-      return "lock";
-    }
-    if (action == "logout") {
-      return "logout";
-    }
-    if (action == "suspend") {
-      return "suspend";
-    }
-    if (action == "lock_and_suspend") {
-      return "lock";
-    }
-    if (action == "reboot") {
-      return "reboot";
-    }
-    if (action == "shutdown") {
-      return "shutdown";
-    }
-    return "terminal";
-  }
 
   [[nodiscard]] std::string aliasesForAction(std::string_view action) {
     if (action == "lock") {
@@ -129,13 +76,11 @@ namespace {
     }
 
     action = id.substr(separator + 1);
-    return isKnownAction(action);
+    return session_action::isKnown(action);
   }
 
   [[nodiscard]] std::string actionSubtitle(const SessionPanelActionConfig& config) {
-    if (config.action != "lock_and_suspend"
-        && config.command.has_value()
-        && !StringUtils::trim(*config.command).empty()) {
+    if (config.command.has_value() && !StringUtils::trim(*config.command).empty()) {
       return i18n::tr("launcher.providers.session.command-subtitle");
     }
     return i18n::tr("launcher.providers.session.action-subtitle");
@@ -149,7 +94,7 @@ namespace {
     entries.reserve(source.size());
     for (std::size_t i = 0; i < source.size(); ++i) {
       const SessionPanelActionConfig& row = source[i];
-      if (!row.enabled || !isKnownAction(row.action)) {
+      if (!row.enabled || !session_action::isKnown(row.action)) {
         continue;
       }
       if (row.action == "command" && (!row.command.has_value() || StringUtils::trim(*row.command).empty())) {
@@ -159,8 +104,10 @@ namespace {
       SessionActionEntry entry;
       entry.index = i;
       entry.config = row;
-      entry.title = row.label.has_value() && !row.label->empty() ? *row.label : i18n::tr(labelKeyForAction(row.action));
-      entry.glyph = row.glyph.has_value() && !row.glyph->empty() ? *row.glyph : defaultGlyphForAction(row.action);
+      entry.title =
+          row.label.has_value() && !row.label->empty() ? *row.label : i18n::tr(session_action::labelKey(row.action));
+      entry.glyph =
+          row.glyph.has_value() && !row.glyph->empty() ? *row.glyph : session_action::defaultGlyph(row.action);
       entry.subtitle = actionSubtitle(row);
       entry.searchable = StringUtils::toLower(entry.title + " " + row.action + " " + aliasesForAction(row.action));
       if (row.command.has_value()) {

@@ -1,0 +1,129 @@
+#pragma once
+
+#include "config/config_types.h"
+
+#include <cstdint>
+#include <filesystem>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <vector>
+
+namespace scripting {
+
+  // Settings-field schema. Declared once per setting in plugin.toml and the single
+  // source of truth for a setting's default (seeded into the runtime settings store).
+  enum class ManifestFieldType : std::uint8_t {
+    Bool,
+    Int,
+    Double,
+    String,
+    File,
+    Folder,
+    Glyph,
+    Select,
+    Color,
+  };
+
+  struct ManifestSelectOption {
+    std::string value;
+    std::string label;
+  };
+
+  struct ManifestVisibility {
+    std::string key;
+    std::vector<std::string> values;
+  };
+
+  struct ManifestField {
+    std::string key;
+    std::string label;
+    std::string description;
+    ManifestFieldType type = ManifestFieldType::String;
+
+    // Typed default; the active member is selected by `type`.
+    bool boolDefault = false;
+    double numberDefault = 0.0;
+    std::string stringDefault;
+
+    std::optional<double> minValue;
+    std::optional<double> maxValue;
+    double step = 1.0;
+    std::vector<ManifestSelectOption> options;
+    std::vector<std::string> extensions;
+    bool advanced = false;
+    std::optional<ManifestVisibility> visibleWhen;
+
+    // The declared default mapped to a settings value.
+    [[nodiscard]] WidgetSettingValue defaultValue() const;
+  };
+
+  // Entry types a plugin may declare. P0 routes only Widget to a surface; the rest
+  // are parsed and registered so the manifest format is forward-compatible.
+  enum class PluginEntryKind : std::uint8_t {
+    Widget,
+    Panel,
+    Shortcut,
+    DesktopWidget,
+    LauncherProvider,
+    Service,
+  };
+
+  struct PluginEntry {
+    PluginEntryKind kind = PluginEntryKind::Widget;
+    std::string id;    // unique within the plugin
+    std::string entry; // relative .luau filename
+    std::vector<ManifestField> settings;
+  };
+
+  struct PluginManifest {
+    std::string id; // "author/plugin"
+    std::string name;
+    std::string version;
+    std::string minNoctalia; // mandatory
+    std::string author;
+    std::vector<std::string> tags;
+    std::string icon;
+    std::string description;
+    std::vector<PluginEntry> entries;
+    // Plugin-level settings, declared once at the manifest root ([[setting]]) and
+    // shared across every entry (widget, shortcut, service). Distinct from a
+    // per-entry instance setting; seeded into all of the plugin's runtimes.
+    std::vector<ManifestField> settings;
+
+    [[nodiscard]] const PluginEntry* findEntry(std::string_view entryId) const;
+  };
+
+  // The TOML array-table name for each entry kind (e.g. "widget" -> [[widget]]).
+  [[nodiscard]] std::string_view pluginEntryTableName(PluginEntryKind kind);
+
+  // Build the runtime settings for an instance: every declared field seeded with
+  // its manifest default, then overlaid by the instance's configured values.
+  // Only declared keys are emitted, so a `getConfig` of an undeclared key stays a
+  // loud miss rather than silently resolving from a stray override.
+  [[nodiscard]] std::unordered_map<std::string, WidgetSettingValue>
+  seedEntrySettings(const PluginEntry& entry, const std::unordered_map<std::string, WidgetSettingValue>& overrides);
+
+  // Overlay the plugin-level settings (manifest defaults, then `pluginOverrides`)
+  // onto an already-seeded entry settings map. A key already present (an entry-level
+  // setting) is left untouched — entry-level wins over plugin-level.
+  void mergePluginSettings(
+      const PluginManifest& manifest, const std::unordered_map<std::string, WidgetSettingValue>& pluginOverrides,
+      std::unordered_map<std::string, WidgetSettingValue>& seeded
+  );
+
+  // Settings-map equality with int/double coercion (matches config override
+  // comparison), so reseeding a service from an unchanged config is a no-op.
+  [[nodiscard]] bool settingsEqual(
+      const std::unordered_map<std::string, WidgetSettingValue>& a,
+      const std::unordered_map<std::string, WidgetSettingValue>& b
+  );
+
+  // Parse a plugin.toml. Returns nullopt and sets `error` on a hard failure:
+  // unreadable file, TOML parse error, or a missing mandatory `id` / `min_noctalia`.
+  // Entry ids are validated for uniqueness within the plugin.
+  [[nodiscard]] std::optional<PluginManifest>
+  parsePluginManifest(const std::filesystem::path& manifestPath, std::string* error);
+
+} // namespace scripting

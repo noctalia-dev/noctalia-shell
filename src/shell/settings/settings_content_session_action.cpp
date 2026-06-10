@@ -1,5 +1,6 @@
 #include "config/config_types.h"
 #include "i18n/i18n.h"
+#include "shell/session/session_action_meta.h"
 #include "shell/settings/settings_content.h"
 #include "shell/settings/settings_content_common.h"
 #include "ui/builders.h"
@@ -33,28 +34,6 @@ namespace settings {
       return options;
     }
 
-    const char* sessionActionDefaultGlyphName(std::string_view action) {
-      if (action == "lock") {
-        return "lock";
-      }
-      if (action == "logout") {
-        return "logout";
-      }
-      if (action == "suspend") {
-        return "suspend";
-      }
-      if (action == "lock_and_suspend") {
-        return "lock";
-      }
-      if (action == "reboot") {
-        return "reboot";
-      }
-      if (action == "shutdown") {
-        return "shutdown";
-      }
-      return "terminal";
-    }
-
   } // namespace
 
   void buildSessionActionEntryDetailContent(
@@ -65,6 +44,10 @@ namespace settings {
 
     const float iconSq = Style::controlHeight * scale;
     const float iconGlyphSize = Style::fontSizeBody * scale;
+    const float captionSize = Style::fontSizeCaption * scale;
+    const std::string glyphLabelText = i18n::tr("settings.session-actions.glyph-label");
+    const float glyphColumnWidth =
+        std::max(iconSq, static_cast<float>(glyphLabelText.size()) * captionSize * 0.62f + 2.0f * scale);
 
     auto body = ui::row({
         .align = FlexAlign::Start,
@@ -72,16 +55,15 @@ namespace settings {
         .fillWidth = true,
     });
 
-    auto iconCol = ui::column(
-        {
-            .align = FlexAlign::Stretch,
-            .gap = Style::spaceSm * scale,
-        },
-        makeLabel(
-            i18n::tr("settings.session-actions.glyph-label"), Style::fontSizeCaption * scale,
-            colorSpecFromRole(ColorRole::OnSurfaceVariant), FontWeight::Normal
-        )
-    );
+    auto iconCol = ui::column({
+        .align = FlexAlign::Start,
+        .gap = Style::spaceSm * scale,
+    });
+    iconCol->setMinWidth(glyphColumnWidth);
+    auto glyphLabel =
+        makeLabel(glyphLabelText, captionSize, colorSpecFromRole(ColorRole::OnSurfaceVariant), FontWeight::Normal);
+    glyphLabel->setMinWidth(glyphColumnWidth);
+    iconCol->addChild(std::move(glyphLabel));
 
     auto glyphBtnRow = ui::row({
         .align = FlexAlign::Center,
@@ -92,13 +74,13 @@ namespace settings {
       if (row.glyph.has_value() && !row.glyph->empty()) {
         return *row.glyph;
       }
-      return std::string(sessionActionDefaultGlyphName(row.action));
+      return std::string(session_action::defaultGlyph(row.action));
     }();
     const auto previewGlyphForRow = [&row]() {
       if (row.glyph.has_value() && !row.glyph->empty()) {
         return *row.glyph;
       }
-      return std::string(sessionActionDefaultGlyphName(row.action));
+      return std::string(session_action::defaultGlyph(row.action));
     };
     const auto hasCustomGlyph = [&row]() { return row.glyph.has_value() && !row.glyph->empty(); };
 
@@ -176,16 +158,17 @@ namespace settings {
         colorSpecFromRole(ColorRole::OnSurfaceVariant), FontWeight::Normal
     ));
 
-    Flex* cmdBlockRaw = nullptr;
     Input* cmdPtr = nullptr;
 
+    const auto commandPlaceholder = [&row]() {
+      if (row.action == "command") {
+        return i18n::tr("settings.session-actions.command-required-placeholder");
+      }
+      return i18n::tr("settings.session-actions.command-placeholder");
+    };
+
     auto cmdBlock = ui::column(
-        {.out = &cmdBlockRaw,
-         .align = FlexAlign::Stretch,
-         .gap = Style::spaceXs * scale,
-         .flexGrow = 1.0f,
-         .visible = row.action == "command",
-         .participatesInLayout = row.action == "command"},
+        {.align = FlexAlign::Stretch, .gap = Style::spaceXs * scale, .flexGrow = 1.0f},
         makeLabel(
             i18n::tr("settings.session-actions.command-label"), Style::fontSizeCaption * scale,
             colorSpecFromRole(ColorRole::OnSurfaceVariant), FontWeight::Normal
@@ -194,22 +177,19 @@ namespace settings {
     auto cmdIn = ui::input({
         .out = &cmdPtr,
         .value = row.command.value_or(""),
-        .placeholder = i18n::tr("settings.session-actions.command-placeholder"),
+        .placeholder = commandPlaceholder(),
         .fontSize = Style::fontSizeBody * scale,
         .controlHeight = Style::controlHeight * scale,
         .horizontalPadding = Style::spaceSm * scale,
         .minLayoutWidth = 280.0f * scale,
     });
     const auto commitCommand = [&row, persist, cmdPtr]() {
-      if (row.action != "command") {
+      const std::string t = StringUtils::trim(cmdPtr->value());
+      if (row.action == "command" && t.empty()) {
         row.command = std::nullopt;
-        if (cmdPtr != nullptr) {
-          cmdPtr->setValue("");
-          cmdPtr->setInvalid(false);
-        }
+        cmdPtr->setInvalid(true);
         return;
       }
-      const std::string t = StringUtils::trim(cmdPtr->value());
       if (t.empty()) {
         row.command = std::nullopt;
       } else {
@@ -232,8 +212,8 @@ namespace settings {
         .controlHeight = Style::controlHeight * scale,
         .glyphSize = Style::fontSizeBody * scale,
         .onSelectionChanged =
-            [&row, kindOptions, persist, glyphPickBtnPtr, previewGlyphForRow, hasCustomGlyph, cmdBlockRaw,
-             cmdPtr](std::size_t index, std::string_view /*label*/) {
+            [&row, kindOptions, persist, glyphPickBtnPtr, previewGlyphForRow, hasCustomGlyph, cmdPtr,
+             commandPlaceholder](std::size_t index, std::string_view /*label*/) {
               if (index >= kindOptions.size()) {
                 return;
               }
@@ -241,20 +221,10 @@ namespace settings {
               if (nextAction == row.action) {
                 return;
               }
-              const std::string prevAction = row.action;
               row.action = nextAction;
-              const bool showCommand = nextAction == "command";
-              if (!showCommand) {
-                row.command = std::nullopt;
-                if (cmdPtr != nullptr) {
-                  cmdPtr->setValue("");
-                }
-              } else if (prevAction != "command" && cmdPtr != nullptr && row.command.value_or("").empty()) {
-                cmdPtr->setValue("");
-              }
-              if (cmdBlockRaw != nullptr) {
-                cmdBlockRaw->setVisible(showCommand);
-                cmdBlockRaw->setParticipatesInLayout(showCommand);
+              if (cmdPtr != nullptr) {
+                cmdPtr->setPlaceholder(commandPlaceholder());
+                cmdPtr->setInvalid(false);
               }
               if (!hasCustomGlyph()) {
                 glyphPickBtnPtr->setGlyph(previewGlyphForRow());

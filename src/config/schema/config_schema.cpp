@@ -79,6 +79,7 @@ namespace noctalia::config::schema {
         field(&LockscreenConfig::blurIntensity, "blur_intensity", kUnitRange),
         field(&LockscreenConfig::tintIntensity, "tint_intensity", kUnitRange),
         field(&LockscreenConfig::wallpaper, "wallpaper"),
+        field(&LockscreenConfig::monitors, "monitors"),
     };
     return s;
   }
@@ -327,6 +328,29 @@ namespace noctalia::config::schema {
             &ControlCenterConfig::shortcuts, "shortcuts", shortcutSchema(),
             [](const ShortcutConfig& sc) { return !sc.type.empty(); }
         ),
+    };
+    return s;
+  }
+
+  namespace {
+    const Schema<PluginSourceConfig>& pluginSourceSchema() {
+      static const Schema<PluginSourceConfig> s = {
+          field(&PluginSourceConfig::name, "name"),
+          enumField(&PluginSourceConfig::kind, "kind", kPluginSourceKinds),
+          field(&PluginSourceConfig::location, "location"),
+          field(&PluginSourceConfig::autoUpdate, "auto_update"),
+      };
+      return s;
+    }
+  } // namespace
+
+  const Schema<PluginsConfig>& pluginsSchema() {
+    static const Schema<PluginsConfig> s = {
+        arrayOf<PluginsConfig, PluginSourceConfig>(
+            &PluginsConfig::sources, "source", pluginSourceSchema(),
+            [](const PluginSourceConfig& src) { return !src.name.empty(); }
+        ),
+        field(&PluginsConfig::enabled, "enabled"),
     };
     return s;
   }
@@ -885,7 +909,7 @@ namespace noctalia::config::schema {
   }
 
   namespace {
-    // Plain string, but emitted only when non-empty (shell.lang, shell.avatar_path).
+    // Plain string, but emitted only when non-empty (shell.lang).
     template <typename Struct> Field<Struct> stringIfNonEmptyField(std::string Struct::* member, std::string_view key) {
       return custom<Struct>(
           key,
@@ -1019,12 +1043,6 @@ namespace noctalia::config::schema {
                 );
               }
           ),
-          // lock_and_suspend never carries a custom command.
-          finalize<SessionPanelActionConfig>([](SessionPanelActionConfig& a, std::string_view, Diagnostics&) {
-            if (a.action == "lock_and_suspend") {
-              a.command = std::nullopt;
-            }
-          }),
       };
       return s;
     }
@@ -1080,7 +1098,7 @@ namespace noctalia::config::schema {
         field(&ShellConfig::disableMipmaps, "disable_mipmaps"),
         enumField(&ShellConfig::clipboardAutoPaste, "clipboard_auto_paste", kClipboardAutoPasteModes),
         field(&ShellConfig::clipboardImageActionCommand, "clipboard_image_action_command"),
-        stringIfNonEmptyField(&ShellConfig::avatarPath, "avatar_path"),
+        pathStringField(&ShellConfig::avatarPath, "avatar_path"),
         subTable(&ShellConfig::animation, "animation", shellAnimationSchema()),
         subTable(&ShellConfig::shadow, "shadow", shellShadowSchema()),
         subTable(&ShellConfig::panel, "panel", shellPanelSchema()),
@@ -1320,6 +1338,12 @@ namespace noctalia::config::schema {
 
     if (section == "desktop_widgets" && isKnownDesktopWidgetPath(path)) {
       return true;
+    }
+
+    // [plugin_settings."author/plugin"].<key> — open schema; keys validate against
+    // the manifest in config_validate's validatePluginSettings, not here.
+    if (section == "plugin_settings") {
+      return path.size() <= 3;
     }
 
     if (path.size() < 2) {

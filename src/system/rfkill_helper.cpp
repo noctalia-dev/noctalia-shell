@@ -17,19 +17,19 @@ namespace {
 
   constexpr Logger kLog("rfkill");
 
-  [[nodiscard]] std::optional<std::uint32_t> rfkillTypeFor(RfkillDeviceType type) {
+  [[nodiscard]] std::optional<std::string_view> rfkillTypeStringFor(RfkillDeviceType type) {
     switch (type) {
     case RfkillDeviceType::Bluetooth:
-      return RFKILL_TYPE_BLUETOOTH;
+      return "bluetooth";
     case RfkillDeviceType::Wlan:
-      return RFKILL_TYPE_WLAN;
+      return "wlan";
     }
     return std::nullopt;
   }
 
   struct RfkillEntry {
     std::uint32_t index = 0;
-    std::uint32_t type = 0;
+    std::string type;
     bool soft = false;
     bool hard = false;
   };
@@ -47,6 +47,20 @@ namespace {
     }
     out = value;
     return true;
+  }
+
+  [[nodiscard]] std::optional<std::string> readSysfsString(const std::string& path) {
+    FILE* file = fopen(path.c_str(), "r");
+    if (file == nullptr) {
+      return std::nullopt;
+    }
+    char buf[32]{};
+    const bool scanned = fscanf(file, "%31s", buf) == 1;
+    fclose(file);
+    if (!scanned) {
+      return std::nullopt;
+    }
+    return buf;
   }
 
   [[nodiscard]] std::vector<RfkillEntry> listRfkillEntries() {
@@ -70,10 +84,11 @@ namespace {
         continue;
       }
       entry.index = value;
-      if (!readSysfsUnsigned(base + "type", value)) {
+      auto typeStr = readSysfsString(base + "type");
+      if (!typeStr.has_value()) {
         continue;
       }
-      entry.type = value;
+      entry.type = std::move(*typeStr);
       if (readSysfsUnsigned(base + "soft", value)) {
         entry.soft = value != 0;
       }
@@ -87,7 +102,7 @@ namespace {
   }
 
   [[nodiscard]] std::optional<RfkillEntry> findEntry(RfkillDeviceType type) {
-    const std::optional<std::uint32_t> wantedType = rfkillTypeFor(type);
+    const std::optional<std::string_view> wantedType = rfkillTypeStringFor(type);
     if (!wantedType.has_value()) {
       return std::nullopt;
     }
@@ -188,7 +203,7 @@ RfkillSwitchResult setRfkillSoftBlockedForNetInterface(std::string_view ifname, 
     return {.success = false, .detail = "no rfkill switch for interface"};
   }
 
-  const std::optional<std::uint32_t> wantedType = rfkillTypeFor(RfkillDeviceType::Wlan);
+  const std::optional<std::string_view> wantedType = rfkillTypeStringFor(RfkillDeviceType::Wlan);
   for (const RfkillEntry& entry : listRfkillEntries()) {
     if (entry.index == *index) {
       if (wantedType.has_value() && entry.type != *wantedType) {

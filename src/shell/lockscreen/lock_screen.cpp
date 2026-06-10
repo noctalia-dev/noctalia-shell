@@ -2,6 +2,7 @@
 
 #include "capture/screencopy_util.h"
 #include "config/config_service.h"
+#include "config/config_types.h"
 #include "core/deferred_call.h"
 #include "core/keybind_matcher.h"
 #include "core/log.h"
@@ -129,10 +130,19 @@ bool LockScreen::lock() {
     kLog.warn("session lock protocol unavailable");
     return false;
   }
+  if (m_wayland->outputs().empty()) {
+    m_lockDeferred = true;
+    kLog.warn("no outputs available for lock screen; lock deferred until an output is connected");
+    return true;
+  }
 
-  m_desktopCaptures.clear();
-  if (shouldUseBlurredDesktop()) {
-    captureDesktopSnapshots();
+  if (m_desktopCapturesPrimed) {
+    m_desktopCapturesPrimed = false;
+  } else {
+    m_desktopCaptures.clear();
+    if (shouldUseBlurredDesktop()) {
+      captureDesktopSnapshots();
+    }
   }
 
   m_lock = ext_session_lock_manager_v1_lock(m_wayland->sessionLockManager());
@@ -167,6 +177,7 @@ bool LockScreen::lock() {
 }
 
 void LockScreen::unlock() {
+  m_lockDeferred = false;
   if (!isActive()) {
     return;
   }
@@ -195,6 +206,7 @@ void LockScreen::unlock() {
   m_statusIsError = false;
   m_wayland->stopKeyRepeat();
   m_desktopCaptures.clear();
+  m_desktopCapturesPrimed = false;
 
   // Tear down widgets while lock surfaces still exist. Session hooks run only after
   // isActive() is false so LockscreenWidgetsController::applyVisibility() hides first.
@@ -218,6 +230,13 @@ void LockScreen::requestLayout() {
 }
 
 void LockScreen::onOutputChange() {
+  if (m_lockDeferred) {
+    if (m_wayland != nullptr && !m_wayland->outputs().empty()) {
+      m_lockDeferred = false;
+      (void)lock();
+    }
+    return;
+  }
   if (!isActive()) {
     return;
   }
@@ -258,6 +277,7 @@ void LockScreen::onConfigChanged() {
       applyLockscreenStyle(*instance.surface);
     }
   }
+  applyOutputRestriction();
   applyWallpaperStyleToSurfaces();
 }
 
@@ -327,7 +347,9 @@ void LockScreen::onKeyboardEvent(const KeyboardEvent& event) {
   LockSurface* targetSurface = nullptr;
   if (m_pointerSurface != nullptr) {
     for (auto& instance : m_instances) {
-      if (instance.surface != nullptr && instance.surface->wlSurface() == m_pointerSurface) {
+      if (instance.surface != nullptr
+          && !instance.surface->isBlackout()
+          && instance.surface->wlSurface() == m_pointerSurface) {
         targetSurface = instance.surface.get();
         break;
       }
@@ -335,7 +357,7 @@ void LockScreen::onKeyboardEvent(const KeyboardEvent& event) {
   }
   if (targetSurface == nullptr) {
     for (auto& instance : m_instances) {
-      if (instance.surface != nullptr) {
+      if (instance.surface != nullptr && !instance.surface->isBlackout()) {
         targetSurface = instance.surface.get();
         break;
       }
@@ -415,6 +437,7 @@ void LockScreen::handleFinished(void* data, ext_session_lock_v1* /*lock*/) {
   self->m_status.clear();
   self->m_statusIsError = false;
   self->m_desktopCaptures.clear();
+  self->m_desktopCapturesPrimed = false;
   if (self->m_onSessionUnlocked) {
     self->m_onSessionUnlocked();
   }
@@ -447,6 +470,8 @@ void LockScreen::syncInstances() {
       createInstance(output);
     }
   }
+
+  applyOutputRestriction();
 }
 
 bool LockScreen::shouldUseBlurredDesktop() const {
@@ -454,6 +479,27 @@ bool LockScreen::shouldUseBlurredDesktop() const {
       && m_configService->config().lockscreen.blurredDesktop
       && m_wayland != nullptr
       && m_wayland->hasScreencopy();
+}
+
+void LockScreen::primeDesktopCaptures() {
+  if (isActive()) {
+    return;
+  }
+  m_desktopCaptures.clear();
+  m_desktopCapturesPrimed = false;
+  if (!shouldUseBlurredDesktop()) {
+    return;
+  }
+  captureDesktopSnapshots();
+  m_desktopCapturesPrimed = true;
+}
+
+void LockScreen::clearPrimedDesktopCaptures() {
+  if (!m_desktopCapturesPrimed) {
+    return;
+  }
+  m_desktopCapturesPrimed = false;
+  m_desktopCaptures.clear();
 }
 
 void LockScreen::captureDesktopSnapshots() {
@@ -468,7 +514,7 @@ void LockScreen::captureDesktopSnapshots() {
   }
 
   for (const auto& output : m_wayland->outputs()) {
-    if (output.output == nullptr) {
+    if (output.output == nullptr || !isInteractiveOutput(output)) {
       continue;
     }
 
@@ -494,6 +540,55 @@ void LockScreen::applyLockscreenStyle(LockSurface& surface) const {
   surface.setBackgroundStyle(lockscreen.blurIntensity, lockscreen.tintIntensity);
 }
 
+bool LockScreen::isInteractiveOutput(const WaylandOutput& output) const {
+  if (m_configService == nullptr) {
+    return true;
+  }
+
+  const auto& selectedMonitors = m_configService->config().lockscreen.monitors;
+  if (selectedMonitors.empty()) {
+    return true;
+  }
+
+  const bool anyConfiguredPresent =
+      m_wayland != nullptr
+      && std::any_of(m_wayland->outputs().begin(), m_wayland->outputs().end(), [&](const WaylandOutput& candidate) {
+           return candidate.output != nullptr
+               && std::any_of(selectedMonitors.begin(), selectedMonitors.end(), [&](const std::string& match) {
+                    return outputMatchesSelector(match, candidate);
+                  });
+         });
+  if (!anyConfiguredPresent) {
+    return true;
+  }
+
+  return std::any_of(selectedMonitors.begin(), selectedMonitors.end(), [&](const std::string& match) {
+    return outputMatchesSelector(match, output);
+  });
+}
+
+void LockScreen::applyOutputRestriction() {
+  for (auto& instance : m_instances) {
+    if (instance.surface == nullptr) {
+      continue;
+    }
+
+    const WaylandOutput* output = nullptr;
+    if (m_wayland != nullptr) {
+      for (const auto& candidate : m_wayland->outputs()) {
+        if (candidate.output == instance.output || candidate.connectorName == instance.connectorName) {
+          output = &candidate;
+          break;
+        }
+      }
+    }
+
+    const bool interactive = output != nullptr ? isInteractiveOutput(*output) : true;
+    instance.surface->setBlackout(!interactive);
+  }
+  requestLayout();
+}
+
 std::string LockScreen::wallpaperPathForOutput(const std::string& connectorName) const {
   if (m_configService == nullptr) {
     return {};
@@ -513,7 +608,7 @@ void LockScreen::applyWallpaperStyleToSurfaces() {
   const WallpaperFillMode fillMode = wallpaperConfig.fillMode;
   const Color fillColor = resolveWallpaperFillColor(wallpaperConfig);
   for (auto& instance : m_instances) {
-    if (instance.surface == nullptr || instance.surface->hasDesktopCapture()) {
+    if (instance.surface == nullptr || instance.surface->isBlackout() || instance.surface->hasDesktopCapture()) {
       continue;
     }
     instance.surface->setWallpaperPath(wallpaperPathForOutput(instance.connectorName));
@@ -545,6 +640,8 @@ void LockScreen::createInstance(const WaylandOutput& output) {
   surface->setOnPasswordChanged([this](const std::string& value) { handlePasswordEdited(value); });
   surface->setPromptState(m_user, m_password, m_status, m_statusIsError);
 
+  surface->setBlackout(!isInteractiveOutput(output));
+
   if (!surface->initialize(m_lock, output.output, output.scale)) {
     kLog.warn("failed to create lock surface for output {}", output.name);
     return;
@@ -562,16 +659,15 @@ void LockScreen::createInstance(const WaylandOutput& output) {
 
 void LockScreen::resetLockState() {
   m_pendingAfterLocked = {};
+  m_lockDeferred = false;
   if (m_lock == nullptr) {
     m_lockPending = false;
     m_locked = false;
     return;
   }
-  if (m_locked) {
-    ext_session_lock_v1_unlock_and_destroy(m_lock);
-  } else {
-    ext_session_lock_v1_destroy(m_lock);
-  }
+  // unlock_and_destroy is required once the compositor may have entered the locked
+  // state (including while m_lockPending is still true locally).
+  ext_session_lock_v1_unlock_and_destroy(m_lock);
   m_lock = nullptr;
   m_lockPending = false;
   m_locked = false;

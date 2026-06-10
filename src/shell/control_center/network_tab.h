@@ -41,7 +41,6 @@ private:
   void clearPasswordPrompt();
   [[nodiscard]] std::string
   structureKey(const std::vector<AccessPointInfo>& aps, const std::vector<VpnConnectionInfo>& vpns) const;
-  [[nodiscard]] std::string apRowsKey(const std::vector<AccessPointInfo>& aps) const;
 
   INetworkService* m_network = nullptr;
   NetworkSecretAgent* m_secrets = nullptr;
@@ -55,7 +54,6 @@ private:
   Input* m_passwordInput = nullptr;
   Button* m_passwordRevealButton = nullptr;
   bool m_passwordRevealed = false;
-  Flex* m_listCard = nullptr;
   ScrollView* m_listScroll = nullptr;
   Flex* m_list = nullptr;
 
@@ -66,11 +64,7 @@ private:
   Spinner* m_scanSpinner = nullptr;
   bool m_vpnVisible = true;
 
-  Flex* m_vpnSection = nullptr;
-  Flex* m_apRows = nullptr;
-
   std::string m_lastStructureKey;
-  std::string m_lastApRowsKey;
   float m_lastListWidth = -1.0f;
 
   bool m_hasPendingSecret = false;

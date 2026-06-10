@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "config/config_validate.h"
+#include "core/log.h"
 #include "core/toml.h" // IWYU pragma: keep
 #include "util/file_utils.h"
 #include "util/string_utils.h"
@@ -331,6 +332,9 @@ namespace noctalia::config {
         }
       }
 
+      // Validation reports through diagnostics below; silence incidental INFO logs
+      // (e.g. the plugin registry scan) so only validation results reach the user.
+      setLogLevel(LogLevel::Warn);
       const auto diagnostics = validateConfigSources(configDir, settingsPath);
 
       const bool colorErr = useColor(stderr);

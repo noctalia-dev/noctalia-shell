@@ -4,6 +4,7 @@
 #include "render/animation/animation_manager.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
+#include "scripting/plugin_manager.h"
 #include "shell/settings/config_export_dialog_popup.h"
 #include "shell/settings/search_picker_popup.h"
 #include "shell/settings/settings_control_factory.h"
@@ -75,6 +76,7 @@ public:
     m_openLockscreenWidgetEditor = std::move(callback);
   }
   void setOpenWallpaperPanel(std::function<void()> callback) { m_openWallpaperPanel = std::move(callback); }
+  void setPluginManager(scripting::PluginManager* manager) { m_pluginManager = manager; }
   void setSyncGreeterAppearance(std::function<void()> callback) { m_syncGreeterAppearance = std::move(callback); }
   void setSaveWallpaperPaletteAsCustom(std::function<void()> callback) {
     m_saveWallpaperPaletteAsCustom = std::move(callback);
@@ -157,6 +159,13 @@ private:
   WaylandConnection* m_wayland = nullptr;
   IdleManager* m_idleManager = nullptr;
   ConfigService* m_config = nullptr;
+  scripting::PluginManager* m_pluginManager = nullptr;
+  // Cached PluginManager::list() — discovery can spawn git, so refresh it only on
+  // entering the Plugins section and after an enable/disable/source action.
+  std::vector<scripting::PluginStatus> m_pluginList;
+  bool m_pluginListDirty = true;
+  // Plugin id whose plugin-level settings editor is expanded in the Plugins section.
+  std::string m_configurePluginId;
   RenderContext* m_renderContext = nullptr;
   DependencyService* m_dependencies = nullptr;
   UPowerService* m_upower = nullptr;

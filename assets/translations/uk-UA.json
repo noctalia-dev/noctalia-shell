@@ -1,0 +1,2848 @@
+{
+  "auth": {
+    "pam": {
+      "authentication-failed": "Автентифікація не вдалася",
+      "start-failed": "Збій запуску PAM",
+      "user-unavailable": "Не вдалося визначити поточного користувача"
+    },
+    "polkit": {
+      "authenticate": "Автентифікувати",
+      "authenticating": "Автентифікація...",
+      "default-message": "Потрібна автентифікація",
+      "invalid-password": "Невірний пароль",
+      "password-placeholder": "Пароль",
+      "title": "Автентифікація потрібна"
+    }
+  },
+  "bar": {
+    "screenshot": {
+      "choose-display": "Оберіть екран",
+      "fullscreen": "Повноекранний",
+      "region": "Вибрати регіон"
+    },
+    "widgets": {
+      "lock-keys": {
+        "caps": "Caps",
+        "caps-short": "C",
+        "num": "Num",
+        "num-short": "Н",
+        "scroll": "Прокрутка",
+        "scroll-short": "С"
+      },
+      "media": {
+        "nothing-playing": "Нічого не грає",
+        "playing": "Відтворення"
+      },
+      "network": {
+        "wired": "Дротове"
+      },
+      "scripted": {
+        "reload-failed": "Перезавантаження скрипта не вдалося",
+        "reloaded": "Скрипт перезавантажено"
+      },
+      "weather": {
+        "default": "Погода",
+        "error": "Помилка погоди",
+        "loading": "Погода...",
+        "no-location": "Немає розташування",
+        "off": "Погода вимкнено",
+        "vertical-default": "В\nХ",
+        "vertical-error": "Помилка",
+        "vertical-loading": "...",
+        "vertical-no-location": "Н О Л О С",
+        "vertical-off": "Вимкнено"
+      }
+    }
+  },
+  "clipboard": {
+    "actions": {
+      "clear-all": "Очистити все",
+      "delete-item": "Видалити елемент",
+      "keep-pinned": "Залишити закріпленим"
+    },
+    "confirm": {
+      "clear-desc": "Оберіть, чи зберігати закріплені елементи.",
+      "clear-desc-all-pinned": "Кожен запис закріплений. Скористайтеся «Очистити все», щоб видалити їх усі.",
+      "clear-desc-no-pinned": "Видаляє всі записи з історії буфера обміну.",
+      "clear-title": "Очистити історію буфера обміну?",
+      "delete-desc": "Це видаляє вибраний елемент з історії буфера обміну.",
+      "delete-title": "Видалити запис буфера обміну?"
+    },
+    "empty": {
+      "history-message": "Немає записів в історії буфера обміну.",
+      "history-title": "Історія буфера обміну порожня",
+      "no-matches-message": "Немає записів, що відповідають поточному фільтру.",
+      "no-matches-title": "Немає відповідних записів"
+    },
+    "entry": {
+      "image": "Зображення",
+      "title": "Запис буфера обміну"
+    },
+    "filter-placeholder": "Фільтрувати буфер обміну...",
+    "preview": {
+      "image-title": "Запис зображення",
+      "loading": "Завантаження попереднього перегляду...",
+      "text-title": "Запис текстового буфера обміну",
+      "truncated": "… скорочено"
+    },
+    "title": "Буфер обміну"
+  },
+  "common": {
+    "actions": {
+      "apply": "Застосувати",
+      "cancel": "Скасувати"
+    },
+    "states": {
+      "auto": "Авто",
+      "custom": "Користувацький",
+      "inherit": "Успадкувати",
+      "off": "Вимкнено"
+    }
+  },
+  "control-center": {
+    "audio": {
+      "application-volumes": "Гучність застосунків",
+      "input-volume": "Вхідна гучність",
+      "no-application-audio": "Немає звуку застосунку",
+      "no-application-audio-body": "Наразі немає доступних потоків відтворення застосунків.",
+      "no-input-devices": "Немає пристроїв введення",
+      "no-input-devices-body": "Наразі немає доступних джерел запису.",
+      "no-input-selected": "Пристрій введення не вибрано",
+      "no-output-devices": "Немає пристроїв виведення",
+      "no-output-devices-body": "Наразі немає доступних пристроїв відтворення.",
+      "no-output-selected": "Вихідний пристрій не вибрано",
+      "output-volume": "Вихідна гучність",
+      "unavailable-body": "PipeWire неактивний.",
+      "unavailable-title": "Аудіо недоступне"
+    },
+    "bluetooth": {
+      "accept": "Прийняти",
+      "auto-reconnect": "Автоперепідключення",
+      "bluetooth": "Bluetooth",
+      "enter-code": "Введіть код",
+      "no-devices": "Пристроїв не знайдено. Почніть сканування, щоб знайти пристрої Bluetooth поблизу.",
+      "off": "Bluetooth вимкнено",
+      "pair-title": "З'єднати {device}",
+      "pairing-detail": {
+        "authorize": "Прийняти вхідний запит на з'єднання?",
+        "authorize-service": "Дозволити доступ до служби {uuid}?",
+        "confirm": "Підтвердьте, що цей код відповідає тому, що відображається на пристрої:",
+        "display-passkey": "Введіть цей код на пристрої:",
+        "display-pin": "Введіть цей PIN на пристрої:",
+        "passkey": "Введіть ключ доступу, показаний на пристрої:",
+        "pin-code": "Введіть PIN-код, показаний на пристрої."
+      },
+      "reject": "Відхилити",
+      "rfkill-blocked": "Bluetooth заблоковано системою. Увімкніть його, щоб зняти блокування.",
+      "sections": {
+        "available": "Доступно",
+        "connected": "Підключено",
+        "paired": "З'єднано"
+      },
+      "unavailable": "Служба Bluetooth недоступна",
+      "unknown-device": "Невідомий пристрій",
+      "visible": "Видно пристроям поблизу"
+    },
+    "calendar": {
+      "all-day": "Весь день",
+      "events": "Події",
+      "no-events": "Подій немає."
+    },
+    "display": {
+      "disabled": "Вимкнено",
+      "no-displays": "Немає доступних моніторів",
+      "unknown-resolution": "Невідома роздільна здатність"
+    },
+    "home": {
+      "media": {
+        "idle": "Простій",
+        "no-active-player": "Немає активного програвача",
+        "nothing-playing": "Нічого не відтворюється",
+        "paused": "Призупинено",
+        "playback-unavailable": "Відтворення недоступне",
+        "playing": "Відтворення",
+        "unavailable": "Недоступно",
+        "unknown-artist": "Невідомий виконавець",
+        "unknown-track": "Невідомий трек"
+      },
+      "select-avatar": "Вибрати аватар",
+      "unknown": "невідомо",
+      "user-facts": "{user}@{host}\nЧас роботи - {uptime}\nNoctalia {version}",
+      "weather": {
+        "configure-location": "Додайте [weather].address або увімкніть auto_locate.",
+        "data-unavailable": "Дані про погоду недоступні.",
+        "disabled": "Погода вимкнена у конфігурації.",
+        "fetching": "Отримання прогнозу..."
+      }
+    },
+    "media": {
+      "active-player": "Активний програвач",
+      "nothing-playing": "Нічого не відтворюється",
+      "now-playing": "Зараз грає",
+      "start-playback": "Почати відтворення в застосунку MPRIS"
+    },
+    "network": {
+      "connect": "Підключити",
+      "current-connection": "Поточне підключення",
+      "no-networks": "Немає мереж в зоні дії",
+      "not-connected": "Не підключено",
+      "password": "Пароль",
+      "password-prompt": "Введіть пароль",
+      "password-prompt-for": "Введіть пароль для {ssid}",
+      "unavailable-detail": "Встанови та увімкни NetworkManager, щоб керувати мережами звідси.",
+      "unavailable-title": "NetworkManager недоступний",
+      "vpns": "VPN",
+      "wi-fi": "Wi-Fi",
+      "wifi": "Wi-Fi",
+      "wifi-off": "Wi-Fi вимкнено",
+      "wifi-on": "Wi-Fi увімкнено",
+      "wired-connection": "Дротове з'єднання"
+    },
+    "notifications": {
+      "empty-body": "Останні сповіщення з'являться тут.",
+      "empty-title": "Немає сповіщень",
+      "filter": {
+        "all": "Усі",
+        "older": "Старіші",
+        "today": "Сьогодні",
+        "yesterday": "Вчора"
+      },
+      "filter-empty-body": "Немає сповіщень, що відповідають цьому фільтру.",
+      "filter-empty-title": "Тут нічого немає",
+      "untitled": "Безіменне сповіщення"
+    },
+    "screen-time": {
+      "disabled": "Відстеження екранного часу вимкнено. Увімкніть його в Налаштуваннях, щоб записувати використання для кожної програми.",
+      "empty": "Використання програм ще не записано. Сфокусуйте вікно, щоб почати відстеження.",
+      "hour-0": "12 ночі",
+      "hour-12": "12 ПП",
+      "hour-18": "6 вечора",
+      "hour-6": "6 ранку",
+      "most-used": "Найчастіше використовувані",
+      "range": {
+        "14-days": "14 днів",
+        "3-days": "3 дні",
+        "today": "Сьогодні"
+      }
+    },
+    "shortcuts": {
+      "audio": "Аудіо",
+      "bluetooth": "Bluetooth",
+      "caffeine": "Кофеїн",
+      "clipboard": "Буфер обміну",
+      "dark-mode": {
+        "auto": "Автоматичний режим",
+        "dark": "Темний режим",
+        "light": "Світлий режим"
+      },
+      "keyboard-layout": "Макет",
+      "media": "Медіа",
+      "mic-mute": "Мікрофон",
+      "nightlight": "Нічне світло",
+      "nightlight-states": {
+        "forced": "Завжди увімкнено",
+        "off": "Нічне світло",
+        "scheduled-day": "Заплановано",
+        "scheduled-night": "Запущено"
+      },
+      "notification": "DND",
+      "power-profile": "Живлення",
+      "screen-recorder": "Запис",
+      "screen-time": "Час екрану",
+      "session": "Сесія",
+      "system": "Система",
+      "wallpaper": "Шпалери",
+      "weather": "Погода",
+      "wifi": "Wi-Fi"
+    },
+    "system": {
+      "titles": {
+        "cpu": "CPU",
+        "gpu": "GPU",
+        "memory": "Пам'ять",
+        "network": "Мережа",
+        "resources": "Ресурси",
+        "system": "Система"
+      },
+      "unknown": "невідомо",
+      "uptime-prefix": "Працює {uptime} · {osAge}"
+    },
+    "tabs": {
+      "audio": "Аудіо",
+      "bluetooth": "Bluetooth",
+      "calendar": "Календар",
+      "display": "Монітор",
+      "home": "Головна",
+      "media": "Медіа",
+      "network": "Мережа",
+      "notifications": "Сповіщення",
+      "screen-time": "Екранний час",
+      "system": "Система",
+      "weather": "Погода"
+    },
+    "weather": {
+      "configure-location": "Встановіть [weather].address або увімкніть auto_locate",
+      "data-unavailable": "Дані про погоду недоступні",
+      "details": {
+        "elevation": "Висота",
+        "sunrise": "Схід сонця",
+        "sunset": "Захід сонця",
+        "temp-max": "Максимальна температура",
+        "temp-min": "Мінімальна температура",
+        "timezone": "Часовий пояс",
+        "wind": "Вітер"
+      },
+      "disabled": "Увімкнути [weather] у config.toml",
+      "fetching": "Завантаження прогнозу...",
+      "forecast-placeholder": {
+        "day": "Неділя",
+        "description": "Погода",
+        "temperature": "10 / 4С"
+      },
+      "location-unavailable": "Місцезнаходження недоступне",
+      "refreshing": "Оновлення погоди...",
+      "waiting": "Очікування даних про погоду"
+    }
+  },
+  "desktop-widgets": {
+    "editor": {
+      "actions": {
+        "done": "Готово"
+      },
+      "dialogs": {
+        "select-sticker-image": "Обрати зображення стікера"
+      },
+      "settings": {
+        "aspect-ratio": "Співвідношення сторін",
+        "background": "Фон",
+        "background-color": "Колір",
+        "background-opacity": "Непрозорість",
+        "background-padding": "Відступи",
+        "background-radius": "Радіус",
+        "background-section": "Фон",
+        "bands": "Смуги",
+        "bar-width": "Ширина панелі",
+        "bloom-intensity": "Bloom",
+        "centered": "По центру",
+        "change-image": "Змінити…",
+        "circle": "Коло",
+        "clock-style": "Стиль годинника",
+        "clock-style-analog": "Аналоговий",
+        "clock-style-digital": "Цифровий",
+        "color": "Колір",
+        "color2": "Колір 2",
+        "custom-color": "Власний…",
+        "description": "Опис",
+        "fade-when-idle": "Тьмяніти при бездіяльності",
+        "font-family": "Шрифт",
+        "font-family-default": "За замовчуванням системи",
+        "format": "Формат",
+        "hide-when-no-media": "Приховувати, коли немає медіа",
+        "high-color": "Висока якість кольору",
+        "horizontal": "Горизонтальний",
+        "image-path": "Зображення",
+        "inner-diameter": "Внутрішній діаметр",
+        "layout": "Макет",
+        "low-color": "Мало кольорів",
+        "mirrored": "Віддзеркалений",
+        "opacity": "Непрозорість",
+        "primary-color": "Основний колір",
+        "ring-opacity": "Непрозорість кільця",
+        "rotation-speed": "Швидкість обертання",
+        "secondary-color": "Додатковий колір",
+        "sensitivity": "Чутливість",
+        "shadow": "Тінь",
+        "show-label": "Показати мітку",
+        "show-when-idle": "Показувати, коли неактивний",
+        "stat": "Стан",
+        "stat-cpu-temp": "Температура CPU",
+        "stat-cpu-usage": "Використання CPU",
+        "stat-gpu-temp": "Температура GPU",
+        "stat-gpu-usage": "Використання GPU",
+        "stat-gpu-vram": "GPU VRAM",
+        "stat-net-rx": "Мережа (отримано)",
+        "stat-net-tx": "Вихідна мережа",
+        "stat-none": "Немає",
+        "stat-ram-pct": "RAM %",
+        "stat-swap-pct": "Підкачка %",
+        "stat2": "Статистика 2",
+        "title": "Заголовок",
+        "vertical": "Вертикальний",
+        "visualization-mode": "Режим",
+        "visualization-mode-all": "Усі",
+        "visualization-mode-bars": "Панелі",
+        "visualization-mode-bars-rings": "Панелі + Кільця",
+        "visualization-mode-rings": "Кільця",
+        "visualization-mode-wave": "Хвиля",
+        "visualization-mode-wave-rings": "Хвиля + Кільця",
+        "wave-thickness": "Товщина хвилі",
+        "widget-section": "Віджет"
+      },
+      "state": {
+        "grid-off": "Сітка вимкнена",
+        "grid-on": "Сітка увімкнена"
+      },
+      "title": "Віджети робочого столу",
+      "types": {
+        "audio-visualizer": "Аудіовізуалізатор",
+        "clock": "Годинник",
+        "fancy-audio-visualizer": "Ефектний аудіовізуалізатор",
+        "label": "Мітка",
+        "media-player": "Медіаплеєр",
+        "sticker": "Стікер",
+        "system-monitor": "Системний монітор",
+        "weather": "Погода"
+      }
+    },
+    "media": {
+      "nothing-playing": "Нічого не відтворюється"
+    },
+    "weather": {
+      "error": "Помилка",
+      "loading": "Завантаження",
+      "no-location": "Немає розташування",
+      "off": "Погода вимкнена"
+    }
+  },
+  "dock": {
+    "actions": {
+      "close": "Закрити",
+      "close-all": "Закрити все"
+    },
+    "launcher": "Запускач"
+  },
+  "internal-apps": {
+    "settings": {
+      "display-name": "Налаштування"
+    }
+  },
+  "launcher": {
+    "categories": {
+      "all": "Усі",
+      "applications": {
+        "development": "Розробка",
+        "education": "Освіта",
+        "games": "Ігри",
+        "graphics": "Графіка",
+        "internet": "Інтернет",
+        "multimedia": "Мультимедіа",
+        "office": "Офіс",
+        "system": "Система",
+        "utilities": "Утиліти"
+      },
+      "emoji": {
+        "activity": "Активність",
+        "animals": "Тварини",
+        "flags": "Прапорці",
+        "food": "Їжа",
+        "nature": "Природа",
+        "objects": "Об'єкти",
+        "people": "Люди",
+        "symbols": "Символи",
+        "travel": "Подорожі"
+      },
+      "recently-used": "Нещодавно використані"
+    },
+    "context-menu": {
+      "open": "Відкрити",
+      "pin-to-dock": "Закріпити до Dock",
+      "unpin-from-dock": "Відкріпити від Dock"
+    },
+    "empty": {
+      "no-results": "Нічого не знайдено",
+      "type-to-search": "Введіть для пошуку..."
+    },
+    "providers": {
+      "applications": {
+        "title": "Застосунки"
+      },
+      "calculator": {
+        "title": "Калькулятор"
+      },
+      "emoji": {
+        "title": "Емодзі"
+      },
+      "session": {
+        "action-subtitle": "Виконати дію сесії",
+        "command-subtitle": "Виконати налаштовану команду",
+        "title": "Сеанс"
+      },
+      "wallpaper": {
+        "title": "Шпалери"
+      },
+      "window": {
+        "title": "Windows"
+      }
+    },
+    "search-placeholder": "Пошук застосунків..."
+  },
+  "location": {
+    "errors": {
+      "address-lookup-failed": "Не вдалося знайти адресу",
+      "ip-geolocation-failed": "Геолокація IP не вдалася",
+      "parse-geocode": "Не вдалося розібрати відповідь геокодування",
+      "parse-ip-geolocation": "Не вдалося розібрати відповідь геолокації IP"
+    },
+    "locations": {
+      "current": "Поточне місцезнаходження"
+    },
+    "source": {
+      "address": "Адреса",
+      "auto": "Авто"
+    }
+  },
+  "lockscreen": {
+    "authenticating": "Автентифікація...",
+    "authentication-failed": "Автентифікація не вдалася",
+    "password-cleared": "Пароль очищено",
+    "password-placeholder": "Пароль",
+    "ready": "Введіть свій пароль і натисніть Enter.",
+    "unlocked": "Розблоковано",
+    "waiting": "Очікування підтвердження блокування..."
+  },
+  "notifications": {
+    "actions": {
+      "fallback": "Дія",
+      "open": "Відкрити"
+    },
+    "inline-reply": {
+      "button": "Відповісти",
+      "placeholder": "Введіть відповідь..."
+    },
+    "internal": {
+      "battery": "Батарея",
+      "battery-device": "Пристрій батареї",
+      "battery-low-body": "{device}: залишилося {percent}%",
+      "battery-low-title": "Низький заряд батареї",
+      "calendar": "Календар",
+      "calendar-google-connect-browser-failed": "Не вдалося запустити браузер для авторизації Google. Перевірте свій типовий браузер або налаштування xdg-open.",
+      "calendar-google-connect-expired": "Термін дії авторизації Google закінчився до завершення входу. Почни підключення знову.",
+      "calendar-google-connect-failed-title": "З'єднання з Google Календарем не вдалося",
+      "calendar-google-connect-missing-account": "Жоден налаштований обліковий запис Google Календаря не відповідає \"{account}\".",
+      "calendar-google-connect-rate-limited": "Авторизація Google тимчасово обмежена за частотою запитів. Зачекайте трохи, потім спробуйте ще раз.",
+      "calendar-google-connect-result-failed": "Не вдалося завершити авторизацію Google. Спробуйте підключитися знову.",
+      "calendar-google-connect-start-failed": "Не вдалося розпочати авторизацію Google. Перевірте своє мережеве з'єднання та спробуйте ще раз.",
+      "calendar-google-connect-start-http": "Не вдалося запустити авторизацію Google. Брокер OAuth повернув HTTP {status}.",
+      "calendar-google-connect-timeout": "Час очікування авторизації Google вичерпано. Почніть підключення знову, коли будете готові увійти.",
+      "dbus-disabled": "Сповіщення DBus вимкнено",
+      "desktop-widgets-editor": "Редактор віджетів",
+      "desktop-widgets-editor-enabled": "Редактор віджетів робочого столу увімкнено. Перейдіть на порожній робочий простір, щоб побачити оверлей редактора.",
+      "greeter-sync": "Noctalia Привітання",
+      "greeter-sync-success": "Оформлення синхронізовано. Зміни будуть застосовані при наступному екрані входу.",
+      "keybind-app": "Noctalia",
+      "keybind-invalid-modifier": "Це поєднання клавіш приймає одну клавішу без модифікаторів.",
+      "keybind-invalid-printable": "Друковані клавіші (літери, цифри, символи) вимагають модифікатора, як-от Ctrl або Alt.",
+      "keybind-invalid-super": "Клавіша Super/Windows не може бути використана у прив'язках клавіш оболонки.",
+      "keybind-invalid-title": "Прив'язка клавіш не дозволена",
+      "lockscreen-widgets-editor": "Редактор віджетів екрана блокування",
+      "lockscreen-widgets-editor-blocked-locked": "Розблокуйте сеанс, перш ніж редагувати віджети екрана блокування.",
+      "lockscreen-widgets-editor-enabled": "Редактор віджетів екрана блокування увімкнено. Розташуйте віджети на оверлеї попереднього перегляду, потім заблокуйте сеанс, щоб перевірити розташування.",
+      "mpris-disabled": "MPRIS вимкнено",
+      "session-bus-unavailable": "Сесійна шина недоступна",
+      "wallpaper-palette-export": "Користувацька палітра",
+      "wallpaper-palette-export-success": "Збережено „{name}“ та перемкнули джерело палітри на власне."
+    }
+  },
+  "osd": {
+    "bluetooth": {
+      "off": "Bluetooth Вимкнено",
+      "on": "Bluetooth Увімкнено"
+    },
+    "caffeine": {
+      "off": "Кофеїн вимкнено",
+      "on": "Активність увімкнено"
+    },
+    "dnd": {
+      "off": "DND Вимкнено",
+      "on": "DND Увімкнено"
+    },
+    "lock-keys": {
+      "caps-off": "Caps Lock Вимкнено",
+      "caps-on": "Caps Lock Увімкнено",
+      "num-off": "Num Lock вимкнено",
+      "num-on": "Num Lock увімкнено",
+      "scroll-off": "Scroll Lock Вимкнено",
+      "scroll-on": "Scroll Lock Увімкнено"
+    },
+    "wifi": {
+      "off": "Wi-Fi Вимкнено",
+      "on": "Wi-Fi Увімкнено"
+    }
+  },
+  "power": {
+    "battery": {
+      "states": {
+        "battery": "Батарея",
+        "charging": "Заряджається",
+        "discharging": "Розряджається",
+        "empty": "Порожньо",
+        "pending-discharge": "Очікується розрядка",
+        "plugged-in": "Підключено"
+      },
+      "tooltip": {
+        "health": "Здоров'я",
+        "rate": "Оцінити",
+        "status": "Статус",
+        "time-left": "Залишилось часу",
+        "time-to-full": "Час до повного"
+      }
+    },
+    "profiles": {
+      "balanced": "Збалансований",
+      "performance": "Продуктивність",
+      "power-saver": "Енергозбереження"
+    }
+  },
+  "session": {
+    "actions": {
+      "custom": "Користувацький",
+      "lock": "Заблокувати",
+      "lock-and-suspend": "Блокування та призупинення",
+      "logout": "Вийти",
+      "reboot": "Перезавантажити",
+      "shutdown": "Вимкнути",
+      "suspend": "Призупинити"
+    },
+    "errors": {
+      "lock-body": "Протокол блокування сесії недоступний.",
+      "lock-title": "Блокування недоступне"
+    }
+  },
+  "settings": {
+    "actions": {
+      "reset": "Скинути"
+    },
+    "badges": {
+      "advanced": "Додатково",
+      "inherited": "Успадковано",
+      "monitor": "Монітор",
+      "override": "Перевизначити"
+    },
+    "calendar-accounts": {
+      "add-title": "Додати обліковий запис календаря",
+      "color-label": "Колір",
+      "delete-error": "Не вдалося видалити обліковий запис календаря.",
+      "edit-title": "Редагувати обліковий запис календаря",
+      "id-label": "ID облікового запису",
+      "invalid": "Перевірте виділені поля облікового запису календаря.",
+      "name-label": "Ім'я для відображення",
+      "name-placeholder": "Особистий календар",
+      "password-keep-placeholder": "Залиш порожнім, щоб зберегти поточний пароль.",
+      "password-label": "Пароль додатка",
+      "password-placeholder": "Пароль для додатка",
+      "password-save-error": "Не вдалося зберегти пароль облікового запису календаря.",
+      "provider": {
+        "custom": "CalDAV",
+        "google": "Google",
+        "icloud": "iCloud"
+      },
+      "provider-label": "Провайдер",
+      "save": "Зберегти",
+      "save-connect": "Зберегти та підключитися",
+      "save-error": "Не вдалося зберегти обліковий запис календаря.",
+      "server-url-label": "URL-адреса сервера",
+      "username-label": "Ім'я користувача",
+      "username-placeholder": "name@example.com"
+    },
+    "controls": {
+      "keybind": {
+        "add": "Натисніть, щоб додати прив'язку клавіш",
+        "recording-placeholder": "Натисніть комбінацію клавіш…",
+        "unset-placeholder": "Натисніть, щоб прив'язати…"
+      },
+      "list": {
+        "add-entry-placeholder": "Додати запис…"
+      },
+      "path-browse": {
+        "file-title": "Вибрати файл",
+        "folder-title": "Вибрати теку"
+      },
+      "select": {
+        "unknown-value": "Невідомо: {value}"
+      }
+    },
+    "dialogs": {
+      "color-picker": {
+        "title": "Виберіть колір"
+      }
+    },
+    "entities": {
+      "bar": {
+        "create": "Створити",
+        "delete": "Видалити",
+        "delete-confirm-desc": "Цю створену у GUI панель буде видалено з settings.toml.",
+        "delete-confirm-title": "Видалити «{name}»?",
+        "id-placeholder": "Ідентифікатор панелі",
+        "label": "Панель: {name}",
+        "management": "Смуга",
+        "move-down": "Перемістити вниз",
+        "move-up": "Перемістити вгору",
+        "new": "Нова панель",
+        "rename": "Перейменувати",
+        "rename-save": "Зберегти"
+      },
+      "monitor-override": {
+        "create": "Створити",
+        "delete": "Видалити",
+        "delete-confirm-desc": "Це створене через GUI перевизначення монітора буде видалено з settings.toml.",
+        "delete-confirm-title": "Видалити «{name}»?",
+        "label": "Монітор: {name}",
+        "management": "Перевизначення монітора",
+        "match-placeholder": "Збіг монітора",
+        "new": "Перевизначення монітора",
+        "rename": "Перейменувати",
+        "rename-save": "Зберегти"
+      },
+      "widget": {
+        "add": "Додати віджет",
+        "detail": {
+          "custom": "Користувацький віджет"
+        },
+        "editor": {
+          "description": "Розташуйте віджети на смугах панелі",
+          "title": "Віджети панелі"
+        },
+        "group": {
+          "action": "Група",
+          "border": "Рамка",
+          "border-description": "Роль кольору обведення капсули; залиште за замовчуванням для відсутності обведення",
+          "clear": "Очистити",
+          "edit": "Редагувати стиль",
+          "fill": "Фон",
+          "fill-description": "Роль кольору тла Капсули; також підтримуються фіксовані шістнадцяткові кольори",
+          "foreground": "Передній план",
+          "foreground-description": "Роль кольору іконки та підпису для віджетів у цій групі",
+          "hint": "Частина групи капсул",
+          "members": "{count} віджетів",
+          "opacity": "Непрозорість",
+          "opacity-description": "Непрозорість фону капсули",
+          "orphan": "Невідома група",
+          "padding": "Відступ",
+          "padding-description": "Внутрішній відступ між краєм капсули та її віджетами, у пікселях",
+          "radius": "Радіус",
+          "radius-description": "Радіус заокруглення капсули в пікселях; Авто успадковує радіус капсули панелі",
+          "selected": "{count} вибрано",
+          "style": "Стиль",
+          "title": "Група капсул",
+          "ungroup": "Розгрупувати"
+        },
+        "inspector": {
+          "add-instance-title": "Додати новий іменований віджет {widget} до {lane}",
+          "add-title": "Додати widget до {lane}",
+          "move-to-lane": "Перемістити до {lane}"
+        },
+        "instance": {
+          "create-save": "Створити",
+          "delete": "Видалити",
+          "delete-confirm-desc": "Цей іменований віджет буде видалено з усіх панелей, а його налаштування буде відкинуто.",
+          "delete-confirm-title": "Видалити \"{name}\"?",
+          "id-description": "Використовуйте лише літери, цифри, підкреслення або дефіси. Без пробілів; має бути унікальним.",
+          "id-placeholder": "ID віджета",
+          "rename": "Перейменувати",
+          "rename-save": "Зберегти"
+        },
+        "lanes": {
+          "center": "Центр",
+          "customize": "Налаштувати",
+          "empty": "Немає віджетів",
+          "empty-hint": "Додайте віджет, щоб заповнити цю смугу.",
+          "end": "Кінець",
+          "start": "Почати"
+        },
+        "picker": {
+          "empty": "Віджетів не знайдено",
+          "instance-description": "Іменований віджет для типу \"{type}\"",
+          "instance-toggle": "Іменований віджет",
+          "placeholder": "Шукати віджети..."
+        },
+        "raw": {
+          "delete": "Видалити",
+          "description": "Непідтримувані ключі, збережені з конфігурації цього віджета.",
+          "title": "Сирі налаштування"
+        },
+        "settings": {
+          "empty": "Жодні налаштування не відповідають поточним фільтрам.",
+          "groups": {
+            "grouping": "Групування",
+            "presentation": "Презентація",
+            "runtime": "Час виконання",
+            "widget": "Віджет"
+          }
+        }
+      }
+    },
+    "errors": {
+      "bar": {
+        "create": "Не вдалося створити панель.",
+        "delete": "Не вдалося видалити панель.",
+        "move": "Не вдалося перемістити бар.",
+        "rename": "Не вдалося перейменувати панель."
+      },
+      "batch-write": "Деякі налаштування не вдалося зберегти.",
+      "export-config": "Не вдалося зберегти експорт конфігурації.",
+      "export-wallpaper-palette": "Не вдалося зберегти палітру шпалер як власну палітру.",
+      "monitor-override": {
+        "create": "Не вдалося створити перевизначення монітора.",
+        "delete": "Не вдалося видалити перевизначення монітора.",
+        "rename": "Не вдалося перейменувати перевизначення монітора."
+      },
+      "reset-page": "Не вдалося скинути деякі налаштування.",
+      "support-report": "Не вдалося зберегти звіт підтримки.",
+      "sync-greeter": "Не вдалося синхронізувати вигляд з Noctalia Greeter.",
+      "widget": {
+        "rename": "Не вдалося перейменувати іменований віджет."
+      },
+      "write": "Не вдалося зберегти налаштування."
+    },
+    "export-config": {
+      "export": "Експорт",
+      "full-effective-description": "Експортує всі активні налаштування, включно з вбудованими значеннями за замовчуванням. Корисно для перевірки або обміну знімком, але явно фіксує поточні значення за замовчуванням.",
+      "full-effective-save-title": "Зберегти повну діючу конфігурацію",
+      "full-effective-title": "Повна ефективна конфігурація",
+      "merged-user-description": "Об'єднує файли конфігурації та перевизначення графічного інтерфейсу в один файл TOML. Вбудовані значення за замовчуванням залишаються неявними.",
+      "merged-user-save-title": "Зберегти об'єднану конфігурацію користувача",
+      "merged-user-title": "Об'єднана конфігурація користувача (Рекомендовано)",
+      "title": "Експортувати конфігурацію"
+    },
+    "idle": {
+      "behavior": {
+        "add": "Додати поведінку",
+        "command-label": "Команда простою",
+        "command-placeholder": "notify-send \"Idle\"",
+        "kind": {
+          "custom": "Користувацькі",
+          "lock": "Заблокувати",
+          "lock-and-suspend": "Заблокувати та призупинити",
+          "screen-off": "Екран вимкнено",
+          "suspend": "Призупинити"
+        },
+        "kind-section-label": "Дія",
+        "name-label": "Ім'я",
+        "name-placeholder": "Поведінка в режимі простою",
+        "resume-command-label": "Команда відновлення",
+        "resume-command-placeholder": "noctalia:dpms-on",
+        "summary": "{name} · {seconds}с",
+        "summary-disabled-timeout": "{name} · таймаут вимкнено",
+        "timeout-label": "Таймаут (секунди)",
+        "unnamed": "Безіменна поведінка"
+      },
+      "live-status": {
+        "active": "Активно",
+        "idle-for-one": "Простоює 1 секунду",
+        "idle-for-seconds": "Простоює {seconds} секунд"
+      }
+    },
+    "navigation": {
+      "groups": {
+        "audio": "Аудіо",
+        "automation": "Автоматизація",
+        "backdrop": "Фон",
+        "background": "Фон",
+        "battery": "Батарея",
+        "behavior": "Поведінка",
+        "brightness": "Яскравість",
+        "built-in": "Вбудований",
+        "calendar": "Календар",
+        "capsules": "Капсули",
+        "clipboard": "Буфер обміну",
+        "community": "Спільнота",
+        "control-center": "Центр керування",
+        "directories": "Каталоги",
+        "effects": "Ефекти",
+        "filtering": "Фільтрування",
+        "focus-styling": "Стиль фокусу",
+        "formats": "Формати",
+        "general": "Загальні",
+        "grouping": "Групування",
+        "home": "Головна",
+        "idle": "Неактивний",
+        "interface": "Інтерфейс",
+        "keybinds": "Гарячі клавіші",
+        "kinds": "Види",
+        "launcher": "Запускач",
+        "layout": "Макет",
+        "lifecycle": "Життєвий цикл",
+        "location": "Розташування",
+        "lock-screen": "Екран блокування",
+        "media": "Медіа",
+        "monitor": "Монітор системи",
+        "monitor-polling": "Інтервали опитування",
+        "monitor-thresholds": "Пороги підсвічування",
+        "monitors": "Монітори",
+        "motion": "Рух",
+        "network": "Мережа",
+        "night-light": "Нічне світло",
+        "notifications": "Сповіщення",
+        "osd": "OSD",
+        "overview": "Огляд",
+        "pinned-apps": "Закріплені застосунки",
+        "power": "Живлення",
+        "privacy-security": "Приватність та Безпека",
+        "profile": "Профіль",
+        "screen-corners": "Кути екрана",
+        "screen-time": "Екранний час",
+        "screenshot": "Знімок екрана",
+        "security": "Безпека",
+        "session-panel": "Сеанс",
+        "shape": "Форма",
+        "system": "Система",
+        "theme": "Тема",
+        "toasts": "Toasts",
+        "transition": "Перехід",
+        "user": "Користувач",
+        "wallpaper": "Шпалери",
+        "weather": "Погода",
+        "widget-list": "Список віджетів",
+        "widgets": "Віджети"
+      },
+      "sections": {
+        "appearance": "Вигляд",
+        "backdrop": "Фон",
+        "bar": "Панель",
+        "desktop": "Робочий стіл",
+        "dock": "Dock",
+        "hooks": "Hooks",
+        "location": "Розташування",
+        "niri": "Niri",
+        "notifications": "Сповіщення",
+        "osd": "OSD",
+        "panels": "Панелі",
+        "popups": "Спливаючі вікна",
+        "power": "Живлення",
+        "security": "Безпека",
+        "services": "Служби",
+        "shell": "Оболонка",
+        "system": "Система",
+        "templates": "Шаблони",
+        "wallpaper": "Шпалери"
+      }
+    },
+    "options": {
+      "clipboard": {
+        "auto-paste": {
+          "ctrl-shift-v": "Ctrl+Shift+V",
+          "ctrl-v": "Ctrl+V",
+          "shift-insert": "Shift+Insert"
+        }
+      },
+      "control-center": {
+        "sidebar": {
+          "compact": "Компактний",
+          "full": "Повний",
+          "none": "Немає"
+        }
+      },
+      "dock-launcher-position": {
+        "end": "Кінець",
+        "none": "Немає",
+        "start": "Почати"
+      },
+      "edge": {
+        "bottom": "Низ",
+        "left": "Зліва",
+        "right": "Права",
+        "top": "Зверху"
+      },
+      "font-weight": {
+        "bold": "Жирний",
+        "book": "Книга",
+        "default": "За замовчуванням (панель)",
+        "heavy": "Важкий",
+        "light": "Світлий",
+        "medium": "Середній",
+        "regular": "Звичайний",
+        "semi-bold": "Напівжирний",
+        "semi-light": "Напівсвітлий",
+        "thin": "Тонкий",
+        "ultra-bold": "Наджирний",
+        "ultra-heavy": "Надважкий",
+        "ultra-light": "Ультра світлий"
+      },
+      "layer": {
+        "overlay": "Накладка",
+        "top": "Зверху"
+      },
+      "notification-urgency": {
+        "critical": "Критичний",
+        "low": "Низький",
+        "normal": "Нормальний"
+      },
+      "orientation": {
+        "horizontal": "Горизонтально",
+        "vertical": "Вертикально"
+      },
+      "screen-position": {
+        "bottom-center": "Знизу по центру",
+        "bottom-left": "Внизу ліворуч",
+        "bottom-right": "Внизу праворуч",
+        "center-left": "По центру ліворуч",
+        "center-right": "Праворуч по центру",
+        "top-center": "Зверху по центру",
+        "top-left": "Згори ліворуч",
+        "top-right": "Угорі праворуч"
+      },
+      "shell": {
+        "panel-placement": {
+          "attached": "Прикріплений",
+          "centered": "По центру",
+          "floating": "Плаваюча"
+        },
+        "panel-transparency": {
+          "glass": "Скло",
+          "soft": "М'який",
+          "solid": "Суцільний"
+        },
+        "password-style": {
+          "filled-circles": "Заповнені кола",
+          "random-icons": "Випадкові іконки"
+        },
+        "shadow-direction": {
+          "center": "Центр",
+          "down": "Вниз",
+          "down-left": "Внизу ліворуч",
+          "down-right": "Внизу праворуч",
+          "left": "Ліворуч",
+          "right": "Праворуч",
+          "up": "Активно",
+          "up-left": "Вгорі Зліва",
+          "up-right": "Вгору праворуч"
+        }
+      },
+      "theme": {
+        "mode": {
+          "dark": "Темний",
+          "light": "Світлий"
+        },
+        "source": {
+          "built-in": "Вбудований",
+          "community": "Спільнота",
+          "custom": "Користувацький",
+          "wallpaper": "Шпалери"
+        }
+      },
+      "theme-role": {
+        "custom": "Власне…",
+        "default": "Типово"
+      },
+      "wallpaper": {
+        "fill": {
+          "center": "Центр",
+          "crop": "Обрізати",
+          "fit": "Вписати",
+          "repeat": "Повторити",
+          "stretch": "Розтягнути"
+        },
+        "order": {
+          "alphabetical": "За алфавітом",
+          "random": "Випадковий"
+        },
+        "transition": {
+          "disc": "Диск",
+          "fade": "Згасання",
+          "honeycomb": "Стільники",
+          "stripes": "Смуги",
+          "wipe": "Стерти",
+          "zoom": "Масштаб"
+        }
+      },
+      "weather": {
+        "unit": {
+          "imperial": "Імперська",
+          "metric": "Метрика"
+        }
+      }
+    },
+    "schema": {
+      "appearance": {
+        "animation-speed": {
+          "description": "Множник швидкості для всіх анімацій",
+          "label": "Швидкість анімації"
+        },
+        "animations": {
+          "description": "Увімкнути або вимкнути анімації інтерфейсу",
+          "label": "Анімації"
+        },
+        "app-icon-color": {
+          "description": "Колір палітри, що використовується для розфарбовування іконок застосунків",
+          "label": "Колір іконки додатка"
+        },
+        "app-icon-colorize": {
+          "description": "Перефарбувати іконки програм в оболонці відповідно до активної палітри",
+          "label": "Розфарбувати іконки програм"
+        },
+        "builtin-palette": {
+          "description": "Виберіть палітру з вбудованого каталогу",
+          "label": "Вбудована палітра"
+        },
+        "community-palette": {
+          "description": "Виберіть палітру з каталогу спільноти",
+          "label": "Палітра спільноти",
+          "search-placeholder": "Пошук палітр..."
+        },
+        "corner-roundness": {
+          "description": "Масштабувати радіус заокруглення для контейнерів та елементів керування інтерфейсу оболонки",
+          "label": "Закруглення кутів"
+        },
+        "custom-palette": {
+          "description": "Виберіть палітру з ~/.config/noctalia/palettes/",
+          "label": "Користувацька палітра",
+          "search-placeholder": "Пошук власних палітр..."
+        },
+        "export-wallpaper-palette": {
+          "button": "Зберегти як користувацька палітра",
+          "description": "Зберегти поточну палітру, згенеровану шпалерами, як багаторазовий файл власної палітри",
+          "label": "Експортувати палітру шпалер"
+        },
+        "font-family": {
+          "description": "Гарнітура шрифтів для інтерфейсу оболонки",
+          "label": "Сімейство шрифтів"
+        },
+        "global-shadow-alpha": {
+          "description": "Глобальна непрозорість тіні поверхні"
+        },
+        "global-shadow-direction": {
+          "description": "Напрямок, з якого відкидається тінь від поверхонь"
+        },
+        "language": {
+          "description": "Перевизначити автоматичне визначення локалі",
+          "label": "Мова"
+        },
+        "palette-source": {
+          "description": "Звідки брати палітру кольорів",
+          "label": "Джерело палітри"
+        },
+        "theme-mode": {
+          "description": "Виберіть темний, світлий або авто, залежно від часу доби",
+          "label": "Режим теми"
+        },
+        "ui-scale": {
+          "description": "Змінити масштаб всього інтерфейсу",
+          "label": "Масштаб інтерфейсу"
+        },
+        "wallpaper-generation-scheme": {
+          "description": "Виберіть, як кольори шпалер перетворюються на палітру",
+          "label": "Схема генерації шпалер"
+        }
+      },
+      "backdrop": {
+        "blur-intensity": {
+          "description": "Інтенсивність розмиття фону",
+          "label": "Інтенсивність розмиття"
+        },
+        "enabled": {
+          "description": "Увімкнути фон"
+        },
+        "tint-intensity": {
+          "description": "Інтенсивність відтінку фону",
+          "label": "Інтенсивність відтінку"
+        }
+      },
+      "bar": {
+        "auto-hide": {
+          "description": "Автоматично приховувати панель, коли вона не використовується"
+        },
+        "background-opacity": {
+          "description": "Непрозорість фону Бару"
+        },
+        "border": {
+          "description": "Колірна роль для обведення панелі; також підтримуються фіксовані шістнадцяткові кольори",
+          "label": "Межа"
+        },
+        "border-width": {
+          "description": "Внутрішня ширина обведення для Бару",
+          "label": "Ширина рамки"
+        },
+        "capsule-border": {
+          "description": "Роль кольору контуру капсули за замовчуванням; також підтримуються фіксовані шістнадцяткові кольори",
+          "label": "Межа капсули"
+        },
+        "capsule-fill": {
+          "description": "Роль кольору фону капсули за замовчуванням; також підтримуються фіксовані шістнадцяткові кольори",
+          "label": "Заливка капсули"
+        },
+        "capsule-foreground": {
+          "description": "Роль кольору за замовчуванням для іконок та міток всередині капсул; також підтримуються фіксовані шістнадцяткові кольори",
+          "label": "Капсула: Передній план"
+        },
+        "capsule-opacity": {
+          "description": "Прозорість фонів капсул віджетів",
+          "label": "Прозорість капсули"
+        },
+        "capsule-padding": {
+          "description": "Внутрішні відступи віджетів у Capsule",
+          "label": "Відступ капсули"
+        },
+        "capsule-radius": {
+          "description": "Радіус заокруглення кутів за замовчуванням для капсул віджетів, пігулок робочих просторів та груп робочих просторів панелі завдань; залиште пустим для автоматичної форми пігулки або встановіть 0 для квадратних кутів",
+          "label": "Радіус капсули"
+        },
+        "center-widgets": {
+          "description": "Віджети по центру панелі",
+          "label": "Центрувати віджети"
+        },
+        "contact-shadow": {
+          "description": "Темний градієнт між прикріпленою панеллю та Bar для створення ілюзії глибини на стику"
+        },
+        "content-padding": {
+          "description": "Відступи всередині області вмісту панелі",
+          "label": "Відступ вмісту"
+        },
+        "content-scale": {
+          "description": "Коефіцієнт масштабування для вмісту панелі",
+          "label": "Масштаб вмісту"
+        },
+        "corner-bottom-left": {
+          "description": "Радіус нижнього лівого кута панелі"
+        },
+        "corner-bottom-right": {
+          "description": "Радіус заокруглення нижнього правого кута панелі"
+        },
+        "corner-radius": {
+          "description": "Радіус заокруглення панелі"
+        },
+        "corner-top-left": {
+          "description": "Радіус верхнього лівого кута панелі"
+        },
+        "corner-top-right": {
+          "description": "Радіус верхнього правого кута для панелі"
+        },
+        "edge-margin": {
+          "description": "Відстань від найближчого краю екрана; позитивні значення віддаляють Bar від нього"
+        },
+        "enabled": {
+          "description": "Показати або приховати цю панель"
+        },
+        "end-widgets": {
+          "description": "Віджети на кінці (справа/знизу) панелі",
+          "label": "Кінцеві віджети"
+        },
+        "ends-margin": {
+          "description": "Відступ від кожного кінця панелі вздовж її головної осі"
+        },
+        "font-weight": {
+          "description": "Стандартна вага для міток віджетів на цій панелі.",
+          "label": "Вага шрифту"
+        },
+        "layer": {
+          "description": "Використовуйте Overlay, щоб показувати панель над повноекранними програмами. Прикріплені панелі слідують за панеллю.",
+          "label": "Шар Wayland"
+        },
+        "panel-overlap": {
+          "description": "Пікселі, на які прикріплена панель перекриває край Bar, щоб приховати шов (налаштуйте, якщо бачите лінію або проміжок)",
+          "label": "Перекриття панелей"
+        },
+        "position": {
+          "description": "На якому краю екрана розташована панель"
+        },
+        "reserve-space": {
+          "description": "Відсувати вікна від краю Bar"
+        },
+        "shadow": {
+          "description": "Відкидати глобальну тінь поверхні з панелі"
+        },
+        "start-widgets": {
+          "description": "Віджети на початку панелі (ліворуч/зверху)",
+          "label": "Запустити віджети"
+        },
+        "thickness": {
+          "description": "Товщина панелі в пікселях",
+          "label": "Товщина"
+        },
+        "widget-capsules": {
+          "description": "Обгорнути віджети у фони капсул",
+          "label": "Віджет Капсули"
+        },
+        "widget-color": {
+          "description": "Роль кольору іконки та мітки за замовчуванням для віджетів на цій панелі; також підтримуються фіксовані шістнадцяткові кольори",
+          "label": "Колір віджета"
+        },
+        "widget-spacing": {
+          "description": "Відстань між віджетами панелі",
+          "label": "Відстань між віджетами"
+        }
+      },
+      "desktop": {
+        "screen-corners-enabled": {
+          "description": "Закруглити кути екрана чорним Overlay",
+          "label": "Кути екрана"
+        },
+        "screen-corners-size": {
+          "description": "Радіус заокруглених кутів екрана у пікселях",
+          "label": "Розмір заокруглення"
+        },
+        "widgets": {
+          "description": "Показувати віджети на робочому столі",
+          "label": "Віджети робочого столу"
+        },
+        "widgets-editor": {
+          "button": "Перемкнути редактор",
+          "description": "Додати, переміщувати та змінювати розмір віджетів робочого столу",
+          "label": "Редактор віджетів"
+        }
+      },
+      "dock": {
+        "active-icon-opacity": {
+          "description": "Прозорість фокусованої іконки Dock",
+          "label": "Непрозорість активної іконки"
+        },
+        "active-icon-scale": {
+          "description": "Масштаб сфокусованої іконки Dock",
+          "label": "Масштаб активної іконки"
+        },
+        "active-monitor-only": {
+          "description": "Показувати лише застосунки, запущені на активному моніторі",
+          "label": "Лише активний монітор"
+        },
+        "auto-hide": {
+          "description": "Автоматично приховувати dock, коли він не використовується"
+        },
+        "background-opacity": {
+          "description": "Прозорість фону Dock"
+        },
+        "corner-bottom-left": {
+          "description": "Радіус нижнього лівого кута для Dock"
+        },
+        "corner-bottom-right": {
+          "description": "Радіус заокруглення нижнього правого кута для Dock"
+        },
+        "corner-radius": {
+          "description": "Радіус заокруглення Dock"
+        },
+        "corner-top-left": {
+          "description": "Радіус верхнього лівого кута для Dock"
+        },
+        "corner-top-right": {
+          "description": "Радіус верхнього правого кута для Dock"
+        },
+        "cross-axis-padding": {
+          "description": "Внутрішній відступ вздовж поперечної осі Dock (між іконками та краєм екрана)"
+        },
+        "edge-margin": {
+          "description": "Відстань від найближчого краю екрана; додатні значення віддаляють Dock від нього"
+        },
+        "enabled": {
+          "description": "Показати або приховати Dock"
+        },
+        "ends-margin": {
+          "description": "Відступ від кожного кінця Dock вздовж його головної осі"
+        },
+        "icon-size": {
+          "description": "Розмір іконок Dock у пікселях",
+          "label": "Розмір іконки"
+        },
+        "inactive-icon-opacity": {
+          "description": "Непрозорість неактивних іконок Dock",
+          "label": "Прозорість неактивної іконки"
+        },
+        "inactive-icon-scale": {
+          "description": "Масштаб неактивних іконок Dock",
+          "label": "Масштаб неактивних іконок"
+        },
+        "item-spacing": {
+          "description": "Відстань між елементами Dock",
+          "label": "Інтервал між елементами"
+        },
+        "launcher-icon": {
+          "description": "Іконка Tabler, що відображається на кнопці запуску Dock",
+          "label": "Іконка Launcher"
+        },
+        "launcher-position": {
+          "description": "Показати кнопку Launcher на початку або в кінці Dock",
+          "label": "Кнопка Запускача"
+        },
+        "magnification": {
+          "description": "Збільшити іконки Dock біля вказівника, у стилі macOS",
+          "label": "Збільшення"
+        },
+        "magnification-scale": {
+          "description": "Максимальний множник масштабу іконок у центрі вказівника (1.0 вимикає збільшення)",
+          "label": "Масштаб збільшення"
+        },
+        "main-axis-padding": {
+          "description": "Внутрішній відступ уздовж головної осі дока (між іконками та короткими кінцями капсули)"
+        },
+        "monitors": {
+          "description": "Виберіть, на яких моніторах відображати Dock (залиште порожнім для всіх); фільтрація за активним монітором застосовується в межах цих моніторів",
+          "label": "Монітори"
+        },
+        "pinned-apps": {
+          "description": "Ідентифікатори записів робочого столу програм, закріплених у Dock",
+          "label": "Закріплені програми"
+        },
+        "position": {
+          "description": "На якій грані екрана розташований Dock"
+        },
+        "reserve-space": {
+          "description": "Зарезервувати місце на екрані для Dock"
+        },
+        "shadow": {
+          "description": "Відкидати глобальну тінь поверхні від dock"
+        },
+        "show-dots": {
+          "description": "Показувати крапки запущених вікон біля іконок Dock",
+          "label": "Показувати крапки"
+        },
+        "show-instance-count": {
+          "description": "Показувати значок з кількістю відкритих екземплярів",
+          "label": "Показати кількість екземплярів"
+        },
+        "show-running": {
+          "description": "Показувати запущені програми, які не закріплені",
+          "label": "Показати запущені"
+        }
+      },
+      "hooks": {
+        "command-placeholder": "команда оболонки або шлях до скрипту",
+        "events": {
+          "battery-charging": {
+            "description": "Команда для виконання, коли батарея починає заряджатися",
+            "label": "При зарядці батареї"
+          },
+          "battery-discharging": {
+            "description": "Команда для запуску, коли батарея починає розряджатися",
+            "label": "При розрядці батареї"
+          },
+          "battery-percentage-changed": {
+            "description": "Команда для виконання, коли змінюється відсоток заряду батареї",
+            "label": "При зміні відсотка заряду батареї"
+          },
+          "battery-plugged": {
+            "description": "Команда для виконання, коли батарея повністю заряджена або очікує зарядки",
+            "label": "При підключенні зарядного пристрою"
+          },
+          "bluetooth-disabled": {
+            "description": "Команда для виконання, коли Bluetooth вимкнено",
+            "label": "При вимкненні Bluetooth"
+          },
+          "bluetooth-enabled": {
+            "description": "Команда для виконання, коли Bluetooth увімкнено",
+            "label": "При увімкненні Bluetooth"
+          },
+          "colors-changed": {
+            "description": "Команда для виконання, коли активна палітра кольорів змінюється",
+            "label": "При зміні кольорів"
+          },
+          "logging-out": {
+            "description": "Команда для виконання перед виходом із системи",
+            "label": "При виході"
+          },
+          "power-profile-changed": {
+            "description": "Команда для виконання при зміні активного профілю живлення UPower/PPD",
+            "label": "При зміні профілю живлення"
+          },
+          "rebooting": {
+            "description": "Команда для виконання перед перезавантаженням",
+            "label": "При перезавантаженні"
+          },
+          "session-locked": {
+            "description": "Команда для виконання, коли сесія заблокована",
+            "label": "При заблокованій сесії"
+          },
+          "session-unlocked": {
+            "description": "Команда, що виконується після розблокування сесії",
+            "label": "При розблокуванні сесії"
+          },
+          "shutting-down": {
+            "description": "Команда для виконання перед вимкненням",
+            "label": "При вимкненні"
+          },
+          "started": {
+            "description": "Команда для запуску після старту Noctalia",
+            "label": "При запуску"
+          },
+          "theme-mode-changed": {
+            "description": "Команда, яка запускається при зміні визначеного режиму теми між світлим і темним",
+            "label": "При зміні режиму теми"
+          },
+          "wallpaper-changed": {
+            "description": "Команда для виконання при зміні шпалер",
+            "label": "При зміні шпалер"
+          },
+          "wifi-disabled": {
+            "description": "Команда для виконання, коли Wi-Fi вимкнено",
+            "label": "При вимкненні Wi-Fi"
+          },
+          "wifi-enabled": {
+            "description": "Команда для запуску, коли Wi-Fi увімкнено",
+            "label": "При увімкненні Wi-Fi"
+          }
+        }
+      },
+      "idle": {
+        "behaviors": {
+          "description": "Іменовані дії простою з готовими налаштуваннями (блокування, вимкнення дисплеїв, призупинення) або власними командами, тайм-аутами, відновленням сполучення та порядком",
+          "label": "Поведінки"
+        },
+        "pre-action-fade": {
+          "description": "Секунди затемнення на весь екран перед командою бездіяльності; використовуйте 0, щоб вимкнути",
+          "label": "Затемнення при простої"
+        }
+      },
+      "keybinds": {
+        "cancel": {
+          "description": "Закрити спливаючі вікна, відхилити панелі або скасувати поточну операцію",
+          "label": "Скасувати"
+        },
+        "down": {
+          "description": "Перемістити фокус або виділення на один рядок вниз",
+          "label": "Перейти вниз"
+        },
+        "left": {
+          "description": "Перемістити фокус або виділення ліворуч",
+          "label": "Перейти ліворуч"
+        },
+        "right": {
+          "description": "Перемістити фокус або виділення праворуч",
+          "label": "Перейти праворуч"
+        },
+        "up": {
+          "description": "Перемістити фокус або виділення на один рядок вгору",
+          "label": "Перейти вгору"
+        },
+        "validate": {
+          "description": "Підтвердити вибір, надіслати введені дані або активувати сфокусований елемент",
+          "label": "Підтвердити"
+        }
+      },
+      "lockscreen": {
+        "blur-intensity": {
+          "description": "Наскільки розмитий фон екрана блокування",
+          "label": "Інтенсивність розмиття"
+        },
+        "blurred-desktop": {
+          "description": "Використовувати знімок робочого столу як фон екрана блокування",
+          "label": "Захоплення робочого столу"
+        },
+        "monitors": {
+          "description": "Виберіть, на яких моніторах відображати екран блокування; залиште порожнім, щоб відображати на всіх моніторах",
+          "label": "Монітори"
+        },
+        "tint-intensity": {
+          "description": "Відтінок кольору поверхні поверх фону екрана блокування",
+          "label": "Інтенсивність відтінку"
+        },
+        "wallpaper": {
+          "description": "Власне зображення для фону екрана блокування. Залиште порожнім, щоб використовувати шпалери робочого столу.",
+          "label": "Шпалери",
+          "placeholder": "Використовувати шпалери робочого столу"
+        },
+        "widgets": {
+          "description": "Показувати налаштовувані віджети на екрані блокування",
+          "label": "Віджети екрана блокування"
+        },
+        "widgets-editor": {
+          "button": "Перемкнути Редактор",
+          "description": "Додати, переміщувати та змінювати розмір віджетів на екрані блокування",
+          "label": "Редактор віджетів екрана блокування"
+        }
+      },
+      "notifications": {
+        "allowed-urgencies": {
+          "description": "Показувати зовнішні сповіщення лише з вибраними рівнями терміновості",
+          "label": "Дозволені терміновості"
+        },
+        "blacklist": {
+          "description": "Приховати відповідних відправників (назва програми, запис робочого столу або категорія)",
+          "label": "Чорний список сповіщень"
+        },
+        "blacklist-allow-critical": {
+          "description": "Все ще показувати критичні сповіщення від заблокованих відправників",
+          "label": "Дозволити критичні через чорний список"
+        },
+        "collapse-on-dismiss": {
+          "description": "Зсувати решту Toast-повідомлень, щоб закрити прогалини, коли одне з них зникає",
+          "label": "Згортати при відхиленні"
+        },
+        "daemon": {
+          "description": "Увімкнути вбудований демон сповіщень",
+          "label": "Демон сповіщень"
+        },
+        "layer": {
+          "description": "Використовуйте Overlay, щоб показувати сповіщення Toast над повноекранними програмами.",
+          "label": "Шар Wayland"
+        },
+        "monitors": {
+          "description": "Виберіть, на яких моніторах показувати Toast-повідомлення; залиште порожнім, щоб показувати на всіх моніторах",
+          "label": "Монітори"
+        },
+        "offset-x": {
+          "description": "Абсолютний горизонтальний відступ від краю екрана або панелі",
+          "label": "Горизонтальний відступ"
+        },
+        "offset-y": {
+          "description": "Абсолютний вертикальний відступ від краю екрана або панелі",
+          "label": "Вертикальний відступ"
+        },
+        "position": {
+          "description": "Позиція на екрані для Toast-сповіщень",
+          "label": "Позиція на екрані"
+        },
+        "scale": {
+          "description": "Масштабувати Toast-повідомлення відповідно до масштабу інтерфейсу оболонки",
+          "label": "Розмір"
+        },
+        "show-actions": {
+          "description": "Показувати кнопки дій у notification toasts; коли вимкнено, натискання на toast запускає його дію за замовчуванням",
+          "label": "Показати кнопки дій"
+        },
+        "show-app-name": {
+          "description": "Показувати назву програми-відправника у тостах сповіщень",
+          "label": "Показувати назву програми"
+        },
+        "toast-opacity": {
+          "description": "Прозорість фону сповіщень Toast",
+          "label": "Непрозорість фону"
+        }
+      },
+      "panels": {
+        "borders": {
+          "description": "Відобразити Outline на панелях та картках розділів всередині панелей",
+          "label": "Рамки"
+        },
+        "control-center-sidebar": {
+          "description": "При Головній та загальних відкриттях",
+          "label": "Бічна панель"
+        },
+        "control-center-sidebar-section": {
+          "description": "При відкритті певної вкладки (гучність, медіа тощо)",
+          "label": "Бічна панель при відкритті вкладки"
+        },
+        "home-shortcuts": {
+          "description": "Оберіть до шести кнопок швидкого доступу для вкладки \"Головна\"",
+          "label": "Головні ярлики"
+        },
+        "launcher-categories": {
+          "description": "Показати фільтри категорій у Launcher; перемикати за допомогою Tab, коли Launcher відкрито",
+          "label": "Показати категорії"
+        },
+        "launcher-compact": {
+          "description": "Використовувати менші іконки та щільніші рядки результатів",
+          "label": "Щільні рядки"
+        },
+        "launcher-show-icons": {
+          "description": "Показувати іконки програм у результатах Launcher",
+          "label": "Показувати іконки програм"
+        },
+        "open-near-click-clipboard": {
+          "description": "Розташувати панель буфера обміну біля кліку на панелі замість центрування її вздовж панелі",
+          "label": "Відкрити біля кліку"
+        },
+        "open-near-click-control-center": {
+          "description": "Розташувати панель Control Center біля місця натискання на панелі замість центрування вздовж панелі",
+          "label": "Відкрити біля кліку"
+        },
+        "open-near-click-launcher": {
+          "description": "Розташувати панель запуску біля місця натискання на панель замість центрування її вздовж панелі",
+          "label": "Відкрити біля натискання"
+        },
+        "open-near-click-session": {
+          "description": "Розташувати панель меню сесії біля точки натискання на Bar, а не центрувати її вздовж Bar",
+          "label": "Відкрити біля курсора"
+        },
+        "open-near-click-wallpaper": {
+          "description": "Розташувати панель вибору шпалер біля кліку на панелі замість центрування її вздовж панелі",
+          "label": "Відкрити біля натискання"
+        },
+        "placement-clipboard": {
+          "description": "Оберіть, чи буфер обміну прикріплюється до панелі, плаває поруч, чи відкривається по центру",
+          "label": "Розміщення"
+        },
+        "placement-control-center": {
+          "description": "Оберіть, чи Центр керування прикріплюється до панелі, плаває поруч з нею, чи відкривається по центру",
+          "label": "Розміщення"
+        },
+        "placement-launcher": {
+          "description": "Виберіть, чи Launcher буде прикріплений до панелі, плаватиме поруч із нею, або відкриватиметься по центру",
+          "label": "Розміщення"
+        },
+        "placement-session": {
+          "description": "Оберіть, чи меню сесії прикріплюється до бару, плаває поруч з ним, або відкривається по центру.",
+          "label": "Розміщення"
+        },
+        "placement-wallpaper": {
+          "description": "Виберіть, чи прикріплюється засіб вибору шпалер до панелі, плаває поруч із нею, чи відкривається по центру",
+          "label": "Розміщення"
+        },
+        "shadow": {
+          "description": "Відкидати глобальну тінь від поверхонь панелей"
+        },
+        "transparency-mode": {
+          "description": "Скляний стиль панелі, включаючи непрозорість плаваючої/центрованої панелі та прозорість карток",
+          "label": "Прозорість"
+        }
+      },
+      "power": {
+        "session-actions": {
+          "description": "Пункти меню живлення, порядок, власні команди та іконки",
+          "label": "Записи"
+        }
+      },
+      "services": {
+        "audio-overdrive": {
+          "description": "Дозволити гучність понад 100%",
+          "label": "Форсування звуку"
+        },
+        "calendar": {
+          "description": "Показувати події з ваших облікових записів онлайн-календарів",
+          "label": "Календар"
+        },
+        "calendar-add": {
+          "button": "Додати обліковий запис",
+          "description": "Додати облікові записи iCloud, CalDAV або Google",
+          "label": "Облікові записи календаря"
+        },
+        "calendar-edit": {
+          "button": "Редагувати",
+          "description": "Оновити цей обліковий запис календаря"
+        },
+        "calendar-refresh-interval": {
+          "description": "Як часто синхронізувати події календаря (хвилини)",
+          "label": "Інтервал оновлення"
+        },
+        "day-temperature": {
+          "description": "Колірна температура вдень (Кельвінів)",
+          "label": "Денна температура"
+        },
+        "ddcutil": {
+          "description": "Керувати яскравістю зовнішнього монітора через DDC/CI",
+          "label": "DDC/CI (ddcutil)",
+          "requires-ddcutil": "Встановіть ddcutil, щоб увімкнути керування яскравістю DDC/CI"
+        },
+        "force-night-light": {
+          "description": "Завжди застосовувати нічне світло незалежно від часу",
+          "label": "Примусове нічне світло"
+        },
+        "latitude": {
+          "description": "Ручна широта для розкладу сходу/заходу сонця, використовується, коли автовизначення місцезнаходження та адреса вимкнені",
+          "label": "Широта"
+        },
+        "location-address": {
+          "description": "Місто або адреса для визначення місцезнаходження, використовується, коли автовизначення вимкнено",
+          "label": "Адреса",
+          "placeholder": "Місто, Країна"
+        },
+        "location-auto-locate": {
+          "description": "Визначати ваше місцезнаходження автоматично за IP-адресою",
+          "label": "Автовизначення (IP)"
+        },
+        "longitude": {
+          "description": "Ручна довгота для розкладу сходу/заходу сонця, використовується, коли автовизначення місцезнаходження та адреса вимкнені",
+          "label": "Довгота"
+        },
+        "mpris-blacklist": {
+          "description": "Програвачі, які ігноруватимуться для медіаконтролю та \"Зараз грає\"",
+          "label": "Чорний список програвачів MPRIS"
+        },
+        "night-light": {
+          "description": "Змінити кольори екрана на тепліші вночі",
+          "label": "Нічне світло",
+          "requires-gamma-control": "Композитор не підтримує керування гамою"
+        },
+        "night-temperature": {
+          "description": "Температура кольору вночі (Кельвін)",
+          "label": "Нічна температура"
+        },
+        "notification-sound": {
+          "description": "Звуковий файл, що використовується для зворотного зв'язку сповіщень",
+          "label": "Звук сповіщення",
+          "placeholder": "/path/to/sound.wav"
+        },
+        "shell-sounds": {
+          "description": "Відтворювати звукові ефекти для подій оболонки",
+          "label": "Звуки оболонки"
+        },
+        "sound-volume": {
+          "description": "Гучність звукових ефектів оболонки",
+          "label": "Гучність звуку"
+        },
+        "sunrise": {
+          "description": "Час сходу сонця вручну у ГГ:ХХ, використовується, якщо місцезнаходження не встановлено",
+          "label": "Схід сонця"
+        },
+        "sunset": {
+          "description": "Ручний час заходу сонця у HH:MM, використовується, коли місцезнаходження не встановлено",
+          "label": "Захід сонця"
+        },
+        "system-monitor": {
+          "cpu-poll": {
+            "description": "Інтервал у секундах між вимірюваннями використання CPU, температури CPU та середнього навантаження (0 вимикає)",
+            "label": "Інтервал опитування CPU"
+          },
+          "description": "Зразок статистики CPU, пам'яті, мережі, навантаження, температури та диска",
+          "disk-poll": {
+            "description": "Секунди між зразками використання диска та swap (0 вимикає)",
+            "label": "Інтервал опитування диска"
+          },
+          "gpu-poll": {
+            "description": "Секунди між зразками температури GPU та VRAM. 0 вимикає його (за замовчуванням), що дозволяє уникнути пробудження дискретного GPU; 5 – хороший інтервал, якщо ви його ввімкнете",
+            "label": "Інтервал опитування GPU"
+          },
+          "label": "Монітор системи",
+          "memory-poll": {
+            "description": "Секунди між зразками використання RAM (0 вимикає)",
+            "label": "Інтервал опитування пам'яті"
+          },
+          "network-poll": {
+            "description": "Інтервал між вимірюваннями пропускної здатності мережі (0 вимикає)",
+            "label": "Інтервал опитування мережі"
+          },
+          "stats": {
+            "cpu-temp": "Темп. CPU",
+            "cpu-usage": "Використання CPU",
+            "disk-usage": "Використання диска",
+            "gpu-temp": "Температура GPU",
+            "gpu-usage": "Використання GPU",
+            "gpu-vram": "GPU VRAM",
+            "network-rx": "Завантажити",
+            "network-tx": "Завантажити",
+            "ram-usage": "Використання RAM",
+            "swap-usage": "Використання Swap"
+          },
+          "threshold": {
+            "description": "Поріг активності (зліва) та критичний поріг (справа)",
+            "label": "{stat}"
+          }
+        },
+        "volume-change-sound": {
+          "description": "Звуковий файл, що використовується для відгуку гучності",
+          "label": "Звук зміни гучності",
+          "placeholder": "/path/to/sound.wav"
+        },
+        "weather": {
+          "description": "Увімкнути службу погоди",
+          "label": "Погода"
+        },
+        "weather-effects": {
+          "description": "Відображати візуальні погодні ефекти",
+          "label": "Погодні ефекти"
+        },
+        "weather-refresh-interval": {
+          "description": "Як часто оновлювати дані про погоду (хвилини)",
+          "label": "Інтервал оновлення"
+        },
+        "weather-unit": {
+          "description": "Система одиниць для відображення погоди",
+          "label": "Одиниці"
+        }
+      },
+      "shared": {
+        "auto-hide": {
+          "label": "Автоприховування"
+        },
+        "background-opacity": {
+          "label": "Непрозорість фону"
+        },
+        "contact-shadow": {
+          "label": "Контактна тінь"
+        },
+        "corner-bottom-left": {
+          "label": "Радіус нижнього лівого кута"
+        },
+        "corner-bottom-right": {
+          "label": "Нижній правий радіус"
+        },
+        "corner-radius": {
+          "label": "Радіус заокруглення"
+        },
+        "corner-top-left": {
+          "label": "Верхній лівий радіус"
+        },
+        "corner-top-right": {
+          "label": "Верхній правий радіус"
+        },
+        "cross-axis-padding": {
+          "label": "Поперечний відступ"
+        },
+        "edge-margin": {
+          "label": "Крайовий відступ"
+        },
+        "enabled": {
+          "label": "Увімкнено"
+        },
+        "ends-margin": {
+          "label": "Відступ по краях"
+        },
+        "main-axis-padding": {
+          "label": "Відступ по головній осі"
+        },
+        "position": {
+          "label": "Позиція"
+        },
+        "reserve-space": {
+          "label": "Зарезервувати місце"
+        },
+        "shadow": {
+          "label": "Тінь"
+        },
+        "shadow-alpha": {
+          "label": "Непрозорість тіні"
+        },
+        "shadow-direction": {
+          "label": "Напрямок тіні"
+        }
+      },
+      "shell": {
+        "avatar-path": {
+          "description": "Шлях до власного зображення аватара",
+          "label": "Шлях аватара",
+          "placeholder": "/path/to/avatar.png"
+        },
+        "clipboard-auto-paste": {
+          "description": "Автоматично вставляти виділення з буфера обміну",
+          "label": "Автоматична вставка з буфера обміну"
+        },
+        "clipboard-confirm-clear-history": {
+          "description": "Запитувати перед очищенням історії буфера обміну або видаленням незакріпленого запису з панелі; коли вимкнено, ці дії застосовуються негайно (закріплені записи все одно запитують перед видаленням)",
+          "label": "Підтвердити очищення історії"
+        },
+        "clipboard-enabled": {
+          "description": "Увімкнути історію буфера обміну, панель буфера обміну та інтеграцію копіювання/вставлення",
+          "label": "Буфер обміну"
+        },
+        "clipboard-history-max-entries": {
+          "description": "Максимальна кількість незакріплених записів в історії буфера обміну",
+          "label": "Розмір історії"
+        },
+        "clipboard-image-action": {
+          "description": "Команда для запуску з елементів буфера обміну зображень; використовуйте {path} для шляху до файлу, {stdin} для позначення позиції stdin, або пропустіть {path} для автоматичного перенаправлення",
+          "label": "Команда дії зображення",
+          "placeholder": "gimp {path} або satty -f -"
+        },
+        "date-format": {
+          "description": "Формат дати за замовчуванням для інтерфейсу оболонки без власного налаштування",
+          "label": "Формат дати"
+        },
+        "launch-apps-as-systemd-services": {
+          "description": "Запускає програми в окремих службах systemd, щоб вони не ділили cgroup Noctalia",
+          "label": "Запускати програми як служби systemd"
+        },
+        "middle-click-opens-widget-settings": {
+          "description": "Відкрити налаштування віджета панелі з панелі середнім кліком",
+          "label": "Середній клік відкриває налаштування віджета"
+        },
+        "niri-overview-type-to-launch": {
+          "description": "Відкриває Launcher під час введення тексту в Niri Overview; використовує невелику поверхню для фокусування клавіатури, поки Overview відкрито",
+          "label": "Наберіть, щоб запустити"
+        },
+        "offline-mode": {
+          "description": "Блокувати всі вихідні мережеві запити",
+          "label": "Офлайн-режим"
+        },
+        "osd-background-opacity": {
+          "description": "Прозорість фону OSD спливаючих вікон",
+          "label": "Непрозорість фону"
+        },
+        "osd-kinds-bluetooth": {
+          "description": "Показувати спливаюче вікно OSD, коли Bluetooth перемикається",
+          "label": "Bluetooth"
+        },
+        "osd-kinds-brightness": {
+          "description": "Показувати OSD-вікно при зміні яскравості дисплея",
+          "label": "Яскравість"
+        },
+        "osd-kinds-caffeine": {
+          "description": "Показувати OSD спливаюче вікно, коли змінюється стан Caffeine (блокувальника бездіяльності)",
+          "label": "Кофеїн"
+        },
+        "osd-kinds-dnd": {
+          "description": "Показувати OSD спливаюче вікно при перемиканні Do Not Disturb",
+          "label": "Не турбувати"
+        },
+        "osd-kinds-keyboard-layout": {
+          "description": "Показувати спливаюче OSD, коли змінюється розкладка клавіатури",
+          "label": "Розкладка клавіатури"
+        },
+        "osd-kinds-lock-keys": {
+          "description": "Показувати OSD спливаючі вікна для змін Caps Lock, Num Lock та Scroll Lock",
+          "label": "Клавіші блокування"
+        },
+        "osd-kinds-power-profile": {
+          "description": "Показувати OSD спливаюче вікно, коли змінюється профіль живлення",
+          "label": "Профіль живлення"
+        },
+        "osd-kinds-volume": {
+          "description": "Показувати OSD спливаючі вікна при зміні гучності; використовуйте розширені налаштування, щоб окремо керувати виходом та входом",
+          "label": "Гучність"
+        },
+        "osd-kinds-volume-input": {
+          "description": "Показувати OSD спливаюче вікно при зміні гучності входу (мікрофона)",
+          "label": "Гучність входу"
+        },
+        "osd-kinds-volume-output": {
+          "description": "Показувати OSD спливаюче вікно при зміні гучності виводу (динаміка)",
+          "label": "Гучність виводу"
+        },
+        "osd-kinds-wifi": {
+          "description": "Показувати OSD спливаюче вікно, коли Wi-Fi перемикається",
+          "label": "Wi-Fi"
+        },
+        "osd-monitors": {
+          "description": "Виберіть, на яких моніторах показувати OSD спливаючі вікна; залиште порожнім, щоб показувати на всіх моніторах",
+          "label": "Монітори"
+        },
+        "osd-offset-x": {
+          "description": "Абсолютний горизонтальний відступ від краю екрана",
+          "label": "Горизонтальний відступ"
+        },
+        "osd-offset-y": {
+          "description": "Абсолютний вертикальний відступ від краю екрана",
+          "label": "Вертикальний відступ"
+        },
+        "osd-orientation": {
+          "description": "Напрямок макета для OSD спливаючих вікон",
+          "label": "Орієнтація"
+        },
+        "osd-position": {
+          "description": "Розташування на екрані для OSD спливаючих вікон",
+          "label": "Позиція на екрані"
+        },
+        "osd-scale": {
+          "description": "Масштабувати OSD спливаючі вікна відносно масштабу інтерфейсу оболонки (1.0 зберігає розмір за замовчуванням)",
+          "label": "Масштаб"
+        },
+        "password-style": {
+          "description": "Візуальний стиль для маскування введення пароля",
+          "label": "Стиль пароля"
+        },
+        "polkit-agent": {
+          "description": "Увімкнути вбудований агент автентифікації",
+          "label": "Polkit Агент"
+        },
+        "screen-time-enabled": {
+          "description": "Відстежувати використання кожної програми та показувати його в Control Center",
+          "label": "Екранний час"
+        },
+        "screenshot-copy-to-clipboard": {
+          "description": "Помістити захоплений PNG у буфер обміну",
+          "label": "Копіювати в буфер обміну"
+        },
+        "screenshot-directory": {
+          "description": "Папка для збережених файлів PNG; залиште порожнім, щоб використовувати ~/Pictures",
+          "label": "Каталог виводу",
+          "placeholder": "~/Pictures"
+        },
+        "screenshot-filename-pattern": {
+          "description": "Шаблон strftime без розширення (.png додається); використовуйте %s для unix epoch",
+          "label": "Шаблон імені файлу"
+        },
+        "screenshot-freeze-screen": {
+          "description": "Захопити робочий стіл перед вибором області, щоб рухомий вміст залишався нерухомим",
+          "label": "Заморозити екран"
+        },
+        "screenshot-pipe-command": {
+          "description": "Команда, що виконується як /bin/sh -lc з PNG на stdin; для анотаторів або завантажувачів (наприклад: swappy -f - або satty -f -)",
+          "label": "Команда конвеєра",
+          "placeholder": "swappy -f -"
+        },
+        "screenshot-pipe-to-command": {
+          "description": "Надіслати захоплений PNG команді оболонки через stdin",
+          "label": "Передати в команду"
+        },
+        "screenshot-save-to-file": {
+          "description": "Зберігати знімки екрана як файли PNG у вихідну теку",
+          "label": "Зберегти у файл"
+        },
+        "show-location": {
+          "description": "Показувати назву локації у віджетах погоди",
+          "label": "Показати розташування"
+        },
+        "sync-greeter": {
+          "button": "Синхронізувати зараз",
+          "description": "Скопіювати поточні шпалери та кольори до Noctalia Greeter (потребує схвалення адміністратора)",
+          "label": "Noctalia Привітання"
+        },
+        "telemetry": {
+          "description": "Надсилає невеликий анонімний стартовий пінг з версією, OS, композитором, роздільною здатністю монітора, RAM та UI scale",
+          "label": "Анонімний пінг при запуску"
+        },
+        "time-format": {
+          "description": "Формат часу за замовчуванням для інтерфейсу оболонки без власного налаштування",
+          "label": "Формат часу"
+        }
+      },
+      "system": {
+        "battery-device-warning-threshold": {
+          "description": "Перевизначити поріг попередження про низький заряд батареї для цього пристрою. Встановіть 0, щоб вимкнути попередження для цього пристрою.",
+          "label": "{device} Поріг попередження"
+        },
+        "battery-warning-threshold": {
+          "description": "Відсоток заряду системної батареї, при якому або нижче якого оболонка надсилає сповіщення про низький заряд, а віджети батареї використовують свій попереджувальний колір. Встановіть 0, щоб вимкнути.",
+          "label": "Поріг попередження про батарею"
+        }
+      },
+      "templates": {
+        "builtin-ids": {
+          "description": "Перемкнути вбудовані шаблони застосунків для відображення при кожній зміні теми",
+          "empty": "Немає вбудованих шаблонів.",
+          "label": "Вбудовані шаблони"
+        },
+        "community-ids": {
+          "description": "Перемкнути кешовані шаблони спільноти для рендерингу при кожній зміні теми",
+          "empty": "Наразі немає доступних шаблонів спільноти. Спочатку увімкніть шаблони спільноти та оновіть каталог.",
+          "label": "Шаблони спільноти"
+        },
+        "enable-builtins": {
+          "description": "Використовуйте вбудований каталог Templates тем для програм",
+          "label": "Увімкнути вбудовані шаблони"
+        },
+        "enable-community-templates": {
+          "description": "Завантажити та застосувати шаблони з каталогу спільноти",
+          "label": "Увімкнути спільнотні шаблони"
+        }
+      },
+      "wallpaper": {
+        "automation": {
+          "description": "Змінювати шпалери автоматично за таймером",
+          "label": "Автоматичне обертання"
+        },
+        "automation-interval": {
+          "description": "Секунди між змінами шпалер",
+          "label": "Інтервал обертання"
+        },
+        "automation-order": {
+          "description": "Обирати шпалери випадково або за алфавітом",
+          "label": "Порядок"
+        },
+        "automation-recursive": {
+          "description": "Шукати шпалери у вкладених папках",
+          "label": "Включити підпапки"
+        },
+        "directory": {
+          "description": "Папка, що містить шпалери",
+          "label": "Каталог шпалер"
+        },
+        "directory-dark": {
+          "description": "Папка шпалер, що використовується в темному режимі",
+          "label": "Каталог темного режиму",
+          "placeholder": "~/Зображення/Шпалери"
+        },
+        "directory-light": {
+          "description": "Папка шпалер, що використовується в світлому режимі теми",
+          "label": "Каталог світлої теми",
+          "placeholder": "~/Pictures/Wallpapers"
+        },
+        "edge-smoothness": {
+          "description": "Розтушовування країв переходу між шпалерами",
+          "label": "Згладжування країв"
+        },
+        "enabled": {
+          "description": "Увімкнути службу шпалер"
+        },
+        "fill-color": {
+          "description": "Суцільний колір, що відображається за зображенням у незакритих областях",
+          "label": "Колір заливки"
+        },
+        "fill-mode": {
+          "description": "Як шпалери підлаштовуються під екран",
+          "label": "Режим заповнення"
+        },
+        "monitor-directory": {
+          "label": "Каталог шпалер"
+        },
+        "monitor-directory-dark": {
+          "label": "Каталог темного режиму",
+          "placeholder": "~/Pictures/Wallpapers"
+        },
+        "monitor-directory-light": {
+          "label": "Каталог світлої теми",
+          "placeholder": "~/Зображення/Шпалери"
+        },
+        "panel": {
+          "button": "Відкрити Панель",
+          "description": "Відкрити панель вибору шпалер",
+          "label": "Панель шпалер"
+        },
+        "per-monitor-directories": {
+          "description": "Використовувати окремі папки для шпалер для кожного монітора",
+          "label": "Помоніторні каталоги"
+        },
+        "transition-duration": {
+          "description": "Довжина анімації зміни шпалер у мілісекундах",
+          "label": "Тривалість переходу"
+        },
+        "transition-on-startup": {
+          "description": "Відтворити перехід, коли оболонка вперше показує шпалери",
+          "label": "Анімувати під час запуску"
+        },
+        "transitions": {
+          "description": "Доступні ефекти при зміні шпалер (один вибирається випадковим чином при кожній зміні)",
+          "label": "Ефекти переходу"
+        }
+      }
+    },
+    "session-actions": {
+      "add": "Додати дію",
+      "clear-glyph": "Очистити",
+      "command-label": "Команда оболонки",
+      "command-placeholder": "Необов'язкова команда bash, залиште порожнім для вбудованої поведінки",
+      "command-required-placeholder": "Команда оболонки для виконання",
+      "glyph-label": "Гліф",
+      "glyph-picker-title": "Гліф дії",
+      "kind-section-label": "Поведінка",
+      "label-field": "Мітка",
+      "label-placeholder": "Необов'язковий текст кнопки",
+      "shortcut-label": "Комбінація клавіш",
+      "variant": {
+        "default": "Типово",
+        "destructive": "Деструктивна",
+        "ghost": "Ghost",
+        "outline": "Outline",
+        "primary": "Основний",
+        "secondary": "Додатковий"
+      },
+      "variant-label": "Стиль кнопки"
+    },
+    "widgets": {
+      "instances": {
+        "cpu": "CPU",
+        "date": "Дата",
+        "input-volume": "Вхідна гучність",
+        "network-rx": "Мережа: Отримано",
+        "network-tx": "Мережа: Вихід",
+        "output-volume": "Вихідна гучність",
+        "ram": "RAM",
+        "temp": "Температура"
+      },
+      "options": {
+        "always": "Завжди",
+        "cpu-temp": "Температура CPU",
+        "cpu-usage": "Використання CPU",
+        "disk-percent": "Відсоток диска",
+        "full": "Повний",
+        "gauge": "Gauge",
+        "glyph": "Гліф",
+        "gpu-temp": "Температура GPU",
+        "gpu-usage": "Використання GPU",
+        "gpu-vram": "GPU VRAM",
+        "graph": "Графік",
+        "graphic": "Графіка",
+        "icon-and-text": "Іконка та Текст",
+        "icon-only": "Лише іконка",
+        "id": "ID",
+        "input": "Введення",
+        "instance": "За розташуванням",
+        "name": "Ім'я",
+        "net-rx": "Прийом мережі",
+        "net-tx": "Мережа: Передача",
+        "none": "Немає",
+        "on-hover": "При наведенні",
+        "output": "Виведення",
+        "ram-percent": "RAM Відсоток",
+        "ram-used": "Використано RAM",
+        "screenshot-primary-fullscreen": "На весь екран",
+        "screenshot-primary-region": "Регіон",
+        "shared": "Спільний",
+        "short": "Короткий",
+        "swap-percent": "Відсоток свопу",
+        "text": "Текст",
+        "text-only": "Тільки текст",
+        "workspace-label-centered": "По центру",
+        "workspace-label-corner": "Кут",
+        "workspace-label-inside": "Всередині капсули"
+      },
+      "settings": {
+        "active-opacity": {
+          "description": "Прозорість іконки активного (фокусованого) вікна.",
+          "label": "Непрозорість активного значка"
+        },
+        "anchor": {
+          "description": "Закріпити цей віджет як якір для вирівнювання по центру",
+          "label": "Прив'язка"
+        },
+        "art-size": {
+          "description": "Розмір обкладинки медіа у пікселях",
+          "label": "Розмір обкладинки"
+        },
+        "bands": {
+          "description": "Кількість смуг візуалізатора",
+          "label": "Діапазони"
+        },
+        "capsule": {
+          "description": "Відобразити капсулу за цим віджетом",
+          "label": "Капсула"
+        },
+        "capsule-border": {
+          "description": "Роль кольору для контуру капсули; також підтримуються фіксовані шістнадцяткові кольори",
+          "label": "Рамка капсули"
+        },
+        "capsule-fill": {
+          "description": "Роль кольору для фону капсули; також підтримуються фіксовані шістнадцяткові кольори",
+          "label": "Заповнення капсули"
+        },
+        "capsule-foreground": {
+          "description": "Роль кольору для вмісту всередині капсули; також підтримуються фіксовані шістнадцяткові кольори",
+          "label": "Передній план капсули"
+        },
+        "capsule-opacity": {
+          "description": "Прозорість фону капсули",
+          "label": "Непрозорість капсули"
+        },
+        "capsule-padding": {
+          "description": "Внутрішній відступ всередині Capsule",
+          "label": "Відступ капсули"
+        },
+        "capsule-radius": {
+          "description": "Радіус заокруглення для цієї капсули віджета; залиште пустим для автоматичної овальної форми, або встановіть 0 для квадратних кутів",
+          "label": "Радіус капсули",
+          "taskbar-description": "Радіус заокруглення кутів для капсули віджета, індикаторів дисків робочих просторів та капсул груп робочих просторів; залиште пустим для автоматичної форми пігулки або встановіть 0 для квадратних кутів",
+          "workspaces-description": "Радіус заокруглення для цієї капсули віджета та пігулок робочих просторів; залиште порожнім для автоматичної форми пігулки, або встановіть 0 для квадратних кутів"
+        },
+        "centered": {
+          "description": "Центрувати смуги візуалізатора замість вирівнювання їх по краю",
+          "label": "По центру"
+        },
+        "color": {
+          "description": "Роль кольору для переднього плану віджета; також підтримуються фіксовані шістнадцяткові кольори",
+          "label": "Колір"
+        },
+        "command": {
+          "description": "Команда оболонки, що виконується при натисканні лівою кнопкою миші на цю кнопку",
+          "label": "Команда лівого кліку"
+        },
+        "custom-image": {
+          "description": "Шлях до власного зображення. Залиште порожнім, щоб використовувати гліф іконки.",
+          "dialog-title": "Вибрати власне зображення",
+          "label": "Власне зображення"
+        },
+        "custom-image-colorize": {
+          "description": "Тонувати власне зображення за допомогою налаштування кольору widget",
+          "label": "Розфарбувати власне зображення"
+        },
+        "custom-labels": {
+          "description": "Зіставити назви розкладок клавіатури з власними мітками",
+          "label": "Користувацькі мітки"
+        },
+        "cycle-command": {
+          "description": "Команда, що виконується при перемиканні розкладок клавіатури",
+          "label": "Команда перемикання"
+        },
+        "detached-panel": {
+          "description": "Відкрити шухляду як Floating Panel з власним фоном замість злиття з Bar",
+          "label": "Від'єднана панель"
+        },
+        "device": {
+          "description": "Пристрій для моніторингу або керування",
+          "label": "Пристрій"
+        },
+        "display": {
+          "active-window-description": "Іконка, заголовок або обидва на горизонтальних панелях. Вертикальні панелі залишаються лише з іконками.",
+          "description": "Режим відображення для цього віджета",
+          "label": "Дисплей"
+        },
+        "display-mode": {
+          "description": "Відображати батарею як графічну фігуру або гліф Tabler",
+          "label": "Режим відображення"
+        },
+        "drawer": {
+          "description": "Показати кнопку Tray на Бар та відкривати елементи у Панелі",
+          "label": "Використовувати висувну панель"
+        },
+        "drawer-columns": {
+          "description": "Кількість іконок Tray на рядок у панелі Drawer",
+          "label": "Стовпці шухляди"
+        },
+        "empty-color": {
+          "description": "Колірна роль, що використовується для порожніх робочих просторів; також підтримуються фіксовані шістнадцяткові кольори",
+          "label": "Порожній колір"
+        },
+        "focused-color": {
+          "description": "Роль кольору, що використовується для активного робочого простору; також підтримуються фіксовані шістнадцяткові кольори",
+          "label": "Колір фокусу"
+        },
+        "font-weight": {
+          "description": "За замовчуванням наслідує насиченість шрифту панелі",
+          "label": "Вага шрифту"
+        },
+        "format": {
+          "description": "Рядок формату часу",
+          "label": "Формат"
+        },
+        "glyph": {
+          "description": "Назва гліфа іконки",
+          "label": "Гліф"
+        },
+        "group-by-workspace": {
+          "description": "Групувати іконки панелі завдань у капсули робочого простору, коли дані композитора доступні",
+          "label": "Групувати за робочим простором"
+        },
+        "group-single-icon-per-app": {
+          "description": "При групуванні за робочим простором, згортати кілька вікон однієї програми в одну іконку зі значком-лічильником.",
+          "label": "Одна іконка на застосунок"
+        },
+        "height": {
+          "description": "Висота віджета в пікселях",
+          "label": "Висота"
+        },
+        "hidden": {
+          "description": "ID елементів Tray, які потрібно приховати",
+          "label": "Приховані елементи"
+        },
+        "hide-empty-workspaces": {
+          "description": "При групуванні за робочим простором, пропускати капсули, які не мають запущених вікон у списку Taskbar.",
+          "label": "Приховати пусті робочі столи"
+        },
+        "hide-when-empty": {
+          "description": "Приховати індикатори робочих просторів, коли немає відкритих вікон",
+          "label": "Приховати, коли порожньо",
+          "workspaces-description": "Приховати індикатори робочих столів, які не мають відкритих вікон"
+        },
+        "hide-when-full": {
+          "description": "Приховати віджет батареї, коли вона повністю заряджена",
+          "label": "Приховати, коли заповнено"
+        },
+        "hide-when-no-connected-device": {
+          "description": "Приховати віджет Bluetooth, коли жодного пристрою не підключено",
+          "label": "Приховувати, якщо немає підключених пристроїв"
+        },
+        "hide-when-no-media": {
+          "description": "Приховати медіа-віджет, коли жоден MPRIS-плеєр не активний",
+          "label": "Приховати, якщо немає медіа"
+        },
+        "hide-when-no-unread": {
+          "description": "Приховати віджет сповіщень, коли немає непрочитаних сповіщень",
+          "label": "Приховувати, якщо немає нових"
+        },
+        "hide-when-off": {
+          "description": "Приховати індикатор клавіші блокування, коли неактивний",
+          "label": "Приховувати, коли вимкнено"
+        },
+        "hide-when-plugged": {
+          "description": "Приховати віджет батареї, коли підключено до мережі",
+          "label": "Приховати, коли підключено до мережі"
+        },
+        "hide-when-single-layout": {
+          "description": "Приховати віджет розкладки клавіатури, якщо налаштовано не більше однієї розкладки",
+          "label": "Приховати, якщо макет один"
+        },
+        "high-color": {
+          "description": "Колір, що використовується для високих значень візуалізатора",
+          "label": "Високий колір"
+        },
+        "highlight-color": {
+          "description": "Колір досяг або перевищив критичний поріг",
+          "label": "Колір виділення"
+        },
+        "hot-reload": {
+          "description": "Перезавантажити скриптовий віджет, коли змінюється його джерело",
+          "label": "Hot Reload"
+        },
+        "icon-size": {
+          "description": "Розмір іконки в пікселях",
+          "label": "Розмір іконок"
+        },
+        "inactive-opacity": {
+          "description": "Непрозорість іконок для неактивних (нефокусованих) вікон.",
+          "label": "Прозорість неактивної іконки"
+        },
+        "label": {
+          "description": "Додатковий статичний текст, що відображається на цій кнопці",
+          "label": "Мітка"
+        },
+        "label-min-width": {
+          "description": "Мінімальна ширина мітки в пікселях, щоб запобігти зміні розміру",
+          "label": "Мінімальна ширина мітки"
+        },
+        "labels-only-when-occupied": {
+          "description": "Приховати мітки робочих просторів на порожніх, неактивних робочих просторах",
+          "label": "Мітки лише при зайнятості",
+          "workspaces-description": "Показувати мітки ідентифікатора або назви робочого простору на робочих просторах з відкритими вікнами та на активному робочому просторі, навіть якщо він порожній; інші порожні теги залишаються без міток"
+        },
+        "length": {
+          "description": "Довжина пробілу в пікселях",
+          "label": "Довжина"
+        },
+        "low-color": {
+          "description": "Колір для низьких значень візуалізатора",
+          "label": "Низька кольоровість"
+        },
+        "match-adjacent-spacing": {
+          "description": "Збільшити проміжки між вбудованими іконками Tray, щоб відповідати візуальному відступу сусідніх віджетів Bar (включаючи відступи Capsule)",
+          "label": "Узгодити інтервал між сусідніми віджетами"
+        },
+        "max-label-chars": {
+          "description": "Максимальна кількість символів для відображення назв робочих просторів",
+          "label": "Макс. символів мітки",
+          "workspaces-description": "Максимальна кількість символів для назв робочих просторів"
+        },
+        "max-length": {
+          "description": "Максимальна довжина віджета у пікселях",
+          "label": "Максимальна довжина"
+        },
+        "middle-command": {
+          "description": "Команда оболонки, що виконується при натисканні середньою кнопкою миші на цю кнопку. Якщо встановлено, натискання середньою кнопкою миші відкриває цю команду замість налаштувань віджета.",
+          "label": "Команда середнього кліку"
+        },
+        "min-length": {
+          "description": "Мінімальна довжина віджета в пікселях",
+          "label": "Мінімальна довжина"
+        },
+        "minimal": {
+          "description": "Показати лише мітки ID або назви робочого простору, без анімованих пігулок",
+          "label": "Мінімальний стиль",
+          "workspaces-description": "Мітки робочих просторів лише текстом, без фонових плашок або анімації ковзання"
+        },
+        "mirrored": {
+          "description": "Віддзеркалити візуалізатор навколо його центру",
+          "label": "Віддзеркалено"
+        },
+        "occupied-color": {
+          "description": "Роль кольору, що використовується для зайнятих робочих просторів; також підтримуються фіксовані шістнадцяткові кольори",
+          "label": "Колір зайнятості"
+        },
+        "only-active-workspace": {
+          "description": "Приховувати вікна на неактивних робочих просторах.",
+          "label": "Лише активний робочий стіл"
+        },
+        "path": {
+          "description": "Шлях, що використовується статистикою диска",
+          "label": "Шлях"
+        },
+        "pill-scale": {
+          "description": "Налаштувати масштаб індикаторів робочих столів",
+          "label": "Капсульна шкала",
+          "workspaces-description": "Налаштувати масштаб пігулок робочих столів"
+        },
+        "pinned": {
+          "description": "Ідентифікатори елементів Tray, які залишаються видимими на панелі, коли увімкнено режим шухляди",
+          "label": "Закріплені елементи"
+        },
+        "primary-click": {
+          "description": "Дія при натисканні лівою кнопкою миші кнопки Bar",
+          "label": "Основний клік"
+        },
+        "right-command": {
+          "description": "Команда оболонки, яка виконується при натисканні правою кнопкою миші на цій кнопці",
+          "label": "Команда правого кліка"
+        },
+        "scale": {
+          "description": "Масштабувати цей віджет відносно масштабу вмісту панелі",
+          "label": "Масштаб"
+        },
+        "scope": {
+          "description": "Запускати одне середовище виконання скрипту для кожного активного розміщення віджета, або ділити одне середовище виконання між панелями з однаковим widget id.",
+          "label": "Область виконання"
+        },
+        "script": {
+          "description": "Шлях до lua-скрипту",
+          "label": "Скрипт"
+        },
+        "scroll-down-command": {
+          "description": "Команда оболонки, що виконується при прокручуванні вниз над цією кнопкою",
+          "label": "Команда прокручування вниз"
+        },
+        "scroll-step": {
+          "description": "Відсоткова зміна, що застосовується при кожному кроці коліщатка миші",
+          "label": "Крок прокрутки"
+        },
+        "scroll-up-command": {
+          "description": "Команда оболонки, що виконується при прокручуванні вгору над цією кнопкою",
+          "label": "Команда прокрутки вгору"
+        },
+        "show-active-indicator": {
+          "description": "Показувати маленьку крапку під іконкою активного вікна в Taskbar.",
+          "label": "Індикатор активного вікна"
+        },
+        "show-all-outputs": {
+          "description": "Включити вікна з усіх дисплеїв на цьому віджеті",
+          "label": "Показати всі монітори"
+        },
+        "show-caps-lock": {
+          "description": "Показувати стан Caps Lock",
+          "label": "Показувати Caps Lock"
+        },
+        "show-condition": {
+          "description": "Відображати текст стану погоди",
+          "label": "Показати умову"
+        },
+        "show-icon": {
+          "description": "Показати іконку цього віджета",
+          "label": "Показати іконку"
+        },
+        "show-label": {
+          "description": "Показувати текст поруч з іконкою",
+          "label": "Показати мітку"
+        },
+        "show-num-lock": {
+          "description": "Показувати стан Num Lock",
+          "label": "Показати Num Lock"
+        },
+        "show-scroll-lock": {
+          "description": "Показувати стан Scroll Lock",
+          "label": "Показати Scroll Lock"
+        },
+        "show-when-idle": {
+          "description": "Залишати візуалізатор видимим, навіть коли медіа не відтворюється",
+          "label": "Показувати, коли неактивний"
+        },
+        "show-window-title": {
+          "description": "Показувати заголовок вікна поряд з його іконкою (лише на горизонтальних барах)",
+          "label": "Показувати заголовок вікна"
+        },
+        "show-workspace-label": {
+          "description": "Показувати маленьку мітку робочого простору на згрупованих капсулах панелі завдань. Вимкнути для груп лише з іконками.",
+          "label": "Мітка капсули робочого столу"
+        },
+        "stat": {
+          "description": "Системна статистика для відображення",
+          "label": "Статистика"
+        },
+        "taskbar-max-width": {
+          "description": "Загальний бюджет ширини в пікселях; заголовки вікон зменшуються, щоб поміститися, і приховуються, коли занадто вузькі",
+          "label": "Максимальна ширина панелі завдань"
+        },
+        "title-scroll": {
+          "description": "Коли заголовок віджета має прокручуватися",
+          "label": "Прокрутка заголовка"
+        },
+        "tooltip": {
+          "description": "Підказка, що відображається при наведенні на цю кнопку",
+          "label": "Підказка"
+        },
+        "tooltip-format": {
+          "description": "Необов'язковий формат для підказки",
+          "label": "Формат підказки"
+        },
+        "type": {
+          "description": "Вбудований тип widget для цього іменованого widget",
+          "label": "Тип"
+        },
+        "vertical-format": {
+          "description": "Необов'язковий формат, що використовується на вертикальних панелях",
+          "label": "Вертикальний формат"
+        },
+        "warning-color": {
+          "description": "Колір, що застосовується, коли заряд батареї досягає або опускається нижче системного порогу попередження.",
+          "label": "Колір попередження"
+        },
+        "width": {
+          "description": "Ширина віджета у пікселях",
+          "label": "Ширина"
+        },
+        "window-title-max-width": {
+          "description": "Максимальна ширина у пікселях для заголовків вікон",
+          "label": "Максимальна ширина заголовка вікна"
+        },
+        "workspace-group-capsule": {
+          "description": "Намалювати фон та рамку навколо кожного згрупованого робочого простору. Вимкніть, щоб залишити лише групування іконок та мітки дисків робочих просторів.",
+          "label": "Капсула групи робочих столів"
+        },
+        "workspace-label-placement": {
+          "description": "Кут, по центру на краю, або всередині капсули.",
+          "label": "Розміщення мітки робочого простору"
+        }
+      },
+      "types": {
+        "active-window": "Активне вікно",
+        "audio-visualizer": "Аудіовізуалізатор",
+        "battery": "Батарея",
+        "bluetooth": "Bluetooth",
+        "brightness": "Яскравість",
+        "caffeine": "Кофеїн",
+        "clipboard": "Буфер обміну",
+        "clock": "Годинник",
+        "control-center": "Центр керування",
+        "custom-button": "Користувацька кнопка",
+        "keyboard-layout": "Розкладка клавіатури",
+        "launcher": "Запускач",
+        "lock-keys": "Клавіші блокування",
+        "media": "Медіа",
+        "network": "Мережа",
+        "nightlight": "Нічне світло",
+        "notifications": "Сповіщення",
+        "power-profile": "Профіль живлення",
+        "screenshot": "Знімок екрана",
+        "scripted": "Скриптовий",
+        "session": "Сеанс",
+        "settings": "Налаштування",
+        "spacer": "Розділювач",
+        "sysmon": "Системний монітор",
+        "taskbar": "Панель завдань",
+        "test": "Тест",
+        "theme-mode": "Режим теми",
+        "tray": "Лоток",
+        "volume": "Гучність",
+        "wallpaper": "Шпалери",
+        "weather": "Погода",
+        "workspaces": "Робочі столи"
+      }
+    },
+    "window": {
+      "export-config": "Експортувати конфігурацію…",
+      "export-config-saved": "Конфігурацію експортовано.",
+      "filter-modified": "Змінено",
+      "native-title": "Налаштування Noctalia",
+      "no-results": "Налаштування не знайдено",
+      "no-results-hint": "Спробуйте іншу назву налаштування або config key.",
+      "reset-page": "Скинути сторінку",
+      "reset-page-confirm": "Підтвердити скидання",
+      "search-placeholder": "Пошук налаштувань…",
+      "support-report": "Звіт підтримки",
+      "support-report-saved": "Звіт підтримки збережено.",
+      "support-report-title": "Зберегти звіт підтримки",
+      "title": "Налаштування"
+    }
+  },
+  "setup-wizard": {
+    "browse": "Переглянути",
+    "builtin-palette": "Вбудована палітра",
+    "footer-note": "Ви можете змінити це пізніше в налаштуваннях.",
+    "get-started": "Почати",
+    "mode": "Режим",
+    "no-wallpaper-selected": "Шпалери не вибрано",
+    "select-wallpaper": "Вибрати шпалери",
+    "subtitle": "Кілька швидких варіантів для початку.",
+    "title": "Ласкаво просимо до Noctalia",
+    "wallpaper": "Шпалери",
+    "wallpaper-scheme": "Схема шпалер"
+  },
+  "system": {
+    "hardware": {
+      "unknown": "Невідомо",
+      "unknown-cpu": "Невідомий CPU",
+      "unknown-distro": "Невідомий дистрибутив",
+      "unknown-gpu": "Невідома GPU"
+    }
+  },
+  "theme": {
+    "scheme": {
+      "dysfunctional": "Нефункціональний",
+      "faithful": "Вірний",
+      "m3-content": "Вміст M3",
+      "m3-fruit-salad": "M3 Фруктовий салат",
+      "m3-monochrome": "M3 Монохромний",
+      "m3-rainbow": "M3 веселка",
+      "m3-tonal-spot": "М3 Тональна Пляма",
+      "muted": "Вимкнено звук",
+      "vibrant": "Яскравий"
+    }
+  },
+  "time": {
+    "duration": {
+      "days-hours-minutes": "{days}д {hours}год {minutes}хв",
+      "hours-minutes": "{hours} год {minutes} хв",
+      "less-than-minute": "1хв",
+      "minutes": "{minutes}хв"
+    },
+    "file": {
+      "unknown": "Невідомо"
+    },
+    "relative": {
+      "days-ago": "{count} день тому",
+      "days-ago-plural": "{count} днів тому",
+      "hours-ago": "{count} год тому",
+      "hours-ago-plural": "{count} год тому",
+      "just-now": "щойно",
+      "minutes-ago": "{count} хв тому",
+      "minutes-ago-plural": "{count} хв тому"
+    }
+  },
+  "tray": {
+    "menu": {
+      "empty": "Немає пунктів меню...",
+      "pin": "Закріпити",
+      "unpin": "Відкріпити"
+    }
+  },
+  "ui": {
+    "controls": {
+      "search-picker": {
+        "empty": "Немає результатів",
+        "placeholder": "Пошук..."
+      },
+      "select": {
+        "placeholder": "Виберіть опцію"
+      }
+    },
+    "dialogs": {
+      "color-picker": {
+        "title": "Колір"
+      },
+      "file": {
+        "actions": {
+          "open": "Відкрити",
+          "save": "Зберегти",
+          "select-folder": "Вибрати теку"
+        },
+        "empty-filtered": "Жодного файлу не відповідає поточному фільтру",
+        "entry": {
+          "folder": "Папка"
+        },
+        "filename-placeholder": "Ім'я файлу",
+        "filter-placeholder": "Фільтр...",
+        "sort": {
+          "ascending": "Вгору",
+          "date": "Дата",
+          "descending": "Розгорнути",
+          "name": "Ім'я",
+          "size": "Розмір"
+        },
+        "title": {
+          "default": "Діалог файлів",
+          "open": "Відкрити файл",
+          "save": "Зберегти файл",
+          "select-folder": "Вибрати теку"
+        }
+      },
+      "glyph-picker": {
+        "all-categories": "Усі",
+        "search-placeholder": "Пошук символів…",
+        "title": "Виберіть гліф"
+      }
+    }
+  },
+  "wallpaper": {
+    "panel": {
+      "all-monitors": "УСІ",
+      "color-title": "Колір шпалер",
+      "favorite-palette-label": "Кольори",
+      "favorite-theme-label": "Тема",
+      "filter-placeholder": "Фільтр...",
+      "flatten": "Згладити",
+      "no-directory-configured": "Не налаштовано жодної директорії",
+      "sort-date-asc": "Сортувати за датою (спочатку найстаріші)",
+      "sort-date-desc": "Сортувати за датою (спочатку новіші)",
+      "sort-name-asc": "Сортувати за назвою (А-Я)",
+      "sort-name-desc": "Сортувати за назвою (Z-A)",
+      "title": "Шпалери"
+    }
+  },
+  "weather": {
+    "conditions": {
+      "full": {
+        "clear-sky": "Ясно",
+        "drizzle": "Мряка",
+        "fog": "Туман",
+        "mainly-clear": "Переважно ясно",
+        "overcast": "Похмуро",
+        "partly-cloudy": "Мінлива хмарність",
+        "rain-showers": "Зливи",
+        "snow": "Сніг",
+        "snow-showers": "Снігові зливи",
+        "thunderstorm": "Гроза",
+        "unknown": "Невідомо"
+      },
+      "short": {
+        "clear": "Очистити",
+        "cloudy": "Хмарно",
+        "drizzle": "Мряка",
+        "fog": "Туман",
+        "mostly-clear": "Переважно ясно",
+        "overcast": "Хмарно",
+        "showers": "Зливи",
+        "snow": "Сніг",
+        "snow-showers": "Снігові зливи",
+        "storm": "Шторм",
+        "weather": "Погода"
+      }
+    },
+    "errors": {
+      "fetch-failed": "Не вдалося отримати погоду",
+      "parse-weather": "Не вдалося розібрати відповідь погоди"
+    }
+  },
+  "window-switcher": {
+    "empty": "Немає відкритих вікон",
+    "hint": "Tab · Shift+Tab · Клавіші зі стрілками · Відпустіть Alt, щоб перемкнути · Esc, щоб скасувати",
+    "title": "Windows"
+  }
+}

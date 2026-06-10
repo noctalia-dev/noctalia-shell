@@ -390,14 +390,6 @@ std::unique_ptr<Flex> BluetoothTab::create() {
 
   tab->addChild(std::move(pairingCard));
 
-  auto listCard = ui::column({
-      .out = &m_listCard,
-      .flexGrow = 1.0f,
-      .configure = [scale, opacity = panelCardOpacity(), borders = panelBordersEnabled()](Flex& card) {
-        applySectionCardStyle(card, scale, opacity, borders);
-      },
-  });
-
   auto listScroll = ui::scrollView({
       .out = &m_listScroll,
       .scrollbarVisible = true,
@@ -412,10 +404,9 @@ std::unique_ptr<Flex> BluetoothTab::create() {
   m_list = listScroll->content();
   m_list->setDirection(FlexDirection::Vertical);
   m_list->setAlign(FlexAlign::Stretch);
-  m_list->setGap(Style::spaceXs * scale);
-  listCard->addChild(std::move(listScroll));
+  m_list->setGap(Style::spaceMd * scale);
 
-  tab->addChild(std::move(listCard));
+  tab->addChild(std::move(listScroll));
   return tab;
 }
 
@@ -456,7 +447,6 @@ void BluetoothTab::onClose() {
   m_pairingButtonRow = nullptr;
   m_pairingAccept = nullptr;
   m_pairingReject = nullptr;
-  m_listCard = nullptr;
   m_listScroll = nullptr;
   m_list = nullptr;
   m_powerToggle = nullptr;
@@ -638,9 +628,15 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
 
   const auto& s = m_service->state();
 
-  // Bluetooth power row
+  // Adapter card: power + discoverable toggles
   {
-    auto row = ui::row(
+    auto adapterCard = ui::column({
+        .configure = [scale, opacity = panelCardOpacity(), borders = panelBordersEnabled()](Flex& card) {
+          applySectionCardStyle(card, scale, opacity, borders);
+        },
+    });
+
+    auto powerRow = ui::row(
         {.align = FlexAlign::Center,
          .gap = Style::spaceSm * scale,
          .minHeight = Style::controlHeightSm * scale,
@@ -653,7 +649,7 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
         })
     );
 
-    row->addChild(
+    powerRow->addChild(
         ui::spinner({
             .out = &m_scanSpinner,
             .color = colorSpecFromRole(ColorRole::Primary),
@@ -662,7 +658,7 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
         })
     );
 
-    row->addChild(
+    powerRow->addChild(
         ui::button({
             .out = &m_rescanButton,
             .glyph = "refresh",
@@ -682,7 +678,7 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
         })
     );
 
-    row->addChild(
+    powerRow->addChild(
         ui::toggle({
             .out = &m_powerToggle,
             .checkedImmediate = s.powered,
@@ -697,12 +693,9 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
         })
     );
 
-    m_list->addChild(std::move(row));
-  }
+    adapterCard->addChild(std::move(powerRow));
 
-  // Visible row
-  {
-    auto row = ui::row(
+    auto visibleRow = ui::row(
         {.align = FlexAlign::Center,
          .gap = Style::spaceSm * scale,
          .minHeight = Style::controlHeightSm * scale,
@@ -727,10 +720,10 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
         })
     );
 
-    m_list->addChild(std::move(row));
-  }
+    adapterCard->addChild(std::move(visibleRow));
 
-  m_list->addChild(ui::separator({.spacing = Style::spaceMd * scale}));
+    m_list->addChild(std::move(adapterCard));
+  }
 
   if (!s.powered) {
     m_list->addChild(
@@ -773,14 +766,12 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
     return;
   }
 
+  Flex* bucketCard = nullptr;
   DeviceBucket currentBucket = DeviceBucket::Connected;
   bool first = true;
   for (const auto& device : devices) {
     const auto bucket = bucketFor(device);
     if (first || bucket != currentBucket) {
-      if (!first) {
-        m_list->addChild(ui::separator({.spacing = Style::spaceMd * scale}));
-      }
       std::string sectionText;
       switch (bucket) {
       case DeviceBucket::Connected:
@@ -793,20 +784,20 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
         sectionText = i18n::tr("control-center.bluetooth.sections.available");
         break;
       }
-      m_list->addChild(
-          ui::label({
-              .text = sectionText,
-              .fontSize = Style::fontSizeBody * scale,
-              .color = colorSpecFromRole(ColorRole::Secondary),
-              .fontWeight = FontWeight::Bold,
-          })
-      );
+      auto card = ui::column({
+          .configure = [scale, opacity = panelCardOpacity(), borders = panelBordersEnabled()](Flex& c) {
+            applySectionCardStyle(c, scale, opacity, borders);
+          },
+      });
+      card->addChild(makeCardHeaderRow(sectionText, scale));
+      bucketCard = card.get();
+      m_list->addChild(std::move(card));
       currentBucket = bucket;
       first = false;
     }
     auto row = std::make_unique<BluetoothDeviceRow>(device, m_service, scale);
     auto* rowPtr = row.get();
-    m_list->addChild(std::move(row));
+    bucketCard->addChild(std::move(row));
     rowPtr->startConnectingSpinner();
   }
   m_list->layout(renderer);

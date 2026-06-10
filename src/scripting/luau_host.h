@@ -1,16 +1,22 @@
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <filesystem>
 #include <functional>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 struct lua_State;
 class CompositorPlatform;
+class HttpClient;
+struct HttpRequest;
 
 namespace process {
   struct RunResult;
@@ -31,6 +37,11 @@ public:
   using AsyncCommandResultHandler =
       std::function<void(std::uint64_t hostId, int callbackRef, process::RunResult result)>;
   using AsyncProcessMatchResultHandler = std::function<void(std::uint64_t hostId, int callbackRef, bool matched)>;
+  using AsyncHttpResultHandler = std::function<
+      void(std::uint64_t hostId, int callbackRef, bool ok, int status, std::string body, bool isDownload)>;
+  // Registers a `noctalia.state.watch` callback with the shared store (the runtime
+  // owns the token + delivery, so registration is delegated back to it).
+  using StateWatchHandler = std::function<void(std::string key, int callbackRef)>;
 
   // Compile and load `source` as a chunk named `chunkName`. The chunk is left
   // on the Lua stack as a callable; call run() to execute it.
@@ -63,24 +74,71 @@ public:
   [[nodiscard]] std::uint64_t hostId() const noexcept { return m_hostId; }
   void setScriptContext(scripting::ScriptedWidgetBindingContext* context) { m_scriptContext = context; }
   void setMuteErrors(bool mute) { m_muteErrors = mute; }
+  // The plugin's own directory: relative filesystem/translation paths resolve against it.
+  void setPluginDir(std::filesystem::path dir) { m_pluginDir = std::move(dir); }
+  [[nodiscard]] const std::filesystem::path& pluginDir() const noexcept { return m_pluginDir; }
+  // The owning plugin id ("author/plugin"): scopes the shared state store.
+  void setPluginId(std::string id) { m_pluginId = std::move(id); }
+  void setStateWatchHandler(StateWatchHandler handler) { m_stateWatchHandler = std::move(handler); }
+
+  // noctalia.state.* — host-mediated per-plugin shared data.
+  void stateSet(const std::string& key, std::string json);
+  [[nodiscard]] std::optional<std::string> stateGet(const std::string& key) const;
+  void stateWatch(std::string key, int callbackRef);
+  bool callStateWatchCallback(int callbackRef, const std::string& json, std::chrono::milliseconds budget);
+  [[nodiscard]] bool hasStateWatchCallback(int callbackRef) const;
+
+  // noctalia.runStream — run a long-lived process and deliver each stdout line to a
+  // Lua callback. Cancellable: every active stream's process is terminated when the
+  // host is destroyed (reload / runtime stop), so editing the script or removing the
+  // widget kills the subprocess instead of leaking it.
+  using StreamLineHandler = std::function<void(std::uint64_t hostId, int callbackRef, std::string line)>;
+  void setStreamLineHandler(StreamLineHandler handler) { m_streamLineHandler = std::move(handler); }
+  [[nodiscard]] bool startStream(std::string command, int callbackRef);
+  bool callStreamCallback(int callbackRef, const std::string& line, std::chrono::milliseconds budget);
+  [[nodiscard]] bool hasStreamCallback(int callbackRef) const;
+
+  // Load the plugin's own translations/<lang>.json (over en.json) into a flat dotted-key
+  // catalog. Call after setPluginDir().
+  void loadTranslations();
+  // Resolve `key` in the plugin catalog and interpolate {name} placeholders from `subst`.
+  // A missing key is logged and returned verbatim (no silent fallback chain).
+  [[nodiscard]] std::string
+  translate(std::string_view key, const std::unordered_map<std::string, std::string>& subst) const;
+  [[nodiscard]] bool hasTranslation(std::string_view key) const { return m_translations.contains(std::string(key)); }
   void setAsyncCommandResultHandler(AsyncCommandResultHandler handler) {
     m_asyncCommandResultHandler = std::move(handler);
   }
   void setAsyncProcessMatchResultHandler(AsyncProcessMatchResultHandler handler) {
     m_asyncProcessMatchResultHandler = std::move(handler);
   }
+  void setHttpClient(HttpClient* client) { m_httpClient = client; }
+  void setAsyncHttpResultHandler(AsyncHttpResultHandler handler) { m_asyncHttpResultHandler = std::move(handler); }
   [[nodiscard]] bool startAsyncCommand(std::string command, int callbackRef, std::chrono::milliseconds timeout);
   [[nodiscard]] bool startAsyncProcessMatch(std::vector<std::string> needles, int callbackRef);
+  // HTTP/download dispatch to the main-thread HttpClient; the response is delivered back as an
+  // AsyncHttpResult event. `isDownload` selects the on_done(bool) vs on_response(table) callback shape.
+  [[nodiscard]] bool startAsyncHttp(HttpRequest request, int callbackRef);
+  [[nodiscard]] bool startAsyncDownload(std::string url, std::string destPath, int callbackRef);
+  bool callAsyncHttpCallback(
+      int callbackRef, bool ok, int status, const std::string& body, std::chrono::milliseconds budget
+  );
+  bool callAsyncDownloadCallback(int callbackRef, bool ok, std::chrono::milliseconds budget);
   [[nodiscard]] bool hasAsyncCommandCallback(int callbackRef) const;
   [[nodiscard]] bool hasAsyncProcessMatchCallback(int callbackRef) const;
+  [[nodiscard]] bool hasAsyncHttpCallback(int callbackRef) const;
   void interruptIfBudgetExceeded(lua_State* L);
   void scriptLog(std::string message);
+  // Request the runtime tick rate (how often update() fires). A runtime concern, so
+  // it lives on noctalia.* and works for every entry type, including headless services.
+  void scriptSetUpdateInterval(int ms);
   void scriptNotifyInfo(std::string title, std::string body);
   void scriptNotifyError(std::string title, std::string body);
   [[nodiscard]] bool scriptCopyToClipboard(std::string text, std::string mimeType);
   [[nodiscard]] std::optional<std::string> scriptFocusedOutputName() const;
 
 private:
+  void stopAllStreams() noexcept;
   bool callGlobalInternal(const char* name, int args, std::chrono::milliseconds budget);
   bool callWithBudget(const char* name, int args, int results, std::chrono::milliseconds budget);
   void beginBudget(std::string_view name, std::chrono::milliseconds budget);
@@ -90,13 +148,24 @@ private:
   scripting::ScriptApiContext& m_api;
   CompositorPlatform* m_platform = nullptr;
   scripting::ScriptedWidgetBindingContext* m_scriptContext = nullptr;
+  std::filesystem::path m_pluginDir;
+  std::string m_pluginId;
+  std::unordered_map<std::string, std::string> m_translations;
+  std::unordered_set<int> m_stateWatchCallbackRefs;
+  StateWatchHandler m_stateWatchHandler;
+  std::unordered_set<int> m_streamCallbackRefs;
+  std::vector<std::shared_ptr<std::atomic<bool>>> m_streamCancels;
+  StreamLineHandler m_streamLineHandler;
   lua_State* m_L = nullptr; // main state, frozen by luaL_sandbox
   lua_State* m_T = nullptr; // sandboxed thread; user code runs here
   int m_threadRef = -1;     // registry ref pinning m_T against the GC
   std::unordered_set<int> m_asyncCommandCallbackRefs;
   std::unordered_set<int> m_asyncProcessMatchCallbackRefs;
+  std::unordered_set<int> m_asyncHttpCallbackRefs;
+  HttpClient* m_httpClient = nullptr;
   AsyncCommandResultHandler m_asyncCommandResultHandler;
   AsyncProcessMatchResultHandler m_asyncProcessMatchResultHandler;
+  AsyncHttpResultHandler m_asyncHttpResultHandler;
   std::chrono::steady_clock::time_point m_callDeadline{};
   std::string m_currentCallName;
   bool m_budgetActive = false;

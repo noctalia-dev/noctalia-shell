@@ -55,6 +55,19 @@ std::vector<ShortcutConfig> defaultControlCenterShortcuts() {
   };
 }
 
+std::vector<PluginSourceConfig> defaultPluginSources() {
+  return {
+      {.kind = PluginSourceKind::Git,
+       .name = "official",
+       .location = "https://github.com/noctalia-dev/official-plugins",
+       .autoUpdate = false},
+      {.kind = PluginSourceKind::Git,
+       .name = "community",
+       .location = "https://github.com/noctalia-dev/community-plugins",
+       .autoUpdate = false},
+  };
+}
+
 std::vector<SessionPanelActionConfig> defaultSessionPanelActions() {
   return {
       SessionPanelActionConfig{
@@ -66,7 +79,7 @@ std::vector<SessionPanelActionConfig> defaultSessionPanelActions() {
           KeyChord{XKB_KEY_2, 0}
       },
       SessionPanelActionConfig{
-          "suspend", true, std::nullopt, std::nullopt, std::nullopt, SessionActionButtonVariant::Default,
+          "lock_and_suspend", true, std::nullopt, std::nullopt, std::nullopt, SessionActionButtonVariant::Default,
           KeyChord{XKB_KEY_3, 0}
       },
       SessionPanelActionConfig{

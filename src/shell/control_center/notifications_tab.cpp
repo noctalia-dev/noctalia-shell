@@ -250,7 +250,7 @@ namespace {
     metrics.metaLine = notificationDisplayAppName(entry.notification) + " • " + relativeMetaLine(entry.notification);
 
     const float metaHeight = measuredTextHeight(
-        renderer, metrics.metaLine, Style::fontSizeCaption * scale, FontWeight::Normal, metrics.metaTextWidth, 0
+        renderer, metrics.metaLine, Style::fontSizeMini * scale, FontWeight::Normal, metrics.metaTextWidth, 0
     );
     const float headerHeight = std::max({iconPx, actionButtonSize, metaHeight});
     const float summaryHeight = measuredTextHeight(
@@ -339,7 +339,7 @@ namespace {
 
       m_meta = static_cast<Label*>(m_leftCluster->addChild(
           ui::label({
-              .fontSize = Style::fontSizeCaption * scale,
+              .fontSize = Style::fontSizeMini * scale,
               .flexGrow = 1.0f,
           })
       ));
@@ -656,7 +656,7 @@ std::unique_ptr<Flex> NotificationsTab::create() {
                   {.label = i18n::tr("control-center.notifications.filter.older")},
               },
           .selectedIndex = m_filterIndex,
-          .fontSize = Style::fontSizeBody * scale,
+          .fontSize = Style::fontSizeCaption * scale,
           .scale = scale,
           .surfaceOpacity = panelCardOpacity(),
           .equalSegmentWidths = true,

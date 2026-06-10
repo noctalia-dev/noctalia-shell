@@ -3,7 +3,6 @@
 #include "cursor-shape-v1-client-protocol.h"
 #include "i18n/i18n.h"
 #include "render/scene/node.h"
-#include "scripting/scripted_widget_manifest.h"
 #include "shell/settings/color_spec_picker.h"
 #include "shell/settings/font_weight_catalog.h"
 #include "shell/settings/settings_content.h"
@@ -307,8 +306,8 @@ namespace settings {
         return "puzzle";
       case WidgetReferenceKind::Named:
         return "tag";
-      case WidgetReferenceKind::Preset:
-        return "script";
+      case WidgetReferenceKind::Plugin:
+        return "puzzle";
       case WidgetReferenceKind::Unknown:
         return "help-circle";
       }
@@ -320,7 +319,7 @@ namespace settings {
       case WidgetReferenceKind::BuiltIn:
         return colorSpecFromRole(ColorRole::Primary);
       case WidgetReferenceKind::Named:
-      case WidgetReferenceKind::Preset:
+      case WidgetReferenceKind::Plugin:
         return colorSpecFromRole(ColorRole::Secondary);
       case WidgetReferenceKind::Unknown:
         return colorSpecFromRole(ColorRole::Error);
@@ -1112,11 +1111,6 @@ namespace settings {
       for (const auto& spec : specs) {
         knownKeys.insert(spec.schema.key);
       }
-      // `script` is the identity of a scripted widget, not a raw/deletable extra — when a Lua
-      // manifest drives the settings it isn't among the specs, so guard it explicitly.
-      if (widgetIt->second.type == "scripted") {
-        knownKeys.insert("script");
-      }
 
       std::vector<std::string> rawKeys;
       for (const auto& [key, value] : widgetIt->second.settings) {
@@ -1421,21 +1415,6 @@ namespace settings {
                 *panel, entry,
                 makePathBrowseControl(
                     ctx, path, settingValueAsString(value), "photo", std::move(options), PathBrowseKind::File
-                )
-            );
-          } else if (widgetType == "scripted" && spec.schema.key == "script") {
-            FileDialogOptions options;
-            options.mode = FileDialogMode::Open;
-            options.defaultViewMode = FileDialogViewMode::List;
-            options.title = i18n::tr("settings.controls.path-browse.file-title");
-            options.extensions = {".lua", ".luau"};
-            const std::string currentValue = settingValueAsString(value);
-            const std::string startValue =
-                currentValue.empty() ? std::string{} : scripting::resolveScriptPath(currentValue).string();
-            ctx.makeRow(
-                *panel, entry,
-                makePathBrowseControl(
-                    ctx, path, currentValue, "file-text", std::move(options), PathBrowseKind::File, startValue
                 )
             );
           } else {

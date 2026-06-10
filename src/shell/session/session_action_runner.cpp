@@ -182,9 +182,7 @@ SessionActionRunner::SessionActionRunner(CompositorPlatform& platform, LockScree
 void SessionActionRunner::setHooks(SessionActionHooks hooks) { m_hooks = std::move(hooks); }
 
 void SessionActionRunner::invoke(const SessionPanelActionConfig& cfg) const {
-  const bool commandOverridesBuiltin =
-      cfg.action != "lock_and_suspend" && cfg.command.has_value() && !StringUtils::trim(*cfg.command).empty();
-  if (commandOverridesBuiltin) {
+  if (cfg.command.has_value() && !StringUtils::trim(*cfg.command).empty()) {
     runShellCommand(hookFor(cfg.action), StringUtils::trim(*cfg.command), cfg.action);
     return;
   }

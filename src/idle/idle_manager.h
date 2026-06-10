@@ -19,8 +19,11 @@ public:
   /// Runs the resolved idle or resume action for this behavior.
   using ActionRunner = std::function<bool(const IdleBehaviorConfig& behavior, const IdleActionRequest& action)>;
   /// Starts the pre-action fade overlay; call `onFadeComplete` once every output has finished fading.
+  /// `willLockSession` is true when the idle action locks the session, so the caller can capture
+  /// a clean desktop snapshot before the overlay fades in.
   using GraceBeginCallback = std::function<void(
-      const std::string& behaviorName, std::chrono::milliseconds fadeDuration, std::function<void()> onFadeComplete
+      const std::string& behaviorName, std::chrono::milliseconds fadeDuration, bool willLockSession,
+      std::function<void()> onFadeComplete
   )>;
   /// `userCancelled` is true when input resumed during the fade before the idle action ran.
   using GraceEndCallback = std::function<void(bool userCancelled)>;
@@ -35,6 +38,8 @@ public:
   void setActionRunner(ActionRunner runner);
   void setLiveIdleChangeCallback(std::function<void()> callback);
   void reload(const IdleConfig& config);
+  /// D-Bus screensaver inhibits (e.g. Chrome video playback). Suppresses idle actions while > 0.
+  void setScreenSaverInhibitLocks(std::int64_t locks);
   /// Seconds the compositor has reported session-idle (1s heartbeat notification); 0 when active.
   [[nodiscard]] std::int64_t liveIdleSeconds() const noexcept { return m_liveIdleSeconds; }
   void onSecondTick();
@@ -62,6 +67,8 @@ private:
   void destroyHeartbeat();
   void notifyLiveIdleChanged();
   void createBehavior(const IdleBehaviorConfig& config);
+  void recreateBehaviorNotification(BehaviorState& behavior);
+  void recreateBehaviorNotifications();
   void runBehavior(BehaviorState& behavior);
   void runResumeBehavior(BehaviorState& behavior);
   bool runAction(const IdleBehaviorConfig& behavior, const IdleActionRequest& action) const;
@@ -83,4 +90,6 @@ private:
   ext_idle_notification_v1* m_heartbeatNotification = nullptr;
   bool m_heartbeatCompositorIdle = false;
   std::int64_t m_liveIdleSeconds = 0;
+  std::int64_t m_screenSaverInhibitLocks = 0;
+  bool m_idledWhileScreenSaverInhibited = false;
 };

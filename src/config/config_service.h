@@ -73,9 +73,10 @@ public:
   // Persisted wallpaper paths (written to settings.toml, app-managed).
   [[nodiscard]] std::string getWallpaperPath(const std::string& connectorName) const;
   [[nodiscard]] std::string getDefaultWallpaperPath() const;
-  // Most recently applied wallpaper path (any output, or default). Used as the palette/template input
-  // so colors are generated even when wallpaper management is only used on a subset of displays.
+  // Last applied wallpaper, else default. Drives palette generation and template previews.
   [[nodiscard]] std::string getPaletteWallpaperPath() const;
+  // Greeter sync fallback when no monitor-specific path is chosen.
+  [[nodiscard]] std::string getGreeterSyncWallpaperPath() const;
   void setWallpaperPath(const std::optional<std::string>& connectorName, const std::string& path);
   void setWallpaperChangeCallback(ChangeCallback callback);
 
@@ -91,6 +92,15 @@ public:
       const std::optional<std::string>& connectorName, const std::string& path, const WallpaperFavorite* applyTheme,
       const std::vector<std::string>& allConnectors
   );
+
+  // Add/remove a plugin id ("author/plugin") in [plugins].enabled. Persists to
+  // settings.toml and triggers the reload pipeline. No-op if already in that state.
+  void setPluginEnabled(std::string_view pluginId, bool enabled);
+
+  // Add (replacing any same-named entry) or remove a plugin source in
+  // [[plugins.source]], then trigger the reload pipeline.
+  void addPluginSource(const PluginSourceConfig& source);
+  void removePluginSource(std::string_view name);
 
   // Persist a theme-mode override to settings.toml and trigger the reload pipeline.
   void setThemeMode(ThemeMode mode);

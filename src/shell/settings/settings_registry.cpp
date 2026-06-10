@@ -32,7 +32,7 @@ namespace settings {
 
     constexpr int kBarMarginMax = 4096;
 
-    constexpr std::array<SettingsSectionDescriptor, 17> kSettingsSections{{
+    constexpr std::array<SettingsSectionDescriptor, 18> kSettingsSections{{
         {SettingsSection::Appearance, "appearance", "adjustments-horizontal"},
         {SettingsSection::Wallpaper, "wallpaper", "paint"},
         {SettingsSection::Templates, "templates", "color-swatch"},
@@ -46,10 +46,11 @@ namespace settings {
         {SettingsSection::System, "system", "activity-heartbeat"},
         {SettingsSection::Services, "services", "stack-2"},
         {SettingsSection::Location, "location", "map-pin"},
-        {SettingsSection::Idle, "idle", "coffee"},
+        {SettingsSection::Power, "power", "bolt"},
         {SettingsSection::Hooks, "hooks", "link"},
         {SettingsSection::Niri, "niri", "niri"},
         {SettingsSection::Bar, "bar", "crop-3-2", false},
+        {SettingsSection::Plugins, "plugins", "puzzle", true, true},
     }};
 
     const SettingsSectionDescriptor& descriptorFor(SettingsSection section) {
@@ -1044,8 +1045,8 @@ namespace settings {
       entries.push_back(std::move(e));
     }
     entries.push_back(makeEntry(
-        SettingsSection::Panels, "session-panel", tr("settings.schema.panels.session-actions.label"),
-        tr("settings.schema.panels.session-actions.description"), {"shell", "session", "actions"},
+        SettingsSection::Power, "session-panel", tr("settings.schema.power.session-actions.label"),
+        tr("settings.schema.power.session-actions.description"), {"shell", "session", "actions"},
         SessionPanelActionsSetting{.items = cfg.shell.session.actions},
         "session panel power menu logout reboot shutdown lock command actions order"
     ));
@@ -1117,6 +1118,12 @@ namespace settings {
         SettingsSection::Security, "lock-screen", tr("settings.schema.lockscreen.tint-intensity.label"),
         tr("settings.schema.lockscreen.tint-intensity.description"), {"lockscreen", "tint_intensity"},
         sliderFor(cfg.lockscreen.tintIntensity, noctalia::config::schema::kUnitRange, false), "lock screen tint"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Security, "lock-screen", tr("settings.schema.lockscreen.monitors.label"),
+        tr("settings.schema.lockscreen.monitors.description"), {"lockscreen", "monitors"},
+        ListSetting{.items = cfg.lockscreen.monitors, .suggestedOptions = env.availableOutputs},
+        "lock screen monitor output connector"
     ));
     {
       const SettingVisibility lockscreenWallpaperOn{{"lockscreen", "blurred_desktop"}, {"false"}};
@@ -1905,7 +1912,7 @@ namespace settings {
 
     // Idle
     entries.push_back(makeEntry(
-        SettingsSection::Idle, "general", tr("settings.schema.idle.pre-action-fade.label"),
+        SettingsSection::Power, "idle", tr("settings.schema.idle.pre-action-fade.label"),
         tr("settings.schema.idle.pre-action-fade.description"), {"idle", "pre_action_fade_seconds"},
         StepperSetting{
             .value = static_cast<int>(std::lround(std::clamp(cfg.idle.preActionFadeSeconds, 0.0f, 30.0f))),
@@ -1917,7 +1924,7 @@ namespace settings {
         "idle fade dim seconds overlay"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Idle, "behavior", tr("settings.schema.idle.behaviors.label"),
+        SettingsSection::Power, "idle", tr("settings.schema.idle.behaviors.label"),
         tr("settings.schema.idle.behaviors.description"), {"idle", "behavior"},
         IdleBehaviorsSetting{.items = cfg.idle.behaviors},
         "idle behavior timeout command resume screen lock dpms suspend lock_and_suspend caffeine"

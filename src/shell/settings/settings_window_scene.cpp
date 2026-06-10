@@ -9,6 +9,8 @@
 #include "shell/settings/settings_bar_management.h"
 #include "shell/settings/settings_content.h"
 #include "shell/settings/settings_content_common.h"
+#include "shell/settings/settings_content_plugins.h"
+#include "shell/settings/settings_control_factory.h"
 #include "shell/settings/settings_sidebar.h"
 #include "shell/settings/settings_window.h"
 #include "system/battery_warning_monitor.h"
@@ -94,12 +96,12 @@ namespace {
       if (!descriptor.sidebar) {
         continue;
       }
-      const bool present =
-          std::find_if(
-              entries.begin(), entries.end(),
-              [section = descriptor.section](const settings::SettingEntry& entry) { return entry.section == section; }
-          )
-          != entries.end();
+      const bool present = descriptor.alwaysShow
+          || std::find_if(
+                 entries.begin(), entries.end(), [section = descriptor.section](const settings::SettingEntry& entry) {
+                   return entry.section == section;
+                 }
+             ) != entries.end();
       if (present) {
         sections.push_back(descriptor.section);
       }
@@ -499,6 +501,54 @@ void SettingsWindow::rebuildSettingsContent() {
   settings::addSettingsContentSections(
       *m_contentContainer, m_settingsRegistry, makeContentContext(cfg, selectedBar, selectedMonitorOverride)
   );
+
+  if (m_selectedSection == "plugins" && m_pluginManager != nullptr) {
+    if (m_pluginListDirty) {
+      m_pluginList = m_pluginManager->list();
+      m_pluginListDirty = false;
+    }
+    settings::SettingsControlFactory pluginFactory(makeContentContext(cfg, selectedBar, selectedMonitorOverride));
+    settings::addSettingsPlugins(
+        *m_contentContainer,
+        settings::SettingsPluginsContext{
+            .scale = scale,
+            .selectedSection = m_selectedSection,
+            .plugins = m_pluginList,
+            .sources = cfg.plugins.sources,
+            .setEnabled =
+                [this](std::string id, bool enable) {
+                  if (enable) {
+                    (void)m_pluginManager->enable(id);
+                  } else {
+                    m_pluginManager->disable(id);
+                  }
+                  m_pluginListDirty = true;
+                  requestSceneRebuild();
+                },
+            .updateSource = [this](std::string source) { m_pluginManager->update(std::move(source)); },
+            .removeSource =
+                [this](std::string source) {
+                  m_pluginManager->removeSource(std::move(source));
+                  m_pluginListDirty = true;
+                  requestSceneRebuild();
+                },
+            .refresh =
+                [this]() {
+                  m_pluginListDirty = true;
+                  requestSceneRebuild();
+                },
+            .config = &cfg,
+            .controlFactory = &pluginFactory,
+            .configurePluginId = m_configurePluginId,
+            .showAdvanced = m_showAdvanced,
+            .onConfigure =
+                [this](std::string id) {
+                  m_configurePluginId = (m_configurePluginId == id) ? std::string{} : std::move(id);
+                  requestSceneRebuild();
+                },
+        }
+    );
+  }
 }
 
 std::unique_ptr<Flex> SettingsWindow::buildHeaderRow(float scale) {

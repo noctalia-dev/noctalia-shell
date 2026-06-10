@@ -35,10 +35,11 @@ namespace settings {
     System,
     Services,
     Location,
-    Idle,
+    Power,
     Hooks,
     Niri,
     Bar,
+    Plugins,
   };
 
   struct SettingsSectionDescriptor {
@@ -46,6 +47,8 @@ namespace settings {
     std::string_view id;
     std::string_view glyph;
     bool sidebar = true;
+    // Show in the sidebar even with no registry entries (fully custom-content section).
+    bool alwaysShow = false;
   };
 
   struct ToggleSetting {

@@ -439,7 +439,7 @@ void DialogPopupHost::buildScene(std::uint32_t width, std::uint32_t height) {
   // Popup grabs keyboard focus before the compositor delivers a text_input enter; allow IME activation on
   // keyboard focus alone. Other surfaces keep the strict protocol-enter gate.
   m_inputDispatcher.setTextInputContext(
-      m_surface->wlSurface(), m_wayland->textInputService(), /*keyboardFocusActivation=*/true
+      m_surface->wlSurface(), m_wayland->textInputService(), /*keyboardFocusActivation=*/true, m_parentSurface
   );
   m_inputDispatcher.setCursorShapeCallback([this](std::uint32_t serial, std::uint32_t shape) {
     m_wayland->setCursorShape(serial, shape);

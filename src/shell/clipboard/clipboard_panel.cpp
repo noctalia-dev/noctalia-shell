@@ -1439,6 +1439,26 @@ void ClipboardPanel::togglePinSelected() {
   PanelManager::instance().refresh();
 }
 
+void ClipboardPanel::clearHistoryFromIpc() {
+  if (m_clipboard == nullptr) {
+    return;
+  }
+
+  const auto& history = m_clipboard->history();
+  if (history.empty()) {
+    return;
+  }
+
+  resetClearConfirmation();
+  resetDeleteConfirmation();
+  const bool hasPinned = std::ranges::any_of(history, [](const ClipboardEntry& entry) { return entry.pinned; });
+  if (hasPinned) {
+    performClearUnpinnedHistory();
+  } else {
+    performClearAllHistory();
+  }
+}
+
 void ClipboardPanel::requestClearUnpinnedHistory() {
   if (m_clipboard == nullptr) {
     return;

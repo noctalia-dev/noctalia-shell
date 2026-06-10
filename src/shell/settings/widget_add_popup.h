@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -65,7 +66,7 @@ namespace settings {
   private:
     std::vector<SearchPickerOption> m_normalOptions;
     std::vector<SearchPickerOption> m_instanceOptions;
-    std::unordered_map<std::string, std::string> m_presetScripts; // picker value -> asset script path
+    std::unordered_set<std::string> m_pluginEntries; // picker values that are plugin entry ids (one-click add)
     float m_scale = 1.0f;
     const Config* m_config = nullptr;
     std::vector<std::string> m_lanePath;

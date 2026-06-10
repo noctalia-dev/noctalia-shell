@@ -7,6 +7,7 @@
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "shell/panel/panel_manager.h"
+#include "shell/session/session_action_meta.h"
 #include "shell/session/session_action_runner.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
@@ -23,60 +24,6 @@
 namespace {
 
   constexpr Logger kLog("session");
-
-  [[nodiscard]] bool isKnownAction(std::string_view action) {
-    return action == "lock"
-        || action == "logout"
-        || action == "suspend"
-        || action == "lock_and_suspend"
-        || action == "reboot"
-        || action == "shutdown"
-        || action == "command";
-  }
-
-  [[nodiscard]] const char* labelKeyForAction(std::string_view action) {
-    if (action == "lock") {
-      return "session.actions.lock";
-    }
-    if (action == "logout") {
-      return "session.actions.logout";
-    }
-    if (action == "suspend") {
-      return "session.actions.suspend";
-    }
-    if (action == "lock_and_suspend") {
-      return "session.actions.lock-and-suspend";
-    }
-    if (action == "reboot") {
-      return "session.actions.reboot";
-    }
-    if (action == "shutdown") {
-      return "session.actions.shutdown";
-    }
-    return "session.actions.custom";
-  }
-
-  [[nodiscard]] const char* defaultGlyphForAction(std::string_view action) {
-    if (action == "lock") {
-      return "lock";
-    }
-    if (action == "logout") {
-      return "logout";
-    }
-    if (action == "suspend") {
-      return "suspend";
-    }
-    if (action == "lock_and_suspend") {
-      return "lock";
-    }
-    if (action == "reboot") {
-      return "reboot";
-    }
-    if (action == "shutdown") {
-      return "shutdown";
-    }
-    return "terminal";
-  }
 
   [[nodiscard]] ButtonVariant buttonVariantFor(SessionActionButtonVariant variant) {
     switch (variant) {
@@ -108,7 +55,7 @@ std::vector<SessionPanelActionConfig> SessionPanel::effectiveActions() const {
     if (!row.enabled) {
       continue;
     }
-    if (!isKnownAction(row.action)) {
+    if (!session_action::isKnown(row.action)) {
       kLog.warn("session panel: skipping unknown action \"{}\"", row.action);
       continue;
     }
@@ -210,12 +157,14 @@ void SessionPanel::create() {
 Button* SessionPanel::createActionButton(const SessionPanelActionConfig& cfg, float scale) {
   auto button = std::make_unique<Button>();
   const std::string labelText =
-      cfg.label.has_value() && !cfg.label->empty() ? *cfg.label : i18n::tr(labelKeyForAction(cfg.action));
+      cfg.label.has_value() && !cfg.label->empty() ? *cfg.label : i18n::tr(session_action::labelKey(cfg.action));
   button->setText(labelText);
   if (cfg.shortcut.has_value() && cfg.shortcut->sym != 0) {
     button->setBadge(keyChordDisplayLabel(*cfg.shortcut));
   }
-  button->setGlyph(cfg.glyph.has_value() && !cfg.glyph->empty() ? *cfg.glyph : defaultGlyphForAction(cfg.action));
+  button->setGlyph(
+      cfg.glyph.has_value() && !cfg.glyph->empty() ? *cfg.glyph : session_action::defaultGlyph(cfg.action)
+  );
   button->setVariant(buttonVariantFor(cfg.variant));
   button->setSurfaceOpacity(panelCardOpacity());
   button->setDirection(FlexDirection::Vertical);

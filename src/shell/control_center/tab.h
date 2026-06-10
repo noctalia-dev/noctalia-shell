@@ -18,6 +18,10 @@ namespace control_center {
   Label* addTitle(Flex& parent, const std::string& text, float scale = 1.0f);
   void addBody(Flex& parent, const std::string& text, float scale = 1.0f);
 
+  // Card header row: a card-title-styled label (flexGrow) ready for trailing
+  // controls appended by the caller. Used for titled group cards.
+  std::unique_ptr<Flex> makeCardHeaderRow(const std::string& title, float scale = 1.0f);
+
 } // namespace control_center
 
 class Tab {

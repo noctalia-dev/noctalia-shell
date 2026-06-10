@@ -2,6 +2,7 @@
 
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
+#include "scripting/plugin_registry.h"
 #include "shell/settings/font_weight_catalog.h"
 #include "shell/settings/font_weight_i18n.h"
 #include "ui/style.h"
@@ -49,6 +50,8 @@ namespace settings {
 
     using i18n::tr;
 
+    std::optional<scripting::ResolvedPluginEntry> resolvePluginWidget(std::string_view type);
+
     const std::vector<WidgetTypeSpec> kWidgetTypeSpecs = {
         {.type = "active_window", .labelKey = "settings.widgets.types.active-window", .glyph = "app-window"},
         {.type = "audio_visualizer", .labelKey = "settings.widgets.types.audio-visualizer", .glyph = "wave-sine"},
@@ -68,7 +71,6 @@ namespace settings {
         {.type = "nightlight", .labelKey = "settings.widgets.types.nightlight", .glyph = "nightlight-off"},
         {.type = "notifications", .labelKey = "settings.widgets.types.notifications", .glyph = "bell"},
         {.type = "power_profile", .labelKey = "settings.widgets.types.power-profile", .glyph = "balanced"},
-        {.type = "scripted", .labelKey = "settings.widgets.types.scripted", .glyph = "script"},
         {.type = "screenshot", .labelKey = "settings.widgets.types.screenshot", .glyph = "screenshot"},
         {.type = "session", .labelKey = "settings.widgets.types.session", .glyph = "shutdown"},
         {.type = "settings", .labelKey = "settings.widgets.types.settings", .glyph = "settings"},
@@ -106,16 +108,10 @@ namespace settings {
     }
 
     std::string widgetGlyph(std::string_view type, const WidgetConfig* config = nullptr) {
-      if (config == nullptr) {
-        return defaultWidgetGlyph(type);
+      if (auto pw = resolvePluginWidget(type)) {
+        return pw->manifest->icon.empty() ? std::string("apps") : pw->manifest->icon;
       }
-      if (type == "scripted") {
-        if (const std::string script = config->getString("script", ""); !script.empty()) {
-          if (auto manifest = scripting::manifestForScriptConfig(script);
-              manifest.has_value() && !manifest->icon.empty()) {
-            return manifest->icon;
-          }
-        }
+      if (config == nullptr) {
         return defaultWidgetGlyph(type);
       }
       if (type == "clipboard") {
@@ -169,11 +165,21 @@ namespace settings {
       return defaultWidgetGlyph(type);
     }
 
-    std::string appendManifestVersion(std::string text, const scripting::ScriptWidgetManifest& manifest) {
-      if (manifest.version.empty()) {
+    // Resolve a widget `type` to a plugin [[widget]] entry, or nullopt for built-ins.
+    std::optional<scripting::ResolvedPluginEntry> resolvePluginWidget(std::string_view type) {
+      scripting::PluginRegistry::instance().ensureScanned();
+      auto entry = scripting::PluginRegistry::instance().resolve(type);
+      if (entry.has_value() && entry->entry->kind == scripting::PluginEntryKind::Widget) {
+        return entry;
+      }
+      return std::nullopt;
+    }
+
+    std::string appendVersion(std::string text, std::string_view version) {
+      if (version.empty()) {
         return text;
       }
-      const std::string versionText = "version " + manifest.version;
+      const std::string versionText = "version " + std::string(version);
       if (text.empty()) {
         return versionText;
       }
@@ -351,8 +357,10 @@ namespace settings {
 
   bool isBuiltInWidgetType(std::string_view type) { return findWidgetTypeSpec(type) != nullptr; }
 
+  bool isPluginWidgetType(std::string_view type) { return resolvePluginWidget(type).has_value(); }
+
   bool widgetTypeRequiresNamedConfig(std::string_view type) {
-    return type == "custom_button" || type == "scripted" || type == "spacer";
+    return type == "custom_button" || type == "spacer" || resolvePluginWidget(type).has_value();
   }
 
   std::string widgetTypeForReference(const Config& cfg, std::string_view name) {
@@ -403,16 +411,12 @@ namespace settings {
     if (const auto it = cfg.widgets.find(std::string(name)); it != cfg.widgets.end()) {
       std::string title = widgetInstanceDisplayLabel(name);
       std::string detail = it->second.type.empty() ? tr("settings.entities.widget.detail.custom") : it->second.type;
-      if (it->second.type == "scripted") {
-        if (const std::string script = it->second.getString("script", ""); !script.empty()) {
-          if (auto manifest = scripting::manifestForScriptConfig(script); manifest.has_value()) {
-            if (!manifest->label.empty()) {
-              title = manifest->label;
-            }
-            if (includeManifestVersion) {
-              detail = appendManifestVersion(std::move(detail), *manifest);
-            }
-          }
+      if (auto pw = resolvePluginWidget(it->second.type)) {
+        if (!pw->manifest->name.empty()) {
+          title = pw->manifest->name;
+        }
+        if (includeManifestVersion) {
+          detail = appendVersion(std::move(detail), pw->manifest->version);
         }
       }
       return WidgetReferenceInfo{
@@ -452,38 +456,36 @@ namespace settings {
       if (isBuiltInWidgetType(name)) {
         continue;
       }
+      // Only surface named instances of built-in multi-instance types (custom_button, spacer).
+      // Plugin-typed instances are already represented by their registry [[widget]] entry below,
+      // and stale/invalid types (e.g. "scripted") are surfaced loudly by config_validate.
+      if (!widget.type.empty() && !isBuiltInWidgetType(widget.type)) {
+        continue;
+      }
       std::string label = widgetInstanceDisplayLabel(name);
       std::string description = widget.type.empty() ? tr("settings.entities.widget.detail.custom") : widget.type;
-      if (widget.type == "scripted") {
-        if (const std::string script = widget.getString("script", ""); !script.empty()) {
-          if (auto manifest = scripting::manifestForScriptConfig(script); manifest.has_value()) {
-            if (!manifest->label.empty()) {
-              label = manifest->label;
-            }
-            description = appendManifestVersion(std::move(description), *manifest);
-          }
-        }
-      }
       addPickerEntry(
           entries, seen, name, label, std::move(description), widgetGlyph(widget.type, &widget),
           WidgetReferenceKind::Named
       );
     }
 
-    // Bundled scripted widgets that declare a Lua manifest appear as one-click presets.
-    for (auto& script : scripting::discoverBundledScriptedWidgets()) {
-      if (!seen.insert(script.id).second) {
+    // Plugin [[widget]] entries appear as one-click adds (value = entry id).
+    scripting::PluginRegistry::instance().ensureScanned();
+    for (const auto& entry : scripting::PluginRegistry::instance().entriesOfKind(scripting::PluginEntryKind::Widget)) {
+      const std::string entryId = entry.fullId();
+      if (!seen.insert(entryId).second) {
         continue;
       }
-      std::string description = appendManifestVersion(script.manifest.description, script.manifest);
+      std::string label = entry.manifest->name.empty() ? entryId : entry.manifest->name;
+      std::string description = appendVersion(entry.manifest->description, entry.manifest->version);
       entries.push_back(
           WidgetPickerEntry{
-              .value = script.id,
-              .label = script.manifest.label.empty() ? script.id : script.manifest.label,
+              .value = entryId,
+              .label = std::move(label),
               .description = std::move(description),
-              .icon = script.manifest.icon.empty() ? "script" : script.manifest.icon,
-              .script = script.assetScript,
-              .kind = WidgetReferenceKind::Preset,
+              .icon = entry.manifest->icon.empty() ? "apps" : entry.manifest->icon,
+              .kind = WidgetReferenceKind::Plugin,
           }
       );
     }
@@ -597,10 +599,6 @@ namespace settings {
         {"icon_only", "settings.widgets.options.icon-only"},
         {"text_only", "settings.widgets.options.text-only"},
     };
-    const std::vector<WidgetSettingSelectOption> scriptedScopes = {
-        {"instance", "settings.widgets.options.instance"},
-        {"shared", "settings.widgets.options.shared"},
-    };
     const std::vector<WidgetSettingSelectOption> volumeDeviceOptions = {
         {"output", "settings.widgets.options.output"},
         {"input", "settings.widgets.options.input"},
@@ -711,10 +709,6 @@ namespace settings {
       add(boolSpec("show_label", true));
     } else if (type == "notifications") {
       add(boolSpec("hide_when_no_unread", false));
-    } else if (type == "scripted") {
-      add(selectSpec("scope", "instance", scriptedScopes));
-      add(boolSpec("hot_reload", false, true));
-      add(stringSpec("script"));
     } else if (type == "session") {
       add(glyphSpec("glyph", "shutdown"));
     } else if (type == "settings") {
@@ -826,9 +820,13 @@ namespace settings {
       add(boolSpec("match_adjacent_spacing", false));
       add(boolSpec("drawer", false));
       {
+        const WidgetSettingVisibility drawerOn{"drawer", {"true"}};
         auto cols = intSpec("drawer_columns", 3, 1.0, 5.0, 1.0);
-        cols.visibleWhen = WidgetSettingVisibility{"drawer", {"true"}};
+        cols.visibleWhen = drawerOn;
         add(std::move(cols));
+        auto detachedPanel = boolSpec("detached_panel", false);
+        detachedPanel.visibleWhen = drawerOn;
+        add(std::move(detachedPanel));
       }
     } else if (type == "volume") {
       add(segmentedSpec("device", "output", volumeDeviceOptions));
@@ -894,10 +892,10 @@ namespace settings {
     return specs;
   }
 
-  std::vector<WidgetSettingSpec> manifestSettingSpecs(const scripting::ScriptWidgetManifest& manifest) {
+  std::vector<WidgetSettingSpec> manifestSettingSpecs(const std::vector<scripting::ManifestField>& fields) {
     std::vector<WidgetSettingSpec> specs;
-    specs.reserve(manifest.settings.size());
-    for (const auto& field : manifest.settings) {
+    specs.reserve(fields.size());
+    for (const auto& field : fields) {
       WidgetSettingSpec spec;
       spec.schema.key = field.key;
       spec.literalLabel = field.label.empty() ? field.key : field.label;
@@ -964,30 +962,14 @@ namespace settings {
 
   std::vector<WidgetSettingSpec>
   widgetSettingSpecs(std::string_view type, const WidgetConfig* config, std::string_view shellFontFamily) {
-    if (type == "scripted" && config != nullptr) {
-      const std::string script = config->getString("script", "");
-      if (!script.empty()) {
-        if (auto manifest = scripting::manifestForScriptConfig(script); manifest.has_value()) {
-          std::vector<WidgetSettingSpec> specs;
-          auto commonSpecs = commonWidgetSettingSpecs(shellFontFamily);
-          const std::vector<WidgetSettingSelectOption> scriptedScopes = {
-              {.value = "instance", .labelKey = "settings.widgets.options.instance"},
-              {.value = "shared", .labelKey = "settings.widgets.options.shared"},
-          };
-          specs.push_back(
-              withGroup(selectSpec("scope", "instance", scriptedScopes, true), WidgetSettingGroup::Runtime)
-          );
-          specs.push_back(withGroup(boolSpec("hot_reload", false, true), WidgetSettingGroup::Runtime));
-          auto fromManifest = manifestSettingSpecs(*manifest);
-          specs.insert(
-              specs.end(), std::make_move_iterator(fromManifest.begin()), std::make_move_iterator(fromManifest.end())
-          );
-          specs.insert(
-              specs.end(), std::make_move_iterator(commonSpecs.begin()), std::make_move_iterator(commonSpecs.end())
-          );
-          return specs;
-        }
-      }
+    (void)config;
+    if (auto pw = resolvePluginWidget(type)) {
+      std::vector<WidgetSettingSpec> specs = manifestSettingSpecs(pw->entry->settings);
+      auto commonSpecs = commonWidgetSettingSpecs(shellFontFamily);
+      specs.insert(
+          specs.end(), std::make_move_iterator(commonSpecs.begin()), std::make_move_iterator(commonSpecs.end())
+      );
+      return specs;
     }
     return widgetSettingSpecs(type, shellFontFamily);
   }

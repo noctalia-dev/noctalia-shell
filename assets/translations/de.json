@@ -1,0 +1,2849 @@
+{
+  "auth": {
+    "pam": {
+      "authentication-failed": "Authentifizierung fehlgeschlagen",
+      "start-failed": "PAM-Start fehlgeschlagen",
+      "user-unavailable": "Aktueller Benutzer kann nicht ermittelt werden"
+    },
+    "polkit": {
+      "authenticate": "Authentifizieren",
+      "authenticating": "Authentifiziere...",
+      "default-message": "Authentifizierung erforderlich",
+      "invalid-password": "Ungültiges Passwort",
+      "password-placeholder": "Passwort",
+      "title": "Authentifizierung erforderlich"
+    }
+  },
+  "bar": {
+    "screenshot": {
+      "choose-display": "Anzeige auswählen",
+      "fullscreen": "Vollbild",
+      "region": "Region auswählen"
+    },
+    "widgets": {
+      "lock-keys": {
+        "caps": "Caps",
+        "caps-short": "C",
+        "num": "Num",
+        "num-short": "N",
+        "scroll": "Scrollen",
+        "scroll-short": "S"
+      },
+      "media": {
+        "nothing-playing": "Nichts spielt",
+        "playing": "Spielt"
+      },
+      "network": {
+        "wired": "Kabelgebunden"
+      },
+      "scripted": {
+        "reload-failed": "Skript-Neuladen fehlgeschlagen",
+        "reloaded": "Skript neu geladen"
+      },
+      "weather": {
+        "default": "Wetter",
+        "error": "Wetterfehler",
+        "loading": "Wetter...",
+        "no-location": "Kein Standort",
+        "off": "Wetter aus",
+        "vertical-default": "W\\nX",
+        "vertical-error": "E R R",
+        "vertical-loading": ".",
+        "vertical-no-location": "N O L O C",
+        "vertical-off": "AUS"
+      }
+    }
+  },
+  "clipboard": {
+    "actions": {
+      "clear-all": "Alles löschen",
+      "delete-item": "Element löschen",
+      "keep-pinned": "Angeheftet lassen"
+    },
+    "confirm": {
+      "clear-desc": "Wähle, ob angeheftete Elemente beibehalten werden sollen.",
+      "clear-desc-all-pinned": "Alle Einträge sind angeheftet. Verwende „Alles löschen“, um sie alle zu entfernen.",
+      "clear-desc-no-pinned": "Dies entfernt jeden Eintrag aus dem Zwischenablageverlauf.",
+      "clear-title": "Zwischenablageverlauf löschen?",
+      "delete-desc": "Dies entfernt das ausgewählte Element aus dem Zwischenablageverlauf.",
+      "delete-title": "Zwischenablage-Eintrag löschen?"
+    },
+    "empty": {
+      "history-message": "Keine Einträge in der Zwischenablage-Historie.",
+      "history-title": "Die Zwischenablage ist leer",
+      "no-matches-message": "Keine Einträge entsprechen dem aktuellen Filter.",
+      "no-matches-title": "Keine passenden Einträge"
+    },
+    "entry": {
+      "image": "Bild",
+      "title": "Zwischenablage-Eintrag"
+    },
+    "filter-placeholder": "Zwischenablage filtern...",
+    "preview": {
+      "empty-text-payload": "(leerer Textinhalt)",
+      "image-title": "Bildeintrag der Zwischenablage",
+      "loading": "Vorschau wird geladen...",
+      "text-title": "Texteintrag in der Zwischenablage",
+      "truncated": "… abgeschnitten"
+    },
+    "title": "Zwischenablage"
+  },
+  "common": {
+    "actions": {
+      "apply": "Anwenden",
+      "cancel": "Abbrechen"
+    },
+    "states": {
+      "auto": "Automatisch",
+      "custom": "Benutzerdefiniert",
+      "inherit": "Erben",
+      "off": "Aus"
+    }
+  },
+  "control-center": {
+    "audio": {
+      "application-volumes": "Anwendungslautstärken",
+      "input-volume": "Eingabelautstärke",
+      "no-application-audio": "Kein Anwendungsaudio",
+      "no-application-audio-body": "Es sind derzeit keine Wiedergabestreams von Anwendungen verfügbar.",
+      "no-input-devices": "Keine Eingabegeräte",
+      "no-input-devices-body": "Es sind derzeit keine Aufnahmequellen verfügbar.",
+      "no-input-selected": "Kein Eingabegerät ausgewählt",
+      "no-output-devices": "Keine Ausgabegeräte",
+      "no-output-devices-body": "Aktuell sind keine Wiedergabesenken verfügbar.",
+      "no-output-selected": "Kein Ausgabegerät ausgewählt",
+      "output-volume": "Ausgabelautstärke",
+      "unavailable-body": "PipeWire ist nicht aktiv.",
+      "unavailable-title": "Audio nicht verfügbar"
+    },
+    "bluetooth": {
+      "accept": "Akzeptieren",
+      "auto-reconnect": "Automatisch wiederverbinden",
+      "bluetooth": "Bluetooth",
+      "enter-code": "Code eingeben",
+      "no-devices": "Keine Geräte gefunden. Starte den Scan, um Bluetooth-Geräte in der Nähe zu entdecken.",
+      "off": "Bluetooth ist ausgeschaltet",
+      "pair-title": "Koppeln {device}",
+      "pairing-detail": {
+        "authorize": "Eingehende Kopplungsanfrage annehmen?",
+        "authorize-service": "Zugriff auf Dienst {uuid} erlauben?",
+        "confirm": "Bestätige, dass dieser Code mit dem auf dem Gerät angezeigten übereinstimmt:",
+        "display-passkey": "Gib diesen Code auf dem Gerät ein:",
+        "display-pin": "Gib diese PIN auf dem Gerät ein:",
+        "passkey": "Gib den auf dem Gerät angezeigten Passkey ein:",
+        "pin-code": "Gib die auf dem Gerät angezeigte PIN ein:"
+      },
+      "reject": "Ablehnen",
+      "rfkill-blocked": "Bluetooth wird vom System blockiert. Schalte es ein, um die Blockierung aufzuheben.",
+      "sections": {
+        "available": "Verfügbar",
+        "connected": "Verbunden",
+        "paired": "Gekoppelt"
+      },
+      "unavailable": "Bluetooth-Dienst nicht verfügbar",
+      "unknown-device": "Unbekanntes Gerät",
+      "visible": "Sichtbar für Geräte in der Nähe"
+    },
+    "calendar": {
+      "all-day": "Ganztägig",
+      "events": "Ereignisse",
+      "no-events": "Keine Ereignisse."
+    },
+    "display": {
+      "disabled": "Deaktiviert",
+      "no-displays": "Keine Monitore verfügbar",
+      "unknown-resolution": "Unbekannte Auflösung"
+    },
+    "home": {
+      "media": {
+        "idle": "Inaktiv",
+        "no-active-player": "Kein aktiver Player",
+        "nothing-playing": "Nichts wird abgespielt",
+        "paused": "Pausiert",
+        "playback-unavailable": "Wiedergabe nicht verfügbar",
+        "playing": "Spielt",
+        "unavailable": "Nicht verfügbar",
+        "unknown-artist": "Unbekannter Künstler",
+        "unknown-track": "Unbekannter Titel"
+      },
+      "select-avatar": "Avatar auswählen",
+      "unknown": "unbekannt",
+      "user-facts": "{user}@{host}Betriebszeit - {uptime}Noctalia {version}",
+      "weather": {
+        "configure-location": "Füge [weather].address hinzu oder aktiviere auto_locate.",
+        "data-unavailable": "Wetterdaten nicht verfügbar.",
+        "disabled": "Wetter ist in der config deaktiviert.",
+        "fetching": "Wettervorhersage wird abgerufen..."
+      }
+    },
+    "media": {
+      "active-player": "Aktiver Player",
+      "nothing-playing": "Nichts wird abgespielt",
+      "now-playing": "Aktuelle Wiedergabe",
+      "start-playback": "Wiedergabe in einer MPRIS-App starten"
+    },
+    "network": {
+      "connect": "Verbinden",
+      "current-connection": "Aktuelle Verbindung",
+      "no-networks": "Keine Netzwerke in Reichweite",
+      "not-connected": "Nicht verbunden",
+      "password": "Passwort",
+      "password-prompt": "Passwort eingeben",
+      "password-prompt-for": "Passwort für {ssid} eingeben",
+      "unavailable-detail": "Installiere und aktiviere NetworkManager, um Netzwerke von hier aus zu verwalten.",
+      "unavailable-title": "NetworkManager nicht verfügbar",
+      "vpns": "VPNs",
+      "wi-fi": "Wi-Fi",
+      "wifi": "Wi-Fi",
+      "wifi-off": "Wi-Fi ist aus",
+      "wifi-on": "Wi-Fi ist an",
+      "wired-connection": "Kabelverbindung"
+    },
+    "notifications": {
+      "empty-body": "Aktuelle Benachrichtigungen werden hier angezeigt.",
+      "empty-title": "Keine Benachrichtigungen",
+      "filter": {
+        "all": "Alle",
+        "older": "Älter",
+        "today": "Heute",
+        "yesterday": "Gestern"
+      },
+      "filter-empty-body": "Keine Benachrichtigungen entsprechen diesem Filter.",
+      "filter-empty-title": "Nichts hier",
+      "untitled": "Unbenannte Benachrichtigung"
+    },
+    "screen-time": {
+      "disabled": "Die Bildschirmzeit-Erfassung ist deaktiviert. Aktiviere sie in den Einstellungen, um die Nutzung pro App aufzuzeichnen.",
+      "empty": "Noch keine App-Nutzung erfasst. Fokussiere ein Fenster, um die Erfassung zu starten.",
+      "hour-0": "12 Uhr morgens",
+      "hour-12": "12 Uhr mittags",
+      "hour-18": "18 Uhr",
+      "hour-6": "6 Uhr",
+      "most-used": "MEISTGENUTZT",
+      "range": {
+        "14-days": "14 Tage",
+        "3-days": "3 Tage",
+        "today": "Heute"
+      }
+    },
+    "shortcuts": {
+      "audio": "Audio",
+      "bluetooth": "Bluetooth",
+      "caffeine": "Koffein",
+      "clipboard": "Zwischenablage",
+      "dark-mode": {
+        "auto": "Auto-Modus",
+        "dark": "Dunkler Modus",
+        "light": "Heller Modus"
+      },
+      "keyboard-layout": "Layout",
+      "media": "Medien",
+      "mic-mute": "Mikrofon",
+      "nightlight": "Nachtlicht",
+      "nightlight-states": {
+        "forced": "Immer an",
+        "off": "Nachtlicht",
+        "scheduled-day": "Geplant",
+        "scheduled-night": "Läuft"
+      },
+      "notification": "DND",
+      "power-profile": "Energie",
+      "screen-recorder": "Rekorder",
+      "screen-time": "Bildschirmzeit",
+      "session": "Sitzung",
+      "system": "System",
+      "wallpaper": "Hintergrundbild",
+      "weather": "Wetter",
+      "wifi": "Wi-Fi"
+    },
+    "system": {
+      "titles": {
+        "cpu": "CPU",
+        "gpu": "GPU",
+        "memory": "Speicher",
+        "network": "Netzwerk",
+        "resources": "Ressourcen",
+        "system": "System"
+      },
+      "unknown": "unbekannt",
+      "uptime-prefix": "Seit {uptime} · {osAge}"
+    },
+    "tabs": {
+      "audio": "Audio",
+      "bluetooth": "Bluetooth",
+      "calendar": "Kalender",
+      "display": "Monitor",
+      "home": "Startseite",
+      "media": "Medien",
+      "network": "Netzwerk",
+      "notifications": "Benachrichtigungen",
+      "screen-time": "Bildschirmzeit",
+      "system": "System",
+      "weather": "Wetter"
+    },
+    "weather": {
+      "configure-location": "Setze [weather].address oder aktiviere auto_locate",
+      "data-unavailable": "Wetterdaten nicht verfügbar",
+      "details": {
+        "elevation": "Anhebung",
+        "sunrise": "Sonnenaufgang",
+        "sunset": "Sonnenuntergang",
+        "temp-max": "Maximale Temperatur",
+        "temp-min": "Minimale Temperatur",
+        "timezone": "Zeitzone",
+        "wind": "Wind"
+      },
+      "disabled": "Aktiviere [weather] in config.toml",
+      "fetching": "Prognose wird abgerufen...",
+      "forecast-placeholder": {
+        "day": "Sonntag",
+        "description": "Wetter",
+        "temperature": "10 / 4°C"
+      },
+      "location-unavailable": "Standort nicht verfügbar",
+      "refreshing": "Wetter wird aktualisiert...",
+      "waiting": "Warten auf Wetterdaten"
+    }
+  },
+  "desktop-widgets": {
+    "editor": {
+      "actions": {
+        "done": "Fertig"
+      },
+      "dialogs": {
+        "select-sticker-image": "Stickerbild auswählen"
+      },
+      "settings": {
+        "aspect-ratio": "Seitenverhältnis",
+        "background": "Hintergrund",
+        "background-color": "Farbe",
+        "background-opacity": "Deckkraft",
+        "background-padding": "Abstand",
+        "background-radius": "Radius",
+        "background-section": "Hintergrund",
+        "bands": "Bänder",
+        "bar-width": "Leistenbreite",
+        "bloom-intensity": "Bloom",
+        "centered": "Zentriert",
+        "change-image": "Ändern…",
+        "circle": "Kreis",
+        "clock-style": "Uhrstil",
+        "clock-style-analog": "Analog",
+        "clock-style-digital": "Digital",
+        "color": "Farbe",
+        "color2": "Farbe 2",
+        "custom-color": "Benutzerdefiniert…",
+        "description": "Beschreibung",
+        "fade-when-idle": "Im Leerlauf ausblenden",
+        "font-family": "Schriftart",
+        "font-family-default": "Systemstandard",
+        "format": "Format",
+        "hide-when-no-media": "Ausblenden, wenn keine Medien vorhanden",
+        "high-color": "Hohe Farbe",
+        "horizontal": "Horizontal",
+        "image-path": "Bild",
+        "inner-diameter": "Innendurchmesser",
+        "layout": "Layout",
+        "low-color": "Geringe Farbe",
+        "mirrored": "Gespiegelt",
+        "opacity": "Deckkraft",
+        "primary-color": "Primärfarbe",
+        "ring-opacity": "Ring-Deckkraft",
+        "rotation-speed": "Rotationsgeschwindigkeit",
+        "secondary-color": "Sekundärfarbe",
+        "sensitivity": "Empfindlichkeit",
+        "shadow": "Schatten",
+        "show-label": "Beschriftung anzeigen",
+        "show-when-idle": "Bei Inaktivität anzeigen",
+        "stat": "Status",
+        "stat-cpu-temp": "CPU-Temperatur",
+        "stat-cpu-usage": "CPU-Auslastung",
+        "stat-gpu-temp": "GPU-Temperatur",
+        "stat-gpu-usage": "GPU-Auslastung",
+        "stat-gpu-vram": "GPU VRAM",
+        "stat-net-rx": "Netzwerk Empfang",
+        "stat-net-tx": "Netzwerk Senden",
+        "stat-none": "Nichts",
+        "stat-ram-pct": "RAM %",
+        "stat-swap-pct": "Swap %",
+        "stat2": "Statistik 2",
+        "title": "Titel",
+        "vertical": "Vertikal",
+        "visualization-mode": "Modus",
+        "visualization-mode-all": "Alle",
+        "visualization-mode-bars": "Bars",
+        "visualization-mode-bars-rings": "Leisten + Ringe",
+        "visualization-mode-rings": "Ringe",
+        "visualization-mode-wave": "Welle",
+        "visualization-mode-wave-rings": "Welle + Ringe",
+        "wave-thickness": "Wellendicke",
+        "widget-section": "Widget"
+      },
+      "state": {
+        "grid-off": "Raster aus",
+        "grid-on": "Raster an"
+      },
+      "title": "Desktop-Widgets",
+      "types": {
+        "audio-visualizer": "Audio-Visualisierer",
+        "clock": "Uhr",
+        "fancy-audio-visualizer": "Ausgefallener Audio-Visualisierer",
+        "label": "Beschriftung",
+        "media-player": "Medienplayer",
+        "sticker": "Sticker",
+        "system-monitor": "Systemüberwachung",
+        "weather": "Wetter"
+      }
+    },
+    "media": {
+      "nothing-playing": "Nichts wird abgespielt"
+    },
+    "weather": {
+      "error": "Fehler",
+      "loading": "Lädt",
+      "no-location": "Kein Standort",
+      "off": "Wetter aus"
+    }
+  },
+  "dock": {
+    "actions": {
+      "close": "Schließen",
+      "close-all": "Alle schließen"
+    },
+    "launcher": "Anwendungsstarter"
+  },
+  "internal-apps": {
+    "settings": {
+      "display-name": "Einstellungen"
+    }
+  },
+  "launcher": {
+    "categories": {
+      "all": "Alle",
+      "applications": {
+        "development": "Entwicklung",
+        "education": "Bildung",
+        "games": "Spiele",
+        "graphics": "Grafik",
+        "internet": "Internet",
+        "multimedia": "Multimedia",
+        "office": "Büro",
+        "system": "System",
+        "utilities": "Dienstprogramme"
+      },
+      "emoji": {
+        "activity": "Aktivität",
+        "animals": "Tiere",
+        "flags": "Optionen",
+        "food": "Essen",
+        "nature": "Natur",
+        "objects": "Objekte",
+        "people": "Leute",
+        "symbols": "Symbole",
+        "travel": "Reisen"
+      },
+      "recently-used": "Zuletzt verwendet"
+    },
+    "context-menu": {
+      "open": "Öffnen",
+      "pin-to-dock": "An Dock anheften",
+      "unpin-from-dock": "Vom Dock lösen"
+    },
+    "empty": {
+      "no-results": "Keine Ergebnisse gefunden",
+      "type-to-search": "Zum Suchen tippen..."
+    },
+    "providers": {
+      "applications": {
+        "title": "Anwendungen"
+      },
+      "calculator": {
+        "title": "Rechner"
+      },
+      "emoji": {
+        "title": "Emoji"
+      },
+      "session": {
+        "action-subtitle": "Sitzungsaktion ausführen",
+        "command-subtitle": "Konfigurierten Befehl ausführen",
+        "title": "Sitzung"
+      },
+      "wallpaper": {
+        "title": "Hintergrundbild"
+      },
+      "window": {
+        "title": "Windows"
+      }
+    },
+    "search-placeholder": "Anwendungen suchen..."
+  },
+  "location": {
+    "errors": {
+      "address-lookup-failed": "Adresssuche fehlgeschlagen",
+      "ip-geolocation-failed": "IP-Geolokalisierung fehlgeschlagen",
+      "parse-geocode": "Konnte Geocode-Antwort nicht parsen",
+      "parse-ip-geolocation": "Konnte IP-Geolokalisierungsantwort nicht parsen"
+    },
+    "locations": {
+      "current": "Aktueller Standort"
+    },
+    "source": {
+      "address": "Adresse",
+      "auto": "Automatisch"
+    }
+  },
+  "lockscreen": {
+    "authenticating": "Authentifiziere...",
+    "authentication-failed": "Authentifizierung fehlgeschlagen",
+    "password-cleared": "Passwort gelöscht",
+    "password-placeholder": "Passwort",
+    "ready": "Gib dein Passwort ein und drücke Enter.",
+    "unlocked": "Entsperrt",
+    "waiting": "Warte auf Sperrbestätigung..."
+  },
+  "notifications": {
+    "actions": {
+      "fallback": "Aktion",
+      "open": "Öffnen"
+    },
+    "inline-reply": {
+      "button": "Antworten",
+      "placeholder": "Antwort eingeben..."
+    },
+    "internal": {
+      "battery": "Akku",
+      "battery-device": "Akkugerät",
+      "battery-low-body": "{device}: noch {percent}% übrig",
+      "battery-low-title": "Akku schwach",
+      "calendar": "Kalender",
+      "calendar-google-connect-browser-failed": "Es konnte kein Browser für die Google-Autorisierung gestartet werden. Überprüfe deinen Standardbrowser oder die xdg-open-Einrichtung.",
+      "calendar-google-connect-expired": "Die Google-Autorisierung ist abgelaufen, bevor die Anmeldung abgeschlossen wurde. Starte die Verbindung erneut.",
+      "calendar-google-connect-failed-title": "Google Calendar Verbindung fehlgeschlagen",
+      "calendar-google-connect-missing-account": "Kein konfiguriertes Google Kalender-Konto entsprach „{account}“.",
+      "calendar-google-connect-rate-limited": "Die Google-Autorisierung ist vorübergehend ratenbegrenzt. Warte einen Moment und versuche es dann erneut.",
+      "calendar-google-connect-result-failed": "Google-Autorisierung konnte nicht abgeschlossen werden. Starte die Verbindung erneut.",
+      "calendar-google-connect-start-failed": "Google-Autorisierung konnte nicht gestartet werden. Überprüfe deine Netzwerkverbindung und versuche es erneut.",
+      "calendar-google-connect-start-http": "Google-Autorisierung konnte nicht gestartet werden. Der OAuth-Broker gab HTTP {status} zurück.",
+      "calendar-google-connect-timeout": "Die Google-Autorisierung hat ein Zeitlimit überschritten. Starte die Verbindung erneut, wenn du bereit bist, dich anzumelden.",
+      "dbus-disabled": "DBus Benachrichtigungen deaktiviert",
+      "desktop-widgets-editor": "Widget-Editor",
+      "desktop-widgets-editor-enabled": "Der Desktop-Widget-Editor ist aktiv. Wechsle zu einer leeren Arbeitsfläche, um das Editor-Overlay zu sehen.",
+      "greeter-sync": "Noctalia Begrüßer",
+      "greeter-sync-success": "Aussehen synchronisiert. Änderungen werden beim nächsten Anmeldebildschirm angewendet.",
+      "keybind-app": "Noctalia",
+      "keybind-invalid-modifier": "Diese Verknüpfung akzeptiert eine einzelne Taste ohne Zusatztasten.",
+      "keybind-invalid-printable": "Druckbare Tasten (Buchstaben, Zahlen, Symbole) benötigen einen Modifikator wie Ctrl oder Alt.",
+      "keybind-invalid-super": "Die Super-/Windows-Taste kann nicht für Shell-Keybinds verwendet werden.",
+      "keybind-invalid-title": "Tastenkombination nicht erlaubt",
+      "lockscreen-widgets-editor": "Sperrbildschirm-Widget-Editor",
+      "lockscreen-widgets-editor-blocked-locked": "Entsperre die Sitzung, bevor du Sperrbildschirm-Widgets bearbeitest.",
+      "lockscreen-widgets-editor-enabled": "Der Sperrbildschirm-Widget-Editor ist aktiv. Ordne Widgets auf dem Vorschau-Overlay an und sperre dann die Sitzung, um das Layout zu überprüfen.",
+      "mpris-disabled": "MPRIS deaktiviert",
+      "session-bus-unavailable": "Session-Bus nicht verfügbar",
+      "wallpaper-palette-export": "Benutzerdefinierte Palette",
+      "wallpaper-palette-export-success": "„{name}“ gespeichert und Palettenquelle auf benutzerdefiniert gewechselt."
+    }
+  },
+  "osd": {
+    "bluetooth": {
+      "off": "Bluetooth Aus",
+      "on": "Bluetooth An"
+    },
+    "caffeine": {
+      "off": "Caffeine Aus",
+      "on": "Koffein an"
+    },
+    "dnd": {
+      "off": "DND Aus",
+      "on": "DND An"
+    },
+    "lock-keys": {
+      "caps-off": "Caps Lock Aus",
+      "caps-on": "Caps Lock Ein",
+      "num-off": "Num Lock Aus",
+      "num-on": "Num Lock An",
+      "scroll-off": "Scroll Lock Aus",
+      "scroll-on": "Scroll Lock Ein"
+    },
+    "wifi": {
+      "off": "Wi-Fi Aus",
+      "on": "Wi-Fi An"
+    }
+  },
+  "power": {
+    "battery": {
+      "states": {
+        "battery": "Akku",
+        "charging": "Wird geladen",
+        "discharging": "Entlädt",
+        "empty": "Leer",
+        "pending-discharge": "Entladung ausstehend",
+        "plugged-in": "Angeschlossen"
+      },
+      "tooltip": {
+        "health": "Gesundheit",
+        "rate": "Bewerten",
+        "status": "Status",
+        "time-left": "Restzeit",
+        "time-to-full": "Zeit bis voll"
+      }
+    },
+    "profiles": {
+      "balanced": "Ausbalanciert",
+      "performance": "Leistung",
+      "power-saver": "Energiesparmodus"
+    }
+  },
+  "session": {
+    "actions": {
+      "custom": "Benutzerdefiniert",
+      "lock": "Sperren",
+      "lock-and-suspend": "Sperren & Energiesparmodus",
+      "logout": "Abmelden",
+      "reboot": "Neustart",
+      "shutdown": "Herunterfahren",
+      "suspend": "Standby"
+    },
+    "errors": {
+      "lock-body": "Das Sitzungssperrprotokoll ist nicht verfügbar.",
+      "lock-title": "Sperre nicht verfügbar"
+    }
+  },
+  "settings": {
+    "actions": {
+      "reset": "Zurücksetzen"
+    },
+    "badges": {
+      "advanced": "Erweitert",
+      "inherited": "Geerbt",
+      "monitor": "Monitor",
+      "override": "Überschreiben"
+    },
+    "calendar-accounts": {
+      "add-title": "Kalenderkonto hinzufügen",
+      "color-label": "Farbe",
+      "delete-error": "Kalenderkonto konnte nicht gelöscht werden.",
+      "edit-title": "Kalenderkonto bearbeiten",
+      "id-label": "Konto-ID",
+      "invalid": "Überprüfe die hervorgehobenen Kalenderkontofelder.",
+      "name-label": "Anzeigename",
+      "name-placeholder": "Persönlicher Kalender",
+      "password-keep-placeholder": "Leer lassen, um das aktuelle Passwort zu behalten",
+      "password-label": "App-Passwort",
+      "password-placeholder": "App-spezifisches Passwort",
+      "password-save-error": "Das Passwort des Kalenderkontos konnte nicht gespeichert werden.",
+      "provider": {
+        "custom": "CalDAV",
+        "google": "Google",
+        "icloud": "iCloud"
+      },
+      "provider-label": "Anbieter",
+      "save": "Speichern",
+      "save-connect": "Speichern und Verbinden",
+      "save-error": "Kalenderkonto konnte nicht gespeichert werden.",
+      "server-url-label": "Server-URL",
+      "username-label": "Benutzername",
+      "username-placeholder": "name@example.com"
+    },
+    "controls": {
+      "keybind": {
+        "add": "Klicken, um Tastenkombination hinzuzufügen",
+        "recording-placeholder": "Drücke eine Tastenkombination…",
+        "unset-placeholder": "Klicken zum Binden…"
+      },
+      "list": {
+        "add-entry-placeholder": "Eintrag hinzufügen…"
+      },
+      "path-browse": {
+        "file-title": "Datei auswählen",
+        "folder-title": "Ordner auswählen"
+      },
+      "select": {
+        "unknown-value": "Unbekannt: {value}"
+      }
+    },
+    "dialogs": {
+      "color-picker": {
+        "title": "Wähle eine Farbe"
+      }
+    },
+    "entities": {
+      "bar": {
+        "create": "Erstellen",
+        "delete": "Löschen",
+        "delete-confirm-desc": "Diese GUI-erstellte Leiste wird aus settings.toml entfernt.",
+        "delete-confirm-title": "„{name}“ löschen?",
+        "id-placeholder": "Bar-ID",
+        "label": "Leiste: {name}",
+        "management": "Leiste",
+        "move-down": "Nach unten",
+        "move-up": "Nach oben",
+        "new": "Neue Leiste",
+        "rename": "Umbenennen",
+        "rename-save": "Speichern"
+      },
+      "monitor-override": {
+        "create": "Erstellen",
+        "delete": "Löschen",
+        "delete-confirm-desc": "Diese GUI-erstellte Monitor-Überschreibung wird aus settings.toml entfernt.",
+        "delete-confirm-title": "„{name}“ löschen?",
+        "label": "Monitor: {name}",
+        "management": "Monitor-Überschreibung",
+        "match-placeholder": "Monitoranpassung",
+        "new": "Monitorüberschreibung",
+        "rename": "Umbenennen",
+        "rename-save": "Speichern"
+      },
+      "widget": {
+        "add": "Widget hinzufügen",
+        "detail": {
+          "custom": "Benutzerdefiniertes Widget"
+        },
+        "editor": {
+          "description": "Widgets in den Bar-Spuren anordnen",
+          "title": "Leisten-Widgets"
+        },
+        "group": {
+          "action": "Gruppe",
+          "border": "Rahmen",
+          "border-description": "Rolle der Umrissfarbe der Kapsel; auf Standard belassen, um keinen Umriss anzuzeigen",
+          "clear": "Leeren",
+          "edit": "Stil bearbeiten",
+          "fill": "Hintergrund",
+          "fill-description": "Capsule Hintergrundfarbrolle; feste Hexadezimalfarben werden ebenfalls unterstützt",
+          "foreground": "Vordergrund",
+          "foreground-description": "Symbol- und Beschriftungs-Farbrolle für Widgets in dieser Gruppe",
+          "hint": "Teil einer Kapselgruppe",
+          "members": "{count} Widgets",
+          "opacity": "Deckkraft",
+          "opacity-description": "Deckkraft des Kapsel-Hintergrunds",
+          "orphan": "Unbekannte Gruppe",
+          "padding": "Abstand",
+          "padding-description": "Innenabstand zwischen dem Kapselrand und seinen Widgets, in Pixeln",
+          "radius": "Radius",
+          "radius-description": "Kapsel-Eckenradius in Pixeln; automatisch erbt den Kapselradius der Leiste",
+          "selected": "{count} ausgewählt",
+          "style": "Stil",
+          "title": "Kapselgruppe",
+          "ungroup": "Gruppierung aufheben"
+        },
+        "inspector": {
+          "add-instance-title": "Füge neues benanntes {widget} Widget zu {lane} hinzu",
+          "add-title": "Widget zu {lane} hinzufügen",
+          "move-to-lane": "Verschieben nach {lane}"
+        },
+        "instance": {
+          "create-save": "Erstellen",
+          "delete": "Löschen",
+          "delete-confirm-desc": "Dieses benannte Widget wird aus jeder Leiste entfernt und seine Einstellungen verworfen.",
+          "delete-confirm-title": "„{name}“ löschen?",
+          "id-description": "Verwende nur Buchstaben, Zahlen, Unterstriche oder Bindestriche. Keine Leerzeichen; muss eindeutig sein.",
+          "id-placeholder": "Widget-ID",
+          "rename": "Umbenennen",
+          "rename-save": "Speichern"
+        },
+        "lanes": {
+          "center": "Mitte",
+          "customize": "Anpassen",
+          "empty": "Keine Widgets",
+          "empty-hint": "Füge ein Widget hinzu, um diese Spur zu füllen.",
+          "end": "Ende",
+          "start": "Starten"
+        },
+        "picker": {
+          "empty": "Keine Widgets gefunden",
+          "instance-description": "Benanntes Widget für Typ „{type}“",
+          "instance-toggle": "Benanntes Widget",
+          "placeholder": "Widgets suchen..."
+        },
+        "raw": {
+          "delete": "Löschen",
+          "description": "Nicht unterstützte Schlüssel aus dieser Widget-Konfiguration beibehalten.",
+          "title": "Rohe Einstellungen"
+        },
+        "settings": {
+          "empty": "Keine Einstellungen passen zu den aktuellen Filtern.",
+          "groups": {
+            "grouping": "Gruppierung",
+            "presentation": "Darstellung",
+            "runtime": "Laufzeit",
+            "widget": "Modul"
+          }
+        }
+      }
+    },
+    "errors": {
+      "bar": {
+        "create": "Konnte Bar nicht erstellen.",
+        "delete": "Konnte Bar nicht löschen.",
+        "move": "Konnte Bar nicht verschieben.",
+        "rename": "Konnte Bar nicht umbenennen."
+      },
+      "batch-write": "Einige Einstellungen konnten nicht gespeichert werden.",
+      "export-config": "Speichern des Konfigurationsexports fehlgeschlagen.",
+      "export-wallpaper-palette": "Konnte die Hintergrundbild-Palette nicht als benutzerdefinierte Palette speichern.",
+      "monitor-override": {
+        "create": "Konnte Monitor-Überschreibung nicht erstellen.",
+        "delete": "Konnte Monitor-Überschreibung nicht löschen.",
+        "rename": "Konnte Monitor-Überschreibung nicht umbenennen."
+      },
+      "reset-page": "Fehler beim Zurücksetzen einiger Einstellungen.",
+      "support-report": "Fehler beim Speichern des Support-Berichts.",
+      "sync-greeter": "Konnte das Aussehen nicht mit Noctalia Greeter synchronisieren.",
+      "widget": {
+        "rename": "Konnte benanntes Widget nicht umbenennen."
+      },
+      "write": "Fehler beim Speichern der Einstellungen."
+    },
+    "export-config": {
+      "export": "Exportieren",
+      "full-effective-description": "Exportiert alle aktiven Einstellungen, einschließlich der integrierten Standardwerte. Nützlich zur Überprüfung oder zum Teilen einer Momentaufnahme, fixiert aber die aktuellen Standardwerte explizit.",
+      "full-effective-save-title": "Gesamte effektive Konfiguration speichern",
+      "full-effective-title": "Vollständige effektive Konfiguration",
+      "merged-user-description": "Kombiniert Konfigurationsdateien und GUI-Überschreibungen in einer TOML-Datei. Integrierte Standardwerte bleiben implizit.",
+      "merged-user-save-title": "Zusammengeführte Benutzerkonfiguration speichern",
+      "merged-user-title": "Zusammengeführte Benutzerkonfiguration (empfohlen)",
+      "title": "Konfiguration exportieren"
+    },
+    "idle": {
+      "behavior": {
+        "add": "Verhalten hinzufügen",
+        "command-label": "Leerlaufbefehl",
+        "command-placeholder": "notify-send \"Idle\"",
+        "kind": {
+          "custom": "Benutzerdefiniert",
+          "lock": "Sperren",
+          "lock-and-suspend": "Sperren & Ruhezustand",
+          "screen-off": "Bildschirm aus",
+          "suspend": "Ruhezustand"
+        },
+        "kind-section-label": "Aktion",
+        "name-label": "Name",
+        "name-placeholder": "Inaktivitätsverhalten",
+        "resume-command-label": "Fortsetzen-Befehl",
+        "resume-command-placeholder": "noctalia:dpms-on",
+        "summary": "{name} · {seconds}s",
+        "summary-disabled-timeout": "{name} · Timeout deaktiviert",
+        "timeout-label": "Timeout-Sekunden",
+        "unnamed": "Unbenanntes Verhalten"
+      },
+      "live-status": {
+        "active": "Aktiv",
+        "idle-for-one": "Inaktiv für 1 Sekunde",
+        "idle-for-seconds": "Inaktiv für {seconds} Sekunden"
+      }
+    },
+    "navigation": {
+      "groups": {
+        "audio": "Audio",
+        "automation": "Automatisierung",
+        "backdrop": "Hintergrund",
+        "background": "Hintergrund",
+        "battery": "Akku",
+        "behavior": "Verhalten",
+        "brightness": "Helligkeit",
+        "built-in": "Integriert",
+        "calendar": "Kalender",
+        "capsules": "Kapseln",
+        "clipboard": "Zwischenablage",
+        "community": "Community",
+        "control-center": "Kontrollzentrum",
+        "directories": "Verzeichnisse",
+        "effects": "Effekte",
+        "filtering": "Filtern",
+        "focus-styling": "Fokus-Stil",
+        "formats": "Formate",
+        "general": "Allgemein",
+        "grouping": "Gruppierung",
+        "home": "Startseite",
+        "idle": "Leerlauf",
+        "interface": "Oberfläche",
+        "keybinds": "Tastenbelegungen",
+        "kinds": "Arten",
+        "launcher": "Starter",
+        "layout": "Layout",
+        "lifecycle": "Lebenszyklus",
+        "location": "Standort",
+        "lock-screen": "Sperrbildschirm",
+        "media": "Medien",
+        "monitor": "Systemüberwachung",
+        "monitor-polling": "Abfrageintervalle",
+        "monitor-thresholds": "Hervorhebungsschwellenwerte",
+        "monitors": "Monitore",
+        "motion": "Bewegung",
+        "network": "Netzwerk",
+        "night-light": "Nachtlicht",
+        "notifications": "Benachrichtigungen",
+        "osd": "OSD",
+        "overview": "Übersicht",
+        "pinned-apps": "Angeheftete Apps",
+        "power": "Energie",
+        "privacy-security": "Datenschutz & Sicherheit",
+        "profile": "Profil",
+        "screen-corners": "Bildschirmecken",
+        "screen-time": "Bildschirmzeit",
+        "screenshot": "Screenshot",
+        "security": "Sicherheit",
+        "session-panel": "Sitzung",
+        "shape": "Form",
+        "system": "System",
+        "theme": "Design",
+        "toasts": "Toasts",
+        "transition": "Übergang",
+        "user": "Benutzer",
+        "wallpaper": "Hintergrundbild",
+        "weather": "Wetter",
+        "widget-list": "Widget-Liste",
+        "widgets": "Widgets"
+      },
+      "sections": {
+        "appearance": "Erscheinungsbild",
+        "backdrop": "Hintergrund",
+        "bar": "Leiste",
+        "desktop": "Desktop",
+        "dock": "Dock",
+        "hooks": "Hooks",
+        "location": "Standort",
+        "niri": "Niri",
+        "notifications": "Benachrichtigungen",
+        "osd": "OSD",
+        "panels": "Panels",
+        "popups": "Popups",
+        "power": "Energie",
+        "security": "Sicherheit",
+        "services": "Dienste",
+        "shell": "Shell",
+        "system": "System",
+        "templates": "Vorlagen",
+        "wallpaper": "Hintergrundbild"
+      }
+    },
+    "options": {
+      "clipboard": {
+        "auto-paste": {
+          "ctrl-shift-v": "Strg+Umschalt+V",
+          "ctrl-v": "Strg+V",
+          "shift-insert": "Umschalt+Einfg"
+        }
+      },
+      "control-center": {
+        "sidebar": {
+          "compact": "Kompakt",
+          "full": "Voll",
+          "none": "Keine"
+        }
+      },
+      "dock-launcher-position": {
+        "end": "Ende",
+        "none": "Keine",
+        "start": "Start"
+      },
+      "edge": {
+        "bottom": "Unten",
+        "left": "Links",
+        "right": "Rechts",
+        "top": "Oben"
+      },
+      "font-weight": {
+        "bold": "Fett",
+        "book": "Buch",
+        "default": "Standard (Leiste)",
+        "heavy": "Fett",
+        "light": "Hell",
+        "medium": "Mittel",
+        "regular": "Normal",
+        "semi-bold": "Halbfett",
+        "semi-light": "Halbhell",
+        "thin": "Dünn",
+        "ultra-bold": "Ultrastark",
+        "ultra-heavy": "Ultra Schwer",
+        "ultra-light": "Ultra Hell"
+      },
+      "layer": {
+        "overlay": "Overlay",
+        "top": "Oben"
+      },
+      "notification-urgency": {
+        "critical": "Kritisch",
+        "low": "Niedrig",
+        "normal": "Normal"
+      },
+      "orientation": {
+        "horizontal": "Horizontal",
+        "vertical": "Vertikal"
+      },
+      "screen-position": {
+        "bottom-center": "Unten Mitte",
+        "bottom-left": "Unten links",
+        "bottom-right": "Unten rechts",
+        "center-left": "Mitte Links",
+        "center-right": "Mitte Rechts",
+        "top-center": "Oben Mitte",
+        "top-left": "Oben links",
+        "top-right": "Oben rechts"
+      },
+      "shell": {
+        "panel-placement": {
+          "attached": "Angeheftet",
+          "centered": "Zentriert",
+          "floating": "Schwebend"
+        },
+        "panel-transparency": {
+          "glass": "Glas",
+          "soft": "Weich",
+          "solid": "Einfarbig"
+        },
+        "password-style": {
+          "filled-circles": "Gefüllte Kreise",
+          "random-icons": "Zufällige Icons"
+        },
+        "shadow-direction": {
+          "center": "Mitte",
+          "down": "Unten",
+          "down-left": "Unten links",
+          "down-right": "Unten rechts",
+          "left": "Links",
+          "right": "Rechts",
+          "up": "Aktiv",
+          "up-left": "Oben links",
+          "up-right": "Oben rechts"
+        }
+      },
+      "theme": {
+        "mode": {
+          "dark": "Dunkel",
+          "light": "Hell"
+        },
+        "source": {
+          "built-in": "Eingebaut",
+          "community": "Community",
+          "custom": "Benutzerdefiniert",
+          "wallpaper": "Hintergrundbild"
+        }
+      },
+      "theme-role": {
+        "custom": "Benutzerdefiniert…",
+        "default": "Standard"
+      },
+      "wallpaper": {
+        "fill": {
+          "center": "Mitte",
+          "crop": "Zuschneiden",
+          "fit": "Anpassen",
+          "repeat": "Wiederholen",
+          "stretch": "Strecken"
+        },
+        "order": {
+          "alphabetical": "Alphabetisch",
+          "random": "Zufällig"
+        },
+        "transition": {
+          "disc": "Disk",
+          "fade": "Verblassen",
+          "honeycomb": "Wabe",
+          "stripes": "Streifen",
+          "wipe": "Löschen",
+          "zoom": "Zoom"
+        }
+      },
+      "weather": {
+        "unit": {
+          "imperial": "Imperial",
+          "metric": "Metrik"
+        }
+      }
+    },
+    "schema": {
+      "appearance": {
+        "animation-speed": {
+          "description": "Geschwindigkeitsmultiplikator für alle Animationen",
+          "label": "Animationsgeschwindigkeit"
+        },
+        "animations": {
+          "description": "UI-Animationen aktivieren oder deaktivieren",
+          "label": "Animationen"
+        },
+        "app-icon-color": {
+          "description": "Palettenfarbe, die beim Einfärben von Anwendungssymbolen verwendet wird",
+          "label": "App-Symbolfarbe"
+        },
+        "app-icon-colorize": {
+          "description": "Anwendungssymbole in der gesamten Shell passend zur aktiven Palette neu einfärben",
+          "label": "App-Icons einfärben"
+        },
+        "builtin-palette": {
+          "description": "Wähle eine Palette aus dem mitgelieferten Katalog",
+          "label": "Integrierte Palette"
+        },
+        "community-palette": {
+          "description": "Wähle ein Farbschema aus dem Community-Katalog",
+          "label": "Community-Palette",
+          "search-placeholder": "Paletten suchen..."
+        },
+        "corner-roundness": {
+          "description": "Eckradius über alle Shell-UI-Container und -Steuerelemente skalieren",
+          "label": "Eckrundung"
+        },
+        "custom-palette": {
+          "description": "Wähle eine Palette aus ~/.config/noctalia/palettes/",
+          "label": "Benutzerdefinierte Palette",
+          "search-placeholder": "Benutzerdefinierte Paletten durchsuchen..."
+        },
+        "export-wallpaper-palette": {
+          "button": "Als benutzerdefinierte Palette speichern",
+          "description": "Speichere die aktuelle, vom Hintergrundbild generierte Palette als wiederverwendbare benutzerdefinierte Palettendatei",
+          "label": "Hintergrundbild-Palette exportieren"
+        },
+        "font-family": {
+          "description": "Schriftfamilie für die Shell-Oberfläche",
+          "label": "Schriftfamilie"
+        },
+        "global-shadow-alpha": {
+          "description": "Globale Oberflächenschatten-Deckkraft"
+        },
+        "global-shadow-direction": {
+          "description": "Richtung, aus der der Schatten von Oberflächen geworfen wird"
+        },
+        "language": {
+          "description": "Automatische Gebietsschemaerkennung überschreiben",
+          "label": "Sprache"
+        },
+        "palette-source": {
+          "description": "Woher die Farbpalette bezogen werden soll",
+          "label": "Farbpalettenquelle"
+        },
+        "theme-mode": {
+          "description": "Wähle dunkel, hell oder automatisch basierend auf der Tageszeit",
+          "label": "Designmodus"
+        },
+        "ui-scale": {
+          "description": "Skaliere die gesamte Oberfläche hoch oder runter",
+          "label": "UI-Skalierung"
+        },
+        "wallpaper-generation-scheme": {
+          "description": "Wähle, wie Hintergrundfarben in eine Palette umgewandelt werden",
+          "label": "Hintergrundbild-Generierungsschema"
+        }
+      },
+      "backdrop": {
+        "blur-intensity": {
+          "description": "Stärke der Hintergrundunschärfe",
+          "label": "Unschärfeintensität"
+        },
+        "enabled": {
+          "description": "Aktiviere die Hintergrundebene"
+        },
+        "tint-intensity": {
+          "description": "Tönungsintensität des Hintergrunds",
+          "label": "Tönungsintensität"
+        }
+      },
+      "bar": {
+        "auto-hide": {
+          "description": "Die Bar automatisch ausblenden, wenn sie ungenutzt ist"
+        },
+        "background-opacity": {
+          "description": "Hintergrunddeckkraft der Leiste"
+        },
+        "border": {
+          "description": "Farbfunktion für die Leistenkontur; feste Hex-Farben werden ebenfalls unterstützt",
+          "label": "Rand"
+        },
+        "border-width": {
+          "description": "Breite der Innenkontur für die Leiste",
+          "label": "Rahmenbreite"
+        },
+        "capsule-border": {
+          "description": "Standard-Farbrolle für die Kapsel-Umrandung; feste Hex-Farben werden ebenfalls unterstützt",
+          "label": "Kapselrand"
+        },
+        "capsule-fill": {
+          "description": "Standard-Capsule-Hintergrundfarbrolle; feste Hexadezimalfarben werden ebenfalls unterstützt",
+          "label": "Kapselfüllung"
+        },
+        "capsule-foreground": {
+          "description": "Standard-Symbol- und Beschriftungs-Farbrolle innerhalb von Kapseln; feste Hex-Farben werden ebenfalls unterstützt",
+          "label": "Kapsel-Vordergrund"
+        },
+        "capsule-opacity": {
+          "description": "Deckkraft der Widget-Kapsel-Hintergründe",
+          "label": "Kapsel-Deckkraft"
+        },
+        "capsule-padding": {
+          "description": "Innenabstand in Widget-Kapseln",
+          "label": "Kapsel-Abstand"
+        },
+        "capsule-radius": {
+          "description": "Standard-Eckradius für Widget-Kapseln, Workspace-Pillen und Taskbar-Workspace-Gruppen; leer lassen für automatische Pillenform oder 0 für eckige Ecken einstellen",
+          "label": "Kapselradius"
+        },
+        "center-widgets": {
+          "description": "Widgets in der Mitte der Leiste",
+          "label": "Zentrierte Widgets"
+        },
+        "contact-shadow": {
+          "description": "Dunkler Verlauf zwischen einem angehängten Panel und der Bar, um an der Nahtstelle Tiefe anzudeuten"
+        },
+        "content-padding": {
+          "description": "Abstand im Inhaltsbereich der Bar",
+          "label": "Inhaltsabstand"
+        },
+        "content-scale": {
+          "description": "Skalierungsfaktor für Bar-Inhalt",
+          "label": "Inhaltsskalierung"
+        },
+        "corner-bottom-left": {
+          "description": "Unterer linker Eckradius für die Bar"
+        },
+        "corner-bottom-right": {
+          "description": "Unterer rechter Eckenradius für die Bar"
+        },
+        "corner-radius": {
+          "description": "Abrundungsradius der Leiste"
+        },
+        "corner-top-left": {
+          "description": "Oberer linker Eckradius für die Bar"
+        },
+        "corner-top-right": {
+          "description": "Oberer rechter Eckenradius für die Bar"
+        },
+        "edge-margin": {
+          "description": "Abstand zum nächsten Bildschirmrand; positive Werte verschieben die Leiste davon weg"
+        },
+        "enabled": {
+          "description": "Diese Bar anzeigen oder ausblenden"
+        },
+        "end-widgets": {
+          "description": "Widgets am Ende (rechts/unten) der Bar",
+          "label": "End-Widgets"
+        },
+        "ends-margin": {
+          "description": "Einzug von jedem Ende der Leiste entlang ihrer Hauptachse"
+        },
+        "font-weight": {
+          "description": "Standardgewicht für Widget-Beschriftungen auf dieser Bar.",
+          "label": "Schriftstärke"
+        },
+        "layer": {
+          "description": "Nutze Overlay, um die Leiste über Vollbild-Apps anzuzeigen. Angehängte Panels folgen der Leiste.",
+          "label": "Wayland-Ebene"
+        },
+        "panel-overlap": {
+          "description": "Pixel eines angehefteten Panels überlappen den Rand der Leiste, um die Naht zu verbergen (anpassen, wenn du eine Linie oder Lücke siehst)",
+          "label": "Einblendungs-Überlappung"
+        },
+        "position": {
+          "description": "An welchem Bildschirmrand die Bar sitzt"
+        },
+        "reserve-space": {
+          "description": "Fenster vom Leistenrand wegschieben"
+        },
+        "shadow": {
+          "description": "Den globalen Oberflächenschatten von der Bar werfen"
+        },
+        "start-widgets": {
+          "description": "Widgets am Anfang (links/oben) der Leiste",
+          "label": "Start-Widgets"
+        },
+        "thickness": {
+          "description": "Leistendicke in Pixeln",
+          "label": "Dicke"
+        },
+        "widget-capsules": {
+          "description": "Widgets in Kapsel-Hintergründe einbetten",
+          "label": "Widget-Kapseln"
+        },
+        "widget-color": {
+          "description": "Standard-Symbol- und Beschriftungsfarbrolle für Widgets auf dieser Bar; feste Hex-Farben werden ebenfalls unterstützt",
+          "label": "Widget-Farbe"
+        },
+        "widget-spacing": {
+          "description": "Abstand zwischen den Bar-Widgets",
+          "label": "Widget-Abstand"
+        }
+      },
+      "desktop": {
+        "screen-corners-enabled": {
+          "description": "Runde die Bildschirmecken mit einem schwarzen Overlay ab",
+          "label": "Bildschirmecken"
+        },
+        "screen-corners-size": {
+          "description": "Radius der abgerundeten Bildschirmecken in Pixeln",
+          "label": "Eckradius"
+        },
+        "widgets": {
+          "description": "Widgets auf dem Desktop anzeigen",
+          "label": "Desktop-Widgets"
+        },
+        "widgets-editor": {
+          "button": "Editor umschalten",
+          "description": "Desktop-Widgets hinzufügen, verschieben und deren Größe ändern",
+          "label": "Widget-Editor"
+        }
+      },
+      "dock": {
+        "active-icon-opacity": {
+          "description": "Deckkraft des fokussierten Dock-Symbols",
+          "label": "Aktive Icon-Deckkraft"
+        },
+        "active-icon-scale": {
+          "description": "Skalierung des fokussierten Dock-Symbols",
+          "label": "Skalierung aktiver Symbole"
+        },
+        "active-monitor-only": {
+          "description": "Nur Anwendungen auf dem aktiven Monitor anzeigen",
+          "label": "Nur auf aktivem Monitor"
+        },
+        "auto-hide": {
+          "description": "Dock automatisch ausblenden, wenn es nicht verwendet wird"
+        },
+        "background-opacity": {
+          "description": "Hintergrunddeckkraft des Docks"
+        },
+        "corner-bottom-left": {
+          "description": "Radius der unteren linken Ecke für das Dock"
+        },
+        "corner-bottom-right": {
+          "description": "Radius der unteren rechten Ecke für das Dock"
+        },
+        "corner-radius": {
+          "description": "Eckradius des Docks"
+        },
+        "corner-top-left": {
+          "description": "Radius der oberen linken Ecke für das Dock"
+        },
+        "corner-top-right": {
+          "description": "Oberer rechter Eckradius für das Dock"
+        },
+        "cross-axis-padding": {
+          "description": "Innenabstand entlang der Querachse des Docks (zwischen den Symbolen und dem Bildschirmrand)"
+        },
+        "edge-margin": {
+          "description": "Abstand zum nächsten Bildschirmrand; positive Werte lassen das Dock davon wegschweben"
+        },
+        "enabled": {
+          "description": "Das Dock anzeigen oder ausblenden"
+        },
+        "ends-margin": {
+          "description": "Versatz von jedem Ende des Docks entlang seiner Hauptachse"
+        },
+        "icon-size": {
+          "description": "Größe der Dock-Icons in Pixeln",
+          "label": "Symbolgröße"
+        },
+        "inactive-icon-opacity": {
+          "description": "Deckkraft von nicht fokussierten Dock-Icons",
+          "label": "Deckkraft inaktiver Symbole"
+        },
+        "inactive-icon-scale": {
+          "description": "Skalierung der nicht fokussierten Dock-Symbole",
+          "label": "Skalierung inaktiver Symbole"
+        },
+        "item-spacing": {
+          "description": "Abstand zwischen Dock-Elementen",
+          "label": "Elementabstand"
+        },
+        "launcher-icon": {
+          "description": "Tabler icon, das auf der Dock Launcher-Schaltfläche angezeigt wird",
+          "label": "Starter-Symbol"
+        },
+        "launcher-position": {
+          "description": "Zeige einen Launcher-Button am Anfang oder Ende des Docks an",
+          "label": "Starter-Schaltfläche"
+        },
+        "magnification": {
+          "description": "Vergrößere Dock-Symbole in der Nähe des Zeigers, im macOS-Stil",
+          "label": "Vergrößerung"
+        },
+        "magnification-scale": {
+          "description": "Maximaler Symbolskalierungsfaktor in der Zeigermitte (1.0 deaktiviert die Vergrößerung)",
+          "label": "Vergrößerungsfaktor"
+        },
+        "main-axis-padding": {
+          "description": "Innenabstand entlang der Hauptachse des Docks (zwischen den Symbolen und den kurzen Enden der Capsule)"
+        },
+        "monitors": {
+          "description": "Wähle aus, welche Monitore das Dock anzeigen (leer lassen für alle); die Filterung nach aktivem Monitor gilt innerhalb dieser Monitore",
+          "label": "Monitore"
+        },
+        "pinned-apps": {
+          "description": "Desktop-Eintrag-IDs von an das Dock angehefteten Apps",
+          "label": "Gepinnte Apps"
+        },
+        "position": {
+          "description": "An welchem Bildschirmrand das Dock platziert ist"
+        },
+        "reserve-space": {
+          "description": "Bildschirmplatz für das Dock reservieren"
+        },
+        "shadow": {
+          "description": "Wirf den globalen Oberflächenschatten vom Dock"
+        },
+        "show-dots": {
+          "description": "Punkte für laufende Fenster neben den Dock-Symbolen anzeigen",
+          "label": "Punkte anzeigen"
+        },
+        "show-instance-count": {
+          "description": "Zeige ein Badge mit der Anzahl offener Instanzen",
+          "label": "Instanzenanzahl anzeigen"
+        },
+        "show-running": {
+          "description": "Laufende Anwendungen anzeigen, die nicht angeheftet sind",
+          "label": "Laufende anzeigen"
+        }
+      },
+      "hooks": {
+        "command-placeholder": "Shell-Befehl oder Skriptpfad",
+        "events": {
+          "battery-charging": {
+            "description": "Befehl, der ausgeführt wird, wenn der Akku zu laden beginnt",
+            "label": "Beim Laden des Akkus"
+          },
+          "battery-discharging": {
+            "description": "Befehl, der ausgeführt wird, wenn der Akku sich zu entladen beginnt",
+            "label": "Bei Batterieentladung"
+          },
+          "battery-percentage-changed": {
+            "description": "Befehl, der ausgeführt wird, wenn sich der Batterieprozentsatz ändert",
+            "label": "Bei Akkuladestand geändert"
+          },
+          "battery-plugged": {
+            "description": "Befehl, der ausgeführt wird, wenn der Akku vollständig geladen ist oder das Laden aussteht",
+            "label": "Bei Akku angeschlossen"
+          },
+          "bluetooth-disabled": {
+            "description": "Befehl, der ausgeführt wird, wenn Bluetooth deaktiviert ist",
+            "label": "Bei deaktiviertem Bluetooth"
+          },
+          "bluetooth-enabled": {
+            "description": "Befehl, der ausgeführt wird, wenn Bluetooth aktiviert ist",
+            "label": "Bei aktiviertem Bluetooth"
+          },
+          "colors-changed": {
+            "description": "Befehl, der ausgeführt wird, wenn die aktive Farbpalette wechselt",
+            "label": "Bei Farben geändert"
+          },
+          "logging-out": {
+            "description": "Befehl, der vor dem Abmelden ausgeführt wird",
+            "label": "Beim Abmelden"
+          },
+          "power-profile-changed": {
+            "description": "Befehl, der ausgeführt wird, wenn sich das aktive UPower/PPD Power-Profil ändert",
+            "label": "Beim Ändern des Energieprofils"
+          },
+          "rebooting": {
+            "description": "Befehl, der vor dem Neustart ausgeführt wird",
+            "label": "Beim Neustart"
+          },
+          "session-locked": {
+            "description": "Befehl, der ausgeführt wird, wenn die Sitzung gesperrt ist",
+            "label": "Bei gesperrter Sitzung"
+          },
+          "session-unlocked": {
+            "description": "Befehl, der nach dem Entsperren der Sitzung ausgeführt wird",
+            "label": "Beim Entsperren der Sitzung"
+          },
+          "shutting-down": {
+            "description": "Befehl, der vor dem Herunterfahren ausgeführt wird",
+            "label": "Beim Herunterfahren"
+          },
+          "started": {
+            "description": "Befehl, der nach dem Start von Noctalia ausgeführt wird",
+            "label": "Beim Start"
+          },
+          "theme-mode-changed": {
+            "description": "Befehl, der ausgeführt wird, wenn der aktive Themenmodus zwischen hell und dunkel wechselt",
+            "label": "Bei Änderung des Designmodus"
+          },
+          "wallpaper-changed": {
+            "description": "Befehl, der beim Wechsel des Hintergrundbilds ausgeführt wird",
+            "label": "Bei Hintergrundbildänderung"
+          },
+          "wifi-disabled": {
+            "description": "Befehl, der ausgeführt wird, wenn Wi-Fi deaktiviert ist",
+            "label": "Bei deaktiviertem Wi-Fi"
+          },
+          "wifi-enabled": {
+            "description": "Befehl, der ausgeführt wird, wenn Wi-Fi aktiviert ist",
+            "label": "Bei Wi-Fi aktiviert"
+          }
+        }
+      },
+      "idle": {
+        "behaviors": {
+          "description": "Benannte Leerlaufaktionen mit Voreinstellungen (Sperren, Bildschirme aus, Ruhezustand) oder benutzerdefinierten Befehlen, Zeitlimits, Wiederaufnahme-Kopplung und Reihenfolge",
+          "label": "Verhalten"
+        },
+        "pre-action-fade": {
+          "description": "Sekunden der Vollbild-Dimmung vor dem Leerlaufbefehl; verwende 0 zum Deaktivieren",
+          "label": "Abdunklung bei Inaktivität"
+        }
+      },
+      "keybinds": {
+        "cancel": {
+          "description": "Popups schließen, Panels verwerfen oder den aktuellen Vorgang abbrechen",
+          "label": "Abbrechen"
+        },
+        "down": {
+          "description": "Fokus oder Auswahl eine Zeile nach unten verschieben",
+          "label": "Nach unten navigieren"
+        },
+        "left": {
+          "description": "Fokus oder Auswahl nach links verschieben",
+          "label": "Nach links navigieren"
+        },
+        "right": {
+          "description": "Fokus oder Auswahl nach rechts verschieben",
+          "label": "Nach rechts navigieren"
+        },
+        "up": {
+          "description": "Fokus oder Auswahl um eine Zeile nach oben verschieben",
+          "label": "Nach oben"
+        },
+        "validate": {
+          "description": "Auswahl bestätigen, Eingaben absenden oder das fokussierte Element aktivieren",
+          "label": "Bestätigen"
+        }
+      },
+      "lockscreen": {
+        "blur-intensity": {
+          "description": "Wie stark der Sperrbildschirmhintergrund weichgezeichnet ist",
+          "label": "Unschärfestärke"
+        },
+        "blurred-desktop": {
+          "description": "Verwende einen Schnappschuss des Desktops als Hintergrund der Bildschirmsperre",
+          "label": "Bildschirmaufnahme"
+        },
+        "monitors": {
+          "description": "Wähle aus, welche Monitore den Sperrbildschirm anzeigen sollen; lass es leer, um ihn auf allen Monitoren anzuzeigen",
+          "label": "Monitore"
+        },
+        "tint-intensity": {
+          "description": "Oberflächenfarbton über dem Sperrbildschirmhintergrund",
+          "label": "Tönungsintensität"
+        },
+        "wallpaper": {
+          "description": "Benutzerdefiniertes Bild für den Sperrbildschirm-Hintergrund. Leer lassen, um das Desktop-Hintergrundbild zu verwenden.",
+          "label": "Hintergrundbild",
+          "placeholder": "Desktop-Hintergrund verwenden"
+        },
+        "widgets": {
+          "description": "Konfigurierbare Widgets auf dem Sperrbildschirm anzeigen",
+          "label": "Sperrbildschirm-Widgets"
+        },
+        "widgets-editor": {
+          "button": "Editor umschalten",
+          "description": "Widgets auf dem Sperrbildschirm hinzufügen, verschieben und deren Größe ändern",
+          "label": "Sperrbildschirm Widget Editor"
+        }
+      },
+      "notifications": {
+        "allowed-urgencies": {
+          "description": "Nur externe Benachrichtigungen mit den ausgewählten Dringlichkeitsstufen anzeigen",
+          "label": "Erlaubte Dringlichkeiten"
+        },
+        "blacklist": {
+          "description": "Passende Absender ausblenden (App-Name, Desktop-Eintrag oder Kategorie)",
+          "label": "Benachrichtigungssperrliste"
+        },
+        "blacklist-allow-critical": {
+          "description": "Kritische Benachrichtigungen von Absendern auf der Blacklist trotzdem anzeigen",
+          "label": "Kritisches trotz Blacklist zulassen"
+        },
+        "collapse-on-dismiss": {
+          "description": "Verbleibende Toasts nachrücken lassen, um Lücken zu schließen, wenn einer verworfen wird",
+          "label": "Beim Schließen einklappen"
+        },
+        "daemon": {
+          "description": "Aktiviere den integrierten Benachrichtigungs-Daemon",
+          "label": "Benachrichtigungs-Daemon"
+        },
+        "layer": {
+          "description": "Verwende Overlay, um Benachrichtigungs-Toasts über Vollbild-Apps anzuzeigen.",
+          "label": "Wayland-Schicht"
+        },
+        "monitors": {
+          "description": "Wähle, welche Monitore Benachrichtigungs-Toasts anzeigen; lasse es leer, um sie auf allen Monitoren anzuzeigen",
+          "label": "Monitore"
+        },
+        "offset-x": {
+          "description": "Absoluter horizontaler Rand vom Bildschirm- oder Bar-Rand",
+          "label": "Horizontaler Abstand"
+        },
+        "offset-y": {
+          "description": "Absoluter vertikaler Rand vom Bildschirm- oder Bar-Rand",
+          "label": "Vertikaler Rand"
+        },
+        "position": {
+          "description": "Bildschirmposition für Benachrichtigungs-Toasts",
+          "label": "Bildschirmposition"
+        },
+        "scale": {
+          "description": "Benachrichtigungs-Toasts relativ zur Skalierung der Shell-Benutzeroberfläche skalieren",
+          "label": "Größe"
+        },
+        "show-actions": {
+          "description": "Aktionsschaltflächen in Benachrichtigungs-Toasts anzeigen; wenn deaktiviert, löst das Klicken auf den Toast seine Standardaktion aus",
+          "label": "Aktionsschaltflächen anzeigen"
+        },
+        "show-app-name": {
+          "description": "Zeige den Namen der sendenden Anwendung in Benachrichtigungs-Toasts",
+          "label": "App-Namen anzeigen"
+        },
+        "toast-opacity": {
+          "description": "Hintergrunddeckkraft von Benachrichtigungs-Toasts",
+          "label": "Hintergrunddeckkraft"
+        }
+      },
+      "panels": {
+        "borders": {
+          "description": "Umrandung auf Panels und Abschnittskarten in Panels zeichnen",
+          "label": "Ränder"
+        },
+        "control-center-sidebar": {
+          "description": "Bei Start und allgemeinem Öffnen",
+          "label": "Seitenleiste"
+        },
+        "control-center-sidebar-section": {
+          "description": "Beim Öffnen einer bestimmten Registerkarte (Lautstärke, Medien usw.)",
+          "label": "Seitenleiste beim Öffnen eines Tabs"
+        },
+        "home-shortcuts": {
+          "description": "Wähle bis zu sechs Schnelltasten für den Home-Tab",
+          "label": "Startseiten-Kurzbefehle"
+        },
+        "launcher-categories": {
+          "description": "Kategoriefilter im Launcher anzeigen; mit Tab umschalten, während der Launcher geöffnet ist",
+          "label": "Kategorien anzeigen"
+        },
+        "launcher-compact": {
+          "description": "Kleinere Symbole und engere Ergebniszeilen verwenden",
+          "label": "Kompakte Zeilen"
+        },
+        "launcher-show-icons": {
+          "description": "App-Symbole in den Launcher-Ergebnissen anzeigen",
+          "label": "App-Symbole anzeigen"
+        },
+        "open-near-click-clipboard": {
+          "description": "Positioniere das Zwischenablage-Panel in der Nähe des Bar-Klicks, anstatt es entlang der Bar zu zentrieren",
+          "label": "In Klicknähe öffnen"
+        },
+        "open-near-click-control-center": {
+          "description": "Positioniere das Kontrollzentrum-Panel nahe dem Klick auf die Leiste, anstatt es entlang der Leiste zu zentrieren",
+          "label": "Am Klickpunkt öffnen"
+        },
+        "open-near-click-launcher": {
+          "description": "Positioniere das Launcher-Panel nahe dem Klick auf die Bar, anstatt es mittig auf der Bar auszurichten",
+          "label": "Nahe dem Klick öffnen"
+        },
+        "open-near-click-session": {
+          "description": "Positioniere das Sitzungsmenü-Panel nahe dem Klick auf die Bar, anstatt es entlang der Bar zu zentrieren",
+          "label": "Nahe Klick öffnen"
+        },
+        "open-near-click-wallpaper": {
+          "description": "Positioniere das Hintergrundbildauswahl-Panel nahe dem Klickbereich der Bar, anstatt es entlang der Bar zu zentrieren.",
+          "label": "In Klicknähe öffnen"
+        },
+        "placement-clipboard": {
+          "description": "Wähle, ob die Zwischenablage an der Bar befestigt ist, in ihrer Nähe schwebt oder zentriert geöffnet wird",
+          "label": "Platzierung"
+        },
+        "placement-control-center": {
+          "description": "Wähle, ob das Control Center an der Bar andockt, in ihrer Nähe schwebt oder zentriert geöffnet wird",
+          "label": "Platzierung"
+        },
+        "placement-launcher": {
+          "description": "Wähle, ob der Launcher an der Bar andockt, in ihrer Nähe schwebt oder zentriert geöffnet wird",
+          "label": "Platzierung"
+        },
+        "placement-session": {
+          "description": "Wähle, ob das Sitzungsmenü an der Leiste befestigt ist, in ihrer Nähe schwebt oder zentriert geöffnet wird",
+          "label": "Platzierung"
+        },
+        "placement-wallpaper": {
+          "description": "Wähle, ob die Hintergrundbildauswahl an der Bar angeheftet ist, in ihrer Nähe schwebt oder zentriert geöffnet wird",
+          "label": "Platzierung"
+        },
+        "shadow": {
+          "description": "Wirf den globalen Oberflächenschatten von Panel-Oberflächen"
+        },
+        "transparency-mode": {
+          "description": "Panel-Glasstil, einschließlich der Deckkraft von Floating-/zentrierten Panels und der Kartentransparenz",
+          "label": "Transparenz"
+        }
+      },
+      "power": {
+        "session-actions": {
+          "description": "Energiemenü-Einträge, Reihenfolge, benutzerdefinierte Befehle und Symbole",
+          "label": "Einträge"
+        }
+      },
+      "services": {
+        "audio-overdrive": {
+          "description": "Lautstärke über 100% zulassen",
+          "label": "Audio-Boost"
+        },
+        "calendar": {
+          "description": "Termine aus deinen Online-Kalenderkonten anzeigen",
+          "label": "Kalender"
+        },
+        "calendar-add": {
+          "button": "Konto hinzufügen",
+          "description": "iCloud-, CalDAV- oder Google-Konten hinzufügen",
+          "label": "Kalenderkonten"
+        },
+        "calendar-edit": {
+          "button": "Bearbeiten",
+          "description": "Dieses Kalenderkonto aktualisieren"
+        },
+        "calendar-refresh-interval": {
+          "description": "Wie oft Kalenderereignisse synchronisiert werden sollen (Minuten)",
+          "label": "Aktualisierungsintervall"
+        },
+        "day-temperature": {
+          "description": "Farbtemperatur tagsüber (Kelvin)",
+          "label": "Tagestemperatur"
+        },
+        "ddcutil": {
+          "description": "Steuere die Helligkeit externer Monitore über DDC/CI",
+          "label": "DDC/CI (ddcutil)",
+          "requires-ddcutil": "Installiere ddcutil, um die DDC/CI-Helligkeitssteuerung zu aktivieren"
+        },
+        "force-night-light": {
+          "description": "Nachtlicht immer unabhängig von der Uhrzeit aktivieren",
+          "label": "Blaulichtfilter erzwingen"
+        },
+        "latitude": {
+          "description": "Manueller Breitengrad für den Sonnenaufgangs- und Sonnenuntergangszeitplan, wenn die automatische Standortbestimmung und die Adresse deaktiviert sind",
+          "label": "Breitengrad"
+        },
+        "location-address": {
+          "description": "Stadt oder Adresse zum Lokalisieren; wird verwendet, wenn die automatische Standortbestimmung deaktiviert ist",
+          "label": "Adresse",
+          "placeholder": "Stadt, Land"
+        },
+        "location-auto-locate": {
+          "description": "Standort automatisch anhand deiner IP-Adresse erkennen",
+          "label": "Automatische Standortbestimmung (IP)"
+        },
+        "longitude": {
+          "description": "Manuelle Länge für den Sonnenaufgangs-/Sonnenuntergangsplan; wird verwendet, wenn die automatische Standortbestimmung und Adresse deaktiviert sind",
+          "label": "Längengrad"
+        },
+        "mpris-blacklist": {
+          "description": "Player, die für Mediensteuerung und Aktuelle Wiedergabe ignoriert werden sollen",
+          "label": "MPRIS-Player-Blacklist"
+        },
+        "night-light": {
+          "description": "Bildschirmfarben nachts wärmer einstellen",
+          "label": "Nachtlicht",
+          "requires-gamma-control": "Compositor unterstützt keine Gammakorrektur"
+        },
+        "night-temperature": {
+          "description": "Farbtemperatur nachts (Kelvin)",
+          "label": "Nachttemperatur"
+        },
+        "notification-sound": {
+          "description": "Sounddatei für Benachrichtigungs-Feedback",
+          "label": "Benachrichtigungston",
+          "placeholder": "/path/to/sound.wav"
+        },
+        "shell-sounds": {
+          "description": "Soundeffekte für Shell-Ereignisse abspielen",
+          "label": "Shell-Sounds"
+        },
+        "sound-volume": {
+          "description": "Lautstärke für Shell-Soundeffekte",
+          "label": "Lautstärke"
+        },
+        "sunrise": {
+          "description": "Manuelle Sonnenaufgangszeit in HH:MM, wird verwendet, wenn kein Standort festgelegt ist",
+          "label": "Sonnenaufgang"
+        },
+        "sunset": {
+          "description": "Manuelle Sonnenuntergangszeit im Format HH:MM, wird verwendet, wenn kein Standort festgelegt ist",
+          "label": "Sonnenuntergang"
+        },
+        "system-monitor": {
+          "cpu-poll": {
+            "description": "Sekunden zwischen Stichproben der CPU-Auslastung, CPU-Temperatur und des Lastdurchschnitts (0 deaktiviert)",
+            "label": "CPU-Abfrageintervall"
+          },
+          "description": "Beispiel-CPU-, Arbeitsspeicher-, Netzwerk-, Last-, Temperatur- und Festplattenstatistiken",
+          "disk-poll": {
+            "description": "Sekunden zwischen Festplattennutzungs- und Swap-Nutzungs-Messungen (0 deaktiviert)",
+            "label": "Festplatten-Abfrageintervall"
+          },
+          "gpu-poll": {
+            "description": "Sekunden zwischen GPU-Temperatur- und VRAM-Messungen: 0 deaktiviert es (Standard), wodurch das Aufwecken einer diskreten GPU vermieden wird; 5 ist ein gutes Intervall, wenn du es aktivierst",
+            "label": "GPU-Abfrageintervall"
+          },
+          "label": "Systemüberwachung",
+          "memory-poll": {
+            "description": "Sekunden zwischen RAM-Nutzungsabtastungen (0 deaktiviert)",
+            "label": "Speicherabfrageintervall"
+          },
+          "network-poll": {
+            "description": "Sekunden zwischen Netzwerkdurchsatz-Abtastungen (0 deaktiviert)",
+            "label": "Netzwerk-Abfrageintervall"
+          },
+          "stats": {
+            "cpu-temp": "CPU-Temp",
+            "cpu-usage": "CPU-Auslastung",
+            "disk-usage": "Festplattennutzung",
+            "gpu-temp": "GPU Temperatur",
+            "gpu-usage": "GPU-Auslastung",
+            "gpu-vram": "GPU VRAM",
+            "network-rx": "Herunterladen",
+            "network-tx": "Hochladen",
+            "ram-usage": "RAM-Auslastung",
+            "swap-usage": "Swap-Nutzung"
+          },
+          "threshold": {
+            "description": "Aktivitätsschwelle (links) und kritische Schwelle (rechts)",
+            "label": "{stat}"
+          }
+        },
+        "volume-change-sound": {
+          "description": "Sounddatei für Lautstärke-Feedback",
+          "label": "Ton bei Lautstärkeänderung",
+          "placeholder": "/path/to/sound.wav"
+        },
+        "weather": {
+          "description": "Wetterdienst aktivieren",
+          "label": "Wetter"
+        },
+        "weather-effects": {
+          "description": "Visuelle Wettereffekte anzeigen",
+          "label": "Wettereffekte"
+        },
+        "weather-refresh-interval": {
+          "description": "Wie oft Wetterdaten aktualisieren (Minuten)",
+          "label": "Aktualisierungsintervall"
+        },
+        "weather-unit": {
+          "description": "Einheitensystem für die Wetteranzeige",
+          "label": "Einheiten"
+        }
+      },
+      "shared": {
+        "auto-hide": {
+          "label": "Automatisch ausblenden"
+        },
+        "background-opacity": {
+          "label": "Hintergrunddeckkraft"
+        },
+        "contact-shadow": {
+          "label": "Kontaktschatten"
+        },
+        "corner-bottom-left": {
+          "label": "Radius unten links"
+        },
+        "corner-bottom-right": {
+          "label": "Radius unten rechts"
+        },
+        "corner-radius": {
+          "label": "Eckradius"
+        },
+        "corner-top-left": {
+          "label": "Radius oben links"
+        },
+        "corner-top-right": {
+          "label": "Radius oben rechts"
+        },
+        "cross-axis-padding": {
+          "label": "Querachsen-Abstand"
+        },
+        "edge-margin": {
+          "label": "Randabstand"
+        },
+        "enabled": {
+          "label": "Aktiviert"
+        },
+        "ends-margin": {
+          "label": "Endabstand"
+        },
+        "main-axis-padding": {
+          "label": "Hauptachsen-Abstand"
+        },
+        "position": {
+          "label": "Position"
+        },
+        "reserve-space": {
+          "label": "Platz reservieren"
+        },
+        "shadow": {
+          "label": "Schatten"
+        },
+        "shadow-alpha": {
+          "label": "Schatten-Deckkraft"
+        },
+        "shadow-direction": {
+          "label": "Schattenrichtung"
+        }
+      },
+      "shell": {
+        "avatar-path": {
+          "description": "Pfad zu einem benutzerdefinierten Avatar-Bild",
+          "label": "Avatar-Pfad",
+          "placeholder": "/path/to/avatar.png"
+        },
+        "clipboard-auto-paste": {
+          "description": "Auswahlen der Zwischenablage automatisch einfügen",
+          "label": "Automatisches Einfügen der Zwischenablage"
+        },
+        "clipboard-confirm-clear-history": {
+          "description": "Frage, bevor du den Zwischenablageverlauf leerst oder einen nicht angehefteten Eintrag aus dem Panel löschst; wenn diese Option deaktiviert ist, werden diese Aktionen sofort angewendet (angeheftete Einträge fragen weiterhin vor dem Löschen)",
+          "label": "Verlauf löschen bestätigen"
+        },
+        "clipboard-enabled": {
+          "description": "Aktiviere den Zwischenablage-Verlauf, das Zwischenablage-Panel und die Kopieren/Einfügen-Integration",
+          "label": "Zwischenablage"
+        },
+        "clipboard-history-max-entries": {
+          "description": "Maximale Anzahl nicht angehefteter Einträge in der Zwischenablage-Historie",
+          "label": "Verlaufgröße"
+        },
+        "clipboard-image-action": {
+          "description": "Befehl, der für Bild-Zwischenablageeinträge ausgeführt wird; verwende {path} für den Dateipfad, {stdin} zur Markierung der stdin-Position, oder lasse {path} weg, um automatisch weiterzuleiten",
+          "label": "Bild-Aktionsbefehl",
+          "placeholder": "gimp {path} oder satty -f -"
+        },
+        "date-format": {
+          "description": "Standard-Datumsformat für die Shell-UI ohne eigene Einstellung",
+          "label": "Datumsformat"
+        },
+        "launch-apps-as-systemd-services": {
+          "description": "Startet Anwendungen in separaten systemd-Diensten, damit sie sich die cgroup von Noctalia nicht teilen",
+          "label": "Apps als systemd-Dienste starten"
+        },
+        "middle-click-opens-widget-settings": {
+          "description": "Öffne die Einstellungen eines Bar-Widgets von der Bar aus mit einem Mittelklick",
+          "label": "Mittelklick öffnet Widget-Einstellungen"
+        },
+        "niri-overview-type-to-launch": {
+          "description": "Öffnet den Launcher, wenn du in der niri Overview tippst; nutzt eine winzige Tastatur-Fokusfläche, während die Overview geöffnet ist",
+          "label": "Zum Starten tippen"
+        },
+        "offline-mode": {
+          "description": "Alle ausgehenden Netzwerkanfragen blockieren",
+          "label": "Offline-Modus"
+        },
+        "osd-background-opacity": {
+          "description": "Hintergrunddeckkraft von OSD-Popups",
+          "label": "Hintergrund-Deckkraft"
+        },
+        "osd-kinds-bluetooth": {
+          "description": "Zeige ein OSD-Popup, wenn Bluetooth umgeschaltet wird",
+          "label": "Bluetooth"
+        },
+        "osd-kinds-brightness": {
+          "description": "Ein OSD-Popup anzeigen, wenn sich die Bildschirmhelligkeit ändert",
+          "label": "Helligkeit"
+        },
+        "osd-kinds-caffeine": {
+          "description": "Zeige ein OSD-Popup an, wenn sich der Zustand von Caffeine (Leerlauf-Inhibitor) ändert",
+          "label": "Koffein"
+        },
+        "osd-kinds-dnd": {
+          "description": "Zeige ein OSD-Popup, wenn der Do Not Disturb-Modus umgeschaltet wird",
+          "label": "Nicht stören"
+        },
+        "osd-kinds-keyboard-layout": {
+          "description": "Zeige ein OSD-Popup an, wenn sich das Tastaturlayout ändert",
+          "label": "Tastaturlayout"
+        },
+        "osd-kinds-lock-keys": {
+          "description": "OSD-Popups für Änderungen bei Caps Lock, Num Lock und Scroll Lock anzeigen",
+          "label": "Sperrtasten"
+        },
+        "osd-kinds-power-profile": {
+          "description": "Zeige ein OSD-Popup, wenn sich das Energieprofil ändert",
+          "label": "Energieprofil"
+        },
+        "osd-kinds-volume": {
+          "description": "OSD-Popups anzeigen, wenn sich die Lautstärke ändert; verwende die erweiterten Einstellungen, um Ausgabe und Eingabe separat zu steuern",
+          "label": "Lautstärke"
+        },
+        "osd-kinds-volume-input": {
+          "description": "Zeige ein OSD-Popup, wenn sich die Eingangslautstärke (Mikrofon) ändert",
+          "label": "Eingabelautstärke"
+        },
+        "osd-kinds-volume-output": {
+          "description": "Zeige ein OSD-Popup, wenn sich die Ausgabelautstärke (Lautsprecher) ändert",
+          "label": "Ausgabelautstärke"
+        },
+        "osd-kinds-wifi": {
+          "description": "Zeige ein OSD-Popup, wenn Wi-Fi umgeschaltet wird",
+          "label": "Wi-Fi"
+        },
+        "osd-monitors": {
+          "description": "Wähle aus, welche Monitore OSD-Popups anzeigen; lasse es leer, um sie auf allen Monitoren anzuzeigen",
+          "label": "Monitore"
+        },
+        "osd-offset-x": {
+          "description": "Absoluter horizontaler Rand vom Bildschirmrand",
+          "label": "Horizontalabstand"
+        },
+        "osd-offset-y": {
+          "description": "Absoluter vertikaler Abstand vom Bildschirmrand",
+          "label": "Vertikaler Abstand"
+        },
+        "osd-orientation": {
+          "description": "Ausrichtung für OSD-Popups",
+          "label": "Ausrichtung"
+        },
+        "osd-position": {
+          "description": "Bildschirmposition für OSD Pop-ups",
+          "label": "Bildschirmposition"
+        },
+        "osd-scale": {
+          "description": "OSD-Popups relativ zur UI-Skalierung der Shell skalieren (1.0 behält die Standardgröße bei)",
+          "label": "Skalierung"
+        },
+        "password-style": {
+          "description": "Visueller Stil für die Maskierung der Passworteingabe",
+          "label": "Passwort-Stil"
+        },
+        "polkit-agent": {
+          "description": "Aktiviere den integrierten Authentifizierungs-Agenten",
+          "label": "Polkit Agent"
+        },
+        "screen-time-enabled": {
+          "description": "Nutzung pro App verfolgen und im Control Center anzeigen",
+          "label": "Bildschirmzeit"
+        },
+        "screenshot-copy-to-clipboard": {
+          "description": "Lege das erfasste PNG in die Zwischenablage.",
+          "label": "In die Zwischenablage kopieren"
+        },
+        "screenshot-directory": {
+          "description": "Ordner für gespeicherte PNG-Dateien; leer lassen, um ~/Bilder zu verwenden",
+          "label": "Ausgabeverzeichnis",
+          "placeholder": "~/Pictures"
+        },
+        "screenshot-filename-pattern": {
+          "description": "strftime-Muster ohne Dateierweiterung (.png wird hinzugefügt); verwende %s für Unix-Epoche",
+          "label": "Dateinamensmuster"
+        },
+        "screenshot-freeze-screen": {
+          "description": "Erfasse den Desktop vor der Bereichsauswahl, damit sich bewegende Inhalte ruhig bleiben",
+          "label": "Bildschirm einfrieren"
+        },
+        "screenshot-pipe-command": {
+          "description": "Befehl ausgeführt als /bin/sh -lc mit dem PNG auf stdin; für Annotatoren oder Uploader (zum Beispiel: swappy -f - oder satty -f -)",
+          "label": "Pipe-Befehl",
+          "placeholder": "swappy -f -"
+        },
+        "screenshot-pipe-to-command": {
+          "description": "Sende das aufgenommene PNG über stdin an einen Shell-Befehl",
+          "label": "An Befehl weiterleiten"
+        },
+        "screenshot-save-to-file": {
+          "description": "Schreibe Screenshots als PNG-Dateien in das Ausgabeverzeichnis",
+          "label": "In Datei speichern"
+        },
+        "show-location": {
+          "description": "Standortnamen in Wetter-Widgets anzeigen",
+          "label": "Standort anzeigen"
+        },
+        "sync-greeter": {
+          "button": "Jetzt synchronisieren",
+          "description": "Kopiere das aktuelle Hintergrundbild und die Farben in den Noctalia Greeter (erfordert Administratorgenehmigung)",
+          "label": "Noctalia Begrüßung"
+        },
+        "telemetry": {
+          "description": "Sendet einen kleinen anonymen Start-Ping mit Version, OS, Compositor, Monitorauflösungen, RAM und UI-Skalierung",
+          "label": "Anonymer Start-Ping"
+        },
+        "time-format": {
+          "description": "Standard-Zeitformat für die Shell-UI ohne eigene Einstellung",
+          "label": "Zeitformat"
+        }
+      },
+      "system": {
+        "battery-device-warning-threshold": {
+          "description": "Überschreibe den Schwellenwert für die Batteriewarnung für dieses Gerät. Setze 0, um Warnungen für dieses Gerät zu deaktivieren.",
+          "label": "{device} Warnungsschwellenwert"
+        },
+        "battery-warning-threshold": {
+          "description": "System-Akkuprozentsatz, bei oder unter dem die Shell eine Benachrichtigung bei niedrigem Akkustand sendet und Akku-Widgets ihre Warnfarbe verwenden. Setze 0, um dies zu deaktivieren.",
+          "label": "Warnschwelle für den Akku"
+        }
+      },
+      "templates": {
+        "builtin-ids": {
+          "description": "Umschalten, ob gebündelte App-Templates bei jedem Themenwechsel gerendert werden",
+          "empty": "Keine integrierten Templates verfügbar.",
+          "label": "Integrierte Templates"
+        },
+        "community-ids": {
+          "description": "Zwischengespeicherte Community-Templates bei jedem Themenwechsel rendern umschalten",
+          "empty": "Es sind noch keine Community-Templates verfügbar. Aktiviere zuerst Community-Templates und aktualisiere den Katalog.",
+          "label": "Community Vorlagen"
+        },
+        "enable-builtins": {
+          "description": "Nutze den gebündelten Katalog von Theme-Templates für Apps",
+          "label": "Integrierte Templates aktivieren"
+        },
+        "enable-community-templates": {
+          "description": "Lade Templates aus dem Community-Katalog herunter und wende sie an",
+          "label": "Community Templates aktivieren"
+        }
+      },
+      "wallpaper": {
+        "automation": {
+          "description": "Hintergrundbilder automatisch nach einem Timer wechseln",
+          "label": "Automatische Rotation"
+        },
+        "automation-interval": {
+          "description": "Sekunden zwischen Hintergrundbildwechseln",
+          "label": "Rotationsintervall"
+        },
+        "automation-order": {
+          "description": "Wähle Hintergrundbilder zufällig oder alphabetisch aus",
+          "label": "Reihenfolge"
+        },
+        "automation-recursive": {
+          "description": "Verschachtelte Ordner nach Hintergrundbildern durchsuchen",
+          "label": "Unterordner einschließen"
+        },
+        "directory": {
+          "description": "Ordner mit Hintergrundbildern",
+          "label": "Hintergrundbild-Verzeichnis"
+        },
+        "directory-dark": {
+          "description": "Hintergrundbildordner, der im Dark Mode verwendet wird",
+          "label": "Dunkelmodus-Verzeichnis",
+          "placeholder": "~/Pictures/Wallpapers"
+        },
+        "directory-light": {
+          "description": "Hintergrundbildordner, der im hellen Modus verwendet wird",
+          "label": "Verzeichnis für hellen Modus",
+          "placeholder": "~/Pictures/Wallpapers"
+        },
+        "edge-smoothness": {
+          "description": "Glättung der Übergangskanten zwischen Hintergrundbildern",
+          "label": "Kantenglättung"
+        },
+        "enabled": {
+          "description": "Hintergrundbilddienst aktivieren"
+        },
+        "fill-color": {
+          "description": "Volltonfarbe, die hinter dem Bild in unbedeckten Bereichen angezeigt wird",
+          "label": "Füllfarbe"
+        },
+        "fill-mode": {
+          "description": "Wie Hintergrundbilder auf den Bildschirm passen",
+          "label": "Füllmodus"
+        },
+        "monitor-directory": {
+          "label": "Hintergrundbild-Ordner"
+        },
+        "monitor-directory-dark": {
+          "label": "Dunkelmodus-Verzeichnis",
+          "placeholder": "~/Pictures/Wallpapers"
+        },
+        "monitor-directory-light": {
+          "label": "Verzeichnis für helles Design",
+          "placeholder": "~/Pictures/Wallpapers"
+        },
+        "panel": {
+          "button": "Panel öffnen",
+          "description": "Öffne das Panel zur Hintergrundbildauswahl",
+          "label": "Hintergrundbild-Panel"
+        },
+        "per-monitor-directories": {
+          "description": "Verwende separate Hintergrundbilder-Ordner für jeden Monitor",
+          "label": "Monitor-spezifische Verzeichnisse"
+        },
+        "transition-duration": {
+          "description": "Länge der Hintergrundbildwechsel-Animation in Millisekunden",
+          "label": "Übergangsdauer"
+        },
+        "transition-on-startup": {
+          "description": "Spiele einen Übergang ab, wenn die Shell zum ersten Mal ein Hintergrundbild anzeigt",
+          "label": "Animation beim Start"
+        },
+        "transitions": {
+          "description": "Verfügbare Effekte beim Wechseln des Hintergrundbilds (einer wird pro Wechsel zufällig ausgewählt)",
+          "label": "Übergangseffekte"
+        }
+      }
+    },
+    "session-actions": {
+      "add": "Aktion hinzufügen",
+      "clear-glyph": "Löschen",
+      "command-label": "Shell-Befehl",
+      "command-placeholder": "Optionaler Bash-Befehl, für das Standardverhalten leer lassen",
+      "command-required-placeholder": "Shell-Befehl zum Ausführen",
+      "glyph-label": "Glyphe",
+      "glyph-picker-title": "Aktionssymbol",
+      "kind-section-label": "Verhalten",
+      "label-field": "Beschriftung",
+      "label-placeholder": "Optionaler Schaltflächentext",
+      "shortcut-label": "Kurzbefehl",
+      "variant": {
+        "default": "Standard",
+        "destructive": "Zerstörerisch",
+        "ghost": "Ghost",
+        "outline": "Outline",
+        "primary": "Primär",
+        "secondary": "Sekundär"
+      },
+      "variant-label": "Schaltflächenstil"
+    },
+    "widgets": {
+      "instances": {
+        "cpu": "CPU",
+        "date": "Datum",
+        "input-volume": "Eingabelautstärke",
+        "network-rx": "Netzwerkempfang",
+        "network-tx": "Netzwerk gesendet",
+        "output-volume": "Ausgabelautstärke",
+        "ram": "RAM",
+        "temp": "Temperatur"
+      },
+      "options": {
+        "always": "Immer",
+        "cpu-temp": "CPU-Temperatur",
+        "cpu-usage": "CPU-Auslastung",
+        "disk-percent": "Festplattenprozentsatz",
+        "full": "Voll",
+        "gauge": "Gauge",
+        "glyph": "Glyphe",
+        "gpu-temp": "GPU Temperatur",
+        "gpu-usage": "GPU-Auslastung",
+        "gpu-vram": "GPU VRAM",
+        "graph": "Diagramm",
+        "graphic": "Grafik",
+        "icon-and-text": "Icon und Text",
+        "icon-only": "Nur Symbol",
+        "id": "ID",
+        "input": "Eingabe",
+        "instance": "Pro Platzierung",
+        "name": "Name",
+        "net-rx": "Netzwerk Empfang",
+        "net-tx": "Netzwerk gesendet",
+        "none": "Nichts",
+        "on-hover": "Beim Hovern",
+        "output": "Ausgabe",
+        "ram-percent": "RAM-Prozentsatz",
+        "ram-used": "RAM belegt",
+        "screenshot-primary-fullscreen": "Vollbild",
+        "screenshot-primary-region": "Region",
+        "shared": "Gemeinsam",
+        "short": "Kurz",
+        "swap-percent": "Swap-Prozent",
+        "text": "Text",
+        "text-only": "Nur Text",
+        "workspace-label-centered": "Zentriert",
+        "workspace-label-corner": "Ecke",
+        "workspace-label-inside": "In Kapsel"
+      },
+      "settings": {
+        "active-opacity": {
+          "description": "Deckkraft des Symbols für das aktive (fokussierte) Fenster.",
+          "label": "Aktive Symbol-Deckkraft"
+        },
+        "anchor": {
+          "description": "Dieses Widget als Anker für die mittlere Ausrichtung anheften",
+          "label": "Anker"
+        },
+        "art-size": {
+          "description": "Größe des Medienbilds in Pixeln",
+          "label": "Bildgröße"
+        },
+        "bands": {
+          "description": "Anzahl der Visualizer-Bänder",
+          "label": "Bänder"
+        },
+        "capsule": {
+          "description": "Zeichne eine Kapsel hinter diesem Widget",
+          "label": "Kapsel"
+        },
+        "capsule-border": {
+          "description": "Farbrolle für den Kapsel-Umriss; feste Hex-Farben werden ebenfalls unterstützt",
+          "label": "Kapselrand"
+        },
+        "capsule-fill": {
+          "description": "Farbrolle für den Kapselhintergrund; feste Hex-Farben werden ebenfalls unterstützt",
+          "label": "Kapsel-Füllung"
+        },
+        "capsule-foreground": {
+          "description": "Farbrolle für Inhalte innerhalb der Kapsel; feste Hexadezimalfarben werden ebenfalls unterstützt",
+          "label": "Kapsel-Vordergrund"
+        },
+        "capsule-opacity": {
+          "description": "Deckkraft des Kapselhintergrunds",
+          "label": "Kapsel-Deckkraft"
+        },
+        "capsule-padding": {
+          "description": "Innenabstand in der Kapsel",
+          "label": "Kapsel-Polsterung"
+        },
+        "capsule-radius": {
+          "description": "Eckradius für diese Widget-Kapsel; leer lassen für automatische Pillenform; oder 0 für eckige Ecken setzen",
+          "label": "Kapselradius",
+          "taskbar-description": "Eckenradius für die Widget-Kapsel, Arbeitsbereichs-Scheibenindikatoren und Arbeitsbereichs-Gruppenkapseln; für automatische Pillenform leer lassen oder 0 für eckige Ecken setzen",
+          "workspaces-description": "Eckenradius für diese Widget-Kapsel und Workspace-Pillen; leer lassen für automatische Pillenform, oder 0 für quadratische Ecken setzen"
+        },
+        "centered": {
+          "description": "Visualizer-Balken zentrieren, anstatt sie am Rand auszurichten",
+          "label": "Zentriert"
+        },
+        "color": {
+          "description": "Farbrolle für den Widget-Vordergrund; feste Hex-Farben werden ebenfalls unterstützt",
+          "label": "Farbe"
+        },
+        "command": {
+          "description": "Shell-Befehl, der beim Linksklick auf diesen Button ausgeführt wird",
+          "label": "Linksklick-Befehl"
+        },
+        "custom-image": {
+          "description": "Pfad zu einem benutzerdefinierten Bild; leer lassen, um das Icon-Glyph zu verwenden",
+          "dialog-title": "Benutzerdefiniertes Bild auswählen",
+          "label": "Eigenes Bild"
+        },
+        "custom-image-colorize": {
+          "description": "Färbe das benutzerdefinierte Bild mit der Farbeinstellung des Widgets ein",
+          "label": "Benutzerdefiniertes Bild einfärben"
+        },
+        "custom-labels": {
+          "description": "Tastaturlayout-Namen benutzerdefinierten Beschriftungen zuordnen",
+          "label": "Benutzerdefinierte Beschriftungen"
+        },
+        "cycle-command": {
+          "description": "Befehl, der beim Umschalten der Tastaturlayouts ausgeführt wird",
+          "label": "Zyklusbefehl"
+        },
+        "detached-panel": {
+          "description": "Öffne das Panel als schwebendes Panel mit eigenem Hintergrund, anstatt es mit der Bar zu verschmelzen",
+          "label": "Schwebendes Panel"
+        },
+        "device": {
+          "description": "Gerät zum Überwachen oder Steuern",
+          "label": "Gerät"
+        },
+        "display": {
+          "active-window-description": "Symbol, Titel oder beides auf horizontalen Leisten. Vertikale Leisten zeigen nur Symbole.",
+          "description": "Anzeigemodus für dieses Widget",
+          "label": "Anzeige"
+        },
+        "display-mode": {
+          "description": "Stelle die Batterie als grafische Form oder als Tabler glyph dar",
+          "label": "Anzeigemodus"
+        },
+        "drawer": {
+          "description": "Zeige einen Tray-Button in der Bar und öffne Elemente in einem Panel",
+          "label": "Schubladen-Panel verwenden"
+        },
+        "drawer-columns": {
+          "description": "Anzahl der Tray-Symbole pro Reihe im Drawer-Panel",
+          "label": "Inhaltsbereich-Spalten"
+        },
+        "empty-color": {
+          "description": "Farbfunktion für leere Arbeitsflächen; feste Hexadezimalfarben werden ebenfalls unterstützt",
+          "label": "Leere Farbe"
+        },
+        "focused-color": {
+          "description": "Farbfunktion, die für den fokussierten Arbeitsbereich verwendet wird; feste Hexadezimalfarben werden ebenfalls unterstützt",
+          "label": "Fokusfarbe"
+        },
+        "font-weight": {
+          "description": "Standard übernimmt die Schriftstärke der Bar",
+          "label": "Schriftstärke"
+        },
+        "format": {
+          "description": "Zeitformatzeichenfolge",
+          "label": "Format"
+        },
+        "glyph": {
+          "description": "Symbol-Glyphenname",
+          "label": "Glyphe"
+        },
+        "group-by-workspace": {
+          "description": "Gruppiere Taskbar-Symbole in Workspace-Kapseln, wenn Compositor-Daten verfügbar sind",
+          "label": "Nach Arbeitsbereich gruppieren"
+        },
+        "group-single-icon-per-app": {
+          "description": "Beim Gruppieren nach Arbeitsfläche werden mehrere Fenster derselben App zu einem Symbol mit einem Zähler-Badge zusammengefasst.",
+          "label": "Einzelnes Symbol pro App"
+        },
+        "height": {
+          "description": "Widget-Höhe in Pixeln",
+          "label": "Höhe"
+        },
+        "hidden": {
+          "description": "Tray-Element-IDs zum Ausblenden",
+          "label": "Ausgeblendete Elemente"
+        },
+        "hide-empty-workspaces": {
+          "description": "Beim Gruppieren nach Arbeitsbereich Kapseln weglassen, die keine laufenden Fenster in der Taskbar-Liste haben.",
+          "label": "Leere Arbeitsflächen ausblenden"
+        },
+        "hide-when-empty": {
+          "description": "Arbeitsbereichs-Pillen ausblenden, wenn keine Fenster geöffnet sind",
+          "label": "Ausblenden, wenn leer",
+          "workspaces-description": "Arbeitsflächen-Anzeigen ausblenden, die keine offenen Fenster haben"
+        },
+        "hide-when-full": {
+          "description": "Das Batterie-Widget ausblenden, wenn es vollständig geladen ist",
+          "label": "Ausblenden, wenn voll"
+        },
+        "hide-when-no-connected-device": {
+          "description": "Blende das Bluetooth Widget aus, wenn kein Gerät verbunden ist",
+          "label": "Ausblenden, wenn kein Gerät verbunden ist"
+        },
+        "hide-when-no-media": {
+          "description": "Medien-Widget ausblenden, wenn kein MPRIS-Player aktiv ist",
+          "label": "Ausblenden, wenn keine Wiedergabe"
+        },
+        "hide-when-no-unread": {
+          "description": "Benachrichtigungs-Widget ausblenden, wenn keine ungelesenen Benachrichtigungen vorhanden sind",
+          "label": "Ausblenden, wenn nichts Neues"
+        },
+        "hide-when-off": {
+          "description": "Blende die Feststelltastenanzeige aus, wenn inaktiv",
+          "label": "Ausblenden, wenn ausgeschaltet"
+        },
+        "hide-when-plugged": {
+          "description": "Das Batterie-Widget ausblenden, wenn es an Netzstrom angeschlossen ist.",
+          "label": "Ausblenden, wenn angeschlossen"
+        },
+        "hide-when-single-layout": {
+          "description": "Das Tastaturlayout-Widget ausblenden, es sei denn, es ist mehr als ein Layout konfiguriert",
+          "label": "Bei einzelnem Layout ausblenden"
+        },
+        "high-color": {
+          "description": "Farbe für hohe Visualisiererwerte",
+          "label": "Hohe Farbe"
+        },
+        "highlight-color": {
+          "description": "Farbe hat den kritischen Schwellenwert erreicht oder überschritten",
+          "label": "Hervorhebungsfarbe"
+        },
+        "hot-reload": {
+          "description": "Lade das geskriptete Widget neu, wenn sich seine Quelle ändert",
+          "label": "Hot Reload"
+        },
+        "icon-size": {
+          "description": "Icon-Größe in Pixeln",
+          "label": "Symbolgröße"
+        },
+        "inactive-opacity": {
+          "description": "Deckkraft der Symbole für inaktive (nicht fokussierte) Fenster.",
+          "label": "Deckkraft inaktiver Icons"
+        },
+        "label": {
+          "description": "Optionaler statischer Text, der auf dieser Schaltfläche angezeigt wird",
+          "label": "Beschriftung"
+        },
+        "label-min-width": {
+          "description": "Minimale Beschriftungsbreite in Pixeln, um eine Größenänderung zu verhindern",
+          "label": "Beschriftung Mindestbreite"
+        },
+        "labels-only-when-occupied": {
+          "description": "Arbeitsbereichsbezeichnungen auf leeren, inaktiven Arbeitsbereichen ausblenden",
+          "label": "Nur Beschriftungen, wenn belegt",
+          "workspaces-description": "Beschriftungen mit der Arbeitsbereichs-ID oder dem Namen auf Arbeitsbereichen mit offenen Fenstern und auf dem aktiven Arbeitsbereich anzeigen, auch wenn dieser leer ist; andere leere Tags bleiben unbeschriftet"
+        },
+        "length": {
+          "description": "Länge des Abstandhalters in Pixeln",
+          "label": "Länge"
+        },
+        "low-color": {
+          "description": "Farbe für niedrige Visualizer-Werte",
+          "label": "Weniger Farbe"
+        },
+        "match-adjacent-spacing": {
+          "description": "Abstände zwischen den Inline-Tray-Symbolen vergrößern, um den visuellen Abstand der benachbarten Bar-Widgets anzupassen (inklusive Capsule-Polsterung)",
+          "label": "Abstand benachbarter Widgets anpassen"
+        },
+        "max-label-chars": {
+          "description": "Maximale Zeichenanzahl für Arbeitsbereichsnamen",
+          "label": "Max. Zeichen für Beschriftung",
+          "workspaces-description": "Maximale Zeichen für Workspace-Namen"
+        },
+        "max-length": {
+          "description": "Maximale Widget-Länge in Pixeln",
+          "label": "Maximale Länge"
+        },
+        "middle-command": {
+          "description": "Shell-Befehl, der beim Mittelklick auf diese Schaltfläche ausgeführt wird. Wenn festgelegt, öffnet der Mittelklick diesen Befehl anstelle der Widget-Einstellungen.",
+          "label": "Mittelklick-Befehl"
+        },
+        "min-length": {
+          "description": "Minimale Widget-Länge in Pixeln",
+          "label": "Mindestlänge"
+        },
+        "minimal": {
+          "description": "Nur Arbeitsbereich-ID oder Namensbeschriftungen anzeigen, ohne animierte Pillen",
+          "label": "Minimaler Stil",
+          "workspaces-description": "Nur-Text-Arbeitsbereichsbezeichnungen ohne Pillen-Hintergrund oder Schiebeanimation"
+        },
+        "mirrored": {
+          "description": "Spiegele den Visualisierer um seine Mitte",
+          "label": "Gespiegelt"
+        },
+        "occupied-color": {
+          "description": "Farbrolle, die für belegte Arbeitsflächen verwendet wird; feste Hexadezimalfarben werden ebenfalls unterstützt",
+          "label": "Belegte Farbe"
+        },
+        "only-active-workspace": {
+          "description": "Fenster auf inaktiven Arbeitsflächen ausblenden",
+          "label": "Nur aktive Arbeitsfläche"
+        },
+        "path": {
+          "description": "Pfad, der von Festplattenstatistiken verwendet wird",
+          "label": "Pfad"
+        },
+        "pill-scale": {
+          "description": "Passe die Skalierung der Arbeitsflächen-Indikatoren an",
+          "label": "Skala in Pillenform",
+          "workspaces-description": "Skalierung der Workspace-Pillen anpassen"
+        },
+        "pinned": {
+          "description": "Tray-Element-IDs, die in der Bar sichtbar bleiben, wenn der Schubladenmodus aktiviert ist",
+          "label": "Angeheftete Elemente"
+        },
+        "primary-click": {
+          "description": "Aktion, die beim Linksklick auf die Leisten-Schaltfläche ausgeführt wird",
+          "label": "Primärer Klick"
+        },
+        "right-command": {
+          "description": "Shell-Befehl, der beim Rechtsklick auf diese Schaltfläche ausgeführt wird",
+          "label": "Rechtsklick-Befehl"
+        },
+        "scale": {
+          "description": "Skaliere dieses Widget relativ zur Inhaltsskala der Bar",
+          "label": "Skalierung"
+        },
+        "scope": {
+          "description": "Führe eine Skript-Laufzeit pro Live-Widget-Platzierung aus, oder teile eine Laufzeit über Leisten mit derselben Widget-ID hinweg",
+          "label": "Laufzeitbereich"
+        },
+        "script": {
+          "description": "Pfad zum Lua-Skript",
+          "label": "Skript"
+        },
+        "scroll-down-command": {
+          "description": "Shell-Befehl, der ausgeführt wird, wenn über diese Schaltfläche nach unten gescrollt wird",
+          "label": "Befehl zum Herunterscrollen"
+        },
+        "scroll-step": {
+          "description": "Prozentuale Änderung, die bei jedem Mausradschritt angewendet wird",
+          "label": "Scroll-Schritt"
+        },
+        "scroll-up-command": {
+          "description": "Shell-Befehl, der ausgeführt wird, wenn über diese Schaltfläche nach oben gescrollt wird",
+          "label": "Befehl zum Hochscrollen"
+        },
+        "show-active-indicator": {
+          "description": "Einen kleinen Punkt unter dem Symbol des aktiven Fensters in der Taskbar anzeigen.",
+          "label": "Aktives Fenster-Anzeige"
+        },
+        "show-all-outputs": {
+          "description": "Fenster von jedem Bildschirm in diesem Widget anzeigen.",
+          "label": "Alle Bildschirme anzeigen"
+        },
+        "show-caps-lock": {
+          "description": "Caps Lock-Status anzeigen",
+          "label": "Caps Lock anzeigen"
+        },
+        "show-condition": {
+          "description": "Wetterbedingungstext anzeigen",
+          "label": "Anzeigebedingung"
+        },
+        "show-icon": {
+          "description": "Zeige das Icon dieses Widgets",
+          "label": "Symbol anzeigen"
+        },
+        "show-label": {
+          "description": "Text neben dem Symbol anzeigen",
+          "label": "Label anzeigen"
+        },
+        "show-num-lock": {
+          "description": "Num Lock-Status anzeigen",
+          "label": "Num Lock anzeigen"
+        },
+        "show-scroll-lock": {
+          "description": "Scroll Lock-Zustand anzeigen",
+          "label": "Scroll Lock anzeigen"
+        },
+        "show-when-idle": {
+          "description": "Visualizer sichtbar lassen, auch wenn keine Medien abgespielt werden",
+          "label": "Anzeigen, wenn inaktiv"
+        },
+        "show-window-title": {
+          "description": "Zeige den Fenstertitel neben seinem Symbol (nur auf horizontalen Bars)",
+          "label": "Fenstertitel anzeigen"
+        },
+        "show-workspace-label": {
+          "description": "Zeige das kleine Arbeitsflächen-Tag auf gruppierten Taskleisten-Kapseln. Deaktiviere es für reine Icon-Gruppen.",
+          "label": "Virtueller Desktop Kapsel Beschriftung"
+        },
+        "stat": {
+          "description": "Systemstatistik, die angezeigt werden soll",
+          "label": "Statistik"
+        },
+        "taskbar-max-width": {
+          "description": "Gesamtbreitenbudget in Pixeln; Fenstertitel werden verkleinert, um zu passen, und ausgeblendet, wenn sie zu schmal sind",
+          "label": "Maximale Breite der Taskleiste"
+        },
+        "title-scroll": {
+          "description": "Wann der Widget-Titel scrollen soll",
+          "label": "Titel-Scrollen"
+        },
+        "tooltip": {
+          "description": "Tooltip, der beim Darüberfahren mit der Maus angezeigt wird",
+          "label": "Tooltip"
+        },
+        "tooltip-format": {
+          "description": "Optionales Format für den Tooltip",
+          "label": "Tooltip-Format"
+        },
+        "type": {
+          "description": "Integrierter Widget-Typ für dieses benannte Widget",
+          "label": "Typ"
+        },
+        "vertical-format": {
+          "description": "Optionales Format für vertikale Leisten",
+          "label": "Vertikales Format"
+        },
+        "warning-color": {
+          "description": "Farbe, die angewendet wird, wenn der Ladestand die System-Batteriewarnschwelle erreicht oder unterschreitet",
+          "label": "Warnfarbe"
+        },
+        "width": {
+          "description": "Widget-Breite in Pixeln",
+          "label": "Breite"
+        },
+        "window-title-max-width": {
+          "description": "Maximale Breite in Pixeln für Fenstertitel",
+          "label": "Maximale Breite des Fenstertitels"
+        },
+        "workspace-group-capsule": {
+          "description": "Zeichne den Hintergrund und den Rahmen um jeden gruppierten Arbeitsbereich. Schalte dies aus, um nur die Symboldarstellung und die Beschriftungen der Arbeitsbereichs-Discs beizubehalten.",
+          "label": "Arbeitsflächengruppen-Kapsel"
+        },
+        "workspace-label-placement": {
+          "description": "Ecke, mittig am Rand oder innerhalb der Kapsel.",
+          "label": "Platzierung der Beschriftung des virtuellen Desktops"
+        }
+      },
+      "types": {
+        "active-window": "Aktives Fenster",
+        "audio-visualizer": "Audio-Visualizer",
+        "battery": "Akku",
+        "bluetooth": "Bluetooth",
+        "brightness": "Helligkeit",
+        "caffeine": "Caffeine",
+        "clipboard": "Zwischenablage",
+        "clock": "Uhr",
+        "control-center": "Kontrollzentrum",
+        "custom-button": "Benutzerdefinierter Button",
+        "keyboard-layout": "Tastaturlayout",
+        "launcher": "Starter",
+        "lock-keys": "Feststelltasten",
+        "media": "Medien",
+        "network": "Netzwerk",
+        "nightlight": "Nachtlicht",
+        "notifications": "Benachrichtigungen",
+        "power-profile": "Energieprofil",
+        "screenshot": "Screenshot",
+        "scripted": "Geskriptet",
+        "session": "Sitzung",
+        "settings": "Einstellungen",
+        "spacer": "Abstandhalter",
+        "sysmon": "Systemüberwachung",
+        "taskbar": "Taskleiste",
+        "test": "Test",
+        "theme-mode": "Design-Modus",
+        "tray": "Tray",
+        "volume": "Lautstärke",
+        "wallpaper": "Hintergrundbild",
+        "weather": "Wetter",
+        "workspaces": "Virtuelle Desktops"
+      }
+    },
+    "window": {
+      "export-config": "Konfiguration exportieren…",
+      "export-config-saved": "Konfigurationsexport gespeichert.",
+      "filter-modified": "Geändert",
+      "native-title": "Noctalia-Einstellungen",
+      "no-results": "Keine Einstellungen gefunden",
+      "no-results-hint": "Versuche einen anderen Einstellungsnamen oder Konfigurationsschlüssel.",
+      "reset-page": "Seite zurücksetzen",
+      "reset-page-confirm": "Zurücksetzen bestätigen",
+      "search-placeholder": "Einstellungen suchen…",
+      "support-report": "Supportbericht",
+      "support-report-saved": "Supportbericht gespeichert.",
+      "support-report-title": "Supportbericht speichern",
+      "title": "Einstellungen"
+    }
+  },
+  "setup-wizard": {
+    "browse": "Durchsuchen",
+    "builtin-palette": "Integrierte Palette",
+    "footer-note": "Du kannst diese später in den Einstellungen ändern.",
+    "get-started": "Los geht's",
+    "mode": "Modus",
+    "no-wallpaper-selected": "Kein Hintergrundbild ausgewählt",
+    "select-wallpaper": "Hintergrundbild auswählen",
+    "subtitle": "Ein paar schnelle Auswahlmöglichkeiten, um dir den Einstieg zu erleichtern.",
+    "title": "Willkommen bei Noctalia",
+    "wallpaper": "Hintergrundbild",
+    "wallpaper-scheme": "Wallpaper-Schema"
+  },
+  "system": {
+    "hardware": {
+      "unknown": "Unbekannt",
+      "unknown-cpu": "Unbekannte CPU",
+      "unknown-distro": "Unbekannte Distro",
+      "unknown-gpu": "Unbekannte GPU"
+    }
+  },
+  "theme": {
+    "scheme": {
+      "dysfunctional": "Funktionsunfähig",
+      "faithful": "treu",
+      "m3-content": "M3 Inhalt",
+      "m3-fruit-salad": "M3 Fruchtsalat",
+      "m3-monochrome": "M3 Monochrome",
+      "m3-rainbow": "M3 Regenbogen",
+      "m3-tonal-spot": "M3 Tonal Spot",
+      "muted": "Stumm",
+      "vibrant": "Lebendig"
+    }
+  },
+  "time": {
+    "duration": {
+      "days-hours-minutes": "{days}T {hours}Std. {minutes}Min.",
+      "hours-minutes": "{hours} Std. {minutes} Min.",
+      "less-than-minute": "1m",
+      "minutes": "{minutes}m"
+    },
+    "file": {
+      "unknown": "Unbekannt"
+    },
+    "relative": {
+      "days-ago": "vor {count} Tag",
+      "days-ago-plural": "Vor {count} Tagen",
+      "hours-ago": "vor {count} Std.",
+      "hours-ago-plural": "vor {count} Stunden",
+      "just-now": "gerade eben",
+      "minutes-ago": "{count} Min. her",
+      "minutes-ago-plural": "vor {count} Min."
+    }
+  },
+  "tray": {
+    "menu": {
+      "empty": "Keine Menüpunkte...",
+      "pin": "Anheften",
+      "unpin": "Lösen"
+    }
+  },
+  "ui": {
+    "controls": {
+      "search-picker": {
+        "empty": "Keine Ergebnisse",
+        "placeholder": "Suchen..."
+      },
+      "select": {
+        "placeholder": "Wähle eine Option"
+      }
+    },
+    "dialogs": {
+      "color-picker": {
+        "title": "Farbe"
+      },
+      "file": {
+        "actions": {
+          "open": "Öffnen",
+          "save": "Speichern",
+          "select-folder": "Ordner auswählen"
+        },
+        "empty-filtered": "Keine Dateien entsprechen dem aktuellen Filter",
+        "entry": {
+          "folder": "Ordner"
+        },
+        "filename-placeholder": "Dateiname",
+        "filter-placeholder": "Filtern...",
+        "sort": {
+          "ascending": "Hoch",
+          "date": "Datum",
+          "descending": "↓",
+          "name": "Name",
+          "size": "Größe"
+        },
+        "title": {
+          "default": "Dateidialog",
+          "open": "Datei öffnen",
+          "save": "Datei speichern",
+          "select-folder": "Ordner auswählen"
+        }
+      },
+      "glyph-picker": {
+        "all-categories": "Alle",
+        "search-placeholder": "Glyphen suchen…",
+        "title": "Wähle eine Glyphe"
+      }
+    }
+  },
+  "wallpaper": {
+    "panel": {
+      "all-monitors": "Alle",
+      "color-title": "Hintergrundbildfarbe",
+      "favorite-palette-label": "Farben",
+      "favorite-theme-label": "Design",
+      "filter-placeholder": "Filtern...",
+      "flatten": "Abflachen",
+      "no-directory-configured": "Kein Verzeichnis konfiguriert",
+      "sort-date-asc": "Nach Datum sortieren (älteste zuerst)",
+      "sort-date-desc": "Nach Datum sortieren (neueste zuerst)",
+      "sort-name-asc": "Nach Name sortieren (A-Z)",
+      "sort-name-desc": "Nach Name sortieren (Z-A)",
+      "title": "Hintergrundbild"
+    }
+  },
+  "weather": {
+    "conditions": {
+      "full": {
+        "clear-sky": "Klarer Himmel",
+        "drizzle": "Nieselregen",
+        "fog": "Nebel",
+        "mainly-clear": "Überwiegend klar",
+        "overcast": "Bedeckt",
+        "partly-cloudy": "Teilweise bewölkt",
+        "rain-showers": "Regenschauer",
+        "snow": "Schnee",
+        "snow-showers": "Schneeschauer",
+        "thunderstorm": "Gewitter",
+        "unknown": "Unbekannt"
+      },
+      "short": {
+        "clear": "Löschen",
+        "cloudy": "Bewölkt",
+        "drizzle": "Nieselregen",
+        "fog": "Nebel",
+        "mostly-clear": "Meist klar",
+        "overcast": "Bedeckt",
+        "showers": "Schauer",
+        "snow": "Schnee",
+        "snow-showers": "Schneeschauer",
+        "storm": "Sturm",
+        "weather": "Wetter"
+      }
+    },
+    "errors": {
+      "fetch-failed": "Wetterabruf fehlgeschlagen",
+      "parse-weather": "Wetterantwort konnte nicht geparst werden"
+    }
+  },
+  "window-switcher": {
+    "empty": "Keine offenen Fenster",
+    "hint": "Tab · Shift+Tab · Pfeiltasten · Alt loslassen zum Wechseln · Esc zum Abbrechen",
+    "title": "Windows"
+  }
+}

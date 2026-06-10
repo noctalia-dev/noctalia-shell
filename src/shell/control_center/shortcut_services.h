@@ -13,9 +13,14 @@ class NotificationManager;
 class PipeWireService;
 class PowerProfilesService;
 class WeatherService;
+class HttpClient;
+class ClipboardService;
 
 namespace noctalia::theme {
   class ThemeService;
+}
+namespace scripting {
+  class ScriptApiContext;
 }
 
 struct ShortcutServices {
@@ -33,4 +38,8 @@ struct ShortcutServices {
   DependencyService* dependencies = nullptr;
   CompositorPlatform* platform = nullptr;
   IpcService* ipc = nullptr;
+  // Plugin shortcut runtime dependencies.
+  scripting::ScriptApiContext* scriptApi = nullptr;
+  HttpClient* httpClient = nullptr;
+  ClipboardService* clipboard = nullptr;
 };

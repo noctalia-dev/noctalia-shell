@@ -1,0 +1,2844 @@
+{
+  "auth": {
+    "pam": {
+      "authentication-failed": "A hitelesítés sikertelen",
+      "start-failed": "PAM-indítás sikertelen",
+      "user-unavailable": "Nem sikerült feloldani a jelenlegi felhasználót"
+    },
+    "polkit": {
+      "authenticate": "Hitelesítés",
+      "authenticating": "Hitelesítés…",
+      "default-message": "Hitelesítés szükséges",
+      "invalid-password": "Érvénytelen jelszó",
+      "password-placeholder": "Jelszó",
+      "title": "Hitelesítés szükséges"
+    }
+  },
+  "bar": {
+    "screenshot": {
+      "choose-display": "Kijelző kiválasztása",
+      "fullscreen": "Teljes képernyő",
+      "region": "Terület kiválasztása"
+    },
+    "widgets": {
+      "lock-keys": {
+        "caps": "Caps",
+        "caps-short": "C",
+        "num": "Num",
+        "num-short": "N",
+        "scroll": "Scroll",
+        "scroll-short": "S"
+      },
+      "media": {
+        "nothing-playing": "Nincs lejátszás",
+        "playing": "Lejátszás"
+      },
+      "network": {
+        "wired": "Vezetékes"
+      },
+      "scripted": {
+        "reload-failed": "Parancsfájl újratöltése sikertelen",
+        "reloaded": "Parancsfájl újratöltve"
+      },
+      "weather": {
+        "default": "Időjárás",
+        "error": "Időjárási hiba",
+        "loading": "Időjárás…",
+        "no-location": "Nincs hely",
+        "off": "Időjárás kikapcsolva",
+        "vertical-default": "Időjárás",
+        "vertical-error": "Hiba",
+        "vertical-loading": "…",
+        "vertical-no-location": "Nincs hely",
+        "vertical-off": "KI"
+      }
+    }
+  },
+  "clipboard": {
+    "actions": {
+      "clear-all": "Minden törlése",
+      "delete-item": "Elem törlése",
+      "keep-pinned": "Rögzített elemek megtartása"
+    },
+    "confirm": {
+      "clear-desc": "Válaszd ki, hogy a rögzített elemek megmaradjanak-e",
+      "clear-desc-all-pinned": "Minden bejegyzés rögzítve van. Használd a Minden törlése opciót, hogy eltávolítsd őket.",
+      "clear-desc-no-pinned": "Ez törli a vágólap-előzmények összes bejegyzését.",
+      "clear-title": "Vágólap-előzmények törlése?",
+      "delete-desc": "Ez eltávolítja a kiválasztott elemet a vágólap előzményeiből.",
+      "delete-title": "Vágólapelem törlése?"
+    },
+    "empty": {
+      "history-message": "Nincs bejegyzés a vágólap előzményeiben.",
+      "history-title": "A vágólap-előzmények üresek",
+      "no-matches-message": "Nincs a szűrőnek megfelelő bejegyzés.",
+      "no-matches-title": "Nincs találat"
+    },
+    "entry": {
+      "image": "Kép",
+      "title": "Vágólapbejegyzés"
+    },
+    "filter-placeholder": "Vágólap szűrése…",
+    "preview": {
+      "empty-text-payload": "(üres szöveges adat)",
+      "image-title": "Képi vágólapbejegyzés",
+      "loading": "Előnézet betöltése…",
+      "text-title": "Szöveges vágólapbejegyzés",
+      "truncated": "… levágva"
+    },
+    "title": "Vágólap"
+  },
+  "common": {
+    "actions": {
+      "apply": "Alkalmazás",
+      "cancel": "Mégse"
+    },
+    "states": {
+      "auto": "Automatikus",
+      "custom": "Egyéni",
+      "inherit": "Örököl",
+      "off": "Ki"
+    }
+  },
+  "control-center": {
+    "audio": {
+      "application-volumes": "Alkalmazások hangereje",
+      "input-volume": "Bemeneti hangerő",
+      "no-application-audio": "Nincs alkalmazáshang",
+      "no-application-audio-body": "Jelenleg nincs lejátszási folyam egyetlen alkalmazásban sem.",
+      "no-input-devices": "Nincsenek bemeneti eszközök",
+      "no-input-devices-body": "Jelenleg nincsenek elérhető felvételi források.",
+      "no-input-selected": "Nincs bemeneti eszköz kiválasztva",
+      "no-output-devices": "Nincsenek kimeneti eszközök",
+      "no-output-devices-body": "Jelenleg nincsenek elérhető lejátszási kimenetek.",
+      "no-output-selected": "Nincs kimeneti eszköz kiválasztva",
+      "output-volume": "Kimeneti hangerő",
+      "unavailable-body": "A PipeWire nem aktív.",
+      "unavailable-title": "Hang nem érhető el"
+    },
+    "bluetooth": {
+      "accept": "Elfogadás",
+      "auto-reconnect": "Automatikus újracsatlakozás",
+      "bluetooth": "Bluetooth",
+      "enter-code": "Kód megadása",
+      "no-devices": "Nem található eszköz. Indíts el egy keresést a közeli Bluetooth-eszközök felderítéséhez.",
+      "off": "A Bluetooth ki van kapcsolva",
+      "pair-title": "{device} párosítása",
+      "pairing-detail": {
+        "authorize": "Elfogadod a bejövő párosítási kérést?",
+        "authorize-service": "Engedélyezed a hozzáférést a(z) {uuid} szolgáltatáshoz?",
+        "confirm": "Ellenőrizd, hogy ez a kód megegyezik-e az eszközön látható kóddal:",
+        "display-passkey": "Add meg ezt a kódot az eszközön:",
+        "display-pin": "Add meg ezt a PIN-kódot az eszközön:",
+        "passkey": "Add meg az eszközön látható jelszót:",
+        "pin-code": "Add meg az eszközön látható PIN-kódot:"
+      },
+      "reject": "Elutasítás",
+      "rfkill-blocked": "A Bluetooth-t blokkolja a rendszer. Kapcsold be a blokk feloldásához.",
+      "sections": {
+        "available": "Elérhető",
+        "connected": "Csatlakoztatva",
+        "paired": "Párosítva"
+      },
+      "unavailable": "Bluetooth szolgáltatás nem elérhető",
+      "unknown-device": "Ismeretlen eszköz",
+      "visible": "Felfedezhető a közeli eszközök számára"
+    },
+    "calendar": {
+      "all-day": "Egész nap",
+      "events": "Események",
+      "no-events": "Nincsenek események."
+    },
+    "display": {
+      "disabled": "Letiltva",
+      "no-displays": "Nincsenek elérhető monitorok",
+      "unknown-resolution": "Ismeretlen felbontás"
+    },
+    "home": {
+      "media": {
+        "idle": "Tétlen",
+        "no-active-player": "Nincs aktív lejátszó",
+        "nothing-playing": "Nincs lejátszás",
+        "paused": "Szüneteltetve",
+        "playback-unavailable": "A lejátszás nem érhető el",
+        "playing": "Lejátszás",
+        "unavailable": "Nem érhető el",
+        "unknown-artist": "Ismeretlen előadó",
+        "unknown-track": "Ismeretlen szám"
+      },
+      "select-avatar": "Profilkép kiválasztása",
+      "unknown": "ismeretlen",
+      "user-facts": "{user}@{host}\nRendszeridő - {uptime}\nNoctalia {version}",
+      "weather": {
+        "configure-location": "Add meg a [weather].address értéket vagy engedélyezd az auto_locate beállítást",
+        "data-unavailable": "Az időjárási adatok nem érhetők el.",
+        "disabled": "Az időjárás le van tiltva a konfigurációban.",
+        "fetching": "Előrejelzés lekérése…"
+      }
+    },
+    "media": {
+      "active-player": "Aktív lejátszó",
+      "nothing-playing": "Nincs lejátszás",
+      "now-playing": "Lejátszás alatt",
+      "start-playback": "Indítsd el a lejátszást egy MPRIS-alkalmazásban"
+    },
+    "network": {
+      "connect": "Csatlakozás",
+      "current-connection": "Jelenlegi kapcsolat",
+      "no-networks": "Nincs hálózat a közelben",
+      "not-connected": "Nincs csatlakozva",
+      "password": "Jelszó",
+      "password-prompt": "Jelszó megadása",
+      "password-prompt-for": "Add meg a jelszót a {ssid} hálózathoz",
+      "unavailable-detail": "Telepítsd és engedélyezd a NetworkManagert a hálózatok innen történő kezeléséhez.",
+      "unavailable-title": "A NetworkManager nem érhető el",
+      "vpns": "VPN-ek",
+      "wi-fi": "Wi-Fi",
+      "wifi": "Wi-Fi",
+      "wifi-off": "A Wi-Fi ki van kapcsolva",
+      "wifi-on": "A Wi-Fi be van kapcsolva",
+      "wired-connection": "Vezetékes kapcsolat"
+    },
+    "notifications": {
+      "empty-body": "A legutóbbi értesítések itt jelennek meg.",
+      "empty-title": "Nincs értesítés",
+      "filter": {
+        "all": "Összes",
+        "older": "Régebbi",
+        "today": "Ma",
+        "yesterday": "Tegnap"
+      },
+      "filter-empty-body": "Nincs a szűrőnek megfelelő értesítés.",
+      "filter-empty-title": "Itt nincs semmi",
+      "untitled": "Cím nélküli értesítés"
+    },
+    "screen-time": {
+      "disabled": "A képernyőidő-követés ki van kapcsolva. Engedélyezd a Beállításokban az alkalmazásonkénti használat rögzítéséhez.",
+      "empty": "Még nincs rögzített alkalmazáshasználat. Aktiválj egy ablakot a mérés indításához",
+      "hour-0": "12:00",
+      "hour-12": "24:00",
+      "hour-18": "18:00",
+      "hour-6": "6:00",
+      "most-used": "LEGGYAKRABBAN HASZNÁLT",
+      "range": {
+        "14-days": "14 nap",
+        "3-days": "3 nap",
+        "today": "Ma"
+      }
+    },
+    "shortcuts": {
+      "audio": "Hang",
+      "bluetooth": "Bluetooth",
+      "caffeine": "Koffein",
+      "clipboard": "Vágólap",
+      "dark-mode": {
+        "auto": "Automatikus mód",
+        "dark": "Sötét mód",
+        "light": "Világos mód"
+      },
+      "keyboard-layout": "Elrendezés",
+      "media": "Média",
+      "mic-mute": "Mikrofon",
+      "nightlight": "Éjszakai fény",
+      "nightlight-states": {
+        "forced": "Mindig bekapcsolva",
+        "off": "Éjszakai fény",
+        "scheduled-day": "Ütemezett",
+        "scheduled-night": "Fut"
+      },
+      "notification": "Ne zavarjanak",
+      "power-profile": "Energiagazdálkodás",
+      "screen-recorder": "Rögzítő",
+      "screen-time": "Képernyőidő",
+      "session": "Munkamenet",
+      "system": "Rendszer",
+      "wallpaper": "Háttérkép",
+      "weather": "Időjárás",
+      "wifi": "Wi-Fi"
+    },
+    "system": {
+      "titles": {
+        "cpu": "CPU",
+        "gpu": "GPU",
+        "memory": "Memória",
+        "network": "Hálózat",
+        "resources": "Erőforrások",
+        "system": "Rendszer"
+      },
+      "unknown": "ismeretlen",
+      "uptime-prefix": "Fut: {uptime} · {osAge}"
+    },
+    "tabs": {
+      "audio": "Hang",
+      "bluetooth": "Bluetooth",
+      "calendar": "Naptár",
+      "display": "Monitor",
+      "home": "Kezdőlap",
+      "media": "Média",
+      "network": "Hálózat",
+      "notifications": "Értesítések",
+      "screen-time": "Képernyőidő",
+      "system": "Rendszer",
+      "weather": "Időjárás"
+    },
+    "weather": {
+      "configure-location": "Állítsd be a [weather].address értéket vagy az auto_locate beállítást",
+      "data-unavailable": "Az időjárási adatok nem érhetők el",
+      "details": {
+        "elevation": "Emelkedés",
+        "sunrise": "Napkelte",
+        "sunset": "Napnyugta",
+        "temp-max": "Maximális hőmérséklet",
+        "temp-min": "Minimális hőmérséklet",
+        "timezone": "Időzóna",
+        "wind": "Szél"
+      },
+      "disabled": "Engedélyezd a [weather] részt a config.toml fájlban",
+      "fetching": "Előrejelzés lekérése…",
+      "forecast-placeholder": {
+        "day": "Vasárnap",
+        "description": "Időjárás",
+        "temperature": "10 / 4C"
+      },
+      "location-unavailable": "A hely nem érhető el",
+      "refreshing": "Időjárás frissítése…",
+      "waiting": "Várakozás az időjárási adatokra"
+    }
+  },
+  "desktop-widgets": {
+    "editor": {
+      "actions": {
+        "done": "Kész"
+      },
+      "dialogs": {
+        "select-sticker-image": "Matricakép kiválasztása"
+      },
+      "settings": {
+        "aspect-ratio": "Képarány",
+        "background": "Háttér",
+        "background-color": "Szín",
+        "background-opacity": "Átlátszatlanság",
+        "background-padding": "Kitöltés",
+        "background-radius": "Sugár",
+        "background-section": "Háttér",
+        "bands": "Sávok",
+        "bar-width": "Sáv szélessége",
+        "bloom-intensity": "Ragyogás",
+        "centered": "Középre zárt",
+        "change-image": "Módosítás…",
+        "circle": "Kör",
+        "clock-style": "Órastílus",
+        "clock-style-analog": "Analóg",
+        "clock-style-digital": "Digitális",
+        "color": "Szín",
+        "color2": "2. szín",
+        "custom-color": "Egyéni…",
+        "description": "Leírás",
+        "fade-when-idle": "Halványítás tétlenség esetén",
+        "font-family": "Betűtípus",
+        "font-family-default": "Rendszer alapértelmezése",
+        "format": "Formátum",
+        "hide-when-no-media": "Elrejtés, ha nincs lejátszás",
+        "high-color": "Magas szín",
+        "horizontal": "Vízszintes",
+        "image-path": "Kép",
+        "inner-diameter": "Belső átmérő",
+        "layout": "Elrendezés",
+        "low-color": "Halvány színek",
+        "mirrored": "Tükrözött",
+        "opacity": "Átlátszatlanság",
+        "primary-color": "Elsődleges szín",
+        "ring-opacity": "Gyűrű átlátszóság",
+        "rotation-speed": "Forgási sebesség",
+        "secondary-color": "Másodlagos szín",
+        "sensitivity": "Érzékenység",
+        "shadow": "Árnyék",
+        "show-label": "Címke megjelenítése",
+        "show-when-idle": "Megjelenítés tétlenség esetén",
+        "stat": "Statisztika",
+        "stat-cpu-temp": "CPU-hőmérséklet",
+        "stat-cpu-usage": "CPU-használat",
+        "stat-gpu-temp": "GPU-hőmérséklet",
+        "stat-gpu-usage": "GPU-használat",
+        "stat-gpu-vram": "VRAM-használat",
+        "stat-net-rx": "Letöltés",
+        "stat-net-tx": "Feltöltés",
+        "stat-none": "Nincs",
+        "stat-ram-pct": "RAM %",
+        "stat-swap-pct": "Cserehely %",
+        "stat2": "2. statisztika",
+        "title": "Cím",
+        "vertical": "Függőleges",
+        "visualization-mode": "Mód",
+        "visualization-mode-all": "Összes",
+        "visualization-mode-bars": "Sávok",
+        "visualization-mode-bars-rings": "Sávok + gyűrűk",
+        "visualization-mode-rings": "Gyűrűk",
+        "visualization-mode-wave": "Hullám",
+        "visualization-mode-wave-rings": "Hullám + gyűrűk",
+        "wave-thickness": "Hullámvastagság",
+        "widget-section": "Modul"
+      },
+      "state": {
+        "grid-off": "Rács kikapcsolva",
+        "grid-on": "Rács be"
+      },
+      "title": "Asztali vezérlők",
+      "types": {
+        "audio-visualizer": "Hangvizualizáló",
+        "clock": "Óra",
+        "fancy-audio-visualizer": "Látványos hangvizualizáló",
+        "label": "Címke",
+        "media-player": "Médialejátszó",
+        "sticker": "Matrica",
+        "system-monitor": "Rendszerfigyelő",
+        "weather": "Időjárás"
+      }
+    },
+    "media": {
+      "nothing-playing": "Nincs lejátszás"
+    },
+    "weather": {
+      "error": "Hiba",
+      "loading": "Betöltés",
+      "no-location": "Nincs hely",
+      "off": "Időjárás kikapcsolva"
+    }
+  },
+  "dock": {
+    "actions": {
+      "close": "Bezárás",
+      "close-all": "Összes bezárása"
+    },
+    "launcher": "Indító"
+  },
+  "internal-apps": {
+    "settings": {
+      "display-name": "Beállítások"
+    }
+  },
+  "launcher": {
+    "categories": {
+      "all": "Összes",
+      "applications": {
+        "development": "Fejlesztés",
+        "education": "Oktatás",
+        "games": "Játékok",
+        "graphics": "Grafika",
+        "internet": "Internet",
+        "multimedia": "Multimédia",
+        "office": "Iroda",
+        "system": "Rendszer",
+        "utilities": "Segédprogramok"
+      },
+      "emoji": {
+        "activity": "Tevékenység",
+        "animals": "Állatok",
+        "flags": "Zászlók",
+        "food": "Étel",
+        "nature": "Természet",
+        "objects": "Objektumok",
+        "people": "Emberek",
+        "symbols": "Szimbólumok",
+        "travel": "Utazás"
+      },
+      "recently-used": "Legutóbb használt"
+    },
+    "context-menu": {
+      "open": "Megnyitás",
+      "pin-to-dock": "Rögzítés a Dockhoz",
+      "unpin-from-dock": "Eltávolítás a dokkból"
+    },
+    "empty": {
+      "no-results": "Nincs találat",
+      "type-to-search": "Kezdj el gépelni a kereséshez…"
+    },
+    "providers": {
+      "applications": {
+        "title": "Alkalmazások"
+      },
+      "calculator": {
+        "title": "Számológép"
+      },
+      "emoji": {
+        "title": "Emoji"
+      },
+      "session": {
+        "action-subtitle": "Munkamenet-művelet futtatása",
+        "command-subtitle": "Konfigurált parancs futtatása",
+        "title": "Munkamenet"
+      },
+      "wallpaper": {
+        "title": "Háttérkép"
+      },
+      "window": {
+        "title": "Ablakok"
+      }
+    },
+    "search-placeholder": "Alkalmazások keresése…"
+  },
+  "location": {
+    "errors": {
+      "address-lookup-failed": "Címfeloldás sikertelen",
+      "ip-geolocation-failed": "IP-helymeghatározás sikertelen",
+      "parse-geocode": "Nem sikerült értelmezni a geokódolási választ",
+      "parse-ip-geolocation": "Nem sikerült értelmezni az IP geolokációs választ"
+    },
+    "locations": {
+      "current": "Jelenlegi hely"
+    },
+    "source": {
+      "address": "Cím",
+      "auto": "Automatikus"
+    }
+  },
+  "lockscreen": {
+    "authenticating": "Hitelesítés…",
+    "authentication-failed": "Hitelesítés sikertelen",
+    "password-cleared": "Jelszó törölve",
+    "password-placeholder": "Jelszó",
+    "ready": "Írd be a jelszavad, és nyomd meg az Entert.",
+    "unlocked": "Feloldva",
+    "waiting": "Várakozás a zárolás megerősítésére…"
+  },
+  "notifications": {
+    "actions": {
+      "fallback": "Művelet",
+      "open": "Megnyitás"
+    },
+    "inline-reply": {
+      "button": "Válasz",
+      "placeholder": "Válasz írása…"
+    },
+    "internal": {
+      "battery": "Akkumulátor",
+      "battery-device": "Akkumulátor eszköz",
+      "battery-low-body": "{device}: {percent}% hátralévő",
+      "battery-low-title": "Alacsony töltöttség",
+      "calendar": "Naptár",
+      "calendar-google-connect-browser-failed": "Nem sikerült böngészőt indítani a Google hitelesítéshez. Ellenőrizd az alapértelmezett böngésződet vagy az xdg-open beállításait.",
+      "calendar-google-connect-expired": "A Google engedélyezés lejárt, mielőtt a bejelentkezés befejeződött volna. Kezdd újra a kapcsolatot.",
+      "calendar-google-connect-failed-title": "Google Calendar kapcsolat meghiúsult",
+      "calendar-google-connect-missing-account": "Nincs konfigurált Google naptárfiók, ami egyezne ezzel: „{account}”.",
+      "calendar-google-connect-rate-limited": "A Google hitelesítés átmenetileg korlátozva van. Várj egy kicsit, majd próbáld újra.",
+      "calendar-google-connect-result-failed": "Nem sikerült a Google-hitelesítés. Indítsd újra a kapcsolatot.",
+      "calendar-google-connect-start-failed": "Nem sikerült elindítani a Google hitelesítést. Ellenőrizd a hálózati kapcsolatodat, és próbáld újra.",
+      "calendar-google-connect-start-http": "Nem sikerült elindítani a Google hitelesítést. Az OAuth bróker HTTP {status} kóddal tért vissza.",
+      "calendar-google-connect-timeout": "A Google-hitelesítés túllépte az időkorlátot. Indítsd újra a kapcsolatot, amikor készen állsz a bejelentkezésre.",
+      "dbus-disabled": "DBus értesítések letiltva",
+      "desktop-widgets-editor": "Vezérlő szerkesztő",
+      "desktop-widgets-editor-enabled": "Az asztali modul szerkesztő be van kapcsolva. Válts egy üres Munkaterületre, hogy lásd a szerkesztő átfedést.",
+      "greeter-sync": "Noctalia Üdvözlő",
+      "greeter-sync-success": "Megjelenés szinkronizálva. A változások a következő bejelentkezési képernyőn lépnek érvénybe.",
+      "keybind-app": "Noctalia",
+      "keybind-invalid-modifier": "Ez a gyorsbillentyű egyetlen billentyűt fogad el módosítók nélkül.",
+      "keybind-invalid-printable": "A nyomtatható billentyűk (betűk, számok, szimbólumok) módosító billentyűt igényelnek, mint például a Ctrl vagy az Alt.",
+      "keybind-invalid-super": "A Super/Windows billentyű nem használható shell gyorsbillentyűkben.",
+      "keybind-invalid-title": "Gyorsbillentyű nem engedélyezett",
+      "lockscreen-widgets-editor": "Zárolási képernyő widget szerkesztő",
+      "lockscreen-widgets-editor-blocked-locked": "Oldd fel a munkamenetet, mielőtt szerkesztenéd a zárolási képernyő widgetjeit.",
+      "lockscreen-widgets-editor-enabled": "A zárolási képernyő widget szerkesztője bekapcsolva. Rendezd el a widgeteket az előnézeti átfedésen, majd zárold a munkamenetet az elrendezés ellenőrzéséhez.",
+      "mpris-disabled": "MPRIS letiltva",
+      "session-bus-unavailable": "Munkamenet-busz nem elérhető",
+      "wallpaper-palette-export": "Egyedi Paletta",
+      "wallpaper-palette-export-success": "Mentettük a(z) „{name}” és a paletta forrását egyedire váltottuk."
+    }
+  },
+  "osd": {
+    "bluetooth": {
+      "off": "Bluetooth Ki",
+      "on": "Bluetooth bekapcsolva"
+    },
+    "caffeine": {
+      "off": "Koffein ki",
+      "on": "Koffein Be"
+    },
+    "dnd": {
+      "off": "Ne zavarjanak ki",
+      "on": "DND be"
+    },
+    "lock-keys": {
+      "caps-off": "Caps Lock ki",
+      "caps-on": "Caps Lock Be",
+      "num-off": "Num Lock Ki",
+      "num-on": "Num Lock Be",
+      "scroll-off": "Scroll Lock ki",
+      "scroll-on": "Scroll Lock Be"
+    },
+    "wifi": {
+      "off": "Wi-Fi Ki",
+      "on": "Wi-Fi Bekapcsolva"
+    }
+  },
+  "power": {
+    "battery": {
+      "states": {
+        "battery": "Akkumulátor",
+        "charging": "Töltés",
+        "discharging": "Merülés",
+        "empty": "Üres",
+        "pending-discharge": "Merülésre vár",
+        "plugged-in": "Csatlakoztatva"
+      },
+      "tooltip": {
+        "health": "Egészség",
+        "rate": "Értékelj",
+        "status": "Állapot",
+        "time-left": "Hátralévő idő",
+        "time-to-full": "Idő a teljes töltöttségig"
+      }
+    },
+    "profiles": {
+      "balanced": "Kiegyensúlyozott",
+      "performance": "Teljesítmény",
+      "power-saver": "Energiatakarékos"
+    }
+  },
+  "session": {
+    "actions": {
+      "custom": "Egyéni",
+      "lock": "Zárolás",
+      "lock-and-suspend": "Zárolás és Felfüggesztés",
+      "logout": "Kijelentkezés",
+      "reboot": "Újraindítás",
+      "shutdown": "Leállítás",
+      "suspend": "Felfüggesztés"
+    },
+    "errors": {
+      "lock-body": "A munkamenet-lezárási protokoll nem érhető el.",
+      "lock-title": "Zárolás nem elérhető"
+    }
+  },
+  "settings": {
+    "actions": {
+      "reset": "Visszaállítás"
+    },
+    "badges": {
+      "advanced": "Haladó",
+      "inherited": "Öröklött",
+      "monitor": "Monitor",
+      "override": "Felülbírálás"
+    },
+    "calendar-accounts": {
+      "add-title": "Naptárfiók hozzáadása",
+      "color-label": "Szín",
+      "delete-error": "Nem sikerült törölni a naptárfiókot.",
+      "edit-title": "Naptárfiók szerkesztése",
+      "id-label": "Fiókazonosító",
+      "invalid": "Ellenőrizd a kiemelt naptárfiók mezőket.",
+      "name-label": "Megjelenítési név",
+      "name-placeholder": "Személyes naptár",
+      "password-keep-placeholder": "Hagyd üresen a jelenlegi jelszó megtartásához",
+      "password-label": "Alkalmazásjelszó",
+      "password-placeholder": "Alkalmazásspecifikus jelszó",
+      "password-save-error": "Nem sikerült menteni a naptárfiók jelszavát.",
+      "provider": {
+        "custom": "CalDAV",
+        "google": "Google",
+        "icloud": "iCloud"
+      },
+      "provider-label": "Szolgáltató",
+      "save": "Mentés",
+      "save-connect": "Mentés és csatlakozás",
+      "save-error": "Nem sikerült menteni a naptárfiókot.",
+      "server-url-label": "Szerver URL",
+      "username-label": "Felhasználónév",
+      "username-placeholder": "name@example.com"
+    },
+    "controls": {
+      "keybind": {
+        "add": "Kattints billentyűkombináció hozzáadásához",
+        "recording-placeholder": "Nyomj meg egy billentyűkombinációt…",
+        "unset-placeholder": "Kattints a hozzárendeléshez…"
+      },
+      "list": {
+        "add-entry-placeholder": "Bejegyzés hozzáadása…"
+      },
+      "path-browse": {
+        "file-title": "Fájl kiválasztása",
+        "folder-title": "Mappa kiválasztása"
+      },
+      "select": {
+        "unknown-value": "Ismeretlen: {value}"
+      }
+    },
+    "dialogs": {
+      "color-picker": {
+        "title": "Válassz színt"
+      }
+    },
+    "entities": {
+      "bar": {
+        "create": "Létrehozás",
+        "delete": "Törlés",
+        "delete-confirm-desc": "Ez a GUI-val létrehozott Bar törölve lesz a settings.toml-ból",
+        "delete-confirm-title": "Törlöd a(z) „{name}”?",
+        "id-placeholder": "Sáv azonosító",
+        "label": "Sáv: {name}",
+        "management": "Sáv",
+        "move-down": "Lejjebb",
+        "move-up": "Feljebb",
+        "new": "Új Sáv",
+        "rename": "Átnevezés",
+        "rename-save": "Mentés"
+      },
+      "monitor-override": {
+        "create": "Létrehozás",
+        "delete": "Törlés",
+        "delete-confirm-desc": "Ez a GUI-val létrehozott monitor felülbírálás el lesz távolítva a settings.toml-ból.",
+        "delete-confirm-title": "Törlöd a(z) „{name}”?",
+        "label": "Monitor: {name}",
+        "management": "Monitor felülírása",
+        "match-placeholder": "Monitor illesztés",
+        "new": "Monitor felülbírálás",
+        "rename": "Átnevezés",
+        "rename-save": "Mentés"
+      },
+      "widget": {
+        "add": "Vezérlő hozzáadása",
+        "detail": {
+          "custom": "egyedi komponens"
+        },
+        "editor": {
+          "description": "Elrendezni a vezérlőket a sáv különböző sávjaiban",
+          "title": "Állapotsáv modulok"
+        },
+        "group": {
+          "action": "Csoport",
+          "border": "Szegély",
+          "border-description": "A kapszula körvonalának színszerepe; hagyd Alapértelmezett értéken, ha nem szeretnél körvonalat",
+          "clear": "Törlés",
+          "edit": "Stílus szerkesztése",
+          "fill": "Háttér",
+          "fill-description": "Kapszula háttérszín szerepe; fix hex színek is támogatottak",
+          "foreground": "Előtér",
+          "foreground-description": "Az ikon és a felirat színszerepe az ebben a csoportban lévő widgetekhez",
+          "hint": "Egy kapszula csoport része",
+          "members": "{count} vezérlő",
+          "opacity": "Átlátszatlanság",
+          "opacity-description": "Kapszula háttér átlátszatlansága",
+          "orphan": "Ismeretlen csoport",
+          "padding": "Kitöltés",
+          "padding-description": "A kapszula széle és a widgetjei közötti belső kitöltés, képpontokban",
+          "radius": "Sugár",
+          "radius-description": "Capsule sarokrádiusza képpontokban; az Automatikus örökli a Bar Capsule rádiuszát",
+          "selected": "{count} kiválasztva",
+          "style": "Stílus",
+          "title": "Kapszula csoport",
+          "ungroup": "Szétcsoportosítás"
+        },
+        "inspector": {
+          "add-instance-title": "Új elnevezett {widget} widget hozzáadása a {lane} sávhoz",
+          "add-title": "Minialkalmazás hozzáadása a {lane}hez",
+          "move-to-lane": "Áthelyezés ide: {lane}"
+        },
+        "instance": {
+          "create-save": "Létrehozás",
+          "delete": "Törlés",
+          "delete-confirm-desc": "Ez az elnevezett vezérlő el lesz távolítva minden sávról, és a beállításai elvetésre kerülnek.",
+          "delete-confirm-title": "Törlöd a(z) „{name}” elemet?",
+          "id-description": "Csak betűket, számokat, aláhúzásokat vagy kötőjeleket használj. Szóközök nélkül; egyedinek kell lennie.",
+          "id-placeholder": "Widget azonosító",
+          "rename": "Átnevezés",
+          "rename-save": "Mentés"
+        },
+        "lanes": {
+          "center": "Közép",
+          "customize": "Testreszabás",
+          "empty": "Nincsenek vezérlők",
+          "empty-hint": "Adj hozzá egy widgetet, hogy kitöltsd ezt a sávot.",
+          "end": "Vége",
+          "start": "Indítás"
+        },
+        "picker": {
+          "empty": "Nincsenek modulok",
+          "instance-description": "Elnevezett vezérlő a(z) {type} típushoz",
+          "instance-toggle": "Elnevezett Vezérlő",
+          "placeholder": "Widgetek keresése…"
+        },
+        "raw": {
+          "delete": "Törlés",
+          "description": "Nem támogatott kulcsok maradtak meg a vezérlő konfigurációjából",
+          "title": "Nyers beállítások"
+        },
+        "settings": {
+          "empty": "Nincsenek a szűrőknek megfelelő beállítások.",
+          "groups": {
+            "grouping": "Csoportosítás",
+            "presentation": "Megjelenítés",
+            "runtime": "Futásidő",
+            "widget": "Vezérlő"
+          }
+        }
+      }
+    },
+    "errors": {
+      "bar": {
+        "create": "Nem sikerült létrehozni a sávot.",
+        "delete": "Nem sikerült törölni a sávot.",
+        "move": "Nem sikerült áthelyezni a sávot.",
+        "rename": "Nem sikerült átnevezni a sávot."
+      },
+      "batch-write": "Néhány beállítást nem sikerült menteni.",
+      "export-config": "Nem sikerült menteni a konfiguráció exportot.",
+      "export-wallpaper-palette": "Nem sikerült menteni a háttérkép palettát egyéni palettaként.",
+      "monitor-override": {
+        "create": "Nem sikerült létrehozni a monitor felülbírálást.",
+        "delete": "Nem sikerült törölni a monitor felülbírálását.",
+        "rename": "Nem sikerült átnevezni a monitor felülbírálását."
+      },
+      "reset-page": "Nem sikerült visszaállítani néhány beállítást.",
+      "support-report": "Nem sikerült menteni a támogatási jelentést.",
+      "sync-greeter": "Nem sikerült szinkronizálni a megjelenést a Noctalia Greeterrel.",
+      "widget": {
+        "rename": "Nem sikerült átnevezni az elnevezett widgetet."
+      },
+      "write": "A beállítások mentése sikertelen."
+    },
+    "export-config": {
+      "export": "Exportálás",
+      "full-effective-description": "Exportálja az összes aktív beállítást, beleértve a beépített alapértelmezéseket is; hasznos ellenőrzéshez vagy pillanatkép megosztásához, de explicit módon rögzíti az aktuális alapértelmezéseket",
+      "full-effective-save-title": "Teljes Aktuális Konfiguráció Mentése",
+      "full-effective-title": "Teljes Aktuális Konfiguráció",
+      "merged-user-description": "Egyesíti a konfigurációs fájlokat és a GUI felülírásokat egyetlen TOML fájlba; a beépített alapértelmezések implicit módon maradnak",
+      "merged-user-save-title": "Egyesített felhasználói konfiguráció mentése",
+      "merged-user-title": "Egyesített felhasználói konfiguráció (Ajánlott)",
+      "title": "Konfiguráció exportálása"
+    },
+    "idle": {
+      "behavior": {
+        "add": "Viselkedés hozzáadása",
+        "command-label": "Üresjárati parancs",
+        "command-placeholder": "notify-send \"Idle\"",
+        "kind": {
+          "custom": "Egyéni",
+          "lock": "Zárolás",
+          "lock-and-suspend": "Zárolás és Felfüggesztés",
+          "screen-off": "Képernyő ki",
+          "suspend": "Felfüggesztés"
+        },
+        "kind-section-label": "Művelet",
+        "name-label": "Név",
+        "name-placeholder": "Tétlenségi viselkedés",
+        "resume-command-label": "Folytatás parancs",
+        "resume-command-placeholder": "noctalia:dpms-bekapcsolva",
+        "summary": "{name} · {seconds} mp",
+        "summary-disabled-timeout": "{name} · időtúllépés kikapcsolva",
+        "timeout-label": "Időtúllépés másodpercek",
+        "unnamed": "Névtelen működés"
+      },
+      "live-status": {
+        "active": "Aktív",
+        "idle-for-one": "Tétlen 1 másodpercig",
+        "idle-for-seconds": "Tétlen {seconds} másodperce"
+      }
+    },
+    "navigation": {
+      "groups": {
+        "audio": "Hang",
+        "automation": "Automatizálás",
+        "backdrop": "Háttér",
+        "background": "Háttér",
+        "battery": "Akkumulátor",
+        "behavior": "Viselkedés",
+        "brightness": "Fényerő",
+        "built-in": "Beépített",
+        "calendar": "Naptár",
+        "capsules": "Kapszulák",
+        "clipboard": "Vágólap",
+        "community": "Közösség",
+        "control-center": "Vezérlőközpont",
+        "directories": "Könyvtárak",
+        "effects": "Effektek",
+        "filtering": "Szűrés",
+        "focus-styling": "Fókusz stílus",
+        "formats": "Formátumok",
+        "general": "Általános",
+        "grouping": "Csoportosítás",
+        "home": "Kezdőlap",
+        "idle": "Tétlen",
+        "interface": "Felület",
+        "keybinds": "Billentyűparancsok",
+        "kinds": "Típusok",
+        "launcher": "Indító",
+        "layout": "Elrendezés",
+        "lifecycle": "Életciklus",
+        "location": "Hely",
+        "lock-screen": "Zárolási képernyő",
+        "media": "Média",
+        "monitor": "Rendszerfigyelő",
+        "monitor-polling": "Lekérdezési időközök",
+        "monitor-thresholds": "Kiemelési Küszöbértékek",
+        "monitors": "Monitorok",
+        "motion": "Mozgás",
+        "network": "Hálózat",
+        "night-light": "Éjszakai fény",
+        "notifications": "Értesítések",
+        "osd": "OSD",
+        "overview": "Áttekintés",
+        "pinned-apps": "Kitűzött alkalmazások",
+        "power": "Bekapcsolás",
+        "privacy-security": "Adatvédelem és Biztonság",
+        "profile": "Profil",
+        "screen-corners": "Képernyő sarkok",
+        "screen-time": "Képernyőidő",
+        "screenshot": "Képernyőfelvétel",
+        "security": "Biztonság",
+        "session-panel": "Munkamenet",
+        "shape": "Alak",
+        "system": "Rendszer",
+        "theme": "Téma",
+        "toasts": "Toastok",
+        "transition": "Átmenet",
+        "user": "Felhasználó",
+        "wallpaper": "Háttérkép",
+        "weather": "Időjárás",
+        "widget-list": "Widget Lista",
+        "widgets": "Widgetek"
+      },
+      "sections": {
+        "appearance": "Megjelenés",
+        "backdrop": "Háttér",
+        "bar": "Állapotsáv",
+        "desktop": "Asztal",
+        "dock": "Dokk",
+        "hooks": "Hookok",
+        "location": "Hely",
+        "niri": "Niri",
+        "notifications": "Értesítések",
+        "osd": "OSD",
+        "panels": "Panelek",
+        "popups": "Felugrók",
+        "power": "Energiakezelés",
+        "security": "Biztonság",
+        "services": "Szolgáltatások",
+        "shell": "Felület",
+        "system": "Rendszer",
+        "templates": "Sablonok",
+        "wallpaper": "Háttérkép"
+      }
+    },
+    "options": {
+      "clipboard": {
+        "auto-paste": {
+          "ctrl-shift-v": "Ctrl+Shift+V",
+          "ctrl-v": "Ctrl+V",
+          "shift-insert": "Shift+Insert"
+        }
+      },
+      "control-center": {
+        "sidebar": {
+          "compact": "Kompakt",
+          "full": "Teljes",
+          "none": "Nincs"
+        }
+      },
+      "dock-launcher-position": {
+        "end": "Vége",
+        "none": "Nincs",
+        "start": "Indítás"
+      },
+      "edge": {
+        "bottom": "Alul",
+        "left": "Bal",
+        "right": "Jobb",
+        "top": "Felül"
+      },
+      "font-weight": {
+        "bold": "Félkövér",
+        "book": "Könyv",
+        "default": "Alapértelmezett (bar)",
+        "heavy": "Vastag",
+        "light": "Világos",
+        "medium": "Közepes",
+        "regular": "Normál",
+        "semi-bold": "Félkövér",
+        "semi-light": "Félvilágos",
+        "thin": "Vékony",
+        "ultra-bold": "Ultra Vastag",
+        "ultra-heavy": "Ultra vastag",
+        "ultra-light": "Ultra világos"
+      },
+      "layer": {
+        "overlay": "Átfedés",
+        "top": "Felül"
+      },
+      "notification-urgency": {
+        "critical": "Kritikus",
+        "low": "Alacsony",
+        "normal": "Normál"
+      },
+      "orientation": {
+        "horizontal": "Vízszintes",
+        "vertical": "Függőleges"
+      },
+      "screen-position": {
+        "bottom-center": "Alul középen",
+        "bottom-left": "Bal alsó",
+        "bottom-right": "Jobb Lent",
+        "center-left": "Közép bal",
+        "center-right": "Középső Jobb",
+        "top-center": "Felül középen",
+        "top-left": "Bal felső",
+        "top-right": "Jobb felül"
+      },
+      "shell": {
+        "panel-placement": {
+          "attached": "Rögzített",
+          "centered": "Középre",
+          "floating": "Lebegő"
+        },
+        "panel-transparency": {
+          "glass": "Üveg",
+          "soft": "Lágy",
+          "solid": "Egyszínű"
+        },
+        "password-style": {
+          "filled-circles": "Kitöltött körök",
+          "random-icons": "Véletlenszerű ikonok"
+        },
+        "shadow-direction": {
+          "center": "Közép",
+          "down": "Le",
+          "down-left": "Bal alsó",
+          "down-right": "Lent jobbra",
+          "left": "Bal",
+          "right": "Jobb",
+          "up": "Fel",
+          "up-left": "Fel Bal",
+          "up-right": "Jobb felső"
+        }
+      },
+      "theme": {
+        "mode": {
+          "dark": "Sötét",
+          "light": "Világos"
+        },
+        "source": {
+          "built-in": "Beépített",
+          "community": "Közösség",
+          "custom": "Egyéni",
+          "wallpaper": "Háttérkép"
+        }
+      },
+      "theme-role": {
+        "custom": "Egyedi…",
+        "default": "Alapértelmezett"
+      },
+      "wallpaper": {
+        "fill": {
+          "center": "Közép",
+          "crop": "Vágás",
+          "fit": "Illesztés",
+          "repeat": "Ismétlés",
+          "stretch": "Nyújtás"
+        },
+        "order": {
+          "alphabetical": "Betűrendes",
+          "random": "Véletlen"
+        },
+        "transition": {
+          "disc": "Lemez",
+          "fade": "Halványítás",
+          "honeycomb": "Méhsejt",
+          "stripes": "Csíkok",
+          "wipe": "Törlés",
+          "zoom": "Nagyítás"
+        }
+      },
+      "weather": {
+        "unit": {
+          "imperial": "Birodalmi",
+          "metric": "Metrikus"
+        }
+      }
+    },
+    "schema": {
+      "appearance": {
+        "animation-speed": {
+          "description": "Sebességszorzó minden animációhoz",
+          "label": "Animáció sebessége"
+        },
+        "animations": {
+          "description": "Engedélyezd vagy tiltsd le a felhasználói felület animációit",
+          "label": "Animációk"
+        },
+        "app-icon-color": {
+          "description": "Palettaszín, amelyet az alkalmazásikonok színezésekor használnak",
+          "label": "Alkalmazásikon Színe"
+        },
+        "app-icon-colorize": {
+          "description": "Színezd át az alkalmazásikonokat az egész shellben, hogy passzoljanak az aktuális palettához",
+          "label": "Alkalmazásikonok színezése"
+        },
+        "builtin-palette": {
+          "description": "Válassz egy palettát a mellékelt katalógusból",
+          "label": "Beépített paletta"
+        },
+        "community-palette": {
+          "description": "Válassz egy palettát a közösségi katalógusból",
+          "label": "Közösségi Paletta",
+          "search-placeholder": "Paletták keresése…"
+        },
+        "corner-roundness": {
+          "description": "A sarokrádiusz méretezése a shell UI tárolóin és vezérlőin",
+          "label": "Sarok Lekerekítés"
+        },
+        "custom-palette": {
+          "description": "Válassz egy palettát innen: ~/.config/noctalia/palettes/",
+          "label": "Egyéni Paletta",
+          "search-placeholder": "Keress egyedi palettákat…"
+        },
+        "export-wallpaper-palette": {
+          "button": "Mentés egyéni palettaként",
+          "description": "Mentsd el az aktuális háttérképből generált palettát újrahasználható egyéni palettafájlként",
+          "label": "Háttérképpaletta Exportálása"
+        },
+        "font-family": {
+          "description": "Betűtípus család a felülethez",
+          "label": "Betűtípus család"
+        },
+        "global-shadow-alpha": {
+          "description": "Globális felületi árnyék átlátszatlanság"
+        },
+        "global-shadow-direction": {
+          "description": "Árnyékvetés iránya a felületekről"
+        },
+        "language": {
+          "description": "Automatikus területi beállítások észlelésének felülírása",
+          "label": "Nyelv"
+        },
+        "palette-source": {
+          "description": "Honnan származtassuk a színpalettát",
+          "label": "Paletta Forrás"
+        },
+        "theme-mode": {
+          "description": "Válaszd a sötét, világos vagy automatikus módot a napszak alapján",
+          "label": "Téma Mód"
+        },
+        "ui-scale": {
+          "description": "A teljes felület fel- vagy lekicsinyítése",
+          "label": "UI skálázás"
+        },
+        "wallpaper-generation-scheme": {
+          "description": "Válaszd ki, hogyan alakulnak át a háttérkép színei palettává",
+          "label": "Háttérkép Generálási Séma"
+        }
+      },
+      "backdrop": {
+        "blur-intensity": {
+          "description": "A háttér elmosásának intenzitása",
+          "label": "Elmosás intenzitása"
+        },
+        "enabled": {
+          "description": "A háttér engedélyezése"
+        },
+        "tint-intensity": {
+          "description": "A háttérréteg színezésének erőssége",
+          "label": "Színezés intenzitása"
+        }
+      },
+      "bar": {
+        "auto-hide": {
+          "description": "Automatikusan elrejti a sávot, ha nincs használatban"
+        },
+        "background-opacity": {
+          "description": "A sáv háttér átlátszósága"
+        },
+        "border": {
+          "description": "Színszerep a sáv körvonalához; fix hex színek is támogatottak",
+          "label": "Szegély"
+        },
+        "border-width": {
+          "description": "Belső körvonal szélesség a sávhoz",
+          "label": "Szegélyszélesség"
+        },
+        "capsule-border": {
+          "description": "Alapértelmezett kapszula körvonal színszerep; rögzített hexadecimális színek is támogatottak",
+          "label": "Kapszula Szegély"
+        },
+        "capsule-fill": {
+          "description": "Alapértelmezett kapszula háttérszín szerepköre; fix hex színek is támogatottak",
+          "label": "Kapszula kitöltés"
+        },
+        "capsule-foreground": {
+          "description": "Alapértelmezett ikon és címke színszerep a kapszulákban; rögzített hexadecimális színek is támogatottak",
+          "label": "Kapszula előtér"
+        },
+        "capsule-opacity": {
+          "description": "A widget kapszulák hátterének átlátszatlansága",
+          "label": "Kapszula átlátszatlansága"
+        },
+        "capsule-padding": {
+          "description": "A widget kapszulák belső kitöltése",
+          "label": "Kapszula kitöltés"
+        },
+        "capsule-radius": {
+          "description": "Alapértelmezett sarokrádiusz a widget kapszulákhoz, a munkaterület jelzőkhöz és a tálca munkaterület csoportjaihoz; hagyd üresen az automatikus lekerekített alakhoz, vagy állítsd 0-ra a szögletes sarkokhoz",
+          "label": "Kapszula Sugár"
+        },
+        "center-widgets": {
+          "description": "Modulok a sáv közepén",
+          "label": "Középső modulok"
+        },
+        "contact-shadow": {
+          "description": "Sötét gradiens egy rögzített panel és a sáv között, hogy mélységet sugalljon az illesztésnél"
+        },
+        "content-padding": {
+          "description": "A sáv tartalomterületén belüli kitöltés",
+          "label": "Tartalompárnázás"
+        },
+        "content-scale": {
+          "description": "A sáv tartalmának skálázási tényezője",
+          "label": "Tartalom Méretezése"
+        },
+        "corner-bottom-left": {
+          "description": "A sáv bal alsó sarkának lekerekítése"
+        },
+        "corner-bottom-right": {
+          "description": "A sáv jobb alsó sarokrádiusza"
+        },
+        "corner-radius": {
+          "description": "A sáv sarokrádiusza"
+        },
+        "corner-top-left": {
+          "description": "A sáv felső bal sarokrádiusza"
+        },
+        "corner-top-right": {
+          "description": "A sáv jobb felső sarkának lekerekítési sugara"
+        },
+        "edge-margin": {
+          "description": "Távolság a legközelebbi képernyőszéltől; a pozitív értékek elúsztatják a sávot tőle"
+        },
+        "enabled": {
+          "description": "Mutatja vagy elrejti ezt a sávot"
+        },
+        "end-widgets": {
+          "description": "Widgetek a Bar végén (jobb/alsó oldalon)",
+          "label": "Végmodulok"
+        },
+        "ends-margin": {
+          "description": "Behúzás a sáv mindkét végénél, a főtengely mentén"
+        },
+        "font-weight": {
+          "description": "Alapértelmezett súly a sávon lévő widget címkékhez",
+          "label": "Betűvastagság"
+        },
+        "layer": {
+          "description": "Használj Átfedést, hogy a sávot teljes képernyős alkalmazások felett jelenítsd meg. A rögzített panelek követik a sávot.",
+          "label": "Wayland Réteg"
+        },
+        "panel-overlap": {
+          "description": "A rögzített Panel ennyi pixellel fedi át a Sáv szélét, hogy elrejtse az illesztést (állítsd, ha vonalat vagy rést látsz)",
+          "label": "Panel átfedés"
+        },
+        "position": {
+          "description": "A sáv melyik képernyőszélen helyezkedik el"
+        },
+        "reserve-space": {
+          "description": "Eltolja az ablakokat a sáv szélétől"
+        },
+        "shadow": {
+          "description": "A sávból vetíti a globális felületi árnyékot"
+        },
+        "start-widgets": {
+          "description": "Widgetek a sáv kezdő (bal/felső) oldalán",
+          "label": "Indító Widgetek"
+        },
+        "thickness": {
+          "description": "Sáv vastagsága pixelben",
+          "label": "Vastagság"
+        },
+        "widget-capsules": {
+          "description": "Widgetek kapszula hátterekbe burkolása",
+          "label": "Widget-kapszulák"
+        },
+        "widget-color": {
+          "description": "Alapértelmezett ikon és címke szín szerepe a sávon lévő widgetekhez; rögzített hexadecimális színek is támogatottak",
+          "label": "Widget színe"
+        },
+        "widget-spacing": {
+          "description": "Távolság a sáv widgetjei között",
+          "label": "Widget térköz"
+        }
+      },
+      "desktop": {
+        "screen-corners-enabled": {
+          "description": "Lekerekíti a képernyő sarkait egy fekete átfedéssel",
+          "label": "Képernyősarkok"
+        },
+        "screen-corners-size": {
+          "description": "A lekerekített képernyősarkok sugara pixelben",
+          "label": "Sarokméret"
+        },
+        "widgets": {
+          "description": "Widgetek megjelenítése az asztalon",
+          "label": "Asztali vezérlők"
+        },
+        "widgets-editor": {
+          "button": "Szerkesztő váltása",
+          "description": "Asztali widgetek hozzáadása, mozgatása és átméretezése",
+          "label": "Widget Szerkesztő"
+        }
+      },
+      "dock": {
+        "active-icon-opacity": {
+          "description": "A fókuszált Dock ikon opacitása",
+          "label": "Aktív ikon átlátszatlanság"
+        },
+        "active-icon-scale": {
+          "description": "A fókuszált dokk ikon mérete",
+          "label": "Aktív Ikon Méretezés"
+        },
+        "active-monitor-only": {
+          "description": "Csak az aktív monitoron futó alkalmazásokat mutassa",
+          "label": "Csak aktív monitoron"
+        },
+        "auto-hide": {
+          "description": "Automatikusan elrejti a Dockot, ha nincs használatban"
+        },
+        "background-opacity": {
+          "description": "A Dock háttér átlátszósága"
+        },
+        "corner-bottom-left": {
+          "description": "A Dock bal alsó sarkának lekerekítése"
+        },
+        "corner-bottom-right": {
+          "description": "A Dock alsó jobb sarok sugara"
+        },
+        "corner-radius": {
+          "description": "A dokk sarokrádiusza"
+        },
+        "corner-top-left": {
+          "description": "A Dock felső bal sarkának sugara"
+        },
+        "corner-top-right": {
+          "description": "A Dock jobb felső sarokrádiusza"
+        },
+        "cross-axis-padding": {
+          "description": "Belső kitöltés a Dock keresztirányú tengelye mentén (az ikonok és a képernyő széle között)"
+        },
+        "edge-margin": {
+          "description": "Távolság a legközelebbi képernyőszéltől; a pozitív értékek lebegtetik a Dockot tőle"
+        },
+        "enabled": {
+          "description": "A Dock megjelenítése vagy elrejtése"
+        },
+        "ends-margin": {
+          "description": "Behúzás a Dokk mindkét végéről, a főtengelye mentén"
+        },
+        "icon-size": {
+          "description": "A Dock ikonok mérete pixelben",
+          "label": "Ikon méret"
+        },
+        "inactive-icon-opacity": {
+          "description": "Nem fókuszált dokk ikonok átlátszatlansága",
+          "label": "Inaktív Ikon Átlátszatlanság"
+        },
+        "inactive-icon-scale": {
+          "description": "Nem fókuszált dokkikonok méretaránya",
+          "label": "Inaktív Ikon Méretarány"
+        },
+        "item-spacing": {
+          "description": "Térköz a Dock elemek között",
+          "label": "Elemtávolság"
+        },
+        "launcher-icon": {
+          "description": "A Dock Launcher gombján megjelenő Tabler ikon",
+          "label": "Alkalmazásindító Ikon"
+        },
+        "launcher-position": {
+          "description": "Mutass egy Indító gombot a Dokk elején vagy végén",
+          "label": "Indító gomb"
+        },
+        "magnification": {
+          "description": "Nagyítja a Dock ikonokat az egérmutató közelében, macOS-stílusban",
+          "label": "Nagyítás"
+        },
+        "magnification-scale": {
+          "description": "Maximális ikonméret-szorzó a kurzor középpontjánál (1.0 kikapcsolja a nagyítást)",
+          "label": "Nagyítási arány"
+        },
+        "main-axis-padding": {
+          "description": "Belső kitöltés a Dock fő tengelye mentén (az ikonok és a kapszula rövid végei között)"
+        },
+        "monitors": {
+          "description": "Válaszd ki, mely monitorokon jelenjen meg a Dock (hagyd üresen az összeshez); az aktív monitor szűrése ezeken a monitorokon belül érvényesül",
+          "label": "Monitorok"
+        },
+        "pinned-apps": {
+          "description": "A dokkhoz rögzített alkalmazások asztali bejegyzés azonosítói",
+          "label": "Kitűzött alkalmazások"
+        },
+        "position": {
+          "description": "Melyik képernyőszélen van a dokk"
+        },
+        "reserve-space": {
+          "description": "Foglaljon le képernyőterületet a Docknak"
+        },
+        "shadow": {
+          "description": "A Dock vetítse a globális felületi árnyékot"
+        },
+        "show-dots": {
+          "description": "Mutasd a futó ablakok jelzőpontjait a dokk ikonok mellett",
+          "label": "Pontok megjelenítése"
+        },
+        "show-instance-count": {
+          "description": "Jelvény megjelenítése a nyitott példányok számával",
+          "label": "Példányszám megjelenítése"
+        },
+        "show-running": {
+          "description": "Mutasd a futó alkalmazásokat, amelyek nincsenek rögzítve",
+          "label": "Futó"
+        }
+      },
+      "hooks": {
+        "command-placeholder": "shell parancs vagy parancsfájl útvonala",
+        "events": {
+          "battery-charging": {
+            "description": "Parancs, ami akkor fut le, amikor az akkumulátor töltődni kezd",
+            "label": "Töltés közben"
+          },
+          "battery-discharging": {
+            "description": "Parancs futtatása, amikor az akkumulátor elkezd merülni",
+            "label": "Akkumulátor lemerülésekor"
+          },
+          "battery-percentage-changed": {
+            "description": "Parancs, ami akkor fut le, amikor az akkumulátor töltöttségi szintje változik",
+            "label": "Akkumulátor Töltöttségi Szint Változásakor"
+          },
+          "battery-plugged": {
+            "description": "Parancs futtatása, amikor az akkumulátor teljesen feltöltődik vagy töltés alatt áll",
+            "label": "Akkumulátorról töltőre csatlakoztatva"
+          },
+          "bluetooth-disabled": {
+            "description": "Parancs, ami akkor fut le, ha a Bluetooth le van tiltva",
+            "label": "Bluetooth kikapcsolásakor"
+          },
+          "bluetooth-enabled": {
+            "description": "Parancs, ami akkor fut le, ha a Bluetooth be van kapcsolva",
+            "label": "Bluetooth engedélyezve"
+          },
+          "colors-changed": {
+            "description": "Parancs, ami akkor fut le, ha az aktív színpaletta megváltozik",
+            "label": "Színek megváltozásakor"
+          },
+          "logging-out": {
+            "description": "Parancs, amit futtatni kell a kijelentkezés előtt",
+            "label": "Kijelentkezéskor"
+          },
+          "power-profile-changed": {
+            "description": "Parancs, ami lefut, amikor az aktív UPower/PPD energiaprofil megváltozik",
+            "label": "Energiaprofil Megváltozásakor"
+          },
+          "rebooting": {
+            "description": "Parancs, amit újraindítás előtt futtatni kell",
+            "label": "Újraindítás"
+          },
+          "session-locked": {
+            "description": "Parancs, ami akkor fut le, amikor a munkamenet zárolva van",
+            "label": "Munkamenet zárolásakor"
+          },
+          "session-unlocked": {
+            "description": "Parancs, ami a munkamenet feloldása után fut le",
+            "label": "Munkamenet feloldásakor"
+          },
+          "shutting-down": {
+            "description": "Leállítás előtt futtatandó parancs",
+            "label": "Leállításkor"
+          },
+          "started": {
+            "description": "Parancs, ami a Noctalia indulása után lefut",
+            "label": "Indításkor"
+          },
+          "theme-mode-changed": {
+            "description": "Parancs, ami akkor fut le, amikor a feloldott téma módja világos és sötét között vált",
+            "label": "Témamód megváltozásakor"
+          },
+          "wallpaper-changed": {
+            "description": "Parancs, ami háttérképváltáskor fut le",
+            "label": "Háttérkép változásakor"
+          },
+          "wifi-disabled": {
+            "description": "Parancs, ami Wi-Fi letiltásakor fut le",
+            "label": "Wi-Fi kikapcsolásakor"
+          },
+          "wifi-enabled": {
+            "description": "Parancs, amit Wi-Fi engedélyezésekor futtatni kell",
+            "label": "Wi-Fi bekapcsolva"
+          }
+        }
+      },
+      "idle": {
+        "behaviors": {
+          "description": "Elnevezett tétlen műveletek előre beállítottakkal (zárolás, kijelzők kikapcsolása, felfüggesztés) vagy egyéni parancsokkal; időtúllépések, visszaállítási párosítás és sorrend",
+          "label": "Viselkedések"
+        },
+        "pre-action-fade": {
+          "description": "Másodpercek, amíg a teljes képernyő elsötétül az üresjárati parancs előtt; használj 0-t a kikapcsoláshoz",
+          "label": "Inaktív halványítás"
+        }
+      },
+      "keybinds": {
+        "cancel": {
+          "description": "Felugró ablakok bezárása, panelek bezárása, vagy az aktuális művelet megszakítása",
+          "label": "Mégse"
+        },
+        "down": {
+          "description": "Fókusz vagy kijelölés mozgatása egy sorral lefelé",
+          "label": "Navigálás lefelé"
+        },
+        "left": {
+          "description": "Fókusz vagy kijelölés mozgatása balra",
+          "label": "Balra lépés"
+        },
+        "right": {
+          "description": "Fókusz vagy kijelölés mozgatása jobbra",
+          "label": "Navigálás jobbra"
+        },
+        "up": {
+          "description": "Fókusz vagy kijelölés mozgatása egy sorral feljebb",
+          "label": "Fel"
+        },
+        "validate": {
+          "description": "Kiválasztások megerősítése, bemenetek elküldése vagy a fókuszált elem aktiválása",
+          "label": "Megerősítés"
+        }
+      },
+      "lockscreen": {
+        "blur-intensity": {
+          "description": "Mennyire elmosódott a zárképernyő háttere",
+          "label": "Elmosás erőssége"
+        },
+        "blurred-desktop": {
+          "description": "Használj egy pillanatképet az asztalról a képernyőzár háttereként",
+          "label": "Képernyőfelvétel"
+        },
+        "monitors": {
+          "description": "Válaszd ki, mely monitorokon jelenjen meg a zárolási képernyő; hagyd üresen, hogy minden monitoron megjelenjen",
+          "label": "Monitorok"
+        },
+        "tint-intensity": {
+          "description": "Felületszín színezés a képernyőzár háttere felett",
+          "label": "Színezés intenzitása"
+        },
+        "wallpaper": {
+          "description": "Egyedi kép a záróképernyő hátteréhez. Hagyd üresen, ha az asztali háttérképet szeretnéd használni.",
+          "label": "Háttérkép",
+          "placeholder": "Asztali háttérkép használata"
+        },
+        "widgets": {
+          "description": "Konfigurálható widgetek megjelenítése a zárolási képernyőn",
+          "label": "Zárképernyő Widgetek"
+        },
+        "widgets-editor": {
+          "button": "Szerkesztő váltása",
+          "description": "Vezérlők hozzáadása, mozgatása és átméretezése a zárolási képernyőn",
+          "label": "Zárolási képernyő Widget Szerkesztő"
+        }
+      },
+      "notifications": {
+        "allowed-urgencies": {
+          "description": "Csak a kiválasztott sürgősségi szinteken mutasd a külső értesítéseket",
+          "label": "Engedélyezett sürgősségek"
+        },
+        "blacklist": {
+          "description": "Megfelelő küldők elrejtése (alkalmazás neve, asztali bejegyzés vagy kategória)",
+          "label": "Értesítési feketelista"
+        },
+        "blacklist-allow-critical": {
+          "description": "Mégis mutassa a kritikus értesítéseket a feketelistára tett küldőktől",
+          "label": "Kritikus átengedése a feketelistán"
+        },
+        "collapse-on-dismiss": {
+          "description": "A megmaradt Toastok elcsúsztatása, hogy kitöltsék a helyet, ha egyet bezárnak",
+          "label": "Összecsukás elvetéskor"
+        },
+        "daemon": {
+          "description": "A beépített értesítési démon engedélyezése",
+          "label": "Értesítési Démon"
+        },
+        "layer": {
+          "description": "Az Átfedés segítségével jeleníthetsz meg értesítési felugró üzeneteket a teljes képernyős alkalmazások felett",
+          "label": "Wayland réteg"
+        },
+        "monitors": {
+          "description": "Válaszd ki, mely monitorokon jelenjenek meg az értesítési toastok; hagyd üresen, hogy minden monitoron megjelenjenek",
+          "label": "Monitorok"
+        },
+        "offset-x": {
+          "description": "Abszolút vízszintes margó a képernyő vagy a sáv szélétől",
+          "label": "Vízszintes margó"
+        },
+        "offset-y": {
+          "description": "Abszolút függőleges margó a képernyő vagy a Bar szélétől",
+          "label": "Függőleges margó"
+        },
+        "position": {
+          "description": "Képernyő pozíció a Toast értesítésekhez",
+          "label": "Képernyő pozíció"
+        },
+        "scale": {
+          "description": "Értesítési Toastok skálázása a shell UI skálájához képest",
+          "label": "Méret"
+        },
+        "show-actions": {
+          "description": "Műveletgombok megjelenítése az értesítési Toast-okban; ha le van tiltva, a Toast-ra kattintás elindítja az alapértelmezett műveletét",
+          "label": "Műveletgombok megjelenítése"
+        },
+        "show-app-name": {
+          "description": "Mutasd a küldő alkalmazás nevét a gyorsértesítésekben",
+          "label": "Alkalmazás nevének megjelenítése"
+        },
+        "toast-opacity": {
+          "description": "Értesítési toastok háttér átlátszatlansága",
+          "label": "Háttér átlátszatlanság"
+        }
+      },
+      "panels": {
+        "borders": {
+          "description": "Körvonalat rajzol a panelekre és a panelekben lévő szekciókártyákra",
+          "label": "Szegélyek"
+        },
+        "control-center-sidebar": {
+          "description": "Kezdőképernyő és általános megnyitások",
+          "label": "Oldalsáv"
+        },
+        "control-center-sidebar-section": {
+          "description": "Amikor megnyitsz egy adott fület (hangerő, média stb.)",
+          "label": "Oldalsáv fül megnyitásakor"
+        },
+        "home-shortcuts": {
+          "description": "Válassz legfeljebb hat gyorsgombot a kezdőlaphoz",
+          "label": "Kezdőlap Parancsikonok"
+        },
+        "launcher-categories": {
+          "description": "Kategóriaszűrők megjelenítése a Launcherben; válts a Tab billentyűvel, amíg a Launcher nyitva van",
+          "label": "Kategóriák megjelenítése"
+        },
+        "launcher-compact": {
+          "description": "Kisebb ikonokat és kompaktabb eredménysorokat használj",
+          "label": "Kompakt sorok"
+        },
+        "launcher-show-icons": {
+          "description": "Alkalmazásikonok megjelenítése az indító találatokban",
+          "label": "Alkalmazásikonok Megjelenítése"
+        },
+        "open-near-click-clipboard": {
+          "description": "Helyezd el a vágólap panelt a sáv kattintásához közel, ahelyett, hogy a sáv mentén középre igazítanád",
+          "label": "Kattintás közeli megnyitás"
+        },
+        "open-near-click-control-center": {
+          "description": "Helyezd el a Vezérlőközpont panelt a sáv kattintásához közel, ahelyett, hogy a sáv mentén középre igazítanád",
+          "label": "Megnyitás kattintás közelében"
+        },
+        "open-near-click-launcher": {
+          "description": "Helyezze el az indító panelt a sáv kattintási pontjához közel, ahelyett, hogy a sáv mentén középre igazítaná",
+          "label": "Nyitás kattintás közelében"
+        },
+        "open-near-click-session": {
+          "description": "Helyezd el a munkamenet menü panelt a sávon történt kattintás helyéhez közel, ahelyett, hogy a sáv mentén középre igazítanád.",
+          "label": "Kattintás közeli megnyitás"
+        },
+        "open-near-click-wallpaper": {
+          "description": "Helyezd el a háttérképválasztó panelt a sáv kattintási pontjához közel, ahelyett, hogy a sáv mentén középre igazítanád.",
+          "label": "Megnyitás kattintás közelében"
+        },
+        "placement-clipboard": {
+          "description": "Válaszd ki, hogy a vágólap rögzül-e a sárhoz, lebeg-e a közelében, vagy középen nyílik meg",
+          "label": "Elhelyezés"
+        },
+        "placement-control-center": {
+          "description": "Válaszd ki, hogy a Központ rögzüljön-e a Sávhoz, lebegjen-e mellette, vagy középen nyíljon meg",
+          "label": "Elhelyezés"
+        },
+        "placement-launcher": {
+          "description": "Válaszd ki, hogy az indító rögzüljön-e a sávhoz, lebegjen-e a közelében, vagy középen nyíljon meg",
+          "label": "Elhelyezés"
+        },
+        "placement-session": {
+          "description": "Válaszd ki, hogy a munkamenet menü a sárhoz csatlakozzon, lebegjen mellette, vagy középen nyíljon meg",
+          "label": "Elhelyezés"
+        },
+        "placement-wallpaper": {
+          "description": "Válaszd ki, hogy a háttérképválasztó a sárhoz rögzül-e, lebeg-e mellette, vagy középen nyílik meg",
+          "label": "Elhelyezés"
+        },
+        "shadow": {
+          "description": "Vetítsd a globális felületi árnyékot a Panel felületeiről"
+        },
+        "transparency-mode": {
+          "description": "Panel üveg stílus, beleértve a lebegő/középre igazított panel átlátszatlanságát és a kártya áttetszőségét",
+          "label": "Átlátszóság"
+        }
+      },
+      "power": {
+        "session-actions": {
+          "description": "Munkamenet menü bejegyzések, sorrend, egyéni parancsok és ikonok",
+          "label": "Bejegyzések"
+        }
+      },
+      "services": {
+        "audio-overdrive": {
+          "description": "Hangerő engedélyezése 100% fölött",
+          "label": "Hangtúlhajtás"
+        },
+        "calendar": {
+          "description": "Mutasd az eseményeket az online naptárfiókjaidból",
+          "label": "Naptár"
+        },
+        "calendar-add": {
+          "button": "Fiók hozzáadása",
+          "description": "iCloud, CalDAV vagy Google fiókok felvétele",
+          "label": "Naptárfiókok"
+        },
+        "calendar-edit": {
+          "button": "Szerkesztés",
+          "description": "Frissítsd ezt a naptárfiókot"
+        },
+        "calendar-refresh-interval": {
+          "description": "Milyen gyakran szinkronizálja a naptáreseményeket (perc)",
+          "label": "Frissítési időintervallum"
+        },
+        "day-temperature": {
+          "description": "Színhőmérséklet nappal (Kelvin)",
+          "label": "Nappali hőmérséklet"
+        },
+        "ddcutil": {
+          "description": "Vezérelheted a külső monitor fényerejét DDC/CI-n keresztül",
+          "label": "DDC/CI (ddcutil)",
+          "requires-ddcutil": "Telepítsd a ddcutilt a DDC/CI fényerő-szabályozás engedélyezéséhez"
+        },
+        "force-night-light": {
+          "description": "Mindig alkalmazza az éjszakai fényt időtől függetlenül",
+          "label": "Kékfény szűrő kényszerítése"
+        },
+        "latitude": {
+          "description": "Kézi szélességi fok a napkelte/napnyugta ütemezéshez; akkor használatos, ha az automatikus helymeghatározás és a cím alapú beállítás ki van kapcsolva",
+          "label": "Szélesség"
+        },
+        "location-address": {
+          "description": "Helymeghatározáshoz használt város vagy cím, ha az automatikus helymeghatározás ki van kapcsolva",
+          "label": "Cím",
+          "placeholder": "Város, Ország"
+        },
+        "location-auto-locate": {
+          "description": "A tartózkodási helyed automatikus észlelése az IP-címed alapján",
+          "label": "Automatikus helymeghatározás (IP)"
+        },
+        "longitude": {
+          "description": "Kézi hosszúsági fok a napkelte/napnyugta ütemezéshez, akkor használatos, ha az automatikus helymeghatározás és cím ki van kapcsolva",
+          "label": "Hosszúság"
+        },
+        "mpris-blacklist": {
+          "description": "Médiavezérléshez és az éppen játszott tartalomhoz figyelmen kívül hagyandó lejátszók",
+          "label": "MPRIS Lejátszó Feketelista"
+        },
+        "night-light": {
+          "description": "Éjszaka melegebbé teszi a képernyő színeit",
+          "label": "Éjszakai fény",
+          "requires-gamma-control": "A kompozitor nem támogatja a gamma vezérlést"
+        },
+        "night-temperature": {
+          "description": "Színhőmérséklet éjszaka (Kelvin)",
+          "label": "Éjszakai hőmérséklet"
+        },
+        "notification-sound": {
+          "description": "Értesítési visszajelzéshez használt hangfájl",
+          "label": "Értesítési hang",
+          "placeholder": "/path/to/sound.wav"
+        },
+        "shell-sounds": {
+          "description": "Hangeffektek lejátszása shell eseményekhez",
+          "label": "Shell hangok"
+        },
+        "sound-volume": {
+          "description": "Hangerő a felület hanghatásaihoz",
+          "label": "Hangerő"
+        },
+        "sunrise": {
+          "description": "Manuális napkelte idő HH:MM formátumban, akkor használatos, ha nincs beállítva helyszín",
+          "label": "Napfelkelte"
+        },
+        "sunset": {
+          "description": "Kézi naplemente ideje HH:MM formátumban, akkor használatos, ha nincs beállítva helyszín",
+          "label": "Naplemente"
+        },
+        "system-monitor": {
+          "cpu-poll": {
+            "description": "Másodpercek a CPU-használat, CPU-hőmérséklet és terhelési átlag mintái között (0 kikapcsolja)",
+            "label": "CPU lekérdezési időköz"
+          },
+          "description": "Minta CPU, memória, hálózat, terhelés, hőmérséklet és lemezstatisztikák",
+          "disk-poll": {
+            "description": "Másodpercek a lemezhasználat és a swap használat mintavételei között (0 kikapcsolja)",
+            "label": "Lemez lekérdezési időköz"
+          },
+          "gpu-poll": {
+            "description": "Másodpercek a GPU hőmérséklet és VRAM mintavételezések között. A 0 letiltja (alapértelmezett), ami elkerüli egy diszkrét GPU felébresztését; az 5 jó intervallum, ha engedélyezed",
+            "label": "GPU Lekérdezési Időköz"
+          },
+          "label": "Rendszerfigyelő",
+          "memory-poll": {
+            "description": "RAM-használat mintavételezése közötti másodpercek (0 kikapcsolja)",
+            "label": "Memória lekérdezési intervallum"
+          },
+          "network-poll": {
+            "description": "Hálózati átviteli sebesség mintavételezési időköz (másodpercben) (0 kikapcsolja)",
+            "label": "Hálózati lekérdezési időköz"
+          },
+          "stats": {
+            "cpu-temp": "CPU Hőmérséklet",
+            "cpu-usage": "CPU kihasználtság",
+            "disk-usage": "Lemezhasználat",
+            "gpu-temp": "GPU Hőm.",
+            "gpu-usage": "GPU használat",
+            "gpu-vram": "GPU VRAM",
+            "network-rx": "Letöltés",
+            "network-tx": "Feltöltés",
+            "ram-usage": "RAM használat",
+            "swap-usage": "Swap használat"
+          },
+          "threshold": {
+            "description": "Tevékenységi küszöb (bal) és kritikus küszöb (jobb)",
+            "label": "statisztika"
+          }
+        },
+        "volume-change-sound": {
+          "description": "Hangerő visszajelzéshez használt hangfájl",
+          "label": "Hangerőváltozás hangja",
+          "placeholder": "/path/to/sound.wav"
+        },
+        "weather": {
+          "description": "Bekapcsolja az időjárás szolgáltatást",
+          "label": "Időjárás"
+        },
+        "weather-effects": {
+          "description": "Vizuális időjárási effektek megjelenítése",
+          "label": "Időjárási effektek"
+        },
+        "weather-refresh-interval": {
+          "description": "Milyen gyakran frissüljenek az időjárási adatok (perc)",
+          "label": "Frissítési intervallum"
+        },
+        "weather-unit": {
+          "description": "Mértékegységrendszer az időjárás kijelzéséhez",
+          "label": "Egységek"
+        }
+      },
+      "shared": {
+        "auto-hide": {
+          "label": "Automatikus elrejtés"
+        },
+        "background-opacity": {
+          "label": "Háttér átlátszatlansága"
+        },
+        "contact-shadow": {
+          "label": "Érintkezési árnyék"
+        },
+        "corner-bottom-left": {
+          "label": "Bal alsó sugár"
+        },
+        "corner-bottom-right": {
+          "label": "Alsó Jobb Sugár"
+        },
+        "corner-radius": {
+          "label": "Sarokrádiusz"
+        },
+        "corner-top-left": {
+          "label": "Bal Felső Sugár"
+        },
+        "corner-top-right": {
+          "label": "Felső Jobb Sugár"
+        },
+        "cross-axis-padding": {
+          "label": "Keresztirányú térköz"
+        },
+        "edge-margin": {
+          "label": "Szélmargó"
+        },
+        "enabled": {
+          "label": "Engedélyezve"
+        },
+        "ends-margin": {
+          "label": "Szélső margó"
+        },
+        "main-axis-padding": {
+          "label": "Fő tengely kitöltés"
+        },
+        "position": {
+          "label": "Pozíció"
+        },
+        "reserve-space": {
+          "label": "Helyfoglalás"
+        },
+        "shadow": {
+          "label": "Árnyék"
+        },
+        "shadow-alpha": {
+          "label": "Árnyék átlátszatlansága"
+        },
+        "shadow-direction": {
+          "label": "Árnyék iránya"
+        }
+      },
+      "shell": {
+        "avatar-path": {
+          "description": "Útvonal egy egyedi avatárképhez",
+          "label": "Avatar útvonal",
+          "placeholder": "/path/to/avatar.png"
+        },
+        "clipboard-auto-paste": {
+          "description": "Automatikusan beilleszti a vágólap tartalmát",
+          "label": "Vágólap automatikus beillesztése"
+        },
+        "clipboard-confirm-clear-history": {
+          "description": "Kérdezzen rá, mielőtt törölné a vágólap előzményeket vagy eltávolítana egy rögzítetlen bejegyzést a panelről; ha ez ki van kapcsolva, a műveletek azonnal végrehajtódnak (a rögzített bejegyzéseknél továbbra is rákérdez a törlés előtt)",
+          "label": "Előzmények törlésének megerősítése"
+        },
+        "clipboard-enabled": {
+          "description": "Engedélyezd a vágólap előzményeket, a vágólap panelt és a másolás/beillesztés integrációt",
+          "label": "Vágólap"
+        },
+        "clipboard-history-max-entries": {
+          "description": "A vágólap előzményeiben tárolt rögzítetlen bejegyzések maximális száma",
+          "label": "Előzmények mérete"
+        },
+        "clipboard-image-action": {
+          "description": "Parancs, amit futtatni kell a képvágólap bejegyzéseiből; használd a {path}-t a fájl elérési útjához, a {stdin}-t az stdin pozíció jelölésére, vagy hagyd el a {path}-t az automatikus pipe-oláshoz",
+          "label": "Képműveleti parancs",
+          "placeholder": "gimp {path} vagy satty -f -"
+        },
+        "date-format": {
+          "description": "Alapértelmezett dátumformátum a shell UI-hoz, saját beállítás nélkül",
+          "label": "Dátumformátum"
+        },
+        "launch-apps-as-systemd-services": {
+          "description": "Alkalmazásokat indít külön systemd szolgáltatásokban, hogy ne osszák meg Noctalia cgroupját",
+          "label": "Alkalmazások indítása systemd szolgáltatásként"
+        },
+        "middle-click-opens-widget-settings": {
+          "description": "Nyisd meg egy sáv widget beállításait a sávról középső kattintással",
+          "label": "Középső kattintás megnyitja a Widget beállításait"
+        },
+        "niri-overview-type-to-launch": {
+          "description": "Nyisd meg az Indítót, amikor gépelsz a niri áttekintésben; egy apró billentyűzet-fókusz felületet használ, amíg az áttekintés nyitva van",
+          "label": "Gépelj az indításhoz"
+        },
+        "offline-mode": {
+          "description": "Összes kimenő hálózati kérés blokkolása",
+          "label": "Offline mód"
+        },
+        "osd-background-opacity": {
+          "description": "OSD felugró ablakok háttér opacitása",
+          "label": "Háttér átlátszatlansága"
+        },
+        "osd-kinds-bluetooth": {
+          "description": "OSD felugró ablak megjelenítése a Bluetooth kapcsolásakor",
+          "label": "Bluetooth"
+        },
+        "osd-kinds-brightness": {
+          "description": "OSD felugró ablak megjelenítése, ha a kijelző fényereje változik",
+          "label": "Fényerő"
+        },
+        "osd-kinds-caffeine": {
+          "description": "OSD felugró ablak megjelenítése, amikor a caffeine (inaktivitás-gátló) állapota megváltozik",
+          "label": "Ébrenlét"
+        },
+        "osd-kinds-dnd": {
+          "description": "OSD felugró megjelenítése DND átváltásakor",
+          "label": "Ne zavarjanak"
+        },
+        "osd-kinds-keyboard-layout": {
+          "description": "OSD felugró ablak megjelenítése, amikor a billentyűzetkiosztás megváltozik",
+          "label": "Billentyűzetkiosztás"
+        },
+        "osd-kinds-lock-keys": {
+          "description": "OSD felugrók mutatása Caps Lock, Num Lock és Scroll Lock változásoknál",
+          "label": "Billentyűzárak"
+        },
+        "osd-kinds-power-profile": {
+          "description": "OSD felugró ablak megjelenítése, amikor az energiaprofil megváltozik",
+          "label": "Energiaprofil"
+        },
+        "osd-kinds-volume": {
+          "description": "OSD felugró ablakok megjelenítése hangerő változásakor; használj haladó beállításokat a kimenet és bemenet külön vezérléséhez",
+          "label": "Hangerő"
+        },
+        "osd-kinds-volume-input": {
+          "description": "OSD felugró ablak megjelenítése, amikor a bemeneti (mikrofon) hangerő változik",
+          "label": "Bemeneti hangerő"
+        },
+        "osd-kinds-volume-output": {
+          "description": "OSD felugró ablak megjelenítése, amikor a kimeneti (hangszóró) hangerő változik",
+          "label": "Kimeneti hangerő"
+        },
+        "osd-kinds-wifi": {
+          "description": "OSD felugró ablak megjelenítése Wi-Fi ki/bekapcsolásakor",
+          "label": "Wi-Fi"
+        },
+        "osd-monitors": {
+          "description": "Válaszd ki, melyik monitorokon jelenjenek meg az OSD felugró ablakok; hagyd üresen, hogy minden monitoron megjelenjenek",
+          "label": "Monitorok"
+        },
+        "osd-offset-x": {
+          "description": "Abszolút vízszintes margó a képernyő szélétől",
+          "label": "Vízszintes margó"
+        },
+        "osd-offset-y": {
+          "description": "Abszolút függőleges margó a képernyő szélétől",
+          "label": "Függőleges margó"
+        },
+        "osd-orientation": {
+          "description": "OSD felugrók elrendezési iránya",
+          "label": "Tájolás"
+        },
+        "osd-position": {
+          "description": "Képernyő pozíció az OSD felugrókhoz",
+          "label": "Képernyő pozíció"
+        },
+        "osd-scale": {
+          "description": "Az OSD felugró ablakok méretezése a shell UI méretéhez képest (az 1.0 az alapértelmezett méretet tartja)",
+          "label": "Méretezés"
+        },
+        "password-style": {
+          "description": "Vizuális stílus a jelszóbeviteli maszkoláshoz",
+          "label": "Jelszó stílus"
+        },
+        "polkit-agent": {
+          "description": "Engedélyezd a beépített hitelesítési ügynököt",
+          "label": "Polkit ügynök"
+        },
+        "screen-time-enabled": {
+          "description": "Alkalmazásonkénti használat követése és megjelenítése a Control Centerben",
+          "label": "Képernyőidő"
+        },
+        "screenshot-copy-to-clipboard": {
+          "description": "Helyezd a rögzített PNG-t a vágólapra",
+          "label": "Vágólapra másolás"
+        },
+        "screenshot-directory": {
+          "description": "Mappa a mentett PNG fájloknak; hagyd üresen, hogy a ~/Pictures-t használd",
+          "label": "Kimeneti könyvtár",
+          "placeholder": "~/Pictures"
+        },
+        "screenshot-filename-pattern": {
+          "description": "strftime minta kiterjesztés nélkül (.png hozzáadódik); használd a %s-t a unix epoch-hoz",
+          "label": "Fájlnév minta"
+        },
+        "screenshot-freeze-screen": {
+          "description": "Készíts felvételt az asztalról a terület kiválasztása előtt, hogy a mozgó tartalom ne mozduljon el",
+          "label": "Képernyő befagyasztása"
+        },
+        "screenshot-pipe-command": {
+          "description": "A parancs /bin/sh -lc-ként fut le, a PNG a stdin-en érkezik; jegyzetelőkhöz vagy feltöltőkhöz (például: swappy -f - vagy satty -f -)",
+          "label": "Pipe parancs",
+          "placeholder": "swappy -f -"
+        },
+        "screenshot-pipe-to-command": {
+          "description": "Küldd el az elfogott PNG-t egy shell parancsnak stdin-re",
+          "label": "Átirányítás parancsra"
+        },
+        "screenshot-save-to-file": {
+          "description": "Képernyőképeket PNG fájlként írjon a kimeneti könyvtárba",
+          "label": "Mentés fájlba"
+        },
+        "show-location": {
+          "description": "Hely nevének megjelenítése az időjárás widgetekben",
+          "label": "Hely megjelenítése"
+        },
+        "sync-greeter": {
+          "button": "Szinkronizálás most",
+          "description": "Másold az aktuális háttérképet és színeket a Noctalia Greeterbe (rendszergazdai jóváhagyás szükséges)",
+          "label": "Noctalia Üdvözlő"
+        },
+        "telemetry": {
+          "description": "Kis, anonim indítási pinget küld verzióval, OS-sel, kompozitorral, monitorfelbontásokkal, RAM-mal és UI skálával",
+          "label": "Névtelen indítási jelzés"
+        },
+        "time-format": {
+          "description": "Alapértelmezett időformátum a shell UI-hoz, ha nincs saját beállítása",
+          "label": "Időformátum"
+        }
+      },
+      "system": {
+        "battery-device-warning-threshold": {
+          "description": "Felülírja az akkumulátor figyelmeztetési küszöbét ehhez az eszközhöz. Állítsd 0-ra, hogy kikapcsold az eszköz figyelmeztetéseit.",
+          "label": "{device} figyelmeztetési küszöb"
+        },
+        "battery-warning-threshold": {
+          "description": "Rendszer akkumulátor töltöttségi szintje, amelynél vagy az alatt a shell alacsony töltöttségi értesítést küld, és az akkumulátor widgetek figyelmeztető színt használnak; állítsd 0-ra a kikapcsoláshoz",
+          "label": "Akkumulátor figyelmeztetési küszöb"
+        }
+      },
+      "templates": {
+        "builtin-ids": {
+          "description": "Kapcsold be/ki a mellékelt alkalmazássablonok renderelését téma módosításakor",
+          "empty": "Nincsenek beépített sablonok elérhetők.",
+          "label": "Beépített sablonok"
+        },
+        "community-ids": {
+          "description": "A gyorsítótárazott közösségi sablonok renderelésének be/ki kapcsolása minden téma módosításakor",
+          "empty": "Még nem érhetők el közösségi sablonok. Először engedélyezd a közösségi sablonokat, és frissítsd a katalógust.",
+          "label": "Közösségi Sablonok"
+        },
+        "enable-builtins": {
+          "description": "Használd az alkalmazásokhoz mellékelt téma sablonok katalógusát",
+          "label": "Beépített sablonok bekapcsolása"
+        },
+        "enable-community-templates": {
+          "description": "Tölts le és alkalmazz sablonokat a közösségi katalógusból",
+          "label": "Közösségi sablonok engedélyezése"
+        }
+      },
+      "wallpaper": {
+        "automation": {
+          "description": "Háttérképek automatikus váltása időzítővel",
+          "label": "Automatikus elforgatás"
+        },
+        "automation-interval": {
+          "description": "Másodpercek a háttérkép váltások között",
+          "label": "Forgatási intervallum"
+        },
+        "automation-order": {
+          "description": "Válassz háttérképeket véletlenszerűen vagy betűrendben",
+          "label": "Sorrend"
+        },
+        "automation-recursive": {
+          "description": "Háttérképek keresése almappákban",
+          "label": "Alkönyvtárak is"
+        },
+        "directory": {
+          "description": "Háttérképeket tartalmazó mappa",
+          "label": "Háttérkép Könyvtár"
+        },
+        "directory-dark": {
+          "description": "Sötét módhoz használt háttérkép mappa",
+          "label": "Sötét mód könyvtár",
+          "placeholder": "~/Pictures/Wallpapers"
+        },
+        "directory-light": {
+          "description": "Világos módhoz használt háttérkép mappa",
+          "label": "Világos mód könyvtár",
+          "placeholder": "~/Pictures/Wallpapers"
+        },
+        "edge-smoothness": {
+          "description": "A háttérképek közötti átmeneti élek lágyítása",
+          "label": "Élsimítás"
+        },
+        "enabled": {
+          "description": "A háttérkép szolgáltatás bekapcsolása"
+        },
+        "fill-color": {
+          "description": "Egyszínű háttérszín, ami a kép mögött, a nem fedett területeken látható",
+          "label": "Kitöltési szín"
+        },
+        "fill-mode": {
+          "description": "Hogyan illeszkednek a háttérképek a képernyőhöz",
+          "label": "Kitöltési Mód"
+        },
+        "monitor-directory": {
+          "label": "Háttérkép Könyvtár"
+        },
+        "monitor-directory-dark": {
+          "label": "Sötét mód könyvtár",
+          "placeholder": "~/Pictures/Wallpapers"
+        },
+        "monitor-directory-light": {
+          "label": "Világos mód könyvtára",
+          "placeholder": "~/Pictures/Wallpapers"
+        },
+        "panel": {
+          "button": "Panel megnyitása",
+          "description": "Nyisd meg a háttérkép választó panelt",
+          "label": "Háttérkép Panel"
+        },
+        "per-monitor-directories": {
+          "description": "Használj külön háttérkép mappákat minden monitorhoz",
+          "label": "Monitoronkénti Könyvtárak"
+        },
+        "transition-duration": {
+          "description": "A háttérkép-váltás animációjának hossza ezredmásodpercben",
+          "label": "Átmenet időtartama"
+        },
+        "transition-on-startup": {
+          "description": "Áttűnés lejátszása, amikor a héj először megjelenít egy háttérképet",
+          "label": "Animáció indításkor"
+        },
+        "transitions": {
+          "description": "Háttérképváltáskor elérhető effektek (minden váltásnál egyet véletlenszerűen választ ki)",
+          "label": "Átmeneti effektusok"
+        }
+      }
+    },
+    "session-actions": {
+      "add": "Művelet hozzáadása",
+      "clear-glyph": "Törlés",
+      "command-label": "Shell parancs",
+      "command-placeholder": "Opcionális bash parancs, hagyd üresen a beépített viselkedéshez",
+      "glyph-label": "Glifa",
+      "glyph-picker-title": "Művelet glifa",
+      "kind-section-label": "Viselkedés",
+      "label-field": "Címke",
+      "label-placeholder": "Választható gomb szövege",
+      "shortcut-label": "Gyorsbillentyű",
+      "variant": {
+        "default": "Alapértelmezett",
+        "destructive": "Romboló",
+        "ghost": "Szellem",
+        "outline": "Körvonal",
+        "primary": "Elsődleges",
+        "secondary": "Másodlagos"
+      },
+      "variant-label": "Gombstílus"
+    },
+    "widgets": {
+      "instances": {
+        "cpu": "CPU",
+        "date": "Dátum",
+        "input-volume": "Bemeneti hangerő",
+        "network-rx": "Hálózati vétel",
+        "network-tx": "Kimenő hálózat",
+        "output-volume": "Kimeneti hangerő",
+        "ram": "RAM",
+        "temp": "Hőmérséklet"
+      },
+      "options": {
+        "always": "Mindig",
+        "cpu-temp": "CPU hőmérséklet",
+        "cpu-usage": "CPU kihasználtság",
+        "disk-percent": "Lemez Százalék",
+        "full": "Teljes",
+        "gauge": "Mérő",
+        "glyph": "Glifa",
+        "gpu-temp": "GPU Hőmérséklet",
+        "gpu-usage": "GPU használat",
+        "gpu-vram": "GPU VRAM",
+        "graph": "Grafikon",
+        "graphic": "Grafika",
+        "icon-and-text": "Ikon és Szöveg",
+        "icon-only": "Csak ikon",
+        "id": "Azonosító",
+        "input": "Bemenet",
+        "instance": "Elhelyezésenként",
+        "name": "Név",
+        "net-rx": "Hálózati fogadás",
+        "net-tx": "Hálózati küldés",
+        "none": "Nincs",
+        "on-hover": "Rámutatásra",
+        "output": "Kimenet",
+        "ram-percent": "RAM Százalék",
+        "ram-used": "RAM Használat",
+        "screenshot-primary-fullscreen": "Teljes képernyő",
+        "screenshot-primary-region": "Régió",
+        "shared": "Közös",
+        "short": "Rövid",
+        "swap-percent": "Lapozó százalék",
+        "text": "Szöveg",
+        "text-only": "Csak szöveg",
+        "workspace-label-centered": "Középen",
+        "workspace-label-corner": "Sarok",
+        "workspace-label-inside": "Kapszulán belül"
+      },
+      "settings": {
+        "active-opacity": {
+          "description": "Az aktív (fókuszált) ablak ikonjának átlátszósága.",
+          "label": "Aktív ikon átlátszatlansága"
+        },
+        "anchor": {
+          "description": "Rögzítsd ezt a modult a középre igazítás rögzítőpontjaként",
+          "label": "Horgony"
+        },
+        "art-size": {
+          "description": "Média borítóképek mérete képpontban",
+          "label": "Műalkotás mérete"
+        },
+        "bands": {
+          "description": "Vizualizáló sávok száma",
+          "label": "Sávok"
+        },
+        "capsule": {
+          "description": "Rajzolj egy kapszulát a widget mögé",
+          "label": "Kapszula"
+        },
+        "capsule-border": {
+          "description": "Színszerep a kapszula körvonalának; fix hex színek is támogatottak",
+          "label": "Kapszula keret"
+        },
+        "capsule-fill": {
+          "description": "Szín szerepe a kapszula hátteréhez; rögzített hexadecimális színek is támogatottak",
+          "label": "Kapszula kitöltés"
+        },
+        "capsule-foreground": {
+          "description": "Színszerep a kapszulán belüli tartalomhoz; rögzített hexadecimális színek is támogatottak",
+          "label": "Kapszula előtér"
+        },
+        "capsule-opacity": {
+          "description": "A kapszula háttérének átlátszatlansága",
+          "label": "Kapszula átlátszatlanság"
+        },
+        "capsule-padding": {
+          "description": "A kapszula belső kitöltése",
+          "label": "Kapszula Kitöltés"
+        },
+        "capsule-radius": {
+          "description": "Sarokrádiusz ehhez a widget kapszulához; hagyd üresen az automatikus pirula alakhoz, vagy állítsd 0-ra a szögletes sarkokhoz",
+          "label": "Kapszula Sugara",
+          "taskbar-description": "Sarokrádiusz a widget kapszulákhoz, a munkaterület korongjelzőkhöz és a munkaterület csoportkapszulákhoz; hagyd üresen az automatikus pirula alakhoz, vagy állítsd 0-ra a szögletes sarkokhoz",
+          "workspaces-description": "Sarokrádiusz ehhez a widget kapszulához és a munkaterület pirulákhoz; hagyd üresen az automatikus pirula alakhoz, vagy állítsd 0-ra a négyzetes sarkokhoz"
+        },
+        "centered": {
+          "description": "Középre igazítsd a vizualizáló sávokat, ahelyett, hogy a szélhez igazítanád",
+          "label": "Középre"
+        },
+        "color": {
+          "description": "Színszerep a widget előteréhez; rögzített hexadecimális színek is támogatottak",
+          "label": "Szín"
+        },
+        "command": {
+          "description": "A gomb bal kattintásakor futó shell parancs",
+          "label": "Bal Kattintás Parancs"
+        },
+        "custom-image": {
+          "description": "Egyéni kép elérési útja. Hagyd üresen az ikon glif használatához.",
+          "dialog-title": "Egyéni kép kiválasztása",
+          "label": "Egyéni kép"
+        },
+        "custom-image-colorize": {
+          "description": "Színezd az egyéni képet a widget Szín beállításával",
+          "label": "Egyéni kép színezése"
+        },
+        "custom-labels": {
+          "description": "Billentyűzetkiosztás-nevek hozzárendelése egyéni címkékhez",
+          "label": "Egyéni címkék"
+        },
+        "cycle-command": {
+          "description": "Billentyűzetkiosztások váltásakor futtatott parancs",
+          "label": "Ciklusparancs"
+        },
+        "device": {
+          "description": "Felügyelendő vagy vezérelendő eszköz",
+          "label": "Eszköz"
+        },
+        "display": {
+          "active-window-description": "Ikon, cím, vagy mindkettő a vízszintes sávokon. A függőleges sávok csak ikonokat jelenítenek meg.",
+          "description": "Megjelenítési mód ehhez a modulhoz",
+          "label": "Kijelző"
+        },
+        "display-mode": {
+          "description": "Az akkumulátor megjelenítése grafikus alakzatként vagy Tabler glifaként",
+          "label": "Kijelző mód"
+        },
+        "drawer": {
+          "description": "Tálcagomb megjelenítése a sávon, és elemek megnyitása egy panelen",
+          "label": "Kihúzható Panel használata"
+        },
+        "drawer-columns": {
+          "description": "Tálcaikonok száma soronként a fiók Panelben",
+          "label": "Fiók Oszlopok"
+        },
+        "empty-color": {
+          "description": "Színszerep üres munkaterületekhez; rögzített hex színek is támogatottak",
+          "label": "Üres szín"
+        },
+        "focused-color": {
+          "description": "Színszerep a fókuszált munkaterülethez; rögzített hexadecimális színek is támogatottak",
+          "label": "Fókuszált szín"
+        },
+        "font-weight": {
+          "description": "Az alapértelmezett örökli a sáv betűtípusának vastagságát",
+          "label": "Betűvastagság"
+        },
+        "format": {
+          "description": "Időformátum-karakterlánc",
+          "label": "Formátum"
+        },
+        "glyph": {
+          "description": "Ikon glifa neve",
+          "label": "Jel"
+        },
+        "group-by-workspace": {
+          "description": "Csoportosítsa az ablaklista ikonjait virtuális asztal kapszulákba, amikor a kompozitor adatok elérhetők",
+          "label": "Csoportosítás munkaterület szerint"
+        },
+        "group-single-icon-per-app": {
+          "description": "Amikor munkaterület szerint csoportosítasz, vond össze ugyanazon alkalmazás több ablakát egyetlen ikonba, egy számláló jelvénnyel.",
+          "label": "Alkalmazásonként egy ikon"
+        },
+        "height": {
+          "description": "Vezérlő magassága pixelben",
+          "label": "Magasság"
+        },
+        "hidden": {
+          "description": "Elrejtendő tálca elem ID-k",
+          "label": "Rejtett elemek"
+        },
+        "hide-empty-workspaces": {
+          "description": "Munkaterület szerinti csoportosítás esetén hagyd ki azokat a kapszulákat, amelyekben nincsenek futó ablakok a tálca listájában.",
+          "label": "Üres munkaterületek elrejtése"
+        },
+        "hide-when-empty": {
+          "description": "Elrejti a munkaterület buborékokat, ha nincsenek nyitott ablakok",
+          "label": "Elrejtés, ha üres",
+          "workspaces-description": "Rejtsd el azokat a munkaterület-jelzőket, amelyeken nincsenek nyitott ablakok"
+        },
+        "hide-when-full": {
+          "description": "Rejtsd el az akkumulátor widgetet, ha teljesen feltöltődött",
+          "label": "Elrejtés, ha tele van"
+        },
+        "hide-when-no-connected-device": {
+          "description": "Rejtsd el a Bluetooth widgetet, ha nincs eszköz csatlakoztatva",
+          "label": "Elrejtés, ha nincs csatlakoztatott eszköz"
+        },
+        "hide-when-no-media": {
+          "description": "Rejtsd el a média Widgetet, ha nincs aktív MPRIS lejátszó",
+          "label": "Elrejtés, ha nincs média"
+        },
+        "hide-when-no-unread": {
+          "description": "Rejtsd el az értesítések widgetet, ha nincsenek olvasatlan értesítések",
+          "label": "Elrejtés, ha nincs új"
+        },
+        "hide-when-off": {
+          "description": "Rejtsd el a billentyűzár-jelzőt, ha inaktív",
+          "label": "Elrejtés, ha kikapcsolva"
+        },
+        "hide-when-plugged": {
+          "description": "Rejtsd el az akkumulátor vezérlőt, amíg hálózati áramforráshoz van csatlakoztatva",
+          "label": "Elrejtés, ha csatlakoztatva van"
+        },
+        "hide-when-single-layout": {
+          "description": "Rejtse el a billentyűzetkiosztás widgetet, hacsak nincs egynél több kiosztás konfigurálva",
+          "label": "Elrejtés, ha egyetlen elrendezés van"
+        },
+        "high-color": {
+          "description": "Szín magas vizualizáló értékekhez",
+          "label": "Magas színmélység"
+        },
+        "highlight-color": {
+          "description": "A szín elérte vagy túllépte a kritikus küszöböt",
+          "label": "Kiemelés színe"
+        },
+        "hot-reload": {
+          "description": "Újratölti a szkriptelt vezérlőt, amikor a forrása megváltozik",
+          "label": "Gyors újratöltés"
+        },
+        "icon-size": {
+          "description": "Ikonméret pixelekben",
+          "label": "Ikonméret"
+        },
+        "inactive-opacity": {
+          "description": "Inaktív (nem fókuszált) ablakok ikonjainak átlátszósága.",
+          "label": "Inaktív Ikon Átlátszóság"
+        },
+        "label": {
+          "description": "Opcionális statikus szöveg, ami ezen a gombon látható",
+          "label": "Címke"
+        },
+        "label-min-width": {
+          "description": "Minimális címkeszélesség pixelben az átméretezés megakadályozására",
+          "label": "Címke Minimális Szélessége"
+        },
+        "labels-only-when-occupied": {
+          "description": "Rejtse el a munkaterület-címkéket az üres, inaktív munkaterületeken",
+          "label": "Címkék csak ha foglalt",
+          "workspaces-description": "Mutassa a munkaterület azonosító vagy név címkéit azokon a munkaterületeken, ahol nyitott ablakok vannak, és az aktív munkaterületen is, még ha üres is; a többi üres címke címkézetlen marad"
+        },
+        "length": {
+          "description": "Távtartó hossza pixelben",
+          "label": "Hossz"
+        },
+        "low-color": {
+          "description": "Az alacsony vizualizátor értékekhez használt szín",
+          "label": "Alacsony szín"
+        },
+        "match-adjacent-spacing": {
+          "description": "Növeld a hézagokat az inline Tray ikonok között, hogy illeszkedjen a szomszédos Bar Widgetek vizuális térközéhez (beleértve a Capsule kitöltését).",
+          "label": "Szomszédos modulok távolságának illesztése"
+        },
+        "max-label-chars": {
+          "description": "A munkaterületnevek megjelenítéséhez használható maximális karakterszám",
+          "label": "Maximális címkekarakterek",
+          "workspaces-description": "Munkaterület név címkék maximális karakterszáma"
+        },
+        "max-length": {
+          "description": "Maximális vezérlőhossz pixelben",
+          "label": "Max. hossz"
+        },
+        "middle-command": {
+          "description": "Shell parancs, ami akkor fut le, ha középső gombbal kattintasz erre a gombra; ha be van állítva, a középső kattintás ezt a parancsot nyitja meg a vezérlőelem beállításai helyett",
+          "label": "Középső Kattintás Parancs"
+        },
+        "min-length": {
+          "description": "Minimális widget hossz pixelben",
+          "label": "Minimális hossz"
+        },
+        "minimal": {
+          "description": "Csak a munkaterület azonosító vagy név címkéit mutasd, animált buborékok nélkül",
+          "label": "Minimális stílus",
+          "workspaces-description": "Csak szöveges munkaterület címkék pirula háttér vagy csúszó animáció nélkül"
+        },
+        "mirrored": {
+          "description": "Tükrözd a vizualizálót a középpontja körül",
+          "label": "Tükrözött"
+        },
+        "occupied-color": {
+          "description": "Színszerep az elfoglalt munkaterületekhez; fix hex színek is támogatottak",
+          "label": "Foglalt Szín"
+        },
+        "only-active-workspace": {
+          "description": "Ablakok elrejtése inaktív munkaterületeken.",
+          "label": "Csak Aktív Munkaterület"
+        },
+        "path": {
+          "description": "Lemezstatisztikákhoz használt útvonal",
+          "label": "Útvonal"
+        },
+        "pill-scale": {
+          "description": "Állítsd be a munkaterület-jelzők skáláját",
+          "label": "Kapszula méret",
+          "workspaces-description": "A munkaterület-jelzők méretarányának beállítása"
+        },
+        "pinned": {
+          "description": "Tálcaelem-azonosítók, amelyek láthatóak maradnak a sávon, amikor a fiókmód engedélyezve van",
+          "label": "Kitűzött elemek"
+        },
+        "primary-click": {
+          "description": "A sáv gombjára bal kattintáskor végrehajtott művelet",
+          "label": "Elsődleges kattintás"
+        },
+        "right-command": {
+          "description": "Shell parancs, ami a gomb jobb kattintására fut le",
+          "label": "Jobb Kattintás Parancs"
+        },
+        "scale": {
+          "description": "Skálázd ezt a widgetet a sáv tartalmi skálájához viszonyítva",
+          "label": "Skálázás"
+        },
+        "scope": {
+          "description": "Futtass egy szkript futtatókörnyezetet minden élő widget elhelyezéshez, vagy ossz meg egy futtatókörnyezetet a sávok között azonos widget azonosítóval",
+          "label": "Futtatási hatókör"
+        },
+        "script": {
+          "description": "A lua szkript elérési útja",
+          "label": "Szkript"
+        },
+        "scroll-down-command": {
+          "description": "Shell parancs, ami lefelé görgetéskor fut le ezen a gombon",
+          "label": "Lefelé Görgetés Parancs"
+        },
+        "scroll-step": {
+          "description": "Százalékos változás minden egérgörgő lépésnél",
+          "label": "Görgetési lépés"
+        },
+        "scroll-up-command": {
+          "description": "Shell parancs, ami akkor fut le, ha felfelé görgetsz ezen a gombon",
+          "label": "Görgetés Fel Parancs"
+        },
+        "show-active-indicator": {
+          "description": "Mutass egy kis pontot az aktív ablak ikonja alatt a feladatlistán.",
+          "label": "Aktív ablak jelző"
+        },
+        "show-all-outputs": {
+          "description": "Ablakok megjelenítése minden kijelzőről ezen a widgeten.",
+          "label": "Összes Monitor Megjelenítése"
+        },
+        "show-caps-lock": {
+          "description": "Caps Lock állapot mutatása",
+          "label": "Caps Lock megjelenítése"
+        },
+        "show-condition": {
+          "description": "Időjárás állapot szövegének mutatása",
+          "label": "Megjelenítési Feltétel"
+        },
+        "show-icon": {
+          "description": "Mutasd a widget ikonját",
+          "label": "Ikon megjelenítése"
+        },
+        "show-label": {
+          "description": "Szöveg megjelenítése az ikon mellett",
+          "label": "Címke mutatása"
+        },
+        "show-num-lock": {
+          "description": "Num Lock állapotának megjelenítése",
+          "label": "Num Lock mutatása"
+        },
+        "show-scroll-lock": {
+          "description": "Scroll Lock állapotának mutatása",
+          "label": "Scroll Lock megjelenítése"
+        },
+        "show-when-idle": {
+          "description": "Legyen látható a vizualizáló akkor is, ha nincs média lejátszás",
+          "label": "Mutatás tétlen állapotban"
+        },
+        "show-window-title": {
+          "description": "Mutasd az ablak címét az ikonja mellett (csak vízszintes sávokon)",
+          "label": "Ablak címének mutatása"
+        },
+        "show-workspace-label": {
+          "description": "Jelenítsd meg a kis munkaterület címkét a csoportosított feladatsáv kapszulákon; csak ikonokat tartalmazó csoportok esetén kapcsold ki",
+          "label": "Munkaterület Kapszula Címke"
+        },
+        "stat": {
+          "description": "Megjelenítendő rendszerstatisztika",
+          "label": "Statisztika"
+        },
+        "taskbar-max-width": {
+          "description": "Teljes szélességi keret pixelben; az ablakcímek zsugorodnak, hogy elférjenek, és elrejtőznek, ha túl keskenyek",
+          "label": "Tálca Maximális Szélessége"
+        },
+        "title-scroll": {
+          "description": "Mikor görgetődjön a vezérlőelem címe",
+          "label": "Cím görgetés"
+        },
+        "tooltip": {
+          "description": "Eszköztipp, ami megjelenik, ha a gomb fölé viszed az egeret",
+          "label": "Eszköztipp"
+        },
+        "tooltip-format": {
+          "description": "Opcionális formátum az eszköztipphez",
+          "label": "Eszköztipp formátum"
+        },
+        "type": {
+          "description": "Beépített vezérlőelem típus ehhez a megnevezett vezérlőelemhez",
+          "label": "Típus"
+        },
+        "vertical-format": {
+          "description": "Opcionális formátum függőleges sávokon",
+          "label": "Függőleges formátum"
+        },
+        "warning-color": {
+          "description": "Szín, ami akkor jelenik meg, ha a töltöttség a rendszer akkumulátor figyelmeztetési küszöbét eléri vagy az alá csökken",
+          "label": "Figyelmeztető szín"
+        },
+        "width": {
+          "description": "Widget szélessége képpontokban",
+          "label": "Szélesség"
+        },
+        "window-title-max-width": {
+          "description": "Maximális szélesség képpontban az ablakcímekhez",
+          "label": "Ablak Cím Maximális Szélessége"
+        },
+        "workspace-group-capsule": {
+          "description": "Rajzold meg a hátteret és a szegélyt minden csoportosított munkaterület körül. Kapcsold ki, hogy csak az ikoncsoportosítás és a munkaterület korong címkék maradjanak.",
+          "label": "Munkaterület Csoport Kapszula"
+        },
+        "workspace-label-placement": {
+          "description": "Sarokban, az él közepén, vagy a kapszulán belül.",
+          "label": "Munkaterület Címke Elhelyezés"
+        }
+      },
+      "types": {
+        "active-window": "Aktív ablak",
+        "audio-visualizer": "Hangsáv vizualizáló",
+        "battery": "Akkumulátor",
+        "bluetooth": "Bluetooth",
+        "brightness": "Fényerő",
+        "caffeine": "Koffein",
+        "clipboard": "Vágólap",
+        "clock": "Óra",
+        "control-center": "Vezérlőközpont",
+        "custom-button": "Egyéni gomb",
+        "keyboard-layout": "Billentyűzetkiosztás",
+        "launcher": "Indító",
+        "lock-keys": "Billentyűzárak",
+        "media": "Média",
+        "network": "Hálózat",
+        "nightlight": "Éjszakai fény",
+        "notifications": "Értesítések",
+        "power-profile": "Energiaprofil",
+        "screenshot": "Képernyőfotó",
+        "scripted": "Szkriptelt",
+        "session": "Munkamenet",
+        "settings": "Beállítások",
+        "spacer": "Távtartó",
+        "sysmon": "Rendszerfigyelő",
+        "taskbar": "Tálca",
+        "test": "Teszt",
+        "theme-mode": "Témamód",
+        "tray": "Tálca",
+        "volume": "Hangerő",
+        "wallpaper": "Háttérkép",
+        "weather": "Időjárás",
+        "workspaces": "Munkaterületek"
+      }
+    },
+    "window": {
+      "export-config": "Konfiguráció exportálása…",
+      "export-config-saved": "Konfiguráció exportálása mentve.",
+      "filter-modified": "Módosítva",
+      "native-title": "Noctalia Beállítások",
+      "no-results": "Nincsenek beállítások",
+      "no-results-hint": "Próbálj meg egy másik beállításnevet vagy konfigurációs kulcsot.",
+      "reset-page": "Oldal visszaállítása",
+      "reset-page-confirm": "Visszaállítás megerősítése",
+      "search-placeholder": "Beállítások keresése…",
+      "support-report": "Támogatási Jelentés",
+      "support-report-saved": "Támogatási jelentés mentve.",
+      "support-report-title": "Támogatási jelentés mentése",
+      "title": "Beállítások"
+    }
+  },
+  "setup-wizard": {
+    "browse": "Tallózás",
+    "builtin-palette": "Beépített paletta",
+    "footer-note": "Ezeket később megváltoztathatod a beállításokban.",
+    "get-started": "Kezdés",
+    "mode": "Mód",
+    "no-wallpaper-selected": "Nincs háttérkép kiválasztva",
+    "select-wallpaper": "Háttérkép kiválasztása",
+    "subtitle": "Pár gyors választás az induláshoz.",
+    "title": "Üdvözlünk a Noctaliában",
+    "wallpaper": "Háttérkép",
+    "wallpaper-scheme": "Háttérkép Séma"
+  },
+  "system": {
+    "hardware": {
+      "unknown": "Ismeretlen",
+      "unknown-cpu": "Ismeretlen CPU",
+      "unknown-distro": "Ismeretlen disztribúció",
+      "unknown-gpu": "Ismeretlen GPU"
+    }
+  },
+  "theme": {
+    "scheme": {
+      "dysfunctional": "Működésképtelen",
+      "faithful": "Hű",
+      "m3-content": "M3 Tartalom",
+      "m3-fruit-salad": "M3 Gyümölcssaláta",
+      "m3-monochrome": "M3 Monokróm",
+      "m3-rainbow": "M3 Szivárvány",
+      "m3-tonal-spot": "M3 Tónusos Folt",
+      "muted": "Némítva",
+      "vibrant": "Élénk"
+    }
+  },
+  "time": {
+    "duration": {
+      "days-hours-minutes": "{days} nap {hours} óra {minutes} perc",
+      "hours-minutes": "{hours} óra {minutes} perc",
+      "less-than-minute": "<1p",
+      "minutes": "{minutes}p"
+    },
+    "file": {
+      "unknown": "Ismeretlen"
+    },
+    "relative": {
+      "days-ago": "{count} napja",
+      "days-ago-plural": "{count} nappal ezelőtt",
+      "hours-ago": "{count} órával ezelőtt",
+      "hours-ago-plural": "{count} órával ezelőtt",
+      "just-now": "épp most",
+      "minutes-ago": "{count} perce",
+      "minutes-ago-plural": "{count} perce"
+    }
+  },
+  "tray": {
+    "menu": {
+      "empty": "Nincsenek menüpontok…",
+      "pin": "Rögzít",
+      "unpin": "Levétel"
+    }
+  },
+  "ui": {
+    "controls": {
+      "search-picker": {
+        "empty": "Nincs találat",
+        "placeholder": "Keresés…"
+      },
+      "select": {
+        "placeholder": "Válassz egy opciót"
+      }
+    },
+    "dialogs": {
+      "color-picker": {
+        "title": "Szín"
+      },
+      "file": {
+        "actions": {
+          "open": "Megnyitás",
+          "save": "Mentés",
+          "select-folder": "Mappa kiválasztása"
+        },
+        "empty-filtered": "Nincs fájl, ami megfelelne az aktuális szűrőnek",
+        "entry": {
+          "folder": "Mappa"
+        },
+        "filename-placeholder": "Fájlnév",
+        "filter-placeholder": "Szűrés…",
+        "sort": {
+          "ascending": "Fel",
+          "date": "Dátum",
+          "descending": "le",
+          "name": "Név",
+          "size": "Méret"
+        },
+        "title": {
+          "default": "Fájl párbeszédpanel",
+          "open": "Fájl megnyitása",
+          "save": "Fájl mentése",
+          "select-folder": "Mappa kiválasztása"
+        }
+      },
+      "glyph-picker": {
+        "all-categories": "Összes",
+        "search-placeholder": "Glifák keresése…",
+        "title": "Válassz egy glifát"
+      }
+    }
+  },
+  "wallpaper": {
+    "panel": {
+      "all-monitors": "ÖSSZES",
+      "color-title": "Háttérkép színe",
+      "favorite-palette-label": "Színek",
+      "favorite-theme-label": "Téma",
+      "filter-placeholder": "Szűrés…",
+      "flatten": "Lapít",
+      "no-directory-configured": "Nincs könyvtár konfigurálva",
+      "sort-date-asc": "Rendezés dátum szerint (legkorábbi elöl)",
+      "sort-date-desc": "Rendezés dátum szerint (legújabb elöl)",
+      "sort-name-asc": "Rendezés név szerint (A-Z)",
+      "sort-name-desc": "Rendezés név szerint (Z-A)",
+      "title": "Háttérkép"
+    }
+  },
+  "weather": {
+    "conditions": {
+      "full": {
+        "clear-sky": "Tiszta ég",
+        "drizzle": "Szitálás",
+        "fog": "Köd",
+        "mainly-clear": "Főként derült",
+        "overcast": "Borult",
+        "partly-cloudy": "Részben felhős",
+        "rain-showers": "Esőzáporok",
+        "snow": "Hó",
+        "snow-showers": "Hózápor",
+        "thunderstorm": "Zivatar",
+        "unknown": "Ismeretlen"
+      },
+      "short": {
+        "clear": "Törlés",
+        "cloudy": "Felhős",
+        "drizzle": "Szitálás",
+        "fog": "Köd",
+        "mostly-clear": "Többnyire derült",
+        "overcast": "Borús",
+        "showers": "Záporok",
+        "snow": "Hó",
+        "snow-showers": "Hózápor",
+        "storm": "Vihar",
+        "weather": "Időjárás"
+      }
+    },
+    "errors": {
+      "fetch-failed": "Időjárás lekérése sikertelen",
+      "parse-weather": "Nem sikerült értelmezni az időjárás választ"
+    }
+  },
+  "window-switcher": {
+    "empty": "Nincsenek nyitott ablakok",
+    "hint": "Tab · Shift+Tab · Nyílbillentyűk · Engedd fel az Alt-ot a váltáshoz · Esc a megszakításhoz",
+    "title": "Windows"
+  }
+}

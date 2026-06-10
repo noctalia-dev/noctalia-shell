@@ -1,0 +1,56 @@
+{
+  "auth": {
+    "pam": {
+      "authentication-failed": "Праверка сапраўднасці не ўдалася",
+      "start-failed": "Не ўдалося запусціць PAM"
+    },
+    "polkit": {
+      "authenticate": "Аўтарызавацца",
+      "authenticating": "Аўтарызацыя...",
+      "default-message": "Патрабуецца аўтарызацыя",
+      "invalid-password": "Пароль памылковы",
+      "password-placeholder": "Пароль",
+      "title": "Патрабуецца аўтарызацыя"
+    }
+  },
+  "bar": {
+    "screenshot": {
+      "choose-display": "Выбраць дысплэй",
+      "fullscreen": "Увесь экран",
+      "region": "Выбраць рэгіён"
+    },
+    "widgets": {
+      "lock-keys": {
+        "caps": "Caps",
+        "caps-short": "C",
+        "num": "Num",
+        "num-short": "N",
+        "scroll": "Scroll",
+        "scroll-short": "S"
+      },
+      "media": {
+        "nothing-playing": "Нічога не грае",
+        "playing": "Грае"
+      },
+      "network": {
+        "wired": "Правадны"
+      },
+      "scripted": {
+        "reload-failed": "Не ўдалося перазапусціць скрыпт",
+        "reloaded": "Скрыпт перазапушчаны"
+      },
+      "weather": {
+        "default": "Надвор'е",
+        "error": "Памылка надвор'я",
+        "loading": "Надвор'е...",
+        "no-location": "Няма месцазнаходжання",
+        "off": "Надвор'е выключана",
+        "vertical-default": "НАД",
+        "vertical-error": "ПАМ",
+        "vertical-loading": "...",
+        "vertical-no-location": "НЯМАМЗ",
+        "vertical-off": "ВЫКЛ"
+      }
+    }
+  }
+}

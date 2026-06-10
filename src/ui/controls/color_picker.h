@@ -46,6 +46,7 @@ private:
   void applyPickFromSv(float localX, float localY);
   void applyPickFromHue(float localX);
   void onHexInputChange(const std::string& value);
+  void applyHexInput(const std::string& value);
   void onRgbInputChange();
 
   float m_scale = 1.0f;

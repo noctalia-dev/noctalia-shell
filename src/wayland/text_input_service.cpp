@@ -140,6 +140,7 @@ void TextInputService::cleanup() {
   m_seat = nullptr;
   m_enteredSurface = nullptr;
   m_keyboardFocusSurface = nullptr;
+  m_keyboardFocusParentSurface = nullptr;
   m_activeSurface = nullptr;
   m_activeClient = nullptr;
   m_activeAcceptsKeyboardFocusActivation = false;
@@ -152,7 +153,8 @@ void TextInputService::cleanup() {
 bool TextInputService::isAvailable() const noexcept { return m_textInput != nullptr; }
 
 void TextInputService::setFocusedClient(
-    wl_surface* surface, TextInputClient* client, bool acceptKeyboardFocusActivation
+    wl_surface* surface, TextInputClient* client, bool acceptKeyboardFocusActivation,
+    wl_surface* keyboardFocusParentSurface
 ) {
   if (surface == nullptr || client == nullptr) {
     clearFocusedClient(m_activeClient);
@@ -163,9 +165,14 @@ void TextInputService::setFocusedClient(
   }
 
   m_activeAcceptsKeyboardFocusActivation = acceptKeyboardFocusActivation;
+  m_keyboardFocusParentSurface = keyboardFocusParentSurface;
 
   if (m_activeClient == client && m_activeSurface == surface) {
-    commitActiveState(TextInputChangeCause::Other);
+    if (!m_enabled) {
+      enableActive(TextInputChangeCause::Other);
+    } else {
+      commitActiveState(TextInputChangeCause::Other);
+    }
     return;
   }
 
@@ -189,6 +196,7 @@ void TextInputService::clearFocusedClient(TextInputClient* client) {
   m_activeClient = nullptr;
   m_activeSurface = nullptr;
   m_activeAcceptsKeyboardFocusActivation = false;
+  m_keyboardFocusParentSurface = nullptr;
   m_pendingEdit = {};
 }
 
@@ -206,7 +214,7 @@ void TextInputService::onKeyboardFocusSurface(wl_surface* surface, bool entered)
     m_keyboardFocusSurface = nullptr;
   }
 
-  if (m_activeClient != nullptr && m_activeSurface == surface && entered) {
+  if (m_activeClient != nullptr && entered && activeSurfaceAcceptsTextInput()) {
     enableActive(TextInputChangeCause::Other);
   }
 }
@@ -218,7 +226,13 @@ bool TextInputService::activeSurfaceAcceptsTextInput() const noexcept {
   if (m_enteredSurface == m_activeSurface) {
     return true;
   }
-  return m_activeAcceptsKeyboardFocusActivation && m_keyboardFocusSurface == m_activeSurface;
+  if (!m_activeAcceptsKeyboardFocusActivation || m_keyboardFocusSurface == nullptr) {
+    return false;
+  }
+  if (m_keyboardFocusSurface == m_activeSurface) {
+    return true;
+  }
+  return m_keyboardFocusParentSurface != nullptr && m_keyboardFocusSurface == m_keyboardFocusParentSurface;
 }
 
 void TextInputService::handleEnter(wl_surface* surface) {

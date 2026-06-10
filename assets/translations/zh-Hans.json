@@ -1,0 +1,168 @@
+{
+  "auth": {
+    "pam": {
+      "user-unavailable": "无法获取当前用户信息"
+    },
+    "polkit": {
+      "default-message": "需要身份认证",
+      "title": "需要身份认证"
+    }
+  },
+  "bar": {
+    "widgets": {
+      "weather": {
+        "off": "天气已关闭",
+        "vertical-off": "关闭"
+      }
+    }
+  },
+  "clipboard": {
+    "confirm": {
+      "clear-desc-no-pinned": "这将清除剪贴板历史记录中的所有条目。"
+    },
+    "empty": {
+      "no-matches-message": "没有符合当前筛选条件的条目。"
+    }
+  },
+  "control-center": {
+    "bluetooth": {
+      "pairing-detail": {
+        "authorize-service": "是否允许访问服务 {uuid}？",
+        "confirm": "请确认此代码与设备上显示的一致："
+      }
+    },
+    "network": {
+      "unavailable-detail": "安装并启用 NetworkManager 以在此管理网络。"
+    },
+    "notifications": {
+      "empty-body": "最近的通知将显示在此处。",
+      "filter": {
+        "today": "今天"
+      },
+      "filter-empty-title": "暂无内容"
+    },
+    "screen-time": {
+      "disabled": "屏幕使用时间追踪已关闭。请在设置中启用以记录各应用的使用情况。",
+      "empty": "暂无应用使用记录。聚焦窗口以开始追踪。",
+      "range": {
+        "today": "今天"
+      }
+    },
+    "system": {
+      "uptime-prefix": "已运行 {uptime} · {osAge}"
+    }
+  },
+  "launcher": {
+    "empty": {
+      "type-to-search": "输入以搜索…"
+    },
+    "search-placeholder": "搜索应用…"
+  },
+  "location": {
+    "errors": {
+      "address-lookup-failed": "地址查询失败"
+    }
+  },
+  "notifications": {
+    "internal": {
+      "calendar-google-connect-result-failed": "无法完成 Google 授权。请重新发起连接。",
+      "calendar-google-connect-start-failed": "无法启动 Google 授权。请检查网络连接并重试。",
+      "keybind-invalid-printable": "可打印按键（字母、数字、符号）需要配合修饰键（如 Ctrl 或 Alt）使用。",
+      "lockscreen-widgets-editor-enabled": "锁屏小组件编辑器已开启。请在预览层上排列小组件，随后锁定会话以验证布局。"
+    }
+  },
+  "settings": {
+    "controls": {
+      "path-browse": {
+        "file-title": "选择文件"
+      }
+    },
+    "entities": {
+      "bar": {
+        "delete-confirm-desc": "此通过 GUI 创建的状态栏将从 settings.toml 中移除。"
+      },
+      "monitor-override": {
+        "delete-confirm-desc": "此通过 GUI 创建的显示器覆盖项将从 settings.toml 中移除。"
+      }
+    },
+    "export-config": {
+      "full-effective-description": "导出所有生效的配置，包括内置默认值；这便于检查或共享配置快照，但会将当前默认值显式固定。",
+      "merged-user-description": "将配置文件与 GUI 覆盖项合并为单个 TOML 文件。内置默认值保持隐式状态。"
+    },
+    "navigation": {
+      "groups": {
+        "built-in": "内置"
+      }
+    },
+    "options": {
+      "theme": {
+        "source": {
+          "built-in": "内置"
+        }
+      }
+    },
+    "schema": {
+      "appearance": {
+        "animations": {
+          "description": "启用或禁用 UI 动画"
+        },
+        "builtin-palette": {
+          "description": "从预置目录中选择配色",
+          "label": "内置配色"
+        },
+        "corner-roundness": {
+          "description": "缩放 Shell UI 容器与控件的圆角半径"
+        },
+        "export-wallpaper-palette": {
+          "description": "将当前由壁纸生成的配色保存为可复用的自定义配色文件"
+        },
+        "ui-scale": {
+          "description": "缩放整体界面比例",
+          "label": "UI 缩放"
+        }
+      },
+      "notifications": {
+        "daemon": {
+          "description": "启用内置通知守护进程"
+        },
+        "scale": {
+          "description": "相对于 Shell UI 缩放比例调整通知 Toast 大小"
+        }
+      },
+      "services": {
+        "ddcutil": {
+          "requires-ddcutil": "安装 ddcutil 以启用 DDC/CI 亮度控制"
+        },
+        "night-light": {
+          "requires-gamma-control": "合成器不支持伽马控制"
+        }
+      },
+      "shell": {
+        "date-format": {
+          "description": "为未单独设置的 Shell UI 提供默认日期格式"
+        },
+        "osd-scale": {
+          "description": "相对于 Shell UI 缩放比例调整 OSD 弹窗大小（1.0 保持默认尺寸）"
+        },
+        "polkit-agent": {
+          "description": "启用内置身份认证代理"
+        },
+        "sync-greeter": {
+          "description": "将当前壁纸与配色同步至 Noctalia Greeter（需要管理员权限）"
+        },
+        "telemetry": {
+          "description": "启动时发送匿名 Ping 数据，包含版本、操作系统、合成器、显示器分辨率、内存及 UI 缩放比例"
+        },
+        "time-format": {
+          "description": "为未单独设置的 Shell UI 提供默认时间格式"
+        }
+      },
+      "templates": {
+        "builtin-ids": {
+          "description": "切换是否在每次更换主题时渲染预置的应用模板",
+          "empty": "暂无可用的内置模板。"
+        }
+      }
+    }
+  }
+}

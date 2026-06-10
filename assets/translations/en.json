@@ -183,7 +183,6 @@
       "start-playback": "Start playback in an MPRIS app"
     },
     "network": {
-      "available-networks": "Available Networks",
       "connect": "Connect",
       "current-connection": "Current Connection",
       "no-networks": "No networks in range",
@@ -194,10 +193,11 @@
       "unavailable-detail": "Install and enable NetworkManager to manage networks from here.",
       "unavailable-title": "NetworkManager unavailable",
       "vpns": "VPNs",
+      "wi-fi": "Wi-Fi",
+      "wifi": "Wi-Fi",
       "wifi-off": "Wi-Fi is off",
       "wifi-on": "Wi-Fi is on",
-      "wired-connection": "Wired connection",
-      "wireless": "Wireless"
+      "wired-connection": "Wired connection"
     },
     "notifications": {
       "empty-body": "Recent notifications will show here.",
@@ -417,11 +417,6 @@
       "display-name": "Settings"
     }
   },
-  "window-switcher": {
-    "empty": "No open windows",
-    "hint": "Tab · Shift+Tab · Arrow keys · Release Alt to switch · Esc to cancel",
-    "title": "Windows"
-  },
   "launcher": {
     "categories": {
       "all": "All",
@@ -535,8 +530,6 @@
       "desktop-widgets-editor-enabled": "Desktop widget editor is on. Switch to an empty workspace to see the editor overlay.",
       "greeter-sync": "Noctalia Greeter",
       "greeter-sync-success": "Appearance synced. Changes apply on the next login screen.",
-      "wallpaper-palette-export": "Custom Palette",
-      "wallpaper-palette-export-success": "Saved \"{name}\" and switched palette source to custom.",
       "keybind-app": "Noctalia",
       "keybind-invalid-modifier": "This shortcut accepts a single key without modifiers.",
       "keybind-invalid-printable": "Printable keys (letters, numbers, symbols) require a modifier such as Ctrl or Alt.",
@@ -546,7 +539,9 @@
       "lockscreen-widgets-editor-blocked-locked": "Unlock the session before editing lockscreen widgets.",
       "lockscreen-widgets-editor-enabled": "Lockscreen widget editor is on. Arrange widgets on the preview overlay, then lock the session to verify the layout.",
       "mpris-disabled": "MPRIS disabled",
-      "session-bus-unavailable": "Session bus unavailable"
+      "session-bus-unavailable": "Session bus unavailable",
+      "wallpaper-palette-export": "Custom Palette",
+      "wallpaper-palette-export-success": "Saved \"{name}\" and switched palette source to custom."
     }
   },
   "osd": {
@@ -786,6 +781,7 @@
       },
       "batch-write": "Some settings could not be saved.",
       "export-config": "Failed to save config export.",
+      "export-wallpaper-palette": "Could not save the wallpaper palette as a custom palette.",
       "monitor-override": {
         "create": "Could not create monitor override.",
         "delete": "Could not delete monitor override.",
@@ -794,7 +790,6 @@
       "reset-page": "Failed to reset some settings.",
       "support-report": "Failed to save support report.",
       "sync-greeter": "Could not sync appearance to Noctalia Greeter.",
-      "export-wallpaper-palette": "Could not save the wallpaper palette as a custom palette.",
       "widget": {
         "rename": "Could not rename named widget."
       },
@@ -861,6 +856,7 @@
         "general": "General",
         "grouping": "Grouping",
         "home": "Home",
+        "idle": "Idle",
         "interface": "Interface",
         "keybinds": "Keybinds",
         "kinds": "Kinds",
@@ -907,13 +903,14 @@
         "desktop": "Desktop",
         "dock": "Dock",
         "hooks": "Hooks",
-        "idle": "Idle",
         "location": "Location",
         "niri": "Niri",
         "notifications": "Notifications",
         "osd": "OSD",
         "panels": "Panels",
+        "plugins": "Plugins",
         "popups": "Popups",
+        "power": "Power",
         "security": "Security",
         "services": "Services",
         "shell": "Shell",
@@ -1093,6 +1090,11 @@
           "label": "Custom Palette",
           "search-placeholder": "Search custom palettes..."
         },
+        "export-wallpaper-palette": {
+          "button": "Save as Custom Palette",
+          "description": "Save the current wallpaper-generated palette as a reusable custom palette file",
+          "label": "Export Wallpaper Palette"
+        },
         "font-family": {
           "description": "Font family for the shell interface",
           "label": "Font Family"
@@ -1122,11 +1124,6 @@
         "wallpaper-generation-scheme": {
           "description": "Choose how wallpaper colors are converted into a palette",
           "label": "Wallpaper Generation Scheme"
-        },
-        "export-wallpaper-palette": {
-          "description": "Save the current wallpaper-generated palette as a reusable custom palette file",
-          "label": "Export Wallpaper Palette",
-          "button": "Save as Custom Palette"
         }
       },
       "backdrop": {
@@ -1229,7 +1226,7 @@
           "label": "Font Weight"
         },
         "layer": {
-          "description": "Layer-shell layer for the bar; attached panels open on the same layer",
+          "description": "Use Overlay to show the bar above fullscreen apps. Attached panels follow the bar.",
           "label": "Wayland Layer"
         },
         "panel-overlap": {
@@ -1518,6 +1515,10 @@
           "description": "Use a snapshot of the desktop as the lock screen background",
           "label": "Desktop Capture"
         },
+        "monitors": {
+          "description": "Choose which monitors show the lock screen; leave empty to show on all monitors",
+          "label": "Monitors"
+        },
         "tint-intensity": {
           "description": "Surface-color tint over the lock screen background",
           "label": "Tint Intensity"
@@ -1559,7 +1560,7 @@
           "label": "Notification Daemon"
         },
         "layer": {
-          "description": "Choose whether toasts use the top or overlay layer",
+          "description": "Use Overlay to show notification toasts above fullscreen apps.",
           "label": "Wayland Layer"
         },
         "monitors": {
@@ -1664,16 +1665,18 @@
           "description": "Choose whether the wallpaper picker attaches to the bar, floats near it, or opens centered",
           "label": "Placement"
         },
-        "session-actions": {
-          "description": "Power menu entries, order, custom commands, and icons",
-          "label": "Entries"
-        },
         "shadow": {
           "description": "Cast the global surface shadow from panel surfaces"
         },
         "transparency-mode": {
           "description": "Panel glass style, including floating/centered panel opacity and card translucency",
           "label": "Transparency"
+        }
+      },
+      "power": {
+        "session-actions": {
+          "description": "Power menu entries, order, custom commands, and icons",
+          "label": "Entries"
         }
       },
       "services": {
@@ -2174,6 +2177,7 @@
       "clear-glyph": "Clear",
       "command-label": "Shell command",
       "command-placeholder": "Optional bash command, leave empty for built-in behavior",
+      "command-required-placeholder": "Shell command to run",
       "glyph-label": "Glyph",
       "glyph-picker-title": "Action glyph",
       "kind-section-label": "Behavior",
@@ -2313,6 +2317,10 @@
         "cycle-command": {
           "description": "Command run when cycling keyboard layouts",
           "label": "Cycle Command"
+        },
+        "detached-panel": {
+          "description": "Open the drawer as a floating panel with its own background instead of merging with the bar",
+          "label": "Detached Panel"
         },
         "device": {
           "description": "Device to monitor or control",
@@ -2833,5 +2841,10 @@
       "fetch-failed": "Weather fetch failed",
       "parse-weather": "Could not parse weather response"
     }
+  },
+  "window-switcher": {
+    "empty": "No open windows",
+    "hint": "Tab · Shift+Tab · Arrow keys · Release Alt to switch · Esc to cancel",
+    "title": "Windows"
   }
 }

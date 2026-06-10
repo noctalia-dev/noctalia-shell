@@ -1254,9 +1254,6 @@ namespace settings {
           displayTitle = sectionLabel(entry.section);
         }
         activeSection = makeSection(displayTitle, entry.section);
-        if (entry.section == SettingsSection::Idle) {
-          addIdleLiveStatusPanel(*activeSection, ctx, scale);
-        }
       }
       if (activeSection != nullptr) {
         if (entry.group != activeGroupKey) {
@@ -1265,6 +1262,9 @@ namespace settings {
           activeKeybindRow = nullptr;
           activeKeybindRowCount = 0;
           addGroupLabel(*activeSection, groupLabel(entry.group), isFirstGroup);
+          if (entry.section == SettingsSection::Power && entry.group == "idle") {
+            addIdleLiveStatusPanel(*activeSection, ctx, scale);
+          }
         }
         const bool isKeybindEntry = std::holds_alternative<KeybindListSetting>(entry.control);
         if (!isKeybindEntry) {
@@ -1310,7 +1310,9 @@ namespace settings {
       }
     }
 
-    if (visibleEntries == 0) {
+    // The Plugins section has no registry entries — it renders fully custom
+    // content (addSettingsPlugins), so suppress the "no settings found" state.
+    if (visibleEntries == 0 && ctx.selectedSection != "plugins") {
       auto emptyState = ui::column(
           {.align = FlexAlign::Center,
            .justify = FlexJustify::Center,

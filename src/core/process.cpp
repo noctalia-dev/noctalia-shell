@@ -352,7 +352,7 @@ namespace {
   process::RunResult runSyncProcess(
       const std::vector<std::string>& args, std::optional<std::chrono::milliseconds> timeout,
       std::size_t maxOutputBytes = std::numeric_limits<std::size_t>::max(),
-      const process::RunCallbacks* callbacks = nullptr
+      const process::RunCallbacks* callbacks = nullptr, const std::shared_ptr<std::atomic<bool>>& cancel = {}
   ) {
     if (args.empty() || args.front().empty()) {
       return {-1, {}, {}};
@@ -435,6 +435,12 @@ namespace {
         terminateAndWait(pid, exitCode);
       }
 
+      // Cancellation: terminate the child and reuse the timed-out drain+break path.
+      if (!timedOut && cancel && cancel->load(std::memory_order_relaxed)) {
+        terminateAndWait(pid, exitCode);
+        timedOut = true;
+      }
+
       if (timedOut) {
         drainAvailable(outPipe[0], out, maxOutputBytes, &outTruncated, stdOutCallback);
         drainAvailable(errPipe[0], err, maxOutputBytes, &errTruncated, stdErrCallback);
@@ -453,7 +459,11 @@ namespace {
       }
 
       if (count > 0) {
-        const int waitMs = exited ? 0 : pollTimeoutMs(deadline);
+        int waitMs = exited ? 0 : pollTimeoutMs(deadline);
+        // Cap the wait when cancellable so an idle stream still wakes to check the flag.
+        if (cancel && (waitMs < 0 || waitMs > 250)) {
+          waitMs = 250;
+        }
         if (::poll(fds.data(), count, waitMs) < 0 && errno != EINTR) {
           break;
         }
@@ -729,7 +739,7 @@ namespace process {
     try {
       std::thread([args, callbacks = std::move(callbacks), options]() mutable {
         const std::size_t maxOutputBytes = callbacks.onExit ? options.maxOutputBytes : 0;
-        RunResult result = runSyncProcess(args, options.timeout, maxOutputBytes, &callbacks);
+        RunResult result = runSyncProcess(args, options.timeout, maxOutputBytes, &callbacks, options.cancel);
         if (callbacks.onExit) {
           try {
             callbacks.onExit(std::move(result));

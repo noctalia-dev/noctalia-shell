@@ -319,6 +319,8 @@ namespace config_export {
 
     root.insert_or_assign("control_center", schema::writeTable(config.controlCenter, schema::controlCenterSchema()));
 
+    root.insert_or_assign("plugins", schema::writeTable(config.plugins, schema::pluginsSchema()));
+
     root.insert_or_assign("hooks", schema::writeTable(config.hooks, schema::hooksSchema()));
     return root;
   }

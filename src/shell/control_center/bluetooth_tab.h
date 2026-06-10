@@ -50,7 +50,6 @@ private:
   Button* m_pairingAccept = nullptr;
   Button* m_pairingReject = nullptr;
 
-  Flex* m_listCard = nullptr;
   ScrollView* m_listScroll = nullptr;
   Flex* m_list = nullptr;
 

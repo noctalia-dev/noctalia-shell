@@ -9,11 +9,13 @@
 #include "ui/palette.h"
 #include "util/string_utils.h"
 
+#include <cctype>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <json.hpp>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -25,6 +27,9 @@ namespace {
 
   constexpr std::string_view kApplyHelperName = "noctalia-greeter-apply-appearance";
   constexpr std::string_view kGreeterName = "noctalia-greeter";
+  constexpr std::string_view kGreeterConfName = "greeter.conf";
+  constexpr std::string_view kDefaultGreeterStateDir = "/var/lib/noctalia-greeter";
+  constexpr std::string_view kGreeterStateDirEnv = "NOCTALIA_GREETER_STATE_DIR";
 
   [[nodiscard]] std::string
   resolveProgramPath(std::string_view name, std::initializer_list<const char*> fallbackPaths) {
@@ -53,6 +58,82 @@ namespace {
 
   void putPaletteColor(nlohmann::json& palette, std::string_view key, const Color& color) {
     palette[std::string(key)] = formatRgbHex(color);
+  }
+
+  [[nodiscard]] std::string trim(std::string_view value) {
+    std::size_t begin = 0;
+    while (begin < value.size() && std::isspace(static_cast<unsigned char>(value[begin])) != 0) {
+      ++begin;
+    }
+    std::size_t end = value.size();
+    while (end > begin && std::isspace(static_cast<unsigned char>(value[end - 1])) != 0) {
+      --end;
+    }
+    return std::string(value.substr(begin, end - begin));
+  }
+
+  [[nodiscard]] std::optional<std::string> unquoteConfValue(std::string_view raw) {
+    const std::string value = trim(raw);
+    if (value.size() >= 2) {
+      const char quote = value.front();
+      if ((quote == '"' || quote == '\'') && value.back() == quote) {
+        return value.substr(1, value.size() - 2);
+      }
+    }
+    if (!value.empty()) {
+      return value;
+    }
+    return std::nullopt;
+  }
+
+  [[nodiscard]] std::filesystem::path greeterConfPath() {
+    const char* stateDir = std::getenv(kGreeterStateDirEnv.data());
+    if (stateDir != nullptr && stateDir[0] != '\0') {
+      return std::filesystem::path(stateDir) / kGreeterConfName;
+    }
+    return std::filesystem::path(kDefaultGreeterStateDir) / kGreeterConfName;
+  }
+
+  [[nodiscard]] std::optional<std::string> readGreeterConfiguredOutput() {
+    const auto path = greeterConfPath();
+    std::ifstream in(path);
+    if (!in.is_open()) {
+      return std::nullopt;
+    }
+
+    std::string line;
+    while (std::getline(in, line)) {
+      const std::size_t hash = line.find('#');
+      if (hash != std::string::npos) {
+        line.resize(hash);
+      }
+      const std::string stripped = trim(line);
+      if (stripped.empty()) {
+        continue;
+      }
+      const std::size_t eq = stripped.find('=');
+      if (eq == std::string::npos) {
+        continue;
+      }
+      if (trim(stripped.substr(0, eq)) != "output") {
+        continue;
+      }
+      return unquoteConfValue(stripped.substr(eq + 1));
+    }
+    return std::nullopt;
+  }
+
+  [[nodiscard]] std::string resolveSyncWallpaperPath(const ConfigService& configService) {
+    const Config& config = configService.config();
+    if (config.theme.source != PaletteSource::Wallpaper) {
+      if (const auto output = readGreeterConfiguredOutput(); output.has_value() && !output->empty()) {
+        const std::string path = configService.getWallpaperPath(*output);
+        if (!path.empty()) {
+          return path;
+        }
+      }
+    }
+    return configService.getGreeterSyncWallpaperPath();
   }
 
   [[nodiscard]] std::string findApplyHelper() {
@@ -192,7 +273,7 @@ namespace greeter {
     }
 
     const Config& config = configService.config();
-    const std::string wallpaperPath = configService.getDefaultWallpaperPath();
+    const std::string wallpaperPath = resolveSyncWallpaperPath(configService);
     const std::string installedWallpaperName = stageWallpaper(staging, wallpaperPath);
     if (!writeManifest(staging, config, resolvedThemeMode, wallpaperPath, installedWallpaperName)) {
       finish(false);

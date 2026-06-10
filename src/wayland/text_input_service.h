@@ -22,7 +22,10 @@ public:
 
   [[nodiscard]] bool isAvailable() const noexcept;
 
-  void setFocusedClient(wl_surface* surface, TextInputClient* client, bool acceptKeyboardFocusActivation = false);
+  void setFocusedClient(
+      wl_surface* surface, TextInputClient* client, bool acceptKeyboardFocusActivation = false,
+      wl_surface* keyboardFocusParentSurface = nullptr
+  );
   void clearFocusedClient(TextInputClient* client);
   void notifyClientStateChanged(TextInputClient* client, TextInputChangeCause cause);
   void onKeyboardFocusSurface(wl_surface* surface, bool entered);
@@ -48,6 +51,7 @@ private:
   zwp_text_input_v3* m_textInput = nullptr;
   wl_surface* m_enteredSurface = nullptr;
   wl_surface* m_keyboardFocusSurface = nullptr;
+  wl_surface* m_keyboardFocusParentSurface = nullptr;
   wl_surface* m_activeSurface = nullptr;
   TextInputClient* m_activeClient = nullptr;
   bool m_activeAcceptsKeyboardFocusActivation = false;

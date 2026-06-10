@@ -188,6 +188,9 @@ Input::Input() {
     startCursorBlink();
     applyVisualState();
     markPaintDirty();
+    if (m_onFocusGain) {
+      m_onFocusGain();
+    }
   });
   area->setOnFocusLoss([this]() {
     const bool removedPreedit = removePreeditText();
@@ -443,6 +446,8 @@ void Input::setOnKeyEvent(std::function<bool(std::uint32_t, std::uint32_t)> call
 }
 
 void Input::setOnFocusLoss(std::function<void()> callback) { m_onFocusLoss = std::move(callback); }
+
+void Input::setOnFocusGain(std::function<void()> callback) { m_onFocusGain = std::move(callback); }
 
 void Input::setSubmitOnFocusLoss(bool enabled) { m_submitOnFocusLoss = enabled; }
 
@@ -1412,6 +1417,7 @@ void Input::updateDisplayText() {
     m_label->setText(std::string{});
   } else {
     m_labelVisibleSlice.clear();
+    m_label->setText(m_value);
   }
 }
 

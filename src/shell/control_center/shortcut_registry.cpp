@@ -12,8 +12,10 @@
 #include "ipc/ipc_service.h"
 #include "notification/notification_manager.h"
 #include "pipewire/pipewire_service.h"
-#include "scripting/scripted_widget_manifest.h"
+#include "scripting/plugin_manifest.h"
+#include "scripting/plugin_registry.h"
 #include "shell/bar/widgets/keyboard_layout_widget.h"
+#include "shell/control_center/plugin_shortcut.h"
 #include "shell/control_center/shortcut_services.h"
 #include "shell/panel/panel_manager.h"
 #include "system/gamma_service.h"
@@ -22,13 +24,14 @@
 
 #include <array>
 #include <cmath>
+#include <deque>
 #include <format>
 #include <optional>
 #include <vector>
 
 namespace {
 
-  constexpr std::array<ShortcutRegistry::CatalogEntry, 18> kShortcutCatalog{{
+  constexpr std::array<ShortcutRegistry::CatalogEntry, 17> kShortcutCatalog{{
       {"wifi", "control-center.shortcuts.wifi"},
       {"bluetooth", "control-center.shortcuts.bluetooth"},
       {"nightlight", "control-center.shortcuts.nightlight"},
@@ -43,7 +46,6 @@ namespace {
       {"system", "control-center.shortcuts.system"},
       {"screen_time", "control-center.shortcuts.screen-time"},
       {"keyboard_layout", "control-center.shortcuts.keyboard-layout"},
-      {"screen_recorder", "control-center.shortcuts.screen-recorder"},
       {"wallpaper", "control-center.shortcuts.wallpaper"},
       {"session", "control-center.shortcuts.session"},
       {"clipboard", "control-center.shortcuts.clipboard"},
@@ -337,22 +339,6 @@ namespace {
     return KeyboardLayoutWidget::parseDisplayMode(display);
   }
 
-  // The shortcut dispatches IPC to the widget named "screen_recorder", so detection must key on the
-  // same canonical config name — not just any scripted widget running screen_recorder.lua — otherwise
-  // the tile renders enabled while the IPC call silently matches nothing.
-  bool hasScreenRecorderWidget(const ConfigService* config) {
-    if (config == nullptr) {
-      return false;
-    }
-
-    const auto& widgets = config->config().widgets;
-    const auto it = widgets.find("screen_recorder");
-    if (it == widgets.end() || it->second.type != "scripted") {
-      return false;
-    }
-    return scripting::resolveScriptPath(it->second.getString("script", "")).filename() == "screen_recorder.lua";
-  }
-
   class PowerProfileShortcut final : public Shortcut {
   public:
     explicit PowerProfileShortcut(PowerProfilesService* svc) : m_svc(svc) {}
@@ -511,34 +497,6 @@ namespace {
     void onClick() override { PanelManager::instance().togglePanel("wallpaper"); }
   };
 
-  class ScreenRecorderShortcut final : public Shortcut {
-  public:
-    ScreenRecorderShortcut(ConfigService* config, IpcService* ipc) : m_config(config), m_ipc(ipc) {}
-    std::string_view id() const override { return "screen_recorder"; }
-    std::string defaultLabel() const override { return i18n::tr("control-center.shortcuts.screen-recorder"); }
-    std::string_view iconOn() const override { return "video"; }
-    std::string_view iconOff() const override { return "video"; }
-    bool enabled() const override { return m_ipc != nullptr && hasScreenRecorderWidget(m_config); }
-    void onClick() override {
-      if (!enabled()) {
-        return;
-      }
-      (void)m_ipc->execute("scripted-widget screen_recorder focused toggle");
-      PanelManager::instance().closePanel();
-    }
-    void onRightClick() override {
-      if (!enabled()) {
-        return;
-      }
-      (void)m_ipc->execute("scripted-widget screen_recorder focused replay-toggle");
-      PanelManager::instance().closePanel();
-    }
-
-  private:
-    ConfigService* m_config = nullptr;
-    IpcService* m_ipc = nullptr;
-  };
-
   class SessionShortcut final : public Shortcut {
   public:
     std::string_view id() const override { return "session"; }
@@ -559,9 +517,46 @@ namespace {
 
 } // namespace
 
-std::span<const ShortcutRegistry::CatalogEntry> ShortcutRegistry::catalog() { return kShortcutCatalog; }
+std::span<const ShortcutRegistry::CatalogEntry> ShortcutRegistry::catalog() {
+  // Built-in shortcuts plus every plugin [[shortcut]] entry. Plugin id/label
+  // strings are held in a stable static deque so the CatalogEntry views stay valid.
+  static std::deque<std::string> storage;
+  static const std::vector<CatalogEntry> combined = [] {
+    std::vector<CatalogEntry> result(kShortcutCatalog.begin(), kShortcutCatalog.end());
+    scripting::PluginRegistry::instance().ensureScanned();
+    for (const auto& entry :
+         scripting::PluginRegistry::instance().entriesOfKind(scripting::PluginEntryKind::Shortcut)) {
+      storage.push_back(entry.fullId());
+      const std::string_view typeView = storage.back();
+      storage.push_back(entry.manifest->name.empty() ? entry.fullId() : entry.manifest->name);
+      const std::string_view labelView = storage.back();
+      result.push_back(CatalogEntry{.type = typeView, .labelKey = labelView});
+    }
+    return result;
+  }();
+  return combined;
+}
 
 std::unique_ptr<Shortcut> ShortcutRegistry::create(std::string_view type, const ShortcutServices& s) {
+  if (auto entry = scripting::PluginRegistry::instance().resolve(type);
+      entry.has_value() && entry->entry->kind == scripting::PluginEntryKind::Shortcut) {
+    if (s.scriptApi == nullptr) {
+      return nullptr;
+    }
+    auto seeded = scripting::seedEntrySettings(*entry->entry, {});
+    static const std::unordered_map<std::string, WidgetSettingValue> kNoPluginOverrides;
+    const auto* overrides = &kNoPluginOverrides;
+    if (s.config != nullptr) {
+      const auto& pluginSettings = s.config->config().plugins.pluginSettings;
+      if (const auto psIt = pluginSettings.find(entry->manifest->id); psIt != pluginSettings.end()) {
+        overrides = &psIt->second;
+      }
+    }
+    scripting::mergePluginSettings(*entry->manifest, *overrides, seeded);
+    return std::make_unique<PluginShortcut>(
+        entry->fullId(), entry->sourcePath, std::move(seeded), *s.scriptApi, s.httpClient, s.clipboard
+    );
+  }
   if (type == "wifi")
     return std::make_unique<WifiShortcut>(s.network);
   if (type == "bluetooth")
@@ -602,8 +597,6 @@ std::unique_ptr<Shortcut> ShortcutRegistry::create(std::string_view type, const 
   }
   if (type == "keyboard_layout")
     return std::make_unique<KeyboardLayoutShortcut>(s.platform, s.config);
-  if (type == "screen_recorder")
-    return std::make_unique<ScreenRecorderShortcut>(s.config, s.ipc);
   if (type == "wallpaper")
     return std::make_unique<WallpaperShortcut>();
   if (type == "session")

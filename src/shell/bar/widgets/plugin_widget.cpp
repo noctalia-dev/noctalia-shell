@@ -1,8 +1,7 @@
-#include "shell/bar/widgets/scripted_widget.h"
+#include "shell/bar/widgets/plugin_widget.h"
 
 #include "compositors/compositor_platform.h"
 #include "core/log.h"
-#include "core/resource_paths.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "dbus/mpris/mpris_service.h"
 #include "i18n/i18n.h"
@@ -31,12 +30,46 @@
 #include <vector>
 
 namespace {
-  constexpr Logger kLog("scripted-widget");
+  constexpr Logger kLog("plugin-widget");
   constexpr std::chrono::milliseconds kDeferredUpdateRetry{50};
   constexpr std::chrono::milliseconds kImageReloadRetry{150};
   constexpr int kImageReloadRetryCount = 2;
   constexpr std::chrono::milliseconds kTimerPhaseStep{50};
   constexpr std::chrono::milliseconds kTimerMaxPhase{500};
+
+  bool
+  settingBool(const std::unordered_map<std::string, WidgetSettingValue>& settings, const std::string& key, bool def) {
+    const auto it = settings.find(key);
+    if (it == settings.end()) {
+      return def;
+    }
+    const auto* value = std::get_if<bool>(&it->second);
+    return value != nullptr ? *value : def;
+  }
+
+  std::int64_t settingInt(
+      const std::unordered_map<std::string, WidgetSettingValue>& settings, const std::string& key, std::int64_t def
+  ) {
+    const auto it = settings.find(key);
+    if (it == settings.end()) {
+      return def;
+    }
+    const auto* value = std::get_if<std::int64_t>(&it->second);
+    return value != nullptr ? *value : def;
+  }
+
+  std::string joinSpectrumValues(const std::vector<float>& values) {
+    std::ostringstream out;
+    out.setf(std::ios::fixed, std::ios::floatfield);
+    out << std::setprecision(4);
+    for (std::size_t i = 0; i < values.size(); ++i) {
+      if (i != 0) {
+        out << ',';
+      }
+      out << values[i];
+    }
+    return out.str();
+  }
 
   std::unordered_set<std::string>& registeredFontFiles() {
     static std::unordered_set<std::string> s;
@@ -85,33 +118,6 @@ namespace {
     return next.fetch_add(1, std::memory_order_relaxed);
   }
 
-  std::filesystem::path resolveScriptPath(const std::string& path) {
-    if (path.empty())
-      return {};
-    if (path[0] == '~') {
-      const char* home = std::getenv("HOME");
-      if (home)
-        return std::string(home) + path.substr(1);
-      return path;
-    }
-    if (path[0] == '/')
-      return path;
-    return paths::assetPath(path);
-  }
-
-  std::string joinSpectrumValues(const std::vector<float>& values) {
-    std::ostringstream out;
-    out.setf(std::ios::fixed, std::ios::floatfield);
-    out << std::setprecision(4);
-    for (std::size_t i = 0; i < values.size(); ++i) {
-      if (i != 0) {
-        out << ',';
-      }
-      out << values[i];
-    }
-    return out.str();
-  }
-
   std::string readFile(const std::filesystem::path& path) {
     std::ifstream f(path);
     if (!f)
@@ -123,40 +129,56 @@ namespace {
 
 } // namespace
 
-ScriptedWidget::ScriptedWidget(
-    std::string configName, std::string scriptPath, std::string barName, std::string outputName,
-    scripting::ScriptApiContext& scriptApi, const WidgetConfig* config, FileWatcher* fileWatcher,
-    CompositorPlatform* platform, ClipboardService* clipboard, PipeWireSpectrum* audioSpectrum, MprisService* mpris
+PluginWidget::PluginWidget(
+    std::string entryId, std::filesystem::path sourcePath, std::unordered_map<std::string, WidgetSettingValue> settings,
+    std::string barName, std::string outputName, scripting::ScriptApiContext& scriptApi, FileWatcher* fileWatcher,
+    CompositorPlatform* platform, ClipboardService* clipboard, HttpClient* httpClient, PipeWireSpectrum* audioSpectrum,
+    MprisService* mpris
 )
-    : m_scriptPath(std::move(scriptPath)), m_widgetConfigName(std::move(configName)), m_barName(std::move(barName)),
-      m_outputName(std::move(outputName)), m_scriptApi(scriptApi), m_fileWatcher(fileWatcher), m_platform(platform),
-      m_clipboard(clipboard), m_audioSpectrum(audioSpectrum), m_mpris(mpris), m_timerPhase(nextTimerPhase()) {
-  if (config) {
-    m_settings = config->settings;
-    m_hotReload = config->getBool("hot_reload", false);
-    m_sharedScope = config->getString("scope", "instance") == "shared";
-    m_audioSpectrumEnabled = config->getBool("audio_spectrum", false);
-    m_audioSpectrumBands =
-        static_cast<int>(std::clamp<std::int64_t>(config->getInt("audio_spectrum_bands", 16), 1, 128));
-  }
+    : m_entryId(std::move(entryId)), m_sourcePath(std::move(sourcePath)), m_pluginDir(m_sourcePath.parent_path()),
+      m_barName(std::move(barName)), m_outputName(std::move(outputName)), m_scriptApi(scriptApi),
+      m_settings(std::move(settings)), m_fileWatcher(fileWatcher), m_platform(platform), m_clipboard(clipboard),
+      m_httpClient(httpClient), m_audioSpectrum(audioSpectrum), m_mpris(mpris), m_timerPhase(nextTimerPhase()) {
+  m_audioSpectrumEnabled = settingBool(m_settings, "audio_spectrum", false);
+  m_audioSpectrumBands =
+      static_cast<int>(std::clamp<std::int64_t>(settingInt(m_settings, "audio_spectrum_bands", 16), 1, 128));
+  scripting::PluginIpcRouter::instance().registerEndpoint(this);
 }
 
-ScriptedWidget::~ScriptedWidget() {
+PluginWidget::~PluginWidget() {
+  scripting::PluginIpcRouter::instance().unregisterEndpoint(this);
   if (m_alive) {
     *m_alive = false;
   }
   teardownAudioSpectrum();
   teardownImageWatch();
   teardownScriptWatch();
-  if (m_runtime != nullptr && m_runtimeSubscription != 0) {
-    m_runtime->unsubscribe(m_runtimeSubscription);
-  }
-  if (m_runtime != nullptr && !m_sharedScope) {
+  if (m_runtime != nullptr) {
+    if (m_runtimeSubscription != 0) {
+      m_runtime->unsubscribe(m_runtimeSubscription);
+    }
     m_runtime->stop();
   }
 }
 
-void ScriptedWidget::create() {
+std::filesystem::path PluginWidget::resolvePluginPath(std::string_view path) const {
+  if (path.empty()) {
+    return {};
+  }
+  if (path[0] == '~') {
+    const char* home = std::getenv("HOME");
+    if (home != nullptr) {
+      return std::string(home) + std::string(path.substr(1));
+    }
+    return std::filesystem::path(path);
+  }
+  if (path[0] == '/') {
+    return std::filesystem::path(path);
+  }
+  return m_pluginDir / path;
+}
+
+void PluginWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setAcceptedButtons(InputArea::buttonMask({BTN_LEFT, BTN_RIGHT, BTN_MIDDLE}));
   area->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
@@ -223,29 +245,19 @@ void ScriptedWidget::create() {
   m_area = area.get();
   setRoot(std::move(area));
 
-  if (m_scriptPath.empty()) {
-    kLog.warn("scripted widget: no script path");
+  if (m_sourcePath.empty()) {
+    kLog.warn("plugin widget '{}': no source path", m_entryId);
     return;
   }
-  m_resolvedPath = resolveScriptPath(m_scriptPath);
-  std::string source = readFile(m_resolvedPath);
+  std::string source = readFile(m_sourcePath);
   if (source.empty()) {
-    kLog.warn("scripted widget: failed to read '{}'", m_resolvedPath.string());
+    kLog.warn("plugin widget '{}': failed to read '{}'", m_entryId, m_sourcePath.string());
     return;
   }
 
-  bool createdRuntime = true;
-  if (m_sharedScope) {
-    auto acquired = scripting::SharedScriptRuntimeRegistry::acquire(
-        m_widgetConfigName, m_resolvedPath.string(), m_settings, m_scriptApi, m_clipboard
-    );
-    m_runtime = std::move(acquired.runtime);
-    createdRuntime = acquired.created;
-  } else {
-    m_runtime = std::make_shared<scripting::ScriptRuntime>(
-        m_widgetConfigName + ":" + m_barName + ":" + m_outputName, m_settings, m_scriptApi, m_clipboard
-    );
-  }
+  m_runtime = std::make_shared<scripting::ScriptRuntime>(
+      m_entryId, m_settings, m_scriptApi, m_pluginDir, m_httpClient, m_clipboard
+  );
 
   auto alive = std::weak_ptr<bool>(m_alive);
   m_runtimeSubscription = m_runtime->subscribe([this, alive](scripting::ScriptWidgetResult result) {
@@ -256,17 +268,44 @@ void ScriptedWidget::create() {
     handleScriptResult(std::move(result));
   });
 
-  if (createdRuntime) {
-    m_runtime->start(m_resolvedPath.string(), std::move(source), makeScriptSnapshot());
-  }
+  m_runtime->start(m_sourcePath.string(), std::move(source), makeScriptSnapshot());
   startUpdateTimer();
+  setupScriptWatch();
   setupAudioSpectrum();
-
-  if (m_hotReload)
-    setupScriptWatch();
 }
 
-void ScriptedWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
+void PluginWidget::setupAudioSpectrum() {
+  if (!m_audioSpectrumEnabled || m_audioSpectrum == nullptr || m_audioSpectrumListenerId != 0) {
+    return;
+  }
+  m_audioSpectrumListenerId =
+      m_audioSpectrum->addChangeListener(m_audioSpectrumBands, [this]() { handleAudioSpectrumChanged(); });
+}
+
+void PluginWidget::teardownAudioSpectrum() {
+  if (m_audioSpectrum != nullptr && m_audioSpectrumListenerId != 0) {
+    m_audioSpectrum->removeChangeListener(m_audioSpectrumListenerId);
+  }
+  m_audioSpectrumListenerId = 0;
+}
+
+void PluginWidget::handleAudioSpectrumChanged() {
+  if (m_runtime == nullptr || m_audioSpectrum == nullptr || m_audioSpectrumListenerId == 0) {
+    return;
+  }
+  const bool audioActive = !m_audioSpectrum->idle();
+  const auto active = m_mpris != nullptr ? m_mpris->activePlayer() : std::nullopt;
+  const bool mprisPlaying = active.has_value() && active->playbackStatus == "Playing";
+  const std::string state = std::string(audioActive ? "1" : "0") + "," + (mprisPlaying ? "1" : "0");
+  // Coalesce: at ~60Hz only the latest frame matters, so a slow script can't
+  // accumulate stale spectrum events.
+  (void)m_runtime->enqueueCallStrings(
+      "onAudioSpectrum", joinSpectrumValues(m_audioSpectrum->values(m_audioSpectrumListenerId)), state,
+      makeScriptSnapshot(), /*coalesce=*/true
+  );
+}
+
+void PluginWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
   m_isVertical = containerHeight > containerWidth;
   if (!m_flex)
     return;
@@ -298,9 +337,9 @@ void ScriptedWidget::doLayout(Renderer& renderer, float containerWidth, float co
     m_area->setSize(m_flex->width(), m_flex->height());
 }
 
-void ScriptedWidget::doUpdate(Renderer&) {}
+void PluginWidget::doUpdate(Renderer&) {}
 
-void ScriptedWidget::luaSetText(std::string_view text) {
+void PluginWidget::luaSetText(std::string_view text) {
   if (!m_label)
     return;
   bool changed = m_label->setText(text);
@@ -312,7 +351,7 @@ void ScriptedWidget::luaSetText(std::string_view text) {
   m_dirty |= changed;
 }
 
-void ScriptedWidget::luaSetGlyph(std::string_view name) {
+void PluginWidget::luaSetGlyph(std::string_view name) {
   if (!m_glyph)
     return;
   bool changed = m_glyph->setGlyph(name);
@@ -340,7 +379,7 @@ void ScriptedWidget::luaSetGlyph(std::string_view name) {
   m_dirty |= changed;
 }
 
-void ScriptedWidget::luaSetImage(std::string_view path, bool watch, float width, float height) {
+void PluginWidget::luaSetImage(std::string_view path, bool watch, float width, float height) {
   if (m_image == nullptr) {
     return;
   }
@@ -357,7 +396,7 @@ void ScriptedWidget::luaSetImage(std::string_view path, bool watch, float width,
   }
 
   m_imagePath = std::move(nextPath);
-  m_resolvedImagePath = m_imagePath.empty() ? std::filesystem::path{} : resolveScriptPath(m_imagePath);
+  m_resolvedImagePath = m_imagePath.empty() ? std::filesystem::path{} : resolvePluginPath(m_imagePath);
   m_imageWatch = nextWatch;
   m_imageWidth = nextWidth;
   m_imageHeight = nextHeight;
@@ -375,7 +414,7 @@ void ScriptedWidget::luaSetImage(std::string_view path, bool watch, float width,
   m_dirty = true;
 }
 
-void ScriptedWidget::luaSetTooltip(const scripting::ScriptWidgetTooltipPatch& tooltip) {
+void PluginWidget::luaSetTooltip(const scripting::ScriptWidgetTooltipPatch& tooltip) {
   if (m_area == nullptr) {
     return;
   }
@@ -398,13 +437,13 @@ void ScriptedWidget::luaSetTooltip(const scripting::ScriptWidgetTooltipPatch& to
   m_area->setTooltip(tooltip.text);
 }
 
-void ScriptedWidget::luaSetFont(std::string_view familyOrPath) {
+void PluginWidget::luaSetFont(std::string_view familyOrPath) {
   if (!m_label)
     return;
   std::string family;
   // If it looks like a font file path, resolve and register it
   if (familyOrPath.ends_with(".otf") || familyOrPath.ends_with(".ttf") || familyOrPath.ends_with(".woff2")) {
-    auto resolved = resolveScriptPath(std::string(familyOrPath));
+    auto resolved = resolvePluginPath(std::string(familyOrPath));
     bool alreadyRegistered = registeredFontFiles().contains(resolved.string());
     family = registerFontFile(resolved);
     if (family.empty())
@@ -419,7 +458,7 @@ void ScriptedWidget::luaSetFont(std::string_view familyOrPath) {
   m_dirty = true;
 }
 
-void ScriptedWidget::luaSetColor(std::string_view role, std::string_view mode) {
+void PluginWidget::luaSetColor(std::string_view role, std::string_view mode) {
   ScriptColorState next{.color = scriptColorFromToken(role), .mode = scriptColorModeFromToken(mode)};
   if (!next.color.has_value()) {
     next.mode = ScriptColorMode::Auto;
@@ -430,7 +469,7 @@ void ScriptedWidget::luaSetColor(std::string_view role, std::string_view mode) {
   }
 }
 
-void ScriptedWidget::luaSetGlyphColor(std::string_view role, std::string_view mode) {
+void PluginWidget::luaSetGlyphColor(std::string_view role, std::string_view mode) {
   ScriptColorState next{.color = scriptColorFromToken(role), .mode = scriptColorModeFromToken(mode)};
   if (!next.color.has_value()) {
     next.mode = ScriptColorMode::Auto;
@@ -441,16 +480,16 @@ void ScriptedWidget::luaSetGlyphColor(std::string_view role, std::string_view mo
   }
 }
 
-void ScriptedWidget::luaSetUpdateInterval(float ms) {
+void PluginWidget::luaSetUpdateInterval(float ms) {
   m_updateIntervalMs = std::max(16, static_cast<int>(ms));
   startUpdateTimer();
 }
 
-void ScriptedWidget::setUpdateDeferralCallback(std::function<bool()> callback) {
+void PluginWidget::setUpdateDeferralCallback(std::function<bool()> callback) {
   m_updateDeferralCallback = std::move(callback);
 }
 
-void ScriptedWidget::luaSetVisible(bool visible) {
+void PluginWidget::luaSetVisible(bool visible) {
   auto* node = root();
   if (!node || node->visible() == visible)
     return;
@@ -458,23 +497,20 @@ void ScriptedWidget::luaSetVisible(bool visible) {
   m_dirty = true;
 }
 
-ScriptedWidget::IpcDispatchResult ScriptedWidget::dispatchIpcEvent(std::string_view event, std::string_view payload) {
+PluginWidget::DispatchResult PluginWidget::dispatchIpc(std::string_view event, std::string_view payload) {
   if (!m_runtime) {
-    return IpcDispatchResult::MissingHost;
+    return DispatchResult::MissingHost;
   }
   if (m_hasOnIpcKnown && !m_hasOnIpc) {
-    return IpcDispatchResult::MissingCallback;
+    return DispatchResult::MissingCallback;
   }
   if (!m_runtime->enqueueCallStrings("onIpc", std::string(event), std::string(payload), makeScriptSnapshot())) {
-    return IpcDispatchResult::Failed;
+    return DispatchResult::Failed;
   }
-  return IpcDispatchResult::Handled;
+  return DispatchResult::Handled;
 }
 
-ColorSpec ScriptedWidget::resolveScriptColor(const ScriptColorState& state) const noexcept {
-  if (m_widgetForeground.has_value()) {
-    return *m_widgetForeground;
-  }
+ColorSpec PluginWidget::resolveScriptColor(const ScriptColorState& state) const noexcept {
   const ColorSpec fallback = colorSpecFromRole(ColorRole::OnSurface);
   if (!state.color.has_value()) {
     return widgetForegroundOr(fallback);
@@ -487,11 +523,11 @@ ColorSpec ScriptedWidget::resolveScriptColor(const ScriptColorState& state) cons
   return widgetForegroundOr(fallback);
 }
 
-ScriptedWidget::ScriptColorMode ScriptedWidget::scriptColorModeFromToken(std::string_view token) noexcept {
+PluginWidget::ScriptColorMode PluginWidget::scriptColorModeFromToken(std::string_view token) noexcept {
   return token == "script" ? ScriptColorMode::Script : ScriptColorMode::Auto;
 }
 
-std::optional<ColorSpec> ScriptedWidget::scriptColorFromToken(std::string_view token) noexcept {
+std::optional<ColorSpec> PluginWidget::scriptColorFromToken(std::string_view token) noexcept {
   if (auto role = colorRoleFromToken(token); role.has_value()) {
     return colorSpecFromRole(*role);
   }
@@ -502,7 +538,7 @@ std::optional<ColorSpec> ScriptedWidget::scriptColorFromToken(std::string_view t
   return std::nullopt;
 }
 
-void ScriptedWidget::startUpdateTimer() {
+void PluginWidget::startUpdateTimer() {
   ++m_updateTimerGeneration;
   m_updateDeferred = false;
   m_deferredUpdateTimer.stop();
@@ -525,7 +561,7 @@ void ScriptedWidget::startUpdateTimer() {
   });
 }
 
-void ScriptedWidget::handleUpdateTimer() {
+void PluginWidget::handleUpdateTimer() {
   if (shouldDeferUpdate()) {
     scheduleDeferredUpdate();
     return;
@@ -533,7 +569,7 @@ void ScriptedWidget::handleUpdateTimer() {
   runScriptUpdate();
 }
 
-void ScriptedWidget::scheduleDeferredUpdate() {
+void PluginWidget::scheduleDeferredUpdate() {
   m_updateDeferred = true;
   if (m_deferredUpdateTimer.active()) {
     return;
@@ -541,7 +577,7 @@ void ScriptedWidget::scheduleDeferredUpdate() {
   armDeferredUpdate(m_updateTimerGeneration);
 }
 
-void ScriptedWidget::armDeferredUpdate(std::uint64_t generation) {
+void PluginWidget::armDeferredUpdate(std::uint64_t generation) {
   m_deferredUpdateTimer.start(kDeferredUpdateRetry, [this, generation] {
     if (m_updateTimerGeneration != generation || !m_updateDeferred) {
       return;
@@ -559,7 +595,7 @@ void ScriptedWidget::armDeferredUpdate(std::uint64_t generation) {
   });
 }
 
-std::chrono::milliseconds ScriptedWidget::initialUpdateDelay(std::chrono::milliseconds interval) const noexcept {
+std::chrono::milliseconds PluginWidget::initialUpdateDelay(std::chrono::milliseconds interval) const noexcept {
   if (interval <= std::chrono::milliseconds(1)) {
     return interval;
   }
@@ -574,13 +610,13 @@ std::chrono::milliseconds ScriptedWidget::initialUpdateDelay(std::chrono::millis
   return interval + std::chrono::milliseconds(phaseMs);
 }
 
-void ScriptedWidget::runScriptUpdate() {
+void PluginWidget::runScriptUpdate() {
   if (m_runtime) {
     (void)m_runtime->enqueueUpdate(makeScriptSnapshot());
   }
 }
 
-void ScriptedWidget::handleScriptResult(scripting::ScriptWidgetResult result) {
+void PluginWidget::handleScriptResult(scripting::ScriptWidgetResult result) {
   if (result.hasOnIpcKnown) {
     m_hasOnIpc = result.hasOnIpc;
     m_hasOnIpcKnown = true;
@@ -589,7 +625,7 @@ void ScriptedWidget::handleScriptResult(scripting::ScriptWidgetResult result) {
   if (result.unhealthy) {
     m_updateTimer.stop();
     m_deferredUpdateTimer.stop();
-    kLog.warn("scripted widget '{}' disabled after repeated timeouts", m_widgetConfigName);
+    kLog.warn("plugin widget '{}' disabled after repeated timeouts", m_entryId);
   }
 
   m_dirty = false;
@@ -599,7 +635,7 @@ void ScriptedWidget::handleScriptResult(scripting::ScriptWidgetResult result) {
   }
 }
 
-void ScriptedWidget::applyScriptPatch(const scripting::ScriptWidgetPatch& patch) {
+void PluginWidget::applyScriptPatch(const scripting::ScriptWidgetPatch& patch) {
   if (patch.fontFamily.has_value()) {
     luaSetFont(*patch.fontFamily);
   }
@@ -629,7 +665,7 @@ void ScriptedWidget::applyScriptPatch(const scripting::ScriptWidgetPatch& patch)
   }
 }
 
-scripting::ScriptWidgetSnapshot ScriptedWidget::makeScriptSnapshot() const {
+scripting::ScriptWidgetSnapshot PluginWidget::makeScriptSnapshot() const {
   return scripting::ScriptWidgetSnapshot{
       .isVertical = m_isVertical,
       .outputName = m_outputName,
@@ -638,7 +674,7 @@ scripting::ScriptWidgetSnapshot ScriptedWidget::makeScriptSnapshot() const {
   };
 }
 
-std::string ScriptedWidget::focusedOutputName() const {
+std::string PluginWidget::focusedOutputName() const {
   if (m_platform == nullptr) {
     return {};
   }
@@ -647,7 +683,7 @@ std::string ScriptedWidget::focusedOutputName() const {
   return info != nullptr ? info->connectorName : std::string{};
 }
 
-void ScriptedWidget::syncImage(Renderer& renderer) {
+void PluginWidget::syncImage(Renderer& renderer) {
   if (m_image == nullptr) {
     return;
   }
@@ -692,7 +728,7 @@ void ScriptedWidget::syncImage(Renderer& renderer) {
   m_image->setVisible(m_image->hasImage());
 }
 
-void ScriptedWidget::setupImageWatch() {
+void PluginWidget::setupImageWatch() {
   teardownImageWatch();
   if (!m_imageWatch || m_resolvedImagePath.empty() || m_fileWatcher == nullptr) {
     return;
@@ -701,7 +737,7 @@ void ScriptedWidget::setupImageWatch() {
   m_imageWatchId = m_fileWatcher->watch(m_resolvedImagePath, [this] { reloadImage(); });
 }
 
-void ScriptedWidget::teardownImageWatch() {
+void PluginWidget::teardownImageWatch() {
   if (m_imageWatchId == 0 || m_fileWatcher == nullptr) {
     return;
   }
@@ -709,14 +745,14 @@ void ScriptedWidget::teardownImageWatch() {
   m_imageWatchId = 0;
 }
 
-void ScriptedWidget::reloadImage() {
+void PluginWidget::reloadImage() {
   m_imageDirty = true;
   m_imageForceReload = true;
   m_imageReloadRetries = kImageReloadRetryCount;
   requestUpdate();
 }
 
-void ScriptedWidget::scheduleImageReloadRetry() {
+void PluginWidget::scheduleImageReloadRetry() {
   if (m_imageReloadRetryTimer.active()) {
     return;
   }
@@ -728,55 +764,22 @@ void ScriptedWidget::scheduleImageReloadRetry() {
   });
 }
 
-void ScriptedWidget::setupAudioSpectrum() {
-  if (!m_audioSpectrumEnabled || m_audioSpectrumListenerId != 0) {
+bool PluginWidget::shouldDeferUpdate() const { return m_updateDeferralCallback && m_updateDeferralCallback(); }
+
+void PluginWidget::setupScriptWatch() {
+  if (m_sourcePath.empty() || !m_fileWatcher)
     return;
-  }
-  if (m_audioSpectrum == nullptr) {
-    kLog.warn("scripted widget '{}': audio_spectrum requested but PipeWireSpectrum is unavailable", m_widgetConfigName);
-    return;
-  }
-  m_audioSpectrumListenerId =
-      m_audioSpectrum->addChangeListener(m_audioSpectrumBands, [this]() { handleAudioSpectrumChanged(); });
+  m_watchId = m_fileWatcher->watch(m_sourcePath, [this] { reloadScript(); });
 }
 
-void ScriptedWidget::teardownAudioSpectrum() {
-  if (m_audioSpectrum != nullptr && m_audioSpectrumListenerId != 0) {
-    m_audioSpectrum->removeChangeListener(m_audioSpectrumListenerId);
-  }
-  m_audioSpectrumListenerId = 0;
-}
-
-void ScriptedWidget::handleAudioSpectrumChanged() {
-  if (m_runtime == nullptr || m_audioSpectrum == nullptr || m_audioSpectrumListenerId == 0) {
-    return;
-  }
-  const bool audioActive = !m_audioSpectrum->idle();
-  const auto active = m_mpris != nullptr ? m_mpris->activePlayer() : std::nullopt;
-  const bool mprisPlaying = active.has_value() && active->playbackStatus == "Playing";
-  const std::string state = std::string(audioActive ? "1" : "0") + "," + (mprisPlaying ? "1" : "0");
-  (void)m_runtime->enqueueCallStrings(
-      "onAudioSpectrum", joinSpectrumValues(m_audioSpectrum->values(m_audioSpectrumListenerId)), state,
-      makeScriptSnapshot(), /*coalesce=*/true
-  );
-}
-
-bool ScriptedWidget::shouldDeferUpdate() const { return m_updateDeferralCallback && m_updateDeferralCallback(); }
-
-void ScriptedWidget::setupScriptWatch() {
-  if (m_resolvedPath.empty() || !m_fileWatcher)
-    return;
-  m_watchId = m_fileWatcher->watch(m_resolvedPath, [this] { reloadScript(); });
-}
-
-void ScriptedWidget::teardownScriptWatch() {
+void PluginWidget::teardownScriptWatch() {
   if (m_watchId == 0 || !m_fileWatcher)
     return;
   m_fileWatcher->unwatch(m_watchId);
   m_watchId = 0;
 }
 
-void ScriptedWidget::reloadScript() {
+void PluginWidget::reloadScript() {
   m_updateTimer.stop();
   m_imageReloadRetryTimer.stop();
   teardownImageWatch();
@@ -804,8 +807,8 @@ void ScriptedWidget::reloadScript() {
   m_hasOnIpc = false;
   m_hasOnIpcKnown = false;
 
-  std::string source = readFile(m_resolvedPath);
-  auto name = m_resolvedPath.filename().string();
+  std::string source = readFile(m_sourcePath);
+  auto name = m_sourcePath.filename().string();
   if (source.empty() || !m_runtime) {
     kLog.warn("hot reload: failed to reload '{}'", name);
     notify::error("Noctalia", i18n::tr("bar.widgets.scripted.reload-failed"), name);
@@ -813,7 +816,7 @@ void ScriptedWidget::reloadScript() {
     return;
   }
 
-  m_runtime->reload(m_resolvedPath.string(), std::move(source), makeScriptSnapshot());
+  m_runtime->reload(m_sourcePath.string(), std::move(source), makeScriptSnapshot());
   startUpdateTimer();
   requestRedraw();
   kLog.info("hot reload: reloaded '{}'", name);

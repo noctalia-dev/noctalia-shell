@@ -1,0 +1,2845 @@
+{
+  "auth": {
+    "pam": {
+      "authentication-failed": "Xác thực không thành công",
+      "start-failed": "Khởi động PAM không thành công",
+      "user-unavailable": "Không thể giải quyết người dùng hiện tại"
+    },
+    "polkit": {
+      "authenticate": "Xác thực",
+      "authenticating": "Đang xác thực...",
+      "default-message": "Yêu cầu xác thực",
+      "invalid-password": "Mật khẩu không hợp lệ",
+      "password-placeholder": "Mật khẩu",
+      "title": "Yêu cầu Xác thực"
+    }
+  },
+  "bar": {
+    "screenshot": {
+      "choose-display": "Chọn màn hình",
+      "fullscreen": "Toàn màn hình",
+      "region": "Chọn khu vực"
+    },
+    "widgets": {
+      "lock-keys": {
+        "caps": "Caps",
+        "caps-short": "C",
+        "num": "Num",
+        "num-short": "N",
+        "scroll": "Scroll",
+        "scroll-short": "S"
+      },
+      "media": {
+        "nothing-playing": "Không có nội dung đang phát",
+        "playing": "Đang phát"
+      },
+      "network": {
+        "wired": "Mạng có dây"
+      },
+      "scripted": {
+        "reload-failed": "Tải lại script thất bại",
+        "reloaded": "Script đã được tải lại"
+      },
+      "weather": {
+        "default": "Thời tiết",
+        "error": "Không thể tải thời tiết",
+        "loading": "Đang cập nhật thời tiết...",
+        "no-location": "Không xác định vị trí",
+        "off": "Thời tiết không được bật",
+        "vertical-default": "WX",
+        "vertical-error": "ERR",
+        "vertical-loading": "...",
+        "vertical-no-location": "NOLOC",
+        "vertical-off": "OFF"
+      }
+    }
+  },
+  "clipboard": {
+    "actions": {
+      "clear-all": "Xóa tất cả",
+      "delete-item": "Xóa mục này",
+      "keep-pinned": "Giữ cố định"
+    },
+    "confirm": {
+      "clear-desc": "Chọn có giữ các mục được ghim hay không.",
+      "clear-desc-all-pinned": "Tất cả mục đang được ghim. Dùng Xóa tất cả để xóa chúng.",
+      "clear-desc-no-pinned": "Hành động này sẽ xóa tất cả mục trong lịch sử sao chép.",
+      "clear-title": "Xóa lịch sử sao chép?",
+      "delete-desc": "Hành động này sẽ xóa mục được chọn khỏi lịch sử sao chép.",
+      "delete-title": "Xóa mục đã sao chép?"
+    },
+    "empty": {
+      "history-message": "Không có dữ liệu trong lịch sử sao chép.",
+      "history-title": "Lịch sử sao chép trống",
+      "no-matches-message": "Không tìm thấy mục khớp bộ lọc.",
+      "no-matches-title": "Không có kết quả phù hợp"
+    },
+    "entry": {
+      "image": "Hình ảnh",
+      "title": "Mục Bộ nhớ"
+    },
+    "filter-placeholder": "Lọc lịch sử sao chép...",
+    "preview": {
+      "empty-text-payload": "(nội dung văn bản trống)",
+      "image-title": "Bộ nhớ Ảnh",
+      "loading": "Đang tải bản xem trước...",
+      "text-title": "Bộ nhớ Văn bản",
+      "truncated": "… đã rút gọn"
+    },
+    "title": "Bộ nhớ tạm"
+  },
+  "common": {
+    "actions": {
+      "apply": "Áp dụng",
+      "cancel": "Hủy"
+    },
+    "states": {
+      "auto": "Tự động",
+      "custom": "Tùy chỉnh",
+      "inherit": "Kế thừa",
+      "off": "Tắt"
+    }
+  },
+  "control-center": {
+    "audio": {
+      "application-volumes": "Âm lượng Ứng dụng",
+      "input-volume": "Âm lượng Đầu vào",
+      "no-application-audio": "Không có âm thanh từ ứng dụng",
+      "no-application-audio-body": "Hiện không có ứng dụng nào đang phát âm thanh.",
+      "no-input-devices": "Không tìm thấy thiết bị đầu vào",
+      "no-input-devices-body": "Hiện không có thiết bị ghi âm nào khả dụng.",
+      "no-input-selected": "Không có thiết bị đầu vào nào được chọn",
+      "no-output-devices": "Không tìm thấy thiết bị đầu ra",
+      "no-output-devices-body": "Không có thiết bị phát âm thanh khả dụng.",
+      "no-output-selected": "Không có thiết bị đầu ra nào được chọn",
+      "output-volume": "Âm lượng Đầu ra",
+      "unavailable-body": "PipeWire hiện không hoạt động.",
+      "unavailable-title": "Âm thanh không khả dụng"
+    },
+    "bluetooth": {
+      "accept": "Chấp nhận",
+      "auto-reconnect": "Tự kết nối lại",
+      "bluetooth": "Bluetooth",
+      "enter-code": "Nhập mã xác thực",
+      "no-devices": "Không tìm thấy thiết bị nào. Bắt đầu quét để phát hiện các thiết bị Bluetooth lân cận.",
+      "off": "Bluetooth đang tắt",
+      "pair-title": "Kết nối với {device}",
+      "pairing-detail": {
+        "authorize": "Chấp nhận yêu cầu ghép nối đến?",
+        "authorize-service": "Cho phép truy cập vào {uuid}?",
+        "confirm": "Xác nhận mã này khớp với mã hiển thị trên thiết bị:",
+        "display-passkey": "Nhập mã này trên thiết bị:",
+        "display-pin": "Nhập mã PIN sau vào thiết bị:",
+        "passkey": "Nhập mã xác thực hiển thị trên thiết bị:",
+        "pin-code": "Nhập mã PIN hiển thị trên thiết bị:"
+      },
+      "reject": "Từ chối",
+      "rfkill-blocked": "Bluetooth đã bị hệ thống vô hiệu hóa. Hãy bật Bluetooth để tiếp tục sử dụng.",
+      "sections": {
+        "available": "Khả dụng",
+        "connected": "Đã kết nối",
+        "paired": "Đã ghép nối"
+      },
+      "unavailable": "Bluetooth không khả dụng",
+      "unknown-device": "Thiết bị không xác định",
+      "visible": "Hiển thị với thiết bị lân cận"
+    },
+    "calendar": {
+      "all-day": "Cả ngày",
+      "events": "Sự kiện",
+      "no-events": "Không có sự kiện."
+    },
+    "display": {
+      "disabled": "Đã tắt",
+      "no-displays": "Không có màn hình nào khả dụng",
+      "unknown-resolution": "Độ phân giải không xác định"
+    },
+    "home": {
+      "media": {
+        "idle": "Chờ",
+        "no-active-player": "Không có trình phát nào đang hoạt động",
+        "nothing-playing": "Không có nội dung nào đang phát",
+        "paused": "Đã dừng",
+        "playback-unavailable": "Trình phát lại không khả dụng",
+        "playing": "Đang phát",
+        "unavailable": "Không khả dụng",
+        "unknown-artist": "Nghệ sĩ không xác định",
+        "unknown-track": "Bài hát không xác định"
+      },
+      "select-avatar": "Chọn Ảnh đại diện",
+      "unknown": "không xác định",
+      "user-facts": "{user}@{host}Thời gian hoạt động - {uptime}Noctalia {version}",
+      "weather": {
+        "configure-location": "Thêm [weather].address hoặc bật auto_locate.",
+        "data-unavailable": "Không thể tải dữ liệu thời tiết.",
+        "disabled": "Tính năng thời tiết đã bị vô hiệu hóa trong config.",
+        "fetching": "Đang cập nhật dự báo thời tiết..."
+      }
+    },
+    "media": {
+      "active-player": "Trình phát hiện tại",
+      "nothing-playing": "Không có nội dung nào đang phát",
+      "now-playing": "Đang phát",
+      "start-playback": "Bắt đầu phát nội dung trong ứng dụng MPRIS"
+    },
+    "network": {
+      "connect": "Kết nối",
+      "current-connection": "Kết nối Hiện tại",
+      "no-networks": "Không có mạng khả dụng ở gần",
+      "not-connected": "Chưa kết nối",
+      "password": "Mật khẩu",
+      "password-prompt": "Nhập mật khẩu",
+      "password-prompt-for": "Nhập mật khẩu cho {ssid}",
+      "unavailable-detail": "Hãy cài đặt và kích hoạt NetworkManager để quản lý mạng tại đây.",
+      "unavailable-title": "NetworkManager không khả dụng",
+      "vpns": "VPNs",
+      "wi-fi": "Wi-Fi",
+      "wifi": "Wi-Fi",
+      "wifi-off": "Wi-Fi đang tắt",
+      "wifi-on": "Wi-Fi đang bật",
+      "wired-connection": "Kết nối mạng có dây"
+    },
+    "notifications": {
+      "empty-body": "Các thông báo gần đây sẽ được hiển thị tại đây.",
+      "empty-title": "Không có thông báo",
+      "filter": {
+        "all": "Tất cả",
+        "older": "Cũ hơn",
+        "today": "Hôm nay",
+        "yesterday": "Hôm qua"
+      },
+      "filter-empty-body": "Không có thông báo nào khớp với bộ lọc này.",
+      "filter-empty-title": "Không có nội dung",
+      "untitled": "Thông báo chưa có tiêu đề"
+    },
+    "screen-time": {
+      "disabled": "Tính năng theo dõi thời gian sử dụng màn hình đang tắt. Bật trong Cài đặt để ghi lại dữ liệu theo từng ứng dụng.",
+      "empty": "Chưa có dữ liệu sử dụng ứng dụng. Hãy chuyển sang một cửa sổ để bắt đầu theo dõi.",
+      "hour-0": "0 giờ",
+      "hour-12": "12 giờ",
+      "hour-18": "18 giờ",
+      "hour-6": "6 giờ",
+      "most-used": "SỬ DỤNG NHIỀU NHẤT",
+      "range": {
+        "14-days": "14 ngày",
+        "3-days": "3 ngày",
+        "today": "Hôm nay"
+      }
+    },
+    "shortcuts": {
+      "audio": "Âm thanh",
+      "bluetooth": "Bluetooth",
+      "caffeine": "Caffeine",
+      "clipboard": "Clipboard",
+      "dark-mode": {
+        "auto": "Tự động",
+        "dark": "Tối",
+        "light": "Sáng"
+      },
+      "keyboard-layout": "Bố cục",
+      "media": "Media",
+      "mic-mute": "Microphone",
+      "nightlight": "Night Light",
+      "nightlight-states": {
+        "forced": "Luôn bật",
+        "off": "Night Light",
+        "scheduled-day": "Theo lịch",
+        "scheduled-night": "Đang chạy"
+      },
+      "notification": "DND",
+      "power-profile": "Power",
+      "screen-recorder": "Recorder",
+      "screen-time": "Screen Time",
+      "session": "Session",
+      "system": "System",
+      "wallpaper": "Wallpaper",
+      "weather": "Thời tiết",
+      "wifi": "Wi-Fi"
+    },
+    "system": {
+      "titles": {
+        "cpu": "CPU",
+        "gpu": "GPU",
+        "memory": "RAM",
+        "network": "Mạng",
+        "resources": "Tài nguyên",
+        "system": "Hệ thống"
+      },
+      "unknown": "không xác định",
+      "uptime-prefix": "Hoạt động {uptime} · {osAge}"
+    },
+    "tabs": {
+      "audio": "Âm thanh",
+      "bluetooth": "Bluetooth",
+      "calendar": "Lịch",
+      "display": "Màn hình",
+      "home": "Trang chủ",
+      "media": "Trình phát",
+      "network": "Mạng",
+      "notifications": "Thông báo",
+      "screen-time": "Thời gian sử dụng",
+      "system": "Hệ thống",
+      "weather": "Thời tiết"
+    },
+    "weather": {
+      "configure-location": "Thêm [weather].address hoặc bật auto_locate",
+      "data-unavailable": "Không thể tải dữ liệu thời tiết",
+      "details": {
+        "elevation": "Độ cao",
+        "sunrise": "Bình minh",
+        "sunset": "Hoàng hôn",
+        "temp-max": "Nhiệt độ Cao nhất",
+        "temp-min": "Nhiệt độ Thấp nhất",
+        "timezone": "Múi giờ",
+        "wind": "Gió"
+      },
+      "disabled": "Bật [weather] trong config.toml",
+      "fetching": "Đang cập nhật dự báo thời tiết...",
+      "forecast-placeholder": {
+        "day": "Chủ nhật",
+        "description": "Thời tiết",
+        "temperature": "10 / 4C"
+      },
+      "location-unavailable": "Không thể xác định vị trí",
+      "refreshing": "Đang tải lại dữ liệu thời tiết...",
+      "waiting": "Đang chờ dữ liệu thời tiết"
+    }
+  },
+  "desktop-widgets": {
+    "editor": {
+      "actions": {
+        "done": "Xong"
+      },
+      "dialogs": {
+        "select-sticker-image": "Chọn Hình ảnh Sticker"
+      },
+      "settings": {
+        "aspect-ratio": "Tỷ lệ Khung hình",
+        "background": "Nền",
+        "background-color": "Màu",
+        "background-opacity": "Độ mờ",
+        "background-padding": "Khoảng cách",
+        "background-radius": "Bo góc",
+        "background-section": "Nền",
+        "bands": "Dải tần",
+        "bar-width": "Chiều rộng thanh",
+        "bloom-intensity": "Bloom",
+        "centered": "Canh giữa",
+        "change-image": "Thay đổi…",
+        "circle": "Vòng tròn",
+        "clock-style": "Kiểu đồng hồ",
+        "clock-style-analog": "Analog",
+        "clock-style-digital": "Kỹ thuật số",
+        "color": "Màu sắc",
+        "color2": "Màu 2",
+        "custom-color": "Tùy chỉnh…",
+        "description": "Mô tả",
+        "fade-when-idle": "Làm mờ khi không hoạt động",
+        "font-family": "Phông chữ",
+        "font-family-default": "Mặc định hệ thống",
+        "format": "Định dạng",
+        "hide-when-no-media": "Ẩn khi không có media",
+        "high-color": "Màu sắc cao",
+        "horizontal": "Ngang",
+        "image-path": "Ảnh",
+        "inner-diameter": "Đường kính trong",
+        "layout": "Bố cục",
+        "low-color": "Màu nhạt",
+        "mirrored": "Phản chiếu",
+        "opacity": "Độ trong suốt",
+        "primary-color": "Màu chính",
+        "ring-opacity": "Độ mờ vòng",
+        "rotation-speed": "Tốc độ quay",
+        "secondary-color": "Màu phụ",
+        "sensitivity": "Độ nhạy",
+        "shadow": "Bóng",
+        "show-label": "Hiển thị nhãn",
+        "show-when-idle": "Hiển thị khi không hoạt động",
+        "stat": "Trạng thái",
+        "stat-cpu-temp": "Nhiệt độ CPU",
+        "stat-cpu-usage": "Mức sử dụng CPU",
+        "stat-gpu-temp": "Nhiệt độ GPU",
+        "stat-gpu-usage": "Mức sử dụng GPU",
+        "stat-gpu-vram": "GPU VRAM",
+        "stat-net-rx": "Nhận",
+        "stat-net-tx": "Mạng truyền",
+        "stat-none": "Không có",
+        "stat-ram-pct": "RAM %",
+        "stat-swap-pct": "Swap %",
+        "stat2": "Chỉ số 2",
+        "title": "Tiêu đề",
+        "vertical": "Dọc",
+        "visualization-mode": "Chế độ",
+        "visualization-mode-all": "Tất cả",
+        "visualization-mode-bars": "Thanh",
+        "visualization-mode-bars-rings": "Thanh + Vòng",
+        "visualization-mode-rings": "Vòng",
+        "visualization-mode-wave": "Sóng",
+        "visualization-mode-wave-rings": "Sóng + Vòng",
+        "wave-thickness": "Độ dày sóng",
+        "widget-section": "Tiện ích"
+      },
+      "state": {
+        "grid-off": "Tắt lưới",
+        "grid-on": "Bật lưới"
+      },
+      "title": "Tiện ích màn hình nền",
+      "types": {
+        "audio-visualizer": "Trực quan hóa âm thanh",
+        "clock": "Đồng hồ",
+        "fancy-audio-visualizer": "Trình hiển thị âm thanh đẹp mắt",
+        "label": "Nhãn",
+        "media-player": "Trình phát đa phương tiện",
+        "sticker": "Hình dán",
+        "system-monitor": "Theo dõi hệ thống",
+        "weather": "Thời tiết"
+      }
+    },
+    "media": {
+      "nothing-playing": "Không có gì đang phát"
+    },
+    "weather": {
+      "error": "Lỗi",
+      "loading": "Đang tải",
+      "no-location": "Không có vị trí",
+      "off": "Đã tắt thời tiết"
+    }
+  },
+  "dock": {
+    "actions": {
+      "close": "Đóng",
+      "close-all": "Đóng tất cả"
+    },
+    "launcher": "Trình khởi chạy"
+  },
+  "internal-apps": {
+    "settings": {
+      "display-name": "Cài đặt"
+    }
+  },
+  "launcher": {
+    "categories": {
+      "all": "Tất cả",
+      "applications": {
+        "development": "Phát triển",
+        "education": "Giáo dục",
+        "games": "Trò chơi",
+        "graphics": "Đồ họa",
+        "internet": "Mạng",
+        "multimedia": "Đa phương tiện",
+        "office": "Văn phòng",
+        "system": "Hệ thống",
+        "utilities": "Tiện ích"
+      },
+      "emoji": {
+        "activity": "Hoạt động",
+        "animals": "Động vật",
+        "flags": "Cờ",
+        "food": "Đồ ăn",
+        "nature": "Thiên nhiên",
+        "objects": "Đối tượng",
+        "people": "Mọi người",
+        "symbols": "Biểu tượng",
+        "travel": "Du lịch"
+      },
+      "recently-used": "Đã dùng gần đây"
+    },
+    "context-menu": {
+      "open": "Mở",
+      "pin-to-dock": "Ghim vào Dock",
+      "unpin-from-dock": "Bỏ ghim khỏi Dock"
+    },
+    "empty": {
+      "no-results": "Không tìm thấy kết quả nào",
+      "type-to-search": "Gõ để tìm kiếm..."
+    },
+    "providers": {
+      "applications": {
+        "title": "Ứng dụng"
+      },
+      "calculator": {
+        "title": "Máy tính"
+      },
+      "emoji": {
+        "title": "Emoji"
+      },
+      "session": {
+        "action-subtitle": "Thực hiện thao tác phiên",
+        "command-subtitle": "Chạy lệnh đã cấu hình",
+        "title": "Phiên"
+      },
+      "wallpaper": {
+        "title": "Hình nền"
+      },
+      "window": {
+        "title": "Windows"
+      }
+    },
+    "search-placeholder": "Tìm ứng dụng..."
+  },
+  "location": {
+    "errors": {
+      "address-lookup-failed": "Tra cứu địa chỉ thất bại",
+      "ip-geolocation-failed": "Định vị địa lý IP thất bại",
+      "parse-geocode": "Không thể phân tích cú pháp phản hồi mã hóa địa lý",
+      "parse-ip-geolocation": "Không thể phân tích cú pháp phản hồi định vị địa lý IP"
+    },
+    "locations": {
+      "current": "Vị trí hiện tại"
+    },
+    "source": {
+      "address": "Địa chỉ",
+      "auto": "Tự động"
+    }
+  },
+  "lockscreen": {
+    "authenticating": "Đang xác thực...",
+    "authentication-failed": "Xác thực thất bại",
+    "password-cleared": "Đã xóa mật khẩu",
+    "password-placeholder": "Mật khẩu",
+    "ready": "Nhập mật khẩu của bạn và nhấn Enter.",
+    "unlocked": "Đã mở khóa",
+    "waiting": "Đang chờ xác nhận khóa..."
+  },
+  "notifications": {
+    "actions": {
+      "fallback": "Hành động",
+      "open": "Mở"
+    },
+    "inline-reply": {
+      "button": "Trả lời",
+      "placeholder": "Nhập phản hồi..."
+    },
+    "internal": {
+      "battery": "Pin",
+      "battery-device": "Thiết bị pin",
+      "battery-low-body": "{device}: còn {percent}%",
+      "battery-low-title": "Pin yếu",
+      "calendar": "Lịch",
+      "calendar-google-connect-browser-failed": "Không thể khởi chạy trình mở trình duyệt để ủy quyền Google. Kiểm tra trình duyệt mặc định của bạn hoặc thiết lập xdg-open.",
+      "calendar-google-connect-expired": "Ủy quyền Google đã hết hạn trước khi đăng nhập hoàn tất. Hãy bắt đầu lại kết nối.",
+      "calendar-google-connect-failed-title": "Kết nối Lịch Google thất bại",
+      "calendar-google-connect-rate-limited": "Ủy quyền Google tạm thời bị giới hạn tốc độ. Đợi một chút, rồi thử lại.",
+      "calendar-google-connect-result-failed": "Không thể hoàn tất ủy quyền Google. Vui lòng thử lại kết nối.",
+      "calendar-google-connect-start-failed": "Không thể bắt đầu ủy quyền Google. Vui lòng kiểm tra kết nối mạng và thử lại.",
+      "calendar-google-connect-start-http": "Không thể bắt đầu ủy quyền Google. Trình môi giới OAuth đã trả về HTTP {status}.",
+      "calendar-google-connect-timeout": "Thời gian ủy quyền Google đã hết. Hãy bắt đầu lại kết nối khi bạn sẵn sàng đăng nhập.",
+      "dbus-disabled": "Thông báo DBus đã tắt",
+      "desktop-widgets-editor": "Trình chỉnh sửa tiện ích",
+      "desktop-widgets-editor-enabled": "Trình chỉnh sửa tiện ích màn hình nền đang bật. Chuyển sang một không gian làm việc trống để xem Overlay trình chỉnh sửa.",
+      "greeter-sync": "Noctalia Màn hình chào mừng",
+      "greeter-sync-success": "Đã đồng bộ giao diện. Các thay đổi sẽ áp dụng vào màn hình đăng nhập tiếp theo.",
+      "keybind-app": "Noctalia",
+      "keybind-invalid-modifier": "Phím tắt này nhận một phím không kèm phím bổ trợ.",
+      "keybind-invalid-printable": "Các phím ký tự (chữ cái, số, ký hiệu) cần một phím bổ trợ như Ctrl hoặc Alt.",
+      "keybind-invalid-super": "Không thể dùng phím Super/Windows trong các phím tắt của shell.",
+      "keybind-invalid-title": "Phím tắt không được phép",
+      "lockscreen-widgets-editor": "Trình chỉnh sửa tiện ích màn hình khóa",
+      "lockscreen-widgets-editor-blocked-locked": "Mở khóa phiên trước khi chỉnh sửa các widget màn hình khóa.",
+      "lockscreen-widgets-editor-enabled": "Trình chỉnh sửa Widget màn hình khóa đang bật. Sắp xếp các Widget trên Overlay xem trước, sau đó khóa phiên để kiểm tra bố cục.",
+      "mpris-disabled": "MPRIS đã tắt",
+      "session-bus-unavailable": "Bus phiên không khả dụng",
+      "wallpaper-palette-export": "Bảng màu tùy chỉnh"
+    }
+  },
+  "osd": {
+    "bluetooth": {
+      "off": "Bluetooth Tắt",
+      "on": "Bluetooth Bật"
+    },
+    "caffeine": {
+      "off": "Tắt Caffeine",
+      "on": "Bật chế độ không ngủ"
+    },
+    "dnd": {
+      "off": "DND Tắt",
+      "on": "DND Bật"
+    },
+    "lock-keys": {
+      "caps-off": "Caps Lock Tắt",
+      "caps-on": "Caps Lock bật",
+      "num-off": "Num Lock Tắt",
+      "num-on": "Num Lock Bật",
+      "scroll-off": "Scroll Lock Tắt",
+      "scroll-on": "Scroll Lock Bật"
+    },
+    "wifi": {
+      "off": "Wi-Fi Tắt",
+      "on": "Wi-Fi Bật"
+    }
+  },
+  "power": {
+    "battery": {
+      "states": {
+        "battery": "Pin",
+        "charging": "Đang sạc",
+        "discharging": "Đang xả",
+        "empty": "Trống",
+        "pending-discharge": "Đang chờ xả",
+        "plugged-in": "Đã cắm sạc"
+      },
+      "tooltip": {
+        "health": "Tình trạng",
+        "rate": "Đánh giá",
+        "status": "Trạng thái",
+        "time-left": "Thời gian còn lại",
+        "time-to-full": "Thời gian sạc đầy"
+      }
+    },
+    "profiles": {
+      "balanced": "Cân bằng",
+      "performance": "Hiệu suất",
+      "power-saver": "Tiết kiệm pin"
+    }
+  },
+  "session": {
+    "actions": {
+      "custom": "Tùy chỉnh",
+      "lock": "Khóa",
+      "lock-and-suspend": "Khóa & Tạm dừng",
+      "logout": "Đăng xuất",
+      "reboot": "Khởi động lại",
+      "shutdown": "Tắt máy",
+      "suspend": "Ngủ"
+    },
+    "errors": {
+      "lock-body": "Giao thức khóa phiên không khả dụng.",
+      "lock-title": "Khóa không khả dụng"
+    }
+  },
+  "settings": {
+    "actions": {
+      "reset": "Đặt lại"
+    },
+    "badges": {
+      "advanced": "Nâng cao",
+      "inherited": "Kế thừa",
+      "monitor": "Màn hình",
+      "override": "Ghi đè"
+    },
+    "calendar-accounts": {
+      "add-title": "Thêm tài khoản Lịch",
+      "color-label": "Màu sắc",
+      "delete-error": "Không thể xóa tài khoản lịch.",
+      "edit-title": "Chỉnh sửa tài khoản lịch",
+      "id-label": "ID tài khoản",
+      "invalid": "Kiểm tra các trường tài khoản lịch được tô sáng.",
+      "name-label": "Tên hiển thị",
+      "name-placeholder": "Lịch cá nhân",
+      "password-keep-placeholder": "Để trống nếu muốn giữ mật khẩu hiện tại",
+      "password-label": "Mật khẩu ứng dụng",
+      "password-placeholder": "Mật khẩu ứng dụng",
+      "password-save-error": "Không thể lưu mật khẩu tài khoản lịch.",
+      "provider": {
+        "custom": "CalDAV",
+        "google": "Google",
+        "icloud": "iCloud"
+      },
+      "provider-label": "Nhà cung cấp",
+      "save": "Lưu",
+      "save-connect": "Lưu và kết nối",
+      "save-error": "Không thể lưu tài khoản lịch.",
+      "server-url-label": "URL máy chủ",
+      "username-label": "Tên người dùng",
+      "username-placeholder": "name@example.com"
+    },
+    "controls": {
+      "keybind": {
+        "add": "Nhấn để thêm phím tắt",
+        "recording-placeholder": "Nhấn tổ hợp phím...",
+        "unset-placeholder": "Nhấn để gán..."
+      },
+      "list": {
+        "add-entry-placeholder": "Thêm mục..."
+      },
+      "path-browse": {
+        "file-title": "Chọn tệp",
+        "folder-title": "Chọn thư mục"
+      },
+      "select": {
+        "unknown-value": "Không xác định: {value}"
+      }
+    },
+    "dialogs": {
+      "color-picker": {
+        "title": "Chọn màu"
+      }
+    },
+    "entities": {
+      "bar": {
+        "create": "Tạo",
+        "delete": "Xóa",
+        "delete-confirm-desc": "Thanh được tạo bằng GUI này sẽ được gỡ bỏ khỏi settings.toml.",
+        "delete-confirm-title": "Xóa \"{name}\"?",
+        "id-placeholder": "ID thanh",
+        "label": "Thanh: {name}",
+        "management": "Thanh",
+        "move-down": "Di chuyển xuống",
+        "move-up": "Di chuyển lên",
+        "new": "Thanh mới",
+        "rename": "Đổi tên",
+        "rename-save": "Lưu"
+      },
+      "monitor-override": {
+        "create": "Tạo",
+        "delete": "Xóa",
+        "delete-confirm-desc": "Ghi đè màn hình được tạo bằng GUI này sẽ bị xóa khỏi settings.toml.",
+        "delete-confirm-title": "Xóa \"{name}\"?",
+        "label": "Màn hình: {name}",
+        "management": "Ghi đè màn hình",
+        "match-placeholder": "Khớp màn hình",
+        "new": "Ghi đè màn hình",
+        "rename": "Đổi tên",
+        "rename-save": "Lưu"
+      },
+      "widget": {
+        "add": "Thêm Widget",
+        "detail": {
+          "custom": "widget tùy chỉnh"
+        },
+        "editor": {
+          "description": "Sắp xếp các widgets trên các làn của bar",
+          "title": "Tiện ích thanh"
+        },
+        "group": {
+          "action": "Nhóm",
+          "border": "Viền",
+          "border-description": "Vai trò màu sắc đường viền của Vùng chứa; để Mặc định nếu không muốn có đường viền",
+          "clear": "Xóa",
+          "edit": "Chỉnh sửa kiểu dáng",
+          "fill": "Nền",
+          "fill-description": "Vai trò màu nền của khung chứa; cũng hỗ trợ các mã màu hex cố định",
+          "foreground": "Nền trước",
+          "foreground-description": "Vai trò màu sắc của biểu tượng và nhãn cho các widget trong nhóm này",
+          "hint": "Một phần của nhóm Capsule",
+          "members": "{count} tiện ích",
+          "opacity": "Độ mờ đục",
+          "opacity-description": "Độ mờ nền của Capsule",
+          "orphan": "Nhóm không xác định",
+          "padding": "Khoảng đệm",
+          "padding-description": "Khoảng đệm bên trong giữa cạnh của Capsule và các Widget của nó, tính bằng pixel",
+          "radius": "Bán kính",
+          "radius-description": "Bán kính góc của Capsule theo pixel; Tự động kế thừa bán kính capsule của Bar",
+          "selected": "{count} đã chọn",
+          "style": "Phong cách",
+          "title": "Nhóm khung",
+          "ungroup": "Tách nhóm"
+        },
+        "inspector": {
+          "add-instance-title": "Thêm mới tiện ích có tên {widget} vào khu vực {lane}",
+          "add-title": "Thêm Widget vào {lane}",
+          "move-to-lane": "Di chuyển đến {lane}"
+        },
+        "instance": {
+          "create-save": "Tạo",
+          "delete": "Xóa",
+          "delete-confirm-desc": "Widget có tên này sẽ bị xóa khỏi mọi Thanh và cài đặt của nó sẽ bị loại bỏ.",
+          "delete-confirm-title": "Xóa \"{name}\"?",
+          "id-description": "Chỉ dùng chữ cái, số, dấu gạch dưới hoặc dấu gạch ngang. Không dùng khoảng trắng; phải là duy nhất.",
+          "id-placeholder": "Mã tiện ích",
+          "rename": "Đổi tên",
+          "rename-save": "Lưu"
+        },
+        "lanes": {
+          "center": "Trung tâm",
+          "customize": "Tùy chỉnh",
+          "empty": "Không có widget nào",
+          "empty-hint": "Thêm một widget để lấp đầy làn này.",
+          "end": "Kết thúc",
+          "start": "Bắt đầu"
+        },
+        "picker": {
+          "empty": "Không tìm thấy tiện ích nào",
+          "instance-toggle": "Tiện ích có tên",
+          "placeholder": "Tìm kiếm tiện ích..."
+        },
+        "raw": {
+          "delete": "Xóa",
+          "description": "Các khóa không được hỗ trợ được giữ lại từ cấu hình widget này.",
+          "title": "Cài đặt thô"
+        },
+        "settings": {
+          "empty": "Không có cài đặt nào khớp với bộ lọc hiện tại.",
+          "groups": {
+            "grouping": "Nhóm",
+            "presentation": "Trình bày",
+            "runtime": "Thời gian chạy",
+            "widget": "Tiện ích"
+          }
+        }
+      }
+    },
+    "errors": {
+      "bar": {
+        "create": "Không thể tạo thanh.",
+        "delete": "Không thể xóa thanh.",
+        "move": "Không thể di chuyển thanh.",
+        "rename": "Không thể đổi tên thanh."
+      },
+      "batch-write": "Một số cài đặt không thể lưu.",
+      "export-config": "Lưu xuất cấu hình thất bại.",
+      "export-wallpaper-palette": "Không thể lưu bảng màu hình nền thành bảng màu tùy chỉnh.",
+      "monitor-override": {
+        "create": "Không thể tạo ghi đè màn hình.",
+        "delete": "Không thể xóa ghi đè màn hình.",
+        "rename": "Không thể đổi tên ghi đè màn hình."
+      },
+      "reset-page": "Không thể đặt lại một số cài đặt.",
+      "support-report": "Không thể lưu báo cáo hỗ trợ.",
+      "sync-greeter": "Không thể đồng bộ giao diện với Noctalia Greeter.",
+      "widget": {
+        "rename": "Không thể đổi tên tiện ích đã đặt tên."
+      },
+      "write": "Lưu cài đặt thất bại."
+    },
+    "export-config": {
+      "export": "Xuất",
+      "full-effective-description": "Xuất mọi cài đặt đang hoạt động, bao gồm cả các giá trị mặc định tích hợp sẵn. Hữu ích để kiểm tra hoặc chia sẻ ảnh chụp nhanh, nhưng khóa chặt các giá trị mặc định hiện tại một cách rõ ràng.",
+      "full-effective-save-title": "Lưu toàn bộ cấu hình hiện hành",
+      "full-effective-title": "Cấu hình hiệu lực đầy đủ",
+      "merged-user-description": "Kết hợp các tệp cấu hình và ghi đè GUI vào một tệp TOML duy nhất. Các giá trị mặc định tích hợp sẵn vẫn ngầm định.",
+      "merged-user-save-title": "Lưu cấu hình người dùng đã hợp nhất",
+      "merged-user-title": "Cấu hình người dùng hợp nhất (Khuyên dùng)",
+      "title": "Xuất cấu hình"
+    },
+    "idle": {
+      "behavior": {
+        "add": "Thêm hành vi",
+        "command-label": "Lệnh chờ",
+        "command-placeholder": "notify-send \"Idle\"",
+        "kind": {
+          "custom": "Tùy chỉnh",
+          "lock": "Khóa",
+          "lock-and-suspend": "Khóa & Tạm dừng",
+          "screen-off": "Tắt màn hình",
+          "suspend": "Ngủ"
+        },
+        "kind-section-label": "Hành động",
+        "name-label": "Tên",
+        "name-placeholder": "Hành vi khi không hoạt động",
+        "resume-command-label": "Lệnh khôi phục",
+        "resume-command-placeholder": "noctalia:dpms-on",
+        "summary": "{name} - {seconds} giây",
+        "summary-disabled-timeout": "{name}, tắt hẹn giờ",
+        "timeout-label": "Số giây chờ",
+        "unnamed": "Hành vi không tên"
+      },
+      "live-status": {
+        "active": "Hoạt động",
+        "idle-for-one": "Không hoạt động trong 1 giây",
+        "idle-for-seconds": "Không hoạt động trong {seconds} giây"
+      }
+    },
+    "navigation": {
+      "groups": {
+        "audio": "Âm thanh",
+        "automation": "Tự động hóa",
+        "backdrop": "Nền",
+        "background": "Nền",
+        "battery": "Pin",
+        "behavior": "Hành vi",
+        "brightness": "Độ sáng",
+        "built-in": "Tích hợp sẵn",
+        "calendar": "Lịch",
+        "capsules": "Viên nang",
+        "clipboard": "Bảng tạm",
+        "community": "Cộng đồng",
+        "control-center": "Trung tâm điều khiển",
+        "directories": "Thư mục",
+        "effects": "Hiệu ứng",
+        "filtering": "Lọc",
+        "focus-styling": "Kiểu dáng tiêu điểm",
+        "formats": "Định dạng",
+        "general": "Chung",
+        "grouping": "Nhóm",
+        "home": "Trang chủ",
+        "idle": "Không hoạt động",
+        "interface": "Giao diện",
+        "keybinds": "Phím tắt",
+        "kinds": "Loại",
+        "launcher": "Trình khởi chạy",
+        "layout": "Bố cục",
+        "lifecycle": "Vòng đời",
+        "location": "Vị trí",
+        "lock-screen": "Màn hình khóa",
+        "media": "Phương tiện",
+        "monitor": "Giám sát hệ thống",
+        "monitor-polling": "Khoảng thời gian kiểm tra",
+        "monitor-thresholds": "Các ngưỡng nổi bật",
+        "monitors": "Màn hình",
+        "motion": "Chuyển động",
+        "network": "Mạng",
+        "night-light": "Ánh sáng đêm",
+        "notifications": "Thông báo",
+        "osd": "OSD",
+        "overview": "Tổng quan",
+        "pinned-apps": "Ứng dụng đã ghim",
+        "power": "Nguồn",
+        "privacy-security": "Quyền riêng tư & Bảo mật",
+        "profile": "Hồ sơ",
+        "screen-corners": "Các góc màn hình",
+        "screen-time": "Thời gian sử dụng màn hình",
+        "screenshot": "Chụp màn hình",
+        "security": "Bảo mật",
+        "session-panel": "Phiên",
+        "shape": "Hình dạng",
+        "system": "Hệ thống",
+        "theme": "Chủ đề",
+        "toasts": "Toasts",
+        "transition": "Chuyển tiếp",
+        "user": "Người dùng",
+        "wallpaper": "Hình nền",
+        "weather": "Thời tiết",
+        "widget-list": "Danh sách Widget",
+        "widgets": "Tiện ích"
+      },
+      "sections": {
+        "appearance": "Giao diện",
+        "backdrop": "Nền",
+        "bar": "Thanh",
+        "desktop": "Màn hình nền",
+        "dock": "Dock",
+        "hooks": "Hooks",
+        "location": "Vị trí",
+        "niri": "Niri",
+        "notifications": "Thông báo",
+        "osd": "OSD",
+        "panels": "Các bảng",
+        "popups": "Pop-up",
+        "power": "Nguồn",
+        "security": "Bảo mật",
+        "services": "Dịch vụ",
+        "shell": "Giao diện",
+        "system": "Hệ thống",
+        "templates": "Mẫu",
+        "wallpaper": "Hình nền"
+      }
+    },
+    "options": {
+      "clipboard": {
+        "auto-paste": {
+          "ctrl-shift-v": "Ctrl+Shift+V",
+          "ctrl-v": "Ctrl+V",
+          "shift-insert": "Shift+Insert"
+        }
+      },
+      "control-center": {
+        "sidebar": {
+          "compact": "Gọn",
+          "full": "Toàn bộ",
+          "none": "Không có"
+        }
+      },
+      "dock-launcher-position": {
+        "end": "Kết thúc",
+        "none": "Không có",
+        "start": "Bắt đầu"
+      },
+      "edge": {
+        "bottom": "Dưới cùng",
+        "left": "Trái",
+        "right": "Phải",
+        "top": "Trên"
+      },
+      "font-weight": {
+        "bold": "In đậm",
+        "book": "Đặt",
+        "default": "Mặc định (thanh)",
+        "heavy": "Đậm",
+        "light": "Sáng",
+        "medium": "Trung bình",
+        "regular": "Thường",
+        "semi-bold": "Bán đậm",
+        "semi-light": "Bán sáng",
+        "thin": "Mỏng",
+        "ultra-bold": "Siêu Đậm",
+        "ultra-heavy": "Siêu nặng",
+        "ultra-light": "Siêu sáng"
+      },
+      "layer": {
+        "overlay": "Overlay",
+        "top": "Trên"
+      },
+      "notification-urgency": {
+        "critical": "Nghiêm trọng",
+        "low": "Thấp",
+        "normal": "Bình thường"
+      },
+      "orientation": {
+        "horizontal": "Ngang",
+        "vertical": "Dọc"
+      },
+      "screen-position": {
+        "bottom-center": "Giữa dưới",
+        "bottom-left": "Góc dưới bên trái",
+        "bottom-right": "Góc dưới bên phải",
+        "center-left": "Giữa trái",
+        "center-right": "Giữa phải",
+        "top-center": "Giữa trên",
+        "top-left": "Góc trên bên trái",
+        "top-right": "Trên cùng bên phải"
+      },
+      "shell": {
+        "panel-placement": {
+          "attached": "Gắn vào",
+          "centered": "Canh giữa",
+          "floating": "Nổi"
+        },
+        "panel-transparency": {
+          "glass": "Kính",
+          "soft": "Dịu",
+          "solid": "Đặc"
+        },
+        "password-style": {
+          "filled-circles": "Hình tròn đặc",
+          "random-icons": "Biểu tượng ngẫu nhiên"
+        },
+        "shadow-direction": {
+          "center": "Giữa",
+          "down": "Xuống",
+          "down-left": "Dưới Trái",
+          "down-right": "Dưới phải",
+          "left": "Trái",
+          "right": "Phải",
+          "up": "Hoạt động",
+          "up-left": "Trên Trái",
+          "up-right": "Trên bên phải"
+        }
+      },
+      "theme": {
+        "mode": {
+          "dark": "Tối",
+          "light": "Sáng"
+        },
+        "source": {
+          "built-in": "Tích hợp sẵn",
+          "community": "Cộng đồng",
+          "custom": "Tùy chỉnh",
+          "wallpaper": "Hình nền"
+        }
+      },
+      "theme-role": {
+        "custom": "Tùy chỉnh…",
+        "default": "Mặc định"
+      },
+      "wallpaper": {
+        "fill": {
+          "center": "Giữa",
+          "crop": "Cắt",
+          "fit": "Vừa",
+          "repeat": "Lặp lại",
+          "stretch": "Kéo giãn"
+        },
+        "order": {
+          "alphabetical": "Theo ABC",
+          "random": "Ngẫu nhiên"
+        },
+        "transition": {
+          "disc": "Ổ đĩa",
+          "fade": "Mờ dần",
+          "honeycomb": "Tổ ong",
+          "stripes": "Sọc",
+          "wipe": "Xóa",
+          "zoom": "Thu phóng"
+        }
+      },
+      "weather": {
+        "unit": {
+          "imperial": "Hệ đo lường Anh",
+          "metric": "Chỉ số"
+        }
+      }
+    },
+    "schema": {
+      "appearance": {
+        "animation-speed": {
+          "description": "Hệ số nhân tốc độ cho tất cả các hoạt ảnh",
+          "label": "Tốc độ ảnh động"
+        },
+        "animations": {
+          "description": "Bật hoặc tắt hoạt ảnh giao diện người dùng",
+          "label": "Hoạt ảnh"
+        },
+        "app-icon-color": {
+          "description": "Màu bảng màu dùng để tô màu biểu tượng ứng dụng",
+          "label": "Màu biểu tượng ứng dụng"
+        },
+        "app-icon-colorize": {
+          "description": "Đổi màu biểu tượng ứng dụng trên toàn bộ Noctalia để phù hợp với bảng màu đang hoạt động",
+          "label": "Tô màu biểu tượng ứng dụng"
+        },
+        "builtin-palette": {
+          "description": "Chọn một bảng màu từ danh mục có sẵn",
+          "label": "Bảng màu tích hợp sẵn"
+        },
+        "community-palette": {
+          "description": "Chọn một bảng màu từ danh mục cộng đồng",
+          "label": "Bảng màu cộng đồng",
+          "search-placeholder": "Tìm kiếm bảng màu..."
+        },
+        "corner-roundness": {
+          "description": "Điều chỉnh bán kính bo góc trên toàn bộ các vùng chứa và điều khiển giao diện người dùng của shell",
+          "label": "Độ bo góc"
+        },
+        "custom-palette": {
+          "description": "Chọn bảng màu từ ~/.config/noctalia/palettes/",
+          "label": "Bảng màu tùy chỉnh",
+          "search-placeholder": "Tìm kiếm bảng màu tùy chỉnh..."
+        },
+        "export-wallpaper-palette": {
+          "button": "Lưu thành Bảng màu Tùy chỉnh",
+          "description": "Lưu bảng màu hiện tại được tạo từ hình nền dưới dạng một tệp bảng màu tùy chỉnh có thể tái sử dụng",
+          "label": "Xuất Palette hình nền"
+        },
+        "font-family": {
+          "description": "Kiểu chữ cho giao diện shell",
+          "label": "Họ phông chữ"
+        },
+        "global-shadow-alpha": {
+          "description": "Độ mờ của bóng bề mặt toàn cục"
+        },
+        "global-shadow-direction": {
+          "description": "Hướng bóng đổ từ các bề mặt"
+        },
+        "language": {
+          "description": "Ghi đè phát hiện ngôn ngữ tự động",
+          "label": "Ngôn ngữ"
+        },
+        "palette-source": {
+          "description": "Lấy bảng màu từ đâu",
+          "label": "Nguồn bảng màu"
+        },
+        "theme-mode": {
+          "description": "Chọn tối, sáng hoặc tự động theo thời gian trong ngày",
+          "label": "Chế độ giao diện"
+        },
+        "ui-scale": {
+          "description": "Phóng to hoặc thu nhỏ toàn bộ giao diện",
+          "label": "Tỷ lệ UI"
+        },
+        "wallpaper-generation-scheme": {
+          "description": "Chọn cách màu sắc hình nền được chuyển đổi thành bảng màu",
+          "label": "Cơ chế tạo hình nền"
+        }
+      },
+      "backdrop": {
+        "blur-intensity": {
+          "description": "Cường độ làm mờ của phông nền",
+          "label": "Độ mờ"
+        },
+        "enabled": {
+          "description": "Bật lớp nền"
+        },
+        "tint-intensity": {
+          "description": "Độ đậm nhạt màu của lớp nền",
+          "label": "Độ đậm màu"
+        }
+      },
+      "bar": {
+        "auto-hide": {
+          "description": "Tự động ẩn thanh khi không sử dụng"
+        },
+        "background-opacity": {
+          "description": "Độ mờ nền của thanh"
+        },
+        "border": {
+          "description": "Vai trò màu sắc cho đường viền của Bar; mã màu hex cố định cũng được hỗ trợ",
+          "label": "Viền"
+        },
+        "border-width": {
+          "description": "Chiều rộng đường viền bên trong cho thanh Bar",
+          "label": "Độ rộng viền"
+        },
+        "capsule-border": {
+          "description": "Vai trò màu viền capsule mặc định; màu hex cố định cũng được hỗ trợ",
+          "label": "Viền Capsule"
+        },
+        "capsule-fill": {
+          "description": "Vai trò màu nền mặc định của khung chứa; mã màu hex cố định cũng được hỗ trợ",
+          "label": "Kiểu đổ đầy vùng chứa"
+        },
+        "capsule-foreground": {
+          "description": "Vai trò màu sắc mặc định cho biểu tượng và nhãn bên trong các vùng chứa; màu hex cố định cũng được hỗ trợ",
+          "label": "Khung Tiền cảnh"
+        },
+        "capsule-opacity": {
+          "description": "Độ mờ của nền viên nang tiện ích",
+          "label": "Độ mờ Vỏ bọc"
+        },
+        "capsule-padding": {
+          "description": "Khoảng đệm bên trong các viên nang widget",
+          "label": "Khoảng đệm Viên nang"
+        },
+        "capsule-radius": {
+          "description": "Bán kính bo góc mặc định cho các capsule widget, pill workspace và nhóm workspace trên taskbar; để trống để có hình dạng pill tự động, hoặc đặt 0 để có góc vuông",
+          "label": "Bán kính khung bo tròn"
+        },
+        "center-widgets": {
+          "description": "Widgets ở giữa Bar",
+          "label": "Căn giữa các tiện ích"
+        },
+        "contact-shadow": {
+          "description": "Chuyển màu tối giữa một bảng điều khiển gắn liền và thanh để gợi ý chiều sâu tại đường nối"
+        },
+        "content-padding": {
+          "description": "Khoảng đệm bên trong khu vực nội dung của thanh Bar",
+          "label": "Khoảng đệm nội dung"
+        },
+        "content-scale": {
+          "description": "Hệ số tỉ lệ cho nội dung thanh",
+          "label": "Tỷ lệ nội dung"
+        },
+        "corner-bottom-left": {
+          "description": "Bán kính góc dưới bên trái cho Bar"
+        },
+        "corner-bottom-right": {
+          "description": "Bán kính góc dưới bên phải cho Bar"
+        },
+        "corner-radius": {
+          "description": "Bán kính góc của Bar"
+        },
+        "corner-top-left": {
+          "description": "Bán kính góc trên bên trái cho Bar"
+        },
+        "corner-top-right": {
+          "description": "Bán kính góc trên bên phải cho Bar"
+        },
+        "edge-margin": {
+          "description": "Khoảng cách từ cạnh màn hình gần nhất; giá trị dương sẽ di chuyển thanh Bar ra xa khỏi cạnh đó"
+        },
+        "enabled": {
+          "description": "Hiện hoặc ẩn thanh này"
+        },
+        "end-widgets": {
+          "description": "Các tiện ích ở phía cuối (phải/dưới) của thanh",
+          "label": "Các tiện ích cuối"
+        },
+        "ends-margin": {
+          "description": "Đệm từ hai đầu thanh dọc theo trục chính"
+        },
+        "font-weight": {
+          "description": "Độ đậm mặc định cho nhãn tiện ích trên thanh này.",
+          "label": "Độ đậm phông chữ"
+        },
+        "layer": {
+          "description": "Sử dụng Overlay để hiển thị thanh trên các ứng dụng toàn màn hình. Các bảng điều khiển gắn liền di chuyển theo thanh.",
+          "label": "Lớp Wayland"
+        },
+        "panel-overlap": {
+          "description": "Số pixel mà một panel đính kèm chồng lên cạnh Bar để ẩn đường nối (điều chỉnh nếu bạn thấy một đường hoặc khoảng trống)",
+          "label": "Chồng lấn bảng"
+        },
+        "position": {
+          "description": "Thanh nằm ở cạnh màn hình nào"
+        },
+        "reserve-space": {
+          "description": "Đẩy cửa sổ ra xa khỏi mép thanh Bar"
+        },
+        "shadow": {
+          "description": "Đổ bóng bề mặt toàn cục từ thanh Bar"
+        },
+        "start-widgets": {
+          "description": "Widgets ở phía đầu (trái/trên) của thanh",
+          "label": "Widgets khởi động"
+        },
+        "thickness": {
+          "description": "Độ dày của Thanh tính bằng pixel",
+          "label": "Độ dày"
+        },
+        "widget-capsules": {
+          "description": "Bọc các Widget trong nền viên nang",
+          "label": "Vỏ bọc Widget"
+        },
+        "widget-color": {
+          "description": "Vai trò màu sắc mặc định cho biểu tượng và nhãn của các tiện ích trên thanh này; mã màu hex cố định cũng được hỗ trợ",
+          "label": "Màu Widget"
+        },
+        "widget-spacing": {
+          "description": "Khoảng cách giữa các tiện ích trên Thanh",
+          "label": "Khoảng cách tiện ích"
+        }
+      },
+      "desktop": {
+        "screen-corners-enabled": {
+          "description": "Làm tròn các góc màn hình với một overlay màu đen",
+          "label": "Các góc màn hình"
+        },
+        "screen-corners-size": {
+          "description": "Bán kính của các góc màn hình bo tròn, tính bằng pixel",
+          "label": "Độ bo góc"
+        },
+        "widgets": {
+          "description": "Hiển thị tiện ích trên màn hình nền",
+          "label": "Tiện ích màn hình nền"
+        },
+        "widgets-editor": {
+          "button": "Chuyển đổi trình chỉnh sửa",
+          "description": "Thêm, di chuyển và thay đổi kích thước các widget màn hình nền",
+          "label": "Trình chỉnh sửa tiện ích"
+        }
+      },
+      "dock": {
+        "active-icon-opacity": {
+          "description": "Độ mờ của biểu tượng Dock khi được lấy nét",
+          "label": "Độ mờ biểu tượng hoạt động"
+        },
+        "active-icon-scale": {
+          "description": "Tỷ lệ của biểu tượng Dock đang được chọn",
+          "label": "Kích thước biểu tượng đang hoạt động"
+        },
+        "active-monitor-only": {
+          "description": "Chỉ hiển thị các ứng dụng đang chạy trên màn hình đang hoạt động.",
+          "label": "Chỉ màn hình đang hoạt động"
+        },
+        "auto-hide": {
+          "description": "Tự động ẩn Dock khi không sử dụng"
+        },
+        "background-opacity": {
+          "description": "Độ mờ nền của Dock"
+        },
+        "corner-bottom-left": {
+          "description": "Bán kính góc dưới bên trái cho Dock"
+        },
+        "corner-bottom-right": {
+          "description": "Bán kính góc dưới bên phải cho Dock"
+        },
+        "corner-radius": {
+          "description": "Bán kính bo góc của Dock"
+        },
+        "corner-top-left": {
+          "description": "Bán kính góc trên bên trái cho Dock"
+        },
+        "corner-top-right": {
+          "description": "Bán kính góc trên bên phải cho Dock"
+        },
+        "cross-axis-padding": {
+          "description": "Khoảng đệm bên trong dọc theo trục vuông góc của Dock (giữa các biểu tượng và mép màn hình)"
+        },
+        "edge-margin": {
+          "description": "Khoảng cách từ cạnh màn hình gần nhất; các giá trị dương sẽ làm cho Dock nổi ra xa khỏi cạnh đó"
+        },
+        "enabled": {
+          "description": "Hiện/Ẩn Dock"
+        },
+        "ends-margin": {
+          "description": "Khoảng cách từ mỗi đầu của Dock theo trục chính của nó"
+        },
+        "icon-size": {
+          "description": "Kích thước biểu tượng Dock theo pixel",
+          "label": "Kích thước biểu tượng"
+        },
+        "inactive-icon-opacity": {
+          "description": "Độ mờ đục của các biểu tượng Dock không được tập trung",
+          "label": "Độ mờ biểu tượng không hoạt động"
+        },
+        "inactive-icon-scale": {
+          "description": "Tỷ lệ biểu tượng Dock khi không được tập trung",
+          "label": "Kích thước biểu tượng không hoạt động"
+        },
+        "item-spacing": {
+          "description": "Khoảng cách giữa các mục trên Dock",
+          "label": "Khoảng cách mục"
+        },
+        "launcher-icon": {
+          "description": "Biểu tượng Tabler hiển thị trên nút khởi chạy Dock",
+          "label": "Biểu tượng trình khởi chạy"
+        },
+        "launcher-position": {
+          "description": "Hiển thị nút trình khởi chạy ở đầu hoặc cuối Dock",
+          "label": "Nút Trình khởi chạy"
+        },
+        "magnification": {
+          "description": "Phóng to các biểu tượng Dock gần con trỏ, theo kiểu macOS",
+          "label": "Độ phóng đại"
+        },
+        "magnification-scale": {
+          "description": "Hệ số phóng đại biểu tượng tối đa tại tâm con trỏ (1.0 sẽ tắt tính năng phóng đại)",
+          "label": "Mức phóng đại"
+        },
+        "main-axis-padding": {
+          "description": "Khoảng đệm bên trong dọc theo trục chính của Dock (giữa các biểu tượng và các cạnh ngắn của Capsule)"
+        },
+        "monitors": {
+          "description": "Chọn màn hình hiển thị Dock (để trống cho tất cả); tính năng lọc theo màn hình đang hoạt động sẽ áp dụng trong các màn hình này",
+          "label": "Màn hình"
+        },
+        "pinned-apps": {
+          "description": "ID mục nhập desktop của các ứng dụng được ghim vào Dock",
+          "label": "Ứng dụng đã ghim"
+        },
+        "position": {
+          "description": "Cạnh màn hình mà Dock nằm trên đó"
+        },
+        "reserve-space": {
+          "description": "Dành riêng không gian màn hình cho Dock"
+        },
+        "shadow": {
+          "description": "Đổ bóng bề mặt toàn cục từ dock"
+        },
+        "show-dots": {
+          "description": "Hiển thị dấu chấm ứng dụng đang chạy bên cạnh biểu tượng Dock",
+          "label": "Hiện dấu chấm"
+        },
+        "show-instance-count": {
+          "description": "Hiển thị huy hiệu với số lượng phiên bản đang mở.",
+          "label": "Hiện số lượng phiên bản"
+        },
+        "show-running": {
+          "description": "Hiển thị các ứng dụng đang chạy không được ghim",
+          "label": "Hiện đang chạy"
+        }
+      },
+      "hooks": {
+        "command-placeholder": "lệnh shell hoặc đường dẫn tập lệnh",
+        "events": {
+          "battery-charging": {
+            "description": "Lệnh chạy khi pin bắt đầu sạc",
+            "label": "Khi pin đang sạc"
+          },
+          "battery-discharging": {
+            "description": "Lệnh chạy khi pin bắt đầu xả",
+            "label": "Khi pin xả"
+          },
+          "battery-percentage-changed": {
+            "description": "Lệnh chạy khi phần trăm pin thay đổi",
+            "label": "Khi phần trăm pin thay đổi"
+          },
+          "battery-plugged": {
+            "description": "Lệnh chạy khi pin được sạc đầy hoặc đang chờ sạc",
+            "label": "Khi pin sạc"
+          },
+          "bluetooth-disabled": {
+            "description": "Lệnh chạy khi Bluetooth bị tắt",
+            "label": "Khi tắt Bluetooth"
+          },
+          "bluetooth-enabled": {
+            "description": "Lệnh chạy khi Bluetooth được bật",
+            "label": "Khi Bluetooth bật"
+          },
+          "colors-changed": {
+            "description": "Lệnh chạy khi bảng màu đang hoạt động thay đổi",
+            "label": "Khi màu sắc thay đổi"
+          },
+          "logging-out": {
+            "description": "Lệnh chạy trước khi đăng xuất",
+            "label": "Khi đăng xuất"
+          },
+          "power-profile-changed": {
+            "description": "Lệnh chạy khi cấu hình nguồn UPower/PPD đang hoạt động thay đổi",
+            "label": "Khi cấu hình nguồn thay đổi"
+          },
+          "rebooting": {
+            "description": "Lệnh chạy trước khi khởi động lại",
+            "label": "Khi khởi động lại"
+          },
+          "session-locked": {
+            "description": "Lệnh chạy khi phiên làm việc bị khóa",
+            "label": "Khi màn hình khóa"
+          },
+          "session-unlocked": {
+            "description": "Lệnh chạy sau khi phiên làm việc được mở khóa",
+            "label": "Khi mở khóa phiên"
+          },
+          "shutting-down": {
+            "description": "Lệnh chạy trước khi tắt máy",
+            "label": "Khi tắt máy"
+          },
+          "started": {
+            "description": "Lệnh để chạy sau khi Noctalia khởi động",
+            "label": "Khi khởi động"
+          },
+          "theme-mode-changed": {
+            "description": "Lệnh chạy khi chế độ giao diện được giải quyết thay đổi giữa sáng và tối",
+            "label": "Khi chế độ chủ đề thay đổi"
+          },
+          "wallpaper-changed": {
+            "description": "Lệnh chạy khi hình nền thay đổi",
+            "label": "Khi hình nền thay đổi"
+          },
+          "wifi-disabled": {
+            "description": "Lệnh chạy khi Wi-Fi bị tắt",
+            "label": "Khi Wi-Fi bị tắt"
+          },
+          "wifi-enabled": {
+            "description": "Lệnh chạy khi Wi-Fi được bật",
+            "label": "Khi Wi-Fi bật"
+          }
+        }
+      },
+      "idle": {
+        "behaviors": {
+          "description": "Các hành động khi không hoạt động được đặt tên với cài đặt sẵn (khóa, tắt màn hình, tạm dừng) hoặc lệnh tùy chỉnh, thời gian chờ, khôi phục ghép nối và thứ tự",
+          "label": "Hành vi"
+        },
+        "pre-action-fade": {
+          "description": "Số giây màn hình mờ toàn màn hình trước khi thực thi lệnh chờ; đặt 0 để vô hiệu hóa.",
+          "label": "Mờ khi không hoạt động"
+        }
+      },
+      "keybinds": {
+        "cancel": {
+          "description": "Đóng các cửa sổ bật lên, đóng các bảng điều khiển hoặc hủy bỏ thao tác hiện tại",
+          "label": "Hủy"
+        },
+        "down": {
+          "description": "Di chuyển tiêu điểm hoặc vùng chọn xuống một hàng",
+          "label": "Di chuyển xuống"
+        },
+        "left": {
+          "description": "Di chuyển tiêu điểm hoặc vùng chọn sang trái",
+          "label": "Di chuyển sang trái"
+        },
+        "right": {
+          "description": "Di chuyển tiêu điểm hoặc vùng chọn sang phải",
+          "label": "Sang phải"
+        },
+        "up": {
+          "description": "Di chuyển tiêu điểm hoặc vùng chọn lên một hàng",
+          "label": "Đi lên"
+        },
+        "validate": {
+          "description": "Xác nhận lựa chọn, gửi dữ liệu nhập hoặc kích hoạt mục đang chọn",
+          "label": "Xác nhận"
+        }
+      },
+      "lockscreen": {
+        "blur-intensity": {
+          "description": "Mức độ làm mờ nền màn hình khóa",
+          "label": "Cường độ làm mờ"
+        },
+        "blurred-desktop": {
+          "description": "Sử dụng ảnh chụp màn hình nền làm nền màn hình khóa",
+          "label": "Chụp màn hình"
+        },
+        "monitors": {
+          "description": "Chọn màn hình hiển thị màn hình khóa; để trống để hiển thị trên tất cả các màn hình",
+          "label": "Màn hình"
+        },
+        "tint-intensity": {
+          "description": "Lớp phủ màu bề mặt trên nền màn hình khóa",
+          "label": "Cường độ màu"
+        },
+        "wallpaper": {
+          "description": "Ảnh tùy chỉnh cho nền màn hình khóa; để trống để sử dụng hình nền máy tính",
+          "label": "Hình nền",
+          "placeholder": "Sử dụng hình nền màn hình nền"
+        },
+        "widgets": {
+          "description": "Hiển thị tiện ích tùy chỉnh trên màn hình khóa",
+          "label": "Màn hình khóa tiện ích"
+        },
+        "widgets-editor": {
+          "button": "Bật/tắt trình chỉnh sửa",
+          "description": "Thêm, di chuyển và thay đổi kích thước các Widget trên màn hình khóa",
+          "label": "Trình chỉnh sửa Widget Màn hình khóa"
+        }
+      },
+      "notifications": {
+        "allowed-urgencies": {
+          "description": "Chỉ hiển thị thông báo bên ngoài ở các mức độ khẩn cấp đã chọn",
+          "label": "Mức độ khẩn cấp được phép"
+        },
+        "blacklist": {
+          "description": "Ẩn người gửi khớp (tên ứng dụng, desktop entry, hoặc danh mục)",
+          "label": "Danh sách đen thông báo"
+        },
+        "blacklist-allow-critical": {
+          "description": "Vẫn hiển thị thông báo khẩn cấp từ người gửi bị chặn",
+          "label": "Cho phép quan trọng vượt qua danh sách đen"
+        },
+        "collapse-on-dismiss": {
+          "description": "Trượt các Toast còn lại để lấp đầy khoảng trống khi một cái bị đóng",
+          "label": "Thu gọn khi đóng"
+        },
+        "daemon": {
+          "description": "Bật dịch vụ thông báo tích hợp",
+          "label": "Dịch vụ thông báo"
+        },
+        "layer": {
+          "description": "Dùng Overlay để hiển thị các Toast thông báo trên các ứng dụng toàn màn hình.",
+          "label": "Lớp Wayland"
+        },
+        "monitors": {
+          "description": "Chọn màn hình nào hiển thị Toast thông báo; để trống để hiển thị trên tất cả màn hình",
+          "label": "Màn hình"
+        },
+        "offset-x": {
+          "description": "Lề ngang tuyệt đối từ mép màn hình hoặc thanh",
+          "label": "Lề ngang"
+        },
+        "offset-y": {
+          "description": "Khoảng lề dọc tuyệt đối từ mép màn hình hoặc thanh Bar",
+          "label": "Lề dọc"
+        },
+        "position": {
+          "description": "Vị trí trên màn hình cho các Toast thông báo",
+          "label": "Vị trí màn hình"
+        },
+        "scale": {
+          "description": "Điều chỉnh kích thước các Toast thông báo theo tỷ lệ giao diện người dùng của Noctalia",
+          "label": "Kích thước"
+        },
+        "show-actions": {
+          "description": "Hiển thị các nút hành động trong Toast thông báo; khi tắt, nhấp vào Toast sẽ kích hoạt hành động mặc định của nó",
+          "label": "Hiển thị các nút hành động"
+        },
+        "show-app-name": {
+          "description": "Hiển thị tên ứng dụng gửi trong các Toast thông báo",
+          "label": "Hiển thị tên ứng dụng"
+        },
+        "toast-opacity": {
+          "description": "Độ mờ nền của các Toast thông báo",
+          "label": "Độ mờ nền"
+        }
+      },
+      "panels": {
+        "borders": {
+          "description": "Vẽ đường viền cho các Panel và các thẻ phần bên trong các Panel",
+          "label": "Viền"
+        },
+        "control-center-sidebar": {
+          "description": "Khi Trang chủ và các mục chung mở",
+          "label": "Thanh bên"
+        },
+        "control-center-sidebar-section": {
+          "description": "Khi mở một tab cụ thể (âm lượng, phương tiện, v.v.)",
+          "label": "Thanh bên khi mở thẻ"
+        },
+        "home-shortcuts": {
+          "description": "Chọn tối đa sáu nút lối tắt cho tab Trang chủ",
+          "label": "Lối tắt Trang chủ"
+        },
+        "launcher-categories": {
+          "description": "Hiển thị bộ lọc danh mục trong Trình khởi chạy; chuyển đổi bằng Tab khi Trình khởi chạy đang mở",
+          "label": "Hiển thị danh mục"
+        },
+        "launcher-compact": {
+          "description": "Dùng biểu tượng nhỏ hơn và hàng kết quả gọn hơn",
+          "label": "Hàng gọn"
+        },
+        "launcher-show-icons": {
+          "description": "Hiển thị biểu tượng ứng dụng trong kết quả của Launcher",
+          "label": "Hiển thị biểu tượng ứng dụng"
+        },
+        "open-near-click-clipboard": {
+          "description": "Định vị bảng điều khiển khay nhớ tạm gần vị trí nhấp chuột trên Bar thay vì căn giữa nó dọc theo Bar",
+          "label": "Mở gần điểm nhấp"
+        },
+        "open-near-click-control-center": {
+          "description": "Đặt bảng điều khiển Control Center gần vị trí nhấp chuột trên thanh thay vì căn giữa nó dọc theo thanh.",
+          "label": "Mở gần điểm nhấp"
+        },
+        "open-near-click-launcher": {
+          "description": "Đặt Panel Launcher gần vị trí nhấp trên Bar thay vì căn giữa Bar",
+          "label": "Mở gần vị trí nhấp"
+        },
+        "open-near-click-session": {
+          "description": "Đặt bảng điều khiển menu phiên gần vị trí nhấp chuột trên thanh thay vì căn giữa nó dọc theo thanh",
+          "label": "Mở gần vị trí nhấp chuột"
+        },
+        "open-near-click-wallpaper": {
+          "description": "Đặt bảng chọn hình nền gần vị trí nhấp vào thanh thay vì căn giữa theo chiều dài thanh",
+          "label": "Mở gần nhấp"
+        },
+        "placement-clipboard": {
+          "description": "Chọn xem bảng tạm gắn vào Bar, lơ lửng gần đó, hay mở ở giữa",
+          "label": "Vị trí"
+        },
+        "placement-control-center": {
+          "description": "Chọn xem Control Center gắn vào thanh, nổi gần đó, hay mở ở giữa",
+          "label": "Vị trí"
+        },
+        "placement-launcher": {
+          "description": "Chọn xem trình khởi chạy gắn vào Bar, nổi gần đó, hay mở ở giữa màn hình",
+          "label": "Vị trí"
+        },
+        "placement-session": {
+          "description": "Chọn xem Session menu gắn vào Bar, nổi gần đó, hay mở ở giữa",
+          "label": "Vị trí"
+        },
+        "placement-wallpaper": {
+          "description": "Chọn xem trình chọn hình nền gắn vào thanh Bar, nổi gần đó hay mở ở giữa",
+          "label": "Vị trí"
+        },
+        "shadow": {
+          "description": "Đổ bóng bề mặt toàn cục từ các bề mặt bảng điều khiển"
+        },
+        "transparency-mode": {
+          "description": "Kiểu kính của Bảng, bao gồm độ mờ của bảng nổi/ở giữa và độ trong mờ của thẻ",
+          "label": "Trong suốt"
+        }
+      },
+      "power": {
+        "session-actions": {
+          "description": "Các mục trong menu phiên, thứ tự, lệnh tùy chỉnh và biểu tượng",
+          "label": "Các mục"
+        }
+      },
+      "services": {
+        "audio-overdrive": {
+          "description": "Cho phép âm lượng trên 100%",
+          "label": "Âm thanh vượt ngưỡng"
+        },
+        "calendar": {
+          "description": "Hiển thị sự kiện từ các tài khoản lịch trực tuyến của bạn",
+          "label": "Lịch"
+        },
+        "calendar-add": {
+          "button": "Thêm tài khoản",
+          "description": "Thêm tài khoản iCloud, CalDAV hoặc Google",
+          "label": "Tài khoản lịch"
+        },
+        "calendar-edit": {
+          "button": "Sửa",
+          "description": "Cập nhật tài khoản lịch này"
+        },
+        "calendar-refresh-interval": {
+          "description": "Tần suất đồng bộ hóa sự kiện lịch (phút)",
+          "label": "Khoảng thời gian làm mới"
+        },
+        "day-temperature": {
+          "description": "Nhiệt độ màu vào ban ngày (Kelvin)",
+          "label": "Nhiệt độ ban ngày"
+        },
+        "ddcutil": {
+          "description": "Điều khiển độ sáng màn hình ngoài qua DDC/CI",
+          "label": "DDC/CI (ddcutil)",
+          "requires-ddcutil": "Cài đặt ddcutil để kích hoạt điều khiển độ sáng DDC/CI"
+        },
+        "force-night-light": {
+          "description": "Luôn bật ánh sáng đêm bất kể thời gian",
+          "label": "Buộc bật Bộ lọc ánh sáng xanh"
+        },
+        "latitude": {
+          "description": "Vĩ độ thủ công cho lịch trình bình minh/hoàng hôn, được sử dụng khi tính năng tự động định vị và địa chỉ không được bật",
+          "label": "Vĩ độ"
+        },
+        "location-address": {
+          "description": "Thành phố hoặc địa chỉ để định vị, được sử dụng khi tắt tự động định vị",
+          "label": "Địa chỉ",
+          "placeholder": "Thành phố, Quốc gia"
+        },
+        "location-auto-locate": {
+          "description": "Tự động phát hiện vị trí của bạn từ địa chỉ IP",
+          "label": "Tự động định vị (IP)"
+        },
+        "longitude": {
+          "description": "Kinh độ thủ công cho lịch mặt trời mọc/lặn, được sử dụng khi tính năng tự động định vị và địa chỉ bị tắt",
+          "label": "Kinh độ"
+        },
+        "mpris-blacklist": {
+          "description": "Các trình phát bỏ qua cho điều khiển media và Now Playing",
+          "label": "Danh sách chặn trình phát MPRIS"
+        },
+        "night-light": {
+          "description": "Làm ấm màu màn hình vào ban đêm",
+          "label": "Ánh sáng ban đêm",
+          "requires-gamma-control": "Trình tổng hợp không hỗ trợ điều khiển gamma."
+        },
+        "night-temperature": {
+          "description": "Nhiệt độ màu vào ban đêm (Kelvin)",
+          "label": "Nhiệt độ ban đêm"
+        },
+        "notification-sound": {
+          "description": "Tệp âm thanh dùng cho phản hồi thông báo",
+          "label": "Âm thanh thông báo",
+          "placeholder": "/path/to/sound.wav"
+        },
+        "shell-sounds": {
+          "description": "Bật hiệu ứng âm thanh cho các sự kiện của shell",
+          "label": "Âm thanh giao diện"
+        },
+        "sound-volume": {
+          "description": "Âm lượng hiệu ứng âm thanh của shell",
+          "label": "Âm lượng"
+        },
+        "sunrise": {
+          "description": "Thời gian mặt trời mọc thủ công theo định dạng HH:MM, được sử dụng khi chưa đặt vị trí",
+          "label": "Bình minh"
+        },
+        "sunset": {
+          "description": "Thời gian hoàng hôn thủ công theo định dạng HH:MM, được sử dụng khi chưa đặt vị trí",
+          "label": "Hoàng hôn"
+        },
+        "system-monitor": {
+          "cpu-poll": {
+            "description": "Số giây giữa các mẫu mức sử dụng CPU, nhiệt độ CPU và tải trung bình (0 để tắt)",
+            "label": "Khoảng thời gian cập nhật CPU"
+          },
+          "description": "Mẫu thống kê CPU, bộ nhớ, mạng, tải, nhiệt độ và ổ đĩa",
+          "disk-poll": {
+            "description": "Số giây giữa các lần lấy mẫu mức sử dụng đĩa và swap (0 để tắt)",
+            "label": "Khoảng thời gian kiểm tra ổ đĩa"
+          },
+          "gpu-poll": {
+            "description": "Số giây giữa các lần lấy mẫu nhiệt độ GPU và VRAM. 0 sẽ tắt tính năng này (mặc định), giúp tránh đánh thức GPU rời; 5 là một khoảng thời gian tốt nếu bạn bật nó",
+            "label": "Khoảng thời gian thăm dò GPU"
+          },
+          "label": "Giám sát hệ thống",
+          "memory-poll": {
+            "description": "Khoảng thời gian (giây) giữa các lần lấy mẫu sử dụng RAM (0 để tắt)",
+            "label": "Khoảng thời gian kiểm tra bộ nhớ"
+          },
+          "network-poll": {
+            "description": "Số giây giữa các lần lấy mẫu thông lượng mạng (0 để tắt)",
+            "label": "Khoảng thời gian thăm dò mạng"
+          },
+          "stats": {
+            "cpu-temp": "Nhiệt độ CPU",
+            "cpu-usage": "Mức sử dụng CPU",
+            "disk-usage": "Sử dụng đĩa",
+            "gpu-temp": "Nhiệt độ GPU",
+            "gpu-usage": "Mức sử dụng GPU",
+            "gpu-vram": "GPU VRAM",
+            "network-rx": "Tải xuống",
+            "network-tx": "Tải lên",
+            "ram-usage": "Mức sử dụng RAM",
+            "swap-usage": "Mức sử dụng Swap"
+          },
+          "threshold": {
+            "description": "Ngưỡng hoạt động (trái) và ngưỡng tới hạn (phải)",
+            "label": "{stat}"
+          }
+        },
+        "volume-change-sound": {
+          "description": "Tệp âm thanh dùng để phản hồi âm lượng",
+          "label": "Âm thanh thay đổi âm lượng",
+          "placeholder": "/path/to/sound.wav"
+        },
+        "weather": {
+          "description": "Bật dịch vụ thời tiết",
+          "label": "Thời tiết"
+        },
+        "weather-effects": {
+          "description": "Hiển thị hiệu ứng thời tiết trực quan",
+          "label": "Hiệu ứng thời tiết"
+        },
+        "weather-refresh-interval": {
+          "description": "Tần suất làm mới dữ liệu thời tiết (phút)",
+          "label": "Khoảng thời gian làm mới"
+        },
+        "weather-unit": {
+          "description": "Hệ thống đơn vị để hiển thị thời tiết",
+          "label": "Đơn vị"
+        }
+      },
+      "shared": {
+        "auto-hide": {
+          "label": "Tự động ẩn"
+        },
+        "background-opacity": {
+          "label": "Độ mờ nền"
+        },
+        "contact-shadow": {
+          "label": "Bóng đổ tiếp xúc"
+        },
+        "corner-bottom-left": {
+          "label": "Bán kính góc dưới bên trái"
+        },
+        "corner-bottom-right": {
+          "label": "Bán kính góc dưới bên phải"
+        },
+        "corner-radius": {
+          "label": "Độ bo góc"
+        },
+        "corner-top-left": {
+          "label": "Bán kính góc trên bên trái"
+        },
+        "corner-top-right": {
+          "label": "Bán kính góc trên bên phải"
+        },
+        "cross-axis-padding": {
+          "label": "Khoảng đệm trục vuông góc"
+        },
+        "edge-margin": {
+          "label": "Lề cạnh"
+        },
+        "enabled": {
+          "label": "Bật"
+        },
+        "ends-margin": {
+          "label": "Lề hai đầu"
+        },
+        "main-axis-padding": {
+          "label": "Khoảng đệm trục chính"
+        },
+        "position": {
+          "label": "Vị trí"
+        },
+        "reserve-space": {
+          "label": "Dành không gian"
+        },
+        "shadow": {
+          "label": "Bóng đổ"
+        },
+        "shadow-alpha": {
+          "label": "Độ mờ bóng"
+        },
+        "shadow-direction": {
+          "label": "Hướng bóng đổ"
+        }
+      },
+      "shell": {
+        "avatar-path": {
+          "description": "Đường dẫn đến ảnh đại diện tùy chỉnh",
+          "label": "Đường dẫn avatar",
+          "placeholder": "/path/to/avatar.png"
+        },
+        "clipboard-auto-paste": {
+          "description": "Tự động dán nội dung bảng tạm",
+          "label": "Tự động dán bảng tạm"
+        },
+        "clipboard-confirm-clear-history": {
+          "description": "Hỏi trước khi xóa lịch sử bảng tạm hoặc xóa một mục chưa ghim khỏi Panel; khi tắt, các hành động đó sẽ áp dụng ngay lập tức (các mục đã ghim vẫn sẽ hỏi trước khi xóa)",
+          "label": "Xác nhận xóa lịch sử"
+        },
+        "clipboard-enabled": {
+          "description": "Bật lịch sử khay nhớ tạm, bảng khay nhớ tạm và tích hợp sao chép/dán",
+          "label": "Bảng tạm"
+        },
+        "clipboard-history-max-entries": {
+          "description": "Số mục chưa ghim tối đa trong lịch sử khay nhớ tạm",
+          "label": "Kích thước lịch sử"
+        },
+        "clipboard-image-action": {
+          "description": "Lệnh chạy từ các mục bảng tạm hình ảnh; sử dụng {path} cho đường dẫn tệp, {stdin} để đánh dấu vị trí stdin, hoặc bỏ qua {path} để tự động chuyển qua pipe",
+          "label": "Lệnh hành động hình ảnh",
+          "placeholder": "gimp {path} hoặc satty -f -"
+        },
+        "date-format": {
+          "description": "Định dạng ngày mặc định cho giao diện người dùng shell khi không có cài đặt riêng",
+          "label": "Định dạng ngày"
+        },
+        "launch-apps-as-systemd-services": {
+          "description": "Khởi chạy ứng dụng trong các dịch vụ systemd riêng biệt để chúng không chia sẻ cgroup của Noctalia",
+          "label": "Khởi chạy ứng dụng dưới dạng dịch vụ systemd"
+        },
+        "middle-click-opens-widget-settings": {
+          "description": "Mở cài đặt của một Widget trên Thanh bằng cách nhấp chuột giữa",
+          "label": "Nhấp chuột giữa mở cài đặt tiện ích"
+        },
+        "niri-overview-type-to-launch": {
+          "description": "Mở trình khởi chạy khi gõ phím trong chế độ tổng quan của Niri; sử dụng một bề mặt lấy nét bàn phím nhỏ trong khi chế độ tổng quan đang mở",
+          "label": "Gõ để khởi chạy"
+        },
+        "offline-mode": {
+          "description": "Chặn tất cả yêu cầu mạng đi",
+          "label": "Chế độ ngoại tuyến"
+        },
+        "osd-background-opacity": {
+          "description": "Độ mờ nền của cửa sổ OSD bật lên",
+          "label": "Độ mờ nền"
+        },
+        "osd-kinds-bluetooth": {
+          "description": "Hiển thị OSD popup khi Bluetooth được bật/tắt",
+          "label": "Bluetooth"
+        },
+        "osd-kinds-brightness": {
+          "description": "Hiển thị OSD popup khi độ sáng màn hình thay đổi",
+          "label": "Độ sáng"
+        },
+        "osd-kinds-caffeine": {
+          "description": "Hiển thị OSD khi trạng thái của caffeine (ngăn chặn chế độ chờ) thay đổi",
+          "label": "Giữ màn hình luôn bật"
+        },
+        "osd-kinds-dnd": {
+          "description": "Hiển thị OSD khi chế độ Do Not Disturb được bật/tắt",
+          "label": "Không làm phiền"
+        },
+        "osd-kinds-keyboard-layout": {
+          "description": "Hiển thị OSD popup khi bố cục bàn phím đầu vào thay đổi",
+          "label": "Bố cục bàn phím"
+        },
+        "osd-kinds-lock-keys": {
+          "description": "Hiển thị OSD popups khi Caps Lock, Num Lock và Scroll Lock thay đổi",
+          "label": "Phím khóa"
+        },
+        "osd-kinds-power-profile": {
+          "description": "Hiển thị OSD khi cấu hình nguồn thay đổi",
+          "label": "Chế độ nguồn"
+        },
+        "osd-kinds-volume": {
+          "description": "Hiển thị các cửa sổ bật lên OSD khi âm lượng thay đổi; sử dụng cài đặt nâng cao để điều khiển đầu ra và đầu vào riêng biệt",
+          "label": "Âm lượng"
+        },
+        "osd-kinds-volume-input": {
+          "description": "Hiển thị một OSD popup khi âm lượng đầu vào (micro) thay đổi",
+          "label": "Âm lượng đầu vào"
+        },
+        "osd-kinds-volume-output": {
+          "description": "Hiển thị OSD popup khi âm lượng đầu ra (loa) thay đổi",
+          "label": "Âm lượng đầu ra"
+        },
+        "osd-kinds-wifi": {
+          "description": "Hiện OSD popup khi bật/tắt Wi-Fi",
+          "label": "Wi-Fi"
+        },
+        "osd-monitors": {
+          "description": "Chọn màn hình nào hiển thị OSD popup; để trống để hiển thị trên tất cả các màn hình",
+          "label": "Màn hình"
+        },
+        "osd-offset-x": {
+          "description": "Khoảng lề ngang tuyệt đối từ cạnh màn hình",
+          "label": "Lề ngang"
+        },
+        "osd-offset-y": {
+          "description": "Lề dọc tuyệt đối từ cạnh màn hình",
+          "label": "Lề dọc"
+        },
+        "osd-orientation": {
+          "description": "Hướng bố cục cho các cửa sổ OSD bật lên",
+          "label": "Hướng"
+        },
+        "osd-position": {
+          "description": "Vị trí hiển thị của các OSD popup",
+          "label": "Vị trí màn hình"
+        },
+        "osd-scale": {
+          "description": "Điều chỉnh tỷ lệ các OSD pop-up theo tỷ lệ giao diện người dùng của Noctalia (1.0 sẽ giữ kích thước mặc định)",
+          "label": "Tỷ lệ"
+        },
+        "password-style": {
+          "description": "Kiểu hiển thị che mật khẩu",
+          "label": "Kiểu mật khẩu"
+        },
+        "polkit-agent": {
+          "description": "Bật tác nhân xác thực tích hợp sẵn",
+          "label": "Tác nhân Polkit"
+        },
+        "screen-time-enabled": {
+          "description": "Theo dõi mức sử dụng của từng ứng dụng và hiển thị trong Trung tâm điều khiển",
+          "label": "Thời gian sử dụng màn hình"
+        },
+        "screenshot-copy-to-clipboard": {
+          "description": "Sao chép ảnh PNG đã chụp vào khay nhớ tạm.",
+          "label": "Sao chép vào bảng tạm"
+        },
+        "screenshot-directory": {
+          "description": "Thư mục chứa các tệp PNG đã lưu; để trống để sử dụng ~/Pictures",
+          "label": "Thư mục đầu ra",
+          "placeholder": "~/Pictures"
+        },
+        "screenshot-filename-pattern": {
+          "description": "Mẫu strftime không có phần mở rộng (.png sẽ được thêm vào); sử dụng %s cho unix epoch",
+          "label": "Mẫu tên tệp"
+        },
+        "screenshot-freeze-screen": {
+          "description": "Chụp màn hình nền trước khi chọn vùng để nội dung đang di chuyển được giữ nguyên",
+          "label": "Đóng băng màn hình"
+        },
+        "screenshot-pipe-command": {
+          "description": "Lệnh chạy dưới dạng /bin/sh -lc với PNG trên stdin; dành cho người chú thích hoặc người tải lên (ví dụ: swappy -f - hoặc satty -f -)",
+          "label": "Lệnh đường ống",
+          "placeholder": "swappy -f -"
+        },
+        "screenshot-pipe-to-command": {
+          "description": "Gửi ảnh PNG đã chụp đến một lệnh shell qua stdin",
+          "label": "Đẩy vào lệnh"
+        },
+        "screenshot-save-to-file": {
+          "description": "Ghi ảnh chụp màn hình dưới dạng tệp PNG vào thư mục đầu ra.",
+          "label": "Lưu vào tệp"
+        },
+        "show-location": {
+          "description": "Hiển thị tên vị trí trong widget thời tiết",
+          "label": "Hiển thị vị trí"
+        },
+        "sync-greeter": {
+          "button": "Đồng bộ ngay",
+          "description": "Sao chép hình nền và màu sắc hiện tại vào Noctalia Greeter (yêu cầu sự chấp thuận của quản trị viên)",
+          "label": "Trình chào mừng Noctalia"
+        },
+        "telemetry": {
+          "description": "Gửi một ping khởi động nhỏ, ẩn danh với phiên bản, OS, trình tổng hợp, độ phân giải màn hình, RAM và tỉ lệ UI",
+          "label": "Ping khởi động ẩn danh"
+        },
+        "time-format": {
+          "description": "Định dạng thời gian mặc định cho giao diện Noctalia khi không có cài đặt riêng",
+          "label": "Định dạng thời gian"
+        }
+      },
+      "system": {
+        "battery-device-warning-threshold": {
+          "description": "Ghi đè ngưỡng cảnh báo pin cho thiết bị này. Đặt 0 để tắt cảnh báo cho thiết bị này.",
+          "label": "{device} Ngưỡng cảnh báo"
+        },
+        "battery-warning-threshold": {
+          "description": "Mức phần trăm pin hệ thống mà khi đạt đến hoặc thấp hơn, Noctalia sẽ gửi thông báo pin yếu và các Widget pin sẽ hiển thị màu cảnh báo; đặt 0 để tắt.",
+          "label": "Ngưỡng cảnh báo pin"
+        }
+      },
+      "templates": {
+        "builtin-ids": {
+          "description": "Bật/tắt việc áp dụng các mẫu ứng dụng đi kèm mỗi khi thay đổi chủ đề",
+          "empty": "Không có mẫu tích hợp nào có sẵn.",
+          "label": "Các mẫu tích hợp sẵn"
+        },
+        "community-ids": {
+          "description": "Bật/tắt việc kết xuất các mẫu giao diện cộng đồng đã lưu vào bộ nhớ đệm mỗi khi thay đổi chủ đề",
+          "empty": "Hiện chưa có mẫu cộng đồng nào khả dụng. Vui lòng bật mẫu cộng đồng và làm mới danh mục trước.",
+          "label": "Mẫu cộng đồng"
+        },
+        "enable-builtins": {
+          "description": "Dùng thư viện mẫu giao diện đi kèm cho các ứng dụng.",
+          "label": "Bật Templates tích hợp sẵn"
+        },
+        "enable-community-templates": {
+          "description": "Tải xuống và áp dụng các mẫu từ danh mục cộng đồng",
+          "label": "Bật mẫu cộng đồng"
+        }
+      },
+      "wallpaper": {
+        "automation": {
+          "description": "Tự động xoay vòng hình nền theo hẹn giờ",
+          "label": "Xoay tự động"
+        },
+        "automation-interval": {
+          "description": "Số giây giữa các lần thay đổi hình nền",
+          "label": "Khoảng thời gian xoay vòng"
+        },
+        "automation-order": {
+          "description": "Chọn hình nền ngẫu nhiên hoặc theo thứ tự bảng chữ cái",
+          "label": "Thứ tự"
+        },
+        "automation-recursive": {
+          "description": "Tìm kiếm hình nền trong các thư mục lồng nhau",
+          "label": "Bao gồm thư mục con"
+        },
+        "directory": {
+          "description": "Thư mục chứa hình nền",
+          "label": "Thư mục hình nền"
+        },
+        "directory-dark": {
+          "description": "Thư mục hình nền được sử dụng trong chế độ tối",
+          "label": "Thư mục Chế độ tối",
+          "placeholder": "~/Pictures/Wallpapers"
+        },
+        "directory-light": {
+          "description": "Thư mục hình nền được sử dụng trong chế độ giao diện sáng",
+          "label": "Thư mục chế độ sáng",
+          "placeholder": "~/Pictures/Hình nền"
+        },
+        "edge-smoothness": {
+          "description": "Làm mờ dần các cạnh chuyển tiếp giữa các hình nền",
+          "label": "Độ mượt cạnh"
+        },
+        "enabled": {
+          "description": "Bật dịch vụ hình nền"
+        },
+        "fill-color": {
+          "description": "Màu đơn sắc hiển thị phía sau hình ảnh ở những vùng không được che phủ",
+          "label": "Màu tô"
+        },
+        "fill-mode": {
+          "description": "Cách hình nền hiển thị trên màn hình",
+          "label": "Chế độ lấp đầy"
+        },
+        "monitor-directory": {
+          "label": "Thư mục Hình nền"
+        },
+        "monitor-directory-dark": {
+          "label": "Thư mục chế độ tối",
+          "placeholder": "~/Pictures/Wallpapers"
+        },
+        "monitor-directory-light": {
+          "label": "Thư mục Chế độ Sáng",
+          "placeholder": "~/Pictures/Wallpapers"
+        },
+        "panel": {
+          "button": "Mở Bảng",
+          "description": "Mở bảng điều khiển chọn hình nền",
+          "label": "Bảng hình nền"
+        },
+        "per-monitor-directories": {
+          "description": "Sử dụng các thư mục hình nền riêng biệt cho mỗi màn hình",
+          "label": "Thư mục theo màn hình"
+        },
+        "transition-duration": {
+          "description": "Thời lượng của hoạt ảnh thay đổi hình nền tính bằng mili giây",
+          "label": "Thời lượng chuyển đổi"
+        },
+        "transition-on-startup": {
+          "description": "Phát hiệu ứng chuyển tiếp khi giao diện lần đầu hiển thị hình nền",
+          "label": "Hoạt ảnh khi khởi động"
+        },
+        "transitions": {
+          "description": "Các hiệu ứng có sẵn khi thay đổi hình nền (một hiệu ứng được chọn ngẫu nhiên mỗi lần thay đổi)",
+          "label": "Hiệu ứng chuyển tiếp"
+        }
+      }
+    },
+    "session-actions": {
+      "add": "Thêm hành động",
+      "clear-glyph": "Xóa",
+      "command-label": "Lệnh shell",
+      "command-placeholder": "Lệnh bash tùy chọn, để trống nếu muốn dùng hành vi tích hợp sẵn",
+      "command-required-placeholder": "Lệnh shell để chạy",
+      "glyph-label": "Biểu tượng",
+      "glyph-picker-title": "Biểu tượng hành động",
+      "kind-section-label": "Hành vi",
+      "label-field": "Nhãn",
+      "label-placeholder": "Văn bản nút tùy chọn",
+      "shortcut-label": "Phím tắt",
+      "variant": {
+        "default": "Mặc định",
+        "destructive": "Nguy hiểm",
+        "ghost": "Ghost",
+        "outline": "Outline",
+        "primary": "Chính",
+        "secondary": "Phụ"
+      },
+      "variant-label": "Kiểu nút"
+    },
+    "widgets": {
+      "instances": {
+        "cpu": "CPU",
+        "date": "Ngày",
+        "input-volume": "Âm lượng đầu vào",
+        "network-rx": "Mạng nhận",
+        "network-tx": "Mạng tải lên",
+        "output-volume": "Âm lượng",
+        "ram": "RAM",
+        "temp": "Nhiệt độ"
+      },
+      "options": {
+        "always": "Luôn",
+        "cpu-temp": "Nhiệt độ CPU",
+        "cpu-usage": "Sử dụng CPU",
+        "disk-percent": "Phần trăm ổ đĩa",
+        "full": "Đầy đủ",
+        "gauge": "Đồng hồ",
+        "glyph": "Biểu tượng",
+        "gpu-temp": "Nhiệt độ GPU",
+        "gpu-usage": "Mức sử dụng GPU",
+        "gpu-vram": "GPU VRAM",
+        "graph": "Biểu đồ",
+        "graphic": "Đồ họa",
+        "icon-and-text": "Biểu tượng và Văn bản",
+        "icon-only": "Chỉ biểu tượng",
+        "id": "ID",
+        "input": "Đầu vào",
+        "instance": "Theo vị trí",
+        "name": "Tên",
+        "net-rx": "Mạng nhận",
+        "net-tx": "Mạng gửi đi",
+        "none": "Không",
+        "on-hover": "Khi di chuột qua",
+        "output": "Đầu ra",
+        "ram-percent": "Phần trăm RAM",
+        "ram-used": "RAM đã dùng",
+        "screenshot-primary-fullscreen": "Toàn màn hình",
+        "screenshot-primary-region": "Khu vực",
+        "shared": "Chung",
+        "short": "Ngắn",
+        "swap-percent": "Phần trăm Swap",
+        "text": "Văn bản",
+        "text-only": "Chỉ Văn bản",
+        "workspace-label-centered": "Canh giữa",
+        "workspace-label-corner": "Góc",
+        "workspace-label-inside": "Bên trong viên thuốc"
+      },
+      "settings": {
+        "active-opacity": {
+          "description": "Độ mờ đục của biểu tượng cho cửa sổ đang hoạt động (được lấy nét).",
+          "label": "Độ mờ biểu tượng đang hoạt động"
+        },
+        "anchor": {
+          "description": "Ghim widget này làm điểm neo căn giữa",
+          "label": "Neo"
+        },
+        "art-size": {
+          "description": "Kích thước ảnh bìa phương tiện (pixel)",
+          "label": "Kích thước ảnh"
+        },
+        "bands": {
+          "description": "Số lượng dải tần trực quan hóa",
+          "label": "Băng"
+        },
+        "capsule": {
+          "description": "Vẽ một Capsule phía sau Widget này",
+          "label": "Khung"
+        },
+        "capsule-border": {
+          "description": "Vai trò màu cho viền của Capsule; mã màu hex cố định cũng được hỗ trợ",
+          "label": "Viền viên nang"
+        },
+        "capsule-fill": {
+          "description": "Vai trò màu sắc cho nền của capsule; màu hex cố định cũng được hỗ trợ",
+          "label": "Nền viên nang"
+        },
+        "capsule-foreground": {
+          "description": "Màu sắc dùng cho nội dung bên trong Capsule; các mã màu hex cố định cũng được hỗ trợ",
+          "label": "Khung tiền cảnh"
+        },
+        "capsule-opacity": {
+          "description": "Độ mờ của nền khung",
+          "label": "Độ mờ đục của Khung"
+        },
+        "capsule-padding": {
+          "description": "Khoảng đệm bên trong khung",
+          "label": "Khoảng đệm viên nang"
+        },
+        "capsule-radius": {
+          "description": "Bán kính góc cho vỏ widget này. Để trống để có hình viên thuốc tự động, hoặc đặt 0 để có góc vuông.",
+          "label": "Bán kính bo góc khung",
+          "taskbar-description": "Bán kính góc cho capsule widget, chỉ báo đĩa workspace và capsule nhóm workspace; để trống để có hình viên thuốc tự động, hoặc đặt 0 để có góc vuông",
+          "workspaces-description": "Bán kính góc cho vỏ widget này và các chỉ báo không gian làm việc; để trống để tự động tạo hình viên thuốc, hoặc đặt 0 cho các góc vuông."
+        },
+        "centered": {
+          "description": "Căn giữa các thanh trực quan hóa thay vì căn chỉnh chúng vào cạnh",
+          "label": "Căn giữa"
+        },
+        "color": {
+          "description": "Vai trò màu sắc cho nền trước của widget; cũng hỗ trợ các màu hex cố định",
+          "label": "Màu sắc"
+        },
+        "command": {
+          "description": "Lệnh shell chạy khi nhấp chuột trái vào nút này",
+          "label": "Lệnh nhấp chuột trái"
+        },
+        "custom-image": {
+          "description": "Đường dẫn đến một ảnh tùy chỉnh. Để trống để sử dụng biểu tượng glyph.",
+          "dialog-title": "Chọn ảnh tùy chỉnh",
+          "label": "Ảnh tùy chỉnh"
+        },
+        "custom-image-colorize": {
+          "description": "Tô màu hình ảnh tùy chỉnh bằng cài đặt Màu của widget",
+          "label": "Tô màu ảnh tùy chỉnh"
+        },
+        "custom-labels": {
+          "description": "Đặt tên tùy chỉnh cho các bố cục bàn phím",
+          "label": "Nhãn Tùy Chỉnh"
+        },
+        "cycle-command": {
+          "description": "Lệnh chạy khi chuyển thi bố cục bàn phím",
+          "label": "Lệnh chuyển đổi"
+        },
+        "detached-panel": {
+          "description": "Mở bảng điều khiển dưới dạng bảng nổi với nền riêng thay vì hòa vào thanh.",
+          "label": "Bảng điều khiển nổi"
+        },
+        "device": {
+          "description": "Thiết bị để giám sát hoặc điều khiển",
+          "label": "Thiết bị"
+        },
+        "display": {
+          "active-window-description": "Biểu tượng, tiêu đề hoặc cả hai trên các thanh ngang. Các thanh dọc chỉ hiển thị biểu tượng.",
+          "description": "Chế độ hiển thị cho tiện ích này",
+          "label": "Màn hình"
+        },
+        "display-mode": {
+          "description": "Hiển thị pin dưới dạng hình ảnh đồ họa hoặc một Tabler glyph",
+          "label": "Chế độ hiển thị"
+        },
+        "drawer": {
+          "description": "Hiển thị nút Tray trên Thanh và mở các mục trong Bảng.",
+          "label": "Sử dụng Bảng điều khiển ngăn kéo"
+        },
+        "drawer-columns": {
+          "description": "Số lượng biểu tượng Tray mỗi hàng trong bảng điều khiển ngăn kéo",
+          "label": "Cột ngăn kéo"
+        },
+        "empty-color": {
+          "description": "Vai trò màu được sử dụng cho các màn hình nền ảo trống; màu hex cố định cũng được hỗ trợ",
+          "label": "Màu trống"
+        },
+        "focused-color": {
+          "description": "Vai trò màu sắc được sử dụng cho không gian làm việc đang được tập trung; mã màu hex cố định cũng được hỗ trợ",
+          "label": "Màu tiêu điểm"
+        },
+        "font-weight": {
+          "description": "Mặc định kế thừa độ đậm phông chữ của thanh",
+          "label": "Độ đậm phông chữ"
+        },
+        "format": {
+          "description": "Chuỗi định dạng thời gian",
+          "label": "Định dạng"
+        },
+        "glyph": {
+          "description": "Tên ký hiệu biểu tượng",
+          "label": "Biểu tượng"
+        },
+        "group-by-workspace": {
+          "description": "Nhóm các biểu tượng Taskbar vào các viên nang Workspace khi dữ liệu compositor có sẵn",
+          "label": "Nhóm theo Không gian làm việc"
+        },
+        "group-single-icon-per-app": {
+          "description": "Khi nhóm theo không gian làm việc, gộp nhiều cửa sổ từ cùng một ứng dụng thành một biểu tượng với huy hiệu đếm số lượng.",
+          "label": "Một biểu tượng cho mỗi ứng dụng"
+        },
+        "height": {
+          "description": "Chiều cao Widget tính bằng pixel",
+          "label": "Chiều cao"
+        },
+        "hidden": {
+          "description": "ID các mục Tray cần ẩn",
+          "label": "Mục đã ẩn"
+        },
+        "hide-empty-workspaces": {
+          "description": "Khi nhóm theo Workspace, bỏ qua các Capsule không có cửa sổ nào đang chạy trong danh sách Taskbar.",
+          "label": "Ẩn các không gian làm việc trống"
+        },
+        "hide-when-empty": {
+          "description": "Ẩn các thẻ không gian làm việc khi không có cửa sổ nào đang mở",
+          "label": "Ẩn khi trống",
+          "workspaces-description": "Ẩn các thẻ không gian làm việc không có cửa sổ nào đang mở"
+        },
+        "hide-when-full": {
+          "description": "Ẩn tiện ích pin khi sạc đầy",
+          "label": "Ẩn khi đầy"
+        },
+        "hide-when-no-connected-device": {
+          "description": "Ẩn widget bluetooth khi không có thiết bị nào được kết nối",
+          "label": "Ẩn khi không có thiết bị kết nối"
+        },
+        "hide-when-no-media": {
+          "description": "Ẩn tiện ích đa phương tiện khi không có trình phát MPRIS nào đang hoạt động",
+          "label": "Ẩn khi không có phương tiện"
+        },
+        "hide-when-no-unread": {
+          "description": "Ẩn tiện ích thông báo khi không có thông báo chưa đọc",
+          "label": "Ẩn khi không có gì mới"
+        },
+        "hide-when-off": {
+          "description": "Ẩn chỉ báo phím khóa khi không hoạt động",
+          "label": "Ẩn khi tắt"
+        },
+        "hide-when-plugged": {
+          "description": "Ẩn widget pin khi kết nối với nguồn điện AC",
+          "label": "Ẩn khi cắm sạc"
+        },
+        "hide-when-single-layout": {
+          "description": "Ẩn widget bố cục bàn phím trừ khi có hơn một bố cục được cấu hình",
+          "label": "Ẩn khi chỉ có một bố cục"
+        },
+        "high-color": {
+          "description": "Màu dùng cho các giá trị cao của bộ hiển thị",
+          "label": "Màu sắc cao"
+        },
+        "highlight-color": {
+          "description": "Màu đã đạt hoặc vượt quá ngưỡng tới hạn",
+          "label": "Màu nổi bật"
+        },
+        "hot-reload": {
+          "description": "Tải lại widget có script khi nguồn của nó thay đổi",
+          "label": "Hot Reload"
+        },
+        "icon-size": {
+          "description": "Kích thước biểu tượng (pixel)",
+          "label": "Kích thước biểu tượng"
+        },
+        "inactive-opacity": {
+          "description": "Độ mờ của các biểu tượng cho các cửa sổ không hoạt động (không được lấy nét)",
+          "label": "Độ mờ biểu tượng không hoạt động"
+        },
+        "label": {
+          "description": "Văn bản tĩnh tùy chọn hiển thị trên nút này",
+          "label": "Nhãn"
+        },
+        "label-min-width": {
+          "description": "Chiều rộng nhãn tối thiểu (pixel) để tránh thay đổi kích thước",
+          "label": "Chiều rộng tối thiểu nhãn"
+        },
+        "labels-only-when-occupied": {
+          "description": "Ẩn nhãn không gian làm việc trên các không gian làm việc trống, không hoạt động",
+          "label": "Chỉ hiển thị nhãn khi có nội dung",
+          "workspaces-description": "Hiển thị nhãn ID hoặc tên không gian làm việc trên các không gian làm việc có cửa sổ đang mở và trên không gian làm việc đang hoạt động ngay cả khi nó trống; các thẻ trống khác vẫn không được gắn nhãn"
+        },
+        "length": {
+          "description": "Chiều dài Spacer theo pixel",
+          "label": "Độ dài"
+        },
+        "low-color": {
+          "description": "Màu dùng cho các giá trị hiển thị thấp",
+          "label": "Màu sắc giảm"
+        },
+        "match-adjacent-spacing": {
+          "description": "Mở rộng khoảng cách giữa các biểu tượng Tray nội tuyến để khớp với khoảng cách hiển thị của các tiện ích thanh trạng thái lân cận (bao gồm đệm Capsule)",
+          "label": "Đồng bộ khoảng cách Widget liền kề"
+        },
+        "max-label-chars": {
+          "description": "Số ký tự tối đa hiển thị cho tên màn hình ảo",
+          "label": "Ký tự nhãn tối đa",
+          "workspaces-description": "Số ký tự tối đa cho nhãn tên không gian làm việc"
+        },
+        "max-length": {
+          "description": "Chiều dài tối đa của tiện ích (pixel)",
+          "label": "Độ dài tối đa"
+        },
+        "middle-command": {
+          "description": "Lệnh shell được chạy khi nhấp chuột giữa vào nút này. Khi được đặt, nhấp chuột giữa sẽ mở lệnh này thay vì cài đặt widget.",
+          "label": "Lệnh chuột giữa"
+        },
+        "min-length": {
+          "description": "Chiều dài tối thiểu của tiện ích (tính bằng pixel)",
+          "label": "Độ dài tối thiểu"
+        },
+        "minimal": {
+          "description": "Chỉ hiển thị nhãn ID hoặc tên không gian làm việc, không có hiệu ứng viên thuốc động",
+          "label": "Phong cách tối giản",
+          "workspaces-description": "Nhãn không gian làm việc chỉ văn bản, không có nền viên thuốc hoặc hoạt ảnh trượt"
+        },
+        "mirrored": {
+          "description": "Phản chiếu trình hiển thị xung quanh tâm của nó",
+          "label": "Phản chiếu"
+        },
+        "occupied-color": {
+          "description": "Vai trò màu sắc được sử dụng cho các không gian làm việc đang sử dụng; màu hex cố định cũng được hỗ trợ",
+          "label": "Màu chiếm dụng"
+        },
+        "only-active-workspace": {
+          "description": "Ẩn cửa sổ trên các không gian làm việc không hoạt động.",
+          "label": "Chỉ không gian làm việc đang hoạt động"
+        },
+        "path": {
+          "description": "Đường dẫn được sử dụng bởi thống kê ổ đĩa",
+          "label": "Đường dẫn"
+        },
+        "pill-scale": {
+          "description": "Chỉnh kích thước các chỉ báo không gian làm việc",
+          "label": "Thang đo hình viên thuốc",
+          "workspaces-description": "Điều chỉnh tỷ lệ của các chỉ báo không gian làm việc"
+        },
+        "pinned": {
+          "description": "ID của các mục Tray sẽ luôn hiển thị trên Bar khi chế độ ngăn kéo được bật",
+          "label": "Mục đã ghim"
+        },
+        "primary-click": {
+          "description": "Thao tác thực hiện khi nhấp chuột trái vào nút trên Thanh",
+          "label": "Nhấp chuột chính"
+        },
+        "right-command": {
+          "description": "Lệnh shell chạy khi nhấp chuột phải vào nút này",
+          "label": "Lệnh nhấp chuột phải"
+        },
+        "scale": {
+          "description": "Tỉ lệ widget này theo tỉ lệ nội dung của Bar",
+          "label": "Tỷ lệ"
+        },
+        "scope": {
+          "description": "Chạy một môi trường chạy script cho mỗi vị trí widget đang hoạt động, hoặc chia sẻ một môi trường chạy giữa các Bar có cùng ID widget",
+          "label": "Phạm vi thực thi"
+        },
+        "script": {
+          "description": "Đường dẫn đến tập lệnh lua",
+          "label": "Script"
+        },
+        "scroll-down-command": {
+          "description": "Lệnh shell chạy khi cuộn xuống trên nút này",
+          "label": "Lệnh cuộn xuống"
+        },
+        "scroll-step": {
+          "description": "Thay đổi phần trăm áp dụng cho mỗi bước cuộn chuột.",
+          "label": "Bước cuộn"
+        },
+        "scroll-up-command": {
+          "description": "Lệnh shell chạy khi cuộn lên trên nút này",
+          "label": "Lệnh cuộn lên"
+        },
+        "show-active-indicator": {
+          "description": "Hiển thị một chấm nhỏ bên dưới biểu tượng cửa sổ đang hoạt động trên thanh tác vụ.",
+          "label": "Chỉ báo cửa sổ đang hoạt động"
+        },
+        "show-all-outputs": {
+          "description": "Bao gồm các cửa sổ từ mọi màn hình trên widget này.",
+          "label": "Hiển thị tất cả màn hình"
+        },
+        "show-caps-lock": {
+          "description": "Hiển thị trạng thái Caps Lock",
+          "label": "Hiển thị Caps Lock"
+        },
+        "show-condition": {
+          "description": "Hiển thị văn bản điều kiện thời tiết",
+          "label": "Điều kiện hiển thị"
+        },
+        "show-icon": {
+          "description": "Hiển thị biểu tượng của tiện ích này",
+          "label": "Hiện biểu tượng"
+        },
+        "show-label": {
+          "description": "Hiển thị văn bản bên cạnh biểu tượng",
+          "label": "Hiện nhãn"
+        },
+        "show-num-lock": {
+          "description": "Hiển thị trạng thái Num Lock",
+          "label": "Hiển thị Num Lock"
+        },
+        "show-scroll-lock": {
+          "description": "Hiển thị trạng thái Scroll Lock",
+          "label": "Hiển thị Scroll Lock"
+        },
+        "show-when-idle": {
+          "description": "Luôn hiển thị trình hiển thị trực quan ngay cả khi không có phương tiện nào đang phát",
+          "label": "Hiển thị khi không hoạt động"
+        },
+        "show-window-title": {
+          "description": "Hiển thị tiêu đề cửa sổ bên cạnh biểu tượng của nó (chỉ trên các Thanh ngang)",
+          "label": "Hiển thị tiêu đề cửa sổ"
+        },
+        "show-workspace-label": {
+          "description": "Hiển thị thẻ không gian làm việc nhỏ trên các capsule Taskbar được nhóm. Tắt đối với các nhóm chỉ biểu tượng.",
+          "label": "Nhãn khung không gian làm việc"
+        },
+        "stat": {
+          "description": "Thống kê hệ thống để hiển thị",
+          "label": "Trạng thái"
+        },
+        "taskbar-max-width": {
+          "description": "Tổng ngân sách chiều rộng tính bằng pixel; tiêu đề cửa sổ sẽ thu nhỏ để vừa và ẩn đi khi quá hẹp",
+          "label": "Chiều rộng tối đa thanh tác vụ"
+        },
+        "title-scroll": {
+          "description": "Khi tiêu đề của widget nên cuộn",
+          "label": "Cuộn tiêu đề"
+        },
+        "tooltip": {
+          "description": "Mẹo công cụ hiển thị khi di chuột qua nút này",
+          "label": "Chú giải công cụ"
+        },
+        "tooltip-format": {
+          "description": "Định dạng tùy chọn cho chú giải công cụ",
+          "label": "Định dạng gợi ý"
+        },
+        "type": {
+          "description": "Loại tiện ích tích hợp sẵn cho tiện ích có tên này",
+          "label": "Loại"
+        },
+        "vertical-format": {
+          "description": "Định dạng tùy chọn cho các thanh dọc",
+          "label": "Định dạng dọc"
+        },
+        "warning-color": {
+          "description": "Màu áp dụng khi mức sạc đạt hoặc dưới ngưỡng cảnh báo pin của hệ thống",
+          "label": "Màu cảnh báo"
+        },
+        "width": {
+          "description": "Chiều rộng tiện ích theo pixel",
+          "label": "Chiều rộng"
+        },
+        "window-title-max-width": {
+          "description": "Chiều rộng tối đa của tiêu đề cửa sổ (pixel)",
+          "label": "Chiều rộng tối đa tiêu đề cửa sổ"
+        },
+        "workspace-group-capsule": {
+          "description": "Vẽ nền và viền xung quanh mỗi không gian làm việc được nhóm. Tắt tùy chọn này để chỉ giữ lại nhóm biểu tượng và nhãn không gian làm việc dạng đĩa.",
+          "label": "Viên nang nhóm không gian làm việc"
+        },
+        "workspace-label-placement": {
+          "description": "Góc, căn giữa cạnh, hoặc bên trong viên thuốc.",
+          "label": "Vị trí nhãn không gian làm việc"
+        }
+      },
+      "types": {
+        "active-window": "Cửa sổ hiện hành",
+        "audio-visualizer": "Trực quan hóa âm thanh",
+        "battery": "Pin",
+        "bluetooth": "Bluetooth",
+        "brightness": "Độ sáng",
+        "caffeine": "Giữ màn hình luôn bật",
+        "clipboard": "Bảng tạm",
+        "clock": "Đồng hồ",
+        "control-center": "Trung tâm điều khiển",
+        "custom-button": "Nút tùy chỉnh",
+        "keyboard-layout": "Bố cục bàn phím",
+        "launcher": "Trình khởi chạy",
+        "lock-keys": "Phím khóa",
+        "media": "Phương tiện",
+        "network": "Mạng",
+        "nightlight": "Ánh sáng đêm",
+        "notifications": "Thông báo",
+        "power-profile": "Chế độ nguồn",
+        "screenshot": "Chụp màn hình",
+        "scripted": "Kịch bản",
+        "session": "Phiên",
+        "settings": "Cài đặt",
+        "spacer": "Khoảng cách",
+        "sysmon": "Giám sát hệ thống",
+        "taskbar": "Thanh tác vụ",
+        "test": "Kiểm tra",
+        "theme-mode": "Chế độ giao diện",
+        "tray": "Khay",
+        "volume": "Âm lượng",
+        "wallpaper": "Hình nền",
+        "weather": "Thời tiết",
+        "workspaces": "Không gian làm việc"
+      }
+    },
+    "window": {
+      "export-config": "Xuất cấu hình…",
+      "export-config-saved": "Xuất cấu hình đã lưu.",
+      "filter-modified": "Đã sửa đổi",
+      "native-title": "Cài đặt Noctalia",
+      "no-results": "Không tìm thấy cài đặt nào",
+      "no-results-hint": "Thử một tên cài đặt hoặc khóa cấu hình khác.",
+      "reset-page": "Đặt lại trang",
+      "reset-page-confirm": "Xác nhận Đặt lại",
+      "search-placeholder": "Tìm kiếm cài đặt…",
+      "support-report": "Báo cáo hỗ trợ",
+      "support-report-saved": "Báo cáo hỗ trợ đã lưu.",
+      "support-report-title": "Lưu Báo cáo hỗ trợ",
+      "title": "Cài đặt"
+    }
+  },
+  "setup-wizard": {
+    "browse": "Duyệt",
+    "builtin-palette": "Bảng màu tích hợp sẵn",
+    "footer-note": "Bạn có thể thay đổi chúng sau này trong cài đặt.",
+    "get-started": "Bắt đầu",
+    "mode": "Chế độ",
+    "no-wallpaper-selected": "Chưa chọn hình nền",
+    "select-wallpaper": "Chọn hình nền",
+    "subtitle": "Một vài lựa chọn nhanh để bạn bắt đầu.",
+    "title": "Chào mừng đến với Noctalia",
+    "wallpaper": "Hình nền",
+    "wallpaper-scheme": "Chế độ hình nền"
+  },
+  "system": {
+    "hardware": {
+      "unknown": "Không xác định",
+      "unknown-cpu": "CPU không xác định",
+      "unknown-distro": "Bản phân phối không xác định",
+      "unknown-gpu": "GPU không xác định"
+    }
+  },
+  "theme": {
+    "scheme": {
+      "dysfunctional": "Trục trặc",
+      "faithful": "Trung thực",
+      "m3-content": "Nội dung M3",
+      "m3-fruit-salad": "M3 Trái cây trộn",
+      "m3-monochrome": "M3 Đơn sắc",
+      "m3-rainbow": "M3 Cầu vồng",
+      "m3-tonal-spot": "M3 Điểm tông màu",
+      "muted": "Tắt tiếng",
+      "vibrant": "Rực rỡ"
+    }
+  },
+  "time": {
+    "duration": {
+      "days-hours-minutes": "{days} ngày {hours} giờ {minutes} phút",
+      "hours-minutes": "{hours} giờ {minutes} phút",
+      "less-than-minute": "1 phút",
+      "minutes": "{minutes} phút"
+    },
+    "file": {
+      "unknown": "Không xác định"
+    },
+    "relative": {
+      "days-ago": "{count} ngày trước",
+      "days-ago-plural": "{count} ngày trước",
+      "hours-ago": "{count} giờ trước",
+      "hours-ago-plural": "{count} giờ trước",
+      "just-now": "vừa mới",
+      "minutes-ago": "{count} phút trước",
+      "minutes-ago-plural": "{count} phút trước"
+    }
+  },
+  "tray": {
+    "menu": {
+      "empty": "Không có mục menu nào...",
+      "pin": "Ghim",
+      "unpin": "Bỏ ghim"
+    }
+  },
+  "ui": {
+    "controls": {
+      "search-picker": {
+        "empty": "Không có kết quả",
+        "placeholder": "Tìm kiếm..."
+      },
+      "select": {
+        "placeholder": "Chọn một tùy chọn"
+      }
+    },
+    "dialogs": {
+      "color-picker": {
+        "title": "Màu sắc"
+      },
+      "file": {
+        "actions": {
+          "open": "Mở",
+          "save": "Lưu",
+          "select-folder": "Chọn thư mục"
+        },
+        "empty-filtered": "Không có tệp nào khớp với bộ lọc hiện tại",
+        "entry": {
+          "folder": "Thư mục"
+        },
+        "filename-placeholder": "Tên tệp",
+        "filter-placeholder": "Lọc...",
+        "sort": {
+          "ascending": "Lên",
+          "date": "Ngày",
+          "name": "Tên",
+          "size": "Kích thước"
+        },
+        "title": {
+          "default": "Hộp thoại tệp",
+          "open": "Mở tệp",
+          "save": "Lưu tệp",
+          "select-folder": "Chọn thư mục"
+        }
+      },
+      "glyph-picker": {
+        "all-categories": "Tất cả",
+        "search-placeholder": "Tìm kiếm ký tự…",
+        "title": "Chọn biểu tượng"
+      }
+    }
+  },
+  "wallpaper": {
+    "panel": {
+      "all-monitors": "Tất cả",
+      "color-title": "Màu hình nền",
+      "favorite-palette-label": "Màu sắc",
+      "favorite-theme-label": "Chủ đề",
+      "filter-placeholder": "Lọc...",
+      "flatten": "Làm phẳng",
+      "no-directory-configured": "Chưa cấu hình thư mục",
+      "sort-date-asc": "Sắp xếp theo ngày (cũ nhất trước)",
+      "sort-date-desc": "Sắp xếp theo ngày (mới nhất trước)",
+      "sort-name-asc": "Sắp xếp theo tên (A-Z)",
+      "sort-name-desc": "Sắp xếp theo tên (Z-A)",
+      "title": "Hình nền"
+    }
+  },
+  "weather": {
+    "conditions": {
+      "full": {
+        "clear-sky": "Trời quang",
+        "drizzle": "Mưa phùn",
+        "fog": "Sương mù",
+        "mainly-clear": "Trời quang mây",
+        "overcast": "Âm u",
+        "partly-cloudy": "Trời nhiều mây",
+        "rain-showers": "Mưa rào",
+        "snow": "Tuyết",
+        "snow-showers": "Tuyết rơi rải rác",
+        "thunderstorm": "Giông bão",
+        "unknown": "Không xác định"
+      },
+      "short": {
+        "clear": "Xóa",
+        "cloudy": "Nhiều mây",
+        "drizzle": "Mưa phùn",
+        "fog": "Sương mù",
+        "mostly-clear": "Trời quang mây",
+        "overcast": "Âm u",
+        "showers": "Mưa rào",
+        "snow": "Tuyết",
+        "snow-showers": "Tuyết rơi rải rác",
+        "storm": "Bão",
+        "weather": "Thời tiết"
+      }
+    },
+    "errors": {
+      "fetch-failed": "Lấy thông tin thời tiết thất bại",
+      "parse-weather": "Không thể phân tích cú pháp phản hồi thời tiết"
+    }
+  },
+  "window-switcher": {
+    "empty": "Không có cửa sổ nào đang mở",
+    "hint": "Tab, Shift+Tab, Phím mũi tên, Nhả Alt để chuyển đổi, Esc để hủy",
+    "title": "Windows"
+  }
+}

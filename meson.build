@@ -391,6 +391,7 @@ _noctalia_sources = files(
   'src/core/ui_phase.cpp',
   'src/dbus/bluetooth/bluetooth_agent.cpp',
   'src/dbus/bluetooth/bluetooth_service.cpp',
+  'src/dbus/idle/screensaver_service.cpp',
   'src/dbus/logind/logind_service.cpp',
   'src/dbus/mpris/mpris_art.cpp',
   'src/dbus/mpris/mpris_service.cpp',
@@ -478,10 +479,17 @@ _noctalia_sources = files(
   'src/render/text/cairo_glyph_renderer.cpp',
   'src/render/wallpaper_renderer.cpp',
   'src/scripting/luau_host.cpp',
+  'src/scripting/plugin_catalog.cpp',
+  'src/scripting/plugin_git.cpp',
+  'src/scripting/plugin_ipc.cpp',
+  'src/scripting/plugin_manager.cpp',
+  'src/scripting/plugin_manifest.cpp',
+  'src/scripting/plugin_registry.cpp',
+  'src/scripting/plugin_service_host.cpp',
+  'src/scripting/plugin_state_store.cpp',
   'src/scripting/script_runtime.cpp',
   'src/scripting/script_worker_pool.cpp',
   'src/scripting/scripted_widget_bindings.cpp',
-  'src/scripting/scripted_widget_manifest.cpp',
   'src/system/battery_warning_monitor.cpp',
   'src/shell/bar/bar.cpp',
   'src/shell/clipboard/clipboard_paste.cpp',
@@ -523,6 +531,7 @@ _noctalia_sources = files(
   'src/shell/control_center/notifications_tab.cpp',
   'src/shell/control_center/screen_time_tab.cpp',
   'src/shell/control_center/home_tab.cpp',
+  'src/shell/control_center/plugin_shortcut.cpp',
   'src/shell/control_center/shortcut_registry.cpp',
   'src/shell/control_center/system_tab.cpp',
   'src/shell/control_center/tab.cpp',
@@ -557,6 +566,7 @@ _noctalia_sources = files(
   'src/wayland/hyprland/focus_grab_service.cpp',
   'src/shell/panel/panel_manager.cpp',
   'src/shell/polkit/polkit_panel.cpp',
+  'src/shell/session/session_action_meta.cpp',
   'src/shell/session/session_action_runner.cpp',
   'src/shell/session/session_ipc.cpp',
   'src/shell/session/session_panel.cpp',
@@ -568,6 +578,7 @@ _noctalia_sources = files(
   'src/shell/settings/config_export_dialog_popup.cpp',
   'src/shell/settings/settings_content.cpp',
   'src/shell/settings/settings_content_common.cpp',
+  'src/shell/settings/settings_content_plugins.cpp',
   'src/shell/settings/settings_control_factory.cpp',
   'src/shell/settings/settings_content_idle_behavior.cpp',
   'src/shell/settings/settings_content_session_action.cpp',
@@ -615,8 +626,8 @@ _noctalia_sources = files(
   'src/shell/bar/widgets/media_widget.cpp',
   'src/shell/bar/widgets/network_widget.cpp',
   'src/shell/bar/widgets/notification_widget.cpp',
+  'src/shell/bar/widgets/plugin_widget.cpp',
   'src/shell/bar/widgets/power_profile_widget.cpp',
-  'src/shell/bar/widgets/scripted_widget.cpp',
   'src/shell/bar/widgets/session_widget.cpp',
   'src/shell/bar/widgets/settings_widget.cpp',
   'src/shell/bar/widgets/spacer_widget.cpp',
@@ -1016,19 +1027,6 @@ config_path_resolution_test = executable('config_path_resolution_test',
 )
 
 test('config_path_resolution', config_path_resolution_test)
-
-scripted_widget_manifest_test = executable('scripted_widget_manifest_test',
-  sources: files(
-    'tests/scripted_widget_manifest_test.cpp',
-    'src/scripting/scripted_widget_bindings.cpp',
-  ),
-  dependencies: [
-    luau_dep,
-  ],
-  include_directories: _noctalia_inc,
-)
-
-test('scripted_widget_manifest', scripted_widget_manifest_test)
 
 state_store_test = executable('state_store_test',
   sources: files(

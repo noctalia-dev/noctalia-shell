@@ -26,6 +26,8 @@
 #include "shell/bar/widgets/debug_indicator_widget.h"
 #endif
 #include "capture/screenshot_service.h"
+#include "scripting/plugin_manifest.h"
+#include "scripting/plugin_registry.h"
 #include "shell/bar/widgets/idle_inhibitor_widget.h"
 #include "shell/bar/widgets/keyboard_layout_widget.h"
 #include "shell/bar/widgets/launcher_widget.h"
@@ -34,9 +36,9 @@
 #include "shell/bar/widgets/network_widget.h"
 #include "shell/bar/widgets/nightlight_widget.h"
 #include "shell/bar/widgets/notification_widget.h"
+#include "shell/bar/widgets/plugin_widget.h"
 #include "shell/bar/widgets/power_profile_widget.h"
 #include "shell/bar/widgets/screenshot_widget.h"
-#include "shell/bar/widgets/scripted_widget.h"
 #include "shell/bar/widgets/session_widget.h"
 #include "shell/bar/widgets/settings_widget.h"
 #include "shell/bar/widgets/spacer_widget.h"
@@ -113,7 +115,9 @@ WidgetFactory::WidgetFactory(
       m_network(network), m_idleInhibitor(idleInhibitor), m_mpris(mpris), m_audioSpectrum(audioSpectrum),
       m_httpClient(httpClient), m_weather(weather), m_nightLight(nightLight), m_themeService(themeService),
       m_bluetooth(bluetooth), m_brightness(brightness), m_lockKeys(lockKeys), m_clipboard(clipboard),
-      m_fileWatcher(fileWatcher), m_screenshots(screenshots), m_renderContext(renderContext), m_scriptApi(scriptApi) {}
+      m_fileWatcher(fileWatcher), m_screenshots(screenshots), m_renderContext(renderContext), m_scriptApi(scriptApi) {
+  scripting::PluginRegistry::instance().ensureScanned();
+}
 
 WidgetFactory::~WidgetFactory() = default;
 
@@ -352,16 +356,27 @@ std::unique_ptr<Widget> WidgetFactory::create(
     return widget;
   }
 
-  if (type == "scripted") {
+  if (auto pluginEntry = scripting::PluginRegistry::instance().resolve(type);
+      pluginEntry.has_value() && pluginEntry->entry->kind == scripting::PluginEntryKind::Widget) {
     if (m_scriptApi == nullptr) {
       return nullptr;
     }
-    std::string script = wc != nullptr ? wc->getString("script", "") : std::string();
     const auto* outputInfo = m_platform.findOutputByWl(output);
     const std::string outputName = outputInfo != nullptr ? outputInfo->connectorName : std::string{};
-    auto widget = std::make_unique<ScriptedWidget>(
-        name, std::move(script), barName, outputName, *m_scriptApi, wc, m_fileWatcher, &m_platform, m_clipboard,
-        m_audioSpectrum, m_mpris
+    std::unordered_map<std::string, WidgetSettingValue> overrides;
+    if (wc != nullptr) {
+      overrides = wc->settings;
+    }
+    auto seeded = scripting::seedEntrySettings(*pluginEntry->entry, overrides);
+    const auto& pluginSettings = m_config.plugins.pluginSettings;
+    const auto psIt = pluginSettings.find(pluginEntry->manifest->id);
+    static const std::unordered_map<std::string, WidgetSettingValue> kNoPluginOverrides;
+    scripting::mergePluginSettings(
+        *pluginEntry->manifest, psIt != pluginSettings.end() ? psIt->second : kNoPluginOverrides, seeded
+    );
+    auto widget = std::make_unique<PluginWidget>(
+        pluginEntry->fullId(), pluginEntry->sourcePath, std::move(seeded), barName, outputName, *m_scriptApi,
+        m_fileWatcher, &m_platform, m_clipboard, m_httpClient, m_audioSpectrum, m_mpris
     );
     widget->setContentScale(contentScale);
     return widget;

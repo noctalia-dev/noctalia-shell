@@ -58,6 +58,24 @@ void IdleManager::notifyLiveIdleChanged() {
   }
 }
 
+void IdleManager::setScreenSaverInhibitLocks(std::int64_t locks) {
+  const std::int64_t next = std::max<std::int64_t>(0, locks);
+  const bool wasInhibited = m_screenSaverInhibitLocks > 0;
+  m_screenSaverInhibitLocks = next;
+  const bool inhibited = m_screenSaverInhibitLocks > 0;
+  if (!wasInhibited && inhibited) {
+    m_heartbeatCompositorIdle = false;
+    if (m_liveIdleSeconds != 0) {
+      m_liveIdleSeconds = 0;
+      notifyLiveIdleChanged();
+    }
+  }
+  if (wasInhibited && !inhibited && m_idledWhileScreenSaverInhibited) {
+    m_idledWhileScreenSaverInhibited = false;
+    recreateBehaviorNotifications();
+  }
+}
+
 void IdleManager::reload(const IdleConfig& config) {
   clearBehaviors();
   m_idleConfig = config;
@@ -84,7 +102,7 @@ void IdleManager::reload(const IdleConfig& config) {
 }
 
 void IdleManager::onSecondTick() {
-  if (m_heartbeatCompositorIdle) {
+  if (m_heartbeatCompositorIdle && m_screenSaverInhibitLocks == 0) {
     ++m_liveIdleSeconds;
   }
 }
@@ -125,6 +143,42 @@ void IdleManager::clearBehaviors() {
     }
   }
   m_behaviors.clear();
+}
+
+void IdleManager::recreateBehaviorNotification(BehaviorState& behavior) {
+  if (m_wayland == nullptr || !m_wayland->hasIdleNotifier() || m_wayland->seat() == nullptr) {
+    return;
+  }
+
+  if (behavior.notification != nullptr) {
+    ext_idle_notification_v1_destroy(behavior.notification);
+    behavior.notification = nullptr;
+  }
+  behavior.phase = BehaviorPhase::Waiting;
+
+  if (!behavior.config.enabled || behavior.config.timeoutSeconds <= 0) {
+    return;
+  }
+
+  const auto timeoutMs = static_cast<std::uint32_t>(behavior.config.timeoutSeconds) * 1000u;
+  behavior.notification = m_wayland->createIdleNotification(timeoutMs);
+  if (behavior.notification == nullptr) {
+    kLog.warn("failed to re-register idle behavior '{}'", behavior.config.name);
+    return;
+  }
+  ext_idle_notification_v1_add_listener(behavior.notification, &kIdleNotificationListener, &behavior);
+}
+
+void IdleManager::recreateBehaviorNotifications() {
+  if (m_wayland == nullptr || !m_wayland->hasIdleNotifier() || m_wayland->seat() == nullptr) {
+    return;
+  }
+
+  cancelActiveGrace(false);
+  for (auto& behavior : m_behaviors) {
+    recreateBehaviorNotification(*behavior);
+  }
+  kLog.info("idle behavior notifications reset after screensaver inhibit released");
 }
 
 void IdleManager::createBehavior(const IdleBehaviorConfig& config) {
@@ -243,6 +297,15 @@ void IdleManager::handleIdled(void* data, ext_idle_notification_v1* /*notificati
   }
 
   IdleManager& self = *behavior->owner;
+  if (self.m_screenSaverInhibitLocks > 0) {
+    self.m_idledWhileScreenSaverInhibited = true;
+    kLog.info(
+        "idle behavior '{}' suppressed (screensaver inhibit locks={})", behavior->config.name,
+        self.m_screenSaverInhibitLocks
+    );
+    self.recreateBehaviorNotification(*behavior);
+    return;
+  }
 
   const float fadeSec = self.m_idleConfig.preActionFadeSeconds;
   if (fadeSec > 0.0005f) {
@@ -256,6 +319,8 @@ void IdleManager::handleIdled(void* data, ext_idle_notification_v1* /*notificati
     const int fadeMs = static_cast<int>(std::lround(static_cast<double>(fadeSec) * 1000.0));
     const auto fade = std::chrono::milliseconds(std::clamp(fadeMs, 1, 600000));
     kLog.info("idle behavior '{}' pre-action fade {}ms", behavior->config.name, fade.count());
+    const IdleActionKind idleKind = resolveIdleBehaviorActions(behavior->config).idleAction.kind;
+    const bool willLockSession = idleKind == IdleActionKind::Lock || idleKind == IdleActionKind::LockAndSuspend;
     self.joinActiveGrace(*behavior);
     const std::uint64_t generation = ++self.m_graceGeneration;
     self.m_graceFallbackTimer.start(fade + std::chrono::milliseconds(250), [&self, generation]() {
@@ -265,7 +330,7 @@ void IdleManager::handleIdled(void* data, ext_idle_notification_v1* /*notificati
       kLog.debug("idle pre-action fade fallback completed");
       self.graceFadeComplete();
     });
-    self.m_onGraceBegin(behavior->config.name, fade, [ptr = &self, generation]() {
+    self.m_onGraceBegin(behavior->config.name, fade, willLockSession, [ptr = &self, generation]() {
       DeferredCall::callLater([ptr, generation]() {
         if (ptr->m_graceGeneration != generation || !ptr->hasActiveGrace()) {
           return;
@@ -306,6 +371,9 @@ void IdleManager::handleResumed(void* data, ext_idle_notification_v1* /*notifica
 void IdleManager::handleHeartbeatIdled(void* data, ext_idle_notification_v1* /*notification*/) {
   auto* self = static_cast<IdleManager*>(data);
   if (self == nullptr) {
+    return;
+  }
+  if (self->m_screenSaverInhibitLocks > 0) {
     return;
   }
   self->m_heartbeatCompositorIdle = true;

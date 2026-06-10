@@ -5,6 +5,7 @@
 #include "core/toml.h" // IWYU pragma: keep
 #include "net/http_client.h"
 #include "util/checksum.h"
+#include "util/file_utils.h"
 #include "util/string_utils.h"
 
 #include <algorithm>
@@ -788,11 +789,12 @@ namespace noctalia::theme {
     return out;
   }
 
+  // Stored under the state dir (not XDG cache): app-managed, re-fetchable data that
+  // should persist between sessions and not be auto-reclaimed by cache cleaners.
   std::filesystem::path communityTemplatesCacheDir() {
-    if (const char* xdg = std::getenv("XDG_CACHE_HOME"); xdg != nullptr && xdg[0] != '\0')
-      return std::filesystem::path(xdg) / "noctalia" / "community-templates";
-    if (const char* home = std::getenv("HOME"); home != nullptr && home[0] != '\0')
-      return std::filesystem::path(home) / ".cache" / "noctalia" / "community-templates";
+    const std::string state = FileUtils::stateDir();
+    if (!state.empty())
+      return std::filesystem::path(state) / "community-templates";
     return std::filesystem::path("/tmp") / "noctalia" / "community-templates";
   }
 

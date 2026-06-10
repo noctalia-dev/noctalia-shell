@@ -2,7 +2,7 @@
 
 #include "config/config_service.h"
 #include "config/schema/widget_schema.h"
-#include "scripting/scripted_widget_manifest.h"
+#include "scripting/plugin_manifest.h"
 
 #include <cstdint>
 #include <initializer_list>
@@ -18,7 +18,7 @@ namespace settings {
     BuiltIn,
     Named,
     Unknown,
-    Preset, // a bundled scripted widget discovered via its Lua manifest
+    Plugin, // a plugin [[widget]] entry from the plugin registry
   };
 
   struct WidgetTypeSpec {
@@ -36,11 +36,10 @@ namespace settings {
   };
 
   struct WidgetPickerEntry {
-    std::string value;
+    std::string value; // for Plugin entries this is the entry id "author/plugin:entry"
     std::string label;
     std::string description;
     std::string icon;
-    std::string script = {}; // asset-relative script path for Preset entries; empty otherwise
     WidgetReferenceKind kind = WidgetReferenceKind::Unknown;
   };
 
@@ -117,6 +116,8 @@ namespace settings {
 
   [[nodiscard]] const std::vector<WidgetTypeSpec>& widgetTypeSpecs();
   [[nodiscard]] bool isBuiltInWidgetType(std::string_view type);
+  // Whether `type` names a plugin [[widget]] entry ("author/plugin:entry").
+  [[nodiscard]] bool isPluginWidgetType(std::string_view type);
   [[nodiscard]] bool widgetTypeRequiresNamedConfig(std::string_view type);
   [[nodiscard]] std::string widgetTypeForReference(const Config& cfg, std::string_view name);
   [[nodiscard]] std::string titleFromWidgetKey(std::string_view key);
@@ -126,16 +127,17 @@ namespace settings {
   [[nodiscard]] std::vector<WidgetSettingSpec> commonWidgetSettingSpecs(std::string_view shellFontFamily);
   [[nodiscard]] std::vector<WidgetSettingSpec>
   widgetSettingSpecs(std::string_view type, std::string_view shellFontFamily);
-  // Config-aware variant: for scripted widgets whose `script` declares a Lua manifest,
-  // returns the manifest-driven settings. Falls back to the type-only specs otherwise.
+  // Config-aware variant: for a plugin [[widget]] type, returns the manifest-driven
+  // settings. Falls back to the type-only specs otherwise.
   [[nodiscard]] std::vector<WidgetSettingSpec>
   widgetSettingSpecs(std::string_view type, const WidgetConfig* config, std::string_view shellFontFamily);
-  // Build settings specs from a scripted widget's Lua manifest.
-  [[nodiscard]] std::vector<WidgetSettingSpec> manifestSettingSpecs(const scripting::ScriptWidgetManifest& manifest);
+  // Build settings specs from a plugin entry's declared setting schema.
+  [[nodiscard]] std::vector<WidgetSettingSpec>
+  manifestSettingSpecs(const std::vector<scripting::ManifestField>& fields);
 
   // Schema projection (the validity half of the specs), consumed by the config
-  // layer (e.g. `config validate`). For scripted widgets pass the config so the
-  // Lua manifest's settings are included.
+  // layer (e.g. `config validate`). For plugin widgets the type alone resolves the
+  // manifest, so the config arg is no longer required for them.
   [[nodiscard]] noctalia::config::schema::WidgetSettingSchema widgetSettingSchema(std::string_view type);
   [[nodiscard]] noctalia::config::schema::WidgetSettingSchema
   widgetSettingSchema(std::string_view type, const WidgetConfig* config);

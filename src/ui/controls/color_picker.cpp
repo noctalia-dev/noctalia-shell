@@ -10,14 +10,18 @@
 #include "ui/style.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <linux/input-event-codes.h>
 #include <memory>
 #include <string>
+#include <string_view>
 
 namespace {
+
+  constexpr std::size_t kHexFieldMaxLen = 7; // '#' + 6 digits
 
   int parseIntClamp(const std::string& s, int lo, int hi) {
     try {
@@ -26,6 +30,33 @@ namespace {
     } catch (...) {
       return lo;
     }
+  }
+
+  [[nodiscard]] std::string sanitizeHexFieldInput(std::string_view input) {
+    std::string out;
+    out.reserve(kHexFieldMaxLen);
+    bool hasHash = false;
+    std::size_t digitCount = 0;
+    for (const char c : input) {
+      if (c == '#' && !hasHash) {
+        hasHash = true;
+        out.push_back('#');
+        continue;
+      }
+      if (std::isxdigit(static_cast<unsigned char>(c)) != 0 && digitCount < 6) {
+        if (!hasHash) {
+          out.push_back('#');
+          hasHash = true;
+        }
+        out.push_back(static_cast<char>(std::toupper(static_cast<unsigned char>(c))));
+        ++digitCount;
+      }
+    }
+    return out;
+  }
+
+  [[nodiscard]] bool isCompleteHexField(std::string_view value) {
+    return value.size() == kHexFieldMaxLen && value.front() == '#';
   }
 
 } // namespace
@@ -115,6 +146,8 @@ ColorPicker::ColorPicker() {
   m_bInput = addField("B", 56.0f);
 
   m_hexInput->setOnChange([this](const std::string& v) { onHexInputChange(v); });
+  m_hexInput->setOnSubmit([this](const std::string& v) { applyHexInput(sanitizeHexFieldInput(v)); });
+  m_hexInput->setSubmitOnFocusLoss(true);
   m_rInput->setOnChange([this](const std::string& /*v*/) { onRgbInputChange(); });
   m_gInput->setOnChange([this](const std::string& /*v*/) { onRgbInputChange(); });
   m_bInput->setOnChange([this](const std::string& /*v*/) { onRgbInputChange(); });
@@ -358,18 +391,42 @@ void ColorPicker::applyPickFromHue(float localX) {
   }
 }
 
-void ColorPicker::onHexInputChange(const std::string& value) {
+void ColorPicker::applyHexInput(const std::string& value) {
   if (m_suppressFieldCallbacks) {
     return;
   }
   Color parsed{};
   if (!tryParseHexColor(value, parsed)) {
+    if (m_hexInput != nullptr) {
+      m_hexInput->setInvalid(true);
+    }
     return;
+  }
+  if (m_hexInput != nullptr) {
+    m_hexInput->setInvalid(false);
   }
   parsed.a = m_alpha;
   setColor(parsed);
   if (m_onColorChanged) {
     m_onColorChanged(m_color);
+  }
+}
+
+void ColorPicker::onHexInputChange(const std::string& value) {
+  if (m_suppressFieldCallbacks) {
+    return;
+  }
+  const std::string sanitized = sanitizeHexFieldInput(value);
+  if (sanitized != value) {
+    m_suppressFieldCallbacks = true;
+    m_hexInput->setValue(sanitized);
+    m_suppressFieldCallbacks = false;
+  }
+  if (m_hexInput != nullptr) {
+    m_hexInput->setInvalid(false);
+  }
+  if (isCompleteHexField(sanitized)) {
+    applyHexInput(sanitized);
   }
 }
 
@@ -426,10 +483,6 @@ void ColorPicker::doLayout(Renderer& renderer) {
   if (m_hueStrip != nullptr) {
     m_hueStrip->setSize(pw, stripH);
     m_hueStrip->layout(renderer);
-  }
-  if (m_fieldsRow != nullptr) {
-    m_fieldsRow->setSize(pw, 0.0f);
-    m_fieldsRow->layout(renderer);
   }
 
   Flex::doLayout(renderer);

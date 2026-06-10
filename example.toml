@@ -24,6 +24,8 @@ clipboard_enabled     = true         # false disables clipboard panel, history, 
 clipboard_history_max_entries = 50 # unpinned history cap (10–200); pinned entries are extra
 clipboard_auto_paste  = "auto"       # off | auto | ctrl_v | ctrl_shift_v | shift_insert
 clipboard_image_action_command = ""  # image preview action: gimp {path}, or satty -f - via stdin
+# IPC example:
+# noctalia msg clipboard-clear
 shared_gl_context     = true         # startup-only; false isolates GPU contexts for broken drivers
 # avatar_path         = "~/Pictures/avatar.png"
 # lang                = "en"
@@ -175,6 +177,7 @@ blurred_desktop         = false       # use a desktop snapshot as the lock scree
 blur_intensity          = 0.5         # lock screen background blur (0.0 = none, 1.0 = maximum)
 tint_intensity          = 0.3         # surface-color tint over the lock screen background
 # wallpaper             = ""          # optional image path for the lock screen; empty uses the desktop wallpaper
+# monitors              = ["DP-1"]    # connectors that show the lock screen; empty shows all monitors, others stay black
 
 # ── System Monitor ────────────────────────────────────────────────────────────
 

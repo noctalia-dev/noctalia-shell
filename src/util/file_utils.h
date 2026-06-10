@@ -63,6 +63,32 @@ namespace FileUtils {
     return {};
   }
 
+  [[nodiscard]] inline std::string dataDir() {
+    const char* noctalia = std::getenv("NOCTALIA_DATA_HOME");
+    if (noctalia != nullptr && noctalia[0] != '\0') {
+      return std::string(noctalia) + "/noctalia";
+    }
+    const char* xdg = std::getenv("XDG_DATA_HOME");
+    if (xdg != nullptr && xdg[0] != '\0') {
+      return std::string(xdg) + "/noctalia";
+    }
+    const char* home = std::getenv("HOME");
+    if (home != nullptr && home[0] != '\0') {
+      return std::string(home) + "/.local/share/noctalia";
+    }
+    return {};
+  }
+
+  // Git-source working copies (blobless sparse clones). Host-managed cache,
+  // re-fetchable, so it lives under the state dir — never config.
+  [[nodiscard]] inline std::string pluginSourcesDir() {
+    const std::string base = stateDir();
+    if (base.empty()) {
+      return {};
+    }
+    return base + "/plugins/sources";
+  }
+
   [[nodiscard]] inline std::vector<std::uint8_t> readBinaryFile(const std::string& path) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file) {

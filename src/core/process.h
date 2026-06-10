@@ -1,10 +1,12 @@
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <cstddef>
 #include <functional>
 #include <initializer_list>
 #include <limits>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -35,6 +37,10 @@ namespace process {
   struct RunOptions {
     std::optional<std::chrono::milliseconds> timeout;
     std::size_t maxOutputBytes = std::numeric_limits<std::size_t>::max();
+    // When set, the run is cancellable: once the flag turns true the child's
+    // process group is terminated and the call returns. Lets a streaming, never-
+    // exiting process (e.g. `evtest`) be stopped on reload/teardown.
+    std::shared_ptr<std::atomic<bool>> cancel;
   };
 
   [[nodiscard]] bool commandExists(const char* name);

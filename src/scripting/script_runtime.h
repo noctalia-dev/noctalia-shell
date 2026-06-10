@@ -4,11 +4,13 @@
 
 #include <chrono>
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <string_view>
 
 class ClipboardService;
+class HttpClient;
 
 namespace scripting {
 
@@ -19,8 +21,8 @@ namespace scripting {
     using SubscriberId = std::uint64_t;
 
     explicit ScriptRuntime(
-        std::string runtimeName, ScriptWidgetSettings settings, ScriptApiContext& api,
-        ClipboardService* clipboard = nullptr
+        std::string runtimeName, ScriptWidgetSettings settings, ScriptApiContext& api, std::filesystem::path pluginDir,
+        HttpClient* httpClient = nullptr, ClipboardService* clipboard = nullptr
     );
     ~ScriptRuntime();
 
@@ -47,19 +49,6 @@ namespace scripting {
   private:
     struct State;
     std::shared_ptr<State> m_state;
-  };
-
-  struct SharedScriptRuntimeAcquireResult {
-    std::shared_ptr<ScriptRuntime> runtime;
-    bool created = false;
-  };
-
-  class SharedScriptRuntimeRegistry {
-  public:
-    static SharedScriptRuntimeAcquireResult acquire(
-        std::string_view baseKey, std::string_view scriptPath, ScriptWidgetSettings settings, ScriptApiContext& api,
-        ClipboardService* clipboard = nullptr
-    );
   };
 
 } // namespace scripting

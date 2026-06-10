@@ -170,7 +170,7 @@ namespace settings {
     const auto pickerEntries = widgetPickerEntries(config);
     std::vector<SearchPickerOption> normalOptions;
     std::vector<SearchPickerOption> instanceOptions;
-    std::unordered_map<std::string, std::string> presetScripts;
+    std::unordered_set<std::string> pluginEntries;
     normalOptions.reserve(pickerEntries.size());
     instanceOptions.reserve(pickerEntries.size());
 
@@ -185,8 +185,8 @@ namespace settings {
           }
       );
 
-      if (entry.kind == WidgetReferenceKind::Preset && !entry.script.empty()) {
-        presetScripts[entry.value] = entry.script;
+      if (entry.kind == WidgetReferenceKind::Plugin) {
+        pluginEntries.insert(entry.value);
       }
 
       if (entry.kind != WidgetReferenceKind::BuiltIn) {
@@ -224,7 +224,7 @@ namespace settings {
     m_config = &config;
     m_normalOptions = std::move(normalOptions);
     m_instanceOptions = std::move(instanceOptions);
-    m_presetScripts = std::move(presetScripts);
+    m_pluginEntries = std::move(pluginEntries);
     m_lanePath = lanePath;
     m_root = nullptr;
     m_createActions = nullptr;
@@ -425,14 +425,19 @@ namespace settings {
                   if (option.value.empty()) {
                     return;
                   }
-                  // Bundled scripted widget (manifest preset): one-click add, no naming form.
-                  if (const auto it = m_presetScripts.find(option.value); it != m_presetScripts.end()) {
-                    const std::string instanceId =
-                        m_config != nullptr && !widgetReferenceNameExists(*m_config, option.value)
-                        ? option.value
-                        : suggestedInstanceId(option.value);
+                  // Plugin [[widget]] entry: one-click add, no naming form. The widget's type is
+                  // the entry id ("author/plugin:entry"); the instance gets a clean auto name
+                  // derived from the entry's short id (config keys can't hold '/' or ':').
+                  if (m_pluginEntries.contains(option.value)) {
+                    std::string base = option.value;
+                    if (const auto pos = base.find_last_of("/:"); pos != std::string::npos) {
+                      base = base.substr(pos + 1);
+                    }
+                    const std::string instanceId = m_config != nullptr && !widgetReferenceNameExists(*m_config, base)
+                        ? base
+                        : suggestedInstanceId(base);
                     if (m_onSelect) {
-                      m_onSelect(m_lanePath, option.value, "scripted", instanceId, {{"script", it->second}});
+                      m_onSelect(m_lanePath, option.value, option.value, instanceId, {});
                     }
                     DeferredCall::callLater([this]() { close(); });
                     return;
@@ -622,7 +627,7 @@ namespace settings {
     }
     m_normalOptions.clear();
     m_instanceOptions.clear();
-    m_presetScripts.clear();
+    m_pluginEntries.clear();
     m_config = nullptr;
     m_parentXdgSurface = nullptr;
     m_parentWlSurface = nullptr;

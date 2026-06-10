@@ -30,8 +30,21 @@ namespace i18n {
     std::string_view displayName;
   };
 
-  inline constexpr std::array<LanguageOption, 1> kSupportedLanguages = {{
+  inline constexpr std::array<LanguageOption, 14> kSupportedLanguages = {{
+      {"be", "Беларуская"},
+      {"de", "Deutsch"},
       {"en", "English"},
+      {"es", "Español"},
+      {"fr", "Français"},
+      {"hu", "Magyar"},
+      {"it", "Italiano"},
+      {"nl", "Nederlands"},
+      {"pl", "Polski"},
+      {"pt-BR", "Português (Brasil)"},
+      {"ru", "Русский"},
+      {"uk-UA", "Українська"},
+      {"vi", "Tiếng Việt"},
+      {"zh-Hans", "简体中文"},
   }};
 
   // Loads translation catalogs and resolves dotted keys against them.

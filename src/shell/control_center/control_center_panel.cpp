@@ -45,7 +45,8 @@ ControlCenterPanel::ControlCenterPanel(
     BluetoothService* bluetooth, BluetoothAgent* bluetoothAgent, BrightnessService* brightness,
     SystemMonitorService* sysmon, ScreenTimeService* screenTime, GammaService* nightLight,
     noctalia::theme::ThemeService* theme, IdleInhibitor* idleInhibitor, DependencyService* dependencies,
-    CompositorPlatform* platform, IpcService* ipc, Wallpaper* wallpaper, CalendarService* calendar
+    CompositorPlatform* platform, IpcService* ipc, Wallpaper* wallpaper, CalendarService* calendar,
+    scripting::ScriptApiContext* scriptApi, ClipboardService* clipboard
 ) {
   (void)upower;
   WaylandConnection* wayland = platform != nullptr ? &platform->wayland() : nullptr;
@@ -55,7 +56,7 @@ ControlCenterPanel::ControlCenterPanel(
   m_dependencies = dependencies;
   m_tabs[tabIndex(TabId::Home)] = std::make_unique<HomeTab>(
       mpris, httpClient, weather, audio, powerProfiles, config, network, bluetooth, nightLight, theme, notifications,
-      idleInhibitor, dependencies, platform, ipc, wallpaper
+      idleInhibitor, dependencies, platform, ipc, wallpaper, scriptApi, clipboard
   );
   m_tabs[tabIndex(TabId::Media)] = std::make_unique<MediaTab>(
       mpris, httpClient, spectrum, config, wayland, PanelManager::instance().renderContext()

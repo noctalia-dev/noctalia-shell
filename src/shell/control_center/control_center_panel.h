@@ -47,9 +47,13 @@ class CalendarService;
 class UPowerService;
 class Wallpaper;
 class WeatherService;
+class ClipboardService;
 
 namespace noctalia::theme {
   class ThemeService;
+}
+namespace scripting {
+  class ScriptApiContext;
 }
 
 class ControlCenterPanel : public Panel {
@@ -64,7 +68,8 @@ public:
       ScreenTimeService* screenTime = nullptr, GammaService* nightLight = nullptr,
       noctalia::theme::ThemeService* theme = nullptr, IdleInhibitor* idleInhibitor = nullptr,
       DependencyService* dependencies = nullptr, CompositorPlatform* platform = nullptr, IpcService* ipc = nullptr,
-      Wallpaper* wallpaper = nullptr, CalendarService* calendar = nullptr
+      Wallpaper* wallpaper = nullptr, CalendarService* calendar = nullptr,
+      scripting::ScriptApiContext* scriptApi = nullptr, ClipboardService* clipboard = nullptr
   );
 
   void create() override;

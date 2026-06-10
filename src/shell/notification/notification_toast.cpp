@@ -1980,6 +1980,9 @@ void NotificationToast::ensureSurfaces() {
 
 void NotificationToast::destroySurfaces() {
   for (auto& inst : m_instances) {
+    if (inst->surface != nullptr) {
+      inst->surface->clearBlurRegion();
+    }
     inst->animations.cancelAll();
     inst->inputDispatcher.setSceneRoot(nullptr);
   }
@@ -2090,7 +2093,11 @@ void NotificationToast::updateInputRegion(Instance& inst) const {
   }
 
   inst.surface->setInputRegion(rects);
-  inst.surface->setBlurRegion(blurRects);
+  if (blurRects.empty()) {
+    inst.surface->clearBlurRegion();
+  } else {
+    inst.surface->setBlurRegion(blurRects);
+  }
 }
 
 float NotificationToast::cardReveal(const Instance::CardState& cs, float cardHeight) const {
