@@ -20,10 +20,11 @@ namespace scripting {
 
   // Thin synchronous wrapper over the `git` CLI for plugin sources. Every call
   // blocks on the subprocess, so callers MUST run these off the UI thread (the
-  // plugin manager drives them on a worker). All ops target a single source
-  // clone directory. `--filter=blob:none` is requested for lazy blob fetch;
-  // servers that don't support it make git fall back to a normal shallow clone
-  // on its own — no explicit degrade path here.
+  // plugin manager drives them on a worker). All ops target a single source repo
+  // cache. Commands run non-interactively so private/unavailable
+  // remotes fail instead of prompting during shell startup. `--filter=blob:none`
+  // is requested for lazy blob fetch; servers that don't support it make git
+  // fall back to a normal shallow clone on its own — no explicit degrade path here.
   namespace plugin_git {
 
     [[nodiscard]] bool available();
@@ -36,13 +37,12 @@ namespace scripting {
     [[nodiscard]] GitResult
     showFile(const std::filesystem::path& dest, std::string_view repoPath, std::string_view rev = "HEAD");
 
-    // Re-derive `subdir` in the working tree from `rev`: wipe any prior/tampered/partial
-    // copy, then `git checkout <rev> -- <subdir>` (clobbers unconditionally — no merge,
-    // so a dirty working tree can't block it; blobs lazily fetch from the partial clone).
-    // The materialized files are a disposable cache: always re-extractable from the
-    // object store, so manual edits or interrupted runs self-heal on the next call.
-    [[nodiscard]] GitResult
-    materialize(const std::filesystem::path& dest, std::string_view rev, std::string_view subdir);
+    // Export `subdir` at `rev` into `workTree/subdir` without checking files out
+    // inside the source repo. The caller owns temp/final directory replacement.
+    [[nodiscard]] GitResult exportSubdir(
+        const std::filesystem::path& dest, std::string_view rev, std::string_view subdir,
+        const std::filesystem::path& workTree
+    );
 
     // `git -C dest fetch origin` — update remote-tracking refs + FETCH_HEAD; the
     // working tree is untouched, so the new revision can be inspected before applying.

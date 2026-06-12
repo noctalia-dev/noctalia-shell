@@ -60,14 +60,14 @@ void AudioVisualizer::tick(float deltaMs) {
   }
 }
 
-void AudioVisualizer::setGradient(const ColorSpec& lowColor, const ColorSpec& highColor) {
-  m_lowColor = lowColor;
-  m_highColor = highColor;
+void AudioVisualizer::setGradient(const ColorSpec& color1, const ColorSpec& color2) {
+  m_color1 = color1;
+  m_color2 = color2;
   syncPalette();
 }
 
-void AudioVisualizer::setGradient(const Color& lowColor, const Color& highColor) {
-  setGradient(fixedColorSpec(lowColor), fixedColorSpec(highColor));
+void AudioVisualizer::setGradient(const Color& color1, const Color& color2) {
+  setGradient(fixedColorSpec(color1), fixedColorSpec(color2));
 }
 
 void AudioVisualizer::setOrientation(AudioSpectrumOrientation orientation) {
@@ -90,8 +90,8 @@ void AudioVisualizer::setCentered(bool centered) {
 
 void AudioVisualizer::syncPalette() {
   auto next = style();
-  next.lowColor = resolveColorSpec(m_lowColor);
-  next.highColor = resolveColorSpec(m_highColor);
+  next.color1 = resolveColorSpec(m_color1);
+  next.color2 = resolveColorSpec(m_color2);
   setStyle(next);
 }
 

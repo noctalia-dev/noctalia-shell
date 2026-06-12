@@ -97,6 +97,23 @@ namespace {
     return argv;
   }
 
+  [[nodiscard]] bool validEnvName(std::string_view name) {
+    return !name.empty() && name.find('=') == std::string_view::npos;
+  }
+
+  void applyEnvOverrides(const std::vector<process::EnvOverride>& env) {
+    for (const auto& item : env) {
+      if (!validEnvName(item.name)) {
+        continue;
+      }
+      if (item.value.has_value()) {
+        ::setenv(item.name.c_str(), item.value->c_str(), 1);
+      } else {
+        ::unsetenv(item.name.c_str());
+      }
+    }
+  }
+
   [[nodiscard]] bool isSafeFlatpakAppId(std::string_view appId) {
     if (appId.empty() || appId.contains('/') || appId.contains('\\')) {
       return false;
@@ -350,9 +367,8 @@ namespace {
   }
 
   process::RunResult runSyncProcess(
-      const std::vector<std::string>& args, std::optional<std::chrono::milliseconds> timeout,
-      std::size_t maxOutputBytes = std::numeric_limits<std::size_t>::max(),
-      const process::RunCallbacks* callbacks = nullptr, const std::shared_ptr<std::atomic<bool>>& cancel = {}
+      const std::vector<std::string>& args, const process::RunOptions& options,
+      const process::RunCallbacks* callbacks = nullptr
   ) {
     if (args.empty() || args.front().empty()) {
       return {-1, {}, {}};
@@ -386,6 +402,7 @@ namespace {
       closeFd(outPipe[1]);
       closeFd(errPipe[1]);
 
+      applyEnvOverrides(options.env);
       std::vector<char*> argv = makeArgv(args);
 
       ::execvp(argv[0], argv.data());
@@ -409,22 +426,22 @@ namespace {
     bool errTruncated = false;
     int exitCode = -1;
     std::optional<std::chrono::steady_clock::time_point> deadline;
-    if (timeout.has_value()) {
-      deadline = std::chrono::steady_clock::now() + std::max(*timeout, std::chrono::milliseconds(0));
+    if (options.timeout.has_value()) {
+      deadline = std::chrono::steady_clock::now() + std::max(*options.timeout, std::chrono::milliseconds(0));
     }
     const auto* stdOutCallback = callbacks != nullptr ? &callbacks->stdOut : nullptr;
     const auto* stdErrCallback = callbacks != nullptr ? &callbacks->stdErr : nullptr;
 
     for (;;) {
-      drainAvailable(outPipe[0], out, maxOutputBytes, &outTruncated, stdOutCallback);
-      drainAvailable(errPipe[0], err, maxOutputBytes, &errTruncated, stdErrCallback);
+      drainAvailable(outPipe[0], out, options.maxOutputBytes, &outTruncated, stdOutCallback);
+      drainAvailable(errPipe[0], err, options.maxOutputBytes, &errTruncated, stdErrCallback);
 
       if (!exited) {
         exited = waitNoHang(pid, exitCode);
       }
       if (exited) {
-        drainAvailable(outPipe[0], out, maxOutputBytes, &outTruncated, stdOutCallback);
-        drainAvailable(errPipe[0], err, maxOutputBytes, &errTruncated, stdErrCallback);
+        drainAvailable(outPipe[0], out, options.maxOutputBytes, &outTruncated, stdOutCallback);
+        drainAvailable(errPipe[0], err, options.maxOutputBytes, &errTruncated, stdErrCallback);
         closeFd(outPipe[0]);
         closeFd(errPipe[0]);
         break;
@@ -436,14 +453,14 @@ namespace {
       }
 
       // Cancellation: terminate the child and reuse the timed-out drain+break path.
-      if (!timedOut && cancel && cancel->load(std::memory_order_relaxed)) {
+      if (!timedOut && options.cancel && options.cancel->load(std::memory_order_relaxed)) {
         terminateAndWait(pid, exitCode);
         timedOut = true;
       }
 
       if (timedOut) {
-        drainAvailable(outPipe[0], out, maxOutputBytes, &outTruncated, stdOutCallback);
-        drainAvailable(errPipe[0], err, maxOutputBytes, &errTruncated, stdErrCallback);
+        drainAvailable(outPipe[0], out, options.maxOutputBytes, &outTruncated, stdOutCallback);
+        drainAvailable(errPipe[0], err, options.maxOutputBytes, &errTruncated, stdErrCallback);
         closeFd(outPipe[0]);
         closeFd(errPipe[0]);
         break;
@@ -461,7 +478,7 @@ namespace {
       if (count > 0) {
         int waitMs = exited ? 0 : pollTimeoutMs(deadline);
         // Cap the wait when cancellable so an idle stream still wakes to check the flag.
-        if (cancel && (waitMs < 0 || waitMs > 250)) {
+        if (options.cancel && (waitMs < 0 || waitMs > 250)) {
           waitMs = 250;
         }
         if (::poll(fds.data(), count, waitMs) < 0 && errno != EINTR) {
@@ -671,7 +688,7 @@ namespace {
 
     systemdArgs.push_back("--");
     systemdArgs.insert(systemdArgs.end(), args.begin(), args.end());
-    process::RunResult result = runSyncProcess(systemdArgs, std::nullopt);
+    process::RunResult result = runSyncProcess(systemdArgs, {});
     if (result) {
       ::_exit(0);
     }
@@ -738,8 +755,10 @@ namespace process {
 
     try {
       std::thread([args, callbacks = std::move(callbacks), options]() mutable {
-        const std::size_t maxOutputBytes = callbacks.onExit ? options.maxOutputBytes : 0;
-        RunResult result = runSyncProcess(args, options.timeout, maxOutputBytes, &callbacks, options.cancel);
+        if (!callbacks.onExit) {
+          options.maxOutputBytes = 0;
+        }
+        RunResult result = runSyncProcess(args, options, &callbacks);
         if (callbacks.onExit) {
           try {
             callbacks.onExit(std::move(result));
@@ -810,7 +829,9 @@ namespace process {
     }
   }
 
-  RunResult runSync(const std::vector<std::string>& args) { return runSyncProcess(args, std::nullopt); }
+  RunResult runSync(const std::vector<std::string>& args) { return runSyncProcess(args, {}); }
+
+  RunResult runSync(const std::vector<std::string>& args, RunOptions options) { return runSyncProcess(args, options); }
 
   RunResult runSync(std::initializer_list<const char*> args) {
     const auto command = makeCommand(args);
@@ -818,7 +839,9 @@ namespace process {
   }
 
   RunResult runSyncWithTimeout(const std::vector<std::string>& args, std::chrono::milliseconds timeout) {
-    return runSyncProcess(args, timeout);
+    RunOptions options;
+    options.timeout = timeout;
+    return runSyncProcess(args, options);
   }
 
   RunResult runSyncWithTimeout(std::initializer_list<const char*> args, std::chrono::milliseconds timeout) {
@@ -829,7 +852,10 @@ namespace process {
   RunResult runSyncWithTimeoutAndOutputLimit(
       const std::vector<std::string>& args, std::chrono::milliseconds timeout, std::size_t maxOutputBytes
   ) {
-    return runSyncProcess(args, timeout, maxOutputBytes);
+    RunOptions options;
+    options.timeout = timeout;
+    options.maxOutputBytes = maxOutputBytes;
+    return runSyncProcess(args, options);
   }
 
   bool commandLineMatchesAll(const std::vector<std::string>& needles) {

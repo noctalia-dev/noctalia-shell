@@ -4,12 +4,15 @@
 #include "config/config_service.h"
 #include "core/build_info.h"
 #include "core/deferred_call.h"
+#include "core/log.h"
 #include "cursor-shape-v1-client-protocol.h"
+#include "dbus/accounts/accounts_service.h"
 #include "dbus/mpris/mpris_art.h"
 #include "dbus/mpris/mpris_service.h"
 #include "i18n/i18n.h"
 #include "net/http_client.h"
 #include "render/scene/input_area.h"
+#include "shell/avatar_path.h"
 #include "shell/control_center/shortcut_registry.h"
 #include "shell/panel/panel_button_style.h"
 #include "shell/panel/panel_manager.h"
@@ -35,6 +38,8 @@
 using namespace control_center;
 
 namespace {
+
+  constexpr Logger kLog("control-center");
 
   constexpr float kHomeAvatarScale = 2.6f;
   // Bottom row split: media/clock column grows more than the shortcuts column so the row feels balanced
@@ -67,13 +72,13 @@ namespace {
     return cellWidth + horizontalPadding;
   }
 
-  std::filesystem::path avatarStartDirectory(const ConfigService* config) {
-    if (config != nullptr) {
-      const std::filesystem::path current(config->config().shell.avatarPath);
-      std::error_code ec;
-      if (!current.empty() && std::filesystem::exists(current, ec) && current.has_parent_path()) {
-        return current.parent_path();
-      }
+  std::filesystem::path avatarStartDirectory(const AccountsService* accounts, const ConfigService* config) {
+    const std::string currentPath =
+        config != nullptr ? shell::resolvedAvatarPath(accounts, config->config()) : std::string{};
+    const std::filesystem::path current(currentPath);
+    std::error_code ec;
+    if (!current.empty() && std::filesystem::exists(current, ec) && current.has_parent_path()) {
+      return current.parent_path();
     }
     if (const char* home = std::getenv("HOME"); home != nullptr && home[0] != '\0') {
       return std::filesystem::path(home) / "Pictures";
@@ -95,6 +100,10 @@ namespace {
     return formatLocalTime(format);
   }
 
+  std::string userHostLine() { return std::format("{}@{}", sessionDisplayName(), hostName()); }
+
+  std::string noctaliaVersionLine() { return std::format("Noctalia {}", noctalia::build_info::displayVersion()); }
+
   void applyHomeCardStyle(Flex& card, float scale, float fillOpacity, bool showBorder) {
     applySectionCardStyle(card, scale, fillOpacity, showBorder);
     card.setGap(Style::spaceSm * scale);
@@ -114,28 +123,28 @@ HomeTab::HomeTab(
     PowerProfilesService* powerProfiles, ConfigService* config, INetworkService* network, BluetoothService* bluetooth,
     GammaService* nightLight, noctalia::theme::ThemeService* theme, NotificationManager* notifications,
     IdleInhibitor* idleInhibitor, DependencyService* dependencies, CompositorPlatform* platform, IpcService* ipc,
-    Wallpaper* wallpaper, scripting::ScriptApiContext* scriptApi, ClipboardService* clipboard
+    Wallpaper* wallpaper, scripting::ScriptApiContext* scriptApi, ClipboardService* clipboard, AccountsService* accounts
 )
-    : m_mpris(mpris), m_httpClient(httpClient), m_weather(weather), m_config(config), m_wallpaper(wallpaper),
-      m_services{
-          .network = network,
-          .bluetooth = bluetooth,
-          .nightLight = nightLight,
-          .theme = theme,
-          .notifications = notifications,
-          .idleInhibitor = idleInhibitor,
-          .audio = audio,
-          .powerProfiles = powerProfiles,
-          .mpris = mpris,
-          .weather = weather,
-          .config = config,
-          .dependencies = dependencies,
-          .platform = platform,
-          .ipc = ipc,
-          .scriptApi = scriptApi,
-          .httpClient = httpClient,
-          .clipboard = clipboard,
-      } {}
+    : m_mpris(mpris), m_httpClient(httpClient), m_weather(weather), m_config(config), m_accounts(accounts),
+      m_wallpaper(wallpaper), m_services{
+                                  .network = network,
+                                  .bluetooth = bluetooth,
+                                  .nightLight = nightLight,
+                                  .theme = theme,
+                                  .notifications = notifications,
+                                  .idleInhibitor = idleInhibitor,
+                                  .audio = audio,
+                                  .powerProfiles = powerProfiles,
+                                  .mpris = mpris,
+                                  .weather = weather,
+                                  .config = config,
+                                  .dependencies = dependencies,
+                                  .platform = platform,
+                                  .ipc = ipc,
+                                  .scriptApi = scriptApi,
+                                  .httpClient = httpClient,
+                                  .clipboard = clipboard,
+                              } {}
 
 HomeTab::~HomeTab() = default;
 
@@ -195,13 +204,15 @@ std::unique_ptr<Flex> HomeTab::create() {
     options.defaultViewMode = FileDialogViewMode::Grid;
     options.title = i18n::tr("control-center.home.select-avatar");
     options.extensions = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"};
-    options.startDirectory = avatarStartDirectory(m_config);
+    options.startDirectory = avatarStartDirectory(m_accounts, m_config);
 
     (void)FileDialog::open(std::move(options), [this](std::optional<std::filesystem::path> result) {
       if (!result.has_value() || m_config == nullptr) {
         return;
       }
-      (void)m_config->setOverride({"shell", "avatar_path"}, result->string());
+      if (!shell::applyAvatarPath(m_accounts, m_config, result->string())) {
+        kLog.warn("failed to set avatar path");
+      }
     });
   });
   m_userAvatarArea = avatarArea.get();
@@ -219,6 +230,9 @@ std::unique_ptr<Flex> HomeTab::create() {
           },
       })
   );
+  const auto configureUserDetailLabel = [scale](Label& label) {
+    label.setShadow(Color{0.0f, 0.0f, 0.0f, 0.36f}, 0.0f, 1.0f * scale);
+  };
   auto userRow = ui::row(
       {.align = FlexAlign::Center, .gap = Style::spaceMd * scale}, std::move(avatarArea),
       ui::column(
@@ -239,13 +253,25 @@ std::unique_ptr<Flex> HomeTab::create() {
                   [scale](Label& label) { label.setShadow(Color{0.0f, 0.0f, 0.0f, 0.42f}, 0.0f, 1.0f * scale); },
           }),
           ui::label({
-              .out = &m_userFacts,
+              .out = &m_userHost,
+              .text = userHostLine(),
+              .fontSize = Style::fontSizeCaption * scale,
+              .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+              .configure = configureUserDetailLabel,
+          }),
+          ui::label({
+              .out = &m_userUptime,
               .text = "…",
               .fontSize = Style::fontSizeCaption * scale,
               .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
-              .configure = [scale](Label& label) {
-                label.setShadow(Color{0.0f, 0.0f, 0.0f, 0.36f}, 0.0f, 1.0f * scale);
-              },
+              .configure = configureUserDetailLabel,
+          }),
+          ui::label({
+              .out = &m_userVersion,
+              .text = noctaliaVersionLine(),
+              .fontSize = Style::fontSizeCaption * scale,
+              .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+              .configure = configureUserDetailLabel,
           })
       )
   );
@@ -643,10 +669,14 @@ void HomeTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight)
     m_mediaTrack->setMaxLines(2);
   }
 
-  if (m_userCard != nullptr && m_userFacts != nullptr) {
+  if (m_userCard != nullptr) {
     const float userWrap = innerWidth(m_userCard);
-    m_userFacts->setMaxWidth(userWrap);
-    m_userFacts->setMaxLines(1);
+    for (Label* label : {m_userHost, m_userUptime, m_userVersion}) {
+      if (label != nullptr) {
+        label->setMaxWidth(userWrap);
+        label->setMaxLines(1);
+      }
+    }
   }
 
   if (m_userAvatar != nullptr && m_userMain != nullptr) {
@@ -866,7 +896,9 @@ void HomeTab::onClose() {
   m_dateLabel = nullptr;
   m_weatherGlyph = nullptr;
   m_weatherLine = nullptr;
-  m_userFacts = nullptr;
+  m_userHost = nullptr;
+  m_userUptime = nullptr;
+  m_userVersion = nullptr;
   m_settingsButton = nullptr;
   m_sessionButton = nullptr;
   m_wallpaperButton = nullptr;
@@ -914,8 +946,10 @@ void HomeTab::syncScaledFonts() {
   if (m_weatherLine != nullptr) {
     m_weatherLine->setFontSize(Style::fontSizeCaption * s);
   }
-  if (m_userFacts != nullptr) {
-    m_userFacts->setFontSize(Style::fontSizeCaption * s);
+  for (Label* label : {m_userHost, m_userUptime, m_userVersion}) {
+    if (label != nullptr) {
+      label->setFontSize(Style::fontSizeCaption * s);
+    }
   }
   if (m_wallpaperButton != nullptr) {
     m_wallpaperButton->setGlyphSize(Style::fontSizeBody * s);
@@ -962,7 +996,7 @@ void HomeTab::sync(Renderer& renderer) {
   syncWallpaperBackground(renderer);
 
   if (m_userAvatar != nullptr && m_config != nullptr) {
-    const std::string avatarPath = m_config->config().shell.avatarPath;
+    const std::string avatarPath = shell::resolvedAvatarPath(m_accounts, m_config->config());
     if (avatarPath != m_loadedAvatarPath) {
       if (avatarPath.empty()) {
         m_userAvatar->clear(renderer);
@@ -973,16 +1007,17 @@ void HomeTab::sync(Renderer& renderer) {
     }
   }
 
-  if (m_userFacts != nullptr) {
+  if (m_userHost != nullptr) {
+    m_userHost->setText(userHostLine());
+  }
+  if (m_userUptime != nullptr) {
     const auto uptime = systemUptime();
     const std::string uptimeText =
         uptime.has_value() ? formatDuration(*uptime) : i18n::tr("control-center.home.unknown");
-    m_userFacts->setText(
-        i18n::tr(
-            "control-center.home.user-facts", "user", sessionDisplayName(), "host", hostName(), "uptime", uptimeText,
-            "version", noctalia::build_info::displayVersion()
-        )
-    );
+    m_userUptime->setText(i18n::tr("control-center.home.uptime", "uptime", uptimeText));
+  }
+  if (m_userVersion != nullptr) {
+    m_userVersion->setText(noctaliaVersionLine());
   }
 
   if (m_weatherGlyph != nullptr && m_weatherLine != nullptr) {
@@ -1115,11 +1150,14 @@ void HomeTab::sync(Renderer& renderer) {
           const std::string artUrl = mpris::effectiveArtUrl(*active);
           const bool artRetry = !artUrl.empty() && !m_mediaArt->hasImage();
           if (artUrl != m_loadedMediaArtUrl || artRetry) {
-            const std::string artPath =
-                mpris::resolveArtworkSource(m_httpClient, m_pendingArtDownloads, artUrl, [this] {
+            const std::string artPath = mpris::resolveArtworkSource(
+                m_httpClient, m_pendingArtDownloads, artUrl,
+                [this] {
                   m_loadedMediaArtUrl.clear();
                   PanelManager::instance().refresh();
-                });
+                },
+                m_aliveGuard
+            );
             bool loaded = false;
             if (!artPath.empty()) {
               const int decodeSize = static_cast<int>(std::round(Style::controlHeightLg * 2.6f * contentScale()));

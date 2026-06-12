@@ -18,3 +18,5 @@ LUAI_FUNC void luaF_freeclosure(lua_State* L, Closure* c, struct lua_Page* page)
 LUAI_FUNC void luaF_freeupval(lua_State* L, UpVal* uv, struct lua_Page* page);
 LUAI_FUNC const LocVar* luaF_getlocal(const Proto* func, int local_number, int pc);
 LUAI_FUNC const LocVar* luaF_findlocal(const Proto* func, int local_reg, int pc);
+// A feedback slot is sealed when luaF_recordhit returns false.
+LUAI_FUNC bool luaF_recordhit(lua_State* L, Closure* func, Closure* target, uint32_t slotid);

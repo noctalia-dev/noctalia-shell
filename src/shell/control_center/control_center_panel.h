@@ -56,6 +56,8 @@ namespace scripting {
   class ScriptApiContext;
 }
 
+class AccountsService;
+
 class ControlCenterPanel : public Panel {
 public:
   ControlCenterPanel(
@@ -69,7 +71,8 @@ public:
       noctalia::theme::ThemeService* theme = nullptr, IdleInhibitor* idleInhibitor = nullptr,
       DependencyService* dependencies = nullptr, CompositorPlatform* platform = nullptr, IpcService* ipc = nullptr,
       Wallpaper* wallpaper = nullptr, CalendarService* calendar = nullptr,
-      scripting::ScriptApiContext* scriptApi = nullptr, ClipboardService* clipboard = nullptr
+      scripting::ScriptApiContext* scriptApi = nullptr, ClipboardService* clipboard = nullptr,
+      AccountsService* accounts = nullptr
   );
 
   void create() override;

@@ -144,9 +144,10 @@ std::unique_ptr<Widget> WidgetFactory::create(
     const std::string titleScroll = wc != nullptr ? wc->getString("title_scroll", "none") : std::string("none");
     const std::string displayMode =
         wc != nullptr ? wc->getString("display", "icon_and_text") : std::string("icon_and_text");
+    const bool showEmptyLabel = wc != nullptr ? wc->getBool("show_empty_label", false) : false;
     auto widget = std::make_unique<ActiveWindowWidget>(
         m_configService, m_platform, maxWidth, minWidth, iconSize, parseActiveWindowTitleScrollMode(titleScroll),
-        parseActiveWindowDisplayMode(displayMode)
+        parseActiveWindowDisplayMode(displayMode), showEmptyLabel
     );
     widget->setContentScale(contentScale);
     return widget;
@@ -158,14 +159,14 @@ std::unique_ptr<Widget> WidgetFactory::create(
     const bool mirrored = wc != nullptr ? wc->getBool("mirrored", true) : true;
     const bool centered = wc != nullptr ? wc->getBool("centered", true) : true;
     const bool showWhenIdle = wc != nullptr ? wc->getBool("show_when_idle", false) : false;
-    const ColorSpec lowColor = wc != nullptr
-        ? wc->getColorSpec("low_color", colorSpecFromRole(ColorRole::Primary), "widget." + name + ".low_color")
+    const ColorSpec color1 = wc != nullptr
+        ? wc->getColorSpec("color_1", colorSpecFromRole(ColorRole::Primary), "widget." + name + ".color_1")
         : colorSpecFromRole(ColorRole::Primary);
-    const ColorSpec highColor = wc != nullptr
-        ? wc->getColorSpec("high_color", colorSpecFromRole(ColorRole::Primary), "widget." + name + ".high_color")
+    const ColorSpec color2 = wc != nullptr
+        ? wc->getColorSpec("color_2", colorSpecFromRole(ColorRole::Primary), "widget." + name + ".color_2")
         : colorSpecFromRole(ColorRole::Primary);
     auto widget = std::make_unique<AudioVisualizerWidget>(
-        m_audioSpectrum, width, bands, mirrored, lowColor, highColor, centered, showWhenIdle
+        m_audioSpectrum, width, bands, mirrored, color1, color2, centered, showWhenIdle
     );
     widget->setContentScale(contentScale);
     return widget;

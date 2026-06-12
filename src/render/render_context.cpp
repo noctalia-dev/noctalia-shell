@@ -223,9 +223,9 @@ void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
 
 TextMetrics RenderContext::measureText(
     std::string_view text, float fontSize, FontWeight fontWeight, float maxWidth, int maxLines, TextAlign align,
-    std::string_view fontFamily
+    std::string_view fontFamily, TextEllipsize ellipsize
 ) {
-  auto m = m_textRenderer.measure(text, fontSize, fontWeight, maxWidth, maxLines, align, fontFamily);
+  auto m = m_textRenderer.measure(text, fontSize, fontWeight, maxWidth, maxLines, align, fontFamily, ellipsize);
   return TextMetrics{
       .width = m.width,
       .left = m.left,
@@ -345,14 +345,14 @@ void RenderContext::renderNode(
         const Mat3 shadowTransform = worldTransform * Mat3::translation(text->shadowOffsetX(), text->shadowOffsetY());
         m_textRenderer.draw(
             sw, sh, 0.0f, 0.0f, text->text(), text->fontSize(), shadowColor, shadowTransform, text->fontWeight(),
-            text->maxWidth(), text->maxLines(), text->textAlign(), font
+            text->maxWidth(), text->maxLines(), text->textAlign(), font, text->ellipsize()
         );
       }
       auto color = text->color();
       color.a *= effectiveOpacity;
       m_textRenderer.draw(
           sw, sh, 0.0f, 0.0f, text->text(), text->fontSize(), color, worldTransform, text->fontWeight(),
-          text->maxWidth(), text->maxLines(), text->textAlign(), font
+          text->maxWidth(), text->maxLines(), text->textAlign(), font, text->ellipsize()
       );
     }
     break;
@@ -421,8 +421,8 @@ void RenderContext::renderNode(
   case NodeType::AudioSpectrum: {
     const auto* spectrum = static_cast<const AudioSpectrumNode*>(node);
     auto style = spectrum->style();
-    style.lowColor.a *= effectiveOpacity;
-    style.highColor.a *= effectiveOpacity;
+    style.color1.a *= effectiveOpacity;
+    style.color2.a *= effectiveOpacity;
     const float pixelScaleX = sw > 0.0f ? bw / sw : 1.0f;
     const float pixelScaleY = sh > 0.0f ? bh / sh : 1.0f;
     m_backend->drawAudioSpectrum(

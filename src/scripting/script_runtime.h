@@ -1,6 +1,6 @@
 #pragma once
 
-#include "scripting/scripted_widget_types.h"
+#include "scripting/script_runtime_types.h"
 
 #include <chrono>
 #include <cstdint>
@@ -21,7 +21,7 @@ namespace scripting {
     using SubscriberId = std::uint64_t;
 
     explicit ScriptRuntime(
-        std::string runtimeName, ScriptWidgetSettings settings, ScriptApiContext& api, std::filesystem::path pluginDir,
+        std::string runtimeName, ScriptSettings settings, ScriptApiContext& api, std::filesystem::path pluginDir,
         HttpClient* httpClient = nullptr, ClipboardService* clipboard = nullptr
     );
     ~ScriptRuntime();
@@ -29,18 +29,17 @@ namespace scripting {
     ScriptRuntime(const ScriptRuntime&) = delete;
     ScriptRuntime& operator=(const ScriptRuntime&) = delete;
 
-    [[nodiscard]] SubscriberId subscribe(ScriptWidgetResultCallback callback);
+    [[nodiscard]] SubscriberId subscribe(ScriptResultCallback callback);
     void unsubscribe(SubscriberId id);
     void stop();
 
-    void start(std::string chunkName, std::string source, ScriptWidgetSnapshot snapshot);
-    void reload(std::string chunkName, std::string source, ScriptWidgetSnapshot snapshot);
-    [[nodiscard]] bool enqueueUpdate(ScriptWidgetSnapshot snapshot);
-    [[nodiscard]] bool enqueueCall(std::string functionName, ScriptWidgetSnapshot snapshot);
-    [[nodiscard]] bool enqueueCallBool(std::string functionName, bool value, ScriptWidgetSnapshot snapshot);
+    void start(std::string chunkName, std::string source, ScriptSnapshot snapshot);
+    void reload(std::string chunkName, std::string source, ScriptSnapshot snapshot);
+    [[nodiscard]] bool enqueueUpdate(ScriptSnapshot snapshot);
+    [[nodiscard]] bool enqueueCall(std::string functionName, ScriptSnapshot snapshot);
+    [[nodiscard]] bool enqueueCallBool(std::string functionName, bool value, ScriptSnapshot snapshot);
     [[nodiscard]] bool enqueueCallStrings(
-        std::string functionName, std::string first, std::string second, ScriptWidgetSnapshot snapshot,
-        bool coalesce = false
+        std::string functionName, std::string first, std::string second, ScriptSnapshot snapshot, bool coalesce = false
     );
     [[nodiscard]] bool enqueueAsyncCommandResult(std::uint64_t hostId, int callbackRef, process::RunResult result);
     [[nodiscard]] bool hasOnIpc() const;

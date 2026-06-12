@@ -32,6 +32,8 @@ public:
   void setMaxLines(int maxLines);
   void setFontWeight(FontWeight fontWeight);
   void setTextAlign(TextAlign align);
+  // Which end of an overflowing single line gets the ellipsis (Start keeps the tail, e.g. file paths).
+  void setEllipsize(TextEllipsize ellipsize);
   // StableLogical uses the resolved font line box; InkCentered centers the current glyph ink.
   void setBaselineMode(LabelBaselineMode mode);
   void setShadow(const Color& color, float offsetX, float offsetY);
@@ -53,6 +55,7 @@ public:
   [[nodiscard]] float maxWidth() const noexcept;
   [[nodiscard]] FontWeight fontWeight() const noexcept;
   [[nodiscard]] TextAlign textAlign() const noexcept;
+  [[nodiscard]] TextEllipsize ellipsize() const noexcept;
   [[nodiscard]] LabelBaselineMode baselineMode() const noexcept { return m_baselineMode; }
   [[nodiscard]] float baselineOffset() const noexcept { return m_baselineOffset; }
 

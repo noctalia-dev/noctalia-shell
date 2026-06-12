@@ -266,10 +266,10 @@ namespace {
             pending->width = static_cast<int>(width);
             pending->height = static_cast<int>(height);
             pending->stride = static_cast<int>(stride);
-            kLog.info(
-                "frame buffer format=0x{:08x} {}x{} stride={} bpp={}", format, width, height, stride,
-                bytesPerPixelFromStride(static_cast<int>(width), static_cast<int>(stride))
-            );
+            // kLog.info(
+            //     "frame buffer format=0x{:08x} {}x{} stride={} bpp={}", format, width, height, stride,
+            //     bytesPerPixelFromStride(static_cast<int>(width), static_cast<int>(stride))
+            // );
           },
       .flags =
           [](void* data, zwlr_screencopy_frame_v1* /*frame*/, std::uint32_t flags) {

@@ -3,6 +3,7 @@
 #include "compositors/compositor_platform.h"
 #include "config/config_service.h"
 #include "core/deferred_call.h"
+#include "dbus/accounts/accounts_service.h"
 #include "dbus/mpris/mpris_service.h"
 #include "dbus/network/inetwork_service.h"
 #include "i18n/i18n.h"
@@ -46,7 +47,7 @@ ControlCenterPanel::ControlCenterPanel(
     SystemMonitorService* sysmon, ScreenTimeService* screenTime, GammaService* nightLight,
     noctalia::theme::ThemeService* theme, IdleInhibitor* idleInhibitor, DependencyService* dependencies,
     CompositorPlatform* platform, IpcService* ipc, Wallpaper* wallpaper, CalendarService* calendar,
-    scripting::ScriptApiContext* scriptApi, ClipboardService* clipboard
+    scripting::ScriptApiContext* scriptApi, ClipboardService* clipboard, AccountsService* accounts
 ) {
   (void)upower;
   WaylandConnection* wayland = platform != nullptr ? &platform->wayland() : nullptr;
@@ -56,7 +57,7 @@ ControlCenterPanel::ControlCenterPanel(
   m_dependencies = dependencies;
   m_tabs[tabIndex(TabId::Home)] = std::make_unique<HomeTab>(
       mpris, httpClient, weather, audio, powerProfiles, config, network, bluetooth, nightLight, theme, notifications,
-      idleInhibitor, dependencies, platform, ipc, wallpaper, scriptApi, clipboard
+      idleInhibitor, dependencies, platform, ipc, wallpaper, scriptApi, clipboard, accounts
   );
   m_tabs[tabIndex(TabId::Media)] = std::make_unique<MediaTab>(
       mpris, httpClient, spectrum, config, wayland, PanelManager::instance().renderContext()

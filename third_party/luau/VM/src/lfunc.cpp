@@ -6,6 +6,9 @@
 #include "lmem.h"
 #include "lgc.h"
 
+LUAU_FASTFLAG(LuauClosureUsageCounter)
+LUAU_FASTINTVARIABLE(LuauInlineHitsThreshold, 3)
+
 Proto* luaF_newproto(lua_State* L)
 {
     Proto* f = luaM_newgco(L, Proto, sizeof(Proto), L->activememcat);
@@ -52,6 +55,10 @@ Proto* luaF_newproto(lua_State* L)
     f->bytecodeid = 0;
     f->sizetypeinfo = 0;
 
+    f->feedbackvec = NULL;
+    f->feedbackvecsize = 0;
+    f->funid = 0;
+
     return f;
 }
 
@@ -64,6 +71,7 @@ Closure* luaF_newLclosure(lua_State* L, int nelems, LuaTable* e, Proto* p)
     c->nupvalues = cast_byte(nelems);
     c->stacksize = p->maxstacksize;
     c->preload = 0;
+    c->usage = 0;
     c->l.p = p;
     for (int i = 0; i < nelems; ++i)
         setnilvalue(&c->l.uprefs[i]);
@@ -79,6 +87,7 @@ Closure* luaF_newCclosure(lua_State* L, int nelems, LuaTable* e)
     c->nupvalues = cast_byte(nelems);
     c->stacksize = LUA_MINSTACK;
     c->preload = 0;
+    c->usage = 0;
     c->c.f = NULL;
     c->c.cont = NULL;
     c->c.debugname = NULL;
@@ -177,6 +186,9 @@ void luaF_freeproto(lua_State* L, Proto* f, lua_Page* page)
     if (f->typeinfo)
         luaM_freearray(L, f->typeinfo, f->sizetypeinfo, uint8_t, f->memcat);
 
+    if (f->feedbackvec)
+        luaM_freearray(L, f->feedbackvec, f->feedbackvecsize, FeedbackVectorSlot, f->memcat);
+
     luaM_freegco(L, f, sizeof(Proto), f->memcat, page);
 }
 
@@ -208,4 +220,35 @@ const LocVar* luaF_findlocal(const Proto* f, int local_reg, int pc)
             return &f->locvars[i];
 
     return NULL; // not found
+}
+
+bool luaF_recordhit(lua_State* L, Closure* caller, Closure* target, uint32_t slotid)
+{
+    if (L->global->ecb.inlinefunction == nullptr)
+        return false;
+
+    LUAU_ASSERT(!caller->isC);
+    Proto* callerp = caller->l.p;
+    if (target->isC)
+        return false;
+    Proto* targetp = target->l.p;
+    LUAU_ASSERT(slotid < callerp->feedbackvecsize);
+    FeedbackVectorSlot& slot = callerp->feedbackvec[slotid];
+    LUAU_ASSERT(slot.kind == FeedbackVectorSlotKind::CALL_TARGET);
+
+    if (slot.call_target.proto == 0)
+        slot.call_target.proto = targetp->funid;
+
+    if (slot.call_target.proto != targetp->funid)
+        return false;
+
+    slot.call_target.hits++;
+
+    if (static_cast<int>(slot.call_target.hits) >= FInt::LuauInlineHitsThreshold)
+    {
+        L->global->ecb.inlinefunction(L, caller, target, slot.call_target.pc);
+        return false;
+    }
+
+    return true;
 }

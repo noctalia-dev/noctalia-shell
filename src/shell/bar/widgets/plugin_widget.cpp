@@ -260,7 +260,7 @@ void PluginWidget::create() {
   );
 
   auto alive = std::weak_ptr<bool>(m_alive);
-  m_runtimeSubscription = m_runtime->subscribe([this, alive](scripting::ScriptWidgetResult result) {
+  m_runtimeSubscription = m_runtime->subscribe([this, alive](scripting::ScriptResult result) {
     auto token = alive.lock();
     if (token == nullptr || !*token) {
       return;
@@ -414,7 +414,7 @@ void PluginWidget::luaSetImage(std::string_view path, bool watch, float width, f
   m_dirty = true;
 }
 
-void PluginWidget::luaSetTooltip(const scripting::ScriptWidgetTooltipPatch& tooltip) {
+void PluginWidget::luaSetTooltip(const scripting::ScriptTooltipPatch& tooltip) {
   if (m_area == nullptr) {
     return;
   }
@@ -616,7 +616,7 @@ void PluginWidget::runScriptUpdate() {
   }
 }
 
-void PluginWidget::handleScriptResult(scripting::ScriptWidgetResult result) {
+void PluginWidget::handleScriptResult(scripting::ScriptResult result) {
   if (result.hasOnIpcKnown) {
     m_hasOnIpc = result.hasOnIpc;
     m_hasOnIpcKnown = true;
@@ -635,7 +635,7 @@ void PluginWidget::handleScriptResult(scripting::ScriptWidgetResult result) {
   }
 }
 
-void PluginWidget::applyScriptPatch(const scripting::ScriptWidgetPatch& patch) {
+void PluginWidget::applyScriptPatch(const scripting::ScriptPatch& patch) {
   if (patch.fontFamily.has_value()) {
     luaSetFont(*patch.fontFamily);
   }
@@ -665,8 +665,8 @@ void PluginWidget::applyScriptPatch(const scripting::ScriptWidgetPatch& patch) {
   }
 }
 
-scripting::ScriptWidgetSnapshot PluginWidget::makeScriptSnapshot() const {
-  return scripting::ScriptWidgetSnapshot{
+scripting::ScriptSnapshot PluginWidget::makeScriptSnapshot() const {
+  return scripting::ScriptSnapshot{
       .isVertical = m_isVertical,
       .outputName = m_outputName,
       .barName = m_barName,
@@ -769,7 +769,7 @@ bool PluginWidget::shouldDeferUpdate() const { return m_updateDeferralCallback &
 void PluginWidget::setupScriptWatch() {
   if (m_sourcePath.empty() || !m_fileWatcher)
     return;
-  m_watchId = m_fileWatcher->watch(m_sourcePath, [this] { reloadScript(); });
+  m_watchId = m_fileWatcher->watch(m_sourcePath, [this] { reloadScript(); }, FileWatcher::WatchTrigger::WriteCompleted);
 }
 
 void PluginWidget::teardownScriptWatch() {
@@ -780,6 +780,14 @@ void PluginWidget::teardownScriptWatch() {
 }
 
 void PluginWidget::reloadScript() {
+  std::string source = readFile(m_sourcePath);
+  auto name = m_sourcePath.filename().string();
+  if (source.empty() || !m_runtime) {
+    kLog.warn("hot reload: failed to reload '{}'", name);
+    notify::error("Noctalia", i18n::tr("bar.widgets.scripted.reload-failed"), name);
+    return;
+  }
+
   m_updateTimer.stop();
   m_imageReloadRetryTimer.stop();
   teardownImageWatch();
@@ -806,15 +814,6 @@ void PluginWidget::reloadScript() {
 
   m_hasOnIpc = false;
   m_hasOnIpcKnown = false;
-
-  std::string source = readFile(m_sourcePath);
-  auto name = m_sourcePath.filename().string();
-  if (source.empty() || !m_runtime) {
-    kLog.warn("hot reload: failed to reload '{}'", name);
-    notify::error("Noctalia", i18n::tr("bar.widgets.scripted.reload-failed"), name);
-    requestRedraw();
-    return;
-  }
 
   m_runtime->reload(m_sourcePath.string(), std::move(source), makeScriptSnapshot());
   startUpdateTimer();

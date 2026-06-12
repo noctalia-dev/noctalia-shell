@@ -117,6 +117,7 @@ public:
   // blur region. No-op when no panel is open.
   void onConfigReloaded();
   void onIconThemeChanged();
+  void focusArea(InputArea* area);
   void requestUpdateOnly();
   void requestLayout();
   // Requests a redraw on the active panel surface without re-running panel

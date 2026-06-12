@@ -3,6 +3,7 @@
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
 #include "shell/desktop/desktop_widget_settings_registry.h"
+#include "shell/lockscreen/lockscreen_login_box.h"
 #include "shell/settings/color_spec_picker.h"
 #include "shell/settings/widget_settings_registry.h"
 #include "shell/widgets_editor/background_widgets_editor.h"
@@ -12,6 +13,7 @@
 #include "ui/style.h"
 #include "wayland/layer_surface.h"
 
+#include <functional>
 #include <linux/input-event-codes.h>
 
 namespace {
@@ -383,6 +385,25 @@ namespace {
     );
   }
 
+  std::unique_ptr<Flex> makeResetDefaultsRow(BackgroundWidgetsEditor* editor, std::function<void()> onReset) {
+    return ui::row(
+        {
+            .justify = FlexJustify::End,
+            .paddingV = Style::spaceXs,
+            .fillWidth = true,
+        },
+        ui::button({
+            .text = i18n::tr("desktop-widgets.editor.settings.reset-defaults"),
+            .variant = ButtonVariant::Ghost,
+            .onClick = [editor, onReset = std::move(onReset)]() {
+              if (editor != nullptr) {
+                onReset();
+              }
+            },
+        })
+    );
+  }
+
   void addSettingsSection(
       Flex& content, const std::vector<settings::WidgetSettingSpec>& specs, const Settings& s,
       BackgroundWidgetsEditor* editor, std::string_view labelKey, bool separator
@@ -493,6 +514,21 @@ void BackgroundWidgetsEditor::applySettingChange(const std::string& key, WidgetS
   });
 }
 
+void BackgroundWidgetsEditor::resetSelectedWidgetSettings() {
+  deferEditorMutation([this]() {
+    auto* state = findWidgetState(m_selectedWidgetId);
+    if (state == nullptr) {
+      return;
+    }
+
+    desktop_settings::applyAllDesktopWidgetDefaultSettings(state->settings, state->type);
+    if (lockscreen_login_box::isLoginBoxWidget(*state)) {
+      lockscreen_login_box::normalizeSettings(state->settings);
+    }
+    requestLayout();
+  });
+}
+
 void BackgroundWidgetsEditor::buildInspector(
     OverlaySurface& surface, Node& root, const DesktopWidgetState& selectedState
 ) {
@@ -528,10 +564,14 @@ void BackgroundWidgetsEditor::buildInspector(
   content->setPadding(Style::spaceSm, Style::spaceMd);
 
   const auto typeSpecs = desktop_settings::desktopWidgetSettingSpecs(selectedState.type);
+  const auto backgroundSpecs = desktop_settings::commonDesktopWidgetSettingSpecs(selectedState.type);
   addSettingsSection(
       *content, typeSpecs, selectedState.settings, this, "desktop-widgets.editor.settings.widget-section", false
   );
   addBackgroundSection(*content, selectedState.settings, this, selectedState.type);
+  if (hasVisibleSpecs(typeSpecs, selectedState.settings) || hasVisibleSpecs(backgroundSpecs, selectedState.settings)) {
+    content->addChild(makeResetDefaultsRow(this, [this]() { resetSelectedWidgetSettings(); }));
+  }
 
   Flex* panelPtr = nullptr;
   Flex* handlePtr = nullptr;

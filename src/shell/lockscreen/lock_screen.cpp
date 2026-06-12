@@ -123,6 +123,10 @@ bool LockScreen::lock() {
   if (m_wayland == nullptr || m_renderContext == nullptr) {
     return false;
   }
+  if (m_configService != nullptr && !m_configService->isLockScreenEnabled()) {
+    kLog.debug("lock screen disabled");
+    return false;
+  }
   if (isActive()) {
     return true;
   }
@@ -269,7 +273,16 @@ void LockScreen::onGpuResourcesInvalidated() {
 }
 
 void LockScreen::onConfigChanged() {
-  if (!isActive() || m_configService == nullptr) {
+  if (m_configService == nullptr) {
+    return;
+  }
+  if (!m_configService->isLockScreenEnabled()) {
+    if (isActive()) {
+      unlock();
+    }
+    return;
+  }
+  if (!isActive()) {
     return;
   }
   for (auto& instance : m_instances) {
@@ -482,6 +495,9 @@ bool LockScreen::shouldUseBlurredDesktop() const {
 }
 
 void LockScreen::primeDesktopCaptures() {
+  if (m_configService != nullptr && !m_configService->isLockScreenEnabled()) {
+    return;
+  }
   if (isActive()) {
     return;
   }

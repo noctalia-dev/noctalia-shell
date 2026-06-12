@@ -10,6 +10,10 @@ class TextureManager;
 
 enum class TextAlign : std::uint8_t { Start, Center, End };
 
+// Which end of an overflowing single line is replaced with the ellipsis.
+// Start keeps the tail (useful for file paths: "…/long/mount/point").
+enum class TextEllipsize : std::uint8_t { End, Start, Middle };
+
 enum class FontWeight : int {
   Thin = 100,
   UltraLight = 200,
@@ -47,7 +51,8 @@ public:
 
   [[nodiscard]] virtual TextMetrics measureText(
       std::string_view text, float fontSize, FontWeight fontWeight = FontWeight::Normal, float maxWidth = 0.0f,
-      int maxLines = 0, TextAlign align = TextAlign::Start, std::string_view fontFamily = {}
+      int maxLines = 0, TextAlign align = TextAlign::Start, std::string_view fontFamily = {},
+      TextEllipsize ellipsize = TextEllipsize::End
   ) = 0;
   [[nodiscard]] virtual TextMetrics measureFont(float fontSize, FontWeight fontWeight = FontWeight::Normal) = 0;
 

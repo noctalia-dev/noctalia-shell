@@ -10,9 +10,9 @@
 #include "lualib.h"
 #include "net/http_client.h"
 #include "notification/notifications.h"
+#include "scripting/plugin_bindings.h"
 #include "scripting/plugin_state_store.h"
 #include "scripting/script_api_context.h"
-#include "scripting/scripted_widget_bindings.h"
 #include "system/terminal_launch.h"
 #include "util/file_utils.h"
 
@@ -1318,7 +1318,7 @@ void LuauHost::scriptSetUpdateInterval(int ms) {
 void LuauHost::scriptLog(std::string message) {
   if (m_scriptContext != nullptr) {
     m_scriptContext->sideEffects.push_back(
-        {.kind = scripting::ScriptWidgetSideEffectKind::Log, .title = std::move(message), .body = {}}
+        {.kind = scripting::ScriptSideEffectKind::Log, .title = std::move(message), .body = {}}
     );
     return;
   }
@@ -1328,7 +1328,7 @@ void LuauHost::scriptLog(std::string message) {
 void LuauHost::scriptNotifyInfo(std::string title, std::string body) {
   if (m_scriptContext != nullptr) {
     m_scriptContext->sideEffects.push_back(
-        {.kind = scripting::ScriptWidgetSideEffectKind::NotifyInfo, .title = std::move(title), .body = std::move(body)}
+        {.kind = scripting::ScriptSideEffectKind::NotifyInfo, .title = std::move(title), .body = std::move(body)}
     );
     return;
   }
@@ -1338,7 +1338,7 @@ void LuauHost::scriptNotifyInfo(std::string title, std::string body) {
 void LuauHost::scriptNotifyError(std::string title, std::string body) {
   if (m_scriptContext != nullptr) {
     m_scriptContext->sideEffects.push_back(
-        {.kind = scripting::ScriptWidgetSideEffectKind::NotifyError, .title = std::move(title), .body = std::move(body)}
+        {.kind = scripting::ScriptSideEffectKind::NotifyError, .title = std::move(title), .body = std::move(body)}
     );
     return;
   }
@@ -1350,9 +1350,7 @@ bool LuauHost::scriptCopyToClipboard(std::string text, std::string mimeType) {
     return false;
   }
   m_scriptContext->sideEffects.push_back(
-      {.kind = scripting::ScriptWidgetSideEffectKind::CopyToClipboard,
-       .title = std::move(text),
-       .body = std::move(mimeType)}
+      {.kind = scripting::ScriptSideEffectKind::CopyToClipboard, .title = std::move(text), .body = std::move(mimeType)}
   );
   return true;
 }

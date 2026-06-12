@@ -82,7 +82,7 @@ void VolumeWidget::create() {
           .out = &m_glyph,
           .glyph = "volume-high",
           .glyphSize = Style::baseGlyphSize * m_contentScale,
-          .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
+          .color = widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)),
       })
   );
 
@@ -152,7 +152,7 @@ void VolumeWidget::syncState(Renderer& renderer) {
   m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
   m_glyph->setColor(
       muted ? colorSpecFromRole(ColorRole::OnSurfaceVariant)
-            : widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
+            : widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface))
   );
   m_glyph->measure(renderer);
 

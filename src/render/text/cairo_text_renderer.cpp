@@ -191,6 +191,7 @@ bool CairoTextRenderer::CacheKey::operator==(const CacheKey& other) const noexce
       && maxWidthQ == other.maxWidthQ
       && maxLines == other.maxLines
       && align == other.align
+      && ellipsize == other.ellipsize
       && colorRgba == other.colorRgba
       && text == other.text
       && fontFamily == other.fontFamily;
@@ -205,6 +206,7 @@ std::size_t CairoTextRenderer::CacheKeyHash::operator()(const CacheKey& k) const
   hashCombine(seed, std::hash<std::uint16_t>{}(k.scaleQ));
   hashCombine(seed, std::hash<std::uint16_t>{}(k.maxLines));
   hashCombine(seed, std::hash<std::uint8_t>{}(static_cast<std::uint8_t>(k.align)));
+  hashCombine(seed, std::hash<std::uint8_t>{}(static_cast<std::uint8_t>(k.ellipsize)));
   hashCombine(seed, std::hash<std::uint32_t>{}(k.colorRgba));
   hashCombine(seed, std::hash<int>{}(static_cast<int>(k.fontWeight)));
   return seed;
@@ -217,6 +219,7 @@ bool CairoTextRenderer::MetricsKey::operator==(const MetricsKey& other) const no
       && maxWidthQ == other.maxWidthQ
       && maxLines == other.maxLines
       && align == other.align
+      && ellipsize == other.ellipsize
       && text == other.text
       && fontFamily == other.fontFamily;
 }
@@ -229,6 +232,7 @@ std::size_t CairoTextRenderer::MetricsKeyHash::operator()(const MetricsKey& k) c
   hashCombine(seed, std::hash<std::uint16_t>{}(k.scaleQ));
   hashCombine(seed, std::hash<std::uint16_t>{}(k.maxLines));
   hashCombine(seed, std::hash<std::uint8_t>{}(static_cast<std::uint8_t>(k.align)));
+  hashCombine(seed, std::hash<std::uint8_t>{}(static_cast<std::uint8_t>(k.ellipsize)));
   hashCombine(seed, std::hash<int>{}(static_cast<int>(k.fontWeight)));
   return seed;
 }
@@ -372,8 +376,11 @@ void CairoTextRenderer::notifyFontConfigChanged() {
 
 PangoLayout* CairoTextRenderer::buildLayout(
     std::string_view text, float fontSize, FontWeight fontWeight, float maxWidthPxScaled, int maxLines, TextAlign align,
-    std::string_view fontFamily
+    std::string_view fontFamily, TextEllipsize ellipsize
 ) const {
+  const PangoEllipsizeMode pangoEllipsize = ellipsize == TextEllipsize::Start ? PANGO_ELLIPSIZE_START
+      : ellipsize == TextEllipsize::Middle                                    ? PANGO_ELLIPSIZE_MIDDLE
+                                                                              : PANGO_ELLIPSIZE_END;
   PangoLayout* layout = pango_layout_new(m_pangoContext);
 
   const float rasterSize = std::max(1.0f, fontSize * m_contentScale);
@@ -418,14 +425,14 @@ PangoLayout* CairoTextRenderer::buildLayout(
     pango_layout_set_width(layout, static_cast<int>(maxWidthPxScaled * PANGO_SCALE));
     pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
     pango_layout_set_height(layout, -lineBudget);
-    pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
+    pango_layout_set_ellipsize(layout, pangoEllipsize);
   } else {
     pango_layout_set_width(layout, -1);
     if (maxLines > 0) {
       constexpr int kHardMaxLines = 500;
       const int lineBudget = std::min(maxLines, kHardMaxLines);
       pango_layout_set_height(layout, -lineBudget);
-      pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
+      pango_layout_set_ellipsize(layout, pangoEllipsize);
     }
   }
 
@@ -476,7 +483,7 @@ CairoTextRenderer::TextMetrics CairoTextRenderer::metricsFromLayout(PangoLayout*
 
 CairoTextRenderer::TextMetrics CairoTextRenderer::measure(
     std::string_view text, float fontSize, FontWeight fontWeight, float maxWidth, int maxLines, TextAlign align,
-    std::string_view fontFamily
+    std::string_view fontFamily, TextEllipsize ellipsize
 ) {
   if (m_pangoContext == nullptr || text.empty()) {
     return {};
@@ -490,6 +497,7 @@ CairoTextRenderer::TextMetrics CairoTextRenderer::measure(
   key.scaleQ = quantizeScale(m_contentScale);
   key.maxLines = static_cast<std::uint16_t>(std::max(0, maxLines));
   key.align = align;
+  key.ellipsize = ellipsize;
   key.fontWeight = fontWeight;
 
   auto it = m_metricsCache.find(key);
@@ -497,7 +505,8 @@ CairoTextRenderer::TextMetrics CairoTextRenderer::measure(
     return it->second;
   }
 
-  PangoLayout* layout = buildLayout(text, fontSize, fontWeight, maxWidth * m_contentScale, maxLines, align, fontFamily);
+  PangoLayout* layout =
+      buildLayout(text, fontSize, fontWeight, maxWidth * m_contentScale, maxLines, align, fontFamily, ellipsize);
   const auto metrics = metricsFromLayout(layout);
   g_object_unref(layout);
 
@@ -855,7 +864,7 @@ void CairoTextRenderer::evictIfNeeded() {
 
 CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(
     std::string_view text, float fontSize, FontWeight fontWeight, float maxWidth, int maxLines, TextAlign align,
-    const Color& color, std::string_view fontFamily
+    const Color& color, std::string_view fontFamily, TextEllipsize ellipsize
 ) {
   // Tinted (A8 coverage) entries are color-independent — the shader applies
   // u_tint at draw time, so one cache entry serves every color. RGBA entries
@@ -873,6 +882,7 @@ CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(
   key.scaleQ = quantizeScale(m_contentScale);
   key.maxLines = static_cast<std::uint16_t>(std::max(0, maxLines));
   key.align = align;
+  key.ellipsize = ellipsize;
   key.fontWeight = fontWeight;
   key.colorRgba = tinted ? 0u : packColorRgb(color);
 
@@ -882,7 +892,8 @@ CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(
     return &it->second;
   }
 
-  PangoLayout* layout = buildLayout(text, fontSize, fontWeight, maxWidth * m_contentScale, maxLines, align, fontFamily);
+  PangoLayout* layout =
+      buildLayout(text, fontSize, fontWeight, maxWidth * m_contentScale, maxLines, align, fontFamily, ellipsize);
   Color rasterColor = color;
   if (!tinted) {
     rasterColor.a = 1.0f;
@@ -899,6 +910,7 @@ CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(
   mkey.scaleQ = key.scaleQ;
   mkey.maxLines = key.maxLines;
   mkey.align = key.align;
+  mkey.ellipsize = key.ellipsize;
   mkey.fontWeight = key.fontWeight;
   if (m_metricsCache.size() >= kMaxMetricsEntries) {
     m_metricsCache.clear();
@@ -919,13 +931,14 @@ CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(
 void CairoTextRenderer::draw(
     float surfaceWidth, float surfaceHeight, float x, float baselineY, std::string_view text, float fontSize,
     const Color& color, const Mat3& transform, FontWeight fontWeight, float maxWidth, int maxLines, TextAlign align,
-    std::string_view fontFamily
+    std::string_view fontFamily, TextEllipsize ellipsize
 ) {
   if (m_pangoContext == nullptr || m_backend == nullptr || text.empty()) {
     return;
   }
 
-  CacheEntry* entry = lookupOrRasterize(text, fontSize, fontWeight, maxWidth, maxLines, align, color, fontFamily);
+  CacheEntry* entry =
+      lookupOrRasterize(text, fontSize, fontWeight, maxWidth, maxLines, align, color, fontFamily, ellipsize);
   if (entry == nullptr || entry->tiles.empty()) {
     return;
   }

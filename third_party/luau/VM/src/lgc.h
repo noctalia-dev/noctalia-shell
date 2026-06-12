@@ -118,6 +118,12 @@
             luaC_barrierback(L, obj2gco(L), &L->gclist); \
     }
 
+#define luaC_objectbarrier(L) \
+    { \
+        if (isblack(obj2gco(L))) \
+            luaC_barrierback(L, obj2gco(L), &L->gclist); \
+    }
+
 #define luaC_init(L, o, tt_) \
     { \
         o->marked = luaC_white(L->global); \

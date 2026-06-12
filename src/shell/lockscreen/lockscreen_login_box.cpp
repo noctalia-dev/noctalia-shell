@@ -10,6 +10,82 @@
 
 namespace lockscreen_login_box {
 
+  namespace {
+
+    [[nodiscard]] float readFloat(
+        const std::unordered_map<std::string, WidgetSettingValue>& settings, std::string_view key, float fallback
+    ) {
+      const auto it = settings.find(std::string(key));
+      if (it == settings.end()) {
+        return fallback;
+      }
+      if (const auto* value = std::get_if<double>(&it->second)) {
+        return static_cast<float>(*value);
+      }
+      if (const auto* value = std::get_if<std::int64_t>(&it->second)) {
+        return static_cast<float>(*value);
+      }
+      return fallback;
+    }
+
+    [[nodiscard]] bool
+    readBool(const std::unordered_map<std::string, WidgetSettingValue>& settings, std::string_view key, bool fallback) {
+      const auto it = settings.find(std::string(key));
+      if (it == settings.end()) {
+        return fallback;
+      }
+      if (const auto* value = std::get_if<bool>(&it->second)) {
+        return *value;
+      }
+      return fallback;
+    }
+
+    [[nodiscard]] std::string readString(
+        const std::unordered_map<std::string, WidgetSettingValue>& settings, std::string_view key,
+        std::string_view fallback
+    ) {
+      const auto it = settings.find(std::string(key));
+      if (it == settings.end()) {
+        return std::string(fallback);
+      }
+      if (const auto* value = std::get_if<std::string>(&it->second)) {
+        return *value;
+      }
+      return std::string(fallback);
+    }
+
+    void clampOpacitySetting(std::unordered_map<std::string, WidgetSettingValue>& settings, std::string_view key) {
+      const std::string keyStr(key);
+      const auto it = settings.find(keyStr);
+      if (it == settings.end()) {
+        return;
+      }
+      if (const auto* doubleValue = std::get_if<double>(&it->second)) {
+        settings.insert_or_assign(keyStr, std::clamp(*doubleValue, 0.0, 1.0));
+        return;
+      }
+      if (const auto* intValue = std::get_if<std::int64_t>(&it->second)) {
+        settings.insert_or_assign(keyStr, std::clamp(static_cast<double>(*intValue), 0.0, 1.0));
+      }
+    }
+
+    void clampRadiusSetting(std::unordered_map<std::string, WidgetSettingValue>& settings, std::string_view key) {
+      const std::string keyStr(key);
+      const auto it = settings.find(keyStr);
+      if (it == settings.end()) {
+        return;
+      }
+      if (const auto* doubleValue = std::get_if<double>(&it->second)) {
+        settings.insert_or_assign(keyStr, std::clamp(*doubleValue, 0.0, 32.0));
+        return;
+      }
+      if (const auto* intValue = std::get_if<std::int64_t>(&it->second)) {
+        settings.insert_or_assign(keyStr, std::clamp(static_cast<double>(*intValue), 0.0, 32.0));
+      }
+    }
+
+  } // namespace
+
   bool isLoginBoxWidget(const DesktopWidgetState& state) { return state.type == kWidgetType; }
 
   bool isLoginBoxWidgetType(std::string_view type) { return type == kWidgetType; }
@@ -51,6 +127,49 @@ namespace lockscreen_login_box {
     return nullptr;
   }
 
+  LoginBoxStyle resolveStyle(const std::unordered_map<std::string, WidgetSettingValue>& settings) {
+    LoginBoxStyle style;
+    ColorSpec panelFill =
+        colorSpecFromConfigString(readString(settings, "background_color", "surface_variant"), "background_color");
+    panelFill.alpha *= std::clamp(readFloat(settings, "background_opacity", 0.88f), 0.0f, 1.0f);
+    style.panelFill = panelFill;
+    style.panelRadius = std::clamp(readFloat(settings, "background_radius", style.panelRadius), 0.0f, 32.0f);
+    style.inputOpacity = std::clamp(readFloat(settings, kInputOpacityKey, style.inputOpacity), 0.0f, 1.0f);
+    style.inputRadius = std::clamp(readFloat(settings, kInputRadiusKey, style.inputRadius), 0.0f, 32.0f);
+    style.showLoginButton = readBool(settings, kShowLoginButtonKey, style.showLoginButton);
+    return style;
+  }
+
+  void applyDefaultSettings(
+      std::unordered_map<std::string, WidgetSettingValue>& settings, desktop_settings::DesktopWidgetSettingsScope scope
+  ) {
+    if (scope == desktop_settings::DesktopWidgetSettingsScope::Widget) {
+      settings.insert_or_assign(std::string(kShowLoginButtonKey), true);
+      settings.insert_or_assign(std::string(kInputOpacityKey), 1.0);
+      settings.insert_or_assign(std::string(kInputRadiusKey), 6.0);
+    }
+    if (scope == desktop_settings::DesktopWidgetSettingsScope::Background) {
+      settings.insert_or_assign("background_color", std::string("surface_variant"));
+      settings.insert_or_assign("background_opacity", 0.88);
+      settings.insert_or_assign("background_radius", 12.0);
+    }
+  }
+
+  void applyAllDefaultSettings(std::unordered_map<std::string, WidgetSettingValue>& settings) {
+    applyDefaultSettings(settings, desktop_settings::DesktopWidgetSettingsScope::Widget);
+    applyDefaultSettings(settings, desktop_settings::DesktopWidgetSettingsScope::Background);
+  }
+
+  void normalizeSettings(std::unordered_map<std::string, WidgetSettingValue>& settings) {
+    if (!settings.contains(std::string(kShowLoginButtonKey))) {
+      settings.insert_or_assign(std::string(kShowLoginButtonKey), true);
+    }
+    clampOpacitySetting(settings, "background_opacity");
+    clampRadiusSetting(settings, "background_radius");
+    clampOpacitySetting(settings, kInputOpacityKey);
+    clampRadiusSetting(settings, kInputRadiusKey);
+  }
+
   void ensureWidgets(std::vector<DesktopWidgetState>& widgets, const WaylandConnection& wayland) {
     std::unordered_set<std::string> outputsWithLoginBox;
     std::erase_if(widgets, [&](const DesktopWidgetState& widget) {
@@ -73,7 +192,7 @@ namespace lockscreen_login_box {
       widget.rotationRad = 0.0f;
       widget.enabled = true;
       widget.type = std::string(kWidgetType);
-      widget.settings.clear();
+      normalizeSettings(widget.settings);
     }
 
     for (const auto& output : wayland.outputs()) {
@@ -95,6 +214,8 @@ namespace lockscreen_login_box {
           desktop_widgets::outputLogicalWidth(output), desktop_widgets::outputLogicalHeight(output), widget.cx,
           widget.cy
       );
+      applyDefaultSettings(widget.settings, desktop_settings::DesktopWidgetSettingsScope::Widget);
+      applyDefaultSettings(widget.settings, desktop_settings::DesktopWidgetSettingsScope::Background);
       widgets.insert(widgets.begin(), std::move(widget));
       outputsWithLoginBox.insert(outputKey);
     }

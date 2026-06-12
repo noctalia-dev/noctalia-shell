@@ -12,7 +12,7 @@ class Renderer;
 class AudioVisualizerWidget : public Widget {
 public:
   AudioVisualizerWidget(
-      PipeWireSpectrum* spectrum, float width, int bands, bool mirrored, ColorSpec lowColor, ColorSpec highColor,
+      PipeWireSpectrum* spectrum, float width, int bands, bool mirrored, ColorSpec color1, ColorSpec color2,
       bool centered, bool showWhenIdle
   );
   ~AudioVisualizerWidget() override;
@@ -37,8 +37,8 @@ private:
   bool m_mirrored = false;
   bool m_centered = true;
   bool m_showWhenIdle = false;
-  ColorSpec m_lowColor = colorSpecFromRole(ColorRole::Primary);
-  ColorSpec m_highColor = colorSpecFromRole(ColorRole::Primary);
+  ColorSpec m_color1 = colorSpecFromRole(ColorRole::Primary);
+  ColorSpec m_color2 = colorSpecFromRole(ColorRole::Primary);
   std::uint64_t m_listenerId = 0;
   AudioVisualizer* m_visualizer = nullptr;
   bool m_pendingSpectrumUpdate = false;

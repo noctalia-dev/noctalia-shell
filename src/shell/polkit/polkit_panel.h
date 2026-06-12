@@ -44,4 +44,5 @@ private:
   Input* m_input = nullptr;
   Button* m_submitButton = nullptr;
   Button* m_cancelButton = nullptr;
+  bool m_lastResponseRequired = false;
 };

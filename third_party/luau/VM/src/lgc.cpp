@@ -11,10 +11,12 @@
 #include "lmem.h"
 #include "ludata.h"
 #include "lbuffer.h"
+#include "lclass.h"
 
 #include <string.h>
 
-LUAU_FASTFLAG(LuauUdataDirectAccess)
+LUAU_FASTFLAG(LuauUdataDirectAccess6)
+LUAU_FASTFLAG(LuauDirectFieldGet)
 
 /*
  * Luau uses an incremental non-generational non-moving mark&sweep garbage collector.
@@ -289,6 +291,18 @@ static void reallymarkobject(global_State* g, GCObject* o)
         g->gray = o;
         break;
     }
+    case LUA_TCLASS:
+    {
+        gco2class(o)->gclist = g->gray;
+        g->gray = o;
+        break;
+    }
+    case LUA_TOBJECT:
+    {
+        gco2object(o)->gclist = g->gray;
+        g->gray = o;
+        break;
+    }
     default:
         LUAU_ASSERT(0);
     }
@@ -415,6 +429,26 @@ static void traversestack(global_State* g, lua_State* l)
     }
 }
 
+static void traverseclass(global_State* g, LuauClass* classobject)
+{
+    markobject(g, classobject->name);
+    markobject(g, classobject->memberstooffset);
+    for (int i = 0; i < classobject->numberofallmembers; i++)
+        markobject(g, classobject->offsettomember[i]);
+    for (int i = 0; i < classobject->numberofallmembers - classobject->numberofinstancemembers; i++)
+        markvalue(g, &classobject->staticmembers[i]);
+    markobject(g, classobject->metatable);
+    if (classobject->instancemetatable)
+        markobject(g, classobject->instancemetatable);
+}
+
+static void traverseobject(global_State* g, LuauObject* classinst)
+{
+    markobject(g, classinst->lclass);
+    for (int i = 0; i < classinst->numberofmembers; i++)
+        markvalue(g, &classinst->members[i]);
+}
+
 static void clearstack(lua_State* l)
 {
     StkId stack_end = l->stack + l->stacksize;
@@ -526,6 +560,28 @@ static size_t propagatemark(global_State* g)
 
         return sizeof(Proto) + sizeof(Instruction) * p->sizecode + sizeof(Proto*) * p->sizep + sizeof(TValue) * p->sizek + p->sizelineinfo +
                sizeof(LocVar) * p->sizelocvars + sizeof(TString*) * p->sizeupvalues + p->sizetypeinfo;
+    }
+    case LUA_TCLASS:
+    {
+        LuauClass* classobject = gco2class(o);
+        g->gray = classobject->gclist;
+        traverseclass(g, classobject);
+        // We've traversed the "object" itself ...
+        return sizeof(LuauClass) +
+               // ... plus the method closures, each a `TValue` wide ...
+               ((classobject->numberofallmembers - classobject->numberofinstancemembers) * sizeof(TValue)) +
+               // ... plus a string pointer for each method or property, each a pointer wide.
+               (classobject->numberofallmembers * sizeof(TString*));
+    }
+    case LUA_TOBJECT:
+    {
+        LuauObject* classinst = gco2object(o);
+        g->gray = classinst->gclist;
+        traverseobject(g, classinst);
+        // We've traversed the instance ...
+        return sizeof(LuauObject) +
+               // ... plus all of the instance fields.
+               classinst->numberofmembers * sizeof(TValue);
     }
     default:
         LUAU_ASSERT(0);
@@ -667,6 +723,12 @@ static void freeobj(lua_State* L, GCObject* o, lua_Page* page)
     case LUA_TBUFFER:
         luaB_freebuffer(L, gco2buf(o), page);
         break;
+    case LUA_TCLASS:
+        luaR_freeclass(L, gco2class(o), page);
+        break;
+    case LUA_TOBJECT:
+        luaR_freeobject(L, gco2object(o), page);
+        break;
     default:
         LUAU_ASSERT(0);
     }
@@ -751,9 +813,9 @@ static void markroot(lua_State* L)
     markobject(g, g->mainthread->gt);
     markvalue(g, registry(L));
 
-    if (FFlag::LuauUdataDirectAccess)
+    if (FFlag::LuauUdataDirectAccess6)
     {
-        for (int i = 0; i < LUA_UTAG_LIMIT; i++)
+        for (int i = 0; i < UTAG_INTERNAL_LIMIT; i++)
         {
             lua_UdataDirectAccessData& udatadirect = L->global->udatadirect[i];
 
@@ -761,6 +823,13 @@ static void markroot(lua_State* L)
             markvalue(g, &udatadirect.newindextm);
             markvalue(g, &udatadirect.namecalltm);
         }
+    }
+
+    if (FFlag::LuauDirectFieldGet)
+    {
+        for (int i = 0; i < UTAG_INTERNAL_LIMIT; i++)
+            if (g->udatadirectfields[i])
+                markobject(g, g->udatadirectfields[i]);
     }
 
     markmt(g);

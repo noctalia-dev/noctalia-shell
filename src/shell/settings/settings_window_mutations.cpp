@@ -2,10 +2,12 @@
 #include "core/deferred_call.h"
 #include "i18n/i18n.h"
 #include "render/text/font_weight_catalog.h"
+#include "shell/avatar_path.h"
 #include "shell/settings/settings_window.h"
 
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 void SettingsWindow::markSettingsWriteSuccess(bool requestRebuild) {
@@ -33,8 +35,22 @@ void SettingsWindow::setSettingOverride(std::vector<std::string> path, ConfigOve
   if (path.size() == 2 && path[0] == "shell" && path[1] == "font_family") {
     text::invalidateFontWeightCatalogCache();
   }
-  DeferredCall::callLater([this, path = std::move(path), value = std::move(value)]() mutable {
+  const bool isAvatarPath = path.size() == 2 && path[0] == "shell" && path[1] == "avatar_path";
+  DeferredCall::callLater([this, path = std::move(path), value = std::move(value), isAvatarPath]() mutable {
     if (m_config == nullptr) {
+      return;
+    }
+    if (isAvatarPath) {
+      const auto* avatarPath = std::get_if<std::string>(&value);
+      if (avatarPath == nullptr) {
+        markSettingsWriteError(i18n::tr("settings.errors.write"));
+        return;
+      }
+      if (shell::applyAvatarPath(m_accounts, m_config, *avatarPath)) {
+        markSettingsWriteSuccess();
+        return;
+      }
+      markSettingsWriteError(i18n::tr("settings.errors.write"));
       return;
     }
     if (m_config->setOverride(path, std::move(value))) {

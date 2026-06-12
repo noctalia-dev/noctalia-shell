@@ -3,6 +3,7 @@
 #include "config/config_service.h"
 #include "core/log.h"
 #include "core/random.h"
+#include "cursor-shape-v1-client-protocol.h"
 #include "ipc/ipc_service.h"
 #include "render/core/render_styles.h"
 #include "render/core/shared_texture_cache.h"
@@ -15,6 +16,7 @@
 #include "util/file_utils.h"
 #include "util/string_utils.h"
 #include "wayland/wayland_connection.h"
+#include "wayland/wayland_seat.h"
 
 #include <algorithm>
 #include <cctype>
@@ -281,6 +283,41 @@ TextureHandle Wallpaper::currentTexture() const {
     }
   }
   return {};
+}
+
+bool Wallpaper::ownsSurface(wl_surface* surface) const noexcept {
+  if (surface == nullptr) {
+    return false;
+  }
+  for (const auto& instance : m_instances) {
+    if (instance->surface != nullptr && instance->surface->wlSurface() == surface) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Wallpaper::onPointerEvent(const PointerEvent& event) {
+  if (!m_wallpaperEnabled || m_instances.empty() || m_wayland == nullptr) {
+    return false;
+  }
+
+  wl_surface* eventSurface = event.surface;
+  if (eventSurface == nullptr) {
+    eventSurface = m_wayland->lastPointerSurface();
+  }
+  if (!ownsSurface(eventSurface)) {
+    return false;
+  }
+
+  if (event.type == PointerEvent::Type::Enter || event.type == PointerEvent::Type::Motion) {
+    const std::uint32_t serial = event.serial != 0 ? event.serial : m_wayland->lastInputSerial();
+    if (serial != 0) {
+      m_wayland->setCursorShape(serial, WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
+    }
+  }
+
+  return true;
 }
 
 void Wallpaper::onGpuResourcesInvalidated() {

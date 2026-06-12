@@ -130,7 +130,7 @@ namespace mpris {
 
   std::string resolveArtworkSource(
       HttpClient* httpClient, std::unordered_set<std::string>& pending, std::string_view artUrl,
-      std::function<void()> onReady
+      std::function<void()> onReady, std::weak_ptr<void> lifetime
   ) {
     std::string path = cachedArtworkPath(artUrl);
     if (!path.empty() || !isRemoteArtUrl(artUrl) || httpClient == nullptr)
@@ -142,7 +142,10 @@ namespace mpris {
     std::error_code ec;
     std::filesystem::create_directories(cached.parent_path(), ec);
     httpClient->download(
-        artFetchCandidates(artUrl), cached, [&pending, key, onReady = std::move(onReady)](bool success) {
+        artFetchCandidates(artUrl), cached,
+        [&pending, key, onReady = std::move(onReady), lifetime = std::move(lifetime)](bool success) {
+          if (lifetime.expired())
+            return;
           pending.erase(key);
           if (success && onReady)
             onReady();

@@ -100,6 +100,11 @@ namespace {
       if (row.action == "command" && (!row.command.has_value() || StringUtils::trim(*row.command).empty())) {
         continue;
       }
+      if ((row.action == "lock" || row.action == "lock_and_suspend")
+          && config != nullptr
+          && !config->isLockScreenEnabled()) {
+        continue;
+      }
 
       SessionActionEntry entry;
       entry.index = i;
@@ -125,6 +130,10 @@ SessionProvider::SessionProvider(ConfigService* config, SessionActionRunner* act
     : m_config(config), m_actionRunner(actionRunner) {}
 
 std::string SessionProvider::displayName() const { return i18n::tr("launcher.providers.session.title"); }
+
+bool SessionProvider::includeInGlobalSearch() const {
+  return m_config != nullptr && m_config->config().shell.panel.launcherSessionSearch;
+}
 
 std::vector<LauncherResult> SessionProvider::query(std::string_view text) const {
   auto entries = collectActions(m_config);

@@ -8,7 +8,17 @@
 
 namespace {
   constexpr Logger kLog("file-watcher");
-}
+
+  bool eventMatchesTrigger(FileWatcher::WatchTrigger trigger, std::uint32_t mask) {
+    switch (trigger) {
+    case FileWatcher::WatchTrigger::Modified:
+      return (mask & (IN_MODIFY | IN_CLOSE_WRITE | IN_CREATE | IN_MOVED_TO)) != 0;
+    case FileWatcher::WatchTrigger::WriteCompleted:
+      return (mask & (IN_CLOSE_WRITE | IN_MOVED_TO)) != 0;
+    }
+    return false;
+  }
+} // namespace
 
 FileWatcher::FileWatcher() {
   m_inotifyFd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
@@ -24,7 +34,8 @@ FileWatcher::~FileWatcher() {
   ::close(m_inotifyFd);
 }
 
-FileWatcher::WatchId FileWatcher::watch(const std::filesystem::path& filePath, Callback callback) {
+FileWatcher::WatchId
+FileWatcher::watch(const std::filesystem::path& filePath, Callback callback, WatchTrigger trigger) {
   if (m_inotifyFd < 0)
     return 0;
 
@@ -47,7 +58,7 @@ FileWatcher::WatchId FileWatcher::watch(const std::filesystem::path& filePath, C
   }
 
   auto id = m_nextId++;
-  m_watches[id] = {std::move(filename), std::move(callback), wd};
+  m_watches[id] = {std::move(filename), std::move(callback), wd, trigger};
   kLog.info("watching '{}' (id {})", filePath.string(), id);
   return id;
 }
@@ -85,6 +96,7 @@ void FileWatcher::dispatch() {
         for (auto& [id, entry] : m_watches) {
           if (entry.dirWd == event->wd
               && entry.filename == name
+              && eventMatchesTrigger(entry.trigger, event->mask)
               && std::find(triggered.begin(), triggered.end(), id) == triggered.end())
             triggered.push_back(id);
         }

@@ -2,6 +2,7 @@
 
 #include "core/log.h"
 #include "core/resource_paths.h"
+#include "i18n/language_tag.h"
 
 #include <cstdlib>
 #include <filesystem>
@@ -27,39 +28,15 @@ namespace i18n {
       }
     }
 
-    // Reads $LC_ALL / $LC_MESSAGES / $LANG, strips encoding + modifier, and
-    // normalizes underscores to hyphens. Returns empty string if unset.
+    // Reads $LC_ALL / $LC_MESSAGES / $LANG. Returns empty string if unset.
     std::string detectSystemLanguage() {
       for (const char* var : {"LC_ALL", "LC_MESSAGES", "LANG"}) {
         const char* value = std::getenv(var);
         if (value != nullptr && value[0] != '\0') {
-          std::string out(value);
-          if (auto pos = out.find('.'); pos != std::string::npos) {
-            out.resize(pos);
-          }
-          if (auto pos = out.find('@'); pos != std::string::npos) {
-            out.resize(pos);
-          }
-          for (char& c : out) {
-            if (c == '_') {
-              c = '-';
-            }
-          }
-          if (out == "C" || out == "POSIX") {
-            return {};
-          }
-          return out;
+          return detail::normalizeLanguageTag(value);
         }
       }
       return {};
-    }
-
-    std::string languageOnly(const std::string& tag) {
-      auto pos = tag.find('-');
-      if (pos == std::string::npos) {
-        return tag;
-      }
-      return tag.substr(0, pos);
     }
 
   } // namespace
@@ -94,7 +71,7 @@ namespace i18n {
   void Service::init(std::string_view preferredLang) {
     std::string candidate;
     if (!preferredLang.empty()) {
-      candidate.assign(preferredLang);
+      candidate = detail::normalizeLanguageTag(preferredLang);
     } else {
       candidate = detectSystemLanguage();
     }
@@ -112,17 +89,16 @@ namespace i18n {
       return;
     }
 
-    if (loadCatalog(candidate, m_active)) {
-      m_language = candidate;
-      kLog.info("language: {}", m_language);
-      return;
-    }
-
-    const std::string shortCode = languageOnly(candidate);
-    if (shortCode != candidate && loadCatalog(shortCode, m_active)) {
-      m_language = shortCode;
-      kLog.info("language: {} (from {})", m_language, candidate);
-      return;
+    for (const std::string& lang : detail::catalogLanguageCandidates(candidate)) {
+      if (loadCatalog(lang, m_active)) {
+        m_language = lang;
+        if (lang == candidate) {
+          kLog.info("language: {}", m_language);
+        } else {
+          kLog.info("language: {} (from {})", m_language, candidate);
+        }
+        return;
+      }
     }
 
     kLog.warn("no catalog for '{}', falling back to English", candidate);

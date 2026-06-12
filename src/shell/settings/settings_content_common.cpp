@@ -107,6 +107,9 @@ namespace settings {
     if (key == "color") {
       return override->widgetColor.has_value();
     }
+    if (key == "icon_color") {
+      return override->widgetIconColor.has_value();
+    }
     if (key == "capsule_padding") {
       return override->widgetCapsulePadding.has_value();
     }

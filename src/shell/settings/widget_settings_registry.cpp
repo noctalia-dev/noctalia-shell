@@ -522,6 +522,7 @@ namespace settings {
     auto anchor = withGroup(boolSpec("anchor", false, true), WidgetSettingGroup::Presentation);
     auto scale = withGroup(doubleSpec("scale", 1.0, 0.2, 2.5, 0.05), WidgetSettingGroup::Presentation);
     auto widgetColor = withGroup(colorSpec("color", {}, true), WidgetSettingGroup::Presentation);
+    auto widgetIconColor = withGroup(colorSpec("icon_color", {}, true), WidgetSettingGroup::Presentation);
     auto fontWeightOptions =
         buildLabelFontWeightSelectOptions(shellFontFamily, FontWeightSelectKind::WidgetInheritDefault);
     auto fontWeight =
@@ -550,9 +551,11 @@ namespace settings {
     capsuleOpacity.visibleWhen = capsuleOn;
 
     return {
-        std::move(anchor),         std::move(scale),          std::move(widgetColor),
-        std::move(fontWeight),     std::move(capsuleToggle),  std::move(capsuleRadius),
-        std::move(capsuleFill),    std::move(capsuleBorder),  std::move(capsuleForeground),
+        std::move(anchor),         std::move(scale),
+        std::move(widgetColor),    std::move(widgetIconColor),
+        std::move(fontWeight),     std::move(capsuleToggle),
+        std::move(capsuleRadius),  std::move(capsuleFill),
+        std::move(capsuleBorder),  std::move(capsuleForeground),
         std::move(capsulePadding), std::move(capsuleOpacity),
     };
   }
@@ -613,6 +616,7 @@ namespace settings {
         display.descriptionKey = "settings.widgets.settings.display.active-window-description";
         add(std::move(display));
       }
+      add(boolSpec("show_empty_label", false));
     } else if (type == "audio_visualizer") {
       add(doubleSpec("width", 56.0, 8.0, 400.0, 1.0));
       add(intSpec("bands", 16, 2.0, 128.0, 1.0));
@@ -620,12 +624,12 @@ namespace settings {
       add(boolSpec("centered", true));
       add(boolSpec("show_when_idle", false));
       {
-        auto low = colorSpec("low_color", "primary");
-        add(std::move(low));
+        auto color1 = colorSpec("color_1", "primary");
+        add(std::move(color1));
       }
       {
-        auto high = colorSpec("high_color", "primary");
-        add(std::move(high));
+        auto color2 = colorSpec("color_2", "primary");
+        add(std::move(color2));
       }
     } else if (type == "battery") {
       add(selectSpec(

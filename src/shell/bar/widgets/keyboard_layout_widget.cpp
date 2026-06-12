@@ -320,7 +320,7 @@ void KeyboardLayoutWidget::create() {
           .out = &m_glyph,
           .glyph = "keyboard",
           .glyphSize = Style::baseGlyphSize * m_contentScale,
-          .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
+          .color = widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)),
       })
   );
 
@@ -357,7 +357,7 @@ void KeyboardLayoutWidget::doLayout(Renderer& renderer, float containerWidth, fl
   }
   if (showIcon) {
     m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
-    m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
+    m_glyph->setColor(widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)));
     m_glyph->measure(renderer);
     if (m_glyph->width() <= 0.0f) {
       // Some icon fonts may miss the keyboard glyph; use a guaranteed fallback.

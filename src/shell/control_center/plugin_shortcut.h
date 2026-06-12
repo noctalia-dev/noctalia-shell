@@ -44,7 +44,7 @@ public:
 
 private:
   void start(std::unordered_map<std::string, WidgetSettingValue> settings);
-  void handleResult(const scripting::ScriptWidgetResult& result);
+  void handleResult(const scripting::ScriptResult& result);
   void armTimer();
 
   std::string m_entryId;

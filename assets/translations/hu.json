@@ -45,12 +45,7 @@
         "error": "Időjárási hiba",
         "loading": "Időjárás…",
         "no-location": "Nincs hely",
-        "off": "Időjárás kikapcsolva",
-        "vertical-default": "Időjárás",
-        "vertical-error": "Hiba",
-        "vertical-loading": "…",
-        "vertical-no-location": "Nincs hely",
-        "vertical-off": "KI"
+        "off": "Időjárás kikapcsolva"
       }
     }
   },
@@ -168,7 +163,7 @@
       },
       "select-avatar": "Profilkép kiválasztása",
       "unknown": "ismeretlen",
-      "user-facts": "{user}@{host}\nRendszeridő - {uptime}\nNoctalia {version}",
+      "uptime": "Rendszeridő - {uptime}",
       "weather": {
         "configure-location": "Add meg a [weather].address értéket vagy engedélyezd az auto_locate beállítást",
         "data-unavailable": "Az időjárási adatok nem érhetők el.",
@@ -339,12 +334,10 @@
         "font-family-default": "Rendszer alapértelmezése",
         "format": "Formátum",
         "hide-when-no-media": "Elrejtés, ha nincs lejátszás",
-        "high-color": "Magas szín",
         "horizontal": "Vízszintes",
         "image-path": "Kép",
         "inner-diameter": "Belső átmérő",
         "layout": "Elrendezés",
-        "low-color": "Halvány színek",
         "mirrored": "Tükrözött",
         "opacity": "Átlátszatlanság",
         "primary-color": "Elsődleges szín",
@@ -437,7 +430,7 @@
         "flags": "Zászlók",
         "food": "Étel",
         "nature": "Természet",
-        "objects": "Objektumok",
+        "objects": "Tárgyak",
         "people": "Emberek",
         "symbols": "Szimbólumok",
         "travel": "Utazás"
@@ -446,12 +439,12 @@
     },
     "context-menu": {
       "open": "Megnyitás",
-      "pin-to-dock": "Rögzítés a Dockhoz",
-      "unpin-from-dock": "Eltávolítás a dokkból"
+      "pin-to-dock": "Rögzítés a dokkhoz",
+      "unpin-from-dock": "Eltávolítás a dokkról"
     },
     "empty": {
       "no-results": "Nincs találat",
-      "type-to-search": "Kezdj el gépelni a kereséshez…"
+      "type-to-search": "Gépelj a kereséshez…"
     },
     "providers": {
       "applications": {
@@ -461,11 +454,11 @@
         "title": "Számológép"
       },
       "emoji": {
-        "title": "Emoji"
+        "title": "Emodzsi"
       },
       "session": {
         "action-subtitle": "Munkamenet-művelet futtatása",
-        "command-subtitle": "Konfigurált parancs futtatása",
+        "command-subtitle": "Beállított parancs futtatása",
         "title": "Munkamenet"
       },
       "wallpaper": {
@@ -479,10 +472,10 @@
   },
   "location": {
     "errors": {
-      "address-lookup-failed": "Címfeloldás sikertelen",
-      "ip-geolocation-failed": "IP-helymeghatározás sikertelen",
-      "parse-geocode": "Nem sikerült értelmezni a geokódolási választ",
-      "parse-ip-geolocation": "Nem sikerült értelmezni az IP geolokációs választ"
+      "address-lookup-failed": "A címkeresés sikertelen",
+      "ip-geolocation-failed": "Az IP-helymeghatározás sikertelen",
+      "parse-geocode": "Nem sikerült feldolgozni a helymeghatározási választ",
+      "parse-ip-geolocation": "Nem sikerült feldolgozni az IP-helymeghatározási választ"
     },
     "locations": {
       "current": "Jelenlegi hely"
@@ -497,7 +490,7 @@
     "authentication-failed": "Hitelesítés sikertelen",
     "password-cleared": "Jelszó törölve",
     "password-placeholder": "Jelszó",
-    "ready": "Írd be a jelszavad, és nyomd meg az Entert.",
+    "ready": "Írd be a jelszavad, majd nyomd meg az Enter billentyűt.",
     "unlocked": "Feloldva",
     "waiting": "Várakozás a zárolás megerősítésére…"
   },
@@ -512,22 +505,22 @@
     },
     "internal": {
       "battery": "Akkumulátor",
-      "battery-device": "Akkumulátor eszköz",
-      "battery-low-body": "{device}: {percent}% hátralévő",
-      "battery-low-title": "Alacsony töltöttség",
+      "battery-device": "Akkumulátoreszköz",
+      "battery-low-body": "{device}: {percent}% van hátra",
+      "battery-low-title": "Alacsony akkumulátorszint",
       "calendar": "Naptár",
-      "calendar-google-connect-browser-failed": "Nem sikerült böngészőt indítani a Google hitelesítéshez. Ellenőrizd az alapértelmezett böngésződet vagy az xdg-open beállításait.",
-      "calendar-google-connect-expired": "A Google engedélyezés lejárt, mielőtt a bejelentkezés befejeződött volna. Kezdd újra a kapcsolatot.",
-      "calendar-google-connect-failed-title": "Google Calendar kapcsolat meghiúsult",
+      "calendar-google-connect-browser-failed": "Nem sikerült böngészőt indítani a Google-hitelesítéshez. Ellenőrizd az alapértelmezett böngészőt vagy az xdg-open beállításait.",
+      "calendar-google-connect-expired": "A Google-hitelesítés lejárt, mielőtt a bejelentkezés befejeződött volna. Kezdd újra a kapcsolódást.",
+      "calendar-google-connect-failed-title": "Google Calendar kapcsolat sikertelen",
       "calendar-google-connect-missing-account": "Nincs konfigurált Google naptárfiók, ami egyezne ezzel: „{account}”.",
-      "calendar-google-connect-rate-limited": "A Google hitelesítés átmenetileg korlátozva van. Várj egy kicsit, majd próbáld újra.",
-      "calendar-google-connect-result-failed": "Nem sikerült a Google-hitelesítés. Indítsd újra a kapcsolatot.",
-      "calendar-google-connect-start-failed": "Nem sikerült elindítani a Google hitelesítést. Ellenőrizd a hálózati kapcsolatodat, és próbáld újra.",
-      "calendar-google-connect-start-http": "Nem sikerült elindítani a Google hitelesítést. Az OAuth bróker HTTP {status} kóddal tért vissza.",
-      "calendar-google-connect-timeout": "A Google-hitelesítés túllépte az időkorlátot. Indítsd újra a kapcsolatot, amikor készen állsz a bejelentkezésre.",
-      "dbus-disabled": "DBus értesítések letiltva",
-      "desktop-widgets-editor": "Vezérlő szerkesztő",
-      "desktop-widgets-editor-enabled": "Az asztali modul szerkesztő be van kapcsolva. Válts egy üres Munkaterületre, hogy lásd a szerkesztő átfedést.",
+      "calendar-google-connect-rate-limited": "A Google-hitelesítés átmenetileg korlátozva van. Várj egy kicsit, majd próbáld újra.",
+      "calendar-google-connect-result-failed": "Nem sikerült a Google-hitelesítés. Indítsd újra a kapcsolódást.",
+      "calendar-google-connect-start-failed": "Nem sikerült elindítani a Google-hitelesítést. Ellenőrizd a hálózati kapcsolatodat, majd próbáld újra.",
+      "calendar-google-connect-start-http": "Nem sikerült elindítani a Google-hitelesítést. Az OAuth bróker HTTP {status} kóddal tért vissza.",
+      "calendar-google-connect-timeout": "A Google-hitelesítés túllépte az időkorlátot. Indítsd újra a kapcsolódást, amikor készen állsz a bejelentkezésre.",
+      "dbus-disabled": "D-Bus értesítések letiltva",
+      "desktop-widgets-editor": "Modulszerkesztő",
+      "desktop-widgets-editor-enabled": "Az asztali modulszerkesztő be van kapcsolva. Válts egy üres munkaterületre, hogy lásd a szerkesztőfelületet.",
       "greeter-sync": "Noctalia Üdvözlő",
       "greeter-sync-success": "Megjelenés szinkronizálva. A változások a következő bejelentkezési képernyőn lépnek érvénybe.",
       "keybind-app": "Noctalia",
@@ -535,39 +528,39 @@
       "keybind-invalid-printable": "A nyomtatható billentyűk (betűk, számok, szimbólumok) módosító billentyűt igényelnek, mint például a Ctrl vagy az Alt.",
       "keybind-invalid-super": "A Super/Windows billentyű nem használható shell gyorsbillentyűkben.",
       "keybind-invalid-title": "Gyorsbillentyű nem engedélyezett",
-      "lockscreen-widgets-editor": "Zárolási képernyő widget szerkesztő",
-      "lockscreen-widgets-editor-blocked-locked": "Oldd fel a munkamenetet, mielőtt szerkesztenéd a zárolási képernyő widgetjeit.",
-      "lockscreen-widgets-editor-enabled": "A zárolási képernyő widget szerkesztője bekapcsolva. Rendezd el a widgeteket az előnézeti átfedésen, majd zárold a munkamenetet az elrendezés ellenőrzéséhez.",
+      "lockscreen-widgets-editor": "Zárolási képernyő modulszerkesztő",
+      "lockscreen-widgets-editor-blocked-locked": "Oldd fel a munkamenetet, mielőtt szerkesztenéd a zárolási képernyő moduljait.",
+      "lockscreen-widgets-editor-enabled": "A zárolási képernyő modulszerkesztője be van kapcsolva. Rendezd el a modulokat az előnézeti átfedésen, majd zárold a munkamenetet az elrendezés ellenőrzéséhez.",
       "mpris-disabled": "MPRIS letiltva",
-      "session-bus-unavailable": "Munkamenet-busz nem elérhető",
-      "wallpaper-palette-export": "Egyedi Paletta",
-      "wallpaper-palette-export-success": "Mentettük a(z) „{name}” és a paletta forrását egyedire váltottuk."
+      "session-bus-unavailable": "A munkamenet-busz nem érhető el",
+      "wallpaper-palette-export": "Egyéni paletta",
+      "wallpaper-palette-export-success": "A(z) „{name}” mentve, és a paletta forrása egyénire váltott."
     }
   },
   "osd": {
     "bluetooth": {
-      "off": "Bluetooth Ki",
+      "off": "Bluetooth kikapcsolva",
       "on": "Bluetooth bekapcsolva"
     },
     "caffeine": {
-      "off": "Koffein ki",
-      "on": "Koffein Be"
+      "off": "Koffein kikapcsolva",
+      "on": "Koffein bekapcsolva"
     },
     "dnd": {
-      "off": "Ne zavarjanak ki",
-      "on": "DND be"
+      "off": "Ne zavarjanak kikapcsolva",
+      "on": "Ne zavarjanak bekapcsolva"
     },
     "lock-keys": {
-      "caps-off": "Caps Lock ki",
-      "caps-on": "Caps Lock Be",
-      "num-off": "Num Lock Ki",
-      "num-on": "Num Lock Be",
-      "scroll-off": "Scroll Lock ki",
-      "scroll-on": "Scroll Lock Be"
+      "caps-off": "Caps Lock kikapcsolva",
+      "caps-on": "Caps Lock bekapcsolva",
+      "num-off": "Num Lock kikapcsolva",
+      "num-on": "Num Lock bekapcsolva",
+      "scroll-off": "Scroll Lock kikapcsolva",
+      "scroll-on": "Scroll Lock bekapcsolva"
     },
     "wifi": {
-      "off": "Wi-Fi Ki",
-      "on": "Wi-Fi Bekapcsolva"
+      "off": "Wi-Fi kikapcsolva",
+      "on": "Wi-Fi bekapcsolva"
     }
   },
   "power": {
@@ -575,14 +568,14 @@
       "states": {
         "battery": "Akkumulátor",
         "charging": "Töltés",
-        "discharging": "Merülés",
-        "empty": "Üres",
-        "pending-discharge": "Merülésre vár",
+        "discharging": "Merül",
+        "empty": "Lemerült",
+        "pending-discharge": "Várakozás a merülésre",
         "plugged-in": "Csatlakoztatva"
       },
       "tooltip": {
-        "health": "Egészség",
-        "rate": "Értékelj",
+        "health": "Állapot",
+        "rate": "Energiafogyasztás",
         "status": "Állapot",
         "time-left": "Hátralévő idő",
         "time-to-full": "Idő a teljes töltöttségig"
@@ -598,15 +591,15 @@
     "actions": {
       "custom": "Egyéni",
       "lock": "Zárolás",
-      "lock-and-suspend": "Zárolás és Felfüggesztés",
+      "lock-and-suspend": "Zárolás és felfüggesztés",
       "logout": "Kijelentkezés",
       "reboot": "Újraindítás",
       "shutdown": "Leállítás",
       "suspend": "Felfüggesztés"
     },
     "errors": {
-      "lock-body": "A munkamenet-lezárási protokoll nem érhető el.",
-      "lock-title": "Zárolás nem elérhető"
+      "lock-body": "A munkamenet-zárolási protokoll nem érhető el.",
+      "lock-title": "A zárolás nem érhető el"
     }
   },
   "settings": {
@@ -614,7 +607,7 @@
       "reset": "Visszaállítás"
     },
     "badges": {
-      "advanced": "Haladó",
+      "advanced": "Speciális",
       "inherited": "Öröklött",
       "monitor": "Monitor",
       "override": "Felülbírálás"
@@ -626,7 +619,7 @@
       "edit-title": "Naptárfiók szerkesztése",
       "id-label": "Fiókazonosító",
       "invalid": "Ellenőrizd a kiemelt naptárfiók mezőket.",
-      "name-label": "Megjelenítési név",
+      "name-label": "Megjelenített név",
       "name-placeholder": "Személyes naptár",
       "password-keep-placeholder": "Hagyd üresen a jelenlegi jelszó megtartásához",
       "password-label": "Alkalmazásjelszó",
@@ -641,13 +634,13 @@
       "save": "Mentés",
       "save-connect": "Mentés és csatlakozás",
       "save-error": "Nem sikerült menteni a naptárfiókot.",
-      "server-url-label": "Szerver URL",
+      "server-url-label": "Kiszolgáló URL-címe",
       "username-label": "Felhasználónév",
-      "username-placeholder": "name@example.com"
+      "username-placeholder": "név@példa.com"
     },
     "controls": {
       "keybind": {
-        "add": "Kattints billentyűkombináció hozzáadásához",
+        "add": "Kattints gyorsbillentyű hozzáadásához",
         "recording-placeholder": "Nyomj meg egy billentyűkombinációt…",
         "unset-placeholder": "Kattints a hozzárendeléshez…"
       },
@@ -671,37 +664,37 @@
       "bar": {
         "create": "Létrehozás",
         "delete": "Törlés",
-        "delete-confirm-desc": "Ez a GUI-val létrehozott Bar törölve lesz a settings.toml-ból",
-        "delete-confirm-title": "Törlöd a(z) „{name}”?",
+        "delete-confirm-desc": "Ez a grafikus felületen létrehozott sáv el lesz távolítva a settings.toml fájlból",
+        "delete-confirm-title": "Törlöd ezt: „{name}”?",
         "id-placeholder": "Sáv azonosító",
         "label": "Sáv: {name}",
         "management": "Sáv",
-        "move-down": "Lejjebb",
-        "move-up": "Feljebb",
-        "new": "Új Sáv",
+        "move-down": "Mozgatás lefelé",
+        "move-up": "Mozgatás felfelé",
+        "new": "Új sáv",
         "rename": "Átnevezés",
         "rename-save": "Mentés"
       },
       "monitor-override": {
         "create": "Létrehozás",
         "delete": "Törlés",
-        "delete-confirm-desc": "Ez a GUI-val létrehozott monitor felülbírálás el lesz távolítva a settings.toml-ból.",
+        "delete-confirm-desc": "Ez a grafikus felületen létrehozott monitor-felülbírálás el lesz távolítva a settings.toml fájlból.",
         "delete-confirm-title": "Törlöd a(z) „{name}”?",
         "label": "Monitor: {name}",
-        "management": "Monitor felülírása",
-        "match-placeholder": "Monitor illesztés",
-        "new": "Monitor felülbírálás",
+        "management": "Monitor-felülbírálás",
+        "match-placeholder": "Monitor-illesztés",
+        "new": "Monitor-felülbírálás",
         "rename": "Átnevezés",
         "rename-save": "Mentés"
       },
       "widget": {
-        "add": "Vezérlő hozzáadása",
+        "add": "Modul hozzáadása",
         "detail": {
-          "custom": "egyedi komponens"
+          "custom": "egyéni modul"
         },
         "editor": {
-          "description": "Elrendezni a vezérlőket a sáv különböző sávjaiban",
-          "title": "Állapotsáv modulok"
+          "description": "Modulok elrendezése a sáv sávjain",
+          "title": "Sávmodulok"
         },
         "group": {
           "action": "Csoport",
@@ -2410,10 +2403,6 @@
           "description": "Rejtse el a billentyűzetkiosztás widgetet, hacsak nincs egynél több kiosztás konfigurálva",
           "label": "Elrejtés, ha egyetlen elrendezés van"
         },
-        "high-color": {
-          "description": "Szín magas vizualizáló értékekhez",
-          "label": "Magas színmélység"
-        },
         "highlight-color": {
           "description": "A szín elérte vagy túllépte a kritikus küszöböt",
           "label": "Kiemelés színe"
@@ -2446,10 +2435,6 @@
         "length": {
           "description": "Távtartó hossza pixelben",
           "label": "Hossz"
-        },
-        "low-color": {
-          "description": "Az alacsony vizualizátor értékekhez használt szín",
-          "label": "Alacsony szín"
         },
         "match-adjacent-spacing": {
           "description": "Növeld a hézagokat az inline Tray ikonok között, hogy illeszkedjen a szomszédos Bar Widgetek vizuális térközéhez (beleértve a Capsule kitöltését).",

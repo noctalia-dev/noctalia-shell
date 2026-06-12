@@ -12,11 +12,11 @@
 #include <memory>
 
 AudioVisualizerWidget::AudioVisualizerWidget(
-    PipeWireSpectrum* spectrum, float width, int bands, bool mirrored, ColorSpec lowColor, ColorSpec highColor,
+    PipeWireSpectrum* spectrum, float width, int bands, bool mirrored, ColorSpec color1, ColorSpec color2,
     bool centered, bool showWhenIdle
 )
     : m_spectrum(spectrum), m_width(width), m_bands(std::max(1, bands)), m_mirrored(mirrored), m_centered(centered),
-      m_showWhenIdle(showWhenIdle), m_lowColor(lowColor), m_highColor(highColor) {}
+      m_showWhenIdle(showWhenIdle), m_color1(color1), m_color2(color2) {}
 
 AudioVisualizerWidget::~AudioVisualizerWidget() {
   cancelVisibilityAnimation();
@@ -34,7 +34,7 @@ void AudioVisualizerWidget::create() {
   visualizer->setOrientation(AudioSpectrumOrientation::Horizontal);
   visualizer->setCentered(m_centered);
   visualizer->setMirrored(m_mirrored);
-  visualizer->setGradient(m_lowColor, m_highColor);
+  visualizer->setGradient(m_color1, m_color2);
   m_visualizer = visualizer.get();
   root->addChild(std::move(visualizer));
 

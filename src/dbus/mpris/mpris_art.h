@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <functional>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_set>
@@ -24,10 +25,12 @@ namespace mpris {
   [[nodiscard]] std::string cachedArtworkPath(std::string_view artUrl);
   // Like cachedArtworkPath, but for an uncached remote URL kicks off a deduped
   // background download (see artFetchCandidates) keyed in `pending`; `onReady` runs
-  // when a download lands. Returns empty until the file exists.
+  // when a download lands. Returns empty until the file exists. `lifetime` guards the
+  // deferred completion: `pending` and `onReady` are touched only while it is alive, so
+  // the owner of `pending`/`onReady` may be destroyed before the download lands.
   [[nodiscard]] std::string resolveArtworkSource(
       HttpClient* httpClient, std::unordered_set<std::string>& pending, std::string_view artUrl,
-      std::function<void()> onReady
+      std::function<void()> onReady, std::weak_ptr<void> lifetime
   );
   [[nodiscard]] std::string normalizeArtPath(std::string_view artUrl);
   [[nodiscard]] std::filesystem::path artCachePath(std::string_view artUrl);

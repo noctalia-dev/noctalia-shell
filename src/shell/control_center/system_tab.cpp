@@ -87,6 +87,53 @@ namespace {
     return FormatUnits::formatBinaryBytesAsGib(*stats.gpuVramUsedBytes);
   }
 
+  // Resource row: glyph + name (grows, left) + value (natural width, right-aligned).
+  // A non-empty tooltip is attached to the row's text (labels opt out of hit-testing by default).
+  Label* addResourceRow(
+      Flex& card, const char* glyphName, const std::string& name, float scale, Flex** outRow = nullptr,
+      const std::string& tooltip = {}
+  ) {
+    Label* value = nullptr;
+    Label* nameLabel = nullptr;
+    Flex* row = nullptr;
+    card.addChild(
+        ui::row(
+            {.out = &row, .align = FlexAlign::Center, .gap = Style::spaceXs * scale},
+            ui::glyph({
+                .glyph = glyphName,
+                .glyphSize = Style::fontSizeMini * scale,
+                .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+            }),
+            ui::label({
+                .out = &nameLabel,
+                .text = name,
+                .fontSize = Style::fontSizeMini * scale,
+                .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+                .maxLines = 1,
+                .flexGrow = 1.0f,
+            }),
+            ui::label({
+                .out = &value,
+                .fontSize = Style::fontSizeMini * scale,
+                .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+                .maxLines = 1,
+            })
+        )
+    );
+    if (!tooltip.empty()) {
+      for (Label* label : {nameLabel, value}) {
+        if (label != nullptr) {
+          label->setTooltip(tooltip);
+          label->setHitTestVisible(true);
+        }
+      }
+    }
+    if (outRow != nullptr) {
+      *outRow = row;
+    }
+    return value;
+  }
+
   Flex* makeInfoCard(
       Flex& parent, const std::string& title, float scale, float grow, float fillOpacity, bool showBorder,
       Label** outLines, int lineCount, const char* const* glyphs
@@ -275,37 +322,31 @@ std::unique_ptr<Flex> SystemTab::create() {
         m_systemLines, kSystemLines, kSystemGlyphs
     );
 
-    static constexpr const char* kResourcesGlyphs[] = {"activity", "memory"};
     auto* resourcesCard = makeInfoCard(
         *row, i18n::tr("control-center.system.titles.resources"), sc, 2.0f, panelCardOpacity(), panelBordersEnabled(),
-        m_resourcesLines, kResourcesLines, kResourcesGlyphs
+        nullptr, 0, nullptr
     );
 
-    // Swap, right after RAM. Hidden in doUpdate when the system has no swap configured.
-    m_swapRow = static_cast<Flex*>(resourcesCard->addChild(
-        ui::row(
-            {.align = FlexAlign::Center, .gap = Style::spaceXs * sc},
-            ui::glyph({
-                .glyph = "arrows-exchange",
-                .glyphSize = Style::fontSizeMini * sc,
-                .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
-            }),
-            ui::label({
-                .out = &m_swapLabel,
-                .fontSize = Style::fontSizeMini * sc,
-                .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
-                .maxLines = 1,
-                .flexGrow = 1.0f,
-            })
-        )
-    ));
+    // Named rows with right-aligned values: load, RAM, then swap (hidden in doUpdate when absent).
+    m_resourcesLines[0] = addResourceRow(
+        *resourcesCard, "activity", i18n::tr("control-center.system.labels.load"), sc, nullptr,
+        i18n::tr("control-center.system.tooltips.load")
+    );
+    m_resourcesLines[1] = addResourceRow(*resourcesCard, "memory", i18n::tr("control-center.system.labels.ram"), sc);
+    m_swapLabel = addResourceRow(
+        *resourcesCard, "arrows-exchange", i18n::tr("control-center.system.labels.swap"), sc, &m_swapRow
+    );
 
     // One line per physical disk, discovered automatically (root first). Usage refreshes in doUpdate.
     m_diskMountPoints = physicalDiskMountPoints();
     m_diskLabels.clear();
     m_diskLabels.reserve(m_diskMountPoints.size());
+    // Mount path and usage are separate labels: the path grows and ellipsizes when long,
+    // while the usage column keeps its natural width so it is never truncated. The full
+    // mount path is recoverable via the path label's tooltip.
     for (std::size_t i = 0; i < m_diskMountPoints.size(); ++i) {
-      Label* lineLabel = nullptr;
+      const std::string& mountPoint = m_diskMountPoints[i];
+      Label* usageLabel = nullptr;
       resourcesCard->addChild(
           ui::row(
               {.align = FlexAlign::Center, .gap = Style::spaceXs * sc},
@@ -315,15 +356,29 @@ std::unique_ptr<Flex> SystemTab::create() {
                   .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
               }),
               ui::label({
-                  .out = &lineLabel,
+                  .text = mountPoint,
                   .fontSize = Style::fontSizeMini * sc,
                   .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
                   .maxLines = 1,
+                  // Ellipsize from the start so the identifying tail stays visible ("…/long/mount/point").
+                  .ellipsize = TextEllipsize::Start,
                   .flexGrow = 1.0f,
+                  .configure =
+                      [mountPoint](Label& label) {
+                        label.setTooltip(mountPoint);
+                        // Labels opt out of hit-testing by default; a tooltip needs hover events.
+                        label.setHitTestVisible(true);
+                      },
+              }),
+              ui::label({
+                  .out = &usageLabel,
+                  .fontSize = Style::fontSizeMini * sc,
+                  .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+                  .maxLines = 1,
               })
           )
       );
-      m_diskLabels.push_back(lineLabel);
+      m_diskLabels.push_back(usageLabel);
     }
 
     tab->addChild(std::move(row));
@@ -841,7 +896,7 @@ void SystemTab::syncLabels() {
   }
   for (std::size_t i = 0; i < m_diskLabels.size(); ++i) {
     if (m_diskLabels[i] != nullptr) {
-      m_diskLabels[i]->setText(std::format("{}  {}", m_diskMountPoints[i], diskUsageLabel(m_diskMountPoints[i])));
+      m_diskLabels[i]->setText(diskUsageLabel(m_diskMountPoints[i]));
     }
   }
 }

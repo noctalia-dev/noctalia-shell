@@ -64,7 +64,7 @@ void NetworkWidget::create() {
           .out = &m_glyph,
           .glyph = "wifi-off",
           .glyphSize = Style::baseGlyphSize * m_contentScale,
-          .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
+          .color = widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)),
       })
   );
 
@@ -131,7 +131,7 @@ void NetworkWidget::syncState(Renderer& renderer) {
   m_glyph->setGlyph(network_glyphs::glyphForState(s));
   m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
   m_glyph->setColor(
-      s.connected ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
+      s.connected ? widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface))
                   : colorSpecFromRole(ColorRole::OnSurfaceVariant)
   );
   m_glyph->measure(renderer);

@@ -29,12 +29,11 @@ namespace {
 } // namespace
 
 DesktopAudioVisualizerWidget::DesktopAudioVisualizerWidget(
-    PipeWireSpectrum* spectrum, float aspectRatio, int bands, bool mirrored, ColorSpec lowColor, ColorSpec highColor,
+    PipeWireSpectrum* spectrum, float aspectRatio, int bands, bool mirrored, ColorSpec color1, ColorSpec color2,
     bool centered, bool showWhenIdle
 )
     : m_spectrum(spectrum), m_aspectRatio(clampAspectRatio(aspectRatio)), m_bands(std::max(1, bands)),
-      m_mirrored(mirrored), m_centered(centered), m_showWhenIdle(showWhenIdle), m_lowColor(lowColor),
-      m_highColor(highColor) {}
+      m_mirrored(mirrored), m_centered(centered), m_showWhenIdle(showWhenIdle), m_color1(color1), m_color2(color2) {}
 
 DesktopAudioVisualizerWidget::~DesktopAudioVisualizerWidget() {
   cancelVisibilityAnimation();
@@ -51,7 +50,7 @@ void DesktopAudioVisualizerWidget::create() {
   visualizer->setOrientation(AudioSpectrumOrientation::Horizontal);
   visualizer->setCentered(m_centered);
   visualizer->setMirrored(m_mirrored);
-  visualizer->setGradient(m_lowColor, m_highColor);
+  visualizer->setGradient(m_color1, m_color2);
   m_visualizer = visualizer.get();
   rootNode->addChild(std::move(visualizer));
 
@@ -72,14 +71,14 @@ bool DesktopAudioVisualizerWidget::applySetting(
   if (m_visualizer == nullptr) {
     return false;
   }
-  if (key == "low_color" || key == "high_color") {
+  if (key == "color_1" || key == "color_2") {
     if (const auto* v = std::get_if<std::string>(&value)) {
-      if (key == "low_color") {
-        m_lowColor = colorSpecFromConfigString(*v, key);
+      if (key == "color_1") {
+        m_color1 = colorSpecFromConfigString(*v, key);
       } else {
-        m_highColor = colorSpecFromConfigString(*v, key);
+        m_color2 = colorSpecFromConfigString(*v, key);
       }
-      m_visualizer->setGradient(m_lowColor, m_highColor);
+      m_visualizer->setGradient(m_color1, m_color2);
       return true;
     }
     return false;

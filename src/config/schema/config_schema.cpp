@@ -3,6 +3,7 @@
 #include "config/schema/engine.h"
 #include "config/schema/ranges.h"
 #include "core/key_chord.h"
+#include "scripting/plugin_id.h"
 #include "util/file_utils.h"
 
 #include <algorithm>
@@ -75,6 +76,7 @@ namespace noctalia::config::schema {
 
   const Schema<LockscreenConfig>& lockscreenSchema() {
     static const Schema<LockscreenConfig> s = {
+        field(&LockscreenConfig::enabled, "enabled"),
         field(&LockscreenConfig::blurredDesktop, "blurred_desktop"),
         field(&LockscreenConfig::blurIntensity, "blur_intensity", kUnitRange),
         field(&LockscreenConfig::tintIntensity, "tint_intensity", kUnitRange),
@@ -339,6 +341,14 @@ namespace noctalia::config::schema {
           enumField(&PluginSourceConfig::kind, "kind", kPluginSourceKinds),
           field(&PluginSourceConfig::location, "location"),
           field(&PluginSourceConfig::autoUpdate, "auto_update"),
+          finalize<PluginSourceConfig>([](PluginSourceConfig& src, std::string_view parentPath, Diagnostics& diag) {
+            if (!src.name.empty() && !isValidPluginSourceName(src.name)) {
+              diag.warn(
+                  joinPath(parentPath, "name"),
+                  "invalid plugin source name; use letters, digits, '.', '_' or '-', starting with a letter or digit"
+              );
+            }
+          }),
       };
       return s;
     }
@@ -348,9 +358,19 @@ namespace noctalia::config::schema {
     static const Schema<PluginsConfig> s = {
         arrayOf<PluginsConfig, PluginSourceConfig>(
             &PluginsConfig::sources, "source", pluginSourceSchema(),
-            [](const PluginSourceConfig& src) { return !src.name.empty(); }
+            [](const PluginSourceConfig& src) { return isValidPluginSourceName(src.name); }
         ),
         field(&PluginsConfig::enabled, "enabled"),
+        finalize<PluginsConfig>([](PluginsConfig& plugins, std::string_view parentPath, Diagnostics& diag) {
+          for (auto it = plugins.enabled.begin(); it != plugins.enabled.end();) {
+            if (scripting::isValidPluginId(*it)) {
+              ++it;
+              continue;
+            }
+            diag.warn(joinPath(parentPath, "enabled"), "invalid plugin id \"" + *it + "\"; expected author/plugin");
+            it = plugins.enabled.erase(it);
+          }
+        }),
     };
     return s;
   }
@@ -960,6 +980,7 @@ namespace noctalia::config::schema {
           field(&ShellConfig::PanelConfig::launcherCategories, "launcher_categories"),
           field(&ShellConfig::PanelConfig::launcherShowIcons, "launcher_show_icons"),
           field(&ShellConfig::PanelConfig::launcherCompact, "launcher_compact"),
+          field(&ShellConfig::PanelConfig::launcherSessionSearch, "launcher_session_search"),
       };
       return s;
     }
@@ -1091,7 +1112,9 @@ namespace noctalia::config::schema {
         colorSpecField(&ShellConfig::appIconColor, "app_icon_color", /*alwaysEmit=*/false),
         field(&ShellConfig::launchAppsAsSystemdServices, "launch_apps_as_systemd_services"),
         field(&ShellConfig::clipboardEnabled, "clipboard_enabled"),
-        field(&ShellConfig::clipboardHistoryMaxEntries, "clipboard_history_max_entries", Range<std::int64_t>{10, 200}),
+        field(
+            &ShellConfig::clipboardHistoryMaxEntries, "clipboard_history_max_entries", kClipboardHistoryMaxEntriesRange
+        ),
         field(&ShellConfig::clipboardConfirmClearHistory, "clipboard_confirm_clear_history"),
         field(&ShellConfig::screenTimeEnabled, "screen_time_enabled"),
         field(&ShellConfig::sharedGlContext, "shared_gl_context"),
@@ -1653,6 +1676,7 @@ namespace noctalia::config::schema {
         colorField(&BarConfig::widgetCapsuleFill, "capsule_fill"),
         optionalColorField(&BarConfig::widgetCapsuleForeground, "capsule_foreground"),
         optionalColorField(&BarConfig::widgetColor, "color"),
+        optionalColorField(&BarConfig::widgetIconColor, "icon_color"),
         arrayOf<BarConfig, BarCapsuleGroupStyle>(
             &BarConfig::widgetCapsuleGroups, "capsule_group", barCapsuleGroupSchema(),
             [](const BarCapsuleGroupStyle& g) { return !g.id.empty(); }
@@ -1714,6 +1738,7 @@ namespace noctalia::config::schema {
         optionalColorField(&BarMonitorOverride::widgetCapsuleFill, "capsule_fill"),
         optionalColorField(&BarMonitorOverride::widgetCapsuleForeground, "capsule_foreground"),
         optionalColorField(&BarMonitorOverride::widgetColor, "color"),
+        optionalColorField(&BarMonitorOverride::widgetIconColor, "icon_color"),
         optionalDoubleField(&BarMonitorOverride::widgetCapsulePadding, "capsule_padding", kBarCapsulePaddingRangeD),
         optionalDoubleField(&BarMonitorOverride::widgetCapsuleRadius, "capsule_radius", kBarCapsuleRadiusRangeD),
         optionalDoubleField(&BarMonitorOverride::widgetCapsuleOpacity, "capsule_opacity", kBarCapsuleOpacityRangeD),

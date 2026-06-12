@@ -33,7 +33,7 @@ public:
   ActiveWindowWidget(
       ConfigService& config, CompositorPlatform& platform, float maxWidth, float minWidth, float iconSize,
       ActiveWindowTitleScrollMode titleScrollMode,
-      ActiveWindowDisplayMode displayMode = ActiveWindowDisplayMode::IconAndText
+      ActiveWindowDisplayMode displayMode = ActiveWindowDisplayMode::IconAndText, bool showEmptyLabel = false
   );
 
   void create() override;
@@ -42,6 +42,7 @@ private:
   void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
   void doUpdate(Renderer& renderer) override;
   void applyTitleScrollMode(bool titleVisible);
+  void syncWidgetVisibility(bool showWidget);
   void syncState(Renderer& renderer);
   [[nodiscard]] std::string resolveIconPath(const std::string& appId);
   void buildDesktopIconIndex();
@@ -53,6 +54,7 @@ private:
   float m_iconSize = 16.0f;
   ActiveWindowTitleScrollMode m_titleScrollMode = ActiveWindowTitleScrollMode::None;
   ActiveWindowDisplayMode m_displayMode = ActiveWindowDisplayMode::IconAndText;
+  bool m_showEmptyLabel = false;
   InputArea* m_area = nullptr;
   Image* m_icon = nullptr;
   Label* m_title = nullptr;

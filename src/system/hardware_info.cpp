@@ -177,13 +177,21 @@ namespace {
       return i18n::tr("system.hardware.unknown-gpu");
     }
 
+    std::vector<fs::path> cardPaths;
     for (const auto& entry : fs::directory_iterator{drmRoot}) {
       const auto name = entry.path().filename().string();
       if (!name.starts_with("card") || name.contains('-')) {
         continue;
       }
+      cardPaths.push_back(entry.path());
+    }
+    std::sort(cardPaths.begin(), cardPaths.end());
 
-      const auto deviceDir = entry.path() / "device";
+    std::vector<std::string> gpus;
+    for (const auto& cardPath : cardPaths) {
+      const auto name = cardPath.filename().string();
+
+      const auto deviceDir = cardPath / "device";
       if (!fs::exists(deviceDir)) {
         continue;
       }
@@ -224,22 +232,32 @@ namespace {
       if (!vendorHex.empty() && !deviceHex.empty()) {
         auto pciName = lookupPciIds(vendorHex, deviceHex, subVendorHex, subDeviceHex);
         if (!pciName.empty()) {
-          return pciName;
+          if (std::find(gpus.begin(), gpus.end(), pciName) == gpus.end()) {
+            gpus.push_back(std::move(pciName));
+          }
+          continue;
         }
       }
 
       if (!driver.empty()) {
+        std::string label;
         if (driver == "i915" || driver == "xe") {
-          return "Intel GPU (" + driver + ")";
+          label = "Intel GPU (" + driver + ")";
+        } else if (driver == "amdgpu" || driver == "radeon") {
+          label = "AMD GPU (" + driver + ")";
+        } else if (driver == "nvidia" || driver == "nouveau") {
+          label = "NVIDIA GPU (" + driver + ")";
+        } else {
+          label = driver + " GPU";
         }
-        if (driver == "amdgpu" || driver == "radeon") {
-          return "AMD GPU (" + driver + ")";
+        if (std::find(gpus.begin(), gpus.end(), label) == gpus.end()) {
+          gpus.push_back(std::move(label));
         }
-        if (driver == "nvidia" || driver == "nouveau") {
-          return "NVIDIA GPU (" + driver + ")";
-        }
-        return driver + " GPU";
       }
+    }
+
+    if (!gpus.empty()) {
+      return StringUtils::join(gpus, " · ");
     }
 
     return i18n::tr("system.hardware.unknown-gpu");
@@ -407,7 +425,7 @@ std::string diskUsageLabel(const std::string& mountPoint) {
   const double avail = static_cast<double>(sv.f_bavail) * static_cast<double>(sv.f_frsize);
   const double used = std::max(0.0, total - avail);
   const double percent = total > 0.0 ? (used / total) * 100.0 : 0.0;
-  return std::format("{} ({:.0f}%)", FormatUnits::formatDecimalBytesAsGb(total), percent);
+  return std::format("{} ({:.0f}%)", FormatUnits::formatDecimalBytesUsage(used, total), percent);
 }
 
 std::string compositorLabel() { return detectCompositor(); }

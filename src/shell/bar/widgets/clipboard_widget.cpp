@@ -19,7 +19,7 @@ void ClipboardWidget::create() {
           .out = &m_glyph,
           .glyph = m_barGlyphId.empty() ? "clipboard" : m_barGlyphId,
           .glyphSize = Style::baseGlyphSize * m_contentScale,
-          .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
+          .color = widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)),
       })
   );
 
@@ -31,7 +31,7 @@ void ClipboardWidget::doLayout(Renderer& renderer, float /*containerWidth*/, flo
     return;
   }
   m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
-  m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
+  m_glyph->setColor(widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
   if (auto* node = root(); node != nullptr) {
     node->setSize(m_glyph->width(), m_glyph->height());

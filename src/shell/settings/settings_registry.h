@@ -271,6 +271,7 @@ namespace settings {
     std::vector<SelectOption> customPalettes;
     std::vector<SelectOption> communityTemplates;
     std::vector<SelectOption> fontFamilies;
+    std::string shellAvatarPath;
   };
 
   [[nodiscard]] const BarConfig* findBar(const Config& cfg, std::string_view name);

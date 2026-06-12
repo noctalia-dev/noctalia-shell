@@ -17,7 +17,7 @@ namespace scripting {
   class PluginRegistry;
 
   // Resolve the [plugins] config into registry source roots + an enabled gate and
-  // (re)scan. Pure disk work — never materializes (no network). Shared by
+  // (re)scan. Pure disk work — never exports git files (no network). Shared by
   // PluginManager::refresh and the config-validate CLI so both resolve plugin
   // widget types against the same active set.
   void applyPluginSourcesToRegistry(PluginRegistry& registry, const PluginsConfig& plugins);
@@ -29,9 +29,14 @@ namespace scripting {
 
   struct PluginStatus {
     std::string id;
+    std::string name;
     std::string version;
+    std::string icon;
+    std::string description;
+    std::string license = "MIT";
     std::string source; // source name ("local" for the implicit dev source)
     bool compatible = true;
+    bool deprecated = false;
     bool enabled = false;
   };
 
@@ -55,10 +60,10 @@ namespace scripting {
     // No-op when the plugins config is unchanged since the last applied refresh.
     void refresh();
 
-    // Enable a managed-source plugin by id ("author/plugin"): clone + sparse-checkout
-    // from its git source if needed, enforce min_noctalia, then persist. Persisting
-    // fans out a reload (which re-refreshes the registry). Hard error on an unknown
-    // id, a failed fetch, or an incompatible min_noctalia.
+    // Enable a managed-source plugin by id ("author/plugin"): clone/read the git
+    // source if needed, export its runtime files if needed, enforce min_noctalia,
+    // then persist. Persisting fans out a reload (which re-refreshes the registry).
+    // Hard error on an unknown id, a failed export, or an incompatible min_noctalia.
     [[nodiscard]] EnableResult enable(std::string_view pluginId);
 
     // Disable a plugin by id and persist. Code stays on disk; settings are retained.
@@ -67,18 +72,21 @@ namespace scripting {
     // Every plugin offered by the local dev source + each configured source, with
     // its compatibility and active state. For the management CLI / settings browser.
     [[nodiscard]] std::vector<PluginStatus> list() const;
+    [[nodiscard]] std::vector<PluginStatus> list(const PluginsConfig& plugins) const;
 
     // Add (or replace) a source and refresh.
     void addSource(const PluginSourceConfig& source);
 
-    // Fetch a git source off-thread, check the new catalog's min_noctalia for every
-    // enabled plugin, and fast-forward only if all are compatible — otherwise the
-    // update is skipped (nothing is applied). Re-scans on the main thread. No-op for
-    // path / unknown sources.
+    // Fetch a git source off-thread, export compatible enabled plugins, keep
+    // incompatible enabled plugins on their previous exported copy, then advance
+    // the source catalog. If the fetched revision is already current, reconcile
+    // any held exports that are now compatible. Re-scans on the main thread. No-op
+    // for path / unknown sources.
     void update(std::string sourceName);
 
-    // Remove a source: delete its git clone, disable its plugins, drop it from
-    // config. Path sources keep their externally-owned directory.
+    // Remove a source: delete its git repo cache and exported runtime files, disable
+    // its plugins, drop it from config. Path sources keep their externally-owned
+    // directory.
     void removeSource(std::string sourceName);
 
   private:
@@ -88,8 +96,8 @@ namespace scripting {
     // Plugin ids offered by the implicit local dev source.
     [[nodiscard]] std::unordered_set<std::string> localPluginIds() const;
     // Re-derive any enabled git-source plugin missing from disk — re-clones a wiped
-    // source and checks out enabled plugins it ships. Heals a deleted clone or a
-    // restored config. Returns whether anything was materialized. No network when
+    // source repo and exports enabled plugins it ships. Heals deleted source storage
+    // or a restored config. Returns whether anything was exported. No network when
     // nothing is missing.
     bool ensureEnabledMaterialized(const PluginsConfig& plugins) const;
 

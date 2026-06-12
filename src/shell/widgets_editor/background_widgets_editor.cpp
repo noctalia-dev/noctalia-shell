@@ -19,6 +19,7 @@
 #include "shell/desktop/desktop_widget_settings_registry.h"
 #include "shell/desktop/widgets/desktop_login_box_widget.h"
 #include "shell/lockscreen/lockscreen_login_box.h"
+#include "shell/tooltip/tooltip_manager.h"
 #include "time/time_format.h"
 #include "ui/builders.h"
 #include "ui/controls/select_dropdown_popup.h"
@@ -331,6 +332,9 @@ void BackgroundWidgetsEditor::createSurface(const WaylandOutput& output) {
   overlay->surface->setPrepareFrameCallback([this, rawOverlay](bool needsUpdate, bool needsLayout) {
     prepareFrame(*rawOverlay, needsUpdate, needsLayout);
   });
+  overlay->inputDispatcher.setHoverChangeCallback([rawOverlay](InputArea* /*old*/, InputArea* next) {
+    TooltipManager::instance().onHoverChange(next, rawOverlay->surface->layerSurface(), rawOverlay->output);
+  });
   overlay->surface->setFrameTickCallback([this, rawOverlay](float deltaMs) {
     if (m_renderContext == nullptr || rawOverlay->surface == nullptr) {
       return;
@@ -353,8 +357,69 @@ void BackgroundWidgetsEditor::createSurface(const WaylandOutput& output) {
   m_surfaces.push_back(std::move(overlay));
 }
 
+std::optional<LayerPopupParentContext>
+BackgroundWidgetsEditor::overlayPopupParentContext(const OverlaySurface& surface) const {
+  if (!m_open || surface.surface == nullptr) {
+    return std::nullopt;
+  }
+
+  zwlr_layer_surface_v1* layerSurface = surface.surface->layerSurface();
+  const std::uint32_t width = surface.surface->width();
+  const std::uint32_t height = surface.surface->height();
+  if (layerSurface == nullptr || width == 0 || height == 0) {
+    return std::nullopt;
+  }
+
+  return LayerPopupParentContext{
+      .surface = surface.surface->wlSurface(),
+      .layerSurface = layerSurface,
+      .output = surface.output,
+      .width = width,
+      .height = height,
+  };
+}
+
+std::optional<LayerPopupParentContext>
+BackgroundWidgetsEditor::popupParentContextForSurface(wl_surface* surface) const {
+  if (surface == nullptr) {
+    return std::nullopt;
+  }
+  const OverlaySurface* overlay = findSurface(surface);
+  return overlay != nullptr ? overlayPopupParentContext(*overlay) : std::nullopt;
+}
+
+std::optional<LayerPopupParentContext> BackgroundWidgetsEditor::fallbackPopupParentContext() const {
+  if (!m_open || m_surfaces.empty()) {
+    return std::nullopt;
+  }
+
+  if (m_wayland != nullptr) {
+    if (const OverlaySurface* overlay = findSurface(m_wayland->lastPointerSurface()); overlay != nullptr) {
+      if (auto context = overlayPopupParentContext(*overlay); context.has_value()) {
+        return context;
+      }
+    }
+    if (const OverlaySurface* overlay = findSurface(m_wayland->lastKeyboardSurface()); overlay != nullptr) {
+      if (auto context = overlayPopupParentContext(*overlay); context.has_value()) {
+        return context;
+      }
+    }
+  }
+
+  for (const auto& overlay : m_surfaces) {
+    if (auto context = overlayPopupParentContext(*overlay); context.has_value()) {
+      return context;
+    }
+  }
+  return std::nullopt;
+}
+
 BackgroundWidgetsEditor::OverlaySurface* BackgroundWidgetsEditor::findSurface(wl_surface* surface) {
-  for (auto& overlay : m_surfaces) {
+  return const_cast<OverlaySurface*>(std::as_const(*this).findSurface(surface));
+}
+
+const BackgroundWidgetsEditor::OverlaySurface* BackgroundWidgetsEditor::findSurface(wl_surface* surface) const {
+  for (const auto& overlay : m_surfaces) {
     if (overlay->surface != nullptr && overlay->surface->wlSurface() == surface) {
       return overlay.get();
     }
@@ -854,140 +919,156 @@ void BackgroundWidgetsEditor::rebuildScene(OverlaySurface& surface) {
 
   Flex* toolbarPtr = nullptr;
   Flex* toolbarHandlePtr = nullptr;
-  auto toolbar = ui::row(
-      {
-          .out = &toolbarPtr,
-          .align = FlexAlign::Center,
-          .gap = Style::spaceSm,
-          .configure =
-              [](Flex& flex) {
-                flex.setPadding(Style::spaceSm, Style::spaceMd);
-                flex.setFill(colorSpecFromRole(ColorRole::Surface, 0.94f));
-                flex.setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth);
-                flex.setRadius(Style::scaledRadiusXl());
-                flex.setZIndex(200);
-              },
-      },
-      ui::row(
-          {
-              .out = &toolbarHandlePtr,
-              .align = FlexAlign::Center,
-              .gap = Style::spaceXs,
-              .paddingV = Style::spaceXs,
-              .paddingH = Style::spaceSm,
-              .fill = colorSpecFromRole(ColorRole::SurfaceVariant, 0.85f),
-              .radius = Style::scaledRadiusLg(),
-              .minHeight = Style::controlHeightSm,
-          },
-          ui::glyph({
-              .glyph = "menu-2",
-              .glyphSize = 14.0f,
-          }),
-          ui::label({
-              .text = i18n::tr("desktop-widgets.editor.title"),
-              .fontSize = Style::fontSizeBody,
-              .fontWeight = FontWeight::Bold,
-          }),
-          std::move(toolbarHandleArea)
-      ),
-      ui::select({
-          .options = std::move(typeLabels),
-          .selectedIndex = selectedTypeIndex,
-          .controlHeight = Style::controlHeightSm,
-          .onSelectionChanged =
-              [this](std::size_t index, std::string_view) {
-                const auto& specs = desktop_settings::desktopWidgetTypeSpecs();
-                if (index < specs.size()) {
-                  m_addWidgetType = std::string(specs[index].type);
-                }
-              },
-          .configure = [](Select& select) { select.setMinWidth(200.0f); },
-      }),
-      ui::button({
-          .glyph = "plus",
-          .variant = ButtonVariant::Primary,
-          .onClick =
-              [this, outputName = surface.outputName]() {
-                deferEditorMutation([this, outputName]() { addWidget(outputName, m_addWidgetType); });
-              },
-      }),
-      ui::button({
-          .glyph = "stack-back",
-          .enabled = canSendSelectedToBack,
-          .variant = ButtonVariant::Outline,
-          .onClick = [this]() { deferEditorMutation([this]() { sendSelectedWidgetToBack(); }); },
-      }),
-      ui::button({
-          .glyph = "stack-front",
-          .enabled = canBringSelectedToFront,
-          .variant = ButtonVariant::Outline,
-          .onClick = [this]() { deferEditorMutation([this]() { bringSelectedWidgetToFront(); }); },
-      }),
-      ui::button({
-          .glyph = "settings",
-          .enabled = hasSelectedWidget && !selectedIsLoginBox,
-          .selected = m_inspectorOpen,
-          .variant = ButtonVariant::Outline,
-          .onClick =
-              [this]() {
-                deferEditorMutation([this]() {
-                  m_inspectorOpen = !m_inspectorOpen;
-                  requestLayout();
-                });
-              },
-      }),
-      ui::button({
-          .glyph = selectedWidgetEnabled ? "eye" : "eye-off",
-          .enabled = hasSelectedWidget && !selectedIsLoginBox,
-          .selected = selectedWidgetEnabled,
-          .variant = ButtonVariant::Outline,
-          .onClick = [this]() { deferEditorMutation([this]() { toggleSelectedWidgetEnabled(); }); },
-      }),
-      ui::button({
-          .glyph = "trash",
-          .enabled = hasSelectedWidget && !selectedIsLoginBox,
-          .variant = ButtonVariant::Destructive,
-          .onClick = [this]() { deferEditorMutation([this]() { removeSelectedWidget(); }); },
-      }),
-      ui::separator({
-          .orientation = SeparatorOrientation::VerticalRule,
-          .width = Style::borderWidth,
-          .height = Style::controlHeight,
-      }),
-      ui::button({
-          .text = m_snapshot.grid.visible ? i18n::tr("desktop-widgets.editor.state.grid-on")
-                                          : i18n::tr("desktop-widgets.editor.state.grid-off"),
-          .selected = m_snapshot.grid.visible,
-          .variant = ButtonVariant::Outline,
-          .onClick =
-              [this]() {
-                deferEditorMutation([this]() {
-                  m_snapshot.grid.visible = !m_snapshot.grid.visible;
-                  requestLayout();
-                });
-              },
-      }),
-      ui::select({
-          .options = std::vector<std::string>{"8", "16", "24", "32", "64"},
-          .selectedIndex = selectedGridIndex,
-          .controlHeight = Style::controlHeightSm,
-          .onSelectionChanged =
-              [this](std::size_t /*index*/, std::string_view text) {
-                deferEditorMutation([this, value = std::string(text)]() {
-                  try {
-                    m_snapshot.grid.cellSize = std::stoi(value);
-                    requestLayout();
-                  } catch (...) {
-                  }
-                });
-              },
-      }),
-      ui::button({
-          .text = i18n::tr("desktop-widgets.editor.actions.done"),
-          .variant = ButtonVariant::Secondary,
-          .onClick = [this]() { requestExit(); },
-      })
-  );
+  auto
+      toolbar =
+          ui::
+              row(
+                  {
+                      .out = &toolbarPtr,
+                      .align = FlexAlign::Center,
+                      .gap = Style::spaceSm,
+                      .configure =
+                          [](Flex& flex) {
+                            flex.setPadding(Style::spaceSm, Style::spaceMd);
+                            flex.setFill(colorSpecFromRole(ColorRole::Surface, 0.94f));
+                            flex.setBorder(colorSpecFromRole(ColorRole::Outline), Style::borderWidth);
+                            flex.setRadius(Style::scaledRadiusXl());
+                            flex.setZIndex(200);
+                          },
+                  },
+                  ui::row(
+                      {
+                          .out = &toolbarHandlePtr,
+                          .align = FlexAlign::Center,
+                          .gap = Style::spaceXs,
+                          .paddingV = Style::spaceXs,
+                          .paddingH = Style::spaceSm,
+                          .fill = colorSpecFromRole(ColorRole::SurfaceVariant, 0.85f),
+                          .radius = Style::scaledRadiusLg(),
+                          .minHeight = Style::controlHeightSm,
+                      },
+                      ui::glyph({
+                          .glyph = "menu-2",
+                          .glyphSize = 14.0f,
+                      }),
+                      ui::label({
+                          .text = i18n::tr("desktop-widgets.editor.title"),
+                          .fontSize = Style::fontSizeBody,
+                          .fontWeight = FontWeight::Bold,
+                      }),
+                      std::move(toolbarHandleArea)
+                  ),
+                  ui::select({
+                      .options = std::move(typeLabels),
+                      .selectedIndex = selectedTypeIndex,
+                      .controlHeight = Style::controlHeightSm,
+                      .onSelectionChanged =
+                          [this](std::size_t index, std::string_view) {
+                            const auto& specs = desktop_settings::desktopWidgetTypeSpecs();
+                            if (index < specs.size()) {
+                              m_addWidgetType = std::string(specs[index].type);
+                            }
+                          },
+                      .configure = [](Select& select) { select.setMinWidth(200.0f); },
+                  }),
+                  ui::button({
+                      .glyph = "plus",
+                      .variant = ButtonVariant::Primary,
+                      .tooltip = i18n::tr("desktop-widgets.editor.actions.add"),
+                      .onClick =
+                          [this, outputName = surface.outputName]() {
+                            deferEditorMutation([this, outputName]() { addWidget(outputName, m_addWidgetType); });
+                          },
+                  }),
+                  ui::button({
+                      .glyph = "stack-back",
+                      .enabled = canSendSelectedToBack,
+                      .variant = ButtonVariant::Outline,
+                      .tooltip = i18n::tr("desktop-widgets.editor.actions.stack-back"),
+                      .onClick = [this]() { deferEditorMutation([this]() { sendSelectedWidgetToBack(); }); },
+                  }),
+                  ui::button({
+                      .glyph = "stack-front",
+                      .enabled = canBringSelectedToFront,
+                      .variant = ButtonVariant::Outline,
+                      .tooltip = i18n::tr("desktop-widgets.editor.actions.stack-front"),
+                      .onClick = [this]() { deferEditorMutation([this]() { bringSelectedWidgetToFront(); }); },
+                  }),
+                  ui::button({
+                      .glyph = "settings",
+                      .enabled = hasSelectedWidget && !selectedIsLoginBox,
+                      .selected = m_inspectorOpen,
+                      .variant = ButtonVariant::Outline,
+                      .tooltip = i18n::tr("desktop-widgets.editor.actions.settings"),
+                      .onClick =
+                          [this]() {
+                            deferEditorMutation([this]() {
+                              m_inspectorOpen = !m_inspectorOpen;
+                              requestLayout();
+                            });
+                          },
+                  }),
+                  ui::button({
+                      .glyph = selectedWidgetEnabled ? "eye" : "eye-off",
+                      .enabled = hasSelectedWidget && !selectedIsLoginBox,
+                      .selected = selectedWidgetEnabled,
+                      .variant = ButtonVariant::Outline,
+                      .tooltip = selectedWidgetEnabled ? i18n::tr("desktop-widgets.editor.actions.hide")
+                                                       : i18n::tr("desktop-widgets.editor.actions.show"),
+                      .onClick = [this]() { deferEditorMutation([this]() { toggleSelectedWidgetEnabled(); }); },
+                  }),
+                  ui::button({
+                      .glyph = "trash",
+                      .enabled = hasSelectedWidget && !selectedIsLoginBox,
+                      .variant = ButtonVariant::Destructive,
+                      .tooltip = i18n::tr("desktop-widgets.editor.actions.trash"),
+                      .onClick = [this]() { deferEditorMutation([this]() { removeSelectedWidget(); }); },
+                  }),
+                  ui::separator(
+                      {
+                          .orientation = SeparatorOrientation::VerticalRule,
+                          .width = Style::borderWidth,
+                          .height = Style::controlHeight,
+                      }
+                  ),
+                  ui::button(
+                      {
+                          .text = m_snapshot.grid.visible ? i18n::tr("desktop-widgets.editor.state.grid-on")
+                                                          : i18n::tr("desktop-widgets.editor.state.grid-off"),
+                          .selected = m_snapshot.grid.visible,
+                          .variant = ButtonVariant::Outline,
+                          .onClick =
+                              [this]() {
+                                deferEditorMutation([this]() {
+                                  m_snapshot.grid.visible = !m_snapshot.grid.visible;
+                                  requestLayout();
+                                });
+                              },
+                      }
+                  ),
+                  ui::select(
+                      {
+                          .options = std::vector<std::string>{"8", "16", "24", "32", "64"},
+                          .selectedIndex = selectedGridIndex,
+                          .controlHeight = Style::controlHeightSm,
+                          .onSelectionChanged =
+                              [this](std::size_t /*index*/, std::string_view text) {
+                                deferEditorMutation([this, value = std::string(text)]() {
+                                  try {
+                                    m_snapshot.grid.cellSize = std::stoi(value);
+                                    requestLayout();
+                                  } catch (...) {
+                                  }
+                                });
+                              },
+                      }
+                  ),
+                  ui::button({
+                      .text = i18n::tr("desktop-widgets.editor.actions.done"),
+                      .variant = ButtonVariant::Secondary,
+                      .onClick = [this]() { requestExit(); },
+                  })
+              );
 
   surface.toolbar = toolbarPtr;
   root->addChild(std::move(toolbar));

@@ -180,38 +180,56 @@ void TooltipManager::initialize(WaylandConnection& wayland, RenderContext* rende
 void TooltipManager::onHoverChange(InputArea* area, zwlr_layer_surface_v1* parentLayerSurface, wl_output* output) {
   if (area != nullptr && area->hasTooltip() && parentLayerSurface != nullptr && output != nullptr) {
     m_pendingContent = area->tooltipContent();
-    m_pendingParent = parentLayerSurface;
+    m_pendingLayerParent = parentLayerSurface;
+    m_pendingXdgParent = nullptr;
     m_pendingOutput = output;
-    const bool sameArea = area == m_pendingArea;
-    m_pendingArea = area;
-    area->setTooltipChangedCallback([this](InputArea* changedArea) { refreshFromArea(changedArea); });
-
-    switch (m_state) {
-    case State::Idle:
-      m_state = State::Pending;
-      m_showTimer.start(kShowDelay, [this] { showPopup(); });
-      break;
-    case State::Pending:
-      m_showTimer.stop();
-      m_showTimer.start(kShowDelay, [this] { showPopup(); });
-      break;
-    case State::Showing:
-      if (sameArea) {
-        refreshFromArea(area);
-        break;
-      }
-      destroyPopup();
-      showPopup();
-      break;
-    case State::FadingOut:
-      destroyPopup();
-      showPopup();
-      break;
-    }
+    handleHoverChange(area);
     return;
   }
 
   dismissPopup();
+}
+
+void TooltipManager::onHoverChange(InputArea* area, xdg_surface* parentXdgSurface, wl_output* output) {
+  if (area != nullptr && area->hasTooltip() && parentXdgSurface != nullptr && output != nullptr) {
+    m_pendingContent = area->tooltipContent();
+    m_pendingLayerParent = nullptr;
+    m_pendingXdgParent = parentXdgSurface;
+    m_pendingOutput = output;
+    handleHoverChange(area);
+    return;
+  }
+
+  dismissPopup();
+}
+
+void TooltipManager::handleHoverChange(InputArea* area) {
+  const bool sameArea = area == m_pendingArea;
+  m_pendingArea = area;
+  area->setTooltipChangedCallback([this](InputArea* changedArea) { refreshFromArea(changedArea); });
+
+  switch (m_state) {
+  case State::Idle:
+    m_state = State::Pending;
+    m_showTimer.start(kShowDelay, [this] { showPopup(); });
+    break;
+  case State::Pending:
+    m_showTimer.stop();
+    m_showTimer.start(kShowDelay, [this] { showPopup(); });
+    break;
+  case State::Showing:
+    if (sameArea) {
+      refreshFromArea(area);
+      break;
+    }
+    destroyPopup();
+    showPopup();
+    break;
+  case State::FadingOut:
+    destroyPopup();
+    showPopup();
+    break;
+  }
 }
 
 void TooltipManager::syncAnchor(InputArea* area) {
@@ -228,7 +246,7 @@ void TooltipManager::syncAnchor(InputArea* area) {
 void TooltipManager::showPopup() {
   if (m_wayland == nullptr
       || m_renderContext == nullptr
-      || m_pendingParent == nullptr
+      || (m_pendingLayerParent == nullptr && m_pendingXdgParent == nullptr)
       || m_pendingOutput == nullptr
       || m_pendingArea == nullptr) {
     m_state = State::Idle;
@@ -257,7 +275,10 @@ void TooltipManager::showPopup() {
     m_state = State::Idle;
   });
 
-  if (!m_surface->initialize(m_pendingParent, m_pendingOutput, config)) {
+  const bool initialized = m_pendingXdgParent != nullptr
+      ? m_surface->initializeAsChild(m_pendingXdgParent, m_pendingOutput, config)
+      : m_surface->initialize(m_pendingLayerParent, m_pendingOutput, config);
+  if (!initialized) {
     kLog.warn("failed to create tooltip popup");
     m_surface.reset();
     m_state = State::Idle;

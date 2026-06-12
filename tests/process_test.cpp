@@ -3,6 +3,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <cstdio>
+#include <cstdlib>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -103,6 +104,24 @@ namespace {
     return ok;
   }
 
+  bool syncAppliesEnvOverrides() {
+    ::setenv("NOCTALIA_PROCESS_UNSET_TEST", "parent", 1);
+
+    process::RunOptions options;
+    options.env.push_back({"NOCTALIA_PROCESS_SET_TEST", "child"});
+    options.env.push_back({"NOCTALIA_PROCESS_UNSET_TEST", std::nullopt});
+
+    const auto result = process::runSync(
+        {"/bin/sh", "-lc", "printf '%s/%s' \"$NOCTALIA_PROCESS_SET_TEST\" \"${NOCTALIA_PROCESS_UNSET_TEST-unset}\""},
+        options
+    );
+    ::unsetenv("NOCTALIA_PROCESS_UNSET_TEST");
+
+    bool ok = expect(result.exitCode == 0, "sync env override command failed");
+    ok = expect(result.out == "child/unset", "sync env overrides were not visible in child") && ok;
+    return ok;
+  }
+
 } // namespace
 
 int main() {
@@ -110,5 +129,6 @@ int main() {
   ok = expect(!process::runAsync("true", process::RunCallbacks{}), "empty callback set should not launch") && ok;
   ok = capturedAsyncDeliversCallbacksAndResult() && ok;
   ok = capturedAsyncDeliversCompletionOnly() && ok;
+  ok = syncAppliesEnvOverrides() && ok;
   return ok ? 0 : 1;
 }

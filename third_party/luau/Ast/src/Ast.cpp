@@ -978,6 +978,40 @@ AstStatDeclareFunction::AstStatDeclareFunction(
 {
 }
 
+AstStatClass::AstStatClass(const Location& location, AstLocal* name, AstArray<AstClassMember> members, bool exported)
+    : AstStat(ClassIndex(), location)
+    , name(name)
+    , members(members)
+    , exported(exported)
+{
+    LUAU_ASSERT(FFlag::DebugLuauUserDefinedClasses);
+}
+
+void AstStatClass::visit(AstVisitor* visitor)
+{
+    LUAU_ASSERT(FFlag::DebugLuauUserDefinedClasses);
+    if (visitor->visit(this))
+    {
+        for (const auto& member : members)
+        {
+            Luau::visit(
+                overloaded{
+                    [&](const AstClassProperty& prop)
+                    {
+                        if (prop.ty)
+                            prop.ty->visit(visitor);
+                    },
+                    [&](const AstClassMethod& method)
+                    {
+                        method.function->visit(visitor);
+                    }
+                },
+                member
+            );
+        }
+    }
+}
+
 AstStatDeclareFunction::AstStatDeclareFunction(
     const Location& location,
     const AstArray<AstAttr*>& attributes,

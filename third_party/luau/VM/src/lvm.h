@@ -32,6 +32,7 @@ LUAI_FUNC void luaV_callTM(lua_State* L, int nparams, int res);
 LUAI_FUNC void luaV_tryfuncTM(lua_State* L, StkId func);
 
 LUAI_FUNC void luau_execute(lua_State* L);
+LUAI_FUNC void luau_finishop(lua_State* L);
 LUAI_FUNC int luau_precall(lua_State* L, struct lua_TValue* func, int nresults);
 LUAI_FUNC void luau_poscall(lua_State* L, StkId first);
 LUAI_FUNC void luau_callhook(lua_State* L, lua_Hook hook, void* userdata);

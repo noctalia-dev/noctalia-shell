@@ -45,12 +45,7 @@
         "error": "Помилка погоди",
         "loading": "Погода...",
         "no-location": "Немає розташування",
-        "off": "Погода вимкнено",
-        "vertical-default": "В\nХ",
-        "vertical-error": "Помилка",
-        "vertical-loading": "...",
-        "vertical-no-location": "Н О Л О С",
-        "vertical-off": "Вимкнено"
+        "off": "Погода вимкнено"
       }
     }
   },
@@ -167,7 +162,7 @@
       },
       "select-avatar": "Вибрати аватар",
       "unknown": "невідомо",
-      "user-facts": "{user}@{host}\nЧас роботи - {uptime}\nNoctalia {version}",
+      "uptime": "Час роботи - {uptime}",
       "weather": {
         "configure-location": "Додайте [weather].address або увімкніть auto_locate.",
         "data-unavailable": "Дані про погоду недоступні.",
@@ -338,12 +333,10 @@
         "font-family-default": "За замовчуванням системи",
         "format": "Формат",
         "hide-when-no-media": "Приховувати, коли немає медіа",
-        "high-color": "Висока якість кольору",
         "horizontal": "Горизонтальний",
         "image-path": "Зображення",
         "inner-diameter": "Внутрішній діаметр",
         "layout": "Макет",
-        "low-color": "Мало кольорів",
         "mirrored": "Віддзеркалений",
         "opacity": "Непрозорість",
         "primary-color": "Основний колір",
@@ -2414,10 +2407,6 @@
           "description": "Приховати віджет розкладки клавіатури, якщо налаштовано не більше однієї розкладки",
           "label": "Приховати, якщо макет один"
         },
-        "high-color": {
-          "description": "Колір, що використовується для високих значень візуалізатора",
-          "label": "Високий колір"
-        },
         "highlight-color": {
           "description": "Колір досяг або перевищив критичний поріг",
           "label": "Колір виділення"
@@ -2450,10 +2439,6 @@
         "length": {
           "description": "Довжина пробілу в пікселях",
           "label": "Довжина"
-        },
-        "low-color": {
-          "description": "Колір для низьких значень візуалізатора",
-          "label": "Низька кольоровість"
         },
         "match-adjacent-spacing": {
           "description": "Збільшити проміжки між вбудованими іконками Tray, щоб відповідати візуальному відступу сусідніх віджетів Bar (включаючи відступи Capsule)",

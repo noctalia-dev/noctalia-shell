@@ -67,7 +67,6 @@ namespace shell::dock {
     const DockEdge edge = cfg.position;
     const bool vertical = isVerticalEdge(edge);
     const auto sb = shell::surface_shadow::bleed(cfg.shadow, shadow);
-    const bool hiddenOverlayMode = cfg.autoHide && !cfg.reserveSpace;
     const auto panelW = dockContentSize(cfg, itemCount);
     const auto panelH = dockThickness(cfg);
     const std::int32_t zoomPad = dockHoverZoomCrossPad(cfg);
@@ -88,7 +87,7 @@ namespace shell::dock {
           geometry.marginBottom = std::max(0, mEdge - sb.down);
           geometry.surfaceH = static_cast<std::uint32_t>(sb.up + panelH + std::min(mEdge, sb.down) + zoomPad);
         }
-        geometry.exclusiveZone = hiddenOverlayMode ? 0 : (panelH + std::min(mEdge, sb.down));
+        geometry.exclusiveZone = cfg.reserveSpace ? (panelH + std::min(mEdge, sb.down)) : 0;
       } else {
         if (edgeGutter > 0) {
           geometry.surfaceH = static_cast<std::uint32_t>(sb.down + panelH + edgeGutter + zoomPad);
@@ -96,7 +95,7 @@ namespace shell::dock {
           geometry.marginTop = std::max(0, mEdge - sb.up);
           geometry.surfaceH = static_cast<std::uint32_t>(std::min(mEdge, sb.up) + panelH + sb.down + zoomPad);
         }
-        geometry.exclusiveZone = hiddenOverlayMode ? 0 : (std::min(mEdge, sb.up) + panelH);
+        geometry.exclusiveZone = cfg.reserveSpace ? (std::min(mEdge, sb.up) + panelH) : 0;
       }
       return geometry;
     }
@@ -111,7 +110,7 @@ namespace shell::dock {
         geometry.marginRight = std::max(0, mEdge - sb.right);
         geometry.surfaceW = static_cast<std::uint32_t>(sb.left + panelH + std::min(mEdge, sb.right) + zoomPad);
       }
-      geometry.exclusiveZone = hiddenOverlayMode ? 0 : (panelH + std::min(mEdge, sb.right));
+      geometry.exclusiveZone = cfg.reserveSpace ? (panelH + std::min(mEdge, sb.right)) : 0;
     } else {
       if (edgeGutter > 0) {
         geometry.surfaceW = static_cast<std::uint32_t>(sb.right + panelH + edgeGutter + zoomPad);
@@ -119,7 +118,7 @@ namespace shell::dock {
         geometry.marginLeft = std::max(0, mEdge - sb.left);
         geometry.surfaceW = static_cast<std::uint32_t>(std::min(mEdge, sb.left) + panelH + sb.right + zoomPad);
       }
-      geometry.exclusiveZone = hiddenOverlayMode ? 0 : (std::min(mEdge, sb.left) + panelH);
+      geometry.exclusiveZone = cfg.reserveSpace ? (std::min(mEdge, sb.left) + panelH) : 0;
     }
     return geometry;
   }

@@ -89,10 +89,15 @@ void WaylandSeat::setKeyboardFocusCallback(KeyboardFocusCallback callback) {
 }
 
 void WaylandSeat::setCursorShape(std::uint32_t serial, std::uint32_t shape) {
-  if (m_cursorShapeDevice == nullptr || serial == 0) {
+  if (m_cursorShapeDevice == nullptr) {
     return;
   }
-  wp_cursor_shape_device_v1_set_shape(m_cursorShapeDevice, serial, shape);
+  // Use the wl_pointer.enter serial for the surface hover lifetime.
+  const std::uint32_t effectiveSerial = m_pointerEnterSerial != 0 ? m_pointerEnterSerial : serial;
+  if (effectiveSerial == 0) {
+    return;
+  }
+  wp_cursor_shape_device_v1_set_shape(m_cursorShapeDevice, effectiveSerial, shape);
 }
 
 void WaylandSeat::forgetSurface(wl_surface* surface) noexcept {

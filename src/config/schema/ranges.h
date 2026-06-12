@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config/config_limits.h"
 #include "config/schema/field.h"
 
 // Numeric ranges for settings that have a UI slider. Each constant is the SINGLE
@@ -17,6 +18,11 @@ namespace noctalia::config::schema {
   inline constexpr Range<float> kAnimationSpeedRange{0.1f, 4.0f, 0.05f};
   inline constexpr Range<float> kCornerRadiusScaleRange{0.0f, 2.0f, 0.05f};
   inline constexpr Range<std::int64_t> kScreenCornersSizeRange{1, 100, 1};
+  inline constexpr Range<std::int64_t> kClipboardHistoryMaxEntriesRange{
+      noctalia::config::kClipboardHistoryMinEntries,
+      noctalia::config::kClipboardHistoryMaxEntries,
+      noctalia::config::kClipboardHistoryStepEntries,
+  };
 
   // Battery / wallpaper.
   inline constexpr Range<std::int64_t> kBatteryWarningThresholdRange{0, 100, 1};

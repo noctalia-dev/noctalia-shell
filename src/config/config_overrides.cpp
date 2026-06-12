@@ -3,6 +3,7 @@
 #include "config/widget_config.h"
 #include "core/key_chord.h"
 #include "core/log.h"
+#include "scripting/plugin_id.h"
 #include "shell/settings/widget_settings_registry.h"
 #include "theme/builtin_palettes.h"
 #include "theme/custom_palettes.h"
@@ -242,6 +243,9 @@ namespace {
     }
     if (ovr.widgetColor) {
       resolved.widgetColor = *ovr.widgetColor;
+    }
+    if (ovr.widgetIconColor) {
+      resolved.widgetIconColor = *ovr.widgetIconColor;
     }
     if (ovr.widgetCapsuleGroups) {
       resolved.widgetCapsuleGroups = *ovr.widgetCapsuleGroups;
@@ -652,34 +656,35 @@ ConfigChangeSet computeConfigChangeSet(const Config& prev, const Config& next) {
 }
 
 void ConfigService::setPluginEnabled(std::string_view pluginId, bool enabled) {
+  if (!scripting::isValidPluginId(pluginId)) {
+    return;
+  }
   if (m_overridesPath.empty()) {
     return;
   }
 
-  auto* pluginsTbl = ensureTable(m_overridesTable, "plugins");
-  auto* arr = pluginsTbl->get_as<toml::array>("enabled");
-  if (arr == nullptr) {
-    auto [it, _] = pluginsTbl->insert_or_assign("enabled", toml::array{});
-    arr = it->second.as_array();
-  }
-
   const std::string id(pluginId);
-  auto pos = std::find_if(arr->begin(), arr->end(), [&id](const toml::node& node) {
-    const auto value = node.value<std::string>();
-    return value && *value == id;
-  });
+  std::vector<std::string> next = m_config.plugins.enabled;
+  const bool currentlyEnabled = std::find(next.begin(), next.end(), id) != next.end();
 
   if (enabled) {
-    if (pos != arr->end()) {
+    if (currentlyEnabled) {
       return; // already enabled
     }
-    arr->push_back(id);
+    next.push_back(id);
   } else {
-    if (pos == arr->end()) {
+    if (!currentlyEnabled) {
       return; // already disabled
     }
-    arr->erase(pos);
+    std::erase(next, id);
   }
+
+  toml::array enabledArray;
+  for (const auto& plugin : next) {
+    enabledArray.push_back(plugin);
+  }
+  auto* pluginsTbl = ensureTable(m_overridesTable, "plugins");
+  pluginsTbl->insert_or_assign("enabled", std::move(enabledArray));
 
   if (!writeOverridesToFile()) {
     kLog.warn("failed to write {}", m_overridesPath);
@@ -692,32 +697,46 @@ void ConfigService::setPluginEnabled(std::string_view pluginId, bool enabled) {
 }
 
 void ConfigService::addPluginSource(const PluginSourceConfig& source) {
-  if (m_overridesPath.empty() || source.name.empty()) {
+  if (m_overridesPath.empty() || !isValidPluginSourceName(source.name)) {
     return;
   }
 
+  const auto sourceTable = [](const PluginSourceConfig& src) {
+    toml::table entry;
+    entry.insert_or_assign("name", src.name);
+    entry.insert_or_assign("kind", std::string(enumToKey(kPluginSourceKinds, src.kind)));
+    entry.insert_or_assign("location", src.location);
+    if (src.autoUpdate) {
+      entry.insert_or_assign("auto_update", true);
+    }
+    return entry;
+  };
+
   auto* pluginsTbl = ensureTable(m_overridesTable, "plugins");
   auto* arr = pluginsTbl->get_as<toml::array>("source");
+  bool sourceWritten = false;
   if (arr == nullptr) {
-    auto [it, _] = pluginsTbl->insert_or_assign("source", toml::array{});
+    toml::array seededSources;
+    for (const auto& existing : m_config.plugins.sources) {
+      if (!isValidPluginSourceName(existing.name)) {
+        continue;
+      }
+      seededSources.push_back(sourceTable(existing.name == source.name ? source : existing));
+      sourceWritten = sourceWritten || existing.name == source.name;
+    }
+    auto [it, _] = pluginsTbl->insert_or_assign("source", std::move(seededSources));
     arr = it->second.as_array();
   }
 
-  // A source name is an identity, not a duplicate key — replace any existing entry.
-  for (auto it = arr->begin(); it != arr->end();) {
-    const auto* tbl = it->as_table();
-    const auto name = tbl != nullptr ? (*tbl)["name"].value<std::string>() : std::nullopt;
-    it = (name && *name == source.name) ? arr->erase(it) : it + 1;
+  if (!sourceWritten) {
+    // A source name is an identity, not a duplicate key — replace any existing entry.
+    for (auto it = arr->begin(); it != arr->end();) {
+      const auto* tbl = it->as_table();
+      const auto name = tbl != nullptr ? (*tbl)["name"].value<std::string>() : std::nullopt;
+      it = (name && *name == source.name) ? arr->erase(it) : it + 1;
+    }
+    arr->push_back(sourceTable(source));
   }
-
-  toml::table entry;
-  entry.insert_or_assign("name", source.name);
-  entry.insert_or_assign("kind", std::string(enumToKey(kPluginSourceKinds, source.kind)));
-  entry.insert_or_assign("location", source.location);
-  if (source.autoUpdate) {
-    entry.insert_or_assign("auto_update", true);
-  }
-  arr->push_back(std::move(entry));
 
   if (!writeOverridesToFile()) {
     kLog.warn("failed to write {}", m_overridesPath);

@@ -161,7 +161,7 @@ void SysmonWidget::create() {
           .out = &m_glyph,
           .glyph = glyphName(m_stat),
           .glyphSize = Style::baseGlyphSize * m_contentScale,
-          .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
+          .color = widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)),
       })
   );
 
@@ -227,7 +227,8 @@ void SysmonWidget::syncVisualPalette() {
 void SysmonWidget::syncValueColor() {
   const Color valueColor = currentValueColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
   if (m_glyph != nullptr) {
-    m_glyph->setColor(valueColor);
+    const Color iconColor = m_widgetIconColor.has_value() ? resolveColorSpec(m_widgetIconColor.value()) : valueColor;
+    m_glyph->setColor(iconColor);
   }
   if (m_label != nullptr) {
     m_label->setColor(valueColor);

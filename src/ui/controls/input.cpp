@@ -460,6 +460,15 @@ void Input::setSurfaceOpacity(float opacity) {
   applyVisualState();
 }
 
+void Input::setFrameRadius(float radius) {
+  const float clamped = std::max(0.0f, radius);
+  if (m_frameRadius == clamped) {
+    return;
+  }
+  m_frameRadius = clamped;
+  applyVisualState();
+}
+
 void Input::setEnabled(bool enabled) {
   if (m_enabled == enabled) {
     return;
@@ -1335,7 +1344,7 @@ void Input::applyVisualState() {
             .fill = fill,
             .border = border,
             .fillMode = FillMode::Solid,
-            .radius = Style::scaledRadiusMd(chromeScale),
+            .radius = Style::scaledRadius(m_frameRadius, chromeScale),
             .softness = 1.0f,
             .borderWidth = Style::borderWidth,
         }

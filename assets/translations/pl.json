@@ -45,12 +45,7 @@
         "error": "Błąd pogody",
         "loading": "Pogoda...",
         "no-location": "Brak lokalizacji",
-        "off": "Pogoda wyłączona",
-        "vertical-default": "P\nO",
-        "vertical-error": "B\nŁ\nĘ\nD",
-        "vertical-loading": ".\n.\n.",
-        "vertical-no-location": "B\nL\nO\nK",
-        "vertical-off": "W\nY\nŁ"
+        "off": "Pogoda wyłączona"
       }
     }
   },
@@ -168,7 +163,7 @@
       },
       "select-avatar": "Wybierz awatar",
       "unknown": "nieznane",
-      "user-facts": "{user}@{host}\nCzas działania - {uptime}\nNoctalia {version}",
+      "uptime": "Czas działania - {uptime}",
       "weather": {
         "configure-location": "Dodaj [weather].address lub włącz auto_locate.",
         "data-unavailable": "Dane pogodowe niedostępne.",
@@ -339,21 +334,23 @@
         "font-family-default": "Domyślna systemowa",
         "format": "Format",
         "hide-when-no-media": "Ukryj bez mediów",
-        "high-color": "Kolor wysoki",
         "horizontal": "Poziomo",
         "image-path": "Obraz",
         "inner-diameter": "Średnica wewnętrzna",
+        "input-opacity": "Krycie Pola",
+        "input-radius": "Promień Pola",
         "layout": "Układ",
-        "low-color": "Kolor niski",
         "mirrored": "Odbite lustrzanie",
         "opacity": "Krycie",
         "primary-color": "Kolor główny",
+        "reset-defaults": "Zresetuj do ustawień domyślnych",
         "ring-opacity": "Krycie pierścienia",
         "rotation-speed": "Prędkość obrotu",
         "secondary-color": "Kolor wtórny",
         "sensitivity": "Czułość",
         "shadow": "Cień",
         "show-label": "Pokaż etykietę",
+        "show-login-button": "Przycisk Logowania",
         "show-when-idle": "Pokaż w bezczynności",
         "stat": "Statystyka",
         "stat-cpu-temp": "Temp. CPU",
@@ -908,6 +905,7 @@
         "notifications": "Powiadomienia",
         "osd": "OSD",
         "panels": "Panele",
+        "plugins": "Wtyczki",
         "popups": "Okna wyskakujące",
         "power": "Zasilanie",
         "security": "Bezpieczeństwo",
@@ -1051,6 +1049,43 @@
           "imperial": "Imperialny",
           "metric": "Metryczny"
         }
+      }
+    },
+    "plugins": {
+      "plugins": {
+        "configure": "Skonfiguruj",
+        "empty": "Nie znaleziono wtyczek. Dodaj źródło, albo sprawdź swoją sieć.",
+        "loading": "Ładowanie wtyczek...",
+        "refreshing": "Odświeżanie wtyczek...",
+        "requires-newer-noctalia": "wymaga nowszej Noctalii",
+        "title": "Wtyczki"
+      },
+      "settings": {
+        "empty": "Brak dostępnych ustawień."
+      },
+      "sources": {
+        "add": "Dodaj źródło",
+        "add-title": "Dodaj źródło wtyczek",
+        "empty": "Źródło nie skonfigurowane.",
+        "errors": {
+          "duplicate-name": "Źródło z tą nazwą już istnieje.",
+          "invalid-name": "Źródło musi zawierać litery, cyfry, '.', '_' albo '-', zaczynając od litery albo cyfry.",
+          "location-required": "Lokalizacja źródła jest wymagana."
+        },
+        "kind": {
+          "git": "Git",
+          "path": "Ścieżka"
+        },
+        "kind-label": "Rodzaj",
+        "location-label": "Lokalizacja",
+        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
+        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "name-label": "Nazwa",
+        "name-placeholder": "moje-wtyczki",
+        "remove": "Usuń źródło",
+        "title": "Źródła",
+        "update": "Aktualizacja",
+        "update-on-startup": "Zaaktualizuj przy uruchomieniu"
       }
     },
     "schema": {
@@ -2415,10 +2450,6 @@
           "description": "Ukryj widżet układu klawiatury, chyba że skonfigurowano więcej niż jeden układ",
           "label": "Ukryj przy jednym układzie"
         },
-        "high-color": {
-          "description": "Kolor używany dla wysokich wartości wizualizera",
-          "label": "Kolor wysoki"
-        },
         "highlight-color": {
           "description": "Kolor osiągnięty na lub powyżej krytycznego progu",
           "label": "Kolor podświetlenia"
@@ -2451,10 +2482,6 @@
         "length": {
           "description": "Długość spacjatora w pikselach",
           "label": "Długość"
-        },
-        "low-color": {
-          "description": "Kolor używany dla niskich wartości wizualizera",
-          "label": "Kolor niski"
         },
         "match-adjacent-spacing": {
           "description": "Powiększ przerwy między wbudowanymi ikonami Tray, aby odpowiadały wizualnym odstępom między sąsiednimi widżetami paska (obejmuje wypełnienie kapsułki)",

@@ -2,6 +2,7 @@
 
 #include "config/config_types.h"
 #include "scripting/plugin_manager.h"
+#include "scripting/plugin_manifest.h"
 
 #include <functional>
 #include <string>
@@ -21,23 +22,26 @@ namespace settings {
     std::string_view selectedSection;
     std::vector<scripting::PluginStatus> plugins;
     std::vector<PluginSourceConfig> sources;
+    bool pluginsLoading = false;
 
     std::function<void(std::string id, bool enable)> setEnabled;
+    std::function<void()> addSource;
+    std::function<void(PluginSourceConfig source, bool autoUpdate)> setSourceAutoUpdate;
     std::function<void(std::string source)> updateSource;
     std::function<void(std::string source)> removeSource;
     std::function<void()> refresh;
 
-    // Per-plugin settings editor (plugin-level [[setting]] block). Rendered inline
-    // for the plugin whose id == configurePluginId, using controlFactory to build
-    // override-backed controls writing to {"plugin_settings", id, key}.
+    // Used to derive current toggle state while async discovery refreshes.
     const Config* config = nullptr;
-    SettingsControlFactory* controlFactory = nullptr;
-    std::string configurePluginId;
-    bool showAdvanced = false;
-    std::function<void(std::string id)> onConfigure; // toggle the editor for a plugin id
+    std::function<void(std::string id)> onConfigure;
   };
 
   // Render the Plugins section into `content` when ctx.selectedSection == "plugins".
   void addSettingsPlugins(Flex& content, SettingsPluginsContext ctx);
+
+  void buildPluginSettingsEditor(
+      Flex& body, const Config& cfg, SettingsControlFactory& factory, const std::string& pluginId,
+      const scripting::PluginManifest& manifest, bool showAdvanced, float scale
+  );
 
 } // namespace settings

@@ -54,6 +54,7 @@ public:
   void setSubmitOnFocusLoss(bool enabled);
   void setEnabled(bool enabled);
   void setSurfaceOpacity(float opacity);
+  void setFrameRadius(float radius);
   [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
   void selectAll();
   void moveCaretLeft(bool shift = false);
@@ -218,6 +219,7 @@ private:
   bool m_frameVisible = true;
   bool m_embeddedOnSolidPrimary = false;
   float m_surfaceOpacity = 1.0f;
+  float m_frameRadius = Style::radiusMd;
   bool m_enabled = true;
   TextInputService* m_textInputService = nullptr;
   float m_minLayoutWidth = 0.0f;

@@ -11,6 +11,8 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <functional>
+#include <memory>
 #include <optional>
 #include <string_view>
 
@@ -39,6 +41,15 @@ namespace {
   bool starts_with_slash(std::string_view value) { return !value.empty() && value.front() == '/'; }
 
   bool looks_like_dbus_name(std::string_view value) { return !value.empty() && value != "__path_only__"; }
+
+  void invokeSharedCallback(const std::shared_ptr<std::function<void()>>& callback) {
+    if (callback == nullptr || !*callback) {
+      return;
+    }
+
+    auto retained = *callback;
+    retained();
+  }
 
   bool isGenericProcessName(std::string_view value) {
     if (value.empty()) {
@@ -1692,7 +1703,7 @@ void TrayService::resolvePathOnlyItemProxy(const std::string& itemId) {
 
             const auto candidate = (*candidates)[(*index)++];
             if (!looks_like_dbus_name(candidate)) {
-              (*probeNext)();
+              invokeSharedCallback(probeNext);
               return;
             }
 
@@ -1710,7 +1721,7 @@ void TrayService::resolvePathOnlyItemProxy(const std::string& itemId) {
                                        std::optional<sdbus::Error> probeError, std::map<std::string, sdbus::Variant>
                                    ) {
                     if (probeError.has_value()) {
-                      (*probeNext)();
+                      invokeSharedCallback(probeNext);
                       return;
                     }
 
@@ -1741,7 +1752,7 @@ void TrayService::resolvePathOnlyItemProxy(const std::string& itemId) {
                     *probeNext = nullptr; // break self-cycle on success
                   });
             } catch (const sdbus::Error&) {
-              (*probeNext)();
+              invokeSharedCallback(probeNext);
             }
           };
 
@@ -1750,7 +1761,7 @@ void TrayService::resolvePathOnlyItemProxy(const std::string& itemId) {
             *probeNext = nullptr; // break self-cycle
             return;
           }
-          (*probeNext)();
+          invokeSharedCallback(probeNext);
         });
   } catch (const sdbus::Error& e) {
     kLog.debug("lazy path-only resolve dispatch failed path={} err={}", objectPath, e.what());

@@ -64,6 +64,8 @@ typedef struct lua_TValue
 #define ttislightuserdata(o) (ttype(o) == LUA_TLIGHTUSERDATA)
 #define ttisvector(o) (ttype(o) == LUA_TVECTOR)
 #define ttisupval(o) (ttype(o) == LUA_TUPVAL)
+#define ttisclass(o) (ttype(o) == LUA_TCLASS)
+#define ttisobject(o) (ttype(o) == LUA_TOBJECT)
 
 // Macros to access values
 #define ttype(o) ((o)->tt)
@@ -80,6 +82,8 @@ typedef struct lua_TValue
 #define thvalue(o) check_exp(ttisthread(o), &(o)->value.gc->th)
 #define bufvalue(o) check_exp(ttisbuffer(o), &(o)->value.gc->buf)
 #define upvalue(o) check_exp(ttisupval(o), &(o)->value.gc->uv)
+#define classvalue(o) check_exp(ttisclass(o), &(o)->value.gc->lclass)
+#define objectvalue(o) check_exp(ttisobject(o), &(o)->value.gc->lobject)
 
 #define l_isfalse(o) (ttisnil(o) || (ttisboolean(o) && bvalue(o) == 0))
 
@@ -222,6 +226,23 @@ typedef struct lua_TValue
         checkliveness(L->global, o1); \
     }
 
+#define setclassvalue(L, obj, x) \
+    { \
+        TValue* i_o = (obj); \
+        i_o->value.gc = cast_to(GCObject*, (x)); \
+        i_o->tt = LUA_TCLASS; \
+        checkliveness(L->global, i_o); \
+    }
+
+
+#define setobjectvalue(L, obj, x) \
+    { \
+        TValue* i_o = (obj); \
+        i_o->value.gc = cast_to(GCObject*, (x)); \
+        i_o->tt = LUA_TOBJECT; \
+        checkliveness(L->global, i_o); \
+    }
+
 /*
 ** different types of sets, according to destination
 */
@@ -234,6 +255,8 @@ typedef struct lua_TValue
 #define setobj2t setobj
 // to new object (no barrier)
 #define setobj2n setobj
+// to class instance or static member (needs barrier)
+#define setobj2class setobj
 
 #define setttype(obj, tt) (ttype(obj) = (tt))
 
@@ -289,6 +312,26 @@ typedef struct LuauBuffer
     alignas(8) char data[1];
 } Buffer;
 
+enum FeedbackVectorSlotKind
+{
+    CALL_TARGET
+};
+
+struct FeedbackVectorSlot
+{
+    FeedbackVectorSlotKind kind;
+
+    union
+    {
+        struct
+        {
+            uint32_t pc;
+            uint32_t proto;
+            uint32_t hits;
+        } call_target;
+    };
+};
+
 /*
 ** Function Prototypes
 */
@@ -336,6 +379,10 @@ typedef struct Proto
     int linedefined;
     int bytecodeid;
     int sizetypeinfo;
+
+    FeedbackVectorSlot* feedbackvec;
+    uint32_t feedbackvecsize;
+    uint32_t funid;
 } Proto;
 // clang-format on
 
@@ -389,6 +436,7 @@ typedef struct Closure
     uint8_t stacksize;
     uint8_t preload;
 
+    uint64_t usage; // only valid for Luau functions
     GCObject* gclist;
     struct LuaTable* env;
 
@@ -477,6 +525,66 @@ typedef struct LuaTable
     GCObject* gclist;
 } LuaTable;
 // clang-format on
+
+typedef struct LuauClass
+{
+    CommonHeader;
+
+    GCObject* gclist;
+
+    TString* name;
+
+    // Mapping from offset to static members (only methods for now).
+    TValue* staticmembers;
+
+    // Mapping from member name to offset.
+    LuaTable* memberstooffset;
+
+    // Mapping from offset to member name.
+    TString** offsettomember;
+
+    // Metatable for this *class object*. At time of writing this only contains
+    // __call, but we may add more metamethods to class objects in the future.
+    LuaTable* metatable;
+
+    // Metatable for instances of this class. NULL until the first metamethod
+    // is added via luaR_addclassmember.
+    LuaTable* instancemetatable;
+
+    // Number of instance members that we expect instances of this class object
+    // to have.
+    int numberofinstancemembers;
+
+    // Total number of members that we expect this class object to have between
+    // instance and static members.
+    //
+    // We store this number as an optimization. It's pretty rare that we need
+    // to reference the specific number of static members, but it's very common
+    // to reference the total number of members (for validating hot paths in
+    // the interpreter) and the number of instance members (branching on
+    // instance or static members, creating class instances).
+    int numberofallmembers;
+
+} LuauClass;
+
+typedef struct LuauObject
+{
+    CommonHeader;
+
+    GCObject* gclist;
+
+    // The class object that this value is an instance of.
+    LuauClass* lclass;
+
+    // The number of members that this instance contains. We need this in order
+    // to free ourselves if we got swept in the same GC cycle as our class
+    // pointer.
+    int numberofmembers;
+
+    // The fields of this instance.
+    TValue* members;
+
+} LuauObject;
 
 /*
 ** `module' operation for hashing (size is always a power of 2)

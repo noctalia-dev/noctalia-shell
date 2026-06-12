@@ -11,7 +11,7 @@
       "default-message": "Yêu cầu xác thực",
       "invalid-password": "Mật khẩu không hợp lệ",
       "password-placeholder": "Mật khẩu",
-      "title": "Yêu cầu Xác thực"
+      "title": "Yêu cầu xác thực"
     }
   },
   "bar": {
@@ -45,12 +45,7 @@
         "error": "Không thể tải thời tiết",
         "loading": "Đang cập nhật thời tiết...",
         "no-location": "Không xác định vị trí",
-        "off": "Thời tiết không được bật",
-        "vertical-default": "WX",
-        "vertical-error": "ERR",
-        "vertical-loading": "...",
-        "vertical-no-location": "NOLOC",
-        "vertical-off": "OFF"
+        "off": "Thời tiết không được bật"
       }
     }
   },
@@ -76,14 +71,14 @@
     },
     "entry": {
       "image": "Hình ảnh",
-      "title": "Mục Bộ nhớ"
+      "title": "Mục bộ nhớ tạm"
     },
     "filter-placeholder": "Lọc lịch sử sao chép...",
     "preview": {
       "empty-text-payload": "(nội dung văn bản trống)",
-      "image-title": "Bộ nhớ Ảnh",
+      "image-title": "Mục bộ nhớ ảnh",
       "loading": "Đang tải bản xem trước...",
-      "text-title": "Bộ nhớ Văn bản",
+      "text-title": "Bộ nhớ văn bản",
       "truncated": "… đã rút gọn"
     },
     "title": "Bộ nhớ tạm"
@@ -102,8 +97,8 @@
   },
   "control-center": {
     "audio": {
-      "application-volumes": "Âm lượng Ứng dụng",
-      "input-volume": "Âm lượng Đầu vào",
+      "application-volumes": "Âm lượng ứng dụng",
+      "input-volume": "Âm lượng đầu vào",
       "no-application-audio": "Không có âm thanh từ ứng dụng",
       "no-application-audio-body": "Hiện không có ứng dụng nào đang phát âm thanh.",
       "no-input-devices": "Không tìm thấy thiết bị đầu vào",
@@ -112,7 +107,7 @@
       "no-output-devices": "Không tìm thấy thiết bị đầu ra",
       "no-output-devices-body": "Không có thiết bị phát âm thanh khả dụng.",
       "no-output-selected": "Không có thiết bị đầu ra nào được chọn",
-      "output-volume": "Âm lượng Đầu ra",
+      "output-volume": "Âm lượng đầu ra",
       "unavailable-body": "PipeWire hiện không hoạt động.",
       "unavailable-title": "Âm thanh không khả dụng"
     },
@@ -166,9 +161,9 @@
         "unknown-artist": "Nghệ sĩ không xác định",
         "unknown-track": "Bài hát không xác định"
       },
-      "select-avatar": "Chọn Ảnh đại diện",
+      "select-avatar": "Chọn ảnh đại diện",
       "unknown": "không xác định",
-      "user-facts": "{user}@{host}Thời gian hoạt động - {uptime}Noctalia {version}",
+      "uptime": "Thời gian hoạt động - {uptime}",
       "weather": {
         "configure-location": "Thêm [weather].address hoặc bật auto_locate.",
         "data-unavailable": "Không thể tải dữ liệu thời tiết.",
@@ -184,7 +179,7 @@
     },
     "network": {
       "connect": "Kết nối",
-      "current-connection": "Kết nối Hiện tại",
+      "current-connection": "Kết nối hiện tại",
       "no-networks": "Không có mạng khả dụng ở gần",
       "not-connected": "Chưa kết nối",
       "password": "Mật khẩu",
@@ -230,29 +225,29 @@
       "audio": "Âm thanh",
       "bluetooth": "Bluetooth",
       "caffeine": "Caffeine",
-      "clipboard": "Clipboard",
+      "clipboard": "Bảng tạm",
       "dark-mode": {
         "auto": "Tự động",
         "dark": "Tối",
         "light": "Sáng"
       },
       "keyboard-layout": "Bố cục",
-      "media": "Media",
-      "mic-mute": "Microphone",
-      "nightlight": "Night Light",
+      "media": "Trình phát",
+      "mic-mute": "Micrô",
+      "nightlight": "Ánh sáng đêm",
       "nightlight-states": {
         "forced": "Luôn bật",
-        "off": "Night Light",
+        "off": "Ánh sáng đêm",
         "scheduled-day": "Theo lịch",
         "scheduled-night": "Đang chạy"
       },
       "notification": "DND",
-      "power-profile": "Power",
-      "screen-recorder": "Recorder",
-      "screen-time": "Screen Time",
-      "session": "Session",
-      "system": "System",
-      "wallpaper": "Wallpaper",
+      "power-profile": "Nguồn",
+      "screen-recorder": "Ghi hình",
+      "screen-time": "Thời gian Sử dụng",
+      "session": "Phiên",
+      "system": "Hệ thống",
+      "wallpaper": "Hình nền",
       "weather": "Thời tiết",
       "wifi": "Wi-Fi"
     },
@@ -288,8 +283,8 @@
         "elevation": "Độ cao",
         "sunrise": "Bình minh",
         "sunset": "Hoàng hôn",
-        "temp-max": "Nhiệt độ Cao nhất",
-        "temp-min": "Nhiệt độ Thấp nhất",
+        "temp-max": "Nhiệt độ cao nhất",
+        "temp-min": "Nhiệt độ thấp nhất",
         "timezone": "Múi giờ",
         "wind": "Gió"
       },
@@ -311,10 +306,10 @@
         "done": "Xong"
       },
       "dialogs": {
-        "select-sticker-image": "Chọn Hình ảnh Sticker"
+        "select-sticker-image": "Chọn hình ảnh Sticker"
       },
       "settings": {
-        "aspect-ratio": "Tỷ lệ Khung hình",
+        "aspect-ratio": "Tỷ lệ khung hình",
         "background": "Nền",
         "background-color": "Màu",
         "background-opacity": "Độ mờ",
@@ -338,22 +333,24 @@
         "font-family": "Phông chữ",
         "font-family-default": "Mặc định hệ thống",
         "format": "Định dạng",
-        "hide-when-no-media": "Ẩn khi không có media",
-        "high-color": "Màu sắc cao",
+        "hide-when-no-media": "Ẩn khi không có trình phát đang chạy",
         "horizontal": "Ngang",
         "image-path": "Ảnh",
         "inner-diameter": "Đường kính trong",
+        "input-opacity": "Độ mờ đầu vào",
+        "input-radius": "Bo góc đầu vào",
         "layout": "Bố cục",
-        "low-color": "Màu nhạt",
         "mirrored": "Phản chiếu",
         "opacity": "Độ trong suốt",
         "primary-color": "Màu chính",
+        "reset-defaults": "Khôi phục về mặc định",
         "ring-opacity": "Độ mờ vòng",
         "rotation-speed": "Tốc độ quay",
         "secondary-color": "Màu phụ",
         "sensitivity": "Độ nhạy",
         "shadow": "Bóng",
         "show-label": "Hiển thị nhãn",
+        "show-login-button": "Nút đăng nhập",
         "show-when-idle": "Hiển thị khi không hoạt động",
         "stat": "Trạng thái",
         "stat-cpu-temp": "Nhiệt độ CPU",
@@ -519,6 +516,7 @@
       "calendar-google-connect-browser-failed": "Không thể khởi chạy trình mở trình duyệt để ủy quyền Google. Kiểm tra trình duyệt mặc định của bạn hoặc thiết lập xdg-open.",
       "calendar-google-connect-expired": "Ủy quyền Google đã hết hạn trước khi đăng nhập hoàn tất. Hãy bắt đầu lại kết nối.",
       "calendar-google-connect-failed-title": "Kết nối Lịch Google thất bại",
+      "calendar-google-connect-missing-account": "Không tìm thấy tài khoản Google calendar nào phù hợp với \"{account}\".",
       "calendar-google-connect-rate-limited": "Ủy quyền Google tạm thời bị giới hạn tốc độ. Đợi một chút, rồi thử lại.",
       "calendar-google-connect-result-failed": "Không thể hoàn tất ủy quyền Google. Vui lòng thử lại kết nối.",
       "calendar-google-connect-start-failed": "Không thể bắt đầu ủy quyền Google. Vui lòng kiểm tra kết nối mạng và thử lại.",
@@ -539,7 +537,8 @@
       "lockscreen-widgets-editor-enabled": "Trình chỉnh sửa Widget màn hình khóa đang bật. Sắp xếp các Widget trên Overlay xem trước, sau đó khóa phiên để kiểm tra bố cục.",
       "mpris-disabled": "MPRIS đã tắt",
       "session-bus-unavailable": "Bus phiên không khả dụng",
-      "wallpaper-palette-export": "Bảng màu tùy chỉnh"
+      "wallpaper-palette-export": "Bảng màu tùy chỉnh",
+      "wallpaper-palette-export-success": "Đã lưu \"{name}\" và chuyển từ bảng màu sang tùy chỉnh."
     }
   },
   "osd": {
@@ -750,6 +749,7 @@
         },
         "picker": {
           "empty": "Không tìm thấy tiện ích nào",
+          "instance-description": "Widget được đặt tên cho kiểu \"{type}\"",
           "instance-toggle": "Tiện ích có tên",
           "placeholder": "Tìm kiếm tiện ích..."
         },
@@ -905,6 +905,7 @@
         "notifications": "Thông báo",
         "osd": "OSD",
         "panels": "Các bảng",
+        "plugins": "Plugins",
         "popups": "Pop-up",
         "power": "Nguồn",
         "security": "Bảo mật",
@@ -1048,6 +1049,44 @@
           "imperial": "Hệ đo lường Anh",
           "metric": "Chỉ số"
         }
+      }
+    },
+    "plugins": {
+      "plugins": {
+        "configure": "Cấu hình",
+        "deprecated": "đã lỗi thời",
+        "empty": "Không tìm thấy plugin nào. Hãy thêm nguồn hoặc kiểm tra mạng của bạn.",
+        "loading": "Đang tải các plugin...",
+        "refreshing": "Đang làm mới các plugin...",
+        "requires-newer-noctalia": "Yêu cầu phiên bản Noctalia mới hơn",
+        "title": "Plugins"
+      },
+      "settings": {
+        "empty": "Không có cài đặt nào khả dụng."
+      },
+      "sources": {
+        "add": "Thêm nguồn",
+        "add-title": "Thêm nguồn của plugin",
+        "empty": "Chưa có nguồn nào được cấu hình.",
+        "errors": {
+          "duplicate-name": "Nguồn có ID này đã tồn tại.",
+          "invalid-name": "ID nguồn chỉ được chứa chữ cái, chữ số, '.', '_' hoặc '-', và phải bắt đầu bằng chữ cái hoặc chữ số.",
+          "location-required": "Cần chỉ định vị trí nguồn."
+        },
+        "kind": {
+          "git": "Git",
+          "path": "Đường dẫn"
+        },
+        "kind-label": "Loại",
+        "location-label": "Vị trí",
+        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
+        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "name-label": "Mã nguồn",
+        "name-placeholder": "my-plugins",
+        "remove": "Xóa nguồn",
+        "title": "Các nguồn",
+        "update": "Cập nhật",
+        "update-on-startup": "Cập nhật khi khởi động"
       }
     },
     "schema": {
@@ -1253,6 +1292,10 @@
         "widget-color": {
           "description": "Vai trò màu sắc mặc định cho biểu tượng và nhãn của các tiện ích trên thanh này; mã màu hex cố định cũng được hỗ trợ",
           "label": "Màu Widget"
+        },
+        "widget-icon-color": {
+          "description": "Thay thế màu widget của các biểu tượng trên thanh này. Bạn cũng có thể sử dụng mã màu hex cố định",
+          "label": "Màu biểu tượng widget"
         },
         "widget-spacing": {
           "description": "Khoảng cách giữa các tiện ích trên Thanh",
@@ -1511,6 +1554,10 @@
           "description": "Sử dụng ảnh chụp màn hình nền làm nền màn hình khóa",
           "label": "Chụp màn hình"
         },
+        "enabled": {
+          "description": "Kích hoạt khóa phiên, tích hợp với logind và các hành động khóa",
+          "label": "Khóa màn hình"
+        },
         "monitors": {
           "description": "Chọn màn hình hiển thị màn hình khóa; để trống để hiển thị trên tất cả các màn hình",
           "label": "Màn hình"
@@ -1616,6 +1663,10 @@
         "launcher-compact": {
           "description": "Dùng biểu tượng nhỏ hơn và hàng kết quả gọn hơn",
           "label": "Hàng gọn"
+        },
+        "launcher-session-search": {
+          "description": "Cho phép tìm thấy các thao tác phiên (khóa, tạm ngủ, khởi động lại, tắt máy, đăng xuất) từ tìm kiếm thông thường, thay vì chỉ qua /session",
+          "label": "Bật tìm kiếm các thao tác phiên"
         },
         "launcher-show-icons": {
           "description": "Hiển thị biểu tượng ứng dụng trong kết quả của Launcher",
@@ -2394,7 +2445,7 @@
         },
         "hide-when-no-media": {
           "description": "Ẩn tiện ích đa phương tiện khi không có trình phát MPRIS nào đang hoạt động",
-          "label": "Ẩn khi không có phương tiện"
+          "label": "Ẩn khi không có trình phát"
         },
         "hide-when-no-unread": {
           "description": "Ẩn tiện ích thông báo khi không có thông báo chưa đọc",
@@ -2412,10 +2463,6 @@
           "description": "Ẩn widget bố cục bàn phím trừ khi có hơn một bố cục được cấu hình",
           "label": "Ẩn khi chỉ có một bố cục"
         },
-        "high-color": {
-          "description": "Màu dùng cho các giá trị cao của bộ hiển thị",
-          "label": "Màu sắc cao"
-        },
         "highlight-color": {
           "description": "Màu đã đạt hoặc vượt quá ngưỡng tới hạn",
           "label": "Màu nổi bật"
@@ -2423,6 +2470,10 @@
         "hot-reload": {
           "description": "Tải lại widget có script khi nguồn của nó thay đổi",
           "label": "Hot Reload"
+        },
+        "icon-color": {
+          "description": "Chỉ áp dụng màu tùy chỉnh cho biểu tượng của widget. Hỗ trợ cả mã màu hex cố định",
+          "label": "Màu biểu tượng"
         },
         "icon-size": {
           "description": "Kích thước biểu tượng (pixel)",
@@ -2448,10 +2499,6 @@
         "length": {
           "description": "Chiều dài Spacer theo pixel",
           "label": "Độ dài"
-        },
-        "low-color": {
-          "description": "Màu dùng cho các giá trị hiển thị thấp",
-          "label": "Màu sắc giảm"
         },
         "match-adjacent-spacing": {
           "description": "Mở rộng khoảng cách giữa các biểu tượng Tray nội tuyến để khớp với khoảng cách hiển thị của các tiện ích thanh trạng thái lân cận (bao gồm đệm Capsule)",
@@ -2569,7 +2616,7 @@
           "label": "Hiển thị Scroll Lock"
         },
         "show-when-idle": {
-          "description": "Luôn hiển thị trình hiển thị trực quan ngay cả khi không có phương tiện nào đang phát",
+          "description": "Luôn hiển thị trình hiển thị trực quan ngay cả khi không có trình phát nào đang chạy",
           "label": "Hiển thị khi không hoạt động"
         },
         "show-window-title": {
@@ -2643,7 +2690,7 @@
         "keyboard-layout": "Bố cục bàn phím",
         "launcher": "Trình khởi chạy",
         "lock-keys": "Phím khóa",
-        "media": "Phương tiện",
+        "media": "Trình phát",
         "network": "Mạng",
         "nightlight": "Ánh sáng đêm",
         "notifications": "Thông báo",
@@ -2770,6 +2817,7 @@
         "sort": {
           "ascending": "Lên",
           "date": "Ngày",
+          "descending": "↓",
           "name": "Tên",
           "size": "Kích thước"
         },

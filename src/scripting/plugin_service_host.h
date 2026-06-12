@@ -20,7 +20,7 @@ namespace scripting {
   class ScriptApiContext;
 
   // Plugin-level setting overrides keyed by plugin id, then setting key.
-  using PluginSettingsMap = std::unordered_map<std::string, ScriptWidgetSettings>;
+  using PluginSettingsMap = std::unordered_map<std::string, ScriptSettings>;
 
   // Hosts headless [[service]] entries: one singleton runtime per service entry,
   // started at launch and ticked on its own interval. Services hold a plugin's
@@ -51,7 +51,7 @@ namespace scripting {
       ScriptRuntime::SubscriberId subscription = 0;
       Timer updateTimer;
       int updateIntervalMs = 1000;
-      ScriptWidgetSettings lastSeededSettings;
+      ScriptSettings lastSeededSettings;
       std::shared_ptr<bool> alive = std::make_shared<bool>(true);
 
       [[nodiscard]] std::string_view ipcEntryId() const override { return entryId; }
@@ -67,13 +67,13 @@ namespace scripting {
     // Build, register, and start a service runtime for an entry. Returns null on an
     // empty/unreadable source.
     [[nodiscard]] std::unique_ptr<Service>
-    makeService(const std::string& entryId, const std::filesystem::path& source, ScriptWidgetSettings seeded);
+    makeService(const std::string& entryId, const std::filesystem::path& source, ScriptSettings seeded);
     // Full teardown for removal/shutdown: unregister IPC, stop timer + runtime, and
     // mark the alive token dead so any in-flight callback is a no-op.
     void stopService(Service& service);
     // Build the effective seeded settings for an entry (manifest defaults + plugin
     // overrides). Returns nullopt if the entry no longer resolves.
-    [[nodiscard]] std::optional<ScriptWidgetSettings>
+    [[nodiscard]] std::optional<ScriptSettings>
     seedFor(const std::string& entryId, const PluginSettingsMap& pluginSettings) const;
 
     ScriptApiContext& m_scriptApi;

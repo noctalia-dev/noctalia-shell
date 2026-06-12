@@ -13,8 +13,8 @@ public:
   AudioVisualizer();
 
   bool setValues(const std::vector<float>& values);
-  void setGradient(const ColorSpec& lowColor, const ColorSpec& highColor);
-  void setGradient(const Color& lowColor, const Color& highColor);
+  void setGradient(const ColorSpec& color1, const ColorSpec& color2);
+  void setGradient(const Color& color1, const Color& color2);
   void setOrientation(AudioSpectrumOrientation orientation);
   void setMirrored(bool mirrored);
   void setCentered(bool centered);
@@ -31,7 +31,7 @@ private:
   std::vector<float> m_displayValues;
   float m_smoothingTauMs = 60.0f;
   bool m_converged = true;
-  ColorSpec m_lowColor = colorSpecFromRole(ColorRole::Primary);
-  ColorSpec m_highColor = colorSpecFromRole(ColorRole::Primary);
+  ColorSpec m_color1 = colorSpecFromRole(ColorRole::Primary);
+  ColorSpec m_color2 = colorSpecFromRole(ColorRole::Primary);
   Signal<>::ScopedConnection m_paletteConn;
 };

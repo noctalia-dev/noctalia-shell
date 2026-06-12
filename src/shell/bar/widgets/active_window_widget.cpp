@@ -1,6 +1,7 @@
 #include "shell/bar/widgets/active_window_widget.h"
 
 #include "config/config_service.h"
+#include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
@@ -19,10 +20,10 @@
 
 ActiveWindowWidget::ActiveWindowWidget(
     ConfigService& config, CompositorPlatform& platform, float maxWidth, float minWidth, float iconSize,
-    ActiveWindowTitleScrollMode titleScrollMode, ActiveWindowDisplayMode displayMode
+    ActiveWindowTitleScrollMode titleScrollMode, ActiveWindowDisplayMode displayMode, bool showEmptyLabel
 )
     : m_config(config), m_platform(platform), m_maxWidth(maxWidth), m_minWidth(minWidth), m_iconSize(iconSize),
-      m_titleScrollMode(titleScrollMode), m_displayMode(displayMode) {
+      m_titleScrollMode(titleScrollMode), m_displayMode(displayMode), m_showEmptyLabel(showEmptyLabel) {
   buildDesktopIconIndex();
 }
 
@@ -75,12 +76,11 @@ void ActiveWindowWidget::doLayout(Renderer& renderer, float containerWidth, floa
   }
   syncState(renderer);
 
-  rootNode->setVisible(!m_lastEmptyState);
-  rootNode->setParticipatesInLayout(!m_lastEmptyState);
-  if (m_lastEmptyState) {
+  if (!rootNode->visible() || !rootNode->participatesInLayout()) {
     return;
   }
 
+  const bool showingEmptyPlaceholder = m_lastEmptyState && m_showEmptyLabel;
   const bool isVertical = containerHeight > containerWidth;
   const float iconSize = m_iconSize * m_contentScale;
   const float maxLength = std::max(0.0f, m_maxWidth * m_contentScale);
@@ -89,15 +89,16 @@ void ActiveWindowWidget::doLayout(Renderer& renderer, float containerWidth, floa
 
   m_title->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
 
-  if (isVertical) {
+  if (isVertical && !showingEmptyPlaceholder) {
     m_title->setVisible(false);
     applyTitleScrollMode(false);
     m_icon->setVisible(true);
     m_icon->setPosition(0.0f, 0.0f);
     rootNode->setSize(m_icon->width(), m_icon->height());
   } else {
-    const bool showIcon = m_displayMode != ActiveWindowDisplayMode::TextOnly;
-    const bool showTitle = m_displayMode != ActiveWindowDisplayMode::IconOnly && !m_lastTitle.empty();
+    const bool showIcon = !showingEmptyPlaceholder && m_displayMode != ActiveWindowDisplayMode::TextOnly;
+    const bool showTitle =
+        showingEmptyPlaceholder || (m_displayMode != ActiveWindowDisplayMode::IconOnly && !m_lastTitle.empty());
     m_icon->setVisible(showIcon);
     m_title->setVisible(showTitle);
     applyTitleScrollMode(showTitle);
@@ -122,6 +123,21 @@ void ActiveWindowWidget::doLayout(Renderer& renderer, float containerWidth, floa
 }
 
 void ActiveWindowWidget::doUpdate(Renderer& renderer) { syncState(renderer); }
+
+void ActiveWindowWidget::syncWidgetVisibility(bool showWidget) {
+  if (Node* rootNode = root(); rootNode != nullptr) {
+    if (rootNode->visible() != showWidget || rootNode->participatesInLayout() != showWidget) {
+      rootNode->setVisible(showWidget);
+      rootNode->setParticipatesInLayout(showWidget);
+      if (!showWidget) {
+        rootNode->setSize(0.0f, 0.0f);
+      }
+      requestUpdate();
+    } else if (!showWidget && (rootNode->width() > 0.0f || rootNode->height() > 0.0f)) {
+      rootNode->setSize(0.0f, 0.0f);
+    }
+  }
+}
 
 void ActiveWindowWidget::applyTitleScrollMode(bool titleVisible) {
   if (m_title == nullptr) {
@@ -155,7 +171,7 @@ void ActiveWindowWidget::syncState(Renderer& renderer) {
 
   if (!current.has_value()) {
     identifier = {};
-    title = {};
+    title = m_showEmptyLabel ? i18n::tr("bar.widgets.active-window.no-active-window") : std::string{};
     appId = {};
     emptyState = true;
   } else {
@@ -165,6 +181,24 @@ void ActiveWindowWidget::syncState(Renderer& renderer) {
     if (title.empty()) {
       title = appId;
     }
+  }
+
+  const bool showWidget = !emptyState || m_showEmptyLabel;
+  syncWidgetVisibility(showWidget);
+  if (!showWidget) {
+    if (!m_iconColorizeRefreshPending && !desktopEntriesChanged && emptyState == m_lastEmptyState) {
+      return;
+    }
+    m_iconColorizeRefreshPending = false;
+    m_lastIdentifier = std::move(identifier);
+    m_lastTitle = {};
+    m_lastAppId = {};
+    m_lastEmptyState = emptyState;
+    m_lastIconPath = {};
+    if (m_icon != nullptr) {
+      m_icon->clear(renderer);
+    }
+    return;
   }
 
   if (!m_iconColorizeRefreshPending

@@ -2,6 +2,7 @@
 
 #include "shell/bar/widget.h"
 
+#include <memory>
 #include <string>
 #include <unordered_set>
 
@@ -54,4 +55,5 @@ private:
   std::string m_lastArtUrl;
   std::string m_lastPlaybackStatus;
   std::unordered_set<std::string> m_pendingArtDownloads;
+  std::shared_ptr<void> m_aliveGuard = std::make_shared<int>(0);
 };

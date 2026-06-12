@@ -21,14 +21,14 @@ show_location         = true         # hide weather location text in shell UI wh
 # app_icon_colorize   = false        # recolor application icons across the shell
 # app_icon_color      = "on_surface" # ColorSpec role or #hex when colorize is enabled
 clipboard_enabled     = true         # false disables clipboard panel, history, and compositor clipboard hooks
-clipboard_history_max_entries = 50 # unpinned history cap (10–200); pinned entries are extra
+clipboard_history_max_entries = 100 # unpinned history cap (10–10000); pinned entries are extra
 clipboard_auto_paste  = "auto"       # off | auto | ctrl_v | ctrl_shift_v | shift_insert
 clipboard_image_action_command = ""  # image preview action: gimp {path}, or satty -f - via stdin
 # IPC example:
 # noctalia msg clipboard-clear
 shared_gl_context     = true         # startup-only; false isolates GPU contexts for broken drivers
-# avatar_path         = "~/Pictures/avatar.png"
 # lang                = "en"
+# avatar_path         = "~/Pictures/avatar.png"
 
 [shell.animation]
 enabled = true
@@ -173,6 +173,7 @@ keyboard_layout = true              # input keyboard layout changes
 # ── Lock Screen ───────────────────────────────────────────────────────────────
 
 [lockscreen]
+enabled                 = true
 blurred_desktop         = false       # use a desktop snapshot as the lock screen background (requires wlr-screencopy)
 blur_intensity          = 0.5         # lock screen background blur (0.0 = none, 1.0 = maximum)
 tint_intensity          = 0.3         # surface-color tint over the lock screen background
@@ -318,7 +319,7 @@ margin_v            = 8
 shadow              = true
 show_running        = true
 auto_hide           = false
-reserve_space       = false
+reserve_space       = true
 active_scale        = 1.0
 inactive_scale      = 0.85
 magnification       = true

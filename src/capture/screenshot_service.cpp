@@ -953,18 +953,18 @@ void ScreenshotService::captureGlobalRegion(LogicalRect globalRegion, const Outp
     );
   }
 
-  m_globalRegionBatch = GlobalRegionBatch{
+  m_globalRegionBatch = std::make_unique<GlobalRegionBatch>(GlobalRegionBatch{
       .options = options,
       .globalRegion = globalRegion,
       .targets = std::move(batchTargets),
       .pieces = {},
       .next = 0,
-  };
+  });
   startNextGlobalRegionCapture();
 }
 
 void ScreenshotService::startNextGlobalRegionCapture() {
-  if (!m_globalRegionBatch.has_value()) {
+  if (!m_globalRegionBatch) {
     return;
   }
 
@@ -995,7 +995,7 @@ void ScreenshotService::startNextGlobalRegionCapture() {
 void ScreenshotService::onGlobalRegionFrameCaptured(
     wl_output* output, LogicalRect localRegion, std::optional<ScreencopyImage> image, const std::string& error
 ) {
-  if (!m_globalRegionBatch.has_value()) {
+  if (!m_globalRegionBatch) {
     return;
   }
   if (!error.empty() || !image.has_value()) {
@@ -1021,7 +1021,7 @@ void ScreenshotService::onGlobalRegionFrameCaptured(
 }
 
 void ScreenshotService::finishGlobalRegionBatch() {
-  if (!m_globalRegionBatch.has_value()) {
+  if (!m_globalRegionBatch) {
     return;
   }
 
@@ -1189,17 +1189,17 @@ void ScreenshotService::captureAllOutputs(const OutputOptions& options) {
     return;
   }
 
-  m_allOutputsBatch = AllOutputsBatch{
+  m_allOutputsBatch = std::make_unique<AllOutputsBatch>(AllOutputsBatch{
       .options = options,
       .targets = std::move(targets),
       .frames = {},
       .next = 0,
-  };
+  });
   startNextAllOutputsCapture();
 }
 
 void ScreenshotService::startNextAllOutputsCapture() {
-  if (!m_allOutputsBatch.has_value()) {
+  if (!m_allOutputsBatch) {
     return;
   }
 
@@ -1230,7 +1230,7 @@ void ScreenshotService::startNextAllOutputsCapture() {
 void ScreenshotService::onAllOutputsFrameCaptured(
     wl_output* output, const std::string& label, std::optional<ScreencopyImage> image, const std::string& error
 ) {
-  if (!m_allOutputsBatch.has_value()) {
+  if (!m_allOutputsBatch) {
     return;
   }
   if (!error.empty() || !image.has_value()) {
@@ -1250,7 +1250,7 @@ void ScreenshotService::onAllOutputsFrameCaptured(
 }
 
 void ScreenshotService::finishAllOutputsBatch() {
-  if (!m_allOutputsBatch.has_value()) {
+  if (!m_allOutputsBatch) {
     return;
   }
 

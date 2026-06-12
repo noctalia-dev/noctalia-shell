@@ -10,6 +10,7 @@ namespace FormatUnits {
     constexpr double kBytesPerKb = 1000.0;
     constexpr double kBytesPerMb = 1000.0 * 1000.0;
     constexpr double kBytesPerGb = 1000.0 * 1000.0 * 1000.0;
+    constexpr double kBytesPerTb = 1000.0 * 1000.0 * 1000.0 * 1000.0;
 
   } // namespace
 
@@ -34,7 +35,12 @@ namespace FormatUnits {
     return std::format("{:.1f} GiB", static_cast<double>(bytes) / kBytesPerGib);
   }
 
-  std::string formatDecimalBytesUsageAsGb(double usedBytes, double totalBytes) {
+  std::string formatDecimalBytesUsage(double usedBytes, double totalBytes) {
+    // Pick the unit from the total so both numbers share it; TB once disks pass 1000 GB
+    // keeps the column narrow and readable (e.g. "1.3 / 2.0 TB" not "1332.2 / 1967.9 GB").
+    if (totalBytes >= kBytesPerTb) {
+      return std::format("{:.1f} / {:.1f} TB", usedBytes / kBytesPerTb, totalBytes / kBytesPerTb);
+    }
     return std::format("{:.1f} / {:.1f} GB", usedBytes / kBytesPerGb, totalBytes / kBytesPerGb);
   }
 

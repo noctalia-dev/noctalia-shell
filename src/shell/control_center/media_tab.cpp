@@ -865,10 +865,14 @@ void MediaTab::refresh(Renderer& renderer) {
     }
 
     const std::string resolvedArtUrl = effectiveArtUrl(player);
-    const std::string artPath = resolveArtworkSource(m_httpClient, m_pendingArtDownloads, resolvedArtUrl, [this] {
-      m_lastArtPath.clear();
-      PanelManager::instance().refresh();
-    });
+    const std::string artPath = resolveArtworkSource(
+        m_httpClient, m_pendingArtDownloads, resolvedArtUrl,
+        [this] {
+          m_lastArtPath.clear();
+          PanelManager::instance().refresh();
+        },
+        m_aliveGuard
+    );
 
     if (m_artwork != nullptr
         && (!resolvedArtUrl.empty() && (resolvedArtUrl != m_lastArtPath || !m_artwork->hasImage()))) {

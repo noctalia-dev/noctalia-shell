@@ -8,7 +8,6 @@
 #include <endian.h>
 #endif
 
-LUAU_FASTFLAG(LuauIntegerType)
 LUAU_FASTFLAG(LuauIntegerLibrary)
 
 #include <string.h>
@@ -433,7 +432,7 @@ static const luaL_Reg bufferlib_NOINTEGER[] = {
 
 int luaopen_buffer(lua_State* L)
 {
-    if (FFlag::LuauIntegerType && FFlag::LuauIntegerLibrary)
+    if (FFlag::LuauIntegerLibrary)
         luaL_register(L, LUA_BUFFERLIBNAME, bufferlib);
     else
         luaL_register(L, LUA_BUFFERLIBNAME, bufferlib_NOINTEGER);

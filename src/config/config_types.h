@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config/config_limits.h"
 #include "core/key_chord.h"
 #include "system/sysmon_threshold_profile.h"
 #include "ui/palette.h"
@@ -75,6 +76,7 @@ struct BarMonitorOverride {
   std::optional<ColorSpec> widgetCapsuleBorder;
   std::optional<ColorSpec> widgetCapsuleForeground;
   std::optional<ColorSpec> widgetColor;
+  std::optional<ColorSpec> widgetIconColor;
   std::optional<std::vector<BarCapsuleGroupStyle>> widgetCapsuleGroups;
   std::optional<double> widgetCapsulePadding;
   std::optional<double> widgetCapsuleRadius;
@@ -122,9 +124,12 @@ struct BarConfig {
   ColorSpec widgetCapsuleFill = colorSpecFromRole(ColorRole::SurfaceVariant);
   // When set, bar widgets with capsules use this for icon + primary label color unless overridden per widget.
   std::optional<ColorSpec> widgetCapsuleForeground;
-  // Default icon + primary label color for all widgets on this bar (same as per-widget `color`); per-widget `color`
+  // Default primary label color for all widgets on this bar (same as per-widget `color`); per-widget `color`
   // overrides.
   std::optional<ColorSpec> widgetColor;
+  // Default icon color for all widgets on this bar (same as per-widget `color`); per-widget `color`
+  // overrides.
+  std::optional<ColorSpec> widgetIconColor;
   std::vector<BarCapsuleGroupStyle> widgetCapsuleGroups;
   // Inner padding between capsule edge and widget content (logical px), multiplied by widget content scale on the bar.
   float widgetCapsulePadding = Style::barCapsulePadding;
@@ -408,6 +413,7 @@ struct BackdropConfig {
 };
 
 struct LockscreenConfig {
+  bool enabled = true;
   bool blurredDesktop = false;
   float blurIntensity = 0.5f;
   float tintIntensity = 0.3f;
@@ -416,6 +422,10 @@ struct LockscreenConfig {
 
   bool operator==(const LockscreenConfig&) const = default;
 };
+
+[[nodiscard]] inline bool isLockScreenEnabled(const LockscreenConfig& lockscreen) noexcept {
+  return lockscreen.enabled;
+}
 
 template <typename T> struct EnumOption {
   T value;
@@ -487,7 +497,7 @@ struct DockConfig {
   bool shadow = true;                  // use the global shell shadow
   bool showRunning = true;             // also show running apps not in pinned list
   bool autoHide = false;               // fade out when not hovered (overlay mode)
-  bool reserveSpace = false;           // keep compositor exclusive zone even while auto-hidden
+  bool reserveSpace = true;            // reserve compositor exclusive zone; applies with or without auto_hide
   float activeScale = 1.0f;            // focused app icon scale
   float inactiveScale = 0.85f;         // non-focused app icon scale
   bool magnification = true;           // magnify icons near the pointer (macOS-style)
@@ -768,6 +778,7 @@ struct ShellConfig {
     bool launcherCategories = true;
     bool launcherShowIcons = true;
     bool launcherCompact = false;
+    bool launcherSessionSearch = false;
 
     bool operator==(const PanelConfig&) const = default;
   };
@@ -820,7 +831,7 @@ struct ShellConfig {
   /// When false, disables Wayland clipboard integration (history panel, data-control binding, Input paste/copy hooks).
   bool clipboardEnabled = true;
   /// Maximum unpinned clipboard history entries retained (pinned entries are exempt).
-  int clipboardHistoryMaxEntries = 50;
+  int clipboardHistoryMaxEntries = static_cast<int>(noctalia::config::kClipboardHistoryDefaultEntries);
   /// When true, clearing clipboard history or deleting unpinned entries from the panel asks for confirmation first.
   bool clipboardConfirmClearHistory = true;
   /// Disables per-app tracking and Control Center usage UI.
@@ -1196,8 +1207,9 @@ struct ControlCenterConfig {
 };
 
 // A plugin source: where plugin code comes from. `Git` is a repo URL the host
-// clones/pulls/sparse-checks-out; `Path` is an immutable local directory (e.g. a
-// Nix store path) the host treats read-only (update/auto-update/remove are no-ops).
+// caches, updates, and exports plugin runtime files from; `Path` is an
+// immutable local directory (e.g. a Nix store path) the host treats read-only
+// (update/auto-update/remove are no-ops).
 enum class PluginSourceKind : std::uint8_t {
   Git = 0,
   Path = 1,
@@ -1232,6 +1244,10 @@ struct PluginsConfig {
 // Default sources seeded when [plugins] declares no [[plugins.source]]: the
 // official + community plugin repos (auto-update off).
 [[nodiscard]] std::vector<PluginSourceConfig> defaultPluginSources();
+[[nodiscard]] bool isDefaultPluginSourceName(std::string_view name);
+// Source names are stable user-facing handles and git source storage directory names.
+// Keep them flat so they can never escape the plugin source cache.
+[[nodiscard]] bool isValidPluginSourceName(std::string_view name);
 
 struct Config {
   std::vector<BarConfig> bars;

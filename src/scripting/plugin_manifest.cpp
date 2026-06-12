@@ -2,6 +2,7 @@
 
 #include "core/log.h"
 #include "core/toml.h" // IWYU pragma: keep
+#include "scripting/plugin_id.h"
 
 #include <algorithm>
 #include <array>
@@ -296,14 +297,22 @@ namespace scripting {
     if (manifest.id.empty()) {
       return fail("missing mandatory key 'id'");
     }
+    if (!isValidPluginId(manifest.id)) {
+      return fail("invalid plugin id '" + manifest.id + "' (expected author/plugin)");
+    }
+    manifest.name = tableString(root, "name");
+    if (manifest.name.empty()) {
+      return fail("missing mandatory key 'name'");
+    }
     manifest.minNoctalia = tableString(root, "min_noctalia");
     if (manifest.minNoctalia.empty()) {
       return fail("missing mandatory key 'min_noctalia'");
     }
 
-    manifest.name = tableString(root, "name", manifest.id);
     manifest.version = tableString(root, "version");
     manifest.author = tableString(root, "author");
+    manifest.license = tableString(root, "license", "MIT");
+    manifest.deprecated = tableBool(root, "deprecated", false);
     manifest.icon = tableString(root, "icon");
     manifest.description = tableString(root, "description");
     if (const auto* tags = root["tags"].as_array()) {

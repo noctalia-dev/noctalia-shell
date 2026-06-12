@@ -16,6 +16,7 @@
 #include "config/schema/engine.h"
 #include "core/key_chord.h"
 #include "core/toml.h"
+#include "scripting/plugin_id.h"
 
 #include <cstdio>
 #include <sstream>
@@ -61,6 +62,86 @@ namespace {
     }
   }
 
+  void checkPluginSourceNameValidation() {
+    const std::string valid[] = {"official", "my-repo", "team.plugins", "repo_2", "A1"};
+    for (const auto& name : valid) {
+      if (!isValidPluginSourceName(name)) {
+        fail("plugins: rejected valid source name " + name);
+      }
+    }
+
+    const std::string invalid[] = {"", ".", "..", "../repo", "repo/name", "repo name", "-repo", "_repo"};
+    for (const auto& name : invalid) {
+      if (isValidPluginSourceName(name)) {
+        fail("plugins: accepted invalid source name " + name);
+      }
+    }
+
+    const toml::table root = toml::parse(R"(
+enabled = ["me/hello", "../bad", "missing-slash", "me/foo/bar"]
+
+[[source]]
+name = "good-repo"
+kind = "git"
+location = "https://example.invalid/good"
+
+[[source]]
+name = "../bad"
+kind = "git"
+location = "https://example.invalid/bad"
+)");
+
+    PluginsConfig plugins;
+    Diagnostics diag;
+    readInto(root, plugins, pluginsSchema(), "plugins", diag);
+    if (plugins.sources.size() != 1 || plugins.sources[0].name != "good-repo") {
+      fail("plugins: schema did not keep only valid source names");
+    }
+    if (plugins.enabled.size() != 1 || plugins.enabled[0] != "me/hello") {
+      fail("plugins: schema did not keep only valid enabled plugin ids");
+    }
+    bool sawWarning = false;
+    bool sawEnabledWarning = false;
+    for (const auto& entry : diag.entries) {
+      if (entry.severity == Diagnostics::Severity::Warning && entry.path == "plugins.source.name") {
+        sawWarning = true;
+      }
+      if (entry.severity == Diagnostics::Severity::Warning && entry.path == "plugins.enabled") {
+        sawEnabledWarning = true;
+      }
+    }
+    if (!sawWarning) {
+      fail("plugins: schema did not warn for invalid source name");
+    }
+    if (!sawEnabledWarning) {
+      fail("plugins: schema did not warn for invalid enabled plugin id");
+    }
+  }
+
+  void checkPluginIdValidation() {
+    const std::string valid[] = {"noctalia/screen_recorder", "me/hello", "Team/repo_2", "a/b.c-d"};
+    for (const auto& id : valid) {
+      if (!scripting::isValidPluginId(id)) {
+        fail("plugins: rejected valid plugin id " + id);
+      }
+      if (!scripting::pluginSubdirFromId(id).has_value()) {
+        fail("plugins: did not derive subdir for valid plugin id " + id);
+      }
+    }
+
+    const std::string invalid[] = {
+        "", "hello", "me/", "/hello", "me/foo/bar", "me/../hello", "me/foo bar", "../foo", "me/.hidden"
+    };
+    for (const auto& id : invalid) {
+      if (scripting::isValidPluginId(id)) {
+        fail("plugins: accepted invalid plugin id " + id);
+      }
+      if (scripting::pluginSubdirFromId(id).has_value()) {
+        fail("plugins: derived subdir for invalid plugin id " + id);
+      }
+    }
+  }
+
   // A fully-specified bar with a fully-specified monitor override. Every override
   // optional is set so the resolve-and-flatten write round-trips back into the
   // same override on read (a partial override would come back fully resolved).
@@ -97,6 +178,7 @@ namespace {
     bar.widgetCapsuleFill = colorSpecFromConfigString("#abcdef");
     bar.widgetCapsuleForeground = colorSpecFromConfigString("#fedcba");
     bar.widgetColor = colorSpecFromConfigString("#0a0b0c");
+    bar.widgetIconColor = colorSpecFromConfigString("#0c0b0a");
     bar.widgetCapsulePadding = 16.0f;
     bar.widgetCapsuleRadius = 12.0;
     bar.widgetCapsuleOpacity = 0.9f;
@@ -147,6 +229,7 @@ namespace {
     ovr.widgetCapsuleBorder = colorSpecFromConfigString("#c1c2c3");
     ovr.widgetCapsuleForeground = colorSpecFromConfigString("#d1d2d3");
     ovr.widgetColor = colorSpecFromConfigString("#e1e2e3");
+    ovr.widgetIconColor = colorSpecFromConfigString("#e3e2e1");
     BarCapsuleGroupStyle ogroup;
     ogroup.id = "ogrp";
     ogroup.members = {"volume"};
@@ -269,6 +352,7 @@ namespace {
     c.shell.panel.transparencyMode = PanelTransparencyMode::Glass;
     c.shell.panel.launcherPlacement = PanelPlacement::Floating;
     c.shell.panel.launcherCompact = true;
+    c.shell.panel.launcherSessionSearch = true;
     c.shell.screenCorners.enabled = true;
     c.shell.screenCorners.size = 24;
     c.shell.mpris.blacklist = {"firefox"};
@@ -346,6 +430,17 @@ namespace {
         fail("osd.scale clamp: expected 0.5");
       }
     }
+    // Clipboard history count accepts large text-heavy histories but still has
+    // an explicit config ceiling.
+    {
+      auto t = toml::parse("clipboard_history_max_entries = 25000");
+      ShellConfig s{};
+      Diagnostics d;
+      readInto(t, s, shellSchema(), "shell", d);
+      if (s.clipboardHistoryMaxEntries != 10000) {
+        fail("shell.clipboard_history_max_entries clamp: expected 10000");
+      }
+    }
   }
 
 } // namespace
@@ -376,6 +471,7 @@ contact_shadow = true
 enabled = false
 end = [ "battery" ]
 font_weight = 600
+icon_color = "#0C0B0A"
 layer = "overlay"
 margin_edge = 5
 margin_ends = 100
@@ -412,6 +508,7 @@ widget_spacing = 8
     enabled = true
     end = [ "volume" ]
     font_weight = 600
+    icon_color = "#E3E2E1"
     layer = "top"
     margin_edge = 9
     margin_ends = 70
@@ -512,6 +609,8 @@ widget_spacing = 8
   checkReadInverse("theme", serialized, probe.theme, themeSchema());
   checkReadInverse("shell", serialized, probe.shell, shellSchema());
 
+  checkPluginIdValidation();
+  checkPluginSourceNameValidation();
   checkClamps();
 
   if (g_failures == 0) {

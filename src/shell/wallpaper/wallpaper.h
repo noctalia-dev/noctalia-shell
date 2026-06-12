@@ -18,7 +18,9 @@ class RenderContext;
 class SharedTextureCache;
 class VisualizerService;
 class WaylandConnection;
+struct PointerEvent;
 struct WaylandOutput;
+struct wl_surface;
 
 class Wallpaper {
 public:
@@ -40,6 +42,8 @@ public:
   void onGpuResourcesInvalidated();
   void registerIpc(IpcService& ipc);
   void setAutomationGate(std::function<bool()> gate);
+  [[nodiscard]] bool ownsSurface(wl_surface* surface) const noexcept;
+  bool onPointerEvent(const PointerEvent& event);
 
   [[nodiscard]] TextureHandle currentTexture() const;
 

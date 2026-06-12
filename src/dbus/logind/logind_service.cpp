@@ -57,6 +57,12 @@ LogindService::LogindService(SystemBus& bus) : m_bus(bus) {
       m_prepareForSleepCallback(sleeping);
     }
   });
+}
+
+void LogindService::ensureSessionLockMonitor() {
+  if (m_sessionProxy != nullptr) {
+    return;
+  }
 
   const auto sessionPath = resolveSessionPath(m_bus.connection());
   if (!sessionPath.has_value()) {
@@ -78,6 +84,19 @@ LogindService::LogindService(SystemBus& bus) : m_bus(bus) {
   kLog.info("logind session lock monitor active ({})", std::string(sessionPath->c_str()));
 }
 
+void LogindService::setSessionLockIntegrationEnabled(bool enabled) {
+  if (m_sessionLockIntegrationEnabled == enabled) {
+    return;
+  }
+  m_sessionLockIntegrationEnabled = enabled;
+  if (!enabled) {
+    m_sessionProxy.reset();
+    kLog.info("logind session lock monitor disabled");
+    return;
+  }
+  ensureSessionLockMonitor();
+}
+
 void LogindService::setPrepareForSleepCallback(PrepareForSleepCallback callback) {
   m_prepareForSleepCallback = std::move(callback);
 }
@@ -87,7 +106,7 @@ void LogindService::setLockCallback(SessionLockCallback callback) { m_lockCallba
 void LogindService::setUnlockCallback(SessionLockCallback callback) { m_unlockCallback = std::move(callback); }
 
 void LogindService::syncSessionLocked() {
-  if (m_sessionProxy == nullptr) {
+  if (!m_sessionLockIntegrationEnabled || m_sessionProxy == nullptr) {
     return;
   }
   try {
@@ -99,7 +118,7 @@ void LogindService::syncSessionLocked() {
 }
 
 void LogindService::syncSessionUnlocked() {
-  if (m_sessionProxy == nullptr) {
+  if (!m_sessionLockIntegrationEnabled || m_sessionProxy == nullptr) {
     return;
   }
   try {

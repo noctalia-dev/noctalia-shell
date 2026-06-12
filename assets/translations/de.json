@@ -21,6 +21,9 @@
       "region": "Region auswählen"
     },
     "widgets": {
+      "active-window": {
+        "no-active-window": "Kein aktives Fenster"
+      },
       "lock-keys": {
         "caps": "Caps",
         "caps-short": "C",
@@ -45,12 +48,7 @@
         "error": "Wetterfehler",
         "loading": "Wetter...",
         "no-location": "Kein Standort",
-        "off": "Wetter aus",
-        "vertical-default": "W\\nX",
-        "vertical-error": "E R R",
-        "vertical-loading": ".",
-        "vertical-no-location": "N O L O C",
-        "vertical-off": "AUS"
+        "off": "Wetter aus"
       }
     }
   },
@@ -168,7 +166,7 @@
       },
       "select-avatar": "Avatar auswählen",
       "unknown": "unbekannt",
-      "user-facts": "{user}@{host}Betriebszeit - {uptime}Noctalia {version}",
+      "uptime": "Betriebszeit - {uptime}",
       "weather": {
         "configure-location": "Füge [weather].address hinzu oder aktiviere auto_locate.",
         "data-unavailable": "Wetterdaten nicht verfügbar.",
@@ -308,7 +306,14 @@
   "desktop-widgets": {
     "editor": {
       "actions": {
-        "done": "Fertig"
+        "add": "Hinzufügen",
+        "done": "Fertig",
+        "hide": "Ausblenden",
+        "settings": "Einstellungen",
+        "show": "Anzeigen",
+        "stack-back": "Im Hintergrund stapeln",
+        "stack-front": "Im Vordergrund stapeln",
+        "trash": "Löschen"
       },
       "dialogs": {
         "select-sticker-image": "Stickerbild auswählen"
@@ -331,6 +336,8 @@
         "clock-style-analog": "Analog",
         "clock-style-digital": "Digital",
         "color": "Farbe",
+        "color-1": "Farbe Eins",
+        "color-2": "Farbe Zwei",
         "color2": "Farbe 2",
         "custom-color": "Benutzerdefiniert…",
         "description": "Beschreibung",
@@ -339,21 +346,23 @@
         "font-family-default": "Systemstandard",
         "format": "Format",
         "hide-when-no-media": "Ausblenden, wenn keine Medien vorhanden",
-        "high-color": "Hohe Farbe",
         "horizontal": "Horizontal",
         "image-path": "Bild",
         "inner-diameter": "Innendurchmesser",
+        "input-opacity": "Eingabedeckkraft",
+        "input-radius": "Eingaberadius",
         "layout": "Layout",
-        "low-color": "Geringe Farbe",
         "mirrored": "Gespiegelt",
         "opacity": "Deckkraft",
         "primary-color": "Primärfarbe",
+        "reset-defaults": "Auf Standardeinstellungen zurücksetzen",
         "ring-opacity": "Ring-Deckkraft",
         "rotation-speed": "Rotationsgeschwindigkeit",
         "secondary-color": "Sekundärfarbe",
         "sensitivity": "Empfindlichkeit",
         "shadow": "Schatten",
         "show-label": "Beschriftung anzeigen",
+        "show-login-button": "Anmelde-Button",
         "show-when-idle": "Bei Inaktivität anzeigen",
         "stat": "Status",
         "stat-cpu-temp": "CPU-Temperatur",
@@ -908,6 +917,7 @@
         "notifications": "Benachrichtigungen",
         "osd": "OSD",
         "panels": "Panels",
+        "plugins": "Plugins",
         "popups": "Popups",
         "power": "Energie",
         "security": "Sicherheit",
@@ -1051,6 +1061,44 @@
           "imperial": "Imperial",
           "metric": "Metrik"
         }
+      }
+    },
+    "plugins": {
+      "plugins": {
+        "configure": "Konfigurieren",
+        "deprecated": "veraltet",
+        "empty": "Es wurden keine Plugins gefunden. Füge eine Quelle hinzu oder überprüfe deine Netzwerkverbindung.",
+        "loading": "Plugins werden geladen...",
+        "refreshing": "Plugins werden aktualisiert...",
+        "requires-newer-noctalia": "erfordert eine neuere Version von Noctalia",
+        "title": "Plugins"
+      },
+      "settings": {
+        "empty": "Keine Einstellungen verfügbar."
+      },
+      "sources": {
+        "add": "Quelle hinzufügen",
+        "add-title": "Plugin-Quelle hinzufügen",
+        "empty": "Keine Quellen konfiguriert.",
+        "errors": {
+          "duplicate-name": "Eine Quelle mit dieser ID existiert bereits.",
+          "invalid-name": "Quell-ID muss aus Buchstaben, Ziffern, '.', '_' oder '-' bestehen und mit einem Buchstaben oder einer Ziffer beginnen.",
+          "location-required": "Die Angabe des Speicherorts ist erforderlich."
+        },
+        "kind": {
+          "git": "Git",
+          "path": "Pfad"
+        },
+        "kind-label": "Typ",
+        "location-label": "Speicherort",
+        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
+        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "name-label": "Quell-ID",
+        "name-placeholder": "my-plugins",
+        "remove": "Quelle entfernen",
+        "title": "Quellen",
+        "update": "Aktualisieren",
+        "update-on-startup": "Beim Start aktualisieren"
       }
     },
     "schema": {
@@ -1239,7 +1287,7 @@
           "description": "Fenster vom Leistenrand wegschieben"
         },
         "shadow": {
-          "description": "Den globalen Oberflächenschatten von der Bar werfen"
+          "description": "Den globalen Oberflächenschatten von der Leiste werfen"
         },
         "start-widgets": {
           "description": "Widgets am Anfang (links/oben) der Leiste",
@@ -1256,6 +1304,10 @@
         "widget-color": {
           "description": "Standard-Symbol- und Beschriftungsfarbrolle für Widgets auf dieser Bar; feste Hex-Farben werden ebenfalls unterstützt",
           "label": "Widget-Farbe"
+        },
+        "widget-icon-color": {
+          "description": "Überschreibt die Widget-Farbe für Symbole in dieser Leiste; feste Hex-Farben werden ebenfalls unterstützt",
+          "label": "Farbe des Widget-Symbols"
         },
         "widget-spacing": {
           "description": "Abstand zwischen den Bar-Widgets",
@@ -1514,6 +1566,10 @@
           "description": "Verwende einen Schnappschuss des Desktops als Hintergrund der Bildschirmsperre",
           "label": "Bildschirmaufnahme"
         },
+        "enabled": {
+          "description": "Sitzungssperre, Logind-Integration und Sperraktionen aktivieren",
+          "label": "Sperrbildschirm"
+        },
         "monitors": {
           "description": "Wähle aus, welche Monitore den Sperrbildschirm anzeigen sollen; lass es leer, um ihn auf allen Monitoren anzuzeigen",
           "label": "Monitore"
@@ -1619,6 +1675,10 @@
         "launcher-compact": {
           "description": "Kleinere Symbole und engere Ergebniszeilen verwenden",
           "label": "Kompakte Zeilen"
+        },
+        "launcher-session-search": {
+          "description": "Sitzungsaktionen (Sperren, Anhalten, Neustart, Herunterfahren, Abmelden) in allgemeine Launcher-Suchen einbeziehen, nicht nur hinter dem /session-Präfix",
+          "label": "Sitzungssuche aktivieren"
         },
         "launcher-show-icons": {
           "description": "App-Symbole in den Launcher-Ergebnissen anzeigen",
@@ -2050,7 +2110,7 @@
         "sync-greeter": {
           "button": "Jetzt synchronisieren",
           "description": "Kopiere das aktuelle Hintergrundbild und die Farben in den Noctalia Greeter (erfordert Administratorgenehmigung)",
-          "label": "Noctalia Begrüßung"
+          "label": "Noctalia Greeter"
         },
         "telemetry": {
           "description": "Sendet einen kleinen anonymen Start-Ping mit Version, OS, Compositor, Monitorauflösungen, RAM und UI-Skalierung",
@@ -2296,6 +2356,14 @@
           "description": "Farbrolle für den Widget-Vordergrund; feste Hex-Farben werden ebenfalls unterstützt",
           "label": "Farbe"
         },
+        "color-1": {
+          "description": "Erste Farbverlaufsfarbe im Visualizer",
+          "label": "Farbe Eins"
+        },
+        "color-2": {
+          "description": "Zweite Farbverlaufsfarbe im Visualizer",
+          "label": "Farbe Zwei"
+        },
         "command": {
           "description": "Shell-Befehl, der beim Linksklick auf diesen Button ausgeführt wird",
           "label": "Linksklick-Befehl"
@@ -2415,10 +2483,6 @@
           "description": "Das Tastaturlayout-Widget ausblenden, es sei denn, es ist mehr als ein Layout konfiguriert",
           "label": "Bei einzelnem Layout ausblenden"
         },
-        "high-color": {
-          "description": "Farbe für hohe Visualisiererwerte",
-          "label": "Hohe Farbe"
-        },
         "highlight-color": {
           "description": "Farbe hat den kritischen Schwellenwert erreicht oder überschritten",
           "label": "Hervorhebungsfarbe"
@@ -2426,6 +2490,10 @@
         "hot-reload": {
           "description": "Lade das geskriptete Widget neu, wenn sich seine Quelle ändert",
           "label": "Hot Reload"
+        },
+        "icon-color": {
+          "description": "Überschreibt die Widget-Farbe nur für Icons; feste Hex-Farben werden ebenfalls unterstützt",
+          "label": "Icon-Farbe"
         },
         "icon-size": {
           "description": "Icon-Größe in Pixeln",
@@ -2451,10 +2519,6 @@
         "length": {
           "description": "Länge des Abstandhalters in Pixeln",
           "label": "Länge"
-        },
-        "low-color": {
-          "description": "Farbe für niedrige Visualizer-Werte",
-          "label": "Weniger Farbe"
         },
         "match-adjacent-spacing": {
           "description": "Abstände zwischen den Inline-Tray-Symbolen vergrößern, um den visuellen Abstand der benachbarten Bar-Widgets anzupassen (inklusive Capsule-Polsterung)",
@@ -2554,6 +2618,10 @@
         "show-condition": {
           "description": "Wetterbedingungstext anzeigen",
           "label": "Anzeigebedingung"
+        },
+        "show-empty-label": {
+          "description": "Platzhaltertext anzeigen, wenn kein Fenster aktiv ist, anstatt das Widget auszublenden",
+          "label": "Leeres Label anzeigen"
         },
         "show-icon": {
           "description": "Zeige das Icon dieses Widgets",
@@ -2664,7 +2732,7 @@
         "volume": "Lautstärke",
         "wallpaper": "Hintergrundbild",
         "weather": "Wetter",
-        "workspaces": "Virtuelle Desktops"
+        "workspaces": "Arbeitsflächen"
       }
     },
     "window": {

@@ -21,7 +21,7 @@ are designed as one cohesive shell instead of a collection of unrelated panels a
 <p align="center">
   <a href="https://docs.noctalia.dev/v5/getting-started/installation">
     <img
-      src="https://img.shields.io/badge/🌙_Install_Noctalia-A8AEFF?style=for-the-badge&labelColor=0C0D11"
+      src="https://img.shields.io/badge/Install_Noctalia-FFF59B?style=for-the-badge&labelColor=FFF59B"
       alt="Install Noctalia"
       style="height: 50px"
     />
@@ -32,16 +32,16 @@ are designed as one cohesive shell instead of a collection of unrelated panels a
 
 <p align="center">
   <a href="https://github.com/noctalia-dev/noctalia-shell/commits">
-    <img src="https://img.shields.io/github/last-commit/noctalia-dev/noctalia-shell?style=for-the-badge&labelColor=0C0D11&color=A8AEFF&logo=git&logoColor=FFFFFF&label=commit" alt="Last commit" />
+    <img src="https://img.shields.io/github/last-commit/noctalia-dev/noctalia-shell?style=for-the-badge&labelColor=FFF59B&color=FFF59B&logo=git&logoColor=070722&label=commit" alt="Last commit" />
   </a>
   <a href="https://github.com/noctalia-dev/noctalia-shell/stargazers">
-    <img src="https://img.shields.io/github/stars/noctalia-dev/noctalia-shell?style=for-the-badge&labelColor=0C0D11&color=A8AEFF&logo=github&logoColor=FFFFFF" alt="GitHub stars" />
+    <img src="https://img.shields.io/github/stars/noctalia-dev/noctalia-shell?style=for-the-badge&labelColor=FFF59B&color=FFF59B&logo=github&logoColor=070722" alt="GitHub stars" />
   </a>
   <a href="https://docs.noctalia.dev">
-    <img src="https://img.shields.io/badge/docs-A8AEFF?style=for-the-badge&logo=gitbook&logoColor=FFFFFF&labelColor=0C0D11" alt="Documentation" />
+    <img src="https://img.shields.io/badge/docs-FFF59B?style=for-the-badge&logo=gitbook&logoColor=070722&labelColor=FFF59B" alt="Documentation" />
   </a>
   <a href="https://discord.noctalia.dev">
-    <img src="https://img.shields.io/badge/discord-A8AEFF?style=for-the-badge&labelColor=0C0D11&logo=discord&logoColor=FFFFFF" alt="Discord" />
+    <img src="https://img.shields.io/badge/discord-FFF59B?style=for-the-badge&labelColor=FFF59B&logo=discord&logoColor=070722" alt="Discord" />
   </a>
 </p>
 
@@ -160,7 +160,7 @@ sudo xbps-install meson ninja pkg-config git \
   pango-devel fontconfig-devel freetype-devel \
   harfbuzz-devel libxkbcommon-devel pipewire-devel \
   libcurl-devel pam-devel libwebp-devel \
-  basu-devel libcurl-devel sdbus-c++-devel \
+  basu-devel sdbus-c++-devel \
   polkit-devel librsvg-devel libqalculate-devel libxml2-devel jemalloc-devel
 ```
 
@@ -247,39 +247,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md#runtime-assets) for the full runtime asset
 
 ## Configuration
 
-Noctalia has two configuration layers:
-
-- Declarative user config lives in `$NOCTALIA_CONFIG_HOME/noctalia/`, `$XDG_CONFIG_HOME/noctalia/`, or
-  `~/.config/noctalia/`.
-  Noctalia reads every `*.toml` file in that directory, sorted alphabetically, and deep-merges them into one config.
-  A single `config.toml` is the simplest setup, but splitting config into files such as `bar.toml`, `theme.toml`,
-  or `widgets.toml` is also supported.
-- GUI-managed overrides live in `$NOCTALIA_STATE_HOME/noctalia/settings.toml`,
-  `$XDG_STATE_HOME/noctalia/settings.toml`, or `~/.local/state/noctalia/settings.toml`. This file is written by
-  Noctalia itself for settings changed through the UI, IPC-backed controls, setup flows, and other runtime actions
-  that need persistence.
-
-Noctalia also keeps internal UI/runtime state in `$NOCTALIA_STATE_HOME/noctalia/state.toml`,
-`$XDG_STATE_HOME/noctalia/state.toml`, or `~/.local/state/noctalia/state.toml`. This is app-owned state, not a
-configuration layer, and it is not merged into the active config.
-
-`NOCTALIA_CONFIG_HOME` and `NOCTALIA_STATE_HOME` are Noctalia-specific overrides with the same "home root" semantics
-as the XDG variables. For example, `NOCTALIA_CONFIG_HOME=/tmp/profile` loads config from
-`/tmp/profile/noctalia/`. Prefer these variables over overriding `XDG_CONFIG_HOME` when launching Noctalia from a
-session, because applications started through Noctalia's launcher inherit the shell environment.
-
-Load order is built-in defaults first, then declarative config files, then `settings.toml`.
-Because the override file is applied last, GUI overrides win over matching values in `config.toml`.
-
-Use the declarative config directory for hand-authored, dotfile-managed configuration. Treat `settings.toml` as an
-app-managed override layer: inspect or delete it when you want to understand or clear GUI changes, but do not rely on
-it as the primary place for curated config. Treat `state.toml` as disposable app state: inspect it when debugging UI
-state, or delete it to reset remembered UI state. Keeping these app-managed files outside `~/.config` also allows the
-GUI to save changes when the config directory is read-only, such as on NixOS.
-
-Both layers are watched for changes and hot-reloaded. If neither declarative config nor state overrides exist,
-Noctalia falls back to built-in defaults in code.
-
 A ready-to-use starting config with all defaults is at [example.toml](example.toml). The full configuration reference
 lives in the [documentation site](https://docs.noctalia.dev/v5/).
 
@@ -302,10 +269,10 @@ Donations are appreciated but completely optional.
 
 <p>
   <a href="https://www.buymeacoffee.com/noctalia">
-    <img src="https://img.shields.io/badge/Buy_Me_a_Coffee-A8AEFF?style=for-the-badge&logo=buymeacoffee&logoColor=FFFFFF&labelColor=0C0D11" alt="Buy Me a Coffee">
+    <img src="https://img.shields.io/badge/Buy_Me_a_Coffee-FFF59B?style=for-the-badge&logo=buymeacoffee&logoColor=070722&labelColor=FFF59B" alt="Buy Me a Coffee">
   </a>
   <a href="https://ko-fi.com/noctaliadev">
-    <img src="https://img.shields.io/badge/Ko--fi-A8AEFF?style=for-the-badge&logo=kofi&logoColor=FFFFFF&labelColor=0C0D11" alt="Ko-fi">
+    <img src="https://img.shields.io/badge/Ko--fi-FFF59B?style=for-the-badge&logo=kofi&logoColor=070722&labelColor=FFF59B" alt="Ko-fi">
   </a>
 </p>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "scripting/scripted_widget_types.h"
+#include "scripting/script_runtime_types.h"
 
 #include <string>
 #include <vector>
@@ -10,24 +10,24 @@ class LuauHost;
 
 namespace scripting {
 
-  struct ScriptedWidgetBindingContext {
-    const ScriptWidgetSettings* settings = nullptr;
+  struct PluginBindingContext {
+    const ScriptSettings* settings = nullptr;
     LuauHost* host = nullptr;
-    ScriptWidgetSnapshot snapshot;
-    ScriptWidgetPatch patch;
-    std::vector<ScriptWidgetSideEffect> sideEffects;
+    ScriptSnapshot snapshot;
+    ScriptPatch patch;
+    std::vector<ScriptSideEffect> sideEffects;
 
     // Entry id ("author/plugin:entry") for diagnostics, e.g. an undeclared getConfig.
     std::string ownerId;
 
-    void beginCall(ScriptWidgetSnapshot nextSnapshot) {
+    void beginCall(ScriptSnapshot nextSnapshot) {
       snapshot = std::move(nextSnapshot);
       patch = {};
       sideEffects.clear();
     }
   };
 
-  void registerScriptedWidgetBindings(lua_State* L, ScriptedWidgetBindingContext* context);
+  void registerPluginBindings(lua_State* L, PluginBindingContext* context);
 
   // getConfig(key) binding — reads the runtime's seeded settings. Registered under
   // both barWidget.* and noctalia.* so every entry kind (widget/shortcut/service)

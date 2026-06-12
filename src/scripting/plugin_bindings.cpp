@@ -1,4 +1,4 @@
-#include "scripting/scripted_widget_bindings.h"
+#include "scripting/plugin_bindings.h"
 
 #include "core/log.h"
 #include "lua.h"
@@ -14,11 +14,11 @@
 namespace {
 
   constexpr Logger kLog("plugin-bindings");
-  constexpr const char* kWidgetKey = "__scripted_widget";
+  constexpr const char* kWidgetKey = "__plugin_binding_context";
 
-  scripting::ScriptedWidgetBindingContext* getContext(lua_State* L) {
+  scripting::PluginBindingContext* getContext(lua_State* L) {
     lua_getglobal(L, kWidgetKey);
-    auto* context = static_cast<scripting::ScriptedWidgetBindingContext*>(lua_touserdata(L, -1));
+    auto* context = static_cast<scripting::PluginBindingContext*>(lua_touserdata(L, -1));
     lua_pop(L, 1);
     return context;
   }
@@ -63,9 +63,8 @@ namespace {
       height = static_cast<float>(luaL_checknumber(L, 4));
     }
     if (auto* context = getContext(L)) {
-      context->patch.image = scripting::ScriptWidgetImagePatch{
-          .path = std::string(path, len), .watch = watch, .width = width, .height = height
-      };
+      context->patch.image =
+          scripting::ScriptImagePatch{.path = std::string(path, len), .watch = watch, .width = width, .height = height};
       context->patch.glyph.reset();
     }
     return 0;
@@ -95,8 +94,8 @@ namespace {
     return out;
   }
 
-  scripting::ScriptWidgetTooltipRowPatch tooltipRowFromLuaTable(lua_State* L, int rowIndex) {
-    scripting::ScriptWidgetTooltipRowPatch row;
+  scripting::ScriptTooltipRowPatch tooltipRowFromLuaTable(lua_State* L, int rowIndex) {
+    scripting::ScriptTooltipRowPatch row;
     row.key = tableOptionalStringField(L, rowIndex, "key");
     row.value = tableOptionalStringField(L, rowIndex, "value");
     if (row.key.empty()) {
@@ -109,7 +108,7 @@ namespace {
   }
 
   int luau_setTooltip(lua_State* L) {
-    scripting::ScriptWidgetTooltipPatch patch;
+    scripting::ScriptTooltipPatch patch;
     if (lua_isnoneornil(L, 1)) {
       patch.clear = true;
     } else if (lua_isstring(L, 1)) {
@@ -149,7 +148,7 @@ namespace {
 
   int luau_clearTooltip(lua_State* L) {
     if (auto* context = getContext(L)) {
-      scripting::ScriptWidgetTooltipPatch patch;
+      scripting::ScriptTooltipPatch patch;
       patch.clear = true;
       context->patch.tooltip = std::move(patch);
     }
@@ -169,9 +168,8 @@ namespace {
     size_t len = 0;
     const char* role = luaL_checklstring(L, 1, &len);
     if (auto* context = getContext(L)) {
-      context->patch.textColor = scripting::ScriptWidgetColorPatch{
-          .role = std::string(role, len), .mode = std::string(optionalStringArg(L, 2))
-      };
+      context->patch.textColor =
+          scripting::ScriptColorPatch{.role = std::string(role, len), .mode = std::string(optionalStringArg(L, 2))};
     }
     return 0;
   }
@@ -180,9 +178,8 @@ namespace {
     size_t len = 0;
     const char* role = luaL_checklstring(L, 1, &len);
     if (auto* context = getContext(L)) {
-      context->patch.glyphColor = scripting::ScriptWidgetColorPatch{
-          .role = std::string(role, len), .mode = std::string(optionalStringArg(L, 2))
-      };
+      context->patch.glyphColor =
+          scripting::ScriptColorPatch{.role = std::string(role, len), .mode = std::string(optionalStringArg(L, 2))};
     }
     return 0;
   }
@@ -313,7 +310,7 @@ namespace scripting {
     return 1;
   }
 
-  void registerScriptedWidgetBindings(lua_State* L, ScriptedWidgetBindingContext* context) {
+  void registerPluginBindings(lua_State* L, PluginBindingContext* context) {
     lua_pushlightuserdata(L, context);
     lua_setglobal(L, kWidgetKey);
 

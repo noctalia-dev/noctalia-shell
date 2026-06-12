@@ -663,26 +663,6 @@ std::string ConfigService::buildSupportReport() const {
   }
   root.insert_or_assign("state_settings", std::move(state));
 
-  toml::table appState;
-  appState.insert_or_assign("kind", "app_state");
-  appState.insert_or_assign("relative_path", "state.toml");
-  appState.insert_or_assign("path", m_stateStore.path().string());
-
-  const bool appStateExists = !m_stateStore.path().empty() && std::filesystem::exists(m_stateStore.path());
-  appState.insert_or_assign("exists", appStateExists);
-  if (appStateExists) {
-    std::string readError;
-    appState.insert_or_assign("content", readTextFile(m_stateStore.path(), &readError));
-    if (!readError.empty()) {
-      appState.insert_or_assign("read_error", readError);
-    } else if (!m_stateStore.parseError().empty()) {
-      appState.insert_or_assign("parse_error", m_stateStore.parseError());
-    }
-  } else {
-    appState.insert_or_assign("content", "");
-  }
-  root.insert_or_assign("app_state", std::move(appState));
-
   toml::table mergedConfig;
   mergedConfig.insert_or_assign("content", formatToml(merged));
   root.insert_or_assign("merged_config", std::move(mergedConfig));
@@ -910,6 +890,9 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
     }
     if (ovr.widgetColor) {
       resolved.widgetColor = *ovr.widgetColor;
+    }
+    if (ovr.widgetIconColor) {
+      resolved.widgetIconColor = *ovr.widgetIconColor;
     }
     if (ovr.widgetCapsuleGroups) {
       resolved.widgetCapsuleGroups = *ovr.widgetCapsuleGroups;

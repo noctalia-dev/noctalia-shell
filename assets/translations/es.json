@@ -45,9 +45,7 @@
         "error": "Error de Pronóstico",
         "loading": "Pronóstico...",
         "no-location": "Sin ubicación",
-        "off": "Pronóstico apagado",
-        "vertical-error": "ERR",
-        "vertical-loading": "..."
+        "off": "Pronóstico apagado"
       }
     }
   },
@@ -151,33 +149,110 @@
       "media": {
         "idle": "Inactivo",
         "no-active-player": "No hay ningún reproductor activo",
-        "nothing-playing": "No hay nada reproduciéndose"
+        "nothing-playing": "No hay nada reproduciéndose",
+        "paused": "Pausado",
+        "playing": "Reproduciendo",
+        "unavailable": "No disponible",
+        "unknown-artist": "Artista desconocido",
+        "unknown-track": "Pista desconocida"
       },
+      "select-avatar": "Selecciona Avatar",
+      "unknown": "Desconocido",
       "weather": {
+        "data-unavailable": "Datos meteorológicos no disponibles",
         "disabled": "Pronóstico desabilitado en la configuracion."
       }
     },
+    "media": {
+      "nothing-playing": "Nada reproduciéndose",
+      "now-playing": "Ahora sonando"
+    },
+    "network": {
+      "connect": "Conectar",
+      "current-connection": "Conexión actual",
+      "not-connected": "No conectado",
+      "password": "Contraseña",
+      "password-prompt": "Introduzca contraseña",
+      "password-prompt-for": "Introduzca contraseña para {ssid}",
+      "unavailable-detail": "Instala y habilita NetworkManager para gestionar redes desde allí",
+      "unavailable-title": "NetworkManager no disponible",
+      "vpns": "VPNs",
+      "wi-fi": "Wi-Fi",
+      "wifi": "Wi-Fi",
+      "wifi-off": "Wi-Fi apagada",
+      "wifi-on": "Wi-Fi encendida",
+      "wired-connection": "Conexión por cable"
+    },
+    "notifications": {
+      "empty-body": "Las notificaciones recientes se mostrarán aquí",
+      "empty-title": "Sin notifiaciones",
+      "filter": {
+        "all": "Todo",
+        "older": "Antiguo",
+        "today": "Hoy",
+        "yesterday": "Ayer"
+      },
+      "filter-empty-body": "Ninguna notificación cumple este filtro",
+      "untitled": "Notificación sin título"
+    },
+    "screen-time": {
+      "hour-0": "12 AM",
+      "hour-12": "12 PM",
+      "hour-18": "6 PM",
+      "hour-6": "6 AM",
+      "range": {
+        "14-days": "14 días",
+        "3-days": "3 días",
+        "today": "Hoy"
+      }
+    },
     "shortcuts": {
+      "audio": "Audio",
+      "bluetooth": "Bluetooth",
       "clipboard": "Portapapeles",
       "dark-mode": {
+        "auto": "Modo Auto",
         "dark": "Modo oscuro",
         "light": "Modo claro"
       },
+      "mic-mute": "Micrófono",
+      "screen-time": "Tiempo de pantalla",
       "session": "Sesión",
       "system": "Sistema",
       "wallpaper": "Fondo de Pantalla",
-      "weather": "Pronóstico"
+      "weather": "Pronóstico",
+      "wifi": "Wi-Fi"
     },
     "system": {
+      "labels": {
+        "load": "Carga CPU",
+        "ram": "RAM",
+        "swap": "Swap"
+      },
       "titles": {
+        "cpu": "CPU",
         "gpu": "GPU",
-        "memory": "Memoria"
-      }
+        "memory": "Memoria",
+        "network": "Red",
+        "system": "Sistema"
+      },
+      "tooltips": {
+        "load": "Carga media en 1 /5/15 minutos"
+      },
+      "unknown": "Desconocido"
     },
     "tabs": {
+      "audio": "Audio",
+      "bluetooth": "Bluetooth",
+      "calendar": "Calendario",
+      "display": "Monitor",
+      "network": "Red",
+      "notifications": "Notificaciones",
+      "system": "Sistema",
       "weather": "Pronóstico"
     },
     "weather": {
+      "data-unavailable": "Datos meteorológicos no disponibles",
       "details": {
         "elevation": "Elevacion",
         "sunrise": "Amanecer",
@@ -187,6 +262,8 @@
         "timezone": "Zona Horaria",
         "wind": "Viento"
       },
+      "disabled": "Habilita [weather] en config.toml",
+      "fetching": "Obteniendo pronóstico",
       "forecast-placeholder": {
         "day": "Domingo",
         "description": "Pronóstico",
@@ -198,7 +275,16 @@
   },
   "desktop-widgets": {
     "editor": {
+      "actions": {
+        "add": "Añadir",
+        "done": "Hecho",
+        "hide": "Ocultar",
+        "settings": "Configuraciones",
+        "show": "Mostrar",
+        "trash": "Borrar"
+      },
       "settings": {
+        "aspect-ratio": "Relación de aspecto",
         "background": "Fondo",
         "background-color": "Color",
         "background-opacity": "Opacidad",
@@ -222,11 +308,13 @@
         "image-path": "Imagen",
         "opacity": "Opacidad",
         "primary-color": "Color Primario",
+        "reset-defaults": "Resetear a valores por defecto",
         "rotation-speed": "Velocidad de rotación",
         "secondary-color": "Color Secundario",
         "sensitivity": "Sensibilidad",
         "shadow": "Sombra",
         "show-label": "Mostrar Etiqueta",
+        "show-login-button": "Botón de login",
         "show-when-idle": "Mostrar cuándo inactivo",
         "stat": "Estadistica",
         "stat-cpu-temp": "Temperatura CPU",
@@ -236,6 +324,7 @@
         "stat-gpu-vram": "GPU VRAM",
         "stat-none": "Ninguno",
         "stat-ram-pct": "RAM %",
+        "stat-swap-pct": "Swap %",
         "stat2": "Estadística 2",
         "title": "Título",
         "vertical": "Vertical",
@@ -250,6 +339,9 @@
         "widget-section": "Widget"
       },
       "types": {
+        "clock": "Reloj",
+        "label": "Etiqueta",
+        "system-monitor": "Monitor de sistema",
         "weather": "Pronóstico"
       }
     },
@@ -285,6 +377,16 @@
         "system": "Sistema",
         "utilities": "Utilidades"
       },
+      "emoji": {
+        "animals": "Animales",
+        "flags": "Banderas",
+        "food": "Comida",
+        "nature": "Naturaleza",
+        "objects": "Objetos",
+        "people": "Gente",
+        "symbols": "Símbolos",
+        "travel": "Viajes"
+      },
       "recently-used": "Recientes"
     },
     "context-menu": {
@@ -293,7 +395,8 @@
       "unpin-from-dock": "Desfijar del dock"
     },
     "empty": {
-      "no-results": "No se han encontrado resultados."
+      "no-results": "No se han encontrado resultados.",
+      "type-to-search": "Escribe para buscar..."
     },
     "providers": {
       "applications": {
@@ -306,6 +409,7 @@
         "title": "Emoji"
       },
       "session": {
+        "command-subtitle": "Ejecuta comando de configuración",
         "title": "Sesión"
       },
       "wallpaper": {
@@ -317,6 +421,15 @@
     },
     "search-placeholder": "Buscar aplicaciones..."
   },
+  "location": {
+    "locations": {
+      "current": "Localización actual"
+    },
+    "source": {
+      "address": "Dirección",
+      "auto": "Auto"
+    }
+  },
   "lockscreen": {
     "authenticating": "Autenticando...",
     "authentication-failed": "Autenticación fallida",
@@ -324,8 +437,20 @@
     "unlocked": "Desbloqueado"
   },
   "notifications": {
+    "actions": {
+      "open": "Abrir"
+    },
+    "inline-reply": {
+      "button": "Responder",
+      "placeholder": "Escribe una respuesta..."
+    },
     "internal": {
+      "battery": "Bateria",
+      "battery-device": "Batería del dispositivo",
+      "battery-low-title": "Batería baja",
+      "calendar": "Calendario",
       "calendar-google-connect-start-failed": "No se pudo empezar la autorización con Google. Revise su conexión al internet",
+      "keybind-app": "Noctalia",
       "wallpaper-palette-export": "Paleta Personalizada"
     }
   },
@@ -472,7 +597,17 @@
           "border": "Borde",
           "edit": "Eliminar estilo",
           "fill": "Fondo",
-          "opacity": "Opacidad"
+          "opacity": "Opacidad",
+          "radius": "Radio",
+          "selected": "{count} seleccionados",
+          "style": "Estilo",
+          "ungroup": "Desagrupar"
+        },
+        "instance": {
+          "create-save": "Crear",
+          "delete": "Borrar",
+          "rename": "Renombrar",
+          "rename-save": "Guardar"
         }
       }
     },
@@ -488,7 +623,7 @@
       "groups": {
         "clipboard": "Portapapeles",
         "launcher": "Launcher",
-        "osd": "Visualizacion en pantalla",
+        "osd": "OSD",
         "session-panel": "Sesión",
         "wallpaper": "Fondo de Pantalla",
         "weather": "Pronóstico"
@@ -496,7 +631,13 @@
       "sections": {
         "bar": "Barra",
         "dock": "Dock",
-        "osd": "Visualizacion en pantalla",
+        "niri": "Niri",
+        "notifications": "Notificaciones",
+        "osd": "OSD",
+        "security": "Seguridad",
+        "services": "Servicios",
+        "shell": "Shell",
+        "system": "Sistema",
         "wallpaper": "Fondo de Pantalla"
       }
     },
@@ -519,6 +660,21 @@
         "end": "Fin",
         "none": "Ninguno",
         "start": "Inicio"
+      },
+      "edge": {
+        "left": "Izquierda",
+        "right": "Derecha"
+      },
+      "layer": {
+        "overlay": "Overlay"
+      },
+      "notification-urgency": {
+        "critical": "Crítico",
+        "low": "Bajo",
+        "normal": "Normal"
+      },
+      "orientation": {
+        "vertical": "Vertical"
       },
       "theme": {
         "source": {
@@ -671,18 +827,25 @@
       }
     },
     "widgets": {
+      "options": {
+        "gauge": "Gauge"
+      },
       "types": {
+        "active-window": "Ventana activa",
         "battery": "Batería",
         "bluetooth": "Bluetooth",
         "brightness": "Brillo",
         "caffeine": "Caffeina",
         "clipboard": "Portapapeles",
         "clock": "Reloj",
+        "control-center": "Centro de Control",
+        "network": "Red",
         "notifications": "Notificaciones",
         "screenshot": "Captura de pantalla",
         "session": "Sesión",
         "settings": "Ajustes",
         "taskbar": "Barra de tareas",
+        "tray": "Tray",
         "volume": "Volumen",
         "wallpaper": "Fondo de pantalla",
         "weather": "Pronóstico",
@@ -756,6 +919,14 @@
       }
     }
   },
+  "wallpaper": {
+    "panel": {
+      "favorite-palette-label": "Colores",
+      "filter-placeholder": "Filtrar...",
+      "sort-date-asc": "Ordenar por fecha (más antiguo primero)",
+      "sort-date-desc": "Ordenar por fecha (más nuevo primero)"
+    }
+  },
   "weather": {
     "conditions": {
       "full": {
@@ -763,6 +934,7 @@
         "drizzle": "Llovizna",
         "fog": "Niebla",
         "overcast": "Cubierto",
+        "partly-cloudy": "Parcialmente nublado",
         "thunderstorm": "Tormenta eléctrica",
         "unknown": "Desconocido"
       },
@@ -772,6 +944,8 @@
         "drizzle": "Llovizna",
         "fog": "Niebla",
         "overcast": "Cubierto",
+        "showers": "Lluvias",
+        "snow": "Nieve",
         "storm": "Tormenta",
         "weather": "Pronóstico"
       }

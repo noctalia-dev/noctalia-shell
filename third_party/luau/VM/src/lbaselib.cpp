@@ -11,8 +11,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-LUAU_FASTFLAG(LuauStacklessPcall)
-
 static void writestring(const char* s, size_t l)
 {
     fwrite(s, 1, l, stdout);
@@ -284,15 +282,8 @@ static void luaB_pcallrun(lua_State* L, void* ud)
 {
     StkId func = (StkId)ud;
 
-    if (FFlag::LuauStacklessPcall)
-    {
-        // if we can yield, schedule a call setup with postponed reentry
-        luaD_callint(L, func, LUA_MULTRET, lua_isyieldable(L) != 0);
-    }
-    else
-    {
-        luaD_call(L, func, LUA_MULTRET);
-    }
+    // if we can yield, schedule a call setup with postponed reentry
+    luaD_callint(L, func, LUA_MULTRET, lua_isyieldable(L) != 0);
 }
 
 static int luaB_pcally(lua_State* L)
@@ -309,18 +300,9 @@ static int luaB_pcally(lua_State* L)
     // necessary to accommodate functions that return lots of values
     expandstacklimit(L, L->top);
 
-    if (FFlag::LuauStacklessPcall)
-    {
-        // yielding means we need to propagate yield; resume will call continuation function later
-        if (status == 0 && isyielded(L))
-            return C_CALL_YIELD;
-    }
-    else
-    {
-        // yielding means we need to propagate yield; resume will call continuation function later
-        if (status == 0 && (L->status == LUA_YIELD || L->status == LUA_BREAK))
-            return -1; // -1 is a marker for yielding from C
-    }
+    // yielding means we need to propagate yield; resume will call continuation function later
+    if (status == 0 && isyielded(L))
+        return C_CALL_YIELD;
 
     // immediate return (error or success)
     lua_rawcheckstack(L, 1);
@@ -369,18 +351,9 @@ static int luaB_xpcally(lua_State* L)
     // necessary to accommodate functions that return lots of values
     expandstacklimit(L, L->top);
 
-    if (FFlag::LuauStacklessPcall)
-    {
-        // yielding means we need to propagate yield; resume will call continuation function later
-        if (status == 0 && isyielded(L))
-            return C_CALL_YIELD;
-    }
-    else
-    {
-        // yielding means we need to propagate yield; resume will call continuation function later
-        if (status == 0 && (L->status == LUA_YIELD || L->status == LUA_BREAK))
-            return -1; // -1 is a marker for yielding from C
-    }
+    // yielding means we need to propagate yield; resume will call continuation function later
+    if (status == 0 && isyielded(L))
+        return C_CALL_YIELD;
 
     // immediate return (error or success)
     lua_rawcheckstack(L, 1);

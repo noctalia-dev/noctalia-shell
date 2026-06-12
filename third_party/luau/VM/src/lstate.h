@@ -4,6 +4,7 @@
 
 #include "lobject.h"
 #include "ltm.h"
+#include "ludata.h"
 
 // registry
 #define registry(L) (&L->global->registry)
@@ -68,6 +69,7 @@ typedef struct CallInfo
 #define LUA_CALLINFO_RETURN (1 << 0) // should the interpreter return after returning from this callinfo? first frame must have this set
 #define LUA_CALLINFO_HANDLE (1 << 1) // should the error thrown during execution get handled by continuation from this callinfo? func must be C
 #define LUA_CALLINFO_NATIVE (1 << 2) // should this function be executed using execution callback for native code
+#define LUA_CALLINFO_OPYIELD (1 << 3) // call frame has yielded on a non-call opcode and requires luaV_finishop
 
 #define curr_func(L) (clvalue(L->ci->func))
 #define ci_func(ci) (clvalue((ci)->func))
@@ -160,6 +162,7 @@ struct lua_ExecutionCallbacks
         Proto* proto,
         size_t* count
     ); // called to get the execution counter data and count {uint32_t, uint32_t, uint64_t}
+    Proto* (*inlinefunction)(lua_State* L, Closure* caller, Closure* target, uint32_t pc); // called when inlining threshold is reached
 };
 
 struct lua_UdataDirectAccessData
@@ -226,7 +229,7 @@ typedef struct global_State
     alignas(16) uint8_t ecbdata[LUA_EXECUTION_CALLBACK_STORAGE];
 
     // Set of userdata __index/__newindex/__namecall metamethods for a direct access
-    lua_UdataDirectAccessData udatadirect[LUA_UTAG_LIMIT];
+    lua_UdataDirectAccessData udatadirect[UTAG_INTERNAL_LIMIT];
 
     size_t memcatbytes[LUA_MEMORY_CATEGORIES]; // total amount of memory used by each memory category
 
@@ -235,7 +238,11 @@ typedef struct global_State
 
     TString* lightuserdataname[LUA_LUTAG_LIMIT]; // names for tagged lightuserdata
 
+    // per-tag direct field dispatch tables; NULL until first field is registered for that tag
+    struct LuaTable* udatadirectfields[UTAG_INTERNAL_LIMIT];
+
     GCStats gcstats;
+    uint32_t lastprotoid;
 
 #ifdef LUAI_GCMETRICS
     GCMetrics gcmetrics;
@@ -299,6 +306,8 @@ union GCObject
     struct UpVal uv;
     struct lua_State th; // thread
     struct LuauBuffer buf;
+    struct LuauClass lclass;
+    struct LuauObject lobject;
 };
 
 // macros to convert a GCObject into a specific value
@@ -310,6 +319,8 @@ union GCObject
 #define gco2uv(o) check_exp((o)->gch.tt == LUA_TUPVAL, &((o)->uv))
 #define gco2th(o) check_exp((o)->gch.tt == LUA_TTHREAD, &((o)->th))
 #define gco2buf(o) check_exp((o)->gch.tt == LUA_TBUFFER, &((o)->buf))
+#define gco2class(o) check_exp((o)->gch.tt == LUA_TCLASS, &((o)->lclass))
+#define gco2object(o) check_exp((o)->gch.tt == LUA_TOBJECT, &((o)->lobject))
 
 // macro to convert any Lua object into a GCObject
 #define obj2gco(v) check_exp(iscollectable(v), cast_to(GCObject*, (v) + 0))

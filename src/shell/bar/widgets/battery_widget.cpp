@@ -135,7 +135,7 @@ void BatteryWidget::createGlyphMode() {
           .out = &m_glyph,
           .glyph = "battery-4",
           .glyphSize = Style::baseGlyphSize * m_contentScale,
-          .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
+          .color = widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)),
       })
   );
 
@@ -372,10 +372,11 @@ void BatteryWidget::syncState(Renderer& renderer) {
 
   const int pct = static_cast<int>(std::round(s.percentage));
   const bool isWarning = m_warningThreshold > 0 && pct <= m_warningThreshold && !isPluggedIn;
-  const ColorSpec normalFgColor = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface));
-  const ColorSpec fgColor = isWarning ? m_warningColor : normalFgColor;
 
   if (m_displayMode == BatteryDisplayMode::Graphic) {
+    const ColorSpec normalFgColor = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface));
+    const ColorSpec fgColor = isWarning ? m_warningColor : normalFgColor;
+
     if (m_fillRect != nullptr) {
       m_fillRect->setFill(fgColor);
     }
@@ -430,6 +431,9 @@ void BatteryWidget::syncState(Renderer& renderer) {
       m_overlayGlyph->setVisible(stateGlyph != nullptr);
     }
   } else {
+    const ColorSpec normalFgColor = widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface));
+    const ColorSpec fgColor = isWarning ? m_warningColor : normalFgColor;
+
     if (m_glyph != nullptr) {
       m_glyph->setGlyph(batteryGlyphName(s.percentage, s.state));
       m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);

@@ -1,5 +1,6 @@
 #include "shell/session/session_ipc.h"
 
+#include "config/config_service.h"
 #include "config/config_types.h"
 #include "ipc/ipc_arg_parse.h"
 #include "ipc/ipc_service.h"
@@ -25,8 +26,8 @@ namespace {
 
 } // namespace
 
-void registerSessionIpc(IpcService& ipc, SessionActionRunner& runner, LockScreen& lockScreen) {
-  const auto dispatch = [&runner, &lockScreen](const std::string& args) -> std::string {
+void registerSessionIpc(IpcService& ipc, SessionActionRunner& runner, LockScreen& lockScreen, ConfigService& config) {
+  const auto dispatch = [&runner, &lockScreen, &config](const std::string& args) -> std::string {
     const auto parts = noctalia::ipc::splitWords(args);
     if (parts.empty()) {
       return "error: session requires <lock|suspend|lock-and-suspend|logout|reboot|shutdown>\n";
@@ -34,6 +35,9 @@ void registerSessionIpc(IpcService& ipc, SessionActionRunner& runner, LockScreen
 
     const std::string& action = parts[0];
     if (action == "lock") {
+      if (!config.isLockScreenEnabled()) {
+        return "error: lock screen disabled\n";
+      }
       if (lockScreen.lock()) {
         return "ok\n";
       }
@@ -46,6 +50,12 @@ void registerSessionIpc(IpcService& ipc, SessionActionRunner& runner, LockScreen
       return "error: failed to suspend\n";
     }
     if (action == "lock-and-suspend") {
+      if (!config.isLockScreenEnabled()) {
+        if (runner.requestSuspendDetached()) {
+          return "ok\n";
+        }
+        return "error: failed to suspend\n";
+      }
       if (runner.lockThenSuspendDetached()) {
         return "ok\n";
       }

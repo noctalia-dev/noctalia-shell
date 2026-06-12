@@ -143,6 +143,9 @@ void LockscreenWidgetsController::registerIpc(IpcService& ipc) {
   ipc.registerHandler(
       "lockscreen-widgets-edit",
       [this](const std::string&) -> std::string {
+        if (m_config != nullptr && !m_config->isLockScreenEnabled()) {
+          return "error: lock screen disabled\n";
+        }
         enterEdit();
         return "ok\n";
       },
@@ -161,6 +164,9 @@ void LockscreenWidgetsController::registerIpc(IpcService& ipc) {
   ipc.registerHandler(
       "lockscreen-widgets-toggle-edit",
       [this](const std::string&) -> std::string {
+        if (m_config != nullptr && !m_config->isLockScreenEnabled()) {
+          return "error: lock screen disabled\n";
+        }
         toggleEdit();
         return "ok\n";
       },
@@ -217,6 +223,9 @@ void LockscreenWidgetsController::requestRedraw() {
 
 void LockscreenWidgetsController::enterEdit() {
   if (!m_initialized || m_editor == nullptr || m_host == nullptr || isEditing() || m_lockScreen == nullptr) {
+    return;
+  }
+  if (m_config != nullptr && !m_config->isLockScreenEnabled()) {
     return;
   }
   if (m_lockScreen->isActive()) {
@@ -277,6 +286,21 @@ void LockscreenWidgetsController::toggleEdit() {
 
 bool LockscreenWidgetsController::isEditing() const noexcept { return m_editor != nullptr && m_editor->isOpen(); }
 
+std::optional<LayerPopupParentContext>
+LockscreenWidgetsController::popupParentContextForSurface(wl_surface* surface) const {
+  if (!isEditing() || m_editor == nullptr) {
+    return std::nullopt;
+  }
+  return m_editor->popupParentContextForSurface(surface);
+}
+
+std::optional<LayerPopupParentContext> LockscreenWidgetsController::fallbackPopupParentContext() const {
+  if (!isEditing() || m_editor == nullptr) {
+    return std::nullopt;
+  }
+  return m_editor->fallbackPopupParentContext();
+}
+
 bool LockscreenWidgetsController::onPointerEvent(const PointerEvent& event) {
   if (isEditing() && m_editor != nullptr) {
     return m_editor->onPointerEvent(event);
@@ -313,6 +337,15 @@ void LockscreenWidgetsController::saveSnapshotToConfig() {
 
 void LockscreenWidgetsController::applyVisibility() {
   if (!m_initialized || m_host == nullptr || m_config == nullptr || m_lockScreen == nullptr) {
+    return;
+  }
+
+  if (!m_config->isLockScreenEnabled()) {
+    if (isEditing() && m_editor != nullptr) {
+      m_snapshot = fromWidgetsEditorSnapshot(m_editor->close());
+      saveSnapshotToConfig();
+    }
+    m_host->hide();
     return;
   }
 
@@ -376,6 +409,7 @@ void LockscreenWidgetsController::normalizeSnapshot() {
   std::unordered_set<std::string> seenIds;
   for (auto& widget : m_snapshot.widgets) {
     if (lockscreen_login_box::isLoginBoxWidget(widget)) {
+      lockscreen_login_box::normalizeSettings(widget.settings);
       seenIds.insert(widget.id);
       continue;
     }

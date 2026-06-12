@@ -32,6 +32,15 @@ ColorSpec Widget::widgetForegroundOr(const ColorSpec& fallback) const noexcept {
   return fallback;
 }
 
+ColorSpec Widget::widgetIconColorOr(const ColorSpec& fallback) const noexcept {
+  // `icon_color` overrides; otherwise the icon inherits the full foreground chain
+  // (`color` → `capsule_foreground` → fallback), so a bare `color` still tints icons.
+  if (m_widgetIconColor.has_value()) {
+    return *m_widgetIconColor;
+  }
+  return widgetForegroundOr(fallback);
+}
+
 bool Widget::shouldShowBarCapsule() const {
   if (!m_barCapsuleSpec.enabled) {
     return false;

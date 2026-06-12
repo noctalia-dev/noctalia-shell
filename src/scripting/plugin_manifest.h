@@ -78,11 +78,13 @@ namespace scripting {
   };
 
   struct PluginManifest {
-    std::string id; // "author/plugin"
-    std::string name;
+    std::string id;   // "author/plugin"
+    std::string name; // mandatory display name
     std::string version;
     std::string minNoctalia; // mandatory
     std::string author;
+    std::string license = "MIT";
+    bool deprecated = false;
     std::vector<std::string> tags;
     std::string icon;
     std::string description;
@@ -121,7 +123,7 @@ namespace scripting {
   );
 
   // Parse a plugin.toml. Returns nullopt and sets `error` on a hard failure:
-  // unreadable file, TOML parse error, or a missing mandatory `id` / `min_noctalia`.
+  // unreadable file, TOML parse error, or a missing mandatory `id` / `name` / `min_noctalia`.
   // Entry ids are validated for uniqueness within the plugin.
   [[nodiscard]] std::optional<PluginManifest>
   parsePluginManifest(const std::filesystem::path& manifestPath, std::string* error);

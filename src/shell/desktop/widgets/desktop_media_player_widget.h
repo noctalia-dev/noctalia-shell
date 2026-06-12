@@ -4,6 +4,7 @@
 #include "ui/palette.h"
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <unordered_set>
 
@@ -74,4 +75,5 @@ private:
   bool m_lastCanGoPrevious = false;
   bool m_lastCanGoNext = false;
   std::unordered_set<std::string> m_pendingArtDownloads;
+  std::shared_ptr<void> m_aliveGuard = std::make_shared<int>(0);
 };

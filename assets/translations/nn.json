@@ -1,0 +1,866 @@
+{
+  "auth": {
+    "pam": {
+      "authentication-failed": "Sanning gjekk gale",
+      "start-failed": "PAM-byrjing gjekk gale",
+      "user-unavailable": "Kan ikkje finna den aktuelle brukaren"
+    },
+    "polkit": {
+      "authenticate": "Sanna",
+      "authenticating": "Sannar ...",
+      "default-message": "Sanning krevst",
+      "invalid-password": "Ugildt passord",
+      "password-placeholder": "Passord",
+      "title": "Sanning krevst"
+    }
+  },
+  "bar": {
+    "screenshot": {
+      "choose-display": "Vel skjerm",
+      "fullscreen": "Fullskjerm",
+      "region": "Vel område"
+    },
+    "widgets": {
+      "active-window": {
+        "no-active-window": "Inga aktiv rute"
+      },
+      "lock-keys": {
+        "caps": "Stor",
+        "caps-short": "S",
+        "num": "Tal",
+        "num-short": "T",
+        "scroll": "Blad",
+        "scroll-short": "B"
+      },
+      "media": {
+        "nothing-playing": "Inkje spelar",
+        "playing": "Spelar"
+      },
+      "network": {
+        "wired": "Trådbunden"
+      },
+      "scripted": {
+        "reload-failed": "Kunne ikkje lasta inn skript å nyo",
+        "reloaded": "Lasta inn skript å nyo"
+      },
+      "weather": {
+        "default": "Vêr",
+        "error": "Vêrfeil",
+        "loading": "Vêr ...",
+        "no-location": "Ingen stad",
+        "off": "Vêr avslege"
+      }
+    }
+  },
+  "clipboard": {
+    "actions": {
+      "clear-all": "Sletta alt",
+      "delete-item": "Sletta oppføring",
+      "keep-pinned": "Haldt fest"
+    },
+    "confirm": {
+      "clear-desc": "Vel om feste oppføringar skal halda seg.",
+      "clear-desc-all-pinned": "Kvar einaste oppføring er fest. Bruk \"Sletta alt\" for å sletta alt.",
+      "clear-desc-no-pinned": "Dette slettar alle oppføringane frå utklippstavla.",
+      "clear-title": "Sletta tavlehistorikken?",
+      "delete-desc": "Dette slettar den valde oppføringa frå tavlehistorikken.",
+      "delete-title": "Sletta tavleoppføringa?"
+    },
+    "empty": {
+      "history-message": "Ingen oppføringar i tavlehistorikken.",
+      "history-title": "Tavlehistorikken er tom",
+      "no-matches-message": "Ingen oppføringar svarar til søket.",
+      "no-matches-title": "Ingen svarande oppføringar"
+    },
+    "entry": {
+      "image": "Bilete",
+      "title": "Tavleoppføring"
+    },
+    "filter-placeholder": "Søk på tavla ...",
+    "preview": {
+      "empty-text-payload": "(tomt tekstinnhald)",
+      "image-title": "Bileteoppføring",
+      "loading": "Lastar inn førebilete ...",
+      "text-title": "Tekstoppføring",
+      "truncated": "... samankrept"
+    },
+    "title": "Utklippstavla"
+  },
+  "common": {
+    "actions": {
+      "apply": "Bruk",
+      "cancel": "Avbryt"
+    },
+    "states": {
+      "auto": "Automatisk",
+      "custom": "Sjølvvald",
+      "inherit": "Erva",
+      "off": "Avslegen"
+    }
+  },
+  "control-center": {
+    "audio": {
+      "application-volumes": "Ljodstyrke på applikasjonar",
+      "input-volume": "Styrke på innljod",
+      "no-application-audio": "Applikasjonen har ikkje ljod",
+      "no-application-audio-body": "Ingen applikasjonar spelar ljod av no.",
+      "no-input-devices": "Ingen innljodseiningar",
+      "no-input-devices-body": "Ingen opptakskjelder er tilgjengelege no.",
+      "no-input-selected": "Inga innljodseining er vald",
+      "no-output-devices": "Ingen utljodseiningar",
+      "no-output-devices-body": "Ingen utljodsmål er tilgjengelege no.",
+      "no-output-selected": "Inga utljodseining er vald",
+      "output-volume": "Utljodsstyrke",
+      "unavailable-body": "PipeWire er ikkje aktiv.",
+      "unavailable-title": "Ljod utilgjengeleg"
+    },
+    "bluetooth": {
+      "accept": "Godtak",
+      "auto-reconnect": "Kopla til att automatisk",
+      "bluetooth": "Bluetooth",
+      "enter-code": "Skriv inn kode",
+      "no-devices": "Ingen einingar funne. Leita for å finna nære Bluetootheiningar.",
+      "off": "Bluetooth er avslegen",
+      "pair-title": "Par {device}",
+      "pairing-detail": {
+        "authorize": "Godtek du parespurnaden som kjem inn?",
+        "authorize-service": "Vil du gjeva tilgang til tenesta {uuid}?",
+        "confirm": "Stadfest at denne koden samsvarar den som er vist på eininga:",
+        "display-passkey": "Skriv inn denne koden på eininga:",
+        "display-pin": "Skriv inn denne PIN-koden på eininga:",
+        "passkey": "Skriv inn passlykelen vist på eininga:",
+        "pin-code": "Skriv inn PIN-koden vist på eininga:"
+      },
+      "reject": "Avslå",
+      "rfkill-blocked": "Bluetooth er sperra av systemet. Slå det på for å sletta sperra.",
+      "sections": {
+        "available": "Tilgjengeleg(e)",
+        "connected": "Kopla til",
+        "paired": "Para"
+      },
+      "unavailable": "Bluetooth-teneste utilgjengeleg",
+      "unknown-device": "Ukjend eining",
+      "visible": "Finnande av nære einingar"
+    },
+    "calendar": {
+      "all-day": "Hiele døgeret",
+      "events": "Arrangement",
+      "no-events": "Ingen arrangement"
+    },
+    "display": {
+      "disabled": "Avslegen",
+      "no-displays": "Ingen skjermar tilgjengelege",
+      "unknown-resolution": "Ukjend oppløysing"
+    },
+    "home": {
+      "media": {
+        "idle": "Inaktiv",
+        "no-active-player": "Ingen aktiv avspelar",
+        "nothing-playing": "Inkje spelar av",
+        "paused": "På vent",
+        "playback-unavailable": "Avspeling utilgjengeleg",
+        "playing": "Spelar",
+        "unavailable": "Utilgjengeleg",
+        "unknown-artist": "Ukjend artist",
+        "unknown-track": "Ukjend låt"
+      },
+      "select-avatar": "Vel brukarbilete",
+      "unknown": "ukjent",
+      "uptime": "Oppetid - {uptime}",
+      "weather": {
+        "configure-location": "Legg til [weather].address eller slå på auto_locate.",
+        "data-unavailable": "Vẽrdata utilgjengeleg",
+        "disabled": "Vêr er avslege i tilmåtinga.",
+        "fetching": "Hentar varsel ..."
+      }
+    },
+    "media": {
+      "active-player": "Aktiv avspelar",
+      "nothing-playing": "Inkje spelar av",
+      "now-playing": "Spelar no",
+      "start-playback": "Byrja avspeling i ein MPRIS-app"
+    },
+    "network": {
+      "connect": "Kopla til",
+      "current-connection": "Koplinga no",
+      "no-networks": "Inkje nettverk som er nære nok",
+      "not-connected": "Ikkje tilkopla",
+      "password": "Passord",
+      "password-prompt": "Skriv inn passord",
+      "password-prompt-for": "Skriv inn passord for {ssid}",
+      "unavailable-detail": "Installer og slå på NetworkManager for å handsama nettverk herfrå.",
+      "unavailable-title": "NetworkManager utilgjengeleg",
+      "vpns": "VPN",
+      "wi-fi": "Wi-Fi",
+      "wifi": "Wi-Fi",
+      "wifi-off": "Wi-Fi er av",
+      "wifi-on": "Wi-Fi er på",
+      "wired-connection": "Trådsamband"
+    },
+    "notifications": {
+      "empty-body": "Nylege varsel viser seg her.",
+      "empty-title": "Ingen varsel",
+      "filter": {
+        "all": "Alle",
+        "older": "Eldre",
+        "today": "I dag",
+        "yesterday": "I går"
+      },
+      "filter-empty-body": "Ingen varsel svarar til søket.",
+      "filter-empty-title": "Inkjevetta her",
+      "untitled": "Varsel utan namn"
+    },
+    "screen-time": {
+      "disabled": "Skjermtidssporing er av. Slå henne på i Innstillingar for å spora bruk for kvar app.",
+      "empty": "Ingen appbruk er spora enno. Set ei rute i fokus for å byrja med sporing.",
+      "hour-0": "Midnatt",
+      "hour-12": "Middag",
+      "hour-18": "kl 18",
+      "hour-6": "kl 6",
+      "most-used": "MEST BRUKT",
+      "range": {
+        "14-days": "14 dagar",
+        "3-days": "3 dagar",
+        "today": "I dag"
+      }
+    },
+    "shortcuts": {
+      "audio": "Ljod",
+      "bluetooth": "Bluetooth",
+      "caffeine": "Koffein",
+      "clipboard": "Utklippstavla",
+      "dark-mode": {
+        "auto": "Auto-modus",
+        "dark": "Mørk-modus",
+        "light": "Ljos-modus"
+      },
+      "keyboard-layout": "Oppsett",
+      "media": "Media",
+      "mic-mute": "Mikrofon",
+      "nightlight": "Natteljos",
+      "nightlight-states": {
+        "forced": "Alltid på",
+        "off": "Natteljos",
+        "scheduled-day": "Planlagt",
+        "scheduled-night": "Køyrer"
+      },
+      "notification": "Ikkje uroa",
+      "power-profile": "Straum",
+      "screen-recorder": "Opptakar",
+      "screen-time": "Skjermtid",
+      "session": "Øykt",
+      "system": "System",
+      "wallpaper": "Bakgrunnsbilete",
+      "weather": "Vêr",
+      "wifi": "Wi-Fi"
+    },
+    "system": {
+      "titles": {
+        "cpu": "Prosessor",
+        "gpu": "Skjermkort",
+        "memory": "Minne",
+        "network": "Nettverk",
+        "resources": "Ressursar",
+        "system": "System"
+      },
+      "unknown": "ukjent",
+      "uptime-prefix": "Opp {uptime} · {osAge}"
+    },
+    "tabs": {
+      "audio": "Ljod",
+      "bluetooth": "Bluetooth",
+      "calendar": "Kalender",
+      "display": "Skjerm",
+      "home": "Heim",
+      "media": "Media",
+      "network": "Nettverk",
+      "notifications": "Varsel",
+      "screen-time": "Skjermtid",
+      "system": "System",
+      "weather": "Vẽr"
+    },
+    "weather": {
+      "configure-location": "Set [weather].address eller slå på auto_locate",
+      "data-unavailable": "Vêrdata utilgjengeleg",
+      "details": {
+        "elevation": "Høgd",
+        "sunrise": "Solrenning",
+        "sunset": "Soleglad",
+        "temp-max": "Høgste temperatur",
+        "temp-min": "Lægste temperatur",
+        "timezone": "Tidssone",
+        "wind": "Vind"
+      },
+      "disabled": "Slå på [weather] i config.toml",
+      "fetching": "Hentar varsel ...",
+      "forecast-placeholder": {
+        "day": "Sundag",
+        "description": "Vêr",
+        "temperature": "10 / 4 °C"
+      },
+      "location-unavailable": "Stad utilgjengeleg",
+      "refreshing": "Hentar vêr å nyo ...",
+      "waiting": "Ventar på vêrdata"
+    }
+  },
+  "desktop-widgets": {
+    "editor": {
+      "actions": {
+        "add": "Legg til",
+        "done": "Ferdig",
+        "hide": "Gøym",
+        "settings": "Innstillingar",
+        "show": "Vis",
+        "stack-back": "Set bak",
+        "stack-front": "Set føre",
+        "trash": "Sletta"
+      },
+      "dialogs": {
+        "select-sticker-image": "Vel merkebilete"
+      },
+      "settings": {
+        "aspect-ratio": "Sidetilhøve",
+        "background": "Bakgrunn",
+        "background-color": "Let",
+        "background-opacity": "Uklårleik",
+        "background-padding": "Utfylling",
+        "background-radius": "Radius",
+        "background-section": "Bakgrunn",
+        "bands": "Band",
+        "bar-width": "Stongbreidde",
+        "bloom-intensity": "Bloom",
+        "centered": "I midten",
+        "change-image": "Endra ...",
+        "circle": "Ring",
+        "clock-style": "Klokkestil",
+        "clock-style-analog": "Analog",
+        "clock-style-digital": "Digital",
+        "color": "Let",
+        "color-1": "Let ein",
+        "color-2": "Let to",
+        "color2": "Let 2",
+        "custom-color": "Sjølvvald ...",
+        "description": "Skildring",
+        "fade-when-idle": "Folna når uaktiv",
+        "font-family": "Skrifttype",
+        "font-family-default": "Systemstandard",
+        "format": "Format",
+        "hide-when-no-media": "Gøym når ingenting spelar av",
+        "horizontal": "Vassrett",
+        "image-path": "Bilete",
+        "inner-diameter": "Indre tverrmål",
+        "input-opacity": "Uklårleik av inndata",
+        "input-radius": "Indre radius",
+        "layout": "Oppsett",
+        "mirrored": "Spegla",
+        "opacity": "Uklårleik",
+        "primary-color": "Hovudlet",
+        "reset-defaults": "Stell tilbake",
+        "ring-opacity": "Ringuklårleik",
+        "rotation-speed": "Omsvivsfart",
+        "secondary-color": "Andrelet",
+        "sensitivity": "Varsemd",
+        "shadow": "Skugge",
+        "show-label": "Vis namn",
+        "show-login-button": "Innskrivingsknapp",
+        "show-when-idle": "Vis når inaktiv",
+        "stat": "Info",
+        "stat-cpu-temp": "Prosessortemp",
+        "stat-cpu-usage": "Prosessorbruk",
+        "stat-gpu-temp": "Skjermkorttemp",
+        "stat-gpu-usage": "Skjermkortbruk",
+        "stat-gpu-vram": "Skjermkort-VRAM",
+        "stat-net-rx": "Netto Rx",
+        "stat-net-tx": "Netto Tx",
+        "stat-none": "Ingen",
+        "stat-ram-pct": "RAM %",
+        "stat-swap-pct": "Swap %",
+        "stat2": "Info 2",
+        "title": "Namn",
+        "vertical": "Loddrett",
+        "visualization-mode": "Modus",
+        "visualization-mode-all": "Alle",
+        "visualization-mode-bars": "Stenger",
+        "visualization-mode-bars-rings": "Stenger og ringar",
+        "visualization-mode-rings": "Ringar",
+        "visualization-mode-wave": "Bylgja",
+        "visualization-mode-wave-rings": "Bylgja og ringar",
+        "wave-thickness": "Bylgjetjukn",
+        "widget-section": "Nøytel"
+      },
+      "state": {
+        "grid-off": "Rutenett av",
+        "grid-on": "Rutenett på"
+      },
+      "title": "Skrivebordsnøytlar",
+      "types": {
+        "audio-visualizer": "Ljodframsyning",
+        "clock": "Klokke",
+        "fancy-audio-visualizer": "Tøff ljodframsyning",
+        "label": "Namn",
+        "media-player": "Avspelar",
+        "sticker": "Klistremerke",
+        "system-monitor": "Systemvakt",
+        "weather": "Vêr"
+      }
+    },
+    "media": {
+      "nothing-playing": "Ingenting spelar av"
+    },
+    "weather": {
+      "error": "Noko gjekk gale",
+      "loading": "Lastar inn",
+      "no-location": "Ingen stad",
+      "off": "Vêr avslege"
+    }
+  },
+  "dock": {
+    "actions": {
+      "close": "Lat att",
+      "close-all": "Lat att alle"
+    },
+    "launcher": "Veljar"
+  },
+  "internal-apps": {
+    "settings": {
+      "display-name": "Innstillingar"
+    }
+  },
+  "launcher": {
+    "categories": {
+      "all": "Alle",
+      "applications": {
+        "development": "Utvikling",
+        "education": "Utdaning",
+        "games": "Spel",
+        "graphics": "Grafikk",
+        "internet": "Internett",
+        "multimedia": "Multimedia",
+        "office": "Kontor",
+        "system": "System",
+        "utilities": "Reiskapar"
+      },
+      "emoji": {
+        "activity": "Handling",
+        "animals": "Dyr",
+        "flags": "Flagg",
+        "food": "Mat",
+        "nature": "Natur",
+        "objects": "Ting",
+        "people": "Folk",
+        "symbols": "Teikn",
+        "travel": "Reise"
+      },
+      "recently-used": "Nyleg brukt"
+    },
+    "context-menu": {
+      "open": "Opna",
+      "pin-to-dock": "Fest til festepunktet",
+      "unpin-from-dock": "Fest frå festepunktet"
+    },
+    "empty": {
+      "no-results": "Ingen oppslag",
+      "type-to-search": "Skriv for å leita ..."
+    },
+    "providers": {
+      "applications": {
+        "title": "Applikasjonar"
+      },
+      "calculator": {
+        "title": "Kalkulator"
+      },
+      "emoji": {
+        "title": "Emoji"
+      },
+      "session": {
+        "action-subtitle": "Køyr øyktsgjerd",
+        "command-subtitle": "Køyr sjølvvald kommando",
+        "title": "Øykt"
+      },
+      "wallpaper": {
+        "title": "Bakgrunnsbilete"
+      },
+      "window": {
+        "title": "Ruter"
+      }
+    },
+    "search-placeholder": "Leita i applikasjonar ..."
+  },
+  "location": {
+    "errors": {
+      "address-lookup-failed": "Adressesøk gjekk gale",
+      "ip-geolocation-failed": "IP-geolokasjon gjekk gale",
+      "parse-geocode": "Kunne ikkje tolka geokodesvar",
+      "parse-ip-geolocation": "Kunne ikkje tolka IP-geokodesvar"
+    },
+    "locations": {
+      "current": "Stad no"
+    },
+    "source": {
+      "address": "Adresse",
+      "auto": "Automatisk"
+    }
+  },
+  "lockscreen": {
+    "authenticating": "Sannar ...",
+    "authentication-failed": "Sanning gjekk gale",
+    "password-cleared": "Passord rett",
+    "password-placeholder": "Passord",
+    "ready": "Skriv inn passordet ditt og trykk på Retur.",
+    "unlocked": "Låst opp",
+    "waiting": "Ventar på låsestadfesting ..."
+  },
+  "notifications": {
+    "actions": {
+      "fallback": "Gjerd",
+      "open": "Opna"
+    },
+    "inline-reply": {
+      "button": "Svar",
+      "placeholder": "Skriv eit svar ..."
+    },
+    "internal": {
+      "battery": "Batteri",
+      "battery-device": "Batterieining",
+      "battery-low-body": "{device}: {percent} % att",
+      "battery-low-title": "Lågt batteri",
+      "calendar": "Kalender",
+      "calendar-google-connect-browser-failed": "Ingen nettlesaropnar kunne opna for å køyra Google-sanning. Sjå over standardlesaren eller oppsettet for xdg-open.",
+      "calendar-google-connect-expired": "Google-sanning gjekk ut før innskrivinga var ferdig. Du må byrja koplinga å nyo.",
+      "calendar-google-connect-failed-title": "Kunne ikkje kopla til Google Calendar",
+      "calendar-google-connect-missing-account": "Ingen tilmåta Google Calendar-konto svara til \"{account}\".",
+      "calendar-google-connect-rate-limited": "Google-sanning har mellombels lastgrense. Bia litt, og prøv att.",
+      "calendar-google-connect-result-failed": "Vann ikkje verta ferdig med Google-sanning. Du må byrja koplinga å nyo.",
+      "calendar-google-connect-start-failed": "Kunne ikkje byrja Google-sanninga. Sjå over nettverktilkoplinga og prøv å nyo.",
+      "calendar-google-connect-start-http": "Kunne ikkje byrja Google-sanninga. OAuth-handsamaren svara med HTTP {status}.",
+      "calendar-google-connect-timeout": "Google-sanning gjekk ut. Byrja koplinga å nyo når du vil skriva deg inn.",
+      "dbus-disabled": "DBus-varsel avslegne",
+      "desktop-widgets-editor": "Nøytelbrigdar",
+      "desktop-widgets-editor-enabled": "Skrivebordsnøytelbrigdaren er på. Gå til eit tomt arbeidsrom for å sjå brigdaroverlaget.",
+      "greeter-sync": "Noctaliahelsar",
+      "greeter-sync-success": "Utsjånad synkronisert. Endringar viser neste gong du skriv deg inn.",
+      "keybind-app": "Noctalia",
+      "keybind-invalid-modifier": "Snarvegen godtek éin knapp utan hjelpeknappar.",
+      "keybind-invalid-printable": "Skrivande knappar (bokstavar, tal, teikn) krev ein hjelpeknapp som Ctrl eller Alt.",
+      "keybind-invalid-super": "Du kan ikkje bruka Superknappen/Windowsknappen i shell-snarvegar.",
+      "keybind-invalid-title": "Snarveg ikkje tillaten.",
+      "lockscreen-widgets-editor": "Låseskjermnøytelbrigdar",
+      "lockscreen-widgets-editor-blocked-locked": "Lås opp øykta før du brigdar på låseskjermnøytlar.",
+      "lockscreen-widgets-editor-enabled": "Låseskjermnøytelbrigdaren er på. Flytta på nøytlar på førebiletet, og lås skjermen for å sjå om oppsettet er rett.",
+      "mpris-disabled": "MPRIS avslege",
+      "session-bus-unavailable": "Øyktebus ikkje tilgjengeleg",
+      "wallpaper-palette-export": "Sjølvvald palett",
+      "wallpaper-palette-export-success": "Lagra \"{name}\" og sette palettbrunn til sjølvvald."
+    }
+  },
+  "osd": {
+    "bluetooth": {
+      "off": "Bluetooth av",
+      "on": "Bluetooth på"
+    },
+    "caffeine": {
+      "off": "Koffein av",
+      "on": "Koffein på"
+    },
+    "dnd": {
+      "off": "Ikkje uroa av",
+      "on": "Ikkje uroa på"
+    },
+    "lock-keys": {
+      "caps-off": "Storlås av",
+      "caps-on": "Storlås på",
+      "num-off": "Tallås av",
+      "num-on": "Tallås på",
+      "scroll-off": "Bladlås av",
+      "scroll-on": "Bladlås på"
+    },
+    "wifi": {
+      "off": "Wi-Fi av",
+      "on": "Wi-Fi på"
+    }
+  },
+  "power": {
+    "battery": {
+      "states": {
+        "battery": "Batteri",
+        "charging": "Ladar",
+        "discharging": "Ladar ut",
+        "empty": "Tomt",
+        "pending-discharge": "Ventar på utlading",
+        "plugged-in": "Kopla til"
+      },
+      "tooltip": {
+        "health": "Helse",
+        "rate": "Rate",
+        "status": "Status",
+        "time-left": "Tid att",
+        "time-to-full": "Tid til fullt"
+      }
+    },
+    "profiles": {
+      "balanced": "Vanleg",
+      "performance": "Yting",
+      "power-saver": "Straumsparing"
+    }
+  },
+  "session": {
+    "actions": {
+      "custom": "Sjølvvald",
+      "lock": "Lås",
+      "lock-and-suspend": "Lås og set i dvale",
+      "logout": "Skriv ut",
+      "reboot": "Start å nyo",
+      "shutdown": "Slå av",
+      "suspend": "Set i dvale"
+    },
+    "errors": {
+      "lock-body": "Protokollen for øyktelås er ikkje tilgjengeleg",
+      "lock-title": "Lås utilgjengeleg"
+    }
+  },
+  "settings": {
+    "actions": {
+      "reset": "Nullstill"
+    },
+    "badges": {
+      "advanced": "Avansert",
+      "inherited": "Ervd",
+      "monitor": "Skjerm",
+      "override": "Overstyr"
+    },
+    "calendar-accounts": {
+      "add-title": "Legg til kalenderkonto",
+      "color-label": "Let",
+      "delete-error": "Kunne ikkje sletta kalenderkonto",
+      "edit-title": "Endra på kalenderkonto",
+      "id-label": "Konto-ID",
+      "invalid": "Sjå over dei merkte felta for kalenderkontoen",
+      "name-label": "Visingsnamn",
+      "name-placeholder": "Personleg kalender",
+      "password-keep-placeholder": "Haldt tomt for å halda fram med same passord",
+      "password-label": "App-passord",
+      "password-placeholder": "Sereige app-passord",
+      "password-save-error": "Kunne ikkje lagra passordet til kalenderkontoen.",
+      "provider": {
+        "custom": "CalDAV",
+        "google": "Google",
+        "icloud": "iCloud"
+      },
+      "provider-label": "Leverandør",
+      "save": "Lagra",
+      "save-connect": "Lagra og kopla til",
+      "save-error": "Kunne ikkje lagra kalenderkonto.",
+      "server-url-label": "Tenar URL",
+      "username-label": "Brukarnamn",
+      "username-placeholder": "namn@doeme.no"
+    },
+    "controls": {
+      "keybind": {
+        "add": "Trykk for å leggja til snarveg",
+        "recording-placeholder": "Trykk på eit knappeval ...",
+        "unset-placeholder": "Trykk for å binda ..."
+      },
+      "list": {
+        "add-entry-placeholder": "Legg til ..."
+      },
+      "path-browse": {
+        "file-title": "Vel fil",
+        "folder-title": "Vel mappe"
+      },
+      "select": {
+        "unknown-value": "Ukjend: {value}"
+      }
+    },
+    "dialogs": {
+      "color-picker": {
+        "title": "Vel ein let"
+      }
+    },
+    "entities": {
+      "bar": {
+        "create": "Skapa",
+        "delete": "Sletta",
+        "delete-confirm-desc": "Denne stonga, som var laga med grensesnittet, vert sletta frå settings.toml.",
+        "delete-confirm-title": "Sletta \"{name}\"?",
+        "id-placeholder": "Stong-ID",
+        "label": "Stong: {name}",
+        "management": "Stong",
+        "move-down": "Flytta nedover",
+        "move-up": "Flytta oppover",
+        "new": "Ny stong",
+        "rename": "Nytt namn",
+        "rename-save": "Lagra"
+      },
+      "monitor-override": {
+        "create": "Skapa",
+        "delete": "Sletta",
+        "delete-confirm-desc": "Denne skjermoverstyringa, som var laga med grensesnittet, vert sletta frå settings.toml.",
+        "delete-confirm-title": "Sletta \"{name}\"?",
+        "label": "Skjerm: {name}",
+        "management": "Skjermoverstyring",
+        "match-placeholder": "Skjermsamsvar",
+        "new": "Skjermoverstyring",
+        "rename": "Nytt namn",
+        "rename-save": "Lagra"
+      },
+      "widget": {
+        "add": "Legg til nøytel",
+        "detail": {
+          "custom": "Sjølvvald nøytel"
+        },
+        "editor": {
+          "description": "Stell nøytlar i dei ulike stongfelta",
+          "title": "Stongnøytlar"
+        },
+        "group": {
+          "action": "Gruppe",
+          "border": "Rand",
+          "border-description": "Leten for pilleomritet; lat vera på Vanleg for inkje omrit",
+          "clear": "Rydd",
+          "edit": "Endra på stil",
+          "fill": "Bakgrunn",
+          "fill-description": "Leten for pillebakgrunnen; hex-leter er stødde òg.",
+          "foreground": "Framgrunn",
+          "foreground-description": "Leten for merke og etikettar til nøytlar i denne gruppa",
+          "hint": "Del av pillegruppe",
+          "members": "{count} nøytlar",
+          "opacity": "Uklårleik",
+          "opacity-description": "Uklårleik for pillebakgrunn",
+          "orphan": "Ukjend gruppe",
+          "padding": "Utfylling",
+          "padding-description": "Indre utfylling mellom pilleranda og nøytlane sine, i piksel",
+          "radius": "Radius",
+          "radius-description": "Hyrneradius på pillene i piksel; erver pilleradien åt stonga automatisk.",
+          "selected": "{count} utvalde",
+          "style": "Stil",
+          "title": "Pillegruppe",
+          "ungroup": "Skil"
+        },
+        "inspector": {
+          "add-instance-title": "Legg til ny nøytel med namn {widget} i {lane}",
+          "add-title": "Legg til nøytel i {lane}",
+          "move-to-lane": "Flytta til {lane}"
+        },
+        "instance": {
+          "create-save": "Skapa",
+          "delete": "Sletta",
+          "delete-confirm-desc": "Denne nøytelen med namn vert sletta frå kvar stong og innstillingane gløymde.",
+          "delete-confirm-title": "Sletta \"{name}\"?",
+          "id-description": "Bruk berre bokstavar, tal, understrek, eller strek. Inkje mellomrom, må vera eineståande.",
+          "id-placeholder": "Nøytel-ID",
+          "rename": "Nytt namn",
+          "rename-save": "Lagra"
+        },
+        "lanes": {
+          "center": "I midten",
+          "customize": "Måta til",
+          "empty": "Ingen nøytlar",
+          "empty-hint": "Legg til ein nøytel i feltet.",
+          "end": "Ende",
+          "start": "Byrjing"
+        },
+        "picker": {
+          "empty": "Fann ingen nøytlar",
+          "instance-description": "Nøytel med namn for sort \"{type}\"",
+          "instance-toggle": "Nøytel med namn",
+          "placeholder": "Leita i nøytlar ..."
+        },
+        "raw": {
+          "delete": "Sletta",
+          "description": "Ustødde lyklar heldt på frå denne nøyteltilmåtinga.",
+          "title": "Råe innstillingar"
+        },
+        "settings": {
+          "empty": "Ingen innstillingar funne med desse søkjevilkåra.",
+          "groups": {
+            "grouping": "Gruppering",
+            "presentation": "Framsyning",
+            "runtime": "Køyretid",
+            "widget": "Nøytel"
+          }
+        }
+      }
+    },
+    "errors": {
+      "bar": {
+        "create": "Kunne ikkje skapa stong.",
+        "delete": "Kunne ikkje sletta stong.",
+        "move": "Kunne ikkje flytta på stong.",
+        "rename": "Kunne ikkje gjeva stonga eit nytt namn."
+      },
+      "batch-write": "Kunne ikkje lagra sume innstillingar.",
+      "export-config": "Utførsla av tilmåtinga gjekk gale.",
+      "export-wallpaper-palette": "Kunne ikkje lagra paletten frå bakgrunnabiletet som sjølvvald palett.",
+      "monitor-override": {
+        "create": "Kunne ikkje skapa skjermoverstyring.",
+        "delete": "Kunne ikkje sletta skjermoverstyring.",
+        "rename": "Kunne ikkje gjeva skjermoverstyring eit nytt namn."
+      },
+      "reset-page": "Kunne ikkje nullstille sume innstillingar.",
+      "support-report": "Kunne ikkje lagra støtterapport.",
+      "sync-greeter": "Kunne ikkje synkronisera utsjånad med Noctaliahelsaren.",
+      "widget": {
+        "rename": "Kunne ikkje gjeva eit nytt namn til nøytelen."
+      },
+      "write": "Kunne ikkje lagra innstillingar."
+    },
+    "export-config": {
+      "export": "Før ut",
+      "full-effective-description": "Fører ut alle aktive innstillingar, medrekna innebygde standardinnstillingar. Nyttig for å sjå over eller dela eit utklipp, men eksplisitt fester standardane som er på no.",
+      "full-effective-save-title": "Lagra full effektiv tilmåting",
+      "full-effective-title": "Full effektiv tilmåting",
+      "merged-user-description": "Blandar tilmåtingsfler og grensesnittoverstyringar i éi TOML-fil. Innebygde standardinnstillingar held seg som implisitte.",
+      "merged-user-save-title": "Lagra blanda brukartilmåting",
+      "merged-user-title": "Blanda brukartilmåting (tilrådd)",
+      "title": "Før ut tilmåting"
+    },
+    "idle": {
+      "behavior": {
+        "add": "Legg til åtburd",
+        "command-label": "Inaktiv-kommando",
+        "command-placeholder": "notify-send \"Inaktiv\"",
+        "kind": {
+          "custom": "Sjølvvald",
+          "lock": "Lås",
+          "lock-and-suspend": "Lås og set i dvale",
+          "screen-off": "Skjerm av",
+          "suspend": "Set i dvale"
+        },
+        "kind-section-label": "Gjerd",
+        "name-label": "Namn",
+        "name-placeholder": "Inaktiv-åtburd",
+        "resume-command-label": "Framhaldkommando",
+        "resume-command-placeholder": "noctalia:dpms-on",
+        "summary": "{name} · {seconds} s",
+        "summary-disabled-timeout": "{name} · timeout avslege",
+        "timeout-label": "Timeout sekund",
+        "unnamed": "Åtburd utan namn"
+      },
+      "live-status": {
+        "active": "Aktiv",
+        "idle-for-one": "Inaktiv i 1 sekund",
+        "idle-for-seconds": "Inaktiv i {seconds} sekund"
+      }
+    },
+    "navigation": {
+      "groups": {
+        "audio": "Ljod",
+        "automation": "Automatisering",
+        "backdrop": "Bakgrunnsbilete",
+        "background": "Bakgrunn",
+        "battery": "Batteri",
+        "behavior": "Åtburd",
+        "brightness": "Ljosstyrke",
+        "built-in": "Innebygd",
+        "calendar": "Kalender",
+        "capsules": "Piller",
+        "clipboard": "Utklippstavle",
+        "community": "Samfunn",
+        "control-center": "Styrerom",
+        "directories": "Mapper",
+        "effects": "Verknader",
+        "filtering": "Søkjevilkår"
+      }
+    }
+  }
+}

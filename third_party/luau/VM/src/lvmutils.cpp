@@ -1,5 +1,7 @@
 // This file is part of the Luau programming language and is licensed under MIT License; see LICENSE.txt for details
 // This code is based on Lua 5.x implementation licensed under MIT License; see lua_LICENSE.txt for details
+#include "lclass.h"
+#include "lfunc.h"
 #include "lvm.h"
 
 #include "lstate.h"
@@ -11,8 +13,12 @@
 
 #include <string.h>
 
+LUAU_FASTFLAG(LuauClosureUsageCounter)
+
 // limit for table tag-method chains (to avoid loops)
 #define MAXTAGLOOP 100
+
+LUAU_FASTFLAG(DebugLuauUserDefinedClassesRuntime)
 
 const TValue* luaV_tonumber(const TValue* obj, TValue* n)
 {
@@ -116,6 +122,51 @@ void luaV_gettable(lua_State* L, const TValue* t, TValue* key, StkId val)
             }
             // t isn't a table, so see if it has an INDEX meta-method to look up the key with
         }
+        else if (LUAU_UNLIKELY(FFlag::DebugLuauUserDefinedClassesRuntime && ttisobject(t)))
+        {
+            LuauObject* inst = objectvalue(t);
+            const TValue* offsettval = luaH_get(inst->lclass->memberstooffset, key);
+
+            // Class instances throw if you try to access a member that is not
+            // present.
+            if (ttisnil(offsettval))
+                luaG_missingmembererror(L, t, key);
+
+            LUAU_ASSERT(ttisnumber(offsettval));
+            int offset = int(nvalue(offsettval));
+            setobj2s(L, val, luaR_lookupmemberatoffset(inst, offset));
+            return;
+        }
+        else if (LUAU_UNLIKELY(FFlag::DebugLuauUserDefinedClassesRuntime && ttisclass(t)))
+        {
+            LuauClass* lco = classvalue(t);
+            const TValue* res = luaH_get(lco->memberstooffset, key);
+
+            // Class objects throw if you try to access a member that is not
+            // present.
+            if (ttisnil(res))
+                luaG_missingmembererror(L, t, key);
+
+            LUAU_ASSERT(ttisnumber(res));
+            int offset = int(nvalue(res));
+            LUAU_ASSERT(offset >= 0 && offset < lco->numberofallmembers);
+
+            // This is the case where we try to access an instance member on a
+            // class object, for example:
+            //
+            //  class Box
+            //      public item
+            //      function print(self) print(self.item) end
+            //  end
+            //
+            //  local _ = Box.item
+            //
+            if (offset < lco->numberofinstancemembers)
+                luaG_missingmembererror(L, t, key);
+
+            setobj2s(L, val, &lco->staticmembers[offset - lco->numberofinstancemembers]);
+            return;
+        }
         else if (ttisnil(tm = luaT_gettmbyobj(L, t, TM_INDEX)))
             luaG_indexerror(L, t, key);
         if (ttisfunction(tm))
@@ -158,6 +209,20 @@ void luaV_settable(lua_State* L, const TValue* t, TValue* key, StkId val)
             }
 
             // fallthrough to metamethod
+        }
+        else if (LUAU_UNLIKELY(FFlag::DebugLuauUserDefinedClassesRuntime && ttisobject(t)))
+        {
+            LuauObject* inst = objectvalue(t);
+            const TValue* offset = luaH_get(inst->lclass->memberstooffset, key);
+            if (ttisnil(offset))
+                luaG_missingmembererror(L, t, key);
+            const int offsetnum = int(nvalue(offset));
+            LUAU_ASSERT(offsetnum >= 0 && offsetnum < inst->lclass->numberofallmembers);
+            if (offsetnum >= inst->lclass->numberofinstancemembers)
+                luaG_indexerror(L, t, key);
+            setobj2class(L, &inst->members[offsetnum], val);
+            luaC_barrier(L, inst, val);
+            return;
         }
         else if (ttisnil(tm = luaT_gettmbyobj(L, t, TM_NEWINDEX)))
             luaG_indexerror(L, t, key);
@@ -296,6 +361,25 @@ int luaV_equalval(lua_State* L, const TValue* t1, const TValue* t2)
         tm = get_compTM(L, uvalue(t1)->metatable, uvalue(t2)->metatable, TM_EQ);
         if (!tm)
             return uvalue(t1) == uvalue(t2);
+        break; // will try TM
+    }
+    case LUA_TCLASS:
+        return classvalue(t1) == classvalue(t2);
+    case LUA_TOBJECT:
+    {
+        // We follow roughly the same rules as metatables, except we require
+        // that the two instances have *exactly* the same class object. This
+        // is not a strict requirement for comparison metamethods.
+        LuauObject* t1inst = objectvalue(t1);
+        LuauObject* t2inst = objectvalue(t2);
+        // Class instances with differing class objects are always inequal.
+        if (t1inst->lclass != t2inst->lclass)
+            return false;
+        // Otherwise, check if `__eq` exists and use that
+        tm = luaT_gettmbyobj(L, t1, TM_EQ);
+        if (ttisnil(tm))
+            // If it doesn't, then check physical equality
+            return t1inst == t2inst;
         break; // will try TM
     }
     case LUA_TTABLE:
@@ -594,6 +678,13 @@ LUAU_NOINLINE void luaV_callTM(lua_State* L, int nparams, int res)
     ci->nresults = (res >= 0);
     LUAU_ASSERT(ci->top <= L->stack_last);
 
+    Closure* ccl;
+    if (FFlag::LuauClosureUsageCounter)
+    {
+        ccl = clvalue(fun);
+        ccl->usage++;
+    }
+
     LUAU_ASSERT(ttisfunction(ci->func));
     LUAU_ASSERT(clvalue(ci->func)->isC);
 
@@ -607,6 +698,12 @@ LUAU_NOINLINE void luaV_callTM(lua_State* L, int nparams, int res)
     // ci is our callinfo, cip is our parent
     // note that we read L->ci again since it may have been reallocated by the call
     CallInfo* cip = L->ci - 1;
+
+    if (FFlag::LuauClosureUsageCounter)
+    {
+        LUAU_ASSERT(ccl->usage > 0);
+        ccl->usage--;
+    }
 
     // copy return value into parent stack
     if (res >= 0)

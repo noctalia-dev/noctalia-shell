@@ -35,6 +35,8 @@
 namespace {
 
   constexpr std::size_t kRowOverscan = 3;
+  // Minimum trimmed query length before prefixed opt-in providers join the global search.
+  constexpr std::size_t kGlobalOptInMinChars = 2;
   constexpr float kIconSizeDefault = 40.0f;
   constexpr float kIconSizeCompact = 28.0f;
   constexpr double kUsageScorePerCount = 0.1;
@@ -716,26 +718,32 @@ void LauncherPanel::onInputChanged(const std::string& text) {
   } else if (startsWithSlash(text)) {
     m_allResults = providerOverviewResults(text);
   } else {
-    // Query default providers (empty prefix)
+    // Query default providers (empty prefix), plus prefixed providers that opt into global search.
+    // Prefixed opt-in providers (e.g. Session) only contribute once the query is long enough,
+    // so opening the launcher with no/short input does not flood it with their entries.
+    const bool allowGlobalOptIn =
+        StringUtils::trimRightView(StringUtils::trimLeftView(queryText)).size() >= kGlobalOptInMinChars;
     for (auto& provider : m_providers) {
-      if (provider->prefix().empty()) {
-        auto results = provider->query(queryText);
-        if (provider->trackUsage()) {
-          applyUsageBoost(results, *provider);
-          if (m_usageTracker.getRecentlyUsedCount(provider->id()) > 0) {
-            hasRecentlyUsed = true;
-          }
+      const bool isDefault = provider->prefix().empty();
+      if (!isDefault && (!provider->includeInGlobalSearch() || !allowGlobalOptIn)) {
+        continue;
+      }
+      auto results = provider->query(queryText);
+      if (provider->trackUsage()) {
+        applyUsageBoost(results, *provider);
+        if (m_usageTracker.getRecentlyUsedCount(provider->id()) > 0) {
+          hasRecentlyUsed = true;
         }
-        for (auto& result : results) {
-          result.providerId = provider->id();
-        }
-        m_allResults.insert(
-            m_allResults.end(), std::make_move_iterator(results.begin()), std::make_move_iterator(results.end())
-        );
-        auto providerCats = provider->categories();
-        for (auto& cat : providerCats) {
-          newCategories.push_back(std::move(cat));
-        }
+      }
+      for (auto& result : results) {
+        result.providerId = provider->id();
+      }
+      m_allResults.insert(
+          m_allResults.end(), std::make_move_iterator(results.begin()), std::make_move_iterator(results.end())
+      );
+      auto providerCats = provider->categories();
+      for (auto& cat : providerCats) {
+        newCategories.push_back(std::move(cat));
       }
     }
     // Stable sort by score descending — preserves provider order (e.g. alphabetical) for ties

@@ -14,7 +14,19 @@ let
   toml = pkgs.formats.toml { };
   json = pkgs.formats.json { };
 
-  configToml = toml.generate "config.toml" cfg.settings;
+  configToml =
+    let
+      rawConfig = toml.generate "config.toml" cfg.settings;
+    in
+    if cfg.package != null && cfg.validateConfig then
+      pkgs.runCommand "noctalia-config" { } ''
+        cp ${rawConfig} config.toml
+        ${lib.getExe cfg.package} config validate .
+        cp config.toml $out
+      ''
+    else
+      rawConfig;
+
   paletteFiles = mapAttrs (
     name: palette: json.generate "${name}-palette.json" palette
   ) cfg.customPalettes;
@@ -37,6 +49,12 @@ in
     package = mkOption {
       type = lib.types.nullOr lib.types.package;
       description = "The noctalia package to use.";
+    };
+
+    validateConfig = mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Validate the configuration file at build time.";
     };
 
     settings = mkOption {

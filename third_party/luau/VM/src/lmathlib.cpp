@@ -19,7 +19,6 @@
 
 #define PCG32_INC 105
 
-LUAU_FASTFLAGVARIABLE(LuauNewMathConstantsRuntime)
 LUAU_FASTFLAGVARIABLE(FixMathNoisePrecision)
 
 static uint32_t pcg32_random(uint64_t* state)
@@ -529,20 +528,16 @@ int luaopen_math(lua_State* L)
     lua_setfield(L, -2, "pi");
     lua_pushnumber(L, HUGE_VAL);
     lua_setfield(L, -2, "huge");
-
-    if (FFlag::LuauNewMathConstantsRuntime)
-    {
-        lua_pushnumber(L, LUAU_NAN);
-        lua_setfield(L, -2, "nan");
-        lua_pushnumber(L, LUAU_E);
-        lua_setfield(L, -2, "e");
-        lua_pushnumber(L, LUAU_PHI);
-        lua_setfield(L, -2, "phi");
-        lua_pushnumber(L, LUAU_SQRT2);
-        lua_setfield(L, -2, "sqrt2");
-        lua_pushnumber(L, LUAU_TAU);
-        lua_setfield(L, -2, "tau");
-    }
+    lua_pushnumber(L, LUAU_NAN);
+    lua_setfield(L, -2, "nan");
+    lua_pushnumber(L, LUAU_E);
+    lua_setfield(L, -2, "e");
+    lua_pushnumber(L, LUAU_PHI);
+    lua_setfield(L, -2, "phi");
+    lua_pushnumber(L, LUAU_SQRT2);
+    lua_setfield(L, -2, "sqrt2");
+    lua_pushnumber(L, LUAU_TAU);
+    lua_setfield(L, -2, "tau");
 
     return 1;
 }

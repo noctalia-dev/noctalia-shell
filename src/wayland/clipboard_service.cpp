@@ -1,5 +1,6 @@
 #include "wayland/clipboard_service.h"
 
+#include "config/config_limits.h"
 #include "core/log.h"
 #include "ext-data-control-v1-client-protocol.h"
 #include "util/file_utils.h"
@@ -24,8 +25,8 @@
 
 namespace {
 
-  constexpr std::size_t kMinHistoryMaxEntries = 10;
-  constexpr std::size_t kMaxHistoryMaxEntries = 200;
+  constexpr std::size_t kMinHistoryMaxEntries = static_cast<std::size_t>(noctalia::config::kClipboardHistoryMinEntries);
+  constexpr std::size_t kMaxHistoryMaxEntries = static_cast<std::size_t>(noctalia::config::kClipboardHistoryMaxEntries);
   constexpr std::size_t kMaxHistoryBytes = 64u * 1024u * 1024u;
   constexpr std::size_t kMaxEntryBytes = 10u * 1024u * 1024u;
   constexpr std::size_t kPreviewBytes = 200;

@@ -1623,9 +1623,10 @@ void PipeWireService::setVolume(float volume) {
   if (sink == nullptr) {
     return;
   }
+  const std::uint32_t sinkId = sink->id;
   volume = std::clamp(volume, 0.0f, 1.5f);
-  setNodeVolume(sink->id, volume);
-  emitVolumePreview(false, sink->id, volume);
+  setNodeVolume(sinkId, volume);
+  emitVolumePreview(false, sinkId, volume);
 }
 
 void PipeWireService::setMuted(bool muted) {
@@ -1633,8 +1634,10 @@ void PipeWireService::setMuted(bool muted) {
   if (sink == nullptr) {
     return;
   }
-  setNodeMuted(sink->id, muted);
-  emitVolumePreview(false, sink->id, sink->volume);
+  const std::uint32_t sinkId = sink->id;
+  const float previewVolume = sink->volume;
+  setNodeMuted(sinkId, muted);
+  emitVolumePreview(false, sinkId, previewVolume);
 }
 
 void PipeWireService::setMicVolume(float volume) {
@@ -1642,9 +1645,10 @@ void PipeWireService::setMicVolume(float volume) {
   if (source == nullptr) {
     return;
   }
+  const std::uint32_t sourceId = source->id;
   volume = std::clamp(volume, 0.0f, 1.5f);
-  setNodeVolume(source->id, volume);
-  emitVolumePreview(true, source->id, volume);
+  setNodeVolume(sourceId, volume);
+  emitVolumePreview(true, sourceId, volume);
 }
 
 void PipeWireService::setMicMuted(bool muted) {
@@ -1652,8 +1656,10 @@ void PipeWireService::setMicMuted(bool muted) {
   if (source == nullptr) {
     return;
   }
-  setNodeMuted(source->id, muted);
-  emitVolumePreview(true, source->id, source->volume);
+  const std::uint32_t sourceId = source->id;
+  const float previewVolume = source->volume;
+  setNodeMuted(sourceId, muted);
+  emitVolumePreview(true, sourceId, previewVolume);
 }
 
 void PipeWireService::emitVolumePreview(bool isInput, std::uint32_t id, float volume) const {

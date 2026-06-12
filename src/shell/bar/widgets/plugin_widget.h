@@ -51,7 +51,7 @@ public:
   void luaSetText(std::string_view text);
   void luaSetGlyph(std::string_view name);
   void luaSetImage(std::string_view path, bool watch, float width, float height);
-  void luaSetTooltip(const scripting::ScriptWidgetTooltipPatch& tooltip);
+  void luaSetTooltip(const scripting::ScriptTooltipPatch& tooltip);
   void luaSetFont(std::string_view familyOrPath);
   void luaSetColor(std::string_view role, std::string_view mode);
   void luaSetGlyphColor(std::string_view role, std::string_view mode);
@@ -89,9 +89,9 @@ private:
 
   void reloadScript();
   void reloadImage();
-  void handleScriptResult(scripting::ScriptWidgetResult result);
-  void applyScriptPatch(const scripting::ScriptWidgetPatch& patch);
-  [[nodiscard]] scripting::ScriptWidgetSnapshot makeScriptSnapshot() const;
+  void handleScriptResult(scripting::ScriptResult result);
+  void applyScriptPatch(const scripting::ScriptPatch& patch);
+  [[nodiscard]] scripting::ScriptSnapshot makeScriptSnapshot() const;
   [[nodiscard]] std::string focusedOutputName() const;
   void syncImage(Renderer& renderer);
   void setupImageWatch();

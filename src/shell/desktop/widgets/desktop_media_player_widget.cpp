@@ -37,7 +37,10 @@ DesktopMediaPlayerWidget::DesktopMediaPlayerWidget(
     : m_mpris(mpris), m_httpClient(httpClient), m_vertical(vertical), m_color(color), m_shadow(shadow),
       m_hideWhenNoMedia(hideWhenNoMedia) {}
 
-DesktopMediaPlayerWidget::~DesktopMediaPlayerWidget() { cancelVisibilityAnimation(); }
+DesktopMediaPlayerWidget::~DesktopMediaPlayerWidget() {
+  m_aliveGuard.reset();
+  cancelVisibilityAnimation();
+}
 
 void DesktopMediaPlayerWidget::create() {
   auto rootNode = std::make_unique<Node>();
@@ -366,8 +369,9 @@ void DesktopMediaPlayerWidget::sync(Renderer& renderer) {
   if (m_artwork != nullptr) {
     const int targetPx = static_cast<int>(std::round(kArtSize * contentScale()));
     if (artChanged) {
-      const std::string artPath =
-          resolveArtworkSource(m_httpClient, m_pendingArtDownloads, m_lastArtUrl, [this] { requestUpdate(); });
+      const std::string artPath = resolveArtworkSource(
+          m_httpClient, m_pendingArtDownloads, m_lastArtUrl, [this] { requestUpdate(); }, m_aliveGuard
+      );
       if (!artPath.empty()) {
         if (!m_artwork->setSourceFile(renderer, artPath, targetPx, true, true))
           m_artwork->clear(renderer);

@@ -54,7 +54,8 @@ public:
   // Renderer interface — used by widgets for measurement and textures
   [[nodiscard]] TextMetrics measureText(
       std::string_view text, float fontSize, FontWeight fontWeight = FontWeight::Normal, float maxWidth = 0.0f,
-      int maxLines = 0, TextAlign align = TextAlign::Start, std::string_view fontFamily = {}
+      int maxLines = 0, TextAlign align = TextAlign::Start, std::string_view fontFamily = {},
+      TextEllipsize ellipsize = TextEllipsize::End
   ) override;
   [[nodiscard]] TextMetrics measureFont(float fontSize, FontWeight fontWeight) override;
   void measureTextCursorStops(

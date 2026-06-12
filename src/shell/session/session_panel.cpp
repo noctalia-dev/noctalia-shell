@@ -63,6 +63,11 @@ std::vector<SessionPanelActionConfig> SessionPanel::effectiveActions() const {
       kLog.warn("session panel: skipping \"command\" entry with no command");
       continue;
     }
+    if ((row.action == "lock" || row.action == "lock_and_suspend")
+        && m_config != nullptr
+        && !m_config->isLockScreenEnabled()) {
+      continue;
+    }
     out.push_back(row);
   }
   return out;

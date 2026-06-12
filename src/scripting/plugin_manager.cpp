@@ -7,10 +7,15 @@
 #include "core/version.h"
 #include "scripting/plugin_catalog.h"
 #include "scripting/plugin_git.h"
+#include "scripting/plugin_id.h"
 #include "scripting/plugin_manifest.h"
 #include "scripting/plugin_registry.h"
+#include "scripting/plugin_source_locks.h"
+#include "scripting/plugin_source_paths.h"
 #include "util/file_utils.h"
+#include "util/string_utils.h"
 
+#include <optional>
 #include <system_error>
 #include <thread>
 #include <unordered_set>
@@ -22,17 +27,217 @@ namespace scripting {
   namespace {
     constexpr Logger kLog("plugins");
 
-    // Repo subdir for a plugin id by convention: "author/foo" lives at "foo/".
-    std::string pluginSubdir(std::string_view pluginId) {
-      const auto slash = pluginId.find('/');
-      return slash == std::string_view::npos ? std::string(pluginId) : std::string(pluginId.substr(slash + 1));
+    std::filesystem::path sourceRootFor(const PluginSourceConfig& source) { return plugin_paths::registryRoot(source); }
+
+    void removeManagedGitSourceStorage(const PluginSourceConfig& source) {
+      const std::string sourceBase = FileUtils::pluginSourcesDir();
+      if (!sourceBase.empty()) {
+        (void)plugin_paths::removeTreeUnder(plugin_paths::sourceStorageRoot(source), sourceBase);
+      }
+      const std::string materializedBase = FileUtils::pluginMaterializedDir();
+      if (!materializedBase.empty()) {
+        (void)plugin_paths::removeTreeUnder(plugin_paths::gitMaterializedRoot(source), materializedBase);
+      }
     }
 
-    std::filesystem::path sourceRootFor(const PluginSourceConfig& source) {
-      if (source.kind == PluginSourceKind::Path) {
-        return FileUtils::expandUserPath(source.location);
+    bool sourceReplacementInvalidatesGitStorage(const PluginSourceConfig& previous, const PluginSourceConfig& next) {
+      if (previous.kind == PluginSourceKind::Git && next.kind == PluginSourceKind::Git) {
+        return previous.location != next.location;
       }
-      return std::filesystem::path(FileUtils::pluginSourcesDir()) / source.name;
+      return previous.kind == PluginSourceKind::Git || next.kind == PluginSourceKind::Git;
+    }
+
+    std::filesystem::path materializedPluginDir(const PluginSourceConfig& source, std::string_view pluginId) {
+      const auto subdir = pluginSubdirFromId(pluginId);
+      if (!subdir.has_value()) {
+        return {};
+      }
+      const auto root = plugin_paths::gitMaterializedRoot(source);
+      return root.empty() ? std::filesystem::path{} : root / *subdir;
+    }
+
+    std::filesystem::path uniqueTempRoot(const std::filesystem::path& root, std::string_view subdir) {
+      for (int i = 0; i < 8; ++i) {
+        std::string suffix = StringUtils::generateUuid();
+        if (suffix.empty()) {
+          suffix = std::to_string(i);
+        }
+        std::filesystem::path candidate = root / (".tmp-" + std::string(subdir) + "-" + suffix);
+        std::error_code ec;
+        if (!std::filesystem::exists(candidate, ec)) {
+          return candidate;
+        }
+      }
+      return {};
+    }
+
+    bool replaceDirectory(
+        const std::filesystem::path& stagedDir, const std::filesystem::path& finalDir,
+        const std::filesystem::path& materializedRoot, std::string* error
+    ) {
+      if (!plugin_paths::pathIsInside(stagedDir, materializedRoot)
+          || !plugin_paths::pathIsInside(finalDir, materializedRoot)) {
+        if (error != nullptr) {
+          *error = "refusing to replace plugin outside materialized source root";
+        }
+        return false;
+      }
+
+      std::error_code ec;
+      const auto backupDir =
+          materializedRoot / (".old-" + finalDir.filename().string() + "-" + StringUtils::generateUuid());
+      bool backedUp = false;
+      if (std::filesystem::exists(finalDir, ec)) {
+        std::filesystem::rename(finalDir, backupDir, ec);
+        if (ec) {
+          if (error != nullptr) {
+            *error = "failed to move previous plugin copy: " + ec.message();
+          }
+          return false;
+        }
+        backedUp = true;
+      }
+
+      ec.clear();
+      std::filesystem::rename(stagedDir, finalDir, ec);
+      if (ec) {
+        if (backedUp) {
+          std::error_code restoreEc;
+          std::filesystem::rename(backupDir, finalDir, restoreEc);
+        }
+        if (error != nullptr) {
+          *error = "failed to install plugin copy: " + ec.message();
+        }
+        return false;
+      }
+
+      if (backedUp) {
+        (void)plugin_paths::removeTreeUnder(backupDir, materializedRoot);
+      }
+      return true;
+    }
+
+    struct MaterializeResult {
+      bool ok = false;
+      std::string error;
+      int exitCode = -1;
+      bool timedOut = false;
+      bool incompatible = false;
+      std::string requiredNoctalia;
+      std::filesystem::path pluginDir;
+      PluginManifest manifest;
+
+      explicit operator bool() const { return ok; }
+    };
+
+    MaterializeResult materializeFailure(
+        std::string error, int exitCode = -1, bool timedOut = false, bool incompatible = false,
+        std::string requiredNoctalia = {}
+    ) {
+      MaterializeResult result;
+      result.error = std::move(error);
+      result.exitCode = exitCode;
+      result.timedOut = timedOut;
+      result.incompatible = incompatible;
+      result.requiredNoctalia = std::move(requiredNoctalia);
+      return result;
+    }
+
+    MaterializeResult materializeGitPlugin(
+        const PluginSourceConfig& source, const std::filesystem::path& repoRoot, std::string_view rev,
+        std::string_view pluginId, bool requireCompatible = false
+    ) {
+      const auto subdir = pluginSubdirFromId(pluginId);
+      if (!subdir.has_value()) {
+        return materializeFailure("invalid plugin id");
+      }
+      const auto materializedRoot = plugin_paths::gitMaterializedRoot(source);
+      if (materializedRoot.empty()) {
+        return materializeFailure("empty materialized source root");
+      }
+
+      std::error_code ec;
+      std::filesystem::create_directories(materializedRoot, ec);
+      if (ec) {
+        return materializeFailure("failed to create materialized source root: " + ec.message());
+      }
+
+      const auto tmpRoot = uniqueTempRoot(materializedRoot, *subdir);
+      if (tmpRoot.empty()) {
+        return materializeFailure("failed to allocate temporary plugin export directory");
+      }
+
+      const auto cleanupTmp = [&] { (void)plugin_paths::removeTreeUnder(tmpRoot, materializedRoot); };
+      const auto exported = plugin_git::exportSubdir(repoRoot, rev, *subdir, tmpRoot);
+      if (!exported) {
+        cleanupTmp();
+        return materializeFailure("export failed: " + exported.err, exported.exitCode, exported.timedOut);
+      }
+
+      const auto stagedDir = tmpRoot / *subdir;
+      std::string manifestError;
+      auto manifest = parsePluginManifest(stagedDir / "plugin.toml", &manifestError);
+      if (!manifest.has_value()) {
+        cleanupTmp();
+        return materializeFailure(manifestError);
+      }
+      if (manifest->id != pluginId) {
+        cleanupTmp();
+        return materializeFailure("manifest id '" + manifest->id + "' does not match requested id");
+      }
+      if (requireCompatible && !noctalia::version::atLeast(noctalia::build_info::version(), manifest->minNoctalia)) {
+        std::string error = "plugin '"
+            + manifest->id
+            + "' requires noctalia >= "
+            + manifest->minNoctalia
+            + " (running "
+            + std::string(noctalia::build_info::version())
+            + ")";
+        const std::string required = manifest->minNoctalia;
+        cleanupTmp();
+        return materializeFailure(std::move(error), -1, false, true, required);
+      }
+
+      const auto finalDir = materializedRoot / *subdir;
+      std::string replaceError;
+      if (!replaceDirectory(stagedDir, finalDir, materializedRoot, &replaceError)) {
+        cleanupTmp();
+        return materializeFailure(replaceError);
+      }
+      cleanupTmp();
+      MaterializeResult result;
+      result.ok = true;
+      result.pluginDir = finalDir;
+      result.manifest = std::move(*manifest);
+      return result;
+    }
+
+    std::vector<CatalogEntry> readGitCatalog(const std::filesystem::path& repoRoot, std::string_view rev = "HEAD") {
+      const auto shown = plugin_git::showFile(repoRoot, "catalog.toml", rev);
+      if (!shown) {
+        return {};
+      }
+      return parseCatalogToml(shown.out);
+    }
+
+    const CatalogEntry* findCatalogEntry(const std::vector<CatalogEntry>& entries, std::string_view id) {
+      for (const auto& entry : entries) {
+        if (entry.id == id) {
+          return &entry;
+        }
+      }
+      return nullptr;
+    }
+
+    bool materializedPluginMatchesCatalog(
+        const PluginSourceConfig& source, std::string_view pluginId, const CatalogEntry& entry
+    ) {
+      std::string error;
+      const auto manifest = parsePluginManifest(materializedPluginDir(source, pluginId) / "plugin.toml", &error);
+      if (!manifest.has_value() || manifest->id != pluginId) {
+        return false;
+      }
+      return manifest->version == entry.version && manifest->minNoctalia == entry.minNoctalia;
     }
   } // namespace
 
@@ -40,14 +245,22 @@ namespace scripting {
     // Scan the local dev dir + every configured source; a plugin is active only if
     // its id is in [plugins].enabled (opt-in, uniform across all sources).
     std::vector<std::filesystem::path> roots;
-    if (const std::string data = FileUtils::dataDir(); !data.empty()) {
-      roots.push_back(std::filesystem::path(data) / "plugins");
+    std::unordered_set<std::string> enabled;
+    if (auto localRoot = plugin_paths::localSourceRoot(); !localRoot.empty()) {
+      roots.push_back(std::move(localRoot));
     }
     for (const auto& source : plugins.sources) {
-      roots.push_back(sourceRootFor(source));
+      if (auto root = sourceRootFor(source); !root.empty()) {
+        roots.push_back(std::move(root));
+      }
+    }
+    for (const auto& id : plugins.enabled) {
+      if (isValidPluginId(id)) {
+        enabled.insert(id);
+      }
     }
     registry.setSources(std::move(roots));
-    registry.setEnabledFilter(std::unordered_set<std::string>(plugins.enabled.begin(), plugins.enabled.end()));
+    registry.setEnabledFilter(std::move(enabled));
     registry.scan();
   }
 
@@ -98,27 +311,67 @@ namespace scripting {
       if (source.kind != PluginSourceKind::Git) {
         continue;
       }
-      const std::filesystem::path root = sourceRoot(source);
-      if (!std::filesystem::exists(root / ".git", ec)) {
-        // Source clone is gone (e.g. the state dir was wiped). Re-clone it (metadata
-        // only); the per-plugin materialize below checks out what's enabled.
-        std::filesystem::create_directories(root.parent_path(), ec);
+      const std::filesystem::path repoRoot = plugin_paths::gitRepoRoot(source);
+      if (repoRoot.empty()) {
+        continue;
+      }
+      auto sourceLock = plugin_source_locks::acquire(source.name);
+      if (!std::filesystem::exists(repoRoot / ".git", ec)) {
+        // Source repo is gone (e.g. the state dir was wiped). Re-clone it (metadata
+        // only); the per-plugin export below writes what's enabled.
+        std::filesystem::create_directories(repoRoot.parent_path(), ec);
         kLog.info("re-cloning missing plugin source '{}'", source.name);
-        if (!plugin_git::cloneBlobless(source.location, root)) {
+        const auto cloned = plugin_git::cloneBlobless(source.location, repoRoot);
+        if (!cloned) {
+          if (cloned.timedOut) {
+            kLog.warn("plugin source '{}': clone timed out", source.name);
+          } else {
+            kLog.warn("plugin source '{}': clone failed with exit code {}", source.name, cloned.exitCode);
+          }
           continue; // offline / unreachable — leave it; list/enable will retry
         }
       }
+      const auto catalog = readGitCatalog(repoRoot);
       for (const auto& id : plugins.enabled) {
-        const std::string sub = pluginSubdir(id);
-        if (std::filesystem::exists(root / sub / "plugin.toml", ec)) {
-          continue; // already materialized
+        const auto sub = pluginSubdirFromId(id);
+        if (!sub.has_value()) {
+          kLog.warn("skipping enabled plugin with invalid id '{}'", id);
+          continue;
         }
-        if (!plugin_git::hasPath(root, sub + "/plugin.toml")) {
+        const auto* catalogEntry = findCatalogEntry(catalog, id);
+        const bool hasMaterialized = std::filesystem::exists(materializedPluginDir(source, id) / "plugin.toml", ec);
+        if (catalogEntry != nullptr && !catalogEntry->compatible) {
+          if (!hasMaterialized) {
+            kLog.warn(
+                "plugin source '{}': cannot export enabled plugin '{}'; it requires noctalia >= {} (running {})",
+                source.name, id, catalogEntry->minNoctalia, noctalia::build_info::version()
+            );
+          }
+          continue;
+        }
+        if (hasMaterialized
+            && (catalogEntry == nullptr || materializedPluginMatchesCatalog(source, id, *catalogEntry))) {
+          continue; // already materialized at this source revision
+        }
+        if (!plugin_git::hasPath(repoRoot, *sub + "/plugin.toml")) {
           continue; // this source doesn't ship it
         }
-        kLog.info("materializing enabled plugin '{}' from source '{}'", id, source.name);
-        if (plugin_git::materialize(root, "HEAD", sub)) {
+        kLog.info("exporting enabled plugin '{}' from source '{}'", id, source.name);
+        const auto materializedPlugin = materializeGitPlugin(source, repoRoot, "HEAD", id, true);
+        if (materializedPlugin) {
           materialized = true;
+        } else if (materializedPlugin.incompatible) {
+          kLog.warn(
+              "plugin source '{}': cannot export enabled plugin '{}'; it requires noctalia >= {} (running {})",
+              source.name, id, materializedPlugin.requiredNoctalia, noctalia::build_info::version()
+          );
+        } else if (materializedPlugin.timedOut) {
+          kLog.warn("plugin source '{}': exporting '{}' timed out", source.name, id);
+        } else {
+          kLog.warn(
+              "plugin source '{}': exporting '{}' failed with exit code {}", source.name, id,
+              materializedPlugin.exitCode
+          );
         }
       }
     }
@@ -130,8 +383,8 @@ namespace scripting {
     if (m_applied && pc == m_lastApplied) {
       return;
     }
-    // Heal a wiped clone / restored config once at startup (the clone state does
-    // not change on later config reloads, so don't re-touch the network then).
+    // Heal wiped source storage / restored config once at startup. Source storage
+    // does not change on later config reloads, so don't re-touch the network then.
     if (!m_applied) {
       ensureEnabledMaterialized(pc);
     }
@@ -144,21 +397,37 @@ namespace scripting {
 
   EnableResult PluginManager::enable(std::string_view pluginId) {
     const std::string id(pluginId);
+    if (!isValidPluginId(id)) {
+      return {.ok = false, .error = "invalid plugin id '" + id + "' (expected author/plugin)"};
+    }
 
-    // Managed source: fetch the code (git sparse-checkout) before enabling.
+    // Managed source: export the plugin directory before enabling.
     if (const auto source = findSourceOffering(id); source.has_value()) {
       const std::filesystem::path root = sourceRoot(*source);
-      const std::string subdir = pluginSubdir(id);
+      const auto subdir = pluginSubdirFromId(id);
+      if (!subdir.has_value()) {
+        return {.ok = false, .error = "invalid plugin id '" + id + "' (expected author/plugin)"};
+      }
+      std::filesystem::path manifestDir = root / *subdir;
+      std::optional<PluginManifest> materializedManifest;
       if (source->kind == PluginSourceKind::Git) {
-        const auto materialized = plugin_git::materialize(root, "HEAD", subdir);
+        auto sourceLock = plugin_source_locks::acquire(source->name);
+        const std::filesystem::path repoRoot = plugin_paths::gitRepoRoot(*source);
+        const auto materialized = materializeGitPlugin(*source, repoRoot, "HEAD", id);
         if (!materialized) {
-          return {.ok = false, .error = "materialize failed: " + materialized.err};
+          return {.ok = false, .error = "export failed: " + materialized.error};
         }
+        manifestDir = materialized.pluginDir;
+        materializedManifest = materialized.manifest;
       }
       std::string error;
-      const auto manifest = parsePluginManifest(root / subdir / "plugin.toml", &error);
+      const auto manifest = materializedManifest.has_value() ? std::move(materializedManifest)
+                                                             : parsePluginManifest(manifestDir / "plugin.toml", &error);
       if (!manifest.has_value()) {
         return {.ok = false, .error = error};
+      }
+      if (manifest->id != id) {
+        return {.ok = false, .error = "manifest id '" + manifest->id + "' does not match requested id"};
       }
       if (!noctalia::version::atLeast(noctalia::build_info::version(), manifest->minNoctalia)) {
         return {
@@ -189,9 +458,10 @@ namespace scripting {
     refresh();
   }
 
-  std::vector<PluginStatus> PluginManager::list() const {
-    const auto& pc = m_config.config().plugins;
-    const std::unordered_set<std::string> enabledSet(pc.enabled.begin(), pc.enabled.end());
+  std::vector<PluginStatus> PluginManager::list() const { return list(m_config.config().plugins); }
+
+  std::vector<PluginStatus> PluginManager::list(const PluginsConfig& plugins) const {
+    const std::unordered_set<std::string> enabledSet(plugins.enabled.begin(), plugins.enabled.end());
 
     std::vector<PluginStatus> out;
     const auto collect = [&](const std::string& sourceName, const CatalogResult& catalog) {
@@ -199,9 +469,14 @@ namespace scripting {
         out.push_back(
             PluginStatus{
                 .id = entry.id,
+                .name = entry.name,
                 .version = entry.version,
+                .icon = entry.icon,
+                .description = entry.description,
+                .license = entry.license,
                 .source = sourceName,
                 .compatible = entry.compatible,
+                .deprecated = entry.deprecated,
                 .enabled = enabledSet.contains(entry.id),
             }
         );
@@ -216,14 +491,24 @@ namespace scripting {
       };
       collect("local", discoverCatalog(localSource));
     }
-    for (const auto& source : pc.sources) {
+    for (const auto& source : plugins.sources) {
       collect(source.name, discoverCatalog(source));
     }
     return out;
   }
 
   void PluginManager::addSource(const PluginSourceConfig& source) {
+    if (!isValidPluginSourceName(source.name)) {
+      kLog.warn("refusing plugin source with invalid name '{}'", source.name);
+      return;
+    }
     kLog.info("adding plugin source '{}' ({})", source.name, source.location);
+    if (const auto previous = findSource(source.name);
+        previous.has_value() && sourceReplacementInvalidatesGitStorage(*previous, source)) {
+      auto sourceLock = plugin_source_locks::acquire(source.name);
+      kLog.info("plugin source '{}' changed; deleting app-managed git storage", source.name);
+      removeManagedGitSourceStorage(source);
+    }
     m_config.addPluginSource(source); // fires reload -> refresh re-injects the registry
   }
 
@@ -232,98 +517,146 @@ namespace scripting {
     if (!source.has_value() || source->kind != PluginSourceKind::Git) {
       return; // path / unknown sources are externally owned
     }
-    const std::filesystem::path root = sourceRoot(*source);
+    const std::filesystem::path repoRoot = plugin_paths::gitRepoRoot(*source);
+    if (repoRoot.empty()) {
+      return;
+    }
     std::error_code ec;
-    if (!std::filesystem::exists(root / ".git", ec)) {
+    if (!std::filesystem::exists(repoRoot / ".git", ec)) {
       return; // nothing cloned yet
     }
     // Snapshot the enabled set for the worker (config is read on the main thread only).
-    std::unordered_set<std::string> enabled(
-        m_config.config().plugins.enabled.begin(), m_config.config().plugins.enabled.end()
-    );
+    std::unordered_set<std::string> enabled;
+    for (const auto& id : m_config.config().plugins.enabled) {
+      if (isValidPluginId(id)) {
+        enabled.insert(id);
+      }
+    }
 
     // The whole git sequence runs off-thread; only the final registry rescan marshals
     // back to the main thread. `this` is an Application member, so it outlives the worker.
-    std::thread([this, root, sourceName = std::move(sourceName), enabled = std::move(enabled)]() mutable {
-      const auto fetched = plugin_git::fetch(root);
+    std::thread([this, source = *source, repoRoot, sourceName = std::move(sourceName),
+                 enabled = std::move(enabled)]() mutable {
+      auto sourceLock = plugin_source_locks::acquire(source.name);
+      const auto fetched = plugin_git::fetch(repoRoot);
       if (!fetched) {
         DeferredCall::callLater([sourceName, err = fetched.err]() {
           kLog.warn("update '{}': fetch failed: {}", sourceName, err);
         });
         return;
       }
-      const std::string newRev = plugin_git::remoteHead(root).out;
-      const std::string curRev = plugin_git::headRevision(root).out;
-      if (newRev.empty() || newRev == curRev) {
-        DeferredCall::callLater([sourceName]() { kLog.info("source '{}' already up to date", sourceName); });
+      const std::string newRev = plugin_git::remoteHead(repoRoot).out;
+      const std::string curRev = plugin_git::headRevision(repoRoot).out;
+      if (newRev.empty()) {
+        DeferredCall::callLater([sourceName]() { kLog.warn("update '{}': fetched revision is empty", sourceName); });
         return;
       }
+      const bool sourceRevisionChanged = newRev != curRev;
 
-      // Compatibility guard BEFORE applying: read the *new* catalog at the fetched
-      // revision (no working-tree change) and check every enabled plugin's
-      // min_noctalia. If one would require a newer Noctalia, skip the update — nothing
-      // is applied, so there is nothing to undo.
-      if (const auto catalog = plugin_git::showFile(root, "catalog.toml", newRev); catalog) {
-        for (const auto& entry : parseCatalogToml(catalog.out)) {
-          if (enabled.contains(entry.id)
-              && !entry.minNoctalia.empty()
-              && !noctalia::version::atLeast(noctalia::build_info::version(), entry.minNoctalia)) {
-            DeferredCall::callLater([sourceName, id = entry.id, min = entry.minNoctalia]() {
-              kLog.warn(
-                  "update '{}' withheld: '{}' requires noctalia >= {} (running {})", sourceName, id, min,
-                  noctalia::build_info::version()
-              );
-            });
-            return;
-          }
+      const auto catalog = readGitCatalog(repoRoot, newRev);
+      std::unordered_set<std::string> withheldIds;
+      std::vector<std::pair<std::string, std::string>> withheldUpdates;
+      const auto rememberWithheld = [&](std::string id, std::string minNoctalia) {
+        if (withheldIds.insert(id).second) {
+          withheldUpdates.emplace_back(std::move(id), std::move(minNoctalia));
         }
-      }
+      };
 
-      // Apply: re-derive every enabled plugin this source ships at the new revision
-      // (checkout -- path; clobbers, no merge — a tampered working tree can't block it),
-      // then advance HEAD so catalog/hasPath reads follow. A failed materialize leaves
-      // HEAD where it is; the partial state is re-derivable on the next run.
+      bool materialized = false;
       for (const auto& id : enabled) {
-        const std::string sub = pluginSubdir(id);
-        if (!plugin_git::hasPath(root, sub + "/plugin.toml", newRev)) {
+        const auto sub = pluginSubdirFromId(id);
+        if (!sub.has_value()) {
+          continue;
+        }
+        const auto* catalogEntry = findCatalogEntry(catalog, id);
+        if (catalogEntry != nullptr && !catalogEntry->compatible) {
+          rememberWithheld(id, catalogEntry->minNoctalia);
+          continue;
+        }
+        if (!plugin_git::hasPath(repoRoot, *sub + "/plugin.toml", newRev)) {
           continue; // not shipped by this source
         }
-        if (const auto m = plugin_git::materialize(root, newRev, sub); !m) {
-          DeferredCall::callLater([sourceName, id, err = m.err]() {
-            kLog.warn("update '{}': materialize '{}' failed: {}", sourceName, id, err);
+        if (!sourceRevisionChanged) {
+          std::error_code materializedEc;
+          const bool hasMaterialized =
+              std::filesystem::exists(materializedPluginDir(source, id) / "plugin.toml", materializedEc);
+          if (catalogEntry == nullptr && hasMaterialized) {
+            continue;
+          }
+          if (catalogEntry != nullptr && materializedPluginMatchesCatalog(source, id, *catalogEntry)) {
+            continue; // source already points here and the exported copy matches it
+          }
+        }
+        if (const auto m = materializeGitPlugin(source, repoRoot, newRev, id, true); !m) {
+          if (m.incompatible) {
+            rememberWithheld(id, m.requiredNoctalia);
+            continue;
+          }
+          DeferredCall::callLater([sourceName, id, err = m.error]() {
+            kLog.warn("update '{}': export '{}' failed: {}", sourceName, id, err);
           });
           return;
         }
+        materialized = true;
       }
-      const auto applied = plugin_git::setHead(root, newRev);
-      DeferredCall::callLater([this, sourceName, ok = static_cast<bool>(applied), err = applied.err, newRev]() {
+      bool applied = true;
+      std::string applyError;
+      if (sourceRevisionChanged) {
+        const auto result = plugin_git::setHead(repoRoot, newRev);
+        applied = static_cast<bool>(result);
+        applyError = result.err;
+      }
+      DeferredCall::callLater([this, sourceName, ok = applied, err = std::move(applyError), newRev,
+                               sourceRevisionChanged, materialized,
+                               withheldUpdates = std::move(withheldUpdates)]() mutable {
         if (!ok) {
           kLog.warn("update '{}': set HEAD failed: {}", sourceName, err);
           return;
         }
-        kLog.info("updated source '{}' -> {}", sourceName, newRev);
-        PluginRegistry::instance().scan(); // re-parse manifests; live .luau changes hot-reload via file watch
-        if (m_onChanged) {
-          m_onChanged(); // rebuild bar + reconcile services for the new revision
+        for (const auto& [id, min] : withheldUpdates) {
+          kLog.warn(
+              "update '{}': kept previous '{}' export; new version requires noctalia >= {} (running {})", sourceName,
+              id, min, noctalia::build_info::version()
+          );
+        }
+        if (sourceRevisionChanged) {
+          kLog.info("updated source '{}' -> {}", sourceName, newRev);
+        } else if (materialized) {
+          kLog.info("reconciled source '{}' at {}", sourceName, newRev);
+        } else {
+          kLog.info("source '{}' already up to date", sourceName);
+        }
+        if (sourceRevisionChanged || materialized) {
+          PluginRegistry::instance().scan(); // re-parse manifests; live .luau changes hot-reload via file watch
+          if (m_onChanged) {
+            m_onChanged(); // rebuild bar + reconcile services for the new revision
+          }
         }
       });
     }).detach();
   }
 
   void PluginManager::removeSource(std::string sourceName) {
+    if (isDefaultPluginSourceName(sourceName)) {
+      kLog.warn("refusing to remove built-in plugin source '{}'", sourceName);
+      return;
+    }
     const auto source = findSource(sourceName);
     if (!source.has_value()) {
       return;
     }
     kLog.info("removing plugin source '{}'", sourceName);
+    std::optional<plugin_source_locks::SourceLock> sourceLock;
+    if (source->kind == PluginSourceKind::Git) {
+      sourceLock.emplace(plugin_source_locks::acquire(source->name));
+    }
 
     // Disable this source's plugins so no stale enabled ids linger.
     for (const auto& entry : discoverCatalog(*source).entries) {
       m_config.setPluginEnabled(entry.id, false);
     }
     if (source->kind == PluginSourceKind::Git) {
-      std::error_code ec;
-      std::filesystem::remove_all(sourceRoot(*source), ec); // delete the clone
+      removeManagedGitSourceStorage(*source);
     }
     m_config.removePluginSource(sourceName); // fires reload -> refresh re-injects
   }

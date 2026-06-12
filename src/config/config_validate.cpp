@@ -420,9 +420,6 @@ namespace noctalia::config {
           diag.warn(base, "unrecognized lockscreen widget type \"" + type + "\"");
           continue;
         }
-        if (type == lockscreen_login_box::kWidgetType) {
-          continue;
-        }
         const auto* settingsTbl = (*tbl)["settings"].as_table();
         if (settingsTbl == nullptr) {
           continue;

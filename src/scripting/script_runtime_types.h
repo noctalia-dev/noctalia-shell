@@ -13,47 +13,47 @@
 
 namespace scripting {
 
-  struct ScriptWidgetColorPatch {
+  struct ScriptColorPatch {
     std::string role;
     std::string mode;
 
-    bool operator==(const ScriptWidgetColorPatch&) const = default;
+    bool operator==(const ScriptColorPatch&) const = default;
   };
 
-  struct ScriptWidgetImagePatch {
+  struct ScriptImagePatch {
     std::string path;
     bool watch = false;
     float width = 0.0f;
     float height = 0.0f;
 
-    bool operator==(const ScriptWidgetImagePatch&) const = default;
+    bool operator==(const ScriptImagePatch&) const = default;
   };
 
-  struct ScriptWidgetTooltipRowPatch {
+  struct ScriptTooltipRowPatch {
     std::string key;
     std::string value;
 
-    bool operator==(const ScriptWidgetTooltipRowPatch&) const = default;
+    bool operator==(const ScriptTooltipRowPatch&) const = default;
   };
 
-  struct ScriptWidgetTooltipPatch {
+  struct ScriptTooltipPatch {
     bool clear = false;
     std::string text;
-    std::vector<ScriptWidgetTooltipRowPatch> rows;
+    std::vector<ScriptTooltipRowPatch> rows;
 
     [[nodiscard]] bool hasRows() const noexcept { return !rows.empty(); }
 
-    bool operator==(const ScriptWidgetTooltipPatch&) const = default;
+    bool operator==(const ScriptTooltipPatch&) const = default;
   };
 
-  struct ScriptWidgetPatch {
+  struct ScriptPatch {
     std::optional<std::string> text;
     std::optional<std::string> glyph;
-    std::optional<ScriptWidgetImagePatch> image;
-    std::optional<ScriptWidgetTooltipPatch> tooltip;
+    std::optional<ScriptImagePatch> image;
+    std::optional<ScriptTooltipPatch> tooltip;
     std::optional<std::string> fontFamily;
-    std::optional<ScriptWidgetColorPatch> textColor;
-    std::optional<ScriptWidgetColorPatch> glyphColor;
+    std::optional<ScriptColorPatch> textColor;
+    std::optional<ScriptColorPatch> glyphColor;
     std::optional<bool> visible;
     std::optional<int> updateIntervalMs;
 
@@ -82,27 +82,27 @@ namespace scripting {
     }
   };
 
-  enum class ScriptWidgetSideEffectKind : std::uint8_t {
+  enum class ScriptSideEffectKind : std::uint8_t {
     Log,
     NotifyInfo,
     NotifyError,
     CopyToClipboard,
   };
 
-  struct ScriptWidgetSideEffect {
-    ScriptWidgetSideEffectKind kind = ScriptWidgetSideEffectKind::Log;
+  struct ScriptSideEffect {
+    ScriptSideEffectKind kind = ScriptSideEffectKind::Log;
     std::string title;
     std::string body;
   };
 
-  struct ScriptWidgetSnapshot {
+  struct ScriptSnapshot {
     bool isVertical = false;
     std::string outputName;
     std::string barName;
     std::string focusedOutputName;
   };
 
-  enum class ScriptWidgetEventKind : std::uint8_t {
+  enum class ScriptEventKind : std::uint8_t {
     Load,
     Reload,
     Update,
@@ -117,8 +117,8 @@ namespace scripting {
     Stop,
   };
 
-  struct ScriptWidgetEvent {
-    ScriptWidgetEventKind kind = ScriptWidgetEventKind::Update;
+  struct ScriptEvent {
+    ScriptEventKind kind = ScriptEventKind::Update;
     std::uint64_t generation = 0;
     std::uint64_t hostId = 0;
     std::string functionName;
@@ -142,14 +142,14 @@ namespace scripting {
     std::string httpBody;
     // StateWatchResult payload (the changed value as JSON).
     std::string stateJson;
-    ScriptWidgetSnapshot snapshot;
+    ScriptSnapshot snapshot;
     std::chrono::milliseconds budget{12};
   };
 
-  struct ScriptWidgetResult {
+  struct ScriptResult {
     std::uint64_t generation = 0;
-    ScriptWidgetPatch patch;
-    std::vector<ScriptWidgetSideEffect> sideEffects;
+    ScriptPatch patch;
+    std::vector<ScriptSideEffect> sideEffects;
     bool ok = true;
     bool timedOut = false;
     bool hasOnIpc = false;
@@ -159,7 +159,7 @@ namespace scripting {
     std::string error;
   };
 
-  using ScriptWidgetSettings = std::unordered_map<std::string, WidgetSettingValue>;
-  using ScriptWidgetResultCallback = std::function<void(ScriptWidgetResult)>;
+  using ScriptSettings = std::unordered_map<std::string, WidgetSettingValue>;
+  using ScriptResultCallback = std::function<void(ScriptResult)>;
 
 } // namespace scripting

@@ -1,8 +1,9 @@
 {
   "auth": {
     "pam": {
-      "authentication-failed": "Праверка сапраўднасці не ўдалася",
-      "start-failed": "Не ўдалося запусціць PAM"
+      "authentication-failed": "Аўтарызацыя не ўдалася",
+      "start-failed": "Не ўдалося запусціць PAM",
+      "user-unavailable": "Не ўдалося вызначыць бягучага карыстальніка"
     },
     "polkit": {
       "authenticate": "Аўтарызавацца",
@@ -44,12 +45,342 @@
         "error": "Памылка надвор'я",
         "loading": "Надвор'е...",
         "no-location": "Няма месцазнаходжання",
-        "off": "Надвор'е выключана",
-        "vertical-default": "НАД",
-        "vertical-error": "ПАМ",
-        "vertical-loading": "...",
-        "vertical-no-location": "НЯМАМЗ",
-        "vertical-off": "ВЫКЛ"
+        "off": "Надвор'е выключана"
+      }
+    }
+  },
+  "clipboard": {
+    "actions": {
+      "clear-all": "Ачысціць усё",
+      "delete-item": "Выдаліць элемент",
+      "keep-pinned": "Пакінуць замацаваным"
+    },
+    "confirm": {
+      "clear-desc": "Выберыце, ці захаваць замацаваныя запісы",
+      "clear-desc-all-pinned": "Усе запісы замацаваныя. Націсніце «Ачысціць усё», каб іх выдаліць.",
+      "clear-desc-no-pinned": "Гэта выдаліць усе запісы з буфера абмену.",
+      "clear-title": "Ачысціць буфер абмену?",
+      "delete-desc": "Гэта выдаліць выбраны элемент з буфера абмену.",
+      "delete-title": "Выдаліць элемент з буферу?"
+    },
+    "empty": {
+      "history-message": "У буферы абмену няма запісаў.",
+      "history-title": "Буфер абмену пусты",
+      "no-matches-message": "Няма запісаў, якія адпавядаюць бягучым фільтрам.",
+      "no-matches-title": "Няма адпаведных запісаў"
+    },
+    "entry": {
+      "image": "Відарыс",
+      "title": "Запіс у буферы абмену"
+    },
+    "filter-placeholder": "Фільтраваць буфер абмену...",
+    "preview": {
+      "empty-text-payload": "(пусты тэкст)",
+      "image-title": "Відарыс у буферы абмену",
+      "loading": "Загрузка перадпрагляду...",
+      "text-title": "Тэкст у буферы абмену",
+      "truncated": "... няпоўны"
+    },
+    "title": "Буфер абмену"
+  },
+  "common": {
+    "actions": {
+      "apply": "Прымяніць",
+      "cancel": "Скасаваць"
+    },
+    "states": {
+      "auto": "Аўтаматычна",
+      "custom": "Уласны",
+      "inherit": "Узяць з налад",
+      "off": "Выкл"
+    }
+  },
+  "control-center": {
+    "audio": {
+      "application-volumes": "Гучнасць праграм",
+      "input-volume": "Гучнасць уводу",
+      "no-application-audio": "Аўдыя не прайграваецца",
+      "no-application-audio-body": "Зараз няма праграм, якія прайграваюць аўдыя.",
+      "no-input-devices": "Няма прылад уводу",
+      "no-input-devices-body": "Зараз няма даступных крыніц запісу.",
+      "no-input-selected": "Прылады ўводу не выбрана",
+      "no-output-devices": "Няма прылад вываду",
+      "no-output-devices-body": "Зараз няма даступных крыніц прайгравання.",
+      "no-output-selected": "Прылады вываду не выбрана",
+      "output-volume": "Гучнасць вываду",
+      "unavailable-body": "PipeWire неактыўны.",
+      "unavailable-title": "Аўдыя недаступна"
+    },
+    "bluetooth": {
+      "accept": "Прыняць",
+      "auto-reconnect": "Перападлучацца аўтаматычна",
+      "bluetooth": "Bluetooth",
+      "enter-code": "Увядзіце код",
+      "no-devices": "Прылад не знойдзена. Пачніце сканіраванне, каб выявіць прылады Bluetooth паблізу",
+      "off": "Bluetooth выключаны",
+      "pair-title": "Спалучыць {device}",
+      "pairing-detail": {
+        "authorize": "Прыняць уваходны запыт спалучэння?",
+        "authorize-service": "Даць доступ да сэрвісу {uuid}?",
+        "confirm": "Пацвярдзіце, што гэты код супадае з кодам на прыладзе:",
+        "display-passkey": "Увядзіце гэты код на прыладзе:",
+        "display-pin": "Увядзіце гэты PIN-код на прыладзе:",
+        "passkey": "Увядзіце ключ доступу, паказаны на прыладзе:",
+        "pin-code": "Увядзіце PIN-код, паказаны на прыладзе:"
+      },
+      "reject": "Адхіліць",
+      "rfkill-blocked": "Bluetooth заблакіраваны сістэмай. Уключыце яго, каб зняць блакіроўку.",
+      "sections": {
+        "available": "Даступна",
+        "connected": "Падлучана",
+        "paired": "Спалучана"
+      },
+      "unavailable": "Сэрвіс Bluetooth недаступны",
+      "unknown-device": "Невядомая прылада",
+      "visible": "Бачны прыладам паблізу"
+    },
+    "calendar": {
+      "all-day": "Увесь дзень",
+      "events": "Падзеі",
+      "no-events": "Падзей няма."
+    },
+    "display": {
+      "disabled": "Адключана",
+      "no-displays": "Няма даступных манітораў",
+      "unknown-resolution": "Невядомая раздзяляльнасць"
+    },
+    "home": {
+      "media": {
+        "idle": "Не прайграваецца",
+        "no-active-player": "Няма актыўнага прайгравальніка",
+        "nothing-playing": "Нічога не грае",
+        "paused": "На паўзе",
+        "playback-unavailable": "Прайграванне недаступна",
+        "playing": "Прайграваецца",
+        "unavailable": "Недаступна",
+        "unknown-artist": "Невядомы выканаўца",
+        "unknown-track": "Невядомы трэк"
+      },
+      "select-avatar": "Выбраць аватар",
+      "unknown": "невядома",
+      "uptime": "Час працы - {uptime}",
+      "weather": {
+        "configure-location": "Дадайце [weather].address або ўключыце auto_locate.",
+        "data-unavailable": "Дадзеныя аб надвор'і недаступныя.",
+        "disabled": "Надвор'е выключана ў файле канфігурацыі.",
+        "fetching": "Загрузка прагнозу..."
+      }
+    },
+    "media": {
+      "active-player": "Актыўны прайгравальнік",
+      "nothing-playing": "Нічога не грае",
+      "now-playing": "Зараз грае",
+      "start-playback": "Пачніце прайграванне ў праграме MPRIS"
+    },
+    "network": {
+      "connect": "Злучыцца",
+      "current-connection": "Бягучае злучэнне",
+      "no-networks": "У дыяпазоне няма сетак",
+      "not-connected": "Не падключана",
+      "password": "Пароль",
+      "password-prompt": "Увядзіце пароль",
+      "password-prompt-for": "Увядзіце пароль для {ssid}",
+      "unavailable-detail": "Усталюйце і ўключыце NetworkManager, каб кіраваць сеткамі тут.",
+      "unavailable-title": "NetworkManager недаступны",
+      "vpns": "VPN",
+      "wi-fi": "Wi-Fi",
+      "wifi": "Wi-Fi",
+      "wifi-off": "Wi-Fi выключаны",
+      "wifi-on": "Wi-Fi уключаны",
+      "wired-connection": "Правадное злучэнне"
+    },
+    "notifications": {
+      "empty-body": "Тут з'явяцца нядаўнія апавяшчэнні.",
+      "empty-title": "Апавяшчэнняў няма",
+      "filter": {
+        "all": "Усе",
+        "older": "Старэй",
+        "today": "Сёння",
+        "yesterday": "Учора"
+      },
+      "filter-empty-body": "Няма апавяшчэнняў, якія адпавядаюць гэтаму фільтру.",
+      "filter-empty-title": "Тут нічога",
+      "untitled": "Апавяшчэнне без назвы"
+    },
+    "screen-time": {
+      "disabled": "Адсочванне экраннага часу выключана. Уключыце яго ў наладах, каб запісваць выкарыстанне кожнай праграмы.",
+      "empty": "Пакуль што няма запісаў выкарыстання праграм. Сфакусіруйцеся на акне, каб пачаць адсочванне.",
+      "hour-0": "0:00",
+      "hour-12": "12:00",
+      "hour-18": "18:00",
+      "hour-6": "6:00",
+      "most-used": "НАЙБОЛЬШ ВЫКАРЫСТАНЫЯ",
+      "range": {
+        "14-days": "14 дзён",
+        "3-days": "3 дні",
+        "today": "Сёння"
+      }
+    },
+    "shortcuts": {
+      "audio": "Аўдыя",
+      "bluetooth": "Bluetooth",
+      "caffeine": "Caffeine",
+      "clipboard": "Буфер абмену",
+      "dark-mode": {
+        "auto": "Аўтаматычны",
+        "dark": "Цёмны рэжым",
+        "light": "Светлы рэжым"
+      },
+      "keyboard-layout": "Макет",
+      "media": "Медыя",
+      "mic-mute": "Мікрафон",
+      "nightlight": "Начное святло",
+      "nightlight-states": {
+        "forced": "Заўсёды ўключана",
+        "off": "Начное святло",
+        "scheduled-day": "Па раскладу",
+        "scheduled-night": "Уключаны"
+      },
+      "power-profile": "Сілкаванне",
+      "screen-recorder": "Запіс экрану",
+      "screen-time": "Экранны час",
+      "session": "Сеанс",
+      "system": "Сістэма",
+      "wallpaper": "Шпалеры",
+      "weather": "Надвор'е",
+      "wifi": "Wi-Fi"
+    },
+    "system": {
+      "titles": {
+        "cpu": "Цэнтральны працэсар",
+        "gpu": "Графічны працэсар",
+        "memory": "Памяць",
+        "network": "Сетка",
+        "resources": "Рэсурсы",
+        "system": "Сістэма"
+      },
+      "unknown": "невядома",
+      "uptime-prefix": "Працуе {uptime} · {osAge}"
+    },
+    "tabs": {
+      "audio": "Аўдыя",
+      "bluetooth": "Bluetooth",
+      "calendar": "Каляндар",
+      "display": "Манітор",
+      "home": "Галоўная",
+      "media": "Медыя",
+      "network": "Сетка",
+      "notifications": "Апавяшчэнні",
+      "screen-time": "Экранны час",
+      "system": "Сістэма",
+      "weather": "Надвор'е"
+    },
+    "weather": {
+      "configure-location": "Задайце [weather].address або ўключыце auto_locate.",
+      "data-unavailable": "Дадзеныя аб надвор'і недаступныя",
+      "details": {
+        "elevation": "Уздым",
+        "sunrise": "Узыход сонца",
+        "sunset": "Захад сонца",
+        "temp-max": "Максімальная тэмпература",
+        "temp-min": "Мінімальная тэмпература",
+        "timezone": "Часавы пояс",
+        "wind": "Вецер"
+      },
+      "disabled": "Уключыце [weather] у config.toml",
+      "fetching": "Загрузка прагнозу...",
+      "forecast-placeholder": {
+        "day": "Нядзеля",
+        "description": "Надвор'е",
+        "temperature": "10 / 4C"
+      },
+      "location-unavailable": "Месцазнаходжанне недаступна",
+      "refreshing": "Абнаўленне надвор'я...",
+      "waiting": "Чаканне дадзеных аб надвор'і"
+    }
+  },
+  "desktop-widgets": {
+    "editor": {
+      "actions": {
+        "add": "Дадаць",
+        "done": "Гатова",
+        "hide": "Схаваць",
+        "settings": "Налады",
+        "show": "Паказаць",
+        "stack-back": "Стосам ззаду",
+        "stack-front": "Стосам спераду",
+        "trash": "Выдаліць"
+      },
+      "dialogs": {
+        "select-sticker-image": "Выберыце відарыс для стыкеру"
+      },
+      "settings": {
+        "aspect-ratio": "Суадносіны бакоў",
+        "background": "Фон",
+        "background-color": "Колер",
+        "background-opacity": "Непразрыстасць",
+        "background-padding": "Водступ",
+        "background-radius": "Радыус",
+        "background-section": "Фон",
+        "bands": "Паласа",
+        "bar-width": "Шырыня панэлі",
+        "bloom-intensity": "Блум",
+        "centered": "Па цэнтру",
+        "change-image": "Змяніць...",
+        "circle": "Круг",
+        "clock-style": "Стыль гадзінніку",
+        "clock-style-analog": "Аналагавы",
+        "clock-style-digital": "Лічбавы",
+        "color": "Колер",
+        "color2": "Колер 2",
+        "custom-color": "Уласны...",
+        "description": "Апісанне",
+        "fade-when-idle": "Затухаць пры неактыўнасці",
+        "font-family": "Шрыфт",
+        "font-family-default": "Як у сістэме",
+        "format": "Фармат",
+        "hide-when-no-media": "Хаваць, калі няма медыя",
+        "horizontal": "Гарызантальна",
+        "image-path": "Відарыс",
+        "inner-diameter": "Унутраны дыяметр",
+        "input-opacity": "Непразрыстасць поля уводу",
+        "input-radius": "Радыус поля ўводу",
+        "layout": "Макет",
+        "mirrored": "Адлюстраванне",
+        "opacity": "Непразрыстасць",
+        "primary-color": "Асноўны колер",
+        "reset-defaults": "Скінуць да прадвызначэнняў",
+        "ring-opacity": "Бачнасць кола",
+        "rotation-speed": "Хуткасць павароту",
+        "secondary-color": "Другасны колер",
+        "sensitivity": "Адчувальнасць",
+        "shadow": "Цень",
+        "show-label": "Паказваць подпіс",
+        "show-login-button": "Кнопка ўваходу",
+        "show-when-idle": "Паказваць пры неактыўнасці",
+        "stat": "Статыстыка",
+        "stat-cpu-temp": "Тэмпература ЦП",
+        "stat-cpu-usage": "Выкарыстанне ЦП",
+        "stat-gpu-temp": "Тэмпература ГП",
+        "stat-gpu-usage": "Выкарыстанне ГП",
+        "stat-gpu-vram": "VRAM ГП",
+        "stat-net-rx": "Net Rx",
+        "stat-net-tx": "Net Tx",
+        "stat-none": "Нічога",
+        "stat-ram-pct": "RAM %",
+        "stat-swap-pct": "Swap %",
+        "stat2": " Статыстыка 2",
+        "title": "Загаловак",
+        "vertical": "Вертыкальна",
+        "visualization-mode": "Рэжым",
+        "visualization-mode-all": "Усё",
+        "visualization-mode-bars": "Палосы",
+        "visualization-mode-bars-rings": "Палосы + Колы",
+        "visualization-mode-rings": "Колы",
+        "visualization-mode-wave": "Хваля",
+        "visualization-mode-wave-rings": "Хваля + Колы",
+        "wave-thickness": "Таўшчыня хвалі",
+        "widget-section": "Віджэт"
       }
     }
   }

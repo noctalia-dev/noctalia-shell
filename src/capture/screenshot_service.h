@@ -144,8 +144,8 @@ private:
   ScreencopyCapture m_capture;
   std::unique_ptr<capture::ScreenshotRegionOverlay> m_regionOverlay;
   std::vector<PendingCapture> m_captureQueue;
-  std::optional<AllOutputsBatch> m_allOutputsBatch;
-  std::optional<GlobalRegionBatch> m_globalRegionBatch;
+  std::unique_ptr<AllOutputsBatch> m_allOutputsBatch;
+  std::unique_ptr<GlobalRegionBatch> m_globalRegionBatch;
   OutputOptions m_regionOutputOptions{};
   RenderContext* m_regionRenderContext = nullptr;
   bool m_regionFullscreenPick = false;

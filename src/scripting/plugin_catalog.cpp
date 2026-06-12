@@ -5,21 +5,25 @@
 #include "core/toml.h" // IWYU pragma: keep
 #include "core/version.h"
 #include "scripting/plugin_git.h"
+#include "scripting/plugin_id.h"
 #include "scripting/plugin_manifest.h"
+#include "scripting/plugin_source_locks.h"
+#include "scripting/plugin_source_paths.h"
 #include "util/file_utils.h"
 
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <system_error>
+#include <utility>
 
 namespace scripting {
 
   namespace {
     const Logger kLog{"plugins"};
 
-    std::string tableString(const toml::table& tbl, std::string_view key) {
-      return tbl[key].value<std::string>().value_or(std::string{});
+    std::string tableString(const toml::table& tbl, std::string_view key, std::string fallback = {}) {
+      return tbl[key].value<std::string>().value_or(std::move(fallback));
     }
 
     bool readFileToString(const std::filesystem::path& path, std::string& out) {
@@ -46,7 +50,11 @@ namespace scripting {
           .tags = m.tags,
           .version = m.version,
           .author = m.author,
+          .icon = m.icon,
+          .description = m.description,
+          .license = m.license,
           .minNoctalia = m.minNoctalia,
+          .deprecated = m.deprecated,
       };
       fillCompat(e);
       return e;
@@ -100,10 +108,23 @@ namespace scripting {
           .tags = {},
           .version = tableString(*tbl, "version"),
           .author = tableString(*tbl, "author"),
+          .icon = tableString(*tbl, "icon"),
+          .description = tableString(*tbl, "description"),
+          .license = tableString(*tbl, "license", "MIT"),
           .minNoctalia = tableString(*tbl, "min_noctalia"),
+          .deprecated = (*tbl)["deprecated"].value<bool>().value_or(false),
       };
       if (e.id.empty()) {
-        continue; // a catalog row without an id is unusable
+        kLog.warn("catalog row missing mandatory key 'id'");
+        continue;
+      }
+      if (!isValidPluginId(e.id)) {
+        kLog.warn("catalog row has invalid plugin id '{}'; expected author/plugin", e.id);
+        continue;
+      }
+      if (e.name.empty()) {
+        kLog.warn("catalog row '{}' missing mandatory key 'name'", e.id);
+        continue;
       }
       if (const auto* tags = (*tbl)["tags"].as_array()) {
         for (const auto& tag : *tags) {
@@ -119,6 +140,9 @@ namespace scripting {
   }
 
   CatalogResult discoverCatalog(const PluginSourceConfig& source) {
+    if (!isValidPluginSourceName(source.name)) {
+      return {.ok = false, .error = "invalid plugin source name: " + source.name, .entries = {}};
+    }
     if (source.kind == PluginSourceKind::Path) {
       std::error_code ec;
       const std::filesystem::path dir = FileUtils::expandUserPath(source.location);
@@ -137,11 +161,15 @@ namespace scripting {
     }
 
     // Git source: clone-if-needed (blobless, no-checkout), then read the catalog
-    // via `git show` so nothing is checked out until a plugin is enabled.
+    // via `git show`. Runtime plugin files are exported separately on enable/update.
     if (!plugin_git::available()) {
       return {.ok = false, .error = "git is not installed", .entries = {}};
     }
-    const std::filesystem::path dest = std::filesystem::path(FileUtils::pluginSourcesDir()) / source.name;
+    const std::filesystem::path dest = plugin_paths::gitRepoRoot(source);
+    if (dest.empty()) {
+      return {.ok = false, .error = "empty plugin source repo path", .entries = {}};
+    }
+    auto sourceLock = plugin_source_locks::acquire(source.name);
     std::error_code ec;
     if (!std::filesystem::exists(dest / ".git", ec)) {
       std::filesystem::create_directories(dest.parent_path(), ec);

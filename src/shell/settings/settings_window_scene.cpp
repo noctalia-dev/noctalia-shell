@@ -4,6 +4,7 @@
 #include "dbus/upower/upower_service.h"
 #include "i18n/i18n.h"
 #include "render/render_context.h"
+#include "shell/avatar_path.h"
 #include "shell/greeter/greeter_appearance_sync.h"
 #include "shell/settings/font_family_catalog.h"
 #include "shell/settings/settings_bar_management.h"
@@ -13,6 +14,7 @@
 #include "shell/settings/settings_control_factory.h"
 #include "shell/settings/settings_sidebar.h"
 #include "shell/settings/settings_window.h"
+#include "shell/tooltip/tooltip_manager.h"
 #include "system/battery_warning_monitor.h"
 #include "system/dependency_service.h"
 #include "theme/community_palettes.h"
@@ -261,6 +263,9 @@ void SettingsWindow::applyPendingContentScrollTarget(float margin) {
 
 settings::RegistryEnvironment SettingsWindow::buildRegistryEnvironment() const {
   settings::RegistryEnvironment env;
+  if (m_config != nullptr) {
+    env.shellAvatarPath = shell::resolvedAvatarPath(m_accounts, m_config->config());
+  }
   env.niriBackdropSupported = (m_wayland != nullptr && compositors::isNiri());
   env.screencopySupported = m_wayland != nullptr && m_wayland->hasScreencopy();
   env.niriOverviewTypeToLaunchSupported = (m_wayland != nullptr && compositors::isNiri());
@@ -503,11 +508,7 @@ void SettingsWindow::rebuildSettingsContent() {
   );
 
   if (m_selectedSection == "plugins" && m_pluginManager != nullptr) {
-    if (m_pluginListDirty) {
-      m_pluginList = m_pluginManager->list();
-      m_pluginListDirty = false;
-    }
-    settings::SettingsControlFactory pluginFactory(makeContentContext(cfg, selectedBar, selectedMonitorOverride));
+    refreshPluginListIfNeeded();
     settings::addSettingsPlugins(
         *m_contentContainer,
         settings::SettingsPluginsContext{
@@ -515,6 +516,7 @@ void SettingsWindow::rebuildSettingsContent() {
             .selectedSection = m_selectedSection,
             .plugins = m_pluginList,
             .sources = cfg.plugins.sources,
+            .pluginsLoading = m_pluginListDirty || m_pluginListRefreshInFlight,
             .setEnabled =
                 [this](std::string id, bool enable) {
                   if (enable) {
@@ -522,30 +524,31 @@ void SettingsWindow::rebuildSettingsContent() {
                   } else {
                     m_pluginManager->disable(id);
                   }
-                  m_pluginListDirty = true;
+                  markPluginListDirty();
+                  requestSceneRebuild();
+                },
+            .addSource = [this]() { openPluginSourceCreateEditor(); },
+            .setSourceAutoUpdate =
+                [this](PluginSourceConfig source, bool autoUpdate) {
+                  source.autoUpdate = autoUpdate;
+                  m_pluginManager->addSource(source);
+                  markPluginListDirty();
                   requestSceneRebuild();
                 },
             .updateSource = [this](std::string source) { m_pluginManager->update(std::move(source)); },
             .removeSource =
                 [this](std::string source) {
                   m_pluginManager->removeSource(std::move(source));
-                  m_pluginListDirty = true;
+                  markPluginListDirty();
                   requestSceneRebuild();
                 },
             .refresh =
                 [this]() {
-                  m_pluginListDirty = true;
+                  markPluginListDirty();
                   requestSceneRebuild();
                 },
             .config = &cfg,
-            .controlFactory = &pluginFactory,
-            .configurePluginId = m_configurePluginId,
-            .showAdvanced = m_showAdvanced,
-            .onConfigure =
-                [this](std::string id) {
-                  m_configurePluginId = (m_configurePluginId == id) ? std::string{} : std::move(id);
-                  requestSceneRebuild();
-                },
+            .onConfigure = [this](std::string id) { openPluginSettingsEditor(std::move(id)); },
         }
     );
   }
@@ -984,7 +987,10 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
                 .glyph = {}
             },
         .searchText = "lockscreen widgets editor edit layout",
-        .visibleWhen = std::nullopt,
+        .visibleWhen = settings::SettingVisibility{std::vector<settings::SettingVisibilityCondition>{
+            {{"lockscreen", "enabled"}, {"true"}},
+            {{"lockscreen_widgets", "enabled"}, {"true"}},
+        }},
     };
     m_settingsRegistry.insert(it, std::move(btn));
   }
@@ -1125,10 +1131,19 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   applyPendingContentScrollTarget(Style::spaceMd * scale);
   m_mainContainer = static_cast<Flex*>(m_sceneRoot->addChild(std::move(main)));
 
-  m_inputDispatcher.setSceneRoot(m_sceneRoot.get());
   m_inputDispatcher.setTextInputContext(m_surface->wlSurface(), m_wayland->textInputService());
   m_inputDispatcher.setCursorShapeCallback([this](std::uint32_t serial, std::uint32_t shape) {
     m_wayland->setCursorShape(serial, shape);
   });
+  m_inputDispatcher.setHoverChangeCallback([this](InputArea* /*old*/, InputArea* next) {
+    if (m_surface != nullptr) {
+      wl_output* output = m_output;
+      if (output == nullptr && m_wayland != nullptr) {
+        output = m_wayland->outputForSurface(m_surface->wlSurface());
+      }
+      TooltipManager::instance().onHoverChange(next, m_surface->xdgSurface(), output);
+    }
+  });
+  m_inputDispatcher.setSceneRoot(m_sceneRoot.get());
   m_surface->setSceneRoot(m_sceneRoot.get());
 }

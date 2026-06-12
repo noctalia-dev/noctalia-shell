@@ -1,12 +1,15 @@
+#include "config/atomic_file.h"
 #include "config/config_service.h"
 #include "config/config_types.h"
 #include "core/deferred_call.h"
 #include "i18n/i18n.h"
 #include "render/render_context.h"
+#include "scripting/plugin_registry.h"
 #include "shell/settings/bar_widget_editor.h"
 #include "shell/settings/color_spec_picker.h"
 #include "shell/settings/settings_content.h"
 #include "shell/settings/settings_content_common.h"
+#include "shell/settings/settings_content_plugins.h"
 #include "shell/settings/settings_control_factory.h"
 #include "shell/settings/settings_window.h"
 #include "shell/settings/widget_settings_registry.h"
@@ -25,7 +28,6 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
-#include <fstream>
 #include <memory>
 #include <optional>
 #include <string>
@@ -37,6 +39,16 @@ namespace {
   constexpr std::int32_t kActionSupportReport = 1;
   constexpr std::int32_t kActionExportConfig = 2;
   constexpr std::string_view kCalendarCredentialOwner = "calendar_credentials";
+
+  struct PluginSourceDraft {
+    PluginSourceKind kind = PluginSourceKind::Git;
+    std::string name;
+    std::string location;
+    bool autoUpdate = false;
+    bool nameInvalid = false;
+    bool locationInvalid = false;
+    std::string error;
+  };
 
   enum class CalendarAccountProvider : std::uint8_t {
     ICloud,
@@ -70,6 +82,14 @@ namespace {
         [id](const CalendarConfig::Account& a) { return a.id == id; }
     );
   }
+
+  bool pluginSourceNameExists(const Config& cfg, std::string_view name) {
+    return std::any_of(cfg.plugins.sources.begin(), cfg.plugins.sources.end(), [name](const PluginSourceConfig& src) {
+      return src.name == name;
+    });
+  }
+
+  std::size_t pluginSourceKindIndex(PluginSourceKind kind) { return kind == PluginSourceKind::Path ? 1u : 0u; }
 
   const CalendarConfig::Account* findCalendarAccount(const Config& cfg, std::string_view id) {
     const auto it = std::find_if(cfg.calendar.accounts.begin(), cfg.calendar.accounts.end(), [id](const auto& account) {
@@ -1204,6 +1224,236 @@ void SettingsWindow::openCapsuleGroupEditor(std::vector<std::string> laneListPat
   });
 }
 
+void SettingsWindow::openPluginSourceCreateEditor() {
+  DeferredCall::callLater([this]() {
+    if (m_config == nullptr || m_pluginManager == nullptr) {
+      return;
+    }
+
+    auto draft = std::make_shared<PluginSourceDraft>();
+    openBarWidgetEditorSheet(i18n::tr("settings.plugins.sources.add-title"), [this, draft](Flex& body) {
+      const float scale = uiScale();
+      auto addField = [scale](Flex& parent, const std::string& label, std::unique_ptr<Node> control) {
+        auto field = ui::column({
+            .align = FlexAlign::Stretch,
+            .gap = Style::spaceXs * scale,
+        });
+        field->addChild(
+            ui::label({
+                .text = label,
+                .fontSize = Style::fontSizeCaption * scale,
+                .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+                .fontWeight = FontWeight::Medium,
+            })
+        );
+        field->addChild(std::move(control));
+        parent.addChild(std::move(field));
+      };
+
+      if (!draft->error.empty()) {
+        body.addChild(
+            ui::label({
+                .text = draft->error,
+                .fontSize = Style::fontSizeCaption * scale,
+                .color = colorSpecFromRole(ColorRole::Error),
+                .fontWeight = FontWeight::Medium,
+            })
+        );
+      }
+
+      addField(
+          body, i18n::tr("settings.plugins.sources.kind-label"),
+          ui::segmented({
+              .options =
+                  std::vector<ui::SegmentedOption>{
+                      {.label = i18n::tr("settings.plugins.sources.kind.git"), .glyph = "brand-git"},
+                      {.label = i18n::tr("settings.plugins.sources.kind.path"), .glyph = "folder"},
+                  },
+              .selectedIndex = pluginSourceKindIndex(draft->kind),
+              .scale = scale,
+              .equalSegmentWidths = true,
+              .onChange = [this, draft](std::size_t index) {
+                draft->kind = index == 1 ? PluginSourceKind::Path : PluginSourceKind::Git;
+                if (draft->kind == PluginSourceKind::Path) {
+                  draft->autoUpdate = false;
+                }
+                draft->error.clear();
+                if (m_editorSheetPopup != nullptr) {
+                  m_editorSheetPopup->rebuildBody();
+                }
+              },
+          })
+      );
+
+      Input* nameInput = nullptr;
+      addField(
+          body, i18n::tr("settings.plugins.sources.name-label"),
+          ui::input({
+              .out = &nameInput,
+              .value = draft->name,
+              .placeholder = i18n::tr("settings.plugins.sources.name-placeholder"),
+              .invalid = draft->nameInvalid,
+              .onChange = [draft](const std::string& value) {
+                draft->name = value;
+                draft->nameInvalid = false;
+                draft->error.clear();
+              },
+          })
+      );
+
+      Input* locationInput = nullptr;
+      addField(
+          body, i18n::tr("settings.plugins.sources.location-label"),
+          ui::input({
+              .out = &locationInput,
+              .value = draft->location,
+              .placeholder = draft->kind == PluginSourceKind::Git
+                  ? i18n::tr("settings.plugins.sources.location-placeholder-git")
+                  : i18n::tr("settings.plugins.sources.location-placeholder-path"),
+              .invalid = draft->locationInvalid,
+              .onChange = [draft](const std::string& value) {
+                draft->location = value;
+                draft->locationInvalid = false;
+                draft->error.clear();
+              },
+          })
+      );
+
+      if (draft->kind == PluginSourceKind::Git) {
+        auto autoUpdate = ui::row({
+            .align = FlexAlign::Center,
+            .gap = Style::spaceSm * scale,
+            .fillWidth = true,
+        });
+        autoUpdate->addChild(
+            ui::label({
+                .text = i18n::tr("settings.plugins.sources.update-on-startup"),
+                .fontSize = Style::fontSizeCaption * scale,
+                .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+                .fontWeight = FontWeight::Medium,
+            })
+        );
+        autoUpdate->addChild(ui::spacer());
+        autoUpdate->addChild(
+            ui::toggle({
+                .checked = draft->autoUpdate,
+                .toggleSize = ToggleSize::Small,
+                .scale = scale,
+                .onChange = [draft](bool value) { draft->autoUpdate = value; },
+            })
+        );
+        body.addChild(std::move(autoUpdate));
+      }
+
+      auto actions = ui::row({
+          .align = FlexAlign::Center,
+          .justify = FlexJustify::End,
+          .gap = Style::spaceSm * scale,
+          .fillWidth = true,
+      });
+      actions->addChild(
+          ui::button({
+              .text = i18n::tr("common.actions.cancel"),
+              .fontSize = Style::fontSizeCaption * scale,
+              .variant = ButtonVariant::Default,
+              .onClick = [this]() {
+                if (m_editorSheetPopup != nullptr) {
+                  m_editorSheetPopup->close();
+                }
+              },
+          })
+      );
+      actions->addChild(
+          ui::button({
+              .text = i18n::tr("settings.plugins.sources.add"),
+              .glyph = "add",
+              .fontSize = Style::fontSizeCaption * scale,
+              .glyphSize = Style::fontSizeBody * scale,
+              .variant = ButtonVariant::Primary,
+              .onClick = [this, draft, nameInput, locationInput]() {
+                if (m_config == nullptr || m_pluginManager == nullptr) {
+                  return;
+                }
+                draft->name = StringUtils::trim(nameInput != nullptr ? nameInput->value() : draft->name);
+                draft->location =
+                    StringUtils::trim(locationInput != nullptr ? locationInput->value() : draft->location);
+                draft->nameInvalid = false;
+                draft->locationInvalid = false;
+                draft->error.clear();
+
+                if (!isValidPluginSourceName(draft->name)) {
+                  draft->nameInvalid = true;
+                  draft->error = i18n::tr("settings.plugins.sources.errors.invalid-name");
+                } else if (pluginSourceNameExists(m_config->config(), draft->name)) {
+                  draft->nameInvalid = true;
+                  draft->error = i18n::tr("settings.plugins.sources.errors.duplicate-name");
+                } else if (draft->location.empty()) {
+                  draft->locationInvalid = true;
+                  draft->error = i18n::tr("settings.plugins.sources.errors.location-required");
+                }
+
+                if (!draft->error.empty()) {
+                  if (m_editorSheetPopup != nullptr) {
+                    m_editorSheetPopup->rebuildBody();
+                  }
+                  return;
+                }
+
+                m_pluginManager->addSource(
+                    PluginSourceConfig{
+                        .kind = draft->kind,
+                        .name = draft->name,
+                        .location = draft->location,
+                        .autoUpdate = draft->kind == PluginSourceKind::Git && draft->autoUpdate,
+                    }
+                );
+                markPluginListDirty();
+                markSettingsWriteSuccess(false);
+                if (m_editorSheetPopup != nullptr) {
+                  m_editorSheetPopup->close();
+                }
+                requestSceneRebuild();
+              },
+          })
+      );
+      body.addChild(std::move(actions));
+    });
+  });
+}
+
+void SettingsWindow::openPluginSettingsEditor(std::string pluginId) {
+  DeferredCall::callLater([this, pluginId = std::move(pluginId)]() mutable {
+    if (m_config == nullptr) {
+      return;
+    }
+    const auto* manifest = scripting::PluginRegistry::instance().findManifest(pluginId);
+    if (manifest == nullptr || manifest->settings.empty()) {
+      return;
+    }
+
+    m_editingWidgetName.clear();
+    m_editingCapsuleGroupId.clear();
+    m_renamingWidgetName.clear();
+    m_pendingDeleteWidgetName.clear();
+    m_pendingDeleteWidgetSettingPath.clear();
+    m_editorSheetListPath.clear();
+
+    const std::string title = manifest->name.empty() ? pluginId : manifest->name;
+    openBarWidgetEditorSheet(title, [this, pluginId](Flex& body) {
+      if (m_config == nullptr || m_editorSheetFactory == nullptr) {
+        return;
+      }
+      const auto* currentManifest = scripting::PluginRegistry::instance().findManifest(pluginId);
+      if (currentManifest == nullptr) {
+        return;
+      }
+      settings::buildPluginSettingsEditor(
+          body, m_config->config(), *m_editorSheetFactory, pluginId, *currentManifest, m_showAdvanced, uiScale()
+      );
+    });
+  });
+}
+
 void SettingsWindow::closeWidgetInspectorPopup() {
   if (m_editorSheetPopup != nullptr) {
     m_editorSheetPopup->close();
@@ -1235,16 +1485,8 @@ void SettingsWindow::saveSupportReport() {
       path += ".toml";
     }
 
-    std::ofstream out(path, std::ios::trunc);
-    if (!out.is_open()) {
-      m_statusMessage = i18n::tr("settings.errors.support-report");
-      m_statusIsError = true;
-      requestSceneRebuild();
-      return;
-    }
-
-    out << m_config->buildSupportReport();
-    if (!out.good()) {
+    const std::string content = m_config->buildSupportReport();
+    if (!writeTextFileAtomic(path, content)) {
       m_statusMessage = i18n::tr("settings.errors.support-report");
       m_statusIsError = true;
       requestSceneRebuild();
@@ -1287,18 +1529,9 @@ void SettingsWindow::saveConfigExport(settings::ConfigExportMode mode) {
       path += ".toml";
     }
 
-    std::ofstream out(path, std::ios::trunc);
-    if (!out.is_open()) {
-      m_statusMessage = i18n::tr("settings.errors.export-config");
-      m_statusIsError = true;
-      requestSceneRebuild();
-      return;
-    }
-
     const std::string content = mode == settings::ConfigExportMode::FullEffective ? m_config->buildEffectiveConfig()
                                                                                   : m_config->buildMergedUserConfig();
-    out << content;
-    if (!out.good()) {
+    if (!writeTextFileAtomic(path, content)) {
       m_statusMessage = i18n::tr("settings.errors.export-config");
       m_statusIsError = true;
       requestSceneRebuild();

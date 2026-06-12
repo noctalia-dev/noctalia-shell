@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
@@ -30,6 +31,12 @@ namespace FileUtils {
   [[nodiscard]] inline std::string expandUserPathString(const std::string& path) {
     return expandUserPath(path).string();
   }
+
+  [[nodiscard]] inline bool
+  containsPath(const std::vector<std::filesystem::path>& paths, const std::filesystem::path& path) {
+    return std::ranges::find(paths, path) != paths.end();
+  }
+
 
   [[nodiscard]] inline std::string configDir() {
     const char* noctalia = std::getenv("NOCTALIA_CONFIG_HOME");
@@ -79,8 +86,8 @@ namespace FileUtils {
     return {};
   }
 
-  // Git-source working copies (blobless sparse clones). Host-managed cache,
-  // re-fetchable, so it lives under the state dir — never config.
+  // Git-source repo caches. Host-managed, re-fetchable, so they live under the
+  // state dir — never config.
   [[nodiscard]] inline std::string pluginSourcesDir() {
     const std::string base = stateDir();
     if (base.empty()) {
@@ -89,18 +96,44 @@ namespace FileUtils {
     return base + "/plugins/sources";
   }
 
+  // Exported runtime files for enabled git-source plugins. Re-derivable from
+  // source repos; path sources and local dev plugins do not use this directory.
+  [[nodiscard]] inline std::string pluginMaterializedDir() {
+    const std::string base = stateDir();
+    if (base.empty()) {
+      return {};
+    }
+    return base + "/plugins/materialized";
+  }
+
   [[nodiscard]] inline std::vector<std::uint8_t> readBinaryFile(const std::string& path) {
-    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (path.empty()) {
+      return {};
+    }
+
+    std::error_code ec;
+    const std::filesystem::path fsPath = expandUserPath(path);
+    if (!std::filesystem::is_regular_file(fsPath, ec) || ec) {
+      return {};
+    }
+
+    const std::uintmax_t fileSize = std::filesystem::file_size(fsPath, ec);
+    if (ec || fileSize == 0) {
+      return {};
+    }
+
+    constexpr std::uintmax_t kMaxBinaryReadBytes = 256ULL * 1024ULL * 1024ULL;
+    if (fileSize > kMaxBinaryReadBytes) {
+      return {};
+    }
+
+    std::ifstream file(fsPath, std::ios::binary);
     if (!file) {
       return {};
     }
-    const auto size = file.tellg();
-    if (size <= 0) {
-      return {};
-    }
-    std::vector<std::uint8_t> data(static_cast<std::size_t>(size));
-    file.seekg(0);
-    file.read(reinterpret_cast<char*>(data.data()), size);
+
+    std::vector<std::uint8_t> data(static_cast<std::size_t>(fileSize));
+    file.read(reinterpret_cast<char*>(data.data()), static_cast<std::streamsize>(fileSize));
     if (!file) {
       return {};
     }

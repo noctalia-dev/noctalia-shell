@@ -21,6 +21,9 @@
       "region": "Select region"
     },
     "widgets": {
+      "active-window": {
+        "no-active-window": "No active window"
+      },
       "lock-keys": {
         "caps": "Caps",
         "caps-short": "C",
@@ -45,12 +48,7 @@
         "error": "Weather err",
         "loading": "Weather...",
         "no-location": "No location",
-        "off": "Weather off",
-        "vertical-default": "W\nX",
-        "vertical-error": "E\nR\nR",
-        "vertical-loading": ".\n.\n.",
-        "vertical-no-location": "N\nO\nL\nO\nC",
-        "vertical-off": "O\nF\nF"
+        "off": "Weather off"
       }
     }
   },
@@ -168,7 +166,7 @@
       },
       "select-avatar": "Select Avatar",
       "unknown": "unknown",
-      "user-facts": "{user}@{host}\nUptime - {uptime}\nNoctalia {version}",
+      "uptime": "Uptime - {uptime}",
       "weather": {
         "configure-location": "Add [weather].address or enable auto_locate.",
         "data-unavailable": "Weather data unavailable.",
@@ -257,6 +255,11 @@
       "wifi": "Wi-Fi"
     },
     "system": {
+      "labels": {
+        "load": "CPU Load",
+        "ram": "RAM",
+        "swap": "Swap"
+      },
       "titles": {
         "cpu": "CPU",
         "gpu": "GPU",
@@ -264,6 +267,9 @@
         "network": "Network",
         "resources": "Resources",
         "system": "System"
+      },
+      "tooltips": {
+        "load": "Load average over 1 / 5 / 15 minutes"
       },
       "unknown": "unknown",
       "uptime-prefix": "Up {uptime} · {osAge}"
@@ -308,7 +314,14 @@
   "desktop-widgets": {
     "editor": {
       "actions": {
-        "done": "Done"
+        "add": "Add",
+        "done": "Done",
+        "hide": "Hide",
+        "settings": "Settings",
+        "show": "Show",
+        "stack-back": "Stack Behind",
+        "stack-front": "Stack In Front",
+        "trash": "Delete"
       },
       "dialogs": {
         "select-sticker-image": "Select Sticker Image"
@@ -331,6 +344,8 @@
         "clock-style-analog": "Analog",
         "clock-style-digital": "Digital",
         "color": "Color",
+        "color-1": "Color One",
+        "color-2": "Color Two",
         "color2": "Color 2",
         "custom-color": "Custom…",
         "description": "Description",
@@ -339,21 +354,23 @@
         "font-family-default": "System default",
         "format": "Format",
         "hide-when-no-media": "Hide When No Media",
-        "high-color": "High Color",
         "horizontal": "Horizontal",
         "image-path": "Image",
         "inner-diameter": "Inner Diameter",
+        "input-opacity": "Input Opacity",
+        "input-radius": "Input Radius",
         "layout": "Layout",
-        "low-color": "Low Color",
         "mirrored": "Mirrored",
         "opacity": "Opacity",
         "primary-color": "Primary Color",
+        "reset-defaults": "Reset to Defaults",
         "ring-opacity": "Ring Opacity",
         "rotation-speed": "Rotation Speed",
         "secondary-color": "Secondary Color",
         "sensitivity": "Sensitivity",
         "shadow": "Shadow",
         "show-label": "Show Label",
+        "show-login-button": "Login Button",
         "show-when-idle": "Show When Idle",
         "stat": "Stat",
         "stat-cpu-temp": "CPU Temp",
@@ -1054,6 +1071,44 @@
         }
       }
     },
+    "plugins": {
+      "plugins": {
+        "configure": "Configure",
+        "deprecated": "deprecated",
+        "empty": "No plugins found. Add a source, or check your network.",
+        "loading": "Loading plugins...",
+        "refreshing": "Refreshing plugins...",
+        "requires-newer-noctalia": "requires newer Noctalia",
+        "title": "Plugins"
+      },
+      "settings": {
+        "empty": "No settings available."
+      },
+      "sources": {
+        "add": "Add source",
+        "add-title": "Add plugin source",
+        "empty": "No sources configured.",
+        "errors": {
+          "duplicate-name": "A source with this ID already exists.",
+          "invalid-name": "Source ID must use letters, digits, '.', '_' or '-', starting with a letter or digit.",
+          "location-required": "Source location is required."
+        },
+        "kind": {
+          "git": "Git",
+          "path": "Path"
+        },
+        "kind-label": "Kind",
+        "location-label": "Location",
+        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
+        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "name-label": "Source ID",
+        "name-placeholder": "my-plugins",
+        "remove": "Remove source",
+        "title": "Sources",
+        "update": "Update",
+        "update-on-startup": "Update on startup"
+      }
+    },
     "schema": {
       "appearance": {
         "animation-speed": {
@@ -1258,6 +1313,10 @@
           "description": "Default icon and label color role for widgets on this bar; fixed hex colors are also supported",
           "label": "Widget Color"
         },
+        "widget-icon-color": {
+          "description": "Overrides the widget color for icons on this bar; fixed hex colors are also supported",
+          "label": "Widget Icon Color"
+        },
         "widget-spacing": {
           "description": "Space between bar widgets",
           "label": "Widget Spacing"
@@ -1375,7 +1434,7 @@
           "description": "Which screen edge the dock sits on"
         },
         "reserve-space": {
-          "description": "Reserve screen space for the dock"
+          "description": "Push windows away from the dock edge"
         },
         "shadow": {
           "description": "Cast the global surface shadow from the dock"
@@ -1515,6 +1574,10 @@
           "description": "Use a snapshot of the desktop as the lock screen background",
           "label": "Desktop Capture"
         },
+        "enabled": {
+          "description": "Enable session lock, logind integration, and lock actions",
+          "label": "Lock Screen"
+        },
         "monitors": {
           "description": "Choose which monitors show the lock screen; leave empty to show on all monitors",
           "label": "Monitors"
@@ -1602,7 +1665,7 @@
           "label": "Borders"
         },
         "control-center-sidebar": {
-          "description": "On Home and general opens",
+          "description": "Choose how to display the sidebar",
           "label": "Sidebar"
         },
         "control-center-sidebar-section": {
@@ -1620,6 +1683,10 @@
         "launcher-compact": {
           "description": "Use smaller icons and tighter result rows",
           "label": "Compact Rows"
+        },
+        "launcher-session-search": {
+          "description": "Include session actions (lock, suspend, reboot, shutdown, logout) in general launcher searches, not only behind the /session prefix",
+          "label": "Enable Session Search"
         },
         "launcher-show-icons": {
           "description": "Show application icons in launcher results",
@@ -2294,8 +2361,16 @@
           "label": "Centered"
         },
         "color": {
-          "description": "Color role for widget foreground; fixed hex colors are also supported",
+          "description": "Color role for this widget's icon and label; fixed hex colors are also supported",
           "label": "Color"
+        },
+        "color-1": {
+          "description": "First gradient color in the visualizer",
+          "label": "Color One"
+        },
+        "color-2": {
+          "description": "Second gradient color in the visualizer",
+          "label": "Color Two"
         },
         "command": {
           "description": "Shell command run when left-clicking this button",
@@ -2307,7 +2382,7 @@
           "label": "Custom image"
         },
         "custom-image-colorize": {
-          "description": "Tint the custom image with the widget Color setting",
+          "description": "Tint the custom image with the widget Icon Color setting",
           "label": "Colorize custom image"
         },
         "custom-labels": {
@@ -2416,10 +2491,6 @@
           "description": "Hide the keyboard layout widget unless more than one layout is configured",
           "label": "Hide When Single Layout"
         },
-        "high-color": {
-          "description": "Color used for high visualizer values",
-          "label": "High Color"
-        },
         "highlight-color": {
           "description": "Color reached at or above the critical threshold",
           "label": "Highlight Color"
@@ -2427,6 +2498,10 @@
         "hot-reload": {
           "description": "Reload the scripted widget when its source changes",
           "label": "Hot Reload"
+        },
+        "icon-color": {
+          "description": "Overrides the widget color for icons only; fixed hex colors are also supported",
+          "label": "Icon Color"
         },
         "icon-size": {
           "description": "Icon size in pixels",
@@ -2452,10 +2527,6 @@
         "length": {
           "description": "Spacer length in pixels",
           "label": "Length"
-        },
-        "low-color": {
-          "description": "Color used for low visualizer values",
-          "label": "Low Color"
         },
         "match-adjacent-spacing": {
           "description": "Widen gaps between inline tray icons to match the visual spacing of neighboring bar widgets (includes capsule padding)",
@@ -2555,6 +2626,10 @@
         "show-condition": {
           "description": "Show weather condition text",
           "label": "Show Condition"
+        },
+        "show-empty-label": {
+          "description": "Show placeholder text when no window is focused instead of hiding the widget",
+          "label": "Show Empty Label"
         },
         "show-icon": {
           "description": "Show this widget's icon",

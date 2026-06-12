@@ -23,7 +23,7 @@ namespace process {
 }
 namespace scripting {
   class ScriptApiContext;
-  struct ScriptedWidgetBindingContext;
+  struct PluginBindingContext;
 } // namespace scripting
 
 class LuauHost {
@@ -72,7 +72,7 @@ public:
   [[nodiscard]] CompositorPlatform* platform() const noexcept { return m_platform; }
   [[nodiscard]] scripting::ScriptApiContext& api() const noexcept { return m_api; }
   [[nodiscard]] std::uint64_t hostId() const noexcept { return m_hostId; }
-  void setScriptContext(scripting::ScriptedWidgetBindingContext* context) { m_scriptContext = context; }
+  void setScriptContext(scripting::PluginBindingContext* context) { m_scriptContext = context; }
   void setMuteErrors(bool mute) { m_muteErrors = mute; }
   // The plugin's own directory: relative filesystem/translation paths resolve against it.
   void setPluginDir(std::filesystem::path dir) { m_pluginDir = std::move(dir); }
@@ -147,7 +147,7 @@ private:
   std::uint64_t m_hostId = 0;
   scripting::ScriptApiContext& m_api;
   CompositorPlatform* m_platform = nullptr;
-  scripting::ScriptedWidgetBindingContext* m_scriptContext = nullptr;
+  scripting::PluginBindingContext* m_scriptContext = nullptr;
   std::filesystem::path m_pluginDir;
   std::string m_pluginId;
   std::unordered_map<std::string, std::string> m_translations;

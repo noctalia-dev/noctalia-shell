@@ -11,6 +11,16 @@ project('noctalia', ['c', 'cpp'],
 cc  = meson.get_compiler('c')
 cpp = meson.get_compiler('cpp')
 
+
+# Clang requires an opt-in flag to properly use experimental C++ libraries.
+# GCC/libstdc++ doesn't need this since these libraries are unconditionally
+# exposed.
+is_libcxx = cpp.get_define('_LIBCPP_VERSION', prefix: '#include <version>' ) != ''
+if is_libcxx
+  add_project_arguments('-fexperimental-library', language: 'cpp')
+  add_project_link_arguments('-lc++experimental', language: 'cpp')
+endif
+
 # Sanitizers are enabled via meson's built-in -Db_sanitize=address,undefined.
 # pipewire_lsan.cpp is only needed when address sanitizer is active.
 sanitize = get_option('b_sanitize') != 'none'
@@ -177,8 +187,9 @@ stb_dep = declare_dependency(
 libwebp_dep = dependency('libwebp', required: true)
 
 # ── Vendored: Luau (Roblox's Lua fork) ────────────────────────────────────────
-# Built as a quiet static library; only VM + Compiler + Ast + Common are vendored.
+# Built as a quiet static library; only VM + Compiler + Bytecode + Ast + Common are vendored.
 _luau_sources = files(
+  'third_party/luau/Common/src/BytecodeWire.cpp',
   'third_party/luau/Common/src/StringUtils.cpp',
   'third_party/luau/Common/src/TimeTrace.cpp',
   'third_party/luau/Ast/src/Allocator.cpp',
@@ -189,9 +200,10 @@ _luau_sources = files(
   'third_party/luau/Ast/src/Location.cpp',
   'third_party/luau/Ast/src/Parser.cpp',
   'third_party/luau/Ast/src/PrettyPrinter.cpp',
+  'third_party/luau/Bytecode/src/BytecodeBuilder.cpp',
+  'third_party/luau/Bytecode/src/BytecodeGraph.cpp',
   'third_party/luau/Compiler/src/BuiltinFolding.cpp',
   'third_party/luau/Compiler/src/Builtins.cpp',
-  'third_party/luau/Compiler/src/BytecodeBuilder.cpp',
   'third_party/luau/Compiler/src/Compiler.cpp',
   'third_party/luau/Compiler/src/ConstantFolding.cpp',
   'third_party/luau/Compiler/src/CostModel.cpp',
@@ -215,6 +227,8 @@ _luau_sources = files(
   'third_party/luau/VM/src/lgcdebug.cpp',
   'third_party/luau/VM/src/linit.cpp',
   'third_party/luau/VM/src/lintlib.cpp',
+  'third_party/luau/VM/src/lclass.cpp',
+  'third_party/luau/VM/src/lclasslib.cpp',
   'third_party/luau/VM/src/lmathlib.cpp',
   'third_party/luau/VM/src/lmem.cpp',
   'third_party/luau/VM/src/lnumprint.cpp',
@@ -237,6 +251,7 @@ _luau_sources = files(
 _luau_inc = include_directories(
   'third_party/luau/Common/include',
   'third_party/luau/Ast/include',
+  'third_party/luau/Bytecode/include',
   'third_party/luau/Compiler/include',
   'third_party/luau/VM/include',
   'third_party/luau/VM/src',
@@ -345,7 +360,7 @@ _wlr_ls_h = custom_target('wlr-layer-shell-unstable-v1-client-header',
   output:  'wlr-layer-shell-unstable-v1-client-protocol.h',
   command: [
     'sh', '-c',
-    '"$1" client-header "$2" "$3" && sed -i s/namespace/name_space/g "$3"',
+    '"$1" client-header "$2" "$3" && sed -i.bak s/namespace/name_space/g "$3"',
     '_', wayland_scanner.full_path(), '@INPUT@', '@OUTPUT@',
   ],
 )
@@ -389,6 +404,7 @@ _noctalia_sources = files(
   'src/core/resource_paths.cpp',
   'src/core/timer_manager.cpp',
   'src/core/ui_phase.cpp',
+  'src/dbus/accounts/accounts_service.cpp',
   'src/dbus/bluetooth/bluetooth_agent.cpp',
   'src/dbus/bluetooth/bluetooth_service.cpp',
   'src/dbus/idle/screensaver_service.cpp',
@@ -410,6 +426,7 @@ _noctalia_sources = files(
   'src/dbus/upower/upower_service.cpp',
   'src/debug/debug_service.cpp',
   'src/i18n/i18n.cpp',
+  'src/i18n/language_tag.cpp',
   'src/i18n/i18n_service.cpp',
   'src/hooks/battery_hook_state.cpp',
   'src/hooks/hook_manager.cpp',
@@ -486,10 +503,12 @@ _noctalia_sources = files(
   'src/scripting/plugin_manifest.cpp',
   'src/scripting/plugin_registry.cpp',
   'src/scripting/plugin_service_host.cpp',
+  'src/scripting/plugin_source_locks.cpp',
+  'src/scripting/plugin_source_paths.cpp',
   'src/scripting/plugin_state_store.cpp',
   'src/scripting/script_runtime.cpp',
   'src/scripting/script_worker_pool.cpp',
-  'src/scripting/scripted_widget_bindings.cpp',
+  'src/scripting/plugin_bindings.cpp',
   'src/system/battery_warning_monitor.cpp',
   'src/shell/bar/bar.cpp',
   'src/shell/clipboard/clipboard_paste.cpp',
@@ -551,6 +570,7 @@ _noctalia_sources = files(
   'src/shell/launcher/launcher_panel.cpp',
   'src/shell/switcher/window_switcher.cpp',
   'src/shell/switcher/window_switcher_tile.cpp',
+  'src/shell/avatar_path.cpp',
   'src/shell/greeter/greeter_appearance_sync.cpp',
   'src/shell/lockscreen/lock_screen.cpp',
   'src/shell/lockscreen/lock_surface.cpp',
@@ -969,6 +989,67 @@ string_utils_test = executable('string_utils_test',
 )
 
 test('string_utils', string_utils_test)
+
+i18n_language_tag_test = executable('i18n_language_tag_test',
+  sources: files(
+    'tests/i18n_language_tag_test.cpp',
+    'src/i18n/language_tag.cpp',
+  ),
+  include_directories: _noctalia_inc,
+)
+
+test('i18n_language_tag', i18n_language_tag_test)
+
+plugin_source_paths_test = executable('plugin_source_paths_test',
+  sources: files(
+    'tests/plugin_source_paths_test.cpp',
+    'src/scripting/plugin_source_paths.cpp',
+    'src/config/config_types.cpp',
+    'src/render/core/color.cpp',
+    'src/ui/palette.cpp',
+    'src/theme/builtin_palettes.cpp',
+    'src/theme/fixed_palette.cpp',
+    'src/theme/color.cpp',
+    'src/theme/contrast.cpp',
+    'src/core/key_chord.cpp',
+  ),
+  include_directories: _noctalia_inc,
+  dependencies: [xkbcommon_dep],
+)
+
+test('plugin_source_paths', plugin_source_paths_test)
+
+plugin_source_locks_test = executable('plugin_source_locks_test',
+  sources: files(
+    'tests/plugin_source_locks_test.cpp',
+    'src/scripting/plugin_source_locks.cpp',
+  ),
+  include_directories: _noctalia_inc,
+)
+
+test('plugin_source_locks', plugin_source_locks_test)
+
+plugin_git_export_test = executable('plugin_git_export_test',
+  sources: files(
+    'tests/plugin_git_export_test.cpp',
+    'src/scripting/plugin_git.cpp',
+    'src/core/process.cpp',
+  ),
+  include_directories: _noctalia_inc,
+)
+
+test('plugin_git_export', plugin_git_export_test)
+
+plugin_manifest_test = executable('plugin_manifest_test',
+  sources: files(
+    'tests/plugin_manifest_test.cpp',
+    'src/scripting/plugin_manifest.cpp',
+    'src/core/log.cpp',
+  ),
+  include_directories: _noctalia_inc,
+)
+
+test('plugin_manifest', plugin_manifest_test)
 
 config_schema_roundtrip_test = executable('config_schema_roundtrip_test',
   sources: files(

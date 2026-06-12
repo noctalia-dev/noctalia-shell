@@ -4,10 +4,10 @@
 #include "core/log.h"
 #include "notification/notifications.h"
 #include "scripting/luau_host.h"
+#include "scripting/plugin_bindings.h"
 #include "scripting/plugin_state_store.h"
 #include "scripting/script_api_context.h"
 #include "scripting/script_worker_pool.h"
-#include "scripting/scripted_widget_bindings.h"
 #include "wayland/clipboard_service.h"
 
 #include <algorithm>
@@ -33,7 +33,7 @@ namespace scripting {
     constexpr auto kCallbackBudget = std::chrono::milliseconds(25);
     constexpr auto kTimeoutWindow = std::chrono::seconds(60);
 
-    void mergePatch(ScriptWidgetPatch& dest, const ScriptWidgetPatch& src) {
+    void mergePatch(ScriptPatch& dest, const ScriptPatch& src) {
       if (src.text.has_value()) {
         dest.text = src.text;
       }
@@ -78,7 +78,7 @@ namespace scripting {
       }
     }
 
-    void mergeResult(ScriptWidgetResult& dest, const ScriptWidgetResult& src) {
+    void mergeResult(ScriptResult& dest, const ScriptResult& src) {
       mergePatch(dest.patch, src.patch);
       dest.sideEffects.insert(dest.sideEffects.end(), src.sideEffects.begin(), src.sideEffects.end());
       dest.ok = dest.ok && src.ok;
@@ -93,19 +93,19 @@ namespace scripting {
       dest.unhealthy = dest.unhealthy || src.unhealthy;
     }
 
-    void dispatchSideEffects(const std::vector<ScriptWidgetSideEffect>& effects, ClipboardService* clipboard) {
+    void dispatchSideEffects(const std::vector<ScriptSideEffect>& effects, ClipboardService* clipboard) {
       for (const auto& effect : effects) {
         switch (effect.kind) {
-        case ScriptWidgetSideEffectKind::Log:
+        case ScriptSideEffectKind::Log:
           kLog.info("{}", effect.title);
           break;
-        case ScriptWidgetSideEffectKind::NotifyInfo:
+        case ScriptSideEffectKind::NotifyInfo:
           notify::info("Noctalia", effect.title, effect.body);
           break;
-        case ScriptWidgetSideEffectKind::NotifyError:
+        case ScriptSideEffectKind::NotifyError:
           notify::error("Noctalia", effect.title, effect.body);
           break;
-        case ScriptWidgetSideEffectKind::CopyToClipboard:
+        case ScriptSideEffectKind::CopyToClipboard:
           if (clipboard == nullptr || !clipboard->copyText(effect.title, effect.body)) {
             kLog.warn("scripted clipboard copy failed");
           }
@@ -118,7 +118,7 @@ namespace scripting {
 
   struct ScriptRuntime::State : public std::enable_shared_from_this<ScriptRuntime::State> {
     explicit State(
-        std::string name, ScriptWidgetSettings widgetSettings, ScriptApiContext& api, std::filesystem::path dir,
+        std::string name, ScriptSettings widgetSettings, ScriptApiContext& api, std::filesystem::path dir,
         HttpClient* httpClientPtr, ClipboardService* clipboardService
     )
         : runtimeName(std::move(name)), settings(std::move(widgetSettings)), scriptApi(api), pluginDir(std::move(dir)),
@@ -126,22 +126,22 @@ namespace scripting {
 
     mutable std::mutex mutex;
     std::string runtimeName;
-    ScriptWidgetSettings settings;
+    ScriptSettings settings;
     ScriptApiContext& scriptApi;
     std::filesystem::path pluginDir;
     HttpClient* httpClient = nullptr;
     const std::uint64_t stateToken = nextStateToken();
-    std::deque<ScriptWidgetEvent> queue;
-    std::unordered_map<SubscriberId, ScriptWidgetResultCallback> subscribers;
+    std::deque<ScriptEvent> queue;
+    std::unordered_map<SubscriberId, ScriptResultCallback> subscribers;
     std::unique_ptr<LuauHost> host;
-    ScriptedWidgetBindingContext bindingContext;
+    PluginBindingContext bindingContext;
     ClipboardService* clipboard = nullptr;
     SubscriberId nextSubscriberId = 1;
     std::uint64_t generation = 0;
     std::chrono::milliseconds updateInterval{250};
     std::chrono::steady_clock::time_point lastUpdateAccepted;
     std::vector<std::chrono::steady_clock::time_point> timeoutHistory;
-    ScriptWidgetResult replayState;
+    ScriptResult replayState;
     bool replayStateReady = false;
     bool scheduled = false;
     bool stopped = false;
@@ -152,12 +152,12 @@ namespace scripting {
     bool unhealthy = false;
     int consecutiveTimeouts = 0;
 
-    SubscriberId subscribe(ScriptWidgetResultCallback callback) {
+    SubscriberId subscribe(ScriptResultCallback callback) {
       if (!callback) {
         return 0;
       }
       SubscriberId id = 0;
-      ScriptWidgetResult replay;
+      ScriptResult replay;
       bool hasReplay = false;
       {
         std::lock_guard lock(mutex);
@@ -175,7 +175,7 @@ namespace scripting {
 
       auto self = shared_from_this();
       DeferredCall::callLater([self, id, replay = std::move(replay)]() mutable {
-        ScriptWidgetResultCallback subscriber;
+        ScriptResultCallback subscriber;
         {
           std::lock_guard replayLock(self->mutex);
           if (self->stopped || replay.generation != self->generation) {
@@ -209,7 +209,7 @@ namespace scripting {
       subscribers.clear();
     }
 
-    bool enqueue(ScriptWidgetEvent event) {
+    bool enqueue(ScriptEvent event) {
       bool shouldSchedule = false;
       {
         std::lock_guard lock(mutex);
@@ -217,9 +217,9 @@ namespace scripting {
           return false;
         }
         if (unhealthy
-            && event.kind != ScriptWidgetEventKind::Reload
-            && event.kind != ScriptWidgetEventKind::Load
-            && event.kind != ScriptWidgetEventKind::Stop) {
+            && event.kind != ScriptEventKind::Reload
+            && event.kind != ScriptEventKind::Load
+            && event.kind != ScriptEventKind::Stop) {
           return false;
         }
 
@@ -227,9 +227,9 @@ namespace scripting {
         // callback with the newer payload instead of appending. Bounds the queue
         // to a single pending event per callback (e.g. onAudioSpectrum at 60Hz),
         // so a slow script can never accumulate stale spectrum frames.
-        if (event.kind == ScriptWidgetEventKind::CallStrings && event.coalesce) {
+        if (event.kind == ScriptEventKind::CallStrings && event.coalesce) {
           const auto existing = std::find_if(queue.begin(), queue.end(), [&event](const auto& queued) {
-            return queued.kind == ScriptWidgetEventKind::CallStrings
+            return queued.kind == ScriptEventKind::CallStrings
                 && queued.coalesce
                 && queued.functionName == event.functionName;
           });
@@ -240,7 +240,7 @@ namespace scripting {
           }
         }
 
-        if (event.kind == ScriptWidgetEventKind::Update) {
+        if (event.kind == ScriptEventKind::Update) {
           const auto now = std::chrono::steady_clock::now();
           if (updateQueued || updateRunning) {
             return true;
@@ -255,18 +255,18 @@ namespace scripting {
         }
 
         if (queue.size() >= kMaxQueuedEvents) {
-          if (event.kind == ScriptWidgetEventKind::Update) {
+          if (event.kind == ScriptEventKind::Update) {
             updateQueued = false;
             return false;
           }
-          if (event.kind == ScriptWidgetEventKind::CallBool) {
+          if (event.kind == ScriptEventKind::CallBool) {
             return false;
           }
           const auto droppable = std::find_if(queue.begin(), queue.end(), [](const auto& queued) {
-            return queued.kind == ScriptWidgetEventKind::Update || queued.kind == ScriptWidgetEventKind::CallBool;
+            return queued.kind == ScriptEventKind::Update || queued.kind == ScriptEventKind::CallBool;
           });
           if (droppable != queue.end()) {
-            if (droppable->kind == ScriptWidgetEventKind::Update) {
+            if (droppable->kind == ScriptEventKind::Update) {
               updateQueued = false;
             }
             queue.erase(droppable);
@@ -275,7 +275,7 @@ namespace scripting {
           }
         }
 
-        if (event.kind == ScriptWidgetEventKind::Load || event.kind == ScriptWidgetEventKind::Reload) {
+        if (event.kind == ScriptEventKind::Load || event.kind == ScriptEventKind::Reload) {
           ++generation;
           event.generation = generation;
           queue.clear();
@@ -306,8 +306,8 @@ namespace scripting {
     }
 
     void enqueueAsyncResult(std::uint64_t hostId, int callbackRef, process::RunResult result) {
-      ScriptWidgetEvent event;
-      event.kind = ScriptWidgetEventKind::AsyncCommandResult;
+      ScriptEvent event;
+      event.kind = ScriptEventKind::AsyncCommandResult;
       event.hostId = hostId;
       event.callbackRef = callbackRef;
       event.commandResult = std::move(result);
@@ -316,8 +316,8 @@ namespace scripting {
     }
 
     void enqueueAsyncProcessMatchResult(std::uint64_t hostId, int callbackRef, bool matched) {
-      ScriptWidgetEvent event;
-      event.kind = ScriptWidgetEventKind::AsyncProcessMatchResult;
+      ScriptEvent event;
+      event.kind = ScriptEventKind::AsyncProcessMatchResult;
       event.hostId = hostId;
       event.callbackRef = callbackRef;
       event.processMatchResult = matched;
@@ -328,8 +328,8 @@ namespace scripting {
     void enqueueAsyncHttpResult(
         std::uint64_t hostId, int callbackRef, bool ok, int status, std::string body, bool isDownload
     ) {
-      ScriptWidgetEvent event;
-      event.kind = ScriptWidgetEventKind::AsyncHttpResult;
+      ScriptEvent event;
+      event.kind = ScriptEventKind::AsyncHttpResult;
       event.hostId = hostId;
       event.callbackRef = callbackRef;
       event.httpOk = ok;
@@ -341,8 +341,8 @@ namespace scripting {
     }
 
     void enqueueStateWatchResult(int callbackRef, std::string json) {
-      ScriptWidgetEvent event;
-      event.kind = ScriptWidgetEventKind::StateWatchResult;
+      ScriptEvent event;
+      event.kind = ScriptEventKind::StateWatchResult;
       event.callbackRef = callbackRef;
       event.stateJson = std::move(json);
       event.budget = kCallbackBudget;
@@ -350,8 +350,8 @@ namespace scripting {
     }
 
     void enqueueStreamLine(std::uint64_t hostId, int callbackRef, std::string line) {
-      ScriptWidgetEvent event;
-      event.kind = ScriptWidgetEventKind::StreamLine;
+      ScriptEvent event;
+      event.kind = ScriptEventKind::StreamLine;
       event.hostId = hostId;
       event.callbackRef = callbackRef;
       event.first = std::move(line);
@@ -361,7 +361,7 @@ namespace scripting {
 
     void drain() {
       for (;;) {
-        ScriptWidgetEvent event;
+        ScriptEvent event;
         {
           std::lock_guard lock(mutex);
           if (queue.empty() || stopped) {
@@ -370,7 +370,7 @@ namespace scripting {
           }
           event = std::move(queue.front());
           queue.pop_front();
-          if (event.kind == ScriptWidgetEventKind::Update) {
+          if (event.kind == ScriptEventKind::Update) {
             updateQueued = false;
             updateRunning = true;
           }
@@ -380,7 +380,7 @@ namespace scripting {
 
         {
           std::lock_guard lock(mutex);
-          if (event.kind == ScriptWidgetEventKind::Update) {
+          if (event.kind == ScriptEventKind::Update) {
             updateRunning = false;
           }
         }
@@ -391,12 +391,12 @@ namespace scripting {
       }
     }
 
-    std::optional<ScriptWidgetResult> processEvent(const ScriptWidgetEvent& event) {
-      if (event.kind == ScriptWidgetEventKind::Stop) {
+    std::optional<ScriptResult> processEvent(const ScriptEvent& event) {
+      if (event.kind == ScriptEventKind::Stop) {
         return std::nullopt;
       }
 
-      if (event.kind == ScriptWidgetEventKind::Load || event.kind == ScriptWidgetEventKind::Reload) {
+      if (event.kind == ScriptEventKind::Load || event.kind == ScriptEventKind::Reload) {
         return processLoad(event);
       }
 
@@ -404,7 +404,7 @@ namespace scripting {
         return std::nullopt;
       }
 
-      if (event.kind == ScriptWidgetEventKind::AsyncCommandResult) {
+      if (event.kind == ScriptEventKind::AsyncCommandResult) {
         if (event.hostId != host->hostId() || !host->hasAsyncCommandCallback(event.callbackRef)) {
           return std::nullopt;
         }
@@ -413,7 +413,7 @@ namespace scripting {
         return collectResult(event, "async command callback", ok);
       }
 
-      if (event.kind == ScriptWidgetEventKind::AsyncProcessMatchResult) {
+      if (event.kind == ScriptEventKind::AsyncProcessMatchResult) {
         if (event.hostId != host->hostId() || !host->hasAsyncProcessMatchCallback(event.callbackRef)) {
           return std::nullopt;
         }
@@ -422,7 +422,7 @@ namespace scripting {
         return collectResult(event, "process match callback", ok);
       }
 
-      if (event.kind == ScriptWidgetEventKind::AsyncHttpResult) {
+      if (event.kind == ScriptEventKind::AsyncHttpResult) {
         if (event.hostId != host->hostId() || !host->hasAsyncHttpCallback(event.callbackRef)) {
           return std::nullopt;
         }
@@ -435,7 +435,7 @@ namespace scripting {
         return collectResult(event, "http callback", ok);
       }
 
-      if (event.kind == ScriptWidgetEventKind::StateWatchResult) {
+      if (event.kind == ScriptEventKind::StateWatchResult) {
         if (!host->hasStateWatchCallback(event.callbackRef)) {
           return std::nullopt;
         }
@@ -444,7 +444,7 @@ namespace scripting {
         return collectResult(event, "state watch callback", ok);
       }
 
-      if (event.kind == ScriptWidgetEventKind::StreamLine) {
+      if (event.kind == ScriptEventKind::StreamLine) {
         if (event.hostId != host->hostId() || !host->hasStreamCallback(event.callbackRef)) {
           return std::nullopt; // stale (reloaded host) or unregistered
         }
@@ -456,20 +456,20 @@ namespace scripting {
       bindingContext.beginCall(event.snapshot);
       bool ok = false;
       switch (event.kind) {
-      case ScriptWidgetEventKind::Update:
-      case ScriptWidgetEventKind::Call:
+      case ScriptEventKind::Update:
+      case ScriptEventKind::Call:
         if (!host->hasGlobal(event.functionName.c_str())) {
           return std::nullopt;
         }
         ok = host->callGlobalWithBudget(event.functionName.c_str(), event.budget);
         break;
-      case ScriptWidgetEventKind::CallBool:
+      case ScriptEventKind::CallBool:
         if (!host->hasGlobal(event.functionName.c_str())) {
           return std::nullopt;
         }
         ok = host->callGlobalWithBoolAndBudget(event.functionName.c_str(), event.boolValue, event.budget);
         break;
-      case ScriptWidgetEventKind::CallStrings:
+      case ScriptEventKind::CallStrings:
         if (!host->hasGlobal(event.functionName.c_str())) {
           return std::nullopt;
         }
@@ -481,7 +481,7 @@ namespace scripting {
       return collectResult(event, event.functionName, ok);
     }
 
-    ScriptWidgetResult processLoad(const ScriptWidgetEvent& event) {
+    ScriptResult processLoad(const ScriptEvent& event) {
       // Drop watchers registered by the previous load before re-registering below.
       PluginStateStore::instance().removeWatchers(stateToken);
 
@@ -494,7 +494,7 @@ namespace scripting {
       host->loadTranslations();
       host->setHttpClient(httpClient);
       host->setScriptContext(&bindingContext);
-      registerScriptedWidgetBindings(host->state(), &bindingContext);
+      registerPluginBindings(host->state(), &bindingContext);
 
       std::weak_ptr<State> weak = shared_from_this();
       const std::string pluginId = runtimeName.substr(0, runtimeName.find(':'));
@@ -529,7 +529,7 @@ namespace scripting {
         }
       });
 
-      ScriptWidgetResult result;
+      ScriptResult result;
       result.generation = event.generation;
       result.callbackName = "load";
 
@@ -538,8 +538,8 @@ namespace scripting {
       mergeResult(result, collectResult(event, "load", ok));
 
       if (ok) {
-        ScriptWidgetEvent updateEvent = event;
-        updateEvent.kind = ScriptWidgetEventKind::Update;
+        ScriptEvent updateEvent = event;
+        updateEvent.kind = ScriptEventKind::Update;
         updateEvent.functionName = "update";
         updateEvent.budget = kUpdateBudget;
         if (host->hasGlobal("update")) {
@@ -559,8 +559,8 @@ namespace scripting {
       return result;
     }
 
-    ScriptWidgetResult collectResult(const ScriptWidgetEvent& event, std::string_view callbackName, bool ok) {
-      ScriptWidgetResult result;
+    ScriptResult collectResult(const ScriptEvent& event, std::string_view callbackName, bool ok) {
+      ScriptResult result;
       result.generation = event.generation;
       result.callbackName = std::string(callbackName);
       result.ok = ok;
@@ -581,7 +581,7 @@ namespace scripting {
       return result;
     }
 
-    void updateHealth(ScriptWidgetResult& result) {
+    void updateHealth(ScriptResult& result) {
       std::lock_guard lock(mutex);
       if (!result.timedOut) {
         consecutiveTimeouts = 0;
@@ -600,13 +600,13 @@ namespace scripting {
       }
     }
 
-    void postResult(ScriptWidgetResult result) {
+    void postResult(ScriptResult result) {
       auto self = shared_from_this();
       DeferredCall::callLater([self, result = std::move(result)]() mutable { self->deliverResult(std::move(result)); });
     }
 
-    void deliverResult(ScriptWidgetResult result) {
-      std::vector<ScriptWidgetResultCallback> callbacks;
+    void deliverResult(ScriptResult result) {
+      std::vector<ScriptResultCallback> callbacks;
       {
         std::lock_guard lock(mutex);
         if (result.generation != generation || stopped) {
@@ -650,7 +650,7 @@ namespace scripting {
   };
 
   ScriptRuntime::ScriptRuntime(
-      std::string runtimeName, ScriptWidgetSettings settings, ScriptApiContext& api, std::filesystem::path pluginDir,
+      std::string runtimeName, ScriptSettings settings, ScriptApiContext& api, std::filesystem::path pluginDir,
       HttpClient* httpClient, ClipboardService* clipboard
   )
       : m_state(
@@ -661,7 +661,7 @@ namespace scripting {
 
   ScriptRuntime::~ScriptRuntime() { stop(); }
 
-  ScriptRuntime::SubscriberId ScriptRuntime::subscribe(ScriptWidgetResultCallback callback) {
+  ScriptRuntime::SubscriberId ScriptRuntime::subscribe(ScriptResultCallback callback) {
     return m_state != nullptr ? m_state->subscribe(std::move(callback)) : 0;
   }
 
@@ -677,16 +677,16 @@ namespace scripting {
     }
   }
 
-  void ScriptRuntime::start(std::string chunkName, std::string source, ScriptWidgetSnapshot snapshot) {
+  void ScriptRuntime::start(std::string chunkName, std::string source, ScriptSnapshot snapshot) {
     reload(std::move(chunkName), std::move(source), std::move(snapshot));
   }
 
-  void ScriptRuntime::reload(std::string chunkName, std::string source, ScriptWidgetSnapshot snapshot) {
+  void ScriptRuntime::reload(std::string chunkName, std::string source, ScriptSnapshot snapshot) {
     if (m_state == nullptr) {
       return;
     }
-    ScriptWidgetEvent event;
-    event.kind = ScriptWidgetEventKind::Reload;
+    ScriptEvent event;
+    event.kind = ScriptEventKind::Reload;
     event.chunkName = std::move(chunkName);
     event.source = std::move(source);
     event.snapshot = std::move(snapshot);
@@ -694,27 +694,27 @@ namespace scripting {
     (void)m_state->enqueue(std::move(event));
   }
 
-  bool ScriptRuntime::enqueueUpdate(ScriptWidgetSnapshot snapshot) {
-    ScriptWidgetEvent event;
-    event.kind = ScriptWidgetEventKind::Update;
+  bool ScriptRuntime::enqueueUpdate(ScriptSnapshot snapshot) {
+    ScriptEvent event;
+    event.kind = ScriptEventKind::Update;
     event.functionName = "update";
     event.snapshot = std::move(snapshot);
     event.budget = kUpdateBudget;
     return m_state != nullptr && m_state->enqueue(std::move(event));
   }
 
-  bool ScriptRuntime::enqueueCall(std::string functionName, ScriptWidgetSnapshot snapshot) {
-    ScriptWidgetEvent event;
-    event.kind = ScriptWidgetEventKind::Call;
+  bool ScriptRuntime::enqueueCall(std::string functionName, ScriptSnapshot snapshot) {
+    ScriptEvent event;
+    event.kind = ScriptEventKind::Call;
     event.functionName = std::move(functionName);
     event.snapshot = std::move(snapshot);
     event.budget = kCallbackBudget;
     return m_state != nullptr && m_state->enqueue(std::move(event));
   }
 
-  bool ScriptRuntime::enqueueCallBool(std::string functionName, bool value, ScriptWidgetSnapshot snapshot) {
-    ScriptWidgetEvent event;
-    event.kind = ScriptWidgetEventKind::CallBool;
+  bool ScriptRuntime::enqueueCallBool(std::string functionName, bool value, ScriptSnapshot snapshot) {
+    ScriptEvent event;
+    event.kind = ScriptEventKind::CallBool;
     event.functionName = std::move(functionName);
     event.boolValue = value;
     event.snapshot = std::move(snapshot);
@@ -723,10 +723,10 @@ namespace scripting {
   }
 
   bool ScriptRuntime::enqueueCallStrings(
-      std::string functionName, std::string first, std::string second, ScriptWidgetSnapshot snapshot, bool coalesce
+      std::string functionName, std::string first, std::string second, ScriptSnapshot snapshot, bool coalesce
   ) {
-    ScriptWidgetEvent event;
-    event.kind = ScriptWidgetEventKind::CallStrings;
+    ScriptEvent event;
+    event.kind = ScriptEventKind::CallStrings;
     event.functionName = std::move(functionName);
     event.first = std::move(first);
     event.second = std::move(second);

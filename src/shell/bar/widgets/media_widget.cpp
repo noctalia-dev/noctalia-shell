@@ -222,23 +222,33 @@ void MediaWidget::syncState(Renderer& renderer) {
     return;
   }
 
+  if (playbackChanged && !textChanged && !artChanged && !artAwaitingDecode) {
+    m_lastPlaybackStatus = playbackStatus;
+    m_label->setColor(
+        m_lastPlaybackStatus == "Playing" ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
+                                          : colorSpecFromRole(ColorRole::OnSurfaceVariant)
+    );
+    requestRedraw();
+    return;
+  }
+
   m_lastText = displayText;
   m_lastArtUrl = artUrl;
   m_lastPlaybackStatus = playbackStatus;
 
-  m_label->setMaxWidth(m_maxWidth * m_contentScale);
-  m_label->setText(m_lastText);
+  if (textChanged) {
+    m_label->setText(m_lastText);
+  }
   m_label->setColor(
       m_lastPlaybackStatus == "Playing" ? widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface))
                                         : colorSpecFromRole(ColorRole::OnSurfaceVariant)
   );
-  applyTitleScrollMode(m_label->visible());
-  m_label->measure(renderer);
 
   const int artDecodePx = static_cast<int>(std::round(64.0f * m_contentScale));
   if (artChanged) {
-    const std::string artPath =
-        resolveArtworkSource(m_httpClient, m_pendingArtDownloads, m_lastArtUrl, [this] { requestUpdate(); });
+    const std::string artPath = resolveArtworkSource(
+        m_httpClient, m_pendingArtDownloads, m_lastArtUrl, [this] { requestUpdate(); }, m_aliveGuard
+    );
     if (!artPath.empty()) {
       if (!m_art->setSourceFile(renderer, artPath, artDecodePx, true, true)) {
         kLog.warn("artwork load failed url=\"{}\" path=\"{}\"", m_lastArtUrl, artPath);
@@ -261,7 +271,11 @@ void MediaWidget::syncState(Renderer& renderer) {
     }
   }
 
-  requestRedraw();
+  if (textChanged || artChanged) {
+    requestUpdate();
+  } else {
+    requestRedraw();
+  }
 }
 
 std::string MediaWidget::buildDisplayText(const MprisPlayerInfo& player) {

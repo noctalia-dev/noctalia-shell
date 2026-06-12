@@ -365,13 +365,19 @@ std::unique_ptr<Flex> ScreenTimeTab::create() {
                       .color = colorSpecFromRole(ColorRole::OnSurface),
                       .maxLines = 1,
                       .flexGrow = 1.0f,
+                      // Labels opt out of hit-testing by default; the per-row tooltip needs hover events.
+                      .configure = [](Label& label) { label.setHitTestVisible(true); },
                   }),
                   ui::label({
                       .out = &m_appRows[i].duration,
                       .fontSize = usageDurationFontSize(scale),
                       .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
                       .maxLines = 1,
-                      .configure = [](Label& label) { label.setTextAlign(TextAlign::End); },
+                      .configure =
+                          [](Label& label) {
+                            label.setTextAlign(TextAlign::End);
+                            label.setHitTestVisible(true);
+                          },
                   })
               ),
               ui::row(

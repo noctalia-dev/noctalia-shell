@@ -8,8 +8,6 @@
 #include <limits>
 #include <math.h>
 
-LUAU_FASTFLAGVARIABLE(LuauCompileNewMathConstantsFolded)
-
 namespace Luau
 {
 namespace Compile
@@ -648,23 +646,20 @@ Constant foldBuiltinMath(AstName index)
     if (index == "huge")
         return cnum(HUGE_VAL);
 
-    if (FFlag::LuauCompileNewMathConstantsFolded)
-    {
-        if (index == "nan")
-            return cnum(kNan);
+    if (index == "nan")
+        return cnum(kNan);
 
-        if (index == "e")
-            return cnum(kE);
+    if (index == "e")
+        return cnum(kE);
 
-        if (index == "phi")
-            return cnum(kPhi);
+    if (index == "phi")
+        return cnum(kPhi);
 
-        if (index == "sqrt2")
-            return cnum(kSqrt2);
+    if (index == "sqrt2")
+        return cnum(kSqrt2);
 
-        if (index == "tau")
-            return cnum(kTau);
-    }
+    if (index == "tau")
+        return cnum(kTau);
 
     return cvar();
 }

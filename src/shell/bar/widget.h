@@ -69,7 +69,8 @@ public:
   [[nodiscard]] bool isAnchor() const noexcept { return m_anchor; }
 
   void setBarCapsuleSpec(WidgetBarCapsuleSpec spec) noexcept { m_barCapsuleSpec = std::move(spec); }
-  void setWidgetForeground(std::optional<ColorSpec> color) noexcept { m_widgetForeground = std::move(color); }
+  void setWidgetForeground(std::optional<ColorSpec> color) noexcept { m_widgetForeground = color; }
+  void setWidgetIconColor(std::optional<ColorSpec> color) noexcept { m_widgetIconColor = color; }
   [[nodiscard]] const WidgetBarCapsuleSpec& barCapsuleSpec() const noexcept { return m_barCapsuleSpec; }
   void setBarCapsuleScene(Node* shell, Box* box) noexcept;
   [[nodiscard]] Node* barCapsuleShell() const noexcept { return m_capsuleShell; }
@@ -81,9 +82,12 @@ public:
   // Whether the bar should paint the decorative capsule for this frame (spec enabled + visible ink).
   [[nodiscard]] virtual bool shouldShowBarCapsule() const;
 
-  // Resolved icon + primary label color: `[widget.*] color` when set, else `capsule_foreground` when capsule styling is
+  // Resolved primary label color: `[widget.*] color` when set, else `capsule_foreground` when capsule styling is
   // enabled, else `fallback` (e.g. colorSpecFromRole(OnSurface)).
   [[nodiscard]] ColorSpec widgetForegroundOr(const ColorSpec& fallback) const noexcept;
+  // Resolved icon color: `[widget.*] icon_color` when set, else the foreground chain
+  // (`color` → `capsule_foreground` → `fallback`), so a bare `color` still tints icons.
+  [[nodiscard]] ColorSpec widgetIconColorOr(const ColorSpec& fallback) const noexcept;
 
 protected:
   void requestUpdate();
@@ -109,6 +113,7 @@ protected:
   PanelToggleCallback m_panelToggleCallback;
   WidgetBarCapsuleSpec m_barCapsuleSpec{};
   std::optional<ColorSpec> m_widgetForeground;
+  std::optional<ColorSpec> m_widgetIconColor;
   Node* m_capsuleShell = nullptr;
   Box* m_capsuleBox = nullptr;
 

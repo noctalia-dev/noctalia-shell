@@ -85,6 +85,16 @@ public:
     markLayoutDirty();
   }
 
+  [[nodiscard]] TextEllipsize ellipsize() const noexcept { return m_ellipsize; }
+
+  void setEllipsize(TextEllipsize ellipsize) {
+    if (m_ellipsize == ellipsize) {
+      return;
+    }
+    m_ellipsize = ellipsize;
+    markLayoutDirty();
+  }
+
   [[nodiscard]] bool hasShadow() const noexcept { return m_hasShadow; }
   [[nodiscard]] const Color& shadowColor() const noexcept { return m_shadowColor; }
   [[nodiscard]] float shadowOffsetX() const noexcept { return m_shadowOffsetX; }
@@ -114,6 +124,7 @@ private:
   int m_maxLines = 0;
   Color m_color;
   TextAlign m_textAlign = TextAlign::Start;
+  TextEllipsize m_ellipsize = TextEllipsize::End;
   int m_fontWeight = static_cast<int>(FontWeight::Normal);
   bool m_hasShadow = false;
   Color m_shadowColor;

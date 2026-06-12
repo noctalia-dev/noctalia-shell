@@ -154,16 +154,16 @@ enum class AudioSpectrumOrientation : std::uint8_t {
 };
 
 struct AudioSpectrumStyle {
-  Color lowColor{};
-  Color highColor{};
+  Color color1{};
+  Color color2{};
   AudioSpectrumOrientation orientation = AudioSpectrumOrientation::Horizontal;
   bool mirrored = false;
   bool centered = false;
 };
 
 constexpr bool operator==(const AudioSpectrumStyle& lhs, const AudioSpectrumStyle& rhs) noexcept {
-  return lhs.lowColor == rhs.lowColor
-      && lhs.highColor == rhs.highColor
+  return lhs.color1 == rhs.color1
+      && lhs.color2 == rhs.color2
       && lhs.orientation == rhs.orientation
       && lhs.mirrored == rhs.mirrored
       && lhs.centered == rhs.centered;

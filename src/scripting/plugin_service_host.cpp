@@ -50,14 +50,14 @@ namespace scripting {
     return DispatchResult::Handled;
   }
 
-  std::optional<ScriptWidgetSettings>
+  std::optional<ScriptSettings>
   PluginServiceHost::seedFor(const std::string& entryId, const PluginSettingsMap& pluginSettings) const {
     auto entry = PluginRegistry::instance().resolve(entryId);
     if (!entry.has_value()) {
       return std::nullopt;
     }
     auto seeded = seedEntrySettings(*entry->entry, {});
-    static const ScriptWidgetSettings kEmpty;
+    static const ScriptSettings kEmpty;
     const auto it = pluginSettings.find(entry->manifest->id);
     mergePluginSettings(*entry->manifest, it != pluginSettings.end() ? it->second : kEmpty, seeded);
     return seeded;
@@ -66,7 +66,7 @@ namespace scripting {
   void PluginServiceHost::subscribeAndArm(Service& service) {
     Service* svc = &service;
     std::weak_ptr<bool> alive = service.alive;
-    service.subscription = service.runtime->subscribe([this, svc, alive](const ScriptWidgetResult& result) {
+    service.subscription = service.runtime->subscribe([this, svc, alive](const ScriptResult& result) {
       auto token = alive.lock();
       if (token == nullptr || !*token) {
         return;
@@ -83,7 +83,7 @@ namespace scripting {
   }
 
   std::unique_ptr<PluginServiceHost::Service> PluginServiceHost::makeService(
-      const std::string& entryId, const std::filesystem::path& source, ScriptWidgetSettings seeded
+      const std::string& entryId, const std::filesystem::path& source, ScriptSettings seeded
   ) {
     std::string code = readFile(source);
     if (code.empty()) {
@@ -121,7 +121,7 @@ namespace scripting {
     PluginRegistry::instance().ensureScanned();
     for (const auto& entry : PluginRegistry::instance().entriesOfKind(PluginEntryKind::Service)) {
       auto seeded = seedFor(entry.fullId(), pluginSettings);
-      if (auto service = makeService(entry.fullId(), entry.sourcePath, seeded.value_or(ScriptWidgetSettings{}))) {
+      if (auto service = makeService(entry.fullId(), entry.sourcePath, seeded.value_or(ScriptSettings{}))) {
         kLog.info("started service '{}'", entry.fullId());
         m_services.push_back(std::move(service));
       }

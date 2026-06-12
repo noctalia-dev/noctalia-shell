@@ -173,8 +173,8 @@ std::unique_ptr<DesktopWidget> DesktopWidgetFactory::create(
     auto widget = std::make_unique<DesktopAudioVisualizerWidget>(
         m_pipewireSpectrum, getFloatSetting(settings, "aspect_ratio", kDefaultDesktopAudioVisualizerAspectRatio),
         getIntSetting(settings, "bands", 32), getBoolSetting(settings, "mirrored", true),
-        getColorSpecSetting(settings, "low_color", colorSpecFromRole(ColorRole::Primary)),
-        getColorSpecSetting(settings, "high_color", colorSpecFromRole(ColorRole::Primary)),
+        getColorSpecSetting(settings, "color_1", colorSpecFromRole(ColorRole::Primary)),
+        getColorSpecSetting(settings, "color_2", colorSpecFromRole(ColorRole::Primary)),
         getBoolSetting(settings, "centered", true), getBoolSetting(settings, "show_when_idle", true)
     );
     applyCommonSettings(*widget, settings);
@@ -297,6 +297,7 @@ std::unique_ptr<DesktopWidget> DesktopWidgetFactory::create(
 
   if (type == "login_box") {
     auto widget = std::make_unique<DesktopLoginBoxWidget>();
+    widget->setSettings(settings);
     widget->setContentScale(contentScale);
     return widget;
   }

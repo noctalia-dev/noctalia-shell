@@ -500,14 +500,26 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
     }
   }
 
+  const lockscreen_login_box::LoginBoxStyle loginStyle = [this]() {
+    if (m_config == nullptr) {
+      return lockscreen_login_box::LoginBoxStyle{};
+    }
+    if (const DesktopWidgetState* loginBox =
+            lockscreen_login_box::findForOutput(m_config->config().lockscreenWidgets.widgets, m_outputKey);
+        loginBox != nullptr) {
+      return lockscreen_login_box::resolveStyle(loginBox->settings);
+    }
+    return lockscreen_login_box::LoginBoxStyle{};
+  }();
+
   m_loginPanel->setPosition(panelX, panelY);
   m_loginPanel->setSize(panelWidth, panelHeight);
   m_loginPanel->setStyle(
       RoundedRectStyle{
-          .fill = colorForRole(ColorRole::SurfaceVariant, 0.88f),
+          .fill = resolveColorSpec(loginStyle.panelFill),
           .border = colorForRole(ColorRole::Outline, 0.95f),
           .fillMode = FillMode::Solid,
-          .radius = Style::scaledRadiusXl(),
+          .radius = Style::scaledRadius(loginStyle.panelRadius),
           .softness = 1.0f,
           .borderWidth = Style::borderWidth,
       }
@@ -519,15 +531,22 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
   const float contentWidth = panelWidth - Style::spaceLg - rightInset;
   const float buttonWidth = Style::controlHeight;
   const float gap = Style::spaceSm;
-  const float inputWidth = std::max(120.0f, contentWidth - buttonWidth - gap);
+  const float inputWidth =
+      loginStyle.showLoginButton ? std::max(120.0f, contentWidth - buttonWidth - gap) : std::max(120.0f, contentWidth);
 
+  m_passwordField->setSurfaceOpacity(loginStyle.inputOpacity);
+  m_passwordField->setFrameRadius(loginStyle.inputRadius);
   m_passwordField->setSize(inputWidth, 0.0f);
   m_passwordField->setPosition(contentLeft, contentTop);
   m_passwordField->layout(*renderer);
 
-  m_loginButton->setSize(buttonWidth, Style::controlHeight);
-  m_loginButton->setPosition(contentLeft + inputWidth + gap, contentTop);
-  m_loginButton->layout(*renderer);
+  m_loginButton->setVisible(loginStyle.showLoginButton);
+  if (loginStyle.showLoginButton) {
+    m_loginButton->setRadius(Style::scaledRadius(loginStyle.inputRadius));
+    m_loginButton->setSize(buttonWidth, Style::controlHeight);
+    m_loginButton->setPosition(contentLeft + inputWidth + gap, contentTop);
+    m_loginButton->layout(*renderer);
+  }
 }
 
 void LockSurface::updateCopy() { m_passwordField->setValue(m_password); }

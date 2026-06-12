@@ -118,6 +118,7 @@ private:
   void requestClose(uint32_t notificationId, CloseReason reason);
   void removePopup(uint32_t notificationId);
   void finishRemoval(uint32_t notificationId);
+  void finishExitingEntryIfOrphaned(uint32_t notificationId);
   void updateInputRegion(Instance& inst) const;
   void enterInlineReplyMode(uint32_t notificationId);
   void submitInlineReply(uint32_t notificationId, const std::string& replyText);

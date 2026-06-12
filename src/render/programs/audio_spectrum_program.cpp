@@ -185,7 +185,7 @@ void AudioSpectrumProgram::draw(
       crossEnd = crossAxisLen;
     }
     const float t = barCount <= 1 ? 0.0f : static_cast<float>(i) / static_cast<float>(barCount - 1);
-    const Color color = colorAt(style.lowColor, style.highColor, t);
+    const Color color = colorAt(style.color1, style.color2, t);
 
     if (horizontal) {
       pushQuad(m_vertices, mainStart, crossStart, mainEnd, crossEnd, color);

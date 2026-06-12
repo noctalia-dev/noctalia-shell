@@ -48,7 +48,7 @@ void LockKeysWidget::create() {
           .out = &m_glyph,
           .glyph = "lock",
           .glyphSize = Style::baseGlyphSize * m_contentScale,
-          .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
+          .color = widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)),
       })
   );
 
@@ -203,7 +203,7 @@ void LockKeysWidget::sync(Renderer& renderer) {
 
   if (m_glyph != nullptr) {
     m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
-    m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
+    m_glyph->setColor(widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)));
   }
 
   const bool full = m_displayMode == DisplayMode::Full;

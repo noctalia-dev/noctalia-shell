@@ -8,6 +8,7 @@
 #include "core/log.h"
 #include "core/process.h"
 #include "core/resource_paths.h"
+#include "cursor-shape-v1-client-protocol.h"
 #include "dbus/network/network_manager_service.h"
 #include "dbus/network/wpa_supplicant_service.h"
 #include "i18n/i18n.h"
@@ -382,8 +383,9 @@ void Application::syncClipboardService() {
   m_wayland.setClipboardService(&m_clipboardService);
   Input::setTextClipboard(&m_clipboardService);
   m_clipboardService.setHistoryRetentionEnabled(enabled);
-  const int maxEntries = m_configService.config().shell.clipboardHistoryMaxEntries;
-  m_clipboardService.setMaxHistoryEntries(static_cast<std::size_t>(std::clamp(maxEntries, 10, 200)));
+  m_clipboardService.setMaxHistoryEntries(
+      static_cast<std::size_t>(m_configService.config().shell.clipboardHistoryMaxEntries)
+  );
 
   if (!enabled) {
     if (m_panelManager.isOpenPanel("clipboard")) {
@@ -423,6 +425,7 @@ void Application::run(std::function<void()> startupReadyCallback) {
     m_configService.addReloadCallback([this]() {
       if (m_configService.lastChange().plugins) {
         m_pluginServiceHost.refresh(m_configService.config().plugins.pluginSettings);
+        m_settingsWindow.onPluginsChanged();
       }
     });
     // A git update() advances a source without a config change, so it bypasses the
@@ -430,6 +433,7 @@ void Application::run(std::function<void()> startupReadyCallback) {
     m_pluginManager.setOnChanged([this]() {
       m_pluginServiceHost.refresh(m_configService.config().plugins.pluginSettings);
       m_bar.refresh();
+      m_settingsWindow.onPluginsChanged();
     });
   });
   runStartupPhase("initIpc", [this]() { initIpc(); });
@@ -654,6 +658,12 @@ void Application::initServices() {
     if (m_panelManager.isOpenPanel("control-center")) {
       m_panelManager.refresh();
     }
+    if (!m_lockScreen.isActive() && m_wayland.hasPointerPosition() && !m_wayland.activeToplevel().has_value()) {
+      const std::uint32_t serial = m_wayland.lastInputSerial();
+      if (serial != 0) {
+        m_wayland.setCursorShape(serial, WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT);
+      }
+    }
   });
   if constexpr (kLockKeysEnabled) {
     if (lockKeysConsumersEnabled(m_configService.config())) {
@@ -803,6 +813,18 @@ void Application::initServices() {
       }
     } else {
       kLog.info("logind not available on system bus; sleep monitor disabled");
+    }
+
+    try {
+      m_accountsService = std::make_unique<AccountsService>(*m_systemBus);
+      m_accountsService->setChangeCallback([this]() {
+        m_panelManager.refresh();
+        m_settingsWindow.onExternalOptionsChanged();
+      });
+      kLog.info("accounts service active for uid {}", m_accountsService->sessionUid());
+    } catch (const std::exception& e) {
+      kLog.warn("accounts service disabled: {}", e.what());
+      m_accountsService.reset();
     }
 
     try {
@@ -1243,7 +1265,7 @@ void Application::initUi() {
   }
   m_backdrop.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
   m_settingsWindow.initialize(m_wayland, &m_configService, &m_renderContext, &m_dependencyService,
-                              m_upowerService.get(), &m_idleManager);
+                              m_upowerService.get(), &m_idleManager, m_accountsService.get());
   m_settingsWindow.setPluginManager(&m_pluginManager);
   m_settingsWindow.setOpenDesktopWidgetEditor([this]() {
     if (m_lockscreenWidgetsController.isEditing()) {
@@ -1259,6 +1281,9 @@ void Application::initUi() {
     }
   });
   m_settingsWindow.setOpenLockscreenWidgetEditor([this]() {
+    if (!m_configService.isLockScreenEnabled()) {
+      return;
+    }
     if (m_lockScreen.isActive()) {
       notify::info(
           "Noctalia", i18n::tr("notifications.internal.lockscreen-widgets-editor"),
@@ -1313,7 +1338,13 @@ void Application::initUi() {
   });
   m_lockScreen.initialize(m_wayland, &m_renderContext, &m_configService, &m_sharedTextureCache);
   m_wallpaper.setAutomationGate([this]() { return !m_lockScreen.isActive(); });
-  m_configService.addReloadCallback([this]() { m_lockScreen.onConfigChanged(); });
+  m_configService.addReloadCallback([this]() {
+    if (m_logindService != nullptr) {
+      m_logindService->setSessionLockIntegrationEnabled(m_configService.isLockScreenEnabled());
+    }
+    m_lockScreen.onConfigChanged();
+    m_lockscreenWidgetsController.onLockStateChanged();
+  });
   m_lockScreen.setSessionHooks(
       [this]() {
         m_lockscreenWidgetsController.onLockStateChanged();
@@ -1345,7 +1376,11 @@ void Application::initUi() {
   }
 #endif
   if (m_logindService != nullptr) {
+    m_logindService->setSessionLockIntegrationEnabled(m_configService.isLockScreenEnabled());
     m_logindService->setLockCallback([this]() {
+      if (!m_configService.isLockScreenEnabled()) {
+        return;
+      }
       if (!m_lockScreen.isActive()) {
         (void)m_lockScreen.lock();
       }
@@ -1355,7 +1390,12 @@ void Application::initUi() {
         m_lockScreen.unlock();
       }
     });
-    m_lockScreen.setLockEngagedCallback([this]() { m_logindService->syncSessionLocked(); });
+    m_lockScreen.setLockEngagedCallback([this]() {
+      if (!m_configService.isLockScreenEnabled() || m_logindService == nullptr) {
+        return;
+      }
+      m_logindService->syncSessionLocked();
+    });
   }
 
   SessionActionHooks sessionActionHooks;
@@ -1369,23 +1409,30 @@ void Application::initUi() {
       m_lockScreen.onPointerEvent(event);
       return;
     }
+    if (m_colorPickerDialogPopup.onPointerEvent(event)) {
+      return;
+    }
+    if (m_glyphPickerDialogPopup.onPointerEvent(event)) {
+      return;
+    }
+    if (m_fileDialogPopup.onPointerEvent(event)) {
+      return;
+    }
     if (m_lockscreenWidgetsController.onPointerEvent(event)) {
       return;
     }
     if (m_desktopWidgetsController.onPointerEvent(event)) {
       return;
     }
+    if (m_wallpaper.onPointerEvent(event)) {
+      return;
+    }
     if (m_screenshotService.onPointerEvent(event)) {
       return;
     }
-    if (m_trayMenu.onPointerEvent(event))
+    if (m_trayMenu.onPointerEvent(event)) {
       return;
-    if (m_colorPickerDialogPopup.onPointerEvent(event))
-      return;
-    if (m_glyphPickerDialogPopup.onPointerEvent(event))
-      return;
-    if (m_fileDialogPopup.onPointerEvent(event))
-      return;
+    }
     if (m_settingsWindow.onPointerEvent(event))
       return;
     if (m_bar.onPointerEvent(event))
@@ -1404,10 +1451,6 @@ void Application::initUi() {
       m_lockScreen.onKeyboardEvent(event);
       return;
     }
-    if (m_lockscreenWidgetsController.isEditing()) {
-      m_lockscreenWidgetsController.onKeyboardEvent(event);
-      return;
-    }
     if (m_colorPickerDialogPopup.isOpen()) {
       m_colorPickerDialogPopup.onKeyboardEvent(event);
       return;
@@ -1418,6 +1461,10 @@ void Application::initUi() {
     }
     if (m_fileDialogPopup.isOpen()) {
       m_fileDialogPopup.onKeyboardEvent(event);
+      return;
+    }
+    if (m_lockscreenWidgetsController.isEditing()) {
+      m_lockscreenWidgetsController.onKeyboardEvent(event);
       return;
     }
     if (m_desktopWidgetsController.isEditing()) {
@@ -1491,7 +1538,7 @@ void Application::initUi() {
           m_networkService.get(), m_networkSecretAgent.get(), m_bluetoothService.get(), m_bluetoothAgent.get(),
           m_brightnessService.get(), m_systemMonitor.get(), &m_screenTimeService, &m_gammaService, &m_themeService,
           &m_idleInhibitor, &m_dependencyService, &m_compositorPlatform, &m_ipcService, &m_wallpaper,
-          &m_calendarService, &m_scriptApi, &m_clipboardService
+          &m_calendarService, &m_scriptApi, &m_clipboardService, m_accountsService.get()
       )
   );
   {
@@ -1582,7 +1629,7 @@ void Application::initUi() {
       ) {
         (void)behaviorName;
         // Snapshot the clean desktop before the overlay fades in
-        if (willLockSession) {
+        if (willLockSession && m_configService.isLockScreenEnabled()) {
           m_lockScreen.primeDesktopCaptures();
         }
         DeferredCall::callLater([this, fadeIn, done = std::move(onFadeComplete)]() mutable {
@@ -1686,6 +1733,21 @@ void Application::initUi() {
   m_configService.addReloadCallback([this]() { m_panelManager.onConfigReloaded(); });
   m_configService.addReloadCallback([this]() { m_screenCorners.onConfigReload(); });
 
+  m_layerPopupHosts.registerHost(
+      [this](wl_surface* surface) {
+        if (auto context = m_lockscreenWidgetsController.popupParentContextForSurface(surface); context.has_value()) {
+          return context;
+        }
+        return m_desktopWidgetsController.popupParentContextForSurface(surface);
+      },
+      {}, {},
+      [this]() {
+        if (auto context = m_lockscreenWidgetsController.fallbackPopupParentContext(); context.has_value()) {
+          return context;
+        }
+        return m_desktopWidgetsController.fallbackPopupParentContext();
+      }
+  );
   m_layerPopupHosts.registerHost(
       [this](wl_surface* surface) { return m_panelManager.popupParentContextForSurface(surface); },
       [this](wl_surface* surface) { m_panelManager.beginAttachedPopup(surface); },
@@ -1939,7 +2001,7 @@ void Application::initIpc() {
       "dpms-off", "Turn monitors off"
   );
 
-  registerSessionIpc(m_ipcService, m_sessionActionRunner, m_lockScreen);
+  registerSessionIpc(m_ipcService, m_sessionActionRunner, m_lockScreen, m_configService);
 
   if (m_powerProfilesService != nullptr) {
     m_powerProfilesService->registerIpc(m_ipcService, [this](std::string_view profile) {
@@ -1995,8 +2057,8 @@ void Application::initIpc() {
           std::string out;
           for (const auto& s : m_pluginManager.list()) {
             out += std::format(
-                "{} {} [{}]{}{}\n", s.id, s.version.empty() ? "-" : s.version, s.source, s.enabled ? " enabled" : "",
-                s.compatible ? "" : " incompatible"
+                "{} [{}] {}{}{}{}\n", s.id, s.source, s.version.empty() ? "-" : s.version, s.enabled ? " enabled" : "",
+                s.compatible ? "" : " incompatible", s.deprecated ? " deprecated" : ""
             );
           }
           return out.empty() ? "(no plugins)\n" : out;
@@ -2044,6 +2106,9 @@ void Application::initIpc() {
             if (!kind.has_value()) {
               return "error: source kind must be 'git' or 'path'\n";
             }
+            if (!isValidPluginSourceName(parts[2])) {
+              return "error: source name must use letters, digits, '.', '_' or '-', starting with a letter or digit\n";
+            }
             PluginSourceConfig source{
                 .kind = *kind,
                 .name = parts[2],
@@ -2056,6 +2121,9 @@ void Application::initIpc() {
           if (sub == "remove") {
             if (parts.size() != 3) {
               return "error: plugins source remove <name>\n";
+            }
+            if (isDefaultPluginSourceName(parts[2])) {
+              return "error: built-in plugin sources cannot be removed from IPC\n";
             }
             m_pluginManager.removeSource(parts[2]);
             return "ok\n";
@@ -2134,6 +2202,9 @@ bool Application::runIdleAction(const IdleActionRequest& action) {
   case IdleActionKind::Command:
     return runUserCommand(action.command);
   case IdleActionKind::Lock:
+    if (!m_configService.isLockScreenEnabled()) {
+      return true;
+    }
     return m_sessionActionRunner.lock();
   case IdleActionKind::ScreenOff:
     return m_compositorPlatform.setOutputPower(false);
@@ -2142,6 +2213,9 @@ bool Application::runIdleAction(const IdleActionRequest& action) {
   case IdleActionKind::Suspend:
     return m_sessionActionRunner.requestSuspendDetached();
   case IdleActionKind::LockAndSuspend:
+    if (!m_configService.isLockScreenEnabled()) {
+      return m_sessionActionRunner.requestSuspendDetached();
+    }
     return m_sessionActionRunner.lockThenSuspendDetached();
   }
   return false;

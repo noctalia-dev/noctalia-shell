@@ -13,6 +13,7 @@ class PopupSurface;
 class RenderContext;
 class WaylandConnection;
 struct wl_output;
+struct xdg_surface;
 struct zwlr_layer_surface_v1;
 
 class TooltipManager {
@@ -22,6 +23,7 @@ public:
   void initialize(WaylandConnection& wayland, RenderContext* renderContext);
 
   void onHoverChange(InputArea* area, zwlr_layer_surface_v1* parentLayerSurface, wl_output* output);
+  void onHoverChange(InputArea* area, xdg_surface* parentXdgSurface, wl_output* output);
   void syncAnchor(InputArea* area);
 
 private:
@@ -35,6 +37,7 @@ private:
   };
 
   void showPopup();
+  void handleHoverChange(InputArea* area);
   void dismissPopup();
   void destroyPopup();
   void refreshFromArea(InputArea* area);
@@ -52,7 +55,8 @@ private:
   Timer m_refreshTimer;
 
   TooltipContent m_pendingContent;
-  zwlr_layer_surface_v1* m_pendingParent = nullptr;
+  zwlr_layer_surface_v1* m_pendingLayerParent = nullptr;
+  xdg_surface* m_pendingXdgParent = nullptr;
   wl_output* m_pendingOutput = nullptr;
   InputArea* m_pendingArea = nullptr;
 

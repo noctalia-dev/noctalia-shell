@@ -60,5 +60,18 @@ inline bool alwaysTerminates(const DenseHashMap<AstExpr*, Constant>& constants, 
     return false;
 }
 
+template<typename T>
+T* unwrapExprOfType(AstExpr* node)
+{
+    if (T* expr = node->as<T>())
+        return expr;
+    else if (AstExprGroup* expr = node->as<AstExprGroup>())
+        return unwrapExprOfType<T>(expr->expr);
+    else if (AstExprTypeAssertion* expr = node->as<AstExprTypeAssertion>())
+        return unwrapExprOfType<T>(expr->expr);
+    else
+        return nullptr;
+}
+
 } // namespace Compile
 } // namespace Luau

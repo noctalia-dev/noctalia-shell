@@ -76,7 +76,7 @@ namespace {
         + '\n'
         + std::to_string(size)
         + '\n'
-        + std::to_string(ticks)
+        + std::to_string(static_cast<long long>(ticks))
         + '\n'
         + std::to_string(kThumbnailTargetPx)
         + '\n'

@@ -37,8 +37,9 @@ namespace scripting {
     // are set). Pointers from prior resolve()/entriesOfKind() calls are invalidated.
     void scan();
 
-    // Source roots to scan, each a directory of `<plugin>/plugin.toml` subdirs (a
-    // git-source clone or a path source). Replaces the implicit local data dir.
+    // Source roots to scan, each a directory of `<plugin>/plugin.toml` subdirs
+    // (exported git-source runtime files or a path source). Replaces the implicit
+    // local data dir.
     // Forces a rescan on next ensureScanned().
     void setSources(std::vector<std::filesystem::path> sourceRoots);
 

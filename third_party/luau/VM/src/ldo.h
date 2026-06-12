@@ -30,8 +30,8 @@
         L->top++; \
     }
 
-#define savestack(L, p) ((char*)(p) - (char*)L->stack)
-#define restorestack(L, n) ((TValue*)((char*)L->stack + (n)))
+#define savestack(L, p) check_exp((p) >= L->stack && (p) <= L->stack + L->stacksize, (char*)(p) - (char*)L->stack)
+#define restorestack(L, n) check_exp((n) >= 0 && (size_t)(n) <= sizeof(TValue) * L->stacksize, (TValue*)((char*)L->stack + (n)))
 
 #define expandstacklimit(L, p) \
     { \
@@ -42,8 +42,8 @@
 
 #define incr_ci(L) ((L->ci == L->end_ci) ? luaD_growCI(L) : (condhardstacktests(luaD_reallocCI(L, L->size_ci)), ++L->ci))
 
-#define saveci(L, p) ((char*)(p) - (char*)L->base_ci)
-#define restoreci(L, n) ((CallInfo*)((char*)L->base_ci + (n)))
+#define saveci(L, p) check_exp((p) >= L->base_ci && (p) <= L->base_ci + L->size_ci, (char*)(p) - (char*)L->base_ci)
+#define restoreci(L, n) check_exp((n) >= 0 && (size_t)(n) <= sizeof(CallInfo) * L->size_ci, (CallInfo*)((char*)L->base_ci + (n)))
 
 #define isyielded(L) ((L)->status == LUA_YIELD || (L)->status == LUA_BREAK || (L)->status == SCHEDULED_REENTRY)
 
@@ -65,6 +65,7 @@ typedef void (*Pfunc)(lua_State* L, void* ud);
 
 LUAI_FUNC CallInfo* luaD_growCI(lua_State* L);
 
+LUAI_FUNC bool luaD_performcally(lua_State* L, StkId func, int nresults);
 LUAI_FUNC void luaD_callint(lua_State* L, StkId func, int nresults, bool forreentry);
 LUAI_FUNC void luaD_call(lua_State* L, StkId func, int nresults);
 LUAI_FUNC void luaD_callny(lua_State* L, StkId func, int nresults);

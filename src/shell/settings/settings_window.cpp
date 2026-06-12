@@ -27,6 +27,7 @@
 #include <linux/input-event-codes.h>
 #include <optional>
 #include <string>
+#include <thread>
 #include <utility>
 
 namespace {
@@ -70,7 +71,7 @@ SettingsWindow::~SettingsWindow() { destroyWindow(); }
 
 void SettingsWindow::initialize(
     WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext, DependencyService* dependencies,
-    UPowerService* upower, IdleManager* idleManager
+    UPowerService* upower, IdleManager* idleManager, AccountsService* accounts
 ) {
   m_wayland = &wayland;
   m_idleManager = idleManager;
@@ -78,6 +79,7 @@ void SettingsWindow::initialize(
   m_renderContext = renderContext;
   m_dependencies = dependencies;
   m_upower = upower;
+  m_accounts = accounts;
   m_showAdvanced = m_config != nullptr ? m_config->config().shell.settingsShowAdvanced : false;
 }
 
@@ -556,6 +558,37 @@ void SettingsWindow::requestContentRebuild() {
   });
 }
 
+void SettingsWindow::markPluginListDirty() {
+  m_pluginListDirty = true;
+  ++m_pluginListRefreshGeneration;
+}
+
+void SettingsWindow::refreshPluginListIfNeeded() {
+  if (m_pluginManager == nullptr || m_config == nullptr || !m_pluginListDirty || m_pluginListRefreshInFlight) {
+    return;
+  }
+
+  m_pluginListRefreshInFlight = true;
+  const std::uint64_t generation = m_pluginListRefreshGeneration;
+  auto* manager = m_pluginManager;
+  PluginsConfig pluginsSnapshot = m_config->config().plugins;
+  std::thread([this, manager, generation, pluginsSnapshot = std::move(pluginsSnapshot)]() {
+    auto plugins = manager->list(pluginsSnapshot);
+    DeferredCall::callLater([this, generation, plugins = std::move(plugins)]() mutable {
+      m_pluginListRefreshInFlight = false;
+      if (generation != m_pluginListRefreshGeneration) {
+        refreshPluginListIfNeeded();
+        return;
+      }
+      m_pluginList = std::move(plugins);
+      m_pluginListDirty = false;
+      if (isOpen() && m_selectedSection == "plugins") {
+        requestContentRebuild();
+      }
+    });
+  }).detach();
+}
+
 void SettingsWindow::clearStatusMessage() {
   m_statusMessage.clear();
   m_statusIsError = false;
@@ -683,7 +716,8 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
       if (onThis) {
         m_pointerInside = true;
       }
-      m_inputDispatcher.pointerMotion(static_cast<float>(event.sx), static_cast<float>(event.sy), 0);
+      const std::uint32_t serial = m_wayland != nullptr ? m_wayland->lastInputSerial() : 0;
+      m_inputDispatcher.pointerMotion(static_cast<float>(event.sx), static_cast<float>(event.sy), serial);
       consumed = m_pointerInside;
     }
     break;
@@ -869,6 +903,13 @@ void SettingsWindow::onFontChanged() {
 }
 
 void SettingsWindow::onExternalOptionsChanged() { requestSceneRebuild(); }
+
+void SettingsWindow::onPluginsChanged() {
+  markPluginListDirty();
+  if (isOpen() && m_selectedSection == "plugins") {
+    requestContentRebuild();
+  }
+}
 
 void SettingsWindow::refreshIdleLiveStatusText() {
   if (m_idleLiveStatusLabel == nullptr) {

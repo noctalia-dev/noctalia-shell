@@ -67,6 +67,7 @@ public:
 
 private:
   struct NvidiaNvmlReader;
+  struct AmdRsmiReader;
 
   struct DiskHistory {
     int refs = 0;
@@ -114,6 +115,7 @@ private:
   [[nodiscard]] static std::optional<double> readCpuTempCelsius();
   [[nodiscard]] static NvidiaDisplayDeviceState detectNvidiaPciDisplayDeviceState();
   [[nodiscard]] NvidiaNvmlReader& ensureNvmlReader();
+  [[nodiscard]] AmdRsmiReader& ensureAmdRsmiReader();
   [[nodiscard]] GpuTempData readGpuTempData(NvidiaDisplayDeviceState nvidiaDisplayState);
   [[nodiscard]] GpuUsageData readGpuUsageData(NvidiaDisplayDeviceState nvidiaDisplayState);
   [[nodiscard]] std::optional<GpuVramData> readGpuVramData(NvidiaDisplayDeviceState nvidiaDisplayState);
@@ -151,4 +153,5 @@ private:
   std::unordered_map<std::string, DiskHistory> m_diskHistories;
   std::unordered_map<std::string, NetIfaceBytes> m_prevNetBytes;
   std::unique_ptr<NvidiaNvmlReader> m_nvidiaNvmlReader;
+  std::unique_ptr<AmdRsmiReader> m_amdRsmiReader;
 };

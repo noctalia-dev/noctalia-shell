@@ -171,6 +171,7 @@ namespace ui {
     std::optional<int> maxLines = std::nullopt;
     std::optional<FontWeight> fontWeight = std::nullopt;
     std::optional<TextAlign> textAlign = std::nullopt;
+    std::optional<TextEllipsize> ellipsize = std::nullopt;
     std::optional<LabelBaselineMode> baselineMode = std::nullopt;
     std::optional<bool> autoScroll = std::nullopt;
     std::optional<float> autoScrollSpeed = std::nullopt;

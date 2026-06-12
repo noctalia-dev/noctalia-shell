@@ -1087,13 +1087,35 @@ void NotificationToast::removeCardFromInstance(Instance& inst, std::size_t entry
   if (inst.pointerInside) {
     inst.inputDispatcher.pointerMotion(inst.lastPointerX, inst.lastPointerY, 0);
   }
+
   if (inst.surface != nullptr) {
     inst.surface->requestRedraw();
   }
 }
 
+void NotificationToast::finishExitingEntryIfOrphaned(uint32_t notificationId) {
+  const auto it = std::find_if(m_entries.begin(), m_entries.end(), [notificationId](const PopupEntry& entry) {
+    return entry.notificationId == notificationId && entry.exiting;
+  });
+  if (it == m_entries.end()) {
+    return;
+  }
+
+  const std::size_t index = static_cast<std::size_t>(std::distance(m_entries.begin(), it));
+  for (const auto& inst : m_instances) {
+    if (index < inst->cards.size() && inst->cards[index].cardNode != nullptr) {
+      return;
+    }
+  }
+
+  finishRemoval(notificationId);
+}
+
 void NotificationToast::syncEntryVisibility(std::size_t entryIndex) {
   if (entryIndex >= m_entries.size()) {
+    return;
+  }
+  if (m_entries[entryIndex].exiting) {
     return;
   }
 
@@ -2065,6 +2087,20 @@ void NotificationToast::buildScene(Instance& inst, uint32_t width, uint32_t heig
   updateInputRegion(inst);
   if (inst.pointerInside) {
     inst.inputDispatcher.pointerMotion(inst.lastPointerX, inst.lastPointerY, 0);
+  }
+
+  std::vector<uint32_t> exitingIds;
+  for (const auto& entry : m_entries) {
+    if (entry.exiting) {
+      exitingIds.push_back(entry.notificationId);
+    }
+  }
+  if (!exitingIds.empty()) {
+    DeferredCall::callLater([this, exitingIds = std::move(exitingIds)]() {
+      for (const uint32_t id : exitingIds) {
+        finishExitingEntryIfOrphaned(id);
+      }
+    });
   }
 }
 

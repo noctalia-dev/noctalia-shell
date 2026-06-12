@@ -1,7 +1,9 @@
 // This file is part of the Luau programming language and is licensed under MIT License; see LICENSE.txt for details
 #pragma once
 
+#include "Luau/Common.h"
 #include "Luau/Location.h"
+#include "Luau/Variant.h"
 
 #include <iterator>
 #include <optional>
@@ -10,6 +12,8 @@
 
 #include <string.h>
 #include <stdint.h>
+
+LUAU_FASTFLAG(DebugLuauUserDefinedClasses)
 
 namespace Luau
 {
@@ -71,6 +75,8 @@ struct AstLocal
     size_t functionDepth;
     size_t loopDepth;
     bool isConst;
+    // exported is only a property set after construction
+    bool isExported = false;
 
     AstType* annotation;
 
@@ -840,7 +846,9 @@ public:
 
     AstArray<AstLocal*> vars;
     AstArray<AstExpr*> values;
-    bool isConst;
+
+    bool isConst = false;
+    bool isExported = false;
 
     std::optional<Location> equalsSignLocation;
 };
@@ -1083,6 +1091,40 @@ struct AstDeclaredExternTypeProperty
     bool isMethod = false;
     Location location;
     AstTableAccess access = AstTableAccess::ReadWrite;
+};
+
+struct AstClassProperty
+{
+    Location qualifierLocation;
+    AstName name;
+    Location nameLocation;
+    std::optional<Location> typeColonLocation = std::nullopt;
+    AstType* ty = nullptr;
+};
+
+struct AstClassMethod
+{
+    std::optional<Location> qualifierLocation;
+    Location keywordLocation;
+    AstName functionName;
+    Location nameLocation;
+    AstExprFunction* function;
+};
+
+using AstClassMember = Variant<AstClassProperty, AstClassMethod>;
+
+class AstStatClass : public AstStat
+{
+public:
+    LUAU_RTTI(AstStatClass)
+
+    AstLocal* name;
+    AstArray<AstClassMember> members;
+    bool exported;
+
+    AstStatClass(const Location& location, AstLocal* name, AstArray<AstClassMember> members, bool exported);
+
+    void visit(AstVisitor* visitor) override;
 };
 
 struct AstTableIndexer
@@ -1578,6 +1620,11 @@ public:
     }
     virtual bool visit(class AstStatDeclareGlobal* node)
     {
+        return visit(static_cast<AstStat*>(node));
+    }
+    virtual bool visit(class AstStatClass* node)
+    {
+        LUAU_ASSERT(FFlag::DebugLuauUserDefinedClasses);
         return visit(static_cast<AstStat*>(node));
     }
     virtual bool visit(class AstStatDeclareExternType* node)

@@ -32,7 +32,7 @@ void ControlCenterWidget::create() {
             .out = &m_glyph,
             .glyph = m_barGlyphId.empty() ? "search" : m_barGlyphId,
             .glyphSize = Style::baseGlyphSize * m_contentScale,
-            .color = widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)),
+            .color = widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)),
         })
     );
   }
@@ -45,7 +45,7 @@ void ControlCenterWidget::refreshCustomImageTint() {
     return;
   }
   if (m_customImageColorize) {
-    m_image->setForegroundTint(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
+    m_image->setForegroundTint(widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)));
   } else {
     m_image->setForegroundTint(std::nullopt);
   }
@@ -65,7 +65,7 @@ void ControlCenterWidget::doLayout(Renderer& renderer, float /*containerWidth*/,
     node->setSize(m_image->width(), m_image->height());
   } else if (m_glyph != nullptr) {
     m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
-    m_glyph->setColor(widgetForegroundOr(colorSpecFromRole(ColorRole::OnSurface)));
+    m_glyph->setColor(widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)));
     m_glyph->measure(renderer);
     node->setSize(m_glyph->width(), m_glyph->height());
   }

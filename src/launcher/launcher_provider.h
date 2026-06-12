@@ -42,6 +42,10 @@ public:
   // record each activation and surface frequently used entries higher.
   [[nodiscard]] virtual bool trackUsage() const { return false; }
 
+  // Prefixed providers (non-empty prefix()) normally only respond when their prefix is typed.
+  // Return true to also contribute results to the general (non-prefixed) search.
+  [[nodiscard]] virtual bool includeInGlobalSearch() const { return false; }
+
   [[nodiscard]] virtual std::vector<LauncherCategory> categories() const { return {}; }
 
   virtual void initialize() {}

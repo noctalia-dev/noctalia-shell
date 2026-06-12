@@ -8,6 +8,7 @@
 #include <array>
 
 LUAU_FASTFLAGVARIABLE(LuauIntegerFastcalls)
+LUAU_FASTFLAGVARIABLE(LuauIntegerBufferFastcalls)
 
 namespace Luau
 {
@@ -254,6 +255,10 @@ static int getBuiltinFunctionId(const Builtin& builtin, const CompileOptions& op
             return LBF_BUFFER_READF64;
         if (builtin.method == "writef64")
             return LBF_BUFFER_WRITEF64;
+        if (FFlag::LuauIntegerFastcalls && FFlag::LuauIntegerBufferFastcalls && builtin.method == "readinteger")
+            return LBF_BUFFER_READINTEGER;
+        if (FFlag::LuauIntegerFastcalls && FFlag::LuauIntegerBufferFastcalls && builtin.method == "writeinteger")
+            return LBF_BUFFER_WRITEINTEGER;
     }
 
     if (builtin.object == "vector")
@@ -645,7 +650,11 @@ BuiltinInfo getBuiltinInfo(int bfid)
     case LBF_BUFFER_WRITEU32:
     case LBF_BUFFER_WRITEF32:
     case LBF_BUFFER_WRITEF64:
+    case LBF_BUFFER_WRITEINTEGER:
         return {3, 0, BuiltinInfo::Flag_NoneSafe};
+
+    case LBF_BUFFER_READINTEGER:
+        return {2, 1, BuiltinInfo::Flag_NoneSafe};
 
     case LBF_VECTOR_MAGNITUDE:
     case LBF_VECTOR_NORMALIZE:

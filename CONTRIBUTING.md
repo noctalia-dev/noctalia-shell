@@ -106,6 +106,26 @@ before commits and refreshes the git index for tracked formatting changes.
 D-Bus wire-protocol string literals, such as `player["bus_name"]`, stay snake_case because they are wire names, not
 C++ identifiers.
 
+## Translations
+
+Noctalia translations are managed through [Noctalia Translate](https://i18n.noctalia.dev/projects/noctalia). The JSON
+files in `assets/translations/` are exported from that workflow, with `assets/translations/en.json` acting as the
+source catalog for new strings.
+
+When a code, UI, settings, or documentation change needs a new user-facing string, add or update the English string in
+`assets/translations/en.json` only. Do not machine translate strings, copy English into other locales, or include broad
+updates to non-English translation files in a normal feature or bug-fix PR. The translation team handles those locale
+updates through the translation app.
+
+Only edit non-English translation files when the PR is explicitly about translation tooling, an import/export sync, or a
+maintainer has asked for that specific locale change.
+
+After adding or renaming translation keys, run:
+
+```sh
+python3 tools/i18n-check.py
+```
+
 ## Project Layout
 
 ```text

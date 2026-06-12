@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config/config_limits.h"
 #include "core/text_clipboard.h"
 
 #include <chrono>
@@ -184,6 +185,6 @@ private:
   std::size_t m_historyBytes = 0;
   std::uint64_t m_changeSerial = 0;
   bool m_historyRetention = true;
-  std::size_t m_maxHistoryEntries = 50;
+  std::size_t m_maxHistoryEntries = static_cast<std::size_t>(noctalia::config::kClipboardHistoryDefaultEntries);
   ChangeCallback m_changeCallback;
 };

@@ -35,22 +35,63 @@ namespace settings {
       });
     }
 
+    bool pluginEnabled(const scripting::PluginStatus& plugin, const SettingsPluginsContext& ctx) {
+      if (ctx.config == nullptr) {
+        return plugin.enabled;
+      }
+      return std::find(ctx.config->plugins.enabled.begin(), ctx.config->plugins.enabled.end(), plugin.id)
+          != ctx.config->plugins.enabled.end();
+    }
+
+    std::string_view pluginDisplayName(const scripting::PluginStatus& plugin) { return plugin.name; }
+
+    std::string pluginSourceDisplayName(std::string_view source) {
+      if (source == "official") {
+        return "Official";
+      }
+      if (source == "community") {
+        return "Community";
+      }
+      return std::string(source);
+    }
+
     std::unique_ptr<Flex> sourceRow(const PluginSourceConfig& source, const SettingsPluginsContext& ctx, float scale) {
       auto row = ui::row({.align = FlexAlign::Center, .gap = Style::spaceSm * scale, .fillWidth = true});
       Flex* r = row.get();
 
       auto info = ui::column({.align = FlexAlign::Start, .gap = 2.0F * scale, .flexGrow = 1.0F});
-      info->addChild(makeLabel(source.name, Style::fontSizeBody * scale, ColorRole::OnSurface, FontWeight::Medium));
-      const std::string kind = source.kind == PluginSourceKind::Git ? "git" : "path";
+      info->addChild(makeLabel(
+          pluginSourceDisplayName(source.name), Style::fontSizeBody * scale, ColorRole::OnSurface, FontWeight::Medium
+      ));
+      const std::string kind = source.kind == PluginSourceKind::Git ? i18n::tr("settings.plugins.sources.kind.git")
+                                                                    : i18n::tr("settings.plugins.sources.kind.path");
       info->addChild(
           makeLabel(kind + " · " + source.location, Style::fontSizeCaption * scale, ColorRole::OnSurfaceVariant)
       );
       r->addChild(std::move(info));
 
       if (source.kind == PluginSourceKind::Git) {
+        auto autoUpdate = ui::row({.align = FlexAlign::Center, .gap = Style::spaceXs * scale});
+        autoUpdate->addChild(makeLabel(
+            i18n::tr("settings.plugins.sources.update-on-startup"), Style::fontSizeCaption * scale,
+            ColorRole::OnSurfaceVariant, FontWeight::Medium
+        ));
+        autoUpdate->addChild(
+            ui::toggle({
+                .checked = source.autoUpdate,
+                .toggleSize = ToggleSize::Small,
+                .scale = scale,
+                .onChange = [cb = ctx.setSourceAutoUpdate, source](bool on) {
+                  if (cb) {
+                    cb(source, on);
+                  }
+                },
+            })
+        );
+        r->addChild(std::move(autoUpdate));
         r->addChild(
             ui::button({
-                .text = "Update",
+                .text = i18n::tr("settings.plugins.sources.update"),
                 .fontSize = Style::fontSizeCaption * scale,
                 .variant = ButtonVariant::Outline,
                 .onClick = [cb = ctx.updateSource, name = source.name]() {
@@ -61,19 +102,21 @@ namespace settings {
             })
         );
       }
-      r->addChild(
-          ui::button({
-              .glyph = "trash",
-              .glyphSize = Style::fontSizeBody * scale,
-              .variant = ButtonVariant::Ghost,
-              .tooltip = "Remove source",
-              .onClick = [cb = ctx.removeSource, name = source.name]() {
-                if (cb) {
-                  cb(name);
-                }
-              },
-          })
-      );
+      if (!isDefaultPluginSourceName(source.name)) {
+        r->addChild(
+            ui::button({
+                .glyph = "trash",
+                .glyphSize = Style::fontSizeBody * scale,
+                .variant = ButtonVariant::Ghost,
+                .tooltip = i18n::tr("settings.plugins.sources.remove"),
+                .onClick = [cb = ctx.removeSource, name = source.name]() {
+                  if (cb) {
+                    cb(name);
+                  }
+                },
+            })
+        );
+      }
       return row;
     }
 
@@ -81,31 +124,54 @@ namespace settings {
     pluginRow(const scripting::PluginStatus& plugin, const SettingsPluginsContext& ctx, float scale) {
       auto row = ui::row({.align = FlexAlign::Center, .gap = Style::spaceSm * scale, .fillWidth = true});
       Flex* r = row.get();
+      const bool enabled = pluginEnabled(plugin, ctx);
+
+      r->addChild(
+          ui::glyph({
+              .glyph = plugin.icon.empty() ? std::string("apps") : plugin.icon,
+              .glyphSize = Style::fontSizeHeader * scale,
+              .color = colorSpecFromRole(ColorRole::Primary),
+              .width = Style::controlHeightSm * scale,
+              .height = Style::controlHeightSm * scale,
+          })
+      );
 
       auto info = ui::column({.align = FlexAlign::Start, .gap = 2.0F * scale, .flexGrow = 1.0F});
       auto title = ui::row({.align = FlexAlign::Center, .gap = Style::spaceXs * scale});
-      title->addChild(makeLabel(plugin.id, Style::fontSizeBody * scale, ColorRole::OnSurface, FontWeight::Medium));
+      const std::string version = plugin.version.empty() ? std::string("?") : plugin.version;
+      title->addChild(
+          makeLabel(pluginDisplayName(plugin), Style::fontSizeBody * scale, ColorRole::OnSurface, FontWeight::Medium)
+      );
+      title->addChild(
+          makeLabel(pluginSourceDisplayName(plugin.source), Style::fontSizeCaption * scale, ColorRole::OnSurfaceVariant)
+      );
+      title->addChild(makeLabel("v" + version, Style::fontSizeCaption * scale, ColorRole::OnSurfaceVariant));
       if (!plugin.compatible) {
-        title->addChild(
-            makeLabel("requires newer noctalia", Style::fontSizeMini * scale, ColorRole::Error, FontWeight::Bold)
-        );
+        title->addChild(makeLabel(
+            i18n::tr("settings.plugins.plugins.requires-newer-noctalia"), Style::fontSizeMini * scale, ColorRole::Error,
+            FontWeight::Bold
+        ));
+      }
+      if (plugin.deprecated) {
+        title->addChild(makeLabel(
+            i18n::tr("settings.plugins.plugins.deprecated"), Style::fontSizeMini * scale, ColorRole::Secondary,
+            FontWeight::Bold
+        ));
       }
       info->addChild(std::move(title));
-      const std::string version = plugin.version.empty() ? std::string("?") : plugin.version;
-      info->addChild(
-          makeLabel("v" + version + " · " + plugin.source, Style::fontSizeCaption * scale, ColorRole::OnSurfaceVariant)
-      );
+      if (!plugin.description.empty()) {
+        info->addChild(makeLabel(plugin.description, Style::fontSizeCaption * scale, ColorRole::OnSurfaceVariant));
+      }
       r->addChild(std::move(info));
 
       const auto* manifest = scripting::PluginRegistry::instance().findManifest(plugin.id);
-      if (plugin.enabled && manifest != nullptr && !manifest->settings.empty() && ctx.controlFactory != nullptr) {
-        const bool open = ctx.configurePluginId == plugin.id;
+      if (enabled && manifest != nullptr && !manifest->settings.empty() && ctx.onConfigure) {
         r->addChild(
             ui::button({
                 .glyph = "settings",
                 .glyphSize = Style::fontSizeBody * scale,
-                .variant = open ? ButtonVariant::Primary : ButtonVariant::Ghost,
-                .tooltip = "Configure",
+                .variant = ButtonVariant::Ghost,
+                .tooltip = i18n::tr("settings.plugins.plugins.configure"),
                 .onClick = [cb = ctx.onConfigure, id = plugin.id]() {
                   if (cb) {
                     cb(id);
@@ -117,8 +183,8 @@ namespace settings {
 
       r->addChild(
           ui::toggle({
-              .checked = plugin.enabled,
-              .enabled = plugin.compatible,
+              .checked = enabled,
+              .enabled = enabled || plugin.compatible,
               .scale = scale,
               .onChange = [cb = ctx.setEnabled, id = plugin.id](bool on) {
                 if (cb) {
@@ -275,45 +341,43 @@ namespace settings {
       }
     }
 
-    void addPluginSettingsPanel(
-        Flex& section, const std::string& pluginId, const scripting::PluginManifest& manifest,
-        const SettingsPluginsContext& ctx
-    ) {
-      const auto specs = settings::manifestSettingSpecs(manifest.settings);
-      auto panel = ui::column({
-          .align = FlexAlign::Stretch,
-          .gap = Style::spaceXs * ctx.scale,
-          .padding = Style::spaceSm * ctx.scale,
-          .fillWidth = true,
-      });
-      Flex* p = panel.get();
-
-      for (const auto& spec : specs) {
-        if (spec.advanced && !ctx.showAdvanced) {
-          continue;
-        }
-        if (ctx.config == nullptr || !pluginSettingVisible(*ctx.config, pluginId, spec, specs)) {
-          continue;
-        }
-        const std::vector<std::string> path = {"plugin_settings", pluginId, spec.schema.key};
-        const WidgetSettingValue value = pluginSettingValue(*ctx.config, pluginId, spec);
-        SettingEntry entry{
-            .section = SettingsSection::Bar,
-            .group = "plugin-settings",
-            .title = spec.literalLabel,
-            .subtitle = spec.literalDescription,
-            .path = path,
-            .control = TextSetting{},
-            .advanced = spec.advanced,
-            .searchText = {},
-            .visibleWhen = std::nullopt,
-        };
-        ctx.controlFactory->makeRow(*p, entry, pluginSettingControl(*ctx.controlFactory, spec, value, path));
-      }
-
-      section.addChild(std::move(panel));
-    }
   } // namespace
+
+  void buildPluginSettingsEditor(
+      Flex& body, const Config& cfg, SettingsControlFactory& factory, const std::string& pluginId,
+      const scripting::PluginManifest& manifest, bool showAdvanced, float scale
+  ) {
+    const auto specs = settings::manifestSettingSpecs(manifest.settings);
+    bool rendered = false;
+    for (const auto& spec : specs) {
+      if (spec.advanced && !showAdvanced) {
+        continue;
+      }
+      if (!pluginSettingVisible(cfg, pluginId, spec, specs)) {
+        continue;
+      }
+      const std::vector<std::string> path = {"plugin_settings", pluginId, spec.schema.key};
+      const WidgetSettingValue value = pluginSettingValue(cfg, pluginId, spec);
+      SettingEntry entry{
+          .section = SettingsSection::Bar,
+          .group = "plugin-settings",
+          .title = spec.literalLabel,
+          .subtitle = spec.literalDescription,
+          .path = path,
+          .control = TextSetting{},
+          .advanced = spec.advanced,
+          .searchText = {},
+          .visibleWhen = std::nullopt,
+      };
+      factory.makeRow(body, entry, pluginSettingControl(factory, spec, value, path));
+      rendered = true;
+    }
+    if (!rendered) {
+      body.addChild(makeLabel(
+          i18n::tr("settings.plugins.settings.empty"), Style::fontSizeCaption * scale, ColorRole::OnSurfaceVariant
+      ));
+    }
+  }
 
   void addSettingsPlugins(Flex& content, SettingsPluginsContext ctx) {
     if (ctx.selectedSection != "plugins") {
@@ -347,34 +411,71 @@ namespace settings {
     );
 
     // ── Sources ──────────────────────────────────────────────────────────
-    section->addChild(makeLabel("Sources", Style::fontSizeBody * scale, ColorRole::Secondary, FontWeight::Bold));
+    auto sourcesHeader = ui::row({.align = FlexAlign::Center, .gap = Style::spaceSm * scale, .fillWidth = true});
+    sourcesHeader->addChild(makeLabel(
+        i18n::tr("settings.plugins.sources.title"), Style::fontSizeBody * scale, ColorRole::Secondary, FontWeight::Bold
+    ));
+    sourcesHeader->addChild(ui::spacer());
+    sourcesHeader->addChild(
+        ui::button({
+            .text = i18n::tr("settings.plugins.sources.add"),
+            .glyph = "add",
+            .fontSize = Style::fontSizeCaption * scale,
+            .glyphSize = Style::fontSizeBody * scale,
+            .variant = ButtonVariant::Outline,
+            .onClick = [cb = ctx.addSource]() {
+              if (cb) {
+                cb();
+              }
+            },
+        })
+    );
+    section->addChild(std::move(sourcesHeader));
     if (ctx.sources.empty()) {
-      section->addChild(
-          makeLabel("No sources configured.", Style::fontSizeCaption * scale, ColorRole::OnSurfaceVariant)
-      );
+      section->addChild(makeLabel(
+          i18n::tr("settings.plugins.sources.empty"), Style::fontSizeCaption * scale, ColorRole::OnSurfaceVariant
+      ));
     }
     for (const auto& source : ctx.sources) {
       section->addChild(sourceRow(source, ctx, scale));
     }
 
-    section->addChild(ui::separator());
+    section->addChild(ui::separator({.spacing = Style::spaceSm * scale}));
 
     // ── Plugins ──────────────────────────────────────────────────────────
-    section->addChild(makeLabel("Plugins", Style::fontSizeBody * scale, ColorRole::Secondary, FontWeight::Bold));
-    if (ctx.plugins.empty()) {
+    section->addChild(makeLabel(
+        i18n::tr("settings.plugins.plugins.title"), Style::fontSizeBody * scale, ColorRole::Secondary, FontWeight::Bold
+    ));
+    if (ctx.pluginsLoading) {
       section->addChild(makeLabel(
-          "No plugins found. Add a source, or check your network.", Style::fontSizeCaption * scale,
-          ColorRole::OnSurfaceVariant
+          ctx.plugins.empty() ? i18n::tr("settings.plugins.plugins.loading")
+                              : i18n::tr("settings.plugins.plugins.refreshing"),
+          Style::fontSizeCaption * scale, ColorRole::OnSurfaceVariant
+      ));
+    } else if (ctx.plugins.empty()) {
+      section->addChild(makeLabel(
+          i18n::tr("settings.plugins.plugins.empty"), Style::fontSizeCaption * scale, ColorRole::OnSurfaceVariant
       ));
     }
-    for (const auto& plugin : ctx.plugins) {
-      section->addChild(pluginRow(plugin, ctx, scale));
-      if (ctx.configurePluginId == plugin.id && ctx.controlFactory != nullptr) {
-        if (const auto* manifest = scripting::PluginRegistry::instance().findManifest(plugin.id);
-            manifest != nullptr && !manifest->settings.empty()) {
-          addPluginSettingsPanel(*section, plugin.id, *manifest, ctx);
-        }
+    std::vector<scripting::PluginStatus> plugins = ctx.plugins;
+    std::sort(plugins.begin(), plugins.end(), [&](const auto& a, const auto& b) {
+      const bool aEnabled = pluginEnabled(a, ctx);
+      const bool bEnabled = pluginEnabled(b, ctx);
+      if (aEnabled != bEnabled) {
+        return aEnabled;
       }
+      const std::string_view aName = pluginDisplayName(a);
+      const std::string_view bName = pluginDisplayName(b);
+      if (aName != bName) {
+        return aName < bName;
+      }
+      if (a.source != b.source) {
+        return a.source < b.source;
+      }
+      return a.id < b.id;
+    });
+    for (const auto& plugin : plugins) {
+      section->addChild(pluginRow(plugin, ctx, scale));
     }
   }
 

@@ -1,6 +1,8 @@
 // This file is part of the Luau programming language and is licensed under MIT License; see LICENSE.txt for details
 #pragma once
 
+#include <climits>
+
 namespace Luau
 {
 
@@ -12,6 +14,11 @@ struct Position
         : line(line)
         , column(column)
     {
+    }
+
+    static Position missing()
+    {
+        return {UINT_MAX, UINT_MAX};
     }
 
     bool operator==(const Position& rhs) const
@@ -47,6 +54,11 @@ struct Position
     }
 
     void shift(const Position& start, const Position& oldEnd, const Position& newEnd);
+
+    bool hasValue() const
+    {
+        return line != UINT_MAX || column != UINT_MAX;
+    }
 };
 
 struct Location

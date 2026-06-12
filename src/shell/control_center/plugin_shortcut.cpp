@@ -55,7 +55,7 @@ void PluginShortcut::start(std::unordered_map<std::string, WidgetSettingValue> s
   );
 
   auto alive = std::weak_ptr<bool>(m_alive);
-  m_subscription = m_runtime->subscribe([this, alive](const scripting::ScriptWidgetResult& result) {
+  m_subscription = m_runtime->subscribe([this, alive](const scripting::ScriptResult& result) {
     auto token = alive.lock();
     if (token == nullptr || !*token) {
       return;
@@ -67,7 +67,7 @@ void PluginShortcut::start(std::unordered_map<std::string, WidgetSettingValue> s
   armTimer();
 }
 
-void PluginShortcut::handleResult(const scripting::ScriptWidgetResult& result) {
+void PluginShortcut::handleResult(const scripting::ScriptResult& result) {
   const auto& patch = result.patch;
   bool changed = false;
   if (patch.label.has_value() && *patch.label != m_label) {

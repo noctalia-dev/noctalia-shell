@@ -315,6 +315,9 @@ namespace ui {
     if (props.textAlign.has_value()) {
       control->setTextAlign(*props.textAlign);
     }
+    if (props.ellipsize.has_value()) {
+      control->setEllipsize(*props.ellipsize);
+    }
     if (props.baselineMode.has_value()) {
       control->setBaselineMode(*props.baselineMode);
     }

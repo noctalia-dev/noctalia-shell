@@ -10,7 +10,7 @@
 
 namespace {
 
-  const Logger log("desktop_entry_launch");
+  constexpr Logger kLog("desktop_entry_launch");
 
   std::string stripFieldCodes(std::string_view exec) {
     std::string result;
@@ -127,7 +127,7 @@ namespace desktop_entry_launch {
   bool launchEntry(const DesktopEntry& entry, const LaunchOptions& options) {
     auto prepared = prepareCommand(entry.exec, entry.terminal);
     if (!prepared.has_value()) {
-      log.warn("Failed to prepare launch command for desktop entry '{}'", entry.id.empty() ? entry.name : entry.id);
+      kLog.warn("Failed to prepare launch command for desktop entry '{}'", entry.id.empty() ? entry.name : entry.id);
       return false;
     }
 
@@ -145,7 +145,9 @@ namespace desktop_entry_launch {
   ) {
     auto prepared = prepareCommand(action.exec, terminal);
     if (!prepared.has_value()) {
-      log.warn("Failed to prepare launch command for desktop action '{}'", action.id.empty() ? action.name : action.id);
+      kLog.warn(
+          "Failed to prepare launch command for desktop action '{}'", action.id.empty() ? action.name : action.id
+      );
       return false;
     }
 

@@ -119,6 +119,7 @@ void PolkitPanel::create() {
 }
 
 void PolkitPanel::onOpen(std::string_view /*context*/) {
+  m_lastResponseRequired = false;
   if (m_input != nullptr) {
     m_input->setValue("");
   }
@@ -130,6 +131,7 @@ void PolkitPanel::onClose() {
       agent->cancelRequest();
     }
   }
+  m_lastResponseRequired = false;
   clearReleasedRoot();
 }
 
@@ -187,6 +189,12 @@ void PolkitPanel::doUpdate(Renderer& /*renderer*/) {
   m_supplementaryLabel->setColor(colorSpecFromRole(ColorRole::OnSurfaceVariant));
   m_input->setVisible(needsInput);
   m_submitButton->setEnabled(needsInput);
+  if (needsInput && !m_lastResponseRequired) {
+    if (auto* manager = PanelManager::current(); manager != nullptr && manager->isOpenPanel("polkit")) {
+      manager->focusArea(m_input->inputArea());
+    }
+  }
+  m_lastResponseRequired = needsInput;
 }
 
 void PolkitPanel::submit() {

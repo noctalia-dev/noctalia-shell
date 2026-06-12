@@ -43,6 +43,7 @@ public:
   ConfigService& operator=(const ConfigService&) = delete;
 
   [[nodiscard]] const Config& config() const noexcept { return m_config; }
+  [[nodiscard]] bool isLockScreenEnabled() const noexcept { return ::isLockScreenEnabled(m_config.lockscreen); }
   // Which sections changed in the reload currently being dispatched. Valid while
   // reload callbacks run; subscribers consult it to skip unaffected work.
   [[nodiscard]] const ConfigChangeSet& lastChange() const noexcept { return m_lastChange; }
@@ -93,8 +94,9 @@ public:
       const std::vector<std::string>& allConnectors
   );
 
-  // Add/remove a plugin id ("author/plugin") in [plugins].enabled. Persists to
-  // settings.toml and triggers the reload pipeline. No-op if already in that state.
+  // Add/remove a plugin id ("author/plugin") from the effective [plugins].enabled
+  // list. Persists the resulting override list to settings.toml and triggers the
+  // reload pipeline. No-op if already in that state.
   void setPluginEnabled(std::string_view pluginId, bool enabled);
 
   // Add (replacing any same-named entry) or remove a plugin source in
